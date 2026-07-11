@@ -1,0 +1,127 @@
+import '../src/style.css'
+import { userEvent } from 'vitest/browser'
+import { beforeEach, expect, test, vi } from 'vitest'
+import { render } from 'vitest-browser-vue'
+import MenuFixture from './fixtures/MenuFixture.vue'
+import MenuCustomFixture from './fixtures/MenuCustomFixture.vue'
+
+beforeEach(() => {
+  // Teleported positioners can outlive a fixture torn down mid-transition.
+  for (const el of document.querySelectorAll('.ui-menu-positioner')) el.remove()
+})
+
+function focusedText() {
+  return document.activeElement?.textContent?.trim()
+}
+
+test('trigger click opens the menu and focuses the first item; select closes it', async () => {
+  const screen = render(MenuFixture)
+
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+
+  await screen.getByRole('menuitem', { name: 'Banana' }).click()
+  await expect.element(screen.getByTestId('selected')).toHaveTextContent('banana')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
+test('ArrowDown/ArrowUp move focus, wrap at both ends, and skip disabled items', async () => {
+  const screen = render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Banana'))
+
+  // Cherry is disabled — skipped straight to Date.
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Date'))
+
+  // Wraps forward past the end back to Apple.
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+
+  // Wraps backward past the start to the last enabled item.
+  await userEvent.keyboard('{ArrowUp}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Date'))
+})
+
+test('Home/End jump to the first and last enabled items', async () => {
+  const screen = render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+
+  await userEvent.keyboard('{End}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Date'))
+  await userEvent.keyboard('{Home}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+})
+
+test('Enter activates the focused item and closes the menu', async () => {
+  const screen = render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Banana'))
+  await userEvent.keyboard('{Enter}')
+
+  await expect.element(screen.getByTestId('selected')).toHaveTextContent('banana')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
+test('typeahead jumps to the item starting with the typed character', async () => {
+  const screen = render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+
+  await userEvent.keyboard('b')
+  await vi.waitFor(() => expect(focusedText()).toBe('Banana'))
+})
+
+test('keepOpen items emit select and run handlers without closing the menu', async () => {
+  const screen = render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+
+  await screen.getByRole('menuitem', { name: 'Date' }).click()
+  await expect.element(screen.getByTestId('selected')).toHaveTextContent('date')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+})
+
+test('Escape closes the menu', async () => {
+  const screen = render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
+test('outside click closes the menu', async () => {
+  const screen = render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+
+  await userEvent.click(document.body)
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
+test('custom default-slot markup keeps behavior: click selects/closes, keep-open stays open', async () => {
+  const screen = render(MenuCustomFixture)
+
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+
+  // keep-open item runs its own @click but the menu stays open
+  await screen.getByTestId('item-date').click()
+  await expect.element(screen.getByTestId('selected')).toHaveTextContent('date')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+
+  // a plain item closes
+  await screen.getByTestId('item-apple').click()
+  await expect.element(screen.getByTestId('selected')).toHaveTextContent('apple')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})

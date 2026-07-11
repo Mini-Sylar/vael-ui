@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "moduleDetection": "force",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "types": ["vite/client"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "vueCompilerOptions": {
+    // Matches packages/ui's own setting — this app leans on the library's
+    // attrs-fallthrough API (aria-label on Dialog, role on Tabs' rendered
+    // tabs, data-testid everywhere), which strict template checking rejects.
+    "strictTemplates": false
+  },
+  "include": ["src"]
+}

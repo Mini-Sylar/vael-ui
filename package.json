@@ -1,0 +1,51 @@
+{
+  "name": "vael-ui-workspace",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Animation-agnostic Vue 3 UI library with full Vue Vapor support.",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --filter vael-ui build && pnpm --filter vapor-ui build",
+    "build:vapor": "pnpm --filter vapor-ui build",
+    "typecheck": "pnpm build && pnpm --filter vael-ui typecheck && pnpm --filter vdom typecheck && pnpm --filter vapor-interop typecheck && pnpm --filter vapor typecheck && pnpm --filter vapor-ui typecheck",
+    "test": "pnpm --filter vael-ui test",
+    "test:vapor": "pnpm build && pnpm --filter vapor-ui test",
+    "test:vapor-interop": "pnpm build && pnpm --filter vapor-interop test",
+    "play": "pnpm --filter vdom dev",
+    "play:vapor": "pnpm --filter vapor dev",
+    "play:vapor-interop": "pnpm --filter vapor-interop dev",
+    "lint": "oxlint . && eslint .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.1",
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-vue": "^10.9.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.74.0",
+    "typescript-eslint": "^8.64.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,vue}": [
+      "oxfmt",
+      "oxlint"
+    ],
+    "*.vue": [
+      "eslint"
+    ],
+    "*.{css,json,jsonc,md,yaml,yml}": [
+      "oxfmt"
+    ]
+  },
+  "packageManager": "pnpm@11.9.0"
+}

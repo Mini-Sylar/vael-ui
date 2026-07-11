@@ -1,0 +1,27 @@
+{
+  "name": "vapor-ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit",
+    "gen": "node ../scripts/generate-vapor.mjs",
+    "build": "pnpm gen && vite build --config vite.lib.config.ts && node ../scripts/emit-vapor-types.mjs"
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
+    "@vueuse/core": "^14.3.0",
+    "vael-ui": "workspace:*",
+    "vue": "3.6.0-rc.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.7",
+    "@vitest/browser-playwright": "^4.1.10",
+    "playwright": "^1.61.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.3.7"
+  }
+}

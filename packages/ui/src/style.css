@@ -1,0 +1,5294 @@
+:root {
+  --ui-primary: #18181b;
+  --ui-primary-hover: #27272a;
+  --ui-primary-contrast: #fafafa;
+  --ui-muted: #f4f4f5;
+  --ui-muted-hover: #e4e4e7;
+  --ui-danger: oklch(0.586 0.253 26);
+  --ui-danger-hover: color-mix(in oklch, var(--ui-danger) 85%, black);
+  --ui-danger-contrast: #ffffff;
+  --ui-success: oklch(71.335% 0.15901 160.899);
+  --ui-success-hover: color-mix(in oklch, var(--ui-success) 85%, black);
+  --ui-success-contrast: #ffffff;
+  --ui-warning: oklch(0.666 0.179 58.315);
+  --ui-warning-hover: color-mix(in oklch, var(--ui-warning) 85%, black);
+  --ui-warning-contrast: #ffffff;
+  --ui-info: #2563eb;
+  --ui-info-hover: #1d4ed8;
+  --ui-info-contrast: #ffffff;
+  --ui-surface: #ffffff;
+  --ui-text: #18181b;
+  --ui-text-muted: #71717a;
+  --ui-border: #e4e4e7;
+  --ui-overlay: rgb(0 0 0 / 0.4);
+  --ui-radius: 10px;
+  --ui-border-strong: #d4d4d8;
+  /* Z-order: toast > popover > dialog. */
+  --ui-z-dialog: 50;
+  --ui-z-popover: 55;
+  --ui-z-toast: 60;
+  --ui-z-tooltip: 70;
+  --ui-panel-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.12), 0 24px 48px rgb(0 0 0 / 0.08);
+  /* Strong curves from easings.co/animations.dev. */
+  --ui-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ui-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Steeper deceleration for edge slides. */
+  --ui-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ui-duration-drawer: 500ms;
+  --ui-duration-press: 160ms;
+  --ui-duration-enter: 200ms;
+  --ui-duration-exit: 150ms;
+  --ui-duration-tooltip: 125ms;
+  --ui-duration-tooltip-exit: 100ms;
+  --ui-duration-toast: 400ms;
+  --ui-duration-toast-exit: 200ms;
+  --ui-ease-toast: ease;
+  --ui-toast-offset: 1rem;
+}
+
+/* Dummy animatable property for Vue timing. */
+@property --ui-dialog-t {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+/* Dark theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --ui-primary: #fafafa;
+    --ui-primary-hover: #e4e4e7;
+    --ui-primary-contrast: #18181b;
+    --ui-muted: #27272a;
+    --ui-muted-hover: #3f3f46;
+    /* Lightness raised for legibility. */
+    --ui-danger: oklch(0.7 0.19 26);
+    --ui-danger-hover: color-mix(in oklch, oklch(0.7 0.19 26) 85%, white);
+    --ui-danger-contrast: #ffffff;
+    --ui-success: oklch(0.75 0.17 163.225);
+    --ui-success-hover: color-mix(in oklch, oklch(0.75 0.17 163.225) 85%, white);
+    --ui-success-contrast: #ffffff;
+    --ui-warning: oklch(0.8 0.16 58.315);
+    --ui-warning-hover: color-mix(in oklch, oklch(0.8 0.16 58.315) 85%, white);
+    --ui-warning-contrast: #18181b;
+    --ui-info: #3b82f6;
+    --ui-info-hover: #2563eb;
+    --ui-info-contrast: #ffffff;
+    --ui-surface: #1f1f23;
+    --ui-text: #fafafa;
+    --ui-text-muted: #a1a1aa;
+    --ui-border: #3f3f46;
+    --ui-overlay: rgb(0 0 0 / 0.6);
+    --ui-panel-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 8px 24px rgb(0 0 0 / 0.5);
+    --ui-border-strong: #52525b;
+  }
+}
+
+:root[data-theme='dark'] {
+  --ui-primary: #fafafa;
+  --ui-primary-hover: #e4e4e7;
+  --ui-primary-contrast: #18181b;
+  --ui-muted: #27272a;
+  --ui-muted-hover: #3f3f46;
+  --ui-danger: oklch(0.7 0.19 26);
+  --ui-danger-hover: color-mix(in oklch, oklch(0.7 0.19 26) 85%, white);
+  --ui-danger-contrast: #ffffff;
+  --ui-success: oklch(0.75 0.17 163.225);
+  --ui-success-hover: color-mix(in oklch, oklch(0.75 0.17 163.225) 85%, white);
+  --ui-success-contrast: #ffffff;
+  --ui-warning: oklch(0.8 0.16 58.315);
+  --ui-warning-hover: color-mix(in oklch, oklch(0.8 0.16 58.315) 85%, white);
+  --ui-warning-contrast: #18181b;
+  --ui-info: #3b82f6;
+  --ui-info-hover: #2563eb;
+  --ui-info-contrast: #ffffff;
+  --ui-surface: #1f1f23;
+  --ui-text: #fafafa;
+  --ui-text-muted: #a1a1aa;
+  --ui-border: #3f3f46;
+  --ui-overlay: rgb(0 0 0 / 0.6);
+  --ui-panel-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 8px 24px rgb(0 0 0 / 0.5);
+  --ui-border-strong: #52525b;
+}
+
+@layer ui-components {
+  .ui-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: var(--ui-btn-px);
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    /* Avoid rasterization mismatch during scale. */
+    will-change: transform;
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
+  }
+
+  .ui-button--sm {
+    --ui-btn-px: 0.75rem;
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-button--md {
+    --ui-btn-px: 1rem;
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-button--lg {
+    --ui-btn-px: 1.25rem;
+    block-size: 2.5rem;
+    font-size: 1rem;
+    border-radius: var(--ui-radius);
+  }
+
+  /* Optical alignment: icon side ~2px less padding. */
+  .ui-button--has-leading {
+    padding-inline-start: calc(var(--ui-btn-px) - 2px);
+  }
+  .ui-button--has-trailing {
+    padding-inline-end: calc(var(--ui-btn-px) - 2px);
+  }
+
+  /* Icon-only: square. */
+  .ui-button--icon {
+    padding-inline: 0;
+  }
+  .ui-button--icon.ui-button--sm {
+    inline-size: 1.75rem;
+  }
+  .ui-button--icon.ui-button--md {
+    inline-size: 2.25rem;
+  }
+  .ui-button--icon.ui-button--lg {
+    inline-size: 2.5rem;
+  }
+
+  .ui-button--icon::after {
+    /* Hit-area pseudo keeps small ones tappable. */
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    translate: -50% -50%;
+    inline-size: max(100%, 2.5rem);
+    block-size: max(100%, 2.5rem);
+  }
+
+  .ui-button--block {
+    display: flex;
+    inline-size: 100%;
+  }
+
+  .ui-button--pill {
+    border-radius: 9999px;
+  }
+
+  .ui-button--primary {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-button--secondary {
+    background: var(--ui-muted);
+    color: var(--ui-text);
+  }
+  .ui-button--outline {
+    background: transparent;
+    color: var(--ui-text);
+    border-color: var(--ui-border);
+  }
+  .ui-button--ghost {
+    background: transparent;
+    color: var(--ui-text);
+  }
+  /* Text-only: no surface; affordance from underline. */
+  .ui-button--link {
+    background: transparent;
+    color: var(--ui-text);
+    text-underline-offset: 3px;
+  }
+  /* Text-only, no underline. */
+  .ui-button--text {
+    background: transparent;
+    color: var(--ui-text);
+  }
+  .ui-button--danger {
+    background: var(--ui-danger);
+    color: var(--ui-danger-contrast);
+  }
+
+  /* Hover only on real pointers. */
+  @media (hover: hover) and (pointer: fine) {
+    .ui-button--primary:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      background: var(--ui-primary-hover);
+    }
+    .ui-button--secondary:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      background: var(--ui-muted-hover);
+    }
+    .ui-button--outline:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading),
+    .ui-button--ghost:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      background: var(--ui-muted);
+    }
+    .ui-button--link:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      text-decoration: underline;
+    }
+    .ui-button--text:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      color: var(--ui-text-muted);
+    }
+    .ui-button--danger:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      background: var(--ui-danger-hover);
+    }
+  }
+
+  /* Press feedback: scale confirms click. */
+  .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+    transform: scale(0.97);
+  }
+
+  /* Keyboard affordance only. */
+  .ui-button:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-button--danger:focus-visible {
+    outline-color: var(--ui-danger);
+  }
+
+  /* Disabled vs busy: dim + cursor are for disabled only; loading stays enabled. */
+  .ui-button:disabled,
+  .ui-button--disabled {
+    cursor: not-allowed;
+  }
+  .ui-button--loading {
+    cursor: progress;
+  }
+  .ui-button--disabled {
+    opacity: 0.5;
+  }
+
+  .ui-button-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      filter var(--ui-duration-press) ease;
+  }
+
+  /* Icon slots: fixed 1em boxes (exact inline-loader swap) */
+  .ui-button-leading,
+  .ui-button-trailing {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1em;
+    block-size: 1em;
+    flex: none;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      filter var(--ui-duration-press) ease,
+      inline-size var(--ui-duration-press) var(--ui-ease-out),
+      margin var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-button-leading {
+    margin-inline-end: 0.5em;
+  }
+  .ui-button-trailing {
+    margin-inline-start: 0.5em;
+  }
+
+  /* Always-mounted loader wrapper; centered, fades with blur. */
+  .ui-button-loader {
+    display: inline-grid;
+    place-items: center;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ui-button--loader-overlay .ui-button-loader {
+    position: absolute;
+    inset: 0;
+    scale: 0.6; /* enters from a visible size — never from nothing */
+    transition:
+      opacity var(--ui-duration-press) ease,
+      scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-button--loader-overlay.ui-button--loading .ui-button-loader {
+    opacity: 1;
+    scale: 1;
+  }
+  .ui-button--loader-overlay.ui-button--loading
+    :is(.ui-button-content, .ui-button-leading, .ui-button-trailing) {
+    opacity: 0;
+    filter: blur(2px);
+  }
+
+  /* Inline loader with text. */
+  .ui-button--loader-inline .ui-button-loader {
+    inline-size: 0;
+    margin-inline-end: 0;
+    overflow: hidden;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      inline-size var(--ui-duration-press) var(--ui-ease-out),
+      margin-inline-end var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-button--loader-inline.ui-button--loading .ui-button-loader {
+    inline-size: var(--ui-loader-size, 1em);
+    margin-inline-end: 0.5em;
+    opacity: 1;
+  }
+  .ui-button--loader-inline.ui-button--loading .ui-button-leading {
+    inline-size: 0;
+    margin-inline-end: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+
+  .ui-button-badge-wrapper {
+    display: inline-flex;
+    position: relative;
+  }
+  .ui-button-badge-wrapper:has(.ui-button--block) {
+    display: flex;
+    inline-size: 100%;
+  }
+  .ui-button-badge {
+    position: absolute;
+    z-index: 2;
+    display: inline-flex;
+    pointer-events: none; /* clicks land on the button beneath, same as Avatar's badge */
+  }
+  /* 50% placement: button corner is real surface. */
+  .ui-button-badge[data-placement='top-start'] {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    translate: -50% -50%;
+  }
+  .ui-button-badge[data-placement='top-end'] {
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    translate: 50% -50%;
+  }
+  .ui-button-badge[data-placement='bottom-start'] {
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    translate: -50% 50%;
+  }
+  .ui-button-badge[data-placement='bottom-end'] {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    translate: 50% 50%;
+  }
+
+  /* Extracted from Button/Toast. */
+  .ui-loader {
+    display: inline-block;
+    position: relative;
+    inline-size: 1em;
+    block-size: 1em;
+    flex: none;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-block-start-color: currentColor;
+    animation: ui-spin 600ms linear infinite;
+  }
+
+  @keyframes ui-spin {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  /* Visually-hidden label (standard sr-only clip-rect technique). */
+  .ui-loader-label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Opacity pulse, never shimmer gradient. */
+  .ui-skeleton {
+    display: block;
+    background: var(--ui-muted);
+    border-radius: var(--ui-radius);
+  }
+  .ui-skeleton--text {
+    inline-size: 100%;
+    block-size: 1em;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-skeleton--circle {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+  }
+  .ui-skeleton--rect {
+    border-radius: var(--ui-radius);
+  }
+  .ui-skeleton--animated {
+    animation: ui-pulse 1.2s ease-in-out infinite;
+  }
+  /* Slotted content sizes box only. */
+  .ui-skeleton-content {
+    visibility: hidden;
+  }
+
+  /* Badge No positioning of its own */
+  .ui-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 1.25rem;
+    block-size: 1.25rem;
+    padding-inline: 0.375rem;
+    border-radius: 9999px;
+    background: var(--ui-muted);
+    color: var(--ui-text);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    /* Tabular figures keep width stable. */
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-badge--dot {
+    min-inline-size: 0.5rem;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    padding: 0;
+  }
+  .ui-badge--primary {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-badge--muted {
+    background: var(--ui-muted);
+    color: var(--ui-text);
+  }
+  .ui-badge--success {
+    background: var(--ui-success);
+    color: var(--ui-success-contrast);
+  }
+  .ui-badge--warning {
+    background: var(--ui-warning);
+    color: var(--ui-warning-contrast);
+  }
+  .ui-badge--danger {
+    background: var(--ui-danger);
+    color: var(--ui-danger-contrast);
+  }
+  .ui-badge--info {
+    background: var(--ui-info);
+    color: var(--ui-info-contrast);
+  }
+  .ui-badge-content {
+    display: inline-flex;
+  }
+  .ui-badge-content--animated {
+    animation: ui-badge-pop var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @keyframes ui-badge-pop {
+    0%,
+    100% {
+      scale: 1;
+    }
+    50% {
+      scale: 1.1;
+    }
+  }
+
+  /* Tag: standalone status/label pill. */
+  .ui-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding-inline: 0.5rem;
+    padding-block: 0.1875rem;
+    border-radius: calc(var(--ui-radius) - 6px);
+    border: 1px solid transparent;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .ui-tag--sm {
+    padding-inline: 0.375rem;
+    padding-block: 0.125rem;
+    font-size: 0.6875rem;
+  }
+  .ui-tag--pill {
+    border-radius: 9999px;
+  }
+  .ui-tag-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+  }
+
+  .ui-tag-label {
+    display: inline-block;
+    transform: translateY(0.04em);
+  }
+  .ui-tag--primary {
+    background: color-mix(in oklch, var(--ui-primary) 14%, var(--ui-surface));
+    border-color: color-mix(in oklch, var(--ui-primary) 32%, var(--ui-surface));
+    color: var(--ui-primary);
+  }
+  .ui-tag--muted {
+    background: var(--ui-muted);
+    border-color: var(--ui-border);
+    color: var(--ui-text-muted);
+  }
+  .ui-tag--success {
+    background: color-mix(in oklch, var(--ui-success) 14%, var(--ui-surface));
+    border-color: color-mix(in oklch, var(--ui-success) 32%, var(--ui-surface));
+    color: var(--ui-success);
+  }
+  .ui-tag--warning {
+    background: color-mix(in oklch, var(--ui-warning) 16%, var(--ui-surface));
+    border-color: color-mix(in oklch, var(--ui-warning) 36%, var(--ui-surface));
+    color: var(--ui-warning);
+  }
+  .ui-tag--danger {
+    background: color-mix(in oklch, var(--ui-danger) 14%, var(--ui-surface));
+    border-color: color-mix(in oklch, var(--ui-danger) 32%, var(--ui-surface));
+    color: var(--ui-danger);
+  }
+  .ui-tag--info {
+    background: color-mix(in oklch, var(--ui-info) 14%, var(--ui-surface));
+    border-color: color-mix(in oklch, var(--ui-info) 32%, var(--ui-surface));
+    color: var(--ui-info);
+  }
+
+  /* Kbd: single keyboard key glyph. */
+  .ui-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 1.25rem;
+    padding: 0.0625rem 0.375rem;
+    border: 1px solid var(--ui-border-strong);
+    border-radius: calc(var(--ui-radius) - 6px);
+    background: var(--ui-surface);
+    color: var(--ui-text-muted);
+    font-family: inherit;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    box-shadow: 0 1px 0 var(--ui-border-strong);
+  }
+
+  /* Avatar */
+  .ui-avatar {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+  }
+  .ui-avatar--sm {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    font-size: 0.6875rem;
+  }
+  .ui-avatar--md {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    font-size: 0.8125rem;
+  }
+  .ui-avatar--lg {
+    inline-size: 3.25rem;
+    block-size: 3.25rem;
+    font-size: 1rem;
+  }
+  .ui-avatar-frame {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+    background: var(--ui-muted);
+    color: var(--ui-text-muted);
+  }
+  .ui-avatar--circle .ui-avatar-frame {
+    border-radius: 50%;
+  }
+  .ui-avatar--square .ui-avatar-frame {
+    border-radius: var(--ui-radius);
+  }
+  .ui-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+    font-weight: 600;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .ui-avatar-image {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    transition: opacity var(--ui-duration-enter) ease;
+  }
+  .ui-avatar-badge {
+    position: absolute;
+    z-index: 1;
+    display: inline-flex;
+  }
+  .ui-avatar-badge[data-placement='top-start'] {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    translate: -25% -25%;
+  }
+  .ui-avatar-badge[data-placement='top-end'] {
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    translate: 25% -25%;
+  }
+  .ui-avatar-badge[data-placement='bottom-start'] {
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    translate: -25% 25%;
+  }
+  .ui-avatar-badge[data-placement='bottom-end'] {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    translate: 25% 25%;
+  }
+
+  .ui-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    border: 1px solid var(--ui-border-strong);
+    border-radius: var(--ui-radius);
+  }
+  .ui-card-header {
+    display: grid;
+    gap: 0.25rem;
+    padding: 1.25rem 1.25rem 0;
+  }
+  .ui-card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .ui-card-description {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--ui-text-muted);
+  }
+  .ui-card-body {
+    padding: 1.25rem;
+  }
+  .ui-card-header + .ui-card-body {
+    padding-block-start: 0.75rem;
+  }
+  .ui-card-body:has(+ .ui-card-footer) {
+    padding-block-end: 0.75rem;
+  }
+  .ui-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem 1.25rem;
+  }
+
+  .ui-card--interactive {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    will-change: transform;
+    transition:
+      border-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-card--interactive:hover {
+      border-color: var(--ui-text-muted);
+    }
+  }
+  .ui-card--interactive:active {
+    transform: scale(0.98);
+  }
+  .ui-card--interactive:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+
+  /* Progress: full-width fill, resized via scale. */
+  .ui-progress {
+    display: block;
+    inline-size: 100%;
+  }
+  .ui-progress-track {
+    position: relative;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: var(--ui-muted);
+  }
+  .ui-progress--sm .ui-progress-track {
+    block-size: 0.375rem;
+  }
+  .ui-progress--md .ui-progress-track {
+    block-size: 0.5rem;
+  }
+  .ui-progress-fill {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: 100%;
+    border-radius: inherit;
+    transform-origin: 0 50%;
+    scale: calc(var(--ui-progress-scale, 0)) 1;
+    background: var(--ui-primary);
+    /* Transition is interruptible on rapid updates. */
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-progress--success .ui-progress-fill {
+    background: var(--ui-success);
+  }
+  .ui-progress--warning .ui-progress-fill {
+    background: var(--ui-warning);
+  }
+  .ui-progress--danger .ui-progress-fill {
+    background: var(--ui-danger);
+  }
+  .ui-progress--info .ui-progress-fill {
+    background: var(--ui-info);
+  }
+  /* Indeterminate: continuous loop, partial-width fill sweeps. */
+  .ui-progress[data-state='indeterminate'] .ui-progress-fill {
+    inline-size: 40%;
+    scale: 1 1;
+    transition: none;
+    /* Linear animation for continuous motion. */
+    animation: ui-progress-sweep 1.5s linear infinite;
+  }
+  /* Translate relative to fill width. */
+  @keyframes ui-progress-sweep {
+    from {
+      translate: -100% 0;
+    }
+    to {
+      translate: 250% 0;
+    }
+  }
+
+  /* Message: in-flow, stationary. */
+  .ui-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--ui-border-strong);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+  }
+  .ui-message-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    margin-block-start: 0.0625rem;
+  }
+  .ui-message--success .ui-message-icon {
+    color: var(--ui-success);
+  }
+  .ui-message--error .ui-message-icon {
+    color: var(--ui-danger);
+  }
+  .ui-message--warning .ui-message-icon {
+    color: var(--ui-warning);
+  }
+  .ui-message--info .ui-message-icon {
+    color: var(--ui-info);
+  }
+  /* Inline use; icon + colored text only. */
+  .ui-message--bare {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .ui-message--bare .ui-message-icon {
+    inline-size: 1em;
+    block-size: 1em;
+    margin-block-start: 0;
+  }
+  .ui-message--bare .ui-message-title,
+  .ui-message--bare .ui-message-description {
+    font-size: 0.8125rem;
+  }
+  .ui-message--bare .ui-message-description {
+    margin-block-start: 0;
+    color: inherit;
+  }
+  .ui-message--bare.ui-message--success {
+    color: var(--ui-success);
+  }
+  .ui-message--bare.ui-message--error {
+    color: var(--ui-danger);
+  }
+  .ui-message--bare.ui-message--warning {
+    color: var(--ui-warning);
+  }
+  .ui-message--bare.ui-message--info {
+    color: var(--ui-info);
+  }
+  .ui-message-content {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+  .ui-message-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .ui-message-description {
+    margin: 0.125rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ui-text-muted);
+  }
+  .ui-message-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .ui-message-close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    opacity: 0.5;
+    cursor: pointer;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-message-close:hover {
+      opacity: 1;
+      background: color-mix(in srgb, currentColor 10%, transparent);
+    }
+  }
+  .ui-message-close:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  /* Exit only, no initial animation. */
+  .ui-message-leave-active {
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-message-leave-to {
+    opacity: 0;
+  }
+
+  /* Scroll fade: general-purpose. */
+  @property --fade-top-end {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+  }
+  @property --fade-bottom-start {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 94%;
+  }
+
+  .scroll-fade {
+    /* Variable prevents Lightning CSS from folding scroll() into shorthand. */
+    --timeline-self: scroll(self);
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 var(--fade-top-end),
+      #000 var(--fade-bottom-start),
+      transparent 99%
+    );
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    animation:
+      scroll-fade-top linear both,
+      scroll-fade-bottom linear both;
+    animation-timeline: var(--timeline-self), var(--timeline-self);
+    animation-range:
+      0px 40px,
+      90% 100%;
+  }
+
+  @keyframes scroll-fade-top {
+    from {
+      --fade-top-end: 0%;
+    }
+    to {
+      --fade-top-end: 6%;
+    }
+  }
+
+  @keyframes scroll-fade-bottom {
+    from {
+      --fade-bottom-start: 94%;
+    }
+    to {
+      --fade-bottom-start: 100%;
+    }
+  }
+
+  /* Dialog: position/inset/z-index inlined in Dialog.vue. */
+  .ui-dialog {
+    /* On-screen movement wants ease-in-out. */
+    transition: padding var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+
+  .ui-dialog-panel {
+    display: flex;
+    flex-direction: column;
+    inline-size: min(28rem, 100%);
+    max-block-size: 85dvh;
+    overflow: hidden;
+    border-radius: calc(var(--ui-radius) + 4px);
+    background: var(--ui-surface);
+    /* Maximize/restore grows/shrinks. */
+    transition:
+      inline-size var(--ui-duration-enter) var(--ui-ease-in-out),
+      block-size var(--ui-duration-enter) var(--ui-ease-in-out),
+      max-block-size var(--ui-duration-enter) var(--ui-ease-in-out),
+      border-radius var(--ui-duration-enter) var(--ui-ease-in-out);
+    color: var(--ui-text);
+    box-shadow: var(--ui-panel-shadow);
+    /* Modals stay centered, not origin-aware. */
+    transform-origin: center;
+    outline: none;
+  }
+
+  .ui-dialog-panel--sm {
+    inline-size: min(22rem, 100%);
+  }
+  .ui-dialog-panel--lg {
+    inline-size: min(38rem, 100%);
+  }
+  /* Cosmetic styling only. */
+  .ui-dialog-panel--maximized {
+    border-radius: 0;
+  }
+  /* Blur masks text reflow during resize. */
+  .ui-dialog-panel--resizing {
+    animation: ui-dialog-resize-blur var(--ui-duration-enter) ease;
+  }
+  @keyframes ui-dialog-resize-blur {
+    0%,
+    100% {
+      filter: blur(0);
+    }
+    45% {
+      filter: blur(4px);
+    }
+  }
+
+  .ui-dialog-header {
+    display: grid;
+    gap: 0.25rem;
+    flex: none;
+    padding: 1.5rem 1.5rem 0;
+    /* Clear of close/maximize buttons. */
+    padding-inline-end: 2rem;
+  }
+
+  .ui-dialog-title {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em; /* headings tighten as they grow */
+  }
+
+  .ui-dialog-description {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--ui-text-muted);
+  }
+
+  /* One scrolling region; scroll-fade masks edge only. */
+  .ui-dialog-body {
+    flex: 1 1 auto;
+    min-block-size: 0; /* Allows flex child to shrink below content size. */
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+  .ui-dialog-header + .ui-dialog-body {
+    padding-block-start: 0.75rem;
+  }
+  .ui-dialog-body:has(+ .ui-dialog-footer) {
+    padding-block-end: 0.75rem;
+  }
+
+  .ui-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: none;
+    padding: 0.75rem 1.5rem 1.5rem;
+  }
+
+  .ui-dialog-close,
+  .ui-dialog-maximize {
+    display: grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: 0;
+    /* Concentric with panel radius. */
+    border-radius: calc(var(--ui-radius) - 6px);
+    background: transparent;
+    color: inherit;
+    opacity: 0.6;
+    cursor: pointer;
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      opacity var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .ui-dialog-close:hover,
+    .ui-dialog-maximize:hover {
+      opacity: 1;
+      background: color-mix(in srgb, currentColor 8%, transparent);
+    }
+  }
+
+  .ui-dialog-close:active,
+  .ui-dialog-maximize:active {
+    transform: scale(0.94);
+  }
+
+  /* Transitions dummy property for Vue timing. */
+  .ui-dialog-enter-active {
+    transition: --ui-dialog-t var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-dialog-leave-active {
+    transition: --ui-dialog-t var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-dialog-enter-from,
+  .ui-dialog-leave-to {
+    --ui-dialog-t: 0;
+  }
+  .ui-dialog-enter-active .ui-dialog-panel {
+    transition:
+      transform var(--ui-duration-enter) var(--ui-ease-out),
+      opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-dialog-leave-active .ui-dialog-panel {
+    transition:
+      transform var(--ui-duration-exit) var(--ui-ease-out),
+      opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* Never from scale(0). */
+  .ui-dialog-enter-from .ui-dialog-panel,
+  .ui-dialog-leave-to .ui-dialog-panel {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  /* Overlay synced on all exit paths. */
+  .ui-dialog-overlay {
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-dialog-enter-active .ui-dialog-overlay {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-dialog-enter-from .ui-dialog-overlay,
+  .ui-dialog-leave-to .ui-dialog-overlay,
+  .ui-dialog[data-state='closing'] .ui-dialog-overlay {
+    opacity: 0;
+  }
+  @starting-style {
+    .ui-dialog-overlay {
+      opacity: 0;
+    }
+  }
+  /* Top/bottom slide from anchored edge. */
+  .ui-dialog--top.ui-dialog-enter-from .ui-dialog-panel,
+  .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel {
+    transform: translateY(-12px);
+  }
+  .ui-dialog--bottom.ui-dialog-enter-from .ui-dialog-panel,
+  .ui-dialog--bottom.ui-dialog-leave-to .ui-dialog-panel {
+    transform: translateY(12px);
+  }
+
+  .ui-dialog--left .ui-dialog-panel,
+  .ui-dialog--right .ui-dialog-panel {
+    inline-size: min(20rem, 90vw);
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+  }
+  .ui-dialog--left .ui-dialog-panel--sm,
+  .ui-dialog--right .ui-dialog-panel--sm {
+    inline-size: min(22rem, 90vw);
+  }
+  .ui-dialog--left .ui-dialog-panel--lg,
+  .ui-dialog--right .ui-dialog-panel--lg {
+    inline-size: min(38rem, 90vw);
+  }
+  .ui-dialog--left .ui-dialog-panel {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+  .ui-dialog--right .ui-dialog-panel {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  /* Full travel from off-screen. */
+  .ui-dialog--left.ui-dialog-enter-active .ui-dialog-panel,
+  .ui-dialog--left.ui-dialog-leave-active .ui-dialog-panel,
+  .ui-dialog--right.ui-dialog-enter-active .ui-dialog-panel,
+  .ui-dialog--right.ui-dialog-leave-active .ui-dialog-panel {
+    transition-duration: var(--ui-duration-drawer);
+    transition-timing-function: var(--ui-ease-drawer), var(--ui-ease-out);
+  }
+  /* Root transition stretches to match panel duration. */
+  .ui-dialog--left.ui-dialog-enter-active,
+  .ui-dialog--left.ui-dialog-leave-active,
+  .ui-dialog--right.ui-dialog-enter-active,
+  .ui-dialog--right.ui-dialog-leave-active {
+    transition-duration: var(--ui-duration-drawer);
+  }
+  .ui-dialog--left.ui-dialog-enter-active .ui-dialog-overlay,
+  .ui-dialog--left.ui-dialog-leave-active .ui-dialog-overlay,
+  .ui-dialog--right.ui-dialog-enter-active .ui-dialog-overlay,
+  .ui-dialog--right.ui-dialog-leave-active .ui-dialog-overlay {
+    transition-duration: var(--ui-duration-drawer);
+  }
+  .ui-dialog--left.ui-dialog-enter-from .ui-dialog-panel,
+  .ui-dialog--left.ui-dialog-leave-to .ui-dialog-panel {
+    transform: translateX(-100%);
+    opacity: 1;
+  }
+  .ui-dialog--right.ui-dialog-enter-from .ui-dialog-panel,
+  .ui-dialog--right.ui-dialog-leave-to .ui-dialog-panel {
+    transform: translateX(100%);
+    opacity: 1;
+  }
+
+  /* Bottom sheet: useSheetDrag owns block-size and transform. */
+  .ui-bottom-sheet-panel {
+    inline-size: 100%;
+    max-block-size: 100dvh;
+    border-radius: 1.25rem 1.25rem 0 0;
+    transition: none;
+  }
+  .ui-bottom-sheet-panel--sm {
+    max-inline-size: min(22rem, 100%);
+    margin-inline: auto;
+  }
+  .ui-bottom-sheet-panel--md {
+    max-inline-size: min(28rem, 100%);
+    margin-inline: auto;
+  }
+  .ui-bottom-sheet-panel--lg {
+    max-inline-size: min(38rem, 100%);
+    margin-inline: auto;
+  }
+  .ui-bottom-sheet-panel--full-screen {
+    border-radius: 0;
+  }
+  .ui-bottom-sheet-overlay {
+    transition-duration: var(--ui-duration-drawer);
+  }
+  .ui-bottom-sheet-body {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  .ui-bottom-sheet-handle-zone {
+    display: flex;
+    flex: none;
+    justify-content: center;
+    padding: 0.75rem 0 0.5rem;
+    cursor: grab;
+    touch-action: none;
+  }
+  .ui-bottom-sheet-handle-zone:active {
+    cursor: grabbing;
+  }
+  .ui-bottom-sheet-handle {
+    inline-size: 2.5rem;
+    block-size: 0.25rem;
+    border-radius: 99px;
+    background: var(--ui-border-strong);
+  }
+  .ui-bottom-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0 1.25rem 0.75rem;
+  }
+  .ui-bottom-sheet-title {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .ui-bottom-sheet-close {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: 0;
+    border-radius: calc(var(--ui-radius) - 6px);
+    background: transparent;
+    color: inherit;
+    opacity: 0.6;
+    cursor: pointer;
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      opacity var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-bottom-sheet-close:hover {
+      opacity: 1;
+      background: color-mix(in srgb, currentColor 8%, transparent);
+    }
+  }
+  .ui-bottom-sheet-close:active {
+    transform: scale(0.94);
+  }
+  .ui-bottom-sheet-content {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  /* Pull to refresh: usePullToRefresh owns pullDistance and zone block-size. */
+  .ui-pull-to-refresh-root {
+    position: relative;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+  .ui-pull-to-refresh-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-drawer);
+  }
+  .ui-pull-to-refresh-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .ui-pull-to-refresh-bubble {
+    display: grid;
+    place-items: center;
+    inline-size: 42px;
+    block-size: 42px;
+    border-radius: 50%;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border-strong);
+    color: var(--ui-text-muted);
+    transition:
+      transform var(--ui-duration-enter) var(--ui-ease-drawer),
+      opacity var(--ui-duration-enter) var(--ui-ease-drawer);
+  }
+  .ui-pull-to-refresh-zone[data-state='ready'] .ui-pull-to-refresh-bubble,
+  .ui-pull-to-refresh-zone[data-state='loading'] .ui-pull-to-refresh-bubble,
+  .ui-pull-to-refresh-zone[data-state='done'] .ui-pull-to-refresh-bubble {
+    color: var(--ui-primary);
+  }
+  .ui-pull-to-refresh-arrow {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-drawer);
+  }
+  .ui-pull-to-refresh-label {
+    font-size: 0.75rem;
+    color: var(--ui-text-muted);
+  }
+
+  /* Popover: no overlay here. */
+  .ui-popover-positioner {
+    z-index: var(--ui-z-popover, 55);
+    /* Shrink-to-fit; floating-ui requirement. */
+    inline-size: max-content;
+  }
+  .ui-popover-panel {
+    position: relative;
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    box-shadow: var(--ui-panel-shadow);
+    /* Clips body to panel corners. */
+    overflow: hidden;
+  }
+  .ui-popover-body {
+    padding: 1rem;
+  }
+  .ui-popover-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-popover-leave-active {
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-popover-enter-from,
+  .ui-popover-leave-to {
+    opacity: 0;
+  }
+  .ui-popover-enter-active .ui-popover-panel {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-popover-leave-active .ui-popover-panel {
+    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* Never from scale(0). */
+  .ui-popover-enter-from .ui-popover-panel,
+  .ui-popover-leave-to .ui-popover-panel {
+    transform: scale(0.96);
+  }
+
+  /* Menu: same positioner/panel split as Popover. */
+  .ui-menu-positioner {
+    z-index: var(--ui-z-popover, 55);
+    /* Shrink-to-fit; floating-ui requirement. */
+    inline-size: max-content;
+  }
+  .ui-menu-panel {
+    position: relative;
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    box-shadow: var(--ui-panel-shadow);
+    /* Clips body to panel corners. */
+    overflow: hidden;
+  }
+  .ui-menu-body {
+    padding: 0.25rem;
+  }
+  .ui-menu-trigger {
+    display: inline-flex;
+  }
+  /* Data-driven item defaults. */
+  .ui-menu-item {
+    /* Positioning context for #item slot content. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    min-inline-size: 9rem;
+    padding: 0.5rem 0.625rem;
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  /* Highlight with background, not focus ring (APG convention). */
+  .ui-menu-item:hover:not(:disabled),
+  .ui-menu-item:focus-visible {
+    outline: none;
+    background: var(--ui-muted);
+  }
+  .ui-menu-item:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .ui-menu-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-menu-item--danger {
+    color: var(--ui-danger);
+  }
+  .ui-menu-item-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    /* Custom property for per-instance size tuning. */
+    inline-size: var(--ui-menu-icon-size, 1em);
+    block-size: var(--ui-menu-icon-size, 1em);
+  }
+  /* Re-square icon to prevent distortion. */
+  .ui-menu-item-icon svg,
+  .ui-menu-item-icon img {
+    inline-size: var(--ui-menu-icon-size, 1em);
+    block-size: var(--ui-menu-icon-size, 1em);
+  }
+  .ui-menu-item-label {
+    flex: 1;
+  }
+  .ui-menu-item-shortcut {
+    margin-inline-start: 1.5rem;
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-menu-item-chevron {
+    flex: none;
+    margin-inline-start: 0.5rem;
+    color: var(--ui-text-muted);
+  }
+  /* Submenu-trigger stays highlighted while open. */
+  .ui-menu-item[aria-expanded='true'] {
+    background: var(--ui-muted);
+  }
+  .ui-menu-separator {
+    block-size: 1px;
+    margin: 0.25rem 0;
+    background: var(--ui-border);
+  }
+  .ui-menu-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-menu-leave-active {
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-menu-enter-from,
+  .ui-menu-leave-to {
+    opacity: 0;
+  }
+  .ui-menu-enter-active .ui-menu-panel {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-menu-leave-active .ui-menu-panel {
+    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* Never from scale(0). */
+  .ui-menu-enter-from .ui-menu-panel,
+  .ui-menu-leave-to .ui-menu-panel {
+    transform: scale(0.96);
+  }
+
+  /* ContextMenu: panel is a Menu instance. */
+  /* Display:contents; wraps arbitrary content. */
+  .ui-context-menu-trigger {
+    display: contents;
+  }
+  /* Floating-ui reference point. */
+  .ui-context-menu-anchor {
+    position: fixed;
+    inline-size: 0;
+    block-size: 0;
+    pointer-events: none;
+  }
+
+  /* SplitButton: two buttons joined. */
+  .ui-split-button {
+    display: inline-flex;
+    align-items: stretch;
+  }
+  .ui-split-button-main {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    /* Keep seam as crisp single line. */
+    border-inline-end-width: 0;
+  }
+  .ui-split-button-trigger {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+    border-inline-start-width: 1px;
+    border-inline-start-style: solid;
+    /* One rule adapts divider to every variant. */
+    border-inline-start-color: color-mix(in oklch, currentColor 22%, transparent);
+  }
+  .ui-split-button-chevron {
+    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-split-button[data-state='open'] .ui-split-button-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* CascadeSelect: panel is a Menu instance. */
+  /* Trigger fills row like Input. */
+  .ui-cascade-select .ui-menu-trigger {
+    display: flex;
+    inline-size: 100%;
+  }
+  .ui-cascade-select-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    padding-inline: 0.75rem;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    /* Colors only. */
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-cascade-select-trigger--sm {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+  }
+  .ui-cascade-select-trigger--md {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+  }
+  .ui-cascade-select-trigger--lg {
+    block-size: 2.5rem;
+    font-size: 1rem;
+  }
+  .ui-cascade-select-trigger:hover:not(:disabled) {
+    border-color: var(--ui-border-strong);
+  }
+  .ui-cascade-select-trigger:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-cascade-select-trigger[data-invalid] {
+    border-color: var(--ui-danger);
+  }
+  .ui-cascade-select-trigger[data-invalid]:focus-visible {
+    outline-color: var(--ui-danger);
+  }
+  .ui-cascade-select-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-cascade-select-value {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-cascade-select-trigger[data-placeholder] .ui-cascade-select-value {
+    color: var(--ui-text-muted);
+  }
+  .ui-cascade-select-chevron {
+    flex: none;
+    color: var(--ui-text-muted);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-cascade-select-trigger[data-state='open'] .ui-cascade-select-chevron {
+    transform: rotate(180deg);
+  }
+  .ui-cascade-select-empty {
+    padding: 0.75rem;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  /* Select/Combobox: popup IS a menu visually. */
+  .ui-select-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-surface);
+    padding-inline: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+    /* Colors only. */
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-select-trigger--sm {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+  }
+  .ui-select-trigger--md {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+  }
+  .ui-select-trigger--lg {
+    block-size: 2.5rem;
+    font-size: 1rem;
+  }
+  /* Div role="combobox" needs own focus-visible. */
+  .ui-select-trigger:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-select-trigger[data-invalid] {
+    border-color: var(--ui-danger);
+  }
+  .ui-select-trigger[data-invalid]:focus-visible {
+    outline-color: var(--ui-danger);
+  }
+  .ui-select-trigger--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-select-value {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: start;
+  }
+  .ui-select-placeholder {
+    color: var(--ui-text-muted);
+  }
+  /* Chips clip horizontally within fixed-height trigger. */
+  .ui-select-chips {
+    position: relative; /* containing block for a leaving chip's position:absolute below */
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+  }
+  /* Overflow indicator is plain span. */
+  .ui-select-chip--overflow {
+    padding-inline: 0.5rem;
+    color: var(--ui-text-muted);
+  }
+  .ui-select-clear,
+  .ui-combobox-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-select-clear:hover,
+  .ui-combobox-clear:hover {
+    background: var(--ui-muted);
+    color: var(--ui-text);
+  }
+  .ui-select-chevron,
+  .ui-combobox-chevron {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--ui-text-muted);
+    /* On-screen movement. */
+    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  /* Combobox chevron is real button. */
+  .ui-combobox-chevron {
+    cursor: pointer;
+  }
+  .ui-combobox-chevron:disabled {
+    cursor: not-allowed;
+  }
+  .ui-select-trigger[data-state='open'] .ui-select-chevron {
+    transform: rotate(180deg);
+  }
+  /* Combobox trigger uses data-open sibling selector. */
+  .ui-input-el[data-open] ~ .ui-input-end .ui-combobox-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Chip: small reusable pill. */
+  .ui-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+    max-inline-size: 8rem;
+    border-radius: 9999px;
+    background: var(--ui-muted);
+    color: var(--ui-text);
+    line-height: 1.25;
+  }
+  .ui-chip--md {
+    padding: 0.125rem 0.25rem 0.125rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+  .ui-chip--sm {
+    padding: 0.0625rem 0.1875rem 0.0625rem 0.375rem;
+    font-size: 0.75rem;
+  }
+  .ui-chip[data-disabled] {
+    opacity: 0.5;
+  }
+  .ui-chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1rem;
+    block-size: 1rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-chip-remove:hover {
+    background: var(--ui-border-strong);
+    color: var(--ui-text);
+  }
+  .ui-chip-remove:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 1px;
+  }
+  .ui-chip-remove:disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  /* Combobox's multiple-mode chips render inside Input's own #start slot (wrapper-owns-placement) — same clip-and-"+N" maxLabels pattern as Select's own .ui-select-chips (mirrored exactly, including this rule). An earlier version tried an unbounded horizontally-scrollable strip instead: a real usability bug (no visible scrollbar — scrollbar-width: none — so an overflowing chip was invisible with no affordance that more existed), compounded by a `max-inline-size: 60%` that couldn't even resolve correctly (.ui-input-start, this strip's containing block, is `flex: none` — shrink-to-fit, sized BY its own content — so a `%` here has no definite basis and Chromium collapsed it to a near-zero width, clipping even a single chip mid-glyph). maxLabels is the real fix: explicit, visible, consistent with Select. */
+  .ui-combobox-chips {
+    position: relative; /* containing block for a leaving chip's position:absolute below */
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+  }
+  /* Chip appear/disappear TransitionGroup. */
+  .ui-chip-item-enter-active,
+  .ui-chip-item-leave-active {
+    transition: opacity var(--ui-duration-enter) ease;
+  }
+  .ui-chip-item-enter-from,
+  .ui-chip-item-leave-to {
+    opacity: 0;
+  }
+  /* Leaving chips pull out of flow. */
+  .ui-chip-item-leave-active {
+    position: absolute;
+  }
+  /* FLIP mechanism for sibling motion. */
+  .ui-chip-item-move {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  /* Uncapped multiple mode: field grows with tag list. */
+  .ui-input.ui-combobox-input--wrap {
+    flex-wrap: wrap;
+    block-size: auto;
+    padding-block: 0.375rem;
+  }
+  .ui-combobox-input--wrap .ui-combobox-chips {
+    flex-wrap: wrap;
+  }
+  .ui-combobox-input--wrap .ui-input-el {
+    min-inline-size: 4rem;
+  }
+
+  .ui-select-positioner {
+    z-index: var(--ui-z-popover, 55);
+    inline-size: max-content;
+  }
+  .ui-select-panel {
+    position: relative;
+    /* Panel matches trigger width via custom property. */
+    inline-size: var(--ui-anchor-inline-size);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    box-shadow: var(--ui-panel-shadow);
+    overflow: hidden;
+  }
+  .ui-select-body {
+    position: relative;
+    padding: 0.25rem;
+    /* Max-height is floating-ui live output. */
+    transition: max-height var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-select-empty,
+  .ui-select-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.625rem;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+  }
+  .ui-select-loading-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+  /* Natural sizing: padding + line-height. */
+  .ui-select-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    padding: 0.5rem 0.625rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    color: var(--ui-text);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  /* Current value gets quiet permanent tint. */
+  .ui-select-option[data-selected] {
+    background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-surface));
+  }
+  /* Active reads same as hover (APG convention). */
+  .ui-select-option[data-active] {
+    background: var(--ui-muted);
+  }
+  .ui-select-option[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-select-option-label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-select-option-check {
+    flex: none;
+    color: var(--ui-primary);
+  }
+  .ui-select-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-select-leave-active {
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-select-enter-from,
+  .ui-select-leave-to {
+    opacity: 0;
+  }
+  .ui-select-enter-active .ui-select-panel {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-select-leave-active .ui-select-panel {
+    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* Never from scale(0). */
+  .ui-select-enter-from .ui-select-panel,
+  .ui-select-leave-to .ui-select-panel {
+    transform: scale(0.96);
+  }
+
+  /* Tree select: trigger/positioner/panel reuse Select's classes. */
+  .ui-tree-select-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-surface);
+    padding-inline: 0.75rem;
+    color: var(--ui-text);
+    cursor: pointer;
+    user-select: none;
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-tree-select-trigger--sm {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+  }
+  .ui-tree-select-trigger--md {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+  }
+  .ui-tree-select-trigger--lg {
+    block-size: 2.5rem;
+    font-size: 1rem;
+  }
+  .ui-tree-select-trigger:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-tree-select-trigger[data-invalid] {
+    border-color: var(--ui-danger);
+  }
+  .ui-tree-select-trigger[data-invalid]:focus-visible {
+    outline-color: var(--ui-danger);
+  }
+  .ui-tree-select-trigger--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-tree-select-trigger[data-state='open'] .ui-select-chevron {
+    transform: rotate(180deg);
+  }
+
+  .ui-tree-select-panel {
+    display: flex;
+    flex-direction: column;
+    /* Floor width for nested rows. */
+    min-inline-size: max(var(--ui-anchor-inline-size, 0px), 18rem);
+    /* Live floating-ui size output. */
+    transition: max-height var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-tree-select-filter {
+    flex: none;
+    padding: 0.5rem;
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-tree-select-list {
+    flex: 1 1 auto;
+    min-block-size: 0; /* Allows scrolling. */
+    overflow-y: auto;
+    padding: 0.25rem;
+  }
+  .ui-tree-select-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.625rem;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+  }
+  .ui-tree-select-rows {
+    position: relative; /* Containing block for leaving row. */
+    display: flex;
+    flex-direction: column;
+    gap: 0.0625rem;
+  }
+  /* One level of nesting == one indent step. */
+  .ui-tree-select-row {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    inline-size: 100%;
+    padding-inline-start: calc(0.375rem + var(--ui-tree-select-depth, 0) * 1.25rem);
+    padding-inline-end: 0.625rem;
+    padding-block: 0.375rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    color: var(--ui-text);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-tree-select-row:hover:not(.ui-tree-select-row--disabled),
+  .ui-tree-select-row:focus-visible {
+    background: var(--ui-muted);
+    outline: none;
+  }
+  /* Quiet permanent tint for current value. */
+  .ui-tree-select-row--selected {
+    background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-surface));
+  }
+  .ui-tree-select-row--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-tree-select-chevron,
+  .ui-tree-select-chevron-spacer {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
+  .ui-tree-select-chevron {
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    /* Same rotation as Accordion. */
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-tree-select-chevron[data-state='open'] {
+    transform: rotate(90deg);
+  }
+  /* motionCss=false on panel. */
+  .ui-tree-select-panel[data-motion='off'] .ui-tree-select-chevron {
+    transition: none;
+  }
+  .ui-tree-select-label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-tree-select-check {
+    flex: none;
+    color: var(--ui-primary);
+  }
+  /* Row enter/leave: opacity fade + FLIP move. */
+  .ui-tree-select-row-enter-active,
+  .ui-tree-select-row-leave-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-tree-select-row-enter-from,
+  .ui-tree-select-row-leave-to {
+    opacity: 0;
+  }
+  .ui-tree-select-row-leave-active {
+    position: absolute;
+    inline-size: 100%;
+  }
+  .ui-tree-select-row-move {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+
+  /* Tree: extracted from TreeSelect's panel. */
+  .ui-tree-root {
+    display: flex;
+    flex-direction: column;
+    /* Lets rows scroll when height-constrained. */
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+  .ui-tree-filter {
+    flex: none;
+    padding: 0.5rem;
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-tree-search-icon {
+    color: var(--ui-text-muted);
+  }
+  .ui-tree-list {
+    flex: 1 1 auto;
+    min-block-size: 0; /* Allows scrolling. */
+    overflow-y: auto;
+    padding: 0.25rem;
+  }
+  .ui-tree-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.625rem;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+  }
+  .ui-tree-rows {
+    position: relative; /* Containing block for leaving row. */
+    display: flex;
+    flex-direction: column;
+    gap: 0.0625rem;
+  }
+  .ui-tree-row {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    inline-size: 100%;
+    padding-inline-start: calc(0.375rem + var(--ui-tree-depth, 0) * 1.25rem);
+    padding-inline-end: 0.625rem;
+    padding-block: 0.375rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    color: var(--ui-text);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-tree-row:hover:not(.ui-tree-row--disabled),
+  .ui-tree-row:focus-visible {
+    background: var(--ui-muted);
+    outline: none;
+  }
+  /* Quiet permanent tint for current value. */
+  .ui-tree-row--selected {
+    background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-surface));
+  }
+  .ui-tree-row--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-tree-chevron,
+  .ui-tree-chevron-spacer {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
+  .ui-tree-chevron {
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    /* Same rotation as Accordion. */
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-tree-chevron[data-state='open'] {
+    transform: rotate(90deg);
+  }
+  /* motionCss=false on Tree root. */
+  .ui-tree-root[data-motion='off'] .ui-tree-chevron {
+    transition: none;
+  }
+  .ui-tree-label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-tree-check {
+    flex: none;
+    color: var(--ui-primary);
+  }
+  /* Row enter/leave: opacity fade + FLIP move. */
+  .ui-tree-row-enter-active,
+  .ui-tree-row-leave-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-tree-row-enter-from,
+  .ui-tree-row-leave-to {
+    opacity: 0;
+  }
+  .ui-tree-row-leave-active {
+    position: absolute;
+    inline-size: 100%;
+  }
+  .ui-tree-row-move {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+
+  /* Calendar: extracted month-grid body. */
+  .ui-calendar-root {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    inline-size: max-content;
+  }
+  .ui-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .ui-calendar-nav {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: none;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-calendar-nav:hover {
+    background: var(--ui-muted);
+    color: var(--ui-text);
+  }
+  .ui-calendar-nav:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 1px;
+  }
+  .ui-calendar-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ui-text);
+  }
+  /* Button only when drillable. */
+  .ui-calendar-label--button {
+    border: none;
+    background: none;
+    padding: 0.125rem 0.375rem;
+    border-radius: calc(var(--ui-radius) - 6px);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-calendar-label--button:hover {
+    background: var(--ui-muted);
+  }
+  .ui-calendar-label--button:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 1px;
+  }
+  .ui-calendar-body {
+    position: relative;
+  }
+  .ui-calendar-weekdays,
+  .ui-calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(2rem, 1fr));
+  }
+  .ui-calendar-weekday {
+    display: grid;
+    place-items: center;
+    padding-block: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ui-text-muted);
+  }
+  .ui-calendar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .ui-calendar-cell {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: calc(var(--ui-radius) - 4px);
+    color: var(--ui-text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease;
+  }
+  .ui-calendar-cell:hover:not(.ui-calendar-cell--disabled),
+  .ui-calendar-cell:focus-visible {
+    background: var(--ui-muted);
+    outline: none;
+  }
+  .ui-calendar-cell--outside {
+    color: var(--ui-text-muted);
+    opacity: 0.5;
+  }
+  .ui-calendar-cell--today {
+    box-shadow: inset 0 0 0 1.5px var(--ui-primary);
+  }
+  .ui-calendar-cell--selected {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  /* Specificity tie-break: selected stays visible on hover. */
+  .ui-calendar-cell.ui-calendar-cell--selected:hover,
+  .ui-calendar-cell.ui-calendar-cell--selected:focus-visible {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  /* Range mode: endpoints solid, between tinted. */
+  .ui-calendar-cell--range-start,
+  .ui-calendar-cell--range-end {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-calendar-cell.ui-calendar-cell--range-start:hover,
+  .ui-calendar-cell.ui-calendar-cell--range-start:focus-visible,
+  .ui-calendar-cell.ui-calendar-cell--range-end:hover,
+  .ui-calendar-cell.ui-calendar-cell--range-end:focus-visible {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  /* Tinted connector between endpoints. */
+  .ui-calendar-cell--in-range {
+    background: color-mix(in oklch, var(--ui-primary) 22%, transparent);
+    border-radius: 3px;
+  }
+  /* Prevents flicker on hover. */
+  .ui-calendar-cell.ui-calendar-cell--in-range:hover {
+    background: color-mix(in oklch, var(--ui-primary) 22%, transparent);
+  }
+  /* Flat inner edge, rounded outer corners. */
+  .ui-calendar-cell--range-start:not(.ui-calendar-cell--range-end) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  .ui-calendar-cell--range-end:not(.ui-calendar-cell--range-start) {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+  .ui-calendar-cell--disabled {
+    color: var(--ui-text-muted);
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  /* Month/year grids: same layout as day grid. */
+  .ui-calendar-month-grid,
+  .ui-calendar-year-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .ui-calendar-month-row,
+  .ui-calendar-year-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(2.75rem, 1fr));
+    gap: 0.25rem;
+  }
+  .ui-calendar-month-cell,
+  .ui-calendar-year-cell {
+    display: grid;
+    place-items: center;
+    block-size: 2.5rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    color: var(--ui-text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease;
+  }
+  .ui-calendar-month-cell:hover:not(.ui-calendar-month-cell--disabled),
+  .ui-calendar-month-cell:focus-visible,
+  .ui-calendar-year-cell:hover:not(.ui-calendar-year-cell--disabled),
+  .ui-calendar-year-cell:focus-visible {
+    background: var(--ui-muted);
+    outline: none;
+  }
+  .ui-calendar-month-cell--selected,
+  .ui-calendar-year-cell--selected {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  /* Specificity tie-break for month/year selected. */
+  .ui-calendar-month-cell.ui-calendar-month-cell--selected:hover,
+  .ui-calendar-month-cell.ui-calendar-month-cell--selected:focus-visible,
+  .ui-calendar-year-cell.ui-calendar-year-cell--selected:hover,
+  .ui-calendar-year-cell.ui-calendar-year-cell--selected:focus-visible {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-calendar-month-cell--disabled,
+  .ui-calendar-year-cell--disabled {
+    color: var(--ui-text-muted);
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Month-transition: grid slides by direction. */
+  .ui-calendar-grid-enter-active,
+  .ui-calendar-grid-leave-active {
+    transition:
+      transform var(--ui-duration-enter) var(--ui-ease-in-out),
+      opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-calendar-grid-leave-active {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 100%;
+  }
+  .ui-calendar-grid-enter-from {
+    opacity: 0;
+    transform: translateX(calc(0.75rem * var(--ui-calendar-direction, 1)));
+  }
+  .ui-calendar-grid-leave-to {
+    opacity: 0;
+    transform: translateX(calc(-0.75rem * var(--ui-calendar-direction, 1)));
+  }
+
+  /* DatePicker: Select chrome wrapping a Calendar. */
+  .ui-date-picker-panel {
+    padding: 0;
+  }
+  .ui-date-picker-icon {
+    display: inline-grid;
+    place-items: center;
+    color: var(--ui-text-muted);
+  }
+
+  /* MenuList: static, always-in-flow sidebar nav. */
+  .ui-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    /* Containing block for .ui-menu-list-indicator's absolute positioning. */
+    position: relative;
+  }
+  /* Sliding indicator between rows. */
+  .ui-menu-list-indicator {
+    position: absolute;
+    inset-inline: 0;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: color-mix(in oklch, var(--ui-primary) 7%, var(--ui-surface));
+    transition:
+      inset-block-start var(--ui-duration-press) var(--ui-ease-out),
+      block-size var(--ui-duration-press) var(--ui-ease-out),
+      background-color var(--ui-duration-press) ease;
+  }
+  /* Retarget darken to indicator via :has(). */
+  .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:hover:not(:disabled))
+    .ui-menu-list-indicator,
+  .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:focus-visible) .ui-menu-list-indicator {
+    background: color-mix(in oklch, var(--ui-primary) 12%, var(--ui-surface));
+  }
+  .ui-menu-list-item {
+    /* Positioning context for item slot. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    /* Nested rows step in per depth. */
+    padding: 0.5rem calc(0.625rem + var(--ui-menu-list-depth, 0) * 1rem);
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-menu-list-item:hover:not(:disabled),
+  .ui-menu-list-item:focus-visible {
+    outline: none;
+    background: var(--ui-muted);
+  }
+  .ui-menu-list-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-menu-list-item--danger {
+    color: var(--ui-danger);
+  }
+  /* Current page row styling. */
+  .ui-menu-list-item[aria-current='page'] {
+    color: var(--ui-primary);
+    font-weight: 600;
+  }
+  /* Stay transparent to let indicator show. */
+  .ui-menu-list-item[aria-current='page']:hover:not(:disabled),
+  .ui-menu-list-item[aria-current='page']:focus-visible {
+    background: transparent;
+  }
+  /* Keyboard focus marker: left accent bar. */
+  .ui-menu-list-item:focus-visible::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.3125rem;
+    inset-inline-start: 0.125rem;
+    inline-size: 3px;
+    border-radius: 9999px;
+    background: var(--ui-primary);
+  }
+  .ui-menu-list-item--group {
+    cursor: default;
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding-block: 0.375rem;
+  }
+  .ui-menu-list-item-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    /* Per-instance tunable custom property. */
+    inline-size: var(--ui-menu-list-icon-size, 1em);
+    block-size: var(--ui-menu-list-icon-size, 1em);
+  }
+  /* Re-square icon to prevent distortion. */
+  .ui-menu-list-item-icon svg,
+  .ui-menu-list-item-icon img {
+    inline-size: var(--ui-menu-list-icon-size, 1em);
+    block-size: var(--ui-menu-list-icon-size, 1em);
+  }
+  .ui-menu-list-item-label {
+    flex: 1;
+  }
+  .ui-menu-list-item-shortcut {
+    margin-inline-start: 1.5rem;
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-menu-list-separator {
+    block-size: 1px;
+    margin: 0.25rem 0;
+    background: var(--ui-border);
+  }
+
+  .ui-tooltip-positioner {
+    z-index: var(--ui-z-tooltip, 70);
+    inline-size: max-content;
+  }
+  .ui-tooltip-panel {
+    padding: 0.375rem 0.625rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+    /* Inverted surface. */
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    max-inline-size: 18rem;
+    box-shadow: var(--ui-panel-shadow);
+  }
+  .ui-tooltip-enter-active {
+    transition: opacity var(--ui-duration-tooltip) var(--ui-ease-out);
+  }
+  .ui-tooltip-leave-active {
+    transition: opacity var(--ui-duration-tooltip-exit) var(--ui-ease-out);
+  }
+  .ui-tooltip-enter-from,
+  .ui-tooltip-leave-to {
+    opacity: 0;
+  }
+  /* Enter scales; exit fades. */
+  .ui-tooltip-enter-active .ui-tooltip-panel {
+    transition: transform var(--ui-duration-tooltip) var(--ui-ease-out);
+  }
+  .ui-tooltip-enter-from .ui-tooltip-panel {
+    transform: scale(0.96);
+  }
+  /* Instant open/close on warm-group. */
+  .ui-tooltip-enter-active[data-instant],
+  .ui-tooltip-leave-active[data-instant],
+  .ui-tooltip-enter-active[data-instant] .ui-tooltip-panel,
+  .ui-tooltip-leave-active[data-instant] .ui-tooltip-panel {
+    transition-duration: 0ms;
+  }
+  /* Moving between targets glides. */
+  .ui-tooltip-positioner[data-traveling] {
+    transition:
+      top var(--ui-duration-press) var(--ui-ease-in-out),
+      left var(--ui-duration-press) var(--ui-ease-in-out),
+      width var(--ui-duration-press) var(--ui-ease-in-out),
+      height var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  /* Panel clips content while positioner animates. */
+  .ui-tooltip-positioner[data-traveling] .ui-tooltip-panel {
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+  }
+
+  .ui-tabs {
+    /* Establish stacking context for indicator. */
+    position: relative;
+    z-index: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .ui-tabs--vertical {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Opt-in sliding indicator; on-screen movement. */
+  .ui-tabs-indicator {
+    position: absolute;
+    z-index: -1; /* paints behind in-flow tab content without needing z-index on every tab */
+    pointer-events: none;
+    inline-size: 1px;
+    transform-origin: 0 0;
+    transition:
+      translate var(--ui-duration-press) var(--ui-ease-in-out),
+      scale var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-tabs--vertical .ui-tabs-indicator {
+    inline-size: auto;
+    block-size: 1px; /* the scaleY() baseline instead, for the vertical axis */
+  }
+  .ui-tabs-indicator--background {
+    inset-block: 0;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: var(--ui-muted);
+  }
+  .ui-tabs--vertical .ui-tabs-indicator--background {
+    inset-block: auto;
+    inset-inline: 0;
+  }
+  .ui-tabs-indicator--underline {
+    inset-block-end: 0;
+    block-size: 2px; /* fixed thickness on the axis perpendicular to the scale */
+    background: var(--ui-primary);
+  }
+  .ui-tabs--vertical .ui-tabs-indicator--underline {
+    inset-block-end: auto;
+    inset-inline-end: 0;
+    inline-size: 2px; /* fixed thickness; block-size stays the 1px scaleY() baseline */
+  }
+
+  /* Accordion: plain divider borders, not boxes. */
+  .ui-accordion {
+    display: flex;
+    flex-direction: column;
+  }
+  .ui-accordion-item {
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-accordion-item:first-child {
+    border-block-start: 1px solid var(--ui-border);
+  }
+  .ui-accordion-header {
+    margin: 0;
+  }
+  .ui-accordion-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    inline-size: 100%;
+    padding: 0.875rem 0.125rem;
+    border: 0;
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-align: start;
+    cursor: pointer;
+  }
+  .ui-accordion-trigger:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+  }
+  .ui-accordion-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-accordion-trigger-title {
+    flex: 1 1 auto;
+  }
+  .ui-accordion-chevron {
+    flex: none;
+    color: var(--ui-text-muted);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-accordion-trigger[aria-expanded='true'] .ui-accordion-chevron {
+    transform: rotate(180deg);
+  }
+  .ui-accordion-panel {
+    /* Block-size exception; containment prevents reflow. */
+    contain: layout;
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-accordion-body {
+    padding-block-end: 1rem;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    opacity: 0;
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  /* Content fades with panel height. */
+  .ui-accordion-panel[data-state='open'] .ui-accordion-body,
+  .ui-accordion-panel[data-state='opening'] .ui-accordion-body {
+    opacity: 1;
+  }
+
+  /* Collapsible: one independent disclosure. */
+  .ui-collapsible-trigger {
+    display: inline-flex;
+  }
+  .ui-collapsible--disabled .ui-collapsible-trigger {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .ui-collapsible-panel {
+    /* Containment prevents reflow. */
+    contain: layout;
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-collapsible-body {
+    opacity: 0;
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  /* Content fades with panel height. */
+  .ui-collapsible-panel[data-state='open'] .ui-collapsible-body,
+  .ui-collapsible-panel[data-state='opening'] .ui-collapsible-body {
+    opacity: 1;
+  }
+
+  /* Toolbar: no animation by design. */
+  .ui-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .ui-toolbar--vertical {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  /* Clipped only with opt-in overflow. */
+  .ui-toolbar--overflow {
+    overflow: hidden;
+  }
+  .ui-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  .ui-toolbar--vertical .ui-toolbar-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ui-toolbar-overflow-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: transparent;
+    color: var(--ui-text);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-toolbar-overflow-trigger:hover {
+      background: var(--ui-muted);
+    }
+  }
+  .ui-toolbar-separator {
+    align-self: stretch;
+    inline-size: 1px;
+    margin-inline: 0.25rem;
+    background: var(--ui-border);
+  }
+  .ui-toolbar--vertical .ui-toolbar-separator {
+    align-self: auto;
+    inline-size: auto;
+    block-size: 1px;
+    margin-inline: 0;
+    margin-block: 0.25rem;
+  }
+
+  .ui-separator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .ui-separator--horizontal {
+    inline-size: 100%;
+  }
+  .ui-separator--horizontal:not(:has(.ui-separator-text)) {
+    block-size: 1px;
+    background: var(--ui-border);
+  }
+  .ui-separator--vertical {
+    flex-direction: column;
+    block-size: 100%;
+  }
+  .ui-separator--vertical:not(:has(.ui-separator-text)) {
+    inline-size: 1px;
+    background: var(--ui-border);
+  }
+  .ui-separator-line {
+    flex: 1 1 auto;
+    background: var(--ui-border);
+  }
+  .ui-separator--horizontal .ui-separator-line {
+    block-size: 1px;
+  }
+  .ui-separator--vertical .ui-separator-line {
+    inline-size: 1px;
+  }
+  .ui-separator-text {
+    flex: none;
+    font-size: 0.75rem;
+    color: var(--ui-text-muted);
+    white-space: nowrap;
+  }
+
+  /* Toaster: presentation only. */
+  .ui-toaster {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    inline-size: min(22rem, calc(100vw - 2 * var(--ui-toast-offset)));
+    /* Container must stay hit-testable. */
+    transition: block-size var(--ui-duration-toast) var(--ui-ease-toast);
+  }
+
+  /* Position classes are selector hooks only. */
+
+  .ui-toast {
+    /* Position/touch-action/translate inlined in Toaster.vue. */
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    box-shadow: var(--ui-panel-shadow);
+    will-change: translate, transform; /* Rasterization fix. */
+    scale: var(--toast-scale, 1);
+    opacity: var(--toast-opacity, 1);
+    transition:
+      translate var(--ui-duration-toast) var(--ui-ease-toast),
+      scale var(--ui-duration-toast) var(--ui-ease-toast),
+      opacity var(--ui-duration-toast) var(--ui-ease-toast),
+      transform var(--ui-duration-toast) var(--ui-ease-toast);
+  }
+
+  .ui-toast[data-swiping='true'] {
+    transition: none;
+    cursor: grabbing;
+  }
+
+  /* Committed swipe: one-shot keyframe. */
+  .ui-toast[data-swipe-out='true'] {
+    animation-duration: var(--ui-duration-toast-exit);
+    animation-timing-function: var(--ui-ease-out);
+    animation-fill-mode: forwards;
+  }
+  .ui-toast[data-swipe-out='true'][data-swipe-direction='left'] {
+    animation-name: ui-toast-swipe-out-left;
+  }
+  .ui-toast[data-swipe-out='true'][data-swipe-direction='right'] {
+    animation-name: ui-toast-swipe-out-right;
+  }
+  .ui-toast[data-swipe-out='true'][data-swipe-direction='up'] {
+    animation-name: ui-toast-swipe-out-up;
+  }
+  .ui-toast[data-swipe-out='true'][data-swipe-direction='down'] {
+    animation-name: ui-toast-swipe-out-down;
+  }
+
+  /* Cancel animation after swipe-out. */
+  .ui-toast-leave-active[data-swipe-out='true'] {
+    transition: none;
+    animation: none;
+  }
+
+  /* Keyframe adds push in swipe direction. */
+  @keyframes ui-toast-swipe-out-left {
+    to {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+  }
+  @keyframes ui-toast-swipe-out-right {
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+  @keyframes ui-toast-swipe-out-up {
+    to {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+  }
+  @keyframes ui-toast-swipe-out-down {
+    to {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+  }
+
+  .ui-toast-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    margin-block-start: 0.0625rem;
+  }
+
+  .ui-toast--success .ui-toast-icon {
+    color: var(--ui-success);
+  }
+  .ui-toast--error .ui-toast-icon {
+    color: var(--ui-danger);
+  }
+  .ui-toast--warning .ui-toast-icon {
+    color: var(--ui-warning);
+  }
+  .ui-toast--info .ui-toast-icon {
+    color: var(--ui-info);
+  }
+
+  .ui-toast-content {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .ui-toast-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .ui-toast-description {
+    margin: 0.125rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--ui-text-muted);
+  }
+
+  .ui-toast-action {
+    flex: none;
+    align-self: center;
+    padding: 0.3125rem 0.625rem;
+    border: 0;
+    border-radius: calc(var(--ui-radius) - 6px);
+    background: var(--ui-muted);
+    color: var(--ui-text);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .ui-toast-action:hover {
+      background: var(--ui-muted-hover);
+    }
+  }
+  .ui-toast-action:active {
+    transform: scale(0.96);
+  }
+
+  .ui-toast-close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    opacity: 0.5;
+    cursor: pointer;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .ui-toast-close:hover {
+      opacity: 1;
+      background: color-mix(in srgb, currentColor 10%, transparent);
+    }
+  }
+
+  /* Enter/exit move by a percentage of the card's own size, matching Sonner's CSS. Exit is faster than enter (200ms vs 400ms), matching Sonner's TIME_BEFORE_UNMOUNT. Never from scale(0) — 0.9 still reads as "arriving" rather than "materializing". Same 4 properties as .ui-toast's base rule, not just opacity/transform: a card can have its own depth reassigned while still inside its own enter/leave window (a second toast arriving within ~400ms of the first) — narrower lists here would let that moment fall back to whichever rule wins the cascade. */
+  .ui-toast-enter-active {
+    transition:
+      translate var(--ui-duration-toast) var(--ui-ease-toast),
+      scale var(--ui-duration-toast) var(--ui-ease-toast),
+      opacity var(--ui-duration-toast) var(--ui-ease-toast),
+      transform var(--ui-duration-toast) var(--ui-ease-toast);
+  }
+  .ui-toast-leave-active {
+    transition:
+      translate var(--ui-duration-toast-exit) var(--ui-ease-toast),
+      scale var(--ui-duration-toast-exit) var(--ui-ease-toast),
+      opacity var(--ui-duration-toast-exit) var(--ui-ease-toast),
+      transform var(--ui-duration-toast-exit) var(--ui-ease-toast);
+  }
+
+  .ui-toast-enter-from,
+  .ui-toast-leave-to {
+    opacity: 0;
+  }
+  .ui-toaster--bottom-left .ui-toast-enter-from,
+  .ui-toaster--bottom-center .ui-toast-enter-from,
+  .ui-toaster--bottom-right .ui-toast-enter-from,
+  .ui-toaster--bottom-left .ui-toast-leave-to,
+  .ui-toaster--bottom-center .ui-toast-leave-to,
+  .ui-toaster--bottom-right .ui-toast-leave-to {
+    transform: translateY(100%) scale(0.9);
+  }
+  .ui-toaster--top-left .ui-toast-enter-from,
+  .ui-toaster--top-center .ui-toast-enter-from,
+  .ui-toaster--top-right .ui-toast-enter-from,
+  .ui-toaster--top-left .ui-toast-leave-to,
+  .ui-toaster--top-center .ui-toast-leave-to,
+  .ui-toaster--top-right .ui-toast-leave-to {
+    transform: translateY(-100%) scale(0.9);
+  }
+
+  /* Field Owns label placement (top/float/inset), description, error, and the required marker for one control. The label lives inside `.ui-field-control` (not a preceding sibling) so float/inset can position it absolutely over the control; `top` (the default) renders it as a static block instead — one DOM shape, three presentations, no JS measurement. See Field.vue's SFC comment. */
+  .ui-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+  }
+  .ui-field-control {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .ui-field-label {
+    display: block;
+    margin: 0 0 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--ui-text);
+    cursor: default;
+  }
+  .ui-field-required {
+    margin-inline-start: 0.125rem;
+    color: var(--ui-danger);
+  }
+  .ui-field[data-disabled] .ui-field-label {
+    color: var(--ui-text-muted);
+  }
+  .ui-field-description {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ui-text-muted);
+  }
+  .ui-field-error {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ui-danger);
+  }
+  /* Opacity-only in both directions — a validation message appearing or disappearing is the "preventing jarring changes" case, not movement, so no height/translate is involved (never gate a layout dimension on a Transition here — a motion-v consumer wanting a collapse animation gets it via the forceMount-free escape hatch, same as Message's note). Exit snappier than enter, per the exit-token convention. */
+  .ui-field-error-enter-active,
+  .ui-field-error-leave-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-field-error-leave-active {
+    transition-duration: var(--ui-duration-exit);
+  }
+  .ui-field-error-enter-from,
+  .ui-field-error-leave-to {
+    opacity: 0;
+  }
+
+  /* float: label rests inside the control's padding box and slides onto the border line (surface-colored backdrop) when focused/filled — translate + scale only (compositor), press-duration: a label move happens on every focus, the touched-constantly tier. */
+  .ui-field[data-placement='float'] .ui-field-label {
+    position: absolute;
+    /* Above the control frame: the frame is position:relative with an opaque surface background and later in the DOM — without this the label paints underneath it, fully invisible. */
+    z-index: 1;
+    inset-inline-start: 0.75rem;
+    inset-block-start: 50%;
+    translate: 0 -50%;
+    scale: 1;
+    transform-origin: 0% 50%;
+    margin: 0;
+    padding-inline: 0.25rem;
+    max-inline-size: calc(100% - 1.5rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: transparent;
+    color: var(--ui-text-muted);
+    pointer-events: none;
+    transition:
+      inset-block-start var(--ui-duration-press) var(--ui-ease-out),
+      translate var(--ui-duration-press) var(--ui-ease-out),
+      scale var(--ui-duration-press) var(--ui-ease-out),
+      color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  /* Anchored to the control's top edge (inset 0 + -50% translate), not a fixed rem offset — the label's midline lands exactly on the border for every control height, sm through lg. */
+  .ui-field[data-placement='float'][data-focused] .ui-field-label,
+  .ui-field[data-placement='float'][data-filled] .ui-field-label {
+    inset-block-start: 0;
+    translate: -0.1875rem -50%;
+    scale: 0.85;
+    background: var(--ui-surface);
+    color: var(--ui-text);
+  }
+  .ui-field[data-placement='float']:not([data-focused], [data-filled]) ::placeholder {
+    color: transparent;
+  }
+  .ui-field[data-placement='float'][data-focused] .ui-field-label {
+    color: var(--ui-primary);
+  }
+  .ui-field[data-invalid] .ui-field-label {
+    color: var(--ui-danger);
+  }
+
+  /* inset: PrimeVue's IFTA style — a small static caption inside the control's own top padding, never floating (no focus/filled reactivity; the control gets extra block padding below to make room for it). */
+  .ui-field[data-placement='inset'] .ui-field-label {
+    position: absolute;
+    z-index: 1;
+    inset-inline-start: 0.75rem;
+    inset-block-start: 0.375rem;
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--ui-text-muted);
+    pointer-events: none;
+  }
+  .ui-field[data-placement='inset'] .ui-input {
+    block-size: auto;
+  }
+  .ui-field[data-placement='inset'] .ui-input-el {
+    padding-block: 1.375rem 0.375rem;
+    block-size: auto;
+  }
+  .ui-field[data-placement='inset'] .ui-textarea-el {
+    padding-block-start: 1.125rem;
+  }
+
+  /* Input The FRAME (this element) carries border/background and the focus ring; the native <input> inside is border:none/background:transparent so the two read as one continuous surface — consumers think of the input as "the input" (Input.vue's SFC comment). `#start`/`#end` are wrapper-owned placement, the same contract as Button's leading/trailing icon slots. */
+  .ui-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-surface);
+    padding-inline: 0.75rem;
+    cursor: text;
+    /* Colors only — text inputs are the touched-constantly tier: no scale, no slide. */
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-input--sm {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+  }
+  .ui-input--md {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+  }
+  .ui-input--lg {
+    block-size: 2.5rem;
+    font-size: 1rem;
+  }
+  .ui-input-el {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    block-size: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+  }
+  .ui-input-el::placeholder {
+    color: var(--ui-text-muted);
+  }
+  /* WebKit paints its own yellow/blue fill behind autofilled inputs and ignores a plain `background` override — an opaque inset shadow the size of the whole field is the only thing that actually beats it. Tokens, not literal colors, so this still matches the surface in dark mode; the absurd transition-delay is the standard trick to stop Chrome flashing its own color for one frame before this rule's shadow paints over it. */
+  .ui-input-el:-webkit-autofill,
+  .ui-input-el:-webkit-autofill:hover,
+  .ui-input-el:-webkit-autofill:focus {
+    box-shadow: 0 0 0 1000px var(--ui-surface) inset;
+    -webkit-text-fill-color: var(--ui-text);
+    caret-color: var(--ui-text);
+    transition: background-color 999999s ease-in-out 0s;
+  }
+  /* inline-flex, not inline-grid + place-items: a single icon centers identically either way, but a slot with MORE than one child (Combobox's #end carries a consumer slot, a clear button, AND the chevron) needs a ROW — grid's implicit auto-placement stacked them into separate rows instead, one on top of the other. */
+  .ui-input-start,
+  .ui-input-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+    color: var(--ui-text-muted);
+  }
+  /* Pointer focus: the 1px border quietly turns primary (transitioned). The full ring is reserved for keyboard travel — data-focus-visible, set from the tracked input modality (useFocusVisible.ts), because native :focus-visible matches text controls on mouse clicks too. */
+  .ui-input:focus-within {
+    border-color: var(--ui-primary);
+  }
+  .ui-input[data-focus-visible] {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-input[data-state='invalid'] {
+    border-color: var(--ui-danger);
+  }
+  .ui-input[data-state='invalid']:focus-within {
+    border-color: var(--ui-danger);
+  }
+  .ui-input[data-state='invalid'][data-focus-visible] {
+    outline-color: var(--ui-danger);
+  }
+  .ui-input--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-input--disabled .ui-input-el {
+    cursor: not-allowed;
+  }
+
+  /* Textarea Grid frame: row 1 is [start][textarea][end], row 2 is a full-width in-frame action strip under the text — an empty grid row with nothing placed in it collapses to 0 height on its own, so the row is always declared and simply disappears when neither bottom slot renders (no `:has()` needed). Auto-grow is native-first (`field-sizing: content`); see Textarea.vue's SFC comment for the JS fallback. */
+  .ui-textarea {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'start textarea end'
+      'bottom bottom bottom';
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-surface);
+    padding: 0.5rem 0.75rem;
+    cursor: text;
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-textarea--sm {
+    font-size: 0.8125rem;
+  }
+  .ui-textarea--md {
+    font-size: 0.875rem;
+  }
+  .ui-textarea--lg {
+    font-size: 1rem;
+  }
+  .ui-textarea-el {
+    grid-area: textarea;
+    min-inline-size: 0;
+    resize: vertical;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    line-height: 1.5;
+  }
+  .ui-textarea-el::placeholder {
+    color: var(--ui-text-muted);
+  }
+  /* field-sizing measures against the box's own 1lh — rows/maxRows arrive as custom properties (Textarea.vue) rather than baked into a stylesheet rule, since they're per-instance props, not tokens. */
+  .ui-textarea--auto-grow .ui-textarea-el {
+    field-sizing: content;
+    resize: none;
+    overflow-y: auto;
+    /* The +1rem budget is real padding-block (0.5rem top + bottom), not just size inflation: a <textarea> renders its content top-aligned with no vertical centering of its own, so without an actual padding split the whole 1rem buffer sat below the text, pushing the box's geometric center — and anything centered against it, like an avatar in #start — visibly below the text's true center. */
+    padding-block: 0.5rem;
+    min-block-size: calc(var(--ui-textarea-rows, 3) * 1lh + 1rem);
+    max-block-size: calc(var(--ui-textarea-max-rows, infinity) * 1lh + 1rem);
+  }
+  /* Centered on the whole frame, not pinned to the first text line: an avatar (or anything taller than one line) overflows evenly up and down from a 1lh box, and that box sits in the vertical middle of the row — the common "cursor sits level with the avatar" composer look. Once autoGrow has actually pushed the box past its resting height (Textarea.vue's ResizeObserver sets data-multiline), the rule below pins it back to the top instead, so a growing reply doesn't drag the avatar down to a new center. */
+  .ui-textarea-start,
+  .ui-textarea-end {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    flex: none;
+    block-size: 1lh;
+    color: var(--ui-text-muted);
+  }
+  .ui-textarea-start {
+    grid-area: start;
+  }
+  .ui-textarea-end {
+    grid-area: end;
+  }
+  /* align-self: start alone pins the box to the TEXTAREA ELEMENT's own top edge — but that element has its own 0.5rem padding-block-start (the auto-grow rule above), so line 1's text actually starts 0.5rem lower than that edge. Without this margin the avatar rides visibly above line 1 instead of sitting on it; matching the padding value here is what actually lands it on the first line, not just "near the top". */
+  .ui-textarea[data-multiline] .ui-textarea-start,
+  .ui-textarea[data-multiline] .ui-textarea-end {
+    align-self: start;
+    margin-block-start: 0.5rem;
+  }
+  .ui-textarea-bottom {
+    grid-area: bottom;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-block-start: 0.5rem;
+  }
+  /* Same pointer/keyboard focus split as .ui-input above. */
+  .ui-textarea:focus-within {
+    border-color: var(--ui-primary);
+  }
+  .ui-textarea[data-focus-visible] {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-textarea[data-state='invalid'] {
+    border-color: var(--ui-danger);
+  }
+  .ui-textarea[data-state='invalid']:focus-within {
+    border-color: var(--ui-danger);
+  }
+  .ui-textarea[data-state='invalid'][data-focus-visible] {
+    outline-color: var(--ui-danger);
+  }
+  .ui-textarea--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-textarea--disabled .ui-textarea-el {
+    cursor: not-allowed;
+  }
+
+  /* Checkbox Native-first (plan convention 17): a real checkbox sits opacity:0 over `.ui-checkbox-box`, keeping focus, click, and the touch target — the box beside it is pure visual. Toggles get native `:focus-visible` directly (unlike text inputs, it already matches keyboard-only), no tracked-modality attribute needed here. */
+  .ui-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--ui-text);
+  }
+  .ui-checkbox-control {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+  }
+  .ui-checkbox--sm .ui-checkbox-control {
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
+  .ui-checkbox--md .ui-checkbox-control {
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+  }
+  .ui-checkbox-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .ui-checkbox-box {
+    position: absolute;
+    inset: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* input (below in paint order) stays the click target */
+    border: 1px solid var(--ui-border-strong);
+    border-radius: calc(var(--ui-radius) - 6px);
+    background: var(--ui-surface);
+    color: var(--ui-primary-contrast);
+    transition:
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
+  }
+  .ui-checkbox-check,
+  .ui-checkbox-indeterminate {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    opacity: 0;
+  }
+  .ui-checkbox-check path {
+    stroke-dasharray: 16;
+    stroke-dashoffset: 16;
+  }
+  .ui-checkbox[data-state='checked'] .ui-checkbox-box,
+  .ui-checkbox[data-state='indeterminate'] .ui-checkbox-box {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+  }
+  /* Draw in on check; uncheck only fades out (never un-draws — that reads as rewinding). The rule below stops applying on uncheck, taking its `transition` with it, so stroke-dashoffset snaps back invisibly under the fade instead of animating back out. */
+  .ui-checkbox[data-state='checked'] .ui-checkbox-check {
+    opacity: 1;
+    transition: opacity var(--ui-duration-press) ease;
+  }
+  .ui-checkbox[data-state='checked'] .ui-checkbox-check path {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-checkbox[data-state='indeterminate'] .ui-checkbox-indeterminate {
+    opacity: 1;
+    transition: opacity var(--ui-duration-press) ease;
+  }
+  .ui-checkbox-input:focus-visible + .ui-checkbox-box {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-checkbox[data-invalid] .ui-checkbox-box {
+    border-color: var(--ui-danger);
+  }
+  .ui-checkbox[data-invalid] .ui-checkbox-input:focus-visible + .ui-checkbox-box {
+    outline-color: var(--ui-danger);
+  }
+  .ui-checkbox--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-checkbox--disabled .ui-checkbox-input {
+    cursor: not-allowed;
+  }
+  /* First paint only: a pre-checked box must not visibly draw its check on
+     page load (the Badge/useTabIndicator first-mount-guard technique). */
+  .ui-checkbox--no-anim .ui-checkbox-box,
+  .ui-checkbox--no-anim .ui-checkbox-check,
+  .ui-checkbox--no-anim .ui-checkbox-check path,
+  .ui-checkbox--no-anim .ui-checkbox-indeterminate {
+    transition: none;
+  }
+  .ui-checkbox-label {
+    line-height: 1.4;
+  }
+
+  /* Switch Same visually-hidden-input technique as Checkbox. Thumb travel is a plain `translate` keyed off `data-state`; the thumb itself carries no Vue-managed inline style, so an imperative spring library may own its transform directly (`thumbEl` is exposed for exactly that). */
+  .ui-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--ui-text);
+  }
+  .ui-switch--sm {
+    --ui-switch-track-w: 1.75rem;
+    --ui-switch-track-h: 1rem;
+    --ui-switch-thumb: 0.75rem;
+  }
+  .ui-switch--md {
+    --ui-switch-track-w: 2.25rem;
+    --ui-switch-track-h: 1.25rem;
+    --ui-switch-thumb: 1rem;
+  }
+  .ui-switch-control {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--ui-switch-track-w);
+    block-size: var(--ui-switch-track-h);
+  }
+  .ui-switch-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .ui-switch-track {
+    position: absolute;
+    inset: 0;
+    pointer-events: none; /* input (below in paint order) stays the click target */
+    border: 1px solid var(--ui-border-strong);
+    border-radius: 9999px;
+    background: var(--ui-muted);
+    transition:
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
+  }
+  .ui-switch-thumb {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 2px;
+    inline-size: var(--ui-switch-thumb);
+    block-size: var(--ui-switch-thumb);
+    border-radius: 9999px;
+    background: var(--ui-surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+    translate: 0 -50%;
+    transition: translate var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-switch[data-state='checked'] .ui-switch-track {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+  }
+  .ui-switch[data-state='checked'] .ui-switch-thumb {
+    translate: calc(var(--ui-switch-track-w) - var(--ui-switch-thumb) - 4px) -50%;
+  }
+  .ui-switch-input:focus-visible + .ui-switch-track {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-switch[data-invalid] .ui-switch-track {
+    border-color: var(--ui-danger);
+  }
+  .ui-switch[data-invalid] .ui-switch-input:focus-visible + .ui-switch-track {
+    outline-color: var(--ui-danger);
+  }
+  .ui-switch--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-switch--disabled .ui-switch-input {
+    cursor: not-allowed;
+  }
+  /* First paint only — see Checkbox's identical guard. */
+  .ui-switch--no-anim .ui-switch-thumb {
+    transition: none;
+  }
+
+  /* RadioGroup Compound with Radio; zero keyboard JS — same-name native radios give APG roving arrows (move AND select) and Tab enter/leave for free (see RadioGroup.vue's comment). `orientation` is layout only. */
+  .ui-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+  .ui-radio-group:not(.ui-radio-group--vertical) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  /* Radio Same visually-hidden-input technique as Checkbox/Switch. */
+  .ui-radio {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--ui-text);
+  }
+  .ui-radio-frame {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    margin-block-start: 0.0625rem; /* optical: aligns the circle with the label's cap-height */
+  }
+  .ui-radio-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .ui-radio-control {
+    position: absolute;
+    inset: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* input (below in paint order) stays the click target */
+    border: 1px solid var(--ui-border-strong);
+    border-radius: 9999px;
+    background: var(--ui-surface);
+    transition:
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
+  }
+  .ui-radio-dot {
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 9999px;
+    background: var(--ui-primary-contrast);
+    scale: 0.4;
+    opacity: 0;
+    transition:
+      scale var(--ui-duration-press) var(--ui-ease-out),
+      opacity var(--ui-duration-press) ease;
+  }
+  .ui-radio[data-state='checked'] .ui-radio-control {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+  }
+  .ui-radio[data-state='checked'] .ui-radio-dot {
+    scale: 1;
+    opacity: 1;
+  }
+  .ui-radio-input:focus-visible + .ui-radio-control {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-radio-group[data-invalid] .ui-radio-control {
+    border-color: var(--ui-danger);
+  }
+  .ui-radio-group[data-invalid] .ui-radio-input:focus-visible + .ui-radio-control {
+    outline-color: var(--ui-danger);
+  }
+  .ui-radio--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-radio--disabled .ui-radio-input {
+    cursor: not-allowed;
+  }
+  /* First paint only — see Checkbox's identical guard. */
+  .ui-radio--no-anim .ui-radio-dot {
+    transition: none;
+  }
+  .ui-radio-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding-block-start: 0.0625rem;
+  }
+  .ui-radio-description {
+    font-size: 0.8125rem;
+    color: var(--ui-text-muted);
+  }
+
+  /* SelectButton Radiogroup-via-native-radios (single) / a checkbox group (multiple) — not Tabs, despite reusing its sliding-indicator technique (plan decision 8): a SelectButton selects a VALUE and participates in forms, it doesn't switch views. Zero keyboard JS in both modes — native same-name radios/checkboxes give it for free. */
+  .ui-select-button {
+    /* position:relative alone does NOT create a stacking context (only position + an explicit z-index does) — without z-index:0 here, the indicator's z-index:-1 below doesn't resolve to "behind the option text, above this track" at all: it escapes to whatever ancestor stacking context happens to exist on the page and paints behind THAT instead, which reads as "no background ever, no matter what color it is" — this, not a color/contrast problem, was the actual bug behind the indicator looking invisible. */
+    position: relative; /* containing block for .ui-select-button-indicator */
+    z-index: 0;
+    --ui-select-button-radius: calc(var(--ui-radius) - 2px);
+    --ui-select-button-gap: 2px;
+    display: inline-flex;
+    padding: var(--ui-select-button-gap);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-select-button-radius);
+    background: var(--ui-muted);
+    /* Belt-and-suspenders alongside the indicator's own explicit inset fix below — a resize mid-transition (e.g. the sm/md/lg row reflowing) can still overshoot by a frame before the ResizeObserver re-measures. */
+    overflow: hidden;
+  }
+  .ui-select-button-option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.75rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    cursor: pointer;
+    color: var(--ui-text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color var(--ui-duration-press) ease;
+  }
+  .ui-select-button--sm .ui-select-button-option {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+  }
+  .ui-select-button--md .ui-select-button-option {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+  }
+  .ui-select-button--lg .ui-select-button-option {
+    block-size: 2.5rem;
+    font-size: 1rem;
+  }
+  .ui-select-button-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  /* Apple's actual segmented control, not a button-group: the selected option gets a raised white/surface pill on the muted track (soft shadow, dark text) — not a solid primary fill. Text color rides data-checked (not the indicator itself) so it stays sharp and independent of the indicator's own slide/settle timing. */
+  .ui-select-button-option[data-checked] {
+    color: var(--ui-text);
+  }
+  /* Multiple mode: several options are active at once, so each carries its own background instead of sharing the single sliding indicator — this one case DOES read correctly as a solid fill (a toggle group, not a single-value segmented control). */
+  .ui-select-button-option:has(.ui-select-button-input[type='checkbox'])[data-checked] {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-select-button-option:has(.ui-select-button-input:focus-visible) {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-select-button-indicator {
+    position: absolute;
+    z-index: -1; /* paints behind in-flow option content, Tabs' own technique */
+    /* Explicit, not "auto": the indicator is the LAST DOM child (after every option) so it participates in flex layout — an unset inline-start leaves the browser to derive a static position from that sibling order, which is not the container's own left edge. measure()'s own math assumes it always is. This was the actual bug behind "doesn't look good" — the indicator was landing on the wrong option entirely (worst for whichever option sits furthest from wherever the browser guessed), not just styled badly. */
+    inset-block: var(--ui-select-button-gap);
+    inset-inline-start: 0;
+    /* Inner Radius = Outer Radius − Gap (make-interfaces-feel-better rule 1's concentric formula, applied literally): --ui-select-button-radius is the track's own radius (the "Outer"), --ui-select-button-gap is the physical inset between this pill and the track (the "Padding"). Both named on .ui-select-button above specifically so this reads as that formula, not two same-looking "2px" literals. This only renders correctly because SelectButton passes useTabIndicator's sizing: 'bounds', not the default 1px-scaled-via- transform baseline Tabs' technique uses elsewhere: border-radius is computed against an element's own PRE-transform layout box, so a 1px-wide box gets its corner radii clamped to ~0.5px per the spec's edge-length rule and only THEN stretched by scale — a flattened, sharp corner exactly where this pill needs to nest inside the track's own rounded end. Real inlineSize gives border-radius a true width to compute against instead. */
+    border-radius: calc(var(--ui-select-button-radius) - var(--ui-select-button-gap));
+    background: var(--ui-surface);
+    box-shadow:
+      0 1px 1px rgb(0 0 0 / 0.06),
+      0 1px 3px rgb(0 0 0 / 0.08);
+    transition:
+      inset-inline-start var(--ui-duration-press) var(--ui-ease-in-out),
+      inline-size var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-select-button[data-invalid] {
+    border-color: var(--ui-danger);
+  }
+  .ui-select-button--disabled,
+  .ui-select-button-option[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-select-button-option[data-disabled] .ui-select-button-input {
+    cursor: not-allowed;
+  }
+
+  /* InputNumber Composes Input's own frame verbatim (InputNumber.vue renders <Input> directly) — only the stepper column, riding Input's `#end` slot, is new here. Steppers are `tabindex="-1"`: APG's spinbutton pattern puts the keyboard path on the input itself (ArrowUp/Down), the buttons are a pointer-only convenience. */
+  .ui-input-number-steppers {
+    display: inline-flex;
+    flex-direction: column;
+    margin-inline-end: -0.375rem;
+  }
+  .ui-input-number-stepper {
+    display: grid;
+    place-items: center;
+    inline-size: 1.125rem;
+    block-size: 0.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition:
+      color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-input-number-stepper:hover {
+      color: var(--ui-text);
+    }
+  }
+  .ui-input-number-stepper:active {
+    transform: scale(0.85);
+  }
+  .ui-input-number-stepper[data-disabled],
+  .ui-input-number-stepper:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  /* OtpInput One real <input>, stretched invisibly (`opacity:0`, not display:none — it must keep focus/paste/autofill) over the whole cell row and painted last so it's the actual hit target (positioned elements stack above in-flow siblings regardless of DOM order, so this needs no z-index). The cells underneath are pure decoration. See OtpInput.vue's SFC comment for why this architecture, not N separate inputs. */
+  .ui-otp {
+    position: relative;
+    display: inline-flex;
+  }
+  .ui-otp-cells {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .ui-otp-cell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    transition: border-color var(--ui-duration-press) ease;
+  }
+  .ui-otp--sm .ui-otp-cell {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    font-size: 0.875rem;
+  }
+  .ui-otp--md .ui-otp-cell {
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    font-size: 1rem;
+  }
+  .ui-otp--lg .ui-otp-cell {
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    font-size: 1.125rem;
+  }
+  .ui-otp-cell[data-active] {
+    border-color: var(--ui-primary);
+  }
+  /* A caret, not decorative motion — kept as-is under reduced motion. */
+  .ui-otp-cell[data-active]::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block-start: 50%;
+    inline-size: 1px;
+    block-size: 1.125em;
+    translate: -50% -50%;
+    background: var(--ui-primary);
+    animation: ui-otp-caret-blink 1s step-end infinite;
+  }
+  /* A custom #cell slot means "full markup swap" — the wrapper sheds every paint style (border/background/color/caret) down to pure geometry (size, centering, position:relative for the slot's own absolute children), or the library's default chrome doubles up behind whatever the slot renders. */
+  .ui-otp-cell--custom {
+    border-color: transparent;
+    background: none;
+  }
+  .ui-otp-cell--custom[data-active]::after {
+    content: none;
+  }
+  /* Fires on every keystroke during a rapid, keyboard-driven entry flow (audit finding: a scale-pop here reads as decoration on a high-frequency action). A plain opacity fade still confirms each digit registered without the added motion — the same treatment already used as the reduced-motion fallback below, now the only treatment. */
+  .ui-otp-cell[data-filled] .ui-otp-cell-char {
+    animation: ui-otp-pop-fade var(--ui-duration-press) ease;
+  }
+
+  .ui-otp--no-anim .ui-otp-cell-char {
+    animation: none;
+  }
+  .ui-otp-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    opacity: 0;
+    cursor: text;
+    /* This is the REAL, actually-focused element — full row width, not any one cell's shape. Without this, the browser's own default focus ring renders on ITS bounding box regardless of what the synthetic data-active/data-focus-visible per-cell styling below does, which is exactly the "square outline" bug: a native rectangular ring around the whole row, sitting on top of whatever shape (circular, in the custom-cell demo) the visible cells actually are. The per-cell data-focus-visible outline above is the library's own, deliberate replacement for this. */
+    outline: none;
+  }
+  .ui-otp[data-state='invalid'] .ui-otp-cell {
+    border-color: var(--ui-danger);
+  }
+  .ui-otp[data-focus-visible] .ui-otp-cell[data-active] {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  /* The wrapper's own border-radius (a square-ish rounded-rect) has nothing to do with whatever shape the custom slot content actually is — a circular custom cell got a squared-off outline traced around its square wrapper. Full markup swap means focus indication is the custom content's job too, same reasoning as the border/background/caret suppression above. */
+  .ui-otp[data-focus-visible] .ui-otp-cell--custom[data-active] {
+    outline: none;
+  }
+  .ui-otp--disabled {
+    opacity: 0.5;
+  }
+  .ui-otp--disabled .ui-otp-input {
+    cursor: not-allowed;
+  }
+
+  /* Slider Direct manipulation: pointer drag tracks 1:1 with zero position transition — the same "never gate a live drag" stance as PullToRefresh. Thumb/fill placement is driven entirely by two 0–1 fraction custom properties set on the ROOT by useSlider.ts (--ui-slider-p0/-p1, the sole Vue-managed style location); thumbs and the fill carry no inline style of their own, so an imperative spring library may own their transform directly. * The root reserves half a thumb's worth of padding on the value axis so the track's 0%/100% edges land the thumb flush with the root's own outer edge (the native <input type="range"> look) — pure CSS, no per-frame pixel measurement needed. */
+  .ui-slider {
+    --ui-slider-track: 0.25rem;
+    --ui-slider-thumb-size: 1rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    inline-size: 100%;
+    min-block-size: var(--ui-slider-thumb-size);
+    padding-inline: calc(var(--ui-slider-thumb-size) / 2);
+    touch-action: none;
+  }
+  .ui-slider--vertical {
+    flex-direction: column;
+    inline-size: var(--ui-slider-thumb-size);
+    block-size: 12rem;
+    padding-inline: 0;
+    padding-block: calc(var(--ui-slider-thumb-size) / 2);
+  }
+  .ui-slider-track {
+    position: relative;
+    inline-size: 100%;
+    block-size: var(--ui-slider-track);
+    border-radius: 9999px;
+    background: var(--ui-muted);
+    cursor: pointer;
+    /* Query container so the thumb below can read the track's OWN box size via cqi/cqb inside calc() — that's what lets the thumb's live-drag position be a `translate` (compositor-only) instead of an `inset-*` calc (layout) without any JS-side rect sampling. Both children are absolutely positioned (no intrinsic-size contribution), so `size` containment changes nothing about how the track itself renders. */
+    container-type: size;
+  }
+  .ui-slider--vertical .ui-slider-track {
+    inline-size: var(--ui-slider-track);
+    block-size: 100%;
+  }
+  .ui-slider-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--ui-primary);
+  }
+  /* Single-thumb fill spans [0, p0]; range fill spans [p0, p1] — same translate-then-scale technique as Progress's --ui-progress-scale, extended with a translate for the range case's moving start edge. Percentages in `translate` always resolve against the box's OWN (pre-scale) size, so the two properties compose correctly regardless of the fixed translate->rotate->scale application order. */
+  .ui-slider:not(.ui-slider--vertical):not([data-range]) .ui-slider-fill {
+    transform-origin: left center;
+    translate: 0 0;
+    scale: var(--ui-slider-p0, 0) 1;
+  }
+  .ui-slider:not(.ui-slider--vertical)[data-range] .ui-slider-fill {
+    transform-origin: left center;
+    translate: calc(var(--ui-slider-p0, 0) * 100%) 0;
+    scale: calc(var(--ui-slider-p1, 0) - var(--ui-slider-p0, 0)) 1;
+  }
+  .ui-slider--vertical:not([data-range]) .ui-slider-fill {
+    transform-origin: center bottom;
+    translate: 0 0;
+    scale: 1 var(--ui-slider-p0, 0);
+  }
+  .ui-slider--vertical[data-range] .ui-slider-fill {
+    transform-origin: center bottom;
+    translate: 0 calc(var(--ui-slider-p0, 0) * -100%);
+    scale: 1 calc(var(--ui-slider-p1, 0) - var(--ui-slider-p0, 0));
+  }
+  .ui-slider-thumb {
+    position: absolute;
+    /* Static (never recalculated) anchor at the track's logical-start corner — the actual live-drag position lives entirely in `translate` below, not here, so this declaration costs one layout pass at mount and never again. */
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    inline-size: var(--ui-slider-thumb-size);
+    block-size: var(--ui-slider-thumb-size);
+    flex: none;
+    border-radius: 50%;
+    background: var(--ui-surface);
+    border: 2px solid var(--ui-primary);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+    cursor: grab;
+    touch-action: none;
+    scale: 1;
+    /* Position rides `translate`, not `inset-inline-start` (a layout property) — --ui-slider-p0 is rewritten every pointermove frame during a live drag, so this must stay compositor-only (skips layout+paint, matching .ui-slider-fill's scale above). `cqi`/`cqb` (enabled by .ui-slider-track's container-type: size) read the track's own box size directly, so `p0 * 100cqi` reproduces the exact px offset `inset-inline-start: calc(p0 * 100%)` used to produce; the trailing -50% on each axis is the same "center the thumb on its point" offset the old inset+translate combo did, just folded into one translate — translate/rotate/scale stay independent properties (see the fill rule above), so this doesn't disturb the hover/press scale below. Caveat: unlike inset-inline-start, translate's X/Y are physical, not logical — this hasn't been verified correct under dir="rtl" (neither had the pre-existing rule, in practice). */
+    translate: calc(var(--ui-slider-p0, 0) * 100cqi - 50%) calc(50cqb - 50%);
+    /* Only the hover/press feedback scale transitions — position never does. */
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-slider-thumb[data-index='1'] {
+    translate: calc(var(--ui-slider-p1, 0) * 100cqi - 50%) calc(50cqb - 50%);
+  }
+  .ui-slider--vertical .ui-slider-thumb {
+    translate: calc(50cqi - 50%) calc((1 - var(--ui-slider-p0, 0)) * 100cqb - 50%);
+  }
+  .ui-slider--vertical .ui-slider-thumb[data-index='1'] {
+    translate: calc(50cqi - 50%) calc((1 - var(--ui-slider-p1, 0)) * 100cqb - 50%);
+  }
+  .ui-slider-thumb:active,
+  .ui-slider-thumb[data-active] {
+    cursor: grabbing;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-slider-thumb:hover {
+      scale: 1.15;
+    }
+  }
+  /* Shrink-on-press, not grow — aligned with Knob/Dial's face and Button's own :active scale (this library's dominant press-feedback direction) instead of growing further past the hover scale above. Declared AFTER the :hover rule (same order as Knob/Dial's own hover-then-active) so it wins the equal-specificity tie on a desktop pointer, which is hovering AND pressing at once — source order, not just direction, has to match or press silently loses to hover again. */
+  .ui-slider-thumb:active,
+  .ui-slider-thumb[data-active] {
+    scale: 0.96;
+  }
+  .ui-slider-thumb:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-slider[data-invalid] .ui-slider-thumb {
+    border-color: var(--ui-danger);
+  }
+  .ui-slider--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* FileUpload No HTTP client, no auto-upload chrome — the library's job ends at a validated File[] model (plan decision 9). Dashed border, no shadow: an in-flow surface, same convention as Card. The real <input type="file"> is sr-only (not display:none) so it keeps native form participation and a Field label's `for` can open the picker natively. */
+  .ui-file-upload {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .ui-file-upload-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    border: 1px dashed var(--ui-border-strong);
+    border-radius: var(--ui-radius);
+    text-align: center;
+    cursor: pointer;
+    transition:
+      border-color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  .ui-file-upload-dropzone[data-drag-over] {
+    border-color: var(--ui-primary);
+    border-style: solid;
+    background: color-mix(in oklch, var(--ui-primary) 8%, transparent);
+  }
+  .ui-file-upload[data-state='invalid'] .ui-file-upload-dropzone {
+    border-color: var(--ui-danger);
+  }
+  .ui-file-upload-text {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--ui-text-muted);
+  }
+  .ui-file-upload-input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .ui-file-upload-list {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ui-file-upload-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 2px);
+    font-size: 0.8125rem;
+  }
+  .ui-file-upload-item-name {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-file-upload-item-size {
+    flex: none;
+    color: var(--ui-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-file-upload-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border: none;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease;
+  }
+  .ui-file-upload-remove:hover {
+    background: var(--ui-muted);
+    color: var(--ui-danger);
+  }
+  .ui-file-upload--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .ui-file-item-enter-active,
+  .ui-file-item-leave-active {
+    transition: opacity var(--ui-duration-enter) ease;
+  }
+  .ui-file-item-enter-active {
+    transition-delay: calc(var(--ui-file-item-index, 0) * 40ms);
+  }
+  .ui-file-item-enter-from,
+  .ui-file-item-leave-to {
+    opacity: 0;
+  }
+  /* Removed rows keep their slot in a leaving TransitionGroup — absolute positioning during the fade-out avoids a layout jump on the remaining rows while it plays. */
+  .ui-file-item-leave-active {
+    position: absolute;
+    inline-size: 100%;
+  }
+
+  /* Knob Rotary counterpart to a linear slider: a min/max/step value mapped onto a fixed 270° arc (KNOB_SWEEP_* in useKnob.ts — -135deg..135deg, a 90deg gap centered at the bottom so min/max never land on the same angle). Direct manipulation: the live drag angle/fraction are NEVER transitioned — same "never gate a live drag" stance as Slider — the only transition here is the decorative hover/press scale on the face. * Positioning rides two custom properties set on the ROOT by useKnob.ts (--ui-knob-angle/-fraction, the sole Vue-managed style location); the indicator and fill arc carry no inline style of their own, so an imperative spring library may own the indicator's `rotate` directly. Kept deliberately, not overlooked: a root-level custom property forces a style-recalc pass over this subtree on every drag frame, narrower than Slider thumb's old layout+paint cost (`rotate` itself is still compositor-eligible) — the win is the override hook above, and the blast radius is 3 descendants, not a page. `stroke-dashoffset` on the fill arc has no compositor-only path regardless (SVG paint), so routing it more directly wouldn't change its performance class either. * The track/fill are one fixed SVG path (KNOB_ARC_PATH, a 100x100 viewBox so the same `d` works at any rendered size — CSS controls the diameter) traced twice: once as the always-visible full-sweep track, once as the fill, whose `path-length="100"`-normalized `stroke-dashoffset` reads --ui-knob-fraction directly, no pixel geometry needed. */
+  .ui-knob {
+    position: relative;
+    display: inline-flex;
+  }
+  .ui-knob-dial {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    cursor: grab;
+    touch-action: none;
+  }
+  .ui-knob-dial:active,
+  .ui-knob-dial[data-active] {
+    cursor: grabbing;
+  }
+  .ui-knob--sm .ui-knob-dial {
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+  }
+  .ui-knob--md .ui-knob-dial {
+    inline-size: 5rem;
+    block-size: 5rem;
+  }
+  .ui-knob--lg .ui-knob-dial {
+    inline-size: 6.5rem;
+    block-size: 6.5rem;
+  }
+  .ui-knob-arc {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    fill: none;
+    pointer-events: none;
+  }
+  .ui-knob-track {
+    stroke: var(--ui-muted);
+    stroke-width: 8;
+    stroke-linecap: round;
+  }
+  .ui-knob-fill {
+    stroke: var(--ui-primary);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: calc(100 - (var(--ui-knob-fraction, 0) * 100));
+  }
+  .ui-knob-face {
+    position: absolute;
+    inset: 15%;
+    border-radius: 50%;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    scale: 1;
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-knob-dial:hover .ui-knob-face {
+      scale: 1.04;
+    }
+  }
+  .ui-knob-dial:active .ui-knob-face,
+  .ui-knob-dial[data-active] .ui-knob-face {
+    scale: 0.96;
+  }
+  .ui-knob-indicator-pivot {
+    position: absolute;
+    inset: 0;
+    rotate: var(--ui-knob-angle, -135deg);
+  }
+  .ui-knob-indicator {
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block-start: 20%;
+    inline-size: 2px;
+    block-size: 22%;
+    border-radius: 9999px;
+    background: var(--ui-primary);
+    translate: -50% 0;
+  }
+  .ui-knob-dial:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-knob[data-invalid] .ui-knob-fill {
+    stroke: var(--ui-danger);
+  }
+  .ui-knob[data-invalid] .ui-knob-indicator {
+    background: var(--ui-danger);
+  }
+  .ui-knob--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Dial Free-spinning counterpart to Knob: no fixed sweep, no min/max required — useDial.ts accumulates the pointer's frame-to-frame angular delta (wraparound-safe) instead of reading one absolute angle, so the dial can pass 12 o'clock any number of times in either direction. * Positioning rides two custom properties set on the ROOT by useDial.ts: --ui-dial-rotation (unbounded degrees, drives the tick ring's spin — ALWAYS 1:1 with the pointer, direct manipulation, never gated behind a transition) and --ui-dial-fraction (0-1, present only when min AND max are both set — the progress ring reads it, absent otherwise so there is simply nothing for the fill circle to draw). Both are the sole Vue-managed style location — the ticks <g> and fill circle carry no inline style of their own, so an imperative spring library may still own the ticks' rotate directly. Same root-custom-property style-recalc tradeoff as Knob's, kept for the same reason — see Knob's CSS comment above. * Three stacked layers, same "wrapper owns placement" shape as Knob's track/fill/indicator: a static full-circle progress ring (bounded only), a rotating tick ring (the spin cue — a real dial's whole face turns, not just a needle), and a static center face showing the live value (necessary here, unlike Knob, because a free-spinning angle alone doesn't communicate the value). */
+  .ui-dial {
+    position: relative;
+    display: inline-flex;
+  }
+  .ui-dial-dial {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    cursor: grab;
+    touch-action: none;
+  }
+  .ui-dial-dial:active,
+  .ui-dial-dial[data-active] {
+    cursor: grabbing;
+  }
+  .ui-dial--sm .ui-dial-dial {
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+  }
+  .ui-dial--md .ui-dial-dial {
+    inline-size: 5rem;
+    block-size: 5rem;
+  }
+  .ui-dial--lg .ui-dial-dial {
+    inline-size: 6.5rem;
+    block-size: 6.5rem;
+  }
+  .ui-dial-arc,
+  .ui-dial-ticks-svg {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    fill: none;
+    pointer-events: none;
+  }
+  .ui-dial-track {
+    stroke: var(--ui-muted);
+    stroke-width: 6;
+    /* SVG circles start their stroke at 3 o'clock — rotate the whole circle so the (normalized, pathLength=100) dash pattern starts at 12 o'clock, the conventional progress-ring zero point. */
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+  .ui-dial-fill {
+    stroke: var(--ui-primary);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: calc(100 - (var(--ui-dial-fraction, 0) * 100));
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+  .ui-dial-ticks {
+    transform-origin: 50% 50%;
+    rotate: var(--ui-dial-rotation, 0deg);
+  }
+  .ui-dial-tick {
+    stroke: var(--ui-border-strong);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .ui-dial-tick--index {
+    stroke: var(--ui-primary);
+    stroke-width: 3;
+  }
+  .ui-dial-face {
+    position: absolute;
+    inset: 24%;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    scale: 1;
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-dial-dial:hover .ui-dial-face {
+      scale: 1.04;
+    }
+  }
+  .ui-dial-dial:active .ui-dial-face,
+  .ui-dial-dial[data-active] .ui-dial-face {
+    scale: 0.96;
+  }
+  .ui-dial-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ui-text);
+    pointer-events: none;
+    user-select: none;
+  }
+  .ui-dial--sm .ui-dial-value {
+    font-size: 0.625rem;
+  }
+  .ui-dial--lg .ui-dial-value {
+    font-size: 0.875rem;
+  }
+  .ui-dial-dial:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-dial[data-invalid] .ui-dial-fill {
+    stroke: var(--ui-danger);
+  }
+  .ui-dial[data-invalid] .ui-dial-tick--index {
+    stroke: var(--ui-danger);
+  }
+  .ui-dial--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* DataTable Border, not shadow — an in-flow surface (convention 7), like Card. A real <table>, not a CSS grid — the slot-based v2 rewrite owns only the column registry and sort/selection state (see DataTable.vue's own comment); `.ui-datatable-scroll-x` wraps the whole <table> so header and body columns scroll horizontally in sync when columns overflow. */
+  .ui-datatable {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    overflow: hidden;
+  }
+  .ui-datatable-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    padding: 0.625rem 0.75rem;
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-datatable-scroll-x {
+    overflow-x: auto;
+  }
+  .ui-datatable-table {
+    inline-size: 100%;
+    border-collapse: collapse;
+  }
+  /* No fill — a flat gray header bar stacked on top of gray stripes and gray hover was the "every row is competing for the same visual weight, spreadsheet-grid" problem the whole section below fixes. The header now reads purely from type (weight 600, muted color) and its own bottom border; nothing left to compete with the tinted row states beneath it. */
+  .ui-datatable-thead {
+    background: transparent;
+  }
+  .ui-datatable-th {
+    position: relative; /* anchors .ui-datatable-resize-handle */
+    padding: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ui-text-muted);
+    text-align: start;
+    border-block-end: 1px solid var(--ui-border);
+    user-select: none;
+  }
+  .ui-datatable-th-label {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-datatable-sort-button {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    inline-size: 100%;
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: none;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-datatable-sort-button .ui-datatable-th-label {
+    padding: 0;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-datatable-sort-button:hover {
+      background: var(--ui-muted-hover);
+    }
+  }
+  .ui-datatable-sort-button:active {
+    transform: scale(0.97);
+  }
+  .ui-datatable-sort-button:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+  }
+  /* Mirrors .ui-select-chevron's exact rotate-on-state treatment: a plain `transform: rotate()` transition keyed off a data attribute, for the same visual language across the library. Dimmed at rest so an unsorted sortable column reads as a quiet affordance, not a stray icon; a hover reveals it more before the state itself commits to full opacity. */
+  .ui-datatable-sort-chevron {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    color: var(--ui-text-muted);
+    opacity: 0.4;
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-in-out),
+      opacity var(--ui-duration-press) ease;
+  }
+  .ui-datatable-sort-button:hover .ui-datatable-sort-chevron {
+    opacity: 0.7;
+  }
+  .ui-datatable-sort-chevron[data-state='asc'] {
+    opacity: 1;
+    transform: rotate(180deg);
+  }
+  .ui-datatable-sort-chevron[data-state='desc'] {
+    opacity: 1;
+  }
+  .ui-datatable-td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--ui-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-datatable-tr:last-child .ui-datatable-td {
+    border-block-end: none;
+  }
+  /* `stripedRows`: plain :nth-child CSS, no JS state. Deliberately kept at the SAME specificity (0,4,0) as the hover/selected rules below and ordered textually BEFORE them — equal-specificity ties resolve by source order, so this one line gives "selected > hover > stripe" with zero specificity hacks (0,4,0 selected, defined last below, still wins over both). `selected` reaches for a `color-mix` of `--ui-primary` into `--ui-surface` (a genuine brand-tinted "this is chosen" signal); hover is deliberately kept a plain, muted gray via `--ui-muted-hover` instead — a colored/tinted hover read as too loud for a dense data grid (/apple-design restraint: hover is a quiet "you could click this," not an accent moment), and a `--ui-primary`-based mix here is indistinguishable from `--ui-muted` anyway in this theme (`--ui-primary` is itself a near-black NEUTRAL, zero real chroma) — so using the actual named muted-hover token directly is both simpler and exactly as gray as it looks like it should be, no indirection through a token that isn't doing anything a plain gray wasn't already. */
+  .ui-datatable--striped .ui-datatable-tr:nth-child(even) .ui-datatable-td {
+    background: color-mix(in oklch, var(--ui-primary) 3%, var(--ui-surface));
+  }
+  @media (hover: hover) and (pointer: fine) {
+    /* Excludes the loading/empty rows — both share the exact same .ui-datatable-tr/-td classes as a real data row (see DataTable.vue's template), so without this a stray hover during a fetch painted the muted-hover gray directly behind the #loading slot's own Skeleton content, visually muddying its pulse against a same-toned backdrop instead of leaving it alone. Neither loading nor empty represents a real, clickable row — hover feedback on either was never meaningful. */
+    .ui-datatable-tbody
+      .ui-datatable-tr:hover
+      .ui-datatable-td:not(.ui-datatable-td--loading):not(.ui-datatable-td--empty) {
+      background: var(--ui-muted-hover);
+    }
+  }
+  /* Bumped to the same (0,4,0) specificity as the hover rule above (an extra `.ui-datatable-tbody` ancestor class) so source order — this rule comes LAST — is what decides the tie, making a selected row's tint win over both a hover and a stripe tint on the same row. */
+  .ui-datatable-tbody .ui-datatable-tr[data-selected] .ui-datatable-td {
+    background: color-mix(in oklch, var(--ui-primary) 8%, var(--ui-surface));
+  }
+  .ui-datatable-td--loading,
+  .ui-datatable-td--empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+    border-block-end: none;
+  }
+  .ui-datatable-footer {
+    padding: 0.625rem 0.75rem;
+    border-block-start: 1px solid var(--ui-border);
+  }
+  /* `selectable`'s built-in checkbox column (DataTable.vue) — narrower than a content column and vertically centered, since `<td>` defaults to baseline and a checkbox reads oddly baseline-aligned next to text cells. */
+  .ui-datatable-th--select,
+  .ui-datatable-td--select,
+  .ui-datatable-th--expand,
+  .ui-datatable-td--expand {
+    inline-size: 2.75rem;
+    padding-inline: 0.75rem;
+    vertical-align: middle;
+  }
+  .ui-datatable-td--expand {
+    text-align: center;
+  }
+
+  /* `scrollHeight` (DataTable.vue): the body scrolls inside the existing `.ui-datatable-scroll-x` wrapper (already handling the horizontal-scroll story) rather than a second wrapper, so both axes share one scrollbar pair. Sticky is applied per-`<th>`, not on `<thead>` itself — a plain `<table>`'s `<thead>` isn't a reliable sticky-positioning context across browsers, but its cells are. Modifier class, not unconditional: sticky positioning is inert without `scrollHeight`'s own `overflow-y: auto`, but gating it explicitly keeps this provably zero-diff for every existing consumer that never sets the prop. */
+  .ui-datatable-scroll-x--scrollable {
+    overflow-y: auto;
+  }
+  .ui-datatable-scroll-x--scrollable .ui-datatable-th {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    background: var(--ui-muted);
+  }
+
+  /* `stackedBreakpoint` (DataTable.vue): a real stacked-card layout, not the scroll-shadow fallback — every declaration below is a plain rule gated on `[data-stacked]`, which DataTable.vue's own script toggles via `matchMedia` (see its comment for why a per-instance PROP breakpoint can't be expressed as a static `@media` rule here). `<td>` sources its visible "column: value" label from `data-label` (set from the column's own `label`/`field`), the standard responsive-table technique. */
+  .ui-datatable[data-stacked] .ui-datatable-table,
+  .ui-datatable[data-stacked] .ui-datatable-tbody,
+  .ui-datatable[data-stacked] .ui-datatable-tr {
+    display: block;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-thead {
+    display: none;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-tr {
+    padding: 0.625rem 0.75rem;
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-datatable[data-stacked] .ui-datatable-tr:last-child {
+    border-block-end: none;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.1875rem 0;
+    border-block-end: none;
+    white-space: normal;
+    text-align: end;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td::before {
+    content: attr(data-label);
+    flex: none;
+    font-weight: 600;
+    color: var(--ui-text-muted);
+    text-align: start;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td--select {
+    justify-content: flex-start;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td--select::before {
+    content: none;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td--loading,
+  .ui-datatable[data-stacked] .ui-datatable-td--empty {
+    display: block;
+    text-align: center;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td--loading::before,
+  .ui-datatable[data-stacked] .ui-datatable-td--empty::before {
+    content: none;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td--expand {
+    justify-content: flex-start;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td--expand::before {
+    content: none;
+  }
+  .ui-datatable[data-stacked] .ui-datatable-td--expansion {
+    display: block;
+    text-align: start;
+  }
+
+  /* `size` (DataTable.vue): row-density variants. `md` needs no rule of its own — the base .ui-datatable-td/-th-label/-sort-button padding above already IS the `md` density. */
+  .ui-datatable--sm .ui-datatable-td,
+  .ui-datatable--sm .ui-datatable-th-label,
+  .ui-datatable--sm .ui-datatable-sort-button {
+    padding: 0.375rem 0.5rem;
+  }
+  .ui-datatable--sm .ui-datatable-th--select,
+  .ui-datatable--sm .ui-datatable-td--select,
+  .ui-datatable--sm .ui-datatable-th--expand,
+  .ui-datatable--sm .ui-datatable-td--expand {
+    padding-inline: 0.5rem;
+  }
+  .ui-datatable--lg .ui-datatable-td,
+  .ui-datatable--lg .ui-datatable-th-label,
+  .ui-datatable--lg .ui-datatable-sort-button {
+    padding: 0.875rem 1rem;
+  }
+  .ui-datatable--lg .ui-datatable-th--select,
+  .ui-datatable--lg .ui-datatable-td--select,
+  .ui-datatable--lg .ui-datatable-th--expand,
+  .ui-datatable--lg .ui-datatable-td--expand {
+    padding-inline: 1rem;
+  }
+
+  /* `showGridlines` (DataTable.vue): row dividers already exist by default (border-block-end above) — this only adds the column (inline-end) divider that's missing otherwise. */
+  .ui-datatable--gridlines .ui-datatable-th,
+  .ui-datatable--gridlines .ui-datatable-td {
+    border-inline-end: 1px solid var(--ui-border);
+  }
+  .ui-datatable--gridlines .ui-datatable-th:last-child,
+  .ui-datatable--gridlines .ui-datatable-td:last-child {
+    border-inline-end: none;
+  }
+
+  /* `resizableColumns`/`Column`'s own `resizable` (DataTable.vue): a thin drag handle at the trailing edge of a resizable `<th>`, anchored by `.ui-datatable-th`'s own `position: relative` above. `touch-action: none` stops a touch-drag from also scrolling the page underneath it. */
+  .ui-datatable-resize-handle {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: -3px;
+    inline-size: 6px;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 2;
+  }
+  .ui-datatable-resize-handle::after {
+    content: '';
+    position: absolute;
+    inset-block: 22%;
+    inset-inline-start: 50%;
+    inline-size: 1px;
+    background: var(--ui-border);
+    translate: -50% 0;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-datatable-resize-handle:hover::after {
+      background: var(--ui-primary);
+    }
+  }
+
+  /* `frozenColumns` (DataTable.vue): sticky-left columns need an opaque background of their own — otherwise scrolled-under column content shows through since a body row itself carries no background at rest. A plain class (not part of the inline `left`/`position` style DataTable.vue sets) so the existing hover/selected/stripe rules above still win by their own normal specificity/source-order, exactly as for a non-frozen cell. `--frozen-end` adds the one-off boundary shadow PrimeVue's own frozen columns use, so the pinned/scrolling boundary reads clearly. */
+  .ui-datatable-th--frozen,
+  .ui-datatable-td--frozen {
+    background: var(--ui-surface);
+  }
+  .ui-datatable-thead .ui-datatable-th--frozen {
+    background: var(--ui-muted);
+  }
+  .ui-datatable-th--frozen-end,
+  .ui-datatable-td--frozen-end {
+    box-shadow: 2px 0 4px -2px rgb(0 0 0 / 0.15);
+  }
+
+  /* `#expansion` (DataTable.vue): a full-width row directly under an expanded row — same border/background language as a normal row, just without the per-column grid. */
+  .ui-datatable-td--expansion {
+    background: var(--ui-muted);
+    white-space: normal;
+  }
+  .ui-datatable-expand-chevron {
+    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-datatable-expand-chevron[data-state='open'] {
+    transform: rotate(-180deg);
+  }
+
+  /* Pagination Standalone primitive (Pagination.vue) — a plain flex nav, not table- specific in any way, even though DataTable's own #footer slot is its main consumer in this library. */
+  .ui-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .ui-pagination-list {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ui-pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    color: var(--ui-text-muted);
+    user-select: none;
+  }
+  .ui-pagination-size-select {
+    min-inline-size: 5rem;
+  }
+
+  /* Resizable General-purpose resize primitive (`useResizable.ts`/`Resizable.vue`) — an axis-agnostic wrapper that adds one draggable edge handle to any panel of content. `position: relative` anchors the handle's absolute positioning; only the release-time rubber-band snap-back transitions (`[data-resizing]` suppresses it for the live drag itself — direct manipulation must never lag the pointer, same convention as Slider's thumb position). The handle itself is styled off its OWN `data-direction`/`data-edge` attributes rather than an ancestor modifier class, so it also works standalone on an existing element that can't become this component's root — DashboardSidebar.vue's `<aside>` reuses just `.ui-resizable-handle` this way (see that file's comment). */
+  .ui-resizable {
+    position: relative;
+    transition: inline-size var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-resizable--vertical {
+    transition-property: block-size;
+  }
+  .ui-resizable[data-resizing] {
+    transition: none;
+  }
+  .ui-resizable--disabled .ui-resizable-handle {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .ui-resizable-handle {
+    position: absolute;
+    z-index: 1;
+    touch-action: none;
+  }
+  .ui-resizable-handle[data-direction='horizontal'] {
+    inset-block: 0;
+    inline-size: 6px;
+    cursor: col-resize;
+  }
+  .ui-resizable-handle[data-direction='horizontal'][data-edge='end'] {
+    inset-inline-end: -3px;
+  }
+  .ui-resizable-handle[data-direction='horizontal'][data-edge='start'] {
+    inset-inline-start: -3px;
+  }
+  .ui-resizable-handle[data-direction='vertical'] {
+    inset-inline: 0;
+    block-size: 6px;
+    cursor: row-resize;
+  }
+  .ui-resizable-handle[data-direction='vertical'][data-edge='end'] {
+    inset-block-end: -3px;
+  }
+  .ui-resizable-handle[data-direction='vertical'][data-edge='start'] {
+    inset-block-start: -3px;
+  }
+  /* A thin centered bar inside the wider invisible hit area — same "generous hit target, slim visual" split as DataTable's own `.ui-datatable-resize-handle::after`. */
+  .ui-resizable-handle::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    background: transparent;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-resizable-handle[data-direction='horizontal']::after {
+    inline-size: 2px;
+    block-size: 100%;
+  }
+  .ui-resizable-handle[data-direction='vertical']::after {
+    inline-size: 100%;
+    block-size: 2px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-resizable-handle:hover::after {
+      background: var(--ui-primary);
+    }
+  }
+  .ui-resizable-handle:active::after,
+  .ui-resizable-handle[data-active]::after {
+    background: var(--ui-primary);
+  }
+  .ui-resizable-handle:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+  }
+
+  /* Dock macOS-style icon dock (`useDock.ts`/`Dock.vue`). Items rest at `--ui-dock-base-size` and magnify toward `--ui-dock-max-size` as the pointer nears them. * Deliberately NOT Slider/Knob/Dial's pattern (a single Vue-managed custom property on the ROOT that every part reads via `calc()`): a dock needs N items to each carry an INDEPENDENT, continuously-varying size every frame — that's the whole visual signature, neighbors fall off too, not just the hovered item — so a shared root property would force a style recalc across every item on every mousemove frame regardless of how many actually changed size. useDock.ts instead writes `scale` straight onto each item element that moved, keeping a frame's cost proportional to the affected neighborhood. This is the exact anti-pattern a recent audit flagged in Slider/Knob/Dial's own root-property approach; see `.ui-slider-thumb` above for why that pattern is still the right call THERE (only one thumb position ever changes per frame, not N independent sizes). * `--ui-dock-base-size`/`-max-size` above are themselves static custom properties (written once per prop change by Dock.vue, not per pointermove) — only the LIVE per-item scale is ever written every frame, and that write bypasses custom properties entirely. */
+  .ui-dock {
+    --ui-dock-base-size: 3rem;
+    --ui-dock-max-size: 4.5rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: calc(var(--ui-radius) + 0.75rem);
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);
+    touch-action: none;
+  }
+  .ui-dock--vertical {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  .ui-dock--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .ui-dock-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: var(--ui-dock-base-size);
+    block-size: var(--ui-dock-base-size);
+    border: none;
+    border-radius: var(--ui-radius);
+    background: var(--ui-muted);
+    color: var(--ui-text);
+    cursor: pointer;
+    scale: 1;
+    /* Bottom-anchored growth is the signature macOS look — a magnified icon rises up off the shelf line rather than growing equally in both directions. A vertical dock has no fixed "shelf" side (it could sit on either screen edge), so it grows from its own center instead. */
+    transform-origin: bottom center;
+    /* Only the settle/press feedback transitions — the live magnified size itself is written every pointermove frame with zero transition delay (direct manipulation, same "never gate a live drag" stance as Slider/Knob/Dial), same as Slider thumb's own hover-scale transition below the drag-position rule. `translate` rides along with `scale` — useDock.ts now writes both every frame (see its own `dockItemOffsets` comment: scale alone doesn't change an item's flex slot, so magnified neighbors would otherwise visually collide) — same treatment so the spread-apart settles back in sync with the size settling back. */
+    transition:
+      scale var(--ui-duration-press) var(--ui-ease-out),
+      translate var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-dock--vertical .ui-dock-item {
+    transform-origin: center;
+  }
+  .ui-dock-item :where(svg) {
+    inline-size: 55%;
+    block-size: 55%;
+  }
+  .ui-dock-item:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-dock-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  /* Shrink-on-press — same direction as Button/Slider/Knob/Dial's own press feedback. Only visible on touch/keyboard activation in practice: on a fine pointer the live magnified `scale` (an inline style) already wins the cascade over this rule regardless of :active. */
+  .ui-dock-item:active {
+    scale: 0.94;
+  }
+  .ui-dock-item-badge {
+    position: absolute;
+    inset-block-start: -0.25rem;
+    inset-inline-end: -0.25rem;
+    min-inline-size: 1.125rem;
+    block-size: 1.125rem;
+    padding-inline: 0.25rem;
+    border-radius: 9999px;
+    background: var(--ui-danger);
+    color: var(--ui-danger-contrast, #fff);
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.125rem;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  /* SpeedDial Trigger + fanned actions are both real `<Button icon pill>` instances (see SpeedDial.vue's own comment) — this section only positions them and animates the fan-out, nothing about their own visual treatment. */
+  .ui-speed-dial {
+    position: relative;
+    display: inline-flex;
+  }
+  .ui-speed-dial-trigger {
+    position: relative;
+    z-index: 1;
+  }
+  .ui-speed-dial-trigger-icon {
+    display: inline-flex;
+    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-speed-dial[data-state='open'] .ui-speed-dial-trigger-icon {
+    transform: rotate(45deg);
+  }
+  .ui-speed-dial-actions {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .ui-speed-dial-action {
+    flex: none;
+  }
+  /* Linear directions: a plain flex stack offset from the trigger by a fixed gap, closest action first so the stagger below reads as "growing outward" rather than out of order. */
+  .ui-speed-dial[data-direction='up'] .ui-speed-dial-actions {
+    flex-direction: column-reverse;
+    inset-inline-start: 50%;
+    inset-block-end: 100%;
+    translate: -50% 0;
+    margin-block-end: 0.75rem;
+  }
+  .ui-speed-dial[data-direction='down'] .ui-speed-dial-actions {
+    flex-direction: column;
+    inset-inline-start: 50%;
+    inset-block-start: 100%;
+    translate: -50% 0;
+    margin-block-start: 0.75rem;
+  }
+  .ui-speed-dial[data-direction='left'] .ui-speed-dial-actions {
+    flex-direction: row-reverse;
+    inset-inline-end: 100%;
+    inset-block-start: 50%;
+    translate: 0 -50%;
+    margin-inline-end: 0.75rem;
+  }
+  .ui-speed-dial[data-direction='right'] .ui-speed-dial-actions {
+    flex-direction: row;
+    inset-inline-start: 100%;
+    inset-block-start: 50%;
+    translate: 0 -50%;
+    margin-inline-start: 0.75rem;
+  }
+  /* quarter-circle: the container stays a zero-size anchor at the trigger's own center; each action positions itself independently via the `--ui-speed-dial-x`/`-y` custom properties SpeedDial.vue computes per item (quarterCirclePoint) — not a flex layout at all. */
+  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-actions {
+    inset-inline-start: 50%;
+    inset-block-start: 50%;
+    inline-size: 0;
+    block-size: 0;
+  }
+  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action {
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    translate: calc(var(--ui-speed-dial-x, 0px) - 50%) calc(var(--ui-speed-dial-y, 0px) - 50%);
+  }
+  /* Fan-out entrance: never from scale(0) — nothing real appears from nothing, matching this file's own convention everywhere else. Opacity and scale are shared across every direction; the DIRECTIONAL travel (composes independently, since `scale`/`translate` are separate CSS properties, not `transform` longhands) makes each action visibly emerge FROM the trigger's position rather than fading in place. Staggered on enter (SpeedDial.vue's own 40ms-per-index, baked into the transition-delay calc() below) since this is the "everything-at-once group entrance" case the library's own audit established a stagger convention for; NOT staggered on leave — dismissal reads as one instant collapse, same open/close asymmetry as every other disclosure in this file. */
+  .ui-speed-dial-action-enter-active {
+    transition:
+      opacity var(--ui-duration-enter) var(--ui-ease-out),
+      scale var(--ui-duration-enter) var(--ui-ease-out),
+      translate var(--ui-duration-enter) var(--ui-ease-out);
+    transition-delay: calc(var(--ui-speed-dial-action-index, 0) * 40ms);
+  }
+  .ui-speed-dial-action-leave-active {
+    transition:
+      opacity var(--ui-duration-exit) var(--ui-ease-out),
+      scale var(--ui-duration-exit) var(--ui-ease-out),
+      translate var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-speed-dial-action-enter-from,
+  .ui-speed-dial-action-leave-to {
+    opacity: 0;
+    scale: 0.9;
+  }
+  .ui-speed-dial[data-direction='up'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='up'] .ui-speed-dial-action-leave-to {
+    translate: 0 0.5rem;
+  }
+  .ui-speed-dial[data-direction='down'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='down'] .ui-speed-dial-action-leave-to {
+    translate: 0 -0.5rem;
+  }
+  .ui-speed-dial[data-direction='left'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='left'] .ui-speed-dial-action-leave-to {
+    translate: 0.5rem 0;
+  }
+  .ui-speed-dial[data-direction='right'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='right'] .ui-speed-dial-action-leave-to {
+    translate: -0.5rem 0;
+  }
+  /* quarter-circle already carries its own resting translate (the arc position) via the base `.ui-speed-dial-action` rule above — enter/leave override JUST that to the trigger's own center (0,0 relative), so the action visibly arcs out from the trigger instead of the shared directional offsets above, which don't apply here. */
+  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-leave-to {
+    translate: -50% -50%;
+  }
+  .ui-speed-dial-action-move {
+    transition: translate var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+
+  /* SwipeToReveal The actions slot is a permanent sibling BEHIND the content, clipped by the root's own overflow:hidden while closed — never v-if'd or display:none'd, so it stays keyboard/screen-reader reachable regardless of visual state (see SwipeToReveal.vue's own comment). */
+  .ui-swipe-reveal {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--ui-radius);
+    touch-action: pan-y;
+  }
+  .ui-swipe-reveal-actions {
+    position: absolute;
+    inset-block: 0;
+    display: flex;
+    align-items: stretch;
+  }
+  .ui-swipe-reveal[data-side='trailing'] .ui-swipe-reveal-actions {
+    inset-inline-end: 0;
+  }
+  .ui-swipe-reveal[data-side='leading'] .ui-swipe-reveal-actions {
+    inset-inline-start: 0;
+  }
+  .ui-swipe-reveal-content {
+    position: relative;
+    z-index: 1;
+    background: var(--ui-surface);
+    touch-action: pan-y;
+    cursor: grab;
+    /* Only the release-time settle — the live drag itself writes `offset` (and therefore this transform) every pointermove frame with zero transition delay, same "never gate a live drag" stance as Resizable/Slider/Knob/Dial. */
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-swipe-reveal[data-dragging] .ui-swipe-reveal-content {
+    transition: none;
+    cursor: grabbing;
+  }
+
+  /* Reduced motion */
+  /* Removes movement (scale, spin, width slides) but keeps opacity fades — a hard cut is more jarring than a fade, and fades don't trigger vestibular issues. */
+  @media (prefers-reduced-motion: reduce) {
+    .ui-dialog-enter-active .ui-dialog-panel,
+    .ui-dialog-leave-active .ui-dialog-panel {
+      transition: none;
+    }
+    .ui-dialog-enter-from .ui-dialog-panel,
+    .ui-dialog-leave-to .ui-dialog-panel,
+    .ui-dialog--top.ui-dialog-enter-from .ui-dialog-panel,
+    .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel,
+    .ui-dialog--bottom.ui-dialog-enter-from .ui-dialog-panel,
+    .ui-dialog--bottom.ui-dialog-leave-to .ui-dialog-panel,
+    .ui-dialog--left.ui-dialog-enter-from .ui-dialog-panel,
+    .ui-dialog--left.ui-dialog-leave-to .ui-dialog-panel,
+    .ui-dialog--right.ui-dialog-enter-from .ui-dialog-panel,
+    .ui-dialog--right.ui-dialog-leave-to .ui-dialog-panel {
+      transform: none;
+    }
+    .ui-popover-enter-active,
+    .ui-popover-leave-active,
+    .ui-popover-enter-active .ui-popover-panel,
+    .ui-popover-leave-active .ui-popover-panel {
+      transition: none;
+    }
+    .ui-popover-enter-from .ui-popover-panel,
+    .ui-popover-leave-to .ui-popover-panel {
+      transform: none;
+    }
+    .ui-menu-enter-active,
+    .ui-menu-leave-active,
+    .ui-menu-enter-active .ui-menu-panel,
+    .ui-menu-leave-active .ui-menu-panel {
+      transition: none;
+    }
+    .ui-menu-enter-from .ui-menu-panel,
+    .ui-menu-leave-to .ui-menu-panel {
+      transform: none;
+    }
+    /* Select/Combobox share Menu's own panel vocabulary — extending the Menu rule above with the same selectors under .ui-select-* (Combobox reuses these classes/transition-name verbatim, see its template). */
+    .ui-select-enter-active,
+    .ui-select-leave-active,
+    .ui-select-enter-active .ui-select-panel,
+    .ui-select-leave-active .ui-select-panel {
+      transition: none;
+    }
+    .ui-select-enter-from .ui-select-panel,
+    .ui-select-leave-to .ui-select-panel {
+      transform: none;
+    }
+    .ui-select-chevron,
+    .ui-combobox-chevron,
+    .ui-split-button-chevron {
+      transition: none;
+    }
+    .ui-select-body {
+      transition: none;
+    }
+    /* Tree select: the trigger chevron already matches .ui-select-chevron above (reused verbatim); its OWN per-row chevron, panel max-height resize, and row enter/leave/move still need their own opt-out here. */
+    .ui-tree-select-chevron {
+      transition: none;
+    }
+    .ui-tree-select-panel {
+      transition: none;
+    }
+    .ui-tree-select-row-enter-active,
+    .ui-tree-select-row-leave-active,
+    .ui-tree-select-row-move {
+      transition: none;
+    }
+    /* Tree (standalone) — same opt-out as TreeSelect's above, against its
+       own `.ui-tree-*` classes (see Tree.vue's own comment on the split). */
+    .ui-tree-chevron {
+      transition: none;
+    }
+    .ui-tree-row-enter-active,
+    .ui-tree-row-leave-active,
+    .ui-tree-row-move {
+      transition: none;
+    }
+    .ui-tooltip-enter-from .ui-tooltip-panel {
+      transform: none;
+    }
+    .ui-tooltip-positioner[data-traveling] {
+      transition: none;
+    }
+    .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading),
+    .ui-dialog-close:active,
+    .ui-dialog-maximize:active,
+    .ui-bottom-sheet-close:active,
+    .ui-card--interactive:active,
+    .ui-input-number-stepper:active {
+      transform: none;
+    }
+    /* Maximize/restore: the resize itself is movement — drop it, snap instead. */
+    .ui-dialog {
+      transition: none;
+    }
+    .ui-dialog-panel {
+      transition: none;
+    }
+    .ui-dialog-panel--resizing {
+      animation: none;
+    }
+    .ui-button--loader-overlay .ui-button-loader {
+      scale: 1;
+      transition: opacity var(--ui-duration-press) ease;
+    }
+    .ui-button--loader-inline .ui-button-loader,
+    .ui-button-leading,
+    .ui-button-trailing {
+      transition: opacity var(--ui-duration-press) ease;
+    }
+    /* Rotation becomes a gentle opacity pulse — still signals "working". A bare Loader (its presence already means "loading") pulses unconditionally; inside Button's always-mounted `.ui-button-loader` wrapper the idle (hidden) spinner must stay off, so that context stays gated on `.ui-button--loading`, same as before the extraction. */
+    .ui-loader {
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+    .ui-button-loader .ui-loader {
+      animation: none;
+    }
+    .ui-button--loading .ui-button-loader .ui-loader {
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+    /* Toast: position changes snap instantly, opacity keeps fading. Swipe still tracks the pointer directly (user-initiated), but its commit keyframes drop the travel distance and just fade out in place. */
+    .ui-toast {
+      transition: opacity var(--ui-duration-toast) ease;
+    }
+    .ui-toast-enter-from,
+    .ui-toast-leave-to {
+      transform: none;
+    }
+    .ui-toast-action:active {
+      transform: none;
+    }
+    .ui-toaster {
+      transition: none;
+    }
+    .ui-toast[data-swipe-out='true'] {
+      animation-name: ui-toast-fade-out;
+    }
+    .ui-tabs-indicator,
+    .ui-menu-list-indicator {
+      transition: none;
+    }
+    /* Skeleton's pulse is opacity-only (no scale/translate/rotation) — it's exempt from reduced motion, same reasoning as any plain fade elsewhere in this file. Restated here (not just left out) so the exemption reads as a decision, not an oversight. */
+    .ui-skeleton--animated {
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+    /* The number itself already communicates the change — no motion needed. */
+    .ui-badge-content--animated {
+      animation: none;
+    }
+    .ui-avatar-image {
+      transition: opacity var(--ui-duration-enter) ease;
+    }
+    .ui-progress-fill {
+      transition: none;
+    }
+    .ui-progress[data-state='indeterminate'] .ui-progress-fill {
+      inline-size: 100%;
+      scale: 1 1;
+      translate: 0 0;
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+    .ui-message-leave-active {
+      transition: opacity var(--ui-duration-exit) ease;
+    }
+    /* Accordion: the resize itself is movement — drop it, snap instead. Same for the chevron's rotation. The content opacity fade is kept (opacity-only, same sanctioned exception as everywhere else in this file) — it's still how a genuinely-changing item signals it. */
+    .ui-accordion-panel {
+      transition: none;
+    }
+    .ui-accordion-chevron {
+      transition: none;
+    }
+    .ui-collapsible-panel {
+      transition: none;
+    }
+    /* The live drag itself is already transition:none (direct manipulation, never gated) — this only snaps the settle-back-to-idle and lock-during-loading moments, which are programmatic. */
+    .ui-pull-to-refresh-zone,
+    .ui-pull-to-refresh-bubble,
+    .ui-pull-to-refresh-arrow {
+      transition: none;
+    }
+    /* Field: the float label's move is real movement — snap instead of sliding. The error line's fade is opacity-only — kept intentionally, same sanctioned exception as Avatar's image crossfade above. */
+    .ui-field[data-placement='float'] .ui-field-label {
+      transition: none;
+    }
+    .ui-field-error-enter-active,
+    .ui-field-error-leave-active {
+      transition: opacity var(--ui-duration-exit) ease;
+    }
+    /* Checkbox: the check "draws" via stroke-dashoffset — movement — so it becomes an opacity-only fade instead, same swap as everywhere else in this file. Colors and the indeterminate fade (already opacity-only) are kept as-is. */
+    .ui-checkbox[data-state='checked'] .ui-checkbox-check path {
+      transition: none;
+    }
+    .ui-switch-thumb {
+      transition: none;
+    }
+    /* Radio: the dot's scale-in is movement — drop the scale, keep the fade. */
+    .ui-radio-dot {
+      transition: opacity var(--ui-duration-press) ease;
+    }
+    .ui-select-button-indicator {
+      transition: none;
+    }
+    /* OtpInput: no override needed here anymore — the default treatment IS the opacity-only fade now (see .ui-otp-cell[data-filled] above), not just the reduced-motion fallback. The caret blink is a caret, not decorative motion — intentionally absent from this block either way. */
+    /* CascadeSelect: the trigger chevron's rotation is movement — same rule and reasoning as Accordion's chevron above. Its panel is a literal <Menu>, so Menu's own reduced-motion rules already cover it. */
+    .ui-cascade-select-chevron {
+      transition: none;
+    }
+    /* Slider: the live drag position was NEVER transitioned (direct manipulation, gated on nothing) — this only drops the decorative hover/press scale, the same :active reset as Button's list above. */
+    .ui-slider-thumb {
+      transition: none;
+    }
+    .ui-slider-thumb:hover,
+    .ui-slider-thumb:active,
+    .ui-slider-thumb[data-active] {
+      scale: 1;
+    }
+    /* Resizable: the live drag itself is already transition:none (direct manipulation, gated on nothing) — this only snaps the release-time rubber-band correction, which is real movement. */
+    .ui-resizable {
+      transition: none;
+    }
+    /* Knob: the live rotation/fill fraction are already transition:none (direct manipulation, never gated) regardless of this media query — this only drops the decorative hover/press scale, same :active reset as Slider's thumb above. */
+    .ui-knob-face {
+      transition: none;
+    }
+    .ui-knob-dial:hover .ui-knob-face,
+    .ui-knob-dial:active .ui-knob-face,
+    .ui-knob-dial[data-active] .ui-knob-face {
+      scale: 1;
+    }
+    /* Dial: the live rotation/fill fraction are already transition:none (direct manipulation, never gated) regardless of this media query — this only drops the decorative hover/press scale, same :active reset as Knob's face above. The tick ring's rotation itself is NOT reduced here — it's driven purely by, and always in sync with, direct pointer input (never an inertial/decorative spin), so it carries no motion to remove; only the incidental hover/press affordance does. */
+    .ui-dial-face {
+      transition: none;
+    }
+    .ui-dial-dial:hover .ui-dial-face,
+    .ui-dial-dial:active .ui-dial-face,
+    .ui-dial-dial[data-active] .ui-dial-face {
+      scale: 1;
+    }
+    /* FileUpload: drag-over/color states are already color-only and the row fade is already opacity-only — both kept intentionally, same sanctioned exception as Avatar's image crossfade above. Restated (not just left out) so it reads as a decision. */
+    .ui-file-upload-dropzone {
+      transition:
+        border-color var(--ui-duration-press) ease,
+        background-color var(--ui-duration-press) ease;
+    }
+    .ui-file-item-enter-active,
+    .ui-file-item-leave-active {
+      transition: opacity var(--ui-duration-enter) ease;
+    }
+    /* Restated unchanged, not just left out — opacity-only already, same "fades don't trigger vestibular issues" exemption as the file-item entry above. */
+    .ui-chip-item-enter-active,
+    .ui-chip-item-leave-active {
+      transition: opacity var(--ui-duration-enter) ease;
+    }
+    /* DataTable: header press-scale reset joins Button's own list above. Sort-chevron rotation is movement — same rule as Select's chevron — so it snaps instead of animating; its opacity fade is kept (color-only exception, same as everywhere else in this file). No row enter/leave or FLIP `-move` exists in the v2 slot-based rewrite (plain `v-for`, not a `TransitionGroup` — see DataTable.vue's own comment), so there is nothing else to neutralize here. */
+    .ui-datatable-sort-button:active {
+      transform: none;
+    }
+    .ui-datatable-sort-chevron {
+      transition: opacity var(--ui-duration-press) ease;
+    }
+    /* Same rotation-is-movement reasoning as the sort chevron above — was missing here entirely (audit finding), the row-expansion chevron's equivalent to the fix immediately above. */
+    .ui-datatable-expand-chevron {
+      transition: none;
+    }
+    .ui-chip-item-move {
+      transition: none;
+    }
+    /* Dock: the magnification itself never runs at all under reduced motion — useDock.ts's canMagnify() check gates the whole effect off in JS before it writes a single `scale`, not just here in CSS. That's a deliberate step further than an instant-snap: the magnification is closer to a decorative flourish (a real dock is fully usable at resting size) than essential feedback like a live drag position, so there's nothing worth preserving even instantly. This rule only resets the incidental press-feedback scale, same :active reset as Slider/Knob/Dial's above. */
+    .ui-dock-item {
+      transition: none;
+    }
+    .ui-dock-item:active {
+      scale: 1;
+    }
+    /* SpeedDial: the fan-out is real movement (scale + directional translate) — drop both, keep the opacity fade, same rule as every other entrance in this block. The stagger delay goes too: a paused, silent gap before an instant-appearing action reads as a stutter, not a stagger, once there's no motion to stagger. The trigger icon's open/close rotation is dropped for the same reason Accordion's chevron is, just below. */
+    .ui-speed-dial-action-enter-active,
+    .ui-speed-dial-action-leave-active {
+      transition: opacity var(--ui-duration-exit) ease;
+      transition-delay: 0ms;
+    }
+    .ui-speed-dial-action-enter-from,
+    .ui-speed-dial-action-leave-to {
+      scale: 1;
+      translate: 0 0;
+    }
+    .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-enter-from,
+    .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-leave-to {
+      translate: calc(var(--ui-speed-dial-x, 0px) - 50%) calc(var(--ui-speed-dial-y, 0px) - 50%);
+    }
+    .ui-speed-dial-action-move,
+    .ui-speed-dial-trigger-icon {
+      transition: none;
+    }
+    /* SwipeToReveal: the live drag itself is already transition:none (direct manipulation, never gated) regardless of this media query — same reasoning as Resizable's own entry above — this only snaps the release-time settle, which is real movement. */
+    .ui-swipe-reveal-content {
+      transition: none;
+    }
+    /* Calendar's month-transition is movement (translateX) — dropped here, same rule as every other position/slide transition in this block; the opacity half of the crossfade is kept. */
+    .ui-calendar-grid-enter-active,
+    .ui-calendar-grid-leave-active {
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+    }
+    .ui-calendar-grid-enter-from,
+    .ui-calendar-grid-leave-to {
+      transform: none;
+    }
+  }
+
+  @keyframes ui-toast-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ui-pulse {
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @keyframes ui-otp-caret-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ui-otp-pop-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

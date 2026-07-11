@@ -1,0 +1,12 @@
+/* Minimal harness page — tracks the library's own surface/text tokens
+   directly rather than inventing a separate page-token system (see
+   playground/src/style.css for that fuller pattern). Without this, the
+   library's dark-mode component tokens (e.g. --ui-primary flips light for
+   dark surfaces) render against a page that stayed pure white. */
+body {
+  margin: 0;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  padding: 1.5rem;
+}

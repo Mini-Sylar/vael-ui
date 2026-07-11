@@ -1,0 +1,258 @@
+/* Unlayered consumer CSS — always beats the library's @layer ui-components */
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+ * Page-level tokens, flipped via the SAME dual hook as the library's own
+ * (see vael-ui/style.css): OS preference by default, explicit data-theme wins.
+ * A consumer app's own CSS has to opt into this pattern itself — the library
+ * cannot make an app's page chrome theme-aware for it.
+ */
+:root {
+  --page-bg: #fafafa;
+  --page-text: #18181b;
+  --page-text-muted: #52525b;
+  --page-text-faint: #71717a;
+  --page-tab-indicator: #e4e4e7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --page-bg: #111113;
+    --page-text: #fafafa;
+    --page-text-muted: #a1a1aa;
+    --page-text-faint: #a1a1aa;
+    --page-tab-indicator: #3f3f46;
+  }
+}
+
+:root[data-theme='dark'] {
+  --page-bg: #111113;
+  --page-text: #fafafa;
+  --page-text-muted: #a1a1aa;
+  --page-text-faint: #a1a1aa;
+  --page-tab-indicator: #3f3f46;
+}
+
+body {
+  margin: 0;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color: var(--page-text);
+  background: var(--page-bg);
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.page {
+  max-width: 44rem;
+  margin-inline: auto;
+  padding: 3rem 1.5rem 6rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.locale-select {
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: 0.3125rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--page-tab-indicator);
+  background: transparent;
+  color: var(--page-text);
+}
+
+h1 {
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.lede,
+.note {
+  color: var(--page-text-muted);
+  line-height: 1.6;
+}
+
+.demo {
+  margin-block-start: 3rem;
+}
+
+.demo h2 {
+  font-size: 1.125rem;
+  letter-spacing: -0.01em;
+}
+
+.demo h3 {
+  margin-block: 1.25rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--page-text-faint);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scoped-theme-box {
+  padding: 1rem;
+  border: 1px dashed var(--page-tab-indicator);
+  border-radius: 8px;
+}
+
+/* Proves the theme.button.ui.root class hook works, not just tokens like radius */
+.sharp-scoped-button {
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
+}
+
+.swatch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--page-text-muted);
+}
+
+.swatch-label input[type='color'] {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--page-tab-indicator);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.preset-dot {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-radius: 50%;
+  border: 1px solid rgb(0 0 0 / 0.1);
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Button demo: motion-v loader — the library's .ui-button-loader wrapper
+   already handles placement and crossfade; this is just the visuals */
+.loader-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.loader-dot {
+  inline-size: 5px;
+  block-size: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Tabs demo: consumer-owned indicator via layout-id */
+.tab {
+  position: relative;
+  border: 0;
+  background: none;
+  border-radius: 8px;
+  font: inherit;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  color: var(--page-text-muted);
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--page-text);
+}
+
+/* No sliding .tab-indicator here — plain background stands in for it. */
+.tab--static[aria-selected='true'] {
+  background: var(--page-tab-indicator);
+}
+
+.tab-indicator {
+  position: absolute;
+  inset: 0;
+  background: var(--page-tab-indicator);
+  border-radius: 8px;
+}
+
+.tab-label {
+  position: relative; /* keeps the label above the sliding indicator */
+}
+
+.panel-text {
+  color: var(--page-text-muted);
+}
+
+.panel-viewport {
+  position: relative;
+  overflow: hidden;
+  min-block-size: 5.5rem;
+}
+
+.panel-content {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+}
+
+.panel-content h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* Tooltip demo */
+.rich-tip {
+  display: grid;
+  gap: 0.25rem;
+  padding-block: 0.125rem;
+}
+
+.rich-tip-kbd {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.rich-tip kbd {
+  font: inherit;
+  font-size: 0.6875rem;
+  padding: 0.0625rem 0.3125rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ui-primary-contrast) 15%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
+  body {
+    transition: none;
+  }
+}

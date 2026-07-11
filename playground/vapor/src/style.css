@@ -1,0 +1,47 @@
+/* Minimal harness page — tracks the library's own surface/text tokens
+   directly rather than inventing a separate page-token system (see
+   playground/vdom/src/style.css for that fuller pattern). Without this, the
+   library's dark-mode component tokens (e.g. --ui-primary flips light for
+   dark surfaces) render against a page that stayed pure white. */
+body {
+  margin: 0;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  padding: 1.5rem;
+}
+
+.demo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block-end: 1rem;
+  margin-block-end: 1.5rem;
+  border-block-end: 1px solid var(--ui-border);
+}
+.demo-header h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+.demo-section {
+  margin-block-end: 2rem;
+}
+.demo-section h2 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: color-mix(in oklch, var(--ui-text) 60%, transparent);
+  margin: 0 0 0.75rem;
+}
+.demo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.625rem;
+}
+.demo-row:not(:last-child) {
+  border-block-end: 1px solid color-mix(in oklch, var(--ui-border) 60%, transparent);
+}

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "moduleDetection": "force",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "types": [],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "vueCompilerOptions": {
+    // strictTemplates stays off: the API leans on attrs fallthrough
+    // (aria-* / data-* / class landing on Dialog's panel, Button's root),
+    // which strict template checking rejects by design.
+    "strictTemplates": false
+  },
+  "include": ["src", "tests"]
+}
