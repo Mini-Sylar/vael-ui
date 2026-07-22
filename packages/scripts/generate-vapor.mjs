@@ -188,6 +188,7 @@ function main() {
     `export { default as ${name} } from './${name}.vue'`,
     `export * from './${name}.vue'`,
   ])
+  barrelLines.push(`export { vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask } from 'vael-ui'`)
   writeFileSync(join(OUT_DIR, 'index.ts'), barrelLines.join('\n') + '\n')
   console.log(
     `\ngenerated src/generated/index.ts (${COMPONENTS.length} public component(s), ${toGenerate.size} file(s) total)`,

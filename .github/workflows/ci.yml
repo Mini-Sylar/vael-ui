@@ -35,26 +35,14 @@ jobs:
           key: playwright-chromium-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - run: pnpm --filter vael-ui exec playwright install --with-deps chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-      # System libs on a cache hit — the browser binary itself is skipped,
-      # this only fills in OS packages if the runner image doesn't already
-      # have them.
       - run: pnpm --filter vael-ui exec playwright install-deps chromium
         if: steps.playwright-cache.outputs.cache-hit == 'true'
 
       - run: pnpm test
-      # Runs once; typecheck/test:vapor/test:vapor-interop below use the
-      # `:only` script variants so they don't each rebuild redundantly —
-      # the plain (non-`:only`) scripts still self-build for standalone
-      # local use.
       - run: pnpm build
       - run: pnpm typecheck:only
       - run: pnpm test:vapor:only
       - run: pnpm test:vapor-interop:only
-      # Belt-and-suspenders alongside the local pre-push hook: the hook only
-      # protects the machine that has it installed (and is skippable with
-      # --no-verify); this catches a PR missing a changeset regardless of
-      # either. Only meaningful on PRs — a direct push's diff against
-      # origin/main is already empty by the time CI sees it.
       - name: Check for missing changeset
         if: github.event_name == 'pull_request'
         run: pnpm exec changeset status --since=origin/${{ github.base_ref }}

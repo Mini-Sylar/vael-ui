@@ -24,9 +24,13 @@ for (const match of uiIndex.matchAll(
 }
 
 const outPath = join(__dirname, '../ui/dist/vapor/index.d.ts')
-const lines = [`export { ${componentNames.join(', ')} } from '../index'`]
-if (typeNames.length > 0) lines.push(`export type { ${typeNames.join(', ')} } from '../index'`)
+const lines = [
+  `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask } from '../index'`,
+]
+const directiveTypeNames = ['TooltipDirectiveOptions', 'TooltipDirectiveValue']
+const allTypeNames = [...typeNames, ...directiveTypeNames]
+if (allTypeNames.length > 0) lines.push(`export type { ${allTypeNames.join(', ')} } from '../index'`)
 writeFileSync(outPath, lines.join('\n') + '\n')
 console.log(
-  `generated dist/vapor/index.d.ts (${componentNames.length} component(s), ${typeNames.length} type(s))`,
+  `generated dist/vapor/index.d.ts (${componentNames.length} component(s), ${allTypeNames.length} type(s))`,
 )

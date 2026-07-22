@@ -117,6 +117,28 @@ import { Button, TooltipHost } from 'vael-ui'
 </template>
 ```
 
+### In a Vapor app
+
+`vael-ui/vapor` exports the same directives under their plain names (`vTooltip`, not
+`vTooltipVapor`), so both registration styles above work the same way — just import from
+`vael-ui/vapor` instead:
+
+```ts
+import { createVaporApp } from 'vue'
+import { vTooltip, vScrollMask } from 'vael-ui/vapor'
+
+const app = createVaporApp(App)
+app.directive('tooltip', vTooltip)
+app.directive('scroll-mask', vScrollMask)
+```
+
+Global registration genuinely works here — Vapor's compiler falls back to the same runtime
+directive resolution VDOM uses whenever a directive isn't a local `<script setup>` import.
+One caveat: `app.directive()`'s TypeScript signature is still VDOM-shaped as of Vue
+`3.6.0-beta.17` (Vapor directives take a getter, `value: () => T`, not a `DirectiveBinding`
+object), so this line currently needs a `// @ts-expect-error` in `.ts`/`lang="ts"` files —
+an upstream Vue typings gap, not a `vael-ui` one. It works correctly at runtime regardless.
+
 Bind a string for plain content, or an options object (`side`, `align`, `openDelay`,
 `closeDelay`). Modifiers (`.top`/`.bottom`/`.left`/`.right`) set the side shorthand. Bind
 `null`/`undefined` to remove the tooltip conditionally.

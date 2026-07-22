@@ -13,6 +13,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,11 +44,6 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
 
       - run: pnpm test
-      # pnpm release (below, only on the actual publish path) does its own
-      # fresh build immediately before publishing — deliberate, not
-      # redundant with this one, since it runs after changesets/action may
-      # have bumped package.json. typecheck/test:vapor/test:vapor-interop
-      # use the `:only` variants so THEY don't also rebuild.
       - run: pnpm build
       - run: pnpm typecheck:only
       - run: pnpm test:vapor:only
