@@ -55,6 +55,82 @@ import { Button, ConfigProvider } from 'vael-ui'
 </template>
 ```
 
+Dark mode is CSS-only — the library responds to `<html data-theme="dark">` and, absent that,
+`prefers-color-scheme`. It ships no toggle UI of its own; `useColorScheme()` is the composable
+that gets the state part right (persistence, applying the attribute, live OS-preference
+updates) so you don't hand-roll it:
+
+```vue
+<script setup lang="ts">
+import { useColorScheme } from 'vael-ui'
+
+const { mode, setMode } = useColorScheme({
+  persist: {
+    get: () => localStorage.getItem('theme'),
+    set: (m) => localStorage.setItem('theme', m ?? ''),
+  },
+})
+</script>
+
+<template>
+  <Button @click="setMode(mode === 'dark' ? 'light' : 'dark')">{{ mode }}</Button>
+</template>
+```
+
+`persist` is optional and structurally typed like `ConfigProvider`'s `i18n` prop — swap in
+cookies, a store, whatever your app already uses.
+
+## Directives
+
+`v-tooltip` and `v-scroll-mask` aren't global by default — Vue only auto-resolves a directive
+from a plain import (no `app.directive(...)` call) when it's imported as `vTooltip`/
+`vScrollMask` _inside the same `<script setup>` block_ that uses it. If you're using either
+in more than one component, register them globally once instead:
+
+```ts
+// main.ts
+import { createApp } from 'vue'
+import { vTooltip, vScrollMask } from 'vael-ui'
+
+const app = createApp(App)
+app.directive('tooltip', vTooltip)
+app.directive('scroll-mask', vScrollMask)
+app.mount('#app')
+```
+
+Skipping this is what causes a `Failed to resolve directive` warning.
+
+**`v-tooltip`** also needs a single `<TooltipHost />` mounted once, anywhere in your app (it's
+a shared singleton — every `v-tooltip` target renders through it):
+
+```vue
+<script setup lang="ts">
+import { Button, TooltipHost } from 'vael-ui'
+</script>
+
+<template>
+  <TooltipHost />
+  <Button v-tooltip="'Delete'" icon aria-label="Delete">🗑</Button>
+  <Button v-tooltip.bottom="{ content: 'Settings', openDelay: 200 }" icon aria-label="Settings"
+    >⚙</Button
+  >
+</template>
+```
+
+Bind a string for plain content, or an options object (`side`, `align`, `openDelay`,
+`closeDelay`). Modifiers (`.top`/`.bottom`/`.left`/`.right`) set the side shorthand. Bind
+`null`/`undefined` to remove the tooltip conditionally.
+
+**`v-scroll-mask`** fades an element's top/bottom edge as it scrolls, no other setup required:
+
+```vue
+<div v-scroll-mask class="my-scrollable-list">…</div>
+```
+
+On by default; `v-scroll-mask="false"` disables it. Both directives have Vapor equivalents
+(`vTooltipVapor`, `vScrollMaskVapor`) that `vael-ui/vapor` components use automatically — you
+only reach for the named export yourself if you're writing your own Vapor SFCs.
+
 ## Structure
 
 ```

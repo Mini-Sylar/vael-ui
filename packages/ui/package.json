@@ -39,7 +39,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && node -e \"require('fs').copyFileSync('../../README.md', './README.md')\"",
     "dev": "tsdown --watch",
     "test": "vitest run",
     "check:dts": "vue-tsc --noEmit -p dts-check/tsconfig.json",

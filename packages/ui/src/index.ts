@@ -176,6 +176,12 @@ export { useFloatingPosition } from './composables/useFloatingPosition'
 export type { Align, UseFloatingPositionOptions } from './composables/useFloatingPosition'
 export { useAsyncLoading } from './composables/useAsyncLoading'
 export type { UseAsyncLoadingReturn } from './composables/useAsyncLoading'
+export { useColorScheme } from './composables/useColorScheme'
+export type {
+  ColorSchemeMode,
+  UseColorSchemeOptions,
+  UseColorSchemeReturn,
+} from './composables/useColorScheme'
 export { toast, useToastQueue } from './composables/useToast'
 export type { ToastEntry, ToastFn, ToastOptions, ToastVariant } from './composables/useToast'
 export { useLayer } from './composables/useLayerStack'
