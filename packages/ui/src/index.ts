@@ -111,8 +111,20 @@ export type {
   DialogOpenChangeDetails,
   UseDialogOptions,
 } from './composables/useDialog'
-export { dialogRefKey, openDialog, useDialogRef } from './composables/useDialogService'
-export type { DialogRef, OpenDialogHandle, OpenDialogOptions } from './composables/useDialogService'
+export {
+  dialogRefKey,
+  openDialog,
+  useDialogQueue,
+  useDialogRef,
+} from './composables/useDialogService'
+export type {
+  DialogRef,
+  DynamicDialogEntry,
+  OpenDialogHandle,
+  OpenDialogOptions,
+} from './composables/useDialogService'
+export { useNumberFormat } from './composables/useNumberFormat'
+export type { UseNumberFormatOptions, UseNumberFormatReturn } from './composables/useNumberFormat'
 export { useTabs } from './composables/useTabs'
 export { useFieldControl } from './composables/useFieldControl'
 export type { UseFieldControlOptions, UseFieldControlReturn } from './composables/useFieldControl'

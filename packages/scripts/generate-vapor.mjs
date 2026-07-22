@@ -12,48 +12,75 @@ const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 
 // Add component name to include in vapor build (dependencies auto-added)
 const COMPONENTS = [
-  'Button',
-  'DataTable',
-  'Column',
   'Accordion',
+  'AccordionItem',
   'Avatar',
   'Badge',
+  'BottomSheet',
+  'Button',
   'Calendar',
   'Card',
+  'CascadeSelect',
   'Checkbox',
   'Chip',
   'Collapsible',
+  'Column',
+  'Combobox',
   'ConfigProvider',
+  'ContextMenu',
+  'DataTable',
+  'DatePicker',
   'Dial',
   'Dialog',
+  'DialogHost',
   'Dock',
   'Field',
+  'FileUpload',
   'Input',
+  'InputNumber',
   'Kbd',
   'Knob',
   'Loader',
   'Menu',
+  'MenuList',
+  'Message',
   'OtpInput',
+  'Pagination',
   'Popover',
   'Progress',
   'PullToRefresh',
+  'Radio',
   'RadioGroup',
   'Resizable',
+  'Select',
   'SelectButton',
   'Separator',
   'Skeleton',
   'Slider',
+  'SplitButton',
   'SwipeToReveal',
   'Switch',
   'Tabs',
   'Tag',
   'Textarea',
+  'Toaster',
+  'Toolbar',
   'Tooltip',
   'TooltipHost',
+  'Tree',
+  'TreeSelect',
 ]
 
-// Prefixes the script can rewrite to vael-ui (fails loudly if unsupported)
-const REWRITABLE_PREFIXES = ['../composables/', '../classes', '../theme', '../messages', '../directives/']
+// Base names the script can rewrite to vael-ui, regardless of how many
+// '../' precede them — internal/*.vue components sit one directory deeper
+// than top-level components, so their imports are '../../composables/...'
+// rather than '../composables/...'.
+const REWRITABLE_BASENAMES = ['composables/', 'classes', 'theme', 'messages', 'directives/']
+
+function isRewritable(specifier) {
+  const stripped = specifier.replace(/^(\.\.\/)+/, '')
+  return REWRITABLE_BASENAMES.some((base) => stripped.startsWith(base))
+}
 
 function collectPublicExports(indexSource) {
   const names = new Set()
@@ -119,8 +146,7 @@ const VAPOR_DIRECTIVE_ALIASES = {
 function rewriteImports(source, moduleId, publicExports) {
   const importLineRe = /^import\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'\s*$/gm
   return source.replace(importLineRe, (full, typeOnly, namedClause, specifier) => {
-    const rewritable = REWRITABLE_PREFIXES.some((prefix) => specifier.startsWith(prefix))
-    if (!rewritable) return full // 'vue', third-party, and sibling ./ imports: untouched
+    if (!isRewritable(specifier)) return full // 'vue', third-party, and sibling ./ imports: untouched
 
     const names = namedClause.split(',').map((n) => n.trim()).filter(Boolean)
     const localNames = names.map((n) => {

@@ -154,7 +154,6 @@ export function openDialog<
   }
 }
 
-/** Internal — `<DialogHost />` is the only intended consumer. */
 export function useDialogQueue() {
   return queue
 }
