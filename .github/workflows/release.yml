@@ -26,12 +26,31 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - run: pnpm install
+
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(node -e "console.log(require('./packages/ui/node_modules/playwright/package.json').version)")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - run: pnpm --filter vael-ui exec playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - run: pnpm --filter vael-ui exec playwright install-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+
       - run: pnpm test
+      # pnpm release (below, only on the actual publish path) does its own
+      # fresh build immediately before publishing — deliberate, not
+      # redundant with this one, since it runs after changesets/action may
+      # have bumped package.json. typecheck/test:vapor/test:vapor-interop
+      # use the `:only` variants so THEY don't also rebuild.
       - run: pnpm build
-      - run: pnpm typecheck
-      - run: pnpm test:vapor
-      - run: pnpm test:vapor-interop
+      - run: pnpm typecheck:only
+      - run: pnpm test:vapor:only
+      - run: pnpm test:vapor-interop:only
 
       - uses: changesets/action@v1
         with:
