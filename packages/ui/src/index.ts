@@ -202,6 +202,15 @@ export { vTooltip, vTooltipVapor, tooltipTargets, TOOLTIP_ATTR } from './directi
 export type { TooltipDirectiveOptions, TooltipDirectiveValue } from './directives/vTooltip'
 export { focusIsFromKeyboard } from './composables/useFocusVisible'
 
+// Lets Volar/vue-tsc resolve `v-tooltip`/`v-scroll-mask` in templates when
+// registered globally
+declare module 'vue' {
+  interface GlobalDirectives {
+    vTooltip: typeof import('./directives/vTooltip').vTooltip
+    vScrollMask: typeof import('./directives/vScrollMask').vScrollMask
+  }
+}
+
 export { default as PullToRefresh } from './components/PullToRefresh.vue'
 export type { PullToRefreshProps } from './components/PullToRefresh.vue'
 export { usePullToRefresh } from './composables/usePullToRefresh'
