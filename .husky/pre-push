@@ -1,0 +1,9 @@
+branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+if [ "$branch" = "main" ] && git rev-parse --verify origin/main >/dev/null 2>&1; then
+  pnpm exec changeset status --since=origin/main || {
+    echo ""
+    echo "Push blocked: packages/ui changed since origin/main with no changeset describing it."
+    echo "Run 'pnpm changeset' to add one, or 'pnpm exec changeset add --empty' if this push doesn't need a release."
+    exit 1
+  }
+fi
