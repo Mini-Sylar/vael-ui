@@ -7,7 +7,6 @@ test('v-tooltip resolves via app.directive() global registration with no local i
   const host = document.createElement('div')
   document.body.appendChild(host)
   const app = createVaporApp(GlobalDirectiveFixture)
-  // @ts-expect-error — app.directive()'s type is still VDOM-shaped; vTooltip's real Vapor signature doesn't match it, but works fine at runtime
   app.directive('tooltip', vTooltip)
   app.mount(host)
   try {

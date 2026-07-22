@@ -1,11 +1,16 @@
 import { createVaporApp } from 'vue'
+import { vTooltip, vScrollMask } from 'vael-ui/vapor'
 import 'vael-ui/style.css'
 import './style.css'
 import App from './App.vue'
 import DirectivesRoot from './DirectivesRoot.vue'
 import DataTableRoot from './DataTableRoot.vue'
 
-createVaporApp(App).mount('#app')
+const app = createVaporApp(App)
+
+app.directive('tooltip', vTooltip)
+app.directive('scroll-mask', vScrollMask)
+app.mount('#app')
 
 const directivesHost = document.createElement('div')
 directivesHost.id = 'directives-test'

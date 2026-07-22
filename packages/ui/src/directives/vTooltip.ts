@@ -1,5 +1,5 @@
 import { watchEffect } from 'vue'
-import type { Directive } from 'vue'
+import type { Directive, DirectiveBinding } from 'vue'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../composables/useFloatingPosition'
 
@@ -79,6 +79,9 @@ function teardown(el: HTMLElement) {
   resolvedTargets.delete(el)
 }
 
+// v-tooltip="'text'" for plain content, or v-tooltip="{ content, side, ... }"
+// for options. Modifiers .top/.bottom/.left/.right set the side shorthand:
+// v-tooltip.bottom="'text'".
 export const vTooltip: Directive<HTMLElement, TooltipDirectiveValue> = {
   mounted(el, binding) {
     if (binding.value == null) return
@@ -101,26 +104,24 @@ export const vTooltip: Directive<HTMLElement, TooltipDirectiveValue> = {
   },
 }
 
-/**
- * Vapor-compiled equivalent of `vTooltip` — Vue's `withVaporDirectives`
- * calls directives as plain functions `(element, value, argument,
- * modifiers) => cleanup`, not the `{ mounted, updated, unmounted }` object
- * VDOM directives use; an object crashes it outright ("dir is not a
- * function"). `value` arrives as a GETTER (re-read reactively), called
- * exactly ONCE at setup — reacting to it needs an explicit watchEffect
- * inside here rather than a separate `updated` hook. Same shared
- * `tooltipTargets`/`TOOLTIP_ATTR` state and `apply`/`teardown` as the VDOM
- * version, so a `<TooltipHost>` doesn't care which runtime registered a
- * given target.
- */
 export function vTooltipVapor(
   el: HTMLElement,
-  value: () => TooltipDirectiveValue,
-  _argument: unknown,
+  binding: DirectiveBinding<TooltipDirectiveValue>,
+): void
+export function vTooltipVapor(
+  el: HTMLElement,
+  value?: () => TooltipDirectiveValue,
+  argument?: unknown,
+  modifiers?: Partial<Record<string, boolean>>,
+): () => void
+export function vTooltipVapor(
+  el: HTMLElement,
+  value?: (() => TooltipDirectiveValue) | DirectiveBinding<TooltipDirectiveValue>,
+  _argument?: unknown,
   modifiers: Partial<Record<string, boolean>> = {},
-): () => void {
+): (() => void) | void {
   watchEffect(() => {
-    const current = value()
+    const current = typeof value === 'function' ? value() : undefined
     if (current == null) {
       if (resolvedTargets.has(el)) teardown(el)
       return

@@ -134,10 +134,6 @@ app.directive('scroll-mask', vScrollMask)
 
 Global registration genuinely works here — Vapor's compiler falls back to the same runtime
 directive resolution VDOM uses whenever a directive isn't a local `<script setup>` import.
-One caveat: `app.directive()`'s TypeScript signature is still VDOM-shaped as of Vue
-`3.6.0-beta.17` (Vapor directives take a getter, `value: () => T`, not a `DirectiveBinding`
-object), so this line currently needs a `// @ts-expect-error` in `.ts`/`lang="ts"` files —
-an upstream Vue typings gap, not a `vael-ui` one. It works correctly at runtime regardless.
 
 Bind a string for plain content, or an options object (`side`, `align`, `openDelay`,
 `closeDelay`). Modifiers (`.top`/`.bottom`/`.left`/`.right`) set the side shorthand. Bind

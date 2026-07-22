@@ -1,5 +1,5 @@
 import { watchEffect } from 'vue'
-import type { Directive } from 'vue'
+import type { Directive, DirectiveBinding } from 'vue'
 
 interface ScrollMaskState {
   observer: ResizeObserver
@@ -25,19 +25,8 @@ function stop(el: HTMLElement) {
   el.classList.remove('scroll-fade')
 }
 
-/**
- * Masks an element's top/bottom edge as its content scrolls, signaling
- * there's more — originally built into Dialog's `scrollFade` prop, extracted
- * so any scrollable element can opt in directly: `<div v-scroll-mask>`.
- * Bind a boolean to toggle it (`v-scroll-mask="false"` disables) — on by
- * default.
- *
- * The fade itself is pure CSS (`.scroll-fade` in style.css, driven by
- * `animation-timeline: scroll(self)`) — this directive's only job is
- * toggling that class based on whether the element actually overflows,
- * since the CSS alone can't distinguish "not scrollable" from "at rest,
- * more below" (both read as 0% scroll progress).
- */
+// v-scroll-mask on any scrollable element, on by default. Bind false to
+// disable: v-scroll-mask="false".
 export const vScrollMask: Directive<HTMLElement, boolean | undefined> = {
   mounted(el, binding) {
     if (binding.value === false) return
@@ -52,17 +41,18 @@ export const vScrollMask: Directive<HTMLElement, boolean | undefined> = {
   },
 }
 
-/**
- * Vapor-compiled equivalent of `vScrollMask` — see vTooltipVapor's own
- * comment for why the object-shaped directive above crashes Vapor's
- * `withVaporDirectives` ("dir is not a function") and why `value` arrives
- * as a getter needing an explicit watchEffect instead of a separate
- * `updated` hook. `start`/`stop` are already idempotent (guarded by the
- * `state` WeakMap), so the effect body is a direct port of `updated` above.
- */
-export function vScrollMaskVapor(el: HTMLElement, value: () => boolean | undefined): () => void {
+export function vScrollMaskVapor(
+  el: HTMLElement,
+  binding: DirectiveBinding<boolean | undefined>,
+): void
+export function vScrollMaskVapor(el: HTMLElement, value?: () => boolean | undefined): () => void
+export function vScrollMaskVapor(
+  el: HTMLElement,
+  value?: (() => boolean | undefined) | DirectiveBinding<boolean | undefined>,
+): (() => void) | void {
   watchEffect(() => {
-    if (value() === false) stop(el)
+    const current = typeof value === 'function' ? value() : undefined
+    if (current === false) stop(el)
     else start(el)
   })
   return () => stop(el)
