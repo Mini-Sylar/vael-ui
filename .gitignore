@@ -2,6 +2,7 @@ node_modules
 dist
 *.log
 /packages/vapor-ui/src/generated/
+/docs/src/generated/
 /packages/ui/README.md
 .DS_Store
 /ARCHITECTURE.md

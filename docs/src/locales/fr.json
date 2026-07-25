@@ -1,0 +1,56 @@
+{
+  "nav": {
+    "gettingStarted": "Démarrage",
+    "guides": "Guides",
+    "tailwindGuide": "Utiliser avec Tailwind",
+    "globalSetup": "Configuration globale",
+    "components": "Composants",
+    "github": "GitHub",
+    "search": "Rechercher un composant…",
+    "home": "vael-ui"
+  },
+  "header": {
+    "colorScheme": "Changer le mode",
+    "theme": "Personnaliser le thème",
+    "primaryColor": "Couleur principale",
+    "radius": "Rayon des angles",
+    "radiusDefault": "Par défaut",
+    "radiusSharp": "Angles vifs",
+    "radiusSoft": "Doux",
+    "radiusRounded": "Arrondi",
+    "radiusPill": "Pilule",
+    "locale": "Langue",
+    "defaultMode": "Mode de démo par défaut"
+  },
+  "component": {
+    "vdom": "Vue DOM",
+    "vapor": "Vapor",
+    "vaporUnavailable": "Pas encore de démo Vapor pour ce composant",
+    "code": "Code",
+    "preview": "Aperçu",
+    "playground": "Bac à sable",
+    "examples": "Exemples",
+    "install": "Installation",
+    "copy": "Copier",
+    "copied": "Copié !",
+    "props": "Props",
+    "events": "Événements",
+    "slots": "Slots",
+    "exposed": "Exposé",
+    "noProps": "Aucune prop.",
+    "noEvents": "Aucun événement.",
+    "noSlots": "Aucun slot.",
+    "noExposed": "Rien d'exposé via une ref de template."
+  },
+  "home": {
+    "tagline": "Une librairie Vue 3 avec un vrai support de Vue Vapor."
+  },
+  "gettingStarted": {
+    "title": "Démarrage",
+    "vaporTitle": "Support de Vue Vapor",
+    "installTitle": "Installation",
+    "usageTitle": "Utilisation",
+    "darkModeTitle": "Mode sombre",
+    "directivesTitle": "Directives"
+  }
+}

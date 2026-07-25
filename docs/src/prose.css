@@ -1,0 +1,35 @@
+/* Shared by every long-form guide page (Getting Started, Using with
+   Tailwind, Global setup, ...) — extracted after the third near-identical
+   copy of this block. */
+.prose {
+  max-width: 42rem;
+}
+
+.prose h1 {
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+}
+
+.prose h2 {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose p {
+  margin-bottom: 0.75rem;
+  color: var(--ui-text-muted);
+}
+
+.prose code {
+  background: var(--ui-muted);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.prose .code-block {
+  margin-bottom: 1.25rem;
+}

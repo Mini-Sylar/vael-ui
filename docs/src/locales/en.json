@@ -1,0 +1,56 @@
+{
+  "nav": {
+    "gettingStarted": "Getting Started",
+    "guides": "Guides",
+    "tailwindGuide": "Using with Tailwind",
+    "globalSetup": "Global Setup",
+    "components": "Components",
+    "github": "GitHub",
+    "search": "Search components…",
+    "home": "vael-ui"
+  },
+  "header": {
+    "colorScheme": "Toggle color scheme",
+    "theme": "Customize theme",
+    "primaryColor": "Primary color",
+    "radius": "Corner radius",
+    "radiusDefault": "Default",
+    "radiusSharp": "Sharp",
+    "radiusSoft": "Soft",
+    "radiusRounded": "Rounded",
+    "radiusPill": "Pill",
+    "locale": "Language",
+    "defaultMode": "Default demo mode"
+  },
+  "component": {
+    "vdom": "Vue DOM",
+    "vapor": "Vapor",
+    "vaporUnavailable": "No Vapor demo for this component yet",
+    "code": "Code",
+    "preview": "Preview",
+    "playground": "Playground",
+    "examples": "Examples",
+    "install": "Install",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "props": "Props",
+    "events": "Events",
+    "slots": "Slots",
+    "exposed": "Exposed",
+    "noProps": "No props.",
+    "noEvents": "No events.",
+    "noSlots": "No slots.",
+    "noExposed": "Nothing exposed via template ref."
+  },
+  "home": {
+    "tagline": "A Vue 3 UI library with a real Vue Vapor build."
+  },
+  "gettingStarted": {
+    "title": "Getting Started",
+    "vaporTitle": "Vue Vapor support",
+    "installTitle": "Install",
+    "usageTitle": "Usage",
+    "darkModeTitle": "Dark mode",
+    "directivesTitle": "Directives"
+  }
+}

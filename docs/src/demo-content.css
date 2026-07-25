@@ -1,0 +1,179 @@
+/*
+ * Styling for the classes the copied playground/vdom demos actually use
+ * (.demo, .row, .note, h3, ...) — ported from playground/vdom/src/style.css
+ * and re-pointed at vael-ui's own --ui-* tokens instead of that app's
+ * --page-* ones. Without this, demo markup renders with zero spacing or
+ * separation between sub-examples: bare browser-default headings, no gaps.
+ */
+
+/* The demo's own <h2> just repeats the component name — already the page's
+   <h1> — and .note carries maintainer-facing implementation commentary, not
+   consumer docs. Both are still visible in the raw source via "Code" below. */
+.demo h2,
+.demo .note {
+  display: none;
+}
+
+.demo h3 {
+  margin-block: 2rem 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ui-border);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ui-text-muted);
+}
+
+.demo h3:first-of-type {
+  margin-top: 0.5rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.demo .row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.demo .panel-text {
+  color: var(--ui-text-muted);
+  font-size: 0.9rem;
+}
+
+.demo .panel-viewport {
+  position: relative;
+  overflow: hidden;
+  min-block-size: 5.5rem;
+}
+
+.demo .panel-content {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+}
+
+.demo .panel-content h3 {
+  margin: 0 0 0.25rem;
+  padding-top: 0;
+  border-top: none;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ui-text);
+}
+
+.demo .scoped-theme-box {
+  padding: 1rem;
+  border: 1px dashed var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+}
+
+.demo .sharp-scoped-button {
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
+}
+
+.demo .swatch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--ui-text-muted);
+}
+
+.demo .swatch-label input[type='color'] {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.demo .preset-dot {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-radius: 50%;
+  border: 1px solid rgb(0 0 0 / 0.1);
+  cursor: pointer;
+  padding: 0;
+}
+
+.demo .loader-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.demo .loader-dot {
+  inline-size: 5px;
+  block-size: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.demo .tab {
+  position: relative;
+  border: 0;
+  background: none;
+  border-radius: 8px;
+  font: inherit;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  color: var(--ui-text-muted);
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.demo .tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.demo .tab[aria-selected='true'] {
+  color: var(--ui-text);
+}
+
+.demo .tab--static[aria-selected='true'] {
+  background: var(--ui-muted);
+}
+
+.demo .tab-indicator {
+  position: absolute;
+  inset: 0;
+  background: var(--ui-muted);
+  border-radius: 8px;
+}
+
+.demo .tab-label {
+  position: relative;
+}
+
+.demo .rich-tip {
+  display: grid;
+  gap: 0.25rem;
+  padding-block: 0.125rem;
+}
+
+.demo .rich-tip-kbd {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.demo .rich-tip kbd {
+  font: inherit;
+  font-size: 0.6875rem;
+  padding: 0.0625rem 0.3125rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ui-primary-contrast) 15%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo .tab {
+    transition: none;
+  }
+}

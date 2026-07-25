@@ -1,0 +1,113 @@
+/* Small hand-written reset — this app doesn't need a full normalize.css. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100dvh;
+  font-family:
+    'Geist Variable',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ui-text);
+  background: var(--ui-surface);
+  transition:
+    background-color var(--ui-duration-enter) var(--ui-ease-out),
+    color var(--ui-duration-enter) var(--ui-ease-out);
+}
+
+img,
+picture,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* No `color: inherit` here on purpose — it's an unlayered rule, and
+   unlayered CSS always beats vael-ui's `@layer ui-components` regardless
+   of specificity, which silently overrode every button's computed
+   contrast text color with the inherited body color (invisible text). */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+code,
+pre,
+kbd {
+  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--ui-primary) 25%, transparent);
+}
+
+:root {
+  --docs-header-height: 3.75rem;
+  --docs-sidebar-width: 15.5rem;
+  --docs-content-max-width: 46rem;
+  /* Fixed on purpose — NOT var(--ui-radius). That token is meant for actual
+     vael-ui components so the theme's "corner radius" picker can showcase
+     it; large structural boxes this app builds itself (demo frames, tables,
+     code blocks) would break at a Pill/999px radius (a tall box's corners
+     get clamped to half its shortest side, turning it into a stadium/oval). */
+  --docs-radius: 10px;
+}
+
+/* Shiki dual-theme output (defaultColor: false) — same data-theme /
+   prefers-color-scheme pairing vael-ui's own stylesheet uses. */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: transparent !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .shiki,
+  :root:not([data-theme='light']) .shiki span {
+    color: var(--shiki-dark);
+  }
+}
+
+:root[data-theme='dark'] .shiki,
+:root[data-theme='dark'] .shiki span {
+  color: var(--shiki-dark);
+}
