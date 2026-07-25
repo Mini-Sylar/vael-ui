@@ -1,3 +1,8 @@
 packages:
   - packages/*
   - playground/*
+minimumReleaseAgeExclude:
+  - '@vue/language-core@3.3.8'
+  - vue-tsc@3.3.8
+  - lint-staged@17.2.0
+  - vue-component-type-helpers@3.3.8
