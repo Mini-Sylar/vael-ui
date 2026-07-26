@@ -82,21 +82,23 @@
             </component>
           </template>
           <template v-else-if="isToolbar">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              class="toolbar-preview-overflow"
+            <div
+              class="toolbar-preview-resizable"
+              :class="{ 'toolbar-preview-resizable--vertical': values.orientation === 'vertical' }"
             >
-              <Button variant="ghost" size="sm">Bold</Button>
-              <Button variant="ghost" size="sm">Italic</Button>
-              <Button variant="ghost" size="sm">Underline</Button>
-              <Button variant="ghost" size="sm" data-toolbar-overflow>Strikethrough</Button>
-              <Button variant="ghost" size="sm" data-toolbar-overflow>Align left</Button>
-              <Button variant="ghost" size="sm" data-toolbar-overflow>Align center</Button>
-              <Button variant="ghost" size="sm" data-toolbar-overflow>Align right</Button>
-              <Button variant="ghost" size="sm" data-toolbar-overflow>Link</Button>
-            </component>
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                class="toolbar-preview-overflow"
+              >
+                <Button variant="ghost" size="sm">Bold</Button>
+                <Button variant="ghost" size="sm">Italic</Button>
+                <Button variant="ghost" size="sm" data-toolbar-overflow>Cut</Button>
+                <Button variant="ghost" size="sm" data-toolbar-overflow>Copy</Button>
+                <Button variant="ghost" size="sm" data-toolbar-overflow>Paste</Button>
+              </component>
+            </div>
           </template>
           <template v-else-if="isDock">
             <component
@@ -105,6 +107,41 @@
               v-bind="boundProps"
               :items="DOCK_PLACEHOLDER_ITEMS"
             />
+          </template>
+          <template v-else-if="isResizable">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              class="resizable-preview"
+            >
+              Drag the handle
+            </component>
+          </template>
+          <template v-else-if="isTabs">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              v-model:active="tabsActive"
+              :items="TABS_PLACEHOLDER_ITEMS"
+            >
+              <template #default="{ active: current, select, items: list }">
+                <button
+                  v-for="item in list"
+                  :key="item"
+                  type="button"
+                  role="tab"
+                  class="tabs-preview-tab"
+                  :aria-selected="current === item"
+                  :tabindex="current === item ? 0 : -1"
+                  :data-active="current === item ? '' : undefined"
+                  @click="select(item)"
+                >
+                  {{ item }}
+                </button>
+              </template>
+            </component>
           </template>
           <template v-else-if="isAccordion">
             <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
@@ -139,7 +176,7 @@
             <component
               v-else-if="hasTriggerSlot && hasItemsProp"
               :is="activeComponent"
-              :key="resetKey"
+              :key="`${resetKey}-trigger`"
               v-bind="boundProps"
               @update:model-value="onModelUpdate"
             >
@@ -150,7 +187,7 @@
             <component
               v-else
               :is="activeComponent"
-              :key="resetKey"
+              :key="`${resetKey}-default`"
               v-bind="boundProps"
               @update:model-value="onModelUpdate"
             >
@@ -290,6 +327,10 @@ const isDataTable = computed(() => props.name === 'DataTable')
 const isToolbar = computed(() => props.name === 'Toolbar')
 const isAccordion = computed(() => props.name === 'Accordion')
 const isDock = computed(() => props.name === 'Dock')
+const isTabs = computed(() => props.name === 'Tabs')
+const TABS_PLACEHOLDER_ITEMS = ['Overview', 'Activity', 'Settings']
+const tabsActive = shallowRef(TABS_PLACEHOLDER_ITEMS[0])
+const isResizable = computed(() => props.name === 'Resizable')
 const showIconPreview = computed(() => props.name === 'Button' && values.icon === true)
 
 function svgIcon(path: string) {
@@ -370,6 +411,9 @@ const COMPONENT_OVERRIDES: Record<
     string?: Record<string, string>
     number?: Record<string, number>
     select?: Record<string, string[]>
+    // Picks a specific starting option for a select control whose real prop default exists but
+    // demos poorly (Message's `variant: 'default'` has no icon, so `showIcon` looks like it does nothing).
+    selectDefault?: Record<string, string>
   }
 > = {
   Avatar: { string: { name: 'Ada Lovelace' } },
@@ -379,6 +423,7 @@ const COMPONENT_OVERRIDES: Record<
   Chip: { string: { label: 'Chip label' } },
   Checkbox: { string: { label: 'Checkbox label' } },
   Switch: { string: { label: 'Switch label' } },
+  Message: { selectDefault: { variant: 'info' } },
 }
 
 const controls = computed<NamedControl[]>(() => {
@@ -407,7 +452,9 @@ const controls = computed<NamedControl[]>(() => {
 
 const hasItemsProp = computed(() => Boolean(meta.value?.props.some((p) => p.name === 'items')))
 const hasTriggerSlot = computed(() => Boolean(meta.value?.slots.some((s) => s.name === 'trigger')))
-const isTreeShaped = computed(() => props.name === 'Tree' || props.name === 'TreeSelect')
+const isTreeShaped = computed(
+  () => props.name === 'Tree' || props.name === 'TreeSelect' || props.name === 'CascadeSelect',
+)
 
 const FLAT_PRESETS: Record<
   string,
@@ -503,7 +550,9 @@ watchEffect(() => {
 
   for (const control of controls.value) {
     const propMeta = meta.value?.props.find((p) => p.name === control.name)
-    if (control.kind === 'string' && overrides?.string?.[control.name] !== undefined) {
+    if (control.kind === 'select' && overrides?.selectDefault?.[control.name] !== undefined) {
+      values[control.name] = overrides.selectDefault[control.name]
+    } else if (control.kind === 'string' && overrides?.string?.[control.name] !== undefined) {
       values[control.name] = overrides.string[control.name]
     } else if (control.kind === 'number' && overrides?.number?.[control.name] !== undefined) {
       values[control.name] = overrides.number[control.name]
@@ -609,8 +658,57 @@ const code = computed(() => {
   font-size: 0.9rem;
 }
 
+.toolbar-preview-resizable {
+  overflow: auto;
+  resize: horizontal;
+  min-inline-size: 160px;
+  max-inline-size: 100%;
+  inline-size: 600px;
+  padding: 0.5rem;
+  border: 1px dashed var(--ui-border-strong);
+}
+
+.toolbar-preview-resizable--vertical {
+  resize: vertical;
+  inline-size: auto;
+  min-block-size: 120px;
+  max-block-size: 100%;
+  block-size: 320px;
+}
+
 .toolbar-preview-overflow {
-  max-inline-size: 16rem;
+  inline-size: 100%;
+}
+
+.toolbar-preview-resizable--vertical .toolbar-preview-overflow {
+  inline-size: auto;
+  block-size: 100%;
+}
+
+.resizable-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--ui-muted);
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
+}
+
+.tabs-preview-tab {
+  padding: 0.375rem 0.75rem;
+  border: none;
+  background: none;
+  border-radius: var(--ui-radius);
+  font-size: 0.875rem;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+}
+
+.tabs-preview-tab[data-active] {
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
 
 .context-area-target {
