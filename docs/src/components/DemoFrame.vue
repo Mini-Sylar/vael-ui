@@ -1,6 +1,6 @@
 <template>
   <section class="demo-frame">
-    <div class="demo-toolbar">
+    <div v-if="items.length > 1" class="demo-toolbar">
       <SelectButton v-model="variant" size="sm" :items="items" :allow-empty="false" />
     </div>
     <div class="demo-preview">
@@ -8,9 +8,7 @@
         <p v-if="!hasActiveDemo" key="empty" class="no-demo">
           No live demo for this component yet.
         </p>
-        <Suspense v-else-if="activeComponent" :key="`${name}-${variant}`">
-          <component :is="activeComponent" />
-        </Suspense>
+        <component v-else-if="activeComponent" :is="activeComponent" :key="`${name}-${variant}`" />
       </Transition>
     </div>
     <details class="demo-code">
@@ -37,10 +35,12 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
-const items = computed(() => [
-  { label: t('component.vdom'), value: 'vdom', disabled: !props.vdomComponent },
-  { label: t('component.vapor'), value: 'vapor', disabled: !props.vaporComponent },
-])
+const items = computed(() => {
+  const list = []
+  if (props.vdomComponent) list.push({ label: t('component.vdom'), value: 'vdom' })
+  if (props.vaporComponent) list.push({ label: t('component.vapor'), value: 'vapor' })
+  return list
+})
 
 // Follows the header's global VDOM/Vapor preference, falling back to VDOM
 // when a page has no demo for the preferred variant (e.g. no Vapor twin).
