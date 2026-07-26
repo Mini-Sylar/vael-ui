@@ -74,8 +74,8 @@
     <h3>Full external control, <code>motionCss="false"</code> + motion-v spring height</h3>
     <p class="note">
       Same escape hatch as Accordion's: skip the built-in transition and drive the panel's height
-      with a motion-v spring instead. <code>useCollapse</code> writes no inline style at all once
-      <code>motionCss</code> is <code>false</code>, so nothing fights the spring.
+      with GSAP instead. <code>useCollapse</code> writes no inline style at all once
+      <code>motionCss</code> is <code>false</code>, so nothing fights the tween.
     </p>
     <Collapsible v-model:open="springOpen" :motion-css="false" class="collapsible-demo">
       <template #trigger="{ open }">
@@ -88,23 +88,19 @@
           </template>
         </Button>
       </template>
-      <motion.div
-        :animate="{ height: springOpen ? springContentHeight : 0 }"
-        :transition="{ type: 'spring', stiffness: 210, damping: 24 }"
-        style="overflow: hidden"
-      >
+      <div ref="springHeightRef" class="spring-height-wrap" style="overflow: hidden">
         <p ref="springContentRef" class="spring-panel-text">
           v0.4.2 adds keyboard support to Dock and fixes a rubber-band overshoot in Resizable. This
-          panel's height is entirely motion-v's, not the library's CSS transition.
+          panel's height is entirely GSAP's, not the library's CSS transition.
         </p>
-      </motion.div>
+      </div>
     </Collapsible>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef } from 'vue'
-import { motion } from 'motion-v'
+import { shallowRef, useTemplateRef, watch } from 'vue'
+import gsap from 'gsap'
 import { Button, Collapsible } from 'vael-ui'
 import { PhCaretRight } from '@phosphor-icons/vue'
 
@@ -112,7 +108,14 @@ const reportsOpen = shallowRef(true)
 const settingsOpen = shallowRef(false)
 const springOpen = shallowRef(false)
 const springContentRef = useTemplateRef<HTMLElement>('springContentRef')
-const springContentHeight = computed(() => springContentRef.value?.scrollHeight ?? 0)
+const springHeightRef = useTemplateRef<HTMLElement>('springHeightRef')
+
+watch(springOpen, (open) => {
+  const wrap = springHeightRef.value
+  const content = springContentRef.value
+  if (!wrap || !content) return
+  gsap.to(wrap, { height: open ? content.scrollHeight : 0, duration: 0.4, ease: 'power3.out' })
+})
 </script>
 
 <style scoped>
@@ -158,5 +161,8 @@ const springContentHeight = computed(() => springContentRef.value?.scrollHeight 
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--ui-text-muted);
+}
+.spring-height-wrap {
+  height: 0;
 }
 </style>

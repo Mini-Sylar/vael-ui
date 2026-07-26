@@ -47,33 +47,28 @@
       </AccordionItem>
     </Accordion>
 
-    <h3>Full external control, <code>motionCss="false"</code> + motion-v spring height</h3>
+    <h3>Full external control, <code>motionCss="false"</code> + GSAP height tween</h3>
     <p class="note">
-      The built-in transition is skipped entirely, a motion-v <code>&lt;motion.div&gt;</code> wraps
-      the exposed <code>panelEl</code>'s content and springs its own height instead, proving the
-      escape hatch, not just the default.
+      The built-in transition is skipped entirely, GSAP tweens the panel's own height instead,
+      proving the escape hatch, not just the default.
     </p>
     <Accordion v-model:value="springValue" :motion-css="false" class="accordion-demo">
-      <AccordionItem value="spring" title="Spring-driven height">
-        <motion.div
-          :animate="{ height: springOpen ? springContentHeight : 0 }"
-          :transition="{ type: 'spring', stiffness: 210, damping: 24 }"
-          style="overflow: hidden"
-        >
+      <AccordionItem value="spring" title="GSAP-driven height">
+        <div ref="springHeightRef" class="spring-height-wrap">
           <p ref="springContentRef" class="spring-panel-text">
-            This panel's height is a motion-v spring, not the library's CSS transition. The
-            Accordion only tracks which item is open, <code>motionCss="false"</code> means it
-            renders no inline block-size style of its own at all.
+            This panel's height is a GSAP tween, not the library's CSS transition. The Accordion
+            only tracks which item is open, <code>motionCss="false"</code> means it renders no
+            inline block-size style of its own at all.
           </p>
-        </motion.div>
+        </div>
       </AccordionItem>
     </Accordion>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef } from 'vue'
-import { motion } from 'motion-v'
+import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import gsap from 'gsap'
 import { Accordion, AccordionItem } from 'vael-ui'
 
 const singleValue = shallowRef<string | null>('shipping')
@@ -83,7 +78,14 @@ const customValue = shallowRef<string | null>(null)
 const springValue = shallowRef<string | null>(null)
 const springOpen = computed(() => springValue.value === 'spring')
 const springContentRef = useTemplateRef<HTMLElement>('springContentRef')
-const springContentHeight = computed(() => springContentRef.value?.scrollHeight ?? 0)
+const springHeightRef = useTemplateRef<HTMLElement>('springHeightRef')
+
+watch(springOpen, (open) => {
+  const wrap = springHeightRef.value
+  const content = springContentRef.value
+  if (!wrap || !content) return
+  gsap.to(wrap, { height: open ? content.scrollHeight : 0, duration: 0.4, ease: 'power3.out' })
+})
 </script>
 
 <style scoped>
@@ -99,5 +101,9 @@ const springContentHeight = computed(() => springContentRef.value?.scrollHeight 
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--ui-text-muted);
+}
+.spring-height-wrap {
+  height: 0;
+  overflow: hidden;
 }
 </style>

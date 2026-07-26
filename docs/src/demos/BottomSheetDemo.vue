@@ -27,9 +27,7 @@
           <span class="sheet-plan-price">{{ plan.price }}</span>
         </Button>
       </div>
-      <p v-if="chosenPlan" class="sheet-lede">
-        Selected: {{ plans.find((p) => p.id === chosenPlan)?.name }}
-      </p>
+      <p v-if="chosenPlanName" class="sheet-lede">Selected: {{ chosenPlanName }}</p>
       <p class="sheet-lede">Drag this row of extra text down to try the dismiss gesture:</p>
       <p v-for="i in 12" :key="i" class="sheet-filler">
         Scrollable filler line {{ i }}. Scroll to the top, then drag down to dismiss instead of
@@ -104,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { Button, BottomSheet } from 'vael-ui'
 
 const basicOpen = shallowRef(false)
@@ -120,6 +118,7 @@ const plans = [
   { id: 'business', name: 'Business', price: '$29.99/mo' },
 ]
 const chosenPlan = shallowRef<string | null>(null)
+const chosenPlanName = computed(() => plans.find((p) => p.id === chosenPlan.value)?.name)
 </script>
 
 <style scoped>

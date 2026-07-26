@@ -13,7 +13,7 @@
     "@floating-ui/dom": "^1.8.0",
     "@vueuse/core": "^14.3.0",
     "vael-ui": "workspace:*",
-    "vue": "3.6.0-rc.1"
+    "vue": "3.6.0-rc.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.8",

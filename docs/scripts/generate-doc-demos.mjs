@@ -54,22 +54,6 @@ const DEMO_OVERRIDES = {
 // Integrations not yet proven under Vapor — skip the twin, keep the VDOM demo.
 const VAPOR_INELIGIBLE_IMPORTS = ['vue-router', 'vee-validate']
 
-// Confirmed live crashes under Vapor specifically, not caught by the checks
-// above since the components themselves do export from vael-ui/vapor:
-// - DataTableDemo: a Column #cell scoped slot reading `row` throws (`row`
-//   arrives undefined), 0 rows render.
-// - CalendarDemo: range mode throws reading `.start` on mount with a null
-//   model, even though Calendar.vue's own rangeBounds()/isDayInRange() are
-//   already null-guarded correctly (works fine under VDOM) — points at a
-//   Vue 3.6-rc Vapor compiler issue, not a source bug here to fix.
-// - AccordionDemo/CollapsibleDemo: motion-v's <motion.div> throws
-//   "Failed to set an indexed property [0] on 'CSSStyleDeclaration'" when
-//   nested inside a Vapor-compiled AccordionItem/Collapsible, regardless of
-//   which value it animates (tried switching away from height:'auto', same
-//   crash) — a motion-v + Vapor interop gap, not fixable from here.
-// Revisit once fixed upstream.
-const VAPOR_BROKEN_DEMOS = ['DataTableDemo', 'CalendarDemo', 'AccordionDemo', 'CollapsibleDemo']
-
 function demoNameFor(component) {
   const override = DEMO_OVERRIDES[component]
   if (override) return override
@@ -157,10 +141,7 @@ function main() {
     const allIds = [demoName, ...partials]
     const allSources = allIds.map((id) => readFileSync(join(DEMOS_DIR, `${id}.vue`), 'utf8'))
     const missingComponents = findMissingVaporComponents(allSources, vaporComponentNames)
-    const eligible =
-      !usesIneligibleIntegration(allSources) &&
-      missingComponents.size === 0 &&
-      !VAPOR_BROKEN_DEMOS.includes(demoName)
+    const eligible = !usesIneligibleIntegration(allSources) && missingComponents.size === 0
     for (const m of missingComponents) vaporGaps.add(m)
 
     for (const id of allIds) {

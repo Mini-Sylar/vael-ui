@@ -51,16 +51,13 @@
     </p>
     <div class="row">
       <Calendar v-model="rangeValue" selection-mode="range" />
-      <output class="panel-text">
-        {{ rangeValue?.start ? rangeValue.start.toDateString() : 'Nothing' }} to
-        {{ rangeValue?.end ? rangeValue.end.toDateString() : '...' }}
-      </output>
+      <output class="panel-text"> {{ rangeStartLabel }} to {{ rangeEndLabel }} </output>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { Calendar } from 'vael-ui'
 import type { CalendarRange } from 'vael-ui'
 
@@ -68,6 +65,12 @@ const basicValue = shallowRef<Date | null>(null)
 const boundedValue = shallowRef<Date | null>(null)
 const localeValue = shallowRef<Date | null>(null)
 const rangeValue = shallowRef<CalendarRange | null>(null)
+const rangeStartLabel = computed(() =>
+  rangeValue.value?.start ? rangeValue.value.start.toDateString() : 'Nothing',
+)
+const rangeEndLabel = computed(() =>
+  rangeValue.value?.end ? rangeValue.value.end.toDateString() : '...',
+)
 
 const today = new Date()
 const minDate = new Date(today.getFullYear(), today.getMonth(), 1)

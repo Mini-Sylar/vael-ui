@@ -18,7 +18,7 @@
         <MenuList :items="navItems" :active="activePage" @select="onSelect" />
       </aside>
       <div class="menu-list-demo-main">
-        <Card :title="currentItem?.label ?? 'Unknown'">
+        <Card :title="currentItemLabel">
           <p class="panel-text">
             Try it with a keyboard: Tab into the list, then ↑/↓ (wraps at both ends, skips
             "Settings" since it's disabled and skips the "Team" group label since it's
@@ -64,6 +64,7 @@ const lastSelected = shallowRef('')
 const currentItem = computed(() =>
   navItems.filter(isNavItem).find((entry) => entry.value === activePage.value),
 )
+const currentItemLabel = computed(() => currentItem.value?.label ?? 'Unknown')
 
 function onSelect(item: MenuItemData) {
   lastSelected.value = item.label

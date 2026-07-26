@@ -62,7 +62,7 @@
     "vite": "^8.1.5",
     "vitest": "^4.1.10",
     "vitest-browser-vue": "^2.1.0",
-    "vue": "3.6.0-rc.1",
+    "vue": "3.6.0-rc.2",
     "vue-tsc": "^3.3.8"
   },
   "peerDependencies": {
