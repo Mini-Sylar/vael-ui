@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["vapor-ui", "vdom", "vapor-interop", "vapor"]
+  "ignore": ["vapor-ui", "vdom", "vapor-interop", "vapor", "docs"]
 }
