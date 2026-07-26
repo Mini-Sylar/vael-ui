@@ -111,9 +111,8 @@ const code = computed(() => (variant.value === 'vapor' ? props.vaporCode : props
   padding: 2.5rem 2.75rem;
   min-height: 6rem;
   /* The docs chrome's Geist Variable is a docs-branding choice, not part of
-     the library. Components here should show their real, unstyled default
-     (which inherits system-ui unless a consumer app overrides it), the same
-     as they render in playground/vdom. */
+     the library. Components here should show their real, unstyled default,
+     which inherits system-ui unless a consumer app overrides it. */
   font-family:
     system-ui,
     -apple-system,

@@ -1,11 +1,10 @@
 #!/usr/bin/env node
-// Copies playground/vdom/src/demos/*.vue (the library's existing, working
-// example set) into docs/src/generated/vdom-demos, and produces a Vapor
-// twin of each eligible one in docs/src/generated/vapor-demos — same two
-// transforms packages/scripts/generate-vapor.mjs already proves out:
-// inject a bare `vapor` attribute on <script setup>, and repoint imports
-// from 'vael-ui' to 'vael-ui/vapor'. Nothing here is hand-authored prose;
-// it's the same demos playground/vdom already exercises.
+// Copies docs/src/demos/*.vue (hand-authored documentation examples) into
+// docs/src/generated/vdom-demos, and produces a Vapor twin of each eligible
+// one in docs/src/generated/vapor-demos — same two transforms
+// packages/scripts/generate-vapor.mjs already proves out: inject a bare
+// `vapor` attribute on <script setup>, and repoint imports from 'vael-ui'
+// to 'vael-ui/vapor'.
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -13,7 +12,7 @@ import { dirname, join } from 'node:path'
 import { allComponents } from '../src/taxonomy.ts'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DEMOS_DIR = join(__dirname, '../../playground/vdom/src/demos')
+const DEMOS_DIR = join(__dirname, '../src/demos')
 const VAPOR_DTS_PATH = join(__dirname, '../../packages/ui/dist/vapor/index.d.ts')
 const OUT_VDOM_DIR = join(__dirname, '../src/generated/vdom-demos')
 const OUT_VAPOR_DIR = join(__dirname, '../src/generated/vapor-demos')
@@ -40,11 +39,12 @@ function readVaporComponentNames() {
 // (e.g. Pagination/Tag only ever appear inside DataTableDemo). Column and
 // AccordionItem aren't listed here at all now — they're documented on their
 // parent's page (see taxonomy.ts), not routed as their own component page.
+// Checkbox and Switch used to share ToggleDemo — split into their own files
+// since a Checkbox page showing Switch examples read as a mistake, not a
+// deliberate pairing.
 const DEMO_OVERRIDES = {
   Pagination: 'DataTableDemo',
   Tag: 'DataTableDemo',
-  Checkbox: 'ToggleDemo',
-  Switch: 'ToggleDemo',
   Avatar: 'AvatarBadgeDemo',
   Badge: 'AvatarBadgeDemo',
   Radio: 'RadioGroupDemo',

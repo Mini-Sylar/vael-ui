@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts" vapor>
-// Mirrors playground/vdom/src/ThemeToggle.vue — vael-ui only promises to respond to <html data-theme>.
+// vael-ui only promises to respond to <html data-theme>; this toggle just sets that attribute.
 import { onMounted, shallowRef } from 'vue'
 import { Button } from 'vael-ui/vapor'
 
