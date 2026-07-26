@@ -53,6 +53,9 @@ importers:
       '@phosphor-icons/vue':
         specifier: ^2.2.1
         version: 2.2.1(vue@3.6.0-rc.2(typescript@6.0.3))
+      '@vueuse/core':
+        specifier: ^14.3.0
+        version: 14.3.0(vue@3.6.0-rc.2(typescript@6.0.3))
       gsap:
         specifier: ^3.15.0
         version: 3.15.0

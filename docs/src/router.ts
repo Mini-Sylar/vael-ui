@@ -30,6 +30,11 @@ export const router = createRouter({
       component: () => import('./pages/guides/StylingAndLayers.vue'),
     },
     {
+      path: '/docs/guides/i18n-keys',
+      name: 'guide-i18n-keys',
+      component: () => import('./pages/guides/I18nKeys.vue'),
+    },
+    {
       path: '/components/:name',
       name: 'component',
       component: () => import('./pages/ComponentPage.vue'),

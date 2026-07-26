@@ -1,5 +1,5 @@
 <template>
-  <article class="prose">
+  <GuideLayout :links="tocLinks">
     <h1>{{ t('nav.tailwindGuide') }}</h1>
     <i18n-t keypath="tailwind.layerNote" tag="p" scope="global">
       <template #layer><code>@layer ui-components</code></template>
@@ -16,7 +16,7 @@
 import './style.css' // your Tailwind entry"
     />
 
-    <h2>{{ t('tailwind.mergingTitle') }}</h2>
+    <h2 id="merging">{{ t('tailwind.mergingTitle') }}</h2>
     <p v-html="t('tailwind.mergingIntro')" />
     <CodeBlock
       lang="typescript"
@@ -29,13 +29,17 @@ import { ConfigProvider } from 'vael-ui'"
 </ConfigProvider>'
     />
     <p v-html="t('tailwind.mergingNote')" />
-  </article>
+  </GuideLayout>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
+import GuideLayout from '../../components/GuideLayout.vue'
 
 const { t } = useI18n()
+
+const tocLinks = computed(() => [{ id: 'merging', label: t('tailwind.mergingTitle') }])
 </script>

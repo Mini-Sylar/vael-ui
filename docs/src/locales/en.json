@@ -9,7 +9,8 @@
     "search": "Search components…",
     "home": "vael-ui",
     "stylingAndLayersGuide": "Styling and Cascade Layers",
-    "animationIntegrationGuide": "Bring Your Own Animation"
+    "animationIntegrationGuide": "Bring Your Own Animation",
+    "i18nKeysGuide": "Translating vael-ui"
   },
   "header": {
     "colorScheme": "Toggle color scheme",
@@ -186,5 +187,12 @@
     "type": "Type",
     "default": "Default",
     "description": "Description"
+  },
+  "i18nKeys": {
+    "title": "Translating vael-ui",
+    "intro": "Every built-in string (dialog close button, toast dismiss, empty states, and similar) has an English default and can be translated by passing your own i18n instance to ConfigProvider. It reads from your existing catalog under the uiKit namespace, so there's nothing extra to install.",
+    "copyIntro": "Copy this into your locale file(s) under the uiKit key, then translate the values:",
+    "key": "Key",
+    "englishDefault": "English default"
   }
 }

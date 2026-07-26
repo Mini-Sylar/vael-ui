@@ -1,18 +1,18 @@
 <template>
-  <article class="prose">
+  <GuideLayout :links="tocLinks">
     <h1>{{ t('animation.title') }}</h1>
     <p>{{ t('animation.intro') }}</p>
 
-    <h2>{{ t('animation.motionCssTitle') }}</h2>
+    <h2 id="motion-css">{{ t('animation.motionCssTitle') }}</h2>
     <p v-html="t('animation.motionCssIntro')" />
 
-    <h2>{{ t('animation.forceMountTitle') }}</h2>
+    <h2 id="force-mount">{{ t('animation.forceMountTitle') }}</h2>
     <p v-html="t('animation.forceMountIntro')" />
 
-    <h2>{{ t('animation.beforeCloseTitle') }}</h2>
+    <h2 id="before-close">{{ t('animation.beforeCloseTitle') }}</h2>
     <p v-html="t('animation.beforeCloseIntro')" />
 
-    <h2>{{ t('animation.motionVExampleTitle') }}</h2>
+    <h2 id="motion-v-example">{{ t('animation.motionVExampleTitle') }}</h2>
     <p v-html="t('animation.motionVExampleIntro')" />
     <CodeBlock
       code='&lt;script setup lang="ts"&gt;
@@ -41,7 +41,7 @@ import { Popover } from "vael-ui"
 </template>'
     />
 
-    <h2>{{ t('animation.gsapExampleTitle') }}</h2>
+    <h2 id="gsap-example">{{ t('animation.gsapExampleTitle') }}</h2>
     <p v-html="t('animation.gsapExampleIntro')" />
     <CodeBlock
       code='&lt;script setup lang="ts"&gt;
@@ -68,12 +68,22 @@ function beforeClose(done: () => void) {
   </Dialog>
 </template>'
     />
-  </article>
+  </GuideLayout>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CodeBlock from '../../components/CodeBlock.vue'
+import GuideLayout from '../../components/GuideLayout.vue'
 
 const { t } = useI18n()
+
+const tocLinks = computed(() => [
+  { id: 'motion-css', label: t('animation.motionCssTitle') },
+  { id: 'force-mount', label: t('animation.forceMountTitle') },
+  { id: 'before-close', label: t('animation.beforeCloseTitle') },
+  { id: 'motion-v-example', label: t('animation.motionVExampleTitle') },
+  { id: 'gsap-example', label: t('animation.gsapExampleTitle') },
+])
 </script>

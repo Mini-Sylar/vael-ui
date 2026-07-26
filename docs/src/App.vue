@@ -103,6 +103,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useLocalStorage } from '@vueuse/core'
 import { PhMoon, PhPalette, PhSun } from '@phosphor-icons/vue'
 import {
   Button,
@@ -123,8 +124,8 @@ import { defaultVariant } from './preferences'
 const themeOpen = shallowRef(false)
 
 const { t, locale: i18nLocale } = useI18n()
-const locale = shallowRef<Locale>('en')
-watch(locale, (l) => setLocale(l), { immediate: false })
+const locale = useLocalStorage<Locale>('vael-ui-docs-locale', 'en')
+watch(locale, (l) => setLocale(l), { immediate: true })
 void i18nLocale // useI18n's own ref stays in sync via setLocale(); kept for template t()
 
 const localeItems = SUPPORTED_LOCALES.map((l) => ({ label: l.toUpperCase(), value: l }))

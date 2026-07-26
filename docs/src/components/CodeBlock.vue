@@ -25,9 +25,10 @@ import { PhCheck, PhCopy } from '@phosphor-icons/vue'
 import { Button } from 'vael-ui'
 import { codeToHtml } from 'shiki'
 
-const props = withDefaults(defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' }>(), {
-  lang: 'vue',
-})
+const props = withDefaults(
+  defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' | 'json' }>(),
+  { lang: 'vue' },
+)
 
 const { t } = useI18n()
 const copied = shallowRef(false)

@@ -312,10 +312,11 @@ const NEEDS_CONTEXT: Record<string, string> = {
 }
 const needsContext = computed(() => NEEDS_CONTEXT[props.name] ?? null)
 
-const OPEN_MODEL_COMPONENTS = ['Dialog', 'BottomSheet']
+const OPEN_MODEL_COMPONENTS = ['Dialog', 'Drawer', 'BottomSheet']
 const CONTEXT_AREA_COMPONENTS = ['ContextMenu']
 const OPEN_MODEL_PLACEHOLDER: Record<string, string> = {
   Dialog: 'This is the dialog body. Put any content here.',
+  Drawer: 'This is the drawer body. Put any content here.',
   BottomSheet: 'This is the sheet body. Put any content here.',
 }
 const isOpenModel = computed(() => OPEN_MODEL_COMPONENTS.includes(props.name))

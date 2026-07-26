@@ -1,5 +1,5 @@
 <template>
-  <nav class="on-this-page" aria-label="On this page">
+  <nav v-if="links.length > 0" class="on-this-page" aria-label="On this page">
     <p class="label">On this page</p>
     <a
       v-for="link in links"

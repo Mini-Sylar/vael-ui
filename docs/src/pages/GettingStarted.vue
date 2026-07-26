@@ -1,9 +1,9 @@
 <template>
-  <article class="prose">
+  <GuideLayout :links="tocLinks">
     <h1>{{ t('gettingStarted.title') }}</h1>
     <p>{{ t('gettingStarted.intro') }}</p>
 
-    <h2>{{ t('gettingStarted.installTitle') }}</h2>
+    <h2 id="install">{{ t('gettingStarted.installTitle') }}</h2>
     <p>{{ t('gettingStarted.installIntro') }}</p>
     <SelectButton
       v-model="pm"
@@ -14,7 +14,7 @@
     />
     <CodeBlock lang="bash" :code="installCode" />
 
-    <h2>{{ t('gettingStarted.usageTitle') }}</h2>
+    <h2 id="usage">{{ t('gettingStarted.usageTitle') }}</h2>
     <i18n-t keypath="gettingStarted.usageImportNote" tag="p" scope="global">
       <template #link>
         <RouterLink to="/docs/guides/styling-and-layers">{{
@@ -40,10 +40,10 @@ import 'vael-ui/style.css'"
     />
     <CodeBlock :code="usageCode" />
 
-    <h2>{{ t('gettingStarted.vaporTitle') }}</h2>
+    <h2 id="vapor">{{ t('gettingStarted.vaporTitle') }}</h2>
     <p>{{ t('gettingStarted.vaporIntro') }}</p>
 
-    <h2>{{ t('gettingStarted.darkModeTitle') }}</h2>
+    <h2 id="dark-mode">{{ t('gettingStarted.darkModeTitle') }}</h2>
     <p v-html="t('gettingStarted.darkModeIntro')" />
     <CodeBlock
       lang="typescript"
@@ -57,7 +57,7 @@ const { mode, setMode } = useColorScheme({
 })"
     />
 
-    <h2>{{ t('gettingStarted.directivesTitle') }}</h2>
+    <h2 id="directives">{{ t('gettingStarted.directivesTitle') }}</h2>
     <p v-html="t('gettingStarted.directivesIntro')" />
     <CodeBlock
       lang="typescript"
@@ -71,7 +71,7 @@ app.directive('scroll-mask', vScrollMask)
 app.mount('#app')"
     />
     <p v-html="t('gettingStarted.directivesNote')" />
-  </article>
+  </GuideLayout>
 </template>
 
 <script setup lang="ts">
@@ -80,6 +80,7 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { SelectButton } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
+import GuideLayout from '../components/GuideLayout.vue'
 import { defaultVariant } from '../preferences'
 
 const { t } = useI18n()
@@ -108,6 +109,14 @@ import { Button, ConfigProvider } from '${pkg}'
   </ConfigProvider>
 </template>`
 })
+
+const tocLinks = computed(() => [
+  { id: 'install', label: t('gettingStarted.installTitle') },
+  { id: 'usage', label: t('gettingStarted.usageTitle') },
+  { id: 'vapor', label: t('gettingStarted.vaporTitle') },
+  { id: 'dark-mode', label: t('gettingStarted.darkModeTitle') },
+  { id: 'directives', label: t('gettingStarted.directivesTitle') },
+])
 </script>
 
 <style scoped>

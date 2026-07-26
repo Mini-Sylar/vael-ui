@@ -1,5 +1,5 @@
 <template>
-  <article class="prose">
+  <GuideLayout :links="[]">
     <h1>{{ t('stylingLayers.title') }}</h1>
     <i18n-t keypath="stylingLayers.intro" tag="p" scope="global">
       <template #layer><code>@layer ui-components</code></template>
@@ -31,13 +31,14 @@ import 'vael-ui/style.css'  // now sorts after app-base"
         }}</RouterLink>
       </template>
     </i18n-t>
-  </article>
+  </GuideLayout>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
+import GuideLayout from '../../components/GuideLayout.vue'
 
 const { t } = useI18n()
 </script>

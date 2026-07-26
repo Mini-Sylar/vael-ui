@@ -8,16 +8,17 @@
     aria-label="Resize sidebar"
     class="sidebar-shell"
   >
-    <nav class="sidebar-scroll">
+    <nav ref="sidebarScrollEl" class="sidebar-scroll">
       <MenuList :items="navItems" :active="activeValue" @select="onSelect" />
     </nav>
   </Resizable>
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, nextTick, onMounted, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { useLocalStorage, useScroll } from '@vueuse/core'
 import { MenuList, Resizable } from 'vael-ui'
 import type { MenuEntry, MenuItemData } from 'vael-ui'
 import { categories } from '../taxonomy'
@@ -32,6 +33,7 @@ const GUIDE_ROUTES = [
   { routeName: 'guide-tailwind', labelKey: 'nav.tailwindGuide' },
   { routeName: 'guide-styling-and-layers', labelKey: 'nav.stylingAndLayersGuide' },
   { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
+  { routeName: 'guide-i18n-keys', labelKey: 'nav.i18nKeysGuide' },
 ] as const
 
 const guideValue = (routeName: string) => `guide:${routeName}`
@@ -62,8 +64,15 @@ function onSelect(item: MenuItemData) {
 
 // This sidebar IS the Resizable example. Its own component page points
 // here rather than duplicating a fake one.
-const sidebarWidth = shallowRef(Number(localStorage.getItem('vael-ui-docs-sidebar-width')) || 248)
-watch(sidebarWidth, (w) => localStorage.setItem('vael-ui-docs-sidebar-width', String(w)))
+const sidebarWidth = useLocalStorage('vael-ui-docs-sidebar-width', 248)
+
+const sidebarScrollEl = useTemplateRef<HTMLElement>('sidebarScrollEl')
+const persistedScrollTop = useLocalStorage('vael-ui-docs-sidebar-scroll', 0)
+const { y: scrollY } = useScroll(sidebarScrollEl)
+watch(scrollY, (y) => (persistedScrollTop.value = y))
+onMounted(() => {
+  nextTick(() => (scrollY.value = persistedScrollTop.value))
+})
 </script>
 
 <style scoped>
