@@ -47,8 +47,7 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",
-    "@vueuse/core": "^14.3.0",
-    "vue-component-type-helpers": "^3.3.8"
+    "@vueuse/core": "^14.3.0"
   },
   "devDependencies": {
     "@tsdown/css": "^0.22.13",
@@ -63,6 +62,7 @@
     "vitest": "^4.1.10",
     "vitest-browser-vue": "^2.1.0",
     "vue": "3.6.0-rc.2",
+    "vue-component-type-helpers": "^3.3.8",
     "vue-tsc": "^3.3.8"
   },
   "peerDependencies": {

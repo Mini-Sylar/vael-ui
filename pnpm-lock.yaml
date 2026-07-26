@@ -102,9 +102,6 @@ importers:
       '@vueuse/core':
         specifier: ^14.3.0
         version: 14.3.0(vue@3.6.0-rc.2(typescript@6.0.3))
-      vue-component-type-helpers:
-        specifier: ^3.3.8
-        version: 3.3.8
     devDependencies:
       '@tsdown/css':
         specifier: ^0.22.13
@@ -142,6 +139,9 @@ importers:
       vue:
         specifier: 3.6.0-rc.2
         version: 3.6.0-rc.2(typescript@6.0.3)
+      vue-component-type-helpers:
+        specifier: ^3.3.8
+        version: 3.3.8
       vue-tsc:
         specifier: ^3.3.8
         version: 3.3.8(typescript@6.0.3)
