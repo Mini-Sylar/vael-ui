@@ -118,10 +118,11 @@ export function useToolbar(
 
     let collapsedCount = candidates.filter((el) => el.hasAttribute('data-toolbar-collapsed')).length
 
-    // Expand first (hysteresis: remembered size prevents immediate re-collapse).
+    // Expand first (hysteresis: remembered size prevents immediate re-collapse); falls back to a
+    // live measurement (still accurate while `position: absolute`) if collapsed before ever being measured.
     while (collapsedCount > 0) {
       const el = candidates[candidates.length - collapsedCount]
-      const needed = (naturalSizes.get(el) ?? Infinity) + ellipsisSize()
+      const needed = (naturalSizes.get(el) ?? extent(el)) + ellipsisSize()
       if (availableSize() - contentExtent() < needed) break
       setCollapsed(el, false)
       collapsedCount--
