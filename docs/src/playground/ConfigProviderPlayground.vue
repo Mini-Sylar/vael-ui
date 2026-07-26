@@ -53,15 +53,15 @@
 <script setup lang="ts">
 import { computed, shallowRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
-import * as VaelUiVapor from 'vael-ui/vapor'
 import { Select, SelectButton } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import { defaultVariant } from '../preferences'
+import { useVaporComponents } from '../composables/useVaporComponents'
 
 const vaelUi = VaelUi as unknown as Record<string, Component>
-const vaelUiVapor = VaelUiVapor as unknown as Record<string, Component>
+const vaelUiVapor = useVaporComponents()
 function pick(name: string): Component {
-  return defaultVariant.value === 'vapor' ? vaelUiVapor[name] : vaelUi[name]
+  return defaultVariant.value === 'vapor' ? vaelUiVapor.value[name] : vaelUi[name]
 }
 const ConfigProviderComp = computed(() => pick('ConfigProvider'))
 const ButtonComp = computed(() => pick('Button'))

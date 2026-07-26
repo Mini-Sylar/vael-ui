@@ -4,8 +4,13 @@ export type DemoVariant = 'vdom' | 'vapor'
 
 const STORAGE_KEY = 'vael-ui-docs-default-variant'
 
-export const defaultVariant = shallowRef<DemoVariant>(
-  (localStorage.getItem(STORAGE_KEY) as DemoVariant | null) ?? 'vdom',
-)
+const storedVariant =
+  typeof localStorage === 'undefined'
+    ? null
+    : (localStorage.getItem(STORAGE_KEY) as DemoVariant | null)
 
-watch(defaultVariant, (v) => localStorage.setItem(STORAGE_KEY, v))
+export const defaultVariant = shallowRef<DemoVariant>(storedVariant ?? 'vdom')
+
+watch(defaultVariant, (v) => {
+  if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, v)
+})

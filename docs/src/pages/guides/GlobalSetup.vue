@@ -56,6 +56,7 @@ import { DialogHost, Toaster, TooltipHost } from 'vael-ui'
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
@@ -65,6 +66,7 @@ import componentMeta from '../../generated/component-meta.json'
 import type { ComponentMetaEntry } from '../../types'
 
 const { t } = useI18n()
+useHead({ title: () => t('globalSetup.title') })
 
 const tooltipHostProps = (componentMeta as Record<string, ComponentMetaEntry>).TooltipHost.props
 

@@ -80,20 +80,20 @@
 <script setup lang="ts">
 import { computed, shallowRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
-import * as VaelUiVapor from 'vael-ui/vapor'
 import { Button, InputNumber, Select, SelectButton, toast } from 'vael-ui'
 import type { ToasterPosition } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import { defaultVariant } from '../preferences'
+import { useVaporComponents } from '../composables/useVaporComponents'
 
 const vaelUi = VaelUi as unknown as Record<string, Component>
-const vaelUiVapor = VaelUiVapor as unknown as Record<string, Component>
+const vaelUiVapor = useVaporComponents()
 // The imperative toast() queue is a plain composable, not a compiled
 // component — it isn't re-exported from 'vael-ui/vapor' (only PascalCase
 // component names are), so it's always imported from the base package
 // regardless of which Toaster host is currently rendered.
 const toasterComponent = computed<Component>(() =>
-  defaultVariant.value === 'vapor' ? vaelUiVapor.Toaster : vaelUi.Toaster,
+  defaultVariant.value === 'vapor' ? vaelUiVapor.value.Toaster : vaelUi.Toaster,
 )
 
 const position = shallowRef<ToasterPosition>('bottom-right')

@@ -1,5 +1,6 @@
 <template>
   <Resizable
+    v-if="!isMobile"
     v-model:size="sidebarWidth"
     direction="horizontal"
     edge="end"
@@ -12,16 +13,25 @@
       <MenuList :items="navItems" :active="activeValue" @select="onSelect" />
     </nav>
   </Resizable>
+  <Drawer v-else v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
+    <nav class="sidebar-scroll sidebar-scroll--mobile">
+      <MenuList :items="navItems" :active="activeValue" @select="onMobileSelect" />
+      <slot name="mobile-extra" />
+    </nav>
+  </Drawer>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useLocalStorage, useScroll } from '@vueuse/core'
-import { MenuList, Resizable } from 'vael-ui'
+import { useLocalStorage, useMediaQuery, useScroll } from '@vueuse/core'
+import { Drawer, MenuList, Resizable } from 'vael-ui'
 import type { MenuEntry, MenuItemData } from 'vael-ui'
 import { categories } from '../taxonomy'
+
+const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
+const isMobile = useMediaQuery('(max-width: 800px)')
 
 const { t } = useI18n()
 const route = useRoute()
@@ -62,6 +72,11 @@ function onSelect(item: MenuItemData) {
   else router.push({ name: 'component', params: { name: value } })
 }
 
+function onMobileSelect(item: MenuItemData) {
+  onSelect(item)
+  mobileOpen.value = false
+}
+
 // This sidebar IS the Resizable example. Its own component page points
 // here rather than duplicating a fake one.
 const sidebarWidth = useLocalStorage('vael-ui-docs-sidebar-width', 248)
@@ -92,6 +107,11 @@ onMounted(() => {
   padding: 1.25rem 1rem;
 }
 
+.sidebar-scroll--mobile {
+  height: auto;
+  padding: 0;
+}
+
 .sidebar-scroll :deep(.ui-menu-list-item) {
   position: relative;
   font-size: 0.85rem;
@@ -116,13 +136,5 @@ onMounted(() => {
   width: 2px;
   border-radius: 9999px;
   background: var(--ui-primary);
-}
-
-@media (max-width: 800px) {
-  .sidebar-shell {
-    width: 100% !important;
-    height: auto;
-    position: static;
-  }
 }
 </style>

@@ -282,7 +282,6 @@
 import { computed, h, reactive, shallowRef, watch, watchEffect, type Component } from 'vue'
 import { RouterLink } from 'vue-router'
 import * as VaelUi from 'vael-ui'
-import * as VaelUiVapor from 'vael-ui/vapor'
 import { Button, Input, InputNumber, Select, SelectButton, Switch } from 'vael-ui'
 import type { TreeNode } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
@@ -291,16 +290,17 @@ import { inferControl, defaultControlValue, type PlaygroundControl } from './inf
 import componentMeta from '../generated/component-meta.json'
 import type { ComponentMetaEntry } from '../types'
 import { defaultVariant } from '../preferences'
+import { useVaporComponents } from '../composables/useVaporComponents'
 
 const props = defineProps<{ name: string }>()
 
 const meta = computed(() => (componentMeta as Record<string, ComponentMetaEntry>)[props.name])
 
-const vaelUiVapor = VaelUiVapor as unknown as Record<string, Component | undefined>
+const vaelUiVapor = useVaporComponents()
 const vaelUi = VaelUi as unknown as Record<string, Component | undefined>
 
 const activeComponent = computed<Component | null>(() => {
-  const vaporExport = vaelUiVapor[props.name]
+  const vaporExport = vaelUiVapor.value[props.name]
   if (defaultVariant.value === 'vapor' && vaporExport) return vaporExport
   return vaelUi[props.name] ?? null
 })
@@ -369,7 +369,7 @@ const DOCK_PLACEHOLDER_ITEMS = [
 
 // Matches activeComponent's own variant — a child rendered from the other build wasn't reliable (e.g. Radio/RadioGroup mismatched under Vapor).
 function resolveVariant(name: string): Component | undefined {
-  return defaultVariant.value === 'vapor' ? vaelUiVapor[name] : vaelUi[name]
+  return defaultVariant.value === 'vapor' ? vaelUiVapor.value[name] : vaelUi[name]
 }
 const columnComponent = computed(() => resolveVariant('Column'))
 const accordionItemComponent = computed(() => resolveVariant('AccordionItem'))

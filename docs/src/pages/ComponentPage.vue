@@ -88,6 +88,7 @@
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent, shallowRef, watchEffect, type Component } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import componentMeta from '../generated/component-meta.json'
@@ -128,6 +129,11 @@ const category = computed(() => {
   return key ? t(`taxonomy.${key}`) : undefined
 })
 const description = computed(() => describe(name.value))
+
+useHead({
+  title: () => name.value,
+  meta: [{ name: 'description', content: () => description.value ?? undefined }],
+})
 
 // Per-component callouts for the handful that need one, currently just
 // pointing Resizable at its real, already-in-use example instead of a

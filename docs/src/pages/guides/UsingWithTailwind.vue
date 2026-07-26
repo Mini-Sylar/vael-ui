@@ -34,12 +34,14 @@ import { ConfigProvider } from 'vael-ui'"
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 
 const { t } = useI18n()
+useHead({ title: () => t('nav.tailwindGuide') })
 
 const tocLinks = computed(() => [{ id: 'merging', label: t('tailwind.mergingTitle') }])
 </script>

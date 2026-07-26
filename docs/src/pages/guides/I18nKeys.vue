@@ -39,12 +39,14 @@ const i18n = useI18n()"
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { defaultMessages } from 'vael-ui'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 
 const { t } = useI18n()
+useHead({ title: () => t('i18nKeys.title') })
 
 interface KeyRow {
   key: string

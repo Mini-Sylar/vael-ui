@@ -2,6 +2,16 @@
   <ConfigProvider :theme="theme">
     <div class="app-shell">
       <header class="app-header">
+        <Button
+          variant="ghost"
+          size="sm"
+          icon
+          class="mobile-nav-trigger"
+          :aria-label="t('nav.openMenu')"
+          @click="mobileNavOpen = true"
+        >
+          <PhList :size="18" />
+        </Button>
         <RouterLink to="/" class="brand">{{ t('nav.home') }}</RouterLink>
         <nav class="main-nav">
           <RouterLink to="/docs/getting-started">{{ t('nav.gettingStarted') }}</RouterLink>
@@ -12,63 +22,65 @@
           }}</a>
         </nav>
         <div class="header-controls">
-          <SearchPalette />
-          <SelectButton
-            v-model="defaultVariant"
-            size="sm"
-            :allow-empty="false"
-            :items="[
-              { label: t('component.vdom'), value: 'vdom' },
-              { label: t('component.vapor'), value: 'vapor' },
-            ]"
-            :aria-label="t('header.defaultMode')"
-          />
-          <Popover v-model:open="themeOpen">
-            <template #trigger="{ setTriggerEl }">
-              <Button
-                :ref="setTriggerEl"
-                variant="ghost"
-                size="sm"
-                icon
-                :aria-label="t('header.theme')"
-                @click="themeOpen = !themeOpen"
-              >
-                <PhPalette :size="18" />
-              </Button>
-            </template>
-            <template #default>
-              <div class="theme-panel">
-                <label class="theme-row">
-                  <span>{{ t('header.primaryColor') }}</span>
-                  <span class="color-swatch">
-                    <input
-                      :value="swatchColor"
-                      type="color"
-                      @input="primaryColor = ($event.target as HTMLInputElement).value"
+          <SearchPalette class="header-search" />
+          <div class="header-desktop-controls">
+            <SelectButton
+              v-model="defaultVariant"
+              size="sm"
+              :allow-empty="false"
+              :items="[
+                { label: t('component.vdom'), value: 'vdom' },
+                { label: t('component.vapor'), value: 'vapor' },
+              ]"
+              :aria-label="t('header.defaultMode')"
+            />
+            <Popover v-model:open="themeOpen">
+              <template #trigger="{ setTriggerEl }">
+                <Button
+                  :ref="setTriggerEl"
+                  variant="ghost"
+                  size="sm"
+                  icon
+                  :aria-label="t('header.theme')"
+                  @click="themeOpen = !themeOpen"
+                >
+                  <PhPalette :size="18" />
+                </Button>
+              </template>
+              <template #default>
+                <div class="theme-panel">
+                  <label class="theme-row">
+                    <span>{{ t('header.primaryColor') }}</span>
+                    <span class="color-swatch">
+                      <input
+                        :value="swatchColor"
+                        type="color"
+                        @input="primaryColor = ($event.target as HTMLInputElement).value"
+                      />
+                    </span>
+                  </label>
+                  <label class="theme-row">
+                    <span>{{ t('header.radius') }}</span>
+                    <Select
+                      :model-value="radiusChoice"
+                      size="sm"
+                      class="radius-select"
+                      :items="radiusItems"
+                      @update:model-value="onRadiusChange"
                     />
-                  </span>
-                </label>
-                <label class="theme-row">
-                  <span>{{ t('header.radius') }}</span>
-                  <Select
-                    :model-value="radiusChoice"
-                    size="sm"
-                    class="radius-select"
-                    :items="radiusItems"
-                    @update:model-value="onRadiusChange"
-                  />
-                </label>
-              </div>
-            </template>
-          </Popover>
-          <Select
-            :model-value="locale"
-            size="sm"
-            class="locale-select"
-            :items="localeItems"
-            :aria-label="t('header.locale')"
-            @update:model-value="onLocaleChange"
-          />
+                  </label>
+                </div>
+              </template>
+            </Popover>
+            <Select
+              :model-value="locale"
+              size="sm"
+              class="locale-select"
+              :items="localeItems"
+              :aria-label="t('header.locale')"
+              @update:model-value="onLocaleChange"
+            />
+          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -82,7 +94,54 @@
         </div>
       </header>
       <div class="app-body">
-        <Sidebar />
+        <Sidebar v-model:mobile-open="mobileNavOpen">
+          <template #mobile-extra>
+            <div class="mobile-settings">
+              <label class="theme-row">
+                <span>{{ t('header.primaryColor') }}</span>
+                <span class="color-swatch">
+                  <input
+                    :value="swatchColor"
+                    type="color"
+                    @input="primaryColor = ($event.target as HTMLInputElement).value"
+                  />
+                </span>
+              </label>
+              <label class="theme-row">
+                <span>{{ t('header.radius') }}</span>
+                <Select
+                  :model-value="radiusChoice"
+                  size="sm"
+                  class="radius-select"
+                  :items="radiusItems"
+                  @update:model-value="onRadiusChange"
+                />
+              </label>
+              <label class="theme-row">
+                <span>{{ t('header.locale') }}</span>
+                <Select
+                  :model-value="locale"
+                  size="sm"
+                  class="locale-select"
+                  :items="localeItems"
+                  @update:model-value="onLocaleChange"
+                />
+              </label>
+              <label class="theme-row">
+                <span>{{ t('header.defaultMode') }}</span>
+                <SelectButton
+                  v-model="defaultVariant"
+                  size="sm"
+                  :allow-empty="false"
+                  :items="[
+                    { label: t('component.vdom'), value: 'vdom' },
+                    { label: t('component.vapor'), value: 'vapor' },
+                  ]"
+                />
+              </label>
+            </div>
+          </template>
+        </Sidebar>
         <main class="app-content">
           <RouterView v-slot="{ Component }">
             <Transition name="page" mode="out-in">
@@ -104,7 +163,7 @@
 import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLocalStorage } from '@vueuse/core'
-import { PhMoon, PhPalette, PhSun } from '@phosphor-icons/vue'
+import { PhList, PhMoon, PhPalette, PhSun } from '@phosphor-icons/vue'
 import {
   Button,
   ConfigProvider,
@@ -120,8 +179,23 @@ import Sidebar from './components/Sidebar.vue'
 import SearchPalette from './components/SearchPalette.vue'
 import { setLocale, SUPPORTED_LOCALES, type Locale } from './i18n'
 import { defaultVariant } from './preferences'
+import { useHead } from '@unhead/vue'
+
+useHead({
+  titleTemplate: (title) => (title ? `${title} — vael-ui` : 'vael-ui'),
+  meta: [
+    {
+      name: 'description',
+      content:
+        'A Vue 3 UI library with a real Vue Vapor build, animation-agnostic components, and full i18n support.',
+    },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:site_name', content: 'vael-ui' },
+  ],
+})
 
 const themeOpen = shallowRef(false)
+const mobileNavOpen = shallowRef(false)
 
 const { t, locale: i18nLocale } = useI18n()
 const locale = useLocalStorage<Locale>('vael-ui-docs-locale', 'en')
@@ -142,8 +216,11 @@ const { resolvedMode, setMode } = useColorScheme({
 
 // No accent by default. The library's own black/white palette is the
 // starting point. The picker is an opt-in accent, not a forced brand color.
-const primaryColor = shallowRef<string | null>(localStorage.getItem('vael-ui-docs-primary'))
+const primaryColor = shallowRef<string | null>(
+  typeof localStorage === 'undefined' ? null : localStorage.getItem('vael-ui-docs-primary'),
+)
 watch(primaryColor, (c) => {
+  if (typeof localStorage === 'undefined') return
   if (c) localStorage.setItem('vael-ui-docs-primary', c)
   else localStorage.removeItem('vael-ui-docs-primary')
 })
@@ -158,8 +235,13 @@ const radiusItems = [
   { label: t('header.radiusRounded'), value: '16px' },
   { label: t('header.radiusPill'), value: '999px' },
 ]
-const radiusChoice = shallowRef(localStorage.getItem('vael-ui-docs-radius') ?? 'default')
-watch(radiusChoice, (r) => localStorage.setItem('vael-ui-docs-radius', r))
+const radiusChoice = shallowRef(
+  (typeof localStorage === 'undefined' ? null : localStorage.getItem('vael-ui-docs-radius')) ??
+    'default',
+)
+watch(radiusChoice, (r) => {
+  if (typeof localStorage !== 'undefined') localStorage.setItem('vael-ui-docs-radius', r)
+})
 function onRadiusChange(value: string | number | (string | number)[] | null) {
   if (typeof value === 'string') radiusChoice.value = value
 }
@@ -223,6 +305,26 @@ const theme = computed(() => ({
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-inline-start: auto;
+}
+
+.header-desktop-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-nav-trigger {
+  display: none;
+}
+
+.mobile-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-block-start: 1rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--ui-border);
 }
 
 .color-swatch {
@@ -285,8 +387,25 @@ const theme = computed(() => ({
     display: none;
   }
 
-  .app-body {
-    flex-direction: column;
+  .mobile-nav-trigger {
+    display: inline-flex;
+  }
+
+  .header-search {
+    display: none;
+  }
+
+  .header-desktop-controls {
+    display: none;
+  }
+
+  .app-header {
+    gap: 0.75rem;
+    padding-inline: 0.75rem;
+  }
+
+  .app-content {
+    padding: 1.5rem 1.25rem 3rem;
   }
 }
 </style>

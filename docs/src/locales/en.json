@@ -10,7 +10,9 @@
     "home": "vael-ui",
     "stylingAndLayersGuide": "Styling and Cascade Layers",
     "animationIntegrationGuide": "Bring Your Own Animation",
-    "i18nKeysGuide": "Translating vael-ui"
+    "i18nKeysGuide": "Translating vael-ui",
+    "menu": "Menu",
+    "openMenu": "Open menu"
   },
   "header": {
     "colorScheme": "Toggle color scheme",
@@ -47,7 +49,18 @@
     "notFound": "Component \"{name}\" not found."
   },
   "home": {
-    "tagline": "A Vue 3 UI library with a real Vue Vapor build."
+    "eyebrow": "Vue 3 component library",
+    "headline": "Components that compile straight to Vapor, not around it.",
+    "tagline": "A Vue 3 UI library with a real Vue Vapor build.",
+    "featureVaporTitle": "Real Vapor build, not a shim",
+    "featureVaporBody": "Every component compiles through Vue 3.6's Vapor mode from the same source.",
+    "featureAnimationTitle": "Bring your own animation",
+    "featureAnimationBody": "Plain CSS by default, or drive it yourself with GSAP or motion-v.",
+    "featureI18nTitle": "i18n built in",
+    "featureI18nBody": "Every built-in string translates through your own i18n instance.",
+    "featurePrimitivesTitle": "One component per primitive",
+    "featurePrimitivesBody": "No compound-component sprawl, no hidden context to wire up.",
+    "browseComponents": "Browse components"
   },
   "gettingStarted": {
     "title": "Getting Started",
@@ -194,5 +207,10 @@
     "copyIntro": "Copy this into your locale file(s) under the uiKit key, then translate the values:",
     "key": "Key",
     "englishDefault": "English default"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you're looking for doesn't exist, or moved.",
+    "home": "Back home"
   }
 }

@@ -35,10 +35,12 @@ import 'vael-ui/style.css'  // now sorts after app-base"
 </template>
 
 <script setup lang="ts">
+import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 
 const { t } = useI18n()
+useHead({ title: () => t('stylingLayers.title') })
 </script>
