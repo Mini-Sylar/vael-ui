@@ -55,11 +55,17 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
   longPressDelay?: number
   /** Which corner of the cursor point the panel expands from. Default: top-left corner. */
   side?: ContextMenuSide
+  /** How the panel aligns against the cursor point along that side. */
   align?: ContextMenuAlign
+  /** Gap between the cursor point and the panel, in pixels. */
   sideOffset?: number
+  /** Shifts the panel along the alignment axis, in pixels. */
   alignOffset?: number
+  /** Escape key closes the menu. */
   closeOnEsc?: boolean
+  /** Clicking outside the panel closes it. */
   closeOnOutside?: boolean
+  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
   beforeClose?: (done: () => void) => void
   /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
   forceMount?: boolean
@@ -67,6 +73,7 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
   teleportTo?: string | HTMLElement
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
+  /** Per-instance part-class/style overrides. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -85,6 +92,7 @@ import { useThemedUi } from '../theme'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the menu is open. */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<ContextMenuProps<T>>(), {

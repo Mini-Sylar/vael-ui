@@ -44,9 +44,13 @@ type TriggerRef = HTMLElement | { el: HTMLElement | null } | null | undefined
 export interface TooltipProps {
   /** External trigger ref (raw element or `{ el }`-exposing component). */
   triggerEl?: TriggerRef
+  /** Which side of the trigger the tooltip opens on. */
   side?: TooltipSide
+  /** How the tooltip aligns against the trigger along that side. */
   align?: TooltipAlign
+  /** Gap between the trigger and the tooltip, in pixels. */
   sideOffset?: number
+  /** Shifts the tooltip along the alignment axis, in pixels. */
   alignOffset?: number
   /** Delay before a cold open, ms. Warm-group opens (another tooltip visible or just hidden) are always instant. */
   openDelay?: number
@@ -54,12 +58,15 @@ export interface TooltipProps {
   closeDelay?: number
   /** Hovering the tooltip itself keeps it open (selectable/clickable content). */
   interactive?: boolean
+  /** Escape key closes the tooltip. */
   closeOnEsc?: boolean
+  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
   beforeClose?: (done: () => void) => void
   /** When true, presence is v-show-driven and owned by the consumer. */
   forceMount?: boolean
   /** CSS selector or DOM element; same as Vue's Teleport `to`. */
   teleportTo?: string | HTMLElement
+  /** Per-instance part-class/style overrides. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -74,6 +81,7 @@ import { themeScopeKey, useThemedUi } from '../theme'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the tooltip is open. */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<TooltipProps>(), {

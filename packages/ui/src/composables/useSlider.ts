@@ -1,6 +1,7 @@
 import { computed, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { ssrWindow } from '../ssr'
 
 export type SliderOrientation = 'horizontal' | 'vertical'
 
@@ -155,9 +156,9 @@ export function useSlider(
   }
 
   // Bound to window for 1:1 tracking outside hit target via setPointerCapture.
-  useEventListener(window, 'pointermove', onPointerMove)
-  useEventListener(window, 'pointerup', endDrag)
-  useEventListener(window, 'pointercancel', endDrag)
+  useEventListener(ssrWindow, 'pointermove', onPointerMove)
+  useEventListener(ssrWindow, 'pointerup', endDrag)
+  useEventListener(ssrWindow, 'pointercancel', endDrag)
 
   function stepValue(index: number, delta: number) {
     setValue(index, values()[index] + delta)

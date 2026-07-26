@@ -105,6 +105,7 @@ export { default as ConfigProvider } from './components/ConfigProvider.vue'
 export { default as Toaster } from './components/Toaster.vue'
 export type { ToasterPosition } from './components/Toaster.vue'
 export { generateThemeCss, useThemedUi, themeKey, themeScopeKey } from './theme'
+export { ssrWindow, ssrDocument } from './ssr'
 export type { UiTheme } from './theme'
 
 export { useDialog } from './composables/useDialog'

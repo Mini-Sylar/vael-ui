@@ -1,6 +1,7 @@
 import { onMounted, nextTick, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
+import { ssrWindow } from '../ssr'
 
 export type DockOrientation = 'horizontal' | 'vertical'
 
@@ -183,7 +184,7 @@ export function useDock(
   )
   // Clear sizes on prefers-reduced-motion toggle.
   useEventListener(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)'),
+    () => ssrWindow()?.matchMedia('(prefers-reduced-motion: reduce)'),
     'change',
     resetSizes,
   )

@@ -49,12 +49,19 @@ type TriggerRef = HTMLElement | { el: HTMLElement | null } | null | undefined
 export interface PopoverProps {
   /** External ref (raw element or component with `.el`); use #trigger slot if the trigger can live here. */
   triggerEl?: TriggerRef
+  /** Which side of the trigger the panel opens on. */
   side?: PopoverSide
+  /** How the panel aligns against the trigger along that side. */
   align?: PopoverAlign
+  /** Gap between the trigger and the panel, in pixels. */
   sideOffset?: number
+  /** Shifts the panel along the alignment axis, in pixels. */
   alignOffset?: number
+  /** Escape key closes the panel. */
   closeOnEsc?: boolean
+  /** Clicking outside the panel closes it. */
   closeOnOutside?: boolean
+  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
   beforeClose?: (done: () => void) => void
   /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
   forceMount?: boolean
@@ -62,6 +69,7 @@ export interface PopoverProps {
   teleportTo?: string | HTMLElement
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
+  /** Per-instance part-class/style overrides. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -81,6 +89,7 @@ import { vScrollMask } from '../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the popover is open. */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<PopoverProps>(), {

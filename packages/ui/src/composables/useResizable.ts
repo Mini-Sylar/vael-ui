@@ -1,6 +1,7 @@
 import { shallowRef, toValue } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { ssrWindow } from '../ssr'
 
 export type ResizeDirection = 'horizontal' | 'vertical'
 
@@ -104,9 +105,9 @@ export function useResizable(
     options.onCommit?.()
   }
 
-  useEventListener(window, 'pointermove', onPointerMove)
-  useEventListener(window, 'pointerup', endDrag)
-  useEventListener(window, 'pointercancel', endDrag)
+  useEventListener(ssrWindow, 'pointermove', onPointerMove)
+  useEventListener(ssrWindow, 'pointerup', endDrag)
+  useEventListener(ssrWindow, 'pointercancel', endDrag)
 
   function onHandleKeydown(event: KeyboardEvent) {
     if (isDisabled()) return

@@ -1,6 +1,7 @@
 import { computed, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { ssrWindow } from '../ssr'
 
 /** 15deg-per-step mirrors mechanical mouse wheel detent; consumer-overridable. */
 export const DIAL_DEFAULT_DEGREES_PER_STEP = 15
@@ -156,9 +157,9 @@ export function useDial(model: Ref<number>, options: UseDialOptions): UseDialRet
   }
 
   // Bound to window for 1:1 tracking outside hit box (same as useKnob).
-  useEventListener(window, 'pointermove', onPointerMove)
-  useEventListener(window, 'pointerup', endDrag)
-  useEventListener(window, 'pointercancel', endDrag)
+  useEventListener(ssrWindow, 'pointermove', onPointerMove)
+  useEventListener(ssrWindow, 'pointerup', endDrag)
+  useEventListener(ssrWindow, 'pointercancel', endDrag)
 
   function stepValue(steps: number) {
     setValue(model.value + steps * step())

@@ -140,16 +140,21 @@ export interface DialogProps {
   modal?: boolean
   /** `true` removes edge padding; `top`/`bottom` panels sit flush to the viewport edge instead of floating. */
   flush?: boolean
+  /** Escape key closes the panel. */
   closeOnEsc?: boolean
+  /** Clicking the overlay closes the panel. No-op when `modal` is false (no overlay to click). */
   closeOnOverlay?: boolean
+  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
   beforeClose?: (done: () => void) => void
   /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
   forceMount?: boolean
+  /** Teleport target for the panel/overlay. */
   teleportTo?: string
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
   /** Adds a maximize/restore toggle to the header, filling the viewport when active. */
   maximizable?: boolean
+  /** Per-instance part-class/style overrides. */
   ui?: Partial<{
     overlay: UiPartValue
     panel: UiPartValue
@@ -175,8 +180,9 @@ import { vScrollMask } from '../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the dialog is open. */
 const open = defineModel<boolean>('open', { default: false })
-/** Self-managed by the built-in toggle unless the consumer binds it. */
+/** Whether the panel currently fills the viewport. Self-managed by the built-in toggle unless the consumer binds it. */
 const maximized = defineModel<boolean>('maximized', { default: false })
 
 const props = withDefaults(defineProps<DialogProps>(), {

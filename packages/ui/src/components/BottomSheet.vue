@@ -75,10 +75,13 @@ export interface BottomSheetProps {
   width?: 'full' | 'sm' | 'md' | 'lg'
   /** Single snap point covering entire viewport height. Shorthand for `snapPoints=[{ id: 'full', height: 1 }]`. */
   fullScreen?: boolean
+  /** Escape key closes the sheet. */
   closeOnEsc?: boolean
+  /** Clicking the overlay closes the sheet. */
   closeOnOverlay?: boolean
   /** Custom exit animation; call `done()` when complete. Fires for all close paths. */
   beforeClose?: (done: () => void) => void
+  /** Per-instance part-class/style overrides. */
   ui?: Partial<{
     panel: UiPartValue
     handleZone: UiPartValue
@@ -104,6 +107,7 @@ import { useThemedUi } from '../theme'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the sheet is open. */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<BottomSheetProps>(), {

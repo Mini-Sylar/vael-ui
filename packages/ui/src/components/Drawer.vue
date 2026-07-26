@@ -53,7 +53,9 @@ import type { DialogOpenChangeDetails } from '../composables/useDialog'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the drawer is open. */
 const open = defineModel<boolean>('open', { default: false })
+/** Whether the panel currently fills the viewport. Self-managed by Dialog's built-in toggle unless the consumer binds it. */
 const maximized = defineModel<boolean>('maximized', { default: false })
 
 const props = withDefaults(defineProps<DrawerProps>(), {

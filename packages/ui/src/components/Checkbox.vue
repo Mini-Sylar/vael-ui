@@ -65,6 +65,7 @@ import { useClassMerge, resolveUiPart } from '../classes'
 import type { UiPartValue } from '../classes'
 import { useThemedUi } from '../theme'
 
+/** Checked state. Bind an array instead to toggle this checkbox's `value` prop in/out of it (checkbox-group pattern). */
 const modelValue = defineModel<boolean | unknown[]>({ default: false })
 
 const props = withDefaults(

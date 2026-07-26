@@ -1,6 +1,7 @@
 import { shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { ssrWindow } from '../ssr'
 
 export type SwipeRevealSide = 'leading' | 'trailing'
 
@@ -175,9 +176,9 @@ export function useSwipeReveal(
     options.onCommit?.(shouldOpen)
   }
 
-  useEventListener(window, 'pointermove', onPointerMove)
-  useEventListener(window, 'pointerup', endDrag)
-  useEventListener(window, 'pointercancel', endDrag)
+  useEventListener(ssrWindow, 'pointermove', onPointerMove)
+  useEventListener(ssrWindow, 'pointerup', endDrag)
+  useEventListener(ssrWindow, 'pointercancel', endDrag)
 
   function onContentClick(event: MouseEvent) {
     if (suppressNextClick) {

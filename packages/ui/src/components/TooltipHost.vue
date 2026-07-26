@@ -34,12 +34,15 @@ import type { UiPartValue } from '../classes'
 export interface TooltipHostProps {
   /** Fallbacks for targets whose v-tooltip value doesn't specify them. */
   side?: Side
+  /** Delay before a cold open, ms. Warm-group opens are always instant. */
   openDelay?: number
+  /** Grace period after the pointer leaves, ms — long enough to travel onto the tooltip. */
   closeDelay?: number
   /** Global default for every v-tooltip target; override per-target with `v-tooltip="{ beforeClose }"`. */
   beforeClose?: (done: () => void) => void
   /** Global default for every v-tooltip target; override per-target with `v-tooltip="{ forceMount }"`. */
   forceMount?: boolean
+  /** Per-instance part-class/style overrides. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -48,6 +51,7 @@ export interface TooltipHostProps {
 <script setup lang="ts">
 import { computed, inject, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { ssrDocument } from '../ssr'
 import { useTooltipCore } from '../composables/useTooltip'
 import { TOOLTIP_ATTR, tooltipTargets } from '../directives/vTooltip'
 import type { TooltipDirectiveOptions } from '../directives/vTooltip'
@@ -91,14 +95,14 @@ function adopt(target: HTMLElement) {
 }
 
 // pointerover/out bubble (enter/leave don't) — that's what makes delegation work.
-useEventListener(document, 'pointerover', (event: PointerEvent) => {
+useEventListener(ssrDocument, 'pointerover', (event: PointerEvent) => {
   const target = findTarget(event.target)
   if (!target) return
   adopt(target)
   core.pointerEnter(event)
 })
 
-useEventListener(document, 'pointerout', (event: PointerEvent) => {
+useEventListener(ssrDocument, 'pointerout', (event: PointerEvent) => {
   const target = findTarget(event.target)
   if (!target || target !== currentEl.value) return
   const next = event.relatedTarget
@@ -106,20 +110,20 @@ useEventListener(document, 'pointerout', (event: PointerEvent) => {
   core.pointerLeave()
 })
 
-useEventListener(document, 'focusin', (event: FocusEvent) => {
+useEventListener(ssrDocument, 'focusin', (event: FocusEvent) => {
   const target = findTarget(event.target)
   if (!target) return
   adopt(target)
   core.focusEnter()
 })
 
-useEventListener(document, 'focusout', (event: FocusEvent) => {
+useEventListener(ssrDocument, 'focusout', (event: FocusEvent) => {
   const target = findTarget(event.target)
   if (target && target === currentEl.value) core.focusLeave(event)
 })
 
 useEventListener(
-  document,
+  ssrDocument,
   'pointerdown',
   (event: PointerEvent) => {
     const target = findTarget(event.target)

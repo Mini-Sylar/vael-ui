@@ -154,7 +154,13 @@ function onDocumentSelectionChange() {
   updateActive()
 }
 onMounted(() => document.addEventListener('selectionchange', onDocumentSelectionChange))
-onScopeDispose(() => document.removeEventListener('selectionchange', onDocumentSelectionChange))
+// This scope disposes on every render, including SSR, where the listener
+// above was never attached (onMounted never runs) and `document` doesn't exist.
+onScopeDispose(() => {
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('selectionchange', onDocumentSelectionChange)
+  }
+})
 
 function onNativeInput(event: Event) {
   const target = event.target as HTMLInputElement

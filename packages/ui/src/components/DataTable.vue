@@ -228,6 +228,7 @@ import {
 } from 'vue'
 import type { Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { ssrWindow } from '../ssr'
 import ColumnImpl from './Column.vue'
 import Checkbox from './Checkbox.vue'
 import Radio from './Radio.vue'
@@ -558,9 +559,9 @@ function onResizePointerup(event: PointerEvent) {
   resizingColumn = null
   resizePointerId = null
 }
-useEventListener(window, 'pointermove', onResizePointermove)
-useEventListener(window, 'pointerup', onResizePointerup)
-useEventListener(window, 'pointercancel', onResizePointerup)
+useEventListener(ssrWindow, 'pointermove', onResizePointermove)
+useEventListener(ssrWindow, 'pointerup', onResizePointerup)
+useEventListener(ssrWindow, 'pointercancel', onResizePointerup)
 
 // Utility columns (select/expand) are fixed-width; real columns need live measurement.
 const UTILITY_COLUMN_WIDTH = 44 // px — matches --select/--expand's 2.75rem
