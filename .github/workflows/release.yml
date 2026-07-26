@@ -9,6 +9,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   release:
@@ -26,6 +27,8 @@ jobs:
           node-version: '24'
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
+
+      - run: npm install -g npm@latest
 
       - run: pnpm install
 
