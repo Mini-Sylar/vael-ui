@@ -10,7 +10,9 @@
     "home": "vael-ui",
     "animationIntegrationGuide": "Apportez votre propre animation",
     "stylingAndLayersGuide": "Calques de style et de cascade",
-    "i18nKeysGuide": "Traduire vael-ui"
+    "i18nKeysGuide": "Traduire vael-ui",
+    "openMenu": "Ouvrir le menu",
+    "menu": "Menu"
   },
   "header": {
     "colorScheme": "Changer le mode",
@@ -47,7 +49,18 @@
     "notFound": "Composant \"{name}\" introuvable."
   },
   "home": {
-    "tagline": "Une librairie Vue 3 avec un vrai support de Vue Vapor."
+    "tagline": "Une librairie Vue 3 avec un vrai support de Vue Vapor.",
+    "browseComponents": "Parcourir les composants",
+    "eyebrow": "Bibliothèque de composants Vue 3",
+    "featureAnimationBody": "CSS simple par défaut, ou pilotez-le vous-même avec GSAP ou motion-v.",
+    "featureAnimationTitle": "Apportez votre propre animation",
+    "featureI18nBody": "Chaque chaîne intégrée se traduit par votre propre instance i18n.",
+    "featureI18nTitle": "i18n intégré",
+    "featurePrimitivesBody": "Pas de prolifération de composants composés, pas de contexte caché à relier.",
+    "featurePrimitivesTitle": "Un composant par primitive",
+    "featureVaporBody": "Chaque composant est compilé via le mode Vapor de Vue 3.6 à partir de la même source.",
+    "featureVaporTitle": "Une vraie construction Vapor, pas une cale",
+    "headline": "Des composants qui se compilent directement dans Vapor, pas autour de lui."
   },
   "gettingStarted": {
     "title": "Démarrage",
@@ -194,5 +207,10 @@
     "intro": "Chaque chaîne intégrée (bouton de fermeture de boîte de dialogue, rejet de toast, états vides et similaires) a un anglais par défaut et peut être traduite en transmettant votre propre instance i18n à ConfigProvider. \nIl lit votre catalogue existant sous l'espace de noms uiKit, il n'y a donc rien de plus à installer.",
     "key": "Clé",
     "title": "Traduire vael-ui"
+  },
+  "notFound": {
+    "body": "La page que vous recherchez n'existe pas ou a été déplacée.",
+    "home": "De retour à la maison",
+    "title": "Page introuvable"
   }
 }

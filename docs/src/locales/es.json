@@ -138,7 +138,18 @@
     "theme": "Personalizar tema"
   },
   "home": {
-    "tagline": "Una biblioteca de interfaz de usuario de Vue 3 con una versión real de Vue Vapor."
+    "tagline": "Una biblioteca de interfaz de usuario de Vue 3 con una versión real de Vue Vapor.",
+    "browseComponents": "Explorar componentes",
+    "eyebrow": "Biblioteca de componentes de Vue 3",
+    "featureAnimationBody": "CSS simple de forma predeterminada, o manéjelo usted mismo con GSAP o motion-v.",
+    "featureAnimationTitle": "Trae tu propia animación",
+    "featureI18nBody": "Cada cadena integrada se traduce a través de su propia instancia i18n.",
+    "featureI18nTitle": "i18n integrado",
+    "featurePrimitivesBody": "Sin expansión de componentes compuestos, sin contexto oculto que conectar.",
+    "featurePrimitivesTitle": "Un componente por primitiva",
+    "featureVaporBody": "Cada componente se compila a través del modo Vapor de Vue 3.6 desde la misma fuente.",
+    "featureVaporTitle": "Construcción Real Vapor, no una cuña",
+    "headline": "Componentes que se compilan directamente en Vapor, no alrededor de él."
   },
   "i18nKeys": {
     "copyIntro": "Copie esto en su(s) archivo(s) local(es) bajo la clave uiKit, luego traduzca los valores:",
@@ -164,7 +175,9 @@
     "i18nKeysGuide": "Traduciendo vael-ui",
     "search": "Buscar componentes…",
     "stylingAndLayersGuide": "Estilo y capas en cascada",
-    "tailwindGuide": "Usando con viento de cola"
+    "tailwindGuide": "Usando con viento de cola",
+    "menu": "Menú",
+    "openMenu": "abrir menú"
   },
   "pageNotes": {
     "Resizable": "La barra lateral de este sitio está construida con Resizable. \nArrastra su borde derecho para probarlo."
@@ -194,5 +207,10 @@
     "overlays": "Superposiciones",
     "selection": "Selección",
     "setup": "Configuración"
+  },
+  "notFound": {
+    "body": "La página que estás buscando no existe o se ha movido.",
+    "home": "De vuelta a casa",
+    "title": "Página no encontrada"
   }
 }

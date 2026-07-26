@@ -138,7 +138,18 @@
     "theme": "自定义主题"
   },
   "home": {
-    "tagline": "具有真实 Vue Vapor 构建的 Vue 3 UI 库。"
+    "tagline": "具有真实 Vue Vapor 构建的 Vue 3 UI 库。",
+    "browseComponents": "浏览组件",
+    "eyebrow": "Vue 3 组件库",
+    "featureAnimationBody": "默认情况下为纯CSS，或者使用GSAP 或motion-v 自行驱动。",
+    "featureAnimationTitle": "带来你自己的动画",
+    "featureI18nBody": "每个内置字符串都通过您自己的 i18n 实例进行翻译。",
+    "featureI18nTitle": "内置 i18n",
+    "featurePrimitivesBody": "没有复合组件的蔓延，没有隐藏的上下文需要连接。",
+    "featurePrimitivesTitle": "每个基元一个组件",
+    "featureVaporBody": "每个组件都通过 Vue 3.6 的 Vapor 模式从相同的源进行编译。",
+    "featureVaporTitle": "真正的蒸汽构建，而不是垫片",
+    "headline": "直接编译为 Vapor 的组件，而不是围绕它。"
   },
   "i18nKeys": {
     "copyIntro": "将其复制到 uiKit 键下的语言环境文件中，然后翻译这些值：",
@@ -164,7 +175,9 @@
     "i18nKeysGuide": "翻译 vael-ui",
     "search": "搜索组件...",
     "stylingAndLayersGuide": "样式和级联层",
-    "tailwindGuide": "与 Tailwind 一起使用"
+    "tailwindGuide": "与 Tailwind 一起使用",
+    "menu": "菜单",
+    "openMenu": "打开菜单"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
@@ -194,5 +207,10 @@
     "overlays": "叠加层",
     "selection": "选择",
     "setup": "设置"
+  },
+  "notFound": {
+    "body": "您要查找的页面不存在或已移动。",
+    "home": "回到家",
+    "title": "找不到页面"
   }
 }

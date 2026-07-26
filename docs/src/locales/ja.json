@@ -138,7 +138,18 @@
     "theme": "テーマのカスタマイズ"
   },
   "home": {
-    "tagline": "実際の Vue Vapor ビルドを備えた Vue 3 UI ライブラリ。"
+    "tagline": "実際の Vue Vapor ビルドを備えた Vue 3 UI ライブラリ。",
+    "browseComponents": "コンポーネントを参照する",
+    "eyebrow": "Vue 3 コンポーネント ライブラリ",
+    "featureAnimationBody": "デフォルトではプレーン CSS を使用するか、GSAP または motion-v を使用して自分で実行します。",
+    "featureAnimationTitle": "独自のアニメーションを持ち込む",
+    "featureI18nBody": "すべての組み込み文字列は、独自の i18n インスタンスを通じて変換されます。",
+    "featureI18nTitle": "i18n内蔵",
+    "featurePrimitivesBody": "複合コンポーネントが無秩序に広がったり、隠蔽されたコンテキストを接続したりすることはありません。",
+    "featurePrimitivesTitle": "プリミティブごとに 1 つのコンポーネント",
+    "featureVaporBody": "すべてのコンポーネントは、同じソースから Vue 3.6 の Vapor モードを通じてコン​​パイルされます。",
+    "featureVaporTitle": "シムではなく本物の Vapor ビルド",
+    "headline": "Vapor を中心にコンパイルするのではなく、Vapor に直接コンパイルするコンポーネント。"
   },
   "i18nKeys": {
     "copyIntro": "これをロケール ファイルの uiKit キーの下にコピーし、値を変換します。",
@@ -164,7 +175,9 @@
     "i18nKeysGuide": "vael-ui の翻訳",
     "search": "コンポーネントを検索…",
     "stylingAndLayersGuide": "スタイリング層とカスケード層",
-    "tailwindGuide": "Tailwind との併用"
+    "tailwindGuide": "Tailwind との併用",
+    "menu": "メニュー",
+    "openMenu": "メニューを開く"
   },
   "pageNotes": {
     "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。"
@@ -194,5 +207,10 @@
     "overlays": "オーバーレイ",
     "selection": "選択",
     "setup": "設定"
+  },
+  "notFound": {
+    "body": "お探しのページは存在しないか、移動されました。",
+    "home": "家に帰ります",
+    "title": "ページが見つかりません"
   }
 }

@@ -138,7 +138,18 @@
     "theme": "Thema anpassen"
   },
   "home": {
-    "tagline": "Eine Vue 3-UI-Bibliothek mit einem echten Vue Vapor-Build."
+    "tagline": "Eine Vue 3-UI-Bibliothek mit einem echten Vue Vapor-Build.",
+    "browseComponents": "Komponenten durchsuchen",
+    "eyebrow": "Vue 3-Komponentenbibliothek",
+    "featureAnimationBody": "Standardmäßig einfaches CSS, oder steuern Sie es selbst mit GSAP oder Motion-v.",
+    "featureAnimationTitle": "Bringen Sie Ihre eigene Animation mit",
+    "featureI18nBody": "Jeder integrierte String wird durch Ihre eigene i18n-Instanz übersetzt.",
+    "featureI18nTitle": "i18n eingebaut",
+    "featurePrimitivesBody": "Keine Wucherung zusammengesetzter Komponenten, kein versteckter Kontext, der verknüpft werden muss.",
+    "featurePrimitivesTitle": "Eine Komponente pro Grundelement",
+    "featureVaporBody": "Jede Komponente wird über den Vapor-Modus von Vue 3.6 aus derselben Quelle kompiliert.",
+    "featureVaporTitle": "Echte Vapor-Konstruktion, kein Shim",
+    "headline": "Komponenten, die direkt zu Vapor kompiliert werden, nicht darum herum."
   },
   "metaTable": {
     "default": "Standard",
@@ -157,7 +168,9 @@
     "search": "Komponenten suchen…",
     "stylingAndLayersGuide": "Styling- und Kaskadenebenen",
     "tailwindGuide": "Verwendung mit Rückenwind",
-    "i18nKeysGuide": "vael-ui übersetzen"
+    "i18nKeysGuide": "vael-ui übersetzen",
+    "menu": "Speisekarte",
+    "openMenu": "Menü öffnen"
   },
   "pageNotes": {
     "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren."
@@ -194,5 +207,10 @@
     "intro": "Jede integrierte Zeichenfolge (Schaltfläche „Dialog schließen“, „Toast schließen“, „Leerstatus“ usw.) verfügt über einen englischen Standardwert und kann übersetzt werden, indem Sie Ihre eigene i18n-Instanz an ConfigProvider übergeben. \nEs liest aus Ihrem vorhandenen Katalog unter dem uiKit-Namespace, sodass nichts extra installiert werden muss.",
     "key": "Schlüssel",
     "title": "vael-ui übersetzen"
+  },
+  "notFound": {
+    "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+    "home": "Zurück zu Hause",
+    "title": "Seite nicht gefunden"
   }
 }
