@@ -35,6 +35,13 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
+// DataTable/Pagination/Tag share DataTableDemo, whose Column #cell slots hit a confirmed upstream
+// Vue Vapor-interop bug (see nuxt/ui#6395 for the same failure class in another component library).
+// The API is identical either way, so the toggle stays for visual consistency, but it's cosmetic
+// here: selecting "Vapor" still renders the VDOM demo rather than a genuinely broken one.
+const FAKE_VAPOR_TOGGLE_COMPONENTS = ['DataTable', 'Pagination', 'Tag']
+const isFakeVaporToggle = computed(() => FAKE_VAPOR_TOGGLE_COMPONENTS.includes(props.name))
+
 const items = computed(() => {
   const list = []
   if (props.vdomComponent) list.push({ label: t('component.vdom'), value: 'vdom' })
@@ -59,10 +66,14 @@ watch(
 )
 
 const activeComponent = computed(() =>
-  variant.value === 'vapor' ? props.vaporComponent : props.vdomComponent,
+  variant.value === 'vapor' && !isFakeVaporToggle.value
+    ? props.vaporComponent
+    : props.vdomComponent,
 )
 const hasActiveDemo = computed(() => Boolean(activeComponent.value))
-const code = computed(() => (variant.value === 'vapor' ? props.vaporCode : props.vdomCode))
+const code = computed(() =>
+  variant.value === 'vapor' && !isFakeVaporToggle.value ? props.vaporCode : props.vdomCode,
+)
 </script>
 
 <style scoped>
