@@ -49,7 +49,7 @@ export const categories: ComponentCategory[] = [
   {
     key: 'overlays',
     name: 'Overlays',
-    components: ['Dialog', 'Popover', 'Tooltip', 'BottomSheet', 'ContextMenu'],
+    components: ['Dialog', 'Drawer', 'Popover', 'Tooltip', 'BottomSheet', 'ContextMenu'],
   },
   {
     key: 'navigationAndMenus',

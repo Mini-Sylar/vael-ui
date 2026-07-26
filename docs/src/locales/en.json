@@ -135,6 +135,7 @@
     "Tree": "A collapsible, indented list for hierarchical data with single or multi-selection.",
     "TreeSelect": "A dropdown whose panel is a Tree, for picking one or more nodes from a hierarchy.",
     "Dialog": "A modal overlay that interrupts the page until the user responds or dismisses it.",
+    "Drawer": "A panel that slides in from a viewport edge, for navigation or side content.",
     "Popover": "A floating panel anchored to a trigger element, for menus, forms, or extra detail.",
     "Tooltip": "A small floating label that appears on hover or focus to explain an element.",
     "BottomSheet": "A panel that slides up from the bottom edge, common on touch layouts.",

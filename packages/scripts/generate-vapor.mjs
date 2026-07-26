@@ -34,6 +34,7 @@ const COMPONENTS = [
   'Dialog',
   'DialogHost',
   'Dock',
+  'Drawer',
   'Field',
   'FileUpload',
   'Input',

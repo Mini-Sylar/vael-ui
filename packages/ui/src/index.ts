@@ -60,6 +60,8 @@ export type { DialogPosition, DialogProps, DialogSize } from './components/Dialo
 export { default as DialogHost } from './components/DialogHost.vue'
 export { default as BottomSheet } from './components/BottomSheet.vue'
 export type { BottomSheetProps, SheetSnapPoint } from './components/BottomSheet.vue'
+export { default as Drawer } from './components/Drawer.vue'
+export type { DrawerProps, DrawerSide } from './components/Drawer.vue'
 export { default as Tabs } from './components/Tabs.vue'
 export { default as Toolbar } from './components/Toolbar.vue'
 export { default as Accordion } from './components/Accordion.vue'
