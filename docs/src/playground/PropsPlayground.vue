@@ -40,20 +40,95 @@
             </component>
           </template>
           <template v-else-if="isRadioWrap">
-            <RadioGroup v-model="radioGroupValue">
+            <component :is="radioGroupComponent" v-model="radioGroupValue">
               <component
                 :is="activeComponent"
                 :key="resetKey"
                 v-bind="boundProps"
                 value="playground-option"
               />
-            </RadioGroup>
+            </component>
+          </template>
+          <template v-else-if="isRadioGroup">
+            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+              <component :is="radioComponent" value="standard" label="Standard shipping" />
+              <component :is="radioComponent" value="express" label="Express shipping" />
+              <component
+                :is="radioComponent"
+                value="overnight"
+                label="Overnight shipping"
+                disabled
+              />
+            </component>
+          </template>
+          <template v-else-if="isField">
+            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+              <component :is="inputComponent" placeholder="you@example.com" />
+            </component>
+          </template>
+          <template v-else-if="isDataTable">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              :data="DATATABLE_PLACEHOLDER_ROWS"
+              row-key="id"
+            >
+              <template #columns="{ columnData }">
+                <component :is="columnComponent" :data="columnData" field="name" label="Name" />
+                <component :is="columnComponent" :data="columnData" field="role" label="Role" />
+                <component :is="columnComponent" :data="columnData" field="status" label="Status" />
+              </template>
+            </component>
+          </template>
+          <template v-else-if="isToolbar">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              class="toolbar-preview-overflow"
+            >
+              <Button variant="ghost" size="sm">Bold</Button>
+              <Button variant="ghost" size="sm">Italic</Button>
+              <Button variant="ghost" size="sm">Underline</Button>
+              <Button variant="ghost" size="sm" data-toolbar-overflow>Strikethrough</Button>
+              <Button variant="ghost" size="sm" data-toolbar-overflow>Align left</Button>
+              <Button variant="ghost" size="sm" data-toolbar-overflow>Align center</Button>
+              <Button variant="ghost" size="sm" data-toolbar-overflow>Align right</Button>
+              <Button variant="ghost" size="sm" data-toolbar-overflow>Link</Button>
+            </component>
+          </template>
+          <template v-else-if="isDock">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              :items="DOCK_PLACEHOLDER_ITEMS"
+            />
+          </template>
+          <template v-else-if="isAccordion">
+            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+              <component :is="accordionItemComponent" value="item-1" title="What is vael-ui?">
+                A Vue 3 component library with a full Vue Vapor build.
+              </component>
+              <component
+                :is="accordionItemComponent"
+                value="item-2"
+                title="Does it support dark mode?"
+              >
+                Yes, CSS-only via a data attribute, no JavaScript toggle required.
+              </component>
+              <component
+                :is="accordionItemComponent"
+                value="item-3"
+                title="Can I use my own animation library?"
+              >
+                Every component that animates exposes real hooks for GSAP, motion-v, or plain CSS.
+              </component>
+            </component>
           </template>
           <template v-else>
-            <!-- No slot content at all here on purpose — some components use
-                 their default slot to override a computed fallback display
-                 (Avatar's initials, Badge's count, Chip/Checkbox/Switch's own
-                 label), so even an empty conditional slot would suppress it. -->
+            <!-- No default slot in these two: some components override data-driven rendering with any default slot content, even empty. -->
             <component
               v-if="suppressDefaultSlot"
               :is="activeComponent"
@@ -62,16 +137,38 @@
               @update:model-value="onModelUpdate"
             />
             <component
+              v-else-if="hasTriggerSlot && hasItemsProp"
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              @update:model-value="onModelUpdate"
+            >
+              <template #trigger="{ setTriggerEl, toggle }">
+                <Button :ref="setTriggerEl" @click="toggle">Trigger</Button>
+              </template>
+            </component>
+            <component
               v-else
               :is="activeComponent"
               :key="resetKey"
               v-bind="boundProps"
               @update:model-value="onModelUpdate"
             >
-              <template v-if="hasTriggerSlot" #trigger>
-                <Button>Trigger</Button>
+              <template v-if="hasTriggerSlot" #trigger="{ setTriggerEl, toggle }">
+                <Button :ref="setTriggerEl" @click="toggle">Trigger</Button>
               </template>
-              <PhStar v-if="showIconPreview" :size="16" weight="fill" />
+              <svg
+                v-if="showIconPreview"
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                />
+              </svg>
               <template v-else>{{ name }}</template>
             </component>
           </template>
@@ -145,12 +242,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, shallowRef, watch, watchEffect, type Component } from 'vue'
+import { computed, h, reactive, shallowRef, watch, watchEffect, type Component } from 'vue'
 import { RouterLink } from 'vue-router'
-import { PhStar } from '@phosphor-icons/vue'
 import * as VaelUi from 'vael-ui'
 import * as VaelUiVapor from 'vael-ui/vapor'
-import { Button, Input, InputNumber, RadioGroup, Select, SelectButton, Switch } from 'vael-ui'
+import { Button, Input, InputNumber, Select, SelectButton, Switch } from 'vael-ui'
 import type { TreeNode } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import PlaygroundErrorBoundary from './PlaygroundErrorBoundary.vue'
@@ -172,18 +268,10 @@ const activeComponent = computed<Component | null>(() => {
   return vaelUi[props.name] ?? null
 })
 
-// These read parent state via provide/inject (or need slot-composed
-// children with real data) and throw immediately when mounted standalone,
-// even wrapped. No combination of props fixes that, so there's nothing
-// useful a generic playground can render. Examples below show them in
-// their real context. Radio used to be here too — it only needs a single
-// sibling to become clickable, so it gets a real (if minimal) RadioGroup
-// wrapper below instead of a message.
+// These throw immediately outside their required parent, even wrapped. See the examples below instead.
 const NEEDS_CONTEXT: Record<string, string> = {
   AccordionItem: 'AccordionItem only renders inside an Accordion. See the examples below.',
   Column: 'Column only renders inside a DataTable’s tree. See the examples below.',
-  DataTable:
-    'DataTable needs real data and <Column> children to show anything useful. See the examples below.',
 }
 const needsContext = computed(() => NEEDS_CONTEXT[props.name] ?? null)
 
@@ -196,12 +284,66 @@ const OPEN_MODEL_PLACEHOLDER: Record<string, string> = {
 const isOpenModel = computed(() => OPEN_MODEL_COMPONENTS.includes(props.name))
 const isContextArea = computed(() => CONTEXT_AREA_COMPONENTS.includes(props.name))
 const isRadioWrap = computed(() => props.name === 'Radio')
+const isRadioGroup = computed(() => props.name === 'RadioGroup')
+const isField = computed(() => props.name === 'Field')
+const isDataTable = computed(() => props.name === 'DataTable')
+const isToolbar = computed(() => props.name === 'Toolbar')
+const isAccordion = computed(() => props.name === 'Accordion')
+const isDock = computed(() => props.name === 'Dock')
 const showIconPreview = computed(() => props.name === 'Button' && values.icon === true)
 
-// These render `<slot>{{ someComputedFallback }}</slot>` internally (Avatar's
-// initials, Badge's count, Chip/Checkbox/Switch's own label) — passing any
-// default-slot content at all, even the generic component-name text, would
-// silently override that fallback and show the wrong thing.
+function svgIcon(path: string) {
+  return () =>
+    h('svg', { viewBox: '0 0 24 24', width: 22, height: 22, fill: 'currentColor' }, [
+      h('path', { d: path }),
+    ])
+}
+const DOCK_PLACEHOLDER_ITEMS = [
+  {
+    label: 'Home',
+    icon: { render: svgIcon('M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z') },
+    style: { color: '#2563eb' },
+  },
+  {
+    label: 'Messages',
+    icon: { render: svgIcon('M4 4h16v12H8l-4 4z') },
+    style: { color: '#16a34a' },
+  },
+  {
+    label: 'Favorites',
+    icon: {
+      render: svgIcon(
+        'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z',
+      ),
+    },
+    style: { color: '#d97706' },
+  },
+  {
+    label: 'Settings',
+    icon: { render: svgIcon('M12 8a4 4 0 100 8 4 4 0 000-8z') },
+    style: { color: '#7c3aed' },
+  },
+]
+
+// Matches activeComponent's own variant — a child rendered from the other build wasn't reliable (e.g. Radio/RadioGroup mismatched under Vapor).
+function resolveVariant(name: string): Component | undefined {
+  return defaultVariant.value === 'vapor' ? vaelUiVapor[name] : vaelUi[name]
+}
+const columnComponent = computed(() => resolveVariant('Column'))
+const accordionItemComponent = computed(() => resolveVariant('AccordionItem'))
+const radioGroupComponent = computed(() => resolveVariant('RadioGroup'))
+const radioComponent = computed(() => resolveVariant('Radio'))
+const inputComponent = computed(() => resolveVariant('Input'))
+
+const DATATABLE_PLACEHOLDER_ROWS = [
+  { id: 'r1', name: 'Ama Mensah', role: 'Engineer', status: 'Active' },
+  { id: 'r2', name: 'Kwame Owusu', role: 'Designer', status: 'Active' },
+  { id: 'r3', name: 'Priya Nair', role: 'Product Manager', status: 'Invited' },
+  { id: 'r4', name: 'Diego Silva', role: 'Support', status: 'Suspended' },
+  { id: 'r5', name: 'Sofia Rossi', role: 'Sales', status: 'Active' },
+]
+
+// Any default-slot content here overrides their own computed fallback (Avatar's initials, Badge's count, ...).
 const NO_DEFAULT_SLOT = ['Avatar', 'Badge', 'Chip', 'Checkbox', 'Switch']
 const suppressDefaultSlot = computed(() => NO_DEFAULT_SLOT.includes(props.name))
 
@@ -221,14 +363,7 @@ interface NamedControl {
   options: string[]
 }
 
-// A few components need an override stronger than type-inference alone can
-// give: a free-form CSS-length string that reads better as presets
-// (Loader's size), or a seed value picked for a good first impression
-// rather than the generic empty/zero default (Avatar's name, Pagination's
-// total). Scoped per component — a blanket override by prop name alone
-// would collide with unrelated props sharing the same name elsewhere
-// (`name` is a form field attribute on Input/Select/RadioGroup, not a
-// display name).
+// Scoped per component — a blanket override by prop name would collide (`name` is also a form field attribute elsewhere).
 const COMPONENT_OVERRIDES: Record<
   string,
   {
@@ -249,14 +384,11 @@ const COMPONENT_OVERRIDES: Record<
 const controls = computed<NamedControl[]>(() => {
   if (!meta.value) return []
   const overrides = COMPONENT_OVERRIDES[props.name]
-  // `open`/`maximized` are named v-models this file drives directly
-  // (the dedicated trigger button, the right-click area) — a generic
-  // boolean control for them would look like it does something and not.
-  const skipOpenModel = isOpenModel.value || isContextArea.value
   const list: NamedControl[] = []
   for (const prop of meta.value.props) {
     if (prop.name === 'modelValue') continue
-    if (skipOpenModel && (prop.name === 'open' || prop.name === 'maximized')) continue
+    // A generic control for `open`/`maximized` would seed a static value that fights the component's own state.
+    if (prop.name === 'open' || prop.name === 'maximized') continue
     const selectOverride = overrides?.select?.[prop.name]
     if (selectOverride) {
       list.push({ name: prop.name, kind: 'select', options: selectOverride })
@@ -336,20 +468,12 @@ const presetItems = computed(() =>
 )
 const dataPreset = shallowRef(presetItems.value[0]?.value ?? '')
 
-// A handful of string props crash when seeded with '' (the normal "string"
-// control default) because the component passes them straight into a
-// browser API that rejects an empty value. Calendar's `locale` hits
-// `new Intl.DateTimeFormat('')`, which throws. Named exceptions beat a
-// generic fallback here since the failure mode is API-specific, not a
-// pattern that generalizes.
+// Some string props crash on the normal '' default (Calendar's `locale` hits `new Intl.DateTimeFormat('')`).
 const STRING_DEFAULT_OVERRIDES: Record<string, string> = {
   locale: 'en-US',
 }
 
-// Required numeric props with no declared default (Resizable's `size`), or
-// optional ones that default to `undefined` on purpose (Progress's `value`,
-// which reads as indeterminate whenever it's not set), otherwise seed to 0,
-// which looks broken or perpetually indeterminate rather than just plain.
+// Props with no real default (Resizable's `size`, Progress's `value`) otherwise seed to 0 and look broken.
 const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
   size: 150,
   value: 60,
@@ -454,11 +578,13 @@ const code = computed(() => {
   position: relative;
   padding: 3rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: safe center;
+  justify-content: safe center;
   gap: 1rem;
   flex-wrap: wrap;
   min-height: 9rem;
+  max-height: 32rem;
+  overflow: auto;
   /* Same reasoning as DemoFrame's .demo-preview: show the component's real
      default look, not the docs chrome's own Geist Variable branding. */
   font-family:
@@ -481,6 +607,10 @@ const code = computed(() => {
 .playground-placeholder-copy {
   color: var(--ui-text-muted);
   font-size: 0.9rem;
+}
+
+.toolbar-preview-overflow {
+  max-inline-size: 16rem;
 }
 
 .context-area-target {

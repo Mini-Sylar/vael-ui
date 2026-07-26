@@ -154,18 +154,34 @@ const installCode = computed(() => {
   return `import { ${name.value} } from '${pkg}'`
 })
 
+// Cached per demo name so a revisit reuses the already-resolved async component instead of a fresh loading gap.
+const vdomComponentCache = new Map<string, Component>()
+const vaporComponentCache = new Map<string, Component>()
+
 const vdomComponent = computed(() => {
   const demo = manifestEntry.value?.demo
   if (!demo) return null
   const loader = vdomModules[`../generated/vdom-demos/${demo}.vue`]
-  return loader ? defineAsyncComponent(loader) : null
+  if (!loader) return null
+  let cached = vdomComponentCache.get(demo)
+  if (!cached) {
+    cached = defineAsyncComponent(loader)
+    vdomComponentCache.set(demo, cached)
+  }
+  return cached
 })
 
 const vaporComponent = computed(() => {
   const demo = manifestEntry.value?.demo
   if (!demo || !manifestEntry.value?.vaporEligible) return null
   const loader = vaporModules[`../generated/vapor-demos/${demo}.vue`]
-  return loader ? defineAsyncComponent(loader) : null
+  if (!loader) return null
+  let cached = vaporComponentCache.get(demo)
+  if (!cached) {
+    cached = defineAsyncComponent(loader)
+    vaporComponentCache.set(demo, cached)
+  }
+  return cached
 })
 
 function useDemoSource(modules: Record<string, () => Promise<unknown>>, dir: string) {

@@ -144,17 +144,17 @@ const chosenPlan = shallowRef<string | null>(null)
   inline-size: 100%;
 }
 .sheet-plan-price {
-  color: var(--page-text-faint);
+  color: var(--ui-text-muted);
 }
 .sheet-lede {
   margin: 0 0 0.5rem;
   font-size: 0.875rem;
-  color: var(--page-text-faint);
+  color: var(--ui-text-muted);
 }
 .sheet-filler {
   margin: 0 0 0.75rem;
   font-size: 0.875rem;
-  color: var(--page-text-faint);
+  color: var(--ui-text-muted);
 }
 .sheet-custom-header {
   display: flex;

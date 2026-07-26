@@ -2,10 +2,8 @@
   <article class="prose">
     <h1>{{ t('gettingStarted.title') }}</h1>
     <p>
-      vael-ui is a Vue 3 component library with a real Vue Vapor build. Every component compiles
-      through Vapor's no-virtual-DOM runtime, not just the classic one. It's also
-      animation-agnostic: plain CSS by default, or bring your own animation library through exposed
-      refs and slots.
+      A Vue 3 component library with a full Vue Vapor build and an animation-agnostic design: plain
+      CSS by default, or bring your own animation library.
     </p>
 
     <h2>{{ t('gettingStarted.installTitle') }}</h2>
@@ -20,7 +18,11 @@
     <CodeBlock lang="bash" :code="installCode" />
 
     <h2>{{ t('gettingStarted.usageTitle') }}</h2>
-    <p>Import the stylesheet once, before your own global CSS:</p>
+    <p>
+      Import the stylesheet once in your entry point (see
+      <RouterLink to="/docs/guides/styling-and-layers">Styling and cascade layers</RouterLink>
+      for base-style setup):
+    </p>
     <CodeBlock
       lang="typescript"
       code="// main.ts
@@ -45,19 +47,16 @@ import 'vael-ui/style.css'"
 
     <h2>{{ t('gettingStarted.vaporTitle') }}</h2>
     <p>
-      vael-ui ships both builds from the same package, generated from the same source. Every
-      component is written once, then compiled a second time through Vapor's compiler. Pick
-      whichever your app runs, or mix both: Vue 3.6 supports VDOM/Vapor interop in one app. Every
-      component page in these docs has the same toggle you just used, so you can compare the two
-      side by side.
+      Both builds ship from the same package and source. Pick whichever your app runs, or mix both
+      (Vue 3.6 supports VDOM/Vapor interop). Every component page has the same toggle to compare
+      them.
     </p>
 
     <h2>{{ t('gettingStarted.darkModeTitle') }}</h2>
     <p>
-      Dark mode is CSS-only: vael-ui responds to <code>&lt;html data-theme="dark"&gt;</code> and,
-      failing that, <code>prefers-color-scheme</code>. It ships no toggle UI of its own;
-      <code>useColorScheme()</code> handles the state part (persistence, applying the attribute,
-      live OS-preference updates) so you don't have to:
+      CSS-only: responds to <code>&lt;html data-theme="dark"&gt;</code>, falling back to
+      <code>prefers-color-scheme</code>. No toggle UI shipped; <code>useColorScheme()</code> handles
+      persistence and OS-preference updates:
     </p>
     <CodeBlock
       lang="typescript"
@@ -88,10 +87,8 @@ app.directive('scroll-mask', vScrollMask)
 app.mount('#app')"
     />
     <p>
-      <code>v-tooltip</code> also needs a single <code>&lt;TooltipHost /&gt;</code> mounted once,
-      anywhere in your app. It's a shared singleton every tooltip renders through. In a Vapor app,
-      import the same directives from <code>vael-ui/vapor</code> instead and register them the same
-      way.
+      <code>v-tooltip</code> also needs a <code>&lt;TooltipHost /&gt;</code> mounted once. In a
+      Vapor app, import both directives from <code>vael-ui/vapor</code> instead.
     </p>
   </article>
 </template>
@@ -99,6 +96,7 @@ app.mount('#app')"
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { RouterLink } from 'vue-router'
 import { SelectButton } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import { defaultVariant } from '../preferences'

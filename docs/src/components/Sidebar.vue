@@ -28,6 +28,7 @@ const GUIDE_ROUTES = [
   { routeName: 'getting-started', label: 'Getting Started' },
   { routeName: 'guide-global-setup', label: 'Global Setup' },
   { routeName: 'guide-tailwind', label: 'Using with Tailwind' },
+  { routeName: 'guide-styling-and-layers', label: 'Styling and Cascade Layers' },
   { routeName: 'guide-animation-integration', label: 'Bring Your Own Animation' },
 ] as const
 

@@ -117,7 +117,7 @@ const querySize = shallowRef(180)
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: var(--page-text-muted);
+  color: var(--ui-text-muted);
 }
 .resizable-vshell {
   display: flex;

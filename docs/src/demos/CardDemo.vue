@@ -81,6 +81,6 @@ const runs = shallowRef(0)
 .card-custom-header-sub {
   margin: 0;
   font-size: 0.75rem;
-  color: var(--page-text-muted);
+  color: var(--ui-text-muted);
 }
 </style>

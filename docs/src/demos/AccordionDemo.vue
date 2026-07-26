@@ -56,11 +56,11 @@
     <Accordion v-model:value="springValue" :motion-css="false" class="accordion-demo">
       <AccordionItem value="spring" title="Spring-driven height">
         <motion.div
-          :animate="{ height: springOpen ? 'auto' : 0 }"
+          :animate="{ height: springOpen ? springContentHeight : 0 }"
           :transition="{ type: 'spring', stiffness: 210, damping: 24 }"
           style="overflow: hidden"
         >
-          <p class="spring-panel-text">
+          <p ref="springContentRef" class="spring-panel-text">
             This panel's height is a motion-v spring, not the library's CSS transition. The
             Accordion only tracks which item is open, <code>motionCss="false"</code> means it
             renders no inline block-size style of its own at all.
@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, useTemplateRef } from 'vue'
 import { motion } from 'motion-v'
 import { Accordion, AccordionItem } from 'vael-ui'
 
@@ -82,6 +82,8 @@ const customValue = shallowRef<string | null>(null)
 
 const springValue = shallowRef<string | null>(null)
 const springOpen = computed(() => springValue.value === 'spring')
+const springContentRef = useTemplateRef<HTMLElement>('springContentRef')
+const springContentHeight = computed(() => springContentRef.value?.scrollHeight ?? 0)
 </script>
 
 <style scoped>
@@ -96,6 +98,6 @@ const springOpen = computed(() => springValue.value === 'spring')
   margin: 0 0 1rem;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: var(--page-text-muted);
+  color: var(--ui-text-muted);
 }
 </style>

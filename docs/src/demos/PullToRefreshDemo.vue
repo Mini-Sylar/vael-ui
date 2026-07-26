@@ -130,6 +130,6 @@ function customLabel(state: PullToRefreshState): string {
 }
 .ptr-custom-label {
   font-size: 0.75rem;
-  color: var(--page-text-faint);
+  color: var(--ui-text-muted);
 }
 </style>

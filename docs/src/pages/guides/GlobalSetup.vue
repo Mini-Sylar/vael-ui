@@ -2,16 +2,12 @@
   <article class="prose">
     <h1>Global setup</h1>
     <p>
-      Three components are singletons. Mount each one once, anywhere in your app, and every other
-      component reaches it automatically. None of them need their own page in this sidebar, so
-      here's everything about setting them up in one place.
+      Three singletons. Mount each once, anywhere in your app, and every other component reaches it
+      automatically.
     </p>
 
     <h2>TooltipHost</h2>
-    <p>
-      Powers every <code>v-tooltip</code> in your app. Without one mounted, tooltips silently do
-      nothing: there's no error, they just never appear.
-    </p>
+    <p>Powers every <code>v-tooltip</code>. Without one mounted, tooltips silently never appear.</p>
     <CodeBlock
       code="<template>
   <TooltipHost />
@@ -23,9 +19,8 @@
 
     <h2>DialogHost</h2>
     <p>
-      Renders whatever <code>openDialog()</code> creates imperatively (as opposed to a
-      <code>&lt;Dialog v-model:open&gt;</code> you place in your own template, which doesn't need
-      this). No props, no configuration, just mount it once.
+      Renders whatever <code>openDialog()</code> creates imperatively. Not needed for a
+      <code>&lt;Dialog v-model:open&gt;</code> in your own template. No props, no configuration.
     </p>
     <CodeBlock
       code="<template>
@@ -36,8 +31,7 @@
 
     <h2>Toaster</h2>
     <p>
-      Renders whatever <code>toast()</code> creates. This one has real configuration (position, how
-      many stack before collapsing, custom animation), so it keeps
+      Renders whatever <code>toast()</code> creates. Has real configuration, so it keeps
       <RouterLink to="/components/Toaster">its own page</RouterLink>.
     </p>
     <CodeBlock

@@ -89,11 +89,11 @@
         </Button>
       </template>
       <motion.div
-        :animate="{ height: springOpen ? 'auto' : 0 }"
+        :animate="{ height: springOpen ? springContentHeight : 0 }"
         :transition="{ type: 'spring', stiffness: 210, damping: 24 }"
         style="overflow: hidden"
       >
-        <p class="spring-panel-text">
+        <p ref="springContentRef" class="spring-panel-text">
           v0.4.2 adds keyboard support to Dock and fixes a rubber-band overshoot in Resizable. This
           panel's height is entirely motion-v's, not the library's CSS transition.
         </p>
@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { computed, shallowRef, useTemplateRef } from 'vue'
 import { motion } from 'motion-v'
 import { Button, Collapsible } from 'vael-ui'
 import { PhCaretRight } from '@phosphor-icons/vue'
@@ -111,6 +111,8 @@ import { PhCaretRight } from '@phosphor-icons/vue'
 const reportsOpen = shallowRef(true)
 const settingsOpen = shallowRef(false)
 const springOpen = shallowRef(false)
+const springContentRef = useTemplateRef<HTMLElement>('springContentRef')
+const springContentHeight = computed(() => springContentRef.value?.scrollHeight ?? 0)
 </script>
 
 <style scoped>
@@ -122,7 +124,7 @@ const springOpen = shallowRef(false)
   margin-block-end: 1.5rem;
 }
 .collapsible-nav-group {
-  border: 1px solid var(--page-border, #e4e4e7);
+  border: 1px solid var(--ui-border);
   border-radius: 0.5rem;
   overflow: hidden;
 }
@@ -155,6 +157,6 @@ const springOpen = shallowRef(false)
   margin: 0 0 1rem;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: var(--page-text-muted);
+  color: var(--ui-text-muted);
 }
 </style>

@@ -25,6 +25,11 @@ export const router = createRouter({
       component: () => import('./pages/guides/AnimationIntegration.vue'),
     },
     {
+      path: '/docs/guides/styling-and-layers',
+      name: 'guide-styling-and-layers',
+      component: () => import('./pages/guides/StylingAndLayers.vue'),
+    },
+    {
       path: '/components/:name',
       name: 'component',
       component: () => import('./pages/ComponentPage.vue'),

@@ -1,5 +1,9 @@
-/* Small hand-written reset — wrapped in docs-base (see layers.css) so it
+/* Layer order fixed here since this file loads before vael-ui/style.css
+   (see main.ts) — a layer's position is set the first time it's mentioned
+   anywhere. Small hand-written reset below, wrapped in docs-base so it
    never wins a property fight against vael-ui's own component styles. */
+@layer docs-base, ui-components;
+
 @layer docs-base {
   *,
   *::before,
