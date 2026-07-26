@@ -14,12 +14,14 @@
       <section id="playground" class="section">
         <h2>{{ t('component.playground') }}</h2>
         <ConfigProviderPlayground v-if="name === 'ConfigProvider'" />
+        <ToasterPlayground v-else-if="name === 'Toaster'" />
         <PropsPlayground v-else :name="name" />
       </section>
 
-      <section id="examples" class="section">
+      <section v-if="manifestEntry?.demo" id="examples" class="section">
         <h2>{{ t('component.examples') }}</h2>
         <DemoFrame
+          :name="name"
           :vdom-component="vdomComponent"
           :vapor-component="vaporComponent"
           :vdom-code="vdomCode"
@@ -96,6 +98,7 @@ import CodeBlock from '../components/CodeBlock.vue'
 import OnThisPage from '../components/OnThisPage.vue'
 import PropsPlayground from '../playground/PropsPlayground.vue'
 import ConfigProviderPlayground from '../playground/ConfigProviderPlayground.vue'
+import ToasterPlayground from '../playground/ToasterPlayground.vue'
 import type { ComponentMetaEntry, DemoManifestEntry } from '../types'
 import { categoryOf } from '../taxonomy'
 import { descriptions } from '../descriptions'
@@ -186,7 +189,7 @@ const vaporCode = useDemoSource(vaporSources, 'vapor-demos')
 const tocLinks = computed(() => [
   { id: 'install', label: t('component.install') },
   { id: 'playground', label: t('component.playground') },
-  { id: 'examples', label: t('component.examples') },
+  ...(manifestEntry.value?.demo ? [{ id: 'examples', label: t('component.examples') }] : []),
   { id: 'props', label: t('component.props') },
   { id: 'slots', label: t('component.slots') },
   { id: 'events', label: t('component.events') },

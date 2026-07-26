@@ -21,10 +21,29 @@
     @focus="onFocus"
     @blur="onBlur"
   >
-    <template v-if="$slots.start" #start><slot name="start" /></template>
+    <template v-if="$slots.start || showSplitControls" #start>
+      <slot name="start" />
+      <button
+        v-if="showSplitControls"
+        type="button"
+        tabindex="-1"
+        :class="decPart.class"
+        :style="decPart.style"
+        :disabled="isDisabled"
+        :data-disabled="atMin || undefined"
+        :aria-label="messages.inputNumber.decrement"
+        @pointerdown.prevent="onStepperDown(-step)"
+        @pointerup="onStepperUp"
+        @pointerleave="onStepperUp"
+      >
+        <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true" fill="none">
+          <path d="M2 5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+      </button>
+    </template>
     <template #end>
       <slot name="end" />
-      <span v-if="controls" class="ui-input-number-steppers">
+      <span v-if="showColumnControls" class="ui-input-number-steppers">
         <button
           type="button"
           tabindex="-1"
@@ -70,6 +89,23 @@
           </svg>
         </button>
       </span>
+      <button
+        v-if="showSplitControls"
+        type="button"
+        tabindex="-1"
+        :class="incPart.class"
+        :style="incPart.style"
+        :disabled="isDisabled"
+        :data-disabled="atMax || undefined"
+        :aria-label="messages.inputNumber.increment"
+        @pointerdown.prevent="onStepperDown(step)"
+        @pointerup="onStepperUp"
+        @pointerleave="onStepperUp"
+      >
+        <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true" fill="none">
+          <path d="M5 2v6M2 5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+      </button>
     </template>
   </Input>
 </template>
@@ -110,6 +146,8 @@ const props = withDefaults(
     prefix?: string
     suffix?: string
     controls?: boolean
+    /** `'end'` (default): stacked +/- column after the value. `'split'`: one full-height button on each side. */
+    stepperPosition?: 'end' | 'split'
     /** `false` coerces a blur-empty field to `min ?? 0` instead of `null`. */
     allowEmpty?: boolean
     size?: 'sm' | 'md' | 'lg'
@@ -130,6 +168,7 @@ const props = withDefaults(
     mode: 'decimal',
     useGrouping: true,
     controls: true,
+    stepperPosition: 'end',
     allowEmpty: true,
     size: 'md',
     disabled: false,
@@ -293,6 +332,9 @@ function onBlur() {
   displayValue.value = numberFormat.format(value)
 }
 
+const showColumnControls = computed(() => props.controls && props.stepperPosition === 'end')
+const showSplitControls = computed(() => props.controls && props.stepperPosition === 'split')
+
 const atMax = computed(
   () => props.max !== undefined && modelValue.value !== null && modelValue.value >= props.max,
 )
@@ -316,6 +358,7 @@ const incPart = computed(() =>
     themedUi()?.increment,
     'ui-input-number-stepper',
     'ui-input-number-stepper--inc',
+    showSplitControls.value && 'ui-input-number-stepper--split',
   ),
 )
 const decPart = computed(() =>
@@ -324,6 +367,7 @@ const decPart = computed(() =>
     themedUi()?.decrement,
     'ui-input-number-stepper',
     'ui-input-number-stepper--dec',
+    showSplitControls.value && 'ui-input-number-stepper--split',
   ),
 )
 

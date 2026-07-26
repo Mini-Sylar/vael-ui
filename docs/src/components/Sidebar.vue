@@ -28,6 +28,7 @@ const GUIDE_ROUTES = [
   { routeName: 'getting-started', label: 'Getting Started' },
   { routeName: 'guide-global-setup', label: 'Global Setup' },
   { routeName: 'guide-tailwind', label: 'Using with Tailwind' },
+  { routeName: 'guide-animation-integration', label: 'Bring Your Own Animation' },
 ] as const
 
 const guideValue = (routeName: string) => `guide:${routeName}`

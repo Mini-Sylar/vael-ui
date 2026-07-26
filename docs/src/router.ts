@@ -20,6 +20,11 @@ export const router = createRouter({
       component: () => import('./pages/guides/GlobalSetup.vue'),
     },
     {
+      path: '/docs/guides/animation-integration',
+      name: 'guide-animation-integration',
+      component: () => import('./pages/guides/AnimationIntegration.vue'),
+    },
+    {
       path: '/components/:name',
       name: 'component',
       component: () => import('./pages/ComponentPage.vue'),

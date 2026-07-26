@@ -86,13 +86,28 @@ pre,
 .icon-swap-enter-active,
 .icon-swap-leave-active {
   transition:
-    opacity 120ms var(--ui-ease-out),
-    transform 120ms var(--ui-ease-out);
+    opacity var(--ui-duration-press) var(--ui-ease-in-out),
+    transform var(--ui-duration-press) var(--ui-ease-in-out),
+    filter var(--ui-duration-press) var(--ui-ease-in-out);
 }
 
 .icon-swap-enter-from,
 .icon-swap-leave-to {
   opacity: 0;
   transform: scale(0.9);
+  filter: blur(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-swap-enter-active,
+  .icon-swap-leave-active {
+    transition: opacity var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+
+  .icon-swap-enter-from,
+  .icon-swap-leave-to {
+    transform: none;
+    filter: none;
+  }
 }
 </style>

@@ -27,7 +27,11 @@ export function useTabIndicator(
     const list = options.listEl.value
     const selector = toValue(options.selector) ?? '[role="tab"][aria-selected="true"]'
     const tab = list?.querySelector<HTMLElement>(selector)
-    if (!list || !tab) return
+    if (!list) return
+    if (!tab) {
+      style.value = { ...style.value, opacity: '0' }
+      return
+    }
     const listRect = list.getBoundingClientRect()
     const tabRect = tab.getBoundingClientRect()
     const vertical = toValue(options.orientation) === 'vertical'

@@ -1843,8 +1843,12 @@
   }
   .ui-select-panel {
     position: relative;
-    /* Panel matches trigger width via custom property. */
+    /* Rows are virtualized (absolutely positioned, out of flow), so they
+       never contribute to a `max-content` measurement — matching the
+       trigger's width exactly is the real constraint, just floored so a
+       `sm` trigger can't force long option labels to truncate. */
     inline-size: var(--ui-anchor-inline-size);
+    min-inline-size: 12rem;
     border-radius: var(--ui-radius);
     background: var(--ui-surface);
     color: var(--ui-text);
@@ -3734,7 +3738,8 @@
       0 1px 3px rgb(0 0 0 / 0.08);
     transition:
       inset-inline-start var(--ui-duration-press) var(--ui-ease-in-out),
-      inline-size var(--ui-duration-press) var(--ui-ease-in-out);
+      inline-size var(--ui-duration-press) var(--ui-ease-in-out),
+      opacity var(--ui-duration-press) var(--ui-ease-out);
   }
   .ui-select-button[data-invalid] {
     border-color: var(--ui-danger);
@@ -3780,6 +3785,16 @@
     opacity: 0.35;
     pointer-events: none;
     cursor: not-allowed;
+  }
+  .ui-input-number-stepper--split {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    border-radius: calc(var(--ui-radius) - 6px);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-input-number-stepper--split:hover {
+      background: var(--ui-muted);
+    }
   }
 
   /* OtpInput One real <input>, stretched invisibly (`opacity:0`, not display:none — it must keep focus/paste/autofill) over the whole cell row and painted last so it's the actual hit target (positioned elements stack above in-flow siblings regardless of DOM order, so this needs no z-index). The cells underneath are pure decoration. See OtpInput.vue's SFC comment for why this architecture, not N separate inputs. */

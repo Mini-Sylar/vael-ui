@@ -8,7 +8,9 @@
         <p v-if="!hasActiveDemo" key="empty" class="no-demo">
           No live demo for this component yet.
         </p>
-        <component :is="activeComponent" v-else-if="activeComponent" :key="variant" />
+        <Suspense v-else-if="activeComponent" :key="`${name}-${variant}`">
+          <component :is="activeComponent" />
+        </Suspense>
       </Transition>
     </div>
     <details class="demo-code">
@@ -26,6 +28,7 @@ import CodeBlock from './CodeBlock.vue'
 import { defaultVariant, type DemoVariant } from '../preferences'
 
 const props = defineProps<{
+  name: string
   vdomComponent: Component | null
   vaporComponent: Component | null
   vdomCode: string

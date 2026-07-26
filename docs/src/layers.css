@@ -1,0 +1,3 @@
+/* Layer order only, no rules. Must load before 'vael-ui/style.css' — a
+   layer's position is fixed the first time it's mentioned anywhere. */
+@layer docs-base, ui-components;

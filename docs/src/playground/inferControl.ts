@@ -18,8 +18,11 @@ export function inferControl(schema: PropSchema | undefined): PlaygroundControl 
   }
 
   if (schema.kind !== 'enum') return null
+  // `null` is filtered alongside `undefined` — a `number | null` prop
+  // (Progress's `value`, nullable-clearable props in general) should still
+  // infer as a plain number control, not fall through to no control at all.
   const members = (schema.schema ?? []).filter(
-    (m): m is string => typeof m === 'string' && m !== 'undefined',
+    (m): m is string => typeof m === 'string' && m !== 'undefined' && m !== 'null',
   )
   if (members.length === 0) return null
 

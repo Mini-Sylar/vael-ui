@@ -18,7 +18,7 @@
               <code>{{ row.name }}</code>
             </td>
             <td>
-              <code class="type">{{ row.type }}</code>
+              <code class="type">{{ displayType(row) }}</code>
             </td>
             <td v-if="showDefault">
               <code v-if="row.default">{{ row.default }}</code>
@@ -44,6 +44,27 @@ withDefaults(
   }>(),
   { showDefault: false },
 )
+
+// vue-component-meta keeps a named union alias (e.g. `Side`) as the opaque
+// type string, but already expands its members one level down in `schema`.
+// Only substitute for a pure string-literal union (Side, Placement, ...) —
+// booleans/numbers already read fine as `row.type` and shouldn't become
+// `true | false`.
+function displayType(row: MetaRow): string {
+  const schema = row.schema
+  if (
+    schema &&
+    typeof schema === 'object' &&
+    schema.kind === 'enum' &&
+    Array.isArray(schema.schema) &&
+    schema.schema.length > 0 &&
+    schema.schema.every((m) => m === 'undefined' || (typeof m === 'string' && /^".*"$/.test(m)))
+  ) {
+    const members = schema.schema.filter((m): m is string => m !== 'undefined')
+    if (members.length > 0) return members.join(' | ')
+  }
+  return row.type
+}
 </script>
 
 <style scoped>

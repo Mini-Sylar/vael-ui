@@ -1,34 +1,48 @@
 <template>
   <section class="playground">
-    <div class="playground-preview">
-      <ConfigProvider :theme="theme">
-        <div class="preview-row">
-          <Button>Save changes</Button>
-          <Badge :count="3" />
-          <Card title="Nested content">
-            <p class="preview-text">Everything inside this ConfigProvider re-themes together.</p>
-          </Card>
-        </div>
-      </ConfigProvider>
+    <div class="playground-toolbar">
+      <SelectButton
+        v-model="defaultVariant"
+        size="sm"
+        :allow-empty="false"
+        :items="[
+          { label: 'Vue DOM', value: 'vdom' },
+          { label: 'Vapor', value: 'vapor' },
+        ]"
+      />
     </div>
 
-    <div class="playground-controls">
-      <div class="control-row">
-        <label for="cp-color">primary</label>
-        <span class="color-swatch">
-          <input id="cp-color" :value="primary" type="color" @input="onColorInput" />
-        </span>
+    <div class="playground-body">
+      <div class="playground-preview">
+        <component :is="ConfigProviderComp" :theme="theme">
+          <div class="preview-row">
+            <component :is="ButtonComp">Save changes</component>
+            <component :is="BadgeComp" :count="3" />
+            <component :is="CardComp" title="Nested content">
+              <p class="preview-text">Everything inside this ConfigProvider re-themes together.</p>
+            </component>
+          </div>
+        </component>
       </div>
-      <div class="control-row">
-        <label for="cp-radius">radius</label>
-        <Select
-          id="cp-radius"
-          size="sm"
-          class="control-input"
-          :items="radiusItems"
-          :model-value="radius"
-          @update:model-value="onRadiusChange"
-        />
+
+      <div class="playground-controls">
+        <div class="control-row">
+          <label for="cp-color">primary</label>
+          <span class="color-swatch">
+            <input id="cp-color" :value="primary" type="color" @input="onColorInput" />
+          </span>
+        </div>
+        <div class="control-row">
+          <label for="cp-radius">radius</label>
+          <Select
+            id="cp-radius"
+            size="sm"
+            class="control-input"
+            :items="radiusItems"
+            :model-value="radius"
+            @update:model-value="onRadiusChange"
+          />
+        </div>
       </div>
     </div>
 
@@ -37,9 +51,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import { Badge, Button, Card, ConfigProvider, Select } from 'vael-ui'
+import { computed, shallowRef, type Component } from 'vue'
+import * as VaelUi from 'vael-ui'
+import * as VaelUiVapor from 'vael-ui/vapor'
+import { Select, SelectButton } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
+import { defaultVariant } from '../preferences'
+
+const vaelUi = VaelUi as unknown as Record<string, Component>
+const vaelUiVapor = VaelUiVapor as unknown as Record<string, Component>
+function pick(name: string): Component {
+  return defaultVariant.value === 'vapor' ? vaelUiVapor[name] : vaelUi[name]
+}
+const ConfigProviderComp = computed(() => pick('ConfigProvider'))
+const ButtonComp = computed(() => pick('Button'))
+const BadgeComp = computed(() => pick('Badge'))
+const CardComp = computed(() => pick('Card'))
 
 const primary = shallowRef('#ea580c')
 const radius = shallowRef('12px')
@@ -76,6 +103,19 @@ const code = computed(
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
 }
 
+.playground-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-muted);
+}
+
+.playground-body {
+  display: grid;
+  grid-template-columns: 1fr 15rem;
+}
+
 .playground-preview {
   position: relative;
   padding: 3rem;
@@ -105,10 +145,10 @@ const code = computed(
 
 .playground-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1.25rem;
+  flex-direction: column;
+  gap: 1rem;
   padding: 1rem 1.25rem;
-  border-top: 1px solid var(--ui-border);
+  border-left: 1px solid var(--ui-border);
   background: var(--ui-muted);
 }
 
@@ -127,7 +167,13 @@ const code = computed(
 }
 
 .control-input {
-  width: 11rem;
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .playground-body {
+    grid-template-columns: 1fr;
+  }
 }
 
 .color-swatch {
