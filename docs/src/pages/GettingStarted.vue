@@ -1,13 +1,10 @@
 <template>
   <article class="prose">
     <h1>{{ t('gettingStarted.title') }}</h1>
-    <p>
-      A Vue 3 component library with a full Vue Vapor build and an animation-agnostic design: plain
-      CSS by default, or bring your own animation library.
-    </p>
+    <p>{{ t('gettingStarted.intro') }}</p>
 
     <h2>{{ t('gettingStarted.installTitle') }}</h2>
-    <p>vael-ui is published on npm. Install it with whichever package manager you use:</p>
+    <p>{{ t('gettingStarted.installIntro') }}</p>
     <SelectButton
       v-model="pm"
       size="sm"
@@ -18,21 +15,19 @@
     <CodeBlock lang="bash" :code="installCode" />
 
     <h2>{{ t('gettingStarted.usageTitle') }}</h2>
-    <p>
-      Import the stylesheet once in your entry point (see
-      <RouterLink to="/docs/guides/styling-and-layers">Styling and cascade layers</RouterLink>
-      for base-style setup):
-    </p>
+    <i18n-t keypath="gettingStarted.usageImportNote" tag="p" scope="global">
+      <template #link>
+        <RouterLink to="/docs/guides/styling-and-layers">{{
+          t('gettingStarted.usageImportNoteLink')
+        }}</RouterLink>
+      </template>
+    </i18n-t>
     <CodeBlock
       lang="typescript"
       code="// main.ts
 import 'vael-ui/style.css'"
     />
-    <p>
-      Then use any component: from <code>'vael-ui'</code> for the classic VDOM build, or
-      <code>'vael-ui/vapor'</code> for the compiled Vapor build (Vue 3.6's no-virtual-DOM mode).
-      Same props either way:
-    </p>
+    <p v-html="t('gettingStarted.usageIntro')" />
     <SelectButton
       v-model="defaultVariant"
       size="sm"
@@ -46,18 +41,10 @@ import 'vael-ui/style.css'"
     <CodeBlock :code="usageCode" />
 
     <h2>{{ t('gettingStarted.vaporTitle') }}</h2>
-    <p>
-      Both builds ship from the same package and source. Pick whichever your app runs, or mix both
-      (Vue 3.6 supports VDOM/Vapor interop). Every component page has the same toggle to compare
-      them.
-    </p>
+    <p>{{ t('gettingStarted.vaporIntro') }}</p>
 
     <h2>{{ t('gettingStarted.darkModeTitle') }}</h2>
-    <p>
-      CSS-only: responds to <code>&lt;html data-theme="dark"&gt;</code>, falling back to
-      <code>prefers-color-scheme</code>. No toggle UI shipped; <code>useColorScheme()</code> handles
-      persistence and OS-preference updates:
-    </p>
+    <p v-html="t('gettingStarted.darkModeIntro')" />
     <CodeBlock
       lang="typescript"
       code="import { useColorScheme } from 'vael-ui'
@@ -71,10 +58,7 @@ const { mode, setMode } = useColorScheme({
     />
 
     <h2>{{ t('gettingStarted.directivesTitle') }}</h2>
-    <p>
-      <code>v-tooltip</code> and <code>v-scroll-mask</code> aren't global by default. If you use
-      either in more than one component, register them once:
-    </p>
+    <p v-html="t('gettingStarted.directivesIntro')" />
     <CodeBlock
       lang="typescript"
       code="// main.ts
@@ -86,10 +70,7 @@ app.directive('tooltip', vTooltip)
 app.directive('scroll-mask', vScrollMask)
 app.mount('#app')"
     />
-    <p>
-      <code>v-tooltip</code> also needs a <code>&lt;TooltipHost /&gt;</code> mounted once. In a
-      Vapor app, import both directives from <code>vael-ui/vapor</code> instead.
-    </p>
+    <p v-html="t('gettingStarted.directivesNote')" />
   </article>
 </template>
 

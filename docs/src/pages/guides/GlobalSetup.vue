@@ -1,27 +1,21 @@
 <template>
   <article class="prose">
-    <h1>Global setup</h1>
-    <p>
-      Three singletons. Mount each once, anywhere in your app, and every other component reaches it
-      automatically.
-    </p>
+    <h1>{{ t('globalSetup.title') }}</h1>
+    <p>{{ t('globalSetup.intro') }}</p>
 
-    <h2>TooltipHost</h2>
-    <p>Powers every <code>v-tooltip</code>. Without one mounted, tooltips silently never appear.</p>
+    <h2>{{ t('globalSetup.tooltipHostTitle') }}</h2>
+    <p v-html="t('globalSetup.tooltipHostIntro')" />
     <CodeBlock
       code="<template>
   <TooltipHost />
   <YourApp />
 </template>"
     />
-    <p>It takes the same options every individual tooltip can override:</p>
+    <p>{{ t('globalSetup.tooltipHostOptions') }}</p>
     <MetaTable :rows="tooltipHostProps" title="Props" show-default empty-text="No props." />
 
-    <h2>DialogHost</h2>
-    <p>
-      Renders whatever <code>openDialog()</code> creates imperatively. Not needed for a
-      <code>&lt;Dialog v-model:open&gt;</code> in your own template. No props, no configuration.
-    </p>
+    <h2>{{ t('globalSetup.dialogHostTitle') }}</h2>
+    <p v-html="t('globalSetup.dialogHostIntro')" />
     <CodeBlock
       code="<template>
   <DialogHost />
@@ -29,11 +23,13 @@
 </template>"
     />
 
-    <h2>Toaster</h2>
-    <p>
-      Renders whatever <code>toast()</code> creates. Has real configuration, so it keeps
-      <RouterLink to="/components/Toaster">its own page</RouterLink>.
-    </p>
+    <h2>{{ t('globalSetup.toasterTitle') }}</h2>
+    <i18n-t keypath="globalSetup.toasterIntro" tag="p" scope="global">
+      <template #code><code>toast()</code></template>
+      <template #link>
+        <RouterLink to="/components/Toaster">{{ t('globalSetup.toasterIntroLink') }}</RouterLink>
+      </template>
+    </i18n-t>
     <CodeBlock
       code="<template>
   <Toaster />
@@ -41,8 +37,8 @@
 </template>"
     />
 
-    <h2>All together</h2>
-    <p>Mount all three once, wherever your app's root template lives:</p>
+    <h2>{{ t('globalSetup.allTogetherTitle') }}</h2>
+    <p>{{ t('globalSetup.allTogetherIntro') }}</p>
     <CodeBlock
       code="<script setup lang=&quot;ts&quot;>
 import { DialogHost, Toaster, TooltipHost } from 'vael-ui'
@@ -59,11 +55,14 @@ import { DialogHost, Toaster, TooltipHost } from 'vael-ui'
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
 import MetaTable from '../../components/MetaTable.vue'
 import componentMeta from '../../generated/component-meta.json'
 import type { ComponentMetaEntry } from '../../types'
+
+const { t } = useI18n()
 
 const tooltipHostProps = (componentMeta as Record<string, ComponentMetaEntry>).TooltipHost.props
 </script>

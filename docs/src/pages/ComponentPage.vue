@@ -83,7 +83,7 @@
     </article>
     <OnThisPage :links="tocLinks" />
   </div>
-  <p v-else>Component "{{ name }}" not found.</p>
+  <p v-else>{{ t('component.notFound', { name }) }}</p>
 </template>
 
 <script setup lang="ts">
@@ -101,7 +101,6 @@ import ConfigProviderPlayground from '../playground/ConfigProviderPlayground.vue
 import ToasterPlayground from '../playground/ToasterPlayground.vue'
 import type { ComponentMetaEntry, DemoManifestEntry } from '../types'
 import { categoryOf } from '../taxonomy'
-import { descriptions } from '../descriptions'
 import { defaultVariant } from '../preferences'
 
 const vdomModules = import.meta.glob<{ default: Component }>('../generated/vdom-demos/*.vue')
@@ -115,20 +114,29 @@ const vaporSources = import.meta.glob('../generated/vapor-demos/*.vue', {
   import: 'default',
 })
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const route = useRoute()
 
+function describe(componentName: string): string | null {
+  const key = `descriptions.${componentName}`
+  return te(key) ? t(key) : null
+}
+
 const name = computed(() => route.params.name as string)
-const category = computed(() => categoryOf(name.value))
-const description = computed(() => descriptions[name.value] ?? null)
+const category = computed(() => {
+  const key = categoryOf(name.value)
+  return key ? t(`taxonomy.${key}`) : undefined
+})
+const description = computed(() => describe(name.value))
 
 // Per-component callouts for the handful that need one, currently just
 // pointing Resizable at its real, already-in-use example instead of a
 // canned demo.
-const PAGE_NOTES: Record<string, string> = {
-  Resizable: 'This site’s own sidebar is built with Resizable. Drag its right edge to try it.',
-}
-const note = computed(() => PAGE_NOTES[name.value] ?? null)
+const PAGE_NOTE_COMPONENTS = ['Resizable']
+const note = computed(() => {
+  if (!PAGE_NOTE_COMPONENTS.includes(name.value)) return null
+  return t(`pageNotes.${name.value}`)
+})
 const typedMeta = componentMeta as Record<string, ComponentMetaEntry>
 const meta = computed(() => typedMeta[name.value])
 
@@ -142,7 +150,7 @@ const RELATED: Record<string, string[]> = {
 const relatedComponents = computed(() =>
   (RELATED[name.value] ?? []).map((n) => ({
     name: n,
-    description: descriptions[n] ?? null,
+    description: describe(n),
     meta: typedMeta[n],
   })),
 )
@@ -184,6 +192,15 @@ const vaporComponent = computed(() => {
   return cached
 })
 
+// Demo files carry their own explanatory prose/headings for this site's Examples section, neither
+// of which is something a reader copying the code snippet wants — strip them from the shown source.
+function stripDemoProse(source: string): string {
+  return source
+    .replace(/[ \t]*<p class="note">[\s\S]*?<\/p>\n?/g, '')
+    .replace(/[ \t]*<h[23]>[\s\S]*?<\/h[23]>\n?/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+}
+
 function useDemoSource(modules: Record<string, () => Promise<unknown>>, dir: string) {
   const source = shallowRef('')
   watchEffect(async () => {
@@ -194,7 +211,7 @@ function useDemoSource(modules: Record<string, () => Promise<unknown>>, dir: str
       return
     }
     const mod = await loader()
-    source.value = mod as string
+    source.value = stripDemoProse(mod as string)
   })
   return source
 }

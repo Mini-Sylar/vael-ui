@@ -16,34 +16,36 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { MenuList, Resizable } from 'vael-ui'
 import type { MenuEntry, MenuItemData } from 'vael-ui'
 import { categories } from '../taxonomy'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
 const GUIDE_ROUTES = [
-  { routeName: 'getting-started', label: 'Getting Started' },
-  { routeName: 'guide-global-setup', label: 'Global Setup' },
-  { routeName: 'guide-tailwind', label: 'Using with Tailwind' },
-  { routeName: 'guide-styling-and-layers', label: 'Styling and Cascade Layers' },
-  { routeName: 'guide-animation-integration', label: 'Bring Your Own Animation' },
+  { routeName: 'getting-started', labelKey: 'nav.gettingStarted' },
+  { routeName: 'guide-global-setup', labelKey: 'nav.globalSetup' },
+  { routeName: 'guide-tailwind', labelKey: 'nav.tailwindGuide' },
+  { routeName: 'guide-styling-and-layers', labelKey: 'nav.stylingAndLayersGuide' },
+  { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
 ] as const
 
 const guideValue = (routeName: string) => `guide:${routeName}`
 
-const navItems: MenuEntry[] = [
+const navItems = computed<MenuEntry[]>(() => [
   {
-    label: 'Guides',
-    items: GUIDE_ROUTES.map((g) => ({ label: g.label, value: guideValue(g.routeName) })),
+    label: t('nav.guides'),
+    items: GUIDE_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
   },
   ...categories.map((category) => ({
-    label: category.name,
+    label: t(`taxonomy.${category.key}`),
     items: category.components.map((name) => ({ label: name, value: name })),
   })),
-]
+])
 
 const activeValue = computed(() => {
   if (route.name === 'component') return route.params.name as string

@@ -1,11 +1,9 @@
 <template>
   <article class="prose">
-    <h1>Styling and cascade layers</h1>
-    <p>
-      vael-ui ships in <code>@layer ui-components</code>. Unlayered CSS always wins over a layer
-      regardless of specificity, so a plain, unlayered base reset silently overrides vael-ui
-      internals. Fix: put your base styles in a layer too, ordered first.
-    </p>
+    <h1>{{ t('stylingLayers.title') }}</h1>
+    <i18n-t keypath="stylingLayers.intro" tag="p" scope="global">
+      <template #layer><code>@layer ui-components</code></template>
+    </i18n-t>
 
     <CodeBlock
       code="/* your app's main stylesheet, e.g. style.css */
@@ -23,20 +21,23 @@ import './style.css'        // your base layer, loads first
 import 'vael-ui/style.css'  // now sorts after app-base"
     />
 
-    <p>
-      Two files, that's it. Import order here only controls layer position, nothing else, an
-      unlayered override anywhere always still wins regardless of load order.
-    </p>
+    <p>{{ t('stylingLayers.orderNote') }}</p>
 
-    <p>
-      Deliberately overriding one component (<code>ui</code> prop, a Tailwind utility) wants your
-      rule to win, keep that CSS unlayered as it already is by default. See
-      <RouterLink to="/docs/guides/tailwind">Using with Tailwind</RouterLink>.
-    </p>
+    <i18n-t keypath="stylingLayers.overrideNote" tag="p" scope="global">
+      <template #code><code>ui</code></template>
+      <template #link>
+        <RouterLink to="/docs/guides/tailwind">{{
+          t('stylingLayers.overrideNoteLink')
+        }}</RouterLink>
+      </template>
+    </i18n-t>
   </article>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
+
+const { t } = useI18n()
 </script>

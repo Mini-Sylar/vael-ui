@@ -6,10 +6,10 @@
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th v-if="showDefault">Default</th>
-            <th>Description</th>
+            <th>{{ t('metaTable.name') }}</th>
+            <th>{{ t('metaTable.type') }}</th>
+            <th v-if="showDefault">{{ t('metaTable.default') }}</th>
+            <th>{{ t('metaTable.description') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -32,7 +32,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { MetaRow } from '../types'
+
+const { t } = useI18n()
 
 withDefaults(
   defineProps<{

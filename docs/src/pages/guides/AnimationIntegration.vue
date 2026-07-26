@@ -1,36 +1,19 @@
 <template>
   <article class="prose">
-    <h1>Bring your own animation</h1>
-    <p>
-      Every component that animates ships a plain CSS transition, but exposes a real escape hatch to
-      drive it with GSAP, motion-v, or nothing at all. Check a component's own Props/Slots/Exposed
-      tables for which of these it has, not every component has all three.
-    </p>
+    <h1>{{ t('animation.title') }}</h1>
+    <p>{{ t('animation.intro') }}</p>
 
-    <h2>motionCss</h2>
-    <p>
-      <code>false</code> disables the built-in CSS transition, the component still changes state
-      instantly, leaving the DOM ready for you to animate.
-    </p>
+    <h2>{{ t('animation.motionCssTitle') }}</h2>
+    <p v-html="t('animation.motionCssIntro')" />
 
-    <h2>forceMount</h2>
-    <p>
-      Keeps content mounted while closed instead of removing it on <code>v-if</code>. Pair with
-      <code>&lt;AnimatePresence&gt;</code> and the default slot's <code>isClosing</code> flag to own
-      exit timing yourself.
-    </p>
+    <h2>{{ t('animation.forceMountTitle') }}</h2>
+    <p v-html="t('animation.forceMountIntro')" />
 
-    <h2>beforeClose(done)</h2>
-    <p>
-      For imperative libraries: pass a function that receives <code>done</code>. The component stays
-      mounted and <code>isClosing</code> until you call it.
-    </p>
+    <h2>{{ t('animation.beforeCloseTitle') }}</h2>
+    <p v-html="t('animation.beforeCloseIntro')" />
 
-    <h2>Example: motion-v, Popover</h2>
-    <p>
-      <code>forceMount</code> plus the default slot's <code>isClosing</code> flag, wrapped in
-      <code>&lt;AnimatePresence&gt;</code>:
-    </p>
+    <h2>{{ t('animation.motionVExampleTitle') }}</h2>
+    <p v-html="t('animation.motionVExampleIntro')" />
     <CodeBlock
       code='&lt;script setup lang="ts"&gt;
 import { AnimatePresence, motion } from "motion-v"
@@ -58,11 +41,8 @@ import { Popover } from "vael-ui"
 </template>'
     />
 
-    <h2>Example: GSAP, Dialog</h2>
-    <p>
-      <code>beforeClose(done)</code> plus the exposed <code>panelEl</code> ref, so the tween runs on
-      the real panel element before it's removed:
-    </p>
+    <h2>{{ t('animation.gsapExampleTitle') }}</h2>
+    <p v-html="t('animation.gsapExampleIntro')" />
     <CodeBlock
       code='&lt;script setup lang="ts"&gt;
 import { ref } from "vue"
@@ -92,5 +72,8 @@ function beforeClose(done: () => void) {
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import CodeBlock from '../../components/CodeBlock.vue'
+
+const { t } = useI18n()
 </script>
