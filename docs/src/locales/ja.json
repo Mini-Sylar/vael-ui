@@ -30,7 +30,7 @@
     "preview": "プレビュー",
     "props": "小道具",
     "slots": "スロット",
-    "vapor": "蒸気",
+    "vapor": "Vapor",
     "vaporUnavailable": "このコンポーネントの Vapor デモはまだありません",
     "vdom": "Vue DOM"
   },
