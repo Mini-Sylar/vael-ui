@@ -22,6 +22,7 @@
   --ui-border: #e4e4e7;
   --ui-overlay: rgb(0 0 0 / 0.4);
   --ui-radius: 10px;
+  --ui-radius-surface: min(var(--ui-radius), 1rem);
   --ui-border-strong: #d4d4d8;
   /* Z-order: toast > popover > dialog. */
   --ui-z-dialog: 50;
@@ -685,7 +686,7 @@
     background: var(--ui-surface);
     color: var(--ui-text);
     border: 1px solid var(--ui-border-strong);
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-surface);
   }
   .ui-card-header {
     display: grid;
@@ -808,7 +809,7 @@
     gap: 0.625rem;
     padding: 0.875rem 1rem;
     border: 1px solid var(--ui-border-strong);
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-surface);
     background: var(--ui-surface);
     color: var(--ui-text);
   }
@@ -986,7 +987,7 @@
     inline-size: min(28rem, 100%);
     max-block-size: 85dvh;
     overflow: hidden;
-    border-radius: calc(var(--ui-radius) + 4px);
+    border-radius: calc(var(--ui-radius-surface) + 4px);
     background: var(--ui-surface);
     /* Maximize/restore grows/shrinks. */
     transition:
@@ -1358,7 +1359,7 @@
   }
   .ui-popover-panel {
     position: relative;
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-surface);
     background: var(--ui-surface);
     color: var(--ui-text);
     box-shadow: var(--ui-panel-shadow);
@@ -1398,7 +1399,7 @@
   }
   .ui-menu-panel {
     position: relative;
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-surface);
     background: var(--ui-surface);
     color: var(--ui-text);
     box-shadow: var(--ui-panel-shadow);
@@ -1849,7 +1850,7 @@
        `sm` trigger can't force long option labels to truncate. */
     inline-size: var(--ui-anchor-inline-size);
     min-inline-size: 12rem;
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-surface);
     background: var(--ui-surface);
     color: var(--ui-text);
     box-shadow: var(--ui-panel-shadow);
@@ -4021,7 +4022,7 @@
     gap: 0.5rem;
     padding: 1.5rem 1rem;
     border: 1px dashed var(--ui-border-strong);
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-surface);
     text-align: center;
     cursor: pointer;
     transition:
@@ -4342,7 +4343,7 @@
     display: flex;
     flex-direction: column;
     border: 1px solid var(--ui-border);
-    border-radius: var(--ui-radius);
+    border-radius: var(--ui-radius-surface);
     background: var(--ui-surface);
     overflow: hidden;
   }
@@ -4754,7 +4755,7 @@
     align-items: flex-end;
     gap: 0.5rem;
     padding: 0.5rem;
-    border-radius: calc(var(--ui-radius) + 0.75rem);
+    border-radius: calc(var(--ui-radius-surface) + 0.75rem);
     background: var(--ui-surface);
     border: 1px solid var(--ui-border);
     box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);

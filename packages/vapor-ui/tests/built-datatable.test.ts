@@ -23,7 +23,7 @@ test('the built vapor-lib DataTable (+ its full dependency tree) renders and wor
     await vi.waitFor(() => {
       const rows = host.querySelectorAll('.ui-datatable-tbody .ui-datatable-tr')
       expect(rows.length).toBe(3)
-      expect(host.textContent).toContain('Ama')
+      expect(host.textContent).toContain('Maria')
       expect(host.textContent).toContain('Engineer')
     })
 

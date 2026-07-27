@@ -23,12 +23,15 @@
     />
     <div class="dash-sidebar-top">
       <div class="dash-brand">
-        <span class="dash-brand-mark" aria-hidden="true">U</span>
+        <span class="dash-brand-mark">
+          <Logo :size="18" />
+        </span>
         <span v-if="!collapsed" class="dash-brand-name">vael-ui admin</span>
       </div>
       <Button
         type="button"
         variant="text"
+        icon
         :ui="{ root: 'dash-collapse-btn' }"
         :class="{ 'dash-collapse-btn--collapsed': collapsed }"
         :aria-expanded="!collapsed"
@@ -145,13 +148,13 @@
       <Menu :items="accountMenuItems" side="top" align="start" @select="onAccountSelect">
         <template #trigger>
           <Button variant="ghost" block class="dash-user-trigger" aria-label="Account menu">
-            <Avatar name="Ama Mensah" size="sm">
+            <Avatar name="Mira Mitchell" size="sm">
               <template #badge>
                 <span class="dash-user-status" aria-hidden="true" />
               </template>
             </Avatar>
             <span v-if="!collapsed" class="dash-user-meta">
-              <span class="dash-user-name">Ama Mensah</span>
+              <span class="dash-user-name">Mira Mitchell</span>
               <span class="dash-user-role">Workspace admin</span>
             </span>
           </Button>
@@ -187,6 +190,7 @@ import {
   PhUsers,
 } from '@phosphor-icons/vue'
 import type { DashPage } from './dashboardNavigate'
+import Logo from '../Logo.vue'
 
 const activePage = defineModel<DashPage>('activePage', { default: 'overview' })
 
@@ -304,6 +308,15 @@ defineExpose({ collapsed })
   min-block-size: 2rem;
 }
 
+/* The brand mark and toggle can't share one row at the collapsed rail's
+   4.25rem width — 28px + 36px overflows the ~32px left after padding, and
+   .dash-shell's overflow: hidden clips whatever doesn't fit. Stacking
+   vertically gives each its own full-width row to center in instead. */
+.dash-sidebar--collapsed .dash-sidebar-top {
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .dash-brand {
   display: flex;
   align-items: center;
@@ -319,8 +332,6 @@ defineExpose({ collapsed })
   border-radius: 8px;
   background: var(--ui-primary);
   color: var(--ui-primary-contrast);
-  font-size: 0.8125rem;
-  font-weight: 700;
 }
 .dash-brand-name {
   font-size: 0.875rem;

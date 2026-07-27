@@ -83,7 +83,7 @@ function onSelect(item: MenuItemData) {
   flex: none;
   padding: 0.5rem;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   background: var(--ui-surface);
 }
 .menu-list-demo-main {

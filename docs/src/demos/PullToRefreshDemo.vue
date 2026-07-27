@@ -97,7 +97,7 @@ function customLabel(state: PullToRefreshState): string {
 .ptr-box {
   block-size: 320px;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   margin-block-end: 1.5rem;
 }
 .ptr-list {

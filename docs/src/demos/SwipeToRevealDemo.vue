@@ -90,11 +90,11 @@ interface DemoMessage {
 }
 
 const messages: DemoMessage[] = [
-  { id: 'm1', from: 'Ama Mensah', preview: 'Quarterly report is ready for review.' },
-  { id: 'm2', from: 'Kwame Owusu', preview: 'Can we push the sync to 3pm?' },
+  { id: 'm1', from: 'Mira Mitchell', preview: 'Quarterly report is ready for review.' },
+  { id: 'm2', from: "Marcus O'Connor", preview: 'Can we push the sync to 3pm?' },
   {
     id: 'm3',
-    from: 'Efua Boateng',
+    from: 'Elena Bennett',
     preview: 'No gesture needed here, try the ⋮ button instead.',
     showMenuButton: true,
   },
@@ -130,7 +130,7 @@ function remove(id: string, close: () => void) {
   padding: 0;
   max-inline-size: 28rem;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   overflow: hidden;
 }
 .swipe-row + .swipe-row {

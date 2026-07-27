@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <clipPath id="og-circle">
+      <circle cx="16" cy="16" r="14" />
+    </clipPath>
+    <pattern id="og-d1" patternUnits="userSpaceOnUse" width="4.6" height="4.6">
+      <circle cx="1.15" cy="1.15" r="0.48" fill="#18181b" />
+    </pattern>
+    <pattern id="og-d2" patternUnits="userSpaceOnUse" width="3.4" height="3.4">
+      <circle cx="0.85" cy="0.85" r="0.58" fill="#18181b" />
+    </pattern>
+    <pattern id="og-d3" patternUnits="userSpaceOnUse" width="2.5" height="2.5">
+      <circle cx="0.625" cy="0.625" r="0.66" fill="#18181b" />
+    </pattern>
+    <pattern id="og-d4" patternUnits="userSpaceOnUse" width="1.8" height="1.8">
+      <circle cx="0.45" cy="0.45" r="0.76" fill="#18181b" />
+    </pattern>
+    <pattern id="og-bg-dots" patternUnits="userSpaceOnUse" width="26" height="26">
+      <circle cx="1" cy="1" r="1" fill="#e4e4e7" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="#ffffff" />
+  <rect width="1200" height="630" fill="url(#og-bg-dots)" />
+
+  <g transform="translate(120, 195) scale(6.875)">
+    <g clip-path="url(#og-circle)">
+      <rect x="2" y="2" width="7" height="28" fill="url(#og-d1)" />
+      <rect x="9" y="2" width="7" height="28" fill="url(#og-d2)" />
+      <rect x="16" y="2" width="7" height="28" fill="url(#og-d3)" />
+      <rect x="23" y="2" width="7" height="28" fill="url(#og-d4)" />
+    </g>
+  </g>
+
+  <text x="380" y="330" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="88" font-weight="700" letter-spacing="-2">
+    <tspan fill="#18181b">vael</tspan><tspan fill="#a1a1aa">-</tspan><tspan fill="#6366f1">ui</tspan>
+  </text>
+  <text x="382" y="390" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" fill="#52525b">
+    A Vue 3 UI library with a real Vue Vapor build.
+  </text>
+</svg>

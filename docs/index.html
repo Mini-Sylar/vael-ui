@@ -2,8 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        var storedTheme = localStorage.getItem("vael-ui-docs-theme");
+        if (storedTheme === "light" || storedTheme === "dark") {
+          document.documentElement.dataset.theme = storedTheme;
+        }
+      } catch (e) {}
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>vael-ui</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Vael-ui</title>
   </head>
   <body>
     <div id="app"></div>

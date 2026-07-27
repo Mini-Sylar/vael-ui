@@ -122,7 +122,7 @@ function rowItems(row: Row): MenuEntry[] {
   inline-size: 100%;
   max-inline-size: 24rem;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   overflow: hidden;
 }
 .table-row {

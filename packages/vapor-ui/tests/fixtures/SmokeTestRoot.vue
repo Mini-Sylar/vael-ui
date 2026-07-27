@@ -87,7 +87,7 @@
   <section class="demo-section">
     <h2>Layout &amp; display</h2>
     <div class="demo-row" data-testid="smoke-Card"><Card title="Card title">Body</Card></div>
-    <div class="demo-row" data-testid="smoke-Avatar"><Avatar name="Ama Mensah" /></div>
+    <div class="demo-row" data-testid="smoke-Avatar"><Avatar name="Alex Johnson" /></div>
     <div class="demo-row" data-testid="smoke-Kbd"><Kbd>K</Kbd></div>
     <div class="demo-row" data-testid="smoke-Accordion"><Accordion /></div>
     <div class="demo-row" data-testid="smoke-Collapsible"><Collapsible /></div>

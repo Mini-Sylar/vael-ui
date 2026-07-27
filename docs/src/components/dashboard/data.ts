@@ -10,10 +10,10 @@ export interface Order {
 }
 
 const CUSTOMER_NAMES = [
-  'Ama Mensah',
-  'Kwame Owusu',
-  'Efua Boateng',
-  'Kofi Asante',
+  'Mira Mitchell',
+  "Marcus O'Connor",
+  'Elena Bennett',
+  'Kai Anderson',
   'Priya Nair',
   'Wei Chen',
   'Sofia Rossi',
@@ -24,7 +24,7 @@ const CUSTOMER_NAMES = [
   'Hiro Suzuki',
   'Zainab Nkomo',
   'Mateo Novak',
-  'Adjoa Frimpong',
+  'Amelia Fisher',
 ]
 
 export const STATUS_VARIANT: Record<Order['status'], 'success' | 'warning' | 'danger'> = {

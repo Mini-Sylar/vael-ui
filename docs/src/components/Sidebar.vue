@@ -1,6 +1,5 @@
 <template>
   <Resizable
-    v-if="!isMobile"
     v-model:size="sidebarWidth"
     direction="horizontal"
     edge="end"
@@ -13,10 +12,9 @@
       <MenuList :items="navItems" :active="activeValue" @select="onSelect" />
     </nav>
   </Resizable>
-  <Drawer v-else v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
+  <Drawer v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
     <nav class="sidebar-scroll sidebar-scroll--mobile">
       <MenuList :items="navItems" :active="activeValue" @select="onMobileSelect" />
-      <slot name="mobile-extra" />
     </nav>
   </Drawer>
 </template>
@@ -25,13 +23,12 @@
 import { computed, nextTick, onMounted, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useLocalStorage, useMediaQuery, useScroll } from '@vueuse/core'
+import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable } from 'vael-ui'
 import type { MenuEntry, MenuItemData } from 'vael-ui'
 import { categories } from '../taxonomy'
 
 const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
-const isMobile = useMediaQuery('(max-width: 800px)')
 
 const { t } = useI18n()
 const route = useRoute()
@@ -99,6 +96,12 @@ onMounted(() => {
   border-right: 1px solid var(--ui-border);
   background: color-mix(in oklch, var(--ui-muted) 40%, transparent);
   overflow: hidden;
+}
+
+@media (max-width: 800px) {
+  .sidebar-shell {
+    display: none;
+  }
 }
 
 .sidebar-scroll {

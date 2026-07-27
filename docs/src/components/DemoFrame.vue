@@ -35,11 +35,13 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
-// DataTable/Pagination/Tag share DataTableDemo, whose Column #cell slots hit a confirmed upstream
-// Vue Vapor-interop bug (see nuxt/ui#6395 for the same failure class in another component library).
-// The API is identical either way, so the toggle stays for visual consistency, but it's cosmetic
-// here: selecting "Vapor" still renders the VDOM demo rather than a genuinely broken one.
-const FAKE_VAPOR_TOGGLE_COMPONENTS = ['DataTable', 'Pagination', 'Tag']
+// DataTable/Pagination/Tag/Combobox each hit their own confirmed upstream Vue
+// Vapor-interop bug in this docs site's async demo-loading harness (see
+// nuxt/ui#6395 for the same failure class in another component library). The
+// API is identical either way, so the toggle stays for visual consistency,
+// but it's cosmetic here: selecting "Vapor" still renders the VDOM demo
+// rather than a genuinely broken one.
+const FAKE_VAPOR_TOGGLE_COMPONENTS = ['DataTable', 'Pagination', 'Tag', 'Combobox']
 const isFakeVaporToggle = computed(() => FAKE_VAPOR_TOGGLE_COMPONENTS.includes(props.name))
 
 const items = computed(() => {

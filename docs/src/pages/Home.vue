@@ -150,7 +150,7 @@ const { t } = useI18n()
   gap: 0.75rem;
   padding: 1.25rem 1.5rem;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   background: var(--ui-muted);
 }
 

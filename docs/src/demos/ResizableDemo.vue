@@ -86,7 +86,7 @@ const querySize = shallowRef(180)
   display: flex;
   block-size: 260px;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   overflow: hidden;
   margin-block-end: 1.5rem;
 }
@@ -124,7 +124,7 @@ const querySize = shallowRef(180)
   flex-direction: column;
   block-size: 340px;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   overflow: hidden;
   margin-block-end: 1.5rem;
 }

@@ -17,9 +17,9 @@ import { DataTable, Column } from 'vael-ui/vapor'
 import { shallowRef } from 'vue'
 
 const people = [
-  { id: '1', name: 'Ama', role: 'Engineer' },
-  { id: '2', name: 'Kwame', role: 'Designer' },
-  { id: '3', name: 'Efua', role: 'Support' },
+  { id: '1', name: 'Maria', role: 'Engineer' },
+  { id: '2', name: 'James', role: 'Designer' },
+  { id: '3', name: 'Sophie', role: 'Support' },
 ]
 
 const selectedCount = shallowRef(0)

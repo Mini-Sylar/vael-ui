@@ -156,7 +156,7 @@ const checkboxValues = shallowRef<(string | number)[]>([])
   flex-direction: column;
   block-size: 20rem;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   background: var(--ui-surface);
   overflow: hidden;
   margin-block: 0.5rem;

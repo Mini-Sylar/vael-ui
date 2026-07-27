@@ -84,11 +84,17 @@ function formatStat(stat: StatDef): string {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 0.875rem;
+  align-items: stretch;
+  margin-block-end: 1rem;
+}
+.dash-stat-card {
+  height: 100%;
 }
 .dash-stat-card :deep(.ui-card-body) {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  height: 100%;
 }
 .dash-stat-head {
   display: flex;

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .vael-favicon-dot { fill: #18181b; }
+      @media (prefers-color-scheme: dark) {
+        .vael-favicon-dot { fill: #f4f4f5; }
+      }
+    </style>
+    <clipPath id="vael-favicon-circle">
+      <circle cx="16" cy="16" r="14" />
+    </clipPath>
+    <pattern id="vael-favicon-d1" patternUnits="userSpaceOnUse" width="4.6" height="4.6">
+      <circle cx="1.15" cy="1.15" r="0.48" class="vael-favicon-dot" />
+    </pattern>
+    <pattern id="vael-favicon-d2" patternUnits="userSpaceOnUse" width="3.4" height="3.4">
+      <circle cx="0.85" cy="0.85" r="0.58" class="vael-favicon-dot" />
+    </pattern>
+    <pattern id="vael-favicon-d3" patternUnits="userSpaceOnUse" width="2.5" height="2.5">
+      <circle cx="0.625" cy="0.625" r="0.66" class="vael-favicon-dot" />
+    </pattern>
+    <pattern id="vael-favicon-d4" patternUnits="userSpaceOnUse" width="1.8" height="1.8">
+      <circle cx="0.45" cy="0.45" r="0.76" class="vael-favicon-dot" />
+    </pattern>
+  </defs>
+  <g clip-path="url(#vael-favicon-circle)">
+    <rect x="2" y="2" width="7" height="28" fill="url(#vael-favicon-d1)" />
+    <rect x="9" y="2" width="7" height="28" fill="url(#vael-favicon-d2)" />
+    <rect x="16" y="2" width="7" height="28" fill="url(#vael-favicon-d3)" />
+    <rect x="23" y="2" width="7" height="28" fill="url(#vael-favicon-d4)" />
+  </g>
+</svg>

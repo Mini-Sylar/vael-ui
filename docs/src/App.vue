@@ -12,7 +12,13 @@
         >
           <PhList :size="18" />
         </Button>
-        <RouterLink to="/" class="brand">{{ t('nav.home') }}</RouterLink>
+        <RouterLink to="/" class="brand">
+          <Logo :size="22" class="brand-logo" />
+          <span class="brand-text"
+            ><span class="brand-vael">vael</span><span class="brand-hyphen">-</span
+            ><span class="brand-ui">ui</span></span
+          >
+        </RouterLink>
         <nav class="main-nav">
           <RouterLink to="/docs/getting-started">{{ t('nav.gettingStarted') }}</RouterLink>
           <RouterLink to="/docs/guides/global-setup">{{ t('nav.globalSetup') }}</RouterLink>
@@ -80,68 +86,21 @@
               :aria-label="t('header.locale')"
               @update:model-value="onLocaleChange"
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              icon
+              :aria-label="t('header.colorScheme')"
+              @click="setMode(resolvedMode === 'dark' ? 'light' : 'dark')"
+            >
+              <PhSun v-if="resolvedMode === 'dark'" :size="18" />
+              <PhMoon v-else :size="18" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            icon
-            :aria-label="t('header.colorScheme')"
-            @click="setMode(resolvedMode === 'dark' ? 'light' : 'dark')"
-          >
-            <PhSun v-if="resolvedMode === 'dark'" :size="18" />
-            <PhMoon v-else :size="18" />
-          </Button>
         </div>
       </header>
       <div class="app-body">
-        <Sidebar v-model:mobile-open="mobileNavOpen">
-          <template #mobile-extra>
-            <div class="mobile-settings">
-              <label class="theme-row">
-                <span>{{ t('header.primaryColor') }}</span>
-                <span class="color-swatch">
-                  <input
-                    :value="swatchColor"
-                    type="color"
-                    @input="primaryColor = ($event.target as HTMLInputElement).value"
-                  />
-                </span>
-              </label>
-              <label class="theme-row">
-                <span>{{ t('header.radius') }}</span>
-                <Select
-                  :model-value="radiusChoice"
-                  size="sm"
-                  class="radius-select"
-                  :items="radiusItems"
-                  @update:model-value="onRadiusChange"
-                />
-              </label>
-              <label class="theme-row">
-                <span>{{ t('header.locale') }}</span>
-                <Select
-                  :model-value="locale"
-                  size="sm"
-                  class="locale-select"
-                  :items="localeItems"
-                  @update:model-value="onLocaleChange"
-                />
-              </label>
-              <label class="theme-row">
-                <span>{{ t('header.defaultMode') }}</span>
-                <SelectButton
-                  v-model="defaultVariant"
-                  size="sm"
-                  :allow-empty="false"
-                  :items="[
-                    { label: t('component.vdom'), value: 'vdom' },
-                    { label: t('component.vapor'), value: 'vapor' },
-                  ]"
-                />
-              </label>
-            </div>
-          </template>
-        </Sidebar>
+        <Sidebar v-model:mobile-open="mobileNavOpen" />
         <main class="app-content">
           <RouterView v-slot="{ Component }">
             <Transition name="page" mode="out-in">
@@ -151,23 +110,87 @@
         </main>
       </div>
     </div>
+
+    <Dock class="mobile-dock" :items="mobileDockItems" magnify tooltips />
+
+    <BottomSheet v-model:open="mobileSettingsOpen" :title="t('header.settings')" width="md">
+      <div class="mobile-settings">
+        <label class="theme-row">
+          <span>{{ t('header.primaryColor') }}</span>
+          <span class="color-swatch">
+            <input
+              :value="swatchColor"
+              type="color"
+              @input="primaryColor = ($event.target as HTMLInputElement).value"
+            />
+          </span>
+        </label>
+        <label class="theme-row">
+          <span>{{ t('header.radius') }}</span>
+          <Select
+            :model-value="radiusChoice"
+            size="sm"
+            class="radius-select"
+            :items="radiusItems"
+            @update:model-value="onRadiusChange"
+          />
+        </label>
+        <label class="theme-row">
+          <span>{{ t('header.locale') }}</span>
+          <Select
+            :model-value="locale"
+            size="sm"
+            class="locale-select"
+            :items="localeItems"
+            @update:model-value="onLocaleChange"
+          />
+        </label>
+        <label class="theme-row">
+          <span>{{ t('header.defaultMode') }}</span>
+          <SelectButton
+            v-model="defaultVariant"
+            size="sm"
+            :allow-empty="false"
+            :items="[
+              { label: t('component.vdom'), value: 'vdom' },
+              { label: t('component.vapor'), value: 'vapor' },
+            ]"
+          />
+        </label>
+      </div>
+    </BottomSheet>
+
     <!-- Global singletons every real consumer app mounts once. Without
-         them, v-tooltip/openDialog()/toast() demos render nothing at all. -->
+         them, v-tooltip/openDialog()/toast() demos render nothing at all.
+         Toaster's own page runs a second, page-local instance to demo its
+         props live — since the toast queue is a real singleton, both would
+         render every fired toast, so this one steps aside there. -->
     <TooltipHost />
     <DialogHost />
-    <Toaster />
+    <Toaster v-if="!isToasterPage" />
   </ConfigProvider>
 </template>
 
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { useLocalStorage } from '@vueuse/core'
-import { PhList, PhMoon, PhPalette, PhSun } from '@phosphor-icons/vue'
 import {
+  PhGear,
+  PhGithubLogo,
+  PhHouse,
+  PhList,
+  PhMoon,
+  PhPalette,
+  PhSun,
+} from '@phosphor-icons/vue'
+import {
+  BottomSheet,
   Button,
   ConfigProvider,
   DialogHost,
+  Dock,
   Popover,
   Select,
   SelectButton,
@@ -175,14 +198,16 @@ import {
   TooltipHost,
   useColorScheme,
 } from 'vael-ui'
+import type { DockItemData } from 'vael-ui'
 import Sidebar from './components/Sidebar.vue'
 import SearchPalette from './components/SearchPalette.vue'
+import Logo from './components/Logo.vue'
 import { setLocale, SUPPORTED_LOCALES, type Locale } from './i18n'
 import { defaultVariant } from './preferences'
 import { useHead } from '@unhead/vue'
 
 useHead({
-  titleTemplate: (title) => (title ? `${title} — vael-ui` : 'vael-ui'),
+  titleTemplate: (title) => (title ? `${title} — Vael-ui` : 'Vael-ui'),
   meta: [
     {
       name: 'description',
@@ -191,18 +216,42 @@ useHead({
     },
     { property: 'og:type', content: 'website' },
     { property: 'og:site_name', content: 'vael-ui' },
+    { property: 'og:url', content: 'https://vael-ui.dev' },
+    {
+      property: 'og:image',
+      content: 'https://vael-ui.dev/og-image.png',
+    },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
+    {
+      property: 'og:image:alt',
+      content: 'vael-ui — a Vue 3 UI library with a real Vue Vapor build',
+    },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    {
+      name: 'twitter:image',
+      content: 'https://vael-ui.dev/og-image.png',
+    },
   ],
 })
 
+const route = useRoute()
+const router = useRouter()
+const isToasterPage = computed(() => route.name === 'component' && route.params.name === 'Toaster')
+
 const themeOpen = shallowRef(false)
 const mobileNavOpen = shallowRef(false)
+const mobileSettingsOpen = shallowRef(false)
 
 const { t, locale: i18nLocale } = useI18n()
 const locale = useLocalStorage<Locale>('vael-ui-docs-locale', 'en')
 watch(locale, (l) => setLocale(l), { immediate: true })
 void i18nLocale // useI18n's own ref stays in sync via setLocale(); kept for template t()
 
-const localeItems = SUPPORTED_LOCALES.map((l) => ({ label: l.toUpperCase(), value: l }))
+const localeItems = SUPPORTED_LOCALES.map((l) => ({
+  label: l.toUpperCase(),
+  value: l,
+}))
 function onLocaleChange(value: string | number | (string | number)[] | null) {
   if (typeof value === 'string') locale.value = value as Locale
 }
@@ -213,6 +262,29 @@ const { resolvedMode, setMode } = useColorScheme({
     set: (m) => localStorage.setItem('vael-ui-docs-theme', m ?? ''),
   },
 })
+
+const mobileDockItems = computed<DockItemData[]>(() => [
+  {
+    label: t('nav.home'),
+    icon: PhHouse,
+    onSelect: () => router.push('/'),
+  },
+  {
+    label: t('header.colorScheme'),
+    icon: resolvedMode.value === 'dark' ? PhSun : PhMoon,
+    onSelect: () => setMode(resolvedMode.value === 'dark' ? 'light' : 'dark'),
+  },
+  {
+    label: t('header.settings'),
+    icon: PhGear,
+    onSelect: () => (mobileSettingsOpen.value = true),
+  },
+  {
+    label: t('nav.github'),
+    icon: PhGithubLogo,
+    onSelect: () => window.open('https://github.com/Mini-Sylar/vael-ui', '_blank', 'noreferrer'),
+  },
+])
 
 // No accent by default. The library's own black/white palette is the
 // starting point. The picker is an opt-in accent, not a forced brand color.
@@ -274,10 +346,29 @@ const theme = computed(() => ({
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 700;
   font-size: 1.1rem;
   text-decoration: none;
   color: var(--ui-text);
+}
+
+.brand .brand-logo {
+  color: var(--ui-primary);
+}
+
+.brand-vael {
+  color: var(--ui-text);
+}
+
+.brand-hyphen {
+  color: var(--ui-text-muted);
+}
+
+.brand-ui {
+  color: var(--ui-primary);
 }
 
 .main-nav {
@@ -322,9 +413,10 @@ const theme = computed(() => ({
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-block-start: 1rem;
-  padding-block-start: 1rem;
-  border-block-start: 1px solid var(--ui-border);
+}
+
+.mobile-dock {
+  display: none;
 }
 
 .color-swatch {
@@ -405,7 +497,17 @@ const theme = computed(() => ({
   }
 
   .app-content {
-    padding: 1.5rem 1.25rem 3rem;
+    padding: 1.5rem 1.25rem 6rem;
+  }
+
+  .mobile-dock {
+    display: flex;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 1rem;
+    inline-size: fit-content;
+    margin-inline: auto;
+    z-index: 20;
   }
 }
 </style>

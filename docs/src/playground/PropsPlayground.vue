@@ -79,6 +79,11 @@
                 <component :is="columnComponent" :data="columnData" field="role" label="Role" />
                 <component :is="columnComponent" :data="columnData" field="status" label="Status" />
               </template>
+              <template #expansion="{ row }">
+                <p class="datatable-expansion-row">
+                  <strong>{{ row.email }}</strong> · {{ row.team }}
+                </p>
+              </template>
             </component>
           </template>
           <template v-else-if="isToolbar">
@@ -106,6 +111,14 @@
               :key="resetKey"
               v-bind="boundProps"
               :items="DOCK_PLACEHOLDER_ITEMS"
+            />
+          </template>
+          <template v-else-if="isSpeedDial">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              :items="SPEED_DIAL_PLACEHOLDER_ITEMS"
             />
           </template>
           <template v-else-if="isResizable">
@@ -177,22 +190,28 @@
               v-else-if="hasTriggerSlot && hasItemsProp"
               :is="activeComponent"
               :key="`${resetKey}-trigger`"
+              v-model:open="openModelValue"
               v-bind="boundProps"
               @update:model-value="onModelUpdate"
             >
-              <template #trigger="{ setTriggerEl, toggle }">
-                <Button :ref="setTriggerEl" @click="toggle">Trigger</Button>
+              <template #trigger="{ setTriggerEl }">
+                <Button :ref="setTriggerEl" @click="openModelValue = !openModelValue"
+                  >Trigger</Button
+                >
               </template>
             </component>
             <component
               v-else
               :is="activeComponent"
               :key="`${resetKey}-default`"
+              v-model:open="openModelValue"
               v-bind="boundProps"
               @update:model-value="onModelUpdate"
             >
-              <template v-if="hasTriggerSlot" #trigger="{ setTriggerEl, toggle }">
-                <Button :ref="setTriggerEl" @click="toggle">Trigger</Button>
+              <template v-if="hasTriggerSlot" #trigger="{ setTriggerEl }">
+                <Button :ref="setTriggerEl" @click="openModelValue = !openModelValue"
+                  >Trigger</Button
+                >
               </template>
               <svg
                 v-if="showIconPreview"
@@ -299,7 +318,14 @@ const meta = computed(() => (componentMeta as Record<string, ComponentMetaEntry>
 const vaelUiVapor = useVaporComponents()
 const vaelUi = VaelUi as unknown as Record<string, Component | undefined>
 
+// Combobox hits a confirmed upstream Vue Vapor-interop crash in this live
+// playground (its floating listbox + filter-input combination), same failure
+// class as DataTable/Pagination/Tag's Examples demo (see DemoFrame.vue). The
+// toggle stays for API-consistency; it's cosmetic here.
+const FAKE_VAPOR_TOGGLE_COMPONENTS = ['Combobox']
+
 const activeComponent = computed<Component | null>(() => {
+  if (FAKE_VAPOR_TOGGLE_COMPONENTS.includes(props.name)) return vaelUi[props.name] ?? null
   const vaporExport = vaelUiVapor.value[props.name]
   if (defaultVariant.value === 'vapor' && vaporExport) return vaporExport
   return vaelUi[props.name] ?? null
@@ -328,6 +354,7 @@ const isDataTable = computed(() => props.name === 'DataTable')
 const isToolbar = computed(() => props.name === 'Toolbar')
 const isAccordion = computed(() => props.name === 'Accordion')
 const isDock = computed(() => props.name === 'Dock')
+const isSpeedDial = computed(() => props.name === 'SpeedDial')
 const isTabs = computed(() => props.name === 'Tabs')
 const TABS_PLACEHOLDER_ITEMS = ['Overview', 'Activity', 'Settings']
 const tabsActive = shallowRef(TABS_PLACEHOLDER_ITEMS[0])
@@ -366,6 +393,17 @@ const DOCK_PLACEHOLDER_ITEMS = [
     style: { color: '#7c3aed' },
   },
 ]
+const SPEED_DIAL_PLACEHOLDER_ITEMS = [
+  { label: 'New file', icon: { render: svgIcon('M4 4h16v12H8l-4 4z') } },
+  {
+    label: 'New folder',
+    icon: { render: svgIcon('M3 5h6l2 2h10v10H3z') },
+  },
+  {
+    label: 'Upload',
+    icon: { render: svgIcon('M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z') },
+  },
+]
 
 // Matches activeComponent's own variant — a child rendered from the other build wasn't reliable (e.g. Radio/RadioGroup mismatched under Vapor).
 function resolveVariant(name: string): Component | undefined {
@@ -378,11 +416,46 @@ const radioComponent = computed(() => resolveVariant('Radio'))
 const inputComponent = computed(() => resolveVariant('Input'))
 
 const DATATABLE_PLACEHOLDER_ROWS = [
-  { id: 'r1', name: 'Ama Mensah', role: 'Engineer', status: 'Active' },
-  { id: 'r2', name: 'Kwame Owusu', role: 'Designer', status: 'Active' },
-  { id: 'r3', name: 'Priya Nair', role: 'Product Manager', status: 'Invited' },
-  { id: 'r4', name: 'Diego Silva', role: 'Support', status: 'Suspended' },
-  { id: 'r5', name: 'Sofia Rossi', role: 'Sales', status: 'Active' },
+  {
+    id: 'r1',
+    name: 'Mira Mitchell',
+    role: 'Engineer',
+    status: 'Active',
+    email: 'mira.mitchell@example.com',
+    team: 'Platform',
+  },
+  {
+    id: 'r2',
+    name: "Marcus O'Connor",
+    role: 'Designer',
+    status: 'Active',
+    email: 'marcus.oconnor@example.com',
+    team: 'Design systems',
+  },
+  {
+    id: 'r3',
+    name: 'Priya Nair',
+    role: 'Product Manager',
+    status: 'Invited',
+    email: 'priya.nair@example.com',
+    team: 'Growth',
+  },
+  {
+    id: 'r4',
+    name: 'Diego Silva',
+    role: 'Support',
+    status: 'Suspended',
+    email: 'diego.silva@example.com',
+    team: 'Customer success',
+  },
+  {
+    id: 'r5',
+    name: 'Sofia Rossi',
+    role: 'Sales',
+    status: 'Active',
+    email: 'sofia.rossi@example.com',
+    team: 'Revenue',
+  },
 ]
 
 // Any default-slot content here overrides their own computed fallback (Avatar's initials, Badge's count, ...).
@@ -710,6 +783,12 @@ const code = computed(() => {
   background: var(--ui-surface);
   color: var(--ui-text);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+.datatable-expansion-row {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ui-text-muted);
 }
 
 .context-area-target {

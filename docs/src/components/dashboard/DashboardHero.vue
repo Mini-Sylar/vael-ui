@@ -8,7 +8,10 @@
           <nav aria-label="Breadcrumb" class="dash-crumb">
             <ol class="dash-crumb-trail">
               <li class="dash-crumb-item">
-                <Button variant="ghost" size="sm" class="dash-crumb-link">Home</Button>
+                <Button variant="ghost" size="sm" class="dash-crumb-link">
+                  <Logo :size="14" class="dash-crumb-logo" />
+                  Home
+                </Button>
                 <PhCaretRight :size="12" class="dash-crumb-separator" />
               </li>
               <li class="dash-crumb-item">
@@ -31,7 +34,7 @@
           <Menu :items="accountMenuItems" align="end" @select="onAccountSelect">
             <template #trigger>
               <Button variant="ghost" icon pill aria-label="Account menu">
-                <Avatar name="Ama Mensah" size="sm" />
+                <Avatar name="Mira Mitchell" size="sm" />
               </Button>
             </template>
           </Menu>
@@ -52,6 +55,7 @@ import { computed, provide, shallowRef } from 'vue'
 import { Avatar, Button, Input, Menu, toast, vTooltip } from 'vael-ui'
 import type { MenuItemData } from 'vael-ui'
 import { PhBell, PhCaretRight, PhMagnifyingGlass } from '@phosphor-icons/vue'
+import Logo from '../Logo.vue'
 import DashboardSidebar from './DashboardSidebar.vue'
 import OverviewPage from './pages/OverviewPage.vue'
 import OrdersPage from './pages/OrdersPage.vue'
@@ -92,7 +96,7 @@ function onAccountSelect(item: MenuItemData) {
   display: flex;
   align-items: stretch;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   overflow: hidden;
   background: var(--ui-surface);
   box-shadow: var(--ui-panel-shadow);
@@ -139,6 +143,9 @@ function onAccountSelect(item: MenuItemData) {
   padding-inline: 0.375rem;
   font-size: 0.75rem;
   color: var(--ui-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 .dash-crumb-link:hover {
   color: var(--ui-text);

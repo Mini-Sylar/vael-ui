@@ -26,7 +26,7 @@ import { Button } from 'vael-ui'
 import { codeToHtml } from 'shiki'
 
 const props = withDefaults(
-  defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' | 'json' }>(),
+  defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' | 'json' | 'css' }>(),
   { lang: 'vue' },
 )
 

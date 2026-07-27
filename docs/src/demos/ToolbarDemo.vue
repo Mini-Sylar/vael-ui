@@ -162,14 +162,14 @@ function onAlignSelect(item: MenuItemData) {
 .editor-toolbar {
   padding: 0.25rem;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   background: var(--ui-surface);
 }
 .toolbar-vertical {
   inline-size: 3rem;
   padding: 0.25rem;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-surface);
   background: var(--ui-surface);
 }
 .resizable {

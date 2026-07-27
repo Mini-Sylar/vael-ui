@@ -24,15 +24,20 @@ let cols = 0
 let rows = 0
 let t = 0
 
+// Sized to the canvas's own containing block, not the viewport — this fills
+// whatever section hosts it (e.g. the 404 page's content column) without
+// bleeding under the sidebar, which sits in a sibling flex column.
 function resize() {
   const canvas = canvasEl.value
-  if (!canvas) return
+  const parent = canvas?.parentElement
+  if (!canvas || !parent) return
+  const { width, height } = parent.getBoundingClientRect()
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
-  canvas.width = Math.ceil(window.innerWidth * dpr)
-  canvas.height = Math.ceil(window.innerHeight * dpr)
+  canvas.width = Math.ceil(width * dpr)
+  canvas.height = Math.ceil(height * dpr)
   ctx?.scale(dpr, dpr)
-  cols = Math.ceil(window.innerWidth / CELL)
-  rows = Math.ceil(window.innerHeight / CELL)
+  cols = Math.ceil(width / CELL)
+  rows = Math.ceil(height / CELL)
 }
 
 // Two offset sine fields instead of true random noise: cheap, and its slow
@@ -76,11 +81,13 @@ onMounted(() => {
     }, 140)
   }
 
-  resizeObserver = new ResizeObserver(() => {
-    resize()
-    draw()
-  })
-  resizeObserver.observe(document.body)
+  if (canvas.parentElement) {
+    resizeObserver = new ResizeObserver(() => {
+      resize()
+      draw()
+    })
+    resizeObserver.observe(canvas.parentElement)
+  }
 })
 
 onUnmounted(() => {
@@ -91,7 +98,7 @@ onUnmounted(() => {
 
 <style scoped>
 .dither-canvas {
-  position: fixed;
+  position: absolute;
   inset: 0;
   inline-size: 100%;
   block-size: 100%;
