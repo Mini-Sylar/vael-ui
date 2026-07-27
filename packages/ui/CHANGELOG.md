@@ -1,5 +1,13 @@
 # vael-ui
 
+## 0.0.6
+
+### Patch Changes
+
+- [`6026e0d`](https://github.com/Mini-Sylar/vael-ui/commit/6026e0da1b407c49a61acd682a2aace77d91230e) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - Cap large surfaces (Card, Dialog, Popover, Menu, Select panel, DataTable, FileUpload dropzone, Dock) to a new `--ui-radius-surface` token (`min(var(--ui-radius), 1rem)`) instead of the raw `--ui-radius`, so an aggressive radius preset like Pill (`999px`) no longer turns large rectangular surfaces into stadium shapes. Small controls keep using the uncapped `--ui-radius`.
+
+  `--ui-radius-surface` is now redeclared on every element (via a universal selector) instead of once at `:root`, so it recomputes correctly under a scoped `ConfigProvider` theme or a Teleported root that re-applies `--ui-radius` — previously it froze at `:root`'s value and ignored those overrides.
+
 ## 0.0.5
 
 ### Patch Changes
