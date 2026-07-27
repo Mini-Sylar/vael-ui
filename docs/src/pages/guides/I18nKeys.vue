@@ -44,9 +44,15 @@ import { useI18n } from 'vue-i18n'
 import { defaultMessages } from 'vael-ui'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
+import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
 
 const { t } = useI18n()
 useHead({ title: () => t('i18nKeys.title') })
+
+useBreadcrumbSchema(() => [
+  { name: 'Home', url: 'https://vael-ui.dev/' },
+  { name: t('i18nKeys.title'), url: 'https://vael-ui.dev/docs/guides/i18n-keys' },
+])
 
 interface KeyRow {
   key: string

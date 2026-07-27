@@ -39,9 +39,15 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
+import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
 
 const { t } = useI18n()
 useHead({ title: () => t('nav.tailwindGuide') })
+
+useBreadcrumbSchema(() => [
+  { name: 'Home', url: 'https://vael-ui.dev/' },
+  { name: t('nav.tailwindGuide'), url: 'https://vael-ui.dev/docs/guides/tailwind' },
+])
 
 const tocLinks = computed(() => [{ id: 'merging', label: t('tailwind.mergingTitle') }])
 </script>

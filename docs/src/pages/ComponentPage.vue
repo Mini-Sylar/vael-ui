@@ -103,6 +103,7 @@ import ToasterPlayground from '../playground/ToasterPlayground.vue'
 import type { ComponentMetaEntry, DemoManifestEntry } from '../types'
 import { categoryOf } from '../taxonomy'
 import { defaultVariant } from '../preferences'
+import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 
 const vdomModules = import.meta.glob<{ default: Component }>('../generated/vdom-demos/*.vue')
 const vaporModules = import.meta.glob<{ default: Component }>('../generated/vapor-demos/*.vue')
@@ -134,6 +135,11 @@ useHead({
   title: () => name.value,
   meta: [{ name: 'description', content: () => description.value ?? undefined }],
 })
+
+useBreadcrumbSchema(() => [
+  { name: 'Home', url: 'https://vael-ui.dev/' },
+  { name: name.value, url: `https://vael-ui.dev/components/${name.value}` },
+])
 
 // Per-component callouts for the handful that need one, currently just
 // pointing Resizable at its real, already-in-use example instead of a

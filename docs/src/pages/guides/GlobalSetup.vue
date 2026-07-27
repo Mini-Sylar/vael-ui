@@ -61,12 +61,18 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
 import MetaTable from '../../components/MetaTable.vue'
+import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
 import GuideLayout from '../../components/GuideLayout.vue'
 import componentMeta from '../../generated/component-meta.json'
 import type { ComponentMetaEntry } from '../../types'
 
 const { t } = useI18n()
 useHead({ title: () => t('globalSetup.title') })
+
+useBreadcrumbSchema(() => [
+  { name: 'Home', url: 'https://vael-ui.dev/' },
+  { name: t('globalSetup.title'), url: 'https://vael-ui.dev/docs/guides/global-setup' },
+])
 
 const tooltipHostProps = (componentMeta as Record<string, ComponentMetaEntry>).TooltipHost.props
 

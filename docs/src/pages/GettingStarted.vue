@@ -83,9 +83,15 @@ import { SelectButton } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import GuideLayout from '../components/GuideLayout.vue'
 import { defaultVariant } from '../preferences'
+import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 
 const { t } = useI18n()
 useHead({ title: () => t('gettingStarted.title') })
+
+useBreadcrumbSchema(() => [
+  { name: 'Home', url: 'https://vael-ui.dev/' },
+  { name: t('gettingStarted.title'), url: 'https://vael-ui.dev/docs/getting-started' },
+])
 
 type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'
 const pmItems: PackageManager[] = ['npm', 'pnpm', 'yarn', 'bun']

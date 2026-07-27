@@ -1,5 +1,6 @@
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
+import generateSitemap from 'vite-ssg-sitemap'
 import { allComponents } from './src/taxonomy'
 
 export default defineConfig({
@@ -22,6 +23,13 @@ export default defineConfig({
     htmlFileName(filename) {
       if (filename === '404/index.html') return '404.html'
       return undefined
+    },
+    onFinished() {
+      generateSitemap({
+        hostname: 'https://vael-ui.dev',
+        exclude: ['/404'],
+        robots: [{ userAgent: '*', allow: '/' }],
+      })
     },
   },
 })

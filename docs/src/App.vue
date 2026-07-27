@@ -206,17 +206,25 @@ import { setLocale, SUPPORTED_LOCALES, type Locale } from './i18n'
 import { defaultVariant } from './preferences'
 import { useHead } from '@unhead/vue'
 
+const route = useRoute()
+const router = useRouter()
+const canonicalUrl = computed(() => `https://vael-ui.dev${route.path}`)
+
 useHead({
   titleTemplate: (title) => (title ? `${title} — Vael-ui` : 'Vael-ui'),
+  link: [{ rel: 'canonical', href: () => canonicalUrl.value }],
   meta: [
     {
       name: 'description',
       content:
         'A Vue 3 UI library with a real Vue Vapor build, animation-agnostic components, and full i18n support.',
     },
+    { name: 'robots', content: 'index, follow' },
+    { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' },
+    { name: 'theme-color', content: '#1f1f23', media: '(prefers-color-scheme: dark)' },
     { property: 'og:type', content: 'website' },
     { property: 'og:site_name', content: 'vael-ui' },
-    { property: 'og:url', content: 'https://vael-ui.dev' },
+    { property: 'og:url', content: () => canonicalUrl.value },
     {
       property: 'og:image',
       content: 'https://vael-ui.dev/og-image.png',
@@ -233,10 +241,34 @@ useHead({
       content: 'https://vael-ui.dev/og-image.png',
     },
   ],
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'vael-ui',
+        url: 'https://vael-ui.dev',
+        description:
+          'A Vue 3 UI library with a real Vue Vapor build, animation-agnostic components, and full i18n support.',
+      }),
+    },
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareSourceCode',
+        name: 'vael-ui',
+        description: 'Animation-agnostic Vue 3 UI library with full Vue Vapor support.',
+        url: 'https://vael-ui.dev',
+        codeRepository: 'https://github.com/Mini-Sylar/vael-ui',
+        programmingLanguage: 'TypeScript',
+        runtimePlatform: 'Vue 3',
+        license: 'https://opensource.org/licenses/MIT',
+      }),
+    },
+  ],
 })
-
-const route = useRoute()
-const router = useRouter()
 const isToasterPage = computed(() => route.name === 'component' && route.params.name === 'Toaster')
 
 const themeOpen = shallowRef(false)

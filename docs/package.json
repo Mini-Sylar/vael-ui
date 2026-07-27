@@ -30,6 +30,7 @@
     "beasties": "^0.4.3",
     "typescript": "^6.0.3",
     "vite": "^8.1.5",
+    "vite-ssg-sitemap": "^0.10.0",
     "vue-component-meta": "^3.3.8",
     "vue-tsc": "^3.3.8"
   }

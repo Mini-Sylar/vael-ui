@@ -77,9 +77,15 @@ import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
+import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
 
 const { t } = useI18n()
 useHead({ title: () => t('animation.title') })
+
+useBreadcrumbSchema(() => [
+  { name: 'Home', url: 'https://vael-ui.dev/' },
+  { name: t('animation.title'), url: 'https://vael-ui.dev/docs/guides/animation-integration' },
+])
 
 const tocLinks = computed(() => [
   { id: 'motion-css', label: t('animation.motionCssTitle') },

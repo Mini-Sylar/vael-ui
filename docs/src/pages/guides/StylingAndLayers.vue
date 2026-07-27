@@ -142,9 +142,15 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
+import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
 
 const { t } = useI18n()
 useHead({ title: () => t('stylingLayers.title') })
+
+useBreadcrumbSchema(() => [
+  { name: 'Home', url: 'https://vael-ui.dev/' },
+  { name: t('stylingLayers.title'), url: 'https://vael-ui.dev/docs/guides/styling-and-layers' },
+])
 
 interface TokenRow {
   name: string
