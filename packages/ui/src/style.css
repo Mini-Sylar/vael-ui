@@ -22,7 +22,6 @@
   --ui-border: #e4e4e7;
   --ui-overlay: rgb(0 0 0 / 0.4);
   --ui-radius: 10px;
-  --ui-radius-surface: min(var(--ui-radius), 1rem);
   --ui-border-strong: #d4d4d8;
   /* Z-order: toast > popover > dialog. */
   --ui-z-dialog: 50;
@@ -46,6 +45,12 @@
   --ui-duration-toast-exit: 200ms;
   --ui-ease-toast: ease;
   --ui-toast-offset: 1rem;
+}
+
+*,
+::before,
+::after {
+  --ui-radius-surface: min(var(--ui-radius), 1rem);
 }
 
 /* Dummy animatable property for Vue timing. */
