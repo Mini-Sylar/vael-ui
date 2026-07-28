@@ -1,5 +1,15 @@
 # vael-ui
 
+## 0.0.7
+
+### Patch Changes
+
+- [`59bf949`](https://github.com/Mini-Sylar/vael-ui/commit/59bf949c8645a7e0c5cd6328ed62a0bce23b53a6) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - - **Button text centering**: Added `line-height: 1` to `.ui-button` for proper optical centering of text content
+  - **Removed tap highlight**: Added `-webkit-tap-highlight-color: transparent` globally to remove the blue tap flash on mobile devices
+  - **Standardized press scale**: Changed button, menu item, and datatable sort button `:active` scale from 0.97 to 0.96 per design standards
+  - **Accessibility**: Added `@media (prefers-reduced-motion: reduce)` support to disable press scale feedback for motion-sensitive users
+  - **Docs**: Added font size slider to theme toolbar (12-18px range) with localStorage persistence
+
 ## 0.0.6
 
 ### Patch Changes
