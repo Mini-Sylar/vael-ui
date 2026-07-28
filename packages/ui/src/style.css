@@ -50,6 +50,7 @@
 *,
 ::before,
 ::after {
+  -webkit-tap-highlight-color: transparent;
   --ui-radius-surface: min(var(--ui-radius), 1rem);
 }
 
@@ -128,6 +129,7 @@
     border: 1px solid transparent;
     font: inherit;
     font-weight: 500;
+    line-height: 1;
     cursor: pointer;
     user-select: none;
     /* Avoid rasterization mismatch during scale. */
@@ -257,7 +259,13 @@
 
   /* Press feedback: scale confirms click. */
   .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
-    transform: scale(0.97);
+    transform: scale(0.96);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      transform: none;
+    }
   }
 
   /* Keyboard affordance only. */
@@ -1447,7 +1455,7 @@
     background: var(--ui-muted);
   }
   .ui-menu-item:active:not(:disabled) {
-    transform: scale(0.97);
+    transform: scale(0.96);
   }
   .ui-menu-item:disabled {
     opacity: 0.5;
@@ -4416,7 +4424,7 @@
     }
   }
   .ui-datatable-sort-button:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
   }
   .ui-datatable-sort-button:focus-visible {
     outline: 2px solid var(--ui-primary);

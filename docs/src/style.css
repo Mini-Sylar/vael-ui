@@ -17,6 +17,12 @@
 
   html {
     font-size: 14px;
+    font-family:
+      'Geist Variable',
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scrollbar-width: thin;

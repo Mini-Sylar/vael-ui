@@ -75,6 +75,17 @@
                       @update:model-value="onRadiusChange"
                     />
                   </label>
+                  <label class="theme-row">
+                    <span>Font: {{ fontSize }}px</span>
+                    <Slider
+                      :model-value="fontSize"
+                      :min="12"
+                      :max="18"
+                      :step="1"
+                      class="font-slider"
+                      @update:model-value="(v) => (fontSize = v as number)"
+                    />
+                  </label>
                 </div>
               </template>
             </Popover>
@@ -136,6 +147,17 @@
           />
         </label>
         <label class="theme-row">
+          <span>Font: {{ fontSize }}px</span>
+          <Slider
+            :model-value="fontSize"
+            :min="12"
+            :max="18"
+            :step="1"
+            class="font-slider"
+            @update:model-value="(v) => (fontSize = v as number)"
+          />
+        </label>
+        <label class="theme-row">
           <span>{{ t('header.locale') }}</span>
           <Select
             :model-value="locale"
@@ -194,6 +216,7 @@ import {
   Popover,
   Select,
   SelectButton,
+  Slider,
   Toaster,
   TooltipHost,
   useColorScheme,
@@ -350,6 +373,23 @@ function onRadiusChange(value: string | number | (string | number)[] | null) {
   if (typeof value === 'string') radiusChoice.value = value
 }
 
+const fontSize = shallowRef(
+  (typeof localStorage === 'undefined' ? null : localStorage.getItem('vael-ui-docs-font-size'))
+    ? parseInt(localStorage.getItem('vael-ui-docs-font-size')!)
+    : 14,
+)
+watch(
+  fontSize,
+  (f) => {
+    if (typeof localStorage !== 'undefined')
+      localStorage.setItem('vael-ui-docs-font-size', String(f))
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.fontSize = `${f}px`
+    }
+  },
+  { immediate: true },
+)
+
 const theme = computed(() => ({
   ...(primaryColor.value ? { primary: primaryColor.value } : {}),
   ...(radiusChoice.value !== 'default' ? { radius: radiusChoice.value } : {}),
@@ -488,6 +528,10 @@ const theme = computed(() => ({
 
 .radius-select {
   width: 9rem;
+}
+
+.font-slider {
+  width: 8rem;
 }
 
 .locale-select {

@@ -1,6 +1,4 @@
 import { ViteSSG } from 'vite-ssg'
-import '@fontsource-variable/geist'
-import '@fontsource-variable/geist-mono'
 import './style.css'
 import 'vael-ui/style.css'
 import { vTooltip } from 'vael-ui'
