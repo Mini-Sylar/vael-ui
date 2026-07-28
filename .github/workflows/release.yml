@@ -30,7 +30,9 @@ jobs:
 
       - run: npm install -g npm@latest
 
-      - run: sed -i '/_authToken/d' "${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
+      - run: |
+          sed -i '/_authToken/d' "${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
+          echo "NODE_AUTH_TOKEN=" >> "$GITHUB_ENV"
 
       - run: pnpm install
 
