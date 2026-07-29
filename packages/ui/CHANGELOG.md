@@ -1,5 +1,31 @@
 # vael-ui
 
+## 0.1.0
+
+### Minor Changes
+
+- [`5f9da6f`](https://github.com/Mini-Sylar/vael-ui/commit/5f9da6f9b3d75fda3e11e1df6b5d10cc3a96e8b4) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - Design consistency pass across sized components, plus a new `ButtonGroup` component and `clearable` support for `CascadeSelect`/`TreeSelect`.
+
+  **New**
+
+  - `ButtonGroup`: a purely visual wrapper that joins adjacent `Button`s into one segmented unit — shared borders, only the outer corners rounded. Supports `horizontal`/`vertical` orientation. Unlike `Toolbar`, it does not manage roving tabindex — each button keeps its own place in the native Tab order, since a row of independent actions isn't a command bar.
+  - `clearable` prop added to `CascadeSelect` and `TreeSelect`, matching the existing `Select`/`Combobox` behavior. Required rebuilding both triggers from a native `<button>` to `role="combobox"` div (a native button can't legally contain the nested clear button).
+  - `SpeedDial` is now included in the `vael-ui/vapor` build. It was simply missing from the Vapor export list, not excluded for a technical reason.
+
+  **Fixed**
+
+  - `SelectButton`'s sliding indicator was landing 1px off from the selected option whenever the track had a border, since `useTabIndicator`'s `bounds` sizing mode computed insets from `getBoundingClientRect()` (border-box) but CSS resolves an absolutely-positioned child's `inset-inline-start` against the padding box. Fixed generically in the composable — benefits every consumer (`SelectButton`, `MenuList`).
+  - Vertical `Toolbar` icon buttons were left-aligned instead of centered: `align-items: stretch` doesn't apply to children with an explicit `inline-size` (icon buttons), and per flexbox falls back to start-alignment instead of centering.
+  - `Combobox`'s `clearable` button never appeared for typed-but-unselected query text — it only checked the committed selection, not the query itself.
+  - Clear buttons (`Select`/`Combobox`/`CascadeSelect`/`TreeSelect`) and the `Menu`/`CascadeSelect` submenu chevron now mount with a proper enter/leave transition (grows in from zero width, not just opacity) instead of popping the layout.
+  - `PullToRefresh`: a fast, short flick now commits even when it doesn't reach the full pull threshold (previously distance-only, unlike every other gesture-driven component in the library). Text selection during an active pull/drag is now suppressed on `PullToRefresh` and `BottomSheet`'s content-drag path.
+  - `BottomSheet`'s drag handle hit area was ~24px tall, under the library's own 40px minimum; now 40px.
+  - `InputNumber`'s stepper buttons were 18×12px with no border-radius at all. Column mode now stretches to fill the input's real height; split mode is circular and scales with `size`, matching `Select`'s own end-of-input icon-button convention.
+
+  **Consistency**
+
+  Border-radius now scales with `size` (`sm`/`md`/`lg`) the way `Button` already did, closing the gap on: `Input`, `Select`, `Combobox`, `CascadeSelect`, `TreeSelect`, `Avatar` (`square` shape), `OtpInput`, `Textarea`, `Tag`, `Checkbox`. Icon/chevron sizing was similarly unified — the `Menu`/`Select`/`Combobox`/`CascadeSelect` chevrons and clear buttons, and `SplitButton`'s trigger chevron, now scale with their trigger's own font-size instead of staying a fixed pixel size regardless of `size`.
+
 ## 0.0.7
 
 ### Patch Changes
