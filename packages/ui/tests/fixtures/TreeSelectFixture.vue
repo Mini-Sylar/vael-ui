@@ -7,6 +7,7 @@
     :items="resolvedItems"
     :selection-mode="selectionMode"
     :disabled="disabled"
+    :clearable="clearable"
     :filterable="filterable"
     placeholder="Pick a node"
   />
@@ -21,10 +22,17 @@ const props = withDefaults(
   defineProps<{
     selectionMode?: TreeSelectSelectionMode
     disabled?: boolean
+    clearable?: boolean
     filterable?: boolean
     items?: TreeSelectNode[]
   }>(),
-  { selectionMode: 'single', disabled: false, filterable: true, items: undefined },
+  {
+    selectionMode: 'single',
+    disabled: false,
+    clearable: false,
+    filterable: true,
+    items: undefined,
+  },
 )
 
 const defaultItems: TreeSelectNode[] = [

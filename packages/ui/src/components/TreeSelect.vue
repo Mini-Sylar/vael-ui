@@ -1,11 +1,12 @@
 <template>
-  <button
+  <div
     ref="triggerEl"
-    type="button"
+    role="combobox"
     :id="fieldControl.id"
     :class="triggerPart.class"
     :style="triggerPart.style"
-    :disabled="isDisabled"
+    :tabindex="isDisabled ? -1 : 0"
+    :aria-disabled="isDisabled || undefined"
     aria-haspopup="tree"
     :aria-expanded="open"
     :aria-controls="treeId"
@@ -25,6 +26,25 @@
         <span v-else>{{ displayLabel }}</span>
       </slot>
     </span>
+    <Transition name="ui-clear">
+      <button
+        v-if="clearable && !isEmpty && !isDisabled"
+        type="button"
+        class="ui-select-clear"
+        :aria-label="messages.treeSelect.clear"
+        @click.stop="onClear"
+        @mousedown.stop.prevent
+      >
+        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
+          <path
+            d="M4 4l8 8M12 4l-8 8"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </Transition>
     <span class="ui-select-chevron" aria-hidden="true">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
         <path
@@ -36,7 +56,7 @@
         />
       </svg>
     </span>
-  </button>
+  </div>
 
   <Teleport :to="teleportTo">
     <Transition name="ui-select" :css="!forceMount">
@@ -118,6 +138,7 @@ import { computed, inject, nextTick, useId, useTemplateRef, watch } from 'vue'
 import { usePopover } from '../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../composables/usePopover'
 import { useFieldControl } from '../composables/useFieldControl'
+import { useUiMessages } from '../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../classes'
 import type { UiPartValue } from '../classes'
 import { themeScopeKey, useThemedUi } from '../theme'
@@ -136,6 +157,7 @@ const props = withDefaults(
     /** `'single'`: clicking replaces selection and closes the panel. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
     selectionMode?: TreeSelectSelectionMode
     disabled?: boolean
+    clearable?: boolean
     invalid?: boolean
     size?: 'sm' | 'md' | 'lg'
     /** Shows the built-in label search box atop the panel, auto-expanding ancestors of any match. `false` removes it entirely. */
@@ -171,6 +193,7 @@ const props = withDefaults(
     placeholder: undefined,
     selectionMode: 'single',
     disabled: false,
+    clearable: false,
     invalid: false,
     size: 'md',
     filterable: true,
@@ -249,13 +272,19 @@ const displayLabel = computed(() => {
   return `${selectedNodes.value.length} selected`
 })
 
+function onClear(event: MouseEvent) {
+  event.preventDefault()
+  model.value = props.selectionMode === 'single' ? null : []
+  emit('change', model.value)
+}
+
 // Single-select commits and closes; multiple/checkbox stay open.
 function onTreeSelect(node: TreeSelectNode) {
   emit('select', node)
   if (props.selectionMode === 'single') close()
 }
 
-const triggerEl = useTemplateRef<HTMLButtonElement>('triggerEl')
+const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 const treeRef = useTemplateRef<InstanceType<typeof Tree>>('treeRef')
@@ -286,6 +315,7 @@ const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close
 
 const treeId = useId()
 
+const messages = useUiMessages()
 const fieldControl = useFieldControl({ filled: () => !isEmpty.value })
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())

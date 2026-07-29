@@ -403,6 +403,39 @@
     translate: 50% 50%;
   }
 
+  .ui-button-group {
+    display: inline-flex;
+  }
+  .ui-button-group--vertical {
+    flex-direction: column;
+  }
+  .ui-button-group > .ui-button {
+    position: relative;
+  }
+  .ui-button-group:not(.ui-button-group--vertical) > .ui-button:not(:first-child) {
+    margin-inline-start: -1px;
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+  .ui-button-group:not(.ui-button-group--vertical) > .ui-button:not(:last-child) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  .ui-button-group--vertical > .ui-button:not(:first-child) {
+    margin-block-start: -1px;
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+  }
+  .ui-button-group--vertical > .ui-button:not(:last-child) {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+  .ui-button-group > .ui-button:hover,
+  .ui-button-group > .ui-button:focus-visible,
+  .ui-button-group > .ui-button:active {
+    z-index: 1;
+  }
+
   /* Extracted from Button/Toast. */
   .ui-loader {
     display: inline-block;
@@ -544,6 +577,7 @@
     padding-inline: 0.375rem;
     padding-block: 0.125rem;
     font-size: 0.6875rem;
+    border-radius: calc(var(--ui-radius) - 7px);
   }
   .ui-tag--pill {
     border-radius: 9999px;
@@ -645,7 +679,13 @@
   .ui-avatar--circle .ui-avatar-frame {
     border-radius: 50%;
   }
-  .ui-avatar--square .ui-avatar-frame {
+  .ui-avatar--square.ui-avatar--sm .ui-avatar-frame {
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-avatar--square.ui-avatar--md .ui-avatar-frame {
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-avatar--square.ui-avatar--lg .ui-avatar-frame {
     border-radius: var(--ui-radius);
   }
   .ui-avatar-fallback {
@@ -1259,10 +1299,12 @@
   .ui-bottom-sheet-handle-zone {
     display: flex;
     flex: none;
+    align-items: center;
     justify-content: center;
-    padding: 0.75rem 0 0.5rem;
+    min-block-size: 2.5rem;
     cursor: grab;
     touch-action: none;
+    user-select: none;
   }
   .ui-bottom-sheet-handle-zone:active {
     cursor: grabbing;
@@ -1318,12 +1360,23 @@
     overscroll-behavior: contain;
     padding: 0 1.25rem 1.25rem;
   }
+  /* Suppress text selection only once a content-area drag-to-dismiss is
+     live — an ordinary tap or scroll should still let a visitor select text. */
+  .ui-bottom-sheet-content[data-dragging] {
+    user-select: none;
+  }
 
   /* Pull to refresh: usePullToRefresh owns pullDistance and zone block-size. */
   .ui-pull-to-refresh-root {
     position: relative;
     overflow-y: auto;
     overscroll-behavior-y: contain;
+  }
+  /* Suppress text selection only while an actual pull is live — a plain tap
+     or ordinary scroll should still let a visitor select the list content. */
+  .ui-pull-to-refresh-root[data-state='pulling'],
+  .ui-pull-to-refresh-root[data-state='ready'] {
+    user-select: none;
   }
   .ui-pull-to-refresh-zone {
     display: flex;
@@ -1490,6 +1543,8 @@
   }
   .ui-menu-item-chevron {
     flex: none;
+    display: inline-grid;
+    place-items: center;
     margin-inline-start: 0.5rem;
     color: var(--ui-text-muted);
   }
@@ -1557,6 +1612,8 @@
     border-inline-start-color: color-mix(in oklch, currentColor 22%, transparent);
   }
   .ui-split-button-chevron {
+    inline-size: 0.85em;
+    block-size: 0.85em;
     transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
   }
   .ui-split-button[data-state='open'] .ui-split-button-chevron {
@@ -1575,7 +1632,6 @@
     gap: 0.5rem;
     inline-size: 100%;
     border: 1px solid var(--ui-border);
-    border-radius: calc(var(--ui-radius) - 2px);
     background: var(--ui-surface);
     color: var(--ui-text);
     padding-inline: 0.75rem;
@@ -1590,18 +1646,22 @@
   .ui-cascade-select-trigger--sm {
     block-size: 1.75rem;
     font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-cascade-select-trigger--md {
     block-size: 2.25rem;
     font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-cascade-select-trigger--lg {
     block-size: 2.5rem;
     font-size: 1rem;
+    border-radius: var(--ui-radius);
   }
-  .ui-cascade-select-trigger:hover:not(:disabled) {
+  .ui-cascade-select-trigger:hover:not(.ui-cascade-select-trigger--disabled) {
     border-color: var(--ui-border-strong);
   }
+  /* Div role="combobox" needs own focus-visible. */
   .ui-cascade-select-trigger:focus-visible {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
@@ -1612,9 +1672,32 @@
   .ui-cascade-select-trigger[data-invalid]:focus-visible {
     outline-color: var(--ui-danger);
   }
-  .ui-cascade-select-trigger:disabled {
+  .ui-cascade-select-trigger--disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  .ui-cascade-select-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1.5em;
+    block-size: 1.5em;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-cascade-select-clear svg {
+    inline-size: 0.85em;
+    block-size: 0.85em;
+  }
+  .ui-cascade-select-clear:hover {
+    background: var(--ui-muted);
+    color: var(--ui-text);
   }
   .ui-cascade-select-value {
     flex: 1 1 auto;
@@ -1631,6 +1714,10 @@
     flex: none;
     color: var(--ui-text-muted);
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-cascade-select-chevron svg {
+    inline-size: 1em;
+    block-size: 1em;
   }
   .ui-cascade-select-trigger[data-state='open'] .ui-cascade-select-chevron {
     transform: rotate(180deg);
@@ -1649,7 +1736,6 @@
     align-items: center;
     gap: 0.5rem;
     border: 1px solid var(--ui-border);
-    border-radius: calc(var(--ui-radius) - 2px);
     background: var(--ui-surface);
     padding-inline: 0.75rem;
     cursor: pointer;
@@ -1662,14 +1748,17 @@
   .ui-select-trigger--sm {
     block-size: 1.75rem;
     font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-select-trigger--md {
     block-size: 2.25rem;
     font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-select-trigger--lg {
     block-size: 2.5rem;
     font-size: 1rem;
+    border-radius: var(--ui-radius);
   }
   /* Div role="combobox" needs own focus-visible. */
   .ui-select-trigger:focus-visible {
@@ -1716,8 +1805,8 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    inline-size: 1.25rem;
-    block-size: 1.25rem;
+    inline-size: 1.5em;
+    block-size: 1.5em;
     padding: 0;
     border: none;
     border-radius: 50%;
@@ -1726,10 +1815,34 @@
     cursor: pointer;
     transition: background-color var(--ui-duration-press) ease;
   }
+  .ui-select-clear svg,
+  .ui-combobox-clear svg {
+    inline-size: 0.85em;
+    block-size: 0.85em;
+  }
   .ui-select-clear:hover,
   .ui-combobox-clear:hover {
     background: var(--ui-muted);
     color: var(--ui-text);
+  }
+  /* Grows in from zero width (not just opacity) so its neighbors don't
+     visibly teleport when it mounts/unmounts — margin-inline-start cancels
+     the flex row's own `gap` at zero width so nothing pops in early. */
+  .ui-clear-enter-active,
+  .ui-clear-leave-active {
+    transition:
+      opacity var(--ui-duration-press) var(--ui-ease-out),
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      inline-size var(--ui-duration-press) var(--ui-ease-out),
+      margin-inline-start var(--ui-duration-press) var(--ui-ease-out);
+    overflow: hidden;
+  }
+  .ui-clear-enter-from,
+  .ui-clear-leave-to {
+    opacity: 0;
+    transform: scale(0.5);
+    inline-size: 0;
+    margin-inline-start: -0.5rem;
   }
   .ui-select-chevron,
   .ui-combobox-chevron {
@@ -1742,6 +1855,14 @@
     color: var(--ui-text-muted);
     /* On-screen movement. */
     transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  /* Scales with the trigger's own font-size (sm/md/lg) instead of staying a
+     fixed 14px — matches the trigger's block-size/font-size scale so it
+     doesn't read oversized at sm or undersized at lg. */
+  .ui-select-chevron svg,
+  .ui-combobox-chevron svg {
+    inline-size: 1em;
+    block-size: 1em;
   }
   /* Combobox chevron is real button. */
   .ui-combobox-chevron {
@@ -1957,7 +2078,6 @@
     align-items: center;
     gap: 0.5rem;
     border: 1px solid var(--ui-border);
-    border-radius: calc(var(--ui-radius) - 2px);
     background: var(--ui-surface);
     padding-inline: 0.75rem;
     color: var(--ui-text);
@@ -1970,14 +2090,17 @@
   .ui-tree-select-trigger--sm {
     block-size: 1.75rem;
     font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-tree-select-trigger--md {
     block-size: 2.25rem;
     font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-tree-select-trigger--lg {
     block-size: 2.5rem;
     font-size: 1rem;
+    border-radius: var(--ui-radius);
   }
   .ui-tree-select-trigger:focus-visible {
     outline: 2px solid var(--ui-primary);
@@ -2780,7 +2903,7 @@
   }
   .ui-toolbar--vertical {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
   /* Clipped only with opt-in overflow. */
   .ui-toolbar--overflow {
@@ -2794,7 +2917,7 @@
   }
   .ui-toolbar--vertical .ui-toolbar-group {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
   .ui-toolbar-overflow-trigger {
     display: inline-flex;
@@ -2822,7 +2945,7 @@
     background: var(--ui-border);
   }
   .ui-toolbar--vertical .ui-toolbar-separator {
-    align-self: auto;
+    align-self: stretch;
     inline-size: auto;
     block-size: 1px;
     margin-inline: 0;
@@ -3209,7 +3332,6 @@
     align-items: center;
     gap: 0.5rem;
     border: 1px solid var(--ui-border);
-    border-radius: calc(var(--ui-radius) - 2px);
     background: var(--ui-surface);
     padding-inline: 0.75rem;
     cursor: text;
@@ -3221,14 +3343,17 @@
   .ui-input--sm {
     block-size: 1.75rem;
     font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-input--md {
     block-size: 2.25rem;
     font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-input--lg {
     block-size: 2.5rem;
     font-size: 1rem;
+    border-radius: var(--ui-radius);
   }
   .ui-input-el {
     flex: 1 1 auto;
@@ -3294,7 +3419,6 @@
       'start textarea end'
       'bottom bottom bottom';
     border: 1px solid var(--ui-border);
-    border-radius: calc(var(--ui-radius) - 2px);
     background: var(--ui-surface);
     padding: 0.5rem 0.75rem;
     cursor: text;
@@ -3304,12 +3428,15 @@
   }
   .ui-textarea--sm {
     font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-textarea--md {
     font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-textarea--lg {
     font-size: 1rem;
+    border-radius: var(--ui-radius);
   }
   .ui-textarea-el {
     grid-area: textarea;
@@ -3408,9 +3535,15 @@
     inline-size: 1rem;
     block-size: 1rem;
   }
+  .ui-checkbox--sm .ui-checkbox-box {
+    border-radius: calc(var(--ui-radius) - 7px);
+  }
   .ui-checkbox--md .ui-checkbox-control {
     inline-size: 1.125rem;
     block-size: 1.125rem;
+  }
+  .ui-checkbox--md .ui-checkbox-box {
+    border-radius: calc(var(--ui-radius) - 6px);
   }
   .ui-checkbox-input {
     position: absolute;
@@ -3427,7 +3560,6 @@
     justify-content: center;
     pointer-events: none; /* input (below in paint order) stays the click target */
     border: 1px solid var(--ui-border-strong);
-    border-radius: calc(var(--ui-radius) - 6px);
     background: var(--ui-surface);
     color: var(--ui-primary-contrast);
     transition:
@@ -3771,13 +3903,13 @@
   .ui-input-number-steppers {
     display: inline-flex;
     flex-direction: column;
-    margin-inline-end: -0.375rem;
+    align-self: stretch;
+    margin-inline-end: -0.75rem;
   }
   .ui-input-number-stepper {
     display: grid;
     place-items: center;
-    inline-size: 1.125rem;
-    block-size: 0.75rem;
+    flex: 1 1 0;
     border: 0;
     background: transparent;
     color: var(--ui-text-muted);
@@ -3785,6 +3917,30 @@
     transition:
       color var(--ui-duration-press) ease,
       transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-input-number-stepper--sm {
+    inline-size: 1.5rem;
+    border-radius: calc(var(--ui-radius) - 6px);
+  }
+  .ui-input-number-stepper--sm svg {
+    inline-size: 0.5rem;
+    block-size: 0.4375rem;
+  }
+  .ui-input-number-stepper--md {
+    inline-size: 1.625rem;
+    border-radius: calc(var(--ui-radius) - 5px);
+  }
+  .ui-input-number-stepper--md svg {
+    inline-size: 0.5625rem;
+    block-size: 0.5rem;
+  }
+  .ui-input-number-stepper--lg {
+    inline-size: 1.75rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-input-number-stepper--lg svg {
+    inline-size: 0.625rem;
+    block-size: 0.5625rem;
   }
   @media (hover: hover) and (pointer: fine) {
     .ui-input-number-stepper:hover {
@@ -3801,9 +3957,31 @@
     cursor: not-allowed;
   }
   .ui-input-number-stepper--split {
-    inline-size: 1.25rem;
-    block-size: 1.25rem;
-    border-radius: calc(var(--ui-radius) - 6px);
+    border-radius: 50%;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--sm {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--sm svg {
+    inline-size: 0.6875rem;
+    block-size: 0.6875rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--md {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--md svg {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--lg {
+    inline-size: 2rem;
+    block-size: 2rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--lg svg {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
   }
   @media (hover: hover) and (pointer: fine) {
     .ui-input-number-stepper--split:hover {
@@ -3825,7 +4003,6 @@
     display: grid;
     place-items: center;
     border: 1px solid var(--ui-border);
-    border-radius: calc(var(--ui-radius) - 4px);
     background: var(--ui-surface);
     color: var(--ui-text);
     font-weight: 500;
@@ -3836,16 +4013,19 @@
     inline-size: 1.75rem;
     block-size: 1.75rem;
     font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-otp--md .ui-otp-cell {
     inline-size: 2.25rem;
     block-size: 2.25rem;
     font-size: 1rem;
+    border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-otp--lg .ui-otp-cell {
     inline-size: 2.75rem;
     block-size: 2.75rem;
     font-size: 1.125rem;
+    border-radius: var(--ui-radius);
   }
   .ui-otp-cell[data-active] {
     border-color: var(--ui-primary);
@@ -5037,6 +5217,16 @@
     .ui-combobox-chevron,
     .ui-split-button-chevron {
       transition: none;
+    }
+    .ui-clear-enter-active,
+    .ui-clear-leave-active {
+      transition: none;
+    }
+    .ui-clear-enter-from,
+    .ui-clear-leave-to {
+      inline-size: 1.25rem;
+      margin-inline-start: 0;
+      transform: none;
     }
     .ui-select-body {
       transition: none;

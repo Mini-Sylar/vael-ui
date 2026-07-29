@@ -19,20 +19,22 @@
       @select="onMenuSelect"
     >
       <template #trigger="{ open: menuOpen }">
-        <button
+        <div
           :id="fieldControl.id"
           ref="triggerEl"
-          type="button"
+          role="combobox"
           v-bind="restAttrs"
           :class="triggerClass"
           :style="[triggerStyle, attrs.style as never]"
-          :disabled="isDisabled"
+          :tabindex="isDisabled ? -1 : 0"
+          :aria-disabled="isDisabled || undefined"
           :data-state="menuOpen ? 'open' : 'closed'"
           :data-invalid="isInvalid || undefined"
           :data-placeholder="!selectedItem || undefined"
           :aria-describedby="fieldControl.describedBy()"
           :aria-invalid="isInvalid || undefined"
           :aria-required="fieldControl.required() || undefined"
+          @click="onTriggerClick"
           @keydown="onTriggerKeydown"
           @focus="fieldControl.onFocus"
           @blur="fieldControl.onBlur"
@@ -42,6 +44,25 @@
               selectedItem?.label ?? placeholder
             }}</slot>
           </span>
+          <Transition name="ui-clear">
+            <button
+              v-if="clearable && selectedItem && !isDisabled"
+              type="button"
+              class="ui-cascade-select-clear"
+              :aria-label="messages.cascadeSelect.clear"
+              @click.stop="onClear"
+              @mousedown.stop.prevent
+            >
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
+                <path
+                  d="M4 4l8 8M12 4l-8 8"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </Transition>
           <svg
             class="ui-cascade-select-chevron"
             viewBox="0 0 16 16"
@@ -58,7 +79,7 @@
               stroke-linejoin="round"
             />
           </svg>
-        </button>
+        </div>
       </template>
       <!-- Empty tree: fall through to Menu's #default escape hatch. Non-empty: use #item to reproduce Menu's label+chevron. -->
       <template v-if="mappedItems.length === 0" #default>
@@ -69,7 +90,17 @@
       <template v-else #item="{ item: entry }">
         <slot name="item" :item="resolveItem(entry)" :has-children="!!entry.items">
           <span class="ui-menu-item-label">{{ entry.label }}</span>
-          <span v-if="entry.items" class="ui-menu-item-chevron" aria-hidden="true">›</span>
+          <span v-if="entry.items" class="ui-menu-item-chevron" aria-hidden="true">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+              <path
+                d="M6 4l4 4-4 4"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
         </slot>
       </template>
     </Menu>
@@ -118,6 +149,7 @@ const props = withDefaults(
     items: readonly CascadeSelectItem[]
     placeholder?: string
     disabled?: boolean
+    clearable?: boolean
     /** Standalone override; ORed with the nearest Field's `error` state. */
     invalid?: boolean
     size?: 'sm' | 'md' | 'lg'
@@ -143,6 +175,7 @@ const props = withDefaults(
   {
     placeholder: undefined,
     disabled: false,
+    clearable: false,
     invalid: false,
     size: 'md',
     name: undefined,
@@ -242,13 +275,31 @@ function onOpenChange(value: boolean, details: PopoverOpenChangeDetails) {
   emit('open-change', value, details)
 }
 
+// Trigger is a div (role="combobox"), not a real <button> — a click that
+// bubbles up still reaches Menu's own wrapping span (which toggles), so this
+// only needs to swallow the click while disabled; opening itself is Menu's job.
+function onTriggerClick(event: MouseEvent) {
+  if (isDisabled.value) event.stopPropagation()
+}
+
 function onTriggerKeydown(event: KeyboardEvent) {
   if (isDisabled.value || open.value) return
-  // Native <button> opens on Enter/Space; arrow keys need wiring (Select affordance).
-  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+  // No native <button> to auto-activate on Enter/Space anymore; drive `open` directly.
+  if (
+    event.key === 'ArrowDown' ||
+    event.key === 'ArrowUp' ||
+    event.key === 'Enter' ||
+    event.key === ' '
+  ) {
     event.preventDefault()
     open.value = true
   }
+}
+
+function onClear(event: MouseEvent) {
+  event.preventDefault()
+  model.value = null
+  emit('change', null)
 }
 
 const messages = useUiMessages()
@@ -257,7 +308,7 @@ const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
 const root = useTemplateRef<HTMLElement>('root')
-const triggerEl = useTemplateRef<HTMLButtonElement>('triggerEl')
+const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const menuRef = useTemplateRef<ComponentExposed<typeof Menu>>('menuRef')
 
 const attrs = useAttrs()
@@ -276,6 +327,7 @@ const triggerClass = computed(() =>
   cx(
     'ui-cascade-select-trigger',
     `ui-cascade-select-trigger--${props.size}`,
+    isDisabled.value && 'ui-cascade-select-trigger--disabled',
     triggerSplit.value.class,
     attrs.class as string | undefined,
   ),

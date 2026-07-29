@@ -2,6 +2,7 @@ import './style.css'
 
 export { default as Button } from './components/Button.vue'
 export type { ButtonLoaderPlacement, ButtonSize, ButtonVariant } from './components/Button.vue'
+export { default as ButtonGroup } from './components/ButtonGroup.vue'
 export { default as SplitButton } from './components/SplitButton.vue'
 export type { SplitButtonAlign, SplitButtonSide } from './components/SplitButton.vue'
 export { default as Loader } from './components/Loader.vue'

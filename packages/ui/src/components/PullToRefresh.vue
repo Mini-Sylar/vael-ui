@@ -1,5 +1,5 @@
 <template>
-  <div ref="root" :class="rootPart.class" :style="rootPart.style">
+  <div ref="root" :class="rootPart.class" :style="rootPart.style" :data-state="state">
     <div
       ref="zoneEl"
       :class="zonePart.class"

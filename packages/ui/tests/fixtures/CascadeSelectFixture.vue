@@ -7,6 +7,7 @@
     v-model:open="open"
     :items="resolvedItems"
     :disabled="props.disabled"
+    :clearable="props.clearable"
     placeholder="Pick a city"
     name="city"
     @select="onSelect"
@@ -18,10 +19,14 @@ import { computed, shallowRef } from 'vue'
 import CascadeSelect from '../../src/components/CascadeSelect.vue'
 import type { CascadeSelectItem, CascadeSelectPath } from '../../src/components/CascadeSelect.vue'
 
-const props = withDefaults(defineProps<{ disabled?: boolean; items?: CascadeSelectItem[] }>(), {
-  disabled: false,
-  items: undefined,
-})
+const props = withDefaults(
+  defineProps<{ disabled?: boolean; clearable?: boolean; items?: CascadeSelectItem[] }>(),
+  {
+    disabled: false,
+    clearable: false,
+    items: undefined,
+  },
+)
 
 const defaultItems: CascadeSelectItem[] = [
   {

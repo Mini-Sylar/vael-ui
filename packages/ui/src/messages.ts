@@ -42,6 +42,10 @@ export interface UiMessages {
   }
   cascadeSelect: {
     empty: string
+    clear: string
+  }
+  treeSelect: {
+    clear: string
   }
   chip: {
     remove: string
@@ -70,7 +74,8 @@ export const defaultMessages: UiMessages = {
   select: { empty: 'No options', clear: 'Clear selection', selectedCount: '{count} selected' },
   combobox: { empty: 'No results', clear: 'Clear selection', toggle: 'Toggle options' },
   fileUpload: { browse: 'Browse files', drop: 'Drop files here', remove: 'Remove' },
-  cascadeSelect: { empty: 'No options' },
+  cascadeSelect: { empty: 'No options', clear: 'Clear selection' },
+  treeSelect: { clear: 'Clear selection' },
   chip: { remove: 'Remove' },
   splitButton: { more: 'More actions' },
 }
@@ -97,6 +102,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     combobox: { ...base.combobox, ...overrides.combobox },
     fileUpload: { ...base.fileUpload, ...overrides.fileUpload },
     cascadeSelect: { ...base.cascadeSelect, ...overrides.cascadeSelect },
+    treeSelect: { ...base.treeSelect, ...overrides.treeSelect },
     chip: { ...base.chip, ...overrides.chip },
     splitButton: { ...base.splitButton, ...overrides.splitButton },
   }
@@ -151,7 +157,8 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     drop: 'uiKit.fileUpload.drop',
     remove: 'uiKit.fileUpload.remove',
   },
-  cascadeSelect: { empty: 'uiKit.cascadeSelect.empty' },
+  cascadeSelect: { empty: 'uiKit.cascadeSelect.empty', clear: 'uiKit.cascadeSelect.clear' },
+  treeSelect: { clear: 'uiKit.treeSelect.clear' },
   chip: { remove: 'uiKit.chip.remove' },
   splitButton: { more: 'uiKit.splitButton.more' },
 }
@@ -228,8 +235,15 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (Object.keys(fileUpload).length > 0) result.fileUpload = fileUpload
 
   const cascadeEmpty = i18n.t(i18nKeyMap.cascadeSelect.empty)
-  if (cascadeEmpty !== i18nKeyMap.cascadeSelect.empty) {
-    result.cascadeSelect = { empty: cascadeEmpty }
+  const cascadeClear = i18n.t(i18nKeyMap.cascadeSelect.clear)
+  const cascadeSelect: PartialUiMessages['cascadeSelect'] = {}
+  if (cascadeEmpty !== i18nKeyMap.cascadeSelect.empty) cascadeSelect.empty = cascadeEmpty
+  if (cascadeClear !== i18nKeyMap.cascadeSelect.clear) cascadeSelect.clear = cascadeClear
+  if (Object.keys(cascadeSelect).length > 0) result.cascadeSelect = cascadeSelect
+
+  const treeSelectClear = i18n.t(i18nKeyMap.treeSelect.clear)
+  if (treeSelectClear !== i18nKeyMap.treeSelect.clear) {
+    result.treeSelect = { clear: treeSelectClear }
   }
 
   const chipRemove = i18n.t(i18nKeyMap.chip.remove)

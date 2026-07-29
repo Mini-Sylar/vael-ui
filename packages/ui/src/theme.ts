@@ -10,6 +10,7 @@ export interface UiTheme {
   radius?: string
   /** App-wide default `ui` part-class/style overrides — same shape as each component's own `ui` prop. */
   button?: { ui?: Partial<{ root: UiPartValue; badge: UiPartValue }> }
+  buttonGroup?: { ui?: Partial<{ root: UiPartValue }> }
   splitButton?: {
     ui?: Partial<{
       root: UiPartValue

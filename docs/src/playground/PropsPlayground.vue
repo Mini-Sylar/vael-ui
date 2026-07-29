@@ -86,6 +86,13 @@
               </template>
             </component>
           </template>
+          <template v-else-if="isButtonGroup">
+            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+              <Button variant="outline">Archive</Button>
+              <Button variant="outline">Report</Button>
+              <Button variant="outline">Snooze</Button>
+            </component>
+          </template>
           <template v-else-if="isToolbar">
             <div
               class="toolbar-preview-resizable"
@@ -181,6 +188,15 @@
             <!-- No default slot in these two: some components override data-driven rendering with any default slot content, even empty. -->
             <component
               v-if="suppressDefaultSlot"
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              @update:model-value="onModelUpdate"
+            />
+            <!-- Not trigger-based; forcing v-model:open (default false) here would
+                 override the component's own sensible open-by-default state. -->
+            <component
+              v-else-if="isSelfManagedOpen"
               :is="activeComponent"
               :key="resetKey"
               v-bind="boundProps"
@@ -338,6 +354,12 @@ const NEEDS_CONTEXT: Record<string, string> = {
 }
 const needsContext = computed(() => NEEDS_CONTEXT[props.name] ?? null)
 
+// Has an `open` model but isn't trigger-based — it manages its own sensible
+// default visibility, so the generic v-model:open="openModelValue" (default
+// false) binding used for overlays would incorrectly hide it on load.
+const SELF_MANAGED_OPEN = ['Message']
+const isSelfManagedOpen = computed(() => SELF_MANAGED_OPEN.includes(props.name))
+
 const OPEN_MODEL_COMPONENTS = ['Dialog', 'Drawer', 'BottomSheet']
 const CONTEXT_AREA_COMPONENTS = ['ContextMenu']
 const OPEN_MODEL_PLACEHOLDER: Record<string, string> = {
@@ -352,6 +374,7 @@ const isRadioGroup = computed(() => props.name === 'RadioGroup')
 const isField = computed(() => props.name === 'Field')
 const isDataTable = computed(() => props.name === 'DataTable')
 const isToolbar = computed(() => props.name === 'Toolbar')
+const isButtonGroup = computed(() => props.name === 'ButtonGroup')
 const isAccordion = computed(() => props.name === 'Accordion')
 const isDock = computed(() => props.name === 'Dock')
 const isSpeedDial = computed(() => props.name === 'SpeedDial')

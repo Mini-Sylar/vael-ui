@@ -36,7 +36,12 @@
         </button>
       </slot>
     </div>
-    <div ref="content" :class="contentPart.class" :style="contentPart.style">
+    <div
+      ref="content"
+      :class="contentPart.class"
+      :style="contentPart.style"
+      :data-dragging="isDragging || undefined"
+    >
       <slot
         :active-snap="activeSnap"
         :is-dragging="isDragging"

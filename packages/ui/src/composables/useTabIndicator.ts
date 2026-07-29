@@ -38,14 +38,22 @@ export function useTabIndicator(
     // No transition on first measurement (avoid visible slide-in).
     const transitionDuration = measuredOnce ? undefined : '0ms'
     if (toValue(options.sizing) === 'bounds') {
+      // getBoundingClientRect measures the border box, but an absolutely
+      // positioned child's inset-* resolves against the containing block's
+      // PADDING box — a container with its own border (SelectButton's track)
+      // needs that border subtracted or the indicator lands one border-width
+      // further along than the option it's supposed to match exactly.
+      const listStyle = getComputedStyle(list)
+      const borderInlineStart = parseFloat(listStyle.borderInlineStartWidth) || 0
+      const borderBlockStart = parseFloat(listStyle.borderBlockStartWidth) || 0
       style.value = vertical
         ? {
-            insetBlockStart: `${tabRect.top - listRect.top}px`,
+            insetBlockStart: `${tabRect.top - listRect.top - borderBlockStart}px`,
             blockSize: `${tabRect.height}px`,
             transitionDuration,
           }
         : {
-            insetInlineStart: `${tabRect.left - listRect.left}px`,
+            insetInlineStart: `${tabRect.left - listRect.left - borderInlineStart}px`,
             inlineSize: `${tabRect.width}px`,
             transitionDuration,
           }

@@ -29,6 +29,8 @@ const DEFAULT_MAX_PULL = 80
 const DEFAULT_THRESHOLD = 60
 const DEFAULT_DONE_HOLD_MS = 650
 const DAMPEN_FACTOR = 40 // px scale for the log curve below
+const VELOCITY_THRESHOLD = 0.5 // px/ms — a decisive flick commits even short of `threshold`
+const VELOCITY_MIN_DISTANCE_FRACTION = 0.5 // of `threshold` — guards a near-zero-distance jerk from reading as "fast"
 
 /** Shifted log curve (Vaul's formula); overshoot creeps with resistance. */
 function dampen(overshoot: number): number {
@@ -53,6 +55,7 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
 
   let pointerId: number | null = null
   let startY = 0
+  let startTime = 0
   let dragging = false
   let refreshToken: symbol | null = null
   let doneTimer: ReturnType<typeof setTimeout> | undefined
@@ -95,6 +98,7 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
     if (!el || el.scrollTop !== 0 || pointerId !== null) return
     pointerId = event.pointerId
     startY = event.clientY
+    startTime = performance.now()
     dragging = false
   }
 
@@ -133,10 +137,15 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
     if (pointerId === null) return
     const wasDragging = dragging
     const wasReady = state.value === 'ready'
+    const elapsed = Math.max(1, performance.now() - startTime)
+    const velocity = pullDistance.value / elapsed
+    const wasFastFlick =
+      velocity > VELOCITY_THRESHOLD &&
+      pullDistance.value >= thresholdValue() * VELOCITY_MIN_DISTANCE_FRACTION
     pointerId = null
     dragging = false
     if (!wasDragging) return
-    if (commit && wasReady) startRefresh()
+    if (commit && (wasReady || wasFastFlick)) startRefresh()
     else settleZero()
   }
 

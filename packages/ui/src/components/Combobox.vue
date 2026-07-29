@@ -43,23 +43,25 @@
     </template>
     <template #end>
       <slot name="end" />
-      <button
-        v-if="clearable && !isDisabled && hasValue"
-        type="button"
-        class="ui-combobox-clear"
-        :aria-label="messages.combobox.clear"
-        @click.stop="onClear"
-        @mousedown.stop.prevent
-      >
-        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
-          <path
-            d="M4 4l8 8M12 4l-8 8"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          />
-        </svg>
-      </button>
+      <Transition name="ui-clear">
+        <button
+          v-if="clearable && !isDisabled && (hasValue || query.length > 0)"
+          type="button"
+          class="ui-combobox-clear"
+          :aria-label="messages.combobox.clear"
+          @click.stop="onClear"
+          @mousedown.stop.prevent
+        >
+          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
+            <path
+              d="M4 4l8 8M12 4l-8 8"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </Transition>
       <button
         type="button"
         class="ui-combobox-chevron"

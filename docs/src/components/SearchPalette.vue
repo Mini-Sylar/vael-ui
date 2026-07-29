@@ -1,16 +1,17 @@
 <template>
   <Combobox
     :model-value="null"
+    v-model:query="query"
     :items="items"
-    :placeholder="t('nav.search')"
     clearable
+    :placeholder="t('nav.search')"
     class="search-palette"
     @update:model-value="onSelect"
   />
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Combobox } from 'vael-ui'
@@ -20,9 +21,13 @@ const { t } = useI18n()
 const router = useRouter()
 
 const items = computed(() => allComponents.map((name) => ({ label: name, value: name })))
+const query = shallowRef('')
 
 function onSelect(value: string | number | (string | number)[] | null) {
-  if (typeof value === 'string') router.push({ name: 'component', params: { name: value } })
+  if (typeof value === 'string') {
+    router.push({ name: 'component', params: { name: value } })
+    query.value = ''
+  }
 }
 </script>
 

@@ -13,13 +13,10 @@ function focusedText() {
   return document.activeElement?.textContent?.trim()
 }
 
-// Submenu-trigger rows carry an aria-hidden chevron appended to their real
-// textContent ("Share›") — stripped here so lookups work the same whether
-// the row is a leaf or itself has nested items.
 function menuItemByText(text: string): HTMLElement | null {
   return (
     Array.from(document.querySelectorAll<HTMLElement>('[role="menuitem"]')).find(
-      (el) => el.textContent?.trim().replace(/›$/, '') === text,
+      (el) => el.textContent?.trim() === text,
     ) ?? null
   )
 }
@@ -30,13 +27,13 @@ test('ArrowRight opens a submenu and focuses its first item; ArrowLeft returns t
   await vi.waitFor(() => expect(focusedText()).toBe('Cut'))
 
   await userEvent.keyboard('{ArrowDown}')
-  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Share›'))
+  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Share'))
 
   await userEvent.keyboard('{ArrowRight}')
   await vi.waitFor(() => expect(focusedText()).toBe('Copy Link'))
 
   await userEvent.keyboard('{ArrowLeft}')
-  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Share›'))
+  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Share'))
   // Collapsing removes the submenu, not just moves focus off it.
   expect(menuItemByText('Copy Link')).toBeNull()
 })

@@ -16,7 +16,15 @@ export const categories: ComponentCategory[] = [
   {
     key: 'actions',
     name: 'Actions',
-    components: ['Button', 'SplitButton', 'Toolbar', 'SpeedDial', 'Dial', 'SelectButton'],
+    components: [
+      'Button',
+      'ButtonGroup',
+      'SplitButton',
+      'Toolbar',
+      'SpeedDial',
+      'Dial',
+      'SelectButton',
+    ],
   },
   {
     key: 'formsAndInputs',

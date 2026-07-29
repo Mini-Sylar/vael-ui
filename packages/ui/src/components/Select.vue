@@ -45,23 +45,25 @@
         </TransitionGroup>
       </slot>
     </span>
-    <button
-      v-if="clearable && !isEmpty && !isDisabled"
-      type="button"
-      class="ui-select-clear"
-      :aria-label="messages.select.clear"
-      @click.stop="onClear"
-      @mousedown.stop.prevent
-    >
-      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
-        <path
-          d="M4 4l8 8M12 4l-8 8"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-        />
-      </svg>
-    </button>
+    <Transition name="ui-clear">
+      <button
+        v-if="clearable && !isEmpty && !isDisabled"
+        type="button"
+        class="ui-select-clear"
+        :aria-label="messages.select.clear"
+        @click.stop="onClear"
+        @mousedown.stop.prevent
+      >
+        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
+          <path
+            d="M4 4l8 8M12 4l-8 8"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </Transition>
     <span class="ui-select-chevron" aria-hidden="true">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
         <path

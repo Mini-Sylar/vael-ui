@@ -44,16 +44,30 @@ async function drag(el: Element, startY: number, endY: number, ms: number) {
   el.dispatchEvent(new PointerEvent('pointerup', { clientY: endY, pointerId, bubbles: true }))
 }
 
-test('a pull below threshold releases back to idle without calling onRefresh', async () => {
+test('a slow pull below threshold releases back to idle without calling onRefresh', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
   render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
-  await drag(root(), 20, 50, 50) // delta 30, below the 60px threshold
+  // delta 30 (below the 60px threshold) over 400ms — 0.075px/ms, well under
+  // the fast-flick gate, so distance is the only thing being exercised here.
+  await drag(root(), 20, 50, 400)
 
   await vi.waitFor(() => expect(state()).toBe('idle'))
   await vi.waitFor(() => expect(zoneHeight()).toBeCloseTo(0, 0))
   expect(onRefresh).not.toHaveBeenCalled()
+})
+
+test('a fast short flick below threshold still calls onRefresh', async () => {
+  const onRefresh = vi.fn().mockResolvedValue(undefined)
+  render(PullToRefreshFixture, { props: { onRefresh } })
+  await settle()
+
+  // delta 35 (below the 60px threshold) over 20ms — 1.75px/ms, a decisive
+  // flick that should commit despite not reaching the raw distance.
+  await drag(root(), 20, 55, 20)
+
+  await vi.waitFor(() => expect(onRefresh).toHaveBeenCalledOnce())
 })
 
 test('a pull past threshold walks pulling -> ready -> loading -> done -> idle and calls onRefresh once', async () => {

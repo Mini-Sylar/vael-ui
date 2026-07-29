@@ -64,9 +64,17 @@
                     <span v-if="entry.shortcut" class="ui-menu-item-shortcut">
                       {{ entry.shortcut }}
                     </span>
-                    <span v-if="entry.items" class="ui-menu-item-chevron" aria-hidden="true"
-                      >›</span
-                    >
+                    <span v-if="entry.items" class="ui-menu-item-chevron" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+                        <path
+                          d="M6 4l4 4-4 4"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </span>
                   </slot>
                 </button>
                 <!-- Teleported to ancestor to stay in same DOM subtree for outside-click detection. -->
