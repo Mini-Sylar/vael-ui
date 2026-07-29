@@ -36,7 +36,7 @@ function readVaporComponentNames() {
 }
 
 // A handful of components share a demo file rather than having their own
-// (e.g. Pagination/Tag only ever appear inside DataTableDemo). Column and
+// (e.g. Pagination only ever appears inside DataTableDemo). Column and
 // AccordionItem aren't listed here at all now — they're documented on their
 // parent's page (see taxonomy.ts), not routed as their own component page.
 // Checkbox and Switch used to share ToggleDemo — split into their own files
@@ -44,7 +44,6 @@ function readVaporComponentNames() {
 // deliberate pairing.
 const DEMO_OVERRIDES = {
   Pagination: 'DataTableDemo',
-  Tag: 'DataTableDemo',
   Avatar: 'AvatarBadgeDemo',
   Badge: 'AvatarBadgeDemo',
   Radio: 'RadioGroupDemo',

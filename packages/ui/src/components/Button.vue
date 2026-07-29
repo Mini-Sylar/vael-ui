@@ -22,7 +22,7 @@
         <slot name="leading" />
       </span>
       <span class="ui-button-content">
-        <slot :loading="isLoading" :el="el" :run="run" />
+        <span class="ui-button-label"><slot :loading="isLoading" :el="el" :run="run" /></span>
       </span>
       <span v-if="$slots.trailing" class="ui-button-trailing" aria-hidden="true">
         <slot name="trailing" />
@@ -55,7 +55,7 @@
       <slot name="leading" />
     </span>
     <span class="ui-button-content">
-      <slot :loading="isLoading" :el="el" :run="run" />
+      <span class="ui-button-label"><slot :loading="isLoading" :el="el" :run="run" /></span>
     </span>
     <span v-if="$slots.trailing" class="ui-button-trailing" aria-hidden="true">
       <slot name="trailing" />

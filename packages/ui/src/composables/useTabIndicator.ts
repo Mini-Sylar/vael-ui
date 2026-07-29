@@ -77,6 +77,13 @@ export function useTabIndicator(
 
   watch(active, () => nextTick(measure), { immediate: true, flush: 'post' })
 
+  if (typeof document !== 'undefined' && document.fonts) {
+    document.fonts.ready.then(() => {
+      measuredOnce = false
+      measure()
+    })
+  }
+
   let resizeObserver: ResizeObserver | undefined
   watch(
     options.listEl,

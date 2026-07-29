@@ -297,6 +297,14 @@
       opacity var(--ui-duration-press) ease,
       filter var(--ui-duration-press) ease;
   }
+  .ui-button-label {
+    display: inline-block;
+  }
+  @supports (text-box-trim: trim-both) {
+    .ui-button-label {
+      text-box: trim-both cap alphabetic;
+    }
+  }
 
   /* Icon slots: fixed 1em boxes (exact inline-loader swap) */
   .ui-button-leading,
@@ -545,7 +553,12 @@
     color: var(--ui-info-contrast);
   }
   .ui-badge-content {
-    display: inline-flex;
+    display: inline-block;
+  }
+  @supports (text-box-trim: trim-both) {
+    .ui-badge-content {
+      text-box: trim-both cap alphabetic;
+    }
   }
   .ui-badge-content--animated {
     animation: ui-badge-pop var(--ui-duration-press) var(--ui-ease-out);
@@ -571,6 +584,7 @@
     border: 1px solid transparent;
     font-size: 0.75rem;
     font-weight: 600;
+    line-height: 1;
     white-space: nowrap;
   }
   .ui-tag--sm {
@@ -594,6 +608,18 @@
   .ui-tag-label {
     display: inline-block;
     transform: translateY(0.04em);
+  }
+  @supports (text-box-trim: trim-both) {
+    .ui-tag-label {
+      text-box: trim-both cap alphabetic;
+      transform: none;
+    }
+    .ui-tag {
+      padding-block: calc(0.1875rem + 0.135em);
+    }
+    .ui-tag--sm {
+      padding-block: calc(0.125rem + 0.135em);
+    }
   }
   .ui-tag--primary {
     background: color-mix(in oklch, var(--ui-primary) 14%, var(--ui-surface));
@@ -1892,12 +1918,18 @@
     line-height: 1.25;
   }
   .ui-chip--md {
-    padding: 0.125rem 0.25rem 0.125rem 0.5rem;
+    padding: 0.125rem 0.5rem;
     font-size: 0.8125rem;
   }
   .ui-chip--sm {
-    padding: 0.0625rem 0.1875rem 0.0625rem 0.375rem;
+    padding: 0.0625rem 0.375rem;
     font-size: 0.75rem;
+  }
+  .ui-chip--removable.ui-chip--md {
+    padding-inline-end: 0.25rem;
+  }
+  .ui-chip--removable.ui-chip--sm {
+    padding-inline-end: 0.1875rem;
   }
   .ui-chip[data-disabled] {
     opacity: 0.5;
@@ -2932,6 +2964,14 @@
     font-size: 1rem;
     line-height: 1;
     cursor: pointer;
+  }
+  .ui-toolbar-overflow-label {
+    display: inline-block;
+  }
+  @supports (text-box-trim: trim-both) {
+    .ui-toolbar-overflow-label {
+      text-box: trim-both cap alphabetic;
+    }
   }
   @media (hover: hover) and (pointer: fine) {
     .ui-toolbar-overflow-trigger:hover {

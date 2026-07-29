@@ -1,14 +1,23 @@
 /// <reference types="vite-ssg" />
 
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import generateSitemap from 'vite-ssg-sitemap'
 import { allComponents } from './src/taxonomy'
 
+const uiPackageJson = JSON.parse(
+  readFileSync(fileURLToPath(new URL('../packages/ui/package.json', import.meta.url)), 'utf-8'),
+)
+
 export default defineConfig({
   plugins: [vue()],
   resolve: { dedupe: ['vue'] },
   optimizeDeps: { exclude: ['motion-v'] },
+  define: {
+    __VAEL_UI_VERSION__: JSON.stringify(uiPackageJson.version),
+  },
   ssgOptions: {
     dirStyle: 'nested',
     formatting: 'minify',

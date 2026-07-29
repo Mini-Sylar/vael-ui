@@ -72,7 +72,13 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() =>
-  resolveUiPart(cx, themedUi()?.root, 'ui-chip', `ui-chip--${props.size}`),
+  resolveUiPart(
+    cx,
+    themedUi()?.root,
+    'ui-chip',
+    `ui-chip--${props.size}`,
+    props.removable && 'ui-chip--removable',
+  ),
 )
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-chip-label'))
 const removePart = computed(() => resolveUiPart(cx, themedUi()?.remove, 'ui-chip-remove'))

@@ -25,7 +25,7 @@
             :style="overflowTriggerPart.style"
             :aria-label="overflowLabel"
           >
-            &hellip;
+            <span class="ui-toolbar-overflow-label">&hellip;</span>
           </button>
         </template>
       </Menu>

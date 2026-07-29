@@ -18,6 +18,10 @@
             ><span class="brand-vael">vael</span><span class="brand-hyphen">-</span
             ><span class="brand-ui">ui</span></span
           >
+          <Tag size="sm" variant="primary" class="brand-version">
+            <template #icon><PhTag :size="12" weight="bold" /></template>
+            v{{ version }}
+          </Tag>
         </RouterLink>
         <nav class="main-nav">
           <RouterLink to="/docs/getting-started">{{ t('nav.gettingStarted') }}</RouterLink>
@@ -194,7 +198,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, onMounted, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useLocalStorage } from '@vueuse/core'
@@ -206,6 +210,7 @@ import {
   PhMoon,
   PhPalette,
   PhSun,
+  PhTag,
 } from '@phosphor-icons/vue'
 import {
   BottomSheet,
@@ -217,6 +222,7 @@ import {
   Select,
   SelectButton,
   Slider,
+  Tag,
   Toaster,
   TooltipHost,
   useColorScheme,
@@ -228,6 +234,19 @@ import Logo from './components/Logo.vue'
 import { setLocale, SUPPORTED_LOCALES, type Locale } from './i18n'
 import { defaultVariant } from './preferences'
 import { useHead } from '@unhead/vue'
+
+const version = shallowRef(__VAEL_UI_VERSION__)
+
+onMounted(async () => {
+  try {
+    const res = await fetch('https://registry.npmjs.org/vael-ui/latest', { cache: 'no-store' })
+    if (!res.ok) return
+    const data = await res.json()
+    if (typeof data.version === 'string') version.value = data.version
+  } catch {
+    // Offline, blocked by CSP, registry down — keep the build-time fallback.
+  }
+})
 
 const route = useRoute()
 const router = useRouter()
