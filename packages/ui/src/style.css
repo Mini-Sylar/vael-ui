@@ -2809,7 +2809,11 @@
     transform-origin: 0 0;
     transition:
       translate var(--ui-duration-press) var(--ui-ease-in-out),
-      scale var(--ui-duration-press) var(--ui-ease-in-out);
+      scale var(--ui-duration-press) var(--ui-ease-in-out),
+      inset-inline-start var(--ui-duration-press) var(--ui-ease-in-out),
+      inline-size var(--ui-duration-press) var(--ui-ease-in-out),
+      inset-block-start var(--ui-duration-press) var(--ui-ease-in-out),
+      block-size var(--ui-duration-press) var(--ui-ease-in-out);
   }
   .ui-tabs--vertical .ui-tabs-indicator {
     inline-size: auto;

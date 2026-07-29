@@ -151,7 +151,7 @@ const hasActiveMatch = computed(() =>
 )
 const { style: indicatorStyle } = useTabIndicator(
   computed(() => props.active),
-  { listEl: list, orientation: 'vertical', selector: '[aria-current="page"]', sizing: 'bounds' },
+  { listEl: list, orientation: 'vertical', selector: '[aria-current="page"]' },
 )
 
 const cx = useClassMerge()

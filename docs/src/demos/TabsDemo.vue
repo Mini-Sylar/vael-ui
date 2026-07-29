@@ -10,10 +10,10 @@
 
     <h3>Sliding indicator (CSS, built in via <code>useTabIndicator()</code>)</h3>
     <p class="note">
-      The composable measures the active tab's real box and returns inline <code>translate</code> +
-      <code>scale</code> (compositor-only, never <code>width</code>/<code>height</code>), you render
-      one extra element with those styles bound and pick a variant class. No JS animation loop, just
-      a CSS <code>transition</code>. Two variants shown here,
+      The composable measures the active tab's real box and returns inline
+      <code>insetInlineStart</code> + <code>inlineSize</code>, you render one extra element with
+      those styles bound and pick a variant class. No JS animation loop, just a CSS
+      <code>transition</code>. Two variants shown here,
       <code>.ui-tabs-indicator--background</code> and <code>.ui-tabs-indicator--underline</code>,
       but it's a plain class, style your own just as easily.
     </p>

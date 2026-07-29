@@ -7,12 +7,12 @@ export interface UseTabIndicatorOptions {
   orientation?: MaybeRefOrGetter<'horizontal' | 'vertical'>
   /** The active element to measure inside `listEl`. Defaults to Tabs' own shape; SelectButton passes `'[data-checked]'` to reuse the same sliding technique for its single-select indicator. */
   selector?: MaybeRefOrGetter<string>
-  /** Default `'transform'`: compositor-only `translate`+`scale` off a 1px CSS baseline — cheapest, but a border-radius on the SCALED axis is computed against that pre-transform 1px box (clamped to ~0.5px per the spec's own corner-radius-vs-edge-length rule) and only THEN stretched, so any indicator needing a real two-axis rounded pill renders a flattened/sharp corner on that axis instead of a proper curve — exactly what happened to SelectButton's pill at the first/last option, where the mismatch against the track's own rounded corner was visible. `'bounds'` sets real `insetInlineStart`/`inlineSize` (or the block equivalents) in px instead — a layout cost on measure, but border-radius then computes against the indicator's true size. */
+  /** Default `'bounds'`: sets real `insetInlineStart`/`inlineSize` (or the block equivalents) in px — a small layout cost on measure, but border-radius computes against the indicator's true size and it renders identically regardless of the display's pixel ratio. `'transform'` instead does compositor-only `translate`+`scale` off a 1px CSS baseline — cheaper, but a border-radius on the SCALED axis is computed against that pre-transform 1px box (clamped to ~0.5px per the spec's own corner-radius-vs-edge-length rule) and only THEN stretched, so any indicator needing a real two-axis rounded pill renders a flattened/sharp corner on that axis instead of a proper curve, and on a fractional device-pixel-ratio display (common on Windows) the scale can round unevenly enough to look visibly misaligned. Only reach for `'transform'` when the indicator has no rounded corners on the scaled axis and the extra compositor-only cheapness genuinely matters. */
   sizing?: MaybeRefOrGetter<'transform' | 'bounds'>
 }
 
 export interface UseTabIndicatorReturn {
-  /** Inline style for a sibling indicator element. Default (`sizing: 'transform'`): `translate` positions it at the active tab's edge, `scale` resizes it to match — both compositor-only, never `inlineSize`/`blockSize`. Pairs with the `.ui-tabs-indicator` CSS, which pins the element to a 1px baseline on the scaled axis. With `sizing: 'bounds'`, sets real `insetInlineStart`/`inlineSize` (or block equivalents) in px instead — see the option's own doc. Bind directly: `:style="style"`. */
+  /** Inline style for a sibling indicator element. Default (`sizing: 'bounds'`): sets real `insetInlineStart`/`inlineSize` (or block equivalents) in px. With `sizing: 'transform'`, `translate` positions it at the active tab's edge and `scale` resizes it to match instead — both compositor-only, never `inlineSize`/`blockSize`; pairs with the `.ui-tabs-indicator` CSS, which pins the element to a 1px baseline on the scaled axis — see the option's own doc. Bind directly: `:style="style"`. */
   style: Ref<Record<string, string | undefined>>
 }
 
@@ -37,39 +37,39 @@ export function useTabIndicator(
     const vertical = toValue(options.orientation) === 'vertical'
     // No transition on first measurement (avoid visible slide-in).
     const transitionDuration = measuredOnce ? undefined : '0ms'
-    if (toValue(options.sizing) === 'bounds') {
-      // getBoundingClientRect measures the border box, but an absolutely
-      // positioned child's inset-* resolves against the containing block's
-      // PADDING box — a container with its own border (SelectButton's track)
-      // needs that border subtracted or the indicator lands one border-width
-      // further along than the option it's supposed to match exactly.
-      const listStyle = getComputedStyle(list)
-      const borderInlineStart = parseFloat(listStyle.borderInlineStartWidth) || 0
-      const borderBlockStart = parseFloat(listStyle.borderBlockStartWidth) || 0
+    if (toValue(options.sizing) === 'transform') {
+      // 1px baseline × factor = measured px size.
       style.value = vertical
         ? {
-            insetBlockStart: `${tabRect.top - listRect.top - borderBlockStart}px`,
-            blockSize: `${tabRect.height}px`,
+            translate: `0 ${tabRect.top - listRect.top}px`,
+            scale: `1 ${tabRect.height}`,
             transitionDuration,
           }
         : {
-            insetInlineStart: `${tabRect.left - listRect.left - borderInlineStart}px`,
-            inlineSize: `${tabRect.width}px`,
+            translate: `${tabRect.left - listRect.left}px 0`,
+            scale: `${tabRect.width} 1`,
             transitionDuration,
           }
       measuredOnce = true
       return
     }
-    // 1px baseline × factor = measured px size.
+    // getBoundingClientRect measures the border box, but an absolutely
+    // positioned child's inset-* resolves against the containing block's
+    // PADDING box — a container with its own border (SelectButton's track)
+    // needs that border subtracted or the indicator lands one border-width
+    // further along than the option it's supposed to match exactly.
+    const listStyle = getComputedStyle(list)
+    const borderInlineStart = parseFloat(listStyle.borderInlineStartWidth) || 0
+    const borderBlockStart = parseFloat(listStyle.borderBlockStartWidth) || 0
     style.value = vertical
       ? {
-          translate: `0 ${tabRect.top - listRect.top}px`,
-          scale: `1 ${tabRect.height}`,
+          insetBlockStart: `${tabRect.top - listRect.top - borderBlockStart}px`,
+          blockSize: `${tabRect.height}px`,
           transitionDuration,
         }
       : {
-          translate: `${tabRect.left - listRect.left}px 0`,
-          scale: `${tabRect.width} 1`,
+          insetInlineStart: `${tabRect.left - listRect.left - borderInlineStart}px`,
+          inlineSize: `${tabRect.width}px`,
           transitionDuration,
         }
     measuredOnce = true

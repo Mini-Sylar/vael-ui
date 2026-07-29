@@ -126,11 +126,9 @@ function onInputChange(item: SelectButtonItem, event: Event) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
-// Single mode only: sizing 'bounds' for real two-axis border-radius (not compositor-only transform)
 const { style: indicatorStyle } = useTabIndicator(modelValue, {
   listEl: root,
   selector: '[data-checked]',
-  sizing: 'bounds',
 })
 
 const cx = useClassMerge()
