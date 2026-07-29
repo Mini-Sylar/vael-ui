@@ -1,5 +1,11 @@
 # vael-ui
 
+## 0.1.3
+
+### Patch Changes
+
+- [`d752420`](https://github.com/Mini-Sylar/vael-ui/commit/d7524201114b65ded8d650eccf25302c585da212) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - Fix `Field`'s context (`disabled`, `required`, `invalid`, label `for` wiring, focus/filled tracking) not reaching wrapped controls under Vapor. `fieldKey` was defined as a fresh `Symbol()` inside `Field.vue` itself, so the Vapor build's copy of that file created a second, different Symbol instance than the one `useFieldControl` (shared, not duplicated) always injected with — the two never matched, so every control wrapped in `<Field>` silently ignored the wrapper's state under Vapor. `fieldKey` now lives in its own module that the Vapor build correctly imports instead of redefining.
+
 ## 0.1.2
 
 ### Patch Changes
