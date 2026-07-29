@@ -4,6 +4,8 @@ packages:
   - docs
 allowBuilds:
   sharp: true
+overrides:
+  brace-expansion: '>=5.0.8'
 minimumReleaseAgeExclude:
   - '@vue/language-core@3.3.8'
   - vue-tsc@3.3.8
