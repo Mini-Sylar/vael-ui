@@ -1,6 +1,6 @@
 import { inject, toValue, useId, watchEffect } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
-import { fieldKey } from '../components/Field.vue'
+import { fieldKey } from './fieldContext'
 
 export interface UseFieldControlOptions {
   /** Reactive "does this control currently have a value" signal. Watched and reported to the nearest Field so it can flip `data-filled` (and, for float/inset placements, move the label) — including programmatic v-model writes, not just user typing. */

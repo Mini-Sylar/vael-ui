@@ -20,8 +20,9 @@ export type {
   MessageProps,
   MessageVariant,
 } from './components/Message.vue'
-export { default as Field, fieldKey } from './components/Field.vue'
-export type { FieldContext } from './components/Field.vue'
+export { default as Field } from './components/Field.vue'
+export { fieldKey } from './composables/fieldContext'
+export type { FieldContext } from './composables/fieldContext'
 export { default as Input } from './components/Input.vue'
 export { default as Textarea } from './components/Textarea.vue'
 export { default as InputNumber } from './components/InputNumber.vue'
