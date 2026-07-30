@@ -9,7 +9,9 @@
             <ol class="dash-crumb-trail">
               <li class="dash-crumb-item">
                 <Button variant="ghost" size="sm" class="dash-crumb-link">
-                  <Logo :size="14" class="dash-crumb-logo" />
+                  <template #leading>
+                    <Logo :size="14" class="dash-crumb-logo" style="margin-top: -0.1rem" />
+                  </template>
                   Home
                 </Button>
                 <PhCaretRight :size="12" class="dash-crumb-separator" />
@@ -145,7 +147,6 @@ function onAccountSelect(item: MenuItemData) {
   color: var(--ui-text-muted);
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
 }
 .dash-crumb-link:hover {
   color: var(--ui-text);
