@@ -3,12 +3,19 @@ import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TreeSelectFixture from './fixtures/TreeSelectFixture.vue'
+import TreeSelect from '../src/components/TreeSelect.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition —
   // same cleanup as select.test.ts, since TreeSelect reuses Select's own
   // positioner class.
   for (const el of document.querySelectorAll('.ui-select-positioner')) el.remove()
+})
+
+test('a plain class passed to TreeSelect reaches the rendered trigger', async () => {
+  const screen = render(TreeSelect, { props: { items: [] }, attrs: { class: 'my-tree-select' } })
+  const trigger = screen.getByRole('combobox')
+  expect(trigger.element().closest('.my-tree-select')).not.toBeNull()
 })
 
 // Finds a row by its visible label text rather than accessible-name matching

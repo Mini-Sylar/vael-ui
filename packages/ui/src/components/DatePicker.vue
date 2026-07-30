@@ -1,6 +1,7 @@
 <template>
   <Input
     ref="inputRef"
+    v-bind="attrs"
     :model-value="displayValue"
     :placeholder="placeholder"
     :size="size"
@@ -105,7 +106,7 @@ export type DatePickerAlign = Align
 
 <!-- Wraps Calendar in Select's popover chrome; input readonly, formatting deferred. -->
 <script setup lang="ts">
-import { computed, inject, nextTick, useId, useTemplateRef, watch } from 'vue'
+import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { usePopover } from '../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../composables/usePopover'
 import { useFieldControl } from '../composables/useFieldControl'
@@ -122,6 +123,8 @@ import type {
 } from './Calendar.vue'
 
 defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const model = defineModel<Date | CalendarRange | null>({ default: null })
 const open = defineModel<boolean>('open', { default: false })

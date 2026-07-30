@@ -4,7 +4,7 @@
     role="combobox"
     :id="fieldControl.id"
     :class="triggerPart.class"
-    :style="triggerPart.style"
+    :style="[triggerPart.style, attrs.style as never]"
     :tabindex="isDisabled ? -1 : 0"
     :aria-disabled="isDisabled || undefined"
     aria-haspopup="tree"
@@ -134,7 +134,7 @@ export type TreeSelectSelectionMode = TreeSelectionMode
 </script>
 
 <script setup lang="ts">
-import { computed, inject, nextTick, useId, useTemplateRef, watch } from 'vue'
+import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { usePopover } from '../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../composables/usePopover'
 import { useFieldControl } from '../composables/useFieldControl'
@@ -145,6 +145,8 @@ import { themeScopeKey, useThemedUi } from '../theme'
 import Tree from './Tree.vue'
 
 defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
 const open = defineModel<boolean>('open', { default: false })
@@ -371,6 +373,7 @@ const triggerPart = computed(() =>
     'ui-tree-select-trigger',
     `ui-tree-select-trigger--${props.size}`,
     isDisabled.value && 'ui-tree-select-trigger--disabled',
+    attrs.class as string | undefined,
   ),
 )
 const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-select-value'))

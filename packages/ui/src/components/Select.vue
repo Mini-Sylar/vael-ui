@@ -4,7 +4,7 @@
     role="combobox"
     :id="fieldControl.id"
     :class="rootPart.class"
-    :style="rootPart.style"
+    :style="[rootPart.style, attrs.style as never]"
     :tabindex="isDisabled ? -1 : 0"
     :aria-disabled="isDisabled || undefined"
     aria-haspopup="listbox"
@@ -159,7 +159,7 @@ export interface SelectVirtualizeConfig {
 </script>
 
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
-import { computed, inject, nextTick, useId, useTemplateRef, watch } from 'vue'
+import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { usePopover } from '../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../composables/usePopover'
 import { useListbox } from '../composables/useListbox'
@@ -173,6 +173,8 @@ import SelectListBody from './internal/SelectListBody.vue'
 import Chip from './Chip.vue'
 
 defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
 
@@ -428,6 +430,7 @@ const rootPart = computed(() =>
     'ui-select-trigger',
     `ui-select-trigger--${props.size}`,
     isDisabled.value && 'ui-select-trigger--disabled',
+    attrs.class as string | undefined,
   ),
 )
 const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-select-value'))

@@ -4,11 +4,18 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import DatePickerFixture from './fixtures/DatePickerFixture.vue'
 import DatePickerFormFixture from './fixtures/DatePickerFormFixture.vue'
+import DatePicker from '../src/components/DatePicker.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition —
   // same cleanup as select.test.ts.
   for (const el of document.querySelectorAll('.ui-select-positioner')) el.remove()
+})
+
+test('a plain class passed to DatePicker reaches the rendered trigger', async () => {
+  const screen = render(DatePicker, { attrs: { class: 'my-date-picker' } })
+  const trigger = screen.getByRole('combobox')
+  expect(trigger.element().closest('.my-date-picker')).not.toBeNull()
 })
 
 const JUNE_15_2024 = new Date(2024, 5, 15)

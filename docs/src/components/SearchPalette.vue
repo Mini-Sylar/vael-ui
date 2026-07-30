@@ -5,7 +5,6 @@
     :items="items"
     clearable
     :placeholder="t('nav.search')"
-    class="search-palette"
     @update:model-value="onSelect"
   />
 </template>
@@ -30,9 +29,3 @@ function onSelect(value: string | number | (string | number)[] | null) {
   }
 }
 </script>
-
-<style scoped>
-.search-palette {
-  width: 14rem;
-}
-</style>

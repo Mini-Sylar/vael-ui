@@ -1,6 +1,7 @@
 <template>
   <Input
     ref="inputRef"
+    v-bind="attrs"
     v-model="query"
     :placeholder="placeholder"
     :size="size"
@@ -166,7 +167,7 @@ export type ComboboxFilter<T> = boolean | ((item: T, query: string) => boolean)
      Trigger: Input.vue instead of button (for Field wiring, frame, float/inset label).
      Focus stays in input; only ArrowDown/Up/Home/End forwarded to listbox (typeahead disabled here for live filtering). -->
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
-import { computed, inject, nextTick, useId, useTemplateRef, watch } from 'vue'
+import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import Input from './Input.vue'
 import { usePopover } from '../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../composables/usePopover'
@@ -181,6 +182,8 @@ import SelectListBody from './internal/SelectListBody.vue'
 import Chip from './Chip.vue'
 
 defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
 const query = defineModel<string>('query', { default: '' })

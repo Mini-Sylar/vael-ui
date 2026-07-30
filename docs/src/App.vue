@@ -25,8 +25,6 @@
         </RouterLink>
         <nav class="main-nav">
           <RouterLink to="/docs/getting-started">{{ t('nav.gettingStarted') }}</RouterLink>
-          <RouterLink to="/docs/guides/global-setup">{{ t('nav.globalSetup') }}</RouterLink>
-          <RouterLink to="/docs/guides/tailwind">{{ t('nav.tailwindGuide') }}</RouterLink>
           <a href="https://github.com/Mini-Sylar/vael-ui" target="_blank" rel="noreferrer">{{
             t('nav.github')
           }}</a>
@@ -440,10 +438,15 @@ const theme = computed(() => ({
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
   font-weight: 700;
   font-size: 1.1rem;
   text-decoration: none;
   color: var(--ui-text);
+}
+
+.brand-text {
+  white-space: nowrap;
 }
 
 .brand .brand-logo {
@@ -488,6 +491,7 @@ const theme = computed(() => ({
   align-items: center;
   gap: 0.75rem;
   margin-inline-start: auto;
+  min-width: 0;
 }
 
 .header-desktop-controls {
@@ -498,6 +502,13 @@ const theme = computed(() => ({
 
 .mobile-nav-trigger {
   display: none;
+  flex-shrink: 0;
+}
+
+:deep(.header-search) {
+  flex: 1 1 auto;
+  min-width: 5rem;
+  max-width: 14rem;
 }
 
 .mobile-settings {
@@ -569,17 +580,13 @@ const theme = computed(() => ({
   max-width: 88rem;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 850px) {
   .main-nav {
     display: none;
   }
 
   .mobile-nav-trigger {
     display: inline-flex;
-  }
-
-  .header-search {
-    display: none;
   }
 
   .header-desktop-controls {

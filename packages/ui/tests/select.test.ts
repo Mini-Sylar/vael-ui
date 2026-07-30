@@ -11,6 +11,15 @@ beforeEach(() => {
   for (const el of document.querySelectorAll('.ui-select-positioner')) el.remove()
 })
 
+test('a plain class passed to Select reaches the rendered trigger', async () => {
+  const screen = render(Select, {
+    props: { items: [{ label: 'A', value: 'a' }] },
+    attrs: { class: 'my-select' },
+  })
+  const trigger = screen.getByRole('combobox')
+  expect(trigger.element().closest('.my-select')).not.toBeNull()
+})
+
 test('click opens the panel; the previously-selected item is active and scrolled into view', async () => {
   const screen = render(SelectFixture)
   const trigger = screen.getByRole('combobox')

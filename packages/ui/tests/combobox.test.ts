@@ -11,6 +11,15 @@ beforeEach(() => {
   for (const el of document.querySelectorAll('.ui-select-positioner')) el.remove()
 })
 
+test('a plain class passed to Combobox reaches the rendered root', async () => {
+  const screen = render(Combobox, {
+    props: { items: [{ label: 'A', value: 'a' }] },
+    attrs: { class: 'my-search-box' },
+  })
+  const input = screen.getByRole('combobox')
+  expect(input.element().closest('.my-search-box')).not.toBeNull()
+})
+
 test('typing filters the list, diacritic- and case-insensitively', async () => {
   const screen = render(ComboboxFixture)
   const input = screen.getByRole('combobox')

@@ -98,7 +98,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 850px) {
   .sidebar-shell {
     display: none;
   }
