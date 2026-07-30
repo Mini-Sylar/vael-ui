@@ -155,6 +155,7 @@
             variant="ghost"
             block
             class="dash-user-trigger"
+            :class="{ 'dash-user-trigger--collapsed': collapsed }"
             :aria-label="collapsed ? 'Account menu' : undefined"
           >
             <span class="dash-user-avatar">
@@ -483,7 +484,20 @@ defineExpose({ collapsed })
 }
 
 .dash-user-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   text-align: start;
+  transition:
+    inline-size var(--ui-duration-enter) var(--ui-ease-in-out),
+    padding-inline var(--ui-duration-enter) var(--ui-ease-in-out),
+    margin-inline var(--ui-duration-enter) var(--ui-ease-in-out);
+}
+.dash-user-trigger--collapsed {
+  justify-content: center;
+  inline-size: 2.25rem;
+  padding-inline: 0;
+  margin-inline: auto;
 }
 .dash-user-trigger :deep(.ui-button-content) {
   flex: 1;
@@ -492,12 +506,18 @@ defineExpose({ collapsed })
   justify-content: flex-start;
   min-inline-size: 0;
 }
+.dash-user-trigger--collapsed :deep(.ui-button-content) {
+  flex: none;
+}
 .dash-user-trigger :deep(.ui-button-label) {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   inline-size: 100%;
   min-inline-size: 0;
+}
+.dash-user-trigger--collapsed :deep(.ui-button-label) {
+  inline-size: auto;
 }
 .dash-user-avatar {
   flex: none;
