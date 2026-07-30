@@ -79,13 +79,15 @@
           <Collapsible v-model:open="settingsOpen" class="dash-nav-group">
             <template #trigger="{ open }">
               <Button variant="ghost" block class="dash-nav-group-trigger">
-                <template #leading><PhGear :size="16" /></template>
+                <template #leading><PhGear :size="20" /></template>
                 <span class="dash-nav-label">Settings</span>
-                <PhCaretDown
-                  :size="14"
-                  class="dash-nav-group-chevron"
-                  :class="{ 'dash-nav-group-chevron--open': open }"
-                />
+                <template #trailing>
+                  <PhCaretDown
+                    :size="16"
+                    class="dash-nav-group-chevron"
+                    :class="{ 'dash-nav-group-chevron--open': open }"
+                  />
+                </template>
               </Button>
             </template>
             <MenuList
@@ -98,13 +100,15 @@
           <Collapsible v-model:open="reportsOpen" class="dash-nav-group">
             <template #trigger="{ open }">
               <Button variant="ghost" block class="dash-nav-group-trigger">
-                <template #leading><PhFileText :size="16" /></template>
+                <template #leading><PhFileText :size="20" /></template>
                 <span class="dash-nav-label">Reports</span>
-                <PhCaretDown
-                  :size="14"
-                  class="dash-nav-group-chevron"
-                  :class="{ 'dash-nav-group-chevron--open': open }"
-                />
+                <template #trailing>
+                  <PhCaretDown
+                    :size="16"
+                    class="dash-nav-group-chevron"
+                    :class="{ 'dash-nav-group-chevron--open': open }"
+                  />
+                </template>
               </Button>
             </template>
             <MenuList
@@ -147,12 +151,19 @@
     <div class="dash-sidebar-bottom">
       <Menu :items="accountMenuItems" side="top" align="start" @select="onAccountSelect">
         <template #trigger>
-          <Button variant="ghost" block class="dash-user-trigger" aria-label="Account menu">
-            <Avatar name="Mira Mitchell" size="sm">
-              <template #badge>
-                <span class="dash-user-status" aria-hidden="true" />
-              </template>
-            </Avatar>
+          <Button
+            variant="ghost"
+            block
+            class="dash-user-trigger"
+            :aria-label="collapsed ? 'Account menu' : undefined"
+          >
+            <span class="dash-user-avatar">
+              <Avatar name="Mira Mitchell" size="sm">
+                <template #badge>
+                  <span class="dash-user-status" aria-hidden="true" />
+                </template>
+              </Avatar>
+            </span>
             <span v-if="!collapsed" class="dash-user-meta">
               <span class="dash-user-name">Mira Mitchell</span>
               <span class="dash-user-role">Workspace admin</span>
@@ -417,6 +428,16 @@ defineExpose({ collapsed })
 .dash-nav-group-trigger :deep(.ui-button-content) {
   flex: 1;
 }
+.dash-nav-group-trigger :deep(.ui-button-leading),
+.dash-nav-group-trigger :deep(.ui-button-trailing) {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
+.dash-nav-group-trigger :deep(.ui-button-leading svg),
+.dash-nav-group-trigger :deep(.ui-button-trailing svg) {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
 .dash-nav-group-trigger:hover,
 .dash-nav-group-trigger-collapsed:hover {
   background: var(--ui-muted-hover);
@@ -462,17 +483,26 @@ defineExpose({ collapsed })
 }
 
 .dash-user-trigger {
+  text-align: start;
+}
+.dash-user-trigger :deep(.ui-button-content) {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.5rem;
+  min-inline-size: 0;
+}
+.dash-user-trigger :deep(.ui-button-label) {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   inline-size: 100%;
-  padding: 0.375rem;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-  text-align: start;
+  min-inline-size: 0;
+}
+.dash-user-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
 }
 .dash-user-trigger:hover {
   background: var(--ui-muted-hover);
@@ -496,6 +526,7 @@ defineExpose({ collapsed })
   flex-direction: column;
   overflow: hidden;
   min-inline-size: 0;
+  line-height: 1.1;
 }
 .dash-user-name {
   font-size: 0.8125rem;
