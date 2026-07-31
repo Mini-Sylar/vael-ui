@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import generateSitemap from 'vite-ssg-sitemap'
-import { allComponents } from './src/taxonomy'
-import { allComposables } from './src/composablesTaxonomy'
+import { allComponents } from './src/taxonomy.ts'
+import { allComposables } from './src/composablesTaxonomy.ts'
 
 const uiPackageJson = JSON.parse(
   readFileSync(fileURLToPath(new URL('../packages/ui/package.json', import.meta.url)), 'utf-8'),
