@@ -162,7 +162,7 @@ onMounted(() => {
 .sidebar-mode-toggle {
   flex-shrink: 0;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 1rem 1rem 0;
 }
 

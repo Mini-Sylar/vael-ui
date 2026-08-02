@@ -185,12 +185,14 @@
     </BottomSheet>
 
     <!-- Global singletons every real consumer app mounts once. Without
-         them, v-tooltip/openDialog()/toast() demos render nothing at all.
-         Toaster's own page runs a second, page-local instance to demo its
-         props live — since the toast queue is a real singleton, both would
-         render every fired toast, so this one steps aside there. -->
+         them, v-tooltip/openDialog()/openPopover()/toast() demos render
+         nothing at all. Toaster's own page runs a second, page-local
+         instance to demo its props live — since the toast queue is a real
+         singleton, both would render every fired toast, so this one steps
+         aside there. -->
     <TooltipHost />
     <DialogHost />
+    <PopoverHost />
     <Toaster v-if="!isToasterPage" />
   </ConfigProvider>
 </template>
@@ -217,6 +219,7 @@ import {
   DialogHost,
   Dock,
   Popover,
+  PopoverHost,
   Select,
   SelectButton,
   Slider,

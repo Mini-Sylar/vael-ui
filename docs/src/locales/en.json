@@ -89,17 +89,19 @@
   },
   "globalSetup": {
     "title": "Global setup",
-    "intro": "Three singletons. Mount each once, anywhere in your app, and every other component reaches it automatically.",
+    "intro": "Four singletons. Mount each once, anywhere in your app, and every other component reaches it automatically.",
     "tooltipHostTitle": "TooltipHost",
     "tooltipHostIntro": "Powers every <code>v-tooltip</code>. Without one mounted, tooltips silently never appear.",
     "tooltipHostOptions": "It takes the same options every individual tooltip can override:",
     "dialogHostTitle": "DialogHost",
-    "dialogHostIntro": "Renders whatever <code>openDialog()</code> creates imperatively. Not needed for a <code>&lt;Dialog v-model:open&gt;</code> in your own template. No props, no configuration.",
+    "dialogHostIntro": "Renders whatever <code>openDialog()</code> or <code>confirmAction()</code> creates imperatively. Not needed for a <code>&lt;Dialog v-model:open&gt;</code> in your own template. No props, no configuration.",
+    "popoverHostTitle": "PopoverHost",
+    "popoverHostIntro": "Renders whatever <code>openPopover()</code> or <code>confirmAction()</code> with <code>surface: 'popover'</code> creates imperatively. Not needed for a <code>&lt;Popover v-model:open&gt;</code> in your own template. No props, no configuration.",
     "toasterTitle": "Toaster",
     "toasterIntro": "Renders whatever {code} creates. Has real configuration, so it keeps {link}.",
     "toasterIntroLink": "its own page",
     "allTogetherTitle": "All together",
-    "allTogetherIntro": "Mount all three once, wherever your app's root template lives:"
+    "allTogetherIntro": "Mount all four once, wherever your app's root template lives:"
   },
   "tailwind": {
     "layerNote": "vael-ui ships in {layer}. Tailwind's utility classes are unlayered, and unlayered CSS always wins over a layer regardless of specificity or import order, so a Tailwind utility on a vael-ui component always overrides the library's default. No {important}, no specificity fights, nothing to configure. See {link} for the general mechanics.",

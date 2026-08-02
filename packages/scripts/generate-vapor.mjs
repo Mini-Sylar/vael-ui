@@ -49,6 +49,7 @@ const COMPONENTS = [
   'OtpInput',
   'Pagination',
   'Popover',
+  'PopoverHost',
   'Progress',
   'PullToRefresh',
   'Radio',

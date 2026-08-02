@@ -1483,6 +1483,35 @@
     transform: scale(0.96);
   }
 
+  /* confirmAction's surface: 'popover' body — Popover has no separate
+     header/footer slots the way Dialog does, so title/description/actions
+     all live in this one block; sizing matches Dialog's own title/
+     description scale for visual consistency across both surfaces. */
+  .ui-confirm-popover {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-inline-size: var(--ui-confirm-popover-width, 18rem);
+  }
+  .ui-confirm-popover-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .ui-confirm-popover-description {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ui-text-muted);
+  }
+  .ui-confirm-popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-block-start: 0.25rem;
+  }
+
   /* Menu: same positioner/panel split as Popover. */
   .ui-menu-positioner {
     z-index: var(--ui-z-popover, 55);

@@ -71,6 +71,7 @@ export { default as AccordionItem } from './components/AccordionItem.vue'
 export { default as Collapsible } from './components/Collapsible.vue'
 export { default as Popover } from './components/Popover.vue'
 export type { PopoverAlign, PopoverProps, PopoverSide } from './components/Popover.vue'
+export { default as PopoverHost } from './components/PopoverHost.vue'
 export { default as Menu } from './components/Menu.vue'
 export type {
   MenuAlign,
@@ -117,21 +118,31 @@ export type {
   UseDialogOptions,
 } from './composables/useDialog'
 export {
-  confirmDialog,
   dialogRefKey,
   openDialog,
   useDialogQueue,
   useDialogRef,
 } from './composables/useDialogService'
 export type {
-  ConfirmDialogOptions,
   DialogRef,
   DynamicDialogEntry,
   OpenDialogHandle,
   OpenDialogOptions,
 } from './composables/useDialogService'
-export { useConfirmAction } from './composables/useConfirmAction'
-export type { UseConfirmActionReturn } from './composables/useConfirmAction'
+export {
+  openPopover,
+  popoverRefKey,
+  usePopoverQueue,
+  usePopoverRef,
+} from './composables/usePopoverService'
+export type {
+  DynamicPopoverEntry,
+  OpenPopoverHandle,
+  OpenPopoverOptions,
+  PopoverRef,
+} from './composables/usePopoverService'
+export { confirmAction } from './composables/confirmAction'
+export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'
 export { useNumberFormat } from './composables/useNumberFormat'
 export type { UseNumberFormatOptions, UseNumberFormatReturn } from './composables/useNumberFormat'
 export { useTabs } from './composables/useTabs'

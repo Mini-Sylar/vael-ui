@@ -2,66 +2,108 @@ import type { MetaRow } from './types'
 
 export interface ComposableContent {
   description: string
-  /** Real named exports for the install snippet — defaults to just the page
+  /** Real named exports for the install snippet. Defaults to just the page
    * name, but a few pages (useToast, useDialogService) group several real
    * exports under one taxonomy/route name that isn't itself an export. */
   installNames?: string[]
   /** Has a matching `Use${Name}Demo.vue` in `composable-demos/` when true. */
   hasLiveDemo?: boolean
-  /** Other `composable-demos/*.vue` files the main demo imports — e.g. a
-   * custom child component — whose source is concatenated into the shown
+  /** Other `composable-demos/*.vue` files the main demo imports, such as a
+   * custom child component, whose source is concatenated into the shown
    * code block too, so the code readers see actually matches what runs. */
   extraSourceFiles?: string[]
-  /** Shown when there's no live demo — a realistic, accurate usage snippet. */
+  /** Shown when there's no live demo: a realistic, accurate usage snippet. */
   exampleCode?: string
   params: MetaRow[]
   returns: MetaRow[]
 }
 
 export const composablesContent: Record<string, ComposableContent> = {
-  useConfirmAction: {
+  confirmAction: {
     description:
-      'Presentation-agnostic confirm/cancel state for async-aware confirm flows. Bind `open` to any overlay’s own `v-model:open` — Popover, Dialog, or a fully custom surface — anchored however that overlay already supports (Popover’s `#trigger` slot or `triggerEl` prop, unchanged). `confirm(action)` keeps the surface open and `pending` true until `action` settles, closing only on success; a rejected action clears `pending`, sets `error`, and leaves the surface open instead of closing out from under a failure.',
+      "One function for async-aware confirm flows, either centered (`surface: 'dialog'`, the default) or anchored to a trigger (`surface: 'popover'`, requires `triggerEl`); a discriminated union on `surface` picks which options TypeScript actually offers you. `onConfirm` is awaited before closing: the confirm button stays in its loading state until it settles, and the surface closes only on success. A rejection leaves it open and fires `onError` instead of closing out from under a failed action. Not a new component, just sugar over `openDialog`/`openPopover`, both still there for anything this doesn’t cover.",
     hasLiveDemo: true,
-    params: [],
+    params: [
+      { name: 'title', type: 'string', description: 'Required either way.' },
+      { name: 'description', type: 'string', description: '' },
+      {
+        name: 'confirmLabel / cancelLabel',
+        type: 'string',
+        description: "Default 'Confirm' / 'Cancel'.",
+      },
+      {
+        name: 'variant',
+        type: 'ButtonVariant',
+        description:
+          "Confirm button style. Default 'primary'; use 'danger' for destructive actions.",
+      },
+      {
+        name: 'onConfirm',
+        type: '() => unknown | Promise<unknown>',
+        description: 'Awaited before closing.',
+      },
+      { name: 'onCancel', type: '() => void', description: '' },
+      {
+        name: 'onError',
+        type: '(error: unknown) => void',
+        description: 'Fires when onConfirm rejects.',
+      },
+      {
+        name: 'confirmButtonProps / cancelButtonProps',
+        type: 'Partial<ButtonProps>',
+        description: 'Full prop passthrough beyond the label/variant shortcuts.',
+      },
+      {
+        name: 'body / bodyProps',
+        type: 'Component / Record<string, unknown>',
+        description:
+          'Extra content between the description and the buttons, e.g. a "type DELETE" input.',
+      },
+      { name: 'surface', type: "'dialog' | 'popover'", description: "Default 'dialog'." },
+      {
+        name: 'position / size',
+        type: 'DialogPosition / DialogSize',
+        description: "surface: 'dialog' only, same as Dialog's own props.",
+      },
+      {
+        name: 'triggerEl',
+        type: 'TriggerRef',
+        description:
+          "surface: 'popover' only. Required, same contract as openPopover's own triggerEl.",
+      },
+      {
+        name: 'side / align / sideOffset / …',
+        type: 'PopoverProps',
+        description: "surface: 'popover' only. Every other Popover prop, passed straight through.",
+      },
+    ],
     returns: [
       {
-        name: 'open',
-        type: 'Ref<boolean>',
-        description: 'Bind to whatever overlay you’re anchoring to via its own v-model:open.',
-      },
-      {
-        name: 'pending',
-        type: 'Ref<boolean>',
+        name: 'result',
+        type: 'Promise<boolean | undefined>',
         description:
-          'True while a confirm action is in flight. Disable/spin the confirm control on this — never the whole surface.',
+          'true on confirm, false on cancel, undefined on Escape/outside-click dismissal.',
       },
       {
-        name: 'error',
-        type: 'Ref<unknown>',
+        name: 'close',
+        type: '(result?: boolean) => void',
+        description: "Close imperatively from the opener's side.",
+      },
+      {
+        name: 'panelEl',
+        type: '{ readonly value: HTMLElement | null }',
         description:
-          'Set if the last confirm(action) rejected; cleared at the start of the next call.',
-      },
-      {
-        name: 'confirm',
-        type: '(action?: () => unknown | Promise<unknown>) => Promise<void>',
-        description:
-          'Runs action, keeping open true until it settles and closing only on success. Called with no action, closes immediately.',
-      },
-      {
-        name: 'cancel',
-        type: '() => void',
-        description: 'Always closes immediately — never runs an action, never waits on pending.',
+          'Null until the surface actually mounts; useful for GSAP/motion-v enter animations.',
       },
     ],
   },
 
   useDialogService: {
     description:
-      'The imperative engine behind `<Dialog>` for dialogs opened from code instead of markup — `openDialog(Component, options)` mounts any component as the body (typed props included) and returns a `result` promise that settles with whatever the opened component’s `useDialogRef().close(result)` passes. `confirmDialog(options)` is sugar over the same service for the common "title + description + Cancel/Confirm" shape, still accepting a custom `body`/`footer` component for full control.',
-    installNames: ['openDialog', 'confirmDialog', 'useDialogRef', 'useDialogQueue'],
+      'The imperative engine behind `<Dialog>` for dialogs opened from code instead of markup. `openDialog(Component, options)` mounts any component as the body (typed props included) and returns a `result` promise that settles with whatever the opened component’s `useDialogRef().close(result)` passes. This is the low-level primitive `confirmAction()` itself is built on; reach for it directly for anything beyond a plain confirm (a rename form, a multi-step flow, …).',
+    installNames: ['openDialog', 'useDialogRef', 'useDialogQueue'],
     hasLiveDemo: true,
-    extraSourceFiles: ['RenameFileDialogBody.vue'],
+    extraSourceFiles: ['RenameFileDialogBody.vue', 'DeleteFileDialogBody.vue'],
     params: [],
     returns: [
       {
@@ -71,29 +113,51 @@ export const composablesContent: Record<string, ComposableContent> = {
           'Mounts component inside <Dialog>, rendered by the app-level <DialogHost/>. options.props is typed against the component you pass.',
       },
       {
-        name: 'confirmDialog(options)',
-        type: 'OpenDialogHandle<boolean>',
-        description:
-          'title + description + Cancel/Confirm footer, built on openDialog. onConfirm is awaited before closing; a rejection leaves the dialog open and fires onError.',
-      },
-      {
         name: 'useDialogRef()',
         type: 'DialogRef<D, T>',
         description:
-          'Called from inside the opened component. { data, panelEl, close(result) } — close() is what settles the opener’s result promise.',
+          'Called from inside the opened component. { data, panelEl, close(result) }: close() is what settles the opener’s result promise.',
       },
       {
         name: 'useDialogQueue()',
         type: 'DynamicDialogEntry[]',
+        description: 'The live queue <DialogHost/> renders. Mount DialogHost once at the app root.',
+      },
+    ],
+  },
+
+  usePopoverService: {
+    description:
+      "The imperative engine behind `<Popover>` for anchored popovers opened from code instead of markup. `openPopover(Component, options)` mounts any component inside a Popover anchored to `options.triggerEl` (required, since an imperative popover has no inline `#trigger` slot to derive it from), and returns a `result` promise that settles with whatever the opened component’s `usePopoverRef().close(result)` passes. This is the low-level primitive `confirmAction({ surface: 'popover' })` is built on; reach for it directly for anything beyond a plain confirm.",
+    installNames: ['openPopover', 'usePopoverRef', 'usePopoverQueue'],
+    hasLiveDemo: true,
+    extraSourceFiles: ['RemoveTagPopoverBody.vue'],
+    params: [],
+    returns: [
+      {
+        name: 'openPopover(component, options)',
+        type: 'OpenPopoverHandle<T>',
         description:
-          'The live queue <DialogHost/> renders — mount DialogHost once at the app root.',
+          'Mounts component inside <Popover>, rendered by the app-level <PopoverHost/>. options.props is typed against the component you pass; options.triggerEl is required.',
+      },
+      {
+        name: 'usePopoverRef()',
+        type: 'PopoverRef<D, T>',
+        description:
+          'Called from inside the opened component. { data, panelEl, close(result) }: close() is what settles the opener’s result promise.',
+      },
+      {
+        name: 'usePopoverQueue()',
+        type: 'DynamicPopoverEntry[]',
+        description:
+          'The live queue <PopoverHost/> renders. Mount PopoverHost once at the app root, alongside DialogHost.',
       },
     ],
   },
 
   useToast: {
     description:
-      'Sonner-style imperative toasts — call `toast(title, options)` from anywhere, no component context needed. `toast.success/error/warning/info/loading` are shortcuts for each variant, and `toast.promise(input, messages)` shows a loading toast immediately and swaps it for success/error once the promise settles, with no manual dismiss() bookkeeping. Requires a `<Toaster/>` mounted once at the app root to actually render.',
+      'Sonner-style imperative toasts: call `toast(title, options)` from anywhere, no component context needed. `toast.success/error/warning/info/loading` are shortcuts for each variant, and `toast.promise(input, messages)` shows a loading toast immediately and swaps it for success/error once the promise settles, with no manual dismiss() bookkeeping. Requires a `<Toaster/>` mounted once at the app root to actually render.',
     installNames: ['toast', 'useToastQueue'],
     hasLiveDemo: true,
     params: [],
@@ -123,14 +187,14 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'useToastQueue()',
         type: '{ toasts, dismiss, pauseAll, resumeAll }',
         description:
-          'Read-only queue access plus pause/resume — what <Toaster/> itself uses internally (e.g. pausing timers on pointerenter).',
+          'Read-only queue access plus pause/resume: what <Toaster/> itself uses internally (e.g. pausing timers on pointerenter).',
       },
     ],
   },
 
   useAsyncLoading: {
     description:
-      'Tracks every in-flight promise passed to `run()` — `loading` only clears once ALL of them have settled, so overlapping calls (or several buttons sharing one instance) never flicker the state early. This is exactly what `Button`’s own `loading="auto"` uses internally for promise-returning `@click` handlers.',
+      'Tracks every in-flight promise passed to `run()`. `loading` only clears once ALL of them have settled, so overlapping calls (or several buttons sharing one instance) never flicker the state early. This is exactly what `Button`’s own `loading="auto"` uses internally for promise-returning `@click` handlers.',
     hasLiveDemo: true,
     params: [],
     returns: [
@@ -149,7 +213,7 @@ export const composablesContent: Record<string, ComposableContent> = {
 
   useNumberFormat: {
     description:
-      "Locale-aware number formatting and parsing, both directions kept perfectly in sync — `format` turns a number into the full localized+affixed display string, `parse` turns typed text back into a number (or `null` for anything incomplete or invalid), and `isPartial` tells a legal mid-typing state ('', '-', '1.') apart from actual garbage so you don’t fight the user while they’re still typing. This is exactly what `InputNumber` uses internally for its own currency/percent/decimal modes.",
+      "Locale-aware number formatting and parsing, both directions kept perfectly in sync. `format` turns a number into the full localized+affixed display string, `parse` turns typed text back into a number (or `null` for anything incomplete or invalid), and `isPartial` tells a legal mid-typing state ('', '-', '1.') apart from actual garbage so you don’t fight the user while they’re still typing. This is exactly what `InputNumber` uses internally for its own currency/percent/decimal modes.",
     hasLiveDemo: true,
     params: [
       {
@@ -186,7 +250,7 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'prefix / suffix',
         type: 'MaybeRefOrGetter<string | undefined>',
         description:
-          'Literal affix Intl has no concept of (e.g. a unit label) — stripped on parse, appended on format.',
+          'Literal affix Intl has no concept of (e.g. a unit label); stripped on parse, appended on format.',
       },
     ],
     returns: [
@@ -199,7 +263,7 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'parse',
         type: '(text: string) => number | null',
         description:
-          'null for anything that isn’t a complete, unambiguous number — including legal in-progress typing states.',
+          'null for anything that isn’t a complete, unambiguous number, including legal in-progress typing states.',
       },
       {
         name: 'isPartial',
@@ -212,7 +276,7 @@ export const composablesContent: Record<string, ComposableContent> = {
 
   useColorScheme: {
     description:
-      'Drives `document.documentElement.dataset.theme` from a `system` / `light` / `dark` mode — `system` removes the attribute entirely and follows `prefers-color-scheme` live. This is the exact composable the docs site’s own header theme toggle uses; `persist` is structural (like ConfigProvider’s `i18n`) so you can wire in cookies, a store, or localStorage yourself instead of the composable assuming one.',
+      'Drives `document.documentElement.dataset.theme` from a `system` / `light` / `dark` mode. `system` removes the attribute entirely and follows `prefers-color-scheme` live. This is the exact composable the docs site’s own header theme toggle uses; `persist` is structural (like ConfigProvider’s `i18n`) so you can wire in cookies, a store, or localStorage yourself instead of the composable assuming one.',
     exampleCode: `import { useColorScheme } from 'vael-ui'
 
 const { mode, resolvedMode, setMode } = useColorScheme({
@@ -226,8 +290,8 @@ const { mode, resolvedMode, setMode } = useColorScheme({
   },
 })
 
-// mode.value: 'system' | 'light' | 'dark' — what the user picked
-// resolvedMode.value: 'light' | 'dark' — what's actually applied right now
+// mode.value: 'system' | 'light' | 'dark' (what the user picked)
+// resolvedMode.value: 'light' | 'dark' (what's actually applied right now)
 setMode('dark')`,
     params: [
       {
@@ -239,7 +303,7 @@ setMode('dark')`,
         name: 'persist',
         type: '{ get: () => string | null; set: (mode) => void }',
         description:
-          'Structural persistence hook — no default, nothing is persisted unless you pass this.',
+          'Structural persistence hook. No default, nothing is persisted unless you pass this.',
       },
     ],
     returns: [
@@ -251,7 +315,7 @@ setMode('dark')`,
       {
         name: 'resolvedMode',
         type: "ShallowRef<'light' | 'dark'>",
-        description: "What's actually applied — resolves 'system' against the live media query.",
+        description: "What's actually applied. Resolves 'system' against the live media query.",
       },
       {
         name: 'setMode',
@@ -263,7 +327,7 @@ setMode('dark')`,
 
   useFloatingPosition: {
     description:
-      'The Floating UI-backed positioning engine behind `Popover`, `Menu`, and `Tooltip` — computes `positionerStyle` (absolute inset + `visibility`) against a reference/floating element pair, with flip/shift collision handling and live `autoUpdate` tracking while `active` is true. Reach for this directly when building a custom anchored surface none of the existing overlay components fit.',
+      'The Floating UI-backed positioning engine behind `Popover`, `Menu`, and `Tooltip`. Computes `positionerStyle` (absolute inset + `visibility`) against a reference/floating element pair, with flip/shift collision handling and live `autoUpdate` tracking while `active` is true. Reach for this directly when building a custom anchored surface none of the existing overlay components fit.',
     hasLiveDemo: true,
     params: [
       { name: 'referenceEl', type: 'Ref<HTMLElement | null>', description: 'The anchor.' },
@@ -331,7 +395,7 @@ setMode('dark')`,
 
   useVirtualizer: {
     description:
-      'Windowed rendering for long lists — only the visible rows (plus overscan) exist in the DOM. This is what `Select`/`Combobox`/`Tree` reach for once their list gets large; use it directly when building a custom scrollable list that needs the same treatment.',
+      'Windowed rendering for long lists: only the visible rows (plus overscan) exist in the DOM. This is what `Select`/`Combobox`/`Tree` reach for once their list gets large; use it directly when building a custom scrollable list that needs the same treatment.',
     hasLiveDemo: true,
     params: [
       { name: 'containerEl', type: 'Ref<HTMLElement | null>', description: 'The scrollable box.' },
@@ -350,7 +414,7 @@ setMode('dark')`,
       {
         name: 'onReachEnd',
         type: '() => void',
-        description: 'Fires once the rendered window nears count - 1 — re-arms when count changes.',
+        description: 'Fires once the rendered window nears count - 1; re-arms when count changes.',
       },
     ],
     returns: [
@@ -358,7 +422,7 @@ setMode('dark')`,
         name: 'listStyle',
         type: 'Ref<Record<string, string>>',
         description:
-          'Bind to a relative, full-height spacer — gives the container real scrollable height.',
+          'Bind to a relative, full-height spacer: gives the container real scrollable height.',
       },
       {
         name: 'items',
@@ -369,7 +433,7 @@ setMode('dark')`,
         name: 'scrollToIndex',
         type: "(index, align?: 'nearest' | 'start' | 'end' | 'center') => void",
         description:
-          "Default 'nearest' — what keyboard nav wants: never move a row that's already visible.",
+          "Default 'nearest': what keyboard nav wants, never move a row that's already visible.",
       },
       {
         name: 'measuredSize',
@@ -381,14 +445,14 @@ setMode('dark')`,
 
   useFieldControl: {
     description:
-      'Wires a custom form control into the nearest `<Field>` — id/label association, `aria-describedby`/`aria-invalid`/`aria-required`, and reporting focus/filled state so Field can move a floating label or flip `data-filled`. This is what every built-in input (Input, Select, Checkbox, RadioGroup, …) uses internally; reach for it directly when building a custom control that should plug into Field the same way.',
+      'Wires a custom form control into the nearest `<Field>`: id/label association, `aria-describedby`/`aria-invalid`/`aria-required`, and reporting focus/filled state so Field can move a floating label or flip `data-filled`. This is what every built-in input (Input, Select, Checkbox, RadioGroup, …) uses internally; reach for it directly when building a custom control that should plug into Field the same way.',
     hasLiveDemo: true,
     params: [
       {
         name: 'filled',
         type: 'MaybeRefOrGetter<boolean>',
         description:
-          'Reactive "does this control currently have a value" signal — reported to the nearest Field, including programmatic v-model writes.',
+          'Reactive "does this control currently have a value" signal, reported to the nearest Field, including programmatic v-model writes.',
       },
     ],
     returns: [
@@ -396,7 +460,7 @@ setMode('dark')`,
         name: 'id',
         type: 'string',
         description:
-          "Bind to the control's own id — Field's controlId when present, otherwise a fresh useId().",
+          "Bind to the control's own id: Field's controlId when present, otherwise a fresh useId().",
       },
       {
         name: 'describedBy',
@@ -418,7 +482,7 @@ setMode('dark')`,
       {
         name: 'disabled',
         type: '() => boolean',
-        description: "Advisory — OR into the control's own disabled prop.",
+        description: "Advisory: OR into the control's own disabled prop.",
       },
       {
         name: 'onFocus',

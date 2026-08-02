@@ -12,7 +12,7 @@ export const composableCategories: ComposableCategory[] = [
   {
     key: 'overlaysAndConfirmation',
     name: 'Overlays & Confirmation',
-    items: ['useConfirmAction', 'useDialogService', 'useToast'],
+    items: ['confirmAction', 'useDialogService', 'usePopoverService', 'useToast'],
   },
   {
     key: 'positioningAndData',

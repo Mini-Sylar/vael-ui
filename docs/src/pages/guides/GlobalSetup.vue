@@ -23,6 +23,15 @@
 </template>"
     />
 
+    <h2 id="popover-host">{{ t('globalSetup.popoverHostTitle') }}</h2>
+    <p v-html="t('globalSetup.popoverHostIntro')" />
+    <CodeBlock
+      code="<template>
+  <PopoverHost />
+  <YourApp />
+</template>"
+    />
+
     <h2 id="toaster">{{ t('globalSetup.toasterTitle') }}</h2>
     <i18n-t keypath="globalSetup.toasterIntro" tag="p" scope="global">
       <template #code><code>toast()</code></template>
@@ -41,12 +50,13 @@
     <p>{{ t('globalSetup.allTogetherIntro') }}</p>
     <CodeBlock
       code="<script setup lang=&quot;ts&quot;>
-import { DialogHost, Toaster, TooltipHost } from 'vael-ui'
+import { DialogHost, PopoverHost, Toaster, TooltipHost } from 'vael-ui'
 </script>
 
 <template>
   <TooltipHost />
   <DialogHost />
+  <PopoverHost />
   <Toaster />
   <YourApp />
 </template>"
@@ -79,6 +89,7 @@ const tooltipHostProps = (componentMeta as Record<string, ComponentMetaEntry>).T
 const tocLinks = computed(() => [
   { id: 'tooltip-host', label: t('globalSetup.tooltipHostTitle') },
   { id: 'dialog-host', label: t('globalSetup.dialogHostTitle') },
+  { id: 'popover-host', label: t('globalSetup.popoverHostTitle') },
   { id: 'toaster', label: t('globalSetup.toasterTitle') },
   { id: 'all-together', label: t('globalSetup.allTogetherTitle') },
 ])

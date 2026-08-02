@@ -1,6 +1,6 @@
 <!-- A fully custom dialog body — openDialog renders any component (typed
      props included); this one reads useDialogRef() to close itself with a
-     result, same as confirmDialog's own built-in footer does internally. -->
+     result, same as confirmAction's own built-in footer does internally. -->
 <template>
   <input v-model="value" class="rename-input" />
   <div class="rename-actions">
