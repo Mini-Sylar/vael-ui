@@ -171,7 +171,8 @@
     "tailwindGuide": "Verwendung mit Rückenwind",
     "i18nKeysGuide": "vael-ui übersetzen",
     "menu": "Speisekarte",
-    "openMenu": "Menü öffnen"
+    "openMenu": "Menü öffnen",
+    "composables": "Composables"
   },
   "pageNotes": {
     "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren."
@@ -263,5 +264,16 @@
     "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
     "home": "Zurück zu Hause",
     "title": "Seite nicht gefunden"
+  },
+  "composable": {
+    "noParameters": "Akzeptiert keine Argumente.",
+    "noReturns": "Nichts zu dokumentieren.",
+    "parameters": "Parameter",
+    "returns": "Rückgaben"
+  },
+  "composablesTaxonomy": {
+    "overlaysAndConfirmation": "Überlagerungen",
+    "positioningAndData": "Positionierung",
+    "utilities": "Dienstprogramme"
   }
 }

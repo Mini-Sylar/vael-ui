@@ -12,7 +12,8 @@
     "stylingAndLayersGuide": "Calques de style et de cascade",
     "i18nKeysGuide": "Traduire vael-ui",
     "openMenu": "Ouvrir le menu",
-    "menu": "Menu"
+    "menu": "Menu",
+    "composables": "Composables"
   },
   "header": {
     "colorScheme": "Changer le mode",
@@ -263,5 +264,16 @@
     "body": "La page que vous recherchez n'existe pas ou a été déplacée.",
     "home": "De retour à la maison",
     "title": "Page introuvable"
+  },
+  "composable": {
+    "noParameters": "Ne prend aucun argument.",
+    "noReturns": "Rien à documenter.",
+    "parameters": "Paramètres",
+    "returns": "Retours"
+  },
+  "composablesTaxonomy": {
+    "overlaysAndConfirmation": "Superpositions",
+    "positioningAndData": "Positionnement",
+    "utilities": "Utilitaires"
   }
 }

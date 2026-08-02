@@ -178,7 +178,8 @@
     "stylingAndLayersGuide": "Estilo e camadas em cascata",
     "tailwindGuide": "Usando com Tailwind",
     "menu": "Menu",
-    "openMenu": "Abrir menu"
+    "openMenu": "Abrir menu",
+    "composables": "Combináveis"
   },
   "pageNotes": {
     "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar."
@@ -263,5 +264,16 @@
     "body": "A página que você procura não existe ou foi movida.",
     "home": "De volta para casa",
     "title": "Página não encontrada"
+  },
+  "composable": {
+    "noParameters": "Não aceita argumentos.",
+    "noReturns": "Nada a documentar.",
+    "parameters": "Parâmetros",
+    "returns": "Devoluções"
+  },
+  "composablesTaxonomy": {
+    "overlaysAndConfirmation": "Sobreposições",
+    "positioningAndData": "Posicionamento",
+    "utilities": "Utilitários"
   }
 }

@@ -38,6 +38,11 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/ComponentPage.vue'),
   },
   {
+    path: '/composables/:name',
+    name: 'composable',
+    component: () => import('./pages/ComposablePage.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('./pages/NotFound.vue'),

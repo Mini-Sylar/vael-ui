@@ -178,7 +178,8 @@
     "stylingAndLayersGuide": "样式和级联层",
     "tailwindGuide": "与 Tailwind 一起使用",
     "menu": "菜单",
-    "openMenu": "打开菜单"
+    "openMenu": "打开菜单",
+    "composables": "可组合项"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
@@ -263,5 +264,16 @@
     "body": "您要查找的页面不存在或已移动。",
     "home": "回到家",
     "title": "找不到页面"
+  },
+  "composable": {
+    "noParameters": "不接受任何争论。",
+    "noReturns": "没有什么可记录的。",
+    "parameters": "参数",
+    "returns": "退货"
+  },
+  "composablesTaxonomy": {
+    "overlaysAndConfirmation": "叠加层",
+    "positioningAndData": "定位",
+    "utilities": "公用事业"
   }
 }

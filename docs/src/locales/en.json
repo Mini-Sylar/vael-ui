@@ -5,6 +5,7 @@
     "tailwindGuide": "Using with Tailwind",
     "globalSetup": "Global Setup",
     "components": "Components",
+    "composables": "Composables",
     "github": "GitHub",
     "search": "Search components…",
     "home": "vael-ui",
@@ -27,6 +28,12 @@
     "locale": "Language",
     "defaultMode": "Default demo mode",
     "settings": "Settings"
+  },
+  "composable": {
+    "parameters": "Parameters",
+    "noParameters": "Takes no arguments.",
+    "returns": "Returns",
+    "noReturns": "Nothing to document."
   },
   "component": {
     "vdom": "Vue DOM",
@@ -245,6 +252,11 @@
     "dataDisplay": "Data Display",
     "layoutAndStructure": "Layout & Structure",
     "gestures": "Gestures"
+  },
+  "composablesTaxonomy": {
+    "overlaysAndConfirmation": "Overlays & Confirmation",
+    "positioningAndData": "Positioning & Data",
+    "utilities": "Utilities"
   },
   "metaTable": {
     "name": "Name",

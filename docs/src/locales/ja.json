@@ -178,7 +178,8 @@
     "stylingAndLayersGuide": "スタイリング層とカスケード層",
     "tailwindGuide": "Tailwind との併用",
     "menu": "メニュー",
-    "openMenu": "メニューを開く"
+    "openMenu": "メニューを開く",
+    "composables": "コンポーザブル"
   },
   "pageNotes": {
     "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。"
@@ -263,5 +264,16 @@
     "body": "お探しのページは存在しないか、移動されました。",
     "home": "家に帰ります",
     "title": "ページが見つかりません"
+  },
+  "composable": {
+    "noParameters": "引数は取りません。",
+    "noReturns": "文書化するものは何もありません。",
+    "parameters": "パラメータ",
+    "returns": "返品"
+  },
+  "composablesTaxonomy": {
+    "overlaysAndConfirmation": "オーバーレイ",
+    "positioningAndData": "位置決め",
+    "utilities": "公共事業"
   }
 }
