@@ -22,6 +22,10 @@ export function useTabIndicator(
 ): UseTabIndicatorReturn {
   const style = shallowRef<Record<string, string | undefined>>({})
   let measuredOnce = false
+  // Tracks whether a real match has ever been positioned, separately from
+  // measuredOnce — lets the first real selection (from "nothing selected")
+  // skip only the position/size transition, not the opacity fade.
+  let hasAppeared = false
 
   function measure() {
     const list = options.listEl.value
@@ -30,15 +34,21 @@ export function useTabIndicator(
     if (!list) return
     if (!tab) {
       style.value = { ...style.value, opacity: '0' }
+      measuredOnce = true
       return
     }
     const listRect = list.getBoundingClientRect()
     const tabRect = tab.getBoundingClientRect()
     const vertical = toValue(options.orientation) === 'vertical'
-    // No transition on first measurement (avoid visible slide-in).
-    const transitionDuration = measuredOnce ? undefined : '0ms'
+    // No transition on first paint; no position/size transition on first
+    // appearance either (its resting size is 0, so it would visibly grow
+    // in from the edge instead of fading in already at the right spot).
+    const firstPaint = !measuredOnce
+    const firstAppearance = !hasAppeared
+    measuredOnce = true
+    hasAppeared = true
     if (toValue(options.sizing) === 'transform') {
-      // 1px baseline × factor = measured px size.
+      const transitionDuration = firstPaint ? '0ms' : firstAppearance ? '0ms, 0ms' : undefined
       style.value = vertical
         ? {
             translate: `0 ${tabRect.top - listRect.top}px`,
@@ -50,7 +60,6 @@ export function useTabIndicator(
             scale: `${tabRect.width} 1`,
             transitionDuration,
           }
-      measuredOnce = true
       return
     }
     // getBoundingClientRect measures the border box, but an absolutely
@@ -61,6 +70,13 @@ export function useTabIndicator(
     const listStyle = getComputedStyle(list)
     const borderInlineStart = parseFloat(listStyle.borderInlineStartWidth) || 0
     const borderBlockStart = parseFloat(listStyle.borderBlockStartWidth) || 0
+    // Order matches this branch's transition-property list; a partial
+    // override still needs a value per slot, so opacity's restates the CSS.
+    const transitionDuration = firstPaint
+      ? '0ms'
+      : firstAppearance
+        ? `0ms, 0ms, var(--ui-duration-press)`
+        : undefined
     style.value = vertical
       ? {
           insetBlockStart: `${tabRect.top - listRect.top - borderBlockStart}px`,
@@ -72,7 +88,6 @@ export function useTabIndicator(
           inlineSize: `${tabRect.width}px`,
           transitionDuration,
         }
-    measuredOnce = true
   }
 
   watch(active, () => nextTick(measure), { immediate: true, flush: 'post' })

@@ -1,5 +1,9 @@
 <template>
-  <div :class="itemPart.class" :style="itemPart.style">
+  <div
+    :class="itemPart.class"
+    :style="itemPart.style"
+    :data-motion="ctx.motionCss() ? undefined : 'off'"
+  >
     <h3 :class="headerPart.class" :style="headerPart.style">
       <button
         :id="triggerId"

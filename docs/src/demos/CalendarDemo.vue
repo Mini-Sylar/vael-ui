@@ -9,7 +9,7 @@
 
     <h3>Basic, with the selected date shown</h3>
     <div class="row">
-      <Calendar v-model="basicValue" />
+      <Calendar v-model="basicValue" :locale="currentLocale" />
       <output class="panel-text">
         {{ basicValue ? basicValue.toDateString() : 'Nothing selected yet' }}
       </output>
@@ -23,6 +23,7 @@
     <div class="row">
       <Calendar
         v-model="boundedValue"
+        :locale="currentLocale"
         :min-date="minDate"
         :max-date="maxDate"
         :disabled-dates="isSunday"
@@ -58,8 +59,12 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Calendar } from 'vael-ui'
 import type { CalendarRange } from 'vael-ui'
+
+const { locale } = useI18n()
+const currentLocale = computed(() => locale.value)
 
 const basicValue = shallowRef<Date | null>(null)
 const boundedValue = shallowRef<Date | null>(null)

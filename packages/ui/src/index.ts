@@ -117,17 +117,21 @@ export type {
   UseDialogOptions,
 } from './composables/useDialog'
 export {
+  confirmDialog,
   dialogRefKey,
   openDialog,
   useDialogQueue,
   useDialogRef,
 } from './composables/useDialogService'
 export type {
+  ConfirmDialogOptions,
   DialogRef,
   DynamicDialogEntry,
   OpenDialogHandle,
   OpenDialogOptions,
 } from './composables/useDialogService'
+export { useConfirmAction } from './composables/useConfirmAction'
+export type { UseConfirmActionReturn } from './composables/useConfirmAction'
 export { useNumberFormat } from './composables/useNumberFormat'
 export type { UseNumberFormatOptions, UseNumberFormatReturn } from './composables/useNumberFormat'
 export { useTabs } from './composables/useTabs'

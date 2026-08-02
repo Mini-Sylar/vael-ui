@@ -3,12 +3,16 @@ import {
   type ComputedRef,
   type InjectionKey,
   computed,
+  defineComponent,
+  h,
   inject,
   markRaw,
   reactive,
   watch,
 } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
+import Button from '../components/Button.vue'
+import type { ButtonVariant } from '../components/Button.vue'
 import type { DialogProps } from '../components/Dialog.vue'
 
 export interface DialogRef<D = unknown, T = unknown> {
@@ -156,4 +160,107 @@ export function openDialog<
 
 export function useDialogQueue() {
   return queue
+}
+
+export interface ConfirmDialogOptions extends Partial<DialogProps> {
+  title: string
+  description?: string
+  confirmLabel?: string
+  cancelLabel?: string
+  /** Styles the confirm button; use `'danger'` for destructive actions. */
+  variant?: ButtonVariant
+  /** Awaited before closing — the dialog (and its confirm button, via `Button`'s own `loading="auto"`) stays open until this resolves. Rejecting leaves the dialog open; see `onError`. */
+  onConfirm?: () => unknown | Promise<unknown>
+  onCancel?: () => void
+  /** Fires when `onConfirm` rejects. The dialog stays open either way — nothing closes it automatically on failure — this is your hook to surface the error (e.g. a toast). */
+  onError?: (error: unknown) => void
+  /** Extra content above the footer, e.g. a "type DELETE to confirm" input — your own component, same as `body: Component` anywhere else in this service. */
+  body?: Component
+  bodyProps?: Record<string, unknown>
+}
+
+const EmptyConfirmBody = defineComponent({
+  name: 'ConfirmDialogEmptyBody',
+  setup: () => () => null,
+})
+
+const ConfirmDialogFooter = defineComponent({
+  name: 'ConfirmDialogFooter',
+  props: {
+    confirmLabel: { type: String, default: 'Confirm' },
+    cancelLabel: { type: String, default: 'Cancel' },
+    variant: { type: String as () => ButtonVariant, default: 'primary' },
+    onConfirmAction: Function as unknown as () => (() => unknown | Promise<unknown>) | undefined,
+    onCancelAction: Function as unknown as () => (() => void) | undefined,
+    onErrorAction: Function as unknown as () => ((error: unknown) => void) | undefined,
+  },
+  setup(props) {
+    const dialogRef = useDialogRef<unknown, boolean>()
+
+    // Never rethrows: onErrorAction is the one place a rejection surfaces,
+    // and swallowing it here (instead of letting it reach Button's own
+    // "rejections propagate as unhandled" behavior) keeps this a single,
+    // deliberate error path instead of also an uncaught rejection.
+    async function handleConfirm() {
+      if (!props.onConfirmAction) {
+        dialogRef.close(true)
+        return
+      }
+      try {
+        await props.onConfirmAction()
+        dialogRef.close(true)
+      } catch (err) {
+        props.onErrorAction?.(err)
+      }
+    }
+    function handleCancel() {
+      props.onCancelAction?.()
+      dialogRef.close(false)
+    }
+
+    return () => [
+      h(Button, { variant: 'outline', onClick: handleCancel }, () => props.cancelLabel),
+      // loading="auto" is Button's own default — handleConfirm returning a
+      // promise is enough for it to show/guard the pending state itself.
+      h(Button, { variant: props.variant, onClick: handleConfirm }, () => props.confirmLabel),
+    ]
+  },
+})
+
+/**
+ * Sugar over `openDialog` for the common "title + description + Cancel/
+ * Confirm" shape — not a new component (nothing here is exported as one),
+ * just a function wiring the existing Dialog `#footer` + `useDialogRef`
+ * pattern for you. Pass your own `body`/`footer` component for full
+ * control; `openDialog` itself is always there as the uncut escape hatch.
+ */
+export function confirmDialog(options: ConfirmDialogOptions): OpenDialogHandle<boolean> {
+  const {
+    title,
+    description,
+    confirmLabel,
+    cancelLabel,
+    variant,
+    onConfirm,
+    onCancel,
+    onError,
+    body,
+    bodyProps,
+    ...dialogProps
+  } = options
+  return openDialog(body ?? EmptyConfirmBody, {
+    ...dialogProps,
+    title,
+    description,
+    props: bodyProps as never,
+    footer: ConfirmDialogFooter,
+    footerProps: {
+      confirmLabel,
+      cancelLabel,
+      variant,
+      onConfirmAction: onConfirm,
+      onCancelAction: onCancel,
+      onErrorAction: onError,
+    },
+  })
 }

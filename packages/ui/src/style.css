@@ -304,6 +304,10 @@
     .ui-button-label {
       text-box: trim-both cap alphabetic;
     }
+    /* Icon-only buttons: text-box-trim breaks flex centering on SVG icons */
+    .ui-button--icon .ui-button-label {
+      text-box: initial;
+    }
   }
 
   /* Icon slots: fixed 1em boxes (exact inline-loader swap) */
@@ -554,11 +558,7 @@
   }
   .ui-badge-content {
     display: inline-block;
-  }
-  @supports (text-box-trim: trim-both) {
-    .ui-badge-content {
-      text-box: trim-both cap alphabetic;
-    }
+    text-box: trim-both cap alphabetic;
   }
   .ui-badge-content--animated {
     animation: ui-badge-pop var(--ui-duration-press) var(--ui-ease-out);
@@ -2456,6 +2456,12 @@
     font-weight: 500;
     color: var(--ui-text-muted);
   }
+  /* Own containing block so the leaving grid's inset-block-start:0 lands at
+     the grid's own top edge, not .ui-calendar-body's (which the weekdays
+     row above also shares). */
+  .ui-calendar-grid-wrap {
+    position: relative;
+  }
   .ui-calendar-grid {
     display: flex;
     flex-direction: column;
@@ -2906,6 +2912,19 @@
   .ui-accordion-panel[data-state='opening'] .ui-accordion-body {
     opacity: 1;
   }
+  /* motionCss={false}: the panel's block-size never gets an inline value
+     (see useCollapse's own doc), so it never actually collapses — leaving
+     this opacity fade running on its own would read as "closes, but only
+     the text fades" instead of the intended full defer to the consumer's
+     own animation. Chevron rotation still flips with aria-expanded; only
+     the transition itself is removed, so it snaps instead of animating. */
+  .ui-accordion-item[data-motion='off'] .ui-accordion-body {
+    opacity: 1;
+    transition: none;
+  }
+  .ui-accordion-item[data-motion='off'] .ui-accordion-chevron {
+    transition: none;
+  }
 
   /* Collapsible: one independent disclosure. */
   .ui-collapsible-trigger {
@@ -2940,6 +2959,7 @@
   .ui-toolbar--vertical {
     flex-direction: column;
     align-items: center;
+    justify-content: center;
   }
   /* Clipped only with opt-in overflow. */
   .ui-toolbar--overflow {
@@ -3048,7 +3068,7 @@
   .ui-toast {
     /* Position/touch-action/translate inlined in Toaster.vue. */
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.625rem;
     padding: 0.75rem 0.875rem;
     border-radius: calc(var(--ui-radius) - 2px);
@@ -3163,8 +3183,10 @@
   }
 
   .ui-toast-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex: none;
-    align-self: center;
     padding: 0.3125rem 0.625rem;
     border: 0;
     border-radius: calc(var(--ui-radius) - 6px);
@@ -3192,8 +3214,8 @@
     display: grid;
     place-items: center;
     flex: none;
-    inline-size: 1.25rem;
-    block-size: 1.25rem;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
     border: 0;
     border-radius: 6px;
     background: transparent;
@@ -3768,7 +3790,7 @@
   /* Radio Same visually-hidden-input technique as Checkbox/Switch. */
   .ui-radio {
     display: inline-flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.5rem;
     cursor: pointer;
     font-size: 0.875rem;
@@ -3780,7 +3802,7 @@
     flex: none;
     inline-size: 1.125rem;
     block-size: 1.125rem;
-    margin-block-start: 0.0625rem; /* optical: aligns the circle with the label's cap-height */
+    flex-shrink: 0;
   }
   .ui-radio-input {
     position: absolute;
@@ -3923,6 +3945,7 @@
     /* Inner Radius = Outer Radius − Gap (make-interfaces-feel-better rule 1's concentric formula, applied literally): --ui-select-button-radius is the track's own radius (the "Outer"), --ui-select-button-gap is the physical inset between this pill and the track (the "Padding"). Both named on .ui-select-button above specifically so this reads as that formula, not two same-looking "2px" literals. This only renders correctly because SelectButton passes useTabIndicator's sizing: 'bounds', not the default 1px-scaled-via- transform baseline Tabs' technique uses elsewhere: border-radius is computed against an element's own PRE-transform layout box, so a 1px-wide box gets its corner radii clamped to ~0.5px per the spec's edge-length rule and only THEN stretched by scale — a flattened, sharp corner exactly where this pill needs to nest inside the track's own rounded end. Real inlineSize gives border-radius a true width to compute against instead. */
     border-radius: calc(var(--ui-select-button-radius) - var(--ui-select-button-gap));
     background: var(--ui-surface);
+    opacity: 1;
     box-shadow:
       0 1px 1px rgb(0 0 0 / 0.06),
       0 1px 3px rgb(0 0 0 / 0.08);
@@ -3930,6 +3953,9 @@
       inset-inline-start var(--ui-duration-press) var(--ui-ease-in-out),
       inline-size var(--ui-duration-press) var(--ui-ease-in-out),
       opacity var(--ui-duration-press) var(--ui-ease-out);
+    @starting-style {
+      opacity: 0;
+    }
   }
   .ui-select-button[data-invalid] {
     border-color: var(--ui-danger);
@@ -4074,8 +4100,11 @@
   .ui-otp-cell[data-active] {
     border-color: var(--ui-primary);
   }
-  /* A caret, not decorative motion — kept as-is under reduced motion. */
-  .ui-otp-cell[data-active]::after {
+  /* Only the next EMPTY cell gets the blinking caret — an active but
+     already-filled cell (editing back into typed digits) would otherwise
+     draw the line through the character itself. A caret, not decorative
+     motion — kept as-is under reduced motion. */
+  .ui-otp-cell[data-active]:not([data-filled])::after {
     content: '';
     position: absolute;
     inset-inline-start: 50%;
@@ -4111,6 +4140,7 @@
     background: transparent;
     opacity: 0;
     cursor: text;
+    caret-color: transparent;
     /* This is the REAL, actually-focused element — full row width, not any one cell's shape. Without this, the browser's own default focus ring renders on ITS bounding box regardless of what the synthetic data-active/data-focus-visible per-cell styling below does, which is exactly the "square outline" bug: a native rectangular ring around the whole row, sitting on top of whatever shape (circular, in the custom-cell demo) the visible cells actually are. The per-cell data-focus-visible outline above is the library's own, deliberate replacement for this. */
     outline: none;
   }
@@ -5019,13 +5049,16 @@
     background: var(--ui-muted);
     color: var(--ui-text);
     cursor: pointer;
-    scale: 1;
     /* Bottom-anchored growth is the signature macOS look — a magnified icon rises up off the shelf line rather than growing equally in both directions. A vertical dock has no fixed "shelf" side (it could sit on either screen edge), so it grows from its own center instead. */
     transform-origin: bottom center;
-    /* Only the settle/press feedback transitions — the live magnified size itself is written every pointermove frame with zero transition delay (direct manipulation, same "never gate a live drag" stance as Slider/Knob/Dial), same as Slider thumb's own hover-scale transition below the drag-position rule. `translate` rides along with `scale` — useDock.ts now writes both every frame (see its own `dockItemOffsets` comment: scale alone doesn't change an item's flex slot, so magnified neighbors would otherwise visually collide) — same treatment so the spread-apart settles back in sync with the size settling back. */
-    transition:
-      scale var(--ui-duration-press) var(--ui-ease-out),
-      translate var(--ui-duration-press) var(--ui-ease-out);
+    /* This transition only ever governs the discrete :active press-shrink
+       below. The live magnify effect itself is driven entirely by
+       useDock.ts's own rAF spring loop, writing `transform` straight to
+       the element every frame with no CSS transition involved — a
+       transition retargeted every frame is what caused visible judder in
+       Safari; a continuous per-frame chase toward the target avoids it
+       structurally instead of tuning around it. */
+    transition: transform var(--ui-duration-press) var(--ui-ease-out);
   }
   .ui-dock--vertical .ui-dock-item {
     transform-origin: center;
@@ -5042,9 +5075,9 @@
     opacity: 0.45;
     cursor: not-allowed;
   }
-  /* Shrink-on-press — same direction as Button/Slider/Knob/Dial's own press feedback. Only visible on touch/keyboard activation in practice: on a fine pointer the live magnified `scale` (an inline style) already wins the cascade over this rule regardless of :active. */
-  .ui-dock-item:active {
-    scale: 0.94;
+  /* Shrink-on-press — same direction as Button/Slider/Knob/Dial's own press feedback. Only visible on touch/keyboard activation in practice: on a fine pointer the live magnified transform (an inline style) already wins the cascade over this rule regardless of :active. */
+  .ui-dock-item:active:not([style*='transform']) {
+    transform: scale(0.94);
   }
   .ui-dock-item-badge {
     position: absolute;

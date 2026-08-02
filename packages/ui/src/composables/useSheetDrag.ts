@@ -222,6 +222,13 @@ export function useSheetDrag(
       return
     }
 
+    // Check if dragging down past all snap points — dismiss if dismissible
+    const minOffset = Math.min(...offsetList)
+    if (!hasDraggedUp && dismissible && currentOffset > minOffset) {
+      options.onDismiss()
+      return
+    }
+
     let closestIndex = 0
     let closestDistance = Infinity
     for (const [i, offset] of offsetList.entries()) {

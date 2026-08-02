@@ -7,7 +7,7 @@ export type CollapseState = 'open' | 'closed' | 'opening' | 'closing'
 export interface UseCollapseOptions {
   /** The element whose block-size is measured and animated. */
   el: Ref<HTMLElement | null>
-  /** `false` means the library writes NO inline visual state at all — not even the closed `blockSize: 0`/`visibility: hidden` resting styles, which would hide the panel before a consumer's exit animation gets to play. Only `state` still flips (instantly). Same `motionCss` escape hatch Toaster's CSS-vs-imperative split uses. */
+  /** `false` skips the animated run() path — open/closed still snap to their resting styles instantly, just with no transition. A consumer driving their own exit animation reads `state`/`el` and overrides these resting styles from there. */
   motionCss?: () => boolean
 }
 
@@ -26,7 +26,7 @@ function closedStyle(): Record<string, string> {
 
 export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): UseCollapseReturn {
   const motionOff = () => options.motionCss?.() === false
-  const style = shallowRef<Record<string, string>>(open.value || motionOff() ? {} : closedStyle())
+  const style = shallowRef<Record<string, string>>(open.value ? {} : closedStyle())
   const state = shallowRef<CollapseState>(open.value ? 'open' : 'closed')
 
   let token: symbol | null = null
@@ -35,7 +35,7 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
   function settle(target: boolean) {
     token = null
     clearTimeout(fallbackTimer)
-    style.value = target || motionOff() ? {} : closedStyle()
+    style.value = target ? {} : closedStyle()
     state.value = target ? 'open' : 'closed'
   }
 

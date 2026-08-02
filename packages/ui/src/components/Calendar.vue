@@ -68,37 +68,39 @@
           </span>
         </div>
 
-        <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
-          <div
-            :key="monthKey"
-            ref="gridEl"
-            role="grid"
-            :aria-label="headerLabel"
-            :class="gridPart.class"
-            :style="gridPart.style"
-            @keydown="onGridKeydown"
-          >
-            <div v-for="(week, wi) in weeks" :key="wi" role="row" class="ui-calendar-week">
-              <div
-                v-for="day in week"
-                :key="isoDate(day)"
-                role="gridcell"
-                :data-date="isoDate(day)"
-                :tabindex="isSameDay(day, focusedDate) ? 0 : -1"
-                :aria-selected="isDaySelected(day) || undefined"
-                :aria-current="isToday(day) ? 'date' : undefined"
-                :aria-disabled="isDayDisabled(day) || undefined"
-                :aria-label="cellLabel(day)"
-                :class="cellPart(day).class"
-                :style="cellPart(day).style"
-                @click="onDayClick(day)"
-                @pointerenter="onDayHover(day)"
-              >
-                {{ day.getDate() }}
+        <div class="ui-calendar-grid-wrap">
+          <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
+            <div
+              :key="monthKey"
+              ref="gridEl"
+              role="grid"
+              :aria-label="headerLabel"
+              :class="gridPart.class"
+              :style="gridPart.style"
+              @keydown="onGridKeydown"
+            >
+              <div v-for="(week, wi) in weeks" :key="wi" role="row" class="ui-calendar-week">
+                <div
+                  v-for="day in week"
+                  :key="isoDate(day)"
+                  role="gridcell"
+                  :data-date="isoDate(day)"
+                  :tabindex="isSameDay(day, focusedDate) ? 0 : -1"
+                  :aria-selected="isDaySelected(day) || undefined"
+                  :aria-current="isToday(day) ? 'date' : undefined"
+                  :aria-disabled="isDayDisabled(day) || undefined"
+                  :aria-label="cellLabel(day)"
+                  :class="cellPart(day).class"
+                  :style="cellPart(day).style"
+                  @click="onDayClick(day)"
+                  @pointerenter="onDayHover(day)"
+                >
+                  {{ day.getDate() }}
+                </div>
               </div>
             </div>
-          </div>
-        </Transition>
+          </Transition>
+        </div>
       </template>
 
       <template v-else-if="navLevel === 'month'">

@@ -112,6 +112,16 @@
               </component>
             </div>
           </template>
+          <template v-else-if="isSeparator">
+            <div
+              class="separator-preview-row"
+              :class="{ 'separator-preview-row--vertical': values.orientation === 'vertical' }"
+            >
+              <span class="separator-preview-side">Left</span>
+              <component :is="activeComponent" :key="resetKey" v-bind="boundProps" />
+              <span class="separator-preview-side">Right</span>
+            </div>
+          </template>
           <template v-else-if="isDock">
             <component
               :is="activeComponent"
@@ -163,6 +173,19 @@
               </template>
             </component>
           </template>
+          <template v-else-if="isCollapsible">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              v-model:open="openModelValue"
+            >
+              <template #trigger>
+                <Button variant="outline">{{ openModelValue ? 'Close' : 'Open' }}</Button>
+              </template>
+              <p class="playground-placeholder-copy">Toggle to reveal this content.</p>
+            </component>
+          </template>
           <template v-else-if="isAccordion">
             <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
               <component :is="accordionItemComponent" value="item-1" title="What is vael-ui?">
@@ -202,6 +225,10 @@
               v-bind="boundProps"
               @update:model-value="onModelUpdate"
             />
+            <!-- Exclusively Menu today: its trigger slot wires its own click
+                 on an internal wrapper (no setTriggerEl, unlike Popover/
+                 Tooltip below) — an extra manual click here would double-
+                 toggle the same v-model:open and cancel itself out. -->
             <component
               v-else-if="hasTriggerSlot && hasItemsProp"
               :is="activeComponent"
@@ -210,10 +237,8 @@
               v-bind="boundProps"
               @update:model-value="onModelUpdate"
             >
-              <template #trigger="{ setTriggerEl }">
-                <Button :ref="setTriggerEl" @click="openModelValue = !openModelValue"
-                  >Trigger</Button
-                >
+              <template #trigger>
+                <Button>Trigger</Button>
               </template>
             </component>
             <component
@@ -376,6 +401,12 @@ const isDataTable = computed(() => props.name === 'DataTable')
 const isToolbar = computed(() => props.name === 'Toolbar')
 const isButtonGroup = computed(() => props.name === 'ButtonGroup')
 const isAccordion = computed(() => props.name === 'Accordion')
+// Collapsible's own trigger wrapper already toggles `open` on click (see
+// Collapsible.vue's onToggle) — the generic fallback below also wires its
+// own click-to-toggle onto the trigger slot, which would double-fire off
+// the same bubbled click and toggle the model back to where it started.
+const isCollapsible = computed(() => props.name === 'Collapsible')
+const isSeparator = computed(() => props.name === 'Separator')
 const isDock = computed(() => props.name === 'Dock')
 const isSpeedDial = computed(() => props.name === 'SpeedDial')
 const isTabs = computed(() => props.name === 'Tabs')
@@ -516,6 +547,9 @@ const COMPONENT_OVERRIDES: Record<
   Avatar: { string: { name: 'Ada Lovelace' } },
   Loader: { select: { size: ['1rem', '1.5rem', '2rem'] } },
   Pagination: { number: { total: 132 } },
+  // No static default in defineProps (real default is computed: baseSize * 3.5)
+  // — seeding to 0 makes dockFalloff's `range <= 0` guard kill magnification entirely.
+  Dock: { number: { range: 168 } },
   Badge: { number: { count: 5 } },
   Chip: { string: { label: 'Chip label' } },
   Checkbox: { string: { label: 'Checkbox label' } },
@@ -775,6 +809,23 @@ const code = computed(() => {
 
 .toolbar-preview-overflow {
   inline-size: 100%;
+}
+
+.separator-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  inline-size: 100%;
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
+}
+
+/* Vertical orientation needs a definite block-size to resolve its own
+   block-size: 100% against — same reasoning as the real Separator demo's
+   own "needs a sized container" wrapper. */
+.separator-preview-row--vertical {
+  align-items: stretch;
+  block-size: 2rem;
 }
 
 .toolbar-preview-resizable--vertical .toolbar-preview-overflow {

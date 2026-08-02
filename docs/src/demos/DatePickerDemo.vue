@@ -10,7 +10,7 @@
 
     <h3>Basic, with a placeholder</h3>
     <div class="row">
-      <DatePicker v-model="basicValue" placeholder="Pick a date" />
+      <DatePicker v-model="basicValue" :locale="currentLocale" placeholder="Pick a date" />
       <output class="panel-text">
         {{ basicValue ? basicValue.toDateString() : 'Nothing selected yet' }}
       </output>
@@ -20,6 +20,7 @@
     <p class="note">Bounded to this month, with every weekend disabled via a predicate.</p>
     <DatePicker
       v-model="boundedValue"
+      :locale="currentLocale"
       :min-date="minDate"
       :max-date="maxDate"
       :disabled-dates="isWeekend"
@@ -34,7 +35,11 @@
       :required="true"
       :error="fieldError"
     >
-      <DatePicker v-model="fieldValue" placeholder="Choose a departure date" />
+      <DatePicker
+        v-model="fieldValue"
+        :locale="currentLocale"
+        placeholder="Choose a departure date"
+      />
     </Field>
 
     <h3>Range selection</h3>
@@ -42,14 +47,23 @@
       The trigger shows both ends once committed; the panel stays open after the first click since
       there's a second date still to pick.
     </p>
-    <DatePicker v-model="rangeValue" selection-mode="range" placeholder="Pick a date range" />
+    <DatePicker
+      v-model="rangeValue"
+      :locale="currentLocale"
+      selection-mode="range"
+      placeholder="Pick a date range"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { DatePicker, Field } from 'vael-ui'
 import type { CalendarRange } from 'vael-ui'
+
+const { locale } = useI18n()
+const currentLocale = computed(() => locale.value)
 
 const basicValue = shallowRef<Date | null>(null)
 const boundedValue = shallowRef<Date | null>(null)

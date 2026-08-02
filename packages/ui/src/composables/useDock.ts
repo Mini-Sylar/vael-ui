@@ -1,4 +1,4 @@
-import { onMounted, nextTick, toValue, watch } from 'vue'
+import { onMounted, onScopeDispose, nextTick, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
@@ -112,6 +112,77 @@ export function useDock(
   let centers: number[] = []
   let gap = 0
 
+  // Real macOS Dock magnification is a continuous spring-like catch-up, not
+  // a value tweened between discrete pointermove samples — a CSS transition
+  // retargeted every frame is the wrong tool (apple-design's own guidance:
+  // avoid transitions for anything gesture-driven) and is what caused the
+  // Safari-specific judder this replaces. currentScale/currentOffset chase
+  // targetScale/targetOffset every animation frame via exponential decay,
+  // independent of how often pointermove itself fires.
+  let currentScale: number[] = []
+  let currentOffset: number[] = []
+  let targetScale: number[] = []
+  let targetOffset: number[] = []
+  let rafId: number | null = null
+  let lastFrameTime = 0
+  const SETTLE_HALF_LIFE_MS = 30 // time to close half the remaining distance to target
+  const SCALE_EPSILON = 0.001
+  const OFFSET_EPSILON = 0.05
+
+  function syncArrayLengths() {
+    const n = itemEls.length
+    for (const arr of [currentScale, currentOffset, targetScale, targetOffset]) arr.length = n
+    for (let i = 0; i < n; i++) {
+      if (currentScale[i] === undefined) currentScale[i] = 1
+      if (currentOffset[i] === undefined) currentOffset[i] = 0
+      if (targetScale[i] === undefined) targetScale[i] = 1
+      if (targetOffset[i] === undefined) targetOffset[i] = 0
+    }
+  }
+
+  function writeTransform(el: HTMLElement, index: number, vertical: boolean) {
+    const scale = currentScale[index]!
+    const offset = currentOffset[index]!
+    const atRest = Math.abs(scale - 1) < SCALE_EPSILON && Math.abs(offset) < OFFSET_EPSILON
+    if (atRest) {
+      // Fully settled — clear the inline style so `.ui-dock-item:active`'s
+      // press-shrink (gated on no live transform being present) can apply.
+      el.style.transform = ''
+      return
+    }
+    el.style.transform = vertical
+      ? `translateY(${offset}px) scale(${scale})`
+      : `translateX(${offset}px) scale(${scale})`
+  }
+
+  function tick(time: number) {
+    const dt = lastFrameTime ? time - lastFrameTime : 16
+    lastFrameTime = time
+    const factor = 1 - Math.pow(0.5, dt / SETTLE_HALF_LIFE_MS)
+    const vertical = orientation() === 'vertical'
+    let stillMoving = false
+    itemEls.forEach((el, i) => {
+      if (!el) return
+      const scaleDelta = targetScale[i]! - currentScale[i]!
+      const offsetDelta = targetOffset[i]! - currentOffset[i]!
+      if (Math.abs(scaleDelta) > SCALE_EPSILON || Math.abs(offsetDelta) > OFFSET_EPSILON) {
+        currentScale[i]! += scaleDelta * factor
+        currentOffset[i]! += offsetDelta * factor
+        stillMoving = true
+      } else {
+        currentScale[i] = targetScale[i]
+        currentOffset[i] = targetOffset[i]
+      }
+      writeTransform(el, i, vertical)
+    })
+    rafId = stillMoving ? requestAnimationFrame(tick) : null
+    if (!stillMoving) lastFrameTime = 0
+  }
+
+  function startLoop() {
+    if (rafId == null) rafId = requestAnimationFrame(tick)
+  }
+
   function measure() {
     const root = rootEl.value
     if (!root) return
@@ -137,13 +208,38 @@ export function useDock(
     )
   }
 
-  // Clear inline styles to stylesheet defaults (let CSS transition settle)
+  // Instant — stops live tracking and jumps straight to rest, no easing.
+  // For when magnify becomes unavailable mid-frame (disabled toggled,
+  // prefers-reduced-motion just turned on): pointerleave gets the smooth
+  // spring settle below instead (settleToRest), same as the real Dock.
   function resetSizes() {
-    for (const el of itemEls) {
-      if (!el) continue
-      el.style.scale = ''
-      el.style.translate = ''
+    if (rafId != null) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+      lastFrameTime = 0
     }
+    syncArrayLengths()
+    for (let i = 0; i < itemEls.length; i++) {
+      currentScale[i] = 1
+      currentOffset[i] = 0
+      targetScale[i] = 1
+      targetOffset[i] = 0
+    }
+    for (const el of itemEls) {
+      if (el) el.style.transform = ''
+    }
+  }
+
+  // Smooth — the pointer left, but the effect is still "on": ease every
+  // item back to rest through the same spring loop live tracking uses,
+  // instead of cutting straight to resetSizes()'s instant snap.
+  function settleToRest() {
+    syncArrayLengths()
+    for (let i = 0; i < itemEls.length; i++) {
+      targetScale[i] = 1
+      targetOffset[i] = 0
+    }
+    startLoop()
   }
 
   function onPointerMove(event: PointerEvent) {
@@ -153,6 +249,7 @@ export function useDock(
     }
     const root = rootEl.value
     if (!root || centers.length === 0) return
+    syncArrayLengths()
     const rootRect = root.getBoundingClientRect()
     const vertical = orientation() === 'vertical'
     const pointerPosition = vertical ? event.clientY - rootRect.top : event.clientX - rootRect.left
@@ -163,15 +260,15 @@ export function useDock(
       range: range(),
     })
     const offsets = dockItemOffsets(sizes, centers, gap)
-    itemEls.forEach((el, i) => {
-      if (!el) return
-      el.style.scale = String(sizes[i] / base)
-      el.style.translate = vertical ? `0 ${offsets[i]}px` : `${offsets[i]}px 0`
+    itemEls.forEach((_, i) => {
+      targetScale[i] = sizes[i]! / base
+      targetOffset[i] = offsets[i]!
     })
+    startLoop()
   }
 
   function onPointerLeave() {
-    resetSizes()
+    settleToRest()
   }
 
   onMounted(() => {
@@ -188,6 +285,9 @@ export function useDock(
     'change',
     resetSizes,
   )
+  onScopeDispose(() => {
+    if (rafId != null) cancelAnimationFrame(rafId)
+  })
 
   return { setItemEl, onPointerMove, onPointerLeave, remeasure: measure }
 }

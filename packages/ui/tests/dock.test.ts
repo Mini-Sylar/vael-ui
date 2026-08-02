@@ -17,8 +17,22 @@ function itemButtons(screen: RenderResult<unknown>): HTMLButtonElement[] {
 }
 
 function scaleOf(el: HTMLElement): number {
-  const value = getComputedStyle(el).scale
-  return value === 'none' ? 1 : parseFloat(value.split(' ')[0])
+  const transform = getComputedStyle(el).transform
+  if (transform === 'none') return 1
+  // Extract scale from "translateX(...) scale(...)" format
+  const match = transform.match(/scale\(([\d.]+)(?:\s|,|$)/)
+  if (match) return parseFloat(match[1])
+  // Fallback: try to parse from matrix transform
+  const matrixMatch = transform.match(
+    /matrix\(([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\)/,
+  )
+  if (matrixMatch) {
+    // scale is sqrt(a² + b²) for matrix(a, b, c, d, e, f)
+    const a = parseFloat(matrixMatch[1])
+    const b = parseFloat(matrixMatch[2])
+    return Math.sqrt(a * a + b * b)
+  }
+  return 1
 }
 
 // ---------------------------------------------------------------------------

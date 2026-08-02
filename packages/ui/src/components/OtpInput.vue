@@ -49,7 +49,7 @@
       @input="onNativeInput"
       @focus="onNativeFocus"
       @blur="onNativeBlur"
-      @click="onOverlayClick"
+      @pointerdown="onOverlayPointerDown"
       @keyup="updateActive"
     />
   </div>
@@ -129,23 +129,33 @@ function updateActive() {
   activeIndex.value = Math.min(pos, props.length - 1)
 }
 
-// Invisible input is always target; correct caret to visually-clicked cell via bounding-box math (not letter-spacing).
-function onOverlayClick(event: MouseEvent) {
+// preventDefault on pointerdown suppresses the browser's own default
+// focus+caret placement (and the mousedown/click that would follow) —
+// without this, the native caret lands wherever the invisible input's own
+// unstyled text metrics put it (usually the end) for one paint, then jumps
+// to the cell actually clicked once this handler corrects it afterward.
+// Focusing and setting the selection here ourselves is the only write, so
+// there's nothing to visibly flash to first.
+function onOverlayPointerDown(event: PointerEvent) {
+  if (event.button === 2) return
   const els = cellEls.value
   const el = inputEl.value
-  if (els && els.length > 0 && el) {
+  if (!el) return
+  event.preventDefault()
+  let index = els && els.length > 0 ? els.length - 1 : 0
+  if (els) {
     // Click anywhere in cell i's box targets index i (not split at midpoint).
-    let index = els.length - 1
     for (let i = 0; i < els.length; i++) {
       if (event.clientX <= els[i]!.getBoundingClientRect().right) {
         index = i
         break
       }
     }
-    // Clamp caret to filled prefix (can't sit past first empty slot).
-    index = Math.min(index, displayValue.value.length)
-    el.setSelectionRange(index, index)
   }
+  // Clamp caret to filled prefix (can't sit past first empty slot).
+  index = Math.min(index, displayValue.value.length)
+  el.focus()
+  el.setSelectionRange(index, index)
   updateActive()
 }
 

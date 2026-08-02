@@ -7,14 +7,14 @@
     :style="rootPart.style"
     @keydown="onKeydown"
   >
-    <div :class="groupPart.class" :style="groupPart.style">
+    <div v-if="slots.start || slots.default" :class="groupPart.class" :style="groupPart.style">
       <slot name="start" />
       <slot />
     </div>
-    <div :class="groupPart.class" :style="groupPart.style">
+    <div v-if="slots.center" :class="groupPart.class" :style="groupPart.style">
       <slot name="center" />
     </div>
-    <div :class="groupPart.class" :style="groupPart.style">
+    <div v-if="slots.end || hasOverflow" :class="groupPart.class" :style="groupPart.style">
       <slot name="end" />
       <Menu v-if="hasOverflow" :items="overflowItems">
         <template #trigger>
@@ -35,7 +35,7 @@
 
 <!-- role="toolbar"; heterogeneous slot content with roving tabindex; three groups (start/center/end) handle overflow ellipsis placement -->
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
+import { computed, useSlots, useTemplateRef } from 'vue'
 import { useToolbar } from '../composables/useToolbar'
 import { useClassMerge, resolveUiPart } from '../classes'
 import type { UiPartValue } from '../classes'
@@ -52,6 +52,7 @@ const props = withDefaults(
   { orientation: 'horizontal', overflowLabel: 'More' },
 )
 
+const slots = useSlots()
 const list = useTemplateRef<HTMLElement>('list')
 const cx = useClassMerge()
 const themedUi = useThemedUi(
