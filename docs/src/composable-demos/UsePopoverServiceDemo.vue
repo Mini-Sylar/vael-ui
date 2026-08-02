@@ -16,6 +16,7 @@
 import { shallowRef, useTemplateRef } from 'vue'
 import { openPopover, usePopoverQueue, Button } from 'vael-ui'
 import RemoveTagPopoverBody from './RemoveTagPopoverBody.vue'
+import { PhTag } from '@phosphor-icons/vue'
 
 // The same reactive queue <PopoverHost/> renders from.
 const queue = usePopoverQueue()
