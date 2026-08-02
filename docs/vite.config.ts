@@ -6,6 +6,7 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import generateSitemap from 'vite-ssg-sitemap'
 import { allComponents } from './src/taxonomy'
+import { allComposables } from './src/composablesTaxonomy'
 
 const uiPackageJson = JSON.parse(
   readFileSync(fileURLToPath(new URL('../packages/ui/package.json', import.meta.url)), 'utf-8'),
@@ -21,13 +22,15 @@ export default defineConfig({
   ssgOptions: {
     dirStyle: 'nested',
     formatting: 'minify',
-    // `/components/:name` is dynamic and gets filtered out by vite-ssg's own
-    // default handler — expand it into one concrete path per real component
-    // instead, plus a `/404` render used only to produce a static 404.html.
+    // `/components/:name` and `/composables/:name` are dynamic and get
+    // filtered out by vite-ssg's own default handler — expand each into one
+    // concrete path per real entry instead, plus a `/404` render used only
+    // to produce a static 404.html.
     includedRoutes(paths) {
       const staticPaths = paths.filter((p) => !p.includes(':'))
       const componentPaths = allComponents.map((name) => `/components/${name}`)
-      return [...staticPaths, ...componentPaths, '/404']
+      const composablePaths = allComposables.map((name) => `/composables/${name}`)
+      return [...staticPaths, ...componentPaths, ...composablePaths, '/404']
     },
     // `dirStyle: 'nested'` would otherwise write `404/index.html` — static
     // hosts (Netlify, Vercel, GitHub Pages) look for `404.html` at the root.
