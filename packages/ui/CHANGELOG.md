@@ -1,5 +1,15 @@
 # vael-ui
 
+## 0.1.6
+
+### Patch Changes
+
+- [`6f27012`](https://github.com/Mini-Sylar/vael-ui/commit/6f270128548985db7d892321408ef0aebbd4cca6) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - **Breaking:** replace `confirmDialog()` and `useConfirmAction()` (added in the previous release) with a single `confirmAction()`. The old pair required either hand-rolling your own overlay wiring (`useConfirmAction`) or being locked into a centered `Dialog` (`confirmDialog`); `confirmAction()` picks its presentation with a discriminated union on `surface`, `'dialog'` (default, centered) or `'popover'` (anchored to a `triggerEl`, required in that branch). Both branches pass every other prop straight through to the underlying `Dialog`/`Popover` (`position`, `size`, `side`, `align`, `closeOnOutside`, `ui`, etc.), so per-call customization (a taller dialog, a wider popover) needs no new API surface. `onConfirm` is awaited before closing: the confirm button stays in its loading state until it settles, closing only on success; a rejection leaves the surface open and fires `onError` instead of closing out from under a failed action. `useConfirmAction` and `confirmDialog` are removed with no compatibility shim, since the API was flagged unstable in the release that introduced it.
+
+  Add `usePopoverService` (`openPopover`, `usePopoverRef`, `usePopoverQueue`) and `PopoverHost`, the anchored-surface counterpart to the existing `useDialogService`/`DialogHost`. `openPopover(Component, options)` mounts any component inside a `Popover` anchored to `options.triggerEl`, returning `{ result, close, panelEl }` the same shape `openDialog` returns — `result` settles with whatever the opened component's `usePopoverRef().close(result)` passes. `confirmAction({ surface: 'popover' })` is built on this primitive; reach for `openPopover` directly for anything beyond a plain confirm (a custom form in a popover, for example). Requires mounting `<PopoverHost/>` once at the app root, alongside `<DialogHost/>`.
+
+  Fix confirm-flow popovers being permanently stuck invisible (`visibility: hidden`, positioning never computed). The shared `useFloatingPosition` composable only recomputes on a false-to-true transition of its `active` flag, not on an initial truthy value; an imperatively-opened popover's `open` state starts `true` before the surface even mounts, so the transition never happened and positioning silently never ran.
+
 ## 0.1.5
 
 ### Patch Changes
