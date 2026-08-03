@@ -81,11 +81,13 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
   Dual render paths: wrapper only with #badge (Vue scoped-style limitation — wrapper breaks :deep() for badge-less).
 -->
 <script setup lang="ts">
+import './Button.css'
+import '../shared/loader-spinner.css'
 import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
-import { useAsyncLoading } from '../composables/useAsyncLoading'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useAsyncLoading } from '../../composables/useAsyncLoading'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 // Manual attrs binding intercepts onClick; rest still fall through.
 defineOptions({ inheritAttrs: false })

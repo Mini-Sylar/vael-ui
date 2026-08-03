@@ -48,7 +48,7 @@
 </template>
 
 <script lang="ts">
-import type { UiPartValue } from '../classes'
+import type { UiPartValue } from '../../classes'
 
 export interface PullToRefreshProps {
   onRefresh: () => Promise<void> | void
@@ -68,12 +68,13 @@ export interface PullToRefreshProps {
 
 <!-- Custom #indicator animations go inside slot content, not zone (which owns block-size state) -->
 <script setup lang="ts">
+import '../shared/loader-spinner.css'
 import { computed, useTemplateRef } from 'vue'
-import { usePullToRefresh } from '../composables/usePullToRefresh'
-import type { PullToRefreshState } from '../composables/usePullToRefresh'
-import { useUiMessages } from '../messages'
-import { useClassMerge, resolveUiPart } from '../classes'
-import { useThemedUi } from '../theme'
+import { usePullToRefresh } from '../../composables/usePullToRefresh'
+import type { PullToRefreshState } from '../../composables/usePullToRefresh'
+import { useUiMessages } from '../../messages'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const props = defineProps<PullToRefreshProps>()
 

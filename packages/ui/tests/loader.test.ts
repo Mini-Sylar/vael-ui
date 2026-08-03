@@ -4,7 +4,7 @@ import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { vi } from 'vitest'
-import Loader from '../src/components/Loader.vue'
+import Loader from '../src/components/Loader/Loader.vue'
 import ButtonFixture from './fixtures/ButtonFixture.vue'
 
 test('default: aria-hidden, no accessible name', async () => {

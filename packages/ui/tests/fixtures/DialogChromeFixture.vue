@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import Dialog from '../../src/components/Dialog.vue'
-import Button from '../../src/components/Button.vue'
+import Button from '../../src/components/Button/Button.vue'
 
 const open = shallowRef(false)
 </script>

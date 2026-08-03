@@ -1,11 +1,15 @@
 import './style.css'
 
-export { default as Button } from './components/Button.vue'
-export type { ButtonLoaderPlacement, ButtonSize, ButtonVariant } from './components/Button.vue'
-export { default as ButtonGroup } from './components/ButtonGroup.vue'
+export { default as Button } from './components/Button/Button.vue'
+export type {
+  ButtonLoaderPlacement,
+  ButtonSize,
+  ButtonVariant,
+} from './components/Button/Button.vue'
+export { default as ButtonGroup } from './components/ButtonGroup/ButtonGroup.vue'
 export { default as SplitButton } from './components/SplitButton.vue'
 export type { SplitButtonAlign, SplitButtonSide } from './components/SplitButton.vue'
-export { default as Loader } from './components/Loader.vue'
+export { default as Loader } from './components/Loader/Loader.vue'
 export { default as Skeleton } from './components/Skeleton.vue'
 export { default as Badge } from './components/Badge.vue'
 export { default as Tag } from './components/Tag.vue'
@@ -243,8 +247,8 @@ declare module 'vue' {
   }
 }
 
-export { default as PullToRefresh } from './components/PullToRefresh.vue'
-export type { PullToRefreshProps } from './components/PullToRefresh.vue'
+export { default as PullToRefresh } from './components/PullToRefresh/PullToRefresh.vue'
+export type { PullToRefreshProps } from './components/PullToRefresh/PullToRefresh.vue'
 export { usePullToRefresh } from './composables/usePullToRefresh'
 export type {
   PullToRefreshState,

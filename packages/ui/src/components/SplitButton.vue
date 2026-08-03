@@ -83,8 +83,8 @@ export type { MenuAlign as SplitButtonAlign, MenuSide as SplitButtonSide }
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import Button from './Button.vue'
-import type { ButtonSize, ButtonVariant } from './Button.vue'
+import Button from './Button/Button.vue'
+import type { ButtonSize, ButtonVariant } from './Button/Button.vue'
 import Menu from './Menu.vue'
 import type { MenuEntry, MenuItemData } from './Menu.vue'
 import type { PopoverOpenChangeDetails } from '../composables/usePopover'

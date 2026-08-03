@@ -3,7 +3,7 @@
 import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import Button from '../src/components/Button.vue'
+import Button from '../src/components/Button/Button.vue'
 import ButtonScopedOverrideFixture from './fixtures/ButtonScopedOverrideFixture.vue'
 
 const wrapper = () => document.querySelector<HTMLElement>('.ui-button-badge-wrapper')!

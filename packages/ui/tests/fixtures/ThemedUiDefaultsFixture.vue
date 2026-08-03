@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 import ConfigProvider from '../../src/components/ConfigProvider.vue'
-import Button from '../../src/components/Button.vue'
+import Button from '../../src/components/Button/Button.vue'
 
 const themeUi = {
   button: { ui: { root: 'from-theme' } },

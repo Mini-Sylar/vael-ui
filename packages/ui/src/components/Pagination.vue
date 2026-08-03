@@ -125,7 +125,7 @@
 <!-- Uses MUI/PrimeVue sibling count algorithm for pagination layout. -->
 <script setup lang="ts">
 import { computed } from 'vue'
-import Button from './Button.vue'
+import Button from './Button/Button.vue'
 import Select from './Select.vue'
 import type { SelectItemData } from './Select.vue'
 import { useClassMerge, resolveUiPart } from '../classes'

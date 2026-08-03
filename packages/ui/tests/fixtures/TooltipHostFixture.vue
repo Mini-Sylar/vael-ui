@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
 import TooltipHost from '../../src/components/TooltipHost.vue'
-import Button from '../../src/components/Button.vue'
+import Button from '../../src/components/Button/Button.vue'
 import { vTooltip } from '../../src/directives/vTooltip'
 
 const hasHint = shallowRef(false)

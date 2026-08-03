@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
-import PullToRefresh from '../../src/components/PullToRefresh.vue'
+import PullToRefresh from '../../src/components/PullToRefresh/PullToRefresh.vue'
 
 withDefaults(
   defineProps<{

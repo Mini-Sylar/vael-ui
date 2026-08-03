@@ -85,7 +85,7 @@
 -->
 <script setup lang="ts">
 import { computed, shallowRef, useTemplateRef } from 'vue'
-import Button from './Button.vue'
+import Button from './Button/Button.vue'
 import { useFieldControl } from '../composables/useFieldControl'
 import { useFileDrop } from '../composables/useFileDrop'
 import { useUiMessages } from '../messages'

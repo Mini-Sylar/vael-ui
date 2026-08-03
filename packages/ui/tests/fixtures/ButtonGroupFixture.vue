@@ -7,8 +7,8 @@
 </template>
 
 <script setup lang="ts">
-import ButtonGroup from '../../src/components/ButtonGroup.vue'
-import Button from '../../src/components/Button.vue'
+import ButtonGroup from '../../src/components/ButtonGroup/ButtonGroup.vue'
+import Button from '../../src/components/Button/Button.vue'
 
 withDefaults(defineProps<{ orientation?: 'horizontal' | 'vertical' }>(), {
   orientation: 'horizontal',

@@ -124,7 +124,7 @@ test('variant, size and disabled render the expected state classes and cursor', 
 })
 
 test('icon-only button is square per size with an expanded hit area', async () => {
-  const { default: Button } = await import('../src/components/Button.vue')
+  const { default: Button } = await import('../src/components/Button/Button.vue')
   const screen = render(Button, {
     props: { icon: true, size: 'sm', 'aria-label': 'Add item' },
     slots: { default: '+' },
@@ -140,7 +140,7 @@ test('icon-only button is square per size with an expanded hit area', async () =
 })
 
 test('leading/trailing slots set the optical-alignment classes', async () => {
-  const { default: Button } = await import('../src/components/Button.vue')
+  const { default: Button } = await import('../src/components/Button/Button.vue')
   const screen = render(Button, {
     slots: { default: 'Next', trailing: '→' },
   })
@@ -150,7 +150,7 @@ test('leading/trailing slots set the optical-alignment classes', async () => {
 })
 
 test('ui.root accepts an object with class + style, merged onto the root', async () => {
-  const { default: Button } = await import('../src/components/Button.vue')
+  const { default: Button } = await import('../src/components/Button/Button.vue')
   const screen = render(Button, {
     props: { ui: { root: { class: 'consumer-root', style: { '--test-prop': '1px' } } } },
     slots: { default: 'Save' },
@@ -162,7 +162,7 @@ test('ui.root accepts an object with class + style, merged onto the root', async
 })
 
 test('ui prop still accepts a plain class string (back-compat)', async () => {
-  const { default: Button } = await import('../src/components/Button.vue')
+  const { default: Button } = await import('../src/components/Button/Button.vue')
   const screen = render(Button, {
     props: { ui: { root: 'plain-string-class' } },
     slots: { default: 'Save' },

@@ -13,10 +13,12 @@
 
 <!-- Template-adjacent comment prevents attrs fallthrough on single-root component. -->
 <script setup lang="ts">
+import './Loader.css'
+import '../shared/loader-spinner.css'
 import { computed, useId, useTemplateRef } from 'vue'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const props = defineProps<{
   /** Any CSS length. Sets the root's font-size — the ring is sized in `em`, so it scales with it. */

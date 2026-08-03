@@ -1,0 +1,38 @@
+/* Shared bare-spinner markup used directly (not via <Loader>) by Button's
+   built-in loader and PullToRefresh's release-to-refresh state — three
+   independent consumers of the same `.ui-loader` class, so it lives here
+   instead of duplicated or owned by any single one of them. */
+@layer ui-components {
+  .ui-loader {
+    display: inline-block;
+    position: relative;
+    inline-size: 1em;
+    block-size: 1em;
+    flex: none;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-block-start-color: currentColor;
+    animation: ui-spin 600ms linear infinite;
+  }
+
+  @keyframes ui-spin {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-loader {
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  /* ui-pulse is genuinely shared (Skeleton, InputNumber stepper, etc. still
+     read the canonical copy in style.css) — duplicated here, not moved,
+     since those components haven't been split into their own chunk yet. */
+  @keyframes ui-pulse {
+    50% {
+      opacity: 0.4;
+    }
+  }
+}

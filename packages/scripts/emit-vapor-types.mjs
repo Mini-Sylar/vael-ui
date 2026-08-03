@@ -12,8 +12,12 @@ const componentNames = [...barrel.matchAll(/^export \{ default as (\w+) \}/gm)].
 // into the Vapor build — same scoping the component re-export above uses.
 const uiIndex = readFileSync(join(__dirname, '../ui/src/index.ts'), 'utf8')
 const typeNames = []
+// The path's final segment (before .vue) is always the component name,
+// whether it's still flat (./components/Foo.vue) or has migrated to a
+// per-component folder (./components/Foo/Foo.vue) — see generate-vapor.mjs's
+// resolveModuleId for the same flat-or-folder split.
 for (const match of uiIndex.matchAll(
-  /export type \{([^}]+)\} from '\.\/components\/(\w+)\.vue'/g,
+  /export type \{([^}]+)\} from '\.\/components\/(?:\w+\/)?(\w+)\.vue'/g,
 )) {
   const [, namedClause, componentName] = match
   if (!componentNames.includes(componentName)) continue

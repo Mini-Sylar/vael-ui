@@ -125,7 +125,7 @@ export function quarterCirclePoint(
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onScopeDispose, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import Button from './Button.vue'
+import Button from './Button/Button.vue'
 import { useLayer } from '../composables/useLayerStack'
 import { useMenu } from '../composables/useMenu'
 import { useClassMerge, resolveUiPart } from '../classes'
