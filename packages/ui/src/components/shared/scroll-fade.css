@@ -8,7 +8,7 @@
   @property --fade-bottom-start {
     syntax: '<percentage>';
     inherits: false;
-    initial-value: 94%;
+    initial-value: 88%;
   }
 
   .scroll-fade {
@@ -38,16 +38,66 @@
       --fade-top-end: 0%;
     }
     to {
-      --fade-top-end: 6%;
+      --fade-top-end: 12%;
     }
   }
 
   @keyframes scroll-fade-bottom {
     from {
-      --fade-bottom-start: 94%;
+      --fade-bottom-start: 88%;
     }
     to {
       --fade-bottom-start: 100%;
+    }
+  }
+
+  @property --fade-left-end {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+  }
+  @property --fade-right-start {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 88%;
+  }
+
+  .scroll-fade-x {
+    --timeline-self-x: scroll(self inline);
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 var(--fade-left-end),
+      #000 var(--fade-right-start),
+      transparent 99%
+    );
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    animation:
+      scroll-fade-left linear both,
+      scroll-fade-right linear both;
+    animation-timeline: var(--timeline-self-x), var(--timeline-self-x);
+    animation-range:
+      0px 40px,
+      90% 100%;
+  }
+
+  @keyframes scroll-fade-left {
+    from {
+      --fade-left-end: 0%;
+    }
+    to {
+      --fade-left-end: 12%;
+    }
+  }
+
+  @keyframes scroll-fade-right {
+    from {
+      --fade-right-start: 88%;
+    }
+    to {
+      --fade-right-start: 100%;
     }
   }
 }
