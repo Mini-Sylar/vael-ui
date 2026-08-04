@@ -16,10 +16,10 @@ const OUT_PATH = join(__dirname, '../src/generated/component-meta.json')
 
 function collectPublicComponents(indexSource) {
   const names = []
-  const re = /export\s*\{\s*default\s+as\s+(\w+)[^}]*\}\s*from\s*'\.\/components\/(\w+)\.vue'/g
+  const re = /export\s*\{\s*default\s+as\s+(\w+)[^}]*\}\s*from\s*'\.\/components\/([^']+)\.vue'/g
   let match
   while ((match = re.exec(indexSource))) {
-    names.push({ exportName: match[1], fileName: match[2] })
+    names.push({ exportName: match[1], relativePath: match[2] })
   }
   return names
 }
@@ -67,9 +67,9 @@ function main() {
   const meta = {}
   const errors = []
 
-  for (const { exportName, fileName } of components) {
+  for (const { exportName, relativePath } of components) {
     try {
-      const filePath = join(UI_COMPONENTS_DIR, `${fileName}.vue`)
+      const filePath = join(UI_COMPONENTS_DIR, `${relativePath}.vue`)
       const componentMeta = checker.getComponentMeta(filePath)
       meta[exportName] = {
         props: componentMeta.props.filter((p) => !p.global).map(toPlainProp),
