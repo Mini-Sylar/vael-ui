@@ -114,7 +114,7 @@
 </template>
 
 <script lang="ts">
-import type { UiPartValue } from '../classes'
+import type { UiPartValue } from '../../classes'
 
 export type DialogSize = 'sm' | 'md' | 'lg'
 /** `top`/`bottom`/`left`/`right` anchor the panel to that viewport edge and slide instead of scale. */
@@ -169,14 +169,15 @@ export interface DialogProps {
 
 <!-- v-if mode: Transition owns enter/exit; forceMount: v-show + consumer drives motion. -->
 <script setup lang="ts">
+import './Dialog.css'
 import { computed, inject, ref, useId, useTemplateRef } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { useDialog } from '../composables/useDialog'
-import type { DialogOpenChangeDetails } from '../composables/useDialog'
-import { useUiMessages } from '../messages'
-import { useClassMerge, resolveUiPart } from '../classes'
-import { themeScopeKey, useThemedUi } from '../theme'
-import { vScrollMask } from '../directives/vScrollMask'
+import { useDialog } from '../../composables/useDialog'
+import type { DialogOpenChangeDetails } from '../../composables/useDialog'
+import { useUiMessages } from '../../messages'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import { themeScopeKey, useThemedUi } from '../../theme'
+import { vScrollMask } from '../../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
 

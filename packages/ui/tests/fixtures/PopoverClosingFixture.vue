@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Popover from '../../src/components/Popover.vue'
+import Popover from '../../src/components/Popover/Popover.vue'
 
 defineProps<{ beforeClose?: (done: () => void) => void }>()
 

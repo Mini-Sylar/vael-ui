@@ -38,8 +38,8 @@
 </template>
 
 <script lang="ts">
-import type { MenuAlign, MenuEntry, MenuItemData, MenuSide } from './Menu.vue'
-import type { UiPartValue } from '../classes'
+import type { MenuAlign, MenuEntry, MenuItemData, MenuSide } from '../Menu.vue'
+import type { UiPartValue } from '../../classes'
 
 export type ContextMenuSide = MenuSide
 export type ContextMenuAlign = MenuAlign
@@ -84,11 +84,12 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
   Reopening moves anchor, then closes/reopens to recompute position.
 -->
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
+import './ContextMenu.css'
 import { computed, nextTick, onScopeDispose, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import Menu from './Menu.vue'
-import type { PopoverOpenChangeDetails } from '../composables/usePopover'
-import { useThemedUi } from '../theme'
+import Menu from '../Menu.vue'
+import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
+import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 

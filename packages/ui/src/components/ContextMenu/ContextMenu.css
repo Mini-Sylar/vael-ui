@@ -1,0 +1,11 @@
+@layer ui-components {
+  .ui-context-menu-trigger {
+    display: contents;
+  }
+  .ui-context-menu-anchor {
+    position: fixed;
+    inline-size: 0;
+    block-size: 0;
+    pointer-events: none;
+  }
+}

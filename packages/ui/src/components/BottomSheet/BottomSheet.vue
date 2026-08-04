@@ -54,8 +54,8 @@
 
 <script lang="ts">
 import type { InjectionKey } from 'vue'
-import type { SheetSnapPoint } from '../composables/useSheetDrag'
-import type { UiPartValue } from '../classes'
+import type { SheetSnapPoint } from '../../composables/useSheetDrag'
+import type { UiPartValue } from '../../classes'
 export type { SheetSnapPoint }
 
 // Nested sheet announces open state; parent recedes Vaul-style (no consumer wiring).
@@ -103,12 +103,16 @@ export interface BottomSheetProps {
   Composes Dialog (position="bottom" force-mount); useSheetDrag only touches panelEl.
 -->
 <script setup lang="ts">
+// Dialog import (and its CSS) must precede BottomSheet.css: this panel
+// carries both .ui-dialog-panel and .ui-bottom-sheet-panel, and the latter's
+// overrides (e.g. max-block-size) need to win the cascade.
 import { computed, inject, onScopeDispose, provide, useTemplateRef, watch } from 'vue'
-import Dialog from './Dialog.vue'
-import { useSheetDrag } from '../composables/useSheetDrag'
-import { useUiMessages } from '../messages'
-import { useClassMerge, resolveUiPart } from '../classes'
-import { useThemedUi } from '../theme'
+import Dialog from '../Dialog/Dialog.vue'
+import './BottomSheet.css'
+import { useSheetDrag } from '../../composables/useSheetDrag'
+import { useUiMessages } from '../../messages'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 

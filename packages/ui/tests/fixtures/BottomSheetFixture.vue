@@ -17,8 +17,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import BottomSheet from '../../src/components/BottomSheet.vue'
-import type { SheetSnapPoint } from '../../src/components/BottomSheet.vue'
+import BottomSheet from '../../src/components/BottomSheet/BottomSheet.vue'
+import type { SheetSnapPoint } from '../../src/components/BottomSheet/BottomSheet.vue'
 
 withDefaults(
   defineProps<{

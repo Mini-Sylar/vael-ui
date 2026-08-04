@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
 import ConfigProvider from '../../src/components/ConfigProvider/ConfigProvider.vue'
-import Dialog from '../../src/components/Dialog.vue'
+import Dialog from '../../src/components/Dialog/Dialog.vue'
 import type { I18nInstance, PartialUiMessages } from '../../src/messages'
 
 defineProps<{ i18n?: I18nInstance; messages?: PartialUiMessages }>()

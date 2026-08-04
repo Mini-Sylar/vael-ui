@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts">
-import type { DialogProps } from './Dialog.vue'
+import type { DialogProps } from '../Dialog/Dialog.vue'
 
 /** A drawer always anchors to a viewport edge — `center` is Dialog's own territory. */
 export type DrawerSide = 'left' | 'right' | 'top' | 'bottom'
@@ -48,8 +48,8 @@ export interface DrawerProps extends Omit<DialogProps, 'position'> {
   `position="center"` — that's a plain dialog, not a drawer. -->
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
-import Dialog from './Dialog.vue'
-import type { DialogOpenChangeDetails } from '../composables/useDialog'
+import Dialog from '../Dialog/Dialog.vue'
+import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 
 defineOptions({ inheritAttrs: false })
 

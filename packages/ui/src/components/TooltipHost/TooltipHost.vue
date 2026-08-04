@@ -29,7 +29,7 @@
 
 <script lang="ts">
 import type { Side } from '@floating-ui/dom'
-import type { UiPartValue } from '../classes'
+import type { UiPartValue } from '../../classes'
 
 export interface TooltipHostProps {
   /** Fallbacks for targets whose v-tooltip value doesn't specify them. */
@@ -49,14 +49,15 @@ export interface TooltipHostProps {
 
 <!-- Singleton behind v-tooltip; document delegation to every target -->
 <script setup lang="ts">
+import '../shared/tooltip.css'
 import { computed, inject, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { ssrDocument } from '../ssr'
-import { useTooltipCore } from '../composables/useTooltip'
-import { TOOLTIP_ATTR, tooltipTargets } from '../directives/vTooltip'
-import type { TooltipDirectiveOptions } from '../directives/vTooltip'
-import { useClassMerge, resolveUiPart } from '../classes'
-import { themeScopeKey, useThemedUi } from '../theme'
+import { ssrDocument } from '../../ssr'
+import { useTooltipCore } from '../../composables/useTooltip'
+import { TOOLTIP_ATTR, tooltipTargets } from '../../directives/vTooltip'
+import type { TooltipDirectiveOptions } from '../../directives/vTooltip'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import { themeScopeKey, useThemedUi } from '../../theme'
 
 const props = defineProps<TooltipHostProps>()
 

@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
-import Tooltip from '../../src/components/Tooltip.vue'
+import Tooltip from '../../src/components/Tooltip/Tooltip.vue'
 import Button from '../../src/components/Button/Button.vue'
 
 const aRef = useTemplateRef('aRef')

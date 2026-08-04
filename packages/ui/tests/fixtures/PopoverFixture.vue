@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Popover from '../../src/components/Popover.vue'
+import Popover from '../../src/components/Popover/Popover.vue'
 
 // Explicit defaults matching Popover's own — an absent boolean prop resolves
 // to false and would silently override the component's true defaults when

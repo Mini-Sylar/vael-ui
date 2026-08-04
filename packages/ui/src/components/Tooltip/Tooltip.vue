@@ -32,8 +32,8 @@
 
 <script lang="ts">
 import type { Side } from '@floating-ui/dom'
-import type { Align } from '../composables/useFloatingPosition'
-import type { UiPartValue } from '../classes'
+import type { Align } from '../../composables/useFloatingPosition'
+import type { UiPartValue } from '../../classes'
 
 export type TooltipSide = Side
 export type TooltipAlign = Align
@@ -72,12 +72,13 @@ export interface TooltipProps {
 </script>
 
 <script setup lang="ts">
+import '../shared/tooltip.css'
 import { computed, inject, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
-import { useTooltip } from '../composables/useTooltip'
-import type { TooltipOpenChangeDetails } from '../composables/useTooltip'
-import { useClassMerge, resolveUiPart } from '../classes'
-import { themeScopeKey, useThemedUi } from '../theme'
+import { useTooltip } from '../../composables/useTooltip'
+import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import { themeScopeKey, useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 

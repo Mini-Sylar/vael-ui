@@ -9,9 +9,9 @@
 
 <script setup lang="ts">
 import { computed, provide, reactive, useTemplateRef, watch } from 'vue'
-import Dialog from './Dialog.vue'
-import { dialogRefKey } from '../composables/useDialogService'
-import type { DynamicDialogEntry } from '../composables/useDialogService'
+import Dialog from '../Dialog/Dialog.vue'
+import { dialogRefKey } from '../../composables/useDialogService'
+import type { DynamicDialogEntry } from '../../composables/useDialogService'
 
 const props = defineProps<{ entry: DynamicDialogEntry }>()
 

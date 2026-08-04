@@ -37,8 +37,8 @@
 
 <script lang="ts">
 import type { Side } from '@floating-ui/dom'
-import type { Align } from '../composables/useFloatingPosition'
-import type { UiPartValue } from '../classes'
+import type { Align } from '../../composables/useFloatingPosition'
+import type { UiPartValue } from '../../classes'
 
 export type PopoverSide = Side
 export type PopoverAlign = Align
@@ -79,13 +79,14 @@ export interface PopoverProps {
   positionerStyle only on positioner (no inline style on panelEl — safe for GSAP/motion-v).
 -->
 <script setup lang="ts">
+import './Popover.css'
 import { computed, inject, shallowRef, useTemplateRef } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
-import { usePopover } from '../composables/usePopover'
-import type { PopoverOpenChangeDetails } from '../composables/usePopover'
-import { useClassMerge, resolveUiPart } from '../classes'
-import { themeScopeKey, useThemedUi } from '../theme'
-import { vScrollMask } from '../directives/vScrollMask'
+import { usePopover } from '../../composables/usePopover'
+import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import { themeScopeKey, useThemedUi } from '../../theme'
+import { vScrollMask } from '../../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
 

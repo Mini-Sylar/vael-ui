@@ -15,9 +15,9 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import Popover from './Popover.vue'
-import { popoverRefKey } from '../composables/usePopoverService'
-import type { DynamicPopoverEntry } from '../composables/usePopoverService'
+import Popover from '../Popover/Popover.vue'
+import { popoverRefKey } from '../../composables/usePopoverService'
+import type { DynamicPopoverEntry } from '../../composables/usePopoverService'
 
 const props = defineProps<{ entry: DynamicPopoverEntry }>()
 

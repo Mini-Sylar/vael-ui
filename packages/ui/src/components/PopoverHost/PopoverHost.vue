@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import PopoverHostEntry from './PopoverHostEntry.vue'
-import { usePopoverQueue } from '../composables/usePopoverService'
+import { usePopoverQueue } from '../../composables/usePopoverService'
 
 // Mount once per app: renders shared queue from openPopover().
 const queue = usePopoverQueue()

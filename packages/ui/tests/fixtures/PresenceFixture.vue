@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { AnimatePresence, motion } from 'motion-v'
-import Dialog from '../../src/components/Dialog.vue'
+import Dialog from '../../src/components/Dialog/Dialog.vue'
 
 const present = shallowRef(false)
 const exits = shallowRef(0)

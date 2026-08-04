@@ -1,0 +1,59 @@
+@layer ui-components {
+  .ui-tooltip-positioner {
+    z-index: var(--ui-z-tooltip, 70);
+    inline-size: max-content;
+  }
+  .ui-tooltip-panel {
+    padding: 0.375rem 0.625rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    max-inline-size: 18rem;
+    box-shadow: var(--ui-panel-shadow);
+  }
+  .ui-tooltip-enter-active {
+    transition: opacity var(--ui-duration-tooltip) var(--ui-ease-out);
+  }
+  .ui-tooltip-leave-active {
+    transition: opacity var(--ui-duration-tooltip-exit) var(--ui-ease-out);
+  }
+  .ui-tooltip-enter-from,
+  .ui-tooltip-leave-to {
+    opacity: 0;
+  }
+  .ui-tooltip-enter-active .ui-tooltip-panel {
+    transition: transform var(--ui-duration-tooltip) var(--ui-ease-out);
+  }
+  .ui-tooltip-enter-from .ui-tooltip-panel {
+    transform: scale(0.96);
+  }
+  .ui-tooltip-enter-active[data-instant],
+  .ui-tooltip-leave-active[data-instant],
+  .ui-tooltip-enter-active[data-instant] .ui-tooltip-panel,
+  .ui-tooltip-leave-active[data-instant] .ui-tooltip-panel {
+    transition-duration: 0ms;
+  }
+  .ui-tooltip-positioner[data-traveling] {
+    transition:
+      top var(--ui-duration-press) var(--ui-ease-in-out),
+      left var(--ui-duration-press) var(--ui-ease-in-out),
+      width var(--ui-duration-press) var(--ui-ease-in-out),
+      height var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-tooltip-positioner[data-traveling] .ui-tooltip-panel {
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-tooltip-enter-from .ui-tooltip-panel {
+      transform: none;
+    }
+    .ui-tooltip-positioner[data-traveling] {
+      transition: none;
+    }
+  }
+}
