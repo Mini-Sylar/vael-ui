@@ -110,12 +110,13 @@ export const DIAL_TICKS = Array.from({ length: DIAL_TICK_COUNT }, (_, i) => {
 </script>
 
 <script setup lang="ts">
+import './Dial.css'
 import { computed, useTemplateRef } from 'vue'
-import { useFieldControl } from '../composables/useFieldControl'
-import { useDial } from '../composables/useDial'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useFieldControl } from '../../composables/useFieldControl'
+import { useDial } from '../../composables/useDial'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const modelValue = defineModel<number>({ default: 0 })
 

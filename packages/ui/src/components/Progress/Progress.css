@@ -1,5 +1,4 @@
 @layer ui-components {
-  /* Progress: full-width fill, resized via scale. */
   .ui-progress {
     display: block;
     inline-size: 100%;
@@ -25,7 +24,7 @@
     transform-origin: 0 50%;
     scale: calc(var(--ui-progress-scale, 0)) 1;
     background: var(--ui-primary);
-    /* Transition is interruptible on rapid updates. */
+
     transition: scale var(--ui-duration-press) var(--ui-ease-out);
   }
   .ui-progress--success .ui-progress-fill {
@@ -40,15 +39,15 @@
   .ui-progress--info .ui-progress-fill {
     background: var(--ui-info);
   }
-  /* Indeterminate: continuous loop, partial-width fill sweeps. */
+
   .ui-progress[data-state='indeterminate'] .ui-progress-fill {
     inline-size: 40%;
     scale: 1 1;
     transition: none;
-    /* Linear animation for continuous motion. */
+
     animation: ui-progress-sweep 1.5s linear infinite;
   }
-  /* Translate relative to fill width. */
+
   @keyframes ui-progress-sweep {
     from {
       translate: -100% 0;

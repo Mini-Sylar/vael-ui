@@ -964,34 +964,6 @@
     pointer-events: none;
   }
 
-  /* SplitButton: two buttons joined. */
-  .ui-split-button {
-    display: inline-flex;
-    align-items: stretch;
-  }
-  .ui-split-button-main {
-    border-start-end-radius: 0;
-    border-end-end-radius: 0;
-    /* Keep seam as crisp single line. */
-    border-inline-end-width: 0;
-  }
-  .ui-split-button-trigger {
-    border-start-start-radius: 0;
-    border-end-start-radius: 0;
-    border-inline-start-width: 1px;
-    border-inline-start-style: solid;
-    /* One rule adapts divider to every variant. */
-    border-inline-start-color: color-mix(in oklch, currentColor 22%, transparent);
-  }
-  .ui-split-button-chevron {
-    inline-size: 0.85em;
-    block-size: 0.85em;
-    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
-  }
-  .ui-split-button[data-state='open'] .ui-split-button-chevron {
-    transform: rotate(180deg);
-  }
-
   /* CascadeSelect: panel is a Menu instance. */
   /* Trigger fills row like Input. */
   .ui-cascade-select .ui-menu-trigger {
@@ -2295,73 +2267,6 @@
     opacity: 1;
   }
 
-  /* Toolbar: no animation by design. */
-  .ui-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-  .ui-toolbar--vertical {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  /* Clipped only with opt-in overflow. */
-  .ui-toolbar--overflow {
-    overflow: hidden;
-  }
-  .ui-toolbar-group {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex-shrink: 0;
-  }
-  .ui-toolbar--vertical .ui-toolbar-group {
-    flex-direction: column;
-    align-items: center;
-  }
-  .ui-toolbar-overflow-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: 1.75rem;
-    block-size: 1.75rem;
-    border: none;
-    border-radius: calc(var(--ui-radius) - 4px);
-    background: transparent;
-    color: var(--ui-text);
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .ui-toolbar-overflow-label {
-    display: inline-block;
-  }
-  @supports (text-box-trim: trim-both) {
-    .ui-toolbar-overflow-label {
-      text-box: trim-both cap alphabetic;
-    }
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-toolbar-overflow-trigger:hover {
-      background: var(--ui-muted);
-    }
-  }
-  .ui-toolbar-separator {
-    align-self: stretch;
-    inline-size: 1px;
-    margin-inline: 0.25rem;
-    background: var(--ui-border);
-  }
-  .ui-toolbar--vertical .ui-toolbar-separator {
-    align-self: stretch;
-    inline-size: auto;
-    block-size: 1px;
-    margin-inline: 0;
-    margin-block: 0.25rem;
-  }
-
   .ui-separator {
     display: flex;
     align-items: center;
@@ -3006,99 +2911,6 @@
     color: var(--ui-text-muted);
   }
 
-  /* SelectButton Radiogroup-via-native-radios (single) / a checkbox group (multiple) — not Tabs, despite reusing its sliding-indicator technique (plan decision 8): a SelectButton selects a VALUE and participates in forms, it doesn't switch views. Zero keyboard JS in both modes — native same-name radios/checkboxes give it for free. */
-  .ui-select-button {
-    /* position:relative alone does NOT create a stacking context (only position + an explicit z-index does) — without z-index:0 here, the indicator's z-index:-1 below doesn't resolve to "behind the option text, above this track" at all: it escapes to whatever ancestor stacking context happens to exist on the page and paints behind THAT instead, which reads as "no background ever, no matter what color it is" — this, not a color/contrast problem, was the actual bug behind the indicator looking invisible. */
-    position: relative; /* containing block for .ui-select-button-indicator */
-    z-index: 0;
-    --ui-select-button-radius: calc(var(--ui-radius) - 2px);
-    --ui-select-button-gap: 2px;
-    display: inline-flex;
-    padding: var(--ui-select-button-gap);
-    border: 1px solid var(--ui-border);
-    border-radius: var(--ui-select-button-radius);
-    background: var(--ui-muted);
-    /* Belt-and-suspenders alongside the indicator's own explicit inset fix below — a resize mid-transition (e.g. the sm/md/lg row reflowing) can still overshoot by a frame before the ResizeObserver re-measures. */
-    overflow: hidden;
-  }
-  .ui-select-button-option {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding-inline: 0.75rem;
-    border-radius: calc(var(--ui-radius) - 4px);
-    cursor: pointer;
-    color: var(--ui-text-muted);
-    font-weight: 500;
-    white-space: nowrap;
-    transition: color var(--ui-duration-press) ease;
-  }
-  .ui-select-button--sm .ui-select-button-option {
-    block-size: 1.75rem;
-    font-size: 0.8125rem;
-  }
-  .ui-select-button--md .ui-select-button-option {
-    block-size: 2.25rem;
-    font-size: 0.875rem;
-  }
-  .ui-select-button--lg .ui-select-button-option {
-    block-size: 2.5rem;
-    font-size: 1rem;
-  }
-  .ui-select-button-input {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-  /* Apple's actual segmented control, not a button-group: the selected option gets a raised white/surface pill on the muted track (soft shadow, dark text) — not a solid primary fill. Text color rides data-checked (not the indicator itself) so it stays sharp and independent of the indicator's own slide/settle timing. */
-  .ui-select-button-option[data-checked] {
-    color: var(--ui-text);
-  }
-  /* Multiple mode: several options are active at once, so each carries its own background instead of sharing the single sliding indicator — this one case DOES read correctly as a solid fill (a toggle group, not a single-value segmented control). */
-  .ui-select-button-option:has(.ui-select-button-input[type='checkbox'])[data-checked] {
-    background: var(--ui-primary);
-    color: var(--ui-primary-contrast);
-  }
-  .ui-select-button-option:has(.ui-select-button-input:focus-visible) {
-    outline: 2px solid var(--ui-primary);
-    outline-offset: 2px;
-  }
-  .ui-select-button-indicator {
-    position: absolute;
-    z-index: -1; /* paints behind in-flow option content, Tabs' own technique */
-    /* Explicit, not "auto": the indicator is the LAST DOM child (after every option) so it participates in flex layout — an unset inline-start leaves the browser to derive a static position from that sibling order, which is not the container's own left edge. measure()'s own math assumes it always is. This was the actual bug behind "doesn't look good" — the indicator was landing on the wrong option entirely (worst for whichever option sits furthest from wherever the browser guessed), not just styled badly. */
-    inset-block: var(--ui-select-button-gap);
-    inset-inline-start: 0;
-    /* Inner Radius = Outer Radius − Gap (make-interfaces-feel-better rule 1's concentric formula, applied literally): --ui-select-button-radius is the track's own radius (the "Outer"), --ui-select-button-gap is the physical inset between this pill and the track (the "Padding"). Both named on .ui-select-button above specifically so this reads as that formula, not two same-looking "2px" literals. This only renders correctly because SelectButton passes useTabIndicator's sizing: 'bounds', not the default 1px-scaled-via- transform baseline Tabs' technique uses elsewhere: border-radius is computed against an element's own PRE-transform layout box, so a 1px-wide box gets its corner radii clamped to ~0.5px per the spec's edge-length rule and only THEN stretched by scale — a flattened, sharp corner exactly where this pill needs to nest inside the track's own rounded end. Real inlineSize gives border-radius a true width to compute against instead. */
-    border-radius: calc(var(--ui-select-button-radius) - var(--ui-select-button-gap));
-    background: var(--ui-surface);
-    opacity: 1;
-    box-shadow:
-      0 1px 1px rgb(0 0 0 / 0.06),
-      0 1px 3px rgb(0 0 0 / 0.08);
-    transition:
-      inset-inline-start var(--ui-duration-press) var(--ui-ease-in-out),
-      inline-size var(--ui-duration-press) var(--ui-ease-in-out),
-      opacity var(--ui-duration-press) var(--ui-ease-out);
-    @starting-style {
-      opacity: 0;
-    }
-  }
-  .ui-select-button[data-invalid] {
-    border-color: var(--ui-danger);
-  }
-  .ui-select-button--disabled,
-  .ui-select-button-option[data-disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  .ui-select-button-option[data-disabled] .ui-select-button-input {
-    cursor: not-allowed;
-  }
-
   /* InputNumber Composes Input's own frame verbatim (InputNumber.vue renders <Input> directly) — only the stepper column, riding Input's `#end` slot, is new here. Steppers are `tabindex="-1"`: APG's spinbutton pattern puts the keyboard path on the input itself (ArrowUp/Down), the buttons are a pointer-only convenience. */
   .ui-input-number-steppers {
     display: inline-flex;
@@ -3618,123 +3430,6 @@
     pointer-events: none;
   }
 
-  /* Dial Free-spinning counterpart to Knob: no fixed sweep, no min/max required — useDial.ts accumulates the pointer's frame-to-frame angular delta (wraparound-safe) instead of reading one absolute angle, so the dial can pass 12 o'clock any number of times in either direction. * Positioning rides two custom properties set on the ROOT by useDial.ts: --ui-dial-rotation (unbounded degrees, drives the tick ring's spin — ALWAYS 1:1 with the pointer, direct manipulation, never gated behind a transition) and --ui-dial-fraction (0-1, present only when min AND max are both set — the progress ring reads it, absent otherwise so there is simply nothing for the fill circle to draw). Both are the sole Vue-managed style location — the ticks <g> and fill circle carry no inline style of their own, so an imperative spring library may still own the ticks' rotate directly. Same root-custom-property style-recalc tradeoff as Knob's, kept for the same reason — see Knob's CSS comment above. * Three stacked layers, same "wrapper owns placement" shape as Knob's track/fill/indicator: a static full-circle progress ring (bounded only), a rotating tick ring (the spin cue — a real dial's whole face turns, not just a needle), and a static center face showing the live value (necessary here, unlike Knob, because a free-spinning angle alone doesn't communicate the value). */
-  .ui-dial {
-    position: relative;
-    display: inline-flex;
-  }
-  .ui-dial-dial {
-    position: relative;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    cursor: grab;
-    touch-action: none;
-  }
-  .ui-dial-dial:active,
-  .ui-dial-dial[data-active] {
-    cursor: grabbing;
-  }
-  .ui-dial--sm .ui-dial-dial {
-    inline-size: 3.5rem;
-    block-size: 3.5rem;
-  }
-  .ui-dial--md .ui-dial-dial {
-    inline-size: 5rem;
-    block-size: 5rem;
-  }
-  .ui-dial--lg .ui-dial-dial {
-    inline-size: 6.5rem;
-    block-size: 6.5rem;
-  }
-  .ui-dial-arc,
-  .ui-dial-ticks-svg {
-    position: absolute;
-    inset: 0;
-    inline-size: 100%;
-    block-size: 100%;
-    fill: none;
-    pointer-events: none;
-  }
-  .ui-dial-track {
-    stroke: var(--ui-muted);
-    stroke-width: 6;
-    /* SVG circles start their stroke at 3 o'clock — rotate the whole circle so the (normalized, pathLength=100) dash pattern starts at 12 o'clock, the conventional progress-ring zero point. */
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-  }
-  .ui-dial-fill {
-    stroke: var(--ui-primary);
-    stroke-width: 6;
-    stroke-linecap: round;
-    stroke-dasharray: 100;
-    stroke-dashoffset: calc(100 - (var(--ui-dial-fraction, 0) * 100));
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-  }
-  .ui-dial-ticks {
-    transform-origin: 50% 50%;
-    rotate: var(--ui-dial-rotation, 0deg);
-  }
-  .ui-dial-tick {
-    stroke: var(--ui-border-strong);
-    stroke-width: 2;
-    stroke-linecap: round;
-  }
-  .ui-dial-tick--index {
-    stroke: var(--ui-primary);
-    stroke-width: 3;
-  }
-  .ui-dial-face {
-    position: absolute;
-    inset: 24%;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: var(--ui-surface);
-    border: 1px solid var(--ui-border);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
-    scale: 1;
-    transition: scale var(--ui-duration-press) var(--ui-ease-out);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-dial-dial:hover .ui-dial-face {
-      scale: 1.04;
-    }
-  }
-  .ui-dial-dial:active .ui-dial-face,
-  .ui-dial-dial[data-active] .ui-dial-face {
-    scale: 0.96;
-  }
-  .ui-dial-value {
-    font-size: 0.75rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--ui-text);
-    pointer-events: none;
-    user-select: none;
-  }
-  .ui-dial--sm .ui-dial-value {
-    font-size: 0.625rem;
-  }
-  .ui-dial--lg .ui-dial-value {
-    font-size: 0.875rem;
-  }
-  .ui-dial-dial:focus-visible {
-    outline: 2px solid var(--ui-primary);
-    outline-offset: 2px;
-  }
-  .ui-dial[data-invalid] .ui-dial-fill {
-    stroke: var(--ui-danger);
-  }
-  .ui-dial[data-invalid] .ui-dial-tick--index {
-    stroke: var(--ui-danger);
-  }
-  .ui-dial--disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
   /* DataTable Border, not shadow — an in-flow surface (convention 7), like Card. A real <table>, not a CSS grid — the slot-based v2 rewrite owns only the column registry and sort/selection state (see DataTable.vue's own comment); `.ui-datatable-scroll-x` wraps the whole <table> so header and body columns scroll horizontally in sync when columns overflow. */
   .ui-datatable {
     display: flex;
@@ -4226,117 +3921,6 @@
     pointer-events: none;
   }
 
-  /* SpeedDial Trigger + fanned actions are both real `<Button icon pill>` instances (see SpeedDial.vue's own comment) — this section only positions them and animates the fan-out, nothing about their own visual treatment. */
-  .ui-speed-dial {
-    position: relative;
-    display: inline-flex;
-  }
-  .ui-speed-dial-trigger {
-    position: relative;
-    z-index: 1;
-  }
-  .ui-speed-dial-trigger-icon {
-    display: inline-flex;
-    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
-  }
-  .ui-speed-dial[data-state='open'] .ui-speed-dial-trigger-icon {
-    transform: rotate(45deg);
-  }
-  .ui-speed-dial-actions {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .ui-speed-dial-action {
-    flex: none;
-  }
-  /* Linear directions: a plain flex stack offset from the trigger by a fixed gap, closest action first so the stagger below reads as "growing outward" rather than out of order. */
-  .ui-speed-dial[data-direction='up'] .ui-speed-dial-actions {
-    flex-direction: column-reverse;
-    inset-inline-start: 50%;
-    inset-block-end: 100%;
-    translate: -50% 0;
-    margin-block-end: 0.75rem;
-  }
-  .ui-speed-dial[data-direction='down'] .ui-speed-dial-actions {
-    flex-direction: column;
-    inset-inline-start: 50%;
-    inset-block-start: 100%;
-    translate: -50% 0;
-    margin-block-start: 0.75rem;
-  }
-  .ui-speed-dial[data-direction='left'] .ui-speed-dial-actions {
-    flex-direction: row-reverse;
-    inset-inline-end: 100%;
-    inset-block-start: 50%;
-    translate: 0 -50%;
-    margin-inline-end: 0.75rem;
-  }
-  .ui-speed-dial[data-direction='right'] .ui-speed-dial-actions {
-    flex-direction: row;
-    inset-inline-start: 100%;
-    inset-block-start: 50%;
-    translate: 0 -50%;
-    margin-inline-start: 0.75rem;
-  }
-  /* quarter-circle: the container stays a zero-size anchor at the trigger's own center; each action positions itself independently via the `--ui-speed-dial-x`/`-y` custom properties SpeedDial.vue computes per item (quarterCirclePoint) — not a flex layout at all. */
-  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-actions {
-    inset-inline-start: 50%;
-    inset-block-start: 50%;
-    inline-size: 0;
-    block-size: 0;
-  }
-  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action {
-    position: absolute;
-    inset-inline-start: 0;
-    inset-block-start: 0;
-    translate: calc(var(--ui-speed-dial-x, 0px) - 50%) calc(var(--ui-speed-dial-y, 0px) - 50%);
-  }
-  /* Fan-out entrance: never from scale(0) — nothing real appears from nothing, matching this file's own convention everywhere else. Opacity and scale are shared across every direction; the DIRECTIONAL travel (composes independently, since `scale`/`translate` are separate CSS properties, not `transform` longhands) makes each action visibly emerge FROM the trigger's position rather than fading in place. Staggered on enter (SpeedDial.vue's own 40ms-per-index, baked into the transition-delay calc() below) since this is the "everything-at-once group entrance" case the library's own audit established a stagger convention for; NOT staggered on leave — dismissal reads as one instant collapse, same open/close asymmetry as every other disclosure in this file. */
-  .ui-speed-dial-action-enter-active {
-    transition:
-      opacity var(--ui-duration-enter) var(--ui-ease-out),
-      scale var(--ui-duration-enter) var(--ui-ease-out),
-      translate var(--ui-duration-enter) var(--ui-ease-out);
-    transition-delay: calc(var(--ui-speed-dial-action-index, 0) * 40ms);
-  }
-  .ui-speed-dial-action-leave-active {
-    transition:
-      opacity var(--ui-duration-exit) var(--ui-ease-out),
-      scale var(--ui-duration-exit) var(--ui-ease-out),
-      translate var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-speed-dial-action-enter-from,
-  .ui-speed-dial-action-leave-to {
-    opacity: 0;
-    scale: 0.9;
-  }
-  .ui-speed-dial[data-direction='up'] .ui-speed-dial-action-enter-from,
-  .ui-speed-dial[data-direction='up'] .ui-speed-dial-action-leave-to {
-    translate: 0 0.5rem;
-  }
-  .ui-speed-dial[data-direction='down'] .ui-speed-dial-action-enter-from,
-  .ui-speed-dial[data-direction='down'] .ui-speed-dial-action-leave-to {
-    translate: 0 -0.5rem;
-  }
-  .ui-speed-dial[data-direction='left'] .ui-speed-dial-action-enter-from,
-  .ui-speed-dial[data-direction='left'] .ui-speed-dial-action-leave-to {
-    translate: 0.5rem 0;
-  }
-  .ui-speed-dial[data-direction='right'] .ui-speed-dial-action-enter-from,
-  .ui-speed-dial[data-direction='right'] .ui-speed-dial-action-leave-to {
-    translate: -0.5rem 0;
-  }
-  /* quarter-circle already carries its own resting translate (the arc position) via the base `.ui-speed-dial-action` rule above — enter/leave override JUST that to the trigger's own center (0,0 relative), so the action visibly arcs out from the trigger instead of the shared directional offsets above, which don't apply here. */
-  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-enter-from,
-  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-leave-to {
-    translate: -50% -50%;
-  }
-  .ui-speed-dial-action-move {
-    transition: translate var(--ui-duration-enter) var(--ui-ease-in-out);
-  }
-
   /* SwipeToReveal The actions slot is a permanent sibling BEHIND the content, clipped by the root's own overflow:hidden while closed — never v-if'd or display:none'd, so it stays keyboard/screen-reader reachable regardless of visual state (see SwipeToReveal.vue's own comment). */
   .ui-swipe-reveal {
     position: relative;
@@ -4421,8 +4005,7 @@
       transform: none;
     }
     .ui-select-chevron,
-    .ui-combobox-chevron,
-    .ui-split-button-chevron {
+    .ui-combobox-chevron {
       transition: none;
     }
     .ui-clear-enter-active,
@@ -4529,9 +4112,6 @@
     .ui-radio-dot {
       transition: opacity var(--ui-duration-press) ease;
     }
-    .ui-select-button-indicator {
-      transition: none;
-    }
     /* OtpInput: no override needed here anymore — the default treatment IS the opacity-only fade now (see .ui-otp-cell[data-filled] above), not just the reduced-motion fallback. The caret blink is a caret, not decorative motion — intentionally absent from this block either way. */
     /* CascadeSelect: the trigger chevron's rotation is movement — same rule and reasoning as Accordion's chevron above. Its panel is a literal <Menu>, so Menu's own reduced-motion rules already cover it. */
     .ui-cascade-select-chevron {
@@ -4557,15 +4137,6 @@
     .ui-knob-dial:hover .ui-knob-face,
     .ui-knob-dial:active .ui-knob-face,
     .ui-knob-dial[data-active] .ui-knob-face {
-      scale: 1;
-    }
-    /* Dial: the live rotation/fill fraction are already transition:none (direct manipulation, never gated) regardless of this media query — this only drops the decorative hover/press scale, same :active reset as Knob's face above. The tick ring's rotation itself is NOT reduced here — it's driven purely by, and always in sync with, direct pointer input (never an inertial/decorative spin), so it carries no motion to remove; only the incidental hover/press affordance does. */
-    .ui-dial-face {
-      transition: none;
-    }
-    .ui-dial-dial:hover .ui-dial-face,
-    .ui-dial-dial:active .ui-dial-face,
-    .ui-dial-dial[data-active] .ui-dial-face {
       scale: 1;
     }
     /* FileUpload: drag-over/color states are already color-only and the row fade is already opacity-only — both kept intentionally, same sanctioned exception as Avatar's image crossfade above. Restated (not just left out) so it reads as a decision. */
@@ -4603,25 +4174,6 @@
     }
     .ui-dock-item:active {
       scale: 1;
-    }
-    /* SpeedDial: the fan-out is real movement (scale + directional translate) — drop both, keep the opacity fade, same rule as every other entrance in this block. The stagger delay goes too: a paused, silent gap before an instant-appearing action reads as a stutter, not a stagger, once there's no motion to stagger. The trigger icon's open/close rotation is dropped for the same reason Accordion's chevron is, just below. */
-    .ui-speed-dial-action-enter-active,
-    .ui-speed-dial-action-leave-active {
-      transition: opacity var(--ui-duration-exit) ease;
-      transition-delay: 0ms;
-    }
-    .ui-speed-dial-action-enter-from,
-    .ui-speed-dial-action-leave-to {
-      scale: 1;
-      translate: 0 0;
-    }
-    .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-enter-from,
-    .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-leave-to {
-      translate: calc(var(--ui-speed-dial-x, 0px) - 50%) calc(var(--ui-speed-dial-y, 0px) - 50%);
-    }
-    .ui-speed-dial-action-move,
-    .ui-speed-dial-trigger-icon {
-      transition: none;
     }
     /* SwipeToReveal: the live drag itself is already transition:none (direct manipulation, never gated) regardless of this media query — same reasoning as Resizable's own entry above — this only snaps the release-time settle, which is real movement. */
     .ui-swipe-reveal-content {

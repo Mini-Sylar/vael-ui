@@ -1,0 +1,66 @@
+@layer ui-components {
+  .ui-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .ui-toolbar--vertical {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .ui-toolbar--overflow {
+    overflow: hidden;
+  }
+  .ui-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  .ui-toolbar--vertical .ui-toolbar-group {
+    flex-direction: column;
+    align-items: center;
+  }
+  .ui-toolbar-overflow-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: transparent;
+    color: var(--ui-text);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .ui-toolbar-overflow-label {
+    display: inline-block;
+  }
+  @supports (text-box-trim: trim-both) {
+    .ui-toolbar-overflow-label {
+      text-box: trim-both cap alphabetic;
+    }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-toolbar-overflow-trigger:hover {
+      background: var(--ui-muted);
+    }
+  }
+  .ui-toolbar-separator {
+    align-self: stretch;
+    inline-size: 1px;
+    margin-inline: 0.25rem;
+    background: var(--ui-border);
+  }
+  .ui-toolbar--vertical .ui-toolbar-separator {
+    align-self: stretch;
+    inline-size: auto;
+    block-size: 1px;
+    margin-inline: 0;
+    margin-block: 0.25rem;
+  }
+}

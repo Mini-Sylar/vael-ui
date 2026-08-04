@@ -1,0 +1,127 @@
+@layer ui-components {
+  .ui-dial {
+    position: relative;
+    display: inline-flex;
+  }
+  .ui-dial-dial {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    cursor: grab;
+    touch-action: none;
+  }
+  .ui-dial-dial:active,
+  .ui-dial-dial[data-active] {
+    cursor: grabbing;
+  }
+  .ui-dial--sm .ui-dial-dial {
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+  }
+  .ui-dial--md .ui-dial-dial {
+    inline-size: 5rem;
+    block-size: 5rem;
+  }
+  .ui-dial--lg .ui-dial-dial {
+    inline-size: 6.5rem;
+    block-size: 6.5rem;
+  }
+  .ui-dial-arc,
+  .ui-dial-ticks-svg {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    fill: none;
+    pointer-events: none;
+  }
+  .ui-dial-track {
+    stroke: var(--ui-muted);
+    stroke-width: 6;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+  .ui-dial-fill {
+    stroke: var(--ui-primary);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: calc(100 - (var(--ui-dial-fraction, 0) * 100));
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+  .ui-dial-ticks {
+    transform-origin: 50% 50%;
+    rotate: var(--ui-dial-rotation, 0deg);
+  }
+  .ui-dial-tick {
+    stroke: var(--ui-border-strong);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .ui-dial-tick--index {
+    stroke: var(--ui-primary);
+    stroke-width: 3;
+  }
+  .ui-dial-face {
+    position: absolute;
+    inset: 24%;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    scale: 1;
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-dial-dial:hover .ui-dial-face {
+      scale: 1.04;
+    }
+  }
+  .ui-dial-dial:active .ui-dial-face,
+  .ui-dial-dial[data-active] .ui-dial-face {
+    scale: 0.96;
+  }
+  .ui-dial-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ui-text);
+    pointer-events: none;
+    user-select: none;
+  }
+  .ui-dial--sm .ui-dial-value {
+    font-size: 0.625rem;
+  }
+  .ui-dial--lg .ui-dial-value {
+    font-size: 0.875rem;
+  }
+  .ui-dial-dial:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-dial[data-invalid] .ui-dial-fill {
+    stroke: var(--ui-danger);
+  }
+  .ui-dial[data-invalid] .ui-dial-tick--index {
+    stroke: var(--ui-danger);
+  }
+  .ui-dial--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-dial-face {
+      transition: none;
+    }
+    .ui-dial-dial:hover .ui-dial-face,
+    .ui-dial-dial:active .ui-dial-face,
+    .ui-dial-dial[data-active] .ui-dial-face {
+      scale: 1;
+    }
+  }
+}

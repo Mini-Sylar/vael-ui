@@ -1,5 +1,3 @@
-/* `.ui-loader` is rendered directly by Button, Loader, and PullToRefresh —
-   no single owner, so it lives here. */
 @layer ui-components {
   .ui-loader {
     display: inline-block;

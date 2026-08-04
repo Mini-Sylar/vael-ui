@@ -73,7 +73,7 @@
 
 <script lang="ts">
 import type { Component } from 'vue'
-import type { UiPartValue } from '../classes'
+import type { UiPartValue } from '../../classes'
 
 export type SpeedDialDirection = 'up' | 'down' | 'left' | 'right' | 'quarter-circle'
 export type SpeedDialTriggerMode = 'click' | 'hover'
@@ -123,13 +123,14 @@ export function quarterCirclePoint(
   Comments outside template to avoid DOM nodes in production.
 -->
 <script setup lang="ts">
+import './SpeedDial.css'
 import { computed, nextTick, onMounted, onScopeDispose, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import Button from './Button/Button.vue'
-import { useLayer } from '../composables/useLayerStack'
-import { useMenu } from '../composables/useMenu'
-import { useClassMerge, resolveUiPart } from '../classes'
-import { useThemedUi } from '../theme'
+import Button from '../Button/Button.vue'
+import { useLayer } from '../../composables/useLayerStack'
+import { useMenu } from '../../composables/useMenu'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const open = defineModel<boolean>('open', { default: false })
 

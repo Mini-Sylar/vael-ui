@@ -4,14 +4,11 @@
     padding: 0;
     list-style: none;
     inline-size: min(22rem, calc(100vw - 2 * var(--ui-toast-offset)));
-    /* Container must stay hit-testable. */
+
     transition: block-size var(--ui-duration-toast) var(--ui-ease-toast);
   }
 
-  /* Position classes are selector hooks only. */
-
   .ui-toast {
-    /* Position/touch-action/translate inlined in Toaster.vue. */
     display: flex;
     align-items: center;
     gap: 0.625rem;
@@ -20,7 +17,7 @@
     background: var(--ui-surface);
     color: var(--ui-text);
     box-shadow: var(--ui-panel-shadow);
-    will-change: translate, transform; /* Rasterization fix. */
+    will-change: translate, transform;
     scale: var(--toast-scale, 1);
     opacity: var(--toast-opacity, 1);
     transition:
@@ -35,7 +32,6 @@
     cursor: grabbing;
   }
 
-  /* Committed swipe: one-shot keyframe. */
   .ui-toast[data-swipe-out='true'] {
     animation-duration: var(--ui-duration-toast-exit);
     animation-timing-function: var(--ui-ease-out);
@@ -54,13 +50,11 @@
     animation-name: ui-toast-swipe-out-down;
   }
 
-  /* Cancel animation after swipe-out. */
   .ui-toast-leave-active[data-swipe-out='true'] {
     transition: none;
     animation: none;
   }
 
-  /* Keyframe adds push in swipe direction. */
   @keyframes ui-toast-swipe-out-left {
     to {
       transform: translateX(-100%);
@@ -179,7 +173,6 @@
     }
   }
 
-  /* Enter/exit move by a percentage of the card's own size, matching Sonner's CSS. Exit is faster than enter (200ms vs 400ms), matching Sonner's TIME_BEFORE_UNMOUNT. Never from scale(0) — 0.9 still reads as "arriving" rather than "materializing". Same 4 properties as .ui-toast's base rule, not just opacity/transform: a card can have its own depth reassigned while still inside its own enter/leave window (a second toast arriving within ~400ms of the first) — narrower lists here would let that moment fall back to whichever rule wins the cascade. */
   .ui-toast-enter-active {
     transition:
       translate var(--ui-duration-toast) var(--ui-ease-toast),
@@ -217,9 +210,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    /* Position changes snap instantly, opacity keeps fading. Swipe still
-       tracks the pointer directly (user-initiated), but its commit
-       keyframes drop the travel distance and just fade out in place. */
     .ui-toast {
       transition: opacity var(--ui-duration-toast) ease;
     }

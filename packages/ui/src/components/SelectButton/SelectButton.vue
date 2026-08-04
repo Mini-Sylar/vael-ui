@@ -52,12 +52,13 @@ export interface SelectButtonItem {
 
 <!-- Native radios (single) or checkboxes (multiple) with sliding indicator; allowEmpty clears on click -->
 <script setup lang="ts">
+import './SelectButton.css'
 import { computed, useId, useTemplateRef } from 'vue'
-import { useTabIndicator } from '../composables/useTabIndicator'
-import { useFieldControl } from '../composables/useFieldControl'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useTabIndicator } from '../../composables/useTabIndicator'
+import { useFieldControl } from '../../composables/useFieldControl'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const modelValue = defineModel<string | number | (string | number)[] | null>({ default: null })
 

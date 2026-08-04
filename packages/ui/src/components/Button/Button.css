@@ -11,7 +11,7 @@
     line-height: 1;
     cursor: pointer;
     user-select: none;
-    /* Avoid rasterization mismatch during scale. */
+
     will-change: transform;
     transition:
       transform var(--ui-duration-press) var(--ui-ease-out),
@@ -38,7 +38,6 @@
     border-radius: var(--ui-radius);
   }
 
-  /* Optical alignment: icon side ~2px less padding. */
   .ui-button--has-leading {
     padding-inline-start: calc(var(--ui-btn-px) - 2px);
   }
@@ -46,7 +45,6 @@
     padding-inline-end: calc(var(--ui-btn-px) - 2px);
   }
 
-  /* Icon-only: square. */
   .ui-button--icon {
     padding-inline: 0;
   }
@@ -61,7 +59,6 @@
   }
 
   .ui-button--icon::after {
-    /* Hit-area pseudo keeps small ones tappable. */
     content: '';
     position: absolute;
     inset-block-start: 50%;
@@ -97,13 +94,13 @@
     background: transparent;
     color: var(--ui-text);
   }
-  /* Text-only: no surface; affordance from underline. */
+
   .ui-button--link {
     background: transparent;
     color: var(--ui-text);
     text-underline-offset: 3px;
   }
-  /* Text-only, no underline. */
+
   .ui-button--text {
     background: transparent;
     color: var(--ui-text);
@@ -113,7 +110,6 @@
     color: var(--ui-danger-contrast);
   }
 
-  /* Hover only on real pointers. */
   @media (hover: hover) and (pointer: fine) {
     .ui-button--primary:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
       background: var(--ui-primary-hover);
@@ -136,7 +132,6 @@
     }
   }
 
-  /* Press feedback: scale confirms click. */
   .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
     transform: scale(0.96);
   }
@@ -147,7 +142,6 @@
     }
   }
 
-  /* Keyboard affordance only. */
   .ui-button:focus-visible {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
@@ -156,7 +150,6 @@
     outline-color: var(--ui-danger);
   }
 
-  /* Disabled vs busy: dim + cursor are for disabled only; loading stays enabled. */
   .ui-button:disabled,
   .ui-button--disabled {
     cursor: not-allowed;
@@ -183,13 +176,12 @@
     .ui-button-label {
       text-box: trim-both cap alphabetic;
     }
-    /* Icon-only buttons: text-box-trim breaks flex centering on SVG icons */
+
     .ui-button--icon .ui-button-label {
       text-box: initial;
     }
   }
 
-  /* Icon slots: fixed 1em boxes (exact inline-loader swap) */
   .ui-button-leading,
   .ui-button-trailing {
     display: inline-grid;
@@ -210,7 +202,6 @@
     margin-inline-start: 0.5em;
   }
 
-  /* Always-mounted loader wrapper; centered, fades with blur. */
   .ui-button-loader {
     display: inline-grid;
     place-items: center;
@@ -221,7 +212,7 @@
   .ui-button--loader-overlay .ui-button-loader {
     position: absolute;
     inset: 0;
-    scale: 0.6; /* enters from a visible size — never from nothing */
+    scale: 0.6;
     transition:
       opacity var(--ui-duration-press) ease,
       scale var(--ui-duration-press) var(--ui-ease-out);
@@ -236,7 +227,6 @@
     filter: blur(2px);
   }
 
-  /* Inline loader with text. */
   .ui-button--loader-inline .ui-button-loader {
     inline-size: 0;
     margin-inline-end: 0;
@@ -268,10 +258,7 @@
     .ui-button-trailing {
       transition: opacity var(--ui-duration-press) ease;
     }
-    /* A bare Loader (its presence already means "loading") pulses
-       unconditionally; inside Button's always-mounted `.ui-button-loader`
-       wrapper the idle (hidden) spinner must stay off, so that context
-       stays gated on `.ui-button--loading`. */
+
     .ui-button-loader .ui-loader {
       animation: none;
     }
@@ -292,9 +279,9 @@
     position: absolute;
     z-index: 2;
     display: inline-flex;
-    pointer-events: none; /* clicks land on the button beneath, same as Avatar's badge */
+    pointer-events: none;
   }
-  /* 50% placement: button corner is real surface. */
+
   .ui-button-badge[data-placement='top-start'] {
     inset-block-start: 0;
     inset-inline-start: 0;

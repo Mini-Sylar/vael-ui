@@ -23,17 +23,17 @@
   --ui-overlay: rgb(0 0 0 / 0.4);
   --ui-radius: 10px;
   --ui-border-strong: #d4d4d8;
-  /* Z-order: toast > popover > dialog. */
+
   --ui-z-dialog: 50;
   --ui-z-popover: 55;
   --ui-z-toast: 60;
   --ui-z-tooltip: 70;
   --ui-panel-shadow:
     0 0 0 1px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.12), 0 24px 48px rgb(0 0 0 / 0.08);
-  /* Strong curves from easings.co/animations.dev. */
+
   --ui-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ui-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-  /* Steeper deceleration for edge slides. */
+
   --ui-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --ui-duration-drawer: 500ms;
   --ui-duration-press: 160ms;
@@ -54,14 +54,12 @@
   --ui-radius-surface: min(var(--ui-radius), 1rem);
 }
 
-/* Dummy animatable property for Vue timing. */
 @property --ui-dialog-t {
   syntax: '<number>';
   inherits: false;
   initial-value: 1;
 }
 
-/* Dark theme. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --ui-primary: #fafafa;
@@ -69,7 +67,7 @@
     --ui-primary-contrast: #18181b;
     --ui-muted: #27272a;
     --ui-muted-hover: #3f3f46;
-    /* Lightness raised for legibility. */
+
     --ui-danger: oklch(0.7 0.19 26);
     --ui-danger-hover: color-mix(in oklch, oklch(0.7 0.19 26) 85%, white);
     --ui-danger-contrast: #ffffff;

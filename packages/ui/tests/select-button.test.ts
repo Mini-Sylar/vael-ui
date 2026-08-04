@@ -5,7 +5,7 @@ import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import SelectButtonFixture from './fixtures/SelectButtonFixture.vue'
 import Field from '../src/components/Field.vue'
-import SelectButton from '../src/components/SelectButton.vue'
+import SelectButton from '../src/components/SelectButton/SelectButton.vue'
 
 test('single select via click', async () => {
   const screen = render(SelectButtonFixture, {})

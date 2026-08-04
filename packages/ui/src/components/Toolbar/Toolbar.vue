@@ -35,13 +35,14 @@
 
 <!-- role="toolbar"; heterogeneous slot content with roving tabindex; three groups (start/center/end) handle overflow ellipsis placement -->
 <script setup lang="ts">
+import './Toolbar.css'
 import { computed, useSlots, useTemplateRef } from 'vue'
-import { useToolbar } from '../composables/useToolbar'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
-import Menu from './Menu.vue'
-import type { MenuItemData } from './Menu.vue'
+import { useToolbar } from '../../composables/useToolbar'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
+import Menu from '../Menu.vue'
+import type { MenuItemData } from '../Menu.vue'
 
 const props = withDefaults(
   defineProps<{

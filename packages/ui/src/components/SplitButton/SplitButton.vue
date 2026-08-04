@@ -75,23 +75,24 @@
   Visual join via inner-corners zeroed + trigger's colored border-inline-start (color-mix).
 -->
 <script lang="ts">
-import type { MenuAlign, MenuSide } from './Menu.vue'
+import type { MenuAlign, MenuSide } from '../Menu.vue'
 
 export type { MenuAlign as SplitButtonAlign, MenuSide as SplitButtonSide }
 </script>
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
+import './SplitButton.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import Button from './Button/Button.vue'
-import type { ButtonSize, ButtonVariant } from './Button/Button.vue'
-import Menu from './Menu.vue'
-import type { MenuEntry, MenuItemData } from './Menu.vue'
-import type { PopoverOpenChangeDetails } from '../composables/usePopover'
-import { useUiMessages } from '../messages'
-import { useClassMerge, resolveUiPart, splitUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import Button from '../Button/Button.vue'
+import type { ButtonSize, ButtonVariant } from '../Button/Button.vue'
+import Menu from '../Menu.vue'
+import type { MenuEntry, MenuItemData } from '../Menu.vue'
+import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
+import { useUiMessages } from '../../messages'
+import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 

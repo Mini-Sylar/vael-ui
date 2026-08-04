@@ -1,5 +1,4 @@
 @layer ui-components {
-  /* Opacity pulse, never shimmer gradient. */
   .ui-skeleton {
     display: block;
     background: var(--ui-muted);
@@ -22,14 +21,12 @@
   .ui-skeleton--animated {
     animation: ui-pulse 1.2s ease-in-out infinite;
   }
-  /* Slotted content sizes box only. */
+
   .ui-skeleton-content {
     visibility: hidden;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    /* Opacity-only pulse — exempt from reduced motion, same as any plain
-       fade. Restated so the exemption reads as a decision, not an oversight. */
     .ui-skeleton--animated {
       animation: ui-pulse 1.2s ease-in-out infinite;
     }

@@ -1,5 +1,4 @@
 @layer ui-components {
-  /* Message: in-flow, stationary. */
   .ui-message {
     display: flex;
     align-items: flex-start;
@@ -30,7 +29,7 @@
   .ui-message--info .ui-message-icon {
     color: var(--ui-info);
   }
-  /* Inline use; icon + colored text only. */
+
   .ui-message--bare {
     padding: 0;
     border: 0;
@@ -112,7 +111,7 @@
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }
-  /* Exit only, no initial animation. */
+
   .ui-message-leave-active {
     transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
   }

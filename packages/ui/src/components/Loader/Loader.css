@@ -1,5 +1,4 @@
 @layer ui-components {
-  /* Visually-hidden label (standard sr-only clip-rect technique). */
   .ui-loader-label {
     position: absolute;
     inline-size: 1px;

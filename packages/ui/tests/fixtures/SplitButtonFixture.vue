@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import SplitButton from '../../src/components/SplitButton.vue'
+import SplitButton from '../../src/components/SplitButton/SplitButton.vue'
 import type { MenuItemData } from '../../src/components/Menu.vue'
 
 const items: MenuItemData[] = [

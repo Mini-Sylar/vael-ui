@@ -8,8 +8,8 @@ export type {
   ButtonVariant,
 } from './components/Button/Button.vue'
 export { default as ButtonGroup } from './components/ButtonGroup/ButtonGroup.vue'
-export { default as SplitButton } from './components/SplitButton.vue'
-export type { SplitButtonAlign, SplitButtonSide } from './components/SplitButton.vue'
+export { default as SplitButton } from './components/SplitButton/SplitButton.vue'
+export type { SplitButtonAlign, SplitButtonSide } from './components/SplitButton/SplitButton.vue'
 export { default as Loader } from './components/Loader/Loader.vue'
 export { default as Skeleton } from './components/Skeleton/Skeleton.vue'
 export { default as Badge } from './components/Badge.vue'
@@ -37,10 +37,10 @@ export { default as Switch } from './components/Switch.vue'
 export { default as RadioGroup } from './components/RadioGroup.vue'
 export type { RadioGroupContext } from './components/RadioGroup.vue'
 export { default as Radio } from './components/Radio.vue'
-export { default as SelectButton } from './components/SelectButton.vue'
-export type { SelectButtonItem } from './components/SelectButton.vue'
+export { default as SelectButton } from './components/SelectButton/SelectButton.vue'
+export type { SelectButtonItem } from './components/SelectButton/SelectButton.vue'
 export { default as Knob } from './components/Knob.vue'
-export { default as Dial } from './components/Dial.vue'
+export { default as Dial } from './components/Dial/Dial.vue'
 export { default as Chip } from './components/Chip.vue'
 export { default as Select } from './components/Select.vue'
 export type {
@@ -70,7 +70,7 @@ export type { BottomSheetProps, SheetSnapPoint } from './components/BottomSheet.
 export { default as Drawer } from './components/Drawer.vue'
 export type { DrawerProps, DrawerSide } from './components/Drawer.vue'
 export { default as Tabs } from './components/Tabs.vue'
-export { default as Toolbar } from './components/Toolbar.vue'
+export { default as Toolbar } from './components/Toolbar/Toolbar.vue'
 export { default as Accordion } from './components/Accordion.vue'
 export { default as AccordionItem } from './components/AccordionItem.vue'
 export { default as Collapsible } from './components/Collapsible.vue'
@@ -277,13 +277,13 @@ export type {
 export { default as DatePicker } from './components/DatePicker.vue'
 export type { DatePickerAlign, DatePickerSide } from './components/DatePicker.vue'
 
-export { default as SpeedDial, quarterCirclePoint } from './components/SpeedDial.vue'
+export { default as SpeedDial, quarterCirclePoint } from './components/SpeedDial/SpeedDial.vue'
 export type {
   SpeedDialDirection,
   SpeedDialItem,
   SpeedDialProps,
   SpeedDialTriggerMode,
-} from './components/SpeedDial.vue'
+} from './components/SpeedDial/SpeedDial.vue'
 
 export { default as SwipeToReveal } from './components/SwipeToReveal.vue'
 export { useSwipeReveal, resolveSwipeCommit } from './composables/useSwipeReveal'
