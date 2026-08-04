@@ -23,7 +23,7 @@
   <th>/<td> order would stay A/B/C no matter what `order` says.
 -->
 <script setup lang="ts">
-import DataTable from '../../src/components/DataTable.vue'
+import DataTable from '../../src/components/DataTable/DataTable.vue'
 
 interface Row {
   id: string

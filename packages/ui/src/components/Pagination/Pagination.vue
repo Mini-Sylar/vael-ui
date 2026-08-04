@@ -124,13 +124,14 @@
 
 <!-- Uses MUI/PrimeVue sibling count algorithm for pagination layout. -->
 <script setup lang="ts">
+import './Pagination.css'
 import { computed } from 'vue'
-import Button from './Button/Button.vue'
-import Select from './Select.vue'
-import type { SelectItemData } from './Select.vue'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import Button from '../Button/Button.vue'
+import Select from '../Select.vue'
+import type { SelectItemData } from '../Select.vue'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const page = defineModel<number>('page', { default: 1 })
 const pageSize = defineModel<number>('pageSize', { default: 10 })

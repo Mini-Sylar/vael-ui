@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Chip from '../../src/components/Chip.vue'
+import Chip from '../../src/components/Chip/Chip.vue'
 
 withDefaults(
   defineProps<{

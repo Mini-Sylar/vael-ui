@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import Tag from '../src/components/Tag.vue'
+import Tag from '../src/components/Tag/Tag.vue'
 
 test('default slot content renders', async () => {
   const screen = render(Tag, { slots: { default: 'paid' } })

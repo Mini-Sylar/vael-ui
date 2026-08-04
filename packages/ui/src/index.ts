@@ -12,11 +12,11 @@ export { default as SplitButton } from './components/SplitButton/SplitButton.vue
 export type { SplitButtonAlign, SplitButtonSide } from './components/SplitButton/SplitButton.vue'
 export { default as Loader } from './components/Loader/Loader.vue'
 export { default as Skeleton } from './components/Skeleton/Skeleton.vue'
-export { default as Badge } from './components/Badge.vue'
-export { default as Tag } from './components/Tag.vue'
-export { default as Kbd } from './components/Kbd.vue'
-export { default as Avatar } from './components/Avatar.vue'
-export { default as Card } from './components/Card.vue'
+export { default as Badge } from './components/Badge/Badge.vue'
+export { default as Tag } from './components/Tag/Tag.vue'
+export { default as Kbd } from './components/Kbd/Kbd.vue'
+export { default as Avatar } from './components/Avatar/Avatar.vue'
+export { default as Card } from './components/Card/Card.vue'
 export { default as Separator } from './components/Separator.vue'
 export { default as Progress } from './components/Progress/Progress.vue'
 export { default as Message } from './components/Message/Message.vue'
@@ -41,7 +41,7 @@ export { default as SelectButton } from './components/SelectButton/SelectButton.
 export type { SelectButtonItem } from './components/SelectButton/SelectButton.vue'
 export { default as Knob } from './components/Knob.vue'
 export { default as Dial } from './components/Dial/Dial.vue'
-export { default as Chip } from './components/Chip.vue'
+export { default as Chip } from './components/Chip/Chip.vue'
 export { default as Select } from './components/Select.vue'
 export type {
   SelectItemData,
@@ -54,9 +54,9 @@ export type { ComboboxAlign, ComboboxFilter, ComboboxSide } from './components/C
 export { default as Slider } from './components/Slider.vue'
 export { default as FileUpload } from './components/FileUpload.vue'
 export type { FileRejectReason } from './components/FileUpload.vue'
-export { default as Pagination } from './components/Pagination.vue'
+export { default as Pagination } from './components/Pagination/Pagination.vue'
 export { default as Resizable } from './components/Resizable.vue'
-export { default as DataTable } from './components/DataTable.vue'
+export { default as DataTable } from './components/DataTable/DataTable.vue'
 export { default as Column } from './components/Column.vue'
 // <Column>'s #cell/#header slot can call this directly to reach
 // selected/toggleSelect/isSelected — see DataTableDemo.vue.

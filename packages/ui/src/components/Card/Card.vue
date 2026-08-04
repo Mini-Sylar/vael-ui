@@ -19,10 +19,11 @@
 
 <!-- Part naming mirrors Dialog for muscle memory; root attrs fall through (no click interception) -->
 <script setup lang="ts">
+import './Card.css'
 import { computed, useTemplateRef } from 'vue'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const props = withDefaults(
   defineProps<{

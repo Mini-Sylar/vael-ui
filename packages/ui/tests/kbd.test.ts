@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import Kbd from '../src/components/Kbd.vue'
+import Kbd from '../src/components/Kbd/Kbd.vue'
 
 test('default slot content renders', async () => {
   const screen = render(Kbd, { slots: { default: 'Esc' } })

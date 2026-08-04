@@ -66,7 +66,7 @@
 
 <script setup lang="ts">
 import { defineComponent, h, shallowRef, useTemplateRef } from 'vue'
-import DataTable from '../../src/components/DataTable.vue'
+import DataTable from '../../src/components/DataTable/DataTable.vue'
 import { useDataTableContext } from '../../src/composables/useDataTableContext'
 
 interface Person {

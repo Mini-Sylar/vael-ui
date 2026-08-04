@@ -167,6 +167,7 @@ export type ComboboxFilter<T> = boolean | ((item: T, query: string) => boolean)
      Trigger: Input.vue instead of button (for Field wiring, frame, float/inset label).
      Focus stays in input; only ArrowDown/Up/Home/End forwarded to listbox (typeahead disabled here for live filtering). -->
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
+import './shared/chip.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import Input from './Input.vue'
 import { usePopover } from '../composables/usePopover'
@@ -179,7 +180,7 @@ import type { UiPartValue } from '../classes'
 import { themeScopeKey, useThemedUi } from '../theme'
 import { useUiMessages } from '../messages'
 import SelectListBody from './internal/SelectListBody.vue'
-import Chip from './Chip.vue'
+import Chip from './Chip/Chip.vue'
 
 defineOptions({ inheritAttrs: false })
 

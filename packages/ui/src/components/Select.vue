@@ -159,6 +159,7 @@ export interface SelectVirtualizeConfig {
 </script>
 
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
+import './shared/chip.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { usePopover } from '../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../composables/usePopover'
@@ -170,7 +171,7 @@ import type { UiPartValue } from '../classes'
 import { themeScopeKey, useThemedUi } from '../theme'
 import { useUiMessages } from '../messages'
 import SelectListBody from './internal/SelectListBody.vue'
-import Chip from './Chip.vue'
+import Chip from './Chip/Chip.vue'
 
 defineOptions({ inheritAttrs: false })
 

@@ -11,10 +11,11 @@
   Comment stays outside <template> — see Button.vue for why.
 -->
 <script setup lang="ts">
+import './Kbd.css'
 import { computed, useTemplateRef } from 'vue'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const props = withDefaults(
   defineProps<{

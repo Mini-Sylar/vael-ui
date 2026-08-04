@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import Card from '../src/components/Card.vue'
+import Card from '../src/components/Card/Card.vue'
 
 test('no header rendered when neither title nor #header slot is given', async () => {
   const screen = render(Card, { slots: { default: 'Body content' } })

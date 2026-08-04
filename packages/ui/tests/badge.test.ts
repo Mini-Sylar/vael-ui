@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import Badge from '../src/components/Badge.vue'
+import Badge from '../src/components/Badge/Badge.vue'
 
 const content = (root: HTMLElement) => root.querySelector<HTMLElement>('.ui-badge-content')
 

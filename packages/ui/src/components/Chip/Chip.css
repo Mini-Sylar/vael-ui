@@ -1,0 +1,47 @@
+@layer ui-components {
+  .ui-chip--sm {
+    padding: 0.0625rem 0.375rem;
+    font-size: 0.75rem;
+  }
+  .ui-chip--removable.ui-chip--md {
+    padding-inline-end: 0.25rem;
+  }
+  .ui-chip--removable.ui-chip--sm {
+    padding-inline-end: 0.1875rem;
+  }
+  .ui-chip[data-disabled] {
+    opacity: 0.5;
+  }
+  .ui-chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1rem;
+    block-size: 1rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-chip-remove:hover {
+    background: var(--ui-border-strong);
+    color: var(--ui-text);
+  }
+  .ui-chip-remove:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 1px;
+  }
+  .ui-chip-remove:disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}

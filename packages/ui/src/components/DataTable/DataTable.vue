@@ -213,6 +213,7 @@
      frozenColumns: table-level math for cumulative offsets, since Column can't know what precedes it.
      Expansion: full-width row per `Ref<Set<...>>`, collapsed in stacked mode (no toggle). -->
 <script setup lang="ts" generic="T extends Record<string, any>">
+import './DataTable.css'
 import {
   computed,
   onBeforeUnmount,
@@ -228,14 +229,14 @@ import {
 } from 'vue'
 import type { Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { ssrWindow } from '../ssr'
-import ColumnImpl from './Column.vue'
-import Checkbox from './Checkbox.vue'
-import Radio from './Radio.vue'
-import Button from './Button/Button.vue'
-import { radioGroupKey } from './RadioGroup.vue'
-import { provideDataTableContext } from '../composables/useDataTableContext'
-import type { RegisteredColumn } from '../composables/useDataTableContext'
+import { ssrWindow } from '../../ssr'
+import ColumnImpl from '../Column.vue'
+import Checkbox from '../Checkbox.vue'
+import Radio from '../Radio.vue'
+import Button from '../Button/Button.vue'
+import { radioGroupKey } from '../RadioGroup.vue'
+import { provideDataTableContext } from '../../composables/useDataTableContext'
+import type { RegisteredColumn } from '../../composables/useDataTableContext'
 
 const props = withDefaults(
   defineProps<{

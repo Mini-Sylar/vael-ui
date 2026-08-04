@@ -32,11 +32,13 @@
 
 <!-- Small reusable pill; remove button stops propagation to avoid toggling parent trigger -->
 <script setup lang="ts">
+import './Chip.css'
+import '../shared/chip.css'
 import { computed, useTemplateRef } from 'vue'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
-import { useUiMessages } from '../messages'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
+import { useUiMessages } from '../../messages'
 
 const props = withDefaults(
   defineProps<{
