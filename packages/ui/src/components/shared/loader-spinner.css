@@ -1,7 +1,5 @@
-/* Shared bare-spinner markup used directly (not via <Loader>) by Button's
-   built-in loader and PullToRefresh's release-to-refresh state — three
-   independent consumers of the same `.ui-loader` class, so it lives here
-   instead of duplicated or owned by any single one of them. */
+/* `.ui-loader` is rendered directly by Button, Loader, and PullToRefresh —
+   no single owner, so it lives here. */
 @layer ui-components {
   .ui-loader {
     display: inline-block;
@@ -27,9 +25,6 @@
     }
   }
 
-  /* ui-pulse is genuinely shared (Skeleton, InputNumber stepper, etc. still
-     read the canonical copy in style.css) — duplicated here, not moved,
-     since those components haven't been split into their own chunk yet. */
   @keyframes ui-pulse {
     50% {
       opacity: 0.4;

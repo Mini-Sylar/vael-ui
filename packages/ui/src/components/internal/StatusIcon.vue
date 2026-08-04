@@ -35,6 +35,7 @@
   behavior (no icon branch existed for it either).
 -->
 <script setup lang="ts">
+import '../shared/loader-spinner.css'
 defineProps<{
   variant: 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading'
 }>()

@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import Skeleton from '../src/components/Skeleton.vue'
+import Skeleton from '../src/components/Skeleton/Skeleton.vue'
 
 test('default variant is text, animated, and aria-hidden', async () => {
   const screen = render(Skeleton)

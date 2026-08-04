@@ -113,13 +113,18 @@ function collectPublicExports(indexSource) {
   return names
 }
 
-// Finds sibling .vue imports (not ../composables or third-party)
-function findSiblingModuleIds(source) {
+// Finds sibling .vue imports (not composables or third-party). `fromId` is
+// the importing module's own id (e.g. 'Message/Message' or 'Select') so
+// './' and '../' specifiers resolve against its real directory — a
+// folder-nested component reaching a top-level internal/ helper writes
+// '../internal/StatusIcon.vue', not './internal/StatusIcon.vue'.
+function findSiblingModuleIds(source, fromId) {
   const ids = new Set()
-  const re = /from\s+'(\.\/[^']+)\.vue'/g
+  const re = /from\s+'(\.\.?\/[^']+)\.vue'/g
+  const fromDir = dirname(fromId) // 'Message/Message' -> 'Message'; 'Select' -> '.'
   let match
   while ((match = re.exec(source))) {
-    ids.add(match[1].replace(/^\.\//, '')) // 'Menu' or 'internal/StatusIcon'
+    ids.add(join(fromDir, match[1])) // join() normalizes away the '../'
   }
   return ids
 }
@@ -132,7 +137,7 @@ function resolveDependencyGraph(requested) {
   while (queue.length > 0) {
     const id = queue.shift()
     const source = readFileSync(join(UI_COMPONENTS_DIR, `${id}.vue`), 'utf8')
-    for (const dep of findSiblingModuleIds(source)) {
+    for (const dep of findSiblingModuleIds(source, id)) {
       if (!toGenerate.has(dep)) {
         toGenerate.add(dep)
         queue.push(dep)

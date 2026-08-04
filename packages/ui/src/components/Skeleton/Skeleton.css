@@ -1,0 +1,43 @@
+@layer ui-components {
+  /* Opacity pulse, never shimmer gradient. */
+  .ui-skeleton {
+    display: block;
+    background: var(--ui-muted);
+    border-radius: var(--ui-radius);
+  }
+  .ui-skeleton--text {
+    inline-size: 100%;
+    block-size: 1em;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-skeleton--circle {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+  }
+  .ui-skeleton--rect {
+    border-radius: var(--ui-radius);
+  }
+  .ui-skeleton--animated {
+    animation: ui-pulse 1.2s ease-in-out infinite;
+  }
+  /* Slotted content sizes box only. */
+  .ui-skeleton-content {
+    visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Opacity-only pulse — exempt from reduced motion, same as any plain
+       fade. Restated so the exemption reads as a decision, not an oversight. */
+    .ui-skeleton--animated {
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes ui-pulse {
+    50% {
+      opacity: 0.4;
+    }
+  }
+}

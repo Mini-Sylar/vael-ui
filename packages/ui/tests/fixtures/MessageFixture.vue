@@ -22,8 +22,8 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Message from '../../src/components/Message.vue'
-import type { MessageOpenChangeDetails } from '../../src/components/Message.vue'
+import Message from '../../src/components/Message/Message.vue'
+import type { MessageOpenChangeDetails } from '../../src/components/Message/Message.vue'
 
 const props = defineProps<{
   beforeClose?: (done: () => void) => void

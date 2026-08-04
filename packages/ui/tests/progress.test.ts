@@ -2,7 +2,7 @@ import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, ref } from 'vue'
-import Progress from '../src/components/Progress.vue'
+import Progress from '../src/components/Progress/Progress.vue'
 
 const bar = (root: HTMLElement) => root.querySelector<HTMLElement>('.ui-progress')!
 

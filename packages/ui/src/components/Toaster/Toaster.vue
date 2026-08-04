@@ -91,13 +91,14 @@ export type ToasterPosition =
 </script>
 
 <script setup lang="ts">
+import './Toaster.css'
 import { computed, inject, reactive, ref, watch } from 'vue'
 import { useDocumentVisibility } from '@vueuse/core'
-import { useToastQueue } from '../composables/useToast'
-import type { ToastEntry } from '../composables/useToast'
-import { useUiMessages } from '../messages'
-import { themeScopeKey } from '../theme'
-import StatusIcon from './internal/StatusIcon.vue'
+import { useToastQueue } from '../../composables/useToast'
+import type { ToastEntry } from '../../composables/useToast'
+import { useUiMessages } from '../../messages'
+import { themeScopeKey } from '../../theme'
+import StatusIcon from '../internal/StatusIcon.vue'
 
 // Port of vue-sonner's swipe-to-dismiss mechanics; constants are Sonner's.
 const SWIPE_THRESHOLD = 45 // px

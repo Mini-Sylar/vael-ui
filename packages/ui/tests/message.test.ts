@@ -3,7 +3,7 @@ import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import MessageFixture from './fixtures/MessageFixture.vue'
-import Message from '../src/components/Message.vue'
+import Message from '../src/components/Message/Message.vue'
 
 test('default variant gets role="status"', async () => {
   render(Message, { slots: { default: 'Heads up' } })

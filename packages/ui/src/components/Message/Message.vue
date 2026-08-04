@@ -45,7 +45,7 @@
 </template>
 
 <script lang="ts">
-import type { UiPartValue } from '../classes'
+import type { UiPartValue } from '../../classes'
 
 export type MessageVariant = 'default' | 'success' | 'error' | 'warning' | 'info'
 
@@ -85,11 +85,12 @@ export interface MessageProps {
   forceMount + beforeClose(done) contract reimplemented locally (Message needs no focus-trap/scroll-lock).
 -->
 <script setup lang="ts">
+import './Message.css'
 import { computed, shallowRef, useTemplateRef, watch } from 'vue'
-import { useUiMessages } from '../messages'
-import { useClassMerge, resolveUiPart } from '../classes'
-import { useThemedUi } from '../theme'
-import StatusIcon from './internal/StatusIcon.vue'
+import { useUiMessages } from '../../messages'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import { useThemedUi } from '../../theme'
+import StatusIcon from '../internal/StatusIcon.vue'
 
 const open = defineModel<boolean>('open', { default: true })
 
