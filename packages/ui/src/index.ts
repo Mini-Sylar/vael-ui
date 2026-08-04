@@ -109,7 +109,7 @@ export type {
 } from './components/TreeSelect.vue'
 export { default as TooltipHost } from './components/TooltipHost.vue'
 export type { TooltipHostProps } from './components/TooltipHost.vue'
-export { default as ConfigProvider } from './components/ConfigProvider.vue'
+export { default as ConfigProvider } from './components/ConfigProvider/ConfigProvider.vue'
 export { default as Toaster } from './components/Toaster.vue'
 export type { ToasterPosition } from './components/Toaster.vue'
 export { generateThemeCss, useThemedUi, themeKey, themeScopeKey } from './theme'

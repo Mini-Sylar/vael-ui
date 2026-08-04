@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import ConfigProvider from '../../src/components/ConfigProvider.vue'
+import ConfigProvider from '../../src/components/ConfigProvider/ConfigProvider.vue'
 import Dialog from '../../src/components/Dialog.vue'
 import type { I18nInstance, PartialUiMessages } from '../../src/messages'
 

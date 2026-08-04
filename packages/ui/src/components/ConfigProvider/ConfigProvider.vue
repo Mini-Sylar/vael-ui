@@ -11,12 +11,17 @@
 
 <script setup lang="ts">
 import { computed, inject, provide, useId } from 'vue'
-import { defaultMessages, mergeMessages, messagesKey, resolveMessagesFromI18n } from '../messages'
-import type { I18nInstance, PartialUiMessages } from '../messages'
-import { classMergerKey } from '../classes'
-import type { ClassMerger } from '../classes'
-import { generateThemeCss, themeKey, themeScopeKey } from '../theme'
-import type { UiTheme } from '../theme'
+import {
+  defaultMessages,
+  mergeMessages,
+  messagesKey,
+  resolveMessagesFromI18n,
+} from '../../messages'
+import type { I18nInstance, PartialUiMessages } from '../../messages'
+import { classMergerKey } from '../../classes'
+import type { ClassMerger } from '../../classes'
+import { generateThemeCss, themeKey, themeScopeKey } from '../../theme'
+import type { UiTheme } from '../../theme'
 
 const props = defineProps<{
   /** I18n instance (e.g. `useI18n()` return value). Missing keys fall back to English defaults. */

@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import ConfigProvider from '../../src/components/ConfigProvider.vue'
+import ConfigProvider from '../../src/components/ConfigProvider/ConfigProvider.vue'
 import Dialog from '../../src/components/Dialog.vue'
 import Button from '../../src/components/Button/Button.vue'
 
