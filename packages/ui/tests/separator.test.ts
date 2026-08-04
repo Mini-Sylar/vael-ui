@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import Separator from '../src/components/Separator.vue'
+import Separator from '../src/components/Separator/Separator.vue'
 
 test('horizontal (default): role=separator, no aria-orientation, no text spans', async () => {
   const screen = render(Separator)

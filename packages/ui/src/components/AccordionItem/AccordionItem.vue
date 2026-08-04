@@ -55,12 +55,13 @@
 
 <!-- No beforeClose: panel always mounted (collapsed); data-state + motionCss={false} + exposed panelEl for exit animation -->
 <script setup lang="ts">
+import './AccordionItem.css'
 import { computed, inject, useId, useTemplateRef } from 'vue'
-import { accordionKey } from './Accordion.vue'
-import { useCollapse } from '../composables/useCollapse'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { accordionKey } from '../Accordion/Accordion.vue'
+import { useCollapse } from '../../composables/useCollapse'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const props = defineProps<{
   value: string

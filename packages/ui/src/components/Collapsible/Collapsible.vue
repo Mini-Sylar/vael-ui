@@ -26,11 +26,12 @@
 
 <!-- Single disclosure with auto-wired trigger slot; imperative aria-expanded/aria-controls via watchEffect -->
 <script setup lang="ts">
+import './Collapsible.css'
 import { computed, useId, useTemplateRef, watchEffect } from 'vue'
-import { useCollapse } from '../composables/useCollapse'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useCollapse } from '../../composables/useCollapse'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const open = defineModel<boolean>('open', { default: false })
 

@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Resizable from '../../src/components/Resizable.vue'
+import Resizable from '../../src/components/Resizable/Resizable.vue'
 
 const size = shallowRef(150)
 const verticalSize = shallowRef(100)

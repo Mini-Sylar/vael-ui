@@ -31,12 +31,13 @@
 
 <!-- General-purpose resize primitive: wraps content + draggable handle, axis/edge-agnostic; no live-drag transitions -->
 <script setup lang="ts">
+import './Resizable.css'
 import { computed, useTemplateRef } from 'vue'
-import { useResizable } from '../composables/useResizable'
-import type { ResizeDirection, ResizeEdge } from '../composables/useResizable'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useResizable } from '../../composables/useResizable'
+import type { ResizeDirection, ResizeEdge } from '../../composables/useResizable'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const modelValue = defineModel<number>('size', { required: true })
 

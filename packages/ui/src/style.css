@@ -1772,145 +1772,6 @@
   }
 
   /* Accordion: plain divider borders, not boxes. */
-  .ui-accordion {
-    display: flex;
-    flex-direction: column;
-  }
-  .ui-accordion-item {
-    border-block-end: 1px solid var(--ui-border);
-  }
-  .ui-accordion-item:first-child {
-    border-block-start: 1px solid var(--ui-border);
-  }
-  .ui-accordion-header {
-    margin: 0;
-  }
-  .ui-accordion-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    inline-size: 100%;
-    padding: 0.875rem 0.125rem;
-    border: 0;
-    background: transparent;
-    color: var(--ui-text);
-    font: inherit;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    text-align: start;
-    cursor: pointer;
-  }
-  .ui-accordion-trigger:focus-visible {
-    outline: 2px solid var(--ui-primary);
-    outline-offset: -2px;
-  }
-  .ui-accordion-trigger:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  .ui-accordion-trigger-title {
-    flex: 1 1 auto;
-  }
-  .ui-accordion-chevron {
-    flex: none;
-    color: var(--ui-text-muted);
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
-  }
-  .ui-accordion-trigger[aria-expanded='true'] .ui-accordion-chevron {
-    transform: rotate(180deg);
-  }
-  .ui-accordion-panel {
-    /* Block-size exception; containment prevents reflow. */
-    contain: layout;
-    transition: block-size var(--ui-duration-enter) var(--ui-ease-in-out);
-  }
-  .ui-accordion-body {
-    padding-block-end: 1rem;
-    color: var(--ui-text-muted);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    opacity: 0;
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  /* Content fades with panel height. */
-  .ui-accordion-panel[data-state='open'] .ui-accordion-body,
-  .ui-accordion-panel[data-state='opening'] .ui-accordion-body {
-    opacity: 1;
-  }
-  /* motionCss={false}: the panel's block-size never gets an inline value
-     (see useCollapse's own doc), so it never actually collapses — leaving
-     this opacity fade running on its own would read as "closes, but only
-     the text fades" instead of the intended full defer to the consumer's
-     own animation. Chevron rotation still flips with aria-expanded; only
-     the transition itself is removed, so it snaps instead of animating. */
-  .ui-accordion-item[data-motion='off'] .ui-accordion-body {
-    opacity: 1;
-    transition: none;
-  }
-  .ui-accordion-item[data-motion='off'] .ui-accordion-chevron {
-    transition: none;
-  }
-
-  /* Collapsible: one independent disclosure. */
-  .ui-collapsible-trigger {
-    display: inline-flex;
-  }
-  .ui-collapsible--disabled .ui-collapsible-trigger {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-  .ui-collapsible-panel {
-    /* Containment prevents reflow. */
-    contain: layout;
-    transition: block-size var(--ui-duration-enter) var(--ui-ease-in-out);
-  }
-  .ui-collapsible-body {
-    opacity: 0;
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  /* Content fades with panel height. */
-  .ui-collapsible-panel[data-state='open'] .ui-collapsible-body,
-  .ui-collapsible-panel[data-state='opening'] .ui-collapsible-body {
-    opacity: 1;
-  }
-
-  .ui-separator {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .ui-separator--horizontal {
-    inline-size: 100%;
-  }
-  .ui-separator--horizontal:not(:has(.ui-separator-text)) {
-    block-size: 1px;
-    background: var(--ui-border);
-  }
-  .ui-separator--vertical {
-    flex-direction: column;
-    block-size: 100%;
-  }
-  .ui-separator--vertical:not(:has(.ui-separator-text)) {
-    inline-size: 1px;
-    background: var(--ui-border);
-  }
-  .ui-separator-line {
-    flex: 1 1 auto;
-    background: var(--ui-border);
-  }
-  .ui-separator--horizontal .ui-separator-line {
-    block-size: 1px;
-  }
-  .ui-separator--vertical .ui-separator-line {
-    inline-size: 1px;
-  }
-  .ui-separator-text {
-    flex: none;
-    font-size: 0.75rem;
-    color: var(--ui-text-muted);
-    white-space: nowrap;
-  }
 
   /* Toaster: presentation only. */
 
@@ -3038,79 +2899,6 @@
     pointer-events: none;
   }
 
-  /* Resizable General-purpose resize primitive (`useResizable.ts`/`Resizable.vue`) — an axis-agnostic wrapper that adds one draggable edge handle to any panel of content. `position: relative` anchors the handle's absolute positioning; only the release-time rubber-band snap-back transitions (`[data-resizing]` suppresses it for the live drag itself — direct manipulation must never lag the pointer, same convention as Slider's thumb position). The handle itself is styled off its OWN `data-direction`/`data-edge` attributes rather than an ancestor modifier class, so it also works standalone on an existing element that can't become this component's root — DashboardSidebar.vue's `<aside>` reuses just `.ui-resizable-handle` this way (see that file's comment). */
-  .ui-resizable {
-    position: relative;
-    transition: inline-size var(--ui-duration-enter) var(--ui-ease-in-out);
-  }
-  .ui-resizable--vertical {
-    transition-property: block-size;
-  }
-  .ui-resizable[data-resizing] {
-    transition: none;
-  }
-  .ui-resizable--disabled .ui-resizable-handle {
-    pointer-events: none;
-    opacity: 0.5;
-  }
-  .ui-resizable-handle {
-    position: absolute;
-    z-index: 1;
-    touch-action: none;
-  }
-  .ui-resizable-handle[data-direction='horizontal'] {
-    inset-block: 0;
-    inline-size: 6px;
-    cursor: col-resize;
-  }
-  .ui-resizable-handle[data-direction='horizontal'][data-edge='end'] {
-    inset-inline-end: -3px;
-  }
-  .ui-resizable-handle[data-direction='horizontal'][data-edge='start'] {
-    inset-inline-start: -3px;
-  }
-  .ui-resizable-handle[data-direction='vertical'] {
-    inset-inline: 0;
-    block-size: 6px;
-    cursor: row-resize;
-  }
-  .ui-resizable-handle[data-direction='vertical'][data-edge='end'] {
-    inset-block-end: -3px;
-  }
-  .ui-resizable-handle[data-direction='vertical'][data-edge='start'] {
-    inset-block-start: -3px;
-  }
-  /* A thin centered bar inside the wider invisible hit area — same "generous hit target, slim visual" split as DataTable's own `.ui-datatable-resize-handle::after`. */
-  .ui-resizable-handle::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    background: transparent;
-    transition: background-color var(--ui-duration-press) ease;
-  }
-  .ui-resizable-handle[data-direction='horizontal']::after {
-    inline-size: 2px;
-    block-size: 100%;
-  }
-  .ui-resizable-handle[data-direction='vertical']::after {
-    inline-size: 100%;
-    block-size: 2px;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-resizable-handle:hover::after {
-      background: var(--ui-primary);
-    }
-  }
-  .ui-resizable-handle:active::after,
-  .ui-resizable-handle[data-active]::after {
-    background: var(--ui-primary);
-  }
-  .ui-resizable-handle:focus-visible {
-    outline: 2px solid var(--ui-primary);
-    outline-offset: -2px;
-  }
-
   /* Dock macOS-style icon dock (`useDock.ts`/`Dock.vue`). Items rest at `--ui-dock-base-size` and magnify toward `--ui-dock-max-size` as the pointer nears them. * Deliberately NOT Slider/Knob/Dial's pattern (a single Vue-managed custom property on the ROOT that every part reads via `calc()`): a dock needs N items to each carry an INDEPENDENT, continuously-varying size every frame — that's the whole visual signature, neighbors fall off too, not just the hovered item — so a shared root property would force a style recalc across every item on every mousemove frame regardless of how many actually changed size. useDock.ts instead writes `scale` straight onto each item element that moved, keeping a frame's cost proportional to the affected neighborhood. This is the exact anti-pattern a recent audit flagged in Slider/Knob/Dial's own root-property approach; see `.ui-slider-thumb` above for why that pattern is still the right call THERE (only one thumb position ever changes per frame, not N independent sizes). * `--ui-dock-base-size`/`-max-size` above are themselves static custom properties (written once per prop change by Dock.vue, not per pointermove) — only the LIVE per-item scale is ever written every frame, and that write bypasses custom properties entirely. */
   .ui-dock {
     --ui-dock-base-size: 3rem;
@@ -3341,16 +3129,6 @@
     .ui-menu-list-indicator {
       transition: none;
     }
-    /* Accordion: the resize itself is movement — drop it, snap instead. Same for the chevron's rotation. The content opacity fade is kept (opacity-only, same sanctioned exception as everywhere else in this file) — it's still how a genuinely-changing item signals it. */
-    .ui-accordion-panel {
-      transition: none;
-    }
-    .ui-accordion-chevron {
-      transition: none;
-    }
-    .ui-collapsible-panel {
-      transition: none;
-    }
     /* The live drag itself is already transition:none (direct manipulation, never gated) — this only snaps the settle-back-to-idle and lock-during-loading moments, which are programmatic. */
     .ui-pull-to-refresh-zone,
     .ui-pull-to-refresh-bubble,
@@ -3389,10 +3167,6 @@
     .ui-slider-thumb:active,
     .ui-slider-thumb[data-active] {
       scale: 1;
-    }
-    /* Resizable: the live drag itself is already transition:none (direct manipulation, gated on nothing) — this only snaps the release-time rubber-band correction, which is real movement. */
-    .ui-resizable {
-      transition: none;
     }
     /* Knob: the live rotation/fill fraction are already transition:none (direct manipulation, never gated) regardless of this media query — this only drops the decorative hover/press scale, same :active reset as Slider's thumb above. */
     .ui-knob-face {

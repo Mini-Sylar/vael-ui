@@ -23,10 +23,11 @@
 </template>
 
 <script setup lang="ts">
+import './Separator.css'
 import { computed, useTemplateRef } from 'vue'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 const root = useTemplateRef<HTMLElement>('root')
 
