@@ -39,15 +39,16 @@
 -->
 
 <script setup lang="ts">
+import './Dock.css'
 import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 import type { Component } from 'vue'
 import type { Side } from '@floating-ui/dom'
-import { useDock } from '../composables/useDock'
-import type { DockOrientation } from '../composables/useDock'
-import { useClassMerge, resolveUiPart } from '../classes'
-import type { UiPartValue } from '../classes'
-import { useThemedUi } from '../theme'
-import { vTooltip } from '../directives/vTooltip'
+import { useDock } from '../../composables/useDock'
+import type { DockOrientation } from '../../composables/useDock'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
+import { vTooltip } from '../../directives/vTooltip'
 
 /**
  * One dock item. Deliberately compatible with `MenuItemData`'s established

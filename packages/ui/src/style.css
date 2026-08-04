@@ -2899,121 +2899,6 @@
     pointer-events: none;
   }
 
-  /* Dock macOS-style icon dock (`useDock.ts`/`Dock.vue`). Items rest at `--ui-dock-base-size` and magnify toward `--ui-dock-max-size` as the pointer nears them. * Deliberately NOT Slider/Knob/Dial's pattern (a single Vue-managed custom property on the ROOT that every part reads via `calc()`): a dock needs N items to each carry an INDEPENDENT, continuously-varying size every frame — that's the whole visual signature, neighbors fall off too, not just the hovered item — so a shared root property would force a style recalc across every item on every mousemove frame regardless of how many actually changed size. useDock.ts instead writes `scale` straight onto each item element that moved, keeping a frame's cost proportional to the affected neighborhood. This is the exact anti-pattern a recent audit flagged in Slider/Knob/Dial's own root-property approach; see `.ui-slider-thumb` above for why that pattern is still the right call THERE (only one thumb position ever changes per frame, not N independent sizes). * `--ui-dock-base-size`/`-max-size` above are themselves static custom properties (written once per prop change by Dock.vue, not per pointermove) — only the LIVE per-item scale is ever written every frame, and that write bypasses custom properties entirely. */
-  .ui-dock {
-    --ui-dock-base-size: 3rem;
-    --ui-dock-max-size: 4.5rem;
-    display: flex;
-    align-items: flex-end;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border-radius: calc(var(--ui-radius-surface) + 0.75rem);
-    background: var(--ui-surface);
-    border: 1px solid var(--ui-border);
-    box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);
-    touch-action: none;
-  }
-  .ui-dock--vertical {
-    flex-direction: column;
-    align-items: flex-end;
-  }
-  .ui-dock--disabled {
-    opacity: 0.6;
-    pointer-events: none;
-  }
-  .ui-dock-item {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    inline-size: var(--ui-dock-base-size);
-    block-size: var(--ui-dock-base-size);
-    border: none;
-    border-radius: var(--ui-radius);
-    background: var(--ui-muted);
-    color: var(--ui-text);
-    cursor: pointer;
-    /* Bottom-anchored growth is the signature macOS look — a magnified icon rises up off the shelf line rather than growing equally in both directions. A vertical dock has no fixed "shelf" side (it could sit on either screen edge), so it grows from its own center instead. */
-    transform-origin: bottom center;
-    /* This transition only ever governs the discrete :active press-shrink
-       below. The live magnify effect itself is driven entirely by
-       useDock.ts's own rAF spring loop, writing `transform` straight to
-       the element every frame with no CSS transition involved — a
-       transition retargeted every frame is what caused visible judder in
-       Safari; a continuous per-frame chase toward the target avoids it
-       structurally instead of tuning around it. */
-    transition: transform var(--ui-duration-press) var(--ui-ease-out);
-  }
-  .ui-dock--vertical .ui-dock-item {
-    transform-origin: center;
-  }
-  .ui-dock-item :where(svg) {
-    inline-size: 55%;
-    block-size: 55%;
-  }
-  .ui-dock-item:focus-visible {
-    outline: 2px solid var(--ui-primary);
-    outline-offset: 2px;
-  }
-  .ui-dock-item:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-  /* Shrink-on-press — same direction as Button/Slider/Knob/Dial's own press feedback. Only visible on touch/keyboard activation in practice: on a fine pointer the live magnified transform (an inline style) already wins the cascade over this rule regardless of :active. */
-  .ui-dock-item:active:not([style*='transform']) {
-    transform: scale(0.94);
-  }
-  .ui-dock-item-badge {
-    position: absolute;
-    inset-block-start: -0.25rem;
-    inset-inline-end: -0.25rem;
-    min-inline-size: 1.125rem;
-    block-size: 1.125rem;
-    padding-inline: 0.25rem;
-    border-radius: 9999px;
-    background: var(--ui-danger);
-    color: var(--ui-danger-contrast, #fff);
-    font-size: 0.625rem;
-    font-weight: 600;
-    line-height: 1.125rem;
-    text-align: center;
-    pointer-events: none;
-  }
-
-  /* SwipeToReveal The actions slot is a permanent sibling BEHIND the content, clipped by the root's own overflow:hidden while closed — never v-if'd or display:none'd, so it stays keyboard/screen-reader reachable regardless of visual state (see SwipeToReveal.vue's own comment). */
-  .ui-swipe-reveal {
-    position: relative;
-    overflow: hidden;
-    border-radius: var(--ui-radius);
-    touch-action: pan-y;
-  }
-  .ui-swipe-reveal-actions {
-    position: absolute;
-    inset-block: 0;
-    display: flex;
-    align-items: stretch;
-  }
-  .ui-swipe-reveal[data-side='trailing'] .ui-swipe-reveal-actions {
-    inset-inline-end: 0;
-  }
-  .ui-swipe-reveal[data-side='leading'] .ui-swipe-reveal-actions {
-    inset-inline-start: 0;
-  }
-  .ui-swipe-reveal-content {
-    position: relative;
-    z-index: 1;
-    background: var(--ui-surface);
-    touch-action: pan-y;
-    cursor: grab;
-    /* Only the release-time settle — the live drag itself writes `offset` (and therefore this transform) every pointermove frame with zero transition delay, same "never gate a live drag" stance as Resizable/Slider/Knob/Dial. */
-    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-swipe-reveal[data-dragging] .ui-swipe-reveal-content {
-    transition: none;
-    cursor: grabbing;
-  }
-
   /* Reduced motion */
   /* Removes movement (scale, spin, width slides) but keeps opacity fades — a hard cut is more jarring than a fade, and fades don't trigger vestibular issues. */
   @media (prefers-reduced-motion: reduce) {
@@ -3186,17 +3071,6 @@
     .ui-file-item-enter-active,
     .ui-file-item-leave-active {
       transition: opacity var(--ui-duration-enter) ease;
-    }
-    /* Dock: the magnification itself never runs at all under reduced motion — useDock.ts's canMagnify() check gates the whole effect off in JS before it writes a single `scale`, not just here in CSS. That's a deliberate step further than an instant-snap: the magnification is closer to a decorative flourish (a real dock is fully usable at resting size) than essential feedback like a live drag position, so there's nothing worth preserving even instantly. This rule only resets the incidental press-feedback scale, same :active reset as Slider/Knob/Dial's above. */
-    .ui-dock-item {
-      transition: none;
-    }
-    .ui-dock-item:active {
-      scale: 1;
-    }
-    /* SwipeToReveal: the live drag itself is already transition:none (direct manipulation, never gated) regardless of this media query — same reasoning as Resizable's own entry above — this only snaps the release-time settle, which is real movement. */
-    .ui-swipe-reveal-content {
-      transition: none;
     }
     /* Calendar's month-transition is movement (translateX) — dropped here, same rule as every other position/slide transition in this block; the opacity half of the crossfade is kept. */
     .ui-calendar-grid-enter-active,

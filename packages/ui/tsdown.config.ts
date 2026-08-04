@@ -31,6 +31,8 @@ export default defineConfig({
     './src/components/Collapsible/Collapsible.vue',
     './src/components/Separator/Separator.vue',
     './src/components/Resizable/Resizable.vue',
+    './src/components/Dock/Dock.vue',
+    './src/components/SwipeToReveal/SwipeToReveal.vue',
   ],
   platform: 'neutral',
   plugins: [Vue({ isProduction: true })],

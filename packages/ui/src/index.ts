@@ -257,8 +257,8 @@ export type {
   UsePullToRefreshReturn,
 } from './composables/usePullToRefresh'
 
-export { default as Dock } from './components/Dock.vue'
-export type { DockItemData } from './components/Dock.vue'
+export { default as Dock } from './components/Dock/Dock.vue'
+export type { DockItemData } from './components/Dock/Dock.vue'
 export { dockFalloff, dockItemSize, dockItemSizes, useDock } from './composables/useDock'
 export type {
   DockFalloffOptions,
@@ -285,7 +285,7 @@ export type {
   SpeedDialTriggerMode,
 } from './components/SpeedDial/SpeedDial.vue'
 
-export { default as SwipeToReveal } from './components/SwipeToReveal.vue'
+export { default as SwipeToReveal } from './components/SwipeToReveal/SwipeToReveal.vue'
 export { useSwipeReveal, resolveSwipeCommit } from './composables/useSwipeReveal'
 export type {
   SwipeRevealSide,

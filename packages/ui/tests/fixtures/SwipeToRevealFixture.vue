@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import SwipeToReveal from '../../src/components/SwipeToReveal.vue'
+import SwipeToReveal from '../../src/components/SwipeToReveal/SwipeToReveal.vue'
 import type { SwipeRevealSide } from '../../src/composables/useSwipeReveal'
 
 withDefaults(defineProps<{ side?: SwipeRevealSide; disabled?: boolean }>(), {

@@ -1,0 +1,82 @@
+@layer ui-components {
+  .ui-dock {
+    --ui-dock-base-size: 3rem;
+    --ui-dock-max-size: 4.5rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: calc(var(--ui-radius-surface) + 0.75rem);
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);
+    touch-action: none;
+  }
+  .ui-dock--vertical {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  .ui-dock--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .ui-dock-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: var(--ui-dock-base-size);
+    block-size: var(--ui-dock-base-size);
+    border: none;
+    border-radius: var(--ui-radius);
+    background: var(--ui-muted);
+    color: var(--ui-text);
+    cursor: pointer;
+    transform-origin: bottom center;
+    transition: transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-dock--vertical .ui-dock-item {
+    transform-origin: center;
+  }
+  .ui-dock-item :where(svg) {
+    inline-size: 55%;
+    block-size: 55%;
+  }
+  .ui-dock-item:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-dock-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .ui-dock-item:active:not([style*='transform']) {
+    transform: scale(0.94);
+  }
+  .ui-dock-item-badge {
+    position: absolute;
+    inset-block-start: -0.25rem;
+    inset-inline-end: -0.25rem;
+    min-inline-size: 1.125rem;
+    block-size: 1.125rem;
+    padding-inline: 0.25rem;
+    border-radius: 9999px;
+    background: var(--ui-danger);
+    color: var(--ui-danger-contrast, #fff);
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.125rem;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-dock-item {
+      transition: none;
+    }
+    .ui-dock-item:active {
+      scale: 1;
+    }
+  }
+}
