@@ -1,0 +1,92 @@
+@layer ui-components {
+  /* Switch Same visually-hidden-input technique as Checkbox. Thumb travel is a plain `translate` keyed off `data-state`; the thumb itself carries no Vue-managed inline style, so an imperative spring library may own its transform directly (`thumbEl` is exposed for exactly that). */
+  .ui-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--ui-text);
+  }
+  .ui-switch--sm {
+    --ui-switch-track-w: 1.75rem;
+    --ui-switch-track-h: 1rem;
+    --ui-switch-thumb: 0.75rem;
+  }
+  .ui-switch--md {
+    --ui-switch-track-w: 2.25rem;
+    --ui-switch-track-h: 1.25rem;
+    --ui-switch-thumb: 1rem;
+  }
+  .ui-switch-control {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--ui-switch-track-w);
+    block-size: var(--ui-switch-track-h);
+  }
+  .ui-switch-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .ui-switch-track {
+    position: absolute;
+    inset: 0;
+    pointer-events: none; /* input (below in paint order) stays the click target */
+    border: 1px solid var(--ui-border-strong);
+    border-radius: 9999px;
+    background: var(--ui-muted);
+    transition:
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
+  }
+  .ui-switch-thumb {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 2px;
+    inline-size: var(--ui-switch-thumb);
+    block-size: var(--ui-switch-thumb);
+    border-radius: 9999px;
+    background: var(--ui-surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+    translate: 0 -50%;
+    transition: translate var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-switch[data-state='checked'] .ui-switch-track {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+  }
+  .ui-switch[data-state='checked'] .ui-switch-thumb {
+    translate: calc(var(--ui-switch-track-w) - var(--ui-switch-thumb) - 4px) -50%;
+  }
+  .ui-switch-input:focus-visible + .ui-switch-track {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-switch[data-invalid] .ui-switch-track {
+    border-color: var(--ui-danger);
+  }
+  .ui-switch[data-invalid] .ui-switch-input:focus-visible + .ui-switch-track {
+    outline-color: var(--ui-danger);
+  }
+  .ui-switch--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-switch--disabled .ui-switch-input {
+    cursor: not-allowed;
+  }
+  /* First paint only — see Checkbox's identical guard. */
+  .ui-switch--no-anim .ui-switch-thumb {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-switch-thumb {
+      transition: none;
+    }
+  }
+}

@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import SelectFixture from './fixtures/SelectFixture.vue'
 import SelectFormFixture from './fixtures/SelectFormFixture.vue'
-import Select from '../src/components/Select.vue'
+import Select from '../src/components/Select/Select.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition.

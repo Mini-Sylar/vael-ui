@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Tabs from '../../src/components/Tabs.vue'
+import Tabs from '../../src/components/Tabs/Tabs.vue'
 
 type Item = 'one' | 'two' | 'three'
 const items: Item[] = ['one', 'two', 'three']

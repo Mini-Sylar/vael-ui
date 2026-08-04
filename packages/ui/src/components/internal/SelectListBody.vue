@@ -90,6 +90,7 @@ export interface SelectItemData {
   Comment stays outside <template> — see Button.vue for why.
 -->
 <script setup lang="ts" generic="T extends SelectItemData">
+import '../shared/loader-spinner.css'
 import { computed, useTemplateRef } from 'vue'
 import { useVirtualizer } from '../../composables/useVirtualizer'
 import type { ScrollAlign } from '../../composables/useVirtualizer'

@@ -15,8 +15,11 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import TreeSelect from '../../src/components/TreeSelect.vue'
-import type { TreeSelectNode, TreeSelectSelectionMode } from '../../src/components/TreeSelect.vue'
+import TreeSelect from '../../src/components/TreeSelect/TreeSelect.vue'
+import type {
+  TreeSelectNode,
+  TreeSelectSelectionMode,
+} from '../../src/components/TreeSelect/TreeSelect.vue'
 
 const props = withDefaults(
   defineProps<{

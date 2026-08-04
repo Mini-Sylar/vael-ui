@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import DatePickerFixture from './fixtures/DatePickerFixture.vue'
 import DatePickerFormFixture from './fixtures/DatePickerFormFixture.vue'
-import DatePicker from '../src/components/DatePicker.vue'
+import DatePicker from '../src/components/DatePicker/DatePicker.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition —

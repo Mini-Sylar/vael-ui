@@ -4,8 +4,8 @@ import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import FieldFixture from './fixtures/FieldFixture.vue'
-import Field from '../src/components/Field.vue'
-import Input from '../src/components/Input.vue'
+import Field from '../src/components/Field/Field.vue'
+import Input from '../src/components/Input/Input.vue'
 
 test('label "for" points at the control\'s id', async () => {
   const screen = render(FieldFixture, { props: { label: 'Name' } })

@@ -1,0 +1,54 @@
+@layer ui-components {
+  .ui-select-positioner {
+    z-index: var(--ui-z-popover, 55);
+    inline-size: max-content;
+  }
+  .ui-select-panel {
+    position: relative;
+    /* Rows are virtualized (absolutely positioned, out of flow), so they
+       never contribute to a `max-content` measurement — matching the
+       trigger's width exactly is the real constraint, just floored so a
+       `sm` trigger can't force long option labels to truncate. */
+    inline-size: var(--ui-anchor-inline-size);
+    min-inline-size: 12rem;
+    border-radius: var(--ui-radius-surface);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    box-shadow: var(--ui-panel-shadow);
+    overflow: hidden;
+  }
+  .ui-select-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-select-leave-active {
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-select-enter-from,
+  .ui-select-leave-to {
+    opacity: 0;
+  }
+  .ui-select-enter-active .ui-select-panel {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-select-leave-active .ui-select-panel {
+    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* Never from scale(0). */
+  .ui-select-enter-from .ui-select-panel,
+  .ui-select-leave-to .ui-select-panel {
+    transform: scale(0.96);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-select-enter-active,
+    .ui-select-leave-active,
+    .ui-select-enter-active .ui-select-panel,
+    .ui-select-leave-active .ui-select-panel {
+      transition: none;
+    }
+    .ui-select-enter-from .ui-select-panel,
+    .ui-select-leave-to .ui-select-panel {
+      transform: none;
+    }
+  }
+}

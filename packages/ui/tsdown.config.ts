@@ -1,48 +1,14 @@
+import { existsSync, readdirSync } from 'node:fs'
 import { defineConfig } from 'tsdown'
 import Vue from 'unplugin-vue/rolldown'
 
+const componentEntries = readdirSync('./src/components', { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((dir) => `./src/components/${dir.name}/${dir.name}.vue`)
+  .filter((path) => existsSync(path))
+
 export default defineConfig({
-  entry: [
-    './src/index.ts',
-    './src/components/Button/Button.vue',
-    './src/components/ButtonGroup/ButtonGroup.vue',
-    './src/components/Loader/Loader.vue',
-    './src/components/PullToRefresh/PullToRefresh.vue',
-    './src/components/ConfigProvider/ConfigProvider.vue',
-    './src/components/Toaster/Toaster.vue',
-    './src/components/Message/Message.vue',
-    './src/components/Progress/Progress.vue',
-    './src/components/Skeleton/Skeleton.vue',
-    './src/components/SplitButton/SplitButton.vue',
-    './src/components/Toolbar/Toolbar.vue',
-    './src/components/SelectButton/SelectButton.vue',
-    './src/components/Dial/Dial.vue',
-    './src/components/SpeedDial/SpeedDial.vue',
-    './src/components/DataTable/DataTable.vue',
-    './src/components/Pagination/Pagination.vue',
-    './src/components/Card/Card.vue',
-    './src/components/Avatar/Avatar.vue',
-    './src/components/Badge/Badge.vue',
-    './src/components/Tag/Tag.vue',
-    './src/components/Chip/Chip.vue',
-    './src/components/Kbd/Kbd.vue',
-    './src/components/Accordion/Accordion.vue',
-    './src/components/AccordionItem/AccordionItem.vue',
-    './src/components/Collapsible/Collapsible.vue',
-    './src/components/Separator/Separator.vue',
-    './src/components/Resizable/Resizable.vue',
-    './src/components/Dock/Dock.vue',
-    './src/components/SwipeToReveal/SwipeToReveal.vue',
-    './src/components/Dialog/Dialog.vue',
-    './src/components/DialogHost/DialogHost.vue',
-    './src/components/Drawer/Drawer.vue',
-    './src/components/BottomSheet/BottomSheet.vue',
-    './src/components/Popover/Popover.vue',
-    './src/components/PopoverHost/PopoverHost.vue',
-    './src/components/Tooltip/Tooltip.vue',
-    './src/components/TooltipHost/TooltipHost.vue',
-    './src/components/ContextMenu/ContextMenu.vue',
-  ],
+  entry: ['./src/index.ts', './src/style-entry.ts', ...componentEntries],
   platform: 'neutral',
   plugins: [Vue({ isProduction: true })],
   dts: { vue: true },

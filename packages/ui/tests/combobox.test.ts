@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import ComboboxFixture from './fixtures/ComboboxFixture.vue'
 import ComboboxFormFixture from './fixtures/ComboboxFormFixture.vue'
-import Combobox from '../src/components/Combobox.vue'
+import Combobox from '../src/components/Combobox/Combobox.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition.

@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Checkbox from '../../src/components/Checkbox.vue'
+import Checkbox from '../../src/components/Checkbox/Checkbox.vue'
 
 withDefaults(
   defineProps<{

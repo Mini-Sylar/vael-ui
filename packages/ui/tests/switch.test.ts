@@ -3,7 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import SwitchFixture from './fixtures/SwitchFixture.vue'
-import Switch from '../src/components/Switch.vue'
+import Switch from '../src/components/Switch/Switch.vue'
 
 test('click toggles the model; label click toggles it too', async () => {
   const screen = render(SwitchFixture, {})

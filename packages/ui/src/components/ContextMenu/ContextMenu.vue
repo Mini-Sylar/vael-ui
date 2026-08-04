@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import type { MenuAlign, MenuEntry, MenuItemData, MenuSide } from '../Menu.vue'
+import type { MenuAlign, MenuEntry, MenuItemData, MenuSide } from '../Menu/Menu.vue'
 import type { UiPartValue } from '../../classes'
 
 export type ContextMenuSide = MenuSide
@@ -87,7 +87,7 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
 import './ContextMenu.css'
 import { computed, nextTick, onScopeDispose, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
-import Menu from '../Menu.vue'
+import Menu from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useThemedUi } from '../../theme'
 

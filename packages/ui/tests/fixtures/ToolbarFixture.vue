@@ -21,9 +21,9 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import Button from '../../src/components/Button/Button.vue'
-import Menu from '../../src/components/Menu.vue'
+import Menu from '../../src/components/Menu/Menu.vue'
 import Toolbar from '../../src/components/Toolbar/Toolbar.vue'
-import type { MenuItemData } from '../../src/components/Menu.vue'
+import type { MenuItemData } from '../../src/components/Menu/Menu.vue'
 
 defineProps<{ orientation?: 'horizontal' | 'vertical' }>()
 

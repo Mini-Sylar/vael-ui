@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Knob from '../../src/components/Knob.vue'
+import Knob from '../../src/components/Knob/Knob.vue'
 
 const basicValue = shallowRef(20)
 const disabledValue = shallowRef(10)

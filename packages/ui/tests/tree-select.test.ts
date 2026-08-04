@@ -3,7 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TreeSelectFixture from './fixtures/TreeSelectFixture.vue'
-import TreeSelect from '../src/components/TreeSelect.vue'
+import TreeSelect from '../src/components/TreeSelect/TreeSelect.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition —

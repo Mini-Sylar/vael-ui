@@ -41,8 +41,8 @@ import { useToolbar } from '../../composables/useToolbar'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
-import Menu from '../Menu.vue'
-import type { MenuItemData } from '../Menu.vue'
+import Menu from '../Menu/Menu.vue'
+import type { MenuItemData } from '../Menu/Menu.vue'
 
 const props = withDefaults(
   defineProps<{

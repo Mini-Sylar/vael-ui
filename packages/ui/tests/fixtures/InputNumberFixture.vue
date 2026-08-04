@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import InputNumber from '../../src/components/InputNumber.vue'
+import InputNumber from '../../src/components/InputNumber/InputNumber.vue'
 
 withDefaults(
   defineProps<{

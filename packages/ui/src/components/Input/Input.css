@@ -1,0 +1,87 @@
+@layer ui-components {
+  /* Input The FRAME (this element) carries border/background and the focus ring; the native <input> inside is border:none/background:transparent so the two read as one continuous surface — consumers think of the input as "the input" (Input.vue's SFC comment). `#start`/`#end` are wrapper-owned placement, the same contract as Button's leading/trailing icon slots. */
+  .ui-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface);
+    padding-inline: 0.75rem;
+    cursor: text;
+    /* Colors only — text inputs are the touched-constantly tier: no scale, no slide. */
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-input--sm {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-input--md {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-input--lg {
+    block-size: 2.5rem;
+    font-size: 1rem;
+    border-radius: var(--ui-radius);
+  }
+  .ui-input-el {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    block-size: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+  }
+  .ui-input-el::placeholder {
+    color: var(--ui-text-muted);
+  }
+  /* WebKit paints its own yellow/blue fill behind autofilled inputs and ignores a plain `background` override — an opaque inset shadow the size of the whole field is the only thing that actually beats it. Tokens, not literal colors, so this still matches the surface in dark mode; the absurd transition-delay is the standard trick to stop Chrome flashing its own color for one frame before this rule's shadow paints over it. */
+  .ui-input-el:-webkit-autofill,
+  .ui-input-el:-webkit-autofill:hover,
+  .ui-input-el:-webkit-autofill:focus {
+    box-shadow: 0 0 0 1000px var(--ui-surface) inset;
+    -webkit-text-fill-color: var(--ui-text);
+    caret-color: var(--ui-text);
+    transition: background-color 999999s ease-in-out 0s;
+  }
+  /* inline-flex, not inline-grid + place-items: a single icon centers identically either way, but a slot with MORE than one child (Combobox's #end carries a consumer slot, a clear button, AND the chevron) needs a ROW — grid's implicit auto-placement stacked them into separate rows instead, one on top of the other. */
+  .ui-input-start,
+  .ui-input-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+    color: var(--ui-text-muted);
+  }
+  /* Pointer focus: the 1px border quietly turns primary (transitioned). The full ring is reserved for keyboard travel — data-focus-visible, set from the tracked input modality (useFocusVisible.ts), because native :focus-visible matches text controls on mouse clicks too. */
+  .ui-input:focus-within {
+    border-color: var(--ui-primary);
+  }
+  .ui-input[data-focus-visible] {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-input[data-state='invalid'] {
+    border-color: var(--ui-danger);
+  }
+  .ui-input[data-state='invalid']:focus-within {
+    border-color: var(--ui-danger);
+  }
+  .ui-input[data-state='invalid'][data-focus-visible] {
+    outline-color: var(--ui-danger);
+  }
+  .ui-input--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-input--disabled .ui-input-el {
+    cursor: not-allowed;
+  }
+}

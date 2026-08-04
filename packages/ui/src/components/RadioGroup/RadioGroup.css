@@ -1,0 +1,20 @@
+@layer ui-components {
+  /* RadioGroup Compound with Radio; zero keyboard JS — same-name native radios give APG roving arrows (move AND select) and Tab enter/leave for free (see RadioGroup.vue's comment). `orientation` is layout only. */
+  .ui-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+  .ui-radio-group:not(.ui-radio-group--vertical) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  .ui-radio-group[data-invalid] .ui-radio-control {
+    border-color: var(--ui-danger);
+  }
+  .ui-radio-group[data-invalid] .ui-radio-input:focus-visible + .ui-radio-control {
+    outline-color: var(--ui-danger);
+  }
+}

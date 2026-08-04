@@ -75,7 +75,7 @@
   Visual join via inner-corners zeroed + trigger's colored border-inline-start (color-mix).
 -->
 <script lang="ts">
-import type { MenuAlign, MenuSide } from '../Menu.vue'
+import type { MenuAlign, MenuSide } from '../Menu/Menu.vue'
 
 export type { MenuAlign as SplitButtonAlign, MenuSide as SplitButtonSide }
 </script>
@@ -86,8 +86,8 @@ import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Button from '../Button/Button.vue'
 import type { ButtonSize, ButtonVariant } from '../Button/Button.vue'
-import Menu from '../Menu.vue'
-import type { MenuEntry, MenuItemData } from '../Menu.vue'
+import Menu from '../Menu/Menu.vue'
+import type { MenuEntry, MenuItemData } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'

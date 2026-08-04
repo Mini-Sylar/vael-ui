@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import DatePicker from '../../src/components/DatePicker.vue'
+import DatePicker from '../../src/components/DatePicker/DatePicker.vue'
 
 const model = shallowRef<Date | null>(null)
 const formEl = useTemplateRef('formEl')

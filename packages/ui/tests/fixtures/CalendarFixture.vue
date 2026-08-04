@@ -12,8 +12,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Calendar from '../../src/components/Calendar.vue'
-import type { CalendarDisabledDates } from '../../src/components/Calendar.vue'
+import Calendar from '../../src/components/Calendar/Calendar.vue'
+import type { CalendarDisabledDates } from '../../src/components/Calendar/Calendar.vue'
 
 const props = withDefaults(
   defineProps<{

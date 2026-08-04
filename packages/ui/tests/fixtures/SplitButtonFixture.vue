@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
 import SplitButton from '../../src/components/SplitButton/SplitButton.vue'
-import type { MenuItemData } from '../../src/components/Menu.vue'
+import type { MenuItemData } from '../../src/components/Menu/Menu.vue'
 
 const items: MenuItemData[] = [
   { label: 'Save As...', value: 'save-as' },

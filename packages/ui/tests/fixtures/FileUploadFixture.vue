@@ -45,8 +45,8 @@
 
 <script setup lang="ts">
 import { reactive, shallowRef } from 'vue'
-import FileUpload from '../../src/components/FileUpload.vue'
-import type { FileRejectReason } from '../../src/components/FileUpload.vue'
+import FileUpload from '../../src/components/FileUpload/FileUpload.vue'
+import type { FileRejectReason } from '../../src/components/FileUpload/FileUpload.vue'
 
 const files = shallowRef<File[]>([])
 const acceptFiles = shallowRef<File[]>([])

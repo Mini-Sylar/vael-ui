@@ -1,3 +1,4 @@
+import '../components/shared/scroll-fade.css'
 import { watchEffect } from 'vue'
 import type { Directive, DirectiveBinding } from 'vue'
 

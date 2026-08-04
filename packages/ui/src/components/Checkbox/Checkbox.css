@@ -1,0 +1,115 @@
+@layer ui-components {
+  /* Checkbox Native-first (plan convention 17): a real checkbox sits opacity:0 over `.ui-checkbox-box`, keeping focus, click, and the touch target — the box beside it is pure visual. Toggles get native `:focus-visible` directly (unlike text inputs, it already matches keyboard-only), no tracked-modality attribute needed here. */
+  .ui-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--ui-text);
+  }
+  .ui-checkbox-control {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+  }
+  .ui-checkbox--sm .ui-checkbox-control {
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
+  .ui-checkbox--sm .ui-checkbox-box {
+    border-radius: calc(var(--ui-radius) - 7px);
+  }
+  .ui-checkbox--md .ui-checkbox-control {
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+  }
+  .ui-checkbox--md .ui-checkbox-box {
+    border-radius: calc(var(--ui-radius) - 6px);
+  }
+  .ui-checkbox-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .ui-checkbox-box {
+    position: absolute;
+    inset: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* input (below in paint order) stays the click target */
+    border: 1px solid var(--ui-border-strong);
+    background: var(--ui-surface);
+    color: var(--ui-primary-contrast);
+    transition:
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
+  }
+  .ui-checkbox-check,
+  .ui-checkbox-indeterminate {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    opacity: 0;
+  }
+  .ui-checkbox-check path {
+    stroke-dasharray: 16;
+    stroke-dashoffset: 16;
+  }
+  .ui-checkbox[data-state='checked'] .ui-checkbox-box,
+  .ui-checkbox[data-state='indeterminate'] .ui-checkbox-box {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+  }
+  /* Draw in on check; uncheck only fades out (never un-draws — that reads as rewinding). The rule below stops applying on uncheck, taking its `transition` with it, so stroke-dashoffset snaps back invisibly under the fade instead of animating back out. */
+  .ui-checkbox[data-state='checked'] .ui-checkbox-check {
+    opacity: 1;
+    transition: opacity var(--ui-duration-press) ease;
+  }
+  .ui-checkbox[data-state='checked'] .ui-checkbox-check path {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-checkbox[data-state='indeterminate'] .ui-checkbox-indeterminate {
+    opacity: 1;
+    transition: opacity var(--ui-duration-press) ease;
+  }
+  .ui-checkbox-input:focus-visible + .ui-checkbox-box {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-checkbox[data-invalid] .ui-checkbox-box {
+    border-color: var(--ui-danger);
+  }
+  .ui-checkbox[data-invalid] .ui-checkbox-input:focus-visible + .ui-checkbox-box {
+    outline-color: var(--ui-danger);
+  }
+  .ui-checkbox--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-checkbox--disabled .ui-checkbox-input {
+    cursor: not-allowed;
+  }
+  /* First paint only: a pre-checked box must not visibly draw its check on
+     page load (the Badge/useTabIndicator first-mount-guard technique). */
+  .ui-checkbox--no-anim .ui-checkbox-box,
+  .ui-checkbox--no-anim .ui-checkbox-check,
+  .ui-checkbox--no-anim .ui-checkbox-check path,
+  .ui-checkbox--no-anim .ui-checkbox-indeterminate {
+    transition: none;
+  }
+  .ui-checkbox-label {
+    line-height: 1.4;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Checkbox: the check "draws" via stroke-dashoffset — movement — so it becomes an opacity-only fade instead, same swap as everywhere else in this file. Colors and the indeterminate fade (already opacity-only) are kept as-is. */
+    .ui-checkbox[data-state='checked'] .ui-checkbox-check path {
+      transition: none;
+    }
+  }
+}

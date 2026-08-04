@@ -21,8 +21,8 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Select from '../../src/components/Select.vue'
-import type { SelectItemData } from '../../src/components/Select.vue'
+import Select from '../../src/components/Select/Select.vue'
+import type { SelectItemData } from '../../src/components/Select/Select.vue'
 
 const props = withDefaults(
   defineProps<{

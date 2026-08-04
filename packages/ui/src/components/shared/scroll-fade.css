@@ -1,0 +1,53 @@
+@layer ui-components {
+  /* Scroll fade: general-purpose. */
+  @property --fade-top-end {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+  }
+  @property --fade-bottom-start {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 94%;
+  }
+
+  .scroll-fade {
+    /* Variable prevents Lightning CSS from folding scroll() into shorthand. */
+    --timeline-self: scroll(self);
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 var(--fade-top-end),
+      #000 var(--fade-bottom-start),
+      transparent 99%
+    );
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    animation:
+      scroll-fade-top linear both,
+      scroll-fade-bottom linear both;
+    animation-timeline: var(--timeline-self), var(--timeline-self);
+    animation-range:
+      0px 40px,
+      90% 100%;
+  }
+
+  @keyframes scroll-fade-top {
+    from {
+      --fade-top-end: 0%;
+    }
+    to {
+      --fade-top-end: 6%;
+    }
+  }
+
+  @keyframes scroll-fade-bottom {
+    from {
+      --fade-bottom-start: 94%;
+    }
+    to {
+      --fade-bottom-start: 100%;
+    }
+  }
+}

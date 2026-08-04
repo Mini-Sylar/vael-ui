@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Switch from '../../src/components/Switch.vue'
+import Switch from '../../src/components/Switch/Switch.vue'
 
 withDefaults(defineProps<{ disabled?: boolean }>(), { disabled: false })
 

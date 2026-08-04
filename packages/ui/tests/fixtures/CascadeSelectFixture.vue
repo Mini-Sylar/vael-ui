@@ -16,8 +16,11 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import CascadeSelect from '../../src/components/CascadeSelect.vue'
-import type { CascadeSelectItem, CascadeSelectPath } from '../../src/components/CascadeSelect.vue'
+import CascadeSelect from '../../src/components/CascadeSelect/CascadeSelect.vue'
+import type {
+  CascadeSelectItem,
+  CascadeSelectPath,
+} from '../../src/components/CascadeSelect/CascadeSelect.vue'
 
 const props = withDefaults(
   defineProps<{ disabled?: boolean; clearable?: boolean; items?: CascadeSelectItem[] }>(),

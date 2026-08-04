@@ -15,8 +15,8 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Field from '../../src/components/Field.vue'
-import Input from '../../src/components/Input.vue'
+import Field from '../../src/components/Field/Field.vue'
+import Input from '../../src/components/Input/Input.vue'
 
 withDefaults(
   defineProps<{

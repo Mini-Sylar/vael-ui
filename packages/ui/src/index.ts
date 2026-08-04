@@ -1,5 +1,4 @@
 import './components/shared/tokens.css'
-import './style.css'
 
 export { default as Button } from './components/Button/Button.vue'
 export type {
@@ -25,35 +24,39 @@ export type {
   MessageProps,
   MessageVariant,
 } from './components/Message/Message.vue'
-export { default as Field } from './components/Field.vue'
+export { default as Field } from './components/Field/Field.vue'
 export { fieldKey } from './composables/fieldContext'
 export type { FieldContext } from './composables/fieldContext'
-export { default as Input } from './components/Input.vue'
-export { default as Textarea } from './components/Textarea.vue'
-export { default as InputNumber } from './components/InputNumber.vue'
-export { default as OtpInput } from './components/OtpInput.vue'
-export { default as Checkbox } from './components/Checkbox.vue'
-export { default as Switch } from './components/Switch.vue'
-export { default as RadioGroup } from './components/RadioGroup.vue'
-export type { RadioGroupContext } from './components/RadioGroup.vue'
-export { default as Radio } from './components/Radio.vue'
+export { default as Input } from './components/Input/Input.vue'
+export { default as Textarea } from './components/Textarea/Textarea.vue'
+export { default as InputNumber } from './components/InputNumber/InputNumber.vue'
+export { default as OtpInput } from './components/OtpInput/OtpInput.vue'
+export { default as Checkbox } from './components/Checkbox/Checkbox.vue'
+export { default as Switch } from './components/Switch/Switch.vue'
+export { default as RadioGroup } from './components/RadioGroup/RadioGroup.vue'
+export type { RadioGroupContext } from './components/RadioGroup/RadioGroup.vue'
+export { default as Radio } from './components/Radio/Radio.vue'
 export { default as SelectButton } from './components/SelectButton/SelectButton.vue'
 export type { SelectButtonItem } from './components/SelectButton/SelectButton.vue'
-export { default as Knob } from './components/Knob.vue'
+export { default as Knob } from './components/Knob/Knob.vue'
 export { default as Dial } from './components/Dial/Dial.vue'
 export { default as Chip } from './components/Chip/Chip.vue'
-export { default as Select } from './components/Select.vue'
+export { default as Select } from './components/Select/Select.vue'
 export type {
   SelectItemData,
   SelectSide,
   SelectAlign,
   SelectVirtualizeConfig,
-} from './components/Select.vue'
-export { default as Combobox } from './components/Combobox.vue'
-export type { ComboboxAlign, ComboboxFilter, ComboboxSide } from './components/Combobox.vue'
-export { default as Slider } from './components/Slider.vue'
-export { default as FileUpload } from './components/FileUpload.vue'
-export type { FileRejectReason } from './components/FileUpload.vue'
+} from './components/Select/Select.vue'
+export { default as Combobox } from './components/Combobox/Combobox.vue'
+export type {
+  ComboboxAlign,
+  ComboboxFilter,
+  ComboboxSide,
+} from './components/Combobox/Combobox.vue'
+export { default as Slider } from './components/Slider/Slider.vue'
+export { default as FileUpload } from './components/FileUpload/FileUpload.vue'
+export type { FileRejectReason } from './components/FileUpload/FileUpload.vue'
 export { default as Pagination } from './components/Pagination/Pagination.vue'
 export { default as Resizable } from './components/Resizable/Resizable.vue'
 export { default as DataTable } from './components/DataTable/DataTable.vue'
@@ -69,7 +72,7 @@ export { default as BottomSheet } from './components/BottomSheet/BottomSheet.vue
 export type { BottomSheetProps, SheetSnapPoint } from './components/BottomSheet/BottomSheet.vue'
 export { default as Drawer } from './components/Drawer/Drawer.vue'
 export type { DrawerProps, DrawerSide } from './components/Drawer/Drawer.vue'
-export { default as Tabs } from './components/Tabs.vue'
+export { default as Tabs } from './components/Tabs/Tabs.vue'
 export { default as Toolbar } from './components/Toolbar/Toolbar.vue'
 export { default as Accordion } from './components/Accordion/Accordion.vue'
 export { default as AccordionItem } from './components/AccordionItem/AccordionItem.vue'
@@ -77,7 +80,7 @@ export { default as Collapsible } from './components/Collapsible/Collapsible.vue
 export { default as Popover } from './components/Popover/Popover.vue'
 export type { PopoverAlign, PopoverProps, PopoverSide } from './components/Popover/Popover.vue'
 export { default as PopoverHost } from './components/PopoverHost/PopoverHost.vue'
-export { default as Menu } from './components/Menu.vue'
+export { default as Menu } from './components/Menu/Menu.vue'
 export type {
   MenuAlign,
   MenuEntry,
@@ -85,9 +88,9 @@ export type {
   MenuProps,
   MenuSeparator,
   MenuSide,
-} from './components/Menu.vue'
-export { default as MenuList } from './components/MenuList.vue'
-export type { MenuListProps } from './components/MenuList.vue'
+} from './components/Menu/Menu.vue'
+export { default as MenuList } from './components/MenuList/MenuList.vue'
+export type { MenuListProps } from './components/MenuList/MenuList.vue'
 export { default as ContextMenu } from './components/ContextMenu/ContextMenu.vue'
 export type {
   ContextMenuAlign,
@@ -96,17 +99,20 @@ export type {
 } from './components/ContextMenu/ContextMenu.vue'
 export { default as Tooltip } from './components/Tooltip/Tooltip.vue'
 export type { TooltipAlign, TooltipProps, TooltipSide } from './components/Tooltip/Tooltip.vue'
-export { default as CascadeSelect } from './components/CascadeSelect.vue'
-export type { CascadeSelectItem, CascadeSelectPath } from './components/CascadeSelect.vue'
-export { default as Tree } from './components/Tree.vue'
-export type { TreeNode, TreeSelectionMode } from './components/Tree.vue'
-export { default as TreeSelect } from './components/TreeSelect.vue'
+export { default as CascadeSelect } from './components/CascadeSelect/CascadeSelect.vue'
+export type {
+  CascadeSelectItem,
+  CascadeSelectPath,
+} from './components/CascadeSelect/CascadeSelect.vue'
+export { default as Tree } from './components/Tree/Tree.vue'
+export type { TreeNode, TreeSelectionMode } from './components/Tree/Tree.vue'
+export { default as TreeSelect } from './components/TreeSelect/TreeSelect.vue'
 export type {
   TreeSelectAlign,
   TreeSelectNode,
   TreeSelectSelectionMode,
   TreeSelectSide,
-} from './components/TreeSelect.vue'
+} from './components/TreeSelect/TreeSelect.vue'
 export { default as TooltipHost } from './components/TooltipHost/TooltipHost.vue'
 export type { TooltipHostProps } from './components/TooltipHost/TooltipHost.vue'
 export { default as ConfigProvider } from './components/ConfigProvider/ConfigProvider.vue'
@@ -267,15 +273,15 @@ export type {
   UseDockReturn,
 } from './composables/useDock'
 
-export { default as Calendar } from './components/Calendar.vue'
+export { default as Calendar } from './components/Calendar/Calendar.vue'
 export type {
   CalendarDisabledDates,
   CalendarRange,
   CalendarSelectionMode,
   CalendarView,
-} from './components/Calendar.vue'
-export { default as DatePicker } from './components/DatePicker.vue'
-export type { DatePickerAlign, DatePickerSide } from './components/DatePicker.vue'
+} from './components/Calendar/Calendar.vue'
+export { default as DatePicker } from './components/DatePicker/DatePicker.vue'
+export type { DatePickerAlign, DatePickerSide } from './components/DatePicker/DatePicker.vue'
 
 export { default as SpeedDial, quarterCirclePoint } from './components/SpeedDial/SpeedDial.vue'
 export type {
