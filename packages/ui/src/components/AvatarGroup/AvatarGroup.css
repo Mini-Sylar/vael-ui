@@ -1,0 +1,42 @@
+@layer ui-components {
+  .ui-avatar-group {
+    display: inline-flex;
+    align-items: center;
+  }
+  .ui-avatar-group .ui-avatar {
+    box-sizing: content-box;
+    border: 2px solid var(--ui-surface);
+    border-radius: 50%;
+    margin-inline-start: -0.625rem;
+  }
+  .ui-avatar-group--hover-lift .ui-avatar {
+    transition: transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-avatar-group--hover-lift .ui-avatar:hover {
+      transform: translateY(-3px);
+      z-index: 1;
+    }
+  }
+  .ui-avatar-group .ui-avatar:first-child {
+    margin-inline-start: 0;
+  }
+  .ui-avatar-group--sm .ui-avatar {
+    margin-inline-start: -0.5rem;
+  }
+  .ui-avatar-group--sm .ui-avatar:first-child {
+    margin-inline-start: 0;
+  }
+  .ui-avatar-group--lg .ui-avatar {
+    margin-inline-start: -0.75rem;
+  }
+  .ui-avatar-group--lg .ui-avatar:first-child {
+    margin-inline-start: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-avatar-group--hover-lift .ui-avatar {
+      transition: none;
+    }
+  }
+}
