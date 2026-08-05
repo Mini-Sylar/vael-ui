@@ -1,0 +1,7 @@
+@layer ui-components {
+  .ui-breadcrumb-separator {
+    display: inline-flex;
+    align-items: center;
+    color: var(--ui-text-muted);
+  }
+}
