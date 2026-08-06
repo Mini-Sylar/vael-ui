@@ -103,8 +103,9 @@
     "installTitle": "安装",
     "intro": "一个 Vue 3 组件库，具有完整的 Vue Vapor 构建和与动画无关的设计：默认情况下使用纯 CSS，或者带上您自己的动画库。",
     "title": "入门",
-    "usageImportNote": "在入口点导入样式表一次（有关基本样式设置，请参阅{link}）：",
+    "usageImportNote": "现在每个组件都会自带样式。仅当您使用的是 0.2.0 之前的版本，或希望一次性加载全部样式时才需要它。基础样式设置请参阅{link}。",
     "usageImportNoteLink": "样式和级联层",
+    "usageImportNoteTitle": "仅 0.2.0 之前需要",
     "usageIntro": "然后使用任何组件：来自 <code>'vael-ui'</code> 进行经典 VDOM 构建，或使用 <code>'vael-ui/vapor'</code> 进行编译后的 Vapor 构建（Vue 3.6 的无虚拟 DOM 模式）。\n无论哪种方式都具有相同的道具：",
     "usageTitle": "用法",
     "vaporIntro": "两个版本都来自相同的包和源。\n选择您的应用程序运行的任何一个，或混合两者（Vue 3.6 支持 VDOM/Vapor 互操作）。\n每个组件页面都有相同的开关来比较它们。",
@@ -148,6 +149,8 @@
     "featureI18nTitle": "内置 i18n",
     "featurePrimitivesBody": "没有复合组件的蔓延，没有隐藏的上下文需要连接。",
     "featurePrimitivesTitle": "每个基元一个组件",
+    "featureSsrBody": "每个组件在访问 window 或 document 之前都会检查是否存在真实浏览器环境，因此可以在 Nuxt、服务端渲染应用和静态站点生成器中安全渲染。本文档站点本身就是用 Vite SSG 和相同的组件构建的。",
+    "featureSsrTitle": "支持 SSR",
     "featureVaporBody": "每个组件都通过 Vue 3.6 的 Vapor 模式从相同的源进行编译。",
     "featureVaporTitle": "真正的蒸汽构建，而不是垫片",
     "headline": "直接编译为 Vapor 的组件，而不是围绕它。"
@@ -186,8 +189,10 @@
   },
   "stylingLayers": {
     "intro": "vael-ui 在 {layer} 中发布。\n无论特殊性如何，无分层的 CSS 总是胜过一层，因此简单的、无分层的基础重置会默默地覆盖 vael-ui 内部。\n修复：将您的基本样式也放在一个图层中，首先订购。",
-    "orderNote": "两个文件，就这样了。\n这里的导入顺序仅控制图层位置，没有其他任何东西，无论加载顺序如何，任何地方的无图层覆盖始终仍然获胜。",
-    "overrideNote": "故意覆盖一个组件（{code} prop，Tailwind 实用程序）希望您的规则获胜，请保持 CSS 不分层，因为它已经默认了。\n请参阅{链接}。",
+    "orderNote": "这里的导入顺序仅控制图层位置，没有其他任何东西，无论加载顺序如何，任何地方的无图层覆盖始终仍然获胜。",
+    "bundlerNoteTitle": "仅 0.2.0 之前需要",
+    "bundlerNote": "现在每个组件都会自带样式。仅当您使用的是 0.2.0 之前的版本，或希望一次性加载全部样式时才需要它。",
+    "overrideNote": "故意覆盖一个组件（{code} prop，Tailwind 实用程序）希望您的规则获胜，请保持 CSS 不分层，因为它已经默认了。\n请参阅{link}。",
     "overrideNoteLink": "与 Tailwind 一起使用",
     "title": "样式和级联层",
     "cascadeLayersTitle": "层序",
@@ -242,7 +247,7 @@
     "variable": "多变的"
   },
   "tailwind": {
-    "layerNote": "vael-ui 在 {layer} 中发布。 \nTailwind 的实用程序类是无分层的，并且无论特殊性或导入顺序如何，无分层的 CSS 始终胜过图层，因此 vael-ui 组件上的 Tailwind 实用程序始终会覆盖库的默认设置。\n没有{重要}，没有特殊性之争，无需配置。\n有关一般机制，请参阅{link}。",
+    "layerNote": "vael-ui 在 {layer} 中发布。 \nTailwind 的实用程序类是无分层的，并且无论特殊性或导入顺序如何，无分层的 CSS 始终胜过图层，因此 vael-ui 组件上的 Tailwind 实用程序始终会覆盖库的默认设置。\n没有{important}，没有特殊性之争，无需配置。\n有关一般机制，请参阅{link}。",
     "layerNoteLink": "样式和级联层",
     "mergingIntro": "每个组件都接受部件类的 <code>ui</code> 属性（例如 <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>）。\n要以 <code>tailwind-merge</code> 的方式解决冲突的 Tailwind 实用程序（每个属性最后一个获胜），请将其连接一次：",
     "mergingNote": "树中的每个 <code>ui.*</code> 零件类现在都会通过 <code>twMerge</code>。",

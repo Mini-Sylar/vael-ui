@@ -15,18 +15,6 @@
     <CodeBlock lang="bash" :code="installCode" />
 
     <h2 id="usage">{{ t('gettingStarted.usageTitle') }}</h2>
-    <i18n-t keypath="gettingStarted.usageImportNote" tag="p" scope="global">
-      <template #link>
-        <RouterLink to="/docs/guides/styling-and-layers">{{
-          t('gettingStarted.usageImportNoteLink')
-        }}</RouterLink>
-      </template>
-    </i18n-t>
-    <CodeBlock
-      lang="typescript"
-      code="// main.ts
-import 'vael-ui/style.css'"
-    />
     <p v-html="t('gettingStarted.usageIntro')" />
     <SelectButton
       v-model="defaultVariant"
@@ -71,6 +59,27 @@ app.directive('scroll-mask', vScrollMask)
 app.mount('#app')"
     />
     <p v-html="t('gettingStarted.directivesNote')" />
+
+    <Message
+      variant="info"
+      :title="t('gettingStarted.usageImportNoteTitle')"
+      class="callout"
+      :ui="{ root: 'callout-info' }"
+    >
+      <i18n-t keypath="gettingStarted.usageImportNote" tag="span" scope="global">
+        <template #link>
+          <RouterLink to="/docs/guides/styling-and-layers">{{
+            t('gettingStarted.usageImportNoteLink')
+          }}</RouterLink>
+        </template>
+      </i18n-t>
+      <CodeBlock
+        lang="typescript"
+        code="// main.ts
+import 'vael-ui/style.css'"
+        class="callout-code"
+      />
+    </Message>
   </GuideLayout>
 </template>
 
@@ -79,7 +88,7 @@ import { computed, shallowRef } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
-import { SelectButton } from 'vael-ui'
+import { Message, SelectButton } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import GuideLayout from '../components/GuideLayout.vue'
 import { defaultVariant } from '../preferences'
@@ -128,6 +137,19 @@ const tocLinks = computed(() => [
 </script>
 
 <style scoped>
+.callout {
+  margin-bottom: 1rem;
+}
+
+:deep(.callout-info) {
+  background: color-mix(in oklch, var(--ui-info) 10%, var(--ui-surface));
+  border-color: color-mix(in oklch, var(--ui-info) 35%, var(--ui-border-strong));
+}
+
+.callout-code {
+  margin-top: 0.625rem;
+}
+
 .usage-toggle {
   margin-bottom: 0.75rem;
 }

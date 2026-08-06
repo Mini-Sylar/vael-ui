@@ -103,8 +103,9 @@
     "installTitle": "Installare",
     "intro": "Una libreria di componenti Vue 3 con una build Vue Vapor completa e un design indipendente dall'animazione: semplice CSS per impostazione predefinita o porta la tua libreria di animazioni.",
     "title": "Iniziare",
-    "usageImportNote": "Importa il foglio di stile una volta nel punto di ingresso (vedi {link} per la configurazione dello stile di base):",
+    "usageImportNote": "Ogni componente porta ora i propri stili. Necessario solo se usi una versione precedente alla 0.2.0, o se vuoi caricare tutto in una volta. Vedi {link} per la configurazione dello stile di base.",
     "usageImportNoteLink": "Styling e strati a cascata",
+    "usageImportNoteTitle": "Solo prima della 0.2.0",
     "usageIntro": "Quindi utilizza qualsiasi componente: da <code>'vael-ui'</code> per la build VDOM classica, o <code>'vael-ui/vapor'</code> per la build Vapor compilata (modalità no-virtual-DOM di Vue 3.6). \nStessi oggetti di scena in ogni caso:",
     "usageTitle": "Utilizzo",
     "vaporIntro": "Entrambe le build vengono spedite dallo stesso pacchetto e fonte. \nScegli l'app in esecuzione o combinale entrambe (Vue 3.6 supporta l'interoperabilità VDOM/Vapor). \nOgni pagina dei componenti ha lo stesso interruttore per confrontarli.",
@@ -148,6 +149,8 @@
     "featureI18nTitle": "i18n integrato",
     "featurePrimitivesBody": "Nessuna espansione incontrollata di componenti compositi, nessun contesto nascosto da collegare.",
     "featurePrimitivesTitle": "Un componente per primitiva",
+    "featureSsrBody": "Ogni componente verifica la presenza di un browser reale prima di accedere a window o document, quindi si renderizza in sicurezza con Nuxt, app renderizzate lato server e generatori di siti statici. Questo sito di documentazione è costruito con Vite SSG usando gli stessi componenti.",
+    "featureSsrTitle": "Pronto per SSR",
     "featureVaporBody": "Ogni componente viene compilato tramite la modalità Vapor di Vue 3.6 dalla stessa fonte.",
     "featureVaporTitle": "Costruzione Real Vapor, non uno spessore",
     "headline": "Componenti che si compilano direttamente su Vapor, non attorno ad esso."
@@ -186,7 +189,9 @@
   },
   "stylingLayers": {
     "intro": "vael-ui viene spedito in {layer}. \nI CSS senza livelli prevalgono sempre su un livello indipendentemente dalla specificità, quindi un ripristino di base semplice e senza livelli sovrascrive silenziosamente gli interni di vael-ui. \nCorrezione: metti anche i tuoi stili di base in un livello, ordinati per primi.",
-    "orderNote": "Due file, tutto qui. \nL'ordine di importazione qui controlla solo la posizione del livello, nient'altro, una sostituzione senza livelli ovunque vince sempre, indipendentemente dall'ordine di caricamento.",
+    "orderNote": "L'ordine di importazione qui controlla solo la posizione del livello, nient'altro, una sostituzione senza livelli ovunque vince sempre, indipendentemente dall'ordine di caricamento.",
+    "bundlerNoteTitle": "Solo prima della 0.2.0",
+    "bundlerNote": "Ogni componente porta ora i propri stili. Necessario solo se usi una versione precedente alla 0.2.0, o se vuoi caricare tutto in una volta.",
     "overrideNote": "Sostituire deliberatamente un componente (prop {code}, un'utilità Tailwind) vuole che la tua regola vinca, mantieni il CSS senza livelli come già lo è per impostazione predefinita. \nVedi {link}.",
     "overrideNoteLink": "Utilizzo con Tailwind",
     "title": "Styling e strati a cascata",
@@ -242,7 +247,7 @@
     "variable": "Variabile"
   },
   "tailwind": {
-    "layerNote": "vael-ui viene spedito in {layer}. \nLe classi di utilità di Tailwind sono senza livelli e i CSS senza livelli prevalgono sempre su un livello indipendentemente dalla specificità o dall'ordine di importazione, quindi un'utilità Tailwind su un componente vael-ui sovrascrive sempre l'impostazione predefinita della libreria. \nNessun {importante}, nessun combattimento sulla specificità, niente da configurare. \nVedi {link} per la meccanica generale.",
+    "layerNote": "vael-ui viene spedito in {layer}. \nLe classi di utilità di Tailwind sono senza livelli e i CSS senza livelli prevalgono sempre su un livello indipendentemente dalla specificità o dall'ordine di importazione, quindi un'utilità Tailwind su un componente vael-ui sovrascrive sempre l'impostazione predefinita della libreria. \nNessun {important}, nessun combattimento sulla specificità, niente da configurare. \nVedi {link} per la meccanica generale.",
     "layerNoteLink": "Styling e strati a cascata",
     "mergingIntro": "Ogni componente accetta una prop <code>ui</code> per le classi di parti (ad esempio <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). \nPer risolvere i conflitti tra le utilità Tailwind nel modo in cui farebbe <code>tailwind-merge</code> (l'ultimo vince per proprietà), collegalo una volta:",
     "mergingNote": "Ogni classe di parte <code>ui.*</code> nell'albero ora passa attraverso <code>twMerge</code>.",

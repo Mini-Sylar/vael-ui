@@ -103,8 +103,9 @@
     "installTitle": "Instalar",
     "intro": "Uma biblioteca de componentes Vue 3 com uma construção Vue Vapor completa e um design independente de animação: CSS simples por padrão ou traga sua própria biblioteca de animação.",
     "title": "Começando",
-    "usageImportNote": "Importe a folha de estilo uma vez no seu ponto de entrada (veja {link} para configuração do estilo base):",
+    "usageImportNote": "Cada componente agora traz seus próprios estilos. Necessário apenas se estiver numa versão anterior à 0.2.0, ou se quiser carregar tudo de uma vez. Veja {link} para a configuração do estilo base.",
     "usageImportNoteLink": "Estilo e camadas em cascata",
+    "usageImportNoteTitle": "Apenas antes da 0.2.0",
     "usageIntro": "Em seguida, use qualquer componente: de <code>'vael-ui'</code> para a compilação VDOM clássica ou <code>'vael-ui/vapor'</code> para a compilação Vapor compilada (modo no-virtual-DOM do Vue 3.6). \nOs mesmos adereços de qualquer maneira:",
     "usageTitle": "Uso",
     "vaporIntro": "Ambas as compilações são enviadas do mesmo pacote e fonte. \nEscolha o que seu aplicativo executa ou misture os dois (o Vue 3.6 oferece suporte à interoperabilidade VDOM/Vapor). \nCada página de componente tem o mesmo botão para compará-los.",
@@ -148,6 +149,8 @@
     "featureI18nTitle": "i18n integrado",
     "featurePrimitivesBody": "Nenhuma expansão de componentes compostos, nenhum contexto oculto para conectar.",
     "featurePrimitivesTitle": "Um componente por primitivo",
+    "featureSsrBody": "Cada componente verifica se existe um navegador real antes de acessar window ou document, então renderiza com segurança no Nuxt, em apps renderizados no servidor e em geradores de sites estáticos. Este site de documentação é construído com Vite SSG usando os mesmos componentes.",
+    "featureSsrTitle": "Pronto para SSR",
     "featureVaporBody": "Cada componente é compilado através do modo Vapor do Vue 3.6 da mesma fonte.",
     "featureVaporTitle": "Construção Real Vapor, não um calço",
     "headline": "Componentes que são compilados diretamente no Vapor, e não em torno dele."
@@ -186,7 +189,9 @@
   },
   "stylingLayers": {
     "intro": "vael-ui é enviado em {layer}. \nCSS sem camadas sempre vence uma camada, independentemente da especificidade, portanto, uma redefinição de base simples e sem camadas substitui silenciosamente os internos do vael-ui. \nCorreção: coloque seus estilos básicos em uma camada também, ordenados primeiro.",
-    "orderNote": "Dois arquivos, é isso. \nA ordem de importação aqui controla apenas a posição da camada, nada mais, uma substituição sem camadas em qualquer lugar sempre vence, independentemente da ordem de carregamento.",
+    "orderNote": "A ordem de importação aqui controla apenas a posição da camada, nada mais, uma substituição sem camadas em qualquer lugar sempre vence, independentemente da ordem de carregamento.",
+    "bundlerNoteTitle": "Apenas antes da 0.2.0",
+    "bundlerNote": "Cada componente agora traz seus próprios estilos. Necessário apenas se estiver numa versão anterior à 0.2.0, ou se quiser carregar tudo de uma vez.",
     "overrideNote": "Substituir deliberadamente um componente ({code} prop, um utilitário Tailwind) deseja que sua regra vença, mantenha esse CSS sem camadas como já está por padrão. \nVeja {link}.",
     "overrideNoteLink": "Usando com Tailwind",
     "title": "Estilo e camadas em cascata",
@@ -242,7 +247,7 @@
     "variable": "Variável"
   },
   "tailwind": {
-    "layerNote": "vael-ui é enviado em {layer}. \nAs classes de utilitário do Tailwind são sem camadas, e o CSS sem camadas sempre vence uma camada, independentemente da especificidade ou ordem de importação, portanto, um utilitário Tailwind em um componente vael-ui sempre substitui o padrão da biblioteca. \nNada de {importante}, nada de brigas de especificidade, nada para configurar. \nVeja {link} para a mecânica geral.",
+    "layerNote": "vael-ui é enviado em {layer}. \nAs classes de utilitário do Tailwind são sem camadas, e o CSS sem camadas sempre vence uma camada, independentemente da especificidade ou ordem de importação, portanto, um utilitário Tailwind em um componente vael-ui sempre substitui o padrão da biblioteca. \nNada de {important}, nada de brigas de especificidade, nada para configurar. \nVeja {link} para a mecânica geral.",
     "layerNoteLink": "Estilo e camadas em cascata",
     "mergingIntro": "Cada componente aceita uma propriedade <code>ui</code> para classes de peças (por exemplo, <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). \nPara resolver utilitários conflitantes do Tailwind da maneira que <code>tailwind-merge</code> faria (o último vence por propriedade), conecte-o uma vez:",
     "mergingNote": "Cada classe de parte <code>ui.*</code> na árvore agora passa por <code>twMerge</code>.",

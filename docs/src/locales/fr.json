@@ -60,6 +60,8 @@
     "featureI18nTitle": "i18n intégré",
     "featurePrimitivesBody": "Pas de prolifération de composants composés, pas de contexte caché à relier.",
     "featurePrimitivesTitle": "Un composant par primitive",
+    "featureSsrBody": "Chaque composant vérifie la présence d'un vrai navigateur avant d'accéder à window ou document, il s'affiche donc sans problème avec Nuxt, les applications rendues côté serveur et les générateurs de sites statiques. Ce site de documentation est construit avec Vite SSG en utilisant les mêmes composants.",
+    "featureSsrTitle": "Compatible SSR",
     "featureVaporBody": "Chaque composant est compilé via le mode Vapor de Vue 3.6 à partir de la même source.",
     "featureVaporTitle": "Une vraie construction Vapor, pas une cale",
     "headline": "Des composants qui se compilent directement dans Vapor, pas autour de lui."
@@ -76,8 +78,9 @@
     "directivesNote": "<code>v-tooltip</code> a également besoin d'un <code>",
     "installIntro": "vael-ui est publié sur npm. \nInstallez-le avec le gestionnaire de packages que vous utilisez :",
     "intro": "Une bibliothèque de composants Vue 3 avec une version complète de Vue Vapor et une conception indépendante de l'animation : CSS simple par défaut, ou apportez votre propre bibliothèque d'animation.",
-    "usageImportNote": "Importez la feuille de style une fois dans votre point d'entrée (voir {link} pour la configuration du style de base) :",
+    "usageImportNote": "Chaque composant apporte désormais ses propres styles. Nécessaire seulement si vous utilisez une version antérieure à 0.2.0, ou si vous voulez tout charger d'un coup. Voir {link} pour la configuration du style de base.",
     "usageImportNoteLink": "Couches de style et de cascade",
+    "usageImportNoteTitle": "Uniquement avant 0.2.0",
     "usageIntro": "Utilisez ensuite n'importe quel composant : depuis <code>'vael-ui'</code> pour la version VDOM classique, ou <code>'vael-ui/vapor'</code> pour la version compilée Vapor (mode sans DOM virtuel de Vue 3.6). \nMêmes accessoires dans tous les cas :",
     "vaporIntro": "Les deux versions sont livrées à partir du même package et de la même source. \nChoisissez celle que votre application exécute ou mélangez les deux (Vue 3.6 prend en charge l'interopérabilité VDOM/Vapor). \nChaque page de composants a la même bascule pour les comparer."
   },
@@ -179,8 +182,10 @@
   },
   "stylingLayers": {
     "intro": "vael-ui est livré dans {layer}. \nLe CSS sans couche l'emporte toujours sur une couche quelle que soit sa spécificité, donc une réinitialisation de base simple et sans couche remplace silencieusement les éléments internes de vael-ui. \nCorrectif : placez également vos styles de base dans un calque, commandés en premier.",
-    "orderNote": "Deux fichiers, c'est tout. \nL'ordre d'importation contrôle ici uniquement la position des calques, rien d'autre, un remplacement sans calque n'importe où l'emporte toujours, quel que soit l'ordre de chargement.",
-    "overrideNote": "Le remplacement délibéré d'un composant (prop {code}, un utilitaire Tailwind) veut que votre règle gagne, gardez ce CSS sans couche comme il l'est déjà par défaut. \nVoir {lien}.",
+    "orderNote": "L'ordre d'importation contrôle ici uniquement la position des calques, rien d'autre, un remplacement sans calque n'importe où l'emporte toujours, quel que soit l'ordre de chargement.",
+    "bundlerNoteTitle": "Uniquement avant 0.2.0",
+    "bundlerNote": "Chaque composant apporte désormais ses propres styles. Nécessaire seulement si vous utilisez une version antérieure à 0.2.0, ou si vous voulez tout charger d'un coup.",
+    "overrideNote": "Le remplacement délibéré d'un composant (prop {code}, un utilitaire Tailwind) veut que votre règle gagne, gardez ce CSS sans couche comme il l'est déjà par défaut. \nVoir {link}.",
     "overrideNoteLink": "Utilisation avec Tailwind",
     "title": "Couches de style et de cascade",
     "cascadeLayersTitle": "Ordre des couches",

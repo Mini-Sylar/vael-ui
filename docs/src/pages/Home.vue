@@ -54,6 +54,13 @@
           <p>{{ t('home.featurePrimitivesBody') }}</p>
         </div>
       </article>
+      <article class="feature feature--wide">
+        <PhHardDrives :size="20" class="feature-icon" />
+        <div>
+          <h2>{{ t('home.featureSsrTitle') }}</h2>
+          <p>{{ t('home.featureSsrBody') }}</p>
+        </div>
+      </article>
     </section>
 
     <section class="closing">
@@ -67,7 +74,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { Button } from 'vael-ui'
-import { PhGlobe, PhLightning, PhPuzzlePiece, PhSparkle } from '@phosphor-icons/vue'
+import { PhGlobe, PhHardDrives, PhLightning, PhPuzzlePiece, PhSparkle } from '@phosphor-icons/vue'
 import DashboardHero from '../components/dashboard/DashboardHero.vue'
 
 const { t } = useI18n()

@@ -1,6 +1,5 @@
 import { ViteSSG } from 'vite-ssg'
 import './style.css'
-import 'vael-ui/style.css'
 import { vTooltip } from 'vael-ui'
 import './demo-content.css'
 import './prose.css'
