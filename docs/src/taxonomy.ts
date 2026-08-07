@@ -57,12 +57,20 @@ export const categories: ComponentCategory[] = [
   {
     key: 'overlays',
     name: 'Overlays',
-    components: ['Dialog', 'Drawer', 'Popover', 'Tooltip', 'BottomSheet', 'ContextMenu'],
+    components: [
+      'Dialog',
+      'Drawer',
+      'Popover',
+      'Tooltip',
+      'BottomSheet',
+      'ContextMenu',
+      'CommandPalette',
+    ],
   },
   {
     key: 'navigationAndMenus',
     name: 'Navigation & Menus',
-    components: ['Menu', 'MenuList', 'Tabs'],
+    components: ['Menu', 'MenuList', 'Tabs', 'Stepper', 'Breadcrumb'],
   },
   {
     key: 'feedback',
@@ -75,12 +83,22 @@ export const categories: ComponentCategory[] = [
   {
     key: 'dataDisplay',
     name: 'Data Display',
-    components: ['DataTable', 'Pagination', 'Card', 'Avatar', 'Badge', 'Tag', 'Chip', 'Kbd'],
+    components: [
+      'DataTable',
+      'Pagination',
+      'Card',
+      'Avatar',
+      'AvatarGroup',
+      'Badge',
+      'Tag',
+      'Chip',
+      'Kbd',
+    ],
   },
   {
     key: 'layoutAndStructure',
     name: 'Layout & Structure',
-    components: ['Accordion', 'Collapsible', 'Separator', 'Resizable'],
+    components: ['Accordion', 'Collapsible', 'Separator', 'Resizable', 'ScrollArea'],
   },
   {
     key: 'gestures',

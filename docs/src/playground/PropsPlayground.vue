@@ -207,6 +207,46 @@
               </component>
             </component>
           </template>
+          <template v-else-if="isScrollArea">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              class="scroll-area-preview"
+            >
+              <ul class="scroll-area-preview-list">
+                <li v-for="n in 20" :key="n">Item {{ n }}</li>
+              </ul>
+            </component>
+          </template>
+          <template v-else-if="isAvatarGroup">
+            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+              <component :is="avatarComponent" name="Ada Lovelace" />
+              <component :is="avatarComponent" name="Grace Hopper" />
+              <component :is="avatarComponent" name="Katherine Johnson" />
+            </component>
+          </template>
+          <template v-else-if="isBreadcrumb">
+            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+              <component :is="breadcrumbItemComponent" href="/">Home</component>
+              <component :is="breadcrumbSeparatorComponent" />
+              <component :is="breadcrumbItemComponent" href="/docs">Docs</component>
+              <component :is="breadcrumbSeparatorComponent" />
+              <component :is="breadcrumbItemComponent" current>Breadcrumb</component>
+            </component>
+          </template>
+          <template v-else-if="isCommandPalette">
+            <Button variant="outline" @click="openModelValue = !openModelValue">
+              {{ openModelValue ? 'Close CommandPalette' : 'Open CommandPalette' }}
+            </Button>
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              v-model:open="openModelValue"
+              :items="COMMAND_PALETTE_PLACEHOLDER_ITEMS"
+            />
+          </template>
           <template v-else>
             <!-- No default slot in these two: some components override data-driven rendering with any default slot content, even empty. -->
             <component
@@ -413,6 +453,15 @@ const isTabs = computed(() => props.name === 'Tabs')
 const TABS_PLACEHOLDER_ITEMS = ['Overview', 'Activity', 'Settings']
 const tabsActive = shallowRef(TABS_PLACEHOLDER_ITEMS[0])
 const isResizable = computed(() => props.name === 'Resizable')
+const isScrollArea = computed(() => props.name === 'ScrollArea')
+const isAvatarGroup = computed(() => props.name === 'AvatarGroup')
+const isBreadcrumb = computed(() => props.name === 'Breadcrumb')
+const isCommandPalette = computed(() => props.name === 'CommandPalette')
+const COMMAND_PALETTE_PLACEHOLDER_ITEMS = [
+  { id: 'new-file', label: 'New File', description: 'Create a blank document' },
+  { id: 'new-folder', label: 'New Folder', description: 'Group related files' },
+  { id: 'open-settings', label: 'Open Settings', description: 'Preferences and theme' },
+]
 const showIconPreview = computed(() => props.name === 'Button' && values.icon === true)
 
 function svgIcon(path: string) {
@@ -468,6 +517,9 @@ const accordionItemComponent = computed(() => resolveVariant('AccordionItem'))
 const radioGroupComponent = computed(() => resolveVariant('RadioGroup'))
 const radioComponent = computed(() => resolveVariant('Radio'))
 const inputComponent = computed(() => resolveVariant('Input'))
+const avatarComponent = computed(() => resolveVariant('Avatar'))
+const breadcrumbItemComponent = computed(() => resolveVariant('BreadcrumbItem'))
+const breadcrumbSeparatorComponent = computed(() => resolveVariant('BreadcrumbSeparator'))
 
 const DATATABLE_PLACEHOLDER_ROWS = [
   {
@@ -841,6 +893,24 @@ const code = computed(() => {
   background: var(--ui-muted);
   color: var(--ui-text-muted);
   font-size: 0.875rem;
+}
+
+/* Needs a definite block-size to resolve its own block-size: 100% against,
+   same reasoning as .separator-preview-row--vertical above. */
+.scroll-area-preview {
+  block-size: 10rem;
+  max-inline-size: 16rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+.scroll-area-preview-list {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+.scroll-area-preview-list li {
+  padding-block: 0.25rem;
 }
 
 .tabs-preview-tab {

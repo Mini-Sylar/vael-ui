@@ -33,6 +33,7 @@ export interface UiTheme {
       badge: UiPartValue
     }>
   }
+  avatarGroup?: { ui?: Partial<{ root: UiPartValue; overflow: UiPartValue }> }
   card?: {
     ui?: Partial<{
       root: UiPartValue
@@ -114,6 +115,23 @@ export interface UiTheme {
     ui?: Partial<{ root: UiPartValue; option: UiPartValue; indicator: UiPartValue }>
   }
   tabs?: { ui?: Partial<{ list: UiPartValue }> }
+  stepper?: {
+    ui?: Partial<{
+      root: UiPartValue
+      step: UiPartValue
+      trigger: UiPartValue
+      circle: UiPartValue
+      content: UiPartValue
+      label: UiPartValue
+      description: UiPartValue
+      connector: UiPartValue
+    }>
+  }
+  breadcrumb?: { ui?: Partial<{ root: UiPartValue; list: UiPartValue }> }
+  breadcrumbItem?: {
+    ui?: Partial<{ item: UiPartValue; link: UiPartValue; current: UiPartValue }>
+  }
+  breadcrumbSeparator?: { ui?: Partial<{ root: UiPartValue }> }
   toolbar?: {
     ui?: Partial<{ root: UiPartValue; group: UiPartValue; overflowTrigger: UiPartValue }>
   }
@@ -225,6 +243,7 @@ export interface UiTheme {
     }>
   }
   resizable?: { ui?: Partial<{ root: UiPartValue; handle: UiPartValue }> }
+  scrollArea?: { ui?: Partial<{ root: UiPartValue; viewport: UiPartValue }> }
   treeSelect?: {
     ui?: Partial<{
       trigger: UiPartValue
@@ -273,6 +292,16 @@ export interface UiTheme {
   speedDial?: { ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }> }
   swipeToReveal?: {
     ui?: Partial<{ root: UiPartValue; content: UiPartValue; actions: UiPartValue }>
+  }
+  commandPalette?: {
+    ui?: Partial<{
+      panel: UiPartValue
+      input: UiPartValue
+      list: UiPartValue
+      groupLabel: UiPartValue
+      item: UiPartValue
+      empty: UiPartValue
+    }>
   }
 }
 
