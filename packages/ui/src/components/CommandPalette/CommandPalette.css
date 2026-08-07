@@ -9,6 +9,10 @@
   .ui-dialog--top .ui-command-palette-panel {
     margin-block-start: min(14vh, 8rem);
   }
+  /* vh is viewport-relative; contained palettes sit flush with their own box instead. */
+  .ui-dialog[data-contained].ui-dialog--top .ui-command-palette-panel {
+    margin-block-start: 0;
+  }
 
   .ui-command-palette-input {
     box-sizing: border-box;
@@ -35,6 +39,11 @@
     padding: 0.5rem;
     overflow-y: auto;
     list-style: none;
+  }
+  /* dvh is viewport-relative; the panel's own [data-contained] cap (Dialog.css) is the real ceiling. */
+  .ui-dialog[data-contained] .ui-command-palette-list {
+    min-block-size: 0;
+    max-block-size: none;
   }
   .ui-command-palette-list:has(.ui-command-palette-empty) {
     display: grid;

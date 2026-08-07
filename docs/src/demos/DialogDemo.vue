@@ -577,10 +577,4 @@ function openRequiredAction() {
 .blurred-overlay {
   backdrop-filter: blur(8px);
 }
-
-/* temporary. */
-.ui-dialog[data-contained] .ui-dialog-panel {
-  max-inline-size: 100%;
-  max-block-size: 100%;
-}
 </style>

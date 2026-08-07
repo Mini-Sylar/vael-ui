@@ -28,6 +28,11 @@
   .ui-dialog-panel--lg {
     inline-size: min(38rem, 100%);
   }
+  /* 85dvh is viewport-relative; cap contained panels to their own wrapper instead. */
+  .ui-dialog[data-contained] .ui-dialog-panel {
+    max-inline-size: 100%;
+    max-block-size: 100%;
+  }
   .ui-dialog-panel--maximized {
     border-radius: 0;
   }
@@ -181,6 +186,20 @@
   .ui-dialog--left .ui-dialog-panel--lg,
   .ui-dialog--right .ui-dialog-panel--lg {
     inline-size: min(38rem, 90vw);
+  }
+  /* dvw is viewport-relative; a contained side drawer fills its container instead. */
+  .ui-dialog[data-contained].ui-dialog--left .ui-dialog-panel,
+  .ui-dialog[data-contained].ui-dialog--right .ui-dialog-panel {
+    inline-size: min(20rem, 90%);
+    block-size: 100%;
+  }
+  .ui-dialog[data-contained].ui-dialog--left .ui-dialog-panel--sm,
+  .ui-dialog[data-contained].ui-dialog--right .ui-dialog-panel--sm {
+    inline-size: min(22rem, 90%);
+  }
+  .ui-dialog[data-contained].ui-dialog--left .ui-dialog-panel--lg,
+  .ui-dialog[data-contained].ui-dialog--right .ui-dialog-panel--lg {
+    inline-size: min(38rem, 90%);
   }
   .ui-dialog--left .ui-dialog-panel {
     border-start-start-radius: 0;

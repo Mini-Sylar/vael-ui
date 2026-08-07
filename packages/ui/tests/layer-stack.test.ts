@@ -54,20 +54,20 @@ test('focus trap only cycles within the topmost dialog', async () => {
 test('scroll lock is reference-counted: stays engaged until every open dialog has closed', async () => {
   const screen = render(StackedDialogsFixture)
   await screen.getByTestId('open-outer').click()
-  expect(document.body.style.overflow).toBe('hidden')
+  expect(document.documentElement.style.overflow).toBe('hidden')
 
   await screen.getByTestId('open-inner').click()
   await vi.waitFor(() => expect(document.querySelectorAll('[role="dialog"]').length).toBe(2))
-  expect(document.body.style.overflow).toBe('hidden')
+  expect(document.documentElement.style.overflow).toBe('hidden')
 
   // Closing the inner one must NOT release the lock — the outer is still open.
   await userEvent.keyboard('{Escape}')
   await vi.waitFor(() => expect(document.querySelectorAll('[role="dialog"]').length).toBe(1))
-  expect(document.body.style.overflow).toBe('hidden')
+  expect(document.documentElement.style.overflow).toBe('hidden')
 
   await userEvent.keyboard('{Escape}')
   await vi.waitFor(() => expect(document.querySelectorAll('[role="dialog"]').length).toBe(0))
-  expect(document.body.style.overflow).toBe('')
+  expect(document.documentElement.style.overflow).toBe('')
 })
 
 test('focus returns to whatever opened the inner dialog, not just the document root', async () => {

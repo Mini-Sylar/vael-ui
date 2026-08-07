@@ -8,7 +8,7 @@
   @property --fade-bottom-start {
     syntax: '<percentage>';
     inherits: false;
-    initial-value: 88%;
+    initial-value: 91%;
   }
 
   .scroll-fade {
@@ -38,13 +38,13 @@
       --fade-top-end: 0%;
     }
     to {
-      --fade-top-end: 12%;
+      --fade-top-end: 9%;
     }
   }
 
   @keyframes scroll-fade-bottom {
     from {
-      --fade-bottom-start: 88%;
+      --fade-bottom-start: 91%;
     }
     to {
       --fade-bottom-start: 100%;
@@ -59,7 +59,7 @@
   @property --fade-right-start {
     syntax: '<percentage>';
     inherits: false;
-    initial-value: 88%;
+    initial-value: 91%;
   }
 
   .scroll-fade-x {
@@ -88,13 +88,13 @@
       --fade-left-end: 0%;
     }
     to {
-      --fade-left-end: 12%;
+      --fade-left-end: 9%;
     }
   }
 
   @keyframes scroll-fade-right {
     from {
-      --fade-right-start: 88%;
+      --fade-right-start: 91%;
     }
     to {
       --fade-right-start: 100%;

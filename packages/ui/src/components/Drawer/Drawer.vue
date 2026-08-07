@@ -16,6 +16,8 @@
     :before-close="beforeClose"
     :force-mount="forceMount"
     :teleport-to="teleportTo"
+    :container="container"
+    :scroll-target="scrollTarget"
     :scroll-fade="scrollFade"
     :ui="ui"
     v-bind="$attrs"
@@ -67,7 +69,6 @@ const props = withDefaults(defineProps<DrawerProps>(), {
   closeOnEsc: true,
   closeOnOverlay: true,
   forceMount: false,
-  teleportTo: 'body',
   scrollFade: true,
 })
 

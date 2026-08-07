@@ -35,7 +35,7 @@ test('modal=false renders no overlay, does not lock scroll, does not steal focus
   await expect.element(screen.getByTestId('pinned-state')).toHaveTextContent('open')
 
   expect(document.querySelector('.ui-dialog-overlay')).toBeNull()
-  expect(document.body.style.overflow).toBe('')
+  expect(document.documentElement.style.overflow).toBe('')
   expect(activeTestId()).toBe('trigger-pinned')
 
   await screen.getByTestId('outside').click()
@@ -57,7 +57,7 @@ test('modal=true (default) at position="right" traps focus and locks scroll like
   await vi.waitFor(() => {
     expect(document.querySelector('[role="dialog"]')!.contains(document.activeElement)).toBe(true)
   })
-  expect(document.body.style.overflow).toBe('hidden')
+  expect(document.documentElement.style.overflow).toBe('hidden')
 
   // Focus lands on the first focusable — the built-in close button — then cycles and wraps
   expect(document.activeElement!.className).toContain('ui-dialog-close')
@@ -73,5 +73,5 @@ test('modal=true (default) at position="right" traps focus and locks scroll like
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('modal-state')).toHaveTextContent('closed')
   await vi.waitFor(() => expect(activeTestId()).toBe('trigger-modal'))
-  expect(document.body.style.overflow).toBe('')
+  expect(document.documentElement.style.overflow).toBe('')
 })

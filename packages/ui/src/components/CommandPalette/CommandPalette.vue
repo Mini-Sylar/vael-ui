@@ -11,6 +11,8 @@
     :force-mount="forceMount"
     :before-close="beforeClose"
     :teleport-to="teleportTo"
+    :container="container"
+    :scroll-target="scrollTarget"
     :scroll-fade="false"
     :initial-focus="() => inputEl"
     :ui="dialogUi"
@@ -122,6 +124,7 @@ import { useEventListener } from '@vueuse/core'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogPosition, DialogSize } from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
+import type { DOMTarget } from '../../composables/dom'
 import Kbd from '../Kbd/Kbd.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -156,6 +159,10 @@ const props = withDefaults(
     /** Presence becomes `v-show`-driven, owned by the consumer. Forwarded straight to the underlying `Dialog`. */
     forceMount?: boolean
     teleportTo?: string
+    /** Scopes the palette to one element instead of the viewport. Forwarded straight to the underlying `Dialog`. */
+    container?: DOMTarget
+    /** Element whose scrolling is locked while open, if different from `container`. Forwarded straight to the underlying `Dialog`. */
+    scrollTarget?: DOMTarget
     ui?: Partial<{
       panel: UiPartValue
       input: UiPartValue
@@ -173,7 +180,6 @@ const props = withDefaults(
     closeOnEsc: true,
     closeOnOverlay: true,
     forceMount: false,
-    teleportTo: 'body',
   },
 )
 

@@ -115,6 +115,18 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     return { isClosing, close, requestClose, cancelClose, container, contained }
   }
 
+  // Panel needs `container` to be a positioning context, or it falls through to whatever
+  // ancestor is positioned instead. Give it one if it doesn't already have one.
+  watch(
+    container,
+    (el) => {
+      if (el && getComputedStyle(el).position === 'static') {
+        el.style.position = 'relative'
+      }
+    },
+    { immediate: true },
+  )
+
   const contentEl = () => options.wrapperEl?.value ?? panelEl.value
 
   const layer = useLayer({

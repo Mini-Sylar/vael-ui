@@ -49,6 +49,23 @@
     </div>
     <CommandPalette v-model:open="centerOpen" position="center" :items="commands" />
 
+    <h3><code>container</code></h3>
+    <p class="note">
+      Forwarded straight to the underlying <code>Dialog</code> too. Scopes the palette to one pane
+      instead of the whole viewport, the rest of the page stays interactive while it's open.
+    </p>
+    <div ref="paletteContainer" class="palette-container">
+      <p class="note" style="margin: 0">A pane with its own content.</p>
+      <Button size="sm" variant="outline" @click="containedOpen = true">Open, contained</Button>
+    </div>
+    <CommandPalette
+      v-model:open="containedOpen"
+      :container="paletteContainer"
+      size="sm"
+      :items="commands"
+      position="center"
+    />
+
     <h3>Custom exit: GSAP shared-element FLIP</h3>
     <p class="note">
       Grows out of the button's real <code>getBoundingClientRect()</code> position and size (iOS
@@ -181,6 +198,8 @@ const lastSelected = shallowRef<string | null>(null)
 const basicOpen = shallowRef(false)
 const groupedOpen = shallowRef(false)
 const centerOpen = shallowRef(false)
+const containedOpen = shallowRef(false)
+const paletteContainer = useTemplateRef('paletteContainer')
 
 function flipDelta(triggerEl: HTMLElement | null, panel: HTMLElement | null) {
   if (!triggerEl || !panel) return null
@@ -275,3 +294,20 @@ async function motionBeforeClose(done: () => void) {
   done()
 }
 </script>
+
+<style scoped>
+.palette-container {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  block-size: 20rem;
+  max-inline-size: 28rem;
+  margin-block-end: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+</style>

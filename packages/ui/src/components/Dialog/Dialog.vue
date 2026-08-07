@@ -156,7 +156,7 @@ export interface DialogProps {
    * Scopes the dialog to one element instead of the viewport: the overlay dims only
    * that box, scroll lock and modality apply only inside it, and the rest of the page
    * stays interactive. Also becomes the teleport target unless `teleportTo` is set.
-   * The element must be positioned (`position: relative` or similar).
+   * Given a positioning context automatically if it doesn't already have one.
    */
   container?: DOMTarget
   /**
@@ -212,7 +212,6 @@ const props = withDefaults(defineProps<DialogProps>(), {
   closeOnEsc: true,
   closeOnOverlay: true,
   forceMount: false,
-  teleportTo: 'body',
   scrollFade: true,
   maximizable: false,
 })
@@ -264,10 +263,12 @@ function onOverlayClick(event: MouseEvent) {
   if (props.closeOnOverlay) requestClose('outside', event)
 }
 
-// An explicit `teleportTo` wins; otherwise a container becomes the target, since a
-// contained dialog rendered at body level would be positioned against the wrong box.
-const teleportTarget = computed<string | HTMLElement>(() =>
-  props.teleportTo === 'body' && container.value ? container.value : props.teleportTo,
+// teleportTo has no default of its own, so an explicit teleportTo="body" is still
+// distinguishable from never setting it, and can win over container either way.
+// || not ??: an empty string is never a valid Teleport target, so it should fall
+// through the same as unset instead of reaching document.querySelector('').
+const teleportTarget = computed<string | HTMLElement>(
+  () => props.teleportTo || container.value || 'body',
 )
 
 const titleId = useId()
