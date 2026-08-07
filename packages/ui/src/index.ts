@@ -202,7 +202,7 @@ export type {
 export { toast, useToastQueue } from './composables/useToast'
 export type { ToastEntry, ToastFn, ToastOptions, ToastVariant } from './composables/useToast'
 export { useLayer } from './composables/useLayerStack'
-export type { Layer } from './composables/useLayerStack'
+export type { Layer, UseLayerOptions } from './composables/useLayerStack'
 
 export {
   defaultMessages,
