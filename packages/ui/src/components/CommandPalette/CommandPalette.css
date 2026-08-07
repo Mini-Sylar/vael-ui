@@ -1,0 +1,122 @@
+@layer ui-components {
+  .ui-dialog-body.ui-command-palette-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .ui-dialog--top .ui-command-palette-panel {
+    margin-block-start: min(14vh, 8rem);
+  }
+
+  .ui-command-palette-input {
+    box-sizing: border-box;
+    flex: none;
+    inline-size: 100%;
+    padding: 1rem 1.25rem;
+    border: 0;
+    border-block-end: 1px solid var(--ui-border);
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    font-size: 0.9375rem;
+    outline: none;
+  }
+  .ui-command-palette-input::placeholder {
+    color: var(--ui-text-muted);
+  }
+
+  .ui-command-palette-list {
+    flex: 1 1 auto;
+    min-block-size: min(16rem, calc(85dvh - 8rem));
+    max-block-size: min(20rem, calc(85dvh - 8rem));
+    margin: 0;
+    padding: 0.5rem;
+    overflow-y: auto;
+    list-style: none;
+  }
+  .ui-command-palette-list:has(.ui-command-palette-empty) {
+    display: grid;
+    place-items: center;
+  }
+
+  .ui-command-palette-group-label {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    padding: 0.5rem 0.75rem 0.375rem;
+    background: var(--ui-surface);
+    color: var(--ui-text-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .ui-command-palette-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    padding: 0.625rem 0.75rem;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-command-palette-item[data-active] {
+    background: var(--ui-muted);
+  }
+  .ui-command-palette-item:active {
+    transform: scale(0.98);
+  }
+  .ui-command-palette-item[data-disabled] {
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .ui-command-palette-item-icon {
+    flex: none;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    color: var(--ui-text-muted);
+  }
+  .ui-command-palette-item-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-inline-size: 0;
+  }
+  .ui-command-palette-item-label {
+    color: var(--ui-text);
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .ui-command-palette-item-description {
+    overflow: hidden;
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-command-palette-item-shortcut {
+    display: flex;
+    flex: none;
+    gap: 0.25rem;
+  }
+
+  .ui-command-palette-empty {
+    padding: 2rem 1rem;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-command-palette-item {
+      transition: none;
+    }
+  }
+}
