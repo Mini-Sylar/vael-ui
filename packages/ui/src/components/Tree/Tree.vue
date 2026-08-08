@@ -72,7 +72,7 @@
         >
           <slot
             name="node"
-            :node="row.node"
+            :node="row.node as T"
             :depth="row.depth"
             :expanded="row.hasChildren && isExpanded(row.node)"
             :checked="isCheckedNode(row.node)"
@@ -149,7 +149,7 @@ export type TreeSelectionMode = 'single' | 'multiple' | 'checkbox'
      Independent DOM class set (ui-tree-*); TreeSelect passes ui overrides for legacy passenger classes (ui-tree-select-*).
      Focus delegation: focusFirstRow/initRoving exposed; roving tabindex internal; focus stealing is popover-specific (TreeSelect only).
      Animation: motionCss=false disables TransitionGroup and chevron rotation via data-motion="off" on root. -->
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends TreeNode = TreeNode">
 import './Tree.css'
 import { computed, nextTick, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -163,7 +163,7 @@ const query = defineModel<string>('query', { default: '' })
 
 const props = withDefaults(
   defineProps<{
-    items: readonly TreeNode[]
+    items: readonly T[]
     /** `'single'`: clicking replaces the selection. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
     selectionMode?: TreeSelectionMode
     /** Shows a built-in label search box atop the tree, auto-expanding ancestors of any match. Default: on. */
@@ -196,7 +196,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   change: [value: string | number | (string | number)[] | null]
-  select: [node: TreeNode]
+  select: [node: T]
   /** Fires on manual expand/collapse (not auto-expansion via filtering). */
   'expand-change': [value: string | number, expanded: boolean]
 }>()
@@ -204,7 +204,7 @@ const emit = defineEmits<{
 defineSlots<{
   /** Row content (inside the library's role="treeitem" wrapper). */
   node(props: {
-    node: TreeNode
+    node: T
     depth: number
     expanded: boolean
     checked: boolean
@@ -286,7 +286,7 @@ function toggleCheckbox(node: TreeNode) {
   const arr = Array.from(next)
   model.value = arr
   emit('change', arr)
-  emit('select', node)
+  emit('select', node as T)
 }
 function toggleMultiple(node: TreeNode) {
   const current = Array.isArray(model.value) ? [...model.value] : []
@@ -295,12 +295,12 @@ function toggleMultiple(node: TreeNode) {
   else current.splice(index, 1)
   model.value = current
   emit('change', current)
-  emit('select', node)
+  emit('select', node as T)
 }
 function selectSingle(node: TreeNode) {
   model.value = node.value
   emit('change', node.value)
-  emit('select', node)
+  emit('select', node as T)
 }
 function activateNode(node: TreeNode) {
   if (node.disabled) return

@@ -51,7 +51,7 @@ export interface SelectButtonItem {
 </script>
 
 <!-- Native radios (single) or checkboxes (multiple) with sliding indicator; allowEmpty clears on click -->
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends SelectButtonItem = SelectButtonItem">
 import './SelectButton.css'
 import { computed, useId, useTemplateRef } from 'vue'
 import { useTabIndicator } from '../../composables/useTabIndicator'
@@ -64,7 +64,7 @@ const modelValue = defineModel<string | number | (string | number)[] | null>({ d
 
 const props = withDefaults(
   defineProps<{
-    items: ReadonlyArray<SelectButtonItem>
+    items: ReadonlyArray<T>
     multiple?: boolean
     /** Single mode only: clicking the active option clears the model. */
     allowEmpty?: boolean
@@ -81,7 +81,7 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  item(props: { item: SelectButtonItem; checked: boolean }): unknown
+  item(props: { item: T; checked: boolean }): unknown
 }>()
 
 const generatedName = useId()
@@ -95,17 +95,17 @@ const fieldControl = useFieldControl({
 })
 const isInvalid = computed(() => fieldControl.invalid())
 
-function isChecked(item: SelectButtonItem): boolean {
+function isChecked(item: T): boolean {
   if (props.multiple) {
     return Array.isArray(modelValue.value) && modelValue.value.includes(item.value)
   }
   return modelValue.value === item.value
 }
-function isDisabled(item: SelectButtonItem): boolean {
+function isDisabled(item: T): boolean {
   return props.disabled || fieldControl.disabled() || !!item.disabled
 }
 
-function onOptionClick(item: SelectButtonItem, event: MouseEvent) {
+function onOptionClick(item: T, event: MouseEvent) {
   if (props.multiple || isDisabled(item)) return
   if (props.allowEmpty && modelValue.value === item.value) {
     event.preventDefault()
@@ -113,7 +113,7 @@ function onOptionClick(item: SelectButtonItem, event: MouseEvent) {
     emit('change', null)
   }
 }
-function onInputChange(item: SelectButtonItem, event: Event) {
+function onInputChange(item: T, event: Event) {
   if (props.multiple) {
     const checked = (event.target as HTMLInputElement).checked
     const current = Array.isArray(modelValue.value) ? modelValue.value : []

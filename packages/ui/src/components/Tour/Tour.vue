@@ -95,8 +95,8 @@ import type { DOMTarget } from '../../composables/dom'
 import type { UiPartValue } from '../../classes'
 export type { TourStep, TourGroup, TourStepChangeDetails, TourEndDetails }
 
-export interface TourProps {
-  steps: readonly TourStep[]
+export interface TourProps<T extends TourStep = TourStep> {
+  steps: readonly T[]
   /** Identifies this tour instance — see `useTour`'s `id` option. */
   id?: string
   /** Scroll-locks the page and makes everything but the target and callout inert while open. */
@@ -137,7 +137,7 @@ export interface TourProps {
   scroll-lock/inert (Popover doesn't dim the page). Escape/outside-click are Popover's own — no
   separate useLayer() call here, see closeOnEsc/closeOnOverlay forwarding above.
 -->
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends TourStep = TourStep">
 import './Tour.css'
 import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
@@ -155,7 +155,7 @@ defineOptions({ inheritAttrs: false })
 const open = defineModel<boolean>('open', { default: false })
 const stepIndex = defineModel<number>('step', { default: 0 })
 
-const props = withDefaults(defineProps<TourProps>(), {
+const props = withDefaults(defineProps<TourProps<T>>(), {
   modal: true,
   closeOnEsc: true,
   closeOnOverlay: false,
@@ -167,20 +167,20 @@ const props = withDefaults(defineProps<TourProps>(), {
 })
 
 const emit = defineEmits<{
-  'step-change': [details: TourStepChangeDetails]
-  skip: [details: TourEndDetails]
-  finish: [details: TourEndDetails]
+  'step-change': [details: TourStepChangeDetails<T>]
+  skip: [details: TourEndDetails<T>]
+  finish: [details: TourEndDetails<T>]
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
 }>()
 
 defineSlots<{
   default(props: {
     id: string | undefined
-    step: TourStep | undefined
+    step: T | undefined
     index: number
     total: number
     group: string | undefined
-    groups: TourGroup[]
+    groups: TourGroup<T>[]
     isFirst: boolean
     isLast: boolean
     isTransitioning: boolean

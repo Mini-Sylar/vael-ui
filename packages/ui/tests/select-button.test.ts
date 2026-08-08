@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { h, nextTick } from 'vue'
+import { h, nextTick, type Component } from 'vue'
 import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
@@ -109,7 +109,7 @@ test('Field label wires aria-labelledby on the group, and Field disabled disable
     props: { label: 'View', disabled: true },
     slots: {
       default: () =>
-        h(SelectButton, {
+        h(SelectButton as Component, {
           modelValue: null,
           items: [
             { label: 'List', value: 'list' },
@@ -135,7 +135,7 @@ test('Field error flips data-invalid on the group', async () => {
     props: { label: 'View', error: 'Required' },
     slots: {
       default: () =>
-        h(SelectButton, {
+        h(SelectButton as Component, {
           modelValue: null,
           items: [{ label: 'List', value: 'list' }],
         }),

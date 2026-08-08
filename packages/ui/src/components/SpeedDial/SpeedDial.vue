@@ -88,8 +88,8 @@ export interface SpeedDialItem {
   onSelect?: () => void
 }
 
-export interface SpeedDialProps {
-  items: ReadonlyArray<SpeedDialItem>
+export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
+  items: ReadonlyArray<T>
   direction?: SpeedDialDirection
   /** `hover` only activates on real hover-capable pointers; click always works too. */
   openOn?: SpeedDialTriggerMode
@@ -122,7 +122,7 @@ export function quarterCirclePoint(
   Outside-click/Escape hand-rolled (avoid usePopover's dead positioning code).
   Comments outside template to avoid DOM nodes in production.
 -->
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends SpeedDialItem = SpeedDialItem">
 import './SpeedDial.css'
 import { computed, nextTick, onMounted, onScopeDispose, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
@@ -134,7 +134,7 @@ import { useThemedUi } from '../../theme'
 
 const open = defineModel<boolean>('open', { default: false })
 
-const props = withDefaults(defineProps<SpeedDialProps>(), {
+const props = withDefaults(defineProps<SpeedDialProps<T>>(), {
   direction: 'up',
   openOn: 'click',
   disabled: false,
@@ -144,12 +144,12 @@ const props = withDefaults(defineProps<SpeedDialProps>(), {
 })
 
 const emit = defineEmits<{
-  select: [item: SpeedDialItem]
+  select: [item: T]
 }>()
 
 defineSlots<{
   icon(props: { open: boolean }): unknown
-  item(props: { item: SpeedDialItem; index: number }): unknown
+  item(props: { item: T; index: number }): unknown
 }>()
 
 const visibleItems = computed(() => (open.value ? props.items : []))
@@ -196,7 +196,7 @@ function onTriggerClick() {
   toggleDial()
 }
 
-function selectItem(item: SpeedDialItem) {
+function selectItem(item: T) {
   if (item.disabled) return
   emit('select', item)
   item.onSelect?.()

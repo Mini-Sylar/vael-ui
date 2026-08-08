@@ -26,15 +26,18 @@
           <span class="ui-menu-list-item-label">{{ row.entry.label }}</span>
         </slot>
       </div>
-      <button
+      <component
+        :is="tagOf(row.entry)"
         v-else
-        type="button"
+        :type="tagOf(row.entry) === 'button' ? 'button' : undefined"
         role="menuitem"
         :class="rowClass(row, 'item')"
-        :disabled="row.entry.disabled"
+        :disabled="tagOf(row.entry) === 'button' ? row.entry.disabled : undefined"
+        :aria-disabled="tagOf(row.entry) !== 'button' ? row.entry.disabled || undefined : undefined"
         :data-menu-index="i"
         :aria-current="isActive(row.entry) ? 'page' : undefined"
         :style="[indentStyle(row.depth), itemPart.style]"
+        v-bind="row.entry.attrs"
       >
         <slot name="item" :item="row.entry as T">
           <span v-if="row.entry.icon" class="ui-menu-list-item-icon">
@@ -45,7 +48,7 @@
             {{ row.entry.shortcut }}
           </span>
         </slot>
-      </button>
+      </component>
     </template>
   </nav>
 </template>
@@ -55,6 +58,10 @@ import type { MenuEntry, MenuItemData, MenuSeparator } from '../Menu/Menu.vue'
 import type { UiPartValue } from '../../classes'
 
 export type { MenuEntry, MenuItemData, MenuSeparator }
+
+// MenuItemData's own `as`/`attrs` (see Menu.vue) already cover link rows —
+// this alias just keeps the more specific import name available.
+export type MenuListItemData = MenuItemData
 
 export interface MenuListProps<T extends MenuItemData = MenuItemData> {
   /** Same shape as `Menu`'s own `items` — a `MenuList` and a `Menu` can share one array. */
@@ -106,6 +113,12 @@ interface FlatRow {
 interface FlatSeparator {
   key: string
   kind: 'separator'
+}
+
+// Row tag: 'button' by default (existing behavior, unaffected), or the
+// consumer's own `as` for a real link — see MenuItemData.
+function tagOf(entry: MenuItemData): string {
+  return entry.as ?? 'button'
 }
 
 // Depth-first flatten: group entries become rows followed by children at depth+1 (always expanded).

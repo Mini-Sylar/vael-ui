@@ -21,7 +21,7 @@
     @blur="fieldControl.onBlur"
   >
     <span :class="valuePart.class" :style="valuePart.style">
-      <slot name="value" :selected="selectedNodes">
+      <slot name="value" :selected="selectedNodes as T[]">
         <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
         <span v-else>{{ displayLabel }}</span>
       </slot>
@@ -133,11 +133,12 @@ export type TreeSelectAlign = Align
 export type TreeSelectSelectionMode = TreeSelectionMode
 </script>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends TreeSelectNode = TreeSelectNode">
 import './TreeSelect.css'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import type { ComponentExposed } from 'vue-component-type-helpers'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -157,7 +158,7 @@ const query = defineModel<string>('query', { default: '' })
 
 const props = withDefaults(
   defineProps<{
-    items: readonly TreeSelectNode[]
+    items: readonly T[]
     placeholder?: string
     /** `'single'`: clicking replaces selection and closes the panel. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
     selectionMode?: TreeSelectSelectionMode
@@ -222,16 +223,16 @@ const props = withDefaults(
 const emit = defineEmits<{
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
   change: [value: string | number | (string | number)[] | null]
-  select: [node: TreeSelectNode]
+  select: [node: T]
   /** Fires on manual expand/collapse; not on filter-driven auto-expansion. */
   'expand-change': [value: string | number, expanded: boolean]
 }>()
 
 defineSlots<{
-  value(props: { selected: TreeSelectNode[] }): unknown
+  value(props: { selected: T[] }): unknown
   /** Row content override (library owns wrapper & behavior). */
   node(props: {
-    node: TreeSelectNode
+    node: T
     depth: number
     expanded: boolean
     checked: boolean
@@ -284,7 +285,7 @@ function onClear(event: MouseEvent) {
 }
 
 // Single-select commits and closes; multiple/checkbox stay open.
-function onTreeSelect(node: TreeSelectNode) {
+function onTreeSelect(node: T) {
   emit('select', node)
   if (props.selectionMode === 'single') close()
 }
@@ -292,7 +293,7 @@ function onTreeSelect(node: TreeSelectNode) {
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
-const treeRef = useTemplateRef<InstanceType<typeof Tree>>('treeRef')
+const treeRef = useTemplateRef<ComponentExposed<typeof Tree>>('treeRef')
 // Sourced from Tree (owns real role="tree").
 const listEl = computed(() => treeRef.value?.listEl ?? null)
 

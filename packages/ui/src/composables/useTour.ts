@@ -35,44 +35,44 @@ export interface TourStep {
   onBeforeEnter?: () => void | Promise<void>
 }
 
-export interface TourGroup {
+export interface TourGroup<T extends TourStep = TourStep> {
   group: string | undefined
-  steps: TourStep[]
+  steps: T[]
 }
 
 /** How a step change happened — `next()`/`prev()` clicked, jumped via `goTo`/`goToGroup`, or the tour just opened onto its first step. */
 export type TourNavigationReason = 'open' | 'next' | 'prev' | 'goto' | 'group'
 
-export interface TourStepChangeDetails {
+export interface TourStepChangeDetails<T extends TourStep = TourStep> {
   index: number
-  step: TourStep
+  step: T
   reason: TourNavigationReason
   previousIndex: number
-  previousStep: TourStep | undefined
+  previousStep: T | undefined
   id: string | undefined
 }
 
-export interface TourEndDetails {
+export interface TourEndDetails<T extends TourStep = TourStep> {
   index: number
-  step: TourStep
+  step: T
   id: string | undefined
 }
 
-export interface UseTourOptions {
+export interface UseTourOptions<T extends TourStep = TourStep> {
   /** Identifies this tour instance. Not used internally — threaded through to callback details and available for a consumer's own analytics/persistence keying once they have more than one tour on a page. */
   id?: string
-  steps: MaybeRefOrGetter<readonly TourStep[]>
-  onStepChange?: (details: TourStepChangeDetails) => void
-  onSkip?: (details: TourEndDetails) => void
-  onFinish?: (details: TourEndDetails) => void
+  steps: MaybeRefOrGetter<readonly T[]>
+  onStepChange?: (details: TourStepChangeDetails<T>) => void
+  onSkip?: (details: TourEndDetails<T>) => void
+  onFinish?: (details: TourEndDetails<T>) => void
 }
 
-export interface UseTourReturn {
+export interface UseTourReturn<T extends TourStep = TourStep> {
   id: string | undefined
   currentIndex: Ref<number>
-  currentStep: ComputedRef<TourStep | undefined>
+  currentStep: ComputedRef<T | undefined>
   currentGroup: ComputedRef<string | undefined>
-  groups: ComputedRef<TourGroup[]>
+  groups: ComputedRef<TourGroup<T>[]>
   total: ComputedRef<number>
   isFirst: ComputedRef<boolean>
   isLast: ComputedRef<boolean>
@@ -85,7 +85,10 @@ export interface UseTourReturn {
   goToGroup: (group: string) => Promise<void>
 }
 
-export function useTour(open: Ref<boolean>, options: UseTourOptions): UseTourReturn {
+export function useTour<T extends TourStep = TourStep>(
+  open: Ref<boolean>,
+  options: UseTourOptions<T>,
+): UseTourReturn<T> {
   const currentIndex = shallowRef(0)
   const isTransitioning = shallowRef(false)
 
@@ -96,8 +99,8 @@ export function useTour(open: Ref<boolean>, options: UseTourOptions): UseTourRet
   const isFirst = computed(() => currentIndex.value <= 0)
   const isLast = computed(() => currentIndex.value >= total.value - 1)
 
-  const groups = computed<TourGroup[]>(() => {
-    const list: TourGroup[] = []
+  const groups = computed<TourGroup<T>[]>(() => {
+    const list: TourGroup<T>[] = []
     for (const step of steps.value) {
       let bucket = list.find((g) => g.group === step.group)
       if (!bucket) {

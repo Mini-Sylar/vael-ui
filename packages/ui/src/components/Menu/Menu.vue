@@ -42,19 +42,24 @@
             <template v-else v-for="(entry, i) in items" :key="i">
               <div v-if="isSeparator(entry)" role="separator" class="ui-menu-separator" />
               <template v-else>
-                <button
-                  type="button"
+                <component
+                  :is="tagOf(entry)"
+                  :type="tagOf(entry) === 'button' ? 'button' : undefined"
                   role="menuitem"
                   class="ui-menu-item"
                   :class="{ 'ui-menu-item--danger': entry.danger }"
-                  :disabled="entry.disabled"
+                  :disabled="tagOf(entry) === 'button' ? entry.disabled : undefined"
+                  :aria-disabled="
+                    tagOf(entry) !== 'button' ? entry.disabled || undefined : undefined
+                  "
                   :data-menu-index="i"
                   :data-keep-open="entry.keepOpen ? '' : undefined"
                   :aria-haspopup="entry.items ? 'menu' : undefined"
                   :aria-expanded="entry.items ? !!submenuOpen[i] : undefined"
-                  :ref="(el) => setRowEl(i, el)"
+                  :ref="(el: unknown) => setRowEl(i, el)"
                   @mouseenter="entry.items ? onRowMouseEnter(i, entry.disabled) : undefined"
                   @mouseleave="entry.items ? onRowMouseLeave(i) : undefined"
+                  v-bind="entry.attrs"
                 >
                   <slot name="item" :item="entry">
                     <span v-if="entry.icon" class="ui-menu-item-icon">
@@ -76,7 +81,7 @@
                       </svg>
                     </span>
                   </slot>
-                </button>
+                </component>
                 <!-- Teleported to ancestor to stay in same DOM subtree for outside-click detection. -->
                 <Menu
                   v-if="entry.items && positionerEl"
@@ -142,6 +147,10 @@ export interface MenuItemData {
    * nested levels.
    */
   items?: ReadonlyArray<MenuEntry<MenuItemData>>
+  /** Row tag — default `'button'`, or `'a'`/`'RouterLink'` for a real link (same `as`/`attrs` convention as `BreadcrumbItem`). Ignored when `items` is set. */
+  as?: string
+  /** Forwarded onto the rendered element, e.g. `{ href }` or `{ to }`. */
+  attrs?: Record<string, unknown>
 }
 
 export type MenuEntry<T extends MenuItemData = MenuItemData> = T | MenuSeparator
@@ -233,6 +242,12 @@ defineSlots<{
 
 function isSeparator(entry: MenuEntry<T>): entry is MenuSeparator {
   return (entry as MenuSeparator).type === 'separator'
+}
+
+// A row with nested `items` is a submenu trigger — always a button,
+// regardless of `as` (expand-on-activate, not navigate-on-activate).
+function tagOf(entry: MenuItemData): string {
+  return entry.items ? 'button' : (entry.as ?? 'button')
 }
 
 function unwrapEl(el: unknown): HTMLElement | null {

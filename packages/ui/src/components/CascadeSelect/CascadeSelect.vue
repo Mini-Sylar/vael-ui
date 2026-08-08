@@ -40,7 +40,7 @@
           @blur="fieldControl.onBlur"
         >
           <span :class="valuePart.class" :style="valuePart.style">
-            <slot name="value" :selected="selectedItem" :path="selectedPath">{{
+            <slot name="value" :selected="selectedItem as T | null" :path="selectedPath">{{
               selectedItem?.label ?? placeholder
             }}</slot>
           </span>
@@ -88,7 +88,7 @@
         </div>
       </template>
       <template v-else #item="{ item: entry }">
-        <slot name="item" :item="resolveItem(entry)" :has-children="!!entry.items">
+        <slot name="item" :item="resolveItem(entry) as T" :has-children="!!entry.items">
           <span class="ui-menu-item-label">{{ entry.label }}</span>
           <span v-if="entry.items" class="ui-menu-item-chevron" aria-hidden="true">
             <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
@@ -127,7 +127,7 @@ export type CascadeSelectPath = (string | number)[]
 </script>
 
 <!-- Wraps Menu's submenu engine; nodeByKey side-table preserves type at all depths. -->
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends CascadeSelectItem = CascadeSelectItem">
 import './CascadeSelect.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
@@ -147,7 +147,7 @@ const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(
   defineProps<{
-    items: readonly CascadeSelectItem[]
+    items: readonly T[]
     placeholder?: string
     disabled?: boolean
     clearable?: boolean
@@ -197,14 +197,14 @@ const props = withDefaults(
 const emit = defineEmits<{
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
   change: [value: string | number | null]
-  select: [item: CascadeSelectItem, path: CascadeSelectPath]
+  select: [item: T, path: CascadeSelectPath]
 }>()
 
 defineSlots<{
   /** Trigger content override — receives the resolved leaf item and its root-to-leaf path. */
-  value(props: { selected: CascadeSelectItem | null; path: CascadeSelectPath }): unknown
+  value(props: { selected: T | null; path: CascadeSelectPath }): unknown
   /** Row content override, any level — keeps the row's expand/select behavior. */
-  item(props: { item: CascadeSelectItem; hasChildren: boolean }): unknown
+  item(props: { item: T; hasChildren: boolean }): unknown
   /** Replaces the localized "no options" row shown when `items` is empty. */
   empty(): unknown
 }>()
@@ -268,7 +268,7 @@ function onMenuSelect(entry: MenuItemData) {
   if (!item) return
   model.value = item.value
   const match = findLeaf(props.items, item.value)
-  emit('select', item, match?.path ?? [])
+  emit('select', item as T, match?.path ?? [])
   emit('change', item.value)
 }
 

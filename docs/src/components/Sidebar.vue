@@ -12,7 +12,7 @@
       <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
     </div>
     <nav ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
-      <MenuList :items="navItems" :active="activeValue" @select="onSelect">
+      <MenuList :items="navItems" :active="activeValue">
         <template #item="{ item }">
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
           <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
@@ -26,7 +26,7 @@
       <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
     </div>
     <nav class="sidebar-scroll sidebar-scroll--mobile">
-      <MenuList :items="navItems" :active="activeValue" @select="onMobileSelect">
+      <MenuList :items="navItems" :active="activeValue" @select="mobileOpen = false">
         <template #item="{ item }">
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
           <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
@@ -40,10 +40,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
 import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable, SelectButton, vScrollMask } from 'vael-ui'
-import type { MenuEntry, MenuItemData } from 'vael-ui'
+import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { categories, NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { composableCategories } from '../composablesTaxonomy'
 
@@ -51,7 +52,6 @@ const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
 
 const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
 
 const GUIDE_ROUTES = [
   { routeName: 'getting-started', labelKey: 'nav.gettingStarted' },
@@ -99,21 +99,36 @@ watch(
   { immediate: true },
 )
 
-const navItems = computed<MenuEntry[]>(() => {
+// Real routes for real <a> tags — MenuList's `as: 'RouterLink'` (see
+// MenuListItemData) renders these as actual hrefs, so cmd/ctrl/middle-click
+// and "open in new tab" all work natively, unlike a plain select-only row.
+function routeFor(value: string): RouteLocationRaw {
+  if (value.startsWith('guide:')) return { name: value.slice('guide:'.length) }
+  if (value.startsWith('composable:')) {
+    return { name: 'composable', params: { name: value.slice('composable:'.length) } }
+  }
+  return { name: 'component', params: { name: value } }
+}
+
+function navItem(label: string, value: string): MenuListItemData {
+  return { label, value, as: 'RouterLink', attrs: { to: routeFor(value) } }
+}
+
+const navItems = computed<MenuEntry<MenuListItemData>[]>(() => {
   if (sidebarMode.value === 'composables') {
     return composableCategories.map((category) => ({
       label: t(`composablesTaxonomy.${category.key}`),
-      items: category.items.map((name) => ({ label: name, value: composableValue(name) })),
+      items: category.items.map((name) => navItem(name, composableValue(name))),
     }))
   }
   return [
     {
       label: t('nav.guides'),
-      items: GUIDE_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
+      items: GUIDE_ROUTES.map((g) => navItem(t(g.labelKey), guideValue(g.routeName))),
     },
     ...categories.map((category) => ({
       label: t(`taxonomy.${category.key}`),
-      items: category.components.map((name) => ({ label: name, value: name })),
+      items: category.components.map((name) => navItem(name, name)),
     })),
   ]
 })
@@ -149,20 +164,6 @@ function isNewBadge(value: string | number | null | undefined): boolean {
   if (!since || seenNewComponents.value.includes(value)) return false
   const ageDays = (Date.now() - new Date(since).getTime()) / 86_400_000
   return ageDays >= 0 && ageDays <= NEW_BADGE_DAYS
-}
-
-function onSelect(item: MenuItemData) {
-  if (!item.value) return
-  const value = String(item.value)
-  if (value.startsWith('guide:')) router.push({ name: value.slice('guide:'.length) })
-  else if (value.startsWith('composable:')) {
-    router.push({ name: 'composable', params: { name: value.slice('composable:'.length) } })
-  } else router.push({ name: 'component', params: { name: value } })
-}
-
-function onMobileSelect(item: MenuItemData) {
-  onSelect(item)
-  mobileOpen.value = false
 }
 
 // This sidebar IS the Resizable example. Its own component page points

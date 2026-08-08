@@ -108,7 +108,7 @@ export type {
   MenuSide,
 } from './components/Menu/Menu.vue'
 export { default as MenuList } from './components/MenuList/MenuList.vue'
-export type { MenuListProps } from './components/MenuList/MenuList.vue'
+export type { MenuListProps, MenuListItemData } from './components/MenuList/MenuList.vue'
 export { default as ContextMenu } from './components/ContextMenu/ContextMenu.vue'
 export type {
   ContextMenuAlign,
