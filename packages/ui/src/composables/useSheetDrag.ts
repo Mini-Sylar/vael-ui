@@ -88,6 +88,10 @@ export function useSheetDrag(
     if (!panel) return
     panel.style.transition = animate && !reducedMotion() ? TRANSITION : 'none'
     panel.style.transform = `translateY(${offset}px)`
+    panel.style.setProperty(
+      '--sheet-visible-height',
+      `${Math.max(0, window.innerHeight - offset)}px`,
+    )
   }
 
   function settleTo(point: SheetSnapPoint) {

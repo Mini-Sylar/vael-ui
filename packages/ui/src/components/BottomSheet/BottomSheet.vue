@@ -174,10 +174,15 @@ const { activeSnap, isDragging, setReceded } = useSheetDrag(open, {
   onDismiss: requestDismiss,
 })
 
-// Nesting auto-detected: instance tells ancestor when opening/closing; recede syncs with child's actual exit.
+// Nesting auto-detected: instance tells ancestor when opening/closing.
 const parentSheet = inject(nestingKey, null)
 provide(nestingKey, { onNestedOpenChange: setReceded })
 watch(open, (value) => parentSheet?.onNestedOpenChange(value))
+// isClosing flips the instant a close is requested, well before `open` itself flips once the
+// exit animation finishes — un-recede the parent then, so both animate out together.
+watch(isClosing, (value) => {
+  if (value) parentSheet?.onNestedOpenChange(false)
+})
 
 let exitTimer: ReturnType<typeof setTimeout> | undefined
 onScopeDispose(() => clearTimeout(exitTimer))
