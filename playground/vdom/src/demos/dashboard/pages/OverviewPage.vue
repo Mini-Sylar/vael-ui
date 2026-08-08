@@ -28,32 +28,57 @@
         </Card>
       </motion.div>
     </div>
-    <Card title="Recent orders" description="Latest 8 — full table lives on the Orders page.">
-      <DataTable :data="recentOrders" row-key="id">
-        <template #columns="{ columnData }">
-          <Column :data="columnData" field="id" label="Order" />
-          <Column :data="columnData" field="customer" label="Customer" />
-          <Column :data="columnData" field="amount" label="Amount">
-            <template #cell="{ row }">{{ currency.format(row.amount) }}</template>
-          </Column>
-          <Column :data="columnData" field="status" label="Status">
-            <template #cell="{ row }">
-              <Tag :variant="STATUS_VARIANT[row.status]">
-                <template #icon>
-                  <!-- simple dot -->
-                  <PhDot :size="5" class="status-dot" />
-                </template>
-                {{ row.status }}</Tag
-              >
-            </template>
-          </Column>
-          <Column :data="columnData" field="date" label="Date" />
-        </template>
-        <template #footer>
-          <RouterLink to="/orders" class="dash-view-all-link">View all orders →</RouterLink>
-        </template>
-      </DataTable>
-    </Card>
+    <div class="dash-overview-grid">
+      <Card
+        title="Recent orders"
+        description="Latest 8 — full table lives on the Orders page."
+        class="dash-recent-orders-card"
+      >
+        <DataTable :data="recentOrders" row-key="id">
+          <template #columns="{ columnData }">
+            <Column :data="columnData" field="id" label="Order" />
+            <Column :data="columnData" field="customer" label="Customer" />
+            <Column :data="columnData" field="amount" label="Amount">
+              <template #cell="{ row }">{{ currency.format(row.amount) }}</template>
+            </Column>
+            <Column :data="columnData" field="status" label="Status">
+              <template #cell="{ row }">
+                <Tag :variant="STATUS_VARIANT[row.status]">
+                  <template #icon>
+                    <!-- simple dot -->
+                    <PhDot :size="5" class="status-dot" />
+                  </template>
+                  {{ row.status }}</Tag
+                >
+              </template>
+            </Column>
+            <Column :data="columnData" field="date" label="Date" />
+          </template>
+          <template #footer>
+            <RouterLink id="dash-view-all-link" to="/orders" class="dash-view-all-link"
+              >View all orders →</RouterLink
+            >
+          </template>
+        </DataTable>
+      </Card>
+
+      <Card
+        title="Active team"
+        description="Who has access to this workspace."
+        class="dash-team-card"
+      >
+        <AvatarGroup :overflow-count="overflowCount" hover-lift class="dash-team-avatars">
+          <Avatar
+            v-for="member in visibleTeam"
+            :key="member.name"
+            :name="member.name"
+            size="md"
+            v-tooltip="`${member.name} — ${member.role}`"
+          />
+        </AvatarGroup>
+        <p class="dash-team-note">{{ teamMembers.length }} teammates have access right now.</p>
+      </Card>
+    </div>
   </div>
 </template>
 
@@ -74,14 +99,18 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { motion, useReducedMotion } from 'motion-v'
-import { Card, Column, DataTable, Progress, Tag } from 'vael-ui'
-import { currency, orders, STATUS_VARIANT, stats } from '../data'
+import { Avatar, AvatarGroup, Card, Column, DataTable, Progress, Tag, vTooltip } from 'vael-ui'
+import { currency, orders, STATUS_VARIANT, stats, teamMembers } from '../data'
 import type { StatDef } from '../data'
 import { PhDot } from '@phosphor-icons/vue'
 
 const reduce = useReducedMotion()
 
 const recentOrders = computed(() => orders.slice(0, 8))
+
+const VISIBLE_TEAM_COUNT = 5
+const visibleTeam = computed(() => teamMembers.slice(0, VISIBLE_TEAM_COUNT))
+const overflowCount = computed(() => Math.max(teamMembers.length - VISIBLE_TEAM_COUNT, 0))
 
 function formatStat(stat: StatDef): string {
   if (stat.format === 'currency') return currency.format(stat.value)
@@ -124,6 +153,40 @@ function formatStat(stat: StatDef): string {
 }
 .dash-view-all-link:hover {
   text-decoration: underline;
+}
+
+/* Asymmetric on purpose: the table is the thing worth scanning, the team
+   widget is a glance. A 50/50 split would waste the table's own width. */
+.dash-overview-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.875rem;
+  align-items: start;
+}
+@media (max-width: 40rem) {
+  .dash-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dash-recent-orders-card {
+  min-inline-size: 0;
+}
+
+.dash-team-card :deep(.ui-card-body) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.dash-team-avatars {
+  /* hoverLift needs room to actually lift into, or the earliest avatars in
+     the row clip against the card's own edge the instant they rise. */
+  padding-block-start: 0.25rem;
+}
+.dash-team-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ui-text-muted);
 }
 
 .status-dot {

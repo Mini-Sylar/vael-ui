@@ -9,6 +9,13 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3125rem;
+    /* `as` can render a <button> instead of the default <a> — reset the native
+       chrome an anchor never had in the first place, so both look identical. */
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
     color: var(--ui-text-muted);
     text-decoration: none;
     border-radius: calc(var(--ui-radius) - 6px);

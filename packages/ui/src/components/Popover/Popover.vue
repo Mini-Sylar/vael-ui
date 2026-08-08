@@ -1,6 +1,6 @@
 <template>
   <slot v-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
-  <Teleport :to="teleportTo">
+  <Teleport :to="teleportTarget">
     <Transition name="ui-popover" :css="!forceMount">
       <div
         v-if="forceMount || open"
@@ -65,8 +65,14 @@ export interface PopoverProps {
   beforeClose?: (done: () => void) => void
   /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
   forceMount?: boolean
-  /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. */
+  /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. Wins over `container` either way. */
   teleportTo?: string | HTMLElement
+  /**
+   * Scopes the popover to one element: it teleports there instead of `body`, positions
+   * against it, and Escape-key ownership is scoped to it too, so it doesn't contend with
+   * page-level layers. Omit for a page-level popover.
+   */
+  container?: DOMTarget
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
   /** Per-instance part-class/style overrides. */
@@ -80,10 +86,11 @@ export interface PopoverProps {
 -->
 <script setup lang="ts">
 import './Popover.css'
-import { computed, inject, shallowRef, useTemplateRef } from 'vue'
+import { computed, inject, shallowRef, useTemplateRef, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
+import { useDOMTarget, type DOMTarget } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -101,7 +108,6 @@ const props = withDefaults(defineProps<PopoverProps>(), {
   closeOnEsc: true,
   closeOnOutside: true,
   forceMount: false,
-  teleportTo: 'body',
   scrollFade: true,
 })
 
@@ -150,6 +156,24 @@ const themedUi = useThemedUi(
 )
 const themeScope = inject(themeScopeKey, undefined)
 
+const { el: container } = useDOMTarget(() => props.container ?? null)
+// teleportTo has no default of its own, so an explicit teleportTo="body" is still
+// distinguishable from never setting it, and can win over container either way.
+const teleportTarget = computed<string | HTMLElement>(
+  () => props.teleportTo || container.value || 'body',
+)
+
+// Positioner needs `container` to be a positioning context, or floating-ui's absolute
+// coordinates resolve against whatever ancestor is positioned instead — same trick
+// useDialog.ts uses for a contained Dialog's panel.
+watch(
+  container,
+  (el) => {
+    if (el && getComputedStyle(el).position === 'static') el.style.position = 'relative'
+  },
+  { immediate: true },
+)
+
 const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close, cancelClose } =
   usePopover(open, {
     triggerEl: triggerElRef,
@@ -162,6 +186,7 @@ const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close
     closeOnOutside: () => props.closeOnOutside,
     beforeClose: () => props.beforeClose,
     onOpenChange: (value, details) => emit('open-change', value, details),
+    scope: container,
   })
 
 // v-scroll-mask on body (not panel) — panel's solid surface must sit behind fade.

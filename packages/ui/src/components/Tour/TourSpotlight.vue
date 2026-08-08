@@ -6,7 +6,11 @@
         v-show="active"
         ref="overlay"
         :class="overlayPart.class"
-        :style="[{ clipPath }, instant && { transitionProperty: 'opacity' }, overlayPart.style]"
+        :style="[
+          { clipPath, position: contained ? 'absolute' : undefined },
+          instant && { transitionProperty: 'opacity' },
+          overlayPart.style,
+        ]"
         aria-hidden="true"
       />
     </Transition>
@@ -27,6 +31,8 @@ export interface TourSpotlightProps {
   instant?: boolean
   forceMount?: boolean
   teleportTo?: string | HTMLElement
+  /** Scopes the dim/cutout to this element's own box instead of the viewport — clip-path coordinates become relative to it, and the overlay switches from `position: fixed` to `absolute`. Omit for page-level. */
+  containerEl?: HTMLElement | null
   ui?: UiPartValue
 }
 </script>
@@ -52,7 +58,10 @@ const props = withDefaults(defineProps<TourSpotlightProps>(), {
   instant: false,
   forceMount: false,
   teleportTo: 'body',
+  containerEl: null,
 })
+
+const contained = computed(() => props.containerEl !== null)
 
 const overlay = useTemplateRef<HTMLElement>('overlay')
 const cx = useClassMerge()
@@ -64,14 +73,18 @@ function update() {
   const target = props.targetEl
   if (!target) return
   const rect = target.getBoundingClientRect()
+  const container = props.containerEl
+  const containerRect = container?.getBoundingClientRect()
+  const originX = containerRect?.left ?? 0
+  const originY = containerRect?.top ?? 0
   const pad = props.padding
-  const x = rect.left - pad
-  const y = rect.top - pad
+  const x = rect.left - originX - pad
+  const y = rect.top - originY - pad
   const w = rect.width + pad * 2
   const h = rect.height + pad * 2
   const r = Math.max(0, Math.min(props.radius, w / 2, h / 2))
-  const vw = window.innerWidth
-  const vh = window.innerHeight
+  const vw = container ? container.clientWidth : window.innerWidth
+  const vh = container ? container.clientHeight : window.innerHeight
   clipPath.value =
     `path(evenodd, "M0,0 H${vw} V${vh} H0 Z ` +
     `M${x + r},${y} H${x + w - r} A${r} ${r} 0 0 1 ${x + w},${y + r} ` +
@@ -82,7 +95,7 @@ function update() {
 
 let stopAutoUpdate: (() => void) | undefined
 watch(
-  () => [props.active, props.targetEl, overlay.value] as const,
+  () => [props.active, props.targetEl, overlay.value, props.containerEl] as const,
   ([active, target, overlayEl]) => {
     stopAutoUpdate?.()
     stopAutoUpdate = undefined

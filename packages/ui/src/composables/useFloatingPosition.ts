@@ -1,14 +1,6 @@
 import { shallowRef, toValue, watch, onScopeDispose } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import {
-  autoUpdate,
-  computePosition,
-  flip,
-  limitShift,
-  offset,
-  shift,
-  size,
-} from '@floating-ui/dom'
+import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
 import type { Placement, Side } from '@floating-ui/dom'
 
 export type Align = 'start' | 'center' | 'end'
@@ -86,9 +78,19 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
           mainAxis: toValue(options.sideOffset) ?? 8,
           crossAxis: toValue(options.alignOffset) ?? 0,
         }),
-        flip(),
-        shift({ limiter: limitShift() }),
+        // altBoundary: true — the floating element is teleported (usually to
+        // <body>), so it shares no offset parent with the reference. Without
+        // this, flip/shift resolve clipping ancestors from the REFERENCE's
+        // position instead, meaning any scrollable container the reference
+        // happens to sit inside (a card, a panel) gets treated as the
+        // boundary the floating element must stay within — even though it's
+        // rendered miles away from that container and the real viewport has
+        // plenty of room. See floating-ui's own docs on this exact case:
+        // https://floating-ui.com/docs/detectOverflow#altboundary
+        flip({ altBoundary: true }),
+        shift({ altBoundary: true, padding: 8 }),
         size({
+          altBoundary: true,
           padding: 8,
           apply({ availableHeight, rects }) {
             maxHeight.value = availableHeight

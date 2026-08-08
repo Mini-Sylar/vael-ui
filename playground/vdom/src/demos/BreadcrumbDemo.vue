@@ -2,14 +2,14 @@
   <section class="demo">
     <h2>Breadcrumb — a block, not a component</h2>
     <p class="note">
-      There's deliberately no <code>Breadcrumb.vue</code> shipped in the library, the same call as
-      "Password with hint" (<code>PasswordFieldDemo</code> above): a <code>&lt;nav&gt;</code> +
-      ordered list of crumbs, a <code>Button</code> per crumb, and a separator between them covers
-      the whole shape with zero new behavior. Consumers want to customize a breadcrumb trail — a
-      different separator, icon vs. text crumbs, collapsing a long path behind an overflow menu —
-      far more than they want a rigid black-box prop API to fight. This is a documented composition
-      recipe using only existing primitives (<code>Button</code>, <code>Menu</code>, plain markup),
-      not a black box: copy it and change whatever you need.
+      The library now ships a real <code>Breadcrumb</code>/<code>BreadcrumbItem</code>/
+      <code>BreadcrumbSeparator</code> set (see the dashboard demo's header for it in real use, with
+      a real <code>router-link</code> crumb and a route-driven trail). This file predates that and
+      still earns its keep as the hand-rolled alternative: a <code>&lt;nav&gt;</code> + ordered list
+      of crumbs, a <code>Button</code> per crumb, and a separator between them, composed from
+      scratch when you want something the packaged component's <code>items</code>/<code>#item</code>
+      API doesn't cover — a custom overflow-collapse policy, non-link crumbs, whatever. Copy it and
+      change whatever you need; nothing here depends on the shipped component existing.
     </p>
 
     <h3>Basic trail</h3>

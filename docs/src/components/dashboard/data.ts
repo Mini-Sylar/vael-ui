@@ -90,6 +90,21 @@ export const customers: Customer[] = CUSTOMER_NAMES.map((name, i) => {
   }
 })
 
+export interface TeamMember {
+  name: string
+  role: string
+}
+
+export const teamMembers: TeamMember[] = [
+  { name: 'Mira Mitchell', role: 'Workspace admin' },
+  { name: "Marcus O'Connor", role: 'Support lead' },
+  { name: 'Priya Nair', role: 'Ops' },
+  { name: 'Wei Chen', role: 'Engineering' },
+  { name: 'Sofia Rossi', role: 'Finance' },
+  { name: 'Liam Walsh', role: 'Support' },
+  { name: 'Noor Haddad', role: 'Ops' },
+]
+
 export interface StatDef {
   label: string
   value: number
@@ -97,25 +112,29 @@ export interface StatDef {
   trend: string
   trendVariant: 'success' | 'warning' | 'danger'
   progress?: number
+  /** Relative (0–1) 30-day trend points — renders as a dithered dot sparkline. Deliberately not a round staircase; real trend data jitters. */
+  sparkline?: number[]
 }
 
 export const stats: StatDef[] = [
   {
-    label: 'Revenue (30d)',
+    label: 'Revenue',
     value: 128430,
     format: 'currency',
     trend: '+12.4%',
     trendVariant: 'success',
+    sparkline: [0.32, 0.28, 0.41, 0.38, 0.52, 0.47, 0.61, 0.58, 0.72, 0.66, 0.84, 0.79, 0.95],
   },
   {
-    label: 'Active customers',
+    label: 'Customers',
     value: 1284,
     format: 'number',
     trend: '+3.1%',
     trendVariant: 'success',
+    sparkline: [0.55, 0.6, 0.5, 0.62, 0.58, 0.68, 0.6, 0.7, 0.65, 0.74, 0.7, 0.78, 0.82],
   },
   {
-    label: 'Order fulfillment',
+    label: 'Fulfillment',
     value: 68,
     format: 'percent',
     trend: 'on track',

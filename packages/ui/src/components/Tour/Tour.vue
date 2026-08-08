@@ -7,7 +7,8 @@
     :radius="step?.spotlightRadius ?? spotlightRadius"
     :instant="isScrolling"
     :force-mount="forceMount"
-    :teleport-to="teleportTo"
+    :teleport-to="teleportTarget"
+    :container-el="container"
     :ui="ui?.spotlight"
   />
   <Popover
@@ -25,7 +26,8 @@
     :close-on-outside="closeOnOverlay"
     :force-mount="forceMount"
     :before-close="beforeClose"
-    :teleport-to="teleportTo"
+    :teleport-to="teleportTarget"
+    :container="container"
     :ui="{ positioner: ui?.positioner, panel: ui?.panel }"
     @open-change="(value, details) => emit('open-change', value, details)"
   >
@@ -47,14 +49,16 @@
         :panel-el="panelEl"
       >
         <div class="ui-tour-default-content">
-          <p v-if="groups.length > 1" class="ui-tour-progress">
-            {{
-              messages.tour.stepOf
-                .replace('{current}', String(currentIndex + 1))
-                .replace('{total}', String(total))
-            }}
-          </p>
-          <h2 v-if="step?.title" class="ui-tour-title">{{ step.title }}</h2>
+          <div v-if="groups.length > 1 || step?.title" class="ui-tour-header">
+            <p v-if="groups.length > 1" class="ui-tour-progress">
+              {{
+                messages.tour.stepOf
+                  .replace('{current}', String(currentIndex + 1))
+                  .replace('{total}', String(total))
+              }}
+            </p>
+            <h2 v-if="step?.title" class="ui-tour-title">{{ step.title }}</h2>
+          </div>
           <p v-if="step?.description" class="ui-tour-description">{{ step.description }}</p>
           <div class="ui-tour-actions">
             <button
@@ -87,6 +91,7 @@ import type {
   TourStepChangeDetails,
 } from '../../composables/useTour'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
+import type { DOMTarget } from '../../composables/dom'
 import type { UiPartValue } from '../../classes'
 export type { TourStep, TourGroup, TourStepChangeDetails, TourEndDetails }
 
@@ -108,7 +113,16 @@ export interface TourProps {
   spotlightRadius?: number
   /** Scrolls the target into view on every step change. */
   scrollIntoView?: boolean
+  /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. Wins over `container` either way. */
   teleportTo?: string | HTMLElement
+  /**
+   * Scopes the tour to one element: the spotlight dims only its own box, the callout
+   * teleports there instead of `body`, and scroll-lock/inert apply only inside it — the
+   * rest of the page stays interactive. Omit for a page-level tour.
+   */
+  container?: DOMTarget
+  /** Element whose scrolling is locked while open. Defaults to `container`, then `document.body`. */
+  scrollTarget?: DOMTarget
   forceMount?: boolean
   beforeClose?: (done: () => void) => void
   ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
@@ -149,7 +163,6 @@ const props = withDefaults(defineProps<TourProps>(), {
   spotlightPadding: 4,
   spotlightRadius: 8,
   scrollIntoView: true,
-  teleportTo: 'body',
   forceMount: false,
 })
 
@@ -211,6 +224,25 @@ watch(stepIndex, (value) => {
 })
 
 const { el: targetEl, refresh: refreshTargetEl } = useDOMTarget(() => step.value?.target ?? null)
+
+const { el: container } = useDOMTarget(() => props.container ?? null)
+const { el: scrollTarget } = useDOMTarget(() => props.scrollTarget ?? null)
+// teleportTo has no default of its own, so an explicit teleportTo="body" is still
+// distinguishable from never setting it, and can win over container either way.
+const teleportTarget = computed<string | HTMLElement>(
+  () => props.teleportTo || container.value || 'body',
+)
+
+// Spotlight/positioner need `container` to be a positioning context, or their absolute
+// coordinates resolve against whatever ancestor is positioned instead — same trick
+// useDialog.ts uses for a contained Dialog's panel.
+watch(
+  container,
+  (el) => {
+    if (el && getComputedStyle(el).position === 'static') el.style.position = 'relative'
+  },
+  { immediate: true },
+)
 
 // useDOMTarget only re-resolves a selector when the selector STRING itself changes — by
 // design (see dom.ts), since it has no way to know the DOM changed under an unchanged
@@ -281,11 +313,14 @@ watch(
   { flush: 'post' },
 )
 
-const scrollLocked = useScrollLock({ target: () => document.body })
+const scrollLocked = useScrollLock({
+  target: () => scrollTarget.value ?? container.value ?? document.body,
+})
 // One call, not one per element: two independent useInert() calls would each treat the
 // other's whole teleported subtree as an unprotected sibling and inert it — see
 // collectInertTargets's doc comment in useInert.ts.
 const inerted = useInert({
+  root: () => container.value ?? document.body,
   content: () => [
     step.value?.disableInteraction ? null : targetEl.value,
     popoverPanelEl.value,
@@ -347,11 +382,20 @@ watch(
     // targetEl (or open) may have moved on while we were waiting — bail on stale state.
     if (targetEl.value !== el || !open.value) return
     const rect = el.getBoundingClientRect()
+    // Contained: "visible" means inside the container's own box, not just the page
+    // viewport — a target can be within the viewport yet scrolled out of a small
+    // container's own clipped bounds.
+    const bounds = container.value?.getBoundingClientRect() ?? {
+      top: 0,
+      left: 0,
+      bottom: window.innerHeight,
+      right: window.innerWidth,
+    }
     const alreadyVisible =
-      rect.top >= 0 &&
-      rect.left >= 0 &&
-      rect.bottom <= window.innerHeight &&
-      rect.right <= window.innerWidth
+      rect.top >= bounds.top &&
+      rect.left >= bounds.left &&
+      rect.bottom <= bounds.bottom &&
+      rect.right <= bounds.right
     if (alreadyVisible) return
 
     const reducedMotion =

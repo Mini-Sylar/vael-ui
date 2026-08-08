@@ -28,6 +28,8 @@ export interface UsePopoverOptions {
   onOpenChange?: (value: boolean, details: PopoverOpenChangeDetails) => void
   /** Getter so the underlying prop stays reactive without being invoked by `toValue`. */
   beforeClose?: () => ((done: () => void) => void) | undefined
+  /** Region this popover is scoped to, for Escape-key layer ownership. Omit for page-level. */
+  scope?: Ref<HTMLElement | null>
 }
 
 export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
@@ -98,7 +100,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     }
   }
 
-  const layer = useLayer()
+  const layer = useLayer({ scope: options.scope, content: options.positionerEl })
   const isOpen = shallowRef(false)
 
   function onDocumentKeydown(event: KeyboardEvent) {

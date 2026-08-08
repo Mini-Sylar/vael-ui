@@ -1,5 +1,6 @@
 <template>
   <aside
+    ref="asideEl"
     class="dash-sidebar"
     :class="{ 'dash-sidebar--collapsed': collapsed }"
     :style="collapsed ? undefined : { '--dash-sidebar-width': `${sidebarWidth}px` }"
@@ -177,9 +178,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, useTemplateRef } from 'vue'
 import type { Component } from 'vue'
-import { useMediaQuery } from '@vueuse/core'
+import { useElementSize } from '@vueuse/core'
 import {
   Avatar,
   Badge,
@@ -206,11 +207,10 @@ import Logo from '../Logo.vue'
 
 const activePage = defineModel<DashPage>('activePage', { default: 'overview' })
 
-// Below the shell's natural break point, force the rail collapsed via real
-// state (not just a narrower CSS width) so the label/group markup that
-// `v-if="!collapsed"` guards actually stops rendering — a CSS-only width
-// squeeze left that markup trying to lay out in a rail too narrow for it.
-const isNarrow = useMediaQuery('(max-width: 52rem)')
+// Watches the shell's own width (the aside's parent), not the page viewport.
+const asideEl = useTemplateRef<HTMLElement>('asideEl')
+const { width: shellWidth } = useElementSize(() => asideEl.value?.parentElement ?? null)
+const isNarrow = computed(() => shellWidth.value > 0 && shellWidth.value < 560)
 const manualCollapsed = shallowRef(false)
 const collapsed = computed({
   get: () => manualCollapsed.value || isNarrow.value,
