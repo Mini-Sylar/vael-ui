@@ -281,5 +281,18 @@
     "overlaysAndConfirmation": "オーバーレイ",
     "positioningAndData": "位置決め",
     "utilities": "公共事業"
+  },
+  "composableDescriptions": {
+    "confirmAction": "非同期対応の確認フローで、ダイアログとして中央に表示するか、popoverとしてトリガーに固定表示します。ハンドラーの完了を待ってから閉じます。",
+    "useDialogService": "マークアップではなくコードから任意のコンポーネントをダイアログとして開き、閉じた際の値でPromiseを解決します。",
+    "usePopoverService": "マークアップではなくコードから任意のコンポーネントを固定popoverとして開き、閉じた際の値でPromiseを解決します。",
+    "useToast": "アプリ内のどこからでも呼び出せる命令的なトースト通知。バリアントのショートカットと、Promiseに応じたローディングから成功/エラーへの切り替えを備えます。",
+    "useTour": "Tourの背後にあるheadlessな状態管理:DOMやレンダリングを一切持たず、ステップとグループのナビゲーションだけを担います。",
+    "useAsyncLoading": "渡されたすべての実行中のPromiseを追跡し、すべてが完了して初めてローディング状態を解除します。",
+    "useNumberFormat": "ロケールに対応した数値のフォーマットと解析を常に同期させ、入力されたテキストとフォーマット済み表示が一致するようにします。",
+    "useColorScheme": "ライト、ダーク、システムのテーマモードを1つのcomposableで制御します。永続化の方法は自由に選べます。",
+    "useFloatingPosition": "Popover、Menu、TooltipのベースとなるFloating UIによる位置決めエンジンで、独自の固定表示サーフェスを構築できます。",
+    "useVirtualizer": "長いリストの仮想レンダリング。表示中の行だけがDOMに存在します。",
+    "useFieldControl": "カスタムフォームコントロールを最も近いFieldに接続します:id、ARIA属性、フォーカスや入力済み状態を扱います。"
   }
 }

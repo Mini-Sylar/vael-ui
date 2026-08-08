@@ -12,7 +12,13 @@
       <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
     </div>
     <nav ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
-      <MenuList :items="navItems" :active="activeValue" @select="onSelect" />
+      <MenuList :items="navItems" :active="activeValue" @select="onSelect">
+        <template #item="{ item }">
+          <span class="ui-menu-list-item-label">{{ item.label }}</span>
+          <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
+          <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
+        </template>
+      </MenuList>
     </nav>
   </Resizable>
   <Drawer v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
@@ -20,7 +26,13 @@
       <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
     </div>
     <nav class="sidebar-scroll sidebar-scroll--mobile">
-      <MenuList :items="navItems" :active="activeValue" @select="onMobileSelect" />
+      <MenuList :items="navItems" :active="activeValue" @select="onMobileSelect">
+        <template #item="{ item }">
+          <span class="ui-menu-list-item-label">{{ item.label }}</span>
+          <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
+          <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
+        </template>
+      </MenuList>
     </nav>
   </Drawer>
 </template>
@@ -32,7 +44,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable, SelectButton, vScrollMask } from 'vael-ui'
 import type { MenuEntry, MenuItemData } from 'vael-ui'
-import { categories } from '../taxonomy'
+import { categories, NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { composableCategories } from '../composablesTaxonomy'
 
 const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
@@ -112,6 +124,32 @@ const activeValue = computed(() => {
   if (typeof route.name === 'string') return guideValue(route.name)
   return null
 })
+
+// Which component pages the visitor has already seen — dismisses that component's sidebar
+// "new" dot for good, whether they got there by clicking the sidebar row, a direct link, or
+// browser back/forward (see the activeValue watcher below, the single place this is written).
+const seenNewComponents = useLocalStorage<string[]>('vael-ui-docs-seen-new-components', [])
+watch(
+  activeValue,
+  (value) => {
+    if (
+      typeof value === 'string' &&
+      NEW_COMPONENTS[value] &&
+      !seenNewComponents.value.includes(value)
+    ) {
+      seenNewComponents.value = [...seenNewComponents.value, value]
+    }
+  },
+  { immediate: true },
+)
+
+function isNewBadge(value: string | number | null | undefined): boolean {
+  if (typeof value !== 'string') return false
+  const since = NEW_COMPONENTS[value]
+  if (!since || seenNewComponents.value.includes(value)) return false
+  const ageDays = (Date.now() - new Date(since).getTime()) / 86_400_000
+  return ageDays >= 0 && ageDays <= NEW_BADGE_DAYS
+}
 
 function onSelect(item: MenuItemData) {
   if (!item.value) return
@@ -196,6 +234,34 @@ onMounted(() => {
 .sidebar-scroll :deep(.ui-menu-list-item:hover:not(:disabled)),
 .sidebar-scroll :deep(.ui-menu-list-item:focus-visible) {
   background: color-mix(in oklch, var(--ui-primary) 10%, transparent);
+}
+
+/* Sidebar rows have no shortcut hints to push right, unlike Menu/ContextMenu
+   usage — so the label doesn't need to claim the row's full remaining width,
+   and the dot can sit right after the text instead of at the row's far edge. */
+.sidebar-scroll :deep(.ui-menu-list-item-label) {
+  flex: initial;
+}
+
+.sidebar-new-dot {
+  flex-shrink: 0;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--ui-primary);
+  margin-inline-start: 0.375rem;
+}
+
+.sidebar-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .sidebar-scroll :deep(.ui-menu-list-item[aria-current='page']::before) {

@@ -281,5 +281,18 @@
     "overlaysAndConfirmation": "叠加层",
     "positioningAndData": "定位",
     "utilities": "公用事业"
+  },
+  "composableDescriptions": {
+    "confirmAction": "一个支持异步的确认流程，可作为居中对话框展示，也可锚定到触发元素以弹出层展示，会等待你的处理函数完成后再关闭。",
+    "useDialogService": "通过代码而非模板打开任意组件作为对话框，并用其关闭时返回的值解析一个 Promise。",
+    "usePopoverService": "通过代码而非模板打开任意组件作为锚定弹出层，并用其关闭时返回的值解析一个 Promise。",
+    "useToast": "可在应用任意位置调用的命令式 toast 通知，提供各种变体的快捷方式，并能感知 Promise 状态，自动从加载切换到成功或失败。",
+    "useTour": "Tour 背后的无 UI 状态机：只负责步骤与分组导航，不包含任何 DOM 或渲染逻辑。",
+    "useAsyncLoading": "追踪传入的每一个进行中的 Promise，只有全部完成后加载状态才会清除。",
+    "useNumberFormat": "支持本地化的数字格式化与解析，始终保持同步，使输入文本与格式化后的显示保持一致。",
+    "useColorScheme": "通过一个 composable 控制浅色、深色或跟随系统的主题模式，持久化方式由你自行决定。",
+    "useFloatingPosition": "Popover、Menu 和 Tooltip 背后基于 Floating UI 的定位引擎，可用于构建自定义的锚定浮层。",
+    "useVirtualizer": "面向长列表的虚拟化渲染，DOM 中只存在当前可见的行。",
+    "useFieldControl": "将自定义表单控件接入最近的 Field：处理 id、ARIA 属性以及聚焦或已填写状态。"
   }
 }

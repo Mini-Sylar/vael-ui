@@ -113,3 +113,18 @@ export const allComponents = categories.flatMap((c) => c.components)
 export function categoryOf(component: string): string | undefined {
   return categories.find((c) => c.components.includes(component))?.key
 }
+
+// Component name -> the ISO date it shipped. Drives the sidebar's "new" dot (see
+// Sidebar.vue): shown until the component's page is visited, or NEW_BADGE_DAYS after
+// this date, whichever comes first. Add an entry here when a component ships; there's
+// no cleanup step — stale entries just stop rendering once they age out.
+export const NEW_COMPONENTS: Record<string, string> = {
+  ScrollArea: '2026-08-03',
+  AvatarGroup: '2026-08-05',
+  Breadcrumb: '2026-08-05',
+  Stepper: '2026-08-06',
+  CommandPalette: '2026-08-07',
+  Tour: '2026-08-08',
+}
+
+export const NEW_BADGE_DAYS = 14

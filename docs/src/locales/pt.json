@@ -281,5 +281,18 @@
     "overlaysAndConfirmation": "Sobreposições",
     "positioningAndData": "Posicionamento",
     "utilities": "Utilitários"
+  },
+  "composableDescriptions": {
+    "confirmAction": "Um fluxo de confirmação assíncrono, centralizado como diálogo ou ancorado a um gatilho como popover, que aguarda seu handler antes de fechar.",
+    "useDialogService": "Abre qualquer componente como diálogo a partir do código em vez de markup, resolvendo uma promise com o que ele retornar ao fechar.",
+    "usePopoverService": "Abre qualquer componente como popover ancorado a partir do código em vez de markup, resolvendo uma promise com o que ele retornar ao fechar.",
+    "useToast": "Notificações toast imperativas de qualquer lugar do seu app, com atalhos de variante e uma troca de carregamento para sucesso/erro ciente de promises.",
+    "useTour": "A máquina de estados headless por trás do Tour: navegação por etapas e grupos, sem nenhum DOM ou renderização embutidos.",
+    "useAsyncLoading": "Rastreia cada promise em andamento passada a ela, para que um estado de carregamento só termine quando todas forem resolvidas.",
+    "useNumberFormat": "Formatação e análise de números sensível ao locale, sempre sincronizadas, para que o texto digitado e a exibição formatada coincidam.",
+    "useColorScheme": "Controla o modo de tema claro, escuro ou do sistema a partir de um único composable, deixando a persistência a seu cargo.",
+    "useFloatingPosition": "O motor de posicionamento baseado em Floating UI por trás de Popover, Menu e Tooltip, para construir superfícies ancoradas personalizadas.",
+    "useVirtualizer": "Renderização virtualizada para listas longas, para que apenas as linhas visíveis existam no DOM.",
+    "useFieldControl": "Conecta um controle de formulário personalizado ao Field mais próximo: id, atributos ARIA e estado de foco ou preenchimento."
   }
 }

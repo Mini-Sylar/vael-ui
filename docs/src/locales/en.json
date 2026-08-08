@@ -283,5 +283,18 @@
     "title": "Page not found",
     "body": "The page you're looking for doesn't exist, or moved.",
     "home": "Back home"
+  },
+  "composableDescriptions": {
+    "confirmAction": "An async-aware confirm flow, centered as a dialog or anchored to a trigger as a popover, that awaits your handler before closing.",
+    "useDialogService": "Opens any component as a dialog from code instead of markup, resolving a promise with whatever it closes with.",
+    "usePopoverService": "Opens any component as an anchored popover from code instead of markup, resolving a promise with whatever it closes with.",
+    "useToast": "Imperative toast notifications from anywhere in your app, with variant shortcuts and a promise-aware loading-to-success/error swap.",
+    "useTour": "The headless state machine behind Tour: step and group navigation, with zero DOM or rendering baked in.",
+    "useAsyncLoading": "Tracks every in-flight promise passed to it, so a loading state clears only once all of them have settled.",
+    "useNumberFormat": "Locale-aware number formatting and parsing kept in sync, so typed text and its formatted display always agree.",
+    "useColorScheme": "Drives light, dark, or system theme mode from one composable, with persistence left up to you.",
+    "useFloatingPosition": "The Floating UI-backed positioning engine behind Popover, Menu, and Tooltip, for building custom anchored surfaces.",
+    "useVirtualizer": "Windowed rendering for long lists, so only the visible rows exist in the DOM.",
+    "useFieldControl": "Wires a custom form control into the nearest Field: id, ARIA attributes, and focus or filled state."
   }
 }

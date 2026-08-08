@@ -281,5 +281,18 @@
     "overlaysAndConfirmation": "Superpositions",
     "positioningAndData": "Positionnement",
     "utilities": "Utilitaires"
+  },
+  "composableDescriptions": {
+    "confirmAction": "Un flux de confirmation asynchrone, centré en boîte de dialogue ou ancré à un déclencheur en popover, qui attend votre gestionnaire avant de se fermer.",
+    "useDialogService": "Ouvre n'importe quel composant en boîte de dialogue depuis le code plutôt que le balisage, en résolvant une promesse avec ce qu'il retourne à la fermeture.",
+    "usePopoverService": "Ouvre n'importe quel composant en popover ancré depuis le code plutôt que le balisage, en résolvant une promesse avec ce qu'il retourne à la fermeture.",
+    "useToast": "Notifications toast impératives depuis n'importe où dans votre application, avec des raccourcis de variante et un basculement chargement→succès/erreur sensible aux promesses.",
+    "useTour": "La machine à états headless derrière Tour : navigation par étapes et groupes, sans aucun DOM ni rendu intégré.",
+    "useAsyncLoading": "Suit chaque promesse en cours qui lui est passée, afin qu'un état de chargement ne se termine qu'une fois toutes résolues.",
+    "useNumberFormat": "Formatage et analyse de nombres sensibles à la locale, toujours synchronisés, pour que le texte saisi et son affichage formaté correspondent.",
+    "useColorScheme": "Pilote le thème clair, sombre ou système depuis un seul composable, la persistance restant à votre charge.",
+    "useFloatingPosition": "Le moteur de positionnement basé sur Floating UI derrière Popover, Menu et Tooltip, pour créer des surfaces ancrées personnalisées.",
+    "useVirtualizer": "Rendu virtualisé pour les longues listes, afin que seules les lignes visibles existent dans le DOM.",
+    "useFieldControl": "Connecte un contrôle de formulaire personnalisé au Field le plus proche : id, attributs ARIA, et état de focus ou de remplissage."
   }
 }

@@ -2,7 +2,7 @@
   <article v-if="content" class="composable-page">
     <p v-if="category" class="eyebrow">{{ category }}</p>
     <h1>{{ name }}</h1>
-    <p class="description">{{ content.description }}</p>
+    <p class="description">{{ description }}</p>
 
     <section id="install" class="section">
       <h2>{{ t('component.install') }}</h2>
@@ -49,7 +49,7 @@ const demoSources = import.meta.glob('../composable-demos/*.vue', {
   import: 'default',
 })
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const route = useRoute()
 
 const name = computed(() => route.params.name as string)
@@ -57,6 +57,10 @@ const content = computed(() => composablesContent[name.value])
 const category = computed(() => {
   const key = composableCategoryOf(name.value)
   return key ? t(`composablesTaxonomy.${key}`) : undefined
+})
+const description = computed(() => {
+  const key = `composableDescriptions.${name.value}`
+  return te(key) ? t(key) : content.value?.description
 })
 
 // UseConfirmAction -> UseConfirmActionDemo.vue
