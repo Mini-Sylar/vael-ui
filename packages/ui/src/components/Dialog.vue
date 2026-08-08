@@ -1,15 +1,17 @@
 <template>
-  <Teleport :to="teleportTo">
+  <Teleport :to="teleportTarget">
     <Transition name="ui-dialog" :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"
+        ref="root"
         class="ui-dialog"
         :class="[`ui-dialog--${position}`, { 'ui-dialog--open': open }]"
         :style="rootStyle"
         :data-ui-theme="themeScope"
         :data-state="isClosing ? 'closing' : 'open'"
         :data-maximized="maximized"
+        :data-contained="contained || undefined"
       >
         <div
           v-if="modal"
@@ -21,7 +23,7 @@
         <div
           ref="panel"
           :role="role"
-          :aria-modal="modal ? 'true' : undefined"
+          :aria-modal="modal && !contained ? 'true' : undefined"
           tabindex="-1"
           :aria-labelledby="title ? titleId : undefined"
           :aria-describedby="description ? descriptionId : undefined"
@@ -150,6 +152,19 @@ export interface DialogProps {
   forceMount?: boolean
   /** Teleport target for the panel/overlay. */
   teleportTo?: string
+  /**
+   * Scopes the dialog to one element instead of the viewport: the overlay dims only
+   * that box, scroll lock and modality apply only inside it, and the rest of the page
+   * stays interactive. Also becomes the teleport target unless `teleportTo` is set.
+   * The element must be positioned (`position: relative` or similar).
+   */
+  container?: DOMTarget
+  /**
+   * Element whose scrolling is locked while open. Defaults to `container`.
+   * Pass the inner scroller when the container itself doesn't scroll - an
+   * absolutely-positioned panel scrolls away with its container's content.
+   */
+  scrollTarget?: DOMTarget
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
   /** Adds a maximize/restore toggle to the header, filling the viewport when active. */
@@ -173,6 +188,7 @@ import { computed, inject, ref, useId, useTemplateRef } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { useDialog } from '../composables/useDialog'
 import type { DialogOpenChangeDetails } from '../composables/useDialog'
+import type { DOMTarget } from '../composables/dom'
 import { useUiMessages } from '../messages'
 import { useClassMerge, resolveUiPart } from '../classes'
 import { themeScopeKey, useThemedUi } from '../theme'
@@ -195,7 +211,6 @@ const props = withDefaults(defineProps<DialogProps>(), {
   closeOnEsc: true,
   closeOnOverlay: true,
   forceMount: false,
-  teleportTo: 'body',
   scrollFade: true,
   maximizable: false,
 })
@@ -220,6 +235,9 @@ defineSlots<{
 
 // Full panel (for FLIP demos and beforeClose measurement, not just scrollable middle).
 const panelEl = useTemplateRef<HTMLElement>('panel')
+// Outermost teleported node. `useInert` spares this rather than `panelEl` — otherwise
+// the overlay is a sibling, goes inert, and stops dispatching the outside-click.
+const rootEl = useTemplateRef<HTMLElement>('root')
 const messages = useUiMessages()
 const cx = useClassMerge()
 const themedUi = useThemedUi(
@@ -228,8 +246,11 @@ const themedUi = useThemedUi(
 )
 const themeScope = inject(themeScopeKey, undefined)
 
-const { isClosing, close, requestClose, cancelClose } = useDialog(open, {
+const { isClosing, close, requestClose, cancelClose, container, contained } = useDialog(open, {
   panelEl,
+  wrapperEl: rootEl,
+  container: () => props.container ?? null,
+  scrollTarget: () => props.scrollTarget ?? null,
   closeOnEsc: () => props.closeOnEsc,
   beforeClose: () => props.beforeClose,
   initialFocus: () => props.initialFocus?.(),
@@ -241,13 +262,22 @@ function onOverlayClick(event: MouseEvent) {
   if (props.closeOnOverlay) requestClose('outside', event)
 }
 
+// An explicit `teleportTo` wins; otherwise a container becomes the target, since a
+// contained dialog rendered at body level would be positioned against the wrong box.
+const teleportTarget = computed<string | HTMLElement | undefined>(() => {
+  if (props.teleportTo) {
+    return props.teleportTo
+  }
+  return container.value ?? 'body'
+})
+
 const titleId = useId()
 const descriptionId = useId()
 
 // STRUCTURAL: inlined for zero-CSS functionality; align-items/justify-content non-interpolable, padding/size animate instead.
 const isSidePosition = computed(() => props.position === 'left' || props.position === 'right')
 const rootStyle = computed<Record<string, string | number | undefined>>(() => ({
-  position: 'fixed',
+  position: contained.value ? 'absolute' : 'fixed',
   inset: 0,
   zIndex: 'var(--ui-z-dialog, 50)',
   display: 'flex',
@@ -276,7 +306,14 @@ const panelStyle = computed<Record<string, string | undefined>>(() => {
     pointerEvents: props.modal ? undefined : 'auto',
   }
   if (maximized.value) {
-    return { ...base, inlineSize: '100dvw', blockSize: '100dvh', maxBlockSize: '100dvh' }
+    // dvw/dvh are viewport-relative; inside a container "maximized" means filling it.
+    const fill = contained.value ? '100%' : undefined
+    return {
+      ...base,
+      inlineSize: fill ?? '100dvw',
+      blockSize: fill ?? '100dvh',
+      maxBlockSize: fill ?? '100dvh',
+    }
   }
   if (naturalPanelSize.value) {
     return {
