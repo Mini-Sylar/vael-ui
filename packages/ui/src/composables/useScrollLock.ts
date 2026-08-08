@@ -113,10 +113,8 @@ function acquireLock(element: HTMLElement): () => void {
   }
   locks.set(element, state)
 
-  const overflowTarget = isBody ? document.documentElement : element
-  patchStyle(state, overflowTarget, 'overflow', 'hidden')
-
-  if (isBody) patchStyle(state, overflowTarget, 'overscroll-behavior', 'contain')
+  patchStyle(state, element, 'overflow', 'hidden')
+  patchStyle(state, element, 'overscroll-behavior', 'contain')
 
   if (scrollbarWidth > 0) {
     const existing = Number.parseFloat(computedStyles.paddingInlineEnd) || 0
