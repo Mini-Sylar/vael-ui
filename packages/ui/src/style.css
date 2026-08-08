@@ -1080,6 +1080,10 @@
     transform-origin: center;
     outline: none;
   }
+  .ui-dialog[data-contained] .ui-dialog-panel {
+    /* When in container, use % instead of dvh */
+    max-block-size: 85%;
+  }
 
   .ui-dialog-panel--sm {
     inline-size: min(22rem, 100%);
