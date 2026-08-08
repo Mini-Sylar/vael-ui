@@ -281,7 +281,7 @@ watch(
   { flush: 'post' },
 )
 
-const scrollLocked = useScrollLock({ target: () => document.documentElement })
+const scrollLocked = useScrollLock({ target: () => document.body })
 // One call, not one per element: two independent useInert() calls would each treat the
 // other's whole teleported subtree as an unprotected sibling and inert it — see
 // collectInertTargets's doc comment in useInert.ts.

@@ -13,7 +13,7 @@ test('opens on the first step, target stays interactive by default, page scroll-
   await expect.element(screen.getByTestId('state')).toHaveTextContent('open')
   await expect.element(page.getByText('Step A')).toBeVisible()
   expect(document.getElementById('target-a')!.inert).toBe(false)
-  expect(document.documentElement.style.overflow).toBe('hidden')
+  expect(document.body.style.overflow).toBe('hidden')
 })
 
 test('next/prev navigate steps and re-target the spotlight', async () => {
@@ -109,7 +109,7 @@ test('advancing past the last step finishes and closes; skip closes early', asyn
   await page.getByRole('button', { name: 'Done' }).click()
   await expect.element(screen.getByTestId('finished')).toHaveTextContent('finished')
   await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
-  expect(document.documentElement.style.overflow).toBe('')
+  expect(document.body.style.overflow).toBe('')
 
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByText('Step A')).toBeVisible() // reopening resets to first step
@@ -145,5 +145,5 @@ test('Escape closes the tour and releases the scroll lock', async () => {
 
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
-  await vi.waitFor(() => expect(document.documentElement.style.overflow).toBe(''))
+  await vi.waitFor(() => expect(document.body.style.overflow).toBe(''))
 })

@@ -26,7 +26,7 @@ test('opens with dialog semantics, traps focus, escape closes and restores focus
   await vi.waitFor(() => {
     expect(document.querySelector('[role="dialog"]')!.contains(document.activeElement)).toBe(true)
   })
-  expect(document.documentElement.style.overflow).toBe('hidden')
+  expect(document.body.style.overflow).toBe('hidden')
 
   // Tab cycles forward through panel content and wraps
   expect(document.activeElement!.className).toContain('ui-dialog-close')
@@ -50,7 +50,7 @@ test('opens with dialog semantics, traps focus, escape closes and restores focus
   // Focus returns to the trigger; panel leaves the DOM after the 150ms exit
   await vi.waitFor(() => expect(activeTestId()).toBe('trigger'))
   await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull())
-  expect(document.documentElement.style.overflow).toBe('')
+  expect(document.body.style.overflow).toBe('')
 })
 
 test('scroll lock compensates for the scrollbar width it removes, and restores it on close', async () => {
