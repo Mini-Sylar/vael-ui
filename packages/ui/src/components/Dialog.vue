@@ -211,7 +211,6 @@ const props = withDefaults(defineProps<DialogProps>(), {
   closeOnEsc: true,
   closeOnOverlay: true,
   forceMount: false,
-  teleportTo: 'body',
   scrollFade: true,
   maximizable: false,
 })
@@ -265,9 +264,12 @@ function onOverlayClick(event: MouseEvent) {
 
 // An explicit `teleportTo` wins; otherwise a container becomes the target, since a
 // contained dialog rendered at body level would be positioned against the wrong box.
-const teleportTarget = computed<string | HTMLElement>(() =>
-  props.teleportTo === 'body' && container.value ? container.value : props.teleportTo,
-)
+const teleportTarget = computed<string | HTMLElement | undefined>(() => {
+  if (props.teleportTo) {
+    return props.teleportTo
+  }
+  return container.value ?? 'body'
+})
 
 const titleId = useId()
 const descriptionId = useId()
