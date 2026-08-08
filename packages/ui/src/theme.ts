@@ -303,6 +303,9 @@ export interface UiTheme {
       empty: UiPartValue
     }>
   }
+  tour?: {
+    ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
+  }
 }
 
 export const themeKey: InjectionKey<ComputedRef<UiTheme | undefined>> = Symbol('ui-theme')

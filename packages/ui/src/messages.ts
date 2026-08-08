@@ -62,6 +62,14 @@ export interface UiMessages {
     placeholder: string
     empty: string
   }
+  tour: {
+    next: string
+    back: string
+    skip: string
+    done: string
+    /** `{current}` and `{total}` are replaced with the step position — e.g. "Step {current} of {total}". */
+    stepOf: string
+  }
 }
 
 export type PartialUiMessages = {
@@ -88,6 +96,13 @@ export const defaultMessages: UiMessages = {
   splitButton: { more: 'More actions' },
   breadcrumb: { label: 'Breadcrumb' },
   commandPalette: { placeholder: 'Search…', empty: 'No results' },
+  tour: {
+    next: 'Next',
+    back: 'Back',
+    skip: 'Skip',
+    done: 'Done',
+    stepOf: 'Step {current} of {total}',
+  },
 }
 
 export const messagesKey: InjectionKey<Ref<UiMessages>> = Symbol('ui-messages')
@@ -117,6 +132,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     splitButton: { ...base.splitButton, ...overrides.splitButton },
     breadcrumb: { ...base.breadcrumb, ...overrides.breadcrumb },
     commandPalette: { ...base.commandPalette, ...overrides.commandPalette },
+    tour: { ...base.tour, ...overrides.tour },
   }
 }
 
@@ -177,6 +193,13 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
   commandPalette: {
     placeholder: 'uiKit.commandPalette.placeholder',
     empty: 'uiKit.commandPalette.empty',
+  },
+  tour: {
+    next: 'uiKit.tour.next',
+    back: 'uiKit.tour.back',
+    skip: 'uiKit.tour.skip',
+    done: 'uiKit.tour.done',
+    stepOf: 'uiKit.tour.stepOf',
   },
 }
 
@@ -286,6 +309,19 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
     commandPalette.empty = commandPaletteEmpty
   }
   if (Object.keys(commandPalette).length > 0) result.commandPalette = commandPalette
+
+  const tourNext = i18n.t(i18nKeyMap.tour.next)
+  const tourBack = i18n.t(i18nKeyMap.tour.back)
+  const tourSkip = i18n.t(i18nKeyMap.tour.skip)
+  const tourDone = i18n.t(i18nKeyMap.tour.done)
+  const tourStepOf = i18n.t(i18nKeyMap.tour.stepOf)
+  const tour: PartialUiMessages['tour'] = {}
+  if (tourNext !== i18nKeyMap.tour.next) tour.next = tourNext
+  if (tourBack !== i18nKeyMap.tour.back) tour.back = tourBack
+  if (tourSkip !== i18nKeyMap.tour.skip) tour.skip = tourSkip
+  if (tourDone !== i18nKeyMap.tour.done) tour.done = tourDone
+  if (tourStepOf !== i18nKeyMap.tour.stepOf) tour.stepOf = tourStepOf
+  if (Object.keys(tour).length > 0) result.tour = tour
 
   return result
 }

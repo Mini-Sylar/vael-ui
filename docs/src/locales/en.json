@@ -219,6 +219,7 @@
     "Tooltip": "A small floating label that appears on hover or focus to explain an element.",
     "BottomSheet": "A panel that slides up from the bottom edge, common on touch layouts.",
     "ContextMenu": "A menu that opens at the pointer on right-click, replacing the native browser menu.",
+    "Tour": "A guided walkthrough that spotlights one element at a time behind a positioned callout, for onboarding and product tours.",
     "Menu": "A dropdown list of actions opened from a trigger, with full keyboard navigation.",
     "MenuList": "The same row rendering as Menu, but always in-flow, built for a permanent sidebar nav.",
     "Tabs": "Switches between panels of content, with a sliding indicator under the active tab.",

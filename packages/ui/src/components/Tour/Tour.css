@@ -1,0 +1,113 @@
+@layer ui-components {
+  .ui-tour-spotlight {
+    position: fixed;
+    inset: 0;
+    z-index: var(--ui-z-tour, 52);
+    background: var(--ui-overlay);
+    transition:
+      opacity var(--ui-duration-exit) var(--ui-ease-out),
+      clip-path var(--ui-duration-drawer) var(--ui-ease-drawer);
+  }
+  .ui-tour-spotlight-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-tour-spotlight-enter-from,
+  .ui-tour-spotlight-leave-to {
+    opacity: 0;
+  }
+  @starting-style {
+    .ui-tour-spotlight {
+      opacity: 0;
+    }
+  }
+
+  .ui-tour-default-content {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1.25rem;
+    max-inline-size: 20rem;
+  }
+  .ui-tour-progress {
+    margin: 0;
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .ui-tour-title {
+    margin: 0;
+    color: var(--ui-text);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .ui-tour-description {
+    margin: 0;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .ui-tour-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-block-start: 0.5rem;
+  }
+  .ui-tour-back,
+  .ui-tour-skip,
+  .ui-tour-next {
+    border: 0;
+    border-radius: calc(var(--ui-radius) - 4px);
+    padding: 0.4rem 0.75rem;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      opacity var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  .ui-tour-back,
+  .ui-tour-skip {
+    background: transparent;
+    color: var(--ui-text-muted);
+    margin-inline-end: auto;
+  }
+  .ui-tour-back:first-child {
+    margin-inline-end: 0;
+  }
+  .ui-tour-next {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-tour-back:hover,
+    .ui-tour-skip:hover {
+      opacity: 1;
+      background: color-mix(in srgb, currentColor 8%, transparent);
+    }
+    .ui-tour-next:hover {
+      background: var(--ui-primary-hover);
+    }
+  }
+  .ui-tour-back:active,
+  .ui-tour-skip:active,
+  .ui-tour-next:active {
+    transform: scale(0.97);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-tour-spotlight,
+    .ui-tour-spotlight-enter-active {
+      transition: opacity var(--ui-duration-exit) ease;
+    }
+    .ui-tour-back:active,
+    .ui-tour-skip:active,
+    .ui-tour-next:active {
+      transform: none;
+    }
+  }
+}

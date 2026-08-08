@@ -51,6 +51,7 @@
     "Combobox": "Um menu suspenso pesquisável que também aceita texto livre, portanto, o preenchimento automático e a marcação são um componente.",
     "ConfigProvider": "Envolve seu aplicativo para fornecer temas, i18n e mesclagem de classes para cada componente abaixo dele.",
     "ContextMenu": "Um menu que se abre ao clicar com o botão direito do mouse, substituindo o menu nativo do navegador.",
+    "Tour": "Um tour guiado que destaca um elemento por vez atrás de um balão posicionado, para integração e tours de produto.",
     "DataTable": "Uma grade de dados com classificação, seleção, redimensionamento e virtualização, composta por Colunas.",
     "DatePicker": "Um campo de texto emparelhado com um popover de calendário para escolher uma data ou intervalo.",
     "Dial": "Um controle de arrastar circular para escolher um valor numérico, como um botão de volume.",

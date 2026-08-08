@@ -51,6 +51,7 @@
     "Combobox": "Ein durchsuchbares Dropdown-Menü, das auch Freitext akzeptiert, sodass Autovervollständigung und Tagging eine Komponente sind.",
     "ConfigProvider": "Umschließt Ihre App, um für jede darunter liegende Komponente Theming, i18n und Klassenzusammenführung bereitzustellen.",
     "ContextMenu": "Ein Menü, das beim Klicken mit der rechten Maustaste am Zeiger geöffnet wird und das native Browsermenü ersetzt.",
+    "Tour": "Eine geführte Tour, die jeweils ein Element mit einer positionierten Sprechblase hervorhebt, für Onboarding und Produktrundgänge.",
     "DataTable": "Ein Datenraster mit Sortierung, Auswahl, Größenänderung und Virtualisierung, bestehend aus Spalten.",
     "DatePicker": "Ein Textfeld gepaart mit einem Kalender-Popover zum Auswählen eines Datums oder Bereichs.",
     "Dial": "Ein kreisförmiger Ziehregler zum Auswählen eines numerischen Werts, wie ein Lautstärkeregler.",

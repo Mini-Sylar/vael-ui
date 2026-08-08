@@ -79,6 +79,14 @@ export type { DrawerProps, DrawerSide } from './components/Drawer/Drawer.vue'
 export { default as Tabs } from './components/Tabs/Tabs.vue'
 export { default as Stepper } from './components/Stepper/Stepper.vue'
 export type { StepperItem } from './components/Stepper/Stepper.vue'
+export { default as Tour } from './components/Tour/Tour.vue'
+export type {
+  TourEndDetails,
+  TourGroup,
+  TourProps,
+  TourStep,
+  TourStepChangeDetails,
+} from './components/Tour/Tour.vue'
 export { default as Breadcrumb } from './components/Breadcrumb/Breadcrumb.vue'
 export type { BreadcrumbItemData } from './components/Breadcrumb/Breadcrumb.vue'
 export { default as BreadcrumbItem } from './components/BreadcrumbItem/BreadcrumbItem.vue'
@@ -241,6 +249,12 @@ export { useDOMTarget, resolveDOMTarget } from './composables/dom'
 export type { DOMTarget } from './composables/dom'
 export { useLayer } from './composables/useLayerStack'
 export type { Layer, UseLayerOptions } from './composables/useLayerStack'
+export { useScrollLock } from './composables/useScrollLock'
+export type { UseScrollLockOptions } from './composables/useScrollLock'
+export { useInert } from './composables/useInert'
+export type { UseInertOptions, UseInertReturn } from './composables/useInert'
+export { useTour } from './composables/useTour'
+export type { UseTourOptions, UseTourReturn } from './composables/useTour'
 
 export {
   defaultMessages,

@@ -51,6 +51,7 @@
     "Combobox": "Un menú desplegable con capacidad de búsqueda que también acepta texto libre, por lo que el autocompletado y el etiquetado son un componente.",
     "ConfigProvider": "Envuelve su aplicación para proporcionar temas, i18n y fusión de clases a cada componente debajo de ella.",
     "ContextMenu": "Un menú que se abre en el puntero al hacer clic derecho, reemplazando el menú nativo del navegador.",
+    "Tour": "Un recorrido guiado que resalta un elemento a la vez detrás de una burbuja posicionada, para la incorporación y recorridos de producto.",
     "DataTable": "Una cuadrícula de datos con clasificación, selección, cambio de tamaño y virtualización, compuesta a partir de columnas.",
     "DatePicker": "Un campo de texto combinado con una ventana emergente de calendario para elegir una fecha o rango.",
     "Dial": "Un control de arrastre circular para seleccionar un valor numérico, como una perilla de volumen.",

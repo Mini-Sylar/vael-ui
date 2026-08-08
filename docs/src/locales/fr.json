@@ -115,6 +115,7 @@
     "Combobox": "Une liste déroulante consultable qui accepte également le texte libre, donc la saisie semi-automatique et le balisage ne constituent qu'un seul composant.",
     "ConfigProvider": "Encapsule votre application pour fournir des thèmes, i18n et une fusion de classes à chaque composant situé en dessous.",
     "ContextMenu": "Un menu qui s'ouvre au pointeur lors d'un clic droit, remplaçant le menu natif du navigateur.",
+    "Tour": "Une visite guidée qui met en évidence un élément à la fois derrière une bulle positionnée, pour l'intégration et la découverte de produit.",
     "DataTable": "Une grille de données avec tri, sélection, redimensionnement et virtualisation, composée de colonnes.",
     "DatePicker": "Un champ de texte associé à un popover de calendrier pour choisir une date ou une plage.",
     "Dial": "Un contrôle de glissement circulaire pour choisir une valeur numérique, comme un bouton de volume.",

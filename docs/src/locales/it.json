@@ -51,6 +51,7 @@
     "Combobox": "Un menu a discesa ricercabile che accetta anche testo libero, quindi il completamento automatico e il tagging sono un componente.",
     "ConfigProvider": "Avvolge la tua app per fornire temi, i18n e unione di classi a ogni componente sottostante.",
     "ContextMenu": "Un menu che si apre facendo clic con il pulsante destro del mouse, sostituendo il menu nativo del browser.",
+    "Tour": "Un percorso guidato che evidenzia un elemento alla volta dietro un fumetto posizionato, per l'onboarding e i tour del prodotto.",
     "DataTable": "Una griglia di dati con ordinamento, selezione, ridimensionamento e virtualizzazione, composta da colonne.",
     "DatePicker": "Un campo di testo abbinato a un popover del calendario per selezionare una data o un intervallo.",
     "Dial": "Un controllo di trascinamento circolare per selezionare un valore numerico, come una manopola del volume.",

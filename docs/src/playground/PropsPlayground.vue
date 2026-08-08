@@ -247,6 +247,22 @@
               :items="COMMAND_PALETTE_PLACEHOLDER_ITEMS"
             />
           </template>
+          <template v-else-if="isTour">
+            <Button variant="outline" @click="openModelValue = !openModelValue">
+              {{ openModelValue ? 'Close Tour' : 'Open Tour' }}
+            </Button>
+            <div class="tour-playground-targets">
+              <Button id="playground-tour-target-1" variant="outline" size="sm">First</Button>
+              <Button id="playground-tour-target-2" variant="outline" size="sm">Second</Button>
+            </div>
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              v-model:open="openModelValue"
+              :steps="TOUR_PLACEHOLDER_STEPS"
+            />
+          </template>
           <template v-else>
             <!-- No default slot in these two: some components override data-driven rendering with any default slot content, even empty. -->
             <component
@@ -461,6 +477,19 @@ const COMMAND_PALETTE_PLACEHOLDER_ITEMS = [
   { id: 'new-file', label: 'New File', description: 'Create a blank document' },
   { id: 'new-folder', label: 'New Folder', description: 'Group related files' },
   { id: 'open-settings', label: 'Open Settings', description: 'Preferences and theme' },
+]
+const isTour = computed(() => props.name === 'Tour')
+const TOUR_PLACEHOLDER_STEPS = [
+  {
+    target: '#playground-tour-target-1',
+    title: 'First stop',
+    description: 'This step points at the button on the left.',
+  },
+  {
+    target: '#playground-tour-target-2',
+    title: 'Second stop',
+    description: 'This step points at the button on the right.',
+  },
 ]
 const showIconPreview = computed(() => props.name === 'Button' && values.icon === true)
 
@@ -945,6 +974,12 @@ const code = computed(() => {
   color: var(--ui-text-muted);
   font-size: 0.85rem;
   user-select: none;
+}
+
+.tour-playground-targets {
+  display: flex;
+  gap: 0.5rem;
+  margin-block-start: 1rem;
 }
 
 .playground-controls {

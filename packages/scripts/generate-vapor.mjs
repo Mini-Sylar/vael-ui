@@ -78,6 +78,7 @@ const COMPONENTS = [
   'Toolbar',
   'Tooltip',
   'TooltipHost',
+  'Tour',
   'Tree',
   'TreeSelect',
 ]

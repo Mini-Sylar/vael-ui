@@ -65,6 +65,7 @@ export const categories: ComponentCategory[] = [
       'BottomSheet',
       'ContextMenu',
       'CommandPalette',
+      'Tour',
     ],
   },
   {
