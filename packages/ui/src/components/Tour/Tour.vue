@@ -130,12 +130,9 @@ export interface TourProps<T extends TourStep = TourStep> {
 </script>
 
 <!--
-  Composes Popover (its `triggerEl` prop already supports an external, changing reference
-  element, no #trigger slot needed) for the callout — Teleport, positioning, transform-origin,
-  scroll-fade, forceMount/beforeClose all come from there for free. Tour adds: the step state
-  machine (useTour), the spotlight cutout (TourSpotlight), scroll-into-view, and its own
-  scroll-lock/inert (Popover doesn't dim the page). Escape/outside-click are Popover's own — no
-  separate useLayer() call here, see closeOnEsc/closeOnOverlay forwarding above.
+  Composes Popover for the callout (its triggerEl prop already tracks a changing reference)
+  and adds the step state machine, the spotlight cutout, scroll-into-view, and its own
+  scroll-lock/inert since Popover doesn't dim the page.
 -->
 <script setup lang="ts" generic="T extends TourStep = TourStep">
 import './Tour.css'
@@ -227,15 +224,14 @@ const { el: targetEl, refresh: refreshTargetEl } = useDOMTarget(() => step.value
 
 const { el: container } = useDOMTarget(() => props.container ?? null)
 const { el: scrollTarget } = useDOMTarget(() => props.scrollTarget ?? null)
-// teleportTo has no default of its own, so an explicit teleportTo="body" is still
-// distinguishable from never setting it, and can win over container either way.
+// No default on teleportTo, so an explicit teleportTo="body" stays distinguishable
+// from unset and can still win over container.
 const teleportTarget = computed<string | HTMLElement>(
   () => props.teleportTo || container.value || 'body',
 )
 
-// Spotlight/positioner need `container` to be a positioning context, or their absolute
-// coordinates resolve against whatever ancestor is positioned instead — same trick
-// useDialog.ts uses for a contained Dialog's panel.
+// container must be a positioning context or the spotlight/positioner's absolute
+// coordinates resolve against whatever ancestor is positioned instead.
 watch(
   container,
   (el) => {
@@ -244,15 +240,9 @@ watch(
   { immediate: true },
 )
 
-// useDOMTarget only re-resolves a selector when the selector STRING itself changes — by
-// design (see dom.ts), since it has no way to know the DOM changed under an unchanged
-// selector otherwise. That's exactly what onBeforeEnter is for (open a drawer, reveal an
-// accordion panel) when a step's target is the very first one a tour lands on, since then
-// the selector was already what it is now at mount, before whatever it points at existed.
-// Force a fresh query once onBeforeEnter actually settles (isTransitioning true -> false) —
-// not on open/currentIndex directly, which can fire before the DOM catches up: setting
-// isTransitioning back to false happens after `await target.onBeforeEnter?.()` resolves, by
-// which point whatever it opened has genuinely rendered.
+// useDOMTarget only re-resolves when the selector STRING changes, so a target revealed by
+// onBeforeEnter (same selector, newly-existing element) needs a forced re-query once that
+// settles — isTransitioning flips back to false only after onBeforeEnter's await resolves.
 watch(isTransitioning, (transitioning) => {
   if (!transitioning && open.value) refreshTargetEl()
 })
@@ -277,16 +267,11 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ')
 
-// Moves focus into the panel on open and on every step change (watching both together, not
-// just currentIndex — reopening onto the same index 0 it was already at wouldn't otherwise
-// re-fire). Without this, a keyboard/screen-reader user gets no signal a step ever appeared.
-// Gated on positionerStyle's own visibility, not just a tick/frame: the panel mounts hidden
-// (Popover/useFloatingPosition's HIDDEN_STYLE) until floating-ui's async computePosition()
-// resolves, and focusing a still-hidden element is a no-op in every major browser. Tracked via
-// a plain variable, not as a third watch source: autoUpdate reassigns positionerStyle to a new
-// object on every reposition tick (scroll, resize, a focus ring nudging layout by a subpixel),
-// and re-running this watch on every one of those — even though the visibility string itself
-// never changes — refocuses the same element over and over.
+// Moves focus into the panel on open and on every step change. Gated on positionerStyle's
+// own visibility (not a tick/frame): the panel mounts hidden until floating-ui's async
+// computePosition() resolves, and focusing a hidden element is a no-op. focusedForIndex is a
+// plain variable, not a watch source, since autoUpdate reassigns positionerStyle on every
+// reposition tick and would otherwise refocus the same element repeatedly.
 let focusedForIndex = -1
 let stopPendingFocus: (() => void) | undefined
 watch(
@@ -338,14 +323,9 @@ watch(
   { immediate: true },
 )
 
-// A step's target can live inside another async-positioned overlay (a Popover the demo just
-// opened from onBeforeEnter, say) that hasn't finished floating-ui's computePosition() pass
-// yet. Until it does, it (or an ancestor of it) still carries useFloatingPosition's
-// HIDDEN_STYLE placeholder — visibility:hidden, top/left 0 relative to that ancestor's own
-// containing block. Reading getBoundingClientRect() on the target at that instant returns
-// coordinates pinned to wherever that placeholder sits (often document-origin), not the
-// target's real spot, and scrollIntoView on that bogus rect throws the whole page to the
-// top. Wait for every ancestor's visibility to clear before trusting the rect.
+// A target inside another async-positioned overlay can still carry useFloatingPosition's
+// HIDDEN_STYLE placeholder (visibility:hidden, top/left 0) when this runs — its
+// getBoundingClientRect() would be bogus and scrollIntoView would throw the page to the top.
 function isHiddenByAncestor(el: HTMLElement): boolean {
   let node: HTMLElement | null = el
   while (node) {
@@ -418,6 +398,35 @@ function onKeydown(event: KeyboardEvent) {
   else if (event.key === 'ArrowLeft') prev()
 }
 useEventListener(() => (open.value ? document : undefined), 'keydown', onKeydown)
+
+// A step's own overlay stacks above the callout and would otherwise eat Escape —
+// capturing on window runs first. skip() (not close()) lets the consumer unwind it.
+useEventListener(
+  () => (open.value && props.closeOnEsc ? window : undefined),
+  'keydown',
+  (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || event.defaultPrevented) return
+    event.preventDefault()
+    skip()
+  },
+  true,
+)
+
+// A target closed out from under the tour would strand the callout on a detached
+// node. Re-resolve first — a re-rendered list swaps the node but the selector still matches.
+watch([open, isTransitioning], ([isOpen, transitioning], _prev, onCleanup) => {
+  if (!isOpen || transitioning) return
+  const observer = new MutationObserver(() => {
+    if (isTransitioning.value) return
+    const current = targetEl.value
+    if (!current || current.isConnected) return
+    refreshTargetEl()
+    const resolved: HTMLElement | null = targetEl.value
+    if (!resolved?.isConnected) skip()
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
+  onCleanup(() => observer.disconnect())
+})
 
 const themedUi = useThemedUi(
   (theme) => theme.tour,

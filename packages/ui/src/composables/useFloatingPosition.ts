@@ -78,17 +78,11 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
           mainAxis: toValue(options.sideOffset) ?? 8,
           crossAxis: toValue(options.alignOffset) ?? 0,
         }),
-        // altBoundary: true — the floating element is teleported (usually to
-        // <body>), so it shares no offset parent with the reference. Without
-        // this, flip/shift resolve clipping ancestors from the REFERENCE's
-        // position instead, meaning any scrollable container the reference
-        // happens to sit inside (a card, a panel) gets treated as the
-        // boundary the floating element must stay within — even though it's
-        // rendered miles away from that container and the real viewport has
-        // plenty of room. See floating-ui's own docs on this exact case:
-        // https://floating-ui.com/docs/detectOverflow#altboundary
-        flip({ altBoundary: true }),
-        shift({ altBoundary: true, padding: 8 }),
+        // No altBoundary here: it resolves the boundary from the REFERENCE's
+        // clipping ancestors, so a trigger inside any scrollable panel makes
+        // flip/shift/size believe there's no room anywhere.
+        flip(),
+        shift({ padding: 8 }),
         size({
           padding: 8,
           apply({ availableHeight, rects }) {
