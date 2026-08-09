@@ -241,8 +241,10 @@
     "variable": "Variable"
   },
   "tailwind": {
-    "layerNote": "vael-ui est livré dans {layer}. \nLes classes d'utilitaires de Tailwind sont sans couche, et le CSS sans couche l'emporte toujours sur une couche, indépendamment de la spécificité ou de l'ordre d'importation, de sorte qu'un utilitaire Tailwind sur un composant vael-ui remplace toujours la valeur par défaut de la bibliothèque. \nNon {important}, pas de combats de spécificité, rien à configurer. \nVoir {link} pour la mécanique générale.",
+    "layerNote": "vael-ui est livré dans {layer}. Tailwind v4 encapsule aussi ses propres utilitaires dans une couche, donc l'ordre compte : importez le CSS de vael-ui avant votre point d'entrée Tailwind (ci-dessous) pour que sa couche s'enregistre en premier, gardant la couche des utilitaires de Tailwind après elle dans la cascade. Un utilitaire Tailwind sur un composant vael-ui l'emporte alors toujours, sans {important}, sans conflit de spécificité. Voir {link} pour la mécanique générale.",
     "layerNoteLink": "Couches de style et de cascade",
+    "orderWarningTitle": "Gardez cet import en premier",
+    "orderWarning": "Depuis la 0.2.0, la plupart des utilisateurs n'ont plus besoin d'un import explicite de vael-ui/style.css — chaque composant charge son propre CSS automatiquement. Tailwind v4 fait exception : ses utilitaires vivent dans leur propre couche de cascade, et c'est la feuille de style qui enregistre un nom de couche en premier qui l'emporte dans l'ordre. Importez le CSS de vael-ui avant votre point d'entrée Tailwind, dans le fichier d'entrée principal de votre application, pour que cela reste vrai même quand le CSS d'autres composants se charge plus tard.",
     "mergingIntro": "Chaque composant accepte un accessoire <code>ui</code> pour les classes de pièces (par exemple <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). \nPour résoudre les utilitaires Tailwind conflictuels comme le ferait <code>tailwind-merge</code> (le dernier gagne par propriété), connectez-le une fois :",
     "mergingNote": "Chaque classe de partie <code>ui.*</code> dans l'arborescence passe désormais par <code>twMerge</code>.",
     "mergingTitle": "Fusionner des classes avec tailwind-merge"

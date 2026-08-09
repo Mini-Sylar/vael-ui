@@ -248,8 +248,10 @@
     "variable": "Variabile"
   },
   "tailwind": {
-    "layerNote": "vael-ui viene spedito in {layer}. \nLe classi di utilità di Tailwind sono senza livelli e i CSS senza livelli prevalgono sempre su un livello indipendentemente dalla specificità o dall'ordine di importazione, quindi un'utilità Tailwind su un componente vael-ui sovrascrive sempre l'impostazione predefinita della libreria. \nNessun {important}, nessun combattimento sulla specificità, niente da configurare. \nVedi {link} per la meccanica generale.",
+    "layerNote": "vael-ui viene distribuito in {layer}. Anche Tailwind v4 racchiude le proprie utility in un livello, quindi l'ordine conta: importa il CSS di vael-ui prima del tuo punto di ingresso Tailwind (sotto) in modo che il suo livello si registri per primo, mantenendo il livello delle utility di Tailwind dopo di esso nella cascata. Un'utility Tailwind su un componente vael-ui vince quindi sempre, senza {important}, senza conflitti di specificità. Vedi {link} per la meccanica generale.",
     "layerNoteLink": "Styling e strati a cascata",
+    "orderWarningTitle": "Mantieni questo import per primo",
+    "orderWarning": "Dalla 0.2.0, la maggior parte degli utenti non ha più bisogno di un import esplicito di vael-ui/style.css — ogni componente carica automaticamente il proprio CSS. Tailwind v4 è l'eccezione: le sue utility vivono in un proprio livello a cascata, e il foglio di stile che registra per primo un nome di livello vince l'ordinamento. Importa il CSS di vael-ui prima del tuo punto di ingresso Tailwind, nel file di ingresso principale della tua app, affinché ciò rimanga vero anche quando il CSS di altri componenti viene caricato in seguito.",
     "mergingIntro": "Ogni componente accetta una prop <code>ui</code> per le classi di parti (ad esempio <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). \nPer risolvere i conflitti tra le utilità Tailwind nel modo in cui farebbe <code>tailwind-merge</code> (l'ultimo vince per proprietà), collegalo una volta:",
     "mergingNote": "Ogni classe di parte <code>ui.*</code> nell'albero ora passa attraverso <code>twMerge</code>.",
     "mergingTitle": "Unione di classi con tailwind-merge"

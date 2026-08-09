@@ -248,8 +248,10 @@
     "variable": "Variável"
   },
   "tailwind": {
-    "layerNote": "vael-ui é enviado em {layer}. \nAs classes de utilitário do Tailwind são sem camadas, e o CSS sem camadas sempre vence uma camada, independentemente da especificidade ou ordem de importação, portanto, um utilitário Tailwind em um componente vael-ui sempre substitui o padrão da biblioteca. \nNada de {important}, nada de brigas de especificidade, nada para configurar. \nVeja {link} para a mecânica geral.",
+    "layerNote": "vael-ui é enviado em {layer}. O Tailwind v4 também envolve seus próprios utilitários em uma camada, então a ordem importa: importe o CSS do vael-ui antes do seu ponto de entrada do Tailwind (abaixo) para que sua camada seja registrada primeiro, mantendo a camada de utilitários do Tailwind depois dela na cascata. Um utilitário do Tailwind em um componente vael-ui sempre vence então, sem {important}, sem brigas de especificidade. Veja {link} para a mecânica geral.",
     "layerNoteLink": "Estilo e camadas em cascata",
+    "orderWarningTitle": "Mantenha essa importação primeiro",
+    "orderWarning": "Desde a 0.2.0, a maioria dos usuários não precisa mais de uma importação explícita de vael-ui/style.css — cada componente carrega seu próprio CSS automaticamente. O Tailwind v4 é a exceção: seus utilitários vivem em sua própria camada de cascata, e a folha de estilo que registrar primeiro um nome de camada vence a ordenação. Importe o CSS do vael-ui antes do seu ponto de entrada do Tailwind, no arquivo de entrada principal do seu app, para que isso permaneça válido mesmo quando o CSS de mais componentes for carregado depois.",
     "mergingIntro": "Cada componente aceita uma propriedade <code>ui</code> para classes de peças (por exemplo, <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). \nPara resolver utilitários conflitantes do Tailwind da maneira que <code>tailwind-merge</code> faria (o último vence por propriedade), conecte-o uma vez:",
     "mergingNote": "Cada classe de parte <code>ui.*</code> na árvore agora passa por <code>twMerge</code>.",
     "mergingTitle": "Mesclando classes com tailwind-merge"

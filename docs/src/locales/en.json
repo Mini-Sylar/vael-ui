@@ -107,8 +107,10 @@
     "allTogetherIntro": "Mount all four once, wherever your app's root template lives:"
   },
   "tailwind": {
-    "layerNote": "vael-ui ships in {layer}. Tailwind's utility classes are unlayered, and unlayered CSS always wins over a layer regardless of specificity or import order, so a Tailwind utility on a vael-ui component always overrides the library's default. No {important}, no specificity fights, nothing to configure. See {link} for the general mechanics.",
+    "layerNote": "vael-ui ships in {layer}. Tailwind v4 wraps its own utilities in a layer too, so order matters: import vael-ui's CSS before your Tailwind entry (below) so its layer registers first, keeping Tailwind's utilities layer after it in the cascade. A Tailwind utility on a vael-ui component then always wins, no {important}, no specificity fights. See {link} for the general mechanics.",
     "layerNoteLink": "Styling and cascade layers",
+    "orderWarningTitle": "Keep this import first",
+    "orderWarning": "Most consumers no longer need an explicit vael-ui/style.css import since 0.2.0 — each component loads its own CSS automatically. Tailwind v4 is the exception: its utilities live in their own cascade layer, and whichever stylesheet registers a layer name first wins the ordering. Import vael-ui's CSS before your Tailwind entry, in your app's main entry file, so this holds even as more components' CSS loads later.",
     "mergingTitle": "Merging classes with tailwind-merge",
     "mergingIntro": "Every component accepts a <code>ui</code> prop for part classes (e.g. <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). To resolve conflicting Tailwind utilities there the way <code>tailwind-merge</code> would (last one wins per property), wire it up once:",
     "mergingNote": "Every <code>ui.*</code> part class in the tree now passes through <code>twMerge</code>."

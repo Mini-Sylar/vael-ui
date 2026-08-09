@@ -248,8 +248,10 @@
     "variable": "多变的"
   },
   "tailwind": {
-    "layerNote": "vael-ui 在 {layer} 中发布。 \nTailwind 的实用程序类是无分层的，并且无论特殊性或导入顺序如何，无分层的 CSS 始终胜过图层，因此 vael-ui 组件上的 Tailwind 实用程序始终会覆盖库的默认设置。\n没有{important}，没有特殊性之争，无需配置。\n有关一般机制，请参阅{link}。",
+    "layerNote": "vael-ui 发布在 {layer} 中。Tailwind v4 也会将自己的工具类封装在一个层中，因此顺序很重要：在你的 Tailwind 入口（见下方）之前导入 vael-ui 的 CSS，让它的层先注册，从而使 Tailwind 的工具类层在级联中排在其后。这样，vael-ui 组件上的 Tailwind 工具类就会始终生效，无需 {important}，也不会有优先级冲突。有关一般机制，请参阅 {link}。",
     "layerNoteLink": "样式和级联层",
+    "orderWarningTitle": "保持这个导入在最前面",
+    "orderWarning": "自 0.2.0 起，大多数使用者不再需要显式导入 vael-ui/style.css —— 每个组件会自动加载自己的 CSS。Tailwind v4 是例外：它的工具类存在于自己的级联层中，谁先注册某个层名，谁就决定了层的顺序。请在应用的主入口文件中，在 Tailwind 入口之前导入 vael-ui 的 CSS，这样即使之后加载了更多组件的 CSS，这个顺序依然成立。",
     "mergingIntro": "每个组件都接受部件类的 <code>ui</code> 属性（例如 <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>）。\n要以 <code>tailwind-merge</code> 的方式解决冲突的 Tailwind 实用程序（每个属性最后一个获胜），请将其连接一次：",
     "mergingNote": "树中的每个 <code>ui.*</code> 零件类现在都会通过 <code>twMerge</code>。",
     "mergingTitle": "使用 tailwind-merge 合并类"

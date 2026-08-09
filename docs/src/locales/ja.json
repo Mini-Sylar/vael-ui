@@ -248,8 +248,10 @@
     "variable": "変数"
   },
   "tailwind": {
-    "layerNote": "vael-ui は {layer} に同梱されています。 \nTailwind のユーティリティ クラスは階層化されておらず、階層化されていない CSS は、特異性やインポート順序に関係なく常にレイヤーよりも優先されるため、vael-ui コンポーネントの Tailwind ユーティリティは常にライブラリのデフォルトをオーバーライドします。 \n{important} はありません。具体性の問題もありません。設定する必要はありません。\n一般的な仕組みについては、{link} を参照してください。",
+    "layerNote": "vael-ui は{layer}に同梱されています。Tailwind v4 も自身のユーティリティを独自のレイヤーにまとめているため、順序が重要になります。Tailwind のエントリー（下記）より先に vael-ui の CSS をインポートすることで、そのレイヤーを先に登録し、Tailwind のユーティリティレイヤーをカスケード内で後に位置させます。こうすることで、vael-ui コンポーネント上の Tailwind ユーティリティは {important} や詳細度の競合なしに常に優先されます。一般的な仕組みについては{link}を参照してください。",
     "layerNoteLink": "スタイリング層とカスケード層",
+    "orderWarningTitle": "このインポートを先頭に保つ",
+    "orderWarning": "0.2.0 以降、ほとんどの利用者は vael-ui/style.css の明示的なインポートを必要としません — 各コンポーネントが自身の CSS を自動的に読み込みます。Tailwind v4 は例外です。そのユーティリティは独自のカスケードレイヤーに存在し、レイヤー名を最初に登録したスタイルシートが順序を制します。アプリのメインエントリーファイルで、Tailwind のエントリーより先に vael-ui の CSS をインポートしておくことで、後から他のコンポーネントの CSS が読み込まれてもこの順序が保たれます。",
     "mergingIntro": "すべてのコンポーネントは、パーツ クラスの <code>ui</code> プロパティを受け入れます (例: <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>)。\nそこで競合する Tailwind ユーティリティを <code>tailwind-merge</code> の方法で解決するには (プロパティごとに最後のものが優先されます)、一度接続します。",
     "mergingNote": "ツリー内のすべての <code>ui.*</code> パーツ クラスが <code>twMerge</code> を通過するようになりました。",
     "mergingTitle": "tailwind-merge を使用したクラスのマージ"

@@ -241,8 +241,10 @@
     "variable": "Variable"
   },
   "tailwind": {
-    "layerNote": "vael-ui wird in {layer} versendet. \nDie Dienstprogrammklassen von Tailwind sind nicht geschichtet, und nicht geschichtetes CSS gewinnt unabhängig von der Spezifität oder Importreihenfolge immer über eine Ebene, sodass ein Tailwind-Dienstprogramm auf einer vael-ui-Komponente immer die Standardeinstellung der Bibliothek überschreibt. \nKein {important}, keine Spezifitätskämpfe, nichts zu konfigurieren. \nSiehe {link} für die allgemeine Mechanik.",
+    "layerNote": "vael-ui wird in {layer} ausgeliefert. Tailwind v4 verpackt seine eigenen Utility-Klassen ebenfalls in eine Ebene, daher zählt die Reihenfolge: Importieren Sie das CSS von vael-ui vor Ihrem Tailwind-Einstiegspunkt (unten), damit seine Ebene zuerst registriert wird und Tailwinds Utilities-Ebene danach in der Kaskade bleibt. Ein Tailwind-Utility auf einer vael-ui-Komponente gewinnt dann immer, ohne {important}, ohne Spezifitätskämpfe. Siehe {link} für die allgemeine Mechanik.",
     "layerNoteLink": "Styling- und Kaskadenschichten",
+    "orderWarningTitle": "Diesen Import zuerst behalten",
+    "orderWarning": "Seit 0.2.0 benötigen die meisten Nutzer keinen expliziten vael-ui/style.css-Import mehr — jede Komponente lädt ihr eigenes CSS automatisch. Tailwind v4 ist die Ausnahme: Seine Utilities leben in einer eigenen Kaskadenebene, und welches Stylesheet einen Ebenennamen zuerst registriert, gewinnt die Reihenfolge. Importieren Sie das CSS von vael-ui vor Ihrem Tailwind-Einstiegspunkt, in der Haupteinstiegsdatei Ihrer App, damit dies auch gilt, wenn später weiteres Komponenten-CSS geladen wird.",
     "mergingIntro": "Jede Komponente akzeptiert eine <code>ui</code>-Requisite für Teilklassen (z. B. <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). \nUm dort widersprüchliche Tailwind-Dienstprogramme auf die Art und Weise zu lösen, wie <code>tailwind-merge</code> es tun würde (das letzte gewinnt pro Eigenschaft), verknüpfen Sie es einmal:",
     "mergingTitle": "Zusammenführen von Klassen mit Rückenwind-Merge",
     "mergingNote": "Jede <code>ui.*</code>-Teilklasse im Baum durchläuft nun <code>twMerge</code>."

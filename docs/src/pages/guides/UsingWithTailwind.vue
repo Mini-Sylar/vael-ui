@@ -15,6 +15,14 @@
       code="import 'vael-ui/style.css'
 import './style.css' // your Tailwind entry"
     />
+    <Message
+      variant="info"
+      :title="t('tailwind.orderWarningTitle')"
+      class="callout"
+      :ui="{ root: 'callout-info' }"
+    >
+      {{ t('tailwind.orderWarning') }}
+    </Message>
 
     <h2 id="merging">{{ t('tailwind.mergingTitle') }}</h2>
     <p v-html="t('tailwind.mergingIntro')" />
@@ -37,6 +45,7 @@ import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import { Message } from 'vael-ui'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
@@ -51,3 +60,14 @@ useBreadcrumbSchema(() => [
 
 const tocLinks = computed(() => [{ id: 'merging', label: t('tailwind.mergingTitle') }])
 </script>
+
+<style scoped>
+.callout {
+  margin-bottom: 1.25rem;
+}
+
+:deep(.callout-info) {
+  background: color-mix(in oklch, var(--ui-info) 10%, var(--ui-surface));
+  border-color: color-mix(in oklch, var(--ui-info) 35%, var(--ui-border-strong));
+}
+</style>
