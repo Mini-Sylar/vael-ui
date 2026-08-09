@@ -90,7 +90,6 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
         flip({ altBoundary: true }),
         shift({ altBoundary: true, padding: 8 }),
         size({
-          altBoundary: true,
           padding: 8,
           apply({ availableHeight, rects }) {
             maxHeight.value = availableHeight
