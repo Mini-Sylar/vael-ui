@@ -364,12 +364,20 @@ const tourSteps: TourStep[] = [
 @container dash-main (max-width: 36rem) {
   .dash-search {
     inline-size: 2.25rem;
+    padding-inline: 0;
+    position: relative;
+  }
+  .dash-search :deep(.ui-input-start) {
+    position: absolute;
+    inset: 0;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .dash-search :deep(.ui-input-end) {
+    display: none;
   }
   .dash-search :deep(.ui-input-el)::placeholder {
     color: transparent;
-  }
-  .dash-search-kbd {
-    display: none;
   }
 }
 </style>
