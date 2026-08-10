@@ -1,12 +1,13 @@
 @layer ui-components {
   /* confirmAction's surface: 'popover' body — Popover has no separate
      header/footer slots the way Dialog does, so title/description/actions
-     all live in this one block; sizing matches Dialog's own title/
-     description scale for visual consistency across both surfaces. */
+     all live in this one block, inside Popover's own 1rem body padding.
+     0.5rem keeps the same 2:1 edge-to-interior ratio Tour uses in the same
+     Popover body. */
   .ui-confirm-popover {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.5rem;
     max-inline-size: var(--ui-confirm-popover-width, 18rem);
   }
   .ui-confirm-popover-title {
@@ -25,6 +26,5 @@
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
-    margin-block-start: 0.25rem;
   }
 }
