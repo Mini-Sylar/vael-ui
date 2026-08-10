@@ -165,14 +165,18 @@
       what you'd wire to <code>useInfiniteQuery</code>'s <code>fetchNextPage</code> for a real
       server-backed table. Scroll to the bottom to see it fire below.
       <code>selectable</code> composes cleanly with virtualization too —
-      <code>selected</code> tracks row keys, not DOM nodes, so checking a row keeps it checked even
-      after it scrolls out of the rendered window and back in.
+      <code>selected</code> tracks row keys, not DOM nodes, so selecting a row keeps it selected
+      even after it scrolls out of the rendered window and back in. This demo uses
+      <code>selection-mode="row"</code> rather than the checkbox column: toggling one row's checkbox
+      still recomputes selection state against the full 5,000-row dataset, which is real, separate
+      perf work being tracked on its own.
     </p>
     <DataTable
       :data="bigDataset"
       row-key="id"
       virtualize
       selectable
+      selection-mode="row"
       scroll-height="360px"
       @reach-end="reachEndCount++"
     >
