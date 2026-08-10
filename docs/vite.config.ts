@@ -22,6 +22,8 @@ export default defineConfig({
   ssgOptions: {
     dirStyle: 'nested',
     formatting: 'minify',
+    // beasties drops the layer-order.css link (see index.html) since it has no matched selector.
+    beastiesOptions: false,
     // `/components/:name` and `/composables/:name` are dynamic and get
     // filtered out by vite-ssg's own default handler — expand each into one
     // concrete path per real entry instead, plus a `/404` render used only
