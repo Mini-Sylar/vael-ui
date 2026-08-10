@@ -14,7 +14,8 @@
     "openMenu": "Ouvrir le menu",
     "menu": "Menu",
     "composables": "Composables",
-    "autoImportGuide": "Importation automatique"
+    "autoImportGuide": "Importation automatique",
+    "nuxtGuide": "Nuxt"
   },
   "header": {
     "colorScheme": "Changer le mode",
@@ -312,5 +313,19 @@
     "title": "Importation automatique",
     "vaporIntro": "vael-ui fournit deux builds à partir de la même source : la build VDOM standard et une build Vapor (<code>vael-ui/vapor</code>). \nPar défaut, le résolveur importe à partir de la version VDOM ; \ntransmettez plutôt <code>variant: 'vapor'</code> pour résoudre à partir de la version Vapor. \nChoisissez celui avec lequel votre application s'affiche réellement : le mélange des deux dans une seule application n'est pas pris en charge.",
     "vaporTitle": "Vapeur"
+  },
+  "nuxt": {
+    "excludeIntro": "Ignorer les noms de composants spécifiques - utile si vous souhaitez enregistrer votre propre <code>",
+    "excludeTitle": "exclure",
+    "intro": "vael-ui/nuxt est un module Nuxt — ajoutez-le une fois et chaque composant vael-ui devient utilisable dans un modèle sans aucune importation manuelle, en utilisant le propre enregistrement de composant intégré de Nuxt au lieu de unplugin-vue-components.",
+    "resolverIntro": "Si votre configuration Nuxt pilote déjà l'importation automatique de composants via unplugin-vue-components pour d'autres bibliothèques, utilisez plutôt vael-ui/resolver — consultez le guide {link}.",
+    "resolverIntroLink": "Importation automatique",
+    "resolverTitle": "Utiliser plutôt unplugin-vue-components",
+    "setupIntro": "Enregistrez le module dans votre configuration Nuxt :",
+    "setupOutro": "C'est tout — écrivez la balise, Nuxt résout l'importation pour vous :",
+    "setupTitle": "Installation",
+    "title": "Nuxt",
+    "vdomOnlyIntro": "Ce module s'enregistre toujours à partir de la version normale de <code>vael-ui</code>, jamais de <code>vael-ui/vapor</code> — il n'y a donc pas d'option <code>variant</code> ici comme <code>vael-ui/resolver</code> en a une. \nVue 3.6 elle-même prend en charge l'hydratation Vapor SSR, mais la version stable de Nuxt n'a pas encore de configuration Vapor - elle atterrit derrière des PR en amont spécifiques, pas encore dans une version générale. \nUne fois le support Vapor de Nuxt expédié, une option <code>variante</code> peut suivre.",
+    "vdomOnlyTitle": "VDOM uniquement"
   }
 }

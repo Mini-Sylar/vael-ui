@@ -13,6 +13,7 @@
     "animationIntegrationGuide": "Bring Your Own Animation",
     "i18nKeysGuide": "Translating vael-ui",
     "autoImportGuide": "Auto Import",
+    "nuxtGuide": "Nuxt",
     "menu": "Menu",
     "openMenu": "Open menu"
   },
@@ -294,6 +295,20 @@
     "cssIntro": "No extra wiring needed here. Every vael-ui component already imports its own CSS internally, so resolving the component import pulls its styles in for free — unlike most unplugin-vue-components resolvers, which need a separate <code>sideEffects</code> entry to also import a component's stylesheet.",
     "bundlersTitle": "Bundlers",
     "bundlersIntro": "unplugin-vue-components supports Vite, Webpack, Rollup, esbuild, and Rspack. The resolver itself is just a plain function — it works identically regardless of which one you use."
+  },
+  "nuxt": {
+    "title": "Nuxt",
+    "intro": "vael-ui/nuxt is a Nuxt module — add it once and every vael-ui component becomes usable in a template with no manual import at all, using Nuxt's own built-in component registration instead of unplugin-vue-components.",
+    "setupTitle": "Setup",
+    "setupIntro": "Register the module in your Nuxt config:",
+    "setupOutro": "That's it — write the tag, Nuxt resolves the import for you:",
+    "excludeTitle": "exclude",
+    "excludeIntro": "Skip specific component names — useful if you want to register your own <code>&lt;Button&gt;</code> under that same tag instead:",
+    "vdomOnlyTitle": "VDOM only",
+    "vdomOnlyIntro": "This module always registers from the regular <code>vael-ui</code> build, never <code>vael-ui/vapor</code> — so there's no <code>variant</code> option here the way <code>vael-ui/resolver</code> has one. Vue 3.6 itself supports Vapor SSR hydration, but the stable Nuxt release has no Vapor configuration yet — it's landing behind specific upstream PRs, not yet in a general release. Once Nuxt's own Vapor support ships, a <code>variant</code> option can follow.",
+    "resolverTitle": "Using unplugin-vue-components instead",
+    "resolverIntro": "If your Nuxt setup already drives component auto-import through unplugin-vue-components for other libraries, use vael-ui/resolver instead — see the {link} guide.",
+    "resolverIntroLink": "Auto Import"
   },
   "notFound": {
     "title": "Page not found",

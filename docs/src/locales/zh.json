@@ -186,7 +186,8 @@
     "menu": "菜单",
     "openMenu": "打开菜单",
     "composables": "可组合项",
-    "autoImportGuide": "自动导入"
+    "autoImportGuide": "自动导入",
+    "nuxtGuide": "努克斯特"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
@@ -312,5 +313,19 @@
     "title": "自动导入",
     "vaporIntro": "vael-ui 提供了来自同一来源的两个版本：常规 VDOM 版本和 Vapor 版本 (<code>vael-ui/vapor</code>)。\n默认情况下，解析器从 VDOM 构建导入；\n传递 <code>variant: 'vapor'</code> 从 Vapor 构建中解析。\n选择您的应用程序实际渲染的任何一个 - 不支持将两者混合在一个应用程序中。",
     "vaporTitle": "汽"
+  },
+  "nuxt": {
+    "excludeIntro": "跳过特定的组件名称 - 如果您想注册自己的 <code>，这很有用",
+    "excludeTitle": "排除",
+    "intro": "vael-ui/nuxt 是一个 Nuxt 模块——添加一次，每个 vael-ui 组件就可以在模板中使用，根本不需要手动导入，使用 Nuxt 自己的内置组件注册而不是 unplugin-vue-components。",
+    "resolverIntro": "如果您的 Nuxt 设置已经通过 unplugin-vue-components 驱动其他库的组件自动导入，请改用 vael-ui/resolver — 请参阅 {link} 指南。",
+    "resolverIntroLink": "自动导入",
+    "resolverTitle": "使用 unplugin-vue-components 代替",
+    "setupIntro": "在 Nuxt 配置中注册模块：",
+    "setupOutro": "就是这样 - 编写标签，Nuxt 会为您解决导入问题：",
+    "setupTitle": "设置",
+    "title": "努克斯特",
+    "vdomOnlyIntro": "该模块始终从常规 <code>vael-ui</code> 版本注册，从不 <code>vael-ui/vapor</code> - 因此这里没有 <code>variant</code> 选项，而 <code>vael-ui/resolver</code> 有一个。 \nVue 3.6 本身支持 Vapor SSR 水合，但稳定的 Nuxt 版本还没有 Vapor 配置 - 它落在特定上游 PR 后面，尚未进入通用版本。\n一旦 Nuxt 自己的 Vapor 支持发布，就会出现一个<code>变体</code>选项。",
+    "vdomOnlyTitle": "仅限虚拟域"
   }
 }

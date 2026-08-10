@@ -179,7 +179,8 @@
     "menu": "Speisekarte",
     "openMenu": "Menü öffnen",
     "composables": "Composables",
-    "autoImportGuide": "Automatischer Import"
+    "autoImportGuide": "Automatischer Import",
+    "nuxtGuide": "Nuxt"
   },
   "pageNotes": {
     "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren."
@@ -312,5 +313,19 @@
     "useFloatingPosition": "Die Floating-UI-basierte Positionierungs-Engine hinter Popover, Menu und Tooltip, zum Bau eigener verankerter Oberflächen.",
     "useVirtualizer": "Virtualisiertes Rendering für lange Listen, sodass nur die sichtbaren Zeilen im DOM existieren.",
     "useFieldControl": "Verbindet ein eigenes Formularelement mit dem nächsten Field: id, ARIA-Attribute sowie Fokus- oder Ausfüllstatus."
+  },
+  "nuxt": {
+    "excludeIntro": "Überspringen Sie bestimmte Komponentennamen – nützlich, wenn Sie Ihren eigenen <Code> registrieren möchten",
+    "excludeTitle": "ausschließen",
+    "intro": "vael-ui/nuxt ist ein Nuxt-Modul – fügen Sie es einmal hinzu und jede vael-ui-Komponente wird in einer Vorlage ohne manuellen Import verwendbar, indem Nuxts eigene integrierte Komponentenregistrierung anstelle von Unplugin-vue-components verwendet wird.",
+    "resolverIntro": "Wenn Ihr Nuxt-Setup bereits den automatischen Komponentenimport über unplugin-vue-components für andere Bibliotheken steuert, verwenden Sie stattdessen vael-ui/resolver – siehe die {link}-Anleitung.",
+    "resolverIntroLink": "Automatischer Import",
+    "resolverTitle": "Verwenden Sie stattdessen unplugin-vue-components",
+    "setupIntro": "Registrieren Sie das Modul in Ihrer Nuxt-Konfiguration:",
+    "setupOutro": "Das ist alles – schreiben Sie das Tag, Nuxt löst den Import für Sie auf:",
+    "setupTitle": "Aufstellen",
+    "title": "Nuxt",
+    "vdomOnlyIntro": "Dieses Modul wird immer vom regulären <code>vael-ui</code>-Build registriert, niemals von <code>vael-ui/vapor</code> – daher gibt es hier keine <code>variant</code>-Option, wie <code>vael-ui/resolver</code> eine hat. \nVue 3.6 selbst unterstützt die Vapor SSR-Hydratation, aber die stabile Nuxt-Version hat noch keine Vapor-Konfiguration – sie landet hinter bestimmten Upstream-PRs, noch nicht in einer allgemeinen Version. \nSobald Nuxts eigener Vapor-Support ausgeliefert wird, kann eine <code>variant</code>-Option folgen.",
+    "vdomOnlyTitle": "Nur VDOM"
   }
 }

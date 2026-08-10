@@ -186,7 +186,8 @@
     "menu": "メニュー",
     "openMenu": "メニューを開く",
     "composables": "コンポーザブル",
-    "autoImportGuide": "自動インポート"
+    "autoImportGuide": "自動インポート",
+    "nuxtGuide": "ナクスト"
   },
   "pageNotes": {
     "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。"
@@ -312,5 +313,19 @@
     "title": "自動インポート",
     "vaporIntro": "vael-ui は、同じソースから 2 つのビルド、つまり通常の VDOM ビルドと Vapor ビルド (<code>vael-ui/vapor</code>) を出荷します。\nデフォルトでは、リゾルバーは VDOM ビルドからインポートします。\n代わりに <code>variant: 'vapor'</code> を渡して、Vapor ビルドから解決します。\nアプリが実際にレンダリングするものを選択してください。1 つのアプリ内で 2 つを混合することはサポートされていません。",
     "vaporTitle": "蒸気"
+  },
+  "nuxt": {
+    "excludeIntro": "特定のコンポーネント名をスキップします。独自の <code> を登録する場合に便利です。",
+    "excludeTitle": "除外する",
+    "intro": "vael-ui/nuxt は Nuxt モジュールです。これを一度追加すると、unplugin-vue-components の代わりに Nuxt 独自の組み込みコンポーネント登録を使用して、手動でインポートすることなく、すべての vael-ui コンポーネントをテンプレートで使用できるようになります。",
+    "resolverIntro": "Nuxt セットアップが既に他のライブラリの unplugin-vue-components を介してコンポーネントの自動インポートを実行している場合は、代わりに vael-ui/resolver を使用してください。{link} ガイドを参照してください。",
+    "resolverIntroLink": "自動インポート",
+    "resolverTitle": "代わりに unplugin-vue-components を使用する",
+    "setupIntro": "Nuxt 構成にモジュールを登録します。",
+    "setupOutro": "以上です — タグを書くと、Nuxt がインポートを解決します。",
+    "setupTitle": "設定",
+    "title": "ナクスト",
+    "vdomOnlyIntro": "このモジュールは常に通常の <code>vael-ui</code> ビルドから登録され、<code>vael-ui/vapor</code> では登録されません。そのため、<code>vael-ui/resolver</code> にあるような <code>variant</code> オプションはここにはありません。 \nVue 3.6 自体は Vapor SSR ハイドレーションをサポートしていますが、安定版 Nuxt リリースにはまだ Vapor 構成がありません。特定のアップストリーム PR の背後にあり、まだ一般リリースには含まれていません。 \nNuxt 独自の Vapor サポートがリリースされると、<code>variant</code> オプションが続く可能性があります。",
+    "vdomOnlyTitle": "VDOMのみ"
   }
 }
