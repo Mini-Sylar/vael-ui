@@ -50,7 +50,7 @@
     "gen": "node ../scripts/generate-resolver-manifest.mjs",
     "build": "pnpm gen && tsdown && node -e \"require('fs').copyFileSync('../../README.md', './README.md')\"",
     "dev": "pnpm gen && tsdown --watch",
-    "test": "vitest run",
+    "test": "pnpm gen && vitest run",
     "check:dts": "vue-tsc --noEmit -p dts-check/tsconfig.json",
     "typecheck": "vue-tsc --noEmit"
   },
