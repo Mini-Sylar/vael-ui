@@ -35,12 +35,17 @@
       "types": "./dist/vapor/index.d.ts",
       "default": "./dist/vapor/index.js"
     },
+    "./resolver": {
+      "types": "./dist/resolver/index.d.ts",
+      "default": "./dist/resolver/index.js"
+    },
     "./style.css": "./dist/style-entry.css",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsdown && node -e \"require('fs').copyFileSync('../../README.md', './README.md')\"",
-    "dev": "tsdown --watch",
+    "gen": "node ../scripts/generate-resolver-manifest.mjs",
+    "build": "pnpm gen && tsdown && node -e \"require('fs').copyFileSync('../../README.md', './README.md')\"",
+    "dev": "pnpm gen && tsdown --watch",
     "test": "vitest run",
     "check:dts": "vue-tsc --noEmit -p dts-check/tsconfig.json",
     "typecheck": "vue-tsc --noEmit"

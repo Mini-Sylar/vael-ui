@@ -124,7 +124,9 @@
     "toasterTitle": "Tostapane",
     "tooltipHostIntro": "Alimenta ogni <code>v-tooltip</code>. \nSenza uno montato, i suggerimenti non vengono mai visualizzati silenziosamente.",
     "tooltipHostOptions": "Richiede le stesse opzioni che ogni singola descrizione comando può sovrascrivere:",
-    "tooltipHostTitle": "TooltipHost"
+    "tooltipHostTitle": "TooltipHost",
+    "popoverHostIntro": "Rende imperativamente qualsiasi cosa <code>openPopover()</code> o <code>confirmAction()</code> con <code>surface: 'popover'</code> crei imperativamente. \nNon necessario per un <codice>",
+    "popoverHostTitle": "PopoverHost"
   },
   "header": {
     "colorScheme": "Attiva/disattiva la combinazione di colori",
@@ -183,7 +185,8 @@
     "tailwindGuide": "Utilizzo con Tailwind",
     "menu": "Menu",
     "openMenu": "Apri il menu",
-    "composables": "Componenti componibili"
+    "composables": "Componenti componibili",
+    "autoImportGuide": "Importazione automatica"
   },
   "pageNotes": {
     "Resizable": "La barra laterale di questo sito è costruita con Resizable. \nTrascina il bordo destro per provarlo."
@@ -296,5 +299,18 @@
     "useFloatingPosition": "Il motore di posizionamento basato su Floating UI dietro Popover, Menu e Tooltip, per costruire superfici ancorate personalizzate.",
     "useVirtualizer": "Rendering virtualizzato per elenchi lunghi, così solo le righe visibili esistono nel DOM.",
     "useFieldControl": "Collega un controllo di form personalizzato al Field più vicino: id, attributi ARIA e stato di focus o compilazione."
+  },
+  "autoImport": {
+    "bundlersIntro": "unplugin-vue-components supporta Vite, Webpack, Rollup, esbuild e Rspack. \nIl risolutore stesso è semplicemente una semplice funzione: funziona in modo identico indipendentemente da quale usi.",
+    "bundlersTitle": "Impacchettatori",
+    "cssIntro": "Non è necessario alcun cablaggio aggiuntivo qui. \nOgni componente vael-ui importa già il proprio CSS internamente, quindi risolvere l'importazione del componente inserisce i suoi stili gratuitamente, a differenza della maggior parte dei risolutori di unplugin-vue-components, che necessitano di una voce <code>sideEffects</code> separata per importare anche il foglio di stile di un componente.",
+    "cssTitle": "CSS",
+    "intro": "vael-ui/resolver è un risolutore per componenti unplugin-vue: registralo una volta e ogni componente vael-ui diventa utilizzabile in un modello senza alcuna importazione manuale.",
+    "setupIntro": "Aggiungi il risolutore ovunque sia già configurato unplugin-vue-components:",
+    "setupOutro": "Questo è tutto: scrivi il tag, l'importazione viene inserita in fase di compilazione:",
+    "setupTitle": "Impostare",
+    "title": "Importazione automatica",
+    "vaporIntro": "vael-ui fornisce due build dalla stessa fonte: la build VDOM normale e una build Vapor (<code>vael-ui/vapor</code>). \nPer impostazione predefinita il risolutore importa dalla build VDOM; \npassa invece <code>variant: 'vapor'</code> per risolverlo dalla build Vapor. \nScegli quello con cui viene effettivamente eseguito il rendering della tua app: la combinazione delle due app in una non è supportata.",
+    "vaporTitle": "Vapore"
   }
 }

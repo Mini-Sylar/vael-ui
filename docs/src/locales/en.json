@@ -12,6 +12,7 @@
     "stylingAndLayersGuide": "Styling and Cascade Layers",
     "animationIntegrationGuide": "Bring Your Own Animation",
     "i18nKeysGuide": "Translating vael-ui",
+    "autoImportGuide": "Auto Import",
     "menu": "Menu",
     "openMenu": "Open menu"
   },
@@ -280,6 +281,19 @@
     "copyIntro": "Copy this into your locale file(s) under the uiKit key, then translate the values:",
     "key": "Key",
     "englishDefault": "English default"
+  },
+  "autoImport": {
+    "title": "Auto Import",
+    "intro": "vael-ui/resolver is a resolver for unplugin-vue-components — register it once and every vael-ui component becomes usable in a template with no manual import at all.",
+    "setupTitle": "Setup",
+    "setupIntro": "Add the resolver wherever unplugin-vue-components is already configured:",
+    "setupOutro": "That's it — write the tag, the import gets inserted at build time:",
+    "vaporTitle": "Vapor",
+    "vaporIntro": "vael-ui ships two builds from the same source: the regular VDOM build and a Vapor build (<code>vael-ui/vapor</code>). By default the resolver imports from the VDOM build; pass <code>variant: 'vapor'</code> to resolve from the Vapor build instead. Pick whichever your app actually renders with — mixing the two in one app isn't supported.",
+    "cssTitle": "CSS",
+    "cssIntro": "No extra wiring needed here. Every vael-ui component already imports its own CSS internally, so resolving the component import pulls its styles in for free — unlike most unplugin-vue-components resolvers, which need a separate <code>sideEffects</code> entry to also import a component's stylesheet.",
+    "bundlersTitle": "Bundlers",
+    "bundlersIntro": "unplugin-vue-components supports Vite, Webpack, Rollup, esbuild, and Rspack. The resolver itself is just a plain function — it works identically regardless of which one you use."
   },
   "notFound": {
     "title": "Page not found",

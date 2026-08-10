@@ -124,7 +124,9 @@
     "toasterTitle": "Tostadora",
     "tooltipHostIntro": "Alimenta cada <code>v-tooltip</code>. \nSin uno montado, la información sobre herramientas nunca aparece silenciosamente.",
     "tooltipHostOptions": "Se necesitan las mismas opciones que cada información sobre herramientas individual puede anular:",
-    "tooltipHostTitle": "Información sobre herramientasHost"
+    "tooltipHostTitle": "Información sobre herramientasHost",
+    "popoverHostIntro": "Representa cualquier cosa que <code>openPopover()</code> o <code>confirmAction()</code> con <code>surface: 'popover'</code> cree imperativamente. \nNo es necesario para un <código>",
+    "popoverHostTitle": "PopoverHost"
   },
   "header": {
     "colorScheme": "Alternar combinación de colores",
@@ -178,6 +180,7 @@
     "guides": "Guías",
     "home": "vael-ui",
     "i18nKeysGuide": "Traduciendo vael-ui",
+    "autoImportGuide": "Importación automática",
     "search": "Buscar componentes…",
     "stylingAndLayersGuide": "Estilo y capas en cascada",
     "tailwindGuide": "Usando con viento de cola",
@@ -296,5 +299,18 @@
     "useFloatingPosition": "El motor de posicionamiento basado en Floating UI detrás de Popover, Menu y Tooltip, para crear superficies ancladas personalizadas.",
     "useVirtualizer": "Renderizado virtualizado para listas largas, de modo que solo las filas visibles existen en el DOM.",
     "useFieldControl": "Conecta un control de formulario personalizado con el Field más cercano: id, atributos ARIA y estado de foco o relleno."
+  },
+  "autoImport": {
+    "bundlersIntro": "unplugin-vue-components admite Vite, Webpack, Rollup, esbuild y Rspack. \nEl solucionador en sí es simplemente una función simple: funciona de manera idéntica independientemente de cuál uses.",
+    "bundlersTitle": "empaquetadores",
+    "cssIntro": "Aquí no se necesita cableado adicional. \nCada componente de vael-ui ya importa su propio CSS internamente, por lo que al resolver la importación del componente se incorporan sus estilos de forma gratuita, a diferencia de la mayoría de los solucionadores de unplugin-vue-components, que necesitan una entrada <code>sideEffects</code> separada para importar también la hoja de estilo de un componente.",
+    "cssTitle": "CSS",
+    "intro": "vael-ui/resolver es un solucionador para unplugin-vue-components: regístrelo una vez y cada componente de vael-ui se podrá utilizar en una plantilla sin ninguna importación manual.",
+    "setupIntro": "Agregue el solucionador donde ya esté configurado unplugin-vue-components:",
+    "setupOutro": "Eso es todo: escribe la etiqueta, la importación se inserta en el momento de la compilación:",
+    "setupTitle": "Configuración",
+    "title": "Importación automática",
+    "vaporIntro": "vael-ui envía dos compilaciones de la misma fuente: la compilación VDOM normal y una compilación Vapor (<code>vael-ui/vapor</code>). \nDe forma predeterminada, el solucionador importa desde la compilación VDOM; \npase <code>variant: 'vapor'</code> para resolverlo desde la compilación de Vapor. \nElija la opción con la que realmente se procesa su aplicación; no se admite mezclar las dos en una sola aplicación.",
+    "vaporTitle": "Vapor"
   }
 }

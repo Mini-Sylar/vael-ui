@@ -124,7 +124,9 @@
     "toasterTitle": "烤面包机",
     "tooltipHostIntro": "为每个<code>v-tooltip</code>提供动力。\n如果没有安装，工具提示永远不会默默出现。",
     "tooltipHostOptions": "每个单独的工具提示都可以覆盖相同的选项：",
-    "tooltipHostTitle": "工具提示主机"
+    "tooltipHostTitle": "工具提示主机",
+    "popoverHostIntro": "渲染使用 <code>surface: 'popover'</code> 命令创建的任何 <code>openPopover()</code> 或 <code>confirmAction()</code> 。 \n<code> 不需要",
+    "popoverHostTitle": "弹出窗口主机"
   },
   "header": {
     "colorScheme": "切换配色方案",
@@ -183,7 +185,8 @@
     "tailwindGuide": "与 Tailwind 一起使用",
     "menu": "菜单",
     "openMenu": "打开菜单",
-    "composables": "可组合项"
+    "composables": "可组合项",
+    "autoImportGuide": "自动导入"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
@@ -296,5 +299,18 @@
     "useFloatingPosition": "Popover、Menu 和 Tooltip 背后基于 Floating UI 的定位引擎，可用于构建自定义的锚定浮层。",
     "useVirtualizer": "面向长列表的虚拟化渲染，DOM 中只存在当前可见的行。",
     "useFieldControl": "将自定义表单控件接入最近的 Field：处理 id、ARIA 属性以及聚焦或已填写状态。"
+  },
+  "autoImport": {
+    "bundlersIntro": "unplugin-vue-components 支持 Vite、Webpack、Rollup、esbuild 和 Rspack。\n解析器本身只是一个简单的函数 - 无论您使用哪一个，它的工作原理都是相同的。",
+    "bundlersTitle": "捆绑者",
+    "cssIntro": "这里不需要额外的接线。\n每个 vael-ui 组件都已经在内部导入了自己的 CSS，因此解析组件导入会免费引入其样式 - 与大多数 unplugin-vue-components 解析器不同，后者需要单独的 <code>sideEffects</code> 条目来导入组件的样式表。",
+    "cssTitle": "CSS",
+    "intro": "vael-ui/resolver 是 unplugin-vue-components 的解析器——注册一次，每个 vael-ui 组件就可以在模板中使用，根本不需要手动导入。",
+    "setupIntro": "在已配置 unplugin-vue-components 的位置添加解析器：",
+    "setupOutro": "就是这样 - 编写标签，导入在构建时插入：",
+    "setupTitle": "设置",
+    "title": "自动导入",
+    "vaporIntro": "vael-ui 提供了来自同一来源的两个版本：常规 VDOM 版本和 Vapor 版本 (<code>vael-ui/vapor</code>)。\n默认情况下，解析器从 VDOM 构建导入；\n传递 <code>variant: 'vapor'</code> 从 Vapor 构建中解析。\n选择您的应用程序实际渲染的任何一个 - 不支持将两者混合在一个应用程序中。",
+    "vaporTitle": "汽"
   }
 }

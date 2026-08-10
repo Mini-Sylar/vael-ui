@@ -4,84 +4,12 @@
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { COMPONENTS } from './component-names.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const UI_COMPONENTS_DIR = join(__dirname, '../ui/src/components')
 const UI_INDEX_PATH = join(__dirname, '../ui/src/index.ts')
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
-
-// Add component name to include in vapor build (dependencies auto-added)
-const COMPONENTS = [
-  'Accordion',
-  'AccordionItem',
-  'Avatar',
-  'AvatarGroup',
-  'Badge',
-  'BottomSheet',
-  'Breadcrumb',
-  'BreadcrumbItem',
-  'BreadcrumbSeparator',
-  'Button',
-  'ButtonGroup',
-  'Calendar',
-  'Card',
-  'CascadeSelect',
-  'Checkbox',
-  'Chip',
-  'Collapsible',
-  'Column',
-  'Combobox',
-  'CommandPalette',
-  'ConfigProvider',
-  'ContextMenu',
-  'DataTable',
-  'DatePicker',
-  'Dial',
-  'Dialog',
-  'DialogHost',
-  'Dock',
-  'Drawer',
-  'Field',
-  'FileUpload',
-  'Input',
-  'InputNumber',
-  'Kbd',
-  'Knob',
-  'Loader',
-  'Menu',
-  'MenuList',
-  'Message',
-  'OtpInput',
-  'Pagination',
-  'Popover',
-  'PopoverHost',
-  'Progress',
-  'PullToRefresh',
-  'Radio',
-  'RadioGroup',
-  'Resizable',
-  'ScrollArea',
-  'Select',
-  'SelectButton',
-  'Separator',
-  'Skeleton',
-  'Slider',
-  'SpeedDial',
-  'SplitButton',
-  'Stepper',
-  'SwipeToReveal',
-  'Switch',
-  'Tabs',
-  'Tag',
-  'Textarea',
-  'Toaster',
-  'Toolbar',
-  'Tooltip',
-  'TooltipHost',
-  'Tour',
-  'Tree',
-  'TreeSelect',
-]
 
 // Some components have migrated from a flat `<Name>.vue` to a folder
 // (`<Name>/<Name>.vue`, CSS split out per-component — see

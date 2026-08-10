@@ -60,6 +60,7 @@ const GUIDE_ROUTES = [
   { routeName: 'guide-styling-and-layers', labelKey: 'nav.stylingAndLayersGuide' },
   { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
   { routeName: 'guide-i18n-keys', labelKey: 'nav.i18nKeysGuide' },
+  { routeName: 'guide-auto-import', labelKey: 'nav.autoImportGuide' },
 ] as const
 
 const guideValue = (routeName: string) => `guide:${routeName}`

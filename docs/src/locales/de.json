@@ -124,7 +124,9 @@
     "toasterTitle": "Toaster",
     "tooltipHostIntro": "Unterstützt jeden <code>v-tooltip</code>. \nOhne montiertes Tool werden keine Tooltips angezeigt.",
     "tooltipHostOptions": "Es sind die gleichen Optionen erforderlich, die jeder einzelne Tooltip überschreiben kann:",
-    "tooltipHostTitle": "TooltipHost"
+    "tooltipHostTitle": "TooltipHost",
+    "popoverHostIntro": "Rendert alles, was <code>openPopover()</code> oder <code>confirmAction()</code> mit <code>surface: 'popover'</code> imperativ erstellt. \nFür einen <Code> nicht erforderlich",
+    "popoverHostTitle": "PopoverHost"
   },
   "header": {
     "colorScheme": "Farbschema umschalten",
@@ -176,7 +178,8 @@
     "i18nKeysGuide": "vael-ui übersetzen",
     "menu": "Speisekarte",
     "openMenu": "Menü öffnen",
-    "composables": "Composables"
+    "composables": "Composables",
+    "autoImportGuide": "Automatischer Import"
   },
   "pageNotes": {
     "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren."
@@ -267,6 +270,19 @@
     "intro": "Jede integrierte Zeichenfolge (Schaltfläche „Dialog schließen“, „Toast schließen“, „Leerstatus“ usw.) verfügt über einen englischen Standardwert und kann übersetzt werden, indem Sie Ihre eigene i18n-Instanz an ConfigProvider übergeben. \nEs liest aus Ihrem vorhandenen Katalog unter dem uiKit-Namespace, sodass nichts extra installiert werden muss.",
     "key": "Schlüssel",
     "title": "vael-ui übersetzen"
+  },
+  "autoImport": {
+    "title": "Auto-Import",
+    "intro": "vael-ui/resolver ist ein Resolver für unplugin-vue-components — einmal registrieren, und jede vael-ui-Komponente wird ohne manuellen Import in einer Vorlage verwendbar.",
+    "setupTitle": "Einrichtung",
+    "setupIntro": "Fügen Sie den Resolver dort hinzu, wo unplugin-vue-components bereits konfiguriert ist:",
+    "setupOutro": "Das war's — schreiben Sie das Tag, der Import wird zur Build-Zeit eingefügt:",
+    "vaporTitle": "Vapor",
+    "vaporIntro": "vael-ui liefert zwei Builds aus derselben Quelle: den regulären VDOM-Build und einen Vapor-Build (<code>vael-ui/vapor</code>). Standardmäßig importiert der Resolver aus dem VDOM-Build; übergeben Sie <code>variant: 'vapor'</code>, um stattdessen aus dem Vapor-Build aufzulösen. Wählen Sie, womit Ihre App tatsächlich rendert — die Mischung beider Builds in einer App wird nicht unterstützt.",
+    "cssTitle": "CSS",
+    "cssIntro": "Hier ist keine zusätzliche Verkabelung nötig. Jede vael-ui-Komponente importiert bereits intern ihr eigenes CSS, sodass das Auflösen des Komponenten-Imports auch deren Styles kostenlos mitbringt — anders als bei den meisten unplugin-vue-components-Resolvern, die einen separaten <code>sideEffects</code>-Eintrag benötigen, um auch das Stylesheet einer Komponente zu importieren.",
+    "bundlersTitle": "Bundler",
+    "bundlersIntro": "unplugin-vue-components unterstützt Vite, Webpack, Rollup, esbuild und Rspack. Der Resolver selbst ist nur eine einfache Funktion — er funktioniert unabhängig davon, welchen Sie verwenden, identisch."
   },
   "notFound": {
     "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
