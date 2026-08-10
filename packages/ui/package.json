@@ -39,6 +39,10 @@
       "types": "./dist/resolver/index.d.ts",
       "default": "./dist/resolver/index.js"
     },
+    "./nuxt": {
+      "types": "./dist/nuxt/index.d.ts",
+      "default": "./dist/nuxt/index.js"
+    },
     "./style.css": "./dist/style-entry.css",
     "./package.json": "./package.json"
   },
@@ -55,6 +59,7 @@
     "@vueuse/core": "^14.4.0"
   },
   "devDependencies": {
+    "@nuxt/kit": "^4.5.2",
     "@tsdown/css": "^0.22.14",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vitest/browser-playwright": "^4.1.10",
@@ -71,6 +76,12 @@
     "vue-tsc": "^3.3.9"
   },
   "peerDependencies": {
+    "@nuxt/kit": "^3.0.0 || ^4.0.0",
     "vue": "^3.5.0 || ^3.6.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@nuxt/kit": {
+      "optional": true
+    }
   }
 }

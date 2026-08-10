@@ -8,7 +8,13 @@ const componentEntries = readdirSync('./src/components', { withFileTypes: true }
   .filter((path) => existsSync(path))
 
 export default defineConfig({
-  entry: ['./src/index.ts', './src/style-entry.ts', './src/resolver/index.ts', ...componentEntries],
+  entry: [
+    './src/index.ts',
+    './src/style-entry.ts',
+    './src/resolver/index.ts',
+    './src/nuxt/index.ts',
+    ...componentEntries,
+  ],
   platform: 'neutral',
   plugins: [Vue({ isProduction: true })],
   dts: { vue: true },
