@@ -27,6 +27,7 @@
 <!-- Single disclosure with auto-wired trigger slot; imperative aria-expanded/aria-controls via watchEffect -->
 <script setup lang="ts">
 import './Collapsible.css'
+import '../shared/tokens.css'
 import { computed, useId, useTemplateRef, watchEffect } from 'vue'
 import { useCollapse } from '../../composables/useCollapse'
 import { useClassMerge, resolveUiPart } from '../../classes'

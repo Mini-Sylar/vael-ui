@@ -75,6 +75,7 @@ export interface StepperItem {
 
 <script setup lang="ts" generic="T extends StepperItem = StepperItem">
 import './Stepper.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { vScrollMask } from '../../directives/vScrollMask'

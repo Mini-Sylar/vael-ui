@@ -30,6 +30,7 @@
 <!-- Injects RadioGroup's name; APG roving arrows are native; throws outside group -->
 <script setup lang="ts">
 import './Radio.css'
+import '../shared/tokens.css'
 import { computed, inject, nextTick, onMounted, shallowRef, useId, useTemplateRef } from 'vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'

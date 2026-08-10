@@ -25,6 +25,7 @@
 <!-- Swipe-to-reveal primitive with ONE side at a time; actions always in DOM for a11y; tap-to-close uses capture phase -->
 <script setup lang="ts">
 import './SwipeToReveal.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import { useSwipeReveal } from '../../composables/useSwipeReveal'

@@ -55,6 +55,7 @@
 <!-- Range or single via tuple/number model; no live-drag transitions, custom properties for CSS positioning -->
 <script setup lang="ts">
 import './Slider.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useSlider } from '../../composables/useSlider'

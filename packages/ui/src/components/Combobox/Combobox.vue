@@ -168,6 +168,7 @@ export type ComboboxFilter<T> = boolean | ((item: T, query: string) => boolean)
      Focus stays in input; only ArrowDown/Up/Home/End forwarded to listbox (typeahead disabled here for live filtering). -->
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
 import './Combobox.css'
+import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import '../shared/select-list.css'

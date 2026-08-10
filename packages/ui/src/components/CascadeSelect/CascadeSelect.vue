@@ -129,6 +129,7 @@ export type CascadeSelectPath = (string | number)[]
 <!-- Wraps Menu's submenu engine; nodeByKey side-table preserves type at all depths. -->
 <script setup lang="ts" generic="T extends CascadeSelectItem = CascadeSelectItem">
 import './CascadeSelect.css'
+import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'

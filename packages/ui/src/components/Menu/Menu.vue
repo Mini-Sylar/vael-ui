@@ -190,6 +190,7 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './Menu.css'
+import '../shared/tokens.css'
 import { computed, inject, nextTick, reactive, useTemplateRef, watch, watchEffect } from 'vue'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'

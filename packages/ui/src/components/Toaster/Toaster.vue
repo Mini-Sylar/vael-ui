@@ -92,6 +92,7 @@ export type ToasterPosition =
 
 <script setup lang="ts">
 import './Toaster.css'
+import '../shared/tokens.css'
 import { computed, inject, reactive, ref, watch } from 'vue'
 import { useDocumentVisibility } from '@vueuse/core'
 import { useToastQueue } from '../../composables/useToast'

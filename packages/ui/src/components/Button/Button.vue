@@ -82,6 +82,7 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
 -->
 <script setup lang="ts">
 import './Button.css'
+import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
 import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
 import { useAsyncLoading } from '../../composables/useAsyncLoading'

@@ -120,6 +120,7 @@
 -->
 <script setup lang="ts">
 import './InputNumber.css'
+import '../shared/tokens.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import Input from '../Input/Input.vue'
 import { useFieldControl } from '../../composables/useFieldControl'

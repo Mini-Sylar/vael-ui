@@ -190,6 +190,7 @@ export type CalendarView = 'date' | 'month' | 'year'
      Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motionCss=false disables. -->
 <script setup lang="ts">
 import './Calendar.css'
+import '../shared/tokens.css'
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

@@ -64,6 +64,7 @@ export const KNOB_ARC_PATH = `M ${start.x.toFixed(3)} ${start.y.toFixed(3)} A ${
 
 <script setup lang="ts">
 import './Knob.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useKnob } from '../../composables/useKnob'

@@ -37,6 +37,7 @@
 <!-- APG switch pattern via checkbox + role="switch"; no inline style on thumbEl for spring override -->
 <script setup lang="ts">
 import './Switch.css'
+import '../shared/tokens.css'
 import { computed, nextTick, onMounted, shallowRef, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'

@@ -14,6 +14,7 @@
 
 <script setup lang="ts">
 import './AvatarGroup.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import Avatar from '../Avatar/Avatar.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'

@@ -107,6 +107,7 @@ export type DatePickerAlign = Align
 <!-- Wraps Calendar in Select's popover chrome; input readonly, formatting deferred. -->
 <script setup lang="ts">
 import './DatePicker.css'
+import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { usePopover } from '../../composables/usePopover'

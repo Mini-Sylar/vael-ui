@@ -111,6 +111,7 @@ export const DIAL_TICKS = Array.from({ length: DIAL_TICK_COUNT }, (_, i) => {
 
 <script setup lang="ts">
 import './Dial.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useDial } from '../../composables/useDial'

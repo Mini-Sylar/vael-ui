@@ -36,6 +36,7 @@
 <!-- role="toolbar"; heterogeneous slot content with roving tabindex; three groups (start/center/end) handle overflow ellipsis placement -->
 <script setup lang="ts">
 import './Toolbar.css'
+import '../shared/tokens.css'
 import { computed, useSlots, useTemplateRef } from 'vue'
 import { useToolbar } from '../../composables/useToolbar'
 import { useClassMerge, resolveUiPart } from '../../classes'

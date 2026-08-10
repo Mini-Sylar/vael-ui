@@ -33,6 +33,7 @@
 <!-- Small reusable pill; remove button stops propagation to avoid toggling parent trigger -->
 <script setup lang="ts">
 import './Chip.css'
+import '../shared/tokens.css'
 import '../shared/chip.css'
 import { computed, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'

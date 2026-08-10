@@ -124,6 +124,7 @@ export function quarterCirclePoint(
 -->
 <script setup lang="ts" generic="T extends SpeedDialItem = SpeedDialItem">
 import './SpeedDial.css'
+import '../shared/tokens.css'
 import { computed, nextTick, onMounted, onScopeDispose, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Button from '../Button/Button.vue'

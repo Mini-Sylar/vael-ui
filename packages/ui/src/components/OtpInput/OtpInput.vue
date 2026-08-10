@@ -58,6 +58,7 @@
 <!-- Invisible input for caret/paste handling; cellEls keyed on index (not char) to avoid remount on content change. -->
 <script setup lang="ts">
 import './OtpInput.css'
+import '../shared/tokens.css'
 import {
   computed,
   nextTick,

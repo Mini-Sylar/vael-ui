@@ -43,6 +43,7 @@ export interface BreadcrumbItemData {
 
 <script setup lang="ts" generic="T extends BreadcrumbItemData = BreadcrumbItemData">
 import './Breadcrumb.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import BreadcrumbItem from '../BreadcrumbItem/BreadcrumbItem.vue'
 import BreadcrumbSeparator from '../BreadcrumbSeparator/BreadcrumbSeparator.vue'

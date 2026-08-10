@@ -1,4 +1,5 @@
 import '../components/shared/confirm-popover.css'
+import '../components/shared/tokens.css'
 import { type Component, type PropType, defineComponent, h } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
 import Button from '../components/Button/Button.vue'

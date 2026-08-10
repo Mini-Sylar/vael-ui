@@ -18,6 +18,7 @@ export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion
 
 <script setup lang="ts">
 import './Accordion.css'
+import '../shared/tokens.css'
 import { computed, provide, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

@@ -52,6 +52,7 @@
 -->
 <script setup lang="ts">
 import './Textarea.css'
+import '../shared/tokens.css'
 import { computed, onMounted, onScopeDispose, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'

@@ -32,6 +32,7 @@
 <!-- Owns presentation + ARIA wiring; label inside control for overlap on float/inset placements -->
 <script setup lang="ts">
 import './Field.css'
+import '../shared/tokens.css'
 import { computed, provide, shallowRef, useId, useSlots, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

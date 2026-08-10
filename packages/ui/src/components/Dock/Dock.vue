@@ -40,6 +40,7 @@
 
 <script setup lang="ts">
 import './Dock.css'
+import '../shared/tokens.css'
 import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 import type { Component } from 'vue'
 import type { Side } from '@floating-ui/dom'

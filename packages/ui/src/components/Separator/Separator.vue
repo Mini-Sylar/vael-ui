@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import './Separator.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

@@ -85,6 +85,7 @@
 -->
 <script setup lang="ts">
 import './FileUpload.css'
+import '../shared/tokens.css'
 import { computed, shallowRef, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'

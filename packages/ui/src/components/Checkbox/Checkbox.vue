@@ -60,6 +60,7 @@
 <!-- Native checkbox overlay (opacity 0) with SVG box styling + first-paint transition guard -->
 <script setup lang="ts">
 import './Checkbox.css'
+import '../shared/tokens.css'
 import { computed, nextTick, onMounted, shallowRef, useTemplateRef, watchEffect } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'

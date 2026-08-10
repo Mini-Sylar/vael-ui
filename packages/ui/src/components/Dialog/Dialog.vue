@@ -185,6 +185,7 @@ export interface DialogProps {
 <!-- v-if mode: Transition owns enter/exit; forceMount: v-show + consumer drives motion. -->
 <script setup lang="ts">
 import './Dialog.css'
+import '../shared/tokens.css'
 import { computed, inject, ref, useId, useTemplateRef } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { useDialog } from '../../composables/useDialog'

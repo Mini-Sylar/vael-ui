@@ -135,6 +135,7 @@ export type TreeSelectSelectionMode = TreeSelectionMode
 
 <script setup lang="ts" generic="T extends TreeSelectNode = TreeSelectNode">
 import './TreeSelect.css'
+import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'

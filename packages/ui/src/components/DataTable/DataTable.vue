@@ -83,6 +83,7 @@
      Expansion: full-width row per `Ref<Set<...>>`, collapsed in stacked mode (no toggle). -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import './DataTable.css'
+import '../shared/tokens.css'
 import {
   computed,
   onBeforeUnmount,

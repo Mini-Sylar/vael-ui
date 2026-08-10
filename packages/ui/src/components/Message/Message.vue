@@ -86,6 +86,7 @@ export interface MessageProps {
 -->
 <script setup lang="ts">
 import './Message.css'
+import '../shared/tokens.css'
 import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'

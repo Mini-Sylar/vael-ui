@@ -14,6 +14,7 @@
 
 <script setup lang="ts">
 import './ScrollArea.css'
+import '../shared/tokens.css'
 import { computed, onBeforeUnmount, shallowRef, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

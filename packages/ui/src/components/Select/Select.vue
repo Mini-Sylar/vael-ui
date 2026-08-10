@@ -160,6 +160,7 @@ export interface SelectVirtualizeConfig {
 
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
 import './Select.css'
+import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import '../shared/select-list.css'

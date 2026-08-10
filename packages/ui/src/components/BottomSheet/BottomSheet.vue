@@ -109,6 +109,7 @@ export interface BottomSheetProps {
 import { computed, inject, onScopeDispose, provide, useTemplateRef, watch } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
+import '../shared/tokens.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'

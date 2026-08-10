@@ -69,6 +69,7 @@ export interface PullToRefreshProps {
 <!-- Custom #indicator animations go inside slot content, not zone (which owns block-size state) -->
 <script setup lang="ts">
 import './PullToRefresh.css'
+import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
 import { computed, useTemplateRef } from 'vue'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'

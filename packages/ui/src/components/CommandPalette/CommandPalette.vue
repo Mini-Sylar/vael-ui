@@ -119,6 +119,7 @@ export interface CommandPaletteItem {
 
 <script setup lang="ts" generic="T extends CommandPaletteItem = CommandPaletteItem">
 import './CommandPalette.css'
+import '../shared/tokens.css'
 import { computed, nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Dialog from '../Dialog/Dialog.vue'

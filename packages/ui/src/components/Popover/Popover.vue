@@ -86,6 +86,7 @@ export interface PopoverProps {
 -->
 <script setup lang="ts">
 import './Popover.css'
+import '../shared/tokens.css'
 import { computed, inject, shallowRef, useTemplateRef, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { usePopover } from '../../composables/usePopover'

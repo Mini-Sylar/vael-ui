@@ -37,6 +37,7 @@
 <!-- inheritAttrs: false; class/style → root, input attrs → input; frame mousedown focuses input (guarded) -->
 <script setup lang="ts">
 import './Input.css'
+import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'

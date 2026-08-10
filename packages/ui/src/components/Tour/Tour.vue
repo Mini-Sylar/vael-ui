@@ -136,6 +136,7 @@ export interface TourProps<T extends TourStep = TourStep> {
 -->
 <script setup lang="ts" generic="T extends TourStep = TourStep">
 import './Tour.css'
+import '../shared/tokens.css'
 import { computed, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'

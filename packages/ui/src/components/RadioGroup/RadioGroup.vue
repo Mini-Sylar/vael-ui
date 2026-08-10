@@ -33,6 +33,7 @@ export const radioGroupKey: InjectionKey<RadioGroupContext> = Symbol('ui-radio-g
 <!-- Compound component: owns model and shared name; native radios give APG roving arrows for free; orientation is layout-only -->
 <script setup lang="ts">
 import './RadioGroup.css'
+import '../shared/tokens.css'
 import { computed, provide, useId, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'

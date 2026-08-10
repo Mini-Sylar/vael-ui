@@ -29,6 +29,7 @@
 <!-- Two-layer crossfade (fallback + img overlay); frame wrapper (overflow hidden) separate from root for badge edge overlap -->
 <script setup lang="ts">
 import './Avatar.css'
+import '../shared/tokens.css'
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

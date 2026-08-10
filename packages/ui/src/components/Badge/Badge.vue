@@ -9,6 +9,7 @@
 <!-- No positioning props: composition via consumer's wrapper (Avatar's #badge slot), not component props -->
 <script setup lang="ts">
 import './Badge.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

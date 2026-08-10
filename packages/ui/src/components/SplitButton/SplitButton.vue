@@ -82,6 +82,7 @@ export type { MenuAlign as SplitButtonAlign, MenuSide as SplitButtonSide }
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './SplitButton.css'
+import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Button from '../Button/Button.vue'

@@ -14,6 +14,7 @@
 <!-- Template-adjacent comment prevents attrs fallthrough on single-root component. -->
 <script setup lang="ts">
 import './Loader.css'
+import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
 import { computed, useId, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'

@@ -13,6 +13,7 @@
 
 <script setup lang="ts" generic="T extends string">
 import './Tabs.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useTabs } from '../../composables/useTabs'
 import { useClassMerge, resolveUiPart } from '../../classes'

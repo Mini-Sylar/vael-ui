@@ -53,6 +53,7 @@ export interface SelectButtonItem {
 <!-- Native radios (single) or checkboxes (multiple) with sliding indicator; allowEmpty clears on click -->
 <script setup lang="ts" generic="T extends SelectButtonItem = SelectButtonItem">
 import './SelectButton.css'
+import '../shared/tokens.css'
 import { computed, useId, useTemplateRef } from 'vue'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'

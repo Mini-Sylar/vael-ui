@@ -7,6 +7,7 @@
 <!-- Slotted content (visibility: hidden) sizes skeleton; no ARIA role (consumer pairs with live region). -->
 <script setup lang="ts">
 import './Skeleton.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

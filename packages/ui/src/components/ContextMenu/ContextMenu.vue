@@ -85,6 +85,7 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
 -->
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './ContextMenu.css'
+import '../shared/tokens.css'
 import { computed, nextTick, onScopeDispose, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'

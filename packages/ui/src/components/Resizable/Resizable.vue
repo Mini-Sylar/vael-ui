@@ -32,6 +32,7 @@
 <!-- General-purpose resize primitive: wraps content + draggable handle, axis/edge-agnostic; no live-drag transitions -->
 <script setup lang="ts">
 import './Resizable.css'
+import '../shared/tokens.css'
 import { computed, useTemplateRef } from 'vue'
 import { useResizable } from '../../composables/useResizable'
 import type { ResizeDirection, ResizeEdge } from '../../composables/useResizable'

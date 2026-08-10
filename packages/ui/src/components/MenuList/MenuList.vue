@@ -82,6 +82,7 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
 -->
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './MenuList.css'
+import '../shared/tokens.css'
 import { computed, onMounted, useTemplateRef } from 'vue'
 import { useMenu } from '../../composables/useMenu'
 import { useTabIndicator } from '../../composables/useTabIndicator'

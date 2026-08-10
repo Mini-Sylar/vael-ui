@@ -50,6 +50,7 @@ export interface TooltipHostProps {
 <!-- Singleton behind v-tooltip; document delegation to every target -->
 <script setup lang="ts">
 import '../shared/tooltip.css'
+import '../shared/tokens.css'
 import { computed, inject, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrDocument } from '../../ssr'

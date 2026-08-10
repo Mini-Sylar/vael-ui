@@ -151,6 +151,7 @@ export type TreeSelectionMode = 'single' | 'multiple' | 'checkbox'
      Animation: motionCss=false disables TransitionGroup and chevron rotation via data-motion="off" on root. -->
 <script setup lang="ts" generic="T extends TreeNode = TreeNode">
 import './Tree.css'
+import '../shared/tokens.css'
 import { computed, nextTick, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
