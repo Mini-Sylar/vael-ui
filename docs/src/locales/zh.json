@@ -312,7 +312,11 @@
     "setupTitle": "设置",
     "title": "自动导入",
     "vaporIntro": "vael-ui 提供了来自同一来源的两个版本：常规 VDOM 版本和 Vapor 版本 (<code>vael-ui/vapor</code>)。\n默认情况下，解析器从 VDOM 构建导入；\n传递 <code>variant: 'vapor'</code> 从 Vapor 构建中解析。\n选择您的应用程序实际渲染的任何一个 - 不支持将两者混合在一个应用程序中。",
-    "vaporTitle": "汽"
+    "vaporTitle": "汽",
+    "oneImportIntro": "如果编辑器的自动导入功能不断建议使用 <code>vael-ui</code> 而不是 <code>vael-ui/vapor</code>（当包从两个入口点导出相同名称时，这是一种已知的 TypeScript 限制），请设置 <code>vapor</code> 导出条件，而不是从子路径导入。\n然后，每次从“vael-ui”导入…都会解析为项目范围内的 Vapor 构建，组件和可组合项都是如此，并且自动导入不会再出现任何错误。",
+    "oneImportNote": "Vite 条件控制实际加载的内容； \nTS 条件只保留与其匹配的类型。\n设置一个而不设置另一个，你会得到一个无声的不匹配——正确的类型加载了错误的构建，反之亦然——而不是错误。",
+    "oneImportNoteTitle": "保持两个设置同步",
+    "oneImportTitle": "一个共享导入，无 /vapor 子路径"
   },
   "nuxt": {
     "excludeIntro": "跳过特定的组件名称 - 如果您想注册自己的 <code>，这很有用",

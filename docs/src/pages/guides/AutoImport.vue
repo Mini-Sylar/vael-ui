@@ -34,6 +34,28 @@ export default {
     <p v-html="t('autoImport.vaporIntro')" />
     <CodeBlock code="VaelUiResolver({ variant: 'vapor' })" />
 
+    <h2 id="one-import">{{ t('autoImport.oneImportTitle') }}</h2>
+    <p v-html="t('autoImport.oneImportIntro')" />
+    <CodeBlock
+      lang="typescript"
+      code="// vite.config.ts
+export default {
+  resolve: { conditions: ['vapor'] },
+}"
+    />
+    <CodeBlock
+      lang="json"
+      code='// tsconfig.json
+{
+  "compilerOptions": {
+    "customConditions": ["vapor"]
+  }
+}'
+    />
+    <Message variant="warning" :title="t('autoImport.oneImportNoteTitle')">
+      {{ t('autoImport.oneImportNote') }}
+    </Message>
+
     <h2 id="css">{{ t('autoImport.cssTitle') }}</h2>
     <p v-html="t('autoImport.cssIntro')" />
 
@@ -46,6 +68,7 @@ export default {
 import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
+import { Message } from 'vael-ui'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
@@ -61,6 +84,7 @@ useBreadcrumbSchema(() => [
 const tocLinks = computed(() => [
   { id: 'setup', label: t('autoImport.setupTitle') },
   { id: 'vapor', label: t('autoImport.vaporTitle') },
+  { id: 'one-import', label: t('autoImport.oneImportTitle') },
   { id: 'css', label: t('autoImport.cssTitle') },
   { id: 'bundlers', label: t('autoImport.bundlersTitle') },
 ])

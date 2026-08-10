@@ -283,7 +283,11 @@
     "cssTitle": "CSS",
     "cssIntro": "Hier ist keine zusätzliche Verkabelung nötig. Jede vael-ui-Komponente importiert bereits intern ihr eigenes CSS, sodass das Auflösen des Komponenten-Imports auch deren Styles kostenlos mitbringt — anders als bei den meisten unplugin-vue-components-Resolvern, die einen separaten <code>sideEffects</code>-Eintrag benötigen, um auch das Stylesheet einer Komponente zu importieren.",
     "bundlersTitle": "Bundler",
-    "bundlersIntro": "unplugin-vue-components unterstützt Vite, Webpack, Rollup, esbuild und Rspack. Der Resolver selbst ist nur eine einfache Funktion — er funktioniert unabhängig davon, welchen Sie verwenden, identisch."
+    "bundlersIntro": "unplugin-vue-components unterstützt Vite, Webpack, Rollup, esbuild und Rspack. Der Resolver selbst ist nur eine einfache Funktion — er funktioniert unabhängig davon, welchen Sie verwenden, identisch.",
+    "oneImportIntro": "Wenn der automatische Import Ihres Editors weiterhin <code>vael-ui</code> anstelle von <code>vael-ui/vapor</code> vorschlägt – eine bekannte TypeScript-Einschränkung, wenn ein Paket denselben Namen von zwei Einstiegspunkten exportiert – legen Sie eine <code>vapor</code>-Exportbedingung fest, anstatt aus dem Unterpfad zu importieren. \nJeder <code>Import … von „vael-ui“</code> wird dann projektweit in den Vapor-Build aufgelöst, sowohl für Komponenten als auch für Composables, und es gibt nichts mehr, was der automatische Import falsch auswählen könnte.",
+    "oneImportNote": "Die Vite-Bedingung steuert, was tatsächlich geladen wird. \nDie TS-Bedingung behält einfach die Typen bei, die ihr entsprechen. \nWenn Sie das eine ohne das andere festlegen, erhalten Sie eine stille Nichtübereinstimmung – richtige Typen mit dem falschen geladenen Build oder umgekehrt – und keinen Fehler.",
+    "oneImportNoteTitle": "Halten Sie beide Einstellungen synchron",
+    "oneImportTitle": "Ein gemeinsamer Import, kein /vapor-Unterpfad"
   },
   "notFound": {
     "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",

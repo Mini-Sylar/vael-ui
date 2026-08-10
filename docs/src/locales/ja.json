@@ -312,7 +312,11 @@
     "setupTitle": "設定",
     "title": "自動インポート",
     "vaporIntro": "vael-ui は、同じソースから 2 つのビルド、つまり通常の VDOM ビルドと Vapor ビルド (<code>vael-ui/vapor</code>) を出荷します。\nデフォルトでは、リゾルバーは VDOM ビルドからインポートします。\n代わりに <code>variant: 'vapor'</code> を渡して、Vapor ビルドから解決します。\nアプリが実際にレンダリングするものを選択してください。1 つのアプリ内で 2 つを混合することはサポートされていません。",
-    "vaporTitle": "蒸気"
+    "vaporTitle": "蒸気",
+    "oneImportIntro": "エディターの自動インポートで <code>vael-ui/vapor</code> ではなく <code>vael-ui</code> が推奨され続ける場合 (パッケージが 2 つのエントリ ポイントから同じ名前をエクスポートする場合の TypeScript の既知の制限)、サブパスからインポートする代わりに <code>vapor</code> エクスポート条件を設定します。\nすべての <code>import … from 'vael-ui'</code> は、コンポーネントとコンポーザブル同様にプロジェクト全体の Vapor ビルドに解決され、自動インポートが間違って選択するものは何も残りません。",
+    "oneImportNote": "Vite 条件は実際に何をロードするかを制御します。 \nTS 条件は、それに一致する型を維持するだけです。\n一方を設定せずに他方を設定すると、エラーではなく、正しい型と間違ったビルドが読み込まれた、またはその逆という、サイレントな不一致が発生します。",
+    "oneImportNoteTitle": "両方の設定を同期させます",
+    "oneImportTitle": "1 つの共有インポート、/vapor サブパスなし"
   },
   "nuxt": {
     "excludeIntro": "特定のコンポーネント名をスキップします。独自の <code> を登録する場合に便利です。",
