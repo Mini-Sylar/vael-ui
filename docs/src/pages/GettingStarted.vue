@@ -6,10 +6,10 @@
     <h2 id="install">{{ t('gettingStarted.installTitle') }}</h2>
     <p>{{ t('gettingStarted.installIntro') }}</p>
     <SelectButton
-      v-model="pm"
+      v-model="packageManager"
       size="sm"
       :allow-empty="false"
-      :items="pmItems.map((item) => ({ label: item, value: item }))"
+      :items="packageManagers.map((item) => ({ label: item, value: item }))"
       class="pm-toggle"
     />
     <CodeBlock lang="bash" :code="installCode" />
@@ -84,14 +84,14 @@ import 'vael-ui/style.css'"
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { Message, SelectButton } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import GuideLayout from '../components/GuideLayout.vue'
-import { defaultVariant } from '../preferences'
+import { defaultVariant, packageManager, packageManagers } from '../preferences'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 
 const { t } = useI18n()
@@ -102,17 +102,13 @@ useBreadcrumbSchema(() => [
   { name: t('gettingStarted.title'), url: 'https://vael-ui.dev/docs/getting-started' },
 ])
 
-type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'
-const pmItems: PackageManager[] = ['npm', 'pnpm', 'yarn', 'bun']
-const pm = shallowRef<PackageManager>('npm')
-
-const INSTALL_COMMANDS: Record<PackageManager, string> = {
+const INSTALL_COMMANDS: Record<(typeof packageManagers)[number], string> = {
   npm: 'npm install vael-ui',
   pnpm: 'pnpm add vael-ui',
   yarn: 'yarn add vael-ui',
   bun: 'bun add vael-ui',
 }
-const installCode = computed(() => INSTALL_COMMANDS[pm.value])
+const installCode = computed(() => INSTALL_COMMANDS[packageManager.value])
 
 const usageCode = computed(() => {
   const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'

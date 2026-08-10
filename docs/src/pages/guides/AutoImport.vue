@@ -2,7 +2,14 @@
   <GuideLayout :links="tocLinks">
     <h1>{{ t('autoImport.title') }}</h1>
     <p>{{ t('autoImport.intro') }}</p>
-    <CodeBlock lang="bash" code="npm install -D unplugin-vue-components" />
+    <SelectButton
+      v-model="packageManager"
+      size="sm"
+      :allow-empty="false"
+      :items="packageManagers.map((item) => ({ label: item, value: item }))"
+      class="pm-toggle"
+    />
+    <CodeBlock lang="bash" :code="installCode" />
 
     <h2 id="setup">{{ t('autoImport.setupTitle') }}</h2>
     <p>{{ t('autoImport.setupIntro') }}</p>
@@ -68,9 +75,10 @@ export default {
 import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
-import { Message } from 'vael-ui'
+import { Message, SelectButton } from 'vael-ui'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
+import { packageManager, packageManagers } from '../../preferences'
 import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
 
 const { t } = useI18n()
@@ -81,6 +89,14 @@ useBreadcrumbSchema(() => [
   { name: t('autoImport.title'), url: 'https://vael-ui.dev/docs/guides/auto-import' },
 ])
 
+const INSTALL_COMMANDS: Record<(typeof packageManagers)[number], string> = {
+  npm: 'npm install -D unplugin-vue-components',
+  pnpm: 'pnpm add -D unplugin-vue-components',
+  yarn: 'yarn add -D unplugin-vue-components',
+  bun: 'bun add -D unplugin-vue-components',
+}
+const installCode = computed(() => INSTALL_COMMANDS[packageManager.value])
+
 const tocLinks = computed(() => [
   { id: 'setup', label: t('autoImport.setupTitle') },
   { id: 'vapor', label: t('autoImport.vaporTitle') },
@@ -89,3 +105,9 @@ const tocLinks = computed(() => [
   { id: 'bundlers', label: t('autoImport.bundlersTitle') },
 ])
 </script>
+
+<style scoped>
+.pm-toggle {
+  margin-bottom: 0.75rem;
+}
+</style>
