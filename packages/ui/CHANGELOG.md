@@ -1,5 +1,11 @@
 # vael-ui
 
+## 0.2.1
+
+### Patch Changes
+
+- [#21](https://github.com/Mini-Sylar/vael-ui/pull/21) [`a78a3a9`](https://github.com/Mini-Sylar/vael-ui/commit/a78a3a9370a4a9fcc4d72b43400faafbab118cf4) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - `vael-ui/vapor` now also re-exports composables and utilities, not just components. This also enables a `vapor` export condition on the package root — set it in your bundler and `tsconfig.json` to use `vael-ui` everywhere with no `/vapor` subpath needed. See the [Auto Import guide](https://vael-ui.dev/docs/guides/auto-import#one-import) for setup; see the [0.2.0 release notes](https://github.com/Mini-Sylar/vael-ui/releases/tag/vael-ui%400.2.0) for the original Vapor/resolver docs.
+
 ## 0.2.0
 
 ### Minor Changes
