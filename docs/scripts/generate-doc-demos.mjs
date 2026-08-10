@@ -23,11 +23,13 @@ const MANIFEST_PATH = join(__dirname, '../src/generated/demo-manifest.json')
 // from generate-vapor.mjs's COMPONENTS array) is caught here too.
 function readVaporComponentNames() {
   const dts = readFileSync(VAPOR_DTS_PATH, 'utf8')
-  const firstExport = dts.match(/^export\s*\{([^}]+)\}\s*from/m)
+  // tsdown emits one combined `export { ... };` of local bindings at the tail
+  // (no trailing `from '...'`, unlike the old hand-written re-export format).
+  const firstExport = dts.match(/^export\s*\{([^}]+)\}\s*(?:from\s*'[^']*')?;?\s*$/m)
   if (!firstExport) throw new Error(`couldn't parse ${VAPOR_DTS_PATH}`)
   const names = new Set()
   for (const raw of firstExport[1].split(',')) {
-    const trimmed = raw.trim()
+    const trimmed = raw.trim().replace(/^type\s+/, '')
     if (!trimmed) continue
     const asMatch = trimmed.match(/\bas\s+(\S+)/)
     names.add(asMatch ? asMatch[1] : trimmed)

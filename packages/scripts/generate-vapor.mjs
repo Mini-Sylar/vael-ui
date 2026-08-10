@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Generates vapor-ui/src/generated/*.vue from ui/src/components/ (add name to COMPONENTS, run pnpm build)
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { COMPONENTS } from './component-names.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -121,13 +121,26 @@ function resolveDependencyGraph(requested) {
   return toGenerate
 }
 
-// Vapor never bundles its own CSS — the same class names are styled by
-// whatever vael-ui stylesheet(s) the consumer already loads (style.css
-// today, or a component's own split CSS chunk once migrated). The relative
-// `.css` side-effect imports that drive that splitting on the vdom side
-// have nothing to resolve to inside vapor-ui/src/generated, so strip them.
-function stripCssImports(source) {
-  return source.replace(/^import\s+'\.[^']*\.css'\s*\n/gm, '')
+// Mirrors each CSS side-effect import into OUT_DIR (relative to
+// UI_COMPONENTS_DIR, the same root OUT_DIR itself mirrors) and rewrites the
+// import line to match, so vapor's build gets the exact same per-component
+// CSS-splitting the vdom tsdown build already does. Works for sources
+// outside UI_COMPONENTS_DIR too (e.g. directives/vScrollMask.ts, which
+// reaches into components/shared/*.css) since the resolution is anchored to
+// the CSS file's own absolute location, not the importing file's original
+// directory.
+function copyCssImports(source, origFileDir, outFileDir) {
+  const importLineRe = /^import\s+'([^']+\.css)'\s*$/gm
+  return source.replace(importLineRe, (_full, relPath) => {
+    const absSrc = resolve(origFileDir, relPath)
+    const mirroredRel = relative(UI_COMPONENTS_DIR, absSrc)
+    const absOut = join(OUT_DIR, mirroredRel)
+    mkdirSync(dirname(absOut), { recursive: true })
+    copyFileSync(absSrc, absOut)
+    let newRel = relative(outFileDir, absOut).split('\\').join('/')
+    if (!newRel.startsWith('.')) newRel = `./${newRel}`
+    return `import '${newRel}'`
+  })
 }
 
 function injectVaporMarker(source, moduleId) {
@@ -210,10 +223,11 @@ function rewriteImports(source, moduleId, publicExports) {
   })
 }
 
-// vScrollMask.ts has its own CSS import — same strip-and-copy components get.
-function copySourceStrippingCss(specifier) {
-  const source = stripCssImports(readFileSync(join(UI_SRC_DIR, `${specifier}.ts`), 'utf8'))
+// vScrollMask.ts has its own CSS import — same copy-and-rewrite components get.
+function copyNonComponentSource(specifier) {
+  const srcPath = join(UI_SRC_DIR, `${specifier}.ts`)
   const outPath = join(OUT_DIR, `${specifier}.ts`)
+  const source = copyCssImports(readFileSync(srcPath, 'utf8'), dirname(srcPath), dirname(outPath))
   mkdirSync(dirname(outPath), { recursive: true })
   writeFileSync(outPath, source)
   return `./${specifier}`
@@ -262,11 +276,11 @@ function main() {
     try {
       const srcPath = join(UI_COMPONENTS_DIR, `${moduleId}.vue`)
       let source = readFileSync(srcPath, 'utf8')
-      source = stripCssImports(source)
-      source = injectVaporMarker(source, moduleId)
-      source = rewriteImports(source, moduleId, publicExports)
       const outPath = join(OUT_DIR, `${moduleId}.vue`)
       mkdirSync(dirname(outPath), { recursive: true }) // for internal/*.vue
+      source = copyCssImports(source, dirname(srcPath), dirname(outPath))
+      source = injectVaporMarker(source, moduleId)
+      source = rewriteImports(source, moduleId, publicExports)
       writeFileSync(outPath, source)
       const dep = requestedModuleIds.has(moduleId) ? '' : ' (dependency)'
       console.log(`generated src/generated/${moduleId}.vue${dep}`)
@@ -301,7 +315,7 @@ function main() {
   })
   barrelLines.push(
     `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
-    `export { vScrollMaskVapor as vScrollMask } from '${copySourceStrippingCss('directives/vScrollMask')}'`,
+    `export { vScrollMaskVapor as vScrollMask } from '${copyNonComponentSource('directives/vScrollMask')}'`,
     `export { confirmAction } from './composables/confirmAction'`,
     `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
   )

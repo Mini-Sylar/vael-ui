@@ -182,6 +182,9 @@ importers:
         specifier: 3.6.0-rc.2
         version: 3.6.0-rc.2(typescript@6.0.3)
     devDependencies:
+      '@tsdown/css':
+        specifier: ^0.22.14
+        version: 0.22.14(jiti@2.7.0)(postcss@8.5.26)(tsdown@0.22.14)(yaml@2.9.0)
       '@vitejs/plugin-vue':
         specifier: ^6.0.8
         version: 6.0.8(vite@8.2.1(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(yaml@2.9.0))(vue@3.6.0-rc.2(typescript@6.0.3))
@@ -191,9 +194,15 @@ importers:
       playwright:
         specifier: ^1.62.1
         version: 1.62.1
+      tsdown:
+        specifier: ^0.22.14
+        version: 0.22.14(@tsdown/css@0.22.14)(@volar/typescript@2.4.28)(typescript@6.0.3)(vue-tsc@3.3.9(typescript@6.0.3))
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      unplugin-vue:
+        specifier: ^7.2.0
+        version: 7.2.0(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0)(rolldown@1.2.3)(rollup@4.62.4)(terser@5.49.2)(vue@3.6.0-rc.2(typescript@6.0.3))(yaml@2.9.0)
       vite:
         specifier: ^8.2.1
         version: 8.2.1(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(yaml@2.9.0)
