@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Pins @layer order first, before Vite's chunked component CSS can establish it wrong. -->
+    <link rel="stylesheet" href="/layer-order.css" />
     <script>
       try {
         var storedTheme = localStorage.getItem("vael-ui-docs-theme");
