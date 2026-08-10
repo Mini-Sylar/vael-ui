@@ -1,5 +1,11 @@
 # vael-ui
 
+## 0.2.4
+
+### Patch Changes
+
+- [#26](https://github.com/Mini-Sylar/vael-ui/pull/26) [`32a8b7b`](https://github.com/Mini-Sylar/vael-ui/commit/32a8b7ba35dc66cf1aa04bf362c27045746b7db3) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - Fixes inconsistent internal spacing in Dialog, Card, Tour, and confirmAction's popover surface, where the gap on one side of a header/body/footer-style transition was silently double-counted against the other, making the two sides unequal (e.g. Dialog's body→footer gap was exactly double its header→body gap). Also fixes Tour rendering with doubled outer padding — its own header/actions padding was stacking on top of Popover's shared body padding.
+
 ## 0.2.3
 
 ### Patch Changes
