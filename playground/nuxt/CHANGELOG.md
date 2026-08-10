@@ -1,5 +1,12 @@
 # nuxt-playground
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [[`0a7d018`](https://github.com/Mini-Sylar/vael-ui/commit/0a7d0180369752ebc739ddda362b74f12a3d603e)]:
+  - vael-ui@0.2.3
+
 ## 0.0.3
 
 ### Patch Changes
