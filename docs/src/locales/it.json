@@ -312,7 +312,11 @@
     "setupTitle": "Impostare",
     "title": "Importazione automatica",
     "vaporIntro": "vael-ui fornisce due build dalla stessa fonte: la build VDOM normale e una build Vapor (<code>vael-ui/vapor</code>). \nPer impostazione predefinita il risolutore importa dalla build VDOM; \npassa invece <code>variant: 'vapor'</code> per risolverlo dalla build Vapor. \nScegli quello con cui viene effettivamente eseguito il rendering della tua app: la combinazione delle due app in una non è supportata.",
-    "vaporTitle": "Vapore"
+    "vaporTitle": "Vapore",
+    "oneImportIntro": "Se l'importazione automatica del tuo editor continua a suggerire <code>vael-ui</code> invece di <code>vael-ui/vapor</code> — una limitazione nota di TypeScript quando un pacchetto esporta lo stesso nome da due punti di ingresso — imposta una condizione di esportazione <code>vapor</code> invece di importare dal sottopercorso. \nOgni <code>import … from 'vael-ui'</code> si risolve quindi nella build Vapor a livello di progetto, componenti e componenti componibili allo stesso modo, e non c'è più nulla che l'importazione automatica possa scegliere in modo sbagliato.",
+    "oneImportNote": "La condizione Vite controlla cosa viene effettivamente caricato; \nla condizione TS mantiene semplicemente i tipi corrispondenti. \nImpostane uno senza l'altro e otterrai una mancata corrispondenza silenziosa (tipi corretti con la build sbagliata caricata o viceversa) non un errore.",
+    "oneImportNoteTitle": "Mantieni entrambe le impostazioni sincronizzate",
+    "oneImportTitle": "Un'importazione condivisa, nessun sottopercorso /vapor"
   },
   "nuxt": {
     "excludeIntro": "Salta nomi di componenti specifici: utile se desideri registrare il tuo <codice>",

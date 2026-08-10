@@ -312,7 +312,11 @@
     "setupTitle": "Configurar",
     "title": "Importação automática",
     "vaporIntro": "vael-ui envia duas compilações da mesma fonte: a compilação VDOM regular e uma compilação Vapor (<code>vael-ui/vapor</code>). \nPor padrão, o resolvedor importa da compilação VDOM; \npasse <code>variant: 'vapor'</code> para resolver a partir da compilação do Vapor. \nEscolha o que seu aplicativo realmente renderiza - não há suporte para misturar os dois em um aplicativo.",
-    "vaporTitle": "Vapor"
+    "vaporTitle": "Vapor",
+    "oneImportIntro": "Se a importação automática do seu editor continuar sugerindo <code>vael-ui</code> em vez de <code>vael-ui/vapor</code> — uma limitação conhecida do TypeScript quando um pacote exporta o mesmo nome de dois pontos de entrada — defina uma condição de exportação <code>vapor</code> em vez de importar do subcaminho. \nCada <code>import … from 'vael-ui'</code> é então resolvida para a compilação do Vapor em todo o projeto, componentes e elementos que podem ser compostos, e não há mais nada para a importação automática escolher errado.",
+    "oneImportNote": "A condição Vite controla o que realmente carrega; \na condição TS apenas mantém os tipos correspondentes. \nDefina um sem o outro e você obterá uma incompatibilidade silenciosa - tipos corretos com a compilação errada carregada ou vice-versa - e não um erro.",
+    "oneImportNoteTitle": "Mantenha as duas configurações sincronizadas",
+    "oneImportTitle": "Uma importação compartilhada, sem subcaminho /vapor"
   },
   "nuxt": {
     "excludeIntro": "Ignore nomes de componentes específicos — útil se você deseja registrar seu próprio <código>",

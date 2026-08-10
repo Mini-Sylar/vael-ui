@@ -49,6 +49,31 @@ function collectPublicExports(indexSource) {
   return names
 }
 
+// Excluded: vdom-unsafe originals already replaced by the aliased vTooltipVapor/vScrollMaskVapor line below.
+const DIRECTIVE_ORIGINALS_EXCLUDED = new Set(['vTooltip', 'vScrollMask'])
+
+function collectNonComponentExports(indexSource) {
+  const values = new Set()
+  const types = new Set()
+  const re = /export\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'/g
+  let match
+  while ((match = re.exec(indexSource))) {
+    const [, typeOnly, namedClause, specifier] = match
+    if (specifier.endsWith('.vue')) continue // component export, handled separately
+    for (const raw of namedClause.split(',')) {
+      const trimmed = raw.trim()
+      if (!trimmed) continue
+      const isTypeMember = typeOnly || trimmed.startsWith('type ')
+      const name = trimmed.replace(/^type\s+/, '')
+      const asMatch = name.match(/\bas\s+(\S+)/)
+      const exported = asMatch ? asMatch[1] : name
+      if (DIRECTIVE_ORIGINALS_EXCLUDED.has(exported)) continue
+      ;(isTypeMember ? types : values).add(exported)
+    }
+  }
+  return { values: [...values], types: [...types] }
+}
+
 // Finds sibling .vue imports (not composables or third-party). `fromId` is
 // the importing module's own id (e.g. 'Message/Message' or 'Select') so
 // './' and '../' specifiers resolve against its real directory — a
@@ -186,9 +211,18 @@ function main() {
     ]
   })
   barrelLines.push(`export { vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask } from 'vael-ui'`)
+
+  const { values: composableValues, types: composableTypes } = collectNonComponentExports(indexSource)
+  if (composableValues.length > 0) {
+    barrelLines.push(`export { ${composableValues.join(', ')} } from 'vael-ui'`)
+  }
+  if (composableTypes.length > 0) {
+    barrelLines.push(`export type { ${composableTypes.join(', ')} } from 'vael-ui'`)
+  }
+
   writeFileSync(join(OUT_DIR, 'index.ts'), barrelLines.join('\n') + '\n')
   console.log(
-    `\ngenerated src/generated/index.ts (${COMPONENTS.length} public component(s), ${toGenerate.size} file(s) total)`,
+    `\ngenerated src/generated/index.ts (${COMPONENTS.length} public component(s), ${toGenerate.size} file(s) total, ${composableValues.length} composable(s)/utilit(y/ies))`,
   )
 }
 

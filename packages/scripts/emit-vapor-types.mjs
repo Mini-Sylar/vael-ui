@@ -31,10 +31,20 @@ const outPath = join(__dirname, '../ui/dist/vapor/index.d.ts')
 const lines = [
   `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask } from '../index'`,
 ]
-const directiveTypeNames = ['TooltipDirectiveOptions', 'TooltipDirectiveValue']
-const allTypeNames = [...typeNames, ...directiveTypeNames]
+const allTypeNames = typeNames
 if (allTypeNames.length > 0) lines.push(`export type { ${allTypeNames.join(', ')} } from '../index'`)
+
+// Reuse the composable re-export lines generate-vapor.mjs already computed, pointed at ../index instead.
+const composableValueLine = barrel.match(/^export \{ (?!default as|vTooltipVapor)[^}]+\} from 'vael-ui'$/m)
+const composableTypeLine = barrel.match(/^export type \{[^}]+\} from 'vael-ui'$/m)
+let composableCount = 0
+if (composableValueLine) {
+  lines.push(composableValueLine[0].replace(/from 'vael-ui'$/, `from '../index'`))
+  composableCount = composableValueLine[0].split(',').length
+}
+if (composableTypeLine) lines.push(composableTypeLine[0].replace(/from 'vael-ui'$/, `from '../index'`))
+
 writeFileSync(outPath, lines.join('\n') + '\n')
 console.log(
-  `generated dist/vapor/index.d.ts (${componentNames.length} component(s), ${allTypeNames.length} type(s))`,
+  `generated dist/vapor/index.d.ts (${componentNames.length} component(s), ${allTypeNames.length} type(s), ${composableCount} composable(s)/utilit(y/ies))`,
 )

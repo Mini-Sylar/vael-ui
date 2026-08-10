@@ -30,7 +30,14 @@
     "**/*.css"
   ],
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "vapor": {
+        "types": "./dist/vapor/index.d.ts",
+        "default": "./dist/vapor/index.js"
+      },
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./vapor": {
       "types": "./dist/vapor/index.d.ts",
       "default": "./dist/vapor/index.js"
