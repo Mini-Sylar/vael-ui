@@ -2,7 +2,7 @@
  * Proves the vapor-lib pipeline end to end: a `vapor`-marked Button.vue
  * (generated verbatim from packages/ui/src/components/Button.vue by
  * scripts/gen.mjs, reusing vael-ui's real exported composables), compiled via
- * a genuine `vite build` library bundle (vite.lib.config.ts → dist/
+ * a genuine `tsdown` library bundle (tsdown.config.ts → ../ui/dist/vapor/
  * index.js), consumed from a pure-Vapor root with no interop plugin. Run
  * `pnpm build` before this test — it consumes the built output, not source.
  */
