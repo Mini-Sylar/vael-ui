@@ -19,7 +19,7 @@ export interface RegisteredColumn<T> {
 export interface DataTableContext<T> {
   registerColumn: (col: RegisteredColumn<T>) => void
   unregisterColumn: (col: RegisteredColumn<T>) => void
-  sort: { field: keyof T | null; dir: 'asc' | 'desc' | null }
+  sort: Ref<{ field: keyof T | null; dir: 'asc' | 'desc' | null }>
   toggleSort: (field: keyof T) => void
   selected: Ref<Set<string | number>>
   toggleSelect: (row: T) => void

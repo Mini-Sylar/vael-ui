@@ -121,6 +121,10 @@
   .ui-datatable-tbody .ui-datatable-tr[data-selected] .ui-datatable-td {
     background: color-mix(in oklch, var(--ui-primary) 8%, var(--ui-surface));
   }
+  /* selectionMode="row": the whole row is the click target, not just a checkbox. */
+  .ui-datatable-tr--clickable {
+    cursor: pointer;
+  }
   .ui-datatable-td--loading,
   .ui-datatable-td--empty {
     padding: 2.5rem 1rem;
@@ -128,6 +132,13 @@
     color: var(--ui-text-muted);
     font-size: 0.875rem;
     border-block-end: none;
+  }
+  .ui-datatable-tr--spacer {
+    pointer-events: none;
+  }
+  .ui-datatable-td--spacer {
+    padding: 0;
+    border: none;
   }
   .ui-datatable-footer {
     padding: 0.625rem 0.75rem;
@@ -145,14 +156,17 @@
     text-align: center;
   }
 
-  .ui-datatable-scroll-x--scrollable {
-    overflow-y: auto;
+  /* Split head/body tables for scrollHeight — see DataTable.vue's own
+     comment on the .ui-datatable-scroll-x div. table-layout:fixed pairs
+     with a <colgroup> (in DataTable.vue) to keep their columns aligned. */
+  .ui-datatable-table--split {
+    table-layout: fixed;
   }
-  .ui-datatable-scroll-x--scrollable .ui-datatable-th {
-    position: sticky;
-    inset-block-start: 0;
-    z-index: 1;
+  .ui-datatable-table--split .ui-datatable-th {
     background: var(--ui-muted);
+  }
+  .ui-datatable-scroll-y {
+    overflow-y: auto;
   }
 
   .ui-datatable[data-stacked] .ui-datatable-table,

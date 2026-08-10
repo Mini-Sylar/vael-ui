@@ -9,182 +9,51 @@
       <slot name="toolbar" :selected="selected" :count="sortedData.length" />
     </div>
 
-    <div
-      class="ui-datatable-scroll-x"
-      :class="{ 'ui-datatable-scroll-x--scrollable': !!scrollHeight }"
-      :style="scrollHeight ? { maxHeight: scrollHeight } : undefined"
-    >
-      <table class="ui-datatable-table">
-        <thead class="ui-datatable-thead">
-          <tr ref="theadRow" class="ui-datatable-tr">
-            <th
-              v-if="selectColumnRendered"
-              scope="col"
-              class="ui-datatable-th ui-datatable-th--select"
-              :class="{ 'ui-datatable-th--frozen': frozenColumns > 0 }"
-              :style="utilityFrozenStyle('select')"
-            >
-              <Checkbox
-                v-if="!single"
-                :model-value="selectAllState.all"
-                :indeterminate="selectAllState.some && !selectAllState.all"
-                aria-label="Select all rows"
-                @update:model-value="toggleSelectAll"
-              />
-            </th>
-            <th
-              v-if="expansionColumnRendered"
-              scope="col"
-              class="ui-datatable-th ui-datatable-th--expand"
-              :class="{ 'ui-datatable-th--frozen': frozenColumns > 0 }"
-              :style="utilityFrozenStyle('expand')"
-              aria-hidden="true"
-            ></th>
-            <th
-              v-for="(col, colIndex) in columns"
-              :key="colIndex"
-              scope="col"
-              class="ui-datatable-th"
-              :class="{
-                'ui-datatable-th--frozen': isFrozenColumn(colIndex),
-                'ui-datatable-th--frozen-end': colIndex === frozenColumns - 1,
-              }"
-              :style="[columnStyle(col), columnFrozenStyle(colIndex)]"
-              :aria-sort="col.sortable ? sortAriaValue(col) : undefined"
-            >
-              <component :is="col.headerSlot" v-if="col.headerSlot" :column="col" />
-              <button
-                v-else-if="col.sortable"
-                type="button"
-                class="ui-datatable-sort-button"
-                @click="toggleSort(col.field)"
-              >
-                <span class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
-                <span
-                  class="ui-datatable-sort-chevron"
-                  :data-state="sort.field === col.field ? sort.dir : 'none'"
-                  aria-hidden="true"
-                >
-                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
-                    <path
-                      d="M4 6l4 4 4-4"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </span>
-              </button>
-              <span v-else class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
-              <span
-                v-if="isColumnResizable(col)"
-                class="ui-datatable-resize-handle"
-                aria-hidden="true"
-                @pointerdown="onResizePointerdown(col, $event)"
-              ></span>
-            </th>
-          </tr>
-        </thead>
+    <!-- `scrollHeight` splits the header into its own non-scrolling table
+         above a separately `overflow-y:auto` body table, so the scrollbar's
+         track starts at the body — a single sticky-<th> container still
+         spans the header in its scrollable box. Both tables share one
+         horizontally-scrolling parent, so no JS scroll-sync is needed. -->
+    <div class="ui-datatable-scroll-x">
+      <template v-if="scrollHeight">
+        <table
+          class="ui-datatable-table ui-datatable-table--split"
+          :style="{ paddingInlineEnd: `${scrollbarWidth}px` }"
+        >
+          <!-- table-layout:fixed only sizes columns from a table's first row;
+               the body table's first row is a virtualize spacer with no
+               per-column cells, so an explicit colgroup is what actually
+               keeps these two tables' columns aligned. -->
+          <colgroup>
+            <col v-for="(width, i) in colWidths" :key="i" :style="width" />
+          </colgroup>
+          <DataTableHead ref="headComponent" v-bind="headProps" />
+        </table>
+        <div
+          ref="bodyScrollEl"
+          class="ui-datatable-scroll-y"
+          :style="{ maxBlockSize: bodyMaxBlockSize }"
+        >
+          <table class="ui-datatable-table ui-datatable-table--split">
+            <colgroup>
+              <col v-for="(width, i) in colWidths" :key="i" :style="width" />
+            </colgroup>
+            <DataTableBody v-bind="bodyProps">
+              <template #loading><slot name="loading" /></template>
+              <template #empty><slot name="empty" /></template>
+              <template #expansion="{ row }"><slot name="expansion" :row="row" /></template>
+            </DataTableBody>
+          </table>
+        </div>
+      </template>
 
-        <tbody v-if="loading" class="ui-datatable-tbody">
-          <tr class="ui-datatable-tr">
-            <td class="ui-datatable-td ui-datatable-td--loading" :colspan="colCount">
-              <slot name="loading" />
-            </td>
-          </tr>
-        </tbody>
-
-        <tbody v-else-if="sortedData.length === 0" class="ui-datatable-tbody">
-          <tr class="ui-datatable-tr">
-            <td class="ui-datatable-td ui-datatable-td--empty" :colspan="colCount">
-              <slot name="empty" />
-            </td>
-          </tr>
-        </tbody>
-
-        <tbody v-else class="ui-datatable-tbody">
-          <tr
-            v-for="entry in tableRowEntries"
-            :key="entry.key"
-            class="ui-datatable-tr"
-            :class="{ 'ui-datatable-tr--expansion': entry.kind === 'expansion' }"
-            :data-selected="entry.kind === 'row' && isSelected(entry.row) ? '' : undefined"
-            @click="entry.kind === 'row' && onRowClick(entry.row, $event)"
-          >
-            <template v-if="entry.kind === 'row'">
-              <td
-                v-if="selectColumnRendered"
-                class="ui-datatable-td ui-datatable-td--select"
-                :class="{ 'ui-datatable-td--frozen': frozenColumns > 0 }"
-                :style="utilityFrozenStyle('select')"
-              >
-                <Checkbox
-                  v-if="!single"
-                  :model-value="isSelected(entry.row)"
-                  aria-label="Select row"
-                  @update:model-value="() => toggleSelect(entry.row)"
-                />
-                <Radio v-else :value="getRowKey(entry.row)" aria-label="Select row" />
-              </td>
-              <td
-                v-if="expansionColumnRendered"
-                class="ui-datatable-td ui-datatable-td--expand"
-                :class="{ 'ui-datatable-td--frozen': frozenColumns > 0 }"
-                :style="utilityFrozenStyle('expand')"
-              >
-                <Button
-                  icon
-                  size="sm"
-                  variant="ghost"
-                  type="button"
-                  :aria-label="isExpanded(entry.row) ? 'Collapse row' : 'Expand row'"
-                  @click="toggleExpand(entry.row)"
-                >
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="12"
-                    height="12"
-                    fill="none"
-                    aria-hidden="true"
-                    class="ui-datatable-expand-chevron"
-                    :data-state="isExpanded(entry.row) ? 'open' : 'closed'"
-                  >
-                    <path
-                      d="M4 6l4 4 4-4"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </Button>
-              </td>
-              <td
-                v-for="(col, colIndex) in columns"
-                :key="colIndex"
-                class="ui-datatable-td"
-                :class="{
-                  'ui-datatable-td--frozen': isFrozenColumn(colIndex),
-                  'ui-datatable-td--frozen-end': colIndex === frozenColumns - 1,
-                }"
-                :style="columnFrozenStyle(colIndex)"
-                :data-label="col.label ?? String(col.field)"
-              >
-                <component
-                  :is="col.cellSlot"
-                  v-if="col.cellSlot"
-                  :row="entry.row"
-                  :value="entry.row[col.field]"
-                />
-                <template v-else>{{ entry.row[col.field] }}</template>
-              </td>
-            </template>
-            <td v-else class="ui-datatable-td ui-datatable-td--expansion" :colspan="colCount">
-              <slot name="expansion" :row="entry.row" />
-            </td>
-          </tr>
-        </tbody>
+      <table v-else class="ui-datatable-table">
+        <DataTableHead ref="headComponent" v-bind="headProps" />
+        <DataTableBody v-bind="bodyProps">
+          <template #loading><slot name="loading" /></template>
+          <template #empty><slot name="empty" /></template>
+          <template #expansion="{ row }"><slot name="expansion" :row="row" /></template>
+        </DataTableBody>
       </table>
     </div>
 
@@ -194,7 +63,7 @@
         :data="sortedData"
         :page="currentPage"
         :page-count="totalPages"
-        :total="sortedData.length"
+        :total="resolvedTotal"
       />
     </div>
 
@@ -220,7 +89,6 @@ import {
   onMounted,
   onUpdated,
   provide,
-  reactive,
   ref,
   useId,
   useSlots,
@@ -231,12 +99,13 @@ import type { Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrWindow } from '../../ssr'
 import ColumnImpl from '../Column.vue'
-import Checkbox from '../Checkbox/Checkbox.vue'
-import Radio from '../Radio/Radio.vue'
-import Button from '../Button/Button.vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { provideDataTableContext } from '../../composables/useDataTableContext'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
+import { useVirtualizer } from '../../composables/useVirtualizer'
+import DataTableHead from './DataTableHead.vue'
+import DataTableBody from './DataTableBody.vue'
+import type { TableRowEntry } from './DataTableBody.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -265,8 +134,16 @@ const props = withDefaults(
     resizableColumns?: boolean
     /** Freezes the first N columns sticky-left against horizontal scroll. */
     frozenColumns?: number
-    /** Rows per page. Default: all rows render. Set: internal slicing; pair with `v-model:page`. */
+    /** Rows per page. Default: all rows render. Set: internal slicing; pair with `v-model:page`. Also the page-size divisor for `lazy`'s `total`. */
     rows?: number
+    /** `data` is already sorted server-side — DataTable stops sorting it locally and only reflects `v-model:sort`, so a header click tells you what to refetch instead of re-sorting what you gave it. */
+    manualSort?: boolean
+    /** `data` is already just the current page — DataTable stops slicing it locally. Pair with `total` (the real across-all-pages count) so `#footer`/`Pagination` math stays correct. */
+    lazy?: boolean
+    /** Real row count across all pages. Only meaningful with `lazy`; falls back to `sortedData.length` (i.e. `data.length`) when unset. */
+    total?: number
+    /** Windows rendering to the visible rows + overscan, for very large `data`. Requires `scrollHeight`. `true` measures each row's real height (rows may vary, e.g. wrapping `#cell` content or `stackedBreakpoint`); pass an object to tune it. */
+    virtualize?: boolean | { itemSize?: number; overscan?: number; estimateSize?: number }
   }>(),
   {
     loading: false,
@@ -278,6 +155,8 @@ const props = withDefaults(
     showGridlines: false,
     resizableColumns: false,
     frozenColumns: 0,
+    manualSort: false,
+    lazy: false,
   },
 )
 
@@ -286,9 +165,18 @@ const emit = defineEmits<{
   'update:selection': [rows: T[]]
   /** A click anywhere on a row outside its interactive descendants. */
   'row-click': [row: T]
+  /** Virtualized only: the rendered window neared the end of `data` — fetch the next page. */
+  'reach-end': []
+  /** Virtualized only: the rendered window neared the start of `data` — fetch the previous page. */
+  'reach-start': []
 }>()
 
 const page = defineModel<number>('page', { default: 1 })
+/** Uncontrolled by default (works exactly as before). Bind `v-model:sort` — required
+ * with `manualSort` — to see every header click and know what to refetch. */
+const sort = defineModel<{ field: keyof T | null; dir: 'asc' | 'desc' | null }>('sort', {
+  default: () => ({ field: null, dir: null }),
+})
 
 const slots = useSlots()
 
@@ -325,6 +213,8 @@ onMounted(resortColumnsByDom)
 onUpdated(resortColumnsByDom)
 
 const selectColumnRendered = computed(() => props.selectable && props.selectionMode === 'checkbox')
+// Drives the pointer-cursor affordance on click-anywhere-to-select rows.
+const selectableRows = computed(() => props.selectable && props.selectionMode === 'row')
 const expansionColumnRendered = computed(() => !!slots.expansion && !stacked.value)
 const colCount = computed(() => {
   let count = columns.value.length
@@ -333,24 +223,21 @@ const colCount = computed(() => {
   return Math.max(count, 1)
 })
 
-const sort = reactive({ field: null, dir: null }) as {
-  field: keyof T | null
-  dir: 'asc' | 'desc' | null
-}
+// Reassigns sort.value wholesale rather than mutating its properties in
+// place — defineModel's local (unbound) fallback only triggers reactivity
+// and emits update:sort through its actual setter, not on nested mutation.
 function toggleSort(field: keyof T) {
-  if (sort.field !== field) {
-    sort.field = field
-    sort.dir = 'asc'
-  } else if (sort.dir === 'asc') {
-    sort.dir = 'desc'
+  if (sort.value.field !== field) {
+    sort.value = { field, dir: 'asc' }
+  } else if (sort.value.dir === 'asc') {
+    sort.value = { field, dir: 'desc' }
   } else {
-    sort.field = null
-    sort.dir = null
+    sort.value = { field: null, dir: null }
   }
 }
 function sortAriaValue(col: RegisteredColumn<T>): 'ascending' | 'descending' | 'none' {
-  if (sort.field !== col.field || !sort.dir) return 'none'
-  return sort.dir === 'asc' ? 'ascending' : 'descending'
+  if (sort.value.field !== col.field || !sort.value.dir) return 'none'
+  return sort.value.dir === 'asc' ? 'ascending' : 'descending'
 }
 function compareValues(a: unknown, b: unknown): number {
   if (a === b) return 0
@@ -361,7 +248,8 @@ function compareValues(a: unknown, b: unknown): number {
   return String(a).localeCompare(String(b))
 }
 const sortedData = computed(() => {
-  const { field, dir } = sort
+  if (props.manualSort) return props.data
+  const { field, dir } = sort.value
   if (!field || !dir) return props.data
   const direction = dir === 'asc' ? 1 : -1
   return [...props.data].sort((a, b) => compareValues(a[field], b[field]) * direction)
@@ -370,12 +258,17 @@ const sortedData = computed(() => {
 // Unset `rows` (the default): `totalPages` is always 1 and `pagedData` is
 // always `sortedData` verbatim — zero behavior change for every existing
 // consumer.
+// `lazy`: `data` IS the current page already (the server decided its size),
+// so `total` (not `data.length`) is what page-count math divides by `rows`.
+const resolvedTotal = computed(() =>
+  props.lazy ? (props.total ?? sortedData.value.length) : sortedData.value.length,
+)
 const totalPages = computed(() =>
-  props.rows ? Math.max(1, Math.ceil(sortedData.value.length / props.rows)) : 1,
+  props.rows ? Math.max(1, Math.ceil(resolvedTotal.value / props.rows)) : 1,
 )
 const currentPage = computed(() => Math.min(Math.max(page.value, 1), totalPages.value))
 const pagedData = computed(() => {
-  if (!props.rows) return sortedData.value
+  if (props.lazy || !props.rows) return sortedData.value
   const start = (currentPage.value - 1) * props.rows
   return sortedData.value.slice(start, start + props.rows)
 })
@@ -448,13 +341,8 @@ function toggleExpand(row: T) {
   expanded.value = next
 }
 
-interface TableRowEntry {
-  kind: 'row' | 'expansion'
-  row: T
-  key: string
-}
-const tableRowEntries = computed<TableRowEntry[]>(() => {
-  const entries: TableRowEntry[] = []
+const tableRowEntries = computed<TableRowEntry<T>[]>(() => {
+  const entries: TableRowEntry<T>[] = []
   for (const row of pagedData.value) {
     const key = String(getRowKey(row))
     entries.push({ kind: 'row', row, key })
@@ -463,6 +351,34 @@ const tableRowEntries = computed<TableRowEntry[]>(() => {
     }
   }
   return entries
+})
+
+// The virtualizer listens to this, not the outer horizontal-scroll div —
+// it's the actual vertically-scrolling ancestor once the header is split out.
+const bodyScrollEl = useTemplateRef<HTMLElement>('bodyScrollEl')
+const virtualizeActive = computed(() => !!props.virtualize)
+const virtualizeConfig = computed(() =>
+  typeof props.virtualize === 'object' ? props.virtualize : {},
+)
+const virtualizer = useVirtualizer({
+  containerEl: bodyScrollEl,
+  count: () => (virtualizeActive.value ? tableRowEntries.value.length : 0),
+  itemSize: () => virtualizeConfig.value.itemSize,
+  overscan: () => virtualizeConfig.value.overscan,
+  // Default to per-row measurement, not a shared itemSize — a DataTable row's
+  // height isn't guaranteed uniform (wrapping #cell content, stackedBreakpoint)
+  // the way a Select option's is. Set itemSize to opt into the faster fixed path.
+  dynamic: () => virtualizeConfig.value.itemSize === undefined,
+  estimateSize: () => virtualizeConfig.value.estimateSize,
+  onReachEnd: () => emit('reach-end'),
+  onReachStart: () => emit('reach-start'),
+})
+const topSpacerHeight = computed(() => virtualizer.items.value[0]?.start ?? 0)
+const bottomSpacerHeight = computed(() => {
+  const items = virtualizer.items.value
+  if (items.length === 0) return 0
+  const last = items[items.length - 1]!
+  return Math.max(0, virtualizer.totalSize.value - (last.start + last.size))
 })
 
 // Guard: interactive descendants (checkbox, button, link) must not also fire row click.
@@ -572,17 +488,28 @@ const leadingFixedWidth = computed(() => {
   if (expansionColumnRendered.value) width += UTILITY_COLUMN_WIDTH
   return width
 })
+// Order must match the cells: select, expand, then real columns.
+const colWidths = computed<(Record<string, string> | undefined)[]>(() => {
+  const widths: (Record<string, string> | undefined)[] = []
+  if (selectColumnRendered.value) widths.push({ width: `${UTILITY_COLUMN_WIDTH}px` })
+  if (expansionColumnRendered.value) widths.push({ width: `${UTILITY_COLUMN_WIDTH}px` })
+  for (const col of columns.value) widths.push(columnStyle(col))
+  return widths
+})
 function isFrozenColumn(colIndex: number): boolean {
   return props.frozenColumns > 0 && colIndex < props.frozenColumns
 }
-const theadRow = useTemplateRef<HTMLElement>('theadRow')
+// Loosely typed, not `InstanceType<typeof DataTableHead>` — same generic-SFC
+// limitation `TypedColumn` below works around; only `rowEl` is needed here.
+const headComponent = useTemplateRef<{ rowEl: HTMLElement | null }>('headComponent')
 const frozenOffsets = ref<number[]>([])
+const headerHeight = ref(0)
 function recomputeFrozenOffsets() {
   if (props.frozenColumns <= 0) {
     if (frozenOffsets.value.length > 0) frozenOffsets.value = []
     return
   }
-  const row = theadRow.value
+  const row = headComponent.value?.rowEl
   if (!row) return
   const ths = Array.from(
     row.querySelectorAll<HTMLElement>(
@@ -610,15 +537,107 @@ function utilityFrozenStyle(kind: 'select' | 'expand'): Record<string, string> |
   const left = kind === 'select' ? 0 : selectColumnRendered.value ? UTILITY_COLUMN_WIDTH : 0
   return { position: 'sticky', insetInlineStart: `${left}px`, zIndex: '2' }
 }
-onMounted(recomputeFrozenOffsets)
-onUpdated(recomputeFrozenOffsets)
-let resizeObserver: ResizeObserver | undefined
+// Feeds bodyMaxBlockSize below: scrollHeight minus this keeps the total
+// visible area (header + body) equal to what `scrollHeight` always meant.
+function recomputeHeaderHeight() {
+  const row = headComponent.value?.rowEl
+  const height = row ? row.getBoundingClientRect().height : 0
+  if (height !== headerHeight.value) headerHeight.value = height
+}
 onMounted(() => {
-  if (typeof ResizeObserver === 'undefined' || !theadRow.value) return
-  resizeObserver = new ResizeObserver(() => recomputeFrozenOffsets())
-  resizeObserver.observe(theadRow.value)
+  recomputeFrozenOffsets()
+  recomputeHeaderHeight()
 })
+onUpdated(() => {
+  recomputeFrozenOffsets()
+  recomputeHeaderHeight()
+})
+let resizeObserver: ResizeObserver | undefined
+let observedHeaderEl: HTMLElement | null = null
+function syncHeaderObserver() {
+  const el = headComponent.value?.rowEl ?? null
+  if (el === observedHeaderEl) return
+  if (observedHeaderEl) resizeObserver?.unobserve(observedHeaderEl)
+  observedHeaderEl = el
+  if (el) resizeObserver?.observe(el)
+}
+onMounted(() => {
+  if (typeof ResizeObserver === 'undefined') return
+  resizeObserver = new ResizeObserver(() => {
+    recomputeFrozenOffsets()
+    recomputeHeaderHeight()
+  })
+  syncHeaderObserver()
+})
+onUpdated(syncHeaderObserver)
 onBeforeUnmount(() => resizeObserver?.disconnect())
+
+// The body's own scrollbar narrows its content width but the head table
+// (not scrolling) doesn't lose that space — pad the head table to match.
+const scrollbarWidth = ref(0)
+function recomputeScrollbarWidth() {
+  const el = bodyScrollEl.value
+  const width = el ? el.offsetWidth - el.clientWidth : 0
+  if (width !== scrollbarWidth.value) scrollbarWidth.value = width
+}
+let bodyResizeObserver: ResizeObserver | undefined
+onMounted(() => {
+  recomputeScrollbarWidth()
+  if (typeof ResizeObserver === 'undefined' || !bodyScrollEl.value) return
+  bodyResizeObserver = new ResizeObserver(() => recomputeScrollbarWidth())
+  bodyResizeObserver.observe(bodyScrollEl.value)
+})
+onUpdated(recomputeScrollbarWidth)
+onBeforeUnmount(() => bodyResizeObserver?.disconnect())
+const bodyMaxBlockSize = computed(() =>
+  props.scrollHeight ? `calc(${props.scrollHeight} - ${headerHeight.value}px)` : undefined,
+)
+
+const headProps = computed(() => ({
+  selectColumnRendered: selectColumnRendered.value,
+  expansionColumnRendered: expansionColumnRendered.value,
+  columns: columns.value,
+  frozenColumns: props.frozenColumns,
+  single: props.single,
+  selectAllState: selectAllState.value,
+  sort: sort.value,
+  isFrozenColumn,
+  columnFrozenStyle,
+  utilityFrozenStyle,
+  columnStyle,
+  isColumnResizable,
+  sortAriaValue,
+  onToggleSelectAll: toggleSelectAll,
+  onToggleSort: toggleSort,
+  onResizePointerdown,
+}))
+const bodyProps = computed(() => ({
+  colCount: colCount.value,
+  columns: columns.value,
+  loading: props.loading,
+  isEmpty: sortedData.value.length === 0,
+  virtualizeActive: virtualizeActive.value,
+  tableRowEntries: tableRowEntries.value,
+  virtualItems: virtualizer.items.value,
+  topSpacerHeight: topSpacerHeight.value,
+  bottomSpacerHeight: bottomSpacerHeight.value,
+  measureRow: virtualizer.measureRow,
+  selectColumnRendered: selectColumnRendered.value,
+  expansionColumnRendered: expansionColumnRendered.value,
+  selectableRows: selectableRows.value,
+  frozenColumns: props.frozenColumns,
+  single: props.single,
+  isFrozenColumn,
+  columnFrozenStyle,
+  utilityFrozenStyle,
+  columnStyle,
+  isSelected,
+  getRowKey,
+  isExpanded,
+  onToggleSelect: toggleSelect,
+  onToggleExpand: toggleExpand,
+  onRowClick,
+}))
 
 // The generic-inference handoff (see the SFC comment above): `T` is bound
 // here from `:data="users"` at the usage site, so casting Column's own
