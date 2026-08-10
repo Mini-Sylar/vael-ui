@@ -34,15 +34,28 @@ const lines = [
 const allTypeNames = typeNames
 if (allTypeNames.length > 0) lines.push(`export type { ${allTypeNames.join(', ')} } from '../index'`)
 
-// Reuse the composable re-export lines generate-vapor.mjs already computed, pointed at ../index instead.
-const composableValueLine = barrel.match(/^export \{ (?!default as|vTooltipVapor)[^}]+\} from 'vael-ui'$/m)
-const composableTypeLine = barrel.match(/^export type \{[^}]+\} from 'vael-ui'$/m)
-let composableCount = 0
-if (composableValueLine) {
-  lines.push(composableValueLine[0].replace(/from 'vael-ui'$/, `from '../index'`))
-  composableCount = composableValueLine[0].split(',').length
+// Types only — safe to re-export from the sibling dist/index.d.ts (unlike the
+// runtime .js side, see generate-vapor.mjs, types aren't subject to the circular-reexport issue).
+const DIRECTIVE_ORIGINALS_EXCLUDED = new Set(['vTooltip', 'vScrollMask'])
+const composableValues = new Set()
+const composableTypes = new Set()
+for (const match of uiIndex.matchAll(/export\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'/g)) {
+  const [, typeOnly, namedClause, specifier] = match
+  if (specifier.endsWith('.vue')) continue
+  for (const raw of namedClause.split(',')) {
+    const trimmed = raw.trim()
+    if (!trimmed) continue
+    const isTypeMember = typeOnly || trimmed.startsWith('type ')
+    const name = trimmed.replace(/^type\s+/, '')
+    const asMatch = name.match(/\bas\s+(\S+)/)
+    const exported = asMatch ? asMatch[1] : name
+    if (DIRECTIVE_ORIGINALS_EXCLUDED.has(exported)) continue
+    ;(isTypeMember ? composableTypes : composableValues).add(exported)
+  }
 }
-if (composableTypeLine) lines.push(composableTypeLine[0].replace(/from 'vael-ui'$/, `from '../index'`))
+if (composableValues.size > 0) lines.push(`export { ${[...composableValues].join(', ')} } from '../index'`)
+if (composableTypes.size > 0) lines.push(`export type { ${[...composableTypes].join(', ')} } from '../index'`)
+const composableCount = composableValues.size
 
 writeFileSync(outPath, lines.join('\n') + '\n')
 console.log(

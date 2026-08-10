@@ -3,10 +3,11 @@
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import { COMPONENTS } from './component-names.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const UI_SRC_DIR = join(__dirname, '../ui/src')
 const UI_COMPONENTS_DIR = join(__dirname, '../ui/src/components')
 const UI_INDEX_PATH = join(__dirname, '../ui/src/index.ts')
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
@@ -49,17 +50,29 @@ function collectPublicExports(indexSource) {
   return names
 }
 
-// Excluded: vdom-unsafe originals already replaced by the aliased vTooltipVapor/vScrollMaskVapor line below.
-const DIRECTIVE_ORIGINALS_EXCLUDED = new Set(['vTooltip', 'vScrollMask'])
+// Handled elsewhere: the vTooltip/vScrollMask alias lines and generateConfirmActionSource below.
+const NON_COMPONENT_EXPORTS_EXCLUDED = new Set([
+  'vTooltip',
+  'vScrollMask',
+  'vTooltipVapor',
+  'vScrollMaskVapor',
+  'confirmAction',
+])
 
+// Grouped by specifier, not flattened to one 'vael-ui' re-export — that would be
+// circular now that vael-ui's own root has a `vapor` condition pointing back here.
 function collectNonComponentExports(indexSource) {
-  const values = new Set()
-  const types = new Set()
+  const groups = new Map() // specifier -> { values: Set, types: Set }
   const re = /export\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'/g
   let match
   while ((match = re.exec(indexSource))) {
     const [, typeOnly, namedClause, specifier] = match
     if (specifier.endsWith('.vue')) continue // component export, handled separately
+    let group = groups.get(specifier)
+    if (!group) {
+      group = { values: new Set(), types: new Set() }
+      groups.set(specifier, group)
+    }
     for (const raw of namedClause.split(',')) {
       const trimmed = raw.trim()
       if (!trimmed) continue
@@ -67,11 +80,11 @@ function collectNonComponentExports(indexSource) {
       const name = trimmed.replace(/^type\s+/, '')
       const asMatch = name.match(/\bas\s+(\S+)/)
       const exported = asMatch ? asMatch[1] : name
-      if (DIRECTIVE_ORIGINALS_EXCLUDED.has(exported)) continue
-      ;(isTypeMember ? types : values).add(exported)
+      if (NON_COMPONENT_EXPORTS_EXCLUDED.has(exported)) continue
+      ;(isTypeMember ? group.types : group.values).add(exported)
     }
   }
-  return { values: [...values], types: [...types] }
+  return groups
 }
 
 // Finds sibling .vue imports (not composables or third-party). `fromId` is
@@ -134,6 +147,20 @@ const VAPOR_DIRECTIVE_ALIASES = {
   vScrollMask: 'vScrollMaskVapor',
 }
 
+function relativeImportPath(specifier, fromDir = '') {
+  const targetPath = join(UI_SRC_DIR, specifier)
+  let relPath = relative(join(OUT_DIR, fromDir), targetPath).split('\\').join('/')
+  if (!relPath.startsWith('.')) relPath = `./${relPath}`
+  return relPath
+}
+
+// Like relativeImportPath, but into an already-generated OUT_DIR file, not ui/src.
+function pathToGenerated(specifier, fromDir) {
+  let relPath = relative(join(OUT_DIR, fromDir), join(OUT_DIR, specifier)).split('\\').join('/')
+  if (!relPath.startsWith('.')) relPath = `./${relPath}`
+  return relPath
+}
+
 function rewriteImports(source, moduleId, publicExports) {
   const importLineRe = /^import\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'\s*$/gm
   return source.replace(importLineRe, (full, typeOnly, namedClause, specifier) => {
@@ -145,17 +172,26 @@ function rewriteImports(source, moduleId, publicExports) {
       return asMatch ? asMatch[1] : n.replace(/^type\s+/, '')
     })
 
-    const rewrittenNames = names.map((n, i) => {
+    // vTooltip/vScrollMask import their own file directly — the barrel only
+    // exports them aliased (vTooltipVapor as vTooltip), not under the raw name.
+    const fromDir = dirname(moduleId)
+    const directiveLines = []
+    const otherNames = []
+    for (let i = 0; i < names.length; i++) {
       const localName = localNames[i]
       const vaporName = VAPOR_DIRECTIVE_ALIASES[localName]
-      return vaporName ? `${vaporName} as ${localName}` : n
-    })
-    const publicNames = rewrittenNames.map((n) => {
-      const asMatch = n.match(/^(\S+)\s+as\s+/)
-      return asMatch ? asMatch[1] : n.replace(/^type\s+/, '')
-    })
+      if (!vaporName) {
+        otherNames.push(names[i])
+        continue
+      }
+      const importPath =
+        localName === 'vScrollMask'
+          ? pathToGenerated('directives/vScrollMask', fromDir)
+          : relativeImportPath('directives/vTooltip', fromDir)
+      directiveLines.push(`import ${typeOnly ?? ''}{${vaporName} as ${localName}} from '${importPath}'`)
+    }
 
-    const missing = publicNames.filter((n) => !publicExports.has(n))
+    const missing = otherNames.filter((n) => !publicExports.has(n.replace(/^type\s+/, '')))
     if (missing.length > 0) {
       throw new Error(
         `${moduleId}: imports ${missing.join(', ')} from '${specifier}', which ${
@@ -165,15 +201,58 @@ function rewriteImports(source, moduleId, publicExports) {
         } publicly first, or exclude this component from COMPONENTS in gen.mjs.`,
       )
     }
-    return `import ${typeOnly ?? ''}{${rewrittenNames.join(', ')}} from 'vael-ui'`
+
+    const lines = [...directiveLines]
+    if (otherNames.length > 0) {
+      lines.push(`import ${typeOnly ?? ''}{${otherNames.join(', ')}} from 'vael-ui'`)
+    }
+    return lines.join('\n')
   })
+}
+
+// vScrollMask.ts has its own CSS import — same strip-and-copy components get.
+function copySourceStrippingCss(specifier) {
+  const source = stripCssImports(readFileSync(join(UI_SRC_DIR, `${specifier}.ts`), 'utf8'))
+  const outPath = join(OUT_DIR, `${specifier}.ts`)
+  mkdirSync(dirname(outPath), { recursive: true })
+  writeFileSync(outPath, source)
+  return `./${specifier}`
+}
+
+// confirmAction.ts renders real components, so its .vue imports need the same
+// rewriting a component would get — seeded into the dependency graph in main().
+const CONFIRM_ACTION_VUE_DEPS = [
+  'internal/ConfirmDialogFooter',
+  'internal/ConfirmPopoverBody',
+  'internal/ConfirmEmptyBody',
+]
+
+function generateConfirmActionSource(publicExports) {
+  const source = readFileSync(join(UI_SRC_DIR, 'composables/confirmAction.ts'), 'utf8')
+  const rewritten = source
+    .replace(/'\.\.\/components\/Button\/Button\.vue'/g, `'../Button/Button.vue'`)
+    .replace(/'\.\.\/components\/Dialog\/Dialog\.vue'/g, `'../Dialog/Dialog.vue'`)
+    .replace(/'\.\.\/components\/Popover\/Popover\.vue'/g, `'../Popover/Popover.vue'`)
+    .replace(
+      /'\.\.\/components\/internal\/(Confirm\w+)\.vue'/g,
+      (_full, name) => `'../internal/${name}.vue'`,
+    )
+    .replace(/from '\.\/useDialogService'/, `from '${relativeImportPath('composables/useDialogService', 'composables')}'`)
+    .replace(/from '\.\/usePopoverService'/, `from '${relativeImportPath('composables/usePopoverService', 'composables')}'`)
+
+  for (const name of ['Button', 'DialogProps', 'PopoverProps']) {
+    if (!publicExports.has(name)) {
+      throw new Error(`confirmAction.ts: '${name}' is no longer in vael-ui's public exports`)
+    }
+  }
+  return rewritten
 }
 
 function main() {
   const indexSource = readFileSync(UI_INDEX_PATH, 'utf8')
   const publicExports = collectPublicExports(indexSource)
   const requestedModuleIds = new Set(COMPONENTS.map(resolveModuleId))
-  const toGenerate = resolveDependencyGraph(COMPONENTS)
+  const toGenerate = resolveDependencyGraph([...COMPONENTS, ...CONFIRM_ACTION_VUE_DEPS])
 
   rmSync(OUT_DIR, { recursive: true, force: true })
   mkdirSync(OUT_DIR, { recursive: true })
@@ -196,6 +275,16 @@ function main() {
     }
   }
 
+  try {
+    const confirmActionSource = generateConfirmActionSource(publicExports)
+    const outPath = join(OUT_DIR, 'composables/confirmAction.ts')
+    mkdirSync(dirname(outPath), { recursive: true })
+    writeFileSync(outPath, confirmActionSource)
+    console.log('generated src/generated/composables/confirmAction.ts')
+  } catch (err) {
+    errors.push(err.message)
+  }
+
   if (errors.length > 0) {
     console.error(`\n${errors.length} component(s) failed:\n`)
     for (const message of errors) console.error(`  - ${message}`)
@@ -210,19 +299,29 @@ function main() {
       `export * from './${moduleId}.vue'`,
     ]
   })
-  barrelLines.push(`export { vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask } from 'vael-ui'`)
+  barrelLines.push(
+    `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
+    `export { vScrollMaskVapor as vScrollMask } from '${copySourceStrippingCss('directives/vScrollMask')}'`,
+    `export { confirmAction } from './composables/confirmAction'`,
+    `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
+  )
 
-  const { values: composableValues, types: composableTypes } = collectNonComponentExports(indexSource)
-  if (composableValues.length > 0) {
-    barrelLines.push(`export { ${composableValues.join(', ')} } from 'vael-ui'`)
-  }
-  if (composableTypes.length > 0) {
-    barrelLines.push(`export type { ${composableTypes.join(', ')} } from 'vael-ui'`)
+  const composableGroups = collectNonComponentExports(indexSource)
+  let composableCount = 0
+  for (const [specifier, { values, types }] of composableGroups) {
+    const relPath = relativeImportPath(specifier)
+    if (values.size > 0) {
+      barrelLines.push(`export { ${[...values].join(', ')} } from '${relPath}'`)
+      composableCount += values.size
+    }
+    if (types.size > 0) {
+      barrelLines.push(`export type { ${[...types].join(', ')} } from '${relPath}'`)
+    }
   }
 
   writeFileSync(join(OUT_DIR, 'index.ts'), barrelLines.join('\n') + '\n')
   console.log(
-    `\ngenerated src/generated/index.ts (${COMPONENTS.length} public component(s), ${toGenerate.size} file(s) total, ${composableValues.length} composable(s)/utilit(y/ies))`,
+    `\ngenerated src/generated/index.ts (${COMPONENTS.length} public component(s), ${toGenerate.size} file(s) total, ${composableCount} composable(s)/utilit(y/ies))`,
   )
 }
 

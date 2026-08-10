@@ -1,13 +1,14 @@
-import '../components/shared/confirm-popover.css'
-import '../components/shared/tokens.css'
-import { type Component, type PropType, defineComponent, h } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
+import type { Component } from 'vue'
 import Button from '../components/Button/Button.vue'
 import type { ButtonVariant } from '../components/Button/Button.vue'
 import type { DialogProps } from '../components/Dialog/Dialog.vue'
 import type { PopoverProps } from '../components/Popover/Popover.vue'
-import { openDialog, useDialogRef } from './useDialogService'
-import { openPopover, usePopoverRef } from './usePopoverService'
+import ConfirmDialogFooter from '../components/internal/ConfirmDialogFooter.vue'
+import ConfirmPopoverBody from '../components/internal/ConfirmPopoverBody.vue'
+import ConfirmEmptyBody from '../components/internal/ConfirmEmptyBody.vue'
+import { openDialog } from './useDialogService'
+import { openPopover } from './usePopoverService'
 
 type TriggerRef = NonNullable<PopoverProps['triggerEl']>
 type ButtonPropsPartial = Partial<ComponentProps<typeof Button>>
@@ -50,132 +51,6 @@ export interface ConfirmActionHandle {
   /** Null until the surface actually mounts — for GSAP/motion-v enter animations. */
   panelEl: { readonly value: HTMLElement | null }
 }
-
-function useConfirmHandlers(
-  onConfirmAction: (() => unknown | Promise<unknown>) | undefined,
-  onCancelAction: (() => void) | undefined,
-  onErrorAction: ((error: unknown) => void) | undefined,
-  close: (result?: boolean) => void,
-) {
-  // Never rethrows: onErrorAction is the one place a rejection surfaces,
-  // and swallowing it here (instead of letting it reach Button's own
-  // "rejections propagate as unhandled" behavior) keeps this a single,
-  // deliberate error path instead of also an uncaught rejection.
-  async function handleConfirm() {
-    if (!onConfirmAction) {
-      close(true)
-      return
-    }
-    try {
-      await onConfirmAction()
-      close(true)
-    } catch (err) {
-      onErrorAction?.(err)
-    }
-  }
-  function handleCancel() {
-    onCancelAction?.()
-    close(false)
-  }
-  return { handleConfirm, handleCancel }
-}
-
-const footerPropsDef = {
-  confirmLabel: { type: String, default: 'Confirm' },
-  cancelLabel: { type: String, default: 'Cancel' },
-  variant: { type: String as PropType<ButtonVariant>, default: 'primary' },
-  confirmButtonProps: { type: Object as PropType<ButtonPropsPartial>, default: undefined },
-  cancelButtonProps: { type: Object as PropType<ButtonPropsPartial>, default: undefined },
-  onConfirmAction: {
-    type: Function as PropType<() => unknown | Promise<unknown>>,
-    default: undefined,
-  },
-  onCancelAction: { type: Function as PropType<() => void>, default: undefined },
-  onErrorAction: { type: Function as PropType<(error: unknown) => void>, default: undefined },
-}
-
-const EmptyBody = defineComponent({
-  name: 'ConfirmActionEmptyBody',
-  setup: () => () => null,
-})
-
-const ConfirmDialogFooter = defineComponent({
-  name: 'ConfirmActionDialogFooter',
-  props: footerPropsDef,
-  setup(props) {
-    const dialogRef = useDialogRef<unknown, boolean>()
-    const { handleConfirm, handleCancel } = useConfirmHandlers(
-      props.onConfirmAction,
-      props.onCancelAction,
-      props.onErrorAction,
-      dialogRef.close,
-    )
-    return () => [
-      h(
-        Button,
-        { variant: 'outline', onClick: handleCancel, ...props.cancelButtonProps },
-        () => props.cancelLabel,
-      ),
-      // loading="auto" is Button's own default — handleConfirm returning a
-      // promise is enough for it to show/guard the pending state itself.
-      h(
-        Button,
-        { variant: props.variant, onClick: handleConfirm, ...props.confirmButtonProps },
-        () => props.confirmLabel,
-      ),
-    ]
-  },
-})
-
-const ConfirmPopoverBody = defineComponent({
-  name: 'ConfirmActionPopoverBody',
-  props: {
-    title: { type: String, required: true },
-    description: { type: String, default: undefined },
-    body: { type: Object as PropType<Component>, default: undefined },
-    bodyProps: { type: Object as PropType<Record<string, unknown>>, default: undefined },
-    ...footerPropsDef,
-  },
-  setup(props) {
-    const popoverRef = usePopoverRef<unknown, boolean>()
-    const { handleConfirm, handleCancel } = useConfirmHandlers(
-      props.onConfirmAction,
-      props.onCancelAction,
-      props.onErrorAction,
-      popoverRef.close,
-    )
-    return () =>
-      h('div', { class: 'ui-confirm-popover' }, [
-        h('p', { class: 'ui-confirm-popover-title' }, props.title),
-        props.description
-          ? h('p', { class: 'ui-confirm-popover-description' }, props.description)
-          : null,
-        props.body ? h(props.body, props.bodyProps) : null,
-        h('div', { class: 'ui-confirm-popover-actions' }, [
-          h(
-            Button,
-            {
-              size: 'sm',
-              variant: 'outline',
-              onClick: handleCancel,
-              ...props.cancelButtonProps,
-            },
-            () => props.cancelLabel,
-          ),
-          h(
-            Button,
-            {
-              size: 'sm',
-              variant: props.variant,
-              onClick: handleConfirm,
-              ...props.confirmButtonProps,
-            },
-            () => props.confirmLabel,
-          ),
-        ]),
-      ])
-  },
-})
 
 /**
  * One function for both anchored (`surface: 'popover'`, needs `triggerEl`)
@@ -233,7 +108,7 @@ export function confirmAction(options: ConfirmActionOptions): ConfirmActionHandl
     Extract<ConfirmActionOptions, { surface?: 'dialog' }>,
     keyof ConfirmActionBase | 'surface'
   >
-  return openDialog(body ?? EmptyBody, {
+  return openDialog(body ?? ConfirmEmptyBody, {
     ...dialogProps,
     title,
     description,
