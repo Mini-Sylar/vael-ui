@@ -192,6 +192,105 @@ export const composablesContent: Record<string, ComposableContent> = {
     ],
   },
 
+  useTour: {
+    description:
+      'The headless state machine behind `<Tour>` — index/group bookkeeping, step navigation, and the `onBeforeEnter`-await sequencing, with zero DOM or rendering baked in. `<Tour>` is just `useTour()` plus a spotlight overlay and a composed `Popover` callout; reach for this directly to build a fully custom walkthrough UI (a different animation library, a non-floating callout, an embedded panel) and keep only the sequencing logic.',
+    exampleCode: `import { ref } from 'vue'
+import { useTour } from 'vael-ui'
+import type { TourStep } from 'vael-ui'
+
+const open = ref(false)
+const steps: TourStep[] = [
+  { target: '#new-doc', title: 'Create something new' },
+  { target: '#share', title: 'Invite your team' },
+]
+
+const { currentStep, currentIndex, total, isFirst, isLast, isTransitioning, next, prev, skip } =
+  useTour(open, {
+    steps,
+    onFinish: () => console.log('tour finished'),
+  })
+
+// Point your own spotlight/callout at currentStep.value.target; next()/prev()/skip()
+// drive it, isTransitioning tells you when an onBeforeEnter is still pending.
+open.value = true`,
+    params: [
+      {
+        name: 'open',
+        type: 'Ref<boolean>',
+        description:
+          "Owns the tour's visibility. Setting it true resets to the first step (awaits that step's onBeforeEnter, then fires onStepChange with reason: 'open'); setting it false is just \"closed,\" no reset happens on its own.",
+      },
+      {
+        name: 'id',
+        type: 'string',
+        description:
+          "Identifies this tour instance. Not used internally — echoed back on every callback's details, useful once a page has more than one tour and a shared handler needs to tell them apart.",
+      },
+      {
+        name: 'steps',
+        type: 'MaybeRefOrGetter<readonly TourStep[]>',
+        description:
+          "Same shape as `<Tour>`'s own steps prop: target (a DOMTarget) plus title/description/side/align/spotlightPadding/spotlightRadius/disableInteraction/onBeforeEnter/group per step.",
+      },
+      {
+        name: 'onStepChange',
+        type: '(details: TourStepChangeDetails) => void',
+        description:
+          "Fires after a step change settles, including the first step (reason: 'open'). details: { index, step, reason, previousIndex, previousStep, id }.",
+      },
+      {
+        name: 'onSkip',
+        type: '(details: TourEndDetails) => void',
+        description: 'Fires when skip() is called. details: { index, step, id }.',
+      },
+      {
+        name: 'onFinish',
+        type: '(details: TourEndDetails) => void',
+        description: 'Fires when next() is called on the last step. details: { index, step, id }.',
+      },
+    ],
+    returns: [
+      {
+        name: 'id',
+        type: 'string | undefined',
+        description: 'Echoed straight back from options.id.',
+      },
+      { name: 'currentIndex', type: 'Ref<number>', description: '' },
+      { name: 'currentStep', type: 'ComputedRef<TourStep | undefined>', description: '' },
+      { name: 'currentGroup', type: 'ComputedRef<string | undefined>', description: '' },
+      {
+        name: 'groups',
+        type: 'ComputedRef<TourGroup[]>',
+        description: '{ group, steps }[], bucketed in first-seen order.',
+      },
+      { name: 'total / isFirst / isLast', type: 'ComputedRef', description: '' },
+      {
+        name: 'isTransitioning',
+        type: 'Ref<boolean>',
+        description:
+          "True while the current step's onBeforeEnter is pending — keep the previous step's UI mounted until this clears.",
+      },
+      {
+        name: 'next / prev',
+        type: '() => Promise<void>',
+        description:
+          'next() on the last step calls onFinish and sets open.value = false instead of advancing.',
+      },
+      {
+        name: 'skip',
+        type: '() => void',
+        description: 'Fires onSkip and sets open.value = false.',
+      },
+      { name: 'goTo', type: '(index: number) => Promise<void>', description: '' },
+      {
+        name: 'goToGroup',
+        type: '(group: string) => Promise<void>',
+        description: "Jumps to that group's first step.",
+      },
+    ],
+  },
+
   useAsyncLoading: {
     description:
       'Tracks every in-flight promise passed to `run()`. `loading` only clears once ALL of them have settled, so overlapping calls (or several buttons sharing one instance) never flicker the state early. This is exactly what `Button`’s own `loading="auto"` uses internally for promise-returning `@click` handlers.',

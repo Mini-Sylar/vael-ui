@@ -3,10 +3,13 @@
   <output data-testid="last-clicked">{{ lastClicked }}</output>
   <output data-testid="selection-change-count">{{ selectionChangeRows.length }}</output>
   <output data-testid="exposed-el">{{ table?.el ? 'yes' : 'no' }}</output>
+  <output data-testid="sort-field">{{ sort.field ?? '' }}</output>
+  <output data-testid="sort-dir">{{ sort.dir ?? '' }}</output>
 
   <DataTable
     ref="table"
     v-model:page="page"
+    v-model:sort="sort"
     :data="data"
     row-key="id"
     :loading="loading"
@@ -21,6 +24,9 @@
     :show-gridlines="showGridlines"
     :resizable-columns="resizableColumns"
     :frozen-columns="frozenColumns"
+    :manual-sort="manualSort"
+    :lazy="lazy"
+    :total="total"
     @update:selection="onSelectionChange"
     @row-click="onRowClick"
   >
@@ -66,7 +72,7 @@
 
 <script setup lang="ts">
 import { defineComponent, h, shallowRef, useTemplateRef } from 'vue'
-import DataTable from '../../src/components/DataTable.vue'
+import DataTable from '../../src/components/DataTable/DataTable.vue'
 import { useDataTableContext } from '../../src/composables/useDataTableContext'
 
 interface Person {
@@ -99,6 +105,9 @@ const props = withDefaults(
     showGridlines?: boolean
     resizableColumns?: boolean
     frozenColumns?: number
+    manualSort?: boolean
+    lazy?: boolean
+    total?: number
   }>(),
   {
     rowCount: 4,
@@ -114,6 +123,8 @@ const props = withDefaults(
     showGridlines: false,
     resizableColumns: false,
     frozenColumns: 0,
+    manualSort: false,
+    lazy: false,
   },
 )
 
@@ -126,6 +137,10 @@ const data: Person[] = Array.from({ length: props.rowCount }, (_, i) => ({
 }))
 
 const page = shallowRef(props.initialPage)
+const sort = shallowRef<{ field: keyof Person | null; dir: 'asc' | 'desc' | null }>({
+  field: null,
+  dir: null,
+})
 
 // A real component rendered through a <Column>'s own #cell slot, proving
 // the documented composition pattern (see useDataTableContext.ts's own doc
@@ -161,5 +176,5 @@ function onSelectionChange(rows: Person[]) {
 }
 
 const table = useTemplateRef('table')
-defineExpose({ table, page })
+defineExpose({ table, page, sort })
 </script>

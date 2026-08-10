@@ -6,7 +6,7 @@ import { render } from 'vitest-browser-vue'
 import DialogFixture from './fixtures/DialogFixture.vue'
 import DialogChromeFixture from './fixtures/DialogChromeFixture.vue'
 import DialogLongContentFixture from './fixtures/DialogLongContentFixture.vue'
-import Dialog from '../src/components/Dialog.vue'
+import Dialog from '../src/components/Dialog/Dialog.vue'
 
 function activeTestId() {
   return document.activeElement?.getAttribute('data-testid') ?? document.activeElement?.className

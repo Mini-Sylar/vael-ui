@@ -153,6 +153,41 @@
         </p>
       </template>
     </DataTable>
+
+    <h3>Virtualized (large data)</h3>
+    <p class="note">
+      <code>virtualize</code> windows rendering to only the visible rows + overscan — this table has
+      {{ bigDataset.length.toLocaleString() }} rows, but only a couple dozen real
+      <code>&lt;tr&gt;</code> elements ever exist in the DOM at once, bounded above/below by two
+      spacer rows that keep native table scroll height correct. Row height is measured per-row by
+      default (rows can wrap or vary), so this works even when cell content isn't uniform.
+      <code>reach-end</code>/<code>reach-start</code> fire as the window nears either edge, exactly
+      what you'd wire to <code>useInfiniteQuery</code>'s <code>fetchNextPage</code> for a real
+      server-backed table. Scroll to the bottom to see it fire below.
+      <code>selectable</code> composes cleanly with virtualization too —
+      <code>selected</code> tracks row keys, not DOM nodes, so checking a row keeps it checked even
+      after it scrolls out of the rendered window and back in.
+    </p>
+    <DataTable
+      :data="bigDataset"
+      row-key="id"
+      virtualize
+      selectable
+      scroll-height="360px"
+      @reach-end="reachEndCount++"
+    >
+      <template #columns="{ columnData }">
+        <Column :data="columnData" field="name" label="Name" sortable width="12rem" />
+        <Column :data="columnData" field="role" label="Role" sortable width="10rem" />
+        <Column :data="columnData" field="department" label="Department" width="8rem" />
+        <Column :data="columnData" field="status" label="Status">
+          <template #cell="{ row }">
+            <Tag :variant="statusVariant[row.status]">{{ row.status }}</Tag>
+          </template>
+        </Column>
+      </template>
+    </DataTable>
+    <p class="note">reach-end fired {{ reachEndCount }} time(s).</p>
   </section>
 </template>
 
@@ -227,6 +262,17 @@ const employees: Employee[] = Array.from({ length: 64 }, (_, i) => ({
   department: DEPARTMENTS[i % DEPARTMENTS.length]!,
 }))
 const smallSample = employees.slice(0, 5)
+const bigDataset: Employee[] = Array.from({ length: 5000 }, (_, i) => ({
+  id: `big-${i}`,
+  name: `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[(i * 7) % LAST_NAMES.length]}`,
+  role: ROLES[i % ROLES.length]!,
+  status: STATUSES[i % STATUSES.length]!,
+  salary: 58000 + ((i * 3117) % 74000),
+  startDate: `${2019 + (i % 6)}-${String((i % 12) + 1).padStart(2, '0')}-01`,
+  email: `person${i}@example.com`,
+  department: DEPARTMENTS[i % DEPARTMENTS.length]!,
+}))
+const reachEndCount = shallowRef(0)
 
 const statusVariant: Record<Employee['status'], 'success' | 'muted' | 'danger'> = {
   active: 'success',

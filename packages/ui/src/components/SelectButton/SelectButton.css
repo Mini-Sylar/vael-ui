@@ -1,0 +1,93 @@
+@layer ui-components {
+  .ui-select-button {
+    position: relative;
+    z-index: 0;
+    --ui-select-button-radius: calc(var(--ui-radius) - 2px);
+    --ui-select-button-gap: 2px;
+    display: inline-flex;
+    padding: var(--ui-select-button-gap);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-select-button-radius);
+    background: var(--ui-muted);
+    overflow: hidden;
+  }
+  .ui-select-button-option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.75rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    cursor: pointer;
+    color: var(--ui-text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color var(--ui-duration-press) ease;
+  }
+  .ui-select-button--sm .ui-select-button-option {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+  }
+  .ui-select-button--md .ui-select-button-option {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+  }
+  .ui-select-button--lg .ui-select-button-option {
+    block-size: 2.5rem;
+    font-size: 1rem;
+  }
+  .ui-select-button-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .ui-select-button-option[data-checked] {
+    color: var(--ui-text);
+  }
+  .ui-select-button-option:has(.ui-select-button-input[type='checkbox'])[data-checked] {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-select-button-option:has(.ui-select-button-input:focus-visible) {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-select-button-indicator {
+    position: absolute;
+    z-index: -1;
+    inset-block: var(--ui-select-button-gap);
+    inset-inline-start: 0;
+    border-radius: calc(var(--ui-select-button-radius) - var(--ui-select-button-gap));
+    background: var(--ui-surface);
+    opacity: 1;
+    box-shadow:
+      0 1px 1px rgb(0 0 0 / 0.06),
+      0 1px 3px rgb(0 0 0 / 0.08);
+    transition:
+      inset-inline-start var(--ui-duration-press) var(--ui-ease-in-out),
+      inline-size var(--ui-duration-press) var(--ui-ease-in-out),
+      opacity var(--ui-duration-press) var(--ui-ease-out);
+    @starting-style {
+      opacity: 0;
+    }
+  }
+  .ui-select-button[data-invalid] {
+    border-color: var(--ui-danger);
+  }
+  .ui-select-button--disabled,
+  .ui-select-button-option[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-select-button-option[data-disabled] .ui-select-button-input {
+    cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-select-button-indicator {
+      transition: none;
+    }
+  }
+}

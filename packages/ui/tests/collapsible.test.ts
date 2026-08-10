@@ -3,7 +3,7 @@ import { page } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, ref } from 'vue'
-import Collapsible from '../src/components/Collapsible.vue'
+import Collapsible from '../src/components/Collapsible/Collapsible.vue'
 import CollapsibleFixture from './fixtures/CollapsibleFixture.vue'
 
 function panel() {

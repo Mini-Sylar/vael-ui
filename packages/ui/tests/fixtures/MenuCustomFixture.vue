@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Menu from '../../src/components/Menu.vue'
+import Menu from '../../src/components/Menu/Menu.vue'
 
 const open = shallowRef(false)
 const selected = shallowRef('')

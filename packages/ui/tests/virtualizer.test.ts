@@ -70,6 +70,61 @@ test('omitting itemSize estimates 36px then corrects to the measured first row s
   })
 })
 
+test('dynamic mode: row offsets accumulate real per-row heights, not a uniform assumption', async () => {
+  // variableHeight(i) = 40 + (i % 3) * 20 -> 40, 60, 80, 40, 60, 80, ...
+  const screen = render(VirtualizerFixture, { props: { count: 10, dynamic: true } })
+  await expect.element(screen.getByTestId('row-4')).toBeInTheDocument()
+
+  function translateY(testId: string): number {
+    const style = screen.getByTestId(testId).element().getAttribute('style') ?? ''
+    // A zero Y offset serializes as a single value ("translate: 0px") — the
+    // browser drops the redundant second value rather than printing "0px 0px".
+    const match = /translate:\s*-?\d+(?:\.\d+)?px(?:\s+(-?\d+(?:\.\d+)?)px)?/.exec(style)
+    if (!match) return Number.NaN
+    return match[1] !== undefined ? Number(match[1]) : 0
+  }
+
+  // Each row's own :ref measurement lands over a few render passes — wait
+  // for every row to settle at its real cumulative offset, not just mount.
+  await vi.waitFor(() => {
+    expect(translateY('row-4')).toBe(220)
+  })
+  expect(translateY('row-0')).toBe(0)
+  expect(translateY('row-1')).toBe(40) // after row 0 (40px)
+  expect(translateY('row-2')).toBe(100) // after rows 0+1 (40+60)
+  expect(translateY('row-3')).toBe(180) // after rows 0+1+2 (40+60+80)
+})
+
+test('dynamic mode still windows a large count instead of rendering every row', async () => {
+  const screen = render(VirtualizerFixture, { props: { count: 10000, dynamic: true } })
+  await expect.element(screen.getByTestId('rendered-count')).toBeInTheDocument()
+  const rendered = Number(screen.getByTestId('rendered-count').element().textContent)
+  expect(rendered).toBeGreaterThan(0)
+  expect(rendered).toBeLessThan(40)
+})
+
+test('dynamic mode: reach-start fires once near the top, re-arms only once count grows', async () => {
+  const screen = render(VirtualizerFixture, {
+    props: { count: 8, dynamic: true, overscan: 2 },
+  })
+  const container = screen.getByTestId('container').element() as HTMLElement
+
+  // Mounts scrolled to the top by default, so reach-start fires immediately —
+  // same "fires whenever the condition already holds" contract as reach-end.
+  await vi.waitFor(() => {
+    expect(screen.getByTestId('reach-start-count').element().textContent).toBe('1')
+  })
+
+  fireScroll(container, 50)
+  fireScroll(container, 0)
+  expect(screen.getByTestId('reach-start-count').element().textContent).toBe('1')
+
+  await screen.rerender({ count: 10, dynamic: true, overscan: 2 })
+  await vi.waitFor(() => {
+    expect(screen.getByTestId('reach-start-count').element().textContent).toBe('2')
+  })
+})
+
 test('scrollToIndex minimally scrolls a nearest-aligned row into view', async () => {
   const screen = render(VirtualizerFixture, { props: { count: 10000 } })
   await expect.element(screen.getByTestId('container')).toBeInTheDocument()

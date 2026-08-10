@@ -3,6 +3,7 @@ dist
 *.log
 /packages/vapor-ui/src/generated/
 /docs/src/generated/
+/packages/ui/src/resolver/generated/
 /packages/ui/README.md
 .DS_Store
 /ARCHITECTURE.md
@@ -16,3 +17,5 @@ __screenshots__/
 *.local
 /plans
 .vite-ssg-temp/
+/playground/nuxt/.nuxt/
+/playground/nuxt/.output/

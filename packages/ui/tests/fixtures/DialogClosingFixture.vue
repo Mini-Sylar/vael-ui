@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Dialog from '../../src/components/Dialog.vue'
+import Dialog from '../../src/components/Dialog/Dialog.vue'
 
 defineProps<{ beforeClose?: (done: () => void) => void }>()
 

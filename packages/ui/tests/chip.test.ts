@@ -3,7 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import ChipFixture from './fixtures/ChipFixture.vue'
-import Chip from '../src/components/Chip.vue'
+import Chip from '../src/components/Chip/Chip.vue'
 
 test('renders the label prop by default', async () => {
   const screen = render(Chip, { props: { label: 'Banana' } })

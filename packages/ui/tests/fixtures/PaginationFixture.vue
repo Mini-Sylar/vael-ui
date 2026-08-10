@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
-import Pagination from '../../src/components/Pagination.vue'
+import Pagination from '../../src/components/Pagination/Pagination.vue'
 
 const props = withDefaults(
   defineProps<{

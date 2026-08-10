@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Dial from '../../src/components/Dial.vue'
+import Dial from '../../src/components/Dial/Dial.vue'
 
 const unboundedValue = shallowRef(0)
 const boundedValue = shallowRef(0)

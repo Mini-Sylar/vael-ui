@@ -51,6 +51,7 @@
     "Combobox": "一种可搜索的下拉菜单，也接受自由文本，因此自动完成和标记是其中一个组件。",
     "ConfigProvider": "包装您的应用程序，为它下面的每个组件提供主题、国际化和类合并。",
     "ContextMenu": "右键单击指针时打开的菜单，取代了本机浏览器菜单。",
+    "Tour": "一种引导式演示，通过定位的提示框依次突出显示各个元素，用于新手引导和产品导览。",
     "DataTable": "具有排序、选择、调整大小和虚拟化功能的数据网格，由列组成。",
     "DatePicker": "与日历弹出框配对的文本字段，用于选择日期或范围。",
     "Dial": "用于选取数值的圆形拖动控件，如音量旋钮。",
@@ -103,8 +104,9 @@
     "installTitle": "安装",
     "intro": "一个 Vue 3 组件库，具有完整的 Vue Vapor 构建和与动画无关的设计：默认情况下使用纯 CSS，或者带上您自己的动画库。",
     "title": "入门",
-    "usageImportNote": "在入口点导入样式表一次（有关基本样式设置，请参阅{link}）：",
+    "usageImportNote": "现在每个组件都会自带样式。仅当您使用的是 0.2.0 之前的版本，或希望一次性加载全部样式时才需要它。基础样式设置请参阅{link}。",
     "usageImportNoteLink": "样式和级联层",
+    "usageImportNoteTitle": "仅 0.2.0 之前需要",
     "usageIntro": "然后使用任何组件：来自 <code>'vael-ui'</code> 进行经典 VDOM 构建，或使用 <code>'vael-ui/vapor'</code> 进行编译后的 Vapor 构建（Vue 3.6 的无虚拟 DOM 模式）。\n无论哪种方式都具有相同的道具：",
     "usageTitle": "用法",
     "vaporIntro": "两个版本都来自相同的包和源。\n选择您的应用程序运行的任何一个，或混合两者（Vue 3.6 支持 VDOM/Vapor 互操作）。\n每个组件页面都有相同的开关来比较它们。",
@@ -122,7 +124,9 @@
     "toasterTitle": "烤面包机",
     "tooltipHostIntro": "为每个<code>v-tooltip</code>提供动力。\n如果没有安装，工具提示永远不会默默出现。",
     "tooltipHostOptions": "每个单独的工具提示都可以覆盖相同的选项：",
-    "tooltipHostTitle": "工具提示主机"
+    "tooltipHostTitle": "工具提示主机",
+    "popoverHostIntro": "渲染使用 <code>surface: 'popover'</code> 命令创建的任何 <code>openPopover()</code> 或 <code>confirmAction()</code> 。 \n<code> 不需要",
+    "popoverHostTitle": "弹出窗口主机"
   },
   "header": {
     "colorScheme": "切换配色方案",
@@ -148,6 +152,8 @@
     "featureI18nTitle": "内置 i18n",
     "featurePrimitivesBody": "没有复合组件的蔓延，没有隐藏的上下文需要连接。",
     "featurePrimitivesTitle": "每个基元一个组件",
+    "featureSsrBody": "每个组件在访问 window 或 document 之前都会检查是否存在真实浏览器环境，因此可以在 Nuxt、服务端渲染应用和静态站点生成器中安全渲染。本文档站点本身就是用 Vite SSG 和相同的组件构建的。",
+    "featureSsrTitle": "支持 SSR",
     "featureVaporBody": "每个组件都通过 Vue 3.6 的 Vapor 模式从相同的源进行编译。",
     "featureVaporTitle": "真正的蒸汽构建，而不是垫片",
     "headline": "直接编译为 Vapor 的组件，而不是围绕它。"
@@ -179,15 +185,19 @@
     "tailwindGuide": "与 Tailwind 一起使用",
     "menu": "菜单",
     "openMenu": "打开菜单",
-    "composables": "可组合项"
+    "composables": "可组合项",
+    "autoImportGuide": "自动导入",
+    "nuxtGuide": "努克斯特"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
   },
   "stylingLayers": {
     "intro": "vael-ui 在 {layer} 中发布。\n无论特殊性如何，无分层的 CSS 总是胜过一层，因此简单的、无分层的基础重置会默默地覆盖 vael-ui 内部。\n修复：将您的基本样式也放在一个图层中，首先订购。",
-    "orderNote": "两个文件，就这样了。\n这里的导入顺序仅控制图层位置，没有其他任何东西，无论加载顺序如何，任何地方的无图层覆盖始终仍然获胜。",
-    "overrideNote": "故意覆盖一个组件（{code} prop，Tailwind 实用程序）希望您的规则获胜，请保持 CSS 不分层，因为它已经默认了。\n请参阅{链接}。",
+    "orderNote": "这里的导入顺序仅控制图层位置，没有其他任何东西，无论加载顺序如何，任何地方的无图层覆盖始终仍然获胜。",
+    "bundlerNoteTitle": "仅 0.2.0 之前需要",
+    "bundlerNote": "现在每个组件都会自带样式。仅当您使用的是 0.2.0 之前的版本，或希望一次性加载全部样式时才需要它。",
+    "overrideNote": "故意覆盖一个组件（{code} prop，Tailwind 实用程序）希望您的规则获胜，请保持 CSS 不分层，因为它已经默认了。\n请参阅{link}。",
     "overrideNoteLink": "与 Tailwind 一起使用",
     "title": "样式和级联层",
     "cascadeLayersTitle": "层序",
@@ -242,8 +252,10 @@
     "variable": "多变的"
   },
   "tailwind": {
-    "layerNote": "vael-ui 在 {layer} 中发布。 \nTailwind 的实用程序类是无分层的，并且无论特殊性或导入顺序如何，无分层的 CSS 始终胜过图层，因此 vael-ui 组件上的 Tailwind 实用程序始终会覆盖库的默认设置。\n没有{重要}，没有特殊性之争，无需配置。\n有关一般机制，请参阅{link}。",
+    "layerNote": "vael-ui 发布在 {layer} 中。Tailwind v4 也会将自己的工具类封装在一个层中，因此顺序很重要：在你的 Tailwind 入口（见下方）之前导入 vael-ui 的 CSS，让它的层先注册，从而使 Tailwind 的工具类层在级联中排在其后。这样，vael-ui 组件上的 Tailwind 工具类就会始终生效，无需 {important}，也不会有优先级冲突。有关一般机制，请参阅 {link}。",
     "layerNoteLink": "样式和级联层",
+    "orderWarningTitle": "保持这个导入在最前面",
+    "orderWarning": "自 0.2.0 起，大多数使用者不再需要显式导入 vael-ui/style.css —— 每个组件会自动加载自己的 CSS。Tailwind v4 是例外：它的工具类存在于自己的级联层中，谁先注册某个层名，谁就决定了层的顺序。请在应用的主入口文件中，在 Tailwind 入口之前导入 vael-ui 的 CSS，这样即使之后加载了更多组件的 CSS，这个顺序依然成立。",
     "mergingIntro": "每个组件都接受部件类的 <code>ui</code> 属性（例如 <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>）。\n要以 <code>tailwind-merge</code> 的方式解决冲突的 Tailwind 实用程序（每个属性最后一个获胜），请将其连接一次：",
     "mergingNote": "树中的每个 <code>ui.*</code> 零件类现在都会通过 <code>twMerge</code>。",
     "mergingTitle": "使用 tailwind-merge 合并类"
@@ -275,5 +287,45 @@
     "overlaysAndConfirmation": "叠加层",
     "positioningAndData": "定位",
     "utilities": "公用事业"
+  },
+  "composableDescriptions": {
+    "confirmAction": "一个支持异步的确认流程，可作为居中对话框展示，也可锚定到触发元素以弹出层展示，会等待你的处理函数完成后再关闭。",
+    "useDialogService": "通过代码而非模板打开任意组件作为对话框，并用其关闭时返回的值解析一个 Promise。",
+    "usePopoverService": "通过代码而非模板打开任意组件作为锚定弹出层，并用其关闭时返回的值解析一个 Promise。",
+    "useToast": "可在应用任意位置调用的命令式 toast 通知，提供各种变体的快捷方式，并能感知 Promise 状态，自动从加载切换到成功或失败。",
+    "useTour": "Tour 背后的无 UI 状态机：只负责步骤与分组导航，不包含任何 DOM 或渲染逻辑。",
+    "useAsyncLoading": "追踪传入的每一个进行中的 Promise，只有全部完成后加载状态才会清除。",
+    "useNumberFormat": "支持本地化的数字格式化与解析，始终保持同步，使输入文本与格式化后的显示保持一致。",
+    "useColorScheme": "通过一个 composable 控制浅色、深色或跟随系统的主题模式，持久化方式由你自行决定。",
+    "useFloatingPosition": "Popover、Menu 和 Tooltip 背后基于 Floating UI 的定位引擎，可用于构建自定义的锚定浮层。",
+    "useVirtualizer": "面向长列表的虚拟化渲染，DOM 中只存在当前可见的行。",
+    "useFieldControl": "将自定义表单控件接入最近的 Field：处理 id、ARIA 属性以及聚焦或已填写状态。"
+  },
+  "autoImport": {
+    "bundlersIntro": "unplugin-vue-components 支持 Vite、Webpack、Rollup、esbuild 和 Rspack。\n解析器本身只是一个简单的函数 - 无论您使用哪一个，它的工作原理都是相同的。",
+    "bundlersTitle": "捆绑者",
+    "cssIntro": "这里不需要额外的接线。\n每个 vael-ui 组件都已经在内部导入了自己的 CSS，因此解析组件导入会免费引入其样式 - 与大多数 unplugin-vue-components 解析器不同，后者需要单独的 <code>sideEffects</code> 条目来导入组件的样式表。",
+    "cssTitle": "CSS",
+    "intro": "vael-ui/resolver 是 unplugin-vue-components 的解析器——注册一次，每个 vael-ui 组件就可以在模板中使用，根本不需要手动导入。",
+    "setupIntro": "在已配置 unplugin-vue-components 的位置添加解析器：",
+    "setupOutro": "就是这样 - 编写标签，导入在构建时插入：",
+    "setupTitle": "设置",
+    "title": "自动导入",
+    "vaporIntro": "vael-ui 提供了来自同一来源的两个版本：常规 VDOM 版本和 Vapor 版本 (<code>vael-ui/vapor</code>)。\n默认情况下，解析器从 VDOM 构建导入；\n传递 <code>variant: 'vapor'</code> 从 Vapor 构建中解析。\n选择您的应用程序实际渲染的任何一个 - 不支持将两者混合在一个应用程序中。",
+    "vaporTitle": "汽"
+  },
+  "nuxt": {
+    "excludeIntro": "跳过特定的组件名称 - 如果您想注册自己的 <code>，这很有用",
+    "excludeTitle": "排除",
+    "intro": "vael-ui/nuxt 是一个 Nuxt 模块——添加一次，每个 vael-ui 组件就可以在模板中使用，根本不需要手动导入，使用 Nuxt 自己的内置组件注册而不是 unplugin-vue-components。",
+    "resolverIntro": "如果您的 Nuxt 设置已经通过 unplugin-vue-components 驱动其他库的组件自动导入，请改用 vael-ui/resolver — 请参阅 {link} 指南。",
+    "resolverIntroLink": "自动导入",
+    "resolverTitle": "使用 unplugin-vue-components 代替",
+    "setupIntro": "在 Nuxt 配置中注册模块：",
+    "setupOutro": "就是这样 - 编写标签，Nuxt 会为您解决导入问题：",
+    "setupTitle": "设置",
+    "title": "努克斯特",
+    "vdomOnlyIntro": "该模块始终从常规 <code>vael-ui</code> 版本注册，从不 <code>vael-ui/vapor</code> - 因此这里没有 <code>variant</code> 选项，而 <code>vael-ui/resolver</code> 有一个。 \nVue 3.6 本身支持 Vapor SSR 水合，但稳定的 Nuxt 版本还没有 Vapor 配置 - 它落在特定上游 PR 后面，尚未进入通用版本。\n一旦 Nuxt 自己的 Vapor 支持发布，就会出现一个<code>变体</code>选项。",
+    "vdomOnlyTitle": "仅限虚拟域"
   }
 }

@@ -16,13 +16,13 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import DatePicker from '../../src/components/DatePicker.vue'
+import DatePicker from '../../src/components/DatePicker/DatePicker.vue'
 import type {
   CalendarDisabledDates,
   CalendarRange,
   CalendarSelectionMode,
   CalendarView,
-} from '../../src/components/Calendar.vue'
+} from '../../src/components/Calendar/Calendar.vue'
 
 const props = withDefaults(
   defineProps<{

@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import Avatar from '../../src/components/Avatar.vue'
+import Avatar from '../../src/components/Avatar/Avatar.vue'
 
 // Thin passthrough so tests can drive `src` as reactive consumer-side state
 // (rerender with a new src) for the image-load/error-fallback flow.

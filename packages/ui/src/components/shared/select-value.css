@@ -1,0 +1,98 @@
+@layer ui-components {
+  .ui-select-value {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: start;
+  }
+  .ui-select-placeholder {
+    color: var(--ui-text-muted);
+  }
+  .ui-select-clear,
+  .ui-combobox-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1.5em;
+    block-size: 1.5em;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-select-clear svg,
+  .ui-combobox-clear svg {
+    inline-size: 0.85em;
+    block-size: 0.85em;
+  }
+  .ui-select-clear:hover,
+  .ui-combobox-clear:hover {
+    background: var(--ui-muted);
+    color: var(--ui-text);
+  }
+  /* Grows in from zero width (not just opacity) so its neighbors don't
+     visibly teleport when it mounts/unmounts — margin-inline-start cancels
+     the flex row's own `gap` at zero width so nothing pops in early. */
+  .ui-clear-enter-active,
+  .ui-clear-leave-active {
+    transition:
+      opacity var(--ui-duration-press) var(--ui-ease-out),
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      inline-size var(--ui-duration-press) var(--ui-ease-out),
+      margin-inline-start var(--ui-duration-press) var(--ui-ease-out);
+    overflow: hidden;
+  }
+  .ui-clear-enter-from,
+  .ui-clear-leave-to {
+    opacity: 0;
+    transform: scale(0.5);
+    inline-size: 0;
+    margin-inline-start: -0.5rem;
+  }
+  .ui-select-chevron,
+  .ui-combobox-chevron {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--ui-text-muted);
+    /* On-screen movement. */
+    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  /* Scales with the trigger's own font-size (sm/md/lg) instead of staying a
+     fixed 14px — matches the trigger's block-size/font-size scale so it
+     doesn't read oversized at sm or undersized at lg. */
+  .ui-select-chevron svg,
+  .ui-combobox-chevron svg {
+    inline-size: 1em;
+    block-size: 1em;
+  }
+  .ui-select-trigger[data-state='open'] .ui-select-chevron {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-select-chevron,
+    .ui-combobox-chevron {
+      transition: none;
+    }
+    .ui-clear-enter-active,
+    .ui-clear-leave-active {
+      transition: none;
+    }
+    .ui-clear-enter-from,
+    .ui-clear-leave-to {
+      inline-size: 1.25rem;
+      margin-inline-start: 0;
+      transform: none;
+    }
+  }
+}

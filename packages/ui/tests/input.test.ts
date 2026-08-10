@@ -3,8 +3,8 @@ import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import InputFixture from './fixtures/InputFixture.vue'
-import Input from '../src/components/Input.vue'
-import Field from '../src/components/Field.vue'
+import Input from '../src/components/Input/Input.vue'
+import Field from '../src/components/Field/Field.vue'
 
 test('v-model round-trips on every keystroke by default', async () => {
   const screen = render(InputFixture, {})

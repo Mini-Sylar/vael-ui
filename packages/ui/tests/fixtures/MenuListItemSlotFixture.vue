@@ -9,8 +9,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import MenuList from '../../src/components/MenuList.vue'
-import type { MenuEntry } from '../../src/components/MenuList.vue'
+import MenuList from '../../src/components/MenuList/MenuList.vue'
+import type { MenuEntry } from '../../src/components/MenuList/MenuList.vue'
 
 const items: MenuEntry[] = [
   { label: 'Home', value: 'home' },

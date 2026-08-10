@@ -12,6 +12,8 @@
     "stylingAndLayersGuide": "Styling and Cascade Layers",
     "animationIntegrationGuide": "Bring Your Own Animation",
     "i18nKeysGuide": "Translating vael-ui",
+    "autoImportGuide": "Auto Import",
+    "nuxtGuide": "Nuxt",
     "menu": "Menu",
     "openMenu": "Open menu"
   },
@@ -68,6 +70,8 @@
     "featureI18nBody": "Every built-in string translates through your own i18n instance.",
     "featurePrimitivesTitle": "One component per primitive",
     "featurePrimitivesBody": "No compound-component sprawl, no hidden context to wire up.",
+    "featureSsrTitle": "SSR ready",
+    "featureSsrBody": "Every component checks for a real browser before touching window or document, so it renders safely in Nuxt, server-rendered apps, and static site generators. This documentation site is built with Vite SSG using the same components.",
     "browseComponents": "Browse components"
   },
   "gettingStarted": {
@@ -78,7 +82,8 @@
     "installTitle": "Install",
     "installIntro": "vael-ui is published on npm. Install it with whichever package manager you use:",
     "usageTitle": "Usage",
-    "usageImportNote": "Import the stylesheet once in your entry point (see {link} for base-style setup):",
+    "usageImportNoteTitle": "Pre-0.2.0 only",
+    "usageImportNote": "Every component brings its own styles now. Only needed if you're on a version before 0.2.0, or want everything loaded at once. See {link} for base-style setup.",
     "usageImportNoteLink": "Styling and cascade layers",
     "usageIntro": "Then use any component: from <code>'vael-ui'</code> for the classic VDOM build, or <code>'vael-ui/vapor'</code> for the compiled Vapor build (Vue 3.6's no-virtual-DOM mode). Same props either way:",
     "darkModeTitle": "Dark mode",
@@ -104,8 +109,10 @@
     "allTogetherIntro": "Mount all four once, wherever your app's root template lives:"
   },
   "tailwind": {
-    "layerNote": "vael-ui ships in {layer}. Tailwind's utility classes are unlayered, and unlayered CSS always wins over a layer regardless of specificity or import order, so a Tailwind utility on a vael-ui component always overrides the library's default. No {important}, no specificity fights, nothing to configure. See {link} for the general mechanics.",
+    "layerNote": "vael-ui ships in {layer}. Tailwind v4 wraps its own utilities in a layer too, so order matters: import vael-ui's CSS before your Tailwind entry (below) so its layer registers first, keeping Tailwind's utilities layer after it in the cascade. A Tailwind utility on a vael-ui component then always wins, no {important}, no specificity fights. See {link} for the general mechanics.",
     "layerNoteLink": "Styling and cascade layers",
+    "orderWarningTitle": "Keep this import first",
+    "orderWarning": "Most consumers no longer need an explicit vael-ui/style.css import since 0.2.0 — each component loads its own CSS automatically. Tailwind v4 is the exception: its utilities live in their own cascade layer, and whichever stylesheet registers a layer name first wins the ordering. Import vael-ui's CSS before your Tailwind entry, in your app's main entry file, so this holds even as more components' CSS loads later.",
     "mergingTitle": "Merging classes with tailwind-merge",
     "mergingIntro": "Every component accepts a <code>ui</code> prop for part classes (e.g. <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). To resolve conflicting Tailwind utilities there the way <code>tailwind-merge</code> would (last one wins per property), wire it up once:",
     "mergingNote": "Every <code>ui.*</code> part class in the tree now passes through <code>twMerge</code>."
@@ -114,7 +121,9 @@
     "title": "Styling and cascade layers",
     "intro": "vael-ui ships in {layer}. Unlayered CSS always wins over a layer regardless of specificity, so a plain, unlayered base reset silently overrides vael-ui internals. Fix: put your base styles in a layer too, ordered first.",
     "cascadeLayersTitle": "Layer order",
-    "orderNote": "Two files, that's it. Import order here only controls layer position, nothing else, an unlayered override anywhere always still wins regardless of load order.",
+    "orderNote": "That's it. Import order here only controls layer position, nothing else, an unlayered override anywhere always still wins regardless of load order.",
+    "bundlerNoteTitle": "Pre-0.2.0 only",
+    "bundlerNote": "Every component brings its own styles now. Only needed if you're on a version before 0.2.0, or want everything loaded at once.",
     "overrideNote": "Deliberately overriding one component ({code} prop, a Tailwind utility) wants your rule to win, keep that CSS unlayered as it already is by default. See {link}.",
     "overrideNoteLink": "Using with Tailwind",
     "cssVariablesTitle": "CSS variables",
@@ -214,6 +223,7 @@
     "Tooltip": "A small floating label that appears on hover or focus to explain an element.",
     "BottomSheet": "A panel that slides up from the bottom edge, common on touch layouts.",
     "ContextMenu": "A menu that opens at the pointer on right-click, replacing the native browser menu.",
+    "Tour": "A guided walkthrough that spotlights one element at a time behind a positioned callout, for onboarding and product tours.",
     "Menu": "A dropdown list of actions opened from a trigger, with full keyboard navigation.",
     "MenuList": "The same row rendering as Menu, but always in-flow, built for a permanent sidebar nav.",
     "Tabs": "Switches between panels of content, with a sliding indicator under the active tab.",
@@ -273,9 +283,49 @@
     "key": "Key",
     "englishDefault": "English default"
   },
+  "autoImport": {
+    "title": "Auto Import",
+    "intro": "vael-ui/resolver is a resolver for unplugin-vue-components — register it once and every vael-ui component becomes usable in a template with no manual import at all.",
+    "setupTitle": "Setup",
+    "setupIntro": "Add the resolver wherever unplugin-vue-components is already configured:",
+    "setupOutro": "That's it — write the tag, the import gets inserted at build time:",
+    "vaporTitle": "Vapor",
+    "vaporIntro": "vael-ui ships two builds from the same source: the regular VDOM build and a Vapor build (<code>vael-ui/vapor</code>). By default the resolver imports from the VDOM build; pass <code>variant: 'vapor'</code> to resolve from the Vapor build instead. Pick whichever your app actually renders with — mixing the two in one app isn't supported.",
+    "cssTitle": "CSS",
+    "cssIntro": "No extra wiring needed here. Every vael-ui component already imports its own CSS internally, so resolving the component import pulls its styles in for free — unlike most unplugin-vue-components resolvers, which need a separate <code>sideEffects</code> entry to also import a component's stylesheet.",
+    "bundlersTitle": "Bundlers",
+    "bundlersIntro": "unplugin-vue-components supports Vite, Webpack, Rollup, esbuild, and Rspack. The resolver itself is just a plain function — it works identically regardless of which one you use."
+  },
+  "nuxt": {
+    "title": "Nuxt",
+    "intro": "vael-ui/nuxt is a Nuxt module — add it once and every vael-ui component becomes usable in a template with no manual import at all, using Nuxt's own built-in component registration instead of unplugin-vue-components.",
+    "setupTitle": "Setup",
+    "setupIntro": "Register the module in your Nuxt config:",
+    "setupOutro": "That's it — write the tag, Nuxt resolves the import for you:",
+    "excludeTitle": "exclude",
+    "excludeIntro": "Skip specific component names — useful if you want to register your own <code>&lt;Button&gt;</code> under that same tag instead:",
+    "vdomOnlyTitle": "VDOM only",
+    "vdomOnlyIntro": "This module always registers from the regular <code>vael-ui</code> build, never <code>vael-ui/vapor</code> — so there's no <code>variant</code> option here the way <code>vael-ui/resolver</code> has one. Vue 3.6 itself supports Vapor SSR hydration, but the stable Nuxt release has no Vapor configuration yet — it's landing behind specific upstream PRs, not yet in a general release. Once Nuxt's own Vapor support ships, a <code>variant</code> option can follow.",
+    "resolverTitle": "Using unplugin-vue-components instead",
+    "resolverIntro": "If your Nuxt setup already drives component auto-import through unplugin-vue-components for other libraries, use vael-ui/resolver instead — see the {link} guide.",
+    "resolverIntroLink": "Auto Import"
+  },
   "notFound": {
     "title": "Page not found",
     "body": "The page you're looking for doesn't exist, or moved.",
     "home": "Back home"
+  },
+  "composableDescriptions": {
+    "confirmAction": "An async-aware confirm flow, centered as a dialog or anchored to a trigger as a popover, that awaits your handler before closing.",
+    "useDialogService": "Opens any component as a dialog from code instead of markup, resolving a promise with whatever it closes with.",
+    "usePopoverService": "Opens any component as an anchored popover from code instead of markup, resolving a promise with whatever it closes with.",
+    "useToast": "Imperative toast notifications from anywhere in your app, with variant shortcuts and a promise-aware loading-to-success/error swap.",
+    "useTour": "The headless state machine behind Tour: step and group navigation, with zero DOM or rendering baked in.",
+    "useAsyncLoading": "Tracks every in-flight promise passed to it, so a loading state clears only once all of them have settled.",
+    "useNumberFormat": "Locale-aware number formatting and parsing kept in sync, so typed text and its formatted display always agree.",
+    "useColorScheme": "Drives light, dark, or system theme mode from one composable, with persistence left up to you.",
+    "useFloatingPosition": "The Floating UI-backed positioning engine behind Popover, Menu, and Tooltip, for building custom anchored surfaces.",
+    "useVirtualizer": "Windowed rendering for long lists, so only the visible rows exist in the DOM.",
+    "useFieldControl": "Wires a custom form control into the nearest Field: id, ARIA attributes, and focus or filled state."
   }
 }

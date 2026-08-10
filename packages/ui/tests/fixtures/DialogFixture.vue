@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Dialog from '../../src/components/Dialog.vue'
+import Dialog from '../../src/components/Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../src/composables/useDialog'
 
 const props = defineProps<{ veto?: boolean }>()

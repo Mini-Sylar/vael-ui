@@ -51,6 +51,7 @@
     "Combobox": "フリー テキストも受け入れる検索可能なドロップダウンであるため、オートコンプリートとタグ付けは 1 つのコンポーネントです。",
     "ConfigProvider": "アプリをラップして、その下のすべてのコンポーネントにテーマ、i18n、およびクラスのマージを提供します。",
     "ContextMenu": "右クリックするとポインターで開くメニューで、ネイティブ ブラウザー メニューを置き換えます。",
+    "Tour": "配置されたコールアウトで要素を1つずつ照らし出しながら順番に案内する、オンボーディングや製品ツアー向けのガイド付きウォークスルー。",
     "DataTable": "列から構成される、並べ替え、選択、サイズ変更、仮想化を備えたデータ グリッド。",
     "DatePicker": "日付または範囲を選択するためのカレンダー ポップオーバーと組み合わせられたテキスト フィールド。",
     "Dial": "ボリュームノブと同様に、数値を選択するための円形のドラッグコントロール。",
@@ -103,8 +104,9 @@
     "installTitle": "インストール",
     "intro": "完全な Vue Vapor ビルドとアニメーションに依存しないデザインを備えた Vue 3 コンポーネント ライブラリ: デフォルトでプレーン CSS を使用するか、独自のアニメーション ライブラリを使用します。",
     "title": "はじめる",
-    "usageImportNote": "エントリ ポイントにスタイルシートを 1 回インポートします (基本スタイルの設定については {link} を参照してください)。",
+    "usageImportNote": "各コンポーネントは現在、独自のスタイルを自動的に持っています。0.2.0 より前のバージョンを使用している場合、またはすべてを一度に読み込みたい場合にのみ必要です。基本スタイルの設定については {link} を参照してください。",
     "usageImportNoteLink": "スタイリング層とカスケード層",
+    "usageImportNoteTitle": "0.2.0 より前のみ必要",
     "usageIntro": "次に、クラシック VDOM ビルドの場合は <code>'vael-ui'</code>、コンパイル済み Vapor ビルド (Vue 3.6 の非仮想 DOM モード) の場合は <code>'vael-ui/vapor'</code> のいずれかのコンポーネントを使用します。\nどちらの方法でも同じ小道具:",
     "usageTitle": "使用法",
     "vaporIntro": "どちらのビルドも同じパッケージとソースから出荷されます。\nアプリが実行する方を選択するか、両方を組み合わせてください (Vue 3.6 は VDOM/Vapor 相互運用をサポートします)。\nすべてのコンポーネント ページには、それらを比較するための同じトグルがあります。",
@@ -122,7 +124,9 @@
     "toasterTitle": "トースター",
     "tooltipHostIntro": "すべての <code>v-tooltip</code> を強化します。\nツールチップがマウントされていない場合、ツールチップは表示されません。",
     "tooltipHostOptions": "個々のツールチップごとにオーバーライドできる同じオプションを取ります。",
-    "tooltipHostTitle": "ツールチップホスト"
+    "tooltipHostTitle": "ツールチップホスト",
+    "popoverHostIntro": "<code>surface: 'popover'</code> を使用して命令的に作成される <code>openPopover()</code> または <code>confirmAction()</code> をレンダリングします。 \n<code> には必要ありません",
+    "popoverHostTitle": "ポップオーバーホスト"
   },
   "header": {
     "colorScheme": "カラースキームを切り替えます",
@@ -148,6 +152,8 @@
     "featureI18nTitle": "i18n内蔵",
     "featurePrimitivesBody": "複合コンポーネントが無秩序に広がったり、隠蔽されたコンテキストを接続したりすることはありません。",
     "featurePrimitivesTitle": "プリミティブごとに 1 つのコンポーネント",
+    "featureSsrBody": "各コンポーネントは window や document にアクセスする前に実際のブラウザかどうかを確認するため、Nuxt やサーバーサイドレンダリングされたアプリ、静的サイトジェネレーターでも安全に描画されます。このドキュメントサイト自体も、同じコンポーネントを使って Vite SSG で構築されています。",
+    "featureSsrTitle": "SSR 対応",
     "featureVaporBody": "すべてのコンポーネントは、同じソースから Vue 3.6 の Vapor モードを通じてコン​​パイルされます。",
     "featureVaporTitle": "シムではなく本物の Vapor ビルド",
     "headline": "Vapor を中心にコンパイルするのではなく、Vapor に直接コンパイルするコンポーネント。"
@@ -179,15 +185,19 @@
     "tailwindGuide": "Tailwind との併用",
     "menu": "メニュー",
     "openMenu": "メニューを開く",
-    "composables": "コンポーザブル"
+    "composables": "コンポーザブル",
+    "autoImportGuide": "自動インポート",
+    "nuxtGuide": "ナクスト"
   },
   "pageNotes": {
     "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。"
   },
   "stylingLayers": {
     "intro": "vael-ui は {layer} に同梱されています。\n階層化されていない CSS は、特異性に関係なく常にレイヤーよりも優先されるため、プレーンな階層化されていないベースのリセットは、vael-ui の内部を静かにオーバーライドします。\n修正: 基本スタイルもレイヤーに配置し、最初に並べます。",
-    "orderNote": "2 つのファイル、それだけです。\nここでのインポート順序はレイヤーの位置のみを制御し、他には何も制御しません。ロード順序に関係なく、どこにでも階層化されていないオーバーライドが常に優先されます。",
-    "overrideNote": "1 つのコンポーネント (Tailwind ユーティリティの {code} プロパティ) を意図的にオーバーライドすると、ルールが優先され、CSS がデフォルトですでに階層化されていない状態が保たれます。 \n{リンク}を参照してください。",
+    "orderNote": "ここでのインポート順序はレイヤーの位置のみを制御し、他には何も制御しません。ロード順序に関係なく、どこにでも階層化されていないオーバーライドが常に優先されます。",
+    "bundlerNoteTitle": "0.2.0 より前のみ必要",
+    "bundlerNote": "各コンポーネントは現在、独自のスタイルを持っています。0.2.0 より前のバージョンを使用している場合、またはすべてを一度に読み込みたい場合にのみ必要です。",
+    "overrideNote": "1 つのコンポーネント (Tailwind ユーティリティの {code} プロパティ) を意図的にオーバーライドすると、ルールが優先され、CSS がデフォルトですでに階層化されていない状態が保たれます。 \n{link}を参照してください。",
     "overrideNoteLink": "Tailwind との併用",
     "title": "スタイリング層とカスケード層",
     "cascadeLayersTitle": "レイヤーの順序",
@@ -242,8 +252,10 @@
     "variable": "変数"
   },
   "tailwind": {
-    "layerNote": "vael-ui は {layer} に同梱されています。 \nTailwind のユーティリティ クラスは階層化されておらず、階層化されていない CSS は、特異性やインポート順序に関係なく常にレイヤーよりも優先されるため、vael-ui コンポーネントの Tailwind ユーティリティは常にライブラリのデフォルトをオーバーライドします。 \n{重要} はありません。具体性の問題もありません。設定する必要はありません。\n一般的な仕組みについては、{link} を参照してください。",
+    "layerNote": "vael-ui は{layer}に同梱されています。Tailwind v4 も自身のユーティリティを独自のレイヤーにまとめているため、順序が重要になります。Tailwind のエントリー（下記）より先に vael-ui の CSS をインポートすることで、そのレイヤーを先に登録し、Tailwind のユーティリティレイヤーをカスケード内で後に位置させます。こうすることで、vael-ui コンポーネント上の Tailwind ユーティリティは {important} や詳細度の競合なしに常に優先されます。一般的な仕組みについては{link}を参照してください。",
     "layerNoteLink": "スタイリング層とカスケード層",
+    "orderWarningTitle": "このインポートを先頭に保つ",
+    "orderWarning": "0.2.0 以降、ほとんどの利用者は vael-ui/style.css の明示的なインポートを必要としません — 各コンポーネントが自身の CSS を自動的に読み込みます。Tailwind v4 は例外です。そのユーティリティは独自のカスケードレイヤーに存在し、レイヤー名を最初に登録したスタイルシートが順序を制します。アプリのメインエントリーファイルで、Tailwind のエントリーより先に vael-ui の CSS をインポートしておくことで、後から他のコンポーネントの CSS が読み込まれてもこの順序が保たれます。",
     "mergingIntro": "すべてのコンポーネントは、パーツ クラスの <code>ui</code> プロパティを受け入れます (例: <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>)。\nそこで競合する Tailwind ユーティリティを <code>tailwind-merge</code> の方法で解決するには (プロパティごとに最後のものが優先されます)、一度接続します。",
     "mergingNote": "ツリー内のすべての <code>ui.*</code> パーツ クラスが <code>twMerge</code> を通過するようになりました。",
     "mergingTitle": "tailwind-merge を使用したクラスのマージ"
@@ -275,5 +287,45 @@
     "overlaysAndConfirmation": "オーバーレイ",
     "positioningAndData": "位置決め",
     "utilities": "公共事業"
+  },
+  "composableDescriptions": {
+    "confirmAction": "非同期対応の確認フローで、ダイアログとして中央に表示するか、popoverとしてトリガーに固定表示します。ハンドラーの完了を待ってから閉じます。",
+    "useDialogService": "マークアップではなくコードから任意のコンポーネントをダイアログとして開き、閉じた際の値でPromiseを解決します。",
+    "usePopoverService": "マークアップではなくコードから任意のコンポーネントを固定popoverとして開き、閉じた際の値でPromiseを解決します。",
+    "useToast": "アプリ内のどこからでも呼び出せる命令的なトースト通知。バリアントのショートカットと、Promiseに応じたローディングから成功/エラーへの切り替えを備えます。",
+    "useTour": "Tourの背後にあるheadlessな状態管理:DOMやレンダリングを一切持たず、ステップとグループのナビゲーションだけを担います。",
+    "useAsyncLoading": "渡されたすべての実行中のPromiseを追跡し、すべてが完了して初めてローディング状態を解除します。",
+    "useNumberFormat": "ロケールに対応した数値のフォーマットと解析を常に同期させ、入力されたテキストとフォーマット済み表示が一致するようにします。",
+    "useColorScheme": "ライト、ダーク、システムのテーマモードを1つのcomposableで制御します。永続化の方法は自由に選べます。",
+    "useFloatingPosition": "Popover、Menu、TooltipのベースとなるFloating UIによる位置決めエンジンで、独自の固定表示サーフェスを構築できます。",
+    "useVirtualizer": "長いリストの仮想レンダリング。表示中の行だけがDOMに存在します。",
+    "useFieldControl": "カスタムフォームコントロールを最も近いFieldに接続します:id、ARIA属性、フォーカスや入力済み状態を扱います。"
+  },
+  "autoImport": {
+    "bundlersIntro": "unplugin-vue-components は、Vite、Webpack、Rollup、esbuild、および Rspack をサポートします。\nリゾルバー自体は単なる単純な関数であり、どちらを使用しても同じように機能します。",
+    "bundlersTitle": "バンドラー",
+    "cssIntro": "ここでは追加の配線は必要ありません。\nすべての vael-ui コンポーネントはすでに独自の CSS を内部でインポートしているため、コンポーネントのインポートを解決すると、そのスタイルが無料で取り込まれます。これは、コンポーネントのスタイルシートをインポートするために別の <code>sideEffects</code> エントリが必要なほとんどの unplugin-vue-components リゾルバーとは異なります。",
+    "cssTitle": "CSS",
+    "intro": "vael-ui/resolver は、unplugin-vue-components のリゾルバーです。これを一度登録すると、手動でインポートすることなく、すべての vael-ui コンポーネントがテンプレートで使用できるようになります。",
+    "setupIntro": "unplugin-vue-components が既に構成されている場所にリゾルバーを追加します。",
+    "setupOutro": "以上です — タグを書くと、インポートがビルド時に挿入されます。",
+    "setupTitle": "設定",
+    "title": "自動インポート",
+    "vaporIntro": "vael-ui は、同じソースから 2 つのビルド、つまり通常の VDOM ビルドと Vapor ビルド (<code>vael-ui/vapor</code>) を出荷します。\nデフォルトでは、リゾルバーは VDOM ビルドからインポートします。\n代わりに <code>variant: 'vapor'</code> を渡して、Vapor ビルドから解決します。\nアプリが実際にレンダリングするものを選択してください。1 つのアプリ内で 2 つを混合することはサポートされていません。",
+    "vaporTitle": "蒸気"
+  },
+  "nuxt": {
+    "excludeIntro": "特定のコンポーネント名をスキップします。独自の <code> を登録する場合に便利です。",
+    "excludeTitle": "除外する",
+    "intro": "vael-ui/nuxt は Nuxt モジュールです。これを一度追加すると、unplugin-vue-components の代わりに Nuxt 独自の組み込みコンポーネント登録を使用して、手動でインポートすることなく、すべての vael-ui コンポーネントをテンプレートで使用できるようになります。",
+    "resolverIntro": "Nuxt セットアップが既に他のライブラリの unplugin-vue-components を介してコンポーネントの自動インポートを実行している場合は、代わりに vael-ui/resolver を使用してください。{link} ガイドを参照してください。",
+    "resolverIntroLink": "自動インポート",
+    "resolverTitle": "代わりに unplugin-vue-components を使用する",
+    "setupIntro": "Nuxt 構成にモジュールを登録します。",
+    "setupOutro": "以上です — タグを書くと、Nuxt がインポートを解決します。",
+    "setupTitle": "設定",
+    "title": "ナクスト",
+    "vdomOnlyIntro": "このモジュールは常に通常の <code>vael-ui</code> ビルドから登録され、<code>vael-ui/vapor</code> では登録されません。そのため、<code>vael-ui/resolver</code> にあるような <code>variant</code> オプションはここにはありません。 \nVue 3.6 自体は Vapor SSR ハイドレーションをサポートしていますが、安定版 Nuxt リリースにはまだ Vapor 構成がありません。特定のアップストリーム PR の背後にあり、まだ一般リリースには含まれていません。 \nNuxt 独自の Vapor サポートがリリースされると、<code>variant</code> オプションが続く可能性があります。",
+    "vdomOnlyTitle": "VDOMのみ"
   }
 }

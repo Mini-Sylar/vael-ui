@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import OtpInput from '../../src/components/OtpInput.vue'
+import OtpInput from '../../src/components/OtpInput/OtpInput.vue'
 
 withDefaults(
   defineProps<{

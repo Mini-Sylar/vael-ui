@@ -1,0 +1,128 @@
+@layer ui-components {
+  .ui-speed-dial {
+    position: relative;
+    display: inline-flex;
+  }
+  .ui-speed-dial-trigger {
+    position: relative;
+    z-index: 1;
+  }
+  .ui-speed-dial-trigger-icon {
+    display: inline-flex;
+    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-speed-dial[data-state='open'] .ui-speed-dial-trigger-icon {
+    transform: rotate(45deg);
+  }
+  .ui-speed-dial-actions {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .ui-speed-dial-action {
+    flex: none;
+  }
+  .ui-speed-dial[data-direction='up'] .ui-speed-dial-actions {
+    flex-direction: column-reverse;
+    inset-inline-start: 50%;
+    inset-block-end: 100%;
+    translate: -50% 0;
+    margin-block-end: 0.75rem;
+  }
+  .ui-speed-dial[data-direction='down'] .ui-speed-dial-actions {
+    flex-direction: column;
+    inset-inline-start: 50%;
+    inset-block-start: 100%;
+    translate: -50% 0;
+    margin-block-start: 0.75rem;
+  }
+  .ui-speed-dial[data-direction='left'] .ui-speed-dial-actions {
+    flex-direction: row-reverse;
+    inset-inline-end: 100%;
+    inset-block-start: 50%;
+    translate: 0 -50%;
+    margin-inline-end: 0.75rem;
+  }
+  .ui-speed-dial[data-direction='right'] .ui-speed-dial-actions {
+    flex-direction: row;
+    inset-inline-start: 100%;
+    inset-block-start: 50%;
+    translate: 0 -50%;
+    margin-inline-start: 0.75rem;
+  }
+  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-actions {
+    inset-inline-start: 50%;
+    inset-block-start: 50%;
+    inline-size: 0;
+    block-size: 0;
+  }
+  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action {
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    translate: calc(var(--ui-speed-dial-x, 0px) - 50%) calc(var(--ui-speed-dial-y, 0px) - 50%);
+  }
+  .ui-speed-dial-action-enter-active {
+    transition:
+      opacity var(--ui-duration-enter) var(--ui-ease-out),
+      scale var(--ui-duration-enter) var(--ui-ease-out),
+      translate var(--ui-duration-enter) var(--ui-ease-out);
+    transition-delay: calc(var(--ui-speed-dial-action-index, 0) * 40ms);
+  }
+  .ui-speed-dial-action-leave-active {
+    transition:
+      opacity var(--ui-duration-exit) var(--ui-ease-out),
+      scale var(--ui-duration-exit) var(--ui-ease-out),
+      translate var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-speed-dial-action-enter-from,
+  .ui-speed-dial-action-leave-to {
+    opacity: 0;
+    scale: 0.9;
+  }
+  .ui-speed-dial[data-direction='up'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='up'] .ui-speed-dial-action-leave-to {
+    translate: 0 0.5rem;
+  }
+  .ui-speed-dial[data-direction='down'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='down'] .ui-speed-dial-action-leave-to {
+    translate: 0 -0.5rem;
+  }
+  .ui-speed-dial[data-direction='left'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='left'] .ui-speed-dial-action-leave-to {
+    translate: 0.5rem 0;
+  }
+  .ui-speed-dial[data-direction='right'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='right'] .ui-speed-dial-action-leave-to {
+    translate: -0.5rem 0;
+  }
+  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-enter-from,
+  .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-leave-to {
+    translate: -50% -50%;
+  }
+  .ui-speed-dial-action-move {
+    transition: translate var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-speed-dial-action-enter-active,
+    .ui-speed-dial-action-leave-active {
+      transition: opacity var(--ui-duration-exit) ease;
+      transition-delay: 0ms;
+    }
+    .ui-speed-dial-action-enter-from,
+    .ui-speed-dial-action-leave-to {
+      scale: 1;
+      translate: 0 0;
+    }
+    .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-enter-from,
+    .ui-speed-dial[data-direction='quarter-circle'] .ui-speed-dial-action-leave-to {
+      translate: calc(var(--ui-speed-dial-x, 0px) - 50%) calc(var(--ui-speed-dial-y, 0px) - 50%);
+    }
+    .ui-speed-dial-action-move,
+    .ui-speed-dial-trigger-icon {
+      transition: none;
+    }
+  }
+}

@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Dialog from '../../src/components/Dialog.vue'
+import Dialog from '../../src/components/Dialog/Dialog.vue'
 
 const open = shallowRef(false)
 const exitRan = shallowRef(false)

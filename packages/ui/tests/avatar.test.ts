@@ -3,7 +3,7 @@
 import '../src/style.css'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import Avatar from '../src/components/Avatar.vue'
+import Avatar from '../src/components/Avatar/Avatar.vue'
 import AvatarFixture from './fixtures/AvatarFixture.vue'
 
 // 1x1 transparent PNG — guaranteed to load with zero network dependency.

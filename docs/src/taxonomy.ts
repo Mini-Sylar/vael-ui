@@ -57,12 +57,21 @@ export const categories: ComponentCategory[] = [
   {
     key: 'overlays',
     name: 'Overlays',
-    components: ['Dialog', 'Drawer', 'Popover', 'Tooltip', 'BottomSheet', 'ContextMenu'],
+    components: [
+      'Dialog',
+      'Drawer',
+      'Popover',
+      'Tooltip',
+      'BottomSheet',
+      'ContextMenu',
+      'CommandPalette',
+      'Tour',
+    ],
   },
   {
     key: 'navigationAndMenus',
     name: 'Navigation & Menus',
-    components: ['Menu', 'MenuList', 'Tabs'],
+    components: ['Menu', 'MenuList', 'Tabs', 'Stepper', 'Breadcrumb'],
   },
   {
     key: 'feedback',
@@ -75,12 +84,22 @@ export const categories: ComponentCategory[] = [
   {
     key: 'dataDisplay',
     name: 'Data Display',
-    components: ['DataTable', 'Pagination', 'Card', 'Avatar', 'Badge', 'Tag', 'Chip', 'Kbd'],
+    components: [
+      'DataTable',
+      'Pagination',
+      'Card',
+      'Avatar',
+      'AvatarGroup',
+      'Badge',
+      'Tag',
+      'Chip',
+      'Kbd',
+    ],
   },
   {
     key: 'layoutAndStructure',
     name: 'Layout & Structure',
-    components: ['Accordion', 'Collapsible', 'Separator', 'Resizable'],
+    components: ['Accordion', 'Collapsible', 'Separator', 'Resizable', 'ScrollArea'],
   },
   {
     key: 'gestures',
@@ -94,3 +113,18 @@ export const allComponents = categories.flatMap((c) => c.components)
 export function categoryOf(component: string): string | undefined {
   return categories.find((c) => c.components.includes(component))?.key
 }
+
+// Component name -> the ISO date it shipped. Drives the sidebar's "new" dot (see
+// Sidebar.vue): shown until the component's page is visited, or NEW_BADGE_DAYS after
+// this date, whichever comes first. Add an entry here when a component ships; there's
+// no cleanup step — stale entries just stop rendering once they age out.
+export const NEW_COMPONENTS: Record<string, string> = {
+  ScrollArea: '2026-08-03',
+  AvatarGroup: '2026-08-05',
+  Breadcrumb: '2026-08-05',
+  Stepper: '2026-08-06',
+  CommandPalette: '2026-08-07',
+  Tour: '2026-08-08',
+}
+
+export const NEW_BADGE_DAYS = 14

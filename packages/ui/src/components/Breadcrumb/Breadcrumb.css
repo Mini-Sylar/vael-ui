@@ -1,0 +1,31 @@
+@layer ui-components {
+  .ui-breadcrumb-list {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.875rem;
+  }
+  .ui-breadcrumb-list--wrap {
+    flex-wrap: wrap;
+  }
+  .ui-breadcrumb-list--scroll {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ui-breadcrumb-list--scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .ui-breadcrumb-list--scroll .ui-breadcrumb-item {
+    flex: none;
+  }
+
+  .ui-breadcrumb-item-icon {
+    flex: none;
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+  }
+}

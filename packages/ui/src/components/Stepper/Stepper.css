@@ -1,0 +1,195 @@
+@layer ui-components {
+  .ui-stepper {
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ui-stepper--horizontal {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ui-stepper--horizontal::-webkit-scrollbar {
+    display: none;
+  }
+  .ui-stepper--vertical {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ui-stepper-step {
+    display: flex;
+    flex: none;
+  }
+
+  .ui-stepper-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .ui-stepper-trigger:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .ui-stepper-trigger:focus-visible .ui-stepper-circle {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  div.ui-stepper-trigger {
+    cursor: default;
+  }
+
+  .ui-stepper-circle {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: 1.5px solid var(--ui-border-strong);
+    border-radius: 50%;
+    background: var(--ui-surface);
+    color: var(--ui-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-stepper-step[data-state='active'] .ui-stepper-circle {
+    border-color: var(--ui-primary);
+    color: var(--ui-primary);
+  }
+  .ui-stepper-step[data-state='completed'] .ui-stepper-circle {
+    border-color: var(--ui-primary);
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    button.ui-stepper-trigger:hover .ui-stepper-circle {
+      border-color: var(--ui-text-muted);
+    }
+    .ui-stepper-step[data-state='active'] button.ui-stepper-trigger:hover .ui-stepper-circle {
+      border-color: var(--ui-primary-hover);
+    }
+    .ui-stepper-step[data-state='completed'] button.ui-stepper-trigger:hover .ui-stepper-circle {
+      border-color: var(--ui-primary-hover);
+      background: var(--ui-primary-hover);
+    }
+  }
+  button.ui-stepper-trigger:active .ui-stepper-circle {
+    transform: scale(0.9);
+  }
+
+  .ui-stepper-check-enter-active,
+  .ui-stepper-check-leave-active {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    transition:
+      opacity var(--ui-duration-enter) var(--ui-ease-in-out),
+      scale var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-stepper-check-enter-from,
+  .ui-stepper-check-leave-to {
+    opacity: 0;
+    scale: 0.6;
+  }
+
+  .ui-stepper-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-inline-size: 0;
+  }
+  .ui-stepper-label {
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .ui-stepper-step[data-state='active'] .ui-stepper-label,
+  .ui-stepper-step[data-state='completed'] .ui-stepper-label {
+    color: var(--ui-text);
+  }
+  .ui-stepper-description {
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .ui-stepper--vertical .ui-stepper-label,
+  .ui-stepper--vertical .ui-stepper-description {
+    white-space: normal;
+  }
+
+  .ui-stepper-connector {
+    position: relative;
+    flex: 1 1 auto;
+    align-self: center;
+    overflow: hidden;
+    background: var(--ui-border);
+  }
+  .ui-stepper-connector--horizontal {
+    block-size: 2px;
+    min-inline-size: 1.5rem;
+    margin-inline: 0.625rem;
+  }
+  .ui-stepper-connector--vertical {
+    align-self: stretch;
+    inline-size: 2px;
+    min-block-size: 1.5rem;
+    margin-block: 0.375rem;
+    margin-inline-start: calc(0.875rem - 1px);
+  }
+  .ui-stepper-connector::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ui-primary);
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-stepper-connector--horizontal::after {
+    transform-origin: 0 50%;
+    scale: 0 1;
+  }
+  .ui-stepper-connector--vertical::after {
+    transform-origin: 50% 0;
+    scale: 1 0;
+  }
+  .ui-stepper-connector[data-state='filled'].ui-stepper-connector--horizontal::after {
+    scale: 1 1;
+  }
+  .ui-stepper-connector[data-state='filled'].ui-stepper-connector--vertical::after {
+    scale: 1 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-stepper-circle,
+    .ui-stepper-connector::after {
+      transition: none;
+    }
+    button.ui-stepper-trigger:active .ui-stepper-circle {
+      transform: none;
+    }
+    .ui-stepper-check-enter-active,
+    .ui-stepper-check-leave-active {
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+    }
+    .ui-stepper-check-enter-from,
+    .ui-stepper-check-leave-to {
+      scale: 1;
+    }
+  }
+}

@@ -3,7 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import SplitButtonFixture from './fixtures/SplitButtonFixture.vue'
-import SplitButton from '../src/components/SplitButton.vue'
+import SplitButton from '../src/components/SplitButton/SplitButton.vue'
 
 beforeEach(() => {
   // Teleported Menu positioners can outlive a fixture torn down mid-transition.

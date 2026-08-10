@@ -1,0 +1,60 @@
+@layer ui-components {
+  .ui-tabs {
+    /* Establish stacking context for indicator. */
+    position: relative;
+    z-index: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .ui-tabs--vertical {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Opt-in sliding indicator; on-screen movement. */
+  .ui-tabs-indicator {
+    position: absolute;
+    z-index: -1; /* paints behind in-flow tab content without needing z-index on every tab */
+    pointer-events: none;
+    inline-size: 1px;
+    transform-origin: 0 0;
+    transition:
+      translate var(--ui-duration-press) var(--ui-ease-in-out),
+      scale var(--ui-duration-press) var(--ui-ease-in-out),
+      inset-inline-start var(--ui-duration-press) var(--ui-ease-in-out),
+      inline-size var(--ui-duration-press) var(--ui-ease-in-out),
+      inset-block-start var(--ui-duration-press) var(--ui-ease-in-out),
+      block-size var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-tabs--vertical .ui-tabs-indicator {
+    inline-size: auto;
+    block-size: 1px; /* the scaleY() baseline instead, for the vertical axis */
+  }
+  .ui-tabs-indicator--background {
+    inset-block: 0;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: var(--ui-muted);
+  }
+  .ui-tabs--vertical .ui-tabs-indicator--background {
+    inset-block: auto;
+    inset-inline: 0;
+  }
+  .ui-tabs-indicator--underline {
+    inset-block-end: 0;
+    block-size: 2px; /* fixed thickness on the axis perpendicular to the scale */
+    background: var(--ui-primary);
+  }
+  .ui-tabs--vertical .ui-tabs-indicator--underline {
+    inset-block-end: auto;
+    inset-inline-end: 0;
+    inline-size: 2px; /* fixed thickness; block-size stays the 1px scaleY() baseline */
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-tabs-indicator {
+      transition: none;
+    }
+  }
+}

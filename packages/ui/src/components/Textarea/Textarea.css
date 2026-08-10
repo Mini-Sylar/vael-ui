@@ -1,0 +1,107 @@
+@layer ui-components {
+  /* Textarea Grid frame: row 1 is [start][textarea][end], row 2 is a full-width in-frame action strip under the text — an empty grid row with nothing placed in it collapses to 0 height on its own, so the row is always declared and simply disappears when neither bottom slot renders (no `:has()` needed). Auto-grow is native-first (`field-sizing: content`); see Textarea.vue's SFC comment for the JS fallback. */
+  .ui-textarea {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'start textarea end'
+      'bottom bottom bottom';
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface);
+    padding: 0.5rem 0.75rem;
+    cursor: text;
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-textarea--sm {
+    font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-textarea--md {
+    font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-textarea--lg {
+    font-size: 1rem;
+    border-radius: var(--ui-radius);
+  }
+  .ui-textarea-el {
+    grid-area: textarea;
+    min-inline-size: 0;
+    resize: vertical;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    line-height: 1.5;
+  }
+  .ui-textarea-el::placeholder {
+    color: var(--ui-text-muted);
+  }
+  /* field-sizing measures against the box's own 1lh — rows/maxRows arrive as custom properties (Textarea.vue) rather than baked into a stylesheet rule, since they're per-instance props, not tokens. */
+  .ui-textarea--auto-grow .ui-textarea-el {
+    field-sizing: content;
+    resize: none;
+    overflow-y: auto;
+    /* The +1rem budget is real padding-block (0.5rem top + bottom), not just size inflation: a <textarea> renders its content top-aligned with no vertical centering of its own, so without an actual padding split the whole 1rem buffer sat below the text, pushing the box's geometric center — and anything centered against it, like an avatar in #start — visibly below the text's true center. */
+    padding-block: 0.5rem;
+    min-block-size: calc(var(--ui-textarea-rows, 3) * 1lh + 1rem);
+    max-block-size: calc(var(--ui-textarea-max-rows, infinity) * 1lh + 1rem);
+  }
+  /* Centered on the whole frame, not pinned to the first text line: an avatar (or anything taller than one line) overflows evenly up and down from a 1lh box, and that box sits in the vertical middle of the row — the common "cursor sits level with the avatar" composer look. Once autoGrow has actually pushed the box past its resting height (Textarea.vue's ResizeObserver sets data-multiline), the rule below pins it back to the top instead, so a growing reply doesn't drag the avatar down to a new center. */
+  .ui-textarea-start,
+  .ui-textarea-end {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    flex: none;
+    block-size: 1lh;
+    color: var(--ui-text-muted);
+  }
+  .ui-textarea-start {
+    grid-area: start;
+  }
+  .ui-textarea-end {
+    grid-area: end;
+  }
+  /* align-self: start alone pins the box to the TEXTAREA ELEMENT's own top edge — but that element has its own 0.5rem padding-block-start (the auto-grow rule above), so line 1's text actually starts 0.5rem lower than that edge. Without this margin the avatar rides visibly above line 1 instead of sitting on it; matching the padding value here is what actually lands it on the first line, not just "near the top". */
+  .ui-textarea[data-multiline] .ui-textarea-start,
+  .ui-textarea[data-multiline] .ui-textarea-end {
+    align-self: start;
+    margin-block-start: 0.5rem;
+  }
+  .ui-textarea-bottom {
+    grid-area: bottom;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-block-start: 0.5rem;
+  }
+  /* Same pointer/keyboard focus split as .ui-input above. */
+  .ui-textarea:focus-within {
+    border-color: var(--ui-primary);
+  }
+  .ui-textarea[data-focus-visible] {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-textarea[data-state='invalid'] {
+    border-color: var(--ui-danger);
+  }
+  .ui-textarea[data-state='invalid']:focus-within {
+    border-color: var(--ui-danger);
+  }
+  .ui-textarea[data-state='invalid'][data-focus-visible] {
+    outline-color: var(--ui-danger);
+  }
+  .ui-textarea--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-textarea--disabled .ui-textarea-el {
+    cursor: not-allowed;
+  }
+}

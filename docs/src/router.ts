@@ -33,6 +33,16 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/guides/I18nKeys.vue'),
   },
   {
+    path: '/docs/guides/auto-import',
+    name: 'guide-auto-import',
+    component: () => import('./pages/guides/AutoImport.vue'),
+  },
+  {
+    path: '/docs/guides/nuxt',
+    name: 'guide-nuxt',
+    component: () => import('./pages/guides/Nuxt.vue'),
+  },
+  {
     path: '/components/:name',
     name: 'component',
     component: () => import('./pages/ComponentPage.vue'),

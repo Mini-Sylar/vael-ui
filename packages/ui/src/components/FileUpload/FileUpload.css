@@ -1,0 +1,127 @@
+@layer ui-components {
+  /* FileUpload No HTTP client, no auto-upload chrome — the library's job ends at a validated File[] model (plan decision 9). Dashed border, no shadow: an in-flow surface, same convention as Card. The real <input type="file"> is sr-only (not display:none) so it keeps native form participation and a Field label's `for` can open the picker natively. */
+  .ui-file-upload {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .ui-file-upload-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    border: 1px dashed var(--ui-border-strong);
+    border-radius: var(--ui-radius-surface);
+    text-align: center;
+    cursor: pointer;
+    transition:
+      border-color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  .ui-file-upload-dropzone[data-drag-over] {
+    border-color: var(--ui-primary);
+    border-style: solid;
+    background: color-mix(in oklch, var(--ui-primary) 8%, transparent);
+  }
+  .ui-file-upload[data-state='invalid'] .ui-file-upload-dropzone {
+    border-color: var(--ui-danger);
+  }
+  .ui-file-upload-text {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--ui-text-muted);
+  }
+  .ui-file-upload-input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .ui-file-upload-list {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ui-file-upload-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 2px);
+    font-size: 0.8125rem;
+  }
+  .ui-file-upload-item-name {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-file-upload-item-size {
+    flex: none;
+    color: var(--ui-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-file-upload-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border: none;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease;
+  }
+  .ui-file-upload-remove:hover {
+    background: var(--ui-muted);
+    color: var(--ui-danger);
+  }
+  .ui-file-upload--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .ui-file-item-enter-active,
+  .ui-file-item-leave-active {
+    transition: opacity var(--ui-duration-enter) ease;
+  }
+  .ui-file-item-enter-active {
+    transition-delay: calc(var(--ui-file-item-index, 0) * 40ms);
+  }
+  .ui-file-item-enter-from,
+  .ui-file-item-leave-to {
+    opacity: 0;
+  }
+  /* Removed rows keep their slot in a leaving TransitionGroup — absolute positioning during the fade-out avoids a layout jump on the remaining rows while it plays. */
+  .ui-file-item-leave-active {
+    position: absolute;
+    inline-size: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* FileUpload: drag-over/color states are already color-only and the row fade is already opacity-only — both kept intentionally, same sanctioned exception as Avatar's image crossfade above. Restated (not just left out) so it reads as a decision. */
+    .ui-file-upload-dropzone {
+      transition:
+        border-color var(--ui-duration-press) ease,
+        background-color var(--ui-duration-press) ease;
+    }
+    .ui-file-item-enter-active,
+    .ui-file-item-leave-active {
+      transition: opacity var(--ui-duration-enter) ease;
+    }
+  }
+}

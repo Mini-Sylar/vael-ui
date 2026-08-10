@@ -1,0 +1,305 @@
+@layer ui-components {
+  .ui-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: var(--ui-btn-px);
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+
+    will-change: transform;
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
+  }
+
+  .ui-button--sm {
+    --ui-btn-px: 0.75rem;
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-button--md {
+    --ui-btn-px: 1rem;
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-button--lg {
+    --ui-btn-px: 1.25rem;
+    block-size: 2.5rem;
+    font-size: 1rem;
+    border-radius: var(--ui-radius);
+  }
+
+  .ui-button--has-leading {
+    padding-inline-start: calc(var(--ui-btn-px) - 2px);
+  }
+  .ui-button--has-trailing {
+    padding-inline-end: calc(var(--ui-btn-px) - 2px);
+  }
+
+  .ui-button--icon {
+    padding-inline: 0;
+  }
+  .ui-button--icon.ui-button--sm {
+    inline-size: 1.75rem;
+  }
+  .ui-button--icon.ui-button--md {
+    inline-size: 2.25rem;
+  }
+  .ui-button--icon.ui-button--lg {
+    inline-size: 2.5rem;
+  }
+
+  .ui-button--icon::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    translate: -50% -50%;
+    inline-size: max(100%, 2.5rem);
+    block-size: max(100%, 2.5rem);
+  }
+
+  .ui-button--block {
+    display: flex;
+    inline-size: 100%;
+  }
+
+  .ui-button--pill {
+    border-radius: 9999px;
+  }
+
+  .ui-button--primary {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-button--secondary {
+    background: var(--ui-muted);
+    color: var(--ui-text);
+  }
+  .ui-button--outline {
+    background: transparent;
+    color: var(--ui-text);
+    border-color: var(--ui-border);
+  }
+  .ui-button--ghost {
+    background: transparent;
+    color: var(--ui-text);
+  }
+
+  .ui-button--link {
+    background: transparent;
+    color: var(--ui-text);
+    text-underline-offset: 3px;
+  }
+
+  .ui-button--text {
+    background: transparent;
+    color: var(--ui-text);
+  }
+  .ui-button--danger {
+    background: var(--ui-danger);
+    color: var(--ui-danger-contrast);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .ui-button--primary:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      background: var(--ui-primary-hover);
+    }
+    .ui-button--secondary:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      background: var(--ui-muted-hover);
+    }
+    .ui-button--outline:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading),
+    .ui-button--ghost:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      background: var(--ui-muted);
+    }
+    .ui-button--link:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      text-decoration: underline;
+    }
+    .ui-button--text:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      color: var(--ui-text-muted);
+    }
+    .ui-button--danger:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      background: var(--ui-danger-hover);
+    }
+  }
+
+  .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+    transform: scale(0.96);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+      transform: none;
+    }
+  }
+
+  .ui-button:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-button--danger:focus-visible {
+    outline-color: var(--ui-danger);
+  }
+
+  .ui-button:disabled,
+  .ui-button--disabled {
+    cursor: not-allowed;
+  }
+  .ui-button--loading {
+    cursor: progress;
+  }
+  .ui-button--disabled {
+    opacity: 0.5;
+  }
+
+  .ui-button-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      filter var(--ui-duration-press) ease;
+  }
+  .ui-button-label {
+    display: inline-block;
+  }
+  @supports (text-box-trim: trim-both) {
+    .ui-button-label {
+      text-box: trim-both cap alphabetic;
+    }
+
+    .ui-button--icon .ui-button-label {
+      text-box: initial;
+    }
+  }
+
+  .ui-button-leading,
+  .ui-button-trailing {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1em;
+    block-size: 1em;
+    flex: none;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      filter var(--ui-duration-press) ease,
+      inline-size var(--ui-duration-press) var(--ui-ease-out),
+      margin var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-button-leading {
+    margin-inline-end: 0.5em;
+  }
+  .ui-button-trailing {
+    margin-inline-start: 0.5em;
+  }
+
+  .ui-button-loader {
+    display: inline-grid;
+    place-items: center;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ui-button--loader-overlay .ui-button-loader {
+    position: absolute;
+    inset: 0;
+    scale: 0.6;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-button--loader-overlay.ui-button--loading .ui-button-loader {
+    opacity: 1;
+    scale: 1;
+  }
+  .ui-button--loader-overlay.ui-button--loading
+    :is(.ui-button-content, .ui-button-leading, .ui-button-trailing) {
+    opacity: 0;
+    filter: blur(2px);
+  }
+
+  .ui-button--loader-inline .ui-button-loader {
+    inline-size: 0;
+    margin-inline-end: 0;
+    overflow: hidden;
+    transition:
+      opacity var(--ui-duration-press) ease,
+      inline-size var(--ui-duration-press) var(--ui-ease-out),
+      margin-inline-end var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-button--loader-inline.ui-button--loading .ui-button-loader {
+    inline-size: var(--ui-loader-size, 1em);
+    margin-inline-end: 0.5em;
+    opacity: 1;
+  }
+  .ui-button--loader-inline.ui-button--loading .ui-button-leading {
+    inline-size: 0;
+    margin-inline-end: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-button--loader-overlay .ui-button-loader {
+      scale: 1;
+      transition: opacity var(--ui-duration-press) ease;
+    }
+    .ui-button--loader-inline .ui-button-loader,
+    .ui-button-leading,
+    .ui-button-trailing {
+      transition: opacity var(--ui-duration-press) ease;
+    }
+
+    .ui-button-loader .ui-loader {
+      animation: none;
+    }
+    .ui-button--loading .ui-button-loader .ui-loader {
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  .ui-button-badge-wrapper {
+    display: inline-flex;
+    position: relative;
+  }
+  .ui-button-badge-wrapper:has(.ui-button--block) {
+    display: flex;
+    inline-size: 100%;
+  }
+  .ui-button-badge {
+    position: absolute;
+    z-index: 2;
+    display: inline-flex;
+    pointer-events: none;
+  }
+
+  .ui-button-badge[data-placement='top-start'] {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    translate: -50% -50%;
+  }
+  .ui-button-badge[data-placement='top-end'] {
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    translate: 50% -50%;
+  }
+  .ui-button-badge[data-placement='bottom-start'] {
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    translate: -50% 50%;
+  }
+  .ui-button-badge[data-placement='bottom-end'] {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    translate: 50% 50%;
+  }
+}

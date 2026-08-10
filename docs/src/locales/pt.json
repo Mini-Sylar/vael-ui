@@ -51,6 +51,7 @@
     "Combobox": "Um menu suspenso pesquisável que também aceita texto livre, portanto, o preenchimento automático e a marcação são um componente.",
     "ConfigProvider": "Envolve seu aplicativo para fornecer temas, i18n e mesclagem de classes para cada componente abaixo dele.",
     "ContextMenu": "Um menu que se abre ao clicar com o botão direito do mouse, substituindo o menu nativo do navegador.",
+    "Tour": "Um tour guiado que destaca um elemento por vez atrás de um balão posicionado, para integração e tours de produto.",
     "DataTable": "Uma grade de dados com classificação, seleção, redimensionamento e virtualização, composta por Colunas.",
     "DatePicker": "Um campo de texto emparelhado com um popover de calendário para escolher uma data ou intervalo.",
     "Dial": "Um controle de arrastar circular para escolher um valor numérico, como um botão de volume.",
@@ -103,8 +104,9 @@
     "installTitle": "Instalar",
     "intro": "Uma biblioteca de componentes Vue 3 com uma construção Vue Vapor completa e um design independente de animação: CSS simples por padrão ou traga sua própria biblioteca de animação.",
     "title": "Começando",
-    "usageImportNote": "Importe a folha de estilo uma vez no seu ponto de entrada (veja {link} para configuração do estilo base):",
+    "usageImportNote": "Cada componente agora traz seus próprios estilos. Necessário apenas se estiver numa versão anterior à 0.2.0, ou se quiser carregar tudo de uma vez. Veja {link} para a configuração do estilo base.",
     "usageImportNoteLink": "Estilo e camadas em cascata",
+    "usageImportNoteTitle": "Apenas antes da 0.2.0",
     "usageIntro": "Em seguida, use qualquer componente: de <code>'vael-ui'</code> para a compilação VDOM clássica ou <code>'vael-ui/vapor'</code> para a compilação Vapor compilada (modo no-virtual-DOM do Vue 3.6). \nOs mesmos adereços de qualquer maneira:",
     "usageTitle": "Uso",
     "vaporIntro": "Ambas as compilações são enviadas do mesmo pacote e fonte. \nEscolha o que seu aplicativo executa ou misture os dois (o Vue 3.6 oferece suporte à interoperabilidade VDOM/Vapor). \nCada página de componente tem o mesmo botão para compará-los.",
@@ -122,7 +124,9 @@
     "toasterTitle": "Torradeira",
     "tooltipHostIntro": "Alimenta cada <code>v-tooltip</code>. \nSem um montado, as dicas de ferramentas nunca aparecem silenciosamente.",
     "tooltipHostOptions": "São necessárias as mesmas opções que cada dica de ferramenta individual pode substituir:",
-    "tooltipHostTitle": "Dica de ferramentaHost"
+    "tooltipHostTitle": "Dica de ferramentaHost",
+    "popoverHostIntro": "Renderiza tudo o que <code>openPopover()</code> ou <code>confirmAction()</code> com <code>surface: 'popover'</code> cria imperativamente. \nNão é necessário para um <code>",
+    "popoverHostTitle": "PopoverHost"
   },
   "header": {
     "colorScheme": "Alternar esquema de cores",
@@ -148,6 +152,8 @@
     "featureI18nTitle": "i18n integrado",
     "featurePrimitivesBody": "Nenhuma expansão de componentes compostos, nenhum contexto oculto para conectar.",
     "featurePrimitivesTitle": "Um componente por primitivo",
+    "featureSsrBody": "Cada componente verifica se existe um navegador real antes de acessar window ou document, então renderiza com segurança no Nuxt, em apps renderizados no servidor e em geradores de sites estáticos. Este site de documentação é construído com Vite SSG usando os mesmos componentes.",
+    "featureSsrTitle": "Pronto para SSR",
     "featureVaporBody": "Cada componente é compilado através do modo Vapor do Vue 3.6 da mesma fonte.",
     "featureVaporTitle": "Construção Real Vapor, não um calço",
     "headline": "Componentes que são compilados diretamente no Vapor, e não em torno dele."
@@ -179,14 +185,18 @@
     "tailwindGuide": "Usando com Tailwind",
     "menu": "Menu",
     "openMenu": "Abrir menu",
-    "composables": "Combináveis"
+    "composables": "Combináveis",
+    "autoImportGuide": "Importação automática",
+    "nuxtGuide": "Nuxt"
   },
   "pageNotes": {
     "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar."
   },
   "stylingLayers": {
     "intro": "vael-ui é enviado em {layer}. \nCSS sem camadas sempre vence uma camada, independentemente da especificidade, portanto, uma redefinição de base simples e sem camadas substitui silenciosamente os internos do vael-ui. \nCorreção: coloque seus estilos básicos em uma camada também, ordenados primeiro.",
-    "orderNote": "Dois arquivos, é isso. \nA ordem de importação aqui controla apenas a posição da camada, nada mais, uma substituição sem camadas em qualquer lugar sempre vence, independentemente da ordem de carregamento.",
+    "orderNote": "A ordem de importação aqui controla apenas a posição da camada, nada mais, uma substituição sem camadas em qualquer lugar sempre vence, independentemente da ordem de carregamento.",
+    "bundlerNoteTitle": "Apenas antes da 0.2.0",
+    "bundlerNote": "Cada componente agora traz seus próprios estilos. Necessário apenas se estiver numa versão anterior à 0.2.0, ou se quiser carregar tudo de uma vez.",
     "overrideNote": "Substituir deliberadamente um componente ({code} prop, um utilitário Tailwind) deseja que sua regra vença, mantenha esse CSS sem camadas como já está por padrão. \nVeja {link}.",
     "overrideNoteLink": "Usando com Tailwind",
     "title": "Estilo e camadas em cascata",
@@ -242,8 +252,10 @@
     "variable": "Variável"
   },
   "tailwind": {
-    "layerNote": "vael-ui é enviado em {layer}. \nAs classes de utilitário do Tailwind são sem camadas, e o CSS sem camadas sempre vence uma camada, independentemente da especificidade ou ordem de importação, portanto, um utilitário Tailwind em um componente vael-ui sempre substitui o padrão da biblioteca. \nNada de {importante}, nada de brigas de especificidade, nada para configurar. \nVeja {link} para a mecânica geral.",
+    "layerNote": "vael-ui é enviado em {layer}. O Tailwind v4 também envolve seus próprios utilitários em uma camada, então a ordem importa: importe o CSS do vael-ui antes do seu ponto de entrada do Tailwind (abaixo) para que sua camada seja registrada primeiro, mantendo a camada de utilitários do Tailwind depois dela na cascata. Um utilitário do Tailwind em um componente vael-ui sempre vence então, sem {important}, sem brigas de especificidade. Veja {link} para a mecânica geral.",
     "layerNoteLink": "Estilo e camadas em cascata",
+    "orderWarningTitle": "Mantenha essa importação primeiro",
+    "orderWarning": "Desde a 0.2.0, a maioria dos usuários não precisa mais de uma importação explícita de vael-ui/style.css — cada componente carrega seu próprio CSS automaticamente. O Tailwind v4 é a exceção: seus utilitários vivem em sua própria camada de cascata, e a folha de estilo que registrar primeiro um nome de camada vence a ordenação. Importe o CSS do vael-ui antes do seu ponto de entrada do Tailwind, no arquivo de entrada principal do seu app, para que isso permaneça válido mesmo quando o CSS de mais componentes for carregado depois.",
     "mergingIntro": "Cada componente aceita uma propriedade <code>ui</code> para classes de peças (por exemplo, <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). \nPara resolver utilitários conflitantes do Tailwind da maneira que <code>tailwind-merge</code> faria (o último vence por propriedade), conecte-o uma vez:",
     "mergingNote": "Cada classe de parte <code>ui.*</code> na árvore agora passa por <code>twMerge</code>.",
     "mergingTitle": "Mesclando classes com tailwind-merge"
@@ -275,5 +287,45 @@
     "overlaysAndConfirmation": "Sobreposições",
     "positioningAndData": "Posicionamento",
     "utilities": "Utilitários"
+  },
+  "composableDescriptions": {
+    "confirmAction": "Um fluxo de confirmação assíncrono, centralizado como diálogo ou ancorado a um gatilho como popover, que aguarda seu handler antes de fechar.",
+    "useDialogService": "Abre qualquer componente como diálogo a partir do código em vez de markup, resolvendo uma promise com o que ele retornar ao fechar.",
+    "usePopoverService": "Abre qualquer componente como popover ancorado a partir do código em vez de markup, resolvendo uma promise com o que ele retornar ao fechar.",
+    "useToast": "Notificações toast imperativas de qualquer lugar do seu app, com atalhos de variante e uma troca de carregamento para sucesso/erro ciente de promises.",
+    "useTour": "A máquina de estados headless por trás do Tour: navegação por etapas e grupos, sem nenhum DOM ou renderização embutidos.",
+    "useAsyncLoading": "Rastreia cada promise em andamento passada a ela, para que um estado de carregamento só termine quando todas forem resolvidas.",
+    "useNumberFormat": "Formatação e análise de números sensível ao locale, sempre sincronizadas, para que o texto digitado e a exibição formatada coincidam.",
+    "useColorScheme": "Controla o modo de tema claro, escuro ou do sistema a partir de um único composable, deixando a persistência a seu cargo.",
+    "useFloatingPosition": "O motor de posicionamento baseado em Floating UI por trás de Popover, Menu e Tooltip, para construir superfícies ancoradas personalizadas.",
+    "useVirtualizer": "Renderização virtualizada para listas longas, para que apenas as linhas visíveis existam no DOM.",
+    "useFieldControl": "Conecta um controle de formulário personalizado ao Field mais próximo: id, atributos ARIA e estado de foco ou preenchimento."
+  },
+  "autoImport": {
+    "bundlersIntro": "unplugin-vue-components suporta Vite, Webpack, Rollup, esbuild e Rspack. \nO resolvedor em si é apenas uma função simples – funciona de forma idêntica, independentemente de qual você usa.",
+    "bundlersTitle": "Empacotadores",
+    "cssIntro": "Nenhuma fiação extra necessária aqui. \nCada componente vael-ui já importa seu próprio CSS internamente, portanto, resolver a importação do componente extrai seus estilos gratuitamente - ao contrário da maioria dos resolvedores de componentes unplugin-vue, que precisam de uma entrada <code>sideEffects</code> separada para também importar a folha de estilo de um componente.",
+    "cssTitle": "CSS",
+    "intro": "vael-ui/resolver é um resolvedor para unplugin-vue-components — registre-o uma vez e cada componente vael-ui se tornará utilizável em um modelo sem nenhuma importação manual.",
+    "setupIntro": "Adicione o resolvedor sempre que unplugin-vue-components já estiver configurado:",
+    "setupOutro": "É isso aí - escreva a tag, a importação será inserida no momento da construção:",
+    "setupTitle": "Configurar",
+    "title": "Importação automática",
+    "vaporIntro": "vael-ui envia duas compilações da mesma fonte: a compilação VDOM regular e uma compilação Vapor (<code>vael-ui/vapor</code>). \nPor padrão, o resolvedor importa da compilação VDOM; \npasse <code>variant: 'vapor'</code> para resolver a partir da compilação do Vapor. \nEscolha o que seu aplicativo realmente renderiza - não há suporte para misturar os dois em um aplicativo.",
+    "vaporTitle": "Vapor"
+  },
+  "nuxt": {
+    "excludeIntro": "Ignore nomes de componentes específicos — útil se você deseja registrar seu próprio <código>",
+    "excludeTitle": "excluir",
+    "intro": "vael-ui/nuxt é um módulo Nuxt - adicione-o uma vez e cada componente vael-ui se tornará utilizável em um modelo sem nenhuma importação manual, usando o registro de componente integrado do próprio Nuxt em vez de componentes unplugin-vue.",
+    "resolverIntro": "Se a sua configuração do Nuxt já orienta a importação automática de componentes por meio de unplugin-vue-components para outras bibliotecas, use vael-ui/resolver - consulte o guia {link}.",
+    "resolverIntroLink": "Importação automática",
+    "resolverTitle": "Usando unplugin-vue-components em vez disso",
+    "setupIntro": "Registre o módulo em sua configuração do Nuxt:",
+    "setupOutro": "É isso aí — escreva a tag, o Nuxt resolve a importação para você:",
+    "setupTitle": "Configurar",
+    "title": "Nuxt",
+    "vdomOnlyIntro": "Este módulo sempre é registrado a partir da compilação <code>vael-ui</code> regular, nunca <code>vael-ui/vapor</code> — então não há nenhuma opção <code>variant</code> aqui da mesma forma que <code>vael-ui/resolver</code> tem uma. \nO próprio Vue 3.6 suporta hidratação Vapor SSR, mas a versão estável do Nuxt ainda não tem configuração Vapor - está chegando atrás de PRs upstream específicos, ainda não em uma versão geral. \nAssim que o suporte Vapor do próprio Nuxt for lançado, uma opção de <code>variante</code> poderá ser lançada.",
+    "vdomOnlyTitle": "Somente VDOM"
   }
 }

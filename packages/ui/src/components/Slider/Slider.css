@@ -1,0 +1,128 @@
+@layer ui-components {
+  /* Slider Direct manipulation: pointer drag tracks 1:1 with zero position transition — the same "never gate a live drag" stance as PullToRefresh. Thumb/fill placement is driven entirely by two 0–1 fraction custom properties set on the ROOT by useSlider.ts (--ui-slider-p0/-p1, the sole Vue-managed style location); thumbs and the fill carry no inline style of their own, so an imperative spring library may own their transform directly. * The root reserves half a thumb's worth of padding on the value axis so the track's 0%/100% edges land the thumb flush with the root's own outer edge (the native <input type="range"> look) — pure CSS, no per-frame pixel measurement needed. */
+  .ui-slider {
+    --ui-slider-track: 0.25rem;
+    --ui-slider-thumb-size: 1rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    inline-size: 100%;
+    min-block-size: var(--ui-slider-thumb-size);
+    padding-inline: calc(var(--ui-slider-thumb-size) / 2);
+    touch-action: none;
+  }
+  .ui-slider--vertical {
+    flex-direction: column;
+    inline-size: var(--ui-slider-thumb-size);
+    block-size: 12rem;
+    padding-inline: 0;
+    padding-block: calc(var(--ui-slider-thumb-size) / 2);
+  }
+  .ui-slider-track {
+    position: relative;
+    inline-size: 100%;
+    block-size: var(--ui-slider-track);
+    border-radius: 9999px;
+    background: var(--ui-muted);
+    cursor: pointer;
+    /* Query container so the thumb below can read the track's OWN box size via cqi/cqb inside calc() — that's what lets the thumb's live-drag position be a `translate` (compositor-only) instead of an `inset-*` calc (layout) without any JS-side rect sampling. Both children are absolutely positioned (no intrinsic-size contribution), so `size` containment changes nothing about how the track itself renders. */
+    container-type: size;
+  }
+  .ui-slider--vertical .ui-slider-track {
+    inline-size: var(--ui-slider-track);
+    block-size: 100%;
+  }
+  .ui-slider-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--ui-primary);
+  }
+  /* Single-thumb fill spans [0, p0]; range fill spans [p0, p1] — same translate-then-scale technique as Progress's --ui-progress-scale, extended with a translate for the range case's moving start edge. Percentages in `translate` always resolve against the box's OWN (pre-scale) size, so the two properties compose correctly regardless of the fixed translate->rotate->scale application order. */
+  .ui-slider:not(.ui-slider--vertical):not([data-range]) .ui-slider-fill {
+    transform-origin: left center;
+    translate: 0 0;
+    scale: var(--ui-slider-p0, 0) 1;
+  }
+  .ui-slider:not(.ui-slider--vertical)[data-range] .ui-slider-fill {
+    transform-origin: left center;
+    translate: calc(var(--ui-slider-p0, 0) * 100%) 0;
+    scale: calc(var(--ui-slider-p1, 0) - var(--ui-slider-p0, 0)) 1;
+  }
+  .ui-slider--vertical:not([data-range]) .ui-slider-fill {
+    transform-origin: center bottom;
+    translate: 0 0;
+    scale: 1 var(--ui-slider-p0, 0);
+  }
+  .ui-slider--vertical[data-range] .ui-slider-fill {
+    transform-origin: center bottom;
+    translate: 0 calc(var(--ui-slider-p0, 0) * -100%);
+    scale: 1 calc(var(--ui-slider-p1, 0) - var(--ui-slider-p0, 0));
+  }
+  .ui-slider-thumb {
+    position: absolute;
+    /* Static (never recalculated) anchor at the track's logical-start corner — the actual live-drag position lives entirely in `translate` below, not here, so this declaration costs one layout pass at mount and never again. */
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    inline-size: var(--ui-slider-thumb-size);
+    block-size: var(--ui-slider-thumb-size);
+    flex: none;
+    border-radius: 50%;
+    background: var(--ui-surface);
+    border: 2px solid var(--ui-primary);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+    cursor: grab;
+    touch-action: none;
+    scale: 1;
+    /* Position rides `translate`, not `inset-inline-start` (a layout property) — --ui-slider-p0 is rewritten every pointermove frame during a live drag, so this must stay compositor-only (skips layout+paint, matching .ui-slider-fill's scale above). `cqi`/`cqb` (enabled by .ui-slider-track's container-type: size) read the track's own box size directly, so `p0 * 100cqi` reproduces the exact px offset `inset-inline-start: calc(p0 * 100%)` used to produce; the trailing -50% on each axis is the same "center the thumb on its point" offset the old inset+translate combo did, just folded into one translate — translate/rotate/scale stay independent properties (see the fill rule above), so this doesn't disturb the hover/press scale below. Caveat: unlike inset-inline-start, translate's X/Y are physical, not logical — this hasn't been verified correct under dir="rtl" (neither had the pre-existing rule, in practice). */
+    translate: calc(var(--ui-slider-p0, 0) * 100cqi - 50%) calc(50cqb - 50%);
+    /* Only the hover/press feedback scale transitions — position never does. */
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-slider-thumb[data-index='1'] {
+    translate: calc(var(--ui-slider-p1, 0) * 100cqi - 50%) calc(50cqb - 50%);
+  }
+  .ui-slider--vertical .ui-slider-thumb {
+    translate: calc(50cqi - 50%) calc((1 - var(--ui-slider-p0, 0)) * 100cqb - 50%);
+  }
+  .ui-slider--vertical .ui-slider-thumb[data-index='1'] {
+    translate: calc(50cqi - 50%) calc((1 - var(--ui-slider-p1, 0)) * 100cqb - 50%);
+  }
+  .ui-slider-thumb:active,
+  .ui-slider-thumb[data-active] {
+    cursor: grabbing;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-slider-thumb:hover {
+      scale: 1.15;
+    }
+  }
+  /* Shrink-on-press, not grow — aligned with Knob/Dial's face and Button's own :active scale (this library's dominant press-feedback direction) instead of growing further past the hover scale above. Declared AFTER the :hover rule (same order as Knob/Dial's own hover-then-active) so it wins the equal-specificity tie on a desktop pointer, which is hovering AND pressing at once — source order, not just direction, has to match or press silently loses to hover again. */
+  .ui-slider-thumb:active,
+  .ui-slider-thumb[data-active] {
+    scale: 0.96;
+  }
+  .ui-slider-thumb:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-slider[data-invalid] .ui-slider-thumb {
+    border-color: var(--ui-danger);
+  }
+  .ui-slider--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Slider: the live drag position was NEVER transitioned (direct manipulation, gated on nothing) — this only drops the decorative hover/press scale, the same :active reset as Button's list above. */
+    .ui-slider-thumb {
+      transition: none;
+    }
+    .ui-slider-thumb:hover,
+    .ui-slider-thumb:active,
+    .ui-slider-thumb[data-active] {
+      scale: 1;
+    }
+  }
+}

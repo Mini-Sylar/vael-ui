@@ -32,8 +32,8 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import DialogHost from '../../src/components/DialogHost.vue'
-import PopoverHost from '../../src/components/PopoverHost.vue'
+import DialogHost from '../../src/components/DialogHost/DialogHost.vue'
+import PopoverHost from '../../src/components/PopoverHost/PopoverHost.vue'
 import { confirmAction } from '../../src/composables/confirmAction'
 
 const resultText = shallowRef('')

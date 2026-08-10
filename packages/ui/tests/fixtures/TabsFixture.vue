@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Tabs from '../../src/components/Tabs.vue'
+import Tabs from '../../src/components/Tabs/Tabs.vue'
 
 const props = defineProps<{ orientation?: 'horizontal' | 'vertical' }>()
 

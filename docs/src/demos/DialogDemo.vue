@@ -571,3 +571,10 @@ function openRequiredAction() {
   padding-block: 0.35rem;
 }
 </style>
+
+<!-- Unscoped: the overlay teleports to <body> with Dialog, out of scoped reach. -->
+<style>
+.blurred-overlay {
+  backdrop-filter: blur(8px);
+}
+</style>

@@ -9,7 +9,7 @@ import {
   watch,
 } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
-import type { PopoverProps } from '../components/Popover.vue'
+import type { PopoverProps } from '../components/Popover/Popover.vue'
 
 export interface PopoverRef<D = unknown, T = unknown> {
   /** Whatever was passed via `openPopover(Component, { data })`. */

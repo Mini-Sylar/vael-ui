@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Dialog from '../../src/components/Dialog.vue'
+import Dialog from '../../src/components/Dialog/Dialog.vue'
 
 const open = shallowRef(false)
 const lines = Array.from({ length: 60 }, (_, i) => `Line ${i} of long content to force scrolling.`)

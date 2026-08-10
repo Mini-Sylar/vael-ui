@@ -1,14 +1,6 @@
 import { shallowRef, toValue, watch, onScopeDispose } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import {
-  autoUpdate,
-  computePosition,
-  flip,
-  limitShift,
-  offset,
-  shift,
-  size,
-} from '@floating-ui/dom'
+import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
 import type { Placement, Side } from '@floating-ui/dom'
 
 export type Align = 'start' | 'center' | 'end'
@@ -86,8 +78,11 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
           mainAxis: toValue(options.sideOffset) ?? 8,
           crossAxis: toValue(options.alignOffset) ?? 0,
         }),
+        // No altBoundary here: it resolves the boundary from the REFERENCE's
+        // clipping ancestors, so a trigger inside any scrollable panel makes
+        // flip/shift/size believe there's no room anywhere.
         flip(),
-        shift({ limiter: limitShift() }),
+        shift({ padding: 8 }),
         size({
           padding: 8,
           apply({ availableHeight, rects }) {

@@ -1,0 +1,31 @@
+@layer ui-components {
+  .ui-loader {
+    display: inline-block;
+    position: relative;
+    inline-size: 1em;
+    block-size: 1em;
+    flex: none;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-block-start-color: currentColor;
+    animation: ui-spin 600ms linear infinite;
+  }
+
+  @keyframes ui-spin {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-loader {
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes ui-pulse {
+    50% {
+      opacity: 0.4;
+    }
+  }
+}

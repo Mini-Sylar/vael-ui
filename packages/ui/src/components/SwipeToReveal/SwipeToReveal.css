@@ -1,0 +1,38 @@
+@layer ui-components {
+  .ui-swipe-reveal {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--ui-radius);
+    touch-action: pan-y;
+  }
+  .ui-swipe-reveal-actions {
+    position: absolute;
+    inset-block: 0;
+    display: flex;
+    align-items: stretch;
+  }
+  .ui-swipe-reveal[data-side='trailing'] .ui-swipe-reveal-actions {
+    inset-inline-end: 0;
+  }
+  .ui-swipe-reveal[data-side='leading'] .ui-swipe-reveal-actions {
+    inset-inline-start: 0;
+  }
+  .ui-swipe-reveal-content {
+    position: relative;
+    z-index: 1;
+    background: var(--ui-surface);
+    touch-action: pan-y;
+    cursor: grab;
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-swipe-reveal[data-dragging] .ui-swipe-reveal-content {
+    transition: none;
+    cursor: grabbing;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-swipe-reveal-content {
+      transition: none;
+    }
+  }
+}

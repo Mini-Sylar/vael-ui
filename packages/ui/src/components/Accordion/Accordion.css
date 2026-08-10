@@ -1,0 +1,6 @@
+@layer ui-components {
+  .ui-accordion {
+    display: flex;
+    flex-direction: column;
+  }
+}

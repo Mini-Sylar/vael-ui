@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Input from '../../src/components/Input.vue'
+import Input from '../../src/components/Input/Input.vue'
 
 const plain = shallowRef('')
 const trimmed = shallowRef('')

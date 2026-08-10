@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Collapsible from '../../src/components/Collapsible.vue'
+import Collapsible from '../../src/components/Collapsible/Collapsible.vue'
 
 const props = withDefaults(
   defineProps<{

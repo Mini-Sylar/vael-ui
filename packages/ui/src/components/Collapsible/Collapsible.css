@@ -1,0 +1,27 @@
+@layer ui-components {
+  .ui-collapsible-trigger {
+    display: inline-flex;
+  }
+  .ui-collapsible--disabled .ui-collapsible-trigger {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .ui-collapsible-panel {
+    contain: layout;
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-collapsible-body {
+    opacity: 0;
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-collapsible-panel[data-state='open'] .ui-collapsible-body,
+  .ui-collapsible-panel[data-state='opening'] .ui-collapsible-body {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-collapsible-panel {
+      transition: none;
+    }
+  }
+}

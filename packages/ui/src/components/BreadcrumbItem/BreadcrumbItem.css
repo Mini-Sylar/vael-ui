@@ -1,0 +1,44 @@
+@layer ui-components {
+  .ui-breadcrumb-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-inline-size: 0;
+  }
+  .ui-breadcrumb-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    /* `as` can render a <button> instead of the default <a> — reset the native
+       chrome an anchor never had in the first place, so both look identical. */
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    color: var(--ui-text-muted);
+    text-decoration: none;
+    border-radius: calc(var(--ui-radius) - 6px);
+    transition: color var(--ui-duration-press) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-breadcrumb-link:hover {
+      color: var(--ui-text);
+      text-decoration: underline;
+    }
+  }
+  .ui-breadcrumb-link:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-breadcrumb-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    overflow: hidden;
+    color: var(--ui-text);
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

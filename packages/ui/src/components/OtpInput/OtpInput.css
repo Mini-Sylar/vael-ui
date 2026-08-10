@@ -1,0 +1,119 @@
+@layer ui-components {
+  /* OtpInput One real <input>, stretched invisibly (`opacity:0`, not display:none — it must keep focus/paste/autofill) over the whole cell row and painted last so it's the actual hit target (positioned elements stack above in-flow siblings regardless of DOM order, so this needs no z-index). The cells underneath are pure decoration. See OtpInput.vue's SFC comment for why this architecture, not N separate inputs. */
+  .ui-otp {
+    position: relative;
+    display: inline-flex;
+  }
+  .ui-otp-cells {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .ui-otp-cell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    transition: border-color var(--ui-duration-press) ease;
+  }
+  .ui-otp--sm .ui-otp-cell {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-otp--md .ui-otp-cell {
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    font-size: 1rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-otp--lg .ui-otp-cell {
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    font-size: 1.125rem;
+    border-radius: var(--ui-radius);
+  }
+  .ui-otp-cell[data-active] {
+    border-color: var(--ui-primary);
+  }
+  /* Only the next EMPTY cell gets the blinking caret — an active but
+     already-filled cell (editing back into typed digits) would otherwise
+     draw the line through the character itself. A caret, not decorative
+     motion — kept as-is under reduced motion. */
+  .ui-otp-cell[data-active]:not([data-filled])::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block-start: 50%;
+    inline-size: 1px;
+    block-size: 1.125em;
+    translate: -50% -50%;
+    background: var(--ui-primary);
+    animation: ui-otp-caret-blink 1s step-end infinite;
+  }
+  /* A custom #cell slot means "full markup swap" — the wrapper sheds every paint style (border/background/color/caret) down to pure geometry (size, centering, position:relative for the slot's own absolute children), or the library's default chrome doubles up behind whatever the slot renders. */
+  .ui-otp-cell--custom {
+    border-color: transparent;
+    background: none;
+  }
+  .ui-otp-cell--custom[data-active]::after {
+    content: none;
+  }
+  /* Fires on every keystroke during a rapid, keyboard-driven entry flow (audit finding: a scale-pop here reads as decoration on a high-frequency action). A plain opacity fade still confirms each digit registered without the added motion — the same treatment already used as the reduced-motion fallback below, now the only treatment. */
+  .ui-otp-cell[data-filled] .ui-otp-cell-char {
+    animation: ui-otp-pop-fade var(--ui-duration-press) ease;
+  }
+
+  .ui-otp--no-anim .ui-otp-cell-char {
+    animation: none;
+  }
+  .ui-otp-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    opacity: 0;
+    cursor: text;
+    caret-color: transparent;
+    /* This is the REAL, actually-focused element — full row width, not any one cell's shape. Without this, the browser's own default focus ring renders on ITS bounding box regardless of what the synthetic data-active/data-focus-visible per-cell styling below does, which is exactly the "square outline" bug: a native rectangular ring around the whole row, sitting on top of whatever shape (circular, in the custom-cell demo) the visible cells actually are. The per-cell data-focus-visible outline above is the library's own, deliberate replacement for this. */
+    outline: none;
+  }
+  .ui-otp[data-state='invalid'] .ui-otp-cell {
+    border-color: var(--ui-danger);
+  }
+  .ui-otp[data-focus-visible] .ui-otp-cell[data-active] {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  /* The wrapper's own border-radius (a square-ish rounded-rect) has nothing to do with whatever shape the custom slot content actually is — a circular custom cell got a squared-off outline traced around its square wrapper. Full markup swap means focus indication is the custom content's job too, same reasoning as the border/background/caret suppression above. */
+  .ui-otp[data-focus-visible] .ui-otp-cell--custom[data-active] {
+    outline: none;
+  }
+  .ui-otp--disabled {
+    opacity: 0.5;
+  }
+  .ui-otp--disabled .ui-otp-input {
+    cursor: not-allowed;
+  }
+
+  @keyframes ui-otp-caret-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ui-otp-pop-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

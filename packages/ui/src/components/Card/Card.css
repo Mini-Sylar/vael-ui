@@ -1,0 +1,70 @@
+@layer ui-components {
+  .ui-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    border: 1px solid var(--ui-border-strong);
+    border-radius: var(--ui-radius-surface);
+  }
+  .ui-card-header {
+    display: grid;
+    gap: 0.25rem;
+    padding: 1.25rem 1.25rem 0;
+  }
+  .ui-card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .ui-card-description {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--ui-text-muted);
+  }
+  .ui-card-body {
+    padding: 1.25rem;
+  }
+  .ui-card-header + .ui-card-body {
+    padding-block-start: 0.75rem;
+  }
+  .ui-card-body:has(+ .ui-card-footer) {
+    padding-block-end: 0.75rem;
+  }
+  .ui-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem 1.25rem;
+  }
+
+  .ui-card--interactive {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    will-change: transform;
+    transition:
+      border-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-card--interactive:hover {
+      border-color: var(--ui-text-muted);
+    }
+  }
+  .ui-card--interactive:active {
+    transform: scale(0.98);
+  }
+  .ui-card--interactive:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-card--interactive:active {
+      transform: none;
+    }
+  }
+}

@@ -3,7 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import CheckboxFixture from './fixtures/CheckboxFixture.vue'
-import Checkbox from '../src/components/Checkbox.vue'
+import Checkbox from '../src/components/Checkbox/Checkbox.vue'
 
 test('click toggles the boolean model; label click toggles it too', async () => {
   const screen = render(CheckboxFixture, {})

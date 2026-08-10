@@ -1,0 +1,125 @@
+@layer ui-components {
+  /* MenuList: static, always-in-flow sidebar nav. */
+  .ui-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    /* Containing block for .ui-menu-list-indicator's absolute positioning. */
+    position: relative;
+  }
+  /* Sliding indicator between rows. */
+  .ui-menu-list-indicator {
+    position: absolute;
+    inset-inline: 0;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: color-mix(in oklch, var(--ui-primary) 7%, var(--ui-surface));
+    transition:
+      inset-block-start var(--ui-duration-press) var(--ui-ease-out),
+      block-size var(--ui-duration-press) var(--ui-ease-out),
+      background-color var(--ui-duration-press) ease;
+  }
+  /* Retarget darken to indicator via :has(). */
+  .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:hover:not(:disabled))
+    .ui-menu-list-indicator,
+  .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:focus-visible) .ui-menu-list-indicator {
+    background: color-mix(in oklch, var(--ui-primary) 12%, var(--ui-surface));
+  }
+  .ui-menu-list-item {
+    /* Positioning context for item slot. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    /* Nested rows step in per depth. */
+    padding: 0.5rem calc(0.625rem + var(--ui-menu-list-depth, 0) * 1rem);
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-menu-list-item:hover:not(:disabled):not([aria-disabled='true']),
+  .ui-menu-list-item:focus-visible {
+    outline: none;
+    background: var(--ui-muted);
+  }
+  .ui-menu-list-item:disabled,
+  .ui-menu-list-item[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-menu-list-item--danger {
+    color: var(--ui-danger);
+  }
+  /* Current page row styling. */
+  .ui-menu-list-item[aria-current='page'] {
+    color: var(--ui-primary);
+    font-weight: 600;
+  }
+  /* Stay transparent to let indicator show. */
+  .ui-menu-list-item[aria-current='page']:hover:not(:disabled),
+  .ui-menu-list-item[aria-current='page']:focus-visible {
+    background: transparent;
+  }
+  /* Keyboard focus marker: left accent bar. */
+  .ui-menu-list-item:focus-visible::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.3125rem;
+    inset-inline-start: 0.125rem;
+    inline-size: 3px;
+    border-radius: 9999px;
+    background: var(--ui-primary);
+  }
+  .ui-menu-list-item--group {
+    cursor: default;
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding-block: 0.375rem;
+  }
+  .ui-menu-list-item-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    /* Per-instance tunable custom property. */
+    inline-size: var(--ui-menu-list-icon-size, 1em);
+    block-size: var(--ui-menu-list-icon-size, 1em);
+  }
+  /* Re-square icon to prevent distortion. */
+  .ui-menu-list-item-icon svg,
+  .ui-menu-list-item-icon img {
+    inline-size: var(--ui-menu-list-icon-size, 1em);
+    block-size: var(--ui-menu-list-icon-size, 1em);
+  }
+  .ui-menu-list-item-label {
+    flex: 1;
+  }
+  .ui-menu-list-item-shortcut {
+    margin-inline-start: 1.5rem;
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-menu-list-separator {
+    block-size: 1px;
+    margin: 0.25rem 0;
+    background: var(--ui-border);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-menu-list-indicator {
+      transition: none;
+    }
+  }
+}

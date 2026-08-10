@@ -9,7 +9,7 @@ import {
   watch,
 } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
-import type { DialogProps } from '../components/Dialog.vue'
+import type { DialogProps } from '../components/Dialog/Dialog.vue'
 
 export interface DialogRef<D = unknown, T = unknown> {
   /** Whatever was passed via `openDialog(Component, { data })`. */

@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Textarea from '../../src/components/Textarea.vue'
+import Textarea from '../../src/components/Textarea/Textarea.vue'
 
 const plain = shallowRef('')
 const lazy = shallowRef('')

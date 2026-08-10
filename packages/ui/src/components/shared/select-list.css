@@ -1,0 +1,72 @@
+@layer ui-components {
+  /* Overflow indicator is plain span. */
+  .ui-select-chip--overflow {
+    padding-inline: 0.5rem;
+    color: var(--ui-text-muted);
+  }
+  .ui-select-body {
+    position: relative;
+    padding: 0.25rem;
+    /* Max-height is floating-ui live output. */
+    transition: max-height var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-select-empty,
+  .ui-select-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.625rem;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+  }
+  .ui-select-loading-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+  /* Natural sizing: padding + line-height. */
+  .ui-select-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    padding: 0.5rem 0.625rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    color: var(--ui-text);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  /* Current value gets quiet permanent tint. */
+  .ui-select-option[data-selected] {
+    background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-surface));
+  }
+  /* Active reads same as hover (APG convention). */
+  .ui-select-option[data-active] {
+    background: var(--ui-muted);
+  }
+  .ui-select-option[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-select-option-label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-select-option-check {
+    flex: none;
+    color: var(--ui-primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-select-body {
+      transition: none;
+    }
+  }
+}

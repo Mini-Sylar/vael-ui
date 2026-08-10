@@ -19,8 +19,8 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import SelectButton from '../../src/components/SelectButton.vue'
-import type { SelectButtonItem } from '../../src/components/SelectButton.vue'
+import SelectButton from '../../src/components/SelectButton/SelectButton.vue'
+import type { SelectButtonItem } from '../../src/components/SelectButton/SelectButton.vue'
 
 withDefaults(defineProps<{ allowEmpty?: boolean }>(), { allowEmpty: true })
 

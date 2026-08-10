@@ -1,0 +1,97 @@
+@layer ui-components {
+  /* InputNumber Composes Input's own frame verbatim (InputNumber.vue renders <Input> directly) — only the stepper column, riding Input's `#end` slot, is new here. Steppers are `tabindex="-1"`: APG's spinbutton pattern puts the keyboard path on the input itself (ArrowUp/Down), the buttons are a pointer-only convenience. */
+  .ui-input-number-steppers {
+    display: inline-flex;
+    flex-direction: column;
+    align-self: stretch;
+    margin-inline-end: -0.75rem;
+  }
+  .ui-input-number-stepper {
+    display: grid;
+    place-items: center;
+    flex: 1 1 0;
+    border: 0;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition:
+      color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-input-number-stepper--sm {
+    inline-size: 1.5rem;
+    border-radius: calc(var(--ui-radius) - 6px);
+  }
+  .ui-input-number-stepper--sm svg {
+    inline-size: 0.5rem;
+    block-size: 0.4375rem;
+  }
+  .ui-input-number-stepper--md {
+    inline-size: 1.625rem;
+    border-radius: calc(var(--ui-radius) - 5px);
+  }
+  .ui-input-number-stepper--md svg {
+    inline-size: 0.5625rem;
+    block-size: 0.5rem;
+  }
+  .ui-input-number-stepper--lg {
+    inline-size: 1.75rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-input-number-stepper--lg svg {
+    inline-size: 0.625rem;
+    block-size: 0.5625rem;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-input-number-stepper:hover {
+      color: var(--ui-text);
+    }
+  }
+  .ui-input-number-stepper:active {
+    transform: scale(0.85);
+  }
+  .ui-input-number-stepper[data-disabled],
+  .ui-input-number-stepper:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+  .ui-input-number-stepper--split {
+    border-radius: 50%;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--sm {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--sm svg {
+    inline-size: 0.6875rem;
+    block-size: 0.6875rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--md {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--md svg {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--lg {
+    inline-size: 2rem;
+    block-size: 2rem;
+  }
+  .ui-input-number-stepper--split.ui-input-number-stepper--lg svg {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-input-number-stepper--split:hover {
+      background: var(--ui-muted);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-input-number-stepper:active {
+      transform: none;
+    }
+  }
+}

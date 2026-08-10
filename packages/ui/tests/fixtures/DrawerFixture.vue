@@ -23,8 +23,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Dialog from '../../src/components/Dialog.vue'
-import type { DialogPosition } from '../../src/components/Dialog.vue'
+import Dialog from '../../src/components/Dialog/Dialog.vue'
+import type { DialogPosition } from '../../src/components/Dialog/Dialog.vue'
 
 withDefaults(defineProps<{ position?: DialogPosition }>(), { position: 'right' })
 

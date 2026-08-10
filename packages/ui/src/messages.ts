@@ -54,6 +54,22 @@ export interface UiMessages {
     /** aria-label for the wordless chevron trigger, when no `triggerLabel` prop is given. */
     more: string
   }
+  breadcrumb: {
+    /** aria-label for the `<nav>` landmark. */
+    label: string
+  }
+  commandPalette: {
+    placeholder: string
+    empty: string
+  }
+  tour: {
+    next: string
+    back: string
+    skip: string
+    done: string
+    /** `{current}` and `{total}` are replaced with the step position — e.g. "Step {current} of {total}". */
+    stepOf: string
+  }
 }
 
 export type PartialUiMessages = {
@@ -78,6 +94,15 @@ export const defaultMessages: UiMessages = {
   treeSelect: { clear: 'Clear selection' },
   chip: { remove: 'Remove' },
   splitButton: { more: 'More actions' },
+  breadcrumb: { label: 'Breadcrumb' },
+  commandPalette: { placeholder: 'Search…', empty: 'No results' },
+  tour: {
+    next: 'Next',
+    back: 'Back',
+    skip: 'Skip',
+    done: 'Done',
+    stepOf: 'Step {current} of {total}',
+  },
 }
 
 export const messagesKey: InjectionKey<Ref<UiMessages>> = Symbol('ui-messages')
@@ -105,6 +130,9 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     treeSelect: { ...base.treeSelect, ...overrides.treeSelect },
     chip: { ...base.chip, ...overrides.chip },
     splitButton: { ...base.splitButton, ...overrides.splitButton },
+    breadcrumb: { ...base.breadcrumb, ...overrides.breadcrumb },
+    commandPalette: { ...base.commandPalette, ...overrides.commandPalette },
+    tour: { ...base.tour, ...overrides.tour },
   }
 }
 
@@ -161,6 +189,18 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
   treeSelect: { clear: 'uiKit.treeSelect.clear' },
   chip: { remove: 'uiKit.chip.remove' },
   splitButton: { more: 'uiKit.splitButton.more' },
+  breadcrumb: { label: 'uiKit.breadcrumb.label' },
+  commandPalette: {
+    placeholder: 'uiKit.commandPalette.placeholder',
+    empty: 'uiKit.commandPalette.empty',
+  },
+  tour: {
+    next: 'uiKit.tour.next',
+    back: 'uiKit.tour.back',
+    skip: 'uiKit.tour.skip',
+    done: 'uiKit.tour.done',
+    stepOf: 'uiKit.tour.stepOf',
+  },
 }
 
 /**
@@ -253,6 +293,35 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (splitButtonMore !== i18nKeyMap.splitButton.more) {
     result.splitButton = { more: splitButtonMore }
   }
+
+  const breadcrumbLabel = i18n.t(i18nKeyMap.breadcrumb.label)
+  if (breadcrumbLabel !== i18nKeyMap.breadcrumb.label) {
+    result.breadcrumb = { label: breadcrumbLabel }
+  }
+
+  const commandPalettePlaceholder = i18n.t(i18nKeyMap.commandPalette.placeholder)
+  const commandPaletteEmpty = i18n.t(i18nKeyMap.commandPalette.empty)
+  const commandPalette: PartialUiMessages['commandPalette'] = {}
+  if (commandPalettePlaceholder !== i18nKeyMap.commandPalette.placeholder) {
+    commandPalette.placeholder = commandPalettePlaceholder
+  }
+  if (commandPaletteEmpty !== i18nKeyMap.commandPalette.empty) {
+    commandPalette.empty = commandPaletteEmpty
+  }
+  if (Object.keys(commandPalette).length > 0) result.commandPalette = commandPalette
+
+  const tourNext = i18n.t(i18nKeyMap.tour.next)
+  const tourBack = i18n.t(i18nKeyMap.tour.back)
+  const tourSkip = i18n.t(i18nKeyMap.tour.skip)
+  const tourDone = i18n.t(i18nKeyMap.tour.done)
+  const tourStepOf = i18n.t(i18nKeyMap.tour.stepOf)
+  const tour: PartialUiMessages['tour'] = {}
+  if (tourNext !== i18nKeyMap.tour.next) tour.next = tourNext
+  if (tourBack !== i18nKeyMap.tour.back) tour.back = tourBack
+  if (tourSkip !== i18nKeyMap.tour.skip) tour.skip = tourSkip
+  if (tourDone !== i18nKeyMap.tour.done) tour.done = tourDone
+  if (tourStepOf !== i18nKeyMap.tour.stepOf) tour.stepOf = tourStepOf
+  if (Object.keys(tour).length > 0) result.tour = tour
 
   return result
 }

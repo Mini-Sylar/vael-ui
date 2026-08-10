@@ -1,0 +1,241 @@
+@layer ui-components {
+  /* Calendar: extracted month-grid body. */
+  .ui-calendar-root {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    inline-size: max-content;
+  }
+  .ui-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .ui-calendar-nav {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: none;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-calendar-nav:hover {
+    background: var(--ui-muted);
+    color: var(--ui-text);
+  }
+  .ui-calendar-nav:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 1px;
+  }
+  .ui-calendar-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ui-text);
+  }
+  /* Button only when drillable. */
+  .ui-calendar-label--button {
+    border: none;
+    background: none;
+    padding: 0.125rem 0.375rem;
+    border-radius: calc(var(--ui-radius) - 6px);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-calendar-label--button:hover {
+    background: var(--ui-muted);
+  }
+  .ui-calendar-label--button:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 1px;
+  }
+  .ui-calendar-body {
+    position: relative;
+  }
+  .ui-calendar-weekdays,
+  .ui-calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(2rem, 1fr));
+  }
+  .ui-calendar-weekday {
+    display: grid;
+    place-items: center;
+    padding-block: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ui-text-muted);
+  }
+  /* Own containing block so the leaving grid's inset-block-start:0 lands at
+     the grid's own top edge, not .ui-calendar-body's (which the weekdays
+     row above also shares). */
+  .ui-calendar-grid-wrap {
+    position: relative;
+  }
+  .ui-calendar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .ui-calendar-cell {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: calc(var(--ui-radius) - 4px);
+    color: var(--ui-text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease;
+  }
+  .ui-calendar-cell:hover:not(.ui-calendar-cell--disabled),
+  .ui-calendar-cell:focus-visible {
+    background: var(--ui-muted);
+    outline: none;
+  }
+  .ui-calendar-cell--outside {
+    color: var(--ui-text-muted);
+    opacity: 0.5;
+  }
+  .ui-calendar-cell--today {
+    box-shadow: inset 0 0 0 1.5px var(--ui-primary);
+  }
+  .ui-calendar-cell--selected {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  /* Specificity tie-break: selected stays visible on hover. */
+  .ui-calendar-cell.ui-calendar-cell--selected:hover,
+  .ui-calendar-cell.ui-calendar-cell--selected:focus-visible {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  /* Range mode: endpoints solid, between tinted. */
+  .ui-calendar-cell--range-start,
+  .ui-calendar-cell--range-end {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-calendar-cell.ui-calendar-cell--range-start:hover,
+  .ui-calendar-cell.ui-calendar-cell--range-start:focus-visible,
+  .ui-calendar-cell.ui-calendar-cell--range-end:hover,
+  .ui-calendar-cell.ui-calendar-cell--range-end:focus-visible {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  /* Tinted connector between endpoints. */
+  .ui-calendar-cell--in-range {
+    background: color-mix(in oklch, var(--ui-primary) 22%, transparent);
+    border-radius: 3px;
+  }
+  /* Prevents flicker on hover. */
+  .ui-calendar-cell.ui-calendar-cell--in-range:hover {
+    background: color-mix(in oklch, var(--ui-primary) 22%, transparent);
+  }
+  /* Flat inner edge, rounded outer corners. */
+  .ui-calendar-cell--range-start:not(.ui-calendar-cell--range-end) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  .ui-calendar-cell--range-end:not(.ui-calendar-cell--range-start) {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+  .ui-calendar-cell--disabled {
+    color: var(--ui-text-muted);
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  /* Month/year grids: same layout as day grid. */
+  .ui-calendar-month-grid,
+  .ui-calendar-year-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .ui-calendar-month-row,
+  .ui-calendar-year-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(2.75rem, 1fr));
+    gap: 0.25rem;
+  }
+  .ui-calendar-month-cell,
+  .ui-calendar-year-cell {
+    display: grid;
+    place-items: center;
+    block-size: 2.5rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+    color: var(--ui-text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease;
+  }
+  .ui-calendar-month-cell:hover:not(.ui-calendar-month-cell--disabled),
+  .ui-calendar-month-cell:focus-visible,
+  .ui-calendar-year-cell:hover:not(.ui-calendar-year-cell--disabled),
+  .ui-calendar-year-cell:focus-visible {
+    background: var(--ui-muted);
+    outline: none;
+  }
+  .ui-calendar-month-cell--selected,
+  .ui-calendar-year-cell--selected {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  /* Specificity tie-break for month/year selected. */
+  .ui-calendar-month-cell.ui-calendar-month-cell--selected:hover,
+  .ui-calendar-month-cell.ui-calendar-month-cell--selected:focus-visible,
+  .ui-calendar-year-cell.ui-calendar-year-cell--selected:hover,
+  .ui-calendar-year-cell.ui-calendar-year-cell--selected:focus-visible {
+    background: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
+  .ui-calendar-month-cell--disabled,
+  .ui-calendar-year-cell--disabled {
+    color: var(--ui-text-muted);
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Month-transition: grid slides by direction. */
+  .ui-calendar-grid-enter-active,
+  .ui-calendar-grid-leave-active {
+    transition:
+      transform var(--ui-duration-enter) var(--ui-ease-in-out),
+      opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-calendar-grid-leave-active {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 100%;
+  }
+  .ui-calendar-grid-enter-from {
+    opacity: 0;
+    transform: translateX(calc(0.75rem * var(--ui-calendar-direction, 1)));
+  }
+  .ui-calendar-grid-leave-to {
+    opacity: 0;
+    transform: translateX(calc(-0.75rem * var(--ui-calendar-direction, 1)));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Calendar's month-transition is movement (translateX) — dropped here, same rule as every other position/slide transition in this block; the opacity half of the crossfade is kept. */
+    .ui-calendar-grid-enter-active,
+    .ui-calendar-grid-leave-active {
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+    }
+    .ui-calendar-grid-enter-from,
+    .ui-calendar-grid-leave-to {
+      transform: none;
+    }
+  }
+}

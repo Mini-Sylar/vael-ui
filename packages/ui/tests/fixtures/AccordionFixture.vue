@@ -20,8 +20,8 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Accordion from '../../src/components/Accordion.vue'
-import AccordionItem from '../../src/components/AccordionItem.vue'
+import Accordion from '../../src/components/Accordion/Accordion.vue'
+import AccordionItem from '../../src/components/AccordionItem/AccordionItem.vue'
 
 // collapsible/motionCss need explicit defaults matching Accordion's own — an
 // absent boolean prop resolves to false, not undefined, so without this the

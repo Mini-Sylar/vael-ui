@@ -6,8 +6,8 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import Combobox from '../../src/components/Combobox.vue'
-import type { SelectItemData } from '../../src/components/Combobox.vue'
+import Combobox from '../../src/components/Combobox/Combobox.vue'
+import type { SelectItemData } from '../../src/components/Combobox/Combobox.vue'
 
 const props = withDefaults(defineProps<{ multiple?: boolean }>(), { multiple: false })
 

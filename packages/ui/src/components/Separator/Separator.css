@@ -1,0 +1,38 @@
+@layer ui-components {
+  .ui-separator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .ui-separator--horizontal {
+    inline-size: 100%;
+  }
+  .ui-separator--horizontal:not(:has(.ui-separator-text)) {
+    block-size: 1px;
+    background: var(--ui-border);
+  }
+  .ui-separator--vertical {
+    flex-direction: column;
+    block-size: 100%;
+  }
+  .ui-separator--vertical:not(:has(.ui-separator-text)) {
+    inline-size: 1px;
+    background: var(--ui-border);
+  }
+  .ui-separator-line {
+    flex: 1 1 auto;
+    background: var(--ui-border);
+  }
+  .ui-separator--horizontal .ui-separator-line {
+    block-size: 1px;
+  }
+  .ui-separator--vertical .ui-separator-line {
+    inline-size: 1px;
+  }
+  .ui-separator-text {
+    flex: none;
+    font-size: 0.75rem;
+    color: var(--ui-text-muted);
+    white-space: nowrap;
+  }
+}

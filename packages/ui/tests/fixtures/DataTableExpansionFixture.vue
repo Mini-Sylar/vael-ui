@@ -24,7 +24,7 @@
   entirely — no other test in this file needs `#expansion` toggled on/off.
 -->
 <script setup lang="ts">
-import DataTable from '../../src/components/DataTable.vue'
+import DataTable from '../../src/components/DataTable/DataTable.vue'
 
 interface Person {
   id: string

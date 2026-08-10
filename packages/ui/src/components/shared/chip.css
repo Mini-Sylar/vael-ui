@@ -1,0 +1,41 @@
+@layer ui-components {
+  .ui-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+    max-inline-size: 8rem;
+    border-radius: 9999px;
+    background: var(--ui-muted);
+    color: var(--ui-text);
+    line-height: 1.25;
+  }
+  .ui-chip--md {
+    padding: 0.125rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+  .ui-chip-item-enter-active,
+  .ui-chip-item-leave-active {
+    transition: opacity var(--ui-duration-enter) ease;
+  }
+  .ui-chip-item-enter-from,
+  .ui-chip-item-leave-to {
+    opacity: 0;
+  }
+  .ui-chip-item-leave-active {
+    position: absolute;
+  }
+  .ui-chip-item-move {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-chip-item-enter-active,
+    .ui-chip-item-leave-active {
+      transition: opacity var(--ui-duration-enter) ease;
+    }
+    .ui-chip-item-move {
+      transition: none;
+    }
+  }
+}

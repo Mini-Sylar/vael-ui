@@ -1,0 +1,95 @@
+@layer ui-components {
+  .ui-avatar {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+  }
+  .ui-avatar--sm {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    font-size: 0.6875rem;
+  }
+  .ui-avatar--md {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    font-size: 0.8125rem;
+  }
+  .ui-avatar--lg {
+    inline-size: 3.25rem;
+    block-size: 3.25rem;
+    font-size: 1rem;
+  }
+  .ui-avatar-frame {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+    background: var(--ui-muted);
+    color: var(--ui-text-muted);
+  }
+  .ui-avatar--circle .ui-avatar-frame {
+    border-radius: 50%;
+  }
+  .ui-avatar--square.ui-avatar--sm .ui-avatar-frame {
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-avatar--square.ui-avatar--md .ui-avatar-frame {
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-avatar--square.ui-avatar--lg .ui-avatar-frame {
+    border-radius: var(--ui-radius);
+  }
+  .ui-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+    font-weight: 600;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .ui-avatar-image {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    transition: opacity var(--ui-duration-enter) ease;
+  }
+  .ui-avatar-badge {
+    position: absolute;
+    z-index: 1;
+    display: inline-flex;
+  }
+  .ui-avatar-badge[data-placement='top-start'] {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    translate: -25% -25%;
+  }
+  .ui-avatar-badge[data-placement='top-end'] {
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    translate: 25% -25%;
+  }
+  .ui-avatar-badge[data-placement='bottom-start'] {
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    translate: -25% 25%;
+  }
+  .ui-avatar-badge[data-placement='bottom-end'] {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    translate: 25% 25%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-avatar-image {
+      transition: opacity var(--ui-duration-enter) ease;
+    }
+  }
+}

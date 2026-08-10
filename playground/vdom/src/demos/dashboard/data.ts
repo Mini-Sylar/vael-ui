@@ -99,6 +99,21 @@ export interface StatDef {
   progress?: number
 }
 
+export interface TeamMember {
+  name: string
+  role: string
+}
+
+export const teamMembers: TeamMember[] = [
+  { name: 'Ama Mensah', role: 'Workspace admin' },
+  { name: 'Kwame Owusu', role: 'Support lead' },
+  { name: 'Priya Nair', role: 'Ops' },
+  { name: 'Wei Chen', role: 'Engineering' },
+  { name: 'Sofia Rossi', role: 'Finance' },
+  { name: 'Liam Walsh', role: 'Support' },
+  { name: 'Noor Haddad', role: 'Ops' },
+]
+
 export const stats: StatDef[] = [
   {
     label: 'Revenue (30d)',

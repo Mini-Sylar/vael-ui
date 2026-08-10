@@ -1,0 +1,11 @@
+@layer ui-components {
+  /* DatePicker: Select chrome wrapping a Calendar. */
+  .ui-date-picker-panel {
+    padding: 0;
+  }
+  .ui-date-picker-icon {
+    display: inline-grid;
+    place-items: center;
+    color: var(--ui-text-muted);
+  }
+}

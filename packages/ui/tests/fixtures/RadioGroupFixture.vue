@@ -23,8 +23,8 @@
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
-import RadioGroup from '../../src/components/RadioGroup.vue'
-import Radio from '../../src/components/Radio.vue'
+import RadioGroup from '../../src/components/RadioGroup/RadioGroup.vue'
+import Radio from '../../src/components/Radio/Radio.vue'
 
 withDefaults(
   defineProps<{

@@ -3,7 +3,7 @@ import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TextareaFixture from './fixtures/TextareaFixture.vue'
-import Textarea from '../src/components/Textarea.vue'
+import Textarea from '../src/components/Textarea/Textarea.vue'
 
 test('v-model round-trips', async () => {
   render(TextareaFixture, {})

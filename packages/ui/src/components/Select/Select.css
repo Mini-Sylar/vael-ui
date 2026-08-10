@@ -1,0 +1,55 @@
+@layer ui-components {
+  .ui-select-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface);
+    padding-inline: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+    /* Colors only. */
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-select-trigger--sm {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-select-trigger--md {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-select-trigger--lg {
+    block-size: 2.5rem;
+    font-size: 1rem;
+    border-radius: var(--ui-radius);
+  }
+  /* Div role="combobox" needs own focus-visible. */
+  .ui-select-trigger:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-select-trigger[data-invalid] {
+    border-color: var(--ui-danger);
+  }
+  .ui-select-trigger[data-invalid]:focus-visible {
+    outline-color: var(--ui-danger);
+  }
+  .ui-select-trigger--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  /* Chips clip horizontally within fixed-height trigger. */
+  .ui-select-chips {
+    position: relative; /* containing block for a leaving chip's position:absolute below */
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+  }
+}

@@ -38,8 +38,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Button from '../../src/components/Button.vue'
-import Toolbar from '../../src/components/Toolbar.vue'
+import Button from '../../src/components/Button/Button.vue'
+import Toolbar from '../../src/components/Toolbar/Toolbar.vue'
 
 withDefaults(defineProps<{ width?: string }>(), { width: '900px' })
 

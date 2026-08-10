@@ -1,0 +1,77 @@
+@layer ui-components {
+  .ui-progress {
+    display: block;
+    inline-size: 100%;
+  }
+  .ui-progress-track {
+    position: relative;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: var(--ui-muted);
+  }
+  .ui-progress--sm .ui-progress-track {
+    block-size: 0.375rem;
+  }
+  .ui-progress--md .ui-progress-track {
+    block-size: 0.5rem;
+  }
+  .ui-progress-fill {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: 100%;
+    border-radius: inherit;
+    transform-origin: 0 50%;
+    scale: calc(var(--ui-progress-scale, 0)) 1;
+    background: var(--ui-primary);
+
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-progress--success .ui-progress-fill {
+    background: var(--ui-success);
+  }
+  .ui-progress--warning .ui-progress-fill {
+    background: var(--ui-warning);
+  }
+  .ui-progress--danger .ui-progress-fill {
+    background: var(--ui-danger);
+  }
+  .ui-progress--info .ui-progress-fill {
+    background: var(--ui-info);
+  }
+
+  .ui-progress[data-state='indeterminate'] .ui-progress-fill {
+    inline-size: 40%;
+    scale: 1 1;
+    transition: none;
+
+    animation: ui-progress-sweep 1.5s linear infinite;
+  }
+
+  @keyframes ui-progress-sweep {
+    from {
+      translate: -100% 0;
+    }
+    to {
+      translate: 250% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-progress-fill {
+      transition: none;
+    }
+    .ui-progress[data-state='indeterminate'] .ui-progress-fill {
+      inline-size: 100%;
+      scale: 1 1;
+      translate: 0 0;
+      animation: ui-pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes ui-pulse {
+    50% {
+      opacity: 0.4;
+    }
+  }
+}

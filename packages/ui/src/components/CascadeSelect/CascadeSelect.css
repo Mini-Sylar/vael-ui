@@ -1,0 +1,117 @@
+@layer ui-components {
+  /* CascadeSelect: panel is a Menu instance. */
+  /* Trigger fills row like Input. */
+  .ui-cascade-select .ui-menu-trigger {
+    display: flex;
+    inline-size: 100%;
+  }
+  .ui-cascade-select-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    padding-inline: 0.75rem;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    /* Colors only. */
+    transition:
+      border-color var(--ui-duration-press) ease,
+      outline-color var(--ui-duration-press) ease;
+  }
+  .ui-cascade-select-trigger--sm {
+    block-size: 1.75rem;
+    font-size: 0.8125rem;
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
+  .ui-cascade-select-trigger--md {
+    block-size: 2.25rem;
+    font-size: 0.875rem;
+    border-radius: calc(var(--ui-radius) - 2px);
+  }
+  .ui-cascade-select-trigger--lg {
+    block-size: 2.5rem;
+    font-size: 1rem;
+    border-radius: var(--ui-radius);
+  }
+  .ui-cascade-select-trigger:hover:not(.ui-cascade-select-trigger--disabled) {
+    border-color: var(--ui-border-strong);
+  }
+  /* Div role="combobox" needs own focus-visible. */
+  .ui-cascade-select-trigger:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-cascade-select-trigger[data-invalid] {
+    border-color: var(--ui-danger);
+  }
+  .ui-cascade-select-trigger[data-invalid]:focus-visible {
+    outline-color: var(--ui-danger);
+  }
+  .ui-cascade-select-trigger--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-cascade-select-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1.5em;
+    block-size: 1.5em;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-cascade-select-clear svg {
+    inline-size: 0.85em;
+    block-size: 0.85em;
+  }
+  .ui-cascade-select-clear:hover {
+    background: var(--ui-muted);
+    color: var(--ui-text);
+  }
+  .ui-cascade-select-value {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ui-cascade-select-trigger[data-placeholder] .ui-cascade-select-value {
+    color: var(--ui-text-muted);
+  }
+  .ui-cascade-select-chevron {
+    flex: none;
+    color: var(--ui-text-muted);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-cascade-select-chevron svg {
+    inline-size: 1em;
+    block-size: 1em;
+  }
+  .ui-cascade-select-trigger[data-state='open'] .ui-cascade-select-chevron {
+    transform: rotate(180deg);
+  }
+  .ui-cascade-select-empty {
+    padding: 0.75rem;
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* CascadeSelect: the trigger chevron's rotation is movement — same rule and reasoning as Accordion's chevron above. Its panel is a literal <Menu>, so Menu's own reduced-motion rules already cover it. */
+    .ui-cascade-select-chevron {
+      transition: none;
+    }
+  }
+}

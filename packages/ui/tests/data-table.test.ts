@@ -7,6 +7,7 @@ import type { RenderResult } from 'vitest-browser-vue'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
 import DataTableReorderFixture from './fixtures/DataTableReorderFixture.vue'
 import DataTableExpansionFixture from './fixtures/DataTableExpansionFixture.vue'
+import DataTableVirtualizeFixture from './fixtures/DataTableVirtualizeFixture.vue'
 
 function headerCells(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>('.ui-datatable-th'))
@@ -48,6 +49,9 @@ async function renderTable(props: {
   showGridlines?: boolean
   resizableColumns?: boolean
   frozenColumns?: number
+  manualSort?: boolean
+  lazy?: boolean
+  total?: number
 }) {
   const screen = render(DataTableFixture, { props })
   await nextTick()
@@ -334,22 +338,35 @@ test('clicking a built-in row checkbox does not also fire row-click (same intera
   await expect.element(screen.getByTestId('row-click-count')).toHaveTextContent('0')
 })
 
-test('scrollHeight is unset by default: no scroll container styling or sticky header', async () => {
+test('scrollHeight is unset by default: a single combined table, no body-scroll wrapper', async () => {
   const screen = await renderTable({ rowCount: 3, showStatusColumn: false })
-  const scrollX = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-x')!
-  expect(scrollX.classList.contains('ui-datatable-scroll-x--scrollable')).toBe(false)
-  expect(scrollX.style.maxHeight).toBe('')
-  const th = screen.container.querySelector<HTMLElement>('.ui-datatable-th')!
-  expect(getComputedStyle(th).position).not.toBe('sticky')
+  expect(screen.container.querySelector('.ui-datatable-scroll-y')).toBeNull()
+  expect(screen.container.querySelectorAll('.ui-datatable-table').length).toBe(1)
+  // A single table means <thead> and <tbody> are siblings inside it.
+  const table = screen.container.querySelector('.ui-datatable-table')!
+  expect(table.querySelector(':scope > .ui-datatable-thead')).not.toBeNull()
+  expect(table.querySelector(':scope > .ui-datatable-tbody')).not.toBeNull()
 })
 
-test('scrollHeight adds an internal max-height scroll container with a sticky header', async () => {
+test('scrollHeight splits into a non-scrolling head table + a separately scrollable body table', async () => {
   const screen = await renderTable({ rowCount: 3, showStatusColumn: false, scrollHeight: '200px' })
-  const scrollX = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-x')!
-  expect(scrollX.classList.contains('ui-datatable-scroll-x--scrollable')).toBe(true)
-  expect(scrollX.style.maxHeight).toBe('200px')
-  const th = screen.container.querySelector<HTMLElement>('.ui-datatable-th')!
-  expect(getComputedStyle(th).position).toBe('sticky')
+  // Two real tables now: a head-only one and a body-only one.
+  const tables = screen.container.querySelectorAll('.ui-datatable-table')
+  expect(tables.length).toBe(2)
+  expect(tables[0]!.querySelector('.ui-datatable-thead')).not.toBeNull()
+  expect(tables[0]!.querySelector('.ui-datatable-tbody')).toBeNull()
+  expect(tables[1]!.querySelector('.ui-datatable-tbody')).not.toBeNull()
+  expect(tables[1]!.querySelector('.ui-datatable-thead')).toBeNull()
+
+  // The body table's own scrolling ancestor is `.ui-datatable-scroll-y`, and
+  // the header lives OUTSIDE it — this is what actually keeps the native
+  // scrollbar's track starting at the body, not overlapping the header, the
+  // way a single sticky-<th>-inside-one-scroll-container never quite can.
+  const scrollY = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  expect(scrollY).not.toBeNull()
+  expect(getComputedStyle(scrollY).overflowY).toBe('auto')
+  expect(scrollY.querySelector('.ui-datatable-thead')).toBeNull()
+  expect(scrollY.querySelector('.ui-datatable-tbody')).not.toBeNull()
 })
 
 test('stackedBreakpoint is unset by default: no data-stacked attribute regardless of viewport', async () => {
@@ -566,6 +583,29 @@ test("selectionMode 'checkbox' (default): a row click alone does not select it",
   expect(rows[0]!.getAttribute('data-selected')).toBeNull()
 })
 
+test("selectionMode 'row' puts a pointer cursor on every row; 'checkbox' mode doesn't", async () => {
+  const rowMode = await renderTable({
+    rowCount: 2,
+    showStatusColumn: false,
+    builtinSelectable: true,
+    selectionMode: 'row',
+  })
+  const rowModeRows = bodyRows(rowMode.container)
+  expect(rowModeRows.every((tr) => tr.classList.contains('ui-datatable-tr--clickable'))).toBe(true)
+  expect(getComputedStyle(rowModeRows[0]!).cursor).toBe('pointer')
+
+  const checkboxMode = await renderTable({
+    rowCount: 2,
+    showStatusColumn: false,
+    builtinSelectable: true,
+  })
+  expect(
+    bodyRows(checkboxMode.container).some((tr) =>
+      tr.classList.contains('ui-datatable-tr--clickable'),
+    ),
+  ).toBe(false)
+})
+
 test('single: renders a real Radio per row instead of a Checkbox, with no header select-all control', async () => {
   const screen = await renderTable({
     rowCount: 3,
@@ -703,4 +743,111 @@ test('row expansion: stacked mode always shows expansion content inline, with no
   expect(screen.container.querySelector('[data-testid="expansion-p0"]')).not.toBeNull()
   expect(screen.container.querySelector('[data-testid="expansion-p1"]')).not.toBeNull()
   expect(screen.container.querySelector('[data-testid="expansion-p2"]')).not.toBeNull()
+})
+
+// -------------------------------------------------------------- v-model:sort
+test('v-model:sort reflects every header click: field/dir update in the parent, not just internal aria-sort', async () => {
+  const screen = await renderTable({ rowCount: 4, showStatusColumn: false })
+  const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
+  const sortButton = nameHeader.querySelector<HTMLElement>('.ui-datatable-sort-button')!
+
+  await expect.element(screen.getByTestId('sort-field')).toHaveTextContent('')
+  await userEvent.click(sortButton)
+  await expect.element(screen.getByTestId('sort-field')).toHaveTextContent('name')
+  await expect.element(screen.getByTestId('sort-dir')).toHaveTextContent('asc')
+
+  await userEvent.click(sortButton)
+  await expect.element(screen.getByTestId('sort-dir')).toHaveTextContent('desc')
+
+  await userEvent.click(sortButton)
+  await expect.element(screen.getByTestId('sort-field')).toHaveTextContent('')
+})
+
+// -------------------------------------------------------------- manualSort
+test('manualSort: a header click updates v-model:sort/aria-sort but never reorders the given data itself', async () => {
+  const screen = await renderTable({ rowCount: 4, showStatusColumn: false, manualSort: true })
+  const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
+  const sortButton = nameHeader.querySelector<HTMLElement>('.ui-datatable-sort-button')!
+  const originalOrder = bodyRows(screen.container).map((tr) => tr.textContent)
+
+  await userEvent.click(sortButton)
+  await vi.waitFor(() => expect(nameHeader.getAttribute('aria-sort')).toBe('ascending'))
+  await expect.element(screen.getByTestId('sort-dir')).toHaveTextContent('asc')
+  // The consumer owns re-fetching sorted data under manualSort — DataTable
+  // must not silently sort what it was handed.
+  expect(bodyRows(screen.container).map((tr) => tr.textContent)).toEqual(originalOrder)
+
+  await userEvent.click(sortButton)
+  await vi.waitFor(() => expect(nameHeader.getAttribute('aria-sort')).toBe('descending'))
+  expect(bodyRows(screen.container).map((tr) => tr.textContent)).toEqual(originalOrder)
+})
+
+// -------------------------------------------------------------- lazy
+test('lazy: data is rendered as-is (no client slicing) and the footer total/page-count come from `total`, not data.length', async () => {
+  const screen = await renderTable({
+    rowCount: 2,
+    showStatusColumn: false,
+    lazy: true,
+    rows: 10,
+    total: 47,
+  })
+  // Only the 2 rows actually handed to `data` render — lazy never slices further.
+  expect(bodyRows(screen.container).length).toBe(2)
+  await expect.element(screen.getByTestId('footer-total')).toHaveTextContent('47')
+  await expect.element(screen.getByTestId('footer-page-count')).toHaveTextContent('5')
+})
+
+test('lazy without total falls back to data.length for the footer total', async () => {
+  const screen = await renderTable({ rowCount: 3, showStatusColumn: false, lazy: true, rows: 10 })
+  await expect.element(screen.getByTestId('footer-total')).toHaveTextContent('3')
+  await expect.element(screen.getByTestId('footer-page-count')).toHaveTextContent('1')
+})
+
+// -------------------------------------------------------------- virtualize
+test('virtualize: renders only a window of rows (+ spacers) for a large dataset, not every row', async () => {
+  const screen = render(DataTableVirtualizeFixture, { props: { rowCount: 2000 } })
+  await nextTick()
+  await vi.waitFor(() => {
+    const rendered = screen.container.querySelectorAll('[data-virtual-index]').length
+    expect(rendered).toBeGreaterThan(0)
+    expect(rendered).toBeLessThan(100)
+  })
+  // Two spacer rows (top + bottom) bound the rendered window.
+  expect(screen.container.querySelectorAll('.ui-datatable-tr--spacer').length).toBe(2)
+})
+
+test('virtualize: scrolling the container windows in later rows', async () => {
+  const screen = render(DataTableVirtualizeFixture, { props: { rowCount: 2000 } })
+  await nextTick()
+  await expect.element(screen.getByTestId('exposed-el')).toBeInTheDocument()
+
+  const scrollEl = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  scrollEl.scrollTop = 20000
+  scrollEl.dispatchEvent(new Event('scroll'))
+
+  await vi.waitFor(() => {
+    const indices = Array.from(
+      screen.container.querySelectorAll<HTMLElement>('[data-virtual-index]'),
+    ).map((el) => Number(el.getAttribute('data-virtual-index')))
+    expect(Math.max(...indices)).toBeGreaterThan(200)
+  })
+})
+
+test('virtualize: reach-end fires once the window nears the last row, then re-arms only when data grows', async () => {
+  const screen = render(DataTableVirtualizeFixture, { props: { rowCount: 8, virtualize: true } })
+  await nextTick()
+  await vi.waitFor(() => {
+    expect(screen.getByTestId('reach-end-count').element().textContent).toBe('1')
+  })
+
+  await screen.rerender({ rowCount: 10, virtualize: true })
+  await vi.waitFor(() => {
+    expect(screen.getByTestId('reach-end-count').element().textContent).toBe('2')
+  })
+})
+
+test('virtualize is off by default: every row renders with no spacer rows', async () => {
+  const screen = await renderTable({ rowCount: 5, showStatusColumn: false })
+  expect(screen.container.querySelectorAll('.ui-datatable-tr--spacer').length).toBe(0)
+  expect(bodyRows(screen.container).length).toBe(5)
 })

@@ -15,8 +15,8 @@
 
 <script setup lang="ts">
 import { h, shallowRef } from 'vue'
-import Dock from '../../src/components/Dock.vue'
-import type { DockItemData } from '../../src/components/Dock.vue'
+import Dock from '../../src/components/Dock/Dock.vue'
+import type { DockItemData } from '../../src/components/Dock/Dock.vue'
 import type { Side } from '@floating-ui/dom'
 
 withDefaults(

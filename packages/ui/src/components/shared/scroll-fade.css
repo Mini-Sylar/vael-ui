@@ -1,0 +1,103 @@
+@layer ui-components {
+  /* Scroll fade: general-purpose. */
+  @property --fade-top-end {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+  }
+  @property --fade-bottom-start {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 91%;
+  }
+
+  .scroll-fade {
+    /* Variable prevents Lightning CSS from folding scroll() into shorthand. */
+    --timeline-self: scroll(self);
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 var(--fade-top-end),
+      #000 var(--fade-bottom-start),
+      transparent 99%
+    );
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    animation:
+      scroll-fade-top linear both,
+      scroll-fade-bottom linear both;
+    animation-timeline: var(--timeline-self), var(--timeline-self);
+    animation-range:
+      0px 40px,
+      90% 100%;
+  }
+
+  @keyframes scroll-fade-top {
+    from {
+      --fade-top-end: 0%;
+    }
+    to {
+      --fade-top-end: 9%;
+    }
+  }
+
+  @keyframes scroll-fade-bottom {
+    from {
+      --fade-bottom-start: 91%;
+    }
+    to {
+      --fade-bottom-start: 100%;
+    }
+  }
+
+  @property --fade-left-end {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 0%;
+  }
+  @property --fade-right-start {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 91%;
+  }
+
+  .scroll-fade-x {
+    --timeline-self-x: scroll(self inline);
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 var(--fade-left-end),
+      #000 var(--fade-right-start),
+      transparent 99%
+    );
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    animation:
+      scroll-fade-left linear both,
+      scroll-fade-right linear both;
+    animation-timeline: var(--timeline-self-x), var(--timeline-self-x);
+    animation-range:
+      0px 40px,
+      90% 100%;
+  }
+
+  @keyframes scroll-fade-left {
+    from {
+      --fade-left-end: 0%;
+    }
+    to {
+      --fade-left-end: 9%;
+    }
+  }
+
+  @keyframes scroll-fade-right {
+    from {
+      --fade-right-start: 91%;
+    }
+    to {
+      --fade-right-start: 100%;
+    }
+  }
+}

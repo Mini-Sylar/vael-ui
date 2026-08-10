@@ -1,0 +1,32 @@
+@layer ui-components {
+  .ui-split-button {
+    display: inline-flex;
+    align-items: stretch;
+  }
+  .ui-split-button-main {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    border-inline-end-width: 0;
+  }
+  .ui-split-button-trigger {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+    border-inline-start-width: 1px;
+    border-inline-start-style: solid;
+    border-inline-start-color: color-mix(in oklch, currentColor 22%, transparent);
+  }
+  .ui-split-button-chevron {
+    inline-size: 0.85em;
+    block-size: 0.85em;
+    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-split-button[data-state='open'] .ui-split-button-chevron {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-split-button-chevron {
+      transition: none;
+    }
+  }
+}

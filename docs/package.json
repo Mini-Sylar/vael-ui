@@ -13,11 +13,11 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@phosphor-icons/vue": "^2.2.1",
-    "@unhead/vue": "^2.1.16",
-    "@vueuse/core": "^14.3.0",
+    "@unhead/vue": "^2.1.17",
+    "@vueuse/core": "^14.4.0",
     "gsap": "^3.15.0",
     "motion-v": "^2.3.0",
-    "shiki": "^4.3.1",
+    "shiki": "^4.4.2",
     "vael-ui": "workspace:*",
     "vee-validate": "^4.15.1",
     "vite-ssg": "^28.3.0",
@@ -29,9 +29,9 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "beasties": "^0.4.3",
     "typescript": "^6.0.3",
-    "vite": "^8.1.5",
+    "vite": "^8.2.1",
     "vite-ssg-sitemap": "^0.10.0",
-    "vue-component-meta": "^3.3.8",
-    "vue-tsc": "^3.3.8"
+    "vue-component-meta": "^3.3.9",
+    "vue-tsc": "^3.3.9"
   }
 }

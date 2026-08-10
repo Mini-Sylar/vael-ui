@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import Slider from '../../src/components/Slider.vue'
+import Slider from '../../src/components/Slider/Slider.vue'
 
 const singleValue = shallowRef(20)
 const rangeValue = shallowRef<[number, number]>([20, 60])

@@ -1,0 +1,78 @@
+@layer ui-components {
+  .ui-resizable {
+    position: relative;
+    transition: inline-size var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-resizable--vertical {
+    transition-property: block-size;
+  }
+  .ui-resizable[data-resizing] {
+    transition: none;
+  }
+  .ui-resizable--disabled .ui-resizable-handle {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .ui-resizable-handle {
+    position: absolute;
+    z-index: 1;
+    touch-action: none;
+  }
+  .ui-resizable-handle[data-direction='horizontal'] {
+    inset-block: 0;
+    inline-size: 6px;
+    cursor: col-resize;
+  }
+  .ui-resizable-handle[data-direction='horizontal'][data-edge='end'] {
+    inset-inline-end: -3px;
+  }
+  .ui-resizable-handle[data-direction='horizontal'][data-edge='start'] {
+    inset-inline-start: -3px;
+  }
+  .ui-resizable-handle[data-direction='vertical'] {
+    inset-inline: 0;
+    block-size: 6px;
+    cursor: row-resize;
+  }
+  .ui-resizable-handle[data-direction='vertical'][data-edge='end'] {
+    inset-block-end: -3px;
+  }
+  .ui-resizable-handle[data-direction='vertical'][data-edge='start'] {
+    inset-block-start: -3px;
+  }
+  .ui-resizable-handle::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    background: transparent;
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-resizable-handle[data-direction='horizontal']::after {
+    inline-size: 2px;
+    block-size: 100%;
+  }
+  .ui-resizable-handle[data-direction='vertical']::after {
+    inline-size: 100%;
+    block-size: 2px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-resizable-handle:hover::after {
+      background: var(--ui-primary);
+    }
+  }
+  .ui-resizable-handle:active::after,
+  .ui-resizable-handle[data-active]::after {
+    background: var(--ui-primary);
+  }
+  .ui-resizable-handle:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-resizable {
+      transition: none;
+    }
+  }
+}

@@ -10,8 +10,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import ContextMenu from '../../src/components/ContextMenu.vue'
-import type { MenuItemData } from '../../src/components/Menu.vue'
+import ContextMenu from '../../src/components/ContextMenu/ContextMenu.vue'
+import type { MenuItemData } from '../../src/components/Menu/Menu.vue'
 
 withDefaults(defineProps<{ disabled?: boolean }>(), { disabled: false })
 

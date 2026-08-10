@@ -1,0 +1,91 @@
+@layer ui-components {
+  /* Radio Same visually-hidden-input technique as Checkbox/Switch. */
+  .ui-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--ui-text);
+  }
+  .ui-radio-frame {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    flex-shrink: 0;
+  }
+  .ui-radio-input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .ui-radio-control {
+    position: absolute;
+    inset: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* input (below in paint order) stays the click target */
+    border: 1px solid var(--ui-border-strong);
+    border-radius: 9999px;
+    background: var(--ui-surface);
+    transition:
+      background-color var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
+  }
+  .ui-radio-dot {
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 9999px;
+    background: var(--ui-primary-contrast);
+    scale: 0.4;
+    opacity: 0;
+    transition:
+      scale var(--ui-duration-press) var(--ui-ease-out),
+      opacity var(--ui-duration-press) ease;
+  }
+  .ui-radio[data-state='checked'] .ui-radio-control {
+    background: var(--ui-primary);
+    border-color: var(--ui-primary);
+  }
+  .ui-radio[data-state='checked'] .ui-radio-dot {
+    scale: 1;
+    opacity: 1;
+  }
+  .ui-radio-input:focus-visible + .ui-radio-control {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-radio--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-radio--disabled .ui-radio-input {
+    cursor: not-allowed;
+  }
+  /* First paint only — see Checkbox's identical guard. */
+  .ui-radio--no-anim .ui-radio-dot {
+    transition: none;
+  }
+  .ui-radio-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding-block-start: 0.0625rem;
+  }
+  .ui-radio-description {
+    font-size: 0.8125rem;
+    color: var(--ui-text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Radio: the dot's scale-in is movement — drop the scale, keep the fade. */
+    .ui-radio-dot {
+      transition: opacity var(--ui-duration-press) ease;
+    }
+  }
+}

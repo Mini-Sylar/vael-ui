@@ -1,0 +1,138 @@
+@layer ui-components {
+  /* Menu: same positioner/panel split as Popover. */
+  .ui-menu-positioner {
+    z-index: var(--ui-z-popover, 55);
+    /* Shrink-to-fit; floating-ui requirement. */
+    inline-size: max-content;
+  }
+  .ui-menu-panel {
+    position: relative;
+    border-radius: var(--ui-radius-surface);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    box-shadow: var(--ui-panel-shadow);
+    /* Clips body to panel corners. */
+    overflow: hidden;
+  }
+  .ui-menu-body {
+    padding: 0.25rem;
+  }
+  .ui-menu-trigger {
+    display: inline-flex;
+  }
+  /* Data-driven item defaults. */
+  .ui-menu-item {
+    /* Positioning context for #item slot content. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    min-inline-size: 9rem;
+    padding: 0.5rem 0.625rem;
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: transparent;
+    color: var(--ui-text);
+    font: inherit;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  /* Highlight with background, not focus ring (APG convention). */
+  .ui-menu-item:hover:not(:disabled):not([aria-disabled='true']),
+  .ui-menu-item:focus-visible {
+    outline: none;
+    background: var(--ui-muted);
+  }
+  .ui-menu-item:active:not(:disabled):not([aria-disabled='true']) {
+    transform: scale(0.96);
+  }
+  .ui-menu-item:disabled,
+  .ui-menu-item[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ui-menu-item--danger {
+    color: var(--ui-danger);
+  }
+  .ui-menu-item-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    /* Custom property for per-instance size tuning. */
+    inline-size: var(--ui-menu-icon-size, 1em);
+    block-size: var(--ui-menu-icon-size, 1em);
+  }
+  /* Re-square icon to prevent distortion. */
+  .ui-menu-item-icon svg,
+  .ui-menu-item-icon img {
+    inline-size: var(--ui-menu-icon-size, 1em);
+    block-size: var(--ui-menu-icon-size, 1em);
+  }
+  .ui-menu-item-label {
+    flex: 1;
+  }
+  .ui-menu-item-shortcut {
+    margin-inline-start: 1.5rem;
+    color: var(--ui-text-muted);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-menu-item-chevron {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    margin-inline-start: 0.5rem;
+    color: var(--ui-text-muted);
+  }
+  /* Submenu-trigger stays highlighted while open. */
+  .ui-menu-item[aria-expanded='true'] {
+    background: var(--ui-muted);
+  }
+  .ui-menu-separator {
+    block-size: 1px;
+    margin: 0.25rem 0;
+    background: var(--ui-border);
+  }
+  .ui-menu-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-menu-leave-active {
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-menu-enter-from,
+  .ui-menu-leave-to {
+    opacity: 0;
+  }
+  .ui-menu-enter-active .ui-menu-panel {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-menu-leave-active .ui-menu-panel {
+    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* Never from scale(0). */
+  .ui-menu-enter-from .ui-menu-panel,
+  .ui-menu-leave-to .ui-menu-panel {
+    transform: scale(0.96);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-menu-enter-active,
+    .ui-menu-leave-active,
+    .ui-menu-enter-active .ui-menu-panel,
+    .ui-menu-leave-active .ui-menu-panel {
+      transition: none;
+    }
+    .ui-menu-enter-from .ui-menu-panel,
+    .ui-menu-leave-to .ui-menu-panel {
+      transform: none;
+    }
+  }
+}

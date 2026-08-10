@@ -4,9 +4,9 @@ import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import RadioGroupFixture from './fixtures/RadioGroupFixture.vue'
-import Field from '../src/components/Field.vue'
-import RadioGroup from '../src/components/RadioGroup.vue'
-import Radio from '../src/components/Radio.vue'
+import Field from '../src/components/Field/Field.vue'
+import RadioGroup from '../src/components/RadioGroup/RadioGroup.vue'
+import Radio from '../src/components/Radio/Radio.vue'
 
 test('click selects; model updates and change fires once per distinct selection', async () => {
   const screen = render(RadioGroupFixture, {})

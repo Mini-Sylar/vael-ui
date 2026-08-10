@@ -18,8 +18,7 @@
     <CodeBlock
       lang="typescript"
       code="// main.ts
-import './style.css'        // your base layer, loads first
-import 'vael-ui/style.css'  // now sorts after app-base"
+import './style.css'  // your base layer, loads first"
     />
 
     <p>{{ t('stylingLayers.orderNote') }}</p>
@@ -132,6 +131,22 @@ import 'vael-ui/style.css'  // now sorts after app-base"
         </tr>
       </tbody>
     </table>
+
+    <Message
+      variant="info"
+      :title="t('stylingLayers.bundlerNoteTitle')"
+      class="callout"
+      :ui="{ root: 'callout-info' }"
+    >
+      {{ t('stylingLayers.bundlerNote') }}
+      <CodeBlock
+        lang="typescript"
+        code="// main.ts
+import './style.css'        // your base layer, loads first
+import 'vael-ui/style.css'  // sorts after app-base, if you use it"
+        class="callout-code"
+      />
+    </Message>
   </GuideLayout>
 </template>
 
@@ -140,6 +155,7 @@ import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import { Message } from 'vael-ui'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 import { useBreadcrumbSchema } from '../../composables/useBreadcrumbSchema'
@@ -308,6 +324,19 @@ const tocLinks = computed(() => [
 </script>
 
 <style scoped>
+.callout {
+  margin-bottom: 1.25rem;
+}
+
+:deep(.callout-info) {
+  background: color-mix(in oklch, var(--ui-info) 10%, var(--ui-surface));
+  border-color: color-mix(in oklch, var(--ui-info) 35%, var(--ui-border-strong));
+}
+
+.callout-code {
+  margin-top: 0.625rem;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

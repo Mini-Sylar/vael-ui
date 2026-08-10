@@ -6,7 +6,7 @@ import { h, ref } from 'vue'
 import { toast, useToastQueue } from '../src/composables/useToast'
 import ToasterFixture from './fixtures/ToasterFixture.vue'
 import ToasterCustomCardFixture from './fixtures/ToasterCustomCardFixture.vue'
-import Toaster from '../src/components/Toaster.vue'
+import Toaster from '../src/components/Toaster/Toaster.vue'
 
 const { dismiss } = useToastQueue()
 
