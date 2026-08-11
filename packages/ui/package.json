@@ -78,7 +78,7 @@
     "vite": "^8.2.1",
     "vitest": "^4.1.10",
     "vitest-browser-vue": "^2.1.0",
-    "vue": "3.6.0-rc.2",
+    "vue": "3.6.0-rc.3",
     "vue-component-type-helpers": "^3.3.9",
     "vue-tsc": "^3.3.9"
   },

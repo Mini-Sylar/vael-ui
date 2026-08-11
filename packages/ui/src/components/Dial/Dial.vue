@@ -1,6 +1,7 @@
 <template>
   <div
     ref="root"
+    v-bind="attrs"
     :class="rootPart.class"
     :style="[dialRootStyle, rootPart.style]"
     :data-dragging="isDragging || undefined"
@@ -112,13 +113,16 @@ export const DIAL_TICKS = Array.from({ length: DIAL_TICK_COUNT }, (_, i) => {
 <script setup lang="ts">
 import './Dial.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useDial } from '../../composables/useDial'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(

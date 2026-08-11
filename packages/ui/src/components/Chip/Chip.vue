@@ -1,6 +1,7 @@
 <template>
   <span
     ref="root"
+    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-disabled="disabled || undefined"
@@ -35,12 +36,15 @@
 import './Chip.css'
 import '../shared/tokens.css'
 import '../shared/chip.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     label?: string

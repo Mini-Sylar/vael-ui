@@ -1,5 +1,11 @@
 <template>
-  <nav ref="root" :aria-label="ariaLabel" :class="rootPart.class" :style="rootPart.style">
+  <nav
+    ref="root"
+    v-bind="attrs"
+    :aria-label="ariaLabel"
+    :class="rootPart.class"
+    :style="rootPart.style"
+  >
     <ol v-scroll-mask="wrap ? false : 'x'" :class="listPart.class" :style="listPart.style">
       <template v-if="items">
         <template v-for="(item, index) in items" :key="index">
@@ -44,7 +50,7 @@ export interface BreadcrumbItemData {
 <script setup lang="ts" generic="T extends BreadcrumbItemData = BreadcrumbItemData">
 import './Breadcrumb.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import BreadcrumbItem from '../BreadcrumbItem/BreadcrumbItem.vue'
 import BreadcrumbSeparator from '../BreadcrumbSeparator/BreadcrumbSeparator.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -53,6 +59,9 @@ import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     /** Data-driven alternative to composing `BreadcrumbItem`/`BreadcrumbSeparator` yourself in the default slot. Omit to use the default slot instead — the two are mutually exclusive per instance. */

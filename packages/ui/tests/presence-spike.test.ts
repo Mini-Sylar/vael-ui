@@ -3,15 +3,18 @@
  * sentinels):
  *
  * motion-v's AnimatePresence is Vue's <Transition>/<TransitionGroup> with JS
- * hooks. Vue transitions cannot animate a child whose root node is a
- * <Teleport>, so exit-detection does NOT defer DOM removal through Dialog's
- * Teleport boundary — the subtree is yanked synchronously and `exit` never
- * runs. The supported motion path for Dialog exits is therefore the
- * imperative fallback: `force-mount` + `beforeClose(done)` driving
- * panelEl.animate()/GSAP/motion's animate().
+ * hooks. As of Vue 3.6.0-rc.3, exit-detection now correctly defers DOM
+ * removal through a Teleport boundary when the Teleport sits one level
+ * inside a component (test 3: AnimatePresence -> Dialog -> internal
+ * Teleport) — previously yanked synchronously with `exit` never running.
+ * A raw `<Teleport>` as AnimatePresence's own *direct* child (test 2) is
+ * still broken; that's a different code path and wasn't part of this fix.
+ * The imperative fallback (`force-mount` + `beforeClose(done)` driving
+ * panelEl.animate()/GSAP/motion's animate()) therefore remains necessary
+ * for the direct-Teleport-child shape, but the AnimatePresence pattern is
+ * viable again for a real Dialog.
  *
- * If test 2 ever starts failing, motion-v (or Vue) fixed the interop —
- * update the README and prefer the AnimatePresence pattern again.
+ * If test 2 ever starts failing too, update the README further.
  */
 import '../src/style.css'
 import { expect, test, vi } from 'vitest'
@@ -50,16 +53,17 @@ test('KNOWN BROKEN: exit deferral does not cross a Teleport boundary', async () 
   await expect.element(screen.getByTestId('exits')).toHaveTextContent('0')
 })
 
-test('KNOWN BROKEN: same failure with the full force-mounted Dialog', async () => {
+test("FIXED (3.6.0-rc.3): AnimatePresence defers removal through Dialog's internal Teleport", async () => {
   const screen = render(PresenceFixture, realTransitions)
   await screen.getByTestId('open').click()
   const content = () => document.querySelector('[data-testid="motion-content"]')
   await vi.waitFor(() => expect(content()).not.toBeNull())
 
   await screen.getByTestId('dismiss').click()
-  expect(content()).toBeNull()
-  await new Promise((r) => setTimeout(r, 100))
-  await expect.element(screen.getByTestId('exits')).toHaveTextContent('0')
+  expect(content()).not.toBeNull() // still present: exit is running
+
+  await vi.waitFor(() => expect(content()).toBeNull(), { timeout: 3000 })
+  await expect.element(screen.getByTestId('exits')).toHaveTextContent('1')
 })
 
 test('fallback: force-mount + beforeClose defers close for an imperative exit', async () => {

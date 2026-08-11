@@ -4,6 +4,7 @@
       v-if="forceMount || open"
       v-show="open"
       ref="root"
+      v-bind="attrs"
       :class="rootPart.class"
       :style="rootPart.style"
       :role="resolvedRole"
@@ -87,11 +88,13 @@ export interface MessageProps {
 <script setup lang="ts">
 import './Message.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import StatusIcon from '../internal/StatusIcon.vue'
+
+defineOptions({ inheritAttrs: false })
 
 const open = defineModel<boolean>('open', { default: true })
 
@@ -118,6 +121,8 @@ defineSlots<{
 
 const messages = useUiMessages()
 const root = useTemplateRef<HTMLElement>('root')
+const rawAttrs = useAttrs()
+const attrs = computed(() => ({ ...rawAttrs }))
 
 const isClosing = shallowRef(false)
 let pendingClose: symbol | null = null

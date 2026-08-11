@@ -1,6 +1,7 @@
 <template>
   <div
     ref="list"
+    v-bind="attrs"
     role="tablist"
     :aria-orientation="props.orientation === 'vertical' ? 'vertical' : undefined"
     :class="listPart.class"
@@ -14,11 +15,15 @@
 <script setup lang="ts" generic="T extends string">
 import './Tabs.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useTabs } from '../../composables/useTabs'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const active = defineModel<T>('active', { required: true })
 

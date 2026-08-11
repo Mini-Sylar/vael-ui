@@ -1,5 +1,5 @@
 <template>
-  <div ref="root" :class="rootPart.class" :style="rootPart.style">
+  <div ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
     <div
       ref="viewport"
       :class="viewportPart.class"
@@ -15,12 +15,15 @@
 <script setup lang="ts">
 import './ScrollArea.css'
 import '../shared/tokens.css'
-import { computed, onBeforeUnmount, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     orientation?: 'vertical' | 'horizontal' | 'both'

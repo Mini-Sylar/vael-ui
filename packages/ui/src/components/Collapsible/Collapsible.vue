@@ -1,5 +1,11 @@
 <template>
-  <div ref="root" :class="rootPart.class" :style="rootPart.style" :data-state="dataState">
+  <div
+    ref="root"
+    v-bind="attrs"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    :data-state="dataState"
+  >
     <span
       ref="triggerWrapper"
       :class="triggerPart.class"
@@ -28,12 +34,15 @@
 <script setup lang="ts">
 import './Collapsible.css'
 import '../shared/tokens.css'
-import { computed, useId, useTemplateRef, watchEffect } from 'vue'
+import { computed, useAttrs, useId, useTemplateRef, watchEffect } from 'vue'
 import { useCollapse } from '../../composables/useCollapse'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(

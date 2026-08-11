@@ -1,5 +1,5 @@
 <template>
-  <span ref="root" :class="rootPart.class" :style="rootPart.style">
+  <span ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
     <span v-if="!dot" :key="count" :class="contentClass" :style="contentStyle()">
       <slot>{{ display }}</slot>
     </span>
@@ -10,11 +10,14 @@
 <script setup lang="ts">
 import './Badge.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     variant?: 'primary' | 'muted' | 'success' | 'warning' | 'danger' | 'info'

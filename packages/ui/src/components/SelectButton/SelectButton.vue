@@ -1,6 +1,7 @@
 <template>
   <div
     ref="root"
+    v-bind="attrs"
     :role="multiple ? 'group' : 'radiogroup'"
     :id="fieldControl.id"
     :class="rootPart.class"
@@ -54,12 +55,16 @@ export interface SelectButtonItem {
 <script setup lang="ts" generic="T extends SelectButtonItem = SelectButtonItem">
 import './SelectButton.css'
 import '../shared/tokens.css'
-import { computed, useId, useTemplateRef } from 'vue'
+import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const modelValue = defineModel<string | number | (string | number)[] | null>({ default: null })
 

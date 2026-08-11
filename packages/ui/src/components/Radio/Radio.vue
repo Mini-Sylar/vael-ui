@@ -1,5 +1,11 @@
 <template>
-  <label ref="root" :class="rootPart.class" :style="rootPart.style" :data-state="dataState">
+  <label
+    ref="root"
+    v-bind="attrs"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    :data-state="dataState"
+  >
     <span class="ui-radio-frame">
       <input
         ref="inputEl"
@@ -31,12 +37,24 @@
 <script setup lang="ts">
 import './Radio.css'
 import '../shared/tokens.css'
-import { computed, inject, nextTick, onMounted, shallowRef, useId, useTemplateRef } from 'vue'
+import {
+  computed,
+  inject,
+  nextTick,
+  onMounted,
+  shallowRef,
+  useAttrs,
+  useId,
+  useTemplateRef,
+} from 'vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = defineProps<{
   value: string | number
   /** Overridden entirely by the `#default` scoped slot. */

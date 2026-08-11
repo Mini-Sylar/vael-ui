@@ -1,6 +1,7 @@
 <template>
   <div
     ref="root"
+    v-bind="attrs"
     class="ui-datatable"
     :class="rootClasses"
     :data-stacked="stacked ? '' : undefined"
@@ -9,11 +10,6 @@
       <slot name="toolbar" :selected="selected" :count="sortedData.length" />
     </div>
 
-    <!-- `scrollHeight` splits the header into its own non-scrolling table
-         above a separately `overflow-y:auto` body table, so the scrollbar's
-         track starts at the body — a single sticky-<th> container still
-         spans the header in its scrollable box. Both tables share one
-         horizontally-scrolling parent, so no JS scroll-sync is needed. -->
     <div class="ui-datatable-scroll-x">
       <template v-if="scrollHeight">
         <table
@@ -91,6 +87,7 @@ import {
   onUpdated,
   provide,
   ref,
+  useAttrs,
   useId,
   useSlots,
   useTemplateRef,
@@ -108,6 +105,9 @@ import DataTableHead from './DataTableHead.vue'
 import DataTableBody from './DataTableBody.vue'
 import type { TableRowEntry } from './DataTableBody.vue'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     data: T[]

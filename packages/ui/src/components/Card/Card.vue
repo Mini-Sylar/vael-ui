@@ -1,5 +1,5 @@
 <template>
-  <component :is="as" ref="root" :class="rootPart.class" :style="rootPart.style">
+  <component :is="as" ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
     <header v-if="title || $slots.header" :class="headerPart.class" :style="headerPart.style">
       <slot name="header">
         <h3 v-if="title" :class="titlePart.class" :style="titlePart.style">{{ title }}</h3>
@@ -17,15 +17,18 @@
   </component>
 </template>
 
-<!-- Part naming mirrors Dialog for muscle memory; root attrs fall through (no click interception) -->
+<!-- Part naming mirrors Dialog for muscle memory -->
 <script setup lang="ts">
 import './Card.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     /** Default header title; ignored when `#header` is used. */

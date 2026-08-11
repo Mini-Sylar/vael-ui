@@ -1,18 +1,26 @@
 <template>
-  <span ref="root" :class="rootPart.class" :style="rootPart.style" aria-hidden="true">
+  <span
+    ref="root"
+    v-bind="attrs"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    aria-hidden="true"
+  >
     <span v-if="$slots.default" class="ui-skeleton-content"><slot /></span>
   </span>
 </template>
 
-<!-- Slotted content (visibility: hidden) sizes skeleton; no ARIA role (consumer pairs with live region). -->
 <script setup lang="ts">
 import './Skeleton.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     /** `text` (default): 1em-tall rounded line. `circle`: round, aspect-ratio 1. `rect`: `--ui-radius` corners, sized by content or `ui.root`. */

@@ -1,6 +1,7 @@
 <template>
   <div
     ref="root"
+    v-bind="attrs"
     :class="rootPart.class"
     :style="[knobStyle, rootPart.style]"
     :data-dragging="isDragging || undefined"
@@ -45,8 +46,6 @@
   </div>
 </template>
 
-<!-- Rotary value input: direct manipulation via pointer angle, no live-drag transitions, custom properties for CSS -->
-
 <script lang="ts">
 // Fixed 100x100 viewBox + pathLength="100" for simple 0-100 scale on stroke-dashoffset
 function polarPoint(cx: number, cy: number, r: number, deg: number): { x: number; y: number } {
@@ -65,13 +64,16 @@ export const KNOB_ARC_PATH = `M ${start.x.toFixed(3)} ${start.y.toFixed(3)} A ${
 <script setup lang="ts">
 import './Knob.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useKnob } from '../../composables/useKnob'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(

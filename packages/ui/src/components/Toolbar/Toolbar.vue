@@ -1,6 +1,7 @@
 <template>
   <div
     ref="list"
+    v-bind="attrs"
     role="toolbar"
     :aria-orientation="orientation === 'vertical' ? 'vertical' : undefined"
     :class="rootPart.class"
@@ -37,11 +38,15 @@
 <script setup lang="ts">
 import './Toolbar.css'
 import '../shared/tokens.css'
-import { computed, useSlots, useTemplateRef } from 'vue'
+import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
 import { useToolbar } from '../../composables/useToolbar'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 import Menu from '../Menu/Menu.vue'
 import type { MenuItemData } from '../Menu/Menu.vue'
 

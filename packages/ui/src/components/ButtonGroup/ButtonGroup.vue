@@ -1,6 +1,7 @@
 <template>
   <div
     ref="root"
+    v-bind="attrs"
     role="group"
     :aria-label="ariaLabel"
     :class="rootPart.class"
@@ -13,11 +14,14 @@
 <script setup lang="ts">
 import './ButtonGroup.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     orientation?: 'horizontal' | 'vertical'

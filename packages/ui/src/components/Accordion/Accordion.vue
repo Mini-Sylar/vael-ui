@@ -1,5 +1,5 @@
 <template>
-  <div ref="root" :class="rootPart.class" :style="rootPart.style">
+  <div ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
     <slot />
   </div>
 </template>
@@ -19,11 +19,14 @@ export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion
 <script setup lang="ts">
 import './Accordion.css'
 import '../shared/tokens.css'
-import { computed, provide, useTemplateRef } from 'vue'
+import { computed, provide, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const value = defineModel<string | string[] | null>('value', { default: null })
 
 const props = withDefaults(
