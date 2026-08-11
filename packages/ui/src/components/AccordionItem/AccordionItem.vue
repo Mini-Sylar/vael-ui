@@ -1,5 +1,6 @@
 <template>
   <div
+    v-bind="attrs"
     :class="itemPart.class"
     :style="itemPart.style"
     :data-motion="ctx.motionCss() ? undefined : 'off'"
@@ -57,13 +58,16 @@
 <script setup lang="ts">
 import './AccordionItem.css'
 import '../shared/tokens.css'
-import { computed, inject, useId, useTemplateRef } from 'vue'
+import { computed, inject, useAttrs, useId, useTemplateRef } from 'vue'
 import { accordionKey } from '../Accordion/Accordion.vue'
 import { useCollapse } from '../../composables/useCollapse'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = defineProps<{
   value: string
   title?: string

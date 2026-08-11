@@ -1,5 +1,5 @@
 <template>
-  <nav :class="rootPart.class" :style="rootPart.style" aria-label="Pagination">
+  <nav v-bind="attrs" :class="rootPart.class" :style="rootPart.style" aria-label="Pagination">
     <ul :class="listPart.class" :style="listPart.style">
       <li>
         <Button
@@ -126,13 +126,17 @@
 <script setup lang="ts">
 import './Pagination.css'
 import '../shared/tokens.css'
-import { computed } from 'vue'
+import { computed, useAttrs } from 'vue'
 import Button from '../Button/Button.vue'
 import Select from '../Select/Select.vue'
 import type { SelectItemData } from '../Select/Select.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const page = defineModel<number>('page', { default: 1 })
 const pageSize = defineModel<number>('pageSize', { default: 10 })

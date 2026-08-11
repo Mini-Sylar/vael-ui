@@ -7,8 +7,21 @@ allowBuilds:
   sharp: true
 overrides:
   brace-expansion: '>=5.0.8'
+  vue: 3.6.0-rc.3
 minimumReleaseAgeExclude:
   - '@vue/language-core@3.3.8'
   - vue-tsc@3.3.8
   - lint-staged@17.2.0
   - vue-component-type-helpers@3.3.8
+  - vue@3.6.0-rc.3
+  - '@vue/compiler-core@3.6.0-rc.3'
+  - '@vue/compiler-dom@3.6.0-rc.3'
+  - '@vue/compiler-sfc@3.6.0-rc.3'
+  - '@vue/compiler-ssr@3.6.0-rc.3'
+  - '@vue/compiler-vapor@3.6.0-rc.3'
+  - '@vue/reactivity@3.6.0-rc.3'
+  - '@vue/runtime-core@3.6.0-rc.3'
+  - '@vue/runtime-dom@3.6.0-rc.3'
+  - '@vue/runtime-vapor@3.6.0-rc.3'
+  - '@vue/server-renderer@3.6.0-rc.3'
+  - '@vue/shared@3.6.0-rc.3'

@@ -1,5 +1,5 @@
 <template>
-  <span ref="root" :class="rootPart.class" :style="rootPart.style">
+  <span ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
     <span class="ui-avatar-frame">
       <span :class="fallbackPart.class" :style="fallbackPart.style">
         <slot>{{ initials }}</slot>
@@ -30,11 +30,14 @@
 <script setup lang="ts">
 import './Avatar.css'
 import '../shared/tokens.css'
-import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, ref, useAttrs, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     src?: string

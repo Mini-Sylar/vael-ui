@@ -1,5 +1,11 @@
 <template>
-  <nav ref="list" :class="rootPart.class" :style="rootPart.style" @keydown="onKeydown">
+  <nav
+    ref="list"
+    v-bind="attrs"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    @keydown="onKeydown"
+  >
     <div
       v-if="hasActiveMatch"
       class="ui-menu-list-indicator"
@@ -83,12 +89,15 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './MenuList.css'
 import '../shared/tokens.css'
-import { computed, onMounted, useTemplateRef } from 'vue'
+import { computed, onMounted, useAttrs, useTemplateRef } from 'vue'
 import { useMenu } from '../../composables/useMenu'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = defineProps<MenuListProps<T>>()
 
 const emit = defineEmits<{

@@ -1,6 +1,7 @@
 <template>
   <div
     ref="root"
+    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-side="side"
@@ -26,7 +27,7 @@
 <script setup lang="ts">
 import './SwipeToReveal.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import { useSwipeReveal } from '../../composables/useSwipeReveal'
 import type { SwipeRevealSide } from '../../composables/useSwipeReveal'
@@ -34,6 +35,9 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(

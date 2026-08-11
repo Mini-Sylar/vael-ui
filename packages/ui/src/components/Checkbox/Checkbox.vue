@@ -1,6 +1,7 @@
 <template>
   <label
     ref="root"
+    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="dataState"
@@ -61,12 +62,23 @@
 <script setup lang="ts">
 import './Checkbox.css'
 import '../shared/tokens.css'
-import { computed, nextTick, onMounted, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import {
+  computed,
+  nextTick,
+  onMounted,
+  shallowRef,
+  useAttrs,
+  useTemplateRef,
+  watchEffect,
+} from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 /** Checked state. Bind an array instead to toggle this checkbox's `value` prop in/out of it (checkbox-group pattern). */
 const modelValue = defineModel<boolean | unknown[]>({ default: false })
 

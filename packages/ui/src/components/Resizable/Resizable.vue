@@ -1,6 +1,7 @@
 <template>
   <div
     ref="root"
+    v-bind="attrs"
     :class="rootPart.class"
     :style="[sizeStyle, rootPart.style]"
     :data-resizing="isDragging || undefined"
@@ -33,12 +34,16 @@
 <script setup lang="ts">
 import './Resizable.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useResizable } from '../../composables/useResizable'
 import type { ResizeDirection, ResizeEdge } from '../../composables/useResizable'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const modelValue = defineModel<number>('size', { required: true })
 

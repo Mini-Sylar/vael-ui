@@ -1,5 +1,5 @@
 <template>
-  <kbd ref="root" :class="rootPart.class" :style="rootPart.style"><slot /></kbd>
+  <kbd ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style"><slot /></kbd>
 </template>
 
 <!--
@@ -13,11 +13,14 @@
 <script setup lang="ts">
 import './Kbd.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
     ui?: Partial<{ root: UiPartValue }>

@@ -1,6 +1,7 @@
 <template>
   <span
     ref="root"
+    v-bind="attrs"
     :class="rootPart.class"
     :style="[rootStyle, rootPart.style]"
     :role="label ? 'status' : undefined"
@@ -16,11 +17,14 @@
 import './Loader.css'
 import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
-import { computed, useId, useTemplateRef } from 'vue'
+import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const props = defineProps<{
   /** Any CSS length. Sets the root's font-size — the ring is sized in `em`, so it scales with it. */
   size?: string

@@ -1,5 +1,11 @@
 <template>
-  <div ref="root" :class="rootPart.class" :style="rootPart.style" :data-state="state">
+  <div
+    ref="root"
+    v-bind="attrs"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    :data-state="state"
+  >
     <div
       ref="zoneEl"
       :class="zonePart.class"
@@ -71,12 +77,16 @@ export interface PullToRefreshProps {
 import './PullToRefresh.css'
 import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
 import type { PullToRefreshState } from '../../composables/usePullToRefresh'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const props = defineProps<PullToRefreshProps>()
 

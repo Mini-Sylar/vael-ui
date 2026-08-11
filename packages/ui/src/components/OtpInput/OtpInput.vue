@@ -1,6 +1,7 @@
 <template>
   <div
     ref="root"
+    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="dataState"
@@ -65,6 +66,7 @@ import {
   onMounted,
   onScopeDispose,
   shallowRef,
+  useAttrs,
   useSlots,
   useTemplateRef,
   watch,
@@ -75,6 +77,9 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 const modelValue = defineModel<string>({ default: '' })
 
 const props = withDefaults(
