@@ -13,7 +13,7 @@
     </div>
 
     <div class="playground-body">
-      <div class="playground-preview">
+      <div ref="previewEl" class="playground-preview">
         <p v-if="needsContext" class="playground-error">{{ needsContext }}</p>
         <PlaygroundErrorBoundary v-else :reset-key="resetKey">
           <template v-if="isOpenModel">
@@ -261,6 +261,7 @@
               v-bind="boundProps"
               v-model:open="openModelValue"
               :steps="TOUR_PLACEHOLDER_STEPS"
+              :container="previewEl"
             />
           </template>
           <template v-else>
@@ -395,7 +396,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, reactive, shallowRef, watch, watchEffect, type Component } from 'vue'
+import {
+  computed,
+  h,
+  reactive,
+  shallowRef,
+  useTemplateRef,
+  watch,
+  watchEffect,
+  type Component,
+} from 'vue'
 import { RouterLink } from 'vue-router'
 import * as VaelUi from 'vael-ui'
 import { Button, Input, InputNumber, Select, SelectButton, Switch } from 'vael-ui'
@@ -599,6 +609,7 @@ const suppressDefaultSlot = computed(() => NO_DEFAULT_SLOT.includes(props.name))
 
 const openModelValue = shallowRef(false)
 const radioGroupValue = shallowRef<string | number | null>(null)
+const previewEl = useTemplateRef<HTMLElement>('previewEl')
 
 const CONTROL_HELP: Record<string, string> = {
   motionCss:
