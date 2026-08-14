@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "vael-ui": "workspace:*",
-    "vue": "3.6.0-rc.3"
+    "vue": "3.6.0-rc.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.8",
@@ -19,6 +19,6 @@
     "typescript": "^6.0.3",
     "vite": "^8.2.1",
     "vitest": "^4.1.10",
-    "vue-tsc": "^3.3.9"
+    "vue-tsc": "^3.3.10"
   }
 }

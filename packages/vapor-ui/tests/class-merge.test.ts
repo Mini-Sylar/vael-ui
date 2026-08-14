@@ -1,26 +1,20 @@
 /**
- * REGRESSION SENTINEL — Vapor-only bug: a component whose root wraps its
- * content in <Transition> auto-forwards its own received attrs (including
+ * REGRESSION SENTINEL — a component whose root wraps its content in
+ * <Transition> used to auto-forward its own received attrs (including
  * `class`) onto VaporTransition as a single-root child, gated on
  * VaporTransition's own `inheritAttrs` (which it never opts out of) — NOT on
- * the component's own `inheritAttrs: false`. VaporTransition then applies
+ * the component's own `inheritAttrs: false`. VaporTransition then applied
  * those raw attrs directly onto its resolved child via a single-source
  * `setDynamicProps(el, [attrs])`, unconditionally overwriting whatever the
- * child's own template computed for `class`. No in-component workaround
- * exists (tried: implicit fallthrough, explicit v-bind, array :class,
- * isolated computed — all fail identically). Traced against vue 3.6.0-rc.3
- * runtime-vapor source (createComponent's isSingleRoot check, ~line 2950;
- * handleSetupResult's fallthrough trigger, ~line 3457; applyFallthroughProps
- * -> setDynamicProps, ~line 3073).
+ * child's own template computed for `class`. Filed as vuejs/core#15274,
+ * fixed by vuejs/core#15275 ("compiler-vapor: propagate component root
+ * through Transition") in vue 3.6.0-rc.4.
  *
- * Every other component (no <Transition> in its own template) correctly
- * merges an external class via `inheritAttrs: false` + `useAttrs()` +
- * `v-bind="attrs"` on its root — see Button.vue's own established pattern,
- * applied to 36 components that were missing it.
- *
- * If the "Message" test below ever starts passing, the upstream Vue/Vapor
- * bug got fixed — the `v-bind="attrs"` pattern stays correct either way, so
- * nothing needs to change in the library itself, just this comment.
+ * Every component correctly merges an external class via
+ * `inheritAttrs: false` + `useAttrs()` + `v-bind="attrs"` on its root — see
+ * Button.vue's own established pattern, applied to 36 components that were
+ * missing it. If this test ever starts failing again, the fix regressed
+ * upstream.
  */
 import { expect, test } from 'vitest'
 import { createVaporApp } from 'vue'
@@ -41,14 +35,16 @@ test('external class merges correctly (no Transition in the component root)', ()
   }
 })
 
-test('KNOWN BROKEN (upstream vue/vapor): external class does not merge through a Transition-wrapped root', () => {
+test('external class merges correctly through a Transition-wrapped root', () => {
   const host = document.createElement('div')
   document.body.appendChild(host)
   const app = createVaporApp(ClassMergeMessageRoot)
   app.mount(host)
   try {
     const el = host.querySelector<HTMLElement>('[data-testid="target"]')!
-    expect(el.className).toBe('external-class') // should be 'ui-message ui-message--warning external-class'
+    expect(el.className).toContain('ui-message')
+    expect(el.className).toContain('ui-message--warning')
+    expect(el.className).toContain('external-class')
   } finally {
     app.unmount()
   }
