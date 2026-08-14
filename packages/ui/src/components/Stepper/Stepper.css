@@ -25,7 +25,7 @@
 
   .ui-stepper-trigger {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.625rem;
     border: 0;
     margin: 0;
@@ -145,6 +145,8 @@
     block-size: 2px;
     min-inline-size: 1.5rem;
     margin-inline: 0.625rem;
+    align-self: flex-start;
+    margin-block-start: calc(0.875rem - 1px);
   }
   .ui-stepper-connector--vertical {
     align-self: stretch;
