@@ -43,6 +43,11 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/guides/Nuxt.vue'),
   },
   {
+    path: '/docs/guides/skill',
+    name: 'guide-skill',
+    component: () => import('./pages/guides/Skill.vue'),
+  },
+  {
     path: '/components/:name',
     name: 'component',
     component: () => import('./pages/ComponentPage.vue'),

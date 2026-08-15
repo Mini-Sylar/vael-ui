@@ -9,14 +9,9 @@
           <RouterLink to="/docs/getting-started" class="cta-link">
             <Button size="lg">{{ t('nav.gettingStarted') }}</Button>
           </RouterLink>
-          <a
-            href="https://github.com/Mini-Sylar/vael-ui"
-            target="_blank"
-            rel="noreferrer"
-            class="cta-link"
-          >
-            <Button size="lg" variant="outline">{{ t('nav.github') }}</Button>
-          </a>
+          <SplitButton size="lg" variant="outline" :items="githubMenuItems" @click="openGithub">
+            {{ t('nav.github') }}
+          </SplitButton>
         </div>
       </div>
 
@@ -61,6 +56,13 @@
           <p>{{ t('home.featureSsrBody') }}</p>
         </div>
       </article>
+      <RouterLink to="/docs/guides/skill" class="feature feature-link">
+        <PhRobot :size="20" class="feature-icon" />
+        <div>
+          <h2>{{ t('home.featureSkillTitle') }}</h2>
+          <p>{{ t('home.featureSkillBody') }}</p>
+        </div>
+      </RouterLink>
     </section>
 
     <section class="closing">
@@ -72,12 +74,35 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Button } from 'vael-ui'
-import { PhGlobe, PhHardDrives, PhLightning, PhPuzzlePiece, PhSparkle } from '@phosphor-icons/vue'
+import { useRouter } from 'vue-router'
+import { Button, SplitButton } from 'vael-ui'
+import type { MenuItemData } from 'vael-ui'
+import {
+  PhGlobe,
+  PhHardDrives,
+  PhLightning,
+  PhPuzzlePiece,
+  PhRobot,
+  PhSparkle,
+} from '@phosphor-icons/vue'
 import DashboardHero from '../components/dashboard/DashboardHero.vue'
 
 const { t } = useI18n()
+const router = useRouter()
+
+function openGithub() {
+  window.open('https://github.com/Mini-Sylar/vael-ui', '_blank', 'noreferrer')
+}
+
+const githubMenuItems = computed<MenuItemData[]>(() => [
+  {
+    label: t('home.featureSkillTitle'),
+    icon: PhRobot,
+    onSelect: () => router.push('/docs/guides/skill'),
+  },
+])
 </script>
 
 <style scoped>
@@ -163,6 +188,16 @@ const { t } = useI18n()
 
 .feature--wide {
   grid-column: span 2;
+}
+
+.feature-link {
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--ui-duration-press) ease;
+}
+
+.feature-link:hover {
+  border-color: var(--ui-primary);
 }
 
 .feature-icon {

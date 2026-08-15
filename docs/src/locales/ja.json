@@ -156,7 +156,9 @@
     "featureSsrTitle": "SSR 対応",
     "featureVaporBody": "すべてのコンポーネントは、同じソースから Vue 3.6 の Vapor モードを通じてコン​​パイルされます。",
     "featureVaporTitle": "シムではなく本物の Vapor ビルド",
-    "headline": "Vapor を中心にコンパイルするのではなく、Vapor に直接コンパイルするコンポーネント。"
+    "headline": "Vapor を中心にコンパイルするのではなく、Vapor に直接コンパイルするコンポーネント。",
+    "featureSkillBody": "Claude Code、GitHub Copilot、Codex、およびその他のエージェントに、すべてのコンポーネントの実際の API (手書きではなく、ライブラリ独自の型から生成される) を教えるコンパニオン パッケージ。",
+    "featureSkillTitle": "AIエージェントスキル"
   },
   "i18nKeys": {
     "copyIntro": "これをロケール ファイルの uiKit キーの下にコピーし、値を変換します。",
@@ -187,7 +189,8 @@
     "openMenu": "メニューを開く",
     "composables": "コンポーザブル",
     "autoImportGuide": "自動インポート",
-    "nuxtGuide": "ナクスト"
+    "nuxtGuide": "ナクスト",
+    "skillGuide": "AIエージェントスキル"
   },
   "pageNotes": {
     "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。"
@@ -331,5 +334,21 @@
     "title": "ナクスト",
     "vdomOnlyIntro": "このモジュールは常に通常の <code>vael-ui</code> ビルドから登録され、<code>vael-ui/vapor</code> では登録されません。そのため、<code>vael-ui/resolver</code> にあるような <code>variant</code> オプションはここにはありません。 \nVue 3.6 自体は Vapor SSR ハイドレーションをサポートしていますが、安定版 Nuxt リリースにはまだ Vapor 構成がありません。特定のアップストリーム PR の背後にあり、まだ一般リリースには含まれていません。 \nNuxt 独自の Vapor サポートがリリースされると、<code>variant</code> オプションが続く可能性があります。",
     "vdomOnlyTitle": "VDOMのみ"
+  },
+  "skill": {
+    "claudeCodeIntro": "マーケットプレイスを一度追加してから、スキルをインストールします。",
+    "claudeCodeTitle": "クロード・コード",
+    "includedAnimation": "アニメーションに依存しないコントラクト — motionCss、forceMount、beforeClose — と実際の G​​SAP および motion-v の例",
+    "includedComponents": "すべてのコンポーネントのプロパティ、スロット、イベント、および公開された参照",
+    "includedComposables": "すべてのスタンドアロン コンポーザブルのパラメータ、戻り値、および使用例",
+    "includedStyling": "カスケード レイヤーの順序付けとテーマ設定のための完全な CSS 変数リファレンス",
+    "intro": "AI コーディング エージェント (Claude Code、GitHub Copilot、Codex、Cursor など) に vael-ui の実際の使用方法、つまりすべてのコンポーネントの実際のプロップ/スロット/イベント、すべてのコンポーザブル、およびアニメーション、テーマ設定、vdom/vapor 分割の接続方法を教えるコンパニオン パッケージ。\n手書きではなく、ライブラリ独自の型とドキュメント コンテンツから直接生成されるため、ライブラリが進化しても正確さが保たれます。 \nvael-ui 自体とは独立してバージョン管理およびリリースされます。",
+    "otherAgentsIntro": "共有の <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">エージェント スキル</a> 仕様 (GitHub Copilot、Codex、Cursor、その他 70 種類) をサポートするエージェントは、<a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> 経由でインストールできます。",
+    "otherAgentsTitle": "その他のエージェント",
+    "sourceIntro": "スキルのソースと、vael-ui 自身のリリース サイクルとは独立してスキルを更新する手順は、{link} で公開されています。",
+    "sourceTitle": "ソース",
+    "title": "AIエージェントスキル",
+    "whatsIncludedIntro": "コンパクトなトップレベル ガイドと完全なリファレンス。ドキュメント サイト自体が構築されているのと同じ実際のデータから生成されます。",
+    "whatsIncludedTitle": "含まれるもの"
   }
 }

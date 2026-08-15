@@ -14,6 +14,7 @@
     "i18nKeysGuide": "Translating vael-ui",
     "autoImportGuide": "Auto Import",
     "nuxtGuide": "Nuxt",
+    "skillGuide": "AI Agent Skill",
     "menu": "Menu",
     "openMenu": "Open menu"
   },
@@ -72,6 +73,8 @@
     "featurePrimitivesBody": "No compound-component sprawl, no hidden context to wire up.",
     "featureSsrTitle": "SSR ready",
     "featureSsrBody": "Every component checks for a real browser before touching window or document, so it renders safely in Nuxt, server-rendered apps, and static site generators. This documentation site is built with Vite SSG using the same components.",
+    "featureSkillTitle": "AI Agent Skill",
+    "featureSkillBody": "A companion package that teaches Claude Code, GitHub Copilot, Codex, and other agents every component's real API, generated from the library's own types, not hand-written.",
     "browseComponents": "Browse components"
   },
   "gettingStarted": {
@@ -313,6 +316,22 @@
     "resolverTitle": "Using unplugin-vue-components instead",
     "resolverIntro": "If your Nuxt setup already drives component auto-import through unplugin-vue-components for other libraries, use vael-ui/resolver instead — see the {link} guide.",
     "resolverIntroLink": "Auto Import"
+  },
+  "skill": {
+    "title": "AI Agent Skill",
+    "intro": "A companion package that teaches AI coding agents, including Claude Code, GitHub Copilot, Codex, and Cursor, how to actually use vael-ui: every component's real props/slots/events, every composable, and how to wire up animation, theming, and the vdom/vapor split. Generated straight from the library's own types and docs content, not hand-written, so it stays accurate as the library evolves. Versioned and released independently of vael-ui itself.",
+    "claudeCodeTitle": "Claude Code",
+    "claudeCodeIntro": "Add the marketplace once, then install the skill:",
+    "otherAgentsTitle": "Other agents",
+    "otherAgentsIntro": "Any agent supporting the shared <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> spec, including GitHub Copilot, Codex, Cursor, and 70+ others, can install it via <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>:",
+    "whatsIncludedTitle": "What's included",
+    "whatsIncludedIntro": "A compact top-level guide plus a full reference, generated from the same real data the docs site itself is built from:",
+    "includedComponents": "Every component's props, slots, events, and exposed refs",
+    "includedComposables": "Every standalone composable's parameters, return values, and usage examples",
+    "includedAnimation": "The animation-agnostic contract (motionCss, forceMount, beforeClose) with real GSAP and motion-v examples",
+    "includedStyling": "Cascade layer ordering and the full CSS variable reference for theming",
+    "sourceTitle": "Source",
+    "sourceIntro": "The skill's source, and instructions for updating it independently of vael-ui's own release cycle, live at {link}."
   },
   "notFound": {
     "title": "Page not found",

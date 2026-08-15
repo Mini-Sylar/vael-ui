@@ -156,7 +156,9 @@
     "featureSsrTitle": "Pronto para SSR",
     "featureVaporBody": "Cada componente é compilado através do modo Vapor do Vue 3.6 da mesma fonte.",
     "featureVaporTitle": "Construção Real Vapor, não um calço",
-    "headline": "Componentes que são compilados diretamente no Vapor, e não em torno dele."
+    "headline": "Componentes que são compilados diretamente no Vapor, e não em torno dele.",
+    "featureSkillBody": "Um pacote complementar que ensina Claude Code, GitHub Copilot, Codex e outros agentes a API real de cada componente - gerada a partir dos próprios tipos da biblioteca, não escrita à mão.",
+    "featureSkillTitle": "Habilidade de agente de IA"
   },
   "i18nKeys": {
     "copyIntro": "Copie isso em seus arquivos de localidade na chave uiKit e traduza os valores:",
@@ -187,7 +189,8 @@
     "openMenu": "Abrir menu",
     "composables": "Combináveis",
     "autoImportGuide": "Importação automática",
-    "nuxtGuide": "Nuxt"
+    "nuxtGuide": "Nuxt",
+    "skillGuide": "Habilidade de agente de IA"
   },
   "pageNotes": {
     "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar."
@@ -331,5 +334,21 @@
     "title": "Nuxt",
     "vdomOnlyIntro": "Este módulo sempre é registrado a partir da compilação <code>vael-ui</code> regular, nunca <code>vael-ui/vapor</code> — então não há nenhuma opção <code>variant</code> aqui da mesma forma que <code>vael-ui/resolver</code> tem uma. \nO próprio Vue 3.6 suporta hidratação Vapor SSR, mas a versão estável do Nuxt ainda não tem configuração Vapor - está chegando atrás de PRs upstream específicos, ainda não em uma versão geral. \nAssim que o suporte Vapor do próprio Nuxt for lançado, uma opção de <code>variante</code> poderá ser lançada.",
     "vdomOnlyTitle": "Somente VDOM"
+  },
+  "skill": {
+    "claudeCodeIntro": "Adicione o mercado uma vez e instale a habilidade:",
+    "claudeCodeTitle": "Código Claude",
+    "includedAnimation": "O contrato independente de animação — motionCss, forceMount, beforeClose — com exemplos reais de GSAP e motion-v",
+    "includedComponents": "Props, slots, eventos e referências expostas de cada componente",
+    "includedComposables": "Parâmetros, valores de retorno e exemplos de uso de cada elemento independente que pode ser composto",
+    "includedStyling": "Ordenação de camadas em cascata e referência completa de variáveis ​​CSS para temas",
+    "intro": "Um pacote complementar que ensina agentes de codificação de IA — Claude Code, GitHub Copilot, Codex, Cursor e outros — como realmente usar vael-ui: os adereços/slots/eventos reais de cada componente, cada elemento que pode ser composto e como conectar animação, temas e a divisão vdom/vapor. \nGerado diretamente a partir dos próprios tipos e conteúdo de documentos da biblioteca, e não manuscrito, para que permaneça preciso à medida que a biblioteca evolui. \nVersionado e lançado independentemente do próprio vael-ui.",
+    "otherAgentsIntro": "Qualquer agente que ofereça suporte à especificação compartilhada de <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> — GitHub Copilot, Codex, Cursor e mais 70 — pode instalá-la via <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>:",
+    "otherAgentsTitle": "Outros agentes",
+    "sourceIntro": "A fonte da habilidade e instruções para atualizá-la independentemente do ciclo de lançamento do próprio vael-ui, disponíveis em {link}.",
+    "sourceTitle": "Fonte",
+    "title": "Habilidade de agente de IA",
+    "whatsIncludedIntro": "Um guia compacto de nível superior mais uma referência completa, gerada a partir dos mesmos dados reais a partir dos quais o próprio site de documentos é construído:",
+    "whatsIncludedTitle": "O que está incluído"
   }
 }

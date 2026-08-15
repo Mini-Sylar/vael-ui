@@ -156,7 +156,9 @@
     "featureSsrTitle": "支持 SSR",
     "featureVaporBody": "每个组件都通过 Vue 3.6 的 Vapor 模式从相同的源进行编译。",
     "featureVaporTitle": "真正的蒸汽构建，而不是垫片",
-    "headline": "直接编译为 Vapor 的组件，而不是围绕它。"
+    "headline": "直接编译为 Vapor 的组件，而不是围绕它。",
+    "featureSkillBody": "一个配套包，用于教授 Claude Code、GitHub Copilot、Codex 和其他代理每个组件的真实 API — 从库自己的类型生成，而不是手写。",
+    "featureSkillTitle": "AI代理技能"
   },
   "i18nKeys": {
     "copyIntro": "将其复制到 uiKit 键下的语言环境文件中，然后翻译这些值：",
@@ -187,7 +189,8 @@
     "openMenu": "打开菜单",
     "composables": "可组合项",
     "autoImportGuide": "自动导入",
-    "nuxtGuide": "努克斯特"
+    "nuxtGuide": "努克斯特",
+    "skillGuide": "AI代理技能"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
@@ -331,5 +334,21 @@
     "title": "努克斯特",
     "vdomOnlyIntro": "该模块始终从常规 <code>vael-ui</code> 版本注册，从不 <code>vael-ui/vapor</code> - 因此这里没有 <code>variant</code> 选项，而 <code>vael-ui/resolver</code> 有一个。 \nVue 3.6 本身支持 Vapor SSR 水合，但稳定的 Nuxt 版本还没有 Vapor 配置 - 它落在特定上游 PR 后面，尚未进入通用版本。\n一旦 Nuxt 自己的 Vapor 支持发布，就会出现一个<code>变体</code>选项。",
     "vdomOnlyTitle": "仅限虚拟域"
+  },
+  "skill": {
+    "claudeCodeIntro": "添加一次市场，然后安装技能：",
+    "claudeCodeTitle": "克劳德·科德",
+    "includedAnimation": "与动画无关的合约——motionCss、forceMount、beforeClose——带有真实的GSAP和motion-v示例",
+    "includedComponents": "每个组件的 props、slots、events 和公开的 refs",
+    "includedComposables": "每个独立可组合项的参数、返回值和使用示例",
+    "includedStyling": "级联层排序和主题的完整 CSS 变量参考",
+    "intro": "一个配套包，用于教授 AI 编码代理（Claude Code、GitHub Copilot、Codex、Cursor 等）如何实际使用 vael-ui：每个组件的真实 props/slots/events、每个可组合项，以及如何连接动画、主题和 vdom/vapor 分割。\n直接从库自己的类型和文档内容生成，而不是手写，因此随着库的发展它保持准确。\n独立于 vael-ui 本身进行版本控制和发布。",
+    "otherAgentsIntro": "任何支持共享 <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 规范的代理（GitHub Copilot、Codex、Cursor 和其他 70 个）都可以通过 <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> 安装它：",
+    "otherAgentsTitle": "其他代理",
+    "sourceIntro": "该技能的来源以及独立于 vael-ui 自己的发布周期进行更新的说明位于 {link}。",
+    "sourceTitle": "来源",
+    "title": "AI代理技能",
+    "whatsIncludedIntro": "紧凑的顶级指南加上完整的参考，由文档站点本身构建的相同真实数据生成：",
+    "whatsIncludedTitle": "包含什么"
   }
 }
