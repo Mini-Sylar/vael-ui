@@ -191,7 +191,7 @@
         <pre
           v-if="selectedFile"
           class="vscode-editor-content"
-        ><code v-html="syntaxHighlightedLanguage || '//'" /></pre>
+        ><code v-html="syntaxHighlightedLanguage || '// Empty file, pnpm add vael-ui'" /></pre>
         <div v-else class="vscode-editor-empty">Select a file to open it</div>
       </div>
     </div>
@@ -531,7 +531,7 @@ watch(
     }
     const lang = file.language ?? 'typescript'
     syntaxHighlightedLanguage.value = await codeToHtml(file.content, {
-      lang,
+      lang: lang || 'txt',
       themes: { light: 'github-light', dark: 'github-dark' },
       defaultColor: false,
     })
