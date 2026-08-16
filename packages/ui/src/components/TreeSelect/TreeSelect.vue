@@ -260,6 +260,9 @@ defineSlots<{
     disabled: boolean
     toggleExpand: () => void
     toggleSelect: () => void
+    findNode: (value: string | number) => T | undefined
+    findParent: (value: string | number) => T | null
+    removeNode: (value: string | number) => boolean
   }): unknown
   empty(): unknown
 }>()
