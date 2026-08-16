@@ -83,6 +83,7 @@
             :id="treeId"
             v-model="model"
             v-model:query="query"
+            v-model:node="nodeModel"
             :items="items"
             :selection-mode="selectionMode"
             :selectable-folders="selectableFolders"
@@ -159,6 +160,9 @@ const attrs = useAttrs()
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
 const open = defineModel<boolean>('open', { default: false })
 const query = defineModel<string>('query', { default: '' })
+/** Mirrors `model`'s value(s) as the full node object(s) — see Tree.vue's own `node` model for
+ * the resolution details; TreeSelect just forwards it straight through from the inner Tree. */
+const nodeModel = defineModel<T | T[] | null>('node', { default: null })
 
 const props = withDefaults(
   defineProps<{

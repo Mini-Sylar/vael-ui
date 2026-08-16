@@ -135,6 +135,7 @@
             ref="treeRef"
             v-model="vscodeValue"
             v-model:query="vscodeQuery"
+            v-model:node="selectedFile"
             :items="gitFileTree"
             :filterable="false"
             expand-on-row-click
@@ -190,7 +191,7 @@
         <pre
           v-if="selectedFile"
           class="vscode-editor-content"
-        ><code>{{ selectedFile.content ?? '// Empty file' }}</code></pre>
+        ><code v-html="syntaxHighlightedLanguage || '//'" /></pre>
         <div v-else class="vscode-editor-empty">Select a file to open it</div>
       </div>
     </div>
@@ -198,7 +199,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, shallowRef, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
+import { codeToHtml } from 'shiki'
 import {
   Button,
   ContextMenu,
@@ -330,6 +332,7 @@ interface GitTreeNode extends TreeNode {
   children?: GitTreeNode[]
   gitStatus?: 'M' | 'U'
   content?: string
+  language?: string
 }
 
 const gitFileTree = ref<GitTreeNode[]>([
@@ -355,6 +358,7 @@ const gitFileTree = ref<GitTreeNode[]>([
 defineProps<{ variant?: 'primary' | 'secondary' }>()
 defineEmits<{ click: [] }>()
 <${''}/script>`,
+            language: 'vue',
           },
           {
             label: 'Input.vue',
@@ -367,6 +371,7 @@ defineEmits<{ click: [] }>()
 const model = defineModel<string>({ default: '' })
 defineProps<{ placeholder?: string }>()
 <${''}/script>`,
+            language: 'vue',
           },
           {
             label: 'GitBadge.vue',
@@ -379,6 +384,7 @@ defineProps<{ placeholder?: string }>()
 <script setup lang="ts">
 defineProps<{ status: 'M' | 'U' | 'A' | 'D' }>()
 <${''}/script>`,
+            language: 'vue',
           },
           { label: 'Select.vue', value: 'src/components/Select.vue' },
           { label: 'Tooltip.vue', value: 'src/components/Tooltip.vue' },
@@ -400,6 +406,7 @@ defineProps<{ status: 'M' | 'U' | 'A' | 'D' }>()
 
   return { user, login }
 }`,
+            language: 'vue',
           },
           {
             label: 'useGitStatus.ts',
@@ -414,21 +421,27 @@ defineProps<{ status: 'M' | 'U' | 'A' | 'D' }>()
 
   return status
 }`,
+            language: 'vue',
           },
-          { label: 'useFetch.ts', value: 'src/composables/useFetch.ts' },
+          {
+            label: 'useFetch.ts',
+            value: 'src/composables/useFetch.ts',
+            language: 'typescript',
+          },
         ],
       },
       {
         label: 'pages',
         value: 'src/pages',
         children: [
-          { label: 'Home.vue', value: 'src/pages/Home.vue' },
+          { label: 'Home.vue', value: 'src/pages/Home.vue', language: 'vue' },
           {
             label: 'Settings.vue',
             value: 'src/pages/Settings.vue',
             gitStatus: 'M',
+            language: 'vue',
           },
-          { label: 'Login.vue', value: 'src/pages/Login.vue' },
+          { label: 'Login.vue', value: 'src/pages/Login.vue', language: 'vue' },
         ],
       },
       {
@@ -476,7 +489,7 @@ defineProps<{ status: 'M' | 'U' | 'A' | 'D' }>()
   }
 }`,
   },
-  { label: 'tsconfig.json', value: 'tsconfig.json' },
+  { label: 'tsconfig.json', value: 'tsconfig.json', language: 'json' },
   {
     label: 'README.md',
     value: 'README.md',
@@ -504,8 +517,26 @@ function toggleSearch() {
   if (!searchOpen.value) vscodeQuery.value = ''
 }
 
-const selectedFile = computed(() =>
-  vscodeValue.value == null ? null : (findTreeNode(gitFileTree.value, vscodeValue.value) ?? null),
+// v-model:node keeps this in lockstep with vscodeValue as the full node
+// object, so the editor pane doesn't need its own findTreeNode lookup.
+const selectedFile = shallowRef<GitTreeNode | null>(null)
+const syntaxHighlightedLanguage = ref<string | null>(null)
+
+watch(
+  selectedFile,
+  async (file) => {
+    if (!file || !file.content) {
+      syntaxHighlightedLanguage.value = null
+      return
+    }
+    const lang = file.language ?? 'typescript'
+    syntaxHighlightedLanguage.value = await codeToHtml(file.content, {
+      lang,
+      themes: { light: 'github-light', dark: 'github-dark' },
+      defaultColor: false,
+    })
+  },
+  { immediate: true },
 )
 
 const treeRef = useTemplateRef('treeRef')

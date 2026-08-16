@@ -407,3 +407,27 @@ test("exposed findNode/findParent/removeNode are bound to this instance's own it
   await vi.waitFor(() => expect(rowByLabel('LeafB')).toBeDefined())
   expect(rowByLabel('LeafA')).toBeUndefined()
 })
+
+test('v-model:node mirrors the selected node object, not just its value', async () => {
+  const screen = render(TreeFixture)
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await expect.element(screen.getByTestId('node-model')).toHaveTextContent('null')
+
+  const chevron = rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-chevron')!
+  await userEvent.click(chevron)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+  await userEvent.click(rowByLabel('Apple')!)
+  await expect.element(screen.getByTestId('node-model')).toHaveTextContent('Apple')
+})
+
+test('v-model:node holds an array of node objects in multiple mode', async () => {
+  const screen = render(TreeFixture, { props: { selectionMode: 'multiple' } })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+
+  const chevron = rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-chevron')!
+  await userEvent.click(chevron)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+  await userEvent.click(rowByLabel('Apple')!)
+  await userEvent.click(rowByLabel('Banana')!)
+  await expect.element(screen.getByTestId('node-model')).toHaveTextContent('Apple,Banana')
+})

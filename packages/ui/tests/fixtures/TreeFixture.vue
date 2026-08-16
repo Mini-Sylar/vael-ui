@@ -1,9 +1,11 @@
 <template>
   <output data-testid="model">{{ JSON.stringify(model) }}</output>
+  <output data-testid="node-model">{{ nodeModelLabels }}</output>
   <div :style="height ? { blockSize: height, display: 'flex' } : undefined">
     <Tree
       ref="treeRef"
       v-model="model"
+      v-model:node="nodeModel"
       :items="resolvedItems"
       :selection-mode="selectionMode"
       :filterable="filterable"
@@ -114,5 +116,11 @@ const resolvedItems = computed(() => props.items ?? defaultItems)
 
 const model = shallowRef<string | number | (string | number)[] | null>(
   props.selectionMode === 'single' ? null : [],
+)
+const nodeModel = shallowRef<TreeNode | TreeNode[] | null>(null)
+const nodeModelLabels = computed(() =>
+  Array.isArray(nodeModel.value)
+    ? nodeModel.value.map((n) => n.label).join(',')
+    : (nodeModel.value?.label ?? 'null'),
 )
 </script>

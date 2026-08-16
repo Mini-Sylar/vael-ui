@@ -754,6 +754,26 @@ function removeNode(value: string | number): boolean {
   return removeTreeNode(props.items as T[], value)
 }
 
+// Mirrors `model`'s value(s) as the full node object(s) — resolved via
+// `findNode` so a consumer bound to `v-model:node` gets the real data
+// (including any app-specific extra fields) instead of re-deriving it from
+// `modelValue` themselves. Shaped like `model` itself: `T[]` when it holds
+// an array, `T | null` otherwise. Writing to it is harmless but has no
+// lasting effect — it's derived from `model`/`items`, not an independent
+// selection channel, so the next reactive pass overwrites it back.
+const nodeModel = defineModel<T | T[] | null>('node', { default: null })
+watch(
+  [model, () => props.items],
+  ([value]) => {
+    nodeModel.value = Array.isArray(value)
+      ? value.map((v) => findNode(v)).filter((n): n is T => n != null)
+      : value == null
+        ? null
+        : (findNode(value) ?? null)
+  },
+  { immediate: true },
+)
+
 const MAX_STICKY_DEPTH = 5
 provide<TreeRowContext>(
   treeRowContextKey,
