@@ -3,6 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TreeFixture from './fixtures/TreeFixture.vue'
+import { findTreeNode, findTreeParent, removeTreeNode } from '../src/components/Tree/Tree.vue'
 import type { TreeNode } from '../src/components/Tree/Tree.vue'
 
 // Same scenarios as tree-select.test.ts, adapted to the standalone component
@@ -193,16 +194,13 @@ test('filterable=false renders no search box', async () => {
   expect(screen.container.querySelector('.ui-tree-filter')).toBeNull()
 })
 
-test('expandOnRowClick: clicking a folder row expands it without also selecting it', async () => {
-  const screen = render(TreeFixture, {
-    props: { expandOnRowClick: true, selectionMode: 'checkbox' },
-  })
+test('expandOnRowClick: clicking a folder row both expands it and selects it', async () => {
+  const screen = render(TreeFixture, { props: { expandOnRowClick: true } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
 
   await userEvent.click(rowByLabel('Fruits')!)
   await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
-  expect(rowByLabel('Fruits')!.getAttribute('aria-checked')).toBe('false')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"fruits"')
 
   await userEvent.click(rowByLabel('Fruits')!)
   await vi.waitFor(() => expect(rowByLabel('Apple')).toBeUndefined())
@@ -310,4 +308,102 @@ test('exposed expandAll/collapseAll toggle every branch at once', async () => {
 
   await userEvent.click(screen.getByTestId('call-collapse-all'))
   await vi.waitFor(() => expect(rowByLabel('Branch')).toBeUndefined())
+})
+
+test('selectableFolders=false: clicking a folder never selects it, even with expandOnRowClick', async () => {
+  const screen = render(TreeFixture, {
+    props: { selectableFolders: false, expandOnRowClick: true },
+  })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+
+  await userEvent.click(rowByLabel('Fruits')!)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('null')
+  expect(rowByLabel('Fruits')!.getAttribute('aria-selected')).toBe('false')
+})
+
+test('selectableFolders=false: a leaf still selects normally', async () => {
+  const screen = render(TreeFixture, { props: { selectableFolders: false } })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+
+  await userEvent.click(rowByLabel('Apple')!)
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"apple"')
+})
+
+test('selectableFolders=false: keyboard Enter on a focused folder does not select it either', async () => {
+  const screen = render(TreeFixture, { props: { selectableFolders: false } })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await userEvent.tab()
+  await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('INPUT'))
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() => expect(focusedLabel()).toBe('Fruits'))
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('null')
+})
+
+test('selectableFolders=false: checkbox mode is unaffected (folders never carry their own value anyway)', async () => {
+  const screen = render(TreeFixture, {
+    props: { selectableFolders: false, selectionMode: 'checkbox' },
+  })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+
+  await userEvent.click(rowByLabel('Fruits')!)
+  await vi.waitFor(() => {
+    expect(rowByLabel('Fruits')!.getAttribute('aria-checked')).toBe('true')
+  })
+  const model = JSON.parse(screen.getByTestId('model').element().textContent || '[]') as string[]
+  expect(model).toEqual(expect.arrayContaining(['apple', 'banana']))
+})
+
+const traversalItems: TreeNode[] = [
+  {
+    label: 'Root',
+    value: 'root',
+    children: [
+      { label: 'Branch', value: 'branch', children: [{ label: 'Leaf', value: 'leaf' }] },
+      { label: 'Sibling', value: 'sibling' },
+    ],
+  },
+]
+
+test('findTreeNode finds a node at any depth, or undefined if missing', () => {
+  expect(findTreeNode(traversalItems, 'leaf')?.label).toBe('Leaf')
+  expect(findTreeNode(traversalItems, 'root')?.label).toBe('Root')
+  expect(findTreeNode(traversalItems, 'missing')).toBeUndefined()
+})
+
+test('findTreeParent finds the immediate parent at any depth, or null for a root node/missing value', () => {
+  expect(findTreeParent(traversalItems, 'leaf')?.value).toBe('branch')
+  expect(findTreeParent(traversalItems, 'sibling')?.value).toBe('root')
+  expect(findTreeParent(traversalItems, 'root')).toBeNull()
+  expect(findTreeParent(traversalItems, 'missing')).toBeNull()
+})
+
+test('removeTreeNode removes a node at any depth in place and reports whether it found one', () => {
+  const items = structuredClone(traversalItems)
+  expect(removeTreeNode(items, 'leaf')).toBe(true)
+  expect(findTreeNode(items, 'leaf')).toBeUndefined()
+  expect(findTreeNode(items, 'branch')?.children).toEqual([])
+  expect(removeTreeNode(items, 'missing')).toBe(false)
+})
+
+test("exposed findNode/findParent/removeNode are bound to this instance's own items", async () => {
+  const screen = render(TreeFixture, { props: { items: deepItems } })
+  await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
+
+  await userEvent.click(screen.getByTestId('call-find-leaf-a'))
+  await expect.element(screen.getByTestId('find-result')).toHaveTextContent('LeafA')
+
+  await userEvent.click(screen.getByTestId('call-find-parent-leaf-a'))
+  await expect.element(screen.getByTestId('find-result')).toHaveTextContent('branch')
+
+  await userEvent.click(screen.getByTestId('call-remove-leaf-a'))
+  await expect.element(screen.getByTestId('find-result')).toHaveTextContent('true')
+  await userEvent.click(screen.getByTestId('call-expand-all'))
+  await vi.waitFor(() => expect(rowByLabel('LeafB')).toBeDefined())
+  expect(rowByLabel('LeafA')).toBeUndefined()
 })

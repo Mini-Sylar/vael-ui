@@ -122,7 +122,12 @@ export type {
   CascadeSelectItem,
   CascadeSelectPath,
 } from './components/CascadeSelect/CascadeSelect.vue'
-export { default as Tree } from './components/Tree/Tree.vue'
+export {
+  default as Tree,
+  findTreeNode,
+  findTreeParent,
+  removeTreeNode,
+} from './components/Tree/Tree.vue'
 export type { TreeNode, TreeSelectionMode } from './components/Tree/Tree.vue'
 export { default as TreeSelect } from './components/TreeSelect/TreeSelect.vue'
 export type {

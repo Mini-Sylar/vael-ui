@@ -27,10 +27,31 @@ for (const match of uiIndex.matchAll(
   }
 }
 
+// A component's own .vue file can export more than its default (e.g. Tree.vue's
+// findTreeNode/findTreeParent/removeTreeNode). The `export type {...}` loop above
+// already mirrors that component's extra TYPE exports; this does the same for
+// extra VALUE exports, restricted to components that actually made it into the
+// Vapor build (same componentNames scoping used everywhere else in this file).
+const componentExtraValueNames = []
+for (const match of uiIndex.matchAll(
+  /export \{([^}]+)\} from '\.\/components\/(?:\w+\/)?(\w+)\.vue'/g,
+)) {
+  const [, namedClause, componentName] = match
+  if (!componentNames.includes(componentName)) continue
+  for (const raw of namedClause.split(',')) {
+    const trimmed = raw.trim()
+    if (!trimmed || /^default(\s+as\s+\S+)?$/.test(trimmed)) continue
+    componentExtraValueNames.push(trimmed)
+  }
+}
+
 const outPath = join(__dirname, '../ui/dist/vapor/index.d.ts')
 const lines = [
   `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask } from '../index'`,
 ]
+if (componentExtraValueNames.length > 0) {
+  lines.push(`export { ${componentExtraValueNames.join(', ')} } from '../index'`)
+}
 const allTypeNames = typeNames
 if (allTypeNames.length > 0) lines.push(`export type { ${allTypeNames.join(', ')} } from '../index'`)
 

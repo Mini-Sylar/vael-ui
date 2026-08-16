@@ -85,6 +85,7 @@
             v-model:query="query"
             :items="items"
             :selection-mode="selectionMode"
+            :selectable-folders="selectableFolders"
             :filterable="filterable"
             :filter-placeholder="filterPlaceholder"
             :empty-text="emptyText"
@@ -165,6 +166,11 @@ const props = withDefaults(
     placeholder?: string
     /** `'single'`: clicking replaces selection and closes the panel. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
     selectionMode?: TreeSelectSelectionMode
+    /** `false` keeps a node with children out of the selection entirely — click, keyboard Enter/Space,
+     * and expandOnRowClick's own select-on-expand all skip it, only a leaf can become the value. Has
+     * no effect in `selectionMode="checkbox"`, which already only ever puts leaves in the model.
+     * Default: true (a folder can be selected like any other node). */
+    selectableFolders?: boolean
     disabled?: boolean
     clearable?: boolean
     invalid?: boolean
@@ -173,9 +179,10 @@ const props = withDefaults(
     filterable?: boolean
     filterPlaceholder?: string
     emptyText?: string
-    /** When true, clicking anywhere on a folder row toggles its expansion instead of selecting it —
-     * the chevron stops being the only expand target. Leaf rows still select on click either way. Off
-     * by default since it changes what a plain row click does. */
+    /** When true, clicking anywhere on a folder row also toggles its expansion, not just the chevron —
+     * it still selects too (unless `selectableFolders` is off), so picking the folder itself (without
+     * opening it to reach a file inside) still works. Off by default since it changes what a plain row
+     * click does. */
     expandOnRowClick?: boolean
     /** When true, each expanded ancestor's row pins to the top of the panel as its own children scroll
      * past, VS Code-style, so deeply nested content never loses its folder context. */
@@ -208,6 +215,7 @@ const props = withDefaults(
   {
     placeholder: undefined,
     selectionMode: 'single',
+    selectableFolders: true,
     disabled: false,
     clearable: false,
     invalid: false,
@@ -435,5 +443,8 @@ defineExpose({
   collapseAll: () => treeRef.value?.collapseAll(),
   expandNode: (value: string | number) => treeRef.value?.expandNode(value),
   collapseNode: (value: string | number) => treeRef.value?.collapseNode(value),
+  findNode: (value: string | number) => treeRef.value?.findNode(value),
+  findParent: (value: string | number) => treeRef.value?.findParent(value) ?? null,
+  removeNode: (value: string | number) => treeRef.value?.removeNode(value) ?? false,
 })
 </script>

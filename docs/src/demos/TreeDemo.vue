@@ -47,14 +47,16 @@
       Everything here composes from existing pieces: the <code>#node</code> slot replaces the row's
       default content entirely (chevron, checkbox, label, checkmark), so git-status colors and a
       rename field are just markup, not new API. <code>expandOnRowClick</code> makes a folder click
-      expand instead of select; <code>stickyScroll</code> pins the expanded ancestor chain while
-      scrolling, using native <code>position: sticky</code>. The toolbar and right-click menu drive
-      the tree's data directly (<code>Tree</code> is uncontrolled state internally, so
-      adding/removing/renaming nodes is just editing the <code>items</code> array) — creating a file
-      or folder calls the exposed <code>expandNode()</code> on its parent so the new entry is
-      immediately visible, and <code>expandAll()</code>/<code>collapseAll()</code> back the toolbar
-      buttons, the same way <code>focusFirstRow</code> is exposed. Click a file to open it on the
-      right, the way a real editor tab would.
+      also expand it; <code>selectableFolders="false"</code> keeps a folder out of the selection
+      entirely, so browsing through folders never knocks the currently-open file out of the editor
+      pane. <code>stickyScroll</code> pins the expanded ancestor chain while scrolling, using native
+      <code>position: sticky</code>. The toolbar and right-click menu drive the tree's data directly
+      (<code>Tree</code> is uncontrolled state internally, so adding/removing/renaming nodes is just
+      editing the <code>items</code> array) — creating a file or folder calls the exposed
+      <code>expandNode()</code> on its parent so the new entry is immediately visible, and
+      <code>expandAll()</code>/<code>collapseAll()</code> back the toolbar buttons, the same way
+      <code>focusFirstRow</code> is exposed. Click a file to open it on the right, the way a real
+      editor tab would.
     </p>
     <div class="vscode-shell">
       <Resizable v-model:size="sidebarSize" :min="200" :max="360" class="vscode-sidebar">
@@ -136,44 +138,47 @@
             :items="gitFileTree"
             :filterable="false"
             expand-on-row-click
+            :selectable-folders="false"
             sticky-scroll
           >
             <template #node="{ node, expanded, checked }">
-              <span class="vscode-node-wrapper" @click="setContext(node)">
-                <ContextMenu :items="contextItemsFor(node)">
-                  <span class="vscode-chevron" :data-open="node.children ? expanded : undefined">
-                    <PhCaretRight v-if="node.children" :size="12" />
-                  </span>
-                  <component
-                    :is="node.children ? PhFolder : PhFile"
-                    :size="14"
-                    class="vscode-icon"
-                  />
-                  <Input
-                    v-if="editingValue === node.value"
-                    v-model="editingDraftName"
-                    size="sm"
-                    class="vscode-rename-input"
-                    @click.stop
-                    @keydown.enter="commitRename"
-                    @keydown.esc="editingValue = null"
-                    @blur="commitRename"
-                  />
-                  <span
-                    v-else
-                    class="vscode-label"
-                    :data-status="node.gitStatus"
-                    :data-selected="checked || undefined"
-                  >
-                    {{ node.label }}
-                  </span>
-                  <span v-if="node.gitStatus" class="vscode-badge" :data-status="node.gitStatus">
-                    {{ node.gitStatus }}
-                  </span>
-                </ContextMenu>
+              <span
+                class="vscode-node-wrapper"
+                @click="setContext(node)"
+                @contextmenu.prevent="openContextMenu(node, $event)"
+              >
+                <span class="vscode-chevron" :data-open="node.children ? expanded : undefined">
+                  <PhCaretRight v-if="node.children" :size="12" />
+                </span>
+                <component :is="node.children ? PhFolder : PhFile" :size="14" class="vscode-icon" />
+                <Input
+                  v-if="editingValue === node.value"
+                  v-model="editingDraftName"
+                  size="sm"
+                  class="vscode-rename-input"
+                  @click.stop
+                  @keydown.enter="commitRename"
+                  @keydown.esc="editingValue = null"
+                  @blur="commitRename"
+                />
+                <span
+                  v-else
+                  class="vscode-label"
+                  :data-status="node.gitStatus"
+                  :data-selected="checked || isContextFolder(node) || undefined"
+                >
+                  {{ node.label }}
+                </span>
+                <span v-if="node.gitStatus" class="vscode-badge" :data-status="node.gitStatus">
+                  {{ node.gitStatus }}
+                </span>
               </span>
             </template>
           </Tree>
+          <!-- One shared instance instead of one per row — each row just
+               reports a right-click; nothing about the menu itself is
+               per-node, so N rows shouldn't mean N popover instances. -->
+          <ContextMenu ref="contextMenuRef" :items="contextMenuItems" :long-press="false" />
         </div>
       </Resizable>
 
@@ -194,7 +199,18 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, shallowRef, useTemplateRef } from 'vue'
-import { Button, ContextMenu, Input, Resizable, Toolbar, Tree, vTooltip } from 'vael-ui'
+import {
+  Button,
+  ContextMenu,
+  findTreeNode,
+  findTreeParent,
+  Input,
+  removeTreeNode,
+  Resizable,
+  Toolbar,
+  Tree,
+  vTooltip,
+} from 'vael-ui'
 import type { MenuEntry, TreeNode } from 'vael-ui'
 import {
   PhArrowsInLineVertical,
@@ -478,35 +494,6 @@ pnpm dev
   },
 ])
 
-function findNode(nodes: GitTreeNode[], value: string | number): GitTreeNode | undefined {
-  for (const node of nodes) {
-    if (node.value === value) return node
-    if (node.children) {
-      const found = findNode(node.children, value)
-      if (found) return found
-    }
-  }
-  return undefined
-}
-function removeNode(nodes: GitTreeNode[], value: string | number): boolean {
-  const index = nodes.findIndex((node) => node.value === value)
-  if (index !== -1) {
-    nodes.splice(index, 1)
-    return true
-  }
-  return nodes.some((node) => node.children && removeNode(node.children, value))
-}
-function findParentOf(nodes: GitTreeNode[], value: string | number): GitTreeNode | null {
-  for (const node of nodes) {
-    if (node.children?.some((child) => child.value === value)) return node
-    if (node.children) {
-      const found = findParentOf(node.children, value)
-      if (found) return found
-    }
-  }
-  return null
-}
-
 const sidebarSize = shallowRef(256)
 
 const vscodeValue = shallowRef<string | number | null>(null)
@@ -518,14 +505,10 @@ function toggleSearch() {
 }
 
 const selectedFile = computed(() =>
-  vscodeValue.value == null ? null : (findNode(gitFileTree.value, vscodeValue.value) ?? null),
+  vscodeValue.value == null ? null : (findTreeNode(gitFileTree.value, vscodeValue.value) ?? null),
 )
 
-const treeRef = useTemplateRef<{
-  collapseAll: () => void
-  expandAll: () => void
-  expandNode: (value: string | number) => void
-}>('treeRef')
+const treeRef = useTemplateRef('treeRef')
 function collapseAll() {
   treeRef.value?.collapseAll()
 }
@@ -537,7 +520,13 @@ function expandAll() {
 // inside whatever the user is currently browsing, instead of always at root.
 const contextFolder = shallowRef<GitTreeNode | null>(null)
 function setContext(node: GitTreeNode) {
-  contextFolder.value = node.children ? node : findParentOf(gitFileTree.value, node.value)
+  contextFolder.value = node.children ? node : findTreeParent(gitFileTree.value, node.value)
+}
+// selectableFolders="false" keeps a folder out of Tree's own selection, so
+// its `checked` slot prop never reflects it — this is the only remaining
+// signal for "New File/Folder will land here".
+function isContextFolder(node: GitTreeNode): boolean {
+  return !!node.children && contextFolder.value?.value === node.value
 }
 
 let untitledCounter = 1
@@ -552,7 +541,7 @@ function startEditing(node: GitTreeNode) {
 }
 function commitRename() {
   if (editingValue.value == null) return
-  const node = findNode(gitFileTree.value, editingValue.value)
+  const node = findTreeNode(gitFileTree.value, editingValue.value)
   if (node && editingDraftName.value.trim()) node.label = editingDraftName.value.trim()
   editingValue.value = null
 }
@@ -616,10 +605,22 @@ function contextItemsFor(node: GitTreeNode): MenuEntry[] {
       value: 'delete',
       icon: PhTrash,
       danger: true,
-      onSelect: () => removeNode(gitFileTree.value, node.value),
+      onSelect: () => removeTreeNode(gitFileTree.value, node.value),
     },
   )
   return items
+}
+
+// Single ContextMenu instance shared by every row (see the template) —
+// retargeted per right-click instead of rendering one per row.
+const contextMenuRef = useTemplateRef('contextMenuRef')
+const contextMenuTarget = shallowRef<GitTreeNode | null>(null)
+const contextMenuItems = computed(() =>
+  contextMenuTarget.value ? contextItemsFor(contextMenuTarget.value) : [],
+)
+function openContextMenu(node: GitTreeNode, event: MouseEvent) {
+  contextMenuTarget.value = node
+  contextMenuRef.value?.openAt(event.clientX, event.clientY)
 }
 </script>
 

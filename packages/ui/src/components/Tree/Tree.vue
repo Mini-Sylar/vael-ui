@@ -65,6 +65,9 @@
               :disabled="scope.disabled"
               :toggle-expand="scope.toggleExpand"
               :toggle-select="scope.toggleSelect"
+              :find-node="scope.findNode as (value: string | number) => T | undefined"
+              :find-parent="scope.findParent as (value: string | number) => T | null"
+              :remove-node="scope.removeNode"
             >
               <span
                 v-if="scope.node.children && scope.node.children.length > 0"
@@ -133,6 +136,48 @@ export interface TreeNode {
 
 export type TreeSelectionMode = 'single' | 'multiple' | 'checkbox'
 
+// Depth-first search, exported so a consumer editing `items` directly
+// (Tree owns no copy of it — see the SFC comment below) doesn't need to
+// hand-roll the same recursion every time. Also bound per-instance onto the
+// #node slot (findNode/findParent/removeNode) as a same-tree shorthand.
+export function findTreeNode<T extends TreeNode>(
+  nodes: readonly T[],
+  value: string | number,
+): T | undefined {
+  for (const node of nodes) {
+    if (node.value === value) return node
+    if (node.children) {
+      const found = findTreeNode(node.children as readonly T[], value)
+      if (found) return found
+    }
+  }
+  return undefined
+}
+export function findTreeParent<T extends TreeNode>(
+  nodes: readonly T[],
+  value: string | number,
+): T | null {
+  for (const node of nodes) {
+    if (node.children?.some((child) => child.value === value)) return node
+    if (node.children) {
+      const found = findTreeParent(node.children as readonly T[], value)
+      if (found) return found
+    }
+  }
+  return null
+}
+/** Mutates `nodes` (and its nested `children` arrays) in place — same
+ * "Tree owns no copy" contract as adding/renaming. Returns whether a match
+ * was found and removed. */
+export function removeTreeNode<T extends TreeNode>(nodes: T[], value: string | number): boolean {
+  const index = nodes.findIndex((node) => node.value === value)
+  if (index !== -1) {
+    nodes.splice(index, 1)
+    return true
+  }
+  return nodes.some((node) => node.children && removeTreeNode(node.children as T[], value))
+}
+
 // Non-setup block so TreeNodeRow.vue (a sibling .vue file) can import this
 // without a separate .ts module — generate-vapor.mjs's dependency walker
 // only follows .vue-extension sibling imports.
@@ -150,6 +195,9 @@ export interface TreeRowContext {
   onRowClick: (node: TreeNode, event: MouseEvent) => void
   isVisible: (node: TreeNode) => boolean
   nodePart: (node: TreeNode) => { class: string; style: UiPartStyle | undefined }
+  findNode: (value: string | number) => TreeNode | undefined
+  findParent: (value: string | number) => TreeNode | null
+  removeNode: (value: string | number) => boolean
 }
 export const treeRowContextKey: InjectionKey<TreeRowContext> = Symbol('treeRowContext')
 </script>
@@ -189,15 +237,21 @@ const props = withDefaults(
     items: readonly T[]
     /** `'single'`: clicking replaces the selection. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
     selectionMode?: TreeSelectionMode
+    /** `false` keeps a node with children out of the selection entirely — click, keyboard Enter/Space,
+     * and expandOnRowClick's own select-on-expand all skip it, only a leaf can become the value. Has
+     * no effect in `selectionMode="checkbox"`, which already only ever puts leaves in the model.
+     * Default: true (a folder can be selected like any other node). */
+    selectableFolders?: boolean
     /** Shows a built-in label search box atop the tree, auto-expanding ancestors of any match. Default: on. */
     filterable?: boolean
     filterPlaceholder?: string
     emptyText?: string
     /** `false` skips all built-in motion (row transitions, chevron rotation, and cross-folder move). */
     motionCss?: boolean
-    /** When true, clicking anywhere on a folder row toggles its expansion instead of selecting it — the
-     * chevron stops being the only expand target. Leaf rows still select on click either way. Off by
-     * default since it changes what a plain row click does. */
+    /** When true, clicking anywhere on a folder row also toggles its expansion, not just the chevron —
+     * it still selects too (unless `selectableFolders` is off), so picking the folder itself (without
+     * opening it to reach a file inside) still works. Off by default since it changes what a plain row
+     * click does. */
     expandOnRowClick?: boolean
     /** When true, each expanded ancestor's row pins to the top of the list as its own children scroll
      * past, VS Code-style, so deeply nested content never loses its folder context. Uses native
@@ -216,6 +270,7 @@ const props = withDefaults(
   }>(),
   {
     selectionMode: 'single',
+    selectableFolders: true,
     filterable: true,
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
@@ -235,7 +290,9 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  /** Row content (inside the library's role="treeitem" wrapper). */
+  /** Row content (inside the library's role="treeitem" wrapper). findNode/findParent/removeNode
+   * are shorthand for findTreeNode/findTreeParent/removeTreeNode bound to this instance's own
+   * `items`, for the common case of looking up a sibling/parent/self without importing them. */
   node(props: {
     node: T
     depth: number
@@ -245,6 +302,9 @@ defineSlots<{
     disabled: boolean
     toggleExpand: () => void
     toggleSelect: () => void
+    findNode: (value: string | number) => T | undefined
+    findParent: (value: string | number) => T | null
+    removeNode: (value: string | number) => boolean
   }): unknown
   /** Replaces the default empty-state row shown when nothing survives the filter. */
   empty(): unknown
@@ -337,8 +397,15 @@ function selectSingle(node: TreeNode) {
 }
 function activateNode(node: TreeNode) {
   if (node.disabled) return
-  if (props.selectionMode === 'checkbox') toggleCheckbox(node)
-  else if (props.selectionMode === 'multiple') toggleMultiple(node)
+  if (props.selectionMode === 'checkbox') {
+    // Checkbox mode never puts a folder's own value in the model — it
+    // collects leaves — so selectableFolders doesn't apply here.
+    toggleCheckbox(node)
+    return
+  }
+  const hasChildren = !!node.children && node.children.length > 0
+  if (!props.selectableFolders && hasChildren) return
+  if (props.selectionMode === 'multiple') toggleMultiple(node)
   else selectSingle(node)
 }
 
@@ -545,12 +612,7 @@ function onRowClick(node: TreeNode, event: MouseEvent) {
   // Guard: chevron/checkbox click must not also activate row.
   if (target.closest('.ui-tree-chevron, .ui-checkbox')) return
   const hasChildren = !!node.children && node.children.length > 0
-  if (props.expandOnRowClick && hasChildren) {
-    // Expands only, never also selects — the checkbox/selected state
-    // shouldn't jump to a folder just because it was clicked through.
-    toggleExpand(node)
-    return
-  }
+  if (props.expandOnRowClick && hasChildren) toggleExpand(node)
   activateNode(node)
 }
 
@@ -679,6 +741,19 @@ function nodePart(node: TreeNode) {
   )
 }
 
+// Slot-bound shorthand for findTreeNode/findTreeParent/removeTreeNode
+// against this instance's own `items`, so the #node slot doesn't need its
+// own import for the common case of looking up a sibling/parent/self.
+function findNode(value: string | number): T | undefined {
+  return findTreeNode(props.items, value)
+}
+function findParent(value: string | number): T | null {
+  return findTreeParent(props.items, value)
+}
+function removeNode(value: string | number): boolean {
+  return removeTreeNode(props.items as T[], value)
+}
+
 const MAX_STICKY_DEPTH = 5
 provide<TreeRowContext>(
   treeRowContextKey,
@@ -696,6 +771,9 @@ provide<TreeRowContext>(
     onRowClick,
     isVisible,
     nodePart,
+    findNode,
+    findParent,
+    removeNode,
   }),
 )
 
@@ -708,5 +786,8 @@ defineExpose({
   collapseAll,
   expandNode,
   collapseNode,
+  findNode,
+  findParent,
+  removeNode,
 })
 </script>

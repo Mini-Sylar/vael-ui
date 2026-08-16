@@ -9,6 +9,7 @@
       :filterable="filterable"
       :expand-on-row-click="expandOnRowClick"
       :sticky-scroll="stickyScroll"
+      :selectable-folders="selectableFolders"
     />
   </div>
   <!-- Below the tree so `userEvent.tab()` from body still reaches the
@@ -20,6 +21,25 @@
   </button>
   <button data-testid="call-collapse-root" @click="treeRef?.collapseNode('root')">
     collapseNode('root')
+  </button>
+  <output data-testid="find-result">{{ findResult }}</output>
+  <button
+    data-testid="call-find-leaf-a"
+    @click="findResult = treeRef?.findNode('leafA')?.label ?? 'none'"
+  >
+    findNode('leafA')
+  </button>
+  <button
+    data-testid="call-find-parent-leaf-a"
+    @click="findResult = String(treeRef?.findParent('leafA')?.value ?? 'none')"
+  >
+    findParent('leafA')
+  </button>
+  <button
+    data-testid="call-remove-leaf-a"
+    @click="findResult = String(treeRef?.removeNode('leafA'))"
+  >
+    removeNode('leafA')
   </button>
 </template>
 
@@ -35,6 +55,7 @@ const props = withDefaults(
     items?: TreeNode[]
     expandOnRowClick?: boolean
     stickyScroll?: boolean
+    selectableFolders?: boolean
     height?: string
   }>(),
   {
@@ -43,6 +64,7 @@ const props = withDefaults(
     items: undefined,
     expandOnRowClick: false,
     stickyScroll: false,
+    selectableFolders: true,
     height: undefined,
   },
 )
@@ -52,7 +74,11 @@ const treeRef = useTemplateRef<{
   collapseAll: () => void
   expandNode: (value: string | number) => void
   collapseNode: (value: string | number) => void
+  findNode: (value: string | number) => TreeNode | undefined
+  findParent: (value: string | number) => TreeNode | null
+  removeNode: (value: string | number) => boolean
 }>('treeRef')
+const findResult = shallowRef('')
 
 // Same shape as TreeSelectFixture's own default data — the two components
 // share one tree-body implementation, so the same nested fixture data

@@ -27,6 +27,9 @@
         :disabled="!!node.disabled"
         :toggle-expand="() => ctx.toggleExpand(node)"
         :toggle-select="() => ctx.activateNode(node)"
+        :find-node="ctx.findNode"
+        :find-parent="ctx.findParent"
+        :remove-node="ctx.removeNode"
       />
     </div>
     <Transition :name="ctx.motionCss ? 'ui-tree-rows' : undefined" appear>
@@ -71,6 +74,9 @@ defineSlots<{
     disabled: boolean
     toggleExpand: () => void
     toggleSelect: () => void
+    findNode: (value: string | number) => TreeNode | undefined
+    findParent: (value: string | number) => TreeNode | null
+    removeNode: (value: string | number) => boolean
   }): unknown
 }>()
 

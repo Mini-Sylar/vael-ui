@@ -50,6 +50,32 @@ function collectPublicExports(indexSource) {
   return names
 }
 
+// A component's own .vue file can export more than its default (e.g. Tree.vue's
+// findTreeNode/findTreeParent/removeTreeNode, alongside `export default`). The
+// barrel's `export * from './X.vue'` below is meant to carry those through, but
+// tsdown's own bundling doesn't reliably resolve a wildcard re-export for plain
+// function/const exports the way it does for the default — silently dropping
+// them from the final dist barrel with no build error. Listing them explicitly
+// here, the same way collectNonComponentExports already does for composables,
+// is what actually makes them survive.
+function collectComponentExtraExports(indexSource) {
+  const byModuleId = new Map() // moduleId ('Tree/Tree') -> Set<name>
+  const re = /export\s+\{([^}]+)\}\s+from\s+'\.\/components\/([^']+)\.vue'/g
+  let match
+  while ((match = re.exec(indexSource))) {
+    const [, namedClause, moduleId] = match
+    const names = new Set()
+    for (const raw of namedClause.split(',')) {
+      const trimmed = raw.trim()
+      if (!trimmed || /^default(\s+as\s+\S+)?$/.test(trimmed)) continue
+      const asMatch = trimmed.match(/\bas\s+(\S+)/)
+      names.add(asMatch ? asMatch[1] : trimmed)
+    }
+    if (names.size > 0) byModuleId.set(moduleId, names)
+  }
+  return byModuleId
+}
+
 // Handled elsewhere: the vTooltip/vScrollMask alias lines and generateConfirmActionSource below.
 const NON_COMPONENT_EXPORTS_EXCLUDED = new Set([
   'vTooltip',
@@ -306,12 +332,16 @@ function main() {
     return
   }
 
+  const extraComponentExports = collectComponentExtraExports(indexSource)
   const barrelLines = COMPONENTS.flatMap((name) => {
     const moduleId = resolveModuleId(name)
-    return [
+    const lines = [
       `export { default as ${name} } from './${moduleId}.vue'`,
       `export * from './${moduleId}.vue'`,
     ]
+    const extra = extraComponentExports.get(moduleId)
+    if (extra) lines.push(`export { ${[...extra].join(', ')} } from './${moduleId}.vue'`)
+    return lines
   })
   barrelLines.push(
     `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
