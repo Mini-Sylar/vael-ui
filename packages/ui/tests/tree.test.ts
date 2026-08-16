@@ -3,6 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TreeFixture from './fixtures/TreeFixture.vue'
+import type { TreeNode } from '../src/components/Tree/Tree.vue'
 
 // Same scenarios as tree-select.test.ts, adapted to the standalone component
 // this logic was extracted INTO — no popover to open first, and Tree's own
@@ -190,4 +191,123 @@ test('filterable=false renders no search box', async () => {
   const screen = render(TreeFixture, { props: { filterable: false } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   expect(screen.container.querySelector('.ui-tree-filter')).toBeNull()
+})
+
+test('expandOnRowClick: clicking a folder row expands it without also selecting it', async () => {
+  const screen = render(TreeFixture, {
+    props: { expandOnRowClick: true, selectionMode: 'checkbox' },
+  })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+
+  await userEvent.click(rowByLabel('Fruits')!)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
+  expect(rowByLabel('Fruits')!.getAttribute('aria-checked')).toBe('false')
+
+  await userEvent.click(rowByLabel('Fruits')!)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeUndefined())
+})
+
+test('expandOnRowClick: a leaf row still selects normally on click', async () => {
+  const screen = render(TreeFixture, { props: { expandOnRowClick: true } })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await userEvent.click(rowByLabel('Fruits')!)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+
+  await userEvent.click(rowByLabel('Apple')!)
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"apple"')
+})
+
+test('expandOnRowClick off (default): clicking a folder row selects it, same as any other node', async () => {
+  const screen = render(TreeFixture)
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+
+  await userEvent.click(rowByLabel('Fruits')!)
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"fruits"')
+})
+
+const deepItems: TreeNode[] = [
+  {
+    label: 'Root',
+    value: 'root',
+    children: [
+      {
+        label: 'Branch',
+        value: 'branch',
+        children: [
+          { label: 'LeafA', value: 'leafA' },
+          { label: 'LeafB', value: 'leafB' },
+          { label: 'LeafC', value: 'leafC' },
+        ],
+      },
+      { label: 'Sibling', value: 'sibling' },
+    ],
+  },
+]
+
+async function expandRootAndBranch() {
+  await userEvent.click(rowByLabel('Root')!.querySelector('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(rowByLabel('Branch')).toBeDefined())
+  await userEvent.click(rowByLabel('Branch')!.querySelector('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(rowByLabel('LeafA')).toBeDefined())
+}
+
+test('stickyScroll: expanded folder rows get native position: sticky, stacked by depth', async () => {
+  render(TreeFixture, { props: { items: deepItems, stickyScroll: true, height: '120px' } })
+  await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
+  await expandRootAndBranch()
+
+  const rootRow = rowByLabel('Root')!
+  const branchRow = rowByLabel('Branch')!
+  expect(getComputedStyle(rootRow).position).toBe('sticky')
+  expect(getComputedStyle(branchRow).position).toBe('sticky')
+  expect(rootRow.style.top).toBe('calc(var(--ui-tree-row-height) * 0)')
+  expect(branchRow.style.top).toBe('calc(var(--ui-tree-row-height) * 1)')
+  expect(getComputedStyle(rowByLabel('LeafA')!).position).not.toBe('sticky')
+})
+
+test('stickyScroll off (default): folder rows stay in normal flow even when expanded', async () => {
+  render(TreeFixture, { props: { items: deepItems, height: '120px' } })
+  await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
+  await expandRootAndBranch()
+
+  expect(getComputedStyle(rowByLabel('Root')!).position).not.toBe('sticky')
+  expect(getComputedStyle(rowByLabel('Branch')!).position).not.toBe('sticky')
+})
+
+test('stickyScroll + expandOnRowClick: a pinned row still collapses normally on click', async () => {
+  render(TreeFixture, {
+    props: { items: deepItems, stickyScroll: true, expandOnRowClick: true, height: '120px' },
+  })
+  await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
+  await expandRootAndBranch()
+
+  await userEvent.click(rowByLabel('Branch')!)
+  await vi.waitFor(() => expect(rowByLabel('LeafA')).toBeUndefined())
+})
+
+test('exposed expandNode/collapseNode toggle a specific node by value', async () => {
+  const screen = render(TreeFixture, { props: { items: deepItems } })
+  await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
+  expect(rowByLabel('Branch')).toBeUndefined()
+
+  await userEvent.click(screen.getByTestId('call-expand-root'))
+  await vi.waitFor(() => expect(rowByLabel('Branch')).toBeDefined())
+
+  await userEvent.click(screen.getByTestId('call-collapse-root'))
+  await vi.waitFor(() => expect(rowByLabel('Branch')).toBeUndefined())
+})
+
+test('exposed expandAll/collapseAll toggle every branch at once', async () => {
+  const screen = render(TreeFixture, { props: { items: deepItems } })
+  await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
+
+  await userEvent.click(screen.getByTestId('call-expand-all'))
+  await vi.waitFor(() => expect(rowByLabel('LeafA')).toBeDefined())
+  expect(rowByLabel('Sibling')).toBeDefined()
+
+  await userEvent.click(screen.getByTestId('call-collapse-all'))
+  await vi.waitFor(() => expect(rowByLabel('Branch')).toBeUndefined())
 })

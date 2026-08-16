@@ -89,6 +89,8 @@
             :filter-placeholder="filterPlaceholder"
             :empty-text="emptyText"
             :motion-css="motionCss"
+            :expand-on-row-click="expandOnRowClick"
+            :sticky-scroll="stickyScroll"
             :ui="treeUi"
             @change="(value) => emit('change', value)"
             @select="onTreeSelect"
@@ -171,6 +173,13 @@ const props = withDefaults(
     filterable?: boolean
     filterPlaceholder?: string
     emptyText?: string
+    /** When true, clicking anywhere on a folder row toggles its expansion instead of selecting it —
+     * the chevron stops being the only expand target. Leaf rows still select on click either way. Off
+     * by default since it changes what a plain row click does. */
+    expandOnRowClick?: boolean
+    /** When true, each expanded ancestor's row pins to the top of the panel as its own children scroll
+     * past, VS Code-style, so deeply nested content never loses its folder context. */
+    stickyScroll?: boolean
     /** Renders hidden `<input>`(s) mirroring the selection, for plain
      * `<form>` posts — repeated `name` outside `single` mode. */
     name?: string
@@ -206,6 +215,8 @@ const props = withDefaults(
     filterable: true,
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
+    expandOnRowClick: false,
+    stickyScroll: false,
     name: undefined,
     side: 'bottom',
     align: 'start',
@@ -420,5 +431,9 @@ defineExpose({
   open: openTree,
   close,
   cancelClose,
+  expandAll: () => treeRef.value?.expandAll(),
+  collapseAll: () => treeRef.value?.collapseAll(),
+  expandNode: (value: string | number) => treeRef.value?.expandNode(value),
+  collapseNode: (value: string | number) => treeRef.value?.collapseNode(value),
 })
 </script>

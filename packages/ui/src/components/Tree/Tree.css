@@ -3,9 +3,12 @@
   .ui-tree-root {
     display: flex;
     flex-direction: column;
-    /* Lets rows scroll when height-constrained. */
+    /* Lets Tree shrink when height- or width-constrained (e.g. a resized panel). */
     flex: 1 1 auto;
     min-block-size: 0;
+    min-inline-size: 0;
+    /* Per-level sticky offset (depth * this) — row height + its trailing gap. */
+    --ui-tree-row-height: 2.0625rem;
   }
   .ui-tree-filter {
     flex: none;
@@ -15,11 +18,17 @@
   .ui-tree-search-icon {
     color: var(--ui-text-muted);
   }
+  /* No block padding: position:sticky's `top` resolves against this
+     element's own padding edge, so any top padding here would leave a
+     permanent gap above a stuck depth-0 row. Equivalent spacing lives on
+     .ui-tree-list > .ui-tree-rows as a margin instead. */
   .ui-tree-list {
     flex: 1 1 auto;
-    min-block-size: 0; /* Allows scrolling. */
+    min-block-size: 0;
+    min-inline-size: 0;
     overflow-y: auto;
-    padding: 0.25rem;
+    padding-inline: 0.25rem;
+    padding-block: 0 0.25rem;
   }
   .ui-tree-empty {
     display: flex;
@@ -29,17 +38,33 @@
     color: var(--ui-text-muted);
     font-size: 0.875rem;
   }
-  .ui-tree-rows {
-    position: relative; /* Containing block for leaving row. */
+  /* TreeNodeRow.vue's own root: row + its children block. A real box, not
+     `display: contents`, so the children block's leave-active (absolute) has
+     something to anchor to. */
+  .ui-tree-node {
     display: flex;
     flex-direction: column;
     gap: 0.0625rem;
+    min-inline-size: 0;
+    position: relative;
+  }
+  .ui-tree-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.0625rem;
+    min-inline-size: 0;
+  }
+  /* Only the root wrapper, not nested per-folder children blocks (same
+     class) — those must stay flush with their row for the sticky depth math. */
+  .ui-tree-list > .ui-tree-rows {
+    margin-block-start: 0.25rem;
   }
   .ui-tree-row {
     display: flex;
     align-items: center;
     gap: 0.375rem;
     inline-size: 100%;
+    min-inline-size: 0;
     padding-inline-start: calc(0.375rem + var(--ui-tree-depth, 0) * 1.25rem);
     padding-inline-end: 0.625rem;
     padding-block: 0.375rem;
@@ -49,12 +74,24 @@
     line-height: 1.25rem;
     text-align: start;
     cursor: pointer;
+    user-select: none;
     transition: background-color var(--ui-duration-press) ease;
   }
   .ui-tree-row:hover:not(.ui-tree-row--disabled),
   .ui-tree-row:focus-visible {
     background: var(--ui-muted);
     outline: none;
+  }
+  /* After .ui-tree-row so padding-block-end wins (equal specificity, later
+     source). 1px overscan (negative margin keeps layout height unchanged)
+     covers a measured sub-pixel gap at the sticky boundary. z-index is
+     depth-based so a shallower ancestor (e.g. src) always stays above a
+     deeper one (e.g. components) during the scroll handoff. */
+  .ui-tree-row--sticky {
+    z-index: calc(6 - var(--ui-tree-depth, 0));
+    background: var(--ui-surface);
+    padding-block-end: calc(0.375rem + 1px);
+    margin-block-end: -1px;
   }
   /* Quiet permanent tint for current value. */
   .ui-tree-row--selected {
@@ -78,13 +115,11 @@
     padding: 0;
     color: var(--ui-text-muted);
     cursor: pointer;
-    /* Same rotation as Accordion. */
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
   }
   .ui-tree-chevron[data-state='open'] {
     transform: rotate(90deg);
   }
-  /* motionCss=false on Tree root. */
   .ui-tree-root[data-motion='off'] .ui-tree-chevron {
     transition: none;
   }
@@ -99,32 +134,33 @@
     flex: none;
     color: var(--ui-primary);
   }
-  /* Row enter/leave: opacity fade + FLIP move. */
-  .ui-tree-row-enter-active,
-  .ui-tree-row-leave-active {
+  /* A folder's own children fade in/out as one block. ease-in-out (not
+     ease-out) to match Tree.vue's FLIP pass, which slides later siblings
+     out of the way on the same curve — a mismatched curve made the fade
+     visibly outrun the slide, so faded-in content overlapped a sibling that
+     hadn't moved yet. */
+  .ui-tree-rows-enter-active,
+  .ui-tree-rows-leave-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
   }
-  .ui-tree-row-enter-from,
-  .ui-tree-row-leave-to {
+  .ui-tree-rows-enter-from,
+  .ui-tree-rows-leave-to {
     opacity: 0;
   }
-  .ui-tree-row-leave-active {
+  /* Out of flow during its own leave so what follows can close the gap
+     immediately instead of waiting for the fade. */
+  .ui-tree-rows-leave-active {
     position: absolute;
-    inline-size: 100%;
-  }
-  .ui-tree-row-move {
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+    inset-inline: 0;
+    top: var(--ui-tree-row-height);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    /* Tree (standalone) — same opt-out as TreeSelect's, against its
-       own `.ui-tree-*` classes (see Tree.vue's own comment on the split). */
     .ui-tree-chevron {
       transition: none;
     }
-    .ui-tree-row-enter-active,
-    .ui-tree-row-leave-active,
-    .ui-tree-row-move {
+    .ui-tree-rows-enter-active,
+    .ui-tree-rows-leave-active {
       transition: none;
     }
   }

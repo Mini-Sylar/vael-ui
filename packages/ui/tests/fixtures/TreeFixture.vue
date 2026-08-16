@@ -1,15 +1,30 @@
 <template>
   <output data-testid="model">{{ JSON.stringify(model) }}</output>
-  <Tree
-    v-model="model"
-    :items="resolvedItems"
-    :selection-mode="selectionMode"
-    :filterable="filterable"
-  />
+  <div :style="height ? { blockSize: height, display: 'flex' } : undefined">
+    <Tree
+      ref="treeRef"
+      v-model="model"
+      :items="resolvedItems"
+      :selection-mode="selectionMode"
+      :filterable="filterable"
+      :expand-on-row-click="expandOnRowClick"
+      :sticky-scroll="stickyScroll"
+    />
+  </div>
+  <!-- Below the tree so `userEvent.tab()` from body still reaches the
+       filter input first, matching real tab order. -->
+  <button data-testid="call-expand-all" @click="treeRef?.expandAll()">expandAll()</button>
+  <button data-testid="call-collapse-all" @click="treeRef?.collapseAll()">collapseAll()</button>
+  <button data-testid="call-expand-root" @click="treeRef?.expandNode('root')">
+    expandNode('root')
+  </button>
+  <button data-testid="call-collapse-root" @click="treeRef?.collapseNode('root')">
+    collapseNode('root')
+  </button>
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, useTemplateRef } from 'vue'
 import Tree from '../../src/components/Tree/Tree.vue'
 import type { TreeNode, TreeSelectionMode } from '../../src/components/Tree/Tree.vue'
 
@@ -18,9 +33,26 @@ const props = withDefaults(
     selectionMode?: TreeSelectionMode
     filterable?: boolean
     items?: TreeNode[]
+    expandOnRowClick?: boolean
+    stickyScroll?: boolean
+    height?: string
   }>(),
-  { selectionMode: 'single', filterable: true, items: undefined },
+  {
+    selectionMode: 'single',
+    filterable: true,
+    items: undefined,
+    expandOnRowClick: false,
+    stickyScroll: false,
+    height: undefined,
+  },
 )
+
+const treeRef = useTemplateRef<{
+  expandAll: () => void
+  collapseAll: () => void
+  expandNode: (value: string | number) => void
+  collapseNode: (value: string | number) => void
+}>('treeRef')
 
 // Same shape as TreeSelectFixture's own default data — the two components
 // share one tree-body implementation, so the same nested fixture data

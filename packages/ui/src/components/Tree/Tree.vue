@@ -40,101 +40,90 @@
       @keydown="onTreeKeydown"
     >
       <div
-        v-if="flatRows.length === 0"
+        v-if="visibleRootNodes.length === 0"
         :class="emptyPart.class"
         :style="emptyPart.style"
         role="presentation"
       >
         <slot name="empty">{{ emptyText }}</slot>
       </div>
-      <TransitionGroup
-        v-else
-        :name="motionCss ? 'ui-tree-row' : undefined"
-        tag="div"
-        class="ui-tree-rows"
-      >
-        <div
-          v-for="(row, i) in flatRows"
-          :key="row.key"
-          role="treeitem"
-          tabindex="-1"
-          :class="nodePart(row).class"
-          :style="[indentStyle(row.depth), nodePart(row).style]"
-          :data-tree-index="i"
-          :aria-level="row.depth + 1"
-          :aria-expanded="row.hasChildren ? isExpanded(row.node) : undefined"
-          :aria-disabled="row.node.disabled || undefined"
-          :aria-selected="
-            selectionMode !== 'checkbox' ? (isCheckedNode(row.node) ? 'true' : 'false') : undefined
-          "
-          :aria-checked="selectionMode === 'checkbox' ? ariaChecked(row.node) : undefined"
-          @click="onRowClick(row.node, $event)"
+      <div v-else class="ui-tree-rows">
+        <TreeNodeRow
+          v-for="node in visibleRootNodes"
+          :key="String(node.value)"
+          :node="node"
+          :depth="0"
         >
-          <slot
-            name="node"
-            :node="row.node as T"
-            :depth="row.depth"
-            :expanded="row.hasChildren && isExpanded(row.node)"
-            :checked="isCheckedNode(row.node)"
-            :indeterminate="isIndeterminateNode(row.node)"
-            :disabled="!!row.node.disabled"
-            :toggle-expand="() => toggleExpand(row.node)"
-            :toggle-select="() => activateNode(row.node)"
-          >
-            <span
-              v-if="row.hasChildren"
-              :class="chevronPart.class"
-              :style="chevronPart.style"
-              aria-hidden="true"
-              :data-state="isExpanded(row.node) ? 'open' : 'closed'"
-              @click="toggleExpand(row.node)"
+          <template #node="scope">
+            <slot
+              name="node"
+              :node="scope.node as T"
+              :depth="scope.depth"
+              :expanded="scope.expanded"
+              :checked="scope.checked"
+              :indeterminate="scope.indeterminate"
+              :disabled="scope.disabled"
+              :toggle-expand="scope.toggleExpand"
+              :toggle-select="scope.toggleSelect"
             >
-              <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
+              <span
+                v-if="scope.node.children && scope.node.children.length > 0"
+                :class="chevronPart.class"
+                :style="chevronPart.style"
+                aria-hidden="true"
+                :data-state="scope.expanded ? 'open' : 'closed'"
+                @click="scope.toggleExpand"
+              >
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
+                  <path
+                    d="M6 4l4 4-4 4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <span v-else class="ui-tree-chevron-spacer" aria-hidden="true" />
+              <Checkbox
+                v-if="selectionMode === 'checkbox'"
+                :model-value="scope.checked"
+                :indeterminate="scope.indeterminate"
+                :disabled="scope.disabled"
+                size="sm"
+                :aria-label="scope.node.label"
+                @update:model-value="scope.toggleSelect"
+              />
+              <span :class="labelPart.class" :style="labelPart.style">{{ scope.node.label }}</span>
+              <svg
+                v-if="selectionMode === 'single' && scope.checked"
+                class="ui-tree-check"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                aria-hidden="true"
+              >
                 <path
-                  d="M6 4l4 4-4 4"
+                  d="M3.5 8.5l3 3 6-7"
                   stroke="currentColor"
-                  stroke-width="1.5"
+                  stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 />
               </svg>
-            </span>
-            <span v-else class="ui-tree-chevron-spacer" aria-hidden="true" />
-            <Checkbox
-              v-if="selectionMode === 'checkbox'"
-              :model-value="isCheckedNode(row.node)"
-              :indeterminate="isIndeterminateNode(row.node)"
-              :disabled="row.node.disabled"
-              size="sm"
-              :aria-label="row.node.label"
-              @update:model-value="() => activateNode(row.node)"
-            />
-            <span :class="labelPart.class" :style="labelPart.style">{{ row.node.label }}</span>
-            <svg
-              v-if="selectionMode === 'single' && isCheckedNode(row.node)"
-              class="ui-tree-check"
-              viewBox="0 0 16 16"
-              width="14"
-              height="14"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M3.5 8.5l3 3 6-7"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </slot>
-        </div>
-      </TransitionGroup>
+            </slot>
+          </template>
+        </TreeNodeRow>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import type { InjectionKey } from 'vue'
+import type { UiPartStyle } from '../../classes'
+
 export interface TreeNode {
   label: string
   value: string | number
@@ -143,21 +132,54 @@ export interface TreeNode {
 }
 
 export type TreeSelectionMode = 'single' | 'multiple' | 'checkbox'
+
+// Non-setup block so TreeNodeRow.vue (a sibling .vue file) can import this
+// without a separate .ts module — generate-vapor.mjs's dependency walker
+// only follows .vue-extension sibling imports.
+export interface TreeRowContext {
+  selectionMode: TreeSelectionMode
+  motionCss: boolean
+  stickyScroll: boolean
+  maxStickyDepth: number
+  isExpanded: (node: TreeNode) => boolean
+  isCheckedNode: (node: TreeNode) => boolean
+  isIndeterminateNode: (node: TreeNode) => boolean
+  ariaChecked: (node: TreeNode) => 'true' | 'false' | 'mixed'
+  toggleExpand: (node: TreeNode) => void
+  activateNode: (node: TreeNode) => void
+  onRowClick: (node: TreeNode, event: MouseEvent) => void
+  isVisible: (node: TreeNode) => boolean
+  nodePart: (node: TreeNode) => { class: string; style: UiPartStyle | undefined }
+}
+export const treeRowContextKey: InjectionKey<TreeRowContext> = Symbol('treeRowContext')
 </script>
 
 <!-- Tree extracts logic for standalone or nested use; TreeSelect wraps it in popover.
      Independent DOM class set (ui-tree-*); TreeSelect passes ui overrides for legacy passenger classes (ui-tree-select-*).
      Focus delegation: focusFirstRow/initRoving exposed; roving tabindex internal; focus stealing is popover-specific (TreeSelect only).
-     Animation: motionCss=false disables TransitionGroup and chevron rotation via data-motion="off" on root. -->
+     Animation: motionCss=false disables all built-in motion via data-motion="off" on root. Rows render as a
+     recursive TreeNodeRow tree (not a flat list) so stickyScroll can use native `position: sticky` — see the FLIP
+     pass below for what that costs and how it's covered. -->
 <script setup lang="ts" generic="T extends TreeNode = TreeNode">
 import './Tree.css'
 import '../shared/tokens.css'
-import { computed, nextTick, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onMounted,
+  provide,
+  reactive,
+  ref,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import Input from '../Input/Input.vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
+import TreeNodeRow from './TreeNodeRow.vue'
 
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
 const query = defineModel<string>('query', { default: '' })
@@ -171,8 +193,16 @@ const props = withDefaults(
     filterable?: boolean
     filterPlaceholder?: string
     emptyText?: string
-    /** `false` skips all built-in motion (row transitions and chevron rotation). */
+    /** `false` skips all built-in motion (row transitions, chevron rotation, and cross-folder move). */
     motionCss?: boolean
+    /** When true, clicking anywhere on a folder row toggles its expansion instead of selecting it — the
+     * chevron stops being the only expand target. Leaf rows still select on click either way. Off by
+     * default since it changes what a plain row click does. */
+    expandOnRowClick?: boolean
+    /** When true, each expanded ancestor's row pins to the top of the list as its own children scroll
+     * past, VS Code-style, so deeply nested content never loses its folder context. Uses native
+     * `position: sticky` — each row is a real, nested DOM level, not a JS-measured overlay. */
+    stickyScroll?: boolean
     /** Id for the role="tree" list element. Auto-generated if omitted. */
     id?: string
     ui?: Partial<{
@@ -190,6 +220,8 @@ const props = withDefaults(
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
     motionCss: true,
+    expandOnRowClick: false,
+    stickyScroll: false,
     id: undefined,
     ui: undefined,
   },
@@ -316,7 +348,7 @@ const expandedKeys = ref(new Set<string | number>())
 function normalize(value: string): string {
   return value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
 }
 const normalizedQuery = computed(() => normalize(query.value.trim()))
@@ -355,39 +387,44 @@ function toggleExpand(node: TreeNode) {
   expandedKeys.value = next
   emit('expand-change', node.value, nowExpanded)
 }
-
-interface FlatNode {
-  key: string
-  node: TreeNode
-  depth: number
-  parentValue: string | number | null
-  hasChildren: boolean
+function setExpanded(value: string | number, expanded: boolean) {
+  if (expandedKeys.value.has(value) === expanded) return
+  const next = new Set(expandedKeys.value)
+  if (expanded) next.add(value)
+  else next.delete(value)
+  expandedKeys.value = next
+  emit('expand-change', value, expanded)
 }
-// Depth-first flatten (own copy due to different semantics).
-function flatten(
-  nodes: readonly TreeNode[],
-  depth: number,
-  parentValue: string | number | null,
-  out: FlatNode[],
-) {
-  for (const node of nodes) {
-    if (isFiltering.value && !subtreeMatchSet.value.has(node.value)) continue
-    const hasChildren = !!node.children && node.children.length > 0
-    out.push({ key: String(node.value), node, depth, parentValue, hasChildren })
-    if (hasChildren && isExpanded(node)) {
-      flatten(node.children!, depth + 1, node.value, out)
+/** Expands a single node by value, e.g. after programmatically creating a child inside it. No-op if
+ * already expanded or the node has no children. */
+function expandNode(value: string | number) {
+  setExpanded(value, true)
+}
+/** Collapses a single node by value. No-op if already collapsed. */
+function collapseNode(value: string | number) {
+  setExpanded(value, false)
+}
+function expandAll() {
+  const next = new Set<string | number>()
+  function visit(nodes: readonly TreeNode[]) {
+    for (const node of nodes) {
+      if (node.children && node.children.length > 0) {
+        next.add(node.value)
+        visit(node.children)
+      }
     }
   }
+  visit(props.items)
+  expandedKeys.value = next
 }
-const flatRows = computed<FlatNode[]>(() => {
-  const out: FlatNode[] = []
-  flatten(props.items, 0, null, out)
-  return out
-})
+function collapseAll() {
+  expandedKeys.value = new Set()
+}
 
-function indentStyle(depth: number) {
-  return depth > 0 ? { '--ui-tree-depth': depth } : undefined
+function isVisible(node: TreeNode): boolean {
+  return !isFiltering.value || subtreeMatchSet.value.has(node.value)
 }
+const visibleRootNodes = computed(() => props.items.filter(isVisible))
 
 // Roving tabindex + keyboard nav (own copy due to tree semantics).
 const listEl = useTemplateRef<HTMLElement>('listEl')
@@ -408,6 +445,36 @@ function focusFirstRow() {
 function initRoving() {
   setRoving(rowEls()[0])
 }
+
+// Depth-first flatten of currently VISIBLE rows, used only for keyboard-nav
+// index math (ArrowUp/Down/Left/Right, Home/End) — rendering itself goes
+// through TreeNodeRow's own recursion, not this list.
+interface FlatNode {
+  node: TreeNode
+  depth: number
+  parentValue: string | number | null
+  hasChildren: boolean
+}
+function flatten(
+  nodes: readonly TreeNode[],
+  depth: number,
+  parentValue: string | number | null,
+  out: FlatNode[],
+) {
+  for (const node of nodes) {
+    if (!isVisible(node)) continue
+    const hasChildren = !!node.children && node.children.length > 0
+    out.push({ node, depth, parentValue, hasChildren })
+    if (hasChildren && isExpanded(node)) {
+      flatten(node.children!, depth + 1, node.value, out)
+    }
+  }
+}
+const flatRows = computed<FlatNode[]>(() => {
+  const out: FlatNode[] = []
+  flatten(props.items, 0, null, out)
+  return out
+})
 
 function onTreeKeydown(event: KeyboardEvent) {
   const rows = rowEls()
@@ -477,6 +544,13 @@ function onRowClick(node: TreeNode, event: MouseEvent) {
   const target = event.target as HTMLElement
   // Guard: chevron/checkbox click must not also activate row.
   if (target.closest('.ui-tree-chevron, .ui-checkbox')) return
+  const hasChildren = !!node.children && node.children.length > 0
+  if (props.expandOnRowClick && hasChildren) {
+    // Expands only, never also selects — the checkbox/selected state
+    // shouldn't jump to a folder just because it was clicked through.
+    toggleExpand(node)
+    return
+  }
   activateNode(node)
 }
 
@@ -490,6 +564,85 @@ watch(flatRows, () => {
 })
 // Self-initializing: first row tabbable on mount.
 onMounted(() => initRoving())
+
+// Cross-folder FLIP: a folder's own children fade in/out locally (see
+// TreeNodeRow.vue), but a row several levels away that shifts because a
+// NESTED folder changed height gets no local re-render signal. Measures
+// every row's position before/after an expand/collapse and slides whatever
+// moved. Currently-stuck sticky rows are excluded (their position is
+// CSS-driven, not flow-driven) — checked live rather than by the sticky-
+// capable class, since with stickyScroll on nearly every folder has that
+// class whether or not it's actually pinned right now.
+function isCurrentlyStuck(el: HTMLElement): boolean {
+  if (!el.classList.contains('ui-tree-row--sticky') || !listEl.value) return false
+  const stickyTop = Number.parseFloat(getComputedStyle(el).top)
+  if (Number.isNaN(stickyTop)) return false
+  const relativeTop = el.getBoundingClientRect().top - listEl.value.getBoundingClientRect().top
+  return Math.abs(relativeTop - stickyTop) < 1
+}
+function captureRowRects(): Map<string, DOMRect> {
+  const map = new Map<string, DOMRect>()
+  if (!listEl.value) return map
+  for (const el of listEl.value.querySelectorAll<HTMLElement>('[data-tree-value]')) {
+    if (isCurrentlyStuck(el)) continue
+    const key = el.dataset.treeValue
+    if (key != null) map.set(key, el.getBoundingClientRect())
+  }
+  return map
+}
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+let pendingBeforeRects: Map<string, DOMRect> | null = null
+watch(
+  expandedKeys,
+  () => {
+    if (!props.motionCss || prefersReducedMotion()) {
+      pendingBeforeRects = null
+      return
+    }
+    pendingBeforeRects = captureRowRects()
+  },
+  { flush: 'pre' },
+)
+watch(
+  expandedKeys,
+  () => {
+    const before = pendingBeforeRects
+    pendingBeforeRects = null
+    if (!before || !listEl.value) return
+    const after = captureRowRects()
+    for (const [key, afterRect] of after) {
+      const beforeRect = before.get(key)
+      if (!beforeRect) continue // entering row — its own local enter transition handles it
+      const deltaY = beforeRect.top - afterRect.top
+      if (Math.abs(deltaY) < 1) continue
+      const el = listEl.value.querySelector<HTMLElement>(`[data-tree-value="${CSS.escape(key)}"]`)
+      if (!el) continue
+      el.style.transition = 'none'
+      el.style.transform = `translateY(${deltaY}px)`
+      el.getBoundingClientRect() // force reflow before releasing the transform
+      // Double rAF: matches Vue's own <Transition> enter scheduling, so the
+      // slide and the entering children's fade start on the same frame.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.style.transition = 'transform var(--ui-duration-enter) var(--ui-ease-in-out)'
+          el.style.transform = ''
+          el.addEventListener(
+            'transitionend',
+            () => {
+              el.style.transition = ''
+            },
+            { once: true },
+          )
+        })
+      })
+    }
+  },
+  { flush: 'post' },
+)
 
 const filterInputRef = useTemplateRef<{ el: HTMLElement | null; inputEl: HTMLInputElement | null }>(
   'filterInputRef',
@@ -516,20 +669,44 @@ const listPart = computed(() => resolveUiPart(cx, themedUi()?.list, 'ui-tree-lis
 const emptyPart = computed(() => resolveUiPart(cx, themedUi()?.empty, 'ui-tree-empty'))
 const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-tree-chevron'))
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-tree-label'))
-function nodePart(row: FlatNode) {
+function nodePart(node: TreeNode) {
   return resolveUiPart(
     cx,
     themedUi()?.node,
     'ui-tree-row',
-    row.node.disabled && 'ui-tree-row--disabled',
-    props.selectionMode !== 'checkbox' && isCheckedNode(row.node) && 'ui-tree-row--selected',
+    node.disabled && 'ui-tree-row--disabled',
+    props.selectionMode !== 'checkbox' && isCheckedNode(node) && 'ui-tree-row--selected',
   )
 }
+
+const MAX_STICKY_DEPTH = 5
+provide<TreeRowContext>(
+  treeRowContextKey,
+  reactive({
+    selectionMode: computed(() => props.selectionMode),
+    motionCss: computed(() => props.motionCss),
+    stickyScroll: computed(() => props.stickyScroll),
+    maxStickyDepth: MAX_STICKY_DEPTH,
+    isExpanded,
+    isCheckedNode,
+    isIndeterminateNode,
+    ariaChecked,
+    toggleExpand,
+    activateNode,
+    onRowClick,
+    isVisible,
+    nodePart,
+  }),
+)
 
 defineExpose({
   listEl,
   filterInputRef,
   focusFirstRow,
   initRoving,
+  expandAll,
+  collapseAll,
+  expandNode,
+  collapseNode,
 })
 </script>

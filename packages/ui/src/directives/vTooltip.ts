@@ -17,9 +17,18 @@ export interface TooltipDirectiveOptions {
 
 export type TooltipDirectiveValue = string | TooltipDirectiveOptions | null | undefined
 
-// The directive stores only data; everything live is in <TooltipHost/>, so
-// per-target cost stays ~zero at any scale.
-export const tooltipTargets = new WeakMap<HTMLElement, TooltipDirectiveOptions>()
+// Backed by globalThis, not a plain module-scope WeakMap: the VDOM and Vapor
+// builds are separate bundled files, so `new WeakMap()` here would give each
+// its own copy, and a Vapor-compiled v-tooltip would never reach the app's
+// (usually VDOM-sourced) <TooltipHost/>.
+const TOOLTIP_TARGETS_KEY = Symbol.for('vael-ui.tooltipTargets')
+type TooltipTargetsGlobal = typeof globalThis & {
+  [TOOLTIP_TARGETS_KEY]?: WeakMap<HTMLElement, TooltipDirectiveOptions>
+}
+const targetsGlobal = globalThis as TooltipTargetsGlobal
+export const tooltipTargets: WeakMap<HTMLElement, TooltipDirectiveOptions> = (targetsGlobal[
+  TOOLTIP_TARGETS_KEY
+] ??= new WeakMap())
 
 export const TOOLTIP_ATTR = 'data-ui-tooltip'
 

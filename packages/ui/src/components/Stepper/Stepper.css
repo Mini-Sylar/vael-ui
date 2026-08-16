@@ -118,6 +118,10 @@
     color: var(--ui-text-muted);
     font-size: 0.875rem;
     font-weight: 500;
+    /* Matches .ui-stepper-circle's own block-size: the label's text centers
+       within this line box, lining up with the circle's center regardless
+       of whether a description follows. */
+    line-height: 1.75rem;
     white-space: nowrap;
   }
   .ui-stepper-step[data-state='active'] .ui-stepper-label,

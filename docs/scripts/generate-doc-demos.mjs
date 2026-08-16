@@ -79,7 +79,7 @@ function usesIneligibleIntegration(sources) {
 // script limitation, a real gap in the library's own Vapor build.
 function findMissingVaporComponents(sources, vaporComponentNames) {
   const missing = new Set()
-  const importRe = /^import\s+\{([^}]+)\}\s+from\s+'vael-ui'$/gm
+  const importRe = /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui['"];?$/gm
   for (const source of sources) {
     let match
     while ((match = importRe.exec(source))) {
@@ -104,7 +104,7 @@ function injectVaporMarker(source) {
 // toast, ...) aren't Vapor/VDOM-specific and stay on 'vael-ui'. `import
 // type` lines are untouched — vapor's .d.ts re-exports the same types.
 function rewriteToVapor(source, vaporComponentNames) {
-  const importRe = /^import\s+\{([^}]+)\}\s+from\s+'vael-ui'$/gm
+  const importRe = /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui['"];?$/gm
   return source.replace(importRe, (full, namedClause) => {
     const names = namedClause.split(',').map((n) => n.trim()).filter(Boolean)
     const vaporNames = names.filter((n) => vaporComponentNames.has(n))
