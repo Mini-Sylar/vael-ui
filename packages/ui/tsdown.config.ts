@@ -1,20 +1,15 @@
-import { existsSync, readdirSync } from 'node:fs'
 import { defineConfig } from 'tsdown'
 import Vue from 'unplugin-vue/rolldown'
-
-const componentEntries = readdirSync('./src/components', { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((dir) => `./src/components/${dir.name}/${dir.name}.vue`)
-  .filter((path) => existsSync(path))
+import { collectBarrelEntries } from '../scripts/collect-barrel-entries.mjs'
 
 export default defineConfig({
-  entry: [
-    './src/index.ts',
-    './src/style-entry.ts',
-    './src/resolver/index.ts',
-    './src/nuxt/index.ts',
-    ...componentEntries,
-  ],
+  entry: {
+    index: './src/index.ts',
+    'style-entry': './src/style-entry.ts',
+    'resolver/index': './src/resolver/index.ts',
+    'nuxt/index': './src/nuxt/index.ts',
+    ...collectBarrelEntries('./src/index.ts', process.cwd()),
+  },
   platform: 'neutral',
   plugins: [Vue({ isProduction: true })],
   dts: { vue: true },
