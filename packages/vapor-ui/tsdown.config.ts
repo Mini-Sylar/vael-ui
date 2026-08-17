@@ -1,18 +1,21 @@
-import { existsSync, readdirSync } from 'node:fs'
 import { defineConfig } from 'tsdown'
 import Vue from 'unplugin-vue/rolldown'
+import { collectBarrelEntries } from '../scripts/collect-barrel-entries.mjs'
 
-// Mirrors packages/ui/tsdown.config.ts: one entry per top-level generated
-// component dir (`<Name>/<Name>.vue`), plus the barrel. Internal-only .vue
-// files (ConfirmDialogFooter, DataTableHead, ...) are dependencies pulled in
-// via whichever entry imports them, not entries of their own.
-const componentEntries = readdirSync('./src/generated', { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((dir) => `./src/generated/${dir.name}/${dir.name}.vue`)
-  .filter((path) => existsSync(path))
-
+// Mirrors packages/ui/tsdown.config.ts: one entry per export the generated
+// barrel actually has, derived from its own specifiers (see
+// collectBarrelEntries's own comment for why — a component/composable only
+// reachable via the barrel otherwise gets inlined into it, breaking a
+// downstream consumer's own tree-shaking). Some specifiers point outside
+// this package, straight at packages/ui/src (composables aren't copied into
+// src/generated/, only components are) — collectBarrelEntries resolves
+// those to an `external/...` entry name so rolldown's entryFileNames
+// placeholder never sees a raw `../` path.
 export default defineConfig({
-  entry: ['./src/generated/index.ts', ...componentEntries],
+  entry: {
+    index: './src/generated/index.ts',
+    ...collectBarrelEntries('./src/generated/index.ts', process.cwd()),
+  },
   outDir: '../ui/dist/vapor',
   platform: 'neutral',
   plugins: [Vue({ isProduction: true })],
