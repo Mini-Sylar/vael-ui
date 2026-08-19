@@ -34,6 +34,7 @@ export const categories: ComponentCategory[] = [
       'Textarea',
       'InputNumber',
       'OtpInput',
+      'PasswordInput',
       'Checkbox',
       'Radio',
       'RadioGroup',
@@ -125,6 +126,7 @@ export const NEW_COMPONENTS: Record<string, string> = {
   Stepper: '2026-08-06',
   CommandPalette: '2026-08-07',
   Tour: '2026-08-08',
+  PasswordInput: '2026-08-16',
 }
 
 export const NEW_BADGE_DAYS = 14

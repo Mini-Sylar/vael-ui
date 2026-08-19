@@ -51,13 +51,15 @@
 
     <h3>Loading state</h3>
     <p class="note">
-      <code>@click</code> forwards straight to the button's own promise handling, so returning a
-      promise is all the wiring a loading state needs. <code>loader="inline"</code> keeps the label
-      visible and puts the spinner next to it instead of covering the button.
+      <code>loading="auto"</code> opts a button into promise-driven loading — returning a promise
+      from <code>@click</code> is then all the wiring it needs. It's opt-in rather than the default
+      because any thenable counts, including ones with no user-facing meaning (a router navigation's
+      own promise, say). <code>loader="inline"</code> keeps the label visible and puts the spinner
+      next to it instead of covering the button.
     </p>
     <div class="row">
-      <Button @click="fakeSave">Save changes</Button>
-      <Button loader="inline" variant="secondary" @click="fakeSave">
+      <Button loading="auto" @click="fakeSave">Save changes</Button>
+      <Button loading="auto" loader="inline" variant="secondary" @click="fakeSave">
         <template #default="{ loading }">
           {{ loading ? 'Saving…' : 'Save as draft' }}
         </template>

@@ -5,6 +5,8 @@
     :min-date="minDate"
     :max-date="maxDate"
     :disabled-dates="disabledDates"
+    :locale="locale"
+    :first-day-of-week="firstDayOfWeek"
     @month-change="onMonthChange"
   />
   <output data-testid="month-change-count">{{ monthChangeCount }}</output>
@@ -23,8 +25,17 @@ const props = withDefaults(
     /** Seeds the model so the grid opens on a KNOWN month, instead of
      * whatever "today" happens to be when the test runs. */
     initialValue?: Date
+    locale?: string
+    firstDayOfWeek?: number
   }>(),
-  { minDate: undefined, maxDate: undefined, disabledDates: undefined, initialValue: undefined },
+  {
+    minDate: undefined,
+    maxDate: undefined,
+    disabledDates: undefined,
+    initialValue: undefined,
+    locale: undefined,
+    firstDayOfWeek: undefined,
+  },
 )
 
 const model = shallowRef<Date | null>(props.initialValue ?? null)

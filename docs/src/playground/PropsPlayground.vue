@@ -298,6 +298,14 @@
                 <Button>Trigger</Button>
               </template>
             </component>
+            <!-- No `open` prop at all (a plain form control, say) — nothing to bind. -->
+            <component
+              v-else-if="!hasOpenProp"
+              :is="activeComponent"
+              :key="`${resetKey}-default`"
+              v-bind="boundProps"
+              @update:model-value="onModelUpdate"
+            />
             <component
               v-else
               :is="activeComponent"
@@ -675,6 +683,13 @@ const controls = computed<NamedControl[]>(() => {
 
 const hasItemsProp = computed(() => Boolean(meta.value?.props.some((p) => p.name === 'items')))
 const hasTriggerSlot = computed(() => Boolean(meta.value?.slots.some((s) => s.name === 'trigger')))
+// Every earlier branch above is for a specifically-named component; this
+// generic tail assumed anything falling through to it is some Popover-like
+// overlay with an `open` model — true for the whole library until a plain
+// form control (PasswordInput) landed here first. Check the real metadata
+// instead of assuming, so the next non-overlay component doesn't hit the
+// same "Extraneous non-props attributes (open)" warning.
+const hasOpenProp = computed(() => Boolean(meta.value?.props.some((p) => p.name === 'open')))
 const isTreeShaped = computed(
   () => props.name === 'Tree' || props.name === 'TreeSelect' || props.name === 'CascadeSelect',
 )

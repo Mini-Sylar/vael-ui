@@ -2,7 +2,7 @@
   <main>
     <h1>Vapor host</h1>
 
-    <Button data-testid="save" @click="fakeSave">
+    <Button data-testid="save" loading="auto" @click="fakeSave">
       <template #default="{ loading }">{{ loading ? 'Saving…' : 'Save' }}</template>
     </Button>
 

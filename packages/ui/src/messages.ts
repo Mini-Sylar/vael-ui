@@ -23,6 +23,10 @@ export interface UiMessages {
     increment: string
     decrement: string
   }
+  passwordInput: {
+    show: string
+    hide: string
+  }
   select: {
     empty: string
     clear: string
@@ -70,6 +74,30 @@ export interface UiMessages {
     /** `{current}` and `{total}` are replaced with the step position — e.g. "Step {current} of {total}". */
     stepOf: string
   }
+  toaster: {
+    /** aria-label for the toast region landmark. */
+    label: string
+  }
+  pagination: {
+    /** aria-label for the `<nav>` landmark. */
+    label: string
+    first: string
+    previous: string
+    /** `{page}` is replaced with the page number. */
+    page: string
+    next: string
+    last: string
+  }
+  datePicker: {
+    /** aria-label for the trigger button that opens the calendar. */
+    chooseDate: string
+  }
+  dataTable: {
+    selectAll: string
+    selectRow: string
+    collapseRow: string
+    expandRow: string
+  }
 }
 
 export type PartialUiMessages = {
@@ -87,6 +115,7 @@ export const defaultMessages: UiMessages = {
     updated: 'Updated',
   },
   inputNumber: { increment: 'Increase', decrement: 'Decrease' },
+  passwordInput: { show: 'Show password', hide: 'Hide password' },
   select: { empty: 'No options', clear: 'Clear selection', selectedCount: '{count} selected' },
   combobox: { empty: 'No results', clear: 'Clear selection', toggle: 'Toggle options' },
   fileUpload: { browse: 'Browse files', drop: 'Drop files here', remove: 'Remove' },
@@ -102,6 +131,22 @@ export const defaultMessages: UiMessages = {
     skip: 'Skip',
     done: 'Done',
     stepOf: 'Step {current} of {total}',
+  },
+  toaster: { label: 'Notifications' },
+  pagination: {
+    label: 'Pagination',
+    first: 'First page',
+    previous: 'Previous page',
+    page: 'Page {page}',
+    next: 'Next page',
+    last: 'Last page',
+  },
+  datePicker: { chooseDate: 'Choose date' },
+  dataTable: {
+    selectAll: 'Select all rows',
+    selectRow: 'Select row',
+    collapseRow: 'Collapse row',
+    expandRow: 'Expand row',
   },
 }
 
@@ -123,6 +168,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     message: { ...base.message, ...overrides.message },
     pullToRefresh: { ...base.pullToRefresh, ...overrides.pullToRefresh },
     inputNumber: { ...base.inputNumber, ...overrides.inputNumber },
+    passwordInput: { ...base.passwordInput, ...overrides.passwordInput },
     select: { ...base.select, ...overrides.select },
     combobox: { ...base.combobox, ...overrides.combobox },
     fileUpload: { ...base.fileUpload, ...overrides.fileUpload },
@@ -133,6 +179,10 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     breadcrumb: { ...base.breadcrumb, ...overrides.breadcrumb },
     commandPalette: { ...base.commandPalette, ...overrides.commandPalette },
     tour: { ...base.tour, ...overrides.tour },
+    toaster: { ...base.toaster, ...overrides.toaster },
+    pagination: { ...base.pagination, ...overrides.pagination },
+    datePicker: { ...base.datePicker, ...overrides.datePicker },
+    dataTable: { ...base.dataTable, ...overrides.dataTable },
   }
 }
 
@@ -170,6 +220,10 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     increment: 'uiKit.inputNumber.increment',
     decrement: 'uiKit.inputNumber.decrement',
   },
+  passwordInput: {
+    show: 'uiKit.passwordInput.show',
+    hide: 'uiKit.passwordInput.hide',
+  },
   select: {
     empty: 'uiKit.select.empty',
     clear: 'uiKit.select.clear',
@@ -200,6 +254,22 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     skip: 'uiKit.tour.skip',
     done: 'uiKit.tour.done',
     stepOf: 'uiKit.tour.stepOf',
+  },
+  toaster: { label: 'uiKit.toaster.label' },
+  pagination: {
+    label: 'uiKit.pagination.label',
+    first: 'uiKit.pagination.first',
+    previous: 'uiKit.pagination.previous',
+    page: 'uiKit.pagination.page',
+    next: 'uiKit.pagination.next',
+    last: 'uiKit.pagination.last',
+  },
+  datePicker: { chooseDate: 'uiKit.datePicker.chooseDate' },
+  dataTable: {
+    selectAll: 'uiKit.dataTable.selectAll',
+    selectRow: 'uiKit.dataTable.selectRow',
+    collapseRow: 'uiKit.dataTable.collapseRow',
+    expandRow: 'uiKit.dataTable.expandRow',
   },
 }
 
@@ -245,6 +315,13 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (increment !== i18nKeyMap.inputNumber.increment) inputNumber.increment = increment
   if (decrement !== i18nKeyMap.inputNumber.decrement) inputNumber.decrement = decrement
   if (Object.keys(inputNumber).length > 0) result.inputNumber = inputNumber
+
+  const show = i18n.t(i18nKeyMap.passwordInput.show)
+  const hide = i18n.t(i18nKeyMap.passwordInput.hide)
+  const passwordInput: PartialUiMessages['passwordInput'] = {}
+  if (show !== i18nKeyMap.passwordInput.show) passwordInput.show = show
+  if (hide !== i18nKeyMap.passwordInput.hide) passwordInput.hide = hide
+  if (Object.keys(passwordInput).length > 0) result.passwordInput = passwordInput
 
   const selectEmpty = i18n.t(i18nKeyMap.select.empty)
   const selectClear = i18n.t(i18nKeyMap.select.clear)
@@ -322,6 +399,50 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (tourDone !== i18nKeyMap.tour.done) tour.done = tourDone
   if (tourStepOf !== i18nKeyMap.tour.stepOf) tour.stepOf = tourStepOf
   if (Object.keys(tour).length > 0) result.tour = tour
+
+  const toasterLabel = i18n.t(i18nKeyMap.toaster.label)
+  if (toasterLabel !== i18nKeyMap.toaster.label) result.toaster = { label: toasterLabel }
+
+  const paginationLabel = i18n.t(i18nKeyMap.pagination.label)
+  const paginationFirst = i18n.t(i18nKeyMap.pagination.first)
+  const paginationPrevious = i18n.t(i18nKeyMap.pagination.previous)
+  const paginationPage = i18n.t(i18nKeyMap.pagination.page)
+  const paginationNext = i18n.t(i18nKeyMap.pagination.next)
+  const paginationLast = i18n.t(i18nKeyMap.pagination.last)
+  const pagination: PartialUiMessages['pagination'] = {}
+  if (paginationLabel !== i18nKeyMap.pagination.label) pagination.label = paginationLabel
+  if (paginationFirst !== i18nKeyMap.pagination.first) pagination.first = paginationFirst
+  if (paginationPrevious !== i18nKeyMap.pagination.previous) {
+    pagination.previous = paginationPrevious
+  }
+  if (paginationPage !== i18nKeyMap.pagination.page) pagination.page = paginationPage
+  if (paginationNext !== i18nKeyMap.pagination.next) pagination.next = paginationNext
+  if (paginationLast !== i18nKeyMap.pagination.last) pagination.last = paginationLast
+  if (Object.keys(pagination).length > 0) result.pagination = pagination
+
+  const chooseDate = i18n.t(i18nKeyMap.datePicker.chooseDate)
+  if (chooseDate !== i18nKeyMap.datePicker.chooseDate) {
+    result.datePicker = { chooseDate }
+  }
+
+  const dataTableSelectAll = i18n.t(i18nKeyMap.dataTable.selectAll)
+  const dataTableSelectRow = i18n.t(i18nKeyMap.dataTable.selectRow)
+  const dataTableCollapseRow = i18n.t(i18nKeyMap.dataTable.collapseRow)
+  const dataTableExpandRow = i18n.t(i18nKeyMap.dataTable.expandRow)
+  const dataTable: PartialUiMessages['dataTable'] = {}
+  if (dataTableSelectAll !== i18nKeyMap.dataTable.selectAll) {
+    dataTable.selectAll = dataTableSelectAll
+  }
+  if (dataTableSelectRow !== i18nKeyMap.dataTable.selectRow) {
+    dataTable.selectRow = dataTableSelectRow
+  }
+  if (dataTableCollapseRow !== i18nKeyMap.dataTable.collapseRow) {
+    dataTable.collapseRow = dataTableCollapseRow
+  }
+  if (dataTableExpandRow !== i18nKeyMap.dataTable.expandRow) {
+    dataTable.expandRow = dataTableExpandRow
+  }
+  if (Object.keys(dataTable).length > 0) result.dataTable = dataTable
 
   return result
 }

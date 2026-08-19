@@ -2,8 +2,8 @@
   <Button variant="outline" @click="handleCancel" v-bind="cancelButtonProps">{{
     cancelLabel
   }}</Button>
-  <!-- loading="auto" is Button's own default — handleConfirm returning a promise is enough for it to show/guard the pending state itself. -->
-  <Button :variant="variant" @click="handleConfirm" v-bind="confirmButtonProps">{{
+  <!-- loading="auto": handleConfirm returning a promise is enough for Button to show/guard the pending state itself. -->
+  <Button :variant="variant" loading="auto" @click="handleConfirm" v-bind="confirmButtonProps">{{
     confirmLabel
   }}</Button>
 </template>

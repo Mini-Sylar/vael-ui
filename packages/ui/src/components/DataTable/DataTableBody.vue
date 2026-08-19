@@ -61,13 +61,13 @@
           <Checkbox
             v-if="!single"
             :model-value="isSelected(tableRowEntries[virtualRow.index]!.row)"
-            aria-label="Select row"
+            :aria-label="messages.dataTable.selectRow"
             @update:model-value="() => onToggleSelect(tableRowEntries[virtualRow.index]!.row)"
           />
           <Radio
             v-else
             :value="getRowKey(tableRowEntries[virtualRow.index]!.row)"
-            aria-label="Select row"
+            :aria-label="messages.dataTable.selectRow"
           />
         </td>
         <td
@@ -82,7 +82,9 @@
             variant="ghost"
             type="button"
             :aria-label="
-              isExpanded(tableRowEntries[virtualRow.index]!.row) ? 'Collapse row' : 'Expand row'
+              isExpanded(tableRowEntries[virtualRow.index]!.row)
+                ? messages.dataTable.collapseRow
+                : messages.dataTable.expandRow
             "
             @click="onToggleExpand(tableRowEntries[virtualRow.index]!.row)"
           >
@@ -96,7 +98,7 @@
               :data-state="isExpanded(tableRowEntries[virtualRow.index]!.row) ? 'open' : 'closed'"
             >
               <path
-                d="M4 6l4 4 4-4"
+                d="M6 4l4 4-4 4"
                 stroke="currentColor"
                 stroke-width="1.5"
                 stroke-linecap="round"
@@ -126,7 +128,11 @@
         </td>
       </template>
       <td v-else class="ui-datatable-td ui-datatable-td--expansion" :colspan="colCount">
-        <slot name="expansion" :row="tableRowEntries[virtualRow.index]!.row" />
+        <div class="ui-datatable-expansion-rows">
+          <div class="ui-datatable-expansion-inner">
+            <slot name="expansion" :row="tableRowEntries[virtualRow.index]!.row" />
+          </div>
+        </div>
       </td>
     </tr>
     <tr
@@ -139,7 +145,17 @@
     </tr>
   </tbody>
 
-  <tbody v-else class="ui-datatable-tbody">
+  <TransitionGroup
+    v-else
+    tag="tbody"
+    name="ui-datatable-row"
+    :css="motionCss"
+    class="ui-datatable-tbody"
+    @before-enter="beforeEnterHook"
+    @before-leave="beforeLeaveHook"
+    @enter="rowEnterHook"
+    @leave="rowLeaveHook"
+  >
     <tr
       v-for="entry in tableRowEntries"
       :key="entry.key"
@@ -161,10 +177,10 @@
           <Checkbox
             v-if="!single"
             :model-value="isSelected(entry.row)"
-            aria-label="Select row"
+            :aria-label="messages.dataTable.selectRow"
             @update:model-value="() => onToggleSelect(entry.row)"
           />
-          <Radio v-else :value="getRowKey(entry.row)" aria-label="Select row" />
+          <Radio v-else :value="getRowKey(entry.row)" :aria-label="messages.dataTable.selectRow" />
         </td>
         <td
           v-if="expansionColumnRendered"
@@ -177,7 +193,9 @@
             size="sm"
             variant="ghost"
             type="button"
-            :aria-label="isExpanded(entry.row) ? 'Collapse row' : 'Expand row'"
+            :aria-label="
+              isExpanded(entry.row) ? messages.dataTable.collapseRow : messages.dataTable.expandRow
+            "
             @click="onToggleExpand(entry.row)"
           >
             <svg
@@ -190,7 +208,7 @@
               :data-state="isExpanded(entry.row) ? 'open' : 'closed'"
             >
               <path
-                d="M4 6l4 4 4-4"
+                d="M6 4l4 4-4 4"
                 stroke="currentColor"
                 stroke-width="1.5"
                 stroke-linecap="round"
@@ -220,10 +238,14 @@
         </td>
       </template>
       <td v-else class="ui-datatable-td ui-datatable-td--expansion" :colspan="colCount">
-        <slot name="expansion" :row="entry.row" />
+        <div class="ui-datatable-expansion-rows">
+          <div class="ui-datatable-expansion-inner">
+            <slot name="expansion" :row="entry.row" />
+          </div>
+        </div>
       </td>
     </tr>
-  </tbody>
+  </TransitionGroup>
 </template>
 
 <!-- Internal, DataTable-only: the tbody markup written once and rendered from
@@ -236,7 +258,9 @@ import Checkbox from '../Checkbox/Checkbox.vue'
 import Radio from '../Radio/Radio.vue'
 import Button from '../Button/Button.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
+import { computed, TransitionGroup } from 'vue'
 import type { VirtualRow } from '../../composables/useVirtualizer'
+import { useUiMessages } from '../../messages'
 
 export interface TableRowEntry<T> {
   kind: 'row' | 'expansion'
@@ -244,7 +268,7 @@ export interface TableRowEntry<T> {
   key: string
 }
 
-defineProps<{
+const props = defineProps<{
   colCount: number
   columns: RegisteredColumn<T>[]
   loading: boolean
@@ -270,6 +294,9 @@ defineProps<{
   onToggleSelect: (row: T) => void
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
+  motionCss: boolean
+  onRowEnter: (el: Element, done: () => void) => void
+  onRowLeave: (el: Element, done: () => void) => void
 }>()
 
 defineSlots<{
@@ -277,4 +304,42 @@ defineSlots<{
   empty(): any
   expansion(props: { row: T }): any
 }>()
+
+const messages = useUiMessages()
+
+// Same shape as Toaster's own enterHook/leaveHook — a JS hook and Vue's own
+// CSS end-detection can't coexist, so this only wires one when motionCss is false.
+const rowEnterHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
+)
+const rowLeaveHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowLeave(el, done),
+)
+
+// grid-template-rows: 1fr/0fr interpolates the *fr* value linearly, not the resulting
+// pixel height — most of the visible shrink/grow happens in a short early burst, then
+// the numeric transition keeps running for its full duration with barely anything
+// visibly changing, reading as a stall. Measuring a real px value first (below) and
+// transitioning max-block-size instead interpolates the actual height linearly. Only
+// motionCss's own CSS-driven transition needs this — skipped when false, since the
+// consumer owns the whole animation via row-enter/row-leave.
+function beforeEnterHook(el: Element) {
+  if (!props.motionCss) return
+  const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
+  if (!wrap) return
+  wrap.style.maxBlockSize = '0px'
+  requestAnimationFrame(() => {
+    wrap.style.maxBlockSize = `${wrap.scrollHeight}px`
+  })
+}
+function beforeLeaveHook(el: Element) {
+  if (!props.motionCss) return
+  const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
+  if (!wrap) return
+  wrap.style.maxBlockSize = `${wrap.scrollHeight}px`
+  void wrap.offsetHeight // force a reflow so the browser registers the starting value
+  requestAnimationFrame(() => {
+    wrap.style.maxBlockSize = '0px'
+  })
+}
 </script>

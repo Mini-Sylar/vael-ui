@@ -12,7 +12,7 @@
           v-if="!single"
           :model-value="selectAllState.all"
           :indeterminate="selectAllState.some && !selectAllState.all"
-          aria-label="Select all rows"
+          :aria-label="messages.dataTable.selectAll"
           @update:model-value="onToggleSelectAll"
         />
       </th>
@@ -81,6 +81,9 @@
 import { useTemplateRef } from 'vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
+import { useUiMessages } from '../../messages'
+
+const messages = useUiMessages()
 
 defineProps<{
   selectColumnRendered: boolean

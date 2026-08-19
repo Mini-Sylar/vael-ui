@@ -1,5 +1,10 @@
 <template>
-  <nav v-bind="attrs" :class="rootPart.class" :style="rootPart.style" aria-label="Pagination">
+  <nav
+    v-bind="attrs"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    :aria-label="messages.pagination.label"
+  >
     <ul :class="listPart.class" :style="listPart.style">
       <li>
         <Button
@@ -8,7 +13,7 @@
           size="sm"
           variant="ghost"
           type="button"
-          aria-label="First page"
+          :aria-label="messages.pagination.first"
           :disabled="isFirstPage"
           @click="goToPage(1)"
         >
@@ -30,7 +35,7 @@
           size="sm"
           variant="ghost"
           type="button"
-          aria-label="Previous page"
+          :aria-label="messages.pagination.previous"
           :disabled="isFirstPage"
           @click="goToPage(page - 1)"
         >
@@ -58,7 +63,7 @@
           type="button"
           :variant="item === page ? 'primary' : 'ghost'"
           :aria-current="item === page ? 'page' : undefined"
-          :aria-label="`Page ${item}`"
+          :aria-label="messages.pagination.page.replace('{page}', String(item))"
           @click="goToPage(item)"
         >
           {{ item }}
@@ -72,7 +77,7 @@
           size="sm"
           variant="ghost"
           type="button"
-          aria-label="Next page"
+          :aria-label="messages.pagination.next"
           :disabled="isLastPage"
           @click="goToPage(page + 1)"
         >
@@ -94,7 +99,7 @@
           size="sm"
           variant="ghost"
           type="button"
-          aria-label="Last page"
+          :aria-label="messages.pagination.last"
           :disabled="isLastPage"
           @click="goToPage(totalPages)"
         >
@@ -133,10 +138,12 @@ import type { SelectItemData } from '../Select/Select.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useUiMessages } from '../../messages'
 
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+const messages = useUiMessages()
 
 const page = defineModel<number>('page', { default: 1 })
 const pageSize = defineModel<number>('pageSize', { default: 10 })

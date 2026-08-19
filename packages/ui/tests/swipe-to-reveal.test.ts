@@ -27,6 +27,19 @@ function pointerup(clientX: number, clientY = 0) {
   )
 }
 
+test('motionCss=false sets data-motion="off" and disables the settle transition', async () => {
+  const { default: SwipeToReveal } =
+    await import('../src/components/SwipeToReveal/SwipeToReveal.vue')
+  const screen = render(SwipeToReveal, {
+    props: { motionCss: false },
+    slots: { default: 'Content', actions: 'Delete' },
+  })
+  const root = screen.container.querySelector<HTMLElement>('.ui-swipe-reveal')!
+  const content = screen.container.querySelector<HTMLElement>('.ui-swipe-reveal-content')!
+  expect(root.getAttribute('data-motion')).toBe('off')
+  expect(getComputedStyle(content).transitionProperty).toBe('none')
+})
+
 // ---------------------------------------------------------------------------
 // useSwipeReveal.ts — pure commit decision, driven with known velocity/
 // distance inputs rather than through real pointer timing (unreliable to

@@ -10,7 +10,7 @@
       :css="motionCss"
       role="region"
       aria-live="polite"
-      aria-label="Notifications"
+      :aria-label="messages.toaster.label"
       :data-expanded="expanded"
       :data-y-position="yPos"
       :data-x-position="xPos"

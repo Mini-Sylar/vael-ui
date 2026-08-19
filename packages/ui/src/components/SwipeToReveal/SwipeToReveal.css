@@ -29,6 +29,9 @@
     transition: none;
     cursor: grabbing;
   }
+  .ui-swipe-reveal[data-motion='off'] .ui-swipe-reveal-content {
+    transition: none;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-swipe-reveal-content {

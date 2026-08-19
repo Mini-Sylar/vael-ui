@@ -58,7 +58,7 @@
           ref="panel"
           role="dialog"
           aria-modal="false"
-          aria-label="Choose date"
+          :aria-label="messages.datePicker.chooseDate"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
           v-bind="$attrs"
@@ -116,6 +116,7 @@ import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
+import { useUiMessages } from '../../messages'
 import Input from '../Input/Input.vue'
 import Calendar from '../Calendar/Calendar.vue'
 import type {
@@ -128,6 +129,7 @@ import type {
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+const messages = useUiMessages()
 
 const model = defineModel<Date | CalendarRange | null>({ default: null })
 const open = defineModel<boolean>('open', { default: false })

@@ -71,7 +71,9 @@
 </template>
 
 <!-- Slot-based: columns register via provide/inject, no config prop. Generic inference: `T` inferred from `:data` binding.
-     No virtualization or row transitions here — consumers own motion-v usage in slots without conflicts.
+     Row enter/exit/reorder is a TransitionGroup in DataTableBody, gated by motionCss — same
+     contract as Toaster (row-enter/row-leave forward its (el, done) hook). Skipped while
+     virtualized. Tests need VTU's transition-group stub disabled — see data-table.test.ts.
      Pagination (rows/page): array slicing, internal; DataTable provides state to #footer slot.
      Single-select mode reuses Radio via direct injection (RadioGroup's wrapper incompatible here).
      Resize drag is direct manipulation per pointermove frame.
@@ -145,6 +147,12 @@ const props = withDefaults(
     total?: number
     /** Windows rendering to the visible rows + overscan, for very large `data`. Requires `scrollHeight`. `true` measures each row's real height (rows may vary, e.g. wrapping `#cell` content or `stackedBreakpoint`); pass an object to tune it. */
     virtualize?: boolean | { itemSize?: number; overscan?: number; estimateSize?: number }
+    /** Gates the built-in row enter/exit/reorder transition (sort, paging, row expansion).
+     * `false` skips it entirely — reach for `@row-enter`/`@row-leave` instead if you want a
+     * consumer-owned animation (GSAP, motion-v) in its place. No effect while `virtualize` is
+     * active: a virtualized list's rows are measured/recycled by height, which a CSS enter/exit
+     * transition would fight, so that mode never animates row presence regardless of this prop. */
+    motionCss?: boolean
   }>(),
   {
     loading: false,
@@ -158,6 +166,7 @@ const props = withDefaults(
     frozenColumns: 0,
     manualSort: false,
     lazy: false,
+    motionCss: true,
   },
 )
 
@@ -170,6 +179,12 @@ const emit = defineEmits<{
   'reach-end': []
   /** Virtualized only: the rendered window neared the start of `data` — fetch the previous page. */
   'reach-start': []
+  /** A row's enter transition started — forwarded straight from the underlying
+   * TransitionGroup's own `(el, done)` hook. Call `done()` yourself and set
+   * `motionCss` to `false` to fully hand the enter animation to GSAP/motion-v/etc. */
+  'row-enter': [el: Element, done: () => void]
+  /** Same as `row-enter`, for a row's exit. */
+  'row-leave': [el: Element, done: () => void]
 }>()
 
 const page = defineModel<number>('page', { default: 1 })
@@ -246,6 +261,7 @@ function compareValues(a: unknown, b: unknown): number {
   if (b == null) return -1
   if (typeof a === 'number' && typeof b === 'number') return a - b
   if (typeof a === 'boolean' && typeof b === 'boolean') return a === b ? 0 : a ? 1 : -1
+  if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime()
   return String(a).localeCompare(String(b))
 }
 const sortedData = computed(() => {
@@ -638,6 +654,9 @@ const bodyProps = computed(() => ({
   onToggleSelect: toggleSelect,
   onToggleExpand: toggleExpand,
   onRowClick,
+  motionCss: props.motionCss,
+  onRowEnter: (el: Element, done: () => void) => emit('row-enter', el, done),
+  onRowLeave: (el: Element, done: () => void) => emit('row-leave', el, done),
 }))
 
 // The generic-inference handoff (see the SFC comment above): `T` is bound

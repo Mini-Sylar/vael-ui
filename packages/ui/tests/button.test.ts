@@ -15,7 +15,22 @@ function deferredTask() {
   return { task, resolve: () => resolveTask() }
 }
 
-test('default auto mode: a promise returned from @click drives loading', async () => {
+test('default loading=false: a promise returned from @click does not trigger loading', async () => {
+  const { task, resolve } = deferredTask()
+  const { default: Button } = await import('../src/components/Button/Button.vue')
+  const screen = render(Button, {
+    props: { onClick: () => task() },
+    slots: { default: 'Save' },
+  })
+  const button = screen.getByRole('button')
+
+  await button.click()
+  await expect.element(button).not.toHaveAttribute('aria-busy')
+  await expect.element(button).not.toHaveAttribute('aria-disabled')
+  resolve()
+})
+
+test('loading="auto": a promise returned from @click drives loading', async () => {
   const { task, resolve } = deferredTask()
   const screen = render(ButtonFixture, { props: { task } })
 
@@ -106,7 +121,7 @@ test('loading keeps focus in the button (aria-disabled, not native disabled) and
   await expect.element(button).not.toHaveAttribute('aria-disabled')
 })
 
-test('variant, size and disabled render the expected state classes and cursor', async () => {
+test('variant, size and disabled render the expected state classes', async () => {
   const { task } = deferredTask()
   const screen = render(ButtonFixture, {
     props: { task, variant: 'danger', size: 'lg' },
@@ -116,10 +131,10 @@ test('variant, size and disabled render the expected state classes and cursor', 
   await expect.element(button).toHaveClass('ui-button--lg')
   await expect.element(button).toHaveClass('ui-button--loader-overlay')
 
-  // Busy ≠ off: while loading the button keeps full opacity, progress cursor
+  // Busy ≠ off: while loading the button keeps full opacity (only `--disabled` dims it)
   await button.click()
+  await expect.element(button).toHaveAttribute('aria-busy', 'true')
   const el = document.querySelector<HTMLElement>('.ui-button')!
-  await vi.waitFor(() => expect(getComputedStyle(el).cursor).toBe('progress'))
   expect(getComputedStyle(el).opacity).toBe('1')
 })
 

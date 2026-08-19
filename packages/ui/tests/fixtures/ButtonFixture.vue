@@ -1,5 +1,5 @@
 <template>
-  <Button :loader :variant :size @click="onClick">
+  <Button loading="auto" :loader :variant :size @click="onClick">
     <template #default="{ loading }">
       {{ !staticLabel && loading ? 'Saving…' : 'Save' }}
     </template>
@@ -23,8 +23,8 @@ const props = defineProps<{
   size?: ButtonSize
 }>()
 
-// The new default-auto contract: returning a promise from @click is all the
-// wiring auto-loading needs — no template ref, no run().
+// loading="auto" (opt-in, not the default) is all the wiring auto-loading
+// needs beyond this — no template ref, no run().
 function onClick() {
   return props.task()
 }

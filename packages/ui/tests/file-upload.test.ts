@@ -25,6 +25,45 @@ function dropOn(el: Element, files: File[]) {
   el.dispatchEvent(dragEventWithFiles('drop', dataTransfer))
 }
 
+test('motionCss=false hands the item enter/leave transition to item-enter/item-leave instead of running the built-in CSS transition', async () => {
+  const { default: FileUpload } = await import('../src/components/FileUpload/FileUpload.vue')
+  const enters: Array<[Element, () => void]> = []
+  const leaves: Array<[Element, () => void]> = []
+  const screen = render(FileUpload, {
+    props: { motionCss: false },
+    attrs: {
+      onItemEnter: (el: Element, done: () => void) => enters.push([el, done]),
+      onItemLeave: (el: Element, done: () => void) => leaves.push([el, done]),
+    },
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  // Rendering FileUpload directly (not through a fixture) needs one tick before
+  // useFileDrop's useEventListener-attached drop handler is actually wired up.
+  await nextTick()
+  const dropzone = screen.container.querySelector('.ui-file-upload-dropzone')!
+  const items = () => screen.container.querySelectorAll('.ui-file-upload-item')
+
+  // The very first item, dropped into an empty list, mounts the TransitionGroup
+  // itself (v-if="modelValue.length > 0") — Vue skips enter transitions on a
+  // TransitionGroup's own initial mount without `appear`, so it never fires. Settle
+  // fully (matching the dedupe test's own proven pattern) before the second drop,
+  // which is what actually exercises an enter on an already-mounted group.
+  dropOn(dropzone, [makeFile('a.txt', 'text/plain', 10)])
+  await vi.waitFor(() => expect(items()).toHaveLength(1))
+  dropOn(dropzone, [makeFile('b.txt', 'text/plain', 10)])
+  await vi.waitFor(() => expect(enters).toHaveLength(1))
+  const [enterEl, enterDone] = enters[0]!
+  expect(enterEl.tagName).toBe('LI')
+  enterDone() // consumer's own animation "finished" — must not throw
+
+  const removeButton = screen.container.querySelector<HTMLButtonElement>('.ui-file-upload-remove')!
+  removeButton.click()
+  await vi.waitFor(() => expect(leaves).toHaveLength(1))
+  const [leaveEl, leaveDone] = leaves[0]!
+  expect(leaveEl.tagName).toBe('LI')
+  leaveDone()
+})
+
 test('browse click opens the file picker via the hidden input', async () => {
   const screen = render(FileUploadFixture, {})
   const input = screen.container.querySelector<HTMLInputElement>(

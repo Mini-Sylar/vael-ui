@@ -13,7 +13,11 @@ function cellByIso(iso: string): HTMLElement | undefined {
 }
 
 test('renders the correct month grid for a known month, including real leading days from the prior month', async () => {
-  const screen = render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
+  // Pinned explicitly: this test is about leading/trailing-day rendering, not about
+  // which day the week starts on, so it shouldn't depend on the ambient default.
+  const screen = render(CalendarFixture, {
+    props: { initialValue: JUNE_15_2024, firstDayOfWeek: 0 },
+  })
   await expect
     .element(screen.container.querySelector<HTMLElement>('.ui-calendar-label')!)
     .toHaveTextContent('June 2024')
@@ -23,6 +27,32 @@ test('renders the correct month grid for a known month, including real leading d
   const leading = cellByIso('2024-05-26')
   expect(leading).toBeDefined()
   expect(leading!.classList.contains('ui-calendar-cell--outside')).toBe(true)
+})
+
+test('first-day-of-week falls back to Monday, not Sunday, when Intl.Locale.weekInfo is unsupported', async () => {
+  // Simulates an engine without Intl.Locale.weekInfo — even for a locale (en-US) that
+  // would resolve Sunday-first with real weekInfo support, the fallback must not just
+  // parrot that back; it's specifically testing the code path taken when weekInfo is
+  // absent, which used to silently default to Sunday regardless of locale.
+  const OriginalLocale = Intl.Locale
+  class LocaleWithoutWeekInfo extends OriginalLocale {}
+  Object.defineProperty(LocaleWithoutWeekInfo.prototype, 'weekInfo', {
+    get: () => undefined,
+    configurable: true,
+  })
+  // @ts-expect-error -- test-only stub of a built-in for a single assertion
+  Intl.Locale = LocaleWithoutWeekInfo
+
+  try {
+    const screen = render(CalendarFixture, {
+      props: { initialValue: JUNE_15_2024, locale: 'en-US' },
+    })
+    const firstWeekday = screen.container.querySelector<HTMLElement>('.ui-calendar-weekday')!
+    await expect.element(firstWeekday).toHaveTextContent('Mon')
+  } finally {
+    // @ts-expect-error -- restoring the test-only stub above
+    Intl.Locale = OriginalLocale
+  }
 })
 
 test('next/previous month navigation updates the header and the rendered grid', async () => {

@@ -1,68 +1,39 @@
 <template>
   <section class="demo">
-    <h2>"Password with hint" — a block, not a component</h2>
+    <h2>PasswordInput</h2>
     <p class="note">
-      PrimeVue ships a dedicated <code>Password</code> component — Input + a visibility toggle + a
-      strength meter bundled together. In vael-ui's worldview that bundle is a composition, not a
-      new primitive: <code>Input</code>'s <code>#end</code> slot + a ghost icon
-      <code>Button</code> toggling <code>type</code> + <code>Field</code>'s
-      <code>description</code>/<code>error</code>
-      covers the whole shape with zero new behavior. The strength meter below is literally
-      <code>Progress</code> driven by a computed value — no bespoke widget.
+      Promoted out of the old hand-composed block into a real component: reveal toggle +
+      <code>Field</code> wiring come for free. Default <code>hintPlacement="popover"</code> floats
+      the requirements checklist next to the field while it's focused — click into the field below
+      to see it.
     </p>
+    <PasswordInput
+      v-model="basic"
+      :rules="defaultRules"
+      placeholder="Focus me"
+      autocomplete="new-password"
+    />
 
-    <Field
-      label="Password"
-      label-placement="float"
-      description="At least 8 characters, one number."
-      :error="error"
-    >
-      <Input
+    <p class="note">
+      <code>hintPlacement="inline"</code> instead keeps it always visible, and here the checklist is
+      swapped for a strength meter via the <code>#hint</code> slot — still just
+      <code>Progress</code> driven by a computed value, no bespoke widget.
+    </p>
+    <Field label="Password" label-placement="float" :error="error">
+      <PasswordInput
         v-model="password"
-        :type="visible ? 'text' : 'password'"
+        hint-placement="inline"
         :invalid="!!error"
         autocomplete="new-password"
       >
-        <template #end>
-          <Button
-            size="sm"
-            variant="ghost"
-            icon
-            :aria-label="visible ? 'Hide password' : 'Show password'"
-            @click="visible = !visible"
-          >
-            <svg
-              v-if="visible"
-              viewBox="0 0 16 16"
-              width="14"
-              height="14"
-              aria-hidden="true"
-              fill="none"
-            >
-              <path
-                d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8z"
-                stroke="currentColor"
-                stroke-width="1.4"
-              />
-              <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.4" />
-            </svg>
-            <svg v-else viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none">
-              <path
-                d="M2 2l12 12M4.2 4.6C2.4 5.7 1 8 1 8s2.5 4.5 7 4.5c1.4 0 2.6-.4 3.6-1M10.6 3.9C9.8 3.6 8.9 3.5 8 3.5c-.6 0-1.2.06-1.7.18M12.9 6.1c1 .8 2.1 1.9 2.1 1.9s-.6 1.1-1.7 2.1"
-                stroke="currentColor"
-                stroke-width="1.4"
-                stroke-linecap="round"
-              />
-            </svg>
-          </Button>
+        <template #hint="{ results }">
+          <div class="password-strength">
+            <Progress :value="strength(results)" :variant="strengthVariant(results)" size="sm" />
+            <span class="note">{{ strengthLabel(results) }}</span>
+          </div>
         </template>
-      </Input>
+      </PasswordInput>
     </Field>
-
-    <div class="password-strength">
-      <Progress :value="strength" :variant="strengthVariant" size="sm" :label="strengthLabel" />
-      <span class="note">{{ strengthLabel }}</span>
-    </div>
 
     <div class="row">
       <Button size="sm" variant="outline" @click="error = error ? '' : 'Password is too short'">
@@ -73,32 +44,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import { Button, Field, Input, Progress } from 'vael-ui'
+import { shallowRef } from 'vue'
+import { Button, Field, PasswordInput, Progress } from 'vael-ui'
+import type { PasswordRule, PasswordRuleResult } from 'vael-ui'
 
+// No built-in default in the component — labels are user-facing text with no i18n
+// context inside PasswordInput to translate them from, so this demo supplies its own.
+const defaultRules: PasswordRule[] = [
+  { label: 'At least 8 characters', test: (v) => v.length >= 8 },
+  { label: 'One number', test: (v) => /[0-9]/.test(v) },
+  { label: 'One uppercase letter', test: (v) => /[A-Z]/.test(v) },
+]
+
+const basic = shallowRef('')
 const password = shallowRef('')
-const visible = shallowRef(false)
 const error = shallowRef('')
 
-const strength = computed(() => {
-  const value = password.value
-  if (!value) return 0
-  let score = Math.min(value.length * 8, 60)
-  if (/[0-9]/.test(value)) score += 20
-  if (/[^a-zA-Z0-9]/.test(value)) score += 20
-  return Math.min(score, 100)
-})
-const strengthVariant = computed(() => {
-  if (strength.value >= 80) return 'success'
-  if (strength.value >= 40) return 'warning'
+function strength(results: PasswordRuleResult[]): number {
+  const passed = results.filter((r) => r.passed).length
+  return results.length === 0 ? 0 : Math.round((passed / results.length) * 100)
+}
+function strengthVariant(results: PasswordRuleResult[]): 'danger' | 'warning' | 'success' {
+  const value = strength(results)
+  if (value >= 100) return 'success'
+  if (value >= 50) return 'warning'
   return 'danger'
-})
-const strengthLabel = computed(() => {
-  if (!password.value) return 'Enter a password'
-  if (strength.value >= 80) return 'Strong'
-  if (strength.value >= 40) return 'Okay'
+}
+function strengthLabel(results: PasswordRuleResult[]): string {
+  const value = strength(results)
+  if (value === 0) return 'Enter a password'
+  if (value >= 100) return 'Strong'
+  if (value >= 50) return 'Okay'
   return 'Weak'
-})
+}
 </script>
 
 <style scoped>

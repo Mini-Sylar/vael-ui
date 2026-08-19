@@ -124,6 +124,10 @@
   /* selectionMode="row": the whole row is the click target, not just a checkbox. */
   .ui-datatable-tr--clickable {
     cursor: pointer;
+    transition: transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-datatable-tr--clickable:active {
+    transform: scale(0.99);
   }
   .ui-datatable-td--loading,
   .ui-datatable-td--empty {
@@ -298,22 +302,76 @@
   .ui-datatable-td--expansion {
     background: var(--ui-muted);
     white-space: normal;
+    padding: 0; /* moved to .ui-datatable-expansion-inner so it collapses on leave */
+  }
+  .ui-datatable-expansion-rows {
+    overflow: hidden;
+  }
+  .ui-datatable-expansion-inner {
+    padding: 0.625rem 0.75rem;
+  }
+  .ui-datatable--sm .ui-datatable-expansion-inner {
+    padding: 0.375rem 0.5rem;
+  }
+  .ui-datatable--lg .ui-datatable-expansion-inner {
+    padding: 0.875rem 1rem;
   }
   .ui-datatable-expand-chevron {
     transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
   }
   .ui-datatable-expand-chevron[data-state='open'] {
-    transform: rotate(-180deg);
+    transform: rotate(90deg);
+  }
+
+  /* `move` is transform-only — a <tr> can't take Tree's position-absolute leave trick
+     without breaking table-layout, and applies to every row (sort reorder). Enter/leave
+     fade + height only apply to expansion rows specifically, not plain data rows: a
+     page change replaces the whole visible row set, and pages don't all have the same
+     row count, so some row positions have an old+new row crossfading while others
+     (past the shorter page's count) only have one entering with nothing to fade
+     against — reads as a broken partial fade. Matches every other table library's
+     convention too: pagination snaps, it doesn't animate. ease-out (not ease-in-out)
+     on the expansion row's own fade: entering/exiting, not an on-screen reposition.
+     The height target (max-block-size) comes from beforeEnterHook/beforeLeaveHook in
+     DataTableBody.vue, which measure a real px value first: animating a
+     grid-template-rows fr value interpolates the fr number linearly, not the
+     resulting pixel height, so most of the visible motion happens in an early burst
+     and the rest of the duration runs with nothing visibly changing — reads as a
+     stall, not a smooth open/close. */
+  .ui-datatable-row-move {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-datatable-tr--expansion.ui-datatable-row-enter-active,
+  .ui-datatable-tr--expansion.ui-datatable-row-leave-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-datatable-tr--expansion.ui-datatable-row-enter-from,
+  .ui-datatable-tr--expansion.ui-datatable-row-leave-to {
+    opacity: 0;
+  }
+  .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
+  .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
+    transition: max-block-size var(--ui-duration-enter) var(--ui-ease-out);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-datatable-sort-button:active {
       transform: none;
     }
+    .ui-datatable-tr--clickable:active {
+      transform: none;
+    }
     .ui-datatable-sort-chevron {
       transition: opacity var(--ui-duration-press) ease;
     }
     .ui-datatable-expand-chevron {
+      transition: none;
+    }
+    .ui-datatable-row-move {
+      transition: none;
+    }
+    .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
+    .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
       transition: none;
     }
   }
