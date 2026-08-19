@@ -1,5 +1,5 @@
 <template>
-  <Button data-testid="vapor-built-button" @click="save">
+  <Button data-testid="vapor-built-button" loading="auto" @click="save">
     <template #default="{ loading }">{{ loading ? 'Saving…' : 'Save' }}</template>
   </Button>
 </template>
