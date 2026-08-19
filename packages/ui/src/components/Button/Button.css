@@ -154,9 +154,6 @@
   .ui-button--disabled {
     cursor: not-allowed;
   }
-  .ui-button--loading {
-    cursor: progress;
-  }
   .ui-button--disabled {
     opacity: 0.5;
   }

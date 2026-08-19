@@ -95,7 +95,9 @@ defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
-    /** `'auto'` (default): promise-returning `@click` handlers trigger loading automatically. `true`/`false`: fully controlled. */
+    /** `false` (default) / `true`: fully controlled. `'auto'`: opt into promise-based
+     * loading — `@click` returning a promise drives it, finishing only once the last
+     * overlapping promise resolves. */
     loading?: boolean | 'auto'
     disabled?: boolean
     variant?: ButtonVariant
@@ -116,7 +118,7 @@ const props = withDefaults(
     ui?: Partial<{ root: UiPartValue; badge: UiPartValue }>
   }>(),
   {
-    loading: 'auto',
+    loading: false,
     disabled: false,
     variant: 'primary',
     size: 'md',
