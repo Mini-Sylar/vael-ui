@@ -151,6 +151,7 @@
     name="ui-datatable-row"
     :css="motionCss"
     class="ui-datatable-tbody"
+    @before-enter="beforeEnterHook"
     @before-leave="beforeLeaveHook"
     @enter="rowEnterHook"
     @leave="rowLeaveHook"
@@ -316,10 +317,21 @@ const rowLeaveHook = computed(() =>
 )
 
 // grid-template-rows: 1fr/0fr interpolates the *fr* value linearly, not the resulting
-// pixel height — most of the visible shrink happens in a short early burst, then the
-// numeric transition keeps running for its full duration with barely anything visibly
-// changing, reading as a stall. Only motionCss's own CSS-driven collapse needs this —
-// skipped when false, since the consumer owns the whole animation via row-leave.
+// pixel height — most of the visible shrink/grow happens in a short early burst, then
+// the numeric transition keeps running for its full duration with barely anything
+// visibly changing, reading as a stall. Measuring a real px value first (below) and
+// transitioning max-block-size instead interpolates the actual height linearly. Only
+// motionCss's own CSS-driven transition needs this — skipped when false, since the
+// consumer owns the whole animation via row-enter/row-leave.
+function beforeEnterHook(el: Element) {
+  if (!props.motionCss) return
+  const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
+  if (!wrap) return
+  wrap.style.maxBlockSize = '0px'
+  requestAnimationFrame(() => {
+    wrap.style.maxBlockSize = `${wrap.scrollHeight}px`
+  })
+}
 function beforeLeaveHook(el: Element) {
   if (!props.motionCss) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')

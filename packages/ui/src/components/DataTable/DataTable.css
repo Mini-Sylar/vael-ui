@@ -321,13 +321,13 @@
 
   /* `move` is transform-only — a <tr> can't take Tree's position-absolute leave trick
      without breaking table-layout. ease-out (not ease-in-out): entering/exiting, not
-     an on-screen reposition. Enter is a plain fade; leave adds a height collapse on
-     top — asymmetric on purpose, not a fade both ways. The collapse target itself
-     (max-block-size: 0) comes from beforeLeaveHook in DataTableBody.vue, which sets
-     the *starting* height as a real measured px value first: animating a grid-rows
-     fr value interpolates the fr number linearly, not the resulting pixel height, so
-     most of the visible shrink happens in an early burst and the rest of the duration
-     runs with nothing visibly changing — reads as a stall/jitter, not a smooth close. */
+     an on-screen reposition. Both directions fade + grow/shrink height together. The
+     height target itself (max-block-size) comes from beforeEnterHook/beforeLeaveHook
+     in DataTableBody.vue, which measure a real px value first: animating a
+     grid-template-rows fr value interpolates the fr number linearly, not the
+     resulting pixel height, so most of the visible motion happens in an early burst
+     and the rest of the duration runs with nothing visibly changing — reads as a
+     stall, not a smooth open/close. */
   .ui-datatable-row-move {
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
   }
@@ -339,6 +339,7 @@
   .ui-datatable-row-leave-to {
     opacity: 0;
   }
+  .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
   .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
     transition: max-block-size var(--ui-duration-enter) var(--ui-ease-out);
   }
@@ -356,6 +357,7 @@
     .ui-datatable-row-move {
       transition: none;
     }
+    .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
     .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
       transition: none;
     }

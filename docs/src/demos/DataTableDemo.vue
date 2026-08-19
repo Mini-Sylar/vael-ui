@@ -135,7 +135,10 @@
     <h3>Row expansion</h3>
     <p class="note">
       The <code>#expansion</code> slot renders a full-width detail row directly beneath an expanded
-      row; DataTable owns the expand/collapse chevron column, the consumer owns the content.
+      row; DataTable owns the expand/collapse chevron column, the consumer owns the content. Each
+      row here has a deliberately different detail height (one line, a short bio, a longer bio with
+      a skills list) — the open/close transition measures each row's real height rather than
+      assuming a fixed one, so this is the actual thing to check when testing it.
     </p>
     <DataTable :data="smallSample" row-key="id">
       <template #columns="{ columnData }">
@@ -148,9 +151,19 @@
         </Column>
       </template>
       <template #expansion="{ row }">
-        <p class="note datatable-demo-expansion-note">
-          {{ row.name }} · {{ row.email }} · {{ row.department }}
-        </p>
+        <div class="datatable-demo-expansion">
+          <p class="datatable-demo-expansion-note">
+            {{ row.name }} · {{ row.email }} · {{ row.department }}
+          </p>
+          <p v-if="expansionDetail(row).bio" class="datatable-demo-expansion-note">
+            {{ expansionDetail(row).bio }}
+          </p>
+          <div v-if="expansionDetail(row).skills" class="datatable-demo-expansion-skills">
+            <Tag v-for="skill in expansionDetail(row).skills" :key="skill" variant="muted">
+              {{ skill }}
+            </Tag>
+          </div>
+        </div>
       </template>
     </DataTable>
 
@@ -266,6 +279,30 @@ const employees: Employee[] = Array.from({ length: 64 }, (_, i) => ({
   department: DEPARTMENTS[i % DEPARTMENTS.length]!,
 }))
 const smallSample = employees.slice(0, 5)
+
+// Deliberately uneven heights (one line / bio / bio + skills) — the row-expansion
+// demo's whole point is exercising the open/close transition's real measured
+// height against something other than one fixed size.
+interface ExpansionDetail {
+  bio?: string
+  skills?: string[]
+}
+const EXPANSION_DETAILS: Record<string, ExpansionDetail> = {
+  e1: {
+    bio: 'Leads the onboarding flow redesign, usually first to jump on a support escalation.',
+  },
+  e2: {
+    bio: "Owns the design system's component library end to end, from Figma source to shipped CSS.",
+    skills: ['Design systems', 'Figma', 'Accessibility', 'Motion design'],
+  },
+  e4: {
+    bio: "Runs the platform team's on-call rotation, the go-to for anything touching the deploy pipeline.",
+    skills: ['Kubernetes', 'Terraform', 'Incident response', 'Postgres', 'Go'],
+  },
+}
+function expansionDetail(row: Employee): ExpansionDetail {
+  return EXPANSION_DETAILS[row.id] ?? {}
+}
 const bigDataset: Employee[] = Array.from({ length: 5000 }, (_, i) => ({
   id: `big-${i}`,
   name: `${FIRST_NAMES[i % FIRST_NAMES.length]} ${LAST_NAMES[(i * 7) % LAST_NAMES.length]}`,
@@ -331,7 +368,19 @@ const loadingDemo = shallowRef(false)
   gap: 1rem;
   align-items: start;
 }
+.datatable-demo-expansion {
+  display: grid;
+  gap: 0.375rem;
+}
 .datatable-demo-expansion-note {
   margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
+}
+.datatable-demo-expansion-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-block-start: 0.125rem;
 }
 </style>
