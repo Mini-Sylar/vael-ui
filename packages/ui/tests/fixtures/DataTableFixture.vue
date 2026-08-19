@@ -27,6 +27,7 @@
     :manual-sort="manualSort"
     :lazy="lazy"
     :total="total"
+    :motion-css="motionCss"
     @update:selection="onSelectionChange"
     @row-click="onRowClick"
   >
@@ -108,6 +109,7 @@ const props = withDefaults(
     manualSort?: boolean
     lazy?: boolean
     total?: number
+    motionCss?: boolean
   }>(),
   {
     rowCount: 4,
@@ -125,6 +127,7 @@ const props = withDefaults(
     frozenColumns: 0,
     manualSort: false,
     lazy: false,
+    motionCss: true,
   },
 )
 

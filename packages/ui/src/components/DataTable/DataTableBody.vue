@@ -151,7 +151,7 @@
     name="ui-datatable-row"
     :css="motionCss"
     class="ui-datatable-tbody"
-    :data-motion-settling="rowMotionReady ? undefined : ''"
+    :data-motion="motionCss && rowMotionReady ? undefined : 'off'"
     @before-enter="beforeEnterHook"
     @before-leave="beforeLeaveHook"
     @enter="rowEnterHook"

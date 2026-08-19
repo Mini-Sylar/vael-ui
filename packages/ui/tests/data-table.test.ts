@@ -53,6 +53,7 @@ async function renderTable(props: {
   manualSort?: boolean
   lazy?: boolean
   total?: number
+  motionCss?: boolean
 }) {
   // Vue Test Utils auto-stubs transition-group by default (a <transition-group-stub>
   // custom element, not the real `tag`). Harmless for most components, but DataTable's
@@ -107,6 +108,33 @@ test('clicking a sortable header cycles none -> asc -> desc -> none and reorders
   await vi.waitFor(() => expect(nameHeader.getAttribute('aria-sort')).toBe('none'))
   rows = bodyRows(screen.container)
   expect(rows[0]!.textContent).toContain('Alice')
+})
+
+test('motionCss=false disables the row-move CSS transition (not just enter/leave)', async () => {
+  // Vue's TransitionGroup only gates enter/leave on the `css` prop — the move
+  // (FLIP) animation is driven purely by whether `.ui-datatable-row-move`
+  // resolves an actual transition, so DataTableBody has to disable that CSS
+  // rule itself via data-motion="off" for motionCss="false" to have any
+  // effect on a real reorder.
+  const screen = await renderTable({ rowCount: 4, showStatusColumn: false, motionCss: false })
+  const tbody = screen.container.querySelector('.ui-datatable-tbody')!
+  expect(tbody.getAttribute('data-motion')).toBe('off')
+
+  // Same detection Vue's own TransitionGroup uses internally (hasCSSTransform):
+  // probe the actual resolved transition for the move class, since it's only
+  // ever applied transiently by Vue during a real reorder.
+  const probe = document.createElement('tr')
+  probe.className = 'ui-datatable-row-move'
+  tbody.appendChild(probe)
+  const duration = getComputedStyle(probe).transitionDuration
+  probe.remove()
+  expect(duration).toBe('0s')
+})
+
+test('motionCss=true (default) leaves the row-move CSS transition active once settled', async () => {
+  const screen = await renderTable({ rowCount: 4, showStatusColumn: false })
+  const tbody = screen.container.querySelector('.ui-datatable-tbody')!
+  expect(tbody.getAttribute('data-motion')).toBeNull()
 })
 
 test('the sort chevron rotates via data-state as the column cycles sort directions', async () => {

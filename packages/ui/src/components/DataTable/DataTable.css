@@ -341,11 +341,12 @@
   .ui-datatable-row-move {
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
   }
-  /* Vue only plays the move animation when it detects a transition on this
-     class (see hasCSSTransform in Vue's TransitionGroup source) — dropping it
-     here makes the DataTable.vue-driven settling render snap instead of
-     jumble, without touching real reorder/expand animations. */
-  .ui-datatable-tbody[data-motion-settling] .ui-datatable-row-move {
+  /* Vue's move animation is never gated by TransitionGroup's own `:css` prop
+     (only enter/leave are) — it only checks whether this class resolves a
+     transition at all (hasCSSTransform in Vue's TransitionGroup source), so
+     this is the only lever for both motionCss="false" and DataTable.vue's
+     post-mount settling render (see its own comment on rowMotionReady). */
+  .ui-datatable-tbody[data-motion='off'] .ui-datatable-row-move {
     transition: none;
   }
   .ui-datatable-tr--expansion.ui-datatable-row-enter-active,
