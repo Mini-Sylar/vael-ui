@@ -246,6 +246,7 @@ function compareValues(a: unknown, b: unknown): number {
   if (b == null) return -1
   if (typeof a === 'number' && typeof b === 'number') return a - b
   if (typeof a === 'boolean' && typeof b === 'boolean') return a === b ? 0 : a ? 1 : -1
+  if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime()
   return String(a).localeCompare(String(b))
 }
 const sortedData = computed(() => {

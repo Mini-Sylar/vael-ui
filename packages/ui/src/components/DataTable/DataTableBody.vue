@@ -61,13 +61,13 @@
           <Checkbox
             v-if="!single"
             :model-value="isSelected(tableRowEntries[virtualRow.index]!.row)"
-            aria-label="Select row"
+            :aria-label="messages.dataTable.selectRow"
             @update:model-value="() => onToggleSelect(tableRowEntries[virtualRow.index]!.row)"
           />
           <Radio
             v-else
             :value="getRowKey(tableRowEntries[virtualRow.index]!.row)"
-            aria-label="Select row"
+            :aria-label="messages.dataTable.selectRow"
           />
         </td>
         <td
@@ -82,7 +82,9 @@
             variant="ghost"
             type="button"
             :aria-label="
-              isExpanded(tableRowEntries[virtualRow.index]!.row) ? 'Collapse row' : 'Expand row'
+              isExpanded(tableRowEntries[virtualRow.index]!.row)
+                ? messages.dataTable.collapseRow
+                : messages.dataTable.expandRow
             "
             @click="onToggleExpand(tableRowEntries[virtualRow.index]!.row)"
           >
@@ -96,7 +98,7 @@
               :data-state="isExpanded(tableRowEntries[virtualRow.index]!.row) ? 'open' : 'closed'"
             >
               <path
-                d="M4 6l4 4 4-4"
+                d="M6 4l4 4-4 4"
                 stroke="currentColor"
                 stroke-width="1.5"
                 stroke-linecap="round"
@@ -161,10 +163,10 @@
           <Checkbox
             v-if="!single"
             :model-value="isSelected(entry.row)"
-            aria-label="Select row"
+            :aria-label="messages.dataTable.selectRow"
             @update:model-value="() => onToggleSelect(entry.row)"
           />
-          <Radio v-else :value="getRowKey(entry.row)" aria-label="Select row" />
+          <Radio v-else :value="getRowKey(entry.row)" :aria-label="messages.dataTable.selectRow" />
         </td>
         <td
           v-if="expansionColumnRendered"
@@ -177,7 +179,9 @@
             size="sm"
             variant="ghost"
             type="button"
-            :aria-label="isExpanded(entry.row) ? 'Collapse row' : 'Expand row'"
+            :aria-label="
+              isExpanded(entry.row) ? messages.dataTable.collapseRow : messages.dataTable.expandRow
+            "
             @click="onToggleExpand(entry.row)"
           >
             <svg
@@ -190,7 +194,7 @@
               :data-state="isExpanded(entry.row) ? 'open' : 'closed'"
             >
               <path
-                d="M4 6l4 4 4-4"
+                d="M6 4l4 4-4 4"
                 stroke="currentColor"
                 stroke-width="1.5"
                 stroke-linecap="round"
@@ -237,6 +241,7 @@ import Radio from '../Radio/Radio.vue'
 import Button from '../Button/Button.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import type { VirtualRow } from '../../composables/useVirtualizer'
+import { useUiMessages } from '../../messages'
 
 export interface TableRowEntry<T> {
   kind: 'row' | 'expansion'
@@ -277,4 +282,6 @@ defineSlots<{
   empty(): any
   expansion(props: { row: T }): any
 }>()
+
+const messages = useUiMessages()
 </script>

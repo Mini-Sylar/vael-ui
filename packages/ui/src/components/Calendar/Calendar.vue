@@ -293,7 +293,10 @@ function isoDate(date: Date): string {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
 }
 
-// Intl.Locale.weekInfo not in every engine; fallback to Sunday.
+// Intl.Locale.weekInfo isn't in every engine yet. Falling back to Sunday would be
+// wrong for most of the world's locales (ISO 8601's Monday-first covers a far larger
+// share than Sunday-first, which is mainly the US/Canada) — Monday is the better
+// blind guess when the real per-locale answer isn't available.
 function resolveFirstDayOfWeek(locale: string | undefined): number {
   try {
     const resolvedLocale = locale ?? Intl.DateTimeFormat().resolvedOptions().locale
@@ -301,7 +304,7 @@ function resolveFirstDayOfWeek(locale: string | undefined): number {
       .weekInfo
     if (info?.firstDay) return info.firstDay % 7
   } catch {}
-  return 0
+  return 1
 }
 
 const today = startOfDay(new Date())

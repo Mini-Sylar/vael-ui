@@ -8,6 +8,7 @@ import DataTableFixture from './fixtures/DataTableFixture.vue'
 import DataTableReorderFixture from './fixtures/DataTableReorderFixture.vue'
 import DataTableExpansionFixture from './fixtures/DataTableExpansionFixture.vue'
 import DataTableVirtualizeFixture from './fixtures/DataTableVirtualizeFixture.vue'
+import DataTableDateSortFixture from './fixtures/DataTableDateSortFixture.vue'
 
 function headerCells(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>('.ui-datatable-th'))
@@ -113,6 +114,23 @@ test('the sort chevron rotates via data-state as the column cycles sort directio
 
   await userEvent.click(sortButton)
   await vi.waitFor(() => expect(chevron.getAttribute('data-state')).toBe('desc'))
+})
+
+test('sorting a Date column orders chronologically, not by weekday name', async () => {
+  const screen = render(DataTableDateSortFixture, {})
+  await nextTick()
+  const container = screen.container
+
+  const idOf = (index: number) => bodyRows(container)[index]!.querySelector('td')!.textContent
+
+  const header = headerCells(container).find((th) => th.textContent?.includes('Joined'))!
+  const sortButton = header.querySelector<HTMLElement>('.ui-datatable-sort-button')!
+  await userEvent.click(sortButton)
+  await vi.waitFor(() => expect(header.getAttribute('aria-sort')).toBe('ascending'))
+
+  // A naive string-coerced sort ('Tue' < 'Mon') would put 'later' first.
+  expect(idOf(0)).toBe('earlier')
+  expect(idOf(1)).toBe('later')
 })
 
 test('sorting by Age (a different column) resets Name back to unsorted', async () => {

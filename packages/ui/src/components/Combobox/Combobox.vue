@@ -207,6 +207,7 @@ const props = withDefaults(
     size?: 'sm' | 'md' | 'lg'
     loading?: boolean
     clearable?: boolean
+    /** `true`/`false` forces virtualization on/off; an object also tunes `itemSize`/`overscan`. Default: auto-virtualizes past 100 items. */
     virtualize?: boolean | SelectVirtualizeConfig
     name?: string
     /** `true` (default): case/diacritic-insensitive local match on

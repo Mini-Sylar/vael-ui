@@ -303,7 +303,7 @@
     transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
   }
   .ui-datatable-expand-chevron[data-state='open'] {
-    transform: rotate(-180deg);
+    transform: rotate(90deg);
   }
 
   @media (prefers-reduced-motion: reduce) {
