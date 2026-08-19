@@ -7,9 +7,14 @@
       <Button size="sm" variant="outline" @click="handleCancel" v-bind="cancelButtonProps">{{
         cancelLabel
       }}</Button>
-      <Button size="sm" :variant="variant" @click="handleConfirm" v-bind="confirmButtonProps">{{
-        confirmLabel
-      }}</Button>
+      <Button
+        size="sm"
+        :variant="variant"
+        loading="auto"
+        @click="handleConfirm"
+        v-bind="confirmButtonProps"
+        >{{ confirmLabel }}</Button
+      >
     </div>
   </div>
 </template>
