@@ -13,3 +13,8 @@ Fixes:
 - `Field`: the error message now visibly arrives (a small translate alongside the existing fade)
   instead of only fading in place, where an instant, unanimated layout shift (the flex gap/height
   snapping in) drowned out the fade and made it look like there was no animation at all.
+- `DataTable`: `motionCss="false"` now actually disables row-reorder animation on a real sort/page
+  change, not just row enter/exit. Vue's `TransitionGroup` never gates its move (FLIP) animation on
+  the `css` prop — only enter/leave are — so the built-in CSS reorder transition kept firing
+  regardless of `motionCss`, contradicting its own documented contract for anyone handing row
+  animation off to GSAP/motion-v.
