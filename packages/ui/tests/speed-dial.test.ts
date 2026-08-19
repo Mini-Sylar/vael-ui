@@ -44,6 +44,25 @@ test('motionCss=false hands the action enter/leave transition to action-enter/ac
   leaveDone()
 })
 
+test('motionCss=false also disables the action-move CSS transition (not just enter/leave)', async () => {
+  // Same gap as DataTable's row-move: Vue's TransitionGroup move animation
+  // isn't gated by the css prop, only enter/leave are, so this needs its own
+  // lever — see data-motion="off" in SpeedDial.vue/css.
+  const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
+  const screen = render(SpeedDial, {
+    props: { items: [{ label: 'Home' }, { label: 'Settings' }], motionCss: false },
+  })
+  const actions = screen.container.querySelector<HTMLElement>('.ui-speed-dial-actions')!
+  expect(actions.getAttribute('data-motion')).toBe('off')
+
+  const probe = document.createElement('button')
+  probe.className = 'ui-speed-dial-action-move'
+  actions.appendChild(probe)
+  const duration = getComputedStyle(probe).transitionDuration
+  probe.remove()
+  expect(duration).toBe('0s')
+})
+
 test('closed by default: trigger renders but no action items are in the DOM', async () => {
   const screen = render(SpeedDialFixture, {})
   await expect.element(trigger(screen)).toBeInTheDocument()

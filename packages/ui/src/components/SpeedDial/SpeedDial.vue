@@ -15,6 +15,7 @@
       role="menu"
       :aria-label="ariaLabel"
       :aria-orientation="orientationFor(direction)"
+      :data-motion="motionCss ? undefined : 'off'"
       @keydown="onKeydown"
     >
       <TransitionGroup
