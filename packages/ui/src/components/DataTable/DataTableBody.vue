@@ -128,7 +128,11 @@
         </td>
       </template>
       <td v-else class="ui-datatable-td ui-datatable-td--expansion" :colspan="colCount">
-        <slot name="expansion" :row="tableRowEntries[virtualRow.index]!.row" />
+        <div class="ui-datatable-expansion-rows">
+          <div class="ui-datatable-expansion-inner">
+            <slot name="expansion" :row="tableRowEntries[virtualRow.index]!.row" />
+          </div>
+        </div>
       </td>
     </tr>
     <tr
@@ -141,7 +145,16 @@
     </tr>
   </tbody>
 
-  <tbody v-else class="ui-datatable-tbody">
+  <TransitionGroup
+    v-else
+    tag="tbody"
+    name="ui-datatable-row"
+    :css="motionCss"
+    class="ui-datatable-tbody"
+    @before-leave="beforeLeaveHook"
+    @enter="rowEnterHook"
+    @leave="rowLeaveHook"
+  >
     <tr
       v-for="entry in tableRowEntries"
       :key="entry.key"
@@ -224,10 +237,14 @@
         </td>
       </template>
       <td v-else class="ui-datatable-td ui-datatable-td--expansion" :colspan="colCount">
-        <slot name="expansion" :row="entry.row" />
+        <div class="ui-datatable-expansion-rows">
+          <div class="ui-datatable-expansion-inner">
+            <slot name="expansion" :row="entry.row" />
+          </div>
+        </div>
       </td>
     </tr>
-  </tbody>
+  </TransitionGroup>
 </template>
 
 <!-- Internal, DataTable-only: the tbody markup written once and rendered from
@@ -240,6 +257,7 @@ import Checkbox from '../Checkbox/Checkbox.vue'
 import Radio from '../Radio/Radio.vue'
 import Button from '../Button/Button.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
+import { computed, TransitionGroup } from 'vue'
 import type { VirtualRow } from '../../composables/useVirtualizer'
 import { useUiMessages } from '../../messages'
 
@@ -249,7 +267,7 @@ export interface TableRowEntry<T> {
   key: string
 }
 
-defineProps<{
+const props = defineProps<{
   colCount: number
   columns: RegisteredColumn<T>[]
   loading: boolean
@@ -275,6 +293,9 @@ defineProps<{
   onToggleSelect: (row: T) => void
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
+  motionCss: boolean
+  onRowEnter: (el: Element, done: () => void) => void
+  onRowLeave: (el: Element, done: () => void) => void
 }>()
 
 defineSlots<{
@@ -284,4 +305,29 @@ defineSlots<{
 }>()
 
 const messages = useUiMessages()
+
+// Same shape as Toaster's own enterHook/leaveHook — a JS hook and Vue's own
+// CSS end-detection can't coexist, so this only wires one when motionCss is false.
+const rowEnterHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
+)
+const rowLeaveHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowLeave(el, done),
+)
+
+// grid-template-rows: 1fr/0fr interpolates the *fr* value linearly, not the resulting
+// pixel height — most of the visible shrink happens in a short early burst, then the
+// numeric transition keeps running for its full duration with barely anything visibly
+// changing, reading as a stall. Only motionCss's own CSS-driven collapse needs this —
+// skipped when false, since the consumer owns the whole animation via row-leave.
+function beforeLeaveHook(el: Element) {
+  if (!props.motionCss) return
+  const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
+  if (!wrap) return
+  wrap.style.maxBlockSize = `${wrap.scrollHeight}px`
+  void wrap.offsetHeight // force a reflow so the browser registers the starting value
+  requestAnimationFrame(() => {
+    wrap.style.maxBlockSize = '0px'
+  })
+}
 </script>

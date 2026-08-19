@@ -6,6 +6,7 @@
     :style="rootPart.style"
     :data-side="side"
     :data-dragging="isDragging || undefined"
+    :data-motion="motionCss ? undefined : 'off'"
     :aria-disabled="disabled || undefined"
   >
     <div ref="actionsEl" :class="actionsPart.class" :style="actionsPart.style">
@@ -23,7 +24,7 @@
   </div>
 </template>
 
-<!-- Swipe-to-reveal primitive with ONE side at a time; actions always in DOM for a11y; tap-to-close uses capture phase -->
+<!-- Swipe-to-reveal primitive with ONE side at a time; actions always in DOM for a11y; tap-to-close uses capture phase. -->
 <script setup lang="ts">
 import './SwipeToReveal.css'
 import '../shared/tokens.css'
@@ -44,11 +45,16 @@ const props = withDefaults(
   defineProps<{
     side?: SwipeRevealSide
     disabled?: boolean
+    /** `false` disables the built-in release/settle transition entirely (via `data-motion="off"`)
+     * — reach for this if you're driving the settle with your own spring/GSAP timeline instead.
+     * Has no effect on the drag itself, which is already transform-only with no transition. */
+    motionCss?: boolean
     ui?: Partial<{ root: UiPartValue; content: UiPartValue; actions: UiPartValue }>
   }>(),
   {
     side: 'trailing',
     disabled: false,
+    motionCss: true,
     ui: undefined,
   },
 )

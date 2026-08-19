@@ -21,6 +21,12 @@ test('steps before/at/after modelValue get completed/active/upcoming data-state'
   expect(steps[2]!.getAttribute('data-state')).toBe('upcoming')
 })
 
+test('motionCss=false disables the check/number swap transition (no ui-stepper-check-* class applied)', async () => {
+  const screen = render(Stepper, { props: { items, modelValue: 1, motionCss: false } })
+  const check = screen.container.querySelector('.ui-stepper-step svg')!
+  expect(check.getAttribute('class')).toBeNull()
+})
+
 test('connectors before the active step are marked filled', async () => {
   const screen = render(Stepper, { props: { items, modelValue: 2 } })
   const connectors = screen.container.querySelectorAll('.ui-stepper-connector')

@@ -17,7 +17,7 @@
           @click="onStepClick(index, item)"
         >
           <span :class="circlePart.class">
-            <Transition name="ui-stepper-check">
+            <Transition :name="motionCss ? 'ui-stepper-check' : undefined">
               <svg
                 v-if="stateOf(index) === 'completed'"
                 key="check"
@@ -92,6 +92,8 @@ const props = withDefaults(
     linear?: boolean
     /** `false` renders a pure display/progress indicator — no click handling at all. */
     clickable?: boolean
+    /** Gates the built-in check-mark/number swap transition inside the step circle. */
+    motionCss?: boolean
     ui?: Partial<{
       root: UiPartValue
       step: UiPartValue
@@ -103,7 +105,7 @@ const props = withDefaults(
       connector: UiPartValue
     }>
   }>(),
-  { orientation: 'horizontal', linear: true, clickable: true },
+  { orientation: 'horizontal', linear: true, clickable: true, motionCss: true },
 )
 
 const emit = defineEmits<{

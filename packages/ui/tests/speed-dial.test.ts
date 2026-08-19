@@ -15,6 +15,35 @@ function root(screen: RenderResult<unknown>): HTMLElement {
   return screen.container.querySelector<HTMLElement>('.ui-speed-dial')!
 }
 
+test('motionCss=false hands the action enter/leave transition to action-enter/action-leave instead of running the built-in CSS transition', async () => {
+  const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
+  const enters: Array<[Element, () => void]> = []
+  const leaves: Array<[Element, () => void]> = []
+  const screen = render(SpeedDial, {
+    props: {
+      items: [{ label: 'Home' }, { label: 'Settings' }],
+      motionCss: false,
+    },
+    attrs: {
+      onActionEnter: (el: Element, done: () => void) => enters.push([el, done]),
+      onActionLeave: (el: Element, done: () => void) => leaves.push([el, done]),
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+
+  await userEvent.click(trigger(screen))
+  await vi.waitFor(() => expect(enters).toHaveLength(2))
+  const [enterEl] = enters[0]!
+  expect(enterEl.getAttribute('role')).toBe('menuitem')
+  enters.forEach(([, done]) => done()) // consumer's own animation "finished" — must not throw
+
+  await userEvent.click(trigger(screen))
+  await vi.waitFor(() => expect(leaves).toHaveLength(2))
+  const [leaveEl, leaveDone] = leaves[0]!
+  expect(leaveEl.getAttribute('role')).toBe('menuitem')
+  leaveDone()
+})
+
 test('closed by default: trigger renders but no action items are in the DOM', async () => {
   const screen = render(SpeedDialFixture, {})
   await expect.element(trigger(screen)).toBeInTheDocument()

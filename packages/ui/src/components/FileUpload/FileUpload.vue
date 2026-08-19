@@ -40,10 +40,14 @@
 
     <TransitionGroup
       v-if="modelValue.length > 0"
+      :ref="registerListEl"
       tag="ul"
       name="ui-file-item"
+      :css="motionCss"
       :class="listPart.class"
       :style="listPart.style"
+      @enter="enterHook"
+      @leave="leaveHook"
     >
       <li
         v-for="(file, index) in modelValue"
@@ -86,7 +90,7 @@
 <script setup lang="ts">
 import './FileUpload.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useTemplateRef } from 'vue'
+import { computed, ref, shallowRef, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFileDrop } from '../../composables/useFileDrop'
@@ -108,6 +112,10 @@ const props = withDefaults(
     maxFiles?: number
     disabled?: boolean
     name?: string
+    /** Gates the built-in file-row enter/exit transition. `false` skips it entirely — reach for
+     * `@item-enter`/`@item-leave` instead if you want a consumer-owned animation (GSAP, motion-v)
+     * in its place. */
+    motionCss?: boolean
     ui?: Partial<{
       root: UiPartValue
       dropzone: UiPartValue
@@ -117,13 +125,18 @@ const props = withDefaults(
       remove: UiPartValue
     }>
   }>(),
-  { multiple: true, disabled: false },
+  { multiple: true, disabled: false, motionCss: true },
 )
 
 const emit = defineEmits<{
   reject: [{ file: File; reason: FileRejectReason }]
   add: [files: File[]]
   remove: [file: File]
+  /** A file row's enter transition started — forwarded straight from the underlying
+   * TransitionGroup's own `(el, done)` hook. Only fires when `motionCss` is `false`. */
+  'item-enter': [el: Element, done: () => void]
+  /** Same as `item-enter`, for a row's exit. */
+  'item-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
@@ -233,6 +246,22 @@ const root = useTemplateRef<HTMLElement>('root')
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const dropzoneEl = useTemplateRef<HTMLElement>('dropzoneEl')
 
+const listEl = ref<HTMLElement | null>(null)
+function registerListEl(el: Element | { $el?: unknown } | null) {
+  if (el instanceof HTMLElement) {
+    listEl.value = el
+  } else if (el && '$el' in el && el.$el instanceof HTMLElement) {
+    listEl.value = el.$el
+  }
+}
+// Same shape as Toaster's own enterHook/leaveHook.
+const enterHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-enter', el, done),
+)
+const leaveHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-leave', el, done),
+)
+
 function browse() {
   if (isDisabled.value) return
   inputEl.value?.click()
@@ -276,5 +305,5 @@ const listPart = computed(() => resolveUiPart(cx, themedUi()?.list, 'ui-file-upl
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-file-upload-item'))
 const removePart = computed(() => resolveUiPart(cx, themedUi()?.remove, 'ui-file-upload-remove'))
 
-defineExpose({ el: root, dropzoneEl, inputEl, browse })
+defineExpose({ el: root, dropzoneEl, inputEl, listEl, browse })
 </script>

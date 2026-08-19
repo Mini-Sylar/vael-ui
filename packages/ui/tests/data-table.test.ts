@@ -54,7 +54,14 @@ async function renderTable(props: {
   lazy?: boolean
   total?: number
 }) {
-  const screen = render(DataTableFixture, { props })
+  // Vue Test Utils auto-stubs transition-group by default (a <transition-group-stub>
+  // custom element, not the real `tag`). Harmless for most components, but DataTable's
+  // rows genuinely need a real <tbody> for correct table layout — disabled here so
+  // these tests exercise the same DOM shape a real browser renders.
+  const screen = render(DataTableFixture, {
+    props,
+    global: { stubs: { 'transition-group': false } },
+  })
   await nextTick()
   return screen
 }
@@ -117,7 +124,9 @@ test('the sort chevron rotates via data-state as the column cycles sort directio
 })
 
 test('sorting a Date column orders chronologically, not by weekday name', async () => {
-  const screen = render(DataTableDateSortFixture, {})
+  const screen = render(DataTableDateSortFixture, {
+    global: { stubs: { 'transition-group': false } },
+  })
   await nextTick()
   const container = screen.container
 
@@ -416,7 +425,10 @@ test('stackedBreakpoint narrower than the viewport leaves the normal table layou
 })
 
 test('column order tracks a reactive v-for reorder, not just initial registration order', async () => {
-  const screen = render(DataTableReorderFixture, { props: { order: ['a', 'b', 'c'] } })
+  const screen = render(DataTableReorderFixture, {
+    props: { order: ['a', 'b', 'c'] },
+    global: { stubs: { 'transition-group': false } },
+  })
   await nextTick()
   expect(headerCells(screen.container).map((th) => th.textContent?.trim())).toEqual(['A', 'B', 'C'])
   expect(
@@ -729,7 +741,10 @@ test('frozenColumns freezes the first N columns (sticky-left) and leaves the res
 
 // -------------------------------------------------------------- #expansion (Tier 2)
 function expansionScreen(props?: { stackedBreakpoint?: string }): Promise<RenderResult<unknown>> {
-  const screen = render(DataTableExpansionFixture, { props })
+  const screen = render(DataTableExpansionFixture, {
+    props,
+    global: { stubs: { 'transition-group': false } },
+  })
   return nextTick().then(() => screen)
 }
 

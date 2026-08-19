@@ -298,12 +298,49 @@
   .ui-datatable-td--expansion {
     background: var(--ui-muted);
     white-space: normal;
+    padding: 0; /* moved to .ui-datatable-expansion-inner so it collapses on leave */
+  }
+  .ui-datatable-expansion-rows {
+    overflow: hidden;
+  }
+  .ui-datatable-expansion-inner {
+    padding: 0.625rem 0.75rem;
+  }
+  .ui-datatable--sm .ui-datatable-expansion-inner {
+    padding: 0.375rem 0.5rem;
+  }
+  .ui-datatable--lg .ui-datatable-expansion-inner {
+    padding: 0.875rem 1rem;
   }
   .ui-datatable-expand-chevron {
     transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
   }
   .ui-datatable-expand-chevron[data-state='open'] {
     transform: rotate(90deg);
+  }
+
+  /* `move` is transform-only — a <tr> can't take Tree's position-absolute leave trick
+     without breaking table-layout. ease-out (not ease-in-out): entering/exiting, not
+     an on-screen reposition. Enter is a plain fade; leave adds a height collapse on
+     top — asymmetric on purpose, not a fade both ways. The collapse target itself
+     (max-block-size: 0) comes from beforeLeaveHook in DataTableBody.vue, which sets
+     the *starting* height as a real measured px value first: animating a grid-rows
+     fr value interpolates the fr number linearly, not the resulting pixel height, so
+     most of the visible shrink happens in an early burst and the rest of the duration
+     runs with nothing visibly changing — reads as a stall/jitter, not a smooth close. */
+  .ui-datatable-row-move {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  }
+  .ui-datatable-row-enter-active,
+  .ui-datatable-row-leave-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-datatable-row-enter-from,
+  .ui-datatable-row-leave-to {
+    opacity: 0;
+  }
+  .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
+    transition: max-block-size var(--ui-duration-enter) var(--ui-ease-out);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -314,6 +351,12 @@
       transition: opacity var(--ui-duration-press) ease;
     }
     .ui-datatable-expand-chevron {
+      transition: none;
+    }
+    .ui-datatable-row-move {
+      transition: none;
+    }
+    .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
       transition: none;
     }
   }

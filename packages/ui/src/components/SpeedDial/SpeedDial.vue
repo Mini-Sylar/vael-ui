@@ -17,7 +17,12 @@
       :aria-orientation="orientationFor(direction)"
       @keydown="onKeydown"
     >
-      <TransitionGroup name="ui-speed-dial-action">
+      <TransitionGroup
+        name="ui-speed-dial-action"
+        :css="motionCss"
+        @enter="enterHook"
+        @leave="leaveHook"
+      >
         <Button
           v-for="(item, i) in visibleItems"
           :key="item.value ?? item.label"
@@ -100,6 +105,10 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
   ariaLabel?: string
   /** Arc radius (px) for `direction="quarter-circle"` — ignored otherwise. */
   radius?: number
+  /** Gates the built-in action fan-out/fan-in transition. `false` skips it entirely —
+   * reach for `@action-enter`/`@action-leave` instead if you want a consumer-owned
+   * animation (a spring, a staggered GSAP timeline) in its place. */
+  motionCss?: boolean
   ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }>
 }
 
@@ -142,10 +151,17 @@ const props = withDefaults(defineProps<SpeedDialProps<T>>(), {
   closeOnSelect: true,
   ariaLabel: 'Actions',
   radius: 96,
+  motionCss: true,
 })
 
 const emit = defineEmits<{
   select: [item: T]
+  /** An action's fan-out enter transition started — forwarded straight from the
+   * underlying TransitionGroup's own `(el, done)` hook. Only fires when `motionCss`
+   * is `false`. */
+  'action-enter': [el: Element, done: () => void]
+  /** Same as `action-enter`, for an action's fan-in exit. */
+  'action-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
@@ -154,6 +170,14 @@ defineSlots<{
 }>()
 
 const visibleItems = computed(() => (open.value ? props.items : []))
+
+// Same shape as Toaster's own enterHook/leaveHook.
+const enterHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('action-enter', el, done),
+)
+const leaveHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('action-leave', el, done),
+)
 
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {
   if (direction === 'up' || direction === 'down') return 'vertical'
@@ -301,5 +325,5 @@ const actionsPart = computed(() => resolveUiPart(cx, undefined, 'ui-speed-dial-a
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-speed-dial-trigger'))
 const actionPart = computed(() => resolveUiPart(cx, themedUi()?.action, 'ui-speed-dial-action'))
 
-defineExpose({ el: root, open: openDial, close: closeDial, toggle: toggleDial })
+defineExpose({ el: root, listEl, open: openDial, close: closeDial, toggle: toggleDial })
 </script>
