@@ -341,6 +341,13 @@
   .ui-datatable-row-move {
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
   }
+  /* Vue only plays the move animation when it detects a transition on this
+     class (see hasCSSTransform in Vue's TransitionGroup source) — dropping it
+     here makes the DataTable.vue-driven settling render snap instead of
+     jumble, without touching real reorder/expand animations. */
+  .ui-datatable-tbody[data-motion-settling] .ui-datatable-row-move {
+    transition: none;
+  }
   .ui-datatable-tr--expansion.ui-datatable-row-enter-active,
   .ui-datatable-tr--expansion.ui-datatable-row-leave-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
