@@ -104,9 +104,6 @@
   .ui-speed-dial-action-move {
     transition: translate var(--ui-duration-enter) var(--ui-ease-in-out);
   }
-  /* Vue's move (FLIP) animation isn't gated by TransitionGroup's own `:css`
-     prop — only enter/leave are — so motionCss="false" needs its own lever
-     here too (same fix as DataTable's row-move, see its own comment). */
   .ui-speed-dial-actions[data-motion='off'] .ui-speed-dial-action-move {
     transition: none;
   }

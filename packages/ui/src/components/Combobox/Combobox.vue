@@ -23,7 +23,16 @@
   >
     <template v-if="multiple || $slots.start" #start>
       <!-- v-if="multiple" not && selectedItems.length: empty wrapper keeps last chip's leave transition -->
-      <TransitionGroup v-if="multiple" name="ui-chip-item" tag="span" class="ui-combobox-chips">
+      <TransitionGroup
+        v-if="multiple"
+        name="ui-chip-item"
+        tag="span"
+        class="ui-combobox-chips"
+        :css="motionCss"
+        :data-motion="motionCss ? undefined : 'off'"
+        @enter="chipEnterHook"
+        @leave="chipLeaveHook"
+      >
         <Chip
           v-for="item in visibleChips"
           :key="item.value"
@@ -230,6 +239,10 @@ const props = withDefaults(
     forceMount?: boolean
     teleportTo?: string | HTMLElement
     scrollFade?: boolean
+    /** Gates the built-in chip enter/exit/reposition transition (`multiple` only). `false` skips
+     * it entirely — reach for `@chip-enter`/`@chip-leave` instead if you want a consumer-owned
+     * animation (GSAP, motion-v) in its place. */
+    motionCss?: boolean
     ui?: Partial<{
       root: UiPartValue
       input: UiPartValue
@@ -261,6 +274,7 @@ const props = withDefaults(
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,
+    motionCss: true,
   },
 )
 
@@ -271,7 +285,20 @@ const emit = defineEmits<{
   select: [item: T]
   /** `allowCustom` committed the raw typed text — no matching item. */
   create: [query: string]
+  /** Fires instead of the built-in CSS transition when `motionCss` is `false` — call `done()`
+   * once your own enter animation finishes. */
+  'chip-enter': [el: Element, done: () => void]
+  /** Same as `chip-enter`, for a chip's removal. */
+  'chip-leave': [el: Element, done: () => void]
 }>()
+
+// Same shape as SpeedDial's own enterHook/leaveHook.
+const chipEnterHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
+)
+const chipLeaveHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-leave', el, done),
+)
 
 defineSlots<{
   start(): unknown

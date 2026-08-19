@@ -129,6 +129,33 @@ test('maxLabels collapses extra selections into a "+N" chip', async () => {
   expect(overflow?.textContent?.trim()).toBe('+2')
 })
 
+test('motionCss=false disables the chip transition, including its move (reflow) animation', async () => {
+  const screen = render(Select, {
+    props: {
+      items: [
+        { label: 'Apple', value: 'apple' },
+        { label: 'Banana', value: 'banana' },
+      ],
+      multiple: true,
+      modelValue: ['apple', 'banana'],
+      motionCss: false,
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const chips = screen.container.querySelector<HTMLElement>('.ui-select-chips')!
+  expect(chips.getAttribute('data-motion')).toBe('off')
+
+  // Vue's move (FLIP) animation isn't gated by TransitionGroup's own `:css`
+  // prop, only enter/leave are — same probe DataTable/SpeedDial's own tests
+  // use to check the actual resolved transition.
+  const probe = document.createElement('span')
+  probe.className = 'ui-chip-item-move'
+  chips.appendChild(probe)
+  const duration = getComputedStyle(probe).transitionDuration
+  probe.remove()
+  expect(duration).toBe('0s')
+})
+
 test('display="text" renders comma-joined labels instead of chips in multiple mode', async () => {
   const screen = render(Select, {
     props: {

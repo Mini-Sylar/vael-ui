@@ -235,6 +235,30 @@ test('multiple: selecting options renders removable chips in the input area; the
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
+test('motionCss=false disables the chip transition, including its move (reflow) animation', async () => {
+  const screen = render(Combobox, {
+    props: {
+      items: [
+        { label: 'Apple', value: 'apple' },
+        { label: 'Banana', value: 'banana' },
+      ],
+      multiple: true,
+      modelValue: ['apple', 'banana'],
+      motionCss: false,
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const chips = screen.container.querySelector<HTMLElement>('.ui-combobox-chips')!
+  expect(chips.getAttribute('data-motion')).toBe('off')
+
+  const probe = document.createElement('span')
+  probe.className = 'ui-chip-item-move'
+  chips.appendChild(probe)
+  const duration = getComputedStyle(probe).transitionDuration
+  probe.remove()
+  expect(duration).toBe('0s')
+})
+
 test('multiple: clicking an already-selected row in the panel toggles it back off (filterable and re-toggleable, matching Select)', async () => {
   const screen = render(ComboboxFixture, { props: { multiple: true } })
   const input = screen.getByRole('combobox')
