@@ -104,6 +104,9 @@
   .ui-speed-dial-action-move {
     transition: translate var(--ui-duration-enter) var(--ui-ease-in-out);
   }
+  .ui-speed-dial-actions[data-motion='off'] .ui-speed-dial-action-move {
+    transition: none;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-speed-dial-action-enter-active,

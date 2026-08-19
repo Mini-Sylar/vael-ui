@@ -28,6 +28,9 @@
   .ui-chip-item-move {
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
   }
+  [data-motion='off'] .ui-chip-item-move {
+    transition: none;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-chip-item-enter-active,

@@ -26,7 +26,16 @@
         <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
         <span v-else-if="!multiple || display === 'text'">{{ displayLabel }}</span>
         <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
-        <TransitionGroup v-else name="ui-chip-item" tag="span" class="ui-select-chips">
+        <TransitionGroup
+          v-else
+          name="ui-chip-item"
+          tag="span"
+          class="ui-select-chips"
+          :css="motionCss"
+          :data-motion="motionCss ? undefined : 'off'"
+          @enter="chipEnterHook"
+          @leave="chipLeaveHook"
+        >
           <Chip
             v-for="item in visibleChips"
             :key="item.value"
@@ -213,6 +222,10 @@ const props = withDefaults(
     forceMount?: boolean
     teleportTo?: string | HTMLElement
     scrollFade?: boolean
+    /** Gates the built-in chip enter/exit/reposition transition (`multiple` + `display="chip"`
+     * only). `false` skips it entirely — reach for `@chip-enter`/`@chip-leave` instead if you want
+     * a consumer-owned animation (GSAP, motion-v) in its place. */
+    motionCss?: boolean
     ui?: Partial<{
       trigger: UiPartValue
       value: UiPartValue
@@ -241,6 +254,7 @@ const props = withDefaults(
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,
+    motionCss: true,
   },
 )
 
@@ -249,7 +263,20 @@ const emit = defineEmits<{
   change: [value: string | number | (string | number)[] | null]
   'reach-end': []
   select: [item: T]
+  /** Fires instead of the built-in CSS transition when `motionCss` is `false` — call `done()`
+   * once your own enter animation finishes. */
+  'chip-enter': [el: Element, done: () => void]
+  /** Same as `chip-enter`, for a chip's removal. */
+  'chip-leave': [el: Element, done: () => void]
 }>()
+
+// Same shape as SpeedDial's own enterHook/leaveHook.
+const chipEnterHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
+)
+const chipLeaveHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-leave', el, done),
+)
 
 defineSlots<{
   value(props: { selected: T | T[] | null }): unknown

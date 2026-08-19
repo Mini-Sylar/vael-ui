@@ -38,15 +38,20 @@
     line-height: 1.5;
     color: var(--ui-danger);
   }
-  /* Opacity-only in both directions — a validation message appearing or disappearing is the "preventing jarring changes" case, not movement, so no height/translate is involved (never gate a layout dimension on a Transition here — a motion-v consumer wanting a collapse animation gets it via the forceMount-free escape hatch, same as Message's note). Exit snappier than enter, per the exit-token convention. */
+  /* Height/gap still snap in instantly (no layout-dimension Transition here); the enter-only translate keeps the message from reading as inert against that jump. */
   .ui-field-error-enter-active,
   .ui-field-error-leave-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+    transition:
+      opacity var(--ui-duration-enter) var(--ui-ease-out),
+      translate var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-field-error-leave-active {
     transition-duration: var(--ui-duration-exit);
   }
-  .ui-field-error-enter-from,
+  .ui-field-error-enter-from {
+    opacity: 0;
+    translate: 0 -0.25rem;
+  }
   .ui-field-error-leave-to {
     opacity: 0;
   }

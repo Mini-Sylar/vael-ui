@@ -84,6 +84,7 @@ import './DataTable.css'
 import '../shared/tokens.css'
 import {
   computed,
+  nextTick,
   onBeforeUnmount,
   onMounted,
   onUpdated,
@@ -561,9 +562,19 @@ function recomputeHeaderHeight() {
   const height = row ? row.getBoundingClientRect().height : 0
   if (height !== headerHeight.value) headerHeight.value = height
 }
+// headerHeight/frozen offsets start at 0 and get corrected once the real DOM
+// (and, via ResizeObserver, the header's settled width) is measurable — a
+// genuine re-render that TransitionGroup can't tell apart from a real row
+// reorder, so it plays the move animation on rows that never actually moved.
+// DataTableBody uses this to disable just that CSS transition (not the
+// hooks) until the first settling render has passed — see its own comment.
+const rowMotionReady = ref(false)
 onMounted(() => {
   recomputeFrozenOffsets()
   recomputeHeaderHeight()
+  nextTick(() => {
+    rowMotionReady.value = true
+  })
 })
 onUpdated(() => {
   recomputeFrozenOffsets()
@@ -655,6 +666,7 @@ const bodyProps = computed(() => ({
   onToggleExpand: toggleExpand,
   onRowClick,
   motionCss: props.motionCss,
+  rowMotionReady: rowMotionReady.value,
   onRowEnter: (el: Element, done: () => void) => emit('row-enter', el, done),
   onRowLeave: (el: Element, done: () => void) => emit('row-leave', el, done),
 }))

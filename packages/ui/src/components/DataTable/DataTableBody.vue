@@ -151,6 +151,7 @@
     name="ui-datatable-row"
     :css="motionCss"
     class="ui-datatable-tbody"
+    :data-motion="motionCss && rowMotionReady ? undefined : 'off'"
     @before-enter="beforeEnterHook"
     @before-leave="beforeLeaveHook"
     @enter="rowEnterHook"
@@ -295,6 +296,10 @@ const props = defineProps<{
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
   motionCss: boolean
+  /** False while DataTable's own post-mount layout measurements are still
+   * settling — disables just the row-move CSS transition for that render
+   * (see DataTable.vue's own comment), not the enter/leave hooks. */
+  rowMotionReady: boolean
   onRowEnter: (el: Element, done: () => void) => void
   onRowLeave: (el: Element, done: () => void) => void
 }>()
