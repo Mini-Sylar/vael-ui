@@ -23,6 +23,10 @@ export interface UiMessages {
     increment: string
     decrement: string
   }
+  passwordInput: {
+    show: string
+    hide: string
+  }
   select: {
     empty: string
     clear: string
@@ -87,6 +91,7 @@ export const defaultMessages: UiMessages = {
     updated: 'Updated',
   },
   inputNumber: { increment: 'Increase', decrement: 'Decrease' },
+  passwordInput: { show: 'Show password', hide: 'Hide password' },
   select: { empty: 'No options', clear: 'Clear selection', selectedCount: '{count} selected' },
   combobox: { empty: 'No results', clear: 'Clear selection', toggle: 'Toggle options' },
   fileUpload: { browse: 'Browse files', drop: 'Drop files here', remove: 'Remove' },
@@ -123,6 +128,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     message: { ...base.message, ...overrides.message },
     pullToRefresh: { ...base.pullToRefresh, ...overrides.pullToRefresh },
     inputNumber: { ...base.inputNumber, ...overrides.inputNumber },
+    passwordInput: { ...base.passwordInput, ...overrides.passwordInput },
     select: { ...base.select, ...overrides.select },
     combobox: { ...base.combobox, ...overrides.combobox },
     fileUpload: { ...base.fileUpload, ...overrides.fileUpload },
@@ -169,6 +175,10 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
   inputNumber: {
     increment: 'uiKit.inputNumber.increment',
     decrement: 'uiKit.inputNumber.decrement',
+  },
+  passwordInput: {
+    show: 'uiKit.passwordInput.show',
+    hide: 'uiKit.passwordInput.hide',
   },
   select: {
     empty: 'uiKit.select.empty',
@@ -245,6 +255,13 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (increment !== i18nKeyMap.inputNumber.increment) inputNumber.increment = increment
   if (decrement !== i18nKeyMap.inputNumber.decrement) inputNumber.decrement = decrement
   if (Object.keys(inputNumber).length > 0) result.inputNumber = inputNumber
+
+  const show = i18n.t(i18nKeyMap.passwordInput.show)
+  const hide = i18n.t(i18nKeyMap.passwordInput.hide)
+  const passwordInput: PartialUiMessages['passwordInput'] = {}
+  if (show !== i18nKeyMap.passwordInput.show) passwordInput.show = show
+  if (hide !== i18nKeyMap.passwordInput.hide) passwordInput.hide = hide
+  if (Object.keys(passwordInput).length > 0) result.passwordInput = passwordInput
 
   const selectEmpty = i18n.t(i18nKeyMap.select.empty)
   const selectClear = i18n.t(i18nKeyMap.select.clear)

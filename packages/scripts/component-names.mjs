@@ -48,6 +48,7 @@ export const COMPONENTS = [
   'Message',
   'OtpInput',
   'Pagination',
+  'PasswordInput',
   'Popover',
   'PopoverHost',
   'Progress',

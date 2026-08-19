@@ -88,6 +88,17 @@ export interface UiTheme {
     }>
   }
   otpInput?: { ui?: Partial<{ root: UiPartValue; input: UiPartValue; cell: UiPartValue }> }
+  passwordInput?: {
+    ui?: Partial<{
+      root: UiPartValue
+      frame: UiPartValue
+      input: UiPartValue
+      toggle: UiPartValue
+      hint: UiPartValue
+      hintList: UiPartValue
+      hintItem: UiPartValue
+    }>
+  }
   textarea?: {
     ui?: Partial<{
       root: UiPartValue
