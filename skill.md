@@ -102,6 +102,14 @@ enough surface to do its own focus management without duplicating logic.
   query specific classes), pass extra classes through the base's own `ui`
   prop rather than forking its CSS — `resolveUiPart`'s override composes
   onto the base classes, it doesn't replace them.
+- **Popover anchored to an external, non-trigger-slot element:** `Tour.vue`
+  positions its panel against whatever DOM node a `target` selector resolves
+  to, not its own `#trigger` slot — `:trigger-el="targetEl"`, a plain ref to
+  a node rendered elsewhere. `PasswordInput.vue` reuses this same
+  `triggerEl`-as-a-plain-ref shape for its `hintPlacement="popover"` mode,
+  anchoring against its own inner `Input`'s `inputEl` rather than anything
+  Popover renders itself. Reach for this whenever a popover needs to track
+  an element that isn't the thing that opened it.
 - **Item-data shape reuse:** `MenuItemData` (`label`/`value`/`icon`/
   `disabled`/`onSelect`) is the house vocabulary for "a row with an icon and
   a click handler." `DockItemData`, `SpeedDialItem`, `ContextMenu`'s items,
@@ -282,5 +290,5 @@ component; find out which one is actually wrong first.
   else.
 - Any recently-added component's own SFC comment (`Tree.vue`,
   `TreeSelect.vue`, `Resizable.vue`, `Dock.vue`, `SwipeToReveal.vue`,
-  `ContextMenu.vue`, `Calendar.vue`, `DatePicker.vue`) for a worked example
-  of every convention above applied together.
+  `ContextMenu.vue`, `Calendar.vue`, `DatePicker.vue`, `PasswordInput.vue`)
+  for a worked example of every convention above applied together.
