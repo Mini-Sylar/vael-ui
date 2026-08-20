@@ -92,7 +92,8 @@
     "Toolbar": "Uma faixa horizontal para agrupar ações relacionadas, com foco móvel no teclado.",
     "Tooltip": "Um pequeno rótulo flutuante que aparece ao passar o mouse ou focar para explicar um elemento.",
     "Tree": "Uma lista recolhível e recuada para dados hierárquicos com seleção única ou múltipla.",
-    "TreeSelect": "Um menu suspenso cujo painel é uma Árvore, para escolher um ou mais nós de uma hierarquia."
+    "TreeSelect": "Um menu suspenso cujo painel é uma Árvore, para escolher um ou mais nós de uma hierarquia.",
+    "PasswordInput": "Um campo de senha com alternância de revelação e uma dica de requisitos."
   },
   "gettingStarted": {
     "darkModeIntro": "Somente CSS: responde a <code>",
