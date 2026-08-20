@@ -59,6 +59,54 @@ function toPlainEventOrSlot(entry) {
   }
 }
 
+// vue-component-meta can't resolve `defineExpose()` on a generic
+// (`<script setup generic="T">`) component — it silently returns an empty
+// `exposed` array even when the component genuinely exposes real refs (open
+// upstream bug, same failure mode as vuejs/language-tools#3429). Falls back
+// to reading the defineExpose({...}) call's own key names straight from
+// source when that happens — no type info, but real names beat an empty
+// table.
+function fallbackExposedNames(source) {
+  const callIndex = source.indexOf('defineExpose(')
+  if (callIndex === -1) return []
+  const braceStart = source.indexOf('{', callIndex)
+  if (braceStart === -1) return []
+
+  let depth = 0
+  let i = braceStart
+  for (; i < source.length; i++) {
+    if (source[i] === '{') depth++
+    else if (source[i] === '}' && --depth === 0) break
+  }
+  // Strips block/line comments (a JSDoc note above an entry, e.g.) so they
+  // don't get swept into the next comma-split entry and fail the identifier
+  // check below.
+  const body = source
+    .slice(braceStart + 1, i)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
+
+  const entries = []
+  let entryStart = 0
+  let braceDepth = 0
+  let parenDepth = 0
+  for (let j = 0; j <= body.length; j++) {
+    const ch = body[j]
+    if (ch === '{') braceDepth++
+    else if (ch === '}') braceDepth--
+    else if (ch === '(') parenDepth++
+    else if (ch === ')') parenDepth--
+    if ((ch === ',' && braceDepth === 0 && parenDepth === 0) || j === body.length) {
+      entries.push(body.slice(entryStart, j))
+      entryStart = j + 1
+    }
+  }
+
+  return entries
+    .map((e) => e.split(':')[0].trim())
+    .filter((name) => /^[A-Za-z_$][\w$]*$/.test(name))
+}
+
 function main() {
   const indexSource = readFileSync(UI_INDEX_PATH, 'utf8')
   const components = collectPublicComponents(indexSource)
@@ -71,11 +119,21 @@ function main() {
     try {
       const filePath = join(UI_COMPONENTS_DIR, `${relativePath}.vue`)
       const componentMeta = checker.getComponentMeta(filePath)
+      let exposed = componentMeta.exposed.map(toPlainEventOrSlot)
+      if (exposed.length === 0) {
+        const source = readFileSync(filePath, 'utf8')
+        exposed = fallbackExposedNames(source).map((name) => ({
+          name,
+          type: 'unknown',
+          description:
+            'Type inference unavailable — vue-component-meta cannot resolve defineExpose on this generic component.',
+        }))
+      }
       meta[exportName] = {
         props: componentMeta.props.filter((p) => !p.global).map(toPlainProp),
         events: componentMeta.events.map(toPlainEventOrSlot),
         slots: componentMeta.slots.map(toPlainEventOrSlot),
-        exposed: componentMeta.exposed.map(toPlainEventOrSlot),
+        exposed,
       }
       console.log(`extracted ${exportName}`)
     } catch (err) {

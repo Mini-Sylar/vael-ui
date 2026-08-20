@@ -92,7 +92,8 @@
     "Toolbar": "Una striscia orizzontale per raggruppare azioni correlate, con focus mobile sulla tastiera.",
     "Tooltip": "Una piccola etichetta mobile che appare al passaggio del mouse o allo stato attivo per spiegare un elemento.",
     "Tree": "Un elenco comprimibile e rientrato per dati gerarchici con selezione singola o multipla.",
-    "TreeSelect": "Un menu a discesa il cui pannello è un albero, per selezionare uno o più nodi da una gerarchia."
+    "TreeSelect": "Un menu a discesa il cui pannello è un albero, per selezionare uno o più nodi da una gerarchia.",
+    "PasswordInput": "Un campo password con un interruttore di rivelazione e un suggerimento sui requisiti."
   },
   "gettingStarted": {
     "darkModeIntro": "Solo CSS: risponde a <codice>",

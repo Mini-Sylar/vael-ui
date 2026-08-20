@@ -92,7 +92,8 @@
     "TreeSelect": "Un menú desplegable cuyo panel es un Árbol, para seleccionar uno o más nodos de una jerarquía.",
     "Drawer": "Un panel que se desliza desde el borde de una ventana gráfica, para navegación o contenido lateral.",
     "Input": "Un campo de texto de una sola línea con tamaños, estados y espacios para íconos o sugerencias.",
-    "Switch": "Un interruptor de encendido/apagado con estilo de interruptor físico, para configuraciones de efecto inmediato."
+    "Switch": "Un interruptor de encendido/apagado con estilo de interruptor físico, para configuraciones de efecto inmediato.",
+    "PasswordInput": "Un campo de contraseña con un botón de revelación y una sugerencia de requisitos."
   },
   "gettingStarted": {
     "darkModeIntro": "Solo CSS: responde a <código>",

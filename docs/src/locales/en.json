@@ -205,6 +205,7 @@
     "Textarea": "A multi-line text field that can auto-grow with its content.",
     "InputNumber": "A numeric field with increment/decrement controls and format-aware parsing.",
     "OtpInput": "A row of single-character boxes for one-time codes, with paste and auto-advance.",
+    "PasswordInput": "A password field with a reveal toggle and a requirements hint.",
     "Checkbox": "A tri-state toggle for a single yes/no/indeterminate choice.",
     "Radio": "One option in a mutually-exclusive set, always used inside a RadioGroup.",
     "RadioGroup": "Coordinates a set of Radio buttons so only one can be selected at a time.",
