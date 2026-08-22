@@ -206,12 +206,45 @@
     </DataTable>
     <p class="note">reach-end fired {{ reachEndCount }} time(s).</p>
   </section>
+  <section class="demo">
+    <h3>Reorderable columns</h3>
+    <p>
+      <code>reorderableColumns</code> lets header cells be dragged. The grip shows at rest by
+      default (<code>columnGripVisibility="always"</code>) so it reads as draggable at a glance;
+      pass <code>"hover"</code> to fade it in only on hover/focus instead. Individual columns opt
+      out with <code>:reorderable="false"</code> — here <strong>Name</strong> is pinned, the same
+      way <code>resizable</code> already works per column.
+    </p>
+    <DataTable
+      :data="colPeople"
+      row-key="id"
+      reorderable-columns
+      class="datatable-columns-demo"
+      @column-reorder="colOrder = $event as string[]"
+    >
+      <template #columns="{ Column }">
+        <component :is="Column" field="name" label="Name" :reorderable="false" sortable />
+        <component :is="Column" field="role" label="Role" sortable />
+        <component :is="Column" field="team" label="Team" />
+      </template>
+    </DataTable>
+    <output class="datatable-columns-order">{{
+      colOrder.join(' / ') || 'Drag a column header'
+    }}</output>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { Button, Column, DataTable, Input, Pagination, Skeleton, Tag } from 'vael-ui'
 import { PhMagnifyingGlass } from '@phosphor-icons/vue'
+
+const colPeople = [
+  { id: 'c1', name: 'Mira Mitchell', role: 'Engineer', team: 'Platform' },
+  { id: 'c2', name: 'Tom Okafor', role: 'Designer', team: 'Brand' },
+  { id: 'c3', name: 'Ana Ruiz', role: 'Engineer', team: 'Growth' },
+]
+const colOrder = ref<string[]>([])
 
 interface Employee {
   id: string
@@ -382,5 +415,15 @@ const loadingDemo = shallowRef(false)
   flex-wrap: wrap;
   gap: 0.375rem;
   margin-block-start: 0.125rem;
+}
+
+.datatable-columns-demo {
+  max-inline-size: 34rem;
+}
+.datatable-columns-order {
+  display: block;
+  margin-block-start: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--ui-text-muted);
 }
 </style>

@@ -526,15 +526,20 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     blockHeight = 0
     for (const row of excluded.removed) blockHeight += bandOf(options.getElement(row.value)).size
 
-    rowGap = 0
     bands = remaining.map((row, index) => ({
       value: row.value,
       ...bandOf(options.getElement(row.value)),
       wasBelowSource: index >= sourceSlot,
     }))
-    // Measured rather than read from CSS — covers gap, margins, borders alike.
-    if (bands.length >= 2) {
-      rowGap = Math.max(0, bands[1]!.start - (bands[0]!.start + bands[0]!.size))
+    // From the FULL (pre-exclusion) list's first two rows — always truly
+    // adjacent in the DOM, unlike `remaining`'s own first two when the
+    // dragged item originally sat between them (their gap would then include
+    // its whole size, overshooting every other row's shift).
+    rowGap = 0
+    if (all.length >= 2) {
+      const first = bandOf(options.getElement(all[0]!.value))
+      const second = bandOf(options.getElement(all[1]!.value))
+      rowGap = Math.max(0, second.start - (first.start + first.size))
     }
 
     source = from
@@ -831,8 +836,18 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     // A cloned <th>/<td> lands outside its <table>, where `display: table-cell`
     // has no layout to resolve against and collapses to the wrong size and
     // place. Pin both axes and drop it to a plain block.
-    const display = getComputedStyle(sourceEl).display
-    if (display.startsWith('table')) clone.style.display = 'block'
+    const computed = getComputedStyle(sourceEl)
+    if (computed.display.startsWith('table')) clone.style.display = 'block'
+    // A transparent source (an inactive tab, an unselected chip) clones as
+    // bare floating text. Fallback only — DataTable/Tree's own opaque
+    // `[data-sortable-preview]` styles already resolve non-transparent here.
+    if (
+      computed.backgroundColor === 'rgba(0, 0, 0, 0)' ||
+      computed.backgroundColor === 'transparent'
+    ) {
+      clone.style.background = 'var(--ui-surface)'
+      clone.style.boxShadow = 'var(--ui-panel-shadow, 0 4px 12px rgb(0 0 0 / 0.15))'
+    }
     clone.style.boxSizing = 'border-box'
     clone.style.inlineSize = `${rect.width}px`
     clone.style.blockSize = `${rect.height}px`

@@ -5,6 +5,7 @@
   <output data-testid="exposed-el">{{ table?.el ? 'yes' : 'no' }}</output>
   <output data-testid="sort-field">{{ sort.field ?? '' }}</output>
   <output data-testid="sort-dir">{{ sort.dir ?? '' }}</output>
+  <output data-testid="column-order">{{ columnOrder.join(',') }}</output>
 
   <DataTable
     ref="table"
@@ -28,6 +29,9 @@
     :lazy="lazy"
     :total="total"
     :motion-css="motionCss"
+    :reorderable-columns="reorderableColumns"
+    :column-grip-visibility="columnGripVisibility"
+    @column-reorder="columnOrder = $event as string[]"
     @update:selection="onSelectionChange"
     @row-click="onRowClick"
   >
@@ -110,6 +114,8 @@ const props = withDefaults(
     lazy?: boolean
     total?: number
     motionCss?: boolean
+    reorderableColumns?: boolean
+    columnGripVisibility?: 'hover' | 'always'
   }>(),
   {
     rowCount: 4,
@@ -128,6 +134,8 @@ const props = withDefaults(
     manualSort: false,
     lazy: false,
     motionCss: true,
+    reorderableColumns: false,
+    columnGripVisibility: 'always',
   },
 )
 
@@ -139,6 +147,7 @@ const data: Person[] = Array.from({ length: props.rowCount }, (_, i) => ({
   status: i % 2 === 0 ? 'active' : 'inactive',
 }))
 
+const columnOrder = shallowRef<string[]>([])
 const page = shallowRef(props.initialPage)
 const sort = shallowRef<{ field: keyof Person | null; dir: 'asc' | 'desc' | null }>({
   field: null,
@@ -179,5 +188,5 @@ function onSelectionChange(rows: Person[]) {
 }
 
 const table = useTemplateRef('table')
-defineExpose({ table, page, sort })
+defineExpose({ table, page, sort, columnOrder })
 </script>
