@@ -6,6 +6,8 @@
     :style="rootPart.style"
     :data-motion="motionCss ? undefined : 'off'"
     :data-axis="axis"
+    :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
+    :data-pending="isPending ? '' : undefined"
   >
     <li
       v-for="(item, index) in items"
@@ -71,7 +73,13 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import { useSortable } from '../../composables/useSortable'
-import type { DropPosition, FlatSortableRow, SortableAxis } from '../../composables/useSortable'
+import { moveTreeNode } from '../../composables/useSortable'
+import type {
+  DropPosition,
+  FlatSortableRow,
+  SortableAxis,
+  SortableDropDetails,
+} from '../../composables/useSortable'
 
 defineOptions({ inheritAttrs: false })
 
@@ -86,6 +94,10 @@ const props = withDefaults(
     labelKey?: keyof T
     /** `'y'` (default) reorders a column of rows; `'x'` reorders a row of items. Arrow keys follow the axis. */
     axis?: SortableAxis
+    /** Structural veto, re-run while dragging: `false` marks the target invalid. Keep it cheap. */
+    canDrop?: (details: SortableDropDetails) => boolean
+    /** Async gate at drop time. Return `false` (or a promise of it) to cancel — composes with `confirmAction().result`. */
+    beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
     disabled?: boolean
     /** `false` skips the built-in springs entirely — rows snap to their new slots. Reach for it when driving the motion yourself. */
     motionCss?: boolean
@@ -99,6 +111,8 @@ const props = withDefaults(
     itemKey: 'value' as never,
     labelKey: 'label' as never,
     axis: 'y',
+    canDrop: undefined,
+    beforeDrop: undefined,
     disabled: false,
     motionCss: true,
     ui: undefined,
@@ -106,8 +120,10 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  /** Fires after `items` has been reordered in place. */
+  /** Fires after `items` has been reordered. Do optimistic persistence here — you own `items`, so a failed call rolls back by restoring your own snapshot. */
   reorder: [value: string | number, to: DropPosition]
+  /** `beforeDrop` threw or rejected; the move was already reverted. */
+  'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
 
 defineSlots<{
@@ -139,11 +155,22 @@ function elementFor(value: string | number): HTMLElement | null {
   )
 }
 
-const { activeValue, isGrabbed, announcement, onHandlePointerdown, onHandleKeydown } = useSortable({
+const {
+  activeValue,
+  isGrabbed,
+  isValidDrop,
+  isPending,
+  announcement,
+  onHandlePointerdown,
+  onHandleKeydown,
+} = useSortable({
   rows,
   getElement: elementFor,
   axis: () => props.axis,
   nested: false,
+  canDrop: (details) => props.canDrop?.(details) ?? true,
+  beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
+  onDropError: (error, details) => emit('drop-error', error, details),
   disabled: () => props.disabled,
   motionCss: () => props.motionCss,
   labelOf: (value) => {
@@ -166,13 +193,11 @@ const { activeValue, isGrabbed, announcement, onHandlePointerdown, onHandleKeydo
       .replace('{total}', String(event.total))
       .replace('{depth}', String(event.depth + 1)),
   onCommit: (value, to) => {
-    const from = items.value.findIndex((item) => keyOf(item) === value)
-    if (from === -1) return
-    // Replaced rather than spliced in place: the bound array can be a shared
-    // constant, and `to.index` is already counted with the item removed.
+    // Same function Tree reorders through — a flat list is just a tree whose
+    // nodes have no children, so the two can't drift apart. Copied first
+    // because the bound array may be a shared constant.
     const next = [...items.value]
-    const [moved] = next.splice(from, 1)
-    next.splice(Math.min(Math.max(to.index, 0), next.length), 0, moved!)
+    if (!moveTreeNode(next, value, to, { getKey: keyOf, getChildren: () => undefined })) return
     items.value = next
     emit('reorder', value, to)
   },
@@ -191,5 +216,5 @@ const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-sortable
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-sortable-item'))
 const handlePart = computed(() => resolveUiPart(cx, themedUi()?.handle, 'ui-sortable-handle'))
 
-defineExpose({ el: root, isGrabbed, activeValue })
+defineExpose({ el: root, isGrabbed, isValidDrop, isPending, activeValue })
 </script>

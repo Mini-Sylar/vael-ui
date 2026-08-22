@@ -109,46 +109,82 @@ export function resolveInsertionIndex(bands: readonly SortableBand[], pointer: n
   return bands.length
 }
 
-function findNodeIn<T extends SortableTreeNode>(
+/**
+ * How to read a node's identity and children. Defaults match the house item
+ * vocabulary (`value` / `children`), so `MenuItemData`, `TreeNode` and friends
+ * need no configuration — a flat list of arbitrary records just supplies its
+ * own `getKey`, and then reorders through the exact same code path as a tree.
+ */
+export interface TreeAccessors<T> {
+  getKey?: (node: T) => string | number
+  getChildren?: (node: T) => T[] | undefined
+  setChildren?: (node: T, children: T[]) => void
+}
+
+function keyOfNode<T>(node: T, accessors?: TreeAccessors<T>): string | number {
+  return accessors?.getKey ? accessors.getKey(node) : (node as SortableTreeNode).value
+}
+function childrenOfNode<T>(node: T, accessors?: TreeAccessors<T>): T[] | undefined {
+  if (accessors?.getChildren) return accessors.getChildren(node)
+  return (node as SortableTreeNode).children as T[] | undefined
+}
+function assignChildren<T>(node: T, children: T[], accessors?: TreeAccessors<T>): void {
+  if (accessors?.setChildren) accessors.setChildren(node, children)
+  else (node as { children?: T[] }).children = children
+}
+
+function findNodeIn<T>(
   nodes: readonly T[],
   value: string | number,
+  accessors?: TreeAccessors<T>,
 ): T | undefined {
   for (const node of nodes) {
-    if (node.value === value) return node
-    if (node.children) {
-      const hit = findNodeIn(node.children as readonly T[], value)
+    if (keyOfNode(node, accessors) === value) return node
+    const children = childrenOfNode(node, accessors)
+    if (children) {
+      const hit = findNodeIn(children, value, accessors)
       if (hit) return hit
     }
   }
   return undefined
 }
 
-function containsValue(nodes: readonly SortableTreeNode[], value: string | number): boolean {
-  return nodes.some(
-    (node) => node.value === value || (!!node.children && containsValue(node.children, value)),
-  )
+function containsValue<T>(
+  nodes: readonly T[],
+  value: string | number,
+  accessors?: TreeAccessors<T>,
+): boolean {
+  return nodes.some((node) => {
+    if (keyOfNode(node, accessors) === value) return true
+    const children = childrenOfNode(node, accessors)
+    return !!children && containsValue(children, value, accessors)
+  })
 }
 
 /** Guard on every move: dropping a folder into its own descendant detaches that branch and loses it. */
-export function isDescendantOf(
-  nodes: readonly SortableTreeNode[],
+export function isDescendantOf<T>(
+  nodes: readonly T[],
   ancestorValue: string | number,
   candidateValue: string | number,
+  accessors?: TreeAccessors<T>,
 ): boolean {
-  const ancestor = findNodeIn(nodes, ancestorValue)
-  if (!ancestor?.children) return false
-  return containsValue(ancestor.children, candidateValue)
+  const ancestor = findNodeIn(nodes, ancestorValue, accessors)
+  const children = ancestor && childrenOfNode(ancestor, accessors)
+  if (!children) return false
+  return containsValue(children, candidateValue, accessors)
 }
 
-function detach<T extends SortableTreeNode>(
+function detach<T>(
   nodes: T[],
   value: string | number,
+  accessors?: TreeAccessors<T>,
 ): { node: T; from: T[]; index: number } | null {
-  const index = nodes.findIndex((node) => node.value === value)
+  const index = nodes.findIndex((node) => keyOfNode(node, accessors) === value)
   if (index !== -1) return { node: nodes.splice(index, 1)[0]!, from: nodes, index }
   for (const node of nodes) {
-    if (!node.children) continue
-    const hit = detach(node.children as T[], value)
+    const children = childrenOfNode(node, accessors)
+    if (!children) continue
+    const hit = detach(children, value, accessors)
     if (hit) return hit
   }
   return null
@@ -162,25 +198,32 @@ function detach<T extends SortableTreeNode>(
  * when the move is impossible (unknown value, unknown parent, or a drop into
  * the node's own subtree).
  */
-export function moveTreeNode<T extends SortableTreeNode>(
+export function moveTreeNode<T>(
   nodes: T[],
   value: string | number,
   to: DropPosition,
+  accessors?: TreeAccessors<T>,
 ): boolean {
   if (to.parentValue === value) return false
-  if (to.parentValue != null && isDescendantOf(nodes, value, to.parentValue)) return false
+  if (to.parentValue != null && isDescendantOf(nodes, value, to.parentValue, accessors)) {
+    return false
+  }
 
   let target: T[]
   if (to.parentValue == null) {
     target = nodes
   } else {
-    const parent = findNodeIn(nodes, to.parentValue)
+    const parent = findNodeIn(nodes, to.parentValue, accessors)
     if (!parent) return false
-    if (!parent.children) (parent as { children?: readonly T[] }).children = []
-    target = parent.children as T[]
+    let children = childrenOfNode(parent, accessors)
+    if (!children) {
+      children = []
+      assignChildren(parent, children, accessors)
+    }
+    target = children
   }
 
-  const detached = detach(nodes, value)
+  const detached = detach(nodes, value, accessors)
   if (!detached) return false
 
   // `to.index` is the node's FINAL resting slot, counted with the node itself
@@ -255,10 +298,23 @@ export interface UseSortableOptions {
   motionCss?: MaybeRefOrGetter<boolean>
   /** Apply the reorder. Fires once, on a committed drop. */
   onCommit: (value: string | number, to: DropPosition) => void
+  /** Synchronous, re-run as the target changes: `false` marks the target invalid and blocks the drop. Use it for structural rules (only folders take children). Keep it cheap — it runs while dragging. */
+  canDrop?: (details: SortableDropDetails) => boolean
+  /** Async gate at drop time: return `false`, or a promise resolving `false`, to cancel and spring the item home. Composes directly with `confirmAction().result`. A rejection is treated as a cancel and reported to `onDropError` — a failed API call must never leave the drop half-applied. */
+  beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
+  /** `beforeDrop` threw or rejected. The move is already reverted by the time this fires; use it to surface the failure (a toast, say). */
+  onDropError?: (error: unknown, details: SortableDropDetails) => void
   /** Human label for announcements; falls back to the raw value. */
   labelOf?: (value: string | number) => string
   /** Builds the live-region text. Supplied by the component so it can route through `messages`. */
   announce?: (event: SortableAnnounceEvent) => string
+}
+
+/** Everything a validation hook or a confirm dialog needs to describe the move. */
+export interface SortableDropDetails {
+  value: string | number
+  from: DropPosition
+  to: DropPosition
 }
 
 export interface SortableAnnounceEvent {
@@ -277,6 +333,10 @@ export interface UseSortableReturn {
   /** True whenever an item is held — by pointer OR keyboard. */
   isGrabbed: Ref<boolean>
   dropPosition: Ref<DropPosition | null>
+  /** `false` while hovering a target `canDrop` rejected. */
+  isValidDrop: Ref<boolean>
+  /** True while an async `beforeDrop` is still deciding. */
+  isPending: Ref<boolean>
   /** Live-region text. Render it in an `aria-live="assertive"` node. */
   announcement: Ref<string>
   onHandlePointerdown: (event: PointerEvent, value: string | number) => void
@@ -294,6 +354,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   const isDragging = shallowRef(false)
   const isGrabbed = shallowRef(false)
   const dropPosition = shallowRef<DropPosition | null>(null)
+  const isValidDrop = shallowRef(true)
+  const isPending = shallowRef(false)
   const announcement = shallowRef('')
 
   const springs = new Map<string | number, SpringHandle>()
@@ -305,6 +367,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let grabbedSpring: SpringHandle | null = null
   let sourceDepth = 0
   let sourceSlot = 0
+  let sourceFrom: DropPosition | null = null
   let source: SortableSource = 'pointer'
 
   function rows(): readonly FlatSortableRow[] {
@@ -421,7 +484,14 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     source = from
     activeValue.value = value
     isGrabbed.value = true
-    dropPosition.value = { parentValue: all[startIndex]!.parentValue, index: 0, depth: sourceDepth }
+    sourceFrom = {
+      parentValue: all[startIndex]!.parentValue,
+      index: all.slice(0, startIndex).filter((r) => r.parentValue === all[startIndex]!.parentValue)
+        .length,
+      depth: sourceDepth,
+    }
+    dropPosition.value = { ...sourceFrom }
+    isValidDrop.value = true
     // Seed with the real starting slot so "no movement yet" announces correctly.
     applyTarget(sourceSlot, 0, false)
     say('grab')
@@ -438,6 +508,16 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       sourceDepth,
       nested: nested(),
     })
+    const value = activeValue.value
+    if (value != null && options.canDrop && sourceFrom) {
+      if (!options.canDrop({ value, from: sourceFrom, to: at })) {
+        // Don't preview a move that can't happen — leave the rows where they
+        // are and let the UI show the target as rejected.
+        isValidDrop.value = false
+        return
+      }
+    }
+    isValidDrop.value = true
     dropPosition.value = at
 
     const instant = !animate || reducedMotion()
@@ -467,6 +547,39 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   /** Linear slot currently implied by `dropPosition`, for keyboard stepping. */
   let currentIndex = 0
 
+  /** Undo the drag preview with motion, leaving the data untouched. */
+  async function revert() {
+    const instant = reducedMotion()
+    for (const [, spring] of springs) {
+      if (instant) spring.jump(0)
+      else spring.set(0)
+    }
+    if (grabbedSpring) {
+      if (instant) grabbedSpring.jump(0)
+      else grabbedSpring.set(0)
+    }
+    const value = activeValue.value
+    const el = value == null ? null : options.getElement(value)
+    if (el && source === 'pointer') {
+      const current = bandOf(el).start
+      el.style.translate = ''
+      const rest = bandOf(el).start
+      const delta = current - rest
+      el.style.translate = translateFor(delta)
+      const home = createSpring(delta, DROP_SPRING, (offset) => {
+        el.style.translate = translateFor(offset)
+      })
+      home.set(0, { velocity })
+      settling.push(home)
+    }
+    // Let the springs above own the visuals; only the bookkeeping resets now.
+    const keep = [...springs.values()]
+    springs.clear()
+    grabbedSpring = null
+    settling.push(...keep)
+    finish()
+  }
+
   /** Every row's on-screen start — read identically before and after the commit. */
   function captureTops(): Map<string | number, number> {
     const tops = new Map<string | number, number>()
@@ -489,6 +602,39 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (value == null || !at) {
       finish()
       return
+    }
+
+    // Blocked target: never commit, just spring everything home.
+    if (!isValidDrop.value) {
+      say('cancel')
+      await revert()
+      return
+    }
+
+    if (options.beforeDrop && sourceFrom) {
+      const details: SortableDropDetails = { value, from: sourceFrom, to: at }
+      let approved = false
+      try {
+        const verdict = options.beforeDrop(details)
+        if (verdict instanceof Promise) {
+          isPending.value = true
+          approved = await verdict
+        } else {
+          approved = verdict
+        }
+      } catch (error) {
+        // A failed API call cancels the move rather than escaping as an
+        // unhandled rejection or stranding the row mid-drop.
+        options.onDropError?.(error, details)
+        approved = false
+      } finally {
+        isPending.value = false
+      }
+      if (!approved) {
+        say('cancel')
+        await revert()
+        return
+      }
     }
 
     say('drop')
@@ -679,6 +825,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     isDragging,
     isGrabbed,
     dropPosition,
+    isValidDrop,
+    isPending,
     announcement,
     onHandlePointerdown,
     onHandleKeydown,

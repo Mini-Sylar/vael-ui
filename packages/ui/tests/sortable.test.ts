@@ -4,6 +4,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import SortableFixture from './fixtures/SortableFixture.vue'
+import type { SortableDropDetails } from '../src/composables/useSortable'
 
 function handles(screen: RenderResult<unknown>): HTMLButtonElement[] {
   return Array.from(screen.container.querySelectorAll<HTMLButtonElement>('.ui-sortable-handle'))
@@ -174,4 +175,140 @@ test('axis="x": the grabbed item translates horizontally, not vertically', async
   const [x, y] = rowFor('a').style.translate.split(' ')
   expect(Number.parseFloat(x!)).toBeGreaterThan(0)
   expect(y === undefined || Number.parseFloat(y) === 0).toBe(true)
+})
+
+// ---------------------------------------------------------------------------
+// canDrop / beforeDrop — structural veto and async gate
+// ---------------------------------------------------------------------------
+
+test('canDrop=false blocks the reorder and marks the target rejected', async () => {
+  const screen = render(SortableFixture, { props: { canDrop: () => false } })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown}')
+  expect(screen.container.querySelector('[data-invalid-drop]')).not.toBeNull()
+  await userEvent.keyboard(' ')
+  expect(order(screen)).toBe('a,b,c')
+})
+
+test('canDrop receives the real from/to positions', async () => {
+  const seen: SortableDropDetails[] = []
+  const screen = render(SortableFixture, {
+    props: {
+      canDrop: (d: SortableDropDetails) => {
+        seen.push(d)
+        return true
+      },
+    },
+  })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+  expect(order(screen)).toBe('b,a,c')
+  const last = seen.at(-1)!
+  expect(last.value).toBe('a')
+  expect(last.from.index).toBe(0)
+  expect(last.to.index).toBe(1)
+})
+
+test('canDrop can allow some targets and refuse others', async () => {
+  // Only ever allow landing in slot 1.
+  const screen = render(SortableFixture, {
+    props: { canDrop: (d: SortableDropDetails) => d.to.index === 1 },
+  })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+  expect(order(screen)).toBe('b,a,c')
+})
+
+test('beforeDrop returning false cancels the drop', async () => {
+  const screen = render(SortableFixture, { props: { beforeDrop: () => false } })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+  await vi.waitFor(() => expect(order(screen)).toBe('a,b,c'))
+})
+
+test('beforeDrop returning true commits it', async () => {
+  const screen = render(SortableFixture, { props: { beforeDrop: () => true } })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+  await vi.waitFor(() => expect(order(screen)).toBe('b,a,c'))
+})
+
+test('an async beforeDrop holds the drop pending, then commits on approval', async () => {
+  let approve!: (value: boolean) => void
+  const gate = new Promise<boolean>((resolve) => {
+    approve = resolve
+  })
+  const screen = render(SortableFixture, { props: { beforeDrop: () => gate } })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+
+  // Still awaiting the consumer's dialog: nothing has moved yet.
+  await vi.waitFor(() => expect(screen.container.querySelector('[data-pending]')).not.toBeNull())
+  expect(order(screen)).toBe('a,b,c')
+
+  approve(true)
+  await vi.waitFor(() => expect(order(screen)).toBe('b,a,c'))
+  expect(screen.container.querySelector('[data-pending]')).toBeNull()
+})
+
+test('an async beforeDrop that resolves false leaves the order untouched', async () => {
+  let decide!: (value: boolean) => void
+  const gate = new Promise<boolean>((resolve) => {
+    decide = resolve
+  })
+  const screen = render(SortableFixture, { props: { beforeDrop: () => gate } })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+  await vi.waitFor(() => expect(screen.container.querySelector('[data-pending]')).not.toBeNull())
+
+  decide(false)
+  await vi.waitFor(() => expect(screen.container.querySelector('[data-pending]')).toBeNull())
+  expect(order(screen)).toBe('a,b,c')
+})
+
+test('a cancelled drop clears every inline transform it applied', async () => {
+  const screen = render(SortableFixture, { props: { beforeDrop: () => false } })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+  await vi.waitFor(() => {
+    const leftover = Array.from(
+      screen.container.querySelectorAll<HTMLElement>('[data-sortable-item]'),
+    ).filter((el) => el.style.translate !== '')
+    expect(leftover).toHaveLength(0)
+  })
+})
+
+test('a rejecting beforeDrop (a failed API call) reverts and reports, never throws', async () => {
+  const screen = render(SortableFixture, {
+    props: { beforeDrop: () => Promise.reject(new Error('network down')) },
+  })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+
+  await vi.waitFor(() => {
+    expect(screen.container.querySelector('[data-testid="drop-errors"]')!.textContent).toContain(
+      'network down',
+    )
+  })
+  // Reverted, not half-applied, and not left stuck pending.
+  expect(order(screen)).toBe('a,b,c')
+  expect(screen.container.querySelector('[data-pending]')).toBeNull()
+})
+
+test('a synchronously throwing beforeDrop is handled the same way', async () => {
+  const screen = render(SortableFixture, {
+    props: {
+      beforeDrop: () => {
+        throw new Error('validation blew up')
+      },
+    },
+  })
+  handles(screen)[0]!.focus()
+  await userEvent.keyboard(' {ArrowDown} ')
+  await vi.waitFor(() => {
+    expect(screen.container.querySelector('[data-testid="drop-errors"]')!.textContent).toContain(
+      'validation blew up',
+    )
+  })
+  expect(order(screen)).toBe('a,b,c')
 })

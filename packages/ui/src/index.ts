@@ -348,6 +348,8 @@ export type {
   FlatSortableRow,
   SortableAxis,
   SortableBand,
+  SortableDropDetails,
+  TreeAccessors,
   SortableTreeNode,
   SortableSource,
   SortableAnnounceEvent,

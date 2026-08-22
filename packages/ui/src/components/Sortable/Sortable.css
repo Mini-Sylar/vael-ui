@@ -74,6 +74,20 @@
     min-inline-size: 0;
   }
 
+  /* Rejected target: the row stays put (no misleading preview) and reads as blocked. */
+  .ui-sortable[data-invalid-drop] .ui-sortable-item[data-dragging],
+  .ui-sortable[data-invalid-drop] .ui-sortable-item[data-grabbed] {
+    border-color: var(--ui-danger);
+    cursor: not-allowed;
+  }
+  .ui-sortable[data-pending] {
+    cursor: progress;
+  }
+  .ui-sortable[data-pending] .ui-sortable-item[data-dragging],
+  .ui-sortable[data-pending] .ui-sortable-item[data-grabbed] {
+    opacity: 0.7;
+  }
+
   .ui-sortable-status {
     position: absolute;
     inline-size: 1px;
