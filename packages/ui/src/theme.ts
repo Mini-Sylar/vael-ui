@@ -317,6 +317,9 @@ export interface UiTheme {
   tour?: {
     ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
   }
+  sortable?: {
+    ui?: Partial<{ root: UiPartValue; item: UiPartValue; handle: UiPartValue }>
+  }
 }
 
 export const themeKey: InjectionKey<ComputedRef<UiTheme | undefined>> = Symbol('ui-theme')

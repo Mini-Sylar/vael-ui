@@ -93,7 +93,8 @@
     "TreeSelect": "Ein Dropdown-Menü, dessen Bereich ein Baum ist, zum Auswählen eines oder mehrerer Knoten aus einer Hierarchie.",
     "Kbd": "Gestaltet eine Tastenkombination so, dass sie sich wie eine physische Taste liest.",
     "Drawer": "Ein Panel, das vom Rand des Ansichtsfensters eingeschoben wird, für Navigation oder Seiteninhalte.",
-    "PasswordInput": "Ein Passwortfeld mit einem Offenlegungsschalter und einem Hinweis zu den Anforderungen."
+    "PasswordInput": "Ein Passwortfeld mit einem Offenlegungsschalter und einem Hinweis zu den Anforderungen.",
+    "Sortable": "Eine Drag-to-Reorder-Liste mit einem echten Tastaturpfad, nicht nur einem Zeigerpfad."
   },
   "gettingStarted": {
     "darkModeIntro": "Nur CSS: antwortet auf <code>",

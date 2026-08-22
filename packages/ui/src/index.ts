@@ -332,3 +332,33 @@ export type {
   UseSwipeRevealOptions,
   UseSwipeRevealReturn,
 } from './composables/useSwipeReveal'
+
+export { default as Sortable } from './components/Sortable/Sortable.vue'
+export {
+  useSortable,
+  moveTreeNode,
+  isDescendantOf,
+  excludeSubtree,
+  resolveDropPosition,
+  resolveInsertionIndex,
+  resolveRowShifts,
+} from './composables/useSortable'
+export type {
+  DropPosition,
+  FlatSortableRow,
+  SortableAxis,
+  SortableBand,
+  SortableTreeNode,
+  SortableSource,
+  SortableAnnounceEvent,
+  ResolveDropInput,
+  UseSortableOptions,
+  UseSortableReturn,
+} from './composables/useSortable'
+export { useSpringValue, createSpring, stepSpring } from './composables/useSpringValue'
+export type {
+  SpringOptions,
+  SpringState,
+  SpringHandle,
+  UseSpringValueReturn,
+} from './composables/useSpringValue'

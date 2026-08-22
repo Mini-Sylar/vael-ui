@@ -98,6 +98,17 @@ export interface UiMessages {
     collapseRow: string
     expandRow: string
   }
+  /** Drag-to-reorder. These carry `{label}`, `{position}`, `{total}` and `{depth}` placeholders rather than being functions, so a consumer's own `i18n.t()` can return them as plain strings like every other entry here. */
+  sortable: {
+    /** Announced on grab, and used as the handle's accessible description. */
+    instructions: string
+    grabbed: string
+    moved: string
+    /** Used instead of `moved` only where depth is meaningful (a tree). */
+    movedToLevel: string
+    dropped: string
+    cancelled: string
+  }
 }
 
 export type PartialUiMessages = {
@@ -148,6 +159,15 @@ export const defaultMessages: UiMessages = {
     collapseRow: 'Collapse row',
     expandRow: 'Expand row',
   },
+  sortable: {
+    instructions:
+      'Press Space or Enter to start reordering. Use the arrow keys to move, Space to drop, Escape to cancel.',
+    grabbed: 'Grabbed {label}. Position {position} of {total}.',
+    moved: '{label} moved to position {position} of {total}.',
+    movedToLevel: '{label} moved to position {position} of {total}, level {depth}.',
+    dropped: 'Dropped {label} at position {position} of {total}.',
+    cancelled: 'Reordering cancelled. {label} returned to its original position.',
+  },
 }
 
 export const messagesKey: InjectionKey<Ref<UiMessages>> = Symbol('ui-messages')
@@ -183,6 +203,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     pagination: { ...base.pagination, ...overrides.pagination },
     datePicker: { ...base.datePicker, ...overrides.datePicker },
     dataTable: { ...base.dataTable, ...overrides.dataTable },
+    sortable: { ...base.sortable, ...overrides.sortable },
   }
 }
 
@@ -270,6 +291,14 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     selectRow: 'uiKit.dataTable.selectRow',
     collapseRow: 'uiKit.dataTable.collapseRow',
     expandRow: 'uiKit.dataTable.expandRow',
+  },
+  sortable: {
+    instructions: 'uiKit.sortable.instructions',
+    grabbed: 'uiKit.sortable.grabbed',
+    moved: 'uiKit.sortable.moved',
+    movedToLevel: 'uiKit.sortable.movedToLevel',
+    dropped: 'uiKit.sortable.dropped',
+    cancelled: 'uiKit.sortable.cancelled',
   },
 }
 
@@ -443,6 +472,33 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
     dataTable.expandRow = dataTableExpandRow
   }
   if (Object.keys(dataTable).length > 0) result.dataTable = dataTable
+
+  const sortableInstructions = i18n.t(i18nKeyMap.sortable.instructions)
+  const sortableGrabbed = i18n.t(i18nKeyMap.sortable.grabbed)
+  const sortableMoved = i18n.t(i18nKeyMap.sortable.moved)
+  const sortableMovedToLevel = i18n.t(i18nKeyMap.sortable.movedToLevel)
+  const sortableDropped = i18n.t(i18nKeyMap.sortable.dropped)
+  const sortableCancelled = i18n.t(i18nKeyMap.sortable.cancelled)
+  const sortable: PartialUiMessages['sortable'] = {}
+  if (sortableInstructions !== i18nKeyMap.sortable.instructions) {
+    sortable.instructions = sortableInstructions
+  }
+  if (sortableGrabbed !== i18nKeyMap.sortable.grabbed) {
+    sortable.grabbed = sortableGrabbed
+  }
+  if (sortableMoved !== i18nKeyMap.sortable.moved) {
+    sortable.moved = sortableMoved
+  }
+  if (sortableMovedToLevel !== i18nKeyMap.sortable.movedToLevel) {
+    sortable.movedToLevel = sortableMovedToLevel
+  }
+  if (sortableDropped !== i18nKeyMap.sortable.dropped) {
+    sortable.dropped = sortableDropped
+  }
+  if (sortableCancelled !== i18nKeyMap.sortable.cancelled) {
+    sortable.cancelled = sortableCancelled
+  }
+  if (Object.keys(sortable).length > 0) result.sortable = sortable
 
   return result
 }

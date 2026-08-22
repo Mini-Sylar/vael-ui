@@ -162,7 +162,8 @@
     "Tree": "Une liste pliable et en retrait pour les données hiérarchiques avec sélection simple ou multiple.",
     "TreeSelect": "Une liste déroulante dont le panneau est un arbre, pour sélectionner un ou plusieurs nœuds dans une hiérarchie.",
     "Drawer": "Un panneau qui glisse depuis le bord d'une fenêtre, pour la navigation ou le contenu latéral.",
-    "PasswordInput": "Un champ de mot de passe avec une bascule de révélation et un indice d'exigences."
+    "PasswordInput": "Un champ de mot de passe avec une bascule de révélation et un indice d'exigences.",
+    "Sortable": "Une liste à glisser pour réorganiser avec un véritable chemin de clavier, pas seulement un chemin de pointeur."
   },
   "globalSetup": {
     "allTogetherIntro": "Montez les trois une fois, quel que soit l'endroit où se trouve le modèle racine de votre application :",

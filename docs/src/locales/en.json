@@ -251,6 +251,7 @@
     "Separator": "A thin line (or gap) for dividing content into visually distinct groups.",
     "Resizable": "A draggable handle for letting the user resize a panel between a min and max size.",
     "SwipeToReveal": "Swipe an item to reveal actions underneath it, like a native mobile list row.",
+    "Sortable": "A drag-to-reorder list with a real keyboard path, not just a pointer one.",
     "PullToRefresh": "A pull-down gesture at the top of a scroll container that triggers a refresh.",
     "Dock": "A macOS-style row of icons that magnify as the pointer approaches them."
   },

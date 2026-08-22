@@ -62,6 +62,7 @@ export const COMPONENTS = [
   'Separator',
   'Skeleton',
   'Slider',
+  'Sortable',
   'SpeedDial',
   'SplitButton',
   'Stepper',

@@ -93,7 +93,8 @@
     "Drawer": "Un panel que se desliza desde el borde de una ventana gráfica, para navegación o contenido lateral.",
     "Input": "Un campo de texto de una sola línea con tamaños, estados y espacios para íconos o sugerencias.",
     "Switch": "Un interruptor de encendido/apagado con estilo de interruptor físico, para configuraciones de efecto inmediato.",
-    "PasswordInput": "Un campo de contraseña con un botón de revelación y una sugerencia de requisitos."
+    "PasswordInput": "Un campo de contraseña con un botón de revelación y una sugerencia de requisitos.",
+    "Sortable": "Una lista de arrastrar para reordenar con una ruta de teclado real, no solo una de puntero."
   },
   "gettingStarted": {
     "darkModeIntro": "Solo CSS: responde a <código>",

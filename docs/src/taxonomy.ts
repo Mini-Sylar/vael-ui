@@ -105,7 +105,7 @@ export const categories: ComponentCategory[] = [
   {
     key: 'gestures',
     name: 'Gestures',
-    components: ['SwipeToReveal', 'PullToRefresh', 'Dock'],
+    components: ['SwipeToReveal', 'PullToRefresh', 'Dock', 'Sortable'],
   },
 ]
 
