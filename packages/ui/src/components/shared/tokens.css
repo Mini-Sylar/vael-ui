@@ -24,6 +24,8 @@
   --ui-radius: 10px;
   --ui-border-strong: #d4d4d8;
 
+  /* Below dialog: a drag preview floats over page content, never over a modal. */
+  --ui-z-drag: 45;
   --ui-z-dialog: 50;
   --ui-z-tour: 52;
   --ui-z-popover: 55;

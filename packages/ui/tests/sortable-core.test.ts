@@ -4,8 +4,11 @@ import {
   isDescendantOf,
   moveTreeNode,
   resolveDropPosition,
+  resolveDropIntent,
   resolveGrabbedOffset,
+  resolveHoveredIndex,
   resolveInsertionIndex,
+  resolveTargetDrop,
   resolveRowShifts,
 } from '../src/composables/useSortable'
 import type { FlatSortableRow, SortableTreeNode } from '../src/composables/useSortable'
@@ -360,4 +363,71 @@ test('the grabbed block travels the full pitch of every row it crosses', () => {
 test('grabbed offset handles rows of differing heights', () => {
   const b = [{ size: 20 }, { size: 60 }]
   expect(resolveGrabbedOffset(b, 0, 2, 0)).toBe(80)
+})
+
+// ---------------------------------------------------------------------------
+// Drop-on-target (VS Code model)
+// ---------------------------------------------------------------------------
+
+const band = { start: 100, size: 40 }
+
+test('a row that takes children splits into edge / middle / edge', () => {
+  expect(resolveDropIntent(band, 105, true)).toBe('before')
+  expect(resolveDropIntent(band, 120, true)).toBe('inside')
+  expect(resolveDropIntent(band, 135, true)).toBe('after')
+})
+
+test('a row that cannot take children splits cleanly in half', () => {
+  expect(resolveDropIntent(band, 110, false)).toBe('before')
+  expect(resolveDropIntent(band, 120, false)).toBe('after')
+  expect(resolveDropIntent(band, 135, false)).toBe('after')
+})
+
+test('the nesting edge band is tunable', () => {
+  // A wider edge makes "inside" harder to hit by accident.
+  expect(resolveDropIntent(band, 115, true, 0.45)).toBe('before')
+  expect(resolveDropIntent(band, 120, true, 0.45)).toBe('inside')
+})
+
+test('hovered index resolves only within a row band', () => {
+  const bands = [
+    { start: 0, size: 20 },
+    { start: 20, size: 20 },
+  ]
+  expect(resolveHoveredIndex(bands, 10)).toBe(0)
+  expect(resolveHoveredIndex(bands, 25)).toBe(1)
+  expect(resolveHoveredIndex(bands, 99)).toBe(-1)
+  expect(resolveHoveredIndex(bands, -5)).toBe(-1)
+})
+
+test('dropping INSIDE a folder appends to it, like a file manager', () => {
+  const r = rows(['a', 0, null], ['b', 0, null])
+  expect(resolveTargetDrop(r, 1, 'inside', () => 3)).toEqual({
+    parentValue: 'b',
+    index: 3,
+    depth: 1,
+  })
+})
+
+test('dropping before/after a row lands as its sibling', () => {
+  const r = rows(['b', 0, null], ['b1', 1, 'b'], ['b2', 1, 'b'], ['c', 0, null])
+  expect(resolveTargetDrop(r, 2, 'before', () => 0)).toEqual({
+    parentValue: 'b',
+    index: 1,
+    depth: 1,
+  })
+  expect(resolveTargetDrop(r, 2, 'after', () => 0)).toEqual({
+    parentValue: 'b',
+    index: 2,
+    depth: 1,
+  })
+})
+
+test('hovering nothing falls back to the end of the root list', () => {
+  const r = rows(['a', 0, null], ['b', 0, null])
+  expect(resolveTargetDrop(r, -1, 'after', () => 0)).toEqual({
+    parentValue: null,
+    index: 2,
+    depth: 0,
+  })
 })

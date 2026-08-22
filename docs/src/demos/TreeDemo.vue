@@ -196,6 +196,36 @@
       </div>
     </div>
   </section>
+  <section class="demo">
+    <h3>Drag to reorder and re-parent</h3>
+    <p>
+      <code>reorderable</code> turns on dragging: drop on a row's <em>middle</em> to move it
+      <em>into</em> that folder, or on an <em>edge</em> to place it alongside. Hovering a collapsed
+      folder opens it. Keyboard works too — <Kbd>Space</Kbd>, then <Kbd>ArrowUp</Kbd>/<Kbd
+        >ArrowDown</Kbd
+      >
+      to move and <Kbd>ArrowRight</Kbd> to nest.
+    </p>
+    <Tree :items="reorderTree" reorderable class="tree-reorder-demo" />
+  </section>
+  <section class="demo">
+    <h3>Gating a move</h3>
+    <p>
+      <code>canDrop</code> runs while you drag — here nothing may enter <code>locked</code>, and the
+      row turns red rather than previewing a move that can't happen. <code>beforeDrop</code> then
+      gates the drop itself; it returns a promise, and <code>confirmAction().result</code> already
+      is one. A rejection (a failed API call) reverts and fires <code>@drop-error</code>.
+    </p>
+    <Tree
+      :items="guardedTree"
+      reorderable
+      :can-drop="canDropHere"
+      :before-drop="confirmMove"
+      class="tree-reorder-demo"
+      @drop-error="treeDropError = String($event)"
+    />
+    <p v-if="treeDropError" class="tree-drop-error">{{ treeDropError }}</p>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -203,7 +233,9 @@ import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect
 import { codeToHtml } from 'shiki'
 import {
   Button,
+  confirmAction,
   ContextMenu,
+  Kbd,
   findTreeNode,
   findTreeParent,
   Input,
@@ -213,7 +245,7 @@ import {
   Tree,
   vTooltip,
 } from 'vael-ui'
-import type { MenuEntry, TreeNode } from 'vael-ui'
+import type { MenuEntry, SortableDropDetails, TreeNode } from 'vael-ui'
 import {
   PhArrowsInLineVertical,
   PhArrowsOutLineVertical,
@@ -225,6 +257,47 @@ import {
   PhMagnifyingGlass,
   PhTrash,
 } from '@phosphor-icons/vue'
+
+const guardedTree = ref<TreeNode[]>([
+  { label: 'locked', value: 'locked', children: [{ label: 'audit.log', value: 'audit.log' }] },
+  { label: 'drafts', value: 'drafts', children: [{ label: 'notes.md', value: 'notes.md' }] },
+  { label: 'todo.txt', value: 'todo.txt' },
+])
+const treeDropError = ref('')
+
+// Structural rule, checked every frame while dragging.
+function canDropHere({ to }: SortableDropDetails) {
+  return to.parentValue !== 'locked'
+}
+
+// `result` is already a Promise<boolean | undefined> — so it IS the gate.
+async function confirmMove({ value }: SortableDropDetails) {
+  return (
+    (await confirmAction({
+      title: `Move ${value}?`,
+      description: 'A real app would persist this before committing.',
+      confirmLabel: 'Move',
+    }).result) === true
+  )
+}
+
+const reorderTree = ref<TreeNode[]>([
+  {
+    label: 'src',
+    value: 'src',
+    children: [
+      { label: 'main.ts', value: 'main.ts' },
+      { label: 'App.vue', value: 'App.vue' },
+      {
+        label: 'components',
+        value: 'components',
+        children: [{ label: 'Button.vue', value: 'Button.vue' }],
+      },
+    ],
+  },
+  { label: 'tests', value: 'tests', children: [{ label: 'app.test.ts', value: 'app.test.ts' }] },
+  { label: 'README.md', value: 'README.md' },
+])
 
 // Same nested file/folder shape as TreeSelectDemo's own `fileTree`. The two
 // components share one tree-body implementation (Tree.vue), so the same

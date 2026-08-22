@@ -292,6 +292,23 @@ export interface UseSortableOptions {
   axis?: MaybeRefOrGetter<SortableAxis>
   /** Enables depth changes (Tree). Flat lists leave this off. */
   nested?: MaybeRefOrGetter<boolean>
+  /** VS Code model: hovering a row's middle drops INTO it. Requires `nested`. */
+  dropOnTarget?: MaybeRefOrGetter<boolean>
+  /** Which rows accept children. Without this every row does. */
+  canNestInto?: (value: string | number) => boolean
+  /** Existing child count, so an "inside" drop appends. */
+  childCountOf?: (value: string | number) => number
+  /** Hovering a collapsed row this long opens it, so you can drill in mid-drag. */
+  autoExpandDelay?: MaybeRefOrGetter<number>
+  /** Open a row during a hover-to-expand. */
+  onAutoExpand?: (value: string | number) => void
+  /**
+   * Lift the grabbed row out as a floating preview that follows the cursor,
+   * leaving its original slot dimmed in place. Without this the row stays in
+   * flow and slides over its neighbours, which on dense borderless rows (a
+   * tree) reads as overlapping text rather than as carrying something.
+   */
+  dragPreview?: MaybeRefOrGetter<boolean>
   indentWidth?: MaybeRefOrGetter<number>
   disabled?: MaybeRefOrGetter<boolean>
   /** `false` disables the built-in springs — positions snap. */
@@ -337,9 +354,18 @@ export interface UseSortableReturn {
   isValidDrop: Ref<boolean>
   /** True while an async `beforeDrop` is still deciding. */
   isPending: Ref<boolean>
+  /** Every value in the dragged block — a folder carries its descendants. */
+  draggedValues: Ref<ReadonlySet<string | number>>
+  /** Row currently being dropped INTO, for highlighting. */
+  dropIntoValue: Ref<string | number | null>
+  /** Row the pointer is over, and which part of it — drives the insertion line. */
+  dropTargetValue: Ref<string | number | null>
+  dropIntent: Ref<DropIntent | null>
   /** Live-region text. Render it in an `aria-live="assertive"` node. */
   announcement: Ref<string>
   onHandlePointerdown: (event: PointerEvent, value: string | number) => void
+  /** True exactly once after a committed drag: the browser fires a trailing click on release, and without swallowing it a drag also triggers whatever the row's click does (select, expand). Same guard `useSwipeReveal` uses. */
+  consumeSuppressedClick: () => boolean
   onHandleKeydown: (event: KeyboardEvent, value: string | number) => void
   cancel: () => void
 }
@@ -356,6 +382,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   const dropPosition = shallowRef<DropPosition | null>(null)
   const isValidDrop = shallowRef(true)
   const isPending = shallowRef(false)
+  const draggedValues = shallowRef<ReadonlySet<string | number>>(new Set())
+  const dropIntoValue = shallowRef<string | number | null>(null)
+  const dropTargetValue = shallowRef<string | number | null>(null)
+  const dropIntent = shallowRef<DropIntent | null>(null)
   const announcement = shallowRef('')
 
   const springs = new Map<string | number, SpringHandle>()
@@ -378,6 +408,17 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
   function axis(): SortableAxis {
     return toValue(options.axis) ?? 'y'
+  }
+  /** Linear slot just past `index`'s visible descendants. */
+  function subtreeEnd(index: number): number {
+    const row = remaining[index]
+    if (!row) return remaining.length
+    let end = index + 1
+    while (end < remaining.length && remaining[end]!.depth > row.depth) end++
+    return end
+  }
+  function dropOnTarget(): boolean {
+    return (toValue(options.dropOnTarget) ?? false) && nested()
   }
   /** The element's extent along the active axis. */
   function bandOf(el: HTMLElement | null): SortableBand {
@@ -430,6 +471,20 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     springs.clear()
   }
 
+  let autoExpandTimer: ReturnType<typeof setTimeout> | null = null
+  let autoExpandFor: string | number | null = null
+  function scheduleAutoExpand(value: string | number | null) {
+    if (value === autoExpandFor) return
+    autoExpandFor = value
+    if (autoExpandTimer) clearTimeout(autoExpandTimer)
+    autoExpandTimer = null
+    if (value == null || !options.onAutoExpand) return
+    const delay = toValue(options.autoExpandDelay) ?? 600
+    autoExpandTimer = setTimeout(() => {
+      if (autoExpandFor === value) options.onAutoExpand!(value)
+    }, delay)
+  }
+
   let lastSpoken = ''
   function say(kind: SortableAnnounceEvent['kind']) {
     const value = activeValue.value
@@ -467,6 +522,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     sourceSlot = excluded.slot
     sourceDepth = all[startIndex]!.depth
 
+    draggedValues.value = new Set(excluded.removed.map((row) => row.value))
     blockHeight = 0
     for (const row of excluded.removed) blockHeight += bandOf(options.getElement(row.value)).size
 
@@ -496,6 +552,50 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     applyTarget(sourceSlot, 0, false)
     say('grab')
     return true
+  }
+
+  /**
+   * Drive the visuals from an already-resolved position. `insertionIndex` is
+   * null for an "inside" drop, where no row shifts — the folder highlights
+   * instead, so nothing pretends to open a slot that isn't there.
+   */
+  function applyResolved(at: DropPosition, insertionIndex: number | null, animate = true) {
+    const value = activeValue.value
+    if (value != null && options.canDrop && sourceFrom) {
+      if (!options.canDrop({ value, from: sourceFrom, to: at })) {
+        isValidDrop.value = false
+        return
+      }
+    }
+    isValidDrop.value = true
+    dropPosition.value = at
+
+    const instant = !animate || reducedMotion()
+    const shifts = resolveRowShifts(
+      bands,
+      insertionIndex ?? sourceSlot,
+      insertionIndex === null ? 0 : blockHeight + rowGap,
+    )
+    for (const [rowValue, shift] of shifts) {
+      const spring = springFor(rowValue)
+      if (instant) spring.jump(shift)
+      else spring.set(shift)
+    }
+
+    if (source !== 'keyboard') return
+    const grabbed = activeValue.value
+    if (grabbed == null) return
+    const el = options.getElement(grabbed)
+    if (!el) return
+    if (!grabbedSpring) {
+      grabbedSpring = createSpring(0, SHIFT_SPRING, (offset) => {
+        el.style.translate = translateFor(offset)
+      })
+    }
+    const offset =
+      insertionIndex === null ? 0 : resolveGrabbedOffset(bands, sourceSlot, insertionIndex, rowGap)
+    if (instant) grabbedSpring.jump(offset)
+    else grabbedSpring.set(offset)
   }
 
   /** Re-point every row's spring at the layout implied by `insertionIndex`. */
@@ -671,6 +771,12 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
 
   function finish() {
+    destroyPreview()
+    draggedValues.value = new Set()
+    scheduleAutoExpand(null)
+    dropIntoValue.value = null
+    dropTargetValue.value = null
+    dropIntent.value = null
     clearSprings()
     const value = activeValue.value
     if (value != null) {
@@ -706,6 +812,50 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let dragEl: HTMLElement | null = null
   let lastAlong = 0
   let lastTime = 0
+  let suppressNextClick = false
+  let previewEl: HTMLElement | null = null
+  let grabOffset = 0
+
+  function createPreview(sourceEl: HTMLElement, event: PointerEvent) {
+    const rect = sourceEl.getBoundingClientRect()
+    const clone = sourceEl.cloneNode(true) as HTMLElement
+    clone.removeAttribute('data-dragging')
+    clone.removeAttribute('id')
+    clone.setAttribute('aria-hidden', 'true')
+    clone.setAttribute('data-sortable-preview', '')
+    clone.style.position = 'fixed'
+    clone.style.margin = '0'
+    clone.style.pointerEvents = 'none'
+    // Below --ui-z-dialog so a confirm dialog opened by beforeDrop wins.
+    clone.style.zIndex = 'var(--ui-z-drag, 45)'
+    // A cloned <th>/<td> lands outside its <table>, where `display: table-cell`
+    // has no layout to resolve against and collapses to the wrong size and
+    // place. Pin both axes and drop it to a plain block.
+    const display = getComputedStyle(sourceEl).display
+    if (display.startsWith('table')) clone.style.display = 'block'
+    clone.style.boxSizing = 'border-box'
+    clone.style.inlineSize = `${rect.width}px`
+    clone.style.blockSize = `${rect.height}px`
+    clone.style.insetInlineStart = `${rect.left}px`
+    clone.style.insetBlockStart = `${rect.top}px`
+    clone.style.translate = ''
+    document.body.appendChild(clone)
+    previewEl = clone
+    // Respect where the row was actually grabbed, so it doesn't jump to a
+    // different point under the cursor on the first move.
+    grabOffset = axis() === 'x' ? event.clientX - rect.left : event.clientY - rect.top
+  }
+
+  function movePreview(event: PointerEvent) {
+    if (!previewEl) return
+    if (axis() === 'x') previewEl.style.insetInlineStart = `${event.clientX - grabOffset}px`
+    else previewEl.style.insetBlockStart = `${event.clientY - grabOffset}px`
+  }
+
+  function destroyPreview() {
+    previewEl?.remove()
+    previewEl = null
+  }
   let velocity = 0
 
   function onHandlePointerdown(event: PointerEvent, value: string | number) {
@@ -718,7 +868,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     lastAlong = event.clientY
     lastTime = performance.now()
     velocity = 0
-    dragEl = (event.currentTarget as HTMLElement).closest<HTMLElement>('[data-sortable-item]')
+    // Resolved through the consumer's own accessor, not a DOM selector — Tree
+    // rows and Sortable rows share no markup, and a selector only one of them
+    // has silently disables capture and the drag preview for the other.
+    dragEl = options.getElement(value)
   }
 
   function onPointerMove(event: PointerEvent) {
@@ -734,10 +887,16 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       }
       committed = true
       isDragging.value = true
-      dragEl?.setPointerCapture(pointerId)
+      try {
+        dragEl?.setPointerCapture(pointerId)
+      } catch {
+        // Capture is an optimisation (it keeps tracking when the pointer
+        // leaves the element); losing it must not abandon the drag itself.
+      }
       if (dragEl) {
-        dragEl.style.zIndex = '1'
         dragEl.setAttribute('data-dragging', '')
+        if (toValue(options.dragPreview)) createPreview(dragEl, event)
+        else dragEl.style.zIndex = '1'
       }
     }
 
@@ -752,9 +911,39 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const along = axis() === 'x' ? dx : dy
     const across = axis() === 'x' ? dy : dx
     // 1:1 with the pointer, no transition — never gate a live drag.
-    if (dragEl) dragEl.style.translate = translateFor(along)
+    if (previewEl) movePreview(event)
+    else if (dragEl) dragEl.style.translate = translateFor(along)
 
-    currentIndex = resolveInsertionIndex(bands, axis() === 'x' ? event.clientX : event.clientY)
+    const pointer = axis() === 'x' ? event.clientX : event.clientY
+    if (dropOnTarget()) {
+      const hovered = resolveHoveredIndex(bands, pointer)
+      const row = hovered === -1 ? null : remaining[hovered]!
+      const nestable = !!row && (options.canNestInto?.(row.value) ?? true)
+      const intent = row ? resolveDropIntent(bands[hovered]!, pointer, nestable) : 'after'
+      scheduleAutoExpand(intent === 'inside' ? (row?.value ?? null) : null)
+      dropIntoValue.value = intent === 'inside' ? (row?.value ?? null) : null
+      dropTargetValue.value = row?.value ?? null
+      dropIntent.value = row ? intent : null
+      const at = resolveTargetDrop(
+        remaining,
+        hovered,
+        intent,
+        (value) => options.childCountOf?.(value) ?? 0,
+      )
+      if (intent === 'inside') {
+        // Open the gap where the row will actually appear — just past the
+        // folder's visible subtree. Without this the whole "inside" mode is
+        // motionless, and since the middle of every folder row resolves to
+        // "inside", most of a drag would show no movement at all.
+        currentIndex = subtreeEnd(hovered)
+      } else {
+        currentIndex = resolveInsertionIndex(bands, pointer)
+      }
+      applyResolved(at, currentIndex)
+      say('move')
+      return
+    }
+    currentIndex = resolveInsertionIndex(bands, pointer)
     applyTarget(currentIndex, nested() ? across : 0)
     say('move')
   }
@@ -769,11 +958,28 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       dragEl = null
       return
     }
+    suppressNextClick = true
 
     dragEl = null
     void commit()
   }
 
+  // Escape aborts a pointer drag too. Not a layer-stack concern — the preview
+  // isn't a dismissible surface with a scope to own the key — but abandoning a
+  // drag mid-flight is standard, so it listens for the length of the gesture.
+  function onWindowKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || !isDragging.value) return
+    event.preventDefault()
+    pointerId = null
+    committed = false
+    pendingValue = null
+    dragEl = null
+    suppressNextClick = true
+    say('cancel')
+    void revert()
+  }
+
+  useEventListener(ssrWindow, 'keydown', onWindowKeydown)
   useEventListener(ssrWindow, 'pointermove', onPointerMove)
   useEventListener(ssrWindow, 'pointerup', endPointer)
   useEventListener(ssrWindow, 'pointercancel', endPointer)
@@ -825,11 +1031,20 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     isDragging,
     isGrabbed,
     dropPosition,
+    draggedValues,
+    dropIntoValue,
+    dropTargetValue,
+    dropIntent,
     isValidDrop,
     isPending,
     announcement,
     onHandlePointerdown,
     onHandleKeydown,
+    consumeSuppressedClick: () => {
+      const suppressed = suppressNextClick
+      suppressNextClick = false
+      return suppressed
+    },
     cancel,
   }
 }
@@ -853,4 +1068,61 @@ export function resolveGrabbedOffset(
     for (let i = insertionIndex; i < sourceSlot; i++) offset -= (bands[i]?.size ?? 0) + gap
   }
   return offset
+}
+
+/** Where a pointer sits relative to one row: reorder beside it, or drop inside it. */
+export type DropIntent = 'before' | 'after' | 'inside'
+
+/**
+ * VS Code / Finder drop model: the middle of a row that accepts children means
+ * "put it in here", the top and bottom edges mean "put it next to this". Rows
+ * that can't take children are edge-only, so the whole row splits in half.
+ */
+export function resolveDropIntent(
+  band: SortableBand,
+  pointer: number,
+  canNestInto: boolean,
+  edgeFraction = 0.25,
+): DropIntent {
+  const offset = (pointer - band.start) / (band.size || 1)
+  if (!canNestInto) return offset < 0.5 ? 'before' : 'after'
+  if (offset < edgeFraction) return 'before'
+  if (offset > 1 - edgeFraction) return 'after'
+  return 'inside'
+}
+
+/** Index of the row whose band contains `pointer`, or -1 past either end. */
+export function resolveHoveredIndex(bands: readonly SortableBand[], pointer: number): number {
+  for (let i = 0; i < bands.length; i++) {
+    const band = bands[i]!
+    if (pointer >= band.start && pointer < band.start + band.size) return i
+  }
+  return -1
+}
+
+/**
+ * Drop position for the on-target model. Dropping INTO a row appends to it,
+ * which is what a file manager does — you drag onto a folder to put something
+ * in it, not to place it at a particular slot inside.
+ */
+export function resolveTargetDrop(
+  rows: readonly FlatSortableRow[],
+  hoveredIndex: number,
+  intent: DropIntent,
+  childCountOf: (value: string | number) => number,
+): DropPosition {
+  const row = rows[hoveredIndex]
+  if (!row) return { parentValue: null, index: rows.length, depth: 0 }
+  if (intent === 'inside') {
+    return { parentValue: row.value, index: childCountOf(row.value), depth: row.depth + 1 }
+  }
+  let index = 0
+  for (let i = 0; i < hoveredIndex; i++) {
+    if (rows[i]!.parentValue === row.parentValue) index++
+  }
+  return {
+    parentValue: row.parentValue,
+    index: intent === 'after' ? index + 1 : index,
+    depth: row.depth,
+  }
 }
