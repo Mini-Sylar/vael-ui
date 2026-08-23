@@ -1,4 +1,4 @@
-import { nextTick, shallowRef, toValue } from 'vue'
+import { nextTick, onScopeDispose, shallowRef, toValue, useId } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
@@ -276,8 +276,8 @@ export function resolveRowShifts(
 /** Tap-vs-drag hysteresis, shared with useSwipeReveal — lets a vertical scroll through untouched. */
 const DRAG_THRESHOLD = 8
 /** Apple's move/reposition spring. Bounce is deliberately absent: a reorder settles into a slot, it doesn't get thrown. */
-const SHIFT_SPRING = { damping: 1, response: 0.32 }
-const DROP_SPRING = { damping: 1, response: 0.28 }
+export const SHIFT_SPRING = { damping: 1, response: 0.32 }
+export const DROP_SPRING = { damping: 1, response: 0.28 }
 
 export type SortableSource = 'pointer' | 'keyboard'
 /** `'y'` reorders a column of rows; `'x'` reorders a row of items (table columns, tabs). */
@@ -329,6 +329,72 @@ export interface UseSortableOptions {
   labelOf?: (value: string | number) => string
   /** Builds the live-region text. Supplied by the component so it can route through `messages`. */
   announce?: (event: SortableAnnounceEvent) => string
+  /** Lets items cross into other `useSortable()` lists that share this handle — from `useSortableGroup()`. */
+  group?: SortableGroupHandle
+  /** This list's identity within `group`. Auto-assigned if omitted, but `onTransfer` receives it, so a real one is usually worth supplying. */
+  groupId?: MaybeRefOrGetter<string | number | undefined>
+  /** This list's root element. Only needed when `group` is set — lets the group hit-test an empty list. */
+  container?: MaybeRefOrGetter<HTMLElement | null>
+}
+
+/** Internal contract between `useSortable()` and a `useSortableGroup()` coordinator — not for direct use. */
+export interface GroupMemberBinding {
+  container: () => HTMLElement | null
+  rows: () => readonly FlatSortableRow[]
+  getElement: (value: string | number) => HTMLElement | null
+  axis: () => SortableAxis
+  labelOf: (value: string | number) => string
+  reducedMotion: () => boolean
+  draggedValue: () => string | number | null
+  draggedBlockSize: () => number
+  sourceSlot: () => number
+  previewRect: () => DOMRect | null
+  releaseVelocity: () => number
+  /** Group tells this member whether it's the one currently showing the open gap. */
+  onHostChange: (isHost: boolean) => void
+  /** Re-drives this member's own gap at a specific index — the keyboard path has
+   * no continuous pointermove to fall back on the way a live drag does. */
+  resumeOwnRows: (insertionIndex: number) => void
+  /** Repositions this member's floating preview directly — for a keyboard-driven
+   * column change, which has no pointer coordinates to follow. */
+  setPreviewPosition: (top: number, left: number) => void
+  /** Snapshot this member's rows right before the group mutates data out from under it. */
+  beginDepart: () => { before: Map<HTMLElement, number>; shiftVelocities: Map<HTMLElement, number> }
+  /** Re-measure and FLIP the remaining rows into their post-departure layout. */
+  finishDepart: (captured: {
+    before: Map<HTMLElement, number>
+    shiftVelocities: Map<HTMLElement, number>
+  }) => void
+  /** = this member's own `commit()` — used when the drop lands back on its own list. */
+  commitLocally: () => Promise<void>
+  /** = this member's own `revert()` — used on cancel, or a rejected cross-container drop. */
+  revertLocally: () => Promise<void>
+  /** Drops this member's floating preview once the destination is ready to take
+   * over the visual — a confirmed transfer never un-hides an origin row (there
+   * is none left to un-hide), so `commit()`/`revert()`'s own `reveal()` calls
+   * don't cover this case. */
+  destroyOwnPreview: () => void
+}
+
+/** Returned by `useSortableGroup()`. Pass to multiple `useSortable()` calls'
+ * `group` option (with distinct `groupId`s) to let items cross between them. */
+export interface SortableGroupHandle {
+  /** Convenience: `useSortable()` with `group`/`groupId` already wired in. */
+  join(
+    options: Omit<UseSortableOptions, 'group' | 'groupId'> & { groupId?: string | number },
+  ): UseSortableReturn
+  /** @internal */
+  __register: (groupId: string | number, binding: GroupMemberBinding) => () => void
+  /** @internal */
+  __beginSession: (groupId: string | number, value: string | number, source: SortableSource) => void
+  /** @internal */
+  __pointerMove: (point: { x: number; y: number }) => void
+  /** @internal */
+  __keyboardMove: (direction: 1 | -1, kind: 'reorder' | 'transfer') => void
+  /** @internal */
+  __finish: () => Promise<void>
+  /** @internal */
+  __cancel: () => void
 }
 
 /** Everything a validation hook or a confirm dialog needs to describe the move. */
@@ -360,6 +426,9 @@ export interface UseSortableReturn {
   isPending: Ref<boolean>
   /** Every value in the dragged block — a folder carries its descendants. */
   draggedValues: Ref<ReadonlySet<string | number>>
+  /** `:data-grabbed="isGrabbedValue(row.value) || undefined"` — every consumer
+   * of this engine re-derives this same check, so it lives here once. */
+  isGrabbedValue: (value: string | number) => boolean
   /** Row currently being dropped INTO, for highlighting. */
   dropIntoValue: Ref<string | number | null>
   /** Row the pointer is over, and which part of it — drives the insertion line. */
@@ -403,6 +472,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let sourceSlot = 0
   let sourceFrom: DropPosition | null = null
   let source: SortableSource = 'pointer'
+  let isGroupHost = true
+  let ownGroupId: string | number | null = null
 
   function rows(): readonly FlatSortableRow[] {
     return toValue(options.rows)
@@ -426,6 +497,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
   function siblingReorderAllowed(): boolean {
     return toValue(options.reorderSiblings) ?? true
+  }
+  function container(): HTMLElement | null {
+    return toValue(options.container) ?? null
   }
   /** The element's extent along the active axis. */
   function bandOf(el: HTMLElement | null): SortableBand {
@@ -673,9 +747,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   /** Linear slot currently implied by `dropPosition`, for keyboard stepping. */
   let currentIndex = 0
 
-  /** Undo the drag preview with motion, leaving the data untouched. */
-  async function revert() {
-    const instant = reducedMotion()
+  /** Springs every row's shift (and the keyboard grab offset, if any) back to 0. */
+  function springRowsToZero(instant: boolean) {
     for (const [, spring] of springs) {
       if (instant) spring.jump(0)
       else spring.set(0)
@@ -684,6 +757,12 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       if (instant) grabbedSpring.jump(0)
       else grabbedSpring.set(0)
     }
+  }
+
+  /** Undo the drag preview with motion, leaving the data untouched. */
+  async function revert() {
+    const instant = reducedMotion()
+    springRowsToZero(instant)
     const value = activeValue.value
     const el = value == null ? null : options.getElement(value)
     if (el && source === 'pointer') {
@@ -717,6 +796,60 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       if (el) tops.set(el, bandOf(el).start)
     }
     return tops
+  }
+
+  /** Springs the dragged element from its (preview-overridden) `before` top to
+   * its real `after` top, carrying the release velocity. Reveals it either
+   * way — extracted so a cross-container drop's destination side (a brand
+   * new element, never dragged locally) can reuse the exact same hand-off. */
+  function flipDraggedElement(
+    draggedEl: HTMLElement | null,
+    before: Map<HTMLElement, number>,
+    after: Map<HTMLElement, number>,
+    releaseVelocity: number,
+  ) {
+    const draggedBefore = draggedEl ? before.get(draggedEl) : undefined
+    const draggedAfter = draggedEl ? after.get(draggedEl) : undefined
+    if (draggedEl && draggedBefore != null && draggedAfter != null) {
+      const delta = draggedBefore - draggedAfter
+      if (Math.abs(delta) >= 0.5) {
+        draggedEl.style.translate = translateFor(delta)
+        reveal(draggedEl)
+        const spring = createSpring(delta, DROP_SPRING, (offset) => {
+          draggedEl.style.translate = translateFor(offset)
+        })
+        spring.set(0, { velocity: releaseVelocity })
+        settling.push(spring)
+      } else {
+        reveal(draggedEl)
+      }
+    } else {
+      reveal(draggedEl)
+    }
+  }
+
+  /** Springs every row but `skipEl` from its `before` top to its `after` top,
+   * carrying each row's own mid-shift velocity. Extracted so a cross-container
+   * drop's origin side (rows closing the gap left behind) can reuse it too. */
+  function flipOtherRows(
+    before: Map<HTMLElement, number>,
+    after: Map<HTMLElement, number>,
+    shiftVelocities: Map<HTMLElement, number>,
+    skipEl: HTMLElement | null,
+  ) {
+    for (const [el, beforeTop] of before) {
+      if (el === skipEl) continue
+      const afterTop = after.get(el)
+      if (afterTop == null) continue
+      const delta = beforeTop - afterTop
+      if (Math.abs(delta) < 0.5) continue
+      const spring = createSpring(delta, DROP_SPRING, (offset) => {
+        el.style.translate = translateFor(offset)
+      })
+      el.style.translate = translateFor(delta)
+      spring.set(0, { velocity: shiftVelocities.get(el) ?? undefined })
+      settling.push(spring)
+    }
   }
 
   /**
@@ -809,38 +942,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     // The dragged row is revealed here, first, in the same synchronous step
     // as applying its starting offset — so it never paints a frame at its
     // natural position with no offset before the catch-up spring takes over.
-    const draggedBefore = draggedEl ? before.get(draggedEl) : undefined
-    const draggedAfter = draggedEl ? after.get(draggedEl) : undefined
-    if (draggedEl && draggedBefore != null && draggedAfter != null) {
-      const delta = draggedBefore - draggedAfter
-      if (Math.abs(delta) >= 0.5) {
-        draggedEl.style.translate = translateFor(delta)
-        reveal(draggedEl)
-        const spring = createSpring(delta, DROP_SPRING, (offset) => {
-          draggedEl.style.translate = translateFor(offset)
-        })
-        spring.set(0, { velocity: releaseVelocity })
-        settling.push(spring)
-      } else {
-        reveal(draggedEl)
-      }
-    } else {
-      reveal(draggedEl)
-    }
-
-    for (const [el, beforeTop] of before) {
-      if (el === draggedEl) continue
-      const afterTop = after.get(el)
-      if (afterTop == null) continue
-      const delta = beforeTop - afterTop
-      if (Math.abs(delta) < 0.5) continue
-      const spring = createSpring(delta, DROP_SPRING, (offset) => {
-        el.style.translate = translateFor(offset)
-      })
-      el.style.translate = translateFor(delta)
-      spring.set(0, { velocity: shiftVelocities.get(el) ?? undefined })
-      settling.push(spring)
-    }
+    flipDraggedElement(draggedEl, before, after, releaseVelocity)
+    flipOtherRows(before, after, shiftVelocities, draggedEl)
   }
 
   /** Un-hides the dragged element and drops its floating preview. Split out
@@ -885,6 +988,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
   function cancel() {
     if (!isGrabbed.value) return
+    if (options.group) {
+      options.group.__cancel()
+      return
+    }
     say('cancel')
     finish()
   }
@@ -901,9 +1008,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let lastTime = 0
   let suppressNextClick = false
   let previewEl: HTMLElement | null = null
-  let grabOffset = 0
+  let grabOffsetX = 0
+  let grabOffsetY = 0
 
-  function createPreview(sourceEl: HTMLElement, event: PointerEvent) {
+  function createPreview(sourceEl: HTMLElement, event: PointerEvent | null) {
     const rect = sourceEl.getBoundingClientRect()
     const clone = sourceEl.cloneNode(true) as HTMLElement
     clone.removeAttribute('data-dragging')
@@ -939,14 +1047,32 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     document.body.appendChild(clone)
     previewEl = clone
     // Respect where the row was actually grabbed, so it doesn't jump to a
-    // different point under the cursor on the first move.
-    grabOffset = axis() === 'x' ? event.clientX - rect.left : event.clientY - rect.top
+    // different point under the cursor on the first move. No pointer at all
+    // (a keyboard grab) just keeps it exactly over the row it started on.
+    grabOffsetX = event ? event.clientX - rect.left : 0
+    grabOffsetY = event ? event.clientY - rect.top : 0
   }
 
   function movePreview(event: PointerEvent) {
     if (!previewEl) return
-    if (axis() === 'x') previewEl.style.insetInlineStart = `${event.clientX - grabOffset}px`
-    else previewEl.style.insetBlockStart = `${event.clientY - grabOffset}px`
+    // A single-list drag only ever needs to track the sort axis — locking
+    // the cross axis to its start keeps a vertical list's preview from
+    // drifting sideways on a slightly diagonal drag. A grouped drag can
+    // cross into a column that isn't even on the same axis, so it needs
+    // the pointer tracked in both dimensions, unconditionally.
+    if (options.group || axis() === 'x') {
+      previewEl.style.insetInlineStart = `${event.clientX - grabOffsetX}px`
+    }
+    if (options.group || axis() === 'y') {
+      previewEl.style.insetBlockStart = `${event.clientY - grabOffsetY}px`
+    }
+  }
+
+  /** Direct repositioning for a keyboard-driven move — no pointer to follow. */
+  function positionPreview(top: number, left: number) {
+    if (!previewEl) return
+    previewEl.style.insetInlineStart = `${left}px`
+    previewEl.style.insetBlockStart = `${top}px`
   }
 
   function destroyPreview() {
@@ -992,8 +1118,14 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       }
       if (dragEl) {
         dragEl.setAttribute('data-dragging', '')
-        if (toValue(options.dragPreview)) createPreview(dragEl, event)
+        // A grouped drag may need to visually leave this list entirely —
+        // that only ever works with the floating preview, regardless of
+        // this instance's own `dragPreview` setting.
+        if (toValue(options.dragPreview) || options.group) createPreview(dragEl, event)
         else dragEl.style.zIndex = '1'
+      }
+      if (options.group && ownGroupId != null) {
+        options.group.__beginSession(ownGroupId, pendingValue, 'pointer')
       }
     }
 
@@ -1010,6 +1142,14 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     // 1:1 with the pointer, no transition — never gate a live drag.
     if (previewEl) movePreview(event)
     else if (dragEl) dragEl.style.translate = translateFor(along)
+
+    if (options.group) {
+      options.group.__pointerMove({ x: event.clientX, y: event.clientY })
+      // A different member currently owns the visible gap — this instance's
+      // own bands would otherwise keep resolving "insert at my last slot"
+      // the whole time, showing two open gaps on screen at once.
+      if (!isGroupHost) return
+    }
 
     const pointer = axis() === 'x' ? event.clientX : event.clientY
     if (dropOnTarget()) {
@@ -1071,6 +1211,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     suppressNextClick = true
 
     dragEl = null
+    if (options.group) {
+      void options.group.__finish()
+      return
+    }
     void commit()
   }
 
@@ -1085,6 +1229,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     pendingValue = null
     dragEl = null
     suppressNextClick = true
+    if (options.group) {
+      options.group.__cancel()
+      return
+    }
     say('cancel')
     void revert()
   }
@@ -1102,10 +1250,22 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (event.key === ' ' || event.key === 'Enter') {
       event.preventDefault()
       if (!isGrabbed.value) {
-        if (begin(value, 'keyboard')) currentIndex = sourceSlot
+        if (begin(value, 'keyboard')) {
+          currentIndex = sourceSlot
+          if (options.group && ownGroupId != null) {
+            createPreview(options.getElement(value)!, null)
+            options.group.__beginSession(ownGroupId, value, 'keyboard')
+          }
+        }
         return
       }
-      if (source === 'keyboard') void commit()
+      if (source === 'keyboard') {
+        if (options.group) {
+          void options.group.__finish()
+          return
+        }
+        void commit()
+      }
       return
     }
 
@@ -1114,6 +1274,24 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (event.key === 'Escape') {
       event.preventDefault()
       cancel()
+      return
+    }
+
+    // A grouped flat list routes every arrow key through the group instead —
+    // it tracks which column currently hosts the grab, this instance's own
+    // `currentIndex`/`remaining` only ever describe its own list.
+    if (options.group && !nested()) {
+      const reorderKey = axis() === 'x' ? 'ArrowRight' : 'ArrowDown'
+      const reorderBackKey = axis() === 'x' ? 'ArrowLeft' : 'ArrowUp'
+      const transferKey = axis() === 'x' ? 'ArrowDown' : 'ArrowRight'
+      const transferBackKey = axis() === 'x' ? 'ArrowUp' : 'ArrowLeft'
+      if (event.key === reorderKey || event.key === reorderBackKey) {
+        event.preventDefault()
+        options.group.__keyboardMove(event.key === reorderKey ? 1 : -1, 'reorder')
+      } else if (event.key === transferKey || event.key === transferBackKey) {
+        event.preventDefault()
+        options.group.__keyboardMove(event.key === transferKey ? 1 : -1, 'transfer')
+      }
       return
     }
 
@@ -1137,12 +1315,53 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
   }
 
+  if (options.group) {
+    ownGroupId = toValue(options.groupId) ?? useId()
+    const binding: GroupMemberBinding = {
+      container,
+      rows,
+      getElement: options.getElement,
+      axis,
+      labelOf,
+      reducedMotion,
+      draggedValue: () => activeValue.value,
+      draggedBlockSize: () => blockHeight + rowGap,
+      sourceSlot: () => sourceSlot,
+      previewRect: () => previewEl?.getBoundingClientRect() ?? null,
+      releaseVelocity: () => velocity,
+      onHostChange: (isHost) => {
+        isGroupHost = isHost
+        if (!isHost) springRowsToZero(reducedMotion())
+      },
+      resumeOwnRows: (insertionIndex) => {
+        currentIndex = insertionIndex
+        applyTarget(insertionIndex, 0)
+      },
+      setPreviewPosition: positionPreview,
+      beginDepart: () => ({ before: captureTops(), shiftVelocities: captureShiftVelocities() }),
+      finishDepart: (captured) => {
+        resetTrackingState()
+        const after = captureTops()
+        flipOtherRows(captured.before, after, captured.shiftVelocities, null)
+      },
+      commitLocally: commit,
+      revertLocally: () => {
+        say('cancel')
+        return revert()
+      },
+      destroyOwnPreview: destroyPreview,
+    }
+    const unregister = options.group.__register(ownGroupId, binding)
+    onScopeDispose(unregister)
+  }
+
   return {
     activeValue,
     isDragging,
     isGrabbed,
     dropPosition,
     draggedValues,
+    isGrabbedValue: (value) => draggedValues.value.has(value),
     dropIntoValue,
     dropTargetValue,
     dropIntent,

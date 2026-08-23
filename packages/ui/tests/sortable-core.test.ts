@@ -12,6 +12,7 @@ import {
   resolveRowShifts,
 } from '../src/composables/useSortable'
 import type { FlatSortableRow, SortableTreeNode } from '../src/composables/useSortable'
+import { resolveAdjacentGroup, resolveHoveredGroup } from '../src/composables/useSortableGroup'
 
 interface Node extends SortableTreeNode {
   value: string
@@ -430,4 +431,58 @@ test('hovering nothing falls back to the end of the root list', () => {
     index: 2,
     depth: 0,
   })
+})
+
+// ---------------------------------------------------------------------------
+// resolveHoveredGroup / resolveAdjacentGroup — cross-container hit-testing
+// ---------------------------------------------------------------------------
+
+const columns = [
+  { groupId: 'todo', left: 0, top: 0, right: 100, bottom: 200 },
+  { groupId: 'doing', left: 120, top: 0, right: 220, bottom: 200 },
+  { groupId: 'done', left: 240, top: 0, right: 340, bottom: 200 },
+]
+
+test('a point inside a container resolves to it directly', () => {
+  expect(resolveHoveredGroup(columns, { x: 50, y: 50 })).toBe('todo')
+  expect(resolveHoveredGroup(columns, { x: 150, y: 50 })).toBe('doing')
+})
+
+test('a point in the gap between containers resolves to the nearer one', () => {
+  expect(resolveHoveredGroup(columns, { x: 105, y: 50 })).toBe('todo')
+  expect(resolveHoveredGroup(columns, { x: 115, y: 50 })).toBe('doing')
+})
+
+test('a point far outside every container still resolves by clamped distance, never null', () => {
+  expect(resolveHoveredGroup(columns, { x: 50, y: 5000 })).toBe('todo')
+  expect(resolveHoveredGroup(columns, { x: -5000, y: 50 })).toBe('todo')
+})
+
+test('no containers registered resolves to null', () => {
+  expect(resolveHoveredGroup([], { x: 0, y: 0 })).toBeNull()
+})
+
+test('a tie resolves to the first-listed container', () => {
+  const tied = [
+    { groupId: 'a', left: 0, top: 0, right: 100, bottom: 100 },
+    { groupId: 'b', left: 200, top: 0, right: 300, bottom: 100 },
+  ]
+  // Equidistant from both, in the gap between them.
+  expect(resolveHoveredGroup(tied, { x: 150, y: 50 })).toBe('a')
+})
+
+test('resolveAdjacentGroup steps to the next or previous column', () => {
+  const order = ['todo', 'doing', 'done']
+  expect(resolveAdjacentGroup(order, 'doing', 1)).toBe('done')
+  expect(resolveAdjacentGroup(order, 'doing', -1)).toBe('todo')
+})
+
+test('resolveAdjacentGroup clamps at either end', () => {
+  const order = ['todo', 'doing', 'done']
+  expect(resolveAdjacentGroup(order, 'todo', -1)).toBeNull()
+  expect(resolveAdjacentGroup(order, 'done', 1)).toBeNull()
+})
+
+test('resolveAdjacentGroup returns null for an unknown column', () => {
+  expect(resolveAdjacentGroup(['todo', 'doing'], 'missing', 1)).toBeNull()
 })

@@ -359,7 +359,18 @@ export type {
   ResolveDropInput,
   UseSortableOptions,
   UseSortableReturn,
+  SortableGroupHandle,
 } from './composables/useSortable'
+export {
+  useSortableGroup,
+  resolveHoveredGroup,
+  resolveAdjacentGroup,
+} from './composables/useSortableGroup'
+export type {
+  GroupDropPosition,
+  GroupDropDetails,
+  UseSortableGroupOptions,
+} from './composables/useSortableGroup'
 export { useSpringValue, createSpring, stepSpring } from './composables/useSpringValue'
 export type {
   SpringOptions,

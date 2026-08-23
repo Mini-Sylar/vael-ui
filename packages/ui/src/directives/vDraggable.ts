@@ -1,7 +1,7 @@
 import { computed, effectScope, shallowRef, watchEffect } from 'vue'
 import type { Directive, DirectiveBinding } from 'vue'
 import { useSortable } from '../composables/useSortable'
-import type { FlatSortableRow, SortableAxis } from '../composables/useSortable'
+import type { FlatSortableRow, SortableAxis, SortableGroupHandle } from '../composables/useSortable'
 
 export interface DraggableOptions<T = unknown> {
   /** The array to reorder. Reordered in place on drop. */
@@ -11,6 +11,10 @@ export interface DraggableOptions<T = unknown> {
   /** CSS selector for the grab surface inside each child. Defaults to the whole child. */
   handle?: string
   onReorder?: (from: number, to: number) => void
+  /** Shares drag sessions with other lists passed the same handle — from `useSortableGroup()`. */
+  group?: SortableGroupHandle
+  /** This list's identity within `group`. Auto-assigned if omitted. */
+  groupId?: string | number
 }
 
 export type DraggableValue<T = unknown> = T[] | DraggableOptions<T> | undefined
@@ -56,9 +60,12 @@ function start(el: HTMLElement, value: DraggableValue): void {
     const engine = useSortable({
       rows,
       getElement: (value) => childrenOf(el)[value as number] ?? null,
+      container: () => el,
       axis: () => options.axis ?? 'y',
       disabled: () => options.disabled ?? false,
       dragPreview: true,
+      group: options.group,
+      groupId: () => options.groupId,
       onCommit: (from, to) => {
         const source = from as number
         const [moved] = options.items.splice(source, 1)

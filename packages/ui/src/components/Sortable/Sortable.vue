@@ -79,6 +79,7 @@ import type {
   FlatSortableRow,
   SortableAxis,
   SortableDropDetails,
+  SortableGroupHandle,
 } from '../../composables/useSortable'
 
 defineOptions({ inheritAttrs: false })
@@ -101,6 +102,10 @@ const props = withDefaults(
     disabled?: boolean
     /** `false` skips the built-in springs entirely — rows snap to their new slots. Reach for it when driving the motion yourself. */
     motionCss?: boolean
+    /** Shares drag sessions with other `<Sortable>`s/`useSortable()` lists passed the same handle — from `useSortableGroup()`. Lets an item cross between them. */
+    group?: SortableGroupHandle
+    /** This list's identity within `group`. Auto-assigned if omitted. */
+    groupId?: string | number
     ui?: Partial<{
       root: UiPartValue
       item: UiPartValue
@@ -115,6 +120,8 @@ const props = withDefaults(
     beforeDrop: undefined,
     disabled: false,
     motionCss: true,
+    group: undefined,
+    groupId: undefined,
     ui: undefined,
   },
 )
@@ -158,6 +165,7 @@ function elementFor(value: string | number): HTMLElement | null {
 const {
   activeValue,
   isGrabbed,
+  isGrabbedValue,
   isValidDrop,
   isPending,
   announcement,
@@ -166,8 +174,11 @@ const {
 } = useSortable({
   rows,
   getElement: elementFor,
+  container: () => root.value,
   axis: () => props.axis,
   nested: false,
+  group: props.group,
+  groupId: () => props.groupId,
   canDrop: (details) => props.canDrop?.(details) ?? true,
   beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
   onDropError: (error, details) => emit('drop-error', error, details),
@@ -204,7 +215,7 @@ const {
 })
 
 function isGrabbedItem(item: T): boolean {
-  return isGrabbed.value && activeValue.value === keyOf(item)
+  return isGrabbedValue(keyOf(item))
 }
 
 const cx = useClassMerge()
