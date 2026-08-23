@@ -279,7 +279,8 @@
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Overlays & Confirmation",
     "positioningAndData": "Positioning & Data",
-    "utilities": "Utilities"
+    "utilities": "Utilities",
+    "dragAndDrop": "Drag & Drop"
   },
   "metaTable": {
     "name": "Name",

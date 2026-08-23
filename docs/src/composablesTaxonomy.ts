@@ -24,6 +24,11 @@ export const composableCategories: ComposableCategory[] = [
     name: 'Utilities',
     items: ['useAsyncLoading', 'useColorScheme', 'useNumberFormat', 'useFieldControl'],
   },
+  {
+    key: 'dragAndDrop',
+    name: 'Drag & Drop',
+    items: ['useSortable', 'useSortableGroup'],
+  },
 ]
 
 export const allComposables = composableCategories.flatMap((c) => c.items)

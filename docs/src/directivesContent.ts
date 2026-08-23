@@ -91,6 +91,12 @@ export const directivesContent: Record<string, DirectiveContent> = {
         type: '(from: number, to: number) => void',
         description: '',
       },
+      {
+        name: 'group / groupId',
+        type: 'SortableGroupHandle / string | number',
+        description:
+          'Shares drag sessions with other lists (directive-bound or `useSortable()`) passed the same handle — from `useSortableGroup()` — so an item can cross from one into another. groupId is auto-assigned if omitted.',
+      },
     ],
   },
 }
