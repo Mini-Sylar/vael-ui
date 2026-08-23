@@ -320,6 +320,7 @@ export interface UiTheme {
   sortable?: {
     ui?: Partial<{ root: UiPartValue; item: UiPartValue; handle: UiPartValue }>
   }
+  rating?: { ui?: Partial<{ root: UiPartValue; item: UiPartValue }> }
 }
 
 export const themeKey: InjectionKey<ComputedRef<UiTheme | undefined>> = Symbol('ui-theme')

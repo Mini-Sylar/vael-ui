@@ -222,6 +222,7 @@
     "DatePicker": "A text field paired with a calendar popover for picking a date or range.",
     "Calendar": "A month grid for picking a single date, multiple dates, or a range.",
     "FileUpload": "A drop zone and file list for picking files, with validation and progress.",
+    "Rating": "Click, drag, or use arrow keys to pick a value on a row of stars, with optional half-step precision.",
     "Select": "A dropdown for picking one or more values from a list, with search and virtualization.",
     "Combobox": "A searchable dropdown that also accepts free text, so autocomplete and tagging are one component.",
     "CascadeSelect": "A dropdown for picking a path through nested options, one level at a time.",

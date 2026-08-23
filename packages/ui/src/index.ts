@@ -378,3 +378,5 @@ export type {
   SpringHandle,
   UseSpringValueReturn,
 } from './composables/useSpringValue'
+
+export { default as Rating } from './components/Rating/Rating.vue'

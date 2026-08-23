@@ -109,6 +109,10 @@ export interface UiMessages {
     dropped: string
     cancelled: string
   }
+  /** `{value}` and `{max}` are replaced with the current and maximum rating. */
+  rating: {
+    valueText: string
+  }
 }
 
 export type PartialUiMessages = {
@@ -168,6 +172,7 @@ export const defaultMessages: UiMessages = {
     dropped: 'Dropped {label} at position {position} of {total}.',
     cancelled: 'Reordering cancelled. {label} returned to its original position.',
   },
+  rating: { valueText: '{value} of {max}' },
 }
 
 export const messagesKey: InjectionKey<Ref<UiMessages>> = Symbol('ui-messages')
@@ -204,6 +209,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     datePicker: { ...base.datePicker, ...overrides.datePicker },
     dataTable: { ...base.dataTable, ...overrides.dataTable },
     sortable: { ...base.sortable, ...overrides.sortable },
+    rating: { ...base.rating, ...overrides.rating },
   }
 }
 
@@ -300,6 +306,7 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     dropped: 'uiKit.sortable.dropped',
     cancelled: 'uiKit.sortable.cancelled',
   },
+  rating: { valueText: 'uiKit.rating.valueText' },
 }
 
 /**
@@ -499,6 +506,13 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
     sortable.cancelled = sortableCancelled
   }
   if (Object.keys(sortable).length > 0) result.sortable = sortable
+
+  const ratingValueText = i18n.t(i18nKeyMap.rating.valueText)
+  const rating: PartialUiMessages['rating'] = {}
+  if (ratingValueText !== i18nKeyMap.rating.valueText) {
+    rating.valueText = ratingValueText
+  }
+  if (Object.keys(rating).length > 0) result.rating = rating
 
   return result
 }

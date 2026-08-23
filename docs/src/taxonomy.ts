@@ -45,6 +45,7 @@ export const categories: ComponentCategory[] = [
       'DatePicker',
       'Calendar',
       'FileUpload',
+      'Rating',
     ],
   },
   {
@@ -127,6 +128,7 @@ export const NEW_COMPONENTS: Record<string, string> = {
   CommandPalette: '2026-08-07',
   Tour: '2026-08-08',
   PasswordInput: '2026-08-16',
+  Rating: '2026-08-23',
 }
 
 export const NEW_BADGE_DAYS = 14

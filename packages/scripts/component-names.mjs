@@ -55,6 +55,7 @@ export const COMPONENTS = [
   'PullToRefresh',
   'Radio',
   'RadioGroup',
+  'Rating',
   'Resizable',
   'ScrollArea',
   'Select',
