@@ -460,6 +460,20 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     return spring
   }
 
+  /** Every row's live shift-spring velocity, right before destroying it —
+   * so a row still mid-shift at drop can hand that motion to its catch-up
+   * spring instead of restarting from a standstill (see `commit()`).
+   * Keyed by the actual DOM node, not `value` — see `captureTops()`'s own
+   * comment for why `value` alone can't be trusted past the reorder. */
+  function captureShiftVelocities(): Map<HTMLElement, number> {
+    const velocities = new Map<HTMLElement, number>()
+    for (const [value, spring] of springs) {
+      const el = options.getElement(value)
+      if (el) velocities.set(el, spring.velocity)
+    }
+    return velocities
+  }
+
   function clearSprings() {
     grabbedSpring?.destroy()
     grabbedSpring = null
@@ -682,15 +696,25 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     springs.clear()
     grabbedSpring = null
     settling.push(...keep)
-    finish()
+    resetTrackingState()
+    reveal(el)
   }
 
-  /** Every row's on-screen start — read identically before and after the commit. */
-  function captureTops(): Map<string | number, number> {
-    const tops = new Map<string | number, number>()
+  /**
+   * Every row's on-screen start, read identically before and after the
+   * commit — keyed by the actual DOM node, not `value`. A stable-key
+   * consumer (Tree, DataTable) has `value` mean the same row before and
+   * after; a position-addressed one (`v-draggable`, no real key to offer)
+   * does not — after the reorder, the same numeric `value` now names
+   * whatever row landed on that index, not the row that held it before.
+   * The physical element Vue moved is still the same node either way, so
+   * keying on it instead sidesteps the mismatch for every consumer.
+   */
+  function captureTops(): Map<HTMLElement, number> {
+    const tops = new Map<HTMLElement, number>()
     for (const row of rows()) {
       const el = options.getElement(row.value)
-      if (el) tops.set(row.value, bandOf(el).start)
+      if (el) tops.set(el, bandOf(el).start)
     }
     return tops
   }
@@ -743,55 +767,100 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
 
     say('drop')
+    // Resolved before onCommit mutates anything — see captureTops()'s own
+    // comment for why `value` alone isn't safe to re-derive from after.
+    const draggedEl = options.getElement(value)
     const before = captureTops()
+    // The real element never moved during a preview-based drag (it's hidden
+    // behind the floating clone) — override its "before" with the preview's
+    // actual last position, or the hand-off below teleports from where the
+    // drag started instead of from under the pointer.
+    if (previewEl && draggedEl) {
+      const previewStart =
+        axis() === 'x'
+          ? parseFloat(previewEl.style.insetInlineStart)
+          : parseFloat(previewEl.style.insetBlockStart)
+      if (!Number.isNaN(previewStart)) before.set(draggedEl, previewStart)
+    }
     const releaseVelocity = velocity
+    const shiftVelocities = captureShiftVelocities()
 
     options.onCommit(value, at)
 
-    // Clear drag transforms so the measurement below reads natural positions.
-    clearSprings()
-    const draggedEl = options.getElement(value)
-    if (draggedEl) draggedEl.style.translate = ''
-
     const animate = !reducedMotion()
-    finish()
-    if (!animate) return
+    resetTrackingState()
+    // A no-preview consumer (Sortable) translates the real element directly
+    // during the drag. Clearing it here, before either branch, matters
+    // twice over: skipped for motionCss="false" it left the row stuck at
+    // its stale offset forever, and left in place through the "after"
+    // measurement below it's identical in both snapshots and cancels
+    // straight out of the delta — silently discarding where the row
+    // actually was, so the catch-up spring animates from its pre-drag rest
+    // position instead, reading as a restart from scratch.
+    if (draggedEl) draggedEl.style.translate = ''
+    if (!animate) {
+      reveal(draggedEl)
+      return
+    }
 
     await nextTick()
     const after = captureTops()
-    for (const [rowValue, beforeTop] of before) {
-      const afterTop = after.get(rowValue)
+
+    // The dragged row is revealed here, first, in the same synchronous step
+    // as applying its starting offset — so it never paints a frame at its
+    // natural position with no offset before the catch-up spring takes over.
+    const draggedBefore = draggedEl ? before.get(draggedEl) : undefined
+    const draggedAfter = draggedEl ? after.get(draggedEl) : undefined
+    if (draggedEl && draggedBefore != null && draggedAfter != null) {
+      const delta = draggedBefore - draggedAfter
+      if (Math.abs(delta) >= 0.5) {
+        draggedEl.style.translate = translateFor(delta)
+        reveal(draggedEl)
+        const spring = createSpring(delta, DROP_SPRING, (offset) => {
+          draggedEl.style.translate = translateFor(offset)
+        })
+        spring.set(0, { velocity: releaseVelocity })
+        settling.push(spring)
+      } else {
+        reveal(draggedEl)
+      }
+    } else {
+      reveal(draggedEl)
+    }
+
+    for (const [el, beforeTop] of before) {
+      if (el === draggedEl) continue
+      const afterTop = after.get(el)
       if (afterTop == null) continue
       const delta = beforeTop - afterTop
       if (Math.abs(delta) < 0.5) continue
-      const el = options.getElement(rowValue)
-      if (!el) continue
       const spring = createSpring(delta, DROP_SPRING, (offset) => {
         el.style.translate = translateFor(offset)
       })
       el.style.translate = translateFor(delta)
-      spring.set(0, rowValue === value ? { velocity: releaseVelocity } : undefined)
+      spring.set(0, { velocity: shiftVelocities.get(el) ?? undefined })
       settling.push(spring)
     }
   }
 
-  function finish() {
+  /** Un-hides the dragged element and drops its floating preview. Split out
+   * of `finish()` so `commit()` can defer it until the exact frame it also
+   * applies the reveal's starting transform — see the call site above. Takes
+   * the element directly, not `value` — see `captureTops()`'s comment. */
+  function reveal(el: HTMLElement | null) {
     destroyPreview()
+    if (!el) return
+    el.style.zIndex = ''
+    el.removeAttribute('data-dragging')
+  }
+
+  function resetTrackingState() {
     draggedValues.value = new Set()
     scheduleAutoExpand(null)
     dropIntoValue.value = null
     dropTargetValue.value = null
     dropIntent.value = null
     clearSprings()
-    const value = activeValue.value
-    if (value != null) {
-      const el = options.getElement(value)
-      if (el) {
-        el.style.translate = ''
-        el.style.zIndex = ''
-        el.removeAttribute('data-dragging')
-      }
-    }
     activeValue.value = null
     lastSpoken = ''
     isGrabbed.value = false
@@ -799,6 +868,19 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     dropPosition.value = null
     bands = []
     remaining = []
+  }
+
+  /** Full, instant stop — resets the dragged element's translate outright, no
+   * transition. Only correct where nothing sets up its own spring hand-off
+   * afterward: `commit()` and `revert()` manage the dragged element's
+   * translate themselves and call `resetTrackingState()`/`reveal()` directly
+   * instead, so this reset can't stomp on the transform they just applied. */
+  function finish() {
+    const value = activeValue.value
+    const el = value != null ? options.getElement(value) : null
+    if (el) el.style.translate = ''
+    resetTrackingState()
+    reveal(el)
   }
 
   function cancel() {
