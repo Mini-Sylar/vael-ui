@@ -226,6 +226,20 @@
     />
     <p v-if="treeDropError" class="tree-drop-error">{{ treeDropError }}</p>
   </section>
+  <section class="demo">
+    <h3>Files stay alphabetical</h3>
+    <p>
+      <code>:reorder-siblings="false"</code> drops sibling reordering entirely — a file can move
+      into a different folder, but not up or down among its current neighbors. Hovering a file shows
+      no indicator at all; only folders highlight.
+    </p>
+    <Tree
+      :items="alphabeticalTree"
+      reorderable
+      :reorder-siblings="false"
+      class="tree-reorder-demo"
+    />
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -297,6 +311,21 @@ const reorderTree = ref<TreeNode[]>([
   },
   { label: 'tests', value: 'tests', children: [{ label: 'app.test.ts', value: 'app.test.ts' }] },
   { label: 'README.md', value: 'README.md' },
+])
+
+const alphabeticalTree = ref<TreeNode[]>([
+  {
+    label: 'components',
+    value: 'components',
+    children: [{ label: 'Button.vue', value: 'Button.vue' }],
+  },
+  {
+    label: 'composables',
+    value: 'composables',
+    children: [{ label: 'useAuth.ts', value: 'useAuth.ts' }],
+  },
+  { label: 'App.vue', value: 'App.vue' },
+  { label: 'main.ts', value: 'main.ts' },
 ])
 
 // Same nested file/folder shape as TreeSelectDemo's own `fileTree`. The two

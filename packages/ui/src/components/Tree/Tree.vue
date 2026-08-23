@@ -275,6 +275,9 @@ const props = withDefaults(
     reorderable?: boolean
     /** Which rows accept children. Defaults to any row that already has some — pass your own to let empty folders take drops. */
     canNestInto?: (node: T) => boolean
+    /** `false` drops the sibling-reorder mode entirely — dragging only ever offers moving INTO a
+     * folder, with no indicator at all when hovering a row that can't hold children. */
+    reorderSiblings?: boolean
     /** Structural veto re-run while dragging; `false` marks the target invalid. */
     canDrop?: (details: SortableDropDetails) => boolean
     /** Async gate at drop time — return `false` (or a promise of it) to cancel. Composes with `confirmAction().result`. */
@@ -310,6 +313,7 @@ const props = withDefaults(
     motionCss: true,
     reorderable: false,
     canNestInto: undefined,
+    reorderSiblings: true,
     canDrop: undefined,
     beforeDrop: undefined,
     autoExpandDelay: 600,
@@ -623,6 +627,7 @@ const {
   dropOnTarget: true,
   dragPreview: true,
   disabled: () => !props.reorderable,
+  reorderSiblings: () => props.reorderSiblings,
   motionCss: () => props.motionCss,
   autoExpandDelay: () => props.autoExpandDelay,
   onAutoExpand: (value) => expandNode(value),

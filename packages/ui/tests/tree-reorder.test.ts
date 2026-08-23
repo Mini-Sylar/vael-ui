@@ -200,6 +200,95 @@ test('Escape aborts a pointer drag, not just a keyboard one', async () => {
   expect(shape(screen)).toBe('a,folder(f1,f2),z')
 })
 
+test('reorderSiblings=false: hovering a non-nestable row shows no indicator and blocks the drop', async () => {
+  const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
+  const aRow = rowFor(screen, 'a')
+  const zRow = rowFor(screen, 'z')
+  const aBox = aRow.getBoundingClientRect()
+  const zBox = zRow.getBoundingClientRect()
+
+  aRow.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 6,
+      button: 0,
+      clientX: aBox.left + 10,
+      clientY: aBox.top + aBox.height / 2,
+    }),
+  )
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 6,
+      clientX: zBox.left + 10,
+      clientY: zBox.top + zBox.height / 2,
+    }),
+  )
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector('[data-invalid-drop]')).not.toBeNull(),
+  )
+  expect(zRow.hasAttribute('data-drop-into')).toBe(false)
+  expect(zRow.hasAttribute('data-drop-edge')).toBe(false)
+
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 6 }))
+  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
+  expect(shape(screen)).toBe('a,folder(f1,f2),z')
+})
+
+test('reorderSiblings=false: hovering a folder always resolves inside', async () => {
+  const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
+  const aRow = rowFor(screen, 'a')
+  const folderRow = rowFor(screen, 'folder')
+  const aBox = aRow.getBoundingClientRect()
+  const folderBox = folderRow.getBoundingClientRect()
+
+  aRow.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 7,
+      button: 0,
+      clientX: aBox.left + 10,
+      clientY: aBox.top + aBox.height / 2,
+    }),
+  )
+  // Right at the top edge, which would normally resolve to 'before' — with
+  // sibling reorder off there's no edge mode left to detect.
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 7,
+      clientX: folderBox.left + 10,
+      clientY: folderBox.top + 2,
+    }),
+  )
+  await vi.waitFor(() => expect(folderRow.hasAttribute('data-drop-into')).toBe(true))
+  expect(folderRow.hasAttribute('data-drop-edge')).toBe(false)
+
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 7,
+      clientX: folderBox.left + 10,
+      clientY: folderBox.top + folderBox.height / 2,
+    }),
+  )
+  await vi.waitFor(() => expect(folderRow.hasAttribute('data-drop-into')).toBe(true))
+
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7 }))
+  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
+})
+
+test('reorderSiblings=false: keyboard Up/Down no-ops at the same depth, Left/Right still reparents', async () => {
+  const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
+  rowFor(screen, 'z').focus()
+  await userEvent.keyboard(' {ArrowUp}')
+  expect(shape(screen)).toBe('a,folder(f1,f2),z')
+
+  await userEvent.keyboard('{ArrowRight} ')
+  await vi.waitFor(() => expect(shape(screen)).not.toBe('a,folder(f1,f2),z'))
+  expect(shape(screen)).toContain('folder(')
+})
+
 test('dragging a folder hides its whole subtree, not just its own row', async () => {
   const screen = render(TreeReorderFixture)
   // Expand so the children are rendered.

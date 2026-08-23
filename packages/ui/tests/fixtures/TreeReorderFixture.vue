@@ -3,6 +3,7 @@
     ref="treeRef"
     :items="items"
     reorderable
+    :reorder-siblings="reorderSiblings"
     :can-drop="canDrop"
     :before-drop="beforeDrop"
     @reorder="onReorder"
@@ -23,8 +24,9 @@ withDefaults(
   defineProps<{
     canDrop?: (d: SortableDropDetails) => boolean
     beforeDrop?: (d: SortableDropDetails) => boolean | Promise<boolean>
+    reorderSiblings?: boolean
   }>(),
-  { canDrop: undefined, beforeDrop: undefined },
+  { canDrop: undefined, beforeDrop: undefined, reorderSiblings: true },
 )
 
 // a

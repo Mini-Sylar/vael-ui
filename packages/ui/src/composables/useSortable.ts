@@ -294,6 +294,10 @@ export interface UseSortableOptions {
   nested?: MaybeRefOrGetter<boolean>
   /** VS Code model: hovering a row's middle drops INTO it. Requires `nested`. */
   dropOnTarget?: MaybeRefOrGetter<boolean>
+  /** `false` disables reordering among current siblings — only re-parenting
+   * is offered, with no indicator at all on a would-be sibling insert.
+   * Requires `dropOnTarget`. */
+  reorderSiblings?: MaybeRefOrGetter<boolean>
   /** Which rows accept children. Without this every row does. */
   canNestInto?: (value: string | number) => boolean
   /** Existing child count, so an "inside" drop appends. */
@@ -419,6 +423,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
   function dropOnTarget(): boolean {
     return (toValue(options.dropOnTarget) ?? false) && nested()
+  }
+  function siblingReorderAllowed(): boolean {
+    return toValue(options.reorderSiblings) ?? true
   }
   /** The element's extent along the active axis. */
   function bandOf(el: HTMLElement | null): SortableBand {
@@ -700,16 +707,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     reveal(el)
   }
 
-  /**
-   * Every row's on-screen start, read identically before and after the
-   * commit — keyed by the actual DOM node, not `value`. A stable-key
-   * consumer (Tree, DataTable) has `value` mean the same row before and
-   * after; a position-addressed one (`v-draggable`, no real key to offer)
-   * does not — after the reorder, the same numeric `value` now names
-   * whatever row landed on that index, not the row that held it before.
-   * The physical element Vue moved is still the same node either way, so
-   * keying on it instead sidesteps the mismatch for every consumer.
-   */
+  /** Every row's on-screen start, before/after the commit — keyed by DOM
+   * node, since `value` can mean a different row after a position-addressed
+   * reorder (v-draggable has no stable key). */
   function captureTops(): Map<HTMLElement, number> {
     const tops = new Map<HTMLElement, number>()
     for (const row of rows()) {
@@ -1016,7 +1016,20 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       const hovered = resolveHoveredIndex(bands, pointer)
       const row = hovered === -1 ? null : remaining[hovered]!
       const nestable = !!row && (options.canNestInto?.(row.value) ?? true)
-      const intent = row ? resolveDropIntent(bands[hovered]!, pointer, nestable) : 'after'
+      if (row && !nestable && !siblingReorderAllowed()) {
+        scheduleAutoExpand(null)
+        dropIntoValue.value = null
+        dropTargetValue.value = null
+        dropIntent.value = null
+        isValidDrop.value = false
+        say('move')
+        return
+      }
+      const intent = !row
+        ? 'after'
+        : !siblingReorderAllowed()
+          ? 'inside'
+          : resolveDropIntent(bands[hovered]!, pointer, nestable)
       scheduleAutoExpand(intent === 'inside' ? (row?.value ?? null) : null)
       dropIntoValue.value = intent === 'inside' ? (row?.value ?? null) : null
       dropTargetValue.value = row?.value ?? null
@@ -1109,6 +1122,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const step = event.key === forward ? 1 : event.key === backward ? -1 : 0
     if (step !== 0) {
       event.preventDefault()
+      if (nested() && dropOnTarget() && !siblingReorderAllowed()) return
       currentIndex = Math.min(Math.max(currentIndex + step, 0), remaining.length)
       applyTarget(currentIndex, 0)
       say('move')
