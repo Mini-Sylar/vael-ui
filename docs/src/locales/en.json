@@ -15,6 +15,7 @@
     "autoImportGuide": "Auto Import",
     "nuxtGuide": "Nuxt",
     "skillGuide": "AI Agent Skill",
+    "directives": "Directives",
     "menu": "Menu",
     "openMenu": "Open menu"
   },
@@ -192,6 +193,11 @@
     "motionVExampleIntro": "<code>forceMount</code> plus the default slot's <code>isClosing</code> flag, wrapped in <code>&lt;AnimatePresence&gt;</code>:",
     "gsapExampleTitle": "Example: GSAP, Dialog",
     "gsapExampleIntro": "<code>beforeClose(done)</code> plus the exposed <code>panelEl</code> ref, so the tween runs on the real panel element before it's removed:"
+  },
+  "directive": {
+    "value": "Value",
+    "modifiers": "Modifiers",
+    "noModifiers": "No modifiers."
   },
   "descriptions": {
     "ConfigProvider": "Wraps your app to provide theming, i18n, and class-merging to every component below it.",
