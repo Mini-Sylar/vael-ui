@@ -13,6 +13,48 @@
     align-items: stretch;
   }
 
+  /* Opt-in default look for a `role="tab"` button — Tabs renders none of its
+     own, so this exists for anyone who wants tabs to just look like tabs
+     without building the styling from scratch. Composes with `v-draggable`:
+     `[data-dragging]` hides the source while its floating preview follows
+     the pointer, matching the same convention DataTable/Tree use. */
+  .ui-tabs-item {
+    position: relative;
+    border: 0;
+    background: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    padding: 0.45rem 0.9rem;
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition:
+      color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  .ui-tabs-item:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .ui-tabs-item[aria-selected='true'] {
+    color: var(--ui-text);
+  }
+  /* Opt-in: a static background on the selected tab, for when there's no
+     separate sliding `indicatorProps()` element — combining both would
+     double up, and the underline variant would get an unwanted box behind
+     its text. */
+  .ui-tabs-item--static[aria-selected='true'] {
+    background: var(--ui-muted);
+  }
+  .ui-tabs-item[data-dragging] {
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-tabs-item {
+      transition: none;
+    }
+  }
+
   /* Opt-in sliding indicator; on-screen movement. */
   .ui-tabs-indicator {
     position: absolute;

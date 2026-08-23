@@ -115,33 +115,6 @@
   background: currentColor;
 }
 
-.demo .tab {
-  position: relative;
-  border: 0;
-  background: none;
-  border-radius: 8px;
-  font: inherit;
-  padding: 0.45rem 0.9rem;
-  cursor: pointer;
-  color: var(--ui-text-muted);
-  transition:
-    color 150ms ease,
-    background-color 150ms ease;
-}
-
-.demo .tab:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.demo .tab[aria-selected='true'] {
-  color: var(--ui-text);
-}
-
-.demo .tab--static[aria-selected='true'] {
-  background: var(--ui-muted);
-}
-
 .demo .tab-indicator {
   position: absolute;
   inset: 0;
@@ -170,10 +143,4 @@
   padding: 0.0625rem 0.3125rem;
   border-radius: 4px;
   background: color-mix(in srgb, var(--ui-primary-contrast) 15%, transparent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .demo .tab {
-    transition: none;
-  }
 }

@@ -8,7 +8,14 @@
     :style="listPart.style"
     @keydown="onKeydown"
   >
-    <slot :active="active" :focused="focused" :select="select" :items="props.items" />
+    <slot
+      :active="active"
+      :focused="focused"
+      :select="select"
+      :items="props.items"
+      :item-props="itemProps"
+      :indicator-props="indicatorProps"
+    />
   </div>
 </template>
 
@@ -17,8 +24,9 @@ import './Tabs.css'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useTabs } from '../../composables/useTabs'
+import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useClassMerge, resolveUiPart } from '../../classes'
-import type { UiPartValue } from '../../classes'
+import type { UiPartValue, UiPartStyle } from '../../classes'
 import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
@@ -34,7 +42,7 @@ const props = withDefaults(
     orientation?: 'horizontal' | 'vertical'
     /** `automatic` (default): arrow keys select. `manual`: arrow keys move focus only; Enter/Space selects. */
     activation?: 'automatic' | 'manual'
-    ui?: Partial<{ list: UiPartValue }>
+    ui?: Partial<{ list: UiPartValue; item: UiPartValue; indicator: UiPartValue }>
   }>(),
   { orientation: 'horizontal', activation: 'automatic' },
 )
@@ -44,8 +52,35 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  /** Render `role="tab"` elements and indicator. `focused` tracks roving tabindex (diverges from `active` in `manual` mode). */
-  default(props: { active: T; focused: T; select: (item: T) => void; items: T[] }): unknown
+  /**
+   * Render `role="tab"` elements and, optionally, a sliding indicator.
+   * `focused` tracks roving tabindex (diverges from `active` in `manual`
+   * mode). `itemProps(item)` returns the full a11y/behavior wiring for one
+   * tab — spread it with `v-bind` onto whatever element you render, a plain
+   * `<button>` or `<Button>`. `indicatorProps(variant)` does the same for
+   * the optional sliding highlight (`'background'` default, or
+   * `'underline'`) — render one element with it bound as a sibling of the
+   * tab buttons.
+   */
+  default(props: {
+    active: T
+    focused: T
+    select: (item: T) => void
+    items: T[]
+    itemProps: (item: T) => {
+      role: 'tab'
+      class: string
+      style: UiPartStyle | undefined
+      'data-tab-value': string
+      'aria-selected': boolean
+      tabindex: 0 | -1
+      onClick: () => void
+    }
+    indicatorProps: (variant?: 'background' | 'underline') => {
+      class: string
+      style: Record<string, string | undefined>
+    }
+  }): unknown
 }>()
 
 const listEl = useTemplateRef<HTMLElement>('list')
@@ -71,6 +106,35 @@ const listPart = computed(() =>
     props.orientation === 'vertical' && 'ui-tabs--vertical',
   ),
 )
+const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-tabs-item'))
+const indicatorPart = computed(() => resolveUiPart(cx, themedUi()?.indicator, 'ui-tabs-indicator'))
+
+// Always instantiated — cheap when unused (one ResizeObserver + a watcher),
+// and the alternative is calling a composable conditionally from inside a
+// function returned to the template, which breaks Vue's setup-time rules.
+// A consumer building a fully custom indicator (e.g. motion-v) just never
+// calls `indicatorProps`; `listEl` stays exposed for that escape hatch.
+const indicator = useTabIndicator(active, { listEl, orientation: () => props.orientation })
+
+function itemProps(item: T) {
+  const isManual = props.activation === 'manual'
+  return {
+    role: 'tab' as const,
+    class: itemPart.value.class,
+    style: itemPart.value.style,
+    'data-tab-value': String(item),
+    'aria-selected': active.value === item,
+    tabindex: ((isManual ? focused.value : active.value) === item ? 0 : -1) as 0 | -1,
+    onClick: () => select(item),
+  }
+}
+
+function indicatorProps(variant: 'background' | 'underline' = 'background') {
+  return {
+    class: cx(indicatorPart.value.class, `ui-tabs-indicator--${variant}`),
+    style: indicator.style.value,
+  }
+}
 
 defineExpose({ listEl })
 </script>

@@ -125,7 +125,7 @@ export interface UiTheme {
   selectButton?: {
     ui?: Partial<{ root: UiPartValue; option: UiPartValue; indicator: UiPartValue }>
   }
-  tabs?: { ui?: Partial<{ list: UiPartValue }> }
+  tabs?: { ui?: Partial<{ list: UiPartValue; item: UiPartValue; indicator: UiPartValue }> }
   stepper?: {
     ui?: Partial<{
       root: UiPartValue

@@ -64,11 +64,48 @@
     </p>
     <Sortable v-model:items="plain" item-key="id" label-key="label" :motion-css="false" />
   </section>
+  <section class="demo">
+    <h3>v-draggable: reorderable tabs</h3>
+    <p>
+      The directive is the "just make this list draggable" escape hatch — it runs the same engine,
+      so the springs and the lift-out preview are identical. A directive on a component attaches to
+      its root element, so it works directly on our own headless <code>&lt;Tabs&gt;</code> — no
+      separate "draggable tabs" component needed. It addresses rows by position, so there's no
+      keyboard path: reach for <code>&lt;Sortable&gt;</code> when you need one.
+    </p>
+    <Tabs
+      v-draggable="tabsDraggable"
+      v-model:active="activeTab"
+      :items="tabs"
+      class="draggable-tabs"
+    >
+      <template #default="{ items: list, itemProps }">
+        <button
+          v-for="item in list"
+          :key="item"
+          class="ui-tabs-item--static"
+          v-bind="itemProps(item)"
+        >
+          {{ item }}
+        </button>
+      </template>
+    </Tabs>
+    <p class="sortable-demo-order">{{ tabs.join(' / ') }}</p>
+
+    <h3>v-draggable: a plain list with a handle</h3>
+    <p>A <code>handle</code> selector limits where a drag can start.</p>
+    <ul v-draggable="filesDraggable" class="draggable-files">
+      <li v-for="file in files" :key="file.id" class="draggable-file">
+        <span data-grip class="draggable-file-grip">⠿</span>
+        <span>{{ file.label }}</span>
+      </li>
+    </ul>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Kbd, Sortable, Tag, confirmAction } from 'vael-ui'
+import { computed, reactive, ref, shallowRef } from 'vue'
+import { Kbd, Sortable, Tabs, Tag, confirmAction, vDraggable } from 'vael-ui'
 import type { SortableDropDetails } from 'vael-ui'
 
 const tasks = ref([
@@ -121,6 +158,17 @@ async function persist() {
   }
 }
 
+const tabs = reactive(['Overview', 'Activity', 'Settings'])
+const activeTab = shallowRef('Overview')
+const tabsDraggable = computed(() => ({ items: tabs, axis: 'x' as const }))
+
+const files = reactive([
+  { id: 'f1', label: 'design.fig' },
+  { id: 'f2', label: 'notes.md' },
+  { id: 'f3', label: 'budget.xlsx' },
+])
+const filesDraggable = computed(() => ({ items: files, handle: '[data-grip]' }))
+
 const plain = ref([
   { id: 'p1', label: 'First' },
   { id: 'p2', label: 'Second' },
@@ -146,5 +194,44 @@ const plain = ref([
   margin-block-start: 0.75rem;
   font-size: 0.8125rem;
   color: var(--ui-text-muted);
+}
+
+.draggable-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  inline-size: fit-content;
+}
+.draggable-tabs .ui-tabs-item {
+  touch-action: none;
+}
+.draggable-files {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  max-inline-size: 20rem;
+}
+.draggable-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  font-size: 0.875rem;
+}
+.draggable-file[data-dragging] {
+  opacity: 0;
+}
+.draggable-file-grip {
+  color: var(--ui-text-muted);
+  cursor: grab;
+  touch-action: none;
 }
 </style>

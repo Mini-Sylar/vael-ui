@@ -8,48 +8,29 @@
       render the tab bar or its content, pick whichever fits and ignore the rest.
     </p>
 
-    <h3>Sliding indicator (CSS, built in via <code>useTabIndicator()</code>)</h3>
+    <h3>Sliding indicator (built in via <code>itemProps</code>/<code>indicatorProps</code>)</h3>
     <p class="note">
-      The composable measures the active tab's real box and returns inline
-      <code>insetInlineStart</code> + <code>inlineSize</code>, you render one extra element with
-      those styles bound and pick a variant class. No JS animation loop, just a CSS
-      <code>transition</code>. Two variants shown here,
-      <code>.ui-tabs-indicator--background</code> and <code>.ui-tabs-indicator--underline</code>,
-      but it's a plain class, style your own just as easily.
+      The <code>#default</code> slot hands back <code>itemProps(item)</code> — the full
+      <code>role</code>/<code>aria-selected</code>/roving-<code>tabindex</code>/click wiring, spread
+      with <code>v-bind</code> onto whatever element you render — and
+      <code>indicatorProps(variant)</code> for the optional sliding highlight, measured internally
+      via <code>useTabIndicator()</code>. Two variants shown here, <code>'background'</code> (the
+      default) and <code>'underline'</code>; both are plain classes if you'd rather style your own.
     </p>
     <div class="row">
-      <Tabs ref="backgroundTabsRef" v-model:active="bgActive" :items="items">
-        <template #default="{ active: current, select, items: list }">
-          <div class="ui-tabs-indicator ui-tabs-indicator--background" :style="bgIndicatorStyle" />
-          <button
-            v-for="item in list"
-            :key="item"
-            role="tab"
-            class="tab"
-            :aria-selected="current === item"
-            :tabindex="current === item ? 0 : -1"
-            @click="select(item)"
-          >
+      <Tabs v-model:active="bgActive" :items="items">
+        <template #default="{ items: list, itemProps, indicatorProps }">
+          <div v-bind="indicatorProps()" />
+          <button v-for="item in list" :key="item" v-bind="itemProps(item)">
             <span class="tab-label">{{ item }}</span>
           </button>
         </template>
       </Tabs>
 
-      <Tabs ref="underlineTabsRef" v-model:active="underlineActive" :items="items">
-        <template #default="{ active: current, select, items: list }">
-          <div
-            class="ui-tabs-indicator ui-tabs-indicator--underline"
-            :style="underlineIndicatorStyle"
-          />
-          <button
-            v-for="item in list"
-            :key="item"
-            role="tab"
-            class="tab"
-            :aria-selected="current === item"
-            :tabindex="current === item ? 0 : -1"
-            @click="select(item)"
-          >
+      <Tabs v-model:active="underlineActive" :items="items">
+        <template #default="{ items: list, itemProps, indicatorProps }">
+          <div v-bind="indicatorProps('underline')" />
+          <button v-for="item in list" :key="item" v-bind="itemProps(item)">
             <span class="tab-label">{{ item }}</span>
           </button>
         </template>
@@ -65,16 +46,8 @@
     </p>
     <div class="row">
       <Tabs v-model:active="springActive" :items="items">
-        <template #default="{ active: current, select, items: list }">
-          <button
-            v-for="item in list"
-            :key="item"
-            role="tab"
-            class="tab"
-            :aria-selected="current === item"
-            :tabindex="current === item ? 0 : -1"
-            @click="select(item)"
-          >
+        <template #default="{ active: current, items: list, itemProps }">
+          <button v-for="item in list" :key="item" v-bind="itemProps(item)">
             <motion.span
               v-if="current === item"
               layout-id="tab-indicator"
@@ -95,16 +68,8 @@
       moving to an earlier one). Tabs has zero awareness this is happening.
     </p>
     <Tabs v-model:active="active" :items="items" @change="onChange">
-      <template #default="{ active: current, select, items: list }">
-        <button
-          v-for="item in list"
-          :key="item"
-          role="tab"
-          class="tab"
-          :aria-selected="current === item"
-          :tabindex="current === item ? 0 : -1"
-          @click="select(item)"
-        >
+      <template #default="{ items: list, itemProps }">
+        <button v-for="item in list" :key="item" v-bind="itemProps(item)">
           <span class="tab-label">{{ item }}</span>
         </button>
       </template>
@@ -132,17 +97,14 @@
       disabled and gets skipped over by arrow/Home/End navigation entirely.
     </p>
     <Tabs v-model:active="manualActive" :items="manualItems" activation="manual">
-      <template #default="{ focused, select, items: list }">
+      <template #default="{ items: list, itemProps }">
         <button
           v-for="item in list"
           :key="item"
-          role="tab"
-          class="tab tab--static"
-          :aria-selected="manualActive === item"
+          class="ui-tabs-item--static"
           :aria-disabled="item === 'archived' || undefined"
           :disabled="item === 'archived'"
-          :tabindex="focused === item ? 0 : -1"
-          @click="select(item)"
+          v-bind="itemProps(item)"
         >
           <span class="tab-label">{{ item }}</span>
         </button>
@@ -153,29 +115,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef } from 'vue'
+import { shallowRef } from 'vue'
 import { AnimatePresence, motion } from 'motion-v'
-import { Tabs, useTabIndicator } from 'vael-ui'
+import { Tabs } from 'vael-ui'
 
 type Section = 'overview' | 'analytics' | 'settings'
 const items: Section[] = ['overview', 'analytics', 'settings']
 
-// Type explicitly to avoid circular generic inference in vue-tsc
-interface TabsListElInstance {
-  listEl: HTMLElement | null
-}
-
 const bgActive = shallowRef<Section>('overview')
-const backgroundTabsRef = useTemplateRef<TabsListElInstance>('backgroundTabsRef')
-const { style: bgIndicatorStyle } = useTabIndicator(bgActive, {
-  listEl: computed(() => backgroundTabsRef.value?.listEl ?? null),
-})
-
 const underlineActive = shallowRef<Section>('overview')
-const underlineTabsRef = useTemplateRef<TabsListElInstance>('underlineTabsRef')
-const { style: underlineIndicatorStyle } = useTabIndicator(underlineActive, {
-  listEl: computed(() => underlineTabsRef.value?.listEl ?? null),
-})
 
 const springActive = shallowRef<Section>('overview')
 
