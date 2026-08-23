@@ -30,6 +30,7 @@
       <span
         v-for="index in max"
         :key="index"
+        ref="itemEls"
         :class="itemPart.class"
         :style="[itemPart.style, { '--ui-rating-fill': `${fillPercent(index - 1)}%` }]"
       >
@@ -119,6 +120,9 @@ function commit(value: number) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+// One element per star — an external animation library needs real nodes to stagger-reveal,
+// wobble, or morph individual stars, not just the row as a whole.
+const itemEls = useTemplateRef<HTMLElement[]>('itemEls')
 function valueFromPointer(event: PointerEvent): number {
   const rect = root.value!.getBoundingClientRect()
   const fraction = rect.width === 0 ? 0 : (event.clientX - rect.left) / rect.width
@@ -196,5 +200,5 @@ const rootPart = computed(() =>
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-rating-item'))
 
-defineExpose({ el: root })
+defineExpose({ el: root, itemEls })
 </script>
