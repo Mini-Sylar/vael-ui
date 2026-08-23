@@ -72,6 +72,7 @@ export const COMPONENTS = [
   'Tabs',
   'Tag',
   'Textarea',
+  'Timeline',
   'Toaster',
   'Toolbar',
   'Tooltip',

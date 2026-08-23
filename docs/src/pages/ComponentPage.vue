@@ -15,6 +15,7 @@
         <h2>{{ t('component.playground') }}</h2>
         <ConfigProviderPlayground v-if="name === 'ConfigProvider'" />
         <ToasterPlayground v-else-if="name === 'Toaster'" />
+        <TimelinePlayground v-else-if="name === 'Timeline'" />
         <PropsPlayground v-else :name="name" />
       </section>
 
@@ -94,6 +95,7 @@ import OnThisPage from '../components/OnThisPage.vue'
 import PropsPlayground from '../playground/PropsPlayground.vue'
 import ConfigProviderPlayground from '../playground/ConfigProviderPlayground.vue'
 import ToasterPlayground from '../playground/ToasterPlayground.vue'
+import TimelinePlayground from '../playground/TimelinePlayground.vue'
 import type { ComponentMetaEntry, DemoManifestEntry } from '../types'
 import { categoryOf } from '../taxonomy'
 import { defaultVariant } from '../preferences'

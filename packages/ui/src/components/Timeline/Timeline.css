@@ -1,0 +1,289 @@
+@layer ui-components {
+  .ui-timeline {
+    position: relative;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ui-timeline--vertical {
+    flex-direction: column;
+  }
+  /* Every row is normally its own independent little grid (`.ui-timeline-step`
+     below) so opposite/marker/content can size to that row's own content —
+     except the opposite column specifically must NOT do that: a narrower
+     "Apr 2025" sizing its own auto column shorter than "May 2025"/"Mar 2025"
+     visibly shifts that row's line and ring left of its neighbors. `subgrid`
+     lets every row keep its own real, animatable box while sharing ONE set
+     of column tracks with every other row, computed across all of them. */
+  .ui-timeline--vertical.ui-timeline--has-opposite {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+  }
+  .ui-timeline--horizontal {
+    align-items: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ui-timeline--horizontal::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ui-timeline-step {
+    position: relative;
+  }
+  .ui-timeline--vertical .ui-timeline-step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.75rem;
+    /* Opposite/content start at the row's top edge — only the marker column
+       (below) overrides this back to `stretch`, so the connector has the
+       row's real height to grow into. */
+    align-items: start;
+  }
+  .ui-timeline--vertical.ui-timeline--has-opposite .ui-timeline-step {
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+  }
+  .ui-timeline--horizontal .ui-timeline-step {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .ui-timeline-opposite {
+    color: var(--ui-text-muted);
+    font-size: 0.8125rem;
+    /* Matches .ui-timeline-marker's own block-size so its text's vertical
+       center lines up with the ring's, the same trick Stepper's own label
+       uses against its circle (Stepper.css) — safe to do here because this
+       wrapper's text is the one piece of Timeline's content this component
+       actually owns, unlike the fully consumer-slotted #item column. */
+    line-height: 1.25rem;
+    padding-block-end: 1.75rem;
+  }
+  .ui-timeline--vertical .ui-timeline-opposite {
+    text-align: end;
+  }
+  .ui-timeline--horizontal .ui-timeline-opposite {
+    padding-block-end: 0;
+  }
+
+  /* Marker + connector, stacked (vertical) or laid side by side (horizontal)
+     — one column/row per item, not a separate sibling element shared
+     between two items. See the component's own top comment for why: only
+     this shape lets the connector's `flex: 1 1 auto` grow against a real,
+     known size (this item's own row height), so it always reaches exactly
+     to the next marker no matter how tall this item's content is. */
+  .ui-timeline-marker-col {
+    display: flex;
+    flex: none;
+  }
+  .ui-timeline--vertical .ui-timeline-marker-col {
+    align-self: stretch;
+    flex-direction: column;
+    align-items: center;
+  }
+  .ui-timeline--horizontal .ui-timeline-marker-col {
+    flex-direction: row;
+    align-items: center;
+    inline-size: 100%;
+  }
+
+  .ui-timeline-marker {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+  }
+
+  /* A hollow ring by default (neither completed nor active), filling solid on completed — the
+     same "outline vs. filled" language Rating's stars use for state. The
+     surface-colored halo keeps the connector line from visually touching
+     the ring's edge as it passes behind it. */
+  .ui-timeline-dot {
+    position: relative;
+    z-index: 1;
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    border-radius: 50%;
+    background: var(--ui-surface);
+    border: 2px solid var(--ui-border-strong);
+    box-shadow: 0 0 0 3px var(--ui-surface);
+    transition:
+      border-color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease,
+      scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-timeline-step[data-completed] .ui-timeline-dot {
+    border-color: var(--ui-primary);
+    background: var(--ui-primary);
+  }
+  .ui-timeline-step[data-active] .ui-timeline-dot {
+    border-color: var(--ui-primary);
+    scale: 1.15;
+  }
+
+  /* Opt-in via the `pulse` prop (.ui-timeline--pulse below) — a continuous
+     looping animation is a real stylistic commitment, not something to turn
+     on unasked. When enabled, it's a quiet "live" cue on the active marker
+     (ambient, like a recording dot, not a retriggered transition — exempt
+     from the "don't animate frequent things" rule for that reason). */
+  .ui-timeline-marker::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--ui-primary);
+    opacity: 0;
+  }
+  .ui-timeline--pulse .ui-timeline-step[data-active] .ui-timeline-marker::before {
+    animation: ui-timeline-pulse 1.8s var(--ui-ease-in-out) infinite;
+  }
+  @keyframes ui-timeline-pulse {
+    0% {
+      scale: 0.75;
+      opacity: 0.55;
+    }
+    100% {
+      scale: 1.7;
+      opacity: 0;
+    }
+  }
+
+  /* Fills the rest of the marker column's stretched height/width — this is
+     the actual "join the segments" fix; see the marker-col comment above. */
+  .ui-timeline-connector {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: hidden;
+    background: var(--ui-border);
+  }
+  .ui-timeline--vertical .ui-timeline-connector {
+    inline-size: 2px;
+    min-block-size: 1rem;
+  }
+  .ui-timeline--horizontal .ui-timeline-connector {
+    block-size: 2px;
+    min-inline-size: 1rem;
+  }
+  .ui-timeline-connector::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ui-primary);
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-timeline--vertical .ui-timeline-connector::after {
+    transform-origin: 50% 0;
+    scale: 1 0;
+  }
+  .ui-timeline--horizontal .ui-timeline-connector::after {
+    transform-origin: 0 50%;
+    scale: 0 1;
+  }
+  .ui-timeline-connector[data-filled]::after {
+    scale: 1 1;
+  }
+
+  .ui-timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-inline-size: 0;
+    padding-block-end: 1.75rem;
+  }
+  .ui-timeline--horizontal .ui-timeline-content {
+    padding-block-end: 0;
+    padding-inline-end: 1.5rem;
+    min-inline-size: 6rem;
+  }
+
+  .ui-timeline-item-enter-active,
+  .ui-timeline-item-leave-active {
+    transition:
+      opacity var(--ui-duration-enter) var(--ui-ease-out),
+      transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-timeline-item-leave-active {
+    position: absolute;
+  }
+  .ui-timeline--vertical .ui-timeline-item-leave-active {
+    inline-size: 100%;
+  }
+  .ui-timeline--horizontal .ui-timeline-item-leave-active {
+    block-size: 100%;
+  }
+  .ui-timeline-item-enter-from,
+  .ui-timeline-item-leave-to {
+    opacity: 0;
+  }
+  .ui-timeline--vertical .ui-timeline-item-enter-from,
+  .ui-timeline--vertical .ui-timeline-item-leave-to {
+    transform: translateY(8px);
+  }
+  .ui-timeline--horizontal .ui-timeline-item-enter-from,
+  .ui-timeline--horizontal .ui-timeline-item-leave-to {
+    transform: translateX(8px);
+  }
+  .ui-timeline-item-move {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
+  }
+
+  /* `motionCss: false` turns off exactly what reduced-motion does below: the dot's color/scale
+     transition, the pulse, and the connector's fill sweep — the animations that actually play
+     when you advance through EXISTING items (current/status changing). TransitionGroup's own
+     :css="motionCss" binding never touched these; it only gates add/remove/reorder of the list
+     itself, which left this prop doing half its job. */
+  .ui-timeline--no-motion .ui-timeline-dot {
+    transition: background-color var(--ui-duration-press) ease;
+  }
+  .ui-timeline--no-motion .ui-timeline-step[data-active] .ui-timeline-dot {
+    scale: 1;
+  }
+  .ui-timeline--no-motion .ui-timeline-marker::before {
+    animation: none;
+  }
+  .ui-timeline--no-motion.ui-timeline--pulse
+    .ui-timeline-step[data-active]
+    .ui-timeline-marker::before {
+    opacity: 0.55;
+    scale: 1.15;
+  }
+  .ui-timeline--no-motion .ui-timeline-connector::after {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-timeline-dot {
+      transition: background-color var(--ui-duration-press) ease;
+    }
+    .ui-timeline-step[data-state='active'] .ui-timeline-dot {
+      scale: 1;
+    }
+    .ui-timeline-marker::before {
+      animation: none;
+    }
+    .ui-timeline--pulse .ui-timeline-step[data-state='active'] .ui-timeline-marker::before {
+      opacity: 0.55;
+      scale: 1.15;
+    }
+    .ui-timeline-connector::after {
+      transition: none;
+    }
+    .ui-timeline-item-enter-active,
+    .ui-timeline-item-leave-active,
+    .ui-timeline-item-move {
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+    }
+    .ui-timeline-item-enter-from,
+    .ui-timeline-item-leave-to {
+      transform: none;
+    }
+  }
+}

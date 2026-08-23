@@ -252,6 +252,7 @@
     "Tag": "A compact label for categorizing or annotating an item inline.",
     "Chip": "A removable, compact token for selected filters, tags, or multi-select values.",
     "Kbd": "Styles a keyboard shortcut so it reads like a physical key.",
+    "Timeline": "An ordered list of steps connected by a line, agnostic to what each step actually contains.",
     "Accordion": "A stack of collapsible sections where opening one can close the others.",
     "AccordionItem": "One collapsible section of an Accordion, always used inside its tree.",
     "Collapsible": "A single show/hide section for content that is optional or secondary.",

@@ -321,6 +321,16 @@ export interface UiTheme {
     ui?: Partial<{ root: UiPartValue; item: UiPartValue; handle: UiPartValue }>
   }
   rating?: { ui?: Partial<{ root: UiPartValue; item: UiPartValue }> }
+  timeline?: {
+    ui?: Partial<{
+      root: UiPartValue
+      item: UiPartValue
+      opposite: UiPartValue
+      marker: UiPartValue
+      connector: UiPartValue
+      content: UiPartValue
+    }>
+  }
 }
 
 export const themeKey: InjectionKey<ComputedRef<UiTheme | undefined>> = Symbol('ui-theme')

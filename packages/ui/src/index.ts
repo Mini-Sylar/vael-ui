@@ -380,3 +380,4 @@ export type {
 } from './composables/useSpringValue'
 
 export { default as Rating } from './components/Rating/Rating.vue'
+export { default as Timeline } from './components/Timeline/Timeline.vue'
