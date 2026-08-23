@@ -273,6 +273,8 @@ export {
 export type { I18nInstance, PartialUiMessages, UiMessages } from './messages'
 export { classMergerKey, useClassMerge, resolveUiPart, splitUiPart } from './classes'
 export type { ClassMerger, ClassValue, UiPartValue, UiPartStyle } from './classes'
+export { vDraggable, vDraggableVapor } from './directives/vDraggable'
+export type { DraggableOptions, DraggableValue } from './directives/vDraggable'
 export { vScrollMask, vScrollMaskVapor } from './directives/vScrollMask'
 export { vTooltip, vTooltipVapor, tooltipTargets, TOOLTIP_ATTR } from './directives/vTooltip'
 export type { TooltipDirectiveOptions, TooltipDirectiveValue } from './directives/vTooltip'
@@ -284,6 +286,7 @@ declare module 'vue' {
   interface GlobalDirectives {
     vTooltip: typeof import('./directives/vTooltip').vTooltip
     vScrollMask: typeof import('./directives/vScrollMask').vScrollMask
+    vDraggable: typeof import('./directives/vDraggable').vDraggable
   }
 }
 

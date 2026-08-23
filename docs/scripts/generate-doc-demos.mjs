@@ -99,6 +99,20 @@ function injectVaporMarker(source) {
   return source.replace(scriptSetupRe, (full, attrs) => `<script setup${attrs} vapor>`)
 }
 
+// Volar's vapor-mode template checker always validates a v-x binding against
+// the classic (el, DirectiveBinding<T>) overload, never v-draggable's actual
+// getter-based Vapor overload — so a non-primitive value errors there even
+// though it's correct at runtime. See skill.md's "Known toolchain gaps".
+function suppressKnownVaporDirectiveGaps(source) {
+  // The comment must precede the tag start, not sit between attributes (an
+  // HTML comment mid-attribute-list is invalid markup) — so this only
+  // matches `v-draggable=` on the tag's own line.
+  return source.replace(
+    /^(\s*)(<[a-zA-Z][^>\n]*\sv-draggable=)/gm,
+    '$1<!-- @vue-expect-error known Volar vapor-directive typecheck gap, see generate-doc-demos.mjs -->\n$1$2',
+  )
+}
+
 // Only PascalCase names that are real Vapor components move to
 // 'vael-ui/vapor'; composables/functions (openDialog, useTabIndicator,
 // toast, ...) aren't Vapor/VDOM-specific and stay on 'vael-ui'. `import
@@ -153,7 +167,9 @@ function main() {
       }
       if (eligible && !copiedVapor.has(id)) {
         const source = readFileSync(join(DEMOS_DIR, `${id}.vue`), 'utf8')
-        const vaporSource = rewriteToVapor(injectVaporMarker(source), vaporComponentNames)
+        const vaporSource = suppressKnownVaporDirectiveGaps(
+          rewriteToVapor(injectVaporMarker(source), vaporComponentNames),
+        )
         writeFileSync(join(OUT_VAPOR_DIR, `${id}.vue`), vaporSource)
         copiedVapor.add(id)
       }

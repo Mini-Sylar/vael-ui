@@ -47,7 +47,7 @@ for (const match of uiIndex.matchAll(
 
 const outPath = join(__dirname, '../ui/dist/vapor/index.d.ts')
 const lines = [
-  `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask } from '../index'`,
+  `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask, vDraggableVapor as vDraggable } from '../index'`,
 ]
 if (componentExtraValueNames.length > 0) {
   lines.push(`export { ${componentExtraValueNames.join(', ')} } from '../index'`)

@@ -82,6 +82,8 @@ const NON_COMPONENT_EXPORTS_EXCLUDED = new Set([
   'vScrollMask',
   'vTooltipVapor',
   'vScrollMaskVapor',
+  'vDraggable',
+  'vDraggableVapor',
   'confirmAction',
 ])
 
@@ -184,6 +186,7 @@ function injectVaporMarker(source, moduleId) {
 const VAPOR_DIRECTIVE_ALIASES = {
   vTooltip: 'vTooltipVapor',
   vScrollMask: 'vScrollMaskVapor',
+  vDraggable: 'vDraggableVapor',
 }
 
 function relativeImportPath(specifier, fromDir = '') {
@@ -346,6 +349,9 @@ function main() {
   barrelLines.push(
     `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
     `export { vScrollMaskVapor as vScrollMask } from '${copyNonComponentSource('directives/vScrollMask')}'`,
+    // Referenced, not copied: unlike vScrollMask this pulls in useSortable, and
+    // a copy into generated/ can't resolve that relative import.
+    `export { vDraggableVapor as vDraggable } from '${relativeImportPath('directives/vDraggable')}'`,
     `export { confirmAction } from './composables/confirmAction'`,
     `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
   )
