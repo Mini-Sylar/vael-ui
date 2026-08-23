@@ -104,13 +104,15 @@ function injectVaporMarker(source) {
 // getter-based Vapor overload — so a non-primitive value errors there even
 // though it's correct at runtime. See skill.md's "Known toolchain gaps".
 function suppressKnownVaporDirectiveGaps(source) {
-  // The comment must precede the tag start, not sit between attributes (an
-  // HTML comment mid-attribute-list is invalid markup) — so this only
-  // matches `v-draggable=` on the tag's own line.
-  return source.replace(
-    /^(\s*)(<[a-zA-Z][^>\n]*\sv-draggable=)/gm,
-    '$1<!-- @vue-expect-error known Volar vapor-directive typecheck gap, see generate-doc-demos.mjs -->\n$1$2',
-  )
+  // Matches a whole opening tag, however its attributes wrap across lines —
+  // a formatter is free to rewrap `v-draggable=` onto its own line at any
+  // point, so this can't assume it shares a line with the tag start. The
+  // comment always precedes the TAG START, never sits between attributes
+  // (an HTML comment mid-attribute-list is invalid markup).
+  return source.replace(/^(\s*)(<[a-zA-Z][a-zA-Z0-9]*\b[\s\S]*?>)/gm, (full, indent, tag) => {
+    if (!/\sv-draggable=/.test(tag)) return full
+    return `${indent}<!-- @vue-expect-error known Volar vapor-directive typecheck gap, see generate-doc-demos.mjs -->\n${full}`
+  })
 }
 
 // Only PascalCase names that are real Vapor components move to
