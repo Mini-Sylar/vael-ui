@@ -183,8 +183,9 @@
   .ui-button-trailing {
     display: inline-grid;
     place-items: center;
-    inline-size: 1em;
-    block-size: 1em;
+    /* min-, not fixed: an icon larger than 1em must still fit and stay centered. */
+    min-inline-size: 1em;
+    min-block-size: 1em;
     flex: none;
     transition:
       opacity var(--ui-duration-press) ease,

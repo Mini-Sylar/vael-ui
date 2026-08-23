@@ -9,6 +9,7 @@
         size="sm"
         :items="variantItems"
         :allow-empty="false"
+        class="demo-variant-toggle"
       />
     </div>
     <div v-show="view === 'preview'" class="demo-preview">
@@ -22,13 +23,25 @@
     <div v-show="view === 'code'" class="demo-code">
       <CodeBlock :code="code" />
     </div>
+    <Collapsible v-model:open="codeOpen" class="demo-code-collapsible">
+      <template #trigger="{ open }">
+        <Button variant="ghost" block size="sm" class="demo-code-trigger">
+          {{ t('component.code') }}
+          <template #trailing>
+            <PhCaretDown class="demo-code-chevron" :class="{ 'demo-code-chevron--open': open }" />
+          </template>
+        </Button>
+      </template>
+      <CodeBlock :code="code" />
+    </Collapsible>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { SelectButton } from 'vael-ui'
+import { Button, Collapsible, SelectButton } from 'vael-ui'
+import { PhCaretDown } from '@phosphor-icons/vue'
 import CodeBlock from './CodeBlock.vue'
 import { defaultVariant, type DemoVariant } from '../preferences'
 import type { DemoExample } from './DemoFrame.vue'
@@ -49,6 +62,8 @@ const { t } = useI18n()
 // rather than a genuinely broken one.
 const FAKE_VAPOR_TOGGLE_COMPONENTS = ['DataTable', 'Pagination', 'Tag', 'Combobox']
 const isFakeVaporToggle = computed(() => FAKE_VAPOR_TOGGLE_COMPONENTS.includes(props.name))
+
+const codeOpen = shallowRef(false)
 
 const viewItems = computed(() => [
   { label: t('component.preview'), value: 'preview' },
@@ -135,11 +150,14 @@ const code = computed(() =>
 .demo-toolbar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
   gap: 0.5rem;
   padding: 0.75rem;
   border-bottom: 1px solid var(--ui-border);
   background: var(--ui-muted);
+}
+
+.demo-variant-toggle {
+  margin-inline-start: auto;
 }
 
 .demo-preview {
@@ -177,5 +195,40 @@ const code = computed(() =>
 .demo-code :deep(.code-block) {
   border: none;
   border-radius: 0;
+}
+
+.demo-code-collapsible {
+  border-top: 1px solid var(--ui-border);
+}
+
+/* The collapsible's internal trigger wrapper is `inline-flex` (shrink-to-fit)
+   so the Button's own `block` prop has no container to stretch against. */
+.demo-code-collapsible :deep(.ui-collapsible-trigger) {
+  display: flex;
+  inline-size: 100%;
+}
+
+.demo-code-trigger {
+  border-radius: 0;
+}
+
+.demo-code-chevron {
+  transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+}
+
+.demo-code-chevron--open {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-code-chevron {
+    transition: none;
+  }
+}
+
+.demo-code-collapsible :deep(.code-block) {
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid var(--ui-border);
 }
 </style>
