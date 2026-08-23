@@ -1,20 +1,34 @@
 <template>
   <section class="demo-frame">
-    <div v-if="items.length > 1" class="demo-toolbar">
-      <SelectButton v-model="variant" size="sm" :items="items" :allow-empty="false" />
+    <div v-if="examples.length > 0" class="demo-toolbar">
+      <div v-if="examples.length > 1" class="demo-example-picker">
+        <SelectButton
+          v-model="activeExampleId"
+          size="sm"
+          :items="exampleItems"
+          :allow-empty="false"
+        />
+      </div>
+      <SelectButton v-model="view" size="sm" :items="viewItems" :allow-empty="false" />
+      <SelectButton
+        v-if="variantItems.length > 1"
+        v-model="variant"
+        size="sm"
+        :items="variantItems"
+        :allow-empty="false"
+      />
     </div>
-    <div class="demo-preview">
+    <div v-show="view === 'preview'" class="demo-preview">
       <Transition name="demo-crossfade" mode="out-in">
-        <p v-if="!hasActiveDemo" key="empty" class="no-demo">
+        <p v-if="!activeComponent" key="empty" class="no-demo">
           No live demo for this component yet.
         </p>
-        <component v-else-if="activeComponent" :is="activeComponent" :key="`${name}-${variant}`" />
+        <component v-else :is="activeComponent" :key="`${name}-${activeExampleId}-${variant}`" />
       </Transition>
     </div>
-    <details class="demo-code">
-      <summary>{{ t('component.code') }}</summary>
+    <div v-show="view === 'code'" class="demo-code">
       <CodeBlock :code="code" />
-    </details>
+    </div>
   </section>
 </template>
 
@@ -25,12 +39,18 @@ import { SelectButton } from 'vael-ui'
 import CodeBlock from './CodeBlock.vue'
 import { defaultVariant, type DemoVariant } from '../preferences'
 
-const props = defineProps<{
-  name: string
+export interface DemoExample {
+  id: string
+  title: string
   vdomComponent: Component | null
   vaporComponent: Component | null
   vdomCode: string
   vaporCode: string
+}
+
+const props = defineProps<{
+  name: string
+  examples: DemoExample[]
 }>()
 
 const { t } = useI18n()
@@ -44,37 +64,56 @@ const { t } = useI18n()
 const FAKE_VAPOR_TOGGLE_COMPONENTS = ['DataTable', 'Pagination', 'Tag', 'Combobox']
 const isFakeVaporToggle = computed(() => FAKE_VAPOR_TOGGLE_COMPONENTS.includes(props.name))
 
-const items = computed(() => {
+const activeExampleId = shallowRef(props.examples[0]?.id ?? '')
+watch(
+  () => props.examples,
+  (examples) => {
+    if (!examples.some((e) => e.id === activeExampleId.value)) {
+      activeExampleId.value = examples[0]?.id ?? ''
+    }
+  },
+)
+const exampleItems = computed(() => props.examples.map((e) => ({ label: e.title, value: e.id })))
+const activeExample = computed(
+  () => props.examples.find((e) => e.id === activeExampleId.value) ?? null,
+)
+
+const viewItems = computed(() => [
+  { label: t('component.preview'), value: 'preview' },
+  { label: t('component.code'), value: 'code' },
+])
+const view = shallowRef<'preview' | 'code'>('preview')
+
+const variantItems = computed(() => {
   const list = []
-  if (props.vdomComponent) list.push({ label: t('component.vdom'), value: 'vdom' })
-  if (props.vaporComponent) list.push({ label: t('component.vapor'), value: 'vapor' })
+  if (activeExample.value?.vdomComponent) list.push({ label: t('component.vdom'), value: 'vdom' })
+  if (activeExample.value?.vaporComponent)
+    list.push({ label: t('component.vapor'), value: 'vapor' })
   return list
 })
 
 // Follows the header's global VDOM/Vapor preference, falling back to VDOM
-// when a page has no demo for the preferred variant (e.g. no Vapor twin).
+// when the active example has no Vapor twin.
 function availableVariant(preferred: DemoVariant): DemoVariant {
-  if (preferred === 'vapor' && props.vaporComponent) return 'vapor'
+  if (preferred === 'vapor' && activeExample.value?.vaporComponent) return 'vapor'
   return 'vdom'
 }
 
 const variant = shallowRef<DemoVariant>(availableVariant(defaultVariant.value))
 watch(defaultVariant, (preferred) => (variant.value = availableVariant(preferred)))
 // DemoFrame is reused across component pages (same route, different param),
-// so re-apply the preference whenever navigation swaps in a new demo.
-watch(
-  () => props.vaporComponent,
-  () => (variant.value = availableVariant(defaultVariant.value)),
-)
+// so re-apply the preference whenever navigation swaps in new examples.
+watch(activeExample, () => (variant.value = availableVariant(defaultVariant.value)))
 
 const activeComponent = computed(() =>
   variant.value === 'vapor' && !isFakeVaporToggle.value
-    ? props.vaporComponent
-    : props.vdomComponent,
+    ? (activeExample.value?.vaporComponent ?? null)
+    : (activeExample.value?.vdomComponent ?? null),
 )
-const hasActiveDemo = computed(() => Boolean(activeComponent.value))
 const code = computed(() =>
-  variant.value === 'vapor' && !isFakeVaporToggle.value ? props.vaporCode : props.vdomCode,
+  variant.value === 'vapor' && !isFakeVaporToggle.value
+    ? (activeExample.value?.vaporCode ?? '')
+    : (activeExample.value?.vdomCode ?? ''),
 )
 </script>
 
@@ -113,10 +152,20 @@ const code = computed(() =>
 
 .demo-toolbar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: 0.5rem;
   padding: 0.75rem;
   border-bottom: 1px solid var(--ui-border);
   background: var(--ui-muted);
+}
+
+/* SelectButton's sliding indicator assumes a single row — a long example
+   list scrolls horizontally in its own lane instead of silently clipping. */
+.demo-example-picker {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .demo-preview {
@@ -151,20 +200,8 @@ const code = computed(() =>
   font-size: 0.9rem;
 }
 
-.demo-code {
-  border-top: 1px solid var(--ui-border);
-}
-
-.demo-code summary {
-  padding: 0.6rem 1rem;
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--ui-text-muted);
-}
-
 .demo-code :deep(.code-block) {
   border: none;
   border-radius: 0;
-  border-top: 1px solid var(--ui-border);
 }
 </style>

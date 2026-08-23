@@ -25,7 +25,12 @@ export interface ComponentMetaEntry {
   exposed: MetaRow[]
 }
 
-export interface DemoManifestEntry {
-  demo: string | null
+export interface DemoManifestExample {
+  id: string
+  title: string
   vaporEligible: boolean
+}
+
+export interface DemoManifestEntry {
+  examples: DemoManifestExample[]
 }

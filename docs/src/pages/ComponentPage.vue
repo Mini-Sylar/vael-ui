@@ -18,15 +18,9 @@
         <PropsPlayground v-else :name="name" />
       </section>
 
-      <section v-if="manifestEntry?.demo" id="examples" class="section">
+      <section v-if="examples.length > 0" id="examples" class="section">
         <h2>{{ t('component.examples') }}</h2>
-        <DemoFrame
-          :name="name"
-          :vdom-component="vdomComponent"
-          :vapor-component="vaporComponent"
-          :vdom-code="vdomCode"
-          :vapor-code="vaporCode"
-        />
+        <DemoFrame :name="name" :examples="examples" />
       </section>
 
       <MetaTable
@@ -104,14 +98,18 @@ import type { ComponentMetaEntry, DemoManifestEntry } from '../types'
 import { categoryOf } from '../taxonomy'
 import { defaultVariant } from '../preferences'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
+import type { DemoExample } from '../components/DemoFrame.vue'
 
-const vdomModules = import.meta.glob<{ default: Component }>('../generated/vdom-demos/*.vue')
-const vaporModules = import.meta.glob<{ default: Component }>('../generated/vapor-demos/*.vue')
-const vdomSources = import.meta.glob('../generated/vdom-demos/*.vue', {
+// `**` (not `*`) because a migrated component's examples live one directory
+// deeper — `vdom-demos/Sortable/DragToReorder.vue` — while a not-yet-migrated
+// one is still flat — `vdom-demos/DataTableDemo.vue`. Both match either way.
+const vdomModules = import.meta.glob<{ default: Component }>('../generated/vdom-demos/**/*.vue')
+const vaporModules = import.meta.glob<{ default: Component }>('../generated/vapor-demos/**/*.vue')
+const vdomSources = import.meta.glob('../generated/vdom-demos/**/*.vue', {
   query: '?raw',
   import: 'default',
 })
-const vaporSources = import.meta.glob('../generated/vapor-demos/*.vue', {
+const vaporSources = import.meta.glob('../generated/vapor-demos/**/*.vue', {
   query: '?raw',
   import: 'default',
 })
@@ -174,35 +172,11 @@ const installCode = computed(() => {
   return `import { ${name.value} } from '${pkg}'`
 })
 
-// Cached per demo name so a revisit reuses the already-resolved async component instead of a fresh loading gap.
+// Cached per example id (already a unique path, e.g. "Sortable/DragToReorder"
+// or "DataTableDemo" for a not-yet-migrated component) so a revisit reuses
+// the already-resolved async component instead of a fresh loading gap.
 const vdomComponentCache = new Map<string, Component>()
 const vaporComponentCache = new Map<string, Component>()
-
-const vdomComponent = computed(() => {
-  const demo = manifestEntry.value?.demo
-  if (!demo) return null
-  const loader = vdomModules[`../generated/vdom-demos/${demo}.vue`]
-  if (!loader) return null
-  let cached = vdomComponentCache.get(demo)
-  if (!cached) {
-    cached = defineAsyncComponent(loader)
-    vdomComponentCache.set(demo, cached)
-  }
-  return cached
-})
-
-const vaporComponent = computed(() => {
-  const demo = manifestEntry.value?.demo
-  if (!demo || !manifestEntry.value?.vaporEligible) return null
-  const loader = vaporModules[`../generated/vapor-demos/${demo}.vue`]
-  if (!loader) return null
-  let cached = vaporComponentCache.get(demo)
-  if (!cached) {
-    cached = defineAsyncComponent(loader)
-    vaporComponentCache.set(demo, cached)
-  }
-  return cached
-})
 
 // Demo files carry their own explanatory prose/headings for this site's Examples section, neither
 // of which is something a reader copying the code snippet wants — strip them from the shown source.
@@ -213,28 +187,52 @@ function stripDemoProse(source: string): string {
     .replace(/\n{3,}/g, '\n\n')
 }
 
-function useDemoSource(modules: Record<string, () => Promise<unknown>>, dir: string) {
-  const source = shallowRef('')
-  watchEffect(async () => {
-    const demo = manifestEntry.value?.demo
-    const loader = demo ? modules[`../generated/${dir}/${demo}.vue`] : undefined
-    if (!loader) {
-      source.value = ''
-      return
-    }
-    const mod = await loader()
-    source.value = stripDemoProse(mod as string)
-  })
-  return source
-}
+const examples = shallowRef<DemoExample[]>([])
+watchEffect(async () => {
+  const manifestExamples = manifestEntry.value?.examples ?? []
+  examples.value = await Promise.all(
+    manifestExamples.map(async (entry) => {
+      const vdomLoader = vdomModules[`../generated/vdom-demos/${entry.id}.vue`]
+      const vaporLoader = entry.vaporEligible
+        ? vaporModules[`../generated/vapor-demos/${entry.id}.vue`]
+        : undefined
 
-const vdomCode = useDemoSource(vdomSources, 'vdom-demos')
-const vaporCode = useDemoSource(vaporSources, 'vapor-demos')
+      let vdomComponent = vdomComponentCache.get(entry.id) ?? null
+      if (!vdomComponent && vdomLoader) {
+        vdomComponent = defineAsyncComponent(vdomLoader)
+        vdomComponentCache.set(entry.id, vdomComponent)
+      }
+      let vaporComponent = vaporComponentCache.get(entry.id) ?? null
+      if (!vaporComponent && vaporLoader) {
+        vaporComponent = defineAsyncComponent(vaporLoader)
+        vaporComponentCache.set(entry.id, vaporComponent)
+      }
+
+      const vdomSourceLoader = vdomSources[`../generated/vdom-demos/${entry.id}.vue`]
+      const vaporSourceLoader = entry.vaporEligible
+        ? vaporSources[`../generated/vapor-demos/${entry.id}.vue`]
+        : undefined
+      const vdomCode = vdomSourceLoader ? stripDemoProse((await vdomSourceLoader()) as string) : ''
+      const vaporCode = vaporSourceLoader
+        ? stripDemoProse((await vaporSourceLoader()) as string)
+        : ''
+
+      return {
+        id: entry.id,
+        title: entry.title,
+        vdomComponent,
+        vaporComponent,
+        vdomCode,
+        vaporCode,
+      }
+    }),
+  )
+})
 
 const tocLinks = computed(() => [
   { id: 'install', label: t('component.install') },
   { id: 'playground', label: t('component.playground') },
-  ...(manifestEntry.value?.demo ? [{ id: 'examples', label: t('component.examples') }] : []),
+  ...(examples.value.length > 0 ? [{ id: 'examples', label: t('component.examples') }] : []),
   { id: 'props', label: t('component.props') },
   { id: 'slots', label: t('component.slots') },
   { id: 'events', label: t('component.events') },
