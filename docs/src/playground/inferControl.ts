@@ -26,7 +26,10 @@ export function inferControl(schema: PropSchema | undefined): PlaygroundControl 
   )
   if (members.length === 0) return null
 
-  if (members.length <= 2 && members.every((m) => m === 'true' || m === 'false')) {
+  // `boolean | (...) => ...` (Select/Combobox's `filter`, etc.): the playground can't
+  // offer a UI for picking a custom function, but the on/off half of the union is still
+  // worth a toggle rather than dropping the control entirely.
+  if (members.includes('true') && members.includes('false')) {
     return { kind: 'boolean' }
   }
   if (members.length === 1 && members[0] === 'string') return { kind: 'string' }
