@@ -95,6 +95,14 @@ export interface UiMessages {
     today: string
     /** `showButtonBar`'s built-in footer button. */
     clear: string
+    /** aria-label for `showTime`'s hour field. */
+    hour: string
+    /** aria-label for `showTime`'s minute field. */
+    minute: string
+    increaseHour: string
+    decreaseHour: string
+    increaseMinute: string
+    decreaseMinute: string
   }
   dataTable: {
     selectAll: string
@@ -160,7 +168,17 @@ export const defaultMessages: UiMessages = {
     next: 'Next page',
     last: 'Last page',
   },
-  datePicker: { chooseDate: 'Choose date', today: 'Today', clear: 'Clear' },
+  datePicker: {
+    chooseDate: 'Choose date',
+    today: 'Today',
+    clear: 'Clear',
+    hour: 'Hour',
+    minute: 'Minute',
+    increaseHour: 'Increase hour',
+    decreaseHour: 'Decrease hour',
+    increaseMinute: 'Increase minute',
+    decreaseMinute: 'Decrease minute',
+  },
   dataTable: {
     selectAll: 'Select all rows',
     selectRow: 'Select row',
@@ -299,6 +317,12 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     chooseDate: 'uiKit.datePicker.chooseDate',
     today: 'uiKit.datePicker.today',
     clear: 'uiKit.datePicker.clear',
+    hour: 'uiKit.datePicker.hour',
+    minute: 'uiKit.datePicker.minute',
+    increaseHour: 'uiKit.datePicker.increaseHour',
+    decreaseHour: 'uiKit.datePicker.decreaseHour',
+    increaseMinute: 'uiKit.datePicker.increaseMinute',
+    decreaseMinute: 'uiKit.datePicker.decreaseMinute',
   },
   dataTable: {
     selectAll: 'uiKit.dataTable.selectAll',
@@ -467,10 +491,30 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   const chooseDate = i18n.t(i18nKeyMap.datePicker.chooseDate)
   const datePickerToday = i18n.t(i18nKeyMap.datePicker.today)
   const datePickerClear = i18n.t(i18nKeyMap.datePicker.clear)
+  const datePickerHour = i18n.t(i18nKeyMap.datePicker.hour)
+  const datePickerMinute = i18n.t(i18nKeyMap.datePicker.minute)
+  const datePickerIncreaseHour = i18n.t(i18nKeyMap.datePicker.increaseHour)
+  const datePickerDecreaseHour = i18n.t(i18nKeyMap.datePicker.decreaseHour)
+  const datePickerIncreaseMinute = i18n.t(i18nKeyMap.datePicker.increaseMinute)
+  const datePickerDecreaseMinute = i18n.t(i18nKeyMap.datePicker.decreaseMinute)
   const datePicker: PartialUiMessages['datePicker'] = {}
   if (chooseDate !== i18nKeyMap.datePicker.chooseDate) datePicker.chooseDate = chooseDate
   if (datePickerToday !== i18nKeyMap.datePicker.today) datePicker.today = datePickerToday
   if (datePickerClear !== i18nKeyMap.datePicker.clear) datePicker.clear = datePickerClear
+  if (datePickerHour !== i18nKeyMap.datePicker.hour) datePicker.hour = datePickerHour
+  if (datePickerMinute !== i18nKeyMap.datePicker.minute) datePicker.minute = datePickerMinute
+  if (datePickerIncreaseHour !== i18nKeyMap.datePicker.increaseHour) {
+    datePicker.increaseHour = datePickerIncreaseHour
+  }
+  if (datePickerDecreaseHour !== i18nKeyMap.datePicker.decreaseHour) {
+    datePicker.decreaseHour = datePickerDecreaseHour
+  }
+  if (datePickerIncreaseMinute !== i18nKeyMap.datePicker.increaseMinute) {
+    datePicker.increaseMinute = datePickerIncreaseMinute
+  }
+  if (datePickerDecreaseMinute !== i18nKeyMap.datePicker.decreaseMinute) {
+    datePicker.decreaseMinute = datePickerDecreaseMinute
+  }
   if (Object.keys(datePicker).length > 0) result.datePicker = datePicker
 
   const dataTableSelectAll = i18n.t(i18nKeyMap.dataTable.selectAll)

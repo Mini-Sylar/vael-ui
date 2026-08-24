@@ -1,5 +1,6 @@
 <template>
   <output data-testid="model">{{ modelText }}</output>
+  <output data-testid="model-time">{{ modelTimeText }}</output>
   <output data-testid="open-state">{{ open ? 'open' : 'closed' }}</output>
   <DatePicker
     v-model="model"
@@ -11,6 +12,11 @@
     :disabled-dates="disabledDates"
     :disabled="disabled"
     :show-button-bar="showButtonBar"
+    :show-time="showTime"
+    :time-only="timeOnly"
+    :hour-format="hourFormat"
+    :minute-step="minuteStep"
+    locale="en-US"
     placeholder="Pick a date"
   >
     <template v-if="customFooter" #footer>
@@ -40,6 +46,10 @@ const props = withDefaults(
     initialValue?: Date
     showButtonBar?: boolean
     customFooter?: boolean
+    showTime?: boolean
+    timeOnly?: boolean
+    hourFormat?: '12' | '24'
+    minuteStep?: number
   }>(),
   {
     selectionMode: 'single',
@@ -51,6 +61,10 @@ const props = withDefaults(
     initialValue: undefined,
     showButtonBar: false,
     customFooter: false,
+    showTime: false,
+    timeOnly: false,
+    hourFormat: undefined,
+    minuteStep: 1,
   },
 )
 
@@ -67,5 +81,10 @@ const modelText = computed(() => {
     return `${value.start ? value.start.toDateString() : 'null'} / ${value.end ? value.end.toDateString() : 'null'}`
   }
   return value.toDateString()
+})
+const modelTimeText = computed(() => {
+  const value = model.value
+  if (!value || isRange(value)) return ''
+  return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`
 })
 </script>

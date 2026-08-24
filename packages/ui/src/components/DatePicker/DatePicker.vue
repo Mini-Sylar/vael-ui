@@ -64,6 +64,7 @@
           v-bind="$attrs"
         >
           <Calendar
+            v-if="!timeOnly"
             ref="calendarRef"
             v-model="model"
             :selection-mode="selectionMode"
@@ -78,6 +79,40 @@
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
           />
+          <div
+            v-if="(showTime || timeOnly) && selectionMode !== 'range'"
+            :class="timePart.class"
+            :style="timePart.style"
+          >
+            <TimeField
+              ref="hourFieldRef"
+              v-model="hourDisplay"
+              :min="resolvedHour12 ? 1 : 0"
+              :max="resolvedHour12 ? 12 : 23"
+              :label="messages.datePicker.hour"
+              :inc-label="messages.datePicker.increaseHour"
+              :dec-label="messages.datePicker.decreaseHour"
+            />
+            <span class="ui-date-picker-time-sep" aria-hidden="true">:</span>
+            <TimeField
+              v-model="minuteValue"
+              :min="0"
+              :max="59"
+              :step="minuteStep"
+              :label="messages.datePicker.minute"
+              :inc-label="messages.datePicker.increaseMinute"
+              :dec-label="messages.datePicker.decreaseMinute"
+            />
+            <SelectButton
+              v-if="resolvedHour12"
+              class="ui-date-picker-ampm"
+              size="sm"
+              :items="ampmItems"
+              :model-value="isPM ? 'PM' : 'AM'"
+              :allow-empty="false"
+              @update:model-value="onAmPmChange"
+            />
+          </div>
           <div
             v-if="showButtonBar || $slots.footer"
             :class="footerPart.class"
@@ -139,7 +174,9 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import Input from '../Input/Input.vue'
 import Button from '../Button/Button.vue'
+import SelectButton from '../SelectButton/SelectButton.vue'
 import Calendar from '../Calendar/Calendar.vue'
+import TimeField from '../internal/TimeField.vue'
 import type {
   CalendarDisabledDates,
   CalendarRange,
@@ -190,6 +227,17 @@ const props = withDefaults(
     /** Built-in Today (single mode only) / Clear buttons below the calendar. Ignored — the
      * `#footer` slot always renders instead — once that slot is provided. */
     showButtonBar?: boolean
+    /** Adds an hour/minute row below the calendar. `single` selection mode only — a range's two
+     * endpoints each having their own time isn't supported here. Keeps the popover open on a date
+     * pick instead of auto-closing, since there's still time left to set. */
+    showTime?: boolean
+    /** Hides the calendar entirely — just the time row. Implies `showTime`. */
+    timeOnly?: boolean
+    /** `'12'` adds an AM/PM toggle; `'24'` doesn't. Default: resolved from `locale` (or the
+     * runtime default) via `Intl`'s own `hour12` resolution — an explicit value always wins. */
+    hourFormat?: '12' | '24'
+    /** Minute increment for the arrow-key/stepper-button adjustments. Default: 1. */
+    minuteStep?: number
     ui?: Partial<{
       root: UiPartValue
       input: UiPartValue
@@ -202,6 +250,7 @@ const props = withDefaults(
       weekday: UiPartValue
       grid: UiPartValue
       cell: UiPartValue
+      time: UiPartValue
       footer: UiPartValue
     }>
   }>(),
@@ -230,6 +279,10 @@ const props = withDefaults(
     teleportTo: 'body',
     motionCss: true,
     showButtonBar: false,
+    showTime: false,
+    timeOnly: false,
+    hourFormat: undefined,
+    minuteStep: 1,
     ui: undefined,
   },
 )
@@ -265,31 +318,112 @@ function isoDate(date: Date): string {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
 }
 
-// Default format narrows to match view (year/month/date); explicit formatOptions always win.
-const defaultFormatOptions = computed<Intl.DateTimeFormatOptions>(() => {
-  if (props.view === 'year') return { year: 'numeric' }
-  if (props.view === 'month') return { month: 'long', year: 'numeric' }
-  return { dateStyle: 'medium' }
+// `true`/`false` always win; otherwise ask Intl what the locale itself defaults to, same
+// spirit as Calendar already deferring month/weekday names to `locale`.
+const resolvedHour12 = computed(() => {
+  if (props.hourFormat === '12') return true
+  if (props.hourFormat === '24') return false
+  return (
+    new Intl.DateTimeFormat(props.locale, { hour: 'numeric' }).resolvedOptions().hour12 ?? false
+  )
 })
-const formatter = computed(
-  () => new Intl.DateTimeFormat(props.locale, props.formatOptions ?? defaultFormatOptions.value),
+
+// `dateStyle`/`timeStyle` can't be combined with individual `hour`/`minute`/`hour12` in one
+// Intl.DateTimeFormat (throws) — so date and time are two separate formatters, concatenated,
+// rather than one options object trying to do both.
+const explicitFormatter = computed(() =>
+  props.formatOptions ? new Intl.DateTimeFormat(props.locale, props.formatOptions) : null,
 )
+const dateFormatter = computed(() => {
+  if (explicitFormatter.value) return explicitFormatter.value
+  if (props.view === 'year') return new Intl.DateTimeFormat(props.locale, { year: 'numeric' })
+  if (props.view === 'month') {
+    return new Intl.DateTimeFormat(props.locale, { month: 'long', year: 'numeric' })
+  }
+  return new Intl.DateTimeFormat(props.locale, { dateStyle: 'medium' })
+})
+const timeFormatter = computed(
+  () =>
+    new Intl.DateTimeFormat(props.locale, {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: resolvedHour12.value,
+    }),
+)
+function formatOne(date: Date): string {
+  if (explicitFormatter.value) return explicitFormatter.value.format(date)
+  if (props.timeOnly) return timeFormatter.value.format(date)
+  if (!props.showTime) return dateFormatter.value.format(date)
+  return `${dateFormatter.value.format(date)}, ${timeFormatter.value.format(date)}`
+}
 const displayValue = computed(() => {
   const value = model.value
   if (!value) return ''
   if (isRangeModel(value)) {
     if (!value.start) return ''
-    const startText = formatter.value.format(value.start)
+    const startText = dateFormatter.value.format(value.start)
     if (!value.end) return `${startText} – …`
-    return `${startText} – ${formatter.value.format(value.end)}`
+    return `${startText} – ${dateFormatter.value.format(value.end)}`
   }
-  return formatter.value.format(value)
+  return formatOne(value)
 })
+
+// Time state reads/writes straight off `model` — a JS Date already carries hour/minute, so
+// there's no separate time model to keep in sync, just this Date's own setHours.
+const timeBase = computed<Date>(() => {
+  const value = model.value
+  return value == null || isRangeModel(value) ? new Date() : value
+})
+function commitTime(hour24: number, minute: number) {
+  const next = new Date(timeBase.value)
+  next.setHours(hour24, minute, 0, 0)
+  model.value = next
+  emit('change', next)
+}
+const hour24 = computed(() => timeBase.value.getHours())
+const isPM = computed(() => hour24.value >= 12)
+const minuteValue = computed({
+  get: () => timeBase.value.getMinutes(),
+  set: (value) => commitTime(hour24.value, value),
+})
+const hourDisplay = computed({
+  get: () => {
+    if (!resolvedHour12.value) return hour24.value
+    const h = hour24.value % 12
+    return h === 0 ? 12 : h
+  },
+  set: (value) => {
+    if (!resolvedHour12.value) {
+      commitTime(value, minuteValue.value)
+      return
+    }
+    commitTime((value % 12) + (isPM.value ? 12 : 0), minuteValue.value)
+  },
+})
+// Locale-correct AM/PM text (some locales don't use literal "AM"/"PM") — format a known
+// morning and evening hour and read back whatever Intl actually calls each period.
+const dayPeriodLabels = computed(() => {
+  const fmt = new Intl.DateTimeFormat(props.locale, { hour: 'numeric', hour12: true })
+  const partAt = (hour: number) =>
+    fmt.formatToParts(new Date(2000, 0, 1, hour)).find((p) => p.type === 'dayPeriod')?.value
+  return { am: partAt(9) ?? 'AM', pm: partAt(21) ?? 'PM' }
+})
+const ampmItems = computed(() => [
+  { label: dayPeriodLabels.value.am, value: 'AM' },
+  { label: dayPeriodLabels.value.pm, value: 'PM' },
+])
+function onAmPmChange(value: string | number | (string | number)[] | null) {
+  const wantPM = value === 'PM'
+  if (wantPM === isPM.value) return
+  commitTime(wantPM ? hour24.value + 12 : hour24.value - 12, minuteValue.value)
+}
 
 function onCalendarChange(value: Date | CalendarRange | null) {
   emit('change', value)
   // Range mode: don't auto-close until both endpoints are committed.
   if (isRangeModel(value) && !value.end) return
+  // showTime: stay open — there's still a time to set after the date.
+  if (props.showTime && !isRangeModel(value)) return
   close()
 }
 
@@ -299,6 +433,7 @@ const inputEl = computed(() => inputRef.value?.inputEl ?? null)
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 const calendarRef = useTemplateRef<InstanceType<typeof Calendar>>('calendarRef')
+const hourFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('hourFieldRef')
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(
@@ -353,6 +488,10 @@ watch(
   () => open.value && positionerStyle.value.visibility === 'visible',
   (ready) => {
     if (!ready) return
+    if (props.timeOnly) {
+      nextTick(() => hourFieldRef.value?.inputEl?.focus())
+      return
+    }
     const value = model.value
     const anchor =
       value == null
@@ -397,6 +536,7 @@ const panelPart = computed(() =>
 const footerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer', 'ui-date-picker-footer'),
 )
+const timePart = computed(() => resolveUiPart(cx, themedUi()?.time, 'ui-date-picker-time'))
 
 const resolvedSide = computed(() => placement.value.split('-')[0] as DatePickerSide)
 const resolvedAlign = computed<DatePickerAlign>(() => {

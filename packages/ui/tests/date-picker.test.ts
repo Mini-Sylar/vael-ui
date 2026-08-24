@@ -244,3 +244,98 @@ test('a custom #footer slot replaces the built-in button bar, even with showButt
   await expect.element(bare.getByTestId('open-state')).toHaveTextContent('open')
   await expect.element(bare.getByTestId('custom-footer')).toBeInTheDocument()
 })
+
+test('showTime adds an hour/minute row; en-US locale auto-resolves to 12h with an AM/PM toggle', async () => {
+  const screen = render(DatePickerFixture, {
+    props: { showTime: true, initialValue: JUNE_15_2024 },
+  })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await expect.element(screen.getByRole('spinbutton', { name: 'Hour' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('spinbutton', { name: 'Minute' })).toBeInTheDocument()
+  const ampm = document.querySelector('.ui-date-picker-ampm')
+  expect(ampm).not.toBeNull()
+})
+
+test('hourFormat="24" suppresses the AM/PM toggle even under a 12h-default locale', async () => {
+  const screen = render(DatePickerFixture, {
+    props: { showTime: true, hourFormat: '24', initialValue: JUNE_15_2024 },
+  })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  expect(document.querySelector('.ui-date-picker-ampm')).toBeNull()
+})
+
+test('picking a date with showTime on keeps the panel open — there is still a time to set', async () => {
+  const screen = render(DatePickerFixture, { props: { showTime: true } })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(document.querySelector('.ui-calendar-cell')).not.toBeNull())
+  const visibleCell = document.querySelector<HTMLElement>(
+    '.ui-calendar-cell:not(.ui-calendar-cell--outside)',
+  )!
+  await userEvent.click(visibleCell)
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+})
+
+test('typing digits into the hour field commits immediately; out-of-range values clamp', async () => {
+  const screen = render(DatePickerFixture, {
+    props: { showTime: true, hourFormat: '24', initialValue: JUNE_15_2024 },
+  })
+  await screen.getByRole('combobox').click()
+  const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await hourField.fill('')
+  await userEvent.type(hourField, '9')
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('09:00')
+})
+
+test('ArrowUp wraps the hour past 23 back to 0, and past 0 back to 23 on ArrowDown', async () => {
+  const dec31_2359 = new Date(2024, 11, 31, 23, 0)
+  const screen = render(DatePickerFixture, {
+    props: { showTime: true, hourFormat: '24', initialValue: dec31_2359 },
+  })
+  await screen.getByRole('combobox').click()
+  const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  ;(hourField.element() as HTMLElement).focus()
+  await userEvent.keyboard('{ArrowUp}')
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('00:00')
+  await userEvent.keyboard('{ArrowDown}')
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('23:00')
+})
+
+test('12h mode wraps hour 12 -> 1 on increment, not 12 -> 0', async () => {
+  const noonish = new Date(2024, 5, 15, 12, 0)
+  const screen = render(DatePickerFixture, {
+    props: { showTime: true, hourFormat: '12', initialValue: noonish },
+  })
+  await screen.getByRole('combobox').click()
+  const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  ;(hourField.element() as HTMLElement).focus()
+  await userEvent.keyboard('{ArrowUp}')
+  // 12 PM + 1 hour = 1 PM = 13:00 in 24h storage.
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('13:00')
+})
+
+test('clicking the minute stepper increments by minuteStep, and the AM/PM toggle flips the stored hour by 12', async () => {
+  const nineAM = new Date(2024, 5, 15, 9, 0)
+  const screen = render(DatePickerFixture, {
+    props: { showTime: true, hourFormat: '12', minuteStep: 15, initialValue: nineAM },
+  })
+  await screen.getByRole('combobox').click()
+
+  const minuteField = document.querySelector('.ui-time-field:has([aria-label="Minute"])')!
+  const incButton = minuteField.querySelector<HTMLButtonElement>('.ui-time-field-stepper')!
+  await userEvent.click(incButton)
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('09:15')
+
+  const pmOption = document.querySelector<HTMLElement>('.ui-date-picker-ampm label:last-of-type')!
+  await userEvent.click(pmOption)
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('21:15')
+})
+
+test('timeOnly hides the calendar grid entirely — just the time row', async () => {
+  const screen = render(DatePickerFixture, { props: { timeOnly: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  expect(document.querySelector('.ui-calendar-root')).toBeNull()
+  await expect.element(screen.getByRole('spinbutton', { name: 'Hour' })).toBeInTheDocument()
+})

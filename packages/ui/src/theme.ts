@@ -314,6 +314,7 @@ export interface UiTheme {
       weekday: UiPartValue
       grid: UiPartValue
       cell: UiPartValue
+      time: UiPartValue
       footer: UiPartValue
     }>
   }

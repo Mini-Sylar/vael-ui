@@ -8,6 +8,21 @@
     place-items: center;
     color: var(--ui-text-muted);
   }
+  .ui-date-picker-time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.75rem 0.5rem;
+    border-block-start: 1px solid var(--ui-border);
+  }
+  .ui-date-picker-time-sep {
+    color: var(--ui-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-date-picker-ampm {
+    margin-inline-start: 0.25rem;
+  }
   .ui-date-picker-footer {
     display: flex;
     justify-content: flex-end;
