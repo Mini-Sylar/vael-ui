@@ -203,6 +203,30 @@ test("range mode's button bar has no Today button — only Clear", async () => {
     b.textContent?.trim(),
   )
   expect(buttons).toEqual(['Clear'])
+
+  // With no Today button to push left, Clear must stay flush against the
+  // footer's own right edge, not fall back to the flex start.
+  const footer = document.querySelector('.ui-date-picker-footer')!
+  const clearButton = document.querySelector('.ui-date-picker-footer button')!
+  const footerRect = footer.getBoundingClientRect()
+  const clearRect = clearButton.getBoundingClientRect()
+  expect(Math.abs(clearRect.right - footerRect.right)).toBeLessThan(20)
+})
+
+test('single mode: Today sits flush left, Clear flush right, in the same button bar', async () => {
+  const screen = render(DatePickerFixture, { props: { showButtonBar: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+
+  const footer = document.querySelector('.ui-date-picker-footer')!
+  const todayButton = document.querySelector('.ui-date-picker-today')!
+  const buttons = [...footer.querySelectorAll('button')]
+  const clearButton = buttons.find((b) => b.textContent?.trim() === 'Clear')!
+  const footerRect = footer.getBoundingClientRect()
+  const todayRect = todayButton.getBoundingClientRect()
+  const clearRect = clearButton.getBoundingClientRect()
+  expect(Math.abs(todayRect.left - footerRect.left)).toBeLessThan(20)
+  expect(Math.abs(clearRect.right - footerRect.right)).toBeLessThan(20)
 })
 
 test('a custom #footer slot replaces the built-in button bar, even with showButtonBar on', async () => {

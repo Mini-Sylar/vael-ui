@@ -86,6 +86,7 @@
             <slot name="footer">
               <Button
                 v-if="selectionMode !== 'range'"
+                class="ui-date-picker-today"
                 size="sm"
                 variant="ghost"
                 @click="todayClick"

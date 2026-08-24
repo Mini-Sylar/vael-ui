@@ -13,4 +13,10 @@
     justify-content: flex-end;
     gap: 0.5rem;
   }
+  /* Pushed to the far left — Clear stays flush right whether or not Today
+     is even rendered (range mode has no Today, and must not have Clear
+     jump to the left to fill the gap). */
+  .ui-date-picker-today {
+    margin-inline-end: auto;
+  }
 }
