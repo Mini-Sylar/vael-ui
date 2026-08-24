@@ -18,6 +18,8 @@ export interface UiTheme {
       trigger: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
     }>
   }
   loader?: { ui?: Partial<{ root: UiPartValue }> }
@@ -178,7 +180,14 @@ export interface UiTheme {
     }>
   }
   popover?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
-  menu?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
+  menu?: {
+    ui?: Partial<{
+      positioner: UiPartValue
+      panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
+    }>
+  }
   menuList?: { ui?: Partial<{ root: UiPartValue; item: UiPartValue; separator: UiPartValue }> }
   tooltip?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
   knob?: {
@@ -206,6 +215,8 @@ export interface UiTheme {
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
     }>
   }
   select?: {
@@ -214,9 +225,12 @@ export interface UiTheme {
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      filter: UiPartValue
       list: UiPartValue
       option: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }
   combobox?: {
@@ -299,7 +313,14 @@ export interface UiTheme {
     }>
   }
   /** Forwarded straight into the wrapped `<Menu>`'s own `ui` prop — same positioner/panel keys, themeable separately from plain `theme.menu`. */
-  contextMenu?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
+  contextMenu?: {
+    ui?: Partial<{
+      positioner: UiPartValue
+      panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
+    }>
+  }
   speedDial?: { ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }> }
   swipeToReveal?: {
     ui?: Partial<{ root: UiPartValue; content: UiPartValue; actions: UiPartValue }>

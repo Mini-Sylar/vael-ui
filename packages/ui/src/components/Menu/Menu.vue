@@ -18,14 +18,16 @@
         <div
           ref="panel"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
           v-bind="$attrs"
         >
+          <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
+            <slot name="header" />
+          </div>
           <div
             ref="list"
             role="menu"
             class="ui-menu-body"
-            :style="bodyStyle"
             v-scroll-mask="scrollFade"
             @keydown="onKeydown"
           >
@@ -38,6 +40,7 @@
               :cancelClose="cancelClose"
               :panelEl="panelEl"
               :placement="placement"
+              :maxHeight="maxHeight"
             />
             <template v-else v-for="(entry, i) in items" :key="i">
               <div v-if="isSeparator(entry)" role="separator" class="ui-menu-separator" />
@@ -99,6 +102,9 @@
                 />
               </template>
             </template>
+          </div>
+          <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
+            <slot name="footer" />
           </div>
         </div>
       </div>
@@ -184,7 +190,12 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
   /** Per-instance part-class/style overrides. */
-  ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
+  ui?: Partial<{
+    positioner: UiPartValue
+    panel: UiPartValue
+    header: UiPartValue
+    footer: UiPartValue
+  }>
 }
 </script>
 
@@ -228,6 +239,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** Co-located trigger markup — Menu wires the click and anchors to it; render just the button. */
   trigger(props: { open: boolean }): unknown
+  /** Above the item list, outside its scroll region — stays put while `items` scrolls underneath. */
+  header(): unknown
   /** Override one data-driven row's content while keeping its behavior. */
   item(props: { item: T }): unknown
   /** Fully custom menu content — render your own role="menuitem" markup; `items` is ignored. */
@@ -238,7 +251,12 @@ defineSlots<{
     cancelClose: () => void
     panelEl: HTMLElement | null
     placement: string
+    /** The live popover height budget in px, or `null` when unconstrained — size your own
+     * scroll region against this instead of guessing, since the built-in item list already does. */
+    maxHeight: number | null
   }): unknown
+  /** Below the item list, outside its scroll region — stays put while `items` scrolls above it. */
+  footer(): unknown
 }>()
 
 function isSeparator(entry: MenuEntry<T>): entry is MenuSeparator {
@@ -451,15 +469,16 @@ watch(
   },
 )
 
-// Apply maxHeight to body, not panel, so v-scroll-mask transparency works correctly.
-const bodyStyle = computed(() =>
-  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px`, overflowY: 'auto' as const } : {},
+const panelMaxHeightStyle = computed(() =>
+  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
 )
 
 const positionerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.positioner, 'ui-menu-positioner'),
 )
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-menu-panel'))
+const headerPart = computed(() => resolveUiPart(cx, themedUi()?.header, 'ui-menu-header'))
+const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-menu-footer'))
 
 // Resolved placement after floating-ui flips (e.g., "top" becomes "bottom" if no room).
 const resolvedSide = computed(() => placement.value.split('-')[0] as MenuSide)

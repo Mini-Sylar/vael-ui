@@ -6,6 +6,11 @@
   }
   .ui-select-body {
     position: relative;
+    /* Panel is a flex column (filter/header/footer are `flex: none` siblings) —
+       this is the one flexible child, capped by the panel's own max-height. */
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow-y: auto;
     padding: 0.25rem;
     /* Max-height is floating-ui live output. */
     transition: max-height var(--ui-duration-enter) var(--ui-ease-in-out);

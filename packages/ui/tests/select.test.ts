@@ -212,6 +212,18 @@ test('virtualization renders a rendered window, not all 1000 rows, for a large l
   })
 })
 
+test('the listbox body still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
+  const screen = render(SelectFixture, { props: { itemCount: 1000 } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  await vi.waitFor(() => {
+    const body = document.querySelector('.ui-select-body')
+    expect(body?.className).toContain('scroll-fade')
+  })
+  const body = document.querySelector('.ui-select-body') as HTMLElement
+  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
+})
+
 test('reach-end fires near the bottom in both virtualized and non-virtualized modes', async () => {
   // Non-virtualized (small list, below the auto-virtualize threshold): the
   // whole list already renders, so reach-end fires as soon as it's open.
@@ -353,4 +365,179 @@ test('forceMount keeps the panel mounted and hidden when closed', async () => {
   const positioner = document.querySelector<HTMLElement>('.ui-select-positioner')
   expect(positioner).not.toBeNull()
   expect(getComputedStyle(positioner!).display).toBe('none')
+})
+
+test('filter defaults to off — no search box, even though items would render fine', async () => {
+  const screen = render(SelectFixture)
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  expect(document.querySelector('.ui-select-filter')).toBeNull()
+})
+
+test('filter=true renders a search box that narrows the listbox to matching labels', async () => {
+  const screen = render(SelectFixture, { props: { filter: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+
+  const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
+  expect(filterInput).not.toBeNull()
+  // Autofocused on open.
+  await vi.waitFor(() => expect(document.activeElement).toBe(filterInput))
+
+  await userEvent.type(filterInput, 'an')
+  await vi.waitFor(() => {
+    const labels = [...document.querySelectorAll('.ui-select-option-label')].map(
+      (el) => el.textContent,
+    )
+    expect(labels).toEqual(['Banana'])
+  })
+})
+
+test("filter is diacritic- and case-insensitive, matching Tree/Combobox's own behavior", async () => {
+  const screen = render(SelectFixture, { props: { filter: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
+
+  await userEvent.type(filterInput, 'APPLE')
+  await vi.waitFor(() => {
+    const labels = [...document.querySelectorAll('.ui-select-option-label')].map(
+      (el) => el.textContent,
+    )
+    expect(labels).toEqual(['Apple'])
+  })
+})
+
+test('a filter query matching nothing falls back to the empty slot/text', async () => {
+  const screen = render(SelectFixture, { props: { filter: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
+
+  await userEvent.type(filterInput, 'zzz')
+  await expect.element(screen.getByText('No options')).toBeInTheDocument()
+})
+
+test('a custom filter function replaces the built-in label match', async () => {
+  const screen = render(SelectFixture, {
+    props: { filter: (item: { value: string | number }, q: string) => item.value === q },
+  })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
+
+  // Built-in label matching would find nothing for this exact-value query — the label is "Date".
+  await userEvent.type(filterInput, 'date')
+  await vi.waitFor(() => {
+    const labels = [...document.querySelectorAll('.ui-select-option-label')].map(
+      (el) => el.textContent,
+    )
+    expect(labels).toEqual(['Date'])
+  })
+})
+
+test('ArrowDown/Enter from inside the filter input still navigate and commit the listbox', async () => {
+  const screen = render(SelectFixture, { props: { filter: true } })
+  const trigger = screen.getByRole('combobox')
+  await trigger.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
+  await vi.waitFor(() => expect(document.activeElement).toBe(filterInput))
+
+  await userEvent.keyboard('{ArrowDown}')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"banana"')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
+test('Escape from inside the filter input closes the panel and returns focus to the trigger', async () => {
+  const screen = render(SelectFixture, { props: { filter: true } })
+  const trigger = screen.getByRole('combobox')
+  await trigger.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
+  await vi.waitFor(() => expect(document.activeElement).toBe(filterInput))
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  expect(document.activeElement).toBe(trigger.element())
+})
+
+test('the filter query resets once the panel closes, so reopening starts unfiltered', async () => {
+  const screen = render(SelectFixture, { props: { filter: true } })
+  const trigger = screen.getByRole('combobox')
+  await trigger.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
+  await userEvent.type(filterInput, 'an')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('an')
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('')
+
+  await trigger.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const labels = [...document.querySelectorAll('.ui-select-option-label')].map(
+    (el) => el.textContent,
+  )
+  expect(labels).toEqual(['Apple', 'Banana', 'Cherry', 'Date'])
+})
+
+test('header and footer slots render around the listbox only when provided', async () => {
+  const screen = render(SelectFixture, { props: { withHeader: true, withFooter: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('select-header')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('select-footer')).toBeInTheDocument()
+
+  screen.unmount()
+
+  const bare = render(SelectFixture)
+  await bare.getByRole('combobox').click()
+  await expect.element(bare.getByRole('listbox')).toBeInTheDocument()
+  expect(document.querySelector('.ui-select-header')).toBeNull()
+  expect(document.querySelector('.ui-select-footer')).toBeNull()
+})
+
+test('filter=false still shows the box but does no matching of its own — the async/remote-search escape hatch', async () => {
+  const screen = render(SelectFixture, { props: { filter: false } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+
+  const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
+  expect(filterInput).not.toBeNull()
+
+  await userEvent.type(filterInput, 'zzz')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('zzz')
+  // A real remote-search consumer would now swap `items` themselves — Select never
+  // second-guesses whatever `items` it's handed while `filter` is exactly `false`.
+  const labels = [...document.querySelectorAll('.ui-select-option-label')].map(
+    (el) => el.textContent,
+  )
+  expect(labels).toEqual(['Apple', 'Banana', 'Cherry', 'Date'])
+})
+
+test('the #filter slot fully replaces the built-in input, and its onKeydown still drives listbox navigation', async () => {
+  const screen = render(SelectFixture, { props: { filter: true, customFilter: true } })
+  const trigger = screen.getByRole('combobox')
+  await trigger.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+
+  expect(document.querySelector('.ui-select-filter input.ui-input-el')).toBeNull()
+  const customInput = screen.getByTestId('custom-filter')
+  await expect.element(customInput).toBeInTheDocument()
+
+  await customInput.fill('banana')
+  await vi.waitFor(() => {
+    const labels = [...document.querySelectorAll('.ui-select-option-label')].map(
+      (el) => el.textContent,
+    )
+    expect(labels).toEqual(['Banana'])
+  })
+
+  ;(customInput.element() as HTMLInputElement).focus()
+  await userEvent.keyboard('{ArrowDown}')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"banana"')
 })

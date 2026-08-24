@@ -7,6 +7,8 @@
   }
   .ui-menu-panel {
     position: relative;
+    display: flex;
+    flex-direction: column;
     border-radius: var(--ui-radius-surface);
     background: var(--ui-surface);
     color: var(--ui-text);
@@ -14,7 +16,23 @@
     /* Clips body to panel corners. */
     overflow: hidden;
   }
+  .ui-menu-header,
+  .ui-menu-footer {
+    flex: none;
+    padding: 0.5rem;
+  }
+  .ui-menu-header {
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-menu-footer {
+    border-block-start: 1px solid var(--ui-border);
+  }
   .ui-menu-body {
+    /* The one flexible child — header/footer are `flex: none` siblings, and
+       max-height (floating-ui live output) is capped on the panel, not here. */
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow-y: auto;
     padding: 0.25rem;
   }
   .ui-menu-trigger {

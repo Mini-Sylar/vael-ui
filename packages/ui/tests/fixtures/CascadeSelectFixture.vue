@@ -11,7 +11,14 @@
     placeholder="Pick a city"
     name="city"
     @select="onSelect"
-  />
+  >
+    <template v-if="withHeader" #header>
+      <span data-testid="cascade-select-header">header</span>
+    </template>
+    <template v-if="withFooter" #footer>
+      <span data-testid="cascade-select-footer">footer</span>
+    </template>
+  </CascadeSelect>
 </template>
 
 <script setup lang="ts">
@@ -23,11 +30,19 @@ import type {
 } from '../../src/components/CascadeSelect/CascadeSelect.vue'
 
 const props = withDefaults(
-  defineProps<{ disabled?: boolean; clearable?: boolean; items?: CascadeSelectItem[] }>(),
+  defineProps<{
+    disabled?: boolean
+    clearable?: boolean
+    items?: CascadeSelectItem[]
+    withHeader?: boolean
+    withFooter?: boolean
+  }>(),
   {
     disabled: false,
     clearable: false,
     items: undefined,
+    withHeader: false,
+    withFooter: false,
   },
 )
 

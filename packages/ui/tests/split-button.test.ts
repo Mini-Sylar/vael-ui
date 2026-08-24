@@ -156,6 +156,16 @@ test('#item slot overrides row content while keeping selection behavior', async 
   await expect.element(screen.getByTestId('custom-row').first()).toHaveTextContent('Save As...!')
 })
 
+test('header and footer slots forward through to the dropdown Menu', async () => {
+  const screen = render(SplitButtonFixture)
+  const scope = screen.container.querySelector('[data-testid="header-footer"]')!
+  const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
+
+  await userEvent.click(trigger)
+  await expect.element(screen.getByTestId('split-button-header')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('split-button-footer')).toBeInTheDocument()
+})
+
 test('root data-state reflects the dropdown open state', async () => {
   const screen = render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!

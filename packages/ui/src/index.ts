@@ -50,6 +50,7 @@ export type {
   SelectSide,
   SelectAlign,
   SelectVirtualizeConfig,
+  SelectFilter,
 } from './components/Select/Select.vue'
 export { default as Combobox } from './components/Combobox/Combobox.vue'
 export type {
@@ -223,6 +224,7 @@ export type {
 } from './composables/useVirtualizer'
 export { useListbox } from './composables/useListbox'
 export type { UseListboxOptions, UseListboxReturn } from './composables/useListbox'
+export { normalizeText } from './composables/normalizeText'
 export { useSlider } from './composables/useSlider'
 export type { SliderOrientation, UseSliderOptions, UseSliderReturn } from './composables/useSlider'
 export { useResizable } from './composables/useResizable'

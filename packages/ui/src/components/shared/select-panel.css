@@ -5,6 +5,8 @@
   }
   .ui-select-panel {
     position: relative;
+    display: flex;
+    flex-direction: column;
     /* Rows are virtualized (absolutely positioned, out of flow), so they
        never contribute to a `max-content` measurement — matching the
        trigger's width exactly is the real constraint, just floored so a

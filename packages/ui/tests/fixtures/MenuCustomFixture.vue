@@ -5,7 +5,8 @@
     <template #trigger>
       <button data-testid="trigger">open menu</button>
     </template>
-    <template #default>
+    <template #default="{ maxHeight }">
+      <output data-testid="max-height">{{ maxHeight }}</output>
       <button role="menuitem" data-testid="item-apple" @click="selected = 'apple'">Apple</button>
       <button role="menuitem" data-testid="item-banana" @click="selected = 'banana'">Banana</button>
       <button role="menuitem" data-testid="item-date" data-keep-open @click="selected = 'date'">

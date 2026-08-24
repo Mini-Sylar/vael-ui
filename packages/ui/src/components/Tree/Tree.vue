@@ -245,6 +245,7 @@ import Input from '../Input/Input.vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
 import { useUiMessages } from '../../messages'
+import { normalizeText } from '../../composables/normalizeText'
 import { moveTreeNode, useSortable } from '../../composables/useSortable'
 import type {
   DropPosition,
@@ -456,18 +457,10 @@ function activateNode(node: TreeNode) {
 }
 
 const expandedKeys = ref(new Set<string | number>())
-
-// Diacritic-insensitive normalization.
-function normalize(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-}
-const normalizedQuery = computed(() => normalize(query.value.trim()))
+const normalizedQuery = computed(() => normalizeText(query.value.trim()))
 const isFiltering = computed(() => normalizedQuery.value.length > 0)
 function nodeMatches(node: TreeNode): boolean {
-  return normalize(node.label).includes(normalizedQuery.value)
+  return normalizeText(node.label).includes(normalizedQuery.value)
 }
 // Nodes matching or with matching descendants.
 const subtreeMatchSet = computed(() => {

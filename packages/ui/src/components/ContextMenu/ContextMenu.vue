@@ -26,13 +26,24 @@
     :force-mount="forceMount"
     :teleport-to="teleportTo"
     :scroll-fade="scrollFade"
-    :ui="{ positioner: themedUi()?.positioner, panel: themedUi()?.panel }"
+    :ui="{
+      positioner: themedUi()?.positioner,
+      panel: themedUi()?.panel,
+      header: themedUi()?.header,
+      footer: themedUi()?.footer,
+    }"
     v-bind="$attrs"
     @select="(item) => emit('select', item)"
     @open-change="(value, details) => emit('open-change', value, details)"
   >
+    <template v-if="$slots.header" #header>
+      <slot name="header" />
+    </template>
     <template v-if="$slots.item" #item="{ item }">
       <slot name="item" :item="item" />
+    </template>
+    <template v-if="$slots.footer" #footer>
+      <slot name="footer" />
     </template>
   </Menu>
 </template>
@@ -74,7 +85,12 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
   /** Per-instance part-class/style overrides. */
-  ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
+  ui?: Partial<{
+    positioner: UiPartValue
+    panel: UiPartValue
+    header: UiPartValue
+    footer: UiPartValue
+  }>
 }
 </script>
 
@@ -125,8 +141,12 @@ const emit = defineEmits<{
 defineSlots<{
   /** Arbitrary wrapped content — a card, a table row, an image. Right-click (or long-press on touch) opens the menu; ordinary interaction with it is untouched. */
   default(props: { open: boolean }): unknown
+  /** Forwarded to Menu's own `#header`. */
+  header(): unknown
   /** Override one data-driven row's content while keeping its behavior. */
   item(props: { item: T }): unknown
+  /** Forwarded to Menu's own `#footer`. */
+  footer(): unknown
 }>()
 
 const wrapperEl = useTemplateRef<HTMLElement>('wrapper')

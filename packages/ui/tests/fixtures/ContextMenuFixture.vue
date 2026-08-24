@@ -2,6 +2,8 @@
   <div data-testid="target" style="inline-size: 200px; block-size: 100px; background: #eee">
     <ContextMenu :items="items" :disabled="disabled" v-model:open="open" @select="onSelect">
       Right-click me
+      <template #header><span data-testid="context-menu-header">header</span></template>
+      <template #footer><span data-testid="context-menu-footer">footer</span></template>
     </ContextMenu>
   </div>
   <output data-testid="selected">{{ selected }}</output>

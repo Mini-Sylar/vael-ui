@@ -90,6 +90,15 @@ test('disabled suppresses the contextmenu trigger entirely', async () => {
   expect(document.querySelector('.ui-menu-panel')).toBeNull()
 })
 
+test('header and footer slots forward through to the underlying Menu', async () => {
+  const screen = render(ContextMenuFixture)
+  const target = screen.container.querySelector('.ui-context-menu-trigger')!
+  rightClick(target, 50, 50)
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('context-menu-header')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('context-menu-footer')).toBeInTheDocument()
+})
+
 test('native browser context menu is suppressed (preventDefault on contextmenu)', async () => {
   const screen = render(ContextMenuFixture)
   const target = screen.container.querySelector('.ui-context-menu-trigger')!

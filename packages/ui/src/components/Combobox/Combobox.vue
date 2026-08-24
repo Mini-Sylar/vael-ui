@@ -193,6 +193,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
+import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
 import Chip from '../Chip/Chip.vue'
 
@@ -313,13 +314,6 @@ const fieldControl = useFieldControl()
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 
-function normalize(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-}
-
 const filteredItems = computed<T[]>(() => {
   if (props.filter === false) return [...props.items]
   const q = query.value.trim()
@@ -328,8 +322,8 @@ const filteredItems = computed<T[]>(() => {
     const match = props.filter
     return props.items.filter((item) => match(item, q))
   }
-  const nq = normalize(q)
-  return props.items.filter((item) => normalize(item.label).includes(nq))
+  const nq = normalizeText(q)
+  return props.items.filter((item) => normalizeText(item.label).includes(nq))
 })
 
 function isSelected(item: T): boolean {

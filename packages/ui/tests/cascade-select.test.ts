@@ -23,6 +23,14 @@ test('trigger click opens the panel and focuses the first top-level row', async 
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
+test('header and footer slots forward through to the underlying Menu', async () => {
+  const screen = render(CascadeSelectFixture, { props: { withHeader: true, withFooter: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('cascade-select-header')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('cascade-select-footer')).toBeInTheDocument()
+})
+
 test('ArrowRight descends a level at a time; Enter on a leaf commits the value, the full path, and closes the whole chain', async () => {
   const screen = render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()
