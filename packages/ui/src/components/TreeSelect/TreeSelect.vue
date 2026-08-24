@@ -78,6 +78,9 @@
           :data-motion="motionCss ? undefined : 'off'"
           v-bind="$attrs"
         >
+          <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
+            <slot name="header" />
+          </div>
           <Tree
             ref="treeRef"
             :id="treeId"
@@ -105,6 +108,9 @@
               <slot name="empty" />
             </template>
           </Tree>
+          <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
+            <slot name="footer" />
+          </div>
         </div>
       </div>
     </Transition>
@@ -210,10 +216,12 @@ const props = withDefaults(
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
       filter: UiPartValue
       list: UiPartValue
       node: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -254,6 +262,8 @@ const emit = defineEmits<{
 
 defineSlots<{
   value(props: { selected: T[] }): unknown
+  /** Above the filter input (if `filterable` is on) or the tree itself. */
+  header(): unknown
   /** Row content override (library owns wrapper & behavior). */
   node(props: {
     node: T
@@ -269,6 +279,8 @@ defineSlots<{
     removeNode: (value: string | number) => boolean
   }): unknown
   empty(): unknown
+  /** Below the tree. */
+  footer(): unknown
 }>()
 
 function findNode(nodes: readonly TreeSelectNode[], value: string | number): TreeSelectNode | null {
@@ -413,6 +425,12 @@ const positionerPart = computed(() =>
 )
 const panelPart = computed(() =>
   resolveUiPart(cx, themedUi()?.panel, 'ui-select-panel', 'ui-tree-select-panel'),
+)
+const headerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.header, 'ui-select-header', 'ui-tree-select-header'),
+)
+const footerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer', 'ui-tree-select-footer'),
 )
 // Deliver TreeSelect's classes to Tree as passengers alongside Tree's own classes.
 function withLegacyClass(legacyClass: string, override: UiPartValue | undefined): UiPartValue {

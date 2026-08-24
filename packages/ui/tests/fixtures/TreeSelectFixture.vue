@@ -10,7 +10,14 @@
     :clearable="clearable"
     :filterable="filterable"
     placeholder="Pick a node"
-  />
+  >
+    <template v-if="withHeader" #header>
+      <span data-testid="tree-select-header">header</span>
+    </template>
+    <template v-if="withFooter" #footer>
+      <span data-testid="tree-select-footer">footer</span>
+    </template>
+  </TreeSelect>
 </template>
 
 <script setup lang="ts">
@@ -28,6 +35,8 @@ const props = withDefaults(
     clearable?: boolean
     filterable?: boolean
     items?: TreeSelectNode[]
+    withHeader?: boolean
+    withFooter?: boolean
   }>(),
   {
     selectionMode: 'single',
@@ -35,6 +44,8 @@ const props = withDefaults(
     clearable: false,
     filterable: true,
     items: undefined,
+    withHeader: false,
+    withFooter: false,
   },
 )
 

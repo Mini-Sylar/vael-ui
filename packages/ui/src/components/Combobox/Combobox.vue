@@ -111,12 +111,14 @@
         <div
           ref="panel"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
           v-bind="$attrs"
         >
+          <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
+            <slot name="header" :count="filteredItems.length" :total="items.length" />
+          </div>
           <SelectListBody
             ref="listBody"
-            :style="bodyStyle"
             :items="filteredItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
@@ -140,6 +142,9 @@
               <slot name="empty" />
             </template>
           </SelectListBody>
+          <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
+            <slot name="footer" />
+          </div>
         </div>
       </div>
     </Transition>
@@ -249,9 +254,11 @@ const props = withDefaults(
       input: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
       list: UiPartValue
       option: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -305,8 +312,12 @@ defineSlots<{
   start(): unknown
   /** Renders before the library's own clear/chevron, inside Input's `#end`. */
   end(): unknown
+  /** Above the listbox, inside the popover panel. */
+  header(props: { count: number; total: number }): unknown
   item(props: { item: T; active: boolean; selected: boolean }): unknown
   empty(): unknown
+  /** Below the listbox, inside the popover panel. */
+  footer(): unknown
 }>()
 
 const messages = useUiMessages()
@@ -574,8 +585,8 @@ const effectiveOverscan = computed(() =>
     : filteredItems.value.length,
 )
 
-const bodyStyle = computed(() =>
-  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px`, overflowY: 'auto' as const } : {},
+const panelMaxHeightStyle = computed(() =>
+  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
 )
 
 const innerUi = computed(() => ({
@@ -591,6 +602,12 @@ const positionerPart = computed(() =>
 )
 const panelPart = computed(() =>
   resolveUiPart(cx, themedUi()?.panel, 'ui-select-panel', 'ui-combobox-panel'),
+)
+const headerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.header, 'ui-select-header', 'ui-combobox-header'),
+)
+const footerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer', 'ui-combobox-footer'),
 )
 
 const resolvedSide = computed(() => placement.value.split('-')[0] as ComboboxSide)

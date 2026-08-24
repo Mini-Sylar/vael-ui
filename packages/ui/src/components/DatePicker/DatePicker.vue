@@ -78,6 +78,25 @@
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
           />
+          <div
+            v-if="showButtonBar || $slots.footer"
+            :class="footerPart.class"
+            :style="footerPart.style"
+          >
+            <slot name="footer">
+              <Button
+                v-if="selectionMode !== 'range'"
+                size="sm"
+                variant="ghost"
+                @click="todayClick"
+              >
+                {{ messages.datePicker.today }}
+              </Button>
+              <Button size="sm" variant="ghost" @click="clearClick">
+                {{ messages.datePicker.clear }}
+              </Button>
+            </slot>
+          </div>
         </div>
       </div>
     </Transition>
@@ -118,6 +137,7 @@ import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import Input from '../Input/Input.vue'
+import Button from '../Button/Button.vue'
 import Calendar from '../Calendar/Calendar.vue'
 import type {
   CalendarDisabledDates,
@@ -166,6 +186,9 @@ const props = withDefaults(
     teleportTo?: string | HTMLElement
     /** `false` skips popover enter/leave AND Calendar's month-slide transition. */
     motionCss?: boolean
+    /** Built-in Today (single mode only) / Clear buttons below the calendar. Ignored — the
+     * `#footer` slot always renders instead — once that slot is provided. */
+    showButtonBar?: boolean
     ui?: Partial<{
       root: UiPartValue
       input: UiPartValue
@@ -178,6 +201,7 @@ const props = withDefaults(
       weekday: UiPartValue
       grid: UiPartValue
       cell: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -204,6 +228,7 @@ const props = withDefaults(
     forceMount: false,
     teleportTo: 'body',
     motionCss: true,
+    showButtonBar: false,
     ui: undefined,
   },
 )
@@ -213,6 +238,24 @@ const emit = defineEmits<{
   change: [value: Date | CalendarRange | null]
   'month-change': [value: Date]
 }>()
+
+defineSlots<{
+  /** Replaces the built-in Today/Clear button bar entirely — shown whenever this slot is
+   * provided, regardless of `showButtonBar`. */
+  footer(): unknown
+}>()
+
+function todayClick() {
+  const value = new Date()
+  model.value = value
+  emit('change', value)
+  close()
+}
+function clearClick() {
+  model.value = null
+  emit('change', null)
+  close()
+}
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0')
@@ -349,6 +392,9 @@ const positionerPart = computed(() =>
 )
 const panelPart = computed(() =>
   resolveUiPart(cx, themedUi()?.panel, 'ui-select-panel', 'ui-date-picker-panel'),
+)
+const footerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer', 'ui-date-picker-footer'),
 )
 
 const resolvedSide = computed(() => placement.value.split('-')[0] as DatePickerSide)

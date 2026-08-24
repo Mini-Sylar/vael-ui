@@ -91,6 +91,10 @@ export interface UiMessages {
   datePicker: {
     /** aria-label for the trigger button that opens the calendar. */
     chooseDate: string
+    /** `showButtonBar`'s built-in footer button — `selectionMode="single"` only. */
+    today: string
+    /** `showButtonBar`'s built-in footer button. */
+    clear: string
   }
   dataTable: {
     selectAll: string
@@ -156,7 +160,7 @@ export const defaultMessages: UiMessages = {
     next: 'Next page',
     last: 'Last page',
   },
-  datePicker: { chooseDate: 'Choose date' },
+  datePicker: { chooseDate: 'Choose date', today: 'Today', clear: 'Clear' },
   dataTable: {
     selectAll: 'Select all rows',
     selectRow: 'Select row',
@@ -291,7 +295,11 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     next: 'uiKit.pagination.next',
     last: 'uiKit.pagination.last',
   },
-  datePicker: { chooseDate: 'uiKit.datePicker.chooseDate' },
+  datePicker: {
+    chooseDate: 'uiKit.datePicker.chooseDate',
+    today: 'uiKit.datePicker.today',
+    clear: 'uiKit.datePicker.clear',
+  },
   dataTable: {
     selectAll: 'uiKit.dataTable.selectAll',
     selectRow: 'uiKit.dataTable.selectRow',
@@ -457,9 +465,13 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (Object.keys(pagination).length > 0) result.pagination = pagination
 
   const chooseDate = i18n.t(i18nKeyMap.datePicker.chooseDate)
-  if (chooseDate !== i18nKeyMap.datePicker.chooseDate) {
-    result.datePicker = { chooseDate }
-  }
+  const datePickerToday = i18n.t(i18nKeyMap.datePicker.today)
+  const datePickerClear = i18n.t(i18nKeyMap.datePicker.clear)
+  const datePicker: PartialUiMessages['datePicker'] = {}
+  if (chooseDate !== i18nKeyMap.datePicker.chooseDate) datePicker.chooseDate = chooseDate
+  if (datePickerToday !== i18nKeyMap.datePicker.today) datePicker.today = datePickerToday
+  if (datePickerClear !== i18nKeyMap.datePicker.clear) datePicker.clear = datePickerClear
+  if (Object.keys(datePicker).length > 0) result.datePicker = datePicker
 
   const dataTableSelectAll = i18n.t(i18nKeyMap.dataTable.selectAll)
   const dataTableSelectRow = i18n.t(i18nKeyMap.dataTable.selectRow)

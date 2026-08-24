@@ -165,3 +165,58 @@ test('view="date": clicking the header label drills up to month, then year, then
   // a value — it's pure navigation.
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
+
+test('showButtonBar off by default — no footer at all', async () => {
+  const screen = render(DatePickerFixture)
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  expect(document.querySelector('.ui-date-picker-footer')).toBeNull()
+})
+
+test("showButtonBar renders Today/Clear; Today commits today's date and closes, Clear empties the model and closes", async () => {
+  const screen = render(DatePickerFixture, {
+    props: { showButtonBar: true, initialValue: JUNE_15_2024 },
+  })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+
+  const todayButton = screen.getByRole('button', { name: 'Today' })
+  await expect.element(todayButton).toBeInTheDocument()
+  await todayButton.click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent(new Date().toDateString())
+
+  await screen.getByRole('combobox').click()
+  const clearButton = screen.getByRole('button', { name: 'Clear' })
+  await clearButton.click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('null')
+})
+
+test("range mode's button bar has no Today button — only Clear", async () => {
+  const screen = render(DatePickerFixture, {
+    props: { showButtonBar: true, selectionMode: 'range' },
+  })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  const buttons = [...document.querySelectorAll('.ui-date-picker-footer button')].map((b) =>
+    b.textContent?.trim(),
+  )
+  expect(buttons).toEqual(['Clear'])
+})
+
+test('a custom #footer slot replaces the built-in button bar, even with showButtonBar on', async () => {
+  const screen = render(DatePickerFixture, { props: { showButtonBar: true, customFooter: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await expect.element(screen.getByTestId('custom-footer')).toBeInTheDocument()
+  expect(document.querySelector('.ui-date-picker-footer button')).toBeNull()
+
+  screen.unmount()
+
+  // #footer alone (no showButtonBar) still renders — the slot doesn't need the flag.
+  const bare = render(DatePickerFixture, { props: { customFooter: true } })
+  await bare.getByRole('combobox').click()
+  await expect.element(bare.getByTestId('open-state')).toHaveTextContent('open')
+  await expect.element(bare.getByTestId('custom-footer')).toBeInTheDocument()
+})

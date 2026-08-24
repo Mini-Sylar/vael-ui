@@ -19,6 +19,18 @@
     box-shadow: var(--ui-panel-shadow);
     overflow: hidden;
   }
+  .ui-select-header {
+    flex: none;
+    padding: 0.5rem 0.625rem;
+    border-block-end: 1px solid var(--ui-border);
+    color: var(--ui-text-muted);
+    font-size: 0.8125rem;
+  }
+  .ui-select-footer {
+    flex: none;
+    padding: 0.5rem;
+    border-block-start: 1px solid var(--ui-border);
+  }
   .ui-select-enter-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
   }

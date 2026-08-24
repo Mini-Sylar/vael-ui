@@ -8,4 +8,9 @@
     place-items: center;
     color: var(--ui-text-muted);
   }
+  .ui-date-picker-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
 }

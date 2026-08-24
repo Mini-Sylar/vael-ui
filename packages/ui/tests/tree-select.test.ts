@@ -264,3 +264,19 @@ test('filterable=false renders no search box', async () => {
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   expect(screen.container.querySelector('.ui-tree-select-filter')).toBeNull()
 })
+
+test('header and footer slots render around the tree only when provided', async () => {
+  const screen = render(TreeSelectFixture, { props: { withHeader: true, withFooter: true } })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await expect.element(screen.getByTestId('tree-select-header')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('tree-select-footer')).toBeInTheDocument()
+
+  screen.unmount()
+
+  const bare = render(TreeSelectFixture)
+  await bare.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  expect(document.querySelector('.ui-tree-select-header')).toBeNull()
+  expect(document.querySelector('.ui-tree-select-footer')).toBeNull()
+})

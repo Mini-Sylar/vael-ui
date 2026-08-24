@@ -239,9 +239,11 @@ export interface UiTheme {
       input: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
       list: UiPartValue
       option: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }
   slider?: {
@@ -275,10 +277,12 @@ export interface UiTheme {
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
       filter: UiPartValue
       list: UiPartValue
       node: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }
   tree?: {
@@ -310,6 +314,7 @@ export interface UiTheme {
       weekday: UiPartValue
       grid: UiPartValue
       cell: UiPartValue
+      footer: UiPartValue
     }>
   }
   /** Forwarded straight into the wrapped `<Menu>`'s own `ui` prop — same positioner/panel keys, themeable separately from plain `theme.menu`. */

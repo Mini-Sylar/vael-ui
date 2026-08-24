@@ -10,8 +10,13 @@
     :max-date="maxDate"
     :disabled-dates="disabledDates"
     :disabled="disabled"
+    :show-button-bar="showButtonBar"
     placeholder="Pick a date"
-  />
+  >
+    <template v-if="customFooter" #footer>
+      <span data-testid="custom-footer">custom footer</span>
+    </template>
+  </DatePicker>
 </template>
 
 <script setup lang="ts">
@@ -33,6 +38,8 @@ const props = withDefaults(
     disabledDates?: CalendarDisabledDates
     disabled?: boolean
     initialValue?: Date
+    showButtonBar?: boolean
+    customFooter?: boolean
   }>(),
   {
     selectionMode: 'single',
@@ -42,6 +49,8 @@ const props = withDefaults(
     disabledDates: undefined,
     disabled: false,
     initialValue: undefined,
+    showButtonBar: false,
+    customFooter: false,
   },
 )
 

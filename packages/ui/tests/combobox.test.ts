@@ -317,6 +317,39 @@ test('multiple + allowCustom: Enter with no active option adds the raw text as a
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
+test('header and footer slots render around the listbox only when provided, with a live count in header', async () => {
+  const screen = render(ComboboxFixture, { props: { withHeader: true, withFooter: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('combobox-header')).toHaveTextContent('5 of 5')
+  await expect.element(screen.getByTestId('combobox-footer')).toBeInTheDocument()
+
+  await userEvent.type(input, 'ban')
+  await expect.element(screen.getByTestId('combobox-header')).toHaveTextContent('1 of 5')
+
+  screen.unmount()
+
+  const bare = render(ComboboxFixture)
+  await bare.getByRole('combobox').click()
+  await expect.element(bare.getByRole('listbox')).toBeInTheDocument()
+  expect(document.querySelector('.ui-select-header')).toBeNull()
+  expect(document.querySelector('.ui-select-footer')).toBeNull()
+})
+
+test('the listbox body still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
+  const screen = render(ComboboxFixture, { props: { itemCount: 1000 } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  await vi.waitFor(() => {
+    const body = document.querySelector('.ui-select-body')
+    expect(body?.className).toContain('scroll-fade')
+  })
+  const body = document.querySelector('.ui-select-body') as HTMLElement
+  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
+})
+
 test('hidden inputs carry the selection into FormData; multiple repeats the name', async () => {
   const screen = render(ComboboxFormFixture)
   const form = screen.getByTestId('form').element() as HTMLFormElement
