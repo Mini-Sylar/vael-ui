@@ -339,3 +339,14 @@ test('timeOnly hides the calendar grid entirely — just the time row', async ()
   expect(document.querySelector('.ui-calendar-root')).toBeNull()
   await expect.element(screen.getByRole('spinbutton', { name: 'Hour' })).toBeInTheDocument()
 })
+
+test("timeOnly is inert in range mode — falls back to the calendar instead of an empty panel (time isn't supported for a range)", async () => {
+  const screen = render(DatePickerFixture, {
+    props: { timeOnly: true, selectionMode: 'range' },
+  })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await vi.waitFor(() => expect(document.querySelector('.ui-calendar-root')).not.toBeNull())
+  expect(document.querySelector('.ui-date-picker-time')).toBeNull()
+  expect(document.querySelector('.ui-select-panel')?.textContent?.trim()).not.toBe('')
+})

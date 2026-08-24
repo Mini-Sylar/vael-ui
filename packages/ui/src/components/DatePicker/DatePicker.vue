@@ -64,7 +64,7 @@
           v-bind="$attrs"
         >
           <Calendar
-            v-if="!timeOnly"
+            v-if="!timeOnlyEffective"
             ref="calendarRef"
             v-model="model"
             :selection-mode="selectionMode"
@@ -318,6 +318,11 @@ function isoDate(date: Date): string {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
 }
 
+// `timeOnly` has no meaning in range mode (time isn't supported there at all) — without this,
+// both the calendar AND the time row would fail their own `v-if`, leaving a genuinely empty
+// panel rather than falling back to something usable.
+const timeOnlyEffective = computed(() => props.timeOnly && props.selectionMode !== 'range')
+
 // `true`/`false` always win; otherwise ask Intl what the locale itself defaults to, same
 // spirit as Calendar already deferring month/weekday names to `locale`.
 const resolvedHour12 = computed(() => {
@@ -488,7 +493,7 @@ watch(
   () => open.value && positionerStyle.value.visibility === 'visible',
   (ready) => {
     if (!ready) return
-    if (props.timeOnly) {
+    if (timeOnlyEffective.value) {
       nextTick(() => hourFieldRef.value?.inputEl?.focus())
       return
     }
