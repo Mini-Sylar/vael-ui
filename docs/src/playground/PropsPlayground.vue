@@ -777,6 +777,12 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
   value: 60,
 }
 
+// Props whose real default IS "unset" (an opt-in cap/limit, not a value the
+// component needs to render at all) — seeding these to 0 like any other
+// number control collapses the panel/track to nothing. `undefined` here
+// keeps the playground's starting state matching the component's own.
+const NUMBER_UNSET_BY_DEFAULT = new Set(['maxPanelHeight'])
+
 const values = reactive<Record<string, unknown>>({})
 
 watch(
@@ -812,6 +818,12 @@ watchEffect(() => {
     } else if (
       control.kind === 'number' &&
       propMeta?.default === undefined &&
+      NUMBER_UNSET_BY_DEFAULT.has(control.name)
+    ) {
+      values[control.name] = undefined
+    } else if (
+      control.kind === 'number' &&
+      propMeta?.default === undefined &&
       NUMBER_DEFAULT_OVERRIDES[control.name] !== undefined
     ) {
       values[control.name] = NUMBER_DEFAULT_OVERRIDES[control.name]
@@ -842,9 +854,10 @@ const code = computed(() => {
     .map((c) => {
       const v = values[c.name]
       if (c.kind === 'boolean') return v ? c.name : `:${c.name}="false"`
-      if (c.kind === 'number') return `:${c.name}="${v}"`
+      if (c.kind === 'number') return v === undefined ? '' : `:${c.name}="${v}"`
       return `${c.name}="${v}"`
     })
+    .filter(Boolean)
     .join(' ')
   const itemsAttr = hasItemsProp.value ? ' :items="items"' : ''
   const openTag = [props.name, attrs, itemsAttr].filter(Boolean).join(' ').replace(/ +/g, ' ')
