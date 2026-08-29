@@ -8,6 +8,8 @@ export type SliderOrientation = 'horizontal' | 'vertical'
 export interface UseSliderOptions {
   /** The track element — pointer coordinates are mapped against its rect. */
   trackEl: Ref<HTMLElement | null>
+  /** Thumb elements in index order — a track click focuses the one it moves. */
+  thumbEls?: Ref<HTMLElement[] | null>
   min?: MaybeRefOrGetter<number>
   max?: MaybeRefOrGetter<number>
   step?: MaybeRefOrGetter<number>
@@ -124,6 +126,7 @@ export function useSlider(
     isDragging.value = true
     capturedPointerId = event.pointerId
     target.setPointerCapture(event.pointerId)
+    options.thumbEls?.value?.[index]?.focus({ preventScroll: true })
     setValue(index, valueFromPointer(event))
   }
 

@@ -125,6 +125,7 @@ const {
   onTrackPointerdown,
 } = useSlider(modelValue, {
   trackEl,
+  thumbEls,
   min: () => props.min,
   max: () => props.max,
   step: () => props.step,
