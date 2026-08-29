@@ -66,6 +66,15 @@
     cursor: not-allowed;
   }
 
+  @media (pointer: coarse) {
+    .ui-time-field-input {
+      padding-block: 0.875rem;
+    }
+    .ui-time-field-stepper {
+      inline-size: 2rem;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .ui-time-field-stepper:active {
       transform: none;

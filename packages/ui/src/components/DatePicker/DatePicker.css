@@ -23,6 +23,12 @@
   .ui-date-picker-ampm {
     margin-inline-start: 0.25rem;
   }
+  @media (pointer: coarse) {
+    .ui-date-picker-ampm .ui-select-button-option.ui-select-button-option {
+      block-size: 2.25rem;
+      padding-inline: 1rem;
+    }
+  }
   .ui-date-picker-footer {
     display: flex;
     justify-content: flex-end;
