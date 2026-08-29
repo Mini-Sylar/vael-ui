@@ -1,4 +1,5 @@
 import '../src/style.css'
+import { nextTick } from 'vue'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
@@ -9,6 +10,9 @@ function rows(screen: RenderResult<unknown>): HTMLElement[] {
 }
 function order(screen: RenderResult<unknown>): string {
   return screen.container.querySelector('[data-testid="order"]')!.textContent!
+}
+function clicked(screen: RenderResult<unknown>): string {
+  return screen.container.querySelector('[data-testid="clicked"]')!.textContent!
 }
 
 /** Synthetic drag: the engine only needs pointerdown -> move past threshold -> up. */
@@ -84,6 +88,32 @@ test('a handle selector restricts where the drag can start', async () => {
   expect(document.querySelector('[data-sortable-preview]')).toBeNull()
   window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 14 }))
   expect(order(screen)).toBe('a,b,c')
+})
+
+test('a sibling reactive change mid-drag does not tear down the drag', async () => {
+  const screen = render(DraggableFixture)
+  const release = drag(rows(screen)[0]!, 40, 16)
+  screen.container.querySelector<HTMLElement>('[data-testid="touch"]')!.click()
+  await nextTick()
+  release()
+  await vi.waitFor(() => expect(order(screen)).not.toBe('a,b,c'))
+})
+
+test('a real drag suppresses the browser trailing click on the dropped row', async () => {
+  const screen = render(DraggableFixture)
+  const release = drag(rows(screen)[0]!, 40, 17)
+  release()
+  await vi.waitFor(() => expect(order(screen)).not.toBe('a,b,c'))
+  const dropped = rows(screen).find((row) => row.dataset.value === 'a')!
+  const evt = new MouseEvent('click', { bubbles: true, cancelable: true })
+  dropped.dispatchEvent(evt)
+  expect(evt.defaultPrevented).toBe(true)
+})
+
+test('a click with no preceding drag reaches the row normally', async () => {
+  const screen = render(DraggableFixture)
+  rows(screen)[1]!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+  await vi.waitFor(() => expect(clicked(screen)).toBe('b'))
 })
 
 test('Escape aborts a directive drag too', async () => {

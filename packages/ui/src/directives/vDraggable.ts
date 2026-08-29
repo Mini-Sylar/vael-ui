@@ -21,9 +21,24 @@ export type DraggableValue<T = unknown> = T[] | DraggableOptions<T> | undefined
 
 const state = new WeakMap<HTMLElement, () => void>()
 
-function normalize<T>(value: DraggableValue<T>): DraggableOptions<T> | null {
+function normalize<T>(value: DraggableValue<T> | null | undefined): DraggableOptions<T> | null {
   if (!value) return null
   return Array.isArray(value) ? { items: value } : value
+}
+
+function sameValue(a: DraggableValue, b: DraggableValue | null): boolean {
+  const na = normalize(a)
+  const nb = normalize(b)
+  if (na === nb) return true
+  if (!na || !nb) return false
+  return (
+    na.items === nb.items &&
+    na.axis === nb.axis &&
+    na.disabled === nb.disabled &&
+    na.handle === nb.handle &&
+    na.group === nb.group &&
+    na.groupId === nb.groupId
+  )
 }
 
 function childrenOf(container: HTMLElement): HTMLElement[] {
@@ -88,9 +103,17 @@ function start(el: HTMLElement, value: DraggableValue): void {
       engine.onHandlePointerdown(event, index)
     }
 
+    function onClickCapture(event: MouseEvent) {
+      if (!engine.consumeSuppressedClick()) return
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
     el.addEventListener('pointerdown', onPointerdown)
+    el.addEventListener('click', onClickCapture, true)
     state.set(el, () => {
       el.removeEventListener('pointerdown', onPointerdown)
+      el.removeEventListener('click', onClickCapture, true)
       scope.stop()
     })
   })
@@ -107,6 +130,7 @@ export const vDraggable: Directive<HTMLElement, DraggableValue> = {
     start(el, binding.value)
   },
   updated(el, binding) {
+    if (sameValue(binding.value, binding.oldValue)) return
     start(el, binding.value)
   },
   unmounted(el) {
