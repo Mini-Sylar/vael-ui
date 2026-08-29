@@ -142,8 +142,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-menu-enter-active,
-    .ui-menu-leave-active,
     .ui-menu-enter-active .ui-menu-panel,
     .ui-menu-leave-active .ui-menu-panel {
       transition: none;

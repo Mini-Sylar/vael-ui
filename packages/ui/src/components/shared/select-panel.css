@@ -54,8 +54,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-select-enter-active,
-    .ui-select-leave-active,
     .ui-select-enter-active .ui-select-panel,
     .ui-select-leave-active .ui-select-panel {
       transition: none;

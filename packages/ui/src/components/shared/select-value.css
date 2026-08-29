@@ -86,7 +86,7 @@
     }
     .ui-clear-enter-active,
     .ui-clear-leave-active {
-      transition: none;
+      transition: opacity var(--ui-duration-press) var(--ui-ease-out);
     }
     .ui-clear-enter-from,
     .ui-clear-leave-to {
