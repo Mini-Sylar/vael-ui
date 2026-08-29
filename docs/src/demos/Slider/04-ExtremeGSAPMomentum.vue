@@ -3,12 +3,11 @@
     <h3>Extreme: GSAP momentum &amp; rubber-band release (gsap)</h3>
     <p class="note">
       Flick the thumb and let go, it overshoots past the release point and eases back, scaled to
-      release velocity. This rides <code>thumbEls</code> directly: the thumb's own position is set
-      via the standalone CSS <code>translate</code> property, and GSAP's <code>x</code> tween
-      animates the separate <code>transform</code> property, two independent CSS properties that
-      compose additively on the same element, so GSAP's tween layers on top of the library's own
-      position instead of fighting it, no wrapper element needed. <code>clearProps</code> wipes the
-      tween's inline transform once it settles so a later drag measures a clean position again.
+      release velocity. The thumb's real position is set via the standalone CSS
+      <code>translate</code> property; GSAP tweens a plain JS object (not the thumb element itself)
+      and each tick writes the result to the thumb's <code>transform</code>, a separate property
+      that composes additively with <code>translate</code> — handing GSAP the element directly would
+      have it clear <code>translate</code> to own the whole transform stack itself.
     </p>
     <div class="row slider-row">
       <Slider
@@ -56,11 +55,18 @@ function onWindowPointerup() {
   const velocity = (last.x - first.x) / (last.t - first.t) // px/ms
   const overshoot = gsap.utils.clamp(-40, 40, velocity * 60)
   if (Math.abs(overshoot) < 1) return
-  gsap.fromTo(
-    thumb,
-    { x: overshoot },
-    { x: 0, duration: 0.6, ease: 'elastic.out(1, 0.5)', clearProps: 'x' },
-  )
+  const state = { x: overshoot }
+  gsap.to(state, {
+    x: 0,
+    duration: 0.6,
+    ease: 'elastic.out(1, 0.5)',
+    onUpdate: () => {
+      thumb.style.transform = `translateX(${state.x}px)`
+    },
+    onComplete: () => {
+      thumb.style.transform = ''
+    },
+  })
 }
 
 onMounted(() => {
