@@ -31,6 +31,7 @@
           :aria-disabled="items[row.index]?.disabled || undefined"
           :style="[row.style, optionPart.style]"
           @mousemove="onRowHover(row.index)"
+          @mousedown.prevent
           @click="onRowClick(row.index)"
         >
           <slot
