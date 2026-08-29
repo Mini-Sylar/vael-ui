@@ -108,6 +108,7 @@ export function useKnob(model: Ref<number>, options: UseKnobOptions): UseKnobRet
     if (isDisabled()) return
     event.preventDefault()
     const dial = event.currentTarget as HTMLElement
+    dial.focus({ preventScroll: true })
     isDragging.value = true
     capturedPointerId = event.pointerId
     dial.setPointerCapture(event.pointerId)

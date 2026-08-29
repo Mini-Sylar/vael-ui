@@ -127,6 +127,7 @@ export function useDial(model: Ref<number>, options: UseDialOptions): UseDialRet
     if (isDisabled()) return
     event.preventDefault()
     const dial = event.currentTarget as HTMLElement
+    dial.focus({ preventScroll: true })
     isDragging.value = true
     capturedPointerId = event.pointerId
     // Anchor baseline before capture (capture can fail).
