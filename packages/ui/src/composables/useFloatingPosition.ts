@@ -18,6 +18,8 @@ export interface UseFloatingPositionOptions {
   alignOffset?: MaybeRefOrGetter<number>
   /** Writes the reference element's measured width into `positionerStyle` as `--ui-anchor-inline-size` (a custom property, not `inline-size` directly — the positioner still shrink-to-fits by default; only a component that opts in, like Select's panel, consumes the variable). Default false; Popover/Menu/Tooltip never pass this and are byte-for-byte unaffected. */
   matchReferenceWidth?: MaybeRefOrGetter<boolean>
+  /** Caps the returned `maxHeight` at this value even when more viewport space is available — the available-space budget still wins when it's smaller. Omitted keeps today's behavior (viewport space is the only limit). */
+  maxHeightCap?: MaybeRefOrGetter<number | undefined>
 }
 
 // Coarse mapping for transform-origin (enough for scale/fade).
@@ -86,7 +88,8 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
         size({
           padding: 8,
           apply({ availableHeight, rects }) {
-            maxHeight.value = availableHeight
+            const cap = toValue(options.maxHeightCap)
+            maxHeight.value = cap != null ? Math.min(availableHeight, cap) : availableHeight
             anchorInlineSize = matchWidth ? `${rects.reference.width}px` : undefined
           },
         }),

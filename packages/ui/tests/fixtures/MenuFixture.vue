@@ -1,7 +1,12 @@
 <template>
   <output data-testid="selected">{{ selected }}</output>
   <output data-testid="open-state">{{ open ? 'open' : 'closed' }}</output>
-  <Menu v-model:open="open" :items="items" @select="selected = $event.value ?? ''">
+  <Menu
+    v-model:open="open"
+    :items="items"
+    :max-panel-height="maxPanelHeight"
+    @select="selected = $event.value ?? ''"
+  >
     <template #trigger>
       <button data-testid="trigger">open menu</button>
     </template>
@@ -24,8 +29,9 @@ const props = withDefaults(
     itemCount?: number
     withHeader?: boolean
     withFooter?: boolean
+    maxPanelHeight?: number
   }>(),
-  { withHeader: false, withFooter: false },
+  { withHeader: false, withFooter: false, maxPanelHeight: undefined },
 )
 
 const items: MenuEntry[] = props.itemCount

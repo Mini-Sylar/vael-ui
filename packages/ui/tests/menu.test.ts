@@ -154,6 +154,16 @@ test('the item list still gets a real capped height (v-scroll-mask keeps working
   expect(body.clientHeight).toBeLessThan(body.scrollHeight)
 })
 
+test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
+  const screen = render(MenuFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  const panel = document.querySelector<HTMLElement>('.ui-menu-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
+  const body = document.querySelector<HTMLElement>('.ui-menu-body')!
+  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
+})
+
 test('a fully custom #default slot gets the live maxHeight budget, so it can bound its own scroll region', async () => {
   const screen = render(MenuCustomFixture)
   await screen.getByTestId('trigger').click()

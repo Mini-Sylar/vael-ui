@@ -189,6 +189,8 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   teleportTo?: string | HTMLElement
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
+  /** Caps the panel's height at this many pixels even when the viewport has room for more — the item list scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+  maxPanelHeight?: number
   /** Per-instance part-class/style overrides. */
   ui?: Partial<{
     positioner: UiPartValue
@@ -312,6 +314,7 @@ const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close
     closeOnEsc: () => props.closeOnEsc,
     closeOnOutside: () => props.closeOnOutside,
     beforeClose: () => props.beforeClose,
+    maxHeightCap: () => props.maxPanelHeight,
     onOpenChange: (value, details) => emit('open-change', value, details),
   })
 

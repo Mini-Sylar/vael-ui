@@ -23,6 +23,8 @@ export interface UsePopoverOptions {
   alignOffset?: MaybeRefOrGetter<number>
   /** Forwarded to `useFloatingPosition` verbatim — see its own docs. Default false; only Select's panel passes true, Popover/Menu/Tooltip pass nothing and stay byte-for-byte unaffected. */
   matchReferenceWidth?: MaybeRefOrGetter<boolean>
+  /** Forwarded to `useFloatingPosition` verbatim — caps the panel's height budget even when the viewport has more room. */
+  maxHeightCap?: MaybeRefOrGetter<number | undefined>
   closeOnEsc?: MaybeRefOrGetter<boolean>
   closeOnOutside?: MaybeRefOrGetter<boolean>
   onOpenChange?: (value: boolean, details: PopoverOpenChangeDetails) => void
@@ -42,6 +44,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     sideOffset: options.sideOffset,
     alignOffset: options.alignOffset,
     matchReferenceWidth: options.matchReferenceWidth,
+    maxHeightCap: options.maxHeightCap,
   })
 
   // Logically open but visually closing: exposes third state for animations.
