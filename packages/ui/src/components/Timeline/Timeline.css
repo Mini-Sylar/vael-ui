@@ -263,13 +263,13 @@
     .ui-timeline-dot {
       transition: background-color var(--ui-duration-press) ease;
     }
-    .ui-timeline-step[data-state='active'] .ui-timeline-dot {
+    .ui-timeline-step[data-active] .ui-timeline-dot {
       scale: 1;
     }
     .ui-timeline-marker::before {
       animation: none;
     }
-    .ui-timeline--pulse .ui-timeline-step[data-state='active'] .ui-timeline-marker::before {
+    .ui-timeline--pulse .ui-timeline-step[data-active] .ui-timeline-marker::before {
       opacity: 0.55;
       scale: 1.15;
     }
