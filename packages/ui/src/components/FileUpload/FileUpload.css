@@ -97,7 +97,7 @@
   }
   .ui-file-item-enter-active,
   .ui-file-item-leave-active {
-    transition: opacity var(--ui-duration-enter) ease;
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-file-item-enter-active {
     transition-delay: calc(var(--ui-file-item-index, 0) * 40ms);
@@ -121,7 +121,7 @@
     }
     .ui-file-item-enter-active,
     .ui-file-item-leave-active {
-      transition: opacity var(--ui-duration-enter) ease;
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
   }
 }

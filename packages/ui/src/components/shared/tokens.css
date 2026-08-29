@@ -46,7 +46,7 @@
   --ui-duration-tooltip-exit: 100ms;
   --ui-duration-toast: 400ms;
   --ui-duration-toast-exit: 200ms;
-  --ui-ease-toast: ease;
+  --ui-ease-toast: var(--ui-ease-out);
   --ui-toast-offset: 1rem;
 }
 
