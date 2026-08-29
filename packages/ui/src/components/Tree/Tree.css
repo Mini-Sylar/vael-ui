@@ -87,11 +87,6 @@
     text-align: start;
     cursor: pointer;
     user-select: none;
-    will-change: transform;
-    transition: transform var(--ui-duration-press) var(--ui-ease-out);
-  }
-  .ui-tree-row:active:not(.ui-tree-row--disabled) {
-    transform: scale(0.98);
   }
   .ui-tree-row:hover:not(.ui-tree-row--disabled),
   .ui-tree-row:focus-visible {
@@ -174,9 +169,6 @@
   @media (prefers-reduced-motion: reduce) {
     .ui-tree-chevron {
       transition: none;
-    }
-    .ui-tree-row:active:not(.ui-tree-row--disabled) {
-      transform: none;
     }
   }
 

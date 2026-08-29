@@ -96,11 +96,6 @@
     line-height: 1.25rem;
     text-align: start;
     cursor: pointer;
-    will-change: transform;
-    transition: transform var(--ui-duration-press) var(--ui-ease-out);
-  }
-  .ui-tree-select-row:active:not(.ui-tree-select-row--disabled) {
-    transform: scale(0.98);
   }
   .ui-tree-select-row:hover:not(.ui-tree-select-row--disabled),
   .ui-tree-select-row:focus-visible {
@@ -177,9 +172,6 @@
     }
     .ui-tree-select-row-move {
       transition: none;
-    }
-    .ui-tree-select-row:active:not(.ui-tree-select-row--disabled) {
-      transform: none;
     }
   }
 }
