@@ -36,6 +36,11 @@
     font-size: 1rem;
     line-height: 1;
     cursor: pointer;
+    will-change: transform;
+    transition: transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-toolbar-overflow-trigger:active {
+    transform: scale(0.96);
   }
   .ui-toolbar-overflow-label {
     display: inline-block;
@@ -48,6 +53,11 @@
   @media (hover: hover) and (pointer: fine) {
     .ui-toolbar-overflow-trigger:hover {
       background: var(--ui-muted);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-toolbar-overflow-trigger:active {
+      transform: none;
     }
   }
   .ui-toolbar-separator {

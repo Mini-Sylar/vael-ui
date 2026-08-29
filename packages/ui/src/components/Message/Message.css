@@ -97,9 +97,14 @@
     color: inherit;
     opacity: 0.5;
     cursor: pointer;
+    will-change: transform;
     transition:
       opacity var(--ui-duration-press) ease,
-      background-color var(--ui-duration-press) ease;
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-message-close:active {
+    transform: scale(0.96);
   }
   @media (hover: hover) and (pointer: fine) {
     .ui-message-close:hover {
@@ -122,6 +127,9 @@
   @media (prefers-reduced-motion: reduce) {
     .ui-message-leave-active {
       transition: opacity var(--ui-duration-exit) ease;
+    }
+    .ui-message-close:active {
+      transform: none;
     }
   }
 }

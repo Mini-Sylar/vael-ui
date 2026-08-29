@@ -52,7 +52,7 @@
     }
   }
   .ui-time-field-stepper:active {
-    transform: scale(0.85);
+    transform: scale(0.96);
   }
   .ui-time-field-stepper:disabled {
     opacity: 0.35;
@@ -64,5 +64,11 @@
   }
   .ui-time-field[data-disabled] .ui-time-field-input {
     cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-time-field-stepper:active {
+      transform: none;
+    }
   }
 }

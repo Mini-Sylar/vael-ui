@@ -161,9 +161,14 @@
     color: inherit;
     opacity: 0.5;
     cursor: pointer;
+    will-change: transform;
     transition:
       opacity var(--ui-duration-press) ease,
-      background-color var(--ui-duration-press) ease;
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-toast-close:active {
+    transform: scale(0.96);
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -217,7 +222,8 @@
     .ui-toast-leave-to {
       transform: none;
     }
-    .ui-toast-action:active {
+    .ui-toast-action:active,
+    .ui-toast-close:active {
       transform: none;
     }
     .ui-toaster {

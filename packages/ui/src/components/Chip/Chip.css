@@ -30,7 +30,13 @@
     background: transparent;
     color: var(--ui-text-muted);
     cursor: pointer;
-    transition: background-color var(--ui-duration-press) ease;
+    will-change: transform;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-chip-remove:active {
+    transform: scale(0.96);
   }
   .ui-chip-remove:hover {
     background: var(--ui-border-strong);
@@ -43,5 +49,11 @@
   .ui-chip-remove:disabled {
     cursor: not-allowed;
     pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-chip-remove:active {
+      transform: none;
+    }
   }
 }

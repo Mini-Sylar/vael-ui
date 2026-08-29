@@ -83,9 +83,14 @@
     background: transparent;
     color: var(--ui-text-muted);
     cursor: pointer;
+    will-change: transform;
     transition:
       background-color var(--ui-duration-press) ease,
-      color var(--ui-duration-press) ease;
+      color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-file-upload-remove:active {
+    transform: scale(0.96);
   }
   .ui-file-upload-remove:hover {
     background: var(--ui-muted);
@@ -122,6 +127,9 @@
     .ui-file-item-enter-active,
     .ui-file-item-leave-active {
       transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+    }
+    .ui-file-upload-remove:active {
+      transform: none;
     }
   }
 }
