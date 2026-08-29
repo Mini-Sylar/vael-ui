@@ -1156,7 +1156,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       const hovered = resolveHoveredIndex(bands, pointer)
       const row = hovered === -1 ? null : remaining[hovered]!
       const nestable = !!row && (options.canNestInto?.(row.value) ?? true)
-      if (row && !nestable && !siblingReorderAllowed()) {
+      if (!nestable && !siblingReorderAllowed()) {
         scheduleAutoExpand(null)
         dropIntoValue.value = null
         dropTargetValue.value = null

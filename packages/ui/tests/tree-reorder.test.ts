@@ -235,6 +235,36 @@ test('reorderSiblings=false: hovering a non-nestable row shows no indicator and 
   expect(shape(screen)).toBe('a,folder(f1,f2),z')
 })
 
+test('reorderSiblings=false: dragging past the last row does not reorder', async () => {
+  const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
+  const aRow = rowFor(screen, 'a')
+  const zRow = rowFor(screen, 'z')
+  const aBox = aRow.getBoundingClientRect()
+  const zBox = zRow.getBoundingClientRect()
+
+  aRow.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 9,
+      button: 0,
+      clientX: aBox.left + 10,
+      clientY: aBox.top + aBox.height / 2,
+    }),
+  )
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 9,
+      clientX: zBox.left + 10,
+      clientY: zBox.bottom + 40,
+    }),
+  )
+  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).not.toBeNull())
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 }))
+  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
+  expect(shape(screen)).toBe('a,folder(f1,f2),z')
+})
+
 test('reorderSiblings=false: hovering a folder always resolves inside', async () => {
   const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
   const aRow = rowFor(screen, 'a')
