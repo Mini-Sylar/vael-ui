@@ -261,7 +261,7 @@
       animation: none;
     }
     .ui-button--loading .ui-button-loader .ui-loader {
-      animation: ui-pulse 1.2s ease-in-out infinite;
+      animation: ui-pulse var(--ui-duration-pulse) ease-in-out infinite;
     }
   }
 
