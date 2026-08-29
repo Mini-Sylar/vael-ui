@@ -279,7 +279,8 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     if (!container) return
     const dynamic = isDynamic.value
     const size = dynamic ? (dynamicSizes.get(index) ?? estimateSize.value) : resolvedSize.value
-    const rowStart = dynamic ? dynamicOffsets.value[index]! : index * size
+    const contentTop = Number.parseFloat(getComputedStyle(container).paddingTop) || 0
+    const rowStart = (dynamic ? dynamicOffsets.value[index]! : index * size) + contentTop
     const rowEnd = rowStart + size
     const viewStart = container.scrollTop
     const viewEnd = viewStart + container.clientHeight
