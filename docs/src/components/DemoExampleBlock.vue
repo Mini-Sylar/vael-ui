@@ -212,6 +212,11 @@ const code = computed(() =>
   border-radius: 0;
 }
 
+.demo-code-trigger:active {
+  transform: none;
+  background: var(--ui-muted-hover);
+}
+
 .demo-code-chevron {
   transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
 }
