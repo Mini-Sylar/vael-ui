@@ -219,6 +219,18 @@
               </ul>
             </component>
           </template>
+          <template v-else-if="isPullToRefresh">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              class="pull-to-refresh-preview"
+            >
+              <ul class="pull-to-refresh-preview-list">
+                <li v-for="n in 8" :key="n">Row {{ n }}</li>
+              </ul>
+            </component>
+          </template>
           <template v-else-if="isAvatarGroup">
             <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
               <component :is="avatarComponent" name="Ada Lovelace" />
@@ -488,6 +500,7 @@ const TABS_PLACEHOLDER_ITEMS = ['Overview', 'Activity', 'Settings']
 const tabsActive = shallowRef(TABS_PLACEHOLDER_ITEMS[0])
 const isResizable = computed(() => props.name === 'Resizable')
 const isScrollArea = computed(() => props.name === 'ScrollArea')
+const isPullToRefresh = computed(() => props.name === 'PullToRefresh')
 const isAvatarGroup = computed(() => props.name === 'AvatarGroup')
 const isBreadcrumb = computed(() => props.name === 'Breadcrumb')
 const isCommandPalette = computed(() => props.name === 'CommandPalette')
@@ -966,6 +979,23 @@ const code = computed(() => {
 }
 .scroll-area-preview-list li {
   padding-block: 0.25rem;
+}
+
+.pull-to-refresh-preview {
+  block-size: 12rem;
+  max-inline-size: 16rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+.pull-to-refresh-preview-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+.pull-to-refresh-preview-list li {
+  padding: 0.5rem 0.75rem;
+  border-block-end: 1px solid var(--ui-border);
 }
 
 .tabs-preview-tab {
