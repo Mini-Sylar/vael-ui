@@ -70,9 +70,7 @@
     border-radius: calc(var(--ui-radius) - 4px);
     padding: 0.625rem 0.75rem;
     cursor: pointer;
-    transition:
-      background-color var(--ui-duration-press) ease,
-      transform var(--ui-duration-press) var(--ui-ease-out);
+    transition: transform var(--ui-duration-press) var(--ui-ease-out);
   }
   .ui-command-palette-item[data-active] {
     background: var(--ui-muted);

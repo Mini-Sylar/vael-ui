@@ -87,7 +87,6 @@
     text-align: start;
     cursor: pointer;
     user-select: none;
-    transition: background-color var(--ui-duration-press) ease;
   }
   .ui-tree-row:hover:not(.ui-tree-row--disabled),
   .ui-tree-row:focus-visible {
