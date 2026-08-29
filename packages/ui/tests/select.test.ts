@@ -262,6 +262,18 @@ test('panel inline-size matches the trigger width (matchReferenceWidth)', async 
   })
 })
 
+test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
+  const screen = render(SelectFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
+  const trigger = screen.getByRole('combobox')
+  await trigger.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+
+  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
+  const body = document.querySelector<HTMLElement>('.ui-select-body')!
+  expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
+})
+
 test('clearable resets the model and hides once empty', async () => {
   const screen = render(SelectFixture, { props: { clearable: true } })
   const trigger = screen.getByRole('combobox')

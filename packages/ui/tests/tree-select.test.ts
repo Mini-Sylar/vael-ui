@@ -34,6 +34,18 @@ function focusedLabel(): string | undefined {
   return row?.querySelector('.ui-tree-select-label')?.textContent?.trim()
 }
 
+test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
+  const items = Array.from({ length: 100 }, (_, i) => ({ label: `Item ${i}`, value: `item-${i}` }))
+  const screen = render(TreeSelectFixture, { props: { items, maxPanelHeight: 160 } })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Item 0')).toBeDefined())
+
+  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
+  const list = document.querySelector<HTMLElement>('.ui-tree-list')!
+  expect(list.scrollHeight).toBeGreaterThan(list.clientHeight)
+})
+
 test('renders nested data: root nodes are visible, children stay hidden until expanded', async () => {
   const screen = render(TreeSelectFixture)
   await screen.getByRole('combobox').click()

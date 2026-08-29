@@ -9,6 +9,7 @@
     :disabled="disabled"
     :clearable="clearable"
     :filterable="filterable"
+    :max-panel-height="maxPanelHeight"
     placeholder="Pick a node"
   >
     <template v-if="withHeader" #header>
@@ -37,6 +38,7 @@ const props = withDefaults(
     items?: TreeSelectNode[]
     withHeader?: boolean
     withFooter?: boolean
+    maxPanelHeight?: number
   }>(),
   {
     selectionMode: 'single',
@@ -46,6 +48,7 @@ const props = withDefaults(
     items: undefined,
     withHeader: false,
     withFooter: false,
+    maxPanelHeight: undefined,
   },
 )
 

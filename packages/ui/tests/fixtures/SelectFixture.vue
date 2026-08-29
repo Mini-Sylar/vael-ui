@@ -16,6 +16,7 @@
     :before-close="beforeClose"
     :force-mount="forceMount"
     :filter="filter"
+    :max-panel-height="maxPanelHeight"
     placeholder="Choose a fruit"
     @reach-end="reachEndCount++"
   >
@@ -55,6 +56,7 @@ const props = withDefaults(
     withHeader?: boolean
     withFooter?: boolean
     customFilter?: boolean
+    maxPanelHeight?: number
   }>(),
   {
     multiple: false,
@@ -62,6 +64,7 @@ const props = withDefaults(
     loading: false,
     deferClose: false,
     forceMount: false,
+    maxPanelHeight: undefined,
     // Explicit `undefined`: `virtualize`'s type includes `boolean`, and an
     // omitted default here would trip Vue's boolean-prop auto-false-when-
     // absent coercion, making it impossible to test Select's own "auto"

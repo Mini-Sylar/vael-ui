@@ -209,6 +209,8 @@ const props = withDefaults(
     beforeClose?: (done: () => void) => void
     forceMount?: boolean
     teleportTo?: string | HTMLElement
+    /** Caps the panel's height at this many pixels even when the viewport has room for more — the tree scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+    maxPanelHeight?: number
     /** `false` skips all built-in motion (row transitions and chevron rotation). */
     motionCss?: boolean
     ui?: Partial<{
@@ -355,6 +357,7 @@ const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close
     closeOnEsc: () => props.closeOnEsc,
     closeOnOutside: () => props.closeOnOutside,
     beforeClose: () => props.beforeClose,
+    maxHeightCap: () => props.maxPanelHeight,
     onOpenChange: (value, details) => emit('open-change', value, details),
   })
 

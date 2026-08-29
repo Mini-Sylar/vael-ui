@@ -15,6 +15,7 @@
     :filter="filter"
     :allow-custom="allowCustom"
     :open-on-focus="openOnFocus"
+    :max-panel-height="maxPanelHeight"
     placeholder="Search fruit"
     @create="createLog.push($event)"
   >
@@ -43,6 +44,7 @@ const props = withDefaults(
     itemCount?: number
     withHeader?: boolean
     withFooter?: boolean
+    maxPanelHeight?: number
   }>(),
   {
     multiple: false,
@@ -56,6 +58,7 @@ const props = withDefaults(
     itemCount: undefined,
     withHeader: false,
     withFooter: false,
+    maxPanelHeight: undefined,
   },
 )
 

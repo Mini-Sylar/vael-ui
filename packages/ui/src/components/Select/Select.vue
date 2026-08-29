@@ -269,6 +269,8 @@ const props = withDefaults(
     forceMount?: boolean
     teleportTo?: string | HTMLElement
     scrollFade?: boolean
+    /** Caps the panel's height at this many pixels even when the viewport has room for more — the option list scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+    maxPanelHeight?: number
     /** Gates the built-in chip enter/exit/reposition transition (`multiple` + `display="chip"`
      * only). `false` skips it entirely — reach for `@chip-enter`/`@chip-leave` instead if you want
      * a consumer-owned animation (GSAP, motion-v) in its place. */
@@ -445,6 +447,7 @@ const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close
     closeOnEsc: () => props.closeOnEsc,
     closeOnOutside: () => props.closeOnOutside,
     beforeClose: () => props.beforeClose,
+    maxHeightCap: () => props.maxPanelHeight,
     onOpenChange: (value, details) => emit('open-change', value, details),
   })
 

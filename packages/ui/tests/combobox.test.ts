@@ -69,6 +69,18 @@ test('selecting an option commits the model and syncs query to its label', async
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
+test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
+  const screen = render(ComboboxFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+
+  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
+  const body = document.querySelector<HTMLElement>('.ui-select-body')!
+  expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
+})
+
 test('allowCustom: Enter with no active option commits the raw text and emits create', async () => {
   const screen = render(ComboboxFixture, { props: { allowCustom: true } })
   const input = screen.getByRole('combobox')
