@@ -6,6 +6,7 @@
   }
   .ui-select-body {
     position: relative;
+    contain: layout;
     /* Panel is a flex column (filter/header/footer are `flex: none` siblings) —
        this is the one flexible child, capped by the panel's own max-height. */
     flex: 1 1 auto;

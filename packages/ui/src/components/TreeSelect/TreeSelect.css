@@ -51,6 +51,7 @@
   .ui-tree-select-panel {
     display: flex;
     flex-direction: column;
+    contain: layout;
     /* Floor width for nested rows. */
     min-inline-size: max(var(--ui-anchor-inline-size, 0px), 18rem);
     /* Live floating-ui size output. */

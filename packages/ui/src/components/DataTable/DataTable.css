@@ -357,6 +357,9 @@
   .ui-datatable-tr--expansion.ui-datatable-row-leave-to {
     opacity: 0;
   }
+  .ui-datatable-expansion-rows {
+    contain: layout;
+  }
   .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
   .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
     transition: max-block-size var(--ui-duration-enter) var(--ui-ease-out);
