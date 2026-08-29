@@ -5,7 +5,8 @@
     :style="rootPart.style"
     :aria-label="messages.pagination.label"
   >
-    <ul :class="listPart.class" :style="listPart.style">
+    <ul ref="list" :class="listPart.class" :style="listPart.style">
+      <span class="ui-pagination-indicator" aria-hidden="true" :style="indicator.style.value" />
       <li>
         <Button
           class="ui-pagination-nav-button"
@@ -58,10 +59,11 @@
         <Button
           v-else
           class="ui-pagination-page-button"
+          :class="{ 'ui-pagination-page-button--active': item === page }"
           icon
           size="sm"
+          variant="ghost"
           type="button"
-          :variant="item === page ? 'primary' : 'ghost'"
           :aria-current="item === page ? 'page' : undefined"
           :aria-label="messages.pagination.page.replace('{page}', String(item))"
           @click="goToPage(item)"
@@ -131,7 +133,7 @@
 <script setup lang="ts">
 import './Pagination.css'
 import '../shared/tokens.css'
-import { computed, useAttrs } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
 import Select from '../Select/Select.vue'
 import type { SelectItemData } from '../Select/Select.vue'
@@ -139,6 +141,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
+import { useTabIndicator } from '../../composables/useTabIndicator'
 
 defineOptions({ inheritAttrs: false })
 
@@ -147,6 +150,9 @@ const messages = useUiMessages()
 
 const page = defineModel<number>('page', { default: 1 })
 const pageSize = defineModel<number>('pageSize', { default: 10 })
+
+const listEl = useTemplateRef<HTMLElement>('list')
+const indicator = useTabIndicator(page, { listEl, selector: '[aria-current="page"]' })
 
 const props = withDefaults(
   defineProps<{
