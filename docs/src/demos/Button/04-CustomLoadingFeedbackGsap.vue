@@ -8,7 +8,7 @@
       button's normal CSS press feedback keeps working afterward.
     </p>
     <div class="row">
-      <Button ref="gsapBtn" @click="gsapSave">Publish</Button>
+      <Button ref="gsapBtn" loading="auto" @click="gsapSave">Publish</Button>
     </div>
   </section>
 </template>

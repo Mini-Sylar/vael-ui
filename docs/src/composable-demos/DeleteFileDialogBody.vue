@@ -4,7 +4,7 @@
   <p class="delete-description">This cannot be undone.</p>
   <div class="delete-actions">
     <Button variant="outline" @click="dialogRef.close(false)">Cancel</Button>
-    <Button variant="danger" @click="onConfirm">Delete</Button>
+    <Button variant="danger" loading="auto" @click="onConfirm">Delete</Button>
   </div>
 </template>
 

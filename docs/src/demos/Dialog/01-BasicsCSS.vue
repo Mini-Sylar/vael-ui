@@ -20,7 +20,7 @@
       </template>
       <template #footer="{ close }">
         <Button variant="ghost" @click="close()">Cancel</Button>
-        <Button @click="() => fakeTask().then(close)">Save changes</Button>
+        <Button loading="auto" @click="() => fakeTask().then(close)">Save changes</Button>
       </template>
     </Dialog>
 
