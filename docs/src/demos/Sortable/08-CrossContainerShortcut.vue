@@ -10,18 +10,18 @@
       composable wiring.
     </p>
     <div class="board">
-      <Sortable
-        v-for="col in shortcutColumns"
-        :key="col.id"
-        v-model:items="shortcutData[col.id].value"
-        item-key="id"
-        label-key="label"
-        :group="shortcutGroup"
-        :group-id="col.id"
-        class="board-list"
-      >
-        <template #item="{ item }">{{ item.label }}</template>
-      </Sortable>
+      <Card v-for="col in shortcutColumns" :key="col.id" :title="col.label" class="board-column">
+        <Sortable
+          v-model:items="shortcutData[col.id].value"
+          item-key="id"
+          label-key="label"
+          :group="shortcutGroup"
+          :group-id="col.id"
+          class="board-list"
+        >
+          <template #item="{ item }">{{ item.label }}</template>
+        </Sortable>
+      </Card>
     </div>
   </section>
 </template>
@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Ref } from 'vue'
-import { Sortable, useSortableGroup } from 'vael-ui'
+import { Card, Sortable, useSortableGroup } from 'vael-ui'
 
 type ShortcutColumnId = 'todo' | 'done'
 const shortcutColumns: { id: ShortcutColumnId; label: string }[] = [
@@ -58,6 +58,9 @@ const shortcutGroup = useSortableGroup({
   align-items: flex-start;
   gap: 1rem;
 }
+.board-column {
+  inline-size: 14rem;
+}
 .board-list {
   display: flex;
   flex-direction: column;
@@ -66,7 +69,5 @@ const shortcutGroup = useSortableGroup({
   padding: 0;
   list-style: none;
   min-block-size: 3rem;
-  padding-block-end: 0.5rem;
-  inline-size: 14rem;
 }
 </style>
