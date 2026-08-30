@@ -376,8 +376,8 @@
           <Switch
             v-if="control.kind === 'boolean'"
             :id="`ctl-${control.name}`"
-            :model-value="values[control.name] as boolean"
-            @update:model-value="(v) => (values[control.name] = v)"
+            :model-value="!!values[control.name]"
+            @update:model-value="(v) => setBooleanControl(control.name, v)"
           />
           <Select
             v-else-if="control.kind === 'select'"
@@ -637,6 +637,8 @@ const CONTROL_HELP: Record<string, string> = {
     'Turn off the built-in CSS transition to animate this yourself with GSAP, motion-v, or plain CSS.',
   forceMount:
     'Keeps this in the DOM while closed, so an external animation library controls the exit instead of Vue removing it.',
+  filter:
+    'Off omits the prop entirely (no box, the real default). On is filter="true" (box + built-in matching). filter="false" — box shown, but no built-in matching, for a consumer doing their own search — has no toggle position since it needs three states; see the prop docs.',
 }
 
 interface NamedControl {
@@ -783,6 +785,16 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
 // keeps the playground's starting state matching the component's own.
 const NUMBER_UNSET_BY_DEFAULT = new Set(['maxPanelHeight'])
 
+// Same idea for a boolean|function prop (Select/Combobox's `filter`) whose
+// real "off" is an unset prop, not `false` — `false` still renders the box,
+// just without built-in matching, so a toggle that could only ever produce
+// `false`/`true` could never show the box actually disappearing.
+const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter'])
+
+function setBooleanControl(name: string, checked: boolean) {
+  values[name] = !checked && BOOLEAN_UNSET_WHEN_OFF.has(name) ? undefined : checked
+}
+
 const values = reactive<Record<string, unknown>>({})
 
 watch(
@@ -821,6 +833,8 @@ watchEffect(() => {
       NUMBER_UNSET_BY_DEFAULT.has(control.name)
     ) {
       values[control.name] = undefined
+    } else if (control.kind === 'boolean' && BOOLEAN_UNSET_WHEN_OFF.has(control.name)) {
+      values[control.name] = undefined
     } else if (
       control.kind === 'number' &&
       propMeta?.default === undefined &&
@@ -853,7 +867,7 @@ const code = computed(() => {
   const attrs = controls.value
     .map((c) => {
       const v = values[c.name]
-      if (c.kind === 'boolean') return v ? c.name : `:${c.name}="false"`
+      if (c.kind === 'boolean') return v === undefined ? '' : v ? c.name : `:${c.name}="false"`
       if (c.kind === 'number') return v === undefined ? '' : `:${c.name}="${v}"`
       return `${c.name}="${v}"`
     })
