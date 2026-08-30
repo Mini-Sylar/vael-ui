@@ -1,6 +1,6 @@
 {
   "name": "vael-ui",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Animation-agnostic Vue 3 UI library with full Vue Vapor support.",
   "keywords": [
     "animation-agnostic",
