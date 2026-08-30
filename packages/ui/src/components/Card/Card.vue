@@ -1,6 +1,10 @@
 <template>
   <component :is="as" ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
-    <header v-if="title || $slots.header" :class="headerPart.class" :style="headerPart.style">
+    <header
+      v-if="title || description || $slots.header"
+      :class="headerPart.class"
+      :style="headerPart.style"
+    >
       <slot name="header">
         <h3 v-if="title" :class="titlePart.class" :style="titlePart.style">{{ title }}</h3>
         <p v-if="description" :class="descriptionPart.class" :style="descriptionPart.style">
