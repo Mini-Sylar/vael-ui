@@ -66,6 +66,7 @@
     flex: 1 1 auto;
     min-block-size: 0; /* Allows scrolling. */
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0.25rem;
   }
   .ui-tree-select-empty {

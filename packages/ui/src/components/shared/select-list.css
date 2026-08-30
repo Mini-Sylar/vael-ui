@@ -12,6 +12,7 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0.25rem;
     /* Max-height is floating-ui live output. */
     transition: max-height var(--ui-duration-enter) var(--ui-ease-in-out);
