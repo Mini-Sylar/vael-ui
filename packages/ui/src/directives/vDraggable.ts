@@ -6,10 +6,14 @@ import type { FlatSortableRow, SortableAxis, SortableGroupHandle } from '../comp
 export interface DraggableOptions<T = unknown> {
   /** The array to reorder. Reordered in place on drop. */
   items: T[]
+  /** `'y'` (default) reorders a column of rows; `'x'` reorders a row of items. */
   axis?: SortableAxis
+  /** Turns off dragging. */
   disabled?: boolean
   /** CSS selector for the grab surface inside each child. Defaults to the whole child. */
   handle?: string
+  /** Fires on a committed drop, with the old and new index — there's no stable
+   * key here to identify the moved item by, only its position. */
   onReorder?: (from: number, to: number) => void
   /** Shares drag sessions with other lists passed the same handle — from `useSortableGroup()`. */
   group?: SortableGroupHandle

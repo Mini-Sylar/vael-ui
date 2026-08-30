@@ -18,11 +18,13 @@ import type {
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
 
+/** Where a dragged value sits, or would land, within one member list. */
 export interface GroupDropPosition {
   groupId: string | number
   index: number
 }
 
+/** Everything `canDrop`/`beforeDrop`/`onDropError` need to describe a cross-container move. */
 export interface GroupDropDetails {
   value: string | number
   from: GroupDropPosition
@@ -36,7 +38,9 @@ export interface UseSortableGroupOptions {
   canDrop?: (details: GroupDropDetails) => boolean
   /** Async gate at drop time. Rejection reverts, same contract as `useSortable`'s own. */
   beforeDrop?: (details: GroupDropDetails) => boolean | Promise<boolean>
+  /** `beforeDrop` threw or rejected; the move is already reverted by the time this fires. */
   onDropError?: (error: unknown, details: GroupDropDetails) => void
+  /** `false` skips the springs for the ghost gap opened in a foreign column while hovering it. */
   motionCss?: MaybeRefOrGetter<boolean>
 }
 
@@ -452,6 +456,10 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     void origin?.revertLocally()
   }
 
+  /** `useSortable()` with `group`/`groupId` already wired in — a column is one
+   * call instead of two things to keep consistent by hand. `groupId` is
+   * optional (auto-assigned if omitted), but a real one is what `onTransfer`
+   * receives to know which array/branch it's dealing with. */
   function join(
     memberOptions: Omit<UseSortableOptions, 'group' | 'groupId'> & { groupId?: string | number },
   ): UseSortableReturn {

@@ -73,7 +73,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
   vDraggable: {
     label: 'v-draggable',
     description:
-      'Container-level sugar for "make this list draggable" — sorting tabs, files, or any plain array without reaching for the full `<Sortable>` component. It runs the exact same spring-driven reorder engine as `<Sortable>` and `Tree`, so the motion and drag preview are identical by construction. Rows are addressed by position, so there\'s no keyboard path — reach for `<Sortable>` when you need one. It ships no styling of its own: while dragging, the grabbed element gets a `data-dragging` attribute and a floating preview follows the pointer — style `[data-dragging] { opacity: 0 }` yourself, or the original stays visible and overlaps whatever slides into its place.',
+      'Container-level sugar for "make this list draggable" — sorting tabs, files, or any plain array without reaching for the full `<Sortable>` component. It runs the exact same spring-driven reorder engine as `<Sortable>` and `Tree`, so the motion and drag preview are identical by construction. Rows are addressed by position, so there\'s no keyboard path and no announcements — reach for `<Sortable>` when you need those. While dragging, the grabbed element floats as a preview and the original hides in place automatically; nothing to style yourself for that part.',
     installNames: ['vDraggable'],
     value: [
       { name: 'T[]', type: 'T[]', description: 'The array directly, reordered in place on drop.' },
@@ -85,11 +85,12 @@ export const directivesContent: Record<string, DirectiveContent> = {
         description:
           'CSS selector for the grab surface inside each child. Defaults to the whole child.',
       },
-      { name: 'disabled', type: 'boolean', description: '' },
+      { name: 'disabled', type: 'boolean', description: 'Turns off dragging.' },
       {
         name: 'onReorder',
         type: '(from: number, to: number) => void',
-        description: '',
+        description:
+          "Fires on a committed drop, with the old and new index — there's no stable key here to identify the moved item by, only its position.",
       },
       {
         name: 'group / groupId',
