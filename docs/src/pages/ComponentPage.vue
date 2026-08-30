@@ -1,5 +1,17 @@
 <template>
   <div v-if="meta" class="component-page-layout">
+    <!-- No username field on a page full of password fields reads to Chrome as a login
+         form; it hunts the DOM for a pairing candidate and can land on the header's own
+         search box. Standard fix: give it a real one instead. -->
+    <input
+      v-if="name === 'PasswordInput'"
+      type="text"
+      name="username"
+      autocomplete="username"
+      style="display: none"
+      aria-hidden="true"
+      tabindex="-1"
+    />
     <article class="component-page">
       <p v-if="category" class="eyebrow">{{ category }}</p>
       <h1>{{ name }}</h1>
