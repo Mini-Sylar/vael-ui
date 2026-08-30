@@ -313,6 +313,10 @@ const totalPages = computed(() =>
   props.rows ? Math.max(1, Math.ceil(resolvedTotal.value / props.rows)) : 1,
 )
 const currentPage = computed(() => Math.min(Math.max(page.value, 1), totalPages.value))
+
+watch(totalPages, (count) => {
+  if (page.value > count) page.value = count
+})
 const pagedData = computed(() => {
   if (props.lazy || !props.rows) return sortedData.value
   const start = (currentPage.value - 1) * props.rows
