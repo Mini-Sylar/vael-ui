@@ -202,6 +202,107 @@ test('previewMode "element" moves the real row itself instead of a floating clon
   await vi.waitFor(() => expect(getComputedStyle(row).position).not.toBe('fixed'))
 })
 
+test('touch: an early move scrolls the page when the row has no closer scroll container', async () => {
+  // Most real pages don't box a Tree in its own overflow:auto container —
+  // the page itself scrolls. Without a fallback to document.scrollingElement,
+  // touch-action: none (set the instant the hold begins, so a real drag
+  // isn't lost to the browser's own scroll decision) leaves an early move
+  // with nothing to scroll at all, on either axis.
+  const spacer = document.createElement('div')
+  spacer.style.blockSize = '3000px'
+  document.body.appendChild(spacer)
+  window.scrollTo(0, 0)
+
+  try {
+    const screen = render(TreeReorderFixture)
+    const row = rowFor(screen, 'a')
+    const box = row.getBoundingClientRect()
+
+    row.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        pointerId: 7,
+        button: 0,
+        pointerType: 'touch',
+        clientX: box.left + 10,
+        clientY: box.top + box.height / 2,
+      }),
+    )
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        pointerId: 7,
+        pointerType: 'touch',
+        clientX: box.left + 10,
+        clientY: box.top + box.height / 2 - 60,
+      }),
+    )
+    expect(window.scrollY).toBeGreaterThan(0)
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7 }))
+  } finally {
+    spacer.remove()
+    window.scrollTo(0, 0)
+  }
+})
+
+test('touch: moving past the threshold before the hold completes cancels the pending grab', async () => {
+  // A tap-to-select/expand row and a drag handle are the same element on
+  // Tree — without a hold delay, touch's natural drift past DRAG_THRESHOLD
+  // reads as a completed drag on every tap. This proves the opposite: an
+  // early move (a scroll, or just an imprecise tap) is let through instead.
+  const screen = render(TreeReorderFixture)
+  const row = rowFor(screen, 'a')
+  const box = row.getBoundingClientRect()
+
+  row.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 5,
+      button: 0,
+      pointerType: 'touch',
+      clientX: box.left + 10,
+      clientY: box.top + box.height / 2,
+    }),
+  )
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 5,
+      pointerType: 'touch',
+      clientX: box.left + 10,
+      clientY: box.top + box.height / 2 + 40,
+    }),
+  )
+
+  expect(document.querySelector('[data-sortable-preview]')).toBeNull()
+  expect(row.hasAttribute('data-dragging')).toBe(false)
+  expect(getComputedStyle(row).opacity).not.toBe('0')
+
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 5 }))
+})
+
+test('touch: holding still past the delay grabs the row even before it moves', async () => {
+  const screen = render(TreeReorderFixture)
+  const row = rowFor(screen, 'a')
+  const box = row.getBoundingClientRect()
+
+  row.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 6,
+      button: 0,
+      pointerType: 'touch',
+      clientX: box.left + 10,
+      clientY: box.top + box.height / 2,
+    }),
+  )
+  // Default touchDragDelay is 150ms — held still, no pointermove at all.
+  await vi.waitFor(() => expect(row.hasAttribute('data-dragging')).toBe(true), { timeout: 1000 })
+
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 6 }))
+  await vi.waitFor(() => expect(row.hasAttribute('data-dragging')).toBe(false))
+})
+
 test('Escape aborts a pointer drag, not just a keyboard one', async () => {
   const screen = render(TreeReorderFixture)
   const row = rowFor(screen, 'a')

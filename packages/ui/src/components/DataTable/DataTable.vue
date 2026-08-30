@@ -180,6 +180,11 @@ const props = withDefaults(
      * lost from the DOM entirely on drop. Kept only for interface symmetry with
      * `Sortable`/`Tree`, where it's safe. */
     previewMode?: 'element' | 'clone'
+    /** Ms a touch pointer must hold a column header still before a drag
+     * starts. A sortable column's header is also a tap-to-sort button, so
+     * touch needs a hold to tell the two apart; mouse/pen are unaffected.
+     * Default `150`. */
+    touchDragDelay?: number
   }>(),
   {
     loading: false,
@@ -199,6 +204,7 @@ const props = withDefaults(
     canDrop: undefined,
     beforeDrop: undefined,
     previewMode: 'clone',
+    touchDragDelay: 150,
   },
 )
 
@@ -703,6 +709,7 @@ const {
   axis: 'x',
   dragPreview: true,
   previewMode: () => props.previewMode,
+  touchDragDelay: () => props.touchDragDelay,
   disabled: () => !props.reorderableColumns,
   motionCss: () => props.motionCss,
   canDrop: (details) => {

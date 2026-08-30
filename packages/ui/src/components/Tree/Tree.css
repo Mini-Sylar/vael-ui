@@ -88,6 +88,13 @@
     cursor: pointer;
     user-select: none;
   }
+  /* Static, not set from JS — the browser reads touch-action at the moment
+     of contact, before any handler runs, so setting it reactively is
+     always too late. useSortable's touchDragDelay drives scrolling by hand
+     instead once a hold loses to an early move. */
+  .ui-tree[data-reorderable] .ui-tree-row {
+    touch-action: none;
+  }
   .ui-tree-row:hover:not(.ui-tree-row--disabled),
   .ui-tree-row:focus-visible {
     background: var(--ui-muted);

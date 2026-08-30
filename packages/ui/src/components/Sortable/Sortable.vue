@@ -115,6 +115,10 @@ const props = withDefaults(
      * a separate floating copy, for content that can't tolerate leaving its
      * normal layout. */
     previewMode?: 'element' | 'clone'
+    /** Ms a touch pointer must hold a row still before a drag starts. Skip
+     * this unless `#item`/`#handle` content is also tappable for something
+     * else — the built-in handle alone never needs it. Default `0`. */
+    touchDragDelay?: number
     ui?: Partial<{
       root: UiPartValue
       item: UiPartValue
@@ -192,6 +196,7 @@ const {
   group: props.group,
   groupId: () => props.groupId,
   previewMode: () => props.previewMode ?? 'element',
+  touchDragDelay: () => props.touchDragDelay ?? 0,
   canDrop: (details) => props.canDrop?.(details) ?? true,
   beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
   onDropError: (error, details) => emit('drop-error', error, details),
