@@ -6,6 +6,7 @@
     :reorder-siblings="reorderSiblings"
     :can-drop="canDrop"
     :before-drop="beforeDrop"
+    :preview-mode="previewMode"
     @reorder="onReorder"
     @drop-error="dropErrors.push(String(($event as Error)?.message ?? $event))"
   />
@@ -25,8 +26,9 @@ withDefaults(
     canDrop?: (d: SortableDropDetails) => boolean
     beforeDrop?: (d: SortableDropDetails) => boolean | Promise<boolean>
     reorderSiblings?: boolean
+    previewMode?: 'element' | 'clone'
   }>(),
-  { canDrop: undefined, beforeDrop: undefined, reorderSiblings: true },
+  { canDrop: undefined, beforeDrop: undefined, reorderSiblings: true, previewMode: undefined },
 )
 
 // a

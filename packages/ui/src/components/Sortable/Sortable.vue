@@ -86,6 +86,7 @@ import type {
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+/** The list, in order. Reassigned to a new array on a committed drop — bind with `v-model:items`. */
 const items = defineModel<T[]>('items', { default: () => [] })
 
 const props = withDefaults(
@@ -100,6 +101,7 @@ const props = withDefaults(
     canDrop?: (details: SortableDropDetails) => boolean
     /** Async gate at drop time. Return `false` (or a promise of it) to cancel — composes with `confirmAction().result`. */
     beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
+    /** Turns off dragging; rows become static. */
     disabled?: boolean
     /** `false` skips the built-in springs entirely — rows snap to their new slots. Reach for it when driving the motion yourself. */
     motionCss?: boolean
@@ -141,7 +143,9 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /** Row content. Falls back to `labelKey`'s value when omitted. */
   item(props: { item: T; index: number; grabbed: boolean }): unknown
+  /** Replaces the default drag handle. */
   handle(props: { item: T }): unknown
 }>()
 

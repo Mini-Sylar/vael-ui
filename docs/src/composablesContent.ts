@@ -585,6 +585,12 @@ setMode('dark')`,
           'false disables reordering among current siblings — only re-parenting is offered, with no indicator on a would-be sibling insert. Requires dropOnTarget.',
       },
       {
+        name: 'nestEdgeFraction',
+        type: 'MaybeRefOrGetter<number>',
+        description:
+          'Fraction of a target\'s own size, on each end, that still means "beside it" rather than "into it". Default 0.25 (a 50%-wide inside zone) — shrink it for a target that\'s hard to land on precisely.',
+      },
+      {
         name: 'canNestInto',
         type: '(value) => boolean',
         description: 'Which rows accept children. Without this, every row does.',
@@ -598,9 +604,21 @@ setMode('dark')`,
         name: 'dragPreview',
         type: 'MaybeRefOrGetter<boolean>',
         description:
-          'Lifts the grabbed row out as a floating preview that follows the cursor, leaving its slot dimmed — without it the row stays in flow and slides over its neighbours. Forced on automatically when `group` is set.',
+          'Lifts the grabbed row out as a floating preview that follows the cursor, leaving its slot dimmed — without it the row stays in flow and slides over its neighbours.',
       },
-      { name: 'disabled', type: 'MaybeRefOrGetter<boolean>', description: '' },
+      {
+        name: 'previewMode',
+        type: "MaybeRefOrGetter<'element' | 'clone'>",
+        description:
+          "'element': the real dragged row itself lifts and keeps moving — only one instance of it on screen. 'clone': a separate floating copy, the real row hidden until drop; needed when the real element can't leave its normal layout (a `<tr>`, a `<th>`). Default is context-dependent: 'element' once a `group` drag leaves this list, 'clone' for a plain `dragPreview` drag.",
+      },
+      {
+        name: 'previewCarriesSubtree',
+        type: 'MaybeRefOrGetter<boolean>',
+        description:
+          'dragPreview + nested only, default true. A dragged row with visible descendants (an expanded folder, a tab group) carries real copies of them along inside the floating clone, at the exact offset they already sat at, so the whole block reads as one physical thing lifting together.',
+      },
+      { name: 'disabled', type: 'MaybeRefOrGetter<boolean>', description: 'Turns off dragging.' },
       {
         name: 'motionCss',
         type: 'MaybeRefOrGetter<boolean>',
@@ -665,6 +683,12 @@ setMode('dark')`,
         name: 'draggedValues',
         type: 'Ref<ReadonlySet>',
         description: 'Every value in the dragged block — a folder carries its descendants.',
+      },
+      {
+        name: 'isForeignDropTarget',
+        type: 'Ref<boolean>',
+        description:
+          "group only: true while a drag from a sibling member is hovering this list as the drop target. Always false for the list the drag started in — style `[data-drop-target]`'s worth of feedback on wherever you'd otherwise show it.",
       },
       {
         name: 'announcement',

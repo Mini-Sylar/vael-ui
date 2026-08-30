@@ -105,6 +105,7 @@ import { provideDataTableContext } from '../../composables/useDataTableContext'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { useVirtualizer } from '../../composables/useVirtualizer'
 import { useSortable } from '../../composables/useSortable'
+import type { SortableDropDetails } from '../../composables/useSortable'
 import DataTableHead from './DataTableHead.vue'
 import DataTableBody from './DataTableBody.vue'
 import type { TableRowEntry } from './DataTableBody.vue'
@@ -114,6 +115,7 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Row objects. Column content is read from these via each `<Column>`'s `field`. */
     data: T[]
     /** Stable row identity — a key on `T`, or a function for composite/derived keys. */
     rowKey: keyof T | ((row: T) => string | number)
@@ -136,6 +138,7 @@ const props = withDefaults(
     /** Adds inline-end border to every cell. */
     showGridlines?: boolean
     /** Enables resize drag handle on every column header. */
+    /** Adds a drag handle to every column header's edge for resizing. */
     resizableColumns?: boolean
     /** Freezes the first N columns sticky-left against horizontal scroll. */
     frozenColumns?: number
@@ -162,6 +165,21 @@ const props = withDefaults(
      * handle's own restraint — reach for this once a table has enough reorderable columns
      * that permanent grips would clutter the header. */
     columnGripVisibility?: 'hover' | 'always'
+    /** Structural veto re-run while a column drags; `false` marks the target invalid.
+     * A pinned column is already protected regardless of this. */
+    canDrop?: (details: SortableDropDetails) => boolean
+    /** Async gate at drop time for a column reorder — return `false` (or a promise of
+     * it) to cancel. Composes with `confirmAction().result` for a confirm-before-move
+     * dialog. */
+    beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
+    /** `'clone'` (default): a floating copy of the dragged column header follows
+     * the cursor, the real `<th>` hidden until drop. `'element'` moves the real
+     * header cell itself instead — **don't use this**: a `<th>`'s `:style` binding
+     * is keyed by column index, and lifting the real element out to `position:
+     * fixed` mid-drag corrupts that binding badly enough that a column can be
+     * lost from the DOM entirely on drop. Kept only for interface symmetry with
+     * `Sortable`/`Tree`, where it's safe. */
+    previewMode?: 'element' | 'clone'
   }>(),
   {
     loading: false,
@@ -178,6 +196,9 @@ const props = withDefaults(
     motionCss: true,
     reorderableColumns: false,
     columnGripVisibility: 'always',
+    canDrop: undefined,
+    beforeDrop: undefined,
+    previewMode: 'clone',
   },
 )
 
@@ -198,6 +219,8 @@ const emit = defineEmits<{
   'row-enter': [el: Element, done: () => void]
   /** Same as `row-enter`, for a row's exit. */
   'row-leave': [el: Element, done: () => void]
+  /** `beforeDrop` threw or rejected while reordering a column; the move was already reverted. */
+  'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
 
 const page = defineModel<number>('page', { default: 1 })
@@ -679,13 +702,18 @@ const {
   getElement: headerElement,
   axis: 'x',
   dragPreview: true,
+  previewMode: () => props.previewMode,
   disabled: () => !props.reorderableColumns,
   motionCss: () => props.motionCss,
-  canDrop: ({ to }) => {
-    // A pinned column can't be displaced out of its slot either.
-    const target = orderedColumns.value[to.index]
-    return !target || isColumnReorderable(target)
+  canDrop: (details) => {
+    // A pinned column can't be displaced out of its slot either, regardless
+    // of what a consumer's own canDrop says.
+    const target = orderedColumns.value[details.to.index]
+    if (target && !isColumnReorderable(target)) return false
+    return props.canDrop?.(details) ?? true
   },
+  beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
+  onDropError: (error, details) => emit('drop-error', error, details),
   onCommit: (value, to) => {
     const current = orderedColumns.value.map((column) => column.field)
     const from = current.indexOf(value as keyof T)

@@ -112,6 +112,58 @@ test('a grip affordance renders only on reorderable columns', async () => {
   expect(off.container.querySelectorAll('.ui-datatable-th-grip').length).toBe(0)
 })
 
+test('canDrop rejecting a target blocks the reorder, on top of the built-in pinned-column check', async () => {
+  const screen = await renderTable({ canDrop: () => false })
+  const [first, second] = headerEls(screen)
+  dragHeaderOver(first!, second!, 26)()
+  await new Promise((r) => setTimeout(r, 50))
+  expect(headerFields(screen)).toEqual(['name', 'age'])
+})
+
+test('beforeDrop resolving false cancels the reorder without an error', async () => {
+  const screen = await renderTable({ beforeDrop: () => Promise.resolve(false) })
+  const [first, second] = headerEls(screen)
+  dragHeaderOver(first!, second!, 27)()
+  await new Promise((r) => setTimeout(r, 50))
+  expect(headerFields(screen)).toEqual(['name', 'age'])
+  expect(screen.container.querySelector('[data-testid="drop-error-count"]')!.textContent).toBe('0')
+})
+
+test('beforeDrop rejecting cancels the reorder and fires drop-error', async () => {
+  const screen = await renderTable({ beforeDrop: () => Promise.reject(new Error('boom')) })
+  const [first, second] = headerEls(screen)
+  dragHeaderOver(first!, second!, 29)()
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector('[data-testid="drop-error-count"]')!.textContent).toBe(
+      '1',
+    ),
+  )
+  expect(headerFields(screen)).toEqual(['name', 'age'])
+})
+
+test('previewMode "clone" (the default) floats a separate copy, real header hidden until drop', async () => {
+  const screen = await renderTable({ previewMode: 'clone' })
+  const [first, second] = headerEls(screen)
+  const release = dragHeaderOver(first!, second!, 30)
+  const preview = document.querySelector<HTMLElement>('[data-sortable-preview]')
+  expect(preview).not.toBeNull()
+  expect(getComputedStyle(preview!).position).toBe('fixed')
+  expect(getComputedStyle(first!).visibility).toBe('hidden')
+  release()
+})
+
+// Not a recommended combination (see previewMode's own doc comment on this
+// prop) — only asserting the one thing that's actually safe about it: the
+// real header does lift mid-drag, same as it would on Sortable/Tree.
+test('previewMode "element" lifts the real header itself mid-drag', async () => {
+  const screen = await renderTable({ previewMode: 'element' })
+  const [first, second] = headerEls(screen)
+  const release = dragHeaderOver(first!, second!, 28)
+  expect(document.querySelector('[data-sortable-preview]')).toBeNull()
+  expect(getComputedStyle(first!).position).toBe('fixed')
+  release()
+})
+
 test('dragging the middle of three columns shifts the far one by the dragged width, not double it', async () => {
   // Regression: dragging a column that originally sat between the two other
   // remaining columns used to double-count its width in the shift, sliding

@@ -172,6 +172,36 @@ test('a pointer drag lifts the row out into a floating preview, leaving a hole',
   await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
 })
 
+test('previewMode "element" moves the real row itself instead of a floating clone', async () => {
+  const screen = render(TreeReorderFixture, { props: { previewMode: 'element' } })
+  const row = rowFor(screen, 'a')
+  const box = row.getBoundingClientRect()
+
+  row.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId: 4,
+      button: 0,
+      clientX: box.left + 10,
+      clientY: box.top + box.height / 2,
+    }),
+  )
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 4,
+      clientX: box.left + 10,
+      clientY: box.top + box.height / 2 + 40,
+    }),
+  )
+
+  expect(document.querySelector('[data-sortable-preview]')).toBeNull()
+  expect(getComputedStyle(row).position).toBe('fixed')
+
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 4 }))
+  await vi.waitFor(() => expect(getComputedStyle(row).position).not.toBe('fixed'))
+})
+
 test('Escape aborts a pointer drag, not just a keyboard one', async () => {
   const screen = render(TreeReorderFixture)
   const row = rowFor(screen, 'a')

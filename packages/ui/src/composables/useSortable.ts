@@ -328,12 +328,15 @@ export interface UseSortableOptions {
    * to show only the header (a "3 items" badge of your own is a common
    * replacement) instead. */
   previewCarriesSubtree?: MaybeRefOrGetter<boolean>
-  /** `group` only — how a drag looks once it actually leaves this list for a
-   * sibling one. `'element'` (default): the real dragged element itself
-   * lifts out of flow and keeps moving, so there's only ever one instance of
-   * it on screen. `'clone'`: a separate floating copy instead, matching
-   * `dragPreview`'s own approach — reach for it if the real element can't
-   * tolerate leaving its normal layout (a table row, say). */
+  /** `'element'`: the real dragged element itself lifts and keeps moving, so
+   * there's only ever one instance of it on screen. `'clone'`: a separate
+   * floating copy, and the real element stays in place (hidden) until the
+   * drag ends — reach for it when the real element can't tolerate leaving
+   * its normal layout (a `<tr>` outside its `<table>` loses its column
+   * widths). Default is context-dependent: `'element'` for a `group` drag
+   * once it leaves this list, `'clone'` for a plain `dragPreview` drag —
+   * matching what `Sortable`/`Tree`/`DataTable` already shipped with before
+   * this option existed, so it's a pure opt-in either way. */
   previewMode?: MaybeRefOrGetter<'element' | 'clone'>
   /** `nested` only. Px of indent per depth level — match whatever your rows
    * actually render with. Default `16`. */
@@ -1228,13 +1231,16 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       }
       if (dragEl) {
         dragEl.setAttribute('data-dragging', '')
-        // dragPreview (DataTable/Tree's own reorder) always wants its clone
-        // right away. A grouped reorder that never actually leaves this list
-        // looks and behaves exactly like a plain drag — the real element
-        // translates, nothing lifted — createPreview only fires later,
-        // lazily, if the drag actually crosses into a foreign host (see
-        // onHostChange below).
-        if (toValue(options.dragPreview)) createPreview(dragEl, event, 'clone')
+        // dragPreview (DataTable/Tree's own reorder) always wants its preview
+        // right away, defaulting to 'clone' (unlike the group codepath below,
+        // which defaults to 'element') since this is the codepath a real
+        // <table> row goes through. A grouped reorder that never actually
+        // leaves this list looks and behaves exactly like a plain drag — the
+        // real element translates, nothing lifted — createPreview only fires
+        // later, lazily, if the drag actually crosses into a foreign host
+        // (see onHostChange below).
+        if (toValue(options.dragPreview))
+          createPreview(dragEl, event, toValue(options.previewMode) ?? 'clone')
         else dragEl.style.zIndex = '1'
       }
       if (options.group && ownGroupId != null) {

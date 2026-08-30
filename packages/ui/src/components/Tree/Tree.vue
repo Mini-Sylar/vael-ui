@@ -258,6 +258,7 @@ const query = defineModel<string>('query', { default: '' })
 
 const props = withDefaults(
   defineProps<{
+    /** The tree data — `TreeNode` (`value`, `label`, optional `children`) or your own extension of it. */
     items: readonly T[]
     /** `'single'`: clicking replaces the selection. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
     selectionMode?: TreeSelectionMode
@@ -285,6 +286,12 @@ const props = withDefaults(
     beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
     /** Hovering a collapsed row this long opens it mid-drag. */
     autoExpandDelay?: number
+    /** `'clone'` (default): a floating copy follows the cursor, real row
+     * hidden until drop — the built-in behavior since before this prop
+     * existed. `'element'` moves the real row itself instead, so there's
+     * only one instance of it on screen; safe here since a tree row is a
+     * plain element, not a `<table>` row. */
+    previewMode?: 'element' | 'clone'
     /** When true, clicking anywhere on a folder row also toggles its expansion, not just the chevron —
      * it still selects too (unless `selectableFolders` is off), so picking the folder itself (without
      * opening it to reach a file inside) still works. Off by default since it changes what a plain row
@@ -317,6 +324,7 @@ const props = withDefaults(
     reorderSiblings: true,
     canDrop: undefined,
     beforeDrop: undefined,
+    previewMode: 'clone',
     autoExpandDelay: 600,
     expandOnRowClick: false,
     stickyScroll: false,
@@ -619,6 +627,7 @@ const {
   nested: true,
   dropOnTarget: true,
   dragPreview: true,
+  previewMode: () => props.previewMode,
   disabled: () => !props.reorderable,
   reorderSiblings: () => props.reorderSiblings,
   motionCss: () => props.motionCss,
