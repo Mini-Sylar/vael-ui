@@ -279,6 +279,17 @@ component; find out which one is actually wrong first.
   that specific rule was not verified — there's no RTL test or demo in this
   codebase yet to verify against. Flag this rather than assuming it's fine
   if RTL support ever becomes a real requirement.
+- Volar's Vapor-mode template checker always validates a `v-x="..."`
+  binding against the classic `(el, DirectiveBinding<T>)` overload, never a
+  directive's actual getter-based Vapor overload (`(el, () => T)`) — so a
+  non-primitive value on `v-draggable`/`v-tooltip`/`v-scroll-mask` errors in
+  a hand-authored `<script setup vapor>` file even though it's correct at
+  runtime (proven by `packages/vapor-ui/tests/built-draggable.test.ts`,
+  which exercises the real built bundle). Not a typing gap in the library —
+  suppress with `<!-- @vue-expect-error known Volar vapor-directive
+typecheck gap, see generate-doc-demos.mjs -->` directly before the tag,
+  matching `generate-doc-demos.mjs`'s `suppressKnownVaporDirectiveGaps` and
+  `packages/vapor-ui/tests/fixtures/DraggableRoot.vue`.
 
 ## Where to look next
 
