@@ -260,16 +260,21 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
       members.get(originGroupId!)?.onHostChange(false)
     } else if (currentHostId != null) {
       settleGhost()
+      members.get(currentHostId)?.onForeignHover(false)
     }
     currentHostId = newHostId
     if (newHostId === originGroupId) {
       members.get(originGroupId!)?.onHostChange(true)
     } else {
       freezeBands(members.get(newHostId)!)
+      members.get(newHostId)?.onForeignHover(true)
     }
   }
 
   function resetSession() {
+    if (currentHostId != null && currentHostId !== originGroupId) {
+      members.get(currentHostId)?.onForeignHover(false)
+    }
     originGroupId = null
     currentHostId = null
     currentIndex = 0

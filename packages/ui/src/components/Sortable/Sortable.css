@@ -80,6 +80,11 @@
     border-color: var(--ui-danger);
     cursor: not-allowed;
   }
+  /* group only: a sibling list's drag is hovering this one as the drop target. */
+  .ui-sortable[data-drop-target] {
+    background: color-mix(in oklch, var(--ui-primary) 6%, transparent);
+    border-radius: var(--ui-radius);
+  }
   .ui-sortable[data-pending] {
     cursor: progress;
   }

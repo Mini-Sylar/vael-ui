@@ -8,6 +8,7 @@
     :data-axis="axis"
     :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
     :data-pending="isPending ? '' : undefined"
+    :data-drop-target="isForeignDropTarget ? '' : undefined"
   >
     <li
       v-for="(item, index) in items"
@@ -168,6 +169,7 @@ const {
   isGrabbedValue,
   isValidDrop,
   isPending,
+  isForeignDropTarget,
   announcement,
   onHandlePointerdown,
   onHandleKeydown,
@@ -227,5 +229,5 @@ const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-sortable
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-sortable-item'))
 const handlePart = computed(() => resolveUiPart(cx, themedUi()?.handle, 'ui-sortable-handle'))
 
-defineExpose({ el: root, isGrabbed, isValidDrop, isPending, activeValue })
+defineExpose({ el: root, isGrabbed, isValidDrop, isPending, isForeignDropTarget, activeValue })
 </script>

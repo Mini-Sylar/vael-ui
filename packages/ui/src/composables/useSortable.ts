@@ -352,6 +352,8 @@ export interface GroupMemberBinding {
   releaseVelocity: () => number
   /** Group tells this member whether it's the one currently showing the open gap. */
   onHostChange: (isHost: boolean) => void
+  /** Group tells this member whether a drag from a sibling member is currently hovering it — origin members never get this, only foreign hosts. */
+  onForeignHover: (isHovered: boolean) => void
   /** Re-drives this member's own gap at a specific index — the keyboard path has
    * no continuous pointermove to fall back on the way a live drag does. */
   resumeOwnRows: (insertionIndex: number) => void
@@ -424,6 +426,8 @@ export interface UseSortableReturn {
   isValidDrop: Ref<boolean>
   /** True while an async `beforeDrop` is still deciding. */
   isPending: Ref<boolean>
+  /** `group` only: true while a drag from a sibling member is hovering this list as the drop target. Always false for the list the drag started in. */
+  isForeignDropTarget: Ref<boolean>
   /** Every value in the dragged block — a folder carries its descendants. */
   draggedValues: Ref<ReadonlySet<string | number>>
   /** `:data-grabbed="isGrabbedValue(row.value) || undefined"` — every consumer
@@ -455,6 +459,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   const dropPosition = shallowRef<DropPosition | null>(null)
   const isValidDrop = shallowRef(true)
   const isPending = shallowRef(false)
+  const isForeignDropTarget = shallowRef(false)
   const draggedValues = shallowRef<ReadonlySet<string | number>>(new Set())
   const dropIntoValue = shallowRef<string | number | null>(null)
   const dropTargetValue = shallowRef<string | number | null>(null)
@@ -1333,6 +1338,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
         isGroupHost = isHost
         if (!isHost) springRowsToZero(reducedMotion())
       },
+      onForeignHover: (isHovered) => {
+        isForeignDropTarget.value = isHovered
+      },
       resumeOwnRows: (insertionIndex) => {
         currentIndex = insertionIndex
         applyTarget(insertionIndex, 0)
@@ -1367,6 +1375,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     dropIntent,
     isValidDrop,
     isPending,
+    isForeignDropTarget,
     announcement,
     onHandlePointerdown,
     onHandleKeydown,
