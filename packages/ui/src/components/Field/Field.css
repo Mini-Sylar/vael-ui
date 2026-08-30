@@ -59,6 +59,7 @@
   /* float: label rests inside the control's padding box and slides onto the border line (surface-colored backdrop) when focused/filled — translate + scale only (compositor), press-duration: a label move happens on every focus, the touched-constantly tier. */
   .ui-field[data-placement='float'] .ui-field-label {
     position: absolute;
+    contain: layout;
     /* Above the control frame: the frame is position:relative with an opaque surface background and later in the DOM — without this the label paints underneath it, fully invisible. */
     z-index: 1;
     inset-inline-start: 0.75rem;

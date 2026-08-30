@@ -48,7 +48,7 @@ const open = defineModel<boolean>('open', { default: false })
 const props = withDefaults(
   defineProps<{
     disabled?: boolean
-    // false skips transitions; use exposed panelEl for custom motion
+    /** `false` skips transitions; use exposed `panelEl` for custom motion. */
     motionCss?: boolean
     ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue }>
   }>(),

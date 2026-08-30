@@ -14,10 +14,18 @@
       :force-mount="forceMount"
       :teleport-to="teleportTo"
       :scroll-fade="scrollFade"
-      :ui="{ positioner: themedUi()?.positioner, panel: themedUi()?.panel }"
+      :ui="{
+        positioner: themedUi()?.positioner,
+        panel: themedUi()?.panel,
+        header: themedUi()?.header,
+        footer: themedUi()?.footer,
+      }"
       @open-change="onOpenChange"
       @select="onMenuSelect"
     >
+      <template v-if="$slots.header" #header>
+        <slot name="header" />
+      </template>
       <template #trigger="{ open: menuOpen }">
         <div
           :id="fieldControl.id"
@@ -103,6 +111,9 @@
           </span>
         </slot>
       </template>
+      <template v-if="$slots.footer" #footer>
+        <slot name="footer" />
+      </template>
     </Menu>
     <input v-if="name" type="hidden" :name="name" :value="model ?? ''" />
   </div>
@@ -172,6 +183,8 @@ const props = withDefaults(
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -204,10 +217,14 @@ const emit = defineEmits<{
 defineSlots<{
   /** Trigger content override — receives the resolved leaf item and its root-to-leaf path. */
   value(props: { selected: T | null; path: CascadeSelectPath }): unknown
+  /** Above the row list — forwarded to the underlying Menu's own `#header`. */
+  header(): unknown
   /** Row content override, any level — keeps the row's expand/select behavior. */
   item(props: { item: T; hasChildren: boolean }): unknown
   /** Replaces the localized "no options" row shown when `items` is empty. */
   empty(): unknown
+  /** Below the row list — forwarded to the underlying Menu's own `#footer`. */
+  footer(): unknown
 }>()
 
 function findLeaf(

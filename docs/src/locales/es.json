@@ -93,7 +93,10 @@
     "Drawer": "Un panel que se desliza desde el borde de una ventana gráfica, para navegación o contenido lateral.",
     "Input": "Un campo de texto de una sola línea con tamaños, estados y espacios para íconos o sugerencias.",
     "Switch": "Un interruptor de encendido/apagado con estilo de interruptor físico, para configuraciones de efecto inmediato.",
-    "PasswordInput": "Un campo de contraseña con un botón de revelación y una sugerencia de requisitos."
+    "PasswordInput": "Un campo de contraseña con un botón de revelación y una sugerencia de requisitos.",
+    "Sortable": "Una lista de arrastrar para reordenar con una ruta de teclado real, no solo una de puntero.",
+    "Rating": "Haga clic, arrastre o use las teclas de flecha para seleccionar un valor en una fila de estrellas, con precisión opcional de medio paso.",
+    "Timeline": "Una lista ordenada de pasos conectados por una línea, independiente de lo que realmente contiene cada paso."
   },
   "gettingStarted": {
     "darkModeIntro": "Solo CSS: responde a <código>",
@@ -290,7 +293,8 @@
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Superposiciones",
     "positioningAndData": "Posicionamiento",
-    "utilities": "Utilidades"
+    "utilities": "Utilidades",
+    "dragAndDrop": "Arrastrar"
   },
   "composableDescriptions": {
     "confirmAction": "Un flujo de confirmación asíncrono, centrado como diálogo o anclado a un disparador como popover, que espera tu controlador antes de cerrarse.",
@@ -351,5 +355,9 @@
     "title": "Habilidad del agente de IA",
     "whatsIncludedIntro": "Una guía compacta de alto nivel más una referencia completa, generada a partir de los mismos datos reales a partir de los cuales se construye el sitio de documentos:",
     "whatsIncludedTitle": "¿Qué está incluido?"
+  },
+  "directive": {
+    "modifiers": "Modificadores",
+    "noModifiers": "Sin modificadores."
   }
 }

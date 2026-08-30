@@ -59,7 +59,7 @@
     inline-size: 100%;
     block-size: 100%;
     object-fit: cover;
-    transition: opacity var(--ui-duration-enter) ease;
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-avatar-badge {
     position: absolute;
@@ -89,7 +89,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .ui-avatar-image {
-      transition: opacity var(--ui-duration-enter) ease;
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
   }
 }

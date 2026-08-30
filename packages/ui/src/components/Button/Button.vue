@@ -160,7 +160,12 @@ const ariaDisabled = computed<true | undefined>(() => {
   if (isButtonTag.value && props.disabled) return undefined
   return isLoading.value || props.disabled ? true : undefined
 })
-const rootTabindex = computed(() => (!isButtonTag.value && props.disabled ? -1 : undefined))
+// An explicit incoming tabindex (e.g. a roving-tabindex tablist) always wins
+// — this only supplies the non-button-tag disabled fallback otherwise.
+const rootTabindex = computed(() => {
+  if (attrs.tabindex !== undefined) return attrs.tabindex as number | string
+  return !isButtonTag.value && props.disabled ? -1 : undefined
+})
 
 // Detects promise-returning handlers to trigger auto-loading.
 function onRootClick(event: MouseEvent) {

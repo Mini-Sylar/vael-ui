@@ -5,6 +5,8 @@
   <output data-testid="exposed-el">{{ table?.el ? 'yes' : 'no' }}</output>
   <output data-testid="sort-field">{{ sort.field ?? '' }}</output>
   <output data-testid="sort-dir">{{ sort.dir ?? '' }}</output>
+  <output data-testid="column-order">{{ columnOrder.join(',') }}</output>
+  <output data-testid="drop-error-count">{{ dropErrorCount }}</output>
 
   <DataTable
     ref="table"
@@ -28,8 +30,15 @@
     :lazy="lazy"
     :total="total"
     :motion-css="motionCss"
+    :reorderable-columns="reorderableColumns"
+    :column-grip-visibility="columnGripVisibility"
+    :can-drop="canDrop"
+    :before-drop="beforeDrop"
+    :preview-mode="previewMode"
+    @column-reorder="columnOrder = $event as string[]"
     @update:selection="onSelectionChange"
     @row-click="onRowClick"
+    @drop-error="dropErrorCount++"
   >
     <template #columns="{ Column }">
       <component :is="Column" v-if="selectable" field="id" width="2rem">
@@ -75,6 +84,7 @@
 import { defineComponent, h, shallowRef, useTemplateRef } from 'vue'
 import DataTable from '../../src/components/DataTable/DataTable.vue'
 import { useDataTableContext } from '../../src/composables/useDataTableContext'
+import type { SortableDropDetails } from '../../src/composables/useSortable'
 
 interface Person {
   id: string
@@ -110,6 +120,11 @@ const props = withDefaults(
     lazy?: boolean
     total?: number
     motionCss?: boolean
+    reorderableColumns?: boolean
+    columnGripVisibility?: 'hover' | 'always'
+    canDrop?: (details: SortableDropDetails) => boolean
+    beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
+    previewMode?: 'element' | 'clone'
   }>(),
   {
     rowCount: 4,
@@ -128,6 +143,8 @@ const props = withDefaults(
     manualSort: false,
     lazy: false,
     motionCss: true,
+    reorderableColumns: false,
+    columnGripVisibility: 'always',
   },
 )
 
@@ -139,6 +156,7 @@ const data: Person[] = Array.from({ length: props.rowCount }, (_, i) => ({
   status: i % 2 === 0 ? 'active' : 'inactive',
 }))
 
+const columnOrder = shallowRef<string[]>([])
 const page = shallowRef(props.initialPage)
 const sort = shallowRef<{ field: keyof Person | null; dir: 'asc' | 'desc' | null }>({
   field: null,
@@ -166,6 +184,7 @@ const SelectCell = defineComponent({
   },
 })
 
+const dropErrorCount = shallowRef(0)
 const rowClickCount = shallowRef(0)
 const lastClicked = shallowRef('')
 const selectionChangeRows = shallowRef<Person[]>([])
@@ -179,5 +198,5 @@ function onSelectionChange(rows: Person[]) {
 }
 
 const table = useTemplateRef('table')
-defineExpose({ table, page, sort })
+defineExpose({ table, page, sort, columnOrder })
 </script>

@@ -19,6 +19,28 @@ test('clicking a page-number button navigates to that page', async () => {
   await expect.element(screen.getByTestId('page')).toHaveTextContent('3')
 })
 
+test('the sliding indicator tracks the active page button, including after navigation', async () => {
+  const screen = render(PaginationFixture, { props: { total: 50, pageSize: 10 } })
+  const indicator = screen.container.querySelector<HTMLElement>('.ui-pagination-indicator')!
+  const activeButton = () => screen.container.querySelector<HTMLElement>('[aria-current="page"]')!
+
+  await vi.waitFor(() => {
+    const ib = indicator.getBoundingClientRect()
+    const ab = activeButton().getBoundingClientRect()
+    expect(Math.abs(ib.left - ab.left)).toBeLessThan(1)
+    expect(Math.abs(ib.width - ab.width)).toBeLessThan(1)
+  })
+
+  const page3 = pageButtons(screen.container).find((b) => b.textContent?.trim() === '3')!
+  await userEvent.click(page3)
+  await vi.waitFor(() => {
+    const ib = indicator.getBoundingClientRect()
+    const ab = activeButton().getBoundingClientRect()
+    expect(Math.abs(ib.left - ab.left)).toBeLessThan(1)
+    expect(Math.abs(ib.width - ab.width)).toBeLessThan(1)
+  })
+})
+
 test('prev/first are disabled on page 1, next/last are disabled on the last page', async () => {
   const screen = render(PaginationFixture, { props: { total: 50, pageSize: 10 } })
   const [first, prev, next, last] = navButtons(screen.container)

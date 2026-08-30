@@ -1,0 +1,83 @@
+@layer ui-components {
+  .ui-time-field {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--ui-border);
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: var(--ui-surface);
+    transition: border-color var(--ui-duration-press) ease;
+  }
+  .ui-time-field:focus-within {
+    border-color: var(--ui-primary);
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 1px;
+  }
+  .ui-time-field-input {
+    inline-size: 2rem;
+    border: none;
+    background: transparent;
+    padding-inline-start: 0.5rem;
+    color: var(--ui-text);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    cursor: default;
+    caret-color: transparent;
+  }
+  .ui-time-field-input:focus {
+    outline: none;
+  }
+  .ui-time-field-steppers {
+    display: inline-flex;
+    flex-direction: column;
+    align-self: stretch;
+  }
+  .ui-time-field-stepper {
+    display: grid;
+    place-items: center;
+    flex: 1 1 0;
+    inline-size: 1.5rem;
+    border: 0;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    transition:
+      color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-time-field-stepper:hover {
+      color: var(--ui-text);
+    }
+  }
+  .ui-time-field-stepper:active {
+    transform: scale(0.96);
+  }
+  .ui-time-field-stepper:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+  .ui-time-field[data-disabled] {
+    opacity: 0.5;
+  }
+  .ui-time-field[data-disabled] .ui-time-field-input {
+    cursor: not-allowed;
+  }
+
+  @media (pointer: coarse) {
+    .ui-time-field-input {
+      padding-block: 0.875rem;
+    }
+    .ui-time-field-stepper {
+      inline-size: 2rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-time-field-stepper:active {
+      transform: none;
+    }
+  }
+}

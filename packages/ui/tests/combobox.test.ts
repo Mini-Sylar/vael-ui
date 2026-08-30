@@ -69,6 +69,18 @@ test('selecting an option commits the model and syncs query to its label', async
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
+test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
+  const screen = render(ComboboxFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+
+  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
+  const body = document.querySelector<HTMLElement>('.ui-select-body')!
+  expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
+})
+
 test('allowCustom: Enter with no active option commits the raw text and emits create', async () => {
   const screen = render(ComboboxFixture, { props: { allowCustom: true } })
   const input = screen.getByRole('combobox')
@@ -315,6 +327,39 @@ test('multiple + allowCustom: Enter with no active option adds the raw text as a
   await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["Elderberry"]')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+})
+
+test('header and footer slots render around the listbox only when provided, with a live count in header', async () => {
+  const screen = render(ComboboxFixture, { props: { withHeader: true, withFooter: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('combobox-header')).toHaveTextContent('5 of 5')
+  await expect.element(screen.getByTestId('combobox-footer')).toBeInTheDocument()
+
+  await userEvent.type(input, 'ban')
+  await expect.element(screen.getByTestId('combobox-header')).toHaveTextContent('1 of 5')
+
+  screen.unmount()
+
+  const bare = render(ComboboxFixture)
+  await bare.getByRole('combobox').click()
+  await expect.element(bare.getByRole('listbox')).toBeInTheDocument()
+  expect(document.querySelector('.ui-select-header')).toBeNull()
+  expect(document.querySelector('.ui-select-footer')).toBeNull()
+})
+
+test('the listbox body still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
+  const screen = render(ComboboxFixture, { props: { itemCount: 1000 } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  await vi.waitFor(() => {
+    const body = document.querySelector('.ui-select-body')
+    expect(body?.className).toContain('scroll-fade')
+  })
+  const body = document.querySelector('.ui-select-body') as HTMLElement
+  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
 })
 
 test('hidden inputs carry the selection into FormData; multiple repeats the name', async () => {

@@ -349,13 +349,26 @@
   .ui-datatable-tbody[data-motion='off'] .ui-datatable-row-move {
     transition: none;
   }
-  .ui-datatable-tr--expansion.ui-datatable-row-enter-active,
+  /* Every row's own enter fade (not scoped to --expansion): a row inserted
+     by a narrowing/widening search lands at its final position instantly
+     while a persisted row can still be mid-flight through that same spot
+     via the move transition above — fading it in avoids two full-opacity
+     rows overlapping. Leave stays --expansion-only: pagination's whole-set
+     swap still snaps out, unaffected (see the comment on move above). */
+  .ui-datatable-row-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-datatable-row-enter-from {
+    opacity: 0;
+  }
   .ui-datatable-tr--expansion.ui-datatable-row-leave-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
   }
-  .ui-datatable-tr--expansion.ui-datatable-row-enter-from,
   .ui-datatable-tr--expansion.ui-datatable-row-leave-to {
     opacity: 0;
+  }
+  .ui-datatable-expansion-rows {
+    contain: layout;
   }
   .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
   .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
@@ -380,6 +393,64 @@
     }
     .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
     .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
+      transition: none;
+    }
+  }
+
+  /* `display: contents` unless a grip is present, so every non-reorderable
+     table keeps exactly the layout it had. With one, the cell becomes a flex
+     row — the grip was previously a sibling of the full-width sort button and
+     stacked ABOVE the label instead of sitting beside it. */
+  .ui-datatable-th-inner {
+    display: contents;
+  }
+  .ui-datatable-th-inner--draggable {
+    display: flex;
+    align-items: center;
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+  .ui-datatable-th-inner--draggable > .ui-datatable-sort-button,
+  .ui-datatable-th-inner--draggable > .ui-datatable-th-label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  /* Reorder affordance. A header already has a click action (sort), so the
+     grip is what says "this also drags" — revealed on hover/focus rather than
+     always on, which would clutter a wide table with repeated icons. */
+  .ui-datatable-th-grip {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    padding-inline-start: 0.5rem;
+    color: var(--ui-text-muted);
+    cursor: grab;
+    opacity: 0;
+    transition: opacity var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-datatable-th:hover .ui-datatable-th-grip,
+  .ui-datatable-th:focus-within .ui-datatable-th-grip,
+  .ui-datatable-th[data-dragging] .ui-datatable-th-grip {
+    opacity: 1;
+  }
+  .ui-datatable-th-grip[data-visibility='always'] {
+    opacity: 1;
+  }
+  .ui-datatable-th[data-dragging] {
+    cursor: grabbing;
+    opacity: 0.4;
+  }
+  [data-sortable-preview].ui-datatable-th {
+    z-index: var(--ui-z-drag, 45);
+    opacity: 1;
+    background: var(--ui-surface);
+    box-shadow: var(--ui-panel-shadow);
+    outline: 1px solid var(--ui-border);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-datatable-th-grip {
       transition: none;
     }
   }

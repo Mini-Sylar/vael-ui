@@ -60,6 +60,7 @@ export function useSheetDrag(
 ): UseSheetDragReturn {
   const activeSnap = shallowRef<string | null>(null)
   const isDragging = shallowRef(false)
+  let lastAppliedOffset = 0
 
   function points(): SheetSnapPoint[] {
     return toValue(options.snapPoints)
@@ -92,6 +93,7 @@ export function useSheetDrag(
       '--sheet-visible-height',
       `${Math.max(0, window.innerHeight - offset)}px`,
     )
+    lastAppliedOffset = offset
   }
 
   function settleTo(point: SheetSnapPoint) {
@@ -137,7 +139,7 @@ export function useSheetDrag(
     const point = currentPoint()
     if (!point) return
     dragStartY = clientY
-    dragStartOffset = offsetFor(point)
+    dragStartOffset = lastAppliedOffset
     dragStartTime = performance.now()
     isDragging.value = true
     moveTo(dragStartOffset, false)

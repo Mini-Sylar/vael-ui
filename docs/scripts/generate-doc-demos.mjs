@@ -5,8 +5,22 @@
 // packages/scripts/generate-vapor.mjs already proves out: inject a bare
 // `vapor` attribute on <script setup>, and repoint imports from 'vael-ui'
 // to 'vael-ui/vapor'.
+//
+// A component's demos live either as a single legacy `{Component}Demo.vue`
+// file (still one example, whatever it contains), or — once migrated — as a
+// `{Component}/` folder holding one file per example. Both are read into the
+// same manifest shape so ComponentPage.vue never needs to know which one it's
+// looking at.
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+  existsSync,
+  readdirSync,
+  statSync,
+} from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { allComponents } from '../src/taxonomy.ts'
@@ -37,13 +51,10 @@ function readVaporComponentNames() {
   return names
 }
 
-// A handful of components share a demo file rather than having their own
-// (e.g. Pagination only ever appears inside DataTableDemo). Column and
+// A handful of components share a legacy demo file rather than having their
+// own (e.g. Pagination only ever appears inside DataTableDemo). Column and
 // AccordionItem aren't listed here at all now — they're documented on their
 // parent's page (see taxonomy.ts), not routed as their own component page.
-// Checkbox and Switch used to share ToggleDemo — split into their own files
-// since a Checkbox page showing Switch examples read as a mistake, not a
-// deliberate pairing.
 const DEMO_OVERRIDES = {
   Pagination: 'DataTableDemo',
   Avatar: 'AvatarBadgeDemo',
@@ -55,7 +66,7 @@ const DEMO_OVERRIDES = {
 // Integrations not yet proven under Vapor — skip the twin, keep the VDOM demo.
 const VAPOR_INELIGIBLE_IMPORTS = ['vue-router', 'vee-validate']
 
-function demoNameFor(component) {
+function legacyDemoNameFor(component) {
   const override = DEMO_OVERRIDES[component]
   if (override) return override
   const guess = `${component}Demo`
@@ -99,6 +110,22 @@ function injectVaporMarker(source) {
   return source.replace(scriptSetupRe, (full, attrs) => `<script setup${attrs} vapor>`)
 }
 
+// Volar's vapor-mode template checker always validates a v-x binding against
+// the classic (el, DirectiveBinding<T>) overload, never v-draggable's actual
+// getter-based Vapor overload — so a non-primitive value errors there even
+// though it's correct at runtime. See skill.md's "Known toolchain gaps".
+function suppressKnownVaporDirectiveGaps(source) {
+  // Matches a whole opening tag, however its attributes wrap across lines —
+  // a formatter is free to rewrap `v-draggable=` onto its own line at any
+  // point, so this can't assume it shares a line with the tag start. The
+  // comment always precedes the TAG START, never sits between attributes
+  // (an HTML comment mid-attribute-list is invalid markup).
+  return source.replace(/^(\s*)(<[a-zA-Z][a-zA-Z0-9]*\b[\s\S]*?>)/gm, (full, indent, tag) => {
+    if (!/\sv-draggable=/.test(tag)) return full
+    return `${indent}<!-- @vue-expect-error known Volar vapor-directive typecheck gap, see generate-doc-demos.mjs -->\n${full}`
+  })
+}
+
 // Only PascalCase names that are real Vapor components move to
 // 'vael-ui/vapor'; composables/functions (openDialog, useTabIndicator,
 // toast, ...) aren't Vapor/VDOM-specific and stay on 'vael-ui'. `import
@@ -116,6 +143,93 @@ function rewriteToVapor(source, vaporComponentNames) {
   })
 }
 
+// The example's own <h3> is its title — same convention every demo file
+// already follows, just read instead of only stripped.
+function extractTitle(source, fallback) {
+  const match = source.match(/<h3[^>]*>([\s\S]*?)<\/h3>/)
+  if (!match) return fallback
+  return match[1]
+    .replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim()
+}
+
+// `id` and every entry in `allIds` are paths relative to the generated root,
+// without extension — "DataTableDemo" for a legacy flat file, or
+// "Sortable/DragToReorder" for a migrated one. Fully self-describing, so
+// nothing here needs to know which shape produced them.
+function emitExample(id, allIds, sourceFor, vaporComponentNames, state) {
+  const allSources = allIds.map((partId) => sourceFor(partId))
+  const missingComponents = findMissingVaporComponents(allSources, vaporComponentNames)
+  const eligible = !usesIneligibleIntegration(allSources) && missingComponents.size === 0
+  for (const m of missingComponents) state.vaporGaps.add(m)
+
+  allIds.forEach((partId, index) => {
+    const parts = partId.split('/')
+    const partFile = parts.at(-1)
+    const partDir = parts.slice(0, -1).join('/')
+    const source = allSources[index]
+    if (!state.copiedVdom.has(partId)) {
+      mkdirSync(join(OUT_VDOM_DIR, partDir), { recursive: true })
+      writeFileSync(join(OUT_VDOM_DIR, partDir, `${partFile}.vue`), source)
+      state.copiedVdom.add(partId)
+    }
+    if (eligible && !state.copiedVapor.has(partId)) {
+      mkdirSync(join(OUT_VAPOR_DIR, partDir), { recursive: true })
+      const vaporSource = suppressKnownVaporDirectiveGaps(
+        rewriteToVapor(injectVaporMarker(source), vaporComponentNames),
+      )
+      writeFileSync(join(OUT_VAPOR_DIR, partDir, `${partFile}.vue`), vaporSource)
+      state.copiedVapor.add(partId)
+    }
+  })
+
+  return { id, title: extractTitle(sourceFor(id), id.split('/').at(-1)), vaporEligible: eligible }
+}
+
+// A migrated component: docs/src/demos/{component}/*.vue, one file per
+// example. Partial files (a plain child component an example imports, no
+// example content of their own) are found by scanning every file's own
+// relative imports first, then excluded from the example list.
+function processFolder(component, folderPath, vaporComponentNames, state) {
+  const files = readdirSync(folderPath).filter((f) => f.endsWith('.vue'))
+  const sourceById = new Map(
+    files.map((f) => [f.replace(/\.vue$/, ''), readFileSync(join(folderPath, f), 'utf8')]),
+  )
+  const referenced = new Set()
+  for (const source of sourceById.values()) {
+    for (const partial of findLocalPartials(source)) referenced.add(partial)
+  }
+  const exampleIds = [...sourceById.keys()].filter((id) => !referenced.has(id))
+
+  // `emitExample` deals only in component-prefixed ids ("Sortable/Foo"), so
+  // this strips the prefix back off before looking the bare filename up.
+  const sourceFor = (id) => {
+    const bareId = id.slice(component.length + 1)
+    return sourceById.get(bareId) ?? readFileSync(join(folderPath, `${bareId}.vue`), 'utf8')
+  }
+  return exampleIds.map((exampleId) => {
+    const allIds = [exampleId, ...findLocalPartials(sourceById.get(exampleId))].map(
+      (id) => `${component}/${id}`,
+    )
+    return emitExample(`${component}/${exampleId}`, allIds, sourceFor, vaporComponentNames, state)
+  })
+}
+
+// A not-yet-migrated component: one legacy `{name}Demo.vue` file, its whole
+// content treated as a single example — unchanged behavior from before
+// per-example splitting existed.
+function processLegacy(demoName, vaporComponentNames, state) {
+  const sourceFor = (id) => readFileSync(join(DEMOS_DIR, `${id}.vue`), 'utf8')
+  const partials = [...findLocalPartials(sourceFor(demoName))]
+  const allIds = [demoName, ...partials]
+  return emitExample(demoName, allIds, sourceFor, vaporComponentNames, state)
+}
+
 function main() {
   const vaporComponentNames = readVaporComponentNames()
 
@@ -125,49 +239,33 @@ function main() {
   mkdirSync(OUT_VAPOR_DIR, { recursive: true })
 
   const manifest = {}
-  const copiedVdom = new Set()
-  const copiedVapor = new Set()
-  const vaporGaps = new Set()
+  const state = { copiedVdom: new Set(), copiedVapor: new Set(), vaporGaps: new Set() }
 
   for (const component of allComponents) {
-    const demoName = demoNameFor(component)
-    if (!demoName) {
-      manifest[component] = { demo: null, vaporEligible: false }
-      console.log(`(no demo) ${component}`)
+    const folderPath = join(DEMOS_DIR, component)
+    if (existsSync(folderPath) && statSync(folderPath).isDirectory()) {
+      const examples = processFolder(component, folderPath, vaporComponentNames, state)
+      manifest[component] = { examples }
+      console.log(`${component} -> ${examples.length} example(s) in ${component}/`)
       continue
     }
 
-    const mainSource = readFileSync(join(DEMOS_DIR, `${demoName}.vue`), 'utf8')
-    const partials = [...findLocalPartials(mainSource)]
-    const allIds = [demoName, ...partials]
-    const allSources = allIds.map((id) => readFileSync(join(DEMOS_DIR, `${id}.vue`), 'utf8'))
-    const missingComponents = findMissingVaporComponents(allSources, vaporComponentNames)
-    const eligible = !usesIneligibleIntegration(allSources) && missingComponents.size === 0
-    for (const m of missingComponents) vaporGaps.add(m)
-
-    for (const id of allIds) {
-      if (!copiedVdom.has(id)) {
-        const source = readFileSync(join(DEMOS_DIR, `${id}.vue`), 'utf8')
-        writeFileSync(join(OUT_VDOM_DIR, `${id}.vue`), source)
-        copiedVdom.add(id)
-      }
-      if (eligible && !copiedVapor.has(id)) {
-        const source = readFileSync(join(DEMOS_DIR, `${id}.vue`), 'utf8')
-        const vaporSource = rewriteToVapor(injectVaporMarker(source), vaporComponentNames)
-        writeFileSync(join(OUT_VAPOR_DIR, `${id}.vue`), vaporSource)
-        copiedVapor.add(id)
-      }
+    const demoName = legacyDemoNameFor(component)
+    if (!demoName) {
+      manifest[component] = { examples: [] }
+      console.log(`(no demo) ${component}`)
+      continue
     }
-
-    manifest[component] = { demo: demoName, vaporEligible: eligible }
-    console.log(`${component} -> ${demoName}${eligible ? '' : ' (VDOM only)'}`)
+    const example = processLegacy(demoName, vaporComponentNames, state)
+    manifest[component] = { examples: [example] }
+    console.log(`${component} -> ${demoName}${example.vaporEligible ? '' : ' (VDOM only)'}`)
   }
 
   writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n')
   console.log(`\nwrote docs/src/generated/demo-manifest.json (${allComponents.length} component(s))`)
-  if (vaporGaps.size > 0) {
+  if (state.vaporGaps.size > 0) {
     console.log(
-      `\nnote: ${[...vaporGaps].join(', ')} ${vaporGaps.size === 1 ? 'is' : 'are'} used in a demo but not exported from vael-ui/vapor's actual build — those demos stayed VDOM-only.`,
+      `\nnote: ${[...state.vaporGaps].join(', ')} ${state.vaporGaps.size === 1 ? 'is' : 'are'} used in a demo but not exported from vael-ui/vapor's actual build — those demos stayed VDOM-only.`,
     )
   }
 }

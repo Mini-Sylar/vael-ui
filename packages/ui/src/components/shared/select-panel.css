@@ -5,6 +5,8 @@
   }
   .ui-select-panel {
     position: relative;
+    display: flex;
+    flex-direction: column;
     /* Rows are virtualized (absolutely positioned, out of flow), so they
        never contribute to a `max-content` measurement — matching the
        trigger's width exactly is the real constraint, just floored so a
@@ -16,6 +18,18 @@
     color: var(--ui-text);
     box-shadow: var(--ui-panel-shadow);
     overflow: hidden;
+  }
+  .ui-select-header {
+    flex: none;
+    padding: 0.5rem 0.625rem;
+    border-block-end: 1px solid var(--ui-border);
+    color: var(--ui-text-muted);
+    font-size: 0.8125rem;
+  }
+  .ui-select-footer {
+    flex: none;
+    padding: 0.5rem;
+    border-block-start: 1px solid var(--ui-border);
   }
   .ui-select-enter-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
@@ -40,8 +54,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-select-enter-active,
-    .ui-select-leave-active,
     .ui-select-enter-active .ui-select-panel,
     .ui-select-leave-active .ui-select-panel {
       transition: none;

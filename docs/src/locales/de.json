@@ -93,7 +93,10 @@
     "TreeSelect": "Ein Dropdown-Menü, dessen Bereich ein Baum ist, zum Auswählen eines oder mehrerer Knoten aus einer Hierarchie.",
     "Kbd": "Gestaltet eine Tastenkombination so, dass sie sich wie eine physische Taste liest.",
     "Drawer": "Ein Panel, das vom Rand des Ansichtsfensters eingeschoben wird, für Navigation oder Seiteninhalte.",
-    "PasswordInput": "Ein Passwortfeld mit einem Offenlegungsschalter und einem Hinweis zu den Anforderungen."
+    "PasswordInput": "Ein Passwortfeld mit einem Offenlegungsschalter und einem Hinweis zu den Anforderungen.",
+    "Sortable": "Eine Drag-to-Reorder-Liste mit einem echten Tastaturpfad, nicht nur einem Zeigerpfad.",
+    "Rating": "Klicken, ziehen oder verwenden Sie die Pfeiltasten, um einen Wert in einer Reihe von Sternen auszuwählen, optional mit Halbschrittgenauigkeit.",
+    "Timeline": "Eine geordnete Liste von Schritten, die durch eine Linie verbunden sind, unabhängig davon, was jeder Schritt tatsächlich enthält."
   },
   "gettingStarted": {
     "darkModeIntro": "Nur CSS: antwortet auf <code>",
@@ -184,7 +187,8 @@
     "composables": "Composables",
     "autoImportGuide": "Automatischer Import",
     "nuxtGuide": "Nuxt",
-    "skillGuide": "KI-Agent-Fähigkeit"
+    "skillGuide": "KI-Agent-Fähigkeit",
+    "directives": "Richtlinien"
   },
   "pageNotes": {
     "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren."
@@ -307,7 +311,8 @@
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Überlagerungen",
     "positioningAndData": "Positionierung",
-    "utilities": "Dienstprogramme"
+    "utilities": "Dienstprogramme",
+    "dragAndDrop": "Ziehen"
   },
   "composableDescriptions": {
     "confirmAction": "Ein asynchroner Bestätigungsablauf, zentriert als Dialog oder an einen Auslöser verankert als Popover, der auf Ihren Handler wartet, bevor er sich schließt.",
@@ -351,5 +356,10 @@
     "title": "KI-Agent-Fähigkeit",
     "whatsIncludedIntro": "Ein kompakter Leitfaden auf oberster Ebene sowie eine vollständige Referenz, generiert aus denselben realen Daten, aus denen die Dokumentationsseite selbst erstellt wurde:",
     "whatsIncludedTitle": "Was ist enthalten"
+  },
+  "directive": {
+    "modifiers": "Modifikatoren",
+    "noModifiers": "Keine Modifikatoren.",
+    "value": "Wert"
   }
 }

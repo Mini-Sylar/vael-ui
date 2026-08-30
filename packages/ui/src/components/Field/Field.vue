@@ -48,6 +48,7 @@ const props = withDefaults(
     error?: string
     required?: boolean
     disabled?: boolean
+    /** `'top'` stacks above the control; `'float'` overlays on the edge (animates up on focus/fill); `'inset'` overlays inside the control. */
     labelPlacement?: 'top' | 'float' | 'inset'
     ui?: Partial<{
       root: UiPartValue

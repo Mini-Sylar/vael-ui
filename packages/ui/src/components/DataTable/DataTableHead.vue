@@ -35,32 +35,57 @@
         }"
         :style="[columnStyle(col), columnFrozenStyle(colIndex)]"
         :aria-sort="col.sortable ? sortAriaValue(col) : undefined"
+        :data-column-field="String(col.field)"
+        :data-dragging="draggingColumn === col.field || undefined"
+        :aria-roledescription="isColumnReorderable(col) ? 'draggable column' : undefined"
+        @pointerdown="isColumnReorderable(col) && onColumnPointerdown($event, col.field as string)"
+        @click.capture="onHeaderClickCapture"
       >
-        <component :is="col.headerSlot" v-if="col.headerSlot" :column="col" />
-        <button
-          v-else-if="col.sortable"
-          type="button"
-          class="ui-datatable-sort-button"
-          @click="onToggleSort(col.field)"
+        <div
+          class="ui-datatable-th-inner"
+          :class="{ 'ui-datatable-th-inner--draggable': isColumnReorderable(col) }"
         >
-          <span class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
           <span
-            class="ui-datatable-sort-chevron"
-            :data-state="sort.field === col.field ? sort.dir : 'none'"
+            v-if="isColumnReorderable(col)"
+            class="ui-datatable-th-grip"
+            :data-visibility="columnGripVisibility"
             aria-hidden="true"
           >
-            <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
-              <path
-                d="M4 6l4 4 4-4"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
+            <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor">
+              <circle cx="6" cy="3" r="1.25" />
+              <circle cx="10" cy="3" r="1.25" />
+              <circle cx="6" cy="8" r="1.25" />
+              <circle cx="10" cy="8" r="1.25" />
+              <circle cx="6" cy="13" r="1.25" />
+              <circle cx="10" cy="13" r="1.25" />
             </svg>
           </span>
-        </button>
-        <span v-else class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
+          <component :is="col.headerSlot" v-if="col.headerSlot" :column="col" />
+          <button
+            v-else-if="col.sortable"
+            type="button"
+            class="ui-datatable-sort-button"
+            @click="onToggleSort(col.field)"
+          >
+            <span class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
+            <span
+              class="ui-datatable-sort-chevron"
+              :data-state="sort.field === col.field ? sort.dir : 'none'"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
+                <path
+                  d="M4 6l4 4 4-4"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+          </button>
+          <span v-else class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
+        </div>
         <span
           v-if="isColumnResizable(col)"
           class="ui-datatable-resize-handle"
@@ -85,7 +110,7 @@ import { useUiMessages } from '../../messages'
 
 const messages = useUiMessages()
 
-defineProps<{
+const props = defineProps<{
   selectColumnRendered: boolean
   expansionColumnRendered: boolean
   columns: RegisteredColumn<T>[]
@@ -102,7 +127,20 @@ defineProps<{
   onToggleSelectAll: () => void
   onToggleSort: (field: keyof T) => void
   onResizePointerdown: (col: RegisteredColumn<T>, event: PointerEvent) => void
+  isColumnReorderable: (col: RegisteredColumn<T>) => boolean
+  columnGripVisibility: 'hover' | 'always'
+  draggingColumn: string | number | null
+  onColumnPointerdown: (event: PointerEvent, field: string | number) => void
+  consumeColumnClick: () => boolean
 }>()
+
+function onHeaderClickCapture(event: MouseEvent) {
+  // A completed drag is followed by a click; without swallowing it, dropping a
+  // column also toggles its sort.
+  if (!props.consumeColumnClick()) return
+  event.preventDefault()
+  event.stopPropagation()
+}
 
 const rowEl = useTemplateRef<HTMLElement>('rowEl')
 defineExpose({ rowEl })

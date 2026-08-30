@@ -15,9 +15,17 @@
     :filter="filter"
     :allow-custom="allowCustom"
     :open-on-focus="openOnFocus"
+    :max-panel-height="maxPanelHeight"
     placeholder="Search fruit"
     @create="createLog.push($event)"
-  />
+  >
+    <template v-if="withHeader" #header="{ count, total }">
+      <span data-testid="combobox-header">{{ count }} of {{ total }}</span>
+    </template>
+    <template v-if="withFooter" #footer>
+      <span data-testid="combobox-footer">footer</span>
+    </template>
+  </Combobox>
 </template>
 
 <script setup lang="ts">
@@ -33,6 +41,10 @@ const props = withDefaults(
     filter?: boolean | ((item: SelectItemData, query: string) => boolean)
     allowCustom?: boolean
     openOnFocus?: boolean
+    itemCount?: number
+    withHeader?: boolean
+    withFooter?: boolean
+    maxPanelHeight?: number
   }>(),
   {
     multiple: false,
@@ -43,16 +55,22 @@ const props = withDefaults(
     // Explicit `undefined` — same boolean-union footgun as Select's own
     // `virtualize`/Combobox's own `openOnFocus` default (see Combobox.vue).
     openOnFocus: undefined,
+    itemCount: undefined,
+    withHeader: false,
+    withFooter: false,
+    maxPanelHeight: undefined,
   },
 )
 
-const items: SelectItemData[] = [
-  { label: 'Apple', value: 'apple' },
-  { label: 'Banana', value: 'banana' },
-  { label: 'Cherry', value: 'cherry', disabled: true },
-  { label: 'Cranberry', value: 'cranberry' },
-  { label: 'Date', value: 'date' },
-]
+const items: SelectItemData[] = props.itemCount
+  ? Array.from({ length: props.itemCount }, (_, i) => ({ label: `Item ${i}`, value: i }))
+  : [
+      { label: 'Apple', value: 'apple' },
+      { label: 'Banana', value: 'banana' },
+      { label: 'Cherry', value: 'cherry', disabled: true },
+      { label: 'Cranberry', value: 'cranberry' },
+      { label: 'Date', value: 'date' },
+    ]
 
 const model = shallowRef<string | number | (string | number)[] | null>(props.multiple ? [] : null)
 const query = shallowRef('')

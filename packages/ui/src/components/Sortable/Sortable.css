@@ -1,0 +1,120 @@
+@layer ui-components {
+  /* Sortable Drag-to-reorder list. Nothing here transitions `translate` — useSortable's springs write that property every frame and a CSS transition would fight them. */
+  .ui-sortable {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ui-sortable[data-axis='x'] {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .ui-sortable-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    transition:
+      box-shadow var(--ui-duration-press) var(--ui-ease-out),
+      border-color var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-sortable-item[data-dragging],
+  .ui-sortable-item[data-grabbed] {
+    position: relative;
+    z-index: 1;
+    border-color: var(--ui-primary);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.04),
+      0 4px 10px rgb(0 0 0 / 0.1);
+  }
+  .ui-sortable-item[data-dragging] {
+    cursor: grabbing;
+  }
+
+  .ui-sortable-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ui-radius);
+    background: none;
+    color: var(--ui-text-muted);
+    cursor: grab;
+    touch-action: none;
+    transition:
+      color var(--ui-duration-press) var(--ui-ease-out),
+      background-color var(--ui-duration-press) var(--ui-ease-out),
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-sortable-handle:hover {
+    color: var(--ui-text);
+    background: var(--ui-muted);
+  }
+  .ui-sortable-handle:active {
+    transform: scale(0.94);
+  }
+  .ui-sortable-handle:focus-visible {
+    outline: 2px solid var(--ui-ring);
+    outline-offset: 2px;
+  }
+  .ui-sortable-item[data-dragging] .ui-sortable-handle {
+    cursor: grabbing;
+  }
+
+  .ui-sortable-content {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  /* Rejected target: the row stays put (no misleading preview) and reads as blocked. */
+  .ui-sortable[data-invalid-drop] .ui-sortable-item[data-dragging],
+  .ui-sortable[data-invalid-drop] .ui-sortable-item[data-grabbed] {
+    border-color: var(--ui-danger);
+    cursor: not-allowed;
+  }
+  /* group only: a sibling list's drag is hovering this one as the drop target. */
+  .ui-sortable[data-drop-target] {
+    background: color-mix(in oklch, var(--ui-primary) 6%, transparent);
+    border-radius: var(--ui-radius);
+  }
+  .ui-sortable[data-pending] {
+    cursor: progress;
+  }
+  .ui-sortable[data-pending] .ui-sortable-item[data-dragging],
+  .ui-sortable[data-pending] .ui-sortable-item[data-grabbed] {
+    opacity: 0.7;
+  }
+
+  .ui-sortable-status {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Springs already jump under this query; this only drops the press feel. */
+    .ui-sortable-item,
+    .ui-sortable-handle {
+      transition: none;
+    }
+    .ui-sortable-handle:active {
+      transform: none;
+    }
+  }
+}

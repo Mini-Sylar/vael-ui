@@ -15,7 +15,12 @@
         ctx.selectionMode !== 'checkbox' ? (ctx.isCheckedNode(node) ? 'true' : 'false') : undefined
       "
       :aria-checked="ctx.selectionMode === 'checkbox' ? ctx.ariaChecked(node) : undefined"
+      :aria-roledescription="ctx.reorderable ? 'draggable tree item' : undefined"
+      :data-dragging="ctx.draggedValues.has(node.value) || undefined"
+      :data-drop-into="ctx.dropIntoValue === node.value || undefined"
+      :data-drop-edge="ctx.dropEdge?.value === node.value ? ctx.dropEdge.side : undefined"
       @click="ctx.onRowClick(node, $event)"
+      @pointerdown="ctx.onRowPointerdown?.(node, $event)"
     >
       <slot
         name="node"

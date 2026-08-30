@@ -125,3 +125,52 @@ test('custom default-slot markup keeps behavior: click selects/closes, keep-open
   await expect.element(screen.getByTestId('selected')).toHaveTextContent('apple')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
+
+test('header and footer slots render around the item list only when provided', async () => {
+  const screen = render(MenuFixture, { props: { withHeader: true, withFooter: true } })
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('menu-header')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('menu-footer')).toBeInTheDocument()
+
+  screen.unmount()
+
+  const bare = render(MenuFixture)
+  await bare.getByTestId('trigger').click()
+  await expect.element(bare.getByRole('menu')).toBeInTheDocument()
+  expect(document.querySelector('.ui-menu-header')).toBeNull()
+  expect(document.querySelector('.ui-menu-footer')).toBeNull()
+})
+
+test('the item list still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
+  const screen = render(MenuFixture, { props: { itemCount: 100 } })
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await vi.waitFor(() => {
+    const body = document.querySelector('.ui-menu-body')
+    expect(body?.className).toContain('scroll-fade')
+  })
+  const body = document.querySelector('.ui-menu-body') as HTMLElement
+  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
+})
+
+test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
+  const screen = render(MenuFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  const panel = document.querySelector<HTMLElement>('.ui-menu-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
+  const body = document.querySelector<HTMLElement>('.ui-menu-body')!
+  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
+})
+
+test('a fully custom #default slot gets the live maxHeight budget, so it can bound its own scroll region', async () => {
+  const screen = render(MenuCustomFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await vi.waitFor(() => {
+    expect(screen.getByTestId('max-height').element().textContent).not.toBe('')
+  })
+  const value = Number(screen.getByTestId('max-height').element().textContent)
+  expect(value).toBeGreaterThan(0)
+})

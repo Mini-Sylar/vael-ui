@@ -30,10 +30,18 @@
       :force-mount="forceMount"
       :teleport-to="teleportTo"
       :scroll-fade="scrollFade"
-      :ui="{ positioner: themedUi()?.positioner, panel: themedUi()?.panel }"
+      :ui="{
+        positioner: themedUi()?.positioner,
+        panel: themedUi()?.panel,
+        header: themedUi()?.header,
+        footer: themedUi()?.footer,
+      }"
       @open-change="(value, details) => emit('open-change', value, details)"
       @select="(item) => emit('select', item)"
     >
+      <template v-if="$slots.header" #header>
+        <slot name="header" />
+      </template>
       <template #trigger>
         <Button
           ref="triggerRef"
@@ -64,6 +72,9 @@
       </template>
       <template v-if="$slots.item" #item="slotProps">
         <slot name="item" v-bind="slotProps" />
+      </template>
+      <template v-if="$slots.footer" #footer>
+        <slot name="footer" />
       </template>
     </Menu>
   </span>
@@ -126,6 +137,8 @@ const props = withDefaults(
       trigger: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -147,8 +160,12 @@ const emit = defineEmits<{
 defineSlots<{
   /** Main action button content. */
   default(): unknown
+  /** Forwarded to the dropdown Menu's own `#header`. */
+  header(): unknown
   /** Override one dropdown row's content while keeping its behavior — forwarded to Menu's own `#item`. */
   item(props: { item: T }): unknown
+  /** Forwarded to the dropdown Menu's own `#footer`. */
+  footer(): unknown
 }>()
 
 const attrs = useAttrs()

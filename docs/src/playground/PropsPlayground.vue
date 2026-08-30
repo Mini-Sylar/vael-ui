@@ -219,6 +219,18 @@
               </ul>
             </component>
           </template>
+          <template v-else-if="isPullToRefresh">
+            <component
+              :is="activeComponent"
+              :key="resetKey"
+              v-bind="boundProps"
+              class="pull-to-refresh-preview"
+            >
+              <ul class="pull-to-refresh-preview-list">
+                <li v-for="n in 8" :key="n">Row {{ n }}</li>
+              </ul>
+            </component>
+          </template>
           <template v-else-if="isAvatarGroup">
             <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
               <component :is="avatarComponent" name="Ada Lovelace" />
@@ -364,8 +376,8 @@
           <Switch
             v-if="control.kind === 'boolean'"
             :id="`ctl-${control.name}`"
-            :model-value="values[control.name] as boolean"
-            @update:model-value="(v) => (values[control.name] = v)"
+            :model-value="!!values[control.name]"
+            @update:model-value="(v) => setBooleanControl(control.name, v)"
           />
           <Select
             v-else-if="control.kind === 'select'"
@@ -488,6 +500,7 @@ const TABS_PLACEHOLDER_ITEMS = ['Overview', 'Activity', 'Settings']
 const tabsActive = shallowRef(TABS_PLACEHOLDER_ITEMS[0])
 const isResizable = computed(() => props.name === 'Resizable')
 const isScrollArea = computed(() => props.name === 'ScrollArea')
+const isPullToRefresh = computed(() => props.name === 'PullToRefresh')
 const isAvatarGroup = computed(() => props.name === 'AvatarGroup')
 const isBreadcrumb = computed(() => props.name === 'Breadcrumb')
 const isCommandPalette = computed(() => props.name === 'CommandPalette')
@@ -624,6 +637,8 @@ const CONTROL_HELP: Record<string, string> = {
     'Turn off the built-in CSS transition to animate this yourself with GSAP, motion-v, or plain CSS.',
   forceMount:
     'Keeps this in the DOM while closed, so an external animation library controls the exit instead of Vue removing it.',
+  filter:
+    'Off omits the prop entirely (no box, the real default). On is filter="true" (box + built-in matching). filter="false" — box shown, but no built-in matching, for a consumer doing their own search — has no toggle position since it needs three states; see the prop docs.',
 }
 
 interface NamedControl {
@@ -764,6 +779,22 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
   value: 60,
 }
 
+// Props whose real default IS "unset" (an opt-in cap/limit, not a value the
+// component needs to render at all) — seeding these to 0 like any other
+// number control collapses the panel/track to nothing. `undefined` here
+// keeps the playground's starting state matching the component's own.
+const NUMBER_UNSET_BY_DEFAULT = new Set(['maxPanelHeight'])
+
+// Same idea for a boolean|function prop (Select/Combobox's `filter`) whose
+// real "off" is an unset prop, not `false` — `false` still renders the box,
+// just without built-in matching, so a toggle that could only ever produce
+// `false`/`true` could never show the box actually disappearing.
+const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter'])
+
+function setBooleanControl(name: string, checked: boolean) {
+  values[name] = !checked && BOOLEAN_UNSET_WHEN_OFF.has(name) ? undefined : checked
+}
+
 const values = reactive<Record<string, unknown>>({})
 
 watch(
@@ -799,6 +830,14 @@ watchEffect(() => {
     } else if (
       control.kind === 'number' &&
       propMeta?.default === undefined &&
+      NUMBER_UNSET_BY_DEFAULT.has(control.name)
+    ) {
+      values[control.name] = undefined
+    } else if (control.kind === 'boolean' && BOOLEAN_UNSET_WHEN_OFF.has(control.name)) {
+      values[control.name] = undefined
+    } else if (
+      control.kind === 'number' &&
+      propMeta?.default === undefined &&
       NUMBER_DEFAULT_OVERRIDES[control.name] !== undefined
     ) {
       values[control.name] = NUMBER_DEFAULT_OVERRIDES[control.name]
@@ -828,10 +867,11 @@ const code = computed(() => {
   const attrs = controls.value
     .map((c) => {
       const v = values[c.name]
-      if (c.kind === 'boolean') return v ? c.name : `:${c.name}="false"`
-      if (c.kind === 'number') return `:${c.name}="${v}"`
+      if (c.kind === 'boolean') return v === undefined ? '' : v ? c.name : `:${c.name}="false"`
+      if (c.kind === 'number') return v === undefined ? '' : `:${c.name}="${v}"`
       return `${c.name}="${v}"`
     })
+    .filter(Boolean)
     .join(' ')
   const itemsAttr = hasItemsProp.value ? ' :items="items"' : ''
   const openTag = [props.name, attrs, itemsAttr].filter(Boolean).join(' ').replace(/ +/g, ' ')
@@ -966,6 +1006,23 @@ const code = computed(() => {
 }
 .scroll-area-preview-list li {
   padding-block: 0.25rem;
+}
+
+.pull-to-refresh-preview {
+  block-size: 12rem;
+  max-inline-size: 16rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+.pull-to-refresh-preview-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+.pull-to-refresh-preview-list li {
+  padding: 0.5rem 0.75rem;
+  border-block-end: 1px solid var(--ui-border);
 }
 
 .tabs-preview-tab {

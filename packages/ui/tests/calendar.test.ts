@@ -73,6 +73,33 @@ test('next/previous month navigation updates the header and the rendered grid', 
   })
 })
 
+test('a shorter next month animates the body height instead of snapping', async () => {
+  // Sunday-first: August 2015 spans 6 rows, September 2015 only 5.
+  const screen = render(CalendarFixture, {
+    props: { initialValue: new Date(2015, 7, 15), firstDayOfWeek: 0 },
+  })
+  const body = screen.container.querySelector<HTMLElement>('.ui-calendar-body')!
+  const before = body.getBoundingClientRect().height
+  const nextButton = screen.container.querySelectorAll<HTMLElement>('.ui-calendar-nav')[1]!
+
+  await userEvent.click(nextButton)
+  await vi.waitFor(() => {
+    expect(screen.container.querySelector('.ui-calendar-label')).toHaveTextContent('September 2015')
+  })
+  // Mid-flight: the body is locked to an explicit px height, not "auto" —
+  // that's what makes the change a transition instead of an instant snap.
+  await vi.waitFor(() => expect(body.style.blockSize).not.toBe(''))
+
+  await vi.waitFor(
+    () => {
+      expect(body.style.blockSize).toBe('')
+    },
+    { timeout: 1000 },
+  )
+  const after = body.getBoundingClientRect().height
+  expect(after).toBeLessThan(before)
+})
+
 test('clicking a date selects it', async () => {
   const screen = render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
   await userEvent.click(cellByIso('2024-06-20')!)

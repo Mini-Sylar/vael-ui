@@ -18,6 +18,8 @@ export interface UiTheme {
       trigger: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
     }>
   }
   loader?: { ui?: Partial<{ root: UiPartValue }> }
@@ -125,7 +127,7 @@ export interface UiTheme {
   selectButton?: {
     ui?: Partial<{ root: UiPartValue; option: UiPartValue; indicator: UiPartValue }>
   }
-  tabs?: { ui?: Partial<{ list: UiPartValue }> }
+  tabs?: { ui?: Partial<{ list: UiPartValue; item: UiPartValue; indicator: UiPartValue }> }
   stepper?: {
     ui?: Partial<{
       root: UiPartValue
@@ -178,7 +180,14 @@ export interface UiTheme {
     }>
   }
   popover?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
-  menu?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
+  menu?: {
+    ui?: Partial<{
+      positioner: UiPartValue
+      panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
+    }>
+  }
   menuList?: { ui?: Partial<{ root: UiPartValue; item: UiPartValue; separator: UiPartValue }> }
   tooltip?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
   knob?: {
@@ -206,6 +215,8 @@ export interface UiTheme {
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
     }>
   }
   select?: {
@@ -214,9 +225,12 @@ export interface UiTheme {
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      filter: UiPartValue
       list: UiPartValue
       option: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }
   combobox?: {
@@ -225,9 +239,11 @@ export interface UiTheme {
       input: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
       list: UiPartValue
       option: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }
   slider?: {
@@ -261,10 +277,12 @@ export interface UiTheme {
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
       filter: UiPartValue
       list: UiPartValue
       node: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }
   tree?: {
@@ -296,10 +314,19 @@ export interface UiTheme {
       weekday: UiPartValue
       grid: UiPartValue
       cell: UiPartValue
+      time: UiPartValue
+      footer: UiPartValue
     }>
   }
   /** Forwarded straight into the wrapped `<Menu>`'s own `ui` prop — same positioner/panel keys, themeable separately from plain `theme.menu`. */
-  contextMenu?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
+  contextMenu?: {
+    ui?: Partial<{
+      positioner: UiPartValue
+      panel: UiPartValue
+      header: UiPartValue
+      footer: UiPartValue
+    }>
+  }
   speedDial?: { ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }> }
   swipeToReveal?: {
     ui?: Partial<{ root: UiPartValue; content: UiPartValue; actions: UiPartValue }>
@@ -316,6 +343,20 @@ export interface UiTheme {
   }
   tour?: {
     ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
+  }
+  sortable?: {
+    ui?: Partial<{ root: UiPartValue; item: UiPartValue; handle: UiPartValue }>
+  }
+  rating?: { ui?: Partial<{ root: UiPartValue; item: UiPartValue }> }
+  timeline?: {
+    ui?: Partial<{
+      root: UiPartValue
+      item: UiPartValue
+      opposite: UiPartValue
+      marker: UiPartValue
+      connector: UiPartValue
+      content: UiPartValue
+    }>
   }
 }
 

@@ -23,11 +23,18 @@
     background: none;
     color: var(--ui-text-muted);
     cursor: pointer;
-    transition: background-color var(--ui-duration-press) ease;
+    will-change: transform;
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      background-color var(--ui-duration-press) ease,
+      color var(--ui-duration-press) ease;
   }
   .ui-calendar-nav:hover {
     background: var(--ui-muted);
     color: var(--ui-text);
+  }
+  .ui-calendar-nav:active {
+    transform: scale(0.96);
   }
   .ui-calendar-nav:focus-visible {
     outline: 2px solid var(--ui-primary);
@@ -46,10 +53,16 @@
     border-radius: calc(var(--ui-radius) - 6px);
     font: inherit;
     cursor: pointer;
-    transition: background-color var(--ui-duration-press) ease;
+    will-change: transform;
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      background-color var(--ui-duration-press) ease;
   }
   .ui-calendar-label--button:hover {
     background: var(--ui-muted);
+  }
+  .ui-calendar-label--button:active {
+    transform: scale(0.96);
   }
   .ui-calendar-label--button:focus-visible {
     outline: 2px solid var(--ui-primary);
@@ -210,7 +223,8 @@
   .ui-calendar-grid-leave-active {
     transition:
       transform var(--ui-duration-enter) var(--ui-ease-in-out),
-      opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+      opacity var(--ui-duration-enter) var(--ui-ease-in-out),
+      filter var(--ui-duration-enter) var(--ui-ease-in-out);
   }
   .ui-calendar-grid-leave-active {
     position: absolute;
@@ -221,10 +235,12 @@
   .ui-calendar-grid-enter-from {
     opacity: 0;
     transform: translateX(calc(0.75rem * var(--ui-calendar-direction, 1)));
+    filter: blur(2px);
   }
   .ui-calendar-grid-leave-to {
     opacity: 0;
     transform: translateX(calc(-0.75rem * var(--ui-calendar-direction, 1)));
+    filter: blur(2px);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -235,6 +251,11 @@
     }
     .ui-calendar-grid-enter-from,
     .ui-calendar-grid-leave-to {
+      transform: none;
+      filter: none;
+    }
+    .ui-calendar-nav:active,
+    .ui-calendar-label--button:active {
       transform: none;
     }
   }

@@ -34,6 +34,9 @@
       ref="listEl"
       :id="listId"
       role="tree"
+      :data-reordering="isReordering ? '' : undefined"
+      :data-invalid-drop="isReordering && !isValidDrop ? '' : undefined"
+      :data-drop-pending="isDropPending ? '' : undefined"
       :aria-multiselectable="selectionMode !== 'single' || undefined"
       :class="listPart.class"
       :style="listPart.style"
@@ -119,6 +122,11 @@
           </template>
         </TreeNodeRow>
       </div>
+      <!-- Mounted for the life of the tree: a live region created at
+           announcement time is not reliably read out. -->
+      <span v-if="reorderable" class="ui-tree-status" role="status" aria-live="assertive">{{
+        reorderAnnouncement
+      }}</span>
     </div>
   </div>
 </template>
@@ -198,6 +206,14 @@ export interface TreeRowContext {
   findNode: (value: string | number) => TreeNode | undefined
   findParent: (value: string | number) => TreeNode | null
   removeNode: (value: string | number) => boolean
+  reorderable: boolean
+  dragValue: string | number | null
+  /** Whole dragged block: a folder hides its descendants with it. */
+  draggedValues: ReadonlySet<string | number>
+  dropIntoValue: string | number | null
+  /** Which row the insertion line sits on, and which side of it. */
+  dropEdge: { value: string | number | null; side: 'before' | 'after' } | null
+  onRowPointerdown?: (node: TreeNode, event: PointerEvent) => void
 }
 export const treeRowContextKey: InjectionKey<TreeRowContext> = Symbol('treeRowContext')
 </script>
@@ -228,12 +244,21 @@ import { useThemedUi } from '../../theme'
 import Input from '../Input/Input.vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
+import { useUiMessages } from '../../messages'
+import { normalizeText } from '../../composables/normalizeText'
+import { moveTreeNode, useSortable } from '../../composables/useSortable'
+import type {
+  DropPosition,
+  FlatSortableRow,
+  SortableDropDetails,
+} from '../../composables/useSortable'
 
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
 const query = defineModel<string>('query', { default: '' })
 
 const props = withDefaults(
   defineProps<{
+    /** The tree data — `TreeNode` (`value`, `label`, optional `children`) or your own extension of it. */
     items: readonly T[]
     /** `'single'`: clicking replaces the selection. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
     selectionMode?: TreeSelectionMode
@@ -248,6 +273,25 @@ const props = withDefaults(
     emptyText?: string
     /** `false` skips all built-in motion (row transitions, chevron rotation, and cross-folder move). */
     motionCss?: boolean
+    /** Drag rows to reorder and to nest, VS Code style: drop on a row's middle to move INTO it, on an edge to place beside it. */
+    reorderable?: boolean
+    /** Which rows accept children. Defaults to any row that already has some — pass your own to let empty folders take drops. */
+    canNestInto?: (node: T) => boolean
+    /** `false` drops the sibling-reorder mode entirely — dragging only ever offers moving INTO a
+     * folder, with no indicator at all when hovering a row that can't hold children. */
+    reorderSiblings?: boolean
+    /** Structural veto re-run while dragging; `false` marks the target invalid. */
+    canDrop?: (details: SortableDropDetails) => boolean
+    /** Async gate at drop time — return `false` (or a promise of it) to cancel. Composes with `confirmAction().result`. */
+    beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
+    /** Hovering a collapsed row this long opens it mid-drag. */
+    autoExpandDelay?: number
+    /** `'clone'` (default): a floating copy follows the cursor, real row
+     * hidden until drop — the built-in behavior since before this prop
+     * existed. `'element'` moves the real row itself instead, so there's
+     * only one instance of it on screen; safe here since a tree row is a
+     * plain element, not a `<table>` row. */
+    previewMode?: 'element' | 'clone'
     /** When true, clicking anywhere on a folder row also toggles its expansion, not just the chevron —
      * it still selects too (unless `selectableFolders` is off), so picking the folder itself (without
      * opening it to reach a file inside) still works. Off by default since it changes what a plain row
@@ -275,6 +319,13 @@ const props = withDefaults(
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
     motionCss: true,
+    reorderable: false,
+    canNestInto: undefined,
+    reorderSiblings: true,
+    canDrop: undefined,
+    beforeDrop: undefined,
+    previewMode: 'clone',
+    autoExpandDelay: 600,
     expandOnRowClick: false,
     stickyScroll: false,
     id: undefined,
@@ -287,6 +338,10 @@ const emit = defineEmits<{
   select: [node: T]
   /** Fires on manual expand/collapse (not auto-expansion via filtering). */
   'expand-change': [value: string | number, expanded: boolean]
+  /** Fires after `items` has been reordered in place. */
+  reorder: [value: string | number, to: DropPosition]
+  /** `beforeDrop` threw or rejected; the move was already reverted. */
+  'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
 
 defineSlots<{
@@ -410,18 +465,10 @@ function activateNode(node: TreeNode) {
 }
 
 const expandedKeys = ref(new Set<string | number>())
-
-// Diacritic-insensitive normalization.
-function normalize(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-}
-const normalizedQuery = computed(() => normalize(query.value.trim()))
+const normalizedQuery = computed(() => normalizeText(query.value.trim()))
 const isFiltering = computed(() => normalizedQuery.value.length > 0)
 function nodeMatches(node: TreeNode): boolean {
-  return normalize(node.label).includes(normalizedQuery.value)
+  return normalizeText(node.label).includes(normalizedQuery.value)
 }
 // Nodes matching or with matching descendants.
 const subtreeMatchSet = computed(() => {
@@ -543,7 +590,113 @@ const flatRows = computed<FlatNode[]>(() => {
   return out
 })
 
+// --- reorder -----------------------------------------------------------------
+// Runs on the same engine as Sortable, so a Tree drop and a list drop resolve
+// and commit through identical code.
+function treeRowElement(value: string | number): HTMLElement | null {
+  return (
+    listEl.value?.querySelector<HTMLElement>(`[data-tree-value="${CSS.escape(String(value))}"]`) ??
+    null
+  )
+}
+const messages = useUiMessages()
+const sortableRows = computed<FlatSortableRow[]>(() =>
+  flatRows.value.map((row) => ({
+    value: row.node.value,
+    depth: row.depth,
+    parentValue: row.parentValue,
+  })),
+)
+const {
+  activeValue: dragValue,
+  isGrabbed: isReordering,
+  draggedValues,
+  dropIntoValue,
+  dropTargetValue,
+  dropIntent,
+  isValidDrop,
+  isPending: isDropPending,
+  announcement: reorderAnnouncement,
+  onHandlePointerdown: onSortablePointerdown,
+  onHandleKeydown: onSortableKeydown,
+  consumeSuppressedClick,
+  cancel: cancelReorder,
+} = useSortable({
+  rows: sortableRows,
+  getElement: treeRowElement,
+  nested: true,
+  dropOnTarget: true,
+  dragPreview: true,
+  previewMode: () => props.previewMode,
+  disabled: () => !props.reorderable,
+  reorderSiblings: () => props.reorderSiblings,
+  motionCss: () => props.motionCss,
+  autoExpandDelay: () => props.autoExpandDelay,
+  onAutoExpand: (value) => expandNode(value),
+  canNestInto: (value) => {
+    const node = findNode(value)
+    if (!node) return false
+    return props.canNestInto ? props.canNestInto(node as T) : !!node.children
+  },
+  childCountOf: (value) => findNode(value)?.children?.length ?? 0,
+  canDrop: (details) => props.canDrop?.(details) ?? true,
+  beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
+  onDropError: (error, details) => emit('drop-error', error, details),
+  labelOf: (value) => findNode(value)?.label ?? String(value),
+  announce: (event) =>
+    messages.value.sortable[
+      event.kind === 'grab'
+        ? 'grabbed'
+        : event.kind === 'move'
+          ? 'movedToLevel'
+          : event.kind === 'drop'
+            ? 'dropped'
+            : 'cancelled'
+    ]
+      .replace('{label}', event.label)
+      .replace('{position}', String(event.position))
+      .replace('{total}', String(event.total))
+      .replace('{depth}', String(event.depth + 1)),
+  onCommit: (value, to) => {
+    // Same shared function Sortable commits through.
+    if (!moveTreeNode(props.items as T[], value, to)) return
+    emit('reorder', value, to)
+  },
+})
+
+function onRowPointerdown(node: TreeNode, event: PointerEvent) {
+  if (!props.reorderable || node.disabled) return
+  onSortablePointerdown(event, node.value)
+}
+
 function onTreeKeydown(event: KeyboardEvent) {
+  // While an item is held, arrows move it instead of moving focus.
+  if (isReordering.value) {
+    const held = dragValue.value
+    if (held != null) {
+      onSortableKeydown(event, held)
+      return
+    }
+  }
+  if (props.reorderable && (event.key === ' ' || event.key === 'Enter')) {
+    const active =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement.closest<HTMLElement>('[data-tree-value]')
+        : null
+    const value = active?.dataset.treeValue
+    // Only claim Space when it would start a reorder; Enter still selects.
+    if (value != null && event.key === ' ') {
+      const node = flatRows.value.find((r) => String(r.node.value) === value)?.node
+      if (node && !node.disabled) {
+        onSortableKeydown(event, node.value)
+        return
+      }
+    }
+  }
+  onTreeNavigationKeydown(event)
+}
+
+function onTreeNavigationKeydown(event: KeyboardEvent) {
   const rows = rowEls()
   if (rows.length === 0) return
   const active = document.activeElement instanceof HTMLElement ? document.activeElement : null
@@ -608,6 +761,13 @@ function onTreeKeydown(event: KeyboardEvent) {
 
 function onRowClick(node: TreeNode, event: MouseEvent) {
   if (node.disabled) return
+  // The browser fires a trailing click after a drag. Without this, dropping a
+  // row also expands or selects it — the drag and the click both "happen".
+  if (consumeSuppressedClick()) {
+    event.preventDefault()
+    event.stopPropagation()
+    return
+  }
   const target = event.target as HTMLElement
   // Guard: chevron/checkbox click must not also activate row.
   if (target.closest('.ui-tree-chevron, .ui-checkbox')) return
@@ -794,6 +954,16 @@ provide<TreeRowContext>(
     findNode,
     findParent,
     removeNode,
+    reorderable: computed(() => props.reorderable),
+    dragValue: computed(() => dragValue.value),
+    draggedValues: computed(() => draggedValues.value),
+    dropIntoValue: computed(() => dropIntoValue.value),
+    dropEdge: computed(() =>
+      dropIntent.value === 'before' || dropIntent.value === 'after'
+        ? { value: dropTargetValue.value, side: dropIntent.value }
+        : null,
+    ),
+    onRowPointerdown,
   }),
 )
 
@@ -809,5 +979,9 @@ defineExpose({
   findNode,
   findParent,
   removeNode,
+  /** True while a row is held, by pointer or keyboard. */
+  isReordering,
+  /** Abort an in-flight reorder and spring everything home. */
+  cancelReorder,
 })
 </script>

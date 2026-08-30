@@ -102,13 +102,52 @@
         <div
           ref="panel"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
           v-bind="$attrs"
         >
+          <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
+            <slot name="header" :count="filteredItems.length" :total="items.length" />
+          </div>
+          <div
+            v-if="filter !== undefined || $slots.filter"
+            :class="filterPart.class"
+            :style="filterPart.style"
+          >
+            <slot name="filter" :query="query" :on-keydown="onFilterKeydown">
+              <Input
+                ref="filterInputRef"
+                v-model="query"
+                :placeholder="filterPlaceholder"
+                size="sm"
+                :aria-label="filterPlaceholder"
+                @keydown="onFilterKeydown"
+              >
+                <template #start>
+                  <slot name="filter-icon">
+                    <svg
+                      class="ui-select-search-icon"
+                      viewBox="0 0 16 16"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
+                      <path
+                        d="M13 13l-2.5-2.5"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </slot>
+                </template>
+              </Input>
+            </slot>
+          </div>
           <SelectListBody
             ref="listBody"
-            :style="bodyStyle"
-            :items="items"
+            :items="filteredItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
             :active-index="activeIndex"
@@ -131,6 +170,9 @@
               <slot name="empty" />
             </template>
           </SelectListBody>
+          <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
+            <slot name="footer" />
+          </div>
         </div>
       </div>
     </Transition>
@@ -165,6 +207,9 @@ export interface SelectVirtualizeConfig {
   itemSize?: number
   overscan?: number
 }
+
+/** See the `filter` prop's own doc comment for what each value does. */
+export type SelectFilter<T> = boolean | ((item: T, query: string) => boolean)
 </script>
 
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
@@ -184,7 +229,9 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
+import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
+import Input from '../Input/Input.vue'
 import Chip from '../Chip/Chip.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -212,28 +259,51 @@ const props = withDefaults(
     /** Renders hidden `<input>`(s) so a plain `<form>` post still carries
      * the selection — repeated `name` when `multiple`. */
     name?: string
+    /** Which side of the trigger the panel opens on. */
     side?: SelectSide
+    /** How the panel aligns against the trigger along that side. */
     align?: SelectAlign
+    /** Gap between the trigger and the panel, in pixels. */
     sideOffset?: number
+    /** Shifts the panel along the alignment axis, in pixels. */
     alignOffset?: number
+    /** Escape key closes the panel. */
     closeOnEsc?: boolean
+    /** Clicking outside the panel closes it. */
     closeOnOutside?: boolean
+    /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
     beforeClose?: (done: () => void) => void
+    /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
     forceMount?: boolean
+    /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. */
     teleportTo?: string | HTMLElement
+    /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
     scrollFade?: boolean
+    /** Caps the panel's height at this many pixels even when the viewport has room for more — the option list scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+    maxPanelHeight?: number
     /** Gates the built-in chip enter/exit/reposition transition (`multiple` + `display="chip"`
      * only). `false` skips it entirely — reach for `@chip-enter`/`@chip-leave` instead if you want
      * a consumer-owned animation (GSAP, motion-v) in its place. */
     motionCss?: boolean
+    /** Shows a built-in search box at the top of the panel. `undefined` (default): no box — most
+     * lists are short enough that one is just noise. `true`: box + built-in diacritic/case-
+     * insensitive label match against `items`. A function: box + your own sync match against the
+     * same `items`. `false`: box, but Select does no matching of its own — pair with `v-model:query`
+     * and swap `items` yourself (debounced API search, server-side paging). Virtualization already
+     * reacts to whatever `items` ends up being, so a remote result set re-virtualizes for free. */
+    filter?: SelectFilter<T>
+    filterPlaceholder?: string
     ui?: Partial<{
       trigger: UiPartValue
       value: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
+      filter: UiPartValue
       list: UiPartValue
       option: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -245,6 +315,7 @@ const props = withDefaults(
     clearable: false,
     display: 'chip',
     virtualize: undefined,
+    filter: undefined,
     side: 'bottom',
     align: 'start',
     sideOffset: 8,
@@ -255,6 +326,7 @@ const props = withDefaults(
     teleportTo: 'body',
     scrollFade: true,
     motionCss: true,
+    filterPlaceholder: 'Search...',
   },
 )
 
@@ -280,11 +352,25 @@ const chipLeaveHook = computed(() =>
 
 defineSlots<{
   value(props: { selected: T | T[] | null }): unknown
+  /** Above the filter input (if `filter` is on) or the listbox itself. `count`/`total` are handed
+   * through for a result-count readout, but the slot is arbitrary content, not just that. */
+  header(props: { count: number; total: number }): unknown
+  /** Replaces the built-in filter row entirely — bind your own control straight to `v-model:query`
+   * on `<Select>` itself (no need to round-trip through this slot's props for that); `onKeydown`
+   * is handed through only so a fully custom input can still opt into arrow/Home/End/Enter
+   * listbox navigation the same way the built-in one does. */
+  filter(props: { query: string; onKeydown: (event: KeyboardEvent) => void }): unknown
+  /** Swaps just the built-in filter row's leading icon, keeping its `Input` frame. */
+  'filter-icon'(): unknown
   item(props: { item: T; active: boolean; selected: boolean }): unknown
   empty(): unknown
+  /** Below the listbox — e.g. a "create new" or "view all" action. */
+  footer(): unknown
 }>()
 
 const messages = useUiMessages()
+
+const query = defineModel<string>('query', { default: '' })
 
 const selectedSet = computed<Set<string | number>>(() => {
   if (props.multiple) return new Set(Array.isArray(model.value) ? model.value : [])
@@ -293,6 +379,18 @@ const selectedSet = computed<Set<string | number>>(() => {
 function isSelected(item: T): boolean {
   return selectedSet.value.has(item.value)
 }
+const filteredItems = computed<T[]>(() => {
+  if (props.filter === false) return [...props.items]
+  const q = query.value.trim()
+  if (!q) return [...props.items]
+  if (typeof props.filter === 'function') {
+    const match = props.filter
+    return props.items.filter((item) => match(item, q))
+  }
+  const nq = normalizeText(q)
+  return props.items.filter((item) => normalizeText(item.label).includes(nq))
+})
+// Selection always resolves against the full list — an item filtered out of view stays selected.
 const selectedItems = computed<T[]>(() => props.items.filter(isSelected))
 const isEmpty = computed(() => selectedItems.value.length === 0)
 const displayLabel = computed(() => selectedItems.value.map((item) => item.label).join(', '))
@@ -332,6 +430,9 @@ const open = defineModel<boolean>('open', { default: false })
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const filterInputRef = useTemplateRef<{ el: HTMLElement | null; inputEl: HTMLInputElement | null }>(
+  'filterInputRef',
+)
 // Manual shape since TS can't derive InstanceType from generic SFC.
 const listBody = useTemplateRef<{
   listEl: HTMLElement | null
@@ -357,6 +458,7 @@ const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close
     closeOnEsc: () => props.closeOnEsc,
     closeOnOutside: () => props.closeOnOutside,
     beforeClose: () => props.beforeClose,
+    maxHeightCap: () => props.maxPanelHeight,
     onOpenChange: (value, details) => emit('open-change', value, details),
   })
 
@@ -385,7 +487,7 @@ const {
   onKeydown: listboxKeydown,
   setActive,
 } = useListbox<T>({
-  items: () => props.items,
+  items: () => filteredItems.value,
   getLabel: (item) => item.label,
   isDisabled: (item) => !!item.disabled,
   onSelect: (item, index) => selectItem(item, index),
@@ -416,11 +518,38 @@ function onTriggerKeydown(event: KeyboardEvent) {
   if (event.key === ' ') {
     // Space commits active row (select-only combobox, not editable input).
     event.preventDefault()
-    const item = props.items[activeIndex.value]
+    const item = filteredItems.value[activeIndex.value]
     if (item) selectItem(item, activeIndex.value)
     return
   }
   listboxKeydown(event)
+}
+// Filter input owns focus while typing — Space must type a literal space, so only
+// forward the navigation/commit keys onto the same listbox logic the trigger uses.
+function onFilterKeydown(event: KeyboardEvent) {
+  switch (event.key) {
+    case 'ArrowDown':
+    case 'ArrowUp':
+    case 'Home':
+    case 'End':
+    case 'Enter':
+      listboxKeydown(event)
+      return
+    case 'Escape':
+      event.preventDefault()
+      close()
+      triggerEl.value?.focus()
+      return
+    default:
+      return
+  }
+}
+
+function computeInitialActive(): number {
+  const list = filteredItems.value
+  if (list.length === 0) return -1
+  const selectedIndex = list.findIndex((item) => isSelected(item))
+  return selectedIndex >= 0 ? selectedIndex : 0
 }
 
 // Gate on visibility:hidden resolution (floating-ui's async computePosition).
@@ -429,13 +558,21 @@ watch(
   (ready) => {
     if (!ready) return
     nextTick(() => {
-      const selectedIndex = props.items.findIndex((item) => isSelected(item))
-      const initial = selectedIndex >= 0 ? selectedIndex : props.items.length > 0 ? 0 : -1
+      const initial = computeInitialActive()
       setActive(initial)
-      if (selectedIndex >= 0) listBody.value?.scrollToIndex(selectedIndex, 'center')
+      if (initial >= 0) listBody.value?.scrollToIndex(initial, 'center')
+      if (props.filter) filterInputRef.value?.inputEl?.focus()
     })
   },
 )
+// Reopening starts unfiltered — a stale query silently hiding items would be confusing.
+watch(open, (isOpen) => {
+  if (!isOpen) query.value = ''
+})
+// Keep activeIndex valid (and pointed at something sensible) as filtering reshapes the list.
+watch(filteredItems, () => {
+  if (open.value) setActive(computeInitialActive())
+})
 
 const AUTO_VIRTUALIZE_THRESHOLD = 100
 const DEFAULT_OVERSCAN = 8
@@ -443,17 +580,17 @@ const virtualizeConfig = computed<SelectVirtualizeConfig | null>(() => {
   if (props.virtualize === false) return null
   if (props.virtualize === true) return {}
   if (props.virtualize && typeof props.virtualize === 'object') return props.virtualize
-  return props.items.length > AUTO_VIRTUALIZE_THRESHOLD ? {} : null
+  return filteredItems.value.length > AUTO_VIRTUALIZE_THRESHOLD ? {} : null
 })
 // Non-virtualized mode: overscan large enough that nothing clips (one code path).
 const effectiveOverscan = computed(() =>
   virtualizeConfig.value
     ? (virtualizeConfig.value.overscan ?? DEFAULT_OVERSCAN)
-    : props.items.length,
+    : filteredItems.value.length,
 )
 
-const bodyStyle = computed(() =>
-  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px`, overflowY: 'auto' as const } : {},
+const panelMaxHeightStyle = computed(() =>
+  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
 )
 
 const rootPart = computed(() =>
@@ -471,6 +608,9 @@ const positionerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.positioner, 'ui-select-positioner'),
 )
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-select-panel'))
+const headerPart = computed(() => resolveUiPart(cx, themedUi()?.header, 'ui-select-header'))
+const filterPart = computed(() => resolveUiPart(cx, themedUi()?.filter, 'ui-select-filter'))
+const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer'))
 
 const resolvedSide = computed(() => placement.value.split('-')[0] as SelectSide)
 const resolvedAlign = computed<SelectAlign>(() => {
@@ -488,6 +628,7 @@ defineExpose({
   panelEl,
   positionerEl,
   listEl,
+  filterInputRef,
   placement,
   positionerStyle,
   isClosing,

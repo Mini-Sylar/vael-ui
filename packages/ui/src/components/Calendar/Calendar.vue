@@ -55,7 +55,7 @@
       </button>
     </div>
 
-    <div class="ui-calendar-body" :style="{ '--ui-calendar-direction': direction }">
+    <div ref="bodyEl" class="ui-calendar-body" :style="{ '--ui-calendar-direction': direction }">
       <template v-if="navLevel === 'date'">
         <div :class="weekdaysPart.class" :style="weekdaysPart.style" aria-hidden="true">
           <span
@@ -482,9 +482,11 @@ function isYearSelected(year: number): boolean {
 
 // Navigation
 function setView(date: Date, dir: 1 | -1) {
-  direction.value = dir
-  viewDate.value = navLevel.value === 'date' ? startOfMonth(date) : date
-  if (navLevel.value === 'date') emit('month-change', startOfMonth(date))
+  animateBodyHeight(() => {
+    direction.value = dir
+    viewDate.value = navLevel.value === 'date' ? startOfMonth(date) : date
+    if (navLevel.value === 'date') emit('month-change', startOfMonth(date))
+  })
 }
 function goPrevious() {
   if (navLevel.value === 'date') setView(addMonths(viewDate.value, -1), -1)
@@ -498,8 +500,10 @@ function goNext() {
 }
 // Header-label click: temporarily drill up to coarser level for fast nav
 function drillUp() {
-  if (navLevel.value === 'date') navLevel.value = 'month'
-  else if (navLevel.value === 'month') navLevel.value = 'year'
+  animateBodyHeight(() => {
+    if (navLevel.value === 'date') navLevel.value = 'month'
+    else if (navLevel.value === 'month') navLevel.value = 'year'
+  })
 }
 
 function commitSingle(day: Date) {
@@ -544,8 +548,10 @@ function onMonthPick(month: Date) {
     emit('change', value)
     return
   }
-  viewDate.value = startOfMonth(month)
-  navLevel.value = 'date'
+  animateBodyHeight(() => {
+    viewDate.value = startOfMonth(month)
+    navLevel.value = 'date'
+  })
   emit('month-change', viewDate.value)
 }
 function onYearPick(year: number) {
@@ -560,12 +566,49 @@ function onYearPick(year: number) {
   // returned above) — either way the next stop is the month grid, either to
   // let the user pick a month to descend into (view: 'date') or because
   // month IS the target granularity (view: 'month').
-  viewDate.value = new Date(year, viewDate.value.getMonth(), 1)
-  navLevel.value = 'month'
+  animateBodyHeight(() => {
+    viewDate.value = new Date(year, viewDate.value.getMonth(), 1)
+    navLevel.value = 'month'
+  })
 }
 
 const rootEl = useTemplateRef<HTMLElement>('rootEl')
 const gridEl = useTemplateRef<HTMLElement>('gridEl')
+const bodyEl = useTemplateRef<HTMLElement>('bodyEl')
+
+// FLIP-style height animation: Vue's Transition already handles the grid's
+// own slide/fade, but the body's overall height (a 4-week vs. 6-week month,
+// or switching to the month/year grid entirely) has no "from" and "to" auto
+// value CSS can transition between — measure both sides and animate the gap.
+function animateBodyHeight(mutate: () => void) {
+  if (!props.motionCss || !bodyEl.value) {
+    mutate()
+    return
+  }
+  const body = bodyEl.value
+  const before = body.offsetHeight
+  mutate()
+  nextTick(() => {
+    const after = body.offsetHeight
+    if (!after || before === after) return
+    body.style.overflow = 'hidden'
+    body.style.blockSize = `${before}px`
+    void body.offsetHeight
+    requestAnimationFrame(() => {
+      body.style.transition = `block-size var(--ui-duration-enter) var(--ui-ease-in-out)`
+      body.style.blockSize = `${after}px`
+    })
+    body.addEventListener(
+      'transitionend',
+      () => {
+        body.style.overflow = ''
+        body.style.blockSize = ''
+        body.style.transition = ''
+      },
+      { once: true },
+    )
+  })
+}
 
 function focusCellEl(day: Date) {
   gridEl.value?.querySelector<HTMLElement>(`[data-date="${isoDate(day)}"]`)?.focus()

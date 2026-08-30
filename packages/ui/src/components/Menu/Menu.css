@@ -7,6 +7,8 @@
   }
   .ui-menu-panel {
     position: relative;
+    display: flex;
+    flex-direction: column;
     border-radius: var(--ui-radius-surface);
     background: var(--ui-surface);
     color: var(--ui-text);
@@ -14,7 +16,24 @@
     /* Clips body to panel corners. */
     overflow: hidden;
   }
+  .ui-menu-header,
+  .ui-menu-footer {
+    flex: none;
+    padding: 0.5rem;
+  }
+  .ui-menu-header {
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-menu-footer {
+    border-block-start: 1px solid var(--ui-border);
+  }
   .ui-menu-body {
+    /* The one flexible child — header/footer are `flex: none` siblings, and
+       max-height (floating-ui live output) is capped on the panel, not here. */
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0.25rem;
   }
   .ui-menu-trigger {
@@ -40,9 +59,7 @@
     text-align: start;
     text-decoration: none;
     cursor: pointer;
-    transition:
-      background-color var(--ui-duration-press) ease,
-      transform var(--ui-duration-press) var(--ui-ease-out);
+    transition: transform var(--ui-duration-press) var(--ui-ease-out);
   }
   /* Highlight with background, not focus ring (APG convention). */
   .ui-menu-item:hover:not(:disabled):not([aria-disabled='true']),
@@ -124,8 +141,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-menu-enter-active,
-    .ui-menu-leave-active,
     .ui-menu-enter-active .ui-menu-panel,
     .ui-menu-leave-active .ui-menu-panel {
       transition: none;

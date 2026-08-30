@@ -104,6 +104,8 @@ import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { provideDataTableContext } from '../../composables/useDataTableContext'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { useVirtualizer } from '../../composables/useVirtualizer'
+import { useSortable } from '../../composables/useSortable'
+import type { SortableDropDetails } from '../../composables/useSortable'
 import DataTableHead from './DataTableHead.vue'
 import DataTableBody from './DataTableBody.vue'
 import type { TableRowEntry } from './DataTableBody.vue'
@@ -113,6 +115,7 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Row objects. Column content is read from these via each `<Column>`'s `field`. */
     data: T[]
     /** Stable row identity — a key on `T`, or a function for composite/derived keys. */
     rowKey: keyof T | ((row: T) => string | number)
@@ -135,6 +138,7 @@ const props = withDefaults(
     /** Adds inline-end border to every cell. */
     showGridlines?: boolean
     /** Enables resize drag handle on every column header. */
+    /** Adds a drag handle to every column header's edge for resizing. */
     resizableColumns?: boolean
     /** Freezes the first N columns sticky-left against horizontal scroll. */
     frozenColumns?: number
@@ -154,6 +158,28 @@ const props = withDefaults(
      * active: a virtualized list's rows are measured/recycled by height, which a CSS enter/exit
      * transition would fight, so that mode never animates row presence regardless of this prop. */
     motionCss?: boolean
+    /** Drag column headers to reorder them. Pair with `v-model:columnOrder` to control or persist the order. */
+    reorderableColumns?: boolean
+    /** `'always'` (default): the drag grip is always shown, so a reorderable column reads as
+     * such at a glance. `'hover'`: fades in on hover/focus instead, matching the resize
+     * handle's own restraint — reach for this once a table has enough reorderable columns
+     * that permanent grips would clutter the header. */
+    columnGripVisibility?: 'hover' | 'always'
+    /** Structural veto re-run while a column drags; `false` marks the target invalid.
+     * A pinned column is already protected regardless of this. */
+    canDrop?: (details: SortableDropDetails) => boolean
+    /** Async gate at drop time for a column reorder — return `false` (or a promise of
+     * it) to cancel. Composes with `confirmAction().result` for a confirm-before-move
+     * dialog. */
+    beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
+    /** `'clone'` (default): a floating copy of the dragged column header follows
+     * the cursor, the real `<th>` hidden until drop. `'element'` moves the real
+     * header cell itself instead — **don't use this**: a `<th>`'s `:style` binding
+     * is keyed by column index, and lifting the real element out to `position:
+     * fixed` mid-drag corrupts that binding badly enough that a column can be
+     * lost from the DOM entirely on drop. Kept only for interface symmetry with
+     * `Sortable`/`Tree`, where it's safe. */
+    previewMode?: 'element' | 'clone'
   }>(),
   {
     loading: false,
@@ -168,6 +194,11 @@ const props = withDefaults(
     manualSort: false,
     lazy: false,
     motionCss: true,
+    reorderableColumns: false,
+    columnGripVisibility: 'always',
+    canDrop: undefined,
+    beforeDrop: undefined,
+    previewMode: 'clone',
   },
 )
 
@@ -180,12 +211,16 @@ const emit = defineEmits<{
   'reach-end': []
   /** Virtualized only: the rendered window neared the start of `data` — fetch the previous page. */
   'reach-start': []
+  /** Column headers were dragged into a new order, newest first argument. */
+  'column-reorder': [order: (keyof T)[]]
   /** A row's enter transition started — forwarded straight from the underlying
    * TransitionGroup's own `(el, done)` hook. Call `done()` yourself and set
    * `motionCss` to `false` to fully hand the enter animation to GSAP/motion-v/etc. */
   'row-enter': [el: Element, done: () => void]
   /** Same as `row-enter`, for a row's exit. */
   'row-leave': [el: Element, done: () => void]
+  /** `beforeDrop` threw or rejected while reordering a column; the move was already reverted. */
+  'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
 
 const page = defineModel<number>('page', { default: 1 })
@@ -215,7 +250,23 @@ function unregisterColumn(col: RegisteredColumn<T>) {
   if (index !== -1) columns.value.splice(index, 1)
 }
 
+/** Empty means "follow the DOM" (pre-reordering behavior); once a drag sets
+ * it, it outranks DOM order so the onUpdated resort below doesn't undo it. */
+const columnOrder = defineModel<(keyof T)[]>('columnOrder', { default: () => [] })
+
+const orderedColumns = computed<RegisteredColumn<T>[]>(() => {
+  const order = columnOrder.value
+  if (order.length === 0) return columns.value
+  const byField = new Map(columns.value.map((column) => [column.field, column]))
+  const ordered = order.map((field) => byField.get(field)).filter(Boolean) as RegisteredColumn<T>[]
+  // Anything registered but not in the saved order keeps its DOM position.
+  for (const column of columns.value) if (!order.includes(column.field)) ordered.push(column)
+  return ordered
+})
+
 function resortColumnsByDom() {
+  // A manual order is authoritative; re-deriving from the DOM would fight it.
+  if (columnOrder.value.length > 0) return
   const sorted = [...columns.value].sort((a, b) => {
     if (!a.el || !b.el || a.el === b.el) return 0
     const position = a.el.compareDocumentPosition(b.el)
@@ -285,6 +336,10 @@ const totalPages = computed(() =>
   props.rows ? Math.max(1, Math.ceil(resolvedTotal.value / props.rows)) : 1,
 )
 const currentPage = computed(() => Math.min(Math.max(page.value, 1), totalPages.value))
+
+watch(totalPages, (count) => {
+  if (page.value > count) page.value = count
+})
 const pagedData = computed(() => {
   if (props.lazy || !props.rows) return sortedData.value
   const start = (currentPage.value - 1) * props.rows
@@ -451,6 +506,9 @@ const rootClasses = computed(() => [
 // Column's own resizable prop wins over table-level default.
 function isColumnResizable(col: RegisteredColumn<T>): boolean {
   return col.resizable ?? props.resizableColumns
+}
+function isColumnReorderable(col: RegisteredColumn<T>): boolean {
+  return col.reorderable ?? props.reorderableColumns
 }
 const resizedWidths = ref(new Map<RegisteredColumn<T>, number>())
 function setColumnWidth(col: RegisteredColumn<T>, width: number) {
@@ -621,10 +679,57 @@ const bodyMaxBlockSize = computed(() =>
   props.scrollHeight ? `calc(${props.scrollHeight} - ${headerHeight.value}px)` : undefined,
 )
 
+function headerElement(field: string | number): HTMLElement | null {
+  return (
+    headComponent.value?.rowEl?.querySelector<HTMLElement>(
+      `[data-column-field="${CSS.escape(String(field))}"]`,
+    ) ?? null
+  )
+}
+const columnRows = computed(() =>
+  orderedColumns.value.map((column) => ({
+    value: column.field as string | number,
+    depth: 0,
+    parentValue: null,
+  })),
+)
+const {
+  activeValue: draggingColumn,
+  onHandlePointerdown: onColumnPointerdown,
+  consumeSuppressedClick: consumeColumnClick,
+} = useSortable({
+  rows: columnRows,
+  getElement: headerElement,
+  axis: 'x',
+  dragPreview: true,
+  previewMode: () => props.previewMode,
+  disabled: () => !props.reorderableColumns,
+  motionCss: () => props.motionCss,
+  canDrop: (details) => {
+    // A pinned column can't be displaced out of its slot either, regardless
+    // of what a consumer's own canDrop says.
+    const target = orderedColumns.value[details.to.index]
+    if (target && !isColumnReorderable(target)) return false
+    return props.canDrop?.(details) ?? true
+  },
+  beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
+  onDropError: (error, details) => emit('drop-error', error, details),
+  onCommit: (value, to) => {
+    const current = orderedColumns.value.map((column) => column.field)
+    const from = current.indexOf(value as keyof T)
+    if (from === -1) return
+    const next = [...current]
+    const [moved] = next.splice(from, 1)
+    next.splice(Math.min(Math.max(to.index, 0), next.length), 0, moved!)
+    columnOrder.value = next
+    emit('column-reorder', next)
+  },
+})
+
 const headProps = computed(() => ({
   selectColumnRendered: selectColumnRendered.value,
   expansionColumnRendered: expansionColumnRendered.value,
-  columns: columns.value,
+  columns: orderedColumns.value,
   frozenColumns: props.frozenColumns,
   single: props.single,
   selectAllState: selectAllState.value,
@@ -638,10 +743,15 @@ const headProps = computed(() => ({
   onToggleSelectAll: toggleSelectAll,
   onToggleSort: toggleSort,
   onResizePointerdown,
+  isColumnReorderable,
+  columnGripVisibility: props.columnGripVisibility,
+  draggingColumn: draggingColumn.value,
+  onColumnPointerdown,
+  consumeColumnClick,
 }))
 const bodyProps = computed(() => ({
   colCount: colCount.value,
-  columns: columns.value,
+  columns: orderedColumns.value,
   loading: props.loading,
   isEmpty: sortedData.value.length === 0,
   virtualizeActive: virtualizeActive.value,

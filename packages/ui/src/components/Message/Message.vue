@@ -58,6 +58,7 @@ export interface MessageOpenChangeDetails {
 
 export interface MessageProps {
   title?: string
+  /** Color variant — sets the icon and border. */
   variant?: MessageVariant
   /** `bare` drops the border/background/padding — icon + colored text only,
    * for inline use (e.g. form field validation) instead of a standalone banner. */
@@ -107,6 +108,7 @@ const props = withDefaults(defineProps<MessageProps>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires before the model flips to false; `details.cancel()` vetoes the close. */
   'open-change': [value: boolean, details: MessageOpenChangeDetails]
 }>()
 

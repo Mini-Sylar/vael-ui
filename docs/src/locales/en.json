@@ -15,6 +15,7 @@
     "autoImportGuide": "Auto Import",
     "nuxtGuide": "Nuxt",
     "skillGuide": "AI Agent Skill",
+    "directives": "Directives",
     "menu": "Menu",
     "openMenu": "Open menu"
   },
@@ -193,6 +194,11 @@
     "gsapExampleTitle": "Example: GSAP, Dialog",
     "gsapExampleIntro": "<code>beforeClose(done)</code> plus the exposed <code>panelEl</code> ref, so the tween runs on the real panel element before it's removed:"
   },
+  "directive": {
+    "value": "Value",
+    "modifiers": "Modifiers",
+    "noModifiers": "No modifiers."
+  },
   "descriptions": {
     "ConfigProvider": "Wraps your app to provide theming, i18n, and class-merging to every component below it.",
     "Button": "A clickable action with variants, sizes, loading states, and icon slots built in.",
@@ -216,6 +222,7 @@
     "DatePicker": "A text field paired with a calendar popover for picking a date or range.",
     "Calendar": "A month grid for picking a single date, multiple dates, or a range.",
     "FileUpload": "A drop zone and file list for picking files, with validation and progress.",
+    "Rating": "Click, drag, or use arrow keys to pick a value on a row of stars, with optional half-step precision.",
     "Select": "A dropdown for picking one or more values from a list, with search and virtualization.",
     "Combobox": "A searchable dropdown that also accepts free text, so autocomplete and tagging are one component.",
     "CascadeSelect": "A dropdown for picking a path through nested options, one level at a time.",
@@ -245,12 +252,14 @@
     "Tag": "A compact label for categorizing or annotating an item inline.",
     "Chip": "A removable, compact token for selected filters, tags, or multi-select values.",
     "Kbd": "Styles a keyboard shortcut so it reads like a physical key.",
+    "Timeline": "An ordered list of steps connected by a line, agnostic to what each step actually contains.",
     "Accordion": "A stack of collapsible sections where opening one can close the others.",
     "AccordionItem": "One collapsible section of an Accordion, always used inside its tree.",
     "Collapsible": "A single show/hide section for content that is optional or secondary.",
     "Separator": "A thin line (or gap) for dividing content into visually distinct groups.",
     "Resizable": "A draggable handle for letting the user resize a panel between a min and max size.",
     "SwipeToReveal": "Swipe an item to reveal actions underneath it, like a native mobile list row.",
+    "Sortable": "A drag-to-reorder list with a real keyboard path, not just a pointer one.",
     "PullToRefresh": "A pull-down gesture at the top of a scroll container that triggers a refresh.",
     "Dock": "A macOS-style row of icons that magnify as the pointer approaches them."
   },
@@ -272,7 +281,8 @@
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "Overlays & Confirmation",
     "positioningAndData": "Positioning & Data",
-    "utilities": "Utilities"
+    "utilities": "Utilities",
+    "dragAndDrop": "Drag & Drop"
   },
   "metaTable": {
     "name": "Name",

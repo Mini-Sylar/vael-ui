@@ -183,8 +183,9 @@
   .ui-button-trailing {
     display: inline-grid;
     place-items: center;
-    inline-size: 1em;
-    block-size: 1em;
+    /* min-, not fixed: an icon larger than 1em must still fit and stay centered. */
+    min-inline-size: 1em;
+    min-block-size: 1em;
     flex: none;
     transition:
       opacity var(--ui-duration-press) ease,
@@ -260,7 +261,7 @@
       animation: none;
     }
     .ui-button--loading .ui-button-loader .ui-loader {
-      animation: ui-pulse 1.2s ease-in-out infinite;
+      animation: ui-pulse var(--ui-duration-pulse) ease-in-out infinite;
     }
   }
 

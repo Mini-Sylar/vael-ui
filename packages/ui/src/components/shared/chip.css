@@ -16,7 +16,7 @@
   }
   .ui-chip-item-enter-active,
   .ui-chip-item-leave-active {
-    transition: opacity var(--ui-duration-enter) ease;
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-chip-item-enter-from,
   .ui-chip-item-leave-to {
@@ -35,7 +35,7 @@
   @media (prefers-reduced-motion: reduce) {
     .ui-chip-item-enter-active,
     .ui-chip-item-leave-active {
-      transition: opacity var(--ui-duration-enter) ease;
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
     .ui-chip-item-move {
       transition: none;

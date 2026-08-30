@@ -542,6 +542,224 @@ setMode('dark')`,
     ],
   },
 
+  useSortable: {
+    description:
+      "The spring-driven drag-to-reorder engine behind `<Sortable>`, `<Tree>`'s nested reorder, and `<DataTable>`'s column reorder — pointer and keyboard drive the same grabbed state, and all ordering/nesting decisions live in pure, independently-tested functions. `<Sortable>` is just a thin, optional convenience layer over this; reach for the composable directly when you need custom markup a component can't give you, or when building a cross-container board with `useSortableGroup()`, which wraps this same engine.",
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'rows',
+        type: 'MaybeRefOrGetter<readonly FlatSortableRow[]>',
+        description:
+          'Visible rows in visual order — { value, depth, parentValue } — re-read at grab time.',
+      },
+      {
+        name: 'getElement',
+        type: '(value) => HTMLElement | null',
+        description: 'Resolves a row to the DOM node the engine measures and transforms directly.',
+      },
+      {
+        name: 'onCommit',
+        type: '(value, to: DropPosition) => void',
+        description: 'Apply the reorder. Fires once, on a committed drop.',
+      },
+      {
+        name: 'axis',
+        type: "MaybeRefOrGetter<'y' | 'x'>",
+        description: "Default 'y'. Nesting is only meaningful on 'y'.",
+      },
+      {
+        name: 'nested',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Enables depth changes — Tree turns this on, a flat list leaves it off.',
+      },
+      {
+        name: 'dropOnTarget',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: "VS Code model: hovering a row's middle drops INTO it. Requires nested.",
+      },
+      {
+        name: 'reorderSiblings',
+        type: 'MaybeRefOrGetter<boolean>',
+        description:
+          'false disables reordering among current siblings — only re-parenting is offered, with no indicator on a would-be sibling insert. Requires dropOnTarget.',
+      },
+      {
+        name: 'nestEdgeFraction',
+        type: 'MaybeRefOrGetter<number>',
+        description:
+          'Fraction of a target\'s own size, on each end, that still means "beside it" rather than "into it". Default 0.25 (a 50%-wide inside zone) — shrink it for a target that\'s hard to land on precisely.',
+      },
+      {
+        name: 'canNestInto',
+        type: '(value) => boolean',
+        description: 'Which rows accept children. Without this, every row does.',
+      },
+      {
+        name: 'childCountOf',
+        type: '(value) => number',
+        description: 'Existing child count, so an "inside" drop appends.',
+      },
+      {
+        name: 'dragPreview',
+        type: 'MaybeRefOrGetter<boolean>',
+        description:
+          'Lifts the grabbed row out as a floating preview that follows the cursor, leaving its slot dimmed — without it the row stays in flow and slides over its neighbours.',
+      },
+      {
+        name: 'previewMode',
+        type: "MaybeRefOrGetter<'element' | 'clone'>",
+        description:
+          "'element': the real dragged row itself lifts and keeps moving — only one instance of it on screen. 'clone': a separate floating copy, the real row hidden until drop; needed when the real element can't leave its normal layout (a `<tr>`, a `<th>`). Default is context-dependent: 'element' once a `group` drag leaves this list, 'clone' for a plain `dragPreview` drag.",
+      },
+      {
+        name: 'previewCarriesSubtree',
+        type: 'MaybeRefOrGetter<boolean>',
+        description:
+          'dragPreview + nested only, default true. A dragged row with visible descendants (an expanded folder, a tab group) carries real copies of them along inside the floating clone, at the exact offset they already sat at, so the whole block reads as one physical thing lifting together.',
+      },
+      { name: 'disabled', type: 'MaybeRefOrGetter<boolean>', description: 'Turns off dragging.' },
+      {
+        name: 'motionCss',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'false disables the built-in springs — positions snap.',
+      },
+      {
+        name: 'canDrop',
+        type: '(details: SortableDropDetails) => boolean',
+        description:
+          'Synchronous structural veto, re-run while dragging: false marks the target invalid and blocks the drop. Keep it cheap.',
+      },
+      {
+        name: 'beforeDrop',
+        type: '(details) => boolean | Promise<boolean>',
+        description:
+          'Async gate at drop time — return false (or a promise of it) to cancel and spring the item home. Composes with confirmAction().result.',
+      },
+      {
+        name: 'onDropError',
+        type: '(error, details) => void',
+        description:
+          'beforeDrop threw or rejected; the move is already reverted by the time this fires.',
+      },
+      {
+        name: 'labelOf / announce',
+        type: '(value) => string / (event) => string',
+        description: 'Human label and live-region text for assistive tech.',
+      },
+      {
+        name: 'group / groupId / container',
+        type: 'SortableGroupHandle / string | number / MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          'Shares drag sessions with other useSortable() lists passed the same handle — see useSortableGroup(). container is only needed when group is set, so it can hit-test an empty list.',
+      },
+    ],
+    returns: [
+      {
+        name: 'activeValue / isGrabbed / isDragging',
+        type: 'Ref',
+        description:
+          'Which row is held, and by which input (isDragging is pointer-only, never a plain click).',
+      },
+      {
+        name: 'isGrabbedValue',
+        type: '(value) => boolean',
+        description:
+          'Bind directly: :data-grabbed="isGrabbedValue(row.value) || undefined". True for a folder\'s whole dragged subtree, not just the row you grabbed.',
+      },
+      {
+        name: 'dropPosition / isValidDrop / isPending',
+        type: 'Ref',
+        description:
+          'Where it would land, whether canDrop currently allows that, and whether an async beforeDrop is still deciding.',
+      },
+      {
+        name: 'dropIntoValue / dropTargetValue / dropIntent',
+        type: 'Ref',
+        description:
+          'Drop-on-target mode only: which row is being hovered, and before/after/inside.',
+      },
+      {
+        name: 'draggedValues',
+        type: 'Ref<ReadonlySet>',
+        description: 'Every value in the dragged block — a folder carries its descendants.',
+      },
+      {
+        name: 'isForeignDropTarget',
+        type: 'Ref<boolean>',
+        description:
+          "group only: true while a drag from a sibling member is hovering this list as the drop target. Always false for the list the drag started in — style `[data-drop-target]`'s worth of feedback on wherever you'd otherwise show it.",
+      },
+      {
+        name: 'announcement',
+        type: 'Ref<string>',
+        description: 'Live-region text. Render it in an aria-live="assertive" node.',
+      },
+      {
+        name: 'onHandlePointerdown / onHandleKeydown',
+        type: '(event, value) => void',
+        description: "Wire directly to a row's handle element.",
+      },
+      {
+        name: 'consumeSuppressedClick',
+        type: '() => boolean',
+        description:
+          'True exactly once after a committed drag — swallow the trailing click a drag also triggers.',
+      },
+      {
+        name: 'cancel',
+        type: '() => void',
+        description: 'Abandon the current grab and spring everything home.',
+      },
+    ],
+  },
+
+  useSortableGroup: {
+    description:
+      "Cross-container drag — the primitive a Kanban-style board is built from, not a component. `<Sortable>`, `<Tree>`, `<DataTable>`'s column reorder, and `v-draggable` all reorder within one list; this is what lets an item cross from one `useSortable()` list into another, over the exact same spring-driven engine. Each list still calls `useSortable()` itself (or `<Sortable>`, which takes the same `group`/`groupId` props directly) — the group only decides which one currently shows the open gap, and runs the actual transfer on drop. The origin list keeps full ownership of the pointer/keyboard gesture for the whole drag; nothing is ever handed off mid-flight.",
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'onTransfer',
+        type: '(value, from: GroupDropPosition, to: GroupDropPosition) => void',
+        description:
+          'The only required option. Fires once, on a committed cross-container drop — splice `value` out of the array named by `from.groupId`, into `to.groupId`. Lives only here, never duplicated per-list, since a cross-boundary decision has no coherent meaning as one column’s opinion versus another’s.',
+      },
+      {
+        name: 'canDrop',
+        type: '(details: GroupDropDetails) => boolean',
+        description:
+          'Vetoes a cross-container move while dragging — a WIP limit on the target column, say. Re-run live; keep it cheap.',
+      },
+      {
+        name: 'beforeDrop',
+        type: '(details: GroupDropDetails) => boolean | Promise<boolean>',
+        description:
+          'Async gate at drop time. Return false (or a promise of it) to cancel and spring the item back home — composes with confirmAction().result exactly like useSortable’s own beforeDrop.',
+      },
+      {
+        name: 'onDropError',
+        type: '(error: unknown, details: GroupDropDetails) => void',
+        description:
+          'beforeDrop threw or rejected; the move is already reverted by the time this fires.',
+      },
+      {
+        name: 'motionCss',
+        type: 'MaybeRefOrGetter<boolean>',
+        description:
+          'false skips the springs for the ghost gap opened in a foreign column while hovering it.',
+      },
+    ],
+    returns: [
+      {
+        name: 'join(options)',
+        type: 'UseSortableReturn',
+        description:
+          'The ergonomic default: useSortable() with group/groupId already wired in, so a column is one call instead of two things to keep consistent by hand. groupId is optional (auto-assigned if omitted), but a real one is what onTransfer receives to know which array/branch it’s dealing with.',
+      },
+    ],
+  },
+
   useFieldControl: {
     description:
       'Wires a custom form control into the nearest `<Field>`: id/label association, `aria-describedby`/`aria-invalid`/`aria-required`, and reporting focus/filled state so Field can move a floating label or flip `data-filled`. This is what every built-in input (Input, Select, Checkbox, RadioGroup, …) uses internally; reach for it directly when building a custom control that should plug into Field the same way.',

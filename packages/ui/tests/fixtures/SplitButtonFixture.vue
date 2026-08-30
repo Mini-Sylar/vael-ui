@@ -31,6 +31,14 @@
     </SplitButton>
   </div>
 
+  <div data-testid="header-footer">
+    <SplitButton :items="items">
+      Save
+      <template #header><span data-testid="split-button-header">header</span></template>
+      <template #footer><span data-testid="split-button-footer">footer</span></template>
+    </SplitButton>
+  </div>
+
   <div data-testid="variant-outline">
     <SplitButton :items="items" variant="outline" size="sm">Outline</SplitButton>
   </div>

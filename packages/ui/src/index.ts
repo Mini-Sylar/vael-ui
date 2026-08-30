@@ -50,6 +50,7 @@ export type {
   SelectSide,
   SelectAlign,
   SelectVirtualizeConfig,
+  SelectFilter,
 } from './components/Select/Select.vue'
 export { default as Combobox } from './components/Combobox/Combobox.vue'
 export type {
@@ -223,6 +224,7 @@ export type {
 } from './composables/useVirtualizer'
 export { useListbox } from './composables/useListbox'
 export type { UseListboxOptions, UseListboxReturn } from './composables/useListbox'
+export { normalizeText } from './composables/normalizeText'
 export { useSlider } from './composables/useSlider'
 export type { SliderOrientation, UseSliderOptions, UseSliderReturn } from './composables/useSlider'
 export { useResizable } from './composables/useResizable'
@@ -273,6 +275,8 @@ export {
 export type { I18nInstance, PartialUiMessages, UiMessages } from './messages'
 export { classMergerKey, useClassMerge, resolveUiPart, splitUiPart } from './classes'
 export type { ClassMerger, ClassValue, UiPartValue, UiPartStyle } from './classes'
+export { vDraggable, vDraggableVapor } from './directives/vDraggable'
+export type { DraggableOptions, DraggableValue } from './directives/vDraggable'
 export { vScrollMask, vScrollMaskVapor } from './directives/vScrollMask'
 export { vTooltip, vTooltipVapor, tooltipTargets, TOOLTIP_ATTR } from './directives/vTooltip'
 export type { TooltipDirectiveOptions, TooltipDirectiveValue } from './directives/vTooltip'
@@ -284,6 +288,7 @@ declare module 'vue' {
   interface GlobalDirectives {
     vTooltip: typeof import('./directives/vTooltip').vTooltip
     vScrollMask: typeof import('./directives/vScrollMask').vScrollMask
+    vDraggable: typeof import('./directives/vDraggable').vDraggable
   }
 }
 
@@ -332,3 +337,49 @@ export type {
   UseSwipeRevealOptions,
   UseSwipeRevealReturn,
 } from './composables/useSwipeReveal'
+
+export { default as Sortable } from './components/Sortable/Sortable.vue'
+export {
+  useSortable,
+  moveTreeNode,
+  isDescendantOf,
+  excludeSubtree,
+  resolveDropPosition,
+  resolveInsertionIndex,
+  resolveRowShifts,
+} from './composables/useSortable'
+export type {
+  DropPosition,
+  FlatSortableRow,
+  SortableAxis,
+  SortableBand,
+  SortableDropDetails,
+  TreeAccessors,
+  SortableTreeNode,
+  SortableSource,
+  SortableAnnounceEvent,
+  ResolveDropInput,
+  UseSortableOptions,
+  UseSortableReturn,
+  SortableGroupHandle,
+} from './composables/useSortable'
+export {
+  useSortableGroup,
+  resolveHoveredGroup,
+  resolveAdjacentGroup,
+} from './composables/useSortableGroup'
+export type {
+  GroupDropPosition,
+  GroupDropDetails,
+  UseSortableGroupOptions,
+} from './composables/useSortableGroup'
+export { useSpringValue, createSpring, stepSpring } from './composables/useSpringValue'
+export type {
+  SpringOptions,
+  SpringState,
+  SpringHandle,
+  UseSpringValueReturn,
+} from './composables/useSpringValue'
+
+export { default as Rating } from './components/Rating/Rating.vue'
+export { default as Timeline } from './components/Timeline/Timeline.vue'

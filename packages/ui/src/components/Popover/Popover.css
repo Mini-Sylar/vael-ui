@@ -36,8 +36,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-popover-enter-active,
-    .ui-popover-leave-active,
     .ui-popover-enter-active .ui-popover-panel,
     .ui-popover-leave-active .ui-popover-panel {
       transition: none;

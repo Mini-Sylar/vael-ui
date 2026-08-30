@@ -9,6 +9,9 @@ export interface RegisteredColumn<T> {
   /** Per-column override for DataTable's `resizableColumns` — `undefined`
    * inherits the table-level setting (see DataTable.vue's `isColumnResizable`). */
   resizable?: boolean
+  /** Per-column override for DataTable's `reorderableColumns` — `undefined`
+   * inherits the table-level setting. Set `false` to pin a column in place. */
+  reorderable?: boolean
   cellSlot?: (p: { row: T; value: T[keyof T] }) => unknown
   headerSlot?: (p: { column: RegisteredColumn<T> }) => unknown
   /** Hidden marker; used to resort columns into DOM order after updates. */

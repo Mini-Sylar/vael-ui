@@ -58,6 +58,11 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/ComposablePage.vue'),
   },
   {
+    path: '/directives/:name',
+    name: 'directive',
+    component: () => import('./pages/DirectivePage.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('./pages/NotFound.vue'),

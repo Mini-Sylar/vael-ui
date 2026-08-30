@@ -18,11 +18,14 @@ const props = withDefaults(
     width?: string | number
     /** Unset (default) inherits DataTable's `resizableColumns`; `true`/`false` overrides per-column. */
     resizable?: boolean
+    /** Unset (default) inherits DataTable's `reorderableColumns`; `false` pins this column in place. */
+    reorderable?: boolean
     /** Type-inference anchor only. Bind here (`<Column :data="items" ...>`) so other props infer correctly against `T`. */
     data?: T[]
   }>(),
   {
     resizable: undefined,
+    reorderable: undefined,
   },
 )
 
@@ -47,6 +50,9 @@ const columnDef: RegisteredColumn<T> = {
   },
   get width() {
     return props.width
+  },
+  get reorderable() {
+    return props.reorderable
   },
   get resizable() {
     return props.resizable

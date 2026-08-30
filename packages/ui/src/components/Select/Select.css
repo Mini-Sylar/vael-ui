@@ -52,4 +52,12 @@
     gap: 0.25rem;
     overflow: hidden;
   }
+  .ui-select-filter {
+    flex: none;
+    padding: 0.5rem;
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .ui-select-search-icon {
+    color: var(--ui-text-muted);
+  }
 }

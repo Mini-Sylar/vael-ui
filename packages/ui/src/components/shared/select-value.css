@@ -24,7 +24,14 @@
     background: transparent;
     color: var(--ui-text-muted);
     cursor: pointer;
-    transition: background-color var(--ui-duration-press) ease;
+    will-change: transform;
+    transition:
+      background-color var(--ui-duration-press) ease,
+      transform var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-select-clear:active,
+  .ui-combobox-clear:active {
+    transform: scale(0.96);
   }
   .ui-select-clear svg,
   .ui-combobox-clear svg {
@@ -84,9 +91,13 @@
     .ui-combobox-chevron {
       transition: none;
     }
+    .ui-select-clear:active,
+    .ui-combobox-clear:active {
+      transform: none;
+    }
     .ui-clear-enter-active,
     .ui-clear-leave-active {
-      transition: none;
+      transition: opacity var(--ui-duration-press) var(--ui-ease-out);
     }
     .ui-clear-enter-from,
     .ui-clear-leave-to {

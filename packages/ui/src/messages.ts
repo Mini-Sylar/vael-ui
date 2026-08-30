@@ -91,12 +91,39 @@ export interface UiMessages {
   datePicker: {
     /** aria-label for the trigger button that opens the calendar. */
     chooseDate: string
+    /** `showButtonBar`'s built-in footer button — `selectionMode="single"` only. */
+    today: string
+    /** `showButtonBar`'s built-in footer button. */
+    clear: string
+    /** aria-label for `showTime`'s hour field. */
+    hour: string
+    /** aria-label for `showTime`'s minute field. */
+    minute: string
+    increaseHour: string
+    decreaseHour: string
+    increaseMinute: string
+    decreaseMinute: string
   }
   dataTable: {
     selectAll: string
     selectRow: string
     collapseRow: string
     expandRow: string
+  }
+  /** Drag-to-reorder. These carry `{label}`, `{position}`, `{total}` and `{depth}` placeholders rather than being functions, so a consumer's own `i18n.t()` can return them as plain strings like every other entry here. */
+  sortable: {
+    /** Announced on grab, and used as the handle's accessible description. */
+    instructions: string
+    grabbed: string
+    moved: string
+    /** Used instead of `moved` only where depth is meaningful (a tree). */
+    movedToLevel: string
+    dropped: string
+    cancelled: string
+  }
+  /** `{value}` and `{max}` are replaced with the current and maximum rating. */
+  rating: {
+    valueText: string
   }
 }
 
@@ -141,13 +168,33 @@ export const defaultMessages: UiMessages = {
     next: 'Next page',
     last: 'Last page',
   },
-  datePicker: { chooseDate: 'Choose date' },
+  datePicker: {
+    chooseDate: 'Choose date',
+    today: 'Today',
+    clear: 'Clear',
+    hour: 'Hour',
+    minute: 'Minute',
+    increaseHour: 'Increase hour',
+    decreaseHour: 'Decrease hour',
+    increaseMinute: 'Increase minute',
+    decreaseMinute: 'Decrease minute',
+  },
   dataTable: {
     selectAll: 'Select all rows',
     selectRow: 'Select row',
     collapseRow: 'Collapse row',
     expandRow: 'Expand row',
   },
+  sortable: {
+    instructions:
+      'Press Space or Enter to start reordering. Use the arrow keys to move, Space to drop, Escape to cancel.',
+    grabbed: 'Grabbed {label}. Position {position} of {total}.',
+    moved: '{label} moved to position {position} of {total}.',
+    movedToLevel: '{label} moved to position {position} of {total}, level {depth}.',
+    dropped: 'Dropped {label} at position {position} of {total}.',
+    cancelled: 'Reordering cancelled. {label} returned to its original position.',
+  },
+  rating: { valueText: '{value} of {max}' },
 }
 
 export const messagesKey: InjectionKey<Ref<UiMessages>> = Symbol('ui-messages')
@@ -183,6 +230,8 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     pagination: { ...base.pagination, ...overrides.pagination },
     datePicker: { ...base.datePicker, ...overrides.datePicker },
     dataTable: { ...base.dataTable, ...overrides.dataTable },
+    sortable: { ...base.sortable, ...overrides.sortable },
+    rating: { ...base.rating, ...overrides.rating },
   }
 }
 
@@ -264,13 +313,32 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     next: 'uiKit.pagination.next',
     last: 'uiKit.pagination.last',
   },
-  datePicker: { chooseDate: 'uiKit.datePicker.chooseDate' },
+  datePicker: {
+    chooseDate: 'uiKit.datePicker.chooseDate',
+    today: 'uiKit.datePicker.today',
+    clear: 'uiKit.datePicker.clear',
+    hour: 'uiKit.datePicker.hour',
+    minute: 'uiKit.datePicker.minute',
+    increaseHour: 'uiKit.datePicker.increaseHour',
+    decreaseHour: 'uiKit.datePicker.decreaseHour',
+    increaseMinute: 'uiKit.datePicker.increaseMinute',
+    decreaseMinute: 'uiKit.datePicker.decreaseMinute',
+  },
   dataTable: {
     selectAll: 'uiKit.dataTable.selectAll',
     selectRow: 'uiKit.dataTable.selectRow',
     collapseRow: 'uiKit.dataTable.collapseRow',
     expandRow: 'uiKit.dataTable.expandRow',
   },
+  sortable: {
+    instructions: 'uiKit.sortable.instructions',
+    grabbed: 'uiKit.sortable.grabbed',
+    moved: 'uiKit.sortable.moved',
+    movedToLevel: 'uiKit.sortable.movedToLevel',
+    dropped: 'uiKit.sortable.dropped',
+    cancelled: 'uiKit.sortable.cancelled',
+  },
+  rating: { valueText: 'uiKit.rating.valueText' },
 }
 
 /**
@@ -421,9 +489,33 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (Object.keys(pagination).length > 0) result.pagination = pagination
 
   const chooseDate = i18n.t(i18nKeyMap.datePicker.chooseDate)
-  if (chooseDate !== i18nKeyMap.datePicker.chooseDate) {
-    result.datePicker = { chooseDate }
+  const datePickerToday = i18n.t(i18nKeyMap.datePicker.today)
+  const datePickerClear = i18n.t(i18nKeyMap.datePicker.clear)
+  const datePickerHour = i18n.t(i18nKeyMap.datePicker.hour)
+  const datePickerMinute = i18n.t(i18nKeyMap.datePicker.minute)
+  const datePickerIncreaseHour = i18n.t(i18nKeyMap.datePicker.increaseHour)
+  const datePickerDecreaseHour = i18n.t(i18nKeyMap.datePicker.decreaseHour)
+  const datePickerIncreaseMinute = i18n.t(i18nKeyMap.datePicker.increaseMinute)
+  const datePickerDecreaseMinute = i18n.t(i18nKeyMap.datePicker.decreaseMinute)
+  const datePicker: PartialUiMessages['datePicker'] = {}
+  if (chooseDate !== i18nKeyMap.datePicker.chooseDate) datePicker.chooseDate = chooseDate
+  if (datePickerToday !== i18nKeyMap.datePicker.today) datePicker.today = datePickerToday
+  if (datePickerClear !== i18nKeyMap.datePicker.clear) datePicker.clear = datePickerClear
+  if (datePickerHour !== i18nKeyMap.datePicker.hour) datePicker.hour = datePickerHour
+  if (datePickerMinute !== i18nKeyMap.datePicker.minute) datePicker.minute = datePickerMinute
+  if (datePickerIncreaseHour !== i18nKeyMap.datePicker.increaseHour) {
+    datePicker.increaseHour = datePickerIncreaseHour
   }
+  if (datePickerDecreaseHour !== i18nKeyMap.datePicker.decreaseHour) {
+    datePicker.decreaseHour = datePickerDecreaseHour
+  }
+  if (datePickerIncreaseMinute !== i18nKeyMap.datePicker.increaseMinute) {
+    datePicker.increaseMinute = datePickerIncreaseMinute
+  }
+  if (datePickerDecreaseMinute !== i18nKeyMap.datePicker.decreaseMinute) {
+    datePicker.decreaseMinute = datePickerDecreaseMinute
+  }
+  if (Object.keys(datePicker).length > 0) result.datePicker = datePicker
 
   const dataTableSelectAll = i18n.t(i18nKeyMap.dataTable.selectAll)
   const dataTableSelectRow = i18n.t(i18nKeyMap.dataTable.selectRow)
@@ -443,6 +535,40 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
     dataTable.expandRow = dataTableExpandRow
   }
   if (Object.keys(dataTable).length > 0) result.dataTable = dataTable
+
+  const sortableInstructions = i18n.t(i18nKeyMap.sortable.instructions)
+  const sortableGrabbed = i18n.t(i18nKeyMap.sortable.grabbed)
+  const sortableMoved = i18n.t(i18nKeyMap.sortable.moved)
+  const sortableMovedToLevel = i18n.t(i18nKeyMap.sortable.movedToLevel)
+  const sortableDropped = i18n.t(i18nKeyMap.sortable.dropped)
+  const sortableCancelled = i18n.t(i18nKeyMap.sortable.cancelled)
+  const sortable: PartialUiMessages['sortable'] = {}
+  if (sortableInstructions !== i18nKeyMap.sortable.instructions) {
+    sortable.instructions = sortableInstructions
+  }
+  if (sortableGrabbed !== i18nKeyMap.sortable.grabbed) {
+    sortable.grabbed = sortableGrabbed
+  }
+  if (sortableMoved !== i18nKeyMap.sortable.moved) {
+    sortable.moved = sortableMoved
+  }
+  if (sortableMovedToLevel !== i18nKeyMap.sortable.movedToLevel) {
+    sortable.movedToLevel = sortableMovedToLevel
+  }
+  if (sortableDropped !== i18nKeyMap.sortable.dropped) {
+    sortable.dropped = sortableDropped
+  }
+  if (sortableCancelled !== i18nKeyMap.sortable.cancelled) {
+    sortable.cancelled = sortableCancelled
+  }
+  if (Object.keys(sortable).length > 0) result.sortable = sortable
+
+  const ratingValueText = i18n.t(i18nKeyMap.rating.valueText)
+  const rating: PartialUiMessages['rating'] = {}
+  if (ratingValueText !== i18nKeyMap.rating.valueText) {
+    rating.valueText = ratingValueText
+  }
+  if (Object.keys(rating).length > 0) result.rating = rating
 
   return result
 }

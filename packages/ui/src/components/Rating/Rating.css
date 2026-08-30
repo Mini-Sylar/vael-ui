@@ -1,0 +1,94 @@
+@layer ui-components {
+  .ui-rating {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    touch-action: none;
+    border-radius: 4px;
+  }
+  .ui-rating:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-rating--readonly {
+    cursor: default;
+  }
+  .ui-rating--disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .ui-rating-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+  }
+  /* Whole row settles together on a committed change (click, drag release, arrow key) — same
+     scale-pop keyframe/timing as Badge's own animated-content pop. */
+  .ui-rating:not(.ui-rating--no-motion) .ui-rating-track {
+    animation: ui-rating-pop var(--ui-duration-press) var(--ui-ease-out);
+  }
+  @keyframes ui-rating-pop {
+    0%,
+    100% {
+      scale: 1;
+    }
+    50% {
+      scale: 1.08;
+    }
+  }
+
+  .ui-rating-item {
+    position: relative;
+    display: inline-block;
+    inline-size: var(--ui-rating-icon-size);
+    block-size: var(--ui-rating-icon-size);
+  }
+  .ui-rating--sm {
+    --ui-rating-icon-size: 1rem;
+  }
+  .ui-rating--md {
+    --ui-rating-icon-size: 1.25rem;
+  }
+  .ui-rating--lg {
+    --ui-rating-icon-size: 1.5rem;
+  }
+
+  .ui-rating-icon {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+  .ui-rating-icon--empty {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 14;
+    stroke-linejoin: round;
+    color: var(--ui-border-strong);
+  }
+  .ui-rating-icon--filled {
+    fill: currentColor;
+    color: var(--ui-warning);
+    clip-path: inset(0 calc(100% - var(--ui-rating-fill, 0%)) 0 0);
+    transition: clip-path var(--ui-duration-press) var(--ui-ease-out);
+  }
+  /* Instant during an active pointer gesture — 1:1 tracking, no lag between
+     cursor position and fill. The commit-pop above still marks the moment
+     a value actually lands. */
+  .ui-rating[data-tracking] .ui-rating-icon--filled,
+  .ui-rating--no-motion .ui-rating-icon--filled {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-rating-track {
+      animation: none;
+    }
+    .ui-rating-icon--filled {
+      transition: none;
+    }
+  }
+}

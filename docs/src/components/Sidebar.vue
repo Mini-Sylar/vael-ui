@@ -47,6 +47,8 @@ import { Drawer, MenuList, Resizable, SelectButton, vScrollMask } from 'vael-ui'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { categories, NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { composableCategories } from '../composablesTaxonomy'
+import { DIRECTIVES } from '../directivesTaxonomy'
+import { directivesContent } from '../directivesContent'
 
 const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
 
@@ -67,6 +69,7 @@ const GUIDE_ROUTES = [
 
 const guideValue = (routeName: string) => `guide:${routeName}`
 const composableValue = (name: string) => `composable:${name}`
+const directiveValue = (name: string) => `directive:${name}`
 
 // Session-scoped (not persisted across a closed tab, unlike sidebarWidth
 // below): a fresh visit should always start on Components, but switching
@@ -95,7 +98,11 @@ watch(
   () => route.name,
   (routeName) => {
     if (routeName === 'composable') sidebarMode.value = 'composables'
-    else if (routeName === 'component' || GUIDE_ROUTES.some((g) => g.routeName === routeName)) {
+    else if (
+      routeName === 'component' ||
+      routeName === 'directive' ||
+      GUIDE_ROUTES.some((g) => g.routeName === routeName)
+    ) {
       sidebarMode.value = 'components'
     }
   },
@@ -109,6 +116,9 @@ function routeFor(value: string): RouteLocationRaw {
   if (value.startsWith('guide:')) return { name: value.slice('guide:'.length) }
   if (value.startsWith('composable:')) {
     return { name: 'composable', params: { name: value.slice('composable:'.length) } }
+  }
+  if (value.startsWith('directive:')) {
+    return { name: 'directive', params: { name: value.slice('directive:'.length) } }
   }
   return { name: 'component', params: { name: value } }
 }
@@ -129,6 +139,12 @@ const navItems = computed<MenuEntry<MenuListItemData>[]>(() => {
       label: t('nav.guides'),
       items: GUIDE_ROUTES.map((g) => navItem(t(g.labelKey), guideValue(g.routeName))),
     },
+    {
+      label: t('nav.directives'),
+      items: DIRECTIVES.map((name) =>
+        navItem(directivesContent[name]!.label, directiveValue(name)),
+      ),
+    },
     ...categories.map((category) => ({
       label: t(`taxonomy.${category.key}`),
       items: category.components.map((name) => navItem(name, name)),
@@ -139,6 +155,7 @@ const navItems = computed<MenuEntry<MenuListItemData>[]>(() => {
 const activeValue = computed(() => {
   if (route.name === 'component') return route.params.name as string
   if (route.name === 'composable') return composableValue(route.params.name as string)
+  if (route.name === 'directive') return directiveValue(route.params.name as string)
   if (typeof route.name === 'string') return guideValue(route.name)
   return null
 })

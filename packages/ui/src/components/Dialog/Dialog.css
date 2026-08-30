@@ -242,7 +242,7 @@
   @media (prefers-reduced-motion: reduce) {
     .ui-dialog-enter-active .ui-dialog-panel,
     .ui-dialog-leave-active .ui-dialog-panel {
-      transition: none;
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
     .ui-dialog-enter-from .ui-dialog-panel,
     .ui-dialog-leave-to .ui-dialog-panel,
@@ -265,6 +265,12 @@
     }
     .ui-dialog-panel {
       transition: none;
+    }
+    .ui-dialog-enter-active {
+      transition: --ui-dialog-t var(--ui-duration-enter) var(--ui-ease-out);
+    }
+    .ui-dialog-leave-active {
+      transition: --ui-dialog-t var(--ui-duration-exit) var(--ui-ease-out);
     }
     .ui-dialog-panel--resizing {
       animation: none;

@@ -111,12 +111,14 @@
         <div
           ref="panel"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
           v-bind="$attrs"
         >
+          <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
+            <slot name="header" :count="filteredItems.length" :total="items.length" />
+          </div>
           <SelectListBody
             ref="listBody"
-            :style="bodyStyle"
             :items="filteredItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
@@ -140,6 +142,9 @@
               <slot name="empty" />
             </template>
           </SelectListBody>
+          <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
+            <slot name="footer" />
+          </div>
         </div>
       </div>
     </Transition>
@@ -193,6 +198,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
+import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
 import Chip from '../Chip/Chip.vue'
 
@@ -235,10 +241,13 @@ const props = withDefaults(
     alignOffset?: number
     closeOnEsc?: boolean
     closeOnOutside?: boolean
+    /** Defers closing (animation gate pattern): called when close is requested, call `done()` to proceed. */
     beforeClose?: (done: () => void) => void
     forceMount?: boolean
     teleportTo?: string | HTMLElement
     scrollFade?: boolean
+    /** Caps the panel's height at this many pixels even when the viewport has room for more — the option list scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+    maxPanelHeight?: number
     /** Gates the built-in chip enter/exit/reposition transition (`multiple` only). `false` skips
      * it entirely — reach for `@chip-enter`/`@chip-leave` instead if you want a consumer-owned
      * animation (GSAP, motion-v) in its place. */
@@ -248,9 +257,11 @@ const props = withDefaults(
       input: UiPartValue
       positioner: UiPartValue
       panel: UiPartValue
+      header: UiPartValue
       list: UiPartValue
       option: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -304,21 +315,18 @@ defineSlots<{
   start(): unknown
   /** Renders before the library's own clear/chevron, inside Input's `#end`. */
   end(): unknown
+  /** Above the listbox, inside the popover panel. */
+  header(props: { count: number; total: number }): unknown
   item(props: { item: T; active: boolean; selected: boolean }): unknown
   empty(): unknown
+  /** Below the listbox, inside the popover panel. */
+  footer(): unknown
 }>()
 
 const messages = useUiMessages()
 const fieldControl = useFieldControl()
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
-
-function normalize(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-}
 
 const filteredItems = computed<T[]>(() => {
   if (props.filter === false) return [...props.items]
@@ -328,8 +336,8 @@ const filteredItems = computed<T[]>(() => {
     const match = props.filter
     return props.items.filter((item) => match(item, q))
   }
-  const nq = normalize(q)
-  return props.items.filter((item) => normalize(item.label).includes(nq))
+  const nq = normalizeText(q)
+  return props.items.filter((item) => normalizeText(item.label).includes(nq))
 })
 
 function isSelected(item: T): boolean {
@@ -386,6 +394,7 @@ const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close
     closeOnEsc: () => props.closeOnEsc,
     closeOnOutside: () => props.closeOnOutside,
     beforeClose: () => props.beforeClose,
+    maxHeightCap: () => props.maxPanelHeight,
     onOpenChange: (value, details) => emit('open-change', value, details),
   })
 
@@ -580,8 +589,8 @@ const effectiveOverscan = computed(() =>
     : filteredItems.value.length,
 )
 
-const bodyStyle = computed(() =>
-  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px`, overflowY: 'auto' as const } : {},
+const panelMaxHeightStyle = computed(() =>
+  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
 )
 
 const innerUi = computed(() => ({
@@ -597,6 +606,12 @@ const positionerPart = computed(() =>
 )
 const panelPart = computed(() =>
   resolveUiPart(cx, themedUi()?.panel, 'ui-select-panel', 'ui-combobox-panel'),
+)
+const headerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.header, 'ui-select-header', 'ui-combobox-header'),
+)
+const footerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer', 'ui-combobox-footer'),
 )
 
 const resolvedSide = computed(() => placement.value.split('-')[0] as ComboboxSide)

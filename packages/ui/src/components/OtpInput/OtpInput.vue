@@ -85,7 +85,9 @@ const modelValue = defineModel<string>({ default: '' })
 const props = withDefaults(
   defineProps<{
     length?: number
+    /** Restricts input to digits only or alphanumeric. */
     type?: 'numeric' | 'alphanumeric'
+    /** Shows a bullet instead of the entered character in every filled cell. */
     mask?: boolean
     disabled?: boolean
     invalid?: boolean
