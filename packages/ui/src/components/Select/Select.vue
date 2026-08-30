@@ -305,6 +305,7 @@ const props = withDefaults(
     clearable: false,
     display: 'chip',
     virtualize: undefined,
+    filter: undefined,
     side: 'bottom',
     align: 'start',
     sideOffset: 8,
