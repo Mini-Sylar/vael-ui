@@ -58,7 +58,9 @@ import type { UiPartValue } from '../../classes'
 
 export interface PullToRefreshProps {
   onRefresh: () => Promise<void> | void
+  /** How far to pull (in pixels) before the refresh triggers. */
   threshold?: number
+  /** Maximum pull distance (in pixels) allowed before clamping. */
   maxPull?: number
   /** Detects gestures on this element instead of the root. Defaults to the root. */
   scrollEl?: HTMLElement | { el: HTMLElement | null } | null

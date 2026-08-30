@@ -259,15 +259,25 @@ const props = withDefaults(
     /** Renders hidden `<input>`(s) so a plain `<form>` post still carries
      * the selection — repeated `name` when `multiple`. */
     name?: string
+    /** Which side of the trigger the panel opens on. */
     side?: SelectSide
+    /** How the panel aligns against the trigger along that side. */
     align?: SelectAlign
+    /** Gap between the trigger and the panel, in pixels. */
     sideOffset?: number
+    /** Shifts the panel along the alignment axis, in pixels. */
     alignOffset?: number
+    /** Escape key closes the panel. */
     closeOnEsc?: boolean
+    /** Clicking outside the panel closes it. */
     closeOnOutside?: boolean
+    /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
     beforeClose?: (done: () => void) => void
+    /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
     forceMount?: boolean
+    /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. */
     teleportTo?: string | HTMLElement
+    /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
     scrollFade?: boolean
     /** Caps the panel's height at this many pixels even when the viewport has room for more — the option list scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
     maxPanelHeight?: number

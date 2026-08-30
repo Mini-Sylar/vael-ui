@@ -219,6 +219,7 @@ const props = withDefaults(
     alignOffset?: number
     closeOnEsc?: boolean
     closeOnOutside?: boolean
+    /** Defers closing (animation gate pattern): called when close is requested, call `done()` to proceed. */
     beforeClose?: (done: () => void) => void
     forceMount?: boolean
     teleportTo?: string | HTMLElement

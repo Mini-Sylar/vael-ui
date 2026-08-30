@@ -145,6 +145,7 @@ const props = withDefaults(
   defineProps<{
     items: ReadonlyArray<T>
     placeholder?: string
+    /** Custom filter function; replaces the default label/keywords match. Omit to use the built-in filter. */
     filter?: (item: T, query: string) => boolean
     /** Global shortcut that toggles `open`, e.g. `'mod+k'` (`mod` = Cmd on Mac, Ctrl elsewhere). Unset by default — nothing listens until you opt in. */
     shortcut?: string

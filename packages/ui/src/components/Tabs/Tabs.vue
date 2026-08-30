@@ -53,14 +53,12 @@ const emit = defineEmits<{
 
 defineSlots<{
   /**
-   * Render `role="tab"` elements and, optionally, a sliding indicator.
-   * `focused` tracks roving tabindex (diverges from `active` in `manual`
-   * mode). `itemProps(item)` returns the full a11y/behavior wiring for one
-   * tab — spread it with `v-bind` onto whatever element you render, a plain
-   * `<button>` or `<Button>`. `indicatorProps(variant)` does the same for
-   * the optional sliding highlight (`'background'` default, or
-   * `'underline'`) — render one element with it bound as a sibling of the
-   * tab buttons.
+   * Render `role="tab"` elements and optionally a sliding indicator.
+   * `itemProps(item)` returns a11y/behavior wiring for one tab — spread via
+   * v-bind. `indicatorProps(variant)` does the same for the optional sliding
+   * highlight (`'background'` default, or `'underline'`) — bind it on a
+   * sibling element of the tab buttons. `focused` tracks roving tabindex
+   * (diverges from `active` in `manual` mode).
    */
   default(props: {
     active: T
