@@ -131,6 +131,7 @@ export const NEW_COMPONENTS: Record<string, string> = {
   PasswordInput: '2026-08-16',
   Rating: '2026-08-23',
   Timeline: '2026-08-23',
+  Sortable: '2026-08-30',
 }
 
 export const NEW_BADGE_DAYS = 14

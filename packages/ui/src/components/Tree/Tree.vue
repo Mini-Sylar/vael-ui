@@ -34,6 +34,7 @@
       ref="listEl"
       :id="listId"
       role="tree"
+      :data-reorderable="reorderable ? '' : undefined"
       :data-reordering="isReordering ? '' : undefined"
       :data-invalid-drop="isReordering && !isValidDrop ? '' : undefined"
       :data-drop-pending="isDropPending ? '' : undefined"
@@ -292,6 +293,10 @@ const props = withDefaults(
      * only one instance of it on screen; safe here since a tree row is a
      * plain element, not a `<table>` row. */
     previewMode?: 'element' | 'clone'
+    /** Ms a touch pointer must hold a row still before a drag starts — a row
+     * is also tap-to-select/expand here, so touch needs a hold to tell the
+     * two apart; mouse/pen are unaffected. Default `150`. */
+    touchDragDelay?: number
     /** When true, clicking anywhere on a folder row also toggles its expansion, not just the chevron —
      * it still selects too (unless `selectableFolders` is off), so picking the folder itself (without
      * opening it to reach a file inside) still works. Off by default since it changes what a plain row
@@ -325,6 +330,7 @@ const props = withDefaults(
     canDrop: undefined,
     beforeDrop: undefined,
     previewMode: 'clone',
+    touchDragDelay: 150,
     autoExpandDelay: 600,
     expandOnRowClick: false,
     stickyScroll: false,
@@ -628,6 +634,7 @@ const {
   dropOnTarget: true,
   dragPreview: true,
   previewMode: () => props.previewMode,
+  touchDragDelay: () => props.touchDragDelay,
   disabled: () => !props.reorderable,
   reorderSiblings: () => props.reorderSiblings,
   motionCss: () => props.motionCss,

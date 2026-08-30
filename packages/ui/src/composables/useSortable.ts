@@ -341,6 +341,9 @@ export interface UseSortableOptions {
   /** `nested` only. Px of indent per depth level — match whatever your rows
    * actually render with. Default `16`. */
   indentWidth?: MaybeRefOrGetter<number>
+  /** Ms a touch pointer must hold still before a drag can start. Mouse/pen
+   * are unaffected — still an immediate distance-threshold commit. Default `150`. */
+  touchDragDelay?: MaybeRefOrGetter<number>
   /** Turns off dragging; the handlers below become no-ops. */
   disabled?: MaybeRefOrGetter<boolean>
   /** `false` disables the built-in springs — positions snap. */
@@ -565,6 +568,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
   function indentWidth(): number {
     return toValue(options.indentWidth) ?? 16
+  }
+  function touchDelay(): number {
+    return toValue(options.touchDragDelay) ?? 0
   }
   function isDisabled(): boolean {
     return toValue(options.disabled) ?? false
@@ -916,6 +922,18 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       return
     }
 
+    // touchDragDelay can commit a grab before any movement — dropped back
+    // at the exact same spot, that's a no-op, not a real drop.
+    if (
+      sourceFrom &&
+      at.parentValue === sourceFrom.parentValue &&
+      at.index === sourceFrom.index &&
+      at.depth === sourceFrom.depth
+    ) {
+      finish()
+      return
+    }
+
     // Blocked target: never commit, just spring everything home.
     if (!isValidDrop.value) {
       say('cancel')
@@ -1004,6 +1022,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     destroyPreview()
     if (!el) return
     el.style.zIndex = ''
+    el.style.touchAction = ''
     el.removeAttribute('data-dragging')
   }
 
@@ -1060,6 +1079,36 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let previewEl: HTMLElement | null = null
   let previewSourceEl: HTMLElement | null = null
   let lastPointerEvent: PointerEvent | null = null
+  // Drives the raw touchmove listener below — preventDefault() on a
+  // PointerEvent doesn't reliably cancel the touch scroll it came from.
+  let isTouchPointer = false
+  // Touch only — `true` for every other pointer type. See touchDragDelay.
+  let touchArmed = true
+  let touchHoldTimer: ReturnType<typeof setTimeout> | null = null
+  function clearTouchHoldTimer() {
+    if (touchHoldTimer != null) clearTimeout(touchHoldTimer)
+    touchHoldTimer = null
+  }
+  // Nearest scrollable ancestor along the sort axis — driven by hand while
+  // the hold is pending (see manualScrolling in onPointerMove), since
+  // touch-action: none takes native scrolling off the table entirely.
+  let touchScrollEl: HTMLElement | null = null
+  let manualScrolling = false
+  let lastScrollPos = 0
+  function findScrollableAncestor(el: HTMLElement | null): HTMLElement | null {
+    const prop = axis() === 'x' ? 'overflowX' : 'overflowY'
+    const overflows = (node: Element) =>
+      axis() === 'x' ? node.scrollWidth > node.clientWidth : node.scrollHeight > node.clientHeight
+    let node = el?.parentElement ?? null
+    while (node && node !== document.body && node !== document.documentElement) {
+      const style = getComputedStyle(node)
+      if (/(auto|scroll)/.test(style[prop]) && overflows(node)) return node
+      node = node.parentElement
+    }
+    // Most lists aren't boxed in their own container — the page scrolls.
+    const page = document.scrollingElement
+    return page instanceof HTMLElement && overflows(page) ? page : null
+  }
   let grabOffsetX = 0
   let grabOffsetY = 0
 
@@ -1202,50 +1251,119 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     startY = event.clientY
     lastAlong = event.clientY
     lastTime = performance.now()
+    lastPointerEvent = event
     velocity = 0
+    isTouchPointer = event.pointerType === 'touch'
     // Resolved through the consumer's own accessor, not a DOM selector — Tree
     // rows and Sortable rows share no markup, and a selector only one of them
     // has silently disables capture and the drag preview for the other.
     dragEl = options.getElement(value)
+
+    clearTouchHoldTimer()
+    manualScrolling = false
+    touchScrollEl = null
+    const delay = touchDelay()
+    if (event.pointerType === 'touch' && delay > 0) {
+      touchArmed = false
+      touchScrollEl = findScrollableAncestor(dragEl)
+      // Now, synchronously — see this variable's own comment above.
+      if (dragEl) dragEl.style.touchAction = 'none'
+      const heldPointerId = pointerId
+      touchHoldTimer = setTimeout(() => {
+        touchHoldTimer = null
+        // Only arm the gesture this was actually scheduled for.
+        if (pointerId !== heldPointerId || committed) return
+        touchArmed = true
+        if (lastPointerEvent) commitDrag(lastPointerEvent)
+      }, delay)
+    } else {
+      // 0 is "off" outright, not a same-tick timer that risks losing a
+      // race with an immediately following pointermove.
+      touchArmed = true
+    }
+  }
+
+  /** Springs up the preview, captures the pointer, tells a `group` a
+   * session started. Called on the first move past the ordinary distance
+   * threshold, or once a touch pointer's hold completes. */
+  function commitDrag(event: PointerEvent): boolean {
+    if (pendingValue == null) return false
+    if (!begin(pendingValue, 'pointer')) {
+      pointerId = null
+      return false
+    }
+    committed = true
+    isDragging.value = true
+    try {
+      dragEl?.setPointerCapture(pointerId!)
+    } catch {
+      // Capture is an optimisation (it keeps tracking when the pointer
+      // leaves the element); losing it must not abandon the drag itself.
+    }
+    if (dragEl) {
+      dragEl.setAttribute('data-dragging', '')
+      dragEl.style.touchAction = 'none'
+      // dragPreview (DataTable/Tree's own reorder) always wants its preview
+      // right away, defaulting to 'clone' (unlike the group codepath below,
+      // which defaults to 'element') since this is the codepath a real
+      // <table> row goes through. A grouped reorder that never actually
+      // leaves this list looks and behaves exactly like a plain drag — the
+      // real element translates, nothing lifted — createPreview only fires
+      // later, lazily, if the drag actually crosses into a foreign host
+      // (see onHostChange below).
+      if (toValue(options.dragPreview))
+        createPreview(dragEl, event, toValue(options.previewMode) ?? 'clone')
+      else dragEl.style.zIndex = '1'
+    }
+    if (options.group && ownGroupId != null) {
+      options.group.__beginSession(ownGroupId, pendingValue, 'pointer')
+    }
+    return true
   }
 
   function onPointerMove(event: PointerEvent) {
     if (pointerId === null || event.pointerId !== pointerId || pendingValue == null) return
     lastPointerEvent = event
+
+    if (manualScrolling) {
+      // touch-action was already 'none' — we are the scroll now.
+      if (touchScrollEl) {
+        const pos = axis() === 'x' ? event.clientX : event.clientY
+        if (axis() === 'x') touchScrollEl.scrollLeft -= pos - lastScrollPos
+        else touchScrollEl.scrollTop -= pos - lastScrollPos
+        lastScrollPos = pos
+      }
+      return
+    }
+
+    // A pending touch hold owns this gesture from its very first move —
+    // never the browser's compositor, which can otherwise commit to a
+    // native scroll before our own threshold check runs.
+    if (!committed && !touchArmed) event.preventDefault()
+
     const dx = event.clientX - startX
     const dy = event.clientY - startY
 
     if (!committed) {
       if (Math.abs(dy) < DRAG_THRESHOLD && Math.abs(dx) < DRAG_THRESHOLD) return
-      if (!begin(pendingValue, 'pointer')) {
-        pointerId = null
+      if (!touchArmed) {
+        // Moved before the hold completed — this is a scroll, not a drag.
+        clearTouchHoldTimer()
+        if (dragEl) dragEl.style.touchAction = ''
+        if (touchScrollEl) {
+          manualScrolling = true
+          // Apply the move that crossed the threshold too, or those first
+          // few px go missing.
+          if (axis() === 'x') touchScrollEl.scrollLeft -= dx
+          else touchScrollEl.scrollTop -= dy
+          lastScrollPos = axis() === 'x' ? event.clientX : event.clientY
+        } else {
+          pointerId = null
+          pendingValue = null
+        }
         return
       }
-      committed = true
-      isDragging.value = true
-      try {
-        dragEl?.setPointerCapture(pointerId)
-      } catch {
-        // Capture is an optimisation (it keeps tracking when the pointer
-        // leaves the element); losing it must not abandon the drag itself.
-      }
-      if (dragEl) {
-        dragEl.setAttribute('data-dragging', '')
-        // dragPreview (DataTable/Tree's own reorder) always wants its preview
-        // right away, defaulting to 'clone' (unlike the group codepath below,
-        // which defaults to 'element') since this is the codepath a real
-        // <table> row goes through. A grouped reorder that never actually
-        // leaves this list looks and behaves exactly like a plain drag — the
-        // real element translates, nothing lifted — createPreview only fires
-        // later, lazily, if the drag actually crosses into a foreign host
-        // (see onHostChange below).
-        if (toValue(options.dragPreview))
-          createPreview(dragEl, event, toValue(options.previewMode) ?? 'clone')
-        else dragEl.style.zIndex = '1'
-      }
-      if (options.group && ownGroupId != null) {
-        options.group.__beginSession(ownGroupId, pendingValue, 'pointer')
-      }
+      if (!commitDrag(event)) return
     }
 
     event.preventDefault()
@@ -1281,7 +1399,10 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       const hovered = resolveHoveredIndex(bands, pointer)
       const row = hovered === -1 ? null : remaining[hovered]!
       const nestable = !!row && (options.canNestInto?.(row.value) ?? true)
-      if (!nestable && !siblingReorderAllowed()) {
+      // Empty space past every row always resolves to top level (see
+      // resolveTargetDrop's `!row` case) — reaching it is a re-parent, not a
+      // sibling reorder, unless the dragged item was already top-level.
+      if (!nestable && !siblingReorderAllowed() && (row || sourceFrom?.parentValue === null)) {
         scheduleAutoExpand(null)
         dropIntoValue.value = null
         dropTargetValue.value = null
@@ -1325,11 +1446,15 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
   function endPointer(event: PointerEvent) {
     if (pointerId === null || event.pointerId !== pointerId) return
+    clearTouchHoldTimer()
+    manualScrolling = false
+    touchScrollEl = null
     const wasCommitted = committed
     pointerId = null
     pendingValue = null
     committed = false
     if (!wasCommitted) {
+      if (dragEl) dragEl.style.touchAction = ''
       dragEl = null
       return
     }
@@ -1349,6 +1474,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   function onWindowKeydown(event: KeyboardEvent) {
     if (event.key !== 'Escape' || !isDragging.value) return
     event.preventDefault()
+    clearTouchHoldTimer()
     pointerId = null
     committed = false
     pendingValue = null
@@ -1366,6 +1492,17 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   useEventListener(ssrWindow, 'pointermove', onPointerMove)
   useEventListener(ssrWindow, 'pointerup', endPointer)
   useEventListener(ssrWindow, 'pointercancel', endPointer)
+  // preventDefault() on a PointerEvent doesn't reliably cancel a touch
+  // scroll — only the real TouchEvent does, and only non-passive (window's
+  // own touchmove default). Backs up touch-action: none on the row itself.
+  useEventListener(
+    ssrWindow,
+    'touchmove',
+    (event: TouchEvent) => {
+      if (pointerId !== null && isTouchPointer) event.preventDefault()
+    },
+    { passive: false },
+  )
 
   // --- keyboard --------------------------------------------------------------
 

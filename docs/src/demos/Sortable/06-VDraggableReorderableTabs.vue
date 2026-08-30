@@ -35,7 +35,10 @@ import { Tabs, vDraggable } from 'vael-ui'
 
 const tabs = reactive(['Overview', 'Activity', 'Settings'])
 const activeTab = shallowRef('Overview')
-const tabsDraggable = computed(() => ({ items: tabs, axis: 'x' as const }))
+// Each tab is also a click target (switches the active tab) — touchDragDelay
+// gives touch a hold to tell "select this tab" from "drag it" apart. A plain
+// dedicated handle (see the demo below) doesn't need this.
+const tabsDraggable = computed(() => ({ items: tabs, axis: 'x' as const, touchDragDelay: 150 }))
 </script>
 
 <style scoped>

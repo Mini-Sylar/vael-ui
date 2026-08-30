@@ -47,7 +47,17 @@ const filesDraggable = computed(() => ({ items: files, handle: '[data-grip]' }))
   opacity: 0;
 }
 .draggable-file-grip {
+  /* The glyph itself is a few px wide — this is the actual touch target,
+     roughly WCAG's 44px minimum, without visually enlarging the row. */
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  margin: -0.5rem -0.625rem -0.5rem -0.375rem;
   color: var(--ui-text-muted);
+  font-size: 1rem;
   cursor: grab;
   touch-action: none;
 }

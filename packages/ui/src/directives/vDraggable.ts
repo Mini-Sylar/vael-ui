@@ -12,6 +12,11 @@ export interface DraggableOptions<T = unknown> {
   disabled?: boolean
   /** CSS selector for the grab surface inside each child. Defaults to the whole child. */
   handle?: string
+  /** Ms a touch pointer must hold a child still before a drag starts. Skip
+   * this unless a child is also tappable for something else (selects,
+   * activates) — a dedicated `handle` with no other purpose never needs it,
+   * mouse/pen are unaffected either way. Default `0`. */
+  touchDragDelay?: number
   /** Fires on a committed drop, with the old and new index — there's no stable
    * key here to identify the moved item by, only its position. */
   onReorder?: (from: number, to: number) => void
@@ -83,6 +88,7 @@ function start(el: HTMLElement, value: DraggableValue): void {
       axis: () => options.axis ?? 'y',
       disabled: () => options.disabled ?? false,
       dragPreview: true,
+      touchDragDelay: () => options.touchDragDelay ?? 0,
       group: options.group,
       groupId: () => options.groupId,
       onCommit: (from, to) => {

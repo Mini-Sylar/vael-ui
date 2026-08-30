@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "gen": "node scripts/extract-component-meta.mjs && node scripts/generate-doc-demos.mjs",
-    "dev": "pnpm gen && vite",
+    "dev": "pnpm gen && vite --host",
     "build": "pnpm gen && vite-ssg build",
     "typecheck": "pnpm gen && vue-tsc --noEmit",
     "preview": "pnpm gen && vite preview"
