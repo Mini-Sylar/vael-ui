@@ -29,7 +29,9 @@
     position: relative;
     z-index: 1;
     border-color: var(--ui-primary);
-    box-shadow: var(--ui-panel-shadow);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.04),
+      0 4px 10px rgb(0 0 0 / 0.1);
   }
   .ui-sortable-item[data-dragging] {
     cursor: grabbing;

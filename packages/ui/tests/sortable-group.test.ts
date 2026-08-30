@@ -120,9 +120,12 @@ test('Escape while hovering a foreign column reverts both arrays untouched', asy
       clientY: doingBox.top + doingBox.height + 5,
     }),
   )
-  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).not.toBeNull())
+  const draggedRow = rowFor(screen, 'a')
+  // Default previewMode ('element'): no separate clone node — the dragged
+  // row itself lifts out of flow once it actually crosses into 'doing'.
+  await vi.waitFor(() => expect(getComputedStyle(draggedRow).position).toBe('fixed'))
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
+  await vi.waitFor(() => expect(getComputedStyle(draggedRow).position).not.toBe('fixed'))
   expect(order(screen, 'todo-order')).toBe('a,b')
   expect(order(screen, 'doing-order')).toBe('c')
 })

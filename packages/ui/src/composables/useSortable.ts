@@ -294,6 +294,12 @@ export interface UseSortableOptions {
   nested?: MaybeRefOrGetter<boolean>
   /** VS Code model: hovering a row's middle drops INTO it. Requires `nested`. */
   dropOnTarget?: MaybeRefOrGetter<boolean>
+  /** Fraction of a target's own size, on each end, that still means "beside
+   * it" rather than "into it" — the rest (the middle) resolves to "inside".
+   * Default 0.25 (a 50%-wide inside zone), same as Tree's own VS Code-style
+   * drops. Shrink it for a target that's hard to land on precisely (rows
+   * that reflow to open a gap as you approach, a narrow target). */
+  nestEdgeFraction?: MaybeRefOrGetter<number>
   /** `false` disables reordering among current siblings — only re-parenting
    * is offered, with no indicator at all on a would-be sibling insert.
    * Requires `dropOnTarget`. */
@@ -313,7 +319,26 @@ export interface UseSortableOptions {
    * tree) reads as overlapping text rather than as carrying something.
    */
   dragPreview?: MaybeRefOrGetter<boolean>
+  /** `dragPreview` + `nested` only. A dragged row with descendants (an
+   * expanded folder's visible children, a tab group's own tabs) carries real
+   * copies of them along inside the same floating clone, each pinned at the
+   * offset it already sat at — so the whole block reads as one physical
+   * thing lifting together, the way a real browser drags a tab group, not
+   * just its header stranding the rest behind. Default `true`; set `false`
+   * to show only the header (a "3 items" badge of your own is a common
+   * replacement) instead. */
+  previewCarriesSubtree?: MaybeRefOrGetter<boolean>
+  /** `group` only — how a drag looks once it actually leaves this list for a
+   * sibling one. `'element'` (default): the real dragged element itself
+   * lifts out of flow and keeps moving, so there's only ever one instance of
+   * it on screen. `'clone'`: a separate floating copy instead, matching
+   * `dragPreview`'s own approach — reach for it if the real element can't
+   * tolerate leaving its normal layout (a table row, say). */
+  previewMode?: MaybeRefOrGetter<'element' | 'clone'>
+  /** `nested` only. Px of indent per depth level — match whatever your rows
+   * actually render with. Default `16`. */
   indentWidth?: MaybeRefOrGetter<number>
+  /** Turns off dragging; the handlers below become no-ops. */
   disabled?: MaybeRefOrGetter<boolean>
   /** `false` disables the built-in springs — positions snap. */
   motionCss?: MaybeRefOrGetter<boolean>
@@ -325,9 +350,13 @@ export interface UseSortableOptions {
   beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
   /** `beforeDrop` threw or rejected. The move is already reverted by the time this fires; use it to surface the failure (a toast, say). */
   onDropError?: (error: unknown, details: SortableDropDetails) => void
-  /** Human label for announcements; falls back to the raw value. */
+  /** Human label used in `announce` events below; falls back to the raw value. */
   labelOf?: (value: string | number) => string
-  /** Builds the live-region text. Supplied by the component so it can route through `messages`. */
+  /** Turns a grab/move/drop/cancel into the sentence a screen reader speaks.
+   * The string comes back as `announcement` below, which you render in an
+   * `aria-live` element yourself — omit this and dragging stays silent for
+   * those users. A callback rather than built-in text so it can be
+   * localized; vael-ui's own components pull theirs from `useUiMessages()`. */
   announce?: (event: SortableAnnounceEvent) => string
   /** Lets items cross into other `useSortable()` lists that share this handle — from `useSortableGroup()`. */
   group?: SortableGroupHandle
@@ -406,21 +435,27 @@ export interface SortableDropDetails {
   to: DropPosition
 }
 
+/** Passed to `announce` on every grab, move, drop, and cancel. */
 export interface SortableAnnounceEvent {
   kind: 'grab' | 'move' | 'drop' | 'cancel'
+  /** From `labelOf`, or the raw value if you didn't supply one. */
   label: string
   /** 1-based slot among the new siblings. */
   position: number
+  /** How many siblings (including this row) share that slot's parent. */
   total: number
+  /** Nesting depth of the slot it would land in — `0` at the top level. */
   depth: number
 }
 
 export interface UseSortableReturn {
+  /** The value currently being dragged, `null` when nothing is. */
   activeValue: Ref<string | number | null>
   /** True only for a committed pointer drag, never a plain click. */
   isDragging: Ref<boolean>
   /** True whenever an item is held — by pointer OR keyboard. */
   isGrabbed: Ref<boolean>
+  /** Where the drag would land if released right now, live as the pointer moves. */
   dropPosition: Ref<DropPosition | null>
   /** `false` while hovering a target `canDrop` rejected. */
   isValidDrop: Ref<boolean>
@@ -437,13 +472,20 @@ export interface UseSortableReturn {
   dropIntoValue: Ref<string | number | null>
   /** Row the pointer is over, and which part of it — drives the insertion line. */
   dropTargetValue: Ref<string | number | null>
+  /** `nested` + `dropOnTarget` only: `'before'`/`'after'` `dropTargetValue`
+   * (reorder) or `'inside'` it (re-parent). */
   dropIntent: Ref<DropIntent | null>
-  /** Live-region text. Render it in an `aria-live="assertive"` node. */
+  /** The current sentence from `announce` above — render it in an
+   * `aria-live` element yourself; this ref only holds the text. */
   announcement: Ref<string>
+  /** Bind to a row's handle: `@pointerdown="onHandlePointerdown($event, row.value)"`. */
   onHandlePointerdown: (event: PointerEvent, value: string | number) => void
   /** True exactly once after a committed drag: the browser fires a trailing click on release, and without swallowing it a drag also triggers whatever the row's click does (select, expand). Same guard `useSwipeReveal` uses. */
   consumeSuppressedClick: () => boolean
+  /** Bind to the same handle: `@keydown="onHandleKeydown($event, row.value)"`.
+   * Space/Enter grabs and drops; arrow keys move while held; Escape cancels. */
   onHandleKeydown: (event: KeyboardEvent, value: string | number) => void
+  /** Cancels an in-progress drag, same as pressing Escape. No-op otherwise. */
   cancel: () => void
 }
 
@@ -1013,44 +1055,88 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let lastTime = 0
   let suppressNextClick = false
   let previewEl: HTMLElement | null = null
+  let previewSourceEl: HTMLElement | null = null
+  let lastPointerEvent: PointerEvent | null = null
   let grabOffsetX = 0
   let grabOffsetY = 0
 
-  function createPreview(sourceEl: HTMLElement, event: PointerEvent | null) {
+  function createPreview(
+    sourceEl: HTMLElement,
+    event: PointerEvent | null,
+    mode: 'element' | 'clone',
+  ) {
     const rect = sourceEl.getBoundingClientRect()
-    const clone = sourceEl.cloneNode(true) as HTMLElement
-    clone.removeAttribute('data-dragging')
-    clone.removeAttribute('id')
-    clone.setAttribute('aria-hidden', 'true')
-    clone.setAttribute('data-sortable-preview', '')
-    clone.style.position = 'fixed'
-    clone.style.margin = '0'
-    clone.style.pointerEvents = 'none'
+    // 'element': the real node lifts out of flow and keeps being the one
+    // thing on screen. 'clone': a separate floating copy, and the real node
+    // is hidden for as long as the clone stands in for it.
+    const target = mode === 'clone' ? (sourceEl.cloneNode(true) as HTMLElement) : sourceEl
+    if (mode === 'clone') {
+      target.removeAttribute('data-dragging')
+      target.removeAttribute('id')
+      target.setAttribute('aria-hidden', 'true')
+      target.setAttribute('data-sortable-preview', '')
+      document.body.appendChild(target)
+      sourceEl.style.visibility = 'hidden'
+      previewSourceEl = sourceEl
+      // Clone each descendant too, positioned at the exact offset it already
+      // sat at relative to `sourceEl` — captured now, synchronously, so this
+      // reads their real (undragged) layout. A consumer's own CSS keyed off
+      // `draggedValues` (hiding the real descendants in place, say) is a
+      // Vue class patch — always a tick behind this same native pointer
+      // event — so it can't have painted anything yet.
+      if ((toValue(options.previewCarriesSubtree) ?? true) && draggedValues.value.size > 1) {
+        for (const value of draggedValues.value) {
+          if (value === activeValue.value) continue
+          const rowEl = options.getElement(value)
+          if (!rowEl) continue
+          const rowRect = rowEl.getBoundingClientRect()
+          const rowClone = rowEl.cloneNode(true) as HTMLElement
+          rowClone.removeAttribute('id')
+          rowClone.removeAttribute('data-dragging')
+          rowClone.setAttribute('aria-hidden', 'true')
+          rowClone.style.position = 'absolute'
+          rowClone.style.insetInlineStart = `${rowRect.left - rect.left}px`
+          rowClone.style.insetBlockStart = `${rowRect.top - rect.top}px`
+          rowClone.style.inlineSize = `${rowRect.width}px`
+          rowClone.style.blockSize = `${rowRect.height}px`
+          rowClone.style.margin = '0'
+          rowClone.style.pointerEvents = 'none'
+          // Always opaque, unconditionally — a row normally relies on its
+          // list's own neutral background (none of its own, or a faint hover
+          // tint mid-drag that's still too sheer), and this one is about to
+          // float over arbitrary page content with nothing behind it.
+          rowClone.style.background = 'var(--ui-surface)'
+          target.appendChild(rowClone)
+        }
+      }
+    }
+    target.style.position = 'fixed'
+    target.style.margin = '0'
+    target.style.pointerEvents = 'none'
     // Below --ui-z-dialog so a confirm dialog opened by beforeDrop wins.
-    clone.style.zIndex = 'var(--ui-z-drag, 45)'
+    target.style.zIndex = 'var(--ui-z-drag, 45)'
     // A cloned <th>/<td> lands outside its <table>, where `display: table-cell`
     // has no layout to resolve against and collapses to the wrong size and
     // place. Pin both axes and drop it to a plain block.
     const computed = getComputedStyle(sourceEl)
-    if (computed.display.startsWith('table')) clone.style.display = 'block'
+    if (computed.display.startsWith('table')) target.style.display = 'block'
     // A transparent source (an inactive tab, an unselected chip) clones as
     // bare floating text. Fallback only — DataTable/Tree's own opaque
     // `[data-sortable-preview]` styles already resolve non-transparent here.
     if (
-      computed.backgroundColor === 'rgba(0, 0, 0, 0)' ||
-      computed.backgroundColor === 'transparent'
+      mode === 'clone' &&
+      (computed.backgroundColor === 'rgba(0, 0, 0, 0)' ||
+        computed.backgroundColor === 'transparent')
     ) {
-      clone.style.background = 'var(--ui-surface)'
-      clone.style.boxShadow = 'var(--ui-panel-shadow, 0 4px 12px rgb(0 0 0 / 0.15))'
+      target.style.background = 'var(--ui-surface)'
     }
-    clone.style.boxSizing = 'border-box'
-    clone.style.inlineSize = `${rect.width}px`
-    clone.style.blockSize = `${rect.height}px`
-    clone.style.insetInlineStart = `${rect.left}px`
-    clone.style.insetBlockStart = `${rect.top}px`
-    clone.style.translate = ''
-    document.body.appendChild(clone)
-    previewEl = clone
+    target.style.boxSizing = 'border-box'
+    target.style.inlineSize = `${rect.width}px`
+    target.style.blockSize = `${rect.height}px`
+    target.style.insetInlineStart = `${rect.left}px`
+    target.style.insetBlockStart = `${rect.top}px`
+    target.style.translate = ''
+    previewEl = target
     // Respect where the row was actually grabbed, so it doesn't jump to a
     // different point under the cursor on the first move. No pointer at all
     // (a keyboard grab) just keeps it exactly over the row it started on.
@@ -1081,7 +1167,25 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
 
   function destroyPreview() {
-    previewEl?.remove()
+    if (!previewEl) return
+    if (previewEl === dragEl) {
+      // 'element' mode: the real node, not a clone — put it back in flow
+      // instead of removing it.
+      previewEl.style.position = ''
+      previewEl.style.margin = ''
+      previewEl.style.pointerEvents = ''
+      previewEl.style.zIndex = ''
+      previewEl.style.display = ''
+      previewEl.style.boxSizing = ''
+      previewEl.style.inlineSize = ''
+      previewEl.style.blockSize = ''
+      previewEl.style.insetInlineStart = ''
+      previewEl.style.insetBlockStart = ''
+    } else {
+      previewEl.remove()
+      if (previewSourceEl) previewSourceEl.style.visibility = ''
+      previewSourceEl = null
+    }
     previewEl = null
   }
   let velocity = 0
@@ -1104,6 +1208,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
   function onPointerMove(event: PointerEvent) {
     if (pointerId === null || event.pointerId !== pointerId || pendingValue == null) return
+    lastPointerEvent = event
     const dx = event.clientX - startX
     const dy = event.clientY - startY
 
@@ -1123,10 +1228,13 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       }
       if (dragEl) {
         dragEl.setAttribute('data-dragging', '')
-        // A grouped drag may need to visually leave this list entirely —
-        // that only ever works with the floating preview, regardless of
-        // this instance's own `dragPreview` setting.
-        if (toValue(options.dragPreview) || options.group) createPreview(dragEl, event)
+        // dragPreview (DataTable/Tree's own reorder) always wants its clone
+        // right away. A grouped reorder that never actually leaves this list
+        // looks and behaves exactly like a plain drag — the real element
+        // translates, nothing lifted — createPreview only fires later,
+        // lazily, if the drag actually crosses into a foreign host (see
+        // onHostChange below).
+        if (toValue(options.dragPreview)) createPreview(dragEl, event, 'clone')
         else dragEl.style.zIndex = '1'
       }
       if (options.group && ownGroupId != null) {
@@ -1146,7 +1254,13 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const across = axis() === 'x' ? dy : dx
     // 1:1 with the pointer, no transition — never gate a live drag.
     if (previewEl) movePreview(event)
-    else if (dragEl) dragEl.style.translate = translateFor(along)
+    else if (dragEl) {
+      // A grouped drag needs to flow toward wherever the pointer actually
+      // is, in both dimensions, even before it lifts out of this list —
+      // otherwise it reads as stuck on the sort axis right up until the
+      // moment it crosses into a sibling column.
+      dragEl.style.translate = options.group ? `${dx}px ${dy}px` : translateFor(along)
+    }
 
     if (options.group) {
       options.group.__pointerMove({ x: event.clientX, y: event.clientY })
@@ -1174,7 +1288,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
         ? 'after'
         : !siblingReorderAllowed()
           ? 'inside'
-          : resolveDropIntent(bands[hovered]!, pointer, nestable)
+          : resolveDropIntent(bands[hovered]!, pointer, nestable, toValue(options.nestEdgeFraction))
       scheduleAutoExpand(intent === 'inside' ? (row?.value ?? null) : null)
       dropIntoValue.value = intent === 'inside' ? (row?.value ?? null) : null
       dropTargetValue.value = row?.value ?? null
@@ -1258,7 +1372,11 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
         if (begin(value, 'keyboard')) {
           currentIndex = sourceSlot
           if (options.group && ownGroupId != null) {
-            createPreview(options.getElement(value)!, null)
+            createPreview(
+              options.getElement(value)!,
+              null,
+              toValue(options.previewMode) ?? 'element',
+            )
             options.group.__beginSession(ownGroupId, value, 'keyboard')
           }
         }
@@ -1336,7 +1454,19 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       releaseVelocity: () => velocity,
       onHostChange: (isHost) => {
         isGroupHost = isHost
-        if (!isHost) springRowsToZero(reducedMotion())
+        if (!isHost) {
+          springRowsToZero(reducedMotion())
+          // Only now does this drag actually need to visually leave the
+          // list — create the preview from the real element's current
+          // (already-translated) position, seamlessly.
+          if (dragEl && !previewEl) {
+            createPreview(dragEl, lastPointerEvent, toValue(options.previewMode) ?? 'element')
+          }
+        } else if (previewEl) {
+          // Back on home turf — drop the preview, the real element resumes
+          // translating directly on the very next pointermove.
+          destroyPreview()
+        }
       },
       onForeignHover: (isHovered) => {
         isForeignDropTarget.value = isHovered

@@ -48,8 +48,12 @@ const shortcutColumns: { id: ShortcutColumnId; label: string }[] = [
   { id: 'done', label: 'Done' },
 ]
 const shortcutData: Record<ShortcutColumnId, Ref<{ id: string; label: string }[]>> = {
-  todo: ref([{ id: 's1', label: 'Review the PR' }]),
-  done: ref([{ id: 's2', label: 'Merge it' }]),
+  todo: ref([
+    { id: 's1', label: 'Review the PR' },
+    { id: 's2', label: 'Write release notes' },
+    { id: 's3', label: 'Update the changelog' },
+  ]),
+  done: ref([{ id: 's4', label: 'Merge it' }]),
 }
 const sortableRefs = useTemplateRef<{ isForeignDropTarget: boolean }[]>('sortableRefs')
 const shortcutGroup = useSortableGroup({
@@ -102,9 +106,17 @@ const shortcutGroup = useSortableGroup({
   block-size: 100%;
   justify-content: flex-start;
   padding-inline-start: 0.625rem;
+  /* The handle itself has no visible surface now that it covers the whole
+     card — its own :active scale only ever moved the icon. The card is
+     what should visibly press. */
+  transform: none;
+}
+.board-list :deep(.ui-sortable-item:active) {
+  transform: scale(0.98);
 }
 .board-list :deep(.ui-sortable-content) {
   position: relative;
+  padding-inline-start: 1.875rem;
   pointer-events: none;
 }
 </style>

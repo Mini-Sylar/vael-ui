@@ -107,6 +107,12 @@ const props = withDefaults(
     group?: SortableGroupHandle
     /** This list's identity within `group`. Auto-assigned if omitted. */
     groupId?: string | number
+    /** `group` only — how a drag looks once it leaves this list for a sibling
+     * one. `'element'` (default): the real dragged item lifts and keeps
+     * moving, so there's only ever one instance of it on screen. `'clone'`:
+     * a separate floating copy, for content that can't tolerate leaving its
+     * normal layout. */
+    previewMode?: 'element' | 'clone'
     ui?: Partial<{
       root: UiPartValue
       item: UiPartValue
@@ -181,6 +187,7 @@ const {
   nested: false,
   group: props.group,
   groupId: () => props.groupId,
+  previewMode: () => props.previewMode ?? 'element',
   canDrop: (details) => props.canDrop?.(details) ?? true,
   beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
   onDropError: (error, details) => emit('drop-error', error, details),
