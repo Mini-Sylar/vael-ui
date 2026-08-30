@@ -46,12 +46,18 @@
   .ui-switch-thumb {
     position: absolute;
     inset-block-start: 50%;
-    inset-inline-start: 2px;
+    /* (track-h - thumb) / 2 is the same gap the block-axis centering above
+       produces — matching it here (minus the track's own 1px border, which
+       insets this containing block) keeps the thumb equidistant from the
+       cap's curve on every side, not just symmetric left-to-right. */
+    inset-inline-start: calc((var(--ui-switch-track-h) - var(--ui-switch-thumb)) / 2 - 1px);
     inline-size: var(--ui-switch-thumb);
     block-size: var(--ui-switch-thumb);
     border-radius: 9999px;
     background: var(--ui-surface);
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.06),
+      0 1px 2px rgb(0 0 0 / 0.15);
     translate: 0 -50%;
     transition: translate var(--ui-duration-press) var(--ui-ease-out);
   }
@@ -60,7 +66,11 @@
     border-color: var(--ui-primary);
   }
   .ui-switch[data-state='checked'] .ui-switch-thumb {
-    translate: calc(var(--ui-switch-track-w) - var(--ui-switch-thumb) - 4px) -50%;
+    /* Distance between the track's two cap centers — each cap's center sits
+       track-h/2 in from its own edge, so the gap this travel leaves on the
+       far side matches the rest position exactly, whatever the thumb's own
+       size (it cancels out of the subtraction). */
+    translate: calc(var(--ui-switch-track-w) - var(--ui-switch-track-h)) -50%;
   }
   .ui-switch-input:focus-visible + .ui-switch-track {
     outline: 2px solid var(--ui-primary);
