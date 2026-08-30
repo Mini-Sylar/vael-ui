@@ -349,11 +349,21 @@
   .ui-datatable-tbody[data-motion='off'] .ui-datatable-row-move {
     transition: none;
   }
-  .ui-datatable-tr--expansion.ui-datatable-row-enter-active,
+  /* Every row's own enter fade (not scoped to --expansion): a row inserted
+     by a narrowing/widening search lands at its final position instantly
+     while a persisted row can still be mid-flight through that same spot
+     via the move transition above — fading it in avoids two full-opacity
+     rows overlapping. Leave stays --expansion-only: pagination's whole-set
+     swap still snaps out, unaffected (see the comment on move above). */
+  .ui-datatable-row-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-datatable-row-enter-from {
+    opacity: 0;
+  }
   .ui-datatable-tr--expansion.ui-datatable-row-leave-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
   }
-  .ui-datatable-tr--expansion.ui-datatable-row-enter-from,
   .ui-datatable-tr--expansion.ui-datatable-row-leave-to {
     opacity: 0;
   }
