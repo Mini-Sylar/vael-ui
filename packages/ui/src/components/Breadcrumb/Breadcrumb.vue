@@ -1,10 +1,10 @@
 <template>
   <nav
     ref="root"
-    v-bind="attrs"
     :aria-label="ariaLabel"
     :class="rootPart.class"
     :style="rootPart.style"
+    v-bind="attrs"
   >
     <ol v-scroll-mask="wrap ? false : 'x'" :class="listPart.class" :style="listPart.style">
       <template v-if="items">

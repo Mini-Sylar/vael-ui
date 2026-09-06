@@ -2,6 +2,10 @@
   /* Pull to refresh: usePullToRefresh owns pullDistance and zone block-size. */
   .ui-pull-to-refresh-root {
     position: relative;
+  }
+  /* Only when this root is itself the scroll box (no external `scrollEl`) — a consumer
+     dropping this into an already-scrollable layout keeps their own overflow untouched. */
+  .ui-pull-to-refresh-root[data-self-scroll] {
     overflow-y: auto;
     overscroll-behavior-y: contain;
   }

@@ -82,9 +82,14 @@
     grid-area: bottom;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 0.5rem;
     margin-block-start: 0.5rem;
+  }
+  /* margin-inline-start: auto, not space-between on the parent — with only
+     #bottom-end provided, space-between has a single flex child and pins it
+     to the start instead of the end. */
+  .ui-textarea-bottom-end {
+    margin-inline-start: auto;
   }
   /* Same pointer/keyboard focus split as .ui-input above. */
   .ui-textarea:focus-within {

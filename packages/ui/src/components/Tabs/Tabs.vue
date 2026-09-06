@@ -1,12 +1,12 @@
 <template>
   <div
     ref="list"
-    v-bind="attrs"
     role="tablist"
     :aria-orientation="props.orientation === 'vertical' ? 'vertical' : undefined"
     :class="listPart.class"
     :style="listPart.style"
     @keydown="onKeydown"
+    v-bind="attrs"
   >
     <slot
       :active="active"

@@ -1,12 +1,13 @@
-import { computed, onScopeDispose, shallowRef, toValue } from 'vue'
+import { computed, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { ElRef } from './dom'
 
 export type PullToRefreshState = 'idle' | 'pulling' | 'ready' | 'loading' | 'done'
 
 export interface UsePullToRefreshOptions {
   /** The scrollable element the gesture engages on — only when its `scrollTop` is 0 and the drag moves down. */
-  scrollEl: Ref<HTMLElement | null>
+  scrollEl: ElRef<HTMLElement | null>
   onRefresh: () => Promise<void> | void
   /** Px the zone can be dragged to before rubber-band resistance takes over. Default 80. */
   maxPull?: MaybeRefOrGetter<number | undefined>
@@ -164,9 +165,31 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
   useEventListener(options.scrollEl, 'pointerup', onPointerUp)
   useEventListener(options.scrollEl, 'pointercancel', onPointerCancel)
 
+  // A gesture's touch-action is decided by the browser before any JS runs on its first move —
+  // setting `touch-action: none` from a pointerdown handler is always one event too late. Instead,
+  // keep it settled ahead of time from scroll position alone: blocking only the native downward
+  // pan at scrollTop 0 leaves our own pointermove free to claim that exact drag, while every other
+  // direction (and all scrolling once away from the top) stays untouched.
+  let lastEl: HTMLElement | null = null
+  function updateTouchAction() {
+    const el = options.scrollEl.value
+    if (el) el.style.touchAction = el.scrollTop === 0 ? 'pan-x pan-up' : ''
+  }
+  useEventListener(options.scrollEl, 'scroll', updateTouchAction, { passive: true })
+  watch(
+    options.scrollEl,
+    (el) => {
+      if (lastEl && lastEl !== el) lastEl.style.touchAction = ''
+      lastEl = el
+      updateTouchAction()
+    },
+    { immediate: true },
+  )
+
   onScopeDispose(() => {
     refreshToken = null
     clearTimeout(doneTimer)
+    if (lastEl) lastEl.style.touchAction = ''
   })
 
   return { state, pullDistance, progress, refresh }

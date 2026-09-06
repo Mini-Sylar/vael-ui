@@ -1,7 +1,6 @@
 <template>
   <ul
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-motion="motionCss ? undefined : 'off'"
@@ -9,6 +8,7 @@
     :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
     :data-pending="isPending ? '' : undefined"
     :data-drop-target="isForeignDropTarget ? '' : undefined"
+    v-bind="attrs"
   >
     <li
       v-for="(item, index) in items"

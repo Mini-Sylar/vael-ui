@@ -1,5 +1,5 @@
 <template>
-  <span ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
+  <span ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <span v-if="!dot" :key="count" :class="contentClass" :style="contentStyle()">
       <slot>{{ display }}</slot>
     </span>

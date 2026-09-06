@@ -1,5 +1,5 @@
 <template>
-  <span ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
+  <span ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <span class="ui-avatar-frame">
       <span :class="fallbackPart.class" :style="fallbackPart.style">
         <slot>{{ initials }}</slot>

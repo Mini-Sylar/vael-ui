@@ -1,9 +1,8 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
-    :style="[rootPart.style, attrs.style as never]"
+    :style="rootPart.style"
     role="slider"
     :tabindex="isDisabled ? -1 : 0"
     aria-orientation="horizontal"
@@ -25,6 +24,7 @@
     @keydown="onKeydown"
     @focus="fieldControl.onFocus"
     @blur="fieldControl.onBlur"
+    v-bind="attrs"
   >
     <span :key="committedKey" class="ui-rating-track">
       <span

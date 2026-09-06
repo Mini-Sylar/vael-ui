@@ -1,10 +1,11 @@
 import { nextTick, shallowRef, toValue } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { ElRef } from './dom'
 
 export interface UseTabsOptions<T> {
   items: MaybeRefOrGetter<readonly T[]>
-  listEl: Ref<HTMLElement | null>
+  listEl: ElRef<HTMLElement | null>
   /** Horizontal tabs use ←/→, vertical use ↑/↓ (per the APG tabs pattern). */
   orientation?: MaybeRefOrGetter<'horizontal' | 'vertical'>
   /** `automatic` (default): arrow keys select as they move focus. `manual`: arrow keys only move focus; Enter/Space on the focused tab selects it. Use this when switching tabs is expensive (e.g. loads data). */

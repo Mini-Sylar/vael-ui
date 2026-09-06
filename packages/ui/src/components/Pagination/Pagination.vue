@@ -1,15 +1,16 @@
 <template>
   <nav
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :aria-label="messages.pagination.label"
+    v-bind="attrs"
   >
     <ul ref="list" :class="listPart.class" :style="listPart.style">
       <span class="ui-pagination-indicator" aria-hidden="true" :style="indicator.style.value" />
       <li>
         <Button
-          class="ui-pagination-nav-button"
+          :class="navButtonPart.class"
+          :style="navButtonPart.style"
           icon
           size="sm"
           variant="ghost"
@@ -31,7 +32,8 @@
       </li>
       <li>
         <Button
-          class="ui-pagination-nav-button"
+          :class="navButtonPart.class"
+          :style="navButtonPart.style"
           icon
           size="sm"
           variant="ghost"
@@ -53,13 +55,17 @@
       </li>
 
       <li v-for="item in pageItems" :key="item">
-        <span v-if="typeof item !== 'number'" class="ui-pagination-ellipsis" aria-hidden="true"
+        <span
+          v-if="typeof item !== 'number'"
+          :class="ellipsisPart.class"
+          :style="ellipsisPart.style"
+          aria-hidden="true"
           >…</span
         >
         <Button
           v-else
-          class="ui-pagination-page-button"
-          :class="{ 'ui-pagination-page-button--active': item === page }"
+          :class="pageButtonPart(item === page).class"
+          :style="pageButtonPart(item === page).style"
           icon
           size="sm"
           variant="ghost"
@@ -74,7 +80,8 @@
 
       <li>
         <Button
-          class="ui-pagination-nav-button"
+          :class="navButtonPart.class"
+          :style="navButtonPart.style"
           icon
           size="sm"
           variant="ghost"
@@ -96,7 +103,8 @@
       </li>
       <li>
         <Button
-          class="ui-pagination-nav-button"
+          :class="navButtonPart.class"
+          :style="navButtonPart.style"
           icon
           size="sm"
           variant="ghost"
@@ -120,7 +128,8 @@
 
     <Select
       v-if="pageSizeOptions && pageSizeOptions.length > 0"
-      class="ui-pagination-size-select"
+      :class="sizeSelectPart.class"
+      :style="sizeSelectPart.style"
       size="sm"
       :items="pageSizeItems"
       :model-value="pageSize"
@@ -234,4 +243,21 @@ const themedUi = useThemedUi(
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-pagination'))
 const listPart = computed(() => resolveUiPart(cx, themedUi()?.list, 'ui-pagination-list'))
+const navButtonPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.button, 'ui-pagination-nav-button'),
+)
+function pageButtonPart(active: boolean) {
+  return resolveUiPart(
+    cx,
+    themedUi()?.button,
+    'ui-pagination-page-button',
+    active && 'ui-pagination-page-button--active',
+  )
+}
+const ellipsisPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.ellipsis, 'ui-pagination-ellipsis'),
+)
+const sizeSelectPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.sizeSelect, 'ui-pagination-size-select'),
+)
 </script>

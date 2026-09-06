@@ -1,5 +1,5 @@
 <template>
-  <div ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
+  <div ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <slot />
     <Avatar
       v-if="overflowCount > 0"

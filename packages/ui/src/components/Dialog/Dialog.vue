@@ -28,14 +28,14 @@
           :aria-labelledby="title ? titleId : undefined"
           :aria-describedby="description ? descriptionId : undefined"
           :class="panelPart.class"
-          :style="[panelStyle, panelPart.style]"
+          :style="[panelPart.style, panelStyle]"
           v-bind="$attrs"
         >
           <button
             v-if="maximizable"
             type="button"
-            class="ui-dialog-maximize"
-            :style="maximizeStyle"
+            :class="maximizePart.class"
+            :style="[maximizeStyle, maximizePart.style]"
             :aria-label="maximized ? messages.dialog.restore : messages.dialog.maximize"
             @click="toggleMaximize"
           >
@@ -68,8 +68,8 @@
           <button
             v-if="showClose"
             type="button"
-            class="ui-dialog-close"
-            :style="closeStyle"
+            :class="closePart.class"
+            :style="[closeStyle, closePart.style]"
             :aria-label="messages.dialog.close"
             @click="requestClose('trigger', $event)"
           >
@@ -178,6 +178,8 @@ export interface DialogProps {
     description: UiPartValue
     body: UiPartValue
     footer: UiPartValue
+    maximize: UiPartValue
+    close: UiPartValue
   }>
 }
 </script>
@@ -300,6 +302,9 @@ const overlayStyle = {
   background: 'var(--ui-overlay, rgb(0 0 0 / 0.4))',
 } as const
 // Pin panel to px before maximizing (CSS can't transition auto); only non-maximized height is auto.
+// Applied AFTER panelPart.style in the template (see :style below) so a consumer's own custom
+// width/height (typically physical properties) can never permanently defeat maximize's logical
+// inlineSize/blockSize — same-axis logical vs. physical conflicts resolve by declaration order.
 const naturalPanelSize = ref<{ width: number; height: number } | null>(null)
 const panelStyle = computed<Record<string, string | undefined>>(() => {
   const base: Record<string, string | undefined> = {
@@ -392,5 +397,7 @@ const descriptionPart = computed(() =>
 )
 const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-dialog-body'))
 const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-dialog-footer'))
+const maximizePart = computed(() => resolveUiPart(cx, themedUi()?.maximize, 'ui-dialog-maximize'))
+const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-dialog-close'))
 defineExpose({ panelEl, isClosing, close, cancelClose, maximized })
 </script>

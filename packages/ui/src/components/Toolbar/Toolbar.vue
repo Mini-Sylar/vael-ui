@@ -1,12 +1,12 @@
 <template>
   <div
     ref="list"
-    v-bind="attrs"
     role="toolbar"
     :aria-orientation="orientation === 'vertical' ? 'vertical' : undefined"
     :class="rootPart.class"
     :style="rootPart.style"
     @keydown="onKeydown"
+    v-bind="attrs"
   >
     <div v-if="slots.start || slots.default" :class="groupPart.class" :style="groupPart.style">
       <slot name="start" />

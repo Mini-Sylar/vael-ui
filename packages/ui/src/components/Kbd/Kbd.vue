@@ -1,5 +1,5 @@
 <template>
-  <kbd ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style"><slot /></kbd>
+  <kbd ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs"><slot /></kbd>
 </template>
 
 <!--

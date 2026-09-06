@@ -1,11 +1,11 @@
 <template>
   <label
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="dataState"
     :data-invalid="isInvalid || undefined"
+    v-bind="attrs"
   >
     <span class="ui-switch-control">
       <input

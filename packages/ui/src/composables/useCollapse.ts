@@ -1,12 +1,13 @@
 import { onScopeDispose, shallowRef, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { ElRef } from './dom'
 
 export type CollapseState = 'open' | 'closed' | 'opening' | 'closing'
 
 export interface UseCollapseOptions {
   /** The element whose block-size is measured and animated. */
-  el: Ref<HTMLElement | null>
+  el: ElRef<HTMLElement | null>
   /** `false` skips the animated run() path — open/closed still snap to their resting styles instantly, just with no transition. A consumer driving their own exit animation reads `state`/`el` and overrides these resting styles from there. */
   motionCss?: () => boolean
 }

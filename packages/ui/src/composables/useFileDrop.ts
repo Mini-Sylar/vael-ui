@@ -1,6 +1,7 @@
 import { shallowRef, toValue } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { ElRef } from './dom'
 
 export interface UseFileDropOptions {
   /** Called with the dropped `File[]` — validation (accept/maxSize/maxFiles) is the caller's job. */
@@ -13,7 +14,7 @@ export interface UseFileDropReturn {
 }
 
 export function useFileDrop(
-  targetEl: Ref<HTMLElement | null>,
+  targetEl: ElRef<HTMLElement | null>,
   options: UseFileDropOptions,
 ): UseFileDropReturn {
   const isDragOver = shallowRef(false)

@@ -4,6 +4,7 @@ import { useEventListener } from '@vueuse/core'
 import type { Side } from '@floating-ui/dom'
 import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
+import type { ElRef } from './dom'
 
 export type TooltipCloseReason = 'pointer' | 'focus' | 'trigger' | 'escape' | 'programmatic'
 
@@ -47,8 +48,8 @@ export function __resetTooltipWarmth() {
 }
 
 export interface UseTooltipOptions {
-  triggerEl: Ref<HTMLElement | null>
-  positionerEl: Ref<HTMLElement | null>
+  triggerEl: ElRef<HTMLElement | null>
+  positionerEl: ElRef<HTMLElement | null>
   side?: MaybeRefOrGetter<Side>
   align?: MaybeRefOrGetter<Align>
   sideOffset?: MaybeRefOrGetter<number>

@@ -1,10 +1,10 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     class="ui-datatable"
     :class="rootClasses"
     :data-stacked="stacked ? '' : undefined"
+    v-bind="attrs"
   >
     <div v-if="$slots.toolbar" class="ui-datatable-toolbar">
       <slot name="toolbar" :selected="selected" :count="sortedData.length" />

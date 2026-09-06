@@ -4,11 +4,11 @@
       v-if="forceMount || open"
       v-show="open"
       ref="root"
-      v-bind="attrs"
       :class="rootPart.class"
       :style="rootPart.style"
       :role="resolvedRole"
       :data-state="isClosing ? 'closing' : 'open'"
+      v-bind="attrs"
     >
       <span v-if="showIcon" :class="iconPart.class" :style="iconPart.style" aria-hidden="true">
         <slot name="icon">
@@ -21,7 +21,7 @@
           <slot />
         </div>
       </div>
-      <div v-if="$slots.actions" class="ui-message-actions">
+      <div v-if="$slots.actions" :class="actionsPart.class" :style="actionsPart.style">
         <slot name="actions" />
       </div>
       <button
@@ -78,6 +78,7 @@ export interface MessageProps {
     content: UiPartValue
     title: UiPartValue
     description: UiPartValue
+    actions: UiPartValue
     close: UiPartValue
   }>
 }
@@ -199,6 +200,7 @@ const descriptionPart = computed(() =>
   resolveUiPart(cx, themedUi()?.description, 'ui-message-description'),
 )
 const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-message-close'))
+const actionsPart = computed(() => resolveUiPart(cx, themedUi()?.actions, 'ui-message-actions'))
 
 defineExpose({ el: root, close, isClosing, cancelClose })
 </script>

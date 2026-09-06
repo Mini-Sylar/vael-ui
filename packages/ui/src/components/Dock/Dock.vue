@@ -1,7 +1,6 @@
 <template>
   <div
     ref="rootEl"
-    v-bind="attrs"
     role="toolbar"
     :aria-orientation="orientation === 'vertical' ? 'vertical' : undefined"
     :class="rootPart.class"
@@ -9,6 +8,7 @@
     :data-orientation="orientation"
     @pointermove="onPointerMove"
     @pointerleave="onPointerLeave"
+    v-bind="attrs"
   >
     <button
       v-for="(item, index) in items"

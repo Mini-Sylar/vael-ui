@@ -4,7 +4,7 @@ import { useEventListener } from '@vueuse/core'
 import { useLayer } from './useLayerStack'
 import { useScrollLock } from './useScrollLock'
 import { useInert } from './useInert'
-import { useDOMTarget, type DOMTarget } from './dom'
+import { useDOMTarget, type DOMTarget, type ElRef } from './dom'
 
 export type DialogCloseReason = 'trigger' | 'escape' | 'outside' | 'programmatic'
 
@@ -15,13 +15,13 @@ export interface DialogOpenChangeDetails {
 }
 
 export interface UseDialogOptions {
-  panelEl: Ref<HTMLElement | null>
+  panelEl: ElRef<HTMLElement | null>
   /**
    * Outermost teleported node — the element the overlay and panel both live inside.
    * `useInert` spares this rather than `panelEl`, otherwise the overlay is a sibling
    * and goes inert, silently killing outside-click. Falls back to `panelEl`.
    */
-  wrapperEl?: Ref<HTMLElement | null>
+  wrapperEl?: ElRef<HTMLElement | null>
   /**
    * Scopes the dialog to one element: the overlay, scroll lock and modality apply
    * only inside it, and the rest of the page stays interactive.
