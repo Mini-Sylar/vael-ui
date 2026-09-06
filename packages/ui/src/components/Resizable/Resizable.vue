@@ -1,11 +1,11 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="[sizeStyle, rootPart.style]"
     :data-resizing="isDragging || undefined"
     :aria-disabled="disabled || undefined"
+    v-bind="attrs"
   >
     <slot />
     <div

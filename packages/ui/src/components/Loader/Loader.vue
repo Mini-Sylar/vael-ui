@@ -1,12 +1,12 @@
 <template>
   <span
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="[rootStyle, rootPart.style]"
     :role="label ? 'status' : undefined"
     :aria-labelledby="label ? labelId : undefined"
     :aria-hidden="label ? undefined : 'true'"
+    v-bind="attrs"
   >
     <span v-if="label" :id="labelId" class="ui-loader-label">{{ label }}</span>
   </span>

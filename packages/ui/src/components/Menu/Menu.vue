@@ -85,7 +85,9 @@
                     </span>
                   </slot>
                 </component>
-                <!-- Teleported to ancestor to stay in same DOM subtree for outside-click detection. -->
+                <!-- Teleported to ancestor to stay in same DOM subtree for outside-click detection.
+                     Forwards #item so a custom row override keeps applying at every nesting depth
+                     instead of silently reverting to the default row past the first submenu level. -->
                 <Menu
                   v-if="entry.items && positionerEl"
                   :items="entry.items"
@@ -99,7 +101,11 @@
                   @active="(value) => onChildActive(i, value)"
                   @mouseenter="onSubmenuPanelMouseEnter(i)"
                   @mouseleave="onSubmenuPanelMouseLeave(i)"
-                />
+                >
+                  <template v-if="$slots.item" #item="{ item: nestedItem }">
+                    <slot name="item" :item="nestedItem as T" />
+                  </template>
+                </Menu>
               </template>
             </template>
           </div>
@@ -150,7 +156,9 @@ export interface MenuItemData {
   /**
    * Nested rows render as submenu triggers (opens on hover-intent, click,
    * Enter/Space, or ArrowRight). Custom item types are not available at
-   * nested levels.
+   * nested levels. In `MenuList` (no overlay/submenus there), this instead
+   * makes the row itself an inert group label with its own `items` flattened
+   * in beneath it — see `MenuList`'s `#item` slot's `isGroup` prop.
    */
   items?: ReadonlyArray<MenuEntry<MenuItemData>>
   /** Row tag — default `'button'`, or `'a'`/`'RouterLink'` for a real link (same `as`/`attrs` convention as `BreadcrumbItem`). Ignored when `items` is set. */

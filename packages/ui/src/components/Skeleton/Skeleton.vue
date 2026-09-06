@@ -1,10 +1,10 @@
 <template>
   <span
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     aria-hidden="true"
+    v-bind="attrs"
   >
     <span v-if="$slots.default" class="ui-skeleton-content"><slot /></span>
   </span>

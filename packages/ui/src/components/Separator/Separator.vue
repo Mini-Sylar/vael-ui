@@ -1,11 +1,11 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     role="separator"
     :aria-orientation="ariaOrientation"
+    v-bind="attrs"
   >
     <span
       v-if="$slots.default"

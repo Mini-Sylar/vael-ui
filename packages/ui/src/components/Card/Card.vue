@@ -1,5 +1,5 @@
 <template>
-  <component :is="as" ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
+  <component :is="as" ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <header
       v-if="title || description || $slots.header"
       :class="headerPart.class"

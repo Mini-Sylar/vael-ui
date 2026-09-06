@@ -1,5 +1,5 @@
-import { inject } from 'vue'
-import type { InjectionKey } from 'vue'
+import { inject, normalizeClass } from 'vue'
+import type { InjectionKey, StyleValue } from 'vue'
 
 /**
  * Optional class post-processor, e.g. `twMerge` from `tailwind-merge`.
@@ -14,15 +14,22 @@ export const classMergerKey: InjectionKey<ClassMerger> = Symbol('ui-class-merger
 
 export type ClassValue = string | false | null | undefined
 
-export type UiPartStyle = string | Record<string, string | number>
+/** Same shape a plain Vue `:class` binding accepts — string, array, object, or any nesting of those. */
+export type UiPartClass = string | Record<string, unknown> | ClassValue[] | UiPartClass[]
+
+/** Same shape a plain Vue `:style` binding accepts (`StyleValue`) — string, object, or an array of those. */
+export type UiPartStyle = StyleValue
 
 /**
  * The shape every `ui.*` part override accepts: a plain class string (as
  * before), or an object carrying a class AND a real inline style — for
  * overrides that can't be expressed as a class alone (a live-changing
- * `transform`, a one-off custom property, ...).
+ * `transform`, a one-off custom property, ...). Both `class` and `style`
+ * accept anything a plain Vue `:class`/`:style` binding would (arrays,
+ * objects, nested combinations), normalized the same way Vue's own compiler
+ * normalizes a template binding.
  */
-export type UiPartValue = string | { class?: string; style?: UiPartStyle }
+export type UiPartValue = string | { class?: UiPartClass; style?: UiPartStyle }
 
 /**
  * Join internal part classes with consumer `ui.*` overrides, routed through
@@ -48,7 +55,14 @@ export function splitUiPart(value: UiPartValue | undefined): {
   class: ClassValue
   style: UiPartStyle | undefined
 } {
-  if (value != null && typeof value === 'object') return { class: value.class, style: value.style }
+  // normalizeClass handles anything a plain `:class` binding would (array, object, nesting) the
+  // same way Vue's own compiler does — cx()'s own merge only ever sees a plain string from here.
+  if (value != null && typeof value === 'object') {
+    return {
+      class: value.class !== undefined ? normalizeClass(value.class) : undefined,
+      style: value.style,
+    }
+  }
   return { class: value, style: undefined }
 }
 

@@ -1,10 +1,10 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="dataState"
+    v-bind="attrs"
   >
     <span
       ref="triggerWrapper"
@@ -23,7 +23,7 @@
       :data-state="collapseState"
       :aria-hidden="collapseState === 'closed' ? 'true' : undefined"
     >
-      <div class="ui-collapsible-body">
+      <div :class="bodyPart.class" :style="bodyPart.style">
         <slot />
       </div>
     </div>
@@ -50,7 +50,7 @@ const props = withDefaults(
     disabled?: boolean
     /** `false` skips transitions; use exposed `panelEl` for custom motion. */
     motionCss?: boolean
-    ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue }>
+    ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue; body: UiPartValue }>
   }>(),
   { disabled: false, motionCss: true },
 )
@@ -106,6 +106,7 @@ const rootPart = computed(() =>
 )
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-collapsible-trigger'))
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-collapsible-panel'))
+const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-collapsible-body'))
 
 defineExpose({ el: root, panelEl: panel })
 </script>

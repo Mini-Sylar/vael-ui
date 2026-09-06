@@ -2,14 +2,15 @@ import { computed, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
+import type { ElRef } from './dom'
 
 export type SliderOrientation = 'horizontal' | 'vertical'
 
 export interface UseSliderOptions {
   /** The track element — pointer coordinates are mapped against its rect. */
-  trackEl: Ref<HTMLElement | null>
+  trackEl: ElRef<HTMLElement | null>
   /** Thumb elements in index order — a track click focuses the one it moves. */
-  thumbEls?: Ref<HTMLElement[] | null>
+  thumbEls?: ElRef<HTMLElement[] | null>
   min?: MaybeRefOrGetter<number>
   max?: MaybeRefOrGetter<number>
   step?: MaybeRefOrGetter<number>

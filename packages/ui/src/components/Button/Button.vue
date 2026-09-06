@@ -18,13 +18,25 @@
           <span class="ui-loader" />
         </slot>
       </span>
-      <span v-if="$slots.leading" class="ui-button-leading" aria-hidden="true">
+      <span
+        v-if="$slots.leading"
+        :class="leadingPart.class"
+        :style="leadingPart.style"
+        aria-hidden="true"
+      >
         <slot name="leading" />
       </span>
-      <span class="ui-button-content">
-        <span class="ui-button-label"><slot :loading="isLoading" :el="el" :run="run" /></span>
+      <span :class="contentPart.class" :style="contentPart.style">
+        <span :class="labelPart.class" :style="labelPart.style"
+          ><slot :loading="isLoading" :el="el" :run="run"
+        /></span>
       </span>
-      <span v-if="$slots.trailing" class="ui-button-trailing" aria-hidden="true">
+      <span
+        v-if="$slots.trailing"
+        :class="trailingPart.class"
+        :style="trailingPart.style"
+        aria-hidden="true"
+      >
         <slot name="trailing" />
       </span>
     </component>
@@ -51,13 +63,25 @@
         <span class="ui-loader" />
       </slot>
     </span>
-    <span v-if="$slots.leading" class="ui-button-leading" aria-hidden="true">
+    <span
+      v-if="$slots.leading"
+      :class="leadingPart.class"
+      :style="leadingPart.style"
+      aria-hidden="true"
+    >
       <slot name="leading" />
     </span>
-    <span class="ui-button-content">
-      <span class="ui-button-label"><slot :loading="isLoading" :el="el" :run="run" /></span>
+    <span :class="contentPart.class" :style="contentPart.style">
+      <span :class="labelPart.class" :style="labelPart.style"
+        ><slot :loading="isLoading" :el="el" :run="run"
+      /></span>
     </span>
-    <span v-if="$slots.trailing" class="ui-button-trailing" aria-hidden="true">
+    <span
+      v-if="$slots.trailing"
+      :class="trailingPart.class"
+      :style="trailingPart.style"
+      aria-hidden="true"
+    >
       <slot name="trailing" />
     </span>
   </component>
@@ -115,7 +139,18 @@ const props = withDefaults(
     as?: string
     /** Where the `#badge` slot wrapper sits relative to the button. */
     badgePlacement?: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end'
-    ui?: Partial<{ root: UiPartValue; badge: UiPartValue }>
+    ui?: Partial<{
+      root: UiPartValue
+      /** Wraps the `#leading` slot — carries the default gap to the label; zero it here to close the gap instead of margin-hacking the slot content. */
+      leading: UiPartValue
+      /** Wraps the `#trailing` slot — same default gap as `leading`, mirrored. */
+      trailing: UiPartValue
+      /** Wraps the label content (default slot) — `display: inline-block` by default; override for e.g. an icon-above-label stacked layout. */
+      content: UiPartValue
+      /** The label itself, nested one level inside `content`. */
+      label: UiPartValue
+      badge: UiPartValue
+    }>
   }>(),
   {
     loading: false,
@@ -224,6 +259,10 @@ const rootPart = computed(() =>
   ),
 )
 const badgePart = computed(() => resolveUiPart(cx, themedUi()?.badge, 'ui-button-badge'))
+const leadingPart = computed(() => resolveUiPart(cx, themedUi()?.leading, 'ui-button-leading'))
+const trailingPart = computed(() => resolveUiPart(cx, themedUi()?.trailing, 'ui-button-trailing'))
+const contentPart = computed(() => resolveUiPart(cx, themedUi()?.content, 'ui-button-content'))
+const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-button-label'))
 
 defineExpose({ el, loading: isLoading, run })
 </script>

@@ -1,10 +1,10 @@
 <template>
   <nav
     ref="list"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     @keydown="onKeydown"
+    v-bind="attrs"
   >
     <div
       v-if="hasActiveMatch"
@@ -25,7 +25,7 @@
         :class="rowClass(row, 'group')"
         :style="[indentStyle(row.depth), itemPart.style]"
       >
-        <slot name="item" :item="row.entry as T">
+        <slot name="item" :item="row.entry as T" :is-group="true">
           <span v-if="row.entry.icon" class="ui-menu-list-item-icon">
             <component :is="row.entry.icon" />
           </span>
@@ -45,7 +45,7 @@
         :style="[indentStyle(row.depth), itemPart.style]"
         v-bind="row.entry.attrs"
       >
-        <slot name="item" :item="row.entry as T">
+        <slot name="item" :item="row.entry as T" :is-group="false">
           <span v-if="row.entry.icon" class="ui-menu-list-item-icon">
             <component :is="row.entry.icon" />
           </span>
@@ -106,8 +106,12 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  /** Override one row's content while keeping its behavior. Fires for selectable rows and group labels. */
-  item(props: { item: T }): unknown
+  /**
+   * Override one row's content while keeping its behavior. Fires for selectable rows and
+   * group labels alike — `isGroup` tells which: a `true` row is inert (its own `items`
+   * rendered as children beneath it, not a click target) rather than selectable.
+   */
+  item(props: { item: T; isGroup: boolean }): unknown
 }>()
 
 function isSeparator(entry: MenuEntry<MenuItemData>): entry is MenuSeparator {

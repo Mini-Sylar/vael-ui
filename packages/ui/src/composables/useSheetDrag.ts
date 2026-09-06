@@ -1,6 +1,7 @@
 import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { ElRef } from './dom'
 
 export interface SheetSnapPoint {
   id: string
@@ -10,11 +11,11 @@ export interface SheetSnapPoint {
 
 export interface UseSheetDragOptions {
   /** The element that's translated (drag, snap-settle, entrance/exit) — never resized. */
-  panelEl: Ref<HTMLElement | null>
+  panelEl: ElRef<HTMLElement | null>
   /** Pointer-down here always starts a drag. */
-  handleEl: Ref<HTMLElement | null>
+  handleEl: ElRef<HTMLElement | null>
   /** Pointer-down here only starts a drag once its own scroll is at the top and the drag moves downward — otherwise it's an ordinary scroll. */
-  contentEl?: Ref<HTMLElement | null>
+  contentEl?: ElRef<HTMLElement | null>
   /** Ordered smallest to largest. */
   snapPoints: MaybeRefOrGetter<SheetSnapPoint[]>
   initialSnap?: MaybeRefOrGetter<string | undefined>

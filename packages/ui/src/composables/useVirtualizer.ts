@@ -1,13 +1,14 @@
 import { computed, onMounted, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useElementSize } from '@vueuse/core'
+import type { ElRef } from './dom'
 
 export type ScrollAlign = 'nearest' | 'start' | 'end' | 'center'
 
 export interface UseVirtualizerOptions {
   /** The scrollable box — for Select/Combobox this is the panel body that
    * already receives `maxHeight` from usePopover. */
-  containerEl: Ref<HTMLElement | null>
+  containerEl: ElRef<HTMLElement | null>
   count: MaybeRefOrGetter<number>
   /** Row size in px. Omit to auto-measure: the first rendered row's real
    * size is read once after it exists; a 36px estimate is used until then.

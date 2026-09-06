@@ -1,13 +1,14 @@
 import { shallowRef, toValue, watch, onScopeDispose } from 'vue'
-import type { MaybeRefOrGetter, Ref } from 'vue'
+import type { MaybeRefOrGetter } from 'vue'
+import type { ElRef } from './dom'
 import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
 import type { Placement, Side } from '@floating-ui/dom'
 
 export type Align = 'start' | 'center' | 'end'
 
 export interface UseFloatingPositionOptions {
-  referenceEl: Ref<HTMLElement | null>
-  floatingEl: Ref<HTMLElement | null>
+  referenceEl: ElRef<HTMLElement | null>
+  floatingEl: ElRef<HTMLElement | null>
   /** Positioning (and its scroll/resize tracking) only runs while true. */
   active: MaybeRefOrGetter<boolean>
   side?: MaybeRefOrGetter<Side>

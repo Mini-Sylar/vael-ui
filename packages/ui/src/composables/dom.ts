@@ -1,6 +1,16 @@
-import { isClient } from '@vueuse/core'
+import { shallowRef, toValue, watch } from 'vue'
+import type { Ref, ShallowRef, MaybeRefOrGetter } from 'vue'
+import { isClient, tryOnMounted } from '@vueuse/core'
 
 export type DOMTarget = HTMLElement | string | null
+
+/**
+ * What a DOM-element option should accept instead of a plain `Ref<T>` — every consumer here only
+ * ever reads `.value`, and the overwhelmingly common caller is `useTemplateRef()`, which returns
+ * `Readonly<ShallowRef<T>>`, not a full writable `Ref<T>`. A plain `Ref<T>` parameter type rejects
+ * that at the type level even though it works fine at runtime.
+ */
+export type ElRef<T> = Ref<T> | Readonly<ShallowRef<T>>
 
 export function resolveDOMTarget(target: undefined): undefined
 export function resolveDOMTarget(target: DOMTarget): HTMLElement | null
@@ -20,9 +30,6 @@ export function resolveDOMTarget(target: DOMTarget | undefined): HTMLElement | n
   }
   return target
 }
-
-import { shallowRef, toValue, watch, type ShallowRef, type MaybeRefOrGetter } from 'vue'
-import { tryOnMounted } from '@vueuse/core'
 
 export interface UseDOMTargetReturn {
   /** The resolved element, or `null` while unresolved. */

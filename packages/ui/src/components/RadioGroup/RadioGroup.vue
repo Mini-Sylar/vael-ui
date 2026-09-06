@@ -1,7 +1,6 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     role="radiogroup"
     :id="fieldControl.id"
     :class="rootPart.class"
@@ -11,6 +10,7 @@
     :aria-describedby="fieldControl.describedBy()"
     :aria-invalid="isInvalid || undefined"
     :aria-required="fieldControl.required() || undefined"
+    v-bind="attrs"
   >
     <slot />
   </div>

@@ -1,9 +1,9 @@
 <template>
   <div
-    v-bind="attrs"
     :class="itemPart.class"
     :style="itemPart.style"
     :data-motion="ctx.motionCss() ? undefined : 'off'"
+    v-bind="attrs"
   >
     <h3 :class="headerPart.class" :style="headerPart.style">
       <button

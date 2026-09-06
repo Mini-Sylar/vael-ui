@@ -1,7 +1,9 @@
 <template>
-  <span ref="root" v-bind="attrs" :class="rootPart.class" :style="rootPart.style">
-    <span v-if="$slots.icon" class="ui-tag-icon" aria-hidden="true"><slot name="icon" /></span>
-    <span class="ui-tag-label"><slot /></span>
+  <span ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
+    <span v-if="$slots.icon" :class="iconPart.class" :style="iconPart.style" aria-hidden="true"
+      ><slot name="icon"
+    /></span>
+    <span :class="labelPart.class" :style="labelPart.style"><slot /></span>
   </span>
 </template>
 
@@ -23,7 +25,7 @@ const props = withDefaults(
     size?: 'sm' | 'md'
     /** Fully pill-rounded instead of the default small label corners. */
     pill?: boolean
-    ui?: Partial<{ root: UiPartValue; icon: UiPartValue }>
+    ui?: Partial<{ root: UiPartValue; icon: UiPartValue; label: UiPartValue }>
   }>(),
   { variant: 'muted', size: 'md', pill: false },
 )
@@ -50,6 +52,8 @@ const rootPart = computed(() =>
     props.pill && 'ui-tag--pill',
   ),
 )
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-tag-icon'))
+const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-tag-label'))
 
 defineExpose({ el: root })
 </script>

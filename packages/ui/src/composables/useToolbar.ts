@@ -1,5 +1,6 @@
 import { computed, onMounted, onScopeDispose, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
+import type { ElRef } from './dom'
 
 export interface UseToolbarOptions {
   /** Horizontal toolbars use ←/→, vertical use ↑/↓ (per the APG toolbar pattern). */
@@ -30,7 +31,7 @@ const OVERFLOW_ITEM_SELECTOR = '[data-toolbar-overflow]'
 const ELLIPSIS_SELECTOR = '[data-toolbar-ellipsis]'
 
 export function useToolbar(
-  listEl: Ref<HTMLElement | null>,
+  listEl: ElRef<HTMLElement | null>,
   options: UseToolbarOptions = {},
 ): UseToolbarReturn {
   let current: HTMLElement | null = null

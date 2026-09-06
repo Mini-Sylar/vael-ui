@@ -1,8 +1,9 @@
 import { nextTick, onBeforeUnmount, shallowRef, toValue, watch } from 'vue'
-import type { MaybeRefOrGetter, Ref } from 'vue'
+import type { MaybeRefOrGetter, Ref, WatchSource } from 'vue'
+import type { ElRef } from './dom'
 
 export interface UseTabIndicatorOptions {
-  listEl: Ref<HTMLElement | null>
+  listEl: ElRef<HTMLElement | null>
   /** Must match the `Tabs` instance's own `orientation` — same axis, same keys. */
   orientation?: MaybeRefOrGetter<'horizontal' | 'vertical'>
   /** The active element to measure inside `listEl`. Defaults to Tabs' own shape; SelectButton passes `'[data-checked]'` to reuse the same sliding technique for its single-select indicator. */
@@ -17,7 +18,7 @@ export interface UseTabIndicatorReturn {
 }
 
 export function useTabIndicator(
-  active: Ref<unknown>,
+  active: WatchSource<unknown>,
   options: UseTabIndicatorOptions,
 ): UseTabIndicatorReturn {
   const style = shallowRef<Record<string, string | undefined>>({})

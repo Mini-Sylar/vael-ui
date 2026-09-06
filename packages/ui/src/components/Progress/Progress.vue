@@ -1,7 +1,6 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     role="progressbar"
@@ -10,6 +9,7 @@
     :aria-valuenow="indeterminate ? undefined : clampedValue"
     :aria-label="label"
     :data-state="state"
+    v-bind="attrs"
   >
     <div :class="trackPart.class" :style="trackPart.style">
       <div ref="fill" :class="fillPart.class" :style="[fillStyle, fillPart.style]" />

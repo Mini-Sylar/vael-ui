@@ -1,9 +1,9 @@
 import { onScopeDispose } from 'vue'
-import type { Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import type { ElRef } from './dom'
 
 export interface UseMenuOptions {
-  listEl: Ref<HTMLElement | null>
+  listEl: ElRef<HTMLElement | null>
   /** Fires when an enabled menuitem is activated — click, or Enter/Space while it has focus — and it isn't a submenu trigger (`aria-haspopup="menu"`; those route to `onExpand` instead). Firing means "activated," nothing more: the close-vs-keep decision is the caller's, since only it knows whether the item is a one-shot action or a toggle. `Menu.vue` closes unless the element carries `data-keep-open`; a bare useMenu consumer applies whatever policy it wants. */
   onSelect?: (itemEl: HTMLElement) => void
   /** Fires instead of `onSelect` when the activated item carries `aria-haspopup="menu"` — click, Enter/Space, or ArrowRight all converge here through the same real-click dispatch as a normal activation. `Menu.vue` wires this to open that row's nested submenu. */

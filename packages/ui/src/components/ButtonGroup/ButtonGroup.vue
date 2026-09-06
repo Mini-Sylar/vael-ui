@@ -1,11 +1,11 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     role="group"
     :aria-label="ariaLabel"
     :class="rootPart.class"
     :style="rootPart.style"
+    v-bind="attrs"
   >
     <slot />
   </div>

@@ -2,6 +2,7 @@ import { computed, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
+import type { ElRef } from './dom'
 
 /** 15deg-per-step mirrors mechanical mouse wheel detent; consumer-overridable. */
 export const DIAL_DEFAULT_DEGREES_PER_STEP = 15
@@ -9,7 +10,7 @@ export const DIAL_DEFAULT_DEGREES_PER_STEP = 15
 export interface UseDialOptions {
   /** The dial element — pointer angle is measured relative to its own
    * `getBoundingClientRect()` center, same as useKnob. */
-  dialEl: Ref<HTMLElement | null>
+  dialEl: ElRef<HTMLElement | null>
   /** Omit for a genuinely unbounded value (keeps counting forever in either direction). Bounding is independent per side — set only one to clamp just that end. */
   min?: MaybeRefOrGetter<number | undefined>
   max?: MaybeRefOrGetter<number | undefined>

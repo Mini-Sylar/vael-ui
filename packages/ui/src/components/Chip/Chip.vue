@@ -1,10 +1,10 @@
 <template>
   <span
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-disabled="disabled || undefined"
+    v-bind="attrs"
   >
     <span :class="labelPart.class" :style="labelPart.style"
       ><slot>{{ label }}</slot></span

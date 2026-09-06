@@ -1,10 +1,11 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="state"
+    :data-self-scroll="ownsScroll ? '' : undefined"
+    v-bind="attrs"
   >
     <div
       ref="zoneEl"
@@ -62,7 +63,11 @@ export interface PullToRefreshProps {
   threshold?: number
   /** Maximum pull distance (in pixels) allowed before clamping. */
   maxPull?: number
-  /** Detects gestures on this element instead of the root. Defaults to the root. */
+  /**
+   * Detects gestures on this element instead of the root, for dropping into an existing
+   * scrollable layout as a thin wrapper. Defaults to the root, which then owns scrolling
+   * itself (`overflow-y: auto`); passing one leaves the root's own overflow untouched.
+   */
   scrollEl?: HTMLElement | { el: HTMLElement | null } | null
   ui?: Partial<{
     root: UiPartValue
@@ -112,9 +117,10 @@ function reducedMotion(): boolean {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
-const scrollEl = computed(() =>
-  props.scrollEl !== undefined ? unwrapEl(props.scrollEl) : root.value,
-)
+// Own scrolling only when the consumer hasn't handed us an existing scroll box — dropping this
+// into an already-scrollable layout shouldn't force that layout to restructure around our root.
+const ownsScroll = computed(() => props.scrollEl === undefined)
+const scrollEl = computed(() => (ownsScroll.value ? root.value : unwrapEl(props.scrollEl)))
 
 const messages = useUiMessages()
 

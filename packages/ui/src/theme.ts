@@ -9,7 +9,16 @@ export interface UiTheme {
   /** Overrides the single `--ui-radius` token every component size derives from. */
   radius?: string
   /** App-wide default `ui` part-class/style overrides — same shape as each component's own `ui` prop. */
-  button?: { ui?: Partial<{ root: UiPartValue; badge: UiPartValue }> }
+  button?: {
+    ui?: Partial<{
+      root: UiPartValue
+      leading: UiPartValue
+      trailing: UiPartValue
+      content: UiPartValue
+      label: UiPartValue
+      badge: UiPartValue
+    }>
+  }
   buttonGroup?: { ui?: Partial<{ root: UiPartValue }> }
   splitButton?: {
     ui?: Partial<{
@@ -25,7 +34,7 @@ export interface UiTheme {
   loader?: { ui?: Partial<{ root: UiPartValue }> }
   skeleton?: { ui?: Partial<{ root: UiPartValue }> }
   badge?: { ui?: Partial<{ root: UiPartValue }> }
-  tag?: { ui?: Partial<{ root: UiPartValue; icon: UiPartValue }> }
+  tag?: { ui?: Partial<{ root: UiPartValue; icon: UiPartValue; label: UiPartValue }> }
   kbd?: { ui?: Partial<{ root: UiPartValue }> }
   avatar?: {
     ui?: Partial<{
@@ -55,6 +64,8 @@ export interface UiTheme {
       description: UiPartValue
       body: UiPartValue
       footer: UiPartValue
+      maximize: UiPartValue
+      close: UiPartValue
     }>
   }
   separator?: { ui?: Partial<{ root: UiPartValue; line: UiPartValue; text: UiPartValue }> }
@@ -66,6 +77,7 @@ export interface UiTheme {
       content: UiPartValue
       title: UiPartValue
       description: UiPartValue
+      actions: UiPartValue
       close: UiPartValue
     }>
   }
@@ -158,7 +170,9 @@ export interface UiTheme {
       body: UiPartValue
     }>
   }
-  collapsible?: { ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue }> }
+  collapsible?: {
+    ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue; body: UiPartValue }>
+  }
   bottomSheet?: {
     ui?: Partial<{
       panel: UiPartValue

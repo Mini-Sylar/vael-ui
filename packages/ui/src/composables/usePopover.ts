@@ -5,6 +5,7 @@ import type { Side } from '@floating-ui/dom'
 import { useLayer } from './useLayerStack'
 import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
+import type { ElRef } from './dom'
 
 export type PopoverCloseReason = 'trigger' | 'escape' | 'outside' | 'programmatic'
 
@@ -15,8 +16,8 @@ export interface PopoverOpenChangeDetails {
 }
 
 export interface UsePopoverOptions {
-  triggerEl: Ref<HTMLElement | null>
-  positionerEl: Ref<HTMLElement | null>
+  triggerEl: ElRef<HTMLElement | null>
+  positionerEl: ElRef<HTMLElement | null>
   side?: MaybeRefOrGetter<Side>
   align?: MaybeRefOrGetter<Align>
   sideOffset?: MaybeRefOrGetter<number>
@@ -31,7 +32,7 @@ export interface UsePopoverOptions {
   /** Getter so the underlying prop stays reactive without being invoked by `toValue`. */
   beforeClose?: () => ((done: () => void) => void) | undefined
   /** Region this popover is scoped to, for Escape-key layer ownership. Omit for page-level. */
-  scope?: Ref<HTMLElement | null>
+  scope?: ElRef<HTMLElement | null>
 }
 
 export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {

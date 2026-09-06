@@ -1,7 +1,8 @@
 import { onMounted, onScopeDispose, nextTick, toValue, watch } from 'vue'
-import type { MaybeRefOrGetter, Ref } from 'vue'
+import type { MaybeRefOrGetter } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
+import type { ElRef } from './dom'
 
 export type DockOrientation = 'horizontal' | 'vertical'
 
@@ -74,7 +75,7 @@ export function dockItemOffsets(
 }
 
 export function useDock(
-  rootEl: Ref<HTMLElement | null>,
+  rootEl: ElRef<HTMLElement | null>,
   itemCount: MaybeRefOrGetter<number>,
   options: UseDockOptions = {},
 ): UseDockReturn {

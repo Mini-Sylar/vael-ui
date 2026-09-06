@@ -4,9 +4,11 @@
     inset: 0;
     z-index: var(--ui-z-tour, 52);
     background: var(--ui-overlay);
-    transition:
-      opacity var(--ui-duration-exit) var(--ui-ease-out),
-      clip-path var(--ui-duration-drawer) var(--ui-ease-drawer);
+    /* Only opacity transitions in CSS. The cutout's step-to-step glide is driven in JS
+       (TourSpotlight.vue) — a CSS transition of `clip-path: path()` on this fixed, full-viewport
+       layer makes Chromium's compositor rasterise it clipped to a collapsed corner for the whole
+       transition, then snap right when it ends. */
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
   }
   .ui-tour-spotlight-enter-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);

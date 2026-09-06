@@ -1,5 +1,5 @@
 <template>
-  <li ref="root" v-bind="attrs" aria-hidden="true" :class="rootPart.class" :style="rootPart.style">
+  <li ref="root" aria-hidden="true" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <slot>
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
         <path

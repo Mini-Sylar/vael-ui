@@ -1,13 +1,13 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="[sliderStyle, rootPart.style]"
     :data-dragging="isDragging || undefined"
     :data-range="isRangeModel || undefined"
     :data-invalid="isInvalid || undefined"
     :aria-disabled="isDisabled || undefined"
+    v-bind="attrs"
   >
     <div
       ref="trackEl"

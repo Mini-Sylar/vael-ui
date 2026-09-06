@@ -1,13 +1,13 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="rootPart.style"
     :data-side="side"
     :data-dragging="isDragging || undefined"
     :data-motion="motionCss ? undefined : 'off'"
     :aria-disabled="disabled || undefined"
+    v-bind="attrs"
   >
     <div ref="actionsEl" :class="actionsPart.class" :style="actionsPart.style">
       <slot name="actions" :open="open" :close="close" />

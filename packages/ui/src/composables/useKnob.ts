@@ -2,6 +2,7 @@ import { computed, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
+import type { ElRef } from './dom'
 
 /** 270° sweep (−135° to +135°): standard rotary UI; gap at bottom for ambiguity. */
 export const KNOB_SWEEP_START_DEG = -135
@@ -10,7 +11,7 @@ export const KNOB_SWEEP_END_DEG = KNOB_SWEEP_START_DEG + KNOB_SWEEP_DEG
 
 export interface UseKnobOptions {
   /** The dial element — pointer angle is measured relative to its own `getBoundingClientRect()` center, per apple-design's direct-manipulation rule (angle-relative-to-center, not a raw x/y delta). */
-  dialEl: Ref<HTMLElement | null>
+  dialEl: ElRef<HTMLElement | null>
   min?: MaybeRefOrGetter<number>
   max?: MaybeRefOrGetter<number>
   step?: MaybeRefOrGetter<number>

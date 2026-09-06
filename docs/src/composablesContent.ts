@@ -59,7 +59,11 @@ export const composablesContent: Record<string, ComposableContent> = {
         description:
           'Extra content between the description and the buttons, e.g. a "type DELETE" input.',
       },
-      { name: 'surface', type: "'dialog' | 'popover'", description: "Default 'dialog'." },
+      {
+        name: 'surface',
+        type: "'dialog' | 'popover'",
+        description: "Default 'dialog'.",
+      },
       {
         name: 'position / size',
         type: 'DialogPosition / DialogSize',
@@ -257,14 +261,26 @@ open.value = true`,
         description: 'Echoed straight back from options.id.',
       },
       { name: 'currentIndex', type: 'Ref<number>', description: '' },
-      { name: 'currentStep', type: 'ComputedRef<TourStep | undefined>', description: '' },
-      { name: 'currentGroup', type: 'ComputedRef<string | undefined>', description: '' },
+      {
+        name: 'currentStep',
+        type: 'ComputedRef<TourStep | undefined>',
+        description: '',
+      },
+      {
+        name: 'currentGroup',
+        type: 'ComputedRef<string | undefined>',
+        description: '',
+      },
       {
         name: 'groups',
         type: 'ComputedRef<TourGroup[]>',
         description: '{ group, steps }[], bucketed in first-seen order.',
       },
-      { name: 'total / isFirst / isLast', type: 'ComputedRef', description: '' },
+      {
+        name: 'total / isFirst / isLast',
+        type: 'ComputedRef',
+        description: '',
+      },
       {
         name: 'isTransitioning',
         type: 'Ref<boolean>',
@@ -282,7 +298,11 @@ open.value = true`,
         type: '() => void',
         description: 'Fires onSkip and sets open.value = false.',
       },
-      { name: 'goTo', type: '(index: number) => Promise<void>', description: '' },
+      {
+        name: 'goTo',
+        type: '(index: number) => Promise<void>',
+        description: '',
+      },
       {
         name: 'goToGroup',
         type: '(group: string) => Promise<void>',
@@ -375,7 +395,7 @@ open.value = true`,
 
   useColorScheme: {
     description:
-      'Drives `document.documentElement.dataset.theme` from a `system` / `light` / `dark` mode. `system` removes the attribute entirely and follows `prefers-color-scheme` live. This is the exact composable the docs site’s own header theme toggle uses; `persist` is structural (like ConfigProvider’s `i18n`) so you can wire in cookies, a store, or localStorage yourself instead of the composable assuming one.',
+      "Drives `document.documentElement.dataset.theme` from a `system` / `light` / `dark` mode. `system` removes the attribute entirely and follows `prefers-color-scheme` live. This is the exact composable the docs site’s own header theme toggle uses; `persist` is structural (like ConfigProvider’s `i18n`) so you can wire in cookies, a store, or localStorage yourself instead of the composable assuming one. Being a plain composable, it can only apply the saved mode once your JS bundle runs a component's `setup()` — after first paint. A returning user with a saved `dark` preference will see a flash of the light theme first unless you also set the attribute synchronously before Vue mounts; see the pre-hydration snippet below.",
     exampleCode: `import { useColorScheme } from 'vael-ui'
 
 const { mode, resolvedMode, setMode } = useColorScheme({
@@ -391,7 +411,24 @@ const { mode, resolvedMode, setMode } = useColorScheme({
 
 // mode.value: 'system' | 'light' | 'dark' (what the user picked)
 // resolvedMode.value: 'light' | 'dark' (what's actually applied right now)
-setMode('dark')`,
+setMode('dark')
+
+// Avoiding a flash of the wrong theme on load
+// ---------------------------------------------
+// useColorScheme can't run before Vue mounts, so a returning user with a
+// saved preference sees the default theme for a frame first. Set the
+// attribute synchronously in a blocking <script> in your HTML's <head>,
+// before your app's bundle loads — same trick as next-themes/Nuxt color-mode.
+// Match whatever persist.get()/set() convention you wired up above.
+//
+    <script>
+       (function () {
+         var saved = localStorage.getItem('theme') // your own persist.get()
+         if (saved === 'light' || saved === 'dark') {
+           document.documentElement.dataset.theme = saved
+         }
+       })()
+     </script>`,
     params: [
       {
         name: 'initial',
@@ -429,7 +466,11 @@ setMode('dark')`,
       'The Floating UI-backed positioning engine behind `Popover`, `Menu`, and `Tooltip`. Computes `positionerStyle` (absolute inset + `visibility`) against a reference/floating element pair, with flip/shift collision handling and live `autoUpdate` tracking while `active` is true. Reach for this directly when building a custom anchored surface none of the existing overlay components fit.',
     hasLiveDemo: true,
     params: [
-      { name: 'referenceEl', type: 'Ref<HTMLElement | null>', description: 'The anchor.' },
+      {
+        name: 'referenceEl',
+        type: 'Ref<HTMLElement | null>',
+        description: 'The anchor.',
+      },
       {
         name: 'floatingEl',
         type: 'Ref<HTMLElement | null>',
@@ -440,7 +481,11 @@ setMode('dark')`,
         type: 'MaybeRefOrGetter<boolean>',
         description: 'Positioning (and autoUpdate scroll/resize tracking) only runs while true.',
       },
-      { name: 'side', type: 'MaybeRefOrGetter<Side>', description: "Default 'bottom'." },
+      {
+        name: 'side',
+        type: 'MaybeRefOrGetter<Side>',
+        description: "Default 'bottom'.",
+      },
       {
         name: 'align',
         type: "MaybeRefOrGetter<'start' | 'center' | 'end'>",
@@ -497,8 +542,16 @@ setMode('dark')`,
       'Windowed rendering for long lists: only the visible rows (plus overscan) exist in the DOM. This is what `Select`/`Combobox`/`Tree` reach for once their list gets large; use it directly when building a custom scrollable list that needs the same treatment.',
     hasLiveDemo: true,
     params: [
-      { name: 'containerEl', type: 'Ref<HTMLElement | null>', description: 'The scrollable box.' },
-      { name: 'count', type: 'MaybeRefOrGetter<number>', description: 'Total row count.' },
+      {
+        name: 'containerEl',
+        type: 'Ref<HTMLElement | null>',
+        description: 'The scrollable box.',
+      },
+      {
+        name: 'count',
+        type: 'MaybeRefOrGetter<number>',
+        description: 'Total row count.',
+      },
       {
         name: 'itemSize',
         type: 'MaybeRefOrGetter<number | undefined>',
@@ -618,7 +671,11 @@ setMode('dark')`,
         description:
           'dragPreview + nested only, default true. A dragged row with visible descendants (an expanded folder, a tab group) carries real copies of them along inside the floating clone, at the exact offset they already sat at, so the whole block reads as one physical thing lifting together.',
       },
-      { name: 'disabled', type: 'MaybeRefOrGetter<boolean>', description: 'Turns off dragging.' },
+      {
+        name: 'disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description: 'Turns off dragging.',
+      },
       {
         name: 'motionCss',
         type: 'MaybeRefOrGetter<boolean>',
@@ -795,7 +852,11 @@ setMode('dark')`,
         type: '() => boolean',
         description: "OR this into the control's own invalid prop.",
       },
-      { name: 'required', type: '() => boolean', description: 'Bind to aria-required.' },
+      {
+        name: 'required',
+        type: '() => boolean',
+        description: 'Bind to aria-required.',
+      },
       {
         name: 'disabled',
         type: '() => boolean',

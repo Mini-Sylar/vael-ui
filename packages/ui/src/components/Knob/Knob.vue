@@ -1,12 +1,12 @@
 <template>
   <div
     ref="root"
-    v-bind="attrs"
     :class="rootPart.class"
     :style="[knobStyle, rootPart.style]"
     :data-dragging="isDragging || undefined"
     :data-invalid="isInvalid || undefined"
     :aria-disabled="isDisabled || undefined"
+    v-bind="attrs"
   >
     <div
       ref="dialEl"
