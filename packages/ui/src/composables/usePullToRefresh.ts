@@ -1,4 +1,4 @@
-import { computed, onScopeDispose, shallowRef, toValue, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { ElRef } from './dom'
@@ -38,6 +38,17 @@ function dampen(overshoot: number): number {
   return DAMPEN_FACTOR * Math.log(1 + overshoot / DAMPEN_FACTOR)
 }
 
+/*
+  Touch events, not Pointer Events, drive the pull.
+
+  Suppressing the native scroll / overscroll-bounce for the exact span of a downward drag at
+  `scrollTop 0` needs `preventDefault()` on a NON-passive `touchmove` — that is the only call a
+  browser actually honours for this, on iOS Safari and Android Chrome alike. `preventDefault()`
+  on a `pointermove` is spec'd not to affect scrolling at all, and the alternative (toggling
+  `touch-action` from a `scroll` listener) always lags the moment you settle back at the top by
+  an event or two, so a swipe there scrolls instead of pulling. Pointer Events stay wired up for
+  a real mouse only, so the docs demo still drags on desktop.
+*/
 export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRefreshReturn {
   const state = shallowRef<PullToRefreshState>('idle')
   const pullDistance = shallowRef(0)
@@ -54,10 +65,12 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
 
   const progress = computed(() => Math.min(1, pullDistance.value / thresholdValue()))
 
-  let pointerId: number | null = null
+  type DragSource = { kind: 'touch' | 'pointer'; id: number }
+  let drag: DragSource | null = null
   let startY = 0
   let startTime = 0
   let dragging = false
+  let captured = false
   let refreshToken: symbol | null = null
   let doneTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -94,36 +107,31 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
     return startRefresh()
   }
 
-  function onPointerDown(event: PointerEvent) {
+  /** Arms a drag if the scroll box is at the top; returns whether it took. */
+  function begin(y: number): boolean {
     const el = options.scrollEl.value
-    if (!el || el.scrollTop !== 0 || pointerId !== null) return
-    pointerId = event.pointerId
-    startY = event.clientY
+    if (!el || el.scrollTop !== 0 || drag !== null) return false
+    startY = y
     startTime = performance.now()
     dragging = false
+    captured = false
+    return true
   }
 
-  function onPointerMove(event: PointerEvent) {
-    if (pointerId === null || event.pointerId !== pointerId) return
+  /**
+   * Feeds a move into the state machine. `'pull'` means the caller should keep the browser out
+   * of it (`preventDefault`); `'release'` means the scroll box left the top and the gesture is
+   * the page's now; `'ignore'` is an upward/flat move before the pull has committed.
+   */
+  function applyMove(y: number): 'pull' | 'release' | 'ignore' {
     const el = options.scrollEl.value
-    if (!el) return
-
+    if (!el) return 'release'
     if (!dragging) {
-      if (event.clientY - startY <= 0 || el.scrollTop !== 0) {
-        if (el.scrollTop !== 0) pointerId = null
-        return
-      }
+      if (el.scrollTop !== 0) return 'release'
+      if (y - startY <= 0) return 'ignore'
       dragging = true
-      // Best-effort tracking in case pointer strays outside bounds.
-      try {
-        el.setPointerCapture(pointerId)
-      } catch {
-        // Capture can fail for synthetic events; not fatal.
-      }
     }
-
-    event.preventDefault()
-    const delta = Math.max(0, event.clientY - startY)
+    const delta = Math.max(0, y - startY)
     const max = maxPullValue()
     pullDistance.value = delta <= max ? delta : max + dampen(delta - max)
     state.value =
@@ -132,10 +140,10 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
         : pullDistance.value >= thresholdValue()
           ? 'ready'
           : 'pulling'
+    return 'pull'
   }
 
   function endDrag(commit: boolean) {
-    if (pointerId === null) return
     const wasDragging = dragging
     const wasReady = state.value === 'ready'
     const elapsed = Math.max(1, performance.now() - startTime)
@@ -143,53 +151,99 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
     const wasFastFlick =
       velocity > VELOCITY_THRESHOLD &&
       pullDistance.value >= thresholdValue() * VELOCITY_MIN_DISTANCE_FRACTION
-    pointerId = null
+    drag = null
     dragging = false
+    captured = false
     if (!wasDragging) return
     if (commit && (wasReady || wasFastFlick)) startRefresh()
     else settleZero()
   }
 
-  function onPointerUp(event: PointerEvent) {
-    if (pointerId === null || event.pointerId !== pointerId) return
+  /** Hand the gesture back mid-drag (the scroll box scrolled away from the top). */
+  function abandonDrag() {
+    drag = null
+    dragging = false
+    captured = false
+    if (state.value === 'pulling' || state.value === 'ready') settleZero()
+  }
+
+  function findTouch(list: TouchList, id: number): Touch | null {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i]!.identifier === id) return list[i]!
+    }
+    return null
+  }
+
+  function onTouchStart(event: TouchEvent) {
+    if (drag !== null || event.touches.length !== 1) return
+    const touch = event.touches[0]!
+    if (begin(touch.clientY)) drag = { kind: 'touch', id: touch.identifier }
+  }
+
+  function onTouchMove(event: TouchEvent) {
+    if (drag?.kind !== 'touch') return
+    const touch = findTouch(event.touches, drag.id)
+    if (!touch) return
+    const result = applyMove(touch.clientY)
+    if (result === 'release') abandonDrag()
+    else if (result === 'pull' && event.cancelable) event.preventDefault()
+  }
+
+  function onTouchEnd(event: TouchEvent) {
+    if (drag?.kind !== 'touch' || !findTouch(event.changedTouches, drag.id)) return
     endDrag(true)
   }
 
-  function onPointerCancel(event: PointerEvent) {
-    if (pointerId === null || event.pointerId !== pointerId) return
-    endDrag(false)
+  function onTouchCancel() {
+    if (drag?.kind === 'touch') endDrag(false)
   }
 
+  function onPointerDown(event: PointerEvent) {
+    // Touch goes through the touch handlers, where `preventDefault` on a non-passive
+    // `touchmove` can actually hold back the native scroll.
+    if (event.pointerType === 'touch' || drag !== null) return
+    if (begin(event.clientY)) drag = { kind: 'pointer', id: event.pointerId }
+  }
+
+  function onPointerMove(event: PointerEvent) {
+    if (drag?.kind !== 'pointer' || event.pointerId !== drag.id) return
+    const result = applyMove(event.clientY)
+    if (result === 'release') {
+      abandonDrag()
+      return
+    }
+    if (result !== 'pull') return
+    event.preventDefault()
+    if (!captured) {
+      try {
+        options.scrollEl.value?.setPointerCapture(drag.id)
+        captured = true
+      } catch {
+        // Capture can fail for synthetic events; not fatal.
+      }
+    }
+  }
+
+  function onPointerUp(event: PointerEvent) {
+    if (drag?.kind === 'pointer' && event.pointerId === drag.id) endDrag(true)
+  }
+
+  function onPointerCancel(event: PointerEvent) {
+    if (drag?.kind === 'pointer' && event.pointerId === drag.id) endDrag(false)
+  }
+
+  useEventListener(options.scrollEl, 'touchstart', onTouchStart, { passive: true })
+  useEventListener(options.scrollEl, 'touchmove', onTouchMove, { passive: false })
+  useEventListener(options.scrollEl, 'touchend', onTouchEnd, { passive: true })
+  useEventListener(options.scrollEl, 'touchcancel', onTouchCancel, { passive: true })
   useEventListener(options.scrollEl, 'pointerdown', onPointerDown)
   useEventListener(options.scrollEl, 'pointermove', onPointerMove, { passive: false })
   useEventListener(options.scrollEl, 'pointerup', onPointerUp)
   useEventListener(options.scrollEl, 'pointercancel', onPointerCancel)
 
-  // A gesture's touch-action is decided by the browser before any JS runs on its first move —
-  // setting `touch-action: none` from a pointerdown handler is always one event too late. Instead,
-  // keep it settled ahead of time from scroll position alone: blocking only the native downward
-  // pan at scrollTop 0 leaves our own pointermove free to claim that exact drag, while every other
-  // direction (and all scrolling once away from the top) stays untouched.
-  let lastEl: HTMLElement | null = null
-  function updateTouchAction() {
-    const el = options.scrollEl.value
-    if (el) el.style.touchAction = el.scrollTop === 0 ? 'pan-x pan-up' : ''
-  }
-  useEventListener(options.scrollEl, 'scroll', updateTouchAction, { passive: true })
-  watch(
-    options.scrollEl,
-    (el) => {
-      if (lastEl && lastEl !== el) lastEl.style.touchAction = ''
-      lastEl = el
-      updateTouchAction()
-    },
-    { immediate: true },
-  )
-
   onScopeDispose(() => {
     refreshToken = null
     clearTimeout(doneTimer)
-    if (lastEl) lastEl.style.touchAction = ''
   })
 
   return { state, pullDistance, progress, refresh }

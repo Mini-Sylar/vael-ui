@@ -86,9 +86,9 @@
                   </slot>
                 </component>
                 <!-- Teleported to ancestor to stay in same DOM subtree for outside-click detection.
-                     Forwards #item so a custom row override keeps applying at every nesting depth
-                     instead of silently reverting to the default row past the first submenu level. -->
-                <Menu
+                     #item is forwarded through `relayItemSlot` so a custom row keeps applying at
+                     every nesting depth instead of reverting to the default row past level one. -->
+                <MenuSelf
                   v-if="entry.items && positionerEl"
                   :items="entry.items"
                   :trigger-el="rowEls[i]"
@@ -103,9 +103,9 @@
                   @mouseleave="onSubmenuPanelMouseLeave(i)"
                 >
                   <template v-if="$slots.item" #item="{ item: nestedItem }">
-                    <slot name="item" :item="nestedItem as T" />
+                    <component :is="relayItemSlot" :item="nestedItem as T" />
                   </template>
-                </Menu>
+                </MenuSelf>
               </template>
             </template>
           </div>
@@ -212,7 +212,23 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './Menu.css'
 import '../shared/tokens.css'
-import { computed, inject, nextTick, reactive, useTemplateRef, watch, watchEffect } from 'vue'
+import {
+  computed,
+  inject,
+  nextTick,
+  reactive,
+  useSlots,
+  useTemplateRef,
+  watch,
+  watchEffect,
+} from 'vue'
+import type { FunctionalComponent, VNodeChild } from 'vue'
+// Explicit self-import for the recursive submenu (see the template). `<Menu>` by name relies on
+// `resolveComponent('Menu', true)`, which returns the bare string — not the component — inside a
+// Vapor render, so the submenu renders as a stray `<menu>` element with its props dropped. The
+// circular import resolves fine: the default export is defined by instantiation time, long after
+// this module finishes evaluating.
+import MenuSelf from './Menu.vue'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
@@ -268,6 +284,14 @@ defineSlots<{
   /** Below the item list, outside its scroll region — stays put while `items` scrolls above it. */
   footer(): unknown
 }>()
+
+const slots = useSlots()
+
+// Renders the consumer's own #item slot for a nested submenu row. Captured from THIS instance
+// here, so forwarding it into the child <Menu> (see the template) can't turn into a self-call —
+// a bare `<slot name="item">` there re-resolves against the submenu under the Vapor compiler.
+const relayItemSlot: FunctionalComponent<{ item: T }> = (relayProps) =>
+  slots.item?.(relayProps) as VNodeChild
 
 function isSeparator(entry: MenuEntry<T>): entry is MenuSeparator {
   return (entry as MenuSeparator).type === 'separator'
