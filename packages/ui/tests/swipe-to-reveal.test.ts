@@ -32,7 +32,7 @@ test('motionCss=false sets data-motion="off" and disables the settle transition'
     await import('../src/components/SwipeToReveal/SwipeToReveal.vue')
   const screen = render(SwipeToReveal, {
     props: { motionCss: false },
-    slots: { default: 'Content', actions: 'Delete' },
+    slots: { default: 'Content', 'trailing-actions': 'Delete' },
   })
   const root = screen.container.querySelector<HTMLElement>('.ui-swipe-reveal')!
   const content = screen.container.querySelector<HTMLElement>('.ui-swipe-reveal-content')!
@@ -172,4 +172,54 @@ test('side="leading" reveals from the left — a rightward drag opens it', async
   pointerup(rect.left + 80, rect.top + 10)
 
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+})
+
+// ---------------------------------------------------------------------------
+// Both edges on one instance: #leading-actions + #trailing-actions, the drag
+// direction picks which panel opens.
+// ---------------------------------------------------------------------------
+
+test('dual edges: a leftward drag opens the trailing panel', async () => {
+  const screen = render(SwipeToRevealFixture, { props: { dual: true } })
+  const content = testId(screen, 'content')
+  const rect = content.getBoundingClientRect()
+
+  pointerdown(content, rect.right - 5, rect.top + 10)
+  pointermove(rect.right - 15, rect.top + 10)
+  pointermove(rect.right - 80, rect.top + 10)
+  pointerup(rect.right - 80, rect.top + 10)
+
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await expect.element(screen.getByTestId('open-side')).toHaveTextContent('trailing')
+  await expect.element(screen.getByTestId('last-change-side')).toHaveTextContent('trailing')
+})
+
+test('dual edges: a rightward drag opens the leading panel', async () => {
+  const screen = render(SwipeToRevealFixture, { props: { dual: true } })
+  const content = testId(screen, 'content')
+  const rect = content.getBoundingClientRect()
+
+  pointerdown(content, rect.left + 5, rect.top + 10)
+  pointermove(rect.left + 15, rect.top + 10)
+  pointermove(rect.left + 80, rect.top + 10)
+  pointerup(rect.left + 80, rect.top + 10)
+
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await expect.element(screen.getByTestId('open-side')).toHaveTextContent('leading')
+  await expect.element(screen.getByTestId('last-change-side')).toHaveTextContent('leading')
+})
+
+test('dual edges: reveal(side) opens the named panel without a drag', async () => {
+  const screen = render(SwipeToRevealFixture, { props: { dual: true } })
+  await userEvent.click(testId(screen, 'reveal-leading-btn'))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await expect.element(screen.getByTestId('open-side')).toHaveTextContent('leading')
+})
+
+test('dual edges: both action panels are in the DOM from the start (accessibility)', async () => {
+  const screen = render(SwipeToRevealFixture, { props: { dual: true } })
+  expect(testId(screen, 'pin')).not.toBeNull()
+  expect(testId(screen, 'archive')).not.toBeNull()
+  expect(testId(screen, 'delete')).not.toBeNull()
+  expect(screen.container.querySelectorAll('.ui-swipe-reveal-actions').length).toBe(2)
 })

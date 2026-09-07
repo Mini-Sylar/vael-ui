@@ -79,3 +79,37 @@ test('block + badge together: wrapper stretches to full width, badge still corne
 
   await expect.element(badge()!).toHaveAttribute('data-placement', 'top-end')
 })
+
+// A conditionally-rendered `#badge` slot (`v-if` on an unread count, say) used to
+// flip the whole button between "wrapper" and "no wrapper" structure the instant
+// the first badge appeared — throwing off any parent CSS that had grid-placed /
+// nth-child-targeted the button. Setting `badgePlacement` now reserves the wrapper
+// up front so the structure is stable, and the consumer's own root class rides
+// onto the wrapper (the real outer element) either way.
+
+test('badgePlacement set with no badge yet: the wrapper still renders, so the structure is stable', async () => {
+  render(Button, { props: { badgePlacement: 'top-end' }, slots: { default: 'Inbox' } })
+  expect(document.querySelector('.ui-button-badge-wrapper')).not.toBeNull()
+  expect(wrapper().querySelector('.ui-button')?.tagName).toBe('BUTTON')
+  expect(badge()).toBeNull() // no badge content, just the reserved structure
+})
+
+test("the consumer's ui.root class lands on the wrapper when the wrapper is the outer element", async () => {
+  render(Button, {
+    props: { badgePlacement: 'top-end', ui: { root: { class: 'grid-placed' } } },
+    slots: { default: 'Inbox', badge: '<span>3</span>' },
+  })
+  // The wrapper is what a parent grid sees as its child — the placement class
+  // has to be on it, not only on the inner button.
+  expect(wrapper().classList.contains('grid-placed')).toBe(true)
+  expect(document.querySelector('.ui-button')?.classList.contains('grid-placed')).toBe(true)
+})
+
+test('a plain class fallthrough also rides onto the wrapper', async () => {
+  render(Button, {
+    attrs: { class: 'nav-item' },
+    props: { badgePlacement: 'top-end' },
+    slots: { default: 'Inbox', badge: '<span>3</span>' },
+  })
+  expect(wrapper().classList.contains('nav-item')).toBe(true)
+})

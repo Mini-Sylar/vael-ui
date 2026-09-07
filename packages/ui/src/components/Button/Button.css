@@ -12,7 +12,6 @@
     cursor: pointer;
     user-select: none;
 
-    will-change: transform;
     transition:
       transform var(--ui-duration-press) var(--ui-ease-out),
       background-color var(--ui-duration-press) ease,

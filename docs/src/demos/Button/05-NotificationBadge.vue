@@ -4,8 +4,9 @@
     <p class="note">
       Button owns the positioned wrapper (<code>badgePlacement</code>, default
       <code>top-end</code>); <code>Badge</code> stays the same context-free component it is
-      everywhere else. The wrapper only exists when a badge is actually rendered, so it costs
-      nothing on every other Button in this file.
+      everywhere else. The wrapper renders only when a badge is in play — a
+      <code>#badge</code> slot, or <code>badgePlacement</code> set to reserve the structure ahead of
+      a conditional badge — so it costs nothing on every other Button in this file.
     </p>
     <div class="row">
       <Button variant="secondary" icon aria-label="Notifications">

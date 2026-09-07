@@ -8,7 +8,7 @@
           v-model:open="openState[message.id]"
           @change="(open) => onRowChange(message.id, open)"
         >
-          <template #actions="{ close }">
+          <template #trailing-actions="{ close }">
             <div class="swipe-actions">
               <Button variant="secondary" size="sm" @click="archive(message.id, close)">
                 Archive
