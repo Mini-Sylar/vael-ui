@@ -15,25 +15,30 @@ export interface SwipeCommitInput {
 }
 
 export interface UseSwipeRevealOptions {
-  side?: MaybeRefOrGetter<SwipeRevealSide>
-  /** Width (px) of the actions panel — the fully-open extreme. A getter since it's measured off a real element that can change size (responsive action labels, …) — SwipeToReveal.vue feeds this from `useElementSize`. */
-  actionsWidth: MaybeRefOrGetter<number>
+  /** Whether a leading / trailing actions panel exists to reveal toward. */
+  leading?: MaybeRefOrGetter<boolean>
+  trailing?: MaybeRefOrGetter<boolean>
+  /** Px width of each actions panel — its fully-open extreme. Getters; measured off real elements. */
+  leadingWidth: MaybeRefOrGetter<number>
+  trailingWidth: MaybeRefOrGetter<number>
   disabled?: MaybeRefOrGetter<boolean>
-  /** Fires once per settled interaction (pointer release, or a programmatic
-   * reveal()/close()) — mirrors useResizable's own onCommit. */
-  onCommit?: (open: boolean) => void
+  /** Fires once per settled interaction with the edge that ended up open, or `null` for closed. */
+  onCommit?: (openSide: SwipeRevealSide | null) => void
 }
 
 export interface UseSwipeRevealReturn {
   /** True for the entire span of a COMMITTED drag (past DRAG_THRESHOLD) —
    * never set for a plain tap, matching useResizable's isDragging shape. */
   isDragging: Ref<boolean>
-  /** Live px offset toward the open side — 0 = closed, `actionsWidth` = fully open, past either end while rubber-banding. Bind directly to `transform: translateX()` on the content element (signed by `side`) — never through a CSS custom property + calc(), same direct-write convention as useResizable's own model. */
+  /** Live SIGNED px offset for `transform: translateX()`: `>0` leading edge revealed, `<0` trailing, `0` closed. */
   offset: Ref<number>
+  /** The revealed (or settling-toward) edge, or `null` when closed. */
+  openSide: Ref<SwipeRevealSide | null>
   onContentPointerdown: (event: PointerEvent) => void
-  /** Intercepts a tap on the content while open: closes instead of letting the row's own click fire, and swallows the browser's own trailing click that follows a completed drag (see the comment on `suppressNextClick` below) so a drag-to-open never immediately re-closes itself. */
+  /** Intercepts a tap on the content while open: closes instead of letting the row's own click fire, and swallows the browser's own trailing click that follows a completed drag so a drag-to-open never immediately re-closes itself. */
   onContentClick: (event: MouseEvent) => void
-  reveal: () => void
+  /** Open a specific edge. With one panel the argument is optional; with both, defaults to `trailing`. */
+  reveal: (side?: SwipeRevealSide) => void
   close: () => void
 }
 
@@ -69,38 +74,71 @@ export function useSwipeReveal(
 ): UseSwipeRevealReturn {
   const isDragging = shallowRef(false)
 
-  function actionsWidth(): number {
-    return Math.max(0, toValue(options.actionsWidth))
+  function leadingActive(): boolean {
+    return toValue(options.leading) ?? false
   }
-  function side(): SwipeRevealSide {
-    return toValue(options.side) ?? 'trailing'
+  function trailingActive(): boolean {
+    return toValue(options.trailing) ?? true
+  }
+  function leadingWidth(): number {
+    return leadingActive() ? Math.max(0, toValue(options.leadingWidth)) : 0
+  }
+  function trailingWidth(): number {
+    return trailingActive() ? Math.max(0, toValue(options.trailingWidth)) : 0
   }
   function isDisabled(): boolean {
     return toValue(options.disabled) ?? false
   }
+  /** The edge a bare `reveal()` / an externally-set `open = true` targets. */
+  function defaultSide(): SwipeRevealSide {
+    return leadingActive() && !trailingActive() ? 'leading' : 'trailing'
+  }
+  // Settled offset only (initial value, v-model sync, reveal, release). Rounded so the
+  // content edge lands on a whole pixel flush with the actions panel — measured widths
+  // are fractional (useElementSize), and a subpixel gap shows as a ~1px seam at rest.
+  // Live drag never routes through here; it stays fractional via rubberBand().
+  function offsetFor(side: SwipeRevealSide | null): number {
+    if (side === 'leading') return Math.round(leadingWidth())
+    if (side === 'trailing') return -Math.round(trailingWidth())
+    return 0
+  }
 
-  const offset = shallowRef(open.value ? actionsWidth() : 0)
+  const openSide = shallowRef<SwipeRevealSide | null>(open.value ? defaultSide() : null)
+  const offset = shallowRef(offsetFor(openSide.value))
 
   function rubberBand(value: number): number {
-    const hi = actionsWidth()
+    const hi = leadingWidth()
+    const lo = -trailingWidth()
     if (value > hi) return hi + dampen(value - hi)
-    if (value < 0) return -dampen(-value)
+    if (value < lo) return lo - dampen(lo - value)
     return value
   }
 
-  // Keep live offset synced with v-model/reveal/close and panel resize.
-  watch([open, () => actionsWidth()], () => {
+  // Keep the live offset synced with v-model/reveal/close and panel resize.
+  watch([open, () => leadingWidth(), () => trailingWidth()], () => {
     if (isDragging.value) return
-    offset.value = open.value ? actionsWidth() : 0
+    if (open.value) {
+      if (!openSide.value) openSide.value = defaultSide()
+      offset.value = offsetFor(openSide.value)
+    } else {
+      openSide.value = null
+      offset.value = 0
+    }
   })
 
-  function reveal() {
+  function reveal(side?: SwipeRevealSide) {
+    const target = side ?? defaultSide()
+    if (target === 'leading' ? !leadingActive() : !trailingActive()) return
+    openSide.value = target
     open.value = true
-    options.onCommit?.(true)
+    offset.value = offsetFor(target)
+    options.onCommit?.(target)
   }
   function close() {
+    openSide.value = null
     open.value = false
-    options.onCommit?.(false)
+    offset.value = 0
+    options.onCommit?.(null)
   }
 
   let pointerId: number | null = null
@@ -142,8 +180,7 @@ export function useSwipeReveal(
       dragEl?.setPointerCapture(pointerId)
     }
     event.preventDefault()
-    const signedOpening = side() === 'trailing' ? -dx : dx
-    liveOffset = rubberBand(startOffset + signedOpening)
+    liveOffset = rubberBand(startOffset + dx)
     offset.value = liveOffset
   }
 
@@ -154,26 +191,29 @@ export function useSwipeReveal(
     committed = false
     isDragging.value = false
     // Not a committed drag — a plain tap, or an abandoned vertical scroll.
-    // Nothing to settle; the native click (if any) proceeds untouched.
     if (!wasCommitted) return
 
     suppressNextClick = true
     const dx = event.clientX - startX
-    const signedOpening = side() === 'trailing' ? -dx : dx
+    // Edge this drag worked toward — offset sign at release, or the drag direction if it's at rest.
+    const side: SwipeRevealSide =
+      liveOffset > 0 || (liveOffset === 0 && dx > 0) ? 'leading' : 'trailing'
+    const width = side === 'leading' ? leadingWidth() : trailingWidth()
+    const signedOpening = side === 'leading' ? dx : -dx
     const elapsed = Math.max(1, performance.now() - startTime)
     const velocity = Math.abs(signedOpening) / elapsed
-    const width = actionsWidth()
     const shouldOpen =
       width <= 0
         ? false
         : resolveSwipeCommit({
             velocity,
             towardOpen: signedOpening > 0,
-            openFraction: liveOffset / width,
+            openFraction: Math.abs(liveOffset) / width,
           })
-    offset.value = shouldOpen ? width : 0
+    openSide.value = shouldOpen ? side : null
     open.value = shouldOpen
-    options.onCommit?.(shouldOpen)
+    offset.value = shouldOpen ? offsetFor(side) : 0
+    options.onCommit?.(openSide.value)
   }
 
   useEventListener(ssrWindow, 'pointermove', onPointerMove)
@@ -194,5 +234,5 @@ export function useSwipeReveal(
     close()
   }
 
-  return { isDragging, offset, onContentPointerdown, onContentClick, reveal, close }
+  return { isDragging, offset, openSide, onContentPointerdown, onContentClick, reveal, close }
 }

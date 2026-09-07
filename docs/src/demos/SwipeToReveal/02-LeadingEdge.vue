@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Reveal from the leading edge, <code>side="leading"</code></h3>
+    <h3>Reveal from the leading edge, <code>#leading-actions</code></h3>
     <ul class="swipe-list">
       <li class="swipe-row">
-        <SwipeToReveal side="leading">
-          <template #actions="{ close }">
+        <SwipeToReveal>
+          <template #leading-actions="{ close }">
             <div class="swipe-actions">
               <Button variant="primary" size="sm" @click="close">Mark read</Button>
             </div>

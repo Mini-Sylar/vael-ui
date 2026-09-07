@@ -1,8 +1,17 @@
 @layer ui-components {
   .ui-swipe-reveal {
     position: relative;
+    /* `contain: paint`, not just `overflow: hidden`: anything composited in the action slot
+       (a button with its own transform/filter, say) leaks ~1px past a plain overflow clip —
+       visibly over a host list's border. Paint containment is the hard clip the compositor
+       actually honours. */
+    contain: paint;
     overflow: hidden;
-    border-radius: var(--ui-radius);
+    /* Shape-agnostic: inherit the host's rounding rather than imposing our own. A list
+       clips its own ends, so every row must stay square — a hard-coded radius here carves
+       an arc out of every corner and the always-mounted action layer shows through it. A
+       standalone rounded host still passes its radius down. Consumers override via `class`. */
+    border-radius: inherit;
     touch-action: pan-y;
   }
   .ui-swipe-reveal-actions {
@@ -10,12 +19,40 @@
     inset-block: 0;
     display: flex;
     align-items: stretch;
+    /* When the host IS rounded, carve the panel's outer corners to match so it can't
+       paint a fringe into the corner behind the resting content. */
+    border-radius: inherit;
+    overflow: hidden;
   }
-  .ui-swipe-reveal[data-side='trailing'] .ui-swipe-reveal-actions {
+  .ui-swipe-reveal-actions[data-side='trailing'] {
     inset-inline-end: 0;
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
   }
-  .ui-swipe-reveal[data-side='leading'] .ui-swipe-reveal-actions {
+  .ui-swipe-reveal-actions[data-side='leading'] {
     inset-inline-start: 0;
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  /* Opt-in via the `revealScale` prop. The panel grows out of its own edge as the swipe
+     reveals it: --ui-swipe-reveal-progress runs 0 (closed) → 1 (open), set live off the drag
+     offset; --ui-swipe-reveal-scale-from is the closed-state scale, always settling to 1.
+     Progress is published on the actions elements regardless, for driving your own effects. */
+  .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions {
+    scale: calc(
+      var(--ui-swipe-reveal-scale-from, 0.94) + (1 - var(--ui-swipe-reveal-scale-from, 0.94)) *
+        var(--ui-swipe-reveal-progress, 1)
+    );
+    transition: scale var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions[data-side='trailing'] {
+    transform-origin: right center;
+  }
+  .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions[data-side='leading'] {
+    transform-origin: left center;
+  }
+  .ui-swipe-reveal[data-reveal-scale][data-dragging] .ui-swipe-reveal-actions {
+    transition: none;
   }
   .ui-swipe-reveal-content {
     position: relative;
@@ -32,9 +69,17 @@
   .ui-swipe-reveal[data-motion='off'] .ui-swipe-reveal-content {
     transition: none;
   }
+  .ui-swipe-reveal[data-reveal-scale][data-motion='off'] .ui-swipe-reveal-actions {
+    scale: 1;
+    transition: none;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-swipe-reveal-content {
+      transition: none;
+    }
+    .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions {
+      scale: 1;
       transition: none;
     }
   }

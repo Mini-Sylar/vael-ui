@@ -100,7 +100,7 @@
     <h2>Gestures</h2>
     <div class="demo-row" data-testid="smoke-SwipeToReveal">
       <SwipeToReveal>
-        <template #actions>Delete</template>
+        <template #trailing-actions>Delete</template>
         <template #default>Content</template>
       </SwipeToReveal>
     </div>

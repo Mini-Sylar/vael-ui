@@ -163,3 +163,62 @@ test('custom beforeClose overrides the built-in exit for every close path, inclu
   captured[0]()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
+
+test('a horizontally-dominant drag on content at the top is left for a nested gesture, not hijacked into a dismiss', async () => {
+  const screen = render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+
+  content().scrollTop = 0
+  const restingHeight = visibleHeight()
+
+  // Mostly sideways with a few px of downward drift — the shape of a real
+  // swipe-to-reveal gesture that used to satisfy "moved down at all" and steal
+  // the pointer for a sheet dismiss.
+  const c = content()
+  const pointerId = 7
+  c.dispatchEvent(
+    new PointerEvent('pointerdown', { clientX: 60, clientY: 320, pointerId, bubbles: true }),
+  )
+  await new Promise((r) => setTimeout(r, 30))
+  c.dispatchEvent(
+    new PointerEvent('pointermove', { clientX: 130, clientY: 326, pointerId, bubbles: true }),
+  )
+  c.dispatchEvent(
+    new PointerEvent('pointermove', { clientX: 200, clientY: 330, pointerId, bubbles: true }),
+  )
+  c.dispatchEvent(
+    new PointerEvent('pointerup', { clientX: 200, clientY: 330, pointerId, bubbles: true }),
+  )
+
+  expect(Math.abs(visibleHeight() - restingHeight)).toBeLessThan(10)
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+})
+
+test('a vertically-dominant downward drag on content at the top still promotes to a sheet dismiss', async () => {
+  const screen = render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+
+  content().scrollTop = 0
+
+  // Straight down, quick: the first move promotes the content drag to a sheet
+  // drag, the rest carry it into a flick-dismiss.
+  const c = content()
+  const pointerId = 8
+  c.dispatchEvent(
+    new PointerEvent('pointerdown', { clientX: 100, clientY: 200, pointerId, bubbles: true }),
+  )
+  await new Promise((r) => setTimeout(r, 20))
+  c.dispatchEvent(
+    new PointerEvent('pointermove', { clientX: 102, clientY: 216, pointerId, bubbles: true }),
+  )
+  c.dispatchEvent(
+    new PointerEvent('pointermove', { clientX: 103, clientY: 320, pointerId, bubbles: true }),
+  )
+  c.dispatchEvent(
+    new PointerEvent('pointerup', { clientX: 103, clientY: 320, pointerId, bubbles: true }),
+  )
+
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})

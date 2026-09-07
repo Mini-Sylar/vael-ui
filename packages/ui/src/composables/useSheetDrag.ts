@@ -14,7 +14,7 @@ export interface UseSheetDragOptions {
   panelEl: ElRef<HTMLElement | null>
   /** Pointer-down here always starts a drag. */
   handleEl: ElRef<HTMLElement | null>
-  /** Pointer-down here only starts a drag once its own scroll is at the top and the drag moves downward — otherwise it's an ordinary scroll. */
+  /** Pointer-down here only starts a drag once its own scroll is at the top, the drag is vertically dominant, and it moves downward — otherwise it's an ordinary scroll (or a horizontal gesture that belongs to something nested, like a swipe-to-reveal row). */
   contentEl?: ElRef<HTMLElement | null>
   /** Ordered smallest to largest. */
   snapPoints: MaybeRefOrGetter<SheetSnapPoint[]>
@@ -41,6 +41,7 @@ const FAST_VELOCITY = 2 // px/ms — a real flick, matches Vaul's jump-to-extrem
 const VELOCITY_THRESHOLD = 0.4 // px/ms — matches Vaul's "was this deliberate" gate
 const SHORT_DRAG_FRACTION = 0.4 // of viewport height — Vaul's step-one-snap-point vs settle-to-nearest split
 const NESTED_DISPLACEMENT = 16 // px — Vaul's own recede distance for stacked sheets
+const AXIS_LOCK_THRESHOLD = 8 // px — movement before a content drag commits to an axis; matches useSwipeReveal
 // Shifted-log curve (Vaul); viewport-scale range.
 const RUBBER_BAND_DAMPEN = 60
 
@@ -131,6 +132,7 @@ export function useSheetDrag(
   })
 
   let dragSource: 'handle' | 'content' | null = null
+  let dragStartX = 0
   let dragStartY = 0
   let dragStartOffset = 0
   let dragStartTime = 0
@@ -155,6 +157,7 @@ export function useSheetDrag(
 
   function onContentPointerDown(event: PointerEvent) {
     dragSource = 'content'
+    dragStartX = event.clientX
     dragStartY = event.clientY
     dragStartScrollTop = options.contentEl?.value?.scrollTop ?? 0
   }
@@ -162,7 +165,15 @@ export function useSheetDrag(
   function onPointerMove(event: PointerEvent) {
     if (!dragSource) return
     if (dragSource === 'content') {
-      const draggingDown = event.clientY > dragStartY
+      const dx = event.clientX - dragStartX
+      const dy = event.clientY - dragStartY
+      if (Math.abs(dx) < AXIS_LOCK_THRESHOLD && Math.abs(dy) < AXIS_LOCK_THRESHOLD) return
+      // Horizontally-dominant → belongs to something nested (a swipe-to-reveal row), not a dismiss.
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        dragSource = null
+        return
+      }
+      const draggingDown = dy > 0
       const atTop = dragStartScrollTop === 0
       if (!(atTop && draggingDown)) return
       dragSource = 'handle'

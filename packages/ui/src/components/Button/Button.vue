@@ -1,5 +1,9 @@
 <template>
-  <span v-if="$slots.badge" class="ui-button-badge-wrapper">
+  <span
+    v-if="$slots.badge || badgePlacement !== undefined"
+    :class="['ui-button-badge-wrapper', wrapperRootPart.class]"
+    :style="wrapperRootPart.style"
+  >
     <component
       :is="as"
       ref="root"
@@ -40,7 +44,12 @@
         <slot name="trailing" />
       </span>
     </component>
-    <span :class="badgePart.class" :style="badgePart.style" :data-placement="badgePlacement">
+    <span
+      v-if="$slots.badge"
+      :class="badgePart.class"
+      :style="badgePart.style"
+      :data-placement="resolvedBadgePlacement"
+    >
       <slot name="badge" />
     </span>
   </span>
@@ -102,16 +111,20 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
 
 <!--
   Loading: aria-disabled + click guard (preserves focus); loader stays mounted (interruptible crossfade).
-  Dual render paths: wrapper only with #badge (Vue scoped-style limitation — wrapper breaks :deep() for badge-less).
+  Dual render paths: the badge wrapper renders only with a badge in play (`#badge` slot, or
+  `badgePlacement` set to reserve the structure) so a plain button keeps its `:deep()`/sibling
+  selectors; when it IS the outer node it mirrors the consumer's own `ui.root`/class/style so
+  class-based placement still resolves. `defineExpose({ el })` is the inner button either way.
 -->
 <script setup lang="ts">
 import './Button.css'
 import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
 import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
+import type { StyleValue } from 'vue'
 import { useAsyncLoading } from '../../composables/useAsyncLoading'
-import { useClassMerge, resolveUiPart } from '../../classes'
-import type { UiPartValue } from '../../classes'
+import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
+import type { ClassValue, UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
 // Manual attrs binding intercepts onClick; rest still fall through.
@@ -137,7 +150,8 @@ const props = withDefaults(
     type?: 'button' | 'submit' | 'reset'
     /** Root tag (e.g. `as="a"` for a link styled as button). */
     as?: string
-    /** Where the `#badge` slot wrapper sits relative to the button. */
+    /** Where the `#badge` slot sits (default `top-end`). Setting it also reserves the wrapper up
+     * front, so a `v-if`'d `#badge` keeps a stable DOM position before the first badge appears. */
     badgePlacement?: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end'
     ui?: Partial<{
       root: UiPartValue
@@ -163,7 +177,6 @@ const props = withDefaults(
     block: false,
     type: 'button',
     as: 'button',
-    badgePlacement: 'top-end',
   },
 )
 
@@ -259,6 +272,15 @@ const rootPart = computed(() =>
   ),
 )
 const badgePart = computed(() => resolveUiPart(cx, themedUi()?.badge, 'ui-button-badge'))
+const resolvedBadgePlacement = computed(() => props.badgePlacement ?? 'top-end')
+// The consumer's own root class/style, mirrored onto the wrapper when it's the outer node.
+const wrapperRootPart = computed(() => {
+  const uiRoot = splitUiPart(themedUi()?.root)
+  return {
+    class: cx(uiRoot.class, attrs.class as ClassValue),
+    style: [uiRoot.style, attrs.style] as StyleValue,
+  }
+})
 const leadingPart = computed(() => resolveUiPart(cx, themedUi()?.leading, 'ui-button-leading'))
 const trailingPart = computed(() => resolveUiPart(cx, themedUi()?.trailing, 'ui-button-trailing'))
 const contentPart = computed(() => resolveUiPart(cx, themedUi()?.content, 'ui-button-content'))
