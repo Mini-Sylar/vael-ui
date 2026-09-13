@@ -36,3 +36,15 @@ test('scrollFade=false never applies the fade class', async () => {
   const viewport = screen.container.querySelector<HTMLElement>('.ui-scroll-area-viewport')!
   expect(viewport.classList.contains('scroll-fade')).toBe(false)
 })
+
+// Regression test: the viewport used `block-size: 100%`, which only resolves against an ancestor
+// with an explicitly specified height — a bare `max-height` on the root (the intuitive way to cap
+// the whole component) never counted, so the viewport grew to fit all content regardless.
+test('max-height on the root actually caps the rendered viewport', async () => {
+  const screen = render(ScrollArea, {
+    props: { ui: { root: { style: 'max-height: 100px' } } },
+    slots: { default: '<div style="block-size: 400px">tall content</div>' },
+  })
+  const viewport = screen.container.querySelector<HTMLElement>('.ui-scroll-area-viewport')!
+  expect(viewport.getBoundingClientRect().height).toBeLessThanOrEqual(100)
+})

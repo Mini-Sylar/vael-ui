@@ -9,6 +9,7 @@ import DataTableReorderFixture from './fixtures/DataTableReorderFixture.vue'
 import DataTableExpansionFixture from './fixtures/DataTableExpansionFixture.vue'
 import DataTableVirtualizeFixture from './fixtures/DataTableVirtualizeFixture.vue'
 import DataTableDateSortFixture from './fixtures/DataTableDateSortFixture.vue'
+import type { UiPartValue } from '../src/classes'
 
 function headerCells(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>('.ui-datatable-th'))
@@ -54,6 +55,22 @@ async function renderTable(props: {
   lazy?: boolean
   total?: number
   motionCss?: boolean
+  ui?: Partial<{
+    root: UiPartValue
+    toolbar: UiPartValue
+    table: UiPartValue
+    thead: UiPartValue
+    th: UiPartValue
+    sortButton: UiPartValue
+    grip: UiPartValue
+    resizeHandle: UiPartValue
+    tbody: UiPartValue
+    tr: UiPartValue
+    td: UiPartValue
+    expansionRow: UiPartValue
+    expansionContent: UiPartValue
+    footer: UiPartValue
+  }>
 }) {
   // Vue Test Utils auto-stubs transition-group by default (a <transition-group-stub>
   // custom element, not the real `tag`). Harmless for most components, but DataTable's
@@ -911,4 +928,22 @@ test('virtualize is off by default: every row renders with no spacer rows', asyn
   const screen = await renderTable({ rowCount: 5, showStatusColumn: false })
   expect(screen.container.querySelectorAll('.ui-datatable-tr--spacer').length).toBe(0)
   expect(bodyRows(screen.container).length).toBe(5)
+})
+
+test('ui prop overrides root/th/td classes, same convention as every other component', async () => {
+  const screen = await renderTable({
+    rowCount: 2,
+    showStatusColumn: false,
+    ui: { root: 'custom-root', th: 'custom-th', td: 'custom-td' },
+  })
+  const root = screen.container.querySelector('.ui-datatable')!
+  expect(root.classList.contains('custom-root')).toBe(true)
+  for (const th of headerCells(screen.container)) {
+    expect(th.classList.contains('custom-th')).toBe(true)
+  }
+  const tds = screen.container.querySelectorAll('.ui-datatable-td')
+  expect(tds.length).toBeGreaterThan(0)
+  for (const td of tds) {
+    expect(td.classList.contains('custom-td')).toBe(true)
+  }
 })

@@ -96,3 +96,27 @@ test('#label slot replaces the label text but keeps the <label> element and for-
   expect(label).not.toBeNull()
   expect(screen.container.querySelector('[data-testid="custom-label"]')).not.toBeNull()
 })
+
+// Regression test: a `float`-placement label's resting position was a fixed 0.75rem offset that
+// assumed no leading content, so it sat on top of a control's `#start` slot (an icon, say)
+// instead of clearing it. Input reports its measured start-inset to the nearest Field, which
+// widens the label's resting inset by that amount.
+test("float label's resting inset clears a leading #start icon instead of overlapping it", async () => {
+  const withoutIcon = render(FieldFixture, { props: { labelPlacement: 'float', label: 'Amount' } })
+  const labelNoIcon = withoutIcon.container.querySelector<HTMLElement>('.ui-field-label')!
+  const insetNoIcon = Number.parseFloat(getComputedStyle(labelNoIcon).insetInlineStart)
+
+  const screen = render(FieldFixture, {
+    props: { labelPlacement: 'float', label: 'Amount' },
+    slots: { start: '<span style="display:inline-block;inline-size:24px">$</span>' },
+  })
+  const control = screen.container.querySelector<HTMLElement>('.ui-field-control')!
+  await vi.waitFor(() => {
+    const inset = getComputedStyle(control).getPropertyValue('--ui-field-start-inset')
+    expect(Number.parseFloat(inset)).toBeGreaterThan(0)
+  })
+  const labelWithIcon = screen.container.querySelector<HTMLElement>('.ui-field-label')!
+  const insetWithIcon = Number.parseFloat(getComputedStyle(labelWithIcon).insetInlineStart)
+
+  expect(insetWithIcon).toBeGreaterThan(insetNoIcon)
+})

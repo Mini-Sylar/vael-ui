@@ -65,6 +65,8 @@
   .ui-swipe-reveal[data-dragging] .ui-swipe-reveal-content {
     transition: none;
     cursor: grabbing;
+    user-select: none;
+    -webkit-user-select: none;
   }
   .ui-swipe-reveal[data-motion='off'] .ui-swipe-reveal-content {
     transition: none;

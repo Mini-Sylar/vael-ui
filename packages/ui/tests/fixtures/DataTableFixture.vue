@@ -35,6 +35,7 @@
     :can-drop="canDrop"
     :before-drop="beforeDrop"
     :preview-mode="previewMode"
+    :ui="ui"
     @column-reorder="columnOrder = $event as string[]"
     @update:selection="onSelectionChange"
     @row-click="onRowClick"
@@ -85,6 +86,7 @@ import { defineComponent, h, shallowRef, useTemplateRef } from 'vue'
 import DataTable from '../../src/components/DataTable/DataTable.vue'
 import { useDataTableContext } from '../../src/composables/useDataTableContext'
 import type { SortableDropDetails } from '../../src/composables/useSortable'
+import type { UiPartValue } from '../../src/classes'
 
 interface Person {
   id: string
@@ -125,6 +127,22 @@ const props = withDefaults(
     canDrop?: (details: SortableDropDetails) => boolean
     beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
     previewMode?: 'element' | 'clone'
+    ui?: Partial<{
+      root: UiPartValue
+      toolbar: UiPartValue
+      table: UiPartValue
+      thead: UiPartValue
+      th: UiPartValue
+      sortButton: UiPartValue
+      grip: UiPartValue
+      resizeHandle: UiPartValue
+      tbody: UiPartValue
+      tr: UiPartValue
+      td: UiPartValue
+      expansionRow: UiPartValue
+      expansionContent: UiPartValue
+      footer: UiPartValue
+    }>
   }>(),
   {
     rowCount: 4,

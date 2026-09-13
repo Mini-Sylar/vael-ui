@@ -7,7 +7,7 @@
     :data-focus-visible="focusVisible || undefined"
     @mousedown="onFrameMousedown"
   >
-    <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
+    <span v-if="$slots.start" ref="startEl" :class="startPart.class" :style="startPart.style"
       ><slot name="start"
     /></span>
     <!-- readonly || undefined: Vapor compiler requires undefined, not false, to omit the attribute -->
@@ -38,7 +38,7 @@
 <script setup lang="ts">
 import './Input.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
@@ -82,7 +82,11 @@ function onNativeChange(event: Event) {
   commit((event.target as HTMLInputElement).value)
 }
 
-const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0 })
+const fieldStartInset = shallowRef(0)
+const fieldControl = useFieldControl({
+  filled: () => modelValue.value.length > 0,
+  startInset: fieldStartInset,
+})
 const focusVisible = shallowRef(false)
 function onNativeFocus() {
   focusVisible.value = focusIsFromKeyboard()
@@ -112,6 +116,34 @@ const restAttrs = computed(() => {
 
 const root = useTemplateRef<HTMLElement>('root')
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
+const startEl = useTemplateRef<HTMLElement>('startEl')
+
+// Measures the real <input>'s offset from the frame edge, rather than assuming a fixed gap.
+function measureStartInset() {
+  const frame = root.value
+  const input = inputEl.value
+  fieldStartInset.value =
+    frame && input
+      ? Math.round(input.getBoundingClientRect().left - frame.getBoundingClientRect().left)
+      : 0
+}
+let startResizeObserver: ResizeObserver | undefined
+watch(
+  startEl,
+  (el) => {
+    startResizeObserver?.disconnect()
+    if (!el) {
+      fieldStartInset.value = 0
+      return
+    }
+    measureStartInset()
+    startResizeObserver = new ResizeObserver(measureStartInset)
+    startResizeObserver.observe(el)
+  },
+  { immediate: true },
+)
+onBeforeUnmount(() => startResizeObserver?.disconnect())
+
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.input,

@@ -31,6 +31,22 @@ export function resolveDOMTarget(target: DOMTarget | undefined): HTMLElement | n
   return target
 }
 
+/**
+ * A `display: contents` element has a zero rect — useless as a floating-ui reference and wrong
+ * for aria-describedby/positioning generally. Descends to the first element that actually
+ * generates a box, same logic vTooltip's directive uses for the same reason.
+ */
+export function resolvePastDisplayContents(el: HTMLElement): HTMLElement {
+  let target = el
+  while (
+    target.firstElementChild instanceof HTMLElement &&
+    getComputedStyle(target).display === 'contents'
+  ) {
+    target = target.firstElementChild
+  }
+  return target
+}
+
 export interface UseDOMTargetReturn {
   /** The resolved element, or `null` while unresolved. */
   el: Readonly<ShallowRef<HTMLElement | null>>

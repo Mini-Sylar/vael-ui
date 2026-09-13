@@ -372,6 +372,36 @@ export interface UiTheme {
       content: UiPartValue
     }>
   }
+  toaster?: {
+    ui?: Partial<{
+      root: UiPartValue
+      toast: UiPartValue
+      icon: UiPartValue
+      content: UiPartValue
+      title: UiPartValue
+      description: UiPartValue
+      action: UiPartValue
+      close: UiPartValue
+    }>
+  }
+  dataTable?: {
+    ui?: Partial<{
+      root: UiPartValue
+      toolbar: UiPartValue
+      table: UiPartValue
+      thead: UiPartValue
+      th: UiPartValue
+      sortButton: UiPartValue
+      grip: UiPartValue
+      resizeHandle: UiPartValue
+      tbody: UiPartValue
+      tr: UiPartValue
+      td: UiPartValue
+      expansionRow: UiPartValue
+      expansionContent: UiPartValue
+      footer: UiPartValue
+    }>
+  }
 }
 
 export const themeKey: InjectionKey<ComputedRef<UiTheme | undefined>> = Symbol('ui-theme')

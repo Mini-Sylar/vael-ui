@@ -64,11 +64,19 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
   const maxHeight = shallowRef<number | null>(null)
   // Set only when matchReferenceWidth enabled (avoid spreading undefined)
   let anchorInlineSize: string | undefined
+  // `update` is async (`computePosition` itself awaits a layout read); autoUpdate's own
+  // ResizeObserver/scroll listeners routinely fire it again before an earlier call resolves — a
+  // reference swap especially, which restarts the observers and typically gets several redundant
+  // calls in the same burst. Without this, whichever call happens to resolve LAST wins even if an
+  // EARLIER call for a newer reference resolves first, and consumers (Tooltip's warm-glide) see a
+  // stream of stale/duplicate position updates instead of one settled value.
+  let updateToken = 0
 
   async function update() {
     const reference = options.referenceEl.value
     const floating = options.floatingEl.value
     if (!reference || !floating) return
+    const token = ++updateToken
 
     const side = toValue(options.side) ?? 'bottom'
     const align = toValue(options.align) ?? 'center'
@@ -96,6 +104,9 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
         }),
       ],
     })
+    // A newer call already started (or the scope was disposed and `update` will never be called
+    // again) — this result is stale, discard it rather than clobber a more current position.
+    if (token !== updateToken) return
 
     positionerStyle.value = {
       position: 'absolute',
@@ -115,6 +126,9 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
       const wasActive = previous?.[0] ?? false
       stopAutoUpdate?.()
       stopAutoUpdate = undefined
+      // Invalidate whatever `update()` call might already be in flight for the config being torn
+      // down — its result, whenever it resolves, must not overwrite what's set up next.
+      updateToken++
       // Reset on (re)open, but not on reference swap while active (avoid blink)
       if (!isActive || !wasActive) {
         positionerStyle.value = { ...HIDDEN_STYLE }
@@ -127,7 +141,12 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
     { flush: 'post' },
   )
 
-  onScopeDispose(() => stopAutoUpdate?.())
+  onScopeDispose(() => {
+    stopAutoUpdate?.()
+    // In case an `update()` call is still in flight when the scope tears down — its resolution
+    // must not write to a ref nothing will ever read again.
+    updateToken++
+  })
 
   return { positionerStyle, placement, transformOrigin, maxHeight, update }
 }

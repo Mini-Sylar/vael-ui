@@ -28,6 +28,31 @@ beforeEach(async () => {
   await page.elementLocator(document.body).hover({ position: { x: 5, y: 5 } })
 })
 
+test('ui prop overrides root/toast/title classes, same convention as every other component', async () => {
+  const screen = render(Toaster, {
+    props: {
+      ui: {
+        root: 'custom-root',
+        toast: 'custom-toast',
+        title: 'custom-title',
+      },
+    },
+  })
+  toast('Hello')
+  await expect.element(page.getByText('Hello')).toBeVisible()
+
+  const toaster = document.querySelector('.ui-toaster')!
+  expect(toaster.classList.contains('custom-root')).toBe(true)
+  const card = document.querySelector('.ui-toast')!
+  expect(card.classList.contains('custom-toast')).toBe(true)
+  const title = document.querySelector('.ui-toast-title')!
+  expect(title.classList.contains('custom-title')).toBe(true)
+
+  dismiss()
+  screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
 test('renders a live region and one card per toast, dismiss button removes it', async () => {
   const screen = render(ToasterFixture)
   toast('Hello', { description: 'World' })

@@ -8,7 +8,9 @@
     :disabled="disabled"
     :label-placement="labelPlacement"
   >
-    <Input ref="input" v-model="value" placeholder="Type here" />
+    <Input ref="input" v-model="value" placeholder="Type here">
+      <template v-if="$slots.start" #start><slot name="start" /></template>
+    </Input>
   </Field>
   <button data-testid="fill" type="button" @click="value = 'programmatic'">Fill</button>
 </template>

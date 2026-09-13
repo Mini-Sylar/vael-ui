@@ -131,7 +131,12 @@
     }
   }
 
+  /* will-change only while actually pressed (not always-on, which forced a permanent compositor
+     layer per button and leaked edges past clipping ancestors) — still promotes the layer ahead
+     of the transform actually starting, so the browser doesn't JIT-promote mid-press and pop the
+     first frame. */
   .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
+    will-change: transform;
     transform: scale(0.96);
   }
 
@@ -264,9 +269,20 @@
     }
   }
 
+  /* The consumer's own class/style rides onto this wrapper too (so grid-column/nth-child
+     placement still resolves against it, the actual grid item) — but it must never paint,
+     or a plain custom class also carrying a background/border/radius paints a second, square
+     box behind the real (correctly rounded) button. The button already received the same
+     class/style, so every visual property still applies there; this just guarantees the
+     wrapper itself stays an invisible shell no matter what that class contains. */
   .ui-button-badge-wrapper {
     display: inline-flex;
     position: relative;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
   }
   .ui-button-badge-wrapper:has(.ui-button--block) {
     display: flex;

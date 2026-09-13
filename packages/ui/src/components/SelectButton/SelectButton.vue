@@ -27,7 +27,7 @@
         :value="item.value"
         :checked="isChecked(item)"
         :disabled="isDisabled(item)"
-        @click="onOptionClick(item, $event)"
+        @click="onOptionClick(item)"
         @change="onInputChange(item, $event)"
       />
       <span class="ui-select-button-content">
@@ -111,10 +111,9 @@ function isDisabled(item: T): boolean {
   return props.disabled || fieldControl.disabled() || !!item.disabled
 }
 
-function onOptionClick(item: T, event: MouseEvent) {
+function onOptionClick(item: T) {
   if (props.multiple || isDisabled(item)) return
   if (props.allowEmpty && modelValue.value === item.value) {
-    event.preventDefault()
     modelValue.value = null
     emit('change', null)
   }

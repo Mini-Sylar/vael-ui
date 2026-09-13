@@ -229,6 +229,7 @@ import type { FunctionalComponent, VNodeChild } from 'vue'
 // circular import resolves fine: the default export is defined by instantiation time, long after
 // this module finishes evaluating.
 import MenuSelf from './Menu.vue'
+import { resolvePastDisplayContents } from '../../composables/dom'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
@@ -311,9 +312,15 @@ function unwrapEl(el: unknown): HTMLElement | null {
 }
 
 const triggerWrapper = useTemplateRef<HTMLElement>('triggerWrapper')
-// External triggerEl prop overrides slot-based trigger.
+// External triggerEl prop overrides slot-based trigger. `.ui-menu-trigger` is `display: contents`
+// (see Menu.css), so it has a zero rect — resolve past it to the real trigger element, or
+// floating-ui anchors the panel at (0,0).
 const triggerElRef = computed<HTMLElement | null>(() =>
-  props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : (triggerWrapper.value ?? null),
+  props.triggerEl !== undefined
+    ? unwrapEl(props.triggerEl)
+    : triggerWrapper.value
+      ? resolvePastDisplayContents(triggerWrapper.value)
+      : null,
 )
 
 function openMenu() {

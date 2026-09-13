@@ -1,15 +1,23 @@
 <template>
-  <tbody v-if="loading" class="ui-datatable-tbody">
-    <tr class="ui-datatable-tr">
-      <td class="ui-datatable-td ui-datatable-td--loading" :colspan="colCount">
+  <tbody v-if="loading" :class="tbodyPart.class" :style="tbodyPart.style">
+    <tr :class="trPart().class" :style="trPart().style">
+      <td
+        :class="tdPart('ui-datatable-td--loading').class"
+        :style="tdPart().style"
+        :colspan="colCount"
+      >
         <slot name="loading" />
       </td>
     </tr>
   </tbody>
 
-  <tbody v-else-if="isEmpty" class="ui-datatable-tbody">
-    <tr class="ui-datatable-tr">
-      <td class="ui-datatable-td ui-datatable-td--empty" :colspan="colCount">
+  <tbody v-else-if="isEmpty" :class="tbodyPart.class" :style="tbodyPart.style">
+    <tr :class="trPart().class" :style="trPart().style">
+      <td
+        :class="tdPart('ui-datatable-td--empty').class"
+        :style="tdPart().style"
+        :colspan="colCount"
+      >
         <slot name="empty" />
       </td>
     </tr>
@@ -19,14 +27,18 @@
        by two spacer rows — an absolutely-positioned <tr> would blockify and
        break column alignment with the header, so this can't reuse the
        absolute-positioning approach Select's own listbox uses. -->
-  <tbody v-else-if="virtualizeActive" class="ui-datatable-tbody">
+  <tbody v-else-if="virtualizeActive" :class="tbodyPart.class" :style="tbodyPart.style">
     <tr
       v-if="virtualItems.length > 0"
-      class="ui-datatable-tr ui-datatable-tr--spacer"
-      :style="{ blockSize: `${topSpacerHeight}px` }"
+      :class="trPart('ui-datatable-tr--spacer').class"
+      :style="[trPart().style, { blockSize: `${topSpacerHeight}px` }]"
       aria-hidden="true"
     >
-      <td :colspan="colCount" class="ui-datatable-td ui-datatable-td--spacer"></td>
+      <td
+        :colspan="colCount"
+        :class="tdPart('ui-datatable-td--spacer').class"
+        :style="tdPart().style"
+      ></td>
     </tr>
     <!-- Cell markup here must stay identical to the non-virtualized tbody below. -->
     <tr
@@ -34,12 +46,15 @@
       :key="tableRowEntries[virtualRow.index]!.key"
       :ref="(el) => measureRow(virtualRow.index, el as HTMLElement | null)"
       :data-virtual-index="virtualRow.index"
-      class="ui-datatable-tr"
-      :class="{
-        'ui-datatable-tr--expansion': tableRowEntries[virtualRow.index]!.kind === 'expansion',
-        'ui-datatable-tr--clickable':
-          selectableRows && tableRowEntries[virtualRow.index]!.kind === 'row',
-      }"
+      :class="
+        trPart(
+          tableRowEntries[virtualRow.index]!.kind === 'expansion' && 'ui-datatable-tr--expansion',
+          selectableRows &&
+            tableRowEntries[virtualRow.index]!.kind === 'row' &&
+            'ui-datatable-tr--clickable',
+        ).class
+      "
+      :style="trPart().style"
       :data-selected="
         tableRowEntries[virtualRow.index]!.kind === 'row' &&
         isSelected(tableRowEntries[virtualRow.index]!.row)
@@ -54,9 +69,10 @@
       <template v-if="tableRowEntries[virtualRow.index]!.kind === 'row'">
         <td
           v-if="selectColumnRendered"
-          class="ui-datatable-td ui-datatable-td--select"
-          :class="{ 'ui-datatable-td--frozen': frozenColumns > 0 }"
-          :style="utilityFrozenStyle('select')"
+          :class="
+            tdPart('ui-datatable-td--select', frozenColumns > 0 && 'ui-datatable-td--frozen').class
+          "
+          :style="[tdPart().style, utilityFrozenStyle('select')]"
         >
           <Checkbox
             v-if="!single"
@@ -72,9 +88,10 @@
         </td>
         <td
           v-if="expansionColumnRendered"
-          class="ui-datatable-td ui-datatable-td--expand"
-          :class="{ 'ui-datatable-td--frozen': frozenColumns > 0 }"
-          :style="utilityFrozenStyle('expand')"
+          :class="
+            tdPart('ui-datatable-td--expand', frozenColumns > 0 && 'ui-datatable-td--frozen').class
+          "
+          :style="[tdPart().style, utilityFrozenStyle('expand')]"
         >
           <Button
             icon
@@ -109,13 +126,14 @@
         </td>
         <td
           v-for="(col, colIndex) in columns"
-          :key="colIndex"
-          class="ui-datatable-td"
-          :class="{
-            'ui-datatable-td--frozen': isFrozenColumn(colIndex),
-            'ui-datatable-td--frozen-end': colIndex === frozenColumns - 1,
-          }"
-          :style="[columnStyle(col), columnFrozenStyle(colIndex)]"
+          :key="String(col.field)"
+          :class="
+            tdPart(
+              isFrozenColumn(colIndex) && 'ui-datatable-td--frozen',
+              colIndex === frozenColumns - 1 && 'ui-datatable-td--frozen-end',
+            ).class
+          "
+          :style="[tdPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
           :data-label="col.label ?? String(col.field)"
         >
           <component
@@ -127,9 +145,14 @@
           <template v-else>{{ tableRowEntries[virtualRow.index]!.row[col.field] }}</template>
         </td>
       </template>
-      <td v-else class="ui-datatable-td ui-datatable-td--expansion" :colspan="colCount">
-        <div class="ui-datatable-expansion-rows">
-          <div class="ui-datatable-expansion-inner">
+      <td
+        v-else
+        :class="tdPart('ui-datatable-td--expansion').class"
+        :style="tdPart().style"
+        :colspan="colCount"
+      >
+        <div :class="expansionRowPart.class" :style="expansionRowPart.style">
+          <div :class="expansionContentPart.class" :style="expansionContentPart.style">
             <slot name="expansion" :row="tableRowEntries[virtualRow.index]!.row" />
           </div>
         </div>
@@ -137,11 +160,15 @@
     </tr>
     <tr
       v-if="virtualItems.length > 0"
-      class="ui-datatable-tr ui-datatable-tr--spacer"
-      :style="{ blockSize: `${bottomSpacerHeight}px` }"
+      :class="trPart('ui-datatable-tr--spacer').class"
+      :style="[trPart().style, { blockSize: `${bottomSpacerHeight}px` }]"
       aria-hidden="true"
     >
-      <td :colspan="colCount" class="ui-datatable-td ui-datatable-td--spacer"></td>
+      <td
+        :colspan="colCount"
+        :class="tdPart('ui-datatable-td--spacer').class"
+        :style="tdPart().style"
+      ></td>
     </tr>
   </tbody>
 
@@ -150,7 +177,8 @@
     tag="tbody"
     name="ui-datatable-row"
     :css="motionCss"
-    class="ui-datatable-tbody"
+    :class="tbodyPart.class"
+    :style="tbodyPart.style"
     :data-motion="motionCss && rowMotionReady ? undefined : 'off'"
     @before-enter="beforeEnterHook"
     @before-leave="beforeLeaveHook"
@@ -160,20 +188,23 @@
     <tr
       v-for="entry in tableRowEntries"
       :key="entry.key"
-      class="ui-datatable-tr"
-      :class="{
-        'ui-datatable-tr--expansion': entry.kind === 'expansion',
-        'ui-datatable-tr--clickable': selectableRows && entry.kind === 'row',
-      }"
+      :class="
+        trPart(
+          entry.kind === 'expansion' && 'ui-datatable-tr--expansion',
+          selectableRows && entry.kind === 'row' && 'ui-datatable-tr--clickable',
+        ).class
+      "
+      :style="trPart().style"
       :data-selected="entry.kind === 'row' && isSelected(entry.row) ? '' : undefined"
       @click="entry.kind === 'row' && onRowClick(entry.row, $event)"
     >
       <template v-if="entry.kind === 'row'">
         <td
           v-if="selectColumnRendered"
-          class="ui-datatable-td ui-datatable-td--select"
-          :class="{ 'ui-datatable-td--frozen': frozenColumns > 0 }"
-          :style="utilityFrozenStyle('select')"
+          :class="
+            tdPart('ui-datatable-td--select', frozenColumns > 0 && 'ui-datatable-td--frozen').class
+          "
+          :style="[tdPart().style, utilityFrozenStyle('select')]"
         >
           <Checkbox
             v-if="!single"
@@ -185,9 +216,10 @@
         </td>
         <td
           v-if="expansionColumnRendered"
-          class="ui-datatable-td ui-datatable-td--expand"
-          :class="{ 'ui-datatable-td--frozen': frozenColumns > 0 }"
-          :style="utilityFrozenStyle('expand')"
+          :class="
+            tdPart('ui-datatable-td--expand', frozenColumns > 0 && 'ui-datatable-td--frozen').class
+          "
+          :style="[tdPart().style, utilityFrozenStyle('expand')]"
         >
           <Button
             icon
@@ -220,13 +252,14 @@
         </td>
         <td
           v-for="(col, colIndex) in columns"
-          :key="colIndex"
-          class="ui-datatable-td"
-          :class="{
-            'ui-datatable-td--frozen': isFrozenColumn(colIndex),
-            'ui-datatable-td--frozen-end': colIndex === frozenColumns - 1,
-          }"
-          :style="[columnStyle(col), columnFrozenStyle(colIndex)]"
+          :key="String(col.field)"
+          :class="
+            tdPart(
+              isFrozenColumn(colIndex) && 'ui-datatable-td--frozen',
+              colIndex === frozenColumns - 1 && 'ui-datatable-td--frozen-end',
+            ).class
+          "
+          :style="[tdPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
           :data-label="col.label ?? String(col.field)"
         >
           <component
@@ -238,9 +271,14 @@
           <template v-else>{{ entry.row[col.field] }}</template>
         </td>
       </template>
-      <td v-else class="ui-datatable-td ui-datatable-td--expansion" :colspan="colCount">
-        <div class="ui-datatable-expansion-rows">
-          <div class="ui-datatable-expansion-inner">
+      <td
+        v-else
+        :class="tdPart('ui-datatable-td--expansion').class"
+        :style="tdPart().style"
+        :colspan="colCount"
+      >
+        <div :class="expansionRowPart.class" :style="expansionRowPart.style">
+          <div :class="expansionContentPart.class" :style="expansionContentPart.style">
             <slot name="expansion" :row="entry.row" />
           </div>
         </div>
@@ -262,6 +300,8 @@ import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { computed, TransitionGroup } from 'vue'
 import type { VirtualRow } from '../../composables/useVirtualizer'
 import { useUiMessages } from '../../messages'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
 
 export interface TableRowEntry<T> {
   kind: 'row' | 'expansion'
@@ -302,7 +342,29 @@ const props = defineProps<{
   rowMotionReady: boolean
   onRowEnter: (el: Element, done: () => void) => void
   onRowLeave: (el: Element, done: () => void) => void
+  ui?: Partial<{
+    tbody: UiPartValue
+    tr: UiPartValue
+    td: UiPartValue
+    expansionRow: UiPartValue
+    expansionContent: UiPartValue
+  }>
 }>()
+
+const cx = useClassMerge()
+const tbodyPart = computed(() => resolveUiPart(cx, props.ui?.tbody, 'ui-datatable-tbody'))
+function trPart(...extra: (string | false | undefined)[]) {
+  return resolveUiPart(cx, props.ui?.tr, 'ui-datatable-tr', ...extra)
+}
+function tdPart(...extra: (string | false | undefined)[]) {
+  return resolveUiPart(cx, props.ui?.td, 'ui-datatable-td', ...extra)
+}
+const expansionRowPart = computed(() =>
+  resolveUiPart(cx, props.ui?.expansionRow, 'ui-datatable-expansion-rows'),
+)
+const expansionContentPart = computed(() =>
+  resolveUiPart(cx, props.ui?.expansionContent, 'ui-datatable-expansion-inner'),
+)
 
 defineSlots<{
   loading(): any

@@ -42,6 +42,17 @@ test('allowEmpty clears the model on re-clicking the active option', async () =>
   await expect.element(screen.getByTestId('single-value')).toHaveTextContent('null')
 })
 
+test('allowEmpty: the same option can be re-selected after being cleared', async () => {
+  const screen = render(SelectButtonFixture, {})
+  const list = screen.container.querySelector<HTMLInputElement>(
+    '[data-testid="single"] input[value="list"]',
+  )!
+  await userEvent.click(list)
+  await expect.element(screen.getByTestId('single-value')).toHaveTextContent('null')
+  await userEvent.click(list)
+  await expect.element(screen.getByTestId('single-value')).toHaveTextContent('list')
+})
+
 test('allowEmpty=false keeps the active option selected on re-click', async () => {
   const screen = render(SelectButtonFixture, { props: { allowEmpty: false } })
   const list = screen.container.querySelector<HTMLInputElement>(
