@@ -12,6 +12,7 @@
         :data-side="resolvedSide"
         :data-instant="instant || undefined"
         :data-traveling="traveling || undefined"
+        :data-sizing-locked="travelActive || undefined"
       >
         <div
           :id="tooltipId"
@@ -78,7 +79,8 @@ const core = useTooltipCore(open, {
   closeDelay: () => config.value?.closeDelay ?? props.closeDelay ?? 100,
   beforeClose: () => config.value?.beforeClose ?? props.beforeClose,
 })
-const { positionerStyle, placement, transformOrigin, isClosing, instant, traveling } = core
+const { positionerStyle, placement, transformOrigin, isClosing, instant, traveling, travelActive } =
+  core
 
 const content = computed(() => config.value?.content ?? '')
 // Per-target override with host default (like side/openDelay/closeDelay).

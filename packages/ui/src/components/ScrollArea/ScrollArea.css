@@ -1,6 +1,10 @@
 @layer ui-components {
   .ui-scroll-area {
     position: relative;
+    /* flex + flex:1 on the viewport, not block-size:100% — a percentage height needs an
+       explicitly-sized ancestor, so a bare max-height on this root did nothing. */
+    display: flex;
+    flex-direction: column;
     min-block-size: 0;
     min-inline-size: 0;
   }
@@ -9,8 +13,9 @@
     --ui-scroll-thumb-hover: var(--ui-text-muted);
     --ui-scroll-size: 0.5rem;
 
-    inline-size: 100%;
-    block-size: 100%;
+    flex: 1 1 auto;
+    min-block-size: 0;
+    min-inline-size: 0;
     scrollbar-width: thin;
     scrollbar-color: var(--ui-scroll-thumb) transparent;
   }

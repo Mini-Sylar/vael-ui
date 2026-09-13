@@ -113,3 +113,51 @@ test('a plain class fallthrough also rides onto the wrapper', async () => {
   })
   expect(wrapper().classList.contains('nav-item')).toBe(true)
 })
+
+// Regression test: a class carrying its own background/border/border-radius (the exact scenario
+// from the issues doc — a custom `.profile-trigger` shape override) used to paint that background
+// on the WRAPPER too, showing as a square box behind the actually-rounded button, because the
+// wrapper has no border-radius of its own. The wrapper now forces its own paint properties off
+// (!important) regardless of what the mirrored class contains — the button still receives the
+// same class and paints normally.
+test('a custom background/border/radius on the fallthrough class never paints on the wrapper', async () => {
+  const style = document.createElement('style')
+  style.textContent = '.custom-shape { background: rgb(10, 20, 30); border-radius: 999px; }'
+  document.head.append(style)
+  try {
+    render(Button, {
+      attrs: { class: 'custom-shape' },
+      props: { badgePlacement: 'top-end' },
+      slots: { default: 'Inbox', badge: '<span>3</span>' },
+    })
+    const wrapperEl = wrapper()
+    const buttonEl = document.querySelector<HTMLElement>('.ui-button')!
+    expect(wrapperEl.classList.contains('custom-shape')).toBe(true)
+    expect(getComputedStyle(wrapperEl).backgroundColor).not.toBe('rgb(10, 20, 30)')
+    expect(getComputedStyle(wrapperEl).borderRadius).toBe('0px')
+    // The button itself still gets the full custom styling — only the wrapper is neutered.
+    expect(getComputedStyle(buttonEl).backgroundColor).toBe('rgb(10, 20, 30)')
+  } finally {
+    style.remove()
+  }
+})
+
+// Regression test: when the badge briefly lived as a child of the button (an earlier fix for the
+// squared-box/grid bugs above), the button's own `:active` press-scale dragged the badge along
+// with it — shrinking it and nudging it toward the button's center, worse the larger the button.
+// The badge is a sibling of the button (inside the wrapper), never a descendant, so the button's
+// own transform can't touch it at all.
+test("pressing the button never moves the badge — it isn't a descendant of the transformed element", async () => {
+  render(Button, {
+    props: { badgePlacement: 'top-end' },
+    slots: { default: 'A fairly wide button label', badge: '<span>3</span>' },
+  })
+  const buttonEl = document.querySelector<HTMLButtonElement>('.ui-button')!
+  const before = badge()!.getBoundingClientRect()
+  buttonEl.style.transform = 'scale(0.96)'
+  const during = badge()!.getBoundingClientRect()
+  buttonEl.style.transform = ''
+  expect(during.left).toBe(before.left)
+  expect(during.top).toBe(before.top)
+  expect(during.width).toBe(before.width)
+})

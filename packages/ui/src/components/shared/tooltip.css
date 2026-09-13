@@ -35,17 +35,28 @@
   .ui-tooltip-leave-active[data-instant] .ui-tooltip-panel {
     transition-duration: 0ms;
   }
+  /* Same duration/easing pair as the panel's own same-trigger resize (Tooltip.vue) — both are
+     "the tooltip box resizing/repositioning", so they use the tooltip-specific tokens rather than
+     the generic press duration + a symmetric in-out curve, which read slightly slower and less
+     directional for something chasing the cursor across a row of triggers. */
   .ui-tooltip-positioner[data-traveling] {
     transition:
-      top var(--ui-duration-press) var(--ui-ease-in-out),
-      left var(--ui-duration-press) var(--ui-ease-in-out),
-      width var(--ui-duration-press) var(--ui-ease-in-out),
-      height var(--ui-duration-press) var(--ui-ease-in-out);
+      top var(--ui-duration-tooltip) var(--ui-ease-out),
+      left var(--ui-duration-tooltip) var(--ui-ease-out),
+      width var(--ui-duration-tooltip) var(--ui-ease-out),
+      height var(--ui-duration-tooltip) var(--ui-ease-out);
   }
-  .ui-tooltip-positioner[data-traveling] .ui-tooltip-panel {
+  /* Set for the travel's whole span, not just while `data-traveling`'s transition is enabled: the
+     content already swapped to the new target the instant the trigger did, but the box is
+     briefly pinned to the old (or a mid-tween) size — a label that only needs one line at its
+     real target width wraps to two at that narrower size. Without `white-space: nowrap` here,
+     that extra wrapped line is fully visible for a frame (before `overflow` below clips it back
+     down), reading as a flash of doubled/wrapped text. */
+  .ui-tooltip-positioner[data-sizing-locked] .ui-tooltip-panel {
     inline-size: 100%;
     block-size: 100%;
     overflow: hidden;
+    white-space: nowrap;
   }
 
   @media (prefers-reduced-motion: reduce) {

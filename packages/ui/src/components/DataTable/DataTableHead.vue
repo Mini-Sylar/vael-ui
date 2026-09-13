@@ -1,12 +1,13 @@
 <template>
-  <thead class="ui-datatable-thead">
+  <thead :class="theadPart.class" :style="theadPart.style">
     <tr ref="rowEl" class="ui-datatable-tr">
       <th
         v-if="selectColumnRendered"
         scope="col"
-        class="ui-datatable-th ui-datatable-th--select"
-        :class="{ 'ui-datatable-th--frozen': frozenColumns > 0 }"
-        :style="utilityFrozenStyle('select')"
+        :class="
+          thPart('ui-datatable-th--select', frozenColumns > 0 && 'ui-datatable-th--frozen').class
+        "
+        :style="[thPart().style, utilityFrozenStyle('select')]"
       >
         <Checkbox
           v-if="!single"
@@ -19,21 +20,23 @@
       <th
         v-if="expansionColumnRendered"
         scope="col"
-        class="ui-datatable-th ui-datatable-th--expand"
-        :class="{ 'ui-datatable-th--frozen': frozenColumns > 0 }"
-        :style="utilityFrozenStyle('expand')"
+        :class="
+          thPart('ui-datatable-th--expand', frozenColumns > 0 && 'ui-datatable-th--frozen').class
+        "
+        :style="[thPart().style, utilityFrozenStyle('expand')]"
         aria-hidden="true"
       ></th>
       <th
         v-for="(col, colIndex) in columns"
-        :key="colIndex"
+        :key="String(col.field)"
         scope="col"
-        class="ui-datatable-th"
-        :class="{
-          'ui-datatable-th--frozen': isFrozenColumn(colIndex),
-          'ui-datatable-th--frozen-end': colIndex === frozenColumns - 1,
-        }"
-        :style="[columnStyle(col), columnFrozenStyle(colIndex)]"
+        :class="
+          thPart(
+            isFrozenColumn(colIndex) && 'ui-datatable-th--frozen',
+            colIndex === frozenColumns - 1 && 'ui-datatable-th--frozen-end',
+          ).class
+        "
+        :style="[thPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
         :aria-sort="col.sortable ? sortAriaValue(col) : undefined"
         :data-column-field="String(col.field)"
         :data-dragging="draggingColumn === col.field || undefined"
@@ -47,7 +50,8 @@
         >
           <span
             v-if="isColumnReorderable(col)"
-            class="ui-datatable-th-grip"
+            :class="gripPart.class"
+            :style="gripPart.style"
             :data-visibility="columnGripVisibility"
             aria-hidden="true"
           >
@@ -64,7 +68,8 @@
           <button
             v-else-if="col.sortable"
             type="button"
-            class="ui-datatable-sort-button"
+            :class="sortButtonPart.class"
+            :style="sortButtonPart.style"
             @click="onToggleSort(col.field)"
           >
             <span class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
@@ -88,7 +93,8 @@
         </div>
         <span
           v-if="isColumnResizable(col)"
-          class="ui-datatable-resize-handle"
+          :class="resizeHandlePart.class"
+          :style="resizeHandlePart.style"
           aria-hidden="true"
           @pointerdown="onResizePointerdown(col, $event)"
         ></span>
@@ -103,10 +109,12 @@
      offset measurement (which needs the real <th> elements) keeps working
      regardless of which table currently owns this header. -->
 <script setup lang="ts" generic="T extends Record<string, any>">
-import { useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { useUiMessages } from '../../messages'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
 
 const messages = useUiMessages()
 
@@ -132,7 +140,27 @@ const props = defineProps<{
   draggingColumn: string | number | null
   onColumnPointerdown: (event: PointerEvent, field: string | number) => void
   consumeColumnClick: () => boolean
+  ui?: Partial<{
+    thead: UiPartValue
+    th: UiPartValue
+    sortButton: UiPartValue
+    grip: UiPartValue
+    resizeHandle: UiPartValue
+  }>
 }>()
+
+const cx = useClassMerge()
+const theadPart = computed(() => resolveUiPart(cx, props.ui?.thead, 'ui-datatable-thead'))
+function thPart(...extra: (string | false | undefined)[]) {
+  return resolveUiPart(cx, props.ui?.th, 'ui-datatable-th', ...extra)
+}
+const sortButtonPart = computed(() =>
+  resolveUiPart(cx, props.ui?.sortButton, 'ui-datatable-sort-button'),
+)
+const gripPart = computed(() => resolveUiPart(cx, props.ui?.grip, 'ui-datatable-th-grip'))
+const resizeHandlePart = computed(() =>
+  resolveUiPart(cx, props.ui?.resizeHandle, 'ui-datatable-resize-handle'),
+)
 
 function onHeaderClickCapture(event: MouseEvent) {
   // A completed drag is followed by a click; without swallowing it, dropping a

@@ -36,8 +36,10 @@
     overscroll-behavior: contain;
     padding: 0.25rem;
   }
+  /* Only exists for a click handler + ref — display:contents keeps it out of the layout tree so
+     the trigger sizes/positions exactly as if it were a direct child of Menu's own parent. */
   .ui-menu-trigger {
-    display: inline-flex;
+    display: contents;
   }
   /* Data-driven item defaults. */
   .ui-menu-item {

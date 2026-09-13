@@ -114,7 +114,10 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
   Dual render paths: the badge wrapper renders only with a badge in play (`#badge` slot, or
   `badgePlacement` set to reserve the structure) so a plain button keeps its `:deep()`/sibling
   selectors; when it IS the outer node it mirrors the consumer's own `ui.root`/class/style so
-  class-based placement still resolves. `defineExpose({ el })` is the inner button either way.
+  class-based placement still resolves (Button.css forces the wrapper paint-free regardless of
+  what that class contains — see its own comment). Badge is a sibling of the button, not a child,
+  so it never inherits the button's own `:active` press-scale. `defineExpose({ el })` is the inner
+  button either way.
 -->
 <script setup lang="ts">
 import './Button.css'

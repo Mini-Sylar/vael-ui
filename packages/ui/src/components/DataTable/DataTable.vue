@@ -1,20 +1,20 @@
 <template>
   <div
     ref="root"
-    class="ui-datatable"
-    :class="rootClasses"
+    :class="rootPart.class"
+    :style="rootPart.style"
     :data-stacked="stacked ? '' : undefined"
     v-bind="attrs"
   >
-    <div v-if="$slots.toolbar" class="ui-datatable-toolbar">
+    <div v-if="$slots.toolbar" :class="toolbarPart.class" :style="toolbarPart.style">
       <slot name="toolbar" :selected="selected" :count="sortedData.length" />
     </div>
 
     <div class="ui-datatable-scroll-x">
       <template v-if="scrollHeight">
         <table
-          class="ui-datatable-table ui-datatable-table--split"
-          :style="{ paddingInlineEnd: `${scrollbarWidth}px` }"
+          :class="tablePart('ui-datatable-table--split').class"
+          :style="[tablePart().style, { paddingInlineEnd: `${scrollbarWidth}px` }]"
         >
           <!-- table-layout:fixed only sizes columns from a table's first row;
                the body table's first row is a virtualize spacer with no
@@ -30,7 +30,7 @@
           class="ui-datatable-scroll-y"
           :style="{ maxBlockSize: bodyMaxBlockSize }"
         >
-          <table class="ui-datatable-table ui-datatable-table--split">
+          <table :class="tablePart('ui-datatable-table--split').class" :style="tablePart().style">
             <colgroup>
               <col v-for="(width, i) in colWidths" :key="i" :style="width" />
             </colgroup>
@@ -43,7 +43,7 @@
         </div>
       </template>
 
-      <table v-else class="ui-datatable-table">
+      <table v-else :class="tablePart().class" :style="tablePart().style">
         <DataTableHead ref="headComponent" v-bind="headProps" />
         <DataTableBody v-bind="bodyProps">
           <template #loading><slot name="loading" /></template>
@@ -53,7 +53,7 @@
       </table>
     </div>
 
-    <div v-if="$slots.footer" class="ui-datatable-footer">
+    <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
       <slot
         name="footer"
         :data="sortedData"
@@ -109,6 +109,9 @@ import type { SortableDropDetails } from '../../composables/useSortable'
 import DataTableHead from './DataTableHead.vue'
 import DataTableBody from './DataTableBody.vue'
 import type { TableRowEntry } from './DataTableBody.vue'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
@@ -185,6 +188,22 @@ const props = withDefaults(
      * touch needs a hold to tell the two apart; mouse/pen are unaffected.
      * Default `150`. */
     touchDragDelay?: number
+    ui?: Partial<{
+      root: UiPartValue
+      toolbar: UiPartValue
+      table: UiPartValue
+      thead: UiPartValue
+      th: UiPartValue
+      sortButton: UiPartValue
+      grip: UiPartValue
+      resizeHandle: UiPartValue
+      tbody: UiPartValue
+      tr: UiPartValue
+      td: UiPartValue
+      expansionRow: UiPartValue
+      expansionContent: UiPartValue
+      footer: UiPartValue
+    }>
   }>(),
   {
     loading: false,
@@ -509,6 +528,20 @@ const rootClasses = computed(() => [
   props.showGridlines && 'ui-datatable--gridlines',
 ])
 
+const cx = useClassMerge()
+const themedUi = useThemedUi(
+  (theme) => theme.dataTable,
+  () => props.ui,
+)
+const rootPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.root, 'ui-datatable', ...rootClasses.value),
+)
+const toolbarPart = computed(() => resolveUiPart(cx, themedUi()?.toolbar, 'ui-datatable-toolbar'))
+function tablePart(...extra: (string | false | undefined)[]) {
+  return resolveUiPart(cx, themedUi()?.table, 'ui-datatable-table', ...extra)
+}
+const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-datatable-footer'))
+
 // Column's own resizable prop wins over table-level default.
 function isColumnResizable(col: RegisteredColumn<T>): boolean {
   return col.resizable ?? props.resizableColumns
@@ -755,6 +788,13 @@ const headProps = computed(() => ({
   draggingColumn: draggingColumn.value,
   onColumnPointerdown,
   consumeColumnClick,
+  ui: {
+    thead: themedUi()?.thead,
+    th: themedUi()?.th,
+    sortButton: themedUi()?.sortButton,
+    grip: themedUi()?.grip,
+    resizeHandle: themedUi()?.resizeHandle,
+  },
 }))
 const bodyProps = computed(() => ({
   colCount: colCount.value,
@@ -786,6 +826,13 @@ const bodyProps = computed(() => ({
   rowMotionReady: rowMotionReady.value,
   onRowEnter: (el: Element, done: () => void) => emit('row-enter', el, done),
   onRowLeave: (el: Element, done: () => void) => emit('row-leave', el, done),
+  ui: {
+    tbody: themedUi()?.tbody,
+    tr: themedUi()?.tr,
+    td: themedUi()?.td,
+    expansionRow: themedUi()?.expansionRow,
+    expansionContent: themedUi()?.expansionContent,
+  },
 }))
 
 // The generic-inference handoff (see the SFC comment above): `T` is bound

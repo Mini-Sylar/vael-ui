@@ -5,6 +5,8 @@ import { fieldKey } from './fieldContext'
 export interface UseFieldControlOptions {
   /** Reactive "does this control currently have a value" signal. Watched and reported to the nearest Field so it can flip `data-filled` (and, for float/inset placements, move the label) — including programmatic v-model writes, not just user typing. */
   filled?: MaybeRefOrGetter<boolean>
+  /** Reactive px offset to this control's real content, past any leading icon/slot. */
+  startInset?: MaybeRefOrGetter<number>
 }
 
 export interface UseFieldControlReturn {
@@ -35,6 +37,11 @@ export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldC
   const filled = options.filled
   if (filled !== undefined) {
     watchEffect(() => ctx?.reportFilled(toValue(filled)))
+  }
+
+  const startInset = options.startInset
+  if (startInset !== undefined) {
+    watchEffect(() => ctx?.reportStartInset(toValue(startInset)))
   }
 
   return {

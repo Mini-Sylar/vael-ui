@@ -26,6 +26,37 @@ test('trigger click opens the menu and focuses the first item; select closes it'
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
+// Regression test: `.ui-menu-trigger` is `display: contents` (so an absolutely-positioned
+// trigger sizes against its real parent, not this wrapper) — but that also gives the wrapper a
+// zero rect at the viewport ORIGIN specifically (not just zero-sized in place), and Menu used the
+// wrapper itself as the floating-ui reference. Anchoring off that collapsed the whole panel to
+// the viewport's top-left corner instead of the trigger. A spacer pushes the trigger well away
+// from (0,0) so a regression can't hide behind the trigger coincidentally rendering near the
+// origin in an isolated test page.
+test('the panel anchors to the real trigger element, not a (0,0) fallback from its display:contents wrapper', async () => {
+  const spacer = document.createElement('div')
+  spacer.style.blockSize = '400px'
+  document.body.prepend(spacer)
+  try {
+    const screen = render(MenuFixture)
+    const trigger = screen.getByTestId('trigger').element() as HTMLElement
+    const triggerRect = trigger.getBoundingClientRect()
+    expect(triggerRect.top).toBeGreaterThan(300) // sanity: the spacer actually pushed it down
+
+    await screen.getByTestId('trigger').click()
+    const panel = document.querySelector<HTMLElement>('.ui-menu-panel')!
+    await vi.waitFor(() =>
+      expect(getComputedStyle(panel.parentElement!).visibility).toBe('visible'),
+    )
+    const panelRect = panel.parentElement!.getBoundingClientRect()
+
+    expect(panelRect.top).toBeGreaterThan(300)
+    expect(Math.abs(panelRect.top - triggerRect.bottom)).toBeLessThan(50)
+  } finally {
+    spacer.remove()
+  }
+})
+
 test('ArrowDown/ArrowUp move focus, wrap at both ends, and skip disabled items', async () => {
   const screen = render(MenuFixture)
   await screen.getByTestId('trigger').click()

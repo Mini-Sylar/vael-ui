@@ -46,7 +46,7 @@ const springActive = shallowRef<Section>('overview')
   position: absolute;
   inset: 0;
   border-radius: var(--ui-radius);
-  background: var(--ui-primary);
+  background: var(--ui-primary-hover);
   opacity: 0.15;
   z-index: -1;
 }

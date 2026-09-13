@@ -49,12 +49,9 @@ const items: SpeedDialItem[] = [
 .speed-dial-row {
   display: flex;
   align-items: center;
-  gap: 3rem;
-  /* Generous block-start clearance specifically, the "up" and
-     "quarter-circle" directions fan out ABOVE the trigger, and without
-     room to do it in, the actions overlap whatever content precedes this
-     row instead of the empty page background. */
-  padding: 8rem 1rem 2rem;
+  gap: 12rem;
+  justify-content: center;
+  padding: 12rem 1rem 2rem;
 }
 /* SpeedDial's own actions are position:absolute against its root, each
    instance needs a positioned, appropriately-sized box of its own so

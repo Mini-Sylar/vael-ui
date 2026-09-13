@@ -99,8 +99,8 @@
     display: grid;
     place-items: center;
     transition:
-      opacity var(--ui-duration-enter) var(--ui-ease-in-out),
-      scale var(--ui-duration-enter) var(--ui-ease-in-out);
+      opacity var(--ui-duration-press) var(--ui-ease-out),
+      scale var(--ui-duration-press) var(--ui-ease-out);
   }
   .ui-stepper-check-enter-from,
   .ui-stepper-check-leave-to {
@@ -191,7 +191,7 @@
     }
     .ui-stepper-check-enter-active,
     .ui-stepper-check-leave-active {
-      transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+      transition: opacity var(--ui-duration-press) var(--ui-ease-out);
     }
     .ui-stepper-check-enter-from,
     .ui-stepper-check-leave-to {

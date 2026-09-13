@@ -4,9 +4,8 @@
       :ref="registerToaster"
       name="ui-toast"
       tag="ol"
-      class="ui-toaster"
-      :class="`ui-toaster--${position}`"
-      :style="rootStyle"
+      :class="rootPart.class"
+      :style="[rootStyle, rootPart.style]"
       :css="motionCss"
       role="region"
       aria-live="polite"
@@ -24,9 +23,8 @@
         v-for="(entry, index) in visible"
         :key="entry.id"
         :ref="(el) => registerCard(entry.id, el as Element | null)"
-        class="ui-toast"
-        :class="`ui-toast--${entry.variant}`"
-        :style="cardStyle(entry.id, index)"
+        :class="toastPart(entry.variant).class"
+        :style="[cardStyle(entry.id, index), toastPart(entry.variant).style]"
         :data-front="depthOf(entry.id) === 0"
         :data-expanded="expanded"
         :data-swiping="swipeState[entry.id]?.swiping ?? false"
@@ -44,24 +42,32 @@
           :depth="depthOf(entry.id)"
           :expanded="expanded"
         >
-          <span class="ui-toast-icon" aria-hidden="true">
+          <span :class="iconPart.class" :style="iconPart.style" aria-hidden="true">
             <StatusIcon :variant="entry.variant" />
           </span>
-          <div class="ui-toast-content">
-            <p class="ui-toast-title">{{ entry.title }}</p>
-            <p v-if="entry.description" class="ui-toast-description">{{ entry.description }}</p>
+          <div :class="contentPart.class" :style="contentPart.style">
+            <p :class="titlePart.class" :style="titlePart.style">{{ entry.title }}</p>
+            <p
+              v-if="entry.description"
+              :class="descriptionPart.class"
+              :style="descriptionPart.style"
+            >
+              {{ entry.description }}
+            </p>
           </div>
           <button
             v-if="entry.action"
             type="button"
-            class="ui-toast-action"
+            :class="actionPart.class"
+            :style="actionPart.style"
             @click="onActionClick(entry)"
           >
             {{ entry.action.label }}
           </button>
           <button
             type="button"
-            class="ui-toast-close"
+            :class="closePart.class"
+            :style="closePart.style"
             :aria-label="messages.toast.dismiss"
             @click="dismiss(entry.id)"
           >
@@ -98,7 +104,9 @@ import { useDocumentVisibility } from '@vueuse/core'
 import { useToastQueue } from '../../composables/useToast'
 import type { ToastEntry } from '../../composables/useToast'
 import { useUiMessages } from '../../messages'
-import { themeScopeKey } from '../../theme'
+import { themeScopeKey, useThemedUi } from '../../theme'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
 import StatusIcon from '../internal/StatusIcon.vue'
 
 // Port of vue-sonner's swipe-to-dismiss mechanics; constants are Sonner's.
@@ -116,6 +124,16 @@ const props = withDefaults(
     teleportTo?: string
     /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. */
     motionCss?: boolean
+    ui?: Partial<{
+      root: UiPartValue
+      toast: UiPartValue
+      icon: UiPartValue
+      content: UiPartValue
+      title: UiPartValue
+      description: UiPartValue
+      action: UiPartValue
+      close: UiPartValue
+    }>
   }>(),
   { position: 'bottom-right', maxVisible: 4, gap: 10, teleportTo: 'body', motionCss: true },
 )
@@ -212,6 +230,26 @@ const rootStyle = computed(() => {
   }
   return style
 })
+
+const cx = useClassMerge()
+const themedUi = useThemedUi(
+  (theme) => theme.toaster,
+  () => props.ui,
+)
+const rootPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.root, 'ui-toaster', `ui-toaster--${props.position}`),
+)
+function toastPart(variant: string) {
+  return resolveUiPart(cx, themedUi()?.toast, 'ui-toast', `ui-toast--${variant}`)
+}
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-toast-icon'))
+const contentPart = computed(() => resolveUiPart(cx, themedUi()?.content, 'ui-toast-content'))
+const titlePart = computed(() => resolveUiPart(cx, themedUi()?.title, 'ui-toast-title'))
+const descriptionPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.description, 'ui-toast-description'),
+)
+const actionPart = computed(() => resolveUiPart(cx, themedUi()?.action, 'ui-toast-action'))
+const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-toast-close'))
 
 function offsetOf(id: number) {
   const i = visible.value.findIndex((t) => t.id === id)

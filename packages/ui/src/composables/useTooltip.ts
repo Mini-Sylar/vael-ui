@@ -108,13 +108,53 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
 
   const TRAVEL_MAX_DISTANCE = 320
   const TRAVEL_MAX_SIZE_RATIO = 1.75
+  // A ratio alone over-triggers for small tooltips: two adjacent toolbar tooltips at 40px and
+  // 72px width are a 1.8x ratio but only a 32px gap — nowhere near the visible "stretch" a ratio
+  // that high implies for larger content. Only let the ratio bail out once the absolute gap is
+  // big enough to actually read as one.
+  const TRAVEL_MIN_SIZE_DELTA_FOR_RATIO = 60
   const REPOSITION_MIN_DISTANCE = 4
+  // Matches the CSS transition duration below (--ui-duration-tooltip, 125ms) plus a small buffer
+  // for it to actually finish painting — not an independent value to keep in sync by hand.
+  const TRAVEL_SETTLE_MS = 150
 
   function repositionDistance(before: Record<string, string>, after: Record<string, string>) {
     return Math.hypot(
       Number.parseFloat(after.left) - Number.parseFloat(before.left),
       Number.parseFloat(after.top) - Number.parseFloat(before.top),
     )
+  }
+
+  // floating-ui's autoUpdate fires its callback more than once right after a reference swap (its
+  // own observers settling independently, sometimes several ms apart, well after the RAFs below
+  // resolve) — for the ENTIRE lifetime of a travel below (staging the from-state through the full
+  // settle), any of those extra fires must be ignored: `positionerStyle` holds a value the plain
+  // reposition branch would otherwise misread as a large, sudden jump — snapping straight to the
+  // target (if it arrives during the staged from-state) or cutting the transition short partway
+  // through (if it arrives after `traveling` has already gone true). They carry no new
+  // information the travel below didn't already capture.
+  //
+  // Reactive (not a plain flag) because it also drives the panel's own clip/no-wrap CSS for that
+  // whole span, not just while `traveling` (the CSS-transition-enabled portion) is true: content
+  // already swapped to the new target the instant the trigger did, but the box is briefly pinned
+  // to the FROM size — a label that only fits on one line at its real target width wraps to two
+  // at that narrower size, and without a no-wrap panel that extra line is fully visible for a
+  // frame before `overflow` clips it back down, reading as a flash of wrapped/doubled text.
+  const travelActive = shallowRef(false)
+  // Handles for whatever's still pending from the travel/reposition branches below — cancelled
+  // outright (not just token-invalidated) whenever a newer one supersedes them, and on scope
+  // dispose, so a `<Tooltip>` unmounted mid-transition doesn't leave a stray rAF/timeout holding
+  // its closure (and everything it captured) alive until it happens to fire on its own.
+  let travelRaf1: number | undefined
+  let travelRaf2: number | undefined
+  let settleTimer: ReturnType<typeof setTimeout> | undefined
+
+  function clearTravelSchedule() {
+    if (travelRaf1 !== undefined) cancelAnimationFrame(travelRaf1)
+    if (travelRaf2 !== undefined) cancelAnimationFrame(travelRaf2)
+    clearTimeout(settleTimer)
+    travelRaf1 = travelRaf2 = settleTimer = undefined
+    travelActive.value = false
   }
 
   watch(floatingStyle, (next) => {
@@ -124,8 +164,9 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       const from = travelFrom
       travelFrom = null
       const el = options.positionerEl.value
-      const targetWidth = el?.offsetWidth ?? from.width
-      const targetHeight = el?.offsetHeight ?? from.height
+      const targetRect = el?.getBoundingClientRect()
+      const targetWidth = targetRect?.width ?? from.width
+      const targetHeight = targetRect?.height ?? from.height
       const distance = Math.hypot(
         Number.parseFloat(next.left) - from.left,
         Number.parseFloat(next.top) - from.top,
@@ -136,12 +177,21 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
         targetHeight / from.height,
         from.height / targetHeight,
       )
-      if (distance > TRAVEL_MAX_DISTANCE || ratio > TRAVEL_MAX_SIZE_RATIO) {
+      const sizeDelta = Math.max(
+        Math.abs(targetWidth - from.width),
+        Math.abs(targetHeight - from.height),
+      )
+      if (
+        distance > TRAVEL_MAX_DISTANCE ||
+        (ratio > TRAVEL_MAX_SIZE_RATIO && sizeDelta > TRAVEL_MIN_SIZE_DELTA_FOR_RATIO)
+      ) {
         traveling.value = false
         positionerStyle.value = next
         return
       }
+      clearTravelSchedule()
       const token = ++travelToken
+      travelActive.value = true
       traveling.value = false
       positionerStyle.value = {
         ...next,
@@ -150,33 +200,42 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
         width: `${from.width}px`,
         height: `${from.height}px`,
       }
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          if (token !== travelToken || positionerStyle.value.visibility !== 'visible') return
+      travelRaf1 = requestAnimationFrame(() => {
+        travelRaf2 = requestAnimationFrame(() => {
+          travelRaf1 = travelRaf2 = undefined
+          if (token !== travelToken || positionerStyle.value.visibility !== 'visible') {
+            travelActive.value = false
+            return
+          }
           traveling.value = true
           positionerStyle.value = {
             ...next,
             width: `${targetWidth}px`,
             height: `${targetHeight}px`,
           }
-          setTimeout(() => {
+          settleTimer = setTimeout(() => {
+            settleTimer = undefined
+            travelActive.value = false
             if (token !== travelToken || positionerStyle.value.visibility !== 'visible') return
             traveling.value = false
             positionerStyle.value = { ...floatingStyle.value }
-          }, 180)
-        }),
-      )
+          }, TRAVEL_SETTLE_MS)
+        })
+      })
       return
     }
+    if (travelActive.value) return
     if (wasVisible && isVisible) {
       if (repositionDistance(positionerStyle.value, next) > REPOSITION_MIN_DISTANCE) {
+        clearTravelSchedule()
         const token = ++travelToken
         traveling.value = true
         positionerStyle.value = next
-        setTimeout(() => {
+        settleTimer = setTimeout(() => {
+          settleTimer = undefined
           if (token !== travelToken || positionerStyle.value.visibility !== 'visible') return
           traveling.value = false
-        }, 180)
+        }, TRAVEL_SETTLE_MS)
         return
       }
       traveling.value = false
@@ -261,6 +320,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       isClosing,
       instant,
       traveling,
+      travelActive,
       show,
       hide,
       requestClose,
@@ -394,6 +454,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
 
   onScopeDispose(() => {
     clearTimers()
+    clearTravelSchedule()
     visiblePeers.delete(peer)
     if (open.value) {
       warmth.visible = Math.max(0, warmth.visible - 1)
@@ -408,6 +469,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     isClosing,
     instant,
     traveling,
+    travelActive,
     show,
     hide,
     requestClose,

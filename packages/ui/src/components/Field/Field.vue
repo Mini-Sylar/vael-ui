@@ -1,6 +1,6 @@
 <template>
   <div ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="dataAttrs">
-    <div :class="controlPart.class" :style="controlPart.style">
+    <div :class="controlPart.class" :style="[controlPart.style, controlVars]">
       <label
         v-if="label || $slots.label"
         :for="controlId"
@@ -77,6 +77,7 @@ const errorId = useId()
 const slots = useSlots()
 const focused = shallowRef(false)
 const filled = shallowRef(false)
+const startInset = shallowRef(0)
 
 const describedBy = computed(() => {
   const ids: string[] = []
@@ -99,7 +100,12 @@ provide<FieldContext>(fieldKey, {
   reportFilled: (value) => {
     filled.value = value
   },
+  reportStartInset: (value) => {
+    startInset.value = value
+  },
 })
+
+const controlVars = computed(() => ({ '--ui-field-start-inset': `${startInset.value}px` }))
 
 const dataAttrs = computed(() => ({
   'data-placement': props.labelPlacement,
