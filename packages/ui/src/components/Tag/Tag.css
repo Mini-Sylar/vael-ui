@@ -36,7 +36,7 @@
   }
   @supports (text-box-trim: trim-both) {
     .ui-tag-label {
-      text-box: trim-both cap text;
+      text-box: trim-both cap alphabetic;
       transform: none;
     }
     .ui-tag {

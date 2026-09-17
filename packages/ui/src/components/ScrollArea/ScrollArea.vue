@@ -5,7 +5,6 @@
       :class="viewportPart.class"
       :style="viewportPart.style"
       v-scroll-mask="scrollMaskValue"
-      @scroll="onScroll"
     >
       <slot />
     </div>
@@ -15,7 +14,8 @@
 <script setup lang="ts">
 import './ScrollArea.css'
 import '../shared/tokens.css'
-import { computed, onBeforeUnmount, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
+import { useResizeObserver, useScroll } from '@vueuse/core'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -53,42 +53,31 @@ const scrollMaskValue = computed(() => {
 const root = useTemplateRef<HTMLElement>('root')
 const viewport = useTemplateRef<HTMLElement>('viewport')
 
-const scrollTop = shallowRef(0)
-const scrollLeft = shallowRef(0)
-const atTop = shallowRef(true)
-const atBottom = shallowRef(true)
-const atStart = shallowRef(true)
-const atEnd = shallowRef(true)
+// useScroll's own reactive arrived/direction/isScrolling state replaces this component's former
+// hand-rolled scroll-position tracking. `isScrolling` in particular is what usePullToRefresh now
+// reads to avoid arming a pull while a nested ScrollArea's own momentum/rubber-band scroll
+// hasn't actually settled — a touchstart landing at scrollTop 0 mid-bounce used to arm
+// regardless, since a raw scrollTop read can't tell "settled" from "still animating through 0."
+const {
+  x: scrollLeft,
+  y: scrollTop,
+  isScrolling,
+  arrivedState,
+  directions,
+  measure,
+} = useScroll(viewport, { onScroll: (event) => emit('scroll', event) })
 
-function syncScrollState() {
-  const el = viewport.value
-  if (!el) return
-  scrollTop.value = el.scrollTop
-  scrollLeft.value = el.scrollLeft
-  atTop.value = el.scrollTop <= 0
-  atBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
-  atStart.value = el.scrollLeft <= 0
-  atEnd.value = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1
-}
+const atTop = computed(() => arrivedState.top)
+const atBottom = computed(() => arrivedState.bottom)
+const atStart = computed(() => arrivedState.left)
+const atEnd = computed(() => arrivedState.right)
 
-function onScroll(event: Event) {
-  syncScrollState()
-  emit('scroll', event)
-}
-
-let resizeObserver: ResizeObserver | undefined
-watch(
-  viewport,
-  (el) => {
-    resizeObserver?.disconnect()
-    if (!el) return
-    syncScrollState()
-    resizeObserver = new ResizeObserver(syncScrollState)
-    resizeObserver.observe(el)
-  },
-  { immediate: true },
-)
-onBeforeUnmount(() => resizeObserver?.disconnect())
+// useScroll's own `observe` option (a MutationObserver, on by default) covers a DOM-mutation-
+// driven size change; this additionally catches a pure layout/CSS size change with no DOM
+// mutation (e.g. a height transition), so `measure()` never goes stale either way — same
+// guarantee the old hand-rolled ResizeObserver gave, via useResizeObserver instead of a bespoke
+// one (it already tracks the reactive `viewport` ref and disconnects on scope dispose).
+useResizeObserver(viewport, () => measure())
 
 function scrollTo(options: ScrollToOptions) {
   viewport.value?.scrollTo(options)
@@ -135,6 +124,9 @@ defineExpose({
   atBottom,
   atStart,
   atEnd,
+  /** True while a scroll (including native momentum/rubber-band settling) is in flight. */
+  isScrolling,
+  directions,
   scrollTo,
   scrollToTop,
   scrollToBottom,

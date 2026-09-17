@@ -4,9 +4,13 @@
     :close-on-esc="closeOnEsc"
     :close-on-outside="closeOnOutside"
     :force-mount="forceMount"
+    :open-on-trigger-click="openOnTriggerClick"
     aria-label="Test popover"
   >
-    <template #trigger="{ setTriggerEl }">
+    <template v-if="openOnTriggerClick" #trigger>
+      <button data-testid="trigger">toggle</button>
+    </template>
+    <template v-else #trigger="{ setTriggerEl }">
       <button :ref="setTriggerEl" data-testid="trigger" @click="open = !open">toggle</button>
     </template>
     <p data-testid="content">popover content</p>
@@ -27,8 +31,9 @@ withDefaults(
     closeOnEsc?: boolean
     closeOnOutside?: boolean
     forceMount?: boolean
+    openOnTriggerClick?: boolean
   }>(),
-  { closeOnEsc: true, closeOnOutside: true, forceMount: false },
+  { closeOnEsc: true, closeOnOutside: true, forceMount: false, openOnTriggerClick: false },
 )
 
 const open = shallowRef(false)

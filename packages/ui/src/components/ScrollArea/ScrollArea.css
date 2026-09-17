@@ -18,6 +18,10 @@
     min-inline-size: 0;
     scrollbar-width: thin;
     scrollbar-color: var(--ui-scroll-thumb) transparent;
+    /* Without this, a nested-inside-a-scrollable-ancestor viewport can hand scroll input back
+       to that ancestor at either end instead of just stopping — the classic "scrolling up
+       inside a nested scroll region ends up scrolling the outer page" bug. */
+    overscroll-behavior: contain;
   }
   .ui-scroll-area-viewport--vertical {
     overflow-x: hidden;

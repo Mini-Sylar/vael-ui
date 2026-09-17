@@ -1,5 +1,13 @@
 <template>
-  <slot v-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
+  <span
+    v-if="$slots.trigger && openOnTriggerClick"
+    ref="triggerWrapper"
+    class="ui-popover-trigger"
+    @click="toggle"
+  >
+    <slot name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
+  </span>
+  <slot v-else-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTarget">
     <Transition name="ui-popover" :css="!forceMount">
       <div
@@ -75,13 +83,20 @@ export interface PopoverProps {
   container?: DOMTarget
   /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
   scrollFade?: boolean
+  /**
+   * When true, Popover manages opening itself — clicking the `#trigger` slot toggles `open` and
+   * the trigger element is auto-resolved for positioning, matching Menu's contract. Default
+   * `false` keeps the original positioning-only contract (drive `open`/`setTriggerEl` yourself).
+   */
+  openOnTriggerClick?: boolean
   /** Per-instance part-class/style overrides. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
 
 <!--
-  Trigger: #trigger slot (:ref="setTriggerEl") or triggerEl prop (decoupled).
+  Trigger: #trigger slot (:ref="setTriggerEl") or triggerEl prop (decoupled), or
+  openOnTriggerClick for Menu's fully-managed click-to-toggle contract instead.
   positionerStyle only on positioner (no inline style on panelEl — safe for GSAP/motion-v).
 -->
 <script setup lang="ts">
@@ -89,9 +104,10 @@ import './Popover.css'
 import '../shared/tokens.css'
 import { computed, inject, shallowRef, useTemplateRef, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
+import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
-import { useDOMTarget, type DOMTarget } from '../../composables/dom'
+import { useDOMTarget, resolvePastDisplayContents, type DOMTarget } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -110,6 +126,7 @@ const props = withDefaults(defineProps<PopoverProps>(), {
   closeOnOutside: true,
   forceMount: false,
   scrollFade: true,
+  openOnTriggerClick: false,
 })
 
 const emit = defineEmits<{
@@ -125,7 +142,7 @@ defineSlots<{
     panelEl: HTMLElement | null
     placement: string
   }): unknown
-  /** Co-located trigger markup — bind `:ref="setTriggerEl"` on whatever you render here. Unlike Menu's `#trigger`, Popover only positions against it: clicking does nothing until you drive `open`/`@update:open` yourself. */
+  /** Co-located trigger markup — bind `:ref="setTriggerEl"` on whatever you render here. By default Popover only positions against it: clicking does nothing until you drive `open`/`@update:open` yourself. Pass `openOnTriggerClick` to get Menu's fully-managed contract instead (click-to-toggle, no manual ref needed). */
   trigger(props: {
     open: boolean
     setTriggerEl: (el: Element | ComponentPublicInstance<any> | null) => void
@@ -144,9 +161,28 @@ function setTriggerEl(el: Element | ComponentPublicInstance<any> | null) {
   slotTriggerEl.value = el
 }
 
-const triggerElRef = computed<HTMLElement | null>(() =>
-  props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : unwrapEl(slotTriggerEl.value),
-)
+function toggle() {
+  open.value = !open.value
+}
+
+// Only wired when openOnTriggerClick is true — same resolvePastDisplayContents +
+// MutationObserver mechanism Menu uses for its own auto-managed #trigger slot, since
+// .ui-popover-trigger is `display: contents` and has no rect of its own to position against.
+const triggerWrapper = useTemplateRef<HTMLElement>('triggerWrapper')
+const resolvedWrapperEl = shallowRef<HTMLElement | null>(null)
+function refreshResolvedTrigger() {
+  resolvedWrapperEl.value = triggerWrapper.value
+    ? resolvePastDisplayContents(triggerWrapper.value)
+    : null
+}
+watch(triggerWrapper, refreshResolvedTrigger, { immediate: true })
+useMutationObserver(triggerWrapper, refreshResolvedTrigger, { childList: true, subtree: true })
+
+const triggerElRef = computed<HTMLElement | null>(() => {
+  if (props.triggerEl !== undefined) return unwrapEl(props.triggerEl)
+  if (slotTriggerEl.value) return unwrapEl(slotTriggerEl.value)
+  return props.openOnTriggerClick ? resolvedWrapperEl.value : null
+})
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')

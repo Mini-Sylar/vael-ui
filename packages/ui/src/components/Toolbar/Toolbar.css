@@ -47,7 +47,7 @@
   }
   @supports (text-box-trim: trim-both) {
     .ui-toolbar-overflow-label {
-      text-box: trim-both cap text;
+      text-box: trim-both cap alphabetic;
     }
   }
   @media (hover: hover) and (pointer: fine) {
