@@ -1,5 +1,30 @@
 # vael-ui
 
+## 0.3.6
+
+### Patch Changes
+
+- [#51](https://github.com/Mini-Sylar/vael-ui/pull/51) [`1daec4d`](https://github.com/Mini-Sylar/vael-ui/commit/1daec4dbdaee0f3bb1270d554fc5ac39b0cb91c5) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - ## Fixes
+
+  - **BottomSheet:** closing no longer skips the slide-out animation when you pass your own `beforeClose` (e.g. a "discard changes?" confirm).
+  - **BottomSheet:** panel height now tracks the live viewport instead of a stale snapshot — fixes a gap opening up on mobile when the browser's address bar hides/shows mid-interaction.
+  - **BottomSheet:** added a `modal` prop (default `true`) and `ui.overlay`, so you can disable the scrim for an always-open, non-dismissible panel.
+  - **Dialog / Drawer / BottomSheet:** added an opt-in `closeOnHistoryBack` prop (default `false`) — the mobile hardware/gesture back action closes the panel instead of navigating the page away. Safe with nested dialogs and won't interfere with your app's own router history.
+  - **Combobox:** the input text now syncs correctly when `modelValue` is set from outside (e.g. loading a saved record) — it used to render blank until the user touched the field. Also fixed: opening with a preselected value no longer filters the list down to a single row.
+  - **SwipeToReveal:** a drag right after mount could be forced closed regardless of distance, on fast interactions or slower devices. Fixed.
+  - **Tooltip:** added long-press as a real touch trigger (500ms, matching Android/iOS convention). Tapping a button no longer accidentally opens its tooltip on touch, and a tooltip now closes properly instead of jumping to the top-left corner if its trigger is removed from the page (e.g. on a route change).
+  - **Menu:** fixed a rare first-open mispositioning bug where the trigger element could be resolved incorrectly and never recover.
+  - **PullToRefresh:** fixed a bug where reversing a pull gesture mid-touch (to scroll normally instead) could get stuck and stop scrolling from working for the rest of that touch.
+  - **FileUpload:** added a native `capture` prop (`boolean | 'user' | 'environment'`) to open the device camera directly on mobile.
+  - **Field / Textarea:** fixed the floating label drifting out of place as a resizable/auto-growing textarea changes height.
+  - **Textarea:** fixed auto-grow mode sometimes not filling the full width of its container.
+  - **Button / Toolbar / Tag / Badge:** fixed descenders (on letters like p, g, y, j, q) getting clipped in truncated labels.
+  - **Tree:** `theme.tree`'s `ui` type was missing `chevron` and `label`, so you couldn't theme them via `ConfigProvider` even though they worked when set directly on the component.
+
+  ## Also fixed
+  - `useSwipeReveal` / `useSheetDrag`: guarded `setPointerCapture` against a rare exception that could cut a drag gesture short.
+  - Clarified `Popover`'s `#trigger` slot docs — unlike `Menu`, it doesn't wire click-to-open for you.
+
 ## 0.3.5
 
 ### Patch Changes
@@ -147,7 +172,6 @@ contents`. It only ever existed for a click handler and a ref, but giving it a b
     for the duration of the press — no permanent layer, no JIT-promotion pop.
 
   ## Internal hardening
-
   - **`useTooltip`:** the travel animation's pending `requestAnimationFrame`/`setTimeout` calls are
     now actually cancelled — on scope dispose and whenever a newer travel/reposition supersedes an
     in-flight one — instead of just being token-invalidated to no-op whenever they eventually fire.
@@ -166,7 +190,6 @@ contents`. It only ever existed for a click handler and a ref, but giving it a b
   its DOM shape doesn't change the moment a `v-if`'d badge first appears.
 
   ## Internal
-
   - Bumped `vue` (and all `@vue/*` packages) to `3.6.0-rc.8` across the workspace.
 
 ## 0.3.4
@@ -248,7 +271,6 @@ contents`. It only ever existed for a click handler and a ref, but giving it a b
     submenu and recursed).
 
   ## Also
-
   - The whole Vue toolchain is pinned to one RC (`3.6.0-rc.7`) via `pnpm.overrides`, not just
     `vue` itself — a second copy of `@vue/runtime-vapor` in the tree breaks recursive Vapor
     components, since self-reference resolves against the wrong instance registry.
@@ -315,7 +337,6 @@ contents`. It only ever existed for a click handler and a ref, but giving it a b
   - **`Collapsible`:** `body` (the content wrapper inside the panel).
 
   ## Also
-
   - Vue bumped to `3.6.0-rc.7`.
 
 ## 0.3.1
@@ -337,7 +358,6 @@ contents`. It only ever existed for a click handler and a ref, but giving it a b
     to the drag.
 
   ## Fixes
-
   - **`Tree`:** `reorderSiblings: false` incorrectly blocked dragging a nested item back out to the top
     level when dropped past the last row — re-parenting out of a folder now works; reordering among
     already-top-level siblings still correctly stays locked.
@@ -350,7 +370,6 @@ contents`. It only ever existed for a click handler and a ref, but giving it a b
     target (was ~8×19px).
 
   ## Docs
-
   - `Sortable` now correctly shows the sidebar's "new" indicator.
 
 ## 0.3.0
@@ -402,13 +421,11 @@ false` being ignored when dropping past a list's last row.
   lifts. The box shadow on a grabbed/dragging `Sortable` item was also toned down.
 
   ## New components
-
   - **`Rating`** — star (or custom icon) rating input, with per-icon elements exposed for external
     animation.
   - **`Timeline`** — vertical event timeline.
 
   ## New customization APIs
-
   - **`Select`/`Combobox`/`Menu`/`TreeSelect`** gain `filter` (Select/Combobox), `header`, and
     `footer` slots for custom panel chrome.
   - **`Tabs`** exposes its tab/indicator wiring (`itemProps`, `indicatorProps`) as bindable slot
@@ -422,7 +439,6 @@ false` being ignored when dropping past a list's last row.
     `MenuList`'s own active-item indicator.
 
   ## Fixes
-
   - **Keyboard/focus:** `Knob`, `Dial`, and `Slider` no longer lose keyboard focus after a pointer
     drag.
   - **Motion:** reduced-motion no longer drops opacity fades, only movement; the active-row highlight
@@ -719,7 +735,6 @@ ui-message--warning` entirely). The `inheritAttrs: false` + `v-bind="attrs"` wor
   - Shared design tokens live in their own `components/shared/tokens.css`, pulled in once regardless of which components you use.
 
   ## New components
-
   - **`ScrollArea`** — custom scrollbar styling and edge fade over real native scrolling (`orientation: 'vertical' | 'horizontal' | 'both'`)
   - **`AvatarGroup`** — overlapping avatar stack with a "+N" overflow indicator and optional hover-lift
   - **`Breadcrumb`** / `BreadcrumbItem` / `BreadcrumbSeparator` — data-driven `items`, or compose the parts yourself. Each item's `as`/`attrs` renders it as a plain link, a `RouterLink`, or anything else your router provides
@@ -745,12 +760,12 @@ ui-message--warning` entirely). The `inheritAttrs: false` + `v-bind="attrs"` wor
 
   ```ts
   // vite.config.ts
-  import Components from "unplugin-vue-components/vite";
-  import { VaelUiResolver } from "vael-ui/resolver";
+  import Components from 'unplugin-vue-components/vite'
+  import { VaelUiResolver } from 'vael-ui/resolver'
 
   export default {
     plugins: [Components({ resolvers: [VaelUiResolver()] })],
-  };
+  }
   ```
 
   Pass `{ variant: 'vapor' }` to resolve from `vael-ui/vapor` instead of the default VDOM build. No CSS side-effect wiring needed — every component already imports its own CSS internally, so resolving the component pulls its styles in for free. Zero dependency on `unplugin-vue-components` itself; the resolver is a plain, hand-typed function that structurally matches its contract.
@@ -762,8 +777,8 @@ ui-message--warning` entirely). The `inheritAttrs: false` + `v-bind="attrs"` wor
   ```ts
   // nuxt.config.ts
   export default defineNuxtConfig({
-    modules: ["vael-ui/nuxt"],
-  });
+    modules: ['vael-ui/nuxt'],
+  })
   ```
 
   `exclude: ['Button']` skips specific component names, e.g. to register your own `<Button>` under that tag instead. VDOM only, no `variant` option — Vue 3.6 supports Vapor SSR hydration, but the stable Nuxt release has no Vapor configuration yet (it's landing behind specific upstream PRs). Verified against a real Nuxt app: SSR markup, client hydration, and CSS all confirmed working in both `nuxt dev` and a production `nuxt build`.
@@ -793,7 +808,6 @@ ui-message--warning` entirely). The `inheritAttrs: false` + `v-bind="attrs"` wor
   Deeply nested items (a `Tree` node's `children`, a `Menu` row's nested `items`) stay base-typed — same documented limitation as before.
 
   ## Fixes
-
   - Page-wide scroll locks now consistently target `document.body` (`Tour` was still locking `documentElement` directly)
   - `BottomSheet` content is scrollable at any drag/snap position instead of only once mostly open, and a nested sheet's parent now un-recedes in sync with the child's own close animation instead of waiting for it to fully finish
   - `Dialog`'s `teleportTo` now correctly wins over `container` when both are set
