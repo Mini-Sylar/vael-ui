@@ -5,26 +5,26 @@ import { render } from 'vitest-browser-vue'
 import ButtonGroupFixture from './fixtures/ButtonGroupFixture.vue'
 
 test('has an accessible group role and name', async () => {
-  const screen = render(ButtonGroupFixture)
+  const screen = await render(ButtonGroupFixture)
   try {
     await expect.element(page.getByRole('group', { name: 'Actions' })).toBeVisible()
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('every button keeps its own native tab order — no roving tabindex', async () => {
-  const screen = render(ButtonGroupFixture)
+  const screen = await render(ButtonGroupFixture)
   try {
     const buttons = Array.from(screen.container.querySelectorAll<HTMLButtonElement>('.ui-button'))
     expect(buttons.map((b) => b.tabIndex)).toEqual([0, 0, 0])
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('horizontal: only the first/last button keep outer-corner radius, shared inner edges are square', async () => {
-  const screen = render(ButtonGroupFixture)
+  const screen = await render(ButtonGroupFixture)
   try {
     const [first, middle, last] = Array.from(
       screen.container.querySelectorAll<HTMLButtonElement>('.ui-button'),
@@ -48,27 +48,27 @@ test('horizontal: only the first/last button keep outer-corner radius, shared in
     expect(lastStyle.borderStartStartRadius).toBe('0px')
     expect(lastStyle.borderEndStartRadius).toBe('0px')
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('vertical orientation applies the vertical modifier class', async () => {
-  const screen = render(ButtonGroupFixture, { props: { orientation: 'vertical' } })
+  const screen = await render(ButtonGroupFixture, { props: { orientation: 'vertical' } })
   try {
     const group = screen.container.querySelector('[role="group"]')
     expect(group?.classList.contains('ui-button-group--vertical')).toBe(true)
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('a disabled button in the group is still disabled', async () => {
-  const screen = render(ButtonGroupFixture)
+  const screen = await render(ButtonGroupFixture)
   try {
     const snooze = screen.container.querySelector<HTMLButtonElement>('.ui-button[disabled]')
     expect(snooze).not.toBeNull()
     expect(snooze?.textContent?.trim()).toBe('Snooze')
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })

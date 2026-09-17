@@ -97,6 +97,11 @@
   .ui-field[data-placement='float']:not([data-focused], [data-filled]) ::placeholder {
     color: transparent;
   }
+  /* A Textarea's height is user-resizable/auto-growing - centering the resting label on 50% of its CURRENT height (right for a fixed-height Input) drifts as it resizes. Anchor to the first line instead, same intent as `inset` placement's own Textarea padding above. */
+  .ui-field[data-placement='float']:has(.ui-textarea):not([data-focused], [data-filled])
+    .ui-field-label {
+    inset-block-start: calc(0.5rem + 0.75em);
+  }
   .ui-field[data-placement='float'][data-focused] .ui-field-label {
     color: var(--ui-primary);
   }

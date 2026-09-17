@@ -17,7 +17,7 @@ function liveRegion(screen: RenderResult<unknown>): HTMLElement {
 }
 
 test('renders one row per item, each with a real button handle in the tab order', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   const grips = handles(screen)
   expect(grips.length).toBe(3)
   // A real <button> is focusable without an explicit tabindex.
@@ -26,7 +26,7 @@ test('renders one row per item, each with a real button handle in the tab order'
 })
 
 test('the live region and instructions are mounted up front, not created on demand', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   const live = liveRegion(screen)
   expect(live).not.toBeNull()
   expect(live.textContent).toBe('')
@@ -36,7 +36,7 @@ test('the live region and instructions are mounted up front, not created on dema
 })
 
 test('keyboard: Space grabs, ArrowDown moves, Space drops — and the array reorders', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   expect(order(screen)).toBe('a,b,c')
 
   handles(screen)[0]!.focus()
@@ -49,21 +49,21 @@ test('keyboard: Space grabs, ArrowDown moves, Space drops — and the array reor
 })
 
 test('keyboard: two ArrowDowns move an item two slots', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown}{ArrowDown} ')
   expect(order(screen)).toBe('b,c,a')
 })
 
 test('keyboard: ArrowUp moves an item toward the top', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   handles(screen)[2]!.focus()
   await userEvent.keyboard(' {ArrowUp} ')
   expect(order(screen)).toBe('a,c,b')
 })
 
 test('keyboard: Escape cancels and leaves the original order untouched', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown}')
   await userEvent.keyboard('{Escape}')
@@ -72,7 +72,7 @@ test('keyboard: Escape cancels and leaves the original order untouched', async (
 })
 
 test('keyboard: moving cannot walk past either end of the list', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowUp}{ArrowUp}{ArrowUp} ')
   expect(order(screen)).toBe('a,b,c')
@@ -83,7 +83,7 @@ test('keyboard: moving cannot walk past either end of the list', async () => {
 })
 
 test('the grabbed row is marked for styling, and unmarked once dropped', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' ')
   expect(screen.container.querySelector('[data-grabbed]')).not.toBeNull()
@@ -92,7 +92,7 @@ test('the grabbed row is marked for styling, and unmarked once dropped', async (
 })
 
 test('announcements report the new position rather than repeating the grab', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown}')
   const text = liveRegion(screen).textContent!
@@ -101,7 +101,7 @@ test('announcements report the new position rather than repeating the grab', asy
 })
 
 test('disabled ignores keyboard grabs entirely', async () => {
-  const screen = render(SortableFixture, { props: { disabled: true } })
+  const screen = await render(SortableFixture, { props: { disabled: true } })
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown} ')
   expect(order(screen)).toBe('a,b,c')
@@ -111,7 +111,7 @@ test('keyboard: the grabbed row itself visibly moves, not just the rows around i
   // Regression: the engine used to shift only the OTHER rows on a keyboard
   // move, so the item you grabbed was the one thing on screen that never
   // appeared to move — the list read as reshuffling underneath it.
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   const rowFor = (value: string) =>
     screen.container.querySelector<HTMLElement>(`[data-sortable-item][data-value="${value}"]`)!
 
@@ -135,7 +135,7 @@ test('keyboard: the grabbed row itself visibly moves, not just the rows around i
 })
 
 test('keyboard: dropping clears every inline transform it applied', async () => {
-  const screen = render(SortableFixture)
+  const screen = await render(SortableFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown} ')
   await vi.waitFor(() => {
@@ -147,7 +147,7 @@ test('keyboard: dropping clears every inline transform it applied', async () => 
 })
 
 test('axis="x": ArrowRight/ArrowLeft reorder along the horizontal axis', async () => {
-  const screen = render(SortableFixture, { props: { axis: 'x' } })
+  const screen = await render(SortableFixture, { props: { axis: 'x' } })
   expect(order(screen)).toBe('a,b,c')
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowRight} ')
@@ -159,14 +159,14 @@ test('axis="x": ArrowRight/ArrowLeft reorder along the horizontal axis', async (
 })
 
 test('axis="x": the vertical arrows do nothing, so page scroll keys stay free', async () => {
-  const screen = render(SortableFixture, { props: { axis: 'x' } })
+  const screen = await render(SortableFixture, { props: { axis: 'x' } })
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown}{ArrowDown} ')
   expect(order(screen)).toBe('a,b,c')
 })
 
 test('axis="x": the grabbed item translates horizontally, not vertically', async () => {
-  const screen = render(SortableFixture, { props: { axis: 'x' } })
+  const screen = await render(SortableFixture, { props: { axis: 'x' } })
   const rowFor = (value: string) =>
     screen.container.querySelector<HTMLElement>(`[data-sortable-item][data-value="${value}"]`)!
   handles(screen)[0]!.focus()
@@ -182,7 +182,7 @@ test('axis="x": the grabbed item translates horizontally, not vertically', async
 // ---------------------------------------------------------------------------
 
 test('canDrop=false blocks the reorder and marks the target rejected', async () => {
-  const screen = render(SortableFixture, { props: { canDrop: () => false } })
+  const screen = await render(SortableFixture, { props: { canDrop: () => false } })
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown}')
   expect(screen.container.querySelector('[data-invalid-drop]')).not.toBeNull()
@@ -192,7 +192,7 @@ test('canDrop=false blocks the reorder and marks the target rejected', async () 
 
 test('canDrop receives the real from/to positions', async () => {
   const seen: SortableDropDetails[] = []
-  const screen = render(SortableFixture, {
+  const screen = await render(SortableFixture, {
     props: {
       canDrop: (d: SortableDropDetails) => {
         seen.push(d)
@@ -211,7 +211,7 @@ test('canDrop receives the real from/to positions', async () => {
 
 test('canDrop can allow some targets and refuse others', async () => {
   // Only ever allow landing in slot 1.
-  const screen = render(SortableFixture, {
+  const screen = await render(SortableFixture, {
     props: { canDrop: (d: SortableDropDetails) => d.to.index === 1 },
   })
   handles(screen)[0]!.focus()
@@ -220,14 +220,14 @@ test('canDrop can allow some targets and refuse others', async () => {
 })
 
 test('beforeDrop returning false cancels the drop', async () => {
-  const screen = render(SortableFixture, { props: { beforeDrop: () => false } })
+  const screen = await render(SortableFixture, { props: { beforeDrop: () => false } })
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown} ')
   await vi.waitFor(() => expect(order(screen)).toBe('a,b,c'))
 })
 
 test('beforeDrop returning true commits it', async () => {
-  const screen = render(SortableFixture, { props: { beforeDrop: () => true } })
+  const screen = await render(SortableFixture, { props: { beforeDrop: () => true } })
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown} ')
   await vi.waitFor(() => expect(order(screen)).toBe('b,a,c'))
@@ -238,7 +238,7 @@ test('an async beforeDrop holds the drop pending, then commits on approval', asy
   const gate = new Promise<boolean>((resolve) => {
     approve = resolve
   })
-  const screen = render(SortableFixture, { props: { beforeDrop: () => gate } })
+  const screen = await render(SortableFixture, { props: { beforeDrop: () => gate } })
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown} ')
 
@@ -256,7 +256,7 @@ test('an async beforeDrop that resolves false leaves the order untouched', async
   const gate = new Promise<boolean>((resolve) => {
     decide = resolve
   })
-  const screen = render(SortableFixture, { props: { beforeDrop: () => gate } })
+  const screen = await render(SortableFixture, { props: { beforeDrop: () => gate } })
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown} ')
   await vi.waitFor(() => expect(screen.container.querySelector('[data-pending]')).not.toBeNull())
@@ -267,7 +267,7 @@ test('an async beforeDrop that resolves false leaves the order untouched', async
 })
 
 test('a cancelled drop clears every inline transform it applied', async () => {
-  const screen = render(SortableFixture, { props: { beforeDrop: () => false } })
+  const screen = await render(SortableFixture, { props: { beforeDrop: () => false } })
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown} ')
   await vi.waitFor(() => {
@@ -279,7 +279,7 @@ test('a cancelled drop clears every inline transform it applied', async () => {
 })
 
 test('a rejecting beforeDrop (a failed API call) reverts and reports, never throws', async () => {
-  const screen = render(SortableFixture, {
+  const screen = await render(SortableFixture, {
     props: { beforeDrop: () => Promise.reject(new Error('network down')) },
   })
   handles(screen)[0]!.focus()
@@ -296,7 +296,7 @@ test('a rejecting beforeDrop (a failed API call) reverts and reports, never thro
 })
 
 test('a synchronously throwing beforeDrop is handled the same way', async () => {
-  const screen = render(SortableFixture, {
+  const screen = await render(SortableFixture, {
     props: {
       beforeDrop: () => {
         throw new Error('validation blew up')

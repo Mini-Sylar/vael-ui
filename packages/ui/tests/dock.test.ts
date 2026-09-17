@@ -136,7 +136,7 @@ test('dockItemOffsets: symmetric magnification produces symmetric offsets around
 // ---------------------------------------------------------------------------
 
 test('renders every item, including an icon and a badge', async () => {
-  const screen = render(DockFixture, {})
+  const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   expect(buttons).toHaveLength(5)
   expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
@@ -158,29 +158,31 @@ test('renders every item, including an icon and a badge', async () => {
 // pointer-hover + TooltipHost render — direct and immune to the singleton
 // TooltipHost being driven by an unrelated hover elsewhere on a real page.
 test('tooltip side defaults per orientation: top for horizontal, right for vertical', async () => {
-  const horizontal = render(DockFixture, { props: { orientation: 'horizontal' } })
+  const horizontal = await render(DockFixture, { props: { orientation: 'horizontal' } })
   const horizontalButton = itemButtons(horizontal)[0]!
   expect(tooltipTargets.get(horizontalButton)?.side).toBe('top')
 
-  const vertical = render(DockFixture, { props: { orientation: 'vertical' } })
+  const vertical = await render(DockFixture, { props: { orientation: 'vertical' } })
   const verticalButton = itemButtons(vertical)[0]!
   expect(tooltipTargets.get(verticalButton)?.side).toBe('right')
 })
 
 test('tooltipSide prop overrides the orientation-based default', async () => {
-  const screen = render(DockFixture, { props: { orientation: 'vertical', tooltipSide: 'left' } })
+  const screen = await render(DockFixture, {
+    props: { orientation: 'vertical', tooltipSide: 'left' },
+  })
   const button = itemButtons(screen)[0]!
   expect(tooltipTargets.get(button)?.side).toBe('left')
 })
 
 test('exactly one item is tabindex="0" at a time, starting on the first item', async () => {
-  const screen = render(DockFixture, {})
+  const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   expect(buttons.map((b) => b.tabIndex)).toEqual([0, -1, -1, -1, -1])
 })
 
 test('ArrowRight/ArrowLeft roll the tabindex across items, skipping the disabled one, and wrap', async () => {
-  const screen = render(DockFixture, {})
+  const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   buttons[0].focus()
 
@@ -201,7 +203,7 @@ test('ArrowRight/ArrowLeft roll the tabindex across items, skipping the disabled
 })
 
 test('orientation="vertical" swaps roving navigation to ArrowDown/ArrowUp; ArrowRight is inert', async () => {
-  const screen = render(DockFixture, { props: { orientation: 'vertical' } })
+  const screen = await render(DockFixture, { props: { orientation: 'vertical' } })
   const buttons = itemButtons(screen)
   buttons[0].focus()
 
@@ -216,7 +218,7 @@ test('orientation="vertical" swaps roving navigation to ArrowDown/ArrowUp; Arrow
 })
 
 test('Home/End jump to the first/last enabled item', async () => {
-  const screen = render(DockFixture, {})
+  const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   buttons[1].focus()
 
@@ -228,7 +230,7 @@ test('Home/End jump to the first/last enabled item', async () => {
 })
 
 test("Enter/Space activates the focused item via the real <button> — fires @select and the item's own onSelect", async () => {
-  const screen = render(DockFixture, {})
+  const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   buttons[1].focus() // "Mail" — carries its own onSelect
 
@@ -241,7 +243,7 @@ test("Enter/Space activates the focused item via the real <button> — fires @se
 })
 
 test('click selection fires @select with the clicked item', async () => {
-  const screen = render(DockFixture, {})
+  const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
 
   await userEvent.click(buttons[2]) // "Messages"
@@ -249,7 +251,7 @@ test('click selection fires @select with the clicked item', async () => {
 })
 
 test('a disabled item is a real disabled <button> — never focusable via Tab order and never fires @select', async () => {
-  const screen = render(DockFixture, {})
+  const screen = await render(DockFixture, {})
   const trash = itemButtons(screen)[4]
   expect(trash.disabled).toBe(true)
   expect(trash.tabIndex).toBe(-1)
@@ -265,7 +267,7 @@ test('a disabled item is a real disabled <button> — never focusable via Tab or
 // ---------------------------------------------------------------------------
 
 test('moving the pointer across the dock magnifies the nearest item more than a distant one', async () => {
-  const screen = render(DockFixture, {})
+  const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
 
@@ -296,7 +298,7 @@ test('moving the pointer across the dock magnifies the nearest item more than a 
 })
 
 test('magnify=false disables the size effect entirely, without disabling the dock', async () => {
-  const screen = render(DockFixture, { props: { magnify: false } })
+  const screen = await render(DockFixture, { props: { magnify: false } })
   const buttons = itemButtons(screen)
   const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
   const firstRect = buttons[0].getBoundingClientRect()

@@ -32,7 +32,10 @@ const realTransitions = {
 const probe = () => document.querySelector('[data-testid="probe"]')
 
 test('control: AnimatePresence defers removal of a non-teleported motion.div', async () => {
-  const screen = render(PresenceDiagnostic, { props: { teleported: false }, ...realTransitions })
+  const screen = await render(PresenceDiagnostic, {
+    props: { teleported: false },
+    ...realTransitions,
+  })
   await vi.waitFor(() => expect(probe()).not.toBeNull())
 
   await screen.getByTestId('hide').click()
@@ -43,7 +46,10 @@ test('control: AnimatePresence defers removal of a non-teleported motion.div', a
 })
 
 test('KNOWN BROKEN: exit deferral does not cross a Teleport boundary', async () => {
-  const screen = render(PresenceDiagnostic, { props: { teleported: true }, ...realTransitions })
+  const screen = await render(PresenceDiagnostic, {
+    props: { teleported: true },
+    ...realTransitions,
+  })
   await vi.waitFor(() => expect(probe()).not.toBeNull())
 
   await screen.getByTestId('hide').click()
@@ -54,7 +60,7 @@ test('KNOWN BROKEN: exit deferral does not cross a Teleport boundary', async () 
 })
 
 test("FIXED (3.6.0-rc.3): AnimatePresence defers removal through Dialog's internal Teleport", async () => {
-  const screen = render(PresenceFixture, realTransitions)
+  const screen = await render(PresenceFixture, realTransitions)
   await screen.getByTestId('open').click()
   const content = () => document.querySelector('[data-testid="motion-content"]')
   await vi.waitFor(() => expect(content()).not.toBeNull())
@@ -67,7 +73,7 @@ test("FIXED (3.6.0-rc.3): AnimatePresence defers removal through Dialog's intern
 })
 
 test('fallback: force-mount + beforeClose defers close for an imperative exit', async () => {
-  const screen = render(BeforeCloseFixture, realTransitions)
+  const screen = await render(BeforeCloseFixture, realTransitions)
   await screen.getByTestId('open').click()
   await expect.element(screen.getByTestId('state')).toHaveTextContent('open')
 

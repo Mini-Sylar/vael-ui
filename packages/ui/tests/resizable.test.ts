@@ -33,7 +33,7 @@ function pointerup(clientX: number, clientY = 0) {
 }
 
 test('dragging the handle updates the bound size (horizontal, edge="end" grows rightward)', async () => {
-  const screen = render(ResizableFixture, {})
+  const screen = await render(ResizableFixture, {})
   const handle = handleEl(screen, 'single')
 
   pointerdown(handle, 0)
@@ -44,7 +44,7 @@ test('dragging the handle updates the bound size (horizontal, edge="end" grows r
 })
 
 test('dragging past max rubber-bands (overshoot stays below the raw drag distance) then snaps to max on release', async () => {
-  const screen = render(ResizableFixture, {})
+  const screen = await render(ResizableFixture, {})
   const handle = handleEl(screen, 'single')
   const output = screen.getByTestId('single-size')
 
@@ -63,7 +63,7 @@ test('dragging past max rubber-bands (overshoot stays below the raw drag distanc
 })
 
 test('dragging past min rubber-bands then snaps to min on release', async () => {
-  const screen = render(ResizableFixture, {})
+  const screen = await render(ResizableFixture, {})
   const handle = handleEl(screen, 'single')
   const output = screen.getByTestId('single-size')
 
@@ -82,7 +82,7 @@ test('dragging past min rubber-bands then snaps to min on release', async () => 
 })
 
 test('external v-model changes update the rendered inline-size', async () => {
-  const screen = render(ResizableFixture, {})
+  const screen = await render(ResizableFixture, {})
   const root = rootEl(screen, 'single')
   expect(root.style.inlineSize).toBe('150px')
 
@@ -94,7 +94,7 @@ test('external v-model changes update the rendered inline-size', async () => {
 })
 
 test('vertical direction resizes block-size off the pointer Y axis', async () => {
-  const screen = render(ResizableFixture, {})
+  const screen = await render(ResizableFixture, {})
   const root = rootEl(screen, 'vertical')
   const handle = handleEl(screen, 'vertical')
 
@@ -108,7 +108,7 @@ test('vertical direction resizes block-size off the pointer Y axis', async () =>
 })
 
 test('disabled resizable ignores pointer and keyboard interaction', async () => {
-  const screen = render(ResizableFixture, {})
+  const screen = await render(ResizableFixture, {})
   const handle = handleEl(screen, 'disabled')
   expect(handle.getAttribute('tabindex')).toBe('-1')
 
@@ -120,7 +120,7 @@ test('disabled resizable ignores pointer and keyboard interaction', async () => 
 })
 
 test('keyboard: arrows step by 16px, Home/End jump to bounds', async () => {
-  const screen = render(ResizableFixture, {})
+  const screen = await render(ResizableFixture, {})
   const handle = handleEl(screen, 'single')
   handle.focus()
 
@@ -138,7 +138,7 @@ test('keyboard: arrows step by 16px, Home/End jump to bounds', async () => {
 })
 
 test('data-resizing is set for the duration of a drag and cleared on release', async () => {
-  const screen = render(ResizableFixture, {})
+  const screen = await render(ResizableFixture, {})
   const root = rootEl(screen, 'single')
   const handle = handleEl(screen, 'single')
 

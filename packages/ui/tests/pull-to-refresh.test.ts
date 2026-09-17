@@ -81,7 +81,7 @@ async function touchDrag(el: Element, startY: number, endY: number, ms: number) 
 
 test('a slow pull below threshold releases back to idle without calling onRefresh', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   // delta 30 (below the 60px threshold) over 400ms — 0.075px/ms, well under
@@ -95,7 +95,7 @@ test('a slow pull below threshold releases back to idle without calling onRefres
 
 test('a fast short flick below threshold still calls onRefresh', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   // delta 35 (below the 60px threshold) over 20ms — 1.75px/ms, a decisive
@@ -107,7 +107,7 @@ test('a fast short flick below threshold still calls onRefresh', async () => {
 
 test('a pull past threshold walks pulling -> ready -> loading -> done -> idle and calls onRefresh once', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
   const pointerId = 1
 
@@ -132,7 +132,7 @@ test('a pull past threshold walks pulling -> ready -> loading -> done -> idle an
 
 test('a drag while scrollTop > 0 does nothing', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   root().scrollTop = 100
@@ -145,7 +145,7 @@ test('a drag while scrollTop > 0 does nothing', async () => {
 
 test('programmatic refresh() walks the same loading/done state machine', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  const screen = render(PullToRefreshFixture, { props: { onRefresh } })
+  const screen = await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   await screen.getByTestId('programmatic-refresh').click()
@@ -157,7 +157,7 @@ test('programmatic refresh() walks the same loading/done state machine', async (
 
 test('the #indicator slot receives state and progress', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  const screen = render(PullToRefreshFixture, { props: { onRefresh, customIndicator: true } })
+  const screen = await render(PullToRefreshFixture, { props: { onRefresh, customIndicator: true } })
   await settle()
   const pointerId = 1
 
@@ -174,7 +174,7 @@ test('the #indicator slot receives state and progress', async () => {
 
 test('an onRefresh that rejects still settles back to idle instead of getting stuck loading', async () => {
   const onRefresh = vi.fn().mockRejectedValue(new Error('boom'))
-  const screen = render(PullToRefreshFixture, { props: { onRefresh } })
+  const screen = await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   await screen.getByTestId('programmatic-refresh').click()
@@ -191,7 +191,7 @@ test('an onRefresh that rejects still settles back to idle instead of getting st
 
 test('a touch pull past threshold walks pulling -> ready -> loading -> done -> idle and calls onRefresh once', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   const t0 = makeTouch(root(), 20)
@@ -214,7 +214,7 @@ test('a touch pull past threshold walks pulling -> ready -> loading -> done -> i
 
 test('a slow touch pull below threshold releases back to idle without calling onRefresh', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   // delta 30 over 400ms — under both the distance threshold and the flick gate.
@@ -227,7 +227,7 @@ test('a slow touch pull below threshold releases back to idle without calling on
 
 test('touchmove during a pull is preventDefaulted, so the container cannot scroll under it', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   const start = makeTouch(root(), 20)
@@ -243,7 +243,7 @@ test('touchmove during a pull is preventDefaulted, so the container cannot scrol
 
 test('a touch drag while scrollTop > 0 never engages and never preventDefaults — pull-to-refresh is top-only', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   root().scrollTop = 100
@@ -262,7 +262,7 @@ test('a touch drag while scrollTop > 0 never engages and never preventDefaults �
 
 test('a touch that starts as an upward move at the top does not engage', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
-  render(PullToRefreshFixture, { props: { onRefresh } })
+  await render(PullToRefreshFixture, { props: { onRefresh } })
   await settle()
 
   const start = makeTouch(root(), 80)

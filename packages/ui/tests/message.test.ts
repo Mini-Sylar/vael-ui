@@ -6,23 +6,29 @@ import MessageFixture from './fixtures/MessageFixture.vue'
 import Message from '../src/components/Message/Message.vue'
 
 test('default variant gets role="status"', async () => {
-  render(Message, { slots: { default: 'Heads up' } })
+  await render(Message, { slots: { default: 'Heads up' } })
   await expect.element(page.getByRole('status')).toBeVisible()
 })
 
 test('error variant gets role="alert"', async () => {
-  const screen = render(Message, { props: { variant: 'error' }, slots: { default: 'Failed' } })
+  const screen = await render(Message, {
+    props: { variant: 'error' },
+    slots: { default: 'Failed' },
+  })
   const el = screen.container.querySelector('.ui-message')!
   expect(el.getAttribute('role')).toBe('alert')
 })
 
 test('warning variant gets role="alert"', async () => {
-  const screen = render(Message, { props: { variant: 'warning' }, slots: { default: 'Careful' } })
+  const screen = await render(Message, {
+    props: { variant: 'warning' },
+    slots: { default: 'Careful' },
+  })
   expect(screen.container.querySelector('.ui-message')!.getAttribute('role')).toBe('alert')
 })
 
 test('explicit role prop overrides the variant-based default', async () => {
-  const screen = render(Message, {
+  const screen = await render(Message, {
     props: { variant: 'error', role: 'status' },
     slots: { default: 'Failed but calm' },
   })
@@ -30,10 +36,10 @@ test('explicit role prop overrides the variant-based default', async () => {
 })
 
 test('showIcon renders StatusIcon for the variant; false omits the icon wrapper', async () => {
-  const withIcon = render(Message, { props: { variant: 'success' }, slots: { default: 'x' } })
+  const withIcon = await render(Message, { props: { variant: 'success' }, slots: { default: 'x' } })
   expect(withIcon.container.querySelector('.ui-message-icon svg')).not.toBeNull()
 
-  const withoutIcon = render(Message, {
+  const withoutIcon = await render(Message, {
     props: { variant: 'success', showIcon: false },
     slots: { default: 'x' },
   })
@@ -41,7 +47,7 @@ test('showIcon renders StatusIcon for the variant; false omits the icon wrapper'
 })
 
 test('closable renders a localized dismiss button that flips the model closed', async () => {
-  const screen = render(Message, { props: { closable: true }, slots: { default: 'Bye' } })
+  const screen = await render(Message, { props: { closable: true }, slots: { default: 'Bye' } })
   const button = page.getByRole('button', { name: 'Dismiss' })
   await expect.element(button).toBeVisible()
   await button.click()
@@ -50,7 +56,7 @@ test('closable renders a localized dismiss button that flips the model closed', 
 
 test('beforeClose defers the close: data-state="closing" until done() runs', async () => {
   const captured: Array<() => void> = []
-  const screen = render(MessageFixture, {
+  const screen = await render(MessageFixture, {
     props: { beforeClose: (done: () => void) => captured.push(done) },
   })
 
@@ -69,7 +75,7 @@ test('beforeClose defers the close: data-state="closing" until done() runs', asy
 
 test('cancelClose reverses a pending close and voids the stale done()', async () => {
   const captured: Array<() => void> = []
-  const screen = render(MessageFixture, {
+  const screen = await render(MessageFixture, {
     props: { beforeClose: (done: () => void) => captured.push(done) },
   })
 
@@ -87,7 +93,7 @@ test('cancelClose reverses a pending close and voids the stale done()', async ()
 })
 
 test('details.cancel() on open-change vetoes the close', async () => {
-  const screen = render(MessageFixture, { props: { veto: true } })
+  const screen = await render(MessageFixture, { props: { veto: true } })
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 
@@ -96,7 +102,7 @@ test('details.cancel() on open-change vetoes the close', async () => {
 })
 
 test('programmatic close() via the exposed instance works the same as the dismiss button', async () => {
-  const screen = render(MessageFixture)
+  const screen = await render(MessageFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 
@@ -105,7 +111,7 @@ test('programmatic close() via the exposed instance works the same as the dismis
 })
 
 test('forceMount keeps the node mounted (display:none) instead of removing it', async () => {
-  const screen = render(Message, {
+  const screen = await render(Message, {
     props: { forceMount: true, open: false },
     slots: { default: 'Always mounted' },
   })
@@ -115,13 +121,13 @@ test('forceMount keeps the node mounted (display:none) instead of removing it', 
 })
 
 test('escape hatch: keyboard-only dismiss is unaffected — no Escape handling of its own (stationary, not floating)', async () => {
-  const screen = render(Message, { props: { closable: true }, slots: { default: 'x' } })
+  const screen = await render(Message, { props: { closable: true }, slots: { default: 'x' } })
   await userEvent.keyboard('{Escape}')
   expect(screen.container.querySelector('.ui-message')).not.toBeNull()
 })
 
 test('appearance="bare" drops the box, keeps variant/role/icon behavior', async () => {
-  const screen = render(Message, {
+  const screen = await render(Message, {
     props: { variant: 'error', appearance: 'bare' },
     slots: { default: 'Required' },
   })

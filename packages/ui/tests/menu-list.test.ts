@@ -11,7 +11,7 @@ function focusedText() {
 }
 
 test('renders rows from items, including a flattened group and a separator', async () => {
-  const screen = render(MenuListFixture)
+  const screen = await render(MenuListFixture)
 
   await expect.element(screen.getByRole('menuitem', { name: 'Dashboard' })).toBeInTheDocument()
   await expect.element(screen.getByRole('menuitem', { name: 'Reports' })).toBeInTheDocument()
@@ -23,20 +23,20 @@ test('renders rows from items, including a flattened group and a separator', asy
 })
 
 test('renders in-flow from mount without stealing focus', async () => {
-  render(MenuListFixture)
+  await render(MenuListFixture)
   // Nothing auto-focused just because the list is on-screen.
   expect(document.activeElement).not.toBe(document.querySelector('[role="menuitem"]'))
 })
 
 test('click fires @select with the item', async () => {
-  const screen = render(MenuListFixture)
+  const screen = await render(MenuListFixture)
 
   await screen.getByRole('menuitem', { name: 'Billing' }).click()
   await expect.element(screen.getByTestId('selected')).toHaveTextContent('billing')
 })
 
 test('Enter/Space activate the focused row and fire @select', async () => {
-  const screen = render(MenuListFixture)
+  const screen = await render(MenuListFixture)
 
   screen.getByRole('menuitem', { name: 'Reports' }).element().focus()
   await vi.waitFor(() => expect(focusedText()).toBe('Reports'))
@@ -46,7 +46,7 @@ test('Enter/Space activate the focused row and fire @select', async () => {
 })
 
 test('ArrowDown/ArrowUp move roving focus and wrap at both ends, skipping disabled rows and non-interactive group labels', async () => {
-  const screen = render(MenuListFixture)
+  const screen = await render(MenuListFixture)
 
   screen.getByRole('menuitem', { name: 'Dashboard' }).element().focus()
   await vi.waitFor(() => expect(focusedText()).toBe('Dashboard'))
@@ -75,7 +75,7 @@ test('ArrowDown/ArrowUp move roving focus and wrap at both ends, skipping disabl
 })
 
 test('active renders aria-current="page" on the matching row only', async () => {
-  const screen = render(MenuListFixture)
+  const screen = await render(MenuListFixture)
 
   await expect
     .element(screen.getByRole('menuitem', { name: 'Reports' }))
@@ -86,7 +86,7 @@ test('active renders aria-current="page" on the matching row only', async () => 
 })
 
 test('#item slot override replaces row content but keeps click behavior', async () => {
-  const screen = render(MenuListItemSlotFixture)
+  const screen = await render(MenuListItemSlotFixture)
 
   await expect.element(screen.getByTestId('custom-row').first()).toBeInTheDocument()
   await screen.getByRole('menuitem', { name: '★ Profile' }).click()
@@ -101,7 +101,7 @@ test('#item slot override replaces row content but keeps click behavior', async 
 // of them fails here instead of just "arrow keys are broken" with no clue
 // which assumption gave out.
 test('MenuList nested in an already-open Collapsible seeds roving tabindex on mount', async () => {
-  render(MenuListInCollapsibleFixture)
+  await render(MenuListInCollapsibleFixture)
 
   const general = document.querySelector('[role="menuitem"]:not([tabindex="-1"])')
   expect(general?.textContent?.trim()).toBe('Overview')
@@ -113,7 +113,7 @@ test('MenuList nested in an already-open Collapsible seeds roving tabindex on mo
 })
 
 test('ArrowDown/ArrowUp move roving focus within a Collapsible-nested MenuList, independent of the sibling top-level list', async () => {
-  const screen = render(MenuListInCollapsibleFixture)
+  const screen = await render(MenuListInCollapsibleFixture)
 
   screen.getByRole('menuitem', { name: 'General' }).element().focus()
   await vi.waitFor(() => expect(focusedText()).toBe('General'))
@@ -131,7 +131,7 @@ test('ArrowDown/ArrowUp move roving focus within a Collapsible-nested MenuList, 
 })
 
 test('selecting a row inside a Collapsible-nested MenuList updates aria-current on that row only', async () => {
-  const screen = render(MenuListInCollapsibleFixture)
+  const screen = await render(MenuListInCollapsibleFixture)
 
   await screen.getByRole('menuitem', { name: 'Notifications' }).click()
   await expect

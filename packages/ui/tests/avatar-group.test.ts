@@ -6,7 +6,7 @@ import AvatarGroup from '../src/components/AvatarGroup/AvatarGroup.vue'
 import Avatar from '../src/components/Avatar/Avatar.vue'
 
 test('no overflowCount: renders only the slotted avatars', async () => {
-  const screen = render(AvatarGroup, {
+  const screen = await render(AvatarGroup, {
     slots: {
       default: () => [h(Avatar, { name: 'Ada Lovelace' }), h(Avatar, { name: 'Grace Hopper' })],
     },
@@ -16,7 +16,7 @@ test('no overflowCount: renders only the slotted avatars', async () => {
 })
 
 test('overflowCount renders a trailing "+N" avatar', async () => {
-  const screen = render(AvatarGroup, {
+  const screen = await render(AvatarGroup, {
     props: { overflowCount: 3 },
     slots: { default: () => [h(Avatar, { name: 'Ada Lovelace' })] },
   })
@@ -26,7 +26,7 @@ test('overflowCount renders a trailing "+N" avatar', async () => {
 })
 
 test('overflow slot overrides the default "+N" content', async () => {
-  const screen = render(AvatarGroup, {
+  const screen = await render(AvatarGroup, {
     props: { overflowCount: 5 },
     slots: {
       default: () => [h(Avatar, { name: 'Ada Lovelace' })],
@@ -39,7 +39,7 @@ test('overflow slot overrides the default "+N" content', async () => {
 })
 
 test('size prop sizes the generated overflow avatar to match', async () => {
-  const screen = render(AvatarGroup, {
+  const screen = await render(AvatarGroup, {
     props: { size: 'lg', overflowCount: 2 },
     slots: { default: () => [h(Avatar, { name: 'Ada Lovelace', size: 'lg' })] },
   })

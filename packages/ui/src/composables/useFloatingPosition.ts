@@ -21,6 +21,8 @@ export interface UseFloatingPositionOptions {
   matchReferenceWidth?: MaybeRefOrGetter<boolean>
   /** Caps the returned `maxHeight` at this value even when more viewport space is available — the available-space budget still wins when it's smaller. Omitted keeps today's behavior (viewport space is the only limit). */
   maxHeightCap?: MaybeRefOrGetter<number | undefined>
+  /** Fires once if `referenceEl` is removed from the document while `active` — a route change under a delegated/external reference otherwise leaves `autoUpdate` repositioning against a detached node, which degenerates to a `{0,0,0,0}` rect. */
+  onReferenceDisconnected?: () => void
 }
 
 // Coarse mapping for transform-origin (enough for scale/fade).
@@ -76,6 +78,7 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
     const reference = options.referenceEl.value
     const floating = options.floatingEl.value
     if (!reference || !floating) return
+    if (!reference.isConnected) return
     const token = ++updateToken
 
     const side = toValue(options.side) ?? 'bottom'
@@ -120,12 +123,15 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
   }
 
   let stopAutoUpdate: (() => void) | undefined
+  let disconnectObserver: MutationObserver | undefined
   watch(
     () => [toValue(options.active), options.referenceEl.value] as const,
     ([isActive, reference], previous) => {
       const wasActive = previous?.[0] ?? false
       stopAutoUpdate?.()
       stopAutoUpdate = undefined
+      disconnectObserver?.disconnect()
+      disconnectObserver = undefined
       // Invalidate whatever `update()` call might already be in flight for the config being torn
       // down — its result, whenever it resolves, must not overwrite what's set up next.
       updateToken++
@@ -137,12 +143,22 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
       const floating = options.floatingEl.value
       if (!isActive || !reference || !floating) return
       stopAutoUpdate = autoUpdate(reference, floating, update)
+      if (options.onReferenceDisconnected && typeof MutationObserver !== 'undefined') {
+        disconnectObserver = new MutationObserver(() => {
+          if (reference.isConnected) return
+          disconnectObserver?.disconnect()
+          disconnectObserver = undefined
+          options.onReferenceDisconnected?.()
+        })
+        disconnectObserver.observe(document.body, { childList: true, subtree: true })
+      }
     },
     { flush: 'post' },
   )
 
   onScopeDispose(() => {
     stopAutoUpdate?.()
+    disconnectObserver?.disconnect()
     // In case an `update()` call is still in flight when the scope tears down — its resolution
     // must not write to a ref nothing will ever read again.
     updateToken++

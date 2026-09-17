@@ -125,7 +125,7 @@ defineSlots<{
     panelEl: HTMLElement | null
     placement: string
   }): unknown
-  /** Co-located trigger markup — bind `:ref="setTriggerEl"` on whatever you render here. */
+  /** Co-located trigger markup — bind `:ref="setTriggerEl"` on whatever you render here. Unlike Menu's `#trigger`, Popover only positions against it: clicking does nothing until you drive `open`/`@update:open` yourself. */
   trigger(props: {
     open: boolean
     setTriggerEl: (el: Element | ComponentPublicInstance<any> | null) => void

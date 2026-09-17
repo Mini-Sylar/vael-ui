@@ -30,7 +30,7 @@ function pointerup(clientX: number, clientY = 0) {
 test('motionCss=false sets data-motion="off" and disables the settle transition', async () => {
   const { default: SwipeToReveal } =
     await import('../src/components/SwipeToReveal/SwipeToReveal.vue')
-  const screen = render(SwipeToReveal, {
+  const screen = await render(SwipeToReveal, {
     props: { motionCss: false },
     slots: { default: 'Content', 'trailing-actions': 'Delete' },
   })
@@ -61,14 +61,14 @@ test('resolveSwipeCommit: a slow drag falls back to distance — crossing the mi
 // ---------------------------------------------------------------------------
 
 test('closed by default, actions clipped but present in the DOM', async () => {
-  const screen = render(SwipeToRevealFixture, {})
+  const screen = await render(SwipeToRevealFixture, {})
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   expect(testId(screen, 'archive')).not.toBeNull()
   expect(testId(screen, 'delete')).not.toBeNull()
 })
 
 test('a real drag past the midpoint commits open, updates v-model, and fires change', async () => {
-  const screen = render(SwipeToRevealFixture, {})
+  const screen = await render(SwipeToRevealFixture, {})
   const content = testId(screen, 'content')
   const rect = content.getBoundingClientRect()
 
@@ -82,7 +82,7 @@ test('a real drag past the midpoint commits open, updates v-model, and fires cha
 })
 
 test('a short, slow drag springs back closed', async () => {
-  const screen = render(SwipeToRevealFixture, {})
+  const screen = await render(SwipeToRevealFixture, {})
   const content = testId(screen, 'content')
   const rect = content.getBoundingClientRect()
 
@@ -103,13 +103,13 @@ test('a short, slow drag springs back closed', async () => {
 })
 
 test('programmatic reveal() opens without any drag', async () => {
-  const screen = render(SwipeToRevealFixture, {})
+  const screen = await render(SwipeToRevealFixture, {})
   await userEvent.click(testId(screen, 'reveal-btn'))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
 test("tapping the content while open closes it, without firing the content's own click handler", async () => {
-  const screen = render(SwipeToRevealFixture, {})
+  const screen = await render(SwipeToRevealFixture, {})
   await userEvent.click(testId(screen, 'reveal-btn'))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 
@@ -119,14 +119,14 @@ test("tapping the content while open closes it, without firing the content's own
 })
 
 test("a plain tap while closed passes through to the content's own click handler untouched", async () => {
-  const screen = render(SwipeToRevealFixture, {})
+  const screen = await render(SwipeToRevealFixture, {})
   await userEvent.click(testId(screen, 'content'))
   await expect.element(screen.getByTestId('content-click-count')).toHaveTextContent('1')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
 test("clicking an action button closes the row via the slot's own close() helper", async () => {
-  const screen = render(SwipeToRevealFixture, {})
+  const screen = await render(SwipeToRevealFixture, {})
   await userEvent.click(testId(screen, 'reveal-btn'))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   await userEvent.click(testId(screen, 'archive'))
@@ -134,7 +134,7 @@ test("clicking an action button closes the row via the slot's own close() helper
 })
 
 test('action buttons stay reachable via Tab regardless of visual open state', async () => {
-  const screen = render(SwipeToRevealFixture, {})
+  const screen = await render(SwipeToRevealFixture, {})
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   testId(screen, 'before').focus()
   await userEvent.keyboard('{Tab}')
@@ -148,7 +148,7 @@ test('action buttons stay reachable via Tab regardless of visual open state', as
 })
 
 test('disabled blocks the drag gesture but leaves plain clicks working', async () => {
-  const screen = render(SwipeToRevealFixture, { props: { disabled: true } })
+  const screen = await render(SwipeToRevealFixture, { props: { disabled: true } })
   const content = testId(screen, 'content')
   const rect = content.getBoundingClientRect()
 
@@ -162,7 +162,7 @@ test('disabled blocks the drag gesture but leaves plain clicks working', async (
 })
 
 test('side="leading" reveals from the left — a rightward drag opens it', async () => {
-  const screen = render(SwipeToRevealFixture, { props: { side: 'leading' } })
+  const screen = await render(SwipeToRevealFixture, { props: { side: 'leading' } })
   const content = testId(screen, 'content')
   const rect = content.getBoundingClientRect()
 
@@ -180,7 +180,7 @@ test('side="leading" reveals from the left — a rightward drag opens it', async
 // ---------------------------------------------------------------------------
 
 test('dual edges: a leftward drag opens the trailing panel', async () => {
-  const screen = render(SwipeToRevealFixture, { props: { dual: true } })
+  const screen = await render(SwipeToRevealFixture, { props: { dual: true } })
   const content = testId(screen, 'content')
   const rect = content.getBoundingClientRect()
 
@@ -195,7 +195,7 @@ test('dual edges: a leftward drag opens the trailing panel', async () => {
 })
 
 test('dual edges: a rightward drag opens the leading panel', async () => {
-  const screen = render(SwipeToRevealFixture, { props: { dual: true } })
+  const screen = await render(SwipeToRevealFixture, { props: { dual: true } })
   const content = testId(screen, 'content')
   const rect = content.getBoundingClientRect()
 
@@ -210,14 +210,14 @@ test('dual edges: a rightward drag opens the leading panel', async () => {
 })
 
 test('dual edges: reveal(side) opens the named panel without a drag', async () => {
-  const screen = render(SwipeToRevealFixture, { props: { dual: true } })
+  const screen = await render(SwipeToRevealFixture, { props: { dual: true } })
   await userEvent.click(testId(screen, 'reveal-leading-btn'))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   await expect.element(screen.getByTestId('open-side')).toHaveTextContent('leading')
 })
 
 test('dual edges: both action panels are in the DOM from the start (accessibility)', async () => {
-  const screen = render(SwipeToRevealFixture, { props: { dual: true } })
+  const screen = await render(SwipeToRevealFixture, { props: { dual: true } })
   expect(testId(screen, 'pin')).not.toBeNull()
   expect(testId(screen, 'archive')).not.toBeNull()
   expect(testId(screen, 'delete')).not.toBeNull()

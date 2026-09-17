@@ -13,7 +13,10 @@ beforeEach(() => {
 })
 
 test('a plain class passed to TreeSelect reaches the rendered trigger', async () => {
-  const screen = render(TreeSelect, { props: { items: [] }, attrs: { class: 'my-tree-select' } })
+  const screen = await render(TreeSelect, {
+    props: { items: [] },
+    attrs: { class: 'my-tree-select' },
+  })
   const trigger = screen.getByRole('combobox')
   expect(trigger.element().closest('.my-tree-select')).not.toBeNull()
 })
@@ -36,7 +39,7 @@ function focusedLabel(): string | undefined {
 
 test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
   const items = Array.from({ length: 100 }, (_, i) => ({ label: `Item ${i}`, value: `item-${i}` }))
-  const screen = render(TreeSelectFixture, { props: { items, maxPanelHeight: 160 } })
+  const screen = await render(TreeSelectFixture, { props: { items, maxPanelHeight: 160 } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Item 0')).toBeDefined())
 
@@ -47,7 +50,7 @@ test('maxPanelHeight caps the panel even though the viewport has room for more',
 })
 
 test('renders nested data: root nodes are visible, children stay hidden until expanded', async () => {
-  const screen = render(TreeSelectFixture)
+  const screen = await render(TreeSelectFixture)
   await screen.getByRole('combobox').click()
 
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
@@ -57,7 +60,7 @@ test('renders nested data: root nodes are visible, children stay hidden until ex
 })
 
 test('clicking the chevron expands a node to reveal its children, and collapses it again', async () => {
-  const screen = render(TreeSelectFixture)
+  const screen = await render(TreeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
 
@@ -71,7 +74,7 @@ test('clicking the chevron expands a node to reveal its children, and collapses 
 })
 
 test('single selection: clicking a leaf commits the value and closes the panel', async () => {
-  const screen = render(TreeSelectFixture)
+  const screen = await render(TreeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
 
@@ -84,7 +87,7 @@ test('single selection: clicking a leaf commits the value and closes the panel',
 })
 
 test('Enter on a focused row toggles selection via the keyboard, not just a mouse click', async () => {
-  const screen = render(TreeSelectFixture)
+  const screen = await render(TreeSelectFixture)
   await screen.getByRole('combobox').click()
   // filterable defaults to true — opening focuses the search box first, not
   // a row; ArrowDown from there hands focus to the first row (see the
@@ -100,7 +103,7 @@ test('Enter on a focused row toggles selection via the keyboard, not just a mous
 })
 
 test('checkbox mode: checking a leaf adds its value to the array', async () => {
-  const screen = render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
+  const screen = await render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-select-chevron')!)
@@ -115,7 +118,7 @@ test('checkbox mode: checking a leaf adds its value to the array', async () => {
 })
 
 test('checkbox mode: a parent renders indeterminate when only some descendants are checked, and checked once every enabled descendant is', async () => {
-  const screen = render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
+  const screen = await render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-select-chevron')!)
@@ -150,7 +153,7 @@ test('checkbox mode: a parent renders indeterminate when only some descendants a
 })
 
 test('checkbox mode: a disabled leaf cannot be toggled directly', async () => {
-  const screen = render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
+  const screen = await render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-select-chevron')!)
@@ -167,7 +170,7 @@ test('checkbox mode: a disabled leaf cannot be toggled directly', async () => {
 })
 
 test('multiple mode: clicking toggles just that node, with no parent/child linkage', async () => {
-  const screen = render(TreeSelectFixture, { props: { selectionMode: 'multiple' } })
+  const screen = await render(TreeSelectFixture, { props: { selectionMode: 'multiple' } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-select-chevron')!)
@@ -185,7 +188,7 @@ test('multiple mode: clicking toggles just that node, with no parent/child linka
 })
 
 test('the search filter narrows rows to label matches and auto-expands their ancestors', async () => {
-  const screen = render(TreeSelectFixture)
+  const screen = await render(TreeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   // Nothing pre-expanded — Orange only exists two levels under Fruits.
@@ -207,7 +210,7 @@ test('the search filter narrows rows to label matches and auto-expands their anc
 })
 
 test('keyboard navigation: ArrowDown/ArrowUp rove between visible rows, ArrowRight expands then descends, ArrowLeft ascends then collapses', async () => {
-  const screen = render(TreeSelectFixture)
+  const screen = await render(TreeSelectFixture)
   await screen.getByRole('combobox').click()
   // The filter input is focused first (filterable defaults to true) — an
   // initial ArrowDown from there hands focus to the first row.
@@ -244,7 +247,7 @@ test('keyboard navigation: ArrowDown/ArrowUp rove between visible rows, ArrowRig
 })
 
 test('the disabled prop disables the trigger and blocks opening', async () => {
-  const screen = render(TreeSelectFixture, { props: { disabled: true } })
+  const screen = await render(TreeSelectFixture, { props: { disabled: true } })
   const trigger = screen.getByRole('combobox')
   await expect.element(trigger).toHaveAttribute('aria-disabled', 'true')
   await trigger.click({ force: true })
@@ -252,7 +255,7 @@ test('the disabled prop disables the trigger and blocks opening', async () => {
 })
 
 test('clearable shows a clear button once a leaf is selected, and it resets the model without opening the panel', async () => {
-  const screen = render(TreeSelectFixture, { props: { clearable: true } })
+  const screen = await render(TreeSelectFixture, { props: { clearable: true } })
   await expect.element(screen.getByLabelText('Clear selection')).not.toBeInTheDocument()
 
   await screen.getByRole('combobox').click()
@@ -271,22 +274,22 @@ test('clearable shows a clear button once a leaf is selected, and it resets the 
 })
 
 test('filterable=false renders no search box', async () => {
-  const screen = render(TreeSelectFixture, { props: { filterable: false } })
+  const screen = await render(TreeSelectFixture, { props: { filterable: false } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   expect(screen.container.querySelector('.ui-tree-select-filter')).toBeNull()
 })
 
 test('header and footer slots render around the tree only when provided', async () => {
-  const screen = render(TreeSelectFixture, { props: { withHeader: true, withFooter: true } })
+  const screen = await render(TreeSelectFixture, { props: { withHeader: true, withFooter: true } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await expect.element(screen.getByTestId('tree-select-header')).toBeInTheDocument()
   await expect.element(screen.getByTestId('tree-select-footer')).toBeInTheDocument()
 
-  screen.unmount()
+  await screen.unmount()
 
-  const bare = render(TreeSelectFixture)
+  const bare = await render(TreeSelectFixture)
   await bare.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   expect(document.querySelector('.ui-tree-select-header')).toBeNull()

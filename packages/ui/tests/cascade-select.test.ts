@@ -16,7 +16,7 @@ function focusedText() {
 }
 
 test('trigger click opens the panel and focuses the first top-level row', async () => {
-  const screen = render(CascadeSelectFixture)
+  const screen = await render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
@@ -24,7 +24,9 @@ test('trigger click opens the panel and focuses the first top-level row', async 
 })
 
 test('header and footer slots forward through to the underlying Menu', async () => {
-  const screen = render(CascadeSelectFixture, { props: { withHeader: true, withFooter: true } })
+  const screen = await render(CascadeSelectFixture, {
+    props: { withHeader: true, withFooter: true },
+  })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
   await expect.element(screen.getByTestId('cascade-select-header')).toBeInTheDocument()
@@ -32,7 +34,7 @@ test('header and footer slots forward through to the underlying Menu', async () 
 })
 
 test('ArrowRight descends a level at a time; Enter on a leaf commits the value, the full path, and closes the whole chain', async () => {
-  const screen = render(CascadeSelectFixture)
+  const screen = await render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
@@ -49,7 +51,7 @@ test('ArrowRight descends a level at a time; Enter on a leaf commits the value, 
 })
 
 test('ArrowLeft ascends back to the parent row without losing focus context', async () => {
-  const screen = render(CascadeSelectFixture)
+  const screen = await render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
@@ -60,7 +62,7 @@ test('ArrowLeft ascends back to the parent row without losing focus context', as
 })
 
 test('a disabled branch is skipped by arrow-key stepping at its own level', async () => {
-  const screen = render(CascadeSelectFixture)
+  const screen = await render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
@@ -73,7 +75,7 @@ test('a disabled branch is skipped by arrow-key stepping at its own level', asyn
 })
 
 test('clicking a leaf row commits the value and path via mouse, same as keyboard', async () => {
-  const screen = render(CascadeSelectFixture)
+  const screen = await render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
@@ -98,7 +100,7 @@ test('clicking a leaf row commits the value and path via mouse, same as keyboard
 })
 
 test('typeahead jumps within a level', async () => {
-  const screen = render(CascadeSelectFixture)
+  const screen = await render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
 
@@ -107,7 +109,7 @@ test('typeahead jumps within a level', async () => {
 })
 
 test('Escape closes the current level first, then the whole panel on a second press', async () => {
-  const screen = render(CascadeSelectFixture)
+  const screen = await render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
   await userEvent.keyboard('{ArrowRight}')
@@ -122,7 +124,7 @@ test('Escape closes the current level first, then the whole panel on a second pr
 })
 
 test('the disabled prop disables the trigger and blocks opening', async () => {
-  const screen = render(CascadeSelectFixture, { props: { disabled: true } })
+  const screen = await render(CascadeSelectFixture, { props: { disabled: true } })
   const trigger = screen.getByRole('combobox')
   await expect.element(trigger).toHaveAttribute('aria-disabled', 'true')
   await trigger.click({ force: true })
@@ -130,7 +132,7 @@ test('the disabled prop disables the trigger and blocks opening', async () => {
 })
 
 test('clearable shows a clear button once a leaf is selected, and it resets the model without opening the panel', async () => {
-  const screen = render(CascadeSelectFixture, { props: { clearable: true } })
+  const screen = await render(CascadeSelectFixture, { props: { clearable: true } })
   await expect.element(screen.getByLabelText('Clear selection')).not.toBeInTheDocument()
 
   await screen.getByRole('combobox').click()
@@ -151,13 +153,13 @@ test('clearable shows a clear button once a leaf is selected, and it resets the 
 })
 
 test('an empty items array renders the localized empty row instead of a blank panel', async () => {
-  const screen = render(CascadeSelectFixture, { props: { items: [] } })
+  const screen = await render(CascadeSelectFixture, { props: { items: [] } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByText('No options')).toBeInTheDocument()
 })
 
 test('the `name` prop renders a hidden input mirroring the committed leaf value for form participation', async () => {
-  const screen = render(CascadeSelectFixture)
+  const screen = await render(CascadeSelectFixture)
   const hidden = screen.container.querySelector<HTMLInputElement>(
     'input[type="hidden"][name="city"]',
   )!

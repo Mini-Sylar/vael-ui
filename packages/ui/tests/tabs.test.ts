@@ -9,7 +9,7 @@ function focusedTab() {
 }
 
 test('click selects; arrows move selection + focus and wrap at both ends', async () => {
-  const screen = render(TabsFixture)
+  const screen = await render(TabsFixture)
   const active = screen.getByTestId('active')
 
   await expect.element(screen.getByRole('tablist')).toBeInTheDocument()
@@ -41,7 +41,7 @@ test('click selects; arrows move selection + focus and wrap at both ends', async
 })
 
 test('vertical orientation navigates with ArrowUp/ArrowDown', async () => {
-  const screen = render(TabsFixture, { props: { orientation: 'vertical' } })
+  const screen = await render(TabsFixture, { props: { orientation: 'vertical' } })
   const active = screen.getByTestId('active')
 
   await expect.element(screen.getByRole('tablist')).toHaveAttribute('aria-orientation', 'vertical')
@@ -59,7 +59,7 @@ test('vertical orientation navigates with ArrowUp/ArrowDown', async () => {
 test('data-tab-value lets keyboard focus find the right element when DOM order differs from items order', async () => {
   // Rendered DOM order is [three, one, two] while items is [one, two, three]
   // — without data-tab-value, focus-by-position would land on the wrong tab.
-  const screen = render(TabsReorderedFixture)
+  const screen = await render(TabsReorderedFixture)
   const active = screen.getByTestId('active')
 
   await screen.getByTestId('tab-one').click()
@@ -77,7 +77,7 @@ test('data-tab-value lets keyboard focus find the right element when DOM order d
 })
 
 test('selecting the already-active tab does not emit change', async () => {
-  const screen = render(TabsFixture)
+  const screen = await render(TabsFixture)
   await screen.getByTestId('tab-one').click()
   await expect.element(screen.getByTestId('changes')).toHaveTextContent('0')
 })

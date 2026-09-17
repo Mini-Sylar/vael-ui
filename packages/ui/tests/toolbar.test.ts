@@ -17,28 +17,28 @@ function toolbarItems(container: HTMLElement) {
 }
 
 test('toolbar has an accessible name and role', async () => {
-  const screen = render(ToolbarFixture)
+  const screen = await render(ToolbarFixture)
   try {
     await expect.element(page.getByRole('toolbar', { name: 'Text formatting' })).toBeVisible()
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('exactly one item is tabindex="0" at any time, starting on the first enabled item', async () => {
-  const screen = render(ToolbarFixture)
+  const screen = await render(ToolbarFixture)
   try {
     const items = toolbarItems(screen.container)
     const zeroed = items.filter((el) => el.tabIndex === 0)
     expect(zeroed.length).toBe(1)
     expect(zeroed[0].dataset.testid).toBe('bold')
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('ArrowRight/ArrowLeft move focus and wrap at both ends', async () => {
-  const screen = render(ToolbarFixture)
+  const screen = await render(ToolbarFixture)
   try {
     const bold = screen.container.querySelector<HTMLElement>('[data-testid="bold"]')!
     bold.focus()
@@ -54,13 +54,13 @@ test('ArrowRight/ArrowLeft move focus and wrap at both ends', async () => {
       screen.container.querySelector('[data-testid="menu-trigger"]'),
     )
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('ArrowUp/ArrowDown are inert on a horizontal toolbar; the vertical orientation swaps the axis', async () => {
-  const screen = render(ToolbarFixture)
-  const vertical = render(ToolbarFixture, { props: { orientation: 'vertical' } })
+  const screen = await render(ToolbarFixture)
+  const vertical = await render(ToolbarFixture, { props: { orientation: 'vertical' } })
   try {
     const bold = screen.container.querySelector<HTMLElement>('[data-testid="bold"]')!
     bold.focus()
@@ -74,13 +74,13 @@ test('ArrowUp/ArrowDown are inert on a horizontal toolbar; the vertical orientat
     await userEvent.keyboard('{ArrowDown}')
     expect(document.activeElement).toBe(vertical.container.querySelector('[data-testid="italic"]'))
   } finally {
-    screen.unmount()
-    vertical.unmount()
+    await screen.unmount()
+    await vertical.unmount()
   }
 })
 
 test('Home/End jump to the first/last enabled item', async () => {
-  const screen = render(ToolbarFixture)
+  const screen = await render(ToolbarFixture)
   try {
     const italic = screen.container.querySelector<HTMLElement>('[data-testid="italic"]')!
     italic.focus()
@@ -93,12 +93,12 @@ test('Home/End jump to the first/last enabled item', async () => {
     await userEvent.keyboard('{Home}')
     expect(document.activeElement).toBe(screen.container.querySelector('[data-testid="bold"]'))
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('a disabled child is skipped by arrow navigation and never becomes the roving tabstop', async () => {
-  const screen = render(ToolbarFixture)
+  const screen = await render(ToolbarFixture)
   try {
     const disabled = screen.container.querySelector<HTMLElement>('[data-testid="disabled"]')!
     expect(disabled.tabIndex).toBe(-1)
@@ -109,12 +109,12 @@ test('a disabled child is skipped by arrow navigation and never becomes the rovi
     // Wraps past the disabled item straight back to the first enabled one.
     expect(document.activeElement).toBe(screen.container.querySelector('[data-testid="bold"]'))
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('tabindex roves to the last-focused item — Tab out and Shift+Tab back lands there, not on the first item', async () => {
-  const screen = render(ToolbarFixture)
+  const screen = await render(ToolbarFixture)
   try {
     const italic = screen.container.querySelector<HTMLElement>('[data-testid="italic"]')!
     italic.focus()
@@ -129,22 +129,22 @@ test('tabindex roves to the last-focused item — Tab out and Shift+Tab back lan
     await userEvent.keyboard('{Shift>}{Tab}{/Shift}')
     expect(document.activeElement).toBe(screen.container.querySelector('[data-testid="pressed"]'))
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('the start/center/end slots render as three groups, in order, with the default slot landing in the start group', async () => {
-  const screen = render(ToolbarGroupsFixture)
+  const screen = await render(ToolbarGroupsFixture)
   try {
     const ids = toolbarItems(screen.container).map((el) => el.dataset.testid)
     expect(ids).toEqual(['s1', 'd1', 'c1', 'e1'])
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('arrow navigation roves continuously across group boundaries', async () => {
-  const screen = render(ToolbarGroupsFixture)
+  const screen = await render(ToolbarGroupsFixture)
   try {
     const s1 = screen.container.querySelector<HTMLElement>('[data-testid="s1"]')!
     s1.focus()
@@ -159,12 +159,12 @@ test('arrow navigation roves continuously across group boundaries', async () => 
     await userEvent.keyboard('{ArrowRight}')
     expect(document.activeElement).toBe(s1)
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('overflow: opt-in end-group items collapse into an ellipsis menu once the toolbar is too narrow, mirroring disabled state', async () => {
-  const screen = render(ToolbarOverflowFixture, { props: { width: '100px' } })
+  const screen = await render(ToolbarOverflowFixture, { props: { width: '100px' } })
   try {
     await vi.waitFor(
       () => {
@@ -213,12 +213,12 @@ test('overflow: opt-in end-group items collapse into an ellipsis menu once the t
       timeout: 2000,
     })
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test("overflow: widening the toolbar past the collapsed items' remembered width removes the ellipsis", async () => {
-  const screen = render(ToolbarOverflowFixture, { props: { width: '100px' } })
+  const screen = await render(ToolbarOverflowFixture, { props: { width: '100px' } })
   try {
     await vi.waitFor(
       () => {
@@ -245,12 +245,12 @@ test("overflow: widening the toolbar past the collapsed items' remembered width 
         ?.hasAttribute('data-toolbar-collapsed'),
     ).toBeFalsy()
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })
 
 test('a child Menu still opens on click and its own arrow navigation is not hijacked by the toolbar', async () => {
-  const screen = render(ToolbarFixture)
+  const screen = await render(ToolbarFixture)
   try {
     // A real (Playwright-backed) click, not a raw DOM .click() — it waits
     // for the trigger to actually be actionable first, same as menu.test.ts's
@@ -283,6 +283,6 @@ test('a child Menu still opens on click and its own arrow navigation is not hija
       timeout: 2000,
     })
   } finally {
-    screen.unmount()
+    await screen.unmount()
   }
 })

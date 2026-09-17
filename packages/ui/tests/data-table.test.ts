@@ -76,7 +76,7 @@ async function renderTable(props: {
   // custom element, not the real `tag`). Harmless for most components, but DataTable's
   // rows genuinely need a real <tbody> for correct table layout — disabled here so
   // these tests exercise the same DOM shape a real browser renders.
-  const screen = render(DataTableFixture, {
+  const screen = await render(DataTableFixture, {
     props,
     global: { stubs: { 'transition-group': false } },
   })
@@ -169,7 +169,7 @@ test('the sort chevron rotates via data-state as the column cycles sort directio
 })
 
 test('sorting a Date column orders chronologically, not by weekday name', async () => {
-  const screen = render(DataTableDateSortFixture, {
+  const screen = await render(DataTableDateSortFixture, {
     global: { stubs: { 'transition-group': false } },
   })
   await nextTick()
@@ -470,7 +470,7 @@ test('stackedBreakpoint narrower than the viewport leaves the normal table layou
 })
 
 test('column order tracks a reactive v-for reorder, not just initial registration order', async () => {
-  const screen = render(DataTableReorderFixture, {
+  const screen = await render(DataTableReorderFixture, {
     props: { order: ['a', 'b', 'c'] },
     global: { stubs: { 'transition-group': false } },
   })
@@ -785,12 +785,15 @@ test('frozenColumns freezes the first N columns (sticky-left) and leaves the res
 })
 
 // -------------------------------------------------------------- #expansion (Tier 2)
-function expansionScreen(props?: { stackedBreakpoint?: string }): Promise<RenderResult<unknown>> {
-  const screen = render(DataTableExpansionFixture, {
+async function expansionScreen(props?: {
+  stackedBreakpoint?: string
+}): Promise<RenderResult<unknown>> {
+  const screen = await render(DataTableExpansionFixture, {
     props,
     global: { stubs: { 'transition-group': false } },
   })
-  return nextTick().then(() => screen)
+  await nextTick()
+  return screen
 }
 
 test('row expansion: a chevron toggle reveals/hides the #expansion row for that row only', async () => {
@@ -803,7 +806,7 @@ test('row expansion: a chevron toggle reveals/hides the #expansion row for that 
   expect(expandButtons.length).toBe(3)
 
   await userEvent.click(expandButtons[0]!)
-  await expect.element(screen.getByTestId('expansion-p0')).toHaveTextContent('Alice')
+  await expect.element(screen.getByTestId('expansion-p0')).toMatchTextContent('Alice')
   expect(screen.container.querySelector('[data-testid="expansion-p1"]')).toBeNull()
 
   await userEvent.click(expandButtons[0]!)
@@ -883,7 +886,7 @@ test('lazy without total falls back to data.length for the footer total', async 
 
 // -------------------------------------------------------------- virtualize
 test('virtualize: renders only a window of rows (+ spacers) for a large dataset, not every row', async () => {
-  const screen = render(DataTableVirtualizeFixture, { props: { rowCount: 2000 } })
+  const screen = await render(DataTableVirtualizeFixture, { props: { rowCount: 2000 } })
   await nextTick()
   await vi.waitFor(() => {
     const rendered = screen.container.querySelectorAll('[data-virtual-index]').length
@@ -895,7 +898,7 @@ test('virtualize: renders only a window of rows (+ spacers) for a large dataset,
 })
 
 test('virtualize: scrolling the container windows in later rows', async () => {
-  const screen = render(DataTableVirtualizeFixture, { props: { rowCount: 2000 } })
+  const screen = await render(DataTableVirtualizeFixture, { props: { rowCount: 2000 } })
   await nextTick()
   await expect.element(screen.getByTestId('exposed-el')).toBeInTheDocument()
 
@@ -912,7 +915,9 @@ test('virtualize: scrolling the container windows in later rows', async () => {
 })
 
 test('virtualize: reach-end fires once the window nears the last row, then re-arms only when data grows', async () => {
-  const screen = render(DataTableVirtualizeFixture, { props: { rowCount: 8, virtualize: true } })
+  const screen = await render(DataTableVirtualizeFixture, {
+    props: { rowCount: 8, virtualize: true },
+  })
   await nextTick()
   await vi.waitFor(() => {
     expect(screen.getByTestId('reach-end-count').element().textContent).toBe('1')

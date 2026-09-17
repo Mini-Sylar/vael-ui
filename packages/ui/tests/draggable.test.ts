@@ -36,7 +36,7 @@ function drag(from: HTMLElement, deltaY: number, pointerId = 11) {
 }
 
 test('v-draggable reorders the bound array in place', async () => {
-  const screen = render(DraggableFixture)
+  const screen = await render(DraggableFixture)
   expect(order(screen)).toBe('a,b,c')
   const release = drag(rows(screen)[0]!, 40)
   release()
@@ -44,7 +44,7 @@ test('v-draggable reorders the bound array in place', async () => {
 })
 
 test('it lifts the row into the same floating preview the components use', async () => {
-  const screen = render(DraggableFixture)
+  const screen = await render(DraggableFixture)
   const release = drag(rows(screen)[0]!, 40, 12)
   const preview = document.querySelector<HTMLElement>('[data-sortable-preview]')
   expect(preview).not.toBeNull()
@@ -55,7 +55,7 @@ test('it lifts the row into the same floating preview the components use', async
 })
 
 test('a movement under the threshold is a click, not a drag', async () => {
-  const screen = render(DraggableFixture)
+  const screen = await render(DraggableFixture)
   const release = drag(rows(screen)[0]!, 3, 13)
   expect(document.querySelector('[data-sortable-preview]')).toBeNull()
   release()
@@ -63,7 +63,7 @@ test('a movement under the threshold is a click, not a drag', async () => {
 })
 
 test('a handle selector restricts where the drag can start', async () => {
-  const screen = render(DraggableFixture, { props: { handle: '[data-grip]' } })
+  const screen = await render(DraggableFixture, { props: { handle: '[data-grip]' } })
   // Pressing the row body (not the grip) must not start a drag.
   const row = rows(screen)[0]!
   const label = row.querySelectorAll('span')[1] as HTMLElement
@@ -91,7 +91,7 @@ test('a handle selector restricts where the drag can start', async () => {
 })
 
 test('a sibling reactive change mid-drag does not tear down the drag', async () => {
-  const screen = render(DraggableFixture)
+  const screen = await render(DraggableFixture)
   const release = drag(rows(screen)[0]!, 40, 16)
   screen.container.querySelector<HTMLElement>('[data-testid="touch"]')!.click()
   await nextTick()
@@ -100,7 +100,7 @@ test('a sibling reactive change mid-drag does not tear down the drag', async () 
 })
 
 test('a real drag suppresses the browser trailing click on the dropped row', async () => {
-  const screen = render(DraggableFixture)
+  const screen = await render(DraggableFixture)
   const release = drag(rows(screen)[0]!, 40, 17)
   release()
   await vi.waitFor(() => expect(order(screen)).not.toBe('a,b,c'))
@@ -111,13 +111,13 @@ test('a real drag suppresses the browser trailing click on the dropped row', asy
 })
 
 test('a click with no preceding drag reaches the row normally', async () => {
-  const screen = render(DraggableFixture)
+  const screen = await render(DraggableFixture)
   rows(screen)[1]!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
   await vi.waitFor(() => expect(clicked(screen)).toBe('b'))
 })
 
 test('Escape aborts a directive drag too', async () => {
-  const screen = render(DraggableFixture)
+  const screen = await render(DraggableFixture)
   drag(rows(screen)[0]!, 45, 15)
   expect(document.querySelector('[data-sortable-preview]')).not.toBeNull()
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))

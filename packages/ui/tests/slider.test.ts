@@ -36,7 +36,7 @@ function pointerup(clientX: number, clientY = 0) {
 }
 
 test('drag on the thumb sets stepped values', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const rect = trackRect(screen, 'single')
   const thumb = thumbEl(screen, 'single')
 
@@ -48,7 +48,7 @@ test('drag on the thumb sets stepped values', async () => {
 })
 
 test('track click jumps the nearest thumb to the pointer', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const rect = trackRect(screen, 'single')
   const track = screen.container.querySelector('[data-testid="single"] .ui-slider-track')!
 
@@ -63,7 +63,7 @@ test('track click jumps the nearest thumb to the pointer', async () => {
 })
 
 test('range thumbs cannot cross — dragging past the other thumb clamps at it', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const rect = trackRect(screen, 'range')
   const thumb0 = thumbEl(screen, 'range', 0)
 
@@ -82,7 +82,7 @@ test('range thumbs cannot cross — dragging past the other thumb clamps at it',
 })
 
 test('keyboard: arrows step, PageUp/Down jump by 10x, Home/End jump to bounds', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const thumb = thumbEl(screen, 'single')
   thumb.focus()
 
@@ -103,7 +103,7 @@ test('keyboard: arrows step, PageUp/Down jump by 10x, Home/End jump to bounds', 
 })
 
 test('vertical orientation maps the block axis — top of the track is max', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const rect = trackRect(screen, 'vertical')
   const thumb = thumbEl(screen, 'vertical')
 
@@ -114,7 +114,7 @@ test('vertical orientation maps the block axis — top of the track is max', asy
 })
 
 test('data-dragging is set for the duration of a drag and cleared on release', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const rect = trackRect(screen, 'single')
   const thumb = thumbEl(screen, 'single')
   const root = screen.container.querySelector('[data-testid="single"]')!
@@ -128,7 +128,7 @@ test('data-dragging is set for the duration of a drag and cleared on release', a
 })
 
 test('disabled slider ignores pointer and keyboard interaction', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const rect = trackRect(screen, 'disabled')
   const thumb = thumbEl(screen, 'disabled')
   expect(thumb.getAttribute('tabindex')).toBe('-1')
@@ -140,14 +140,14 @@ test('disabled slider ignores pointer and keyboard interaction', async () => {
 })
 
 test('form participation: hidden input carries the value under name', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const data = new FormData(form)
   expect(data.get('amount')).toBe('50')
 })
 
 test('valueText renders as aria-valuetext', async () => {
-  const screen = render(SliderFixture, {})
+  const screen = await render(SliderFixture, {})
   const thumb = thumbEl(screen, 'valuetext')
   expect(thumb.getAttribute('aria-valuetext')).toBe('$40')
 })

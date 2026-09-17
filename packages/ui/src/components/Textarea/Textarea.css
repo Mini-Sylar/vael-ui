@@ -48,6 +48,8 @@
   }
   /* field-sizing measures against the box's own 1lh — rows/maxRows arrive as custom properties (Textarea.vue) rather than baked into a stylesheet rule, since they're per-instance props, not tokens. */
   .ui-textarea--auto-grow .ui-textarea-el {
+    /* field-sizing:content sizes BOTH axes to content when left auto - only block-size should auto-grow, so inline-size is pinned explicit here or the grid's 1fr column stops stretching it once its value is short/empty. */
+    inline-size: 100%;
     field-sizing: content;
     resize: none;
     overflow-y: auto;

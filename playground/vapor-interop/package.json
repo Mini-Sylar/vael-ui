@@ -13,12 +13,12 @@
     "vue": "3.6.0-rc.8"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.8",
-    "@vitest/browser-playwright": "^4.1.10",
-    "playwright": "^1.62.1",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vitest/browser-playwright": "^5.0.1",
+    "playwright": "^1.63.0",
     "typescript": "^6.0.3",
-    "vite": "^8.2.1",
-    "vitest": "^4.1.10",
-    "vue-tsc": "^3.3.10"
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1",
+    "vue-tsc": "^3.3.11"
   }
 }

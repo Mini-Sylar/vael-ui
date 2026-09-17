@@ -15,21 +15,21 @@ function closeLabel() {
   return document.querySelector('.ui-dialog-close')?.getAttribute('aria-label')
 }
 
-test('resolves the close label from an i18n instance under the uiKit.* namespace', () => {
+test('resolves the close label from an i18n instance under the uiKit.* namespace', async () => {
   const i18n = { t: (key: string) => (key === 'uiKit.dialog.close' ? 'Fermer' : key) }
-  render(I18nAdapterFixture, { props: { i18n } })
+  await render(I18nAdapterFixture, { props: { i18n } })
   expect(closeLabel()).toBe('Fermer')
 })
 
-test('a missing key falls back to the English default instead of leaking the raw path', () => {
+test('a missing key falls back to the English default instead of leaking the raw path', async () => {
   const i18n = { t: (key: string) => key } // simulates vue-i18n's own "key not found" behavior
-  render(I18nAdapterFixture, { props: { i18n } })
+  await render(I18nAdapterFixture, { props: { i18n } })
   expect(closeLabel()).toBe('Close')
 })
 
-test('the static messages prop still overrides on top of a resolved i18n instance', () => {
+test('the static messages prop still overrides on top of a resolved i18n instance', async () => {
   const i18n = { t: (key: string) => (key === 'uiKit.dialog.close' ? 'Fermer' : key) }
-  render(I18nAdapterFixture, {
+  await render(I18nAdapterFixture, {
     props: { i18n, messages: { dialog: { close: 'Explicit override' } } },
   })
   expect(closeLabel()).toBe('Explicit override')
@@ -45,7 +45,7 @@ test('reacts to the i18n instance changing its own locale, like a real vue-i18n 
   // Vue's reactivity tracks that read transparently through the function call.
   const i18n = { t: (key: string) => catalog[locale.value]?.[key] ?? key }
 
-  render(I18nAdapterFixture, { props: { i18n } })
+  await render(I18nAdapterFixture, { props: { i18n } })
   expect(closeLabel()).toBe('Close')
 
   locale.value = 'fr'

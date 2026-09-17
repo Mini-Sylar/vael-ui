@@ -21,7 +21,7 @@ function clickBehindOverlay(container: HTMLElement, testId: string) {
 // ---------------------------------------------------------------------------
 
 test('dialog: renders title/description and a Cancel/Confirm footer; Cancel closes without running onConfirm and resolves false', async () => {
-  const screen = render(ConfirmActionFixture)
+  const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-dialog-sync').click()
 
   const dialog = page.getByRole('dialog')
@@ -35,7 +35,7 @@ test('dialog: renders title/description and a Cancel/Confirm footer; Cancel clos
 })
 
 test('dialog: Confirm with no onConfirm closes immediately and resolves true', async () => {
-  const screen = render(ConfirmActionFixture)
+  const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-dialog-sync').click()
 
   await page.getByRole('button', { name: 'Confirm' }).click()
@@ -44,7 +44,7 @@ test('dialog: Confirm with no onConfirm closes immediately and resolves true', a
 })
 
 test('dialog: an async onConfirm keeps it open (Button shows its own loading state) until it resolves, then closes', async () => {
-  const screen = render(ConfirmActionFixture)
+  const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-dialog-resolve').click()
 
   const dialog = page.getByRole('dialog')
@@ -65,7 +65,7 @@ test('dialog: an async onConfirm keeps it open (Button shows its own loading sta
 })
 
 test('dialog: a rejecting onConfirm fires onError and leaves it open — nothing closes it out from under the failure', async () => {
-  const screen = render(ConfirmActionFixture)
+  const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-dialog-reject').click()
 
   const dialog = page.getByRole('dialog')
@@ -91,7 +91,7 @@ test('dialog: a rejecting onConfirm fires onError and leaves it open — nothing
 // ---------------------------------------------------------------------------
 
 test('popover: anchors to triggerEl, renders title, Cancel closes and resolves false', async () => {
-  const screen = render(ConfirmActionFixture)
+  const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-popover-sync').click()
 
   const popover = page.getByText('Remove tag?')
@@ -103,7 +103,7 @@ test('popover: anchors to triggerEl, renders title, Cancel closes and resolves f
 })
 
 test('popover: Confirm with no onConfirm closes immediately and resolves true', async () => {
-  const screen = render(ConfirmActionFixture)
+  const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-popover-sync').click()
 
   await expect.element(page.getByText('Remove tag?')).toBeVisible()
@@ -113,7 +113,7 @@ test('popover: Confirm with no onConfirm closes immediately and resolves true', 
 })
 
 test('popover: an async onConfirm keeps it open until it resolves, then closes — same gating as dialog', async () => {
-  const screen = render(ConfirmActionFixture)
+  const screen = await render(ConfirmActionFixture)
   await screen.getByTestId('open-popover-resolve').click()
 
   const popover = page.getByText('Remove tag?')
@@ -130,7 +130,7 @@ test('popover: an async onConfirm keeps it open until it resolves, then closes �
 })
 
 test('dialog and popover queues are independent — one open does not affect the other', async () => {
-  const screen = render(ConfirmActionFixture)
+  const screen = await render(ConfirmActionFixture)
   const dialogQueue = useDialogQueue()
   const popoverQueue = usePopoverQueue()
 

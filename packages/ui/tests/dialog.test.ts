@@ -13,7 +13,7 @@ function activeTestId() {
 }
 
 test('opens with dialog semantics, traps focus, escape closes and restores focus', async () => {
-  const screen = render(DialogFixture)
+  const screen = await render(DialogFixture)
   const trigger = screen.getByTestId('trigger')
   await trigger.click()
 
@@ -67,7 +67,7 @@ test('scroll lock compensates for the scrollbar width it removes, and restores i
     .mockReturnValue(window.innerWidth - 17) // simulate a classic 17px scrollbar
 
   try {
-    const screen = render(DialogFixture)
+    const screen = await render(DialogFixture)
     const previousPaddingRight = document.body.style.paddingRight
     await screen.getByTestId('trigger').click()
     await expect.element(page.getByRole('dialog')).toBeVisible()
@@ -89,7 +89,7 @@ test('scroll-fade only applies when the body actually overflows — never on sho
   // .scroll-fade's mask can't distinguish "not scrollable" from "at rest,
   // more below" on its own — both read as 0% on the scroll(self) timeline.
   // Ungated, every dialog gets a permanent bottom fade regardless of overflow.
-  const screen = render(DialogFixture) // short content: two inputs and a button
+  const screen = await render(DialogFixture) // short content: two inputs and a button
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-dialog-body')).not.toBeNull())
 
@@ -99,7 +99,7 @@ test('scroll-fade only applies when the body actually overflows — never on sho
 })
 
 test('scrollFade prop toggles the .scroll-fade class on an actually-overflowing body, on by default', async () => {
-  const screen = render(DialogLongContentFixture)
+  const screen = await render(DialogLongContentFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => {
     const body = document.querySelector<HTMLElement>('.ui-dialog-body')
@@ -109,7 +109,7 @@ test('scrollFade prop toggles the .scroll-fade class on an actually-overflowing 
     expect(document.querySelector('.ui-dialog-body')!.classList.contains('scroll-fade')).toBe(true),
   )
 
-  render(Dialog, { props: { open: true, scrollFade: false, ariaLabel: 'Fade off' } })
+  await render(Dialog, { props: { open: true, scrollFade: false, ariaLabel: 'Fade off' } })
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-dialog-panel').length).toBe(2))
   const panels = [...document.querySelectorAll('.ui-dialog-panel')]
   const noFadePanel = panels.find((p) => p.getAttribute('aria-label') === 'Fade off')
@@ -118,7 +118,7 @@ test('scrollFade prop toggles the .scroll-fade class on an actually-overflowing 
 })
 
 test('overlay click closes with reason "outside"; slot close() works', async () => {
-  const screen = render(DialogFixture)
+  const screen = await render(DialogFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByRole('dialog')).toBeVisible()
 
@@ -135,7 +135,7 @@ test('overlay click closes with reason "outside"; slot close() works', async () 
 })
 
 test('title/description wire ARIA automatically; footer slot renders actions', async () => {
-  const screen = render(DialogChromeFixture)
+  const screen = await render(DialogChromeFixture)
   await screen.getByTestId('trigger').click()
 
   const dialog = page.getByRole('dialog')
@@ -153,7 +153,7 @@ test('title/description wire ARIA automatically; footer slot renders actions', a
 })
 
 test('details.cancel() vetoes the close', async () => {
-  const screen = render(DialogFixture, { props: { veto: true } })
+  const screen = await render(DialogFixture, { props: { veto: true } })
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByRole('dialog')).toBeVisible()
 

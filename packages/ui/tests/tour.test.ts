@@ -7,7 +7,7 @@ import TourFixture from './fixtures/TourFixture.vue'
 import TourTeleportFixture from './fixtures/TourTeleportFixture.vue'
 
 test('opens on the first step, target stays interactive by default, page scroll-locks', async () => {
-  const screen = render(TourFixture)
+  const screen = await render(TourFixture)
   await screen.getByTestId('trigger').click()
 
   await expect.element(screen.getByTestId('state')).toHaveTextContent('open')
@@ -17,7 +17,7 @@ test('opens on the first step, target stays interactive by default, page scroll-
 })
 
 test('next/prev navigate steps and re-target the spotlight', async () => {
-  const screen = render(TourFixture)
+  const screen = await render(TourFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByText('Step A')).toBeVisible()
 
@@ -34,7 +34,7 @@ test('disableInteraction makes the target inert too, unlike the default', async 
   // `inert` inherits from an ancestor, so check effective inertness (closest([inert])),
   // not the element's own attribute — Tour may mark a shared container inert rather than
   // the target itself, depending on what else is (or isn't) protected at that moment.
-  const screen = render(TourFixture)
+  const screen = await render(TourFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByText('Step A')).toBeVisible()
   expect(document.getElementById('target-a')!.closest('[inert]')).toBeNull()
@@ -47,7 +47,7 @@ test('disableInteraction makes the target inert too, unlike the default', async 
 })
 
 test('onBeforeEnter runs before the target is resolved — the "open a drawer first" case', async () => {
-  const screen = render(TourFixture)
+  const screen = await render(TourFixture)
   await screen.getByTestId('trigger').click()
   expect(document.getElementById('target-d')).toBeNull() // not mounted yet
 
@@ -68,7 +68,7 @@ test('onBeforeEnter resolves and positions correctly regardless of which telepor
   // reference would leave positionerStyle stuck at `visibility: hidden`, and a hidden
   // element can never receive focus (see this file's git history for exactly that bug,
   // caught by this same check).
-  const screen = render(TourTeleportFixture)
+  const screen = await render(TourTeleportFixture)
   await screen.getByTestId('trigger').click()
 
   const expectTourPanelFocused = (text: string) =>
@@ -99,7 +99,7 @@ test('onBeforeEnter resolves and positions correctly regardless of which telepor
 })
 
 test('advancing past the last step finishes and closes; skip closes early', async () => {
-  const screen = render(TourFixture)
+  const screen = await render(TourFixture)
   await screen.getByTestId('trigger').click()
   await page.getByRole('button', { name: 'Next' }).click() // -> B
   await page.getByRole('button', { name: 'Next' }).click() // -> C
@@ -119,7 +119,7 @@ test('advancing past the last step finishes and closes; skip closes early', asyn
 })
 
 test('ArrowRight/ArrowLeft step forward and back', async () => {
-  const screen = render(TourFixture)
+  const screen = await render(TourFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByText('Step A')).toBeVisible()
 
@@ -130,7 +130,7 @@ test('ArrowRight/ArrowLeft step forward and back', async () => {
 })
 
 test('progress text reflects total step count across groups', async () => {
-  const screen = render(TourFixture)
+  const screen = await render(TourFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByText('Step 1 of 4')).toBeVisible()
 
@@ -139,7 +139,7 @@ test('progress text reflects total step count across groups', async () => {
 })
 
 test('Escape closes the tour and releases the scroll lock', async () => {
-  const screen = render(TourFixture)
+  const screen = await render(TourFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByText('Step A')).toBeVisible()
 

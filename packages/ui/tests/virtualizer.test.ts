@@ -9,7 +9,7 @@ function fireScroll(container: HTMLElement, top: number) {
 }
 
 test('renders only the visible window + overscan for a 10k count, not every row', async () => {
-  const screen = render(VirtualizerFixture, { props: { count: 10000 } })
+  const screen = await render(VirtualizerFixture, { props: { count: 10000 } })
   await expect.element(screen.getByTestId('rendered-count')).toBeInTheDocument()
 
   const rendered = Number(screen.getByTestId('rendered-count').element().textContent)
@@ -19,7 +19,7 @@ test('renders only the visible window + overscan for a 10k count, not every row'
 })
 
 test('scrolling updates the rendered window to the new position', async () => {
-  const screen = render(VirtualizerFixture, { props: { count: 10000 } })
+  const screen = await render(VirtualizerFixture, { props: { count: 10000 } })
   await expect.element(screen.getByTestId('rendered-indices')).toBeInTheDocument()
 
   const before = screen.getByTestId('rendered-indices').element().textContent
@@ -43,7 +43,9 @@ test('reach-end fires once near the bottom, then re-arms only once count grows',
   // An 8-row list at 40px/row = 320px total: the 200px viewport's visible
   // rows (5) + 2 overscan already cover every row up to the last index, so
   // reach-end should fire immediately on mount without any scrolling.
-  const screen = render(VirtualizerFixture, { props: { count: 8, rowHeight: 40, overscan: 2 } })
+  const screen = await render(VirtualizerFixture, {
+    props: { count: 8, rowHeight: 40, overscan: 2 },
+  })
   const container = screen.getByTestId('container').element() as HTMLElement
 
   await vi.waitFor(() => {
@@ -64,7 +66,7 @@ test('reach-end fires once near the bottom, then re-arms only once count grows',
 })
 
 test('omitting itemSize estimates 36px then corrects to the measured first row size', async () => {
-  const screen = render(VirtualizerFixture, { props: { count: 100, rowHeight: 40 } })
+  const screen = await render(VirtualizerFixture, { props: { count: 100, rowHeight: 40 } })
   await vi.waitFor(() => {
     expect(screen.getByTestId('measured-size').element().textContent).toBe('40')
   })
@@ -72,7 +74,7 @@ test('omitting itemSize estimates 36px then corrects to the measured first row s
 
 test('dynamic mode: row offsets accumulate real per-row heights, not a uniform assumption', async () => {
   // variableHeight(i) = 40 + (i % 3) * 20 -> 40, 60, 80, 40, 60, 80, ...
-  const screen = render(VirtualizerFixture, { props: { count: 10, dynamic: true } })
+  const screen = await render(VirtualizerFixture, { props: { count: 10, dynamic: true } })
   await expect.element(screen.getByTestId('row-4')).toBeInTheDocument()
 
   function translateY(testId: string): number {
@@ -96,7 +98,7 @@ test('dynamic mode: row offsets accumulate real per-row heights, not a uniform a
 })
 
 test('dynamic mode still windows a large count instead of rendering every row', async () => {
-  const screen = render(VirtualizerFixture, { props: { count: 10000, dynamic: true } })
+  const screen = await render(VirtualizerFixture, { props: { count: 10000, dynamic: true } })
   await expect.element(screen.getByTestId('rendered-count')).toBeInTheDocument()
   const rendered = Number(screen.getByTestId('rendered-count').element().textContent)
   expect(rendered).toBeGreaterThan(0)
@@ -104,7 +106,7 @@ test('dynamic mode still windows a large count instead of rendering every row', 
 })
 
 test('dynamic mode: reach-start fires once near the top, re-arms only once count grows', async () => {
-  const screen = render(VirtualizerFixture, {
+  const screen = await render(VirtualizerFixture, {
     props: { count: 8, dynamic: true, overscan: 2 },
   })
   const container = screen.getByTestId('container').element() as HTMLElement
@@ -126,7 +128,7 @@ test('dynamic mode: reach-start fires once near the top, re-arms only once count
 })
 
 test('scrollToIndex minimally scrolls a nearest-aligned row into view', async () => {
-  const screen = render(VirtualizerFixture, { props: { count: 10000 } })
+  const screen = await render(VirtualizerFixture, { props: { count: 10000 } })
   await expect.element(screen.getByTestId('container')).toBeInTheDocument()
   const container = screen.getByTestId('container').element() as HTMLElement
   expect(container.scrollTop).toBe(0)

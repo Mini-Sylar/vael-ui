@@ -28,6 +28,7 @@
       type="file"
       class="ui-file-upload-input"
       :accept="accept"
+      :capture="capture"
       :multiple="multiple"
       :name="name"
       :disabled="isDisabled"
@@ -107,6 +108,8 @@ const props = withDefaults(
   defineProps<{
     /** Native `accept` syntax: `.pdf`, `image/png`, `image/*`, comma-separated. */
     accept?: string
+    /** Native `capture` — opens the device camera directly instead of the file picker on mobile. `'environment'`/`'user'` pick a facing side; `true` leaves it to the browser. */
+    capture?: boolean | 'user' | 'environment'
     multiple?: boolean
     maxSize?: number
     maxFiles?: number

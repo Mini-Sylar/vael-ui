@@ -33,7 +33,7 @@ function drag(handle: HTMLElement, toX: number, toY: number, pointerId = 21) {
 }
 
 test('pointer-drag across the boundary transfers the card at the resolved index', async () => {
-  const screen = render(SortableGroupFixture)
+  const screen = await render(SortableGroupFixture)
   const handle = handles(screen)[0]! // todo's Alpha
   const doingBox = rowFor(screen, 'c').getBoundingClientRect()
   const release = drag(handle, doingBox.left + 10, doingBox.top + doingBox.height + 5)
@@ -43,7 +43,7 @@ test('pointer-drag across the boundary transfers the card at the resolved index'
 })
 
 test('a same-container move inside a grouped Sortable behaves exactly like an ungrouped one', async () => {
-  const screen = render(SortableGroupFixture)
+  const screen = await render(SortableGroupFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowDown} ')
   await vi.waitFor(() => expect(order(screen, 'todo-order')).toBe('b,a'))
@@ -51,7 +51,7 @@ test('a same-container move inside a grouped Sortable behaves exactly like an un
 })
 
 test('keyboard: the transfer key moves the grab to the adjacent column, and focus follows', async () => {
-  const screen = render(SortableGroupFixture)
+  const screen = await render(SortableGroupFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' ')
   await userEvent.keyboard('{ArrowRight}')
@@ -66,7 +66,7 @@ test('keyboard: the transfer key moves the grab to the adjacent column, and focu
 })
 
 test('keyboard: the reorder key still steps within whichever column currently hosts the grab', async () => {
-  const screen = render(SortableGroupFixture)
+  const screen = await render(SortableGroupFixture)
   handles(screen)[0]!.focus()
   await userEvent.keyboard(' {ArrowRight}{ArrowUp} ')
   await vi.waitFor(() => expect(order(screen, 'doing-order')).toBe('a,c'))
@@ -74,7 +74,7 @@ test('keyboard: the reorder key still steps within whichever column currently ho
 })
 
 test('a group-level canDrop rejection reverts both arrays', async () => {
-  const screen = render(SortableGroupFixture, { props: { canDrop: () => false } })
+  const screen = await render(SortableGroupFixture, { props: { canDrop: () => false } })
   const handle = handles(screen)[0]!
   const doingBox = rowFor(screen, 'c').getBoundingClientRect()
   const release = drag(handle, doingBox.left + 10, doingBox.top + doingBox.height + 5)
@@ -85,7 +85,7 @@ test('a group-level canDrop rejection reverts both arrays', async () => {
 })
 
 test('a rejecting group-level beforeDrop reverts instead of throwing', async () => {
-  const screen = render(SortableGroupFixture, {
+  const screen = await render(SortableGroupFixture, {
     props: { beforeDrop: () => Promise.resolve(false) },
   })
   const handle = handles(screen)[0]!
@@ -98,7 +98,7 @@ test('a rejecting group-level beforeDrop reverts instead of throwing', async () 
 })
 
 test('Escape while hovering a foreign column reverts both arrays untouched', async () => {
-  const screen = render(SortableGroupFixture)
+  const screen = await render(SortableGroupFixture)
   const handle = handles(screen)[0]!
   const doingBox = rowFor(screen, 'c').getBoundingClientRect()
   const pointerId = 33

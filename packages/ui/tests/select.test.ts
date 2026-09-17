@@ -12,7 +12,7 @@ beforeEach(() => {
 })
 
 test('a plain class passed to Select reaches the rendered trigger', async () => {
-  const screen = render(Select, {
+  const screen = await render(Select, {
     props: { items: [{ label: 'A', value: 'a' }] },
     attrs: { class: 'my-select' },
   })
@@ -21,7 +21,7 @@ test('a plain class passed to Select reaches the rendered trigger', async () => 
 })
 
 test('click opens the panel; the previously-selected item is active and scrolled into view', async () => {
-  const screen = render(SelectFixture)
+  const screen = await render(SelectFixture)
   const trigger = screen.getByRole('combobox')
   await trigger.click()
 
@@ -34,7 +34,7 @@ test('click opens the panel; the previously-selected item is active and scrolled
 })
 
 test('ArrowDown/ArrowUp move aria-activedescendant while DOM focus stays on the trigger', async () => {
-  const screen = render(SelectFixture)
+  const screen = await render(SelectFixture)
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -49,7 +49,7 @@ test('ArrowDown/ArrowUp move aria-activedescendant while DOM focus stays on the 
 })
 
 test('typeahead jumps the active option to the next label match', async () => {
-  const screen = render(SelectFixture)
+  const screen = await render(SelectFixture)
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -63,7 +63,7 @@ test('typeahead jumps the active option to the next label match', async () => {
 })
 
 test('Enter commits the active option and closes; multiple keeps it open and toggles aria-selected', async () => {
-  const screen = render(SelectFixture)
+  const screen = await render(SelectFixture)
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -74,8 +74,8 @@ test('Enter commits the active option and closes; multiple keeps it open and tog
   await expect.element(screen.getByTestId('model')).toHaveTextContent('"apple"')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 
-  screen.unmount()
-  const multi = render(SelectFixture, { props: { multiple: true } })
+  await screen.unmount()
+  const multi = await render(SelectFixture, { props: { multiple: true } })
   const multiTrigger = multi.getByRole('combobox')
   await multiTrigger.click()
   await expect.element(multi.getByRole('listbox')).toBeInTheDocument()
@@ -87,7 +87,7 @@ test('Enter commits the active option and closes; multiple keeps it open and tog
 })
 
 test('multiple mode renders each selection as a removable chip; the × removes just that one', async () => {
-  const screen = render(SelectFixture, { props: { multiple: true } })
+  const screen = await render(SelectFixture, { props: { multiple: true } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await userEvent.keyboard('{Enter}') // apple
@@ -111,7 +111,7 @@ test('multiple mode renders each selection as a removable chip; the × removes j
 })
 
 test('maxLabels collapses extra selections into a "+N" chip', async () => {
-  const screen = render(Select, {
+  const screen = await render(Select, {
     props: {
       items: [
         { label: 'Apple', value: 'apple' },
@@ -130,7 +130,7 @@ test('maxLabels collapses extra selections into a "+N" chip', async () => {
 })
 
 test('motionCss=false disables the chip transition, including its move (reflow) animation', async () => {
-  const screen = render(Select, {
+  const screen = await render(Select, {
     props: {
       items: [
         { label: 'Apple', value: 'apple' },
@@ -157,7 +157,7 @@ test('motionCss=false disables the chip transition, including its move (reflow) 
 })
 
 test('display="text" renders comma-joined labels instead of chips in multiple mode', async () => {
-  const screen = render(Select, {
+  const screen = await render(Select, {
     props: {
       items: [
         { label: 'Apple', value: 'apple' },
@@ -173,7 +173,7 @@ test('display="text" renders comma-joined labels instead of chips in multiple mo
 })
 
 test('display="count" renders a localized "N selected" summary in multiple mode', async () => {
-  const screen = render(Select, {
+  const screen = await render(Select, {
     props: {
       items: [
         { label: 'Apple', value: 'apple' },
@@ -190,7 +190,7 @@ test('display="count" renders a localized "N selected" summary in multiple mode'
 })
 
 test('display defaults to "chip" — omitting the prop keeps the existing removable-chip behavior', async () => {
-  const screen = render(Select, {
+  const screen = await render(Select, {
     props: {
       items: [{ label: 'Apple', value: 'apple' }],
       multiple: true,
@@ -201,7 +201,7 @@ test('display defaults to "chip" — omitting the prop keeps the existing remova
 })
 
 test('virtualization renders a rendered window, not all 1000 rows, for a large list', async () => {
-  const screen = render(SelectFixture, { props: { itemCount: 1000 } })
+  const screen = await render(SelectFixture, { props: { itemCount: 1000 } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
 
@@ -213,7 +213,7 @@ test('virtualization renders a rendered window, not all 1000 rows, for a large l
 })
 
 test('the listbox body still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
-  const screen = render(SelectFixture, { props: { itemCount: 1000 } })
+  const screen = await render(SelectFixture, { props: { itemCount: 1000 } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
   await vi.waitFor(() => {
@@ -227,15 +227,15 @@ test('the listbox body still gets a real capped height (v-scroll-mask keeps work
 test('reach-end fires near the bottom in both virtualized and non-virtualized modes', async () => {
   // Non-virtualized (small list, below the auto-virtualize threshold): the
   // whole list already renders, so reach-end fires as soon as it's open.
-  const small = render(SelectFixture)
+  const small = await render(SelectFixture)
   await small.getByRole('combobox').click()
   await vi.waitFor(() => {
     expect(small.getByTestId('reach-end-count').element().textContent).toBe('1')
   })
-  small.unmount()
+  await small.unmount()
 
   // Virtualized (large list): fires once the scroll gets near the bottom.
-  const big = render(SelectFixture, { props: { itemCount: 1000 } })
+  const big = await render(SelectFixture, { props: { itemCount: 1000 } })
   await big.getByRole('combobox').click()
   await expect.element(big.getByRole('listbox')).toBeInTheDocument()
   expect(big.getByTestId('reach-end-count').element().textContent).toBe('0')
@@ -249,7 +249,7 @@ test('reach-end fires near the bottom in both virtualized and non-virtualized mo
 })
 
 test('panel inline-size matches the trigger width (matchReferenceWidth)', async () => {
-  const screen = render(SelectFixture)
+  const screen = await render(SelectFixture)
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -263,7 +263,7 @@ test('panel inline-size matches the trigger width (matchReferenceWidth)', async 
 })
 
 test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
-  const screen = render(SelectFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
+  const screen = await render(SelectFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -275,7 +275,7 @@ test('maxPanelHeight caps the panel even though the viewport has room for more',
 })
 
 test('clearable resets the model and hides once empty', async () => {
-  const screen = render(SelectFixture, { props: { clearable: true } })
+  const screen = await render(SelectFixture, { props: { clearable: true } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await userEvent.keyboard('{Enter}')
@@ -288,7 +288,7 @@ test('clearable resets the model and hides once empty', async () => {
 })
 
 test('invalid sets data-invalid on the trigger (not just a class) — the animation-agnostic hook every other control uses', async () => {
-  const screen = render(Select, {
+  const screen = await render(Select, {
     props: {
       items: [{ label: 'Apple', value: 'apple' }],
       invalid: true,
@@ -300,7 +300,7 @@ test('invalid sets data-invalid on the trigger (not just a class) — the animat
 })
 
 test('hidden inputs carry the selection into FormData; multiple repeats the name', async () => {
-  const screen = render(SelectFormFixture)
+  const screen = await render(SelectFormFixture)
   const form = screen.getByTestId('form').element() as HTMLFormElement
   const trigger = form.querySelector('[role="combobox"]') as HTMLElement
   trigger.focus()
@@ -312,8 +312,8 @@ test('hidden inputs carry the selection into FormData; multiple repeats the name
     expect(data.get('fruit')).toBe('apple')
   })
 
-  screen.unmount()
-  const multi = render(SelectFormFixture, { props: { multiple: true } })
+  await screen.unmount()
+  const multi = await render(SelectFormFixture, { props: { multiple: true } })
   const multiForm = multi.getByTestId('form').element() as HTMLFormElement
   const multiTrigger = multiForm.querySelector('[role="combobox"]') as HTMLElement
   multiTrigger.focus()
@@ -328,7 +328,7 @@ test('hidden inputs carry the selection into FormData; multiple repeats the name
 })
 
 test('beforeClose defers closing with data-state="closing" until done() is called', async () => {
-  const screen = render(SelectFixture, { props: { deferClose: true } })
+  const screen = await render(SelectFixture, { props: { deferClose: true } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await userEvent.keyboard('{ArrowDown}')
@@ -349,7 +349,7 @@ test('beforeClose defers closing with data-state="closing" until done() is calle
 })
 
 test('clicking the trigger to close an open panel also defers through beforeClose, not just Enter/Escape/outside', async () => {
-  const screen = render(SelectFixture, { props: { deferClose: true } })
+  const screen = await render(SelectFixture, { props: { deferClose: true } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -369,7 +369,7 @@ test('clicking the trigger to close an open panel also defers through beforeClos
 })
 
 test('forceMount keeps the panel mounted and hidden when closed', async () => {
-  const screen = render(SelectFixture, { props: { forceMount: true } })
+  const screen = await render(SelectFixture, { props: { forceMount: true } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
   await userEvent.keyboard('{Escape}')
@@ -380,14 +380,14 @@ test('forceMount keeps the panel mounted and hidden when closed', async () => {
 })
 
 test('filter defaults to off — no search box, even though items would render fine', async () => {
-  const screen = render(SelectFixture)
+  const screen = await render(SelectFixture)
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
   expect(document.querySelector('.ui-select-filter')).toBeNull()
 })
 
 test('filter=true renders a search box that narrows the listbox to matching labels', async () => {
-  const screen = render(SelectFixture, { props: { filter: true } })
+  const screen = await render(SelectFixture, { props: { filter: true } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
 
@@ -406,7 +406,7 @@ test('filter=true renders a search box that narrows the listbox to matching labe
 })
 
 test("filter is diacritic- and case-insensitive, matching Tree/Combobox's own behavior", async () => {
-  const screen = render(SelectFixture, { props: { filter: true } })
+  const screen = await render(SelectFixture, { props: { filter: true } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
   const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
@@ -421,7 +421,7 @@ test("filter is diacritic- and case-insensitive, matching Tree/Combobox's own be
 })
 
 test('a filter query matching nothing falls back to the empty slot/text', async () => {
-  const screen = render(SelectFixture, { props: { filter: true } })
+  const screen = await render(SelectFixture, { props: { filter: true } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
   const filterInput = document.querySelector<HTMLInputElement>('.ui-select-filter input')!
@@ -431,7 +431,7 @@ test('a filter query matching nothing falls back to the empty slot/text', async 
 })
 
 test('a custom filter function replaces the built-in label match', async () => {
-  const screen = render(SelectFixture, {
+  const screen = await render(SelectFixture, {
     props: { filter: (item: { value: string | number }, q: string) => item.value === q },
   })
   await screen.getByRole('combobox').click()
@@ -449,7 +449,7 @@ test('a custom filter function replaces the built-in label match', async () => {
 })
 
 test('ArrowDown/Enter from inside the filter input still navigate and commit the listbox', async () => {
-  const screen = render(SelectFixture, { props: { filter: true } })
+  const screen = await render(SelectFixture, { props: { filter: true } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -463,7 +463,7 @@ test('ArrowDown/Enter from inside the filter input still navigate and commit the
 })
 
 test('Escape from inside the filter input closes the panel and returns focus to the trigger', async () => {
-  const screen = render(SelectFixture, { props: { filter: true } })
+  const screen = await render(SelectFixture, { props: { filter: true } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -476,7 +476,7 @@ test('Escape from inside the filter input closes the panel and returns focus to 
 })
 
 test('the filter query resets once the panel closes, so reopening starts unfiltered', async () => {
-  const screen = render(SelectFixture, { props: { filter: true } })
+  const screen = await render(SelectFixture, { props: { filter: true } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -497,15 +497,15 @@ test('the filter query resets once the panel closes, so reopening starts unfilte
 })
 
 test('header and footer slots render around the listbox only when provided', async () => {
-  const screen = render(SelectFixture, { props: { withHeader: true, withFooter: true } })
+  const screen = await render(SelectFixture, { props: { withHeader: true, withFooter: true } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
   await expect.element(screen.getByTestId('select-header')).toBeInTheDocument()
   await expect.element(screen.getByTestId('select-footer')).toBeInTheDocument()
 
-  screen.unmount()
+  await screen.unmount()
 
-  const bare = render(SelectFixture)
+  const bare = await render(SelectFixture)
   await bare.getByRole('combobox').click()
   await expect.element(bare.getByRole('listbox')).toBeInTheDocument()
   expect(document.querySelector('.ui-select-header')).toBeNull()
@@ -513,7 +513,7 @@ test('header and footer slots render around the listbox only when provided', asy
 })
 
 test('filter=false still shows the box but does no matching of its own — the async/remote-search escape hatch', async () => {
-  const screen = render(SelectFixture, { props: { filter: false } })
+  const screen = await render(SelectFixture, { props: { filter: false } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
 
@@ -531,7 +531,7 @@ test('filter=false still shows the box but does no matching of its own — the a
 })
 
 test('the #filter slot fully replaces the built-in input, and its onKeydown still drives listbox navigation', async () => {
-  const screen = render(SelectFixture, { props: { filter: true, customFilter: true } })
+  const screen = await render(SelectFixture, { props: { filter: true, customFilter: true } })
   const trigger = screen.getByRole('combobox')
   await trigger.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()

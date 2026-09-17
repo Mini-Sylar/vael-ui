@@ -19,7 +19,7 @@ test('motionCss=false hands the action enter/leave transition to action-enter/ac
   const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
   const enters: Array<[Element, () => void]> = []
   const leaves: Array<[Element, () => void]> = []
-  const screen = render(SpeedDial, {
+  const screen = await render(SpeedDial, {
     props: {
       items: [{ label: 'Home' }, { label: 'Settings' }],
       motionCss: false,
@@ -49,7 +49,7 @@ test('motionCss=false also disables the action-move CSS transition (not just ent
   // isn't gated by the css prop, only enter/leave are, so this needs its own
   // lever — see data-motion="off" in SpeedDial.vue/css.
   const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
-  const screen = render(SpeedDial, {
+  const screen = await render(SpeedDial, {
     props: { items: [{ label: 'Home' }, { label: 'Settings' }], motionCss: false },
   })
   const actions = screen.container.querySelector<HTMLElement>('.ui-speed-dial-actions')!
@@ -64,7 +64,7 @@ test('motionCss=false also disables the action-move CSS transition (not just ent
 })
 
 test('closed by default: trigger renders but no action items are in the DOM', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await expect.element(trigger(screen)).toBeInTheDocument()
   expect(actionButtons(screen)).toHaveLength(0)
   expect(trigger(screen).getAttribute('aria-expanded')).toBe('false')
@@ -72,12 +72,12 @@ test('closed by default: trigger renders but no action items are in the DOM', as
 })
 
 test('exposes the root element via defineExpose', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await expect.element(screen.getByTestId('exposed-el')).toHaveTextContent('yes')
 })
 
 test('clicking the trigger opens the dial: items appear, aria-expanded/data-state flip', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
   expect(trigger(screen).getAttribute('aria-expanded')).toBe('true')
@@ -91,7 +91,7 @@ test('clicking the trigger opens the dial: items appear, aria-expanded/data-stat
 })
 
 test('clicking the trigger again closes it', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
   await userEvent.click(trigger(screen))
@@ -99,12 +99,12 @@ test('clicking the trigger again closes it', async () => {
 })
 
 test('data-direction reflects the direction prop', async () => {
-  const screen = render(SpeedDialFixture, { props: { direction: 'left' } })
+  const screen = await render(SpeedDialFixture, { props: { direction: 'left' } })
   expect(root(screen).getAttribute('data-direction')).toBe('left')
 })
 
 test("selecting an action fires @select with the item and the item's own onSelect", async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
 
@@ -115,7 +115,7 @@ test("selecting an action fires @select with the item and the item's own onSelec
 })
 
 test('closeOnSelect (default true): selecting an action closes the dial and returns focus to the trigger', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
 
@@ -125,7 +125,7 @@ test('closeOnSelect (default true): selecting an action closes the dial and retu
 })
 
 test('closeOnSelect=false keeps the dial open after selecting', async () => {
-  const screen = render(SpeedDialFixture, { props: { closeOnSelect: false } })
+  const screen = await render(SpeedDialFixture, { props: { closeOnSelect: false } })
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
 
@@ -135,7 +135,7 @@ test('closeOnSelect=false keeps the dial open after selecting', async () => {
 })
 
 test('a disabled action is a real disabled <button> — never fires @select', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
 
@@ -146,14 +146,14 @@ test('a disabled action is a real disabled <button> — never fires @select', as
 })
 
 test('disabled SpeedDial: trigger is a real disabled button and never opens', async () => {
-  const screen = render(SpeedDialFixture, { props: { disabled: true } })
+  const screen = await render(SpeedDialFixture, { props: { disabled: true } })
   expect(trigger(screen).disabled).toBe(true)
   trigger(screen).click()
   expect(actionButtons(screen)).toHaveLength(0)
 })
 
 test('openOn="hover": mouseenter opens, mouseleave closes after a short delay', async () => {
-  const screen = render(SpeedDialFixture, { props: { openOn: 'hover' } })
+  const screen = await render(SpeedDialFixture, { props: { openOn: 'hover' } })
   await userEvent.hover(root(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
 
@@ -165,14 +165,14 @@ test('openOn="hover": mouseenter opens, mouseleave closes after a short delay', 
 })
 
 test('openOn="click" (default): hovering the root alone never opens it', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.hover(root(screen))
   await new Promise((resolve) => setTimeout(resolve, 100))
   expect(actionButtons(screen)).toHaveLength(0)
 })
 
 test('Escape closes the dial and returns focus to the trigger', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
 
@@ -182,7 +182,7 @@ test('Escape closes the dial and returns focus to the trigger', async () => {
 })
 
 test('a pointerdown outside the dial closes it', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
 
@@ -196,7 +196,7 @@ test('a pointerdown outside the dial closes it', async () => {
 })
 
 test('once open, ArrowDown/ArrowUp roll the roving tabindex across actions, skipping the disabled one, and wrap', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
   const buttons = actionButtons(screen)
@@ -217,7 +217,7 @@ test('once open, ArrowDown/ArrowUp roll the roving tabindex across actions, skip
 })
 
 test('Home/End jump to the first/last enabled action', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
   const buttons = actionButtons(screen)
@@ -231,7 +231,7 @@ test('Home/End jump to the first/last enabled action', async () => {
 })
 
 test('Enter/Space activates the focused action via a real click', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
   await userEvent.click(trigger(screen))
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
   const buttons = actionButtons(screen)
@@ -242,7 +242,7 @@ test('Enter/Space activates the focused action via a real click', async () => {
 })
 
 test('defineExpose: open()/close()/toggle() drive the dial programmatically', async () => {
-  const screen = render(SpeedDialFixture, {})
+  const screen = await render(SpeedDialFixture, {})
 
   await screen.getByTestId('call-open').click()
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))

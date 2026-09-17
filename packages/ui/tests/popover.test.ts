@@ -11,7 +11,7 @@ function positioner(): HTMLElement {
 }
 
 test('#trigger slot: click opens, panel teleports to body, attrs land on the panel', async () => {
-  const screen = render(PopoverFixture)
+  const screen = await render(PopoverFixture)
   expect(document.querySelector('.ui-popover-positioner')).toBeNull()
 
   await screen.getByTestId('trigger').click()
@@ -25,7 +25,7 @@ test('#trigger slot: click opens, panel teleports to body, attrs land on the pan
 })
 
 test('resolved placement is exposed as data-side/data-align', async () => {
-  const screen = render(PopoverFixture)
+  const screen = await render(PopoverFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByTestId('content')).toBeVisible()
 
@@ -34,15 +34,15 @@ test('resolved placement is exposed as data-side/data-align', async () => {
 })
 
 test('outside click dismisses; closeOnOutside=false leaves it open', async () => {
-  const screen = render(PopoverFixture)
+  const screen = await render(PopoverFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByTestId('content')).toBeVisible()
 
   await screen.getByTestId('outside').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 
-  screen.unmount()
-  const pinned = render(PopoverFixture, { props: { closeOnOutside: false } })
+  await screen.unmount()
+  const pinned = await render(PopoverFixture, { props: { closeOnOutside: false } })
   await pinned.getByTestId('trigger').click()
   await expect.element(pinned.getByTestId('content')).toBeVisible()
   await pinned.getByTestId('outside').click()
@@ -50,15 +50,15 @@ test('outside click dismisses; closeOnOutside=false leaves it open', async () =>
 })
 
 test('Escape dismisses; closeOnEsc=false leaves it open', async () => {
-  const screen = render(PopoverFixture)
+  const screen = await render(PopoverFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByTestId('content')).toBeVisible()
 
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 
-  screen.unmount()
-  const pinned = render(PopoverFixture, { props: { closeOnEsc: false } })
+  await screen.unmount()
+  const pinned = await render(PopoverFixture, { props: { closeOnEsc: false } })
   await pinned.getByTestId('trigger').click()
   await expect.element(pinned.getByTestId('content')).toBeVisible()
   await userEvent.keyboard('{Escape}')
@@ -66,7 +66,7 @@ test('Escape dismisses; closeOnEsc=false leaves it open', async () => {
 })
 
 test('forceMount keeps the panel mounted and hidden when closed', async () => {
-  const screen = render(PopoverFixture, { props: { forceMount: true } })
+  const screen = await render(PopoverFixture, { props: { forceMount: true } })
 
   expect(getComputedStyle(positioner()).display).toBe('none')
 

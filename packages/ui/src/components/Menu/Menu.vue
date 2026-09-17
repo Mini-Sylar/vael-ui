@@ -216,7 +216,9 @@ import {
   computed,
   inject,
   nextTick,
+  onScopeDispose,
   reactive,
+  shallowRef,
   useSlots,
   useTemplateRef,
   watch,
@@ -312,15 +314,32 @@ function unwrapEl(el: unknown): HTMLElement | null {
 }
 
 const triggerWrapper = useTemplateRef<HTMLElement>('triggerWrapper')
-// External triggerEl prop overrides slot-based trigger. `.ui-menu-trigger` is `display: contents`
-// (see Menu.css), so it has a zero rect — resolve past it to the real trigger element, or
-// floating-ui anchors the panel at (0,0).
+// External triggerEl prop overrides slot-based trigger. `.ui-menu-trigger` is `display: contents` (see Menu.css), so it has a zero rect — resolve past it to the real trigger element, or floating-ui anchors the panel at (0,0).
+// `getComputedStyle()` inside that resolution isn't reactivity-tracked, so a MutationObserver re-runs it whenever the wrapper's content changes, instead of locking onto whatever mounted first.
+const resolvedTriggerEl = shallowRef<HTMLElement | null>(null)
+function refreshResolvedTrigger() {
+  resolvedTriggerEl.value = triggerWrapper.value
+    ? resolvePastDisplayContents(triggerWrapper.value)
+    : null
+}
+let triggerObserver: MutationObserver | undefined
+watch(
+  triggerWrapper,
+  (el) => {
+    triggerObserver?.disconnect()
+    triggerObserver = undefined
+    refreshResolvedTrigger()
+    if (el && typeof MutationObserver !== 'undefined') {
+      triggerObserver = new MutationObserver(refreshResolvedTrigger)
+      triggerObserver.observe(el, { childList: true, subtree: true })
+    }
+  },
+  { immediate: true, flush: 'post' },
+)
+onScopeDispose(() => triggerObserver?.disconnect())
+
 const triggerElRef = computed<HTMLElement | null>(() =>
-  props.triggerEl !== undefined
-    ? unwrapEl(props.triggerEl)
-    : triggerWrapper.value
-      ? resolvePastDisplayContents(triggerWrapper.value)
-      : null,
+  props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : resolvedTriggerEl.value,
 )
 
 function openMenu() {

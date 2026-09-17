@@ -8,6 +8,8 @@
     position="bottom"
     :close-on-esc="closeOnEsc"
     :close-on-overlay="closeOnOverlay"
+    :modal="modal"
+    :close-on-history-back="closeOnHistoryBack"
     :show-close="false"
     :ui="dialogUi"
     v-bind="$attrs"
@@ -84,10 +86,15 @@ export interface BottomSheetProps {
   closeOnEsc?: boolean
   /** Clicking the overlay closes the sheet. */
   closeOnOverlay?: boolean
+  /** Dims the background and traps focus/scroll, like Dialog's own `modal`. Set `false` for an always-open, non-dismissible panel docked beside other interactive content (e.g. a persistent list next to a live map) — the overlay becomes fully transparent and inert instead of blocking the page behind it. Default true. */
+  modal?: boolean
+  /** Pushes a history entry on open so the mobile hardware/gesture back action closes this sheet instead of navigating the page away. Default false. */
+  closeOnHistoryBack?: boolean
   /** Custom exit animation; call `done()` when complete. Fires for all close paths. */
   beforeClose?: (done: () => void) => void
   /** Per-instance part-class/style overrides. */
   ui?: Partial<{
+    overlay: UiPartValue
     panel: UiPartValue
     handleZone: UiPartValue
     handle: UiPartValue
@@ -126,6 +133,8 @@ const props = withDefaults(defineProps<BottomSheetProps>(), {
   fullScreen: false,
   closeOnEsc: true,
   closeOnOverlay: true,
+  modal: true,
+  closeOnHistoryBack: false,
 })
 
 const resolvedSnapPoints = computed<SheetSnapPoint[]>(
@@ -188,12 +197,16 @@ watch(isClosing, (value) => {
 let exitTimer: ReturnType<typeof setTimeout> | undefined
 onScopeDispose(() => clearTimeout(exitTimer))
 
-// Matches useSheetDrag settle motion for one continuous vocabulary (entrance + exit).
+// A consumer's own beforeClose gates WHETHER to close (e.g. a confirm prompt) - a separate concern from HOW it exits, so its own done is wired to the slide-out below instead of the real one.
 function beforeClose(done: () => void) {
   if (props.beforeClose) {
-    props.beforeClose(done)
+    props.beforeClose(() => animateClose(done))
     return
   }
+  animateClose(done)
+}
+
+function animateClose(done: () => void) {
   const panel = panelEl.value
   if (!panel || reducedMotion()) {
     done()
@@ -221,8 +234,11 @@ const panelPart = computed(() =>
     props.fullScreen && 'ui-bottom-sheet-panel--full-screen',
   ),
 )
+const overlayPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.overlay, 'ui-bottom-sheet-overlay'),
+)
 const dialogUi = computed(() => ({
-  overlay: 'ui-bottom-sheet-overlay',
+  overlay: { class: overlayPart.value.class, style: overlayPart.value.style },
   panel: { class: panelPart.value.class, style: panelPart.value.style },
   body: 'ui-bottom-sheet-body',
 }))

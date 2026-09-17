@@ -17,13 +17,13 @@ function live(screen: RenderResult<unknown>): string {
 }
 
 test('a reorderable tree marks its rows as draggable for assistive tech', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   expect(rowFor(screen, 'a').getAttribute('aria-roledescription')).toBe('draggable tree item')
   expect(screen.container.querySelector('[aria-live="assertive"]')).not.toBeNull()
 })
 
 test('keyboard: Space grabs a row and arrows move it among its siblings', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   expect(shape(screen)).toBe('a,folder(f1,f2),z')
 
   rowFor(screen, 'a').focus()
@@ -35,7 +35,7 @@ test('keyboard: Space grabs a row and arrows move it among its siblings', async 
 })
 
 test('keyboard: Escape cancels without touching the tree', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   rowFor(screen, 'a').focus()
   await userEvent.keyboard(' {ArrowDown}{Escape}')
   expect(shape(screen)).toBe('a,folder(f1,f2),z')
@@ -43,7 +43,7 @@ test('keyboard: Escape cancels without touching the tree', async () => {
 })
 
 test('keyboard: ArrowRight nests a row under the sibling above it', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   rowFor(screen, 'z').focus()
   await userEvent.keyboard(' {ArrowRight} ')
   // z moves inside folder rather than staying at the root.
@@ -52,7 +52,7 @@ test('keyboard: ArrowRight nests a row under the sibling above it', async () => 
 })
 
 test('a nested child can be pulled back out to the root', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   // ArrowRight on an unheld row still expands, as it always did — reorder only
   // claims the arrows once something is actually grabbed.
   rowFor(screen, 'folder').focus()
@@ -66,7 +66,7 @@ test('a nested child can be pulled back out to the root', async () => {
 })
 
 test('canDrop=false blocks the move and flags the tree invalid', async () => {
-  const screen = render(TreeReorderFixture, { props: { canDrop: () => false } })
+  const screen = await render(TreeReorderFixture, { props: { canDrop: () => false } })
   rowFor(screen, 'a').focus()
   await userEvent.keyboard(' {ArrowDown}')
   expect(screen.container.querySelector('[data-invalid-drop]')).not.toBeNull()
@@ -79,7 +79,7 @@ test('an async beforeDrop gates the tree move exactly as it gates a list', async
   const gate = new Promise<boolean>((resolve) => {
     decide = resolve
   })
-  const screen = render(TreeReorderFixture, { props: { beforeDrop: () => gate } })
+  const screen = await render(TreeReorderFixture, { props: { beforeDrop: () => gate } })
   rowFor(screen, 'a').focus()
   await userEvent.keyboard(' {ArrowDown} ')
   await vi.waitFor(() =>
@@ -92,7 +92,7 @@ test('an async beforeDrop gates the tree move exactly as it gates a list', async
 })
 
 test('a rejecting beforeDrop reverts and reports instead of throwing', async () => {
-  const screen = render(TreeReorderFixture, {
+  const screen = await render(TreeReorderFixture, {
     props: { beforeDrop: () => Promise.reject(new Error('server said no')) },
   })
   rowFor(screen, 'a').focus()
@@ -107,7 +107,7 @@ test('a rejecting beforeDrop reverts and reports instead of throwing', async () 
 
 test('dropping a folder into its own descendant is refused', async () => {
   const seen: SortableDropDetails[] = []
-  const screen = render(TreeReorderFixture, {
+  const screen = await render(TreeReorderFixture, {
     props: {
       canDrop: (d: SortableDropDetails) => {
         seen.push(d)
@@ -128,7 +128,7 @@ test('dropping a folder into its own descendant is refused', async () => {
 })
 
 test('sticky pinning is suspended while a drag is in flight', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   rowFor(screen, 'a').focus()
   await userEvent.keyboard(' ')
   expect(screen.container.querySelector('[data-reordering]')).not.toBeNull()
@@ -137,7 +137,7 @@ test('sticky pinning is suspended while a drag is in flight', async () => {
 })
 
 test('a pointer drag lifts the row out into a floating preview, leaving a hole', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   const row = rowFor(screen, 'a')
   const box = row.getBoundingClientRect()
 
@@ -173,7 +173,7 @@ test('a pointer drag lifts the row out into a floating preview, leaving a hole',
 })
 
 test('previewMode "element" moves the real row itself instead of a floating clone', async () => {
-  const screen = render(TreeReorderFixture, { props: { previewMode: 'element' } })
+  const screen = await render(TreeReorderFixture, { props: { previewMode: 'element' } })
   const row = rowFor(screen, 'a')
   const box = row.getBoundingClientRect()
 
@@ -214,7 +214,7 @@ test('touch: an early move scrolls the page when the row has no closer scroll co
   window.scrollTo(0, 0)
 
   try {
-    const screen = render(TreeReorderFixture)
+    const screen = await render(TreeReorderFixture)
     const row = rowFor(screen, 'a')
     const box = row.getBoundingClientRect()
 
@@ -250,7 +250,7 @@ test('touch: moving past the threshold before the hold completes cancels the pen
   // Tree — without a hold delay, touch's natural drift past DRAG_THRESHOLD
   // reads as a completed drag on every tap. This proves the opposite: an
   // early move (a scroll, or just an imprecise tap) is let through instead.
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   const row = rowFor(screen, 'a')
   const box = row.getBoundingClientRect()
 
@@ -282,7 +282,7 @@ test('touch: moving past the threshold before the hold completes cancels the pen
 })
 
 test('touch: holding still past the delay grabs the row even before it moves', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   const row = rowFor(screen, 'a')
   const box = row.getBoundingClientRect()
 
@@ -304,7 +304,7 @@ test('touch: holding still past the delay grabs the row even before it moves', a
 })
 
 test('Escape aborts a pointer drag, not just a keyboard one', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   const row = rowFor(screen, 'a')
   const box = row.getBoundingClientRect()
   row.dispatchEvent(
@@ -332,7 +332,7 @@ test('Escape aborts a pointer drag, not just a keyboard one', async () => {
 })
 
 test('reorderSiblings=false: hovering a non-nestable row shows no indicator and blocks the drop', async () => {
-  const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
+  const screen = await render(TreeReorderFixture, { props: { reorderSiblings: false } })
   const aRow = rowFor(screen, 'a')
   const zRow = rowFor(screen, 'z')
   const aBox = aRow.getBoundingClientRect()
@@ -367,7 +367,7 @@ test('reorderSiblings=false: hovering a non-nestable row shows no indicator and 
 })
 
 test('reorderSiblings=false: dragging past the last row does not reorder', async () => {
-  const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
+  const screen = await render(TreeReorderFixture, { props: { reorderSiblings: false } })
   const aRow = rowFor(screen, 'a')
   const zRow = rowFor(screen, 'z')
   const aBox = aRow.getBoundingClientRect()
@@ -397,7 +397,7 @@ test('reorderSiblings=false: dragging past the last row does not reorder', async
 })
 
 test('reorderSiblings=false: hovering a folder always resolves inside', async () => {
-  const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
+  const screen = await render(TreeReorderFixture, { props: { reorderSiblings: false } })
   const aRow = rowFor(screen, 'a')
   const folderRow = rowFor(screen, 'folder')
   const aBox = aRow.getBoundingClientRect()
@@ -440,7 +440,7 @@ test('reorderSiblings=false: hovering a folder always resolves inside', async ()
 })
 
 test('reorderSiblings=false: keyboard Up/Down no-ops at the same depth, Left/Right still reparents', async () => {
-  const screen = render(TreeReorderFixture, { props: { reorderSiblings: false } })
+  const screen = await render(TreeReorderFixture, { props: { reorderSiblings: false } })
   rowFor(screen, 'z').focus()
   await userEvent.keyboard(' {ArrowUp}')
   expect(shape(screen)).toBe('a,folder(f1,f2),z')
@@ -451,7 +451,7 @@ test('reorderSiblings=false: keyboard Up/Down no-ops at the same depth, Left/Rig
 })
 
 test('dragging a folder hides its whole subtree, not just its own row', async () => {
-  const screen = render(TreeReorderFixture)
+  const screen = await render(TreeReorderFixture)
   // Expand so the children are rendered.
   rowFor(screen, 'folder').focus()
   await userEvent.keyboard('{ArrowRight}')

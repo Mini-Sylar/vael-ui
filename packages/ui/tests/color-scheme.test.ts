@@ -8,7 +8,7 @@ afterEach(() => {
 })
 
 test('defaults to system, applies data-theme on explicit choice, clears it back to system', async () => {
-  const screen = render(ColorSchemeFixture)
+  const screen = await render(ColorSchemeFixture)
 
   await expect.element(screen.getByTestId('mode')).toHaveTextContent('system')
   expect(document.documentElement.dataset.theme).toBeUndefined()
@@ -27,11 +27,11 @@ test('persists through the provided get/set pair and restores it on the next mou
   let stored: string | null = null
   const persist = { get: () => stored, set: (m: string | null) => (stored = m) }
 
-  const screen = render(ColorSchemeFixture, { props: { persist } })
+  const screen = await render(ColorSchemeFixture, { props: { persist } })
   await screen.getByTestId('set-light').click()
   expect(stored).toBe('light')
-  screen.unmount()
+  await screen.unmount()
 
-  const screen2 = render(ColorSchemeFixture, { props: { persist } })
+  const screen2 = await render(ColorSchemeFixture, { props: { persist } })
   await expect.element(screen2.getByTestId('mode')).toHaveTextContent('light')
 })

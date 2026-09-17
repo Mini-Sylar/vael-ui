@@ -4,10 +4,10 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import OtpInputFixture from './fixtures/OtpInputFixture.vue'
 
-function basicInput(screen: ReturnType<typeof render>) {
+function basicInput(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLInputElement>('[data-testid="basic"] .ui-otp-input')!
 }
-function basicCells(screen: ReturnType<typeof render>) {
+function basicCells(screen: Awaited<ReturnType<typeof render>>) {
   return Array.from(
     screen.container.querySelectorAll<HTMLElement>('[data-testid="basic"] .ui-otp-cell'),
   )
@@ -34,7 +34,7 @@ async function clickCell(input: HTMLInputElement, cell: HTMLElement) {
 }
 
 test('typing fills cells sequentially', async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   const input = basicInput(screen)
   await userEvent.type(input, '123')
   const cells = basicCells(screen)
@@ -46,7 +46,7 @@ test('typing fills cells sequentially', async () => {
 })
 
 test("the real overlay input's own native focus ring is suppressed — the per-cell data-active/data-focus-visible styling is the only visible focus indicator", async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   const input = basicInput(screen)
   input.focus()
   await vi.waitFor(() => {
@@ -55,21 +55,21 @@ test("the real overlay input's own native focus ring is suppressed — the per-c
 })
 
 test('illegal characters are stripped for numeric type', async () => {
-  const screen = render(OtpInputFixture, { props: { type: 'numeric' } })
+  const screen = await render(OtpInputFixture, { props: { type: 'numeric' } })
   const input = basicInput(screen)
   await userEvent.type(input, 'a1b2c3')
   await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('123')
 })
 
 test('alphanumeric type accepts letters and digits', async () => {
-  const screen = render(OtpInputFixture, { props: { type: 'alphanumeric', length: 4 } })
+  const screen = await render(OtpInputFixture, { props: { type: 'alphanumeric', length: 4 } })
   const input = basicInput(screen)
   await userEvent.type(input, 'A1b2')
   await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('A1b2')
 })
 
 test('mask renders bullets in cells while the model keeps the real characters', async () => {
-  const screen = render(OtpInputFixture, { props: { mask: true } })
+  const screen = await render(OtpInputFixture, { props: { mask: true } })
   const input = basicInput(screen)
   await userEvent.type(input, '42')
   const cells = basicCells(screen)
@@ -79,7 +79,7 @@ test('mask renders bullets in cells while the model keeps the real characters', 
 })
 
 test('paste of a full code fills every cell and fires complete once', async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   const input = basicInput(screen)
   input.focus()
   // A real paste inserts the clipboard text into the input's own value
@@ -100,7 +100,7 @@ test('paste of a full code fills every cell and fires complete once', async () =
 })
 
 test('clicking a cell moves the caret there, so Backspace edits mid-string', async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   const input = basicInput(screen)
   await userEvent.type(input, '12345')
   const cells = basicCells(screen)
@@ -111,7 +111,7 @@ test('clicking a cell moves the caret there, so Backspace edits mid-string', asy
 })
 
 test('the overlay input actually has focus after clicking any cell', async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   const input = basicInput(screen)
   const cells = basicCells(screen)
   await clickCell(input, cells[3]!)
@@ -119,32 +119,32 @@ test('the overlay input actually has focus after clicking any cell', async () =>
 })
 
 test('disabled blocks the overlay input', async () => {
-  const screen = render(OtpInputFixture, { props: { disabled: true } })
+  const screen = await render(OtpInputFixture, { props: { disabled: true } })
   expect(basicInput(screen).disabled).toBe(true)
 })
 
 test('FormData carries the code via the native input name', async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const data = new FormData(form)
   expect(data.get('otp')).toBe('654321')
 })
 
 test('the real input carries autocomplete one-time-code and inputmode', async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   const input = basicInput(screen)
   expect(input.getAttribute('autocomplete')).toBe('one-time-code')
   expect(input.getAttribute('inputmode')).toBe('numeric')
 })
 
 test('cells are aria-hidden decoration', async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   const cellsWrap = screen.container.querySelector('[data-testid="basic"] .ui-otp-cells')!
   expect(cellsWrap.getAttribute('aria-hidden')).toBe('true')
 })
 
 test('a programmatic model write longer than length is clamped everywhere — cells, native value, completeness', async () => {
-  const screen = render(OtpInputFixture, {})
+  const screen = await render(OtpInputFixture, {})
   await screen.getByTestId('overflow-model').click()
   await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('123456789')
   await vi.waitFor(() => expect(basicInput(screen).value).toBe('123456'))

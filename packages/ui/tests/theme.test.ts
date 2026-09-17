@@ -25,27 +25,27 @@ const baselineHeadStyles = headStyleCount()
 
 test('a mid-tone seed color repaints the button, gets white contrast text, and cleans up its <style> on unmount', async () => {
   // indigo-500-ish — clearly not near-white, not near-black
-  const screen = render(ThemedFixture, { props: { theme: { primary: '#6366f1' } } })
+  const screen = await render(ThemedFixture, { props: { theme: { primary: '#6366f1' } } })
 
   await vi.waitFor(() => expect(bgOf('themed-primary')).toBe('rgb(99, 102, 241)'))
   // luminance of #6366f1 is low enough that WCAG picks light text
   expect(colorOf('themed-primary')).toBe('rgb(250, 250, 250)')
   expect(headStyleCount()).toBe(baselineHeadStyles + 1)
 
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(headStyleCount()).toBe(baselineHeadStyles))
 })
 
 test('a pale seed color flips contrast text to dark (luminance actually computed, not hardcoded)', async () => {
-  const screen = render(ThemedFixture, { props: { theme: { primary: '#fde68a' } } }) // pale yellow
+  const screen = await render(ThemedFixture, { props: { theme: { primary: '#fde68a' } } }) // pale yellow
 
   await vi.waitFor(() => expect(bgOf('themed-primary')).toBe('rgb(253, 230, 138)'))
   expect(colorOf('themed-primary')).toBe('rgb(24, 24, 27)')
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('hover state is darker than the base seed via color-mix, not identical', async () => {
-  const screen = render(ThemedFixture, { props: { theme: { primary: '#6366f1' } } })
+  const screen = await render(ThemedFixture, { props: { theme: { primary: '#6366f1' } } })
   await vi.waitFor(() => expect(bgOf('themed-primary')).toBe('rgb(99, 102, 241)'))
 
   // Read from the themed button itself, not document.documentElement — the
@@ -63,22 +63,22 @@ test('hover state is darker than the base seed via color-mix, not identical', as
   const resolved = getComputedStyle(probe).color
   probe.remove()
   expect(resolved).not.toBe('rgb(99, 102, 241)')
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('danger seed themes independently from primary', async () => {
-  const screen = render(ThemedFixture, {
+  const screen = await render(ThemedFixture, {
     props: { theme: { primary: '#6366f1', danger: '#059669' } }, // green "danger" — proves it is not hardcoded red
   })
   await vi.waitFor(() => expect(bgOf('themed-danger')).toBe('rgb(5, 150, 105)'))
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('no theme prop injects no stylesheet at all', async () => {
-  const screen = render(ThemedFixture, { props: { theme: {} } })
+  const screen = await render(ThemedFixture, { props: { theme: {} } })
   await new Promise((r) => setTimeout(r, 50))
   expect(headStyleCount()).toBe(baselineHeadStyles)
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('a nested ConfigProvider theme is scoped to its own subtree — it must NOT leak to buttons outside it', async () => {
@@ -87,7 +87,7 @@ test('a nested ConfigProvider theme is scoped to its own subtree — it must NOT
   // overrode the same global tokens for the whole page. Confirmed directly
   // before this was fixed: an inner provider's radius:'0px' also changed a
   // sibling button rendered entirely outside its own subtree.
-  const screen = render(NestedThemeFixture, { props: { innerRadius: '0px' } })
+  const screen = await render(NestedThemeFixture, { props: { innerRadius: '0px' } })
   await vi.waitFor(() => expect(document.querySelector('[data-testid="inner-btn"]')).not.toBeNull())
 
   const outerRadius = getComputedStyle(
@@ -99,7 +99,7 @@ test('a nested ConfigProvider theme is scoped to its own subtree — it must NOT
 
   expect(innerRadius).toBe('0px')
   expect(outerRadius).not.toBe('0px')
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('a scoped theme still reaches a Dialog opened from inside it, despite Dialog Teleporting to body', async () => {
@@ -111,7 +111,7 @@ test('a scoped theme still reaches a Dialog opened from inside it, despite Dialo
   // not 0px. Dialog now injects the nearest scope via context (Vue's
   // provide/inject, unaffected by Teleport) and re-applies it to its own
   // teleported root.
-  const screen = render(ScopedDialogFixture)
+  const screen = await render(ScopedDialogFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-dialog-panel')).not.toBeNull())
 
@@ -125,7 +125,7 @@ test('a scoped theme still reaches a Dialog opened from inside it, despite Dialo
 })
 
 test('theme.button.ui applies app-wide; a local ui prop overrides it per-instance', async () => {
-  const screen = render(ThemedUiDefaultsFixture)
+  const screen = await render(ThemedUiDefaultsFixture)
 
   await expect.element(screen.getByTestId('inherits')).toHaveClass('from-theme')
   await expect.element(screen.getByTestId('overrides')).toHaveClass('local-override')
@@ -139,11 +139,11 @@ test('the seed color survives dark mode instead of reverting to the library defa
   // no matter what order the stylesheets loaded in.
   document.documentElement.dataset.theme = 'dark'
   try {
-    const screen = render(ThemedFixture, { props: { theme: { primary: '#6366f1' } } })
+    const screen = await render(ThemedFixture, { props: { theme: { primary: '#6366f1' } } })
     await vi.waitFor(() => expect(bgOf('themed-primary')).toBe('rgb(99, 102, 241)'))
     // Contrast still computed correctly, not just carried over from light mode
     expect(colorOf('themed-primary')).toBe('rgb(250, 250, 250)')
-    screen.unmount()
+    await screen.unmount()
   } finally {
     delete document.documentElement.dataset.theme
   }

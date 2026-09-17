@@ -43,7 +43,7 @@ async function drag(el: Element, startY: number, endY: number, ms: number) {
 }
 
 test('opens at the initial (smallest) snap point', async () => {
-  const screen = render(BottomSheetFixture)
+  const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-bottom-sheet-panel')).not.toBeNull())
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1), {
@@ -56,7 +56,7 @@ test('opens at the initial (smallest) snap point', async () => {
 })
 
 test('a fast upward flick jumps straight to the largest snap point', async () => {
-  const screen = render(BottomSheetFixture)
+  const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 
@@ -70,7 +70,7 @@ test('a fast upward flick jumps straight to the largest snap point', async () =>
 })
 
 test('a slow, deliberate drag settles at whichever snap point is nearest by distance', async () => {
-  const screen = render(BottomSheetFixture)
+  const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 
@@ -86,7 +86,7 @@ test('a slow, deliberate drag settles at whichever snap point is nearest by dist
 })
 
 test('a fast downward flick dismisses regardless of distance', async () => {
-  const screen = render(BottomSheetFixture)
+  const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 
@@ -101,7 +101,7 @@ test('a fast downward flick dismisses regardless of distance', async () => {
 })
 
 test('dismissible=false keeps the sheet at its smallest snap point instead of closing', async () => {
-  const screen = render(BottomSheetFixture, { props: { dismissible: false } })
+  const screen = await render(BottomSheetFixture, { props: { dismissible: false } })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 
@@ -115,7 +115,7 @@ test('dismissible=false keeps the sheet at its smallest snap point instead of cl
 })
 
 test('a drag on the content while not scrolled to the top is left as an ordinary scroll', async () => {
-  const screen = render(BottomSheetFixture)
+  const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 
@@ -128,7 +128,7 @@ test('a drag on the content while not scrolled to the top is left as an ordinary
 })
 
 test('Escape closes the sheet and focus-trap still applies (inherited from Dialog)', async () => {
-  const screen = render(BottomSheetFixture)
+  const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 
@@ -146,7 +146,7 @@ test('Escape closes the sheet and focus-trap still applies (inherited from Dialo
 
 test('custom beforeClose overrides the built-in exit for every close path, including a drag-triggered dismiss', async () => {
   const captured: Array<() => void> = []
-  const screen = render(BottomSheetFixture, {
+  const screen = await render(BottomSheetFixture, {
     props: { beforeClose: (done: () => void) => captured.push(done) },
   })
   await screen.getByTestId('trigger').click()
@@ -165,7 +165,7 @@ test('custom beforeClose overrides the built-in exit for every close path, inclu
 })
 
 test('a horizontally-dominant drag on content at the top is left for a nested gesture, not hijacked into a dismiss', async () => {
-  const screen = render(BottomSheetFixture)
+  const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 
@@ -196,7 +196,7 @@ test('a horizontally-dominant drag on content at the top is left for a nested ge
 })
 
 test('a vertically-dominant downward drag on content at the top still promotes to a sheet dismiss', async () => {
-  const screen = render(BottomSheetFixture)
+  const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 

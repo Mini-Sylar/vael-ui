@@ -7,7 +7,7 @@ import DialogClosingFixture from './fixtures/DialogClosingFixture.vue'
 
 test('popover: deferred close exposes isClosing, dedupes dismissals, and done() completes it', async () => {
   const captured: Array<() => void> = []
-  const screen = render(PopoverClosingFixture, {
+  const screen = await render(PopoverClosingFixture, {
     props: { beforeClose: (done: () => void) => captured.push(done) },
   })
 
@@ -35,7 +35,7 @@ test('popover: deferred close exposes isClosing, dedupes dismissals, and done() 
 
 test('popover: cancelClose reverses a pending close and voids the stale done()', async () => {
   const captured: Array<() => void> = []
-  const screen = render(PopoverClosingFixture, {
+  const screen = await render(PopoverClosingFixture, {
     props: { beforeClose: (done: () => void) => captured.push(done) },
   })
 
@@ -63,7 +63,7 @@ test('popover: cancelClose reverses a pending close and voids the stale done()',
 
 test('dialog: same deferred-close contract — isClosing, dedupe, cancelClose, stale done voided', async () => {
   const captured: Array<() => void> = []
-  const screen = render(DialogClosingFixture, {
+  const screen = await render(DialogClosingFixture, {
     props: { beforeClose: (done: () => void) => captured.push(done) },
   })
 

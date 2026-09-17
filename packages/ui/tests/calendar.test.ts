@@ -15,7 +15,7 @@ function cellByIso(iso: string): HTMLElement | undefined {
 test('renders the correct month grid for a known month, including real leading days from the prior month', async () => {
   // Pinned explicitly: this test is about leading/trailing-day rendering, not about
   // which day the week starts on, so it shouldn't depend on the ambient default.
-  const screen = render(CalendarFixture, {
+  const screen = await render(CalendarFixture, {
     props: { initialValue: JUNE_15_2024, firstDayOfWeek: 0 },
   })
   await expect
@@ -44,7 +44,7 @@ test('first-day-of-week falls back to Monday, not Sunday, when Intl.Locale.weekI
   Intl.Locale = LocaleWithoutWeekInfo
 
   try {
-    const screen = render(CalendarFixture, {
+    const screen = await render(CalendarFixture, {
       props: { initialValue: JUNE_15_2024, locale: 'en-US' },
     })
     const firstWeekday = screen.container.querySelector<HTMLElement>('.ui-calendar-weekday')!
@@ -56,7 +56,7 @@ test('first-day-of-week falls back to Monday, not Sunday, when Intl.Locale.weekI
 })
 
 test('next/previous month navigation updates the header and the rendered grid', async () => {
-  const screen = render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
+  const screen = await render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
   const [prevButton, nextButton] = Array.from(
     screen.container.querySelectorAll<HTMLElement>('.ui-calendar-nav'),
   )
@@ -75,7 +75,7 @@ test('next/previous month navigation updates the header and the rendered grid', 
 
 test('a shorter next month animates the body height instead of snapping', async () => {
   // Sunday-first: August 2015 spans 6 rows, September 2015 only 5.
-  const screen = render(CalendarFixture, {
+  const screen = await render(CalendarFixture, {
     props: { initialValue: new Date(2015, 7, 15), firstDayOfWeek: 0 },
   })
   const body = screen.container.querySelector<HTMLElement>('.ui-calendar-body')!
@@ -101,13 +101,13 @@ test('a shorter next month animates the body height instead of snapping', async 
 })
 
 test('clicking a date selects it', async () => {
-  const screen = render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
+  const screen = await render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
   await userEvent.click(cellByIso('2024-06-20')!)
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('Jun 20 2024')
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 20 2024')
 })
 
 test('min/max bounds disable out-of-range days and block their selection', async () => {
-  const screen = render(CalendarFixture, {
+  const screen = await render(CalendarFixture, {
     props: {
       initialValue: JUNE_15_2024,
       minDate: new Date(2024, 5, 10),
@@ -124,37 +124,37 @@ test('min/max bounds disable out-of-range days and block their selection', async
   const early = cellByIso('2024-06-05')!
   expect(early.getAttribute('aria-disabled')).toBe('true')
   await userEvent.click(early, { force: true })
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('Jun 15 2024')
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 15 2024')
 
   const late = cellByIso('2024-06-25')!
   expect(late.getAttribute('aria-disabled')).toBe('true')
   await userEvent.click(late, { force: true })
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('Jun 15 2024')
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 15 2024')
 
   expect(cellByIso('2024-06-15')!.getAttribute('aria-disabled')).toBeNull()
 })
 
 test('disabledDates blocks a specific date, given as either a list or a predicate', async () => {
-  const listScreen = render(CalendarFixture, {
+  const listScreen = await render(CalendarFixture, {
     props: { initialValue: JUNE_15_2024, disabledDates: [new Date(2024, 5, 12)] },
   })
   const listCell = cellByIso('2024-06-12')!
   expect(listCell.getAttribute('aria-disabled')).toBe('true')
   await userEvent.click(listCell, { force: true })
-  await expect.element(listScreen.getByTestId('model')).toHaveTextContent('Jun 15 2024')
-  listScreen.unmount()
+  await expect.element(listScreen.getByTestId('model')).toMatchTextContent('Jun 15 2024')
+  await listScreen.unmount()
 
-  const predicateScreen = render(CalendarFixture, {
+  const predicateScreen = await render(CalendarFixture, {
     props: { initialValue: JUNE_15_2024, disabledDates: (date: Date) => date.getDay() === 0 },
   })
   const sundayCell = cellByIso('2024-06-16')!
   expect(sundayCell.getAttribute('aria-disabled')).toBe('true')
   await userEvent.click(sundayCell, { force: true })
-  await expect.element(predicateScreen.getByTestId('model')).toHaveTextContent('Jun 15 2024')
+  await expect.element(predicateScreen.getByTestId('model')).toMatchTextContent('Jun 15 2024')
 })
 
 test('keyboard navigation: Left/Right/Up/Down move focus by day, Enter selects the focused day', async () => {
-  const screen = render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
+  const screen = await render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
   const start = cellByIso('2024-06-15')!
   expect(start.tabIndex).toBe(0)
   start.focus()
@@ -181,11 +181,11 @@ test('keyboard navigation: Left/Right/Up/Down move focus by day, Enter selects t
   )
 
   await userEvent.keyboard('{Enter}')
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('Jun 15 2024')
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 15 2024')
 })
 
 test('PageDown/PageUp move the focused day — and the displayed month — by one month', async () => {
-  const screen = render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
+  const screen = await render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
   cellByIso('2024-06-15')!.focus()
 
   await userEvent.keyboard('{PageDown}')
