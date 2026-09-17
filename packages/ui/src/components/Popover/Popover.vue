@@ -102,8 +102,9 @@ export interface PopoverProps {
 <script setup lang="ts">
 import './Popover.css'
 import '../shared/tokens.css'
-import { computed, inject, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, inject, shallowRef, useTemplateRef, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
+import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useDOMTarget, resolvePastDisplayContents, type DOMTarget } from '../../composables/dom'
@@ -169,26 +170,13 @@ function toggle() {
 // .ui-popover-trigger is `display: contents` and has no rect of its own to position against.
 const triggerWrapper = useTemplateRef<HTMLElement>('triggerWrapper')
 const resolvedWrapperEl = shallowRef<HTMLElement | null>(null)
-let triggerObserver: MutationObserver | undefined
 function refreshResolvedTrigger() {
   resolvedWrapperEl.value = triggerWrapper.value
     ? resolvePastDisplayContents(triggerWrapper.value)
     : null
 }
-watch(
-  triggerWrapper,
-  (el) => {
-    triggerObserver?.disconnect()
-    triggerObserver = undefined
-    refreshResolvedTrigger()
-    if (el) {
-      triggerObserver = new MutationObserver(refreshResolvedTrigger)
-      triggerObserver.observe(el, { childList: true, subtree: true })
-    }
-  },
-  { immediate: true },
-)
-onScopeDispose(() => triggerObserver?.disconnect())
+watch(triggerWrapper, refreshResolvedTrigger, { immediate: true })
+useMutationObserver(triggerWrapper, refreshResolvedTrigger, { childList: true, subtree: true })
 
 const triggerElRef = computed<HTMLElement | null>(() => {
   if (props.triggerEl !== undefined) return unwrapEl(props.triggerEl)

@@ -216,7 +216,6 @@ import {
   computed,
   inject,
   nextTick,
-  onScopeDispose,
   reactive,
   shallowRef,
   useSlots,
@@ -225,6 +224,7 @@ import {
   watchEffect,
 } from 'vue'
 import type { FunctionalComponent, VNodeChild } from 'vue'
+import { useMutationObserver } from '@vueuse/core'
 // Explicit self-import for the recursive submenu (see the template). `<Menu>` by name relies on
 // `resolveComponent('Menu', true)`, which returns the bare string — not the component — inside a
 // Vapor render, so the submenu renders as a stray `<menu>` element with its props dropped. The
@@ -322,21 +322,8 @@ function refreshResolvedTrigger() {
     ? resolvePastDisplayContents(triggerWrapper.value)
     : null
 }
-let triggerObserver: MutationObserver | undefined
-watch(
-  triggerWrapper,
-  (el) => {
-    triggerObserver?.disconnect()
-    triggerObserver = undefined
-    refreshResolvedTrigger()
-    if (el && typeof MutationObserver !== 'undefined') {
-      triggerObserver = new MutationObserver(refreshResolvedTrigger)
-      triggerObserver.observe(el, { childList: true, subtree: true })
-    }
-  },
-  { immediate: true, flush: 'post' },
-)
-onScopeDispose(() => triggerObserver?.disconnect())
+watch(triggerWrapper, refreshResolvedTrigger, { immediate: true, flush: 'post' })
+useMutationObserver(triggerWrapper, refreshResolvedTrigger, { childList: true, subtree: true })
 
 const triggerElRef = computed<HTMLElement | null>(() =>
   props.triggerEl !== undefined ? unwrapEl(props.triggerEl) : resolvedTriggerEl.value,

@@ -1,6 +1,6 @@
 import { computed, onScopeDispose, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useScroll } from '@vueuse/core'
 import type { ElRef } from './dom'
 
 export type PullToRefreshState = 'idle' | 'pulling' | 'ready' | 'loading' | 'done'
@@ -53,6 +53,14 @@ function dampen(overshoot: number): number {
 export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRefreshReturn {
   const state = shallowRef<PullToRefreshState>('idle')
   const pullDistance = shallowRef(0)
+
+  // Guards `begin()` against arming mid a native momentum/rubber-band bounce-back — a raw
+  // `scrollTop === 0` read can't tell "settled at the top" apart from "still animating through
+  // 0 on the way back from an overshoot," so a touchstart landing in that window used to arm a
+  // pull even though the scroll box was never actually at rest. `useScroll`'s `isScrolling`
+  // (true for `idle`ms after the last scroll event) closes that gap generically, for whatever
+  // element `scrollEl` turns out to be.
+  const { isScrolling } = useScroll(options.scrollEl)
 
   function maxPullValue(): number {
     return toValue(options.maxPull) ?? DEFAULT_MAX_PULL
@@ -111,7 +119,7 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
   /** Arms a drag if the scroll box is at the top; returns whether it took. */
   function begin(y: number): boolean {
     const el = options.scrollEl.value
-    if (!el || el.scrollTop !== 0 || drag !== null) return false
+    if (!el || el.scrollTop !== 0 || isScrolling.value || drag !== null) return false
     startY = y
     startTime = performance.now()
     dragging = false
