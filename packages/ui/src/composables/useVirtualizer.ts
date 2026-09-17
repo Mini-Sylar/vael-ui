@@ -1,6 +1,6 @@
-import { computed, onMounted, onScopeDispose, shallowRef, toValue, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useElementSize } from '@vueuse/core'
+import { useElementSize, useEventListener } from '@vueuse/core'
 import type { ElRef } from './dom'
 
 export type ScrollAlign = 'nearest' | 'start' | 'end' | 'center'
@@ -262,16 +262,23 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     scrollTop.value = options.containerEl.value?.scrollTop ?? 0
   }
 
-  onMounted(() => {
-    const container = options.containerEl.value
-    if (!container) return
-    scrollTop.value = container.scrollTop
-    container.addEventListener('scroll', onScroll, { passive: true })
-    measureFirstRow()
-  })
+  // useEventListener tracks `containerEl` reactively (rebinding if it ever points at a
+  // different element, and cleaning up on scope dispose) - a plain addEventListener/onMounted
+  // pairing here bound to whatever element was current at mount time, and onScopeDispose's own
+  // removeEventListener read `containerEl.value` again at dispose time, so a container swap
+  // mid-lifetime would've torn down the listener on the NEW element while leaking the old one.
+  watch(
+    options.containerEl,
+    (container) => {
+      if (!container) return
+      scrollTop.value = container.scrollTop
+      measureFirstRow()
+    },
+    { immediate: true },
+  )
+  useEventListener(options.containerEl, 'scroll', onScroll, { passive: true })
 
   onScopeDispose(() => {
-    options.containerEl.value?.removeEventListener('scroll', onScroll)
     rowResizeObserver?.disconnect()
   })
 

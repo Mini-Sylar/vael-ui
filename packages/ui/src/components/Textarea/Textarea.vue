@@ -53,7 +53,8 @@
 <script setup lang="ts">
 import './Textarea.css'
 import '../shared/tokens.css'
-import { computed, onMounted, onScopeDispose, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
@@ -145,7 +146,6 @@ function adjustHeightFallback() {
 
 // Pin slots to top when multiline (not re-centering as box grows) — compare against fixed one-line height, not resolved min-block-size (consumer-overridable).
 const isMultiline = shallowRef(false)
-let resizeObserver: ResizeObserver | undefined
 function checkMultiline() {
   const el = textareaEl.value
   if (!el) return
@@ -155,22 +155,26 @@ function checkMultiline() {
   isMultiline.value = el.clientHeight > oneLineHeight + 1
 }
 
-onMounted(() => {
-  const supportsFieldSizing = typeof CSS !== 'undefined' && CSS.supports('field-sizing', 'content')
-  if (props.autoGrow && !supportsFieldSizing) {
-    adjustHeightFallback()
-    textareaEl.value?.addEventListener('input', adjustHeightFallback)
-  }
-  if (props.autoGrow && textareaEl.value) {
+const supportsFieldSizing = typeof CSS !== 'undefined' && CSS.supports('field-sizing', 'content')
+
+// useEventListener/useResizeObserver track `textareaEl` reactively and clean up on scope
+// dispose; the callbacks below gate on the live `props.autoGrow` value instead of a snapshot
+// read at mount, so autoGrow flipping true after mount (not just at mount time) is honored too.
+useEventListener(textareaEl, 'input', () => {
+  if (props.autoGrow && !supportsFieldSizing) adjustHeightFallback()
+})
+useResizeObserver(textareaEl, () => {
+  if (props.autoGrow) checkMultiline()
+})
+watch(
+  () => props.autoGrow,
+  (autoGrow) => {
+    if (!autoGrow) return
+    if (!supportsFieldSizing) adjustHeightFallback()
     checkMultiline()
-    resizeObserver = new ResizeObserver(checkMultiline)
-    resizeObserver.observe(textareaEl.value)
-  }
-})
-onScopeDispose(() => {
-  textareaEl.value?.removeEventListener('input', adjustHeightFallback)
-  resizeObserver?.disconnect()
-})
+  },
+  { immediate: true },
+)
 
 const attrs = useAttrs()
 const restAttrs = computed(() => {
