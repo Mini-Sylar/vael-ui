@@ -78,3 +78,15 @@ test('forceMount keeps the panel mounted and hidden when closed', async () => {
   expect(document.querySelector('.ui-popover-positioner')).not.toBeNull()
   expect(getComputedStyle(positioner()).display).toBe('none')
 })
+
+test('openOnTriggerClick: click toggles open with no manual wiring, matching Menu', async () => {
+  const screen = await render(PopoverFixture, { props: { openOnTriggerClick: true } })
+  expect(document.querySelector('.ui-popover-positioner')).toBeNull()
+
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByTestId('content')).toBeVisible()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+
+  await screen.getByTestId('trigger').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})

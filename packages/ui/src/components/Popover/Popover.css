@@ -1,4 +1,10 @@
 @layer ui-components {
+  /* Only exists for a click handler + ref (openOnTriggerClick) — display:contents keeps it out
+     of the layout tree so the trigger sizes/positions exactly as if it were a direct child of
+     Popover's own parent. Same mechanism as Menu's .ui-menu-trigger. */
+  .ui-popover-trigger {
+    display: contents;
+  }
   .ui-popover-positioner {
     z-index: var(--ui-z-popover, 55);
     inline-size: max-content;

@@ -175,7 +175,7 @@
   }
   @supports (text-box-trim: trim-both) {
     .ui-button-label {
-      text-box: trim-both cap text;
+      text-box: trim-both cap alphabetic;
     }
 
     .ui-button--icon .ui-button-label {
