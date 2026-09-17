@@ -146,6 +146,8 @@ export interface DialogProps {
   closeOnEsc?: boolean
   /** Clicking the overlay closes the panel. No-op when `modal` is false (no overlay to click). */
   closeOnOverlay?: boolean
+  /** Pushes a history entry on open so the mobile hardware/gesture back action closes this panel instead of navigating the page away, popping that entry again on any other close path. Default false — opt in per instance. */
+  closeOnHistoryBack?: boolean
   /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
   beforeClose?: (done: () => void) => void
   /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
@@ -214,6 +216,7 @@ const props = withDefaults(defineProps<DialogProps>(), {
   flush: false,
   closeOnEsc: true,
   closeOnOverlay: true,
+  closeOnHistoryBack: false,
   forceMount: false,
   scrollFade: true,
   maximizable: false,
@@ -259,6 +262,7 @@ const { isClosing, close, requestClose, cancelClose, container, contained } = us
   beforeClose: () => props.beforeClose,
   initialFocus: () => props.initialFocus?.(),
   modal: () => props.modal,
+  closeOnHistoryBack: () => props.closeOnHistoryBack,
   onOpenChange: (value, details) => emit('open-change', value, details),
 })
 

@@ -47,7 +47,7 @@
   }
   .ui-badge-content {
     display: inline-block;
-    text-box: trim-both cap alphabetic;
+    text-box: trim-both cap text;
   }
   .ui-badge-content--animated {
     animation: ui-badge-pop var(--ui-duration-press) var(--ui-ease-out);

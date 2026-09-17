@@ -13,7 +13,7 @@ beforeEach(() => {
 })
 
 test('a plain class passed to DatePicker reaches the rendered trigger', async () => {
-  const screen = render(DatePicker, { attrs: { class: 'my-date-picker' } })
+  const screen = await render(DatePicker, { attrs: { class: 'my-date-picker' } })
   const trigger = screen.getByRole('combobox')
   expect(trigger.element().closest('.my-date-picker')).not.toBeNull()
 })
@@ -25,29 +25,29 @@ function cellByIso(iso: string): HTMLElement | undefined {
 }
 
 test('opens on trigger click and shows the calendar panel', async () => {
-  const screen = render(DatePickerFixture)
+  const screen = await render(DatePickerFixture)
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   await vi.waitFor(() => expect(document.querySelector('.ui-calendar-root')).not.toBeNull())
 })
 
 test('single mode: picking a date commits it and auto-closes', async () => {
-  const screen = render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
+  const screen = await render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(cellByIso('2024-06-20')).toBeDefined())
   await userEvent.click(cellByIso('2024-06-20')!)
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('Jun 20 2024')
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 20 2024')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
 test('the trigger input displays the formatted selection', async () => {
-  const screen = render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
+  const screen = await render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
   const input = screen.getByRole('combobox')
   await expect.element(input).toHaveValue(expect.stringContaining('2024'))
 })
 
 test('min/max bounds block selection of out-of-range days', async () => {
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: {
       initialValue: JUNE_15_2024,
       minDate: new Date(2024, 5, 10),
@@ -59,12 +59,12 @@ test('min/max bounds block selection of out-of-range days', async () => {
   const early = cellByIso('2024-06-05')!
   expect(early.getAttribute('aria-disabled')).toBe('true')
   await userEvent.click(early, { force: true })
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('Jun 15 2024')
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 15 2024')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
 test('the disabled prop disables the trigger and blocks opening', async () => {
-  const screen = render(DatePickerFixture, { props: { disabled: true } })
+  const screen = await render(DatePickerFixture, { props: { disabled: true } })
   const trigger = screen.getByRole('combobox')
   await expect.element(trigger).toBeDisabled()
   await trigger.click({ force: true })
@@ -72,7 +72,7 @@ test('the disabled prop disables the trigger and blocks opening', async () => {
 })
 
 test('a plain <form> post renders hidden input(s) mirroring the selection', async () => {
-  const screen = render(DatePickerFormFixture)
+  const screen = await render(DatePickerFormFixture)
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-calendar-root')).not.toBeNull())
   const today = new Date()
@@ -85,7 +85,7 @@ test('a plain <form> post renders hidden input(s) mirroring the selection', asyn
 })
 
 test('range mode: two clicks commit a start/end pair, and the panel stays open after the first', async () => {
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { selectionMode: 'range', initialValue: undefined },
   })
   await screen.getByRole('combobox').click()
@@ -112,7 +112,7 @@ test('range mode: two clicks commit a start/end pair, and the panel stays open a
 })
 
 test('view="month": clicking a month cell commits it directly, no day grid involved', async () => {
-  const screen = render(DatePickerFixture, { props: { view: 'month' } })
+  const screen = await render(DatePickerFixture, { props: { view: 'month' } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-calendar-month-grid')).not.toBeNull())
   expect(document.querySelector('.ui-calendar-grid')).toBeNull()
@@ -125,7 +125,7 @@ test('view="month": clicking a month cell commits it directly, no day grid invol
 })
 
 test('view="year": clicking a year cell commits it directly', async () => {
-  const screen = render(DatePickerFixture, { props: { view: 'year' } })
+  const screen = await render(DatePickerFixture, { props: { view: 'year' } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-calendar-year-grid')).not.toBeNull())
   const firstYear = document.querySelector<HTMLElement>(
@@ -137,7 +137,7 @@ test('view="year": clicking a year cell commits it directly', async () => {
 })
 
 test('view="date": clicking the header label drills up to month, then year, then a pick descends back down', async () => {
-  const screen = render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
+  const screen = await render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-calendar-grid')).not.toBeNull())
 
@@ -167,14 +167,14 @@ test('view="date": clicking the header label drills up to month, then year, then
 })
 
 test('showButtonBar off by default — no footer at all', async () => {
-  const screen = render(DatePickerFixture)
+  const screen = await render(DatePickerFixture)
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   expect(document.querySelector('.ui-date-picker-footer')).toBeNull()
 })
 
 test("showButtonBar renders Today/Clear; Today commits today's date and closes, Clear empties the model and closes", async () => {
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { showButtonBar: true, initialValue: JUNE_15_2024 },
   })
   await screen.getByRole('combobox').click()
@@ -194,7 +194,7 @@ test("showButtonBar renders Today/Clear; Today commits today's date and closes, 
 })
 
 test("range mode's button bar has no Today button — only Clear", async () => {
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { showButtonBar: true, selectionMode: 'range' },
   })
   await screen.getByRole('combobox').click()
@@ -214,7 +214,7 @@ test("range mode's button bar has no Today button — only Clear", async () => {
 })
 
 test('single mode: Today sits flush left, Clear flush right, in the same button bar', async () => {
-  const screen = render(DatePickerFixture, { props: { showButtonBar: true } })
+  const screen = await render(DatePickerFixture, { props: { showButtonBar: true } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 
@@ -230,23 +230,25 @@ test('single mode: Today sits flush left, Clear flush right, in the same button 
 })
 
 test('a custom #footer slot replaces the built-in button bar, even with showButtonBar on', async () => {
-  const screen = render(DatePickerFixture, { props: { showButtonBar: true, customFooter: true } })
+  const screen = await render(DatePickerFixture, {
+    props: { showButtonBar: true, customFooter: true },
+  })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   await expect.element(screen.getByTestId('custom-footer')).toBeInTheDocument()
   expect(document.querySelector('.ui-date-picker-footer button')).toBeNull()
 
-  screen.unmount()
+  await screen.unmount()
 
   // #footer alone (no showButtonBar) still renders — the slot doesn't need the flag.
-  const bare = render(DatePickerFixture, { props: { customFooter: true } })
+  const bare = await render(DatePickerFixture, { props: { customFooter: true } })
   await bare.getByRole('combobox').click()
   await expect.element(bare.getByTestId('open-state')).toHaveTextContent('open')
   await expect.element(bare.getByTestId('custom-footer')).toBeInTheDocument()
 })
 
 test('showTime adds an hour/minute row; en-US locale auto-resolves to 12h with an AM/PM toggle', async () => {
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { showTime: true, initialValue: JUNE_15_2024 },
   })
   await screen.getByRole('combobox').click()
@@ -258,7 +260,7 @@ test('showTime adds an hour/minute row; en-US locale auto-resolves to 12h with a
 })
 
 test('hourFormat="24" suppresses the AM/PM toggle even under a 12h-default locale', async () => {
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { showTime: true, hourFormat: '24', initialValue: JUNE_15_2024 },
   })
   await screen.getByRole('combobox').click()
@@ -267,7 +269,7 @@ test('hourFormat="24" suppresses the AM/PM toggle even under a 12h-default local
 })
 
 test('picking a date with showTime on keeps the panel open — there is still a time to set', async () => {
-  const screen = render(DatePickerFixture, { props: { showTime: true } })
+  const screen = await render(DatePickerFixture, { props: { showTime: true } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-calendar-cell')).not.toBeNull())
   const visibleCell = document.querySelector<HTMLElement>(
@@ -278,7 +280,7 @@ test('picking a date with showTime on keeps the panel open — there is still a 
 })
 
 test('typing digits into the hour field commits immediately; out-of-range values clamp', async () => {
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { showTime: true, hourFormat: '24', initialValue: JUNE_15_2024 },
   })
   await screen.getByRole('combobox').click()
@@ -290,7 +292,7 @@ test('typing digits into the hour field commits immediately; out-of-range values
 
 test('ArrowUp wraps the hour past 23 back to 0, and past 0 back to 23 on ArrowDown', async () => {
   const dec31_2359 = new Date(2024, 11, 31, 23, 0)
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { showTime: true, hourFormat: '24', initialValue: dec31_2359 },
   })
   await screen.getByRole('combobox').click()
@@ -304,7 +306,7 @@ test('ArrowUp wraps the hour past 23 back to 0, and past 0 back to 23 on ArrowDo
 
 test('12h mode wraps hour 12 -> 1 on increment, not 12 -> 0', async () => {
   const noonish = new Date(2024, 5, 15, 12, 0)
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { showTime: true, hourFormat: '12', initialValue: noonish },
   })
   await screen.getByRole('combobox').click()
@@ -317,7 +319,7 @@ test('12h mode wraps hour 12 -> 1 on increment, not 12 -> 0', async () => {
 
 test('clicking the minute stepper increments by minuteStep, and the AM/PM toggle flips the stored hour by 12', async () => {
   const nineAM = new Date(2024, 5, 15, 9, 0)
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { showTime: true, hourFormat: '12', minuteStep: 15, initialValue: nineAM },
   })
   await screen.getByRole('combobox').click()
@@ -333,7 +335,7 @@ test('clicking the minute stepper increments by minuteStep, and the AM/PM toggle
 })
 
 test('timeOnly hides the calendar grid entirely — just the time row', async () => {
-  const screen = render(DatePickerFixture, { props: { timeOnly: true } })
+  const screen = await render(DatePickerFixture, { props: { timeOnly: true } })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   expect(document.querySelector('.ui-calendar-root')).toBeNull()
@@ -341,7 +343,7 @@ test('timeOnly hides the calendar grid entirely — just the time row', async ()
 })
 
 test("timeOnly is inert in range mode — falls back to the calendar instead of an empty panel (time isn't supported for a range)", async () => {
-  const screen = render(DatePickerFixture, {
+  const screen = await render(DatePickerFixture, {
     props: { timeOnly: true, selectionMode: 'range' },
   })
   await screen.getByRole('combobox').click()

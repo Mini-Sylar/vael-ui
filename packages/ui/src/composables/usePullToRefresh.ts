@@ -32,6 +32,7 @@ const DEFAULT_DONE_HOLD_MS = 650
 const DAMPEN_FACTOR = 40 // px scale for the log curve below
 const VELOCITY_THRESHOLD = 0.5 // px/ms — a decisive flick commits even short of `threshold`
 const VELOCITY_MIN_DISTANCE_FRACTION = 0.5 // of `threshold` — guards a near-zero-distance jerk from reading as "fast"
+const COMMIT_THRESHOLD = 8 // px — matches useSheetDrag's AXIS_LOCK_THRESHOLD; a thumb's incidental jitter at scrollTop 0 shouldn't commit to a pull
 
 /** Shifted log curve (Vaul's formula); overshoot creeps with resistance. */
 function dampen(overshoot: number): number {
@@ -126,20 +127,17 @@ export function usePullToRefresh(options: UsePullToRefreshOptions): UsePullToRef
   function applyMove(y: number): 'pull' | 'release' | 'ignore' {
     const el = options.scrollEl.value
     if (!el) return 'release'
+    const delta = y - startY
     if (!dragging) {
       if (el.scrollTop !== 0) return 'release'
-      if (y - startY <= 0) return 'ignore'
+      if (delta <= COMMIT_THRESHOLD) return 'ignore'
       dragging = true
     }
-    const delta = Math.max(0, y - startY)
+    // Re-checked every move even after committing - reversing back past the start hands the gesture back to native scroll instead of staying locked into `pull` for the rest of the touch.
+    if (delta <= 0) return 'release'
     const max = maxPullValue()
     pullDistance.value = delta <= max ? delta : max + dampen(delta - max)
-    state.value =
-      pullDistance.value <= 0
-        ? 'idle'
-        : pullDistance.value >= thresholdValue()
-          ? 'ready'
-          : 'pulling'
+    state.value = pullDistance.value >= thresholdValue() ? 'ready' : 'pulling'
     return 'pull'
   }
 

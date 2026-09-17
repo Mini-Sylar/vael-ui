@@ -22,7 +22,7 @@ function focusedLabel(): string | undefined {
 }
 
 test('renders nested data: root nodes are visible, children stay hidden until expanded', async () => {
-  render(TreeFixture)
+  await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   expect(rowByLabel('Vegetables')).toBeDefined()
   expect(rowByLabel('Apple')).toBeUndefined()
@@ -30,7 +30,7 @@ test('renders nested data: root nodes are visible, children stay hidden until ex
 })
 
 test('clicking the chevron expands a node to reveal its children, and collapses it again', async () => {
-  render(TreeFixture)
+  await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
 
   const chevron = rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-chevron')!
@@ -43,7 +43,7 @@ test('clicking the chevron expands a node to reveal its children, and collapses 
 })
 
 test('single selection: clicking a leaf commits the value', async () => {
-  const screen = render(TreeFixture)
+  const screen = await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
 
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
@@ -54,14 +54,14 @@ test('single selection: clicking a leaf commits the value', async () => {
 })
 
 test('a first row is tabbable as soon as the tree mounts, with no external action needed', async () => {
-  render(TreeFixture)
+  await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await vi.waitFor(() => expect(rowByLabel('Fruits')!.tabIndex).toBe(0))
   expect(rowByLabel('Vegetables')!.tabIndex).toBe(-1)
 })
 
 test('Enter on a focused row toggles selection via the keyboard, not just a mouse click', async () => {
-  const screen = render(TreeFixture)
+  const screen = await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   // filterable defaults to true — the search box is focused first via Tab,
   // same handoff TreeSelect's own panel relies on.
@@ -77,7 +77,7 @@ test('Enter on a focused row toggles selection via the keyboard, not just a mous
 })
 
 test('checkbox mode: checking a leaf adds its value to the array', async () => {
-  const screen = render(TreeFixture, { props: { selectionMode: 'checkbox' } })
+  const screen = await render(TreeFixture, { props: { selectionMode: 'checkbox' } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
@@ -91,7 +91,7 @@ test('checkbox mode: checking a leaf adds its value to the array', async () => {
 })
 
 test('checkbox mode: a parent renders indeterminate when only some descendants are checked, and checked once every enabled descendant is', async () => {
-  const screen = render(TreeFixture, { props: { selectionMode: 'checkbox' } })
+  const screen = await render(TreeFixture, { props: { selectionMode: 'checkbox' } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
@@ -118,7 +118,7 @@ test('checkbox mode: a parent renders indeterminate when only some descendants a
 })
 
 test('checkbox mode: a disabled leaf cannot be toggled directly', async () => {
-  const screen = render(TreeFixture, { props: { selectionMode: 'checkbox' } })
+  const screen = await render(TreeFixture, { props: { selectionMode: 'checkbox' } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Citrus')).toBeDefined())
@@ -134,7 +134,7 @@ test('checkbox mode: a disabled leaf cannot be toggled directly', async () => {
 })
 
 test('multiple mode: clicking toggles just that node, with no parent/child linkage', async () => {
-  const screen = render(TreeFixture, { props: { selectionMode: 'multiple' } })
+  const screen = await render(TreeFixture, { props: { selectionMode: 'multiple' } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
@@ -147,7 +147,7 @@ test('multiple mode: clicking toggles just that node, with no parent/child linka
 })
 
 test('the search filter narrows rows to label matches and auto-expands their ancestors', async () => {
-  const screen = render(TreeFixture)
+  const screen = await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   expect(rowByLabel('Orange')).toBeUndefined()
 
@@ -162,7 +162,7 @@ test('the search filter narrows rows to label matches and auto-expands their anc
 })
 
 test('keyboard navigation: ArrowDown/ArrowUp rove between visible rows, ArrowRight expands then descends, ArrowLeft ascends then collapses', async () => {
-  render(TreeFixture)
+  await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.tab()
   await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('INPUT'))
@@ -189,13 +189,13 @@ test('keyboard navigation: ArrowDown/ArrowUp rove between visible rows, ArrowRig
 })
 
 test('filterable=false renders no search box', async () => {
-  const screen = render(TreeFixture, { props: { filterable: false } })
+  const screen = await render(TreeFixture, { props: { filterable: false } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   expect(screen.container.querySelector('.ui-tree-filter')).toBeNull()
 })
 
 test('expandOnRowClick: clicking a folder row both expands it and selects it', async () => {
-  const screen = render(TreeFixture, { props: { expandOnRowClick: true } })
+  const screen = await render(TreeFixture, { props: { expandOnRowClick: true } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
 
   await userEvent.click(rowByLabel('Fruits')!)
@@ -207,7 +207,7 @@ test('expandOnRowClick: clicking a folder row both expands it and selects it', a
 })
 
 test('expandOnRowClick: a leaf row still selects normally on click', async () => {
-  const screen = render(TreeFixture, { props: { expandOnRowClick: true } })
+  const screen = await render(TreeFixture, { props: { expandOnRowClick: true } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!)
   await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
@@ -217,7 +217,7 @@ test('expandOnRowClick: a leaf row still selects normally on click', async () =>
 })
 
 test('expandOnRowClick off (default): clicking a folder row selects it, same as any other node', async () => {
-  const screen = render(TreeFixture)
+  const screen = await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
@@ -253,7 +253,7 @@ async function expandRootAndBranch() {
 }
 
 test('stickyScroll: expanded folder rows get native position: sticky, stacked by depth', async () => {
-  render(TreeFixture, { props: { items: deepItems, stickyScroll: true, height: '120px' } })
+  await render(TreeFixture, { props: { items: deepItems, stickyScroll: true, height: '120px' } })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
   await expandRootAndBranch()
 
@@ -267,7 +267,7 @@ test('stickyScroll: expanded folder rows get native position: sticky, stacked by
 })
 
 test('stickyScroll off (default): folder rows stay in normal flow even when expanded', async () => {
-  render(TreeFixture, { props: { items: deepItems, height: '120px' } })
+  await render(TreeFixture, { props: { items: deepItems, height: '120px' } })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
   await expandRootAndBranch()
 
@@ -276,7 +276,7 @@ test('stickyScroll off (default): folder rows stay in normal flow even when expa
 })
 
 test('stickyScroll + expandOnRowClick: a pinned row still collapses normally on click', async () => {
-  render(TreeFixture, {
+  await render(TreeFixture, {
     props: { items: deepItems, stickyScroll: true, expandOnRowClick: true, height: '120px' },
   })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
@@ -287,7 +287,7 @@ test('stickyScroll + expandOnRowClick: a pinned row still collapses normally on 
 })
 
 test('exposed expandNode/collapseNode toggle a specific node by value', async () => {
-  const screen = render(TreeFixture, { props: { items: deepItems } })
+  const screen = await render(TreeFixture, { props: { items: deepItems } })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
   expect(rowByLabel('Branch')).toBeUndefined()
 
@@ -299,7 +299,7 @@ test('exposed expandNode/collapseNode toggle a specific node by value', async ()
 })
 
 test('exposed expandAll/collapseAll toggle every branch at once', async () => {
-  const screen = render(TreeFixture, { props: { items: deepItems } })
+  const screen = await render(TreeFixture, { props: { items: deepItems } })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
 
   await userEvent.click(screen.getByTestId('call-expand-all'))
@@ -311,7 +311,7 @@ test('exposed expandAll/collapseAll toggle every branch at once', async () => {
 })
 
 test('selectableFolders=false: clicking a folder never selects it, even with expandOnRowClick', async () => {
-  const screen = render(TreeFixture, {
+  const screen = await render(TreeFixture, {
     props: { selectableFolders: false, expandOnRowClick: true },
   })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
@@ -323,7 +323,7 @@ test('selectableFolders=false: clicking a folder never selects it, even with exp
 })
 
 test('selectableFolders=false: a leaf still selects normally', async () => {
-  const screen = render(TreeFixture, { props: { selectableFolders: false } })
+  const screen = await render(TreeFixture, { props: { selectableFolders: false } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
@@ -333,7 +333,7 @@ test('selectableFolders=false: a leaf still selects normally', async () => {
 })
 
 test('selectableFolders=false: keyboard Enter on a focused folder does not select it either', async () => {
-  const screen = render(TreeFixture, { props: { selectableFolders: false } })
+  const screen = await render(TreeFixture, { props: { selectableFolders: false } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await userEvent.tab()
   await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('INPUT'))
@@ -344,7 +344,7 @@ test('selectableFolders=false: keyboard Enter on a focused folder does not selec
 })
 
 test('selectableFolders=false: checkbox mode is unaffected (folders never carry their own value anyway)', async () => {
-  const screen = render(TreeFixture, {
+  const screen = await render(TreeFixture, {
     props: { selectableFolders: false, selectionMode: 'checkbox' },
   })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
@@ -392,7 +392,7 @@ test('removeTreeNode removes a node at any depth in place and reports whether it
 })
 
 test("exposed findNode/findParent/removeNode are bound to this instance's own items", async () => {
-  const screen = render(TreeFixture, { props: { items: deepItems } })
+  const screen = await render(TreeFixture, { props: { items: deepItems } })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
 
   await userEvent.click(screen.getByTestId('call-find-leaf-a'))
@@ -409,7 +409,7 @@ test("exposed findNode/findParent/removeNode are bound to this instance's own it
 })
 
 test('v-model:node mirrors the selected node object, not just its value', async () => {
-  const screen = render(TreeFixture)
+  const screen = await render(TreeFixture)
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   await expect.element(screen.getByTestId('node-model')).toHaveTextContent('null')
 
@@ -421,7 +421,7 @@ test('v-model:node mirrors the selected node object, not just its value', async 
 })
 
 test('v-model:node holds an array of node objects in multiple mode', async () => {
-  const screen = render(TreeFixture, { props: { selectionMode: 'multiple' } })
+  const screen = await render(TreeFixture, { props: { selectionMode: 'multiple' } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
 
   const chevron = rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-chevron')!

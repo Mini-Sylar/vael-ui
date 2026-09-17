@@ -12,7 +12,7 @@ function panelFor(triggerName: string) {
 }
 
 test('single mode: opening one item closes the previously open one', async () => {
-  render(AccordionFixture, { props: { initial: 'first' } })
+  await render(AccordionFixture, { props: { initial: 'first' } })
   expect(panelFor('First section').getAttribute('aria-labelledby')).not.toBeNull()
   await expect
     .element(page.getByRole('button', { name: 'First section' }))
@@ -28,7 +28,7 @@ test('single mode: opening one item closes the previously open one', async () =>
 })
 
 test('multiple mode allows several items open at once', async () => {
-  render(AccordionFixture, { props: { multiple: true } })
+  await render(AccordionFixture, { props: { multiple: true } })
   await page.getByRole('button', { name: 'First section' }).click()
   await page.getByRole('button', { name: 'Second section' }).click()
 
@@ -41,7 +41,7 @@ test('multiple mode allows several items open at once', async () => {
 })
 
 test('collapsible=false keeps the last open item open', async () => {
-  render(AccordionFixture, { props: { initial: 'first', collapsible: false } })
+  await render(AccordionFixture, { props: { initial: 'first', collapsible: false } })
   await page.getByRole('button', { name: 'First section' }).click()
   await expect
     .element(page.getByRole('button', { name: 'First section' }))
@@ -49,7 +49,7 @@ test('collapsible=false keeps the last open item open', async () => {
 })
 
 test('a disabled item is a native disabled button and stays collapsed', async () => {
-  const screen = render(AccordionFixture)
+  const screen = await render(AccordionFixture)
   const disabledTrigger = screen.getByRole('button', { name: 'Disabled section' })
   await expect.element(disabledTrigger).toBeDisabled()
   await expect.element(disabledTrigger).toHaveAttribute('aria-expanded', 'false')
@@ -57,7 +57,7 @@ test('a disabled item is a native disabled button and stays collapsed', async ()
 })
 
 test('aria wiring: aria-controls/aria-labelledby pair the trigger and role="region" panel', async () => {
-  render(AccordionFixture)
+  await render(AccordionFixture)
   const trigger = document.querySelector<HTMLElement>('.ui-accordion-trigger')!
   const panelId = trigger.getAttribute('aria-controls')!
   const panel = document.getElementById(panelId)!
@@ -66,7 +66,7 @@ test('aria wiring: aria-controls/aria-labelledby pair the trigger and role="regi
 })
 
 test('height pins to a concrete px value while animating, then releases to auto once settled', async () => {
-  render(AccordionFixture)
+  await render(AccordionFixture)
   const panel = panelFor('First section')
   expect(panel.style.blockSize).toBe('0px')
 
@@ -87,7 +87,7 @@ test('height pins to a concrete px value while animating, then releases to auto 
 })
 
 test('motionCss=false skips the pin/transition dance — no inline block-size transition state', async () => {
-  render(AccordionFixture, { props: { motionCss: false } })
+  await render(AccordionFixture, { props: { motionCss: false } })
   const panel = panelFor('First section')
 
   await page.getByRole('button', { name: 'First section' }).click()
@@ -96,7 +96,7 @@ test('motionCss=false skips the pin/transition dance — no inline block-size tr
 })
 
 test('rapid double-toggle (open then close before settling) does not strand a pinned height', async () => {
-  render(AccordionFixture)
+  await render(AccordionFixture)
   const panel = panelFor('First section')
   const trigger = page.getByRole('button', { name: 'First section' })
 

@@ -177,7 +177,11 @@ export function useSwipeReveal(
       }
       committed = true
       isDragging.value = true
-      dragEl?.setPointerCapture(pointerId)
+      try {
+        dragEl?.setPointerCapture(pointerId)
+      } catch {
+        // Capture can fail for synthetic/non-standard pointer ids; not fatal.
+      }
     }
     event.preventDefault()
     liveOffset = rubberBand(startOffset + dx)

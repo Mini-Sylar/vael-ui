@@ -8,7 +8,7 @@ import Field from '../src/components/Field/Field.vue'
 import Input from '../src/components/Input/Input.vue'
 
 test('label "for" points at the control\'s id', async () => {
-  const screen = render(FieldFixture, { props: { label: 'Name' } })
+  const screen = await render(FieldFixture, { props: { label: 'Name' } })
   const label = screen.container.querySelector<HTMLLabelElement>('.ui-field-label')!
   const input = screen.container.querySelector<HTMLInputElement>('.ui-input-el')!
   expect(label.getAttribute('for')).toBe(input.id)
@@ -16,16 +16,16 @@ test('label "for" points at the control\'s id', async () => {
 })
 
 test('describedby composes description+error ids and drops absent ones', async () => {
-  const bare = render(FieldFixture, { props: {} })
+  const bare = await render(FieldFixture, { props: {} })
   const bareInput = bare.container.querySelector<HTMLInputElement>('.ui-input-el')!
   expect(bareInput.getAttribute('aria-describedby')).toBeNull()
 
-  const withDescription = render(FieldFixture, { props: { description: 'Helper text' } })
+  const withDescription = await render(FieldFixture, { props: { description: 'Helper text' } })
   const descInput = withDescription.container.querySelector<HTMLInputElement>('.ui-input-el')!
   const descId = withDescription.container.querySelector('.ui-field-description')!.id
   expect(descInput.getAttribute('aria-describedby')).toBe(descId)
 
-  const withBoth = render(FieldFixture, {
+  const withBoth = await render(FieldFixture, {
     props: { description: 'Helper text', error: 'Required' },
   })
   const bothInput = withBoth.container.querySelector<HTMLInputElement>('.ui-input-el')!
@@ -35,7 +35,7 @@ test('describedby composes description+error ids and drops absent ones', async (
 })
 
 test('error flips aria-invalid on the slotted Input and renders role="alert"', async () => {
-  const screen = render(FieldFixture, { props: { error: 'Required field' } })
+  const screen = await render(FieldFixture, { props: { error: 'Required field' } })
   const input = screen.container.querySelector<HTMLInputElement>('.ui-input-el')!
   expect(input.getAttribute('aria-invalid')).toBe('true')
   const error = screen.container.querySelector('.ui-field-error')!
@@ -45,7 +45,7 @@ test('error flips aria-invalid on the slotted Input and renders role="alert"', a
 })
 
 test("data-focused/data-filled mirror the control's focus and value reports", async () => {
-  const screen = render(FieldFixture, {})
+  const screen = await render(FieldFixture, {})
   const root = screen.container.querySelector('.ui-field')!
   expect(root.hasAttribute('data-focused')).toBe(false)
   expect(root.hasAttribute('data-filled')).toBe(false)
@@ -62,7 +62,7 @@ test("data-focused/data-filled mirror the control's focus and value reports", as
 })
 
 test("Field's disabled alone disables a nested control with no local disabled prop", async () => {
-  const screen = render(Field, {
+  const screen = await render(Field, {
     props: { label: 'Locked', disabled: true },
     slots: { default: () => h(Input) },
   })
@@ -72,7 +72,7 @@ test("Field's disabled alone disables a nested control with no local disabled pr
 })
 
 test('controls work standalone with no Field ancestor — no throw, own generated id', async () => {
-  const screen = render(Input, { props: { placeholder: 'standalone' } })
+  const screen = await render(Input, { props: { placeholder: 'standalone' } })
   const input = screen.container.querySelector<HTMLInputElement>('.ui-input-el')!
   expect(input.id).not.toBe('')
   expect(input.getAttribute('aria-describedby')).toBeNull()
@@ -80,7 +80,7 @@ test('controls work standalone with no Field ancestor — no throw, own generate
 })
 
 test('float placement flips data-filled when the input gets a value programmatically', async () => {
-  const screen = render(FieldFixture, { props: { labelPlacement: 'float', label: 'Email' } })
+  const screen = await render(FieldFixture, { props: { labelPlacement: 'float', label: 'Email' } })
   const root = screen.container.querySelector('.ui-field')!
   expect(root.hasAttribute('data-filled')).toBe(false)
 
@@ -89,7 +89,7 @@ test('float placement flips data-filled when the input gets a value programmatic
 })
 
 test('#label slot replaces the label text but keeps the <label> element and for-wiring', async () => {
-  const screen = render(Field, {
+  const screen = await render(Field, {
     slots: { label: '<strong data-testid="custom-label">Custom</strong>', default: '' },
   })
   const label = screen.container.querySelector('label')!
@@ -102,11 +102,13 @@ test('#label slot replaces the label text but keeps the <label> element and for-
 // instead of clearing it. Input reports its measured start-inset to the nearest Field, which
 // widens the label's resting inset by that amount.
 test("float label's resting inset clears a leading #start icon instead of overlapping it", async () => {
-  const withoutIcon = render(FieldFixture, { props: { labelPlacement: 'float', label: 'Amount' } })
+  const withoutIcon = await render(FieldFixture, {
+    props: { labelPlacement: 'float', label: 'Amount' },
+  })
   const labelNoIcon = withoutIcon.container.querySelector<HTMLElement>('.ui-field-label')!
   const insetNoIcon = Number.parseFloat(getComputedStyle(labelNoIcon).insetInlineStart)
 
-  const screen = render(FieldFixture, {
+  const screen = await render(FieldFixture, {
     props: { labelPlacement: 'float', label: 'Amount' },
     slots: { start: '<span style="display:inline-block;inline-size:24px">$</span>' },
   })

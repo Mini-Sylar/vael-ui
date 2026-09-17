@@ -26,7 +26,7 @@ function focusedText(): string | undefined {
 // against the child and calls itself forever; this is the regression guard for
 // both the fallback-to-default bug and that recursion.
 test('a custom #item slot keeps applying at every submenu depth', async () => {
-  const screen = render(MenuSubmenuItemSlotFixture)
+  const screen = await render(MenuSubmenuItemSlotFixture)
   await screen.getByTestId('trigger').click()
 
   // Level 0 — the root list.
@@ -50,7 +50,7 @@ test('a custom #item slot keeps applying at every submenu depth', async () => {
 })
 
 test('selecting a deep custom row still bubbles its value and closes the chain', async () => {
-  const screen = render(MenuSubmenuItemSlotFixture)
+  const screen = await render(MenuSubmenuItemSlotFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('mark:Cut'))
 

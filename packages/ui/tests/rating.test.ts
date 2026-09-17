@@ -17,7 +17,7 @@ function pointerup(clientX: number) {
   )
 }
 
-function renderModel(props: Record<string, unknown> = {}) {
+async function renderModel(props: Record<string, unknown> = {}) {
   const modelValue = ref((props.modelValue as number) ?? 0)
   const Wrapper = {
     render: () =>
@@ -27,11 +27,11 @@ function renderModel(props: Record<string, unknown> = {}) {
         'onUpdate:modelValue': (v: number) => (modelValue.value = v),
       }),
   }
-  return { screen: render(Wrapper), modelValue }
+  return { screen: await render(Wrapper), modelValue }
 }
 
 test('clicking a star position commits that value', async () => {
-  const { screen, modelValue } = renderModel({ max: 5 })
+  const { screen, modelValue } = await renderModel({ max: 5 })
   const root = screen.container.querySelector('.ui-rating')!
   const rect = root.getBoundingClientRect()
 
@@ -43,7 +43,7 @@ test('clicking a star position commits that value', async () => {
 })
 
 test('allowHalf snaps to the nearest 0.5', async () => {
-  const { screen, modelValue } = renderModel({ max: 5, allowHalf: true })
+  const { screen, modelValue } = await renderModel({ max: 5, allowHalf: true })
   const root = screen.container.querySelector('.ui-rating')!
   const rect = root.getBoundingClientRect()
 
@@ -55,7 +55,7 @@ test('allowHalf snaps to the nearest 0.5', async () => {
 })
 
 test('keyboard: arrows step by 1 (default), Home/End jump to bounds', async () => {
-  const { screen, modelValue } = renderModel({ max: 5, modelValue: 2 })
+  const { screen, modelValue } = await renderModel({ max: 5, modelValue: 2 })
   const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
   root.focus()
 
@@ -73,7 +73,7 @@ test('keyboard: arrows step by 1 (default), Home/End jump to bounds', async () =
 })
 
 test('keyboard arrows step by 0.5 when allowHalf is set', async () => {
-  const { screen, modelValue } = renderModel({ max: 5, allowHalf: true, modelValue: 2 })
+  const { screen, modelValue } = await renderModel({ max: 5, allowHalf: true, modelValue: 2 })
   const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
   root.focus()
 
@@ -82,7 +82,7 @@ test('keyboard arrows step by 0.5 when allowHalf is set', async () => {
 })
 
 test('readonly ignores pointer and keyboard interaction', async () => {
-  const { screen, modelValue } = renderModel({ max: 5, modelValue: 3, readonly: true })
+  const { screen, modelValue } = await renderModel({ max: 5, modelValue: 3, readonly: true })
   const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
   const rect = root.getBoundingClientRect()
 
@@ -95,7 +95,7 @@ test('readonly ignores pointer and keyboard interaction', async () => {
 })
 
 test('disabled has tabindex -1 and ignores interaction', async () => {
-  const { screen, modelValue } = renderModel({ max: 5, modelValue: 1, disabled: true })
+  const { screen, modelValue } = await renderModel({ max: 5, modelValue: 1, disabled: true })
   const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
   expect(root.getAttribute('tabindex')).toBe('-1')
 
@@ -106,7 +106,7 @@ test('disabled has tabindex -1 and ignores interaction', async () => {
 })
 
 test('aria-valuenow/valuemax/valuetext reflect the value', async () => {
-  const { screen } = renderModel({ max: 5, modelValue: 3 })
+  const { screen } = await renderModel({ max: 5, modelValue: 3 })
   const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
   expect(root.getAttribute('aria-valuenow')).toBe('3')
   expect(root.getAttribute('aria-valuemax')).toBe('5')
@@ -114,7 +114,11 @@ test('aria-valuenow/valuemax/valuetext reflect the value', async () => {
 })
 
 test('custom valueText overrides the default aria-valuetext', async () => {
-  const { screen } = renderModel({ max: 5, modelValue: 3, valueText: (v: number) => `${v} stars` })
+  const { screen } = await renderModel({
+    max: 5,
+    modelValue: 3,
+    valueText: (v: number) => `${v} stars`,
+  })
   const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
   expect(root.getAttribute('aria-valuetext')).toBe('3 stars')
 })
@@ -131,14 +135,14 @@ test('form participation: hidden input carries the value under name', async () =
         }),
       ]),
   }
-  const screen = render(Wrapper)
+  const screen = await render(Wrapper)
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const data = new FormData(form)
   expect(data.get('stars')).toBe('4')
 })
 
 test('the 3rd star is fully filled and the 4th is empty at value 3', async () => {
-  const { screen } = renderModel({ max: 5, modelValue: 3 })
+  const { screen } = await renderModel({ max: 5, modelValue: 3 })
   const items = screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')
   expect(items[2]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
   expect(items[3]!.style.getPropertyValue('--ui-rating-fill')).toBe('0%')

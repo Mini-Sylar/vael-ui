@@ -13,6 +13,7 @@
     :modal="modal"
     :close-on-esc="closeOnEsc"
     :close-on-overlay="closeOnOverlay"
+    :close-on-history-back="closeOnHistoryBack"
     :before-close="beforeClose"
     :force-mount="forceMount"
     :teleport-to="teleportTo"
@@ -68,6 +69,7 @@ const props = withDefaults(defineProps<DrawerProps>(), {
   modal: true,
   closeOnEsc: true,
   closeOnOverlay: true,
+  closeOnHistoryBack: false,
   forceMount: false,
   scrollFade: true,
 })

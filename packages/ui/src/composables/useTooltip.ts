@@ -1,6 +1,6 @@
 import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
+import { onLongPress, useEventListener } from '@vueuse/core'
 import type { Side } from '@floating-ui/dom'
 import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
@@ -80,6 +80,11 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     align: options.align,
     sideOffset: options.sideOffset,
     alignOffset: options.alignOffset,
+    // A route change can remove the trigger while a delegated TooltipHost stays mounted - closing
+    // outright beats leaving it repositioned against a detached node (which degenerates to (0,0)).
+    onReferenceDisconnected: () => {
+      open.value = false
+    },
   })
 
   const isClosing = shallowRef(false)
@@ -336,6 +341,10 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
 
   // Click dismisses and suppresses reopen until pointer leaves.
   let suppressed = false
+  // Touch has no hover - `focusEnter`'s `:focus-visible` open path is guarded against it below so long-press (the only positive touch trigger) doesn't leak in through focus instead.
+  let lastPointerWasTouch = false
+
+  let suppressNextClick = false
 
   const peer: WarmPeer = {
     rect: measureRect,
@@ -384,6 +393,8 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
   }
 
   function focusEnter() {
+    // Touch owns its own trigger (long-press, below) - WebKit can mark a tapped button's resulting focus as `:focus-visible`, which would otherwise open the tooltip on every plain tap.
+    if (lastPointerWasTouch) return
     const trigger = options.triggerEl.value
     // Only :focus-visible (mouse clicks would fight click-dismiss).
     if (!trigger?.matches(':focus-visible')) return
@@ -410,6 +421,35 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     clearTimeout(closeTimer)
     closeTimer = setTimeout(() => requestClose('pointer'), toValue(options.closeDelay) ?? 100)
   }
+
+  useEventListener(options.triggerEl, 'pointerdown', (event: PointerEvent) => {
+    lastPointerWasTouch = event.pointerType === 'touch'
+  })
+  // VueUse's own long-press primitive (500ms delay, 10px move tolerance to cancel, both matching
+  // platform convention) - it fires for every pointer type, so the handler itself gates on touch.
+  onLongPress(
+    options.triggerEl,
+    (event) => {
+      if (event.pointerType === 'touch') show()
+    },
+    {
+      onMouseUp: (_duration, _distance, isLongPress, event) => {
+        if (isLongPress && event.pointerType === 'touch') suppressNextClick = true
+      },
+    },
+  )
+  // A long-press that fires mid-gesture shouldn't also activate the trigger's own click handler right after.
+  useEventListener(
+    options.triggerEl,
+    'click',
+    (event: MouseEvent) => {
+      if (!suppressNextClick) return
+      suppressNextClick = false
+      event.preventDefault()
+      event.stopPropagation()
+    },
+    true,
+  )
 
   useEventListener(
     () => (toValue(options.interactive) !== false ? options.positionerEl.value : undefined),

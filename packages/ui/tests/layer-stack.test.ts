@@ -11,7 +11,7 @@ import { render } from 'vitest-browser-vue'
 import StackedDialogsFixture from './fixtures/StackedDialogsFixture.vue'
 
 test('Escape closes only the topmost of two stacked dialogs', async () => {
-  const screen = render(StackedDialogsFixture)
+  const screen = await render(StackedDialogsFixture)
 
   await screen.getByTestId('open-outer').click()
   await expect.element(screen.getByTestId('outer-state')).toHaveTextContent('open')
@@ -34,7 +34,7 @@ test('Escape closes only the topmost of two stacked dialogs', async () => {
 })
 
 test('focus trap only cycles within the topmost dialog', async () => {
-  const screen = render(StackedDialogsFixture)
+  const screen = await render(StackedDialogsFixture)
   await screen.getByTestId('open-outer').click()
   await screen.getByTestId('open-inner').click()
   await vi.waitFor(() => expect(document.querySelectorAll('[role="dialog"]').length).toBe(2))
@@ -52,7 +52,7 @@ test('focus trap only cycles within the topmost dialog', async () => {
 })
 
 test('scroll lock is reference-counted: stays engaged until every open dialog has closed', async () => {
-  const screen = render(StackedDialogsFixture)
+  const screen = await render(StackedDialogsFixture)
   await screen.getByTestId('open-outer').click()
   expect(document.body.style.overflow).toBe('hidden')
 
@@ -71,7 +71,7 @@ test('scroll lock is reference-counted: stays engaged until every open dialog ha
 })
 
 test('focus returns to whatever opened the inner dialog, not just the document root', async () => {
-  const screen = render(StackedDialogsFixture)
+  const screen = await render(StackedDialogsFixture)
   await screen.getByTestId('open-outer').click()
   await screen.getByTestId('open-inner').click()
   await vi.waitFor(() => expect(document.querySelectorAll('[role="dialog"]').length).toBe(2))

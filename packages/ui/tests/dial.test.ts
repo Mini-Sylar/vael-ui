@@ -94,7 +94,7 @@ async function dragSweep(
 }
 
 test('dragging clockwise past a full 360deg rotation keeps increasing the value', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   // 750deg — more than two full clockwise turns — at the default
   // 15deg/step. A single-turn-only (or buggy, non-accumulating) reading
   // could reach at most ~24; this proves rotation past 360 keeps counting.
@@ -106,7 +106,7 @@ test('dragging clockwise past a full 360deg rotation keeps increasing the value'
 })
 
 test('dragging counter-clockwise decreases the value, including past multiple rotations', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   await dragSweep(screen, 'unbounded', 0, -480) // 1.33 turns counter-clockwise
 
   const value = Number(screen.getByTestId('unbounded-value').element().textContent)
@@ -115,7 +115,7 @@ test('dragging counter-clockwise decreases the value, including past multiple ro
 })
 
 test('unbounded dial has no ceiling — accumulates across separate drag sessions', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   await dragSweep(screen, 'unbounded', 0, 750)
   await dragSweep(screen, 'unbounded', 0, 750)
 
@@ -126,7 +126,7 @@ test('unbounded dial has no ceiling — accumulates across separate drag session
 })
 
 test('dragging through the atan2 wraparound boundary (+-180deg) does not spike the value', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   // Sweeps straight through the dial's bottom (the atan2 seam) continuing
   // in one clockwise direction — a naive raw-angle subtraction would
   // register a ~360deg jump right at the crossing instead of the true
@@ -140,7 +140,7 @@ test('dragging through the atan2 wraparound boundary (+-180deg) does not spike t
 })
 
 test('bounded dial clamps at max even as the pointer keeps rotating past it', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   // Way more than enough rotation to blow past max=10 many times over.
   await dragSweep(screen, 'bounded', 0, 1200)
 
@@ -151,7 +151,7 @@ test('bounded dial clamps at max even as the pointer keeps rotating past it', as
 })
 
 test('bounded dial clamps at min the same way', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   await dragSweep(screen, 'bounded', 0, -1200)
 
   const value = Number(screen.getByTestId('bounded-value').element().textContent)
@@ -159,7 +159,7 @@ test('bounded dial clamps at min the same way', async () => {
 })
 
 test('keyboard: arrows step, PageUp/Down jump by 10x, Home/End jump to bounds', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const dial = dialEl(screen, 'bounded')
   dial.focus()
 
@@ -180,7 +180,7 @@ test('keyboard: arrows step, PageUp/Down jump by 10x, Home/End jump to bounds', 
 })
 
 test('Home/End no-op on the side with no bound set', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const dial = dialEl(screen, 'no-min')
   dial.focus()
 
@@ -193,7 +193,7 @@ test('Home/End no-op on the side with no bound set', async () => {
 })
 
 test('aria-valuenow reflects the current value', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const dial = dialEl(screen, 'bounded')
   dial.focus()
   await userEvent.keyboard('{ArrowRight}')
@@ -201,7 +201,7 @@ test('aria-valuenow reflects the current value', async () => {
 })
 
 test('data-dragging is set for the duration of a drag and cleared on release', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const rect = dialRect(screen, 'unbounded')
   const dial = dialEl(screen, 'unbounded')
   const root = screen.container.querySelector('[data-testid="unbounded"]')!
@@ -217,7 +217,7 @@ test('data-dragging is set for the duration of a drag and cleared on release', a
 })
 
 test('disabled dial ignores pointer and keyboard interaction', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const rect = dialRect(screen, 'disabled')
   const dial = dialEl(screen, 'disabled')
   expect(dial.getAttribute('tabindex')).toBe('-1')
@@ -230,32 +230,32 @@ test('disabled dial ignores pointer and keyboard interaction', async () => {
 })
 
 test('form participation: hidden input carries the value under name', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const data = new FormData(form)
   expect(data.get('gain')).toBe('2')
 })
 
 test('valueText renders as aria-valuetext when bounded', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const dial = dialEl(screen, 'valuetext')
   expect(dial.getAttribute('aria-valuetext')).toBe('40%')
 })
 
 test('unbounded dial falls back to the raw number as aria-valuetext with no valueText prop', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const dial = dialEl(screen, 'unbounded')
   expect(dial.getAttribute('aria-valuetext')).toBe('0')
 })
 
 test('bounded dial with no valueText omits aria-valuetext entirely', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const dial = dialEl(screen, 'bounded')
   expect(dial.getAttribute('aria-valuetext')).toBeNull()
 })
 
 test('bounded dial omits aria-valuemin/aria-valuemax when that bound is not set', async () => {
-  const screen = render(DialFixture, {})
+  const screen = await render(DialFixture, {})
   const dial = dialEl(screen, 'no-min')
   expect(dial.getAttribute('aria-valuemin')).toBeNull()
   expect(dial.getAttribute('aria-valuemax')).toBe('20')

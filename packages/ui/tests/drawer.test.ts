@@ -10,7 +10,7 @@ function activeTestId() {
 }
 
 test('position="right" renders a full-height panel anchored to the right edge', async () => {
-  const screen = render(DrawerFixture, { props: { position: 'right' } })
+  const screen = await render(DrawerFixture, { props: { position: 'right' } })
   await screen.getByTestId('trigger-modal').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-dialog--right')).not.toBeNull())
   const panel = document.querySelector<HTMLElement>('.ui-dialog--right .ui-dialog-panel')!
@@ -20,7 +20,7 @@ test('position="right" renders a full-height panel anchored to the right edge', 
 })
 
 test('position="left" renders a full-height panel anchored to the left edge', async () => {
-  const screen = render(DrawerFixture, { props: { position: 'left' } })
+  const screen = await render(DrawerFixture, { props: { position: 'left' } })
   await screen.getByTestId('trigger-modal').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-dialog--left')).not.toBeNull())
   const panel = document.querySelector<HTMLElement>('.ui-dialog--left .ui-dialog-panel')!
@@ -30,7 +30,7 @@ test('position="left" renders a full-height panel anchored to the left edge', as
 })
 
 test('modal=false renders no overlay, does not lock scroll, does not steal focus, and leaves the page clickable', async () => {
-  const screen = render(DrawerFixture)
+  const screen = await render(DrawerFixture)
   await screen.getByTestId('trigger-pinned').click()
   await expect.element(screen.getByTestId('pinned-state')).toHaveTextContent('open')
 
@@ -46,7 +46,7 @@ test('modal=false renders no overlay, does not lock scroll, does not steal focus
 })
 
 test('modal=true (default) at position="right" traps focus and locks scroll like a center dialog', async () => {
-  const screen = render(DrawerFixture)
+  const screen = await render(DrawerFixture)
   await screen.getByTestId('trigger-modal').click()
 
   const dialog = page.getByRole('dialog')

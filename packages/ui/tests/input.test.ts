@@ -7,20 +7,20 @@ import Input from '../src/components/Input/Input.vue'
 import Field from '../src/components/Field/Field.vue'
 
 test('v-model round-trips on every keystroke by default', async () => {
-  const screen = render(InputFixture, {})
+  const screen = await render(InputFixture, {})
   await userEvent.fill(page.getByTestId('plain'), 'hello')
   await expect.element(page.getByTestId('plain-value')).toHaveTextContent('hello')
   expect(screen.container).not.toBeNull()
 })
 
 test('.trim modifier trims the committed value', async () => {
-  render(InputFixture, {})
+  await render(InputFixture, {})
   await userEvent.fill(page.getByTestId('trim'), '  padded  ')
   await expect.element(page.getByTestId('trim-value')).toHaveTextContent('padded')
 })
 
 test('.lazy modifier commits on change (blur), not on every keystroke', async () => {
-  render(InputFixture, {})
+  await render(InputFixture, {})
   const lazyInput = page.getByTestId('lazy')
   await userEvent.click(lazyInput)
   await userEvent.type(lazyInput, 'late')
@@ -31,7 +31,7 @@ test('.lazy modifier commits on change (blur), not on every keystroke', async ()
 })
 
 test('frame click focuses the input; an interactive #end child keeps its own click instead', async () => {
-  const screen = render(Input, {
+  const screen = await render(Input, {
     slots: { end: '<button type="button" data-testid="end-btn">X</button>' },
   })
   const root = screen.container.querySelector<HTMLElement>('.ui-input')!
@@ -46,18 +46,18 @@ test('frame click focuses the input; an interactive #end child keeps its own cli
 })
 
 test('disabled blocks input', async () => {
-  const screen = render(Input, { props: { disabled: true, placeholder: 'off' } })
+  const screen = await render(Input, { props: { disabled: true, placeholder: 'off' } })
   const input = screen.container.querySelector<HTMLInputElement>('.ui-input-el')!
   expect(input.disabled).toBe(true)
 })
 
 test('invalid prop and Field error both flip aria-invalid', async () => {
-  const standalone = render(Input, { props: { invalid: true } })
+  const standalone = await render(Input, { props: { invalid: true } })
   expect(standalone.container.querySelector('.ui-input-el')!.getAttribute('aria-invalid')).toBe(
     'true',
   )
 
-  const inField = render(Field, {
+  const inField = await render(Field, {
     props: { error: 'Required' },
     slots: { default: () => null },
   })
@@ -66,13 +66,13 @@ test('invalid prop and Field error both flip aria-invalid', async () => {
 
 test('size classes render for sm/md/lg', async () => {
   for (const size of ['sm', 'md', 'lg'] as const) {
-    const screen = render(Input, { props: { size } })
+    const screen = await render(Input, { props: { size } })
     expect(screen.container.querySelector('.ui-input')).toHaveClass(`ui-input--${size}`)
   }
 })
 
 test('ui part overrides land on the right elements', async () => {
-  const screen = render(Input, {
+  const screen = await render(Input, {
     props: { ui: { root: 'my-root', input: 'my-input', start: 'my-start', end: 'my-end' } },
     slots: { start: '<span>@</span>', end: '<span>x</span>' },
   })
@@ -83,7 +83,7 @@ test('ui part overrides land on the right elements', async () => {
 })
 
 test('fallthrough attrs land on the native input; class lands on the root frame', async () => {
-  const screen = render(InputFixture, {})
+  const screen = await render(InputFixture, {})
   const wrapper = screen.container.querySelector('[data-testid="attrs"]')!.closest('.ui-input')!
   const input = wrapper.querySelector<HTMLInputElement>('.ui-input-el')!
   expect(wrapper).toHaveClass('consumer-class')

@@ -11,7 +11,7 @@ function panel() {
 }
 
 test('opens and closes on trigger click', async () => {
-  render(CollapsibleFixture)
+  await render(CollapsibleFixture)
   const trigger = page.getByRole('button', { name: 'Show details' })
   await expect.element(trigger).toHaveAttribute('aria-expanded', 'false')
   expect(panel().dataset.state).toBe('closed')
@@ -42,7 +42,7 @@ test('v-model:open is a real two-way binding: trigger click updates the outer re
         },
       ),
   }
-  render(Wrapper)
+  await render(Wrapper)
 
   await page.getByRole('button', { name: 'Show' }).click()
   expect(isOpen.value).toBe(true)
@@ -53,7 +53,7 @@ test('v-model:open is a real two-way binding: trigger click updates the outer re
 })
 
 test('root data-state mirrors the open model', async () => {
-  render(CollapsibleFixture, { props: { initialOpen: true } })
+  await render(CollapsibleFixture, { props: { initialOpen: true } })
   const root = document.querySelector<HTMLElement>('.ui-collapsible')!
   expect(root.dataset.state).toBe('open')
 
@@ -62,7 +62,7 @@ test('root data-state mirrors the open model', async () => {
 })
 
 test('disabled prevents toggling on click', async () => {
-  render(CollapsibleFixture, { props: { disabled: true } })
+  await render(CollapsibleFixture, { props: { disabled: true } })
   const trigger = page.getByRole('button', { name: 'Show details' })
   await expect.element(trigger).toHaveAttribute('aria-disabled', 'true')
 
@@ -78,14 +78,14 @@ test('disabled prevents toggling on click', async () => {
 })
 
 test('motionCss=false skips the pin/transition dance — no inline block-size transition state', async () => {
-  render(CollapsibleFixture, { props: { motionCss: false } })
+  await render(CollapsibleFixture, { props: { motionCss: false } })
   await page.getByRole('button', { name: 'Show details' }).click()
   await vi.waitFor(() => expect(panel().dataset.state).toBe('open'))
   expect(panel().style.blockSize).toBe('')
 })
 
 test('height pins to a concrete px value while animating, then releases once settled', async () => {
-  render(CollapsibleFixture)
+  await render(CollapsibleFixture)
   const el = panel()
   expect(el.style.blockSize).toBe('0px')
 
@@ -106,7 +106,7 @@ test('exposes real el/panelEl elements', async () => {
     render: () =>
       h(Collapsible, { ref: captured }, { trigger: () => h('button', 'Show'), default: () => 'x' }),
   }
-  render(Wrapper)
+  await render(Wrapper)
 
   expect(captured.value?.el).toBeInstanceOf(HTMLElement)
   expect(captured.value?.el?.classList.contains('ui-collapsible')).toBe(true)

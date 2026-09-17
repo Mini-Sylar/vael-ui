@@ -56,6 +56,14 @@ function reducedMotion(): boolean {
   )
 }
 
+// visualViewport tracks a mobile browser's dynamic toolbar show/hide live; window.innerHeight is a one-time read that only updates on an actual 'resize' event, which mobile browsers don't reliably fire for toolbar changes.
+function viewportHeight(): number {
+  return window.visualViewport?.height ?? window.innerHeight
+}
+function viewportWidth(): number {
+  return window.visualViewport?.width ?? window.innerWidth
+}
+
 export function useSheetDrag(
   active: Ref<boolean>,
   options: UseSheetDragOptions,
@@ -69,7 +77,8 @@ export function useSheetDrag(
   }
 
   function offsetFor(point: SheetSnapPoint): number {
-    return window.innerHeight - point.height * window.innerHeight
+    const height = viewportHeight()
+    return height - point.height * height
   }
 
   function offsets(): number[] {
@@ -83,7 +92,7 @@ export function useSheetDrag(
   // Panel is always viewport tall; translateY(0) = viewport top.
   function applyFixedHeight() {
     const panel = options.panelEl.value
-    if (panel) panel.style.blockSize = `${window.innerHeight}px`
+    if (panel) panel.style.blockSize = `${viewportHeight()}px`
   }
 
   function moveTo(offset: number, animate: boolean) {
@@ -91,10 +100,7 @@ export function useSheetDrag(
     if (!panel) return
     panel.style.transition = animate && !reducedMotion() ? TRANSITION : 'none'
     panel.style.transform = `translateY(${offset}px)`
-    panel.style.setProperty(
-      '--sheet-visible-height',
-      `${Math.max(0, window.innerHeight - offset)}px`,
-    )
+    panel.style.setProperty('--sheet-visible-height', `${Math.max(0, viewportHeight() - offset)}px`)
     lastAppliedOffset = offset
   }
 
@@ -151,7 +157,11 @@ export function useSheetDrag(
   function onHandlePointerDown(event: PointerEvent) {
     dragSource = 'handle'
     beginDrag(event.clientY)
-    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+    try {
+      ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+    } catch {
+      // Capture can fail for synthetic/non-standard pointer ids; not fatal.
+    }
     event.preventDefault()
   }
 
@@ -223,7 +233,7 @@ export function useSheetDrag(
 
     if (
       velocity > VELOCITY_THRESHOLD &&
-      Math.abs(draggedDistance) < window.innerHeight * SHORT_DRAG_FRACTION
+      Math.abs(draggedDistance) < viewportHeight() * SHORT_DRAG_FRACTION
     ) {
       const step = hasDraggedUp ? 1 : -1
       const nextIndex = currentIndex + step
@@ -276,8 +286,9 @@ export function useSheetDrag(
     // Origin at top edge (not center) to avoid swallowing the shift.
     panel.style.transformOrigin = '50% 0'
     panel.style.transition = reducedMotion() ? 'none' : TRANSITION
+    const width = viewportWidth()
     panel.style.transform = receded
-      ? `translateY(${offset - NESTED_DISPLACEMENT}px) scale(${(window.innerWidth - NESTED_DISPLACEMENT) / window.innerWidth})`
+      ? `translateY(${offset - NESTED_DISPLACEMENT}px) scale(${(width - NESTED_DISPLACEMENT) / width})`
       : `translateY(${offset}px)`
   }
 
@@ -287,7 +298,7 @@ export function useSheetDrag(
   useEventListener(options.panelEl, 'pointerup', onPointerUp)
   useEventListener(options.panelEl, 'pointercancel', onPointerCancel)
   useEventListener(
-    () => (typeof window === 'undefined' ? undefined : window),
+    () => (typeof window === 'undefined' ? undefined : (window.visualViewport ?? window)),
     'resize',
     () => {
       if (active.value) applyFixedHeight()

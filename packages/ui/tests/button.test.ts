@@ -18,7 +18,7 @@ function deferredTask() {
 test('default loading=false: a promise returned from @click does not trigger loading', async () => {
   const { task, resolve } = deferredTask()
   const { default: Button } = await import('../src/components/Button/Button.vue')
-  const screen = render(Button, {
+  const screen = await render(Button, {
     props: { onClick: () => task() },
     slots: { default: 'Save' },
   })
@@ -32,7 +32,7 @@ test('default loading=false: a promise returned from @click does not trigger loa
 
 test('loading="auto": a promise returned from @click drives loading', async () => {
   const { task, resolve } = deferredTask()
-  const screen = render(ButtonFixture, { props: { task } })
+  const screen = await render(ButtonFixture, { props: { task } })
 
   const button = screen.getByRole('button')
   await expect.element(button).toHaveTextContent('Save')
@@ -53,7 +53,7 @@ test('loading="auto": a promise returned from @click drives loading', async () =
 
 test('overlay loader never shifts layout on a static-label button', async () => {
   const { task, resolve } = deferredTask()
-  const screen = render(ButtonFixture, { props: { task, staticLabel: true } })
+  const screen = await render(ButtonFixture, { props: { task, staticLabel: true } })
 
   const button = screen.getByRole('button')
   const el = () => loader().closest('button')!
@@ -72,7 +72,7 @@ test('overlay loader never shifts layout on a static-label button', async () => 
 
 test('inline loader keeps the label visible and slides the spinner in', async () => {
   const { task, resolve } = deferredTask()
-  const screen = render(ButtonFixture, {
+  const screen = await render(ButtonFixture, {
     props: { task, loader: 'inline', staticLabel: true },
   })
 
@@ -96,7 +96,7 @@ test('loading keeps focus in the button (aria-disabled, not native disabled) and
     calls++
     return task()
   }
-  const screen = render(ButtonFixture, { props: { task: wrappedTask } })
+  const screen = await render(ButtonFixture, { props: { task: wrappedTask } })
   const button = screen.getByRole('button')
 
   button.element().focus()
@@ -123,7 +123,7 @@ test('loading keeps focus in the button (aria-disabled, not native disabled) and
 
 test('variant, size and disabled render the expected state classes', async () => {
   const { task } = deferredTask()
-  const screen = render(ButtonFixture, {
+  const screen = await render(ButtonFixture, {
     props: { task, variant: 'danger', size: 'lg' },
   })
   const button = screen.getByRole('button')
@@ -140,7 +140,7 @@ test('variant, size and disabled render the expected state classes', async () =>
 
 test('icon-only button is square per size with an expanded hit area', async () => {
   const { default: Button } = await import('../src/components/Button/Button.vue')
-  const screen = render(Button, {
+  const screen = await render(Button, {
     props: { icon: true, size: 'sm', 'aria-label': 'Add item' },
     slots: { default: '+' },
   })
@@ -156,7 +156,7 @@ test('icon-only button is square per size with an expanded hit area', async () =
 
 test('leading/trailing slots set the optical-alignment classes', async () => {
   const { default: Button } = await import('../src/components/Button/Button.vue')
-  const screen = render(Button, {
+  const screen = await render(Button, {
     slots: { default: 'Next', trailing: '→' },
   })
   const button = screen.getByRole('button')
@@ -166,7 +166,7 @@ test('leading/trailing slots set the optical-alignment classes', async () => {
 
 test('ui.root accepts an object with class + style, merged onto the root', async () => {
   const { default: Button } = await import('../src/components/Button/Button.vue')
-  const screen = render(Button, {
+  const screen = await render(Button, {
     props: { ui: { root: { class: 'consumer-root', style: { '--test-prop': '1px' } } } },
     slots: { default: 'Save' },
   })
@@ -178,7 +178,7 @@ test('ui.root accepts an object with class + style, merged onto the root', async
 
 test('ui prop still accepts a plain class string (back-compat)', async () => {
   const { default: Button } = await import('../src/components/Button/Button.vue')
-  const screen = render(Button, {
+  const screen = await render(Button, {
     props: { ui: { root: 'plain-string-class' } },
     slots: { default: 'Save' },
   })
@@ -203,7 +203,7 @@ test('useAsyncLoading stays true until every overlapping run settles', async () 
 
 test('run() propagates rejections and still clears loading', async () => {
   const failing = () => Promise.reject(new Error('nope'))
-  const screen = render(ButtonFixture, { props: { task: failing } })
+  const screen = await render(ButtonFixture, { props: { task: failing } })
   const button = screen.getByRole('button')
 
   // The fixture fires run() without awaiting; swallow the expected rejection.

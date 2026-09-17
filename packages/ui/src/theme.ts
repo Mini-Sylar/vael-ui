@@ -175,6 +175,7 @@ export interface UiTheme {
   }
   bottomSheet?: {
     ui?: Partial<{
+      overlay: UiPartValue
       panel: UiPartValue
       handleZone: UiPartValue
       handle: UiPartValue
@@ -300,7 +301,14 @@ export interface UiTheme {
     }>
   }
   tree?: {
-    ui?: Partial<{ list: UiPartValue; node: UiPartValue; filter: UiPartValue; empty: UiPartValue }>
+    ui?: Partial<{
+      list: UiPartValue
+      node: UiPartValue
+      filter: UiPartValue
+      empty: UiPartValue
+      chevron: UiPartValue
+      label: UiPartValue
+    }>
   }
   dock?: { ui?: Partial<{ root: UiPartValue; item: UiPartValue }> }
   calendar?: {

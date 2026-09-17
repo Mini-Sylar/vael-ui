@@ -29,7 +29,7 @@ beforeEach(async () => {
 })
 
 test('ui prop overrides root/toast/title classes, same convention as every other component', async () => {
-  const screen = render(Toaster, {
+  const screen = await render(Toaster, {
     props: {
       ui: {
         root: 'custom-root',
@@ -49,12 +49,12 @@ test('ui prop overrides root/toast/title classes, same convention as every other
   expect(title.classList.contains('custom-title')).toBe(true)
 
   dismiss()
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test('renders a live region and one card per toast, dismiss button removes it', async () => {
-  const screen = render(ToasterFixture)
+  const screen = await render(ToasterFixture)
   toast('Hello', { description: 'World' })
 
   const region = page.getByRole('region', { name: 'Notifications' })
@@ -64,12 +64,12 @@ test('renders a live region and one card per toast, dismiss button removes it', 
 
   await page.getByRole('button', { name: 'Dismiss' }).click()
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull())
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test('hovering the stack pauses auto-dismiss; leaving resumes with remaining time', async () => {
-  const screen = render(ToasterFixture)
+  const screen = await render(ToasterFixture)
   const id = toast('Pausable', { duration: 150 })
 
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
@@ -83,12 +83,12 @@ test('hovering the stack pauses auto-dismiss; leaving resumes with remaining tim
   toaster.dispatchEvent(new PointerEvent('pointerleave'))
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
   dismiss(id)
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test('hovering the stack expands it: cards go full-opacity with real gapped offsets', async () => {
-  const screen = render(ToasterFixture)
+  const screen = await render(ToasterFixture)
   toast('First', { duration: 10000 })
   toast('Second', { duration: 10000 })
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(2))
@@ -110,12 +110,12 @@ test('hovering the stack expands it: cards go full-opacity with real gapped offs
   toaster.dispatchEvent(new PointerEvent('pointerleave'))
   await vi.waitFor(() => expect(toaster.getAttribute('data-expanded')).toBe('false'))
   dismiss()
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test('backgrounding the tab pauses every toast; foregrounding resumes them', async () => {
-  const screen = render(ToasterFixture)
+  const screen = await render(ToasterFixture)
   toast('Backgrounded', { duration: 150 })
 
   Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
@@ -128,7 +128,7 @@ test('backgrounding the tab pauses every toast; foregrounding resumes them', asy
   document.dispatchEvent(new Event('visibilitychange'))
 
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
@@ -150,7 +150,7 @@ async function drag(el: Element, dx: number, dy: number, ms = 100) {
 }
 
 test('swiping past the threshold commits and dismisses the toast', async () => {
-  const screen = render(ToasterFixture) // default position: bottom-right -> allowed directions include right/left/down
+  const screen = await render(ToasterFixture) // default position: bottom-right -> allowed directions include right/left/down
   toast('Swipe me', { duration: 10000 })
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
 
@@ -160,12 +160,12 @@ test('swiping past the threshold commits and dismisses the toast', async () => {
   await vi.waitFor(() => expect(card.getAttribute('data-swipe-out')).toBe('true'))
   expect(card.getAttribute('data-swipe-direction')).toBe('right')
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test('a small, slow swipe below both the distance and velocity threshold snaps back', async () => {
-  const screen = render(ToasterFixture)
+  const screen = await render(ToasterFixture)
   toast('Stay put', { duration: 10000 })
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
 
@@ -176,12 +176,12 @@ test('a small, slow swipe below both the distance and velocity threshold snaps b
   expect(card.getAttribute('data-swipe-out')).toBe('false')
   expect(document.querySelector('.ui-toast')).not.toBeNull()
   dismiss()
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test('stacked (non-front) cards get reduced opacity and a real pixel offset behind the front one', async () => {
-  const screen = render(ToasterFixture)
+  const screen = await render(ToasterFixture)
   toast('First', { duration: 10000 })
   toast('Second', { duration: 10000 })
 
@@ -203,12 +203,12 @@ test('stacked (non-front) cards get reduced opacity and a real pixel offset behi
   const translates = cards.map((el) => getComputedStyle(el).translate)
   expect(new Set(translates).size).toBe(2)
   dismiss()
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test('a card that grows after mount (e.g. text rewrapping on resize, or a late webfont) re-measures via ResizeObserver, not just once', async () => {
-  const screen = render(ToasterFixture)
+  const screen = await render(ToasterFixture)
   toast('First', { duration: 10000 })
   toast('Second', { duration: 10000 })
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(2))
@@ -240,12 +240,12 @@ test('a card that grows after mount (e.g. text rewrapping on resize, or a late w
   })
 
   dismiss()
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test('the default slot fully replaces built-in card markup — the library still owns the <li> itself', async () => {
-  const screen = render(ToasterCustomCardFixture)
+  const screen = await render(ToasterCustomCardFixture)
   toast('Custom card')
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
 
@@ -261,14 +261,14 @@ test('the default slot fully replaces built-in card markup — the library still
 
   await page.getByTestId('custom-dismiss').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull())
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
 test("card-enter/card-leave forward TransitionGroup's own (el, done) hooks when motionCss is false — the GSAP/motion-v escape hatch", async () => {
   const enterCalls: Element[] = []
   const leaveCalls: Element[] = []
-  const screen = render(Toaster, {
+  const screen = await render(Toaster, {
     props: { motionCss: false },
     attrs: {
       onCardEnter: (el: Element, done: () => void) => {
@@ -291,23 +291,23 @@ test("card-enter/card-leave forward TransitionGroup's own (el, done) hooks when 
   await vi.waitFor(() => expect(leaveCalls.length).toBe(1))
   // done() was called synchronously above, so Vue actually removes the node.
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull())
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('the exposed toasterEl is the real <ol> element, usable for direct DOM/animation-lib access', async () => {
   const captured = ref<InstanceType<typeof Toaster> | null>(null)
   const Wrapper = { render: () => h(Toaster, { ref: captured }) }
-  const screen = render(Wrapper, {
+  const screen = await render(Wrapper, {
     global: { stubs: { transition: false, 'transition-group': false } },
   })
   await vi.waitFor(() => expect(captured.value?.toasterEl).not.toBeNull())
   expect(captured.value!.toasterEl).toBeInstanceOf(HTMLElement)
   expect((captured.value!.toasterEl as HTMLElement).classList.contains('ui-toaster')).toBe(true)
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('maxVisible caps rendered cards even when more are queued', async () => {
-  const screen = render(ToasterFixture, { props: { maxVisible: 2 } })
+  const screen = await render(ToasterFixture, { props: { maxVisible: 2 } })
   toast('One', { duration: 10000 })
   toast('Two', { duration: 10000 })
   toast('Three', { duration: 10000 })
@@ -317,6 +317,6 @@ test('maxVisible caps rendered cards even when more are queued', async () => {
   await expect.element(page.getByText('Two')).toBeVisible()
   await expect.element(page.getByText('Three')).toBeVisible()
   dismiss()
-  screen.unmount()
+  await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })

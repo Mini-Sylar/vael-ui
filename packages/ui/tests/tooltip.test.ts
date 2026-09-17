@@ -13,7 +13,7 @@ beforeEach(() => {
 })
 
 test('cold open waits for the delay; leave hides after the grace period', async () => {
-  const screen = render(TooltipFixture)
+  const screen = await render(TooltipFixture)
   const trigger = screen.getByTestId('trigger-a')
 
   await trigger.hover()
@@ -32,7 +32,7 @@ test('cold open waits for the delay; leave hides after the grace period', async 
 })
 
 test('warm group: the next tooltip opens instantly with data-instant', async () => {
-  const screen = render(TooltipFixture)
+  const screen = await render(TooltipFixture)
 
   await screen.getByTestId('trigger-a').hover()
   await expect.element(screen.getByTestId('tip-a')).toBeVisible()
@@ -52,7 +52,7 @@ test('warm group: the next tooltip opens instantly with data-instant', async () 
 })
 
 test('keyboard focus shows immediately; Escape hides', async () => {
-  const screen = render(TooltipFixture)
+  const screen = await render(TooltipFixture)
   // Listeners attach reactively post-mount — tabbing immediately can race them.
   await new Promise((r) => setTimeout(r, 50))
 
@@ -76,13 +76,13 @@ test('keyboard focus shows immediately; Escape hides', async () => {
 })
 
 test('slot trigger path: hover on a Button inside #trigger opens the tooltip', async () => {
-  const screen = render(TooltipFixture)
+  const screen = await render(TooltipFixture)
   await screen.getByTestId('trigger-slot').hover()
   await expect.element(screen.getByTestId('tip-slot')).toBeVisible()
 })
 
 test('v-tooltip + TooltipHost: delegation shows string content and side modifier applies', async () => {
-  const screen = render(TooltipHostFixture)
+  const screen = await render(TooltipHostFixture)
 
   await screen.getByTestId('host-a').hover()
   await vi.waitFor(() => {
@@ -103,7 +103,7 @@ test('v-tooltip + TooltipHost: delegation shows string content and side modifier
 })
 
 test('v-tooltip="undefined" renders no tooltip, and toggling to a real value later starts one', async () => {
-  const screen = render(TooltipHostFixture)
+  const screen = await render(TooltipHostFixture)
   const target = document.querySelector<HTMLElement>('[data-testid="host-conditional"]')!
 
   // No hint bound yet: no directive attribute, no hover-triggered panel.
@@ -125,7 +125,7 @@ test('v-tooltip="undefined" renders no tooltip, and toggling to a real value lat
 })
 
 test('v-tooltip on a Button anchors to the real button, not a badge wrapper', async () => {
-  const screen = render(TooltipHostFixture)
+  const screen = await render(TooltipHostFixture)
 
   // A badge-less Button has no `.ui-button-badge-wrapper` at all (see
   // Button.vue's own comment — an unconditional wrapper broke Vue's

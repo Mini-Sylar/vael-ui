@@ -29,7 +29,7 @@ test('motionCss=false hands the item enter/leave transition to item-enter/item-l
   const { default: FileUpload } = await import('../src/components/FileUpload/FileUpload.vue')
   const enters: Array<[Element, () => void]> = []
   const leaves: Array<[Element, () => void]> = []
-  const screen = render(FileUpload, {
+  const screen = await render(FileUpload, {
     props: { motionCss: false },
     attrs: {
       onItemEnter: (el: Element, done: () => void) => enters.push([el, done]),
@@ -65,7 +65,7 @@ test('motionCss=false hands the item enter/leave transition to item-enter/item-l
 })
 
 test('browse click opens the file picker via the hidden input', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   const input = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="basic"] .ui-file-upload-input',
   )!
@@ -80,7 +80,7 @@ test('browse click opens the file picker via the hidden input', async () => {
 })
 
 test('a programmatic drop updates the model', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   await nextTick() // useFileDrop's dragenter/drop listeners attach via a watched template ref — one tick after mount
   const dropzone = screen.container.querySelector('[data-testid="basic"] .ui-file-upload-dropzone')!
   dropOn(dropzone, [makeFile('a.txt', 'text/plain', 10)])
@@ -89,7 +89,7 @@ test('a programmatic drop updates the model', async () => {
 })
 
 test('accept rejects non-matching files and does not add them', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   await nextTick()
   const dropzone = screen.container.querySelector(
     '[data-testid="accept"] .ui-file-upload-dropzone',
@@ -101,7 +101,7 @@ test('accept rejects non-matching files and does not add them', async () => {
 })
 
 test('maxSize rejects oversized files', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   await nextTick()
   const dropzone = screen.container.querySelector(
     '[data-testid="maxsize"] .ui-file-upload-dropzone',
@@ -112,7 +112,7 @@ test('maxSize rejects oversized files', async () => {
 })
 
 test('maxFiles rejects files past the cap and stops adding once full', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   await nextTick()
   const dropzone = screen.container.querySelector(
     '[data-testid="maxfiles"] .ui-file-upload-dropzone',
@@ -124,7 +124,7 @@ test('maxFiles rejects files past the cap and stops adding once full', async () 
 })
 
 test('dedupe: dropping the same file twice only adds it once, silently', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   await nextTick()
   const dropzone = screen.container.querySelector(
     '[data-testid="dedupe"] .ui-file-upload-dropzone',
@@ -139,7 +139,7 @@ test('dedupe: dropping the same file twice only adds it once, silently', async (
 })
 
 test('remove button removes the file from the model', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   await nextTick()
   const dropzone = screen.container.querySelector('[data-testid="basic"] .ui-file-upload-dropzone')!
   dropOn(dropzone, [makeFile('a.txt', 'text/plain', 10)])
@@ -154,7 +154,7 @@ test('remove button removes the file from the model', async () => {
 })
 
 test('drag-over state survives nested-child dragenter/dragleave churn', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   await nextTick()
   const dropzone = screen.container.querySelector('[data-testid="basic"] .ui-file-upload-dropzone')!
   const child = dropzone.querySelector('p, button')!
@@ -176,7 +176,7 @@ test('drag-over state survives nested-child dragenter/dragleave churn', async ()
 })
 
 test('#item slot swap renders inside the library-owned <li>', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   await nextTick()
   const dropzone = screen.container.querySelector(
     '[data-testid="itemslot"] .ui-file-upload-dropzone',
@@ -193,7 +193,7 @@ test('#item slot swap renders inside the library-owned <li>', async () => {
 })
 
 test('form participation: the real file input carries the given name', async () => {
-  const screen = render(FileUploadFixture, {})
+  const screen = await render(FileUploadFixture, {})
   const input = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="form-upload"] .ui-file-upload-input',
   )!

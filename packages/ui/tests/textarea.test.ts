@@ -6,13 +6,13 @@ import TextareaFixture from './fixtures/TextareaFixture.vue'
 import Textarea from '../src/components/Textarea/Textarea.vue'
 
 test('v-model round-trips', async () => {
-  render(TextareaFixture, {})
+  await render(TextareaFixture, {})
   await userEvent.fill(page.getByTestId('plain'), 'hello world')
   await expect.element(page.getByTestId('plain-value')).toHaveTextContent('hello world')
 })
 
 test('.lazy modifier commits on change, not on every keystroke', async () => {
-  render(TextareaFixture, {})
+  await render(TextareaFixture, {})
   const lazyEl = page.getByTestId('lazy')
   await userEvent.click(lazyEl)
   await userEvent.type(lazyEl, 'late')
@@ -22,10 +22,10 @@ test('.lazy modifier commits on change, not on every keystroke', async () => {
 })
 
 test('bottom row renders only when a bottom slot is present', async () => {
-  const without = render(Textarea, {})
+  const without = await render(Textarea, {})
   expect(without.container.querySelector('.ui-textarea-bottom')).toBeNull()
 
-  const withBottom = render(Textarea, {
+  const withBottom = await render(Textarea, {
     slots: { 'bottom-end': '<button type="button">Send</button>' },
   })
   const bottom = withBottom.container.querySelector('.ui-textarea-bottom')
@@ -34,7 +34,7 @@ test('bottom row renders only when a bottom slot is present', async () => {
 })
 
 test('slot geometry: start/end/bottom-start/bottom-end all render inside the frame', async () => {
-  const screen = render(Textarea, {
+  const screen = await render(Textarea, {
     slots: {
       start: '<span data-testid="start">S</span>',
       end: '<span data-testid="end">E</span>',
@@ -49,7 +49,7 @@ test('slot geometry: start/end/bottom-start/bottom-end all render inside the fra
 })
 
 test('frame click focuses the textarea', async () => {
-  const screen = render(Textarea, {})
+  const screen = await render(Textarea, {})
   const root = screen.container.querySelector<HTMLElement>('.ui-textarea')!
   const textarea = screen.container.querySelector<HTMLTextAreaElement>('.ui-textarea-el')!
   root.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
@@ -57,7 +57,7 @@ test('frame click focuses the textarea', async () => {
 })
 
 test('autoGrow renders the rows/maxRows custom properties for the native field-sizing path', async () => {
-  const screen = render(Textarea, { props: { autoGrow: true, rows: 2, maxRows: 6 } })
+  const screen = await render(Textarea, { props: { autoGrow: true, rows: 2, maxRows: 6 } })
   const root = screen.container.querySelector('.ui-textarea')!
   const textarea = screen.container.querySelector<HTMLTextAreaElement>('.ui-textarea-el')!
   expect(root).toHaveClass('ui-textarea--auto-grow')
@@ -68,7 +68,7 @@ test('autoGrow renders the rows/maxRows custom properties for the native field-s
 test('autoGrow JS fallback grows blockSize as the value grows and respects maxRows, when field-sizing is unsupported', async () => {
   const supportsSpy = vi.spyOn(CSS, 'supports').mockReturnValue(false)
   try {
-    const screen = render(Textarea, { props: { autoGrow: true, rows: 1 } })
+    const screen = await render(Textarea, { props: { autoGrow: true, rows: 1 } })
     const textarea = screen.container.querySelector<HTMLTextAreaElement>('.ui-textarea-el')!
     const initialHeight = textarea.getBoundingClientRect().height
 

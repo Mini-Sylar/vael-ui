@@ -17,7 +17,7 @@ function deferredTask() {
 }
 
 test('main button click fires @click and does not open the menu', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const main = scope.querySelector<HTMLButtonElement>('.ui-split-button-main')!
 
@@ -27,7 +27,7 @@ test('main button click fires @click and does not open the menu', async () => {
 })
 
 test('chevron click opens the dropdown independently of the main action', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 
@@ -38,7 +38,7 @@ test('chevron click opens the dropdown independently of the main action', async 
 })
 
 test('picking a dropdown item fires @select, closes the menu, and never fires the main @click', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 
@@ -51,7 +51,7 @@ test('picking a dropdown item fires @select, closes the menu, and never fires th
 })
 
 test('main and chevron are two separately-focusable tab stops', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const main = scope.querySelector<HTMLButtonElement>('.ui-split-button-main')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
@@ -63,7 +63,7 @@ test('main and chevron are two separately-focusable tab stops', async () => {
 })
 
 test('Enter on the focused chevron opens the menu with the first item focused (native button + Menu wiring, zero extra code)', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 
@@ -73,7 +73,7 @@ test('Enter on the focused chevron opens the menu with the first item focused (n
 })
 
 test('once open, ArrowDown/ArrowUp roving focus and Home/End work exactly like Menu (its own keyboard handling, unmodified)', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 
@@ -89,7 +89,7 @@ test('once open, ArrowDown/ArrowUp roving focus and Home/End work exactly like M
 })
 
 test('disabled disables both the main and chevron buttons', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="disabled-wrap"]')!
   const main = scope.querySelector<HTMLButtonElement>('.ui-split-button-main')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
@@ -107,7 +107,7 @@ test('@click supports a promise-returning handler — Button auto-loading runs o
   // own useAsyncLoading tracks this exactly like a plain <Button @click>
   // would — no bespoke loading logic in SplitButton itself.
   const { task, resolve } = deferredTask()
-  const screen = render(SplitButton, {
+  const screen = await render(SplitButton, {
     props: { items: [{ label: 'One', value: 'one' }], onClick: () => task() },
     slots: { default: () => 'Save' },
   })
@@ -122,7 +122,7 @@ test('@click supports a promise-returning handler — Button auto-loading runs o
 })
 
 test('chevron aria-label defaults to the localized message and is overridable via triggerLabel', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const defaultScope = screen.container.querySelector('[data-testid="basic"]')!
   const defaultTrigger = defaultScope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
   expect(defaultTrigger.getAttribute('aria-label')).toBe('More actions')
@@ -133,7 +133,7 @@ test('chevron aria-label defaults to the localized message and is overridable vi
 })
 
 test('Menu wires aria-haspopup/aria-expanded onto the real chevron button', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 
@@ -148,7 +148,7 @@ test('Menu wires aria-haspopup/aria-expanded onto the real chevron button', asyn
 })
 
 test('#item slot overrides row content while keeping selection behavior', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="item-slot"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 
@@ -157,7 +157,7 @@ test('#item slot overrides row content while keeping selection behavior', async 
 })
 
 test('header and footer slots forward through to the dropdown Menu', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="header-footer"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 
@@ -167,7 +167,7 @@ test('header and footer slots forward through to the dropdown Menu', async () =>
 })
 
 test('root data-state reflects the dropdown open state', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const root = scope.querySelector<HTMLElement>('.ui-split-button')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
@@ -178,7 +178,7 @@ test('root data-state reflects the dropdown open state', async () => {
 })
 
 test('variant and size mirror onto both buttons', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="variant-outline"]')!
   const main = scope.querySelector<HTMLButtonElement>('.ui-split-button-main')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
@@ -190,7 +190,7 @@ test('variant and size mirror onto both buttons', async () => {
 })
 
 test('exposes el/mainEl/triggerEl and imperative open()/close()', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   await expect.element(screen.getByTestId('imperative-refs')).toHaveTextContent('ready')
 
   await screen.getByTestId('imperative-open').click()
@@ -206,7 +206,7 @@ test('exposes el/mainEl/triggerEl and imperative open()/close()', async () => {
 // silently overriding Menu's own `true` defaults for all three — dismissal
 // via outside click or Escape never fired.
 test('clicking outside closes the dropdown (Menu default is not silently forced off)', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 
@@ -218,7 +218,7 @@ test('clicking outside closes the dropdown (Menu default is not silently forced 
 })
 
 test('Escape closes the dropdown (same closeOnEsc default-forwarding fix)', async () => {
-  const screen = render(SplitButtonFixture)
+  const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="basic"]')!
   const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
 

@@ -9,6 +9,7 @@ dist
 /ARCHITECTURE.md
 __screenshots__/
 .vitest-attachments/
+.vitest/
 
 # editor/local tooling
 .vscode/*

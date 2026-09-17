@@ -10,7 +10,7 @@ const wrapper = () => document.querySelector<HTMLElement>('.ui-button-badge-wrap
 const badge = () => document.querySelector<HTMLElement>('.ui-button-badge')
 
 test('no #badge slot: no wrapper renders at all, the button is the component root', async () => {
-  render(Button, { slots: { default: 'Save' } })
+  await render(Button, { slots: { default: 'Save' } })
   // No wrapper, not a display:contents one — an unconditionally-rendered
   // wrapper would defeat Vue's "parent scoped styles reach the child root"
   // mechanism for every badge-less Button (see Button.vue's own comment).
@@ -25,20 +25,20 @@ test('no #badge slot: no wrapper renders at all, the button is the component roo
 // `<Button class="foo">` overridden via `.foo { ... }` in scoped CSS
 // silently never applied, forcing `:deep()` for every badge-less Button.
 test("a consumer's own scoped-style class overrides a badge-less Button with no :deep()", async () => {
-  render(ButtonScopedOverrideFixture)
+  await render(ButtonScopedOverrideFixture)
   const el = document.querySelector<HTMLElement>('.consumer-scoped-class')!
   expect(getComputedStyle(el).color).toBe('rgb(1, 2, 3)')
 })
 
 test('#badge slot renders inside the wrapper with the expected default placement', async () => {
-  render(Button, { slots: { default: 'Inbox', badge: '<span>3</span>' } })
+  await render(Button, { slots: { default: 'Inbox', badge: '<span>3</span>' } })
   expect(getComputedStyle(wrapper()).display).toBe('inline-flex')
   await expect.element(badge()!).toHaveAttribute('data-placement', 'top-end')
   await expect.element(badge()!).toHaveTextContent('3')
 })
 
 test('badgePlacement prop controls the corner', async () => {
-  render(Button, {
+  await render(Button, {
     props: { badgePlacement: 'bottom-start' },
     slots: { default: 'Inbox', badge: '<span>3</span>' },
   })
@@ -47,7 +47,7 @@ test('badgePlacement prop controls the corner', async () => {
 
 test('badge does not intercept clicks meant for the button beneath it', async () => {
   let clicks = 0
-  render(Button, {
+  await render(Button, {
     props: { onClick: () => clicks++ },
     slots: { default: 'Inbox', badge: '<span>3</span>' },
   })
@@ -62,7 +62,7 @@ test('badge does not intercept clicks meant for the button beneath it', async ()
 // button, not the wrapper, and has nothing to resolve against once the
 // wrapper stops being `display: contents`.
 test('block + badge together: wrapper stretches to full width, badge still corner-anchored', async () => {
-  const screen = render(Button, {
+  const screen = await render(Button, {
     props: { block: true, badgePlacement: 'top-end' },
     slots: { default: 'Full width action', badge: '<span>9+</span>' },
   })
@@ -88,14 +88,14 @@ test('block + badge together: wrapper stretches to full width, badge still corne
 // onto the wrapper (the real outer element) either way.
 
 test('badgePlacement set with no badge yet: the wrapper still renders, so the structure is stable', async () => {
-  render(Button, { props: { badgePlacement: 'top-end' }, slots: { default: 'Inbox' } })
+  await render(Button, { props: { badgePlacement: 'top-end' }, slots: { default: 'Inbox' } })
   expect(document.querySelector('.ui-button-badge-wrapper')).not.toBeNull()
   expect(wrapper().querySelector('.ui-button')?.tagName).toBe('BUTTON')
   expect(badge()).toBeNull() // no badge content, just the reserved structure
 })
 
 test("the consumer's ui.root class lands on the wrapper when the wrapper is the outer element", async () => {
-  render(Button, {
+  await render(Button, {
     props: { badgePlacement: 'top-end', ui: { root: { class: 'grid-placed' } } },
     slots: { default: 'Inbox', badge: '<span>3</span>' },
   })
@@ -106,7 +106,7 @@ test("the consumer's ui.root class lands on the wrapper when the wrapper is the 
 })
 
 test('a plain class fallthrough also rides onto the wrapper', async () => {
-  render(Button, {
+  await render(Button, {
     attrs: { class: 'nav-item' },
     props: { badgePlacement: 'top-end' },
     slots: { default: 'Inbox', badge: '<span>3</span>' },
@@ -125,7 +125,7 @@ test('a custom background/border/radius on the fallthrough class never paints on
   style.textContent = '.custom-shape { background: rgb(10, 20, 30); border-radius: 999px; }'
   document.head.append(style)
   try {
-    render(Button, {
+    await render(Button, {
       attrs: { class: 'custom-shape' },
       props: { badgePlacement: 'top-end' },
       slots: { default: 'Inbox', badge: '<span>3</span>' },
@@ -148,7 +148,7 @@ test('a custom background/border/radius on the fallthrough class never paints on
 // The badge is a sibling of the button (inside the wrapper), never a descendant, so the button's
 // own transform can't touch it at all.
 test("pressing the button never moves the badge — it isn't a descendant of the transformed element", async () => {
-  render(Button, {
+  await render(Button, {
     props: { badgePlacement: 'top-end' },
     slots: { default: 'A fairly wide button label', badge: '<span>3</span>' },
   })

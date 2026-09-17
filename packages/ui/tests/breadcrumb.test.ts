@@ -7,19 +7,19 @@ import BreadcrumbItem from '../src/components/BreadcrumbItem/BreadcrumbItem.vue'
 import BreadcrumbSeparator from '../src/components/BreadcrumbSeparator/BreadcrumbSeparator.vue'
 
 test('nav has a default localized aria-label, overridable', async () => {
-  const screen = render(Breadcrumb)
+  const screen = await render(Breadcrumb)
   await expect
     .element(screen.container.querySelector('nav')!)
     .toHaveAttribute('aria-label', 'Breadcrumb')
 
-  const custom = render(Breadcrumb, { props: { ariaLabel: 'You are here' } })
+  const custom = await render(Breadcrumb, { props: { ariaLabel: 'You are here' } })
   await expect
     .element(custom.container.querySelector('nav')!)
     .toHaveAttribute('aria-label', 'You are here')
 })
 
 test('item default renders an <a>; attrs (href) fall through', async () => {
-  const screen = render(BreadcrumbItem, {
+  const screen = await render(BreadcrumbItem, {
     attrs: { href: '/docs' },
     slots: { default: 'Docs' },
   })
@@ -31,7 +31,7 @@ test('item default renders an <a>; attrs (href) fall through', async () => {
 
 test('as overrides the rendered tag, e.g. a router-link stub component', async () => {
   const RouterLinkStub = { props: ['to'], template: '<a :href="to"><slot /></a>' }
-  const screen = render(BreadcrumbItem, {
+  const screen = await render(BreadcrumbItem, {
     props: { as: RouterLinkStub as unknown as string },
     attrs: { to: '/docs' },
     slots: { default: 'Docs' },
@@ -40,7 +40,7 @@ test('as overrides the rendered tag, e.g. a router-link stub component', async (
 })
 
 test('current renders plain text with aria-current="page", no link', async () => {
-  const screen = render(BreadcrumbItem, {
+  const screen = await render(BreadcrumbItem, {
     props: { current: true },
     slots: { default: 'Settings' },
   })
@@ -50,21 +50,21 @@ test('current renders plain text with aria-current="page", no link', async () =>
 })
 
 test('separator renders a default chevron icon, aria-hidden', async () => {
-  const screen = render(BreadcrumbSeparator)
+  const screen = await render(BreadcrumbSeparator)
   const li = screen.container.querySelector('li')!
   expect(li.getAttribute('aria-hidden')).toBe('true')
   expect(li.querySelector('svg')).not.toBeNull()
 })
 
 test('separator default slot replaces the chevron', async () => {
-  const screen = render(BreadcrumbSeparator, { slots: { default: '/' } })
+  const screen = await render(BreadcrumbSeparator, { slots: { default: '/' } })
   const li = screen.container.querySelector('li')!
   expect(li.querySelector('svg')).toBeNull()
   await expect.element(li).toHaveTextContent('/')
 })
 
 test('composed: root + items + separators produce the expected structure', async () => {
-  const screen = render({
+  const screen = await render({
     render: () =>
       h(Breadcrumb as any, null, {
         default: () => [

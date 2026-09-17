@@ -15,32 +15,32 @@ const image = () => document.querySelector<HTMLImageElement>('.ui-avatar-image')
 const fallback = () => document.querySelector<HTMLElement>('.ui-avatar-fallback')!
 
 test('initials computed from first + last word of name', async () => {
-  const screen = render(Avatar, { props: { name: 'Jane Doe' } })
+  const screen = await render(Avatar, { props: { name: 'Jane Doe' } })
   await expect
     .element(screen.container.querySelector<HTMLElement>('.ui-avatar-fallback')!)
     .toHaveTextContent('JD')
 })
 
 test('single-word name uses just its first letter', async () => {
-  const screen = render(Avatar, { props: { name: 'Cher' } })
+  const screen = await render(Avatar, { props: { name: 'Cher' } })
   await expect
     .element(screen.container.querySelector<HTMLElement>('.ui-avatar-fallback')!)
     .toHaveTextContent('C')
 })
 
 test('no src: fallback shows immediately, no image rendered', async () => {
-  render(Avatar, { props: { name: 'Ada Lovelace' } })
+  await render(Avatar, { props: { name: 'Ada Lovelace' } })
   expect(image()).toBeNull()
   expect(getComputedStyle(fallback()).visibility).not.toBe('hidden')
 })
 
 test('fallback swaps to the loaded image', async () => {
-  render(AvatarFixture, { props: { src: VALID_SRC, name: 'Ada Lovelace' } })
+  await render(AvatarFixture, { props: { src: VALID_SRC, name: 'Ada Lovelace' } })
   await vi.waitFor(() => expect(getComputedStyle(image()!).opacity).toBe('1'))
 })
 
 test('error keeps the fallback visible permanently for that src', async () => {
-  const screen = render(AvatarFixture, { props: { src: BROKEN_SRC, name: 'Grace Hopper' } })
+  const screen = await render(AvatarFixture, { props: { src: BROKEN_SRC, name: 'Grace Hopper' } })
   await vi.waitFor(() => expect(getComputedStyle(image()!).opacity).toBe('0'))
   // Fallback stays the initials, never swaps in a broken image.
   await expect
@@ -49,7 +49,7 @@ test('error keeps the fallback visible permanently for that src', async () => {
 })
 
 test('badge slot renders inside the positioned wrapper with data-placement', async () => {
-  const screen = render(Avatar, {
+  const screen = await render(Avatar, {
     props: { name: 'Jane Doe', badgePlacement: 'top-start' },
     slots: { badge: '<span class="my-badge">●</span>' },
   })
@@ -59,7 +59,7 @@ test('badge slot renders inside the positioned wrapper with data-placement', asy
 })
 
 test('size and shape render the matching part classes', async () => {
-  const screen = render(Avatar, { props: { name: 'Jane Doe', size: 'lg', shape: 'square' } })
+  const screen = await render(Avatar, { props: { name: 'Jane Doe', size: 'lg', shape: 'square' } })
   const el = screen.container.querySelector('.ui-avatar')!
   expect(el).toHaveClass('ui-avatar--lg')
   expect(el).toHaveClass('ui-avatar--square')

@@ -9,7 +9,7 @@ import RadioGroup from '../src/components/RadioGroup/RadioGroup.vue'
 import Radio from '../src/components/Radio/Radio.vue'
 
 test('click selects; model updates and change fires once per distinct selection', async () => {
-  const screen = render(RadioGroupFixture, {})
+  const screen = await render(RadioGroupFixture, {})
   const free = screen.container.querySelector<HTMLInputElement>('input[value="free"]')!
 
   await userEvent.click(free)
@@ -22,7 +22,7 @@ test('click selects; model updates and change fires once per distinct selection'
 })
 
 test('arrow keys move selection natively and skip the disabled option', async () => {
-  const screen = render(RadioGroupFixture, {})
+  const screen = await render(RadioGroupFixture, {})
   const free = screen.container.querySelector<HTMLInputElement>('input[value="free"]')!
   free.focus()
 
@@ -35,7 +35,7 @@ test('arrow keys move selection natively and skip the disabled option', async ()
 })
 
 test('group disabled blocks every radio in it', async () => {
-  const screen = render(RadioGroupFixture, { props: { disabled: true } })
+  const screen = await render(RadioGroupFixture, { props: { disabled: true } })
   for (const value of ['free', 'pro', 'enterprise']) {
     const input = screen.container.querySelector<HTMLInputElement>(`input[value="${value}"]`)!
     expect(input.disabled).toBe(true)
@@ -43,14 +43,14 @@ test('group disabled blocks every radio in it', async () => {
 })
 
 test('FormData carries the shared name and selected value', async () => {
-  const screen = render(RadioGroupFixture, {})
+  const screen = await render(RadioGroupFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const data = new FormData(form)
   expect(data.get('plan')).toBe('a')
 })
 
 test('Field label wires aria-labelledby on the group', async () => {
-  const screen = render(Field, {
+  const screen = await render(Field, {
     props: { label: 'Plan' },
     slots: {
       default: () =>
@@ -65,6 +65,6 @@ test('Field label wires aria-labelledby on the group', async () => {
   expect(group.getAttribute('aria-labelledby')).toBe(label.id)
 })
 
-test('a Radio outside a RadioGroup throws', () => {
-  expect(() => render(Radio, { props: { value: 'x' } })).toThrow()
+test('a Radio outside a RadioGroup throws', async () => {
+  await expect(render(Radio, { props: { value: 'x' } })).rejects.toThrow()
 })

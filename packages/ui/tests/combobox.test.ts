@@ -12,7 +12,7 @@ beforeEach(() => {
 })
 
 test('a plain class passed to Combobox reaches the rendered root', async () => {
-  const screen = render(Combobox, {
+  const screen = await render(Combobox, {
     props: { items: [{ label: 'A', value: 'a' }] },
     attrs: { class: 'my-search-box' },
   })
@@ -21,7 +21,7 @@ test('a plain class passed to Combobox reaches the rendered root', async () => {
 })
 
 test('typing filters the list, diacritic- and case-insensitively', async () => {
-  const screen = render(ComboboxFixture)
+  const screen = await render(ComboboxFixture)
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.type(input, 'cran')
@@ -45,7 +45,7 @@ test('typing filters the list, diacritic- and case-insensitively', async () => {
 })
 
 test('filter=false never filters locally and update:query fires on every keystroke', async () => {
-  const screen = render(ComboboxFixture, { props: { filter: false } })
+  const screen = await render(ComboboxFixture, { props: { filter: false } })
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.type(input, 'xyz')
@@ -58,7 +58,7 @@ test('filter=false never filters locally and update:query fires on every keystro
 })
 
 test('selecting an option commits the model and syncs query to its label', async () => {
-  const screen = render(ComboboxFixture)
+  const screen = await render(ComboboxFixture)
   const input = screen.getByRole('combobox')
   await input.click() // openOnFocus (now the default) opens with Apple already active
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -70,7 +70,7 @@ test('selecting an option commits the model and syncs query to its label', async
 })
 
 test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
-  const screen = render(ComboboxFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
+  const screen = await render(ComboboxFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
   const input = screen.getByRole('combobox')
   await input.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -82,7 +82,7 @@ test('maxPanelHeight caps the panel even though the viewport has room for more',
 })
 
 test('allowCustom: Enter with no active option commits the raw text and emits create', async () => {
-  const screen = render(ComboboxFixture, { props: { allowCustom: true } })
+  const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.type(input, 'Elderberry')
@@ -97,7 +97,7 @@ test('allowCustom: Enter with no active option commits the raw text and emits cr
 })
 
 test('without allowCustom, blur with unmatched text reverts the query to the selected label', async () => {
-  const screen = render(ComboboxFixture)
+  const screen = await render(ComboboxFixture)
   const input = screen.getByRole('combobox')
   await input.click() // openOnFocus (now the default) opens with Apple already active
   await userEvent.keyboard('{Enter}') // commits Apple
@@ -111,7 +111,7 @@ test('without allowCustom, blur with unmatched text reverts the query to the sel
 })
 
 test('loading renders a loader row and aria-busy on the listbox', async () => {
-  const screen = render(ComboboxFixture, { props: { loading: true } })
+  const screen = await render(ComboboxFixture, { props: { loading: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.keyboard('{ArrowDown}')
@@ -122,7 +122,7 @@ test('loading renders a loader row and aria-busy on the listbox', async () => {
 })
 
 test('aria-activedescendant tracks arrow navigation while focus stays in the input', async () => {
-  const screen = render(ComboboxFixture)
+  const screen = await render(ComboboxFixture)
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.keyboard('{ArrowDown}')
@@ -138,7 +138,7 @@ test('aria-activedescendant tracks arrow navigation while focus stays in the inp
 })
 
 test('outside detection: a pointerdown inside the panel does not close it (focus-out containment)', async () => {
-  const screen = render(ComboboxFixture)
+  const screen = await render(ComboboxFixture)
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.keyboard('{ArrowDown}')
@@ -153,14 +153,14 @@ test('outside detection: a pointerdown inside the panel does not close it (focus
 })
 
 test('openOnFocus defaults to true when filter=false, opening before any typing', async () => {
-  const screen = render(ComboboxFixture, { props: { filter: false } })
+  const screen = await render(ComboboxFixture, { props: { filter: false } })
   const input = screen.getByRole('combobox')
   ;(input.element() as HTMLElement).focus()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
 })
 
 test('openOnFocus defaults to true in local-filter mode too — focusing an empty field shows every option with nothing typed', async () => {
-  const screen = render(ComboboxFixture)
+  const screen = await render(ComboboxFixture)
   const input = screen.getByRole('combobox')
   ;(input.element() as HTMLElement).focus()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -171,14 +171,14 @@ test('openOnFocus defaults to true in local-filter mode too — focusing an empt
 })
 
 test('openOnFocus="false" opts back out — focusing alone does not open the panel', async () => {
-  const screen = render(ComboboxFixture, { props: { openOnFocus: false } })
+  const screen = await render(ComboboxFixture, { props: { openOnFocus: false } })
   const input = screen.getByRole('combobox')
   ;(input.element() as HTMLElement).focus()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
 test('the chevron button is a standalone open/close toggle, independent of focus/typing', async () => {
-  const screen = render(ComboboxFixture, { props: { openOnFocus: false } })
+  const screen = await render(ComboboxFixture, { props: { openOnFocus: false } })
   const chevron = screen.getByRole('button', { name: 'Toggle options' })
 
   await chevron.click()
@@ -194,7 +194,7 @@ test('the chevron button is a standalone open/close toggle, independent of focus
 
 test('a preselected value deep in a long list opens centered, not flush against the panel edge — matching Select', async () => {
   const items = Array.from({ length: 200 }, (_, i) => ({ label: `Item ${i}`, value: i }))
-  const screen = render(Combobox, {
+  const screen = await render(Combobox, {
     props: { items, modelValue: 100, virtualize: { itemSize: 32 } },
   })
   const input = screen.getByRole('combobox')
@@ -223,7 +223,7 @@ test('a preselected value deep in a long list opens centered, not flush against 
 })
 
 test('multiple: selecting options renders removable chips in the input area; the × removes just that one, and the panel stays open the whole time', async () => {
-  const screen = render(ComboboxFixture, { props: { multiple: true } })
+  const screen = await render(ComboboxFixture, { props: { multiple: true } })
   const input = screen.getByRole('combobox')
   await input.click() // openOnFocus opens with Apple already active
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -248,7 +248,7 @@ test('multiple: selecting options renders removable chips in the input area; the
 })
 
 test('motionCss=false disables the chip transition, including its move (reflow) animation', async () => {
-  const screen = render(Combobox, {
+  const screen = await render(Combobox, {
     props: {
       items: [
         { label: 'Apple', value: 'apple' },
@@ -272,7 +272,7 @@ test('motionCss=false disables the chip transition, including its move (reflow) 
 })
 
 test('multiple: clicking an already-selected row in the panel toggles it back off (filterable and re-toggleable, matching Select)', async () => {
-  const screen = render(ComboboxFixture, { props: { multiple: true } })
+  const screen = await render(ComboboxFixture, { props: { multiple: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -290,7 +290,7 @@ test('multiple: clicking an already-selected row in the panel toggles it back of
 })
 
 test('multiple: Backspace on an empty query removes the last chip', async () => {
-  const screen = render(ComboboxFixture, { props: { multiple: true } })
+  const screen = await render(ComboboxFixture, { props: { multiple: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.keyboard('{Enter}') // apple
@@ -303,7 +303,7 @@ test('multiple: Backspace on an empty query removes the last chip', async () => 
 })
 
 test('multiple: Backspace with text still in the query edits the text, not the chips', async () => {
-  const screen = render(ComboboxFixture, { props: { multiple: true } })
+  const screen = await render(ComboboxFixture, { props: { multiple: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.keyboard('{Enter}') // apple
@@ -316,7 +316,7 @@ test('multiple: Backspace with text still in the query edits the text, not the c
 })
 
 test('multiple + allowCustom: Enter with no active option adds the raw text as a new chip and keeps the panel open', async () => {
-  const screen = render(ComboboxFixture, { props: { multiple: true, allowCustom: true } })
+  const screen = await render(ComboboxFixture, { props: { multiple: true, allowCustom: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.type(input, 'Elderberry')
@@ -330,7 +330,7 @@ test('multiple + allowCustom: Enter with no active option adds the raw text as a
 })
 
 test('header and footer slots render around the listbox only when provided, with a live count in header', async () => {
-  const screen = render(ComboboxFixture, { props: { withHeader: true, withFooter: true } })
+  const screen = await render(ComboboxFixture, { props: { withHeader: true, withFooter: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -340,9 +340,9 @@ test('header and footer slots render around the listbox only when provided, with
   await userEvent.type(input, 'ban')
   await expect.element(screen.getByTestId('combobox-header')).toHaveTextContent('1 of 5')
 
-  screen.unmount()
+  await screen.unmount()
 
-  const bare = render(ComboboxFixture)
+  const bare = await render(ComboboxFixture)
   await bare.getByRole('combobox').click()
   await expect.element(bare.getByRole('listbox')).toBeInTheDocument()
   expect(document.querySelector('.ui-select-header')).toBeNull()
@@ -350,7 +350,7 @@ test('header and footer slots render around the listbox only when provided, with
 })
 
 test('the listbox body still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
-  const screen = render(ComboboxFixture, { props: { itemCount: 1000 } })
+  const screen = await render(ComboboxFixture, { props: { itemCount: 1000 } })
   const input = screen.getByRole('combobox')
   await input.click()
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
@@ -363,7 +363,7 @@ test('the listbox body still gets a real capped height (v-scroll-mask keeps work
 })
 
 test('hidden inputs carry the selection into FormData; multiple repeats the name', async () => {
-  const screen = render(ComboboxFormFixture)
+  const screen = await render(ComboboxFormFixture)
   const form = screen.getByTestId('form').element() as HTMLFormElement
   const trigger = form.querySelector('[role="combobox"]') as HTMLElement
   trigger.focus() // openOnFocus opens with Apple already active
@@ -374,8 +374,8 @@ test('hidden inputs carry the selection into FormData; multiple repeats the name
     expect(data.get('fruit')).toBe('apple')
   })
 
-  screen.unmount()
-  const multi = render(ComboboxFormFixture, { props: { multiple: true } })
+  await screen.unmount()
+  const multi = await render(ComboboxFormFixture, { props: { multiple: true } })
   const multiForm = multi.getByTestId('form').element() as HTMLFormElement
   const multiTrigger = multiForm.querySelector('[role="combobox"]') as HTMLElement
   multiTrigger.focus()

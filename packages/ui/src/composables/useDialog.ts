@@ -6,7 +6,7 @@ import { useScrollLock } from './useScrollLock'
 import { useInert } from './useInert'
 import { useDOMTarget, type DOMTarget, type ElRef } from './dom'
 
-export type DialogCloseReason = 'trigger' | 'escape' | 'outside' | 'programmatic'
+export type DialogCloseReason = 'trigger' | 'escape' | 'outside' | 'history' | 'programmatic'
 
 export interface DialogOpenChangeDetails {
   reason: DialogCloseReason
@@ -43,6 +43,8 @@ export interface UseDialogOptions {
   initialFocus?: () => HTMLElement | null | undefined
   /** Gates scroll-lock, the Tab focus-trap, and the initial-focus steal. Escape-close and layer stacking stay active either way. Default true. */
   modal?: MaybeRefOrGetter<boolean>
+  /** Pushes a history entry on open so the mobile hardware/gesture back action closes this dialog instead of navigating the underlying page away, popping that entry again on any other close path. Default false — opt in per instance, since it alters the browser's history stack. */
+  closeOnHistoryBack?: MaybeRefOrGetter<boolean>
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -105,6 +107,50 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
 
   function close() {
     requestClose('programmatic')
+  }
+
+  // Back-navigation dismiss: push one history entry on open, pop it again on any OTHER close path
+  // (`popHistoryEntryIfOwned`) so the stack stays balanced; a real back gesture instead fires
+  // `popstate` first, which closes the dialog and marks the entry as already gone so the
+  // resulting `deactivate()` doesn't also call `history.back()` and consume a second entry.
+  //
+  // Two things this guards against, both real with nested dialogs or an app router sharing the
+  // same history stack: (1) every open dialog's `popstate` listener fires on the SAME back
+  // action, not just the one whose entry actually got popped - only the topmost dialog may treat
+  // it as its own, via `layer.isTopmost()`, so an underlying dialog's own bookkeeping isn't
+  // clobbered by a pop that wasn't its entry. (2) something else (the app's own router) may have
+  // pushed a newer entry on top of ours before we close normally - `history.state` is checked
+  // right before popping so we only ever consume OUR OWN still-current entry, never someone
+  // else's navigation.
+  let pushedHistoryEntry = false
+  let ignoreNextPopstate = false
+
+  function pushHistoryEntry() {
+    if (!toValue(options.closeOnHistoryBack) || typeof history === 'undefined') return
+    try {
+      history.pushState({ __uiDialog: true }, '')
+      pushedHistoryEntry = true
+    } catch {
+      // Some engines throttle pushState - fail safe: no entry pushed, no back-gesture-close this time.
+    }
+  }
+
+  function popHistoryEntryIfOwned() {
+    if (!pushedHistoryEntry) return
+    pushedHistoryEntry = false
+    if (typeof history === 'undefined' || history.state?.__uiDialog !== true) return
+    ignoreNextPopstate = true
+    history.back()
+  }
+
+  function onPopState() {
+    if (ignoreNextPopstate) {
+      ignoreNextPopstate = false
+      return
+    }
+    if (!pushedHistoryEntry || !layer.isTopmost()) return
+    pushedHistoryEntry = false
+    requestClose('history')
   }
 
   const { el: container } = useDOMTarget(() => toValue(options.container) ?? null)
@@ -195,6 +241,11 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   }
 
   useEventListener(() => (isOpen.value ? document : undefined), 'keydown', onDocumentKeydown, true)
+  useEventListener(
+    () => (typeof window === 'undefined' ? undefined : window),
+    'popstate',
+    onPopState,
+  )
 
   function activate() {
     if (active) return
@@ -203,6 +254,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     containedActive = contained.value
     layer.push()
     isOpen.value = true
+    pushHistoryEntry()
     if (modalActive) {
       previouslyFocused =
         document.activeElement instanceof HTMLElement ? document.activeElement : null
@@ -224,6 +276,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     active = false
     layer.pop()
     isOpen.value = false
+    popHistoryEntryIfOwned()
     if (modalActive) {
       scrollLocked.value = false
       inerted.value = false

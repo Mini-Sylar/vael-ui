@@ -6,7 +6,7 @@ import CheckboxFixture from './fixtures/CheckboxFixture.vue'
 import Checkbox from '../src/components/Checkbox/Checkbox.vue'
 
 test('click toggles the boolean model; label click toggles it too', async () => {
-  const screen = render(CheckboxFixture, {})
+  const screen = await render(CheckboxFixture, {})
   const input = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="basic"] .ui-checkbox-input',
   )!
@@ -20,7 +20,7 @@ test('click toggles the boolean model; label click toggles it too', async () => 
 })
 
 test('Space toggles a focused checkbox', async () => {
-  const screen = render(CheckboxFixture, {})
+  const screen = await render(CheckboxFixture, {})
   const input = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="basic"] .ui-checkbox-input',
   )!
@@ -30,7 +30,7 @@ test('Space toggles a focused checkbox', async () => {
 })
 
 test('array model reflects membership via the value prop', async () => {
-  const screen = render(CheckboxFixture, {})
+  const screen = await render(CheckboxFixture, {})
   const a = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="opt-a"] .ui-checkbox-input',
   )!
@@ -47,7 +47,7 @@ test('array model reflects membership via the value prop', async () => {
 })
 
 test('indeterminate sets and clears the native property, not an attribute', async () => {
-  const screen = render(Checkbox, { props: { indeterminate: true } })
+  const screen = await render(Checkbox, { props: { indeterminate: true } })
   const input = screen.container.querySelector<HTMLInputElement>('.ui-checkbox-input')!
   await vi.waitFor(() => expect(input.indeterminate).toBe(true))
   expect(input.hasAttribute('indeterminate')).toBe(false)
@@ -57,13 +57,13 @@ test('indeterminate sets and clears the native property, not an attribute', asyn
 })
 
 test('disabled blocks interaction', async () => {
-  const screen = render(Checkbox, { props: { disabled: true, label: 'Off' } })
+  const screen = await render(Checkbox, { props: { disabled: true, label: 'Off' } })
   const input = screen.container.querySelector<HTMLInputElement>('.ui-checkbox-input')!
   expect(input.disabled).toBe(true)
 })
 
 test('form participation: FormData carries the name for a checked box', async () => {
-  const screen = render(CheckboxFixture, {})
+  const screen = await render(CheckboxFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const input = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="form-check"] .ui-checkbox-input',
@@ -74,14 +74,19 @@ test('form participation: FormData carries the name for a checked box', async ()
 })
 
 test('no draw animation on initial checked mount; transitions resume right after', async () => {
-  const screen = render(Checkbox, { props: { modelValue: true, label: 'Pre-checked' } })
-  const root = screen.container.querySelector<HTMLElement>('.ui-checkbox')!
+  // render()'s own async completion (a trace-mark round-trip) now takes long enough that awaiting
+  // it first lets the no-anim class's own nextTick removal fire before we ever see it - the actual
+  // mount (and onMounted's synchronous class application) still happens the instant render() is
+  // called, before its internal await, so check the DOM through that unawaited call instead.
+  const pending = render(Checkbox, { props: { modelValue: true, label: 'Pre-checked' } })
+  const root = document.querySelector<HTMLElement>('.ui-checkbox')!
   expect(root).toHaveClass('ui-checkbox--no-anim')
+  await pending
   await vi.waitFor(() => expect(root).not.toHaveClass('ui-checkbox--no-anim'))
 })
 
 test('motionCss=false keeps the no-anim class permanently, past first paint', async () => {
-  const screen = render(Checkbox, { props: { motionCss: false, label: 'No motion' } })
+  const screen = await render(Checkbox, { props: { motionCss: false, label: 'No motion' } })
   const root = screen.container.querySelector<HTMLElement>('.ui-checkbox')!
   // Long enough for the sibling test's own first-paint guard to have
   // resolved by now — the class staying past that point is motionCss's doing.

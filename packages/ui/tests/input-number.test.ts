@@ -5,24 +5,24 @@ import { render } from 'vitest-browser-vue'
 import { nextTick } from 'vue'
 import InputNumberFixture from './fixtures/InputNumberFixture.vue'
 
-function basicInput(screen: ReturnType<typeof render>) {
+function basicInput(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLInputElement>('[data-testid="basic"] .ui-input-el')!
 }
-function basicIncrement(screen: ReturnType<typeof render>) {
+function basicIncrement(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLButtonElement>(
     '[data-testid="basic"] .ui-input-number-stepper--inc',
   )!
 }
 
 test('typing a de-DE formatted string parses to the correct number on commit', async () => {
-  const screen = render(InputNumberFixture, { props: { locale: 'de-DE' } })
+  const screen = await render(InputNumberFixture, { props: { locale: 'de-DE' } })
   const input = basicInput(screen)
   await userEvent.type(input, '1.234,5')
   await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('1234.5')
 })
 
 test('blur reformats the display and clamps to min/max', async () => {
-  const screen = render(InputNumberFixture, { props: { min: 0, max: 10 } })
+  const screen = await render(InputNumberFixture, { props: { min: 0, max: 10 } })
   const input = basicInput(screen)
   await userEvent.type(input, '25')
   input.blur()
@@ -31,7 +31,7 @@ test('blur reformats the display and clamps to min/max', async () => {
 })
 
 test('null model when cleared, with allowEmpty (default)', async () => {
-  const screen = render(InputNumberFixture, { props: { min: 0 } })
+  const screen = await render(InputNumberFixture, { props: { min: 0 } })
   const input = basicInput(screen)
   await userEvent.type(input, '5')
   await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('5')
@@ -43,7 +43,7 @@ test('null model when cleared, with allowEmpty (default)', async () => {
 })
 
 test('allowEmpty=false coerces a blur-empty field to min ?? 0', async () => {
-  const screen = render(InputNumberFixture, { props: { min: 2, allowEmpty: false } })
+  const screen = await render(InputNumberFixture, { props: { min: 2, allowEmpty: false } })
   const input = basicInput(screen)
   await userEvent.type(input, '5')
   await userEvent.clear(input)
@@ -52,7 +52,7 @@ test('allowEmpty=false coerces a blur-empty field to min ?? 0', async () => {
 })
 
 test('steppers step decimal-safely: 0.1 by step 0.2 lands on exactly 0.3', async () => {
-  const screen = render(InputNumberFixture, { props: { step: 0.2 } })
+  const screen = await render(InputNumberFixture, { props: { step: 0.2 } })
   const input = basicInput(screen)
   await userEvent.type(input, '0.1')
   await userEvent.click(basicIncrement(screen))
@@ -60,7 +60,7 @@ test('steppers step decimal-safely: 0.1 by step 0.2 lands on exactly 0.3', async
 })
 
 test('ArrowUp/ArrowDown step by the configured step and clamp at bounds', async () => {
-  const screen = render(InputNumberFixture, { props: { min: 0, max: 2, step: 1 } })
+  const screen = await render(InputNumberFixture, { props: { min: 0, max: 2, step: 1 } })
   const input = basicInput(screen)
   input.focus()
   await userEvent.keyboard('{ArrowUp}')
@@ -73,7 +73,7 @@ test('ArrowUp/ArrowDown step by the configured step and clamp at bounds', async 
 })
 
 test('Home/End jump to min/max when defined', async () => {
-  const screen = render(InputNumberFixture, { props: { min: -5, max: 5 } })
+  const screen = await render(InputNumberFixture, { props: { min: -5, max: 5 } })
   const input = basicInput(screen)
   input.focus()
   await userEvent.keyboard('{End}')
@@ -83,7 +83,7 @@ test('Home/End jump to min/max when defined', async () => {
 })
 
 test('press-and-hold on a stepper repeats the step beyond the first click', async () => {
-  const screen = render(InputNumberFixture, { props: { step: 1 } })
+  const screen = await render(InputNumberFixture, { props: { step: 1 } })
   const inc = basicIncrement(screen)
   inc.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }))
   // 500ms initial delay + several 60ms repeats.
@@ -94,7 +94,7 @@ test('press-and-hold on a stepper repeats the step beyond the first click', asyn
 })
 
 test('spinbutton ARIA reflects the current value and bounds', async () => {
-  const screen = render(InputNumberFixture, { props: { min: 0, max: 10 } })
+  const screen = await render(InputNumberFixture, { props: { min: 0, max: 10 } })
   const input = basicInput(screen)
   expect(input.getAttribute('role')).toBe('spinbutton')
   expect(input.getAttribute('aria-valuemin')).toBe('0')
@@ -106,7 +106,7 @@ test('spinbutton ARIA reflects the current value and bounds', async () => {
 })
 
 test('disabled blocks typing and stepper interaction', async () => {
-  const screen = render(InputNumberFixture, { props: { disabled: true } })
+  const screen = await render(InputNumberFixture, { props: { disabled: true } })
   const input = basicInput(screen)
   expect(input.disabled).toBe(true)
   const inc = basicIncrement(screen)
@@ -114,14 +114,14 @@ test('disabled blocks typing and stepper interaction', async () => {
 })
 
 test('FormData carries the raw number string via the native input name', async () => {
-  const screen = render(InputNumberFixture, {})
+  const screen = await render(InputNumberFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const data = new FormData(form)
   expect(data.get('qty')).toBe('5')
 })
 
 test('increment/decrement are exposed as imperative step functions', async () => {
-  const screen = render(InputNumberFixture, { props: { step: 2 } })
+  const screen = await render(InputNumberFixture, { props: { step: 2 } })
   const input = basicInput(screen)
   await userEvent.type(input, '4')
   await userEvent.click(screen.getByTestId('call-increment'))

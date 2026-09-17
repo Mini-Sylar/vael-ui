@@ -52,9 +52,8 @@ jobs:
       - run: pnpm test:vapor:only
       - run: pnpm test:vapor-interop:only
 
-      - uses: changesets/action@v1
+      - uses: changesets/action@v2
         with:
-          publish: pnpm release
-          version: pnpm version-packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          publish-script: pnpm release
+          version-script: pnpm version-packages
+          github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -6,7 +6,7 @@ import type { RenderResult } from 'vitest-browser-vue'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
 
 async function renderTable(props: Record<string, unknown> = {}) {
-  const screen = render(DataTableFixture, {
+  const screen = await render(DataTableFixture, {
     props: { reorderableColumns: true, showStatusColumn: false, ...props },
     global: { stubs: { 'transition-group': false } },
   })

@@ -8,27 +8,27 @@ import Loader from '../src/components/Loader/Loader.vue'
 import ButtonFixture from './fixtures/ButtonFixture.vue'
 
 test('default: aria-hidden, no accessible name', async () => {
-  const screen = render(Loader)
+  const screen = await render(Loader)
   const el = screen.container.querySelector('.ui-loader')!
   expect(el.getAttribute('aria-hidden')).toBe('true')
   expect(el.getAttribute('role')).toBeNull()
 })
 
 test('label renders role=status with the label as accessible text', async () => {
-  const screen = render(Loader, { props: { label: 'Loading results' } })
+  const screen = await render(Loader, { props: { label: 'Loading results' } })
   const status = screen.getByRole('status')
   await expect.element(status).toHaveAccessibleName('Loading results')
   expect(status.element().getAttribute('aria-hidden')).toBeNull()
 })
 
 test('ui.root merges onto the root class', async () => {
-  const screen = render(Loader, { props: { ui: { root: 'my-loader' } } })
+  const screen = await render(Loader, { props: { ui: { root: 'my-loader' } } })
   const el = screen.container.querySelector('.ui-loader')!
   expect(el).toHaveClass('my-loader')
 })
 
 test('size sets font-size on the root', async () => {
-  const screen = render(Loader, { props: { size: '2rem' } })
+  const screen = await render(Loader, { props: { size: '2rem' } })
   const el = screen.container.querySelector<HTMLElement>('.ui-loader')!
   expect(el.style.fontSize).toBe('2rem')
 })
@@ -39,7 +39,7 @@ test('size sets font-size on the root', async () => {
 test('Button still shows a spinner while auto-loading after the .ui-loader extraction', async () => {
   let resolveTask!: () => void
   const task = () => new Promise<void>((resolve) => (resolveTask = resolve))
-  const screen = render(ButtonFixture, { props: { task } })
+  const screen = await render(ButtonFixture, { props: { task } })
 
   const button = screen.getByRole('button')
   const loaderWrap = document.querySelector<HTMLElement>('.ui-button-loader')!

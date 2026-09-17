@@ -45,7 +45,7 @@ function pointerup(x: number, y: number) {
 }
 
 test('drag from the min angle to the max angle sets the value to max', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const rect = dialRect(screen, 'basic')
   const dial = dialEl(screen, 'basic')
 
@@ -59,7 +59,7 @@ test('drag from the min angle to the max angle sets the value to max', async () 
 })
 
 test('pointerdown anywhere on the dial jumps the value to that angle (absolute tracking)', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const rect = dialRect(screen, 'basic')
   const dial = dialEl(screen, 'basic')
 
@@ -75,7 +75,7 @@ test('pointerdown anywhere on the dial jumps the value to that angle (absolute t
 })
 
 test('dragging into the bottom dead zone clamps to the nearer endpoint', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const rect = dialRect(screen, 'basic')
   const dial = dialEl(screen, 'basic')
 
@@ -89,7 +89,7 @@ test('dragging into the bottom dead zone clamps to the nearer endpoint', async (
 })
 
 test('keyboard: arrows step, PageUp/Down jump by 10x, Home/End jump to bounds', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const dial = dialEl(screen, 'basic')
   dial.focus()
 
@@ -110,7 +110,7 @@ test('keyboard: arrows step, PageUp/Down jump by 10x, Home/End jump to bounds', 
 })
 
 test('aria-valuenow reflects the current value', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const dial = dialEl(screen, 'basic')
   dial.focus()
   await userEvent.keyboard('{ArrowRight}')
@@ -118,7 +118,7 @@ test('aria-valuenow reflects the current value', async () => {
 })
 
 test('data-dragging is set for the duration of a drag and cleared on release', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const rect = dialRect(screen, 'basic')
   const dial = dialEl(screen, 'basic')
   const root = screen.container.querySelector('[data-testid="basic"]')!
@@ -134,7 +134,7 @@ test('data-dragging is set for the duration of a drag and cleared on release', a
 })
 
 test('disabled knob ignores pointer and keyboard interaction', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const rect = dialRect(screen, 'disabled')
   const dial = dialEl(screen, 'disabled')
   expect(dial.getAttribute('tabindex')).toBe('-1')
@@ -147,14 +147,14 @@ test('disabled knob ignores pointer and keyboard interaction', async () => {
 })
 
 test('form participation: hidden input carries the value under name', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const data = new FormData(form)
   expect(data.get('gain')).toBe('5')
 })
 
 test('valueText renders as aria-valuetext', async () => {
-  const screen = render(KnobFixture, {})
+  const screen = await render(KnobFixture, {})
   const dial = dialEl(screen, 'valuetext')
   expect(dial.getAttribute('aria-valuetext')).toBe('40%')
 })

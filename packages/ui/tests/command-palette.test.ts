@@ -13,14 +13,14 @@ const items: CommandPaletteItem[] = [
 ]
 
 test('open renders a dialog with the search input and every item as an option', async () => {
-  render(CommandPalette, { props: { open: true, items } })
+  await render(CommandPalette, { props: { open: true, items } })
   await expect.element(page.getByRole('dialog')).toBeVisible()
   await expect.element(page.getByRole('combobox')).toBeVisible()
   expect(page.getByRole('option').all()).toHaveLength(3)
 })
 
 test('typing filters the list by label and keywords', async () => {
-  render(CommandPalette, { props: { open: true, items } })
+  await render(CommandPalette, { props: { open: true, items } })
   await userEvent.type(page.getByRole('combobox'), 'folder')
   const options = page.getByRole('option')
   expect(options.all()).toHaveLength(1)
@@ -28,7 +28,7 @@ test('typing filters the list by label and keywords', async () => {
 })
 
 test('no matches shows the empty message', async () => {
-  render(CommandPalette, { props: { open: true, items } })
+  await render(CommandPalette, { props: { open: true, items } })
   await userEvent.type(page.getByRole('combobox'), 'zzz-nothing-matches')
   await expect.element(page.getByText('No results')).toBeVisible()
 })
@@ -45,7 +45,7 @@ test('ArrowDown then Enter selects the active item and closes (closeOnSelect def
         onSelect: (item: CommandPaletteItem) => selected.push(item),
       }),
   }
-  render(Wrapper)
+  await render(Wrapper)
   const input = page.getByRole('combobox')
   await userEvent.click(input)
   await userEvent.keyboard('{ArrowDown}{Enter}')
@@ -54,7 +54,7 @@ test('ArrowDown then Enter selects the active item and closes (closeOnSelect def
 })
 
 test('a disabled item is never the active/selected one', async () => {
-  render(CommandPalette, { props: { open: true, items } })
+  await render(CommandPalette, { props: { open: true, items } })
   const input = page.getByRole('combobox')
   await userEvent.click(input)
   // 3 ArrowDown presses would land on "settings" if it were selectable; it's
@@ -75,7 +75,7 @@ test('shortcut prop toggles open on the configured global hotkey', async () => {
         'onUpdate:open': (v: boolean) => (open.value = v),
       }),
   }
-  render(Wrapper)
+  await render(Wrapper)
   expect(open.value).toBe(false)
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
   await vi.waitFor(() => expect(open.value).toBe(true))

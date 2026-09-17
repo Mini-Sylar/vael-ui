@@ -4,10 +4,10 @@ import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import PasswordInputFixture from './fixtures/PasswordInputFixture.vue'
 
-function basicInput(screen: ReturnType<typeof render>) {
+function basicInput(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLInputElement>('[data-testid="basic"] .ui-input-el')!
 }
-function toggleButton(screen: ReturnType<typeof render>) {
+function toggleButton(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLButtonElement>(
     '[data-testid="basic"] .ui-password-input-toggle',
   )
@@ -20,7 +20,7 @@ function hintItems() {
 }
 
 test('v-model round-trips on every keystroke, type starts as password', async () => {
-  const screen = render(PasswordInputFixture, {})
+  const screen = await render(PasswordInputFixture, {})
   const input = basicInput(screen)
   expect(input.type).toBe('password')
   await userEvent.type(input, 'hunter2')
@@ -28,7 +28,7 @@ test('v-model round-trips on every keystroke, type starts as password', async ()
 })
 
 test('reveal toggle flips type and its own aria-label, and v-model:visible follows it', async () => {
-  const screen = render(PasswordInputFixture, {})
+  const screen = await render(PasswordInputFixture, {})
   const input = basicInput(screen)
   const toggle = toggleButton(screen)!
   expect(toggle.getAttribute('aria-label')).toBe('Show password')
@@ -44,12 +44,12 @@ test('reveal toggle flips type and its own aria-label, and v-model:visible follo
 })
 
 test('revealable=false hides the toggle entirely', async () => {
-  const screen = render(PasswordInputFixture, { props: { revealable: false } })
+  const screen = await render(PasswordInputFixture, { props: { revealable: false } })
   expect(toggleButton(screen)).toBeNull()
 })
 
 test('default rules: checklist rows flip data-passed as the value satisfies each one', async () => {
-  const screen = render(PasswordInputFixture, {})
+  const screen = await render(PasswordInputFixture, {})
   const input = basicInput(screen)
   let items = hintItems()
   expect(items).toHaveLength(3)
@@ -61,13 +61,13 @@ test('default rules: checklist rows flip data-passed as the value satisfies each
 })
 
 test('no rules and no #hint slot: the hint does not mount at all', async () => {
-  render(PasswordInputFixture, { props: { rules: [] } })
+  await render(PasswordInputFixture, { props: { rules: [] } })
   expect(hintItems()).toHaveLength(0)
 })
 
 test('custom rules prop overrides the built-in defaults', async () => {
   const rules = [{ label: 'Contains "ok"', test: (v: string) => v.includes('ok') }]
-  const screen = render(PasswordInputFixture, { props: { rules } })
+  const screen = await render(PasswordInputFixture, { props: { rules } })
   const input = basicInput(screen)
   let items = hintItems()
   expect(items).toHaveLength(1)
@@ -79,12 +79,12 @@ test('custom rules prop overrides the built-in defaults', async () => {
 })
 
 test('hintPlacement="inline" renders the hint immediately, unfocused', async () => {
-  render(PasswordInputFixture, { props: { hintPlacement: 'inline' } })
+  await render(PasswordInputFixture, { props: { hintPlacement: 'inline' } })
   expect(hintItems()).toHaveLength(3)
 })
 
 test('hintPlacement="popover" only mounts the hint while the input is focused', async () => {
-  const screen = render(PasswordInputFixture, { props: { hintPlacement: 'popover' } })
+  const screen = await render(PasswordInputFixture, { props: { hintPlacement: 'popover' } })
   expect(hintItems()).toHaveLength(0)
 
   const input = basicInput(screen)
@@ -96,7 +96,7 @@ test('hintPlacement="popover" only mounts the hint while the input is focused', 
 })
 
 test('hintPlacement="none" renders no hint at all', async () => {
-  const screen = render(PasswordInputFixture, { props: { hintPlacement: 'none' } })
+  const screen = await render(PasswordInputFixture, { props: { hintPlacement: 'none' } })
   const input = basicInput(screen)
   input.focus()
   await new Promise((resolve) => setTimeout(resolve, 50))
@@ -104,14 +104,14 @@ test('hintPlacement="none" renders no hint at all', async () => {
 })
 
 test('#hint slot override receives the correct results shape and replaces the default checklist', async () => {
-  const screen = render(PasswordInputFixture, { props: { customHint: true } })
+  const screen = await render(PasswordInputFixture, { props: { customHint: true } })
   expect(hintItems()).toHaveLength(0)
   const custom = screen.container.querySelectorAll('[data-testid="custom-hint"] li')
   expect(custom).toHaveLength(3)
 })
 
 test('wrapped in Field: aria-describedby wires to the error message', async () => {
-  const screen = render(PasswordInputFixture, { props: { fieldError: 'Too short' } })
+  const screen = await render(PasswordInputFixture, { props: { fieldError: 'Too short' } })
   const fieldInput = screen.container.querySelector<HTMLInputElement>('.ui-field .ui-input-el')!
   const describedBy = fieldInput.getAttribute('aria-describedby')
   expect(describedBy).toBeTruthy()

@@ -11,17 +11,17 @@
   "dependencies": {
     "@phosphor-icons/vue": "^2.2.1",
     "gsap": "^3.15.0",
-    "motion-v": "^2.4.0",
+    "motion-v": "^2.4.4",
     "vael-ui": "workspace:*",
     "vue": "3.6.0-rc.8",
-    "vue-i18n": "^11.4.8",
-    "vue-router": "^5.3.0"
+    "vue-i18n": "^11.4.12",
+    "vue-router": "^5.3.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.8",
+    "@vitejs/plugin-vue": "^6.0.9",
     "typescript": "^6.0.3",
     "vee-validate": "^4.15.1",
-    "vite": "^8.2.1",
-    "vue-tsc": "^3.3.10"
+    "vite": "^8.3.0",
+    "vue-tsc": "^3.3.11"
   }
 }

@@ -22,7 +22,7 @@ function menuItemByText(text: string): HTMLElement | null {
 }
 
 test('ArrowRight opens a submenu and focuses its first item; ArrowLeft returns to the parent row', async () => {
-  const screen = render(MenuSubmenuFixture)
+  const screen = await render(MenuSubmenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Cut'))
 
@@ -39,7 +39,7 @@ test('ArrowRight opens a submenu and focuses its first item; ArrowLeft returns t
 })
 
 test('selecting a leaf item inside a submenu closes the whole chain and bubbles the item', async () => {
-  const screen = render(MenuSubmenuFixture)
+  const screen = await render(MenuSubmenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Cut'))
 
@@ -54,7 +54,7 @@ test('selecting a leaf item inside a submenu closes the whole chain and bubbles 
 })
 
 test('hover-intent opens a submenu after a delay and closes it after moving away', async () => {
-  const screen = render(MenuSubmenuFixture)
+  const screen = await render(MenuSubmenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Cut'))
 
@@ -71,7 +71,7 @@ test('hovering into the submenu itself keeps it open, not just hovering the trig
   // pointer from one to the other always fires a real mouseleave on the row
   // first. A close scheduled from that leave must be cancelled by entering
   // the panel, or the submenu closes out from under the pointer mid-transit.
-  const screen = render(MenuSubmenuFixture)
+  const screen = await render(MenuSubmenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Cut'))
 
@@ -93,7 +93,7 @@ test('hovering a 3rd-level submenu keeps the whole chain open, including the gra
   // bubbling, top-level's own close timer for the whole Share branch fires
   // ~200ms later and tears out Social's submenu with it, even though the
   // pointer never left the cascade — it's just hovering deeper inside it.
-  const screen = render(MenuSubmenuFixture)
+  const screen = await render(MenuSubmenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Cut'))
 
@@ -116,7 +116,7 @@ test('hovering a 4th-level submenu keeps the entire chain open, all the way to t
   // previous test's deepest case — proving the bubbling is genuinely
   // recursive (each level forwards what it hears from below) rather than a
   // fix specific to exactly 3 levels.
-  const screen = render(MenuSubmenuFixture)
+  const screen = await render(MenuSubmenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Cut'))
 
@@ -145,7 +145,7 @@ test('hovering a 4th-level submenu keeps the entire chain open, all the way to t
 })
 
 test('Escape closes the submenu first, then the parent menu on a second press', async () => {
-  const screen = render(MenuSubmenuFixture)
+  const screen = await render(MenuSubmenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Cut'))
 

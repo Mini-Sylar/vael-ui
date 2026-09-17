@@ -21,7 +21,7 @@ import ToasterFixture from './fixtures/ToasterFixture.vue'
 import { toast, useToastQueue } from '../src/composables/useToast'
 
 test('dialog: focus trap, Escape, and focus-return work with zero CSS', async () => {
-  const screen = render(DialogFixture)
+  const screen = await render(DialogFixture)
   await screen.getByTestId('trigger').click()
 
   const dialog = document.querySelector('[role="dialog"]')!
@@ -36,7 +36,7 @@ test('dialog: focus trap, Escape, and focus-return work with zero CSS', async ()
 })
 
 test('dialog: root/overlay/panel are still full-viewport and layered without any stylesheet', async () => {
-  const screen = render(DialogFixture)
+  const screen = await render(DialogFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).not.toBeNull())
 
@@ -64,7 +64,7 @@ test('dialog: root/overlay/panel are still full-viewport and layered without any
 
 test('toaster: still floats fixed in its chosen corner with zero CSS', async () => {
   const { dismiss } = useToastQueue()
-  const screen = render(ToasterFixture, { props: { position: 'top-left' } })
+  const screen = await render(ToasterFixture, { props: { position: 'top-left' } })
   toast('Unstyled toast')
 
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
@@ -80,12 +80,12 @@ test('toaster: still floats fixed in its chosen corner with zero CSS', async () 
   expect(rect.left).toBeLessThan(50)
 
   dismiss()
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('toaster: cards stay absolutely positioned and stacked (not a flat overlapping pile) with zero CSS', async () => {
   const { dismiss } = useToastQueue()
-  const screen = render(ToasterFixture)
+  const screen = await render(ToasterFixture)
   toast('First', { duration: 10000 })
   toast('Second', { duration: 10000 })
 
@@ -103,13 +103,13 @@ test('toaster: cards stay absolutely positioned and stacked (not a flat overlapp
   expect(new Set(translates).size).toBe(2)
 
   dismiss()
-  screen.unmount()
+  await screen.unmount()
 })
 
 test('button: aria-busy and disabled stay correct while loading, even unstyled', async () => {
   let resolveTask!: () => void
   const task = () => new Promise<void>((resolve) => (resolveTask = resolve))
-  const screen = render(ButtonFixture, { props: { task } })
+  const screen = await render(ButtonFixture, { props: { task } })
   const button = screen.getByRole('button')
 
   await button.click()

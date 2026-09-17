@@ -122,12 +122,17 @@ const trailingActionsEl = useTemplateRef<HTMLElement>('trailingActionsEl')
 const { width: leadingWidth } = useElementSize(leadingActionsEl)
 const { width: trailingWidth } = useElementSize(trailingActionsEl)
 
+// A fresh offsetWidth read, not the useElementSize ref directly - ResizeObserver's own first
+// callback is always async (per spec), and useElementSize's ref briefly resets to 0 on the
+// template ref's own null-to-element transition right after mount, before that first callback
+// lands. A drag committed in that same short window would otherwise measure a stale/zero width
+// and be forced closed regardless of how far it traveled.
 const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reveal, close } =
   useSwipeReveal(open, {
     leading: () => hasLeading.value,
     trailing: () => hasTrailing.value,
-    leadingWidth,
-    trailingWidth,
+    leadingWidth: () => leadingActionsEl.value?.offsetWidth ?? leadingWidth.value,
+    trailingWidth: () => trailingActionsEl.value?.offsetWidth ?? trailingWidth.value,
     disabled: () => props.disabled,
     onCommit: (side) => emit('change', side !== null, side),
   })
@@ -135,12 +140,14 @@ const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reve
 // 0 → 1: how far the drag/settle has revealed each edge. Exposed for consumer-driven effects;
 // also drives the opt-in `revealScale` grow-in.
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
-const leadingProgress = computed(() =>
-  leadingWidth.value > 0 ? clamp01(offset.value / leadingWidth.value) : 0,
-)
-const trailingProgress = computed(() =>
-  trailingWidth.value > 0 ? clamp01(-offset.value / trailingWidth.value) : 0,
-)
+const leadingProgress = computed(() => {
+  const width = leadingActionsEl.value?.offsetWidth ?? leadingWidth.value
+  return width > 0 ? clamp01(offset.value / width) : 0
+})
+const trailingProgress = computed(() => {
+  const width = trailingActionsEl.value?.offsetWidth ?? trailingWidth.value
+  return width > 0 ? clamp01(-offset.value / width) : 0
+})
 
 const revealScaleOn = computed(() => props.revealScale !== false)
 const rootStyle = computed(() =>

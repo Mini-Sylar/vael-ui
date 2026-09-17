@@ -15,7 +15,7 @@ function focusedText() {
 }
 
 test('trigger click opens the menu and focuses the first item; select closes it', async () => {
-  const screen = render(MenuFixture)
+  const screen = await render(MenuFixture)
 
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
@@ -38,7 +38,7 @@ test('the panel anchors to the real trigger element, not a (0,0) fallback from i
   spacer.style.blockSize = '400px'
   document.body.prepend(spacer)
   try {
-    const screen = render(MenuFixture)
+    const screen = await render(MenuFixture)
     const trigger = screen.getByTestId('trigger').element() as HTMLElement
     const triggerRect = trigger.getBoundingClientRect()
     expect(triggerRect.top).toBeGreaterThan(300) // sanity: the spacer actually pushed it down
@@ -58,7 +58,7 @@ test('the panel anchors to the real trigger element, not a (0,0) fallback from i
 })
 
 test('ArrowDown/ArrowUp move focus, wrap at both ends, and skip disabled items', async () => {
-  const screen = render(MenuFixture)
+  const screen = await render(MenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
 
@@ -79,7 +79,7 @@ test('ArrowDown/ArrowUp move focus, wrap at both ends, and skip disabled items',
 })
 
 test('Home/End jump to the first and last enabled items', async () => {
-  const screen = render(MenuFixture)
+  const screen = await render(MenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
 
@@ -90,7 +90,7 @@ test('Home/End jump to the first and last enabled items', async () => {
 })
 
 test('Enter activates the focused item and closes the menu', async () => {
-  const screen = render(MenuFixture)
+  const screen = await render(MenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
 
@@ -103,7 +103,7 @@ test('Enter activates the focused item and closes the menu', async () => {
 })
 
 test('typeahead jumps to the item starting with the typed character', async () => {
-  const screen = render(MenuFixture)
+  const screen = await render(MenuFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
 
@@ -112,7 +112,7 @@ test('typeahead jumps to the item starting with the typed character', async () =
 })
 
 test('keepOpen items emit select and run handlers without closing the menu', async () => {
-  const screen = render(MenuFixture)
+  const screen = await render(MenuFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
 
@@ -122,7 +122,7 @@ test('keepOpen items emit select and run handlers without closing the menu', asy
 })
 
 test('Escape closes the menu', async () => {
-  const screen = render(MenuFixture)
+  const screen = await render(MenuFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
 
@@ -131,7 +131,7 @@ test('Escape closes the menu', async () => {
 })
 
 test('outside click closes the menu', async () => {
-  const screen = render(MenuFixture)
+  const screen = await render(MenuFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
 
@@ -140,7 +140,7 @@ test('outside click closes the menu', async () => {
 })
 
 test('custom default-slot markup keeps behavior: click selects/closes, keep-open stays open', async () => {
-  const screen = render(MenuCustomFixture)
+  const screen = await render(MenuCustomFixture)
 
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
@@ -158,15 +158,15 @@ test('custom default-slot markup keeps behavior: click selects/closes, keep-open
 })
 
 test('header and footer slots render around the item list only when provided', async () => {
-  const screen = render(MenuFixture, { props: { withHeader: true, withFooter: true } })
+  const screen = await render(MenuFixture, { props: { withHeader: true, withFooter: true } })
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
   await expect.element(screen.getByTestId('menu-header')).toBeInTheDocument()
   await expect.element(screen.getByTestId('menu-footer')).toBeInTheDocument()
 
-  screen.unmount()
+  await screen.unmount()
 
-  const bare = render(MenuFixture)
+  const bare = await render(MenuFixture)
   await bare.getByTestId('trigger').click()
   await expect.element(bare.getByRole('menu')).toBeInTheDocument()
   expect(document.querySelector('.ui-menu-header')).toBeNull()
@@ -174,7 +174,7 @@ test('header and footer slots render around the item list only when provided', a
 })
 
 test('the item list still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
-  const screen = render(MenuFixture, { props: { itemCount: 100 } })
+  const screen = await render(MenuFixture, { props: { itemCount: 100 } })
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
   await vi.waitFor(() => {
@@ -186,7 +186,7 @@ test('the item list still gets a real capped height (v-scroll-mask keeps working
 })
 
 test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
-  const screen = render(MenuFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
+  const screen = await render(MenuFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
   const panel = document.querySelector<HTMLElement>('.ui-menu-panel')!
@@ -196,7 +196,7 @@ test('maxPanelHeight caps the panel even though the viewport has room for more',
 })
 
 test('a fully custom #default slot gets the live maxHeight budget, so it can bound its own scroll region', async () => {
-  const screen = render(MenuCustomFixture)
+  const screen = await render(MenuCustomFixture)
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
   await vi.waitFor(() => {

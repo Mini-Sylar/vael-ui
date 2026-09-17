@@ -187,7 +187,7 @@ import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
-import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { computed, inject, nextTick, ref, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import Input from '../Input/Input.vue'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
@@ -328,8 +328,13 @@ const fieldControl = useFieldControl()
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 
+// True only once the user has actually typed - query also holds the selected item's label
+// passively (mount-synced, or set by selectItem/onClear), and that shouldn't narrow the list
+// down to a single row the moment the panel opens; only real keystrokes should filter.
+const queryDirty = ref(false)
+
 const filteredItems = computed<T[]>(() => {
-  if (props.filter === false) return [...props.items]
+  if (props.filter === false || !queryDirty.value) return [...props.items]
   const q = query.value.trim()
   if (!q) return [...props.items]
   if (typeof props.filter === 'function') {
@@ -410,6 +415,7 @@ function selectItem(item: T, _index: number) {
     else current.splice(pos, 1)
     model.value = current
     query.value = ''
+    queryDirty.value = false
     emit('select', item)
     emit('change', model.value)
     // Stays open (multiple mode)
@@ -417,6 +423,7 @@ function selectItem(item: T, _index: number) {
   }
   model.value = item.value
   query.value = item.label
+  queryDirty.value = false
   emit('select', item)
   emit('change', model.value)
   close()
@@ -465,15 +472,31 @@ function computeInitialActive(): number {
 }
 
 const openOnFocusResolved = computed(() => props.openOnFocus ?? true)
+const isFocused = ref(false)
+
+// Resyncs query from an externally-changed model (mount, or a parent swap) - skipped while focused so it can't clobber in-progress typing, and skipped in `multiple` mode where query is search text, not a label.
+watch(
+  [model, () => props.items],
+  ([value]) => {
+    if (props.multiple || isFocused.value) return
+    query.value =
+      value != null ? (props.items.find((item) => item.value === value)?.label ?? '') : ''
+    queryDirty.value = false
+  },
+  { immediate: true },
+)
 
 function onQueryInput() {
   if (isDisabled.value) return
+  queryDirty.value = true
   if (!open.value) open.value = true
 }
 function onInputFocus() {
+  isFocused.value = true
   if (!isDisabled.value && openOnFocusResolved.value) open.value = true
 }
 function onInputBlur() {
+  isFocused.value = false
   // Multiple: query is search text, not committed label; chips are source of truth.
   if (props.multiple) {
     if (!query.value.trim()) return
@@ -482,6 +505,7 @@ function onInputBlur() {
       return
     }
     query.value = ''
+    queryDirty.value = false
     return
   }
   const activeLabel =
@@ -493,6 +517,7 @@ function onInputBlur() {
   }
   // No match and allowCustom=false: revert to committed selection's label
   query.value = activeLabel
+  queryDirty.value = false
 }
 
 function onInputKeydown(event: KeyboardEvent) {
@@ -551,6 +576,7 @@ function onClear(event: MouseEvent) {
   event.preventDefault()
   model.value = props.multiple ? [] : null
   query.value = ''
+  queryDirty.value = false
   emit('change', model.value)
   inputEl.value?.focus()
 }

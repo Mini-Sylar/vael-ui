@@ -8,7 +8,7 @@ import Field from '../src/components/Field/Field.vue'
 import SelectButton from '../src/components/SelectButton/SelectButton.vue'
 
 test('single select via click', async () => {
-  const screen = render(SelectButtonFixture, {})
+  const screen = await render(SelectButtonFixture, {})
   const grid = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="single"] input[value="grid"]',
   )!
@@ -17,7 +17,7 @@ test('single select via click', async () => {
 })
 
 test('arrow keys move selection and skip the disabled option, wrapping', async () => {
-  const screen = render(SelectButtonFixture, {})
+  const screen = await render(SelectButtonFixture, {})
   const list = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="single"] input[value="list"]',
   )!
@@ -34,7 +34,7 @@ test('arrow keys move selection and skip the disabled option, wrapping', async (
 })
 
 test('allowEmpty clears the model on re-clicking the active option', async () => {
-  const screen = render(SelectButtonFixture, {})
+  const screen = await render(SelectButtonFixture, {})
   const list = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="single"] input[value="list"]',
   )!
@@ -43,7 +43,7 @@ test('allowEmpty clears the model on re-clicking the active option', async () =>
 })
 
 test('allowEmpty: the same option can be re-selected after being cleared', async () => {
-  const screen = render(SelectButtonFixture, {})
+  const screen = await render(SelectButtonFixture, {})
   const list = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="single"] input[value="list"]',
   )!
@@ -54,7 +54,7 @@ test('allowEmpty: the same option can be re-selected after being cleared', async
 })
 
 test('allowEmpty=false keeps the active option selected on re-click', async () => {
-  const screen = render(SelectButtonFixture, { props: { allowEmpty: false } })
+  const screen = await render(SelectButtonFixture, { props: { allowEmpty: false } })
   const list = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="single"] input[value="list"]',
   )!
@@ -63,7 +63,7 @@ test('allowEmpty=false keeps the active option selected on re-click', async () =
 })
 
 test('multiple mode toggles options independently', async () => {
-  const screen = render(SelectButtonFixture, {})
+  const screen = await render(SelectButtonFixture, {})
   const listInput = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="multi"] input[value="list"]',
   )!
@@ -79,7 +79,7 @@ test('multiple mode toggles options independently', async () => {
 })
 
 test('disabled option cannot be selected', async () => {
-  const screen = render(SelectButtonFixture, {})
+  const screen = await render(SelectButtonFixture, {})
   const board = screen.container.querySelector<HTMLInputElement>(
     '[data-testid="single"] input[value="board"]',
   )!
@@ -87,7 +87,7 @@ test('disabled option cannot be selected', async () => {
 })
 
 test('indicator lands on the checked option and is suppressed on first mount', async () => {
-  const screen = render(SelectButton, {
+  const screen = await render(SelectButton, {
     props: {
       items: [
         { label: 'List', value: 'list' },
@@ -108,7 +108,7 @@ test('indicator lands on the checked option and is suppressed on first mount', a
 })
 
 test('FormData carries selections for single and multiple modes', async () => {
-  const screen = render(SelectButtonFixture, {})
+  const screen = await render(SelectButtonFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!
   const data = new FormData(form)
   expect(data.get('single-choice')).toBe('list')
@@ -116,7 +116,7 @@ test('FormData carries selections for single and multiple modes', async () => {
 })
 
 test('Field label wires aria-labelledby on the group, and Field disabled disables every option', async () => {
-  const screen = render(Field, {
+  const screen = await render(Field, {
     props: { label: 'View', disabled: true },
     slots: {
       default: () =>
@@ -142,7 +142,7 @@ test('Field label wires aria-labelledby on the group, and Field disabled disable
 })
 
 test('Field error flips data-invalid on the group', async () => {
-  const screen = render(Field, {
+  const screen = await render(Field, {
     props: { label: 'View', error: 'Required' },
     slots: {
       default: () =>
@@ -157,7 +157,7 @@ test('Field error flips data-invalid on the group', async () => {
 })
 
 test('multiple mode gets role="group", not role="radiogroup"', async () => {
-  const screen = render(SelectButton, {
+  const screen = await render(SelectButton, {
     props: {
       multiple: true,
       modelValue: [],

@@ -5,7 +5,7 @@ import { render } from 'vitest-browser-vue'
 import ListboxFixture from './fixtures/ListboxFixture.vue'
 
 test('ArrowDown/ArrowUp step over items, skip disabled, and wrap at both ends', async () => {
-  const screen = render(ListboxFixture)
+  const screen = await render(ListboxFixture)
   await screen.getByTestId('input').click()
 
   await userEvent.keyboard('{ArrowDown}')
@@ -31,7 +31,7 @@ test('ArrowDown/ArrowUp step over items, skip disabled, and wrap at both ends', 
 })
 
 test('Home/End jump to the first and last enabled items', async () => {
-  const screen = render(ListboxFixture)
+  const screen = await render(ListboxFixture)
   await screen.getByTestId('input').click()
 
   await userEvent.keyboard('{End}')
@@ -41,7 +41,7 @@ test('Home/End jump to the first and last enabled items', async () => {
 })
 
 test('typeahead jumps to the next item whose label starts with the typed character', async () => {
-  const screen = render(ListboxFixture)
+  const screen = await render(ListboxFixture)
   await screen.getByTestId('input').click()
 
   await userEvent.keyboard('d')
@@ -49,7 +49,7 @@ test('typeahead jumps to the next item whose label starts with the typed charact
 })
 
 test('Enter selects the active item', async () => {
-  const screen = render(ListboxFixture)
+  const screen = await render(ListboxFixture)
   await screen.getByTestId('input').click()
 
   await userEvent.keyboard('{ArrowDown}')
@@ -59,7 +59,7 @@ test('Enter selects the active item', async () => {
 })
 
 test('activeId reflects listboxId-opt-index for the active row, undefined when none', async () => {
-  const screen = render(ListboxFixture)
+  const screen = await render(ListboxFixture)
   await expect.element(screen.getByTestId('active-id')).toHaveTextContent('')
 
   await screen.getByTestId('input').click()
@@ -68,7 +68,7 @@ test('activeId reflects listboxId-opt-index for the active row, undefined when n
 })
 
 test('onActiveChange fires before activeIndex itself flips', async () => {
-  const screen = render(ListboxFixture)
+  const screen = await render(ListboxFixture)
   await screen.getByTestId('input').click()
   await userEvent.keyboard('{ArrowDown}')
   await userEvent.keyboard('{ArrowDown}')
