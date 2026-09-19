@@ -37,8 +37,13 @@
         :remove-node="ctx.removeNode"
       />
     </div>
-    <Transition :name="ctx.motionCss ? 'ui-tree-rows' : undefined" appear>
-      <div v-if="hasChildren && ctx.isExpanded(node)" class="ui-tree-rows">
+    <Transition :name="ctx.motionCss ? 'ui-tree-rows' : undefined" :css="!ctx.forceMount" appear>
+      <div
+        v-if="hasChildren && (ctx.forceMount || ctx.isExpanded(node))"
+        v-show="!ctx.forceMount || ctx.isExpanded(node)"
+        class="ui-tree-rows"
+        :data-state="ctx.isExpanded(node) ? 'open' : 'closed'"
+      >
         <TreeNodeRow
           v-for="child in visibleChildren"
           :key="String(child.value)"

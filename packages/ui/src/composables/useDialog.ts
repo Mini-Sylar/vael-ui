@@ -158,7 +158,15 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   const contained = computed(() => container.value !== null)
 
   if (typeof window === 'undefined') {
-    return { isClosing, close, requestClose, cancelClose, container, contained }
+    return {
+      isClosing,
+      close,
+      requestClose,
+      cancelClose,
+      container,
+      contained,
+      layerIndex: () => 0,
+    }
   }
 
   // Panel needs `container` to be a positioning context, or it falls through to whatever
@@ -297,5 +305,19 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
 
   onScopeDispose(() => deactivate())
 
-  return { isClosing, close, requestClose, cancelClose, container, scrollTarget, contained }
+  return {
+    isClosing,
+    close,
+    requestClose,
+    cancelClose,
+    container,
+    scrollTarget,
+    contained,
+    // Only the index, not the whole Layer object - a caller (Dialog.vue, for its own z-index) has
+    // no business calling .push()/.pop() itself, since this hook already owns that lifecycle
+    // above (activate/deactivate) and a second registration for the same dialog would give it two
+    // stack slots instead of one, breaking isTopmost()/Escape-routing/scroll-lock ref-counting for
+    // every dialog on the page.
+    layerIndex: layer.index,
+  }
 }

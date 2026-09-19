@@ -253,18 +253,21 @@ const themedUi = useThemedUi(
 )
 const themeScope = inject(themeScopeKey, undefined)
 
-const { isClosing, close, requestClose, cancelClose, container, contained } = useDialog(open, {
-  panelEl,
-  wrapperEl: rootEl,
-  container: () => props.container ?? null,
-  scrollTarget: () => props.scrollTarget ?? null,
-  closeOnEsc: () => props.closeOnEsc,
-  beforeClose: () => props.beforeClose,
-  initialFocus: () => props.initialFocus?.(),
-  modal: () => props.modal,
-  closeOnHistoryBack: () => props.closeOnHistoryBack,
-  onOpenChange: (value, details) => emit('open-change', value, details),
-})
+const { isClosing, close, requestClose, cancelClose, container, contained, layerIndex } = useDialog(
+  open,
+  {
+    panelEl,
+    wrapperEl: rootEl,
+    container: () => props.container ?? null,
+    scrollTarget: () => props.scrollTarget ?? null,
+    closeOnEsc: () => props.closeOnEsc,
+    beforeClose: () => props.beforeClose,
+    initialFocus: () => props.initialFocus?.(),
+    modal: () => props.modal,
+    closeOnHistoryBack: () => props.closeOnHistoryBack,
+    onOpenChange: (value, details) => emit('open-change', value, details),
+  },
+)
 
 function onOverlayClick(event: MouseEvent) {
   if (props.closeOnOverlay) requestClose('outside', event)
@@ -286,7 +289,15 @@ const isSidePosition = computed(() => props.position === 'left' || props.positio
 const rootStyle = computed<Record<string, string | number | undefined>>(() => ({
   position: contained.value ? 'absolute' : 'fixed',
   inset: 0,
-  zIndex: 'var(--ui-z-dialog, 50)',
+  // Derives this Dialog's stacking position from useDialog's own real OPEN-order layer instead of
+  // the single shared --ui-z-dialog constant every instance used before - Drawer/BottomSheet's own
+  // always-mounted content (force-mount) means two instances can be simultaneously open with no
+  // natural DOM-order tiebreak, and paint order then follows MOUNT order (declaration order in the
+  // consuming template) rather than which one was actually opened more recently. Reads the index
+  // from useDialog's own layer (via layerIndex above) rather than registering a second one here -
+  // useDialog already pushes/pops it for focus-trap/Escape/scroll-lock, and a second registration
+  // for the same dialog would give it two stack slots instead of one.
+  zIndex: `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`,
   display: 'flex',
   alignItems: isSidePosition.value
     ? 'stretch'

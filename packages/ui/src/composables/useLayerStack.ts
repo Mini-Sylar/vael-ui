@@ -62,6 +62,11 @@ export interface Layer {
   push: () => void
   pop: () => void
   isTopmost: () => boolean
+  /** This layer's position in the shared stack, or `-1` before it's ever been pushed. Lets a
+   * consumer (Dialog) derive a per-instance z-index from open ORDER instead of every instance
+   * sharing one constant - otherwise two simultaneously-open layers can only be told apart by DOM
+   * paint order, which follows mount order, not which one opened more recently. */
+  index: () => number
 }
 
 export interface UseLayerOptions {
@@ -110,5 +115,7 @@ export function useLayer(options: UseLayerOptions = {}): Layer {
     return true
   }
 
-  return { push, pop, isTopmost }
+  const index = () => stack.value.findIndex((e) => e.id === id)
+
+  return { push, pop, isTopmost, index }
 }

@@ -133,8 +133,24 @@ export function useSheetDrag(
   }
   let resetToken: symbol | null = null
 
+  // The falsy transition matters just as much as the truthy one: without handling it explicitly,
+  // a close that arrives while a PREVIOUS reset()'s two-rAF wait is still pending left that pending
+  // reset free to resolve and call settleTo() after the sheet should already be closed - visually
+  // reopening it. Cancelling the in-flight token AND snapping the panel to the closed transform
+  // synchronously here means a reopen that lands in that same window starts its own reset() from a
+  // known, definitely-closed state instead of racing whatever the interrupted one was mid-way
+  // through.
   watch(active, (value) => {
-    if (value) reset()
+    if (value) {
+      reset()
+      return
+    }
+    resetToken = null
+    const panel = options.panelEl.value
+    if (panel) {
+      panel.style.transition = 'none'
+      panel.style.transform = 'translateY(100%)'
+    }
   })
 
   let dragSource: 'handle' | 'content' | null = null

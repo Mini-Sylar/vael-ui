@@ -207,6 +207,7 @@ export interface TreeRowContext {
   findNode: (value: string | number) => TreeNode | undefined
   findParent: (value: string | number) => TreeNode | null
   removeNode: (value: string | number) => boolean
+  forceMount: boolean
   reorderable: boolean
   dragValue: string | number | null
   /** Whole dragged block: a folder hides its descendants with it. */
@@ -274,6 +275,10 @@ const props = withDefaults(
     emptyText?: string
     /** `false` skips all built-in motion (row transitions, chevron rotation, and cross-folder move). */
     motionCss?: boolean
+    /** Keeps every folder's children block mounted (visibility via `v-show`, `data-state="open"/"closed"`
+     * on it) instead of mounting/unmounting on expand/collapse, so a consumer can drive the collapse
+     * with their own animation library instead of the built-in CSS transition. */
+    forceMount?: boolean
     /** Drag rows to reorder and to nest, VS Code style: drop on a row's middle to move INTO it, on an edge to place beside it. */
     reorderable?: boolean
     /** Which rows accept children. Defaults to any row that already has some — pass your own to let empty folders take drops. */
@@ -324,6 +329,7 @@ const props = withDefaults(
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
     motionCss: true,
+    forceMount: false,
     reorderable: false,
     canNestInto: undefined,
     reorderSiblings: true,
@@ -961,6 +967,7 @@ provide<TreeRowContext>(
     findNode,
     findParent,
     removeNode,
+    forceMount: computed(() => props.forceMount),
     reorderable: computed(() => props.reorderable),
     dragValue: computed(() => dragValue.value),
     draggedValues: computed(() => draggedValues.value),

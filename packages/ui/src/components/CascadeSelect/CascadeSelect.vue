@@ -48,9 +48,12 @@
           @blur="fieldControl.onBlur"
         >
           <span :class="valuePart.class" :style="valuePart.style">
-            <slot name="value" :selected="selectedItem as T | null" :path="selectedPath">{{
-              selectedItem?.label ?? placeholder
-            }}</slot>
+            <slot name="value" :selected="selectedItem as T | null" :path="selectedPath">
+              <span v-if="!selectedItem" class="ui-cascade-select-placeholder">{{
+                placeholder
+              }}</span>
+              <template v-else>{{ selectedItem.label }}</template>
+            </slot>
           </span>
           <Transition name="ui-clear">
             <button

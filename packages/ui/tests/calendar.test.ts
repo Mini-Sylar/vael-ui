@@ -1,8 +1,10 @@
 import '../src/style.css'
+import { h } from 'vue'
 import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import CalendarFixture from './fixtures/CalendarFixture.vue'
+import Calendar from '../src/components/Calendar/Calendar.vue'
 
 // June 2024 is a fixed, hand-verifiable month: June 1 falls on a Saturday, so
 // the grid's leading week pulls in May 26-31 — a good known-boundary case.
@@ -200,4 +202,47 @@ test('PageDown/PageUp move the focused day — and the displayed month — by on
   await vi.waitFor(() => {
     expect(screen.container.querySelector('.ui-calendar-label')).toHaveTextContent('June 2024')
   })
+})
+
+test("#day slot replaces a cell's content and receives the right per-day flags, without touching its click/aria wiring", async () => {
+  await render(Calendar, {
+    props: { modelValue: new Date(2024, 5, 15), firstDayOfWeek: 0 },
+    slots: {
+      day: (props: {
+        date: Date
+        isCurrentMonth: boolean
+        isToday: boolean
+        isSelected: boolean
+        isDisabled: boolean
+      }) =>
+        h(
+          'span',
+          {
+            'data-testid': 'day-slot',
+            'data-current': String(props.isCurrentMonth),
+            'data-selected': String(props.isSelected),
+          },
+          `${props.date.getDate()}!`,
+        ),
+    },
+  })
+
+  const selectedCell = cellByIso('2024-06-15')!
+  // The slot's own content rendered inside the cell...
+  expect(selectedCell.textContent).toContain('15!')
+  // ...and the scoped props it received matched this cell's real state.
+  const slotEl = selectedCell.querySelector<HTMLElement>('[data-testid="day-slot"]')!
+  expect(slotEl.dataset.current).toBe('true')
+  expect(slotEl.dataset.selected).toBe('true')
+  // A leading day from the prior month is real content, but not the current month.
+  const leadingSlotEl = cellByIso('2024-05-26')!.querySelector<HTMLElement>(
+    '[data-testid="day-slot"]',
+  )!
+  expect(leadingSlotEl.dataset.current).toBe('false')
+
+  // Cell wiring (click-to-select, aria) is untouched by the slot replacing its content.
+  await userEvent.click(cellByIso('2024-06-20')!)
+  await vi.waitFor(() =>
+    expect(cellByIso('2024-06-20')!.getAttribute('aria-selected')).toBe('true'),
+  )
 })
