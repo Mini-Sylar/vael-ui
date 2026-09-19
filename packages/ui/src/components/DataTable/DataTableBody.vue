@@ -44,7 +44,7 @@
     <tr
       v-for="virtualRow in virtualItems"
       :key="tableRowEntries[virtualRow.index]!.key"
-      :ref="(el) => measureRow(virtualRow.index, el as HTMLElement | null)"
+      :ref="measureRow(virtualRow.index)"
       :data-virtual-index="virtualRow.index"
       :class="
         trPart(
@@ -298,6 +298,7 @@ import Radio from '../Radio/Radio.vue'
 import Button from '../Button/Button.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { computed, TransitionGroup } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
 import type { VirtualRow } from '../../composables/useVirtualizer'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -319,7 +320,10 @@ const props = defineProps<{
   virtualItems: VirtualRow[]
   topSpacerHeight: number
   bottomSpacerHeight: number
-  measureRow: (index: number, el: HTMLElement | null) => void
+  measureRow: {
+    (index: number, el: HTMLElement | null): void
+    (index: number): (el: Element | ComponentPublicInstance | null) => void
+  }
   selectColumnRendered: boolean
   expansionColumnRendered: boolean
   selectableRows: boolean

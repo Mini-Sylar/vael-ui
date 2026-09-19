@@ -12,6 +12,7 @@
       :expand-on-row-click="expandOnRowClick"
       :sticky-scroll="stickyScroll"
       :selectable-folders="selectableFolders"
+      :force-mount="forceMount"
     />
   </div>
   <!-- Below the tree so `userEvent.tab()` from body still reaches the
@@ -59,6 +60,7 @@ const props = withDefaults(
     stickyScroll?: boolean
     selectableFolders?: boolean
     height?: string
+    forceMount?: boolean
   }>(),
   {
     selectionMode: 'single',
@@ -68,6 +70,7 @@ const props = withDefaults(
     stickyScroll: false,
     selectableFolders: true,
     height: undefined,
+    forceMount: false,
   },
 )
 

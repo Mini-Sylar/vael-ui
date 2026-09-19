@@ -1,7 +1,10 @@
 <template>
   <span ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <span class="ui-avatar-frame">
-      <span :class="fallbackPart.class" :style="fallbackPart.style">
+      <span
+        :class="fallbackPart.class"
+        :style="[{ display: showImage ? 'none' : undefined }, fallbackPart.style]"
+      >
         <slot>{{ initials }}</slot>
       </span>
       <img
@@ -26,7 +29,7 @@
   </span>
 </template>
 
-<!-- Two-layer crossfade (fallback + img overlay); frame wrapper (overflow hidden) separate from root for badge edge overlap -->
+<!-- Two-layer crossfade (fallback + img overlay); frame wrapper (overflow hidden) separate from root for badge edge overlap. The fallback is display:none once showImage is true, not just covered by the img's own opacity - an img with transparent regions (a PNG logo) would otherwise composite against the fallback still sitting fully visible underneath it, permanently bleeding its background color/initials through every transparent pixel, not just during the load flash. -->
 <script setup lang="ts">
 import './Avatar.css'
 import '../shared/tokens.css'

@@ -1,5 +1,5 @@
 import { computed, onScopeDispose, shallowRef, toValue, watch } from 'vue'
-import type { MaybeRefOrGetter, Ref } from 'vue'
+import type { ComponentPublicInstance, MaybeRefOrGetter, Ref } from 'vue'
 import { useElementSize, useEventListener } from '@vueuse/core'
 import type { ElRef } from './dom'
 
@@ -52,8 +52,28 @@ export interface UseVirtualizerReturn {
   /** The resolved per-row size — the `itemSize` prop, or the measured first
    * row once available, or the 36px estimate before that. Fixed-size mode only. */
   measuredSize: Readonly<Ref<number | null>>
-  /** Reports one rendered row's real height. No-op unless `dynamic` is true. */
-  measureRow: (index: number, el: HTMLElement | null) => void
+  /**
+   * Reports one rendered row's real height. No-op unless `dynamic` is true.
+   *
+   * Call with `(index, el)` directly from an inline ref callback, or with just `index` to get
+   * back a stable, internally-memoized `(el) => void` for that index instead - prefer the latter
+   * for a `:ref` binding. An inline `(el) => measureRow(row.index, el)` arrow is a fresh function
+   * identity every render, and Vue's ref diffing calls the OLD identity with `null` then the NEW
+   * one with the element on every reactive update, not just a genuine mount/unmount - churning
+   * this composable's own observe/unobserve bookkeeping (and, transitively, its own reactive
+   * version bump) far more than the "one measurement per row, plus one per real resize" this API
+   * implies. `measureRow(row.index)` returns the same function on every call for that index, so
+   * Vue's diffing sees an unchanged ref and only invokes it on a real mount/unmount.
+   */
+  measureRow: {
+    (index: number, el: HTMLElement | null): void
+    /** The factory form's callback accepts the same wide type a template `:ref` binding always
+     * hands a callback (an element OR a component's public instance) rather than the narrower
+     * `HTMLElement` the two-argument form takes directly - so `:ref="measureRow(row.index)"` type-
+     * checks without a caller needing to cast, matching how every other stable-ref-callback in
+     * this codebase (and its consumers) is typed. Non-`HTMLElement` values are a no-op inside. */
+    (index: number): (el: Element | ComponentPublicInstance | null) => void
+  }
   /** Total height of all `count` rows, in px — same value `listStyle.blockSize`
    * carries, exposed as a number for layouts (a real `<table>`'s spacer rows)
    * that can't use `listStyle`'s absolute-positioning contract. */
@@ -148,7 +168,23 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
   // no-op; real size changes are instead caught by the ResizeObserver above,
   // whose callback runs decoupled from Vue's render cycle so it can't nest
   // inside — and re-trigger — the update it's reacting to.
-  function measureRow(index: number, el: HTMLElement | null) {
+  // Row index is stable for a rendered item's whole lifetime in every real usage (rows append or
+  // get replaced wholesale, never reorder in place), so this is a small, permanent cache, not a
+  // leak - same reasoning a consumer's own app-level workaround for this used to rely on before
+  // the factory overload below made it unnecessary.
+  const rowRefCache = new Map<number, (el: Element | ComponentPublicInstance | null) => void>()
+
+  function measureRow(index: number, el: HTMLElement | null): void
+  function measureRow(index: number): (el: Element | ComponentPublicInstance | null) => void
+  function measureRow(index: number, el?: HTMLElement | null) {
+    if (arguments.length < 2) {
+      let fn = rowRefCache.get(index)
+      if (!fn) {
+        fn = (rowEl) => measureRow(index, rowEl instanceof HTMLElement ? rowEl : null)
+        rowRefCache.set(index, fn)
+      }
+      return fn
+    }
     if (!isDynamic.value) return
     const prevEl = elByIndex.get(index)
     if (prevEl === el) return

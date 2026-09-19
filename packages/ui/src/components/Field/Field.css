@@ -87,14 +87,26 @@
   }
   /* Anchored to the control's top edge (inset 0 + -50% translate), not a fixed rem offset — the label's midline lands exactly on the border for every control height, sm through lg. */
   .ui-field[data-placement='float'][data-focused] .ui-field-label,
-  .ui-field[data-placement='float'][data-filled] .ui-field-label {
+  .ui-field[data-placement='float'][data-filled] .ui-field-label,
+  /* Browser autofill (landing on a page with a saved password/address already filled in) doesn't
+     reliably fire an `input` event Vue's v-model catches, so `data-filled` can stay stale even
+     though the control visually has a value - `:autofill` is the platform's own signal for this. */
+  .ui-field[data-placement='float']:has(:autofill) .ui-field-label,
+  .ui-field[data-placement='float']:has(:-webkit-autofill) .ui-field-label {
     inset-block-start: 0;
     translate: -0.1875rem -50%;
     scale: 0.85;
     background: var(--ui-surface);
     color: var(--ui-text);
   }
-  .ui-field[data-placement='float']:not([data-focused], [data-filled]) ::placeholder {
+  /* Select/CascadeSelect render their own placeholder as plain markup (.ui-select-placeholder /
+     .ui-cascade-select-placeholder), not a real <input>/<textarea> - the ::placeholder pseudo-
+     element above never matches those, so their placeholder text stayed fully visible under the
+     floating label regardless of focus/filled state without this. */
+  .ui-field[data-placement='float']:not([data-focused], [data-filled]) ::placeholder,
+  .ui-field[data-placement='float']:not([data-focused], [data-filled]) .ui-select-placeholder,
+  .ui-field[data-placement='float']:not([data-focused], [data-filled])
+    .ui-cascade-select-placeholder {
     color: transparent;
   }
   /* A Textarea's height is user-resizable/auto-growing - centering the resting label on 50% of its CURRENT height (right for a fixed-height Input) drifts as it resizes. Anchor to the first line instead, same intent as `inset` placement's own Textarea padding above. */

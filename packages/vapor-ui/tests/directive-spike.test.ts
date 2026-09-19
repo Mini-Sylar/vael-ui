@@ -7,6 +7,8 @@ test('spike: Vapor directive value is a getter, called once, needs its own watch
   document.body.appendChild(host)
   const app = createVaporApp(DirectiveSpike)
   app.mount(host)
+  // As of vue@3.6.0-rc.9 the initial directive call is no longer synchronous with mount() - wait a tick.
+  await new Promise((resolve) => setTimeout(resolve, 50))
   try {
     const rawCalls = () =>
       host.querySelector('[data-testid="directive-spike-raw-calls"]')!.textContent

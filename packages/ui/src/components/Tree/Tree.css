@@ -161,16 +161,28 @@
   .ui-tree-rows-leave-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
   }
-  .ui-tree-rows-enter-from,
-  .ui-tree-rows-leave-to {
+  .ui-tree-rows-enter-from {
     opacity: 0;
   }
-  /* Out of flow during its own leave so what follows can close the gap
-     immediately instead of waiting for the fade. */
+  /* position: absolute stays - it's what lets FLIP snap surviving siblings into place instantly,
+     decoupled from this box's own fade (removing it made the whole collapse feel gated on the full
+     transition, a real regression, tried and reverted). max-block-size 40rem -> 0 fixes the actual
+     "layout snaps shut" complaint without needing that decoupling given up. duration-exit (not
+     duration-enter) matches this library's own asymmetric exit/enter convention (toast, tooltip).
+     Nested-level transitionend still unverified - see tree.test.ts. */
   .ui-tree-rows-leave-active {
     position: absolute;
     inset-inline: 0;
     top: var(--ui-tree-row-height);
+    overflow: hidden;
+    max-block-size: 40rem;
+    transition:
+      opacity var(--ui-duration-exit) var(--ui-ease-in-out),
+      max-block-size var(--ui-duration-exit) var(--ui-ease-in-out);
+  }
+  .ui-tree-rows-leave-to {
+    opacity: 0;
+    max-block-size: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {

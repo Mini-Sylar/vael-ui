@@ -431,3 +431,45 @@ test('v-model:node holds an array of node objects in multiple mode', async () =>
   await userEvent.click(rowByLabel('Banana')!)
   await expect.element(screen.getByTestId('node-model')).toHaveTextContent('Apple,Banana')
 })
+
+test('the leave transition declares a max-block-size collapse alongside opacity, not just opacity, so the vacated space shrinks instead of snapping shut', async () => {
+  await render(TreeFixture, { props: { items: deepItems, height: '120px' } })
+  await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
+  await userEvent.click(rowByLabel('Root')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(rowByLabel('Sibling')).toBeDefined())
+
+  // Asserts the CSS declaration, not real transition events - this harness never observes
+  // transitionrun/transitionend for .ui-tree-rows at all, a harness limitation (see Tree.css).
+  const rowsEl = document.querySelector<HTMLElement>('.ui-tree-rows')!
+  rowsEl.classList.add('ui-tree-rows-leave-active')
+  const style = getComputedStyle(rowsEl)
+  expect(style.transitionProperty).toContain('max-block-size')
+  expect(style.maxBlockSize).not.toBe('none')
+  rowsEl.classList.remove('ui-tree-rows-leave-active')
+
+  await userEvent.click(rowByLabel('Root')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(rowByLabel('Sibling')).toBeUndefined())
+})
+
+// NOT yet fixed: a NESTED folder's own leave transition (depth >= 1) still never completes -
+// see vael-ui-issues.md's Tree entry for the full diagnosis and why it needs more than CSS.
+
+test("forceMount keeps a collapsed folder's children in the DOM instead of unmounting them, toggling data-state instead", async () => {
+  await render(TreeFixture, { props: { forceMount: true } })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+
+  // Collapsed by default, but forceMount means it's already in the DOM, just hidden.
+  expect(rowByLabel('Apple')).toBeDefined()
+  const childrenBlock = rowByLabel('Apple')!.closest('.ui-tree-rows')!
+  expect(childrenBlock.getAttribute('data-state')).toBe('closed')
+  expect(getComputedStyle(childrenBlock).display).toBe('none')
+
+  await userEvent.click(rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(childrenBlock.getAttribute('data-state')).toBe('open'))
+  expect(getComputedStyle(childrenBlock).display).not.toBe('none')
+
+  await userEvent.click(rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
+  await vi.waitFor(() => expect(childrenBlock.getAttribute('data-state')).toBe('closed'))
+  // Still mounted after collapsing again - forceMount never unmounts it.
+  expect(rowByLabel('Apple')).toBeDefined()
+})

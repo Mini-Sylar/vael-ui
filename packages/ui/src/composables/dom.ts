@@ -31,17 +31,29 @@ export function resolveDOMTarget(target: DOMTarget | undefined): HTMLElement | n
   return target
 }
 
+function hasZeroRect(el: HTMLElement): boolean {
+  const rect = el.getBoundingClientRect()
+  return rect.width === 0 && rect.height === 0 && rect.top === 0 && rect.left === 0
+}
+
 /**
  * A `display: contents` element has a zero rect — useless as a floating-ui reference and wrong
  * for aria-describedby/positioning generally. Descends to the first element that actually
  * generates a box, same logic vTooltip's directive uses for the same reason.
+ *
+ * Also descends past a wrapper that isn't `display: contents` but still measures a zero rect at
+ * `(0, 0)` - the exact shape of a `#trigger`-slot wrapper caught before its first real layout
+ * (Menu's own trigger-anchoring resolves this at the same point in the render cycle every other
+ * `display: contents` check runs, and a not-yet-measured wrapper is indistinguishable from a
+ * `display: contents` one by rect alone). Without this, `computePosition` was handed that zero
+ * rect as the reference element and fell back to floating-ui's `top: 0px; left: 0px` default,
+ * anchoring the menu/popover to the viewport's top-left corner instead of the real trigger.
  */
 export function resolvePastDisplayContents(el: HTMLElement): HTMLElement {
   let target = el
-  while (
-    target.firstElementChild instanceof HTMLElement &&
-    getComputedStyle(target).display === 'contents'
-  ) {
+  while (target.firstElementChild instanceof HTMLElement) {
+    const isDisplayContents = getComputedStyle(target).display === 'contents'
+    if (!isDisplayContents && !hasZeroRect(target)) break
     target = target.firstElementChild
   }
   return target

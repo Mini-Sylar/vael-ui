@@ -95,7 +95,15 @@
                   @click="onDayClick(day)"
                   @pointerenter="onDayHover(day)"
                 >
-                  {{ day.getDate() }}
+                  <slot
+                    name="day"
+                    :date="day"
+                    :is-current-month="isSameMonth(day, viewDate)"
+                    :is-today="isToday(day)"
+                    :is-selected="isDaySelected(day)"
+                    :is-disabled="isDayDisabled(day)"
+                    >{{ day.getDate() }}</slot
+                  >
                 </div>
               </div>
             </div>
@@ -240,6 +248,22 @@ const emit = defineEmits<{
   change: [value: Date | CalendarRange | null]
   /** Fires when the displayed month changes (nav buttons, keyboard, or clicking adjacent month's day). */
   'month-change': [value: Date]
+}>()
+
+defineSlots<{
+  /**
+   * Per-day cell content in the date grid - falls back to the day number when unused. Doesn't
+   * replace the cell's own click/hover/keyboard-focus wiring or its aria attributes, just what
+   * renders inside it, so a caller can badge/mark a day (e.g. "has N items scheduled") without
+   * forking the whole grid/keyboard-nav/month-transition logic Calendar already owns.
+   */
+  day(props: {
+    date: Date
+    isCurrentMonth: boolean
+    isToday: boolean
+    isSelected: boolean
+    isDisabled: boolean
+  }): unknown
 }>()
 
 // Pure date helpers: no date library dependency, native Date math only
