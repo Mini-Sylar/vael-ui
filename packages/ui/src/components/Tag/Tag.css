@@ -1,6 +1,8 @@
 @layer ui-components {
   .ui-tag {
     display: inline-flex;
+    /* A pill/badge should never grow in an ambient flex context - without this, every consumer needs its own `flex:none` override. */
+    flex: none;
     align-items: center;
     gap: 0.25rem;
     padding-inline: 0.5rem;

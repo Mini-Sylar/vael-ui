@@ -102,7 +102,7 @@
         v-show="open"
         ref="positioner"
         :class="positionerPart.class"
-        :style="[positionerStyle, positionerPart.style]"
+        :style="[positionerStyle, { zIndex }, positionerPart.style]"
         :data-ui-theme="themeScope"
         :data-state="isClosing ? 'closing' : 'open'"
         :data-side="resolvedSide"
@@ -387,21 +387,32 @@ const themedUi = useThemedUi(
 )
 const themeScope = inject(themeScopeKey, undefined)
 
-const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close, cancelClose } =
-  usePopover(open, {
-    triggerEl: el,
-    positionerEl,
-    side: () => props.side,
-    align: () => props.align,
-    sideOffset: () => props.sideOffset,
-    alignOffset: () => props.alignOffset,
-    matchReferenceWidth: true,
-    closeOnEsc: () => props.closeOnEsc,
-    closeOnOutside: () => props.closeOnOutside,
-    beforeClose: () => props.beforeClose,
-    maxHeightCap: () => props.maxPanelHeight,
-    onOpenChange: (value, details) => emit('open-change', value, details),
-  })
+const {
+  positionerStyle,
+  placement,
+  transformOrigin,
+  maxHeight,
+  isClosing,
+  close,
+  cancelClose,
+  layerIndex,
+} = usePopover(open, {
+  triggerEl: el,
+  positionerEl,
+  side: () => props.side,
+  align: () => props.align,
+  sideOffset: () => props.sideOffset,
+  alignOffset: () => props.alignOffset,
+  matchReferenceWidth: true,
+  closeOnEsc: () => props.closeOnEsc,
+  closeOnOutside: () => props.closeOnOutside,
+  beforeClose: () => props.beforeClose,
+  maxHeightCap: () => props.maxPanelHeight,
+  onOpenChange: (value, details) => emit('open-change', value, details),
+})
+
+// Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
+const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
 
 const listboxId = useId()
 

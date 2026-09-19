@@ -101,6 +101,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
       close,
       requestClose,
       cancelClose,
+      layerIndex: () => 0,
     }
   }
 
@@ -175,5 +176,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     close,
     requestClose,
     cancelClose,
+    // Same shared stack useDialog.ts already uses for Dialog/Drawer/BottomSheet's own z-index.
+    layerIndex: layer.index,
   }
 }

@@ -9,7 +9,7 @@
     :force-mount="forceMount"
     :teleport-to="teleportTarget"
     :container-el="container"
-    :ui="ui?.spotlight"
+    :ui="spotlightUi"
   />
   <Popover
     ref="popover"
@@ -28,7 +28,7 @@
     :before-close="beforeClose"
     :teleport-to="teleportTarget"
     :container="container"
-    :ui="{ positioner: ui?.positioner, panel: ui?.panel }"
+    :ui="{ positioner: positionerUi, panel: ui?.panel }"
     @open-change="(value, details) => emit('open-change', value, details)"
   >
     <template #default="{ close, panelEl }">
@@ -137,7 +137,7 @@ export interface TourProps<T extends TourStep = TourStep> {
 <script setup lang="ts" generic="T extends TourStep = TourStep">
 import './Tour.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
 import TourSpotlight from './TourSpotlight.vue'
@@ -145,6 +145,7 @@ import { useTour } from '../../composables/useTour'
 import { useDOMTarget } from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
+import { useLayer } from '../../composables/useLayerStack'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 
@@ -324,6 +325,31 @@ watch(
   { immediate: true },
 )
 
+// One shared-stack layer for the spotlight+panel pair (panel = index + 1, always above its own spotlight), reclaimed to the top after every onBeforeEnter (which often opens another overlay to reveal its target) - keyed off isTransitioning, not currentIndex, since goTo(0, 'open') never actually changes currentIndex from its default.
+const layer = useLayer({ scope: container, content: () => popoverPanelEl.value })
+function reclaimTop() {
+  layer.pop()
+  layer.push()
+}
+watch(open, (value) => (value ? layer.push() : layer.pop()), { immediate: true, flush: 'post' })
+watch(isTransitioning, (transitioning) => {
+  if (!transitioning && open.value) reclaimTop()
+})
+onScopeDispose(() => layer.pop())
+
+const spotlightZIndex = computed(
+  () => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layer.index())})`,
+)
+const panelZIndex = computed(
+  () => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layer.index())} + 1)`,
+)
+
+// Merges the forced z-index into whatever spotlight/positioner override was already passed through, instead of clobbering it.
+function withZIndex(part: UiPartValue | undefined, zIndex: string): UiPartValue {
+  const base = typeof part === 'string' ? { class: part } : (part ?? {})
+  return { class: base.class, style: [base.style, { zIndex }] }
+}
+
 // A target inside another async-positioned overlay can still carry useFloatingPosition's
 // HIDDEN_STYLE placeholder (visibility:hidden, top/left 0) when this runs — its
 // getBoundingClientRect() would be bogus and scrollIntoView would throw the page to the top.
@@ -434,6 +460,8 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const ui = computed(() => themedUi())
+const spotlightUi = computed(() => withZIndex(ui.value?.spotlight, spotlightZIndex.value))
+const positionerUi = computed(() => withZIndex(ui.value?.positioner, panelZIndex.value))
 
 defineExpose({
   id: () => props.id,

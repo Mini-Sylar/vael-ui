@@ -100,6 +100,21 @@ export function useTabIndicator(
     })
   }
 
+  // A still-animating ancestor (Dialog/Drawer/Popover entering) can make the first measure() above run mid-transition, so re-measure once any ancestor's own transition actually finishes.
+  function onAncestorTransitionEnd(event: Event) {
+    const list = options.listEl.value
+    const target = event.target
+    if (!list || !(target instanceof Node) || target === list || !target.contains(list)) return
+    measuredOnce = false
+    measure()
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('transitionend', onAncestorTransitionEnd, { capture: true })
+    onBeforeUnmount(() =>
+      document.removeEventListener('transitionend', onAncestorTransitionEnd, { capture: true }),
+    )
+  }
+
   let resizeObserver: ResizeObserver | undefined
   watch(
     options.listEl,
