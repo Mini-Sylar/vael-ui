@@ -182,11 +182,19 @@ function injectVaporMarker(source, moduleId) {
   return source.replace(scriptSetupRe, (full, attrs) => `<script setup${attrs} vapor>`)
 }
 
-// Aliases vTooltip→vTooltipVapor so templates need no changes
-const VAPOR_DIRECTIVE_ALIASES = {
-  vTooltip: 'vTooltipVapor',
-  vScrollMask: 'vScrollMaskVapor',
-  vDraggable: 'vDraggableVapor',
+// Local identifiers whose vapor-only implementation lives in a differently-named
+// export, possibly from a different module than the vdom import site names —
+// aliased so component templates/call sites need no changes. Value is
+// [vaporExportName, sourceModulePath relative to ui/src].
+const VAPOR_ALIASES = {
+  vTooltip: ['vTooltipVapor', 'directives/vTooltip'],
+  vScrollMask: ['vScrollMaskVapor', 'directives/vScrollMask'],
+  vDraggable: ['vDraggableVapor', 'directives/vDraggable'],
+  // See useSlotRelay.ts: a plain functional component forwarding a captured
+  // slot renders as [object Object] under vaporInteropPlugin
+  // (https://github.com/vuejs/core/issues/15596) — the vapor build needs the
+  // defineVaporComponent-wrapped variant instead.
+  createSlotRelay: ['createSlotRelayVapor', 'composables/useSlotRelay'],
 }
 
 function relativeImportPath(specifier, fromDir = '') {
@@ -214,22 +222,27 @@ function rewriteImports(source, moduleId, publicExports) {
       return asMatch ? asMatch[1] : n.replace(/^type\s+/, '')
     })
 
-    // vTooltip/vScrollMask import their own file directly — the barrel only
-    // exports them aliased (vTooltipVapor as vTooltip), not under the raw name.
+    // vTooltip/vScrollMask/createSlotRelay etc. import their own file directly
+    // — the barrel only exports them aliased (vTooltipVapor as vTooltip), not
+    // under the raw name.
     const fromDir = dirname(moduleId)
     const directiveLines = []
     const otherNames = []
     for (let i = 0; i < names.length; i++) {
       const localName = localNames[i]
-      const vaporName = VAPOR_DIRECTIVE_ALIASES[localName]
-      if (!vaporName) {
+      const alias = VAPOR_ALIASES[localName]
+      if (!alias) {
         otherNames.push(names[i])
         continue
       }
+      const [vaporName, modulePath] = alias
+      // vScrollMask.ts has its own CSS import that needs mirroring into
+      // OUT_DIR (see copyNonComponentSource below), so it's referenced from
+      // the copy already generated there rather than back into ui/src.
       const importPath =
         localName === 'vScrollMask'
-          ? pathToGenerated('directives/vScrollMask', fromDir)
-          : relativeImportPath('directives/vTooltip', fromDir)
+          ? pathToGenerated(modulePath, fromDir)
+          : relativeImportPath(modulePath, fromDir)
       directiveLines.push(`import ${typeOnly ?? ''}{${vaporName} as ${localName}} from '${importPath}'`)
     }
 

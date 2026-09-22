@@ -223,8 +223,9 @@ import {
   watch,
   watchEffect,
 } from 'vue'
-import type { FunctionalComponent, VNodeChild } from 'vue'
+import type { VNodeChild } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
+import { createSlotRelay } from '../../composables/useSlotRelay'
 // Explicit self-import for the recursive submenu (see the template). `<Menu>` by name relies on
 // `resolveComponent('Menu', true)`, which returns the bare string — not the component — inside a
 // Vapor render, so the submenu renders as a stray `<menu>` element with its props dropped. The
@@ -293,8 +294,10 @@ const slots = useSlots()
 // Renders the consumer's own #item slot for a nested submenu row. Captured from THIS instance
 // here, so forwarding it into the child <Menu> (see the template) can't turn into a self-call —
 // a bare `<slot name="item">` there re-resolves against the submenu under the Vapor compiler.
-const relayItemSlot: FunctionalComponent<{ item: T }> = (relayProps) =>
-  slots.item?.(relayProps) as VNodeChild
+const relayItemSlot = createSlotRelay<{ item: T }>(
+  (relayProps) => slots.item?.(relayProps) as VNodeChild,
+  ['item'],
+)
 
 function isSeparator(entry: MenuEntry<T>): entry is MenuSeparator {
   return (entry as MenuSeparator).type === 'separator'
