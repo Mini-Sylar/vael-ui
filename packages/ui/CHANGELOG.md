@@ -1,5 +1,17 @@
 # vael-ui
 
+## 0.3.9
+
+### Patch Changes
+
+- [#58](https://github.com/Mini-Sylar/vael-ui/pull/58) [`1d3884f`](https://github.com/Mini-Sylar/vael-ui/commit/1d3884fadeca92788ef3e3f15f2928e932f03676) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - ## Fixes
+
+  - **Popover / Menu / Select / Combobox / TreeSelect / DatePicker:** correct stacking order when opened from within another overlay, based on open order instead of family.
+  - **Tour:** panel no longer becomes unclickable when a step opens another overlay to reveal its target.
+  - **Tag:** no longer stretches to fill a flex row.
+  - **Tabs:** sliding indicator no longer lands in the wrong spot when mounted inside an animating Dialog/Drawer/Popover.
+  - **Menu / CascadeSelect (vapor build):** fixed a custom `#item` slot rendering as `[object Object]` in a nested submenu under `vaporInteropPlugin`.
+
 ## 0.3.8
 
 ### Patch Changes
