@@ -9,7 +9,7 @@
         v-show="open"
         ref="positioner"
         :class="positionerPart.class"
-        :style="[positionerStyle, positionerPart.style]"
+        :style="[positionerStyle, { zIndex }, positionerPart.style]"
         :data-ui-theme="themeScope"
         :data-state="isClosing ? 'closing' : 'open'"
         :data-side="resolvedSide"
@@ -223,8 +223,9 @@ import {
   watch,
   watchEffect,
 } from 'vue'
-import type { FunctionalComponent, VNodeChild } from 'vue'
+import type { VNodeChild } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
+import { createSlotRelay } from '../../composables/useSlotRelay'
 // Explicit self-import for the recursive submenu (see the template). `<Menu>` by name relies on
 // `resolveComponent('Menu', true)`, which returns the bare string — not the component — inside a
 // Vapor render, so the submenu renders as a stray `<menu>` element with its props dropped. The
@@ -293,8 +294,10 @@ const slots = useSlots()
 // Renders the consumer's own #item slot for a nested submenu row. Captured from THIS instance
 // here, so forwarding it into the child <Menu> (see the template) can't turn into a self-call —
 // a bare `<slot name="item">` there re-resolves against the submenu under the Vapor compiler.
-const relayItemSlot: FunctionalComponent<{ item: T }> = (relayProps) =>
-  slots.item?.(relayProps) as VNodeChild
+const relayItemSlot = createSlotRelay<{ item: T }>(
+  (relayProps) => slots.item?.(relayProps) as VNodeChild,
+  ['item'],
+)
 
 function isSeparator(entry: MenuEntry<T>): entry is MenuSeparator {
   return (entry as MenuSeparator).type === 'separator'
@@ -348,20 +351,31 @@ const themedUi = useThemedUi(
 // Re-apply theme scope on Teleported node since it breaks CSS custom-property inheritance.
 const themeScope = inject(themeScopeKey, undefined)
 
-const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close, cancelClose } =
-  usePopover(open, {
-    triggerEl: triggerElRef,
-    positionerEl,
-    side: () => props.side,
-    align: () => props.align,
-    sideOffset: () => props.sideOffset,
-    alignOffset: () => props.alignOffset,
-    closeOnEsc: () => props.closeOnEsc,
-    closeOnOutside: () => props.closeOnOutside,
-    beforeClose: () => props.beforeClose,
-    maxHeightCap: () => props.maxPanelHeight,
-    onOpenChange: (value, details) => emit('open-change', value, details),
-  })
+const {
+  positionerStyle,
+  placement,
+  transformOrigin,
+  maxHeight,
+  isClosing,
+  close,
+  cancelClose,
+  layerIndex,
+} = usePopover(open, {
+  triggerEl: triggerElRef,
+  positionerEl,
+  side: () => props.side,
+  align: () => props.align,
+  sideOffset: () => props.sideOffset,
+  alignOffset: () => props.alignOffset,
+  closeOnEsc: () => props.closeOnEsc,
+  closeOnOutside: () => props.closeOnOutside,
+  beforeClose: () => props.beforeClose,
+  maxHeightCap: () => props.maxPanelHeight,
+  onOpenChange: (value, details) => emit('open-change', value, details),
+})
+
+// Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
+const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
 
 const rowEls = reactive<Record<number, HTMLElement | null>>({})
 const submenuOpen = reactive<Record<number, boolean>>({})

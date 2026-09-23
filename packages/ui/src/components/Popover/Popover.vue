@@ -15,7 +15,7 @@
         v-show="open"
         ref="positioner"
         :class="positionerPart.class"
-        :style="[positionerStyle, positionerPart.style]"
+        :style="[positionerStyle, { zIndex }, positionerPart.style]"
         :data-ui-theme="themeScope"
         :data-state="isClosing ? 'closing' : 'open'"
         :data-side="resolvedSide"
@@ -211,20 +211,31 @@ watch(
   { immediate: true },
 )
 
-const { positionerStyle, placement, transformOrigin, maxHeight, isClosing, close, cancelClose } =
-  usePopover(open, {
-    triggerEl: triggerElRef,
-    positionerEl,
-    side: () => props.side,
-    align: () => props.align,
-    sideOffset: () => props.sideOffset,
-    alignOffset: () => props.alignOffset,
-    closeOnEsc: () => props.closeOnEsc,
-    closeOnOutside: () => props.closeOnOutside,
-    beforeClose: () => props.beforeClose,
-    onOpenChange: (value, details) => emit('open-change', value, details),
-    scope: container,
-  })
+const {
+  positionerStyle,
+  placement,
+  transformOrigin,
+  maxHeight,
+  isClosing,
+  close,
+  cancelClose,
+  layerIndex,
+} = usePopover(open, {
+  triggerEl: triggerElRef,
+  positionerEl,
+  side: () => props.side,
+  align: () => props.align,
+  sideOffset: () => props.sideOffset,
+  alignOffset: () => props.alignOffset,
+  closeOnEsc: () => props.closeOnEsc,
+  closeOnOutside: () => props.closeOnOutside,
+  beforeClose: () => props.beforeClose,
+  onOpenChange: (value, details) => emit('open-change', value, details),
+  scope: container,
+})
+
+// Same shared-layer-stack stacking Dialog uses (see Dialog.vue's rootStyle.zIndex) - deliberately --ui-z-dialog, not --ui-z-popover, so both families compare on one shared axis.
+const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
 
 // v-scroll-mask on body (not panel) — panel's solid surface must sit behind fade.
 const bodyStyle = computed(() =>

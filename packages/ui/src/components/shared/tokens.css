@@ -27,6 +27,7 @@
 
     /* Below dialog: a drag preview floats over page content, never over a modal. */
     --ui-z-drag: 45;
+    /* Shared floor every overlay adds its own layer-stack index to (useLayerStack.ts) via calc(var(--ui-z-dialog, 50) + layerIndex) - --ui-z-tour/--ui-z-popover below are just pre-hydration fallbacks now. */
     --ui-z-dialog: 50;
     --ui-z-tour: 52;
     --ui-z-popover: 55;
