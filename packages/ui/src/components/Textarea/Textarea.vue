@@ -56,6 +56,7 @@ import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -105,23 +106,39 @@ function commit(value: string) {
   modelValue.value = modifiers.trim ? value.trim() : value
 }
 function onNativeInput(event: Event) {
-  if (modifiers.lazy) return
-  commit((event.target as HTMLTextAreaElement).value)
+  try {
+    if (modifiers.lazy) return
+    commit((event.target as HTMLTextAreaElement).value)
+  } finally {
+    forward('onInput', event)
+  }
 }
 function onNativeChange(event: Event) {
-  if (!modifiers.lazy) return
-  commit((event.target as HTMLTextAreaElement).value)
+  try {
+    if (!modifiers.lazy) return
+    commit((event.target as HTMLTextAreaElement).value)
+  } finally {
+    forward('onChange', event)
+  }
 }
 
 const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0 })
 const focusVisible = shallowRef(false)
-function onNativeFocus() {
-  focusVisible.value = focusIsFromKeyboard()
-  fieldControl.onFocus()
+function onNativeFocus(event: FocusEvent) {
+  try {
+    focusVisible.value = focusIsFromKeyboard()
+    fieldControl.onFocus()
+  } finally {
+    forward('onFocus', event)
+  }
 }
-function onNativeBlur() {
-  focusVisible.value = false
-  fieldControl.onBlur()
+function onNativeBlur(event: FocusEvent) {
+  try {
+    focusVisible.value = false
+    fieldControl.onBlur()
+  } finally {
+    forward('onBlur', event)
+  }
 }
 
 function onFrameMousedown(event: MouseEvent) {
@@ -177,10 +194,10 @@ watch(
 )
 
 const attrs = useAttrs()
-const restAttrs = computed(() => {
-  const { class: _class, style: _style, ...rest } = attrs
-  return rest
-})
+const forward = useForwardedListener(attrs)
+const restAttrs = computed(() =>
+  omitAttrs(attrs, ['class', 'style', 'onInput', 'onChange', 'onFocus', 'onBlur']),
+)
 
 const textareaStyle = computed(() => ({
   '--ui-textarea-rows': String(props.rows),
