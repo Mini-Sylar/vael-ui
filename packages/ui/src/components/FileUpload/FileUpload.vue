@@ -28,7 +28,7 @@
       type="file"
       class="ui-file-upload-input"
       :accept="accept"
-      :capture="capture"
+      :capture="capture || undefined"
       :multiple="multiple"
       :name="name"
       :disabled="isDisabled"
@@ -128,7 +128,7 @@ const props = withDefaults(
       remove: UiPartValue
     }>
   }>(),
-  { multiple: true, disabled: false, motionCss: true },
+  { capture: undefined, multiple: true, disabled: false, motionCss: true },
 )
 
 const emit = defineEmits<{
