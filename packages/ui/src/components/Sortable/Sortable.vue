@@ -101,6 +101,8 @@ const props = withDefaults(
     canDrop?: (details: SortableDropDetails) => boolean
     /** Async gate at drop time. Return `false` (or a promise of it) to cancel — composes with `confirmAction().result`. */
     beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
+    /** Scrolls the list, any scrollable ancestor, or the page while a drag nears its edge. Default `true`. */
+    autoScroll?: boolean
     /** Turns off dragging; rows become static. */
     disabled?: boolean
     /** `false` skips the built-in springs entirely — rows snap to their new slots. Reach for it when driving the motion yourself. */
@@ -131,6 +133,7 @@ const props = withDefaults(
     axis: 'y',
     canDrop: undefined,
     beforeDrop: undefined,
+    autoScroll: true,
     disabled: false,
     motionCss: true,
     group: undefined,
@@ -200,6 +203,7 @@ const {
   canDrop: (details) => props.canDrop?.(details) ?? true,
   beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
   onDropError: (error, details) => emit('drop-error', error, details),
+  autoScroll: () => props.autoScroll,
   disabled: () => props.disabled,
   motionCss: () => props.motionCss,
   labelOf: (value) => {

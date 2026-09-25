@@ -4,6 +4,7 @@ import { useEventListener } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
+import { autoScrollAt, contentOffset, findScrollParent } from './sortableAutoScroll'
 
 /**
  * Reorder engine shared by every sortable surface. All ordering/nesting
@@ -344,6 +345,9 @@ export interface UseSortableOptions {
   /** Ms a touch pointer must hold still before a drag can start. Mouse/pen
    * are unaffected — still an immediate distance-threshold commit. Default `150`. */
   touchDragDelay?: MaybeRefOrGetter<number>
+  /** Scrolls the list (and any scrollable ancestor, or the page) while a pointer drag nears its
+   * edge, so off-screen drop targets stay reachable. Default `true`. */
+  autoScroll?: MaybeRefOrGetter<boolean>
   /** Turns off dragging; the handlers below become no-ops. */
   disabled?: MaybeRefOrGetter<boolean>
   /** `false` disables the built-in springs — positions snap. */
@@ -1112,6 +1116,38 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let grabOffsetX = 0
   let grabOffsetY = 0
 
+  // Bands are measured in viewport coordinates at grab time; this is how far the list has
+  // scrolled since, so hit-testing and the in-place translate can follow the content.
+  let listScrollEl: HTMLElement | null = null
+  let listOffsetAtGrab = 0
+  function scrollShift(): number {
+    return contentOffset(listScrollEl, axis()) - listOffsetAtGrab
+  }
+  let autoScrollFrame: number | null = null
+  // True while an autoscroll tick re-runs the last move: same pointer, so velocity must not reset.
+  let replayingPointer = false
+  function autoScrollLoop() {
+    autoScrollFrame = null
+    if (!isDragging.value || pointerId === null || !lastPointerEvent) return
+    if (toValue(options.autoScroll) ?? true) {
+      const event = lastPointerEvent
+      if (autoScrollAt({ x: event.clientX, y: event.clientY }, [listScrollEl])) {
+        replayingPointer = true
+        onPointerMove(event)
+        replayingPointer = false
+      }
+    }
+    autoScrollFrame = requestAnimationFrame(autoScrollLoop)
+  }
+  function startAutoScroll() {
+    listScrollEl = findScrollParent(dragEl?.parentElement ?? null, axis())
+    listOffsetAtGrab = contentOffset(listScrollEl, axis())
+    if (autoScrollFrame === null) autoScrollFrame = requestAnimationFrame(autoScrollLoop)
+  }
+  onScopeDispose(() => {
+    if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame)
+  })
+
   function createPreview(
     sourceEl: HTMLElement,
     event: PointerEvent | null,
@@ -1294,6 +1330,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
     committed = true
     isDragging.value = true
+    startAutoScroll()
     try {
       dragEl?.setPointerCapture(pointerId!)
     } catch {
@@ -1367,14 +1404,17 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
 
     event.preventDefault()
-    const now = performance.now()
-    const elapsed = Math.max(1, now - lastTime)
-    const pos = axis() === 'x' ? event.clientX : event.clientY
-    velocity = ((pos - lastAlong) / elapsed) * 1000 // px/s, for the drop handoff
-    lastAlong = pos
-    lastTime = now
+    if (!replayingPointer) {
+      const now = performance.now()
+      const elapsed = Math.max(1, now - lastTime)
+      const pos = axis() === 'x' ? event.clientX : event.clientY
+      velocity = ((pos - lastAlong) / elapsed) * 1000 // px/s, for the drop handoff
+      lastAlong = pos
+      lastTime = now
+    }
 
-    const along = axis() === 'x' ? dx : dy
+    const shift = scrollShift()
+    const along = (axis() === 'x' ? dx : dy) + shift
     const across = axis() === 'x' ? dy : dx
     // 1:1 with the pointer, no transition — never gate a live drag.
     if (previewEl) movePreview(event)
@@ -1383,7 +1423,11 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       // is, in both dimensions, even before it lifts out of this list —
       // otherwise it reads as stuck on the sort axis right up until the
       // moment it crosses into a sibling column.
-      dragEl.style.translate = options.group ? `${dx}px ${dy}px` : translateFor(along)
+      dragEl.style.translate = options.group
+        ? axis() === 'x'
+          ? `${dx + shift}px ${dy}px`
+          : `${dx}px ${dy + shift}px`
+        : translateFor(along)
     }
 
     if (options.group) {
@@ -1394,7 +1438,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       if (!isGroupHost) return
     }
 
-    const pointer = axis() === 'x' ? event.clientX : event.clientY
+    const pointer = (axis() === 'x' ? event.clientX : event.clientY) + shift
     if (dropOnTarget()) {
       const hovered = resolveHoveredIndex(bands, pointer)
       const row = hovered === -1 ? null : remaining[hovered]!

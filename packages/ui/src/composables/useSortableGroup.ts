@@ -17,6 +17,7 @@ import type {
 } from './useSortable'
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
+import { contentOffset, findScrollParent } from './sortableAutoScroll'
 
 /** Where a dragged value sits, or would land, within one member list. */
 export interface GroupDropPosition {
@@ -196,8 +197,14 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     return entries.map((entry) => entry.groupId)
   }
 
+  // Ghost bands are frozen in viewport coordinates; the host list may scroll after that.
+  let ghostScrollEl: HTMLElement | null = null
+  let ghostOffsetAtFreeze = 0
+
   function freezeBands(binding: GroupMemberBinding) {
     const axis = binding.axis()
+    ghostScrollEl = findScrollParent(binding.container(), axis)
+    ghostOffsetAtFreeze = contentOffset(ghostScrollEl, axis)
     ghostBands = binding.rows().map((row) => {
       const rect = binding.getElement(row.value)?.getBoundingClientRect()
       return {
@@ -316,7 +323,9 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     if (currentHostId === originGroupId) return
     const hostBinding = members.get(currentHostId!)!
     const origin = members.get(originGroupId)!
-    const pointerAlong = hostBinding.axis() === 'x' ? point.x : point.y
+    const axis = hostBinding.axis()
+    const pointerAlong =
+      (axis === 'x' ? point.x : point.y) + contentOffset(ghostScrollEl, axis) - ghostOffsetAtFreeze
     currentIndex = resolveInsertionIndex(ghostBands, pointerAlong)
     driveGhost(hostBinding, currentIndex, origin.draggedBlockSize())
   }
