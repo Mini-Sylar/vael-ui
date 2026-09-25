@@ -199,3 +199,24 @@ test('form participation: the real file input carries the given name', async () 
   )!
   expect(input.name).toBe('attachments')
 })
+
+test('capture is omitted unless set, so mobile opens the photo library by default', async () => {
+  const { default: FileUpload } = await import('../src/components/FileUpload/FileUpload.vue')
+  const absent = await render(FileUpload, { props: { accept: 'image/*' } })
+  await nextTick()
+  expect(absent.container.querySelector('input[type="file"]')!.hasAttribute('capture')).toBe(false)
+
+  const environment = await render(FileUpload, { props: { capture: 'environment' } })
+  await nextTick()
+  expect(environment.container.querySelector('input[type="file"]')!.getAttribute('capture')).toBe(
+    'environment',
+  )
+
+  const bare = await render(FileUpload, { props: { capture: true } })
+  await nextTick()
+  expect(bare.container.querySelector('input[type="file"]')!.hasAttribute('capture')).toBe(true)
+
+  const off = await render(FileUpload, { props: { capture: false } })
+  await nextTick()
+  expect(off.container.querySelector('input[type="file"]')!.hasAttribute('capture')).toBe(false)
+})

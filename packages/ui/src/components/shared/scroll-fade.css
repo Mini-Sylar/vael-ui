@@ -92,6 +92,11 @@
     }
   }
 
+  /* No scroll-driven animations: vScrollMask sets the fade variables from a scroll listener. */
+  .scroll-fade-manual {
+    animation: none;
+  }
+
   @keyframes scroll-fade-right {
     from {
       --fade-right-start: 91%;

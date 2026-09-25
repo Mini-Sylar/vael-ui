@@ -172,7 +172,14 @@ test('dragging the middle of three columns shifts the far one by the dragged wid
   const [name, age, status] = headerEls(screen)
   expect(headerFields(screen)).toEqual(['name', 'age', 'status'])
 
+  // The drag ends near the table's scrollable edge, so autoscroll may move the content sideways.
+  const scrolledX = () => {
+    let total = 0
+    for (let node = name!.parentElement; node; node = node.parentElement) total += node.scrollLeft
+    return total
+  }
   const nameRectBefore = name!.getBoundingClientRect()
+  const scrolledBefore = scrolledX()
   const ageWidth = age!.getBoundingClientRect().width
   const release = dragHeaderOver(age!, status!, 26)
   await vi.waitFor(() => expect(status!.style.translate).not.toBe(''))
@@ -180,7 +187,10 @@ test('dragging the middle of three columns shifts the far one by the dragged wid
   await new Promise((resolve) => setTimeout(resolve, 500))
 
   // Untouched — must not have moved at all.
-  expect(name!.getBoundingClientRect().left).toBeCloseTo(nameRectBefore.left, 0)
+  expect(name!.getBoundingClientRect().left + scrolledX() - scrolledBefore).toBeCloseTo(
+    nameRectBefore.left,
+    0,
+  )
   // Status closes the gap age left behind — by age's own width (plus a
   // near-zero border gap), never by roughly double that.
   const shifted = -parseFloat(status!.style.translate)

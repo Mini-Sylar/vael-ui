@@ -44,8 +44,8 @@
           :aria-required="fieldControl.required() || undefined"
           @click="onTriggerClick"
           @keydown="onTriggerKeydown"
-          @focus="fieldControl.onFocus"
-          @blur="fieldControl.onBlur"
+          @focus="onTriggerFocus"
+          @blur="onTriggerBlur"
         >
           <span :class="valuePart.class" :style="valuePart.style">
             <slot name="value" :selected="selectedItem as T | null" :path="selectedPath">
@@ -150,6 +150,7 @@ import Menu from '../Menu/Menu.vue'
 import type { MenuAlign, MenuItemData, MenuSide } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -301,20 +302,44 @@ function onOpenChange(value: boolean, details: PopoverOpenChangeDetails) {
 // bubbles up still reaches Menu's own wrapping span (which toggles), so this
 // only needs to swallow the click while disabled; opening itself is Menu's job.
 function onTriggerClick(event: MouseEvent) {
-  if (isDisabled.value) event.stopPropagation()
+  try {
+    if (isDisabled.value) event.stopPropagation()
+  } finally {
+    forward('onClick', event)
+  }
+}
+
+function onTriggerFocus(event: FocusEvent) {
+  try {
+    fieldControl.onFocus()
+  } finally {
+    forward('onFocus', event)
+  }
+}
+
+function onTriggerBlur(event: FocusEvent) {
+  try {
+    fieldControl.onBlur()
+  } finally {
+    forward('onBlur', event)
+  }
 }
 
 function onTriggerKeydown(event: KeyboardEvent) {
-  if (isDisabled.value || open.value) return
-  // No native <button> to auto-activate on Enter/Space anymore; drive `open` directly.
-  if (
-    event.key === 'ArrowDown' ||
-    event.key === 'ArrowUp' ||
-    event.key === 'Enter' ||
-    event.key === ' '
-  ) {
-    event.preventDefault()
-    open.value = true
+  try {
+    if (isDisabled.value || open.value) return
+    // No native <button> to auto-activate on Enter/Space anymore; drive `open` directly.
+    if (
+      event.key === 'ArrowDown' ||
+      event.key === 'ArrowUp' ||
+      event.key === 'Enter' ||
+      event.key === ' '
+    ) {
+      event.preventDefault()
+      open.value = true
+    }
+  } finally {
+    forward('onKeydown', event)
   }
 }
 
@@ -334,10 +359,10 @@ const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const menuRef = useTemplateRef<ComponentExposed<typeof Menu>>('menuRef')
 
 const attrs = useAttrs()
-const restAttrs = computed(() => {
-  const { class: _class, style: _style, ...rest } = attrs
-  return rest
-})
+const forward = useForwardedListener(attrs)
+const restAttrs = computed(() =>
+  omitAttrs(attrs, ['class', 'style', 'onClick', 'onKeydown', 'onFocus', 'onBlur']),
+)
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(

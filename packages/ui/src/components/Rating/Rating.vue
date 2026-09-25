@@ -19,12 +19,12 @@
     @pointermove="onPointerMove"
     @pointerleave="onPointerLeave"
     @pointerdown="onPointerDown"
-    @pointerup="endTracking"
-    @pointercancel="endTracking"
+    @pointerup="onPointerUp"
+    @pointercancel="onPointerCancel"
     @keydown="onKeydown"
-    @focus="fieldControl.onFocus"
-    @blur="fieldControl.onBlur"
-    v-bind="attrs"
+    @focus="onFocus"
+    @blur="onBlur"
+    v-bind="restAttrs"
   >
     <span :key="committedKey" class="ui-rating-track">
       <span
@@ -52,6 +52,7 @@ import './Rating.css'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -63,6 +64,20 @@ const STAR_PATH =
   'M234.29,114.85l-45,38.83L203,211.75a16.4,16.4,0,0,1-24.5,17.82L128,198.49,77.47,229.57A16.4,16.4,0,0,1,53,211.75l13.76-58.07-45-38.83A16.46,16.46,0,0,1,31.08,86l59-4.76,22.76-55.08a16.36,16.36,0,0,1,30.27,0l22.75,55.08,59,4.76a16.46,16.46,0,0,1,9.37,28.86Z'
 
 const attrs = useAttrs()
+const forward = useForwardedListener(attrs)
+const restAttrs = computed(() =>
+  omitAttrs(attrs, [
+    'onPointerenter',
+    'onPointermove',
+    'onPointerleave',
+    'onPointerdown',
+    'onPointerup',
+    'onPointercancel',
+    'onKeydown',
+    'onFocus',
+    'onBlur',
+  ]),
+)
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(
@@ -131,49 +146,94 @@ function valueFromPointer(event: PointerEvent): number {
 }
 
 function onPointerEnter(event: PointerEvent) {
-  if (isDisabled.value || props.readonly) return
-  hoverValue.value = valueFromPointer(event)
+  try {
+    if (isDisabled.value || props.readonly) return
+    hoverValue.value = valueFromPointer(event)
+  } finally {
+    forward('onPointerenter', event)
+  }
 }
 function onPointerMove(event: PointerEvent) {
-  if (isDisabled.value || props.readonly) return
-  hoverValue.value = valueFromPointer(event)
-  if (isTracking.value) commit(hoverValue.value)
+  try {
+    if (isDisabled.value || props.readonly) return
+    hoverValue.value = valueFromPointer(event)
+    if (isTracking.value) commit(hoverValue.value)
+  } finally {
+    forward('onPointermove', event)
+  }
 }
-function onPointerLeave() {
-  hoverValue.value = null
+function onPointerLeave(event: PointerEvent) {
+  try {
+    hoverValue.value = null
+  } finally {
+    forward('onPointerleave', event)
+  }
 }
 function onPointerDown(event: PointerEvent) {
-  if (isDisabled.value || props.readonly) return
-  root.value?.setPointerCapture(event.pointerId)
-  isTracking.value = true
-  commit(valueFromPointer(event))
-  root.value?.focus()
+  try {
+    if (isDisabled.value || props.readonly) return
+    root.value?.setPointerCapture(event.pointerId)
+    isTracking.value = true
+    commit(valueFromPointer(event))
+    root.value?.focus()
+  } finally {
+    forward('onPointerdown', event)
+  }
 }
-function endTracking() {
-  isTracking.value = false
+function onPointerUp(event: PointerEvent) {
+  try {
+    isTracking.value = false
+  } finally {
+    forward('onPointerup', event)
+  }
+}
+function onPointerCancel(event: PointerEvent) {
+  try {
+    isTracking.value = false
+  } finally {
+    forward('onPointercancel', event)
+  }
+}
+function onFocus(event: FocusEvent) {
+  try {
+    fieldControl.onFocus()
+  } finally {
+    forward('onFocus', event)
+  }
+}
+function onBlur(event: FocusEvent) {
+  try {
+    fieldControl.onBlur()
+  } finally {
+    forward('onBlur', event)
+  }
 }
 
 function onKeydown(event: KeyboardEvent) {
-  if (isDisabled.value || props.readonly) return
-  switch (event.key) {
-    case 'ArrowRight':
-    case 'ArrowUp':
-      event.preventDefault()
-      commit(modelValue.value + step.value)
-      return
-    case 'ArrowLeft':
-    case 'ArrowDown':
-      event.preventDefault()
-      commit(modelValue.value - step.value)
-      return
-    case 'Home':
-      event.preventDefault()
-      commit(0)
-      return
-    case 'End':
-      event.preventDefault()
-      commit(props.max)
-      return
+  try {
+    if (isDisabled.value || props.readonly) return
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowUp':
+        event.preventDefault()
+        commit(modelValue.value + step.value)
+        return
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        event.preventDefault()
+        commit(modelValue.value - step.value)
+        return
+      case 'Home':
+        event.preventDefault()
+        commit(0)
+        return
+      case 'End':
+        event.preventDefault()
+        commit(props.max)
+        return
+    }
+  } finally {
+    forward('onKeydown', event)
   }
 }
 

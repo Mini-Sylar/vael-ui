@@ -10,5 +10,13 @@
   "env": {
     "builtin": true
   },
-  "ignorePatterns": ["dist", "node_modules", "*.d.ts"]
+  "ignorePatterns": ["dist", "node_modules", "*.d.ts"],
+  "overrides": [
+    {
+      "files": ["packages/ui/src/**"],
+      "rules": {
+        "no-console": "error"
+      }
+    }
+  ]
 }
