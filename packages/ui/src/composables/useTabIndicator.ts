@@ -40,6 +40,20 @@ export function useTabIndicator(
     }
     const listRect = list.getBoundingClientRect()
     const tabRect = tab.getBoundingClientRect()
+    // Undo any ancestor scale (e.g. a Dialog still animating in) so px values match layout size.
+    // offsetWidth is rounded to whole px, so only treat a real (>1px) mismatch as a scale.
+    const scaleX =
+      list.offsetWidth && Math.abs(listRect.width - list.offsetWidth) > 1
+        ? listRect.width / list.offsetWidth
+        : 1
+    const scaleY =
+      list.offsetHeight && Math.abs(listRect.height - list.offsetHeight) > 1
+        ? listRect.height / list.offsetHeight
+        : 1
+    const left = (tabRect.left - listRect.left) / scaleX
+    const top = (tabRect.top - listRect.top) / scaleY
+    const width = tabRect.width / scaleX
+    const height = tabRect.height / scaleY
     const vertical = toValue(options.orientation) === 'vertical'
     // No transition on first paint; no position/size transition on first
     // appearance either (its resting size is 0, so it would visibly grow
@@ -52,13 +66,13 @@ export function useTabIndicator(
       const transitionDuration = firstPaint ? '0ms' : firstAppearance ? '0ms, 0ms' : undefined
       style.value = vertical
         ? {
-            translate: `0 ${tabRect.top - listRect.top}px`,
-            scale: `1 ${tabRect.height}`,
+            translate: `0 ${top}px`,
+            scale: `1 ${height}`,
             transitionDuration,
           }
         : {
-            translate: `${tabRect.left - listRect.left}px 0`,
-            scale: `${tabRect.width} 1`,
+            translate: `${left}px 0`,
+            scale: `${width} 1`,
             transitionDuration,
           }
       return
@@ -80,13 +94,13 @@ export function useTabIndicator(
         : undefined
     style.value = vertical
       ? {
-          insetBlockStart: `${tabRect.top - listRect.top - borderBlockStart}px`,
-          blockSize: `${tabRect.height}px`,
+          insetBlockStart: `${top - borderBlockStart}px`,
+          blockSize: `${height}px`,
           transitionDuration,
         }
       : {
-          insetInlineStart: `${tabRect.left - listRect.left - borderInlineStart}px`,
-          inlineSize: `${tabRect.width}px`,
+          insetInlineStart: `${left - borderInlineStart}px`,
+          inlineSize: `${width}px`,
           transitionDuration,
         }
   }
