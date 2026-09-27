@@ -1,5 +1,27 @@
 # vael-ui
 
+## 0.3.11
+
+### Patch Changes
+
+- [#65](https://github.com/Mini-Sylar/vael-ui/pull/65) [`0ef09cf`](https://github.com/Mini-Sylar/vael-ui/commit/0ef09cfcaafcc917b0f468b7ec08fffe9c34a9a5) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - ## Features
+
+  - **Combobox:** `allowCustom` now shows a `Create "…"` row whenever the typed text isn't an existing label, including when it partially matches one. Customize it with the new `#create` slot, or turn it off with `:create-option="false"`.
+  - **Combobox:** `@create` now receives `{ reason, cancel }`. Call `cancel()` to reject a value.
+  - **Combobox:** `#item` slot now receives `query` for highlighting matches.
+  - **Combobox:** new `tab-behavior` prop: `'select'` picks the highlighted option on Tab, `'create'` commits the typed text. Unset, Tab just moves focus.
+
+  ## Fixes
+  - **Combobox:** a custom value no longer disappears from the input after it's committed.
+  - **Combobox:** text that exactly matches an option now highlights that option first.
+  - **Combobox:** a disabled first result no longer blocks Enter.
+  - **Combobox:** Escape now discards uncommitted typing.
+  - **Combobox:** tabbing away now closes the panel.
+  - **Select / Combobox:** Tab no longer moves focus into a long, scrollable option list.
+
+  ## Behavior change
+  - **Combobox:** clicking away with `allowCustom` no longer commits the typed text. Set `commit-on-blur` to keep the old behavior.
+
 ## 0.3.10
 
 ### Patch Changes
