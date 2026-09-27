@@ -385,8 +385,13 @@
             size="sm"
             class="control-input"
             :items="control.options.map((o) => ({ label: o, value: o }))"
-            :model-value="values[control.name] as string"
-            @update:model-value="(v) => (values[control.name] = v)"
+            :model-value="
+              (values[control.name] ?? (control.unsettable ? UNSET_OPTION : undefined)) as string
+            "
+            @update:model-value="
+              (v) =>
+                (values[control.name] = control.unsettable && v === UNSET_OPTION ? undefined : v)
+            "
           />
           <InputNumber
             v-else-if="control.kind === 'number'"
@@ -645,7 +650,11 @@ interface NamedControl {
   name: string
   kind: PlaygroundControl['kind']
   options: string[]
+  /** Optional select with no default: unset is its own real behavior (Combobox's `tabBehavior`, DatePicker's locale-driven `hourFormat`), so it gets an `undefined` choice and starts on it. */
+  unsettable?: boolean
 }
+
+const UNSET_OPTION = 'undefined'
 
 // Scoped per component — a blanket override by prop name would collide (`name` is also a form field attribute elsewhere).
 const COMPONENT_OVERRIDES: Record<
@@ -687,10 +696,22 @@ const controls = computed<NamedControl[]>(() => {
     }
     const control = inferControl(prop.schema)
     if (!control) continue
+    const unsettable =
+      control.kind === 'select' &&
+      (prop.default === undefined || prop.default === 'undefined') &&
+      typeof prop.schema === 'object' &&
+      prop.schema.kind === 'enum' &&
+      (prop.schema.schema ?? []).includes('undefined')
     list.push({
       name: prop.name,
       kind: control.kind,
-      options: control.kind === 'select' ? control.options : [],
+      options:
+        control.kind === 'select'
+          ? unsettable
+            ? [UNSET_OPTION, ...control.options]
+            : control.options
+          : [],
+      unsettable,
     })
   }
   return list
@@ -783,7 +804,7 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
 // component needs to render at all) — seeding these to 0 like any other
 // number control collapses the panel/track to nothing. `undefined` here
 // keeps the playground's starting state matching the component's own.
-const NUMBER_UNSET_BY_DEFAULT = new Set(['maxPanelHeight'])
+const NUMBER_UNSET_BY_DEFAULT = new Set(['maxPanelHeight', 'maxLabels'])
 
 // Same idea for a boolean|function prop (Select/Combobox's `filter`) whose
 // real "off" is an unset prop, not `false` — `false` still renders the box,
@@ -821,6 +842,8 @@ watchEffect(() => {
     const propMeta = meta.value?.props.find((p) => p.name === control.name)
     if (control.kind === 'select' && overrides?.selectDefault?.[control.name] !== undefined) {
       values[control.name] = overrides.selectDefault[control.name]
+    } else if (control.unsettable) {
+      values[control.name] = undefined
     } else if (control.kind === 'string' && overrides?.string?.[control.name] !== undefined) {
       values[control.name] = overrides.string[control.name]
     } else if (control.kind === 'number' && overrides?.number?.[control.name] !== undefined) {
@@ -869,6 +892,7 @@ const code = computed(() => {
       const v = values[c.name]
       if (c.kind === 'boolean') return v === undefined ? '' : v ? c.name : `:${c.name}="false"`
       if (c.kind === 'number') return v === undefined ? '' : `:${c.name}="${v}"`
+      if (v === undefined) return ''
       return `${c.name}="${v}"`
     })
     .filter(Boolean)
