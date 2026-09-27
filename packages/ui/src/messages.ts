@@ -38,6 +38,8 @@ export interface UiMessages {
     empty: string
     clear: string
     toggle: string
+    /** `{query}` is replaced with the typed text — the `allowCustom` create row. */
+    create: string
   }
   fileUpload: {
     browse: string
@@ -144,7 +146,12 @@ export const defaultMessages: UiMessages = {
   inputNumber: { increment: 'Increase', decrement: 'Decrease' },
   passwordInput: { show: 'Show password', hide: 'Hide password' },
   select: { empty: 'No options', clear: 'Clear selection', selectedCount: '{count} selected' },
-  combobox: { empty: 'No results', clear: 'Clear selection', toggle: 'Toggle options' },
+  combobox: {
+    empty: 'No results',
+    clear: 'Clear selection',
+    toggle: 'Toggle options',
+    create: 'Create "{query}"',
+  },
   fileUpload: { browse: 'Browse files', drop: 'Drop files here', remove: 'Remove' },
   cascadeSelect: { empty: 'No options', clear: 'Clear selection' },
   treeSelect: { clear: 'Clear selection' },
@@ -282,6 +289,7 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     empty: 'uiKit.combobox.empty',
     clear: 'uiKit.combobox.clear',
     toggle: 'uiKit.combobox.toggle',
+    create: 'uiKit.combobox.create',
   },
   fileUpload: {
     browse: 'uiKit.fileUpload.browse',
@@ -404,10 +412,12 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   const comboboxEmpty = i18n.t(i18nKeyMap.combobox.empty)
   const comboboxClear = i18n.t(i18nKeyMap.combobox.clear)
   const comboboxToggle = i18n.t(i18nKeyMap.combobox.toggle)
+  const comboboxCreate = i18n.t(i18nKeyMap.combobox.create)
   const combobox: PartialUiMessages['combobox'] = {}
   if (comboboxEmpty !== i18nKeyMap.combobox.empty) combobox.empty = comboboxEmpty
   if (comboboxClear !== i18nKeyMap.combobox.clear) combobox.clear = comboboxClear
   if (comboboxToggle !== i18nKeyMap.combobox.toggle) combobox.toggle = comboboxToggle
+  if (comboboxCreate !== i18nKeyMap.combobox.create) combobox.create = comboboxCreate
   if (Object.keys(combobox).length > 0) result.combobox = combobox
 
   const fileUploadBrowse = i18n.t(i18nKeyMap.fileUpload.browse)
