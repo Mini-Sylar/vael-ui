@@ -119,7 +119,7 @@
           </div>
           <SelectListBody
             ref="listBody"
-            :items="filteredItems"
+            :items="listItems"
             :get-label="(item: T) => item.label"
             :is-selected="isSelected"
             :active-index="activeIndex"
@@ -135,8 +135,36 @@
             @hover="setActive"
             @reach-end="emit('reach-end')"
           >
-            <template v-if="$slots.item" #item="slotProps">
-              <slot name="item" v-bind="slotProps" />
+            <template #item="slotProps">
+              <slot
+                v-if="isCreateRow(slotProps.item)"
+                name="create"
+                :query="trimmedQuery"
+                :active="slotProps.active"
+              >
+                <svg
+                  class="ui-combobox-create-icon"
+                  viewBox="0 0 16 16"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M8 3.5v9M3.5 8h9"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <span class="ui-select-option-label">{{ createLabel }}</span>
+              </slot>
+              <slot v-else name="item" v-bind="slotProps" :query="trimmedQuery">
+                <span class="ui-select-option-label">{{ slotProps.item.label }}</span>
+                <span v-if="slotProps.selected" class="ui-select-option-check" aria-hidden="true"
+                  >✓</span
+                >
+              </slot>
             </template>
             <template v-if="$slots.empty" #empty>
               <slot name="empty" />
@@ -175,11 +203,25 @@ export type ComboboxAlign = Align
 export type { SelectItemData }
 
 export type ComboboxFilter<T> = boolean | ((item: T, query: string) => boolean)
+
+/** `option`: the Create row was picked. `enter`: Enter with no row active (`createOption` off). `tab`: `tabBehavior`. `blur`: `commitOnBlur`. */
+export type ComboboxCreateReason = 'option' | 'enter' | 'tab' | 'blur'
+
+export type ComboboxTabBehavior = 'select' | 'create'
+
+export interface ComboboxCreateDetails {
+  reason: ComboboxCreateReason
+  /** Vetoes the commit: the model is left untouched. */
+  cancel: () => void
+}
 </script>
 
 <!-- Combobox absorbs Autocomplete (one component). Shares Select's internals: usePopover + useListbox + SelectListBody.
      Trigger: Input.vue instead of button (for Field wiring, frame, float/inset label).
-     Focus stays in input; only ArrowDown/Up/Home/End forwarded to listbox (typeahead disabled here for live filtering). -->
+     Focus stays in input; only ArrowDown/Up/Home/End forwarded to listbox (typeahead disabled here for live filtering).
+     allowCustom: the Create row is a real option inside the list, not footer content, so it's keyboard-reachable even when
+     the typed text partially matches an existing item ("tu" inside "feature"). commitOnBlur defaults off because clicking
+     away is rarely an intent to create — only an explicit pick of the Create row (or Enter) commits. -->
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
 import './Combobox.css'
 import '../shared/tokens.css'
@@ -230,9 +272,22 @@ const props = withDefaults(
      * result) — `filteredItems` becomes `items` verbatim. A function: fully
      * custom local match. */
     filter?: ComboboxFilter<T>
-    /** Enter with no active option, or blur with unmatched text, commits
-     * the raw typed string as the model value and emits `create`. */
+    /** Lets the typed text become the value when it isn't one of `items`,
+     * via the Create row (see `createOption`). Emits a cancelable `create`
+     * first. Add the new value to `items` yourself in that handler if it
+     * should become a real option. */
     allowCustom?: boolean
+    /** `allowCustom` only: appends a `Create "…"` row whenever the typed text
+     * isn't already an item's label. Customize it with `#create`. Default `true`. */
+    createOption?: boolean
+    /** `allowCustom` only: leaving the field with uncommitted text commits it
+     * (reason `'blur'`). Default `false`: the text reverts instead. */
+    commitOnBlur?: boolean
+    /** What Tab does before focus moves on. Unset (default): nothing.
+     * `'select'`: picks the highlighted row, only once the user has typed or
+     * used the arrow keys. `'create'` (`allowCustom` only): commits the typed
+     * text, or the item it exactly names. */
+    tabBehavior?: ComboboxTabBehavior
     /** Opens the panel on focus before typing (the discoverability default). Set `false` to require typing first. */
     openOnFocus?: boolean
     side?: ComboboxSide
@@ -273,6 +328,9 @@ const props = withDefaults(
     clearable: false,
     filter: true,
     allowCustom: false,
+    createOption: true,
+    commitOnBlur: false,
+    tabBehavior: undefined,
     virtualize: undefined,
     // Explicit undefined: distinguishes "not set" from "true".
     openOnFocus: undefined,
@@ -294,8 +352,9 @@ const emit = defineEmits<{
   change: [value: string | number | (string | number)[] | null]
   'reach-end': []
   select: [item: T]
-  /** `allowCustom` committed the raw typed text — no matching item. */
-  create: [query: string]
+  /** Fires before the typed text is committed as a custom value. `details.cancel()`
+   * vetoes it — for validation, or an async create that sets the model itself. */
+  create: [query: string, details: ComboboxCreateDetails]
   /** Fires instead of the built-in CSS transition when `motionCss` is `false` — call `done()`
    * once your own enter animation finishes. */
   'chip-enter': [el: Element, done: () => void]
@@ -317,7 +376,16 @@ defineSlots<{
   end(): unknown
   /** Above the listbox, inside the popover panel. */
   header(props: { count: number; total: number }): unknown
-  item(props: { item: T; active: boolean; selected: boolean }): unknown
+  /** `query` is the trimmed typed text, for highlighting the matched part. */
+  item(props: {
+    item: T
+    index: number
+    active: boolean
+    selected: boolean
+    query: string
+  }): unknown
+  /** Content of the `allowCustom` Create row. */
+  create(props: { query: string; active: boolean }): unknown
   empty(): unknown
   /** Below the listbox, inside the popover panel. */
   footer(): unknown
@@ -332,6 +400,8 @@ const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 // passively (mount-synced, or set by selectItem/onClear), and that shouldn't narrow the list
 // down to a single row the moment the panel opens; only real keystrokes should filter.
 const queryDirty = ref(false)
+// Arrow/Home/End since the panel opened — tabBehavior 'select' treats that as intent, like typing.
+const keyboardNavigated = ref(false)
 
 const filteredItems = computed<T[]>(() => {
   if (props.filter === false || !queryDirty.value) return [...props.items]
@@ -345,7 +415,43 @@ const filteredItems = computed<T[]>(() => {
   return props.items.filter((item) => normalizeText(item.label).includes(nq))
 })
 
+const CREATE_ROW = Symbol('combobox-create-row')
+function isCreateRow(item: T): boolean {
+  return (item as { [CREATE_ROW]?: true })[CREATE_ROW] === true
+}
+const trimmedQuery = computed(() => query.value.trim())
+const showCreateRow = computed(() => {
+  if (!props.allowCustom || !props.createOption || !queryDirty.value || props.loading) return false
+  const raw = trimmedQuery.value
+  if (!raw) return false
+  const nq = normalizeText(raw)
+  if (props.items.some((item) => normalizeText(item.label) === nq)) return false
+  if (props.multiple) return !(Array.isArray(model.value) && model.value.includes(raw))
+  return model.value !== raw
+})
+const listItems = computed<T[]>(() =>
+  showCreateRow.value
+    ? [
+        ...filteredItems.value,
+        {
+          label: trimmedQuery.value,
+          value: trimmedQuery.value,
+          [CREATE_ROW]: true,
+        } as unknown as T,
+      ]
+    : filteredItems.value,
+)
+const createLabel = computed(() =>
+  messages.value.combobox.create.replace('{query}', trimmedQuery.value),
+)
+
+function labelFor(value: string | number | (string | number)[] | null): string {
+  if (value == null || Array.isArray(value)) return ''
+  return props.items.find((item) => item.value === value)?.label ?? String(value)
+}
+
 function isSelected(item: T): boolean {
+  if (isCreateRow(item)) return false
   if (props.multiple) return Array.isArray(model.value) && model.value.includes(item.value)
   return model.value != null && item.value === model.value
 }
@@ -417,7 +523,11 @@ const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layer
 const listboxId = useId()
 
 // Multiple: stays open, query clears; single: closes.
-function selectItem(item: T, _index: number) {
+function selectItem(item: T, _index: number, createReason: ComboboxCreateReason = 'option') {
+  if (isCreateRow(item)) {
+    commitCustom(createReason)
+    return
+  }
   if (item.disabled) return
   if (props.multiple) {
     const current = Array.isArray(model.value) ? [...model.value] : []
@@ -440,9 +550,17 @@ function selectItem(item: T, _index: number) {
   close()
 }
 
-function commitCustom() {
-  const raw = query.value.trim()
-  if (!raw) return
+function commitCustom(reason: ComboboxCreateReason): boolean {
+  const raw = trimmedQuery.value
+  if (!raw) return false
+  let cancelled = false
+  emit('create', raw, {
+    reason,
+    cancel: () => {
+      cancelled = true
+    },
+  })
+  if (cancelled) return false
   if (props.multiple) {
     const current = Array.isArray(model.value) ? [...model.value] : []
     if (!current.includes(raw)) current.push(raw)
@@ -450,9 +568,17 @@ function commitCustom() {
     query.value = ''
   } else {
     model.value = raw
+    query.value = raw
   }
-  emit('create', raw)
+  queryDirty.value = false
   emit('change', model.value)
+  if (!props.multiple && reason !== 'blur') close()
+  return true
+}
+
+function revertQuery() {
+  query.value = props.multiple ? '' : labelFor(model.value)
+  queryDirty.value = false
 }
 
 const {
@@ -461,7 +587,7 @@ const {
   setActive,
   onKeydown: listboxKeydown,
 } = useListbox<T>({
-  items: () => filteredItems.value,
+  items: () => listItems.value,
   getLabel: (item) => item.label,
   isDisabled: (item) => !!item.disabled,
   onSelect: (item, index) => selectItem(item, index),
@@ -469,17 +595,22 @@ const {
   listboxId,
 })
 
+// Priority: a row whose label IS the typed text, then the current selection, then the first
+// enabled row. `multiple` has no single selection to re-focus, so it skips the middle step.
 function computeInitialActive(): number {
-  const list = filteredItems.value
-  if (list.length === 0) return -1
-  // `multiple` has no single "the" selection to re-focus — several rows can
-  // be active at once, so this just lands on the first row, same as opening
-  // with nothing selected in single mode.
+  const list = listItems.value
+  if (queryDirty.value && trimmedQuery.value) {
+    const nq = normalizeText(trimmedQuery.value)
+    const exact = list.findIndex(
+      (item) => !item.disabled && !isCreateRow(item) && normalizeText(item.label) === nq,
+    )
+    if (exact >= 0) return exact
+  }
   if (!props.multiple && model.value != null) {
-    const index = list.findIndex((item) => item.value === model.value)
+    const index = list.findIndex((item) => !item.disabled && item.value === model.value)
     if (index >= 0) return index
   }
-  return 0
+  return list.findIndex((item) => !item.disabled)
 }
 
 const openOnFocusResolved = computed(() => props.openOnFocus ?? true)
@@ -490,8 +621,7 @@ watch(
   [model, () => props.items],
   ([value]) => {
     if (props.multiple || isFocused.value) return
-    query.value =
-      value != null ? (props.items.find((item) => item.value === value)?.label ?? '') : ''
+    query.value = labelFor(value)
     queryDirty.value = false
   },
   { immediate: true },
@@ -506,33 +636,24 @@ function onInputFocus() {
   isFocused.value = true
   if (!isDisabled.value && openOnFocusResolved.value) open.value = true
 }
-function onInputBlur() {
+function onInputBlur(event?: FocusEvent) {
   isFocused.value = false
+  // Focus leaving for good (Tab, programmatic) closes the panel too; focus moving INTO it (a #footer button) doesn't.
+  const next = event?.relatedTarget as Node | null | undefined
+  if (props.closeOnOutside && !(next && panelEl.value?.contains(next))) close()
   // Multiple: query is search text, not committed label; chips are source of truth.
-  if (props.multiple) {
-    if (!query.value.trim()) return
-    if (props.allowCustom) {
-      commitCustom()
-      return
-    }
-    query.value = ''
-    queryDirty.value = false
-    return
-  }
-  const activeLabel =
-    model.value != null ? (props.items.find((item) => item.value === model.value)?.label ?? '') : ''
-  if (query.value === activeLabel) return
-  if (props.allowCustom) {
-    commitCustom()
-    return
-  }
-  // No match and allowCustom=false: revert to committed selection's label
-  query.value = activeLabel
-  queryDirty.value = false
+  if (props.multiple ? !trimmedQuery.value : query.value === labelFor(model.value)) return
+  if (props.allowCustom && props.commitOnBlur && commitCustom('blur')) return
+  revertQuery()
 }
 
 function onInputKeydown(event: KeyboardEvent) {
   if (isDisabled.value) return
+  // usePopover's capture-phase listener has already closed the panel by now, so this can't sit behind the `open` check below.
+  if (event.key === 'Escape') {
+    if (props.closeOnEsc && queryDirty.value) revertQuery()
+    return
+  }
   // Backspace on empty query removes last chip (tag-input convention).
   if (props.multiple && event.key === 'Backspace' && query.value === '') {
     const current = Array.isArray(model.value) ? model.value : []
@@ -544,6 +665,10 @@ function onInputKeydown(event: KeyboardEvent) {
     }
     return
   }
+  if (event.key === 'Tab') {
+    onTab()
+    return
+  }
   if (!open.value) {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
@@ -551,16 +676,11 @@ function onInputKeydown(event: KeyboardEvent) {
     }
     return
   }
-  if (event.key === 'Escape') return
   if (event.key === 'Enter') {
     event.preventDefault()
-    const active = filteredItems.value[activeIndex.value]
-    if (active) {
-      selectItem(active, activeIndex.value)
-    } else if (props.allowCustom) {
-      commitCustom()
-      if (!props.multiple) close()
-    }
+    const active = listItems.value[activeIndex.value]
+    if (active) selectItem(active, activeIndex.value)
+    else if (props.allowCustom) commitCustom('enter')
     return
   }
   if (
@@ -569,7 +689,25 @@ function onInputKeydown(event: KeyboardEvent) {
     event.key === 'Home' ||
     event.key === 'End'
   ) {
+    keyboardNavigated.value = true
     listboxKeydown(event)
+  }
+}
+
+// Never preventDefault: focus still moves on, this only decides what's committed first.
+function onTab() {
+  if (props.tabBehavior === 'select') {
+    if (!open.value || !(queryDirty.value || keyboardNavigated.value)) return
+    const active = listItems.value[activeIndex.value]
+    if (!active || active.disabled || (props.multiple && isSelected(active))) return
+    selectItem(active, activeIndex.value, 'tab')
+  } else if (props.tabBehavior === 'create') {
+    if (!props.allowCustom || !queryDirty.value || !trimmedQuery.value) return
+    const nq = normalizeText(trimmedQuery.value)
+    const named = props.items.find((item) => !item.disabled && normalizeText(item.label) === nq)
+    if (!named) commitCustom('tab')
+    else if (props.multiple && isSelected(named)) revertQuery()
+    else selectItem(named, -1)
   }
 }
 
@@ -608,8 +746,11 @@ watch(
     })
   },
 )
-watch(filteredItems, () => {
+watch(listItems, () => {
   if (open.value) setActive(computeInitialActive())
+})
+watch(open, (value) => {
+  if (value) keyboardNavigated.value = false
 })
 
 const AUTO_VIRTUALIZE_THRESHOLD = 100
@@ -623,7 +764,7 @@ const virtualizeConfig = computed<SelectVirtualizeConfig | null>(() => {
 const effectiveOverscan = computed(() =>
   virtualizeConfig.value
     ? (virtualizeConfig.value.overscan ?? DEFAULT_OVERSCAN)
-    : filteredItems.value.length,
+    : listItems.value.length,
 )
 
 const panelMaxHeightStyle = computed(() =>

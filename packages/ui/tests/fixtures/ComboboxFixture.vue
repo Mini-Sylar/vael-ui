@@ -3,6 +3,7 @@
   <output data-testid="query">{{ query }}</output>
   <output data-testid="open-state">{{ open ? 'open' : 'closed' }}</output>
   <output data-testid="create-log">{{ createLog.join(',') }}</output>
+  <output data-testid="create-reasons">{{ createReasons.join(',') }}</output>
   <Combobox
     ref="combobox"
     v-model="model"
@@ -14,11 +15,17 @@
     :clearable="clearable"
     :filter="filter"
     :allow-custom="allowCustom"
+    :create-option="createOption"
+    :commit-on-blur="commitOnBlur"
+    :tab-behavior="tabBehavior"
     :open-on-focus="openOnFocus"
     :max-panel-height="maxPanelHeight"
     placeholder="Search fruit"
-    @create="createLog.push($event)"
+    @create="onCreate"
   >
+    <template v-if="withCreateSlot" #create="{ query: q }">
+      <span data-testid="custom-create">add {{ q }}</span>
+    </template>
     <template v-if="withHeader" #header="{ count, total }">
       <span data-testid="combobox-header">{{ count }} of {{ total }}</span>
     </template>
@@ -31,7 +38,11 @@
 <script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
 import Combobox from '../../src/components/Combobox/Combobox.vue'
-import type { SelectItemData } from '../../src/components/Combobox/Combobox.vue'
+import type {
+  ComboboxCreateDetails,
+  ComboboxTabBehavior,
+  SelectItemData,
+} from '../../src/components/Combobox/Combobox.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -40,6 +51,12 @@ const props = withDefaults(
     clearable?: boolean
     filter?: boolean | ((item: SelectItemData, query: string) => boolean)
     allowCustom?: boolean
+    createOption?: boolean
+    commitOnBlur?: boolean
+    tabBehavior?: ComboboxTabBehavior
+    /** Vetoes every create whose text is shorter than this. */
+    minCreateLength?: number
+    withCreateSlot?: boolean
     openOnFocus?: boolean
     itemCount?: number
     withHeader?: boolean
@@ -52,6 +69,11 @@ const props = withDefaults(
     clearable: false,
     filter: true,
     allowCustom: false,
+    createOption: true,
+    commitOnBlur: false,
+    tabBehavior: undefined,
+    minCreateLength: 0,
+    withCreateSlot: false,
     // Explicit `undefined` — same boolean-union footgun as Select's own
     // `virtualize`/Combobox's own `openOnFocus` default (see Combobox.vue).
     openOnFocus: undefined,
@@ -76,6 +98,15 @@ const model = shallowRef<string | number | (string | number)[] | null>(props.mul
 const query = shallowRef('')
 const open = shallowRef(false)
 const createLog = shallowRef<string[]>([])
+const createReasons = shallowRef<string[]>([])
+function onCreate(raw: string, details: ComboboxCreateDetails) {
+  createReasons.value = [...createReasons.value, details.reason]
+  if (raw.length < props.minCreateLength) {
+    details.cancel()
+    return
+  }
+  createLog.value = [...createLog.value, raw]
+}
 
 const combobox = useTemplateRef('combobox')
 

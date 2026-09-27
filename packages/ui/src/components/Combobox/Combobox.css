@@ -31,4 +31,13 @@
   .ui-combobox-input--wrap .ui-input-el {
     min-inline-size: 4rem;
   }
+  /* The chips wrapper stays mounted with no chips so the last chip's leave transition can play; while it's empty and alone, drop Input's start slot so the root's flex gap doesn't leave a blank strip before the text. A leaving chip is still a child, so the space holds until it's gone. */
+  .ui-input-start:has(> .ui-combobox-chips:empty:only-child) {
+    display: none;
+  }
+
+  .ui-combobox-create-icon {
+    flex: none;
+    color: var(--ui-text-muted);
+  }
 }

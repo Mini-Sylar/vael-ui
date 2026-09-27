@@ -81,19 +81,283 @@ test('maxPanelHeight caps the panel even though the viewport has room for more',
   expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
 })
 
-test('allowCustom: Enter with no active option commits the raw text and emits create', async () => {
+function optionTexts(): string[] {
+  return Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).map(
+    (el) => el.textContent?.trim() ?? '',
+  )
+}
+function activeOptionText(): string | undefined {
+  return document.querySelector<HTMLElement>('[role="option"][data-active]')?.textContent?.trim()
+}
+
+test('allowCustom: with nothing matching, the Create row is the active option and Enter commits it', async () => {
   const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.type(input, 'Elderberry')
-  // Nothing matches "Elderberry" in the list — no active option.
-  await vi.waitFor(() => {
-    expect(document.querySelectorAll('.ui-select-option-label').length).toBe(0)
-  })
+  await vi.waitFor(() => expect(optionTexts()).toEqual(['Create "Elderberry"']))
+  expect(activeOptionText()).toBe('Create "Elderberry"')
 
   await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByTestId('model')).toHaveTextContent('"Elderberry"')
   await expect.element(screen.getByTestId('create-log')).toHaveTextContent('Elderberry')
+  await expect.element(screen.getByTestId('create-reasons')).toHaveTextContent('option')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('Elderberry')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
+test('allowCustom: text that partially matches an item still gets a Create row, reachable by keyboard', async () => {
+  const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'ran')
+  await vi.waitFor(() => expect(optionTexts()).toEqual(['Cranberry', 'Create "ran"']))
+  expect(activeOptionText()).toBe('Cranberry')
+
+  await userEvent.keyboard('{ArrowDown}')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"ran"')
+})
+
+test('allowCustom: Enter on a partial match still picks the highlighted item, not the typed text', async () => {
+  const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'ran')
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Cranberry'))
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"cranberry"')
+  await expect.element(screen.getByTestId('create-log')).toHaveTextContent('')
+})
+
+test('allowCustom: clicking the Create row commits it', async () => {
+  const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'Kiwi')
+  await screen.getByRole('option', { name: 'Create "Kiwi"' }).click()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"Kiwi"')
+})
+
+test('allowCustom: no Create row when the text already is an item label (case-insensitive); that item is highlighted', async () => {
+  const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'BANANA')
+  await vi.waitFor(() => expect(optionTexts()).toEqual(['Banana']))
+  expect(activeOptionText()).toBe('Banana')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"banana"')
+  await expect.element(screen.getByTestId('create-log')).toHaveTextContent('')
+})
+
+test('a disabled first match does not swallow Enter: the first enabled row is active', async () => {
+  const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'Che')
+  await vi.waitFor(() => expect(optionTexts()).toEqual(['Cherry', 'Create "Che"']))
+  expect(activeOptionText()).toBe('Create "Che"')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"Che"')
+})
+
+test('createOption=false: no Create row, Enter with nothing matching still commits (reason "enter")', async () => {
+  const screen = await render(ComboboxFixture, {
+    props: { allowCustom: true, createOption: false },
+  })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'Elderberry')
+  await vi.waitFor(() => expect(optionTexts()).toEqual([]))
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"Elderberry"')
+  await expect.element(screen.getByTestId('create-reasons')).toHaveTextContent('enter')
+})
+
+test('#create slot replaces the Create row content, the row still commits', async () => {
+  const screen = await render(ComboboxFixture, {
+    props: { allowCustom: true, withCreateSlot: true },
+  })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'Kiwi')
+  await expect.element(screen.getByTestId('custom-create')).toHaveTextContent('add Kiwi')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"Kiwi"')
+})
+
+test('create is cancelable: details.cancel() leaves the model untouched', async () => {
+  const screen = await render(ComboboxFixture, {
+    props: { allowCustom: true, minCreateLength: 5 },
+  })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'abc')
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Create "abc"'))
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('create-reasons')).toHaveTextContent('option')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('null')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('abc')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+})
+
+test('allowCustom: leaving the field does not commit by default, the text reverts', async () => {
+  const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'Elderberry')
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('null')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('')
+  await expect.element(screen.getByTestId('create-log')).toHaveTextContent('')
+})
+
+test('commitOnBlur: leaving the field commits the raw text and keeps it visible', async () => {
+  const screen = await render(ComboboxFixture, {
+    props: { allowCustom: true, commitOnBlur: true },
+  })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'ran')
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"ran"')
+  await expect.element(screen.getByTestId('create-reasons')).toHaveTextContent('blur')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('ran')
+})
+
+test('Tab by default only moves focus: the highlighted row is not picked', async () => {
+  const screen = await render(ComboboxFixture)
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'ran')
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Cranberry'))
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('null')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('')
+})
+
+test('tabBehavior="select": Tab picks the highlighted row after typing', async () => {
+  const screen = await render(ComboboxFixture, { props: { tabBehavior: 'select' } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'ran')
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Cranberry'))
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"cranberry"')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('Cranberry')
+})
+
+test('tabBehavior="select": Tab picks the row reached with the arrow keys', async () => {
+  const screen = await render(ComboboxFixture, { props: { tabBehavior: 'select' } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Apple'))
+  await userEvent.keyboard('{ArrowDown}')
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"banana"')
+})
+
+test('tabBehavior="select": just tabbing through the field picks nothing', async () => {
+  const screen = await render(ComboboxFixture, { props: { tabBehavior: 'select' } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Apple'))
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('null')
+})
+
+test('tabBehavior="select" on the Create row commits it with reason "tab"', async () => {
+  const screen = await render(ComboboxFixture, {
+    props: { allowCustom: true, tabBehavior: 'select' },
+  })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'ran')
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Cranberry'))
+  await userEvent.keyboard('{ArrowDown}')
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"ran"')
+  await expect.element(screen.getByTestId('create-reasons')).toHaveTextContent('tab')
+})
+
+test('tabBehavior="create": Tab commits the typed text even when it partially matches', async () => {
+  const screen = await render(ComboboxFixture, {
+    props: { allowCustom: true, tabBehavior: 'create' },
+  })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'ran')
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Cranberry'))
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"ran"')
+  await expect.element(screen.getByTestId('create-reasons')).toHaveTextContent('tab')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('ran')
+})
+
+test('tabBehavior="create": text that exactly names an item picks that item instead of duplicating it', async () => {
+  const screen = await render(ComboboxFixture, {
+    props: { allowCustom: true, tabBehavior: 'create' },
+  })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'banana')
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"banana"')
+  await expect.element(screen.getByTestId('create-log')).toHaveTextContent('')
+})
+
+test('multiple + tabBehavior="select": Tab adds the highlighted row but never removes an already-selected one', async () => {
+  const screen = await render(ComboboxFixture, {
+    props: { multiple: true, tabBehavior: 'select' },
+  })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'ban')
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Banana'))
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["banana"]')
+
+  await input.click()
+  await userEvent.type(input, 'ban')
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Banana✓'))
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["banana"]')
+})
+
+for (const multiple of [false, true]) {
+  test(`Tab away closes the panel (multiple=${multiple})`, async () => {
+    const screen = await render(ComboboxFixture, { props: { multiple } })
+    const input = screen.getByRole('combobox')
+    await input.click()
+    await userEvent.type(input, 'ban')
+    await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+    await userEvent.tab()
+    await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  })
+}
+
+test('a committed custom value stays visible after the field loses focus again', async () => {
+  const screen = await render(ComboboxFixture, { props: { allowCustom: true } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'Kiwi')
+  await userEvent.keyboard('{Enter}')
+  await userEvent.tab()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"Kiwi"')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('Kiwi')
+})
+
+test('Escape discards uncommitted typing and restores the selected label', async () => {
+  const screen = await render(ComboboxFixture)
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.keyboard('{Enter}') // Apple
+  await input.click()
+  await userEvent.type(input, 'xyz')
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('Apple')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"apple"')
 })
 
 test('without allowCustom, blur with unmatched text reverts the query to the selected label', async () => {
@@ -315,14 +579,12 @@ test('multiple: Backspace with text still in the query edits the text, not the c
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["apple"]')
 })
 
-test('multiple + allowCustom: Enter with no active option adds the raw text as a new chip and keeps the panel open', async () => {
+test('multiple + allowCustom: Enter on the Create row adds the raw text as a new chip and keeps the panel open', async () => {
   const screen = await render(ComboboxFixture, { props: { multiple: true, allowCustom: true } })
   const input = screen.getByRole('combobox')
   await input.click()
   await userEvent.type(input, 'Elderberry')
-  await vi.waitFor(() => {
-    expect(document.querySelectorAll('.ui-select-option-label').length).toBe(0)
-  })
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Create "Elderberry"'))
 
   await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["Elderberry"]')

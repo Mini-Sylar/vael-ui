@@ -55,8 +55,11 @@ export type {
 export { default as Combobox } from './components/Combobox/Combobox.vue'
 export type {
   ComboboxAlign,
+  ComboboxCreateDetails,
+  ComboboxCreateReason,
   ComboboxFilter,
   ComboboxSide,
+  ComboboxTabBehavior,
 } from './components/Combobox/Combobox.vue'
 export { default as Slider } from './components/Slider/Slider.vue'
 export { default as FileUpload } from './components/FileUpload/FileUpload.vue'
