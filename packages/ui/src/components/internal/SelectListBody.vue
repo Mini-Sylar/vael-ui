@@ -3,6 +3,7 @@
     :id="listboxId"
     ref="listEl"
     role="listbox"
+    tabindex="-1"
     :class="listPart.class"
     :style="listPart.style"
     :aria-multiselectable="multiple || undefined"
@@ -76,7 +77,9 @@ export interface SelectItemData {
   signal. Select/Combobox each own everything ABOVE this (trigger, model,
   filtering, useListbox's keyboard/typeahead wiring) — this component never
   receives a keydown; the APG activedescendant pattern means focus and key
-  handling both live on the trigger/input, never here.
+  handling both live on the trigger/input, never here. Hence `tabindex="-1"`:
+  Chromium makes any scrollable box keyboard-focusable, which would put an
+  overflowing list into the Tab order right after the trigger.
 
   ALWAYS runs `useVirtualizer`, even when the "virtualize" prop the consumer
   sees is off: a non-virtualized list is just a windowed one whose window
