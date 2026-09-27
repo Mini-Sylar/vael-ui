@@ -46,8 +46,7 @@ const springActive = shallowRef<Section>('overview')
   position: absolute;
   inset: 0;
   border-radius: var(--ui-radius);
-  background: var(--ui-primary-hover);
-  opacity: 0.15;
+  background: color-mix(in srgb, var(--ui-primary-hover) 15%, transparent);
   z-index: -1;
 }
 .tab-label {
