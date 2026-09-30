@@ -95,7 +95,8 @@ useBreadcrumbSchema(() => [
 <style scoped>
 .directive-page {
   min-width: 0;
-  max-width: 46rem;
+  max-width: 56rem;
+  margin-inline: auto;
 }
 
 .eyebrow {

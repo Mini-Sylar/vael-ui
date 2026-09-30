@@ -15,9 +15,12 @@ defineProps<{ links: { id: string; label: string }[] }>()
 </script>
 
 <style scoped>
+/* A readable prose column, centered with its table of contents instead of
+   pinned left on wide screens. */
 .guide-layout {
   display: grid;
-  grid-template-columns: minmax(0, 46rem) 1fr;
+  grid-template-columns: minmax(0, 50rem) 13rem;
+  justify-content: center;
   gap: 4rem;
   align-items: start;
 }
