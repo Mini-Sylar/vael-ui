@@ -20,7 +20,7 @@
       </div>
     </template>
 
-    <DataTable :data="filteredCustomers" row-key="id" stacked-breakpoint="42rem">
+    <DataTable :data="filteredCustomers" row-key="id" :stacked-breakpoint="stacked">
       <template #columns="{ columnData }">
         <Column :data="columnData" field="name" label="Customer" sortable />
         <Column :data="columnData" field="country" label="Country" sortable />
@@ -79,6 +79,9 @@ import { Card, Chip, Column, Combobox, DataTable, Tag } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 import { currency, customers } from '../data'
 import type { Customer } from '../data'
+import { useDashStacked } from '../useDashStacked'
+
+const stacked = useDashStacked(680)
 
 const SEGMENT_VARIANT: Record<Customer['segment'], 'success' | 'muted' | 'warning'> = {
   enterprise: 'success',
@@ -100,16 +103,19 @@ const filteredCustomers = computed(() => {
 </script>
 
 <style scoped>
+/* The filter drops under the title when the card is too narrow for both. */
 .dash-customers-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem 1rem;
   inline-size: 100%;
 }
 .dash-segment-filter {
-  inline-size: 12rem;
-  flex: none;
+  flex: 1 1 10rem;
+  min-inline-size: 0;
+  max-inline-size: 13rem;
 }
 .dash-tag-list {
   display: flex;

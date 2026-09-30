@@ -77,14 +77,25 @@
           </AvatarGroup>
         </div>
       </template>
-      <DataTable :data="recentOrders" row-key="id" size="sm" scroll-height="15rem">
+      <DataTable
+        :data="recentOrders"
+        row-key="id"
+        size="sm"
+        scroll-height="15rem"
+        :stacked-breakpoint="stacked"
+      >
         <template #columns="{ columnData }">
           <Column :data="columnData" field="id" label="Order" />
           <Column :data="columnData" field="customer" label="Customer" />
           <Column :data="columnData" field="amount" label="Amount">
             <template #cell="{ row }">{{ currency.format(row.amount) }}</template>
           </Column>
-          <Column :data="columnData" field="status" label="Status" width="6rem">
+          <Column
+            :data="columnData"
+            field="status"
+            label="Status"
+            :width="stacked ? undefined : '6rem'"
+          >
             <template #cell="{ row }">
               <Tag :variant="STATUS_VARIANT[row.status]" size="sm">
                 <template #icon>
@@ -118,11 +129,13 @@ import { currency, orders, STATUS_VARIANT, stats, teamMembers } from '../data'
 import type { StatDef } from '../data'
 import { PhDot } from '@phosphor-icons/vue'
 import { dashboardNavigateKey } from '../dashboardNavigate'
+import { useDashStacked } from '../useDashStacked'
 
 const navigate = inject(dashboardNavigateKey, null)
 const reduce = useReducedMotion()
 
 const recentOrders = computed(() => orders.slice(0, 10))
+const stacked = useDashStacked(560)
 
 // Skip index 0 (Mira Mitchell) — already shown as the header's account avatar.
 const otherTeamMembers = teamMembers.slice(1)
