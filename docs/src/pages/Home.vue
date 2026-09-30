@@ -24,61 +24,87 @@
       </div>
     </section>
 
-    <section class="features">
-      <article class="feature feature--wide">
-        <PhLightning :size="20" class="feature-icon" />
-        <div>
-          <h2>{{ t('home.featureVaporTitle') }}</h2>
-          <p>{{ t('home.featureVaporBody') }}</p>
-        </div>
-      </article>
-      <article class="feature">
-        <PhSparkle :size="20" class="feature-icon" />
-        <div>
-          <h2>{{ t('home.featureAnimationTitle') }}</h2>
-          <p>{{ t('home.featureAnimationBody') }}</p>
-        </div>
-      </article>
-      <article class="feature">
-        <PhGlobe :size="20" class="feature-icon" />
-        <div>
-          <h2>{{ t('home.featureI18nTitle') }}</h2>
-          <p>{{ t('home.featureI18nBody') }}</p>
-        </div>
-      </article>
-      <article class="feature feature--wide">
-        <PhPuzzlePiece :size="20" class="feature-icon" />
-        <div>
-          <h2>{{ t('home.featurePrimitivesTitle') }}</h2>
-          <p>{{ t('home.featurePrimitivesBody') }}</p>
-        </div>
-      </article>
-      <article class="feature feature--wide">
-        <PhHardDrives :size="20" class="feature-icon" />
-        <div>
-          <h2>{{ t('home.featureSsrTitle') }}</h2>
-          <p>{{ t('home.featureSsrBody') }}</p>
-        </div>
-      </article>
-      <RouterLink to="/docs/guides/skill" class="feature feature-link">
-        <PhRobot :size="20" class="feature-icon" />
-        <div>
-          <h2>{{ t('home.featureSkillTitle') }}</h2>
-          <p>{{ t('home.featureSkillBody') }}</p>
-        </div>
-      </RouterLink>
+    <section ref="features" class="features" :data-reveal="reveal === 'none' ? undefined : reveal">
+      <FeatureCard
+        class="feature--wide"
+        :icon="PhLightning"
+        :title="t('home.featureVaporTitle')"
+        :body="t('home.featureVaporBody')"
+      >
+        <template #visual><VaporVisual /></template>
+      </FeatureCard>
+      <FeatureCard
+        :icon="PhSparkle"
+        :title="t('home.featureAnimationTitle')"
+        :body="t('home.featureAnimationBody')"
+      >
+        <template #visual><AnimationVisual /></template>
+      </FeatureCard>
+      <FeatureCard
+        :icon="PhGlobe"
+        :title="t('home.featureI18nTitle')"
+        :body="t('home.featureI18nBody')"
+      >
+        <template #visual><I18nVisual /></template>
+      </FeatureCard>
+      <FeatureCard
+        class="feature--wide"
+        :icon="PhPuzzlePiece"
+        :title="t('home.featurePrimitivesTitle')"
+        :body="t('home.featurePrimitivesBody')"
+      >
+        <template #visual><PrimitivesVisual /></template>
+      </FeatureCard>
+      <FeatureCard
+        class="feature--wide"
+        :icon="PhHardDrives"
+        :title="t('home.featureSsrTitle')"
+        :body="t('home.featureSsrBody')"
+      >
+        <template #visual>
+          <TerminalVisual
+            command="vite-ssg build"
+            :output="['pages rendered on the server', 'hydrated in the browser']"
+          />
+        </template>
+      </FeatureCard>
+      <FeatureCard
+        to="/docs/guides/skill"
+        :icon="PhRobot"
+        :title="t('home.featureSkillTitle')"
+        :body="t('home.featureSkillBody')"
+      >
+        <template #visual>
+          <TerminalVisual
+            command="npx skills add Mini-Sylar/vael-ui-skills"
+            :output="['vael-ui skill installed']"
+          />
+        </template>
+      </FeatureCard>
     </section>
 
     <section class="closing">
-      <RouterLink to="/components/Button" class="cta-link">
-        <Button variant="secondary">{{ t('home.browseComponents') }}</Button>
-      </RouterLink>
+      <div class="closing-actions">
+        <RouterLink to="/components/Button" class="cta-link">
+          <Button size="lg">{{ t('home.browseComponents') }}</Button>
+        </RouterLink>
+        <RouterLink to="/docs/getting-started" class="cta-link">
+          <Button size="lg" variant="outline">{{ t('nav.gettingStarted') }}</Button>
+        </RouterLink>
+      </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  onBeforeUnmount,
+  onMounted,
+  shallowRef,
+  useTemplateRef,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Button, SplitButton } from 'vael-ui'
@@ -92,11 +118,40 @@ import {
   PhSparkle,
 } from '@phosphor-icons/vue'
 import DashboardHero from '../components/dashboard/DashboardHero.vue'
+import FeatureCard from '../components/home/FeatureCard.vue'
+import VaporVisual from '../components/home/VaporVisual.vue'
+import AnimationVisual from '../components/home/AnimationVisual.vue'
+import I18nVisual from '../components/home/I18nVisual.vue'
+import PrimitivesVisual from '../components/home/PrimitivesVisual.vue'
+import TerminalVisual from '../components/home/TerminalVisual.vue'
 
 // Lazy: it pulls in motion, which the rest of the page doesn't need up front.
 const ThemeSwatches = defineAsyncComponent(() => import('../components/ThemeSwatches.vue'))
 
 const { t } = useI18n()
+
+// The bento staggers in once as it scrolls into view. It only arms (hides)
+// when it starts below the fold, so server-rendered HTML, no-JS visitors and
+// a section already on screen never see hidden cards.
+const features = useTemplateRef<HTMLElement>('features')
+const reveal = shallowRef<'none' | 'armed' | 'shown'>('none')
+let revealObserver: IntersectionObserver | undefined
+onBeforeUnmount(() => revealObserver?.disconnect())
+onMounted(() => {
+  const el = features.value
+  if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  if (el.getBoundingClientRect().top < window.innerHeight) return
+  reveal.value = 'armed'
+  revealObserver = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry?.isIntersecting) return
+      reveal.value = 'shown'
+      revealObserver?.disconnect()
+    },
+    { threshold: 0.15 },
+  )
+  revealObserver.observe(el)
+})
 const router = useRouter()
 
 function openGithub() {
@@ -121,12 +176,45 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
 }
 
 .hero {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
   gap: 3rem;
   align-items: center;
   min-block-size: 34rem;
   padding-block-start: 1rem;
+}
+
+/* A dot grid that fades out toward the edges, with a soft glow behind the
+   showcase in the chosen theme color (neutral until one is picked). */
+.hero::before,
+.hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hero::before {
+  inset: -2rem -3rem;
+  background: radial-gradient(
+      color-mix(in oklch, var(--ui-text) 10%, transparent) 1px,
+      transparent 1px
+    )
+    0 0 / 18px 18px;
+  mask-image: radial-gradient(ellipse 70% 65% at 60% 45%, black 20%, transparent 75%);
+}
+
+.hero::after {
+  inset: 5% -5% 5% 35%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklch, var(--docs-accent, var(--ui-text)) 16%, transparent),
+    transparent
+  );
+  filter: blur(8px);
+  transition: background 400ms var(--ui-ease-out);
 }
 
 .hero-copy {
@@ -195,56 +283,68 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
 .features {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-
-.feature {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1.25rem 1.5rem;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-surface);
-  background: var(--ui-muted);
+  gap: 1rem;
 }
 
 .feature--wide {
   grid-column: span 2;
 }
 
-.feature-link {
-  text-decoration: none;
-  color: inherit;
-  transition: border-color var(--ui-duration-press) ease;
+.features[data-reveal] > * {
+  transition:
+    opacity 500ms var(--ui-ease-out),
+    transform 500ms var(--ui-ease-out);
 }
 
-.feature-link:hover {
-  border-color: var(--ui-primary);
+.features[data-reveal='armed'] > * {
+  opacity: 0;
+  transform: translateY(14px);
 }
 
-.feature-icon {
-  flex: none;
-  margin-block-start: 0.125rem;
-  color: var(--ui-primary);
+.features[data-reveal] > :nth-child(2) {
+  transition-delay: 70ms;
+}
+.features[data-reveal] > :nth-child(3) {
+  transition-delay: 140ms;
+}
+.features[data-reveal] > :nth-child(4) {
+  transition-delay: 210ms;
+}
+.features[data-reveal] > :nth-child(5) {
+  transition-delay: 280ms;
+}
+.features[data-reveal] > :nth-child(6) {
+  transition-delay: 350ms;
 }
 
-.feature h2 {
-  margin: 0 0 0.2rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.feature p {
-  margin: 0;
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  color: var(--ui-text-muted);
-}
-
+/* A proper ending: both next steps, centered under a soft glow that picks
+   up the chosen theme color. */
 .closing {
-  text-align: center;
-  padding-block: 1rem 2rem;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding-block: 3.5rem 2.5rem;
+  isolation: isolate;
+}
+
+.closing::before {
+  content: '';
+  position: absolute;
+  inset: 0 15%;
+  z-index: -1;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklch, var(--docs-accent, var(--ui-text)) 12%, transparent),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.closing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 @media (max-width: 900px) {
@@ -259,6 +359,10 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
 
   .features {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .feature--wide {
+    grid-column: auto;
   }
 
   .feature--wide {
