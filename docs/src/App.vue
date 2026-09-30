@@ -118,7 +118,14 @@
       </div>
     </div>
 
-    <Dock class="mobile-dock" :items="mobileDockItems" magnify tooltips />
+    <Dock
+      class="mobile-dock"
+      :class="{ 'mobile-dock--hidden': dockHidden }"
+      :inert="dockHidden"
+      :items="mobileDockItems"
+      magnify
+      tooltips
+    />
 
     <BottomSheet v-model:open="mobileSettingsOpen" :title="t('header.settings')" width="md">
       <div class="mobile-settings">
@@ -189,7 +196,7 @@
 import { computed, defineAsyncComponent, onMounted, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useLocalStorage } from '@vueuse/core'
+import { useEventListener, useLocalStorage } from '@vueuse/core'
 import {
   PhGear,
   PhGithubLogo,
@@ -352,6 +359,25 @@ const mobileDockItems = computed<DockItemData[]>(() => [
   },
 ])
 
+// The mobile dock floats over the page, so it slides away while scrolling
+// down (reading, or reaching for a control under it) and returns on scroll up
+// or at the end of the page, where the content's bottom padding clears it.
+const dockHidden = shallowRef(false)
+let lastScrollY = 0
+useEventListener(
+  typeof window === 'undefined' ? undefined : window,
+  'scroll',
+  () => {
+    const y = window.scrollY
+    const delta = y - lastScrollY
+    if (Math.abs(delta) < 6) return
+    const atEnd = y + window.innerHeight >= document.documentElement.scrollHeight - 8
+    dockHidden.value = delta > 0 && y > 64 && !atEnd
+    lastScrollY = y
+  },
+  { passive: true },
+)
+
 const radiusItems = [
   { label: t('header.radiusDefault'), value: 'default' },
   { label: t('header.radiusSharp'), value: '0px' },
@@ -387,9 +413,13 @@ watch(
   { immediate: true },
 )
 
+// ConfigProvider only renders its scope wrapper while the theme produces CSS,
+// so going from an empty theme to a non-empty one remounts the whole app (and
+// drops focus from the swatch that was just clicked). Always passing a radius,
+// the library default from tokens.css when none is picked, keeps it mounted.
 const theme = computed(() => ({
   ...(primaryColor.value ? { primary: primaryColor.value } : {}),
-  ...(radiusChoice.value !== 'default' ? { radius: radiusChoice.value } : {}),
+  radius: radiusChoice.value !== 'default' ? radiusChoice.value : '10px',
 }))
 </script>
 
@@ -578,6 +608,24 @@ const theme = computed(() => ({
     inline-size: fit-content;
     margin-inline: auto;
     z-index: 20;
+    transition:
+      translate var(--ui-duration-exit) var(--ui-ease-out),
+      opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+
+  .mobile-dock--hidden {
+    translate: 0 calc(100% + 1.5rem);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 850px) and (prefers-reduced-motion: reduce) {
+  .mobile-dock {
+    transition: opacity var(--ui-duration-exit) linear;
+  }
+
+  .mobile-dock--hidden {
+    translate: none;
   }
 }
 </style>

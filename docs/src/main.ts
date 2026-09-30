@@ -9,6 +9,20 @@ import { i18n } from './i18n'
 
 export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => {
   app.use(i18n).directive('tooltip', vTooltip)
+
+  // vite-ssg registers a `(to, from, next)` guard right after this callback,
+  // which vue-router 5 flags as deprecated. Adapt callback-style guards to
+  // the return-value style so the warning never fires.
+  const beforeEach = router.beforeEach.bind(router)
+  router.beforeEach = (guard) =>
+    beforeEach(
+      guard.length > 2
+        ? (to, from) =>
+            new Promise((resolve) => {
+              void guard.call(undefined, to, from, resolve as Parameters<typeof guard>[2])
+            })
+        : guard,
+    )
   // vaporInteropPlugin only exists in Vue's browser build — vue/server-renderer
   // has no VDOM/Vapor interop concept (there's no live DOM to bridge into during
   // SSG), so this import must stay dynamic and client-gated or the SSR build's

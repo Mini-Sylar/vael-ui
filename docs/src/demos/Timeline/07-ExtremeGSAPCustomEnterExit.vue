@@ -64,14 +64,18 @@ function onEnter(el: Element, done: () => void) {
 }
 function onLeave(el: Element, done: () => void) {
   if (reduce()) return done()
-  gsap.to(el, {
-    opacity: 0,
-    scale: 0.4,
-    x: -24,
-    duration: 0.3,
-    ease: 'power2.in',
-    onComplete: done,
-  })
+  const item = el as HTMLElement
+  // The leaving item stays in flow until done(), so its height has to shrink
+  // with the exit, or the list snaps shorter the moment it's removed.
+  gsap
+    .timeline({ onComplete: done })
+    .to(item, { opacity: 0, scale: 0.4, x: -24, duration: 0.3, ease: 'power2.in' }, 0)
+    .fromTo(
+      item,
+      { height: item.offsetHeight, overflow: 'hidden' },
+      { height: 0, duration: 0.35, ease: 'power2.inOut' },
+      0.05,
+    )
 }
 </script>
 

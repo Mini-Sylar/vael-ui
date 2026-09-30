@@ -53,17 +53,21 @@ const asyncPick = shallowRef<string | number | null>(null)
 const asyncResults = shallowRef<SelectItemData[]>([])
 const asyncLoading = shallowRef(false)
 let asyncTimer: ReturnType<typeof setTimeout> | undefined
-watch(asyncQuery, (query) => {
-  clearTimeout(asyncTimer)
-  asyncLoading.value = true
-  asyncTimer = setTimeout(() => {
-    const q = query.trim().toLowerCase()
-    asyncResults.value = remoteCities
-      .filter((name) => (q ? name.toLowerCase().includes(q) : true))
-      .map((name) => ({ label: name, value: name }))
-    asyncLoading.value = false
-  }, 300)
-})
+watch(
+  asyncQuery,
+  (query) => {
+    clearTimeout(asyncTimer)
+    asyncLoading.value = true
+    asyncTimer = setTimeout(() => {
+      const q = query.trim().toLowerCase()
+      asyncResults.value = remoteCities
+        .filter((name) => (q ? name.toLowerCase().includes(q) : true))
+        .map((name) => ({ label: name, value: name }))
+      asyncLoading.value = false
+    }, 300)
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>

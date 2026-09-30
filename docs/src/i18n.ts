@@ -15,6 +15,10 @@ export const i18n = createI18n({
   locale: initialLocale,
   fallbackLocale: initialLocale,
   messages: { en } as Record<Locale, typeof en>,
+  // Guide prose keeps inline <code>/<a> markup in the locale files and renders
+  // it with v-html. The messages are static and ship with the build, so the
+  // XSS warning doesn't apply.
+  warnHtmlMessage: false,
 })
 
 const loaded = new Set<Locale>(['en'])

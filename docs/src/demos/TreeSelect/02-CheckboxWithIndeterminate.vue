@@ -16,11 +16,7 @@
         placeholder="Pick files"
       />
       <output class="panel-text">
-        {{
-          checkboxValues.length
-            ? `${checkboxValues.length} file(s) selected`
-            : 'Nothing selected yet'
-        }}
+        {{ selectionSummary }}
       </output>
     </div>
     <p v-if="checkboxValues.length" class="demo-status">{{ checkboxValues.join(', ') }}</p>
@@ -28,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { TreeSelect } from 'vael-ui'
 import type { TreeSelectNode } from 'vael-ui'
 
@@ -116,7 +112,14 @@ const fileTree: TreeSelectNode[] = [
   { label: 'index.html', value: 'index.html' },
 ]
 
+// Checkbox mode keeps only leaves (files) in the model, so its length is the file count,
+// including files inside collapsed subfolders.
 const checkboxValues = shallowRef<(string | number)[]>([])
+const selectionSummary = computed(() => {
+  const count = checkboxValues.value.length
+  if (count === 0) return 'Nothing selected yet'
+  return `${count} ${count === 1 ? 'file' : 'files'} selected`
+})
 </script>
 
 <style scoped>

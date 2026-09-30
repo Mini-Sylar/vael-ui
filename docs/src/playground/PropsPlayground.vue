@@ -908,10 +908,191 @@ const code = computed(() => {
     .filter(Boolean)
     .join(' ')
   const itemsAttr = hasItemsProp.value ? ' :items="items"' : ''
-  const openTag = [props.name, attrs, itemsAttr].filter(Boolean).join(' ').replace(/ +/g, ' ')
+  const { extraAttrs = '', children = [], imports = [] } = snippetParts.value
+  const openTag = [props.name, attrs, itemsAttr, extraAttrs]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/ +/g, ' ')
   const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
-  return `import { ${props.name} } from '${pkg}'\n\n<${openTag}>${props.name}</${props.name}>`
+  const names = [...new Set([props.name, ...imports])].join(', ')
+  const inline = children.length === 1 && !children[0]!.startsWith('<')
+  const body =
+    children.length === 0
+      ? `<${openTag} />`
+      : inline
+        ? `<${openTag}>${children[0]}</${props.name}>`
+        : `<${openTag}>\n${children.map((line) => `  ${line}`).join('\n')}\n</${props.name}>`
+  return `import { ${names} } from '${pkg}'\n\n${body}`
 })
+
+// Mirrors the preview branches above, so the snippet shows the same slot
+// content the preview renders (and none when the preview has none).
+const snippetParts = computed<{ extraAttrs?: string; children?: string[]; imports?: string[] }>(
+  () => {
+    const open = 'v-model:open="open"'
+    if (isOpenModel.value) {
+      return { extraAttrs: open, children: [`<p>${OPEN_MODEL_PLACEHOLDER[props.name]}</p>`] }
+    }
+    if (isContextArea.value) {
+      return { extraAttrs: open, children: ['<div>Right-click here</div>'] }
+    }
+    if (isRadioWrap.value) return { extraAttrs: 'value="playground-option"' }
+    if (isRadioGroup.value) {
+      return {
+        imports: ['Radio'],
+        children: [
+          '<Radio value="standard" label="Standard shipping" />',
+          '<Radio value="express" label="Express shipping" />',
+          '<Radio value="overnight" label="Overnight shipping" disabled />',
+        ],
+      }
+    }
+    if (isField.value) {
+      return { imports: ['Input'], children: ['<Input placeholder="you@example.com" />'] }
+    }
+    if (isDataTable.value) {
+      return {
+        extraAttrs: ':data="rows" row-key="id"',
+        imports: ['Column'],
+        children: [
+          '<template #columns="{ columnData }">',
+          '  <Column :data="columnData" field="name" label="Name" />',
+          '  <Column :data="columnData" field="role" label="Role" />',
+          '  <Column :data="columnData" field="status" label="Status" />',
+          '</template>',
+        ],
+      }
+    }
+    if (isButtonGroup.value) {
+      return {
+        imports: ['Button'],
+        children: ['Archive', 'Report', 'Snooze'].map(
+          (label) => `<Button variant="outline">${label}</Button>`,
+        ),
+      }
+    }
+    if (isToolbar.value) {
+      return {
+        imports: ['Button'],
+        children: [
+          '<Button variant="ghost" size="sm">Bold</Button>',
+          '<Button variant="ghost" size="sm">Italic</Button>',
+          ...['Cut', 'Copy', 'Paste'].map(
+            (label) => `<Button variant="ghost" size="sm" data-toolbar-overflow>${label}</Button>`,
+          ),
+        ],
+      }
+    }
+    if (isDock.value || isSpeedDial.value) {
+      return hasItemsProp.value ? {} : { extraAttrs: ':items="items"' }
+    }
+    if (isResizable.value) return { children: ['Drag the handle'] }
+    if (isTabs.value) {
+      return {
+        extraAttrs: 'v-model:active="active"',
+        children: [
+          '<template #default="{ active, select, items }">',
+          '  <button',
+          '    v-for="item in items"',
+          '    :key="item"',
+          '    type="button"',
+          '    role="tab"',
+          '    :aria-selected="active === item"',
+          '    @click="select(item)"',
+          '  >',
+          '    {{ item }}',
+          '  </button>',
+          '</template>',
+        ],
+      }
+    }
+    if (isCollapsible.value) {
+      return {
+        extraAttrs: open,
+        imports: ['Button'],
+        children: [
+          '<template #trigger>',
+          `  <Button variant="outline">{{ open ? 'Close' : 'Open' }}</Button>`,
+          '</template>',
+          '<p>Toggle to reveal this content.</p>',
+        ],
+      }
+    }
+    if (isAccordion.value) {
+      return {
+        imports: ['AccordionItem'],
+        children: [
+          '<AccordionItem value="item-1" title="What is vael-ui?">',
+          '  A Vue 3 component library with a full Vue Vapor build.',
+          '</AccordionItem>',
+          '<AccordionItem value="item-2" title="Does it support dark mode?">',
+          '  Yes. It follows the system setting, and a data-theme attribute on the root element overrides it.',
+          '</AccordionItem>',
+          '<AccordionItem value="item-3" title="Can I use my own animation library?">',
+          '  Yes. Every animated component has hooks for GSAP, motion-v, or plain CSS.',
+          '</AccordionItem>',
+        ],
+      }
+    }
+    if (isScrollArea.value) {
+      return {
+        children: ['<ul>', '  <li v-for="n in 20" :key="n">Item {{ n }}</li>', '</ul>'],
+      }
+    }
+    if (isPullToRefresh.value) {
+      return {
+        children: ['<ul>', '  <li v-for="n in 8" :key="n">Row {{ n }}</li>', '</ul>'],
+      }
+    }
+    if (isAvatarGroup.value) {
+      return {
+        imports: ['Avatar'],
+        children: ['Ada Lovelace', 'Grace Hopper', 'Katherine Johnson'].map(
+          (person) => `<Avatar name="${person}" />`,
+        ),
+      }
+    }
+    if (isBreadcrumb.value) {
+      return {
+        imports: ['BreadcrumbItem', 'BreadcrumbSeparator'],
+        children: [
+          '<BreadcrumbItem href="/">Home</BreadcrumbItem>',
+          '<BreadcrumbSeparator />',
+          '<BreadcrumbItem href="/docs">Docs</BreadcrumbItem>',
+          '<BreadcrumbSeparator />',
+          '<BreadcrumbItem current>Breadcrumb</BreadcrumbItem>',
+        ],
+      }
+    }
+    if (isCommandPalette.value) {
+      return { extraAttrs: hasItemsProp.value ? open : `${open} :items="items"` }
+    }
+    if (isTour.value) return { extraAttrs: `${open} :steps="steps"` }
+    if (suppressDefaultSlot.value || isSelfManagedOpen.value) return {}
+    if (hasTriggerSlot.value && hasItemsProp.value) {
+      return {
+        extraAttrs: open,
+        imports: ['Button'],
+        children: ['<template #trigger>', '  <Button>Trigger</Button>', '</template>'],
+      }
+    }
+    if (!hasOpenProp.value) {
+      return sampleSlotText.value ? { children: [sampleSlotText.value] } : {}
+    }
+    const trigger = hasTriggerSlot.value
+      ? [
+          '<template #trigger="{ setTriggerEl }">',
+          '  <Button :ref="setTriggerEl" @click="open = !open">Trigger</Button>',
+          '</template>',
+        ]
+      : []
+    return {
+      extraAttrs: open,
+      imports: hasTriggerSlot.value ? ['Button'] : [],
+      children: [...trigger, props.name],
+    }
+  },
+)
 </script>
 
 <style scoped>

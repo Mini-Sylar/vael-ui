@@ -206,8 +206,7 @@
         </template>
       </DataTable>
       <p class="demo-status">reach-end fired {{ reachEndCount }} time(s).</p>
-    </section>
-    <section class="demo">
+
       <h3>Reorderable columns</h3>
       <p>
         <code>reorderableColumns</code> lets header cells be dragged. The grip shows at rest by

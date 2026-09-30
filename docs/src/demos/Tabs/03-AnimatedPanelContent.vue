@@ -2,12 +2,14 @@
   <section class="demo">
     <h3>Animated panel content (motion-v)</h3>
     <p class="note">
-      The panel below isn't part of Tabs at all, it's ordinary consumer markup keyed by
-      <code>active</code>, wrapped in <code>AnimatePresence</code> so the outgoing and incoming
-      panel cross fade with a directional slide (forward when moving to a later tab, backward when
-      moving to an earlier one). Tabs has zero awareness this is happening.
+      The panels aren't part of Tabs, they're ordinary consumer markup. Every panel stays mounted
+      and motion-v animates each one's <code>x</code>/<code>opacity</code> from its position
+      relative to <code>active</code>, so the outgoing and incoming panels cross fade with a
+      directional slide. No <code>AnimatePresence</code>: a keyed swap inside it loses its key in a
+      Vapor parent, so exits never ran there. <code>id-base</code> wires each tab's
+      <code>aria-controls</code> to its panel.
     </p>
-    <Tabs v-model:active="active" :items="items" @change="onChange">
+    <Tabs v-model:active="active" :items="items" id-base="report">
       <template #default="{ items: list, itemProps }">
         <button v-for="item in list" :key="item" v-bind="itemProps(item)">
           <span class="tab-label">{{ item }}</span>
@@ -15,26 +17,29 @@
       </template>
     </Tabs>
     <div class="panel-viewport">
-      <AnimatePresence :initial="false">
-        <motion.div
-          :key="active"
-          class="panel-content"
-          :initial="{ x: direction * 48, opacity: 0 }"
-          :animate="{ x: 0, opacity: 1 }"
-          :exit="{ x: direction * -48, opacity: 0 }"
-          :transition="{ type: 'spring', duration: 0.4, bounce: 0.2 }"
-        >
-          <h3>{{ panels[active].title }}</h3>
-          <p class="panel-text">{{ panels[active].body }}</p>
-        </motion.div>
-      </AnimatePresence>
+      <motion.div
+        v-for="(item, index) in items"
+        :id="`report-panel-${item}`"
+        :key="item"
+        class="panel-content"
+        role="tabpanel"
+        :aria-labelledby="`report-tab-${item}`"
+        :tabindex="item === active ? 0 : -1"
+        :inert="item !== active"
+        :initial="false"
+        :animate="{ x: offsetOf(index), opacity: item === active ? 1 : 0 }"
+        :transition="{ type: 'spring', duration: 0.4, bounce: 0.2 }"
+      >
+        <h3>{{ panels[item].title }}</h3>
+        <p class="panel-text">{{ panels[item].body }}</p>
+      </motion.div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
+import { motion } from 'motion-v'
 import { Tabs } from 'vael-ui'
 
 type Section = 'overview' | 'analytics' | 'settings'
@@ -56,13 +61,11 @@ const panels: Record<Section, { title: string; body: string }> = {
   },
 }
 
-// Panel slides with directional momentum; @change fires after Tabs flips v-model
-const direction = shallowRef(1)
-let previousIndex = items.indexOf(active.value)
-function onChange(item: Section) {
-  const next = items.indexOf(item)
-  direction.value = next > previousIndex ? 1 : -1
-  previousIndex = next
+// Panels before the active one wait off to the left, later ones to the right,
+// so switching tabs slides in the direction of travel.
+function offsetOf(index: number) {
+  const activeIndex = items.indexOf(active.value)
+  return index === activeIndex ? 0 : index < activeIndex ? -48 : 48
 }
 </script>
 

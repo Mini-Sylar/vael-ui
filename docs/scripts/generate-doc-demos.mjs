@@ -51,13 +51,12 @@ function readVaporComponentNames() {
   return names
 }
 
-// A handful of components share a legacy demo file rather than having their
-// own (e.g. Avatar and Badge share AvatarBadgeDemo). Column and
+// A handful of components use a legacy demo file not named after them (e.g.
+// Avatar uses AvatarBadgeDemo). A component's own folder always wins. Column and
 // AccordionItem aren't listed here at all now — they're documented on their
 // parent's page (see taxonomy.ts), not routed as their own component page.
 const DEMO_OVERRIDES = {
   Avatar: 'AvatarBadgeDemo',
-  Badge: 'AvatarBadgeDemo',
   Radio: 'RadioGroupDemo',
   Toaster: 'ToastDemo',
 }

@@ -4,11 +4,12 @@
     <p class="note">
       "France" is disabled (its whole subtree is unreachable): expand-only rows never accept a
       selection, so a disabled branch simply can't be entered. The trigger's default label swaps for
-      a breadcrumb via the <code>#value</code> slot, using the <code>path</code> it hands back.
+      a breadcrumb via the <code>#value</code> slot: <code>path</code> holds each level's
+      <code>value</code>, mapped back to labels here.
     </p>
     <CascadeSelect v-model="city2" :items="geographyWithDisabled" placeholder="Pick a city">
       <template #value="{ selected, path: p }">
-        <span v-if="selected">{{ p.join(' / ') }}</span>
+        <span v-if="selected">{{ pathLabels(p).join(' / ') }}</span>
         <span v-else>Pick a city</span>
       </template>
     </CascadeSelect>
@@ -18,7 +19,7 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { CascadeSelect } from 'vael-ui'
-import type { CascadeSelectItem } from 'vael-ui'
+import type { CascadeSelectItem, CascadeSelectPath } from 'vael-ui'
 
 const geography: CascadeSelectItem[] = [
   {
@@ -94,4 +95,16 @@ const geographyWithDisabled: CascadeSelectItem[] = geography.map((continent) =>
 )
 
 const city2 = shallowRef<string | number | null>(null)
+
+function pathLabels(path: CascadeSelectPath): string[] {
+  const labels: string[] = []
+  let level: readonly CascadeSelectItem[] | undefined = geographyWithDisabled
+  for (const value of path) {
+    const node: CascadeSelectItem | undefined = level?.find((item) => item.value === value)
+    if (!node) break
+    labels.push(node.label)
+    level = node.children
+  }
+  return labels
+}
 </script>

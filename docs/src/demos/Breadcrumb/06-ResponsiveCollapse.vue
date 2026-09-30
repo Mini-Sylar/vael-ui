@@ -1,5 +1,5 @@
 <template>
-  <section class="demo">
+  <section ref="demoRoot" class="demo">
     <h3>Responsive collapse: middle items into a <code>Menu</code> popup</h3>
     <p class="note">
       Not a built-in feature — <code>Breadcrumb</code> stays a dumb primitive on purpose. This is
@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbSeparator, Menu, Resizable } from 'vael-ui'
 import type { BreadcrumbItemData } from 'vael-ui'
 import { PhDotsThree } from '@phosphor-icons/vue'
@@ -61,6 +61,11 @@ const allCrumbs: BreadcrumbItemData[] = [
 ]
 
 const resizableSize = shallowRef(480)
+// Start no wider than the demo itself, so the handle stays on screen.
+const demoRoot = useTemplateRef('demoRoot')
+onMounted(() => {
+  if (demoRoot.value) resizableSize.value = Math.min(480, demoRoot.value.clientWidth)
+})
 const collapseContainer = useTemplateRef('collapseContainer')
 const containerWidth = shallowRef(480)
 let resizeObserver: ResizeObserver | undefined
@@ -102,6 +107,8 @@ const lastHiddenPick = shallowRef<string | null>(null)
 
 <style scoped>
 .breadcrumb-resizable {
+  box-sizing: border-box;
+  max-inline-size: 100%;
   margin-block-end: 0.5rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);

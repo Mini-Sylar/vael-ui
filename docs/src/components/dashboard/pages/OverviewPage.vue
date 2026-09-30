@@ -74,7 +74,7 @@
           <Column :data="columnData" field="amount" label="Amount">
             <template #cell="{ row }">{{ currency.format(row.amount) }}</template>
           </Column>
-          <Column :data="columnData" field="status" label="Status">
+          <Column :data="columnData" field="status" label="Status" width="6rem">
             <template #cell="{ row }">
               <Tag :variant="STATUS_VARIANT[row.status]" size="sm">
                 <template #icon>
@@ -84,7 +84,6 @@
               >
             </template>
           </Column>
-          <Column :data="columnData" field="date" label="Date" />
         </template>
         <template #footer>
           <button

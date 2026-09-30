@@ -16,7 +16,7 @@
           :transition="GLIDE"
         />
         <m.button
-          v-for="preset in PRESETS"
+          v-for="(preset, index) in PRESETS"
           :key="preset.key"
           type="button"
           role="radio"
@@ -24,18 +24,21 @@
           :class="{ 'swatch--default': preset.color === null }"
           :style="preset.color ? { '--swatch': preset.color } : undefined"
           :aria-checked="isSelected(preset.color)"
+          :tabindex="index === tabStopIndex ? 0 : -1"
           :aria-label="t(`theme.${preset.key}`)"
           :title="t(`theme.${preset.key}`)"
           :while-hover="{ scale: 1.1 }"
           :while-press="{ scale: 0.88 }"
           :transition="PRESS"
           @click="primaryColor = preset.color"
+          @keydown="onKeydown($event, index)"
         />
         <m.label
           class="swatch swatch--custom"
           :class="{ 'swatch--custom-active': isCustom }"
           :style="isCustom ? { '--swatch': primaryColor! } : undefined"
           :title="t('theme.custom')"
+          tabindex="-1"
           :while-hover="{ scale: 1.1 }"
           :while-press="{ scale: 0.88 }"
           :transition="PRESS"
@@ -90,6 +93,36 @@ const isCustom = computed(
 const selectedIndex = computed(() =>
   isCustom.value ? PRESETS.length : PRESETS.findIndex((preset) => isSelected(preset.color)),
 )
+
+// Roving tabindex: the checked preset is the group's one Tab stop, or the
+// first preset while a custom color is active.
+const tabStopIndex = computed(() => (isCustom.value ? 0 : selectedIndex.value))
+
+function onKeydown(event: KeyboardEvent, index: number) {
+  const last = PRESETS.length - 1
+  let next: number
+  switch (event.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      next = index === last ? 0 : index + 1
+      break
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      next = index === 0 ? last : index - 1
+      break
+    case 'Home':
+      next = 0
+      break
+    case 'End':
+      next = last
+      break
+    default:
+      return
+  }
+  event.preventDefault()
+  primaryColor.value = PRESETS[next]!.color
+  row.value?.querySelectorAll<HTMLElement>('button.swatch')[next]?.focus()
+}
 
 const ringColor = computed(() => primaryColor.value ?? 'var(--ui-text)')
 

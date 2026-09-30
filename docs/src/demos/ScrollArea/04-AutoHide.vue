@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3><code>autoHide</code>: transparent until hover/focus</h3>
+    <h3><code>autoHide</code>: transparent until hover, focus or scroll</h3>
     <p class="note">
-      An overlay-style scrollbar (Chromium/WebKit): invisible at rest, fades in on hover so it
-      doesn't compete with content for attention. Customize thumb color/size by overriding
+      An overlay-style scrollbar: invisible at rest, fades in on hover, focus or while scrolling so
+      it doesn't compete with content for attention. Customize thumb color/size by overriding
       <code>--ui-scroll-thumb</code>/<code>--ui-scroll-thumb-hover</code>/<code
         >--ui-scroll-size</code
       >
