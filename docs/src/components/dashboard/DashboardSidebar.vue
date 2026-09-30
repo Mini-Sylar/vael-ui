@@ -23,12 +23,25 @@
       @keydown="onHandleKeydown"
     />
     <div class="dash-sidebar-top">
-      <div class="dash-brand">
-        <span class="dash-brand-mark">
-          <Logo :size="18" />
-        </span>
-        <span v-if="!collapsed" class="dash-brand-name">vael-ui admin</span>
-      </div>
+      <!-- Workspace switcher: the store and the repo dashboards share this shell. -->
+      <Menu :items="workspaceItems" align="start" data-dash-overlay @select="onWorkspaceSelect">
+        <template #trigger>
+          <button
+            id="dash-workspace-trigger"
+            type="button"
+            class="dash-brand"
+            :aria-label="collapsed ? `Switch workspace, ${workspaceName}` : undefined"
+          >
+            <span class="dash-brand-mark">
+              <Logo :size="18" />
+            </span>
+            <template v-if="!collapsed">
+              <span class="dash-brand-name">{{ workspaceName }}</span>
+              <PhCaretUpDown :size="14" class="dash-brand-caret" />
+            </template>
+          </button>
+        </template>
+      </Menu>
       <Button
         type="button"
         variant="text"
@@ -121,7 +134,13 @@
         </template>
 
         <template v-else>
-          <Menu :items="settingsChildren" side="right" align="start" @select="onSettingsSelect">
+          <Menu
+            :items="settingsChildren"
+            side="right"
+            align="start"
+            data-dash-overlay
+            @select="onSettingsSelect"
+          >
             <template #trigger>
               <Button
                 variant="ghost"
@@ -133,7 +152,13 @@
               </Button>
             </template>
           </Menu>
-          <Menu :items="reportsChildren" side="right" align="start" @select="onReportSelect">
+          <Menu
+            :items="reportsChildren"
+            side="right"
+            align="start"
+            data-dash-overlay
+            @select="onReportSelect"
+          >
             <template #trigger>
               <Button
                 variant="ghost"
@@ -150,7 +175,13 @@
     </nav>
 
     <div class="dash-sidebar-bottom">
-      <Menu :items="accountMenuItems" side="top" align="start" @select="onAccountSelect">
+      <Menu
+        :items="accountMenuItems"
+        side="top"
+        align="start"
+        data-dash-overlay
+        @select="onAccountSelect"
+      >
         <template #trigger>
           <Button
             variant="ghost"
@@ -195,25 +226,55 @@ import {
 import type { MenuItemData } from 'vael-ui'
 import {
   PhCaretDown,
+  PhCaretUpDown,
   PhFileText,
+  PhFolder,
   PhGear,
+  PhGitBranch,
+  PhGitPullRequest,
   PhPackage,
   PhSidebarSimple,
   PhSquaresFour,
+  PhStorefront,
   PhUsers,
 } from '@phosphor-icons/vue'
-import type { DashPage } from './dashboardNavigate'
+import type { DashPage, DashVariant } from './dashboardNavigate'
+import { repo } from './repoData'
 import Logo from '../Logo.vue'
 
+const variant = defineModel<DashVariant>('variant', { default: 'store' })
 const activePage = defineModel<DashPage>('activePage', { default: 'overview' })
+
+const WORKSPACES: Record<DashVariant, string> = { store: 'Acme store', repo: 'vael-ui / main' }
+const workspaceName = computed(() => WORKSPACES[variant.value])
+const workspaceItems = computed<MenuItemData[]>(() => [
+  {
+    label: WORKSPACES.store,
+    value: 'store',
+    icon: PhStorefront,
+    shortcut: variant.value === 'store' ? 'Current' : undefined,
+  },
+  {
+    label: WORKSPACES.repo,
+    value: 'repo',
+    icon: PhGitBranch,
+    shortcut: variant.value === 'repo' ? 'Current' : undefined,
+  },
+])
+function onWorkspaceSelect(item: MenuItemData) {
+  if (item.value === 'store' || item.value === 'repo') variant.value = item.value
+}
 
 // Watches the shell's own width (the aside's parent), not the page viewport.
 const asideEl = useTemplateRef<HTMLElement>('asideEl')
 const { width: shellWidth } = useElementSize(() => asideEl.value?.parentElement ?? null)
+// Too narrow for an open sidebar at all: always icons only. Narrower than the
+// pages' full two-column layout: starts collapsed, but can still be opened.
 const isNarrow = computed(() => shellWidth.value > 0 && shellWidth.value < 560)
-const manualCollapsed = shallowRef(false)
+const prefersCollapsed = computed(() => shellWidth.value > 0 && shellWidth.value < 900)
+const manualCollapsed = shallowRef<boolean | null>(null)
 const collapsed = computed({
-  get: () => manualCollapsed.value || isNarrow.value,
+  get: () => isNarrow.value || (manualCollapsed.value ?? prefersCollapsed.value),
   set: (v: boolean) => (manualCollapsed.value = v),
 })
 
@@ -238,11 +299,24 @@ interface NavEntry extends MenuItemData {
   badge?: number
 }
 
-const navItems: NavEntry[] = [
-  { label: 'Overview', value: 'overview', icon: PhSquaresFour },
-  { label: 'Orders', value: 'orders', icon: PhPackage, badge: 12 },
-  { label: 'Customers', value: 'customers', icon: PhUsers },
-]
+const navItems = computed<NavEntry[]>(() =>
+  variant.value === 'repo'
+    ? [
+        { label: 'Overview', value: 'overview', icon: PhSquaresFour },
+        {
+          label: 'Pull requests',
+          value: 'pulls',
+          icon: PhGitPullRequest,
+          badge: repo.pulls.filter((p) => p.state === 'open').length,
+        },
+        { label: 'Files', value: 'files', icon: PhFolder },
+      ]
+    : [
+        { label: 'Overview', value: 'overview', icon: PhSquaresFour },
+        { label: 'Orders', value: 'orders', icon: PhPackage, badge: 12 },
+        { label: 'Customers', value: 'customers', icon: PhUsers },
+      ],
+)
 
 function isCurrentNav(item: NavEntry): boolean {
   return item.value === activePage.value
@@ -333,7 +407,40 @@ defineExpose({ collapsed })
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  border: 0;
+  border-radius: calc(var(--ui-radius) - 2px);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
   overflow: hidden;
+  transition:
+    background-color var(--ui-duration-press) ease,
+    transform var(--ui-duration-press) var(--ui-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .dash-brand:hover {
+    background: var(--ui-muted);
+  }
+}
+.dash-brand:active {
+  transform: scale(0.97);
+}
+.dash-brand:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 1px;
+}
+.dash-brand-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-brand-caret {
+  flex: none;
+  color: var(--ui-text-muted);
 }
 .dash-brand-mark {
   flex: none;

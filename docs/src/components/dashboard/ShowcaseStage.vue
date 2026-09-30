@@ -6,7 +6,7 @@
     @pointerleave="onPointerLeave"
     @pointerdown="onTouch"
   >
-    <DashboardHero />
+    <DashboardHero ref="hero" v-model:variant="variant" />
     <!-- The halo: light at the dashboard's edges that turns when you hover
          and nudges round with each autoplay click. -->
     <div class="halo" aria-hidden="true" :style="{ '--halo-spin': `${haloSpin}deg` }">
@@ -39,10 +39,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  shallowRef,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import DashboardHero from './DashboardHero.vue'
+import { resetRepo } from './repoData'
+import type { DashVariant } from './dashboardNavigate'
 import { useLiveCard, useTicker } from '../home/useLiveCard'
 import { useAutoplayCursor } from './useAutoplayCursor'
+import type { AutoplayStep } from './useAutoplayCursor'
 
 const stage = useTemplateRef<HTMLElement>('stage')
 const cursor = useTemplateRef<HTMLElement>('cursor')
@@ -81,10 +92,23 @@ function onKeydown(event: KeyboardEvent) {
 }
 function onFocusChange() {
   const focused = document.activeElement
-  focusElsewhere.value = !!focused && focused !== document.body && !stage.value?.contains(focused)
+  // The dashboard's own menus are teleported out of the stage but still count as inside it.
+  focusElsewhere.value =
+    !!focused &&
+    focused !== document.body &&
+    !stage.value?.contains(focused) &&
+    !focused.closest('[data-dash-overlay]')
 }
 const mounted = shallowRef(false)
+// Two dashboards share the stage: a store and a code repo. Each visit starts on
+// one at random (?dashboard=repo|store pins it); every autoplay run ends by
+// switching to the other one from the sidebar's workspace menu.
+const variant = shallowRef<DashVariant>('store')
+const hero = useTemplateRef<{ resetPage: () => void }>('hero')
 onMounted(() => {
+  const pinned = new URLSearchParams(location.search).get('dashboard')
+  variant.value =
+    pinned === 'repo' || pinned === 'store' ? pinned : Math.random() < 0.5 ? 'repo' : 'store'
   mounted.value = true
   window.addEventListener('keydown', onKeydown, true)
   document.addEventListener('focusin', onFocusChange)
@@ -103,6 +127,10 @@ const enabled = computed(
 )
 
 const q = (selector: string) => () => stage.value?.querySelector(selector)
+// Sidebar nav by position: collapsed, the items are icons with no text to match.
+const nav = (index: number) => () =>
+  stage.value?.querySelectorAll('#dash-nav .dash-nav-list .ui-menu-list-item')[index]
+
 const byText = (selector: string, text: string) => () =>
   [...(stage.value?.querySelectorAll(selector) ?? [])].find((el) =>
     el.textContent?.trim().startsWith(text),
@@ -117,17 +145,17 @@ const optionByText = (text: () => string) => () =>
 const SEGMENTS = ['Enterprise', 'Growth', 'Starter']
 let loop = -1
 
-// Back to a known state: palette closed, sidebar expanded, Overview showing.
+// Back to a known state: palette closed, Overview showing, repo data fresh.
 function reset() {
   loop++
+  resetRepo()
+  hero.value?.resetPage()
   const root = stage.value
   if (!root) return
   root
     .querySelector('.ui-command-palette-input')
     ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-  const collapse = root.querySelector<HTMLElement>('.dash-collapse-btn')
-  if (collapse?.getAttribute('aria-expanded') === 'false') collapse.click()
-  const overview = byText('.ui-menu-list-item', 'Overview')()
+  const overview = nav(0)()
   if (overview && overview.getAttribute('aria-current') !== 'page')
     (overview as HTMLElement).click()
 }
@@ -141,24 +169,67 @@ useTicker(
   () => (haloSpin.value += 120),
 )
 
+// The workspace menu is teleported to <body>, outside the stage.
+const menuItemByText = (text: string) => () =>
+  [...document.querySelectorAll('.ui-menu-panel [role="menuitem"]')].find((el) =>
+    el.textContent?.trim().startsWith(text),
+  )
+const SWITCH_TO = (name: string): AutoplayStep[] => [
+  { to: q('#dash-workspace-trigger'), click: true, rest: 600 },
+  { to: menuItemByText(name), click: true, rest: 1400 },
+]
+
+// Exact text match on a file-tree label; the click bubbles to its row.
+const treeLabel = (text: string) => () =>
+  [...(stage.value?.querySelectorAll('.files-label') ?? [])].find(
+    (el) => el.textContent?.trim() === text,
+  )
+
+// The store: search, sort and filter customers, collapse the sidebar.
+const STORE_STEPS: AutoplayStep[] = [
+  { rest: 700 },
+  { to: q('#dash-search-trigger'), click: true, rest: 450 },
+  { to: q('.ui-command-palette-input'), type: 'cust', rest: 450 },
+  { to: q('.ui-command-palette-item[data-active]'), click: true, rest: 1000 },
+  { to: byText('.ui-datatable-sort-button', 'Customer'), click: true, rest: 900 },
+  { to: q('input[placeholder^="Filter by segment"]'), click: true, rest: 600 },
+  { to: optionByText(() => SEGMENTS[loop % SEGMENTS.length]!), click: true, rest: 1600 },
+  { to: q('.dash-collapse-btn'), click: true, rest: 1000 },
+  { to: q('.dash-collapse-btn'), click: true, rest: 700 },
+  { to: nav(0), click: true, rest: 2200 },
+  ...SWITCH_TO('vael-ui / main'),
+]
+
+// A pull request goes from review to merged, then shows up on the Overview.
+const REPO_STEPS: AutoplayStep[] = [
+  { rest: 700 },
+  { to: q('#dash-search-trigger'), click: true, rest: 450 },
+  { to: q('.ui-command-palette-input'), type: 'pull', rest: 450 },
+  { to: q('.ui-command-palette-item[data-active]'), click: true, rest: 900 },
+  { to: q('.prs-list [data-accordion-trigger]'), click: true, rest: 900 },
+  { to: byText('.prs-actions .ui-button', 'Approve'), click: true, rest: 1500 },
+  { to: byText('.prs-tabs [role="tab"]', 'Merged'), click: true, rest: 1100 },
+  { to: nav(0), click: true, rest: 1300 },
+  { to: q('[data-day="24"]'), click: true, rest: 1500 },
+  { to: nav(2), click: true, rest: 700 },
+  { to: treeLabel('src'), click: true, rest: 350 },
+  { to: treeLabel('components'), click: true, rest: 350 },
+  { to: treeLabel('Button'), click: true, rest: 350 },
+  { to: treeLabel('Button.vue'), click: true, rest: 1300 },
+  { to: byText('.files-meta .ui-select-button-option', 'Blame'), click: true, rest: 1500 },
+  { to: nav(0), click: true, rest: 2000 },
+  ...SWITCH_TO('Acme store'),
+]
+
 const { pressed, visible } = useAutoplayCursor({
   onClick: () => (haloSpin.value += 40),
   stage,
   cursor,
   enabled: () => enabled.value,
   reset,
-  steps: [
-    { rest: 700 },
-    { to: q('#dash-search-trigger'), click: true, rest: 450 },
-    { to: q('.ui-command-palette-input'), type: 'cust', rest: 450 },
-    { to: q('.ui-command-palette-item[data-active]'), click: true, rest: 1000 },
-    { to: byText('.ui-datatable-sort-button', 'Customer'), click: true, rest: 900 },
-    { to: q('input[placeholder^="Filter by segment"]'), click: true, rest: 600 },
-    { to: optionByText(() => SEGMENTS[loop % SEGMENTS.length]!), click: true, rest: 1600 },
-    { to: q('.dash-collapse-btn'), click: true, rest: 1000 },
-    { to: q('.dash-collapse-btn'), click: true, rest: 700 },
-    { to: byText('.ui-menu-list-item', 'Overview'), click: true, rest: 2600 },
-  ],
+  get steps() {
+    return variant.value === 'repo' ? REPO_STEPS : STORE_STEPS
+  },
 })
 </script>
 
