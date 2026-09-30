@@ -30,12 +30,7 @@
     >
       <svg class="ui-knob-arc" viewBox="0 0 100 100" aria-hidden="true">
         <path :class="trackPart.class" :style="trackPart.style" :d="KNOB_ARC_PATH" />
-        <path
-          :class="fillPart.class"
-          :style="fillPart.style"
-          :d="KNOB_ARC_PATH"
-          path-length="100"
-        />
+        <path :class="fillPart.class" :style="fillPart.style" :d="KNOB_ARC_PATH" pathLength="100" />
       </svg>
       <span class="ui-knob-face" />
       <span class="ui-knob-indicator-pivot">

@@ -36,7 +36,7 @@
           cx="50"
           cy="50"
           r="42"
-          path-length="100"
+          pathLength="100"
         />
         <circle
           v-if="isBounded"
@@ -45,7 +45,7 @@
           cx="50"
           cy="50"
           r="42"
-          path-length="100"
+          pathLength="100"
         />
       </svg>
       <svg class="ui-dial-ticks-svg" viewBox="0 0 100 100" aria-hidden="true">

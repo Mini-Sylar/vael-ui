@@ -30,6 +30,15 @@ test('blur reformats the display and clamps to min/max', async () => {
   await expect.poll(() => input.value).toBe('10')
 })
 
+test('Enter clamps to min/max without leaving the field', async () => {
+  const screen = await render(InputNumberFixture, { props: { min: 0, max: 10 } })
+  const input = basicInput(screen)
+  await userEvent.type(input, '25{Enter}')
+  await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('10')
+  await expect.poll(() => input.value).toBe('10')
+  expect(document.activeElement).toBe(input)
+})
+
 test('null model when cleared, with allowEmpty (default)', async () => {
   const screen = await render(InputNumberFixture, { props: { min: 0 } })
   const input = basicInput(screen)

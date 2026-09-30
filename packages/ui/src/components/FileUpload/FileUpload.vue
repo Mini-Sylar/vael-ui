@@ -27,6 +27,7 @@
       :id="fieldControl.id"
       type="file"
       class="ui-file-upload-input"
+      tabindex="-1"
       :accept="accept"
       :capture="capture || undefined"
       :multiple="multiple"
@@ -92,7 +93,7 @@
 <script setup lang="ts">
 import './FileUpload.css'
 import '../shared/tokens.css'
-import { computed, ref, shallowRef, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFileDrop } from '../../composables/useFileDrop'
@@ -254,10 +255,33 @@ function processFiles(incoming: File[]) {
   emit('add', accepted)
 }
 
+const FOCUSABLE =
+  'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+function liveRows(): Element[] {
+  return [...(listEl.value?.children ?? [])].filter(
+    (el) => !el.classList.contains('ui-file-item-leave-active'),
+  )
+}
+
 function removeFile(file: File) {
+  const row = document.activeElement?.closest('li')
+  const rows = liveRows()
+  const index = row && row.parentElement === listEl.value ? rows.indexOf(row) : -1
   staggerIndex.delete(fileKey(file))
   modelValue.value = modelValue.value.filter((f) => f !== file)
   emit('remove', file)
+  // The removed row takes focus with it; hand it to the row that slides into
+  // its place, or the one before, or back to the dropzone.
+  if (index < 0) return
+  nextTick(() => {
+    const remaining = liveRows()
+    const target = remaining[index] ?? remaining[index - 1]
+    const el =
+      target?.querySelector<HTMLElement>(FOCUSABLE) ??
+      dropzoneEl.value?.querySelector<HTMLElement>(FOCUSABLE)
+    el?.focus()
+  })
 }
 
 const root = useTemplateRef<HTMLElement>('root')

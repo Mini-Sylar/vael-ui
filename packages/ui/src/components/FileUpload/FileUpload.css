@@ -69,6 +69,11 @@
     border-radius: calc(var(--ui-radius) - 2px);
     font-size: 0.8125rem;
   }
+  /* A custom #item slot with one root fills the row. */
+  .ui-file-upload-item > :only-child {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
   .ui-file-upload-item-name {
     flex: 1 1 auto;
     min-inline-size: 0;

@@ -99,15 +99,34 @@ test('paste of a full code fills every cell and fires complete once', async () =
   await expect.element(screen.getByTestId('complete-count')).toHaveTextContent('1')
 })
 
-test('clicking a cell moves the caret there, so Backspace edits mid-string', async () => {
+test('clicking a filled cell selects it, so Backspace clears that cell', async () => {
   const screen = await render(OtpInputFixture, {})
   const input = basicInput(screen)
   await userEvent.type(input, '12345')
   const cells = basicCells(screen)
   await clickCell(input, cells[2]!)
   await userEvent.keyboard('{Backspace}')
-  // Backspace at caret index 2 removes the character just before it (index 1).
-  await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('1345')
+  await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('1245')
+})
+
+test('typing on a clicked cell of a full code replaces that digit', async () => {
+  const screen = await render(OtpInputFixture, {})
+  const input = basicInput(screen)
+  await userEvent.type(input, '123456')
+  await clickCell(input, basicCells(screen)[2]!)
+  await userEvent.keyboard('9')
+  await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('129456')
+})
+
+test('a pasted code with separators keeps every digit', async () => {
+  const screen = await render(OtpInputFixture, {})
+  const input = basicInput(screen)
+  input.focus()
+  input.value = '123-456'
+  input.setSelectionRange(7, 7)
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+  await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('123456')
+  expect(input.value).toBe('123456')
 })
 
 test('the overlay input actually has focus after clicking any cell', async () => {

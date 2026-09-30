@@ -113,7 +113,7 @@
 <!--
   Composes Input (reusing field/aria/label wiring); stepper column in #end slot.
   beforeinput gates keystrokes via useNumberFormat.isPartial/parse (no caret math).
-  Model commits live on full parse or null (clearing unambiguous); blur reformats + clamps.
+  Model commits live on full parse or null (clearing unambiguous); blur and Enter reformat + clamp.
   Steppers: tabindex=-1 (arrows on input), decimal-safe math (0.1 + 0.2 = 0.3).
   Press-and-hold repeats (500ms delay, 60ms thereafter); pointerdown for instant feedback.
   Comments outside template to avoid DOM nodes in production.
@@ -135,9 +135,9 @@ const modelValue = defineModel<number | null>({ default: null })
 
 const props = withDefaults(
   defineProps<{
-    /** Lowest allowed value; blur and the steppers clamp the value to it. */
+    /** Lowest allowed value; blur, Enter and the steppers clamp the value to it. */
     min?: number
-    /** Highest allowed value; blur and the steppers clamp the value to it. */
+    /** Highest allowed value; blur, Enter and the steppers clamp the value to it. */
     max?: number
     /** Amount the steppers and the arrow keys add or remove. @default 1 */
     step?: number
@@ -304,6 +304,9 @@ function onKeydown(event: KeyboardEvent) {
         displayValue.value = numberFormat.format(props.min)
       }
       break
+    case 'Enter':
+      commit()
+      break
     case 'End':
       if (props.max !== undefined) {
         event.preventDefault()
@@ -335,12 +338,16 @@ function onStepperUp() {
 }
 onScopeDispose(clearRepeat)
 
-// Only reformat/clamp-on-blur here; focus/blur reported by Input's useFieldControl.
+// Only reformat/clamp on blur and Enter here; focus/blur reported by Input's useFieldControl.
 function onFocus() {
   isFocused.value = true
 }
 function onBlur() {
   isFocused.value = false
+  commit()
+}
+// Enter commits like blur: clamp to min/max and reformat.
+function commit() {
   let value = modelValue.value
   if (value === null) {
     if (!props.allowEmpty) {
