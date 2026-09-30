@@ -162,6 +162,22 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     travelActive.value = false
   }
 
+  // The new label's own size. Mid-travel the box is still pinned to the previous
+  // size (inline width/height plus the sizing lock), so measuring it as-is would
+  // carry that stale width into the next travel and clip the longer label.
+  function naturalRect(el: HTMLElement): DOMRect {
+    const { width, height } = el.style
+    const locked = el.hasAttribute('data-sizing-locked')
+    el.style.width = ''
+    el.style.height = ''
+    if (locked) el.removeAttribute('data-sizing-locked')
+    const rect = el.getBoundingClientRect()
+    el.style.width = width
+    el.style.height = height
+    if (locked) el.setAttribute('data-sizing-locked', '')
+    return rect
+  }
+
   watch(floatingStyle, (next) => {
     const wasVisible = positionerStyle.value.visibility === 'visible'
     const isVisible = next.visibility === 'visible'
@@ -169,7 +185,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       const from = travelFrom
       travelFrom = null
       const el = options.positionerEl.value
-      const targetRect = el?.getBoundingClientRect()
+      const targetRect = el ? naturalRect(el) : undefined
       const targetWidth = targetRect?.width ?? from.width
       const targetHeight = targetRect?.height ?? from.height
       const distance = Math.hypot(
@@ -198,12 +214,14 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       const token = ++travelToken
       travelActive.value = true
       traveling.value = false
+      // Grow to fit a larger label at once; only shrinking animates. A box easing
+      // up to a longer label would clip it for the length of the tween.
       positionerStyle.value = {
         ...next,
         top: `${from.top}px`,
         left: `${from.left}px`,
-        width: `${from.width}px`,
-        height: `${from.height}px`,
+        width: `${Math.max(from.width, targetWidth)}px`,
+        height: `${Math.max(from.height, targetHeight)}px`,
       }
       travelRaf1 = requestAnimationFrame(() => {
         travelRaf2 = requestAnimationFrame(() => {
