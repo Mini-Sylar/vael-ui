@@ -148,3 +148,27 @@ test('the seed color survives dark mode instead of reverting to the library defa
     delete document.documentElement.dataset.theme
   }
 })
+
+test('setting or clearing a theme keeps the subtree mounted (focus and DOM identity survive)', async () => {
+  const { default: ConfigProvider } =
+    await import('../src/components/ConfigProvider/ConfigProvider.vue')
+  const { defineComponent, h } = await import('vue')
+  type Theme = { primary?: string } | undefined
+  const Wrapper = defineComponent({
+    props: { theme: { type: Object as () => Theme, default: undefined } },
+    setup(props) {
+      return () =>
+        h(ConfigProvider, { theme: props.theme }, () =>
+          h('button', { 'data-testid': 'inner' }, 'inner'),
+        )
+    },
+  })
+  const screen = await render(Wrapper, { props: { theme: undefined as Theme } })
+  const before = screen.container.querySelector<HTMLButtonElement>('[data-testid="inner"]')!
+  before.focus()
+  await screen.rerender({ theme: { primary: '#6366f1' } as Theme })
+  expect(screen.container.querySelector('[data-testid="inner"]')).toBe(before)
+  expect(document.activeElement).toBe(before)
+  await screen.rerender({ theme: undefined })
+  expect(screen.container.querySelector('[data-testid="inner"]')).toBe(before)
+})
