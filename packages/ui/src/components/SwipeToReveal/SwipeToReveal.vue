@@ -9,6 +9,7 @@
     :data-reveal-scale="revealScaleOn || undefined"
     :aria-disabled="disabled || undefined"
     v-bind="attrs"
+    @focusout="onFocusout"
   >
     <div
       v-if="hasLeading"
@@ -16,6 +17,7 @@
       :class="actionsPart.class"
       :style="[{ '--ui-swipe-reveal-progress': leadingProgress }, actionsPart.style]"
       data-side="leading"
+      @focusin="onActionsFocus('leading')"
     >
       <slot
         name="leading-actions"
@@ -30,6 +32,7 @@
       :class="actionsPart.class"
       :style="[{ '--ui-swipe-reveal-progress': trailingProgress }, actionsPart.style]"
       data-side="trailing"
+      @focusin="onActionsFocus('trailing')"
     >
       <slot
         name="trailing-actions"
@@ -143,6 +146,21 @@ const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reve
     disabled: () => props.disabled,
     onCommit: (side) => emit('change', side !== null, side),
   })
+
+// Tabbing into a closed row's actions reveals them, so the focused button is
+// visible; tabbing out of the row closes what focus opened.
+let openedByFocus = false
+function onActionsFocus(side: SwipeRevealSide) {
+  if (openSide.value === side) return
+  openedByFocus = true
+  reveal(side)
+}
+function onFocusout(event: FocusEvent) {
+  if (!openedByFocus) return
+  if (root.value?.contains(event.relatedTarget as Node | null)) return
+  openedByFocus = false
+  close()
+}
 
 // 0 → 1: how far the drag/settle has revealed each edge. Exposed for consumer-driven effects;
 // also drives the opt-in `revealScale` grow-in.
