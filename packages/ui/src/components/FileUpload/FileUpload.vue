@@ -40,7 +40,6 @@
     />
 
     <TransitionGroup
-      v-if="modelValue.length > 0"
       :ref="registerListEl"
       tag="ul"
       name="ui-file-item"
@@ -86,6 +85,7 @@
   Dropzone + hidden input (via useFileDrop, headless and reusable) + accept/maxSize/maxFiles validation.
   input: sr-only (not display:none) for form participation; Browse button + dropzone are alternate entry points.
   Rows animate via TransitionGroup (opacity fade, staggered per-batch); consumers own #item slot + model.
+  The list stays mounted when empty (hidden by :empty) so the first and last rows animate too.
   Comments outside template to avoid DOM nodes in production.
 -->
 <script setup lang="ts">

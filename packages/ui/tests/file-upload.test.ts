@@ -43,22 +43,18 @@ test('motionCss=false hands the item enter/leave transition to item-enter/item-l
   const dropzone = screen.container.querySelector('.ui-file-upload-dropzone')!
   const items = () => screen.container.querySelectorAll('.ui-file-upload-item')
 
-  // The very first item, dropped into an empty list, mounts the TransitionGroup
-  // itself (v-if="modelValue.length > 0") — Vue skips enter transitions on a
-  // TransitionGroup's own initial mount without `appear`, so it never fires. Settle
-  // fully (matching the dedupe test's own proven pattern) before the second drop,
-  // which is what actually exercises an enter on an already-mounted group.
+  // The list stays mounted while empty, so even the very first row animates in.
   dropOn(dropzone, [makeFile('a.txt', 'text/plain', 10)])
-  await vi.waitFor(() => expect(items()).toHaveLength(1))
-  dropOn(dropzone, [makeFile('b.txt', 'text/plain', 10)])
   await vi.waitFor(() => expect(enters).toHaveLength(1))
   const [enterEl, enterDone] = enters[0]!
   expect(enterEl.tagName).toBe('LI')
   enterDone() // consumer's own animation "finished" — must not throw
+  expect(items()).toHaveLength(1)
 
   const removeButton = screen.container.querySelector<HTMLButtonElement>('.ui-file-upload-remove')!
   removeButton.click()
   await vi.waitFor(() => expect(leaves).toHaveLength(1))
+  // Removing the last row still animates it out.
   const [leaveEl, leaveDone] = leaves[0]!
   expect(leaveEl.tagName).toBe('LI')
   leaveDone()

@@ -50,6 +50,10 @@
     padding: 0;
     list-style: none;
   }
+  /* Always rendered, so the first row fades in and the last fades out. */
+  .ui-file-upload-list:empty {
+    display: none;
+  }
   .ui-file-upload-item {
     display: flex;
     align-items: center;
