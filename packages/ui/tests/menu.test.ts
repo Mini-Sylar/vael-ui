@@ -205,3 +205,23 @@ test('a fully custom #default slot gets the live maxHeight budget, so it can bou
   const value = Number(screen.getByTestId('max-height').element().textContent)
   expect(value).toBeGreaterThan(0)
 })
+
+test('Escape returns focus to the trigger', async () => {
+  const screen = await render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await vi.waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByTestId('trigger').element()),
+  )
+})
+
+test('Tab from an open menu closes it without dropping focus to the page', async () => {
+  const screen = await render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+  await userEvent.keyboard('{Tab}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  expect(document.activeElement).not.toBe(document.body)
+})

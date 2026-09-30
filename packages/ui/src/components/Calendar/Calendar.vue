@@ -23,19 +23,18 @@
           />
         </svg>
       </button>
+      <!-- Stays a button at the top level (aria-disabled), so focus isn't
+           dropped when drilling up to the year grid. -->
       <button
-        v-if="canDrill"
         type="button"
-        :class="[labelPart.class, 'ui-calendar-label--button']"
+        :class="[labelPart.class, canDrill && 'ui-calendar-label--button']"
         :style="labelPart.style"
+        :aria-disabled="!canDrill || undefined"
         aria-live="polite"
-        @click="drillUp"
+        @click="canDrill && drillUp()"
       >
         {{ headerLabel }}
       </button>
-      <span v-else :class="labelPart.class" :style="labelPart.style" aria-live="polite">{{
-        headerLabel
-      }}</span>
       <button
         type="button"
         :class="navButtonPart.class"
@@ -382,10 +381,12 @@ const monthRows = computed<Date[][]>(() => {
   for (let i = 0; i < 12; i += 4) out.push(monthsInYear.value.slice(i, i + 4))
   return out
 })
-// 12-year window with viewDate year centered in 2nd row.
-const yearWindowStart = computed(
-  () => viewDate.value.getFullYear() - (viewDate.value.getFullYear() % 12) - 4,
-)
+// 12-year window with viewDate's year always in the 2nd row. Rows are aligned
+// to multiples of 4, so paging by 12 lands on the same row boundaries.
+const yearWindowStart = computed(() => {
+  const year = viewDate.value.getFullYear()
+  return year - (year % 4) - 4
+})
 const yearsInWindow = computed<number[]>(() =>
   Array.from({ length: 12 }, (_, i) => yearWindowStart.value + i),
 )

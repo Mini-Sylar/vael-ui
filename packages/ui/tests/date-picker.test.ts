@@ -352,3 +352,17 @@ test("timeOnly is inert in range mode — falls back to the calendar instead of 
   expect(document.querySelector('.ui-date-picker-time')).toBeNull()
   expect(document.querySelector('.ui-select-panel')?.textContent?.trim()).not.toBe('')
 })
+
+test('focusing the trigger (Tab) does not open it; Enter does, and a pick returns focus', async () => {
+  const screen = await render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
+  const trigger = screen.getByRole('combobox').element() as HTMLElement
+  trigger.focus()
+  await new Promise((r) => setTimeout(r, 50))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await vi.waitFor(() => expect(cellByIso('2024-06-20')).toBeDefined())
+  await userEvent.click(cellByIso('2024-06-20')!)
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await vi.waitFor(() => expect(document.activeElement).toBe(trigger))
+})

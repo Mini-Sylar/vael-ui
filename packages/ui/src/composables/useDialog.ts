@@ -4,7 +4,7 @@ import { useEventListener } from '@vueuse/core'
 import { useLayer } from './useLayerStack'
 import { useScrollLock } from './useScrollLock'
 import { useInert } from './useInert'
-import { useDOMTarget, type DOMTarget, type ElRef } from './dom'
+import { getFocusable, useDOMTarget, type DOMTarget, type ElRef } from './dom'
 
 export type DialogCloseReason = 'trigger' | 'escape' | 'outside' | 'history' | 'programmatic'
 
@@ -45,21 +45,6 @@ export interface UseDialogOptions {
   modal?: MaybeRefOrGetter<boolean>
   /** Pushes a history entry on open so the mobile hardware/gesture back action closes this dialog instead of navigating the underlying page away, popping that entry again on any other close path. Default false — opt in per instance, since it alters the browser's history stack. */
   closeOnHistoryBack?: MaybeRefOrGetter<boolean>
-}
-
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(', ')
-
-function getFocusable(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (el) => el.getClientRects().length > 0,
-  )
 }
 
 /** Headless dialog: cancelable close, Escape, Tab trap, scroll lock, focus save/restore. */

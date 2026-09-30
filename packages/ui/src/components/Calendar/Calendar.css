@@ -44,14 +44,14 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--ui-text);
-  }
-  /* Button only when drillable. */
-  .ui-calendar-label--button {
     border: none;
     background: none;
     padding: 0.125rem 0.375rem;
     border-radius: calc(var(--ui-radius) - 6px);
     font: inherit;
+  }
+  /* Interactive only when drillable. */
+  .ui-calendar-label--button {
     cursor: pointer;
     will-change: transform;
     transition:
@@ -64,7 +64,7 @@
   .ui-calendar-label--button:active {
     transform: scale(0.96);
   }
-  .ui-calendar-label--button:focus-visible {
+  .ui-calendar-label:focus-visible {
     outline: 2px solid var(--ui-primary);
     outline-offset: 1px;
   }

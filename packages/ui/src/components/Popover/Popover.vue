@@ -22,6 +22,7 @@
         :data-align="resolvedAlign"
       >
         <div
+          :id="panelId"
           ref="panel"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
@@ -101,7 +102,7 @@ export interface PopoverProps {
 <script setup lang="ts">
 import './Popover.css'
 import '../shared/tokens.css'
-import { computed, inject, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, inject, shallowRef, useId, useTemplateRef, watch, watchEffect } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
@@ -188,6 +189,22 @@ const triggerElRef = computed<HTMLElement | null>(() => {
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const panelId = useId()
+
+const TRIGGER_SELECTOR = 'button, a[href], [role="button"], [tabindex]'
+// Our own #trigger only: a `triggerEl` prop can point at anything (Tour aims
+// it at the highlighted element), which isn't a disclosure button.
+watchEffect(() => {
+  if (props.triggerEl !== undefined || !triggerElRef.value) return
+  const el = triggerElRef.value
+  const trigger = el.matches(TRIGGER_SELECTOR)
+    ? el
+    : el.querySelector<HTMLElement>(TRIGGER_SELECTOR)
+  if (!trigger) return
+  trigger.setAttribute('aria-expanded', String(open.value))
+  if (open.value) trigger.setAttribute('aria-controls', panelId)
+  else trigger.removeAttribute('aria-controls')
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.popover,
@@ -223,6 +240,7 @@ const {
   cancelClose,
   layerIndex,
 } = usePopover(open, {
+  tabIntoPanel: true,
   triggerEl: triggerElRef,
   positionerEl,
   side: () => props.side,

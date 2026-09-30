@@ -364,6 +364,7 @@ const {
   cancelClose,
   layerIndex,
 } = usePopover(open, {
+  tabIntoPanel: true,
   triggerEl: triggerElRef,
   positionerEl,
   side: () => props.side,

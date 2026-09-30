@@ -14,7 +14,7 @@
     :aria-controls="panelId"
     autocomplete="off"
     :ui="innerUi"
-    @focus="onTriggerFocus"
+    @click="onTriggerClick"
     @keydown="onTriggerKeydown"
   >
     <template #end>
@@ -507,13 +507,10 @@ const fieldControl = useFieldControl()
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
-let suppressNextFocusOpen = false
-function onTriggerFocus() {
-  if (suppressNextFocusOpen) {
-    suppressNextFocusOpen = false
-    return
-  }
-  if (!isDisabled.value) open.value = true
+// Opens on click or ArrowDown/Enter/Space, not on focus: tabbing through a
+// form shouldn't pop a calendar open at every date field.
+function onTriggerClick() {
+  if (!isDisabled.value) open.value = !open.value
 }
 function onTriggerKeydown(event: KeyboardEvent) {
   if (isDisabled.value || open.value) return
@@ -543,18 +540,6 @@ watch(
     nextTick(() => calendarRef.value?.focusDay(anchor))
   },
 )
-// Return focus to trigger only if it was inside the panel; suppressNextFocusOpen prevents auto-reopen.
-watch(open, (value) => {
-  if (value) return
-  nextTick(() => {
-    const active = document.activeElement
-    if (active instanceof Node && positionerEl.value?.contains(active)) {
-      suppressNextFocusOpen = true
-      inputEl.value?.focus()
-    }
-  })
-})
-
 const innerUi = computed(() => ({
   root: themedUi()?.root,
   input: themedUi()?.input,

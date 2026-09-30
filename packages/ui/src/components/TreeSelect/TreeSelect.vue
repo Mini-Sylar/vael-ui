@@ -11,6 +11,7 @@
     :aria-expanded="open"
     :aria-controls="treeId"
     :aria-describedby="fieldControl.describedBy()"
+    :aria-labelledby="(attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()"
     :aria-invalid="isInvalid || undefined"
     :aria-required="fieldControl.required() || undefined"
     :data-state="open ? 'open' : 'closed'"

@@ -8,6 +8,8 @@
   .ui-popover-positioner {
     z-index: var(--ui-z-popover, 55);
     inline-size: max-content;
+    /* Wraps instead of running off a narrow screen; 1rem matches the edge padding. */
+    max-inline-size: calc(100vw - 1rem);
   }
   .ui-popover-panel {
     position: relative;

@@ -40,6 +40,9 @@
           :data-invalid="isInvalid || undefined"
           :data-placeholder="!selectedItem || undefined"
           :aria-describedby="fieldControl.describedBy()"
+          :aria-labelledby="
+            (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
+          "
           :aria-invalid="isInvalid || undefined"
           :aria-required="fieldControl.required() || undefined"
           @click="onTriggerClick"

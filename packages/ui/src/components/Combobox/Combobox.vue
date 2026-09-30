@@ -20,6 +20,7 @@
     @keydown="onInputKeydown"
     @focus="onInputFocus"
     @blur="onInputBlur"
+    @click="onInputClick"
   >
     <template v-if="multiple || $slots.start" #start>
       <!-- v-if="multiple" not && selectedItems.length: empty wrapper keeps last chip's leave transition -->
@@ -672,6 +673,10 @@ function onQueryInput() {
 }
 function onInputFocus() {
   isFocused.value = true
+  if (!isDisabled.value && openOnFocusResolved.value) open.value = true
+}
+// Focus alone can't reopen an input that already has focus (after a pick or Escape).
+function onInputClick() {
   if (!isDisabled.value && openOnFocusResolved.value) open.value = true
 }
 function onInputBlur(event?: FocusEvent) {

@@ -91,3 +91,24 @@ export function useDOMTarget(target: MaybeRefOrGetter<DOMTarget>): UseDOMTargetR
 
   return { el, refresh }
 }
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ')
+
+/** Visible Tab stops inside `root`, in DOM order. A `tabindex="-1"` button (a roving menu item) isn't one. */
+export function getFocusable(root: ParentNode): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (el) => el.tabIndex >= 0 && el.getClientRects().length > 0,
+  )
+}
+
+/** `el` itself when it's focusable, else the first focusable element inside it. */
+export function focusTargetIn(el: HTMLElement): HTMLElement | undefined {
+  return el.matches(FOCUSABLE_SELECTOR) ? el : getFocusable(el)[0]
+}

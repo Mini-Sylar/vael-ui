@@ -22,6 +22,7 @@
       :style="[collapseStyle, panelPart.style]"
       :data-state="collapseState"
       :aria-hidden="collapseState === 'closed' ? 'true' : undefined"
+      :inert="collapseState === 'closed'"
     >
       <div :class="bodyPart.class" :style="bodyPart.style">
         <slot />
