@@ -6,8 +6,14 @@
     cursor: pointer;
     touch-action: none;
     border-radius: 4px;
+    /* Don't stretch inside Field, so the focus ring hugs the stars. */
+    align-self: flex-start;
   }
+  /* The ring is keyboard-only via [data-focus-visible], not the UA default. */
   .ui-rating:focus-visible {
+    outline: none;
+  }
+  .ui-rating[data-focus-visible] {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }

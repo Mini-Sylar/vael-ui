@@ -102,7 +102,11 @@
   .ui-slider-thumb[data-active] {
     scale: 0.96;
   }
+  /* The ring is keyboard-only via [data-focus-visible], not the UA default. */
   .ui-slider-thumb:focus-visible {
+    outline: none;
+  }
+  .ui-slider-thumb[data-focus-visible] {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }

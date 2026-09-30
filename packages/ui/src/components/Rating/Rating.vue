@@ -52,6 +52,11 @@ import './Rating.css'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import {
+  clearFocusVisible,
+  markFocusVisible,
+  showFocusVisible,
+} from '../../composables/useFocusVisible'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -202,6 +207,7 @@ function onPointerCancel(event: PointerEvent) {
 }
 function onFocus(event: FocusEvent) {
   try {
+    markFocusVisible(event)
     fieldControl.onFocus()
   } finally {
     forward('onFocus', event)
@@ -209,6 +215,7 @@ function onFocus(event: FocusEvent) {
 }
 function onBlur(event: FocusEvent) {
   try {
+    clearFocusVisible(event)
     fieldControl.onBlur()
   } finally {
     forward('onBlur', event)
@@ -217,6 +224,7 @@ function onBlur(event: FocusEvent) {
 
 function onKeydown(event: KeyboardEvent) {
   try {
+    showFocusVisible(event)
     if (isDisabled.value || props.readonly) return
     switch (event.key) {
       case 'ArrowRight':

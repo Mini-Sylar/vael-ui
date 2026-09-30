@@ -36,9 +36,9 @@
         :aria-describedby="fieldControl.describedBy()"
         :aria-labelledby="fieldControl.labelledBy()"
         @pointerdown.stop="onThumbPointerdown(index, $event)"
-        @keydown="onThumbKeydown(index, $event)"
-        @focus="fieldControl.onFocus"
-        @blur="fieldControl.onBlur"
+        @keydown="(event: KeyboardEvent) => onThumbKeydownWithRing(index, event)"
+        @focus="onThumbFocus"
+        @blur="onThumbBlur"
       />
     </div>
     <template v-if="name">
@@ -59,6 +59,11 @@ import './Slider.css'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import {
+  clearFocusVisible,
+  markFocusVisible,
+  showFocusVisible,
+} from '../../composables/useFocusVisible'
 import { useSlider } from '../../composables/useSlider'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -169,4 +174,17 @@ defineExpose({
   /** Thumb elements, one per value (two in range mode). */
   thumbEls,
 })
+
+function onThumbFocus(event: FocusEvent) {
+  markFocusVisible(event)
+  fieldControl.onFocus()
+}
+function onThumbBlur(event: FocusEvent) {
+  clearFocusVisible(event)
+  fieldControl.onBlur()
+}
+function onThumbKeydownWithRing(index: number, event: KeyboardEvent) {
+  showFocusVisible(event)
+  onThumbKeydown(index, event)
+}
 </script>

@@ -24,9 +24,9 @@
       :aria-describedby="fieldControl.describedBy()"
       :aria-labelledby="fieldControl.labelledBy()"
       @pointerdown="onDialPointerdown"
-      @keydown="onDialKeydown"
-      @focus="fieldControl.onFocus"
-      @blur="fieldControl.onBlur"
+      @keydown="onDialKeydownWithRing"
+      @focus="onDialFocus"
+      @blur="onDialBlur"
     >
       <svg class="ui-knob-arc" viewBox="0 0 100 100" aria-hidden="true">
         <path :class="trackPart.class" :style="trackPart.style" :d="KNOB_ARC_PATH" />
@@ -66,6 +66,11 @@ import './Knob.css'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import {
+  clearFocusVisible,
+  markFocusVisible,
+  showFocusVisible,
+} from '../../composables/useFocusVisible'
 import { useKnob } from '../../composables/useKnob'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -162,4 +167,17 @@ defineExpose({
   /** Pointer mark that rotates with the value. */
   indicatorEl,
 })
+
+function onDialFocus(event: FocusEvent) {
+  markFocusVisible(event)
+  fieldControl.onFocus()
+}
+function onDialBlur(event: FocusEvent) {
+  clearFocusVisible(event)
+  fieldControl.onBlur()
+}
+function onDialKeydownWithRing(event: KeyboardEvent) {
+  showFocusVisible(event)
+  onDialKeydown(event)
+}
 </script>
