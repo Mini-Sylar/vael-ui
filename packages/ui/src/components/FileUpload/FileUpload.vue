@@ -47,6 +47,7 @@
       :class="listPart.class"
       :style="listPart.style"
       @enter="enterHook"
+      @before-leave="beforeLeaveHook"
       @leave="leaveHook"
     >
       <li
@@ -274,6 +275,16 @@ function registerListEl(el: Element | { $el?: unknown } | null) {
 // Same shape as Toaster's own enterHook/leaveHook.
 const enterHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-enter', el, done),
+)
+// The built-in exit collapses the row from its measured height.
+const beforeLeaveHook = computed(() =>
+  props.motionCss
+    ? (el: Element) =>
+        (el as HTMLElement).style.setProperty(
+          '--ui-file-item-block-size',
+          `${el.getBoundingClientRect().height}px`,
+        )
+    : undefined,
 )
 const leaveHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-leave', el, done),
