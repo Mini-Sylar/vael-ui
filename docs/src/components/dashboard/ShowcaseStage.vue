@@ -180,7 +180,8 @@ const { pressed, visible } = useAutoplayCursor({
   /* Three hues from the theme color: itself, one 70° round the wheel and a
      lighter one 60° the other way, so the light mixes instead of sitting
      in a single flat hue. Info blue stands in until a color is picked. */
-  --halo-hue: var(--docs-accent, var(--ui-info));
+  /* Desaturated: the halo frames the dashboard, it shouldn't compete with it. */
+  --halo-hue: oklch(from var(--docs-accent, var(--ui-info)) l calc(c * 0.6) h);
   --halo-hue-b: oklch(from var(--halo-hue) l c calc(h + 70));
   --halo-hue-c: oklch(from var(--halo-hue) calc(l + 0.08) c calc(h - 60));
   /* Light mode: white rim and hues lifted toward white, so the halo reads as
@@ -238,7 +239,7 @@ const { pressed, visible } = useAutoplayCursor({
   inset: -1.5rem;
   border-radius: 2rem;
   filter: blur(30px);
-  opacity: 0.45;
+  opacity: 0.2;
 }
 
 .halo-aurora::before {
@@ -261,10 +262,10 @@ const { pressed, visible } = useAutoplayCursor({
 .halo-outer::before {
   background: conic-gradient(
     transparent,
-    color-mix(in oklch, var(--halo-a) 40%, transparent),
+    color-mix(in oklch, var(--halo-a) 20%, transparent),
     transparent 10%,
     transparent 50%,
-    color-mix(in oklch, var(--halo-b) 36%, transparent),
+    color-mix(in oklch, var(--halo-b) 18%, transparent),
     transparent 60%
   );
 }
@@ -279,10 +280,10 @@ const { pressed, visible } = useAutoplayCursor({
 .halo-inner::before {
   background: conic-gradient(
     transparent,
-    color-mix(in oklch, var(--halo-c) 34%, transparent),
+    color-mix(in oklch, var(--halo-c) 16%, transparent),
     transparent 8%,
     transparent 50%,
-    color-mix(in oklch, var(--halo-a) 30%, transparent),
+    color-mix(in oklch, var(--halo-a) 14%, transparent),
     transparent 58%
   );
 }
@@ -298,10 +299,10 @@ const { pressed, visible } = useAutoplayCursor({
 .halo-border::before {
   background: conic-gradient(
     var(--halo-rim),
-    var(--halo-a) 5%,
+    color-mix(in oklch, var(--halo-a) 45%, var(--halo-rim)) 5%,
     var(--halo-rim) 14%,
     var(--halo-rim) 50%,
-    var(--halo-b) 60%,
+    color-mix(in oklch, var(--halo-b) 45%, var(--halo-rim)) 60%,
     var(--halo-rim) 64%
   );
 }

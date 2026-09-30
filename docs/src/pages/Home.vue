@@ -256,12 +256,12 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .showcase-backdrop {
-    --dither-alpha: 0.26;
+    --dither-alpha: 0.13;
   }
 }
 
 :root[data-theme='dark'] .showcase-backdrop {
-  --dither-alpha: 0.26;
+  --dither-alpha: 0.13;
 }
 
 .hero-showcase {
@@ -274,7 +274,7 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
    (neutral until one is picked), fading out toward the edges. */
 .showcase-backdrop {
   --dither-color: var(--docs-accent, var(--ui-text));
-  --dither-alpha: 0.16;
+  --dither-alpha: 0.08;
   --dither-cell: 5;
   position: absolute;
   /* Less on the left, so the cloud never sits behind the headline. */
