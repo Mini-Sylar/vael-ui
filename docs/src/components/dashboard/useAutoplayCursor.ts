@@ -27,6 +27,8 @@ export function useAutoplayCursor(options: {
   enabled: () => boolean
   steps: AutoplayStep[]
   reset: () => void
+  /** Called on each scripted click, after it lands. */
+  onClick?: () => void
 }) {
   const x = motionValue(0)
   const y = motionValue(0)
@@ -95,6 +97,7 @@ export function useAutoplayCursor(options: {
           }
           ;(target as HTMLElement).click()
           pressed.value = false
+          options.onClick?.()
         }
         if (step.type && target instanceof HTMLInputElement) {
           for (const ch of step.type) {

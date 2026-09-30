@@ -7,7 +7,14 @@
     @pointerdown="onTouch"
   >
     <DashboardHero />
-    <span class="stage-glow" aria-hidden="true" />
+    <!-- The halo: light at the dashboard's edges that turns when you hover
+         and nudges round with each autoplay click. -->
+    <div class="halo" aria-hidden="true" :style="{ '--halo-spin': `${haloSpin}deg` }">
+      <span class="halo-layer halo-aurora" />
+      <span class="halo-layer halo-outer" />
+      <span class="halo-layer halo-inner" />
+      <span class="halo-layer halo-border" />
+    </div>
     <!-- In <body> so it sits above every layer, including teleported panels. -->
     <Teleport v-if="mounted" to="body">
       <div
@@ -34,7 +41,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
 import DashboardHero from './DashboardHero.vue'
-import { useLiveCard } from '../home/useLiveCard'
+import { useLiveCard, useTicker } from '../home/useLiveCard'
 import { useAutoplayCursor } from './useAutoplayCursor'
 
 const stage = useTemplateRef<HTMLElement>('stage')
@@ -125,7 +132,17 @@ function reset() {
     (overview as HTMLElement).click()
 }
 
+// The halo swings round on its own every few seconds while the dashboard is
+// on screen and not hovered, and each scripted click nudges it further.
+const haloSpin = shallowRef(0)
+useTicker(
+  () => active.value && !userHere.value,
+  6500,
+  () => (haloSpin.value += 120),
+)
+
 const { pressed, visible } = useAutoplayCursor({
+  onClick: () => (haloSpin.value += 40),
   stage,
   cursor,
   enabled: () => enabled.value,
@@ -148,6 +165,7 @@ const { pressed, visible } = useAutoplayCursor({
 <style scoped>
 .showcase-stage {
   position: relative;
+  isolation: isolate;
   block-size: 100%;
 }
 
@@ -155,43 +173,120 @@ const { pressed, visible } = useAutoplayCursor({
   block-size: 100%;
 }
 
-/* A slow light travelling around the dashboard's edge, in the theme color. */
-@property --glow-angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-
-.stage-glow {
+/* Halo layers sit behind the dashboard, which covers their centers, so only
+   light at its edges shows. Each is a large conic gradient turned by its own
+   base angle plus --halo-spin; hover swings them to an alternate angle. */
+.halo {
+  /* Three hues from the theme color: itself, one 70° round the wheel and a
+     lighter one 60° the other way, so the light mixes instead of sitting
+     in a single flat hue. Info blue stands in until a color is picked. */
+  --halo-a: var(--docs-accent, var(--ui-info));
+  --halo-b: oklch(from var(--halo-a) l c calc(h + 70));
+  --halo-c: oklch(from var(--halo-a) calc(l + 0.08) c calc(h - 60));
   position: absolute;
-  inset: -1px;
-  z-index: 1;
-  padding: 1px;
-  border-radius: calc(var(--ui-radius-surface) + 1px);
-  background: conic-gradient(
-    from var(--glow-angle),
-    transparent 0 62%,
-    color-mix(in oklch, var(--docs-accent, var(--ui-text)) 70%, transparent) 80%,
-    transparent 94%
-  );
-  /* Only the 1px ring shows: the content box is masked out. */
-  mask:
-    linear-gradient(#000 0 0) content-box exclude,
-    linear-gradient(#000 0 0);
-  opacity: 0.55;
+  inset: 0;
+  z-index: -1;
   pointer-events: none;
-  animation: glow-orbit 9s linear infinite;
 }
 
-@keyframes glow-orbit {
-  to {
-    --glow-angle: 360deg;
-  }
+.halo-layer {
+  position: absolute;
+  overflow: hidden;
+  border-radius: calc(var(--ui-radius-surface) + 2px);
+}
+
+.halo-layer::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 1600px;
+  block-size: 1600px;
+  transform: translate(-50%, -50%) rotate(calc(var(--turn) + var(--halo-spin, 0deg)));
+  transition: transform 2.5s var(--ui-ease-out);
+}
+
+.showcase-stage:hover .halo-layer::before {
+  transform: translate(-50%, -50%) rotate(calc(var(--turn-hover) + var(--halo-spin, 0deg)));
+}
+
+.halo-aurora {
+  --turn: 60deg;
+  --turn-hover: -120deg;
+  inset: -1.5rem;
+  border-radius: 2rem;
+  filter: blur(30px);
+  opacity: 0.45;
+}
+
+.halo-aurora::before {
+  background: conic-gradient(
+    color-mix(in oklch, var(--halo-a) 40%, transparent),
+    color-mix(in oklch, var(--halo-b) 30%, transparent) 25%,
+    color-mix(in oklch, var(--halo-c) 18%, transparent) 50%,
+    color-mix(in oklch, var(--halo-b) 30%, transparent) 75%,
+    color-mix(in oklch, var(--halo-a) 40%, transparent)
+  );
+}
+
+.halo-outer {
+  --turn: 82deg;
+  --turn-hover: -98deg;
+  inset: -6px;
+  filter: blur(3px);
+}
+
+.halo-outer::before {
+  background: conic-gradient(
+    transparent,
+    color-mix(in oklch, var(--halo-a) 40%, transparent),
+    transparent 10%,
+    transparent 50%,
+    color-mix(in oklch, var(--halo-b) 36%, transparent),
+    transparent 60%
+  );
+}
+
+.halo-inner {
+  --turn: 83deg;
+  --turn-hover: -97deg;
+  inset: -3px;
+  filter: blur(2px);
+}
+
+.halo-inner::before {
+  background: conic-gradient(
+    transparent,
+    color-mix(in oklch, var(--halo-c) 34%, transparent),
+    transparent 8%,
+    transparent 50%,
+    color-mix(in oklch, var(--halo-a) 30%, transparent),
+    transparent 58%
+  );
+}
+
+.halo-border {
+  --turn: 70deg;
+  --turn-hover: -110deg;
+  inset: -1px;
+  border-radius: calc(var(--ui-radius-surface) + 1px);
+  filter: blur(0.5px);
+}
+
+.halo-border::before {
+  background: conic-gradient(
+    var(--ui-border),
+    var(--halo-a) 5%,
+    var(--ui-border) 14%,
+    var(--ui-border) 50%,
+    var(--halo-b) 60%,
+    var(--ui-border) 64%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage-glow {
-    animation: none;
+  .halo-layer::before {
+    transition: none;
   }
 }
 
