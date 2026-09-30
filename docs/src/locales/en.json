@@ -76,7 +76,8 @@
     "featureSsrBody": "Every component checks for a real browser before touching window or document, so it renders safely in Nuxt, server-rendered apps, and static site generators. This documentation site is built with Vite SSG using the same components.",
     "featureSkillTitle": "AI Agent Skill",
     "featureSkillBody": "A companion package that teaches Claude Code, GitHub Copilot, Codex, and other agents every component's real API, generated from the library's own types, not hand-written.",
-    "browseComponents": "Browse components"
+    "browseComponents": "Browse components",
+    "themeLabel": "Try a color:"
   },
   "gettingStarted": {
     "title": "Getting Started",
@@ -261,7 +262,9 @@
     "SwipeToReveal": "Swipe an item to reveal actions underneath it, like a native mobile list row.",
     "Sortable": "A drag-to-reorder list with a real keyboard path, not just a pointer one.",
     "PullToRefresh": "A pull-down gesture at the top of a scroll container that triggers a refresh.",
-    "Dock": "A macOS-style row of icons that magnify as the pointer approaches them."
+    "Dock": "A macOS-style row of icons that magnify as the pointer approaches them.",
+    "BreadcrumbItem": "One link or the current page in a Breadcrumb trail.",
+    "BreadcrumbSeparator": "The divider between two BreadcrumbItems: a chevron unless you pass your own content."
   },
   "pageNotes": {
     "Resizable": "This site's own sidebar is built with Resizable. Drag its right edge to try it."
@@ -288,7 +291,9 @@
     "name": "Name",
     "type": "Type",
     "default": "Default",
-    "description": "Description"
+    "description": "Description",
+    "required": "Required",
+    "link": "Link to"
   },
   "i18nKeys": {
     "title": "Translating vael-ui",
@@ -361,5 +366,15 @@
     "useFloatingPosition": "The Floating UI-backed positioning engine behind Popover, Menu, and Tooltip, for building custom anchored surfaces.",
     "useVirtualizer": "Windowed rendering for long lists, so only the visible rows exist in the DOM.",
     "useFieldControl": "Wires a custom form control into the nearest Field: id, ARIA attributes, and focus or filled state."
+  },
+  "theme": {
+    "label": "Theme color",
+    "default": "Default (black and white)",
+    "blue": "Blue",
+    "violet": "Violet",
+    "rose": "Rose",
+    "orange": "Orange",
+    "green": "Green",
+    "custom": "Custom color"
   }
 }

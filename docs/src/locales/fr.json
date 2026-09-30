@@ -69,7 +69,8 @@
     "featureVaporTitle": "Une vraie construction Vapor, pas une cale",
     "headline": "Des composants qui se compilent directement dans Vapor, pas autour de lui.",
     "featureSkillBody": "Un package compagnon qui enseigne à Claude Code, GitHub Copilot, Codex et à d'autres agents la véritable API de chaque composant - générée à partir des propres types de la bibliothèque, et non écrite à la main.",
-    "featureSkillTitle": "Compétence d'agent IA"
+    "featureSkillTitle": "Compétence d'agent IA",
+    "themeLabel": "Essayez une couleur :"
   },
   "gettingStarted": {
     "title": "Démarrage",
@@ -163,7 +164,9 @@
     "TreeSelect": "Une liste déroulante dont le panneau est un arbre, pour sélectionner un ou plusieurs nœuds dans une hiérarchie.",
     "Drawer": "Un panneau qui glisse depuis le bord d'une fenêtre, pour la navigation ou le contenu latéral.",
     "PasswordInput": "Un champ de mot de passe avec une bascule de révélation et un indice d'exigences.",
-    "Sortable": "Une liste à glisser pour réorganiser avec un véritable chemin de clavier, pas seulement un chemin de pointeur."
+    "Sortable": "Une liste à glisser pour réorganiser avec un véritable chemin de clavier, pas seulement un chemin de pointeur.",
+    "BreadcrumbItem": "Un lien ou la page actuelle dans un fil d’Ariane Breadcrumb.",
+    "BreadcrumbSeparator": "Le séparateur entre deux BreadcrumbItem : un chevron, sauf si vous fournissez votre propre contenu."
   },
   "globalSetup": {
     "allTogetherIntro": "Montez les trois une fois, quel que soit l'endroit où se trouve le modèle racine de votre application :",
@@ -185,7 +188,9 @@
     "default": "Défaut",
     "description": "Description",
     "name": "Nom",
-    "type": "Taper"
+    "type": "Taper",
+    "required": "Requis",
+    "link": "Lien vers"
   },
   "pageNotes": {
     "Resizable": "La propre barre latérale de ce site est construite avec Resizing. \nFaites glisser son bord droit pour l'essayer."
@@ -352,5 +357,15 @@
     "title": "Compétence d'agent IA",
     "whatsIncludedIntro": "Un guide compact de haut niveau ainsi qu'une référence complète, générés à partir des mêmes données réelles à partir desquelles le site de documentation lui-même est construit :",
     "whatsIncludedTitle": "Ce qui est inclus"
+  },
+  "theme": {
+    "label": "Couleur du thème",
+    "default": "Par défaut (noir et blanc)",
+    "blue": "Bleu",
+    "violet": "Violet",
+    "rose": "Rose",
+    "orange": "Orange",
+    "green": "Vert",
+    "custom": "Couleur personnalisée"
   }
 }

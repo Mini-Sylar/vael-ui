@@ -15,6 +15,9 @@ export interface MetaRow {
   description: string
   type: string
   default?: string
+  /** The default as written in source (`'md'`), for display. */
+  defaultText?: string
+  required?: boolean
   schema?: PropSchema
 }
 

@@ -94,7 +94,9 @@
     "Tree": "具有单选或多选的分层数据的可折叠缩进列表。",
     "TreeSelect": "其面板为树的下拉列表，用于从层次结构中选取一个或多个节点。",
     "PasswordInput": "带有显示切换和要求提示的密码字段。",
-    "Sortable": "具有真实键盘路径的拖动重新排序列表，而不仅仅是指针路径。"
+    "Sortable": "具有真实键盘路径的拖动重新排序列表，而不仅仅是指针路径。",
+    "BreadcrumbItem": "Breadcrumb 路径中的一个链接或当前页面。",
+    "BreadcrumbSeparator": "两个 BreadcrumbItem 之间的分隔符：默认显示箭头，也可以传入自定义内容。"
   },
   "gettingStarted": {
     "darkModeIntro": "仅 CSS：响应 <code>",
@@ -160,7 +162,8 @@
     "featureVaporTitle": "真正的蒸汽构建，而不是垫片",
     "headline": "直接编译为 Vapor 的组件，而不是围绕它。",
     "featureSkillBody": "一个配套包，用于教授 Claude Code、GitHub Copilot、Codex 和其他代理每个组件的真实 API — 从库自己的类型生成，而不是手写。",
-    "featureSkillTitle": "AI代理技能"
+    "featureSkillTitle": "AI代理技能",
+    "themeLabel": "试试颜色："
   },
   "i18nKeys": {
     "copyIntro": "将其复制到 uiKit 键下的语言环境文件中，然后翻译这些值：",
@@ -173,7 +176,9 @@
     "default": "默认",
     "description": "描述",
     "name": "姓名",
-    "type": "类型"
+    "type": "类型",
+    "required": "必填",
+    "link": "链接到"
   },
   "nav": {
     "animationIntegrationGuide": "自带动画",
@@ -352,5 +357,15 @@
     "title": "AI代理技能",
     "whatsIncludedIntro": "紧凑的顶级指南加上完整的参考，由文档站点本身构建的相同真实数据生成：",
     "whatsIncludedTitle": "包含什么"
+  },
+  "theme": {
+    "label": "主题色",
+    "default": "默认（黑白）",
+    "blue": "蓝色",
+    "violet": "紫色",
+    "rose": "玫红",
+    "orange": "橙色",
+    "green": "绿色",
+    "custom": "自定义颜色"
   }
 }

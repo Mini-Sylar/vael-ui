@@ -96,7 +96,9 @@
     "PasswordInput": "Un campo de contraseña con un botón de revelación y una sugerencia de requisitos.",
     "Sortable": "Una lista de arrastrar para reordenar con una ruta de teclado real, no solo una de puntero.",
     "Rating": "Haga clic, arrastre o use las teclas de flecha para seleccionar un valor en una fila de estrellas, con precisión opcional de medio paso.",
-    "Timeline": "Una lista ordenada de pasos conectados por una línea, independiente de lo que realmente contiene cada paso."
+    "Timeline": "Una lista ordenada de pasos conectados por una línea, independiente de lo que realmente contiene cada paso.",
+    "BreadcrumbItem": "Un enlace o la página actual dentro de un Breadcrumb.",
+    "BreadcrumbSeparator": "El separador entre dos BreadcrumbItem: un chevron, salvo que pases tu propio contenido."
   },
   "gettingStarted": {
     "darkModeIntro": "Solo CSS: responde a <código>",
@@ -162,7 +164,8 @@
     "featureVaporTitle": "Construcción Real Vapor, no una cuña",
     "headline": "Componentes que se compilan directamente en Vapor, no alrededor de él.",
     "featureSkillBody": "Un paquete complementario que enseña a Claude Code, GitHub Copilot, Codex y otros agentes la API real de cada componente, generada a partir de los propios tipos de la biblioteca, no escrita a mano.",
-    "featureSkillTitle": "Habilidad del agente de IA"
+    "featureSkillTitle": "Habilidad del agente de IA",
+    "themeLabel": "Prueba un color:"
   },
   "i18nKeys": {
     "copyIntro": "Copie esto en su(s) archivo(s) local(es) bajo la clave uiKit, luego traduzca los valores:",
@@ -175,7 +178,9 @@
     "default": "Por defecto",
     "description": "Descripción",
     "name": "Nombre",
-    "type": "Tipo"
+    "type": "Tipo",
+    "required": "Obligatorio",
+    "link": "Enlace a"
   },
   "nav": {
     "animationIntegrationGuide": "Trae tu propia animación",
@@ -359,5 +364,15 @@
   "directive": {
     "modifiers": "Modificadores",
     "noModifiers": "Sin modificadores."
+  },
+  "theme": {
+    "label": "Color del tema",
+    "default": "Predeterminado (blanco y negro)",
+    "blue": "Azul",
+    "violet": "Violeta",
+    "rose": "Rosa",
+    "orange": "Naranja",
+    "green": "Verde",
+    "custom": "Color personalizado"
   }
 }

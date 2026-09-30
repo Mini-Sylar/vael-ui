@@ -94,7 +94,9 @@
     "Tree": "Un elenco comprimibile e rientrato per dati gerarchici con selezione singola o multipla.",
     "TreeSelect": "Un menu a discesa il cui pannello è un albero, per selezionare uno o più nodi da una gerarchia.",
     "PasswordInput": "Un campo password con un interruttore di rivelazione e un suggerimento sui requisiti.",
-    "Sortable": "Un elenco da trascinare per riordinare con un percorso di tastiera reale, non solo un puntatore."
+    "Sortable": "Un elenco da trascinare per riordinare con un percorso di tastiera reale, non solo un puntatore.",
+    "BreadcrumbItem": "Un link o la pagina corrente in un percorso Breadcrumb.",
+    "BreadcrumbSeparator": "Il separatore tra due BreadcrumbItem: un chevron, a meno che tu non passi un contenuto tuo."
   },
   "gettingStarted": {
     "darkModeIntro": "Solo CSS: risponde a <codice>",
@@ -160,7 +162,8 @@
     "featureVaporTitle": "Costruzione Real Vapor, non uno spessore",
     "headline": "Componenti che si compilano direttamente su Vapor, non attorno ad esso.",
     "featureSkillBody": "Un pacchetto complementare che insegna a Claude Code, GitHub Copilot, Codex e altri agenti l'API reale di ogni componente, generata dai tipi propri della libreria, non scritta a mano.",
-    "featureSkillTitle": "Abilità dell'agente IA"
+    "featureSkillTitle": "Abilità dell'agente IA",
+    "themeLabel": "Prova un colore:"
   },
   "i18nKeys": {
     "copyIntro": "Copialo nei file locali sotto la chiave uiKit, quindi traduci i valori:",
@@ -173,7 +176,9 @@
     "default": "Predefinito",
     "description": "Descrizione",
     "name": "Nome",
-    "type": "Tipo"
+    "type": "Tipo",
+    "required": "Obbligatorio",
+    "link": "Link a"
   },
   "nav": {
     "animationIntegrationGuide": "Porta la tua animazione",
@@ -352,5 +357,15 @@
     "title": "Abilità dell'agente IA",
     "whatsIncludedIntro": "Una guida compatta di alto livello più un riferimento completo, generata dagli stessi dati reali da cui è costruito il sito di documentazione stesso:",
     "whatsIncludedTitle": "Cosa è incluso"
+  },
+  "theme": {
+    "label": "Colore del tema",
+    "default": "Predefinito (bianco e nero)",
+    "blue": "Blu",
+    "violet": "Viola",
+    "rose": "Rosa",
+    "orange": "Arancione",
+    "green": "Verde",
+    "custom": "Colore personalizzato"
   }
 }

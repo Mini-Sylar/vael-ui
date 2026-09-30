@@ -2,7 +2,7 @@
   <article v-if="content" class="directive-page">
     <p class="eyebrow">{{ t('nav.directives') }}</p>
     <h1>{{ content.label }}</h1>
-    <p class="description">{{ content.description }}</p>
+    <p class="description"><RichText :text="content.description" /></p>
 
     <section id="install" class="section">
       <h2>{{ t('component.install') }}</h2>
@@ -37,6 +37,7 @@ import { directivesContent } from '../directivesContent'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import CodeBlock from '../components/CodeBlock.vue'
 import MetaTable from '../components/MetaTable.vue'
+import RichText from '../components/RichText.vue'
 
 const demoModules = import.meta.glob<{ default: Component }>('../directive-demos/*.vue')
 const demoSources = import.meta.glob('../directive-demos/*.vue', {

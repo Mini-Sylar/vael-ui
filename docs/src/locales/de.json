@@ -96,7 +96,9 @@
     "PasswordInput": "Ein Passwortfeld mit einem Offenlegungsschalter und einem Hinweis zu den Anforderungen.",
     "Sortable": "Eine Drag-to-Reorder-Liste mit einem echten Tastaturpfad, nicht nur einem Zeigerpfad.",
     "Rating": "Klicken, ziehen oder verwenden Sie die Pfeiltasten, um einen Wert in einer Reihe von Sternen auszuwählen, optional mit Halbschrittgenauigkeit.",
-    "Timeline": "Eine geordnete Liste von Schritten, die durch eine Linie verbunden sind, unabhängig davon, was jeder Schritt tatsächlich enthält."
+    "Timeline": "Eine geordnete Liste von Schritten, die durch eine Linie verbunden sind, unabhängig davon, was jeder Schritt tatsächlich enthält.",
+    "BreadcrumbItem": "Ein Link oder die aktuelle Seite in einem Breadcrumb-Pfad.",
+    "BreadcrumbSeparator": "Das Trennzeichen zwischen zwei BreadcrumbItems: ein Chevron, sofern Sie keinen eigenen Inhalt übergeben."
   },
   "gettingStarted": {
     "darkModeIntro": "Nur CSS: antwortet auf <code>",
@@ -162,13 +164,16 @@
     "featureVaporTitle": "Echte Vapor-Konstruktion, kein Shim",
     "headline": "Komponenten, die direkt zu Vapor kompiliert werden, nicht darum herum.",
     "featureSkillBody": "Ein Begleitpaket, das Claude Code, GitHub Copilot, Codex und anderen Agenten die echte API jeder Komponente beibringt – generiert aus den eigenen Typen der Bibliothek, nicht handgeschrieben.",
-    "featureSkillTitle": "KI-Agent-Fähigkeit"
+    "featureSkillTitle": "KI-Agent-Fähigkeit",
+    "themeLabel": "Farbe ausprobieren:"
   },
   "metaTable": {
     "default": "Standard",
     "description": "Beschreibung",
     "name": "Name",
-    "type": "Typ"
+    "type": "Typ",
+    "required": "Erforderlich",
+    "link": "Link zu"
   },
   "nav": {
     "animationIntegrationGuide": "Bringen Sie Ihre eigene Animation mit",
@@ -361,5 +366,15 @@
     "modifiers": "Modifikatoren",
     "noModifiers": "Keine Modifikatoren.",
     "value": "Wert"
+  },
+  "theme": {
+    "label": "Designfarbe",
+    "default": "Standard (Schwarz-Weiß)",
+    "blue": "Blau",
+    "violet": "Violett",
+    "rose": "Rosé",
+    "orange": "Orange",
+    "green": "Grün",
+    "custom": "Eigene Farbe"
   }
 }
