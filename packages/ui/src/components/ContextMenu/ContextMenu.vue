@@ -163,6 +163,11 @@ function setAnchorPosition(x: number, y: number) {
   if (!el) return
   el.style.left = `${x}px`
   el.style.top = `${y}px`
+  // A transformed or filtered ancestor turns `fixed` into
+  // "relative to that ancestor", so correct by wherever the anchor really landed.
+  const rect = el.getBoundingClientRect()
+  if (rect.left !== x) el.style.left = `${2 * x - rect.left}px`
+  if (rect.top !== y) el.style.top = `${2 * y - rect.top}px`
 }
 
 async function openAt(x: number, y: number) {

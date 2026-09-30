@@ -30,6 +30,7 @@ Worth a look before upgrading from 0.3.x:
 
 ## Fixes
 
+- **ContextMenu:** opens at the pointer inside a transformed or filtered ancestor (a leftover `transform` from a page-transition animation counts). It used to open offset by that ancestor's position, sometimes off the edge of the screen.
 - **Rating / Slider / Knob / Dial:** clicking no longer shows the keyboard focus ring. It still shows for keyboard focus, and once you use the arrow keys after a click.
 - **FileUpload:** the first file you add now fades in like the rest, and a removed file now collapses smoothly while it fades, instead of fading first and then snapping the rows below into place. With `motionCss: false`, `@item-enter` and `@item-leave` now also fire for the first and last file.
 - **Knob / Dial:** the value arc now draws as one stroke up to the pointer. It was split into pieces that didn't match the value.
