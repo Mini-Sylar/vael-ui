@@ -32,7 +32,8 @@
     "slots": "Slot",
     "vapor": "Vapor",
     "vaporUnavailable": "Nessuna demo di Vapor per questo componente ancora",
-    "vdom": "Vedi DOM"
+    "vdom": "Vedi DOM",
+    "onThisPage": "In questa pagina"
   },
   "descriptions": {
     "Accordion": "Una pila di sezioni pieghevoli dove aprendone una si possono chiudere le altre.",
@@ -149,7 +150,7 @@
     "settings": "Impostazioni"
   },
   "home": {
-    "tagline": "Una libreria dell'interfaccia utente Vue 3 con una vera build Vue Vapor.",
+    "tagline": "Oltre 60 componenti per Vue 3, compilati da un’unica sorgente sia per il build VDOM classico sia per Vue Vapor.",
     "browseComponents": "Sfoglia i componenti",
     "eyebrow": "Libreria di componenti Vue 3",
     "featureAnimationBody": "CSS semplice per impostazione predefinita oppure guidalo tu stesso con GSAP o motion-v.",
@@ -165,7 +166,9 @@
     "headline": "Componenti che si compilano direttamente su Vapor, non attorno ad esso.",
     "featureSkillBody": "Un pacchetto complementare che insegna a Claude Code, GitHub Copilot, Codex e altri agenti l'API reale di ogni componente. È generato dai tipi della libreria stessa, non scritto a mano.",
     "featureSkillTitle": "Skill per agenti IA",
-    "themeLabel": "Prova un colore:"
+    "themeLabel": "Prova un colore:",
+    "newTag": "Novità",
+    "newText": "Ogni prop documentata nel tuo editor"
   },
   "i18nKeys": {
     "copyIntro": "Copia questo nei tuoi file di lingua sotto la chiave uiKit, poi traduci i valori:",

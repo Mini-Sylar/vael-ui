@@ -52,10 +52,11 @@
     "noEvents": "Aucun événement.",
     "noSlots": "Aucun slot.",
     "noExposed": "Rien d'exposé via une ref de template.",
-    "notFound": "Composant \"{name}\" introuvable."
+    "notFound": "Composant \"{name}\" introuvable.",
+    "onThisPage": "Sur cette page"
   },
   "home": {
-    "tagline": "Une librairie Vue 3 avec un vrai support de Vue Vapor.",
+    "tagline": "Plus de 60 composants pour Vue 3, compilés depuis une seule source pour le build VDOM classique et pour Vue Vapor.",
     "browseComponents": "Parcourir les composants",
     "eyebrow": "Bibliothèque de composants Vue 3",
     "featureAnimationBody": "CSS simple par défaut, ou pilotez-le vous-même avec GSAP ou motion-v.",
@@ -71,7 +72,9 @@
     "headline": "Des composants qui se compilent directement dans Vapor, pas autour de lui.",
     "featureSkillBody": "Un package compagnon qui enseigne à Claude Code, GitHub Copilot, Codex et à d'autres agents la véritable API de chaque composant. Il est généré à partir des propres types de la bibliothèque, et non écrit à la main.",
     "featureSkillTitle": "Compétence d'agent IA",
-    "themeLabel": "Essayez une couleur :"
+    "themeLabel": "Essayez une couleur :",
+    "newTag": "Nouveau",
+    "newText": "Chaque prop documentée dans votre éditeur"
   },
   "gettingStarted": {
     "title": "Démarrage",

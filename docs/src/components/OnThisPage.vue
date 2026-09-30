@@ -1,12 +1,19 @@
 <template>
-  <nav v-if="links.length > 0" class="on-this-page" aria-label="On this page">
-    <p class="label">On this page</p>
+  <nav
+    v-if="links.length > 0"
+    ref="nav"
+    class="on-this-page"
+    :aria-label="t('component.onThisPage')"
+  >
+    <span ref="indicator" class="toc-indicator" aria-hidden="true" />
+    <p class="label">{{ t('component.onThisPage') }}</p>
     <a
       v-for="link in links"
       :key="link.id"
       :href="`#${link.id}`"
       class="toc-link"
       :class="{ 'toc-link-active': link.id === activeId }"
+      :aria-current="link.id === activeId ? 'location' : undefined"
       @click="onLinkClick(link.id)"
     >
       {{ link.label }}
@@ -15,13 +22,25 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, onMounted, onUnmounted } from 'vue'
+import { shallowRef, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import { useGlidingIndicator } from '../composables/useGlidingIndicator'
 
 const props = defineProps<{ links: { id: string; label: string }[] }>()
 const route = useRoute()
+const { t } = useI18n()
 
 const activeId = shallowRef<string | null>(null)
+
+const nav = useTemplateRef<HTMLElement>('nav')
+const indicator = useTemplateRef<HTMLElement>('indicator')
+useGlidingIndicator(
+  nav,
+  indicator,
+  () => nav.value?.querySelector<HTMLElement>('.toc-link-active'),
+  () => [activeId.value, props.links.length],
+)
 const TARGET_Y = 88 // matches router.ts's scrollBehavior offset
 
 // Closest heading to the target line wins, rather than "last one past a
@@ -44,15 +63,21 @@ function updateActive() {
   activeId.value = best
 }
 
-// A click's own resulting scroll can be too small to move a compressed
-// trailing section's heading noticeably (Slots/Events/Exposed all fitting
-// on screen at once), so the very next recompute can immediately overrule
-// the click with a geometrically "closer" neighbor. Give the clicked link
-// a short grace window before scroll tracking resumes.
-let ignoreScrollUntil = 0
+// A click's own smooth scroll can end with a neighbor geometrically "closer"
+// to the target line (Slots/Events/Exposed all fitting on screen at once), so
+// the clicked link holds until that scroll finishes, not for a fixed time.
+let holdClicked = false
+let holdTimer: ReturnType<typeof setTimeout> | undefined
+function releaseHold() {
+  holdClicked = false
+  clearTimeout(holdTimer)
+}
 function onLinkClick(id: string) {
   activeId.value = id
-  ignoreScrollUntil = Date.now() + 600
+  holdClicked = true
+  clearTimeout(holdTimer)
+  // Fallback for browsers without `scrollend`, or a click that doesn't scroll.
+  holdTimer = setTimeout(releaseHold, 1200)
 }
 
 let ticking = false
@@ -60,7 +85,7 @@ function onScroll() {
   if (ticking) return
   ticking = true
   requestAnimationFrame(() => {
-    if (Date.now() >= ignoreScrollUntil) updateActive()
+    if (!holdClicked) updateActive()
     ticking = false
   })
 }
@@ -72,8 +97,13 @@ onMounted(() => {
   if (route.hash) onLinkClick(route.hash.slice(1))
   else updateActive()
   window.addEventListener('scroll', onScroll, { passive: true })
+  window.addEventListener('scrollend', releaseHold)
 })
-onUnmounted(() => window.removeEventListener('scroll', onScroll))
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('scrollend', releaseHold)
+  clearTimeout(holdTimer)
+})
 </script>
 
 <style scoped>
@@ -116,15 +146,18 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   font-weight: 600;
 }
 
-.toc-link-active::before {
-  content: '';
+/* One bar for the whole list, gliding to the active link (useGlidingIndicator
+   sets its offset and height). It sits over the nav's left rule. */
+.toc-indicator {
   position: absolute;
-  left: -1.5625rem;
-  top: 0.15rem;
-  bottom: 0.15rem;
+  top: 0;
+  left: -1.5px;
   width: 2px;
   border-radius: 9999px;
   background: var(--ui-primary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ui-ease-out);
 }
 
 @media (max-width: 1100px) {

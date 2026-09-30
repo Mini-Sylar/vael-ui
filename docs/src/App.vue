@@ -410,8 +410,15 @@ const theme = computed(() => ({
   position: sticky;
   top: 0;
   background: color-mix(in oklch, var(--ui-surface) 85%, transparent);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px) saturate(1.4);
   z-index: 10;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-header {
+    background: var(--ui-surface);
+    backdrop-filter: none;
+  }
 }
 
 .brand {

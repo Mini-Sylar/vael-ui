@@ -32,7 +32,8 @@
     "slots": "スロット",
     "vapor": "Vapor",
     "vaporUnavailable": "このコンポーネントの Vapor デモはまだありません",
-    "vdom": "Vue DOM"
+    "vdom": "Vue DOM",
+    "onThisPage": "このページの内容"
   },
   "descriptions": {
     "Accordion": "折りたたみ可能なセクションのスタック。1 つを開くと他のセクションを閉じることができます。",
@@ -149,7 +150,7 @@
     "settings": "設定"
   },
   "home": {
-    "tagline": "実際の Vue Vapor ビルドを備えた Vue 3 UI ライブラリ。",
+    "tagline": "Vue 3 向けの 60 以上のコンポーネント。1 つのソースから従来の VDOM ビルドと Vue Vapor の両方にコンパイルされます。",
     "browseComponents": "コンポーネントを参照する",
     "eyebrow": "Vue 3 コンポーネント ライブラリ",
     "featureAnimationBody": "デフォルトではプレーン CSS を使用するか、GSAP または motion-v を使用して自分で実行します。",
@@ -165,7 +166,9 @@
     "headline": "Vapor を中心にコンパイルするのではなく、Vapor に直接コンパイルするコンポーネント。",
     "featureSkillBody": "Claude Code、GitHub Copilot、Codex などのエージェントに、全コンポーネントの実際の API を教えるコンパニオンパッケージです。手書きではなく、ライブラリ自身の型から生成されています。",
     "featureSkillTitle": "AI エージェントスキル",
-    "themeLabel": "カラーを試す:"
+    "themeLabel": "カラーを試す:",
+    "newTag": "新着",
+    "newText": "すべての Prop をエディター上で確認"
   },
   "i18nKeys": {
     "copyIntro": "これをロケールファイルの uiKit キーの下にコピーし、値を翻訳してください。",

@@ -58,12 +58,13 @@
     "noEvents": "No events.",
     "noSlots": "No slots.",
     "noExposed": "Nothing exposed via template ref.",
-    "notFound": "Component \"{name}\" not found."
+    "notFound": "Component \"{name}\" not found.",
+    "onThisPage": "On this page"
   },
   "home": {
     "eyebrow": "Vue 3 component library",
     "headline": "Components that compile straight to Vapor, not around it.",
-    "tagline": "A Vue 3 UI library with a real Vue Vapor build.",
+    "tagline": "60+ components for Vue 3, compiled from one source to both the classic VDOM build and Vue Vapor.",
     "featureVaporTitle": "Real Vapor build, not a shim",
     "featureVaporBody": "Every component compiles through Vue 3.6's Vapor mode from the same source.",
     "featureAnimationTitle": "Bring your own animation",
@@ -77,7 +78,9 @@
     "featureSkillTitle": "AI agent skill",
     "featureSkillBody": "A companion package that teaches Claude Code, GitHub Copilot, Codex, and other agents every component's real API. It's generated from the library's own types, not written by hand.",
     "browseComponents": "Browse components",
-    "themeLabel": "Try a color:"
+    "themeLabel": "Try a color:",
+    "newTag": "New",
+    "newText": "Every prop documented in your editor"
   },
   "gettingStarted": {
     "title": "Getting started",

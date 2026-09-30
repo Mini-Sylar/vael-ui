@@ -2,6 +2,11 @@
   <div class="home">
     <section class="hero">
       <div class="hero-copy">
+        <a class="news-pill" :href="CHANGELOG_URL" target="_blank" rel="noreferrer">
+          <span class="news-pill-tag">{{ t('home.newTag') }}</span>
+          <span>{{ t('home.newText') }}</span>
+          <PhArrowRight :size="12" aria-hidden="true" />
+        </a>
         <p class="eyebrow">{{ t('home.eyebrow') }}</p>
         <h1 class="headline">{{ t('home.headline') }}</h1>
         <p class="tagline">{{ t('home.tagline') }}</p>
@@ -110,6 +115,7 @@ import { useRouter } from 'vue-router'
 import { Button, SplitButton } from 'vael-ui'
 import type { MenuItemData } from 'vael-ui'
 import {
+  PhArrowRight,
   PhGlobe,
   PhHardDrives,
   PhLightning,
@@ -129,6 +135,8 @@ import TerminalVisual from '../components/home/TerminalVisual.vue'
 const ThemeSwatches = defineAsyncComponent(() => import('../components/ThemeSwatches.vue'))
 
 const { t } = useI18n()
+
+const CHANGELOG_URL = 'https://github.com/Mini-Sylar/vael-ui/blob/main/packages/ui/CHANGELOG.md'
 
 // The bento staggers in once as it scrolls into view. It only arms (hides)
 // when it starts below the fold, so server-rendered HTML, no-JS visitors and
@@ -179,8 +187,8 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
-  gap: 3rem;
+  grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+  gap: 2rem;
   align-items: center;
   min-block-size: 34rem;
   padding-block-start: 1rem;
@@ -278,6 +286,59 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
 .hero-showcase {
   block-size: 34rem;
   min-inline-size: 0;
+}
+
+/* The dashboard rises in once on first load; later visits and reduced
+   motion show it in place. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-showcase {
+    animation: showcase-in 700ms var(--ui-ease-out) both;
+    animation-delay: 120ms;
+  }
+}
+
+@keyframes showcase-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+}
+
+.news-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: flex-start;
+  padding: 0.25rem 0.65rem 0.25rem 0.3rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  color: var(--ui-text-muted);
+  text-decoration: none;
+  background: var(--ui-surface);
+  box-shadow: 0 0 0 1px var(--ui-border);
+  transition:
+    color var(--ui-duration-press) var(--ui-ease-out),
+    box-shadow var(--ui-duration-press) var(--ui-ease-out);
+}
+
+.news-pill:hover {
+  color: var(--ui-text);
+  box-shadow: 0 0 0 1px
+    color-mix(in oklch, var(--docs-accent, var(--ui-text)) 45%, var(--ui-border));
+}
+
+.news-pill:focus-visible {
+  outline: 2px solid var(--ui-text);
+  outline-offset: 3px;
+}
+
+.news-pill-tag {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ui-primary-contrast);
+  background: var(--ui-primary);
 }
 
 .features {

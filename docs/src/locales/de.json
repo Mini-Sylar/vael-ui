@@ -32,7 +32,8 @@
     "slots": "Spielautomaten",
     "vapor": "Vapor",
     "vaporUnavailable": "Für diese Komponente gibt es noch keine Vapor-Demo",
-    "vdom": "Vue DOM"
+    "vdom": "Vue DOM",
+    "onThisPage": "Auf dieser Seite"
   },
   "descriptions": {
     "Accordion": "Ein Stapel zusammenklappbarer Abschnitte, bei denen durch Öffnen eines Abschnitts die anderen geschlossen werden können.",
@@ -149,7 +150,7 @@
     "settings": "Einstellungen"
   },
   "home": {
-    "tagline": "Eine Vue 3-UI-Bibliothek mit einem echten Vue Vapor-Build.",
+    "tagline": "Über 60 Komponenten für Vue 3, aus einer Quelle kompiliert – für den klassischen VDOM-Build und für Vue Vapor.",
     "browseComponents": "Komponenten durchsuchen",
     "eyebrow": "Vue 3-Komponentenbibliothek",
     "featureAnimationBody": "Standardmäßig einfaches CSS, oder steuern Sie es selbst mit GSAP oder Motion-v.",
@@ -165,7 +166,9 @@
     "headline": "Komponenten, die direkt zu Vapor kompiliert werden, nicht darum herum.",
     "featureSkillBody": "Ein Begleitpaket, das Claude Code, GitHub Copilot, Codex und anderen Agenten die echte API jeder Komponente beibringt. Es wird aus den eigenen Typen der Bibliothek generiert, nicht von Hand geschrieben.",
     "featureSkillTitle": "KI-Agent-Fähigkeit",
-    "themeLabel": "Farbe ausprobieren:"
+    "themeLabel": "Farbe ausprobieren:",
+    "newTag": "Neu",
+    "newText": "Jede Prop direkt im Editor dokumentiert"
   },
   "metaTable": {
     "default": "Standard",

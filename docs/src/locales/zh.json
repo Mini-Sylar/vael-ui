@@ -32,7 +32,8 @@
     "vapor": "Vapor",
     "vaporUnavailable": "该组件还没有 Vapor 演示",
     "vdom": "Vue DOM",
-    "events": "活动"
+    "events": "活动",
+    "onThisPage": "本页内容"
   },
   "descriptions": {
     "Accordion": "一堆可折叠的部分，打开一个部分就可以关闭其他部分。",
@@ -149,7 +150,7 @@
     "settings": "设置"
   },
   "home": {
-    "tagline": "具有真实 Vue Vapor 构建的 Vue 3 UI 库。",
+    "tagline": "60 多个 Vue 3 组件，从同一份源码编译为经典 VDOM 构建和 Vue Vapor。",
     "browseComponents": "浏览组件",
     "eyebrow": "Vue 3 组件库",
     "featureAnimationBody": "默认情况下为纯CSS，或者使用GSAP 或motion-v 自行驱动。",
@@ -165,7 +166,9 @@
     "headline": "直接编译为 Vapor 的组件，而不是围绕它。",
     "featureSkillBody": "一个配套包，向 Claude Code、GitHub Copilot、Codex 等智能体讲解每个组件的真实 API。它由库自身的类型生成，而非手写。",
     "featureSkillTitle": "AI 智能体技能",
-    "themeLabel": "试试颜色："
+    "themeLabel": "试试颜色：",
+    "newTag": "新",
+    "newText": "每个 Prop 都在编辑器中有文档"
   },
   "i18nKeys": {
     "copyIntro": "将以下内容复制到你的语言文件中的 uiKit 键下，然后翻译各个值：",

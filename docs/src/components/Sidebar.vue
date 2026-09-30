@@ -12,6 +12,7 @@
       <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
     </div>
     <nav ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
+      <span ref="sidebarIndicator" class="sidebar-indicator" aria-hidden="true" />
       <MenuList :items="navItems" :active="activeValue">
         <template #item="{ item }">
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
@@ -56,6 +57,7 @@ import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { categories, NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { composableCategories } from '../composablesTaxonomy'
 import { DIRECTIVES } from '../directivesTaxonomy'
+import { useGlidingIndicator } from '../composables/useGlidingIndicator'
 import { directivesContent } from '../directivesContent'
 
 const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
@@ -223,6 +225,17 @@ function isNewBadge(value: string | number | null | undefined): boolean {
 const sidebarWidth = useLocalStorage('vael-ui-docs-sidebar-width', 248)
 
 const sidebarScrollEl = useTemplateRef<HTMLElement>('sidebarScrollEl')
+
+// One bar gliding to the current page instead of a bar per row. -8 px sits
+// it in the gutter left of the row, where the per-row bar used to be.
+const sidebarIndicator = useTemplateRef<HTMLElement>('sidebarIndicator')
+useGlidingIndicator(
+  sidebarScrollEl,
+  sidebarIndicator,
+  () => sidebarScrollEl.value?.querySelector<HTMLElement>('[aria-current="page"]'),
+  () => [activeValue.value, sidebarMode.value],
+  -8,
+)
 const persistedScrollTop = useLocalStorage('vael-ui-docs-sidebar-scroll', 0)
 const { y: scrollY } = useScroll(sidebarScrollEl)
 watch(scrollY, (y) => (persistedScrollTop.value = y))
@@ -263,10 +276,26 @@ onMounted(() => {
 }
 
 .sidebar-scroll {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   padding: 1.25rem 1rem;
+}
+
+.sidebar-indicator {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  width: 2px;
+  /* Transparent borders inset the visible bar 4 px from the row's edges. */
+  border-block: 4px solid transparent;
+  border-radius: 9999px;
+  background: var(--ui-primary);
+  background-clip: padding-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ui-ease-out);
 }
 
 .sidebar-scroll--mobile {
@@ -317,7 +346,8 @@ onMounted(() => {
   border: 0;
 }
 
-.sidebar-scroll :deep(.ui-menu-list-item[aria-current='page']::before) {
+/* The mobile drawer keeps a per-row bar; the desktop sidebar glides one. */
+.sidebar-scroll--mobile :deep(.ui-menu-list-item[aria-current='page']::before) {
   content: '';
   position: absolute;
   left: -0.5rem;
