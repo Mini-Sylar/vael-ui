@@ -18,7 +18,7 @@
         disabled
       />
     </RadioGroup>
-    <p class="note">Selected: {{ shipping ?? '(none)' }}</p>
+    <p class="demo-status">Selected: {{ shipping ?? '(none)' }}</p>
 
     <h3>Horizontal layout</h3>
     <RadioGroup v-model="size" orientation="horizontal">

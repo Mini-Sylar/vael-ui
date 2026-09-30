@@ -17,7 +17,7 @@
         </Select>
       </template>
     </Input>
-    <p class="note">Value: {{ code }} {{ number || '(empty)' }}</p>
+    <p class="demo-status">Value: {{ code }} {{ number || '(empty)' }}</p>
   </section>
 </template>
 

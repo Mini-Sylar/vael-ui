@@ -53,9 +53,12 @@ const sidebarSize = shallowRef(240)
 .resizable-sidebar {
   block-size: 100%;
   background: var(--ui-surface);
-  overflow-y: auto;
 }
+/* Scroll inside the pane, not on the Resizable root, so its overhanging handle isn't clipped. */
 .resizable-nav {
+  box-sizing: border-box;
+  block-size: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;

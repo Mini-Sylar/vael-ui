@@ -10,11 +10,11 @@
     <div class="row dial-row">
       <div class="dial-cell">
         <Dial v-model="bounded" :min="0" :max="100" :step="1" />
-        <p class="note">bounded 0-100, clamps at both ends</p>
+        <p class="demo-status">bounded 0-100, clamps at both ends</p>
       </div>
       <div class="dial-cell">
         <Dial v-model="unbounded" :step="1" />
-        <p class="note">unbounded, {{ unbounded }}, no ceiling or floor</p>
+        <p class="demo-status">unbounded, {{ unbounded }}, no ceiling or floor</p>
       </div>
     </div>
   </section>

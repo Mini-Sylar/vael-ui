@@ -1,11 +1,12 @@
 <template>
   <section class="demo">
-    <h3><code>#item</code> slot, fully custom circle content</h3>
+    <h3><code>#item</code> slot, custom label content</h3>
     <Stepper v-model="freeStep" :items="checkoutSteps" class="stepper-demo">
-      <template #item="{ index, completed, active }">
-        <span class="custom-circle" :data-state="completed ? 'completed' : active ? 'active' : ''">
+      <template #item="{ item, completed, active, disabled }">
+        <span class="custom-label">{{ item.label }}</span>
+        <span class="custom-status" :data-state="completed ? 'completed' : active ? 'active' : ''">
           <PhCheck v-if="completed" weight="bold" />
-          <template v-else>{{ index + 1 }}</template>
+          {{ completed ? 'Done' : active ? 'In progress' : disabled ? 'Locked' : 'Up next' }}
         </span>
       </template>
     </Stepper>
@@ -33,24 +34,19 @@ const freeStep = shallowRef(0)
   max-inline-size: 32rem;
   margin-block-end: 1.25rem;
 }
-.custom-circle {
-  display: grid;
-  place-items: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
-  border-radius: calc(var(--ui-radius) - 4px);
-  border: 1.5px solid var(--ui-border-strong);
-  color: var(--ui-text-muted);
+.custom-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.custom-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   font-size: 0.75rem;
-  font-weight: 600;
+  color: var(--ui-text-muted);
 }
-.custom-circle[data-state='active'] {
-  border-color: var(--ui-primary);
+.custom-status[data-state='active'],
+.custom-status[data-state='completed'] {
   color: var(--ui-primary);
-}
-.custom-circle[data-state='completed'] {
-  border-color: var(--ui-primary);
-  background: var(--ui-primary);
-  color: var(--ui-primary-contrast);
 }
 </style>

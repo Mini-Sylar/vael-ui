@@ -13,7 +13,7 @@
     </p>
     <div class="row knob-row">
       <Knob ref="momentumKnob" v-model="momentumValue" :min="0" :max="100" />
-      <output class="note">{{ momentumValue }}</output>
+      <output class="demo-status">{{ momentumValue }}</output>
     </div>
   </section>
 </template>

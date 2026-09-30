@@ -18,7 +18,7 @@
         :step="10"
         style="max-width: 20rem"
       />
-      <output class="note">{{ springValue }}</output>
+      <output class="demo-status">{{ springValue }}</output>
     </div>
   </section>
 </template>

@@ -39,7 +39,7 @@
         </Breadcrumb>
       </div>
     </Resizable>
-    <p v-if="lastHiddenPick" class="note">
+    <p v-if="lastHiddenPick" class="demo-status">
       Picked from the popup: <code>{{ lastHiddenPick }}</code>
     </p>
   </section>

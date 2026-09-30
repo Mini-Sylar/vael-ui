@@ -7,7 +7,7 @@
       pop never fires underneath and GSAP is the only thing moving these nodes.
     </p>
     <Rating ref="ratingRef" v-model="value" :max="5" :motion-css="false" />
-    <p class="note">{{ value === 5 ? 'Perfect score!' : 'Rate it 5 to see the burst.' }}</p>
+    <p class="demo-status">{{ value === 5 ? 'Perfect score!' : 'Rate it 5 to see the burst.' }}</p>
   </section>
 </template>
 

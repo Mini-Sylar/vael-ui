@@ -1,12 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Full external control, <code>motionCss="false"</code> + motion-v spring height</h3>
+    <h3>Full external control, <code>motionCss="false"</code> + GSAP height tween</h3>
     <p class="note">
       Same escape hatch as Accordion's: skip the built-in transition and drive the panel's height
       with GSAP instead. <code>useCollapse</code> writes no inline style at all once
       <code>motionCss</code> is <code>false</code>, so nothing fights the tween.
     </p>
-    <Collapsible v-model:open="springOpen" :motion-css="false" class="collapsible-demo">
+    <Collapsible v-model:open="panelOpen" :motion-css="false" class="collapsible-demo">
       <template #trigger="{ open }">
         <Button variant="ghost" block style="justify-content: space-between">
           <span>Release notes</span>
@@ -17,8 +17,8 @@
           </template>
         </Button>
       </template>
-      <div ref="springHeightRef" class="spring-height-wrap" style="overflow: hidden">
-        <p ref="springContentRef" class="spring-panel-text">
+      <div ref="heightRef" class="height-wrap" style="overflow: hidden">
+        <p ref="contentRef" class="height-panel-text">
           v0.4.2 adds keyboard support to Dock and fixes a rubber-band overshoot in Resizable. This
           panel's height is entirely GSAP's, not the library's CSS transition.
         </p>
@@ -33,13 +33,13 @@ import gsap from 'gsap'
 import { Button, Collapsible } from 'vael-ui'
 import { PhCaretRight } from '@phosphor-icons/vue'
 
-const springOpen = shallowRef(false)
-const springContentRef = useTemplateRef<HTMLElement>('springContentRef')
-const springHeightRef = useTemplateRef<HTMLElement>('springHeightRef')
+const panelOpen = shallowRef(false)
+const contentRef = useTemplateRef<HTMLElement>('contentRef')
+const heightRef = useTemplateRef<HTMLElement>('heightRef')
 
-watch(springOpen, (open) => {
-  const wrap = springHeightRef.value
-  const content = springContentRef.value
+watch(panelOpen, (open) => {
+  const wrap = heightRef.value
+  const content = contentRef.value
   if (!wrap || !content) return
   gsap.to(wrap, { height: open ? content.scrollHeight : 0, duration: 0.4, ease: 'power3.out' })
 })
@@ -57,13 +57,13 @@ watch(springOpen, (open) => {
 .collapsible-nav-chevron[data-open='true'] {
   transform: rotate(90deg);
 }
-.spring-panel-text {
+.height-panel-text {
   margin: 0 0 1rem;
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--ui-text-muted);
 }
-.spring-height-wrap {
+.height-wrap {
   height: 0;
 }
 </style>

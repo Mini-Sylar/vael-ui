@@ -23,7 +23,7 @@
         }}
       </output>
     </div>
-    <p v-if="checkboxValues.length" class="note">{{ checkboxValues.join(', ') }}</p>
+    <p v-if="checkboxValues.length" class="demo-status">{{ checkboxValues.join(', ') }}</p>
   </section>
 </template>
 

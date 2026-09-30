@@ -70,9 +70,11 @@ const gridSidebarSize = shallowRef(240)
   grid-area: sidebar;
   background: var(--ui-surface);
   border-inline-end: 1px solid var(--ui-border);
-  overflow-y: auto;
 }
 .resizable-gnav {
+  box-sizing: border-box;
+  block-size: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;

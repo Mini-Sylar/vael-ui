@@ -26,7 +26,7 @@
       <Button variant="outline" @click="openDangerFirstConfirm">Reset settings</Button>
       <Button variant="outline" @click="openRequiredAction">Rotate API key</Button>
     </div>
-    <p v-if="dynamicResult" class="note">
+    <p v-if="dynamicResult" class="demo-status">
       <strong>{{ dynamicResult }}</strong>
     </p>
   </section>

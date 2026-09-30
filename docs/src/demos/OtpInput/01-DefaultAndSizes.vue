@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Default (6 digits) and sizes</h3>
     <OtpInput v-model="code" @complete="onComplete" />
-    <p class="note">Value: {{ code || '(empty)' }}, completions: {{ completions }}</p>
+    <p class="demo-status">Value: {{ code || '(empty)' }}, completions: {{ completions }}</p>
     <div class="row">
       <OtpInput v-model="sizeSm" size="sm" :length="4" />
       <OtpInput v-model="sizeMd" size="md" :length="4" />

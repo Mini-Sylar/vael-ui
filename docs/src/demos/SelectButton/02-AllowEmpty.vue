@@ -10,7 +10,9 @@
       <SelectButton v-model="clearable" :items="viewItems" />
       <SelectButton v-model="sticky" :items="viewItems" :allow-empty="false" />
     </div>
-    <p class="note">clearable: {{ clearable ?? '(none)' }} · sticky: {{ sticky ?? '(none)' }}</p>
+    <p class="demo-status">
+      clearable: {{ clearable ?? '(none)' }} · sticky: {{ sticky ?? '(none)' }}
+    </p>
   </section>
 </template>
 

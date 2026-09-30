@@ -14,6 +14,12 @@
   display: none;
 }
 
+/* Live state readouts inside a demo ("Selected: …", "Last action: …"). */
+.demo .demo-status {
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
+}
+
 .demo h3 {
   margin-block: 2rem 0.75rem;
   padding-top: 1.5rem;

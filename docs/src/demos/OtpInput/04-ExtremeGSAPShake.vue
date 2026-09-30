@@ -14,7 +14,7 @@
       :invalid="shakeInvalid"
       @complete="onShakeComplete"
     />
-    <p class="note">{{ shakeStatus }}</p>
+    <p class="demo-status">{{ shakeStatus }}</p>
   </section>
 </template>
 

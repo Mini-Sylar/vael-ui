@@ -17,7 +17,7 @@
       <Checkbox v-model="fruits" value="banana" label="Banana" name="fruits" />
       <Checkbox v-model="fruits" value="cherry" label="Cherry" name="fruits" />
     </div>
-    <p class="note">Selected: {{ fruits.length ? fruits.join(', ') : '(none)' }}</p>
+    <p class="demo-status">Selected: {{ fruits.length ? fruits.join(', ') : '(none)' }}</p>
   </section>
 </template>
 

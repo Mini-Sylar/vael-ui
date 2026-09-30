@@ -7,7 +7,9 @@
       Flipping it also disables the two radios below immediately, no confirm step.
     </p>
     <Switch v-model="airplaneMode" label="Airplane mode" />
-    <p class="note">Wi-Fi and Bluetooth radios: {{ airplaneMode ? 'disabled' : 'available' }}</p>
+    <p class="demo-status">
+      Wi-Fi and Bluetooth radios: {{ airplaneMode ? 'disabled' : 'available' }}
+    </p>
   </section>
 </template>
 
