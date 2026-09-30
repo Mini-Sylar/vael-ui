@@ -193,5 +193,8 @@ function onStepperDown(delta: number) {
 function onStepperUp() {
   clearRepeat()
 }
-onScopeDispose(clearRepeat)
+onScopeDispose(() => {
+  clearRepeat()
+  clearTimeout(typedTimer)
+})
 </script>

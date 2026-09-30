@@ -105,7 +105,7 @@ export type ToasterPosition =
 <script setup lang="ts">
 import './Toaster.css'
 import '../shared/tokens.css'
-import { computed, inject, reactive, ref, watch } from 'vue'
+import { computed, inject, onScopeDispose, reactive, ref, watch } from 'vue'
 import { useDocumentVisibility } from '@vueuse/core'
 import { useToastQueue } from '../../composables/useToast'
 import type { ToastEntry } from '../../composables/useToast'
@@ -469,6 +469,10 @@ watch(
     }
   },
 ) // Clean up heights/swipe state/observers when toasts leave the queue.
+onScopeDispose(() => {
+  for (const observer of resizeObservers.values()) observer.disconnect()
+  resizeObservers.clear()
+})
 
 // Pause timers when tab is hidden; useToastQueue tracks remaining time.
 const visibility = useDocumentVisibility()
