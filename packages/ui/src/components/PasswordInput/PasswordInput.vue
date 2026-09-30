@@ -1,8 +1,8 @@
 <template>
   <div
     ref="root"
-    :class="rootPart.class"
-    :style="rootPart.style"
+    :class="[rootPart.class, $attrs.class]"
+    :style="[rootPart.style, $attrs.style as never]"
     :data-side="inlineSide"
     :data-align="inlineAlign"
   >
@@ -18,6 +18,7 @@
       :name="name"
       :autocomplete="autocomplete"
       :ui="innerUi"
+      v-bind="inputAttrs"
       @focus="onFocus"
       @blur="onBlur"
     >
@@ -156,14 +157,17 @@ export interface PasswordRuleResult {
 <script setup lang="ts">
 import './PasswordInput.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useSlots, useTemplateRef } from 'vue'
+import { computed, shallowRef, useAttrs, useSlots, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Input from '../Input/Input.vue'
 import Popover from '../Popover/Popover.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { omitAttrs } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
 
 /** Password value. @default '' */
 const modelValue = defineModel<string>({ default: '' })
@@ -298,6 +302,10 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const innerUi = computed(() => ({ root: themedUi()?.frame, input: themedUi()?.input }))
+// Two roots (the field and the hints popover), so attrs are routed by hand:
+// class and style to the wrapper, everything else to the input.
+const attrs = useAttrs()
+const inputAttrs = computed(() => omitAttrs(attrs, ['class', 'style']))
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-password-input'))
 const togglePart = computed(() =>
   resolveUiPart(

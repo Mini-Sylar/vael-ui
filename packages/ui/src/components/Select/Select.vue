@@ -158,7 +158,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :ui="{ list: themedUi()?.list, option: themedUi()?.option }"
+            :ui="{ list: themedUi()?.list, option: themedUi()?.option, empty: themedUi()?.empty }"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="setActive"
             @reach-end="emit('reach-end')"

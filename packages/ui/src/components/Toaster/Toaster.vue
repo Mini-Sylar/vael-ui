@@ -6,6 +6,7 @@
       tag="ol"
       :class="rootPart.class"
       :style="[rootStyle, rootPart.style]"
+      v-bind="$attrs"
       :css="motionCss"
       role="region"
       aria-live="polite"
@@ -113,6 +114,8 @@ import StatusIcon from '../internal/StatusIcon.vue'
 const SWIPE_THRESHOLD = 45 // px
 const SWIPE_VELOCITY_THRESHOLD = 0.11 // px/ms
 const SWIPE_EXIT_MS = 200
+
+defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{

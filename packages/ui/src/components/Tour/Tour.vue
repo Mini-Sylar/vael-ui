@@ -29,6 +29,7 @@
     :teleport-to="teleportTarget"
     :container="container"
     :ui="{ positioner: positionerUi, panel: ui?.panel }"
+    v-bind="$attrs"
     @open-change="(value, details) => emit('open-change', value, details)"
   >
     <template #default="{ close, panelEl }">
@@ -153,6 +154,7 @@ import { useLayer } from '../../composables/useLayerStack'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 
+// Two roots: attrs go to the popover panel, like Popover's own.
 defineOptions({ inheritAttrs: false })
 
 /** Whether the tour is open. @default false */

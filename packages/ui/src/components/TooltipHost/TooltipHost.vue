@@ -20,6 +20,7 @@
           role="tooltip"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
+          v-bind="$attrs"
         >
           <slot :content="content" :side="resolvedSide">{{ content }}</slot>
         </div>
@@ -60,6 +61,8 @@ import { TOOLTIP_ATTR, tooltipTargets } from '../../directives/vTooltip'
 import type { TooltipDirectiveOptions } from '../../directives/vTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
 
 const props = defineProps<TooltipHostProps>()
 
