@@ -325,7 +325,7 @@ Components that compile straight to Vapor, not around it.`,
     lang: 'json',
     code: `{
   "name": "vael-ui",
-  "version": "0.3.12"
+  "version": "0.4.0"
 }`,
   },
 }

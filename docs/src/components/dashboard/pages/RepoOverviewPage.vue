@@ -74,8 +74,8 @@
       <div class="repo-col">
         <Card class="repo-panel">
           <div class="repo-panel-head">
-            <h3 class="repo-h">Release <span class="repo-mono">v0.3.12</span></h3>
-            <Tag size="sm" variant="muted" class="repo-push">patch</Tag>
+            <h3 class="repo-h">Release <span class="repo-mono">v0.4.0</span></h3>
+            <Tag size="sm" variant="muted" class="repo-push">minor</Tag>
           </div>
           <ol class="repo-stages">
             <li
@@ -107,7 +107,7 @@
           </SplitButton>
           <Dialog
             v-model:open="shipOpen"
-            title="Ship v0.3.12"
+            title="Ship v0.4.0"
             description="Publishes to npm, then rolls out to the docs site."
             :container="shell"
             size="sm"
@@ -242,7 +242,7 @@ const shipItems: MenuEntry[] = [
 function ship(close: () => void) {
   close()
   const notified = notify.value ? ', #releases notified' : ''
-  toast.success(`v0.3.12 is on its way to npm, rolling out to ${rollout.value}%${notified}.`)
+  toast.success(`v0.4.0 is on its way to npm, rolling out to ${rollout.value}%${notified}.`)
 }
 function onShipOption(item: MenuItemData) {
   toast(item.value === 'preview' ? 'Shipping to preview.' : 'Scheduled for tomorrow, 09:00.')
