@@ -63,11 +63,11 @@ const attrs = useAttrs()
  */
 export interface DockItemData {
   label: string
-  /** Identity for `@select` consumers; falls back to `label` for the `:key`. */
+  /** Identity for your `@select` handler; `:key` falls back to `label` when unset. */
   value?: string
-  /** Icon component, sized by CSS (`.ui-dock-item svg`). */
+  /** Icon component. CSS sizes it via `.ui-dock-item svg`. */
   icon?: Component
-  /** Small overlay badge, e.g. an unread count; folded into aria-label. */
+  /** Small overlay badge, such as an unread count. The item's `aria-label` includes it. */
   badge?: string | number
   disabled?: boolean
   /** Per-item handler; `@select` fires alongside it. */
@@ -76,21 +76,34 @@ export interface DockItemData {
 
 const props = withDefaults(
   defineProps<{
+    /** Items to show, one button each. */
     items: DockItemData[]
+    /** Lays items out in a row or a column; arrow keys follow the same axis. @default 'horizontal' */
     orientation?: DockOrientation
-    /** Resting icon size, in px. */
+    /** Resting icon size, in pixels. @default 48 */
     baseSize?: number
-    /** Icon size, in px, directly under the pointer. */
+    /** Icon size, in pixels, directly under the pointer. @default 76 */
     maxSize?: number
-    /** Falloff distance in px; defaults to 3.5x `baseSize`. */
+    /** Falloff distance in pixels. Unset, it's 3.5 times `baseSize`. */
     range?: number
+    /** Dims the dock and blocks pointer interaction and magnification. @default false */
     disabled?: boolean
-    /** `false` disables magnification but keeps interaction enabled; distinct from `disabled`. */
+    /**
+     * `false` turns off magnification but keeps items interactive, unlike `disabled`.
+     * @default true
+     */
     magnify?: boolean
-    /** Renders each item's `v-tooltip` on hover. */
+    /**
+     * Magnifies by resizing items, so the dock grows with them. Off, items scale and
+     * spread with transforms and the dock keeps its size.
+     * @default false
+     */
+    grow?: boolean
+    /** Renders each item's `v-tooltip` on hover. @default true */
     tooltips?: boolean
-    /** Which side each item's tooltip opens on. Default: `'top'` for horizontal, `'right'` for vertical. */
+    /** Which side each item's tooltip opens on. Unset, it's `'top'` when horizontal and `'right'` when vertical. */
     tooltipSide?: Side
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
   }>(),
   {
@@ -99,13 +112,14 @@ const props = withDefaults(
     maxSize: 76,
     disabled: false,
     magnify: true,
+    grow: false,
     tooltips: true,
     tooltipSide: undefined,
   },
 )
 
 const emit = defineEmits<{
-  /** Fires on click, or Enter/Space while focused. */
+  /** Fires when you click an item, or press Enter or Space on a focused item. */
   select: [item: DockItemData, index: number]
 }>()
 
@@ -121,6 +135,7 @@ const { setItemEl, onPointerMove, onPointerLeave, remeasure } = useDock(
     range: () => props.range,
     disabled: () => props.disabled,
     magnify: () => props.magnify,
+    grow: () => props.grow,
   },
 )
 
@@ -207,10 +222,16 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-dock',
     props.orientation === 'vertical' && 'ui-dock--vertical',
+    props.grow && 'ui-dock--grow',
     props.disabled && 'ui-dock--disabled',
   ),
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-dock-item'))
 
-defineExpose({ el: rootEl, remeasure })
+defineExpose({
+  /** Root element. */
+  el: rootEl,
+  /** Re-measures item positions for magnification, after a layout change the dock can't detect. */
+  remeasure,
+})
 </script>

@@ -95,9 +95,10 @@ async function motionBeforeClose(done: () => void) {
 }
 .rich-tip-kbd kbd {
   padding: 0.25rem 0.375rem;
-  border: 1px solid var(--ui-border);
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
   border-radius: 3px;
-  background: var(--ui-surface);
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  color: inherit;
   font-family: monospace;
 }
 </style>

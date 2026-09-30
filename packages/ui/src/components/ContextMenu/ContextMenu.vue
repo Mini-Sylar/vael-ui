@@ -56,35 +56,38 @@ export type ContextMenuSide = MenuSide
 export type ContextMenuAlign = MenuAlign
 
 export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
-  /** Data-driven rows — same shape as Menu.vue's `items`. */
+  /** Data-driven rows, in the same shape as Menu's `items`. */
   items?: ReadonlyArray<MenuEntry<T>>
-  /** Suppresses both the right-click and long-press triggers entirely. */
+  /** Disables both the right-click and long-press triggers. @default false */
   disabled?: boolean
-  /** Long-press (touch) as an additional trigger alongside the native `contextmenu` event. */
+  /** Adds a touch long-press trigger alongside the native `contextmenu` event. @default true */
   longPress?: boolean
-  /** Hold duration, in ms, before a touch press opens the menu. */
+  /** How long you hold a touch press, in ms, before the menu opens. @default 500 */
   longPressDelay?: number
-  /** Which corner of the cursor point the panel expands from. Default: top-left corner. */
+  /** Which side of the cursor point the panel opens on. @default 'bottom' */
   side?: ContextMenuSide
-  /** How the panel aligns against the cursor point along that side. */
+  /** How the panel aligns against the cursor point along that side. @default 'start' */
   align?: ContextMenuAlign
-  /** Gap between the cursor point and the panel, in pixels. */
+  /** Gap between the cursor point and the panel, in pixels. @default 2 */
   sideOffset?: number
-  /** Shifts the panel along the alignment axis, in pixels. */
+  /** Shifts the panel along the alignment axis, in pixels. @default 0 */
   alignOffset?: number
-  /** Escape key closes the menu. */
+  /** Escape key closes the panel. @default true */
   closeOnEsc?: boolean
-  /** Clicking outside the panel closes it. */
+  /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
+  /** Custom exit animation; call `done()` to finish closing. */
   beforeClose?: (done: () => void) => void
-  /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
+  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
-  /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. */
+  /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
-  /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
+  /**
+   * Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more.
+   * @default true
+   */
   scrollFade?: boolean
-  /** Per-instance part-class/style overrides. */
+  /** Class and style overrides for each part. */
   ui?: Partial<{
     positioner: UiPartValue
     panel: UiPartValue
@@ -110,7 +113,7 @@ import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-/** Whether the menu is open. */
+/** Whether the menu is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<ContextMenuProps<T>>(), {
@@ -134,12 +137,14 @@ const props = withDefaults(defineProps<ContextMenuProps<T>>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires before the menu closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires when a data-driven row is activated, including rows in submenus. */
   select: [item: T]
 }>()
 
 defineSlots<{
-  /** Arbitrary wrapped content — a card, a table row, an image. Right-click (or long-press on touch) opens the menu; ordinary interaction with it is untouched. */
+  /** Wrapped content, such as a card, row or image. Right-clicking it, or long-pressing it on touch, opens the menu. */
   default(props: { open: boolean }): unknown
   /** Forwarded to Menu's own `#header`. */
   header(): unknown
@@ -158,6 +163,11 @@ function setAnchorPosition(x: number, y: number) {
   if (!el) return
   el.style.left = `${x}px`
   el.style.top = `${y}px`
+  // A transformed or filtered ancestor turns `fixed` into
+  // "relative to that ancestor", so correct by wherever the anchor really landed.
+  const rect = el.getBoundingClientRect()
+  if (rect.left !== x) el.style.left = `${2 * x - rect.left}px`
+  if (rect.top !== y) el.style.top = `${2 * y - rect.top}px`
 }
 
 async function openAt(x: number, y: number) {
@@ -212,15 +222,23 @@ const themedUi = useThemedUi(
 )
 
 defineExpose({
+  /** Element wrapping the default slot; listens for right-click and long-press. */
   wrapperEl,
+  /** Zero-size element placed at the open point; the panel anchors to it. */
   anchorEl,
+  /** Panel element (null while closed). */
   panelEl: computed(() => menuRef.value?.panelEl ?? null),
+  /** Positioning wrapper around the panel (null while closed). */
   positionerEl: computed(() => menuRef.value?.positionerEl ?? null),
+  /** Item list element (null while closed). */
   listEl: computed(() => menuRef.value?.listEl ?? null),
+  /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => menuRef.value?.isClosing ?? false),
-  /** Opens the menu at an explicit viewport point — e.g. from a custom "⋮" button instead of a right-click. */
+  /** Opens the menu at a viewport point, for example from a custom "⋮" button instead of a right-click. */
   openAt,
+  /** Closes the menu, running `@open-change` and `beforeClose` first. */
   close: () => menuRef.value?.close(),
+  /** Cancels a close pending in `beforeClose` and keeps the menu open. */
   cancelClose: () => menuRef.value?.cancelClose(),
 })
 </script>

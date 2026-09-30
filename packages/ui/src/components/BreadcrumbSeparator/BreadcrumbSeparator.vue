@@ -26,6 +26,7 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 const props = defineProps<{
+  /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue }>
 }>()
 
@@ -42,5 +43,8 @@ const themedUi = useThemedUi(
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-breadcrumb-separator'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

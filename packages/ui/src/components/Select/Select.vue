@@ -12,6 +12,7 @@
     :aria-controls="listboxId"
     :aria-activedescendant="open ? activeId : undefined"
     :aria-describedby="fieldControl.describedBy()"
+    :aria-labelledby="(attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()"
     :aria-invalid="isInvalid || undefined"
     :aria-required="fieldControl.required() || undefined"
     :data-state="open ? 'open' : 'closed'"
@@ -158,7 +159,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :ui="{ list: themedUi()?.list, option: themedUi()?.option }"
+            :ui="{ list: themedUi()?.list, option: themedUi()?.option, empty: themedUi()?.empty }"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="setActive"
             @reach-end="emit('reach-end')"
@@ -238,61 +239,81 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
+/** Selected value, or an array of values when `multiple`. @default null */
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
 
 const props = withDefaults(
   defineProps<{
+    /** Options to choose from. */
     items: ReadonlyArray<T>
+    /** Text shown in the trigger while nothing is selected. */
     placeholder?: string
+    /**
+     * Lets you select several items. The model becomes an array and the panel stays open on pick.
+     * @default false
+     */
     multiple?: boolean
+    /** Disables the trigger and blocks interaction. @default false */
     disabled?: boolean
+    /** Marks the field invalid. ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Trigger size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Shows a spinner in place of an empty list, or below the rows while more load. @default false */
     loading?: boolean
+    /** Shows a clear button once something is selected. @default false */
     clearable?: boolean
-    /** `multiple` only: how many selected items render as chips before collapsing the rest into a "+N" indicator. Default: uncollapsed. */
+    /** `multiple` only: how many chips show before the rest collapse into a "+N" chip. Unset, all show. */
     maxLabels?: number
-    /** `multiple` only: how the trigger renders multiple selections. `'chip'` (default) shows removable chips; `'text'` shows comma-joined labels; `'count'` shows a "N selected" summary. Single-select ignores this prop. */
+    /** `multiple` only: `'chip'` shows removable chips, `'text'` comma-joined labels, `'count'` an "N selected"
+     * summary.
+     * @default 'chip'
+     */
     display?: 'chip' | 'text' | 'count'
-    /** `true`/`false` forces virtualization on/off; an object also tunes `itemSize`/`overscan`. Default: auto-virtualizes past 100 items. */
+    /** `true`/`false` forces virtualization on/off; an object also tunes `itemSize`/`overscan`. Unset, it auto-virtualizes past 100 items. */
     virtualize?: boolean | SelectVirtualizeConfig
-    /** Renders hidden `<input>`(s) so a plain `<form>` post still carries
-     * the selection — repeated `name` when `multiple`. */
+    /** Renders hidden `<input>`(s) so a plain `<form>` post carries the selection, repeating `name` when `multiple`. */
     name?: string
-    /** Which side of the trigger the panel opens on. */
+    /** Which side of the trigger the panel opens on. @default 'bottom' */
     side?: SelectSide
-    /** How the panel aligns against the trigger along that side. */
+    /** How the panel aligns against the trigger along that side. @default 'start' */
     align?: SelectAlign
-    /** Gap between the trigger and the panel, in pixels. */
+    /** Gap between the trigger and the panel, in pixels. @default 8 */
     sideOffset?: number
-    /** Shifts the panel along the alignment axis, in pixels. */
+    /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
-    /** Escape key closes the panel. */
+    /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
-    /** Clicking outside the panel closes it. */
+    /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
+    /** Custom exit animation; call `done()` to finish closing. */
     beforeClose?: (done: () => void) => void
-    /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
+    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
     forceMount?: boolean
-    /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. */
+    /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
-    /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
+    /**
+     * Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more.
+     * @default true
+     */
     scrollFade?: boolean
-    /** Caps the panel's height at this many pixels even when the viewport has room for more — the option list scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+    /**
+     * Caps the panel height in pixels; the list scrolls past it. The viewport limits it too, so
+     * pass `Infinity` to fill the available space.
+     * @default 320
+     */
     maxPanelHeight?: number
-    /** Gates the built-in chip enter/exit/reposition transition (`multiple` + `display="chip"`
-     * only). `false` skips it entirely — reach for `@chip-enter`/`@chip-leave` instead if you want
-     * a consumer-owned animation (GSAP, motion-v) in its place. */
+    /** `false` skips the built-in chip transitions (`multiple` only); animate them yourself via
+     * `@chip-enter`/`@chip-leave`.
+     * @default true
+     */
     motionCss?: boolean
-    /** Shows a built-in search box at the top of the panel. `undefined` (default): no box — most
-     * lists are short enough that one is just noise. `true`: box + built-in diacritic/case-
-     * insensitive label match against `items`. A function: box + your own sync match against the
-     * same `items`. `false`: box, but Select does no matching of its own — pair with `v-model:query`
-     * and swap `items` yourself (debounced API search, server-side paging). Virtualization already
-     * reacts to whatever `items` ends up being, so a remote result set re-virtualizes for free. */
+    /** Adds a search box to the panel. `true` matches labels ignoring case and accents, a function
+     * matches your way, `false` leaves filtering to you via `v-model:query`. */
     filter?: SelectFilter<T>
+    /** Placeholder for the search box. @default 'Search...' */
     filterPlaceholder?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
       value: UiPartValue
@@ -322,6 +343,7 @@ const props = withDefaults(
     alignOffset: 0,
     closeOnEsc: true,
     closeOnOutside: true,
+    maxPanelHeight: 320,
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,
@@ -331,14 +353,17 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires before the panel closes; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires when you change the selection, including chip removal and clear. */
   change: [value: string | number | (string | number)[] | null]
+  /** Fires when the list's last rows render, for loading more. Re-arms when the item count changes. */
   'reach-end': []
+  /** Fires when you pick an item, including a pick that deselects it in `multiple` mode. */
   select: [item: T]
-  /** Fires instead of the built-in CSS transition when `motionCss` is `false` — call `done()`
-   * once your own enter animation finishes. */
+  /** Fires instead of the built-in CSS transition when `motionCss` is `false`. Call `done()` once your enter animation finishes. */
   'chip-enter': [el: Element, done: () => void]
-  /** Same as `chip-enter`, for a chip's removal. */
+  /** Same as `@chip-enter`, for a chip's removal. */
   'chip-leave': [el: Element, done: () => void]
 }>()
 
@@ -351,25 +376,26 @@ const chipLeaveHook = computed(() =>
 )
 
 defineSlots<{
+  /** Custom trigger content for the current selection (an array when `multiple`). */
   value(props: { selected: T | T[] | null }): unknown
-  /** Above the filter input (if `filter` is on) or the listbox itself. `count`/`total` are handed
-   * through for a result-count readout, but the slot is arbitrary content, not just that. */
+  /** Content above the filter input (when `filter` is on) or the listbox. `count` and `total` support a result-count readout. */
   header(props: { count: number; total: number }): unknown
-  /** Replaces the built-in filter row entirely — bind your own control straight to `v-model:query`
-   * on `<Select>` itself (no need to round-trip through this slot's props for that); `onKeydown`
-   * is handed through only so a fully custom input can still opt into arrow/Home/End/Enter
-   * listbox navigation the same way the built-in one does. */
+  /** Replaces the built-in filter row. Bind your input to `v-model:query`; pass keys to `onKeydown`
+   * to keep arrow/Home/End/Enter list navigation. */
   filter(props: { query: string; onKeydown: (event: KeyboardEvent) => void }): unknown
-  /** Swaps just the built-in filter row's leading icon, keeping its `Input` frame. */
+  /** Replaces only the built-in filter row's leading icon and keeps its Input frame. */
   'filter-icon'(): unknown
+  /** Custom row content for each option. */
   item(props: { item: T; active: boolean; selected: boolean }): unknown
+  /** Replaces the text shown when no items match. */
   empty(): unknown
-  /** Below the listbox — e.g. a "create new" or "view all" action. */
+  /** Content below the listbox, such as a "create new" or "view all" action. */
   footer(): unknown
 }>()
 
 const messages = useUiMessages()
 
+/** Search box text. Clears when the panel closes. @default '' */
 const query = defineModel<string>('query', { default: '' })
 
 const selectedSet = computed<Set<string | number>>(() => {
@@ -426,6 +452,7 @@ function onClear(event: MouseEvent) {
   emit('change', model.value)
 }
 
+/** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
@@ -635,18 +662,31 @@ function scrollToIndex(index: number, align?: ScrollAlign) {
 }
 
 defineExpose({
+  /** Trigger element. */
   triggerEl,
+  /** Panel element (null while closed). */
   panelEl,
+  /** Positioning wrapper around the panel (null while closed). */
   positionerEl,
+  /** Scrollable listbox element (null while closed). */
   listEl,
+  /** Built-in search Input instance (null without `filter`, with a `#filter` slot, or while closed). */
   filterInputRef,
+  /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
+  /** Inline positioning styles applied to the positioner. */
   positionerStyle,
+  /** True while a `beforeClose` close is pending. */
   isClosing,
+  /** Opens the panel (no-op while disabled). */
   open: openSelect,
+  /** Closes the panel, running `@open-change` and `beforeClose` first. */
   close,
+  /** Cancels a close pending in `beforeClose` and keeps the panel open. */
   cancelClose,
+  /** Index of the highlighted row in the filtered list (-1 for none). */
   activeIndex,
+  /** Scrolls the list to the row at `index`. */
   scrollToIndex,
 })
 </script>

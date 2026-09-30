@@ -1,5 +1,5 @@
 @layer ui-components {
-  /* Knob Rotary counterpart to a linear slider: a min/max/step value mapped onto a fixed 270° arc (KNOB_SWEEP_* in useKnob.ts — -135deg..135deg, a 90deg gap centered at the bottom so min/max never land on the same angle). Direct manipulation: the live drag angle/fraction are NEVER transitioned — same "never gate a live drag" stance as Slider — the only transition here is the decorative hover/press scale on the face. * Positioning rides two custom properties set on the ROOT by useKnob.ts (--ui-knob-angle/-fraction, the sole Vue-managed style location); the indicator and fill arc carry no inline style of their own, so an imperative spring library may own the indicator's `rotate` directly. Kept deliberately, not overlooked: a root-level custom property forces a style-recalc pass over this subtree on every drag frame, narrower than Slider thumb's old layout+paint cost (`rotate` itself is still compositor-eligible) — the win is the override hook above, and the blast radius is 3 descendants, not a page. `stroke-dashoffset` on the fill arc has no compositor-only path regardless (SVG paint), so routing it more directly wouldn't change its performance class either. * The track/fill are one fixed SVG path (KNOB_ARC_PATH, a 100x100 viewBox so the same `d` works at any rendered size — CSS controls the diameter) traced twice: once as the always-visible full-sweep track, once as the fill, whose `path-length="100"`-normalized `stroke-dashoffset` reads --ui-knob-fraction directly, no pixel geometry needed. */
+  /* Knob Rotary counterpart to a linear slider: a min/max/step value mapped onto a fixed 270° arc (KNOB_SWEEP_* in useKnob.ts — -135deg..135deg, a 90deg gap centered at the bottom so min/max never land on the same angle). Direct manipulation: the live drag angle/fraction are NEVER transitioned — same "never gate a live drag" stance as Slider — the only transition here is the decorative hover/press scale on the face. * Positioning rides two custom properties set on the ROOT by useKnob.ts (--ui-knob-angle/-fraction, the sole Vue-managed style location); the indicator and fill arc carry no inline style of their own, so an imperative spring library may own the indicator's `rotate` directly. Kept deliberately, not overlooked: a root-level custom property forces a style-recalc pass over this subtree on every drag frame, narrower than Slider thumb's old layout+paint cost (`rotate` itself is still compositor-eligible) — the win is the override hook above, and the blast radius is 3 descendants, not a page. `stroke-dashoffset` on the fill arc has no compositor-only path regardless (SVG paint), so routing it more directly wouldn't change its performance class either. * The track/fill are one fixed SVG path (KNOB_ARC_PATH, a 100x100 viewBox so the same `d` works at any rendered size — CSS controls the diameter) traced twice: once as the always-visible full-sweep track, once as the fill, whose `pathLength="100"`-normalized `stroke-dashoffset` reads --ui-knob-fraction directly, no pixel geometry needed. */
   .ui-knob {
     position: relative;
     display: inline-flex;
@@ -82,7 +82,11 @@
     background: var(--ui-primary);
     translate: -50% 0;
   }
+  /* The ring is keyboard-only via [data-focus-visible], not the UA default. */
   .ui-knob-dial:focus-visible {
+    outline: none;
+  }
+  .ui-knob-dial[data-focus-visible] {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }

@@ -15,7 +15,8 @@
     flex: none;
     inline-size: 1.25rem;
     block-size: 1.25rem;
-    margin-block-start: 0.0625rem;
+    /* Centre on the title's first line box (0.875rem x 1.4), not a fixed nudge. */
+    margin-block-start: calc((0.875rem * 1.4 - 1.25rem) / 2);
   }
   .ui-message--success .ui-message-icon {
     color: var(--ui-success);

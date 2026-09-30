@@ -1,6 +1,6 @@
 <template>
-  <section class="playground">
-    <div class="playground-toolbar">
+  <section class="playground" :class="{ 'playground--next': next }">
+    <div v-if="!next" class="playground-toolbar">
       <SelectButton
         v-model="defaultVariant"
         size="sm"
@@ -13,410 +13,533 @@
     </div>
 
     <div class="playground-body">
-      <div ref="previewEl" class="playground-preview">
-        <p v-if="needsContext" class="playground-error">{{ needsContext }}</p>
-        <PlaygroundErrorBoundary v-else :reset-key="resetKey">
-          <template v-if="isOpenModel">
-            <Button variant="outline" @click="openModelValue = !openModelValue">
-              {{ openModelValue ? `Close ${name}` : `Open ${name}` }}
-            </Button>
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              v-model:open="openModelValue"
+      <div class="playground-stage" :data-bg="next ? stageBg : undefined">
+        <div v-if="next" class="pg-stagebar">
+          <SelectButton
+            v-if="presetItems2.length > 1"
+            v-model="activePreset"
+            size="sm"
+            :items="presetItems2"
+            :allow-empty="false"
+            aria-label="Presets"
+            class="pg-presets"
+          />
+          <div class="pg-stage-tools">
+            <button
+              v-if="frameWidth !== null"
+              type="button"
+              class="pg-width"
+              aria-label="Reset preview width"
+              @click="frameWidth = null"
             >
-              <p class="playground-placeholder-copy">{{ OPEN_MODEL_PLACEHOLDER[name] }}</p>
-            </component>
-          </template>
-          <template v-else-if="isContextArea">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              v-model:open="openModelValue"
+              {{ Math.round(frameWidth) }}px
+              <PhX :size="10" weight="bold" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="pg-tool"
+              :aria-pressed="stageBg === 'plain'"
+              :aria-label="stageBg === 'dots' ? 'Plain background' : 'Dotted background'"
+              v-tooltip="stageBg === 'dots' ? 'Plain background' : 'Dotted background'"
+              @click="stageBg = stageBg === 'dots' ? 'plain' : 'dots'"
             >
-              <div class="context-area-target">Right-click here</div>
-            </component>
-          </template>
-          <template v-else-if="isRadioWrap">
-            <component :is="radioGroupComponent" v-model="radioGroupValue">
+              <PhDotsNine v-if="stageBg === 'dots'" :size="15" aria-hidden="true" />
+              <PhSquare v-else :size="15" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <div
+          ref="previewEl"
+          class="playground-preview"
+          :style="
+            next && frameWidth !== null ? { inlineSize: `min(${frameWidth}px, 100%)` } : undefined
+          "
+          :data-sized="(next && frameWidth !== null) || undefined"
+        >
+          <p v-if="needsContext" class="playground-error">{{ needsContext }}</p>
+          <PlaygroundErrorBoundary v-else :reset-key="resetKey">
+            <template v-if="isOpenModel">
+              <Button variant="outline" @click="openModelValue = !openModelValue">
+                {{ openModelValue ? `Close ${name}` : `Open ${name}` }}
+              </Button>
               <component
                 :is="activeComponent"
                 :key="resetKey"
                 v-bind="boundProps"
-                value="playground-option"
-              />
-            </component>
-          </template>
-          <template v-else-if="isRadioGroup">
-            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
-              <component :is="radioComponent" value="standard" label="Standard shipping" />
-              <component :is="radioComponent" value="express" label="Express shipping" />
-              <component
-                :is="radioComponent"
-                value="overnight"
-                label="Overnight shipping"
-                disabled
-              />
-            </component>
-          </template>
-          <template v-else-if="isField">
-            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
-              <component :is="inputComponent" placeholder="you@example.com" />
-            </component>
-          </template>
-          <template v-else-if="isDataTable">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              :data="DATATABLE_PLACEHOLDER_ROWS"
-              row-key="id"
-            >
-              <template #columns="{ columnData }">
-                <component :is="columnComponent" :data="columnData" field="name" label="Name" />
-                <component :is="columnComponent" :data="columnData" field="role" label="Role" />
-                <component :is="columnComponent" :data="columnData" field="status" label="Status" />
-              </template>
-              <template #expansion="{ row }">
-                <p class="datatable-expansion-row">
-                  <strong>{{ row.email }}</strong> · {{ row.team }}
-                </p>
-              </template>
-            </component>
-          </template>
-          <template v-else-if="isButtonGroup">
-            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
-              <Button variant="outline">Archive</Button>
-              <Button variant="outline">Report</Button>
-              <Button variant="outline">Snooze</Button>
-            </component>
-          </template>
-          <template v-else-if="isToolbar">
-            <div
-              class="toolbar-preview-resizable"
-              :class="{ 'toolbar-preview-resizable--vertical': values.orientation === 'vertical' }"
-            >
-              <component
-                :is="activeComponent"
-                :key="resetKey"
-                v-bind="boundProps"
-                class="toolbar-preview-overflow"
+                v-model:open="openModelValue"
               >
-                <Button variant="ghost" size="sm">Bold</Button>
-                <Button variant="ghost" size="sm">Italic</Button>
-                <Button variant="ghost" size="sm" data-toolbar-overflow>Cut</Button>
-                <Button variant="ghost" size="sm" data-toolbar-overflow>Copy</Button>
-                <Button variant="ghost" size="sm" data-toolbar-overflow>Paste</Button>
+                <p class="playground-placeholder-copy">{{ OPEN_MODEL_PLACEHOLDER[name] }}</p>
               </component>
-            </div>
-          </template>
-          <template v-else-if="isSeparator">
-            <div
-              class="separator-preview-row"
-              :class="{ 'separator-preview-row--vertical': values.orientation === 'vertical' }"
-            >
-              <span class="separator-preview-side">Left</span>
-              <component :is="activeComponent" :key="resetKey" v-bind="boundProps" />
-              <span class="separator-preview-side">Right</span>
-            </div>
-          </template>
-          <template v-else-if="isDock">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              :items="DOCK_PLACEHOLDER_ITEMS"
-            />
-          </template>
-          <template v-else-if="isSpeedDial">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              :items="SPEED_DIAL_PLACEHOLDER_ITEMS"
-            />
-          </template>
-          <template v-else-if="isResizable">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              class="resizable-preview"
-            >
-              Drag the handle
-            </component>
-          </template>
-          <template v-else-if="isTabs">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              v-model:active="tabsActive"
-              :items="TABS_PLACEHOLDER_ITEMS"
-            >
-              <template #default="{ active: current, select, items: list }">
-                <button
-                  v-for="item in list"
-                  :key="item"
-                  type="button"
-                  role="tab"
-                  class="tabs-preview-tab"
-                  :aria-selected="current === item"
-                  :tabindex="current === item ? 0 : -1"
-                  :data-active="current === item ? '' : undefined"
-                  @click="select(item)"
+            </template>
+            <template v-else-if="isContextArea">
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                v-model:open="openModelValue"
+              >
+                <div class="context-area-target">Right-click here</div>
+              </component>
+            </template>
+            <template v-else-if="isRadioWrap">
+              <component :is="radioGroupComponent" v-model="radioGroupValue">
+                <component
+                  :is="activeComponent"
+                  :key="resetKey"
+                  v-bind="boundProps"
+                  value="playground-option"
+                />
+              </component>
+            </template>
+            <template v-else-if="isRadioGroup">
+              <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+                <component :is="radioComponent" value="standard" label="Standard shipping" />
+                <component :is="radioComponent" value="express" label="Express shipping" />
+                <component
+                  :is="radioComponent"
+                  value="overnight"
+                  label="Overnight shipping"
+                  disabled
+                />
+              </component>
+            </template>
+            <template v-else-if="isField">
+              <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+                <component :is="inputComponent" placeholder="you@example.com" />
+              </component>
+            </template>
+            <template v-else-if="isDataTable">
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                :data="DATATABLE_PLACEHOLDER_ROWS"
+                row-key="id"
+              >
+                <template #columns="{ columnData }">
+                  <component :is="columnComponent" :data="columnData" field="name" label="Name" />
+                  <component :is="columnComponent" :data="columnData" field="role" label="Role" />
+                  <component
+                    :is="columnComponent"
+                    :data="columnData"
+                    field="status"
+                    label="Status"
+                  />
+                </template>
+                <template #expansion="{ row }">
+                  <p class="datatable-expansion-row">
+                    <strong>{{ row.email }}</strong> · {{ row.team }}
+                  </p>
+                </template>
+              </component>
+            </template>
+            <template v-else-if="isButtonGroup">
+              <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+                <Button variant="outline">Archive</Button>
+                <Button variant="outline">Report</Button>
+                <Button variant="outline">Snooze</Button>
+              </component>
+            </template>
+            <template v-else-if="isToolbar">
+              <div
+                class="toolbar-preview-resizable"
+                :class="{
+                  'toolbar-preview-resizable--vertical': values.orientation === 'vertical',
+                }"
+              >
+                <component
+                  :is="activeComponent"
+                  :key="resetKey"
+                  v-bind="boundProps"
+                  class="toolbar-preview-overflow"
                 >
-                  {{ item }}
-                </button>
-              </template>
-            </component>
-          </template>
-          <template v-else-if="isCollapsible">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              v-model:open="openModelValue"
-            >
-              <template #trigger>
-                <Button variant="outline">{{ openModelValue ? 'Close' : 'Open' }}</Button>
-              </template>
-              <p class="playground-placeholder-copy">Toggle to reveal this content.</p>
-            </component>
-          </template>
-          <template v-else-if="isAccordion">
-            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
-              <component :is="accordionItemComponent" value="item-1" title="What is vael-ui?">
-                A Vue 3 component library with a full Vue Vapor build.
-              </component>
-              <component
-                :is="accordionItemComponent"
-                value="item-2"
-                title="Does it support dark mode?"
+                  <Button variant="ghost" size="sm">Bold</Button>
+                  <Button variant="ghost" size="sm">Italic</Button>
+                  <Button variant="ghost" size="sm" data-toolbar-overflow>Cut</Button>
+                  <Button variant="ghost" size="sm" data-toolbar-overflow>Copy</Button>
+                  <Button variant="ghost" size="sm" data-toolbar-overflow>Paste</Button>
+                </component>
+              </div>
+            </template>
+            <template v-else-if="isSeparator">
+              <div
+                class="separator-preview-row"
+                :class="{ 'separator-preview-row--vertical': values.orientation === 'vertical' }"
               >
-                Yes, CSS-only via a data attribute, no JavaScript toggle required.
-              </component>
+                <span class="separator-preview-side">Left</span>
+                <component :is="activeComponent" :key="resetKey" v-bind="boundProps" />
+                <span class="separator-preview-side">Right</span>
+              </div>
+            </template>
+            <template v-else-if="isDock">
               <component
-                :is="accordionItemComponent"
-                value="item-3"
-                title="Can I use my own animation library?"
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                :items="DOCK_PLACEHOLDER_ITEMS"
+              />
+            </template>
+            <template v-else-if="isSpeedDial">
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                :items="SPEED_DIAL_PLACEHOLDER_ITEMS"
+              />
+            </template>
+            <template v-else-if="isResizable">
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                class="resizable-preview"
               >
-                Every component that animates exposes real hooks for GSAP, motion-v, or plain CSS.
+                Drag the handle
               </component>
-            </component>
-          </template>
-          <template v-else-if="isScrollArea">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              class="scroll-area-preview"
-            >
-              <ul class="scroll-area-preview-list">
-                <li v-for="n in 20" :key="n">Item {{ n }}</li>
-              </ul>
-            </component>
-          </template>
-          <template v-else-if="isPullToRefresh">
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              class="pull-to-refresh-preview"
-            >
-              <ul class="pull-to-refresh-preview-list">
-                <li v-for="n in 8" :key="n">Row {{ n }}</li>
-              </ul>
-            </component>
-          </template>
-          <template v-else-if="isAvatarGroup">
-            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
-              <component :is="avatarComponent" name="Ada Lovelace" />
-              <component :is="avatarComponent" name="Grace Hopper" />
-              <component :is="avatarComponent" name="Katherine Johnson" />
-            </component>
-          </template>
-          <template v-else-if="isBreadcrumb">
-            <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
-              <component :is="breadcrumbItemComponent" href="/">Home</component>
-              <component :is="breadcrumbSeparatorComponent" />
-              <component :is="breadcrumbItemComponent" href="/docs">Docs</component>
-              <component :is="breadcrumbSeparatorComponent" />
-              <component :is="breadcrumbItemComponent" current>Breadcrumb</component>
-            </component>
-          </template>
-          <template v-else-if="isCommandPalette">
-            <Button variant="outline" @click="openModelValue = !openModelValue">
-              {{ openModelValue ? 'Close CommandPalette' : 'Open CommandPalette' }}
-            </Button>
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              v-model:open="openModelValue"
-              :items="COMMAND_PALETTE_PLACEHOLDER_ITEMS"
-            />
-          </template>
-          <template v-else-if="isTour">
-            <Button variant="outline" @click="openModelValue = !openModelValue">
-              {{ openModelValue ? 'Close Tour' : 'Open Tour' }}
-            </Button>
-            <div class="tour-playground-targets">
-              <Button id="playground-tour-target-1" variant="outline" size="sm">First</Button>
-              <Button id="playground-tour-target-2" variant="outline" size="sm">Second</Button>
-            </div>
-            <component
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              v-model:open="openModelValue"
-              :steps="TOUR_PLACEHOLDER_STEPS"
-              :container="previewEl"
-            />
-          </template>
-          <template v-else>
-            <!-- No default slot in these two: some components override data-driven rendering with any default slot content, even empty. -->
-            <component
-              v-if="suppressDefaultSlot"
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              @update:model-value="onModelUpdate"
-            />
-            <!-- Not trigger-based; forcing v-model:open (default false) here would
+            </template>
+            <template v-else-if="isTabs">
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                v-model:active="tabsActive"
+                :items="TABS_PLACEHOLDER_ITEMS"
+              >
+                <template #default="{ active: current, select, items: list }">
+                  <button
+                    v-for="item in list"
+                    :key="item"
+                    type="button"
+                    role="tab"
+                    class="tabs-preview-tab"
+                    :aria-selected="current === item"
+                    :tabindex="current === item ? 0 : -1"
+                    :data-active="current === item ? '' : undefined"
+                    @click="select(item)"
+                  >
+                    {{ item }}
+                  </button>
+                </template>
+              </component>
+            </template>
+            <template v-else-if="isCollapsible">
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                v-model:open="openModelValue"
+              >
+                <template #trigger>
+                  <Button variant="outline">{{ openModelValue ? 'Close' : 'Open' }}</Button>
+                </template>
+                <p class="playground-placeholder-copy">Toggle to reveal this content.</p>
+              </component>
+            </template>
+            <template v-else-if="isAccordion">
+              <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+                <component :is="accordionItemComponent" value="item-1" title="What is vael-ui?">
+                  A Vue 3 component library with a full Vue Vapor build.
+                </component>
+                <component
+                  :is="accordionItemComponent"
+                  value="item-2"
+                  title="Does it support dark mode?"
+                >
+                  Yes. It follows the system setting, and a data-theme attribute on the root element
+                  overrides it.
+                </component>
+                <component
+                  :is="accordionItemComponent"
+                  value="item-3"
+                  title="Can I use my own animation library?"
+                >
+                  Yes. Every animated component has hooks for GSAP, motion-v, or plain CSS.
+                </component>
+              </component>
+            </template>
+            <template v-else-if="isScrollArea">
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                class="scroll-area-preview"
+              >
+                <ul class="scroll-area-preview-list">
+                  <li v-for="n in 20" :key="n">Item {{ n }}</li>
+                </ul>
+              </component>
+            </template>
+            <template v-else-if="isPullToRefresh">
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                class="pull-to-refresh-preview"
+              >
+                <ul class="pull-to-refresh-preview-list">
+                  <li v-for="n in 8" :key="n">Row {{ n }}</li>
+                </ul>
+              </component>
+            </template>
+            <template v-else-if="isAvatarGroup">
+              <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+                <component :is="avatarComponent" name="Ada Lovelace" />
+                <component :is="avatarComponent" name="Grace Hopper" />
+                <component :is="avatarComponent" name="Katherine Johnson" />
+              </component>
+            </template>
+            <template v-else-if="isBreadcrumb">
+              <component :is="activeComponent" :key="resetKey" v-bind="boundProps">
+                <component :is="breadcrumbItemComponent" href="/">Home</component>
+                <component :is="breadcrumbSeparatorComponent" />
+                <component :is="breadcrumbItemComponent" href="/docs">Docs</component>
+                <component :is="breadcrumbSeparatorComponent" />
+                <component :is="breadcrumbItemComponent" current>Breadcrumb</component>
+              </component>
+            </template>
+            <template v-else-if="isCommandPalette">
+              <Button variant="outline" @click="openModelValue = !openModelValue">
+                {{ openModelValue ? 'Close CommandPalette' : 'Open CommandPalette' }}
+              </Button>
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                v-model:open="openModelValue"
+                :items="COMMAND_PALETTE_PLACEHOLDER_ITEMS"
+              />
+            </template>
+            <template v-else-if="isTour">
+              <Button variant="outline" @click="openModelValue = !openModelValue">
+                {{ openModelValue ? 'Close Tour' : 'Open Tour' }}
+              </Button>
+              <div class="tour-playground-targets">
+                <Button id="playground-tour-target-1" variant="outline" size="sm">First</Button>
+                <Button id="playground-tour-target-2" variant="outline" size="sm">Second</Button>
+              </div>
+              <component
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                v-model:open="openModelValue"
+                :steps="TOUR_PLACEHOLDER_STEPS"
+                :container="previewEl"
+              />
+            </template>
+            <template v-else>
+              <!-- No default slot in these two: some components override data-driven rendering with any default slot content, even empty. -->
+              <component
+                v-if="suppressDefaultSlot"
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                @update:model-value="onModelUpdate"
+              />
+              <!-- Not trigger-based; forcing v-model:open (default false) here would
                  override the component's own sensible open-by-default state. -->
-            <component
-              v-else-if="isSelfManagedOpen"
-              :is="activeComponent"
-              :key="resetKey"
-              v-bind="boundProps"
-              @update:model-value="onModelUpdate"
-            />
-            <!-- Exclusively Menu today: its trigger slot wires its own click
+              <component
+                v-else-if="isSelfManagedOpen"
+                :is="activeComponent"
+                :key="resetKey"
+                v-bind="boundProps"
+                @update:model-value="onModelUpdate"
+              />
+              <!-- Exclusively Menu today: its trigger slot wires its own click
                  on an internal wrapper (no setTriggerEl, unlike Popover/
                  Tooltip below) — an extra manual click here would double-
                  toggle the same v-model:open and cancel itself out. -->
-            <component
-              v-else-if="hasTriggerSlot && hasItemsProp"
-              :is="activeComponent"
-              :key="`${resetKey}-trigger`"
-              v-model:open="openModelValue"
-              v-bind="boundProps"
-              @update:model-value="onModelUpdate"
-            >
-              <template #trigger>
-                <Button>Trigger</Button>
-              </template>
-            </component>
-            <!-- No `open` prop at all (a plain form control, say) — nothing to bind. -->
-            <component
-              v-else-if="!hasOpenProp"
-              :is="activeComponent"
-              :key="`${resetKey}-default`"
-              v-bind="boundProps"
-              @update:model-value="onModelUpdate"
-            />
-            <component
-              v-else
-              :is="activeComponent"
-              :key="`${resetKey}-default`"
-              v-model:open="openModelValue"
-              v-bind="boundProps"
-              @update:model-value="onModelUpdate"
-            >
-              <template v-if="hasTriggerSlot" #trigger="{ setTriggerEl }">
-                <Button :ref="setTriggerEl" @click="openModelValue = !openModelValue"
-                  >Trigger</Button
-                >
-              </template>
-              <svg
-                v-if="showIconPreview"
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="currentColor"
-                aria-hidden="true"
+              <component
+                v-else-if="hasTriggerSlot && hasItemsProp"
+                :is="activeComponent"
+                :key="`${resetKey}-trigger`"
+                v-model:open="openModelValue"
+                v-bind="boundProps"
+                @update:model-value="onModelUpdate"
               >
-                <path
-                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                />
-              </svg>
-              <template v-else>{{ name }}</template>
-            </component>
-          </template>
-        </PlaygroundErrorBoundary>
+                <template #trigger>
+                  <Button>Trigger</Button>
+                </template>
+              </component>
+              <!-- No `open` prop at all (a plain form control, say) — nothing to bind. -->
+              <component
+                v-else-if="!hasOpenProp"
+                :is="activeComponent"
+                :key="`${resetKey}-default`"
+                v-bind="boundProps"
+                @update:model-value="onModelUpdate"
+              >
+                <template v-if="sampleSlotText" #default>{{ sampleSlotText }}</template>
+              </component>
+              <component
+                v-else
+                :is="activeComponent"
+                :key="`${resetKey}-default`"
+                v-model:open="openModelValue"
+                v-bind="boundProps"
+                @update:model-value="onModelUpdate"
+              >
+                <template v-if="hasTriggerSlot" #trigger="{ setTriggerEl }">
+                  <Button :ref="setTriggerEl" @click="openModelValue = !openModelValue"
+                    >Trigger</Button
+                  >
+                </template>
+                <svg
+                  v-if="showIconPreview"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                  />
+                </svg>
+                <template v-else>{{ name }}</template>
+              </component>
+            </template>
+          </PlaygroundErrorBoundary>
+          <span
+            v-if="next"
+            class="pg-handle"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize preview"
+            tabindex="0"
+            @pointerdown="onHandleDown"
+            @dblclick="frameWidth = null"
+            @keydown="onHandleKey"
+          />
+        </div>
       </div>
 
-      <div v-if="controls.length > 0 || hasItemsProp" class="playground-controls">
-        <div v-if="hasItemsProp" class="control-row">
-          <label for="ctl-data-preset">Data</label>
-          <Select
-            id="ctl-data-preset"
-            size="sm"
-            class="control-input"
-            :items="presetItems"
-            v-model="dataPreset"
-          />
+      <div v-if="controls.length > 0 || showDataPreset" class="playground-controls">
+        <div v-if="next" class="pg-inspector-head">
+          <span>
+            Props
+            <span class="pg-count">{{ controls.length + (showDataPreset ? 1 : 0) }}</span>
+          </span>
+          <button
+            type="button"
+            class="pg-reset-all"
+            :disabled="changedCount === 0"
+            @click="resetAll"
+          >
+            <PhArrowCounterClockwise :size="12" aria-hidden="true" />
+            Reset
+          </button>
         </div>
+        <div ref="rowsEl" class="pg-rows" v-scroll-mask="next" @scroll.passive="updateMore">
+          <div v-if="showDataPreset" class="control-row">
+            <label for="ctl-data-preset">Data</label>
+            <Select
+              id="ctl-data-preset"
+              size="sm"
+              class="control-input"
+              :items="presetItems"
+              v-model="dataPreset"
+            />
+          </div>
 
-        <div v-for="control in controls" :key="control.name" class="control-row">
-          <label :for="`ctl-${control.name}`">
-            {{ control.name }}
-            <RouterLink
-              v-if="CONTROL_HELP[control.name]"
-              to="/docs/guides/animation-integration"
-              v-tooltip="CONTROL_HELP[control.name]"
-              class="control-hint"
-              >?</RouterLink
+          <template v-for="control in orderedControls" :key="control.name">
+            <p v-if="next && control.name === firstAdvanced" class="pg-group-label">
+              Placement, behaviour and animation
+            </p>
+            <div
+              class="control-row"
+              :data-changed="next && isChanged(control.name) ? '' : undefined"
             >
-          </label>
+              <label :for="`ctl-${control.name}`">
+                {{ control.name }}
+                <RouterLink
+                  v-if="CONTROL_HELP[control.name]"
+                  to="/docs/guides/animation-integration"
+                  v-tooltip="CONTROL_HELP[control.name]"
+                  class="control-hint"
+                  >?</RouterLink
+                >
+              </label>
 
-          <Switch
-            v-if="control.kind === 'boolean'"
-            :id="`ctl-${control.name}`"
-            :model-value="!!values[control.name]"
-            @update:model-value="(v) => setBooleanControl(control.name, v)"
-          />
-          <Select
-            v-else-if="control.kind === 'select'"
-            :id="`ctl-${control.name}`"
-            size="sm"
-            class="control-input"
-            :items="control.options.map((o) => ({ label: o, value: o }))"
-            :model-value="
-              (values[control.name] ?? (control.unsettable ? UNSET_OPTION : undefined)) as string
-            "
-            @update:model-value="
-              (v) =>
-                (values[control.name] = control.unsettable && v === UNSET_OPTION ? undefined : v)
-            "
-          />
-          <InputNumber
-            v-else-if="control.kind === 'number'"
-            :id="`ctl-${control.name}`"
-            size="sm"
-            class="control-input"
-            :model-value="values[control.name] as number"
-            @update:model-value="(v) => (values[control.name] = v)"
-          />
-          <Input
-            v-else
-            :id="`ctl-${control.name}`"
-            size="sm"
-            class="control-input"
-            :model-value="values[control.name] as string"
-            @update:model-value="(v) => (values[control.name] = v)"
-          />
+              <Switch
+                v-if="control.kind === 'boolean'"
+                :id="`ctl-${control.name}`"
+                :model-value="!!values[control.name]"
+                @update:model-value="(v) => setBooleanControl(control.name, v)"
+              />
+              <Select
+                v-else-if="control.kind === 'select'"
+                :id="`ctl-${control.name}`"
+                size="sm"
+                class="control-input"
+                :items="control.options.map((o) => ({ label: o, value: o }))"
+                :model-value="
+                  (values[control.name] ??
+                    (control.unsettable ? UNSET_OPTION : undefined)) as string
+                "
+                @update:model-value="
+                  (v) =>
+                    (values[control.name] =
+                      control.unsettable && v === UNSET_OPTION ? undefined : v)
+                "
+              />
+              <InputNumber
+                v-else-if="control.kind === 'number'"
+                :id="`ctl-${control.name}`"
+                size="sm"
+                class="control-input"
+                allow-empty
+                :model-value="values[control.name] as number"
+                @update:model-value="(v) => (values[control.name] = v)"
+              />
+              <Input
+                v-else
+                :id="`ctl-${control.name}`"
+                size="sm"
+                class="control-input"
+                :model-value="values[control.name] as string"
+                @update:model-value="(v) => (values[control.name] = v)"
+              />
+              <button
+                v-if="next"
+                type="button"
+                class="pg-row-reset"
+                :disabled="!isChanged(control.name)"
+                :aria-label="`Reset ${control.name}`"
+                @click="resetControl(control.name)"
+              >
+                <PhArrowCounterClockwise :size="12" aria-hidden="true" />
+              </button>
+            </div>
+          </template>
         </div>
+        <Transition name="pg-more">
+          <button v-if="next && moreBelow > 0" type="button" class="pg-more" @click="scrollRows">
+            <PhArrowDown :size="12" weight="bold" aria-hidden="true" />
+            {{ moreBelow }} more
+          </button>
+        </Transition>
       </div>
       <p v-else class="no-controls">
-        This component has no simple props to try live. See the examples below.
+        This component has no props you can edit here. See the examples below.
       </p>
     </div>
 
-    <CodeBlock lang="vue" :code="code" />
+    <CodeBlock lang="vue" :code="next ? codeNext : code">
+      <!-- Right where you copy, so a Vapor user can't miss which import they're getting. -->
+      <template v-if="next" #toolbar>
+        <span class="pg-code-label">Usage</span>
+        <SelectButton
+          v-model="defaultVariant"
+          size="sm"
+          :allow-empty="false"
+          aria-label="Rendering mode"
+          :items="[
+            { label: 'Vue DOM', value: 'vdom' },
+            { label: 'Vapor', value: 'vapor' },
+          ]"
+        />
+      </template>
+    </CodeBlock>
   </section>
 </template>
 
@@ -426,6 +549,8 @@ import {
   h,
   reactive,
   shallowRef,
+  nextTick,
+  toRaw,
   useTemplateRef,
   watch,
   watchEffect,
@@ -433,9 +558,18 @@ import {
 } from 'vue'
 import { RouterLink } from 'vue-router'
 import * as VaelUi from 'vael-ui'
-import { Button, Input, InputNumber, Select, SelectButton, Switch } from 'vael-ui'
+import { Button, Input, InputNumber, Select, SelectButton, Switch, vScrollMask } from 'vael-ui'
 import type { TreeNode } from 'vael-ui'
+import { useResizeObserver } from '@vueuse/core'
+import {
+  PhArrowCounterClockwise,
+  PhArrowDown,
+  PhDotsNine,
+  PhSquare,
+  PhX,
+} from '@phosphor-icons/vue'
 import CodeBlock from '../components/CodeBlock.vue'
+import { layoutNext as next } from '../layoutNext'
 import PlaygroundErrorBoundary from './PlaygroundErrorBoundary.vue'
 import { inferControl, defaultControlValue, type PlaygroundControl } from './inferControl'
 import componentMeta from '../generated/component-meta.json'
@@ -466,7 +600,7 @@ const activeComponent = computed<Component | null>(() => {
 // These throw immediately outside their required parent, even wrapped. See the examples below instead.
 const NEEDS_CONTEXT: Record<string, string> = {
   AccordionItem: 'AccordionItem only renders inside an Accordion. See the examples below.',
-  Column: 'Column only renders inside a DataTable’s tree. See the examples below.',
+  Column: 'Column only renders inside a DataTable. See the examples below.',
 }
 const needsContext = computed(() => NEEDS_CONTEXT[props.name] ?? null)
 
@@ -633,6 +767,15 @@ const DATATABLE_PLACEHOLDER_ROWS = [
 const NO_DEFAULT_SLOT = ['Avatar', 'Badge', 'Chip', 'Checkbox', 'Switch']
 const suppressDefaultSlot = computed(() => NO_DEFAULT_SLOT.includes(props.name))
 
+// Slot-only components have no label prop, so without this they preview empty.
+const SAMPLE_SLOT_TEXT: Record<string, string> = {
+  Button: 'Button',
+  Card: 'Card content',
+  Tag: 'Tag',
+  Kbd: '⌘K',
+}
+const sampleSlotText = computed(() => SAMPLE_SLOT_TEXT[props.name])
+
 const openModelValue = shallowRef(false)
 const radioGroupValue = shallowRef<string | number | null>(null)
 const previewEl = useTemplateRef<HTMLElement>('previewEl')
@@ -641,9 +784,9 @@ const CONTROL_HELP: Record<string, string> = {
   motionCss:
     'Turn off the built-in CSS transition to animate this yourself with GSAP, motion-v, or plain CSS.',
   forceMount:
-    'Keeps this in the DOM while closed, so an external animation library controls the exit instead of Vue removing it.',
+    'Keeps this mounted while closed, so your animation library runs the exit instead of Vue removing it.',
   filter:
-    'Off omits the prop entirely (no box, the real default). On is filter="true" (box + built-in matching). filter="false" — box shown, but no built-in matching, for a consumer doing their own search — has no toggle position since it needs three states; see the prop docs.',
+    'Off leaves filter unset, so the component default applies. On sets filter="true" for built-in matching. filter="false" lets you filter the items yourself. It needs a third state, so it has no toggle here. See the prop docs.',
 }
 
 interface NamedControl {
@@ -718,6 +861,15 @@ const controls = computed<NamedControl[]>(() => {
 })
 
 const hasItemsProp = computed(() => Boolean(meta.value?.props.some((p) => p.name === 'items')))
+// These previews pass their own fixed items, so a data picker would change nothing.
+const showDataPreset = computed(
+  () =>
+    hasItemsProp.value &&
+    !isDock.value &&
+    !isSpeedDial.value &&
+    !isTabs.value &&
+    !isCommandPalette.value,
+)
 const hasTriggerSlot = computed(() => Boolean(meta.value?.slots.some((s) => s.name === 'trigger')))
 // Every earlier branch above is for a specifically-named component; this
 // generic tail assumed anything falling through to it is some Popover-like
@@ -800,23 +952,20 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
   value: 60,
 }
 
-// Props whose real default IS "unset" (an opt-in cap/limit, not a value the
-// component needs to render at all) — seeding these to 0 like any other
-// number control collapses the panel/track to nothing. `undefined` here
-// keeps the playground's starting state matching the component's own.
-const NUMBER_UNSET_BY_DEFAULT = new Set(['maxPanelHeight', 'maxLabels'])
-
 // Same idea for a boolean|function prop (Select/Combobox's `filter`) whose
 // real "off" is an unset prop, not `false` — `false` still renders the box,
 // just without built-in matching, so a toggle that could only ever produce
 // `false`/`true` could never show the box actually disappearing.
-const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter'])
+// FileUpload's `capture`: `true` opens the camera, so it starts unset too.
+const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter', 'capture'])
 
 function setBooleanControl(name: string, checked: boolean) {
   values[name] = !checked && BOOLEAN_UNSET_WHEN_OFF.has(name) ? undefined : checked
 }
 
 const values = reactive<Record<string, unknown>>({})
+// What each control started at, so the next layout can mark and reset edits.
+const initialValues = shallowRef<Record<string, unknown>>({})
 
 watch(
   () => props.name,
@@ -848,14 +997,12 @@ watchEffect(() => {
       values[control.name] = overrides.string[control.name]
     } else if (control.kind === 'number' && overrides?.number?.[control.name] !== undefined) {
       values[control.name] = overrides.number[control.name]
+    } else if (control.kind === 'string' && next.value && control.name === 'placeholder') {
+      values.placeholder = /Select|Combobox|Picker/.test(props.name)
+        ? 'Choose an option'
+        : 'Type here…'
     } else if (control.kind === 'string' && STRING_DEFAULT_OVERRIDES[control.name] !== undefined) {
       values[control.name] = STRING_DEFAULT_OVERRIDES[control.name]
-    } else if (
-      control.kind === 'number' &&
-      propMeta?.default === undefined &&
-      NUMBER_UNSET_BY_DEFAULT.has(control.name)
-    ) {
-      values[control.name] = undefined
     } else if (control.kind === 'boolean' && BOOLEAN_UNSET_WHEN_OFF.has(control.name)) {
       values[control.name] = undefined
     } else if (
@@ -864,10 +1011,205 @@ watchEffect(() => {
       NUMBER_DEFAULT_OVERRIDES[control.name] !== undefined
     ) {
       values[control.name] = NUMBER_DEFAULT_OVERRIDES[control.name]
+    } else if (
+      control.kind === 'number' &&
+      (propMeta?.default === undefined || propMeta.default === 'undefined') &&
+      !propMeta?.required
+    ) {
+      // An optional number with no default (min, max, maxSize, maxRows...) is
+      // a limit that's off until set. Seeding 0 would clamp everything to 0.
+      values[control.name] = undefined
     } else {
       values[control.name] = defaultControlValue(control, propMeta?.default)
     }
   }
+  // toRaw: reading `values` reactively here would re-seed on every edit.
+  initialValues.value = { ...toRaw(values) }
+})
+
+// ---- Next layout (the default; `?layout=current` for the old one) ----
+
+function isChanged(name: string): boolean {
+  return !Object.is(values[name], initialValues.value[name])
+}
+const changedCount = computed(() => controls.value.filter((c) => isChanged(c.name)).length)
+
+function resetControl(name: string) {
+  values[name] = initialValues.value[name]
+}
+function resetAll() {
+  for (const c of controls.value) values[c.name] = initialValues.value[c.name]
+}
+
+// Placement, wiring and animation hooks: listed after the everyday props.
+const ADVANCED = new Set([
+  'side',
+  'align',
+  'name',
+  'id',
+  'to',
+  'locale',
+  'query',
+  'virtualize',
+  'autofocus',
+  'as',
+  'type',
+])
+const ADVANCED_PATTERN =
+  /Offset$|^closeOn|^force|^motion|^scroll|^tab[A-Z]|^teleport|Placeholder$|^maxPanel|^aria|Label$/
+function isAdvanced(name: string): boolean {
+  return ADVANCED.has(name) || ADVANCED_PATTERN.test(name)
+}
+// Grouping only pays off when both halves have something in them.
+const grouped = computed(() => {
+  const advanced = controls.value.filter((c) => isAdvanced(c.name)).length
+  return next.value && advanced > 1 && advanced < controls.value.length
+})
+const orderedControls = computed(() =>
+  grouped.value
+    ? [
+        ...controls.value.filter((c) => !isAdvanced(c.name)),
+        ...controls.value.filter((c) => isAdvanced(c.name)),
+      ]
+    : controls.value,
+)
+const firstAdvanced = computed(() =>
+  grouped.value ? (orderedControls.value.find((c) => isAdvanced(c.name))?.name ?? null) : null,
+)
+
+// One-click states, built from whichever of these booleans the component has.
+const PRESET_STATES = ['multiple', 'clearable', 'loading', 'invalid', 'disabled', 'readonly']
+const presetItems2 = computed(() => [
+  { label: 'Default', value: 'default' },
+  ...PRESET_STATES.filter((name) =>
+    controls.value.some((c) => c.name === name && c.kind === 'boolean'),
+  ).map((name) => ({ label: name[0]!.toUpperCase() + name.slice(1), value: name })),
+])
+const activePreset = computed<string | null>({
+  get: () => {
+    const changed = controls.value.filter((c) => isChanged(c.name))
+    if (changed.length === 0) return 'default'
+    const only = changed[0]!.name
+    return changed.length === 1 && PRESET_STATES.includes(only) && values[only] === true
+      ? only
+      : null
+  },
+  set: (key) => {
+    resetAll()
+    if (key && key !== 'default') values[key] = true
+  },
+})
+
+const stageBg = shallowRef<'dots' | 'plain'>('dots')
+
+// How many props sit below the fold of the scrolling panel, so a long list says
+// so instead of relying on a fade the eye can miss.
+const rowsEl = useTemplateRef<HTMLElement>('rowsEl')
+const moreBelow = shallowRef(0)
+function updateMore() {
+  const el = rowsEl.value
+  if (!el || el.scrollHeight <= el.clientHeight + 1) {
+    moreBelow.value = 0
+    return
+  }
+  const fold = el.scrollTop + el.clientHeight
+  let count = 0
+  for (const row of el.querySelectorAll<HTMLElement>('.control-row')) {
+    if (row.offsetTop + row.offsetHeight / 2 > fold) count++
+  }
+  moreBelow.value = count
+}
+function scrollRows() {
+  const el = rowsEl.value
+  el?.scrollBy({ top: el.clientHeight * 0.8, behavior: 'smooth' })
+}
+useResizeObserver(rowsEl, updateMore)
+watch([orderedControls, next], () => nextTick(updateMore))
+
+// Drag the frame's edge to try the component at narrower widths. The frame is
+// centered, so the width moves twice the pointer delta to keep the edge under it.
+const MIN_FRAME = 240
+const frameWidth = shallowRef<number | null>(null)
+watch(
+  () => props.name,
+  () => (frameWidth.value = null),
+)
+function stageWidth(): number {
+  return previewEl.value?.parentElement?.clientWidth ?? 0
+}
+function clampFrame(width: number): number | null {
+  const max = stageWidth()
+  return width >= max - 1 ? null : Math.max(MIN_FRAME, width)
+}
+function onHandleDown(event: PointerEvent) {
+  const handle = event.currentTarget as HTMLElement
+  const startX = event.clientX
+  const startWidth = previewEl.value?.getBoundingClientRect().width ?? 0
+  handle.setPointerCapture(event.pointerId)
+  const move = (e: PointerEvent) => {
+    frameWidth.value = clampFrame(startWidth + (e.clientX - startX) * 2)
+  }
+  const up = () => {
+    handle.removeEventListener('pointermove', move)
+    handle.removeEventListener('pointerup', up)
+    handle.removeEventListener('pointercancel', up)
+  }
+  handle.addEventListener('pointermove', move)
+  handle.addEventListener('pointerup', up)
+  handle.addEventListener('pointercancel', up)
+}
+function onHandleKey(event: KeyboardEvent) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+  event.preventDefault()
+  const current = frameWidth.value ?? stageWidth()
+  const step = event.shiftKey ? 80 : 16
+  frameWidth.value = clampFrame(current + (event.key === 'ArrowLeft' ? -step : step))
+}
+
+// The snippet lists only what differs from the component's own defaults, one
+// attribute per line once it stops fitting on one.
+function metaDefault(name: string): unknown {
+  const raw = meta.value?.props.find((p) => p.name === name)?.default
+  if (raw === undefined || raw === 'undefined') return undefined
+  const quoted = /^(['"`])(.*)\1$/.exec(raw)
+  if (quoted) return quoted[2]
+  if (raw === 'true' || raw === 'false') return raw === 'true'
+  const n = Number(raw)
+  return Number.isNaN(n) ? raw : n
+}
+const codeNext = computed(() => {
+  if (!meta.value) return ''
+  const attrs: string[] = []
+  for (const c of controls.value) {
+    const v = values[c.name]
+    const d = metaDefault(c.name)
+    if (v === undefined || v === '' || v === null) continue
+    if (c.kind === 'boolean' && v === false && (d === undefined || d === false)) continue
+    if (Object.is(v, d) || String(v) === String(d)) continue
+    if (c.kind === 'boolean') attrs.push(v ? c.name : `:${c.name}="false"`)
+    else if (c.kind === 'number') attrs.push(`:${c.name}="${v}"`)
+    else attrs.push(`${c.name}="${v}"`)
+  }
+  if (hasItemsProp.value && showDataPreset.value) attrs.push(':items="items"')
+  const { extraAttrs = '', imports = [] } = snippetParts.value
+  // A list control's default slot isn't its label, so the name-as-content filler misleads.
+  const children = (snippetParts.value.children ?? []).filter(
+    (line) => !(hasItemsProp.value && line === props.name),
+  )
+  if (extraAttrs) attrs.push(extraAttrs)
+  const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
+  const names = [...new Set([props.name, ...imports])].join(', ')
+  const oneLine = `<${[props.name, ...attrs].join(' ')}`
+  const fits = oneLine.length <= 64
+  const open = fits ? oneLine : `<${props.name}\n${attrs.map((a) => `  ${a}`).join('\n')}\n`
+  const inline = children.length === 1 && !children[0]!.startsWith('<')
+  const body =
+    children.length === 0
+      ? `${open}${fits ? ' ' : ''}/>`
+      : inline && fits
+        ? `${open}>${children[0]}</${props.name}>`
+        : `${open}>\n${children.map((line) => `  ${line}`).join('\n')}\n</${props.name}>`
+  return sfcSnippet(names, pkg, body)
 })
 
 const boundProps = computed(() => ({
@@ -885,6 +1227,18 @@ function onModelUpdate(v: unknown) {
 
 const resetKey = computed(() => `${props.name}:${defaultVariant.value}`)
 
+// A whole SFC rather than an import line plus loose markup: it pastes straight
+// into a .vue file, and the highlighter only colors markup inside <template>.
+// Split so this file's own <script> block isn't closed by the string.
+const SCRIPT_CLOSE = '</' + 'script>'
+function sfcSnippet(names: string, pkg: string, body: string): string {
+  const template = body
+    .split('\n')
+    .map((line) => `  ${line}`)
+    .join('\n')
+  return `<script setup lang="ts">\nimport { ${names} } from '${pkg}'\n${SCRIPT_CLOSE}\n\n<template>\n${template}\n</template>`
+}
+
 const code = computed(() => {
   if (!meta.value) return ''
   const attrs = controls.value
@@ -898,10 +1252,191 @@ const code = computed(() => {
     .filter(Boolean)
     .join(' ')
   const itemsAttr = hasItemsProp.value ? ' :items="items"' : ''
-  const openTag = [props.name, attrs, itemsAttr].filter(Boolean).join(' ').replace(/ +/g, ' ')
+  const { extraAttrs = '', children = [], imports = [] } = snippetParts.value
+  const openTag = [props.name, attrs, itemsAttr, extraAttrs]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/ +/g, ' ')
   const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
-  return `import { ${props.name} } from '${pkg}'\n\n<${openTag}>${props.name}</${props.name}>`
+  const names = [...new Set([props.name, ...imports])].join(', ')
+  const inline = children.length === 1 && !children[0]!.startsWith('<')
+  const body =
+    children.length === 0
+      ? `<${openTag} />`
+      : inline
+        ? `<${openTag}>${children[0]}</${props.name}>`
+        : `<${openTag}>\n${children.map((line) => `  ${line}`).join('\n')}\n</${props.name}>`
+  return sfcSnippet(names, pkg, body)
 })
+
+// Mirrors the preview branches above, so the snippet shows the same slot
+// content the preview renders (and none when the preview has none).
+const snippetParts = computed<{ extraAttrs?: string; children?: string[]; imports?: string[] }>(
+  () => {
+    const open = 'v-model:open="open"'
+    if (isOpenModel.value) {
+      return { extraAttrs: open, children: [`<p>${OPEN_MODEL_PLACEHOLDER[props.name]}</p>`] }
+    }
+    if (isContextArea.value) {
+      return { extraAttrs: open, children: ['<div>Right-click here</div>'] }
+    }
+    if (isRadioWrap.value) return { extraAttrs: 'value="playground-option"' }
+    if (isRadioGroup.value) {
+      return {
+        imports: ['Radio'],
+        children: [
+          '<Radio value="standard" label="Standard shipping" />',
+          '<Radio value="express" label="Express shipping" />',
+          '<Radio value="overnight" label="Overnight shipping" disabled />',
+        ],
+      }
+    }
+    if (isField.value) {
+      return { imports: ['Input'], children: ['<Input placeholder="you@example.com" />'] }
+    }
+    if (isDataTable.value) {
+      return {
+        extraAttrs: ':data="rows" row-key="id"',
+        imports: ['Column'],
+        children: [
+          '<template #columns="{ columnData }">',
+          '  <Column :data="columnData" field="name" label="Name" />',
+          '  <Column :data="columnData" field="role" label="Role" />',
+          '  <Column :data="columnData" field="status" label="Status" />',
+          '</template>',
+        ],
+      }
+    }
+    if (isButtonGroup.value) {
+      return {
+        imports: ['Button'],
+        children: ['Archive', 'Report', 'Snooze'].map(
+          (label) => `<Button variant="outline">${label}</Button>`,
+        ),
+      }
+    }
+    if (isToolbar.value) {
+      return {
+        imports: ['Button'],
+        children: [
+          '<Button variant="ghost" size="sm">Bold</Button>',
+          '<Button variant="ghost" size="sm">Italic</Button>',
+          ...['Cut', 'Copy', 'Paste'].map(
+            (label) => `<Button variant="ghost" size="sm" data-toolbar-overflow>${label}</Button>`,
+          ),
+        ],
+      }
+    }
+    if (isDock.value || isSpeedDial.value) {
+      return hasItemsProp.value ? {} : { extraAttrs: ':items="items"' }
+    }
+    if (isResizable.value) return { children: ['Drag the handle'] }
+    if (isTabs.value) {
+      return {
+        extraAttrs: 'v-model:active="active"',
+        children: [
+          '<template #default="{ active, select, items }">',
+          '  <button',
+          '    v-for="item in items"',
+          '    :key="item"',
+          '    type="button"',
+          '    role="tab"',
+          '    :aria-selected="active === item"',
+          '    @click="select(item)"',
+          '  >',
+          '    {{ item }}',
+          '  </button>',
+          '</template>',
+        ],
+      }
+    }
+    if (isCollapsible.value) {
+      return {
+        extraAttrs: open,
+        imports: ['Button'],
+        children: [
+          '<template #trigger>',
+          `  <Button variant="outline">{{ open ? 'Close' : 'Open' }}</Button>`,
+          '</template>',
+          '<p>Toggle to reveal this content.</p>',
+        ],
+      }
+    }
+    if (isAccordion.value) {
+      return {
+        imports: ['AccordionItem'],
+        children: [
+          '<AccordionItem value="item-1" title="What is vael-ui?">',
+          '  A Vue 3 component library with a full Vue Vapor build.',
+          '</AccordionItem>',
+          '<AccordionItem value="item-2" title="Does it support dark mode?">',
+          '  Yes. It follows the system setting, and a data-theme attribute on the root element overrides it.',
+          '</AccordionItem>',
+          '<AccordionItem value="item-3" title="Can I use my own animation library?">',
+          '  Yes. Every animated component has hooks for GSAP, motion-v, or plain CSS.',
+          '</AccordionItem>',
+        ],
+      }
+    }
+    if (isScrollArea.value) {
+      return {
+        children: ['<ul>', '  <li v-for="n in 20" :key="n">Item {{ n }}</li>', '</ul>'],
+      }
+    }
+    if (isPullToRefresh.value) {
+      return {
+        children: ['<ul>', '  <li v-for="n in 8" :key="n">Row {{ n }}</li>', '</ul>'],
+      }
+    }
+    if (isAvatarGroup.value) {
+      return {
+        imports: ['Avatar'],
+        children: ['Ada Lovelace', 'Grace Hopper', 'Katherine Johnson'].map(
+          (person) => `<Avatar name="${person}" />`,
+        ),
+      }
+    }
+    if (isBreadcrumb.value) {
+      return {
+        imports: ['BreadcrumbItem', 'BreadcrumbSeparator'],
+        children: [
+          '<BreadcrumbItem href="/">Home</BreadcrumbItem>',
+          '<BreadcrumbSeparator />',
+          '<BreadcrumbItem href="/docs">Docs</BreadcrumbItem>',
+          '<BreadcrumbSeparator />',
+          '<BreadcrumbItem current>Breadcrumb</BreadcrumbItem>',
+        ],
+      }
+    }
+    if (isCommandPalette.value) {
+      return { extraAttrs: hasItemsProp.value ? open : `${open} :items="items"` }
+    }
+    if (isTour.value) return { extraAttrs: `${open} :steps="steps"` }
+    if (suppressDefaultSlot.value || isSelfManagedOpen.value) return {}
+    if (hasTriggerSlot.value && hasItemsProp.value) {
+      return {
+        extraAttrs: open,
+        imports: ['Button'],
+        children: ['<template #trigger>', '  <Button>Trigger</Button>', '</template>'],
+      }
+    }
+    if (!hasOpenProp.value) {
+      return sampleSlotText.value ? { children: [sampleSlotText.value] } : {}
+    }
+    const trigger = hasTriggerSlot.value
+      ? [
+          '<template #trigger="{ setTriggerEl }">',
+          '  <Button :ref="setTriggerEl" @click="open = !open">Trigger</Button>',
+          '</template>',
+        ]
+      : []
+    return {
+      extraAttrs: open,
+      imports: hasTriggerSlot.value ? ['Button'] : [],
+      children: [...trigger, props.name],
+    }
+  },
+)
 </script>
 
 <style scoped>
@@ -1161,7 +1696,7 @@ const code = computed(() => {
     grid-template-columns: 1fr;
   }
 
-  .playground-controls {
+  .playground:not(.playground--next) .playground-controls {
     flex-direction: row;
     flex-wrap: wrap;
     border-left: none;
@@ -1169,8 +1704,427 @@ const code = computed(() => {
     max-height: none;
   }
 
-  .control-input {
+  .playground:not(.playground--next) .control-input {
     width: 9rem;
+  }
+}
+
+.playground-stage {
+  display: contents;
+}
+
+/* ---- Next layout (the default; `?layout=current` for the old one) ---- */
+
+.playground--next {
+  /* clip, not hidden: hidden would stop the stage sticking when stacked. */
+  overflow: clip;
+  container-type: inline-size;
+}
+
+/* Preview and props side by side, so every change stays in view. */
+.playground--next .playground-body {
+  grid-template-columns: minmax(0, 1fr) 23rem;
+  grid-template-areas: 'stage controls';
+}
+
+.playground--next .playground-stage {
+  grid-area: stage;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  justify-content: center;
+  padding: 3.25rem 1rem 1rem;
+}
+
+.playground--next .playground-stage[data-bg='dots']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(circle, var(--ui-border) 1px, transparent 1px);
+  background-size: 20px 20px;
+  mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+}
+
+.playground--next .playground-preview {
+  inline-size: 100%;
+  min-height: 15rem;
+  max-height: 34rem;
+  padding: 2rem;
+  border-radius: calc(var(--docs-radius) - 2px);
+}
+
+.playground--next .playground-preview::before {
+  content: none;
+}
+
+.playground--next .playground-preview[data-sized] {
+  outline: 1px dashed var(--ui-border-strong);
+  outline-offset: -1px;
+}
+
+.pg-stagebar {
+  position: absolute;
+  inset: 0.625rem 0.625rem auto;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pg-presets {
+  min-inline-size: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pg-stage-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline-start: auto;
+}
+
+.pg-tool,
+.pg-width,
+.pg-row-reset,
+.pg-reset-all {
+  border: none;
+  background: none;
+  color: var(--ui-text-muted);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 120ms var(--ui-ease-out);
+}
+
+.pg-tool {
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 7px;
+}
+
+.pg-width {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  block-size: 1.5rem;
+  padding-inline: 0.5rem;
+  border-radius: 999px;
+  background: var(--ui-surface);
+  box-shadow: 0 0 0 1px var(--ui-border);
+  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pg-tool:hover,
+  .pg-row-reset:hover,
+  .pg-reset-all:hover:not(:disabled) {
+    background: var(--ui-muted-hover);
+    color: var(--ui-text);
+  }
+  .pg-width:hover {
+    color: var(--ui-text);
+  }
+}
+
+.pg-tool:active,
+.pg-width:active,
+.pg-row-reset:active,
+.pg-reset-all:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* The frame's resize grip: quiet until you're over the stage. */
+.pg-handle {
+  position: absolute;
+  inset-inline-end: 0.75rem;
+  inset-block-start: 50%;
+  inline-size: 4px;
+  block-size: 2.5rem;
+  translate: 0 -50%;
+  border-radius: 999px;
+  background: var(--ui-border-strong);
+  cursor: ew-resize;
+  touch-action: none;
+  opacity: 0;
+  transition:
+    opacity 150ms ease,
+    background-color 150ms ease;
+}
+
+.pg-handle::before {
+  content: '';
+  position: absolute;
+  inset: -0.75rem -0.5rem;
+}
+
+.playground-stage:hover .pg-handle,
+.pg-handle:focus-visible,
+.playground-preview[data-sized] .pg-handle {
+  opacity: 1;
+}
+
+.pg-handle:hover,
+.pg-handle:active {
+  background: var(--ui-text-muted);
+}
+
+.pg-handle:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+
+.pg-rows {
+  display: contents;
+}
+
+/* The panel matches the stage's height and scrolls on its own; the fade at
+   either edge says there's more. */
+.playground--next .playground-controls {
+  position: relative;
+  grid-area: controls;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 30rem;
+  padding: 0;
+  border-left: 1px solid var(--ui-border);
+  background: none;
+  overflow: hidden;
+}
+
+.playground--next .pg-rows {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-block-size: 0;
+  padding-block-end: 0.75rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pg-inspector-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.5rem 0.375rem 1rem;
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pg-code-label {
+  margin-inline-end: auto;
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pg-count {
+  margin-inline-start: 0.25rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.pg-more {
+  position: absolute;
+  inset-block-end: 0.625rem;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  block-size: 1.625rem;
+  padding-inline: 0.625rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--ui-surface);
+  /* Floats over the rows, so it needs real lift to read as a control. */
+  box-shadow:
+    0 0 0 1px var(--ui-border),
+    0 1px 2px rgb(0 0 0 / 0.06),
+    0 6px 16px rgb(0 0 0 / 0.14);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    scale 120ms var(--ui-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pg-more:hover {
+    background: var(--ui-muted);
+  }
+}
+
+:root[data-theme='dark'] .pg-more {
+  box-shadow:
+    0 0 0 1px var(--ui-border-strong),
+    0 6px 16px rgb(0 0 0 / 0.5);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .pg-more {
+    box-shadow:
+      0 0 0 1px var(--ui-border-strong),
+      0 6px 16px rgb(0 0 0 / 0.5);
+  }
+}
+
+.pg-more:active {
+  scale: 0.96;
+}
+
+.pg-more-enter-active,
+.pg-more-leave-active {
+  transition:
+    opacity 150ms var(--ui-ease-out),
+    transform 150ms var(--ui-ease-out);
+}
+
+.pg-more-enter-from,
+.pg-more-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.pg-reset-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  block-size: 1.625rem;
+  padding-inline: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.pg-reset-all:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.playground--next .control-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8.75rem 1.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  min-block-size: 2.5rem;
+  padding: 0.25rem 0.5rem 0.25rem 1rem;
+}
+
+.playground--next .control-row label {
+  gap: 0.5rem;
+  min-inline-size: 0;
+  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.8125rem;
+  font-weight: 450;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ui-text);
+  white-space: nowrap;
+}
+
+/* Changed from its starting value: a dot in the gutter, so labels never shift. */
+.playground--next .control-row[data-changed]::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0.375rem;
+  inset-block-start: 50%;
+  inline-size: 5px;
+  block-size: 5px;
+  margin-block-start: -2.5px;
+  border-radius: 999px;
+  background: var(--ui-primary);
+}
+
+.playground--next .control-row :deep(.ui-switch) {
+  justify-self: start;
+}
+
+.pg-row-reset {
+  display: grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-radius: 6px;
+}
+
+.pg-row-reset:disabled {
+  visibility: hidden;
+}
+
+/* Everything stays visible; the divider just says where the everyday props end. */
+.pg-group-label {
+  margin: 0.625rem 1rem 0.25rem;
+  padding-block-start: 0.875rem;
+  border-block-start: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Stacked on narrow cards; the stage sticks so the preview stays in view while
+   you work down the props. */
+@container (max-width: 40rem) {
+  .playground--next .playground-stage {
+    position: sticky;
+    inset-block-start: var(--docs-header-height);
+    z-index: 2;
+    background: var(--ui-surface);
+    border-block-end: 1px solid var(--ui-border);
+  }
+  .playground--next .playground-preview {
+    min-height: 11rem;
+    max-height: 16rem;
+  }
+  .playground--next .playground-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'stage'
+      'controls';
+  }
+  .playground--next .playground-controls {
+    max-height: none;
+    border-left: none;
+  }
+  .playground--next .pg-rows {
+    overflow: visible;
+  }
+  .playground--next .control-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem) 1.5rem;
+  }
+}
+
+@container (min-width: 40rem) and (max-width: 50rem) {
+  .playground--next .playground-body {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+  .playground--next .control-row {
+    grid-template-columns: minmax(0, 1fr) 7.5rem 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-handle {
+    transition: none;
+  }
+  .pg-more-enter-from,
+  .pg-more-leave-to {
+    transform: none;
   }
 }
 </style>

@@ -24,10 +24,12 @@ const reviews = [
 </script>
 
 <style scoped>
+/* Equal-width columns, stacking to one when there's no room for two. */
 .row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
   gap: 1rem;
-  flex-wrap: wrap;
+  max-inline-size: 36rem;
 }
 .panel-text {
   margin-block-start: 0.5rem;

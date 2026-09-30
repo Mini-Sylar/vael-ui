@@ -29,12 +29,16 @@
       background-color var(--ui-duration-press) ease,
       color var(--ui-duration-press) ease;
   }
-  .ui-calendar-nav:hover {
+  .ui-calendar-nav:hover:not([aria-disabled='true']) {
     background: var(--ui-muted);
     color: var(--ui-text);
   }
-  .ui-calendar-nav:active {
+  .ui-calendar-nav:active:not([aria-disabled='true']) {
     transform: scale(0.96);
+  }
+  .ui-calendar-nav[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
   .ui-calendar-nav:focus-visible {
     outline: 2px solid var(--ui-primary);
@@ -44,14 +48,14 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--ui-text);
-  }
-  /* Button only when drillable. */
-  .ui-calendar-label--button {
     border: none;
     background: none;
     padding: 0.125rem 0.375rem;
     border-radius: calc(var(--ui-radius) - 6px);
     font: inherit;
+  }
+  /* Interactive only when drillable. */
+  .ui-calendar-label--button {
     cursor: pointer;
     will-change: transform;
     transition:
@@ -64,12 +68,14 @@
   .ui-calendar-label--button:active {
     transform: scale(0.96);
   }
-  .ui-calendar-label--button:focus-visible {
+  .ui-calendar-label:focus-visible {
     outline: 2px solid var(--ui-primary);
     outline-offset: 1px;
   }
   .ui-calendar-body {
     position: relative;
+    display: flex;
+    flex-direction: column;
   }
   .ui-calendar-weekdays,
   .ui-calendar-week {
@@ -165,15 +171,17 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
-  /* Month/year grids: same layout as day grid. */
+  /* Month/year grids: same layout as day grid, rows stretched to the body's min-block-size. */
   .ui-calendar-month-grid,
   .ui-calendar-year-grid {
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
     gap: 0.25rem;
   }
   .ui-calendar-month-row,
   .ui-calendar-year-row {
+    flex: 1 1 0;
     display: grid;
     grid-template-columns: repeat(4, minmax(2.75rem, 1fr));
     gap: 0.25rem;
@@ -182,7 +190,7 @@
   .ui-calendar-year-cell {
     display: grid;
     place-items: center;
-    block-size: 2.5rem;
+    min-block-size: 2.5rem;
     border-radius: calc(var(--ui-radius) - 4px);
     color: var(--ui-text);
     font-size: 0.8125rem;
@@ -222,9 +230,9 @@
   .ui-calendar-grid-enter-active,
   .ui-calendar-grid-leave-active {
     transition:
-      transform var(--ui-duration-enter) var(--ui-ease-in-out),
-      opacity var(--ui-duration-enter) var(--ui-ease-in-out),
-      filter var(--ui-duration-enter) var(--ui-ease-in-out);
+      transform var(--ui-duration-enter) var(--ui-ease-out),
+      opacity var(--ui-duration-enter) var(--ui-ease-out),
+      filter var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-calendar-grid-leave-active {
     position: absolute;
@@ -234,13 +242,13 @@
   }
   .ui-calendar-grid-enter-from {
     opacity: 0;
-    transform: translateX(calc(0.75rem * var(--ui-calendar-direction, 1)));
-    filter: blur(2px);
+    transform: translateX(calc(0.5rem * var(--ui-calendar-direction, 1)));
+    filter: blur(3px);
   }
   .ui-calendar-grid-leave-to {
     opacity: 0;
-    transform: translateX(calc(-0.75rem * var(--ui-calendar-direction, 1)));
-    filter: blur(2px);
+    transform: translateX(calc(-0.5rem * var(--ui-calendar-direction, 1)));
+    filter: blur(3px);
   }
 
   @media (prefers-reduced-motion: reduce) {

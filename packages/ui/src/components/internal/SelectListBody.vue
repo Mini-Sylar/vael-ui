@@ -10,7 +10,7 @@
     :aria-busy="loading || undefined"
     v-scroll-mask="scrollFade"
   >
-    <div v-if="items.length === 0 && !loading" class="ui-select-empty">
+    <div v-if="items.length === 0 && !loading" :class="emptyPart.class" :style="emptyPart.style">
       <slot name="empty">{{ emptyText }}</slot>
     </div>
     <div v-else-if="items.length === 0 && loading" class="ui-select-loading">
@@ -117,12 +117,13 @@ const props = defineProps<{
    * "not virtualized" case is just an overscan that never clips. */
   overscan: number
   scrollFade?: boolean
-  ui?: Partial<{ list: UiPartValue; option: UiPartValue }>
+  ui?: Partial<{ list: UiPartValue; option: UiPartValue; empty: UiPartValue }>
 }>()
 
 const cx = useClassMerge()
 const listPart = computed(() => resolveUiPart(cx, props.ui?.list, 'ui-select-body'))
 const optionPart = computed(() => resolveUiPart(cx, props.ui?.option, 'ui-select-option'))
+const emptyPart = computed(() => resolveUiPart(cx, props.ui?.empty, 'ui-select-empty'))
 
 const emit = defineEmits<{
   select: [item: T, index: number]

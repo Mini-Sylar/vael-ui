@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TabsFixture from './fixtures/TabsFixture.vue'
 import TabsReorderedFixture from './fixtures/TabsReorderedFixture.vue'
+import TabsPanelsFixture from './fixtures/TabsPanelsFixture.vue'
 
 function focusedTab() {
   return document.activeElement?.getAttribute('data-testid')
@@ -80,4 +81,31 @@ test('selecting the already-active tab does not emit change', async () => {
   const screen = await render(TabsFixture)
   await screen.getByTestId('tab-one').click()
   await expect.element(screen.getByTestId('changes')).toHaveTextContent('0')
+})
+
+test('idBase wires each tab to its panel via id/aria-controls; unset, tabs get ids but no aria-controls', async () => {
+  const wired = await render(TabsPanelsFixture, { props: { idBase: 'acct' } })
+  const tabs = wired.container.querySelectorAll<HTMLElement>('[role="tab"]')
+  expect(tabs[0]!.id).toBe('acct-tab-one')
+  expect(tabs[1]!.getAttribute('aria-controls')).toBe('acct-panel-two')
+  const panel = document.getElementById(tabs[0]!.getAttribute('aria-controls')!)!
+  expect(panel.getAttribute('role')).toBe('tabpanel')
+  expect(document.getElementById(panel.getAttribute('aria-labelledby')!)).toBe(tabs[0])
+
+  const bare = await render(TabsPanelsFixture)
+  const bareTabs = bare.container.querySelectorAll<HTMLElement>('[role="tab"]')
+  expect(bareTabs[0]!.id).not.toBe('')
+  expect(bareTabs[0]!.hasAttribute('aria-controls')).toBe(false)
+})
+
+test('exposed panelProps() returns matching tabpanel attributes', async () => {
+  const screen = await render(TabsPanelsFixture, { props: { idBase: 'acct' } })
+  await vi.waitFor(() =>
+    expect(JSON.parse(screen.getByTestId('panel-props').element().textContent!)).toEqual({
+      id: 'acct-panel-two',
+      role: 'tabpanel',
+      'aria-labelledby': 'acct-tab-two',
+      tabindex: 0,
+    }),
+  )
 })

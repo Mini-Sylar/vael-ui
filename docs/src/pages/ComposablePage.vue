@@ -2,7 +2,7 @@
   <article v-if="content" class="composable-page">
     <p v-if="category" class="eyebrow">{{ category }}</p>
     <h1>{{ name }}</h1>
-    <p class="description">{{ description }}</p>
+    <p v-if="description" class="description"><RichText :text="description" /></p>
 
     <section id="install" class="section">
       <h2>{{ t('component.install') }}</h2>
@@ -40,6 +40,7 @@ import { composablesContent } from '../composablesContent'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import CodeBlock from '../components/CodeBlock.vue'
 import MetaTable from '../components/MetaTable.vue'
+import RichText from '../components/RichText.vue'
 import DemoFrame from '../components/DemoFrame.vue'
 import type { DemoExample } from '../components/DemoFrame.vue'
 

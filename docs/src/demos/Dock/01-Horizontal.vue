@@ -4,7 +4,7 @@
     <div class="row">
       <Dock aria-label="Applications" :items="appItems" @select="onSelect" />
     </div>
-    <p class="note">
+    <p class="demo-status">
       Last opened: <strong>{{ lastSelected ?? 'none yet' }}</strong>
     </p>
   </section>

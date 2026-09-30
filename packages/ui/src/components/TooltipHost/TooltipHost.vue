@@ -20,6 +20,7 @@
           role="tooltip"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
+          v-bind="$attrs"
         >
           <slot :content="content" :side="resolvedSide">{{ content }}</slot>
         </div>
@@ -33,17 +34,17 @@ import type { Side } from '@floating-ui/dom'
 import type { UiPartValue } from '../../classes'
 
 export interface TooltipHostProps {
-  /** Fallbacks for targets whose v-tooltip value doesn't specify them. */
+  /** Default side for targets whose `v-tooltip` value doesn't set one. */
   side?: Side
-  /** Delay before a cold open, ms. Warm-group opens are always instant. */
+  /** Delay before a cold open, in milliseconds. Warm-group opens are instant. */
   openDelay?: number
-  /** Grace period after the pointer leaves, ms — long enough to travel onto the tooltip. */
+  /** Grace period after the pointer leaves, in milliseconds, so it can move onto the tooltip. */
   closeDelay?: number
-  /** Global default for every v-tooltip target; override per-target with `v-tooltip="{ beforeClose }"`. */
+  /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ beforeClose }"`. */
   beforeClose?: (done: () => void) => void
-  /** Global default for every v-tooltip target; override per-target with `v-tooltip="{ forceMount }"`. */
+  /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ forceMount }"`. */
   forceMount?: boolean
-  /** Per-instance part-class/style overrides. */
+  /** Class and style overrides for each part. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -61,7 +62,14 @@ import type { TooltipDirectiveOptions } from '../../directives/vTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 
+defineOptions({ inheritAttrs: false })
+
 const props = defineProps<TooltipHostProps>()
+
+defineSlots<{
+  /** Custom tooltip body; defaults to the text `content`. */
+  default(props: { content: string; side: Side }): unknown
+}>()
 
 const currentEl = shallowRef<HTMLElement | null>(null)
 const config = shallowRef<TooltipDirectiveOptions | null>(null)
@@ -164,5 +172,12 @@ const positionerPart = computed(() =>
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-tooltip-panel'))
 const resolvedSide = computed(() => placement.value.split('-')[0] as Side)
 
-defineExpose({ panelEl, positionerEl, currentEl })
+defineExpose({
+  /** Panel element (`null` while closed). */
+  panelEl,
+  /** Positioning wrapper around the panel (`null` while closed). */
+  positionerEl,
+  /** The `v-tooltip` target the tooltip is attached to. */
+  currentEl,
+})
 </script>

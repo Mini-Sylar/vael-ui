@@ -16,7 +16,7 @@
     >
       <Dial v-model="formValue" name="zoom" :min="0" :max="200" />
       <Button type="submit" size="sm">Submit</Button>
-      <output class="note">{{ submitted }}</output>
+      <output class="demo-status">{{ submitted }}</output>
     </form>
   </section>
 </template>

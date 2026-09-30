@@ -1,39 +1,57 @@
 <template>
-  <section class="demo-frame">
-    <h3 v-if="showTitle" class="demo-title">{{ example.title }}</h3>
-    <div class="demo-toolbar">
-      <SelectButton v-model="view" size="sm" :items="viewItems" :allow-empty="false" />
-      <SelectButton
-        v-if="variantItems.length > 1"
-        v-model="variant"
-        size="sm"
-        :items="variantItems"
-        :allow-empty="false"
-        class="demo-variant-toggle"
-      />
-    </div>
-    <div v-show="view === 'preview'" class="demo-preview">
-      <Transition name="demo-crossfade" mode="out-in">
-        <p v-if="!activeComponent" key="empty" class="no-demo">
-          No live demo for this component yet.
-        </p>
-        <component v-else :is="activeComponent" :key="`${name}-${example.id}-${variant}`" />
-      </Transition>
-    </div>
-    <div v-show="view === 'code'" class="demo-code">
-      <CodeBlock :code="code" />
-    </div>
-    <Collapsible v-model:open="codeOpen" class="demo-code-collapsible">
-      <template #trigger="{ open }">
-        <Button variant="ghost" block size="sm" class="demo-code-trigger">
-          {{ t('component.code') }}
-          <template #trailing>
-            <PhCaretDown class="demo-code-chevron" :class="{ 'demo-code-chevron--open': open }" />
+  <section class="demo-frame" :class="{ 'demo-frame--next': next }">
+    <h3 v-if="showTitle && next" :id="anchor" class="demo-heading">
+      <a :href="`#${anchor}`">{{ example.title }}</a>
+    </h3>
+    <div class="demo-card">
+      <h3 v-if="showTitle && !next" class="demo-title">{{ example.title }}</h3>
+      <div v-if="!next" class="demo-toolbar">
+        <SelectButton v-model="view" size="sm" :items="viewItems" :allow-empty="false" />
+        <SelectButton
+          v-if="variantItems.length > 1"
+          v-model="variant"
+          size="sm"
+          :items="variantItems"
+          :allow-empty="false"
+          class="demo-variant-toggle"
+        />
+      </div>
+      <div v-show="view === 'preview'" class="demo-preview">
+        <Transition name="demo-crossfade" mode="out-in">
+          <p v-if="!activeComponent" key="empty" class="no-demo">
+            No live demo for this component yet.
+          </p>
+          <component v-else :is="activeComponent" :key="`${example.id}-${variant}`" />
+        </Transition>
+      </div>
+      <div v-show="view === 'code'" class="demo-code">
+        <CodeBlock v-if="codeShown" :code="code" />
+      </div>
+      <Collapsible v-model:open="codeOpen" class="demo-code-collapsible">
+        <template #trigger="{ open }">
+          <Button variant="ghost" block size="sm" class="demo-code-trigger">
+            <template v-if="next" #leading><PhCode :size="14" /></template>
+            {{ next && open ? t('component.hideCode') : t('component.code') }}
+            <template #trailing>
+              <PhCaretDown class="demo-code-chevron" :class="{ 'demo-code-chevron--open': open }" />
+            </template>
+          </Button>
+        </template>
+        <CodeBlock v-if="codeShown" :code="code">
+          <template v-if="next" #toolbar>
+            <span class="demo-code-file">{{ fileName }}</span>
+            <SelectButton
+              v-if="variantItems.length > 1"
+              v-model="variant"
+              size="sm"
+              :items="variantItems"
+              :allow-empty="false"
+              aria-label="Rendering mode"
+            />
           </template>
-        </Button>
-      </template>
-      <CodeBlock :code="code" />
-    </Collapsible>
+        </CodeBlock>
+      </Collapsible>
+    </div>
   </section>
 </template>
 
@@ -41,8 +59,9 @@
 import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Button, Collapsible, SelectButton } from 'vael-ui'
-import { PhCaretDown } from '@phosphor-icons/vue'
+import { PhCaretDown, PhCode } from '@phosphor-icons/vue'
 import CodeBlock from './CodeBlock.vue'
+import { layoutNext as next } from '../layoutNext'
 import { defaultVariant, type DemoVariant } from '../preferences'
 import type { DemoExample } from './DemoFrame.vue'
 
@@ -64,12 +83,22 @@ const FAKE_VAPOR_TOGGLE_COMPONENTS = ['DataTable', 'Pagination', 'Tag', 'Combobo
 const isFakeVaporToggle = computed(() => FAKE_VAPOR_TOGGLE_COMPONENTS.includes(props.name))
 
 const codeOpen = shallowRef(false)
+const fileName = computed(() => `${props.example.id.split('/').pop()!.replace(/^\d+-/, '')}.vue`)
+const anchor = computed(() => `example-${props.example.id.split('/').pop()!.replace(/^\d+-/, '')}`)
 
 const viewItems = computed(() => [
   { label: t('component.preview'), value: 'preview' },
   { label: t('component.code'), value: 'code' },
 ])
 const view = shallowRef<'preview' | 'code'>('preview')
+
+// Highlighting a full demo source costs real main-thread time, and most
+// visitors never open the code. Mount it the first time it's shown, then keep
+// it so reopening is instant.
+const codeShown = shallowRef(false)
+watch([view, codeOpen], ([nextView, open]) => {
+  if (nextView === 'code' || open) codeShown.value = true
+})
 
 const variantItems = computed(() => {
   const list = []
@@ -107,7 +136,7 @@ const code = computed(() =>
 </script>
 
 <style scoped>
-.demo-frame {
+.demo-card {
   border: 1px solid var(--ui-border);
   border-radius: var(--docs-radius);
   overflow: hidden;
@@ -235,5 +264,57 @@ const code = computed(() =>
   border: none;
   border-radius: 0;
   border-top: 1px solid var(--ui-border);
+}
+
+/* ---- Next layout (the default; `?layout=current` for the old one) ---- */
+
+.demo-heading {
+  margin: 0 0 0.625rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  scroll-margin-top: calc(var(--docs-header-height) + 1.5rem);
+}
+
+.demo-heading a {
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .demo-heading a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--ui-border-strong);
+    text-underline-offset: 3px;
+  }
+}
+
+/* The page already shows the title, so the demo's own first heading goes. */
+.demo-frame--next .demo-preview :deep(.demo > h3:first-of-type) {
+  display: none;
+}
+
+.demo-frame--next .demo-preview {
+  padding-block: 2.75rem;
+}
+
+.demo-code-file {
+  margin-inline-end: auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-text-muted);
+  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.75rem;
+}
+
+.demo-frame--next .demo-code-trigger {
+  justify-content: flex-start;
+  padding-inline: 0.875rem;
+  color: var(--ui-text-muted);
+}
+
+.demo-frame--next .demo-code-trigger :deep(.demo-code-chevron) {
+  margin-inline-start: auto;
 }
 </style>

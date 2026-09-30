@@ -3,10 +3,11 @@
   <Teleport v-if="themeCss" to="head">
     <component :is="'style'">{{ themeCss }}</component>
   </Teleport>
-  <div v-if="themeCss" :data-ui-theme="scopeId" style="display: contents">
+  <!-- Always rendered: swapping between a wrapper and a bare slot when a theme is
+       first set or cleared would remount the whole subtree (losing focus and state). -->
+  <div :data-ui-theme="themeCss ? scopeId : undefined" style="display: contents">
     <slot />
   </div>
-  <slot v-else />
 </template>
 
 <script setup lang="ts">
@@ -32,6 +33,11 @@ const props = defineProps<{
   classMerge?: ClassMerger
   /** Auto-derives a color system from seed colors and optional radius. Injects a scoped `<style>` tag. */
   theme?: UiTheme
+}>()
+
+defineSlots<{
+  /** App content that receives these settings. */
+  default(): unknown
 }>()
 
 // Layered: defaults < i18n < static prop.

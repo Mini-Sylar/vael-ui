@@ -131,3 +131,12 @@ test('nav landmark carries the Pagination aria-label', async () => {
   const nav = screen.container.querySelector('nav.ui-pagination')!
   expect(nav.getAttribute('aria-label')).toBe('Pagination')
 })
+
+test('the list only holds <li> children, and the indicator is presentational', async () => {
+  const screen = await render(PaginationFixture, { props: { total: 100 } })
+  const list = screen.container.querySelector('.ui-pagination-list')!
+  expect(Array.from(list.children).every((child) => child.tagName === 'LI')).toBe(true)
+  const indicator = list.querySelector('.ui-pagination-indicator')!
+  expect(indicator.getAttribute('role')).toBe('presentation')
+  expect(indicator.getAttribute('aria-hidden')).toBe('true')
+})

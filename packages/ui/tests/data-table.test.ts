@@ -952,3 +952,147 @@ test('ui prop overrides root/th/td classes, same convention as every other compo
     expect(td.classList.contains('custom-td')).toBe(true)
   }
 })
+
+// -------------------------------------------------------------- keyboard row selection
+test("selectionMode 'row': the body is one Tab stop and arrows/Home/End rove focus between rows", async () => {
+  const screen = await renderTable({
+    rowCount: 4,
+    showStatusColumn: false,
+    builtinSelectable: true,
+    selectionMode: 'row',
+  })
+  const rows = bodyRows(screen.container)
+  expect(rows.map((tr) => tr.getAttribute('tabindex'))).toEqual(['0', '-1', '-1', '-1'])
+  expect(rows.every((tr) => tr.getAttribute('aria-selected') === 'false')).toBe(true)
+
+  rows[0]!.focus()
+  await userEvent.keyboard('{ArrowDown}')
+  expect(document.activeElement).toBe(rows[1])
+  await vi.waitFor(() => expect(rows[1]!.getAttribute('tabindex')).toBe('0'))
+  expect(rows[0]!.getAttribute('tabindex')).toBe('-1')
+
+  await userEvent.keyboard('{End}')
+  expect(document.activeElement).toBe(rows[3])
+  await userEvent.keyboard('{Home}')
+  expect(document.activeElement).toBe(rows[0])
+  await userEvent.keyboard('{ArrowUp}')
+  expect(document.activeElement).toBe(rows[0])
+})
+
+test("selectionMode 'row': Space toggles the focused row, Enter selects and fires row-click", async () => {
+  const screen = await renderTable({
+    rowCount: 3,
+    showStatusColumn: false,
+    builtinSelectable: true,
+    selectionMode: 'row',
+  })
+  const rows = bodyRows(screen.container)
+  rows[1]!.focus()
+  await userEvent.keyboard(' ')
+  await vi.waitFor(() => expect(rows[1]!.getAttribute('aria-selected')).toBe('true'))
+  await expect.element(screen.getByTestId('row-click-count')).toHaveTextContent('0')
+  await userEvent.keyboard(' ')
+  await vi.waitFor(() => expect(rows[1]!.getAttribute('aria-selected')).toBe('false'))
+
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(rows[1]!.getAttribute('aria-selected')).toBe('true'))
+  await expect.element(screen.getByTestId('row-click-count')).toHaveTextContent('1')
+})
+
+test("selectionMode 'row': Shift+Arrow extends the selection; single mode only moves focus", async () => {
+  const screen = await renderTable({
+    rowCount: 4,
+    showStatusColumn: false,
+    builtinSelectable: true,
+    selectionMode: 'row',
+  })
+  const rows = bodyRows(screen.container)
+  rows[0]!.focus()
+  await userEvent.keyboard('{Shift>}{ArrowDown}{ArrowDown}{/Shift}')
+  await vi.waitFor(() =>
+    expect(rows.map((tr) => tr.getAttribute('aria-selected'))).toEqual([
+      'true',
+      'true',
+      'true',
+      'false',
+    ]),
+  )
+  expect(document.activeElement).toBe(rows[2])
+
+  const single = await renderTable({
+    rowCount: 3,
+    showStatusColumn: false,
+    builtinSelectable: true,
+    selectionMode: 'row',
+    single: true,
+  })
+  const singleRows = bodyRows(single.container)
+  singleRows[0]!.focus()
+  await userEvent.keyboard('{Shift>}{ArrowDown}{/Shift}')
+  expect(document.activeElement).toBe(singleRows[1])
+  expect(singleRows.every((tr) => tr.getAttribute('aria-selected') === 'false')).toBe(true)
+})
+
+test("selectionMode 'row': the Tab stop lands on the selected row, and checkbox mode rows aren't focusable", async () => {
+  const screen = await renderTable({
+    rowCount: 3,
+    showStatusColumn: false,
+    builtinSelectable: true,
+    selectionMode: 'row',
+  })
+  const rows = bodyRows(screen.container)
+  await userEvent.click(rows[2]!.querySelector('.ui-datatable-td')!)
+  ;(document.activeElement as HTMLElement | null)?.blur()
+  await vi.waitFor(() => expect(rows[2]!.getAttribute('tabindex')).toBe('0'))
+
+  const checkbox = await renderTable({
+    rowCount: 2,
+    showStatusColumn: false,
+    builtinSelectable: true,
+  })
+  const checkboxRows = bodyRows(checkbox.container)
+  expect(checkboxRows.every((tr) => !tr.hasAttribute('tabindex'))).toBe(true)
+  expect(checkboxRows.every((tr) => tr.getAttribute('aria-selected') === 'false')).toBe(true)
+})
+
+test('rows carry no aria-selected when selection is off', async () => {
+  const screen = await renderTable({ rowCount: 2, showStatusColumn: false })
+  expect(bodyRows(screen.container).some((tr) => tr.hasAttribute('aria-selected'))).toBe(false)
+})
+
+test("virtualize + selectionMode 'row': End focuses the last row even though it starts outside the window", async () => {
+  const screen = await render(DataTableVirtualizeFixture, {
+    props: { rowCount: 500, selectable: true },
+  })
+  await nextTick()
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector('[data-virtual-index="0"]')).not.toBeNull(),
+  )
+  const first = screen.container.querySelector<HTMLElement>('[data-virtual-index="0"]')!
+  expect(first.getAttribute('tabindex')).toBe('0')
+  first.focus()
+  await userEvent.keyboard('{End}')
+  await vi.waitFor(() =>
+    expect((document.activeElement as HTMLElement).getAttribute('data-row-key')).toBe('r499'),
+  )
+  await userEvent.keyboard('{ArrowUp}')
+  await vi.waitFor(() =>
+    expect((document.activeElement as HTMLElement).getAttribute('data-row-key')).toBe('r498'),
+  )
+})
+
+test('row expansion: the toggle carries aria-expanded and aria-controls pointing at the expansion row', async () => {
+  const screen = await render(DataTableExpansionFixture, {
+    global: { stubs: { 'transition-group': false } },
+  })
+  await nextTick()
+  const button = screen.container.querySelector<HTMLElement>('.ui-datatable-td--expand button')!
+  expect(button.getAttribute('aria-expanded')).toBe('false')
+  expect(button.hasAttribute('aria-controls')).toBe(false)
+  await userEvent.click(button)
+  await vi.waitFor(() => expect(button.getAttribute('aria-expanded')).toBe('true'))
+  const controls = button.getAttribute('aria-controls')!
+  const target = document.getElementById(controls)!
+  expect(target.tagName).toBe('TR')
+  expect(target.querySelector('[data-testid="expansion-p0"]')).not.toBeNull()
+})

@@ -122,3 +122,18 @@ test("float label's resting inset clears a leading #start icon instead of overla
 
   expect(insetWithIcon).toBeGreaterThan(insetNoIcon)
 })
+
+test('required: the asterisk stays out of the label text and aria-required marks the control', async () => {
+  const screen = await render({
+    render: () => h(Field, { label: 'Username', required: true }, () => h(Input as any)),
+  })
+  const label = screen.container.querySelector<HTMLLabelElement>('.ui-field-label')!
+  const marker = label.querySelector<HTMLElement>('.ui-field-required')!
+  expect(marker.getAttribute('aria-hidden')).toBe('true')
+  expect(getComputedStyle(marker, '::after').content).toContain('*')
+  expect(label.textContent!.trim()).toBe('Username')
+  await expect.element(page.getByLabelText('Username', { exact: true })).toBeInTheDocument()
+  await expect
+    .element(page.getByRole('textbox', { name: 'Username', exact: true }))
+    .toHaveAttribute('aria-required', 'true')
+})

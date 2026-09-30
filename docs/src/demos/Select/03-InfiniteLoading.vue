@@ -20,7 +20,7 @@
       placeholder="Scroll to load more invoices"
       @reach-end="fetchNextPage"
     />
-    <p class="note">
+    <p class="demo-status">
       Loaded {{ pagedItems.length }} of {{ TOTAL_REMOTE_ITEMS }},
       {{ isFetchingNextPage ? 'fetching…' : 'idle' }}
     </p>

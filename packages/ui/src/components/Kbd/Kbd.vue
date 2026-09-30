@@ -23,10 +23,16 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
   {},
 )
+
+defineSlots<{
+  /** Key or shortcut text, e.g. `⌘` or `Esc`. */
+  default(): unknown
+}>()
 
 const root = useTemplateRef<HTMLElement>('root')
 const cx = useClassMerge()
@@ -36,5 +42,8 @@ const themedUi = useThemedUi(
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-kbd'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

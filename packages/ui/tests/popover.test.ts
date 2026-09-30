@@ -90,3 +90,13 @@ test('openOnTriggerClick: click toggles open with no manual wiring, matching Men
   await screen.getByTestId('trigger').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
+
+test('#trigger with setTriggerEl gets aria-expanded and aria-controls', async () => {
+  const screen = await render(PopoverFixture, { props: { openOnTriggerClick: false } })
+  const trigger = screen.getByTestId('trigger').element()
+  expect(trigger.getAttribute('aria-expanded')).toBe('false')
+  await screen.getByTestId('trigger').click()
+  await expect.poll(() => trigger.getAttribute('aria-expanded')).toBe('true')
+  const panelId = trigger.getAttribute('aria-controls')!
+  expect(document.getElementById(panelId)?.classList.contains('ui-popover-panel')).toBe(true)
+})

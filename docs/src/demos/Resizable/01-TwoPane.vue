@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
     <h3>Two-pane layout</h3>
-    <div class="resizable-shell">
+    <div ref="shell" class="resizable-shell">
       <Resizable
         v-model:size="sidebarSize"
-        :min="180"
+        :min="140"
         :max="360"
         class="resizable-sidebar"
         aria-label="Resize sidebar"
@@ -26,7 +26,7 @@
         <h4>Revenue</h4>
         <p>
           Widen or narrow the sidebar with the handle between the two panes. Drag it all the way to
-          either edge to feel the resistance build past 180px and 360px.
+          either edge to feel the resistance build past 140px and 360px.
         </p>
       </div>
     </div>
@@ -34,11 +34,17 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { onMounted, shallowRef, useTemplateRef } from 'vue'
 import { Button, Resizable } from 'vael-ui'
 
 const navItems = ['Overview', 'Revenue', 'Customers', 'Invoices', 'Settings']
 const sidebarSize = shallowRef(240)
+
+// On a narrow screen, start at half the shell so the main pane has room.
+const shell = useTemplateRef('shell')
+onMounted(() => {
+  if (shell.value) sidebarSize.value = Math.max(140, Math.min(240, shell.value.clientWidth / 2))
+})
 </script>
 
 <style scoped>
@@ -52,10 +58,16 @@ const sidebarSize = shallowRef(240)
 }
 .resizable-sidebar {
   block-size: 100%;
+  flex-shrink: 0;
+  /* Keeps the main pane readable on narrow screens. */
+  max-inline-size: calc(100% - 8rem);
   background: var(--ui-surface);
-  overflow-y: auto;
 }
+/* Scroll inside the pane, not on the Resizable root, so its overhanging handle isn't clipped. */
 .resizable-nav {
+  box-sizing: border-box;
+  block-size: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;

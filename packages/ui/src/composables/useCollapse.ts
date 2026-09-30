@@ -8,7 +8,7 @@ export type CollapseState = 'open' | 'closed' | 'opening' | 'closing'
 export interface UseCollapseOptions {
   /** The element whose block-size is measured and animated. */
   el: ElRef<HTMLElement | null>
-  /** `false` skips the animated run() path — open/closed still snap to their resting styles instantly, just with no transition. A consumer driving their own exit animation reads `state`/`el` and overrides these resting styles from there. */
+  /** `false` hands the height over entirely: no inline styles are written, open or closed, so a consumer's own tween isn't cut off. `state` still reports open/closed. */
   motionCss?: () => boolean
 }
 
@@ -27,7 +27,7 @@ function closedStyle(): Record<string, string> {
 
 export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): UseCollapseReturn {
   const motionOff = () => options.motionCss?.() === false
-  const style = shallowRef<Record<string, string>>(open.value ? {} : closedStyle())
+  const style = shallowRef<Record<string, string>>(open.value || motionOff() ? {} : closedStyle())
   const state = shallowRef<CollapseState>(open.value ? 'open' : 'closed')
 
   let token: symbol | null = null
@@ -36,7 +36,7 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
   function settle(target: boolean) {
     token = null
     clearTimeout(fallbackTimer)
-    style.value = target ? {} : closedStyle()
+    style.value = target || motionOff() ? {} : closedStyle()
     state.value = target ? 'open' : 'closed'
   }
 

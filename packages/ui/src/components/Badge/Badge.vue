@@ -1,6 +1,12 @@
 <template>
   <span ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
-    <span v-if="!dot" :key="count" :class="contentClass" :style="contentStyle()">
+    <span
+      v-if="!dot"
+      :key="count"
+      :class="contentClass"
+      :style="contentStyle()"
+      :data-direction="direction"
+    >
       <slot>{{ display }}</slot>
     </span>
   </span>
@@ -10,7 +16,7 @@
 <script setup lang="ts">
 import './Badge.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -20,21 +26,27 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Color variant. @default 'primary' */
     variant?: 'primary' | 'muted' | 'success' | 'warning' | 'danger' | 'info'
+    /** Number to display; capped by `max`. */
     count?: number
-    /** Counts above this render as `"${max}+"`. */
+    /** Counts above this render as `"${max}+"`. @default 99 */
     max?: number
-    /** Minimal size, no content — a plain presence dot. */
+    /** Minimal size with no content: a plain presence dot. @default false */
     dot?: boolean
-    /** `false` drops the built-in count-change animation — use when driving your own animation instead. */
+    /**
+     * `false` drops the built-in count-change animation so you can drive your own.
+     * @default true
+     */
     animated?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
   { variant: 'primary', max: 99, dot: false, animated: true },
 )
 
 defineSlots<{
-  /** Overrides `count` entirely — anything you render here wins. */
+  /** Overrides `count` entirely; anything you render here wins. */
   default(): unknown
 }>()
 
@@ -62,7 +74,16 @@ const contentClass = computed(() =>
   cx('ui-badge-content', props.animated && 'ui-badge-content--animated'),
 )
 
-// Pop only on state-CHANGE: non-reactive closure flag (like useTabIndicator's measuredOnce) prevents initial-render animation.
+const direction = shallowRef<'up' | 'down'>('up')
+watch(
+  () => props.count,
+  (next, prev) => {
+    if (next != null && prev != null) direction.value = next < prev ? 'down' : 'up'
+  },
+  { flush: 'sync' },
+)
+
+// Animate only on state-CHANGE: non-reactive closure flag (like useTabIndicator's measuredOnce) prevents initial-render animation.
 let contentMounted = false
 function contentStyle(): Record<string, string> | undefined {
   if (!props.animated) return undefined
@@ -71,5 +92,8 @@ function contentStyle(): Record<string, string> | undefined {
   return style
 }
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

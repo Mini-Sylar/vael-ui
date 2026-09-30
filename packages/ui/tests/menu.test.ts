@@ -78,6 +78,24 @@ test('ArrowDown/ArrowUp move focus, wrap at both ends, and skip disabled items',
   await vi.waitFor(() => expect(focusedText()).toBe('Date'))
 })
 
+test('ArrowDown on the focused trigger opens the menu on the first item, ArrowUp on the last (ARIA menu button)', async () => {
+  const screen = await render(MenuFixture)
+  const trigger = screen.getByTestId('trigger').element() as HTMLElement
+  trigger.focus()
+  await userEvent.keyboard('{ArrowDown}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await vi.waitFor(() => expect(document.activeElement).toBe(trigger))
+
+  await userEvent.keyboard('{ArrowUp}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  // Date is the last enabled row (the separator is skipped).
+  await vi.waitFor(() => expect(focusedText()).toBe('Date'))
+})
+
 test('Home/End jump to the first and last enabled items', async () => {
   const screen = await render(MenuFixture)
   await screen.getByTestId('trigger').click()
@@ -204,4 +222,24 @@ test('a fully custom #default slot gets the live maxHeight budget, so it can bou
   })
   const value = Number(screen.getByTestId('max-height').element().textContent)
   expect(value).toBeGreaterThan(0)
+})
+
+test('Escape returns focus to the trigger', async () => {
+  const screen = await render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await vi.waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByTestId('trigger').element()),
+  )
+})
+
+test('Tab from an open menu closes it without dropping focus to the page', async () => {
+  const screen = await render(MenuFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Apple'))
+  await userEvent.keyboard('{Tab}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  expect(document.activeElement).not.toBe(document.body)
 })

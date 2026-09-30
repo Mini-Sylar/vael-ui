@@ -11,10 +11,19 @@
     border: 1px solid var(--ui-border);
     box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);
     touch-action: none;
+    /* Never wider than its container: items shrink instead (see .ui-dock-item). */
+    min-inline-size: 0;
+    max-inline-size: 100%;
   }
   .ui-dock--vertical {
     flex-direction: column;
     align-items: flex-end;
+    min-block-size: 0;
+    max-block-size: 100%;
+  }
+  /* Growing items expand both ways across a column, not just toward one edge. */
+  .ui-dock--grow.ui-dock--vertical {
+    align-items: center;
   }
   .ui-dock--disabled {
     opacity: 0.6;
@@ -25,9 +34,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: none;
+    flex: 0 1 auto;
+    min-inline-size: 0;
     inline-size: var(--ui-dock-base-size);
-    block-size: var(--ui-dock-base-size);
+    aspect-ratio: 1;
     border: none;
     border-radius: var(--ui-radius);
     background: var(--ui-muted);
@@ -38,6 +48,9 @@
   }
   .ui-dock--vertical .ui-dock-item {
     transform-origin: center;
+    min-block-size: 0;
+    inline-size: auto;
+    block-size: var(--ui-dock-base-size);
   }
   .ui-dock-item :where(svg) {
     inline-size: 55%;

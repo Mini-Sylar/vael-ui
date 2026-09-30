@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { userEvent } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import SelectFixture from './fixtures/SelectFixture.vue'
@@ -274,6 +274,16 @@ test('maxPanelHeight caps the panel even though the viewport has room for more',
   expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
 })
 
+test('without maxPanelHeight the panel defaults to a 320px cap instead of filling the viewport', async () => {
+  await page.viewport(800, 900)
+  const screen = await render(SelectFixture, { props: { itemCount: 100 } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(320))
+  expect(panel.getBoundingClientRect().height).toBeGreaterThan(300)
+})
+
 test('clearable resets the model and hides once empty', async () => {
   const screen = await render(SelectFixture, { props: { clearable: true } })
   const trigger = screen.getByRole('combobox')
@@ -510,6 +520,14 @@ test('header and footer slots render around the listbox only when provided', asy
   await expect.element(bare.getByRole('listbox')).toBeInTheDocument()
   expect(document.querySelector('.ui-select-header')).toBeNull()
   expect(document.querySelector('.ui-select-footer')).toBeNull()
+})
+
+test('plain-text footer uses the same type size as the header, not the inherited body size', async () => {
+  const screen = await render(SelectFixture, { props: { withHeader: true, withFooter: true } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('select-footer')).toBeInTheDocument()
+  const size = (sel: string) => getComputedStyle(document.querySelector(sel)!).fontSize
+  expect(size('.ui-select-footer')).toBe(size('.ui-select-header'))
 })
 
 test('filter=false still shows the box but does no matching of its own — the async/remote-search escape hatch', async () => {

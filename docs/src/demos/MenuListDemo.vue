@@ -75,18 +75,22 @@ function onSelect(item: MenuItemData) {
 <style scoped>
 .menu-list-demo-shell {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: stretch;
 }
 .menu-list-demo-sidebar {
-  inline-size: 14rem;
-  flex: none;
+  box-sizing: border-box;
+  flex: 0 0 14rem;
+  max-inline-size: 100%;
   padding: 0.5rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-surface);
   background: var(--ui-surface);
 }
+/* Wraps under the sidebar once there's no room for both side by side. */
 .menu-list-demo-main {
-  flex: 1;
+  flex: 1 1 12rem;
+  min-inline-size: 0;
 }
 </style>

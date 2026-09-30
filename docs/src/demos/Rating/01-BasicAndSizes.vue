@@ -7,7 +7,7 @@
       <Rating v-model="mdValue" size="md" />
       <Rating v-model="lgValue" size="lg" />
     </div>
-    <p class="note">sm: {{ smValue }}, md: {{ mdValue }}, lg: {{ lgValue }}</p>
+    <p class="demo-status">sm: {{ smValue }}, md: {{ mdValue }}, lg: {{ lgValue }}</p>
   </section>
 </template>
 

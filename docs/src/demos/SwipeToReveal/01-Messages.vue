@@ -23,7 +23,7 @@
             <Avatar :name="message.from" size="sm" />
             <div class="swipe-body">
               <strong>{{ message.from }}</strong>
-              <p class="note swipe-preview">{{ message.preview }}</p>
+              <p class="swipe-preview">{{ message.preview }}</p>
             </div>
             <Button
               v-if="message.showMenuButton"
@@ -39,7 +39,7 @@
         </SwipeToReveal>
       </li>
     </ul>
-    <p class="note">
+    <p class="swipe-status">
       Last change: <strong>{{ lastChange ?? 'none yet' }}</strong>
     </p>
   </section>
@@ -101,8 +101,26 @@ function remove(id: string, close: () => void) {
   border-radius: var(--ui-radius-surface);
   overflow: hidden;
 }
-.swipe-row + .swipe-row {
-  border-block-start: 1px solid var(--ui-border);
+/* A resting row's actions sit under its content, and the list's rounded clip antialiases
+   both, so Delete tints the corner red. Hide them at rest, after the close slide ends. */
+.swipe-row :deep(.ui-swipe-reveal:not([data-open-side], [data-dragging]) .ui-swipe-reveal-actions) {
+  opacity: 0;
+  transition: opacity 0s var(--ui-duration-enter);
+}
+/* Drawn over the rows rather than as a border, so a row's composited content can't
+   snap over it at fractional offsets. */
+.swipe-row {
+  position: relative;
+}
+.swipe-row + .swipe-row::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  z-index: 2;
+  block-size: 1px;
+  background: var(--ui-border);
+  pointer-events: none;
 }
 .swipe-content {
   display: flex;
@@ -119,6 +137,8 @@ function remove(id: string, close: () => void) {
   flex: 1;
 }
 .swipe-preview {
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -134,5 +154,10 @@ function remove(id: string, close: () => void) {
 .swipe-actions :deep(.ui-button) {
   border-radius: 0;
   inline-size: 5.5rem;
+  block-size: auto;
+}
+.swipe-status {
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
 }
 </style>

@@ -8,7 +8,7 @@
     </p>
     <div class="row">
       <Calendar v-model="rangeValue" selection-mode="range" />
-      <output class="panel-text"> {{ rangeStartLabel }} to {{ rangeEndLabel }} </output>
+      <output class="panel-text">{{ rangeLabel }}</output>
     </div>
   </section>
 </template>
@@ -19,12 +19,12 @@ import { Calendar } from 'vael-ui'
 import type { CalendarRange } from 'vael-ui'
 
 const rangeValue = shallowRef<CalendarRange | null>(null)
-const rangeStartLabel = computed(() =>
-  rangeValue.value?.start ? rangeValue.value.start.toDateString() : 'Nothing',
-)
-const rangeEndLabel = computed(() =>
-  rangeValue.value?.end ? rangeValue.value.end.toDateString() : '...',
-)
+const rangeLabel = computed(() => {
+  const { start, end } = rangeValue.value ?? {}
+  if (!start) return 'No range selected'
+  if (!end) return `${start.toDateString()} to … (pick an end date)`
+  return `${start.toDateString()} to ${end.toDateString()}`
+})
 </script>
 
 <style scoped>

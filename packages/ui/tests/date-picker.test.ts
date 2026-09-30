@@ -290,6 +290,39 @@ test('typing digits into the hour field commits immediately; out-of-range values
   await expect.element(screen.getByTestId('model-time')).toHaveTextContent('09:00')
 })
 
+test('a complete typed hour moves on to the minutes like a native time input: "1830" gives 18:30', async () => {
+  const screen = await render(DatePickerFixture, {
+    props: { showTime: true, hourFormat: '24', initialValue: JUNE_15_2024 },
+  })
+  await screen.getByRole('combobox').click()
+  const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  ;(hourField.element() as HTMLElement).focus()
+  await userEvent.keyboard('1830')
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('18:30')
+  expect(document.activeElement).toBe(screen.getByRole('spinbutton', { name: 'Minute' }).element())
+
+  // A single digit that can't start a valid two-digit hour ("3" in 24h) advances at once.
+  ;(hourField.element() as HTMLElement).focus()
+  await userEvent.keyboard('3')
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('03:30')
+  expect(document.activeElement).toBe(screen.getByRole('spinbutton', { name: 'Minute' }).element())
+})
+
+test('Enter in a time field commits and closes the time-only panel, returning focus to the input', async () => {
+  const screen = await render(DatePickerFixture, { props: { timeOnly: true, hourFormat: '24' } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await vi.waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole('spinbutton', { name: 'Hour' }).element()),
+  )
+  await userEvent.keyboard('0945{Enter}')
+  await expect.element(screen.getByTestId('model-time')).toHaveTextContent('09:45')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await vi.waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole('combobox').element()),
+  )
+})
+
 test('ArrowUp wraps the hour past 23 back to 0, and past 0 back to 23 on ArrowDown', async () => {
   const dec31_2359 = new Date(2024, 11, 31, 23, 0)
   const screen = await render(DatePickerFixture, {
@@ -351,4 +384,18 @@ test("timeOnly is inert in range mode — falls back to the calendar instead of 
   await vi.waitFor(() => expect(document.querySelector('.ui-calendar-root')).not.toBeNull())
   expect(document.querySelector('.ui-date-picker-time')).toBeNull()
   expect(document.querySelector('.ui-select-panel')?.textContent?.trim()).not.toBe('')
+})
+
+test('focusing the trigger (Tab) does not open it; Enter does, and a pick returns focus', async () => {
+  const screen = await render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
+  const trigger = screen.getByRole('combobox').element() as HTMLElement
+  trigger.focus()
+  await new Promise((r) => setTimeout(r, 50))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await vi.waitFor(() => expect(cellByIso('2024-06-20')).toBeDefined())
+  await userEvent.click(cellByIso('2024-06-20')!)
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await vi.waitFor(() => expect(document.activeElement).toBe(trigger))
 })

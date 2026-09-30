@@ -1,6 +1,6 @@
 <template>
   <div class="guide-layout">
-    <article class="prose">
+    <article v-highlight-code class="prose">
       <slot />
     </article>
     <OnThisPage :links="links" />
@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 import OnThisPage from './OnThisPage.vue'
+import { vHighlightCode } from '../composables/vHighlightCode'
 
 defineProps<{ links: { id: string; label: string }[] }>()
 </script>

@@ -21,64 +21,64 @@ export interface ComposableContent {
 export const composablesContent: Record<string, ComposableContent> = {
   confirmAction: {
     description:
-      "One function for async-aware confirm flows, either centered (`surface: 'dialog'`, the default) or anchored to a trigger (`surface: 'popover'`, requires `triggerEl`); a discriminated union on `surface` picks which options TypeScript actually offers you. `onConfirm` is awaited before closing: the confirm button stays in its loading state until it settles, and the surface closes only on success. A rejection leaves it open and fires `onError` instead of closing out from under a failed action. Not a new component, just sugar over `openDialog`/`openPopover`, both still there for anything this doesn’t cover.",
+      "Opens a confirm flow with one function call. It's centered by default (`surface: 'dialog'`), or anchored to a trigger with `surface: 'popover'`, which requires `triggerEl`. TypeScript offers the options that match the `surface` you pick. `onConfirm` is awaited: the confirm button shows its loading state until it settles, and the surface closes only on success. If `onConfirm` rejects, the surface stays open and `onError` fires. `confirmAction` isn't a new component. It wraps `openDialog` and `openPopover`, which you can still use for anything it doesn't cover.",
     hasLiveDemo: true,
     params: [
-      { name: 'title', type: 'string', description: 'Required either way.' },
+      { name: 'title', type: 'string', description: 'Required for both surfaces.' },
       { name: 'description', type: 'string', description: '' },
       {
         name: 'confirmLabel / cancelLabel',
         type: 'string',
-        description: "Default 'Confirm' / 'Cancel'.",
+        description: "Default `'Confirm'` / `'Cancel'`.",
       },
       {
         name: 'variant',
         type: 'ButtonVariant',
         description:
-          "Confirm button style. Default 'primary'; use 'danger' for destructive actions.",
+          "Confirm button style. Default `'primary'`. Use `'danger'` for destructive actions.",
       },
       {
         name: 'onConfirm',
         type: '() => unknown | Promise<unknown>',
-        description: 'Awaited before closing.',
+        description: 'Awaited before the surface closes.',
       },
       { name: 'onCancel', type: '() => void', description: '' },
       {
         name: 'onError',
         type: '(error: unknown) => void',
-        description: 'Fires when onConfirm rejects.',
+        description: 'Fires when `onConfirm` rejects.',
       },
       {
         name: 'confirmButtonProps / cancelButtonProps',
         type: 'Partial<ButtonProps>',
-        description: 'Full prop passthrough beyond the label/variant shortcuts.',
+        description: 'Passes any Button prop, beyond the label and variant shortcuts.',
       },
       {
         name: 'body / bodyProps',
         type: 'Component / Record<string, unknown>',
         description:
-          'Extra content between the description and the buttons, e.g. a "type DELETE" input.',
+          'Extra content between the description and the buttons, such as a "type DELETE" input.',
       },
       {
         name: 'surface',
         type: "'dialog' | 'popover'",
-        description: "Default 'dialog'.",
+        description: "Default `'dialog'`.",
       },
       {
         name: 'position / size',
         type: 'DialogPosition / DialogSize',
-        description: "surface: 'dialog' only, same as Dialog's own props.",
+        description: "Only with `surface: 'dialog'`. Same as Dialog's own props.",
       },
       {
         name: 'triggerEl',
         type: 'TriggerRef',
         description:
-          "surface: 'popover' only. Required, same contract as openPopover's own triggerEl.",
+          "Only with `surface: 'popover'`, where it's required. Same contract as `openPopover`'s `triggerEl`.",
       },
       {
         name: 'side / align / sideOffset / …',
         type: 'PopoverProps',
-        description: "surface: 'popover' only. Every other Popover prop, passed straight through.",
+        description: "Only with `surface: 'popover'`. Any other Popover prop, passed through.",
       },
     ],
     returns: [
@@ -86,25 +86,25 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'result',
         type: 'Promise<boolean | undefined>',
         description:
-          'true on confirm, false on cancel, undefined on Escape/outside-click dismissal.',
+          '`true` on confirm, `false` on cancel, `undefined` when dismissed with Escape or an outside click.',
       },
       {
         name: 'close',
         type: '(result?: boolean) => void',
-        description: "Close imperatively from the opener's side.",
+        description: "Closes the surface from the opener's side.",
       },
       {
         name: 'panelEl',
         type: '{ readonly value: HTMLElement | null }',
         description:
-          'Null until the surface actually mounts; useful for GSAP/motion-v enter animations.',
+          '`null` until the surface mounts. Use it for GSAP or motion-v enter animations.',
       },
     ],
   },
 
   useDialogService: {
     description:
-      'The imperative engine behind `<Dialog>` for dialogs opened from code instead of markup. `openDialog(Component, options)` mounts any component as the body (typed props included) and returns a `result` promise that settles with whatever the opened component’s `useDialogRef().close(result)` passes. This is the low-level primitive `confirmAction()` itself is built on; reach for it directly for anything beyond a plain confirm (a rename form, a multi-step flow, …).',
+      'Opens dialogs from code instead of markup, on the same engine as `<Dialog>`. `openDialog(Component, options)` mounts any component as the dialog body, with typed props. It returns a `result` promise that settles with the value the opened component passes to `useDialogRef().close(result)`. `confirmAction()` is built on it. Use it directly for anything beyond a plain confirm, such as a rename form or a multi-step flow.',
     installNames: ['openDialog', 'useDialogRef', 'useDialogQueue'],
     hasLiveDemo: true,
     extraSourceFiles: ['RenameFileDialogBody.vue', 'DeleteFileDialogBody.vue'],
@@ -114,25 +114,26 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'openDialog(component, options)',
         type: 'OpenDialogHandle<T>',
         description:
-          'Mounts component inside <Dialog>, rendered by the app-level <DialogHost/>. options.props is typed against the component you pass.',
+          'Mounts `component` inside `<Dialog>`, rendered by the app-level `<DialogHost/>`. `options.props` is typed against the component you pass.',
       },
       {
         name: 'useDialogRef()',
         type: 'DialogRef<D, T>',
         description:
-          'Called from inside the opened component. { data, panelEl, close(result) }: close() is what settles the opener’s result promise.',
+          "Call it inside the opened component. Returns `{ data, panelEl, close(result) }`. Calling `close()` settles the opener's `result` promise.",
       },
       {
         name: 'useDialogQueue()',
         type: 'DynamicDialogEntry[]',
-        description: 'The live queue <DialogHost/> renders. Mount DialogHost once at the app root.',
+        description:
+          'The live queue that `<DialogHost/>` renders. Mount `DialogHost` once at the app root.',
       },
     ],
   },
 
   usePopoverService: {
     description:
-      "The imperative engine behind `<Popover>` for anchored popovers opened from code instead of markup. `openPopover(Component, options)` mounts any component inside a Popover anchored to `options.triggerEl` (required, since an imperative popover has no inline `#trigger` slot to derive it from), and returns a `result` promise that settles with whatever the opened component’s `usePopoverRef().close(result)` passes. This is the low-level primitive `confirmAction({ surface: 'popover' })` is built on; reach for it directly for anything beyond a plain confirm.",
+      "Opens anchored popovers from code instead of markup, on the same engine as `<Popover>`. `openPopover(Component, options)` mounts any component inside a Popover anchored to `options.triggerEl`. `triggerEl` is required, because an imperative popover has no `#trigger` slot to anchor to. It returns a `result` promise that settles with the value the opened component passes to `usePopoverRef().close(result)`. `confirmAction({ surface: 'popover' })` is built on it. Use it directly for anything beyond a plain confirm.",
     installNames: ['openPopover', 'usePopoverRef', 'usePopoverQueue'],
     hasLiveDemo: true,
     extraSourceFiles: ['RemoveTagPopoverBody.vue'],
@@ -142,26 +143,26 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'openPopover(component, options)',
         type: 'OpenPopoverHandle<T>',
         description:
-          'Mounts component inside <Popover>, rendered by the app-level <PopoverHost/>. options.props is typed against the component you pass; options.triggerEl is required.',
+          'Mounts `component` inside `<Popover>`, rendered by the app-level `<PopoverHost/>`. `options.props` is typed against the component you pass. `options.triggerEl` is required.',
       },
       {
         name: 'usePopoverRef()',
         type: 'PopoverRef<D, T>',
         description:
-          'Called from inside the opened component. { data, panelEl, close(result) }: close() is what settles the opener’s result promise.',
+          "Call it inside the opened component. Returns `{ data, panelEl, close(result) }`. Calling `close()` settles the opener's `result` promise.",
       },
       {
         name: 'usePopoverQueue()',
         type: 'DynamicPopoverEntry[]',
         description:
-          'The live queue <PopoverHost/> renders. Mount PopoverHost once at the app root, alongside DialogHost.',
+          'The live queue that `<PopoverHost/>` renders. Mount `PopoverHost` once at the app root, next to `DialogHost`.',
       },
     ],
   },
 
   useToast: {
     description:
-      'Sonner-style imperative toasts: call `toast(title, options)` from anywhere, no component context needed. `toast.success/error/warning/info/loading` are shortcuts for each variant, and `toast.promise(input, messages)` shows a loading toast immediately and swaps it for success/error once the promise settles, with no manual dismiss() bookkeeping. Requires a `<Toaster/>` mounted once at the app root to actually render.',
+      "Sonner-style toasts you trigger from code. Call `toast(title, options)` from anywhere, with no component context. `toast.success`, `.error`, `.warning`, `.info` and `.loading` set the variant for you. `toast.promise(input, messages)` shows a loading toast at once, then swaps it for a success or error toast when the promise settles. You don't need to call `dismiss()` yourself. Toasts render in a `<Toaster/>`, which you mount once at the app root.",
     installNames: ['toast', 'useToastQueue'],
     hasLiveDemo: true,
     params: [],
@@ -169,36 +170,38 @@ export const composablesContent: Record<string, ComposableContent> = {
       {
         name: 'toast(title, options?)',
         type: 'number',
-        description: 'Pushes a default-variant toast; returns its id (for dismiss(id)).',
+        description:
+          'Shows a toast with the default variant. Returns its id, which you can pass to `dismiss(id)`.',
       },
       {
         name: 'toast.success / .error / .warning / .info / .loading',
         type: '(title, options?) => number',
-        description: 'Same signature, fixed variant. loading defaults to duration: Infinity.',
+        description:
+          'Same signature with a fixed variant. `loading` defaults to `duration: Infinity`.',
       },
       {
         name: 'toast.promise(input, messages, options?)',
         type: 'Promise<T>',
         description:
-          'input is a Promise or a function returning one. Shows messages.loading immediately, then messages.success/.error (string or a function of the settled value/error).',
+          '`input` is a promise or a function that returns one. Shows `messages.loading` at once, then `messages.success` or `messages.error`. Each can be a string or a function of the settled value or error.',
       },
       {
         name: 'toast.dismiss(id?)',
         type: '(id?: number) => void',
-        description: 'Dismisses one toast, or every toast when id is omitted.',
+        description: 'Dismisses one toast, or every toast when you omit `id`.',
       },
       {
         name: 'useToastQueue()',
         type: '{ toasts, dismiss, pauseAll, resumeAll }',
         description:
-          'Read-only queue access plus pause/resume: what <Toaster/> itself uses internally (e.g. pausing timers on pointerenter).',
+          'Read-only queue access, plus pause and resume. `<Toaster/>` uses it internally, for example to pause timers on `pointerenter`.',
       },
     ],
   },
 
   useTour: {
     description:
-      'The headless state machine behind `<Tour>` — index/group bookkeeping, step navigation, and the `onBeforeEnter`-await sequencing, with zero DOM or rendering baked in. `<Tour>` is just `useTour()` plus a spotlight overlay and a composed `Popover` callout; reach for this directly to build a fully custom walkthrough UI (a different animation library, a non-floating callout, an embedded panel) and keep only the sequencing logic.',
+      "The headless state machine behind `<Tour>`. It tracks the step index and groups, handles navigation and awaits each step's `onBeforeEnter`. It renders nothing and doesn't touch the DOM. `<Tour>` is `useTour()` plus a spotlight overlay and a `Popover` callout. Use the composable directly to build your own walkthrough UI. For example, you might use a different animation library, a non-floating callout or an embedded panel.",
     exampleCode: `import { ref } from 'vue'
 import { useTour } from 'vael-ui'
 import type { TourStep } from 'vael-ui'
@@ -223,42 +226,43 @@ open.value = true`,
         name: 'open',
         type: 'Ref<boolean>',
         description:
-          "Owns the tour's visibility. Setting it true resets to the first step (awaits that step's onBeforeEnter, then fires onStepChange with reason: 'open'); setting it false is just \"closed,\" no reset happens on its own.",
+          "Controls the tour's visibility. Setting it to `true` resets to the first step: it awaits that step's `onBeforeEnter`, then fires `onStepChange` with `reason: 'open'`. Setting it to `false` closes the tour without resetting it.",
       },
       {
         name: 'id',
         type: 'string',
         description:
-          "Identifies this tour instance. Not used internally — echoed back on every callback's details, useful once a page has more than one tour and a shared handler needs to tell them apart.",
+          "Identifies this tour instance. It isn't used internally. It's passed back in every callback's `details`, so a shared handler can tell tours apart when a page has more than one.",
       },
       {
         name: 'steps',
         type: 'MaybeRefOrGetter<readonly TourStep[]>',
         description:
-          "Same shape as `<Tour>`'s own steps prop: target (a DOMTarget) plus title/description/side/align/spotlightPadding/spotlightRadius/disableInteraction/onBeforeEnter/group per step.",
+          "Same shape as `<Tour>`'s `steps` prop. Each step has a `target` (a `DOMTarget`), plus optional `title`, `description`, `side`, `align`, `sideOffset`, `alignOffset`, `spotlightPadding`, `spotlightRadius`, `disableInteraction`, `onBeforeEnter` and `group`.",
       },
       {
         name: 'onStepChange',
         type: '(details: TourStepChangeDetails) => void',
         description:
-          "Fires after a step change settles, including the first step (reason: 'open'). details: { index, step, reason, previousIndex, previousStep, id }.",
+          "Fires after a step change settles, including the first step (`reason: 'open'`). `details` is `{ index, step, reason, previousIndex, previousStep, id }`.",
       },
       {
         name: 'onSkip',
         type: '(details: TourEndDetails) => void',
-        description: 'Fires when skip() is called. details: { index, step, id }.',
+        description: 'Fires when you call `skip()`. `details` is `{ index, step, id }`.',
       },
       {
         name: 'onFinish',
         type: '(details: TourEndDetails) => void',
-        description: 'Fires when next() is called on the last step. details: { index, step, id }.',
+        description:
+          'Fires when you call `next()` on the last step. `details` is `{ index, step, id }`.',
       },
     ],
     returns: [
       {
         name: 'id',
         type: 'string | undefined',
-        description: 'Echoed straight back from options.id.',
+        description: 'The `options.id` you passed in.',
       },
       { name: 'currentIndex', type: 'Ref<number>', description: '' },
       {
@@ -274,7 +278,7 @@ open.value = true`,
       {
         name: 'groups',
         type: 'ComputedRef<TourGroup[]>',
-        description: '{ group, steps }[], bucketed in first-seen order.',
+        description: '`{ group, steps }[]`, grouped in first-seen order.',
       },
       {
         name: 'total / isFirst / isLast',
@@ -285,18 +289,18 @@ open.value = true`,
         name: 'isTransitioning',
         type: 'Ref<boolean>',
         description:
-          "True while the current step's onBeforeEnter is pending — keep the previous step's UI mounted until this clears.",
+          "`true` while the next step's `onBeforeEnter` is pending. `currentIndex` doesn't change until it settles, so keep the previous step's UI mounted until then.",
       },
       {
         name: 'next / prev',
         type: '() => Promise<void>',
         description:
-          'next() on the last step calls onFinish and sets open.value = false instead of advancing.',
+          'On the last step, `next()` calls `onFinish` and sets `open.value = false` instead of advancing.',
       },
       {
         name: 'skip',
         type: '() => void',
-        description: 'Fires onSkip and sets open.value = false.',
+        description: 'Calls `onSkip` and sets `open.value = false`.',
       },
       {
         name: 'goTo',
@@ -306,33 +310,33 @@ open.value = true`,
       {
         name: 'goToGroup',
         type: '(group: string) => Promise<void>',
-        description: "Jumps to that group's first step.",
+        description: "Jumps to the group's first step.",
       },
     ],
   },
 
   useAsyncLoading: {
     description:
-      'Tracks every in-flight promise passed to `run()`. `loading` only clears once ALL of them have settled, so overlapping calls (or several buttons sharing one instance) never flicker the state early. This is exactly what `Button`’s own `loading="auto"` uses internally for promise-returning `@click` handlers.',
+      'Tracks every in-flight promise you pass to `run()`. `loading` stays `true` until all of them settle, so overlapping calls, or several buttons sharing one instance, don\'t make the state flicker. `Button` uses it for `loading="auto"` when an `@click` handler returns a promise.',
     hasLiveDemo: true,
     params: [],
     returns: [
       {
         name: 'loading',
         type: 'ComputedRef<boolean>',
-        description: 'True while at least one call to run() hasn’t settled yet.',
+        description: "`true` while at least one `run()` call hasn't settled.",
       },
       {
         name: 'run',
         type: '<T>(fn: () => T | Promise<T>) => Promise<T>',
-        description: 'Wraps fn, incrementing/decrementing the in-flight count around it.',
+        description: 'Runs `fn` and counts it as in flight until it settles.',
       },
     ],
   },
 
   useNumberFormat: {
     description:
-      "Locale-aware number formatting and parsing, both directions kept perfectly in sync. `format` turns a number into the full localized+affixed display string, `parse` turns typed text back into a number (or `null` for anything incomplete or invalid), and `isPartial` tells a legal mid-typing state ('', '-', '1.') apart from actual garbage so you don’t fight the user while they’re still typing. This is exactly what `InputNumber` uses internally for its own currency/percent/decimal modes.",
+      "Formats and parses numbers for a locale, with both directions kept in sync. `format` turns a number into the localized display string, including any affixes. `parse` turns typed text back into a number, or `null` if the text is incomplete or invalid. `isPartial` tells valid in-progress input (`''`, `'-'`, `'1.'`) apart from invalid text, so you don't reject input mid-typing. `InputNumber` uses it for its currency, percent and decimal modes.",
     hasLiveDemo: true,
     params: [
       {
@@ -343,59 +347,60 @@ open.value = true`,
       {
         name: 'mode',
         type: "MaybeRefOrGetter<'decimal' | 'currency' | 'percent' | undefined>",
-        description: "Default 'decimal'.",
+        description: "Default `'decimal'`.",
       },
       {
         name: 'currency',
         type: 'MaybeRefOrGetter<string | undefined>',
-        description: "ISO code, e.g. 'USD'. Default 'USD' when mode is currency.",
+        description: "ISO code, such as `'USD'`. Defaults to `'USD'` when `mode` is `'currency'`.",
       },
       {
         name: 'minFractionDigits',
         type: 'MaybeRefOrGetter<number | undefined>',
-        description: 'Passed to Intl.NumberFormat.',
+        description: 'Passed to `Intl.NumberFormat` as `minimumFractionDigits`.',
       },
       {
         name: 'maxFractionDigits',
         type: 'MaybeRefOrGetter<number | undefined>',
-        description: 'Passed to Intl.NumberFormat.',
+        description: 'Passed to `Intl.NumberFormat` as `maximumFractionDigits`.',
       },
       {
         name: 'useGrouping',
         type: 'MaybeRefOrGetter<boolean | undefined>',
-        description: 'Thousands separators. Default true.',
+        description: 'Shows thousands separators. Default `true`.',
       },
       {
         name: 'prefix / suffix',
         type: 'MaybeRefOrGetter<string | undefined>',
         description:
-          'Literal affix Intl has no concept of (e.g. a unit label); stripped on parse, appended on format.',
+          "A literal affix that `Intl` doesn't handle, such as a unit label. Added on format and stripped on parse.",
       },
     ],
     returns: [
       {
         name: 'format',
         type: '(value: number | null) => string',
-        description: "null/NaN -> ''. Always the full localized+affixed string.",
+        description:
+          "Returns `''` for `null` or `NaN`. Otherwise returns the full localized string, including affixes.",
       },
       {
         name: 'parse',
         type: '(text: string) => number | null',
         description:
-          'null for anything that isn’t a complete, unambiguous number, including legal in-progress typing states.',
+          "Returns `null` for anything that isn't a complete, unambiguous number, including valid in-progress input.",
       },
       {
         name: 'isPartial',
         type: '(text: string) => boolean',
         description:
-          'True for legal mid-typing states parse correctly returns null for but that must not be rejected.',
+          "`true` for valid in-progress input that `parse` returns `null` for. Don't reject this input.",
       },
     ],
   },
 
   useColorScheme: {
     description:
-      "Drives `document.documentElement.dataset.theme` from a `system` / `light` / `dark` mode. `system` removes the attribute entirely and follows `prefers-color-scheme` live. This is the exact composable the docs site’s own header theme toggle uses; `persist` is structural (like ConfigProvider’s `i18n`) so you can wire in cookies, a store, or localStorage yourself instead of the composable assuming one. Being a plain composable, it can only apply the saved mode once your JS bundle runs a component's `setup()` — after first paint. A returning user with a saved `dark` preference will see a flash of the light theme first unless you also set the attribute synchronously before Vue mounts; see the pre-hydration snippet below.",
+      "Sets `document.documentElement.dataset.theme` from a `system`, `light` or `dark` mode. In `system` mode it removes the attribute and follows `prefers-color-scheme` as it changes. The docs site's theme toggle uses this composable. `persist` is structural (like ConfigProvider's `i18n`), so you choose the storage: cookies, a store or `localStorage`. The composable applies the saved mode when the component mounts, after the first paint. A returning visitor with a saved `dark` preference sees the light theme briefly, unless you set the attribute before Vue mounts. The end of the example below shows how.",
     exampleCode: `import { useColorScheme } from 'vael-ui'
 
 const { mode, resolvedMode, setMode } = useColorScheme({
@@ -433,43 +438,43 @@ setMode('dark')
       {
         name: 'initial',
         type: "'system' | 'light' | 'dark'",
-        description: "Starting mode before persist.get() (if any) resolves. Default 'system'.",
+        description: "The mode to use until `persist.get()` is read on mount. Default `'system'`.",
       },
       {
         name: 'persist',
         type: '{ get: () => string | null; set: (mode) => void }',
         description:
-          'Structural persistence hook. No default, nothing is persisted unless you pass this.',
+          "Structural persistence hook. No default: nothing is saved unless you pass it. `set` receives `null` for `'system'`.",
       },
     ],
     returns: [
       {
         name: 'mode',
         type: "ShallowRef<'system' | 'light' | 'dark'>",
-        description: 'What the user picked.',
+        description: 'The selected mode.',
       },
       {
         name: 'resolvedMode',
         type: "ShallowRef<'light' | 'dark'>",
-        description: "What's actually applied. Resolves 'system' against the live media query.",
+        description: "The applied theme. Resolves `'system'` against the live media query.",
       },
       {
         name: 'setMode',
         type: '(mode) => void',
-        description: 'Sets mode, persists it, and re-applies.',
+        description: 'Sets the mode, persists it and applies it.',
       },
     ],
   },
 
   useFloatingPosition: {
     description:
-      'The Floating UI-backed positioning engine behind `Popover`, `Menu`, and `Tooltip`. Computes `positionerStyle` (absolute inset + `visibility`) against a reference/floating element pair, with flip/shift collision handling and live `autoUpdate` tracking while `active` is true. Reach for this directly when building a custom anchored surface none of the existing overlay components fit.',
+      'The positioning engine behind `Popover`, `Menu` and `Tooltip`, built on Floating UI. It computes `positionerStyle` (absolute `top` and `left`, plus `visibility`) for a reference and floating element pair. It flips and shifts to avoid collisions, and tracks changes with `autoUpdate` while `active` is `true`. Use it directly to build a custom anchored surface that no existing overlay component fits.',
     hasLiveDemo: true,
     params: [
       {
         name: 'referenceEl',
         type: 'Ref<HTMLElement | null>',
-        description: 'The anchor.',
+        description: 'The anchor element.',
       },
       {
         name: 'floatingEl',
@@ -479,94 +484,97 @@ setMode('dark')
       {
         name: 'active',
         type: 'MaybeRefOrGetter<boolean>',
-        description: 'Positioning (and autoUpdate scroll/resize tracking) only runs while true.',
+        description:
+          'Positioning and `autoUpdate` scroll and resize tracking run only while this is `true`.',
       },
       {
         name: 'side',
         type: 'MaybeRefOrGetter<Side>',
-        description: "Default 'bottom'.",
+        description: "Default `'bottom'`.",
       },
       {
         name: 'align',
         type: "MaybeRefOrGetter<'start' | 'center' | 'end'>",
-        description: "Default 'center'.",
+        description: "Default `'center'`.",
       },
       {
         name: 'sideOffset',
         type: 'MaybeRefOrGetter<number>',
-        description: 'Gap along side. Default 8.',
+        description: 'Gap from the reference, along `side`. Default `8`.',
       },
       {
         name: 'alignOffset',
         type: 'MaybeRefOrGetter<number>',
-        description: 'Shift along the align axis.',
+        description: 'Shift along the alignment axis. Default `0`.',
       },
       {
         name: 'matchReferenceWidth',
         type: 'MaybeRefOrGetter<boolean>',
         description:
-          'Writes the reference’s width into --ui-anchor-inline-size for the positioner to opt into.',
+          "Writes the reference's width to `--ui-anchor-inline-size` in `positionerStyle`. Your positioner CSS can read that variable.",
       },
     ],
     returns: [
       {
         name: 'positionerStyle',
         type: 'Ref<Record<string, string>>',
-        description: 'Bind directly: :style="positionerStyle".',
+        description: 'Bind it directly: `:style="positionerStyle"`.',
       },
       {
         name: 'placement',
         type: 'Ref<Placement>',
-        description: 'The resolved placement, post-flip.',
+        description: 'The resolved placement, after flipping.',
       },
       {
         name: 'transformOrigin',
         type: 'Ref<string>',
-        description: 'For scale/fade animations anchored correctly.',
+        description:
+          'Matches the resolved placement, so scale and fade animations start at the anchor.',
       },
       {
         name: 'maxHeight',
         type: 'Ref<number | null>',
-        description: 'Available space in the resolved direction, or null.',
+        description: 'The available height for the surface, or `null` while inactive.',
       },
       {
         name: 'update',
         type: '() => Promise<void>',
-        description: 'Force a recompute outside the normal auto-update triggers.',
+        description: 'Forces a recompute outside the normal `autoUpdate` triggers.',
       },
     ],
   },
 
   useVirtualizer: {
     description:
-      'Windowed rendering for long lists: only the visible rows (plus overscan) exist in the DOM. This is what `Select`/`Combobox`/`Tree` reach for once their list gets large; use it directly when building a custom scrollable list that needs the same treatment.',
+      'Renders only the visible rows of a long list, plus a few extra rows past each edge (overscan). `Select`, `Combobox` and `DataTable` use it for large lists. Use it directly to give a custom scrollable list the same treatment.',
     hasLiveDemo: true,
     params: [
       {
         name: 'containerEl',
         type: 'Ref<HTMLElement | null>',
-        description: 'The scrollable box.',
+        description: 'The scroll container.',
       },
       {
         name: 'count',
         type: 'MaybeRefOrGetter<number>',
-        description: 'Total row count.',
+        description: 'Total number of rows.',
       },
       {
         name: 'itemSize',
         type: 'MaybeRefOrGetter<number | undefined>',
         description:
-          'Row size in px. Omit to auto-measure the first rendered row (36px estimate until then).',
+          'Row size in px. Omit it to measure the first rendered row, with a 36 px estimate until then.',
       },
       {
         name: 'overscan',
         type: 'MaybeRefOrGetter<number>',
-        description: 'Extra rows rendered past each edge. Default 8.',
+        description: 'Extra rows rendered past each edge. Default `8`.',
       },
       {
         name: 'onReachEnd',
         type: '() => void',
-        description: 'Fires once the rendered window nears count - 1; re-arms when count changes.',
+        description:
+          "Fires once when the rendered window's last index reaches `count - 1 - overscan`. Fires again after `count` changes.",
       },
     ],
     returns: [
@@ -574,102 +582,104 @@ setMode('dark')
         name: 'listStyle',
         type: 'Ref<Record<string, string>>',
         description:
-          'Bind to a relative, full-height spacer: gives the container real scrollable height.',
+          'Bind it to a relatively positioned spacer inside the container. It gives the container its full scroll height.',
       },
       {
         name: 'items',
         type: 'Readonly<Ref<VirtualRow[]>>',
-        description: 'The currently rendered window: { index, start, style }.',
+        description: 'The rows to render now: `{ index, start, size, style }`.',
       },
       {
         name: 'scrollToIndex',
         type: "(index, align?: 'nearest' | 'start' | 'end' | 'center') => void",
         description:
-          "Default 'nearest': what keyboard nav wants, never move a row that's already visible.",
+          "Default `'nearest'`, which suits keyboard navigation: it doesn't scroll when the row is already visible.",
       },
       {
         name: 'measuredSize',
         type: 'Readonly<Ref<number | null>>',
-        description: 'The resolved per-row size.',
+        description: 'The resolved row size.',
       },
     ],
   },
 
   useSortable: {
     description:
-      "The spring-driven drag-to-reorder engine behind `<Sortable>`, `<Tree>`'s nested reorder, and `<DataTable>`'s column reorder — pointer and keyboard drive the same grabbed state, and all ordering/nesting decisions live in pure, independently-tested functions. `<Sortable>` is just a thin, optional convenience layer over this; reach for the composable directly when you need custom markup a component can't give you, or when building a cross-container board with `useSortableGroup()`, which wraps this same engine.",
+      "The spring-driven drag-to-reorder engine behind `<Sortable>`, nested reordering in `<Tree>` and column reordering in `<DataTable>`. Pointer and keyboard input drive the same grabbed state. Pure, separately tested functions make every ordering and nesting decision. `<Sortable>` is an optional wrapper around it. Use the composable directly when you need markup a component can't give you. To move items between lists, use `useSortableGroup()`, which wraps the same engine.",
     hasLiveDemo: true,
     params: [
       {
         name: 'rows',
         type: 'MaybeRefOrGetter<readonly FlatSortableRow[]>',
         description:
-          'Visible rows in visual order — { value, depth, parentValue } — re-read at grab time.',
+          'Visible rows in visual order, as `{ value, depth, parentValue }`. Read again each time a row is grabbed.',
       },
       {
         name: 'getElement',
         type: '(value) => HTMLElement | null',
-        description: 'Resolves a row to the DOM node the engine measures and transforms directly.',
+        description:
+          'Returns the DOM node for a row. The engine measures and moves that node directly.',
       },
       {
         name: 'onCommit',
         type: '(value, to: DropPosition) => void',
-        description: 'Apply the reorder. Fires once, on a committed drop.',
+        description: 'Applies the reorder. Fires once, on a committed drop.',
       },
       {
         name: 'axis',
         type: "MaybeRefOrGetter<'y' | 'x'>",
-        description: "Default 'y'. Nesting is only meaningful on 'y'.",
+        description: "Default `'y'`. Nesting only works on `'y'`.",
       },
       {
         name: 'nested',
         type: 'MaybeRefOrGetter<boolean>',
-        description: 'Enables depth changes — Tree turns this on, a flat list leaves it off.',
+        description: 'Enables depth changes. `Tree` turns it on; a flat list leaves it off.',
       },
       {
         name: 'dropOnTarget',
         type: 'MaybeRefOrGetter<boolean>',
-        description: "VS Code model: hovering a row's middle drops INTO it. Requires nested.",
+        description:
+          'VS Code-style drops: hovering the middle of a row drops the item into it. Requires `nested`.',
       },
       {
         name: 'reorderSiblings',
         type: 'MaybeRefOrGetter<boolean>',
         description:
-          'false disables reordering among current siblings — only re-parenting is offered, with no indicator on a would-be sibling insert. Requires dropOnTarget.',
+          '`false` turns off reordering among current siblings. Only re-parenting is offered, and no indicator shows for a sibling insert. Requires `dropOnTarget`.',
       },
       {
         name: 'nestEdgeFraction',
         type: 'MaybeRefOrGetter<number>',
         description:
-          'Fraction of a target\'s own size, on each end, that still means "beside it" rather than "into it". Default 0.25 (a 50%-wide inside zone) — shrink it for a target that\'s hard to land on precisely.',
+          'The fraction of a target\'s size, at each end, that means "beside it" rather than "into it". Default `0.25`, which leaves a 50% inside zone. Lower it for targets that are hard to hit.',
       },
       {
         name: 'canNestInto',
         type: '(value) => boolean',
-        description: 'Which rows accept children. Without this, every row does.',
+        description: 'Which rows accept children. Without it, every row does.',
       },
       {
         name: 'childCountOf',
         type: '(value) => number',
-        description: 'Existing child count, so an "inside" drop appends.',
+        description: 'Existing child count, so an "inside" drop appends to the end.',
       },
       {
         name: 'dragPreview',
         type: 'MaybeRefOrGetter<boolean>',
         description:
-          'Lifts the grabbed row out as a floating preview that follows the cursor, leaving its slot dimmed — without it the row stays in flow and slides over its neighbours.',
+          'Lifts the grabbed row into a floating preview that follows the cursor, and dims its slot. Without it, the row stays in the layout and slides past its neighbours.',
       },
       {
         name: 'previewMode',
         type: "MaybeRefOrGetter<'element' | 'clone'>",
         description:
-          "'element': the real dragged row itself lifts and keeps moving — only one instance of it on screen. 'clone': a separate floating copy, the real row hidden until drop; needed when the real element can't leave its normal layout (a `<tr>`, a `<th>`). Default is context-dependent: 'element' once a `group` drag leaves this list, 'clone' for a plain `dragPreview` drag.",
+          "`'element'` lifts the real row, so only one copy is on screen. `'clone'` shows a separate floating copy and hides the real row until the drop. Use `'clone'` when the real element can't leave its layout, such as a `<tr>` or `<th>`. The default depends on context: `'element'` once a `group` drag leaves this list, `'clone'` for a plain `dragPreview` drag.",
       },
       {
         name: 'previewCarriesSubtree',
         type: 'MaybeRefOrGetter<boolean>',
         description:
-          'dragPreview + nested only, default true. A dragged row with visible descendants (an expanded folder, a tab group) carries real copies of them along inside the floating clone, at the exact offset they already sat at, so the whole block reads as one physical thing lifting together.',
+          "Only with `dragPreview` and `nested`. Default `true`. The dragged row's visible descendants (an expanded folder, a tab group) travel inside the floating clone at their current offsets. The whole block lifts as one piece.",
       },
       {
         name: 'disabled',
@@ -679,36 +689,36 @@ setMode('dark')
       {
         name: 'motionCss',
         type: 'MaybeRefOrGetter<boolean>',
-        description: 'false disables the built-in springs — positions snap.',
+        description: '`false` turns off the built-in springs, so positions snap.',
       },
       {
         name: 'canDrop',
         type: '(details: SortableDropDetails) => boolean',
         description:
-          'Synchronous structural veto, re-run while dragging: false marks the target invalid and blocks the drop. Keep it cheap.',
+          'A synchronous veto, re-run while dragging. Returning `false` marks the target invalid and blocks the drop. Keep it cheap.',
       },
       {
         name: 'beforeDrop',
         type: '(details) => boolean | Promise<boolean>',
         description:
-          'Async gate at drop time — return false (or a promise of it) to cancel and spring the item home. Composes with confirmAction().result.',
+          'An async check at drop time. Return `false`, or a promise of `false`, to cancel and spring the item back. Works with `confirmAction().result`.',
       },
       {
         name: 'onDropError',
         type: '(error, details) => void',
         description:
-          'beforeDrop threw or rejected; the move is already reverted by the time this fires.',
+          '`beforeDrop` threw or rejected. The move is already reverted when this fires.',
       },
       {
         name: 'labelOf / announce',
         type: '(value) => string / (event) => string',
-        description: 'Human label and live-region text for assistive tech.',
+        description: 'The row label and live-region text for assistive tech.',
       },
       {
         name: 'group / groupId / container',
         type: 'SortableGroupHandle / string | number / MaybeRefOrGetter<HTMLElement | null>',
         description:
-          'Shares drag sessions with other useSortable() lists passed the same handle — see useSortableGroup(). container is only needed when group is set, so it can hit-test an empty list.',
+          'Shares drag sessions with other `useSortable()` lists that get the same handle. See `useSortableGroup()`. `container` is only needed with `group`, so an empty list can be hit-tested.',
       },
     ],
     returns: [
@@ -716,95 +726,95 @@ setMode('dark')
         name: 'activeValue / isGrabbed / isDragging',
         type: 'Ref',
         description:
-          'Which row is held, and by which input (isDragging is pointer-only, never a plain click).',
+          "The held row and how it's held. `isDragging` is pointer-only and stays `false` for a plain click.",
       },
       {
         name: 'isGrabbedValue',
         type: '(value) => boolean',
         description:
-          'Bind directly: :data-grabbed="isGrabbedValue(row.value) || undefined". True for a folder\'s whole dragged subtree, not just the row you grabbed.',
+          'Bind it directly: `:data-grabbed="isGrabbedValue(row.value) || undefined"`. `true` for a folder\'s whole dragged subtree, not only the grabbed row.',
       },
       {
         name: 'dropPosition / isValidDrop / isPending',
         type: 'Ref',
         description:
-          'Where it would land, whether canDrop currently allows that, and whether an async beforeDrop is still deciding.',
+          'Where the item would land, whether `canDrop` allows it, and whether an async `beforeDrop` is still pending.',
       },
       {
         name: 'dropIntoValue / dropTargetValue / dropIntent',
         type: 'Ref',
         description:
-          'Drop-on-target mode only: which row is being hovered, and before/after/inside.',
+          'Drop-on-target mode only: the hovered row, and whether the drop goes before, after or inside it.',
       },
       {
         name: 'draggedValues',
         type: 'Ref<ReadonlySet>',
-        description: 'Every value in the dragged block — a folder carries its descendants.',
+        description: 'Every value in the dragged block. A folder carries its descendants.',
       },
       {
         name: 'isForeignDropTarget',
         type: 'Ref<boolean>',
         description:
-          "group only: true while a drag from a sibling member is hovering this list as the drop target. Always false for the list the drag started in — style `[data-drop-target]`'s worth of feedback on wherever you'd otherwise show it.",
+          'Only with `group`. `true` while a drag from another list in the group hovers this list. Always `false` for the list the drag started in. Use it to style drop-target feedback.',
       },
       {
         name: 'announcement',
         type: 'Ref<string>',
-        description: 'Live-region text. Render it in an aria-live="assertive" node.',
+        description: 'Live-region text. Render it in an `aria-live="assertive"` element.',
       },
       {
         name: 'onHandlePointerdown / onHandleKeydown',
         type: '(event, value) => void',
-        description: "Wire directly to a row's handle element.",
+        description: "Bind these to a row's handle element.",
       },
       {
         name: 'consumeSuppressedClick',
         type: '() => boolean',
         description:
-          'True exactly once after a committed drag — swallow the trailing click a drag also triggers.',
+          'Returns `true` once after a committed drag. Use it to ignore the click that follows the drag.',
       },
       {
         name: 'cancel',
         type: '() => void',
-        description: 'Abandon the current grab and spring everything home.',
+        description: 'Abandons the current grab and springs everything back.',
       },
     ],
   },
 
   useSortableGroup: {
     description:
-      "Cross-container drag — the primitive a Kanban-style board is built from, not a component. `<Sortable>`, `<Tree>`, `<DataTable>`'s column reorder, and `v-draggable` all reorder within one list; this is what lets an item cross from one `useSortable()` list into another, over the exact same spring-driven engine. Each list still calls `useSortable()` itself (or `<Sortable>`, which takes the same `group`/`groupId` props directly) — the group only decides which one currently shows the open gap, and runs the actual transfer on drop. The origin list keeps full ownership of the pointer/keyboard gesture for the whole drag; nothing is ever handed off mid-flight.",
+      'Moves items between lists: the building block for a Kanban-style board, not a component. `<Sortable>`, `<Tree>`, column reordering in `<DataTable>` and `v-draggable` all reorder within one list. This lets an item move from one `useSortable()` list into another, on the same spring-driven engine. Each list still calls `useSortable()`, or uses `<Sortable>` with the same `group` and `groupId` props. The group decides which list shows the open gap, and runs the transfer on drop. The list where the drag started keeps the pointer or keyboard gesture until the drag ends.',
     hasLiveDemo: true,
     params: [
       {
         name: 'onTransfer',
         type: '(value, from: GroupDropPosition, to: GroupDropPosition) => void',
         description:
-          'The only required option. Fires once, on a committed cross-container drop — splice `value` out of the array named by `from.groupId`, into `to.groupId`. Lives only here, never duplicated per-list, since a cross-boundary decision has no coherent meaning as one column’s opinion versus another’s.',
+          "Required. Fires once, on a committed drop into another list. Remove `value` from the array for `from.groupId` and insert it into the array for `to.groupId`. It lives on the group, not on each list, because a move between lists isn't either list's decision.",
       },
       {
         name: 'canDrop',
         type: '(details: GroupDropDetails) => boolean',
         description:
-          'Vetoes a cross-container move while dragging — a WIP limit on the target column, say. Re-run live; keep it cheap.',
+          'Vetoes a move between lists while dragging, such as a WIP limit on the target column. It re-runs live, so keep it cheap.',
       },
       {
         name: 'beforeDrop',
         type: '(details: GroupDropDetails) => boolean | Promise<boolean>',
         description:
-          'Async gate at drop time. Return false (or a promise of it) to cancel and spring the item back home — composes with confirmAction().result exactly like useSortable’s own beforeDrop.',
+          "An async check at drop time. Return `false`, or a promise of `false`, to cancel and spring the item back. Works with `confirmAction().result`, like `useSortable`'s `beforeDrop`.",
       },
       {
         name: 'onDropError',
         type: '(error: unknown, details: GroupDropDetails) => void',
         description:
-          'beforeDrop threw or rejected; the move is already reverted by the time this fires.',
+          '`beforeDrop` threw or rejected. The move is already reverted when this fires.',
       },
       {
         name: 'motionCss',
         type: 'MaybeRefOrGetter<boolean>',
         description:
-          'false skips the springs for the ghost gap opened in a foreign column while hovering it.',
+          '`false` turns off the springs for the gap that opens in another list while you hover it.',
       },
     ],
     returns: [
@@ -812,21 +822,21 @@ setMode('dark')
         name: 'join(options)',
         type: 'UseSortableReturn',
         description:
-          'The ergonomic default: useSortable() with group/groupId already wired in, so a column is one call instead of two things to keep consistent by hand. groupId is optional (auto-assigned if omitted), but a real one is what onTransfer receives to know which array/branch it’s dealing with.',
+          'The usual way to add a list: `useSortable()` with `group` and `groupId` already set, so each column is one call. `groupId` is auto-assigned if you omit it. Pass your own so `onTransfer` knows which array to update.',
       },
     ],
   },
 
   useFieldControl: {
     description:
-      'Wires a custom form control into the nearest `<Field>`: id/label association, `aria-describedby`/`aria-invalid`/`aria-required`, and reporting focus/filled state so Field can move a floating label or flip `data-filled`. This is what every built-in input (Input, Select, Checkbox, RadioGroup, …) uses internally; reach for it directly when building a custom control that should plug into Field the same way.',
+      'Connects a custom form control to the nearest `<Field>`. It returns the id and the ARIA values to bind (`aria-describedby`, `aria-invalid`, `aria-required`), and reports focus and filled state to Field. Field uses that state to move a floating label and set `data-filled`. Every built-in input (Input, Select, Checkbox, RadioGroup, …) uses it. Use it so a custom control works with Field the same way.',
     hasLiveDemo: true,
     params: [
       {
         name: 'filled',
         type: 'MaybeRefOrGetter<boolean>',
         description:
-          'Reactive "does this control currently have a value" signal, reported to the nearest Field, including programmatic v-model writes.',
+          '`true` when the control has a value. Reported to the nearest Field, including programmatic `v-model` writes.',
       },
     ],
     returns: [
@@ -834,43 +844,43 @@ setMode('dark')
         name: 'id',
         type: 'string',
         description:
-          "Bind to the control's own id: Field's controlId when present, otherwise a fresh useId().",
+          "Bind to the control's `id`. It's Field's `controlId` when there is one, otherwise a new `useId()`.",
       },
       {
         name: 'describedBy',
         type: '() => string | undefined',
-        description: 'Bind to aria-describedby.',
+        description: 'Bind to `aria-describedby`.',
       },
       {
         name: 'labelledBy',
         type: '() => string | undefined',
         description:
-          'Bind to aria-labelledby on group-shaped controls (RadioGroup) with no single native input.',
+          'Bind to `aria-labelledby` on group controls (RadioGroup) that have no single native input.',
       },
       {
         name: 'invalid',
         type: '() => boolean',
-        description: "OR this into the control's own invalid prop.",
+        description: "OR it into the control's own `invalid` prop.",
       },
       {
         name: 'required',
         type: '() => boolean',
-        description: 'Bind to aria-required.',
+        description: 'Bind to `aria-required`.',
       },
       {
         name: 'disabled',
         type: '() => boolean',
-        description: "Advisory: OR into the control's own disabled prop.",
+        description: "Advisory. OR it into the control's own `disabled` prop.",
       },
       {
         name: 'onFocus',
         type: '() => void',
-        description: "Call from the control's native focus handler.",
+        description: "Call it from the control's native `focus` handler.",
       },
       {
         name: 'onBlur',
         type: '() => void',
-        description: "Call from the control's native blur handler.",
+        description: "Call it from the control's native `blur` handler.",
       },
     ],
   },

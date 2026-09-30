@@ -9,6 +9,8 @@
     row-key="id"
     scroll-height="200px"
     :virtualize="virtualize"
+    :selectable="selectable"
+    selection-mode="row"
     @reach-end="reachEndCount++"
     @reach-start="reachStartCount++"
   >
@@ -31,8 +33,9 @@ const props = withDefaults(
   defineProps<{
     rowCount?: number
     virtualize?: boolean | { itemSize?: number; overscan?: number; estimateSize?: number }
+    selectable?: boolean
   }>(),
-  { rowCount: 1000, virtualize: true },
+  { rowCount: 1000, virtualize: true, selectable: false },
 )
 
 // Reactive to `rowCount` — the reach-end re-arm test rerenders with a larger

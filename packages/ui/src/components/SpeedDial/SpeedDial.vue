@@ -87,7 +87,7 @@ export type SpeedDialTriggerMode = 'click' | 'hover'
 // Field names mirror Menu's MenuItemData (label/icon/value/disabled/onSelect) to allow shared item arrays.
 export interface SpeedDialItem {
   label: string
-  /** Any component (1em box) — SpeedDial renders it inside an icon-only Button. */
+  /** Any component, sized to a `1em` box. SpeedDial renders it inside an icon-only Button. */
   icon?: Component
   value?: string
   disabled?: boolean
@@ -95,21 +95,29 @@ export interface SpeedDialItem {
 }
 
 export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
+  /** Actions to fan out, one icon button each. */
   items: ReadonlyArray<T>
+  /**
+   * Which way the actions fan out from the trigger. `'quarter-circle'` lays them on an arc of `radius`.
+   * @default 'up'
+   */
   direction?: SpeedDialDirection
-  /** `hover` only activates on real hover-capable pointers; click always works too. */
+  /** What opens the dial. `'hover'` only responds to hover-capable pointers; click always works too. @default 'click' */
   openOn?: SpeedDialTriggerMode
+  /** Disables the trigger and blocks interaction. @default false */
   disabled?: boolean
-  /** Selecting an action closes the dial; `false` keeps it open. */
+  /** Closes the dial when you select an action; `false` keeps it open. @default true */
   closeOnSelect?: boolean
-  /** Accessible name for both the trigger button and the action `role="menu"`. */
+  /** Accessible name for both the trigger button and the action `role="menu"`. @default 'Actions' */
   ariaLabel?: string
-  /** Arc radius (px) for `direction="quarter-circle"` — ignored otherwise. */
+  /** Arc radius in pixels. Only applies when `direction` is `'quarter-circle'`. @default 96 */
   radius?: number
-  /** Gates the built-in action fan-out/fan-in transition. `false` skips it entirely —
-   * reach for `@action-enter`/`@action-leave` instead if you want a consumer-owned
-   * animation (a spring, a staggered GSAP timeline) in its place. */
+  /** Plays the built-in fan-out and fan-in transition.
+   * Set `false` to animate actions yourself via `@action-enter` and `@action-leave`.
+   * @default true
+   */
   motionCss?: boolean
+  /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }>
 }
 
@@ -143,6 +151,7 @@ import { useMenu } from '../../composables/useMenu'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+/** Whether the actions are shown. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<SpeedDialProps<T>>(), {
@@ -156,17 +165,19 @@ const props = withDefaults(defineProps<SpeedDialProps<T>>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires when you click an action. */
   select: [item: T]
-  /** An action's fan-out enter transition started — forwarded straight from the
-   * underlying TransitionGroup's own `(el, done)` hook. Only fires when `motionCss`
-   * is `false`. */
+  /** Fires when an action's fan-out transition starts. Call `done()` when finished.
+   * Only fires when `motionCss` is `false`. */
   'action-enter': [el: Element, done: () => void]
-  /** Same as `action-enter`, for an action's fan-in exit. */
+  /** Fires when an action's fan-in transition starts, as with `@action-enter`. */
   'action-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
+  /** Replaces the trigger's plus icon. */
   icon(props: { open: boolean }): unknown
+  /** Custom content for each action button. Unset, the button shows the item's `icon`. */
   item(props: { item: T; index: number }): unknown
 }>()
 
@@ -183,7 +194,18 @@ const leaveHook = computed(() =>
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {
   if (direction === 'up' || direction === 'down') return 'vertical'
   if (direction === 'left' || direction === 'right') return 'horizontal'
+  // The arc runs both ways, so neither orientation is accurate.
   return undefined
+}
+
+// Items are ordered nearest-to-farthest from the trigger; +1 moves away from it.
+// The quarter-circle arc runs from straight above the trigger round to its left.
+const ARROW_STEPS: Record<SpeedDialDirection, Partial<Record<string, 1 | -1>>> = {
+  up: { ArrowUp: 1, ArrowDown: -1 },
+  down: { ArrowDown: 1, ArrowUp: -1 },
+  left: { ArrowLeft: 1, ArrowRight: -1 },
+  right: { ArrowRight: 1, ArrowLeft: -1 },
+  'quarter-circle': { ArrowLeft: 1, ArrowDown: 1, ArrowRight: -1, ArrowUp: -1 },
 }
 
 const STAGGER_STEP_MS = 40
@@ -207,6 +229,9 @@ function focusTrigger() {
   triggerRef.value?.el?.focus()
 }
 
+// Set when a hover opened the dial and no pointer click on the trigger has landed since.
+let openedByHover = false
+
 function openDial() {
   if (props.disabled) return
   open.value = true
@@ -218,7 +243,14 @@ function toggleDial() {
   if (props.disabled) return
   open.value = !open.value
 }
-function onTriggerClick() {
+function onTriggerClick(event: MouseEvent) {
+  // With openOn="hover", reaching the trigger opens the dial just before the
+  // natural click lands on it; that first pointer click keeps it open instead
+  // of toggling it straight back shut. Keyboard clicks (detail 0) still toggle.
+  if (open.value && openedByHover && event.detail > 0) {
+    openedByHover = false
+    return
+  }
   toggleDial()
 }
 
@@ -234,15 +266,30 @@ function selectItem(item: T) {
 }
 
 // useMenu handles roving-tabindex/arrows; onSelect unwired (clicks via @click).
-const { onKeydown: onMenuKeydown, focusFirst } = useMenu({ listEl })
+const { onKeydown: onMenuKeydown, focusFirst, focusItem } = useMenu({ listEl })
 
+// Arrow keys follow the visual direction; useMenu's vertical-only mapping would
+// send ArrowUp toward the trigger on an upward dial and ignore Left/Right.
 function onKeydown(event: KeyboardEvent) {
-  onMenuKeydown(event)
+  const step = ARROW_STEPS[props.direction][event.key]
+  if (!step) {
+    if (!event.key.startsWith('Arrow')) onMenuKeydown(event)
+    return
+  }
+  const items = Array.from(
+    listEl.value?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])') ?? [],
+  ).filter((el) => el.getAttribute('aria-disabled') !== 'true')
+  if (items.length === 0) return
+  event.preventDefault()
+  const current = items.indexOf(document.activeElement as HTMLElement)
+  const from = current === -1 ? (step > 0 ? -1 : 0) : current
+  focusItem(items[(from + step + items.length) % items.length])
 }
 
 // Focus first action on open (Menu pattern, minus floating-position gate).
 watch(open, (value) => {
   if (value) nextTick(() => focusFirst())
+  else openedByHover = false
 })
 
 // useLayer ensures Escape applies only to topmost open layer.
@@ -303,6 +350,7 @@ let hoverCloseTimer: ReturnType<typeof setTimeout> | undefined
 function onRootMouseEnter() {
   if (!canHoverOpen()) return
   clearTimeout(hoverCloseTimer)
+  if (!open.value) openedByHover = true
   open.value = true
 }
 function onRootMouseLeave() {
@@ -326,5 +374,16 @@ const actionsPart = computed(() => resolveUiPart(cx, undefined, 'ui-speed-dial-a
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-speed-dial-trigger'))
 const actionPart = computed(() => resolveUiPart(cx, themedUi()?.action, 'ui-speed-dial-action'))
 
-defineExpose({ el: root, listEl, open: openDial, close: closeDial, toggle: toggleDial })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Action list element (`role="menu"`). */
+  listEl,
+  /** Shows the actions. No-op while `disabled`. */
+  open: openDial,
+  /** Hides the actions. */
+  close: closeDial,
+  /** Shows or hides the actions. No-op while `disabled`. */
+  toggle: toggleDial,
+})
 </script>

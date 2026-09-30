@@ -51,7 +51,7 @@
         </Button>
       </Toolbar>
     </div>
-    <p class="note">
+    <p class="demo-status">
       Bold: <strong>{{ bold ? 'on' : 'off' }}</strong
       >, Italic: <strong>{{ italic ? 'on' : 'off' }}</strong
       >, Underline: <strong>{{ underline ? 'on' : 'off' }}</strong

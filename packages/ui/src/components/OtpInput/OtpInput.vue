@@ -37,7 +37,6 @@
       :class="inputPart.class"
       :style="inputPart.style"
       :value="displayValue"
-      :maxlength="length"
       :inputmode="type === 'numeric' ? 'numeric' : 'text'"
       autocomplete="one-time-code"
       autocapitalize="off"
@@ -80,27 +79,33 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+/** Entered code. @default '' */
 const modelValue = defineModel<string>({ default: '' })
 
 const props = withDefaults(
   defineProps<{
+    /** Number of cells, and the maximum code length. @default 6 */
     length?: number
-    /** Restricts input to digits only or alphanumeric. */
+    /** Restricts input to digits or to alphanumeric characters. @default 'numeric' */
     type?: 'numeric' | 'alphanumeric'
-    /** Shows a bullet instead of the entered character in every filled cell. */
+    /** Shows a bullet instead of the entered character in every filled cell. @default false */
     mask?: boolean
+    /** Disables the input and blocks interaction. A disabled parent Field also disables it. @default false */
     disabled?: boolean
+    /** Standalone override; ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Native `name` on the input, for plain `<form>` submission. */
     name?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; input: UiPartValue; cell: UiPartValue }>
   }>(),
   { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false, size: 'md' },
 )
 
 const emit = defineEmits<{
-  /** Fires once per distinct completion — when the model's length reaches
-   * `length` coming from a shorter value, not on every re-render. */
+  /** Fires with the code each time it changes to a full `length` characters, not on every re-render. */
   complete: [code: string]
 }>()
 
@@ -109,10 +114,8 @@ defineSlots<{
   cell(props: { char: string | null; index: number; active: boolean; filled: boolean }): unknown
 }>()
 
-function sanitize(text: string): string {
-  const stripped =
-    props.type === 'numeric' ? text.replace(/[^0-9]/g, '') : text.replace(/[^a-zA-Z0-9]/g, '')
-  return stripped.slice(0, props.length)
+function strip(text: string): string {
+  return props.type === 'numeric' ? text.replace(/[^0-9]/g, '') : text.replace(/[^a-zA-Z0-9]/g, '')
 }
 
 const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0 })
@@ -161,10 +164,11 @@ function onOverlayPointerDown(event: PointerEvent) {
       }
     }
   }
-  // Clamp caret to filled prefix (can't sit past first empty slot).
+  // Clamp caret to filled prefix (can't sit past first empty slot). A filled
+  // cell selects its character, so typing replaces it and Backspace clears it.
   index = Math.min(index, displayValue.value.length)
   el.focus()
-  el.setSelectionRange(index, index)
+  el.setSelectionRange(index, index < displayValue.value.length ? index + 1 : index)
   updateActive()
 }
 
@@ -181,9 +185,26 @@ onScopeDispose(() => {
   }
 })
 
+// No native maxlength: it would cut a pasted "123-456" before the dash is
+// stripped. Past the length, new characters overwrite the ones after the caret.
 function onNativeInput(event: Event) {
   const target = event.target as HTMLInputElement
-  modelValue.value = sanitize(target.value)
+  const caret = target.selectionStart ?? target.value.length
+  const before = strip(target.value.slice(0, caret))
+  const after = strip(target.value.slice(caret))
+  const overflow = before.length + after.length - props.length
+  const next =
+    overflow <= 0
+      ? before + after
+      : before.length >= props.length
+        ? before.slice(0, props.length)
+        : before + after.slice(overflow)
+  modelValue.value = next
+  if (target.value !== next) {
+    target.value = next
+    const pos = Math.min(before.length, props.length)
+    target.setSelectionRange(pos, pos)
+  }
   updateActive()
 }
 function onNativeFocus() {
@@ -199,7 +220,7 @@ function onNativeBlur() {
   fieldControl.onBlur()
 }
 
-// Clamped view used for display/completeness; sanitize() only runs from native input, so derive from this to stay consistent.
+// Clamped view used for display/completeness: a bound modelValue can be longer than `length`.
 const displayValue = computed(() => modelValue.value.slice(0, props.length))
 
 const cells = computed(() => {
@@ -252,5 +273,12 @@ const cellPart = computed(() =>
   resolveUiPart(cx, themedUi()?.cell, 'ui-otp-cell', hasCustomCell.value && 'ui-otp-cell--custom'),
 )
 
-defineExpose({ el: root, inputEl, cellEls })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Invisible native `<input>` that receives typing and paste. */
+  inputEl,
+  /** Cell elements, one per character slot. */
+  cellEls,
+})
 </script>

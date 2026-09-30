@@ -10,7 +10,7 @@
         :value-text="(v) => `$${v}`"
         style="max-width: 20rem"
       />
-      <output class="note">${{ price }}</output>
+      <output class="demo-status">${{ price }}</output>
     </div>
   </section>
 </template>

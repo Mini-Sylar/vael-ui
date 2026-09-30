@@ -45,16 +45,30 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
+/** Panel size in pixels along `direction`. Overshoots `min` or `max` elastically mid-drag, then settles within them. */
 const modelValue = defineModel<number>('size', { required: true })
 
 const props = withDefaults(
   defineProps<{
+    /** Smallest size in pixels. @default 0 */
     min?: number
+    /** Largest size in pixels. @default Infinity */
     max?: number
+    /**
+     * Axis the panel resizes along: `'horizontal'` sets its width, `'vertical'` its height.
+     * @default 'horizontal'
+     */
     direction?: ResizeDirection
+    /**
+     * Which edge the handle sits on. `'start'` flips the drag so moving toward the panel grows it.
+     * @default 'end'
+     */
     edge?: ResizeEdge
+    /** Disables dragging and keyboard resizing, and removes the handle from the tab order. @default false */
     disabled?: boolean
+    /** Accessible label for the handle. @default 'Resize' */
     ariaLabel?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; handle: UiPartValue }>
   }>(),
   {
@@ -68,7 +82,9 @@ const props = withDefaults(
 )
 
 defineSlots<{
+  /** Panel content. */
   default(): unknown
+  /** Custom content inside the drag handle. */
   handle(): unknown
 }>()
 
@@ -103,5 +119,12 @@ const rootPart = computed(() =>
 )
 const handlePart = computed(() => resolveUiPart(cx, themedUi()?.handle, 'ui-resizable-handle'))
 
-defineExpose({ el: root, handleEl, isDragging })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Drag handle element. */
+  handleEl,
+  /** Whether you're dragging the handle with a pointer. */
+  isDragging,
+})
 </script>

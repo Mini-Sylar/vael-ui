@@ -2,6 +2,7 @@
   .ui-breadcrumb-separator {
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
     color: var(--ui-text-muted);
   }
 }

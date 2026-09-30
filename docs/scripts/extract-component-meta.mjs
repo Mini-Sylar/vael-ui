@@ -4,6 +4,7 @@
 // the docs site's API tables can never drift from the real source.
 
 import { createChecker } from 'vue-component-meta'
+import ts from 'typescript'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -35,8 +36,43 @@ function shallowSchema(schema, depth = 0) {
   return {
     kind: schema.kind,
     type: schema.type,
+    // oxfmt-ignore
     schema: Array.isArray(schema.schema) ? schema.schema.map((s) => shallowSchema(s, depth + 1)) : undefined,
   }
+}
+
+// Every prop with a runtime default carries a matching `@default` tag, since
+// that tag is the only place the default survives into the published
+// `.d.ts` (editor hovers can't see `withDefaults`). The tag's text also reads
+// the way the source is written (`'md'`, `(item, index) => index`), so the
+// docs show it as `defaultText`; `default` keeps vue-component-meta's
+// JSON-style value, which the playground parses.
+function defaultTag(prop) {
+  return prop.tags?.find((tag) => tag.name === 'default')?.text?.trim()
+}
+
+// Loose equality between a `@default` tag and vue-component-meta's printed
+// default: ignores quote style, whitespace and `as` casts, and compares a
+// function default by its body (vue-component-meta unwraps arrows).
+function sameDefault(tag, printed) {
+  const normalize = (value) =>
+    value
+      .replace(/^\(.*?\)\s*=>\s*/, '')
+      .replace(/\s+as\s+\w+$/, '')
+      .replace(/'/g, '"')
+      .replace(/\s+/g, '')
+  return normalize(tag) === normalize(printed)
+}
+
+function defaultProblem(prop) {
+  const tag = defaultTag(prop)
+  const hasRuntimeDefault = prop.default !== undefined && prop.default !== 'undefined'
+  if (hasRuntimeDefault && !tag)
+    return `prop \`${prop.name}\` defaults to ${prop.default} but has no @default tag`
+  if (hasRuntimeDefault && !sameDefault(tag, prop.default)) {
+    return `prop \`${prop.name}\`: @default ${tag} doesn't match the real default ${prop.default}`
+  }
+  return null
 }
 
 function toPlainProp(prop) {
@@ -44,7 +80,10 @@ function toPlainProp(prop) {
     name: prop.name,
     description: prop.description,
     type: prop.type,
+    // Machine-readable (JSON-ish), for the playground's control defaults.
     default: prop.default,
+    // As written in source, for the API tables and skill references.
+    defaultText: defaultTag(prop) ?? prop.default,
     required: prop.required,
     global: prop.global,
     schema: shallowSchema(prop.schema),
@@ -59,52 +98,97 @@ function toPlainEventOrSlot(entry) {
   }
 }
 
-// vue-component-meta can't resolve `defineExpose()` on a generic
-// (`<script setup generic="T">`) component — it silently returns an empty
-// `exposed` array even when the component genuinely exposes real refs (open
-// upstream bug, same failure mode as vuejs/language-tools#3429). Falls back
-// to reading the defineExpose({...}) call's own key names straight from
-// source when that happens — no type info, but real names beat an empty
-// table.
-function fallbackExposedNames(source) {
-  const callIndex = source.indexOf('defineExpose(')
-  if (callIndex === -1) return []
-  const braceStart = source.indexOf('{', callIndex)
-  if (braceStart === -1) return []
+function formatType(typeChecker, type) {
+  return typeChecker
+    .typeToString(
+      type,
+      undefined,
+      ts.TypeFormatFlags.UseFullyQualifiedType | ts.TypeFormatFlags.NoTruncation,
+    )
+    .replace(/import\(.*?\)\./g, '')
+}
 
-  let depth = 0
-  let i = braceStart
-  for (; i < source.length; i++) {
-    if (source[i] === '{') depth++
-    else if (source[i] === '}' && --depth === 0) break
+function findNode(root, predicate) {
+  let found
+  const visit = (node) => {
+    if (found) return
+    if (predicate(node)) found = node
+    else ts.forEachChild(node, visit)
   }
-  // Strips block/line comments (a JSDoc note above an entry, e.g.) so they
-  // don't get swept into the next comma-split entry and fail the identifier
-  // check below.
-  const body = source
-    .slice(braceStart + 1, i)
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*$/gm, '')
+  visit(root)
+  return found
+}
 
-  const entries = []
-  let entryStart = 0
-  let braceDepth = 0
-  let parenDepth = 0
-  for (let j = 0; j <= body.length; j++) {
-    const ch = body[j]
-    if (ch === '{') braceDepth++
-    else if (ch === '}') braceDepth--
-    else if (ch === '(') parenDepth++
-    else if (ch === ')') parenDepth--
-    if ((ch === ',' && braceDepth === 0 && parenDepth === 0) || j === body.length) {
-      entries.push(body.slice(entryStart, j))
-      entryStart = j + 1
-    }
-  }
+// Mirrors Vue's `ShallowUnwrapRef`: a template ref reads as its `.value`
+// type, everything else stays as is.
+function unwrapRef(typeChecker, type) {
+  const isRef = type.getProperties().some((p) => p.getName().includes('RefSymbol'))
+  const value = isRef && type.getProperty('value')
+  return value ? typeChecker.getTypeOfSymbol(value) : type
+}
 
-  return entries
-    .map((e) => e.split(':')[0].trim())
-    .filter((name) => /^[A-Za-z_$][\w$]*$/.test(name))
+// vue-component-meta's own `exposed` is wrong in two ways here:
+// - It's always empty for a generic (`<script setup generic="T">`)
+//   component. Vue types that component's `expose` parameter as optional,
+//   and upstream's `inferComponentExposed` asks the `| undefined` union for
+//   call signatures without stripping it, so it finds none.
+// - It drops any exposed member that shares a prop's name (Button's
+//   `loading`, e.g.), since it filters the instance type by prop names.
+// Vue's codegen assigns the `defineExpose({...})` argument to a
+// `__VLS_exposed` const in every component's virtual file, so reading that
+// object directly sidesteps both.
+function resolveExposed(program, sourceFile) {
+  const decl = findNode(
+    sourceFile,
+    (n) =>
+      ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === '__VLS_exposed',
+  )
+  if (!decl) return []
+  const typeChecker = program.getTypeChecker()
+  return typeChecker
+    .getTypeAtLocation(decl)
+    .getProperties()
+    .map((prop) => ({
+      name: prop.getName(),
+      description: ts.displayPartsToString(prop.getDocumentationComment(typeChecker)),
+      type: formatType(typeChecker, unwrapRef(typeChecker, typeChecker.getTypeOfSymbol(prop))),
+    }))
+}
+
+// Vue turns `defineEmits<{ name: [...] }>()` into overloaded call
+// signatures that don't carry the JSDoc written on each key, so
+// vue-component-meta always reports an empty event description. Reads it
+// back off the type literal passed to `defineEmits` instead.
+function resolveEventDescriptions(program, sourceFile) {
+  const call = findNode(
+    sourceFile,
+    (n) =>
+      ts.isCallExpression(n) &&
+      ts.isIdentifier(n.expression) &&
+      n.expression.text === 'defineEmits' &&
+      n.typeArguments?.length === 1,
+  )
+  if (!call) return new Map()
+  const typeChecker = program.getTypeChecker()
+  return new Map(
+    typeChecker
+      .getTypeFromTypeNode(call.typeArguments[0])
+      .getProperties()
+      .map((prop) => [
+        prop.getName(),
+        ts.displayPartsToString(prop.getDocumentationComment(typeChecker)),
+      ]),
+  )
+}
+
+// `update:*` events generated by `defineModel` have no declaration to hang a
+// JSDoc on, so they get a uniform description pointing back at the model.
+function modelEventDescription(eventName) {
+  if (!eventName.startsWith('update:')) return ''
+  const model = eventName.slice('update:'.length)
+  return model === 'modelValue'
+    ? 'Fires when `modelValue` changes (`v-model`).'
+    : `Fires when \`${model}\` changes (\`v-model:${model}\`).`
 }
 
 function main() {
@@ -119,19 +203,25 @@ function main() {
     try {
       const filePath = join(UI_COMPONENTS_DIR, `${relativePath}.vue`)
       const componentMeta = checker.getComponentMeta(filePath)
-      let exposed = componentMeta.exposed.map(toPlainEventOrSlot)
-      if (exposed.length === 0) {
-        const source = readFileSync(filePath, 'utf8')
-        exposed = fallbackExposedNames(source).map((name) => ({
-          name,
-          type: 'unknown',
-          description:
-            'Type inference unavailable — vue-component-meta cannot resolve defineExpose on this generic component.',
-        }))
+      const program = checker.getProgram()
+      const sourceFile = program.getSourceFile(filePath)
+      const exposed = resolveExposed(program, sourceFile)
+      if (exposed.length === 0 && readFileSync(filePath, 'utf8').includes('defineExpose(')) {
+        throw new Error('calls defineExpose() but no exposed members could be resolved')
       }
+      const props = componentMeta.props.filter((p) => !p.global)
+      const defaultProblems = props.map(defaultProblem).filter(Boolean)
+      if (defaultProblems.length > 0) throw new Error(defaultProblems.join('; '))
+      const eventDescriptions = resolveEventDescriptions(program, sourceFile)
       meta[exportName] = {
-        props: componentMeta.props.filter((p) => !p.global).map(toPlainProp),
-        events: componentMeta.events.map(toPlainEventOrSlot),
+        props: props.map(toPlainProp),
+        events: componentMeta.events.map((event) => ({
+          ...toPlainEventOrSlot(event),
+          description:
+            event.description ||
+            eventDescriptions.get(event.name) ||
+            modelEventDescription(event.name),
+        })),
         slots: componentMeta.slots.map(toPlainEventOrSlot),
         exposed,
       }

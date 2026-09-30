@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { userEvent } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TreeSelectFixture from './fixtures/TreeSelectFixture.vue'
@@ -47,6 +47,17 @@ test('maxPanelHeight caps the panel even though the viewport has room for more',
   await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
   const list = document.querySelector<HTMLElement>('.ui-tree-list')!
   expect(list.scrollHeight).toBeGreaterThan(list.clientHeight)
+})
+
+test('without maxPanelHeight the panel defaults to a 320px cap', async () => {
+  await page.viewport(800, 900)
+  const items = Array.from({ length: 100 }, (_, i) => ({ label: `Item ${i}`, value: `item-${i}` }))
+  const screen = await render(TreeSelectFixture, { props: { items } })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Item 0')).toBeDefined())
+  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(320))
+  expect(panel.getBoundingClientRect().height).toBeGreaterThan(300)
 })
 
 test('renders nested data: root nodes are visible, children stay hidden until expanded', async () => {

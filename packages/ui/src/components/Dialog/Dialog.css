@@ -122,6 +122,12 @@
   .ui-dialog-maximize:active {
     transform: scale(0.94);
   }
+  .ui-dialog-close:focus-visible,
+  .ui-dialog-maximize:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 1px;
+  }
 
   .ui-dialog-enter-active {
     transition: --ui-dialog-t var(--ui-duration-enter) var(--ui-ease-out);

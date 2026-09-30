@@ -35,7 +35,7 @@
             <Avatar :name="row.from" size="sm" />
             <div class="swipe-body">
               <strong>{{ row.from }}</strong>
-              <p class="note swipe-preview">{{ row.preview }}</p>
+              <p class="swipe-preview">{{ row.preview }}</p>
             </div>
           </div>
         </SwipeToReveal>
@@ -155,6 +155,8 @@ onBeforeUnmount(() => {
   flex: 1;
 }
 .swipe-preview {
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;

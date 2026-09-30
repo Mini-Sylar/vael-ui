@@ -66,27 +66,36 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
+/** Selected value, an array of values with `multiple`, or `null` when nothing is selected. @default null */
 const modelValue = defineModel<string | number | (string | number)[] | null>({ default: null })
 
 const props = withDefaults(
   defineProps<{
+    /** Options to choose from. */
     items: ReadonlyArray<T>
+    /** Turns on multi-select; the model becomes an array. @default false */
     multiple?: boolean
-    /** Single mode only: clicking the active option clears the model. */
+    /** Single mode only: clicking the active option clears the model. @default true */
     allowEmpty?: boolean
+    /** Disables every option and blocks interaction. @default false */
     disabled?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Native `name` for form submission. Auto-generated when omitted. */
     name?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; option: UiPartValue; indicator: UiPartValue }>
   }>(),
   { multiple: false, allowEmpty: true, disabled: false, size: 'md' },
 )
 
 const emit = defineEmits<{
+  /** Fires when you change the selection, with the new model value. */
   change: [value: string | number | (string | number)[] | null]
 }>()
 
 defineSlots<{
+  /** Custom content for each option. Receives `item` and `checked`. */
   item(props: { item: T; checked: boolean }): unknown
 }>()
 
@@ -157,5 +166,10 @@ const indicatorPart = computed(() =>
 )
 
 const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
-defineExpose({ el: root, indicatorEl })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Sliding selection indicator (single mode only; `null` with `multiple`). */
+  indicatorEl,
+})
 </script>

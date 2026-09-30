@@ -13,9 +13,7 @@
             <Avatar name="Priya Nair" size="sm" />
             <div class="swipe-body">
               <strong>Priya Nair</strong>
-              <p class="note swipe-preview">
-                Drag right instead, actions live behind the left edge.
-              </p>
+              <p class="swipe-preview">Drag right instead, actions live behind the left edge.</p>
             </div>
           </div>
         </SwipeToReveal>
@@ -56,6 +54,8 @@ import { Avatar, Button, SwipeToReveal } from 'vael-ui'
   flex: 1;
 }
 .swipe-preview {
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -71,5 +71,6 @@ import { Avatar, Button, SwipeToReveal } from 'vael-ui'
 .swipe-actions :deep(.ui-button) {
   border-radius: 0;
   inline-size: 5.5rem;
+  block-size: auto;
 }
 </style>

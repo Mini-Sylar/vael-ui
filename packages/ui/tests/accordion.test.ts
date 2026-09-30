@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import AccordionFixture from './fixtures/AccordionFixture.vue'
@@ -107,4 +107,36 @@ test('rapid double-toggle (open then close before settling) does not strand a pi
   await vi.waitFor(() => expect(panel.dataset.state).toBe('closed'))
   expect(panel.style.blockSize).toBe('0px')
   expect(panel.style.visibility).toBe('hidden')
+})
+
+test('ArrowDown/ArrowUp/Home/End move focus between enabled triggers, wrapping at the ends', async () => {
+  const screen = await render(AccordionFixture)
+  const triggers = screen.container.querySelectorAll<HTMLButtonElement>('.ui-accordion-trigger')
+  triggers[0]!.focus()
+  await userEvent.keyboard('{ArrowDown}')
+  expect(document.activeElement).toBe(triggers[1])
+  // The third item is disabled, so the next stop wraps back to the first.
+  await userEvent.keyboard('{ArrowDown}')
+  expect(document.activeElement).toBe(triggers[0])
+  await userEvent.keyboard('{ArrowUp}')
+  expect(document.activeElement).toBe(triggers[1])
+  await userEvent.keyboard('{Home}')
+  expect(document.activeElement).toBe(triggers[0])
+  await userEvent.keyboard('{End}')
+  expect(document.activeElement).toBe(triggers[1])
+})
+
+test('trigger text and panel content share the same inline start edge', async () => {
+  const screen = await render(AccordionFixture, { props: { initial: 'first', motionCss: false } })
+  const trigger = screen.container.querySelector<HTMLElement>('.ui-accordion-trigger-title')!
+  const body = screen.container.querySelector<HTMLElement>('.ui-accordion-body')!
+  const range = document.createRange()
+  range.selectNodeContents(body)
+  expect(range.getBoundingClientRect().left).toBeCloseTo(trigger.getBoundingClientRect().left, 1)
+})
+
+test('motionCss=false removes the panel height transition so a consumer tween is not smoothed by it', async () => {
+  const screen = await render(AccordionFixture, { props: { motionCss: false } })
+  const panel = screen.container.querySelector<HTMLElement>('.ui-accordion-panel')!
+  expect(getComputedStyle(panel).transitionDuration).toBe('0s')
 })

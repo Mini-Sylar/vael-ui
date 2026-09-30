@@ -24,12 +24,20 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Whether the buttons sit in a row or a column. @default 'horizontal' */
     orientation?: 'horizontal' | 'vertical'
+    /** Accessible name for the group. */
     ariaLabel?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
   { orientation: 'horizontal', ariaLabel: undefined, ui: undefined },
 )
+
+defineSlots<{
+  /** The grouped buttons. */
+  default(): unknown
+}>()
 
 const root = useTemplateRef<HTMLElement>('root')
 const cx = useClassMerge()
@@ -47,5 +55,8 @@ const rootPart = computed(() =>
   ),
 )
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

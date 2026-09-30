@@ -4,6 +4,7 @@
       ref="viewport"
       :class="viewportPart.class"
       :style="viewportPart.style"
+      :data-scrolling="thumbRevealed ? '' : undefined"
       v-scroll-mask="scrollMaskValue"
     >
       <slot />
@@ -14,7 +15,7 @@
 <script setup lang="ts">
 import './ScrollArea.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, onScopeDispose, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useResizeObserver, useScroll } from '@vueuse/core'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -26,21 +27,28 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Which axis (or axes) the viewport scrolls along. @default 'vertical' */
     orientation?: 'vertical' | 'horizontal' | 'both'
-    /** Masks the scrolling edge(s) as content scrolls under them. */
+    /** Masks the scrolling edge(s) as content scrolls under them. @default true */
     scrollFade?: boolean
-    /** Scrollbar thumb is transparent until you hover/scroll the viewport (Chromium/WebKit only — `::-webkit-scrollbar-thumb` has no hover-reveal equivalent for Firefox's `scrollbar-color`, which always shows the thin thumb). */
+    /**
+     * Hides the scrollbar thumb until you hover, focus or scroll the viewport.
+     * @default false
+     */
     autoHide?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; viewport: UiPartValue }>
   }>(),
   { orientation: 'vertical', scrollFade: true, autoHide: false },
 )
 
 const emit = defineEmits<{
+  /** Fires when the viewport scrolls. */
   scroll: [event: Event]
 }>()
 
 defineSlots<{
+  /** Scrollable content. */
   default(): unknown
 }>()
 
@@ -58,6 +66,21 @@ const viewport = useTemplateRef<HTMLElement>('viewport')
 // reads to avoid arming a pull while a nested ScrollArea's own momentum/rubber-band scroll
 // hasn't actually settled — a touchstart landing at scrollTop 0 mid-bounce used to arm
 // regardless, since a raw scrollTop read can't tell "settled" from "still animating through 0."
+// autoHide keeps the thumb shown for a moment after the last scroll event, like
+// an overlay scrollbar. Not `isScrolling`: an instant scroll fires scrollend in the
+// same frame, so the thumb would never paint.
+const THUMB_LINGER_MS = 800
+const thumbRevealed = shallowRef(false)
+let thumbTimer: ReturnType<typeof setTimeout> | undefined
+function onScroll(event: Event) {
+  emit('scroll', event)
+  if (!props.autoHide) return
+  thumbRevealed.value = true
+  clearTimeout(thumbTimer)
+  thumbTimer = setTimeout(() => (thumbRevealed.value = false), THUMB_LINGER_MS)
+}
+onScopeDispose(() => clearTimeout(thumbTimer))
+
 const {
   x: scrollLeft,
   y: scrollTop,
@@ -65,7 +88,7 @@ const {
   arrivedState,
   directions,
   measure,
-} = useScroll(viewport, { onScroll: (event) => emit('scroll', event) })
+} = useScroll(viewport, { onScroll })
 
 const atTop = computed(() => arrivedState.top)
 const atBottom = computed(() => arrivedState.bottom)
@@ -116,21 +139,35 @@ const viewportPart = computed(() =>
 )
 
 defineExpose({
+  /** Root element. */
   el: root,
+  /** Scrolling viewport element. */
   viewportEl: viewport,
+  /** Vertical scroll offset in pixels. Writable: assigning it scrolls the viewport. */
   scrollTop,
+  /** Horizontal scroll offset in pixels. Writable: assigning it scrolls the viewport. */
   scrollLeft,
+  /** Whether the viewport is scrolled to the top. */
   atTop,
+  /** Whether the viewport is scrolled to the bottom. */
   atBottom,
+  /** Whether the viewport is scrolled to the left edge. */
   atStart,
+  /** Whether the viewport is scrolled to the right edge. */
   atEnd,
-  /** True while a scroll (including native momentum/rubber-band settling) is in flight. */
+  /** `true` while a scroll is in progress, including native momentum or rubber-band settling. */
   isScrolling,
+  /** Direction of the current scroll, as `top`, `bottom`, `left` and `right` flags. */
   directions,
+  /** Scrolls the viewport with native `ScrollToOptions`. */
   scrollTo,
+  /** Smooth-scrolls to the top. */
   scrollToTop,
+  /** Smooth-scrolls to the bottom. */
   scrollToBottom,
+  /** Smooth-scrolls to the left edge. */
   scrollToStart,
+  /** Smooth-scrolls to the right edge. */
   scrollToEnd,
 })
 </script>

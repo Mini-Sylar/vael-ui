@@ -8,7 +8,7 @@
     </p>
     <div class="row">
       <Button @click="basicOpen = true">Open command palette</Button>
-      <span v-if="lastSelected" class="note"
+      <span v-if="lastSelected" class="demo-status"
         >Last selected: <code>{{ lastSelected }}</code></span
       >
     </div>

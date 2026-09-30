@@ -58,17 +58,15 @@
 import type { UiPartValue } from '../../classes'
 
 export interface PullToRefreshProps {
+  /** Runs when you release a pull past `threshold`. The spinner shows until its promise settles. */
   onRefresh: () => Promise<void> | void
-  /** How far to pull (in pixels) before the refresh triggers. */
+  /** How far you pull, in pixels, before the refresh triggers. */
   threshold?: number
-  /** Maximum pull distance (in pixels) allowed before clamping. */
+  /** Maximum pull distance in pixels; the pull stops growing past it. */
   maxPull?: number
-  /**
-   * Detects gestures on this element instead of the root, for dropping into an existing
-   * scrollable layout as a thin wrapper. Defaults to the root, which then owns scrolling
-   * itself (`overflow-y: auto`); passing one leaves the root's own overflow untouched.
-   */
+  /** Existing scroll container to detect pulls on. Unset, the root itself scrolls. */
   scrollEl?: HTMLElement | { el: HTMLElement | null } | null
+  /** Class and style overrides for each part. */
   ui?: Partial<{
     root: UiPartValue
     zone: UiPartValue
@@ -98,7 +96,9 @@ const attrs = useAttrs()
 const props = defineProps<PullToRefreshProps>()
 
 defineSlots<{
+  /** Scrollable content. */
   default(): unknown
+  /** Replaces the default arrow, spinner and label shown in the pull zone. */
   indicator(props: { state: PullToRefreshState; progress: number; pullDistance: number }): unknown
 }>()
 
@@ -183,5 +183,14 @@ const labelText = computed(() => {
   }
 })
 
-defineExpose({ el: root, state, progress, refresh })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Current phase: `'idle'`, `'pulling'`, `'ready'`, `'loading'` or `'done'`. */
+  state,
+  /** Pull distance as a fraction of `threshold`, from 0 to 1. */
+  progress,
+  /** Starts a refresh without a pull. No-op while one is already running. */
+  refresh,
+})
 </script>

@@ -14,6 +14,7 @@
         :aria-expanded="isOpenValue"
         :aria-controls="panelId"
         :disabled="disabled"
+        data-accordion-trigger
         @click="onToggle"
       >
         <slot name="trigger" :open="isOpenValue" :toggle="onToggle">
@@ -46,6 +47,7 @@
       :style="[collapseStyle, panelPart.style]"
       :data-state="collapseState"
       :aria-hidden="collapseState === 'closed' ? 'true' : undefined"
+      :inert="collapseState === 'closed'"
     >
       <div :class="bodyPart.class" :style="bodyPart.style">
         <slot :open="isOpenValue" :toggle="onToggle" />
@@ -69,9 +71,13 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 const props = defineProps<{
+  /** Identifies the item in the parent `Accordion`'s value. */
   value: string
+  /** Trigger text; the `#trigger` slot replaces it. */
   title?: string
+  /** Disables the trigger so the item can't be toggled. */
   disabled?: boolean
+  /** Class and style overrides for each part. */
   ui?: Partial<{
     item: UiPartValue
     header: UiPartValue
@@ -82,7 +88,9 @@ const props = defineProps<{
 }>()
 
 defineSlots<{
+  /** Panel content. */
   default(props: { open: boolean; toggle: () => void }): unknown
+  /** Replaces the trigger's title and chevron; renders inside the trigger button. */
   trigger(props: { open: boolean; toggle: () => void }): unknown
 }>()
 
@@ -126,5 +134,10 @@ const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-ac
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-accordion-panel'))
 const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-accordion-body'))
 
-defineExpose({ panelEl: panel, open: isOpenValue })
+defineExpose({
+  /** Panel element, always mounted. */
+  panelEl: panel,
+  /** Whether the item is open. */
+  open: isOpenValue,
+})
 </script>

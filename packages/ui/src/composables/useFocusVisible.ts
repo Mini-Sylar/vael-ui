@@ -29,3 +29,24 @@ export function focusIsFromKeyboard(): boolean {
   wire()
   return modality === 'keyboard'
 }
+
+// For controls that focus themselves on pointerdown: Chrome matches native
+// :focus-visible there, so they style [data-focus-visible] instead.
+
+/** Focus handler: ring only for keyboard focus. */
+export function markFocusVisible(event: FocusEvent): void {
+  ;(event.currentTarget as HTMLElement | null)?.toggleAttribute(
+    'data-focus-visible',
+    focusIsFromKeyboard(),
+  )
+}
+
+/** Blur handler. */
+export function clearFocusVisible(event: FocusEvent): void {
+  ;(event.currentTarget as HTMLElement | null)?.removeAttribute('data-focus-visible')
+}
+
+/** Keydown handler: keyboard use after a click shows the ring. */
+export function showFocusVisible(event: KeyboardEvent): void {
+  ;(event.currentTarget as HTMLElement | null)?.setAttribute('data-focus-visible', '')
+}

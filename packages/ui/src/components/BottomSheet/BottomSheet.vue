@@ -70,29 +70,43 @@ const DEFAULT_SNAP_POINTS: SheetSnapPoint[] = [
 ]
 
 export interface BottomSheetProps {
-  /** Renders the default header with built-in close button. */
+  /** Renders the default header with a built-in close button. */
   title?: string
-  /** Ordered smallest to largest. Default: 60% / 92% of viewport height. Ignored when `fullScreen` is set and this is left unspecified. */
+  /** Snap points, ordered smallest to largest. Unset, the sheet snaps at 60% and 92% of viewport height,
+   * or fills it when `fullScreen` is set. */
   snapPoints?: SheetSnapPoint[]
-  /** Which snap point to open at. Defaults to the first (smallest). */
+  /** `id` of the snap point to open at. Unset, the sheet opens at the first (smallest). */
   initialSnap?: string
-  /** Whether dragging past the smallest snap point closes the sheet. Default true. */
+  /** Dragging past the smallest snap point closes the sheet. @default true */
   dismissible?: boolean
-  /** Panel width: `full` spans edge to edge, `sm`/`md`/`lg` cap and center it. Default: `full`. */
+  /**
+   * Panel width: `'full'` spans edge to edge; `'sm'`, `'md'` and `'lg'` cap and center it.
+   * @default 'full'
+   */
   width?: 'full' | 'sm' | 'md' | 'lg'
-  /** Single snap point covering entire viewport height. Shorthand for `snapPoints=[{ id: 'full', height: 1 }]`. */
+  /**
+   * Uses a single snap point that covers the full viewport height. Shorthand for `[{ id: 'full', height: 1 }]` snap points.
+   * @default false
+   */
   fullScreen?: boolean
-  /** Escape key closes the sheet. */
+  /** Closes the sheet when you press Escape. @default true */
   closeOnEsc?: boolean
-  /** Clicking the overlay closes the sheet. */
+  /** Closes the sheet when you click the overlay. @default true */
   closeOnOverlay?: boolean
-  /** Dims the background and traps focus/scroll, like Dialog's own `modal`. Set `false` for an always-open, non-dismissible panel docked beside other interactive content (e.g. a persistent list next to a live map) — the overlay becomes fully transparent and inert instead of blocking the page behind it. Default true. */
+  /**
+   * `false` disables the overlay, scroll lock and focus trap, so the page behind stays interactive.
+   * @default true
+   */
   modal?: boolean
-  /** Pushes a history entry on open so the mobile hardware/gesture back action closes this sheet instead of navigating the page away. Default false. */
+  /**
+   * Pushes a history entry on open, so the mobile back gesture or button closes the sheet.
+   * The page doesn't navigate away.
+   * @default false
+   */
   closeOnHistoryBack?: boolean
-  /** Custom exit animation; call `done()` when complete. Fires for all close paths. */
+  /** Custom exit animation; call `done()` to finish closing. Runs for every close path. */
   beforeClose?: (done: () => void) => void
-  /** Per-instance part-class/style overrides. */
+  /** Class and style overrides for each part. */
   ui?: Partial<{
     overlay: UiPartValue
     panel: UiPartValue
@@ -124,7 +138,7 @@ import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-/** Whether the sheet is open. */
+/** Whether the sheet is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<BottomSheetProps>(), {
@@ -142,13 +156,14 @@ const resolvedSnapPoints = computed<SheetSnapPoint[]>(
 )
 
 defineSlots<{
+  /** Sheet content. */
   default(props: {
     activeSnap: string | null
     isDragging: boolean
     isClosing: boolean
     close: () => void
   }): unknown
-  /** Replaces the default title + close-button row entirely. */
+  /** Replaces the default title and close-button row. */
   header(props: { close: () => void }): unknown
 }>()
 
@@ -253,5 +268,18 @@ const contentPart = computed(() =>
   resolveUiPart(cx, themedUi()?.content, 'ui-bottom-sheet-content'),
 )
 
-defineExpose({ panelEl, activeSnap, isDragging, isClosing, close: requestDismiss, cancelClose })
+defineExpose({
+  /** Panel element (null while closed). */
+  panelEl,
+  /** `id` of the snap point the sheet rests at. */
+  activeSnap,
+  /** Whether you're dragging the sheet. */
+  isDragging,
+  /** Whether a close is in progress (the exit animation or `beforeClose` hasn't finished). */
+  isClosing,
+  /** Closes the sheet with its slide-out animation. */
+  close: requestDismiss,
+  /** Cancels a close pending in `beforeClose` and keeps the sheet open. */
+  cancelClose,
+})
 </script>

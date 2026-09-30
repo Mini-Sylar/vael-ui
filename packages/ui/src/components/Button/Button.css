@@ -104,8 +104,9 @@
     background: transparent;
     color: var(--ui-text);
   }
+  /* --ui-danger-solid: the dark preset's darker fill (its --ui-danger is a light red for text). */
   .ui-button--danger {
-    background: var(--ui-danger);
+    background: var(--ui-danger-solid, var(--ui-danger));
     color: var(--ui-danger-contrast);
   }
 
@@ -127,7 +128,7 @@
       color: var(--ui-text-muted);
     }
     .ui-button--danger:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
-      background: var(--ui-danger-hover);
+      background: var(--ui-danger-solid-hover, var(--ui-danger-hover));
     }
   }
 

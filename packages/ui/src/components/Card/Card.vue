@@ -35,14 +35,15 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
-    /** Default header title; ignored when `#header` is used. */
+    /** Default header title; the `#header` slot replaces it. */
     title?: string
-    /** Default header description; ignored when `#header` is used. */
+    /** Default header description; the `#header` slot replaces it. */
     description?: string
-    /** Root tag — `'a'`/`'button'` for a fully interactive card. */
+    /** Root tag; use `'a'` or `'button'` for a fully interactive card. @default 'div' */
     as?: string
-    /** Hover/press affordance. Implied (always on) when `as` is `'a'` or `'button'`. */
+    /** Adds a hover and press affordance. Always on when `as` is `'a'` or `'button'`. @default false */
     interactive?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       header: UiPartValue
@@ -56,9 +57,11 @@ const props = withDefaults(
 )
 
 defineSlots<{
+  /** Card body content. */
   default(): unknown
   /** Replaces the default title/description header. */
   header(): unknown
+  /** Footer content; the footer renders only when this slot is used. */
   footer(): unknown
 }>()
 
@@ -81,5 +84,8 @@ const descriptionPart = computed(() =>
 const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-card-body'))
 const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-card-footer'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

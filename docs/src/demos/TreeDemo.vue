@@ -1,245 +1,250 @@
 <template>
-  <section class="demo">
-    <h2>Tree</h2>
-    <p class="note">
-      The tree BODY extracted out of <code>TreeSelect</code>'s own popover panel (see its own SFC
-      comment) so it can render on its own, with no trigger button, no positioner, no Teleport. Same
-      expand/collapse, checkbox-indeterminate, filter, and roving-keyboard-nav behavior either way,
-      just permanently in the page flow instead of behind a click. A VS Code-style file-explorer
-      sidebar is the case that motivated pulling it out. Try it with a keyboard: Tab into either
-      tree below, then ArrowDown/ArrowRight/ArrowLeft/Enter.
-    </p>
+  <div>
+    <section class="demo">
+      <h2>Tree</h2>
+      <p class="note">
+        The tree BODY extracted out of <code>TreeSelect</code>'s own popover panel (see its own SFC
+        comment) so it can render on its own, with no trigger button, no positioner, no Teleport.
+        Same expand/collapse, checkbox-indeterminate, filter, and roving-keyboard-nav behavior
+        either way, just permanently in the page flow instead of behind a click. A VS Code-style
+        file-explorer sidebar is the case that motivated pulling it out. Try it with a keyboard: Tab
+        into either tree below, then ArrowDown/ArrowRight/ArrowLeft/Enter.
+      </p>
 
-    <div class="tree-demo-shell">
-      <div class="tree-demo-column">
-        <h3>Single-select, <code>selectionMode="single"</code></h3>
-        <p class="note">Picking any node (folder or file) replaces the selection.</p>
-        <div class="tree-demo-sidebar">
-          <Tree v-model="singleValue" :items="fileTree" />
+      <div class="tree-demo-shell">
+        <div class="tree-demo-column">
+          <h3>Single-select, <code>selectionMode="single"</code></h3>
+          <p class="note">Picking any node (folder or file) replaces the selection.</p>
+          <div class="tree-demo-sidebar">
+            <Tree v-model="singleValue" :items="fileTree" />
+          </div>
+          <output class="panel-text">
+            {{ singleValue ? `Selected: ${singleValue}` : 'Nothing selected yet' }}
+          </output>
         </div>
-        <output class="panel-text">
-          {{ singleValue ? `Selected: ${singleValue}` : 'Nothing selected yet' }}
-        </output>
+
+        <div class="tree-demo-column">
+          <h3>Checkbox, <code>selectionMode="checkbox"</code>, indeterminate parents</h3>
+          <p class="note">
+            Checking a folder cascades to every enabled file beneath it.
+            <code>node_modules</code> is disabled: its whole subtree is unreachable and never
+            participates in a parent's indeterminate count.
+          </p>
+          <div class="tree-demo-sidebar">
+            <Tree v-model="checkboxValues" :items="fileTree" selection-mode="checkbox" />
+          </div>
+          <output class="panel-text">
+            {{
+              checkboxValues.length
+                ? `${checkboxValues.length} file(s) selected`
+                : 'Nothing selected yet'
+            }}
+          </output>
+        </div>
       </div>
 
-      <div class="tree-demo-column">
-        <h3>Checkbox, <code>selectionMode="checkbox"</code>, indeterminate parents</h3>
-        <p class="note">
-          Checking a folder cascades to every enabled file beneath it.
-          <code>node_modules</code> is disabled: its whole subtree is unreachable and never
-          participates in a parent's indeterminate count.
-        </p>
-        <div class="tree-demo-sidebar">
-          <Tree v-model="checkboxValues" :items="fileTree" selection-mode="checkbox" />
-        </div>
-        <output class="panel-text">
-          {{
-            checkboxValues.length
-              ? `${checkboxValues.length} file(s) selected`
-              : 'Nothing selected yet'
-          }}
-        </output>
-      </div>
-    </div>
-
-    <h3>A small VS Code</h3>
-    <p class="note">
-      Everything here composes from existing pieces: the <code>#node</code> slot replaces the row's
-      default content entirely (chevron, checkbox, label, checkmark), so git-status colors and a
-      rename field are just markup, not new API. <code>expandOnRowClick</code> makes a folder click
-      also expand it; <code>selectableFolders="false"</code> keeps a folder out of the selection
-      entirely, so browsing through folders never knocks the currently-open file out of the editor
-      pane. <code>stickyScroll</code> pins the expanded ancestor chain while scrolling, using native
-      <code>position: sticky</code>. The toolbar and right-click menu drive the tree's data directly
-      (<code>Tree</code> is uncontrolled state internally, so adding/removing/renaming nodes is just
-      editing the <code>items</code> array) — creating a file or folder calls the exposed
-      <code>expandNode()</code> on its parent so the new entry is immediately visible, and
-      <code>expandAll()</code>/<code>collapseAll()</code> back the toolbar buttons, the same way
-      <code>focusFirstRow</code> is exposed. Click a file to open it on the right, the way a real
-      editor tab would.
-    </p>
-    <div class="vscode-shell">
-      <Resizable v-model:size="sidebarSize" :min="200" :max="360" class="vscode-sidebar">
-        <div class="vscode-toolbar">
-          <span class="vscode-toolbar-title">Explorer</span>
-          <Toolbar aria-label="Explorer actions" class="vscode-toolbar-actions">
-            <template #end>
-              <Button
-                v-tooltip="searchOpen ? 'Close search' : 'Search files'"
-                icon
-                variant="ghost"
-                size="sm"
-                data-toolbar-overflow
-                :aria-label="searchOpen ? 'Close search' : 'Search files'"
-                @click="toggleSearch"
-              >
-                <PhMagnifyingGlass :size="14" />
-              </Button>
-              <Button
-                v-tooltip="'New File'"
-                icon
-                variant="ghost"
-                size="sm"
-                data-toolbar-overflow
-                aria-label="New File"
-                @click="createFile(contextFolder)"
-              >
-                <PhFilePlus :size="14" />
-              </Button>
-              <Button
-                v-tooltip="'New Folder'"
-                icon
-                variant="ghost"
-                size="sm"
-                data-toolbar-overflow
-                aria-label="New Folder"
-                @click="createFolder(contextFolder)"
-              >
-                <PhFolderPlus :size="14" />
-              </Button>
-              <Button
-                v-tooltip="'Expand All'"
-                icon
-                variant="ghost"
-                size="sm"
-                data-toolbar-overflow
-                aria-label="Expand All"
-                @click="expandAll"
-              >
-                <PhArrowsOutLineVertical :size="14" />
-              </Button>
-              <Button
-                v-tooltip="'Collapse All'"
-                icon
-                variant="ghost"
-                size="sm"
-                data-toolbar-overflow
-                aria-label="Collapse All"
-                @click="collapseAll"
-              >
-                <PhArrowsInLineVertical :size="14" />
-              </Button>
-            </template>
-          </Toolbar>
-        </div>
-        <Input
-          v-if="searchOpen"
-          v-model="vscodeQuery"
-          placeholder="Search files..."
-          size="sm"
-          class="vscode-search"
-        />
-
-        <div class="vscode-tree-scroll">
-          <Tree
-            ref="treeRef"
-            v-model="vscodeValue"
-            v-model:query="vscodeQuery"
-            v-model:node="selectedFile"
-            :items="gitFileTree"
-            :filterable="false"
-            expand-on-row-click
-            :selectable-folders="false"
-            sticky-scroll
-          >
-            <template #node="{ node, expanded, checked }">
-              <span
-                class="vscode-node-wrapper"
-                @click="setContext(node)"
-                @contextmenu.prevent="openContextMenu(node, $event)"
-              >
-                <span class="vscode-chevron" :data-open="node.children ? expanded : undefined">
-                  <PhCaretRight v-if="node.children" :size="12" />
-                </span>
-                <component :is="node.children ? PhFolder : PhFile" :size="14" class="vscode-icon" />
-                <Input
-                  v-if="editingValue === node.value"
-                  v-model="editingDraftName"
+      <h3>A small VS Code</h3>
+      <p class="note">
+        Everything here composes from existing pieces: the <code>#node</code> slot replaces the
+        row's default content entirely (chevron, checkbox, label, checkmark), so git-status colors
+        and a rename field are just markup, not new API. <code>expandOnRowClick</code> makes a
+        folder click also expand it; <code>selectableFolders="false"</code> keeps a folder out of
+        the selection entirely, so browsing through folders never knocks the currently-open file out
+        of the editor pane. <code>stickyScroll</code> pins the expanded ancestor chain while
+        scrolling, using native <code>position: sticky</code>. The toolbar and right-click menu
+        drive the tree's data directly (<code>Tree</code> is uncontrolled state internally, so
+        adding/removing/renaming nodes is just editing the <code>items</code> array) — creating a
+        file or folder calls the exposed <code>expandNode()</code> on its parent so the new entry is
+        immediately visible, and <code>expandAll()</code>/<code>collapseAll()</code> back the
+        toolbar buttons, the same way <code>focusFirstRow</code> is exposed. Click a file to open it
+        on the right, the way a real editor tab would.
+      </p>
+      <div class="vscode-shell">
+        <Resizable v-model:size="sidebarSize" :min="200" :max="360" class="vscode-sidebar">
+          <div class="vscode-toolbar">
+            <span class="vscode-toolbar-title">Explorer</span>
+            <Toolbar aria-label="Explorer actions" class="vscode-toolbar-actions">
+              <template #end>
+                <Button
+                  v-tooltip="searchOpen ? 'Close search' : 'Search files'"
+                  icon
+                  variant="ghost"
                   size="sm"
-                  class="vscode-rename-input"
-                  @click.stop
-                  @keydown.enter="commitRename"
-                  @keydown.esc="editingValue = null"
-                  @blur="commitRename"
-                />
-                <span
-                  v-else
-                  class="vscode-label"
-                  :data-status="node.gitStatus"
-                  :data-selected="checked || isContextFolder(node) || undefined"
+                  data-toolbar-overflow
+                  :aria-label="searchOpen ? 'Close search' : 'Search files'"
+                  @click="toggleSearch"
                 >
-                  {{ node.label }}
-                </span>
-                <span v-if="node.gitStatus" class="vscode-badge" :data-status="node.gitStatus">
-                  {{ node.gitStatus }}
-                </span>
-              </span>
-            </template>
-          </Tree>
-          <!-- One shared instance instead of one per row — each row just
-               reports a right-click; nothing about the menu itself is
-               per-node, so N rows shouldn't mean N popover instances. -->
-          <ContextMenu ref="contextMenuRef" :items="contextMenuItems" :long-press="false" />
-        </div>
-      </Resizable>
+                  <PhMagnifyingGlass :size="14" />
+                </Button>
+                <Button
+                  v-tooltip="'New File'"
+                  icon
+                  variant="ghost"
+                  size="sm"
+                  data-toolbar-overflow
+                  aria-label="New File"
+                  @click="createFile(contextFolder)"
+                >
+                  <PhFilePlus :size="14" />
+                </Button>
+                <Button
+                  v-tooltip="'New Folder'"
+                  icon
+                  variant="ghost"
+                  size="sm"
+                  data-toolbar-overflow
+                  aria-label="New Folder"
+                  @click="createFolder(contextFolder)"
+                >
+                  <PhFolderPlus :size="14" />
+                </Button>
+                <Button
+                  v-tooltip="'Expand All'"
+                  icon
+                  variant="ghost"
+                  size="sm"
+                  data-toolbar-overflow
+                  aria-label="Expand All"
+                  @click="expandAll"
+                >
+                  <PhArrowsOutLineVertical :size="14" />
+                </Button>
+                <Button
+                  v-tooltip="'Collapse All'"
+                  icon
+                  variant="ghost"
+                  size="sm"
+                  data-toolbar-overflow
+                  aria-label="Collapse All"
+                  @click="collapseAll"
+                >
+                  <PhArrowsInLineVertical :size="14" />
+                </Button>
+              </template>
+            </Toolbar>
+          </div>
+          <Input
+            v-if="searchOpen"
+            v-model="vscodeQuery"
+            placeholder="Search files..."
+            size="sm"
+            class="vscode-search"
+          />
 
-      <div class="vscode-editor">
-        <div v-if="selectedFile" class="vscode-editor-tab">
-          <component :is="PhFile" :size="14" />
-          {{ selectedFile.label }}
+          <div class="vscode-tree-scroll">
+            <Tree
+              ref="treeRef"
+              v-model="vscodeValue"
+              v-model:query="vscodeQuery"
+              v-model:node="selectedFile"
+              :items="gitFileTree"
+              :filterable="false"
+              expand-on-row-click
+              :selectable-folders="false"
+              sticky-scroll
+            >
+              <template #node="{ node, expanded, checked }">
+                <span
+                  class="vscode-node-wrapper"
+                  @click="setContext(node)"
+                  @contextmenu.prevent="openContextMenu(node, $event)"
+                >
+                  <span class="vscode-chevron" :data-open="node.children ? expanded : undefined">
+                    <PhCaretRight v-if="node.children" :size="12" />
+                  </span>
+                  <component
+                    :is="node.children ? PhFolder : PhFile"
+                    :size="14"
+                    class="vscode-icon"
+                  />
+                  <Input
+                    v-if="editingValue === node.value"
+                    v-model="editingDraftName"
+                    size="sm"
+                    class="vscode-rename-input"
+                    @click.stop
+                    @keydown.enter="commitRename"
+                    @keydown.esc="editingValue = null"
+                    @blur="commitRename"
+                  />
+                  <span
+                    v-else
+                    class="vscode-label"
+                    :data-status="node.gitStatus"
+                    :data-selected="checked || isContextFolder(node) || undefined"
+                  >
+                    {{ node.label }}
+                  </span>
+                  <span v-if="node.gitStatus" class="vscode-badge" :data-status="node.gitStatus">
+                    {{ node.gitStatus }}
+                  </span>
+                </span>
+              </template>
+            </Tree>
+            <!-- One shared instance instead of one per row — each row just
+                 reports a right-click; nothing about the menu itself is
+                 per-node, so N rows shouldn't mean N popover instances. -->
+            <ContextMenu ref="contextMenuRef" :items="contextMenuItems" :long-press="false" />
+          </div>
+        </Resizable>
+
+        <div class="vscode-editor">
+          <div v-if="selectedFile" class="vscode-editor-tab">
+            <component :is="PhFile" :size="14" />
+            {{ selectedFile.label }}
+          </div>
+          <pre
+            v-if="selectedFile"
+            class="vscode-editor-content"
+          ><code v-html="syntaxHighlightedLanguage || '// Empty file, pnpm add vael-ui'" /></pre>
+          <div v-else class="vscode-editor-empty">Select a file to open it</div>
         </div>
-        <pre
-          v-if="selectedFile"
-          class="vscode-editor-content"
-        ><code v-html="syntaxHighlightedLanguage || '// Empty file, pnpm add vael-ui'" /></pre>
-        <div v-else class="vscode-editor-empty">Select a file to open it</div>
       </div>
-    </div>
-  </section>
-  <section class="demo">
-    <h3>Drag to reorder and re-parent</h3>
-    <p>
-      <code>reorderable</code> turns on dragging: drop on a row's <em>middle</em> to move it
-      <em>into</em> that folder, or on an <em>edge</em> to place it alongside. Hovering a collapsed
-      folder opens it. Keyboard works too — <Kbd>Space</Kbd>, then <Kbd>ArrowUp</Kbd>/<Kbd
-        >ArrowDown</Kbd
-      >
-      to move and <Kbd>ArrowRight</Kbd> to nest.
-    </p>
-    <Tree :items="reorderTree" reorderable class="tree-reorder-demo" />
-  </section>
-  <section class="demo">
-    <h3>Gating a move</h3>
-    <p>
-      <code>canDrop</code> runs while you drag — here nothing may enter <code>locked</code>, and the
-      row turns red rather than previewing a move that can't happen. <code>beforeDrop</code> then
-      gates the drop itself; it returns a promise, and <code>confirmAction().result</code> already
-      is one. A rejection (a failed API call) reverts and fires <code>@drop-error</code>.
-    </p>
-    <Tree
-      :items="guardedTree"
-      reorderable
-      :can-drop="canDropHere"
-      :before-drop="confirmMove"
-      class="tree-reorder-demo"
-      @drop-error="treeDropError = String($event)"
-    />
-    <p v-if="treeDropError" class="tree-drop-error">{{ treeDropError }}</p>
-  </section>
-  <section class="demo">
-    <h3>Files stay alphabetical</h3>
-    <p>
-      <code>:reorder-siblings="false"</code> drops sibling reordering entirely — a file can move
-      into a different folder, but not up or down among its current neighbors. Hovering a file shows
-      no indicator at all; only folders highlight.
-    </p>
-    <Tree
-      :items="alphabeticalTree"
-      reorderable
-      :reorder-siblings="false"
-      class="tree-reorder-demo"
-    />
-  </section>
+    </section>
+    <section class="demo">
+      <h3>Drag to reorder and re-parent</h3>
+      <p>
+        <code>reorderable</code> turns on dragging: drop on a row's <em>middle</em> to move it
+        <em>into</em> that folder, or on an <em>edge</em> to place it alongside. Hovering a
+        collapsed folder opens it. Keyboard works too — <Kbd>Space</Kbd>, then
+        <Kbd>ArrowUp</Kbd>/<Kbd>ArrowDown</Kbd> to move and <Kbd>ArrowRight</Kbd> to nest.
+      </p>
+      <Tree :items="reorderTree" reorderable class="tree-reorder-demo" />
+    </section>
+    <section class="demo">
+      <h3>Gating a move</h3>
+      <p>
+        <code>canDrop</code> runs while you drag — here nothing may enter <code>locked</code>, and
+        the row turns red rather than previewing a move that can't happen.
+        <code>beforeDrop</code> then gates the drop itself; it returns a promise, and
+        <code>confirmAction().result</code> already is one. A rejection (a failed API call) reverts
+        and fires <code>@drop-error</code>.
+      </p>
+      <Tree
+        :items="guardedTree"
+        reorderable
+        :can-drop="canDropHere"
+        :before-drop="confirmMove"
+        class="tree-reorder-demo"
+        @drop-error="treeDropError = String($event)"
+      />
+      <p v-if="treeDropError" class="tree-drop-error">{{ treeDropError }}</p>
+    </section>
+    <section class="demo">
+      <h3>Files stay alphabetical</h3>
+      <p>
+        <code>:reorder-siblings="false"</code> drops sibling reordering entirely — a file can move
+        into a different folder, but not up or down among its current neighbors. Hovering a file
+        shows no indicator at all; only folders highlight.
+      </p>
+      <Tree
+        :items="alphabeticalTree"
+        reorderable
+        :reorder-siblings="false"
+        class="tree-reorder-demo"
+      />
+    </section>
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { userEvent } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import ComboboxFixture from './fixtures/ComboboxFixture.vue'
@@ -79,6 +79,16 @@ test('maxPanelHeight caps the panel even though the viewport has room for more',
   await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
   const body = document.querySelector<HTMLElement>('.ui-select-body')!
   expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
+})
+
+test('without maxPanelHeight the panel defaults to a 320px cap', async () => {
+  await page.viewport(800, 900)
+  const screen = await render(ComboboxFixture, { props: { itemCount: 100 } })
+  await screen.getByRole('combobox').click()
+  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
+  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(320))
+  expect(panel.getBoundingClientRect().height).toBeGreaterThan(300)
 })
 
 function optionTexts(): string[] {

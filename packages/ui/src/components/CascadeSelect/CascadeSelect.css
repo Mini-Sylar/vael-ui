@@ -114,4 +114,17 @@
       transition: none;
     }
   }
+  /* Rows on the selected path keep a quiet tint (same as Select's selected option). Rows are
+     teleported out of .ui-cascade-select, so this targets Menu's row directly. */
+  .ui-menu-item[data-cascade-selected] {
+    background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-surface));
+  }
+  .ui-menu-item[data-cascade-selected]:focus-visible {
+    background: var(--ui-muted);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-menu-item[data-cascade-selected]:hover {
+      background: var(--ui-muted);
+    }
+  }
 }

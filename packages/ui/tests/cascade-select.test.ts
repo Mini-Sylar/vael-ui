@@ -74,6 +74,34 @@ test('a disabled branch is skipped by arrow-key stepping at its own level', asyn
   await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
 })
 
+test('reopening with a value reveals the selected path: submenus open, the selected leaf is focused and tinted', async () => {
+  const screen = await render(CascadeSelectFixture)
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
+  await userEvent.keyboard('{ArrowRight}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
+  await userEvent.keyboard('{ArrowRight}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Accra'))
+  await userEvent.keyboard('{ArrowDown}{Enter}')
+  await expect.element(screen.getByTestId('value')).toHaveTextContent('kumasi')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Kumasi'))
+  const row = (name: string) => screen.getByRole('menuitem', { name }).element()
+  expect(row('Africa').getAttribute('aria-expanded')).toBe('true')
+  expect(row('Ghana').getAttribute('aria-expanded')).toBe('true')
+  expect(row('Europe').getAttribute('aria-expanded')).toBe('false')
+  for (const name of ['Africa', 'Ghana', 'Kumasi']) {
+    expect(row(name).hasAttribute('data-cascade-selected')).toBe(true)
+  }
+  expect(row('Accra').hasAttribute('data-cascade-selected')).toBe(false)
+
+  // ArrowLeft still walks back up the revealed path.
+  await userEvent.keyboard('{ArrowLeft}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
+})
+
 test('clicking a leaf row commits the value and path via mouse, same as keyboard', async () => {
   const screen = await render(CascadeSelectFixture)
   await screen.getByRole('combobox').click()

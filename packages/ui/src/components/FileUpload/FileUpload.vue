@@ -27,6 +27,7 @@
       :id="fieldControl.id"
       type="file"
       class="ui-file-upload-input"
+      tabindex="-1"
       :accept="accept"
       :capture="capture || undefined"
       :multiple="multiple"
@@ -40,7 +41,6 @@
     />
 
     <TransitionGroup
-      v-if="modelValue.length > 0"
       :ref="registerListEl"
       tag="ul"
       name="ui-file-item"
@@ -48,6 +48,7 @@
       :class="listPart.class"
       :style="listPart.style"
       @enter="enterHook"
+      @before-leave="beforeLeaveHook"
       @leave="leaveHook"
     >
       <li
@@ -86,12 +87,13 @@
   Dropzone + hidden input (via useFileDrop, headless and reusable) + accept/maxSize/maxFiles validation.
   input: sr-only (not display:none) for form participation; Browse button + dropzone are alternate entry points.
   Rows animate via TransitionGroup (opacity fade, staggered per-batch); consumers own #item slot + model.
+  The list stays mounted when empty (hidden by :empty) so the first and last rows animate too.
   Comments outside template to avoid DOM nodes in production.
 -->
 <script setup lang="ts">
 import './FileUpload.css'
 import '../shared/tokens.css'
-import { computed, ref, shallowRef, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFileDrop } from '../../composables/useFileDrop'
@@ -102,23 +104,35 @@ import { useThemedUi } from '../../theme'
 
 export type FileRejectReason = 'accept' | 'maxSize' | 'maxFiles'
 
+/** Accepted files. @default [] */
 const modelValue = defineModel<File[]>('files', { default: () => [] })
 
 const props = withDefaults(
   defineProps<{
     /** Native `accept` syntax: `.pdf`, `image/png`, `image/*`, comma-separated. */
     accept?: string
-    /** Native `capture` — opens the device camera directly instead of the file picker on mobile. `'environment'`/`'user'` pick a facing side; `true` leaves it to the browser. */
+    /** Native `capture`: opens the camera instead of the picker on mobile. `'user'`/`'environment'` pick the
+     * facing side; `true` lets the browser choose. */
     capture?: boolean | 'user' | 'environment'
+    /**
+     * Accepts several files that add to the list. When `false`, a new file replaces the current one.
+     * @default true
+     */
     multiple?: boolean
+    /** Maximum size per file, in bytes. Larger files fire `@reject` with `'maxSize'`. */
     maxSize?: number
+    /** Maximum number of files in the list. Files past it fire `@reject` with `'maxFiles'`. */
     maxFiles?: number
+    /** Disables the dropzone, browse button and file input. @default false */
     disabled?: boolean
+    /** Native `name` on the file input. */
     name?: string
-    /** Gates the built-in file-row enter/exit transition. `false` skips it entirely — reach for
-     * `@item-enter`/`@item-leave` instead if you want a consumer-owned animation (GSAP, motion-v)
-     * in its place. */
+    /**
+     * `false` skips the built-in file-row transition; use `@item-enter`/`@item-leave` for custom motion.
+     * @default true
+     */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       dropzone: UiPartValue
@@ -132,18 +146,20 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires for each file that `accept`, `maxSize` or `maxFiles` rejects, with the reason. */
   reject: [{ file: File; reason: FileRejectReason }]
+  /** Fires with the files accepted from a pick or drop. */
   add: [files: File[]]
+  /** Fires when you remove a file from the list. */
   remove: [file: File]
-  /** A file row's enter transition started — forwarded straight from the underlying
-   * TransitionGroup's own `(el, done)` hook. Only fires when `motionCss` is `false`. */
+  /** Fires when a file row enters, with the `(el, done)` transition hook. Only when `motionCss` is `false`. */
   'item-enter': [el: Element, done: () => void]
   /** Same as `item-enter`, for a row's exit. */
   'item-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
-  /** Replaces the dropzone's inner content; the library keeps the dropzone element + drag wiring. */
+  /** Custom dropzone content; the dropzone keeps its drag-and-drop handling. Receives `isDragOver` and `browse`. */
   default(props: { isDragOver: boolean; browse: () => void }): unknown
   /** Replaces one file row's content; the library keeps the `<li>`. */
   item(props: { file: File; remove: () => void; index: number }): unknown
@@ -239,10 +255,33 @@ function processFiles(incoming: File[]) {
   emit('add', accepted)
 }
 
+const FOCUSABLE =
+  'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+function liveRows(): Element[] {
+  return [...(listEl.value?.children ?? [])].filter(
+    (el) => !el.classList.contains('ui-file-item-leave-active'),
+  )
+}
+
 function removeFile(file: File) {
+  const row = document.activeElement?.closest('li')
+  const rows = liveRows()
+  const index = row && row.parentElement === listEl.value ? rows.indexOf(row) : -1
   staggerIndex.delete(fileKey(file))
   modelValue.value = modelValue.value.filter((f) => f !== file)
   emit('remove', file)
+  // The removed row takes focus with it; hand it to the row that slides into
+  // its place, or the one before, or back to the dropzone.
+  if (index < 0) return
+  nextTick(() => {
+    const remaining = liveRows()
+    const target = remaining[index] ?? remaining[index - 1]
+    const el =
+      target?.querySelector<HTMLElement>(FOCUSABLE) ??
+      dropzoneEl.value?.querySelector<HTMLElement>(FOCUSABLE)
+    el?.focus()
+  })
 }
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -260,6 +299,16 @@ function registerListEl(el: Element | { $el?: unknown } | null) {
 // Same shape as Toaster's own enterHook/leaveHook.
 const enterHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-enter', el, done),
+)
+// The built-in exit collapses the row from its measured height.
+const beforeLeaveHook = computed(() =>
+  props.motionCss
+    ? (el: Element) =>
+        (el as HTMLElement).style.setProperty(
+          '--ui-file-item-block-size',
+          `${el.getBoundingClientRect().height}px`,
+        )
+    : undefined,
 )
 const leaveHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-leave', el, done),
@@ -308,5 +357,16 @@ const listPart = computed(() => resolveUiPart(cx, themedUi()?.list, 'ui-file-upl
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-file-upload-item'))
 const removePart = computed(() => resolveUiPart(cx, themedUi()?.remove, 'ui-file-upload-remove'))
 
-defineExpose({ el: root, dropzoneEl, inputEl, listEl, browse })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Dropzone element. */
+  dropzoneEl,
+  /** Native file input. */
+  inputEl,
+  /** File list element (`null` until the first file is added). */
+  listEl,
+  /** Opens the native file picker (no-op while disabled). */
+  browse,
+})
 </script>

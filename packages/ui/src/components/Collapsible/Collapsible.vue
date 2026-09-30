@@ -22,6 +22,7 @@
       :style="[collapseStyle, panelPart.style]"
       :data-state="collapseState"
       :aria-hidden="collapseState === 'closed' ? 'true' : undefined"
+      :inert="collapseState === 'closed'"
     >
       <div :class="bodyPart.class" :style="bodyPart.style">
         <slot />
@@ -43,21 +44,25 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+/** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(
   defineProps<{
+    /** Blocks toggling and marks the trigger `aria-disabled`. @default false */
     disabled?: boolean
-    /** `false` skips transitions; use exposed `panelEl` for custom motion. */
+    /** `false` skips transitions; use exposed `panelEl` for custom motion. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue; body: UiPartValue }>
   }>(),
   { disabled: false, motionCss: true },
 )
 
 defineSlots<{
-  // Collapsible wires click handler and aria attributes
+  /** Toggle control: clicks toggle the panel, and its first button receives `aria-expanded` and `aria-controls`. */
   trigger(props: { open: boolean }): unknown
+  /** Panel content. */
   default(): unknown
 }>()
 
@@ -108,5 +113,10 @@ const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-co
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-collapsible-panel'))
 const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-collapsible-body'))
 
-defineExpose({ el: root, panelEl: panel })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Panel element, always mounted. */
+  panelEl: panel,
+})
 </script>

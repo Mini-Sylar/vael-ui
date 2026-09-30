@@ -19,15 +19,24 @@ import type { UiPartValue } from '../../classes'
 export interface TourSpotlightProps {
   targetEl?: HTMLElement | null
   active?: boolean
-  /** Space between the target's own box and the cutout edge, in pixels. */
+  /** Space between the target's own box and the cutout edge, in pixels. @default 4 */
   padding?: number
-  /** Cutout corner radius, in pixels. Clamped so it never exceeds half the padded box's own width/height. */
+  /**
+   * Cutout corner radius, in pixels. Clamped so it never exceeds half the padded box's own width/height.
+   * @default 8
+   */
   radius?: number
-  /** Snaps the cutout to the target 1:1 instead of gliding to it — for while a scroll driven by the same target change is in flight, so it doesn't lag a beat behind every scroll frame. */
+  /**
+   * Snaps the cutout to the target 1:1 instead of gliding to it — for while a scroll driven by the same target change is in flight, so it doesn't lag a beat behind every scroll frame.
+   * @default false
+   */
   instant?: boolean
   forceMount?: boolean
   teleportTo?: string | HTMLElement
-  /** Scopes the dim/cutout to this element's own box instead of the viewport — clip-path coordinates become relative to it, and the overlay switches from `position: fixed` to `absolute`. Omit for page-level. */
+  /**
+   * Scopes the dim/cutout to this element's own box instead of the viewport — clip-path coordinates become relative to it, and the overlay switches from `position: fixed` to `absolute`. Omit for page-level.
+   * @default null
+   */
   containerEl?: HTMLElement | null
   ui?: UiPartValue
 }

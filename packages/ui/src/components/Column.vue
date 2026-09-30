@@ -12,15 +12,19 @@ defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
+    /** Row key this column reads its values from. */
     field: keyof T
+    /** Header text. Falls back to `field`. */
     label?: string
+    /** Makes the header a button that cycles ascending, descending and unsorted. */
     sortable?: boolean
+    /** Column width as a CSS length. Numbers are pixels. */
     width?: string | number
-    /** Unset (default) inherits DataTable's `resizableColumns`; `true`/`false` overrides per-column. */
+    /** Unset, inherits DataTable's `resizableColumns`; `true` or `false` overrides it for this column. */
     resizable?: boolean
-    /** Unset (default) inherits DataTable's `reorderableColumns`; `false` pins this column in place. */
+    /** Unset, inherits DataTable's `reorderableColumns`; `false` pins this column in place. */
     reorderable?: boolean
-    /** Type-inference anchor only. Bind here (`<Column :data="items" ...>`) so other props infer correctly against `T`. */
+    /** Type-inference anchor only. Bind it (`<Column :data="items">`) so other props infer against `T`. */
     data?: T[]
   }>(),
   {
@@ -30,7 +34,9 @@ const props = withDefaults(
 )
 
 defineSlots<{
+  /** Custom cell content for each row. */
   cell?: (p: { row: T; value: T[keyof T] }) => any
+  /** Replaces the header content, including the sort button of a `sortable` column. */
   header?: (p: { column: RegisteredColumn<T> }) => any
 }>()
 

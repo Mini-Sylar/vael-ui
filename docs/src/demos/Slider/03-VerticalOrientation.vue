@@ -3,7 +3,7 @@
     <h3>Vertical orientation</h3>
     <div class="row slider-row" style="align-items: flex-start">
       <Slider v-model="verticalValue" orientation="vertical" :min="0" :max="100" />
-      <output class="note">{{ verticalValue }}</output>
+      <output class="demo-status">{{ verticalValue }}</output>
     </div>
   </section>
 </template>

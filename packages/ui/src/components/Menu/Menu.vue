@@ -1,5 +1,11 @@
 <template>
-  <span v-if="$slots.trigger" ref="triggerWrapper" class="ui-menu-trigger" @click="toggle">
+  <span
+    v-if="$slots.trigger"
+    ref="triggerWrapper"
+    class="ui-menu-trigger"
+    @click="toggle"
+    @keydown="onTriggerKeydown"
+  >
     <slot name="trigger" :open="open" />
   </span>
   <Teleport :to="teleportTo">
@@ -93,6 +99,7 @@
                   :items="entry.items"
                   :trigger-el="rowEls[i]"
                   v-model:open="submenuOpen[i]"
+                  :open-path="revealedRow === i ? openPath?.slice(1) : undefined"
                   side="right"
                   align="start"
                   :teleport-to="positionerEl"
@@ -133,35 +140,32 @@ export interface MenuSeparator {
 }
 
 /**
- * One action row in a data-driven `items` array. Extend it with your own
- * fields — Menu is generic over the item type, so `@select` hands the whole
- * object back with those fields intact.
+ * One action row in a data-driven `items` array. You can extend it with your own fields: Menu is
+ * generic over the item type, so `@select` returns the whole object with those fields intact.
  */
 export interface MenuItemData {
   type?: 'item'
   label: string
-  /** Identity for `@select` consumers; falls back to `label` if omitted. */
+  /** Row identity for `@select`; falls back to `label` when omitted. */
   value?: string
-  /** Leading icon — any component (1em box). Omit and use the `#item` slot for richer content. */
+  /** Leading icon: any component, sized to a 1em box. For richer content, use the `#item` slot. */
   icon?: Component
   /** Trailing hint, e.g. a keyboard shortcut. */
   shortcut?: string
   disabled?: boolean
-  /** Renders in the danger color — destructive actions (Delete, Remove). */
+  /** Renders the row in the danger color, for destructive actions such as Delete or Remove. */
   danger?: boolean
-  /** Activates and runs handlers but leaves the menu open — toggles, multi-select. */
+  /** Runs the handlers but leaves the menu open, for toggles and multi-select. */
   keepOpen?: boolean
   /** Per-item handler; the `@select` event fires alongside it. */
   onSelect?: () => void
   /**
-   * Nested rows render as submenu triggers (opens on hover-intent, click,
-   * Enter/Space, or ArrowRight). Custom item types are not available at
-   * nested levels. In `MenuList` (no overlay/submenus there), this instead
-   * makes the row itself an inert group label with its own `items` flattened
-   * in beneath it — see `MenuList`'s `#item` slot's `isGroup` prop.
+   * Nested rows; the row becomes a submenu trigger that opens on hover intent, click, Enter/Space or
+   * ArrowRight. Nested levels don't support custom item types. In MenuList, the row becomes an inert
+   * group label with its `items` rendered beneath it (see the `isGroup` prop of the `#item` slot).
    */
   items?: ReadonlyArray<MenuEntry<MenuItemData>>
-  /** Row tag — default `'button'`, or `'a'`/`'RouterLink'` for a real link (same `as`/`attrs` convention as `BreadcrumbItem`). Ignored when `items` is set. */
+  /** Row tag: `'button'`, or `'a'`/`'RouterLink'` for a real link (same `as`/`attrs` convention as BreadcrumbItem). Ignored when `items` is set. */
   as?: string
   /** Forwarded onto the rendered element, e.g. `{ href }` or `{ to }`. */
   attrs?: Record<string, unknown>
@@ -169,37 +173,45 @@ export interface MenuItemData {
 
 export type MenuEntry<T extends MenuItemData = MenuItemData> = T | MenuSeparator
 
-/** Anything a template ref can resolve to — a plain element, or a component exposing `.el` (Button's convention). */
+/** Anything a template ref can resolve to: a plain element, or a component exposing `.el` (Button's convention). */
 type TriggerRef = HTMLElement | { el: HTMLElement | null } | null | undefined
 
 export interface MenuProps<T extends MenuItemData = MenuItemData> {
   /** Data-driven rows. Ignored when the default slot renders custom markup instead. */
   items?: ReadonlyArray<MenuEntry<T>>
-  /** External ref for a trigger that can't live in the #trigger slot. */
+  /** External ref for a trigger that can't live in the `#trigger` slot. */
   triggerEl?: TriggerRef
-  /** Which side of the trigger the panel opens on. */
+  /** Which side of the trigger the panel opens on. @default 'bottom' */
   side?: MenuSide
-  /** How the panel aligns against the trigger along that side. */
+  /** How the panel aligns against the trigger along that side. @default 'start' */
   align?: MenuAlign
-  /** Gap between the trigger and the panel, in pixels. */
+  /** Gap between the trigger and the panel, in pixels. @default 8 */
   sideOffset?: number
-  /** Shifts the panel along the alignment axis, in pixels. */
+  /** Shifts the panel along the alignment axis, in pixels. @default 0 */
   alignOffset?: number
-  /** Escape key closes the panel. */
+  /** Escape key closes the panel. @default true */
   closeOnEsc?: boolean
-  /** Clicking outside the panel closes it. */
+  /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
+  /** Custom exit animation; call `done()` to finish closing. */
   beforeClose?: (done: () => void) => void
-  /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
+  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
-  /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. */
+  /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
-  /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
+  /**
+   * Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more.
+   * @default true
+   */
   scrollFade?: boolean
-  /** Caps the panel's height at this many pixels even when the viewport has room for more — the item list scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+  /** Caps the panel's height in pixels; the item list scrolls past it. Unset, only the viewport limits it. */
   maxPanelHeight?: number
-  /** Per-instance part-class/style overrides. */
+  /**
+   * Row path to reveal on open, as each row's `value` (or `label`): every submenu along it opens and
+   * its last row takes focus instead of the first, e.g. to show the current selection.
+   */
+  openPath?: readonly string[]
+  /** Class and style overrides for each part. */
   ui?: Partial<{
     positioner: UiPartValue
     panel: UiPartValue
@@ -242,7 +254,7 @@ import { vScrollMask } from '../../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
 
-/** Whether the menu is open. */
+/** Whether the menu is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<MenuProps<T>>(), {
@@ -259,21 +271,24 @@ const props = withDefaults(defineProps<MenuProps<T>>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires before the menu closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires when a data-driven row is activated, including rows in submenus. */
   select: [item: T]
+  /** Fires on ArrowLeft inside the menu; a parent menu uses it to close this submenu. */
   collapse: []
-  /** Whether any row/panel in subtree is under pointer (keeps parent alive during pointer transit). */
+  /** Fires when the pointer enters or leaves any submenu row or panel in this subtree; a parent menu uses it to stay open. */
   active: [value: boolean]
 }>()
 
 defineSlots<{
-  /** Co-located trigger markup — Menu wires the click and anchors to it; render just the button. */
+  /** Trigger markup. Menu wires the click and anchors the panel to it, so render only the button. */
   trigger(props: { open: boolean }): unknown
-  /** Above the item list, outside its scroll region — stays put while `items` scrolls underneath. */
+  /** Content above the item list, outside its scroll region; it stays put while `items` scrolls. */
   header(): unknown
   /** Override one data-driven row's content while keeping its behavior. */
   item(props: { item: T }): unknown
-  /** Fully custom menu content — render your own role="menuitem" markup; `items` is ignored. */
+  /** Fully custom menu content. Render your own `role="menuitem"` markup; Menu ignores `items`. */
   default(props: {
     close: () => void
     open: boolean
@@ -281,11 +296,11 @@ defineSlots<{
     cancelClose: () => void
     panelEl: HTMLElement | null
     placement: string
-    /** The live popover height budget in px, or `null` when unconstrained — size your own
-     * scroll region against this instead of guessing, since the built-in item list already does. */
+    /** Live panel height budget in pixels, or `null` when unconstrained. Size your own scroll region
+     * against it, as the built-in item list does. */
     maxHeight: number | null
   }): unknown
-  /** Below the item list, outside its scroll region — stays put while `items` scrolls above it. */
+  /** Content below the item list, outside its scroll region; it stays put while `items` scrolls. */
   footer(): unknown
 }>()
 
@@ -340,6 +355,20 @@ function toggle() {
   open.value = !open.value
 }
 
+// Which end of the list takes focus once the panel is ready (ARIA menu button: ArrowUp -> last).
+let focusOnReady: 'first' | 'last' = 'first'
+function onTriggerKeydown(event: KeyboardEvent) {
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+  // A consumer trigger (e.g. CascadeSelect) may handle it, and a vertical composite (toolbar)
+  // uses Up/Down to move between its own items.
+  if (event.defaultPrevented) return
+  if ((event.currentTarget as HTMLElement).closest('[aria-orientation="vertical"]')) return
+  event.preventDefault()
+  focusOnReady = event.key === 'ArrowUp' ? 'last' : 'first'
+  if (open.value) focusEdge()
+  else open.value = true
+}
+
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 const listEl = useTemplateRef<HTMLElement>('list')
@@ -361,6 +390,7 @@ const {
   cancelClose,
   layerIndex,
 } = usePopover(open, {
+  tabIntoPanel: true,
   triggerEl: triggerElRef,
   positionerEl,
   side: () => props.side,
@@ -523,13 +553,50 @@ watchEffect(() => {
   trigger.setAttribute('aria-expanded', String(open.value))
 })
 
+// Row whose submenu `openPath` opened; only that submenu inherits the rest of the path, so a
+// later hover/keyboard open of any submenu starts at its first row as usual.
+const revealedRow = shallowRef<number | null>(null)
+watch(
+  () => revealedRow.value != null && !!submenuOpen[revealedRow.value],
+  (stillOpen) => {
+    if (!stillOpen) revealedRow.value = null
+  },
+)
+
+function revealOpenPath(): boolean {
+  const [head, ...rest] = props.openPath ?? []
+  if (head === undefined || !props.items) return false
+  const i = props.items.findIndex(
+    (entry) => !isSeparator(entry) && !entry.disabled && (entry.value ?? entry.label) === head,
+  )
+  const row = rowEls[i]
+  if (i < 0 || !row) return false
+  focusItem(row)
+  if (rest.length > 0 && (props.items[i] as MenuItemData).items) {
+    closeAllSubmenusExcept(i)
+    revealedRow.value = i
+    submenuOpen[i] = true
+  }
+  return true
+}
+
 // Gate focus on visibility:hidden resolution (floating-ui's async computePosition).
 watch(
   () => open.value && positionerStyle.value.visibility === 'visible',
   (ready) => {
-    if (ready) nextTick(() => focusFirst())
+    if (ready) nextTick(() => revealOpenPath() || focusEdge())
   },
 )
+
+function focusEdge() {
+  const edge = focusOnReady
+  focusOnReady = 'first'
+  if (edge === 'first') return focusFirst()
+  const rows = listEl.value?.querySelectorAll<HTMLElement>(
+    '[role="menuitem"]:not(:disabled):not([aria-disabled="true"])',
+  )
+  focusItem(rows?.[rows.length - 1])
+}
 
 const panelMaxHeightStyle = computed(() =>
   maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
@@ -550,15 +617,25 @@ const resolvedAlign = computed<MenuAlign>(() => {
 })
 
 defineExpose({
+  /** Panel element (null while closed). */
   panelEl,
+  /** Positioning wrapper around the panel (null while closed). */
   positionerEl,
+  /** Item list element (null while closed). */
   listEl,
+  /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
+  /** Inline positioning style applied to the positioner. */
   positionerStyle,
+  /** `true` while a `beforeClose` close is pending. */
   isClosing,
+  /** Opens the menu. */
   open: openMenu,
+  /** Opens or closes the menu. */
   toggle,
+  /** Closes the menu, running `@open-change` and `beforeClose` first. */
   close,
+  /** Cancels a close pending in `beforeClose` and keeps the menu open. */
   cancelClose,
 })
 </script>

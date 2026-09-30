@@ -4,6 +4,7 @@
       ref="menuRef"
       v-model:open="open"
       :items="mappedItems"
+      :open-path="openKeyPath"
       :side="side"
       :align="align"
       :side-offset="sideOffset"
@@ -40,6 +41,9 @@
           :data-invalid="isInvalid || undefined"
           :data-placeholder="!selectedItem || undefined"
           :aria-describedby="fieldControl.describedBy()"
+          :aria-labelledby="
+            (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
+          "
           :aria-invalid="isInvalid || undefined"
           :aria-required="fieldControl.required() || undefined"
           @click="onTriggerClick"
@@ -124,10 +128,9 @@
 
 <script lang="ts">
 /**
- * One node in a `CascadeSelect` hierarchy. A node with `children` is a
- * branch — it opens a nested level on hover/click/ArrowRight instead of
- * committing a selection; a node with no `children` (or an empty array) is a
- * leaf — it's the only kind of node that can ever become the model value.
+ * One node in a CascadeSelect hierarchy. A node with `children` is a branch: it opens a nested
+ * level on hover, click or ArrowRight instead of committing a selection. A node with no `children`
+ * (or an empty array) is a leaf, the only kind of node that can become the model value.
  */
 export interface CascadeSelectItem {
   label: string
@@ -158,30 +161,54 @@ import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
+/** Selected leaf value. @default null */
 const model = defineModel<string | number | null>({ default: null })
+/** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(
   defineProps<{
+    /** Tree of options; only leaves (nodes without `children`) can be selected. */
     items: readonly T[]
+    /** Text shown in the trigger when nothing is selected. */
     placeholder?: string
+    /**
+     * Disables the trigger and keeps the panel from opening. A disabled parent Field also disables it.
+     * @default false
+     */
     disabled?: boolean
+    /** Shows a clear button in the trigger while a value is selected. @default false */
     clearable?: boolean
-    /** Standalone override; ORed with the nearest Field's `error` state. */
+    /** Standalone override; ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
-    /** Renders a hidden `<input type="hidden">` mirroring the leaf value, for plain `<form>` posts. */
+    /** When set, renders an `<input type="hidden">` with this name that mirrors the leaf value, for plain `<form>` posts. */
     name?: string
+    /** Which side of the trigger the panel opens on. @default 'bottom' */
     side?: MenuSide
+    /** How the panel aligns against the trigger along that side. @default 'start' */
     align?: MenuAlign
+    /** Gap between the trigger and the panel, in pixels. @default 8 */
     sideOffset?: number
+    /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
+    /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
+    /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
+    /** Custom exit animation; call `done()` to finish closing. */
     beforeClose?: (done: () => void) => void
+    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
     forceMount?: boolean
+    /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
+    /**
+     * Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more.
+     * @default true
+     */
     scrollFade?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
       value: UiPartValue
@@ -213,21 +240,24 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires before the panel closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires when the value changes by picking a leaf or clearing (`null`). */
   change: [value: string | number | null]
+  /** Fires when a leaf is picked, with the item and its root-to-leaf path. */
   select: [item: T, path: CascadeSelectPath]
 }>()
 
 defineSlots<{
-  /** Trigger content override — receives the resolved leaf item and its root-to-leaf path. */
+  /** Custom trigger content; receives the selected leaf item and its root-to-leaf path. */
   value(props: { selected: T | null; path: CascadeSelectPath }): unknown
-  /** Above the row list — forwarded to the underlying Menu's own `#header`. */
+  /** Content above the row list, forwarded to the underlying Menu's `#header`. */
   header(): unknown
-  /** Row content override, any level — keeps the row's expand/select behavior. */
+  /** Custom row content at any level; the row keeps its expand and select behavior. */
   item(props: { item: T; hasChildren: boolean }): unknown
   /** Replaces the localized "no options" row shown when `items` is empty. */
   empty(): unknown
-  /** Below the row list — forwarded to the underlying Menu's own `#footer`. */
+  /** Content below the row list, forwarded to the underlying Menu's `#footer`. */
   footer(): unknown
 }>()
 
@@ -259,16 +289,25 @@ const selectedPath = computed<CascadeSelectPath>(() => selectedMatch.value?.path
 const nodeByKey = new Map<string, CascadeSelectItem>()
 let nodeSeq = 0
 
-function buildEntries(items: readonly CascadeSelectItem[]): MenuItemData[] {
+// `path` is the rest of the selected path while this level is on it; its rows get
+// `data-cascade-selected`.
+function buildEntries(
+  items: readonly CascadeSelectItem[],
+  path: CascadeSelectPath | undefined,
+): MenuItemData[] {
   return items.map((item) => {
     const key = String(nodeSeq++)
     nodeByKey.set(key, item)
     const hasChildren = !!item.children && item.children.length > 0
+    const onPath = path !== undefined && path[0] === item.value
     return {
       label: item.label,
       value: key,
       disabled: item.disabled,
-      items: hasChildren ? buildEntries(item.children!) : undefined,
+      attrs: onPath ? { 'data-cascade-selected': '' } : undefined,
+      items: hasChildren
+        ? buildEntries(item.children!, onPath ? path.slice(1) : undefined)
+        : undefined,
     }
   })
 }
@@ -276,7 +315,22 @@ function buildEntries(items: readonly CascadeSelectItem[]): MenuItemData[] {
 const mappedItems = computed(() => {
   nodeByKey.clear()
   nodeSeq = 0
-  return buildEntries(props.items)
+  return buildEntries(props.items, selectedPath.value)
+})
+
+// Menu keys along the selected path: reopening reveals the selection instead of the first row.
+const openKeyPath = computed(() => {
+  const keys: string[] = []
+  let level: readonly MenuItemData[] | undefined = mappedItems.value
+  while (level) {
+    const entry: MenuItemData | undefined = level.find(
+      (e) => e.attrs?.['data-cascade-selected'] !== undefined,
+    )
+    if (!entry?.value) break
+    keys.push(entry.value)
+    level = entry.items as MenuItemData[] | undefined
+  }
+  return keys
 })
 
 function resolveItem(entry: MenuItemData): CascadeSelectItem {
@@ -383,18 +437,29 @@ const triggerStyle = computed(() => triggerSplit.value.style)
 const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-cascade-select-value'))
 
 defineExpose({
+  /** Root element. */
   el: root,
+  /** Trigger element. */
   triggerEl,
+  /** Panel element (null while closed). */
   panelEl: computed(() => menuRef.value?.panelEl ?? null),
+  /** Positioning wrapper around the panel (null while closed). */
   positionerEl: computed(() => menuRef.value?.positionerEl ?? null),
+  /** Top-level row list element (null while closed). */
   listEl: computed(() => menuRef.value?.listEl ?? null),
+  /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => menuRef.value?.isClosing ?? false),
+  /** Selected leaf item, or `null`. */
   selectedItem,
+  /** Root-to-leaf `value` path of the selection (empty when nothing is selected). */
   selectedPath,
+  /** Opens the panel. */
   open: () => {
     open.value = true
   },
+  /** Closes the panel, running `@open-change` and `beforeClose` first. */
   close: () => menuRef.value?.close(),
+  /** Cancels a close pending in `beforeClose` and keeps the panel open. */
   cancelClose: () => menuRef.value?.cancelClose(),
 })
 </script>

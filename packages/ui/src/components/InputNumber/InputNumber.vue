@@ -113,7 +113,7 @@
 <!--
   Composes Input (reusing field/aria/label wiring); stepper column in #end slot.
   beforeinput gates keystrokes via useNumberFormat.isPartial/parse (no caret math).
-  Model commits live on full parse or null (clearing unambiguous); blur reformats + clamps.
+  Model commits live on full parse or null (clearing unambiguous); blur and Enter reformat + clamp.
   Steppers: tabindex=-1 (arrows on input), decimal-safe math (0.1 + 0.2 = 0.3).
   Press-and-hold repeats (500ms delay, 60ms thereafter); pointerdown for instant feedback.
   Comments outside template to avoid DOM nodes in production.
@@ -130,34 +130,55 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+/** Numeric value; `null` when the field is empty. @default null */
 const modelValue = defineModel<number | null>({ default: null })
 
 const props = withDefaults(
   defineProps<{
+    /** Lowest allowed value; blur, Enter and the steppers clamp the value to it. */
     min?: number
+    /** Highest allowed value; blur, Enter and the steppers clamp the value to it. */
     max?: number
+    /** Amount the steppers and the arrow keys add or remove. @default 1 */
     step?: number
+    /** BCP-47 locale for formatting and parsing numbers. When unset, the runtime locale applies. */
     locale?: string
+    /** Number format: plain decimal, currency (needs `currency`) or percent. @default 'decimal' */
     mode?: 'decimal' | 'currency' | 'percent'
-    /** ISO 4217 currency code — required when `mode="currency"`. */
+    /** ISO 4217 currency code; required when `mode` is `'currency'`. */
     currency?: string
+    /** Minimum number of decimal places shown. */
     minFractionDigits?: number
+    /** Maximum number of decimal places shown. */
     maxFractionDigits?: number
+    /** Shows locale grouping separators, such as thousands commas. @default true */
     useGrouping?: boolean
-    /** Literal affix rendered outside Intl, e.g. a unit label. */
+    /** Literal text before the formatted number, outside Intl formatting, such as a unit label. */
     prefix?: string
+    /** Literal text after the formatted number, such as a unit label. */
     suffix?: string
+    /** Shows the increment and decrement buttons. @default true */
     controls?: boolean
-    /** `'end'` (default): stacked +/- column after the value. `'split'`: one full-height button on each side. */
+    /**
+     * `'end'` stacks a +/- column after the value; `'split'` puts one full-height button on each side.
+     * @default 'end'
+     */
     stepperPosition?: 'end' | 'split'
-    /** `false` coerces a blur-empty field to `min ?? 0` instead of `null`. */
+    /** When `false`, blurring an empty field sets the value to `min ?? 0` instead of `null`. @default true */
     allowEmpty?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Disables the input and blocks interaction. A disabled parent Field also disables it. @default false */
     disabled?: boolean
+    /** Makes the value read-only while keeping it focusable and selectable. @default false */
     readonly?: boolean
+    /** Standalone override; ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Text shown while the input is empty. */
     placeholder?: string
+    /** Native `name` on the input; a plain `<form>` submits the formatted text. */
     name?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       input: UiPartValue
@@ -180,7 +201,9 @@ const props = withDefaults(
 )
 
 defineSlots<{
+  /** Inline leading content, before the value and the `'split'` mode decrement button. */
   start(): unknown
+  /** Inline trailing content, before the stepper buttons. */
   end(): unknown
 }>()
 
@@ -281,6 +304,9 @@ function onKeydown(event: KeyboardEvent) {
         displayValue.value = numberFormat.format(props.min)
       }
       break
+    case 'Enter':
+      commit()
+      break
     case 'End':
       if (props.max !== undefined) {
         event.preventDefault()
@@ -312,12 +338,16 @@ function onStepperUp() {
 }
 onScopeDispose(clearRepeat)
 
-// Only reformat/clamp-on-blur here; focus/blur reported by Input's useFieldControl.
+// Only reformat/clamp on blur and Enter here; focus/blur reported by Input's useFieldControl.
 function onFocus() {
   isFocused.value = true
 }
 function onBlur() {
   isFocused.value = false
+  commit()
+}
+// Enter commits like blur: clamp to min/max and reformat.
+function commit() {
   let value = modelValue.value
   if (value === null) {
     if (!props.allowEmpty) {
@@ -375,5 +405,14 @@ const decPart = computed(() =>
   ),
 )
 
-defineExpose({ el, inputEl, increment, decrement })
+defineExpose({
+  /** Root element (the frame around the input). */
+  el,
+  /** Native `<input>` element. */
+  inputEl,
+  /** Adds one `step`, clamped to `max`. No-op when disabled or read-only. */
+  increment,
+  /** Subtracts one `step`, clamped to `min`. No-op when disabled or read-only. */
+  decrement,
+})
 </script>

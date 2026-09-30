@@ -198,6 +198,10 @@
     min-inline-size: 0;
     padding-block-end: 1.75rem;
   }
+  /* The content column stretches its children; pills and buttons keep their own width. */
+  .ui-timeline-content > :where(.ui-tag, .ui-badge, .ui-button, .ui-chip) {
+    align-self: flex-start;
+  }
   .ui-timeline--horizontal .ui-timeline-content {
     padding-block-end: 0;
     padding-inline-end: 1.5rem;

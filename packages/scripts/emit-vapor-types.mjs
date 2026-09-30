@@ -53,7 +53,8 @@ if (componentExtraValueNames.length > 0) {
   lines.push(`export { ${componentExtraValueNames.join(', ')} } from '../index'`)
 }
 const allTypeNames = typeNames
-if (allTypeNames.length > 0) lines.push(`export type { ${allTypeNames.join(', ')} } from '../index'`)
+if (allTypeNames.length > 0)
+  lines.push(`export type { ${allTypeNames.join(', ')} } from '../index'`)
 
 // Types only — safe to re-export from the sibling dist/index.d.ts (unlike the
 // runtime .js side, see generate-vapor.mjs, types aren't subject to the circular-reexport issue).
@@ -74,8 +75,10 @@ for (const match of uiIndex.matchAll(/export\s+(type\s+)?\{([^}]+)\}\s+from\s+'(
     ;(isTypeMember ? composableTypes : composableValues).add(exported)
   }
 }
-if (composableValues.size > 0) lines.push(`export { ${[...composableValues].join(', ')} } from '../index'`)
-if (composableTypes.size > 0) lines.push(`export type { ${[...composableTypes].join(', ')} } from '../index'`)
+if (composableValues.size > 0)
+  lines.push(`export { ${[...composableValues].join(', ')} } from '../index'`)
+if (composableTypes.size > 0)
+  lines.push(`export type { ${[...composableTypes].join(', ')} } from '../index'`)
 const composableCount = composableValues.size
 
 writeFileSync(outPath, lines.join('\n') + '\n')

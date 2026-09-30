@@ -40,7 +40,7 @@
       </template>
     </Menu>
 
-    <Drawer v-model:open="drawerOpen" title="3 · Drawer" side="right">
+    <Drawer v-model:open="drawerOpen" title="3 · Drawer" side="right" size="lg">
       <div class="level level-3">
         <span class="level-badge">3 · Drawer</span>
         <p class="panel-text">Renders above the Menu and Popover beneath it.</p>
@@ -49,11 +49,12 @@
           v-model:open="comboboxOpen"
           :items="comboboxItems"
           placeholder="Open this Combobox"
+          class="drawer-combobox"
         >
           <template #footer>
             <div class="combobox-footer">
               <span class="level-badge">4 · Combobox</span>
-              <Button size="sm" @click="sheetOpen = true">Open a BottomSheet from here</Button>
+              <Button size="sm" @click="sheetOpen = true">Open a BottomSheet</Button>
             </div>
           </template>
         </Combobox>
@@ -127,11 +128,16 @@ const tourSteps: TourStep[] = [
   min-inline-size: 16rem;
 }
 
+.drawer-combobox {
+  inline-size: 100%;
+}
 .combobox-footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.625rem;
+  white-space: nowrap;
   padding: 0.5rem 0.75rem;
   border-top: 1px solid var(--ui-border, #e4e4e7);
 }

@@ -50,9 +50,11 @@ const querySize = shallowRef(180)
 .resizable-query {
   inline-size: 100%;
   background: var(--ui-surface);
-  overflow-y: auto;
 }
 .resizable-pane-content {
+  box-sizing: border-box;
+  block-size: 100%;
+  overflow-y: auto;
   padding: 1rem 1.25rem;
 }
 .resizable-pane-content h4 {

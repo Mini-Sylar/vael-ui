@@ -117,10 +117,15 @@
     --docs-radius: 10px;
   }
 
-  /* Shiki dual-theme output (defaultColor: false). */
+  /* Shiki dual-theme output (defaultColor: false). Only block output carries
+     Shiki's own inline background; inline `code.shiki` chips keep theirs. */
   .shiki,
   .shiki span {
     color: var(--shiki-light);
+  }
+
+  pre.shiki,
+  .shiki span {
     background-color: transparent !important;
   }
 

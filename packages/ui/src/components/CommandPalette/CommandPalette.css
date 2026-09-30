@@ -76,6 +76,7 @@
   .ui-command-palette-item[data-active] {
     background: var(--ui-muted);
   }
+  /* Wide rows: a subtler press than a button's, or the edges visibly pull in. */
   .ui-command-palette-item:active {
     transform: scale(0.98);
   }

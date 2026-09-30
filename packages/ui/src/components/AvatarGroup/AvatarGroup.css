@@ -9,13 +9,15 @@
     border-radius: 50%;
     margin-inline-start: -0.625rem;
   }
+  /* Rises quick and direct; settles back with a soft spring rather than snapping. */
   .ui-avatar-group--hover-lift .ui-avatar {
-    transition: transform var(--ui-duration-press) var(--ui-ease-out);
+    transition: transform 300ms cubic-bezier(0.34, 3.85, 0.64, 1);
   }
   @media (hover: hover) and (pointer: fine) {
     .ui-avatar-group--hover-lift .ui-avatar:hover {
       transform: translateY(-3px);
       z-index: 1;
+      transition: transform var(--ui-duration-press) var(--ui-ease-out);
     }
   }
   .ui-avatar-group .ui-avatar:first-child {

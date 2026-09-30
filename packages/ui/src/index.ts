@@ -283,7 +283,12 @@ export type { DraggableOptions, DraggableValue } from './directives/vDraggable'
 export { vScrollMask, vScrollMaskVapor } from './directives/vScrollMask'
 export { vTooltip, vTooltipVapor, tooltipTargets, TOOLTIP_ATTR } from './directives/vTooltip'
 export type { TooltipDirectiveOptions, TooltipDirectiveValue } from './directives/vTooltip'
-export { focusIsFromKeyboard } from './composables/useFocusVisible'
+export {
+  clearFocusVisible,
+  focusIsFromKeyboard,
+  markFocusVisible,
+  showFocusVisible,
+} from './composables/useFocusVisible'
 export { omitAttrs, useForwardedListener } from './composables/forwardedListeners'
 
 // Lets Volar/vue-tsc resolve `v-tooltip`/`v-scroll-mask` in templates when

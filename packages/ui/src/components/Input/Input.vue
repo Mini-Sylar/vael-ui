@@ -48,24 +48,31 @@ import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
+/** Input value. Supports the `.trim` and `.lazy` modifiers. @default '' */
 const [modelValue, modifiers] = defineModel<string>({ default: '' })
 
 const props = withDefaults(
   defineProps<{
+    /** Native input `type`. @default 'text' */
     type?: string
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Disables the input and blocks interaction. A disabled parent Field also disables it. @default false */
     disabled?: boolean
+    /** Makes the value read-only while keeping it focusable and selectable. @default false */
     readonly?: boolean
-    /** Standalone override; ORed with the nearest Field's `error` state. */
+    /** Standalone override; ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Text shown while the input is empty. */
     placeholder?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; input: UiPartValue; start: UiPartValue; end: UiPartValue }>
   }>(),
   { type: 'text', size: 'md', disabled: false, readonly: false, invalid: false },
 )
 
 defineSlots<{
-  /** Inline leading content (icon, kbd hint, a copy Button). */
+  /** Inline leading content, such as an icon, a Kbd hint or a copy Button. */
   start(): unknown
   /** Inline trailing content. */
   end(): unknown
@@ -182,5 +189,10 @@ const inputPart = computed(() => resolveUiPart(cx, themedUi()?.input, 'ui-input-
 const startPart = computed(() => resolveUiPart(cx, themedUi()?.start, 'ui-input-start'))
 const endPart = computed(() => resolveUiPart(cx, themedUi()?.end, 'ui-input-end'))
 
-defineExpose({ el: root, inputEl })
+defineExpose({
+  /** Root element (the frame around the input). */
+  el: root,
+  /** Native `<input>` element. */
+  inputEl,
+})
 </script>

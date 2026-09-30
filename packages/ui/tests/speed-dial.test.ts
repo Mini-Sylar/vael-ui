@@ -253,3 +253,76 @@ test('defineExpose: open()/close()/toggle() drive the dial programmatically', as
   await screen.getByTestId('call-toggle').click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('true')
 })
+
+async function openWithKeyboardFocus(screen: RenderResult<unknown>) {
+  trigger(screen).click()
+  await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(4))
+  const buttons = actionButtons(screen)
+  await vi.waitFor(() => expect(document.activeElement).toBe(buttons[0]))
+  return buttons
+}
+
+test('direction="up": ArrowUp moves away from the trigger, ArrowDown back toward it', async () => {
+  const screen = await render(SpeedDialFixture, { props: { direction: 'up' } })
+  const buttons = await openWithKeyboardFocus(screen)
+  expect(screen.container.querySelector('[role="menu"]')!.getAttribute('aria-orientation')).toBe(
+    'vertical',
+  )
+  await userEvent.keyboard('{ArrowUp}')
+  expect(document.activeElement).toBe(buttons[1])
+  await userEvent.keyboard('{ArrowUp}')
+  expect(document.activeElement).toBe(buttons[2])
+  await userEvent.keyboard('{ArrowDown}')
+  expect(document.activeElement).toBe(buttons[1])
+  // Left/Right mean nothing on a vertical dial.
+  await userEvent.keyboard('{ArrowLeft}')
+  await userEvent.keyboard('{ArrowRight}')
+  expect(document.activeElement).toBe(buttons[1])
+})
+
+test('direction="left"/"right": horizontal arrows follow the fan-out and aria-orientation is horizontal', async () => {
+  for (const [direction, away, back] of [
+    ['left', 'ArrowLeft', 'ArrowRight'],
+    ['right', 'ArrowRight', 'ArrowLeft'],
+  ] as const) {
+    const screen = await render(SpeedDialFixture, { props: { direction } })
+    const buttons = await openWithKeyboardFocus(screen)
+    expect(screen.container.querySelector('[role="menu"]')!.getAttribute('aria-orientation')).toBe(
+      'horizontal',
+    )
+    await userEvent.keyboard(`{${away}}`)
+    expect(document.activeElement).toBe(buttons[1])
+    await userEvent.keyboard(`{${back}}`)
+    expect(document.activeElement).toBe(buttons[0])
+    await userEvent.keyboard('{ArrowDown}')
+    expect(document.activeElement).toBe(buttons[0])
+    await screen.unmount()
+  }
+})
+
+test('direction="quarter-circle": Left/Down walk the arc away from the top, Right/Up walk back', async () => {
+  const screen = await render(SpeedDialFixture, { props: { direction: 'quarter-circle' } })
+  const buttons = await openWithKeyboardFocus(screen)
+  expect(screen.container.querySelector('[role="menu"]')!.hasAttribute('aria-orientation')).toBe(
+    false,
+  )
+  await userEvent.keyboard('{ArrowLeft}')
+  expect(document.activeElement).toBe(buttons[1])
+  await userEvent.keyboard('{ArrowDown}')
+  expect(document.activeElement).toBe(buttons[2])
+  await userEvent.keyboard('{ArrowUp}')
+  expect(document.activeElement).toBe(buttons[1])
+  await userEvent.keyboard('{ArrowRight}')
+  expect(document.activeElement).toBe(buttons[0])
+})
+
+test('openOn="hover": the click that follows a hover-open keeps the dial open; the next click closes it', async () => {
+  const screen = await render(SpeedDialFixture, { props: { openOn: 'hover' } })
+  await userEvent.hover(trigger(screen))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('true')
+  await userEvent.click(trigger(screen))
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(screen.getByTestId('open-state').element().textContent).toBe('true')
+  await userEvent.click(trigger(screen))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('false')
+})

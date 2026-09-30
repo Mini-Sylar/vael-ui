@@ -30,3 +30,18 @@ export const packageManager = shallowRef<PackageManager>(storedPackageManager ??
 watch(packageManager, (v) => {
   if (typeof localStorage !== 'undefined') localStorage.setItem(PM_STORAGE_KEY, v)
 })
+
+// No accent by default: the library's own black/white palette is the starting
+// point, and a picked color is an opt-in accent. Shared so the header's theme
+// popover and the home page's swatches stay in sync.
+const PRIMARY_STORAGE_KEY = 'vael-ui-docs-primary'
+
+export const primaryColor = shallowRef<string | null>(
+  typeof localStorage === 'undefined' ? null : localStorage.getItem(PRIMARY_STORAGE_KEY),
+)
+
+watch(primaryColor, (color) => {
+  if (typeof localStorage === 'undefined') return
+  if (color) localStorage.setItem(PRIMARY_STORAGE_KEY, color)
+  else localStorage.removeItem(PRIMARY_STORAGE_KEY)
+})

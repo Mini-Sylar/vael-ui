@@ -6,7 +6,7 @@
     </p>
     <div class="row slider-row">
       <Slider v-model="range" :min="0" :max="100" style="max-width: 20rem" />
-      <output class="note">{{ range[0] }} to {{ range[1] }}</output>
+      <output class="demo-status">{{ range[0] }} to {{ range[1] }}</output>
     </div>
   </section>
 </template>

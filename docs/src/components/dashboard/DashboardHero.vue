@@ -1,6 +1,6 @@
 <template>
   <div ref="dashShell" class="dash-shell">
-    <DashboardSidebar v-model:active-page="activePage" />
+    <DashboardSidebar v-model:active-page="activePage" v-model:variant="variant" />
 
     <div class="dash-main">
       <header class="dash-header">
@@ -45,7 +45,7 @@
           >
             <PhBell :size="18" />
           </Button>
-          <Menu :items="accountMenuItems" align="end" @select="onAccountSelect">
+          <Menu :items="accountMenuItems" align="end" data-dash-overlay @select="onAccountSelect">
             <template #trigger>
               <Button id="dash-account-trigger" variant="ghost" icon pill aria-label="Account menu">
                 <Avatar name="Mira Mitchell" size="sm" />
@@ -57,7 +57,7 @@
 
       <div class="dash-content">
         <Transition name="fade" mode="out-in">
-          <component :is="pages[activePage]" :key="activePage" />
+          <component :is="pages[activePage]" ref="page" :key="activePage" />
         </Transition>
       </div>
     </div>
@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, shallowRef, useTemplateRef } from 'vue'
+import { computed, provide, shallowRef, useTemplateRef, watch } from 'vue'
 import {
   Avatar,
   Breadcrumb,
@@ -92,6 +92,8 @@ import type { BreadcrumbItemData, CommandPaletteItem, MenuItemData, TourStep } f
 import {
   PhBell,
   PhCompass,
+  PhFolder,
+  PhGitPullRequest,
   PhMagnifyingGlass,
   PhPackage,
   PhQuestion,
@@ -105,27 +107,36 @@ import DashboardSidebar from './DashboardSidebar.vue'
 import OverviewPage from './pages/OverviewPage.vue'
 import OrdersPage from './pages/OrdersPage.vue'
 import CustomersPage from './pages/CustomersPage.vue'
+import RepoOverviewPage from './pages/RepoOverviewPage.vue'
+import PullRequestsPage from './pages/PullRequestsPage.vue'
+import FilesPage from './pages/FilesPage.vue'
 import { customers } from './data'
-import { dashboardNavigateKey } from './dashboardNavigate'
-import type { DashPage } from './dashboardNavigate'
+import { repo } from './repoData'
+import { dashboardNavigateKey, dashboardShellKey } from './dashboardNavigate'
+import type { DashPage, DashVariant } from './dashboardNavigate'
 
+const variant = defineModel<DashVariant>('variant', { default: 'store' })
 const activePage = defineModel<DashPage>('activePage', { default: 'overview' })
+watch(variant, () => (activePage.value = 'overview'))
 
-const pages: Record<DashPage, unknown> = {
-  overview: OverviewPage,
-  orders: OrdersPage,
-  customers: CustomersPage,
-}
+const pages = computed<Partial<Record<DashPage, unknown>>>(() =>
+  variant.value === 'repo'
+    ? { overview: RepoOverviewPage, pulls: PullRequestsPage, files: FilesPage }
+    : { overview: OverviewPage, orders: OrdersPage, customers: CustomersPage },
+)
 const pageTitles: Record<DashPage, string> = {
   overview: 'Overview',
   orders: 'Orders',
   customers: 'Customers',
+  pulls: 'Pull requests',
+  files: 'Files',
 }
 const pageTitle = computed(() => pageTitles[activePage.value])
 
 provide(dashboardNavigateKey, (page: DashPage) => (activePage.value = page))
 
 const dashShell = useTemplateRef<HTMLElement>('dashShell')
+provide(dashboardShellKey, dashShell)
 
 const breadcrumbItems = computed<BreadcrumbItemData[]>(() => [
   {
@@ -153,7 +164,50 @@ interface DashboardCommand extends CommandPaletteItem {
   page?: DashPage
 }
 
-const paletteItems = computed<DashboardCommand[]>(() => [
+const repoPaletteItems = computed<DashboardCommand[]>(() => [
+  {
+    id: 'nav-overview',
+    label: 'Overview',
+    group: 'Navigate',
+    icon: PhSquaresFour,
+    kind: 'nav',
+    page: 'overview',
+  },
+  {
+    id: 'nav-pulls',
+    label: 'Pull requests',
+    group: 'Navigate',
+    icon: PhGitPullRequest,
+    kind: 'nav',
+    page: 'pulls',
+  },
+  {
+    id: 'nav-files',
+    label: 'Files',
+    group: 'Navigate',
+    icon: PhFolder,
+    kind: 'nav',
+    page: 'files',
+  },
+  { id: 'action-tour', label: 'Take a tour', group: 'Actions', icon: PhCompass, kind: 'action' },
+  ...repo.pulls
+    .filter((p) => p.state === 'open')
+    .map((p): DashboardCommand => ({
+      id: `pull-${p.id}`,
+      label: p.title,
+      description: `#${p.id}`,
+      group: 'Pull requests',
+      icon: PhGitPullRequest,
+      kind: 'nav',
+      page: 'pulls',
+    })),
+])
+
+const paletteItems = computed<DashboardCommand[]>(() =>
+  variant.value === 'repo' ? repoPaletteItems.value : storePaletteItems.value,
+)
+
+const storePaletteItems = computed<DashboardCommand[]>(() => [
   {
     id: 'nav-overview',
     label: 'Overview',
@@ -219,11 +273,14 @@ async function waitForElement(selector: string, timeoutMs = 1000): Promise<void>
   }
 }
 
-const tourSteps: TourStep[] = [
+const tourSteps = computed<TourStep[]>(() => [
   {
     target: '#dash-nav',
     title: 'Your workspace',
-    description: 'Jump between Overview, Orders, and Customers from here.',
+    description:
+      variant.value === 'repo'
+        ? 'Jump between Overview, Pull requests, and Files from here.'
+        : 'Jump between Overview, Orders, and Customers from here.',
     side: 'right',
   },
   {
@@ -245,17 +302,34 @@ const tourSteps: TourStep[] = [
     side: 'bottom',
     align: 'end',
   },
-  {
-    target: '#dash-view-all-link',
-    title: 'Recent activity',
-    description: 'Every new order lands on this list — click through for the full history.',
-    side: 'bottom',
-    onBeforeEnter: async () => {
-      if (activePage.value !== 'overview') activePage.value = 'overview'
-      await waitForElement('#dash-view-all-link')
-    },
-  },
-]
+  variant.value === 'repo'
+    ? {
+        target: '#dash-activity',
+        title: 'Recent activity',
+        description: 'Merges, reviews and deploys land here the moment they happen.',
+        side: 'left',
+        onBeforeEnter: async () => {
+          if (activePage.value !== 'overview') activePage.value = 'overview'
+          await waitForElement('#dash-activity')
+        },
+      }
+    : {
+        target: '#dash-view-all-link',
+        title: 'Recent activity',
+        description: 'Every new order lands on this list — click through for the full history.',
+        side: 'bottom',
+        onBeforeEnter: async () => {
+          if (activePage.value !== 'overview') activePage.value = 'overview'
+          await waitForElement('#dash-view-all-link')
+        },
+      },
+])
+
+const page = useTemplateRef<{ reset?: () => void }>('page')
+defineExpose({
+  /** Resets the current page's own state (a pinned chart day, an open file). */
+  resetPage: () => page.value?.reset?.(),
+})
 </script>
 
 <style scoped>
@@ -348,6 +422,17 @@ const tourSteps: TourStep[] = [
   gap: 0.625rem;
   min-inline-size: 0;
   overflow: auto;
+}
+
+/* Windows draws every scrollbar solid and always on. Inside the demo's
+   widgets (palette, tree, tables, code) they'd be noise the fades already
+   cover; the main area keeps a thin, quiet one so it still reads as scrollable. */
+.dash-shell :deep(*) {
+  scrollbar-width: none;
+}
+.dash-shell .dash-content {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--ui-text) 18%, transparent) transparent;
 }
 
 .fade-enter-active,

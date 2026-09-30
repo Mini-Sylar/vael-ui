@@ -7,6 +7,7 @@
     </p>
     <PasswordInput
       v-model="strength"
+      :rules="rules"
       hint-placement="inline"
       placeholder="Strength meter"
       autocomplete="new-password"
@@ -24,13 +25,19 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { PasswordInput, Progress } from 'vael-ui'
-import type { PasswordRuleResult } from 'vael-ui'
+import type { PasswordRule, PasswordRuleResult } from 'vael-ui'
 
 const strength = shallowRef('')
+const rules: PasswordRule[] = [
+  { label: 'At least 8 characters', test: (v) => v.length >= 8 },
+  { label: 'An uppercase letter', test: (v) => /[A-Z]/.test(v) },
+  { label: 'A number', test: (v) => /\d/.test(v) },
+  { label: 'A symbol', test: (v) => /[^A-Za-z0-9]/.test(v) },
+]
 
 function strengthValue(results: PasswordRuleResult[]): number {
   const passed = results.filter((r) => r.passed).length
-  return results.length === 0 ? 0 : Math.round((passed / results.length) * 100)
+  return strength.value === '' ? 0 : Math.round((passed / results.length) * 100)
 }
 function strengthVariant(results: PasswordRuleResult[]): 'danger' | 'warning' | 'success' {
   const value = strengthValue(results)
@@ -40,7 +47,7 @@ function strengthVariant(results: PasswordRuleResult[]): 'danger' | 'warning' | 
 }
 function strengthLabel(results: PasswordRuleResult[]): string {
   const value = strengthValue(results)
-  if (value === 0) return 'Enter a password'
+  if (strength.value === '') return 'Enter a password'
   if (value >= 100) return 'Strong'
   if (value >= 50) return 'Okay'
   return 'Weak'

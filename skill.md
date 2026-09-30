@@ -52,7 +52,8 @@ one, match it — don't improvise a variant.
   This bit `Button.vue` for real once; don't reintroduce it. The comment
   explains _why_, not _what_ — non-obvious tradeoffs, the reasoning behind
   a specific number, what was deliberately left out and why.
-- **Default to zero new comments** beyond that one block. Never restate the
+- **Default to zero new comments** beyond that one block (public API JSDoc
+  is the exception, see below). Never restate the
   same "why" in two places. If you're about to write a comment explaining
   what the code obviously does, delete it instead.
 
@@ -82,6 +83,27 @@ consumer needs the actual root element and any imperative control
 implementation details. Look at `Tree.vue`'s `focusFirstRow`/`initRoving`
 exposure for the pattern of a base component handing a popover wrapper just
 enough surface to do its own focus management without duplicating logic.
+
+**Document the public API (the one exception to "zero new comments"):**
+every prop, `defineModel`, `defineEmits` key, `defineSlots` entry and
+`defineExpose` key gets a one-line JSDoc. Those comments are the component's
+reference: they feed editor hovers (through the published `.d.ts`), the
+docs site's API tables and the vael-ui-skills references.
+
+- One sentence, under 20 words; say what it does for the consumer, not how.
+  Use "you", active voice, no em dashes, and backticks around identifiers and
+  values. Reuse the existing wording for shared props (`disabled`,
+  `closeOnEsc`, `beforeClose`, `forceMount`, `teleportTo`, `ui`).
+- Every prop or model with a runtime default carries `@default <value>`
+  matching `withDefaults` / `defineModel({ default })`, e.g.
+  `/** Trigger size. @default 'md' */`. `withDefaults` doesn't survive into
+  the `.d.ts`, so the tag is the only way a default reaches a hover.
+- A slot rendered with a bare `<slot>` still needs a `defineSlots` entry, or
+  it has nowhere to hang its description.
+- `pnpm gen` (docs) fails when an `@default` tag is missing or doesn't match
+  the real default. After an API change, run
+  `node docs/scripts/sync-skill-references.mjs` to regenerate the
+  vael-ui-skills component references.
 
 **Reuse, don't fork — two established splits:**
 

@@ -27,7 +27,7 @@
     transition: transform var(--ui-duration-tooltip) var(--ui-ease-out);
   }
   .ui-tooltip-enter-from .ui-tooltip-panel {
-    transform: scale(0.96);
+    transform: scale(0.98);
   }
   .ui-tooltip-enter-active[data-instant],
   .ui-tooltip-leave-active[data-instant],

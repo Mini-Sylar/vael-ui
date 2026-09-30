@@ -67,6 +67,14 @@ test('closed by default, actions clipped but present in the DOM', async () => {
   expect(testId(screen, 'delete')).not.toBeNull()
 })
 
+test('focusing a hidden action reveals its edge, and tabbing out closes it', async () => {
+  const screen = await render(SwipeToRevealFixture, {})
+  testId(screen, 'archive').focus()
+  await expect.element(screen.getByTestId('open-side')).toHaveTextContent('trailing')
+  testId(screen, 'archive').blur()
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
 test('a real drag past the midpoint commits open, updates v-model, and fires change', async () => {
   const screen = await render(SwipeToRevealFixture, {})
   const content = testId(screen, 'content')

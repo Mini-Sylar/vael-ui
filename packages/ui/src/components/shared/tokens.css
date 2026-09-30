@@ -38,6 +38,8 @@
 
     --ui-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ui-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    /* Slight overshoot for things arriving (a new count). Never for exits. */
+    --ui-ease-pop: cubic-bezier(0.34, 1.36, 0.64, 1);
 
     --ui-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
     --ui-duration-drawer: 500ms;
@@ -77,6 +79,9 @@
       --ui-danger: oklch(0.7 0.19 26);
       --ui-danger-hover: color-mix(in oklch, oklch(0.7 0.19 26) 85%, white);
       --ui-danger-contrast: #ffffff;
+      /* Fill for solid danger surfaces (buttons): --ui-danger is a light red for text on dark, too light under white text. */
+      --ui-danger-solid: oklch(0.586 0.2 26);
+      --ui-danger-solid-hover: color-mix(in oklch, oklch(0.586 0.2 26) 88%, white);
       --ui-success: oklch(0.75 0.17 163.225);
       --ui-success-hover: color-mix(in oklch, oklch(0.75 0.17 163.225) 85%, white);
       --ui-success-contrast: #ffffff;
@@ -105,6 +110,8 @@
     --ui-danger: oklch(0.7 0.19 26);
     --ui-danger-hover: color-mix(in oklch, oklch(0.7 0.19 26) 85%, white);
     --ui-danger-contrast: #ffffff;
+    --ui-danger-solid: oklch(0.586 0.2 26);
+    --ui-danger-solid-hover: color-mix(in oklch, oklch(0.586 0.2 26) 88%, white);
     --ui-success: oklch(0.75 0.17 163.225);
     --ui-success-hover: color-mix(in oklch, oklch(0.75 0.17 163.225) 85%, white);
     --ui-success-contrast: #ffffff;

@@ -26,18 +26,23 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
-    /** Sizes the generated overflow avatar; slotted `Avatar`s keep their own `size` prop. */
+    /** Sizes the generated overflow avatar; slotted `Avatar`s keep their own `size` prop. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
-    /** Count of items NOT rendered as slotted `Avatar`s — the caller decides truncation, this only displays the remainder as "+N". 0 (default) renders nothing. */
+    /**
+     * Number of items you didn't render as slotted `Avatar`s, shown as "+N". You decide the truncation; `0` renders nothing.
+     * @default 0
+     */
     overflowCount?: number
-    /** Lifts an avatar on hover to reveal it above its neighbors. Off by default. */
+    /** Lifts an avatar on hover to reveal it above its neighbors. @default false */
     hoverLift?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; overflow: UiPartValue }>
   }>(),
   { size: 'md', overflowCount: 0, hoverLift: false },
 )
 
 defineSlots<{
+  /** The `Avatar`s to stack. */
   default(): unknown
   /** Replaces the default "+N" content of the generated overflow avatar. */
   overflow(props: { count: number }): unknown
@@ -62,5 +67,8 @@ const overflowPart = computed(() =>
   resolveUiPart(cx, themedUi()?.overflow, 'ui-avatar-group-overflow'),
 )
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

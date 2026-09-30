@@ -175,9 +175,8 @@ export function findTreeParent<T extends TreeNode>(
   }
   return null
 }
-/** Mutates `nodes` (and its nested `children` arrays) in place — same
- * "Tree owns no copy" contract as adding/renaming. Returns whether a match
- * was found and removed. */
+/** Removes the node with `value` from `nodes` (and nested `children` arrays) in place, following the
+ * same "Tree owns no copy" contract as adding and renaming. Returns whether it removed a match. */
 export function removeTreeNode<T extends TreeNode>(nodes: T[], value: string | number): boolean {
   const index = nodes.findIndex((node) => node.value === value)
   if (index !== -1) {
@@ -255,64 +254,91 @@ import type {
   SortableDropDetails,
 } from '../../composables/useSortable'
 
+/**
+ * Selected value: one value in `'single'` mode, an array in `'multiple'`, leaf values in `'checkbox'`.
+ * @default null
+ */
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
+/** Filter box text. @default '' */
 const query = defineModel<string>('query', { default: '' })
 
 const props = withDefaults(
   defineProps<{
-    /** The tree data — `TreeNode` (`value`, `label`, optional `children`) or your own extension of it. */
+    /** Tree data: `TreeNode` objects (`value`, `label`, optional `children`) or your own extension of them. */
     items: readonly T[]
-    /** `'single'`: clicking replaces the selection. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
+    /**
+     * `'single'`: a click replaces the selection. `'multiple'`: a click toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles.
+     * @default 'single'
+     */
     selectionMode?: TreeSelectionMode
-    /** `false` keeps a node with children out of the selection entirely — click, keyboard Enter/Space,
-     * and expandOnRowClick's own select-on-expand all skip it, only a leaf can become the value. Has
-     * no effect in `selectionMode="checkbox"`, which already only ever puts leaves in the model.
-     * Default: true (a folder can be selected like any other node). */
+    /** `false` makes folders unselectable, so only leaves can become the value. No effect in
+     * `selectionMode="checkbox"`, which only puts leaves in the model.
+     * @default true
+     */
     selectableFolders?: boolean
-    /** Shows a built-in label search box atop the tree, auto-expanding ancestors of any match. Default: on. */
+    /**
+     * Shows a built-in label search box above the tree and expands the ancestors of any match.
+     * @default true
+     */
     filterable?: boolean
+    /** Placeholder and accessible label for the filter box. @default 'Search...' */
     filterPlaceholder?: string
+    /**
+     * Text shown when no rows are visible (empty `items` or no filter matches).
+     * @default 'No results found'
+     */
     emptyText?: string
-    /** `false` skips all built-in motion (row transitions, chevron rotation, and cross-folder move). */
+    /**
+     * `false` skips all built-in motion (row transitions, chevron rotation and cross-folder moves).
+     * @default true
+     */
     motionCss?: boolean
-    /** Keeps every folder's children block mounted (visibility via `v-show`, `data-state="open"/"closed"`
-     * on it) instead of mounting/unmounting on expand/collapse, so a consumer can drive the collapse
-     * with their own animation library instead of the built-in CSS transition. */
+    /** Keeps collapsed folders' children mounted (`v-show` plus `data-state`) so you can animate
+     * expand/collapse yourself instead of using the built-in transition.
+     * @default false
+     */
     forceMount?: boolean
-    /** Drag rows to reorder and to nest, VS Code style: drop on a row's middle to move INTO it, on an edge to place beside it. */
+    /**
+     * Lets you drag rows to reorder and nest them, VS Code style. Drop on a row's middle to move into it, or on an edge to place beside it.
+     * @default false
+     */
     reorderable?: boolean
-    /** Which rows accept children. Defaults to any row that already has some — pass your own to let empty folders take drops. */
+    /** Which rows accept dropped children. Unset, any row that already has children does; pass your own to let empty folders take drops. */
     canNestInto?: (node: T) => boolean
-    /** `false` drops the sibling-reorder mode entirely — dragging only ever offers moving INTO a
-     * folder, with no indicator at all when hovering a row that can't hold children. */
+    /** `false` turns off sibling reordering, so dragging only moves rows into a folder. Rows that
+     * can't hold children show no indicator.
+     * @default true
+     */
     reorderSiblings?: boolean
-    /** Structural veto re-run while dragging; `false` marks the target invalid. */
+    /** Structural check that runs as you drag; returning `false` marks the target invalid. */
     canDrop?: (details: SortableDropDetails) => boolean
-    /** Async gate at drop time — return `false` (or a promise of it) to cancel. Composes with `confirmAction().result`. */
+    /** Async check at drop time; return `false` (or a promise of it) to cancel. Works with `confirmAction().result`. */
     beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
-    /** Hovering a collapsed row this long opens it mid-drag. */
+    /** How long, in ms, you hover a collapsed row mid-drag before it opens. @default 600 */
     autoExpandDelay?: number
-    /** `'clone'` (default): a floating copy follows the cursor, real row
-     * hidden until drop — the built-in behavior since before this prop
-     * existed. `'element'` moves the real row itself instead, so there's
-     * only one instance of it on screen; safe here since a tree row is a
-     * plain element, not a `<table>` row. */
+    /** Drag preview: `'clone'` shows a floating copy while the real row hides until drop;
+     * `'element'` moves the real row itself.
+     * @default 'clone'
+     */
     previewMode?: 'element' | 'clone'
-    /** Ms a touch pointer must hold a row still before a drag starts — a row
-     * is also tap-to-select/expand here, so touch needs a hold to tell the
-     * two apart; mouse/pen are unaffected. Default `150`. */
+    /** How long, in ms, a touch pointer must hold a row still before a drag starts. The hold tells a
+     * drag apart from a tap to select or expand. Mouse and pen are unaffected.
+     * @default 150
+     */
     touchDragDelay?: number
-    /** When true, clicking anywhere on a folder row also toggles its expansion, not just the chevron —
-     * it still selects too (unless `selectableFolders` is off), so picking the folder itself (without
-     * opening it to reach a file inside) still works. Off by default since it changes what a plain row
-     * click does. */
+    /** Clicking anywhere on a folder row toggles it, as well as the chevron. The click still
+     * selects the folder unless `selectableFolders` is `false`.
+     * @default false
+     */
     expandOnRowClick?: boolean
-    /** When true, each expanded ancestor's row pins to the top of the list as its own children scroll
-     * past, VS Code-style, so deeply nested content never loses its folder context. Uses native
-     * `position: sticky` — each row is a real, nested DOM level, not a JS-measured overlay. */
+    /** Pins each expanded ancestor row to the top of the list while its children scroll past,
+     * VS Code-style.
+     * @default false
+     */
     stickyScroll?: boolean
-    /** Id for the role="tree" list element. Auto-generated if omitted. */
+    /** Id for the `role="tree"` list element. Auto-generated when omitted. */
     id?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       list: UiPartValue
       node: UiPartValue
@@ -346,20 +372,21 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when you change the selection, with the new model value. */
   change: [value: string | number | (string | number)[] | null]
+  /** Fires when you select or toggle a node. */
   select: [node: T]
-  /** Fires on manual expand/collapse (not auto-expansion via filtering). */
+  /** Fires when a single node expands or collapses. Filter auto-expansion, `expandAll` and `collapseAll` don't fire it. */
   'expand-change': [value: string | number, expanded: boolean]
   /** Fires after `items` has been reordered in place. */
   reorder: [value: string | number, to: DropPosition]
-  /** `beforeDrop` threw or rejected; the move was already reverted. */
+  /** Fires when `beforeDrop` throws or rejects, after the move is reverted. */
   'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
 
 defineSlots<{
-  /** Row content (inside the library's role="treeitem" wrapper). findNode/findParent/removeNode
-   * are shorthand for findTreeNode/findTreeParent/removeTreeNode bound to this instance's own
-   * `items`, for the common case of looking up a sibling/parent/self without importing them. */
+  /** Row content inside the `role="treeitem"` wrapper. `findNode`/`findParent`/`removeNode` are
+   * `findTreeNode`/`findTreeParent`/`removeTreeNode` bound to this tree's `items`. */
   node(props: {
     node: T
     depth: number
@@ -373,7 +400,7 @@ defineSlots<{
     findParent: (value: string | number) => T | null
     removeNode: (value: string | number) => boolean
   }): unknown
-  /** Replaces the default empty-state row shown when nothing survives the filter. */
+  /** Replaces the empty-state row shown when no rows are visible. */
   empty(): unknown
 }>()
 
@@ -927,13 +954,10 @@ function removeNode(value: string | number): boolean {
   return removeTreeNode(props.items as T[], value)
 }
 
-// Mirrors `model`'s value(s) as the full node object(s) — resolved via
-// `findNode` so a consumer bound to `v-model:node` gets the real data
-// (including any app-specific extra fields) instead of re-deriving it from
-// `modelValue` themselves. Shaped like `model` itself: `T[]` when it holds
-// an array, `T | null` otherwise. Writing to it is harmless but has no
-// lasting effect — it's derived from `model`/`items`, not an independent
-// selection channel, so the next reactive pass overwrites it back.
+/** Selected node object(s), resolved from `v-model` against `items`. Read-only in effect: the value
+ * model overwrites any writes.
+ * @default null
+ */
 const nodeModel = defineModel<T | T[] | null>('node', { default: null })
 watch(
   [model, () => props.items],
@@ -982,20 +1006,31 @@ provide<TreeRowContext>(
 )
 
 defineExpose({
+  /** The `role="tree"` list element. */
   listEl,
+  /** The filter box's Input instance (null when `filterable` is off). */
   filterInputRef,
+  /** Focuses the first visible row. */
   focusFirstRow,
+  /** Makes the first visible row the tab stop without focusing it. */
   initRoving,
+  /** Expands every folder. */
   expandAll,
+  /** Collapses every folder. */
   collapseAll,
+  /** Expands the node with this value, e.g. after adding a child to it. */
   expandNode,
+  /** Collapses the node with this value. */
   collapseNode,
+  /** Finds a node in `items` by value. */
   findNode,
+  /** Finds a node's parent in `items` by value (null at the root). */
   findParent,
+  /** Removes a node from `items` in place; returns whether one was found. */
   removeNode,
-  /** True while a row is held, by pointer or keyboard. */
+  /** `true` while a row is held, by pointer or keyboard. */
   isReordering,
-  /** Abort an in-flight reorder and spring everything home. */
+  /** Aborts an in-flight reorder and springs every row back into place. */
   cancelReorder,
 })
 </script>

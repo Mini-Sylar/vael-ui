@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { userEvent } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import ContextMenuFixture from './fixtures/ContextMenuFixture.vue'
@@ -31,6 +31,26 @@ test('right-click opens the menu positioned at the click point', async () => {
   // whole target or anchored to its top-left corner.
   expect(Math.abs(rect.left - 120)).toBeLessThan(10)
   expect(Math.abs(rect.top - 200)).toBeLessThan(10)
+})
+
+test.each([
+  ['a container-query', 'container-type: inline-size'],
+  ['a transformed', 'transform: translate(40px, 30px)'],
+])('opens at the click point inside %s ancestor', async (_, style) => {
+  const host = document.createElement('div')
+  host.setAttribute('style', `${style}; margin: 80px 0 0 60px; inline-size: 400px`)
+  document.body.append(host)
+  const screen = await render(ContextMenuFixture, { container: host })
+  const target = screen.container.querySelector('.ui-context-menu-trigger')!
+
+  rightClick(target, 150, 220)
+  // The menu teleports to <body>, outside this custom container.
+  await expect.element(page.getByRole('menu')).toBeInTheDocument()
+
+  const rect = document.querySelector<HTMLElement>('.ui-menu-panel')!.getBoundingClientRect()
+  expect(Math.abs(rect.left - 150)).toBeLessThan(10)
+  expect(Math.abs(rect.top - 220)).toBeLessThan(10)
+  host.remove()
 })
 
 test('Escape closes the menu and select fires with the right item', async () => {

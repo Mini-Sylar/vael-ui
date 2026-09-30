@@ -1,6 +1,20 @@
 <template>
   <div class="code-block">
+    <!-- With a toolbar, copy sits in a header and is always visible. -->
+    <div v-if="$slots.toolbar" class="code-head">
+      <slot name="toolbar" />
+      <Button variant="ghost" size="sm" class="code-head-copy" @click="copy">
+        <template #leading>
+          <Transition name="icon-swap" mode="out-in">
+            <PhCheck v-if="copied" key="check" :size="14" />
+            <PhCopy v-else key="copy" :size="14" />
+          </Transition>
+        </template>
+        {{ copied ? t('component.copied') : t('component.copy') }}
+      </Button>
+    </div>
     <Button
+      v-else
       variant="ghost"
       size="sm"
       icon
@@ -23,7 +37,7 @@ import { shallowRef, useTemplateRef, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PhCheck, PhCopy } from '@phosphor-icons/vue'
 import { Button } from 'vael-ui'
-import { codeToHtml } from 'shiki'
+import { highlightBlock } from '../composables/highlightInline'
 
 const props = withDefaults(
   defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' | 'json' | 'css' }>(),
@@ -36,11 +50,9 @@ const codeEl = useTemplateRef('codeEl')
 const html = shallowRef('')
 
 watchEffect(async () => {
-  html.value = await codeToHtml(props.code, {
-    lang: props.lang,
-    themes: { light: 'github-light', dark: 'github-dark' },
-    defaultColor: false,
-  })
+  const { code, lang } = props
+  const result = await highlightBlock(code, lang)
+  if (code === props.code && lang === props.lang) html.value = result
 })
 
 async function copy() {
@@ -67,6 +79,18 @@ pre,
   font-size: 0.85rem;
   line-height: 1.65;
   background: transparent !important;
+}
+
+.code-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.code-head-copy {
+  flex: none;
 }
 
 .copy-button {

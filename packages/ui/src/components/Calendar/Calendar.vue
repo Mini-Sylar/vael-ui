@@ -11,6 +11,7 @@
         :class="navButtonPart.class"
         :style="navButtonPart.style"
         :aria-label="previousLabel"
+        :aria-disabled="!canGoPrevious || undefined"
         @click="goPrevious"
       >
         <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
@@ -23,24 +24,24 @@
           />
         </svg>
       </button>
+      <!-- Stays a button at the top level (aria-disabled), so focus isn't
+           dropped when drilling up to the year grid. -->
       <button
-        v-if="canDrill"
         type="button"
-        :class="[labelPart.class, 'ui-calendar-label--button']"
+        :class="[labelPart.class, canDrill && 'ui-calendar-label--button']"
         :style="labelPart.style"
+        :aria-disabled="!canDrill || undefined"
         aria-live="polite"
-        @click="drillUp"
+        @click="canDrill && drillUp()"
       >
         {{ headerLabel }}
       </button>
-      <span v-else :class="labelPart.class" :style="labelPart.style" aria-live="polite">{{
-        headerLabel
-      }}</span>
       <button
         type="button"
         :class="navButtonPart.class"
         :style="navButtonPart.style"
         :aria-label="nextLabel"
+        :aria-disabled="!canGoNext || undefined"
         @click="goNext"
       >
         <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
@@ -55,7 +56,11 @@
       </button>
     </div>
 
-    <div ref="bodyEl" class="ui-calendar-body" :style="{ '--ui-calendar-direction': direction }">
+    <div
+      ref="bodyEl"
+      class="ui-calendar-body"
+      :style="[{ '--ui-calendar-direction': direction }, bodyMinSize]"
+    >
       <template v-if="navLevel === 'date'">
         <div :class="weekdaysPart.class" :style="weekdaysPart.style" aria-hidden="true">
           <span
@@ -204,22 +209,31 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+/** Selected date, or `{ start, end }` in `range` mode. @default null */
 const model = defineModel<Date | CalendarRange | null>({ default: null })
 
 const props = withDefaults(
   defineProps<{
+    /**
+     * `'range'` picks a start then an end; clicking before the start restarts the range.
+     * @default 'single'
+     */
     selectionMode?: CalendarSelectionMode
+    /** What a click selects: a day, a month (its 1st) or a year (January 1st). @default 'date' */
     view?: CalendarView
+    /** Earliest selectable date (inclusive); the calendar disables earlier days, months and years. */
     minDate?: Date
+    /** Latest selectable date (inclusive); the calendar disables later days, months and years. */
     maxDate?: Date
-    /** List of unavailable dates, or a predicate function. Matched by calendar day, ignoring time. */
+    /** List of unavailable dates, or a predicate function. Matching compares calendar days and ignores time. */
     disabledDates?: CalendarDisabledDates
-    /** BCP-47 locale for month/weekday names and week start day. Omitted uses runtime default. */
+    /** BCP-47 locale for month and weekday names and the week start day. Unset, it uses the runtime default. */
     locale?: string
-    /** 0 (Sunday) – 6 (Saturday). Omitted derives from `locale`, falling back to Sunday. */
+    /** `0` (Sunday) to `6` (Saturday). Unset, it derives from `locale` and falls back to Monday. */
     firstDayOfWeek?: number
-    /** `false` skips month-navigation slide transition. */
+    /** `false` skips the month-navigation slide transition. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       header: UiPartValue
@@ -245,18 +259,15 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when you pick a date, month, year or range endpoint. */
   change: [value: Date | CalendarRange | null]
-  /** Fires when the displayed month changes (nav buttons, keyboard, or clicking adjacent month's day). */
+  /** Fires when the displayed month changes (nav buttons, keyboard, or clicking an adjacent month's day). */
   'month-change': [value: Date]
 }>()
 
 defineSlots<{
-  /**
-   * Per-day cell content in the date grid - falls back to the day number when unused. Doesn't
-   * replace the cell's own click/hover/keyboard-focus wiring or its aria attributes, just what
-   * renders inside it, so a caller can badge/mark a day (e.g. "has N items scheduled") without
-   * forking the whole grid/keyboard-nav/month-transition logic Calendar already owns.
-   */
+  /** Custom content inside each day cell (defaults to the day number). The cell keeps its own
+   * click, keyboard and aria wiring. */
   day(props: {
     date: Date
     isCurrentMonth: boolean
@@ -376,10 +387,12 @@ const monthRows = computed<Date[][]>(() => {
   for (let i = 0; i < 12; i += 4) out.push(monthsInYear.value.slice(i, i + 4))
   return out
 })
-// 12-year window with viewDate year centered in 2nd row.
-const yearWindowStart = computed(
-  () => viewDate.value.getFullYear() - (viewDate.value.getFullYear() % 12) - 4,
-)
+// 12-year window with viewDate's year always in the 2nd row. Rows are aligned
+// to multiples of 4, so paging by 12 lands on the same row boundaries.
+const yearWindowStart = computed(() => {
+  const year = viewDate.value.getFullYear()
+  return year - (year % 4) - 4
+})
 const yearsInWindow = computed<number[]>(() =>
   Array.from({ length: 12 }, (_, i) => yearWindowStart.value + i),
 )
@@ -504,6 +517,34 @@ function isYearSelected(year: number): boolean {
   return model.value.getFullYear() === year
 }
 
+// Paging is blocked only when the whole target page lies past min/max; aria-disabled (not
+// `disabled`) keeps focus on the button when it reaches the edge.
+const canGoPrevious = computed(() => {
+  const min = props.minDate
+  if (!min) return true
+  if (navLevel.value === 'date') return endOfMonth(addMonths(viewDate.value, -1)) >= startOfDay(min)
+  const lastYear =
+    navLevel.value === 'month' ? viewDate.value.getFullYear() - 1 : yearWindowStart.value - 1
+  return lastYear >= min.getFullYear()
+})
+const canGoNext = computed(() => {
+  const max = props.maxDate
+  if (!max) return true
+  if (navLevel.value === 'date')
+    return addMonths(startOfMonth(viewDate.value), 1) <= startOfDay(max)
+  const firstYear =
+    navLevel.value === 'month' ? viewDate.value.getFullYear() + 1 : yearWindowStart.value + 12
+  return firstYear <= max.getFullYear()
+})
+
+// Month/year grids stretch to the day view's last size, so drilling up or down doesn't jump.
+const dateBodySize = ref<{ inline: number; block: number } | null>(null)
+const bodyMinSize = computed(() => {
+  const size = dateBodySize.value
+  if (navLevel.value === 'date' || !size) return undefined
+  return { minInlineSize: `${size.inline}px`, minBlockSize: `${size.block}px` }
+})
+
 // Navigation
 function setView(date: Date, dir: 1 | -1) {
   animateBodyHeight(() => {
@@ -513,11 +554,13 @@ function setView(date: Date, dir: 1 | -1) {
   })
 }
 function goPrevious() {
+  if (!canGoPrevious.value) return
   if (navLevel.value === 'date') setView(addMonths(viewDate.value, -1), -1)
   else if (navLevel.value === 'month') setView(addYears(viewDate.value, -1), -1)
   else setView(addYears(viewDate.value, -12), -1)
 }
 function goNext() {
+  if (!canGoNext.value) return
   if (navLevel.value === 'date') setView(addMonths(viewDate.value, 1), 1)
   else if (navLevel.value === 'month') setView(addYears(viewDate.value, 1), 1)
   else setView(addYears(viewDate.value, 12), 1)
@@ -605,6 +648,9 @@ const bodyEl = useTemplateRef<HTMLElement>('bodyEl')
 // or switching to the month/year grid entirely) has no "from" and "to" auto
 // value CSS can transition between — measure both sides and animate the gap.
 function animateBodyHeight(mutate: () => void) {
+  if (navLevel.value === 'date' && bodyEl.value) {
+    dateBodySize.value = { inline: bodyEl.value.offsetWidth, block: bodyEl.value.offsetHeight }
+  }
   if (!props.motionCss || !bodyEl.value) {
     mutate()
     return
@@ -727,10 +773,15 @@ function cellPart(day: Date) {
 }
 
 defineExpose({
+  /** Root element. */
   rootEl,
+  /** Day grid element (`null` while the month or year grid shows). */
   gridEl,
+  /** Steps back one page: a month, or a year or 12 years in the month and year grids. */
   goToPreviousMonth: goPrevious,
+  /** Steps forward one page: a month, or a year or 12 years in the month and year grids. */
   goToNextMonth: goNext,
+  /** Moves keyboard focus to the given day, switching months if needed. Does nothing unless `view` is `'date'`. */
   focusDay,
 })
 </script>

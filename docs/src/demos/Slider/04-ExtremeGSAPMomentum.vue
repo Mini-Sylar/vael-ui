@@ -17,7 +17,7 @@
         :max="100"
         style="max-width: 20rem"
       />
-      <output class="note">{{ momentumValue }}</output>
+      <output class="demo-status">{{ momentumValue }}</output>
     </div>
   </section>
 </template>

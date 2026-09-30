@@ -1,8 +1,11 @@
 @layer ui-components {
   /* FileUpload No HTTP client, no auto-upload chrome — the library's job ends at a validated File[] model (plan decision 9). Dashed border, no shadow: an in-flow surface, same convention as Card. The real <input type="file"> is sr-only (not display:none) so it keeps native form participation and a Field label's `for` can open the picker natively. */
   .ui-file-upload {
-    display: grid;
-    gap: 0.75rem;
+    --ui-file-upload-gap: 0.75rem;
+    /* Flex, not grid: a negative margin can only pull in a flex gap. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--ui-file-upload-gap);
   }
   .ui-file-upload-dropzone {
     display: flex;
@@ -43,12 +46,19 @@
     border: 0;
   }
   .ui-file-upload-list {
+    --ui-file-list-gap: 0.5rem;
     position: relative;
-    display: grid;
-    gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ui-file-list-gap);
+    transition: margin-block-start var(--ui-duration-enter) var(--ui-ease-out);
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+  /* Always rendered, so the first row fades in and the last fades out. */
+  .ui-file-upload-list:empty {
+    display: none;
   }
   .ui-file-upload-item {
     display: flex;
@@ -58,6 +68,11 @@
     border: 1px solid var(--ui-border);
     border-radius: calc(var(--ui-radius) - 2px);
     font-size: 0.8125rem;
+  }
+  /* A custom #item slot with one root fills the row. */
+  .ui-file-upload-item > :only-child {
+    flex: 1 1 auto;
+    min-inline-size: 0;
   }
   .ui-file-upload-item-name {
     flex: 1 1 auto;
@@ -100,21 +115,52 @@
     opacity: 0.6;
     pointer-events: none;
   }
-  .ui-file-item-enter-active,
-  .ui-file-item-leave-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
   .ui-file-item-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     transition-delay: calc(var(--ui-file-item-index, 0) * 40ms);
   }
   .ui-file-item-enter-from,
   .ui-file-item-leave-to {
     opacity: 0;
   }
-  /* Removed rows keep their slot in a leaving TransitionGroup — absolute positioning during the fade-out avoids a layout jump on the remaining rows while it plays. */
   .ui-file-item-leave-active {
-    position: absolute;
-    inline-size: 100%;
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+
+  /* A removed row fades while it collapses, so the rows below slide up with
+     it instead of jumping once it's gone. Its height is measured on leave. */
+  @media (prefers-reduced-motion: no-preference) {
+    .ui-file-item-leave-active {
+      box-sizing: border-box;
+      overflow: hidden;
+      transition:
+        opacity var(--ui-duration-exit) var(--ui-ease-out),
+        block-size var(--ui-duration-enter) var(--ui-ease-out),
+        padding-block var(--ui-duration-enter) var(--ui-ease-out),
+        margin-block var(--ui-duration-enter) var(--ui-ease-out);
+    }
+    .ui-file-item-leave-from {
+      block-size: var(--ui-file-item-block-size);
+    }
+    .ui-file-item-leave-to {
+      block-size: 0;
+      padding-block: 0;
+      /* Dropped at once: Chrome rounds a sub-pixel border up to 1px. */
+      border-block-width: 0;
+      /* Swallow the gap on one side too. */
+      margin-block-end: calc(var(--ui-file-list-gap) * -1);
+    }
+    .ui-file-item-leave-to:last-child {
+      margin-block-end: 0;
+      margin-block-start: calc(var(--ui-file-list-gap) * -1);
+    }
+    .ui-file-item-leave-to:only-child {
+      margin-block-start: 0;
+    }
+    /* The last row takes the gap above the list with it. */
+    .ui-file-upload-list:has(> .ui-file-item-leave-to:only-child) {
+      margin-block-start: calc(var(--ui-file-upload-gap) * -1);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

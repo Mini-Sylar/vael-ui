@@ -11,6 +11,7 @@
     :aria-expanded="open"
     :aria-controls="treeId"
     :aria-describedby="fieldControl.describedBy()"
+    :aria-labelledby="(attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()"
     :aria-invalid="isInvalid || undefined"
     :aria-required="fieldControl.required() || undefined"
     :data-state="open ? 'open' : 'closed'"
@@ -163,56 +164,90 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
+/** Selected value, or an array of values outside `'single'` mode. @default null */
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
+/** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
+/** Search box text. @default '' */
 const query = defineModel<string>('query', { default: '' })
-/** Mirrors `model`'s value(s) as the full node object(s) — see Tree.vue's own `node` model for
- * the resolution details; TreeSelect just forwards it straight through from the inner Tree. */
+/**
+ * Selected node object(s), shaped like the model. It mirrors the model, so writes to it don't stick.
+ * @default null
+ */
 const nodeModel = defineModel<T | T[] | null>('node', { default: null })
 
 const props = withDefaults(
   defineProps<{
+    /** Tree data: nodes with `value`, `label` and optional `children`. */
     items: readonly T[]
+    /** Text shown in the trigger while nothing is selected. */
     placeholder?: string
-    /** `'single'`: clicking replaces selection and closes the panel. `'multiple'`: clicking toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles. */
+    /**
+     * `'single'`: a click replaces the selection and closes the panel. `'multiple'`: a click toggles that node only. `'checkbox'`: checkboxes with cascading parent/child toggles.
+     * @default 'single'
+     */
     selectionMode?: TreeSelectSelectionMode
-    /** `false` keeps a node with children out of the selection entirely — click, keyboard Enter/Space,
-     * and expandOnRowClick's own select-on-expand all skip it, only a leaf can become the value. Has
-     * no effect in `selectionMode="checkbox"`, which already only ever puts leaves in the model.
-     * Default: true (a folder can be selected like any other node). */
+    /** `false` makes folders unselectable, so only leaves can become the value. No effect in
+     * `'checkbox'` mode, which puts only leaves in the model.
+     * @default true
+     */
     selectableFolders?: boolean
+    /** Disables the trigger and blocks interaction. @default false */
     disabled?: boolean
+    /** Shows a clear button once something is selected. @default false */
     clearable?: boolean
+    /** Marks the field invalid. ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Trigger size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
-    /** Shows the built-in label search box atop the panel, auto-expanding ancestors of any match. `false` removes it entirely. */
+    /**
+     * Shows the built-in label search box atop the panel, auto-expanding ancestors of any match. `false` removes it entirely.
+     * @default true
+     */
     filterable?: boolean
+    /** Placeholder for the search box. @default 'Search...' */
     filterPlaceholder?: string
+    /** Text shown when no nodes match the search or `items` is empty. @default 'No results found' */
     emptyText?: string
-    /** When true, clicking anywhere on a folder row also toggles its expansion, not just the chevron —
-     * it still selects too (unless `selectableFolders` is off), so picking the folder itself (without
-     * opening it to reach a file inside) still works. Off by default since it changes what a plain row
-     * click does. */
+    /** Clicking a folder row also toggles its expansion, not only the chevron. The click still
+     * selects the row unless `selectableFolders` is `false`.
+     * @default false
+     */
     expandOnRowClick?: boolean
-    /** When true, each expanded ancestor's row pins to the top of the panel as its own children scroll
-     * past, VS Code-style, so deeply nested content never loses its folder context. */
+    /** Pins each expanded ancestor's row to the top of the panel while its children scroll past,
+     * VS Code-style. Nested rows keep their folder context in view.
+     * @default false
+     */
     stickyScroll?: boolean
-    /** Renders hidden `<input>`(s) mirroring the selection, for plain
-     * `<form>` posts — repeated `name` outside `single` mode. */
+    /** Renders hidden `<input>`(s) so a plain `<form>` post carries the selection, repeating `name` outside `'single'` mode. */
     name?: string
+    /** Which side of the trigger the panel opens on. @default 'bottom' */
     side?: TreeSelectSide
+    /** How the panel aligns against the trigger along that side. @default 'start' */
     align?: TreeSelectAlign
+    /** Gap between the trigger and the panel, in pixels. @default 8 */
     sideOffset?: number
+    /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
+    /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
+    /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
+    /** Custom exit animation; call `done()` to finish closing. */
     beforeClose?: (done: () => void) => void
+    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
     forceMount?: boolean
+    /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
-    /** Caps the panel's height at this many pixels even when the viewport has room for more — the tree scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+    /**
+     * Caps the panel height in pixels; the tree scrolls past it. The viewport limits it too, so
+     * pass `Infinity` to fill the available space.
+     * @default 320
+     */
     maxPanelHeight?: number
-    /** `false` skips all built-in motion (row transitions and chevron rotation). */
+    /** `false` skips all built-in motion (row transitions and chevron rotation). @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
       value: UiPartValue
@@ -246,6 +281,7 @@ const props = withDefaults(
     alignOffset: 0,
     closeOnEsc: true,
     closeOnOutside: true,
+    maxPanelHeight: 320,
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
@@ -255,18 +291,22 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires before the panel closes; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires when you change the selection, including clear. */
   change: [value: string | number | (string | number)[] | null]
+  /** Fires when you pick or toggle a node. */
   select: [node: T]
-  /** Fires on manual expand/collapse; not on filter-driven auto-expansion. */
+  /** Fires when a node expands or collapses, except during filter-driven auto-expansion. */
   'expand-change': [value: string | number, expanded: boolean]
 }>()
 
 defineSlots<{
+  /** Custom trigger content for the selected nodes. */
   value(props: { selected: T[] }): unknown
-  /** Above the filter input (if `filterable` is on) or the tree itself. */
+  /** Content above the filter input (when `filterable` is on) or the tree. */
   header(): unknown
-  /** Row content override (library owns wrapper & behavior). */
+  /** Custom row content for each node; the built-in row wrapper and behavior stay in place. */
   node(props: {
     node: T
     depth: number
@@ -280,8 +320,9 @@ defineSlots<{
     findParent: (value: string | number) => T | null
     removeNode: (value: string | number) => boolean
   }): unknown
+  /** Replaces `emptyText`. */
   empty(): unknown
-  /** Below the tree. */
+  /** Content below the tree. */
   footer(): unknown
 }>()
 
@@ -468,22 +509,39 @@ const resolvedAlign = computed<TreeSelectAlign>(() => {
 })
 
 defineExpose({
+  /** Trigger element. */
   triggerEl,
+  /** Panel element (null while closed). */
   panelEl,
+  /** Positioning wrapper around the panel (null while closed). */
   positionerEl,
+  /** The tree's `role="tree"` element (null while closed). */
   listEl,
+  /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
+  /** Inline positioning styles applied to the positioner. */
   positionerStyle,
+  /** True while a `beforeClose` close is pending. */
   isClosing,
+  /** Opens the panel (no-op while disabled). */
   open: openTree,
+  /** Closes the panel, running `@open-change` and `beforeClose` first. */
   close,
+  /** Cancels a close pending in `beforeClose` and keeps the panel open. */
   cancelClose,
+  /** Expands every folder. No-op while the panel is closed. */
   expandAll: () => treeRef.value?.expandAll(),
+  /** Collapses every folder. No-op while the panel is closed. */
   collapseAll: () => treeRef.value?.collapseAll(),
+  /** Expands the node with this value. No-op while the panel is closed. */
   expandNode: (value: string | number) => treeRef.value?.expandNode(value),
+  /** Collapses the node with this value. No-op while the panel is closed. */
   collapseNode: (value: string | number) => treeRef.value?.collapseNode(value),
+  /** Finds the node with this value in `items` (`undefined` while closed). */
   findNode: (value: string | number) => treeRef.value?.findNode(value),
+  /** Finds the parent of the node with this value (null for a root node or while closed). */
   findParent: (value: string | number) => treeRef.value?.findParent(value) ?? null,
+  /** Removes the node with this value from `items` in place; returns whether it was found. */
   removeNode: (value: string | number) => treeRef.value?.removeNode(value) ?? false,
 })
 </script>

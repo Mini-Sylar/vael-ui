@@ -6,10 +6,10 @@
     role="slider"
     :tabindex="isDisabled ? -1 : 0"
     aria-orientation="horizontal"
-    :aria-valuenow="displayValue"
+    :aria-valuenow="modelValue"
     aria-valuemin="0"
     :aria-valuemax="max"
-    :aria-valuetext="resolveValueText(displayValue)"
+    :aria-valuetext="resolveValueText(modelValue)"
     :aria-disabled="isDisabled || undefined"
     :aria-readonly="readonly || undefined"
     :aria-describedby="fieldControl.describedBy()"
@@ -52,6 +52,11 @@ import './Rating.css'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import {
+  clearFocusVisible,
+  markFocusVisible,
+  showFocusVisible,
+} from '../../composables/useFocusVisible'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -78,22 +83,28 @@ const restAttrs = computed(() =>
     'onBlur',
   ]),
 )
+/** Current rating; `0` means unrated. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(
   defineProps<{
+    /** Number of stars, which is also the highest rating. @default 5 */
     max?: number
-    /** Half-star precision, for both pointer and keyboard (arrow keys step by 0.5). */
+    /** Half-star precision, for both pointer and keyboard (arrow keys step by `0.5`). @default false */
     allowHalf?: boolean
+    /** Shows the rating but ignores pointer and keyboard input. Stays focusable. @default false */
     readonly?: boolean
+    /** Disables the rating and blocks interaction. @default false */
     disabled?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
-    /** Falls through to a hidden `<input>` → plain `<form>` participation. */
+    /** Native `name` for form submission, via a hidden input. */
     name?: string
     /** Drives `aria-valuetext`. Defaults to the `rating.valueText` message ("{value} of {max}"). */
     valueText?: (value: number) => string
-    /** Gates the fill-sweep + commit-pop animation. */
+    /** `false` skips the built-in fill-sweep and commit-pop animations. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
   }>(),
   { max: 5, allowHalf: false, readonly: false, disabled: false, size: 'md', motionCss: true },
@@ -117,7 +128,8 @@ function clamp(value: number): number {
 }
 
 // Hover/drag shows a live preview without touching the committed model —
-// clearing it on pointerleave reverts the display back to modelValue.
+// clearing it on pointerleave reverts the display back to modelValue. The
+// preview is visual only: ARIA always reports the committed value.
 const hoverValue = shallowRef<number | null>(null)
 const isTracking = shallowRef(false)
 const displayValue = computed(() => hoverValue.value ?? modelValue.value)
@@ -196,6 +208,7 @@ function onPointerCancel(event: PointerEvent) {
 }
 function onFocus(event: FocusEvent) {
   try {
+    markFocusVisible(event)
     fieldControl.onFocus()
   } finally {
     forward('onFocus', event)
@@ -203,6 +216,7 @@ function onFocus(event: FocusEvent) {
 }
 function onBlur(event: FocusEvent) {
   try {
+    clearFocusVisible(event)
     fieldControl.onBlur()
   } finally {
     forward('onBlur', event)
@@ -211,7 +225,12 @@ function onBlur(event: FocusEvent) {
 
 function onKeydown(event: KeyboardEvent) {
   try {
+    showFocusVisible(event)
     if (isDisabled.value || props.readonly) return
+    // A resting pointer's preview would otherwise mask the keyboard change until it moves.
+    if (['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+      hoverValue.value = null
+    }
     switch (event.key) {
       case 'ArrowRight':
       case 'ArrowUp':
@@ -260,5 +279,10 @@ const rootPart = computed(() =>
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-rating-item'))
 
-defineExpose({ el: root, itemEls })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Star elements, one per star. */
+  itemEls,
+})
 </script>

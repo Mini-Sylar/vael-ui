@@ -113,3 +113,51 @@ test('item slot fully overrides the default circle/label markup', async () => {
     .element(screen.container.querySelector<HTMLElement>('.ui-stepper-content')!)
     .toHaveTextContent('custom-0-Account')
 })
+
+test('linear: steps reached earlier stay clickable after stepping back', async () => {
+  const modelValue = ref(0)
+  const Wrapper = {
+    render: () =>
+      h(Stepper as any, {
+        items: [{ label: 'A' }, { label: 'B' }, { label: 'C' }, { label: 'D' }],
+        modelValue: modelValue.value,
+        'onUpdate:modelValue': (v: number) => (modelValue.value = v),
+      }),
+  }
+  const screen = await render(Wrapper)
+  modelValue.value = 2
+  await Promise.resolve()
+  const triggers = () => screen.container.querySelectorAll<HTMLElement>('.ui-stepper-trigger')
+  await userEvent.click(triggers()[0]!)
+  expect(modelValue.value).toBe(0)
+  // Step 2 was reached, so it's still a button; step 3 never was.
+  expect(triggers()[2]!.tagName).toBe('BUTTON')
+  expect(triggers()[3]!.tagName).toBe('DIV')
+  await userEvent.click(triggers()[2]!)
+  expect(modelValue.value).toBe(2)
+})
+
+test('non-interactive steps carry no disabled attribute; disabled steps use aria-disabled and look dimmed', async () => {
+  const screen = await render(Stepper, { props: { items, modelValue: 0 } })
+  const triggers = screen.container.querySelectorAll<HTMLElement>('.ui-stepper-trigger')
+  triggers.forEach((el) => expect(el.hasAttribute('disabled')).toBe(false))
+  expect(triggers[2]!.getAttribute('aria-disabled')).toBe('true')
+  expect(triggers[3]!.hasAttribute('aria-disabled')).toBe(false)
+  // Disabled reads differently from a merely upcoming step.
+  expect(getComputedStyle(triggers[2]!).opacity).toBe('0.5')
+  expect(getComputedStyle(triggers[3]!).opacity).toBe('1')
+})
+
+test('#indicator slot replaces the circle content and receives the step state', async () => {
+  const screen = await render(Stepper, {
+    props: { items, modelValue: 1 },
+    slots: {
+      indicator: ({ index, state }: { index: number; state: string }) => `${index}:${state}`,
+    },
+  })
+  const circles = screen.container.querySelectorAll<HTMLElement>('.ui-stepper-circle')
+  expect(circles[0]!.textContent).toBe('0:completed')
+  expect(circles[1]!.textContent).toBe('1:active')
+  expect(circles[3]!.textContent).toBe('3:upcoming')
+  expect(circles[0]!.querySelector('svg')).toBeNull()
+})

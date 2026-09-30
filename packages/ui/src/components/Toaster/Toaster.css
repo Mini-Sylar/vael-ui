@@ -9,6 +9,8 @@
   }
 
   .ui-toast {
+    /* The collapsed back-card height is a measured border-box height. */
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     gap: 0.625rem;
@@ -20,11 +22,26 @@
     will-change: translate, transform;
     scale: var(--toast-scale, 1);
     opacity: var(--toast-opacity, 1);
+    /* Lets the collapsed back-card height (px) animate to/from its natural height (auto). */
+    interpolate-size: allow-keywords;
     transition:
       translate var(--ui-duration-toast) var(--ui-ease-toast),
       scale var(--ui-duration-toast) var(--ui-ease-toast),
       opacity var(--ui-duration-toast) var(--ui-ease-toast),
-      transform var(--ui-duration-toast) var(--ui-ease-toast);
+      transform var(--ui-duration-toast) var(--ui-ease-toast),
+      block-size var(--ui-duration-toast) var(--ui-ease-toast);
+  }
+
+  .ui-toast > * {
+    transition: opacity var(--ui-duration-toast) var(--ui-ease-toast);
+  }
+
+  /* Collapsed back cards only show their top edge; their content would bleed into it. */
+  .ui-toast[data-front='false'][data-expanded='false'] {
+    overflow: hidden;
+  }
+  .ui-toast[data-front='false'][data-expanded='false'] > * {
+    opacity: 0;
   }
 
   .ui-toast[data-swiping='true'] {

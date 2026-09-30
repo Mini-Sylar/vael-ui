@@ -30,6 +30,47 @@
   font-size: 0.85em;
 }
 
+/* Inline-code styling must not reach a code block's own <code>: padding on
+   an inline box only applies where it starts, so it indented just the first
+   line. */
+.prose pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+/* Vue template references (`v-model:open`, `@change`, `<Dialog>`) carry no
+   syntax colors of their own, so they take an accent: the color picked in
+   the docs theme picker (`--docs-accent`, set by App.vue), else the info
+   blue, since the default primary is plain black/white and wouldn't stand
+   out. Pulled a quarter of the way toward the text color so a light accent
+   (yellow, lime) still reads. Used by API tables and guide prose alike. */
+code.code-ref {
+  --ref-accent: var(--docs-accent, var(--ui-info));
+  color: color-mix(in oklch, var(--ref-accent) 75%, var(--ui-text));
+  background: color-mix(in oklch, var(--ref-accent) 12%, transparent);
+  font-weight: 500;
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.prose code.code-token {
+  white-space: nowrap;
+}
+
+/* Preview dot before a color value (`#18181b`, `oklch(…)`). */
+.code-swatch {
+  display: inline-block;
+  inline-size: 0.8em;
+  block-size: 0.8em;
+  margin-inline-end: 0.35em;
+  border-radius: 50%;
+  vertical-align: -0.05em;
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ui-text) 20%, transparent);
+}
+
 .prose .code-block {
   margin-bottom: 1.25rem;
 }

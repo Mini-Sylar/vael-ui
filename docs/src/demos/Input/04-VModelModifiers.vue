@@ -9,7 +9,7 @@
       />
       <Input v-model.lazy="lazyValue" placeholder=".lazy, commits on blur" class="input-fixed" />
     </div>
-    <p class="note">trim: "{{ trimValue }}" / lazy: "{{ lazyValue }}"</p>
+    <p class="demo-status">trim: "{{ trimValue }}" / lazy: "{{ lazyValue }}"</p>
   </section>
 </template>
 

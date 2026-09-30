@@ -7,36 +7,50 @@
     :style="rootPart.style"
   >
     <template v-for="(item, index) in items" :key="index">
-      <li :class="stepPart.class" :data-state="stateOf(index)">
+      <li
+        :class="stepPart.class"
+        :data-state="stateOf(index)"
+        :data-disabled="isDisabled(item) ? '' : undefined"
+      >
         <component
           :is="isReachable(index, item) ? 'button' : 'div'"
           :type="isReachable(index, item) ? 'button' : undefined"
           :class="triggerPart.class"
-          :disabled="clickable && isDisabled(item) ? true : undefined"
+          :aria-disabled="isDisabled(item) ? 'true' : undefined"
           :aria-current="index === modelValue ? 'step' : undefined"
           @click="onStepClick(index, item)"
         >
           <span :class="circlePart.class">
-            <Transition :name="motionCss ? 'ui-stepper-check' : undefined">
-              <svg
-                v-if="stateOf(index) === 'completed'"
-                key="check"
-                viewBox="0 0 16 16"
-                width="12"
-                height="12"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M3 8.5l3 3 7-7"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <span v-else key="number">{{ index + 1 }}</span>
-            </Transition>
+            <slot
+              name="indicator"
+              :item="item"
+              :index="index"
+              :state="stateOf(index)"
+              :active="index === modelValue"
+              :completed="stateOf(index) === 'completed'"
+              :disabled="isDisabled(item)"
+            >
+              <Transition :name="motionCss ? 'ui-stepper-check' : undefined">
+                <svg
+                  v-if="stateOf(index) === 'completed'"
+                  key="check"
+                  viewBox="0 0 16 16"
+                  width="12"
+                  height="12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 8.5l3 3 7-7"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span v-else key="number">{{ index + 1 }}</span>
+              </Transition>
+            </slot>
           </span>
           <span :class="contentPart.class">
             <slot
@@ -76,24 +90,32 @@ export interface StepperItem {
 <script setup lang="ts" generic="T extends StepperItem = StepperItem">
 import './Stepper.css'
 import '../shared/tokens.css'
-import { computed, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { vScrollMask } from '../../directives/vScrollMask'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+/** Index of the active step. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(
   defineProps<{
+    /** Steps to show, each with a `label` and optional `description` and `disabled`. */
     items: ReadonlyArray<T>
+    /** Lays the steps out in a row or a column. @default 'horizontal' */
     orientation?: 'horizontal' | 'vertical'
-    /** Steps ahead of the active one are only clickable once reached (no skipping ahead). Past/current steps stay clickable. */
+    /**
+     * Blocks clicks on steps you haven't reached yet, so you can't skip ahead. Every step up to the
+     * furthest one reached stays clickable, even after stepping back.
+     * @default true
+     */
     linear?: boolean
-    /** `false` renders a pure display/progress indicator — no click handling at all. */
+    /** `false` renders a display-only progress indicator with no click handling. @default true */
     clickable?: boolean
-    /** Gates the built-in check-mark/number swap transition inside the step circle. */
+    /** Gates the built-in check-mark/number swap transition inside the step circle. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       step: UiPartValue
@@ -109,13 +131,24 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when you click a step and it becomes active. */
   change: [index: number, item: T]
 }>()
 
 defineSlots<{
+  /** Custom label content for each step, replacing the default label and description. */
   item(props: {
     item: T
     index: number
+    active: boolean
+    completed: boolean
+    disabled: boolean
+  }): unknown
+  /** Replaces the content inside each step's circle (the number or check mark). The circle itself stays, so its size, border and focus ring still apply; restyle it via `ui.circle`. */
+  indicator(props: {
+    item: T
+    index: number
+    state: 'completed' | 'active' | 'upcoming'
     active: boolean
     completed: boolean
     disabled: boolean
@@ -130,9 +163,15 @@ function stateOf(index: number): 'completed' | 'active' | 'upcoming' {
 function isDisabled(item: T): boolean {
   return !!item.disabled
 }
+// Linear mode lets you revisit any step you've already reached, so stepping
+// back doesn't lock the steps you came from.
+const furthestReached = ref(modelValue.value)
+watch(modelValue, (index) => {
+  if (index > furthestReached.value) furthestReached.value = index
+})
 function isReachable(index: number, item: T): boolean {
   if (!props.clickable || isDisabled(item)) return false
-  return !props.linear || index <= modelValue.value
+  return !props.linear || index <= Math.max(furthestReached.value, modelValue.value)
 }
 function onStepClick(index: number, item: T) {
   if (index === modelValue.value || !isReachable(index, item)) return
@@ -166,5 +205,8 @@ const connectorPart = computed(() =>
   ),
 )
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

@@ -45,20 +45,32 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
+/** Value of the selected Radio, or `null` when none is selected. @default null */
 const modelValue = defineModel<string | number | null>({ default: null })
 
 const props = withDefaults(
   defineProps<{
+    /** Native `name` shared by every Radio's input. Auto-generated when omitted. */
     name?: string
-    /** Disables all Radio children. */
+    /** Disables every Radio in the group. @default false */
     disabled?: boolean
+    /** Lays the radios out in a row or a column. @default 'vertical' */
     orientation?: 'horizontal' | 'vertical'
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
   { disabled: false, orientation: 'vertical' },
 )
 
-const emit = defineEmits<{ change: [value: string | number | null] }>()
+const emit = defineEmits<{
+  /** Fires when you select a different Radio, with its value. */
+  change: [value: string | number | null]
+}>()
+
+defineSlots<{
+  /** The group's `Radio` items. */
+  default(): unknown
+}>()
 
 const fieldControl = useFieldControl({ filled: () => modelValue.value !== null })
 const isInvalid = computed(() => fieldControl.invalid())
@@ -93,5 +105,8 @@ const rootPart = computed(() =>
   ),
 )
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

@@ -6,6 +6,7 @@
       tag="ol"
       :class="rootPart.class"
       :style="[rootStyle, rootPart.style]"
+      v-bind="$attrs"
       :css="motionCss"
       role="region"
       aria-live="polite"
@@ -16,6 +17,8 @@
       :data-ui-theme="themeScope"
       @pointerenter="onToasterEnter"
       @pointerleave="onToasterLeave"
+      @focusin="onToasterFocusIn"
+      @focusout="onToasterFocusOut"
       @enter="enterHook"
       @leave="leaveHook"
     >
@@ -35,6 +38,9 @@
         @pointermove="onPointerMove(entry.id, $event)"
         @pointerup="onPointerUp(entry.id)"
         @pointercancel="onPointerUp(entry.id)"
+        @transitionrun="onCardTransition(entry.id, $event, true)"
+        @transitionend="onCardTransition(entry.id, $event, false)"
+        @transitioncancel="onCardTransition(entry.id, $event, false)"
       >
         <slot
           :entry="entry"
@@ -99,7 +105,7 @@ export type ToasterPosition =
 <script setup lang="ts">
 import './Toaster.css'
 import '../shared/tokens.css'
-import { computed, inject, reactive, ref, watch } from 'vue'
+import { computed, inject, onScopeDispose, reactive, ref, watch } from 'vue'
 import { useDocumentVisibility } from '@vueuse/core'
 import { useToastQueue } from '../../composables/useToast'
 import type { ToastEntry } from '../../composables/useToast'
@@ -114,16 +120,21 @@ const SWIPE_THRESHOLD = 45 // px
 const SWIPE_VELOCITY_THRESHOLD = 0.11 // px/ms
 const SWIPE_EXIT_MS = 200
 
+defineOptions({ inheritAttrs: false })
+
 const props = withDefaults(
   defineProps<{
+    /** Screen corner or edge the toasts stack from. @default 'bottom-right' */
     position?: ToasterPosition
-    /** Max toasts shown at once; extras queue until visible slots free. */
+    /** Max toasts shown at once; extras queue until visible slots free. @default 4 */
     maxVisible?: number
-    /** Spacing between stacked cards, px. */
+    /** Spacing between stacked cards, in pixels. @default 10 */
     gap?: number
+    /** CSS selector to teleport the toast stack to. @default 'body' */
     teleportTo?: string
-    /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. */
+    /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       toast: UiPartValue
@@ -139,7 +150,10 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when a toast enters, only while `motionCss` is `false`. Run your own animation, then call
+   * `done()`. */
   'card-enter': [el: Element, done: () => void]
+  /** Same as `@card-enter`, for a toast leaving. */
   'card-leave': [el: Element, done: () => void]
 }>()
 
@@ -151,7 +165,7 @@ const leaveHook = computed(() =>
 )
 
 defineSlots<{
-  /** Replaces a card's entire inner markup. The library still owns the <li> itself (position/stacking/swipe). */
+  /** Replaces a toast's inner markup; the toaster still handles its positioning, stacking and swipe. */
   default(props: {
     entry: ToastEntry
     dismiss: () => void
@@ -187,15 +201,33 @@ const xPos = computed(() => props.position.split('-')[1])
 const heights = reactive<Record<number, number>>({})
 const resizeObservers = new Map<number, ResizeObserver>()
 
+// Collapsed back cards are forced to the front card's height (inline block-size), so only
+// record natural heights while a card is unforced and not mid height-transition.
+const heightTransitions = new Set<number>()
+function recordHeight(id: number, el: HTMLElement, h = el.offsetHeight) {
+  if (el.style.blockSize || heightTransitions.has(id)) return
+  if (h > 0) heights[id] = h
+}
+
 function registerCard(id: number, el: Element | null) {
   if (!(el instanceof HTMLElement)) return
   if (resizeObservers.has(id)) return
   const observer = new ResizeObserver(([entry]) => {
-    const h = entry.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight
-    if (h > 0) heights[id] = h
+    recordHeight(id, el, entry.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight)
   })
   observer.observe(el)
   resizeObservers.set(id, observer)
+}
+
+function onCardTransition(id: number, event: TransitionEvent, running: boolean) {
+  if (event.target !== event.currentTarget) return
+  if (event.propertyName !== 'block-size' && event.propertyName !== 'height') return
+  if (running) {
+    heightTransitions.add(id)
+  } else {
+    heightTransitions.delete(id)
+    recordHeight(id, event.currentTarget as HTMLElement)
+  }
 }
 
 function depthOf(id: number) {
@@ -203,14 +235,18 @@ function depthOf(id: number) {
   return i === -1 ? 0 : visible.value.length - 1 - i
 }
 
+const frontHeight = computed<number | undefined>(() => {
+  const front = visible.value[visible.value.length - 1]
+  return front ? heights[front.id] : undefined
+})
+
 // Position:absolute cards collapse parent; set explicit height to catch pointerleave.
 const toasterHeight = computed(() => {
   if (visible.value.length === 0) return 0
   if (expanded.value) {
     return visible.value.reduce((sum, t) => sum + (heights[t.id] ?? 56) + props.gap, -props.gap)
   }
-  const front = visible.value[visible.value.length - 1]
-  return front ? (heights[front.id] ?? 56) : 0
+  return frontHeight.value ?? 56
 })
 
 // Inlined for structural correctness (position:fixed needs explicit inset); themeable via CSS variables.
@@ -262,14 +298,37 @@ function offsetOf(id: number) {
 }
 
 const expanded = ref(false)
-function onToasterEnter() {
+const hovered = ref(false)
+const focusWithin = ref(false)
+function expand() {
+  if (expanded.value) return
   expanded.value = true
   pauseAll()
 }
-function onToasterLeave() {
-  if (activeSwipeId.value != null) return
+function collapse() {
+  if (!expanded.value || hovered.value || focusWithin.value) return
   expanded.value = false
   resumeAll()
+}
+function onToasterEnter() {
+  hovered.value = true
+  expand()
+}
+function onToasterLeave() {
+  if (activeSwipeId.value != null) return
+  hovered.value = false
+  collapse()
+}
+// Collapsed back cards hide their content, so keyboard focus expands the stack too.
+function onToasterFocusIn() {
+  focusWithin.value = true
+  expand()
+}
+function onToasterFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget as Node | null
+  if (next && toasterEl.value?.contains(next)) return
+  focusWithin.value = false
+  collapse()
 }
 
 function cardStyle(id: number, index: number) {
@@ -291,6 +350,10 @@ function cardStyle(id: number, index: number) {
     '--toast-scale': expanded.value ? 1 : 1 - depth * 0.045,
     '--toast-opacity': expanded.value || depth === 0 ? 1 : 1 - depth * 0.3,
   }
+  // Sonner's collapsed stack: back cards take the front card's height so each one peeks by
+  // exactly `gap`, however tall or short its own content is.
+  const frontH = frontHeight.value
+  if (!expanded.value && depth > 0 && frontH != null) style.blockSize = `${frontH}px`
   return style
 }
 
@@ -395,6 +458,9 @@ watch(
     for (const key of Object.keys(swipeState)) {
       if (!live.has(Number(key))) delete swipeState[Number(key)]
     }
+    for (const id of heightTransitions) {
+      if (!live.has(id)) heightTransitions.delete(id)
+    }
     for (const [id, observer] of resizeObservers) {
       if (!live.has(id)) {
         observer.disconnect()
@@ -403,10 +469,17 @@ watch(
     }
   },
 ) // Clean up heights/swipe state/observers when toasts leave the queue.
+onScopeDispose(() => {
+  for (const observer of resizeObservers.values()) observer.disconnect()
+  resizeObservers.clear()
+})
 
 // Pause timers when tab is hidden; useToastQueue tracks remaining time.
 const visibility = useDocumentVisibility()
 watch(visibility, (visibilityState) => (visibilityState === 'hidden' ? pauseAll() : resumeAll()))
 
-defineExpose({ toasterEl })
+defineExpose({
+  /** Toast list (root) element. */
+  toasterEl,
+})
 </script>

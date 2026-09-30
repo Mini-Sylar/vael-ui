@@ -15,7 +15,9 @@ const BAYER_4X4 = [
   [15, 7, 13, 5],
 ].map((row) => row.map((v) => (v + 0.5) / 16))
 
-const CELL = 8 // px per dither cell — coarse enough to read as texture, not noise
+// px per dither cell: coarse enough to read as texture, not noise. The host
+// can override it with --dither-cell.
+let cell = 8
 
 const canvasEl = useTemplateRef<HTMLCanvasElement>('canvasEl')
 let ctx: CanvasRenderingContext2D | null = null
@@ -35,9 +37,10 @@ function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
   canvas.width = Math.ceil(width * dpr)
   canvas.height = Math.ceil(height * dpr)
-  ctx?.scale(dpr, dpr)
-  cols = Math.ceil(width / CELL)
-  rows = Math.ceil(height / CELL)
+  ctx?.setTransform(dpr, 0, 0, dpr, 0, 0)
+  cell = Number.parseFloat(getComputedStyle(canvas).getPropertyValue('--dither-cell')) || 8
+  cols = Math.ceil(width / cell)
+  rows = Math.ceil(height / cell)
 }
 
 // Two offset sine fields instead of true random noise: cheap, and its slow
@@ -50,21 +53,45 @@ function noiseAt(x: number, y: number): number {
 function draw() {
   const canvas = canvasEl.value
   if (!canvas || !ctx) return
-  const color = getComputedStyle(canvas).getPropertyValue('--ui-text').trim() || '#000'
+  // The host can tint it: --dither-color and --dither-alpha, falling back to
+  // a faint text-colored texture.
+  const style = getComputedStyle(canvas)
+  const color =
+    style.getPropertyValue('--dither-color').trim() ||
+    style.getPropertyValue('--ui-text').trim() ||
+    '#000'
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.fillStyle = color
-  ctx.globalAlpha = 0.05
+  ctx.globalAlpha = Number.parseFloat(style.getPropertyValue('--dither-alpha')) || 0.05
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const threshold = BAYER_4X4[y % 4]![x % 4]!
       if (noiseAt(x, y) > threshold) {
-        ctx.fillRect(x * CELL, y * CELL, CELL - 1, CELL - 1)
+        ctx.fillRect(x * cell, y * cell, cell - 1, cell - 1)
       }
     }
   }
 }
 
 let resizeObserver: ResizeObserver | undefined
+let visibilityObserver: IntersectionObserver | undefined
+let onScreen = false
+
+// Drift only while it's on screen in a visible tab; the canvas keeps its
+// last frame otherwise.
+function syncAnimation() {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const run = onScreen && document.visibilityState === 'visible' && !reduceMotion
+  if (run && !intervalId) {
+    intervalId = setInterval(() => {
+      t += 0.06
+      draw()
+    }, 140)
+  } else if (!run && intervalId) {
+    clearInterval(intervalId)
+    intervalId = undefined
+  }
+}
 
 onMounted(() => {
   const canvas = canvasEl.value
@@ -73,13 +100,12 @@ onMounted(() => {
   resize()
   draw()
 
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  if (!reduceMotion) {
-    intervalId = setInterval(() => {
-      t += 0.06
-      draw()
-    }, 140)
-  }
+  visibilityObserver = new IntersectionObserver(([entry]) => {
+    onScreen = !!entry?.isIntersecting
+    syncAnimation()
+  })
+  visibilityObserver.observe(canvas)
+  document.addEventListener('visibilitychange', syncAnimation)
 
   if (canvas.parentElement) {
     resizeObserver = new ResizeObserver(() => {
@@ -93,6 +119,8 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval(intervalId)
   resizeObserver?.disconnect()
+  visibilityObserver?.disconnect()
+  document.removeEventListener('visibilitychange', syncAnimation)
 })
 </script>
 

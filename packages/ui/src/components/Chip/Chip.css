@@ -42,9 +42,10 @@
     background: var(--ui-border-strong);
     color: var(--ui-text);
   }
+  /* Inset so the ring stays within the chip's height and clear of the label. */
   .ui-chip-remove:focus-visible {
     outline: 2px solid var(--ui-primary);
-    outline-offset: 1px;
+    outline-offset: -2px;
   }
   .ui-chip-remove:disabled {
     cursor: not-allowed;

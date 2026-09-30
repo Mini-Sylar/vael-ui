@@ -9,7 +9,7 @@
         <Button size="sm" variant="ghost">Attach</Button>
       </template>
       <template #bottom-end>
-        <span class="note char-count">{{ composerValue.length }}/280</span>
+        <span class="demo-status char-count">{{ composerValue.length }}/280</span>
         <Button size="sm" :disabled="!composerValue">Post</Button>
       </template>
     </Textarea>

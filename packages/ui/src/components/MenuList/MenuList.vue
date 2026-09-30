@@ -70,13 +70,11 @@ export type { MenuEntry, MenuItemData, MenuSeparator }
 export type MenuListItemData = MenuItemData
 
 export interface MenuListProps<T extends MenuItemData = MenuItemData> {
-  /** Same shape as `Menu`'s own `items` — a `MenuList` and a `Menu` can share one array. */
+  /** Data-driven rows, in the same shape as Menu's `items`, so a MenuList and a Menu can share one array. */
   items?: ReadonlyArray<MenuEntry<T>>
-  /**
-   * The current page's `value` — renders `aria-current="page"` on the
-   * matching row.
-   */
+  /** `value` of the current page; the matching row gets `aria-current="page"`. */
   active?: string | number | null
+  /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue; item: UiPartValue; separator: UiPartValue }>
 }
 </script>
@@ -107,9 +105,8 @@ const emit = defineEmits<{
 
 defineSlots<{
   /**
-   * Override one row's content while keeping its behavior. Fires for selectable rows and
-   * group labels alike — `isGroup` tells which: a `true` row is inert (its own `items`
-   * rendered as children beneath it, not a click target) rather than selectable.
+   * Override one row's content while keeping its behavior. `isGroup` marks an inert group label
+   * (an entry with `items`, whose children render beneath it).
    */
   item(props: { item: T; isGroup: boolean }): unknown
 }>()
@@ -221,5 +218,8 @@ const { onKeydown, initRoving } = useMenu({
 // Initialize roving focus without stealing focus (unlike Menu, always on-screen).
 onMounted(() => initRoving())
 
-defineExpose({ el: list })
+defineExpose({
+  /** Root element. */
+  el: list,
+})
 </script>

@@ -108,29 +108,45 @@ import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the dropdown menu is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(
   defineProps<{
-    /** Dropdown rows — same shape as Menu.vue's `items`. */
+    /** Dropdown rows, in the same shape as Menu's `items`. */
     items: ReadonlyArray<MenuEntry<T>>
+    /** Visual style of both buttons. @default 'primary' */
     variant?: ButtonVariant
+    /** Size of both buttons. @default 'md' */
     size?: ButtonSize
+    /** Disables both buttons and blocks interaction. @default false */
     disabled?: boolean
-    /** Forwarded to the main action Button only. */
+    /** Forwarded to the main action Button only. @default 'auto' */
     loading?: boolean | 'auto'
-    /** aria-label for the chevron button. Default: localized "More actions". */
+    /** `aria-label` for the chevron button; uses the localized "More actions" when unset. */
     triggerLabel?: string
+    /** Which side of the trigger the panel opens on. */
     side?: MenuSide
+    /** How the panel aligns against the trigger along that side. */
     align?: MenuAlign
+    /** Gap between the trigger and the panel, in pixels. */
     sideOffset?: number
+    /** Shifts the panel along the alignment axis, in pixels. */
     alignOffset?: number
+    /** Escape key closes the panel. */
     closeOnEsc?: boolean
+    /** Clicking outside the panel closes it. */
     closeOnOutside?: boolean
+    /** Custom exit animation; call `done()` to finish closing. */
     beforeClose?: (done: () => void) => void
+    /** Keeps the panel mounted (toggled with `v-show`) and skips the built-in transition, for JS
+     * animation libraries. */
     forceMount?: boolean
+    /** Teleport target: a CSS selector or element. */
     teleportTo?: string | HTMLElement
+    /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
     scrollFade?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       main: UiPartValue
@@ -153,7 +169,9 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires before the menu closes; `details` has the `reason` and a `cancel()` that keeps it open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires when a dropdown item is chosen. */
   select: [item: T]
 }>()
 
@@ -162,7 +180,7 @@ defineSlots<{
   default(): unknown
   /** Forwarded to the dropdown Menu's own `#header`. */
   header(): unknown
-  /** Override one dropdown row's content while keeping its behavior — forwarded to Menu's own `#item`. */
+  /** Custom content for one dropdown row, keeping its behavior; forwarded to Menu's own `#item`. */
   item(props: { item: T }): unknown
   /** Forwarded to the dropdown Menu's own `#footer`. */
   footer(): unknown
@@ -201,16 +219,25 @@ const triggerUi = computed(() => ({
 }))
 
 defineExpose({
+  /** Root element. */
   el: root,
+  /** Main action button element. */
   mainEl: computed(() => mainRef.value?.el ?? null),
+  /** Chevron button element that opens the menu. */
   triggerEl: computed(() => triggerRef.value?.el ?? null),
+  /** Panel element (null while closed). */
   panelEl: computed(() => menuRef.value?.panelEl ?? null),
+  /** Positioning wrapper around the panel (null while closed). */
   positionerEl: computed(() => menuRef.value?.positionerEl ?? null),
+  /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => menuRef.value?.isClosing ?? false),
+  /** Opens the menu. */
   open: () => {
     open.value = true
   },
+  /** Closes the menu, running `beforeClose` first. */
   close: () => menuRef.value?.close(),
+  /** Cancels a close pending in `beforeClose` and keeps the menu open. */
   cancelClose: () => menuRef.value?.cancelClose(),
 })
 </script>

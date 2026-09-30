@@ -136,3 +136,16 @@ test('appearance="bare" drops the box, keeps variant/role/icon behavior', async 
   expect(el.getAttribute('role')).toBe('alert')
   expect(el.querySelector('.ui-message-icon svg')).not.toBeNull()
 })
+
+test('the status icon is vertically centred on the title line', async () => {
+  const screen = await render(Message, {
+    props: { variant: 'success', title: 'Saved' },
+    slots: { default: 'All changes are stored.' },
+  })
+  const icon = screen.container.querySelector<HTMLElement>('.ui-message-icon')!
+  const title = screen.container.querySelector<HTMLElement>('.ui-message-title')!
+  const i = icon.getBoundingClientRect()
+  const t = title.getBoundingClientRect()
+  const lineHeight = parseFloat(getComputedStyle(title).lineHeight)
+  expect(Math.abs(i.top + i.height / 2 - (t.top + lineHeight / 2))).toBeLessThan(0.5)
+})

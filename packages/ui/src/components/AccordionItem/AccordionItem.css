@@ -48,7 +48,8 @@
     transition: block-size var(--ui-duration-enter) var(--ui-ease-in-out);
   }
   .ui-accordion-body {
-    padding-block-end: 1rem;
+    /* Matches the trigger's inline padding so title and content share a start edge. */
+    padding: 0 0.125rem 1rem;
     color: var(--ui-text-muted);
     font-size: 0.875rem;
     line-height: 1.5;
@@ -64,6 +65,10 @@
     transition: none;
   }
   .ui-accordion-item[data-motion='off'] .ui-accordion-chevron {
+    transition: none;
+  }
+  /* A consumer tween on the panel's height would otherwise be smoothed (and lagged) by this transition. */
+  .ui-accordion-item[data-motion='off'] .ui-accordion-panel {
     transition: none;
   }
 

@@ -67,13 +67,19 @@
      InputNumber clamps at its bounds, a clock wraps (23 + 1 -> 0, 1 - 1 -> 12),
      which is different enough stepping math that reusing InputNumber directly
      would mean overriding its core clamp behavior anyway. Typing digits commits
-     immediately per keystroke (a clock segment has no "in-progress" partial
-     state worth waiting on) rather than buffering like OtpInput's cells. -->
+     immediately per keystroke, and `complete` fires once the typed value can't
+     take another digit, so the parent can move on to the next segment like a
+     native time input. -->
 <script setup lang="ts">
 import './TimeField.css'
 import { computed, onScopeDispose, useTemplateRef } from 'vue'
 
 const modelValue = defineModel<number>({ required: true })
+
+const emit = defineEmits<{
+  /** Typed digits formed a whole value (two digits, or one no further digit can extend). */
+  complete: []
+}>()
 
 const props = withDefaults(
   defineProps<{
@@ -131,8 +137,12 @@ function onBeforeInput(event: InputEvent) {
   const typed = Number(typedBuffer)
   modelValue.value = Math.min(props.max, Math.max(props.min, typed))
   const canExtend = typedBuffer.length < props.pad && typed * 10 <= props.max
-  if (canExtend) typedTimer = setTimeout(resetBuffer, 800)
-  else typedBuffer = ''
+  if (canExtend) {
+    typedTimer = setTimeout(resetBuffer, 800)
+  } else {
+    typedBuffer = ''
+    emit('complete')
+  }
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -183,5 +193,8 @@ function onStepperDown(delta: number) {
 function onStepperUp() {
   clearRepeat()
 }
-onScopeDispose(clearRepeat)
+onScopeDispose(() => {
+  clearRepeat()
+  clearTimeout(typedTimer)
+})
 </script>

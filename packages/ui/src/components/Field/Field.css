@@ -23,6 +23,13 @@
     margin-inline-start: 0.125rem;
     color: var(--ui-danger);
   }
+  /* Generated with empty alt text rather than a text node, so no label-text lookup
+     (accessible name, getByLabel-style queries) picks up "Username*"; aria-required
+     on the control conveys the state. */
+  .ui-field-required::after {
+    content: '*';
+    content: '*' / '';
+  }
   .ui-field[data-disabled] .ui-field-label {
     color: var(--ui-text-muted);
   }

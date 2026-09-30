@@ -17,7 +17,7 @@
         </Button>
       </ButtonGroup>
     </div>
-    <p class="note">
+    <p class="demo-status">
       Aligned: <strong>{{ align }}</strong>
     </p>
   </section>

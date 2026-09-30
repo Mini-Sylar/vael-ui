@@ -4,6 +4,7 @@
     aria-label="Applications"
     :orientation="orientation"
     :magnify="magnify"
+    :grow="grow"
     :tooltip-side="tooltipSide"
     :items="items"
     @select="onSelect"
@@ -20,10 +21,16 @@ import type { DockItemData } from '../../src/components/Dock/Dock.vue'
 import type { Side } from '@floating-ui/dom'
 
 withDefaults(
-  defineProps<{ orientation?: 'horizontal' | 'vertical'; magnify?: boolean; tooltipSide?: Side }>(),
+  defineProps<{
+    orientation?: 'horizontal' | 'vertical'
+    magnify?: boolean
+    grow?: boolean
+    tooltipSide?: Side
+  }>(),
   {
     orientation: undefined,
     magnify: true,
+    grow: false,
     tooltipSide: undefined,
   },
 )

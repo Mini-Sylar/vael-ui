@@ -20,6 +20,7 @@
     @keydown="onInputKeydown"
     @focus="onInputFocus"
     @blur="onInputBlur"
+    @click="onInputClick"
   >
     <template v-if="multiple || $slots.start" #start>
       <!-- v-if="multiple" not && selectedItems.length: empty wrapper keeps last chip's leave transition -->
@@ -130,7 +131,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :ui="{ list: themedUi()?.list, option: themedUi()?.option }"
+            :ui="{ list: themedUi()?.list, option: themedUi()?.option, empty: themedUi()?.empty }"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="setActive"
             @reach-end="emit('reach-end')"
@@ -248,65 +249,101 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
+/** Selected value, or an array of values when `multiple`. @default null */
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
+/**
+ * Input text. Holds the selected label in single mode; clears after each pick when `multiple`.
+ * @default ''
+ */
 const query = defineModel<string>('query', { default: '' })
 
 const props = withDefaults(
   defineProps<{
+    /** Options to choose from. */
     items: ReadonlyArray<T>
+    /** Text shown in the input while it's empty. */
     placeholder?: string
-    /** Model becomes `(string | number)[]`. Selecting adds an item without closing the panel; clicking a selected row removes it. Selections render as removable chips. */
+    /** Lets you select several items. The model becomes an array, the panel stays open on pick, and
+     * selections show as removable chips.
+     * @default false
+     */
     multiple?: boolean
-    /** `multiple` only: how many selected items render as chips before collapsing the rest into a "+N" indicator. Default: uncollapsed. */
+    /** `multiple` only: how many chips show before the rest collapse into a "+N" chip. Unset, all show. */
     maxLabels?: number
+    /** Disables the input and blocks interaction. @default false */
     disabled?: boolean
+    /** Marks the field invalid. ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Input size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Shows a spinner in place of an empty list, or below the rows while more load. @default false */
     loading?: boolean
+    /** Shows a clear button once there's a selection or typed text; clearing empties both. @default false */
     clearable?: boolean
-    /** `true`/`false` forces virtualization on/off; an object also tunes `itemSize`/`overscan`. Default: auto-virtualizes past 100 items. */
+    /** `true`/`false` forces virtualization on/off; an object also tunes `itemSize`/`overscan`. Unset, it auto-virtualizes past 100 items. */
     virtualize?: boolean | SelectVirtualizeConfig
+    /** Renders hidden `<input>`(s) so a plain `<form>` post carries the selection, repeating `name` when `multiple`. */
     name?: string
-    /** `true` (default): case/diacritic-insensitive local match on
-     * `getLabel`. `false`: consumer filters (bind `items` to an async
-     * result) — `filteredItems` becomes `items` verbatim. A function: fully
-     * custom local match. */
+    /** How typed text filters `items`. `true` matches labels ignoring case and accents; a function
+     * matches your way. `false` shows `items` as-is so you can filter them yourself.
+     * @default true
+     */
     filter?: ComboboxFilter<T>
-    /** Lets the typed text become the value when it isn't one of `items`,
-     * via the Create row (see `createOption`). Emits a cancelable `create`
-     * first. Add the new value to `items` yourself in that handler if it
-     * should become a real option. */
+    /** Lets typed text that isn't an item become the value, after a cancelable `@create`. Add it to
+     * `items` yourself if it should become a real option.
+     * @default false
+     */
     allowCustom?: boolean
     /** `allowCustom` only: appends a `Create "…"` row whenever the typed text
-     * isn't already an item's label. Customize it with `#create`. Default `true`. */
+     * isn't already an item's label. Customize it with `#create`.
+     * @default true
+     */
     createOption?: boolean
     /** `allowCustom` only: leaving the field with uncommitted text commits it
-     * (reason `'blur'`). Default `false`: the text reverts instead. */
+     * (reason `'blur'`). When `false`, the text reverts instead.
+     * @default false
+     */
     commitOnBlur?: boolean
-    /** What Tab does before focus moves on. Unset (default): nothing.
-     * `'select'`: picks the highlighted row, only once the user has typed or
-     * used the arrow keys. `'create'` (`allowCustom` only): commits the typed
-     * text, or the item it exactly names. */
+    /** What Tab commits before focus moves on. `'select'`: the highlighted row, once you type or move
+     * the highlight with the keyboard. `'create'` (`allowCustom` only): the typed text, or the item it names. */
     tabBehavior?: ComboboxTabBehavior
-    /** Opens the panel on focus before typing (the discoverability default). Set `false` to require typing first. */
+    /** Opens the panel on focus, before you type. Unset means on; set `false` to require typing first. */
     openOnFocus?: boolean
+    /** Which side of the input the panel opens on. @default 'bottom' */
     side?: ComboboxSide
+    /** How the panel aligns against the input along that side. @default 'start' */
     align?: ComboboxAlign
+    /** Gap between the input and the panel, in pixels. @default 8 */
     sideOffset?: number
+    /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
+    /** Escape key closes the panel (and reverts uncommitted typing). @default true */
     closeOnEsc?: boolean
+    /** Clicking outside the panel, or tabbing away, closes it. @default true */
     closeOnOutside?: boolean
-    /** Defers closing (animation gate pattern): called when close is requested, call `done()` to proceed. */
+    /** Custom exit animation; call `done()` to finish closing. */
     beforeClose?: (done: () => void) => void
+    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
     forceMount?: boolean
+    /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
+    /**
+     * Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more.
+     * @default true
+     */
     scrollFade?: boolean
-    /** Caps the panel's height at this many pixels even when the viewport has room for more — the option list scrolls internally past it instead of the panel growing indefinitely. Omitted keeps today's behavior (only the viewport limits it). */
+    /**
+     * Caps the panel height in pixels; the list scrolls past it. The viewport limits it too, so
+     * pass `Infinity` to fill the available space.
+     * @default 320
+     */
     maxPanelHeight?: number
-    /** Gates the built-in chip enter/exit/reposition transition (`multiple` only). `false` skips
-     * it entirely — reach for `@chip-enter`/`@chip-leave` instead if you want a consumer-owned
-     * animation (GSAP, motion-v) in its place. */
+    /** `false` skips the built-in chip transitions (`multiple` only); animate them yourself via
+     * `@chip-enter`/`@chip-leave`.
+     * @default true
+     */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       input: UiPartValue
@@ -340,6 +377,7 @@ const props = withDefaults(
     alignOffset: 0,
     closeOnEsc: true,
     closeOnOutside: true,
+    maxPanelHeight: 320,
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,
@@ -348,17 +386,20 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires before the panel closes; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires when you change the value, including custom values, chip removal and clear. */
   change: [value: string | number | (string | number)[] | null]
+  /** Fires when the list's last rows render, for loading more. Re-arms when the item count changes. */
   'reach-end': []
+  /** Fires when you pick an item, including a pick that deselects it in `multiple` mode. */
   select: [item: T]
-  /** Fires before the typed text is committed as a custom value. `details.cancel()`
-   * vetoes it — for validation, or an async create that sets the model itself. */
+  /** Fires before the typed text commits as a custom value. Call `details.cancel()` to veto it,
+   * for validation or an async create that sets the model itself. */
   create: [query: string, details: ComboboxCreateDetails]
-  /** Fires instead of the built-in CSS transition when `motionCss` is `false` — call `done()`
-   * once your own enter animation finishes. */
+  /** Fires instead of the built-in CSS transition when `motionCss` is `false`. Call `done()` once your enter animation finishes. */
   'chip-enter': [el: Element, done: () => void]
-  /** Same as `chip-enter`, for a chip's removal. */
+  /** Same as `@chip-enter`, for a chip's removal. */
   'chip-leave': [el: Element, done: () => void]
 }>()
 
@@ -371,12 +412,13 @@ const chipLeaveHook = computed(() =>
 )
 
 defineSlots<{
+  /** Content before the input text, after any chips. */
   start(): unknown
-  /** Renders before the library's own clear/chevron, inside Input's `#end`. */
+  /** Content before the built-in clear button and chevron, inside Input's `#end`. */
   end(): unknown
-  /** Above the listbox, inside the popover panel. */
+  /** Content above the listbox, inside the popover panel. `count` and `total` support a result-count readout. */
   header(props: { count: number; total: number }): unknown
-  /** `query` is the trimmed typed text, for highlighting the matched part. */
+  /** Custom row content for each option. `query` is the trimmed typed text, for highlighting the match. */
   item(props: {
     item: T
     index: number
@@ -386,8 +428,9 @@ defineSlots<{
   }): unknown
   /** Content of the `allowCustom` Create row. */
   create(props: { query: string; active: boolean }): unknown
+  /** Replaces the text shown when no items match. */
   empty(): unknown
-  /** Below the listbox, inside the popover panel. */
+  /** Content below the listbox, inside the popover panel. */
   footer(): unknown
 }>()
 
@@ -474,6 +517,7 @@ function removeItem(item: T) {
   emit('change', next)
 }
 
+/** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 const inputRef = useTemplateRef('inputRef')
 const el = computed(() => inputRef.value?.el ?? null)
@@ -634,6 +678,10 @@ function onQueryInput() {
 }
 function onInputFocus() {
   isFocused.value = true
+  if (!isDisabled.value && openOnFocusResolved.value) open.value = true
+}
+// Focus alone can't reopen an input that already has focus (after a pick or Escape).
+function onInputClick() {
   if (!isDisabled.value && openOnFocusResolved.value) open.value = true
 }
 function onInputBlur(event?: FocusEvent) {
@@ -804,20 +852,33 @@ function scrollToIndex(index: number, align?: ScrollAlign) {
 }
 
 defineExpose({
+  /** Root element (the input's frame). */
   el,
+  /** Native `<input>` element. */
   inputEl,
+  /** Panel element (null while closed). */
   panelEl,
+  /** Positioning wrapper around the panel (null while closed). */
   positionerEl,
+  /** Scrollable listbox element (null while closed). */
   listEl,
+  /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
+  /** Inline positioning styles applied to the positioner. */
   positionerStyle,
+  /** True while a `beforeClose` close is pending. */
   isClosing,
+  /** Opens the panel (no-op while disabled). */
   open: () => {
     if (!isDisabled.value) open.value = true
   },
+  /** Closes the panel, running `@open-change` and `beforeClose` first. */
   close,
+  /** Cancels a close pending in `beforeClose` and keeps the panel open. */
   cancelClose,
+  /** Index of the highlighted row in the list (-1 for none). */
   activeIndex,
+  /** Scrolls the list to the row at `index`. */
   scrollToIndex,
 })
 </script>

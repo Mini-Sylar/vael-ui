@@ -112,7 +112,7 @@ export interface StatDef {
   trend: string
   trendVariant: 'success' | 'warning' | 'danger'
   progress?: number
-  /** Relative (0–1) 30-day trend points — renders as a dithered dot sparkline. Deliberately not a round staircase; real trend data jitters. */
+  /** Relative (0–1) 30-day trend points, drawn as a smooth line with a soft fill. Deliberately not a round staircase; real trend data jitters. */
   sparkline?: number[]
 }
 

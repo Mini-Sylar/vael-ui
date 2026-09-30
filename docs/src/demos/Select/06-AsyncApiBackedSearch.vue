@@ -6,7 +6,8 @@
       — it trusts whatever <code>items</code> it's handed. This debounces <code>query</code> into a
       fake API call and swaps <code>items</code> with the response; virtualization (already a plain
       computed off the current item count) re-evaluates automatically, so a 5,000-row remote page
-      virtualizes exactly like a local one would.
+      virtualizes exactly like a local one would. The panel matches the trigger's width by default;
+      <code>ui.panel</code> gives it a wider floor here so the email addresses don't truncate.
     </p>
     <div class="row">
       <Select
@@ -17,6 +18,7 @@
         :filter="false"
         filter-placeholder="Search 5,000 users..."
         placeholder="Pick a user"
+        :ui="{ panel: { style: { minInlineSize: '18rem' } } }"
       />
       <output class="panel-text">{{ userId ?? '(none)' }}</output>
     </div>
