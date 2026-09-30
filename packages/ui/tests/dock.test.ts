@@ -2,8 +2,10 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h } from 'vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import DockFixture from './fixtures/DockFixture.vue'
+import Dock from '../src/components/Dock/Dock.vue'
 import {
   dockFalloff,
   dockItemOffsets,
@@ -318,4 +320,89 @@ test('magnify=false disables the size effect entirely, without disabling the doc
   // Still fully interactive — magnify=false isn't disabled=true.
   await userEvent.click(buttons[1])
   await expect.element(screen.getByTestId('selected')).toHaveTextContent('mail')
+})
+
+function contains(outer: DOMRect, inner: DOMRect) {
+  return (
+    inner.left >= outer.left - 0.5 &&
+    inner.right <= outer.right + 0.5 &&
+    inner.top >= outer.top - 0.5 &&
+    inner.bottom <= outer.bottom + 0.5
+  )
+}
+
+function hoverItem(root: HTMLElement, item: HTMLElement) {
+  const rect = item.getBoundingClientRect()
+  root.dispatchEvent(
+    new PointerEvent('pointermove', {
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+      bubbles: true,
+    }),
+  )
+}
+
+test('grow: items change real size and the dock grows to hold them', async () => {
+  const screen = await render(DockFixture, { props: { grow: true } })
+  const buttons = itemButtons(screen)
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  const rest = buttons[0].offsetWidth
+  const restRoot = root.getBoundingClientRect()
+  await expect
+    .poll(() => {
+      hoverItem(root, buttons[0])
+      return buttons[0].offsetWidth
+    })
+    .toBeGreaterThan(rest + 20)
+  expect(buttons[0].style.transform).toBe('')
+  expect(buttons[0].offsetHeight).toBe(buttons[0].offsetWidth)
+  const grown = root.getBoundingClientRect()
+  expect(grown.height).toBeGreaterThan(restRoot.height + 20)
+  for (const button of buttons) expect(contains(grown, button.getBoundingClientRect())).toBe(true)
+
+  // A resting pointer converges instead of feeding back into the layout it grew.
+  const samples: number[] = []
+  for (let i = 0; i < 20; i++) {
+    hoverItem(root, buttons[0])
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    samples.push(buttons[0].offsetWidth)
+  }
+  expect(Math.abs(samples.at(-1)! - samples.at(-2)!)).toBeLessThanOrEqual(1)
+
+  root.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }))
+  await expect.poll(() => buttons[0].style.inlineSize).toBe('')
+  expect(root.getBoundingClientRect().height).toBeCloseTo(restRoot.height, 0)
+})
+
+test('without grow the dock keeps its size: items scale with transforms', async () => {
+  const screen = await render(DockFixture, {})
+  const buttons = itemButtons(screen)
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  const rest = buttons[0].offsetWidth
+  const restRoot = root.getBoundingClientRect()
+  await expect
+    .poll(() => {
+      hoverItem(root, buttons[0])
+      return scaleOf(buttons[0])
+    })
+    .toBeGreaterThan(1.3)
+  expect(buttons[0].offsetWidth).toBe(rest)
+  expect(root.getBoundingClientRect().width).toBeCloseTo(restRoot.width, 0)
+})
+
+test('a narrow container shrinks the items instead of letting the dock overflow', async () => {
+  const items = Array.from({ length: 9 }, (_, i) => ({ label: `App ${i}` }))
+  const screen = await render({
+    render: () =>
+      h('div', { style: 'inline-size: 300px' }, [h(Dock, { items, 'aria-label': 'Apps' })]),
+  })
+  const wrapper = screen.container.firstElementChild as HTMLElement
+  const bounds = wrapper.getBoundingClientRect()
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  expect(root.getBoundingClientRect().right).toBeLessThanOrEqual(bounds.right + 0.5)
+  for (const button of itemButtons(screen)) {
+    const rect = button.getBoundingClientRect()
+    expect(rect.width).toBeLessThan(48)
+    expect(rect.height).toBeCloseTo(rect.width, 0)
+  }
 })

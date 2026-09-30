@@ -17,6 +17,8 @@ export interface UseDockOptions {
   disabled?: MaybeRefOrGetter<boolean>
   /** `false` turns off the pointer-proximity size effect entirely — the dock stays fully interactive (click, keyboard nav, tooltips), items just never grow. Distinct from `disabled`, which also blocks interaction outright; this only opts out of the one visual effect. */
   magnify?: MaybeRefOrGetter<boolean>
+  /** `true` magnifies by changing each item's real size, so the dock grows with its items. Default `false` scales and spreads items with transforms: the dock keeps its size and the end items can reach past it. */
+  grow?: MaybeRefOrGetter<boolean>
 }
 
 export interface UseDockReturn {
@@ -74,6 +76,39 @@ export function dockItemOffsets(
   return virtualCenters.map((center, i) => center + shift - centers[i]!)
 }
 
+/**
+ * Maps a pointer position on a grown dock back onto the resting layout, where
+ * item `i` spans `[i * (restSize + gap), i * (restSize + gap) + restSize]`. The
+ * pointer keeps the same fractional position inside whichever item or gap it's
+ * over, so sizes derived from it never feed back into the layout they grew.
+ */
+export function dockRestingPosition(
+  pointer: number,
+  spans: readonly (readonly [start: number, end: number])[],
+  restSize: number,
+  gap: number,
+): number {
+  if (spans.length === 0) return pointer
+  const pitch = restSize + gap
+  const [firstStart] = spans[0]!
+  if (pointer < firstStart) return pointer - firstStart
+  for (let i = 0; i < spans.length; i++) {
+    const [start, end] = spans[i]!
+    const restStart = i * pitch
+    if (pointer <= end) {
+      const length = end - start
+      return restStart + (length > 0 ? ((pointer - start) / length) * restSize : 0)
+    }
+    const next = spans[i + 1]
+    if (next && pointer < next[0]) {
+      const gapLength = next[0] - end
+      return restStart + restSize + (gapLength > 0 ? ((pointer - end) / gapLength) * gap : 0)
+    }
+  }
+  const lastEnd = spans[spans.length - 1]![1]
+  return (spans.length - 1) * pitch + restSize + (pointer - lastEnd)
+}
+
 export function useDock(
   rootEl: ElRef<HTMLElement | null>,
   itemCount: MaybeRefOrGetter<number>,
@@ -97,6 +132,9 @@ export function useDock(
   function magnifyEnabled(): boolean {
     return toValue(options.magnify) ?? true
   }
+  function grows(): boolean {
+    return toValue(options.grow) ?? false
+  }
 
   const itemEls: (HTMLElement | null)[] = []
   function setItemEl(index: number) {
@@ -109,9 +147,15 @@ export function useDock(
     }
   }
 
-  // Resting centers measured once for virtual re-layout.
+  // Resting centers measured once for virtual re-layout. Items can rest below
+  // `baseSize` when a narrow container shrinks them, so the real resting size is
+  // measured too and magnification scales from it.
   let centers: number[] = []
   let gap = 0
+  let restSize = 0
+  // In grow mode the root resizes every frame while magnified; only the resting
+  // layout is worth measuring.
+  let magnified = false
 
   // Real macOS Dock magnification is a continuous spring-like catch-up, not
   // a value tweened between discrete pointermove samples — a CSS transition
@@ -141,10 +185,27 @@ export function useDock(
     }
   }
 
+  function clearStyles(el: HTMLElement) {
+    el.style.transform = ''
+    el.style.inlineSize = ''
+    el.style.blockSize = ''
+  }
+
   function writeTransform(el: HTMLElement, index: number, vertical: boolean) {
     const scale = currentScale[index]!
     const offset = currentOffset[index]!
     const atRest = Math.abs(scale - 1) < SCALE_EPSILON && Math.abs(offset) < OFFSET_EPSILON
+    if (grows()) {
+      if (atRest) {
+        clearStyles(el)
+        return
+      }
+      const size = `${scale * restSize}px`
+      el.style.transform = ''
+      el.style.inlineSize = size
+      el.style.blockSize = size
+      return
+    }
     if (atRest) {
       // Fully settled — clear the inline style so `.ui-dock-item:active`'s
       // press-shrink (gated on no live transform being present) can apply.
@@ -162,6 +223,7 @@ export function useDock(
     const factor = 1 - Math.pow(0.5, dt / SETTLE_HALF_LIFE_MS)
     const vertical = orientation() === 'vertical'
     let stillMoving = false
+    let atRest = true
     itemEls.forEach((el, i) => {
       if (!el) return
       const scaleDelta = targetScale[i]! - currentScale[i]!
@@ -174,8 +236,10 @@ export function useDock(
         currentScale[i] = targetScale[i]
         currentOffset[i] = targetOffset[i]
       }
+      if (Math.abs(currentScale[i]! - 1) >= SCALE_EPSILON) atRest = false
       writeTransform(el, i, vertical)
     })
+    magnified = !atRest
     rafId = stillMoving ? requestAnimationFrame(tick) : null
     if (!stillMoving) lastFrameTime = 0
   }
@@ -186,9 +250,12 @@ export function useDock(
 
   function measure() {
     const root = rootEl.value
-    if (!root) return
+    if (!root || (grows() && magnified)) return
     const rootRect = root.getBoundingClientRect()
     const vertical = orientation() === 'vertical'
+    const first = itemEls.find((el): el is HTMLElement => !!el)
+    // offsetWidth/Height ignore transforms, so this is the resting size even mid-magnify.
+    if (first) restSize = vertical ? first.offsetHeight : first.offsetWidth
     centers = itemEls.map((el) => {
       if (!el) return 0
       const rect = el.getBoundingClientRect()
@@ -226,8 +293,9 @@ export function useDock(
       targetScale[i] = 1
       targetOffset[i] = 0
     }
+    magnified = false
     for (const el of itemEls) {
-      if (el) el.style.transform = ''
+      if (el) clearStyles(el)
     }
   }
 
@@ -249,20 +317,33 @@ export function useDock(
       return
     }
     const root = rootEl.value
-    if (!root || centers.length === 0) return
+    if (!root || centers.length === 0 || restSize === 0) return
     syncArrayLengths()
     const rootRect = root.getBoundingClientRect()
     const vertical = orientation() === 'vertical'
-    const pointerPosition = vertical ? event.clientY - rootRect.top : event.clientX - rootRect.left
-    const base = baseSize()
+    let pointerPosition = vertical ? event.clientY - rootRect.top : event.clientX - rootRect.left
+    if (grows()) {
+      // The layout itself has grown; map the pointer back onto the resting one.
+      const spans = itemEls.map((el): [number, number] => {
+        if (!el) return [0, 0]
+        const rect = el.getBoundingClientRect()
+        return vertical ? [rect.top, rect.bottom] : [rect.left, rect.right]
+      })
+      const firstStart = centers[0]! - restSize / 2
+      pointerPosition =
+        dockRestingPosition(vertical ? event.clientY : event.clientX, spans, restSize, gap) +
+        firstStart
+    }
+    // Sizes are designed against baseSize; a shrunken dock magnifies in proportion.
+    const ratio = restSize / baseSize()
     const sizes = dockItemSizes(pointerPosition, centers, {
-      baseSize: base,
-      maxSize: maxSize(),
-      range: range(),
+      baseSize: restSize,
+      maxSize: maxSize() * ratio,
+      range: range() * ratio,
     })
-    const offsets = dockItemOffsets(sizes, centers, gap)
+    const offsets = grows() ? sizes.map(() => 0) : dockItemOffsets(sizes, centers, gap)
     itemEls.forEach((_, i) => {
-      targetScale[i] = sizes[i]! / base
+      targetScale[i] = sizes[i]! / restSize
       targetOffset[i] = offsets[i]!
     })
     startLoop()
@@ -280,6 +361,10 @@ export function useDock(
     () => toValue(itemCount),
     () => nextTick(measure),
   )
+  watch(grows, () => {
+    resetSizes()
+    nextTick(measure)
+  })
   // Clear sizes on prefers-reduced-motion toggle.
   useEventListener(
     () => ssrWindow()?.matchMedia('(prefers-reduced-motion: reduce)'),

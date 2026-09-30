@@ -93,6 +93,12 @@ const props = withDefaults(
      * @default true
      */
     magnify?: boolean
+    /**
+     * Magnifies by resizing items, so the dock grows with them. Off, items scale and
+     * spread with transforms and the dock keeps its size.
+     * @default false
+     */
+    grow?: boolean
     /** Renders each item's `v-tooltip` on hover. @default true */
     tooltips?: boolean
     /** Which side each item's tooltip opens on. Unset, it's `'top'` when horizontal and `'right'` when vertical. */
@@ -106,6 +112,7 @@ const props = withDefaults(
     maxSize: 76,
     disabled: false,
     magnify: true,
+    grow: false,
     tooltips: true,
     tooltipSide: undefined,
   },
@@ -128,6 +135,7 @@ const { setItemEl, onPointerMove, onPointerLeave, remeasure } = useDock(
     range: () => props.range,
     disabled: () => props.disabled,
     magnify: () => props.magnify,
+    grow: () => props.grow,
   },
 )
 
@@ -214,6 +222,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-dock',
     props.orientation === 'vertical' && 'ui-dock--vertical',
+    props.grow && 'ui-dock--grow',
     props.disabled && 'ui-dock--disabled',
   ),
 )
