@@ -173,6 +173,25 @@ const { pressed, visible } = useAutoplayCursor({
   block-size: 100%;
 }
 
+/* Light mode: a soft white glow instead of a dark drop shadow, so the
+   dashboard sits in light against the dither rather than in grey haze. */
+.showcase-stage > :deep(.dash-shell) {
+  box-shadow:
+    0 0 0 1px var(--ui-border),
+    0 6px 20px rgb(0 0 0 / 0.05),
+    0 0 36px 14px var(--ui-surface);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .showcase-stage > :deep(.dash-shell) {
+    box-shadow: var(--ui-panel-shadow);
+  }
+}
+
+:root[data-theme='dark'] .showcase-stage > :deep(.dash-shell) {
+  box-shadow: var(--ui-panel-shadow);
+}
+
 /* Halo layers sit behind the dashboard, which covers their centers, so only
    light at its edges shows. Each is a large conic gradient turned by its own
    base angle plus --halo-spin; hover swings them to an alternate angle. */
@@ -184,12 +203,16 @@ const { pressed, visible } = useAutoplayCursor({
   --halo-hue: oklch(from var(--docs-accent, var(--ui-info)) l calc(c * 0.6) h);
   --halo-hue-b: oklch(from var(--halo-hue) l c calc(h + 70));
   --halo-hue-c: oklch(from var(--halo-hue) calc(l + 0.08) c calc(h - 60));
-  /* Light mode: white rim and hues lifted toward white, so the halo reads as
-     light, not as tinted shadow. Dark mode uses them at full strength. */
-  --halo-a: color-mix(in oklch, var(--halo-hue) 60%, white);
-  --halo-b: color-mix(in oklch, var(--halo-hue-b) 60%, white);
-  --halo-c: color-mix(in oklch, var(--halo-hue-c) 60%, white);
+  /* Light mode: the halo is white light, clearing the dither around the
+     dashboard. Dark mode brings in the subtle mixed hues. Fades go to a
+     clear version of the same color, never to `transparent` (transparent
+     black), which some engines blend through grey. */
+  --halo-a: white;
+  --halo-b: white;
+  --halo-c: white;
   --halo-rim: white;
+  --halo-clear: rgb(255 255 255 / 0);
+  --halo-aurora-opacity: 0.9;
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -202,6 +225,8 @@ const { pressed, visible } = useAutoplayCursor({
     --halo-b: var(--halo-hue-b);
     --halo-c: var(--halo-hue-c);
     --halo-rim: var(--ui-border);
+    --halo-clear: rgb(0 0 0 / 0);
+    --halo-aurora-opacity: 0.2;
   }
 }
 
@@ -239,16 +264,16 @@ const { pressed, visible } = useAutoplayCursor({
   inset: -1.5rem;
   border-radius: 2rem;
   filter: blur(30px);
-  opacity: 0.2;
+  opacity: var(--halo-aurora-opacity);
 }
 
 .halo-aurora::before {
   background: conic-gradient(
-    color-mix(in oklch, var(--halo-a) 40%, transparent),
-    color-mix(in oklch, var(--halo-b) 30%, transparent) 25%,
-    color-mix(in oklch, var(--halo-c) 18%, transparent) 50%,
-    color-mix(in oklch, var(--halo-b) 30%, transparent) 75%,
-    color-mix(in oklch, var(--halo-a) 40%, transparent)
+    color-mix(in oklch, var(--halo-a) 40%, var(--halo-clear)),
+    color-mix(in oklch, var(--halo-b) 30%, var(--halo-clear)) 25%,
+    color-mix(in oklch, var(--halo-c) 18%, var(--halo-clear)) 50%,
+    color-mix(in oklch, var(--halo-b) 30%, var(--halo-clear)) 75%,
+    color-mix(in oklch, var(--halo-a) 40%, var(--halo-clear))
   );
 }
 
@@ -261,12 +286,12 @@ const { pressed, visible } = useAutoplayCursor({
 
 .halo-outer::before {
   background: conic-gradient(
-    transparent,
-    color-mix(in oklch, var(--halo-a) 20%, transparent),
-    transparent 10%,
-    transparent 50%,
-    color-mix(in oklch, var(--halo-b) 18%, transparent),
-    transparent 60%
+    var(--halo-clear),
+    color-mix(in oklch, var(--halo-a) 20%, var(--halo-clear)),
+    var(--halo-clear) 10%,
+    var(--halo-clear) 50%,
+    color-mix(in oklch, var(--halo-b) 18%, var(--halo-clear)),
+    var(--halo-clear) 60%
   );
 }
 
@@ -279,12 +304,12 @@ const { pressed, visible } = useAutoplayCursor({
 
 .halo-inner::before {
   background: conic-gradient(
-    transparent,
-    color-mix(in oklch, var(--halo-c) 16%, transparent),
-    transparent 8%,
-    transparent 50%,
-    color-mix(in oklch, var(--halo-a) 14%, transparent),
-    transparent 58%
+    var(--halo-clear),
+    color-mix(in oklch, var(--halo-c) 16%, var(--halo-clear)),
+    var(--halo-clear) 8%,
+    var(--halo-clear) 50%,
+    color-mix(in oklch, var(--halo-a) 14%, var(--halo-clear)),
+    var(--halo-clear) 58%
   );
 }
 
