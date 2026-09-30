@@ -168,7 +168,8 @@
     "featureSkillTitle": "AI エージェントスキル",
     "themeLabel": "カラーを試す:",
     "newTag": "新着",
-    "newText": "すべての Prop をエディター上で確認"
+    "newText": "すべての Prop をエディター上で確認",
+    "showcaseLabel": "vael-ui で作ったライブデモ"
   },
   "i18nKeys": {
     "copyIntro": "これをロケールファイルの uiKit キーの下にコピーし、値を翻訳してください。",

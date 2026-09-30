@@ -168,7 +168,8 @@
     "featureSkillTitle": "KI-Agent-Fähigkeit",
     "themeLabel": "Farbe ausprobieren:",
     "newTag": "Neu",
-    "newText": "Jede Prop direkt im Editor dokumentiert"
+    "newText": "Jede Prop direkt im Editor dokumentiert",
+    "showcaseLabel": "Live-Demo, gebaut mit vael-ui"
   },
   "metaTable": {
     "default": "Standard",

@@ -24,8 +24,8 @@
         </div>
       </div>
 
-      <div class="hero-showcase" aria-hidden="true">
-        <DashboardHero />
+      <div class="hero-showcase" role="region" :aria-label="t('home.showcaseLabel')">
+        <ShowcaseStage />
       </div>
     </section>
 
@@ -123,7 +123,7 @@ import {
   PhRobot,
   PhSparkle,
 } from '@phosphor-icons/vue'
-import DashboardHero from '../components/dashboard/DashboardHero.vue'
+import ShowcaseStage from '../components/dashboard/ShowcaseStage.vue'
 import FeatureCard from '../components/home/FeatureCard.vue'
 import VaporVisual from '../components/home/VaporVisual.vue'
 import AnimationVisual from '../components/home/AnimationVisual.vue'

@@ -168,7 +168,8 @@
     "featureSkillTitle": "Skill para agentes de IA",
     "themeLabel": "Prueba un color:",
     "newTag": "Nuevo",
-    "newText": "Cada prop documentada en tu editor"
+    "newText": "Cada prop documentada en tu editor",
+    "showcaseLabel": "Demo en vivo hecha con vael-ui"
   },
   "i18nKeys": {
     "copyIntro": "Copia esto en tus archivos de idioma bajo la clave uiKit y luego traduce los valores:",

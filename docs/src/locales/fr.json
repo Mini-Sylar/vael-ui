@@ -74,7 +74,8 @@
     "featureSkillTitle": "Compétence d'agent IA",
     "themeLabel": "Essayez une couleur :",
     "newTag": "Nouveau",
-    "newText": "Chaque prop documentée dans votre éditeur"
+    "newText": "Chaque prop documentée dans votre éditeur",
+    "showcaseLabel": "Démo en direct réalisée avec vael-ui"
   },
   "gettingStarted": {
     "title": "Démarrage",

@@ -80,7 +80,8 @@
     "browseComponents": "Browse components",
     "themeLabel": "Try a color:",
     "newTag": "New",
-    "newText": "Every prop documented in your editor"
+    "newText": "Every prop documented in your editor",
+    "showcaseLabel": "Live demo built with vael-ui"
   },
   "gettingStarted": {
     "title": "Getting started",

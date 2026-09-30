@@ -168,7 +168,8 @@
     "featureSkillTitle": "AI 智能体技能",
     "themeLabel": "试试颜色：",
     "newTag": "新",
-    "newText": "每个 Prop 都在编辑器中有文档"
+    "newText": "每个 Prop 都在编辑器中有文档",
+    "showcaseLabel": "使用 vael-ui 构建的在线演示"
   },
   "i18nKeys": {
     "copyIntro": "将以下内容复制到你的语言文件中的 uiKit 键下，然后翻译各个值：",
