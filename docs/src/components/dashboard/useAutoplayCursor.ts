@@ -52,13 +52,12 @@ export function useAutoplayCursor(options: {
   }
 
   async function glideTo(target: Element, id: number): Promise<void> {
-    const stage = options.stage.value
-    if (!stage) return
-    const s = stage.getBoundingClientRect()
     const r = target.getBoundingClientRect()
-    // Aim a little left of center and just below the midline, like a hand.
-    const tx = r.left - s.left + Math.min(r.width * 0.4, 48)
-    const ty = r.top - s.top + r.height * 0.55
+    // Page coordinates: the cursor lives in <body>, above every layer, and
+    // scrolls with the page. Aim a little left of center and just below the
+    // midline, like a hand.
+    const tx = r.left + window.scrollX + Math.min(r.width * 0.4, 48)
+    const ty = r.top + window.scrollY + r.height * 0.55
     const distance = Math.hypot(tx - x.get(), ty - y.get())
     const duration = Math.min(0.9, 0.35 + distance / 1400)
     // y settles a touch sooner than x, so the path arcs instead of running
@@ -73,8 +72,9 @@ export function useAutoplayCursor(options: {
     // Enter from the stage's lower right, off the content.
     const stage = options.stage.value
     if (stage) {
-      x.jump(stage.clientWidth * 0.78)
-      y.jump(stage.clientHeight * 0.82)
+      const s = stage.getBoundingClientRect()
+      x.jump(s.left + window.scrollX + s.width * 0.78)
+      y.jump(s.top + window.scrollY + s.height * 0.82)
       paint()
     }
     visible.value = true

@@ -25,6 +25,7 @@
       </div>
 
       <div class="hero-showcase" role="region" :aria-label="t('home.showcaseLabel')">
+        <div class="showcase-backdrop" aria-hidden="true"><DitherBackground /></div>
         <ShowcaseStage />
       </div>
     </section>
@@ -124,6 +125,7 @@ import {
   PhSparkle,
 } from '@phosphor-icons/vue'
 import ShowcaseStage from '../components/dashboard/ShowcaseStage.vue'
+import DitherBackground from '../components/DitherBackground.vue'
 import FeatureCard from '../components/home/FeatureCard.vue'
 import VaporVisual from '../components/home/VaporVisual.vue'
 import AnimationVisual from '../components/home/AnimationVisual.vue'
@@ -194,37 +196,6 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   padding-block-start: 1rem;
 }
 
-/* A dot grid that fades out toward the edges, with a soft glow behind the
-   showcase in the chosen theme color (neutral until one is picked). */
-.hero::before,
-.hero::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.hero::before {
-  inset: -2rem -3rem;
-  background: radial-gradient(
-      color-mix(in oklch, var(--ui-text) 10%, transparent) 1px,
-      transparent 1px
-    )
-    0 0 / 18px 18px;
-  mask-image: radial-gradient(ellipse 70% 65% at 60% 45%, black 20%, transparent 75%);
-}
-
-.hero::after {
-  inset: 5% -5% 5% 35%;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in oklch, var(--docs-accent, var(--ui-text)) 16%, transparent),
-    transparent
-  );
-  filter: blur(8px);
-  transition: background 400ms var(--ui-ease-out);
-}
-
 .hero-copy {
   display: flex;
   flex-direction: column;
@@ -283,9 +254,36 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   text-decoration: none;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .showcase-backdrop {
+    --dither-alpha: 0.26;
+  }
+}
+
+:root[data-theme='dark'] .showcase-backdrop {
+  --dither-alpha: 0.26;
+}
+
 .hero-showcase {
+  position: relative;
   block-size: 34rem;
   min-inline-size: 0;
+}
+
+/* A dithered glow cloud behind the dashboard in the chosen theme color
+   (neutral until one is picked), fading out toward the edges. */
+.showcase-backdrop {
+  --dither-color: var(--docs-accent, var(--ui-text));
+  --dither-alpha: 0.16;
+  --dither-cell: 5;
+  position: absolute;
+  /* Less on the left, so the cloud never sits behind the headline. */
+  inset: -3rem -2.5rem -3rem -1rem;
+  z-index: -1;
+  pointer-events: none;
+  /* Solid out to just past the dashboard's edges (the center is covered
+     anyway), then fading, so the cloud frames the dashboard. */
+  mask-image: radial-gradient(ellipse 72% 70% at 50% 50%, black 58%, transparent 100%);
 }
 
 /* The dashboard rises in once on first load; later visits and reduced

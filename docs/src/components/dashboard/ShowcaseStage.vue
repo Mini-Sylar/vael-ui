@@ -7,23 +7,27 @@
     @pointerdown="onTouch"
   >
     <DashboardHero />
-    <div
-      ref="cursor"
-      class="auto-cursor"
-      :data-visible="visible || undefined"
-      :data-pressed="pressed || undefined"
-      aria-hidden="true"
-    >
-      <svg viewBox="0 0 24 24" width="22" height="22">
-        <path
-          d="M4.5 3.2 19.3 11c.8.4.7 1.5-.1 1.8l-6 1.9-2.7 5.7c-.4.8-1.5.7-1.8-.1L4 4.3c-.2-.7.4-1.3 1-1.1Z"
-          fill="#111"
-          stroke="#fff"
-          stroke-width="1.6"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </div>
+    <span class="stage-glow" aria-hidden="true" />
+    <!-- In <body> so it sits above every layer, including teleported panels. -->
+    <Teleport v-if="mounted" to="body">
+      <div
+        ref="cursor"
+        class="auto-cursor"
+        :data-visible="visible || undefined"
+        :data-pressed="pressed || undefined"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path
+            d="M4.5 3.2 19.3 11c.8.4.7 1.5-.1 1.8l-6 1.9-2.7 5.7c-.4.8-1.5.7-1.8-.1L4 4.3c-.2-.7.4-1.3 1-1.1Z"
+            fill="#111"
+            stroke="#fff"
+            stroke-width="1.6"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -72,7 +76,9 @@ function onFocusChange() {
   const focused = document.activeElement
   focusElsewhere.value = !!focused && focused !== document.body && !stage.value?.contains(focused)
 }
+const mounted = shallowRef(false)
 onMounted(() => {
+  mounted.value = true
   window.addEventListener('keydown', onKeydown, true)
   document.addEventListener('focusin', onFocusChange)
   document.addEventListener('focusout', onFocusChange)
@@ -149,11 +155,51 @@ const { pressed, visible } = useAutoplayCursor({
   block-size: 100%;
 }
 
+/* A slow light travelling around the dashboard's edge, in the theme color. */
+@property --glow-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.stage-glow {
+  position: absolute;
+  inset: -1px;
+  z-index: 1;
+  padding: 1px;
+  border-radius: calc(var(--ui-radius-surface) + 1px);
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0 62%,
+    color-mix(in oklch, var(--docs-accent, var(--ui-text)) 70%, transparent) 80%,
+    transparent 94%
+  );
+  /* Only the 1px ring shows: the content box is masked out. */
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  opacity: 0.55;
+  pointer-events: none;
+  animation: glow-orbit 9s linear infinite;
+}
+
+@keyframes glow-orbit {
+  to {
+    --glow-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-glow {
+    animation: none;
+  }
+}
+
 .auto-cursor {
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
-  z-index: 20;
+  z-index: 2147483647;
   pointer-events: none;
   opacity: 0;
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.25));
