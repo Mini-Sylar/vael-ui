@@ -172,7 +172,8 @@ const DAY = new Intl.DateTimeFormat('en-US', { weekday: 'short', day: 'numeric',
 export const throughputDays = throughput.merged.map((_, i) => DAY.format(new Date(2026, 8, 1 + i)))
 
 export interface RepoFile extends TreeNode {
-  changed?: boolean
+  /** Git status: modified or untracked. */
+  status?: 'M' | 'U'
   children?: RepoFile[]
 }
 
@@ -189,16 +190,20 @@ export const fileTree: RepoFile[] = [
             label: 'Button',
             value: 'src/components/Button',
             children: [
-              { label: 'Button.vue', value: 'src/components/Button/Button.vue', changed: true },
+              { label: 'Button.vue', value: 'src/components/Button/Button.vue', status: 'M' },
               { label: 'Button.css', value: 'src/components/Button/Button.css' },
             ],
           },
           {
+            label: 'Dock',
+            value: 'src/components/Dock',
+            children: [{ label: 'Dock.vue', value: 'src/components/Dock/Dock.vue', status: 'U' }],
+          },
+          {
             label: 'Tooltip',
             value: 'src/components/Tooltip',
-            changed: true,
             children: [
-              { label: 'Tooltip.vue', value: 'src/components/Tooltip/Tooltip.vue', changed: true },
+              { label: 'Tooltip.vue', value: 'src/components/Tooltip/Tooltip.vue', status: 'M' },
             ],
           },
         ],
@@ -206,12 +211,21 @@ export const fileTree: RepoFile[] = [
       {
         label: 'composables',
         value: 'src/composables',
-        children: [{ label: 'useTooltip.ts', value: 'src/composables/useTooltip.ts' }],
+        children: [
+          { label: 'useTooltip.ts', value: 'src/composables/useTooltip.ts', status: 'M' },
+          { label: 'usePopover.ts', value: 'src/composables/usePopover.ts' },
+        ],
       },
       { label: 'index.ts', value: 'src/index.ts' },
     ],
   },
+  {
+    label: 'tests',
+    value: 'tests',
+    children: [{ label: 'tooltip.test.ts', value: 'tests/tooltip.test.ts', status: 'M' }],
+  },
   { label: 'package.json', value: 'package.json' },
+  { label: 'README.md', value: 'README.md' },
 ]
 
 export const fileSources: Record<
@@ -265,6 +279,45 @@ width: \`\${Math.max(from.width, targetWidth)}px\`,`,
     lang: 'ts',
     code: `export { default as Button } from './components/Button/Button.vue'
 export { default as Tooltip } from './components/Tooltip/Tooltip.vue'`,
+  },
+  'src/components/Dock/Dock.vue': {
+    author: 'PN',
+    pr: 485,
+    lines: 236,
+    lang: 'vue',
+    code: `<nav class="ui-dock" :class="{ 'ui-dock--grow': grow }">
+  <button v-for="item in items" :key="item.label" class="ui-dock-item">
+    <component :is="item.icon" />
+  </button>
+</nav>`,
+  },
+  'src/composables/usePopover.ts': {
+    author: 'EB',
+    lines: 262,
+    lang: 'ts',
+    code: `// Focus goes back to whatever had it before opening.
+function restoreFocus() {
+  const target = returnFocusTo ?? triggerEl.value
+  target?.focus({ preventScroll: true })
+}`,
+  },
+  'tests/tooltip.test.ts': {
+    author: 'KA',
+    pr: 482,
+    lines: 96,
+    lang: 'ts',
+    code: `test('grows to fit a longer label at once', async () => {
+  await hover('Terminal')
+  expect(panel.scrollWidth).toBe(panel.clientWidth)
+})`,
+  },
+  'README.md': {
+    author: 'MM',
+    lines: 140,
+    lang: 'md',
+    code: `# vael-ui
+
+Components that compile straight to Vapor, not around it.`,
   },
   'package.json': {
     author: 'MM',

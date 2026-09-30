@@ -43,15 +43,14 @@
               </li>
             </ul>
             <div class="prs-actions">
-              <Checkbox v-model="squash" label="Squash and merge" size="sm" />
               <Button
                 size="sm"
                 :disabled="statusOf(pull) !== 'passed'"
-                class="prs-merge"
-                @click="merge(pull)"
+                class="prs-review"
+                @click="review(pull)"
               >
-                <template #leading><PhGitMerge :size="14" /></template>
-                Approve and merge
+                <template #leading><PhChatCircle :size="14" /></template>
+                Review
               </Button>
             </div>
           </div>
@@ -62,24 +61,16 @@
       </Accordion>
       <p v-else :key="`${tab}-empty`" class="prs-empty">Nothing left to review.</p>
     </Transition>
+    <ReviewPanel v-model:open="reviewOpen" :pull="reviewing" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import {
-  Accordion,
-  AccordionItem,
-  Avatar,
-  Button,
-  Checkbox,
-  Chip,
-  Loader,
-  Tabs,
-  toast,
-} from 'vael-ui'
-import { PhCaretDown, PhCheckCircle, PhGitMerge, PhXCircle } from '@phosphor-icons/vue'
-import { mergePull, people, repo } from '../repoData'
+import { computed, shallowRef, watch } from 'vue'
+import { Accordion, AccordionItem, Avatar, Button, Chip, Loader, Tabs } from 'vael-ui'
+import { PhCaretDown, PhChatCircle, PhCheckCircle, PhXCircle } from '@phosphor-icons/vue'
+import ReviewPanel from '../ReviewPanel.vue'
+import { people, repo } from '../repoData'
 import type { PullRequest } from '../repoData'
 
 type Tab = 'open' | 'merged'
@@ -87,7 +78,8 @@ const TABS: Tab[] = ['open', 'merged']
 
 const tab = shallowRef<Tab>('open')
 const expanded = shallowRef<string | null>(null)
-const squash = shallowRef(true)
+const reviewOpen = shallowRef(false)
+const reviewing = shallowRef<PullRequest | null>(null)
 
 const counts = computed(() => ({
   open: repo.pulls.filter((p) => p.state === 'open').length,
@@ -110,13 +102,17 @@ function statusText(pull: PullRequest): string {
   }[statusOf(pull)]
 }
 
-function merge(pull: PullRequest) {
-  mergePull(pull.id)
-  expanded.value = null
-  toast.success(`#${pull.id} merged into main.`, {
-    action: { label: 'View', onClick: () => (tab.value = 'merged') },
-  })
+function review(pull: PullRequest) {
+  reviewing.value = pull
+  reviewOpen.value = true
 }
+// A merged pull request leaves the Open list; close its row too.
+watch(
+  () => reviewing.value?.state,
+  (state) => {
+    if (state === 'merged') expanded.value = null
+  },
+)
 </script>
 
 <style scoped>

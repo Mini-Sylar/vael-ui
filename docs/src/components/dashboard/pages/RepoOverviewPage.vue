@@ -100,11 +100,35 @@
             :items="shipItems"
             :disabled="repo.approvals < 2"
             class="repo-ship"
-            @click="ship"
-            @select="ship"
+            @click="shipOpen = true"
+            @select="onShipOption"
           >
             Ship release
           </SplitButton>
+          <Dialog
+            v-model:open="shipOpen"
+            title="Ship v0.3.12"
+            description="Publishes to npm, then rolls out to the docs site."
+            :container="shell"
+            size="sm"
+            class="repo-ship-dialog"
+          >
+            <div class="repo-ship-body">
+              <div class="repo-ship-row">
+                <span>Docs rollout</span>
+                <span class="repo-mono">{{ rollout }}%</span>
+              </div>
+              <Slider v-model="rollout" :min="10" :max="100" :step="10" aria-label="Rollout" />
+              <Switch v-model="notify" label="Post to #releases" />
+            </div>
+            <template #footer="{ close }">
+              <Button variant="ghost" size="sm" @click="close">Cancel</Button>
+              <Button size="sm" class="repo-ship-confirm" @click="ship(close)">
+                <template #leading><PhRocketLaunch :size="14" /></template>
+                Ship
+              </Button>
+            </template>
+          </Dialog>
         </Card>
 
         <Card class="repo-panel repo-queue">
@@ -136,19 +160,43 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, shallowRef } from 'vue'
 import { motion, useReducedMotion } from 'motion-v'
-import { Avatar, AvatarGroup, Card, Progress, SplitButton, Tag, Timeline, toast } from 'vael-ui'
-import type { MenuEntry } from 'vael-ui'
-import { PhCheck, PhCircle, PhCircleDashed, PhCloudArrowUp } from '@phosphor-icons/vue'
+import {
+  Avatar,
+  AvatarGroup,
+  Button,
+  Card,
+  Dialog,
+  Progress,
+  Slider,
+  SplitButton,
+  Switch,
+  Tag,
+  Timeline,
+  toast,
+} from 'vael-ui'
+import type { MenuEntry, MenuItemData } from 'vael-ui'
+import {
+  PhCheck,
+  PhCircle,
+  PhCircleDashed,
+  PhCloudArrowUp,
+  PhRocketLaunch,
+} from '@phosphor-icons/vue'
 import DitherArea from '../DitherArea.vue'
 import ThroughputChart from '../ThroughputChart.vue'
 import { RELEASE_STAGES, people, repo, throughput } from '../repoData'
 import type { PullRequest } from '../repoData'
-import { dashboardNavigateKey } from '../dashboardNavigate'
+import { dashboardNavigateKey, dashboardShellKey } from '../dashboardNavigate'
 
 const reduce = useReducedMotion()
 const navigate = inject(dashboardNavigateKey, undefined)
+const shell = inject(dashboardShellKey, undefined)
+
+const shipOpen = shallowRef(false)
+const rollout = shallowRef(20)
+const notify = shallowRef(false)
 
 const stats = [
   { label: 'Merged', value: '42', delta: '+18%', good: true, series: throughput.merged.slice(-14) },
@@ -191,8 +239,13 @@ const shipItems: MenuEntry[] = [
   { label: 'Ship to preview', value: 'preview' },
   { label: 'Schedule for tomorrow', value: 'schedule' },
 ]
-function ship() {
-  toast.success('v0.3.12 is on its way to npm.')
+function ship(close: () => void) {
+  close()
+  const notified = notify.value ? ', #releases notified' : ''
+  toast.success(`v0.3.12 is on its way to npm, rolling out to ${rollout.value}%${notified}.`)
+}
+function onShipOption(item: MenuItemData) {
+  toast(item.value === 'preview' ? 'Shipping to preview.' : 'Scheduled for tomorrow, 09:00.')
 }
 </script>
 
@@ -424,6 +477,16 @@ function ship() {
 }
 .repo-ship {
   inline-size: 100%;
+}
+.repo-ship-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  font-size: 0.8125rem;
+}
+.repo-ship-row {
+  display: flex;
+  justify-content: space-between;
 }
 .repo-ship :deep(.ui-button:first-child) {
   flex: 1 1 auto;

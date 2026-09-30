@@ -200,24 +200,41 @@ const STORE_STEPS: AutoplayStep[] = [
   ...SWITCH_TO('vael-ui / main'),
 ]
 
-// A pull request goes from review to merged, then shows up on the Overview.
+// Overlays that may render outside the stage (a phone's BottomSheet, the
+// context menu) are looked up in the whole document.
+const anywhere = (selector: string) => () => document.querySelector(selector)
+
+// A pull request is reviewed and merged, the release ships, and a file gets
+// opened in the editor.
 const REPO_STEPS: AutoplayStep[] = [
   { rest: 700 },
   { to: q('#dash-search-trigger'), click: true, rest: 450 },
   { to: q('.ui-command-palette-input'), type: 'pull', rest: 450 },
   { to: q('.ui-command-palette-item[data-active]'), click: true, rest: 900 },
-  { to: q('.prs-list [data-accordion-trigger]'), click: true, rest: 900 },
-  { to: byText('.prs-actions .ui-button', 'Approve'), click: true, rest: 1500 },
-  { to: byText('.prs-tabs [role="tab"]', 'Merged'), click: true, rest: 1100 },
-  { to: nav(0), click: true, rest: 1300 },
-  { to: q('[data-day="24"]'), click: true, rest: 1500 },
+  { to: q('.prs-list [data-accordion-trigger]'), click: true, rest: 800 },
+  { to: q('.prs-review'), click: true, rest: 900 },
+  { to: anywhere('.review-panel textarea'), click: true, type: 'Thanks, merging!', rest: 500 },
+  { to: anywhere('.review-panel .review-merge'), click: true, rest: 1400 },
+  { to: byText('.prs-tabs [role="tab"]', 'Merged'), click: true, rest: 900 },
+  { to: nav(0), click: true, rest: 1100 },
+  { to: q('.repo-ship .ui-button'), click: true, rest: 800 },
+  {
+    to: anywhere('.repo-ship-dialog [role="slider"]'),
+    keys: ['ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowRight'],
+    rest: 400,
+  },
+  { to: anywhere('.repo-ship-dialog [role="switch"]'), click: true, rest: 500 },
+  { to: anywhere('.repo-ship-dialog .repo-ship-confirm'), click: true, rest: 1400 },
+  { to: q('[data-day="24"]'), click: true, rest: 1300 },
   { to: nav(2), click: true, rest: 700 },
-  { to: treeLabel('src'), click: true, rest: 350 },
-  { to: treeLabel('components'), click: true, rest: 350 },
-  { to: treeLabel('Button'), click: true, rest: 350 },
-  { to: treeLabel('Button.vue'), click: true, rest: 1300 },
-  { to: byText('.files-meta .ui-select-button-option', 'Blame'), click: true, rest: 1500 },
-  { to: nav(0), click: true, rest: 2000 },
+  { to: treeLabel('src'), click: true, rest: 300 },
+  { to: treeLabel('components'), click: true, rest: 300 },
+  { to: treeLabel('Button'), click: true, rest: 300 },
+  { to: treeLabel('Button.vue'), click: true, rest: 1000 },
+  { to: treeLabel('Button.css'), contextmenu: true, rest: 700 },
+  { to: menuItemByText('Copy path'), click: true, rest: 1000 },
+  { to: byText('.ide-doc-bar .ui-select-button-option', 'Blame'), click: true, rest: 1400 },
+  { to: nav(0), click: true, rest: 1800 },
   ...SWITCH_TO('Acme store'),
 ]
 

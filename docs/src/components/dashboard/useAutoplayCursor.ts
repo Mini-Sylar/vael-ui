@@ -9,6 +9,10 @@ export interface AutoplayStep {
   click?: boolean
   /** Characters to type into the target input, one at a time. */
   type?: string
+  /** Keys to press on the target once there (it's focused first), e.g. a Slider's arrows. */
+  keys?: string[]
+  /** Right-click instead of click: fires `contextmenu` at the cursor. */
+  contextmenu?: boolean
   /** Rest after the step, in ms. */
   rest?: number
 }
@@ -53,7 +57,27 @@ export function useAutoplayCursor(options: {
     })
   }
 
+  // Scrolls the target into view inside its nearest scrolling box within the
+  // stage (the dashboard's content area), never the page itself.
+  async function bringIntoView(target: Element, id: number): Promise<void> {
+    const stage = options.stage.value
+    let box = target.parentElement
+    while (box && box !== stage) {
+      const { overflowY } = getComputedStyle(box)
+      if (/(auto|scroll)/.test(overflowY) && box.scrollHeight > box.clientHeight) break
+      box = box.parentElement
+    }
+    if (!box || box === stage) return
+    const outer = box.getBoundingClientRect()
+    const inner = target.getBoundingClientRect()
+    if (inner.top >= outer.top && inner.bottom <= outer.bottom) return
+    const top = box.scrollTop + inner.top - outer.top - (outer.height - inner.height) / 2
+    box.scrollTo({ top, behavior: 'smooth' })
+    await wait(380, id)
+  }
+
   async function glideTo(target: Element, id: number): Promise<void> {
+    await bringIntoView(target, id)
     const r = target.getBoundingClientRect()
     // Page coordinates: the cursor lives in <body>, above every layer, and
     // scrolls with the page. Aim a little left of center and just below the
@@ -82,8 +106,27 @@ export function useAutoplayCursor(options: {
     visible.value = true
     for (;;) {
       for (const step of options.steps) {
-        const target = step.to?.()
+        const found = step.to?.()
+        // Hidden or not laid out (a layout that differs on narrow screens): skip
+        // the step rather than fly to a zero-size box at the page's corner.
+        const target = found && found.getClientRects().length > 0 ? found : undefined
+        if (step.to && !target) continue
         if (target) await glideTo(target, id)
+        if (step.contextmenu && target) {
+          pressed.value = true
+          await wait(110, id)
+          const r = target.getBoundingClientRect()
+          target.dispatchEvent(
+            new MouseEvent('contextmenu', {
+              bubbles: true,
+              cancelable: true,
+              clientX: r.left + Math.min(r.width * 0.4, 48),
+              clientY: r.top + r.height * 0.55,
+            }),
+          )
+          pressed.value = false
+          options.onClick?.()
+        }
         if (step.click && target) {
           pressed.value = true
           await wait(110, id)
@@ -99,7 +142,19 @@ export function useAutoplayCursor(options: {
           pressed.value = false
           options.onClick?.()
         }
-        if (step.type && target instanceof HTMLInputElement) {
+        if (step.keys && target instanceof HTMLElement) {
+          target.focus({ preventScroll: true })
+          for (const key of step.keys) {
+            target.dispatchEvent(
+              new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+            )
+            await wait(160, id)
+          }
+        }
+        if (
+          step.type &&
+          (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
+        ) {
           for (const ch of step.type) {
             target.value += ch
             target.dispatchEvent(new Event('input', { bubbles: true }))

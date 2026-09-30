@@ -112,7 +112,7 @@ import PullRequestsPage from './pages/PullRequestsPage.vue'
 import FilesPage from './pages/FilesPage.vue'
 import { customers } from './data'
 import { repo } from './repoData'
-import { dashboardNavigateKey } from './dashboardNavigate'
+import { dashboardNavigateKey, dashboardShellKey } from './dashboardNavigate'
 import type { DashPage, DashVariant } from './dashboardNavigate'
 
 const variant = defineModel<DashVariant>('variant', { default: 'store' })
@@ -136,6 +136,7 @@ const pageTitle = computed(() => pageTitles[activePage.value])
 provide(dashboardNavigateKey, (page: DashPage) => (activePage.value = page))
 
 const dashShell = useTemplateRef<HTMLElement>('dashShell')
+provide(dashboardShellKey, dashShell)
 
 const breadcrumbItems = computed<BreadcrumbItemData[]>(() => [
   {
