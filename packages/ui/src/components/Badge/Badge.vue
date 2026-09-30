@@ -1,6 +1,12 @@
 <template>
   <span ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
-    <span v-if="!dot" :key="count" :class="contentClass" :style="contentStyle()">
+    <span
+      v-if="!dot"
+      :key="count"
+      :class="contentClass"
+      :style="contentStyle()"
+      :data-direction="direction"
+    >
       <slot>{{ display }}</slot>
     </span>
   </span>
@@ -10,7 +16,7 @@
 <script setup lang="ts">
 import './Badge.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -68,7 +74,16 @@ const contentClass = computed(() =>
   cx('ui-badge-content', props.animated && 'ui-badge-content--animated'),
 )
 
-// Pop only on state-CHANGE: non-reactive closure flag (like useTabIndicator's measuredOnce) prevents initial-render animation.
+const direction = shallowRef<'up' | 'down'>('up')
+watch(
+  () => props.count,
+  (next, prev) => {
+    if (next != null && prev != null) direction.value = next < prev ? 'down' : 'up'
+  },
+  { flush: 'sync' },
+)
+
+// Animate only on state-CHANGE: non-reactive closure flag (like useTabIndicator's measuredOnce) prevents initial-render animation.
 let contentMounted = false
 function contentStyle(): Record<string, string> | undefined {
   if (!props.animated) return undefined

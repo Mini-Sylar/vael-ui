@@ -61,9 +61,33 @@
           ? ''
           : undefined
       "
+      :data-row-key="tableRowEntries[virtualRow.index]!.key"
+      :id="
+        tableRowEntries[virtualRow.index]!.kind === 'expansion'
+          ? expansionId(tableRowEntries[virtualRow.index]!.row)
+          : undefined
+      "
+      :tabindex="
+        tableRowEntries[virtualRow.index]!.kind === 'row'
+          ? rowTabIndex(tableRowEntries[virtualRow.index]!.row)
+          : undefined
+      "
+      :aria-selected="
+        tableRowEntries[virtualRow.index]!.kind === 'row'
+          ? ariaSelected(tableRowEntries[virtualRow.index]!.row)
+          : undefined
+      "
       @click="
         tableRowEntries[virtualRow.index]!.kind === 'row' &&
         onRowClick(tableRowEntries[virtualRow.index]!.row, $event)
+      "
+      @focus="
+        tableRowEntries[virtualRow.index]!.kind === 'row' &&
+        onRowFocus(tableRowEntries[virtualRow.index]!.row, $event)
+      "
+      @keydown="
+        tableRowEntries[virtualRow.index]!.kind === 'row' &&
+        onRowKeydown(tableRowEntries[virtualRow.index]!.row, $event)
       "
     >
       <template v-if="tableRowEntries[virtualRow.index]!.kind === 'row'">
@@ -103,6 +127,12 @@
                 ? messages.dataTable.collapseRow
                 : messages.dataTable.expandRow
             "
+            :aria-expanded="isExpanded(tableRowEntries[virtualRow.index]!.row)"
+            :aria-controls="
+              isExpanded(tableRowEntries[virtualRow.index]!.row)
+                ? expansionId(tableRowEntries[virtualRow.index]!.row)
+                : undefined
+            "
             @click="onToggleExpand(tableRowEntries[virtualRow.index]!.row)"
           >
             <svg
@@ -135,6 +165,7 @@
           "
           :style="[tdPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
           :data-label="col.label ?? String(col.field)"
+          :data-column-field="String(col.field)"
         >
           <component
             :is="col.cellSlot"
@@ -196,7 +227,13 @@
       "
       :style="trPart().style"
       :data-selected="entry.kind === 'row' && isSelected(entry.row) ? '' : undefined"
+      :data-row-key="entry.key"
+      :id="entry.kind === 'expansion' ? expansionId(entry.row) : undefined"
+      :tabindex="entry.kind === 'row' ? rowTabIndex(entry.row) : undefined"
+      :aria-selected="entry.kind === 'row' ? ariaSelected(entry.row) : undefined"
       @click="entry.kind === 'row' && onRowClick(entry.row, $event)"
+      @focus="entry.kind === 'row' && onRowFocus(entry.row, $event)"
+      @keydown="entry.kind === 'row' && onRowKeydown(entry.row, $event)"
     >
       <template v-if="entry.kind === 'row'">
         <td
@@ -229,6 +266,8 @@
             :aria-label="
               isExpanded(entry.row) ? messages.dataTable.collapseRow : messages.dataTable.expandRow
             "
+            :aria-expanded="isExpanded(entry.row)"
+            :aria-controls="isExpanded(entry.row) ? expansionId(entry.row) : undefined"
             @click="onToggleExpand(entry.row)"
           >
             <svg
@@ -261,6 +300,7 @@
           "
           :style="[tdPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
           :data-label="col.label ?? String(col.field)"
+          :data-column-field="String(col.field)"
         >
           <component
             :is="col.cellSlot"
@@ -336,6 +376,11 @@ const props = defineProps<{
   isSelected: (row: T) => boolean
   getRowKey: (row: T) => string | number
   isExpanded: (row: T) => boolean
+  selectable: boolean
+  rowTabIndex: (row: T) => number | undefined
+  onRowFocus: (row: T, event: FocusEvent) => void
+  onRowKeydown: (row: T, event: KeyboardEvent) => void
+  expansionId: (row: T) => string
   onToggleSelect: (row: T) => void
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
@@ -377,6 +422,11 @@ defineSlots<{
 }>()
 
 const messages = useUiMessages()
+
+function ariaSelected(row: T): 'true' | 'false' | undefined {
+  if (!props.selectable) return undefined
+  return props.isSelected(row) ? 'true' : 'false'
+}
 
 // Same shape as Toaster's own enterHook/leaveHook — a JS hook and Vue's own
 // CSS end-detection can't coexist, so this only wires one when motionCss is false.

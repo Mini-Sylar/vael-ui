@@ -1,5 +1,12 @@
 <template>
-  <div ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
+  <div
+    ref="root"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    data-accordion-root
+    @keydown="onKeydown"
+    v-bind="attrs"
+  >
     <slot />
   </div>
 </template>
@@ -69,6 +76,28 @@ function toggle(itemValue: string) {
   if (next === value.value) return
   value.value = next
   emit('change', next)
+}
+
+// ARIA accordion pattern: arrows and Home/End move between this accordion's
+// own triggers (not a nested accordion's), skipping disabled ones.
+function onKeydown(event: KeyboardEvent) {
+  const target = event.target as HTMLElement
+  const rootEl = root.value
+  if (!rootEl || !target.matches('[data-accordion-trigger]')) return
+  if (target.closest('[data-accordion-root]') !== rootEl) return
+  const triggers = Array.from(
+    rootEl.querySelectorAll<HTMLButtonElement>('[data-accordion-trigger]'),
+  ).filter((el) => !el.disabled && el.closest('[data-accordion-root]') === rootEl)
+  const index = triggers.indexOf(target as HTMLButtonElement)
+  if (index === -1) return
+  let next: HTMLButtonElement | undefined
+  if (event.key === 'ArrowDown') next = triggers[(index + 1) % triggers.length]
+  else if (event.key === 'ArrowUp') next = triggers[(index - 1 + triggers.length) % triggers.length]
+  else if (event.key === 'Home') next = triggers[0]
+  else if (event.key === 'End') next = triggers[triggers.length - 1]
+  if (!next) return
+  event.preventDefault()
+  next.focus()
 }
 
 defineSlots<{

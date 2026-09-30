@@ -136,6 +136,64 @@ test('min/max bounds disable out-of-range days and block their selection', async
   expect(cellByIso('2024-06-15')!.getAttribute('aria-disabled')).toBeNull()
 })
 
+test('prev/next are aria-disabled (and inert) when the whole target month lies outside min/max, at every drill level', async () => {
+  const screen = await render(CalendarFixture, {
+    props: {
+      initialValue: JUNE_15_2024,
+      minDate: new Date(2024, 5, 10),
+      maxDate: new Date(2024, 6, 3),
+    },
+  })
+  const [prev, next] = Array.from(
+    screen.container.querySelectorAll<HTMLElement>('.ui-calendar-nav'),
+  )
+  const label = () => screen.container.querySelector('.ui-calendar-label')!
+  expect(prev!.getAttribute('aria-disabled')).toBe('true')
+  // July still holds in-range days (Jul 1-3).
+  expect(next!.getAttribute('aria-disabled')).toBeNull()
+
+  await userEvent.click(prev!, { force: true })
+  expect(label()).toHaveTextContent('June 2024')
+
+  await userEvent.click(next!)
+  await vi.waitFor(() => expect(label()).toHaveTextContent('July 2024'))
+  expect(next!.getAttribute('aria-disabled')).toBe('true')
+  expect(prev!.getAttribute('aria-disabled')).toBeNull()
+  // Focus isn't dropped when the button it's on becomes disabled.
+  expect(document.activeElement).toBe(next)
+  await userEvent.click(next!, { force: true })
+  expect(label()).toHaveTextContent('July 2024')
+
+  // Month grid: 2023 and 2025 are wholly out of range.
+  await userEvent.click(label())
+  await vi.waitFor(() => expect(label()).toHaveTextContent('2024'))
+  expect(prev!.getAttribute('aria-disabled')).toBe('true')
+  expect(next!.getAttribute('aria-disabled')).toBe('true')
+})
+
+test('the month and year grids keep the day view height, so drilling up does not jump', async () => {
+  const screen = await render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
+  const body = screen.container.querySelector<HTMLElement>('.ui-calendar-body')!
+  const dayHeight = body.getBoundingClientRect().height
+  const dayWidth = body.getBoundingClientRect().width
+  const label = screen.container.querySelector<HTMLElement>('.ui-calendar-label')!
+
+  await userEvent.click(label)
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector('.ui-calendar-month-grid')).not.toBeNull(),
+  )
+  await vi.waitFor(() => expect(body.style.blockSize).toBe(''), { timeout: 1000 })
+  expect(Math.abs(body.getBoundingClientRect().height - dayHeight)).toBeLessThan(1)
+
+  await userEvent.click(label)
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector('.ui-calendar-year-grid')).not.toBeNull(),
+  )
+  await vi.waitFor(() => expect(body.style.blockSize).toBe(''), { timeout: 1000 })
+  expect(Math.abs(body.getBoundingClientRect().height - dayHeight)).toBeLessThan(1)
+  expect(Math.abs(body.getBoundingClientRect().width - dayWidth)).toBeLessThan(1)
+})
+
 test('disabledDates blocks a specific date, given as either a list or a predicate', async () => {
   const listScreen = await render(CalendarFixture, {
     props: { initialValue: JUNE_15_2024, disabledDates: [new Date(2024, 5, 12)] },

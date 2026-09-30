@@ -194,7 +194,18 @@ const leaveHook = computed(() =>
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {
   if (direction === 'up' || direction === 'down') return 'vertical'
   if (direction === 'left' || direction === 'right') return 'horizontal'
+  // The arc runs both ways, so neither orientation is accurate.
   return undefined
+}
+
+// Items are ordered nearest-to-farthest from the trigger; +1 moves away from it.
+// The quarter-circle arc runs from straight above the trigger round to its left.
+const ARROW_STEPS: Record<SpeedDialDirection, Partial<Record<string, 1 | -1>>> = {
+  up: { ArrowUp: 1, ArrowDown: -1 },
+  down: { ArrowDown: 1, ArrowUp: -1 },
+  left: { ArrowLeft: 1, ArrowRight: -1 },
+  right: { ArrowRight: 1, ArrowLeft: -1 },
+  'quarter-circle': { ArrowLeft: 1, ArrowDown: 1, ArrowRight: -1, ArrowUp: -1 },
 }
 
 const STAGGER_STEP_MS = 40
@@ -218,6 +229,9 @@ function focusTrigger() {
   triggerRef.value?.el?.focus()
 }
 
+// Set when a hover opened the dial and no pointer click on the trigger has landed since.
+let openedByHover = false
+
 function openDial() {
   if (props.disabled) return
   open.value = true
@@ -229,7 +243,14 @@ function toggleDial() {
   if (props.disabled) return
   open.value = !open.value
 }
-function onTriggerClick() {
+function onTriggerClick(event: MouseEvent) {
+  // With openOn="hover", reaching the trigger opens the dial just before the
+  // natural click lands on it; that first pointer click keeps it open instead
+  // of toggling it straight back shut. Keyboard clicks (detail 0) still toggle.
+  if (open.value && openedByHover && event.detail > 0) {
+    openedByHover = false
+    return
+  }
   toggleDial()
 }
 
@@ -245,15 +266,30 @@ function selectItem(item: T) {
 }
 
 // useMenu handles roving-tabindex/arrows; onSelect unwired (clicks via @click).
-const { onKeydown: onMenuKeydown, focusFirst } = useMenu({ listEl })
+const { onKeydown: onMenuKeydown, focusFirst, focusItem } = useMenu({ listEl })
 
+// Arrow keys follow the visual direction; useMenu's vertical-only mapping would
+// send ArrowUp toward the trigger on an upward dial and ignore Left/Right.
 function onKeydown(event: KeyboardEvent) {
-  onMenuKeydown(event)
+  const step = ARROW_STEPS[props.direction][event.key]
+  if (!step) {
+    if (!event.key.startsWith('Arrow')) onMenuKeydown(event)
+    return
+  }
+  const items = Array.from(
+    listEl.value?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])') ?? [],
+  ).filter((el) => el.getAttribute('aria-disabled') !== 'true')
+  if (items.length === 0) return
+  event.preventDefault()
+  const current = items.indexOf(document.activeElement as HTMLElement)
+  const from = current === -1 ? (step > 0 ? -1 : 0) : current
+  focusItem(items[(from + step + items.length) % items.length])
 }
 
 // Focus first action on open (Menu pattern, minus floating-position gate).
 watch(open, (value) => {
   if (value) nextTick(() => focusFirst())
+  else openedByHover = false
 })
 
 // useLayer ensures Escape applies only to topmost open layer.
@@ -314,6 +350,7 @@ let hoverCloseTimer: ReturnType<typeof setTimeout> | undefined
 function onRootMouseEnter() {
   if (!canHoverOpen()) return
   clearTimeout(hoverCloseTimer)
+  if (!open.value) openedByHover = true
   open.value = true
 }
 function onRootMouseLeave() {

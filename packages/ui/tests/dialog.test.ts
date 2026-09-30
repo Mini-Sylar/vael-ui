@@ -134,6 +134,22 @@ test('overlay click closes with reason "outside"; slot close() works', async () 
   await expect.element(screen.getByTestId('last-reason')).toHaveTextContent('programmatic')
 })
 
+test('clicking a non-dismissable overlay keeps focus inside the dialog instead of dropping it to <body>', async () => {
+  const screen = await render(Dialog, {
+    props: { open: true, closeOnOverlay: false, 'aria-label': 'Required' },
+    slots: { default: '<button data-testid="inner">Rotate</button>' },
+  })
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  const inner = document.querySelector<HTMLElement>('[data-testid="inner"]')!
+  inner.focus()
+
+  const overlay = document.querySelector<HTMLElement>('.ui-dialog-overlay')!
+  await page.elementLocator(overlay).click({ position: { x: 5, y: 5 } })
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  expect(document.activeElement).toBe(inner)
+  await screen.unmount()
+})
+
 test('title/description wire ARIA automatically; footer slot renders actions', async () => {
   const screen = await render(DialogChromeFixture)
   await screen.getByTestId('trigger').click()

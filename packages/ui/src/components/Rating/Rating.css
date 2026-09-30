@@ -73,7 +73,8 @@
     stroke: currentColor;
     stroke-width: 14;
     stroke-linejoin: round;
-    color: var(--ui-border-strong);
+    /* Derived from text, not border tokens, so the outline keeps ~3:1 against both light and dark surfaces. */
+    color: color-mix(in oklab, var(--ui-text) 50%, transparent);
   }
   .ui-rating-icon--filled {
     fill: currentColor;

@@ -23,7 +23,8 @@
     inline-size: 100%;
     block-size: var(--ui-slider-track);
     border-radius: 9999px;
-    background: var(--ui-muted);
+    /* --ui-muted is a surface tint and all but vanishes on dark surfaces; the unfilled track needs to read as a control. */
+    background: var(--ui-border-strong);
     cursor: pointer;
     /* Query container so the thumb below can read the track's OWN box size via cqi/cqb inside calc() — that's what lets the thumb's live-drag position be a `translate` (compositor-only) instead of an `inset-*` calc (layout) without any JS-side rect sampling. Both children are absolutely positioned (no intrinsic-size contribution), so `size` containment changes nothing about how the track itself renders. */
     container-type: size;

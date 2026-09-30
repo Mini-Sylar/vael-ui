@@ -15,6 +15,8 @@
       :items="props.items"
       :item-props="itemProps"
       :indicator-props="indicatorProps"
+      :tab-id="tabId"
+      :panel-id="panelId"
     />
   </div>
 </template>
@@ -22,7 +24,7 @@
 <script setup lang="ts" generic="T extends string">
 import './Tabs.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useTabs } from '../../composables/useTabs'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -47,6 +49,12 @@ const props = withDefaults(
      * @default 'automatic'
      */
     activation?: 'automatic' | 'manual'
+    /**
+     * Prefix for the tab and panel ids. Set it when you render tab panels: each tab then gets
+     * `aria-controls="{idBase}-panel-{value}"`, so give each panel that id (or spread the exposed
+     * `panelProps(value)`). Values should be id-safe (no spaces).
+     */
+    idBase?: string
     /** Class and style overrides for each part. */
     ui?: Partial<{ list: UiPartValue; item: UiPartValue; indicator: UiPartValue }>
   }>(),
@@ -68,6 +76,8 @@ defineSlots<{
     items: T[]
     itemProps: (item: T) => {
       role: 'tab'
+      id: string
+      'aria-controls': string | undefined
       class: string
       style: UiPartStyle | undefined
       'data-tab-value': string
@@ -79,6 +89,10 @@ defineSlots<{
       class: string
       style: Record<string, string | undefined>
     }
+    /** The id `itemProps` gives a tab. */
+    tabId: (item: T) => string
+    /** The id a tab's panel should carry for `aria-controls` to find it. */
+    panelId: (item: T) => string
   }): unknown
 }>()
 
@@ -115,10 +129,31 @@ const indicatorPart = computed(() => resolveUiPart(cx, themedUi()?.indicator, 'u
 // calls `indicatorProps`; `listEl` stays exposed for that escape hatch.
 const indicator = useTabIndicator(active, { listEl, orientation: () => props.orientation })
 
+const generatedId = useId()
+const idBase = computed(() => props.idBase ?? generatedId)
+function tabId(item: T): string {
+  return `${idBase.value}-tab-${item}`
+}
+function panelId(item: T): string {
+  return `${idBase.value}-panel-${item}`
+}
+/** Attributes for the panel of `item`, rendered outside Tabs. */
+function panelProps(item: T) {
+  return {
+    id: panelId(item),
+    role: 'tabpanel' as const,
+    'aria-labelledby': tabId(item),
+    tabindex: 0 as const,
+  }
+}
+
 function itemProps(item: T) {
   const isManual = props.activation === 'manual'
   return {
     role: 'tab' as const,
+    id: tabId(item),
+    // Only when panels are wired up, so a panel-less tab list has no dangling reference.
+    'aria-controls': props.idBase ? panelId(item) : undefined,
     class: itemPart.value.class,
     style: itemPart.value.style,
     'data-tab-value': String(item),
@@ -138,5 +173,11 @@ function indicatorProps(variant: 'background' | 'underline' = 'background') {
 defineExpose({
   /** Tab list (root) element. */
   listEl,
+  /** The id a tab carries. */
+  tabId,
+  /** The id a tab's panel should carry. */
+  panelId,
+  /** `id`, `role="tabpanel"`, `aria-labelledby` and `tabindex` for a panel you render. */
+  panelProps,
 })
 </script>

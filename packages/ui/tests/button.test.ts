@@ -5,6 +5,8 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { useAsyncLoading } from '../src/composables/useAsyncLoading'
 import ButtonFixture from './fixtures/ButtonFixture.vue'
+import { contrast } from './utils/contrast'
+import Button from '../src/components/Button/Button.vue'
 
 const loader = () => document.querySelector<HTMLElement>('.ui-button-loader')!
 const content = () => document.querySelector<HTMLElement>('.ui-button-content')!
@@ -216,4 +218,24 @@ test('run() propagates rejections and still clears loading', async () => {
   await button.click()
   await expect.element(button).toHaveTextContent('Save')
   await vi.waitFor(() => expect(unhandled).toHaveBeenCalled())
+})
+
+test('dark theme: danger keeps a legible label, enabled and disabled', async () => {
+  document.documentElement.dataset.theme = 'dark'
+  try {
+    const screen = await render(Button, {
+      props: { variant: 'danger', disabled: true },
+      slots: { default: 'Delete' },
+    })
+    const button = screen.container.querySelector<HTMLElement>('.ui-button')!
+    const style = getComputedStyle(button)
+    const surface = getComputedStyle(document.documentElement).getPropertyValue('--ui-surface')
+    expect(contrast(style.color, style.backgroundColor, surface)).toBeGreaterThanOrEqual(4.5)
+    // Disabled opacity applies to fill and label alike; stay within reach of disabled primary (~3:1).
+    expect(
+      contrast(style.color, style.backgroundColor, surface, Number(style.opacity)),
+    ).toBeGreaterThanOrEqual(2.9)
+  } finally {
+    delete document.documentElement.dataset.theme
+  }
 })

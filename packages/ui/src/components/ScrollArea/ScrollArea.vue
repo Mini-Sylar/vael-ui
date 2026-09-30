@@ -4,6 +4,7 @@
       ref="viewport"
       :class="viewportPart.class"
       :style="viewportPart.style"
+      :data-scrolling="thumbRevealed ? '' : undefined"
       v-scroll-mask="scrollMaskValue"
     >
       <slot />
@@ -14,7 +15,7 @@
 <script setup lang="ts">
 import './ScrollArea.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, onScopeDispose, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useResizeObserver, useScroll } from '@vueuse/core'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -31,7 +32,7 @@ const props = withDefaults(
     /** Masks the scrolling edge(s) as content scrolls under them. @default true */
     scrollFade?: boolean
     /**
-     * Hides the scrollbar thumb until you hover or scroll the viewport. Chromium and WebKit only; Firefox always shows it.
+     * Hides the scrollbar thumb until you hover, focus or scroll the viewport.
      * @default false
      */
     autoHide?: boolean
@@ -65,6 +66,21 @@ const viewport = useTemplateRef<HTMLElement>('viewport')
 // reads to avoid arming a pull while a nested ScrollArea's own momentum/rubber-band scroll
 // hasn't actually settled — a touchstart landing at scrollTop 0 mid-bounce used to arm
 // regardless, since a raw scrollTop read can't tell "settled" from "still animating through 0."
+// autoHide keeps the thumb shown for a moment after the last scroll event, like
+// an overlay scrollbar. Not `isScrolling`: an instant scroll fires scrollend in the
+// same frame, so the thumb would never paint.
+const THUMB_LINGER_MS = 800
+const thumbRevealed = shallowRef(false)
+let thumbTimer: ReturnType<typeof setTimeout> | undefined
+function onScroll(event: Event) {
+  emit('scroll', event)
+  if (!props.autoHide) return
+  thumbRevealed.value = true
+  clearTimeout(thumbTimer)
+  thumbTimer = setTimeout(() => (thumbRevealed.value = false), THUMB_LINGER_MS)
+}
+onScopeDispose(() => clearTimeout(thumbTimer))
+
 const {
   x: scrollLeft,
   y: scrollTop,
@@ -72,7 +88,7 @@ const {
   arrivedState,
   directions,
   measure,
-} = useScroll(viewport, { onScroll: (event) => emit('scroll', event) })
+} = useScroll(viewport, { onScroll })
 
 const atTop = computed(() => arrivedState.top)
 const atBottom = computed(() => arrivedState.bottom)

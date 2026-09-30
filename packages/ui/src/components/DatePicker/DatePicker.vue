@@ -92,9 +92,12 @@
               :label="messages.datePicker.hour"
               :inc-label="messages.datePicker.increaseHour"
               :dec-label="messages.datePicker.decreaseHour"
+              @complete="focusMinuteField"
+              @keydown.enter.prevent="close()"
             />
             <span class="ui-date-picker-time-sep" aria-hidden="true">:</span>
             <TimeField
+              ref="minuteFieldRef"
               v-model="minuteValue"
               :min="0"
               :max="59"
@@ -102,6 +105,7 @@
               :label="messages.datePicker.minute"
               :inc-label="messages.datePicker.increaseMinute"
               :dec-label="messages.datePicker.decreaseMinute"
+              @keydown.enter.prevent="close()"
             />
             <SelectButton
               v-if="resolvedHour12"
@@ -474,6 +478,12 @@ const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 const calendarRef = useTemplateRef<InstanceType<typeof Calendar>>('calendarRef')
 const hourFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('hourFieldRef')
+const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('minuteFieldRef')
+
+// Like a native time input: a complete hour moves on to the minutes (focus selects them).
+function focusMinuteField() {
+  minuteFieldRef.value?.inputEl?.focus()
+}
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(

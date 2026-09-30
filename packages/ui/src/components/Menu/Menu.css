@@ -136,10 +136,12 @@
   .ui-menu-leave-active .ui-menu-panel {
     transition: transform var(--ui-duration-exit) var(--ui-ease-out);
   }
-  /* Never from scale(0). */
-  .ui-menu-enter-from .ui-menu-panel,
+  /* Opens from a touch further than it closes to: the close should get out of the way. Never from scale(0). */
+  .ui-menu-enter-from .ui-menu-panel {
+    transform: scale(0.97);
+  }
   .ui-menu-leave-to .ui-menu-panel {
-    transform: scale(0.96);
+    transform: scale(0.99);
   }
 
   @media (prefers-reduced-motion: reduce) {

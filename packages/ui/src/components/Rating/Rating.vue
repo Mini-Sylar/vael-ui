@@ -6,10 +6,10 @@
     role="slider"
     :tabindex="isDisabled ? -1 : 0"
     aria-orientation="horizontal"
-    :aria-valuenow="displayValue"
+    :aria-valuenow="modelValue"
     aria-valuemin="0"
     :aria-valuemax="max"
-    :aria-valuetext="resolveValueText(displayValue)"
+    :aria-valuetext="resolveValueText(modelValue)"
     :aria-disabled="isDisabled || undefined"
     :aria-readonly="readonly || undefined"
     :aria-describedby="fieldControl.describedBy()"
@@ -128,7 +128,8 @@ function clamp(value: number): number {
 }
 
 // Hover/drag shows a live preview without touching the committed model —
-// clearing it on pointerleave reverts the display back to modelValue.
+// clearing it on pointerleave reverts the display back to modelValue. The
+// preview is visual only: ARIA always reports the committed value.
 const hoverValue = shallowRef<number | null>(null)
 const isTracking = shallowRef(false)
 const displayValue = computed(() => hoverValue.value ?? modelValue.value)
@@ -226,6 +227,10 @@ function onKeydown(event: KeyboardEvent) {
   try {
     showFocusVisible(event)
     if (isDisabled.value || props.readonly) return
+    // A resting pointer's preview would otherwise mask the keyboard change until it moves.
+    if (['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+      hoverValue.value = null
+    }
     switch (event.key) {
       case 'ArrowRight':
       case 'ArrowUp':

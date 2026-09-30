@@ -1,5 +1,11 @@
 <template>
-  <span v-if="$slots.trigger" ref="triggerWrapper" class="ui-menu-trigger" @click="toggle">
+  <span
+    v-if="$slots.trigger"
+    ref="triggerWrapper"
+    class="ui-menu-trigger"
+    @click="toggle"
+    @keydown="onTriggerKeydown"
+  >
     <slot name="trigger" :open="open" />
   </span>
   <Teleport :to="teleportTo">
@@ -93,6 +99,7 @@
                   :items="entry.items"
                   :trigger-el="rowEls[i]"
                   v-model:open="submenuOpen[i]"
+                  :open-path="revealedRow === i ? openPath?.slice(1) : undefined"
                   side="right"
                   align="start"
                   :teleport-to="positionerEl"
@@ -199,6 +206,11 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   scrollFade?: boolean
   /** Caps the panel's height in pixels; the item list scrolls past it. Unset, only the viewport limits it. */
   maxPanelHeight?: number
+  /**
+   * Row path to reveal on open, as each row's `value` (or `label`): every submenu along it opens and
+   * its last row takes focus instead of the first, e.g. to show the current selection.
+   */
+  openPath?: readonly string[]
   /** Class and style overrides for each part. */
   ui?: Partial<{
     positioner: UiPartValue
@@ -341,6 +353,20 @@ function openMenu() {
 // Close honors beforeClose; open() does not (nothing to defer).
 function toggle() {
   open.value = !open.value
+}
+
+// Which end of the list takes focus once the panel is ready (ARIA menu button: ArrowUp -> last).
+let focusOnReady: 'first' | 'last' = 'first'
+function onTriggerKeydown(event: KeyboardEvent) {
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+  // A consumer trigger (e.g. CascadeSelect) may handle it, and a vertical composite (toolbar)
+  // uses Up/Down to move between its own items.
+  if (event.defaultPrevented) return
+  if ((event.currentTarget as HTMLElement).closest('[aria-orientation="vertical"]')) return
+  event.preventDefault()
+  focusOnReady = event.key === 'ArrowUp' ? 'last' : 'first'
+  if (open.value) focusEdge()
+  else open.value = true
 }
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
@@ -527,13 +553,50 @@ watchEffect(() => {
   trigger.setAttribute('aria-expanded', String(open.value))
 })
 
+// Row whose submenu `openPath` opened; only that submenu inherits the rest of the path, so a
+// later hover/keyboard open of any submenu starts at its first row as usual.
+const revealedRow = shallowRef<number | null>(null)
+watch(
+  () => revealedRow.value != null && !!submenuOpen[revealedRow.value],
+  (stillOpen) => {
+    if (!stillOpen) revealedRow.value = null
+  },
+)
+
+function revealOpenPath(): boolean {
+  const [head, ...rest] = props.openPath ?? []
+  if (head === undefined || !props.items) return false
+  const i = props.items.findIndex(
+    (entry) => !isSeparator(entry) && !entry.disabled && (entry.value ?? entry.label) === head,
+  )
+  const row = rowEls[i]
+  if (i < 0 || !row) return false
+  focusItem(row)
+  if (rest.length > 0 && (props.items[i] as MenuItemData).items) {
+    closeAllSubmenusExcept(i)
+    revealedRow.value = i
+    submenuOpen[i] = true
+  }
+  return true
+}
+
 // Gate focus on visibility:hidden resolution (floating-ui's async computePosition).
 watch(
   () => open.value && positionerStyle.value.visibility === 'visible',
   (ready) => {
-    if (ready) nextTick(() => focusFirst())
+    if (ready) nextTick(() => revealOpenPath() || focusEdge())
   },
 )
+
+function focusEdge() {
+  const edge = focusOnReady
+  focusOnReady = 'first'
+  if (edge === 'first') return focusFirst()
+  const rows = listEl.value?.querySelectorAll<HTMLElement>(
+    '[role="menuitem"]:not(:disabled):not([aria-disabled="true"])',
+  )
+  focusItem(rows?.[rows.length - 1])
+}
 
 const panelMaxHeightStyle = computed(() =>
   maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},

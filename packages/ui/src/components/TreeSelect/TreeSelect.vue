@@ -239,7 +239,11 @@ const props = withDefaults(
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
-    /** Caps the panel height in pixels; the tree scrolls past it. Unset, only the viewport limits it. */
+    /**
+     * Caps the panel height in pixels; the tree scrolls past it. The viewport limits it too, so
+     * pass `Infinity` to fill the available space.
+     * @default 320
+     */
     maxPanelHeight?: number
     /** `false` skips all built-in motion (row transitions and chevron rotation). @default true */
     motionCss?: boolean
@@ -277,6 +281,7 @@ const props = withDefaults(
     alignOffset: 0,
     closeOnEsc: true,
     closeOnOutside: true,
+    maxPanelHeight: 320,
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',

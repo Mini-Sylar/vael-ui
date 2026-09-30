@@ -14,6 +14,7 @@
         :aria-expanded="isOpenValue"
         :aria-controls="panelId"
         :disabled="disabled"
+        data-accordion-trigger
         @click="onToggle"
       >
         <slot name="trigger" :open="isOpenValue" :toggle="onToggle">

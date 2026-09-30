@@ -129,6 +129,13 @@
   .ui-datatable-tr--clickable:active {
     transform: scale(0.99);
   }
+  .ui-datatable-tr--clickable:focus {
+    outline: none;
+  }
+  .ui-datatable-tr--clickable:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+  }
   .ui-datatable-td--loading,
   .ui-datatable-td--empty {
     padding: 2.5rem 1rem;
@@ -440,6 +447,13 @@
   .ui-datatable-th[data-dragging] {
     cursor: grabbing;
     opacity: 0.4;
+  }
+  /* Body cells of the column being dragged ride above their neighbours, which
+     slide underneath them to open the drop gap. */
+  .ui-datatable-td[data-column-dragging] {
+    position: relative;
+    z-index: 1;
+    background: var(--ui-surface);
   }
   [data-sortable-preview].ui-datatable-th {
     z-index: var(--ui-z-drag, 45);

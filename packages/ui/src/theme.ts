@@ -474,13 +474,20 @@ function pickContrast(color: string): string {
 
 function seedBlock(token: 'primary' | 'danger', seed: string) {
   const contrast = pickContrast(seed)
+  // A seeded danger fills buttons as-is; the dark preset's own darker fill
+  // (--ui-danger-solid) is only for the default light-red danger.
+  const solid = (hover: string) =>
+    token === 'danger' ? [`--ui-danger-solid: ${seed};`, `--ui-danger-solid-hover: ${hover};`] : []
+  const lightHover = `color-mix(in oklch, ${seed} 85%, black)`
+  const darkHover = `color-mix(in oklch, ${seed} 85%, white)`
   return {
     root: [
       `--ui-${token}: ${seed};`,
       `--ui-${token}-contrast: ${contrast};`,
       // Light surfaces: darken on hover. The seed itself never flips between
       // schemes (brand hue stays constant) — only the hover mix direction does.
-      `--ui-${token}-hover: color-mix(in oklch, ${seed} 85%, black);`,
+      `--ui-${token}-hover: ${lightHover};`,
+      ...solid(lightHover),
     ],
     // Re-declaring seed + contrast (not just -hover) matters: the dark
     // preset's attribute selector has higher specificity than plain `:root`,
@@ -489,7 +496,8 @@ function seedBlock(token: 'primary' | 'danger', seed: string) {
     dark: [
       `--ui-${token}: ${seed};`,
       `--ui-${token}-contrast: ${contrast};`,
-      `--ui-${token}-hover: color-mix(in oklch, ${seed} 85%, white);`,
+      `--ui-${token}-hover: ${darkHover};`,
+      ...solid(darkHover),
     ],
   }
 }

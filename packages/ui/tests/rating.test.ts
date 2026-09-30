@@ -4,6 +4,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import Rating from '../src/components/Rating/Rating.vue'
+import { contrast } from './utils/contrast'
 
 const pointerId = 1
 function pointerdown(el: Element, clientX: number) {
@@ -146,4 +147,56 @@ test('the 3rd star is fully filled and the 4th is empty at value 3', async () =>
   const items = screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')
   expect(items[2]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
   expect(items[3]!.style.getPropertyValue('--ui-rating-fill')).toBe('0%')
+})
+
+function pointermove(el: Element, type: 'pointerenter' | 'pointermove', clientX: number) {
+  el.dispatchEvent(new PointerEvent(type, { clientX, clientY: 0, pointerId, bubbles: true }))
+}
+
+test('hover preview is visual only: aria-valuenow keeps the committed value', async () => {
+  const { screen } = await renderModel({ max: 5, modelValue: 2 })
+  const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
+  const items = screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')
+  const rect = root.getBoundingClientRect()
+  pointermove(root, 'pointerenter', rect.right - 1)
+  pointermove(root, 'pointermove', rect.right - 1)
+  await expect.poll(() => items[4]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
+  expect(root.getAttribute('aria-valuenow')).toBe('2')
+  expect(root.getAttribute('aria-valuetext')).toBe('2 of 5')
+})
+
+test('keyboard input clears a resting hover preview so the change shows at once', async () => {
+  // Chrome replays pointer moves under a resting real cursor when layout changes;
+  // park it away from the stars so only the synthetic events below count.
+  const parking = document.createElement('div')
+  parking.style.cssText =
+    'position: fixed; inset-block-end: 0; inset-inline-end: 0; inline-size: 4px; block-size: 4px'
+  document.body.append(parking)
+  await userEvent.hover(parking)
+  const { screen, modelValue } = await renderModel({ max: 5, modelValue: 2 })
+  const root = screen.container.querySelector<HTMLElement>('.ui-rating')!
+  const items = screen.container.querySelectorAll<HTMLElement>('.ui-rating-item')
+  const rect = root.getBoundingClientRect()
+  pointermove(root, 'pointermove', rect.right - 1)
+  await expect.poll(() => items[4]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
+  root.focus()
+  await userEvent.keyboard('{ArrowRight}')
+  expect(modelValue.value).toBe(3)
+  await expect.poll(() => items[3]!.style.getPropertyValue('--ui-rating-fill')).toBe('0%')
+  expect(items[2]!.style.getPropertyValue('--ui-rating-fill')).toBe('100%')
+  parking.remove()
+})
+
+test('empty stars keep ~3:1 contrast against the surface in both themes', async () => {
+  const { screen } = await renderModel({ max: 5, modelValue: 0 })
+  const empty = screen.container.querySelector<SVGElement>('.ui-rating-icon--empty')!
+  try {
+    for (const theme of ['light', 'dark']) {
+      document.documentElement.dataset.theme = theme
+      const surface = getComputedStyle(document.documentElement).getPropertyValue('--ui-surface')
+      expect(contrast(getComputedStyle(empty).color, surface, surface)).toBeGreaterThanOrEqual(3)
+    }
+  } finally {
+    delete document.documentElement.dataset.theme
+  }
 })

@@ -4,6 +4,7 @@
       ref="menuRef"
       v-model:open="open"
       :items="mappedItems"
+      :open-path="openKeyPath"
       :side="side"
       :align="align"
       :side-offset="sideOffset"
@@ -288,16 +289,25 @@ const selectedPath = computed<CascadeSelectPath>(() => selectedMatch.value?.path
 const nodeByKey = new Map<string, CascadeSelectItem>()
 let nodeSeq = 0
 
-function buildEntries(items: readonly CascadeSelectItem[]): MenuItemData[] {
+// `path` is the rest of the selected path while this level is on it; its rows get
+// `data-cascade-selected`.
+function buildEntries(
+  items: readonly CascadeSelectItem[],
+  path: CascadeSelectPath | undefined,
+): MenuItemData[] {
   return items.map((item) => {
     const key = String(nodeSeq++)
     nodeByKey.set(key, item)
     const hasChildren = !!item.children && item.children.length > 0
+    const onPath = path !== undefined && path[0] === item.value
     return {
       label: item.label,
       value: key,
       disabled: item.disabled,
-      items: hasChildren ? buildEntries(item.children!) : undefined,
+      attrs: onPath ? { 'data-cascade-selected': '' } : undefined,
+      items: hasChildren
+        ? buildEntries(item.children!, onPath ? path.slice(1) : undefined)
+        : undefined,
     }
   })
 }
@@ -305,7 +315,22 @@ function buildEntries(items: readonly CascadeSelectItem[]): MenuItemData[] {
 const mappedItems = computed(() => {
   nodeByKey.clear()
   nodeSeq = 0
-  return buildEntries(props.items)
+  return buildEntries(props.items, selectedPath.value)
+})
+
+// Menu keys along the selected path: reopening reveals the selection instead of the first row.
+const openKeyPath = computed(() => {
+  const keys: string[] = []
+  let level: readonly MenuItemData[] | undefined = mappedItems.value
+  while (level) {
+    const entry: MenuItemData | undefined = level.find(
+      (e) => e.attrs?.['data-cascade-selected'] !== undefined,
+    )
+    if (!entry?.value) break
+    keys.push(entry.value)
+    level = entry.items as MenuItemData[] | undefined
+  }
+  return keys
 })
 
 function resolveItem(entry: MenuItemData): CascadeSelectItem {

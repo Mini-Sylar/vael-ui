@@ -127,7 +127,8 @@ const props = withDefaults(
     /** Adds a leading checkbox or radio column that tracks the selection. @default false */
     selectable?: boolean
     /**
-     * `'checkbox'` adds a leading selection column. `'row'` toggles selection when you click a row.
+     * `'checkbox'` adds a leading selection column. `'row'` toggles selection when you click a row;
+     * the rows are then one Tab stop, arrow keys move between them, and Space or Enter toggles.
      * @default 'checkbox'
      */
     selectionMode?: 'checkbox' | 'row'
@@ -442,6 +443,18 @@ const expanded = ref(new Set<string | number>())
 function isExpanded(row: T): boolean {
   return expanded.value.has(getRowKey(row))
 }
+// Row keys can hold characters an id can't, so ids come from a per-key counter.
+const tableId = useId()
+const expansionIds = new Map<string | number, string>()
+function expansionId(row: T): string {
+  const key = getRowKey(row)
+  let id = expansionIds.get(key)
+  if (!id) {
+    id = `${tableId}-expansion-${expansionIds.size}`
+    expansionIds.set(key, id)
+  }
+  return id
+}
 function toggleExpand(row: T) {
   const key = getRowKey(row)
   const next = new Set(expanded.value)
@@ -489,6 +502,98 @@ const bottomSpacerHeight = computed(() => {
   const last = items[items.length - 1]!
   return Math.max(0, virtualizer.totalSize.value - (last.start + last.size))
 })
+
+// Roving tabindex for selectionMode="row": the body is one Tab stop. Keys are
+// the String()ed row keys tableRowEntries already carries.
+const focusedRowKey = ref<string | null>(null)
+const selectedKeyStrings = computed(() => new Set([...selected.value].map(String)))
+const tabStopRowKey = computed<string | null>(() => {
+  if (!selectableRows.value) return null
+  const entries = tableRowEntries.value
+  const indices = virtualizeActive.value
+    ? virtualizer.items.value.map((item) => item.index)
+    : entries.map((_, i) => i)
+  const rendered: string[] = []
+  for (const i of indices) if (entries[i]?.kind === 'row') rendered.push(entries[i]!.key)
+  if (rendered.length === 0) return null
+  // A focused row scrolled out of the virtual window can't hold the Tab stop.
+  const focused = focusedRowKey.value
+  if (focused !== null && rendered.includes(focused)) return focused
+  return rendered.find((key) => selectedKeyStrings.value.has(key)) ?? rendered[0]!
+})
+function rowTabIndex(row: T): number | undefined {
+  if (!selectableRows.value) return undefined
+  return String(getRowKey(row)) === tabStopRowKey.value ? 0 : -1
+}
+
+function findRowElement(key: string): HTMLElement | null {
+  return (
+    root.value?.querySelector<HTMLElement>(
+      `.ui-datatable-tbody [data-row-key="${CSS.escape(key)}"]`,
+    ) ?? null
+  )
+}
+async function focusRowEntry(entryIndex: number) {
+  const entry = tableRowEntries.value[entryIndex]
+  if (!entry) return
+  focusedRowKey.value = entry.key
+  // The target may sit outside the rendered window; scrolling first makes it render.
+  if (virtualizeActive.value) virtualizer.scrollToIndex(entryIndex)
+  await nextTick()
+  findRowElement(entry.key)?.focus()
+}
+function onRowFocus(row: T, event: FocusEvent) {
+  if (event.target === event.currentTarget) focusedRowKey.value = String(getRowKey(row))
+}
+function onRowKeydown(row: T, event: KeyboardEvent) {
+  // Keys pressed inside a cell's own controls (buttons, inputs) stay theirs.
+  if (!selectableRows.value || event.target !== event.currentTarget) return
+  const entries = tableRowEntries.value
+  const rowIndices: number[] = []
+  entries.forEach((entry, i) => entry.kind === 'row' && rowIndices.push(i))
+  const key = String(getRowKey(row))
+  const position = rowIndices.findIndex((i) => entries[i]!.key === key)
+  if (position === -1) return
+
+  let target: number | undefined
+  switch (event.key) {
+    case 'ArrowDown':
+      target = rowIndices[Math.min(position + 1, rowIndices.length - 1)]
+      break
+    case 'ArrowUp':
+      target = rowIndices[Math.max(position - 1, 0)]
+      break
+    case 'Home':
+      target = rowIndices[0]
+      break
+    case 'End':
+      target = rowIndices[rowIndices.length - 1]
+      break
+    case ' ':
+      event.preventDefault()
+      toggleSelect(row)
+      return
+    case 'Enter':
+      // Same as a click: toggles selection and fires row-click.
+      event.preventDefault()
+      toggleSelect(row)
+      emit('row-click', row)
+      return
+    default:
+      return
+  }
+  event.preventDefault()
+  if (target === undefined) return
+  const targetRow = entries[target]!.row
+  if (event.shiftKey && !props.single && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+    // Shift+Arrow extends: both ends of the step end up selected.
+    const next = new Set(selected.value)
+    next.add(getRowKey(row))
+    next.add(getRowKey(targetRow))
+    if (next.size !== selected.value.size) setSelection(next)
+  }
+  void focusRowEntry(target)
+}
 
 // Guard: interactive descendants (checkbox, button, link) must not also fire row click.
 function onRowClick(row: T, event: MouseEvent) {
@@ -777,6 +882,56 @@ const {
   },
 })
 
+// The sortable engine only moves header cells. Each frame of a drag (and of
+// the drop settle that follows) this copies every header's shift onto its
+// body cells, and moves the dragged column's cells with the floating preview.
+let columnFollowFrame = 0
+let lastDraggedColumn: string | null = null
+function bodyCellsFor(field: string): HTMLElement[] {
+  return Array.from(
+    root.value?.querySelectorAll<HTMLElement>(
+      `.ui-datatable-tbody .ui-datatable-td[data-column-field="${CSS.escape(field)}"]`,
+    ) ?? [],
+  )
+}
+function translateX(el: HTMLElement): number {
+  return parseFloat(el.style.translate) || 0
+}
+function followColumnDrag() {
+  columnFollowFrame = 0
+  const head = headComponent.value?.rowEl
+  if (!head) return
+  const dragging = draggingColumn.value == null ? null : String(draggingColumn.value)
+  if (dragging !== null) lastDraggedColumn = dragging
+  let moving = dragging !== null
+  for (const th of head.querySelectorAll<HTMLElement>('[data-column-field]')) {
+    const field = th.dataset.columnField!
+    const cells = bodyCellsFor(field)
+    let shift = th.style.translate
+    if (field === dragging && cells.length > 0) {
+      // Clone mode floats a copy; element mode lifts the header itself.
+      const preview = document.querySelector<HTMLElement>('[data-sortable-preview]') ?? th
+      const cellLeft = cells[0]!.getBoundingClientRect().left - translateX(cells[0]!)
+      const dx = preview.getBoundingClientRect().left - cellLeft
+      shift = Math.abs(dx) < 0.5 ? '' : `${dx}px 0`
+    }
+    if (shift) moving = true
+    const lifted = field === lastDraggedColumn && shift !== ''
+    for (const cell of cells) {
+      cell.style.translate = shift
+      cell.toggleAttribute('data-column-dragging', lifted)
+    }
+  }
+  if (moving) columnFollowFrame = requestAnimationFrame(followColumnDrag)
+  else lastDraggedColumn = null
+}
+watch(draggingColumn, (value) => {
+  if (value != null && !columnFollowFrame) {
+    columnFollowFrame = requestAnimationFrame(followColumnDrag)
+  }
+})
+onBeforeUnmount(() => cancelAnimationFrame(columnFollowFrame))
+
 const headProps = computed(() => ({
   selectColumnRendered: selectColumnRendered.value,
   expansionColumnRendered: expansionColumnRendered.value,
@@ -830,6 +985,11 @@ const bodyProps = computed(() => ({
   isSelected,
   getRowKey,
   isExpanded,
+  selectable: props.selectable,
+  rowTabIndex,
+  onRowFocus,
+  onRowKeydown,
+  expansionId,
   onToggleSelect: toggleSelect,
   onToggleExpand: toggleExpand,
   onRowClick,

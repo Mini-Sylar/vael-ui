@@ -6,7 +6,14 @@
     v-bind="attrs"
   >
     <ul ref="list" :class="listPart.class" :style="listPart.style">
-      <span class="ui-pagination-indicator" aria-hidden="true" :style="indicator.style.value" />
+      <!-- An <li>, since a <ul> may only hold list items; role="presentation"
+           keeps it out of the list's item count. -->
+      <li
+        class="ui-pagination-indicator"
+        role="presentation"
+        aria-hidden="true"
+        :style="indicator.style.value"
+      />
       <li>
         <Button
           :class="navButtonPart.class"

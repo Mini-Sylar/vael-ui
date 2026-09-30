@@ -332,7 +332,11 @@ const props = withDefaults(
      * @default true
      */
     scrollFade?: boolean
-    /** Caps the panel height in pixels; the list scrolls past it. Unset, only the viewport limits it. */
+    /**
+     * Caps the panel height in pixels; the list scrolls past it. The viewport limits it too, so
+     * pass `Infinity` to fill the available space.
+     * @default 320
+     */
     maxPanelHeight?: number
     /** `false` skips the built-in chip transitions (`multiple` only); animate them yourself via
      * `@chip-enter`/`@chip-leave`.
@@ -373,6 +377,7 @@ const props = withDefaults(
     alignOffset: 0,
     closeOnEsc: true,
     closeOnOutside: true,
+    maxPanelHeight: 320,
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,

@@ -38,7 +38,7 @@
     color: var(--ui-warning-contrast);
   }
   .ui-badge--danger {
-    background: var(--ui-danger);
+    background: var(--ui-danger-solid, var(--ui-danger));
     color: var(--ui-danger-contrast);
   }
   .ui-badge--info {
@@ -49,22 +49,29 @@
     display: inline-block;
     text-box: trim-both cap alphabetic;
   }
+  /* A changed count arrives from the direction it moved: up from below, down from above. */
   .ui-badge-content--animated {
-    animation: ui-badge-pop var(--ui-duration-press) var(--ui-ease-out);
+    animation: ui-badge-count-in 250ms var(--ui-ease-pop) both;
   }
-  @keyframes ui-badge-pop {
-    0%,
-    100% {
-      scale: 1;
-    }
-    50% {
-      scale: 1.1;
+  .ui-badge-content--animated[data-direction='down'] {
+    --ui-badge-count-from: -0.25rem;
+  }
+  @keyframes ui-badge-count-in {
+    from {
+      opacity: 0;
+      translate: 0 var(--ui-badge-count-from, 0.25rem);
+      filter: blur(2px);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-badge-content--animated {
-      animation: none;
+      animation: ui-badge-count-fade var(--ui-duration-exit) ease-out both;
+    }
+    @keyframes ui-badge-count-fade {
+      from {
+        opacity: 0;
+      }
     }
   }
 }

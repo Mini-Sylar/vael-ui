@@ -320,3 +320,51 @@ test('maxVisible caps rendered cards even when more are queued', async () => {
   await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
+
+test('collapsed stack: back cards take the front card height so each peeks above a taller front toast', async () => {
+  const screen = await render(ToasterFixture)
+  toast('One', { duration: 10000 })
+  toast('Two', { duration: 10000 })
+  toast('Three', { description: 'A longer description line', duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(3))
+
+  const cards = () => [...document.querySelectorAll<HTMLElement>('.ui-toast')]
+  await vi.waitFor(
+    () => {
+      const [back2, back1, front] = cards().map((el) => el.getBoundingClientRect())
+      expect(parseFloat(cards()[1].style.blockSize)).toBeCloseTo(cards()[2].offsetHeight, 0)
+      // Each deeper card's top edge sits visibly above the one in front of it.
+      expect(front.top - back1.top).toBeGreaterThan(4)
+      expect(front.top - back1.top).toBeLessThan(12)
+      expect(back1.top - back2.top).toBeGreaterThan(4)
+    },
+    { timeout: 2000 },
+  )
+  // Back-card content is hidden so it can't bleed into the peek strip.
+  expect(getComputedStyle(cards()[1].querySelector('.ui-toast-content')!).opacity).toBe('0')
+
+  const toaster = document.querySelector('.ui-toaster')!
+  toaster.dispatchEvent(new PointerEvent('pointerenter'))
+  await vi.waitFor(() => {
+    expect(cards()[1].style.blockSize).toBe('')
+    expect(cards()[1].offsetHeight).toBeLessThan(cards()[2].offsetHeight)
+  })
+  dismiss()
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('focusing a toast button expands the stack so its hidden content is revealed', async () => {
+  const screen = await render(ToasterFixture)
+  toast('One', { duration: 10000 })
+  toast('Two', { duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(2))
+  const toaster = document.querySelector('.ui-toaster')!
+  document.querySelector<HTMLElement>('.ui-toast .ui-toast-close')!.focus()
+  await vi.waitFor(() => expect(toaster.getAttribute('data-expanded')).toBe('true'))
+  ;(document.activeElement as HTMLElement).blur()
+  await vi.waitFor(() => expect(toaster.getAttribute('data-expanded')).toBe('false'))
+  dismiss()
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})

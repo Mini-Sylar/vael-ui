@@ -4,6 +4,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import SliderFixture from './fixtures/SliderFixture.vue'
+import { contrast } from './utils/contrast'
 
 function trackRect(screen: RenderResult<unknown>, testId: string): DOMRect {
   const el = screen.container.querySelector(`[data-testid="${testId}"] .ui-slider-track`)
@@ -150,4 +151,22 @@ test('valueText renders as aria-valuetext', async () => {
   const screen = await render(SliderFixture, {})
   const thumb = thumbEl(screen, 'valuetext')
   expect(thumb.getAttribute('aria-valuetext')).toBe('$40')
+})
+
+test('the unfilled track stays visible against the surface in both themes', async () => {
+  const screen = await render(SliderFixture)
+  const track = screen.container.querySelector<HTMLElement>(
+    '[data-testid="single"] .ui-slider-track',
+  )!
+  try {
+    for (const theme of ['light', 'dark']) {
+      document.documentElement.dataset.theme = theme
+      const surface = getComputedStyle(document.documentElement).getPropertyValue('--ui-surface')
+      // Pre-fix, the dark track (--ui-muted) sat at ~1.1:1 on the surface.
+      expect(contrast(getComputedStyle(track).backgroundColor, surface)).toBeGreaterThan(1.4)
+    }
+    expect(contrast(getComputedStyle(track).backgroundColor, '#1f1f23')).toBeGreaterThan(2)
+  } finally {
+    delete document.documentElement.dataset.theme
+  }
 })

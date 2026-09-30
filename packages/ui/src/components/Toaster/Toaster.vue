@@ -17,6 +17,8 @@
       :data-ui-theme="themeScope"
       @pointerenter="onToasterEnter"
       @pointerleave="onToasterLeave"
+      @focusin="onToasterFocusIn"
+      @focusout="onToasterFocusOut"
       @enter="enterHook"
       @leave="leaveHook"
     >
@@ -36,6 +38,9 @@
         @pointermove="onPointerMove(entry.id, $event)"
         @pointerup="onPointerUp(entry.id)"
         @pointercancel="onPointerUp(entry.id)"
+        @transitionrun="onCardTransition(entry.id, $event, true)"
+        @transitionend="onCardTransition(entry.id, $event, false)"
+        @transitioncancel="onCardTransition(entry.id, $event, false)"
       >
         <slot
           :entry="entry"
@@ -196,15 +201,33 @@ const xPos = computed(() => props.position.split('-')[1])
 const heights = reactive<Record<number, number>>({})
 const resizeObservers = new Map<number, ResizeObserver>()
 
+// Collapsed back cards are forced to the front card's height (inline block-size), so only
+// record natural heights while a card is unforced and not mid height-transition.
+const heightTransitions = new Set<number>()
+function recordHeight(id: number, el: HTMLElement, h = el.offsetHeight) {
+  if (el.style.blockSize || heightTransitions.has(id)) return
+  if (h > 0) heights[id] = h
+}
+
 function registerCard(id: number, el: Element | null) {
   if (!(el instanceof HTMLElement)) return
   if (resizeObservers.has(id)) return
   const observer = new ResizeObserver(([entry]) => {
-    const h = entry.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight
-    if (h > 0) heights[id] = h
+    recordHeight(id, el, entry.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight)
   })
   observer.observe(el)
   resizeObservers.set(id, observer)
+}
+
+function onCardTransition(id: number, event: TransitionEvent, running: boolean) {
+  if (event.target !== event.currentTarget) return
+  if (event.propertyName !== 'block-size' && event.propertyName !== 'height') return
+  if (running) {
+    heightTransitions.add(id)
+  } else {
+    heightTransitions.delete(id)
+    recordHeight(id, event.currentTarget as HTMLElement)
+  }
 }
 
 function depthOf(id: number) {
@@ -212,14 +235,18 @@ function depthOf(id: number) {
   return i === -1 ? 0 : visible.value.length - 1 - i
 }
 
+const frontHeight = computed<number | undefined>(() => {
+  const front = visible.value[visible.value.length - 1]
+  return front ? heights[front.id] : undefined
+})
+
 // Position:absolute cards collapse parent; set explicit height to catch pointerleave.
 const toasterHeight = computed(() => {
   if (visible.value.length === 0) return 0
   if (expanded.value) {
     return visible.value.reduce((sum, t) => sum + (heights[t.id] ?? 56) + props.gap, -props.gap)
   }
-  const front = visible.value[visible.value.length - 1]
-  return front ? (heights[front.id] ?? 56) : 0
+  return frontHeight.value ?? 56
 })
 
 // Inlined for structural correctness (position:fixed needs explicit inset); themeable via CSS variables.
@@ -271,14 +298,37 @@ function offsetOf(id: number) {
 }
 
 const expanded = ref(false)
-function onToasterEnter() {
+const hovered = ref(false)
+const focusWithin = ref(false)
+function expand() {
+  if (expanded.value) return
   expanded.value = true
   pauseAll()
 }
-function onToasterLeave() {
-  if (activeSwipeId.value != null) return
+function collapse() {
+  if (!expanded.value || hovered.value || focusWithin.value) return
   expanded.value = false
   resumeAll()
+}
+function onToasterEnter() {
+  hovered.value = true
+  expand()
+}
+function onToasterLeave() {
+  if (activeSwipeId.value != null) return
+  hovered.value = false
+  collapse()
+}
+// Collapsed back cards hide their content, so keyboard focus expands the stack too.
+function onToasterFocusIn() {
+  focusWithin.value = true
+  expand()
+}
+function onToasterFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget as Node | null
+  if (next && toasterEl.value?.contains(next)) return
+  focusWithin.value = false
+  collapse()
 }
 
 function cardStyle(id: number, index: number) {
@@ -300,6 +350,10 @@ function cardStyle(id: number, index: number) {
     '--toast-scale': expanded.value ? 1 : 1 - depth * 0.045,
     '--toast-opacity': expanded.value || depth === 0 ? 1 : 1 - depth * 0.3,
   }
+  // Sonner's collapsed stack: back cards take the front card's height so each one peeks by
+  // exactly `gap`, however tall or short its own content is.
+  const frontH = frontHeight.value
+  if (!expanded.value && depth > 0 && frontH != null) style.blockSize = `${frontH}px`
   return style
 }
 
@@ -403,6 +457,9 @@ watch(
     }
     for (const key of Object.keys(swipeState)) {
       if (!live.has(Number(key))) delete swipeState[Number(key)]
+    }
+    for (const id of heightTransitions) {
+      if (!live.has(id)) heightTransitions.delete(id)
     }
     for (const [id, observer] of resizeObservers) {
       if (!live.has(id)) {

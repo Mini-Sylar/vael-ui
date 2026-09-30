@@ -211,3 +211,37 @@ test('columnGripVisibility="hover" is invisible until interacted with', async ()
   const grip = hover.container.querySelector<HTMLElement>('.ui-datatable-th-grip')!
   expect(getComputedStyle(grip).opacity).toBe('0')
 })
+
+test('body cells follow their header while a column drags, then settle back to rest', async () => {
+  const screen = await renderTable({ showStatusColumn: true })
+  const [, age, status] = headerEls(screen)
+  const cellsOf = (field: string) =>
+    Array.from(
+      screen.container.querySelectorAll<HTMLElement>(
+        `.ui-datatable-tbody .ui-datatable-td[data-column-field="${field}"]`,
+      ),
+    )
+  const release = dragHeaderOver(age!, status!, 31)
+  // The neighbour's body cells mirror its header's shift…
+  await vi.waitFor(() => {
+    expect(status!.style.translate).not.toBe('')
+    expect(cellsOf('status')[0]!.style.translate).toBe(status!.style.translate)
+  })
+  // …and the dragged column's cells travel with the floating preview.
+  const preview = document.querySelector<HTMLElement>('[data-sortable-preview]')!
+  await vi.waitFor(() => {
+    const cell = cellsOf('age')[0]!
+    expect(cell.hasAttribute('data-column-dragging')).toBe(true)
+    expect(cell.getBoundingClientRect().left).toBeCloseTo(preview.getBoundingClientRect().left, 0)
+  })
+  release()
+  await vi.waitFor(
+    () => {
+      for (const cell of [...cellsOf('age'), ...cellsOf('status')]) {
+        expect(cell.style.translate).toBe('')
+        expect(cell.hasAttribute('data-column-dragging')).toBe(false)
+      }
+    },
+    { timeout: 3000 },
+  )
+})

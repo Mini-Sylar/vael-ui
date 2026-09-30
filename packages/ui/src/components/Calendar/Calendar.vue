@@ -11,6 +11,7 @@
         :class="navButtonPart.class"
         :style="navButtonPart.style"
         :aria-label="previousLabel"
+        :aria-disabled="!canGoPrevious || undefined"
         @click="goPrevious"
       >
         <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
@@ -40,6 +41,7 @@
         :class="navButtonPart.class"
         :style="navButtonPart.style"
         :aria-label="nextLabel"
+        :aria-disabled="!canGoNext || undefined"
         @click="goNext"
       >
         <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
@@ -54,7 +56,11 @@
       </button>
     </div>
 
-    <div ref="bodyEl" class="ui-calendar-body" :style="{ '--ui-calendar-direction': direction }">
+    <div
+      ref="bodyEl"
+      class="ui-calendar-body"
+      :style="[{ '--ui-calendar-direction': direction }, bodyMinSize]"
+    >
       <template v-if="navLevel === 'date'">
         <div :class="weekdaysPart.class" :style="weekdaysPart.style" aria-hidden="true">
           <span
@@ -511,6 +517,34 @@ function isYearSelected(year: number): boolean {
   return model.value.getFullYear() === year
 }
 
+// Paging is blocked only when the whole target page lies past min/max; aria-disabled (not
+// `disabled`) keeps focus on the button when it reaches the edge.
+const canGoPrevious = computed(() => {
+  const min = props.minDate
+  if (!min) return true
+  if (navLevel.value === 'date') return endOfMonth(addMonths(viewDate.value, -1)) >= startOfDay(min)
+  const lastYear =
+    navLevel.value === 'month' ? viewDate.value.getFullYear() - 1 : yearWindowStart.value - 1
+  return lastYear >= min.getFullYear()
+})
+const canGoNext = computed(() => {
+  const max = props.maxDate
+  if (!max) return true
+  if (navLevel.value === 'date')
+    return addMonths(startOfMonth(viewDate.value), 1) <= startOfDay(max)
+  const firstYear =
+    navLevel.value === 'month' ? viewDate.value.getFullYear() + 1 : yearWindowStart.value + 12
+  return firstYear <= max.getFullYear()
+})
+
+// Month/year grids stretch to the day view's last size, so drilling up or down doesn't jump.
+const dateBodySize = ref<{ inline: number; block: number } | null>(null)
+const bodyMinSize = computed(() => {
+  const size = dateBodySize.value
+  if (navLevel.value === 'date' || !size) return undefined
+  return { minInlineSize: `${size.inline}px`, minBlockSize: `${size.block}px` }
+})
+
 // Navigation
 function setView(date: Date, dir: 1 | -1) {
   animateBodyHeight(() => {
@@ -520,11 +554,13 @@ function setView(date: Date, dir: 1 | -1) {
   })
 }
 function goPrevious() {
+  if (!canGoPrevious.value) return
   if (navLevel.value === 'date') setView(addMonths(viewDate.value, -1), -1)
   else if (navLevel.value === 'month') setView(addYears(viewDate.value, -1), -1)
   else setView(addYears(viewDate.value, -12), -1)
 }
 function goNext() {
+  if (!canGoNext.value) return
   if (navLevel.value === 'date') setView(addMonths(viewDate.value, 1), 1)
   else if (navLevel.value === 'month') setView(addYears(viewDate.value, 1), 1)
   else setView(addYears(viewDate.value, 12), 1)
@@ -612,6 +648,9 @@ const bodyEl = useTemplateRef<HTMLElement>('bodyEl')
 // or switching to the month/year grid entirely) has no "from" and "to" auto
 // value CSS can transition between — measure both sides and animate the gap.
 function animateBodyHeight(mutate: () => void) {
+  if (navLevel.value === 'date' && bodyEl.value) {
+    dateBodySize.value = { inline: bodyEl.value.offsetWidth, block: bodyEl.value.offsetHeight }
+  }
   if (!props.motionCss || !bodyEl.value) {
     mutate()
     return

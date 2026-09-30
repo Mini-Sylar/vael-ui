@@ -9,7 +9,7 @@
         :style="labelPart.style"
       >
         <slot name="label">{{ label }}</slot>
-        <span v-if="required" class="ui-field-required" aria-hidden="true">*</span>
+        <span v-if="required" class="ui-field-required" aria-hidden="true"></span>
       </label>
       <slot />
     </div>

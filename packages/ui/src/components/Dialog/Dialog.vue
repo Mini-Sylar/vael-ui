@@ -18,6 +18,7 @@
           :class="overlayPart.class"
           :style="[overlayStyle, overlayPart.style]"
           aria-hidden="true"
+          @mousedown.prevent
           @click="onOverlayClick"
         />
         <div
@@ -286,6 +287,8 @@ const { isClosing, close, requestClose, cancelClose, container, contained, layer
   },
 )
 
+// The overlay's mousedown is prevented (template) so a click on it never moves focus to <body>:
+// with closeOnOverlay off, focus must stay inside the still-open modal.
 function onOverlayClick(event: MouseEvent) {
   if (props.closeOnOverlay) requestClose('outside', event)
 }
