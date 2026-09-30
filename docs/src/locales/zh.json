@@ -15,6 +15,7 @@
   },
   "component": {
     "code": "代码",
+    "hideCode": "隐藏代码",
     "copied": "复制了！",
     "copy": "复制",
     "examples": "示例",

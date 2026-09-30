@@ -38,6 +38,7 @@
     "vapor": "Vapor",
     "vaporUnavailable": "Pas encore de démo Vapor pour ce composant",
     "code": "Code",
+    "hideCode": "Masquer le code",
     "preview": "Aperçu",
     "playground": "Bac à sable",
     "examples": "Exemples",

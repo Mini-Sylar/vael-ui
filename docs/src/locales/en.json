@@ -44,6 +44,7 @@
     "vapor": "Vapor",
     "vaporUnavailable": "No Vapor demo for this component yet",
     "code": "Code",
+    "hideCode": "Hide code",
     "preview": "Preview",
     "playground": "Playground",
     "examples": "Examples",

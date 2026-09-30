@@ -1,6 +1,20 @@
 <template>
   <div class="code-block">
+    <!-- With a toolbar, copy sits in a header and is always visible. -->
+    <div v-if="$slots.toolbar" class="code-head">
+      <slot name="toolbar" />
+      <Button variant="ghost" size="sm" class="code-head-copy" @click="copy">
+        <template #leading>
+          <Transition name="icon-swap" mode="out-in">
+            <PhCheck v-if="copied" key="check" :size="14" />
+            <PhCopy v-else key="copy" :size="14" />
+          </Transition>
+        </template>
+        {{ copied ? t('component.copied') : t('component.copy') }}
+      </Button>
+    </div>
     <Button
+      v-else
       variant="ghost"
       size="sm"
       icon
@@ -65,6 +79,18 @@ pre,
   font-size: 0.85rem;
   line-height: 1.65;
   background: transparent !important;
+}
+
+.code-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.code-head-copy {
+  flex: none;
 }
 
 .copy-button {

@@ -15,6 +15,7 @@
   },
   "component": {
     "code": "Código",
+    "hideCode": "Ocultar código",
     "copied": "¡Copiado!",
     "copy": "Copiar",
     "events": "Eventos",

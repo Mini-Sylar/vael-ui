@@ -15,6 +15,7 @@
   },
   "component": {
     "code": "Codice",
+    "hideCode": "Nascondi codice",
     "copied": "Copiato!",
     "copy": "Copia",
     "events": "Eventi",

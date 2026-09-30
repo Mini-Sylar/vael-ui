@@ -1,5 +1,9 @@
 <template>
-  <div v-if="meta" class="component-page-layout">
+  <div
+    v-if="meta"
+    class="component-page-layout"
+    :class="{ 'component-page-layout--next': layoutNext }"
+  >
     <!-- No username field on a page full of password fields reads to Chrome as a login
          form; it hunts the DOM for a pairing candidate and can land on the header's own
          search box. Standard fix: give it a real one instead. -->
@@ -96,6 +100,11 @@
       </section>
     </article>
     <OnThisPage :links="tocLinks" />
+    <!-- Lets readers keep the previous layout if they prefer it. -->
+    <div class="layout-compare">
+      <span>Layout</span>
+      <SelectButton v-model="layoutChoice" size="sm" :items="LAYOUT_ITEMS" :allow-empty="false" />
+    </div>
   </div>
   <p v-else>{{ t('component.notFound', { name }) }}</p>
 </template>
@@ -105,6 +114,8 @@ import { computed, defineAsyncComponent, shallowRef, watchEffect, type Component
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import { SelectButton } from 'vael-ui'
+import { layoutNext } from '../layoutNext'
 import componentMeta from '../generated/component-meta.json'
 import demoManifest from '../generated/demo-manifest.json'
 import DemoFrame from '../components/DemoFrame.vue'
@@ -136,6 +147,15 @@ const vaporSources = import.meta.glob('../generated/vapor-demos/**/*.vue', {
 })
 
 const { t, te } = useI18n()
+
+const LAYOUT_ITEMS = [
+  { label: 'Current', value: 'current' },
+  { label: 'Next', value: 'next' },
+]
+const layoutChoice = computed({
+  get: () => (layoutNext.value ? 'next' : 'current'),
+  set: (v: string) => (layoutNext.value = v === 'next'),
+})
 const route = useRoute()
 
 function describe(componentName: string): string | null {
@@ -279,6 +299,47 @@ const tocLinks = computed(() => [
 
 .component-page {
   min-width: 0;
+}
+
+.component-page-layout--next {
+  grid-template-columns: minmax(0, 56rem) minmax(9rem, 1fr);
+  gap: 3rem;
+}
+
+.layout-compare {
+  position: fixed;
+  inset-block-end: 1rem;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.3125rem 0.3125rem 0.3125rem 0.875rem;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--ui-surface) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  box-shadow:
+    0 0 0 1px var(--ui-border),
+    0 8px 24px rgb(0 0 0 / 0.1);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ui-text-muted);
+}
+
+@media (max-width: 850px) {
+  .layout-compare {
+    inset-block-end: 5.5rem;
+  }
+}
+
+/* Pill all the way down: the sliding indicator reads its radius from this var. */
+.layout-compare :deep(.ui-select-button) {
+  --ui-select-button-radius: 999px;
+}
+
+.layout-compare :deep(.ui-select-button-option) {
+  border-radius: 999px;
 }
 
 @media (max-width: 1100px) {

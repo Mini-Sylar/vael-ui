@@ -139,10 +139,12 @@ h2 {
   overflow: hidden;
 }
 
+/* Text at ~13px with code a step smaller: mono runs visually larger, so ~12px
+   code sits level with the prose beside it instead of shrinking under it. */
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   line-height: 1.55;
 }
 
@@ -157,7 +159,7 @@ td {
 thead th {
   color: var(--ui-text-muted);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   background: var(--ui-muted);
@@ -195,7 +197,7 @@ tbody tr:target {
 }
 
 .name code {
-  font-size: 0.85em;
+  font-size: 0.92em;
   font-weight: 600;
 }
 
@@ -213,7 +215,7 @@ tbody tr:target {
 .required {
   display: block;
   margin-top: 0.2rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--ui-danger, var(--ui-text-muted));
@@ -230,7 +232,7 @@ tbody tr:target {
 
 .type-cell :deep(.inline-code),
 .default-cell :deep(.inline-code) {
-  font-size: 0.8em;
+  font-size: 0.92em;
 }
 
 .none {
@@ -244,6 +246,7 @@ tbody tr:target {
 }
 
 .description-cell :deep(.inline-code) {
+  font-size: 0.9em;
   padding: 0.05em 0.3em;
   border-radius: 4px;
   white-space: nowrap;
@@ -315,7 +318,7 @@ tbody tr:target {
     display: grid;
     grid-template-columns: subgrid;
     margin-top: 0.4rem;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
   }
 
   .type-cell::before,
