@@ -100,15 +100,14 @@ function onFocusChange() {
     !focused.closest('[data-dash-overlay]')
 }
 const mounted = shallowRef(false)
-// Two dashboards share the stage: a store and a code repo. Each visit starts on
-// one at random (?dashboard=repo|store pins it); every autoplay run ends by
-// switching to the other one from the sidebar's workspace menu.
-const variant = shallowRef<DashVariant>('store')
+// Two dashboards share the stage: a code repo and a store. Every visit starts
+// on the repo, the one closest to what vael-ui is for (?dashboard=store opens
+// the store instead); each autoplay run ends by switching to the other one from
+// the sidebar's workspace menu.
+const variant = shallowRef<DashVariant>('repo')
 const hero = useTemplateRef<{ resetPage: () => void }>('hero')
 onMounted(() => {
-  const pinned = new URLSearchParams(location.search).get('dashboard')
-  variant.value =
-    pinned === 'repo' || pinned === 'store' ? pinned : Math.random() < 0.5 ? 'repo' : 'store'
+  if (new URLSearchParams(location.search).get('dashboard') === 'store') variant.value = 'store'
   mounted.value = true
   window.addEventListener('keydown', onKeydown, true)
   document.addEventListener('focusin', onFocusChange)

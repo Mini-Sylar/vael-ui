@@ -9,6 +9,7 @@
         row-key="id"
         selectable
         scroll-height="26rem"
+        :stacked-breakpoint="stacked"
         @update:selection="onSelectionChange"
       >
         <template #columns="{ columnData }">
@@ -82,6 +83,9 @@ import { Card, Column, DataTable, Input, Tag } from 'vael-ui'
 import { PhMagnifyingGlass } from '@phosphor-icons/vue'
 import { currency, orders, STATUS_VARIANT } from '../data'
 import type { Order } from '../data'
+import { useDashStacked } from '../useDashStacked'
+
+const stacked = useDashStacked(820)
 
 const search = shallowRef('')
 const filteredOrders = computed(() => {
@@ -99,6 +103,10 @@ function onSelectionChange(rows: Order[]) {
 </script>
 
 <style scoped>
+/* Stacked cards are narrow: let a long email break instead of being cut off. */
+:deep(.ui-datatable[data-stacked] .ui-datatable-td) {
+  overflow-wrap: anywhere;
+}
 .dash-table-search {
   max-inline-size: 16rem;
 }
