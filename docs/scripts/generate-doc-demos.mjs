@@ -82,7 +82,9 @@ function findLocalPartials(source) {
 }
 
 function usesIneligibleIntegration(sources) {
-  return sources.some((source) => VAPOR_INELIGIBLE_IMPORTS.some((pkg) => source.includes(`'${pkg}'`)))
+  return sources.some((source) =>
+    VAPOR_INELIGIBLE_IMPORTS.some((pkg) => source.includes(`'${pkg}'`)),
+  )
 }
 
 // A PascalCase name imported from 'vael-ui' not in the real built Vapor
@@ -94,7 +96,10 @@ function findMissingVaporComponents(sources, vaporComponentNames) {
   for (const source of sources) {
     let match
     while ((match = importRe.exec(source))) {
-      for (const raw of match[1].split(',').map((n) => n.trim()).filter(Boolean)) {
+      for (const raw of match[1]
+        .split(',')
+        .map((n) => n.trim())
+        .filter(Boolean)) {
         if (/^[A-Z]/.test(raw) && !vaporComponentNames.has(raw)) missing.add(raw)
       }
     }
@@ -133,11 +138,15 @@ function suppressKnownVaporDirectiveGaps(source) {
 function rewriteToVapor(source, vaporComponentNames) {
   const importRe = /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui['"];?$/gm
   return source.replace(importRe, (full, namedClause) => {
-    const names = namedClause.split(',').map((n) => n.trim()).filter(Boolean)
+    const names = namedClause
+      .split(',')
+      .map((n) => n.trim())
+      .filter(Boolean)
     const vaporNames = names.filter((n) => vaporComponentNames.has(n))
     const stayNames = names.filter((n) => !vaporComponentNames.has(n))
     const lines = []
-    if (vaporNames.length > 0) lines.push(`import { ${vaporNames.join(', ')} } from 'vael-ui/vapor'`)
+    if (vaporNames.length > 0)
+      lines.push(`import { ${vaporNames.join(', ')} } from 'vael-ui/vapor'`)
     if (stayNames.length > 0) lines.push(`import { ${stayNames.join(', ')} } from 'vael-ui'`)
     return lines.join('\n')
   })
@@ -262,7 +271,9 @@ function main() {
   }
 
   writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n')
-  console.log(`\nwrote docs/src/generated/demo-manifest.json (${allComponents.length} component(s))`)
+  console.log(
+    `\nwrote docs/src/generated/demo-manifest.json (${allComponents.length} component(s))`,
+  )
   if (state.vaporGaps.size > 0) {
     console.log(
       `\nnote: ${[...state.vaporGaps].join(', ')} ${state.vaporGaps.size === 1 ? 'is' : 'are'} used in a demo but not exported from vael-ui/vapor's actual build — those demos stayed VDOM-only.`,

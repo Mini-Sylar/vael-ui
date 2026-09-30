@@ -45,7 +45,7 @@ if (missing.length > 0) {
   for (const m of missing) console.error(`  [${m.label}] ${m.name} (from ${m.srcPath})`)
   console.error(
     '\nEach of these got inlined into its barrel instead of split into its own chunk — a ' +
-      'downstream consumer can no longer tree-shake it independently. Check tsdown.config.ts\'s ' +
+      "downstream consumer can no longer tree-shake it independently. Check tsdown.config.ts's " +
       'entry list (packages/ui, packages/vapor-ui) still spreads collectBarrelEntries(...).',
   )
   process.exit(1)

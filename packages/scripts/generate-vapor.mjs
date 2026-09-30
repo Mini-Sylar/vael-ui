@@ -216,7 +216,10 @@ function rewriteImports(source, moduleId, publicExports) {
   return source.replace(importLineRe, (full, typeOnly, namedClause, specifier) => {
     if (!isRewritable(specifier)) return full // 'vue', third-party, and sibling ./ imports: untouched
 
-    const names = namedClause.split(',').map((n) => n.trim()).filter(Boolean)
+    const names = namedClause
+      .split(',')
+      .map((n) => n.trim())
+      .filter(Boolean)
     const localNames = names.map((n) => {
       const asMatch = n.match(/\bas\s+(\S+)/)
       return asMatch ? asMatch[1] : n.replace(/^type\s+/, '')
@@ -243,7 +246,9 @@ function rewriteImports(source, moduleId, publicExports) {
         localName === 'vScrollMask'
           ? pathToGenerated(modulePath, fromDir)
           : relativeImportPath(modulePath, fromDir)
-      directiveLines.push(`import ${typeOnly ?? ''}{${vaporName} as ${localName}} from '${importPath}'`)
+      directiveLines.push(
+        `import ${typeOnly ?? ''}{${vaporName} as ${localName}} from '${importPath}'`,
+      )
     }
 
     const missing = otherNames.filter((n) => !publicExports.has(n.replace(/^type\s+/, '')))
@@ -293,8 +298,14 @@ function generateConfirmActionSource(publicExports) {
       /'\.\.\/components\/internal\/(Confirm\w+)\.vue'/g,
       (_full, name) => `'../internal/${name}.vue'`,
     )
-    .replace(/from '\.\/useDialogService'/, `from '${relativeImportPath('composables/useDialogService', 'composables')}'`)
-    .replace(/from '\.\/usePopoverService'/, `from '${relativeImportPath('composables/usePopoverService', 'composables')}'`)
+    .replace(
+      /from '\.\/useDialogService'/,
+      `from '${relativeImportPath('composables/useDialogService', 'composables')}'`,
+    )
+    .replace(
+      /from '\.\/usePopoverService'/,
+      `from '${relativeImportPath('composables/usePopoverService', 'composables')}'`,
+    )
 
   for (const name of ['Button', 'DialogProps', 'PopoverProps']) {
     if (!publicExports.has(name)) {
