@@ -179,7 +179,7 @@ const { pressed, visible } = useAutoplayCursor({
   box-shadow:
     0 0 0 1px var(--ui-border),
     0 6px 20px rgb(0 0 0 / 0.05),
-    0 0 36px 14px var(--ui-surface);
+    0 0 24px 6px var(--ui-surface);
 }
 
 @media (prefers-color-scheme: dark) {

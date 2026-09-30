@@ -274,7 +274,7 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
    (neutral until one is picked), fading out toward the edges. */
 .showcase-backdrop {
   --dither-color: var(--docs-accent, var(--ui-text));
-  --dither-alpha: 0.08;
+  --dither-alpha: 0.2;
   --dither-cell: 5;
   position: absolute;
   /* Less on the left, so the cloud never sits behind the headline. */
