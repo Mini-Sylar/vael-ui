@@ -71,8 +71,7 @@ for (const mode of ['vapor', 'interop', 'vdom-parent'] as const) {
     await userEvent.keyboard('{Enter}')
     await expect.poll(value).toBe('"tu"')
     expect(reasons()).toBe('option')
-    // vdom parent: blanked by an upstream interop bug, see interop-uncontrolled-model-reset.test.ts.
-    if (mode !== 'vdom-parent') expect(input.value).toBe('tu')
+    expect(input.value).toBe('tu')
   })
 
   test(`[${mode}] #create and #item slots render the consumer's content`, async () => {

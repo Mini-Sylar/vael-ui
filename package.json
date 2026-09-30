@@ -30,15 +30,15 @@
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.3",
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.2",
-    "eslint": "^10.10.0",
-    "eslint-plugin-vue": "^10.11.0",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "eslint": "^10.11.0",
+    "eslint-plugin-vue": "^10.11.1",
     "husky": "^9.1.7",
-    "lint-staged": "^17.5.1",
-    "oxfmt": "^0.68.0",
-    "oxlint": "^1.83.0",
-    "typescript-eslint": "^8.70.0"
+    "lint-staged": "^17.6.0",
+    "oxfmt": "^0.71.0",
+    "oxlint": "^1.86.0",
+    "typescript-eslint": "^8.71.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,vue}": [
