@@ -318,7 +318,9 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
    motion show it in place. */
 @media (prefers-reduced-motion: no-preference) {
   .hero-showcase {
-    animation: showcase-in 700ms var(--ui-ease-out) both;
+    /* backwards, not both: a kept end frame leaves an identity transform that
+       re-anchors every position: fixed inside the dashboard. */
+    animation: showcase-in 700ms var(--ui-ease-out) backwards;
     animation-delay: 120ms;
   }
 }

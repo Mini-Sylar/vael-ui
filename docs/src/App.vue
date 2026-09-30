@@ -424,6 +424,20 @@ const theme = computed(() => ({
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* The picked accent as a foreground ink (headline word, charts), else plain
+     text. Declared here, where App.vue sets --docs-accent, so it resolves. */
+  --docs-accent-ink: var(--docs-accent, var(--ui-text));
+}
+
+/* Dark mode lifts the ink a little: a saturated accent at full strength sinks
+   into the dark surface. */
+:root[data-theme='dark'] .app-shell {
+  --docs-accent-ink: color-mix(in oklch, var(--docs-accent, var(--ui-text)) 78%, white);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .app-shell {
+    --docs-accent-ink: color-mix(in oklch, var(--docs-accent, var(--ui-text)) 78%, white);
+  }
 }
 
 .app-header {

@@ -59,7 +59,8 @@ const areaMask = computed(() => {
   position: relative;
   inline-size: 100%;
   block-size: 100%;
-  color: var(--ui-text);
+  /* The theme picker's accent when one is set, else plain ink. */
+  color: var(--docs-accent-ink, var(--ui-text));
   /* Draws in left to right once, as its card lands. */
   animation: dither-reveal 800ms var(--ui-ease-out) var(--reveal-delay, 0s) both;
 }

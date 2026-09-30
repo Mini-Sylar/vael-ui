@@ -424,6 +424,17 @@ defineExpose({
   overflow: auto;
 }
 
+/* Windows draws every scrollbar solid and always on. Inside the demo's
+   widgets (palette, tree, tables, code) they'd be noise the fades already
+   cover; the main area keeps a thin, quiet one so it still reads as scrollable. */
+.dash-shell :deep(*) {
+  scrollbar-width: none;
+}
+.dash-shell .dash-content {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--ui-text) 18%, transparent) transparent;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;

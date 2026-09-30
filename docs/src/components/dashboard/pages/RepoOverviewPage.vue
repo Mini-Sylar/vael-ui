@@ -99,6 +99,7 @@
             size="sm"
             :items="shipItems"
             :disabled="repo.approvals < 2"
+            :variant="repo.approvals < 2 ? 'secondary' : 'primary'"
             class="repo-ship"
             @click="shipOpen = true"
             @select="onShipOption"
@@ -378,7 +379,7 @@ function onShipOption(item: MenuItemData) {
   inline-size: 0.75rem;
   block-size: 2px;
   border-radius: 999px;
-  background: var(--ui-text);
+  background: var(--docs-accent-ink, var(--ui-text));
 }
 .repo-swatch--dashed {
   background: repeating-linear-gradient(90deg, var(--ui-text-muted) 0 3px, transparent 3px 6px);
@@ -488,7 +489,7 @@ function onShipOption(item: MenuItemData) {
   display: flex;
   justify-content: space-between;
 }
-.repo-ship :deep(.ui-button:first-child) {
+.repo-ship :deep(.ui-split-button-main) {
   flex: 1 1 auto;
 }
 

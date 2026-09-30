@@ -94,6 +94,8 @@ onBeforeUnmount(() => observer?.disconnect())
 .vapor-word-text {
   --vapor-tile: 150px;
   display: inline-block;
+  /* Takes the accent from the theme picker, else stays the headline's color. */
+  color: var(--docs-accent-ink, currentColor);
   /* Room for the haze, so the mask's box doesn't cut it off in a hard edge. */
   padding: 0.25em 0.2em;
   margin: -0.25em -0.2em;

@@ -155,7 +155,7 @@ defineExpose({
   block-size: 8px;
   margin: -4px 0 0 -4px;
   border-radius: 999px;
-  background: var(--ui-text);
+  background: var(--docs-accent-ink, var(--ui-text));
   box-shadow: 0 0 0 3px var(--ui-surface);
   pointer-events: none;
   transition:
@@ -195,14 +195,14 @@ defineExpose({
   font-weight: 600;
 }
 
-:global(:root[data-theme='dark']) .throughput-tip {
+:root[data-theme='dark'] .throughput-tip {
   background: #2a2a2e;
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.1),
     0 8px 20px rgb(0 0 0 / 0.4);
 }
 @media (prefers-color-scheme: dark) {
-  :global(:root:not([data-theme='light'])) .throughput-tip {
+  :root:not([data-theme='light']) .throughput-tip {
     background: #2a2a2e;
     box-shadow:
       0 0 0 1px rgb(255 255 255 / 0.1),
