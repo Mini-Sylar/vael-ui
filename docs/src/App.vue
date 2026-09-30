@@ -1,6 +1,6 @@
 <template>
   <ConfigProvider :theme="theme">
-    <div class="app-shell">
+    <div class="app-shell" :style="primaryColor ? { '--docs-accent': primaryColor } : undefined">
       <header class="app-header">
         <Button
           variant="ghost"
@@ -57,16 +57,10 @@
               </template>
               <template #default>
                 <div class="theme-panel">
-                  <label class="theme-row">
+                  <div class="theme-row">
                     <span>{{ t('header.primaryColor') }}</span>
-                    <span class="color-swatch">
-                      <input
-                        :value="swatchColor"
-                        type="color"
-                        @input="primaryColor = ($event.target as HTMLInputElement).value"
-                      />
-                    </span>
-                  </label>
+                    <ThemeSwatches />
+                  </div>
                   <label class="theme-row">
                     <span>{{ t('header.radius') }}</span>
                     <Select
@@ -128,16 +122,10 @@
 
     <BottomSheet v-model:open="mobileSettingsOpen" :title="t('header.settings')" width="md">
       <div class="mobile-settings">
-        <label class="theme-row">
+        <div class="theme-row">
           <span>{{ t('header.primaryColor') }}</span>
-          <span class="color-swatch">
-            <input
-              :value="swatchColor"
-              type="color"
-              @input="primaryColor = ($event.target as HTMLInputElement).value"
-            />
-          </span>
-        </label>
+          <ThemeSwatches />
+        </div>
         <label class="theme-row">
           <span>{{ t('header.radius') }}</span>
           <Select
@@ -198,7 +186,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, shallowRef, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useLocalStorage } from '@vueuse/core'
@@ -233,8 +221,11 @@ import Sidebar from './components/Sidebar.vue'
 import SearchPalette from './components/SearchPalette.vue'
 import Logo from './components/Logo.vue'
 import { setLocale, SUPPORTED_LOCALES, type Locale } from './i18n'
-import { defaultVariant } from './preferences'
+import { defaultVariant, primaryColor } from './preferences'
 import { useHead } from '@unhead/vue'
+
+// Lazy: it pulls in motion, which the rest of the shell doesn't need up front.
+const ThemeSwatches = defineAsyncComponent(() => import('./components/ThemeSwatches.vue'))
 
 const version = shallowRef(__VAEL_UI_VERSION__)
 
@@ -360,20 +351,6 @@ const mobileDockItems = computed<DockItemData[]>(() => [
     onSelect: () => window.open('https://github.com/Mini-Sylar/vael-ui', '_blank', 'noreferrer'),
   },
 ])
-
-// No accent by default. The library's own black/white palette is the
-// starting point. The picker is an opt-in accent, not a forced brand color.
-const primaryColor = shallowRef<string | null>(
-  typeof localStorage === 'undefined' ? null : localStorage.getItem('vael-ui-docs-primary'),
-)
-watch(primaryColor, (c) => {
-  if (typeof localStorage === 'undefined') return
-  if (c) localStorage.setItem('vael-ui-docs-primary', c)
-  else localStorage.removeItem('vael-ui-docs-primary')
-})
-const swatchColor = computed(
-  () => primaryColor.value ?? (resolvedMode.value === 'dark' ? '#fafafa' : '#18181b'),
-)
 
 const radiusItems = [
   { label: t('header.radiusDefault'), value: 'default' },
@@ -522,25 +499,6 @@ const theme = computed(() => ({
 
 .mobile-dock {
   display: none;
-}
-
-.color-swatch {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  border: 1px solid var(--ui-border);
-  overflow: hidden;
-  display: inline-flex;
-  cursor: pointer;
-}
-
-.color-swatch input[type='color'] {
-  width: 150%;
-  height: 150%;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transform: translate(-15%, -15%);
 }
 
 .theme-panel {

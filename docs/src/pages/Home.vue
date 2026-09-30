@@ -13,6 +13,10 @@
             {{ t('nav.github') }}
           </SplitButton>
         </div>
+        <div class="hero-theme">
+          <span class="hero-theme-label">{{ t('home.themeLabel') }}</span>
+          <ThemeSwatches />
+        </div>
       </div>
 
       <div class="hero-showcase" aria-hidden="true">
@@ -74,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Button, SplitButton } from 'vael-ui'
@@ -88,6 +92,9 @@ import {
   PhSparkle,
 } from '@phosphor-icons/vue'
 import DashboardHero from '../components/dashboard/DashboardHero.vue'
+
+// Lazy: it pulls in motion, which the rest of the page doesn't need up front.
+const ThemeSwatches = defineAsyncComponent(() => import('../components/ThemeSwatches.vue'))
 
 const { t } = useI18n()
 const router = useRouter()
@@ -159,6 +166,21 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   gap: 0.75rem;
   flex-wrap: wrap;
   margin-block-start: 0.5rem;
+}
+
+.hero-theme {
+  /* Holds the lazily loaded swatch row's height so nothing shifts when it lands. */
+  min-block-size: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-block-start: 0.75rem;
+}
+
+.hero-theme-label {
+  font-size: 0.8125rem;
+  color: var(--ui-text-muted);
 }
 
 .cta-link {
