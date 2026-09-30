@@ -17,7 +17,20 @@
       tabindex="-1"
     />
     <article class="component-page">
-      <p v-if="category" class="eyebrow">{{ category }}</p>
+      <div class="page-head">
+        <p class="eyebrow">{{ category }}</p>
+        <!-- Lets readers keep the previous layout if they prefer it. -->
+        <div class="layout-compare">
+          <span>Layout</span>
+          <SelectButton
+            v-model="layoutChoice"
+            size="sm"
+            :items="LAYOUT_ITEMS"
+            :allow-empty="false"
+            aria-label="Page layout"
+          />
+        </div>
+      </div>
       <h1>{{ name }}</h1>
       <p v-if="description" class="description">{{ description }}</p>
       <p v-if="note" class="page-note">{{ note }}</p>
@@ -100,11 +113,6 @@
       </section>
     </article>
     <OnThisPage :links="tocLinks" />
-    <!-- Lets readers keep the previous layout if they prefer it. -->
-    <div class="layout-compare">
-      <span>Layout</span>
-      <SelectButton v-model="layoutChoice" size="sm" :items="LAYOUT_ITEMS" :allow-empty="false" />
-    </div>
   </div>
   <p v-else>{{ t('component.notFound', { name }) }}</p>
 </template>
@@ -292,7 +300,8 @@ const tocLinks = computed(() => [
 <style scoped>
 .component-page-layout {
   display: grid;
-  grid-template-columns: minmax(0, 46rem) 1fr;
+  grid-template-columns: minmax(0, 46rem) 13rem;
+  justify-content: center;
   gap: 4rem;
   align-items: start;
 }
@@ -301,36 +310,39 @@ const tocLinks = computed(() => [
   min-width: 0;
 }
 
+/* Grows with the screen: the playground, examples and tables all use the
+   width, while running text keeps its own reading measure. */
 .component-page-layout--next {
-  grid-template-columns: minmax(0, 56rem) minmax(9rem, 1fr);
+  grid-template-columns: minmax(0, 1fr) 13rem;
+  max-inline-size: 124rem;
+  margin-inline: auto;
   gap: 3rem;
 }
 
-.layout-compare {
-  position: fixed;
-  inset-block-end: 1rem;
-  inset-inline-start: 50%;
-  translate: -50% 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.3125rem 0.3125rem 0.3125rem 0.875rem;
-  border-radius: 999px;
-  background: color-mix(in oklch, var(--ui-surface) 82%, transparent);
-  backdrop-filter: blur(16px) saturate(160%);
-  box-shadow:
-    0 0 0 1px var(--ui-border),
-    0 8px 24px rgb(0 0 0 / 0.1);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--ui-text-muted);
+.component-page-layout--next .description,
+.component-page-layout--next .page-note {
+  max-inline-size: 46rem;
 }
 
-@media (max-width: 850px) {
-  .layout-compare {
-    inset-block-end: 5.5rem;
-  }
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.page-head .eyebrow {
+  margin-bottom: 0;
+}
+
+.layout-compare {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ui-text-muted);
 }
 
 /* Pill all the way down: the sliding indicator reads its radius from this var. */

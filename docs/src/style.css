@@ -112,7 +112,9 @@
   :root {
     --docs-header-height: 3.75rem;
     --docs-sidebar-width: 15.5rem;
-    --docs-content-max-width: 46rem;
+    /* Pages center within the content area and grow to this; prose pages
+       keep a narrower reading column of their own. */
+    --docs-page-max: 140rem;
     /* Fixed, not var(--ui-radius) — a Pill radius would clamp our own boxes into ovals. */
     --docs-radius: 10px;
   }

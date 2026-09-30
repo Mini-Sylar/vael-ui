@@ -585,7 +585,6 @@ const theme = computed(() => ({
   flex: 1;
   min-width: 0;
   padding: 2.5rem 3.5rem 4rem;
-  max-width: 88rem;
 }
 
 @media (max-width: 850px) {

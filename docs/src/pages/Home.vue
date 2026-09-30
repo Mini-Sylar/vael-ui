@@ -200,6 +200,9 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   display: flex;
   flex-direction: column;
   gap: 5rem;
+  inline-size: 100%;
+  max-inline-size: var(--docs-page-max);
+  margin-inline: auto;
   padding-block-end: 3rem;
 }
 /* The glow behind the dashboard spills past the column; on a phone that
@@ -501,6 +504,25 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   gap: 0.75rem;
 }
 
+/* Big screens: the copy grows with the dashboard instead of staying a
+   narrow strip beside it. */
+@media (min-width: 1800px) {
+  .hero {
+    grid-template-columns: minmax(0, 32rem) minmax(0, 1fr);
+    gap: 3.5rem;
+  }
+  .headline {
+    font-size: 3.75rem;
+  }
+  .tagline {
+    font-size: 1.1875rem;
+    max-inline-size: 34rem;
+  }
+  .hero-showcase {
+    block-size: 38rem;
+  }
+}
+
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: minmax(0, 1fr);
@@ -511,12 +533,15 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
     block-size: 28rem;
   }
 
-  .features {
-    grid-template-columns: minmax(0, 1fr);
+  /* Stacked, the swatches sit right above the dashboard: keep the glow off
+     them, and fade it out before the edges so no square block shows. */
+  .showcase-backdrop {
+    inset: 0.75rem -1rem -1.25rem;
+    mask-image: radial-gradient(ellipse 70% 62% at 50% 50%, black 40%, transparent 100%);
   }
 
-  .feature--wide {
-    grid-column: auto;
+  .features {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .feature--wide {
