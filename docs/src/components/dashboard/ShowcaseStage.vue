@@ -180,13 +180,35 @@ const { pressed, visible } = useAutoplayCursor({
   /* Three hues from the theme color: itself, one 70° round the wheel and a
      lighter one 60° the other way, so the light mixes instead of sitting
      in a single flat hue. Info blue stands in until a color is picked. */
-  --halo-a: var(--docs-accent, var(--ui-info));
-  --halo-b: oklch(from var(--halo-a) l c calc(h + 70));
-  --halo-c: oklch(from var(--halo-a) calc(l + 0.08) c calc(h - 60));
+  --halo-hue: var(--docs-accent, var(--ui-info));
+  --halo-hue-b: oklch(from var(--halo-hue) l c calc(h + 70));
+  --halo-hue-c: oklch(from var(--halo-hue) calc(l + 0.08) c calc(h - 60));
+  /* Light mode: white rim and hues lifted toward white, so the halo reads as
+     light, not as tinted shadow. Dark mode uses them at full strength. */
+  --halo-a: color-mix(in oklch, var(--halo-hue) 60%, white);
+  --halo-b: color-mix(in oklch, var(--halo-hue-b) 60%, white);
+  --halo-c: color-mix(in oklch, var(--halo-hue-c) 60%, white);
+  --halo-rim: white;
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .halo {
+    --halo-a: var(--halo-hue);
+    --halo-b: var(--halo-hue-b);
+    --halo-c: var(--halo-hue-c);
+    --halo-rim: var(--ui-border);
+  }
+}
+
+:root[data-theme='dark'] .halo {
+  --halo-a: var(--halo-hue);
+  --halo-b: var(--halo-hue-b);
+  --halo-c: var(--halo-hue-c);
+  --halo-rim: var(--ui-border);
 }
 
 .halo-layer {
@@ -275,12 +297,12 @@ const { pressed, visible } = useAutoplayCursor({
 
 .halo-border::before {
   background: conic-gradient(
-    var(--ui-border),
+    var(--halo-rim),
     var(--halo-a) 5%,
-    var(--ui-border) 14%,
-    var(--ui-border) 50%,
+    var(--halo-rim) 14%,
+    var(--halo-rim) 50%,
     var(--halo-b) 60%,
-    var(--ui-border) 64%
+    var(--halo-rim) 64%
   );
 }
 

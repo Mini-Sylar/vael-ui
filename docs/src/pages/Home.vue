@@ -302,7 +302,25 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   }
 }
 
+/* An animated gradient border in the theme's hues (three derived from the
+   accent, info blue until one is picked), with a very small glow behind. */
+@property --border-angle {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@keyframes border-angle-rotate {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
 .news-pill {
+  --pill-a: var(--docs-accent, var(--ui-info));
+  --pill-b: oklch(from var(--pill-a) l c calc(h + 70));
+  --pill-c: oklch(from var(--pill-a) calc(l + 0.1) c calc(h - 60));
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -312,22 +330,69 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   font-size: 0.8125rem;
   color: var(--ui-text-muted);
   text-decoration: none;
-  background: var(--ui-surface);
-  box-shadow: 0 0 0 1px var(--ui-border);
-  transition:
-    color var(--ui-duration-press) var(--ui-ease-out),
-    box-shadow var(--ui-duration-press) var(--ui-ease-out);
+  transition: color var(--ui-duration-press) var(--ui-ease-out);
+}
+
+.news-pill::before,
+.news-pill::after {
+  content: '';
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.news-pill::before {
+  inset: 0;
+  z-index: 0;
+  background: conic-gradient(
+    from var(--border-angle),
+    var(--pill-a),
+    transparent,
+    var(--pill-b),
+    var(--pill-a)
+  );
+  filter: blur(4px);
+  opacity: 0.35;
+  animation: border-angle-rotate 6s linear infinite reverse;
+}
+
+.news-pill::after {
+  inset: -1px;
+  z-index: 1;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--ui-surface), var(--ui-surface)) padding-box,
+    conic-gradient(
+        from var(--border-angle),
+        var(--pill-c),
+        transparent,
+        var(--pill-a),
+        var(--pill-b),
+        var(--pill-c)
+      )
+      border-box;
+  animation: border-angle-rotate 3.5s linear infinite;
+}
+
+.news-pill > * {
+  position: relative;
+  z-index: 2;
 }
 
 .news-pill:hover {
   color: var(--ui-text);
-  box-shadow: 0 0 0 1px
-    color-mix(in oklch, var(--docs-accent, var(--ui-text)) 45%, var(--ui-border));
 }
 
 .news-pill:focus-visible {
   outline: 2px solid var(--ui-text);
   outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .news-pill::before,
+  .news-pill::after {
+    animation: none;
+  }
 }
 
 .news-pill-tag {
