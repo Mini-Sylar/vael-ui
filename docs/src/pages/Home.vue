@@ -184,6 +184,13 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   gap: 5rem;
   padding-block-end: 3rem;
 }
+/* The glow behind the dashboard spills past the column; on a phone that
+   would pan the page sideways. */
+@media (max-width: 48rem) {
+  .home {
+    overflow-x: clip;
+  }
+}
 
 .hero {
   position: relative;

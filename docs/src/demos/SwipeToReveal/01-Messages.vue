@@ -23,7 +23,7 @@
             <Avatar :name="message.from" size="sm" />
             <div class="swipe-body">
               <strong>{{ message.from }}</strong>
-              <p class="note swipe-preview">{{ message.preview }}</p>
+              <p class="swipe-preview">{{ message.preview }}</p>
             </div>
             <Button
               v-if="message.showMenuButton"
@@ -39,7 +39,7 @@
         </SwipeToReveal>
       </li>
     </ul>
-    <p class="note">
+    <p class="swipe-status">
       Last change: <strong>{{ lastChange ?? 'none yet' }}</strong>
     </p>
   </section>
@@ -119,6 +119,8 @@ function remove(id: string, close: () => void) {
   flex: 1;
 }
 .swipe-preview {
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -134,5 +136,10 @@ function remove(id: string, close: () => void) {
 .swipe-actions :deep(.ui-button) {
   border-radius: 0;
   inline-size: 5.5rem;
+  block-size: auto;
+}
+.swipe-status {
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
 }
 </style>

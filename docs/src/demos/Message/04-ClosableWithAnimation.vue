@@ -18,13 +18,12 @@
     </div>
     <div class="message-stack">
       <Message
-        v-if="showDeployMessage"
+        v-model:open="showDeployMessage"
         ref="deployMessageRef"
         title="Deploy finished"
         variant="success"
         closable
         :before-close="onDeployBeforeClose"
-        @open-change="() => (showDeployMessage = false)"
       >
         Your build finished successfully.
       </Message>

@@ -29,13 +29,13 @@
             <Avatar :name="row.from" size="sm" />
             <div class="swipe-body">
               <strong>{{ row.from }}</strong>
-              <p class="note swipe-preview">{{ row.preview }}</p>
+              <p class="swipe-preview">{{ row.preview }}</p>
             </div>
           </div>
         </SwipeToReveal>
       </li>
     </ul>
-    <p class="note">
+    <p class="swipe-status">
       Last change: <strong>{{ lastChange ?? 'none yet' }}</strong>
     </p>
   </section>
@@ -81,6 +81,8 @@ const lastChange = shallowRef<string | null>(null)
   flex: 1;
 }
 .swipe-preview {
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -96,5 +98,10 @@ const lastChange = shallowRef<string | null>(null)
 .swipe-actions :deep(.ui-button) {
   border-radius: 0;
   inline-size: 5.5rem;
+  block-size: auto;
+}
+.swipe-status {
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
 }
 </style>

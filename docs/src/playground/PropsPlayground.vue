@@ -318,7 +318,9 @@
               :key="`${resetKey}-default`"
               v-bind="boundProps"
               @update:model-value="onModelUpdate"
-            />
+            >
+              <template v-if="sampleSlotText" #default>{{ sampleSlotText }}</template>
+            </component>
             <component
               v-else
               :is="activeComponent"
@@ -634,6 +636,15 @@ const DATATABLE_PLACEHOLDER_ROWS = [
 // Any default-slot content here overrides their own computed fallback (Avatar's initials, Badge's count, ...).
 const NO_DEFAULT_SLOT = ['Avatar', 'Badge', 'Chip', 'Checkbox', 'Switch']
 const suppressDefaultSlot = computed(() => NO_DEFAULT_SLOT.includes(props.name))
+
+// Slot-only components have no label prop, so without this they preview empty.
+const SAMPLE_SLOT_TEXT: Record<string, string> = {
+  Button: 'Button',
+  Card: 'Card content',
+  Tag: 'Tag',
+  Kbd: '⌘K',
+}
+const sampleSlotText = computed(() => SAMPLE_SLOT_TEXT[props.name])
 
 const openModelValue = shallowRef(false)
 const radioGroupValue = shallowRef<string | number | null>(null)
