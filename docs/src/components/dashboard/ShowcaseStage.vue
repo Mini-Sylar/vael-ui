@@ -1,194 +1,177 @@
 <template>
-  <div ref="stage" class="showcase-stage" @pointermove="onPointerMove" @pointerleave="resetTilt">
-    <DashboardHero class="stage-dashboard" />
-
-    <!-- Live vael-ui components floating over the dashboard's edges. -->
-    <div class="float float--settings" style="--depth: 1.4">
-      <p class="float-title">Notifications</p>
-      <label class="float-row">
-        <span>Email alerts</span>
-        <Switch v-model="emailAlerts" size="sm" />
-      </label>
-      <label class="float-row">
-        <span>Weekly digest</span>
-        <Switch v-model="weeklyDigest" size="sm" />
-      </label>
-    </div>
-
-    <div class="float float--menu" style="--depth: 1.8">
-      <p class="float-title">Status</p>
-      <MenuList :items="statusItems" :active="status" @select="onStatusSelect" />
-    </div>
-
-    <div class="float float--toast" style="--depth: 2.2">
-      <Message variant="success" title="Export ready">orders-2026.csv, 128 rows</Message>
+  <div
+    ref="stage"
+    class="showcase-stage"
+    @pointerenter="onPointerEnter"
+    @pointerleave="onPointerLeave"
+    @pointerdown="onTouch"
+  >
+    <DashboardHero />
+    <div
+      ref="cursor"
+      class="auto-cursor"
+      :data-visible="visible || undefined"
+      :data-pressed="pressed || undefined"
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path
+          d="M4.5 3.2 19.3 11c.8.4.7 1.5-.1 1.8l-6 1.9-2.7 5.7c-.4.8-1.5.7-1.8-.1L4 4.3c-.2-.7.4-1.3 1-1.1Z"
+          fill="#111"
+          stroke="#fff"
+          stroke-width="1.6"
+          stroke-linejoin="round"
+        />
+      </svg>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { shallowRef, useTemplateRef } from 'vue'
-import { MenuList, Message, Switch } from 'vael-ui'
-import type { MenuListItemData } from 'vael-ui'
+import { computed, onBeforeUnmount, onMounted, shallowRef, useTemplateRef } from 'vue'
 import DashboardHero from './DashboardHero.vue'
+import { useLiveCard } from '../home/useLiveCard'
+import { useAutoplayCursor } from './useAutoplayCursor'
 
-const emailAlerts = shallowRef(true)
-const weeklyDigest = shallowRef(false)
-const status = shallowRef<string | number>('paid')
-const statusItems: MenuListItemData[] = [
-  { label: 'Paid', value: 'paid' },
-  { label: 'Pending', value: 'pending' },
-  { label: 'Refunded', value: 'refunded' },
-]
-function onStatusSelect(item: MenuListItemData) {
-  if (item.value !== undefined) status.value = item.value
-}
-
-// The floats drift a few pixels against the pointer, each by its own
-// --depth, so the stage reads as layered. rAF-throttled; off under reduced
-// motion (the CSS ignores --px/--py there).
 const stage = useTemplateRef<HTMLElement>('stage')
-let frame = 0
-function onPointerMove(event: PointerEvent) {
-  if (event.pointerType !== 'mouse' || frame) return
-  frame = requestAnimationFrame(() => {
-    frame = 0
-    const el = stage.value
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    el.style.setProperty('--px', ((event.clientX - rect.left) / rect.width - 0.5).toFixed(3))
-    el.style.setProperty('--py', ((event.clientY - rect.top) / rect.height - 0.5).toFixed(3))
-  })
+const cursor = useTemplateRef<HTMLElement>('cursor')
+const { active } = useLiveCard(stage)
+
+// Autoplay hands over the moment you reach for the dashboard, waits while
+// you type anywhere, and never runs while something outside the stage has
+// focus (opening the palette would move it).
+const userHere = shallowRef(false)
+const typingPause = shallowRef(false)
+const focusElsewhere = shallowRef(false)
+let resumeTimer: ReturnType<typeof setTimeout> | undefined
+let typingTimer: ReturnType<typeof setTimeout> | undefined
+
+function onPointerEnter(event: PointerEvent) {
+  if (event.pointerType !== 'mouse') return
+  clearTimeout(resumeTimer)
+  userHere.value = true
 }
-function resetTilt() {
-  stage.value?.style.setProperty('--px', '0')
-  stage.value?.style.setProperty('--py', '0')
+function onPointerLeave() {
+  clearTimeout(resumeTimer)
+  resumeTimer = setTimeout(() => (userHere.value = false), 4000)
 }
+// Touch has no hover, so a tap is what hands over; it resumes after the same
+// idle wait.
+function onTouch(event: PointerEvent) {
+  if (!event.isTrusted || event.pointerType === 'mouse') return
+  userHere.value = true
+  onPointerLeave()
+}
+function onKeydown(event: KeyboardEvent) {
+  if (!event.isTrusted) return
+  typingPause.value = true
+  clearTimeout(typingTimer)
+  typingTimer = setTimeout(() => (typingPause.value = false), 8000)
+}
+function onFocusChange() {
+  const focused = document.activeElement
+  focusElsewhere.value = !!focused && focused !== document.body && !stage.value?.contains(focused)
+}
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown, true)
+  document.addEventListener('focusin', onFocusChange)
+  document.addEventListener('focusout', onFocusChange)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown, true)
+  document.removeEventListener('focusin', onFocusChange)
+  document.removeEventListener('focusout', onFocusChange)
+  clearTimeout(resumeTimer)
+  clearTimeout(typingTimer)
+})
+
+const enabled = computed(
+  () => active.value && !userHere.value && !typingPause.value && !focusElsewhere.value,
+)
+
+const q = (selector: string) => () => stage.value?.querySelector(selector)
+const byText = (selector: string, text: string) => () =>
+  [...(stage.value?.querySelectorAll(selector) ?? [])].find((el) =>
+    el.textContent?.trim().startsWith(text),
+  )
+
+// The Combobox's option list is teleported to <body>, outside the stage.
+const optionByText = (text: () => string) => () =>
+  [...document.querySelectorAll('[role="option"]')].find((el) => el.textContent?.trim() === text())
+
+// Each loop filters by the next segment, so a repeat viewer sees the table
+// change rather than an already-filtered one.
+const SEGMENTS = ['Enterprise', 'Growth', 'Starter']
+let loop = -1
+
+// Back to a known state: palette closed, sidebar expanded, Overview showing.
+function reset() {
+  loop++
+  const root = stage.value
+  if (!root) return
+  root
+    .querySelector('.ui-command-palette-input')
+    ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+  const collapse = root.querySelector<HTMLElement>('.dash-collapse-btn')
+  if (collapse?.getAttribute('aria-expanded') === 'false') collapse.click()
+  const overview = byText('.ui-menu-list-item', 'Overview')()
+  if (overview && overview.getAttribute('aria-current') !== 'page')
+    (overview as HTMLElement).click()
+}
+
+const { pressed, visible } = useAutoplayCursor({
+  stage,
+  cursor,
+  enabled: () => enabled.value,
+  reset,
+  steps: [
+    { rest: 700 },
+    { to: q('#dash-search-trigger'), click: true, rest: 450 },
+    { to: q('.ui-command-palette-input'), type: 'cust', rest: 450 },
+    { to: q('.ui-command-palette-item[data-active]'), click: true, rest: 1000 },
+    { to: byText('.ui-datatable-sort-button', 'Customer'), click: true, rest: 900 },
+    { to: q('input[placeholder^="Filter by segment"]'), click: true, rest: 600 },
+    { to: optionByText(() => SEGMENTS[loop % SEGMENTS.length]!), click: true, rest: 1600 },
+    { to: q('.dash-collapse-btn'), click: true, rest: 1000 },
+    { to: q('.dash-collapse-btn'), click: true, rest: 700 },
+    { to: byText('.ui-menu-list-item', 'Overview'), click: true, rest: 2600 },
+  ],
+})
 </script>
 
 <style scoped>
 .showcase-stage {
-  --px: 0;
-  --py: 0;
   position: relative;
   block-size: 100%;
-  /* Room for the floats to overhang the dashboard. */
-  padding: 1.75rem 1.5rem 2.5rem 2.5rem;
 }
 
-.stage-dashboard {
+.showcase-stage > :first-child {
   block-size: 100%;
 }
 
-.float {
+.auto-cursor {
   position: absolute;
-  z-index: 2;
-  padding: 0.75rem;
-  border-radius: 12px;
-  background: color-mix(in oklch, var(--ui-surface) 88%, transparent);
-  backdrop-filter: blur(10px) saturate(1.4);
-  box-shadow:
-    0 0 0 1px var(--ui-border),
-    0 2px 4px color-mix(in oklch, black 5%, transparent),
-    0 16px 32px -12px color-mix(in oklch, black 28%, transparent);
-  font-size: 0.8125rem;
-  transform: translate(
-    calc(var(--px) * var(--depth) * -10px),
-    calc(var(--py) * var(--depth) * -10px)
-  );
-  transition: transform 400ms var(--ui-ease-out);
-}
-
-.float-title {
-  margin: 0 0 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ui-text-muted);
-}
-
-.float-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding-block: 0.25rem;
-  cursor: pointer;
-}
-
-.float--settings {
-  inset-block-start: 40%;
+  inset-block-start: 0;
   inset-inline-start: 0;
-  inline-size: 12.5rem;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.25));
+  transition: opacity 300ms var(--ui-ease-out);
+  will-change: transform;
 }
 
-.float--menu {
-  inset-block-start: 38%;
-  inset-inline-end: -0.5rem;
-  inline-size: 10.5rem;
+.auto-cursor[data-visible] {
+  opacity: 1;
 }
 
-.float--menu :deep(.ui-menu-list) {
-  padding: 0;
+.auto-cursor svg {
+  display: block;
+  transform-origin: 4px 3px;
+  transition: scale 110ms var(--ui-ease-out);
 }
 
-.float--toast {
-  inset-block-end: 0;
-  inset-inline-start: 1rem;
-  inline-size: 17rem;
-  padding: 0;
-  background: none;
-  backdrop-filter: none;
-  box-shadow: none;
-}
-
-.float--toast :deep(.ui-message) {
-  box-shadow:
-    0 0 0 1px var(--ui-border),
-    0 16px 32px -12px color-mix(in oklch, black 28%, transparent);
-}
-
-/* The floats land once, after the dashboard, lightest layer first. */
-@media (prefers-reduced-motion: no-preference) {
-  .float {
-    animation: float-in 600ms var(--ui-ease-out) both;
-  }
-
-  .float--settings {
-    animation-delay: 380ms;
-  }
-
-  .float--menu {
-    animation-delay: 480ms;
-  }
-
-  .float--toast {
-    animation-delay: 580ms;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .float {
-    transform: none;
-  }
-}
-
-@keyframes float-in {
-  from {
-    opacity: 0;
-    translate: 0 10px;
-    scale: 0.97;
-  }
-}
-
-@media (max-width: 900px) {
-  .showcase-stage {
-    padding: 0;
-  }
-
-  .float {
-    display: none;
-  }
+.auto-cursor[data-pressed] svg {
+  scale: 0.9;
 }
 </style>
