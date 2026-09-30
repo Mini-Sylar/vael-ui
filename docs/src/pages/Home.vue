@@ -8,7 +8,12 @@
           <PhArrowRight :size="12" aria-hidden="true" />
         </a>
         <p class="eyebrow">{{ t('home.eyebrow') }}</p>
-        <h1 class="headline">{{ t('home.headline') }}</h1>
+        <h1 class="headline">
+          {{ headline.before
+          }}<span v-if="headline.word" class="headline-nowrap"
+            ><VaporWord :text="headline.word" />{{ headline.glued }}</span
+          >{{ headline.after }}
+        </h1>
         <p class="tagline">{{ t('home.tagline') }}</p>
         <div class="hero-actions">
           <RouterLink to="/docs/getting-started" class="cta-link">
@@ -128,6 +133,7 @@ import ShowcaseStage from '../components/dashboard/ShowcaseStage.vue'
 import DitherBackground from '../components/DitherBackground.vue'
 import FeatureCard from '../components/home/FeatureCard.vue'
 import VaporVisual from '../components/home/VaporVisual.vue'
+import VaporWord from '../components/home/VaporWord.vue'
 import AnimationVisual from '../components/home/AnimationVisual.vue'
 import I18nVisual from '../components/home/I18nVisual.vue'
 import PrimitivesVisual from '../components/home/PrimitivesVisual.vue'
@@ -137,6 +143,18 @@ import TerminalVisual from '../components/home/TerminalVisual.vue'
 const ThemeSwatches = defineAsyncComponent(() => import('../components/ThemeSwatches.vue'))
 
 const { t } = useI18n()
+
+// The last "Vapor" in the headline gets the steam treatment; in every locale
+// that's the one about compiling straight to it.
+// Punctuation right after the word stays on its line.
+const headline = computed(() => {
+  const text = t('home.headline')
+  const at = text.lastIndexOf('Vapor')
+  if (at === -1) return { before: text, word: '', glued: '', after: '' }
+  const rest = text.slice(at + 'Vapor'.length)
+  const glued = rest.match(/^[^\s]*/)![0]
+  return { before: text.slice(0, at), word: 'Vapor', glued, after: rest.slice(glued.length) }
+})
 
 const CHANGELOG_URL = 'https://github.com/Mini-Sylar/vael-ui/blob/main/packages/ui/CHANGELOG.md'
 
@@ -218,6 +236,9 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   color: var(--ui-primary);
 }
 
+.headline-nowrap {
+  white-space: nowrap;
+}
 .headline {
   margin: 0;
   font-size: clamp(2.25rem, 4vw, 3rem);

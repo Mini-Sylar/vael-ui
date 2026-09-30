@@ -31,18 +31,28 @@
             v-else-if="stat.sparkline"
             class="dash-stat-spark"
             :class="`dash-stat-spark--${stat.trendVariant}`"
-            viewBox="0 0 100 22"
+            :style="{ '--spark-delay': `${reduce ? 0 : 0.2 + i * 0.06}s` }"
+            :viewBox="`0 0 ${SPARK_W} ${SPARK_H}`"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
-            <circle
-              v-for="(dot, i) in ditheredSparkline(stat.sparkline)"
-              :key="i"
-              :cx="dot.x"
-              :cy="dot.y"
-              :r="dot.r"
-              :fill-opacity="dot.o"
-              fill="currentColor"
+            <defs>
+              <linearGradient :id="`spark-fill-${i}`" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="currentColor" stop-opacity="0.22" />
+                <stop offset="100%" stop-color="currentColor" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <path :d="sparkPaths(stat.sparkline).area" :fill="`url(#spark-fill-${i})`" />
+            <path
+              :d="sparkPaths(stat.sparkline).line"
+              class="dash-stat-spark-line"
+              vector-effect="non-scaling-stroke"
+            />
+            <!-- A zero-length round-capped stroke stays a true circle under the stretched viewBox. -->
+            <path
+              :d="sparkPaths(stat.sparkline).end"
+              class="dash-stat-spark-end"
+              vector-effect="non-scaling-stroke"
             />
           </svg>
         </Card>
@@ -127,42 +137,43 @@ function formatStat(stat: StatDef): string {
 }
 
 // Deterministic (no Math.random — this page SSRs) pseudo-random hash.
-function hash(n: number): number {
-  const x = Math.sin(n * 12.9898) * 43758.5453
-  return x - Math.floor(x)
+const SPARK_W = 100
+const SPARK_H = 24
+// Leaves room for the stroke and end dot at the top and bottom edges.
+const SPARK_PAD = 3
+
+interface SparkPaths {
+  line: string
+  area: string
+  end: string
 }
 
-interface SparkDot {
-  x: number
-  y: number
-  r: number
-  o: number
-}
-
-// Dithering = varying dot size/opacity, not scattering position (jitter reads as noise).
-function ditheredSparkline(values: number[]): SparkDot[] {
-  const width = 100
-  const height = 20
-  const dotsPerSegment = 3
-  const dots: SparkDot[] = []
-  let seed = 0
-  for (let i = 0; i < values.length - 1; i++) {
-    const x0 = (i / (values.length - 1)) * width
-    const x1 = ((i + 1) / (values.length - 1)) * width
-    const y0 = height - values[i]! * height
-    const y1 = height - values[i + 1]! * height
-    for (let j = 0; j < dotsPerSegment; j++) {
-      const t = j / dotsPerSegment
-      seed++
-      dots.push({
-        x: x0 + (x1 - x0) * t,
-        y: y0 + (y1 - y0) * t,
-        r: 0.7 + hash(seed) * 0.5,
-        o: 0.55 + hash(seed + 150) * 0.4,
-      })
-    }
+// Monotone cubic interpolation (Fritsch–Carlson): smooth, but never overshoots
+// the data the way a plain Catmull-Rom curve does between close points.
+function sparkPaths(values: number[]): SparkPaths {
+  const n = values.length
+  const xs = values.map((_, i) => (i / (n - 1)) * SPARK_W)
+  // Each series fills the chart's height, whatever its range.
+  const min = Math.min(...values)
+  const range = Math.max(...values) - min || 1
+  const ys = values.map((v) => SPARK_PAD + (1 - (v - min) / range) * (SPARK_H - SPARK_PAD * 2))
+  const slopes: number[] = []
+  for (let i = 0; i < n - 1; i++) slopes.push((ys[i + 1]! - ys[i]!) / (xs[i + 1]! - xs[i]!))
+  const tangents = values.map((_, i) => {
+    if (i === 0) return slopes[0]!
+    if (i === n - 1) return slopes[n - 2]!
+    const a = slopes[i - 1]!
+    const b = slopes[i]!
+    return a * b <= 0 ? 0 : (2 * a * b) / (a + b)
+  })
+  let line = `M${xs[0]},${ys[0]}`
+  for (let i = 0; i < n - 1; i++) {
+    const dx = (xs[i + 1]! - xs[i]!) / 3
+    line += ` C${xs[i]! + dx},${ys[i]! + tangents[i]! * dx} ${xs[i + 1]! - dx},${ys[i + 1]! - tangents[i + 1]! * dx} ${xs[i + 1]},${ys[i + 1]}`
   }
-  return dots
+  const area = `${line} L${SPARK_W},${SPARK_H} L0,${SPARK_H} Z`
+  const end = `M${xs[n - 1]},${ys[n - 1]} h0`
+  return { line, area, end }
 }
 </script>
 
@@ -221,8 +232,36 @@ function ditheredSparkline(values: number[]): SparkDot[] {
 
 .dash-stat-spark {
   inline-size: 100%;
-  block-size: 1.375rem;
+  block-size: 1.5rem;
   overflow: visible;
+  /* Draws in left to right once, as its card lands. */
+  animation: dash-spark-reveal 700ms var(--ui-ease-out) var(--spark-delay, 0s) both;
+}
+.dash-stat-spark-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dash-stat-spark-end {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+@keyframes dash-spark-reveal {
+  from {
+    clip-path: inset(-4px 100% -4px -4px);
+  }
+  to {
+    clip-path: inset(-4px -4px -4px -4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-stat-spark {
+    animation: none;
+  }
 }
 .dash-stat-spark--success {
   color: var(--ui-success);

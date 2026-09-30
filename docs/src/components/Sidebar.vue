@@ -280,6 +280,8 @@ onMounted(() => {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  /* Hitting the end of the nav shouldn't start scrolling the page behind it. */
+  overscroll-behavior: contain;
   padding: 1.25rem 1rem;
 }
 
