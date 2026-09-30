@@ -55,41 +55,40 @@ export type PopoverAlign = Align
 type TriggerRef = HTMLElement | { el: HTMLElement | null } | null | undefined
 
 export interface PopoverProps {
-  /** External ref (raw element or component with `.el`); use #trigger slot if the trigger can live here. */
+  /** External trigger ref: a raw element or a component that exposes `el`. Use `#trigger` if the trigger can live here. */
   triggerEl?: TriggerRef
-  /** Which side of the trigger the panel opens on. */
+  /** Which side of the trigger the panel opens on. @default 'bottom' */
   side?: PopoverSide
-  /** How the panel aligns against the trigger along that side. */
+  /** How the panel aligns against the trigger along that side. @default 'center' */
   align?: PopoverAlign
-  /** Gap between the trigger and the panel, in pixels. */
+  /** Gap between the trigger and the panel, in pixels. @default 8 */
   sideOffset?: number
-  /** Shifts the panel along the alignment axis, in pixels. */
+  /** Shifts the panel along the alignment axis, in pixels. @default 0 */
   alignOffset?: number
-  /** Escape key closes the panel. */
+  /** Escape key closes the panel. @default true */
   closeOnEsc?: boolean
-  /** Clicking outside the panel closes it. */
+  /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
+  /** Custom exit animation; call `done()` to finish closing. */
   beforeClose?: (done: () => void) => void
-  /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
+  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
-  /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. Wins over `container` either way. */
+  /** Teleport target: a CSS selector or element. Wins over `container` either way. */
   teleportTo?: string | HTMLElement
-  /**
-   * Scopes the popover to one element: it teleports there instead of `body`, positions
-   * against it, and Escape-key ownership is scoped to it too, so it doesn't contend with
-   * page-level layers. Omit for a page-level popover.
-   */
+  /** Scopes the popover to an element. It teleports there instead of `body`, and its Escape handling
+   * stays within it. Omit it for a page-level popover. */
   container?: DOMTarget
-  /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
-  scrollFade?: boolean
   /**
-   * When true, Popover manages opening itself — clicking the `#trigger` slot toggles `open` and
-   * the trigger element is auto-resolved for positioning, matching Menu's contract. Default
-   * `false` keeps the original positioning-only contract (drive `open`/`setTriggerEl` yourself).
+   * Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more.
+   * @default true
+   */
+  scrollFade?: boolean
+  /** Clicking the `#trigger` slot toggles `open`, and the popover finds the trigger element itself
+   * (no `setTriggerEl` needed). Otherwise you drive `open` yourself.
+   * @default false
    */
   openOnTriggerClick?: boolean
-  /** Per-instance part-class/style overrides. */
+  /** Class and style overrides for each part. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -114,7 +113,7 @@ import { vScrollMask } from '../../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
 
-/** Whether the popover is open. */
+/** Whether the popover is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<PopoverProps>(), {
@@ -130,10 +129,12 @@ const props = withDefaults(defineProps<PopoverProps>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
 }>()
 
 defineSlots<{
+  /** Panel content; receives `close`, `open`, `isClosing`, `cancelClose`, `panelEl` and `placement`. */
   default(props: {
     close: () => void
     open: boolean
@@ -142,7 +143,8 @@ defineSlots<{
     panelEl: HTMLElement | null
     placement: string
   }): unknown
-  /** Co-located trigger markup — bind `:ref="setTriggerEl"` on whatever you render here. By default Popover only positions against it: clicking does nothing until you drive `open`/`@update:open` yourself. Pass `openOnTriggerClick` to get Menu's fully-managed contract instead (click-to-toggle, no manual ref needed). */
+  /** Trigger markup; bind `:ref="setTriggerEl"` to position against it. Clicking it does nothing
+   * unless you set `openOnTriggerClick`. */
   trigger(props: {
     open: boolean
     setTriggerEl: (el: Element | ComponentPublicInstance<any> | null) => void
@@ -255,5 +257,20 @@ const resolvedAlign = computed<PopoverAlign>(() => {
 })
 
 // Expose placement/positionerStyle reactively for anchored companion visuals (arrows, connectors).
-defineExpose({ panelEl, positionerEl, placement, positionerStyle, isClosing, close, cancelClose })
+defineExpose({
+  /** Panel element (`null` while closed). */
+  panelEl,
+  /** Positioning wrapper around the panel (`null` while closed). */
+  positionerEl,
+  /** Resolved placement after flipping, e.g. `'bottom-start'`. */
+  placement,
+  /** Computed position styles applied to the positioner. */
+  positionerStyle,
+  /** `true` while a `beforeClose` close is pending. */
+  isClosing,
+  /** Closes the panel, running `@open-change` and `beforeClose` first. */
+  close,
+  /** Cancels a close pending in `beforeClose` and keeps the panel open. */
+  cancelClose,
+})
 </script>

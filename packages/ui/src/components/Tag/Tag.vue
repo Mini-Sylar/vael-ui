@@ -21,18 +21,22 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Color variant. @default 'muted' */
     variant?: 'primary' | 'muted' | 'success' | 'warning' | 'danger' | 'info'
+    /** Text size and padding. @default 'md' */
     size?: 'sm' | 'md'
-    /** Fully pill-rounded instead of the default small label corners. */
+    /** Fully pill-rounded instead of the default small label corners. @default false */
     pill?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; icon: UiPartValue; label: UiPartValue }>
   }>(),
   { variant: 'muted', size: 'md', pill: false },
 )
 
 defineSlots<{
+  /** Tag label. */
   default(): unknown
-  /** A small leading glyph (a dot, a checkmark) — sized to match the text, not a full icon box. */
+  /** Small leading glyph, such as a dot or checkmark, sized to match the text rather than a full icon box. */
   icon(): unknown
 }>()
 
@@ -55,5 +59,8 @@ const rootPart = computed(() =>
 const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-tag-icon'))
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-tag-label'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

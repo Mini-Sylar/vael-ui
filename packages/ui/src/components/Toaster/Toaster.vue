@@ -116,14 +116,17 @@ const SWIPE_EXIT_MS = 200
 
 const props = withDefaults(
   defineProps<{
+    /** Screen corner or edge the toasts stack from. @default 'bottom-right' */
     position?: ToasterPosition
-    /** Max toasts shown at once; extras queue until visible slots free. */
+    /** Max toasts shown at once; extras queue until visible slots free. @default 4 */
     maxVisible?: number
-    /** Spacing between stacked cards, px. */
+    /** Spacing between stacked cards, in pixels. @default 10 */
     gap?: number
+    /** CSS selector to teleport the toast stack to. @default 'body' */
     teleportTo?: string
-    /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. */
+    /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       toast: UiPartValue
@@ -139,7 +142,10 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when a toast enters, only while `motionCss` is `false`. Run your own animation, then call
+   * `done()`. */
   'card-enter': [el: Element, done: () => void]
+  /** Same as `@card-enter`, for a toast leaving. */
   'card-leave': [el: Element, done: () => void]
 }>()
 
@@ -151,7 +157,7 @@ const leaveHook = computed(() =>
 )
 
 defineSlots<{
-  /** Replaces a card's entire inner markup. The library still owns the <li> itself (position/stacking/swipe). */
+  /** Replaces a toast's inner markup; the toaster still handles its positioning, stacking and swipe. */
   default(props: {
     entry: ToastEntry
     dismiss: () => void
@@ -408,5 +414,8 @@ watch(
 const visibility = useDocumentVisibility()
 watch(visibility, (visibilityState) => (visibilityState === 'hidden' ? pauseAll() : resumeAll()))
 
-defineExpose({ toasterEl })
+defineExpose({
+  /** Toast list (root) element. */
+  toasterEl,
+})
 </script>

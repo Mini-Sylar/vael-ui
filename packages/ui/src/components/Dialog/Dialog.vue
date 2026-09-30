@@ -124,54 +124,66 @@ export type DialogPosition = 'center' | 'top' | 'bottom' | 'left' | 'right'
 
 /** Exported so `useDialogService`'s `openDialog()` can forward the same options without duplicating them. */
 export interface DialogProps {
-  /** Renders the default header and wires aria-labelledby automatically. */
+  /** Renders the default header and wires `aria-labelledby` automatically. */
   title?: string
-  /** Muted line under the title; wires aria-describedby automatically. */
+  /** Muted line under the title; wires `aria-describedby` automatically. */
   description?: string
-  /** Panel width: sm 22rem / md 28rem / lg 38rem. */
+  /** Panel width: `'sm'` is 22rem, `'md'` is 28rem, `'lg'` is 38rem. @default 'md' */
   size?: DialogSize
-  /** Where the panel anchors in the viewport. */
+  /** Where the panel anchors in the viewport. @default 'center' */
   position?: DialogPosition
-  /** `alertdialog` for urgent messages requiring a response (e.g. confirmations) — announced more assertively by screen readers. */
+  /**
+   * Use `'alertdialog'` for urgent messages that need a response, such as confirmations. Screen readers announce it more assertively.
+   * @default 'dialog'
+   */
   role?: 'dialog' | 'alertdialog'
-  /** Custom initial focus; return null/undefined to use default (first focusable). */
+  /** Returns the element to focus on open; return `null` or `undefined` to focus the first focusable element. */
   initialFocus?: () => HTMLElement | null | undefined
-  /** Hide the built-in × when the footer carries the only sensible actions. */
+  /** Shows the built-in close button (×). Hide it when the footer carries the only sensible actions. @default true */
   showClose?: boolean
-  /** `false` disables overlay, scroll lock, and focus trap. Escape-close and layer stacking still apply. */
+  /**
+   * `false` disables the overlay, scroll lock and focus trap. Escape-close and layer stacking still apply.
+   * @default true
+   */
   modal?: boolean
-  /** `true` removes edge padding; `top`/`bottom` panels sit flush to the viewport edge instead of floating. */
+  /**
+   * `true` removes edge padding; `top`/`bottom` panels sit flush to the viewport edge instead of floating.
+   * @default false
+   */
   flush?: boolean
-  /** Escape key closes the panel. */
+  /** Escape key closes the panel. @default true */
   closeOnEsc?: boolean
-  /** Clicking the overlay closes the panel. No-op when `modal` is false (no overlay to click). */
+  /**
+   * Clicking the overlay closes the panel. Has no effect when `modal` is `false` (no overlay to click).
+   * @default true
+   */
   closeOnOverlay?: boolean
-  /** Pushes a history entry on open so the mobile hardware/gesture back action closes this panel instead of navigating the page away, popping that entry again on any other close path. Default false — opt in per instance. */
+  /**
+   * The browser or mobile back action closes the panel instead of leaving the page.
+   * Opening pushes a history entry, and any other close removes it.
+   * @default false
+   */
   closeOnHistoryBack?: boolean
-  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
+  /** Custom exit animation; call `done()` to finish closing. */
   beforeClose?: (done: () => void) => void
-  /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
+  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
-  /** Teleport target for the panel/overlay. */
+  /** Teleport target: a CSS selector. Wins over `container` either way. */
   teleportTo?: string
-  /**
-   * Scopes the dialog to one element instead of the viewport: the overlay dims only
-   * that box, scroll lock and modality apply only inside it, and the rest of the page
-   * stays interactive. Also becomes the teleport target unless `teleportTo` is set.
-   * Given a positioning context automatically if it doesn't already have one.
-   */
+  /** Scopes the panel to an element instead of the viewport. The overlay, scroll lock and modality
+   * apply only inside it. It's also the teleport target unless you set `teleportTo`. */
   container?: DOMTarget
-  /**
-   * Element whose scrolling is locked while open. Defaults to `container`.
-   * Pass the inner scroller when the container itself doesn't scroll - an
-   * absolutely-positioned panel scrolls away with its container's content.
-   */
+  /** Element to scroll-lock while open. Defaults to `container`; pass the inner scroller
+   * when the container itself doesn't scroll. */
   scrollTarget?: DOMTarget
-  /** Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more. */
+  /**
+   * Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more.
+   * @default true
+   */
   scrollFade?: boolean
-  /** Adds a maximize/restore toggle to the header, filling the viewport when active. */
+  /** Adds a maximize/restore toggle to the header, filling the viewport when active. @default false */
   maximizable?: boolean
-  /** Per-instance part-class/style overrides. */
+  /** Class and style overrides for each part. */
   ui?: Partial<{
     overlay: UiPartValue
     panel: UiPartValue
@@ -202,9 +214,12 @@ import { vScrollMask } from '../../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
 
-/** Whether the dialog is open. */
+/** Whether the dialog is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
-/** Whether the panel currently fills the viewport. Self-managed by the built-in toggle unless the consumer binds it. */
+/**
+ * Whether the panel fills the viewport. The built-in toggle manages it unless you bind `v-model:maximized`.
+ * @default false
+ */
 const maximized = defineModel<boolean>('maximized', { default: false })
 
 const props = withDefaults(defineProps<DialogProps>(), {
@@ -223,10 +238,12 @@ const props = withDefaults(defineProps<DialogProps>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires when a close is requested; call `details.cancel()` to keep the dialog open. */
   'open-change': [value: boolean, details: DialogOpenChangeDetails]
 }>()
 
 defineSlots<{
+  /** Body content; receives `close`, `open`, `isClosing`, `cancelClose` and `panelEl`. */
   default(props: {
     close: () => void
     open: boolean
@@ -414,5 +431,16 @@ const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-dialog-b
 const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-dialog-footer'))
 const maximizePart = computed(() => resolveUiPart(cx, themedUi()?.maximize, 'ui-dialog-maximize'))
 const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-dialog-close'))
-defineExpose({ panelEl, isClosing, close, cancelClose, maximized })
+defineExpose({
+  /** Panel element (`null` while closed). */
+  panelEl,
+  /** `true` while a `beforeClose` close is pending. */
+  isClosing,
+  /** Closes the dialog, running `@open-change` and `beforeClose` first. */
+  close,
+  /** Cancels a close pending in `beforeClose` and keeps the dialog open. */
+  cancelClose,
+  /** Whether the panel is maximized. */
+  maximized,
+})
 </script>

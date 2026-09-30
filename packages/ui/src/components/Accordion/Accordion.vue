@@ -27,21 +27,27 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+/** Open item's `value`, or an array of them with `multiple`. @default null */
 const value = defineModel<string | string[] | null>('value', { default: null })
 
 const props = withDefaults(
   defineProps<{
+    /** Lets several items be open at once; the model becomes an array. @default false */
     multiple?: boolean
-    /** Whether the last open item can close, leaving none open. */
+    /** Whether the last open item can close, leaving none open. @default true */
     collapsible?: boolean
-    /** `false` skips transitions; use exposed `panelEl`/`open` for custom motion. */
+    /** `false` skips transitions; use exposed `panelEl`/`open` for custom motion. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
   { multiple: false, collapsible: true, motionCss: true },
 )
 
-const emit = defineEmits<{ change: [value: string | string[] | null] }>()
+const emit = defineEmits<{
+  /** Fires when an item opens or closes, with the new value. */
+  change: [value: string | string[] | null]
+}>()
 
 function isOpen(itemValue: string): boolean {
   return props.multiple
@@ -65,6 +71,11 @@ function toggle(itemValue: string) {
   emit('change', next)
 }
 
+defineSlots<{
+  /** The `AccordionItem`s. */
+  default(): unknown
+}>()
+
 provide(accordionKey, { isOpen, toggle, motionCss: () => props.motionCss })
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -75,5 +86,8 @@ const themedUi = useThemedUi(
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-accordion'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

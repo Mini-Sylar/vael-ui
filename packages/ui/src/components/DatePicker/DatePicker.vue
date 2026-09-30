@@ -189,7 +189,9 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const messages = useUiMessages()
 
+/** Selected date, or `{ start, end }` in `range` mode. @default null */
 const model = defineModel<Date | CalendarRange | null>({ default: null })
+/** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 function isRangeModel(value: Date | CalendarRange | null): value is CalendarRange {
@@ -198,47 +200,76 @@ function isRangeModel(value: Date | CalendarRange | null): value is CalendarRang
 
 const props = withDefaults(
   defineProps<{
+    /**
+     * `'range'` picks a start then an end; clicking before the start restarts the range.
+     * @default 'single'
+     */
     selectionMode?: CalendarSelectionMode
+    /** What a click selects: a day, a month (its 1st) or a year (January 1st). @default 'date' */
     view?: CalendarView
+    /** Text shown in the input when nothing is selected. */
     placeholder?: string
+    /**
+     * Disables the input and keeps the panel from opening. A disabled parent Field also disables it.
+     * @default false
+     */
     disabled?: boolean
+    /** Standalone override; ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Input size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Earliest selectable date (inclusive); the calendar disables earlier days, months and years. */
     minDate?: Date
+    /** Latest selectable date (inclusive); the calendar disables later days, months and years. */
     maxDate?: Date
+    /** List of unavailable dates, or a predicate function. Matching compares calendar days and ignores time. */
     disabledDates?: CalendarDisabledDates
+    /** BCP-47 locale for the input text, month and weekday names, and the week start day. */
     locale?: string
+    /** `0` (Sunday) to `6` (Saturday). Unset, it derives from `locale` and falls back to Monday. */
     firstDayOfWeek?: number
-    /** Formats the trigger display. Default: `{ dateStyle: 'medium' }`. */
+    /** `Intl.DateTimeFormat` options for the input text. Unset, the format follows `view`, `showTime` and `timeOnly`. */
     formatOptions?: Intl.DateTimeFormatOptions
-    /** Hidden `<input>` mirroring selection as `YYYY-MM-DD` for form post. */
+    /** Renders a hidden `<input>` that mirrors the selection as `YYYY-MM-DD` for form posts. */
     name?: string
+    /** Which side of the trigger the panel opens on. @default 'bottom' */
     side?: DatePickerSide
+    /** How the panel aligns against the trigger along that side. @default 'start' */
     align?: DatePickerAlign
+    /** Gap between the trigger and the panel, in pixels. @default 8 */
     sideOffset?: number
+    /** Shifts the panel along the alignment axis, in pixels. @default 0 */
     alignOffset?: number
+    /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
+    /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Defers closing (animation gate pattern): called when close is requested, call `done()` to proceed. */
+    /** Custom exit animation; call `done()` to finish closing. */
     beforeClose?: (done: () => void) => void
+    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
     forceMount?: boolean
+    /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
-    /** `false` skips popover enter/leave AND Calendar's month-slide transition. */
+    /** `false` skips both the popover enter/leave and Calendar's month-slide transitions. @default true */
     motionCss?: boolean
-    /** Built-in Today (single mode only) / Clear buttons below the calendar. Ignored — the
-     * `#footer` slot always renders instead — once that slot is provided. */
+    /** Shows built-in Today (`single` mode only) and Clear buttons below the calendar.
+     * Has no effect once you provide the `#footer` slot, which renders instead.
+     * @default false
+     */
     showButtonBar?: boolean
-    /** Adds an hour/minute row below the calendar. `single` selection mode only — a range's two
-     * endpoints each having their own time isn't supported here. Keeps the popover open on a date
-     * pick instead of auto-closing, since there's still time left to set. */
+    /** Adds an hour/minute row below the calendar (`single` mode only). Picking a date then keeps
+     * the panel open so you can set the time.
+     * @default false
+     */
     showTime?: boolean
-    /** Hides the calendar entirely — just the time row. Implies `showTime`. */
+    /** Hides the calendar and shows only the time row. Implies `showTime`. @default false */
     timeOnly?: boolean
-    /** `'12'` adds an AM/PM toggle; `'24'` doesn't. Default: resolved from `locale` (or the
-     * runtime default) via `Intl`'s own `hour12` resolution — an explicit value always wins. */
+    /** `'12'` adds an AM/PM toggle; `'24'` doesn't. Unset, it follows `locale` (or the runtime
+     * default) through `Intl`'s `hour12` resolution. */
     hourFormat?: '12' | '24'
-    /** Minute increment for the arrow-key/stepper-button adjustments. Default: 1. */
+    /** Minute increment for the arrow-key and stepper-button adjustments. @default 1 */
     minuteStep?: number
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       input: UiPartValue
@@ -289,14 +320,17 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires when you pick a date, time or range endpoint, or use Today or Clear. */
   change: [value: Date | CalendarRange | null]
+  /** Fires when the calendar's displayed month changes. */
   'month-change': [value: Date]
 }>()
 
 defineSlots<{
-  /** Replaces the built-in Today/Clear button bar entirely — shown whenever this slot is
-   * provided, regardless of `showButtonBar`. */
+  /** Replaces the built-in Today/Clear button bar. It renders whenever you provide it,
+   * regardless of `showButtonBar`. */
   footer(): unknown
 }>()
 
@@ -552,17 +586,27 @@ const resolvedAlign = computed<DatePickerAlign>(() => {
 })
 
 defineExpose({
+  /** Root element. */
   el,
+  /** Native `<input>` element. */
   inputEl,
+  /** Panel element (`null` while closed). */
   panelEl,
+  /** Positioning wrapper around the panel (`null` while closed). */
   positionerEl,
+  /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
+  /** Computed position styles applied to the positioner. */
   positionerStyle,
+  /** `true` while a `beforeClose` close is pending. */
   isClosing,
+  /** Opens the panel unless disabled. */
   open: () => {
     if (!isDisabled.value) open.value = true
   },
+  /** Closes the panel, running `@open-change` and `beforeClose` first. */
   close,
+  /** Cancels a close pending in `beforeClose` and keeps the panel open. */
   cancelClose,
 })
 </script>

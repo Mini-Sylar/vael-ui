@@ -33,33 +33,34 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
+/** Active tab value. */
 const active = defineModel<T>('active', { required: true })
 
 const props = withDefaults(
   defineProps<{
+    /** Tab values, in order; drives keyboard navigation. */
     items: T[]
-    /** Vertical layout with ↑/↓ navigation. */
+    /** Lays the tabs out in a row or a column; arrow keys follow the axis. @default 'horizontal' */
     orientation?: 'horizontal' | 'vertical'
-    /** `automatic` (default): arrow keys select. `manual`: arrow keys move focus only; Enter/Space selects. */
+    /**
+     * `'automatic'`: arrow keys select. `'manual'`: arrow keys move focus only, and `Enter` or `Space` selects.
+     * @default 'automatic'
+     */
     activation?: 'automatic' | 'manual'
+    /** Class and style overrides for each part. */
     ui?: Partial<{ list: UiPartValue; item: UiPartValue; indicator: UiPartValue }>
   }>(),
   { orientation: 'horizontal', activation: 'automatic' },
 )
 
 const emit = defineEmits<{
+  /** Fires when you select a different tab. */
   change: [item: T]
 }>()
 
 defineSlots<{
-  /**
-   * Render `role="tab"` elements and optionally a sliding indicator.
-   * `itemProps(item)` returns a11y/behavior wiring for one tab — spread via
-   * v-bind. `indicatorProps(variant)` does the same for the optional sliding
-   * highlight (`'background'` default, or `'underline'`) — bind it on a
-   * sibling element of the tab buttons. `focused` tracks roving tabindex
-   * (diverges from `active` in `manual` mode).
-   */
+  /** The tab buttons: bind `itemProps(item)` on each, and `indicatorProps()` on an optional sibling
+   * for the sliding highlight. */
   default(props: {
     active: T
     focused: T
@@ -134,5 +135,8 @@ function indicatorProps(variant: 'background' | 'underline' = 'background') {
   }
 }
 
-defineExpose({ listEl })
+defineExpose({
+  /** Tab list (root) element. */
+  listEl,
+})
 </script>

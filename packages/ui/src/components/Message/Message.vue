@@ -52,26 +52,31 @@ export type MessageVariant = 'default' | 'success' | 'error' | 'warning' | 'info
 
 export interface MessageOpenChangeDetails {
   event?: Event
-  /** Call to veto the close — the model never flips. */
+  /** Vetoes the close, so the model never flips. */
   cancel: () => void
 }
 
 export interface MessageProps {
+  /** Bold heading above the default slot content. */
   title?: string
-  /** Color variant — sets the icon and border. */
+  /** Color variant; sets the icon and border. @default 'default' */
   variant?: MessageVariant
-  /** `bare` drops the border/background/padding — icon + colored text only,
-   * for inline use (e.g. form field validation) instead of a standalone banner. */
+  /** `'bare'` drops the border, background and padding, leaving only the icon and colored text.
+   * Use it inline, such as for form field validation, instead of as a standalone banner.
+   * @default 'default'
+   */
   appearance?: 'default' | 'bare'
-  /** Renders the built-in dismiss button. */
+  /** Renders the built-in dismiss button. @default false */
   closable?: boolean
-  /** Called before the model flips to false. Call `done()` to actually close. */
+  /** Custom exit animation; call `done()` to finish closing. The model stays `true` until you do. */
   beforeClose?: (done: () => void) => void
-  /** When true, presence is v-show-driven and owned by the consumer (e.g. AnimatePresence). */
+  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
+  /** Shows the leading status icon (or the `#icon` slot). @default true */
   showIcon?: boolean
-  /** Defaults to `alert` for `error`/`warning`, `status` otherwise. */
+  /** Defaults to `'alert'` for `'error'` and `'warning'`, `'status'` otherwise. */
   role?: 'status' | 'alert'
+  /** Class and style overrides for each part. */
   ui?: Partial<{
     root: UiPartValue
     icon: UiPartValue
@@ -98,6 +103,7 @@ import StatusIcon from '../internal/StatusIcon.vue'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the message is shown. @default true */
 const open = defineModel<boolean>('open', { default: true })
 
 const props = withDefaults(defineProps<MessageProps>(), {
@@ -202,5 +208,14 @@ const descriptionPart = computed(() =>
 const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-message-close'))
 const actionsPart = computed(() => resolveUiPart(cx, themedUi()?.actions, 'ui-message-actions'))
 
-defineExpose({ el: root, close, isClosing, cancelClose })
+defineExpose({
+  /** Root element (null while closed unless `forceMount`). */
+  el: root,
+  /** Closes the message, running `@open-change` and `beforeClose` first. */
+  close,
+  /** `true` while a `beforeClose` close is pending. */
+  isClosing,
+  /** Cancels a close pending in `beforeClose` and keeps the message open. */
+  cancelClose,
+})
 </script>

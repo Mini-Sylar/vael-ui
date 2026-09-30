@@ -38,7 +38,9 @@ const root = useTemplateRef<HTMLElement>('root')
 
 const props = withDefaults(
   defineProps<{
+    /** Draws a horizontal or vertical line. @default 'horizontal' */
     orientation?: 'horizontal' | 'vertical'
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; line: UiPartValue; text: UiPartValue }>
   }>(),
   { orientation: 'horizontal' },
@@ -62,5 +64,8 @@ const rootPart = computed(() =>
 const linePart = computed(() => resolveUiPart(cx, themedUi()?.line, 'ui-separator-line'))
 const textPart = computed(() => resolveUiPart(cx, themedUi()?.text, 'ui-separator-text'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

@@ -38,11 +38,11 @@ import type { Component } from 'vue'
 export interface BreadcrumbItemData {
   label: string
   icon?: Component
-  /** Root tag for this crumb's link, e.g. `'a'` (default) or a registered router-link component name. Ignored when `current` is true. */
+  /** Link tag for this crumb, such as `'a'` (default) or a registered router-link component name. Has no effect when `current` is `true`. */
   as?: string
   /** Defaults to `true` for the last item, `false` otherwise. */
   current?: boolean
-  /** Extra attrs forwarded straight to the rendered `BreadcrumbItem` — the destination prop itself depends on `as` (`{ href: '/docs' }` for a plain `<a>`, `{ to: '/docs' }` for a router link), so it lives here rather than as a dedicated field that would only fit one of them. */
+  /** Extra attributes for the rendered `BreadcrumbItem`, such as `{ href: '/docs' }` for `<a>` or `{ to: '/docs' }` for a router link. */
   attrs?: Record<string, unknown>
 }
 </script>
@@ -64,21 +64,25 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
-    /** Data-driven alternative to composing `BreadcrumbItem`/`BreadcrumbSeparator` yourself in the default slot. Omit to use the default slot instead — the two are mutually exclusive per instance. */
+    /** Crumbs to render, with separators added between them. Omit to compose children in the default slot. */
     items?: ReadonlyArray<T>
     /** Overrides the default localized "Breadcrumb" nav landmark label. */
     ariaLabel?: string
-    /** `false` (default): a single line that scrolls horizontally once it overflows, edge-faded like Dialog/Select. `true`: wraps onto multiple lines instead. */
+    /**
+     * Wraps crumbs onto multiple lines instead of scrolling one line horizontally on overflow.
+     * @default false
+     */
     wrap?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; list: UiPartValue }>
   }>(),
   { wrap: false },
 )
 
 defineSlots<{
-  /** `BreadcrumbItem` and `BreadcrumbSeparator` children, interleaved by the caller. Ignored when `items` is set. */
+  /** `BreadcrumbItem` and `BreadcrumbSeparator` children that you interleave. Has no effect when you pass `items`. */
   default(): unknown
-  /** Overrides one crumb's label content when using `items`. Falls back to plain text. */
+  /** Custom label content for each crumb when you pass `items`. Falls back to plain text. */
   item(props: { item: T; index: number }): unknown
 }>()
 
@@ -101,5 +105,8 @@ const listPart = computed(() =>
   ),
 )
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

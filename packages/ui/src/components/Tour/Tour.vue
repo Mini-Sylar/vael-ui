@@ -96,35 +96,39 @@ import type { UiPartValue } from '../../classes'
 export type { TourStep, TourGroup, TourStepChangeDetails, TourEndDetails }
 
 export interface TourProps<T extends TourStep = TourStep> {
+  /** Steps to walk through, in order; each points at a `target` element. */
   steps: readonly T[]
-  /** Identifies this tour instance — see `useTour`'s `id` option. */
+  /** Identifies this tour instance (see `useTour`'s `id` option). */
   id?: string
-  /** Scroll-locks the page and makes everything but the target and callout inert while open. */
+  /** Scroll-locks the page and makes everything but the target and callout inert while open. @default true */
   modal?: boolean
-  /** Escape key closes the tour. */
+  /** Escape key closes the tour, firing `@skip`. @default true */
   closeOnEsc?: boolean
-  /** Clicking the dimmed area closes the tour. */
+  /** Clicking the dimmed area closes the tour. @default false */
   closeOnOverlay?: boolean
-  /** ArrowLeft/ArrowRight step back/forward. */
+  /** `ArrowLeft` and `ArrowRight` move back and forward a step. @default true */
   keyboardNav?: boolean
-  /** Space between the target and the spotlight cutout, in pixels. Per-step `spotlightPadding` wins. */
-  spotlightPadding?: number
-  /** Spotlight cutout corner radius, in pixels. Per-step `spotlightRadius` wins. */
-  spotlightRadius?: number
-  /** Scrolls the target into view on every step change. */
-  scrollIntoView?: boolean
-  /** CSS selector or an actual DOM element — same contract as Vue's own Teleport `to`. Wins over `container` either way. */
-  teleportTo?: string | HTMLElement
   /**
-   * Scopes the tour to one element: the spotlight dims only its own box, the callout
-   * teleports there instead of `body`, and scroll-lock/inert apply only inside it — the
-   * rest of the page stays interactive. Omit for a page-level tour.
+   * Space between the target and the spotlight cutout, in pixels. Per-step `spotlightPadding` wins.
+   * @default 4
    */
+  spotlightPadding?: number
+  /** Spotlight cutout corner radius, in pixels. Per-step `spotlightRadius` wins. @default 8 */
+  spotlightRadius?: number
+  /** Scrolls the target into view on every step change. @default true */
+  scrollIntoView?: boolean
+  /** Teleport target: a CSS selector or element. Wins over `container` either way. */
+  teleportTo?: string | HTMLElement
+  /** Scopes the tour to an element. The spotlight dims only that box and the callout teleports there.
+   * Scroll lock and inert apply only inside it. Omit it for a page-level tour. */
   container?: DOMTarget
-  /** Element whose scrolling is locked while open. Defaults to `container`, then `document.body`. */
+  /** Element to scroll-lock while open. Defaults to `container`, then `document.body`. */
   scrollTarget?: DOMTarget
+  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
+  /** Custom exit animation; call `done()` to finish closing. */
   beforeClose?: (done: () => void) => void
+  /** Class and style overrides for each part. */
   ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -151,7 +155,9 @@ import { useUiMessages } from '../../messages'
 
 defineOptions({ inheritAttrs: false })
 
+/** Whether the tour is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
+/** Current step index; resets to the first step whenever the tour opens. @default 0 */
 const stepIndex = defineModel<number>('step', { default: 0 })
 
 const props = withDefaults(defineProps<TourProps<T>>(), {
@@ -166,13 +172,18 @@ const props = withDefaults(defineProps<TourProps<T>>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires after the tour moves to another step, including the first step when it opens. */
   'step-change': [details: TourStepChangeDetails<T>]
+  /** Fires when the tour ends early: the Skip button, Escape, or the step's target disappearing. */
   skip: [details: TourEndDetails<T>]
+  /** Fires when the tour advances past the last step. */
   finish: [details: TourEndDetails<T>]
+  /** Fires when a close is requested; call `details.cancel()` to keep the tour open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
 }>()
 
 defineSlots<{
+  /** Replaces the callout content; receives the current `step`, progress and `next`/`prev`/`skip`/`close`. */
   default(props: {
     id: string | undefined
     step: T | undefined
@@ -464,16 +475,27 @@ const spotlightUi = computed(() => withZIndex(ui.value?.spotlight, spotlightZInd
 const positionerUi = computed(() => withZIndex(ui.value?.positioner, panelZIndex.value))
 
 defineExpose({
+  /** Returns the tour's `id` prop. */
   id: () => props.id,
+  /** Current step's target element. */
   targetEl,
+  /** Callout panel element (`null` while closed). */
   panelEl: popoverPanelEl,
+  /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => popover.value?.isClosing ?? false),
+  /** Closes the tour, running `@open-change` and `beforeClose` first. */
   close: () => popover.value?.close(),
+  /** Cancels a close pending in `beforeClose` and keeps the tour open. */
   cancelClose: () => popover.value?.cancelClose(),
+  /** Current step index. */
   currentIndex,
+  /** `true` while a step's `onBeforeEnter` is pending; the previous step stays visible until it settles. */
   isTransitioning,
+  /** Goes to the next step, or finishes the tour on the last one. */
   next,
+  /** Goes back one step. */
   prev,
+  /** Closes the tour and fires `@skip`. */
   skip,
 })
 </script>

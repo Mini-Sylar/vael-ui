@@ -47,21 +47,27 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Label text. Also names the remove button, so pass it even when using the default slot. */
     label?: string
+    /** Shows a remove button that fires `@remove`. @default false */
     removable?: boolean
+    /** Disables the remove button. @default false */
     disabled?: boolean
+    /** Chip size. @default 'md' */
     size?: 'sm' | 'md'
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; label: UiPartValue; remove: UiPartValue }>
   }>(),
   { removable: false, disabled: false, size: 'md' },
 )
 
-const emit = defineEmits<{ remove: [] }>()
+const emit = defineEmits<{
+  /** Fires when you click the remove button. */
+  remove: []
+}>()
 
 defineSlots<{
-  /** Overrides the label content; the library still owns the remove button
-   * and its accessible name (from the `label` prop) — pass `label` even
-   * when using this slot. */
+  /** Label content; replaces the `label` text. The remove button keeps its name from `label`. */
   default(): unknown
 }>()
 
@@ -90,5 +96,8 @@ const rootPart = computed(() =>
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-chip-label'))
 const removePart = computed(() => resolveUiPart(cx, themedUi()?.remove, 'ui-chip-remove'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

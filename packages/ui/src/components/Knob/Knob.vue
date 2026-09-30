@@ -74,20 +74,28 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+/** Current value. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(
   defineProps<{
+    /** Lowest allowed value. @default 0 */
     min?: number
+    /** Highest allowed value. @default 100 */
     max?: number
+    /** Increment the value snaps to; arrow keys move one step, Page Up/Down ten. @default 1 */
     step?: number
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Disables the knob and blocks interaction. @default false */
     disabled?: boolean
+    /** Shows the invalid state. A surrounding `Field` in error sets it too. @default false */
     invalid?: boolean
-    /** Falls through to a hidden `<input>` → plain `<form>` participation. */
+    /** Native `name` for form submission, via a hidden input. */
     name?: string
     /** Drives `aria-valuetext`, e.g. `(v) => \`${v} dB\`` for a gain knob. */
     valueText?: (value: number) => string
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       dial: UiPartValue
@@ -146,5 +154,12 @@ const trackPart = computed(() => resolveUiPart(cx, themedUi()?.track, 'ui-knob-t
 const fillPart = computed(() => resolveUiPart(cx, themedUi()?.fill, 'ui-knob-fill'))
 const indicatorPart = computed(() => resolveUiPart(cx, themedUi()?.indicator, 'ui-knob-indicator'))
 
-defineExpose({ el: root, dialEl, indicatorEl })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Focusable dial element (`role="slider"`). */
+  dialEl,
+  /** Pointer mark that rotates with the value. */
+  indicatorEl,
+})
 </script>

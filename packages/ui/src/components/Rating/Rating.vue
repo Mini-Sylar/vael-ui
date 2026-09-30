@@ -78,22 +78,28 @@ const restAttrs = computed(() =>
     'onBlur',
   ]),
 )
+/** Current rating; `0` means unrated. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(
   defineProps<{
+    /** Number of stars, which is also the highest rating. @default 5 */
     max?: number
-    /** Half-star precision, for both pointer and keyboard (arrow keys step by 0.5). */
+    /** Half-star precision, for both pointer and keyboard (arrow keys step by `0.5`). @default false */
     allowHalf?: boolean
+    /** Shows the rating but ignores pointer and keyboard input. Stays focusable. @default false */
     readonly?: boolean
+    /** Disables the rating and blocks interaction. @default false */
     disabled?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
-    /** Falls through to a hidden `<input>` → plain `<form>` participation. */
+    /** Native `name` for form submission, via a hidden input. */
     name?: string
     /** Drives `aria-valuetext`. Defaults to the `rating.valueText` message ("{value} of {max}"). */
     valueText?: (value: number) => string
-    /** Gates the fill-sweep + commit-pop animation. */
+    /** `false` skips the built-in fill-sweep and commit-pop animations. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
   }>(),
   { max: 5, allowHalf: false, readonly: false, disabled: false, size: 'md', motionCss: true },
@@ -260,5 +266,10 @@ const rootPart = computed(() =>
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-rating-item'))
 
-defineExpose({ el: root, itemEls })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Star elements, one per star. */
+  itemEls,
+})
 </script>

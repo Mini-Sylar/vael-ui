@@ -42,14 +42,22 @@ import type { FieldContext } from '../../composables/fieldContext'
 
 const props = withDefaults(
   defineProps<{
+    /** Label text, linked to the wrapped control. */
     label?: string
+    /** Help text below the control, linked via `aria-describedby`. */
     description?: string
     /** Error message; renders with `role="alert"`. */
     error?: string
+    /** Shows a required marker and sets `aria-required` on the wrapped control. */
     required?: boolean
+    /** Disables the wrapped control. */
     disabled?: boolean
-    /** `'top'` stacks above the control; `'float'` overlays on the edge (animates up on focus/fill); `'inset'` overlays inside the control. */
+    /**
+     * `'top'` stacks above the control; `'float'` overlays its edge, moving up on focus or fill; `'inset'` sits inside it.
+     * @default 'top'
+     */
     labelPlacement?: 'top' | 'float' | 'inset'
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       label: UiPartValue
@@ -62,10 +70,13 @@ const props = withDefaults(
 )
 
 defineSlots<{
+  /** The form control that the field labels and describes. */
   default(): unknown
-  /** Replaces label text without affecting label element or for wiring. */
+  /** Replaces the label text, keeping the `<label>` element and its `for` wiring. */
   label(): unknown
+  /** Custom description content; replaces the `description` text. */
   description(): unknown
+  /** Custom error content; renders only while `error` is set. */
   error(props: { error: string }): unknown
 }>()
 
@@ -129,5 +140,8 @@ const descriptionPart = computed(() =>
 )
 const errorPart = computed(() => resolveUiPart(cx, themedUi()?.error, 'ui-field-error'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

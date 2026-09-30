@@ -43,31 +43,34 @@ export type TooltipAlign = Align
 type TriggerRef = HTMLElement | { el: HTMLElement | null } | null | undefined
 
 export interface TooltipProps {
-  /** External trigger ref (raw element or `{ el }`-exposing component). */
+  /** External trigger ref: a raw element or a component that exposes `el`. */
   triggerEl?: TriggerRef
-  /** Which side of the trigger the tooltip opens on. */
+  /** Which side of the trigger the tooltip opens on. @default 'top' */
   side?: TooltipSide
-  /** How the tooltip aligns against the trigger along that side. */
+  /** How the tooltip aligns against the trigger along that side. @default 'center' */
   align?: TooltipAlign
-  /** Gap between the trigger and the tooltip, in pixels. */
+  /** Gap between the trigger and the tooltip, in pixels. @default 8 */
   sideOffset?: number
-  /** Shifts the tooltip along the alignment axis, in pixels. */
+  /** Shifts the tooltip along the alignment axis, in pixels. @default 0 */
   alignOffset?: number
-  /** Delay before a cold open, ms. Warm-group opens (another tooltip visible or just hidden) are always instant. */
+  /**
+   * Delay before a cold open, in milliseconds. Warm-group opens (another tooltip visible or recently hidden) are instant.
+   * @default 400
+   */
   openDelay?: number
-  /** Grace period after the pointer leaves, ms — long enough to travel onto the tooltip. */
+  /** Grace period after the pointer leaves, in milliseconds, so it can move onto the tooltip. @default 100 */
   closeDelay?: number
-  /** Hovering the tooltip itself keeps it open (selectable/clickable content). */
+  /** Hovering the tooltip itself keeps it open, so its content stays selectable and clickable. @default true */
   interactive?: boolean
-  /** Escape key closes the tooltip. */
+  /** Escape key closes the tooltip. @default true */
   closeOnEsc?: boolean
-  /** Custom exit animation; call `done()` when it's complete. Delays the actual close/unmount until then. */
+  /** Custom exit animation; call `done()` to finish closing. */
   beforeClose?: (done: () => void) => void
-  /** When true, presence is v-show-driven and owned by the consumer. */
+  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
-  /** CSS selector or DOM element; same as Vue's Teleport `to`. */
+  /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
-  /** Per-instance part-class/style overrides. */
+  /** Class and style overrides for each part. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
 </script>
@@ -84,7 +87,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-/** Whether the tooltip is open. */
+/** Whether the tooltip is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(defineProps<TooltipProps>(), {
@@ -101,10 +104,12 @@ const props = withDefaults(defineProps<TooltipProps>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires when a close is requested; call `details.cancel()` to keep the tooltip open. */
   'open-change': [value: boolean, details: TooltipOpenChangeDetails]
 }>()
 
 defineSlots<{
+  /** Tooltip content; receives `open` and `isClosing`. */
   default(props: { open: boolean; isClosing: boolean }): unknown
   /** Trigger markup; bind `:ref="setTriggerEl"` to the triggering element. */
   trigger(props: {
@@ -268,13 +273,21 @@ const resolvedAlign = computed<TooltipAlign>(() => {
 })
 
 defineExpose({
+  /** Panel element (`null` while closed). */
   panelEl,
+  /** Positioning wrapper around the panel (`null` while closed). */
   positionerEl,
+  /** Resolved placement after flipping, e.g. `'top'` or `'bottom-start'`. */
   placement,
+  /** Computed position styles applied to the positioner. */
   positionerStyle,
+  /** `true` while a `beforeClose` close is pending. */
   isClosing,
+  /** Opens the tooltip immediately, skipping `openDelay`; revives it if it's mid-close. */
   show,
+  /** Closes the tooltip, running `@open-change` and `beforeClose` first. */
   hide,
+  /** Cancels a close pending in `beforeClose` and keeps the tooltip open. */
   cancelClose,
 })
 </script>

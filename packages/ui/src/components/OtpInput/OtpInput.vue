@@ -80,27 +80,33 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+/** Entered code. @default '' */
 const modelValue = defineModel<string>({ default: '' })
 
 const props = withDefaults(
   defineProps<{
+    /** Number of cells, and the maximum code length. @default 6 */
     length?: number
-    /** Restricts input to digits only or alphanumeric. */
+    /** Restricts input to digits or to alphanumeric characters. @default 'numeric' */
     type?: 'numeric' | 'alphanumeric'
-    /** Shows a bullet instead of the entered character in every filled cell. */
+    /** Shows a bullet instead of the entered character in every filled cell. @default false */
     mask?: boolean
+    /** Disables the input and blocks interaction. A disabled parent Field also disables it. @default false */
     disabled?: boolean
+    /** Standalone override; ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Native `name` on the input, for plain `<form>` submission. */
     name?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; input: UiPartValue; cell: UiPartValue }>
   }>(),
   { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false, size: 'md' },
 )
 
 const emit = defineEmits<{
-  /** Fires once per distinct completion — when the model's length reaches
-   * `length` coming from a shorter value, not on every re-render. */
+  /** Fires with the code each time it changes to a full `length` characters, not on every re-render. */
   complete: [code: string]
 }>()
 
@@ -252,5 +258,12 @@ const cellPart = computed(() =>
   resolveUiPart(cx, themedUi()?.cell, 'ui-otp-cell', hasCustomCell.value && 'ui-otp-cell--custom'),
 )
 
-defineExpose({ el: root, inputEl, cellEls })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Invisible native `<input>` that receives typing and paste. */
+  inputEl,
+  /** Cell elements, one per character slot. */
+  cellEls,
+})
 </script>

@@ -26,21 +26,28 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Which axis (or axes) the viewport scrolls along. @default 'vertical' */
     orientation?: 'vertical' | 'horizontal' | 'both'
-    /** Masks the scrolling edge(s) as content scrolls under them. */
+    /** Masks the scrolling edge(s) as content scrolls under them. @default true */
     scrollFade?: boolean
-    /** Scrollbar thumb is transparent until you hover/scroll the viewport (Chromium/WebKit only — `::-webkit-scrollbar-thumb` has no hover-reveal equivalent for Firefox's `scrollbar-color`, which always shows the thin thumb). */
+    /**
+     * Hides the scrollbar thumb until you hover or scroll the viewport. Chromium and WebKit only; Firefox always shows it.
+     * @default false
+     */
     autoHide?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; viewport: UiPartValue }>
   }>(),
   { orientation: 'vertical', scrollFade: true, autoHide: false },
 )
 
 const emit = defineEmits<{
+  /** Fires when the viewport scrolls. */
   scroll: [event: Event]
 }>()
 
 defineSlots<{
+  /** Scrollable content. */
   default(): unknown
 }>()
 
@@ -116,21 +123,35 @@ const viewportPart = computed(() =>
 )
 
 defineExpose({
+  /** Root element. */
   el: root,
+  /** Scrolling viewport element. */
   viewportEl: viewport,
+  /** Vertical scroll offset in pixels. Writable: assigning it scrolls the viewport. */
   scrollTop,
+  /** Horizontal scroll offset in pixels. Writable: assigning it scrolls the viewport. */
   scrollLeft,
+  /** Whether the viewport is scrolled to the top. */
   atTop,
+  /** Whether the viewport is scrolled to the bottom. */
   atBottom,
+  /** Whether the viewport is scrolled to the left edge. */
   atStart,
+  /** Whether the viewport is scrolled to the right edge. */
   atEnd,
-  /** True while a scroll (including native momentum/rubber-band settling) is in flight. */
+  /** `true` while a scroll is in progress, including native momentum or rubber-band settling. */
   isScrolling,
+  /** Direction of the current scroll, as `top`, `bottom`, `left` and `right` flags. */
   directions,
+  /** Scrolls the viewport with native `ScrollToOptions`. */
   scrollTo,
+  /** Smooth-scrolls to the top. */
   scrollToTop,
+  /** Smooth-scrolls to the bottom. */
   scrollToBottom,
+  /** Smooth-scrolls to the left edge. */
   scrollToStart,
+  /** Smooth-scrolls to the right edge. */
   scrollToEnd,
 })
 </script>

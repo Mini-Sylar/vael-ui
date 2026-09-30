@@ -52,12 +52,26 @@ import type { MenuItemData } from '../Menu/Menu.vue'
 
 const props = withDefaults(
   defineProps<{
+    /** Lays the controls out in a row or a column; arrow keys follow the axis. @default 'horizontal' */
     orientation?: 'horizontal' | 'vertical'
+    /** Accessible label for the overflow (`…`) menu button. @default 'More' */
     overflowLabel?: string
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; group: UiPartValue; overflowTrigger: UiPartValue }>
   }>(),
   { orientation: 'horizontal', overflowLabel: 'More' },
 )
+
+defineSlots<{
+  /** Controls at the start of the toolbar. Mark a child `data-toolbar-overflow` to let it collapse into the `…` menu. */
+  start(): unknown
+  /** Controls in the start group, after `#start`. */
+  default(): unknown
+  /** Controls in the center group. */
+  center(): unknown
+  /** Controls at the end of the toolbar, before the `…` overflow menu. */
+  end(): unknown
+}>()
 
 const slots = useSlots()
 const list = useTemplateRef<HTMLElement>('list')
@@ -94,5 +108,8 @@ const overflowItems = computed<MenuItemData[]>(() =>
   })),
 )
 
-defineExpose({ el: list })
+defineExpose({
+  /** Root element. */
+  el: list,
+})
 </script>

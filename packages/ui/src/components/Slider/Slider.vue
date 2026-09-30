@@ -67,20 +67,28 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+/** Current value. Bind a `[start, end]` tuple for a two-thumb range. @default 0 */
 const modelValue = defineModel<number | [number, number]>({ default: 0 })
 
 const props = withDefaults(
   defineProps<{
+    /** Lowest allowed value. @default 0 */
     min?: number
+    /** Highest allowed value. @default 100 */
     max?: number
+    /** Increment the value snaps to; arrow keys move one step, Page Up/Down ten. @default 1 */
     step?: number
+    /** Lays the track out horizontally or vertically. @default 'horizontal' */
     orientation?: 'horizontal' | 'vertical'
+    /** Disables the slider and blocks interaction. @default false */
     disabled?: boolean
+    /** Shows the invalid state. A surrounding `Field` in error sets it too. @default false */
     invalid?: boolean
-    /** Falls through to hidden `<input>`(s) → plain `<form>` participation. */
+    /** Native `name` for form submission, via one hidden input per thumb. */
     name?: string
     /** Drives `aria-valuetext`, e.g. `(v) => \`$${v}\`` for a currency slider. */
     valueText?: (value: number) => string
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; track: UiPartValue; fill: UiPartValue; thumb: UiPartValue }>
   }>(),
   {
@@ -151,5 +159,14 @@ const trackPart = computed(() => resolveUiPart(cx, themedUi()?.track, 'ui-slider
 const fillPart = computed(() => resolveUiPart(cx, themedUi()?.fill, 'ui-slider-fill'))
 const thumbPart = computed(() => resolveUiPart(cx, themedUi()?.thumb, 'ui-slider-thumb'))
 
-defineExpose({ el: root, trackEl, fillEl, thumbEls })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Track element. */
+  trackEl,
+  /** Filled portion of the track. */
+  fillEl,
+  /** Thumb elements, one per value (two in range mode). */
+  thumbEls,
+})
 </script>

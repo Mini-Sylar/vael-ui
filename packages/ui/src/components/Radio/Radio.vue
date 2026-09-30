@@ -56,12 +56,15 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 const props = defineProps<{
+  /** Value the parent RadioGroup's model takes when this radio is selected. */
   value: string | number
-  /** Overridden entirely by the `#default` scoped slot. */
+  /** Label text; the default slot replaces it. */
   label?: string
+  /** Disables this radio. The parent RadioGroup's `disabled` also disables it. */
   disabled?: boolean
   /** Secondary line under the label. */
   description?: string
+  /** Class and style overrides for each part. */
   ui?: Partial<{
     root: UiPartValue
     control: UiPartValue
@@ -71,6 +74,7 @@ const props = defineProps<{
 }>()
 
 defineSlots<{
+  /** Label content; replaces the `label` text. Receives `checked`. */
   default(props: { checked: boolean }): unknown
 }>()
 
@@ -120,5 +124,10 @@ const descriptionPart = computed(() =>
   resolveUiPart(cx, themedUi()?.description, 'ui-radio-description'),
 )
 
-defineExpose({ el: root, inputEl })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Native radio input. */
+  inputEl,
+})
 </script>

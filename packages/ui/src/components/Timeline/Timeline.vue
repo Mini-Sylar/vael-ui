@@ -109,32 +109,28 @@ import { useThemedUi } from '../../theme'
 
 const props = withDefaults(
   defineProps<{
+    /** Entries to show; any shape, rendered through the `#item` slot. */
     items: ReadonlyArray<T>
+    /** Lays the entries out in a row or a column. @default 'vertical' */
     orientation?: 'horizontal' | 'vertical'
-    /** Gates the connector fill transition and the item enter/leave/move animation. */
+    /** Gates the connector fill transition and the item enter/leave/move animation. @default true */
     motionCss?: boolean
-    /** Opt-in continuous "live" pulse ring on the active marker. Off by default — a
-     * looping animation is a real stylistic commitment this component shouldn't make for you. */
+    /** Adds a looping pulse ring to the active marker. @default false */
     pulse?: boolean
-    /** Identifies an item across re-renders for TransitionGroup — defaults to its index, so pass
-     * this whenever items can be reordered/spliced (not just appended) or it'll re-key wrong. */
+    /**
+     * Stable key for each item. Pass it when items can be reordered or removed.
+     * @default (item, index) => index
+     */
     itemKey?: (item: T, index: number) => string | number
-    /** Whether a step counts as "done" for the built-in dot fill and connector fill — the only
-     * two things Timeline itself renders any state for. Omit for a plain, uncolored list; a
-     * richer status vocabulary (success/failure/skipped, whatever) is still fully expressible —
-     * just read your own `item` inside #marker/#item and render it yourself, no help from
-     * Timeline needed. Takes priority over `current` when both are given. */
+    /** Whether an item is done, which fills its dot and connector. Takes priority over `current`. */
     completed?: (item: T, index: number) => boolean
-    /** Whether a step is "the current one" — drives the marker's active ring (and, with `pulse`,
-     * its live pulse). Independent of `completed`: a step can be both, neither, or either.
-     * Takes priority over `current` when both are given. */
+    /** Whether an item is the current one, which rings its marker (and pulses it with `pulse`).
+     * Independent of `completed`; takes priority over `current`. */
     active?: (item: T, index: number) => boolean
-    /** Convenience for the common case where progress genuinely is one linear index: steps before
-     * it read as completed, the one at it as active. Plain number, not a v-model — Timeline never
-     * advances it itself (no built-in click-to-select), so there's nothing for it to write back.
-     * Bind your own ref and advance it however fits your UI (a button, a click handler, an action
-     * inside the active step's own content). Ignored per-flag once `completed`/`active` are given. */
+    /** Index of the current item: earlier items read as completed, this one as active. Not a v-model;
+     * Timeline never changes it. `completed`/`active` override it when given. */
     current?: number
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       item: UiPartValue
@@ -153,12 +149,10 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  /** A step's enter transition started — forwarded straight from the underlying
-   * TransitionGroup's own `(el, done)` hook. Only fires when `motionCss` is `false`, so an
-   * external animation library (GSAP, motion-v, raw WAAPI) can own it instead — call `done()`
-   * when your own animation finishes. Same shape as FileUpload's `item-enter`. */
+  /** Fires when an item enters, only while `motionCss` is `false`. Run your own animation, then call
+   * `done()`. */
   'item-enter': [el: Element, done: () => void]
-  /** Same as `item-enter`, for a step's exit. */
+  /** Same as `@item-enter`, for an item leaving. */
   'item-leave': [el: Element, done: () => void]
 }>()
 const enterHook = computed(() =>
@@ -204,10 +198,11 @@ const resolvedItems = computed<ResolvedRow[]>(() =>
 )
 
 defineSlots<{
-  /** The other side of the line from #item — a date, a status pill, whatever. Omit it entirely
-   * and the row collapses back to the plain marker+content layout, no reserved empty column. */
+  /** Content on the other side of the line from `#item`, such as a date. Without it, Timeline reserves no column. */
   opposite(props: { item: T; index: number; completed: boolean; active: boolean }): unknown
+  /** Custom marker content, replacing the default dot. */
   marker(props: { item: T; index: number; completed: boolean; active: boolean }): unknown
+  /** Content for each item; defaults to the item itself as text. */
   item(props: {
     item: T
     index: number
@@ -258,5 +253,14 @@ const connectorPart = computed(() =>
 )
 const contentPart = computed(() => resolveUiPart(cx, themedUi()?.content, 'ui-timeline-content'))
 
-defineExpose({ el: root, stepEls, markerEls, connectorEls })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Item (`<li>`) elements, in order. */
+  stepEls,
+  /** Marker elements, in order. */
+  markerEls,
+  /** Connector elements, one fewer than items (the last item has none). */
+  connectorEls,
+})
 </script>

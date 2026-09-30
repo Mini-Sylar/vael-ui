@@ -165,57 +165,59 @@ import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+/** Password value. @default '' */
 const modelValue = defineModel<string>({ default: '' })
+/** Whether the password is shown as plain text. @default false */
 const visible = defineModel<boolean>('visible', { default: false })
 
 const props = withDefaults(
   defineProps<{
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Disables the input and reveal toggle. A disabled parent Field also disables it. @default false */
     disabled?: boolean
+    /** Makes the value read-only while keeping it focusable and selectable. @default false */
     readonly?: boolean
-    /** Standalone override; ORed with the nearest Field's `error` state. */
+    /** Standalone override; ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Text shown while the input is empty. */
     placeholder?: string
+    /** Native `name` on the input, for plain `<form>` submission. */
     name?: string
-    /** `'current-password'` for a login form, `'new-password'` for signup/reset/change.
-     * No default: only the screen's context determines which, so set it explicitly. */
+    /** `'current-password'` for a login form, `'new-password'` for signup, reset or change forms.
+     * Set it yourself; only the screen's context determines which one fits. */
     autocomplete?: string
-    /** `false` hides the reveal toggle entirely — e.g. a compliance-sensitive form that
-     * never wants the password shown in plain text. */
+    /** `false` hides the reveal toggle, for forms that must never show the password in plain text.
+     * @default true
+     */
     revealable?: boolean
-    /** Requirement checks driving the default hint checklist (and the `#hint` slot's
-     * `results` scope). No built-in default — the labels are user-facing text, and
-     * this component has no i18n context to translate them from, so shipping one
-     * would silently be English-only. Pass your own, e.g.:
-     * ```ts
-     * const rules: PasswordRule[] = [
-     *   { label: t('password.minLength'), test: (v) => v.length >= 8 },
-     *   { label: t('password.oneNumber'), test: (v) => /[0-9]/.test(v) },
-     * ]
-     * ```
-     * Omitting both `rules` and `#hint` leaves nothing to show, so the hint doesn't
-     * mount at all. */
+    /** Requirement checks (`{ label, test }`) for the hint checklist and the `#hint` slot's `results`.
+     * There are no built-in rules; without `rules` or `#hint`, the hint doesn't render. */
     rules?: PasswordRule[]
-    /** Where the requirements hint renders. `'none'` disables it outright. */
+    /** Where the requirements hint renders. `'none'` disables it outright. @default 'popover' */
     hintPlacement?: 'inline' | 'popover' | 'none'
-    /** Inline mode only: gates the enter/exit transition. */
+    /** `false` skips the hint's enter/exit transition. Inline mode only. @default true */
     motionCss?: boolean
-    /** Which side of the input the hint appears on. In `'popover'` mode this is
-     * floating-ui's own side, forwarded straight to the inner Popover; in `'inline'`
-     * mode it controls the flex layout instead (`'top'`/`'bottom'` stack, `'left'`/
-     * `'right'` sit the hint beside the input). Default: `'bottom'`. */
+    /** Which side of the input the hint appears on, in both `'popover'` and `'inline'` mode.
+     * Inline defaults to `'bottom'`. */
     side?: PopoverSide
-    /** Cross-axis alignment. In `'popover'` mode this is floating-ui's own align,
-     * forwarded to the inner Popover; in `'inline'` mode it positions the hint
-     * relative to the input instead — along the input's width for `'top'`/
-     * `'bottom'`, along its height for `'left'`/`'right'`. Default: `'start'`. */
+    /** How the hint aligns against the input along that side, in both `'popover'` and `'inline'` mode.
+     * Inline defaults to `'start'`. */
     align?: PopoverAlign
-    /** Popover mode only, forwarded to the inner Popover. */
+    /** Gap between the input and the hint popover, in pixels. Popover mode only. */
     sideOffset?: number
+    /** Shifts the hint popover along the alignment axis, in pixels. Popover mode only. */
     alignOffset?: number
+    /** Teleport target for the hint popover: a CSS selector or element. Popover mode only. */
     teleportTo?: string | HTMLElement
+    /** Keeps the hint popover mounted (toggled with `v-show`) and skips the built-in transition.
+     * Popover mode only.
+     * @default false
+     */
     forceMount?: boolean
+    /** Custom exit animation for the hint popover; call `done()` when it's complete. Popover mode only. */
     beforeClose?: (done: () => void) => void
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       frame: UiPartValue
@@ -320,5 +322,18 @@ const hintItemPart = computed(() =>
   resolveUiPart(cx, themedUi()?.hintItem, 'ui-password-input-hint-item'),
 )
 
-defineExpose({ el, inputEl, visible, hintPanelEl, closeHint, cancelCloseHint })
+defineExpose({
+  /** Root element. */
+  el,
+  /** Native `<input>` element. */
+  inputEl,
+  /** Whether the password is shown as plain text (writable). */
+  visible,
+  /** Hint popover panel element (null while closed or in `'inline'` mode). */
+  hintPanelEl,
+  /** Closes the hint popover, running `beforeClose` if set. */
+  closeHint,
+  /** Aborts a pending `beforeClose` exit and keeps the hint popover open. */
+  cancelCloseHint,
+})
 </script>

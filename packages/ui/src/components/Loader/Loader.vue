@@ -26,10 +26,11 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 const props = defineProps<{
-  /** Any CSS length. Sets the root's font-size — the ring is sized in `em`, so it scales with it. */
+  /** Any CSS length. Sets the root's `font-size`, and the `em`-based ring scales with it. */
   size?: string
-  /** Renders role="status" with visually-hidden text as the accessible name. Omit to make the loader aria-hidden. */
+  /** Renders `role="status"` with visually hidden text as the accessible name. Omit it to make the loader `aria-hidden`. */
   label?: string
+  /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue }>
 }>()
 
@@ -43,5 +44,8 @@ const themedUi = useThemedUi(
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-loader'))
 const rootStyle = computed(() => (props.size ? { fontSize: props.size } : undefined))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

@@ -34,6 +34,11 @@ const props = defineProps<{
   theme?: UiTheme
 }>()
 
+defineSlots<{
+  /** App content that receives these settings. */
+  default(): unknown
+}>()
+
 // Layered: defaults < i18n < static prop.
 provide(
   messagesKey,

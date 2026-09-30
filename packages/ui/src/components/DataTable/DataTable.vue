@@ -118,76 +118,87 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
-    /** Row objects. Column content is read from these via each `<Column>`'s `field`. */
+    /** Row objects. Each `<Column>` reads its content from them by `field`. */
     data: T[]
-    /** Stable row identity — a key on `T`, or a function for composite/derived keys. */
+    /** Stable row identity: a key on `T`, or a function for composite or derived keys. */
     rowKey: keyof T | ((row: T) => string | number)
-    /** Shows the `#loading` slot instead of rows/empty state. */
+    /** Shows the `#loading` slot instead of the rows or empty state. @default false */
     loading?: boolean
-    /** Adds a leading checkbox/radio column wired to the `selected` state. */
+    /** Adds a leading checkbox or radio column that tracks the selection. @default false */
     selectable?: boolean
-    /** `'checkbox'` (default): leading selection column. `'row'`: click row to toggle selection. */
+    /**
+     * `'checkbox'` adds a leading selection column. `'row'` toggles selection when you click a row.
+     * @default 'checkbox'
+     */
     selectionMode?: 'checkbox' | 'row'
-    /** Single-selection mode — `selected` holds at most one key. In `'checkbox'` mode uses `Radio`. */
+    /**
+     * Limits selection to one row. In `'checkbox'` mode, the selection column renders Radio buttons.
+     * @default false
+     */
     single?: boolean
-    /** CSS length (`'400px'`, `'60vh'`). When set, body scrolls with sticky header; unset uses natural flow. */
+    /** CSS length, such as `'400px'` or `'60vh'`. When set, the body scrolls under a sticky header. */
     scrollHeight?: string
-    /** CSS length (`'640px'`). Below this viewport width, switches to stacked card layout. */
+    /** CSS length, such as `'640px'`. Below this viewport width, rows switch to a stacked card layout. */
     stackedBreakpoint?: string
-    /** Row-density variant. */
+    /** Row-density variant. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
-    /** Alternating row background via CSS (selected > hover > stripe precedence). */
+    /** Alternates row backgrounds. Selected and hover backgrounds win over stripes. @default false */
     stripedRows?: boolean
-    /** Adds inline-end border to every cell. */
+    /** Adds an inline-end border to every cell. @default false */
     showGridlines?: boolean
-    /** Enables resize drag handle on every column header. */
-    /** Adds a drag handle to every column header's edge for resizing. */
+    /** Adds a drag handle to every column header's edge for resizing. @default false */
     resizableColumns?: boolean
-    /** Freezes the first N columns sticky-left against horizontal scroll. */
+    /** Pins the first N columns to the left while the table scrolls horizontally. @default 0 */
     frozenColumns?: number
-    /** Rows per page. Default: all rows render. Set: internal slicing; pair with `v-model:page`. Also the page-size divisor for `lazy`'s `total`. */
+    /** Rows per page. Unset, all rows render. Set, the table slices rows; pair it with `v-model:page`.
+     * With `lazy`, it also divides `total` into pages. */
     rows?: number
-    /** `data` is already sorted server-side — DataTable stops sorting it locally and only reflects `v-model:sort`, so a header click tells you what to refetch instead of re-sorting what you gave it. */
+    /**
+     * Marks `data` as sorted on the server. DataTable stops sorting locally and only updates `v-model:sort`.
+     * A header click then tells you what to refetch.
+     * @default false
+     */
     manualSort?: boolean
-    /** `data` is already just the current page — DataTable stops slicing it locally. Pair with `total` (the real across-all-pages count) so `#footer`/`Pagination` math stays correct. */
+    /**
+     * Marks `data` as the current page only, so DataTable stops slicing it.
+     * Pair it with `total` so `#footer` and Pagination math stays correct.
+     * @default false
+     */
     lazy?: boolean
-    /** Real row count across all pages. Only meaningful with `lazy`; falls back to `sortedData.length` (i.e. `data.length`) when unset. */
+    /** Row count across all pages. Only used with `lazy`; unset, it falls back to `data.length`. */
     total?: number
-    /** Windows rendering to the visible rows + overscan, for very large `data`. Requires `scrollHeight`. `true` measures each row's real height (rows may vary, e.g. wrapping `#cell` content or `stackedBreakpoint`); pass an object to tune it. */
+    /** Renders only the visible rows, for large `data`. Requires `scrollHeight`.
+     * `true` measures each row's height; pass an object to tune it (`itemSize` fixes row height). */
     virtualize?: boolean | { itemSize?: number; overscan?: number; estimateSize?: number }
-    /** Gates the built-in row enter/exit/reorder transition (sort, paging, row expansion).
-     * `false` skips it entirely — reach for `@row-enter`/`@row-leave` instead if you want a
-     * consumer-owned animation (GSAP, motion-v) in its place. No effect while `virtualize` is
-     * active: a virtualized list's rows are measured/recycled by height, which a CSS enter/exit
-     * transition would fight, so that mode never animates row presence regardless of this prop. */
+    /** Plays the built-in row enter, exit, reorder and column-drag transitions.
+     * Set `false` to animate rows yourself via `@row-enter` and `@row-leave`. Rows never animate while virtualized.
+     * @default true
+     */
     motionCss?: boolean
-    /** Drag column headers to reorder them. Pair with `v-model:columnOrder` to control or persist the order. */
+    /**
+     * Lets you drag column headers to reorder them. Pair with `v-model:columnOrder` to control or persist the order.
+     * @default false
+     */
     reorderableColumns?: boolean
-    /** `'always'` (default): the drag grip is always shown, so a reorderable column reads as
-     * such at a glance. `'hover'`: fades in on hover/focus instead, matching the resize
-     * handle's own restraint — reach for this once a table has enough reorderable columns
-     * that permanent grips would clutter the header. */
+    /** When a reorderable column's drag grip shows: `'always'`, or only on hover and focus (`'hover'`). @default 'always' */
     columnGripVisibility?: 'hover' | 'always'
-    /** Structural veto re-run while a column drags; `false` marks the target invalid.
-     * A pinned column is already protected regardless of this. */
+    /** Runs while a column drags; return `false` to mark the target invalid.
+     * Pinned columns stay in place whatever it returns. */
     canDrop?: (details: SortableDropDetails) => boolean
-    /** Async gate at drop time for a column reorder — return `false` (or a promise of
-     * it) to cancel. Composes with `confirmAction().result` for a confirm-before-move
-     * dialog. */
+    /** Async check at drop time for a column reorder. Return `false`, or a promise of `false`, to cancel.
+     * Pair it with `confirmAction().result` to confirm before the move. */
     beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
-    /** `'clone'` (default): a floating copy of the dragged column header follows
-     * the cursor, the real `<th>` hidden until drop. `'element'` moves the real
-     * header cell itself instead — **don't use this**: a `<th>`'s `:style` binding
-     * is keyed by column index, and lifting the real element out to `position:
-     * fixed` mid-drag corrupts that binding badly enough that a column can be
-     * lost from the DOM entirely on drop. Kept only for interface symmetry with
-     * `Sortable`/`Tree`, where it's safe. */
+    /** What follows the pointer during a column drag. `'clone'` floats a copy of the header.
+     * Avoid `'element'`: it can drop a column from the DOM here.
+     * @default 'clone'
+     */
     previewMode?: 'element' | 'clone'
-    /** Ms a touch pointer must hold a column header still before a drag
-     * starts. A sortable column's header is also a tap-to-sort button, so
-     * touch needs a hold to tell the two apart; mouse/pen are unaffected.
-     * Default `150`. */
+    /** Milliseconds a touch must hold a column header before a drag starts, so taps still sort.
+     * Mouse and pen drags start without the delay.
+     * @default 150
+     */
     touchDragDelay?: number
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       toolbar: UiPartValue
@@ -228,29 +239,30 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  /** Fires when selection changes, with resolved row objects (not raw keys). */
+  /** Fires when the selection changes, with the resolved row objects (not raw keys). */
   'update:selection': [rows: T[]]
-  /** A click anywhere on a row outside its interactive descendants. */
+  /** Fires when you click a row anywhere outside its interactive descendants. */
   'row-click': [row: T]
-  /** Virtualized only: the rendered window neared the end of `data` — fetch the next page. */
+  /** Virtualized only: fires when the rendered window nears the end of `data`, so you can fetch the next page. */
   'reach-end': []
-  /** Virtualized only: the rendered window neared the start of `data` — fetch the previous page. */
+  /** Virtualized only: fires when the rendered window nears the start of `data`, so you can fetch the previous page. */
   'reach-start': []
-  /** Column headers were dragged into a new order, newest first argument. */
+  /** Fires when a column drag commits, with the new `field` order. */
   'column-reorder': [order: (keyof T)[]]
-  /** A row's enter transition started — forwarded straight from the underlying
-   * TransitionGroup's own `(el, done)` hook. Call `done()` yourself and set
-   * `motionCss` to `false` to fully hand the enter animation to GSAP/motion-v/etc. */
+  /** Fires when a row enters. Call `done()` when finished; set `motionCss` to `false` to own the animation. */
   'row-enter': [el: Element, done: () => void]
-  /** Same as `row-enter`, for a row's exit. */
+  /** Fires when a row leaves. Call `done()` when finished, as with `@row-enter`. */
   'row-leave': [el: Element, done: () => void]
-  /** `beforeDrop` threw or rejected while reordering a column; the move was already reverted. */
+  /** Fires when `beforeDrop` throws or rejects during a column reorder, after DataTable reverts the move. */
   'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
 
+/** Current page, 1-based. Only used when `rows` is set; DataTable clamps it to the page count. @default 1 */
 const page = defineModel<number>('page', { default: 1 })
-/** Uncontrolled by default (works exactly as before). Bind `v-model:sort` — required
- * with `manualSort` — to see every header click and know what to refetch. */
+/**
+ * Current sort field and direction. Bind it with `manualSort` to know what to refetch.
+ * @default { field: null, dir: null }
+ */
 const sort = defineModel<{ field: keyof T | null; dir: 'asc' | 'desc' | null }>('sort', {
   default: () => ({ field: null, dir: null }),
 })
@@ -275,8 +287,7 @@ function unregisterColumn(col: RegisteredColumn<T>) {
   if (index !== -1) columns.value.splice(index, 1)
 }
 
-/** Empty means "follow the DOM" (pre-reordering behavior); once a drag sets
- * it, it outranks DOM order so the onUpdated resort below doesn't undo it. */
+/** Column `field`s in display order. When empty, columns follow their `<Column>` order in the template. @default [] */
 const columnOrder = defineModel<(keyof T)[]>('columnOrder', { default: () => [] })
 
 const orderedColumns = computed<RegisteredColumn<T>[]>(() => {
@@ -865,21 +876,24 @@ type TypedColumn = new () => {
 const Column = ColumnImpl as unknown as TypedColumn
 
 defineSlots<{
-  /** Declare `<Column>` children. `columnData` is the table's `:data`, handed back for type-inference. */
+  /** Declares `<Column>` children. `columnData` is the table's `:data`, passed back for type inference. */
   columns(props: { Column: TypedColumn; columnData: T[] }): any
   /** Toolbar content (search, bulk actions, …). */
   toolbar(props: { selected: Set<string | number>; count: number }): any
-  /** Replaces row area while `loading` is true. */
+  /** Replaces the row area while `loading` is true. */
   loading(): any
-  /** Replaces row area when data is empty and not loading. */
+  /** Replaces the row area when `data` is empty and not loading. */
   empty(): any
-  /** Footer content (pagination, …). `data` is sorted (not paginated); `page`/`pageCount` are always provided. */
+  /** Footer content (pagination, …). `data` is sorted, not paginated; the slot always receives `page` and `pageCount`. */
   footer(props: { data: T[]; page: number; pageCount: number; total: number }): any
-  /** Full-width row beneath an expanded row. In stacked mode, always renders (no toggle). */
+  /** Full-width row beneath an expanded row. In stacked mode, it always renders, with no toggle. */
   expansion(props: { row: T }): any
 }>()
 
 const root = useTemplateRef<HTMLElement>('root')
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

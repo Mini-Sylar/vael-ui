@@ -20,21 +20,27 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Color variant. @default 'primary' */
     variant?: 'primary' | 'muted' | 'success' | 'warning' | 'danger' | 'info'
+    /** Number to display; capped by `max`. */
     count?: number
-    /** Counts above this render as `"${max}+"`. */
+    /** Counts above this render as `"${max}+"`. @default 99 */
     max?: number
-    /** Minimal size, no content — a plain presence dot. */
+    /** Minimal size with no content: a plain presence dot. @default false */
     dot?: boolean
-    /** `false` drops the built-in count-change animation — use when driving your own animation instead. */
+    /**
+     * `false` drops the built-in count-change animation so you can drive your own.
+     * @default true
+     */
     animated?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
   { variant: 'primary', max: 99, dot: false, animated: true },
 )
 
 defineSlots<{
-  /** Overrides `count` entirely — anything you render here wins. */
+  /** Overrides `count` entirely; anything you render here wins. */
   default(): unknown
 }>()
 
@@ -71,5 +77,8 @@ function contentStyle(): Record<string, string> | undefined {
   return style
 }
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

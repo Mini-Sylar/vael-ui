@@ -67,21 +67,27 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 const slots = useSlots()
+/**
+ * Whether an action panel is open. Setting it `true` opens the trailing edge, or the leading one if it's the only edge.
+ * @default false
+ */
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(
   defineProps<{
+    /** Blocks swiping. `reveal()`, `close()` and `v-model:open` still work. @default false */
     disabled?: boolean
-    /** `false` disables the built-in release/settle transition entirely (via `data-motion="off"`)
-     * — reach for this if you're driving the settle with your own spring/GSAP timeline instead.
-     * Has no effect on the drag itself, which is already transform-only with no transition. */
+    /**
+     * Plays the built-in release and settle transition. Set `false` to drive the settle yourself.
+     * @default true
+     */
     motionCss?: boolean
-    /** Grow the actions panel in from its own edge as the swipe reveals it, settling to full
-     * size. On by default; `false` opts out (e.g. when driving the panel with your own
-     * timeline), a number (0–1) sets the closed-state scale. The raw 0→1 reveal progress is
-     * always on the `progress` slot prop and the `--ui-swipe-reveal-progress` custom property
-     * for driving your own effects. */
+    /** Grows the actions panel in from its edge as it opens. A number from 0 to 1 sets the starting scale.
+     * `false` turns it off.
+     * @default true
+     */
     revealScale?: boolean | number
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; content: UiPartValue; actions: UiPartValue }>
   }>(),
   {
@@ -93,21 +99,22 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  /** Once per settled interaction: `open`, and which edge (or `null`). */
+  /** Fires once per settled interaction, with `open` and the open edge (or `null`). */
   change: [open: boolean, side: SwipeRevealSide | null]
 }>()
 
 // Every actions slot stays mounted (visually clipped) so its buttons are always keyboard-reachable.
 defineSlots<{
+  /** Row content that slides to reveal the actions. */
   default(props: {
     open: boolean
     openSide: SwipeRevealSide | null
     reveal: (side?: SwipeRevealSide) => void
     close: () => void
   }): unknown
-  /** Leading-edge (left, LTR) actions. `progress` is 0 → 1 as this edge is revealed. */
+  /** Leading-edge actions (left in LTR). `progress` goes from 0 to 1 as this edge opens. */
   'leading-actions'(props: { open: boolean; close: () => void; progress: number }): unknown
-  /** Trailing-edge (right, LTR) actions. `progress` is 0 → 1 as this edge is revealed. */
+  /** Trailing-edge actions (right in LTR). `progress` goes from 0 to 1 as this edge opens. */
   'trailing-actions'(props: { open: boolean; close: () => void; progress: number }): unknown
 }>()
 
@@ -177,16 +184,25 @@ const actionsPart = computed(() =>
 )
 
 defineExpose({
+  /** Root element. */
   el: root,
+  /** Sliding content element. */
   contentEl,
+  /** Leading actions panel (null without `#leading-actions`). */
   leadingActionsEl,
+  /** Trailing actions panel (null without `#trailing-actions`). */
   trailingActionsEl,
+  /** Whether you're swiping. Taps don't count. */
   isDragging,
+  /** Which edge is open, or `null` when closed. */
   openSide,
-  /** 0 → 1 reveal progress for each edge — live during a drag, settled after. */
+  /** Reveal progress of the leading edge, from 0 to 1. Live during a drag, settled after. */
   leadingProgress,
+  /** Reveal progress of the trailing edge, from 0 to 1. Live during a drag, settled after. */
   trailingProgress,
+  /** Opens an edge. Without `side`, it opens the trailing edge, or the leading one if it's the only edge. */
   reveal,
+  /** Closes the open edge. */
   close,
 })
 </script>

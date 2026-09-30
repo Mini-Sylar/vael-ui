@@ -79,31 +79,43 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-/** Checked state. Bind an array instead to toggle this checkbox's `value` prop in/out of it (checkbox-group pattern). */
+/**
+ * Checked state. Bind an array to add or remove this checkbox's `value` in it (checkbox group).
+ * @default false
+ */
 const modelValue = defineModel<boolean | unknown[]>({ default: false })
 
 const props = withDefaults(
   defineProps<{
+    /** Label text; the default slot replaces it. */
     label?: string
-    /** Only meaningful alongside an array model — checked reflects membership. */
+    /** Value added to an array model when checked. Checked state reflects its membership. */
     value?: string | number
-    /** Property, not attribute. */
+    /** Shows the mixed (indeterminate) state, which takes precedence over checked. @default false */
     indeterminate?: boolean
+    /** Disables the checkbox and blocks interaction. @default false */
     disabled?: boolean
+    /** Shows the invalid state. A surrounding `Field` in error sets it too. @default false */
     invalid?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md'
+    /** Native `name` for form submission. */
     name?: string
-    /** `false` skips built-in transitions; use exposed `boxEl`/`checkEl` to drive animation instead. */
+    /** `false` skips built-in transitions; animate the exposed `boxEl`/`checkEl` yourself. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; box: UiPartValue; label: UiPartValue }>
   }>(),
   { indeterminate: false, disabled: false, invalid: false, size: 'md', motionCss: true },
 )
 
-const emit = defineEmits<{ change: [checked: boolean] }>()
+const emit = defineEmits<{
+  /** Fires when you toggle the checkbox, with its new checked state. */
+  change: [checked: boolean]
+}>()
 
 defineSlots<{
-  /** Inline label content; overrides the `label` prop text entirely. */
+  /** Label content; replaces the `label` text. */
   default(): unknown
 }>()
 
@@ -176,5 +188,14 @@ const controlClass = computed(() => cx('ui-checkbox-control'))
 const boxPart = computed(() => resolveUiPart(cx, themedUi()?.box, 'ui-checkbox-box'))
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-checkbox-label'))
 
-defineExpose({ el: root, inputEl, boxEl, checkEl })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Native checkbox input. */
+  inputEl,
+  /** Visual box element. */
+  boxEl,
+  /** Check-mark SVG element. */
+  checkEl,
+})
 </script>

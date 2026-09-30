@@ -82,18 +82,25 @@ import { vScrollMask } from '../../directives/vScrollMask'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
+/** Index of the active step. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(
   defineProps<{
+    /** Steps to show, each with a `label` and optional `description` and `disabled`. */
     items: ReadonlyArray<T>
+    /** Lays the steps out in a row or a column. @default 'horizontal' */
     orientation?: 'horizontal' | 'vertical'
-    /** Steps ahead of the active one are only clickable once reached (no skipping ahead). Past/current steps stay clickable. */
+    /**
+     * Blocks clicks on steps ahead of the active one, so you can't skip ahead. Past and current steps stay clickable.
+     * @default true
+     */
     linear?: boolean
-    /** `false` renders a pure display/progress indicator — no click handling at all. */
+    /** `false` renders a display-only progress indicator with no click handling. @default true */
     clickable?: boolean
-    /** Gates the built-in check-mark/number swap transition inside the step circle. */
+    /** Gates the built-in check-mark/number swap transition inside the step circle. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       step: UiPartValue
@@ -109,10 +116,12 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when you click a step and it becomes active. */
   change: [index: number, item: T]
 }>()
 
 defineSlots<{
+  /** Custom label content for each step, replacing the default label and description. */
   item(props: {
     item: T
     index: number
@@ -166,5 +175,8 @@ const connectorPart = computed(() =>
   ),
 )
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

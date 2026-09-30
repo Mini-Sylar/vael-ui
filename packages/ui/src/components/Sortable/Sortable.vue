@@ -86,41 +86,53 @@ import type {
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-/** The list, in order. Reassigned to a new array on a committed drop — bind with `v-model:items`. */
+/**
+ * The list, in order. Sortable assigns a new array when a drop commits, so bind it with `v-model:items`.
+ * @default []
+ */
 const items = defineModel<T[]>('items', { default: () => [] })
 
 const props = withDefaults(
   defineProps<{
-    /** Property holding each item's stable identity. Defaults to `value`, the same item vocabulary `MenuItemData`/`SelectItemData`/`TreeNode` already use. */
+    /**
+     * Property that holds each item's stable identity. `value` matches `MenuItemData`, `SelectItemData` and `TreeNode`.
+     * @default 'value'
+     */
     itemKey?: keyof T
-    /** Property to announce and to render when no `#item` slot is given. */
+    /** Property to announce, and to render when you don't pass an `#item` slot. @default 'label' */
     labelKey?: keyof T
-    /** `'y'` (default) reorders a column of rows; `'x'` reorders a row of items. Arrow keys follow the axis. */
+    /**
+     * `'y'` reorders a column of rows; `'x'` reorders a row of items. Arrow keys follow the axis.
+     * @default 'y'
+     */
     axis?: SortableAxis
-    /** Structural veto, re-run while dragging: `false` marks the target invalid. Keep it cheap. */
+    /** Runs repeatedly while you drag; return `false` to mark the target invalid. Keep it cheap. */
     canDrop?: (details: SortableDropDetails) => boolean
-    /** Async gate at drop time. Return `false` (or a promise of it) to cancel — composes with `confirmAction().result`. */
+    /** Async check at drop time. Return `false`, or a promise of `false`, to cancel. Pairs with `confirmAction().result`. */
     beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
-    /** Scrolls the list, any scrollable ancestor, or the page while a drag nears its edge. Default `true`. */
+    /**
+     * Scrolls the list, any scrollable ancestor, or the page while a drag nears its edge.
+     * @default true
+     */
     autoScroll?: boolean
-    /** Turns off dragging; rows become static. */
+    /** Turns off dragging, so rows stay static. @default false */
     disabled?: boolean
-    /** `false` skips the built-in springs entirely — rows snap to their new slots. Reach for it when driving the motion yourself. */
+    /**
+     * `false` skips the built-in springs, so rows snap to their new slots. Use it when you drive the motion yourself.
+     * @default true
+     */
     motionCss?: boolean
-    /** Shares drag sessions with other `<Sortable>`s/`useSortable()` lists passed the same handle — from `useSortableGroup()`. Lets an item cross between them. */
+    /** Handle from `useSortableGroup()`. Lists that share it, `<Sortable>` or `useSortable()`, let items cross between them. */
     group?: SortableGroupHandle
-    /** This list's identity within `group`. Auto-assigned if omitted. */
+    /** This list's identity within `group`. Unset, Sortable assigns one. */
     groupId?: string | number
-    /** `group` only — how a drag looks once it leaves this list for a sibling
-     * one. `'element'` (default): the real dragged item lifts and keeps
-     * moving, so there's only ever one instance of it on screen. `'clone'`:
-     * a separate floating copy, for content that can't tolerate leaving its
-     * normal layout. */
+    /** `group` only: what follows the pointer once a drag leaves this list.
+     * `'element'` moves the real item; `'clone'` floats a copy, for content that can't leave its layout. */
     previewMode?: 'element' | 'clone'
-    /** Ms a touch pointer must hold a row still before a drag starts. Skip
-     * this unless `#item`/`#handle` content is also tappable for something
-     * else — the built-in handle alone never needs it. Default `0`. */
+    /** Milliseconds a touch must hold a row still before a drag starts. Unset, drags start at once.
+     * Set it only when `#item` or `#handle` content is also tappable; the built-in handle never needs it. */
     touchDragDelay?: number
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       item: UiPartValue
@@ -143,14 +155,14 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  /** Fires after `items` has been reordered. Do optimistic persistence here — you own `items`, so a failed call rolls back by restoring your own snapshot. */
+  /** Fires after `items` changes order. Persist optimistically here; on failure, restore your own snapshot of `items`. */
   reorder: [value: string | number, to: DropPosition]
-  /** `beforeDrop` threw or rejected; the move was already reverted. */
+  /** Fires when `beforeDrop` throws or rejects, after Sortable reverts the move. */
   'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
 
 defineSlots<{
-  /** Row content. Falls back to `labelKey`'s value when omitted. */
+  /** Row content. Unset, the row shows the item's `labelKey` value. */
   item(props: { item: T; index: number; grabbed: boolean }): unknown
   /** Replaces the default drag handle. */
   handle(props: { item: T }): unknown
@@ -249,5 +261,18 @@ const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-sortable
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-sortable-item'))
 const handlePart = computed(() => resolveUiPart(cx, themedUi()?.handle, 'ui-sortable-handle'))
 
-defineExpose({ el: root, isGrabbed, isValidDrop, isPending, isForeignDropTarget, activeValue })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Whether an item is held, by pointer or keyboard. */
+  isGrabbed,
+  /** `false` while hovering a target that `canDrop` rejected. */
+  isValidDrop,
+  /** Whether an async `beforeDrop` is still deciding. */
+  isPending,
+  /** `group` only: whether a drag from another list is hovering this one. */
+  isForeignDropTarget,
+  /** Key of the item being dragged, or `null`. */
+  activeValue,
+})
 </script>

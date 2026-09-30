@@ -43,12 +43,19 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
+    /** Image URL. Falls back to the default slot or initials until it loads, or if it fails. */
     src?: string
+    /** Image alt text; defaults to `name`. */
     alt?: string
+    /** Person's name, used for the fallback initials and as the default `alt`. */
     name?: string
+    /** Avatar size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Round or rounded-square frame. @default 'circle' */
     shape?: 'circle' | 'square'
+    /** Which corner the `#badge` slot sits on. @default 'bottom-end' */
     badgePlacement?: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end'
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       image: UiPartValue
@@ -60,12 +67,16 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when the image loads. */
   load: [event: Event]
+  /** Fires when the image fails to load. */
   error: [event: Event]
 }>()
 
 defineSlots<{
+  /** Fallback content shown while there's no loaded image; defaults to the initials of `name`. */
   default(): unknown
+  /** Overlay on the avatar's edge, e.g. a `Badge`; position it with `badgePlacement`. */
   badge(): unknown
 }>()
 
@@ -124,5 +135,10 @@ const imagePart = computed(() => resolveUiPart(cx, themedUi()?.image, 'ui-avatar
 const fallbackPart = computed(() => resolveUiPart(cx, themedUi()?.fallback, 'ui-avatar-fallback'))
 const badgePart = computed(() => resolveUiPart(cx, themedUi()?.badge, 'ui-avatar-badge'))
 
-defineExpose({ el: root, imgEl })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Image element (null without `src`). */
+  imgEl,
+})
 </script>

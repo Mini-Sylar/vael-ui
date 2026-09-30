@@ -32,11 +32,15 @@ const props = withDefaults(
   defineProps<{
     /** `null`/`undefined` renders the indeterminate (looping) state. */
     value?: number | null
+    /** Value that counts as complete; Progress clamps `value` to `0`–`max`. @default 100 */
     max?: number
+    /** Accessible label for the progress bar. */
     label?: string
+    /** Fill color variant. @default 'primary' */
     variant?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
-    /** Track thickness. */
+    /** Track thickness. @default 'md' */
     size?: 'sm' | 'md'
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; track: UiPartValue; fill: UiPartValue }>
   }>(),
   { max: 100, variant: 'primary', size: 'md' },
@@ -75,5 +79,10 @@ const rootPart = computed(() =>
 const trackPart = computed(() => resolveUiPart(cx, themedUi()?.track, 'ui-progress-track'))
 const fillPart = computed(() => resolveUiPart(cx, themedUi()?.fill, 'ui-progress-fill'))
 
-defineExpose({ el: root, fillEl })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Fill element; its scale comes from the `--ui-progress-scale` custom property. */
+  fillEl,
+})
 </script>

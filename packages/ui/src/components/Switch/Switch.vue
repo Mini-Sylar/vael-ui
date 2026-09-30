@@ -49,23 +49,31 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
+/** Whether the switch is on. @default false */
 const modelValue = defineModel<boolean>({ default: false })
 
 const props = withDefaults(
   defineProps<{
+    /** Label text; the default slot replaces it. */
     label?: string
+    /** Disables the switch and blocks interaction. @default false */
     disabled?: boolean
+    /** Shows the invalid state. A surrounding `Field` in error sets it too. @default false */
     invalid?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md'
+    /** Native `name` for form submission. */
     name?: string
-    // false skips transitions; exposed trackEl/thumbEl enable custom motion
+    /** `false` skips built-in transitions; animate the exposed `trackEl`/`thumbEl` yourself. @default true */
     motionCss?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; track: UiPartValue; thumb: UiPartValue; label: UiPartValue }>
   }>(),
   { disabled: false, invalid: false, size: 'md', motionCss: true },
 )
 
 defineSlots<{
+  /** Label content; replaces the `label` text. */
   default(): unknown
 }>()
 
@@ -117,5 +125,14 @@ const trackPart = computed(() => resolveUiPart(cx, themedUi()?.track, 'ui-switch
 const thumbPart = computed(() => resolveUiPart(cx, themedUi()?.thumb, 'ui-switch-thumb'))
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-switch-label'))
 
-defineExpose({ el: root, inputEl, trackEl, thumbEl })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Native checkbox input (`role="switch"`). */
+  inputEl,
+  /** Track element. */
+  trackEl,
+  /** Thumb element. */
+  thumbEl,
+})
 </script>

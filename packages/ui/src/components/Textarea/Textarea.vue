@@ -64,22 +64,31 @@ import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
+/** Textarea value. Supports the `.trim` and `.lazy` modifiers. @default '' */
 const [modelValue, modifiers] = defineModel<string>({ default: '' })
 
 const props = withDefaults(
   defineProps<{
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /**
+     * Disables the textarea and blocks interaction. A disabled parent Field also disables it.
+     * @default false
+     */
     disabled?: boolean
+    /** Makes the value read-only while keeping it focusable and selectable. @default false */
     readonly?: boolean
-    /** Standalone override; ORed with the nearest Field's `error` state. */
+    /** Standalone override; ORed with the nearest Field's `error` state. @default false */
     invalid?: boolean
+    /** Text shown while the textarea is empty. */
     placeholder?: string
-    /** Native `rows` attribute — also the auto-grow minimum. */
+    /** Native `rows` attribute; also sets the auto-grow minimum. @default 3 */
     rows?: number
-    /** Enable auto-grow behavior. */
+    /** Grows the textarea to fit its content. @default false */
     autoGrow?: boolean
-    /** Only meaningful with `autoGrow`; omitted means no cap. */
+    /** Maximum rows `autoGrow` grows to; unset means no cap. */
     maxRows?: number
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       textarea: UiPartValue
@@ -95,10 +104,11 @@ const props = withDefaults(
 defineSlots<{
   /** Inline leading content (centered on the resting height). */
   start(): unknown
+  /** Inline trailing content (centered on the resting height). */
   end(): unknown
-  /** Bottom-left of the action strip (attachment button, …). */
+  /** Bottom-left of the action strip, such as an attachment button. */
   'bottom-start'(): unknown
-  /** Bottom-right of the action strip (char counter, send button, …). */
+  /** Bottom-right of the action strip, such as a character counter or send button. */
   'bottom-end'(): unknown
 }>()
 
@@ -235,5 +245,10 @@ const bottomEndPart = computed(() =>
   resolveUiPart(cx, themedUi()?.bottomEnd, 'ui-textarea-bottom-end'),
 )
 
-defineExpose({ el: root, textareaEl })
+defineExpose({
+  /** Root element (the frame around the textarea). */
+  el: root,
+  /** Native `<textarea>` element. */
+  textareaEl,
+})
 </script>

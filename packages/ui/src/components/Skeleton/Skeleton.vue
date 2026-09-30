@@ -23,13 +23,23 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = withDefaults(
   defineProps<{
-    /** `text` (default): 1em-tall rounded line. `circle`: round, aspect-ratio 1. `rect`: `--ui-radius` corners, sized by content or `ui.root`. */
+    /**
+     * `'text'`: a `1em`-tall rounded line. `'circle'`: round, with `aspect-ratio: 1`. `'rect'`: `--ui-radius` corners; content or `ui.root` sets its size.
+     * @default 'text'
+     */
     variant?: 'text' | 'rect' | 'circle'
+    /** Shows the shimmer animation. @default true */
     animated?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
   { variant: 'text', animated: true },
 )
+
+defineSlots<{
+  /** Placeholder content that sizes the skeleton; it renders hidden. */
+  default(): unknown
+}>()
 
 const root = useTemplateRef<HTMLElement>('root')
 const cx = useClassMerge()
@@ -47,5 +57,8 @@ const rootPart = computed(() =>
   ),
 )
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

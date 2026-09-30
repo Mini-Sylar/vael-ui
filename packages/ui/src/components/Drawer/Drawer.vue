@@ -41,7 +41,7 @@ import type { DialogProps } from '../Dialog/Dialog.vue'
 export type DrawerSide = 'left' | 'right' | 'top' | 'bottom'
 
 export interface DrawerProps extends Omit<DialogProps, 'position'> {
-  /** Which viewport edge the panel slides in from. */
+  /** Which viewport edge the panel slides in from. @default 'right' */
   side?: DrawerSide
 }
 </script>
@@ -56,9 +56,12 @@ import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 
 defineOptions({ inheritAttrs: false })
 
-/** Whether the drawer is open. */
+/** Whether the drawer is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
-/** Whether the panel currently fills the viewport. Self-managed by Dialog's built-in toggle unless the consumer binds it. */
+/**
+ * Whether the panel fills the viewport. Dialog's built-in toggle manages it unless you bind it.
+ * @default false
+ */
 const maximized = defineModel<boolean>('maximized', { default: false })
 
 const props = withDefaults(defineProps<DrawerProps>(), {
@@ -75,10 +78,12 @@ const props = withDefaults(defineProps<DrawerProps>(), {
 })
 
 const emit = defineEmits<{
+  /** Fires before the drawer closes, with the reason. Call `details.cancel()` to keep it open. */
   'open-change': [value: boolean, details: DialogOpenChangeDetails]
 }>()
 
 defineSlots<{
+  /** Panel content. */
   default(props: {
     close: () => void
     open: boolean
@@ -86,15 +91,21 @@ defineSlots<{
     cancelClose: () => void
     panelEl: HTMLElement | null
   }): unknown
+  /** Replaces the default title and description header. */
   header(props: { close: () => void }): unknown
+  /** Action row at the end of the panel. */
   footer(props: { close: () => void }): unknown
 }>()
 
 const dialog = useTemplateRef('dialog')
 defineExpose({
+  /** Panel element (null while closed). */
   panelEl: computed(() => dialog.value?.panelEl ?? null),
+  /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => dialog.value?.isClosing ?? false),
+  /** Closes the drawer, running `beforeClose` first. */
   close: () => dialog.value?.close(),
+  /** Cancels a close pending in `beforeClose` and keeps the drawer open. */
   cancelClose: () => dialog.value?.cancelClose(),
 })
 </script>

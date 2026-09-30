@@ -135,34 +135,43 @@ defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
-    /** `false` (default) / `true`: fully controlled. `'auto'`: opt into promise-based
-     * loading — `@click` returning a promise drives it, finishing only once the last
-     * overlapping promise resolves. */
+    /** `true` and `false` set the loading state directly. With `'auto'`, the button stays loading
+     * until every overlapping promise your `@click` handler returns settles.
+     * @default false
+     */
     loading?: boolean | 'auto'
+    /** Disables the button and blocks interaction. @default false */
     disabled?: boolean
+    /** Visual style of the button. @default 'primary' */
     variant?: ButtonVariant
+    /** Button size. @default 'md' */
     size?: ButtonSize
-    /** `overlay` (default): loader centered over fading content. `inline`: spinner slides in at start. */
+    /**
+     * `'overlay'` centers the loader over the fading content; `'inline'` slides a spinner in at the start.
+     * @default 'overlay'
+     */
     loader?: ButtonLoaderPlacement
-    /** Square icon-only button; pair with an aria-label. */
+    /** Renders a square icon-only button; pair it with an `aria-label`. @default false */
     icon?: boolean
-    /** Fully rounded capsule/pill shape. */
+    /** Gives the button a fully rounded pill shape. @default false */
     pill?: boolean
-    /** Stretch to container's full inline size. */
+    /** Stretches the button to its container's full inline size. @default false */
     block?: boolean
+    /** Native `type` attribute; applied only when `as` is `'button'`. @default 'button' */
     type?: 'button' | 'submit' | 'reset'
-    /** Root tag (e.g. `as="a"` for a link styled as button). */
+    /** Root tag, such as `as="a"` for a link styled as a button. @default 'button' */
     as?: string
-    /** Where the `#badge` slot sits (default `top-end`). Setting it also reserves the wrapper up
-     * front, so a `v-if`'d `#badge` keeps a stable DOM position before the first badge appears. */
+    /** Where the `#badge` slot sits (`'top-end'` when unset). Setting it reserves the wrapper up front,
+     * so a `v-if`'d `#badge` keeps a stable DOM position. */
     badgePlacement?: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end'
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
-      /** Wraps the `#leading` slot — carries the default gap to the label; zero it here to close the gap instead of margin-hacking the slot content. */
+      /** Wraps the `#leading` slot and carries the gap to the label. */
       leading: UiPartValue
-      /** Wraps the `#trailing` slot — same default gap as `leading`, mirrored. */
+      /** Wraps the `#trailing` slot and carries the gap to the label. */
       trailing: UiPartValue
-      /** Wraps the label content (default slot) — `display: inline-block` by default; override for e.g. an icon-above-label stacked layout. */
+      /** Wraps the label (`display: inline-block`); override for stacked layouts. */
       content: UiPartValue
       /** The label itself, nested one level inside `content`. */
       label: UiPartValue
@@ -184,18 +193,19 @@ const props = withDefaults(
 )
 
 defineSlots<{
+  /** Button label; receives the loading state, the root element and `run`. */
   default(props: {
     loading: boolean
     el: HTMLElement | null
     run: <T>(fn: () => T | Promise<T>) => Promise<T>
   }): unknown
-  /** Custom loader visuals (placement and crossfade are library-owned). */
+  /** Custom loader visuals; the library still handles placement and the crossfade. */
   loader(props: { loading: boolean; el: HTMLElement | null }): unknown
-  /** Icon before the label (1em box, optically aligned). */
+  /** Icon before the label, in an optically aligned `1em` box. */
   leading(): unknown
-  /** Icon after the label (1em box, optically aligned). */
+  /** Icon after the label, in an optically aligned `1em` box. */
   trailing(): unknown
-  /** Badge in library-positioned wrapper. */
+  /** Badge content, placed in a wrapper the library positions. */
   badge(): unknown
 }>()
 
@@ -289,5 +299,12 @@ const trailingPart = computed(() => resolveUiPart(cx, themedUi()?.trailing, 'ui-
 const contentPart = computed(() => resolveUiPart(cx, themedUi()?.content, 'ui-button-content'))
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-button-label'))
 
-defineExpose({ el, loading: isLoading, run })
+defineExpose({
+  /** Root element (the button itself, even when a badge wrapper is rendered). */
+  el,
+  /** Whether the button is loading, from the `loading` prop or `'auto'` tracking. */
+  loading: isLoading,
+  /** Runs `fn` with the loading state shown until it settles. */
+  run,
+})
 </script>

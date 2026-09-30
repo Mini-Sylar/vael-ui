@@ -123,24 +123,35 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+/** Current value. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
 const props = withDefaults(
   defineProps<{
-    /** Omit either (or both) for a genuinely unbounded value that keeps counting forever in that direction. */
+    /** Lowest allowed value. Omit for no lower bound. */
     min?: number
+    /** Highest allowed value. Omit for no upper bound; the progress ring shows only when both are set. */
     max?: number
+    /**
+     * Value change per arrow key or per `degreesPerStep` of rotation. Page Up/Down move ten steps.
+     * @default 1
+     */
     step?: number
-    /** Degrees of pointer rotation per `step` of value change. */
+    /** Degrees of pointer rotation per `step` of value change. Unset, uses 15. */
     degreesPerStep?: number
+    /** Shows the current value in the center of the dial. @default true */
     showValue?: boolean
+    /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** Disables the dial and blocks interaction. @default false */
     disabled?: boolean
+    /** Shows the invalid state. A surrounding `Field` in error sets it too. @default false */
     invalid?: boolean
-    /** Falls through to a hidden `<input>` → plain `<form>` participation. */
+    /** Native `name` for form submission, via a hidden input. */
     name?: string
     /** Drives `aria-valuetext`, e.g. `(v) => \`${v} dB\`` for a gain dial. */
     valueText?: (value: number) => string
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       dial: UiPartValue
@@ -216,5 +227,12 @@ const fillPart = computed(() => resolveUiPart(cx, themedUi()?.fill, 'ui-dial-fil
 const ticksPart = computed(() => resolveUiPart(cx, themedUi()?.ticks, 'ui-dial-ticks'))
 const facePart = computed(() => resolveUiPart(cx, themedUi()?.face, 'ui-dial-face'))
 
-defineExpose({ el: root, dialEl, ticksEl })
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** Focusable dial element (`role="slider"`). */
+  dialEl,
+  /** SVG group holding the tick marks. */
+  ticksEl,
+})
 </script>

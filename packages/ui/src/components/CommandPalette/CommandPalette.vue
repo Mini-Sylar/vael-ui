@@ -110,9 +110,9 @@ export interface CommandPaletteItem {
   keywords?: string[]
   disabled?: boolean
   icon?: Component
-  /** Purely a display hint (e.g. `['⌘', 'K']`) — rendered as `Kbd` badges. Doesn't wire the actual key handler; pair with your own listener or `shortcut` on a second instance if you want it functional too. */
+  /** Display-only hint, such as `['⌘', 'K']`, rendered as Kbd badges. It doesn't bind the key; add your own listener for that. */
   shortcut?: string[]
-  /** Items sharing the same `group` are visually clustered under a sticky heading, in first-seen order — items don't need to be adjacent in `items` itself. */
+  /** Groups items that share it under a sticky heading, in first-seen order. They don't need to be adjacent in `items`. */
   group?: string
 }
 </script>
@@ -138,33 +138,56 @@ interface CommandPaletteGroupView {
   entries: { item: T; index: number }[]
 }
 
+/** Whether the palette is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
+/** Search text. Resets to empty each time the palette opens. @default '' */
 const query = defineModel<string>('query', { default: '' })
 
 const props = withDefaults(
   defineProps<{
+    /** Commands to search and run. */
     items: ReadonlyArray<T>
+    /** Search input placeholder. Falls back to the localized message. */
     placeholder?: string
     /** Custom filter function; replaces the default label/keywords match. Omit to use the built-in filter. */
     filter?: (item: T, query: string) => boolean
-    /** Global shortcut that toggles `open`, e.g. `'mod+k'` (`mod` = Cmd on Mac, Ctrl elsewhere). Unset by default — nothing listens until you opt in. */
+    /** Global shortcut that toggles `open`, such as `'mod+k'` (`mod` is Cmd on Mac, Ctrl elsewhere). Nothing listens until you set it. */
     shortcut?: string
+    /** Closes the palette after an item is selected. @default true */
     closeOnSelect?: boolean
+    /** Panel width, as in Dialog. @default 'lg' */
     size?: DialogSize
-    /** Where the panel anchors in the viewport. `'top'` (default) matches the Spotlight/Raycast convention; `'center'` for a more Dialog-like feel. */
+    /**
+     * Where the panel anchors in the viewport. `'top'` matches the Spotlight/Raycast convention; `'center'` feels more like a Dialog.
+     * @default 'top'
+     */
     position?: DialogPosition
+    /**
+     * `false` disables the overlay, scroll lock and focus trap. Escape-to-close and layer stacking still apply.
+     * @default true
+     */
     modal?: boolean
+    /** Escape key closes the panel. @default true */
     closeOnEsc?: boolean
+    /**
+     * Clicking the overlay closes the panel. Has no effect when `modal` is `false`, since there's no overlay.
+     * @default true
+     */
     closeOnOverlay?: boolean
-    /** Custom exit animation; call `done()` when complete. Forwarded straight to the underlying `Dialog`. */
+    /** Custom exit animation; call `done()` to finish closing. Forwarded to the underlying Dialog. */
     beforeClose?: (done: () => void) => void
-    /** Presence becomes `v-show`-driven, owned by the consumer. Forwarded straight to the underlying `Dialog`. */
+    /**
+     * Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. Forwarded to the underlying Dialog.
+     * @default false
+     */
     forceMount?: boolean
+    /** Teleport target: a CSS selector. Takes precedence over `container`. */
     teleportTo?: string
-    /** Scopes the palette to one element instead of the viewport. Forwarded straight to the underlying `Dialog`. */
+    /** Scopes the palette to one element instead of the viewport. Forwarded to the underlying Dialog. */
     container?: DOMTarget
-    /** Element whose scrolling is locked while open, if different from `container`. Forwarded straight to the underlying `Dialog`. */
+    /** Element whose scrolling locks while the palette is open, if different from `container`. Forwarded to the underlying Dialog. */
     scrollTarget?: DOMTarget
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       panel: UiPartValue
       input: UiPartValue
@@ -186,12 +209,16 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
+  /** Fires when you pick an enabled item by click or Enter. */
   select: [item: T]
+  /** Fires before the palette closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: DialogOpenChangeDetails]
 }>()
 
 defineSlots<{
+  /** Custom row content for each item; call `select()` to pick it. */
   item(props: { item: T; index: number; active: boolean; select: () => void }): unknown
+  /** Replaces the localized "no results" row shown when nothing matches. */
   empty(): unknown
 }>()
 
@@ -352,13 +379,21 @@ const emptyPart = computed(() => resolveUiPart(cx, themedUi()?.empty, 'ui-comman
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 
 defineExpose({
+  /** Panel element (null while closed). */
   panelEl: computed(() => dialogRef.value?.panelEl ?? null),
+  /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => dialogRef.value?.isClosing ?? false),
+  /** Closes the palette, running `@open-change` and `beforeClose` first. */
   close: () => dialogRef.value?.close(),
+  /** Cancels a close pending in `beforeClose` and keeps the palette open. */
   cancelClose: () => dialogRef.value?.cancelClose(),
+  /** Search input element (null while closed). */
   inputEl,
+  /** Results list element (null while closed). */
   listEl,
+  /** Items matching the current query, in `items` order. */
   filteredItems,
+  /** Index of the highlighted item in `filteredItems` (`-1` when none). */
   activeIndex,
 })
 </script>

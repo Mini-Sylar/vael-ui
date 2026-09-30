@@ -21,16 +21,24 @@ defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
-    /** Root tag for the link, e.g. `as="a"` (default) or a router's link component. Ignored when `current` is true. */
+    /**
+     * Root tag for the link, such as `'a'` or a router's link component. Has no effect when `current` is `true`.
+     * @default 'a'
+     */
     as?: string
-    /** Renders plain text with `aria-current="page"` instead of a link — the last, active crumb. */
+    /**
+     * Renders the last, active crumb: plain text with `aria-current="page"` instead of a link.
+     * @default false
+     */
     current?: boolean
+    /** Class and style overrides for each part. */
     ui?: Partial<{ item: UiPartValue; link: UiPartValue; current: UiPartValue }>
   }>(),
   { as: 'a', current: false },
 )
 
 defineSlots<{
+  /** Crumb label. */
   default(): unknown
 }>()
 
@@ -44,5 +52,8 @@ const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-breadcru
 const linkPart = computed(() => resolveUiPart(cx, themedUi()?.link, 'ui-breadcrumb-link'))
 const currentPart = computed(() => resolveUiPart(cx, themedUi()?.current, 'ui-breadcrumb-current'))
 
-defineExpose({ el: root })
+defineExpose({
+  /** Root element. */
+  el: root,
+})
 </script>

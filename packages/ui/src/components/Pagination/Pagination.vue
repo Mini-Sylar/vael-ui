@@ -157,7 +157,9 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const messages = useUiMessages()
 
+/** Current page, 1-based. @default 1 */
 const page = defineModel<number>('page', { default: 1 })
+/** Rows per page. Picking a size from the dropdown resets `page` to 1. @default 10 */
 const pageSize = defineModel<number>('pageSize', { default: 10 })
 
 const listEl = useTemplateRef<HTMLElement>('list')
@@ -165,12 +167,13 @@ const indicator = useTabIndicator(page, { listEl, selector: '[aria-current="page
 
 const props = withDefaults(
   defineProps<{
-    /** Total item count across all pages (not current page's row count). */
+    /** Total item count across all pages, not the current page's row count. */
     total: number
-    /** Page-size `<Select>` options. Omitted hides the dropdown. */
+    /** Page-size `<Select>` options. Omit it to hide the dropdown. */
     pageSizeOptions?: number[]
-    /** Page-number buttons to show on each side of current page before ellipsis. */
+    /** Page-number buttons to show on each side of the current page before an ellipsis. @default 1 */
     siblingCount?: number
+    /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
       list: UiPartValue
