@@ -413,13 +413,9 @@ watch(
   { immediate: true },
 )
 
-// ConfigProvider only renders its scope wrapper while the theme produces CSS,
-// so going from an empty theme to a non-empty one remounts the whole app (and
-// drops focus from the swatch that was just clicked). Always passing a radius,
-// the library default from tokens.css when none is picked, keeps it mounted.
 const theme = computed(() => ({
   ...(primaryColor.value ? { primary: primaryColor.value } : {}),
-  radius: radiusChoice.value !== 'default' ? radiusChoice.value : '10px',
+  ...(radiusChoice.value !== 'default' ? { radius: radiusChoice.value } : {}),
 }))
 </script>
 
