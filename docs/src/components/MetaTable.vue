@@ -249,7 +249,7 @@ tbody tr:target {
   white-space: nowrap;
 }
 
-.description-cell :deep(.inline-code:not(.inline-code--ref)) {
+.description-cell :deep(.inline-code:not(.code-ref)) {
   background: color-mix(in oklch, var(--ui-text) 7%, transparent);
 }
 

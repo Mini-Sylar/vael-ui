@@ -1,32 +1,33 @@
 <template>
-  <code v-if="html && !plain" class="inline-code shiki" v-html="html" />
-  <code v-else class="inline-code" :class="{ 'inline-code--ref': plain }">{{ code }}</code>
+  <code v-if="html && highlighted" class="inline-code shiki" v-html="html" />
+  <code v-else class="inline-code" :class="{ 'code-ref': kind === 'ref' }">{{ code }}</code>
 </template>
 
 <script setup lang="ts">
-import { shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { highlightInline } from '../composables/highlightInline'
-import type { InlineLang } from '../composables/highlightInline'
+import type { InlineKind, InlineLang } from '../composables/highlightInline'
 
 const props = withDefaults(
   defineProps<{
     code: string
     lang?: InlineLang
-    /** Vue template syntax (`@skip`, `#item`, `v-model:open`): no highlighting, accent-colored. */
-    plain?: boolean
+    /** `code`/`cssVar`/`cssValue` are syntax-highlighted, `ref` takes the accent color, `plain` is monospace only. */
+    kind?: InlineKind
   }>(),
-  { lang: 'ts', plain: false },
+  { lang: 'ts', kind: 'code' },
 )
 
 const html = shallowRef('')
+const highlighted = computed(() => props.kind !== 'ref' && props.kind !== 'plain')
 
 // Plain text renders first; the highlighted version swaps in once Shiki
 // resolves. A stale result for a previous `code` is dropped.
 watch(
-  () => [props.code, props.lang] as const,
-  async ([code, lang]) => {
-    if (props.plain) return
-    const result = await highlightInline(code, lang)
+  () => [props.code, props.lang, props.kind] as const,
+  async ([code, lang, kind]) => {
+    if (kind === 'ref' || kind === 'plain') return
+    const result = await highlightInline(code, kind === 'code' ? lang : kind)
     if (code === props.code && lang === props.lang) html.value = result
   },
   { immediate: true },
@@ -38,20 +39,5 @@ watch(
   font-size: 0.85em;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-}
-
-/* Template references carry no syntax colors of their own, so they take an
-   accent: the color picked in the docs theme picker (`--docs-accent`, set by
-   App.vue), else the info blue, since the default primary is plain
-   black/white and wouldn't stand out. Pulled a quarter of the way toward the
-   text color so a light accent (yellow, lime) still reads on the page. */
-.inline-code--ref {
-  --ref-accent: var(--docs-accent, var(--ui-info));
-  color: color-mix(in oklch, var(--ref-accent) 75%, var(--ui-text));
-  background: color-mix(in oklch, var(--ref-accent) 12%, transparent);
-  font-weight: 500;
-  padding: 0.05em 0.3em;
-  border-radius: 4px;
-  white-space: nowrap;
 }
 </style>
