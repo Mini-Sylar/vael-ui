@@ -13,26 +13,36 @@
       </Input>
       <Input v-model="copyValue" placeholder="Click the button, not the frame" class="input-fixed">
         <template #end>
-          <Button size="sm" variant="ghost" icon aria-label="Copy link" @click="onCopyClick">
-            <PhCopy weight="bold" />
+          <Button
+            size="sm"
+            variant="ghost"
+            icon
+            :aria-label="copied ? 'Copied' : 'Copy link'"
+            @click="copy"
+          >
+            <PhCheck v-if="copied" weight="bold" />
+            <PhCopy v-else weight="bold" />
           </Button>
         </template>
       </Input>
     </div>
-    <p class="note">Copy button clicks: {{ copyClicks }}</p>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { Button, Input } from 'vael-ui'
-import { PhCopy, PhMagnifyingGlass } from '@phosphor-icons/vue'
+import { PhCheck, PhCopy, PhMagnifyingGlass } from '@phosphor-icons/vue'
 
 const searchValue = shallowRef('')
 const copyValue = shallowRef('https://vael-ui.dev')
-const copyClicks = shallowRef(0)
-function onCopyClick() {
-  copyClicks.value++
+const copied = shallowRef(false)
+let resetTimer: ReturnType<typeof setTimeout> | undefined
+async function copy() {
+  await navigator.clipboard.writeText(copyValue.value)
+  copied.value = true
+  clearTimeout(resetTimer)
+  resetTimer = setTimeout(() => (copied.value = false), 1500)
 }
 </script>
 

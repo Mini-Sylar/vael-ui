@@ -399,6 +399,7 @@
             :id="`ctl-${control.name}`"
             size="sm"
             class="control-input"
+            allow-empty
             :model-value="values[control.name] as number"
             @update:model-value="(v) => (values[control.name] = v)"
           />
@@ -801,17 +802,12 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
   value: 60,
 }
 
-// Props whose real default IS "unset" (an opt-in cap/limit, not a value the
-// component needs to render at all) — seeding these to 0 like any other
-// number control collapses the panel/track to nothing. `undefined` here
-// keeps the playground's starting state matching the component's own.
-const NUMBER_UNSET_BY_DEFAULT = new Set(['maxPanelHeight', 'maxLabels'])
-
 // Same idea for a boolean|function prop (Select/Combobox's `filter`) whose
 // real "off" is an unset prop, not `false` — `false` still renders the box,
 // just without built-in matching, so a toggle that could only ever produce
 // `false`/`true` could never show the box actually disappearing.
-const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter'])
+// FileUpload's `capture`: `true` opens the camera, so it starts unset too.
+const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter', 'capture'])
 
 function setBooleanControl(name: string, checked: boolean) {
   values[name] = !checked && BOOLEAN_UNSET_WHEN_OFF.has(name) ? undefined : checked
@@ -851,12 +847,6 @@ watchEffect(() => {
       values[control.name] = overrides.number[control.name]
     } else if (control.kind === 'string' && STRING_DEFAULT_OVERRIDES[control.name] !== undefined) {
       values[control.name] = STRING_DEFAULT_OVERRIDES[control.name]
-    } else if (
-      control.kind === 'number' &&
-      propMeta?.default === undefined &&
-      NUMBER_UNSET_BY_DEFAULT.has(control.name)
-    ) {
-      values[control.name] = undefined
     } else if (control.kind === 'boolean' && BOOLEAN_UNSET_WHEN_OFF.has(control.name)) {
       values[control.name] = undefined
     } else if (
@@ -865,6 +855,14 @@ watchEffect(() => {
       NUMBER_DEFAULT_OVERRIDES[control.name] !== undefined
     ) {
       values[control.name] = NUMBER_DEFAULT_OVERRIDES[control.name]
+    } else if (
+      control.kind === 'number' &&
+      (propMeta?.default === undefined || propMeta.default === 'undefined') &&
+      !propMeta?.required
+    ) {
+      // An optional number with no default (min, max, maxSize, maxRows...) is
+      // a limit that's off until set. Seeding 0 would clamp everything to 0.
+      values[control.name] = undefined
     } else {
       values[control.name] = defaultControlValue(control, propMeta?.default)
     }
