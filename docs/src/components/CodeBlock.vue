@@ -23,7 +23,7 @@ import { shallowRef, useTemplateRef, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PhCheck, PhCopy } from '@phosphor-icons/vue'
 import { Button } from 'vael-ui'
-import { codeToHtml } from 'shiki'
+import { highlightBlock } from '../composables/highlightInline'
 
 const props = withDefaults(
   defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' | 'json' | 'css' }>(),
@@ -36,11 +36,9 @@ const codeEl = useTemplateRef('codeEl')
 const html = shallowRef('')
 
 watchEffect(async () => {
-  html.value = await codeToHtml(props.code, {
-    lang: props.lang,
-    themes: { light: 'github-light', dark: 'github-dark' },
-    defaultColor: false,
-  })
+  const { code, lang } = props
+  const result = await highlightBlock(code, lang)
+  if (code === props.code && lang === props.lang) html.value = result
 })
 
 async function copy() {

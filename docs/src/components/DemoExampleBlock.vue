@@ -17,11 +17,11 @@
         <p v-if="!activeComponent" key="empty" class="no-demo">
           No live demo for this component yet.
         </p>
-        <component v-else :is="activeComponent" :key="`${name}-${example.id}-${variant}`" />
+        <component v-else :is="activeComponent" :key="`${example.id}-${variant}`" />
       </Transition>
     </div>
     <div v-show="view === 'code'" class="demo-code">
-      <CodeBlock :code="code" />
+      <CodeBlock v-if="codeShown" :code="code" />
     </div>
     <Collapsible v-model:open="codeOpen" class="demo-code-collapsible">
       <template #trigger="{ open }">
@@ -32,7 +32,7 @@
           </template>
         </Button>
       </template>
-      <CodeBlock :code="code" />
+      <CodeBlock v-if="codeShown" :code="code" />
     </Collapsible>
   </section>
 </template>
@@ -70,6 +70,14 @@ const viewItems = computed(() => [
   { label: t('component.code'), value: 'code' },
 ])
 const view = shallowRef<'preview' | 'code'>('preview')
+
+// Highlighting a full demo source costs real main-thread time, and most
+// visitors never open the code. Mount it the first time it's shown, then keep
+// it so reopening is instant.
+const codeShown = shallowRef(false)
+watch([view, codeOpen], ([nextView, open]) => {
+  if (nextView === 'code' || open) codeShown.value = true
+})
 
 const variantItems = computed(() => {
   const list = []

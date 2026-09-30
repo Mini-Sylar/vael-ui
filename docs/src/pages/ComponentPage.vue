@@ -40,6 +40,7 @@
         id="props"
         :title="t('component.props')"
         :rows="meta.props"
+        kind="props"
         :empty-text="t('component.noProps')"
         show-default
       />
@@ -47,18 +48,21 @@
         id="slots"
         :title="t('component.slots')"
         :rows="meta.slots"
+        kind="slots"
         :empty-text="t('component.noSlots')"
       />
       <MetaTable
         id="events"
         :title="t('component.events')"
         :rows="meta.events"
+        kind="events"
         :empty-text="t('component.noEvents')"
       />
       <MetaTable
         id="exposed"
         :title="t('component.exposed')"
         :rows="meta.exposed"
+        kind="exposed"
         :empty-text="t('component.noExposed')"
       />
 
@@ -73,17 +77,20 @@
         <MetaTable
           :title="t('component.props')"
           :rows="related.meta.props"
+          kind="props"
           :empty-text="t('component.noProps')"
           show-default
         />
         <MetaTable
           :title="t('component.slots')"
           :rows="related.meta.slots"
+          kind="slots"
           :empty-text="t('component.noSlots')"
         />
         <MetaTable
           :title="t('component.exposed')"
           :rows="related.meta.exposed"
+          kind="exposed"
           :empty-text="t('component.noExposed')"
         />
       </section>
@@ -170,6 +177,7 @@ const meta = computed(() => typedMeta[name.value])
 const RELATED: Record<string, string[]> = {
   DataTable: ['Column'],
   Accordion: ['AccordionItem'],
+  Breadcrumb: ['BreadcrumbItem', 'BreadcrumbSeparator'],
 }
 const relatedComponents = computed(() =>
   (RELATED[name.value] ?? []).map((n) => ({
@@ -202,9 +210,14 @@ function stripDemoProse(source: string): string {
 }
 
 const examples = shallowRef<DemoExample[]>([])
-watchEffect(async () => {
+watchEffect(async (onCleanup) => {
   const manifestExamples = manifestEntry.value?.examples ?? []
-  examples.value = await Promise.all(
+  // A newer component's examples may resolve after an older one's; only the
+  // latest run may write. Without this, a slow load can overwrite the page
+  // you navigated to with the one you left.
+  let stale = false
+  onCleanup(() => (stale = true))
+  const loaded = await Promise.all(
     manifestExamples.map(async (entry) => {
       const vdomLoader = vdomModules[`../generated/vdom-demos/${entry.id}.vue`]
       const vaporLoader = entry.vaporEligible
@@ -241,6 +254,7 @@ watchEffect(async () => {
       }
     }),
   )
+  if (!stale) examples.value = loaded
 })
 
 const tocLinks = computed(() => [

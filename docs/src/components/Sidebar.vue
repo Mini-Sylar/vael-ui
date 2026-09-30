@@ -38,10 +38,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onScopeDispose,
+  shallowRef,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
-import type { RouteLocationRaw } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable, SelectButton, vScrollMask } from 'vael-ui'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
@@ -54,6 +62,7 @@ const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 
 const GUIDE_ROUTES = [
   { routeName: 'getting-started', labelKey: 'nav.gettingStarted' },
@@ -152,13 +161,36 @@ const navItems = computed<MenuEntry<MenuListItemData>[]>(() => {
   ]
 })
 
-const activeValue = computed(() => {
-  if (route.name === 'component') return route.params.name as string
-  if (route.name === 'composable') return composableValue(route.params.name as string)
-  if (route.name === 'directive') return directiveValue(route.params.name as string)
-  if (typeof route.name === 'string') return guideValue(route.name)
+function valueFor(to: RouteLocationNormalized): string | null {
+  if (to.name === 'component') return to.params.name as string
+  if (to.name === 'composable') return composableValue(to.params.name as string)
+  if (to.name === 'directive') return directiveValue(to.params.name as string)
+  if (typeof to.name === 'string') return guideValue(to.name)
   return null
+}
+
+// The indicator re-renders in the same frame as the whole next page (demos,
+// API tables), so on a slow device it trails the click by that page's render
+// time. Navigation start (`beforeEach`) moves it immediately, then holds the
+// navigation until that frame has painted, so the click gets feedback first
+// and the page follows a frame later. `afterEach`, which also runs for
+// failed or cancelled navigations, hands control back to the real route.
+const pendingValue = shallowRef<string | null>(null)
+const removeBeforeEach = router.beforeEach(async (to) => {
+  const next = valueFor(to)
+  if (next === null || next === valueFor(route)) return
+  pendingValue.value = next
+  await new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve)))
 })
+const removeAfterEach = router.afterEach(() => {
+  pendingValue.value = null
+})
+onScopeDispose(() => {
+  removeBeforeEach()
+  removeAfterEach()
+})
+
+const activeValue = computed(() => pendingValue.value ?? valueFor(route))
 
 // Which component pages the visitor has already seen — dismisses that component's sidebar
 // "new" dot for good, whether they got there by clicking the sidebar row, a direct link, or
