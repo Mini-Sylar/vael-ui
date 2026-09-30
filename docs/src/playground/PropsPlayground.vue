@@ -196,14 +196,15 @@
                 value="item-2"
                 title="Does it support dark mode?"
               >
-                Yes, CSS-only via a data attribute, no JavaScript toggle required.
+                Yes. It follows the system setting, and a data-theme attribute on the root element
+                overrides it.
               </component>
               <component
                 :is="accordionItemComponent"
                 value="item-3"
                 title="Can I use my own animation library?"
               >
-                Every component that animates exposes real hooks for GSAP, motion-v, or plain CSS.
+                Yes. Every animated component has hooks for GSAP, motion-v, or plain CSS.
               </component>
             </component>
           </template>
@@ -412,7 +413,7 @@
         </div>
       </div>
       <p v-else class="no-controls">
-        This component has no simple props to try live. See the examples below.
+        This component has no props you can edit here. See the examples below.
       </p>
     </div>
 
@@ -466,7 +467,7 @@ const activeComponent = computed<Component | null>(() => {
 // These throw immediately outside their required parent, even wrapped. See the examples below instead.
 const NEEDS_CONTEXT: Record<string, string> = {
   AccordionItem: 'AccordionItem only renders inside an Accordion. See the examples below.',
-  Column: 'Column only renders inside a DataTable’s tree. See the examples below.',
+  Column: 'Column only renders inside a DataTable. See the examples below.',
 }
 const needsContext = computed(() => NEEDS_CONTEXT[props.name] ?? null)
 
@@ -641,9 +642,9 @@ const CONTROL_HELP: Record<string, string> = {
   motionCss:
     'Turn off the built-in CSS transition to animate this yourself with GSAP, motion-v, or plain CSS.',
   forceMount:
-    'Keeps this in the DOM while closed, so an external animation library controls the exit instead of Vue removing it.',
+    'Keeps this mounted while closed, so your animation library runs the exit instead of Vue removing it.',
   filter:
-    'Off omits the prop entirely (no box, the real default). On is filter="true" (box + built-in matching). filter="false" — box shown, but no built-in matching, for a consumer doing their own search — has no toggle position since it needs three states; see the prop docs.',
+    'Off leaves filter unset, so the component default applies. On sets filter="true" for built-in matching. filter="false" lets you filter the items yourself. It needs a third state, so it has no toggle here. See the prop docs.',
 }
 
 interface NamedControl {

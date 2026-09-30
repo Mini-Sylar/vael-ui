@@ -1,6 +1,6 @@
 <template>
   <p v-if="error" class="playground-error">
-    Interactive preview isn't available for this component's current props. See the examples below.
+    The live preview can't render with these props. See the examples below.
   </p>
   <slot v-else />
 </template>

@@ -19,7 +19,7 @@
             <component :is="ButtonComp">Save changes</component>
             <component :is="BadgeComp" :count="3" />
             <component :is="CardComp" title="Nested content">
-              <p class="preview-text">Everything inside this ConfigProvider re-themes together.</p>
+              <p class="preview-text">Everything inside this ConfigProvider uses its theme.</p>
             </component>
           </div>
         </component>
