@@ -124,8 +124,9 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
 
   let stopAutoUpdate: (() => void) | undefined
   let disconnectObserver: MutationObserver | undefined
+  // floatingEl is a source so a panel that mounts already open still starts positioning.
   watch(
-    () => [toValue(options.active), options.referenceEl.value] as const,
+    () => [toValue(options.active), options.referenceEl.value, options.floatingEl.value] as const,
     ([isActive, reference], previous) => {
       const wasActive = previous?.[0] ?? false
       stopAutoUpdate?.()

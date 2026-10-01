@@ -3,6 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import PopoverFixture from './fixtures/PopoverFixture.vue'
+import PopoverOpenAtMountFixture from './fixtures/PopoverOpenAtMountFixture.vue'
 
 function positioner(): HTMLElement {
   const el = document.querySelector<HTMLElement>('.ui-popover-positioner')
@@ -99,4 +100,16 @@ test('#trigger with setTriggerEl gets aria-expanded and aria-controls', async ()
   await expect.poll(() => trigger.getAttribute('aria-expanded')).toBe('true')
   const panelId = trigger.getAttribute('aria-controls')!
   expect(document.getElementById(panelId)?.classList.contains('ui-popover-panel')).toBe(true)
+})
+
+// Regression: a Popover mounted with `open` already true stayed hidden at (0,0).
+test('a Popover mounted already open positions itself against its trigger', async () => {
+  const screen = await render(PopoverOpenAtMountFixture)
+  await screen.getByTestId('mount').click()
+  await expect.element(screen.getByTestId('content')).toBeVisible()
+  const triggerRect = (
+    screen.getByTestId('trigger').element() as HTMLElement
+  ).getBoundingClientRect()
+  const rect = positioner().getBoundingClientRect()
+  expect(rect.top).toBeGreaterThanOrEqual(triggerRect.bottom)
 })
