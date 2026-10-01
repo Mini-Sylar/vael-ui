@@ -1,5 +1,13 @@
 # vael-ui
 
+## 0.4.1
+
+### Patch Changes
+
+- [#73](https://github.com/Mini-Sylar/vael-ui/pull/73) [`31bb50b`](https://github.com/Mini-Sylar/vael-ui/commit/31bb50bec4e76a6bec80c2e26a50b42665e4a960) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - ## Fixes
+
+  - **Menu / Popover:** a trigger that was hidden when the menu mounted (for example inside a closed BottomSheet) no longer makes the open panel jitter. The panel anchored to the Button's hidden loading spinner instead of the Button, and repositioned on every frame as the spinner rotated. It now anchors to the trigger itself and stays put.
+
 ## 0.4.0
 
 ### Minor Changes
