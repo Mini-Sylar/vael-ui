@@ -4,6 +4,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import MenuFixture from './fixtures/MenuFixture.vue'
 import MenuCustomFixture from './fixtures/MenuCustomFixture.vue'
+import MenuHiddenTriggerFixture from './fixtures/MenuHiddenTriggerFixture.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition.
@@ -55,6 +56,33 @@ test('the panel anchors to the real trigger element, not a (0,0) fallback from i
   } finally {
     spacer.remove()
   }
+})
+
+// Regression test: a trigger that is hidden when the Menu mounts (inside a closed BottomSheet) has
+// a zero rect, and the resolver used to descend past it into the Button's spinning loader. The
+// panel then chased that loader's rotating bounding box, repositioning on every frame.
+test('a trigger hidden at mount anchors to the trigger itself and the panel settles', async () => {
+  const screen = await render(MenuHiddenTriggerFixture)
+  await screen.getByTestId('show').click()
+  const trigger = screen.getByTestId('trigger').element() as HTMLElement
+  await screen.getByTestId('trigger').click()
+
+  const positioner = await vi.waitFor(() => {
+    const el = document.querySelector<HTMLElement>('.ui-menu-positioner')
+    expect(el && getComputedStyle(el).visibility).toBe('visible')
+    return el!
+  })
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  let writes = 0
+  const observer = new MutationObserver(() => writes++)
+  observer.observe(positioner, { attributes: true, attributeFilter: ['style'] })
+  await new Promise((resolve) => setTimeout(resolve, 500))
+  observer.disconnect()
+
+  expect(writes).toBe(0)
+  const triggerRect = trigger.getBoundingClientRect()
+  expect(positioner.getBoundingClientRect().top).toBeGreaterThanOrEqual(triggerRect.bottom)
 })
 
 test('ArrowDown/ArrowUp move focus, wrap at both ends, and skip disabled items', async () => {

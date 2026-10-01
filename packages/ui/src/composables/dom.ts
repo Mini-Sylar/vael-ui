@@ -48,12 +48,16 @@ function hasZeroRect(el: HTMLElement): boolean {
  * `display: contents` one by rect alone). Without this, `computePosition` was handed that zero
  * rect as the reference element and fell back to floating-ui's `top: 0px; left: 0px` default,
  * anchoring the menu/popover to the viewport's top-left corner instead of the real trigger.
+ *
+ * That zero-rect fallback only applies to `el` itself. Below it, only `display: contents` is
+ * skipped: a real element that measures zero is hidden (e.g. inside a closed BottomSheet), and
+ * descending into it lands on internals like a Button's spinning loader.
  */
 export function resolvePastDisplayContents(el: HTMLElement): HTMLElement {
   let target = el
   while (target.firstElementChild instanceof HTMLElement) {
     const isDisplayContents = getComputedStyle(target).display === 'contents'
-    if (!isDisplayContents && !hasZeroRect(target)) break
+    if (!isDisplayContents && (target !== el || !hasZeroRect(target))) break
     target = target.firstElementChild
   }
   return target
