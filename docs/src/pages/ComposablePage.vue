@@ -27,10 +27,12 @@
       :rows="content.returns"
       :empty-text="t('composable.noReturns')"
     />
+    <PageNav />
   </article>
 </template>
 
 <script setup lang="ts">
+import PageNav from '../components/PageNav.vue'
 import { computed, defineAsyncComponent, shallowRef, watchEffect, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'

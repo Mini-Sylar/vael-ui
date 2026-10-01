@@ -25,10 +25,12 @@
       :rows="content.modifiers"
       :empty-text="t('directive.noModifiers')"
     />
+    <PageNav />
   </article>
 </template>
 
 <script setup lang="ts">
+import PageNav from '../components/PageNav.vue'
 import { computed, defineAsyncComponent, shallowRef, watchEffect, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'

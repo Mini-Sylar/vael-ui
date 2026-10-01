@@ -59,24 +59,13 @@ import { composableCategories } from '../composablesTaxonomy'
 import { DIRECTIVES } from '../directivesTaxonomy'
 import { useGlidingIndicator } from '../composables/useGlidingIndicator'
 import { directivesContent } from '../directivesContent'
+import { GUIDE_ROUTES } from '../docsNav'
 
 const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-
-const GUIDE_ROUTES = [
-  { routeName: 'getting-started', labelKey: 'nav.gettingStarted' },
-  { routeName: 'guide-global-setup', labelKey: 'nav.globalSetup' },
-  { routeName: 'guide-tailwind', labelKey: 'nav.tailwindGuide' },
-  { routeName: 'guide-styling-and-layers', labelKey: 'nav.stylingAndLayersGuide' },
-  { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
-  { routeName: 'guide-i18n-keys', labelKey: 'nav.i18nKeysGuide' },
-  { routeName: 'guide-auto-import', labelKey: 'nav.autoImportGuide' },
-  { routeName: 'guide-nuxt', labelKey: 'nav.nuxtGuide' },
-  { routeName: 'guide-skill', labelKey: 'nav.skillGuide' },
-] as const
 
 const guideValue = (routeName: string) => `guide:${routeName}`
 const composableValue = (name: string) => `composable:${name}`

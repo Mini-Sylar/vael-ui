@@ -188,6 +188,9 @@
     "link": "リンク:"
   },
   "nav": {
+    "next": "次へ",
+    "pagination": "他のページ",
+    "previous": "前へ",
     "animationIntegrationGuide": "独自のアニメーションを持ち込む",
     "components": "コンポーネント",
     "gettingStarted": "はじめる",

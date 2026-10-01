@@ -188,6 +188,9 @@
     "link": "Link para"
   },
   "nav": {
+    "next": "Próximo",
+    "pagination": "Mais páginas",
+    "previous": "Anterior",
     "animationIntegrationGuide": "Traga sua própria animação",
     "components": "Componentes",
     "gettingStarted": "Começando",

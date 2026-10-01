@@ -1,5 +1,8 @@
 {
   "nav": {
+    "next": "Next",
+    "pagination": "More pages",
+    "previous": "Previous",
     "gettingStarted": "Getting Started",
     "guides": "Guides",
     "tailwindGuide": "Using with Tailwind",

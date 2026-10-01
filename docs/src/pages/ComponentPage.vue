@@ -111,6 +111,7 @@
           :empty-text="t('component.noExposed')"
         />
       </section>
+      <PageNav />
     </article>
     <OnThisPage :links="tocLinks" />
   </div>
@@ -118,6 +119,7 @@
 </template>
 
 <script setup lang="ts">
+import PageNav from '../components/PageNav.vue'
 import { computed, defineAsyncComponent, shallowRef, watchEffect, type Component } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'

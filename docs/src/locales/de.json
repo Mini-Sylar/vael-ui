@@ -181,6 +181,9 @@
     "link": "Link zu"
   },
   "nav": {
+    "next": "Weiter",
+    "pagination": "Weitere Seiten",
+    "previous": "Zurück",
     "animationIntegrationGuide": "Bringen Sie Ihre eigene Animation mit",
     "components": "Komponenten",
     "gettingStarted": "Erste Schritte",
