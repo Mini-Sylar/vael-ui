@@ -1,5 +1,13 @@
 # vael-ui
 
+## 0.4.2
+
+### Patch Changes
+
+- [#75](https://github.com/Mini-Sylar/vael-ui/pull/75) [`ad3a2f9`](https://github.com/Mini-Sylar/vael-ui/commit/ad3a2f94f1a5d6d9f3f151721bf709f5158dd483) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - ## Fixes
+
+  - **Popover / Menu / Select and other anchored panels:** a panel that mounts with `open` already `true` (for example one rendered lazily next to its trigger) now positions itself. It used to stay hidden at the top-left corner because nothing changed after mount to start positioning.
+
 ## 0.4.1
 
 ### Patch Changes
