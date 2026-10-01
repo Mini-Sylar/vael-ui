@@ -6,6 +6,7 @@ import { render } from 'vitest-browser-vue'
 import DialogFixture from './fixtures/DialogFixture.vue'
 import DialogChromeFixture from './fixtures/DialogChromeFixture.vue'
 import DialogLongContentFixture from './fixtures/DialogLongContentFixture.vue'
+import DialogFooterEdgeFixture from './fixtures/DialogFooterEdgeFixture.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
 
 function activeTestId() {
@@ -177,4 +178,21 @@ test('details.cancel() vetoes the close', async () => {
   await expect.element(screen.getByTestId('last-reason')).toHaveTextContent('escape')
   await expect.element(screen.getByTestId('state')).toHaveTextContent('open')
   await expect.element(page.getByRole('dialog')).toBeVisible()
+})
+
+// Regression: with a footer, the body had no bottom padding, so focus rings and hover-grown controls at its end were clipped.
+test('content at the end of a body with a footer is not clipped, and the gap above the footer is unchanged', async () => {
+  const screen = await render(DialogFooterEdgeFixture)
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  const last = screen.getByTestId('last').element() as HTMLElement
+  const body = document.querySelector<HTMLElement>('.ui-dialog-body')!
+  const footerAction = screen.getByTestId('footer-action').element() as HTMLElement
+
+  const lastRect = last.getBoundingClientRect()
+  const clipBottom = body.getBoundingClientRect().top + body.clientHeight
+  expect(lastRect.bottom + 3).toBeLessThanOrEqual(clipBottom)
+
+  const gap = footerAction.getBoundingClientRect().top - lastRect.bottom
+  expect(gap).toBeGreaterThanOrEqual(11)
+  expect(gap).toBeLessThanOrEqual(13)
 })
