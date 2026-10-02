@@ -1,5 +1,10 @@
 # vael-ui
 
+[![npm version](https://img.shields.io/npm/v/vael-ui)](https://www.npmjs.com/package/vael-ui)
+[![npm downloads](https://img.shields.io/npm/dm/vael-ui)](https://www.npmjs.com/package/vael-ui)
+[![license](https://img.shields.io/npm/l/vael-ui)](https://github.com/Mini-Sylar/vael-ui#license)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Mini-Sylar)
+
 A Vue 3 UI library with a real, first-class **Vue Vapor** build, plain CSS by default,
 animation-agnostic when you want more. One component per primitive, no compound-component
 sprawl, fully native to Vue's own APIs.
@@ -131,6 +136,10 @@ serves a stale build the moment you edit library source. Run `pnpm --filter vael
 
 Releases are automated: merging to `main` opens or updates a "Version Packages" PR from any
 pending changesets; merging that PR publishes to npm.
+
+## Sponsor
+
+If vael-ui saves you time, consider [sponsoring its development on GitHub](https://github.com/sponsors/Mini-Sylar).
 
 ## License
 

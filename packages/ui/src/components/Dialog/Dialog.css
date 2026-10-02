@@ -80,8 +80,12 @@
   .ui-dialog-header + .ui-dialog-body {
     padding-block-start: 0.75rem;
   }
+  /* The body scrolls, so it keeps some bottom padding for focus rings and hover growth; the footer gives up the same amount. */
   .ui-dialog-body:has(+ .ui-dialog-footer) {
-    padding-block-end: 0;
+    padding-block-end: 0.5rem;
+  }
+  .ui-dialog-body + .ui-dialog-footer {
+    padding-block-start: 0.25rem;
   }
 
   .ui-dialog-footer {

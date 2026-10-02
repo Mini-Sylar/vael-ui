@@ -71,14 +71,18 @@
     z-index: 1;
     /* --ui-field-start-inset: the control's own leading-slot width (useFieldControl), so the
        label clears it instead of sitting on top of it. */
-    inset-inline-start: calc(0.75rem + var(--ui-field-start-inset, 0px));
+    inset-inline-start: calc(
+      0.75rem + var(--ui-field-prepend-width, 0px) + var(--ui-field-start-inset, 0px)
+    );
     inset-block-start: 50%;
     translate: 0 -50%;
     scale: 1;
     transform-origin: 0% 50%;
     margin: 0;
     padding-inline: 0.25rem;
-    max-inline-size: calc(100% - 1.5rem - var(--ui-field-start-inset, 0px));
+    max-inline-size: calc(
+      100% - 1.5rem - var(--ui-field-prepend-width, 0px) - var(--ui-field-start-inset, 0px)
+    );
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -132,7 +136,7 @@
   .ui-field[data-placement='inset'] .ui-field-label {
     position: absolute;
     z-index: 1;
-    inset-inline-start: 0.75rem;
+    inset-inline-start: calc(0.75rem + var(--ui-field-prepend-width, 0px));
     inset-block-start: 0.375rem;
     margin: 0;
     font-size: 0.6875rem;
@@ -149,6 +153,277 @@
   }
   .ui-field[data-placement='inset'] .ui-textarea-el {
     padding-block-start: 1.125rem;
+  }
+
+  /* A flex row keeps an icon in #label inline with its text, even under a reset that makes svg display:block; float/inset stay block for their ellipsis. */
+  .ui-field:is([data-placement='top'], [data-placement='start'], [data-placement='end'])
+    .ui-field-label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .ui-field:is([data-placement='top'], [data-placement='start'], [data-placement='end'])
+    .ui-field-required {
+    margin-inline-start: -0.25rem;
+  }
+
+  /* start/end: a two-column grid; display:contents lifts the label and control out of .ui-field-control so description/error can sit under the control column, not the label. */
+  .ui-field:is([data-placement='start'], [data-placement='end']) {
+    display: grid;
+    grid-template-columns: var(--ui-field-label-width, max-content) minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.375rem;
+    align-items: center;
+  }
+  .ui-field[data-placement='end'] {
+    grid-template-columns: minmax(0, 1fr) var(--ui-field-label-width, max-content);
+  }
+  .ui-field:is([data-placement='start'], [data-placement='end']) .ui-field-control {
+    display: contents;
+  }
+  .ui-field:is([data-placement='start'], [data-placement='end']) .ui-field-label {
+    grid-row: 1;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .ui-field:is([data-placement='start'], [data-placement='end'])
+    .ui-field-control
+    > :not(.ui-field-label) {
+    grid-row: 1;
+    min-inline-size: 0;
+  }
+  .ui-field[data-placement='start'] .ui-field-label,
+  .ui-field[data-placement='end'] .ui-field-control > :not(.ui-field-label),
+  .ui-field[data-placement='end'] > :is(.ui-field-description, .ui-field-error) {
+    grid-column: 1;
+  }
+  .ui-field[data-placement='end'] .ui-field-label,
+  .ui-field[data-placement='start'] .ui-field-control > :not(.ui-field-label),
+  .ui-field[data-placement='start'] > :is(.ui-field-description, .ui-field-error) {
+    grid-column: 2;
+  }
+  .ui-field[data-label-align='end'] .ui-field-label {
+    justify-content: flex-end;
+    text-align: end;
+  }
+  /* A Textarea grows; the label stays level with its first line instead of drifting to the middle. */
+  .ui-field:is([data-placement='start'], [data-placement='end']):has(.ui-textarea) .ui-field-label {
+    align-self: start;
+    padding-block-start: calc(0.5rem + 1px);
+  }
+
+  /* #prepend/#append: the control and its cells share one row; cells stretch to the control's height. */
+  .ui-field-group {
+    display: flex;
+    align-items: stretch;
+    min-inline-size: 0;
+  }
+  .ui-field-group > :not(.ui-field-prepend, .ui-field-append) {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  /* Joined cells: an attached label and #prepend/#append all draw the same muted box, themed via --ui-field-cell-*. */
+  .ui-field[data-attached] {
+    column-gap: 0;
+  }
+  .ui-field[data-attached] .ui-field-label,
+  .ui-field-prepend,
+  .ui-field-append {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: none;
+    padding-inline: 0.75rem;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-field-cell-bg, var(--ui-muted));
+    color: var(--ui-field-cell-color, var(--ui-text-muted));
+    font-size: var(--ui-field-cell-font-size, 0.875rem);
+    white-space: nowrap;
+    transition: border-color var(--ui-duration-press) ease;
+  }
+  .ui-field[data-joined]:has(.ui-textarea) :is(.ui-field-prepend, .ui-field-append),
+  .ui-field[data-attached]:has(.ui-textarea) .ui-field-label {
+    align-self: stretch;
+    align-items: flex-start;
+    padding-block-start: calc(0.5rem + 1px);
+  }
+  /* A label-width narrower than the text truncates the cell instead of overflowing it. */
+  .ui-field[data-attached] .ui-field-label {
+    min-inline-size: 0;
+    overflow: hidden;
+  }
+  .ui-field[data-attached] .ui-field-label-text {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ui-field[data-attached][data-placement='start'] .ui-field-label,
+  .ui-field-prepend {
+    border-inline-end: none;
+    border-start-start-radius: var(--ui-field-cell-radius, calc(var(--ui-radius) - 2px));
+    border-end-start-radius: var(--ui-field-cell-radius, calc(var(--ui-radius) - 2px));
+  }
+  .ui-field[data-attached][data-placement='end'] .ui-field-label,
+  .ui-field-append {
+    border-inline-start: none;
+    border-start-end-radius: var(--ui-field-cell-radius, calc(var(--ui-radius) - 2px));
+    border-end-end-radius: var(--ui-field-cell-radius, calc(var(--ui-radius) - 2px));
+  }
+  /* A #prepend after an attached start label (or #append before an end one) is a middle cell. */
+  .ui-field[data-attached][data-placement='start'] .ui-field-prepend {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+  .ui-field[data-attached][data-placement='end'] .ui-field-append {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  /* A control inside a cell fills it and drops its own frame, so the cell's divider is the only line; a Button keeps its fill. */
+  :is(.ui-field-prepend, .ui-field-append):has(> :is([data-ui-frame], button, .ui-button)) {
+    padding-inline: 0;
+    background: transparent;
+  }
+  :is(.ui-field-prepend, .ui-field-append) > :is([data-ui-frame], button, .ui-button) {
+    align-self: stretch;
+    block-size: auto;
+    border: none;
+    border-radius: inherit;
+  }
+  :is(.ui-field-prepend, .ui-field-append) > [data-ui-frame] {
+    background-color: transparent;
+  }
+  /* A control sharing its cell with text or an icon keeps the cell's padding and fill (Field.vue flags these). */
+  :is(.ui-field-prepend, .ui-field-append)[data-mixed] {
+    padding-inline: 0.75rem;
+    background: var(--ui-field-cell-bg, var(--ui-muted));
+  }
+  /* Segments: each control in a mixed cell is split from its neighbours by one divider (useFieldCell sets data-cell-before/after); at a cell edge it runs flush. */
+  :is(.ui-field-prepend, .ui-field-append)[data-mixed] > :is([data-ui-frame], button, .ui-button) {
+    margin-inline: -0.75rem;
+    border-radius: 0;
+  }
+  :is(.ui-field-prepend, .ui-field-append)[data-mixed]
+    > :is([data-ui-frame], button, .ui-button)[data-cell-before] {
+    border-inline-start: 1px solid var(--ui-border);
+  }
+  :is(.ui-field-prepend, .ui-field-append)[data-mixed]
+    > :is([data-ui-frame], button, .ui-button)[data-cell-before='text'] {
+    margin-inline-start: 0.375rem;
+  }
+  :is(.ui-field-prepend, .ui-field-append)[data-mixed]
+    > :is([data-ui-frame], button, .ui-button)[data-cell-before='control'] {
+    margin-inline-start: -0.375rem;
+  }
+  :is(.ui-field-prepend, .ui-field-append)[data-mixed]
+    > :is([data-ui-frame], button, .ui-button)[data-cell-after='text'] {
+    margin-inline-end: 0.375rem;
+    border-inline-end: 1px solid var(--ui-border);
+  }
+  :is(.ui-field-prepend, .ui-field-append)[data-mixed]
+    > :is([data-ui-frame], button, .ui-button)[data-cell-after='control'] {
+    margin-inline-end: 0;
+  }
+
+  /* A segment on the cell's outer edge takes the cell's rounding there (zero when the cell is a middle one). */
+  .ui-field-prepend[data-mixed] > :is([data-ui-frame], button, .ui-button):not([data-cell-before]) {
+    border-start-start-radius: inherit;
+    border-end-start-radius: inherit;
+  }
+  .ui-field-append[data-mixed] > :is([data-ui-frame], button, .ui-button):not([data-cell-after]) {
+    border-start-end-radius: inherit;
+    border-end-end-radius: inherit;
+  }
+
+  /* Any control's bordered frame carries [data-ui-frame] (its size as the value), so Field never needs to know which control it wraps; frames inside cells are excluded. */
+  .ui-field[data-join-start]
+    .ui-field-control
+    [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *) {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+  .ui-field[data-join-end]
+    .ui-field-control
+    [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+  }
+  /* Cells match the control's size: same corner radius and font size as its frame. */
+  .ui-field:has(
+    .ui-field-control [data-ui-frame='sm']:not(:is(.ui-field-prepend, .ui-field-append) *)
+  ) {
+    --ui-field-cell-radius: calc(var(--ui-radius) - 4px);
+    --ui-field-cell-font-size: 0.8125rem;
+  }
+  .ui-field:has(
+    .ui-field-control [data-ui-frame='lg']:not(:is(.ui-field-prepend, .ui-field-append) *)
+  ) {
+    --ui-field-cell-radius: var(--ui-radius);
+    --ui-field-cell-font-size: 1rem;
+  }
+  /* The whole row recolors together, since Select-family triggers don't recolor their own border on pointer focus. */
+  .ui-field[data-attached][data-focused] .ui-field-label,
+  .ui-field[data-joined][data-focused]:not([data-invalid]) :is(.ui-field-prepend, .ui-field-append),
+  .ui-field[data-joined][data-focused]:not([data-invalid])
+    .ui-field-control
+    [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *) {
+    border-color: var(--ui-primary);
+  }
+  .ui-field[data-attached][data-invalid] .ui-field-label,
+  .ui-field[data-joined][data-invalid] :is(.ui-field-prepend, .ui-field-append) {
+    border-color: var(--ui-danger);
+  }
+
+  /* No [data-ui-frame] to join (Switch, Slider, RadioGroup…): an attached label falls back to a plain side label and cells to plain inline text. */
+  .ui-field[data-joined]:not(
+      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
+    )
+    :is(.ui-field-prepend, .ui-field-append),
+  .ui-field[data-attached]:not(
+      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
+    )
+    .ui-field-label {
+    align-self: center;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+  }
+  .ui-field[data-attached]:not(
+      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
+    ) {
+    column-gap: 0.75rem;
+  }
+  .ui-field[data-attached]:not(
+      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
+    )
+    .ui-field-label {
+    color: var(--ui-text);
+  }
+  .ui-field[data-joined]:not(
+      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
+    )
+    .ui-field-group {
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .ui-field[data-joined]:not(
+      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
+    )
+    .ui-field-group
+    > :not(.ui-field-prepend, .ui-field-append) {
+    flex: 0 1 auto;
+  }
+
+  /* With no frame to join, segment margins and dividers inside cells go too. */
+  .ui-field[data-joined]:not(
+      :has(.ui-field-control [data-ui-frame]:not(:is(.ui-field-prepend, .ui-field-append) *))
+    )
+    :is(.ui-field-prepend, .ui-field-append)
+    > :is([data-ui-frame], button, .ui-button) {
+    margin-inline: 0;
+    border-inline: none;
   }
 
   @media (prefers-reduced-motion: reduce) {

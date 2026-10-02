@@ -86,6 +86,9 @@ export interface UiTheme {
       root: UiPartValue
       label: UiPartValue
       control: UiPartValue
+      group: UiPartValue
+      prepend: UiPartValue
+      append: UiPartValue
       description: UiPartValue
       error: UiPartValue
     }>

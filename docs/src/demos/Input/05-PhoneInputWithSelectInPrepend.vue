@@ -1,29 +1,28 @@
 <template>
   <section class="demo">
-    <h3>A phone input: fusing a Select into <code>#start</code></h3>
+    <h3>A phone input: a Select in Field's <code>#prepend</code></h3>
     <p class="note">
-      <code>#start</code> is a generic slot, not just a home for icons — nothing stops a full
-      interactive control from living there. The Select strips its own border/background and matches
-      the frame's own corner radius, so it reads as one continuous field split by a single divider,
-      not a button nested inside a box. With a real-sized country list, <code>filter</code> is what
-      makes picking one by typing actually usable, rather than scrolling a 30-row list.
+      Field's <code>#prepend</code> takes a whole control, not only text. A Select there drops its
+      own border and background, so the pair reads as one field split by a single divider. With a
+      real-sized country list, <code>filter</code> lets people pick one by typing.
     </p>
-    <Input v-model="number" placeholder="555 0100" class="phone-input">
-      <template #start>
-        <Select v-model="code" :items="codes" filter :ui="{ trigger: 'code-select' }">
+    <Field label="Phone" class="phone-input">
+      <template #prepend>
+        <Select v-model="code" :items="codes" filter aria-label="Country code">
           <template #value="{ selected }">
             {{ Array.isArray(selected) ? '' : (selected?.value ?? '') }}
           </template>
         </Select>
       </template>
-    </Input>
+      <Input v-model="number" type="tel" placeholder="555 0100" />
+    </Field>
     <p class="demo-status">Value: {{ code }} {{ number || '(empty)' }}</p>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Input, Select } from 'vael-ui'
+import { Field, Input, Select } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 
 // Label carries the country name so `filter` can match on it — the trigger's own
@@ -57,23 +56,5 @@ const number = shallowRef('')
 <style scoped>
 .phone-input {
   max-width: 16rem;
-  padding-inline-start: 0;
-}
-.phone-input :deep(.ui-input-start) {
-  align-self: stretch;
-  align-items: stretch;
-  margin-inline-end: 0;
-}
-
-.phone-input :deep(.code-select) {
-  align-self: stretch;
-  block-size: 100%;
-  border: none;
-  border-radius: 0;
-  border-start-start-radius: calc(var(--ui-radius) - 2px);
-  border-end-start-radius: calc(var(--ui-radius) - 2px);
-  border-inline-end: 1px solid var(--ui-border);
-  background: transparent;
-  padding-inline: 0.75rem 0.625rem;
 }
 </style>

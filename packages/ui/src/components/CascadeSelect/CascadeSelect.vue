@@ -31,6 +31,7 @@
         <div
           :id="fieldControl.id"
           ref="triggerEl"
+          :data-ui-frame="size"
           role="combobox"
           v-bind="restAttrs"
           :class="triggerClass"

@@ -257,10 +257,29 @@
       "zDialog": "Ordre d'empilement des boîtes de dialogue.",
       "zPopover": "Ordre d'empilement des popovers, des menus et des sélections.",
       "zToast": "Ordre d'empilement des toasts.",
-      "zTooltip": "Ordre d'empilement des info-bulles (en haut)."
+      "zTooltip": "Ordre d'empilement des info-bulles (en haut).",
+      "joinFrame": "Sur l'élément bordé de votre contrôle, pas sur Field. Valeur facultative : sm, md ou lg.",
+      "joinStart": "Une cellule ou un libellé joint se trouve sur le bord de début du contrôle.",
+      "joinEnd": "Une cellule ou un libellé joint se trouve sur le bord de fin du contrôle.",
+      "joinFocused": "Le contrôle a le focus.",
+      "joinInvalid": "Le Field a une erreur.",
+      "joinAttached": "Le libellé est dessiné comme une cellule jointe.",
+      "cellBg": "Fond des cellules jointes : un libellé joint, #prepend et #append.",
+      "cellColor": "Couleur du texte des cellules jointes.",
+      "labelWidth": "Largeur d'un libellé start/end. Définissez-la sur un parent pour aligner tout un formulaire."
     },
     "shapeTitle": "Forme",
-    "variable": "Variable"
+    "variable": "Variable",
+    "joinTitle": "Joindre votre propre contrôle à un Field",
+    "joinIntro": "Le libellé <code>attached</code> et les cellules <code>#prepend</code>/<code>#append</code> d'un Field se joignent au cadre bordé du contrôle. Les contrôles de vael-ui marquent ce cadre avec <code>data-ui-frame</code>. Ajoutez le même attribut à votre propre contrôle et il se joindra aussi. Donnez-lui la taille du contrôle (<code>sm</code>, <code>md</code> ou <code>lg</code>) et les cellules reprennent son rayon d'angle et sa taille de police.",
+    "joinLayerNote": "Les règles de jonction de Field se trouvent dans {layer}. Si les styles de votre contrôle ne sont pas dans une couche, ce sont eux qui l'emportent. Dans ce cas, aplatissez les angles et recolorez la bordure vous-même, avec les attributs que Field pose sur sa racine :",
+    "joinCellNote": "Donnez à un contrôle placé dans une cellule son propre <code>aria-label</code>. Il est indépendant, donc le libellé du Field ne le nomme pas.",
+    "attributesTitle": "Attributs de Field",
+    "variablesTitle": "Variables de Field",
+    "attribute": "Attribut",
+    "setWhen": "Présent quand",
+    "advancedTitle": "Avancé",
+    "advancedNote": "Vous n'en aurez pas besoin au quotidien. C'est pour créer vos propres contrôles qui s'intègrent à vael-ui."
   },
   "tailwind": {
     "layerNote": "vael-ui est livré dans {layer}. Tailwind v4 place aussi ses utilitaires dans une couche, donc l'ordre des imports compte. Importez le CSS de vael-ui avant votre point d'entrée Tailwind (ci-dessous) pour que sa couche soit enregistrée en premier. La couche des utilitaires de Tailwind vient alors après dans la cascade, et un utilitaire Tailwind sur un composant vael-ui l'emporte toujours. Pas besoin de {important} ni de conflits de spécificité. Voir {link} pour le fonctionnement des couches.",

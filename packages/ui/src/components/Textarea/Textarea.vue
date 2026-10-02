@@ -4,6 +4,7 @@
     :class="rootClass"
     :style="[rootStyle, attrs.style as never]"
     :data-state="dataState"
+    :data-ui-frame="size"
     :data-focus-visible="focusVisible || undefined"
     :data-multiline="isMultiline || undefined"
     @mousedown="onFrameMousedown"

@@ -822,6 +822,11 @@ const COMPONENT_OVERRIDES: Record<
   Checkbox: { string: { label: 'Checkbox label' } },
   Switch: { string: { label: 'Switch label' } },
   Message: { selectDefault: { variant: 'info' } },
+  // An empty label leaves labelPlacement/attached with nothing to show; labelWidth (number | string) gets presets.
+  Field: {
+    string: { label: 'Email' },
+    select: { labelWidth: [UNSET_OPTION, '6rem', '8rem', '10rem'] },
+  },
 }
 
 const controls = computed<NamedControl[]>(() => {
@@ -834,7 +839,9 @@ const controls = computed<NamedControl[]>(() => {
     if (prop.name === 'open' || prop.name === 'maximized') continue
     const selectOverride = overrides?.select?.[prop.name]
     if (selectOverride) {
-      list.push({ name: prop.name, kind: 'select', options: selectOverride })
+      // Listing UNSET_OPTION makes the override start unset, so the snippet omits it.
+      const unsettable = selectOverride.includes(UNSET_OPTION)
+      list.push({ name: prop.name, kind: 'select', options: selectOverride, unsettable })
       continue
     }
     const control = inferControl(prop.schema)
@@ -1026,6 +1033,23 @@ watchEffect(() => {
   // toRaw: reading `values` reactively here would re-seed on every edit.
   initialValues.value = { ...toRaw(values) }
 })
+
+// Field's attached/labelWidth/labelAlign only apply to a side label, so setting one moves a
+// top/float/inset label beside the control instead of appearing to do nothing.
+watch(
+  () => [values.attached, values.labelWidth, values.labelAlign],
+  () => {
+    if (!isField.value) return
+    const initial = initialValues.value
+    const sideOnlyEdited =
+      values.attached === true ||
+      values.labelWidth !== initial.labelWidth ||
+      values.labelAlign !== initial.labelAlign
+    if (sideOnlyEdited && values.labelPlacement !== 'start' && values.labelPlacement !== 'end') {
+      values.labelPlacement = 'start'
+    }
+  },
+)
 
 // ---- Next layout (the default; `?layout=current` for the old one) ----
 

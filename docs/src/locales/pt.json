@@ -264,10 +264,29 @@
       "zDialog": "Ordem de empilhamento para diálogos.",
       "zPopover": "Ordem de empilhamento para popovers, menus e seleções.",
       "zToast": "Ordem de empilhamento para torradas.",
-      "zTooltip": "Ordem de empilhamento das dicas de ferramentas (acima)."
+      "zTooltip": "Ordem de empilhamento das dicas de ferramentas (acima).",
+      "joinFrame": "No elemento com borda do seu controle, não no Field. Valor opcional: sm, md ou lg.",
+      "joinStart": "Uma célula ou um rótulo junto fica na borda inicial do controle.",
+      "joinEnd": "Uma célula ou um rótulo junto fica na borda final do controle.",
+      "joinFocused": "O controle tem o foco.",
+      "joinInvalid": "O Field tem um erro.",
+      "joinAttached": "O rótulo é desenhado como uma célula junta.",
+      "cellBg": "Fundo das células juntas: um rótulo junto, #prepend e #append.",
+      "cellColor": "Cor do texto das células juntas.",
+      "labelWidth": "Largura de um rótulo start/end. Defina num elemento pai para alinhar um formulário inteiro."
     },
     "shapeTitle": "Forma",
-    "variable": "Variável"
+    "variable": "Variável",
+    "joinTitle": "Juntar o seu próprio controle a um Field",
+    "joinIntro": "O rótulo <code>attached</code> e as células <code>#prepend</code>/<code>#append</code> de um Field se juntam à moldura com borda do controle. Os controles do vael-ui marcam essa moldura com <code>data-ui-frame</code>. Adicione o mesmo atributo ao seu próprio controle e ele também se junta. Dê a ele o tamanho do controle (<code>sm</code>, <code>md</code> ou <code>lg</code>) e as células acompanham o raio dos cantos e o tamanho da fonte.",
+    "joinLayerNote": "As regras de junção do Field ficam em {layer}, então, se os estilos do seu controle estão fora de uma camada, eles vencem. Nesse caso, achate os cantos e mude a cor da borda você mesmo, usando os atributos que o Field coloca na raiz:",
+    "joinCellNote": "Dê a um controle dentro de uma célula o seu próprio <code>aria-label</code>. Ele é independente, então o rótulo do Field não o nomeia.",
+    "attributesTitle": "Atributos do Field",
+    "variablesTitle": "Variáveis do Field",
+    "attribute": "Atributo",
+    "setWhen": "Presente quando",
+    "advancedTitle": "Avançado",
+    "advancedNote": "Você não vai precisar disto no uso diário. É para criar seus próprios controles que se integram ao vael-ui."
   },
   "tailwind": {
     "layerNote": "O vael-ui é distribuído em {layer}. O Tailwind v4 também coloca seus utilitários em uma camada, então a ordem de importação importa. Importe o CSS do vael-ui antes da entrada do Tailwind (como mostrado abaixo) para que a camada dele seja registrada primeiro. Assim a camada de utilitários do Tailwind fica depois na cascata, e um utilitário do Tailwind em um componente do vael-ui sempre vence. Você não precisa de {important} nem de brigas de especificidade. Veja {link} para entender como as camadas funcionam.",
