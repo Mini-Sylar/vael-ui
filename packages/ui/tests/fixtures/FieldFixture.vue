@@ -7,7 +7,13 @@
     :required="required"
     :disabled="disabled"
     :label-placement="labelPlacement"
+    :attached="attached"
+    :label-width="labelWidth"
+    :label-align="labelAlign"
+    :ui="ui"
   >
+    <template v-if="$slots.prepend" #prepend><slot name="prepend" /></template>
+    <template v-if="$slots.append" #append><slot name="append" /></template>
     <Input ref="input" v-model="value" placeholder="Type here">
       <template v-if="$slots.start" #start><slot name="start" /></template>
     </Input>
@@ -27,9 +33,13 @@ withDefaults(
     error?: string
     required?: boolean
     disabled?: boolean
-    labelPlacement?: 'top' | 'float' | 'inset'
+    labelPlacement?: 'top' | 'float' | 'inset' | 'start' | 'end'
+    attached?: boolean
+    labelWidth?: number | string
+    labelAlign?: 'start' | 'end'
+    ui?: Record<string, string>
   }>(),
-  { labelPlacement: 'top' },
+  { labelPlacement: 'top', attached: false, labelAlign: 'start' },
 )
 
 const value = shallowRef('')

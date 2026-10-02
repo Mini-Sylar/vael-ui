@@ -264,10 +264,29 @@
       "zDialog": "Orden de apilamiento de los diálogos.",
       "zPopover": "Orden de apilamiento de ventanas emergentes, menús y selecciones.",
       "zToast": "Orden de apilamiento para tostadas.",
-      "zTooltip": "Orden de apilamiento de información sobre herramientas (arriba)."
+      "zTooltip": "Orden de apilamiento de información sobre herramientas (arriba).",
+      "joinFrame": "En el elemento con borde de tu control, no en Field. Valor opcional: sm, md o lg.",
+      "joinStart": "Una celda o una etiqueta unida está en el borde inicial del control.",
+      "joinEnd": "Una celda o una etiqueta unida está en el borde final del control.",
+      "joinFocused": "El control tiene el foco.",
+      "joinInvalid": "El Field tiene un error.",
+      "joinAttached": "La etiqueta se dibuja como una celda unida.",
+      "cellBg": "Fondo de las celdas unidas: una etiqueta unida, #prepend y #append.",
+      "cellColor": "Color del texto de las celdas unidas.",
+      "labelWidth": "Ancho de una etiqueta start/end. Defínelo en un padre para alinear todo un formulario."
     },
     "shapeTitle": "Forma",
-    "variable": "Variable"
+    "variable": "Variable",
+    "joinTitle": "Unir tu propio control a un Field",
+    "joinIntro": "La etiqueta <code>attached</code> y las celdas <code>#prepend</code>/<code>#append</code> de un Field se unen al marco con borde del control. Los controles de vael-ui marcan ese marco con <code>data-ui-frame</code>. Añade el mismo atributo a tu propio control y también se unirá. Dale el tamaño del control (<code>sm</code>, <code>md</code> o <code>lg</code>) y las celdas igualarán su radio de esquina y su tamaño de fuente.",
+    "joinLayerNote": "Las reglas de unión de Field viven en {layer}, así que si los estilos de tu control no tienen capa, ganan ellos. En ese caso, aplana las esquinas y recolorea el borde tú mismo, usando los atributos que Field pone en su raíz:",
+    "joinCellNote": "Dale a un control dentro de una celda su propio <code>aria-label</code>. Es independiente, así que la etiqueta del Field no lo nombra.",
+    "attributesTitle": "Atributos de Field",
+    "variablesTitle": "Variables de Field",
+    "attribute": "Atributo",
+    "setWhen": "Se aplica cuando",
+    "advancedTitle": "Avanzado",
+    "advancedNote": "No lo necesitarás en el uso diario. Es para crear tus propios controles que se integran con vael-ui."
   },
   "tailwind": {
     "layerNote": "vael-ui se distribuye en {layer}. Tailwind v4 también pone sus utilidades en una capa, así que el orden de importación importa. Importa el CSS de vael-ui antes de tu entrada de Tailwind (como se ve abajo) para que su capa se registre primero. Así la capa de utilidades de Tailwind queda después en la cascada y una utilidad de Tailwind sobre un componente de vael-ui siempre gana. No necesitas {important} ni pelearte con la especificidad. Consulta {link} para saber cómo funcionan las capas.",

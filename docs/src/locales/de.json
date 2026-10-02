@@ -257,10 +257,29 @@
       "zDialog": "Stapelreihenfolge für Dialoge.",
       "zPopover": "Stapelreihenfolge für Popovers, Menüs und Auswahlmöglichkeiten.",
       "zToast": "Stapelreihenfolge für Toasts.",
-      "zTooltip": "Stapelreihenfolge für Tooltips (ganz oben)."
+      "zTooltip": "Stapelreihenfolge für Tooltips (ganz oben).",
+      "joinFrame": "Auf dem umrandeten Element deines Controls, nicht auf Field. Optionaler Wert: sm, md oder lg.",
+      "joinStart": "Eine Zelle oder ein angehängtes Label liegt an der Startkante des Controls.",
+      "joinEnd": "Eine Zelle oder ein angehängtes Label liegt an der Endkante des Controls.",
+      "joinFocused": "Das Control hat den Fokus.",
+      "joinInvalid": "Das Field hat einen Fehler.",
+      "joinAttached": "Das Label wird als verbundene Zelle gezeichnet.",
+      "cellBg": "Hintergrund verbundener Zellen: ein angehängtes Label, #prepend und #append.",
+      "cellColor": "Textfarbe verbundener Zellen.",
+      "labelWidth": "Breite eines start/end-Labels. Auf einem Elternelement gesetzt, richtet es ein ganzes Formular aus."
     },
     "shapeTitle": "Form",
-    "variable": "Variable"
+    "variable": "Variable",
+    "joinTitle": "Eigene Controls mit einem Field verbinden",
+    "joinIntro": "Das <code>attached</code>-Label und die Zellen <code>#prepend</code>/<code>#append</code> eines Field schließen an den umrandeten Rahmen des Controls an. Die Controls von vael-ui markieren diesen Rahmen mit <code>data-ui-frame</code>. Setze dasselbe Attribut auf dein eigenes Control, dann schließt es ebenfalls an. Gib ihm die Größe des Controls (<code>sm</code>, <code>md</code> oder <code>lg</code>), dann übernehmen die Zellen seinen Eckenradius und seine Schriftgröße.",
+    "joinLayerNote": "Die Verbindungsregeln von Field liegen in {layer}. Sind die Styles deines Controls ohne Layer, gewinnen sie. Dann musst du die Ecken selbst abflachen und den Rahmen selbst umfärben, mit den Attributen, die Field auf seinem Root setzt:",
+    "joinCellNote": "Gib einem Control in einer Zelle ein eigenes <code>aria-label</code>. Es steht für sich, das Label des Field benennt es also nicht.",
+    "attributesTitle": "Field-Attribute",
+    "variablesTitle": "Field-Variablen",
+    "attribute": "Attribut",
+    "setWhen": "Gesetzt, wenn",
+    "advancedTitle": "Fortgeschritten",
+    "advancedNote": "Für die normale Nutzung brauchst du das nicht. Es ist für eigene Controls gedacht, die sich in vael-ui einfügen."
   },
   "tailwind": {
     "layerNote": "vael-ui wird in {layer} ausgeliefert. Tailwind v4 legt seine Utilities ebenfalls in einen Layer, daher ist die Importreihenfolge wichtig. Importieren Sie das CSS von vael-ui vor Ihrem Tailwind-Einstiegspunkt (siehe unten), damit sein Layer zuerst registriert wird. Der Utilities-Layer von Tailwind folgt dann in der Kaskade, und eine Tailwind-Utility auf einer vael-ui-Komponente gewinnt immer. Sie brauchen weder {important} noch Kämpfe um Spezifität. Unter {link} erfahren Sie, wie Layer funktionieren.",

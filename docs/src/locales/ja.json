@@ -264,10 +264,29 @@
       "zDialog": "ダイアログの重なり順。",
       "zPopover": "ポップオーバー、メニュー、選択の重なり順。",
       "zToast": "トーストの重ね順。",
-      "zTooltip": "ツールチップの重なり順 (一番上)。"
+      "zTooltip": "ツールチップの重なり順 (一番上)。",
+      "joinFrame": "Field ではなく、独自コントロールの枠線付き要素に付けます。値は任意で sm・md・lg。",
+      "joinStart": "セルまたは結合ラベルがコントロールの開始側にあるとき。",
+      "joinEnd": "セルまたは結合ラベルがコントロールの終了側にあるとき。",
+      "joinFocused": "コントロールにフォーカスがあるとき。",
+      "joinInvalid": "Field にエラーがあるとき。",
+      "joinAttached": "ラベルが結合セルとして描画されるとき。",
+      "cellBg": "結合セル（attached ラベル、#prepend、#append）の背景。",
+      "cellColor": "結合セルの文字色。",
+      "labelWidth": "start/end ラベルの幅。親要素に設定するとフォーム全体を揃えられます。"
     },
     "shapeTitle": "形",
-    "variable": "変数"
+    "variable": "変数",
+    "joinTitle": "独自のコントロールを Field に結合する",
+    "joinIntro": "Field の <code>attached</code> ラベルと <code>#prepend</code>/<code>#append</code> のセルは、コントロールの枠線付きフレームに結合します。vael-ui のコントロールはそのフレームに <code>data-ui-frame</code> を付けています。独自のコントロールにも同じ属性を付ければ結合されます。値にコントロールのサイズ（<code>sm</code>・<code>md</code>・<code>lg</code>）を指定すると、セルの角丸とフォントサイズがそれに合わせて変わります。",
+    "joinLayerNote": "Field の結合ルールは {layer} にあります。そのため、コントロール自身のスタイルがレイヤー外にある場合はそちらが優先されます。その場合は、Field がルート要素に付ける属性を使って、角を平らにし、枠線の色を自分で変えてください。",
+    "joinCellNote": "セル内のコントロールには専用の <code>aria-label</code> を付けてください。セル内のコントロールは独立しており、Field のラベルでは名前が付きません。",
+    "attributesTitle": "Field の属性",
+    "variablesTitle": "Field の変数",
+    "attribute": "属性",
+    "setWhen": "付与される条件",
+    "advancedTitle": "上級",
+    "advancedNote": "通常の利用では必要ありません。vael-ui に組み込める独自のコントロールを作るときのための内容です。"
   },
   "tailwind": {
     "layerNote": "vael-ui は {layer} で提供されています。Tailwind v4 も自身のユーティリティをレイヤーに入れるため、インポート順が重要です。Tailwind のエントリー（下記）より前に vael-ui の CSS をインポートして、そのレイヤーを先に登録してください。すると Tailwind のユーティリティレイヤーがカスケード上でその後に来るため、vael-ui コンポーネントに付けた Tailwind ユーティリティが常に優先されます。{important} も詳細度の競合も不要です。レイヤーの仕組みについては {link} を参照してください。",

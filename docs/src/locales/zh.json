@@ -264,10 +264,29 @@
       "zDialog": "对话框的堆叠顺序。",
       "zPopover": "弹出窗口、菜单和选择的堆叠顺序。",
       "zToast": "吐司的堆叠顺序。",
-      "zTooltip": "工具提示的堆叠顺序（最上面）。"
+      "zTooltip": "工具提示的堆叠顺序（最上面）。",
+      "joinFrame": "设置在你的控件带边框的元素上，而不是 Field 上。可选值：sm、md 或 lg。",
+      "joinStart": "单元格或连接标签位于控件的起始边。",
+      "joinEnd": "单元格或连接标签位于控件的结束边。",
+      "joinFocused": "控件获得焦点。",
+      "joinInvalid": "Field 有错误。",
+      "joinAttached": "标签绘制为连接单元格。",
+      "cellBg": "连接单元格的背景：attached 标签、#prepend 和 #append。",
+      "cellColor": "连接单元格的文字颜色。",
+      "labelWidth": "start/end 标签的宽度。设置在父元素上可对齐整个表单。"
     },
     "shapeTitle": "形状",
-    "variable": "多变的"
+    "variable": "多变的",
+    "joinTitle": "将自定义控件连接到 Field",
+    "joinIntro": "Field 的 <code>attached</code> 标签和 <code>#prepend</code>/<code>#append</code> 单元格会与控件带边框的外框连接。vael-ui 自带的控件用 <code>data-ui-frame</code> 标记这个外框。给你自己的控件加上同一个属性，它也会连接。把属性值设为控件的尺寸（<code>sm</code>、<code>md</code> 或 <code>lg</code>），单元格就会匹配它的圆角和字号。",
+    "joinLayerNote": "Field 的连接规则位于 {layer} 中，所以如果你的控件样式不在层中，会以你的样式为准。这时请用 Field 在根元素上设置的属性，自己把圆角改为直角并修改边框颜色：",
+    "joinCellNote": "请给单元格内的控件设置它自己的 <code>aria-label</code>。它是独立的，Field 的标签不会为它命名。",
+    "attributesTitle": "Field 属性",
+    "variablesTitle": "Field 变量",
+    "attribute": "属性",
+    "setWhen": "设置时机",
+    "advancedTitle": "高级",
+    "advancedNote": "日常使用不需要这些内容。它用于构建可接入 vael-ui 的自定义控件。"
   },
   "tailwind": {
     "layerNote": "vael-ui 发布在 {layer} 中。Tailwind v4 也会把自己的工具类放在一个层中，因此导入顺序很重要。请在 Tailwind 入口（见下方）之前导入 vael-ui 的 CSS，让它的层先注册。这样 Tailwind 的工具类层在级联中位于其后，vael-ui 组件上的 Tailwind 工具类总会生效。你不需要 {important}，也不会有优先级冲突。层的工作原理请参阅 {link}。",

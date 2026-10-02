@@ -183,8 +183,27 @@
       "durationToast": "Duration for a toast entering.",
       "durationToastExit": "Duration for a toast exiting.",
       "easeToast": "Easing for toast transitions.",
-      "toastOffset": "Edge offset for the toast stack."
-    }
+      "toastOffset": "Edge offset for the toast stack.",
+      "joinFrame": "On your control's bordered element, not on Field. Optional value: sm, md or lg.",
+      "joinStart": "A cell or an attached label sits on the control's start edge.",
+      "joinEnd": "A cell or an attached label sits on the control's end edge.",
+      "joinFocused": "The control has focus.",
+      "joinInvalid": "The Field has an error.",
+      "joinAttached": "Field draws the label as a joined cell.",
+      "cellBg": "Background of joined cells: an attached label, #prepend and #append.",
+      "cellColor": "Text color of joined cells.",
+      "labelWidth": "Width of a start/end label. Set it on a parent to line up a whole form."
+    },
+    "joinTitle": "Joining your own control to a Field",
+    "joinIntro": "A Field's <code>attached</code> label and <code>#prepend</code>/<code>#append</code> cells join the control's bordered frame. vael-ui's own controls mark that frame with <code>data-ui-frame</code>. Add the same attribute to your own control and it joins too. Give it the control's size (<code>sm</code>, <code>md</code> or <code>lg</code>) and the cells match its corner radius and font size.",
+    "joinLayerNote": "Field's join rules are in {layer}, so if your control's own styles are unlayered, they win. In that case, flatten the corners and recolor the border yourself with the attributes Field sets on its root:",
+    "joinCellNote": "Give a control inside a cell its own <code>aria-label</code>. It stands alone, so the Field's label doesn't name it.",
+    "attributesTitle": "Field attributes",
+    "variablesTitle": "Field variables",
+    "attribute": "Attribute",
+    "setWhen": "Set when",
+    "advancedTitle": "Advanced",
+    "advancedNote": "You won't need this for everyday use. It's for building your own controls that plug into vael-ui."
   },
   "animation": {
     "title": "Bring your own animation",

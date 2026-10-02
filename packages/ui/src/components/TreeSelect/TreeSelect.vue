@@ -1,6 +1,7 @@
 <template>
   <div
     ref="triggerEl"
+    :data-ui-frame="size"
     role="combobox"
     :id="fieldControl.id"
     :class="triggerPart.class"
