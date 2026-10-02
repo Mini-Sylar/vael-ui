@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>A bordered record form</h3>
     <p class="note">
-      A layout, not a component: attached fields in a CSS grid with <code>--ui-radius: 0</code>, no
-      gaps, and borders overlapped by 1px so neighbors share one line.
+      <code>attached</code> is the vael-ui part. The grid, square corners and shared borders are
+      about 15 lines of your own CSS (<code>.my-record-form</code>): open the Code tab to copy them.
     </p>
-    <div class="record-form">
+    <div class="my-record-form">
       <Field label="Username" label-placement="start" attached :label-width="104">
         <Input v-model="username" />
       </Field>
@@ -42,25 +42,26 @@ const address = shallowRef('42 Example Street, Apartment 7, Springfield, 01234')
 </script>
 
 <style scoped>
-.record-form {
+/* Your own CSS: vael-ui only provides `attached`. */
+.my-record-form {
   --ui-radius: 0px;
   display: grid;
   max-width: 52rem;
   padding: 1px 0 0 1px;
 }
-.record-form > * {
+.my-record-form > * {
   margin: -1px 0 0 -1px;
 }
-/* Overlapped neighbours would paint over a focused or invalid field's shared edges. */
-.record-form > :is(:focus-within, [data-invalid]) {
+/* Overlapped neighbors would paint over a focused or invalid field's shared edges. */
+.my-record-form > :is(:focus-within, [data-invalid]) {
   position: relative;
   z-index: 1;
 }
 @media (min-width: 48rem) {
-  .record-form {
+  .my-record-form {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .record-form > .wide {
+  .my-record-form > .wide {
     grid-column: span 2;
   }
 }
