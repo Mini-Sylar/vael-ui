@@ -58,7 +58,6 @@ function readVaporComponentNames() {
 const DEMO_OVERRIDES = {
   Avatar: 'AvatarBadgeDemo',
   Radio: 'RadioGroupDemo',
-  Toaster: 'ToastDemo',
 }
 
 // Integrations not yet proven under Vapor — skip the twin, keep the VDOM demo.

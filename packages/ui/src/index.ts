@@ -256,7 +256,14 @@ export type {
   UseColorSchemeReturn,
 } from './composables/useColorScheme'
 export { toast, useToastQueue } from './composables/useToast'
-export type { ToastEntry, ToastFn, ToastOptions, ToastVariant } from './composables/useToast'
+export type {
+  ToastCall,
+  ToastEntry,
+  ToastFn,
+  ToastId,
+  ToastOptions,
+  ToastVariant,
+} from './composables/useToast'
 export { useDOMTarget, resolveDOMTarget, resolvePastDisplayContents } from './composables/dom'
 export type { DOMTarget } from './composables/dom'
 export { useLayer } from './composables/useLayerStack'

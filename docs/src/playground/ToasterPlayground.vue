@@ -19,6 +19,7 @@
           :position="position"
           :max-visible="maxVisible"
           :gap="gap"
+          :expand="expand"
         />
         <div class="trigger-row">
           <Button size="sm" @click="toast('Saved changes')">Default</Button>
@@ -34,6 +35,8 @@
           <Button size="sm" variant="outline" @click="toast.info('New version available')"
             >Info</Button
           >
+          <Button size="sm" variant="secondary" @click="burst">Burst of 3</Button>
+          <Button size="sm" variant="secondary" @click="pin">Pinned</Button>
         </div>
       </div>
 
@@ -59,6 +62,10 @@
             v-model="maxVisible"
           />
         </div>
+        <div class="control-row control-row--inline">
+          <label for="ctl-expand">expand</label>
+          <Switch id="ctl-expand" size="sm" v-model="expand" />
+        </div>
         <div class="control-row">
           <label for="ctl-gap">gap</label>
           <InputNumber
@@ -80,7 +87,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
-import { Button, InputNumber, Select, SelectButton, toast } from 'vael-ui'
+import { Button, InputNumber, Select, SelectButton, Switch, toast } from 'vael-ui'
 import type { ToasterPosition } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import { defaultVariant } from '../preferences'
@@ -99,6 +106,24 @@ const toasterComponent = computed<Component>(() =>
 const position = shallowRef<ToasterPosition>('bottom-right')
 const maxVisible = shallowRef(4)
 const gap = shallowRef(10)
+const expand = shallowRef(false)
+
+// Three requests settling together: the error ends up between two successes.
+// Stays in its own section until dismissed, however many toasts arrive after it.
+function pin() {
+  toast.warning('Verify your email to unlock every feature.', {
+    id: 'verify-email',
+    pinned: true,
+    duration: Infinity,
+    action: { label: 'Resend', onClick: () => toast.success('Email sent') },
+  })
+}
+
+function burst() {
+  toast.success('Profile saved')
+  toast.error('Avatar upload failed', { description: 'The file is over 5 MB.' })
+  toast.success('Settings synced')
+}
 
 const positionItems = [
   { label: 'top-left', value: 'top-left' },
@@ -113,11 +138,16 @@ const code = computed(() => {
   const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
   return `import { toast, Toaster } from '${pkg}'
 
-<Toaster position="${position.value}" :max-visible="${maxVisible.value}" :gap="${gap.value}" />
+<Toaster position="${position.value}" :max-visible="${maxVisible.value}" :gap="${gap.value}"${expand.value ? ' expand' : ''} />
 
 // anywhere in your app
 toast('Saved changes')
-toast.success('Upload complete')`
+toast.success('Upload complete')
+
+// pinned: its own section, never covered by newer toasts
+// id: calling again updates this toast instead of adding a second one
+toast.warning('Verify your email', { id: 'verify-email', pinned: true, duration: Infinity })
+toast.dismiss('verify-email')`
 })
 </script>
 
@@ -194,6 +224,12 @@ toast.success('Upload complete')`
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--ui-text-muted);
+}
+
+.control-row--inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .control-input {

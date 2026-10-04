@@ -368,3 +368,228 @@ test('focusing a toast button expands the stack so its hidden content is reveale
   await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
+
+test('expand keeps the stack open as a full list without hover', async () => {
+  const screen = await render(ToasterFixture, { props: { expand: true } })
+  toast('Saved', { duration: 10000 })
+  toast.error('Upload failed', { duration: 10000 })
+  toast('Synced', { duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(3))
+
+  const toaster = document.querySelector('.ui-toaster')!
+  expect(toaster.getAttribute('data-expanded')).toBe('true')
+  await expect.element(page.getByText('Upload failed')).toBeVisible()
+  await vi.waitFor(() => {
+    const cards = [...document.querySelectorAll<HTMLElement>('.ui-toast')]
+    expect(cards.every((el) => Number(getComputedStyle(el).opacity) === 1)).toBe(true)
+    // No two cards overlap: each sits fully above the next.
+    const rects = cards.map((el) => el.getBoundingClientRect()).sort((a, b) => a.top - b.top)
+    for (let i = 1; i < rects.length; i++) {
+      expect(rects[i].top).toBeGreaterThanOrEqual(rects[i - 1].bottom)
+    }
+  })
+
+  // Leaving after a hover must not collapse a stack the prop holds open.
+  toaster.dispatchEvent(new PointerEvent('pointerenter'))
+  toaster.dispatchEvent(new PointerEvent('pointerleave'))
+  await new Promise((r) => setTimeout(r, 50))
+  expect(toaster.getAttribute('data-expanded')).toBe('true')
+
+  dismiss()
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('expand does not pause timers on its own; toasts still auto-dismiss', async () => {
+  const screen = await render(ToasterFixture, { props: { expand: true } })
+  toast('Short-lived', { duration: 150 })
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('toasts queued past maxVisible keep their full time until they show', async () => {
+  const { toasts } = useToastQueue()
+  const screen = await render(ToasterFixture, { props: { maxVisible: 1 } })
+  const queued = toast('Queued', { duration: 150 })
+  const front = toast('Front', { duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(1))
+
+  // Well past the queued toast's duration: it never showed, so it must still be there.
+  await new Promise((r) => setTimeout(r, 300))
+  expect(toasts.some((t) => t.id === queued)).toBe(true)
+
+  dismiss(front)
+  await expect.element(page.getByText('Queued')).toBeVisible()
+  await vi.waitFor(() => expect(toasts.some((t) => t.id === queued)).toBe(false), {
+    timeout: 2000,
+  })
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('the tab coming back while the stack is hovered keeps timers paused', async () => {
+  const screen = await render(ToasterFixture)
+  toast('Hovered', { duration: 150 })
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
+  const toaster = document.querySelector('.ui-toaster')!
+  toaster.dispatchEvent(new PointerEvent('pointerenter'))
+
+  Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+  document.dispatchEvent(new Event('visibilitychange'))
+  Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+  document.dispatchEvent(new Event('visibilitychange'))
+
+  await new Promise((r) => setTimeout(r, 300))
+  expect(document.querySelector('.ui-toast')).not.toBeNull()
+
+  toaster.dispatchEvent(new PointerEvent('pointerleave'))
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+function cardFor(text: string) {
+  return [...document.querySelectorAll<HTMLElement>('.ui-toast')].find((el) =>
+    el.textContent?.includes(text),
+  )!
+}
+
+function overlaps(a: DOMRect, b: DOMRect) {
+  return a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5
+}
+
+test('a pinned toast sits in its own section that newer toasts never cover', async () => {
+  const screen = await render(ToasterFixture)
+  toast.warning('Verify your email', { pinned: true, duration: Infinity })
+  toast('One', { duration: 10000 })
+  toast('Two', { duration: 10000 })
+  toast('Three', { duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(4))
+
+  const pinnedCard = cardFor('Verify your email')
+  expect(pinnedCard.dataset.pinned).toBe('true')
+  expect(pinnedCard.dataset.front).toBe('true')
+  const check = () => {
+    const p = pinnedCard.getBoundingClientRect()
+    expect(Number(getComputedStyle(pinnedCard).opacity)).toBe(1)
+    for (const el of document.querySelectorAll<HTMLElement>(
+      '.ui-toast:not([data-pinned="true"])',
+    )) {
+      const r = el.getBoundingClientRect()
+      expect(overlaps(p, r)).toBe(false)
+      // Bottom position: the pinned section sits above the stack, away from the edge.
+      expect(p.bottom).toBeLessThanOrEqual(r.top + 0.5)
+    }
+  }
+  await vi.waitFor(check)
+
+  // Expanding the stack pushes the pinned section along instead of sliding under it.
+  const toaster = document.querySelector('.ui-toaster')!
+  toaster.dispatchEvent(new PointerEvent('pointerenter'))
+  await vi.waitFor(() => expect(toaster.getAttribute('data-expanded')).toBe('true'))
+  await new Promise((r) => setTimeout(r, 600))
+  await vi.waitFor(check)
+
+  dismiss()
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('top positions put the pinned section below the stack', async () => {
+  const screen = await render(ToasterFixture, { props: { position: 'top-right' } })
+  toast('Pinned', { pinned: true, duration: Infinity })
+  toast('Regular', { duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(2))
+  await vi.waitFor(() => {
+    const p = cardFor('Pinned').getBoundingClientRect()
+    const r = cardFor('Regular').getBoundingClientRect()
+    expect(p.top).toBeGreaterThanOrEqual(r.bottom - 0.5)
+  })
+  dismiss()
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('pinned toasts are outside maxVisible: they never queue and never push others out', async () => {
+  const { toasts } = useToastQueue()
+  const screen = await render(ToasterFixture, { props: { maxVisible: 1 } })
+  const pinnedId = toast('Pinned', { pinned: true, duration: 150 })
+  toast('Regular', { duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(2))
+  await expect.element(page.getByText('Pinned')).toBeVisible()
+  await expect.element(page.getByText('Regular')).toBeVisible()
+
+  // Its timer runs: it was on screen the whole time.
+  await vi.waitFor(() => expect(toasts.some((t) => t.id === pinnedId)).toBe(false), {
+    timeout: 2000,
+  })
+  dismiss()
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('a pinned toast alone sits at the edge like any single toast', async () => {
+  const screen = await render(ToasterFixture)
+  toast('Only pinned', { pinned: true, duration: Infinity })
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
+  const toaster = document.querySelector<HTMLElement>('.ui-toaster')!
+  await vi.waitFor(() => {
+    const card = cardFor('Only pinned').getBoundingClientRect()
+    const box = toaster.getBoundingClientRect()
+    expect(Math.abs(card.bottom - box.bottom)).toBeLessThan(1)
+    expect(Math.abs(box.height - card.height)).toBeLessThan(1)
+  })
+  dismiss()
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('a pinned toast swipes away like any other, and the stack keeps its place', async () => {
+  const screen = await render(ToasterFixture)
+  toast('Pinned swipe', { pinned: true, duration: Infinity })
+  toast('Stays', { duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(2))
+
+  const card = cardFor('Pinned swipe')
+  await drag(card, 80, 0)
+  await vi.waitFor(() => expect(card.getAttribute('data-swipe-out')).toBe('true'))
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(1), {
+    timeout: 2000,
+  })
+  await expect.element(page.getByText('Stays')).toBeVisible()
+  dismiss()
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('updating a toast by id re-renders the same card, not a second one', async () => {
+  const screen = await render(ToasterFixture)
+  toast('Uploading', { id: 'upload', duration: Infinity })
+  await expect.element(page.getByText('Uploading')).toBeVisible()
+  const card = document.querySelector('.ui-toast')!
+
+  toast.success('Uploaded', { id: 'upload' })
+  await expect.element(page.getByText('Uploaded')).toBeVisible()
+  expect(document.querySelectorAll('.ui-toast').length).toBe(1)
+  expect(document.querySelector('.ui-toast')).toBe(card)
+  expect(card.classList.contains('ui-toast--success')).toBe(true)
+
+  toast.dismiss('upload')
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull())
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+test('a toast with a custom id swipes away', async () => {
+  const screen = await render(ToasterFixture)
+  toast('Custom swipe', { id: 'swipe-me', duration: 10000 })
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
+  const card = document.querySelector<HTMLElement>('.ui-toast')!
+  await drag(card, 80, 0)
+  await vi.waitFor(() => expect(card.getAttribute('data-swipe-out')).toBe('true'))
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
+  await screen.unmount()
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
