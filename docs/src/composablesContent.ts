@@ -169,9 +169,9 @@ export const composablesContent: Record<string, ComposableContent> = {
     returns: [
       {
         name: 'toast(title, options?)',
-        type: 'number',
+        type: 'number | string',
         description:
-          'Shows a toast with the default variant. Returns its id, which you can pass to `dismiss(id)`.',
+          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id` if you pass one. Options: `id`, `description`, `variant`, `duration` (in milliseconds, default 4000; `Infinity` keeps it until someone closes it), `action: { label, onClick }` and `pinned`, which shows the toast in its own section where newer toasts can't cover it. Showing a toast with an `id` that's already on screen updates that toast instead of adding another.",
       },
       {
         name: 'toast.success / .error / .warning / .info / .loading',
@@ -187,14 +187,14 @@ export const composablesContent: Record<string, ComposableContent> = {
       },
       {
         name: 'toast.dismiss(id?)',
-        type: '(id?: number) => void',
+        type: '(id?: number | string) => void',
         description: 'Dismisses one toast, or every toast when you omit `id`.',
       },
       {
         name: 'useToastQueue()',
-        type: '{ toasts, dismiss, pauseAll, resumeAll }',
+        type: '{ toasts, dismiss, pauseAll, resumeAll, setWaiting }',
         description:
-          'Read-only queue access, plus pause and resume. `<Toaster/>` uses it internally, for example to pause timers on `pointerenter`.',
+          "Read-only queue access, plus pause and resume. `<Toaster/>` uses it internally, for example to pause timers on `pointerenter`. `setWaiting(ids)` holds the timers of toasts that aren't on screen yet.",
       },
     ],
   },

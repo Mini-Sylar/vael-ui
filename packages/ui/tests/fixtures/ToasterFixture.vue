@@ -1,12 +1,12 @@
 <template>
-  <Toaster :position="position" :max-visible="maxVisible" />
+  <Toaster :position="position" :max-visible="maxVisible" :expand="expand" />
 </template>
 
 <script setup lang="ts">
 import Toaster from '../../src/components/Toaster/Toaster.vue'
 import type { ToasterPosition } from '../../src/components/Toaster/Toaster.vue'
 
-withDefaults(defineProps<{ position?: ToasterPosition; maxVisible?: number }>(), {
+withDefaults(defineProps<{ position?: ToasterPosition; maxVisible?: number; expand?: boolean }>(), {
   position: 'bottom-right',
 })
 </script>
