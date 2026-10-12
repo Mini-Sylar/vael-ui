@@ -2114,6 +2114,7 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   .playground--next .playground-preview {
     min-height: 11rem;
     max-height: 16rem;
+    padding: 1.25rem 1rem;
   }
   .playground--next .playground-body {
     grid-template-columns: minmax(0, 1fr);

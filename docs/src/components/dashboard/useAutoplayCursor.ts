@@ -39,6 +39,7 @@ export function useAutoplayCursor(options: {
   const pressed = shallowRef(false)
   const visible = shallowRef(false)
   let run = 0
+  const quieted = new Set<HTMLElement>()
 
   const paint = () => {
     const el = options.cursor.value
@@ -74,6 +75,35 @@ export function useAutoplayCursor(options: {
     const top = box.scrollTop + inner.top - outer.top - (outer.height - inner.height) / 2
     box.scrollTo({ top, behavior: 'smooth' })
     await wait(380, id)
+  }
+
+  // Scripted focus shouldn't raise a phone's keyboard. That includes focus the
+  // components move themselves, like the CommandPalette focusing its input.
+  function quiet(el: EventTarget | null) {
+    if (
+      (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) &&
+      !el.hasAttribute('inputmode')
+    ) {
+      el.setAttribute('inputmode', 'none')
+      quieted.add(el)
+    }
+  }
+  const onFocusIn = (event: FocusEvent) => quiet(event.target)
+
+  function focusQuietly(target: HTMLElement) {
+    quiet(target)
+    target.focus({ preventScroll: true })
+  }
+
+  // Blurred too, so the visitor's own tap focuses it fresh, with a keyboard.
+  function releaseFocus() {
+    if (typeof document === 'undefined') return
+    document.removeEventListener('focusin', onFocusIn, true)
+    for (const el of quieted) {
+      el.removeAttribute('inputmode')
+      if (document.activeElement === el) el.blur()
+    }
+    quieted.clear()
   }
 
   async function glideTo(target: Element, id: number): Promise<void> {
@@ -136,14 +166,14 @@ export function useAutoplayCursor(options: {
           // keyboard ring.
           if (target instanceof HTMLInputElement) {
             target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
-            target.focus({ preventScroll: true })
+            focusQuietly(target)
           }
           ;(target as HTMLElement).click()
           pressed.value = false
           options.onClick?.()
         }
         if (step.keys && target instanceof HTMLElement) {
-          target.focus({ preventScroll: true })
+          focusQuietly(target)
           for (const key of step.keys) {
             target.dispatchEvent(
               new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
@@ -172,7 +202,9 @@ export function useAutoplayCursor(options: {
     (on) => {
       run++
       visible.value = false
-      if (!on) return
+      releaseFocus()
+      if (!on || typeof document === 'undefined') return
+      document.addEventListener('focusin', onFocusIn, true)
       const id = run
       play(id).catch((error) => {
         if (!(error instanceof Cancelled)) throw error
@@ -183,6 +215,7 @@ export function useAutoplayCursor(options: {
 
   onScopeDispose(() => {
     run++
+    releaseFocus()
     unsubscribe.forEach((stop) => stop())
   })
 

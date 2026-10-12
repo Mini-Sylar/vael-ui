@@ -23,6 +23,15 @@
   color: var(--ui-text-muted);
 }
 
+/* Variable names don't wrap, so a table can outgrow a phone. It scrolls on
+   its own instead of widening the whole page. */
+@media (max-width: 700px) {
+  .prose table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
 .prose code {
   background: var(--ui-muted);
   padding: 0.1rem 0.35rem;

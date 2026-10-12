@@ -189,10 +189,13 @@ const code = computed(() =>
   margin-inline-start: auto;
 }
 
+/* Scrolls sideways when a demo is wider than a phone, instead of the card
+   clipping it. */
 .demo-preview {
   position: relative;
   padding: 2.5rem 2.75rem;
   min-height: 6rem;
+  overflow-x: auto;
   /* The docs chrome's Geist Variable is a docs-branding choice, not part of
      the library. Components here should show their real, unstyled default,
      which inherits system-ui unless a consumer app overrides it. */
@@ -214,6 +217,12 @@ const code = computed(() =>
      border: a flat dot grid touching the corners read as an unfinished
      placeholder rather than a deliberate texture. */
   mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+}
+
+@media (max-width: 600px) {
+  .demo-preview {
+    padding: 1.75rem 1rem;
+  }
 }
 
 .no-demo {

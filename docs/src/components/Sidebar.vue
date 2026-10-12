@@ -300,9 +300,12 @@ onMounted(() => {
   transition: opacity 200ms var(--ui-ease-out);
 }
 
+/* The drawer body scrolls; this box would trap the scroll otherwise. */
 .sidebar-scroll--mobile {
   height: auto;
   padding: 0;
+  overflow: visible;
+  overscroll-behavior: auto;
 }
 
 .sidebar-scroll :deep(.ui-menu-list-item) {
