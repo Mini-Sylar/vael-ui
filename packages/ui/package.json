@@ -40,6 +40,13 @@
     },
     "./vapor": {
       "types": "./dist/vapor/index.d.ts",
+      "browser": "./dist/vapor/index.js",
+      "node": "./dist/vapor-server/index.js",
+      "workerd": "./dist/vapor-server/index.js",
+      "worker": "./dist/vapor-server/index.js",
+      "edge-light": "./dist/vapor-server/index.js",
+      "deno": "./dist/vapor-server/index.js",
+      "bun": "./dist/vapor-server/index.js",
       "default": "./dist/vapor/index.js"
     },
     "./resolver": {

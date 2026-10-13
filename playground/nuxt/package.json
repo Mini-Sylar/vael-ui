@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",
+    "dev:vapor": "VAEL_UI_VARIANT=vapor nuxt dev",
     "build": "nuxt build",
+    "build:vapor": "VAEL_UI_VARIANT=vapor nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck"

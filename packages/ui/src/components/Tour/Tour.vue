@@ -152,6 +152,7 @@ import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
 import { useLayer } from '../../composables/useLayerStack'
 import { useThemedUi } from '../../theme'
+import { ssrDocument } from '../../ssr'
 import { useUiMessages } from '../../messages'
 
 // Two roots: attrs go to the popover panel, like Popover's own.
@@ -314,13 +315,13 @@ watch(
 )
 
 const scrollLocked = useScrollLock({
-  target: () => scrollTarget.value ?? container.value ?? document.body,
+  target: () => scrollTarget.value ?? container.value ?? ssrDocument()?.body ?? null,
 })
 // One call, not one per element: two independent useInert() calls would each treat the
 // other's whole teleported subtree as an unprotected sibling and inert it — see
 // collectInertTargets's doc comment in useInert.ts.
 const inerted = useInert({
-  root: () => container.value ?? document.body,
+  root: () => container.value ?? ssrDocument()?.body ?? null,
   content: () => [
     step.value?.disableInteraction ? null : targetEl.value,
     popoverPanelEl.value,
@@ -437,7 +438,7 @@ function onKeydown(event: KeyboardEvent) {
   if (event.key === 'ArrowRight') next()
   else if (event.key === 'ArrowLeft') prev()
 }
-useEventListener(() => (open.value ? document : undefined), 'keydown', onKeydown)
+useEventListener(() => (open.value ? ssrDocument() : undefined), 'keydown', onKeydown)
 
 // A step's own overlay stacks above the callout and would otherwise eat Escape —
 // capturing on window runs first. skip() (not close()) lets the consumer unwind it.

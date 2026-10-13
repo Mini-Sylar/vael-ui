@@ -31,8 +31,27 @@ export default defineNuxtConfig({
 })"
     />
 
-    <h2 id="vdom-only">{{ t('nuxt.vdomOnlyTitle') }}</h2>
-    <p v-html="t('nuxt.vdomOnlyIntro')" />
+    <h2 id="vapor">{{ t('nuxt.vaporTitle') }}</h2>
+    <p v-html="t('nuxt.vaporIntro')" />
+    <CodeBlock
+      lang="typescript"
+      code="export default defineNuxtConfig({
+  modules: ['vael-ui/nuxt'],
+  vaelUi: {
+    variant: 'vapor',
+  },
+})"
+    />
+    <p v-html="t('nuxt.vaporOutro')" />
+    <p v-html="t('nuxt.vaporForceIntro')" />
+    <CodeBlock
+      lang="typescript"
+      code="export default defineNuxtConfig({
+  modules: ['vael-ui/nuxt'],
+  vaelUi: { variant: 'vapor' },
+  vite: { vue: { features: { vapor: true } } },
+})"
+    />
 
     <h2 id="resolver">{{ t('nuxt.resolverTitle') }}</h2>
     <i18n-t keypath="nuxt.resolverIntro" tag="p" scope="global">
@@ -63,7 +82,7 @@ useBreadcrumbSchema(() => [
 const tocLinks = computed(() => [
   { id: 'setup', label: t('nuxt.setupTitle') },
   { id: 'exclude', label: t('nuxt.excludeTitle') },
-  { id: 'vdom-only', label: t('nuxt.vdomOnlyTitle') },
+  { id: 'vapor', label: t('nuxt.vaporTitle') },
   { id: 'resolver', label: t('nuxt.resolverTitle') },
 ])
 </script>

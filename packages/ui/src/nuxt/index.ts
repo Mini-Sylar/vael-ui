@@ -5,6 +5,9 @@ export interface ModuleOptions {
   /** Component names to skip auto-registering — e.g. to register your own
    * `<Button>` under that same tag name instead. */
   exclude?: string[]
+  /** Which build to register. `'vapor'` (Nuxt 4.6+) uses `vael-ui/vapor` and turns on
+   * Nuxt's `vue.vapor`, the same choice as `vael-ui/resolver`'s `variant`. @default 'vdom' */
+  variant?: 'vdom' | 'vapor'
 }
 
 // Loosely typed on purpose: `defineNuxtModule`'s real return type
@@ -25,9 +28,6 @@ export interface VaelUiNuxtModule {
   ): void | Promise<void>
 }
 
-// VDOM only: Nuxt's SSR/hydration pipeline has no Vue Vapor support, so
-// there's no `variant` option here the way vael-ui/resolver has one — this
-// module always registers from the regular `vael-ui` build.
 const vaelUiNuxtModule = defineNuxtModule<ModuleOptions>({
   meta: {
     name: 'vael-ui',
@@ -36,12 +36,19 @@ const vaelUiNuxtModule = defineNuxtModule<ModuleOptions>({
   },
   defaults: {
     exclude: [],
+    variant: 'vdom',
   },
-  setup(options: ModuleOptions) {
+  setup(options: ModuleOptions, nuxt) {
+    const vapor = options.variant === 'vapor'
+    // Vapor components need Nuxt's interop. `vael-ui/vapor` resolves to its server-rendering
+    // build on the server by itself, so nothing else is needed here.
+    if (vapor) (nuxt.options.vue as { vapor?: boolean }).vapor = true
+
+    const filePath = vapor ? 'vael-ui/vapor' : 'vael-ui'
     const excluded = new Set(options.exclude ?? [])
     for (const name of COMPONENT_NAMES) {
       if (excluded.has(name)) continue
-      addComponent({ name, export: name, filePath: 'vael-ui' })
+      addComponent({ name, export: name, filePath })
     }
   },
 }) as unknown as VaelUiNuxtModule

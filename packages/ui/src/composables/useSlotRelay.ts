@@ -1,5 +1,5 @@
 import type { FunctionalComponent, VNodeChild } from 'vue'
-import { defineVaporComponent } from 'vue'
+import * as vue from 'vue'
 
 /**
  * Forwards an already-captured slot into a nested instance via `<component :is>`
@@ -29,5 +29,9 @@ export function createSlotRelayVapor<P extends object>(
   // call site, but under vapor compilation a captured slot call actually
   // produces a vapor Block, not a VNodeChild — hence the `any`, the real
   // mismatch is between the vdom/vapor slot representations, not a bug here.
-  return defineVaporComponent((props: P) => render(props) as any, { props: propKeys })
+  // Looked up at call time: Vue's server build has no Vapor runtime, and on the server the
+  // plain relay is the right one anyway, since server rendering goes through the VDOM path.
+  const define = (vue as { defineVaporComponent?: (...args: any[]) => any }).defineVaporComponent
+  if (!define) return createSlotRelay(render, propKeys)
+  return define((props: P) => render(props) as any, { props: propKeys })
 }

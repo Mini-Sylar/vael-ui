@@ -118,6 +118,7 @@
     "usageIntro": "Depois importe os componentes de <code>'vael-ui'</code> para a build VDOM clássica. Para a build Vapor (o modo do Vue 3.6 sem DOM virtual), importe de <code>'vael-ui/vapor'</code>. As props são as mesmas nas duas:",
     "usageTitle": "Uso",
     "vaporIntro": "As duas builds saem do mesmo pacote e do mesmo código-fonte. Use a que seu app executa ou combine as duas, já que o Vue 3.6 oferece interoperabilidade VDOM/Vapor. Cada página de componente tem o mesmo seletor para compará-las.",
+    "vaporForceIntro": "Seus próprios componentes passam para Vapor um a um com <code>&lt;script setup vapor&gt;</code>. Para compilar todo componente <code>&lt;script setup&gt;</code> como Vapor sem o atributo, ative <code>features.vapor</code> no <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou mais recente:",
     "vaporTitle": "Suporte Vue Vapor"
   },
   "globalSetup": {
@@ -367,8 +368,10 @@
     "setupOutro": "Escreva a tag e o Nuxt resolve a importação para você:",
     "setupTitle": "Configurar",
     "title": "Nuxt",
-    "vdomOnlyIntro": "Este módulo sempre registra componentes da build normal <code>vael-ui</code>, nunca de <code>vael-ui/vapor</code>. Por isso ele não tem a opção <code>variant</code>, ao contrário do <code>vael-ui/resolver</code>. O Vue 3.6 suporta hidratação SSR do Vapor, mas o Nuxt estável ainda não tem configuração para Vapor. Esse trabalho está em andamento no upstream e ainda não saiu em uma versão geral. Uma opção <code>variant</code> pode vir quando o Nuxt lançar suporte ao Vapor.",
-    "vdomOnlyTitle": "Somente VDOM"
+    "vaporIntro": "Defina <code>variant: 'vapor'</code> para usar <code>vael-ui/vapor</code>, a mesma opção que o <code>vael-ui/resolver</code> aceita. O módulo ativa o <code>vue.vapor</code> do Nuxt para você. É preciso Nuxt 4.6 ou mais recente e Vue 3.6.",
+    "vaporOutro": "As páginas continuam sendo renderizadas no servidor. O servidor transforma cada componente em HTML, e o navegador o assume como um componente Vapor, sem mais nada para configurar.",
+    "vaporForceIntro": "Para compilar também seus próprios componentes <code>&lt;script setup&gt;</code> como Vapor, sem adicionar <code>vapor</code> a cada um, ative o <code>features.vapor</code> do <code>{'@'}vitejs/plugin-vue</code> pelo <code>vite.vue</code> do Nuxt:",
+    "vaporTitle": "Vapor"
   },
   "skill": {
     "claudeCodeIntro": "Adicione o mercado uma vez e instale a habilidade:",

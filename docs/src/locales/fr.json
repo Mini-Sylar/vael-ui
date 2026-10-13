@@ -94,7 +94,8 @@
     "usageImportNoteLink": "Couches de style et de cascade",
     "usageImportNoteTitle": "Uniquement avant 0.2.0",
     "usageIntro": "Importez ensuite les composants depuis <code>'vael-ui'</code> pour la version VDOM classique. Pour la version Vapor (le mode de Vue 3.6 sans DOM virtuel), importez depuis <code>'vael-ui/vapor'</code>. Les props sont les mêmes dans les deux cas :",
-    "vaporIntro": "Les deux versions sont livrées depuis le même package et le même code source. Utilisez celle que votre application exécute, ou combinez les deux, puisque Vue 3.6 prend en charge l'interopérabilité VDOM/Vapor. Chaque page de composant propose la même bascule pour les comparer."
+    "vaporIntro": "Les deux versions sont livrées depuis le même package et le même code source. Utilisez celle que votre application exécute, ou combinez les deux, puisque Vue 3.6 prend en charge l'interopérabilité VDOM/Vapor. Chaque page de composant propose la même bascule pour les comparer.",
+    "vaporForceIntro": "Vos propres composants passent à Vapor un par un avec <code>&lt;script setup vapor&gt;</code>. Pour compiler chaque composant <code>&lt;script setup&gt;</code> en Vapor sans l’attribut, activez <code>features.vapor</code> dans <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou plus récent :"
   },
   "animation": {
     "beforeCloseIntro": "Pour les bibliothèques impératives : passez une fonction qui reçoit <code>done</code>. Le composant reste monté, avec <code>isClosing</code> activé, jusqu'à ce que vous l'appeliez.",
@@ -367,8 +368,10 @@
     "setupOutro": "Écrivez la balise, et Nuxt résout l'import pour vous :",
     "setupTitle": "Installation",
     "title": "Nuxt",
-    "vdomOnlyIntro": "Ce module enregistre toujours les composants depuis la version standard de <code>vael-ui</code>, jamais depuis <code>vael-ui/vapor</code>. C'est pourquoi il n'a pas d'option <code>variant</code>, contrairement à <code>vael-ui/resolver</code>. Vue 3.6 prend en charge l'hydratation SSR de Vapor, mais la version stable de Nuxt n'a pas encore de configuration Vapor. Ce travail est en cours en amont et ne figure dans aucune version générale. Une option <code>variant</code> pourra suivre dès que Nuxt prendra en charge Vapor.",
-    "vdomOnlyTitle": "VDOM uniquement"
+    "vaporIntro": "Définissez <code>variant: 'vapor'</code> pour utiliser <code>vael-ui/vapor</code>, la même option que celle de <code>vael-ui/resolver</code>. Le module active <code>vue.vapor</code> de Nuxt pour vous. Il faut Nuxt 4.6 ou plus récent et Vue 3.6.",
+    "vaporOutro": "Les pages sont toujours rendues côté serveur. Le serveur transforme chaque composant en HTML, et le navigateur le reprend comme composant Vapor, sans rien d’autre à configurer.",
+    "vaporForceIntro": "Pour compiler aussi vos propres composants <code>&lt;script setup&gt;</code> en Vapor, sans ajouter <code>vapor</code> à chacun, activez <code>features.vapor</code> de <code>{'@'}vitejs/plugin-vue</code> via <code>vite.vue</code> de Nuxt :",
+    "vaporTitle": "Vapor"
   },
   "skill": {
     "claudeCodeIntro": "Ajoutez la place de marché une fois, puis installez la compétence :",
