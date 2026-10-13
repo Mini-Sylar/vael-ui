@@ -36,10 +36,8 @@ pnpm add vael-ui
 
 ## Usage
 
-```ts
-// main.ts
-import 'vael-ui/style.css' // import before your own global/Tailwind CSS
-```
+Each component loads its own CSS, so there is no stylesheet to import. On Tailwind v4, see the
+[Tailwind guide](https://vael-ui.dev/docs/guides/tailwind) for import order.
 
 ```vue
 <script setup lang="ts">
