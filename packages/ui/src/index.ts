@@ -264,7 +264,12 @@ export type {
   ToastOptions,
   ToastVariant,
 } from './composables/useToast'
-export { useDOMTarget, resolveDOMTarget, resolvePastDisplayContents } from './composables/dom'
+export {
+  useDOMTarget,
+  resolveDOMTarget,
+  resolvePastDisplayContents,
+  nativeTag,
+} from './composables/dom'
 export type { DOMTarget } from './composables/dom'
 export { useLayer } from './composables/useLayerStack'
 export type { Layer, UseLayerOptions } from './composables/useLayerStack'

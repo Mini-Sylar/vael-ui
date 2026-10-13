@@ -52,7 +52,7 @@
               <div v-if="isSeparator(entry)" role="separator" class="ui-menu-separator" />
               <template v-else>
                 <component
-                  :is="tagOf(entry)"
+                  :is="nativeTag(tagOf(entry))"
                   :type="tagOf(entry) === 'button' ? 'button' : undefined"
                   role="menuitem"
                   class="ui-menu-item"
@@ -244,7 +244,7 @@ import { createSlotRelay } from '../../composables/useSlotRelay'
 // circular import resolves fine: the default export is defined by instantiation time, long after
 // this module finishes evaluating.
 import MenuSelf from './Menu.vue'
-import { resolvePastDisplayContents } from '../../composables/dom'
+import { resolvePastDisplayContents, nativeTag } from '../../composables/dom'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'

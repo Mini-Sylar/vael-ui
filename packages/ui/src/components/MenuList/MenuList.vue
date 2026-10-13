@@ -33,7 +33,7 @@
         </slot>
       </div>
       <component
-        :is="tagOf(row.entry)"
+        :is="nativeTag(tagOf(row.entry))"
         v-else
         :type="tagOf(row.entry) === 'button' ? 'button' : undefined"
         role="menuitem"
@@ -87,6 +87,7 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './MenuList.css'
 import '../shared/tokens.css'
+import { nativeTag } from '../../composables/dom'
 import { computed, onMounted, useAttrs, useTemplateRef } from 'vue'
 import { useMenu } from '../../composables/useMenu'
 import { useTabIndicator } from '../../composables/useTabIndicator'

@@ -116,3 +116,14 @@ export function getFocusable(root: ParentNode): HTMLElement[] {
 export function focusTargetIn(el: HTMLElement): HTMLElement | undefined {
   return el.matches(FOCUSABLE_SELECTOR) ? el : getFocusable(el)[0]
 }
+
+/**
+ * A native tag for `<component :is>`, written in capitals. Vue resolves a string `is` against
+ * registered components first, ignoring case, so `'button'` would render a globally registered
+ * `Button`, and vael-ui's own Button would then render itself forever. HTML tag names are
+ * case-insensitive, so `'BUTTON'` still creates a `<button>`. Component names (`'RouterLink'`,
+ * `'router-link'`) pass through unchanged and still resolve.
+ */
+export function nativeTag<T>(as: T): T {
+  return (typeof as === 'string' && /^[a-z][a-z0-9]*$/.test(as) ? as.toUpperCase() : as) as T
+}
