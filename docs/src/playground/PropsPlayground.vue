@@ -373,7 +373,7 @@
               <component
                 v-else
                 :is="activeComponent"
-                :key="`${resetKey}-default`"
+                :key="`${resetKey}-open`"
                 v-model:open="openModelValue"
                 v-bind="boundProps"
                 @update:model-value="onModelUpdate"
@@ -1689,6 +1689,14 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   letter-spacing: normal;
   text-decoration: none;
   cursor: help;
+  position: relative;
+}
+
+/* A bigger hit area than the 0.9rem badge, for fingers. */
+.control-hint::after {
+  content: '';
+  position: absolute;
+  inset: -0.6rem;
 }
 
 .control-input {

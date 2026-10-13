@@ -170,3 +170,13 @@ test('the unfilled track stays visible against the surface in both themes', asyn
     delete document.documentElement.dataset.theme
   }
 })
+
+test('#thumb and #track slots receive the value and its percent', async () => {
+  const screen = await render(SliderFixture, {})
+
+  await expect.element(screen.getByTestId('thumb-content-0')).toHaveTextContent('50|25')
+  await expect.element(screen.getByTestId('track-content')).toHaveTextContent('25')
+  const thumb = thumbEl(screen, 'slots')
+  expect(thumb.getAttribute('role')).toBe('slider')
+  expect(thumb.contains(screen.getByTestId('thumb-content-0').element())).toBe(true)
+})

@@ -51,6 +51,7 @@ async function renderTable(props: {
   showGridlines?: boolean
   resizableColumns?: boolean
   frozenColumns?: number
+  scrollFade?: boolean
   manualSort?: boolean
   lazy?: boolean
   total?: number
@@ -782,6 +783,34 @@ test('frozenColumns freezes the first N columns (sticky-left) and leaves the res
   expect(nameHeader.classList.contains('ui-datatable-th--frozen')).toBe(true)
   expect(getComputedStyle(ageHeader).position).not.toBe('sticky')
   expect(ageHeader.classList.contains('ui-datatable-th--frozen')).toBe(false)
+})
+
+test('scrollFade fades an overflowing table by default, and can be turned off', async () => {
+  const narrow = { root: { style: 'width: 120px' } }
+  const off = await renderTable({ rowCount: 2, scrollFade: false, ui: narrow })
+  const offScroller = off.container.querySelector('.ui-datatable-scroll-x')!
+  expect(offScroller.scrollWidth).toBeGreaterThan(offScroller.clientWidth)
+  expect(offScroller.classList.contains('scroll-fade-x')).toBe(false)
+  off.unmount()
+
+  const on = await renderTable({ rowCount: 2, ui: narrow })
+  const scroller = on.container.querySelector('.ui-datatable-scroll-x')!
+  await vi.waitFor(() => expect(scroller.classList.contains('scroll-fade-x')).toBe(true))
+})
+
+test('scrollFade with frozen columns fades only the right edge', async () => {
+  const screen = await renderTable({
+    rowCount: 2,
+    frozenColumns: 1,
+    scrollFade: true,
+    ui: { root: { style: 'width: 120px' } },
+  })
+  const scroller = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-x')!
+  await vi.waitFor(() => expect(scroller.classList.contains('scroll-fade-x')).toBe(true))
+  expect(getComputedStyle(scroller).maskImage).not.toContain('transparent 0%')
+  expect(
+    getComputedStyle(scroller).maskImage.startsWith('linear-gradient(to right, rgb(0, 0, 0)'),
+  ).toBe(true)
 })
 
 // -------------------------------------------------------------- #expansion (Tier 2)

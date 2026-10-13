@@ -127,4 +127,17 @@
       background: var(--ui-muted);
     }
   }
+
+  /* Same size across a row of controls on touch screens, and no iOS zoom on focus. */
+  @media (pointer: coarse) {
+    .ui-cascade-select-trigger--sm {
+      font-size: max(var(--ui-touch-font-size, 16px), 0.8125rem);
+    }
+    .ui-cascade-select-trigger--md {
+      font-size: max(var(--ui-touch-font-size, 16px), 0.875rem);
+    }
+    .ui-cascade-select-trigger--lg {
+      font-size: max(var(--ui-touch-font-size, 16px), 1rem);
+    }
+  }
 }

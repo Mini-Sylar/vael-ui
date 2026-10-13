@@ -31,8 +31,25 @@
       opacity: 0;
     }
   }
-  .ui-pagination-page-button--active {
+  /* Same layout as the list, so each number sits exactly over its real button. */
+  .ui-pagination-indicator-labels {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: inherit;
+    gap: inherit;
+    pointer-events: none;
+    transition: clip-path var(--ui-duration-press) var(--ui-ease-in-out);
+  }
+  .ui-pagination-indicator-labels > span {
+    display: flex;
+  }
+  .ui-pagination-indicator-labels .ui-button {
     color: var(--ui-primary-contrast);
+  }
+  .ui-pagination-labels-spacer {
+    visibility: hidden;
   }
   @media (hover: hover) and (pointer: fine) {
     .ui-button--ghost.ui-pagination-page-button--active:hover:not(:disabled):not(
@@ -42,11 +59,13 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .ui-pagination-indicator {
+    .ui-pagination-indicator,
+    .ui-pagination-indicator-labels {
       transition: none;
     }
   }
-  .ui-pagination-ellipsis {
+  .ui-pagination-ellipsis,
+  .ui-pagination-label-ellipsis {
     display: inline-flex;
     align-items: center;
     justify-content: center;

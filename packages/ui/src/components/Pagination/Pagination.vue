@@ -14,6 +14,34 @@
         aria-hidden="true"
         :style="indicator.style.value"
       />
+      <li
+        class="ui-pagination-indicator-labels"
+        role="presentation"
+        aria-hidden="true"
+        inert
+        :style="labelsStyle"
+      >
+        <span v-for="n in 2" :key="`start-${n}`" class="ui-pagination-labels-spacer">
+          <Button :class="labelPart.class" icon size="sm" variant="ghost" tabindex="-1" />
+        </span>
+        <span v-for="item in pageItems" :key="`label-${item}`">
+          <span v-if="typeof item !== 'number'" :class="labelEllipsisPart.class">…</span>
+          <Button
+            v-else
+            :class="labelPart.class"
+            :style="labelPart.style"
+            icon
+            size="sm"
+            variant="ghost"
+            tabindex="-1"
+          >
+            {{ item }}
+          </Button>
+        </span>
+        <span v-for="n in 2" :key="`end-${n}`" class="ui-pagination-labels-spacer">
+          <Button :class="labelPart.class" icon size="sm" variant="ghost" tabindex="-1" />
+        </span>
+      </li>
       <li>
         <Button
           :class="navButtonPart.class"
@@ -171,6 +199,17 @@ const pageSize = defineModel<number>('pageSize', { default: 10 })
 
 const listEl = useTemplateRef<HTMLElement>('list')
 const indicator = useTabIndicator(page, { listEl, selector: '[aria-current="page"]' })
+// The page numbers again in the contrast color, clipped to the indicator, so the
+// color travels with it instead of flipping when the page changes.
+const labelsStyle = computed(() => {
+  const { insetInlineStart, inlineSize, transitionDuration } = indicator.style.value
+  const left = parseFloat(insetInlineStart ?? '0') || 0
+  const right = left + (parseFloat(inlineSize ?? '0') || 0)
+  return {
+    clipPath: `inset(0 calc(100% - ${right}px) 0 ${left}px round calc(var(--ui-radius) - 4px))`,
+    transitionDuration: transitionDuration?.startsWith('0ms') ? '0ms' : undefined,
+  }
+})
 
 const props = withDefaults(
   defineProps<{
@@ -264,6 +303,15 @@ function pageButtonPart(active: boolean) {
     active && 'ui-pagination-page-button--active',
   )
 }
+const labelPart = computed(() => resolveUiPart(cx, themedUi()?.button, 'ui-pagination-label'))
+const labelEllipsisPart = computed(() =>
+  resolveUiPart(
+    cx,
+    themedUi()?.ellipsis,
+    'ui-pagination-label-ellipsis',
+    'ui-pagination-labels-spacer',
+  ),
+)
 const ellipsisPart = computed(() =>
   resolveUiPart(cx, themedUi()?.ellipsis, 'ui-pagination-ellipsis'),
 )

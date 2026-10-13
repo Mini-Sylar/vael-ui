@@ -98,6 +98,19 @@
 
      TransitionGroup (not plain Transition, unlike Stepper's checkmark swap) because items is a
      real array a consumer can push/splice at runtime. -->
+<script lang="ts">
+/** A step's elements, passed to `@item-enter` and `@item-leave` for custom animations. */
+export interface TimelineItemParts {
+  marker: HTMLElement | null
+  /** The line below this step's marker. `null` on the last step. */
+  connector: HTMLElement | null
+  /** The line coming down from the step above, the one that leads into this step. */
+  previousConnector: HTMLElement | null
+  content: HTMLElement | null
+  opposite: HTMLElement | null
+}
+</script>
+
 <script setup lang="ts" generic="T = unknown">
 import './Timeline.css'
 import '../shared/tokens.css'
@@ -150,16 +163,37 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   /** Fires when an item enters, only while `motionCss` is `false`. Run your own animation, then call
-   * `done()`. */
-  'item-enter': [el: Element, done: () => void]
+   * `done()`. `parts` holds the step's marker, connectors, content and opposite elements. */
+  'item-enter': [el: Element, done: () => void, parts: TimelineItemParts]
   /** Same as `@item-enter`, for an item leaving. */
-  'item-leave': [el: Element, done: () => void]
+  'item-leave': [el: Element, done: () => void, parts: TimelineItemParts]
 }>()
+
+// Direct children only, so a Timeline nested in a step's content isn't picked up.
+function partsOf(el: Element): TimelineItemParts {
+  const child = (parent: Element | null | undefined, cls: string) =>
+    parent?.querySelector<HTMLElement>(`:scope > .${cls}`) ?? null
+  const col = child(el, 'ui-timeline-marker-col')
+  return {
+    marker: child(col, 'ui-timeline-marker'),
+    connector: child(col, 'ui-timeline-connector'),
+    previousConnector: child(
+      child(el.previousElementSibling, 'ui-timeline-marker-col'),
+      'ui-timeline-connector',
+    ),
+    content: child(el, 'ui-timeline-content'),
+    opposite: child(el, 'ui-timeline-opposite'),
+  }
+}
 const enterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-enter', el, done),
+  props.motionCss
+    ? undefined
+    : (el: Element, done: () => void) => emit('item-enter', el, done, partsOf(el)),
 )
 const leaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-leave', el, done),
+  props.motionCss
+    ? undefined
+    : (el: Element, done: () => void) => emit('item-leave', el, done, partsOf(el)),
 )
 
 const $slots = useSlots()

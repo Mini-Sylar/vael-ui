@@ -117,4 +117,17 @@
   .ui-textarea--disabled .ui-textarea-el {
     cursor: not-allowed;
   }
+
+  /* Same size across a row of controls on touch screens, and no iOS zoom on focus. */
+  @media (pointer: coarse) {
+    .ui-textarea--sm {
+      font-size: max(var(--ui-touch-font-size, 16px), 0.8125rem);
+    }
+    .ui-textarea--md {
+      font-size: max(var(--ui-touch-font-size, 16px), 0.875rem);
+    }
+    .ui-textarea--lg {
+      font-size: max(var(--ui-touch-font-size, 16px), 1rem);
+    }
+  }
 }

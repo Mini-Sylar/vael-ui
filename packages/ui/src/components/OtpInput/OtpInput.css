@@ -8,6 +8,18 @@
     display: flex;
     gap: 0.5rem;
   }
+  .ui-otp-separator {
+    display: grid;
+    place-items: center;
+    flex: none;
+    color: var(--ui-text-muted);
+  }
+  .ui-otp-separator-dash {
+    inline-size: 0.5rem;
+    block-size: 2px;
+    border-radius: 9999px;
+    background: currentColor;
+  }
   .ui-otp-cell {
     position: relative;
     display: grid;
@@ -114,6 +126,13 @@
     }
     to {
       opacity: 1;
+    }
+  }
+
+  /* iOS zooms the page into any field under 16px. */
+  @media (pointer: coarse) {
+    .ui-otp-input {
+      font-size: max(var(--ui-touch-font-size, 16px), 1em);
     }
   }
 }

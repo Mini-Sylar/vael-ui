@@ -172,3 +172,36 @@ test('a programmatic model write longer than length is clamped everywhere — ce
   expect(root.getAttribute('data-state')).toBe('complete')
   await expect.element(screen.getByTestId('complete-count')).toHaveTextContent('1')
 })
+
+test('groups puts a separator between each group of cells', async () => {
+  const screen = await render(OtpInputFixture, { props: { groups: 3 } })
+  const row = screen.container.querySelector('[data-testid="basic"] .ui-otp-cells')!
+  const kinds = Array.from(row.children).map((el) =>
+    el.classList.contains('ui-otp-separator') ? '-' : 'c',
+  )
+  expect(kinds.join('')).toBe('ccc-ccc')
+})
+
+test('groups takes explicit group sizes', async () => {
+  const screen = await render(OtpInputFixture, { props: { groups: [2, 4] } })
+  const row = screen.container.querySelector('[data-testid="basic"] .ui-otp-cells')!
+  const kinds = Array.from(row.children).map((el) =>
+    el.classList.contains('ui-otp-separator') ? '-' : 'c',
+  )
+  expect(kinds.join('')).toBe('cc-cccc')
+})
+
+test('#separator replaces the default dash', async () => {
+  const screen = await render(OtpInputFixture, {})
+  await expect.element(screen.getByTestId('custom-sep')).toHaveTextContent('/0')
+  expect(screen.container.querySelectorAll('[data-testid="custom-sep"]').length).toBe(1)
+})
+
+test('clicking a cell after a separator still targets that cell', async () => {
+  const screen = await render(OtpInputFixture, { props: { groups: 3 } })
+  const input = basicInput(screen)
+  await userEvent.type(input, '123456')
+  await clickCell(input, basicCells(screen)[4]!)
+  await userEvent.keyboard('9')
+  await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('123496')
+})

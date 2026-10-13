@@ -128,4 +128,11 @@
       transition: none;
     }
   }
+
+  /* iOS zooms the page into any field under 16px. */
+  @media (pointer: coarse) {
+    .ui-command-palette-input {
+      font-size: max(var(--ui-touch-font-size, 16px), 0.9375rem);
+    }
+  }
 }
