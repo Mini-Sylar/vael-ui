@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "vael-ui": "workspace:*",
-    "vue": "3.6.0-rc.10"
+    "vue": "3.6.0-rc.11"
   },
   "devDependencies": {
-    "nuxt": "^4.5.2"
+    "nuxt": "^4.6.1"
   }
 }
