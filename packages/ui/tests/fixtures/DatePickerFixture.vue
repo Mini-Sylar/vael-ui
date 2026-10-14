@@ -16,11 +16,15 @@
     :time-only="timeOnly"
     :hour-format="hourFormat"
     :minute-step="minuteStep"
+    :close-on-select="closeOnSelect"
     locale="en-US"
     placeholder="Pick a date"
   >
     <template v-if="customDay" #day="{ date, isToday }">
       <span class="custom-day" :data-today="isToday || undefined">d{{ date.getDate() }}</span>
+    </template>
+    <template v-if="customDay" #label="{ label, level }">
+      <span class="custom-label" :data-level="level">{{ label }} ⌄</span>
     </template>
     <template v-if="customFooter" #footer>
       <span data-testid="custom-footer">custom footer</span>
@@ -54,6 +58,7 @@ const props = withDefaults(
     timeOnly?: boolean
     hourFormat?: '12' | '24'
     minuteStep?: number
+    closeOnSelect?: boolean
   }>(),
   {
     selectionMode: 'single',
@@ -70,6 +75,7 @@ const props = withDefaults(
     timeOnly: false,
     hourFormat: undefined,
     minuteStep: 1,
+    closeOnSelect: true,
   },
 )
 

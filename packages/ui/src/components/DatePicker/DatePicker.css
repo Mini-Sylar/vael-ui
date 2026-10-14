@@ -2,6 +2,8 @@
   /* DatePicker: Select chrome wrapping a Calendar. */
   .ui-date-picker-panel {
     padding: 0;
+    /* Never wider than the screen, so several months stack on a phone instead of overflowing. */
+    max-inline-size: calc(100vw - 1rem);
   }
   .ui-date-picker-icon {
     display: inline-grid;

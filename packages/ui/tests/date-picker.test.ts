@@ -39,6 +39,8 @@ test('#day reaches the calendar inside the panel; without it the day number show
   )
   expect(document.querySelector('.custom-day')!.textContent).toMatch(/^d\d+$/)
   expect(document.querySelectorAll('.custom-day[data-today]').length).toBe(1)
+  // #label reaches the panel's heading too.
+  expect(document.querySelector<HTMLElement>('.custom-label')!.dataset.level).toBe('date')
   screen.unmount()
 
   const plain = await render(DatePickerFixture)
@@ -53,6 +55,21 @@ test('single mode: picking a date commits it and auto-closes', async () => {
   await vi.waitFor(() => expect(cellByIso('2024-06-20')).toBeDefined())
   await userEvent.click(cellByIso('2024-06-20')!)
   await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 20 2024')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
+test('close-on-select false keeps the panel open after picking, until you dismiss it', async () => {
+  const screen = await render(DatePickerFixture, {
+    props: { initialValue: JUNE_15_2024, closeOnSelect: false },
+  })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(cellByIso('2024-06-20')).toBeDefined())
+  await userEvent.click(cellByIso('2024-06-20')!)
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 20 2024')
+  await userEvent.click(cellByIso('2024-06-22')!)
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 22 2024')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
