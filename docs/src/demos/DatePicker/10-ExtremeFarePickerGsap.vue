@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Extreme: a fare picker (GSAP + motion-v)</h3>
+    <h3>Extreme: a fare picker (GSAP)</h3>
     <p class="note">
       <code>force-mount</code> hands the panel to you: GSAP unrolls the exposed
       <code>panelEl</code> from the field when it opens, and <code>beforeClose(done)</code> rolls it
-      back up. Each opening replays the days rippling in through the <code>#day</code> slot, and the
+      back up, and each opening ripples the <code>#day</code> slot's days in behind it. The
       <code>#label</code> slot puts each month's cheapest fare next to its name.
       <code>:close-on-select="false"</code> keeps it open while you try a few returns.
     </p>
@@ -29,18 +29,12 @@
           </span>
         </template>
         <template #day="{ date, isCurrentMonth, isDisabled, isToday }">
-          <motion.span
-            :key="openCount"
-            class="fare-day"
-            :initial="reduce ? false : { opacity: 0, y: -8, scale: 0.8, filter: 'blur(4px)' }"
-            :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
-            :transition="{ type: 'spring', visualDuration: 0.3, bounce: 0.3, delay: wave(date) }"
-          >
+          <span :ref="(el) => trackDay(el as HTMLElement | null, date)" class="fare-day">
             <span :class="{ 'fare-today': isToday }">{{ date.getDate() }}</span>
             <span v-if="isCurrentMonth && !isDisabled" class="fare-price" :data-deal="isDeal(date)">
               ${{ fare(date) }}
             </span>
-          </motion.span>
+          </span>
         </template>
       </DatePicker>
       <output class="fare-summary">{{ summary }}</output>
@@ -51,12 +45,11 @@
 <script setup lang="ts">
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import { gsap } from 'gsap'
-import { motion, useReducedMotion } from 'motion-v'
 import { DatePicker } from 'vael-ui'
 import type { CalendarRange } from 'vael-ui'
 
 const picker = useTemplateRef('picker')
-const reduce = useReducedMotion()
+const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const now = new Date()
 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 const trip = shallowRef<CalendarRange | null>(null)
@@ -86,7 +79,7 @@ function wave(date: Date): number {
   const firstColumn = (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7
   const column = (date.getDay() + 6) % 7
   const row = Math.floor((date.getDate() - 1 + firstColumn) / 7)
-  return reduce.value ? 0 : (row + column) * 0.016
+  return (row + column) * 0.016
 }
 
 // The panel unrolls from the field it hangs off, and rolls back up into it.
@@ -95,24 +88,42 @@ function sideOf(panel: HTMLElement) {
   return panel.parentElement?.dataset.side ?? 'bottom'
 }
 
-// Bumped on every open, so the days remount and ripple in again.
-const openCount = shallowRef(0)
+// Each day registers its element through a ref, so opening animates the days already there
+// instead of rebuilding them, and the panel shows on the very next frame.
+const days = new Map<HTMLElement, Date>()
+function trackDay(el: HTMLElement | null, date: Date) {
+  if (el) days.set(el, date)
+}
 watch(open, async (isOpen) => {
   if (!isOpen) return
-  openCount.value++
   await nextTick()
   const panel = picker.value?.panelEl
-  if (!panel || reduce.value) return
+  if (!panel || reduce()) return
   gsap.fromTo(
     panel,
     { clipPath: closed(sideOf(panel)) },
     { clipPath: 'inset(0 0 0% 0)', duration: 0.32, ease: 'power3.out' },
   )
+  for (const el of days.keys()) if (!el.isConnected) days.delete(el)
+  const shown = [...days.keys()]
+  gsap.fromTo(
+    shown,
+    { opacity: 0, y: -8, scale: 0.8 },
+    {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 0.36,
+      ease: 'back.out(1.7)',
+      delay: (i: number) => wave(days.get(shown[i]!)!),
+      clearProps: 'opacity,transform',
+    },
+  )
 })
 
 function rollUp(done: () => void) {
   const panel = picker.value?.panelEl
-  if (!panel || reduce.value) return done()
+  if (!panel || reduce()) return done()
   gsap.to(panel, {
     clipPath: closed(sideOf(panel)),
     duration: 0.18,
