@@ -6,12 +6,17 @@
     "forceMountTitle": "强制安装",
     "gsapExampleIntro": "<code>beforeClose(done)</code> 加上公开的 <code>panelEl</code> 引用，因此补间在删除之前在真实面板元素上运行：",
     "gsapExampleTitle": "示例：GSAP、对话框",
-    "intro": "每个带动画的组件都自带纯 CSS 过渡。每个组件也都提供了逃生舱，你可以用 GSAP、motion-v 驱动动画，或者完全不使用动画。并非每个组件都具备下面全部三个钩子，请查看其 Props、Slots 和 Exposed 表。",
+    "intro": "每个带动画的组件都自带简单的 CSS 过渡，并且都能让你接管：用 GSAP、motion-v，或完全不要动画。可用的钩子取决于组件的功能。",
     "motionCssIntro": "将其设为 <code>false</code> 可关闭内置的 CSS 过渡。组件仍会切换状态，只是立即完成，DOM 的动画交由你来处理。",
     "motionCssTitle": "运动CSS",
     "motionVExampleIntro": "<code>forceMount</code> 加上默认插槽的 <code>isClosing</code> 标志，包装在 <code> 中",
     "motionVExampleTitle": "示例：motion-v、Popover",
-    "title": "带来你自己的动画"
+    "title": "带来你自己的动画",
+    "kindsTitle": "我的组件有哪些钩子？",
+    "kindsOverlay": "<strong>打开和关闭的组件</strong>（Dialog、Popover、Tooltip、Menu、Select、DatePicker）：<code>forceMount</code>、<code>beforeClose(done)</code> 和暴露的 <code>panelEl</code>。<code>forceMount</code> 已经会关闭 CSS 过渡。",
+    "kindsInPlace": "<strong>原地变化的组件</strong>（Calendar、Checkbox、Radio、Collapsible、Pagination、PullToRefresh）：<code>motionCss</code> 可关闭过渡，暴露的元素可让你自行制作动画。",
+    "kindsList": "<strong>条目进出的组件</strong>（CommandPalette、Timeline、FileUpload）：<code>motionCss</code> 加上 <code>{'@'}item-enter</code> 和 <code>{'@'}item-leave</code>。",
+    "kindsCheck": "组件的 Props、Slots 和 Exposed 表会准确列出它提供的内容。"
   },
   "component": {
     "code": "代码",

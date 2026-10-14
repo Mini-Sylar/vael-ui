@@ -6,12 +6,17 @@
     "forceMountTitle": "fuerzaMontar",
     "gsapExampleIntro": "<code>beforeClose(done)</code> más la referencia <code>panelEl</code> expuesta, por lo que la interpolación se ejecuta en el elemento del panel real antes de eliminarlo:",
     "gsapExampleTitle": "Ejemplo: GSAP, diálogo",
-    "intro": "Cada componente que se anima incluye una transición CSS simple. Cada uno tiene además una vía de escape para que lo controles con GSAP, motion-v o nada en absoluto. No todos los componentes tienen los tres mecanismos de abajo, así que revisa sus tablas de Props, Slots y Exposed.",
+    "intro": "Cada componente que se anima trae una transición CSS sencilla, y en todos puedes tomar el control: con GSAP, motion-v o sin animación. Los hooks disponibles dependen de lo que hace el componente.",
     "motionCssIntro": "Ponlo en <code>false</code> para desactivar la transición CSS integrada. El componente sigue cambiando de estado, pero al instante, y deja el DOM listo para que lo animes tú.",
     "motionCssTitle": "movimientoCss",
     "motionVExampleIntro": "<code>forceMount</code> más el indicador <code>isClosing</code> de la ranura predeterminada, envuelto en <code>",
     "motionVExampleTitle": "Ejemplo: movimiento-v, ventana emergente",
-    "title": "Trae tu propia animación"
+    "title": "Trae tu propia animación",
+    "kindsTitle": "¿Qué hooks tiene mi componente?",
+    "kindsOverlay": "<strong>Se abre y se cierra</strong> (Dialog, Popover, Tooltip, Menu, Select, DatePicker): <code>forceMount</code>, <code>beforeClose(done)</code> y un <code>panelEl</code> expuesto. <code>forceMount</code> ya desactiva la transición CSS.",
+    "kindsInPlace": "<strong>Cambia en su sitio</strong> (Calendar, Checkbox, Radio, Collapsible, Pagination, PullToRefresh): <code>motionCss</code> desactiva la transición y los elementos expuestos te permiten animarlo tú.",
+    "kindsList": "<strong>Elementos que aparecen y desaparecen</strong> (CommandPalette, Timeline, FileUpload): <code>motionCss</code> más <code>{'@'}item-enter</code> y <code>{'@'}item-leave</code>.",
+    "kindsCheck": "Las tablas Props, Slots y Exposed de cada componente indican exactamente qué tiene."
   },
   "component": {
     "code": "Código",

@@ -6,12 +6,17 @@
     "forceMountTitle": "ForceMount",
     "gsapExampleIntro": "<code>beforeClose(done)</code> plus die verfügbar gemachte <code>panelEl</code>-Referenz, damit das Tween auf dem echten Panel-Element ausgeführt wird, bevor es entfernt wird:",
     "gsapExampleTitle": "Beispiel: GSAP, Dialog",
-    "intro": "Jede animierte Komponente liefert einen einfachen CSS-Übergang mit. Jede bietet außerdem einen Ausweg, damit Sie sie mit GSAP, motion-v oder ganz ohne Animation steuern können. Nicht jede Komponente hat alle drei der folgenden Hooks, prüfen Sie daher ihre Tabellen für Props, Slots und Exposed.",
+    "intro": "Jede animierte Komponente liefert einen einfachen CSS-Übergang mit, und bei jeder können Sie selbst übernehmen: mit GSAP, motion-v oder ganz ohne Animation. Welche Hooks Sie bekommen, hängt davon ab, was die Komponente tut.",
     "motionCssIntro": "Setzen Sie sie auf <code>false</code>, um den integrierten CSS-Übergang auszuschalten. Die Komponente wechselt ihren Zustand weiterhin, aber sofort, und überlässt Ihnen das DOM zum Animieren.",
     "motionVExampleIntro": "<code>forceMount</code> plus das Flag <code>isClosing</code> des Standardsteckplatzes, eingeschlossen in <code>",
     "motionVExampleTitle": "Beispiel: motion-v, Popover",
     "title": "Bringen Sie Ihre eigene Animation mit",
-    "motionCssTitle": "MotionCss"
+    "motionCssTitle": "MotionCss",
+    "kindsTitle": "Welche Hooks hat meine Komponente?",
+    "kindsOverlay": "<strong>Öffnet und schließt</strong> (Dialog, Popover, Tooltip, Menu, Select, DatePicker): <code>forceMount</code>, <code>beforeClose(done)</code> und ein bereitgestelltes <code>panelEl</code>. <code>forceMount</code> schaltet den CSS-Übergang bereits ab.",
+    "kindsInPlace": "<strong>Ändert sich an Ort und Stelle</strong> (Calendar, Checkbox, Radio, Collapsible, Pagination, PullToRefresh): <code>motionCss</code> schaltet den Übergang ab, und bereitgestellte Elemente lassen Sie selbst animieren.",
+    "kindsList": "<strong>Einträge, die kommen und gehen</strong> (CommandPalette, Timeline, FileUpload): <code>motionCss</code> sowie <code>{'@'}item-enter</code> und <code>{'@'}item-leave</code>.",
+    "kindsCheck": "Die Tabellen Props, Slots und Exposed einer Komponente zeigen genau, was sie bietet."
   },
   "component": {
     "code": "Code",

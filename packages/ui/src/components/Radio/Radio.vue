@@ -18,8 +18,13 @@
         :disabled="isDisabled"
         @change="onNativeChange"
       />
-      <span :class="controlPart.class" :style="controlPart.style" aria-hidden="true">
-        <span class="ui-radio-dot" />
+      <span
+        ref="controlEl"
+        :class="controlPart.class"
+        :style="controlPart.style"
+        aria-hidden="true"
+      >
+        <span ref="dotEl" class="ui-radio-dot" />
       </span>
     </span>
     <span v-if="label || $slots.default || description" class="ui-radio-text">
@@ -55,23 +60,28 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-const props = defineProps<{
-  /** Value the parent RadioGroup's model takes when this radio is selected. */
-  value: string | number
-  /** Label text; the default slot replaces it. */
-  label?: string
-  /** Disables this radio. The parent RadioGroup's `disabled` also disables it. */
-  disabled?: boolean
-  /** Secondary line under the label. */
-  description?: string
-  /** Class and style overrides for each part. */
-  ui?: Partial<{
-    root: UiPartValue
-    control: UiPartValue
-    label: UiPartValue
-    description: UiPartValue
-  }>
-}>()
+const props = withDefaults(
+  defineProps<{
+    /** Value the parent RadioGroup's model takes when this radio is selected. */
+    value: string | number
+    /** Label text; the default slot replaces it. */
+    label?: string
+    /** Disables this radio. The parent RadioGroup's `disabled` also disables it. */
+    disabled?: boolean
+    /** Secondary line under the label. */
+    description?: string
+    /** `false` skips built-in transitions; animate the exposed `controlEl`/`dotEl` yourself. @default true */
+    motionCss?: boolean
+    /** Class and style overrides for each part. */
+    ui?: Partial<{
+      root: UiPartValue
+      control: UiPartValue
+      label: UiPartValue
+      description: UiPartValue
+    }>
+  }>(),
+  { motionCss: true },
+)
 
 defineSlots<{
   /** Label content; replaces the `label` text. Receives `checked`. */
@@ -94,16 +104,19 @@ function onNativeChange() {
 const dataState = computed(() => (isChecked.value ? 'checked' : 'unchecked'))
 
 // First paint only: suppress transitions to prevent initial render
-const skipTransition = shallowRef(true)
+const firstPaint = shallowRef(true)
+const skipTransition = computed(() => firstPaint.value || !props.motionCss)
 onMounted(() => {
   void nextTick(() => {
-    skipTransition.value = false
+    firstPaint.value = false
   })
 })
 
 const inputId = useId()
 const root = useTemplateRef<HTMLElement>('root')
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
+const controlEl = useTemplateRef<HTMLElement>('controlEl')
+const dotEl = useTemplateRef<HTMLElement>('dotEl')
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.radio,
@@ -129,5 +142,9 @@ defineExpose({
   el: root,
   /** Native radio input. */
   inputEl,
+  /** The circle that fills when selected. */
+  controlEl,
+  /** The dot inside it. */
+  dotEl,
 })
 </script>

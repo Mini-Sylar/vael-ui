@@ -58,6 +58,15 @@
       background: transparent;
     }
   }
+  .ui-pagination--no-motion .ui-pagination-indicator,
+  .ui-pagination--no-motion .ui-pagination-indicator-labels {
+    transition: none;
+  }
+  .ui-pagination--no-motion .ui-pagination-indicator {
+    @starting-style {
+      opacity: 1;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .ui-pagination-indicator,
     .ui-pagination-indicator-labels {

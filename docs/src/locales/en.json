@@ -211,7 +211,7 @@
   },
   "animation": {
     "title": "Bring your own animation",
-    "intro": "Every component that animates ships a plain CSS transition. Each one also has an escape hatch, so you can drive it with GSAP, motion-v, or nothing at all. Not every component has all three hooks below, so check its Props, Slots, and Exposed tables.",
+    "intro": "Every component that animates ships a plain CSS transition, and each one lets you take over: drive it with GSAP, motion-v, or nothing at all. Which hooks you get depends on what the component does.",
     "motionCssTitle": "motionCss",
     "motionCssIntro": "Set it to <code>false</code> to turn off the built-in CSS transition. The component still changes state, but instantly, and leaves the DOM for you to animate.",
     "forceMountTitle": "forceMount",
@@ -221,7 +221,12 @@
     "motionVExampleTitle": "Example: motion-v, Popover",
     "motionVExampleIntro": "<code>forceMount</code> plus the default slot's <code>isClosing</code> flag, wrapped in <code>&lt;AnimatePresence&gt;</code>:",
     "gsapExampleTitle": "Example: GSAP, Dialog",
-    "gsapExampleIntro": "<code>beforeClose(done)</code> plus the exposed <code>panelEl</code> ref, so the tween runs on the real panel element before it's removed:"
+    "gsapExampleIntro": "<code>beforeClose(done)</code> plus the exposed <code>panelEl</code> ref, so the tween runs on the real panel element before it's removed:",
+    "kindsTitle": "Which hooks does my component have?",
+    "kindsOverlay": "<strong>Opens and closes</strong> (Dialog, Popover, Tooltip, Menu, Select, DatePicker): <code>forceMount</code>, <code>beforeClose(done)</code> and an exposed <code>panelEl</code>. <code>forceMount</code> already turns the CSS transition off.",
+    "kindsInPlace": "<strong>Changes in place</strong> (Calendar, Checkbox, Radio, Collapsible, Pagination, PullToRefresh): <code>motionCss</code> turns the transition off, and exposed elements let you animate it yourself.",
+    "kindsList": "<strong>Items that come and go</strong> (CommandPalette, Timeline, FileUpload): <code>motionCss</code> plus <code>{'@'}item-enter</code> and <code>{'@'}item-leave</code>.",
+    "kindsCheck": "A component's Props, Slots and Exposed tables list exactly what it has."
   },
   "directive": {
     "value": "Value",

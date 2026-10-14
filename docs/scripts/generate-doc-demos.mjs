@@ -57,7 +57,12 @@ function readVaporComponentNames() {
 // parent's page (see taxonomy.ts), not routed as their own component page.
 const DEMO_OVERRIDES = {
   Avatar: 'AvatarBadgeDemo',
-  Radio: 'RadioGroupDemo',
+}
+
+// Components that share another component's demo folder (Radio can't render outside a
+// RadioGroup, so both pages show the same examples).
+const FOLDER_ALIASES = {
+  RadioGroup: 'Radio',
 }
 
 // Integrations not yet proven under Vapor — skip the twin, keep the VDOM demo.
@@ -248,7 +253,7 @@ function main() {
   const state = { copiedVdom: new Set(), copiedVapor: new Set(), vaporGaps: new Set() }
 
   for (const component of allComponents) {
-    const folderPath = join(DEMOS_DIR, component)
+    const folderPath = join(DEMOS_DIR, FOLDER_ALIASES[component] ?? component)
     if (existsSync(folderPath) && statSync(folderPath).isDirectory()) {
       const examples = processFolder(component, folderPath, vaporComponentNames, state)
       manifest[component] = { examples }

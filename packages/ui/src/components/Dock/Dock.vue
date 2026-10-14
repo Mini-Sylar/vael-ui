@@ -231,6 +231,8 @@ const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-dock-ite
 defineExpose({
   /** Root element. */
   el: rootEl,
+  /** The item buttons, in order, to animate yourself (with `:magnify="false"` to turn the built-in magnification off). */
+  itemEls: () => itemButtons.filter((el): el is HTMLButtonElement => !!el),
   /** Re-measures item positions for magnification, after a layout change the dock can't detect. */
   remeasure,
 })

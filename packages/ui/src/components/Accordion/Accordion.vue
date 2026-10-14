@@ -34,7 +34,7 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-/** Open item's `value`, or an array of them with `multiple`. @default null */
+/** Open item's `value` (a `string`, or a union of your item values), or an array of them with `multiple`. `V` takes the type you bind, and `@change` hands the same type back. @default null */
 const value = defineModel<V>('value')
 
 const props = withDefaults(

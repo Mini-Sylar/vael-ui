@@ -6,12 +6,17 @@
     "forceMountTitle": "強制マウント",
     "gsapExampleIntro": "<code>beforeClose(done)</code> と公開された <code>panelEl</code> 参照を追加することで、削除される前に実際のパネル要素上でトゥイーンが実行されます。",
     "gsapExampleTitle": "例: GSAP、ダイアログ",
-    "intro": "アニメーションするコンポーネントはすべて、プレーンな CSS トランジションを備えています。それぞれにエスケープハッチもあり、GSAP や motion-v で動かすことも、アニメーションなしにすることもできます。下記の 3 つのフックをすべて持つコンポーネントばかりではないため、各コンポーネントの Props、Slots、Exposed の表を確認してください。",
+    "intro": "アニメーションするコンポーネントにはすべてプレーンな CSS トランジションが付属し、どれも自分で制御を引き継げます。GSAP や motion-v で動かすことも、アニメーションなしにすることも可能です。利用できるフックはコンポーネントの役割によって異なります。",
     "motionCssIntro": "<code>false</code> に設定すると、組み込みの CSS トランジションが無効になります。コンポーネントの状態は変わりますが即座に切り替わり、DOM のアニメーションはあなたに任されます。",
     "motionCssTitle": "モーションCss",
     "motionVExampleIntro": "<code>forceMount</code> とデフォルト スロットの <code>isClosing</code> フラグを <code> でラップしたもの",
     "motionVExampleTitle": "例: motion-v、ポップオーバー",
-    "title": "独自のアニメーションを持ち込む"
+    "title": "独自のアニメーションを持ち込む",
+    "kindsTitle": "自分のコンポーネントにはどのフックがある？",
+    "kindsOverlay": "<strong>開閉するもの</strong>（Dialog、Popover、Tooltip、Menu、Select、DatePicker）：<code>forceMount</code>、<code>beforeClose(done)</code>、公開された <code>panelEl</code>。<code>forceMount</code> は CSS トランジションをすでにオフにします。",
+    "kindsInPlace": "<strong>その場で変化するもの</strong>（Calendar、Checkbox、Radio、Collapsible、Pagination、PullToRefresh）：<code>motionCss</code> でトランジションをオフにでき、公開された要素を自分でアニメーションできます。",
+    "kindsList": "<strong>項目が出入りするもの</strong>（CommandPalette、Timeline、FileUpload）：<code>motionCss</code> と <code>{'@'}item-enter</code>、<code>{'@'}item-leave</code>。",
+    "kindsCheck": "各コンポーネントの Props、Slots、Exposed の表に、利用できるものが正確に載っています。"
   },
   "component": {
     "code": "コード",

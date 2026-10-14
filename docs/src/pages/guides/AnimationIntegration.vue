@@ -3,6 +3,14 @@
     <h1>{{ t('animation.title') }}</h1>
     <p>{{ t('animation.intro') }}</p>
 
+    <h2 id="which-hooks">{{ t('animation.kindsTitle') }}</h2>
+    <ul>
+      <li v-html="t('animation.kindsOverlay')" />
+      <li v-html="t('animation.kindsInPlace')" />
+      <li v-html="t('animation.kindsList')" />
+    </ul>
+    <p>{{ t('animation.kindsCheck') }}</p>
+
     <h2 id="motion-css">{{ t('animation.motionCssTitle') }}</h2>
     <p v-html="t('animation.motionCssIntro')" />
 
@@ -88,6 +96,7 @@ useBreadcrumbSchema(() => [
 ])
 
 const tocLinks = computed(() => [
+  { id: 'which-hooks', label: t('animation.kindsTitle') },
   { id: 'motion-css', label: t('animation.motionCssTitle') },
   { id: 'force-mount', label: t('animation.forceMountTitle') },
   { id: 'before-close', label: t('animation.beforeCloseTitle') },
