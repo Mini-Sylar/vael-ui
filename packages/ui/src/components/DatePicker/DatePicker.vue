@@ -74,11 +74,19 @@
             :disabled-dates="disabledDates"
             :locale="locale"
             :first-day-of-week="firstDayOfWeek"
+            :months="months"
             :motion-css="motionCss"
             :ui="calendarUi"
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
-          />
+          >
+            <template v-if="$slots.day" #day="dayProps">
+              <slot name="day" v-bind="dayProps" />
+            </template>
+            <template v-if="$slots.label" #label="labelProps">
+              <slot name="label" v-bind="labelProps" />
+            </template>
+          </Calendar>
           <div
             v-if="(showTime || timeOnly) && selectionMode !== 'range'"
             :class="timePart.class"
@@ -232,6 +240,14 @@ const props = withDefaults(
     locale?: string
     /** `0` (Sunday) to `6` (Saturday). Unset, it derives from `locale` and falls back to Monday. */
     firstDayOfWeek?: number
+    /** How many months the panel shows side by side, for picking a range at a glance. @default 1 */
+    months?: number
+    /**
+     * Closes the panel once a date (or a range's end) is picked. `false` keeps it open, for an
+     * apply button in `#footer` or trying a few dates; outside clicks and Escape still close it.
+     * @default true
+     */
+    closeOnSelect?: boolean
     /** `Intl.DateTimeFormat` options for the input text. Unset, the format follows `view`, `showTime` and `timeOnly`. */
     formatOptions?: Intl.DateTimeFormatOptions
     /** Renders a hidden `<input>` that mirrors the selection as `YYYY-MM-DD` for form posts. */
@@ -302,6 +318,8 @@ const props = withDefaults(
     disabledDates: undefined,
     locale: undefined,
     firstDayOfWeek: undefined,
+    months: 1,
+    closeOnSelect: true,
     formatOptions: undefined,
     name: undefined,
     side: 'bottom',
@@ -333,6 +351,17 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /** Custom content inside each day cell, the same as Calendar's `#day`. The cell keeps its own
+   * click, keyboard and aria wiring. */
+  day(props: {
+    date: Date
+    isCurrentMonth: boolean
+    isToday: boolean
+    isSelected: boolean
+    isDisabled: boolean
+  }): unknown
+  /** Custom content for the panel's month and year heading, the same as Calendar's `#label`. */
+  label(props: { label: string; date: Date; level: CalendarView }): unknown
   /** Replaces the built-in Today/Clear button bar. It renders whenever you provide it,
    * regardless of `showButtonBar`. */
   footer(): unknown
@@ -464,6 +493,7 @@ function onAmPmChange(value: string | number | (string | number)[] | null) {
 
 function onCalendarChange(value: Date | CalendarRange | null) {
   emit('change', value)
+  if (!props.closeOnSelect) return
   // Range mode: don't auto-close until both endpoints are committed.
   if (isRangeModel(value) && !value.end) return
   // showTime: stay open — there's still a time to set after the date.

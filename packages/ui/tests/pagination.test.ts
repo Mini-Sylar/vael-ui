@@ -41,6 +41,22 @@ test('the sliding indicator tracks the active page button, including after navig
   })
 })
 
+test('the contrast labels are clipped to the indicator, and are not real controls', async () => {
+  const screen = await render(PaginationFixture, { props: { total: 50, pageSize: 10 } })
+  const indicator = screen.container.querySelector<HTMLElement>('.ui-pagination-indicator')!
+  const labels = screen.container.querySelector<HTMLElement>('.ui-pagination-indicator-labels')!
+  expect(labels.hasAttribute('inert')).toBe(true)
+  expect(labels.getAttribute('aria-hidden')).toBe('true')
+  expect(labels.querySelector('.ui-pagination-page-button')).toBeNull()
+
+  const page3 = pageButtons(screen.container).find((b) => b.textContent?.trim() === '3')!
+  await userEvent.click(page3)
+  await vi.waitFor(() => {
+    const left = parseFloat(indicator.style.insetInlineStart)
+    expect(labels.style.clipPath).toContain(`${left}px round`)
+  })
+})
+
 test('prev/first are disabled on page 1, next/last are disabled on the last page', async () => {
   const screen = await render(PaginationFixture, { props: { total: 50, pageSize: 10 } })
   const [first, prev, next, last] = navButtons(screen.container)

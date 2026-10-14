@@ -23,7 +23,7 @@ export interface AccordionContext {
 export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion')
 </script>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="V extends string | string[] | null = string | string[] | null">
 import './Accordion.css'
 import '../shared/tokens.css'
 import { computed, provide, useAttrs, useTemplateRef } from 'vue'
@@ -34,8 +34,8 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-/** Open item's `value`, or an array of them with `multiple`. @default null */
-const value = defineModel<string | string[] | null>('value', { default: null })
+/** Open item's `value` (a `string`, or a union of your item values), or an array of them with `multiple`. `V` takes the type you bind, and `@change` hands the same type back. @default null */
+const value = defineModel<V>('value')
 
 const props = withDefaults(
   defineProps<{
@@ -53,29 +53,32 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   /** Fires when an item opens or closes, with the new value. */
-  change: [value: string | string[] | null]
+  change: [value: V]
 }>()
 
+// Items report plain strings; the model's narrower type is the caller's to choose.
+const current = () => (value.value ?? null) as string | string[] | null
+function commit(next: string | string[] | null) {
+  value.value = next as typeof value.value
+  emit('change', next as V)
+}
+
 function isOpen(itemValue: string): boolean {
-  return props.multiple
-    ? Array.isArray(value.value) && value.value.includes(itemValue)
-    : value.value === itemValue
+  const open = current()
+  return props.multiple ? Array.isArray(open) && open.includes(itemValue) : open === itemValue
 }
 
 function toggle(itemValue: string) {
+  const open = current()
   if (props.multiple) {
-    const current = Array.isArray(value.value) ? value.value : []
-    const opening = !current.includes(itemValue)
-    if (!opening && !props.collapsible && current.length === 1) return
-    const next = opening ? [...current, itemValue] : current.filter((v) => v !== itemValue)
-    value.value = next
-    emit('change', next)
+    const list = Array.isArray(open) ? open : []
+    const opening = !list.includes(itemValue)
+    if (!opening && !props.collapsible && list.length === 1) return
+    commit(opening ? [...list, itemValue] : list.filter((v) => v !== itemValue))
     return
   }
-  const next = value.value === itemValue ? (props.collapsible ? null : value.value) : itemValue
-  if (next === value.value) return
-  value.value = next
-  emit('change', next)
+  const next = open === itemValue ? (props.collapsible ? null : open) : itemValue
+  if (next !== open) commit(next)
 }
 
 // ARIA accordion pattern: arrows and Home/End move between this accordion's

@@ -3,9 +3,10 @@
     <h3>Extreme: fully custom enter/exit via GSAP (gsap)</h3>
     <p class="note">
       <code>:motion-css="false"</code> turns off Timeline's own enter/leave transition entirely and
-      hands the raw element + a <code>done()</code> callback to <code>@item-enter</code>/
-      <code>@item-leave</code> instead — a new event spins and flies each step in from off-screen, a
-      removed one gets sucked into the marker column it's leaving.
+      hands the step's element, a <code>done()</code> callback and its <code>parts</code> (marker,
+      connectors, content) to <code>@item-enter</code>/<code>@item-leave</code> instead. A new event
+      grows the line down from the step above, pops its marker in where the line lands, then reveals
+      its label. Removing one plays it in reverse, the line retracting into the next marker.
     </p>
     <Timeline
       :items="events"
@@ -31,6 +32,7 @@
 import { shallowRef } from 'vue'
 import { gsap } from 'gsap'
 import { Button, Timeline } from 'vael-ui'
+import type { TimelineItemParts } from 'vael-ui'
 
 const reduce = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -54,28 +56,51 @@ function removeOldest() {
   events.value = events.value.slice(1)
 }
 
-function onEnter(el: Element, done: () => void) {
+function onEnter(_el: Element, done: () => void, parts: TimelineItemParts) {
   if (reduce()) return done()
-  gsap.fromTo(
-    el,
-    { opacity: 0, x: -40, rotate: -8 },
-    { opacity: 1, x: 0, rotate: 0, duration: 0.4, ease: 'back.out(1.7)', onComplete: done },
+  const { previousConnector: line, marker, content } = parts
+  gsap.set(marker, { scale: 0.4, opacity: 0 })
+  gsap.set(content, { opacity: 0, x: 8, filter: 'blur(4px)' })
+  const tl = gsap.timeline({ onComplete: done })
+  if (line) {
+    tl.fromTo(
+      line,
+      { scaleY: 0, transformOrigin: '50% 0' },
+      { scaleY: 1, duration: 0.3, ease: 'power3.out' },
+    )
+  }
+  tl.to(marker, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2.2)' }, line ? '-=0.08' : 0)
+  tl.to(
+    content,
+    {
+      opacity: 1,
+      x: 0,
+      filter: 'blur(0px)',
+      duration: 0.35,
+      ease: 'power2.out',
+      clearProps: 'filter',
+    },
+    '<0.05',
   )
 }
-function onLeave(el: Element, done: () => void) {
+
+function onLeave(el: Element, done: () => void, parts: TimelineItemParts) {
   if (reduce()) return done()
   const item = el as HTMLElement
+  const { connector: line, marker, content } = parts
   // The leaving item stays in flow until done(), so its height has to shrink
   // with the exit, or the list snaps shorter the moment it's removed.
-  gsap
-    .timeline({ onComplete: done })
-    .to(item, { opacity: 0, scale: 0.4, x: -24, duration: 0.3, ease: 'power2.in' }, 0)
-    .fromTo(
-      item,
-      { height: item.offsetHeight, overflow: 'hidden' },
-      { height: 0, duration: 0.35, ease: 'power2.inOut' },
-      0.05,
-    )
+  const tl = gsap.timeline({ onComplete: done })
+  tl.to(content, { opacity: 0, x: -8, filter: 'blur(4px)', duration: 0.2, ease: 'power2.in' }, 0)
+  tl.to(marker, { scale: 0.4, opacity: 0, duration: 0.2, ease: 'power2.in' }, 0.05)
+  if (line)
+    tl.to(line, { scaleY: 0, transformOrigin: '50% 100%', duration: 0.25, ease: 'power3.in' }, 0.1)
+  tl.fromTo(
+    item,
+    { height: item.offsetHeight, overflow: 'hidden' },
+    { height: 0, duration: 0.3, ease: 'power2.inOut' },
+    0.2,
+  )
 }
 </script>
 

@@ -30,6 +30,16 @@
 
     <h2 id="vapor">{{ t('gettingStarted.vaporTitle') }}</h2>
     <p>{{ t('gettingStarted.vaporIntro') }}</p>
+    <p v-html="t('gettingStarted.vaporForceIntro')" />
+    <CodeBlock
+      lang="typescript"
+      code="// vite.config.ts
+import vue from '@vitejs/plugin-vue'
+
+export default {
+  plugins: [vue({ features: { vapor: true } })],
+}"
+    />
 
     <h2 id="dark-mode">{{ t('gettingStarted.darkModeTitle') }}</h2>
     <p v-html="t('gettingStarted.darkModeIntro')" />

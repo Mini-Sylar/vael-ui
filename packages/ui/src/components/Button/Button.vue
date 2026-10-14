@@ -5,7 +5,7 @@
     :style="wrapperRootPart.style"
   >
     <component
-      :is="as"
+      :is="nativeTag(as)"
       ref="root"
       v-bind="restAttrs"
       :type="isButtonTag ? type : undefined"
@@ -54,7 +54,7 @@
     </span>
   </span>
   <component
-    :is="as"
+    :is="nativeTag(as)"
     v-else
     ref="root"
     v-bind="restAttrs"
@@ -122,6 +122,7 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
 <script setup lang="ts">
 import './Button.css'
 import '../shared/tokens.css'
+import { nativeTag } from '../../composables/dom'
 import '../shared/loader-spinner.css'
 import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
 import type { StyleValue } from 'vue'

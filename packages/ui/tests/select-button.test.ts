@@ -107,6 +107,24 @@ test('indicator lands on the checked option and is suppressed on first mount', a
   expect(indicator.style.transitionDuration).toBe('0ms')
 })
 
+test('indicator mounted on a later option appears there without sliding in', async () => {
+  const screen = await render(SelectButton, {
+    props: {
+      items: [
+        { label: 'AM', value: 'AM' },
+        { label: 'PM', value: 'PM' },
+      ],
+      modelValue: 'PM',
+    },
+  })
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+  await frame()
+  await frame()
+  const indicator = screen.container.querySelector<HTMLElement>('.ui-select-button-indicator')!
+  expect(indicator.style.transitionDuration).toBe('0ms')
+  expect(getComputedStyle(indicator).insetInlineStart).toBe(indicator.style.insetInlineStart)
+})
+
 test('FormData carries selections for single and multiple modes', async () => {
   const screen = await render(SelectButtonFixture, {})
   const form = screen.container.querySelector<HTMLFormElement>('[data-testid="form"]')!

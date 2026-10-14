@@ -64,17 +64,11 @@ export function useTabIndicator(
     hasAppeared = true
     if (toValue(options.sizing) === 'transform') {
       const transitionDuration = firstPaint ? '0ms' : firstAppearance ? '0ms, 0ms' : undefined
-      style.value = vertical
-        ? {
-            translate: `0 ${top}px`,
-            scale: `1 ${height}`,
-            transitionDuration,
-          }
-        : {
-            translate: `${left}px 0`,
-            scale: `${width} 1`,
-            transitionDuration,
-          }
+      apply(
+        vertical
+          ? { translate: `0 ${top}px`, scale: `1 ${height}`, transitionDuration }
+          : { translate: `${left}px 0`, scale: `${width} 1`, transitionDuration },
+      )
       return
     }
     // getBoundingClientRect measures the border box, but an absolutely
@@ -92,17 +86,29 @@ export function useTabIndicator(
       : firstAppearance
         ? `0ms, 0ms, var(--ui-duration-press)`
         : undefined
-    style.value = vertical
-      ? {
-          insetBlockStart: `${top - borderBlockStart}px`,
-          blockSize: `${height}px`,
-          transitionDuration,
-        }
-      : {
-          insetInlineStart: `${left - borderInlineStart}px`,
-          inlineSize: `${width}px`,
-          transitionDuration,
-        }
+    apply(
+      vertical
+        ? {
+            insetBlockStart: `${top - borderBlockStart}px`,
+            blockSize: `${height}px`,
+            transitionDuration,
+          }
+        : {
+            insetInlineStart: `${left - borderInlineStart}px`,
+            inlineSize: `${width}px`,
+            transitionDuration,
+          },
+    )
+  }
+
+  // Same geometry keeps a pending `0ms`: the ResizeObserver's first callback lands in the
+  // mount frame, and dropping it there slides the indicator in from its CSS default.
+  function apply(next: Record<string, string | undefined>) {
+    const prev = style.value
+    const unchanged =
+      prev.opacity === undefined &&
+      Object.keys(next).every((key) => key === 'transitionDuration' || prev[key] === next[key])
+    if (!unchanged) style.value = next
   }
 
   watch(active, () => nextTick(measure), { immediate: true, flush: 'post' })

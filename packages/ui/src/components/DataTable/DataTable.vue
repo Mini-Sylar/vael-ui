@@ -10,7 +10,11 @@
       <slot name="toolbar" :selected="selected" :count="sortedData.length" />
     </div>
 
-    <div class="ui-datatable-scroll-x">
+    <div
+      v-scroll-mask="scrollFade ? 'x' : false"
+      class="ui-datatable-scroll-x"
+      :data-frozen="frozenColumns > 0 || undefined"
+    >
       <template v-if="scrollHeight">
         <table
           :class="tablePart('ui-datatable-table--split').class"
@@ -27,6 +31,7 @@
         </table>
         <div
           ref="bodyScrollEl"
+          v-scroll-mask="scrollFade ? 'y' : false"
           class="ui-datatable-scroll-y"
           :style="{ maxBlockSize: bodyMaxBlockSize }"
         >
@@ -112,6 +117,7 @@ import type { TableRowEntry } from './DataTableBody.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { vScrollMask } from '../../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
 
@@ -151,6 +157,8 @@ const props = withDefaults(
     resizableColumns?: boolean
     /** Pins the first N columns to the left while the table scrolls horizontally. @default 0 */
     frozenColumns?: number
+    /** Fades the edges that have more to scroll to, so it's clear the table scrolls. @default true */
+    scrollFade?: boolean
     /** Rows per page. Unset, all rows render. Set, the table slices rows; pair it with `v-model:page`.
      * With `lazy`, it also divides `total` into pages. */
     rows?: number
@@ -227,6 +235,7 @@ const props = withDefaults(
     showGridlines: false,
     resizableColumns: false,
     frozenColumns: 0,
+    scrollFade: true,
     manualSort: false,
     lazy: false,
     motionCss: true,

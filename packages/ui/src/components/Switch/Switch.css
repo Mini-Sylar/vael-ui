@@ -36,9 +36,11 @@
     position: absolute;
     inset: 0;
     pointer-events: none; /* input (below in paint order) stays the click target */
-    border: 1px solid var(--ui-border-strong);
+    /* A filled track, not an outlined one: a border ring eats into the gap in the
+       off state only, so the thumb read crammed off and roomy on. */
+    border: 1px solid transparent;
     border-radius: 9999px;
-    background: var(--ui-muted);
+    background: var(--ui-border-strong);
     transition:
       background-color var(--ui-duration-press) ease,
       border-color var(--ui-duration-press) ease;

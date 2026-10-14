@@ -7,9 +7,10 @@
       relative to <code>active</code>, so the outgoing and incoming panels cross fade with a
       directional slide. No <code>AnimatePresence</code>: a keyed swap inside it loses its key in a
       Vapor parent, so exits never ran there. <code>id-base</code> wires each tab's
-      <code>aria-controls</code> to its panel.
+      <code>aria-controls</code> to its panel, and the exposed <code>panelProps(item)</code> gives
+      each panel its matching <code>id</code>, <code>role</code> and <code>aria-labelledby</code>.
     </p>
-    <Tabs v-model:active="active" :items="items" id-base="report">
+    <Tabs ref="tabs" v-model:active="active" :items="items" id-base="report">
       <template #default="{ items: list, itemProps }">
         <button v-for="item in list" :key="item" v-bind="itemProps(item)">
           <span class="tab-label">{{ item }}</span>
@@ -19,12 +20,9 @@
     <div class="panel-viewport">
       <motion.div
         v-for="(item, index) in items"
-        :id="`report-panel-${item}`"
         :key="item"
+        v-bind="tabs?.panelProps(item)"
         class="panel-content"
-        role="tabpanel"
-        :aria-labelledby="`report-tab-${item}`"
-        :tabindex="item === active ? 0 : -1"
         :inert="item !== active"
         :initial="false"
         :animate="{ x: offsetOf(index), opacity: item === active ? 1 : 0 }"
@@ -38,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { shallowRef, useTemplateRef } from 'vue'
 import { motion } from 'motion-v'
 import { Tabs } from 'vael-ui'
 
@@ -46,6 +44,7 @@ type Section = 'overview' | 'analytics' | 'settings'
 const items: Section[] = ['overview', 'analytics', 'settings']
 
 const active = shallowRef<Section>('overview')
+const tabs = useTemplateRef('tabs')
 const panels: Record<Section, { title: string; body: string }> = {
   overview: {
     title: 'Overview',

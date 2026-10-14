@@ -8,27 +8,36 @@
     v-bind="attrs"
   >
     <div class="ui-otp-cells" aria-hidden="true">
-      <span
-        v-for="(cell, index) in cells"
-        :key="index"
-        ref="cellEls"
-        :class="cellPart.class"
-        :style="cellPart.style"
-        :data-active="cell.active || undefined"
-        :data-filled="cell.filled || undefined"
-      >
-        <slot
-          name="cell"
-          :char="cell.char"
-          :index="index"
-          :active="cell.active"
-          :filled="cell.filled"
+      <template v-for="(cell, index) in cells" :key="index">
+        <span
+          v-if="groupStarts.has(index)"
+          :class="separatorPart.class"
+          :style="separatorPart.style"
         >
-          <span :key="`${index}-${cell.char ?? 'empty'}`" class="ui-otp-cell-char">{{
-            cell.char ? (mask ? '•' : cell.char) : ''
-          }}</span>
-        </slot>
-      </span>
+          <slot name="separator" :index="groupStarts.get(index)!">
+            <span class="ui-otp-separator-dash" />
+          </slot>
+        </span>
+        <span
+          ref="cellEls"
+          :class="cellPart.class"
+          :style="cellPart.style"
+          :data-active="cell.active || undefined"
+          :data-filled="cell.filled || undefined"
+        >
+          <slot
+            name="cell"
+            :char="cell.char"
+            :index="index"
+            :active="cell.active"
+            :filled="cell.filled"
+          >
+            <span :key="`${index}-${cell.char ?? 'empty'}`" class="ui-otp-cell-char">{{
+              cell.char ? (mask ? '•' : cell.char) : ''
+            }}</span>
+          </slot>
+        </span>
+      </template>
     </div>
     <input
       ref="inputEl"
@@ -98,8 +107,15 @@ const props = withDefaults(
     size?: 'sm' | 'md' | 'lg'
     /** Native `name` on the input, for plain `<form>` submission. */
     name?: string
+    /** Splits the cells into groups with a separator between them: a group size (`3` for `123-456`), or each group's size (`[3, 4]`). */
+    groups?: number | number[]
     /** Class and style overrides for each part. */
-    ui?: Partial<{ root: UiPartValue; input: UiPartValue; cell: UiPartValue }>
+    ui?: Partial<{
+      root: UiPartValue
+      input: UiPartValue
+      cell: UiPartValue
+      separator: UiPartValue
+    }>
   }>(),
   { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false, size: 'md' },
 )
@@ -112,7 +128,29 @@ const emit = defineEmits<{
 defineSlots<{
   /** Custom content for one cell. */
   cell(props: { char: string | null; index: number; active: boolean; filled: boolean }): unknown
+  /** Replaces the dash between groups. `index` counts separators from 0. */
+  separator(props: { index: number }): unknown
 }>()
+
+/** Cell index that starts each group after the first, mapped to its separator's index. */
+const groupStarts = computed(() => {
+  const starts = new Map<number, number>()
+  const sizes =
+    typeof props.groups === 'number'
+      ? props.groups > 0
+        ? Array.from(
+            { length: Math.ceil(props.length / props.groups) },
+            () => props.groups as number,
+          )
+        : []
+      : (props.groups ?? [])
+  let at = 0
+  for (const size of sizes.slice(0, -1)) {
+    at += size
+    if (at > 0 && at < props.length) starts.set(at, starts.size)
+  }
+  return starts
+})
 
 function strip(text: string): string {
   return props.type === 'numeric' ? text.replace(/[^0-9]/g, '') : text.replace(/[^a-zA-Z0-9]/g, '')
@@ -269,6 +307,7 @@ const rootPart = computed(() =>
   ),
 )
 const inputPart = computed(() => resolveUiPart(cx, themedUi()?.input, 'ui-otp-input'))
+const separatorPart = computed(() => resolveUiPart(cx, themedUi()?.separator, 'ui-otp-separator'))
 const cellPart = computed(() =>
   resolveUiPart(cx, themedUi()?.cell, 'ui-otp-cell', hasCustomCell.value && 'ui-otp-cell--custom'),
 )

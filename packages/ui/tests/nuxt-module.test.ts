@@ -12,12 +12,12 @@ vi.mock('@nuxt/kit', () => ({
   addComponent,
   defineNuxtModule: (def: {
     defaults: unknown
-    setup: (options: unknown) => void
+    setup: (options: unknown, nuxt: unknown) => void
     meta: unknown
   }) =>
     Object.assign(
-      (options: Record<string, unknown> = {}) =>
-        def.setup({ ...(def.defaults as object), ...options }),
+      (options: Record<string, unknown> = {}, nuxt: unknown = { options: { vue: {} } }) =>
+        def.setup({ ...(def.defaults as object), ...options }, nuxt),
       {
         getMeta: () => def.meta,
       },
@@ -39,7 +39,7 @@ test('registers every known component name by default', async () => {
   expect(new Set(registeredNames)).toEqual(COMPONENT_NAMES)
 })
 
-test('every registration resolves name/export from "vael-ui", never vael-ui/vapor', async () => {
+test('by default every registration resolves name/export from "vael-ui"', async () => {
   const { default: vaelUiNuxtModule } = await import('../src/nuxt/index')
   vaelUiNuxtModule(undefined, undefined)
 
@@ -48,6 +48,16 @@ test('every registration resolves name/export from "vael-ui", never vael-ui/vapo
     expect(options.filePath).toBe('vael-ui')
     expect(options.export).toBe(options.name)
   }
+})
+
+test("variant 'vapor' registers from vael-ui/vapor and turns on Nuxt's vue.vapor", async () => {
+  const { default: vaelUiNuxtModule } = await import('../src/nuxt/index')
+  const nuxt = { options: { vue: {} as { vapor?: boolean } } }
+  vaelUiNuxtModule({ variant: 'vapor' }, nuxt)
+
+  expect(nuxt.options.vue.vapor).toBe(true)
+  expect(addComponent).toHaveBeenCalled()
+  for (const call of addComponent.mock.calls) expect(call[0].filePath).toBe('vael-ui/vapor')
 })
 
 test('exclude skips those component names and no others', async () => {

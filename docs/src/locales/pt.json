@@ -6,12 +6,17 @@
     "forceMountTitle": "forçar montagem",
     "gsapExampleIntro": "<code>beforeClose(done)</code> mais a referência <code>panelEl</code> exposta, para que a interpolação seja executada no elemento de painel real antes de ser removido:",
     "gsapExampleTitle": "Exemplo: GSAP, Diálogo",
-    "intro": "Todo componente que anima vem com uma transição CSS simples. Cada um também tem uma válvula de escape, para você controlá-lo com GSAP, motion-v ou nada. Nem todo componente tem os três mecanismos abaixo, então confira as tabelas de Props, Slots e Exposed dele.",
+    "intro": "Todo componente que anima traz uma transição CSS simples, e em todos você pode assumir o controle: com GSAP, motion-v ou sem animação. Os hooks disponíveis dependem do que o componente faz.",
     "motionCssIntro": "Defina como <code>false</code> para desativar a transição CSS integrada. O componente continua mudando de estado, mas instantaneamente, e deixa o DOM para você animar.",
     "motionCssTitle": "movimentoCss",
     "motionVExampleIntro": "<code>forceMount</code> mais o sinalizador <code>isClosing</code> do slot padrão, envolvido em <code>",
     "motionVExampleTitle": "Exemplo: motion-v, Popover",
-    "title": "Traga sua própria animação"
+    "title": "Traga sua própria animação",
+    "kindsTitle": "Que hooks meu componente tem?",
+    "kindsOverlay": "<strong>Abre e fecha</strong> (Dialog, Popover, Tooltip, Menu, Select, DatePicker): <code>forceMount</code>, <code>beforeClose(done)</code> e um <code>panelEl</code> exposto. <code>forceMount</code> já desliga a transição CSS.",
+    "kindsInPlace": "<strong>Muda no lugar</strong> (Calendar, Checkbox, Radio, Collapsible, Pagination, PullToRefresh): <code>motionCss</code> desliga a transição, e os elementos expostos permitem animar por conta própria.",
+    "kindsList": "<strong>Itens que entram e saem</strong> (CommandPalette, Timeline, FileUpload): <code>motionCss</code> mais <code>{'@'}item-enter</code> e <code>{'@'}item-leave</code>.",
+    "kindsCheck": "As tabelas Props, Slots e Exposed de um componente listam exatamente o que ele tem."
   },
   "component": {
     "code": "Código",
@@ -118,6 +123,7 @@
     "usageIntro": "Depois importe os componentes de <code>'vael-ui'</code> para a build VDOM clássica. Para a build Vapor (o modo do Vue 3.6 sem DOM virtual), importe de <code>'vael-ui/vapor'</code>. As props são as mesmas nas duas:",
     "usageTitle": "Uso",
     "vaporIntro": "As duas builds saem do mesmo pacote e do mesmo código-fonte. Use a que seu app executa ou combine as duas, já que o Vue 3.6 oferece interoperabilidade VDOM/Vapor. Cada página de componente tem o mesmo seletor para compará-las.",
+    "vaporForceIntro": "Seus próprios componentes passam para Vapor um a um com <code>&lt;script setup vapor&gt;</code>. Para compilar todo componente <code>&lt;script setup&gt;</code> como Vapor sem o atributo, ative <code>features.vapor</code> no <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou mais recente:",
     "vaporTitle": "Suporte Vue Vapor"
   },
   "globalSetup": {
@@ -205,7 +211,10 @@
     "autoImportGuide": "Importação automática",
     "nuxtGuide": "Nuxt",
     "skillGuide": "Habilidade de agente de IA",
-    "directives": "Diretivas"
+    "directives": "Diretivas",
+    "previous": "Anterior",
+    "next": "Próximo",
+    "pager": "Páginas anterior e seguinte"
   },
   "pageNotes": {
     "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar."
@@ -367,8 +376,10 @@
     "setupOutro": "Escreva a tag e o Nuxt resolve a importação para você:",
     "setupTitle": "Configurar",
     "title": "Nuxt",
-    "vdomOnlyIntro": "Este módulo sempre registra componentes da build normal <code>vael-ui</code>, nunca de <code>vael-ui/vapor</code>. Por isso ele não tem a opção <code>variant</code>, ao contrário do <code>vael-ui/resolver</code>. O Vue 3.6 suporta hidratação SSR do Vapor, mas o Nuxt estável ainda não tem configuração para Vapor. Esse trabalho está em andamento no upstream e ainda não saiu em uma versão geral. Uma opção <code>variant</code> pode vir quando o Nuxt lançar suporte ao Vapor.",
-    "vdomOnlyTitle": "Somente VDOM"
+    "vaporIntro": "Defina <code>variant: 'vapor'</code> para usar <code>vael-ui/vapor</code>, a mesma opção que o <code>vael-ui/resolver</code> aceita. O módulo ativa o <code>vue.vapor</code> do Nuxt para você. É preciso Nuxt 4.6 ou mais recente e Vue 3.6.",
+    "vaporOutro": "As páginas continuam sendo renderizadas no servidor. O servidor transforma cada componente em HTML, e o navegador o assume como um componente Vapor, sem mais nada para configurar.",
+    "vaporForceIntro": "Para compilar também seus próprios componentes <code>&lt;script setup&gt;</code> como Vapor, sem adicionar <code>vapor</code> a cada um, ative o <code>features.vapor</code> do <code>{'@'}vitejs/plugin-vue</code> pelo <code>vite.vue</code> do Nuxt:",
+    "vaporTitle": "Vapor"
   },
   "skill": {
     "claudeCodeIntro": "Adicione o mercado uma vez e instale a habilidade:",

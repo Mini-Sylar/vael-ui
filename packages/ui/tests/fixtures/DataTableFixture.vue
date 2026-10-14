@@ -26,6 +26,7 @@
     :show-gridlines="showGridlines"
     :resizable-columns="resizableColumns"
     :frozen-columns="frozenColumns"
+    :scroll-fade="scrollFade"
     :manual-sort="manualSort"
     :lazy="lazy"
     :total="total"
@@ -118,6 +119,7 @@ const props = withDefaults(
     showGridlines?: boolean
     resizableColumns?: boolean
     frozenColumns?: number
+    scrollFade?: boolean
     manualSort?: boolean
     lazy?: boolean
     total?: number
@@ -158,6 +160,7 @@ const props = withDefaults(
     showGridlines: false,
     resizableColumns: false,
     frozenColumns: 0,
+    scrollFade: undefined,
     manualSort: false,
     lazy: false,
     motionCss: true,

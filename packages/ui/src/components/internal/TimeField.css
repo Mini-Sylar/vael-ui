@@ -67,8 +67,10 @@
   }
 
   @media (pointer: coarse) {
+    /* iOS zooms the page into any field under 16px. */
     .ui-time-field-input {
       padding-block: 0.875rem;
+      font-size: max(var(--ui-touch-font-size, 16px), 1em);
     }
     .ui-time-field-stepper {
       inline-size: 2rem;

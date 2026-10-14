@@ -1,7 +1,9 @@
 import '../src/style.css'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TimelineFixture from './fixtures/TimelineFixture.vue'
+import Timeline from '../src/components/Timeline/Timeline.vue'
+import type { TimelineItemParts } from '../src/components/Timeline/Timeline.vue'
 
 function stepsIn(
   screen: Awaited<ReturnType<typeof render>>,
@@ -192,4 +194,22 @@ test('pushing a new item renders an additional step reactively', async () => {
 
   await screen.getByTestId('push-item').click()
   await expect.poll(() => stepsIn(screen, 'reactive').length).toBe(2)
+})
+
+test("@item-enter hands over the entering step's parts, including the line leading into it", async () => {
+  const onEnter = vi.fn((_el: Element, done: () => void, _parts: TimelineItemParts) => done())
+  const screen = await render(Timeline, {
+    props: { items: ['a', 'b'], motionCss: false, 'onItem-enter': onEnter },
+    global: { stubs: { 'transition-group': false } },
+  })
+  await screen.rerender({ items: ['a', 'b', 'c'] })
+  await vi.waitFor(() => expect(onEnter).toHaveBeenCalled())
+
+  const [el, , parts] = onEnter.mock.calls.at(-1)!
+  const steps = screen.container.querySelectorAll('.ui-timeline-step')
+  expect(el).toBe(steps[2])
+  expect(parts.marker).toBe(steps[2]!.querySelector('.ui-timeline-marker'))
+  expect(parts.content).toBe(steps[2]!.querySelector('.ui-timeline-content'))
+  expect(parts.connector).toBeNull()
+  expect(parts.previousConnector).toBe(steps[1]!.querySelector('.ui-timeline-connector'))
 })

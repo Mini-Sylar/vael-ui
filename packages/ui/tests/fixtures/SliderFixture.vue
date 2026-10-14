@@ -32,6 +32,15 @@
     :value-text="(v) => `$${v}`"
   />
 
+  <Slider data-testid="slots" style="width: 200px" v-model="slotValue" :min="0" :max="200">
+    <template #thumb="{ value, percent, index }">
+      <span :data-testid="`thumb-content-${index}`">{{ value }}|{{ percent }}</span>
+    </template>
+    <template #track="{ percents }">
+      <span data-testid="track-content">{{ percents.join(',') }}</span>
+    </template>
+  </Slider>
+
   <form data-testid="form">
     <Slider data-testid="form-slider" style="width: 200px" v-model="formValue" name="amount" />
   </form>
@@ -47,6 +56,7 @@ const verticalValue = shallowRef(30)
 const disabledValue = shallowRef(10)
 const valueTextValue = shallowRef(40)
 const formValue = shallowRef(50)
+const slotValue = shallowRef(50)
 
 defineExpose({
   singleValue,

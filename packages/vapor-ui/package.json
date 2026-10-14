@@ -7,13 +7,13 @@
     "test": "vitest run",
     "typecheck": "vue-tsc --noEmit",
     "gen": "node ../scripts/generate-vapor.mjs",
-    "build": "pnpm gen && tsdown && node ../scripts/emit-vapor-types.mjs"
+    "build": "pnpm gen && NODE_ENV=production tsdown && node ../scripts/emit-vapor-types.mjs"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",
     "@vueuse/core": "^15.0.0",
     "vael-ui": "workspace:*",
-    "vue": "3.6.0-rc.10"
+    "vue": "3.6.0-rc.11"
   },
   "devDependencies": {
     "@tsdown/css": "^0.23.0",

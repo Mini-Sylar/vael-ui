@@ -25,6 +25,7 @@
       :rows="content.modifiers"
       :empty-text="t('directive.noModifiers')"
     />
+    <DocsPager />
   </article>
 </template>
 
@@ -36,6 +37,7 @@ import { useHead } from '@unhead/vue'
 import { directivesContent } from '../directivesContent'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import CodeBlock from '../components/CodeBlock.vue'
+import DocsPager from '../components/DocsPager.vue'
 import MetaTable from '../components/MetaTable.vue'
 import RichText from '../components/RichText.vue'
 

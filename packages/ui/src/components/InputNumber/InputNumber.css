@@ -89,6 +89,21 @@
     }
   }
 
+  /* Stacked, each stepper gets half the field's height: too small for a finger.
+     Side by side, each one is the field's full height. */
+  @media (pointer: coarse) {
+    .ui-input-number-steppers {
+      flex-direction: row-reverse;
+    }
+    .ui-input-number-stepper:not(.ui-input-number-stepper--split) {
+      inline-size: 2rem;
+    }
+    .ui-input-number-stepper--split.ui-input-number-stepper--sm {
+      inline-size: 1.75rem;
+      block-size: 1.75rem;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .ui-input-number-stepper:active {
       transform: none;

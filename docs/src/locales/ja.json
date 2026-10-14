@@ -6,12 +6,17 @@
     "forceMountTitle": "強制マウント",
     "gsapExampleIntro": "<code>beforeClose(done)</code> と公開された <code>panelEl</code> 参照を追加することで、削除される前に実際のパネル要素上でトゥイーンが実行されます。",
     "gsapExampleTitle": "例: GSAP、ダイアログ",
-    "intro": "アニメーションするコンポーネントはすべて、プレーンな CSS トランジションを備えています。それぞれにエスケープハッチもあり、GSAP や motion-v で動かすことも、アニメーションなしにすることもできます。下記の 3 つのフックをすべて持つコンポーネントばかりではないため、各コンポーネントの Props、Slots、Exposed の表を確認してください。",
+    "intro": "アニメーションするコンポーネントにはすべてプレーンな CSS トランジションが付属し、どれも自分で制御を引き継げます。GSAP や motion-v で動かすことも、アニメーションなしにすることも可能です。利用できるフックはコンポーネントの役割によって異なります。",
     "motionCssIntro": "<code>false</code> に設定すると、組み込みの CSS トランジションが無効になります。コンポーネントの状態は変わりますが即座に切り替わり、DOM のアニメーションはあなたに任されます。",
     "motionCssTitle": "モーションCss",
     "motionVExampleIntro": "<code>forceMount</code> とデフォルト スロットの <code>isClosing</code> フラグを <code> でラップしたもの",
     "motionVExampleTitle": "例: motion-v、ポップオーバー",
-    "title": "独自のアニメーションを持ち込む"
+    "title": "独自のアニメーションを持ち込む",
+    "kindsTitle": "自分のコンポーネントにはどのフックがある？",
+    "kindsOverlay": "<strong>開閉するもの</strong>（Dialog、Popover、Tooltip、Menu、Select、DatePicker）：<code>forceMount</code>、<code>beforeClose(done)</code>、公開された <code>panelEl</code>。<code>forceMount</code> は CSS トランジションをすでにオフにします。",
+    "kindsInPlace": "<strong>その場で変化するもの</strong>（Calendar、Checkbox、Radio、Collapsible、Pagination、PullToRefresh）：<code>motionCss</code> でトランジションをオフにでき、公開された要素を自分でアニメーションできます。",
+    "kindsList": "<strong>項目が出入りするもの</strong>（CommandPalette、Timeline、FileUpload）：<code>motionCss</code> と <code>{'@'}item-enter</code>、<code>{'@'}item-leave</code>。",
+    "kindsCheck": "各コンポーネントの Props、Slots、Exposed の表に、利用できるものが正確に載っています。"
   },
   "component": {
     "code": "コード",
@@ -118,6 +123,7 @@
     "usageIntro": "次に、従来の VDOM ビルドでは <code>'vael-ui'</code> からコンポーネントをインポートします。Vapor ビルド（仮想 DOM を使わない Vue 3.6 のモード）では <code>'vael-ui/vapor'</code> からインポートします。props はどちらも同じです。",
     "usageTitle": "使用法",
     "vaporIntro": "どちらのビルドも同じパッケージ・同じソースから提供されます。アプリで使っている方を選ぶか、Vue 3.6 は VDOM/Vapor の相互運用に対応しているので両方を併用することもできます。各コンポーネントページにも、両者を比較できる同じ切り替えがあります。",
+    "vaporForceIntro": "自分のコンポーネントは <code>&lt;script setup vapor&gt;</code> で 1 つずつ Vapor にできます。属性なしですべての <code>&lt;script setup&gt;</code> コンポーネントを Vapor でコンパイルするには、<code>{'@'}vitejs/plugin-vue</code> 6.0.8 以降で <code>features.vapor</code> を有効にします：",
     "vaporTitle": "Vue Vapor のサポート"
   },
   "globalSetup": {
@@ -205,7 +211,10 @@
     "autoImportGuide": "自動インポート",
     "nuxtGuide": "ナクスト",
     "skillGuide": "AIエージェントスキル",
-    "directives": "ディレクティブ"
+    "directives": "ディレクティブ",
+    "previous": "前へ",
+    "next": "次へ",
+    "pager": "前後のページ"
   },
   "pageNotes": {
     "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。"
@@ -367,8 +376,10 @@
     "setupOutro": "タグを書けば、Nuxt がインポートを解決します。",
     "setupTitle": "設定",
     "title": "ナクスト",
-    "vdomOnlyIntro": "このモジュールは常に通常の <code>vael-ui</code> ビルドからコンポーネントを登録し、<code>vael-ui/vapor</code> は使いません。そのため、<code>vael-ui/resolver</code> と違って <code>variant</code> オプションはありません。Vue 3.6 は Vapor の SSR ハイドレーションに対応していますが、安定版の Nuxt にはまだ Vapor の設定がありません。その対応はアップストリームで進行中で、一般リリースには含まれていません。Nuxt が Vapor に対応した後、<code>variant</code> オプションを追加できます。",
-    "vdomOnlyTitle": "VDOMのみ"
+    "vaporIntro": "<code>variant: 'vapor'</code> を設定すると <code>vael-ui/vapor</code> を使います。<code>vael-ui/resolver</code> と同じオプションです。モジュールが Nuxt の <code>vue.vapor</code> を自動で有効にします。Nuxt 4.6 以降と Vue 3.6 が必要です。",
+    "vaporOutro": "ページは引き続きサーバーでレンダリングされます。サーバーが各コンポーネントを HTML にし、ブラウザーがそれを Vapor コンポーネントとして引き継ぎます。追加の設定は不要です。",
+    "vaporForceIntro": "自分の <code>&lt;script setup&gt;</code> コンポーネントも、それぞれに <code>vapor</code> を付けずに Vapor でコンパイルするには、Nuxt の <code>vite.vue</code> で <code>{'@'}vitejs/plugin-vue</code> の <code>features.vapor</code> を有効にします：",
+    "vaporTitle": "Vapor"
   },
   "skill": {
     "claudeCodeIntro": "マーケットプレイスを一度追加してから、スキルをインストールします。",

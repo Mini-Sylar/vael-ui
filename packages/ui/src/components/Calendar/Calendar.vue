@@ -5,7 +5,10 @@
     :style="rootPart.style"
     :data-motion="motionCss ? undefined : 'off'"
   >
-    <div :class="headerPart.class" :style="headerPart.style">
+    <div
+      :class="[headerPart.class, splitMonths && 'ui-calendar-header--overlay']"
+      :style="[{ '--ui-calendar-direction': direction }, headerPart.style]"
+    >
       <button
         type="button"
         :class="navButtonPart.class"
@@ -27,6 +30,7 @@
       <!-- Stays a button at the top level (aria-disabled), so focus isn't
            dropped when drilling up to the year grid. -->
       <button
+        v-if="!splitMonths"
         type="button"
         :class="[labelPart.class, canDrill && 'ui-calendar-label--button']"
         :style="labelPart.style"
@@ -34,7 +38,13 @@
         aria-live="polite"
         @click="canDrill && drillUp()"
       >
-        {{ headerLabel }}
+        <Transition :name="motionCss ? 'ui-calendar-label' : undefined" :css="motionCss">
+          <span :key="headerLabel" class="ui-calendar-label-text">
+            <slot name="label" :label="headerLabel" :date="viewDate" :level="navLevel">{{
+              headerLabel
+            }}</slot>
+          </span>
+        </Transition>
       </button>
       <button
         type="button"
@@ -60,125 +70,168 @@
       ref="bodyEl"
       class="ui-calendar-body"
       :style="[{ '--ui-calendar-direction': direction }, bodyMinSize]"
+      :data-zoom="zoom"
     >
-      <template v-if="navLevel === 'date'">
-        <div :class="weekdaysPart.class" :style="weekdaysPart.style" aria-hidden="true">
-          <span
-            v-for="(label, i) in weekdayLabels"
-            :key="i"
-            :class="weekdayPart.class"
-            :style="weekdayPart.style"
-          >
-            {{ label }}
-          </span>
-        </div>
-
-        <div class="ui-calendar-grid-wrap">
-          <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
-            <div
-              :key="monthKey"
-              ref="gridEl"
-              role="grid"
-              :aria-label="headerLabel"
-              :class="gridPart.class"
-              :style="gridPart.style"
-              @keydown="onGridKeydown"
-            >
-              <div v-for="(week, wi) in weeks" :key="wi" role="row" class="ui-calendar-week">
-                <div
-                  v-for="day in week"
-                  :key="isoDate(day)"
-                  role="gridcell"
-                  :data-date="isoDate(day)"
-                  :tabindex="isSameDay(day, focusedDate) ? 0 : -1"
-                  :aria-selected="isDaySelected(day) || undefined"
-                  :aria-current="isToday(day) ? 'date' : undefined"
-                  :aria-disabled="isDayDisabled(day) || undefined"
-                  :aria-label="cellLabel(day)"
-                  :class="cellPart(day).class"
-                  :style="cellPart(day).style"
-                  @click="onDayClick(day)"
-                  @pointerenter="onDayHover(day)"
-                >
-                  <slot
-                    name="day"
-                    :date="day"
-                    :is-current-month="isSameMonth(day, viewDate)"
-                    :is-today="isToday(day)"
-                    :is-selected="isDaySelected(day)"
-                    :is-disabled="isDayDisabled(day)"
-                    >{{ day.getDate() }}</slot
+      <Transition
+        :name="motionCss ? 'ui-calendar-level' : undefined"
+        :css="motionCss"
+        @enter="anchorZoom"
+      >
+        <div :key="navLevel" class="ui-calendar-level">
+          <div v-if="navLevel === 'date'" class="ui-calendar-panes">
+            <div v-for="(pane, pi) in panes" :key="pi" class="ui-calendar-pane">
+              <div v-if="panes.length > 1" class="ui-calendar-pane-head">
+                <Transition :name="motionCss ? 'ui-calendar-label' : undefined" :css="motionCss">
+                  <button
+                    :key="monthKeyOf(pane)"
+                    type="button"
+                    :class="[
+                      labelPart.class,
+                      'ui-calendar-label--button',
+                      'ui-calendar-pane-label',
+                    ]"
+                    :style="labelPart.style"
+                    aria-live="polite"
+                    @click="drillUp(pane)"
                   >
+                    <slot name="label" :label="monthYearFormat(pane)" :date="pane" level="date">{{
+                      monthYearFormat(pane)
+                    }}</slot>
+                  </button>
+                </Transition>
+              </div>
+              <div :class="weekdaysPart.class" :style="weekdaysPart.style" aria-hidden="true">
+                <span
+                  v-for="(label, i) in weekdayLabels"
+                  :key="i"
+                  :class="weekdayPart.class"
+                  :style="weekdayPart.style"
+                >
+                  {{ label }}
+                </span>
+              </div>
+
+              <div class="ui-calendar-grid-wrap">
+                <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
+                  <div
+                    :key="monthKeyOf(pane)"
+                    :ref="(el) => pi === 0 && setGridEl(el)"
+                    role="grid"
+                    :aria-label="monthYearFormat(pane)"
+                    :class="gridPart.class"
+                    :style="gridPart.style"
+                    @keydown="onGridKeydown"
+                  >
+                    <div
+                      v-for="(week, wi) in weeksOf(pane)"
+                      :key="wi"
+                      role="row"
+                      class="ui-calendar-week"
+                    >
+                      <div
+                        v-for="day in week"
+                        :key="isoDate(day)"
+                        role="gridcell"
+                        v-bind="dayAttrs(day, pane)"
+                        :class="cellPart(day, pane).class"
+                        :style="cellPart(day, pane).style"
+                        @click="onDayClick(day)"
+                        @pointerenter="onDayHover(day)"
+                      >
+                        <slot
+                          name="day"
+                          :date="day"
+                          :is-current-month="isSameMonth(day, pane)"
+                          :is-today="isToday(day)"
+                          :is-selected="isDaySelected(day)"
+                          :is-disabled="isDayDisabled(day)"
+                          >{{ day.getDate() }}</slot
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+            </div>
+          </div>
+
+          <template v-else-if="navLevel === 'month'">
+            <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
+              <div
+                :key="`m${viewDate.getFullYear()}`"
+                role="grid"
+                :aria-label="headerLabel"
+                class="ui-calendar-month-grid"
+              >
+                <div
+                  v-for="(row, ri) in monthRows"
+                  :key="ri"
+                  role="row"
+                  class="ui-calendar-month-row"
+                >
+                  <div
+                    v-for="month in row"
+                    :key="month.getMonth()"
+                    :data-month="month.getMonth()"
+                    role="gridcell"
+                    tabindex="0"
+                    :aria-selected="isMonthSelected(month) || undefined"
+                    :aria-disabled="isMonthDisabled(month) || undefined"
+                    class="ui-calendar-month-cell"
+                    :class="{
+                      'ui-calendar-month-cell--selected': isMonthSelected(month),
+                      'ui-calendar-month-cell--disabled': isMonthDisabled(month),
+                    }"
+                    @click="onMonthPick(month)"
+                    @keydown.enter="onMonthPick(month)"
+                    @keydown.space.prevent="onMonthPick(month)"
+                  >
+                    {{ monthLabel(month) }}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Transition>
+            </Transition>
+          </template>
+
+          <template v-else>
+            <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
+              <div
+                :key="`y${yearWindowStart}`"
+                role="grid"
+                :aria-label="headerLabel"
+                class="ui-calendar-year-grid"
+              >
+                <div
+                  v-for="(row, ri) in yearRows"
+                  :key="ri"
+                  role="row"
+                  class="ui-calendar-year-row"
+                >
+                  <div
+                    v-for="year in row"
+                    :key="year"
+                    :data-year="year"
+                    role="gridcell"
+                    tabindex="0"
+                    :aria-selected="isYearSelected(year) || undefined"
+                    :aria-disabled="isYearDisabled(year) || undefined"
+                    class="ui-calendar-year-cell"
+                    :class="{
+                      'ui-calendar-year-cell--selected': isYearSelected(year),
+                      'ui-calendar-year-cell--disabled': isYearDisabled(year),
+                    }"
+                    @click="onYearPick(year)"
+                    @keydown.enter="onYearPick(year)"
+                    @keydown.space.prevent="onYearPick(year)"
+                  >
+                    {{ year }}
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </template>
         </div>
-      </template>
-
-      <template v-else-if="navLevel === 'month'">
-        <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
-          <div
-            :key="`m${viewDate.getFullYear()}`"
-            role="grid"
-            :aria-label="headerLabel"
-            class="ui-calendar-month-grid"
-          >
-            <div v-for="(row, ri) in monthRows" :key="ri" role="row" class="ui-calendar-month-row">
-              <div
-                v-for="month in row"
-                :key="month.getMonth()"
-                role="gridcell"
-                tabindex="0"
-                :aria-selected="isMonthSelected(month) || undefined"
-                :aria-disabled="isMonthDisabled(month) || undefined"
-                class="ui-calendar-month-cell"
-                :class="{
-                  'ui-calendar-month-cell--selected': isMonthSelected(month),
-                  'ui-calendar-month-cell--disabled': isMonthDisabled(month),
-                }"
-                @click="onMonthPick(month)"
-                @keydown.enter="onMonthPick(month)"
-                @keydown.space.prevent="onMonthPick(month)"
-              >
-                {{ monthLabel(month) }}
-              </div>
-            </div>
-          </div>
-        </Transition>
-      </template>
-
-      <template v-else>
-        <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
-          <div
-            :key="`y${yearWindowStart}`"
-            role="grid"
-            :aria-label="headerLabel"
-            class="ui-calendar-year-grid"
-          >
-            <div v-for="(row, ri) in yearRows" :key="ri" role="row" class="ui-calendar-year-row">
-              <div
-                v-for="year in row"
-                :key="year"
-                role="gridcell"
-                tabindex="0"
-                :aria-selected="isYearSelected(year) || undefined"
-                :aria-disabled="isYearDisabled(year) || undefined"
-                class="ui-calendar-year-cell"
-                :class="{
-                  'ui-calendar-year-cell--selected': isYearSelected(year),
-                  'ui-calendar-year-cell--disabled': isYearDisabled(year),
-                }"
-                @click="onYearPick(year)"
-                @keydown.enter="onYearPick(year)"
-                @keydown.space.prevent="onYearPick(year)"
-              >
-                {{ year }}
-              </div>
-            </div>
-          </div>
-        </Transition>
-      </template>
+      </Transition>
     </div>
   </div>
 </template>
@@ -204,7 +257,8 @@ export type CalendarView = 'date' | 'month' | 'year'
 <script setup lang="ts">
 import './Calendar.css'
 import '../shared/tokens.css'
-import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -231,6 +285,12 @@ const props = withDefaults(
     locale?: string
     /** `0` (Sunday) to `6` (Saturday). Unset, it derives from `locale` and falls back to Monday. */
     firstDayOfWeek?: number
+    /**
+     * How many months to show side by side, for picking a range at a glance. They move together
+     * and wrap onto separate rows when there isn't room.
+     * @default 1
+     */
+    months?: number
     /** `false` skips the month-navigation slide transition. @default true */
     motionCss?: boolean
     /** Class and style overrides for each part. */
@@ -253,6 +313,7 @@ const props = withDefaults(
     disabledDates: undefined,
     locale: undefined,
     firstDayOfWeek: undefined,
+    months: 1,
     motionCss: true,
     ui: undefined,
   },
@@ -266,6 +327,9 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /** Custom content for the month and year heading (defaults to its text). The heading keeps its
+   * own click-to-pick-month/year, keyboard and aria wiring. With `months`, each month's label. */
+  label(props: { label: string; date: Date; level: CalendarView }): unknown
   /** Custom content inside each day cell (defaults to the day number). The cell keeps its own
    * click, keyboard and aria wiring. */
   day(props: {
@@ -357,16 +421,69 @@ const viewDate = ref<Date>(startOfMonth(initialAnchor()))
 const direction = ref(1)
 const focusedDate = ref<Date>(initialAnchor())
 const navLevel = ref<CalendarView>(props.view)
+
+// Moving between days, months and years zooms: out going up a level, in coming back down,
+// around the cell that links the two levels (the month you're in, the year you picked).
+const LEVEL_DEPTH: Record<CalendarView, number> = { date: 0, month: 1, year: 2 }
+const zoom = ref<'in' | 'out'>('out')
+let zoomLink = 'month'
+function linkCellOrigin() {
+  const body = bodyEl.value
+  if (!body) return
+  const cell = body
+    .querySelector(
+      zoomLink === 'year'
+        ? `[data-year="${viewDate.value.getFullYear()}"]`
+        : `[data-month="${viewDate.value.getMonth()}"]`,
+    )
+    ?.getBoundingClientRect()
+  const box = body.getBoundingClientRect()
+  body.style.setProperty(
+    '--ui-calendar-origin',
+    cell?.width
+      ? `${cell.left + cell.width / 2 - box.left}px ${cell.top + cell.height / 2 - box.top}px`
+      : 'center',
+  )
+}
+// Sync, so zooming in reads the cell you picked before its grid is replaced.
+watch(
+  navLevel,
+  (to, from) => {
+    zoom.value = LEVEL_DEPTH[to] > LEVEL_DEPTH[from] ? 'out' : 'in'
+    zoomLink = LEVEL_DEPTH[to] > LEVEL_DEPTH[from] ? to : from
+    if (zoom.value === 'in') linkCellOrigin()
+  },
+  { flush: 'sync' },
+)
+// Zooming out, the linking cell is in the grid that's arriving.
+function anchorZoom() {
+  if (zoom.value === 'out') linkCellOrigin()
+}
 const hoveredDate = ref<Date | null>(null)
 
 const resolvedFirstDay = computed(() => props.firstDayOfWeek ?? resolveFirstDayOfWeek(props.locale))
 
-const gridStart = computed(() => startOfWeek(startOfMonth(viewDate.value), resolvedFirstDay.value))
-const gridEnd = computed(() => endOfWeek(endOfMonth(viewDate.value), resolvedFirstDay.value))
-const weeks = computed<Date[][]>(() => {
+// The months on show: `viewDate`'s and the ones after it.
+const panes = computed<Date[]>(() =>
+  Array.from({ length: Math.max(1, Math.floor(props.months)) }, (_, i) =>
+    addMonths(viewDate.value, i),
+  ),
+)
+// Each month labels itself; the header keeps only the arrows.
+const splitMonths = computed(() => panes.value.length > 1 && navLevel.value === 'date')
+function isShownMonth(day: Date): boolean {
+  return panes.value.some((pane) => isSameMonth(day, pane))
+}
+// Brings `day`'s month on screen, as the first month going back or the last going forward.
+function showMonth(day: Date) {
+  const forward = day > viewDate.value
+  setView(forward ? addMonths(startOfMonth(day), 1 - panes.value.length) : day, forward ? 1 : -1)
+}
+function weeksOf(month: Date): Date[][] {
+  const end = endOfWeek(endOfMonth(month), resolvedFirstDay.value)
   const out: Date[][] = []
-  let cursor = gridStart.value
-  while (cursor <= gridEnd.value) {
+  let cursor = startOfWeek(startOfMonth(month), resolvedFirstDay.value)
+  while (cursor <= end) {
     const week: Date[] = []
     for (let i = 0; i < 7; i++) {
       week.push(cursor)
@@ -375,8 +492,10 @@ const weeks = computed<Date[][]>(() => {
     out.push(week)
   }
   return out
-})
-const monthKey = computed(() => `${viewDate.value.getFullYear()}-${viewDate.value.getMonth()}`)
+}
+function monthKeyOf(month: Date): string {
+  return `${month.getFullYear()}-${month.getMonth()}`
+}
 
 // Month/year grid data
 const monthsInYear = computed<Date[]>(() =>
@@ -404,9 +523,10 @@ const yearRows = computed<number[][]>(() => {
 
 const canDrill = computed(() => navLevel.value !== 'year')
 
-const monthYearLabel = computed(() =>
-  new Intl.DateTimeFormat(props.locale, { month: 'long', year: 'numeric' }).format(viewDate.value),
-)
+function monthYearFormat(month: Date): string {
+  return new Intl.DateTimeFormat(props.locale, { month: 'long', year: 'numeric' }).format(month)
+}
+const monthYearLabel = computed(() => monthYearFormat(viewDate.value))
 const yearLabel = computed(() => String(viewDate.value.getFullYear()))
 const yearRangeLabel = computed(
   () => `${yearsInWindow.value[0]} – ${yearsInWindow.value[yearsInWindow.value.length - 1]}`,
@@ -433,7 +553,7 @@ const nextLabel = computed(() =>
 
 const weekdayLabels = computed(() => {
   const formatter = new Intl.DateTimeFormat(props.locale, { weekday: 'short' })
-  return (weeks.value[0] ?? []).map((day) => formatter.format(day))
+  return (weeksOf(viewDate.value)[0] ?? []).map((day) => formatter.format(day))
 })
 function cellLabel(day: Date): string {
   return new Intl.DateTimeFormat(props.locale, { dateStyle: 'full' }).format(day)
@@ -486,6 +606,15 @@ function isDayInRange(day: Date): boolean {
   if (!bounds) return false
   return day > startOfDay(bounds.start) && day < startOfDay(bounds.end)
 }
+// The side an endpoint meets the band on, committed or previewed, so only those corners flatten.
+function joinSide(day: Date): 'start' | 'end' | null {
+  const bounds = rangeBounds()
+  if (!bounds || isSameDay(bounds.start, bounds.end)) return null
+  if (!isRangeStart(day) && !isRangeEnd(day)) return null
+  if (isSameDay(day, bounds.start)) return 'end'
+  if (isSameDay(day, bounds.end)) return 'start'
+  return null
+}
 function isRangeStart(day: Date): boolean {
   return isRange(model.value) && model.value.start != null && isSameDay(day, model.value.start)
 }
@@ -531,7 +660,7 @@ const canGoNext = computed(() => {
   const max = props.maxDate
   if (!max) return true
   if (navLevel.value === 'date')
-    return addMonths(startOfMonth(viewDate.value), 1) <= startOfDay(max)
+    return addMonths(startOfMonth(viewDate.value), panes.value.length) <= startOfDay(max)
   const firstYear =
     navLevel.value === 'month' ? viewDate.value.getFullYear() + 1 : yearWindowStart.value + 12
   return firstYear <= max.getFullYear()
@@ -566,8 +695,9 @@ function goNext() {
   else setView(addYears(viewDate.value, 12), 1)
 }
 // Header-label click: temporarily drill up to coarser level for fast nav
-function drillUp() {
+function drillUp(month?: Date) {
   animateBodyHeight(() => {
+    if (month) viewDate.value = month
     if (navLevel.value === 'date') navLevel.value = 'month'
     else if (navLevel.value === 'month') navLevel.value = 'year'
   })
@@ -600,7 +730,7 @@ function selectDate(day: Date) {
 }
 function onDayClick(day: Date) {
   focusedDate.value = day
-  if (!isSameMonth(day, viewDate.value)) setView(day, day > viewDate.value ? 1 : -1)
+  if (!isShownMonth(day)) showMonth(day)
   selectDate(day)
 }
 function onDayHover(day: Date) {
@@ -640,7 +770,11 @@ function onYearPick(year: number) {
 }
 
 const rootEl = useTemplateRef<HTMLElement>('rootEl')
-const gridEl = useTemplateRef<HTMLElement>('gridEl')
+// The first month's grid, the one `gridEl` exposes.
+const gridEl = shallowRef<HTMLElement | null>(null)
+function setGridEl(el: Element | ComponentPublicInstance | null) {
+  gridEl.value = el instanceof HTMLElement ? el : null
+}
 const bodyEl = useTemplateRef<HTMLElement>('bodyEl')
 
 // FLIP-style height animation: Vue's Transition already handles the grid's
@@ -681,11 +815,11 @@ function animateBodyHeight(mutate: () => void) {
 }
 
 function focusCellEl(day: Date) {
-  gridEl.value?.querySelector<HTMLElement>(`[data-date="${isoDate(day)}"]`)?.focus()
+  bodyEl.value?.querySelector<HTMLElement>(`[data-date="${isoDate(day)}"]`)?.focus()
 }
 function moveFocus(day: Date) {
   focusedDate.value = day
-  if (!isSameMonth(day, viewDate.value)) setView(day, day > viewDate.value ? 1 : -1)
+  if (!isShownMonth(day)) showMonth(day)
   nextTick(() => focusCellEl(day))
 }
 /** Roving-tabindex to a specific day; only resets navLevel to 'date' if that view exists. */
@@ -740,8 +874,7 @@ watch(model, (value) => {
   const anchor = isRange(value) ? (value.end ?? value.start) : value
   if (!anchor) return
   focusedDate.value = anchor
-  if (navLevel.value === 'date' && !isSameMonth(anchor, viewDate.value))
-    viewDate.value = startOfMonth(anchor)
+  if (navLevel.value === 'date' && !isShownMonth(anchor)) viewDate.value = startOfMonth(anchor)
 })
 
 const cx = useClassMerge()
@@ -757,18 +890,36 @@ const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-calend
 const weekdaysPart = computed(() => resolveUiPart(cx, themedUi()?.weekdays, 'ui-calendar-weekdays'))
 const weekdayPart = computed(() => resolveUiPart(cx, themedUi()?.weekday, 'ui-calendar-weekday'))
 const gridPart = computed(() => resolveUiPart(cx, themedUi()?.grid, 'ui-calendar-grid'))
-function cellPart(day: Date) {
+// With several months, a neighbouring month's days are blank: each date shows once.
+function isBlank(day: Date, month: Date): boolean {
+  return panes.value.length > 1 && !isSameMonth(day, month)
+}
+function dayAttrs(day: Date, month: Date) {
+  if (isBlank(day, month)) return { 'aria-hidden': 'true' as const }
+  return {
+    'data-date': isoDate(day),
+    tabindex: isSameDay(day, focusedDate.value) ? 0 : -1,
+    'aria-selected': isDaySelected(day) || undefined,
+    'aria-current': isToday(day) ? ('date' as const) : undefined,
+    'aria-disabled': isDayDisabled(day) || undefined,
+    'aria-label': cellLabel(day),
+  }
+}
+function cellPart(day: Date, month: Date) {
   return resolveUiPart(
     cx,
     themedUi()?.cell,
     'ui-calendar-cell',
-    !isSameMonth(day, viewDate.value) && 'ui-calendar-cell--outside',
+    isBlank(day, month) && 'ui-calendar-cell--blank',
+    !isSameMonth(day, month) && 'ui-calendar-cell--outside',
     isToday(day) && 'ui-calendar-cell--today',
     isDaySelected(day) && 'ui-calendar-cell--selected',
     isDayDisabled(day) && 'ui-calendar-cell--disabled',
     props.selectionMode === 'range' && isRangeStart(day) && 'ui-calendar-cell--range-start',
     props.selectionMode === 'range' && isRangeEnd(day) && 'ui-calendar-cell--range-end',
     props.selectionMode === 'range' && isDayInRange(day) && 'ui-calendar-cell--in-range',
+    props.selectionMode === 'range' && joinSide(day) === 'end' && 'ui-calendar-cell--join-end',
+    props.selectionMode === 'range' && joinSide(day) === 'start' && 'ui-calendar-cell--join-start',
   )
 }
 

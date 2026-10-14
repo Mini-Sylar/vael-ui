@@ -9,11 +9,41 @@
       <!-- An <li>, since a <ul> may only hold list items; role="presentation"
            keeps it out of the list's item count. -->
       <li
+        ref="indicatorEl"
         class="ui-pagination-indicator"
         role="presentation"
         aria-hidden="true"
         :style="indicator.style.value"
       />
+      <li
+        ref="labelsEl"
+        class="ui-pagination-indicator-labels"
+        role="presentation"
+        aria-hidden="true"
+        inert
+        :style="labelsStyle"
+      >
+        <span v-for="n in 2" :key="`start-${n}`" class="ui-pagination-labels-spacer">
+          <Button :class="labelPart.class" icon size="sm" variant="ghost" tabindex="-1" />
+        </span>
+        <span v-for="item in pageItems" :key="`label-${item}`">
+          <span v-if="typeof item !== 'number'" :class="labelEllipsisPart.class">…</span>
+          <Button
+            v-else
+            :class="labelPart.class"
+            :style="labelPart.style"
+            icon
+            size="sm"
+            variant="ghost"
+            tabindex="-1"
+          >
+            {{ item }}
+          </Button>
+        </span>
+        <span v-for="n in 2" :key="`end-${n}`" class="ui-pagination-labels-spacer">
+          <Button :class="labelPart.class" icon size="sm" variant="ghost" tabindex="-1" />
+        </span>
+      </li>
       <li>
         <Button
           :class="navButtonPart.class"
@@ -170,7 +200,20 @@ const page = defineModel<number>('page', { default: 1 })
 const pageSize = defineModel<number>('pageSize', { default: 10 })
 
 const listEl = useTemplateRef<HTMLElement>('list')
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+const labelsEl = useTemplateRef<HTMLElement>('labelsEl')
 const indicator = useTabIndicator(page, { listEl, selector: '[aria-current="page"]' })
+// The page numbers again in the contrast color, clipped to the indicator, so the
+// color travels with it instead of flipping when the page changes.
+const labelsStyle = computed(() => {
+  const { insetInlineStart, inlineSize, transitionDuration } = indicator.style.value
+  const left = parseFloat(insetInlineStart ?? '0') || 0
+  const right = left + (parseFloat(inlineSize ?? '0') || 0)
+  return {
+    clipPath: `inset(0 calc(100% - ${right}px) 0 ${left}px round calc(var(--ui-radius) - 4px))`,
+    transitionDuration: transitionDuration?.startsWith('0ms') ? '0ms' : undefined,
+  }
+})
 
 const props = withDefaults(
   defineProps<{
@@ -180,6 +223,8 @@ const props = withDefaults(
     pageSizeOptions?: number[]
     /** Page-number buttons to show on each side of the current page before an ellipsis. @default 1 */
     siblingCount?: number
+    /** `false` skips the indicator's built-in sliding; animate the exposed `indicatorEl` and `labelsEl` yourself. @default true */
+    motionCss?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -189,7 +234,7 @@ const props = withDefaults(
       sizeSelect: UiPartValue
     }>
   }>(),
-  { siblingCount: 1 },
+  { siblingCount: 1, motionCss: true },
 )
 
 const totalPages = computed(() => {
@@ -251,7 +296,14 @@ const themedUi = useThemedUi(
   (theme) => theme.pagination,
   () => props.ui,
 )
-const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-pagination'))
+const rootPart = computed(() =>
+  resolveUiPart(
+    cx,
+    themedUi()?.root,
+    'ui-pagination',
+    !props.motionCss && 'ui-pagination--no-motion',
+  ),
+)
 const listPart = computed(() => resolveUiPart(cx, themedUi()?.list, 'ui-pagination-list'))
 const navButtonPart = computed(() =>
   resolveUiPart(cx, themedUi()?.button, 'ui-pagination-nav-button'),
@@ -264,10 +316,28 @@ function pageButtonPart(active: boolean) {
     active && 'ui-pagination-page-button--active',
   )
 }
+const labelPart = computed(() => resolveUiPart(cx, themedUi()?.button, 'ui-pagination-label'))
+const labelEllipsisPart = computed(() =>
+  resolveUiPart(
+    cx,
+    themedUi()?.ellipsis,
+    'ui-pagination-label-ellipsis',
+    'ui-pagination-labels-spacer',
+  ),
+)
 const ellipsisPart = computed(() =>
   resolveUiPart(cx, themedUi()?.ellipsis, 'ui-pagination-ellipsis'),
 )
 const sizeSelectPart = computed(() =>
   resolveUiPart(cx, themedUi()?.sizeSelect, 'ui-pagination-size-select'),
 )
+
+defineExpose({
+  /** The page-number list. */
+  listEl,
+  /** The sliding highlight behind the current page. */
+  indicatorEl,
+  /** The page numbers in the contrast color, clipped to the indicator. */
+  labelsEl,
+})
 </script>

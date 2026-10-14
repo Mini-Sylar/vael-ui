@@ -50,15 +50,13 @@ import {
 } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable, SelectButton, vScrollMask } from 'vael-ui'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
-import { categories, NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
-import { composableCategories } from '../composablesTaxonomy'
-import { DIRECTIVES } from '../directivesTaxonomy'
+import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
+import { GUIDE_ROUTES, navSections, routeFor, valueFor } from '../docsNav'
+import type { DocsMode } from '../docsNav'
 import { useGlidingIndicator } from '../composables/useGlidingIndicator'
-import { directivesContent } from '../directivesContent'
 
 const mobileOpen = defineModel<boolean>('mobileOpen', { default: false })
 
@@ -66,32 +64,16 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
-const GUIDE_ROUTES = [
-  { routeName: 'getting-started', labelKey: 'nav.gettingStarted' },
-  { routeName: 'guide-global-setup', labelKey: 'nav.globalSetup' },
-  { routeName: 'guide-tailwind', labelKey: 'nav.tailwindGuide' },
-  { routeName: 'guide-styling-and-layers', labelKey: 'nav.stylingAndLayersGuide' },
-  { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
-  { routeName: 'guide-i18n-keys', labelKey: 'nav.i18nKeysGuide' },
-  { routeName: 'guide-auto-import', labelKey: 'nav.autoImportGuide' },
-  { routeName: 'guide-nuxt', labelKey: 'nav.nuxtGuide' },
-  { routeName: 'guide-skill', labelKey: 'nav.skillGuide' },
-] as const
-
-const guideValue = (routeName: string) => `guide:${routeName}`
-const composableValue = (name: string) => `composable:${name}`
-const directiveValue = (name: string) => `directive:${name}`
-
 // Session-scoped (not persisted across a closed tab, unlike sidebarWidth
 // below): a fresh visit should always start on Components, but switching
 // back and forth while browsing in the same tab shouldn't keep resetting.
-type SidebarMode = 'components' | 'composables'
+
 const MODE_STORAGE_KEY = 'vael-ui-docs-sidebar-mode'
 const storedMode =
   typeof sessionStorage === 'undefined'
     ? null
-    : (sessionStorage.getItem(MODE_STORAGE_KEY) as SidebarMode | null)
-const sidebarMode = shallowRef<SidebarMode>(storedMode ?? 'components')
+    : (sessionStorage.getItem(MODE_STORAGE_KEY) as DocsMode | null)
+const sidebarMode = shallowRef<DocsMode>(storedMode ?? 'components')
 watch(sidebarMode, (mode) => {
   if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(MODE_STORAGE_KEY, mode)
 })
@@ -120,56 +102,18 @@ watch(
   { immediate: true },
 )
 
-// Real routes for real <a> tags — MenuList's `as: 'RouterLink'` (see
-// MenuListItemData) renders these as actual hrefs, so cmd/ctrl/middle-click
-// and "open in new tab" all work natively, unlike a plain select-only row.
-function routeFor(value: string): RouteLocationRaw {
-  if (value.startsWith('guide:')) return { name: value.slice('guide:'.length) }
-  if (value.startsWith('composable:')) {
-    return { name: 'composable', params: { name: value.slice('composable:'.length) } }
-  }
-  if (value.startsWith('directive:')) {
-    return { name: 'directive', params: { name: value.slice('directive:'.length) } }
-  }
-  return { name: 'component', params: { name: value } }
-}
-
-function navItem(label: string, value: string): MenuListItemData {
-  return { label, value, as: 'RouterLink', attrs: { to: routeFor(value) } }
-}
-
-const navItems = computed<MenuEntry<MenuListItemData>[]>(() => {
-  if (sidebarMode.value === 'composables') {
-    return composableCategories.map((category) => ({
-      label: t(`composablesTaxonomy.${category.key}`),
-      items: category.items.map((name) => navItem(name, composableValue(name))),
-    }))
-  }
-  return [
-    {
-      label: t('nav.guides'),
-      items: GUIDE_ROUTES.map((g) => navItem(t(g.labelKey), guideValue(g.routeName))),
-    },
-    {
-      label: t('nav.directives'),
-      items: DIRECTIVES.map((name) =>
-        navItem(directivesContent[name]!.label, directiveValue(name)),
-      ),
-    },
-    ...categories.map((category) => ({
-      label: t(`taxonomy.${category.key}`),
-      items: category.components.map((name) => navItem(name, name)),
+// Real routes for real <a> tags: MenuList's `as: 'RouterLink'` renders actual hrefs, so
+// cmd/ctrl/middle-click and "open in new tab" all work natively.
+const navItems = computed<MenuEntry<MenuListItemData>[]>(() =>
+  navSections(sidebarMode.value, t).map((section) => ({
+    label: section.label,
+    items: section.items.map((item) => ({
+      ...item,
+      as: 'RouterLink',
+      attrs: { to: routeFor(item.value) },
     })),
-  ]
-})
-
-function valueFor(to: RouteLocationNormalized): string | null {
-  if (to.name === 'component') return to.params.name as string
-  if (to.name === 'composable') return composableValue(to.params.name as string)
-  if (to.name === 'directive') return directiveValue(to.params.name as string)
-  if (typeof to.name === 'string') return guideValue(to.name)
-  return null
-}
+  })),
+)
 
 // The indicator re-renders in the same frame as the whole next page (demos,
 // API tables), so on a slow device it trails the click by that page's render

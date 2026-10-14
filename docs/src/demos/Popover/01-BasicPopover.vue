@@ -1,11 +1,13 @@
 <template>
   <section class="demo">
     <h3>Basic popover</h3>
-    <Popover v-model:open="basicOpen">
-      <template #trigger="{ open, setTriggerEl }">
-        <Button :ref="setTriggerEl" @click="basicOpen = !basicOpen">
-          {{ open ? 'Close' : 'Open' }} popover
-        </Button>
+    <p class="note">
+      <code>open-on-trigger-click</code> makes the <code>#trigger</code> slot toggle the popover and
+      anchors it there, with no ref or click handler to wire.
+    </p>
+    <Popover v-model:open="basicOpen" open-on-trigger-click>
+      <template #trigger="{ open }">
+        <Button>{{ open ? 'Close' : 'Open' }} popover</Button>
       </template>
       <template #default>
         <p class="panel-text">

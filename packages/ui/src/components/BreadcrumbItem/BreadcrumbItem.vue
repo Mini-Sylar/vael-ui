@@ -3,7 +3,13 @@
     <span v-if="current" aria-current="page" :class="currentPart.class" :style="currentPart.style">
       <slot />
     </span>
-    <component :is="as" v-else :class="linkPart.class" :style="linkPart.style" v-bind="$attrs">
+    <component
+      :is="nativeTag(as)"
+      v-else
+      :class="linkPart.class"
+      :style="linkPart.style"
+      v-bind="$attrs"
+    >
       <slot />
     </component>
   </li>
@@ -12,6 +18,7 @@
 <script setup lang="ts">
 import './BreadcrumbItem.css'
 import '../shared/tokens.css'
+import { nativeTag } from '../../composables/dom'
 import { computed, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

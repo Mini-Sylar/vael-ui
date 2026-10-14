@@ -13,7 +13,7 @@
         :data-disabled="isDisabled(item) ? '' : undefined"
       >
         <component
-          :is="isReachable(index, item) ? 'button' : 'div'"
+          :is="nativeTag(isReachable(index, item) ? 'button' : 'div')"
           :type="isReachable(index, item) ? 'button' : undefined"
           :class="triggerPart.class"
           :aria-disabled="isDisabled(item) ? 'true' : undefined"
@@ -90,6 +90,7 @@ export interface StepperItem {
 <script setup lang="ts" generic="T extends StepperItem = StepperItem">
 import './Stepper.css'
 import '../shared/tokens.css'
+import { nativeTag } from '../../composables/dom'
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { vScrollMask } from '../../directives/vScrollMask'

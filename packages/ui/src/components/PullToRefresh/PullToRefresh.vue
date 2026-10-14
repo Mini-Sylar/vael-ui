@@ -66,6 +66,8 @@ export interface PullToRefreshProps {
   maxPull?: number
   /** Existing scroll container to detect pulls on. Unset, the root itself scrolls. */
   scrollEl?: HTMLElement | { el: HTMLElement | null } | null
+  /** `false` skips the settle and indicator transitions; animate the `#indicator` slot or exposed `zoneEl` yourself. The live pull still tracks your finger. @default true */
+  motionCss?: boolean
   /** Class and style overrides for each part. */
   ui?: Partial<{
     root: UiPartValue
@@ -93,7 +95,7 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
-const props = defineProps<PullToRefreshProps>()
+const props = withDefaults(defineProps<PullToRefreshProps>(), { motionCss: true })
 
 defineSlots<{
   /** Scrollable content. */
@@ -109,14 +111,16 @@ function unwrapEl(el: unknown): HTMLElement | null {
   return null
 }
 
-// Check for prefers-reduced-motion to disable CSS transitions
-function reducedMotion(): boolean {
+// No CSS transitions when turned off, or when the user prefers reduced motion.
+function noMotion(): boolean {
   return (
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    !props.motionCss ||
+    (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   )
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+const zoneEl = useTemplateRef<HTMLElement>('zoneEl')
 // Own scrolling only when the consumer hasn't handed us an existing scroll box — dropping this
 // into an already-scrollable layout shouldn't force that layout to restructure around our root.
 const ownsScroll = computed(() => props.scrollEl === undefined)
@@ -151,23 +155,24 @@ const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-pull-t
 
 const zoneStyle = computed(() => ({
   blockSize: `${pullDistance.value}px`,
-  transition: live.value || reducedMotion() ? 'none' : undefined,
+  transition: live.value || noMotion() ? 'none' : undefined,
 }))
 
 const bubbleStyle = computed(() => {
   if (state.value === 'loading' || state.value === 'done') {
-    return { transform: 'scale(1)', opacity: 1, transition: reducedMotion() ? 'none' : undefined }
+    return { transform: 'scale(1)', opacity: 1, transition: noMotion() ? 'none' : undefined }
   }
   const p = progress.value
   return {
     transform: `scale(${0.65 + 0.35 * p})`,
     opacity: 0.3 + 0.7 * p,
-    transition: live.value || reducedMotion() ? 'none' : undefined,
+    transition: live.value || noMotion() ? 'none' : undefined,
   }
 })
 
 const arrowStyle = computed(() => ({
   transform: state.value === 'ready' ? 'rotate(180deg)' : 'rotate(0deg)',
+  transition: noMotion() ? 'none' : undefined,
 }))
 
 const labelText = computed(() => {
@@ -186,6 +191,8 @@ const labelText = computed(() => {
 defineExpose({
   /** Root element. */
   el: root,
+  /** The pull zone above the content; its height follows the pull. */
+  zoneEl,
   /** Current phase: `'idle'`, `'pulling'`, `'ready'`, `'loading'` or `'done'`. */
   state,
   /** Pull distance as a fraction of `threshold`, from 0 to 1. */

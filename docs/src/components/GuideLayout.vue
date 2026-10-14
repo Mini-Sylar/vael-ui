@@ -2,12 +2,14 @@
   <div class="guide-layout">
     <article v-highlight-code class="prose">
       <slot />
+      <DocsPager />
     </article>
     <OnThisPage :links="links" />
   </div>
 </template>
 
 <script setup lang="ts">
+import DocsPager from './DocsPager.vue'
 import OnThisPage from './OnThisPage.vue'
 import { vHighlightCode } from '../composables/vHighlightCode'
 

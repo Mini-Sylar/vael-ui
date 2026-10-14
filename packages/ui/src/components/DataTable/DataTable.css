@@ -16,6 +16,10 @@
     padding: 0.625rem 0.75rem;
     border-block-end: 1px solid var(--ui-border);
   }
+  /* Frozen columns sit at the left edge, so only the right edge fades. */
+  .ui-datatable-scroll-x[data-frozen].scroll-fade-x {
+    mask-image: linear-gradient(to right, #000 var(--fade-right-start), transparent 99%);
+  }
   .ui-datatable-scroll-x {
     overflow-x: auto;
   }

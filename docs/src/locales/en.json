@@ -17,7 +17,10 @@
     "skillGuide": "AI Agent Skill",
     "directives": "Directives",
     "menu": "Menu",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "previous": "Previous",
+    "next": "Next",
+    "pager": "Previous and next pages"
   },
   "header": {
     "colorScheme": "Toggle color scheme",
@@ -89,6 +92,7 @@
     "intro": "A Vue 3 component library with a full Vue Vapor build. Animations use plain CSS by default, or you can bring your own animation library.",
     "vaporTitle": "Vue Vapor support",
     "vaporIntro": "Both builds ship from the same package and source. Use the one your app runs, or mix both, since Vue 3.6 supports VDOM/Vapor interop. Every component page has the same toggle to compare them.",
+    "vaporForceIntro": "Your own components opt into Vapor one at a time with <code>&lt;script setup vapor&gt;</code>. To compile every <code>&lt;script setup&gt;</code> component as Vapor without the attribute, turn on <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 or later:",
     "installTitle": "Install",
     "installIntro": "vael-ui is on npm. Install it with your package manager:",
     "usageTitle": "Usage",
@@ -207,7 +211,7 @@
   },
   "animation": {
     "title": "Bring your own animation",
-    "intro": "Every component that animates ships a plain CSS transition. Each one also has an escape hatch, so you can drive it with GSAP, motion-v, or nothing at all. Not every component has all three hooks below, so check its Props, Slots, and Exposed tables.",
+    "intro": "Every component that animates ships a plain CSS transition, and each one lets you take over: drive it with GSAP, motion-v, or nothing at all. Which hooks you get depends on what the component does.",
     "motionCssTitle": "motionCss",
     "motionCssIntro": "Set it to <code>false</code> to turn off the built-in CSS transition. The component still changes state, but instantly, and leaves the DOM for you to animate.",
     "forceMountTitle": "forceMount",
@@ -217,7 +221,12 @@
     "motionVExampleTitle": "Example: motion-v, Popover",
     "motionVExampleIntro": "<code>forceMount</code> plus the default slot's <code>isClosing</code> flag, wrapped in <code>&lt;AnimatePresence&gt;</code>:",
     "gsapExampleTitle": "Example: GSAP, Dialog",
-    "gsapExampleIntro": "<code>beforeClose(done)</code> plus the exposed <code>panelEl</code> ref, so the tween runs on the real panel element before it's removed:"
+    "gsapExampleIntro": "<code>beforeClose(done)</code> plus the exposed <code>panelEl</code> ref, so the tween runs on the real panel element before it's removed:",
+    "kindsTitle": "Which hooks does my component have?",
+    "kindsOverlay": "<strong>Opens and closes</strong> (Dialog, Popover, Tooltip, Menu, Select, DatePicker): <code>forceMount</code>, <code>beforeClose(done)</code> and an exposed <code>panelEl</code>. <code>forceMount</code> already turns the CSS transition off.",
+    "kindsInPlace": "<strong>Changes in place</strong> (Calendar, Checkbox, Radio, Collapsible, Pagination, PullToRefresh): <code>motionCss</code> turns the transition off, and exposed elements let you animate it yourself.",
+    "kindsList": "<strong>Items that come and go</strong> (CommandPalette, Timeline, FileUpload): <code>motionCss</code> plus <code>{'@'}item-enter</code> and <code>{'@'}item-leave</code>.",
+    "kindsCheck": "A component's Props, Slots and Exposed tables list exactly what it has."
   },
   "directive": {
     "value": "Value",
@@ -351,8 +360,10 @@
     "setupOutro": "Write the tag, and Nuxt resolves the import for you:",
     "excludeTitle": "exclude",
     "excludeIntro": "Skip specific component names, for example to register your own <code>&lt;Button&gt;</code> under the same tag:",
-    "vdomOnlyTitle": "VDOM only",
-    "vdomOnlyIntro": "This module always registers components from the regular <code>vael-ui</code> build, never <code>vael-ui/vapor</code>. That's why it has no <code>variant</code> option, unlike <code>vael-ui/resolver</code>. Vue 3.6 supports Vapor SSR hydration, but stable Nuxt has no Vapor configuration yet. That work is in progress upstream and not in a general release. A <code>variant</code> option can follow once Nuxt ships Vapor support.",
+    "vaporTitle": "Vapor",
+    "vaporIntro": "Set <code>variant: 'vapor'</code> to use <code>vael-ui/vapor</code>, the same option <code>vael-ui/resolver</code> takes. The module turns on Nuxt's <code>vue.vapor</code> for you. It needs Nuxt 4.6 or later and Vue 3.6.",
+    "vaporOutro": "Pages still render on the server. The server turns each component into HTML, and the browser picks it up as a Vapor component, with nothing else to configure.",
+    "vaporForceIntro": "To compile your own <code>&lt;script setup&gt;</code> components as Vapor too, without adding <code>vapor</code> to each one, turn on <code>{'@'}vitejs/plugin-vue</code>'s <code>features.vapor</code> through Nuxt's <code>vite.vue</code>:",
     "resolverTitle": "Using unplugin-vue-components instead",
     "resolverIntro": "If your Nuxt app already uses unplugin-vue-components to auto-import other libraries, use vael-ui/resolver instead. See the {link} guide.",
     "resolverIntroLink": "Auto Import"

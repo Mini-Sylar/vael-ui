@@ -264,7 +264,12 @@ export type {
   ToastOptions,
   ToastVariant,
 } from './composables/useToast'
-export { useDOMTarget, resolveDOMTarget, resolvePastDisplayContents } from './composables/dom'
+export {
+  useDOMTarget,
+  resolveDOMTarget,
+  resolvePastDisplayContents,
+  nativeTag,
+} from './composables/dom'
 export type { DOMTarget } from './composables/dom'
 export { useLayer } from './composables/useLayerStack'
 export type { Layer, UseLayerOptions } from './composables/useLayerStack'
@@ -399,3 +404,4 @@ export type {
 
 export { default as Rating } from './components/Rating/Rating.vue'
 export { default as Timeline } from './components/Timeline/Timeline.vue'
+export type { TimelineItemParts } from './components/Timeline/Timeline.vue'

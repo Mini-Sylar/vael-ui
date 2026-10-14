@@ -231,6 +231,29 @@
       <output class="datatable-columns-order">{{
         colOrder.join(' / ') || 'Drag a column header'
       }}</output>
+
+      <h3>Scroll fade</h3>
+      <p>
+        A table fades whichever edge has more to scroll to: sideways when it's wider than its
+        container, and up and down when <code>scrollHeight</code> makes the body scroll. With
+        <code>frozenColumns</code>, the left edge never fades, so the pinned column stays sharp.
+        Turn it off with <code>:scroll-fade="false"</code>.
+      </p>
+      <DataTable
+        :data="employees.slice(0, 20)"
+        row-key="id"
+        scroll-height="16rem"
+        :frozen-columns="1"
+      >
+        <template #columns="{ Column }">
+          <component :is="Column" field="name" label="Name" width="10rem" />
+          <component :is="Column" field="email" label="Email" width="16rem" />
+          <component :is="Column" field="role" label="Role" width="10rem" />
+          <component :is="Column" field="department" label="Department" width="10rem" />
+          <component :is="Column" field="startDate" label="Start date" width="10rem" />
+          <component :is="Column" field="salary" label="Salary" width="8rem" />
+        </template>
+      </DataTable>
     </section>
   </div>
 </template>

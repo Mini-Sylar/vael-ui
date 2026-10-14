@@ -104,7 +104,14 @@ export interface UiTheme {
       decrement: UiPartValue
     }>
   }
-  otpInput?: { ui?: Partial<{ root: UiPartValue; input: UiPartValue; cell: UiPartValue }> }
+  otpInput?: {
+    ui?: Partial<{
+      root: UiPartValue
+      input: UiPartValue
+      cell: UiPartValue
+      separator: UiPartValue
+    }>
+  }
   passwordInput?: {
     ui?: Partial<{
       root: UiPartValue

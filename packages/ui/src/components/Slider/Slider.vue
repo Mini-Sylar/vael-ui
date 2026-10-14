@@ -16,6 +16,7 @@
       @pointerdown="onTrackPointerdown"
     >
       <div ref="fillEl" :class="fillPart.class" :style="fillPart.style" aria-hidden="true" />
+      <slot name="track" :values="thumbValues" :percents="thumbPercents" :dragging="isDragging" />
       <span
         v-for="(value, index) in thumbValues"
         :key="index"
@@ -39,7 +40,16 @@
         @keydown="(event: KeyboardEvent) => onThumbKeydownWithRing(index, event)"
         @focus="onThumbFocus"
         @blur="onThumbBlur"
-      />
+      >
+        <slot
+          name="thumb"
+          :value="value"
+          :index="index"
+          :percent="thumbPercents[index] ?? 0"
+          :active="activeThumb === index"
+          :dragging="isDragging"
+        />
+      </span>
     </div>
     <template v-if="name">
       <input
@@ -115,6 +125,27 @@ const thumbValues = computed<number[]>(() =>
   isRangeModel.value ? (modelValue.value as [number, number]) : [modelValue.value as number],
 )
 
+const thumbPercents = computed(() =>
+  thumbValues.value.map((value) =>
+    props.max > props.min
+      ? Math.min(100, Math.max(0, ((value - props.min) / (props.max - props.min)) * 100))
+      : 0,
+  ),
+)
+
+defineSlots<{
+  /** Content inside each thumb, such as a value bubble or an icon. The thumb keeps its role and keyboard handling. */
+  thumb(props: {
+    value: number
+    index: number
+    percent: number
+    active: boolean
+    dragging: boolean
+  }): unknown
+  /** Content inside the track, under the thumbs, such as ticks or an inline label. */
+  track(props: { values: number[]; percents: number[]; dragging: boolean }): unknown
+}>()
+
 function thumbMin(index: number): number {
   if (!isRangeModel.value || index === 0) return props.min
   return thumbValues.value[0] ?? props.min
@@ -173,6 +204,8 @@ defineExpose({
   fillEl,
   /** Thumb elements, one per value (two in range mode). */
   thumbEls,
+  /** `true` while a thumb is being dragged. */
+  dragging: isDragging,
 })
 
 function onThumbFocus(event: FocusEvent) {

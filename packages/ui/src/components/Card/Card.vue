@@ -1,5 +1,11 @@
 <template>
-  <component :is="as" ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
+  <component
+    :is="nativeTag(as)"
+    ref="root"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    v-bind="attrs"
+  >
     <header
       v-if="title || description || $slots.header"
       :class="headerPart.class"
@@ -25,6 +31,7 @@
 <script setup lang="ts">
 import './Card.css'
 import '../shared/tokens.css'
+import { nativeTag } from '../../composables/dom'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

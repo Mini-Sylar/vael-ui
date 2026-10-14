@@ -6,12 +6,17 @@
     "forceMountTitle": "强制安装",
     "gsapExampleIntro": "<code>beforeClose(done)</code> 加上公开的 <code>panelEl</code> 引用，因此补间在删除之前在真实面板元素上运行：",
     "gsapExampleTitle": "示例：GSAP、对话框",
-    "intro": "每个带动画的组件都自带纯 CSS 过渡。每个组件也都提供了逃生舱，你可以用 GSAP、motion-v 驱动动画，或者完全不使用动画。并非每个组件都具备下面全部三个钩子，请查看其 Props、Slots 和 Exposed 表。",
+    "intro": "每个带动画的组件都自带简单的 CSS 过渡，并且都能让你接管：用 GSAP、motion-v，或完全不要动画。可用的钩子取决于组件的功能。",
     "motionCssIntro": "将其设为 <code>false</code> 可关闭内置的 CSS 过渡。组件仍会切换状态，只是立即完成，DOM 的动画交由你来处理。",
     "motionCssTitle": "运动CSS",
     "motionVExampleIntro": "<code>forceMount</code> 加上默认插槽的 <code>isClosing</code> 标志，包装在 <code> 中",
     "motionVExampleTitle": "示例：motion-v、Popover",
-    "title": "带来你自己的动画"
+    "title": "带来你自己的动画",
+    "kindsTitle": "我的组件有哪些钩子？",
+    "kindsOverlay": "<strong>打开和关闭的组件</strong>（Dialog、Popover、Tooltip、Menu、Select、DatePicker）：<code>forceMount</code>、<code>beforeClose(done)</code> 和暴露的 <code>panelEl</code>。<code>forceMount</code> 已经会关闭 CSS 过渡。",
+    "kindsInPlace": "<strong>原地变化的组件</strong>（Calendar、Checkbox、Radio、Collapsible、Pagination、PullToRefresh）：<code>motionCss</code> 可关闭过渡，暴露的元素可让你自行制作动画。",
+    "kindsList": "<strong>条目进出的组件</strong>（CommandPalette、Timeline、FileUpload）：<code>motionCss</code> 加上 <code>{'@'}item-enter</code> 和 <code>{'@'}item-leave</code>。",
+    "kindsCheck": "组件的 Props、Slots 和 Exposed 表会准确列出它提供的内容。"
   },
   "component": {
     "code": "代码",
@@ -118,6 +123,7 @@
     "usageIntro": "然后，经典 VDOM 构建从 <code>'vael-ui'</code> 导入组件。Vapor 构建（Vue 3.6 不使用虚拟 DOM 的模式）则从 <code>'vael-ui/vapor'</code> 导入。两者的 props 完全相同：",
     "usageTitle": "用法",
     "vaporIntro": "两种构建来自同一个包和同一份源码。使用你的应用所运行的那一种即可；由于 Vue 3.6 支持 VDOM/Vapor 互操作，也可以混合使用。每个组件页面都有相同的切换开关，方便对比。",
+    "vaporForceIntro": "你自己的组件可以用 <code>&lt;script setup vapor&gt;</code> 逐个启用 Vapor。若想不加该属性就把所有 <code>&lt;script setup&gt;</code> 组件编译为 Vapor，请在 <code>{'@'}vitejs/plugin-vue</code> 6.0.8 或更高版本中开启 <code>features.vapor</code>：",
     "vaporTitle": "Vue 蒸气支持"
   },
   "globalSetup": {
@@ -205,7 +211,10 @@
     "autoImportGuide": "自动导入",
     "nuxtGuide": "努克斯特",
     "skillGuide": "AI代理技能",
-    "directives": "指令"
+    "directives": "指令",
+    "previous": "上一页",
+    "next": "下一页",
+    "pager": "上一页和下一页"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
@@ -367,8 +376,10 @@
     "setupOutro": "只需编写标签，Nuxt 会为你解析导入：",
     "setupTitle": "设置",
     "title": "努克斯特",
-    "vdomOnlyIntro": "该模块始终从常规的 <code>vael-ui</code> 构建注册组件，从不使用 <code>vael-ui/vapor</code>。因此它不像 <code>vael-ui/resolver</code> 那样提供 <code>variant</code> 选项。Vue 3.6 支持 Vapor SSR 水合，但稳定版 Nuxt 尚无 Vapor 配置。相关工作正在上游进行，还未进入正式版本。待 Nuxt 支持 Vapor 后，就可以加入 <code>variant</code> 选项。",
-    "vdomOnlyTitle": "仅限虚拟域"
+    "vaporIntro": "设置 <code>variant: 'vapor'</code> 即可使用 <code>vael-ui/vapor</code>，与 <code>vael-ui/resolver</code> 的选项相同。模块会自动开启 Nuxt 的 <code>vue.vapor</code>。需要 Nuxt 4.6 或更高版本以及 Vue 3.6。",
+    "vaporOutro": "页面依然在服务端渲染。服务端把每个组件渲染成 HTML，浏览器再将其作为 Vapor 组件接管，无需其他配置。",
+    "vaporForceIntro": "若想把你自己的 <code>&lt;script setup&gt;</code> 组件也编译为 Vapor，而无需逐个添加 <code>vapor</code>，可通过 Nuxt 的 <code>vite.vue</code> 开启 <code>{'@'}vitejs/plugin-vue</code> 的 <code>features.vapor</code>：",
+    "vaporTitle": "Vapor"
   },
   "skill": {
     "claudeCodeIntro": "添加一次市场，然后安装技能：",

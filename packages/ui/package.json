@@ -40,6 +40,13 @@
     },
     "./vapor": {
       "types": "./dist/vapor/index.d.ts",
+      "browser": "./dist/vapor/index.js",
+      "node": "./dist/vapor-server/index.js",
+      "workerd": "./dist/vapor-server/index.js",
+      "worker": "./dist/vapor-server/index.js",
+      "edge-light": "./dist/vapor-server/index.js",
+      "deno": "./dist/vapor-server/index.js",
+      "bun": "./dist/vapor-server/index.js",
       "default": "./dist/vapor/index.js"
     },
     "./resolver": {
@@ -78,7 +85,7 @@
     "vite": "^8.3.1",
     "vitest": "^5.0.2",
     "vitest-browser-vue": "^3.1.0",
-    "vue": "3.6.0-rc.10",
+    "vue": "3.6.0-rc.11",
     "vue-component-type-helpers": "^3.3.11",
     "vue-tsc": "^3.3.11"
   },
