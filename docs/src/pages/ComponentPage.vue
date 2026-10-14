@@ -111,6 +111,7 @@
           :empty-text="t('component.noExposed')"
         />
       </section>
+      <DocsPager />
     </article>
     <OnThisPage :links="tocLinks" />
   </div>
@@ -129,6 +130,7 @@ import demoManifest from '../generated/demo-manifest.json'
 import DemoFrame from '../components/DemoFrame.vue'
 import MetaTable from '../components/MetaTable.vue'
 import CodeBlock from '../components/CodeBlock.vue'
+import DocsPager from '../components/DocsPager.vue'
 import OnThisPage from '../components/OnThisPage.vue'
 import PropsPlayground from '../playground/PropsPlayground.vue'
 import ConfigProviderPlayground from '../playground/ConfigProviderPlayground.vue'

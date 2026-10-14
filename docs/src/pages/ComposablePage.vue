@@ -27,6 +27,7 @@
       :rows="content.returns"
       :empty-text="t('composable.noReturns')"
     />
+    <DocsPager />
   </article>
 </template>
 
@@ -39,6 +40,7 @@ import { composableCategoryOf } from '../composablesTaxonomy'
 import { composablesContent } from '../composablesContent'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import CodeBlock from '../components/CodeBlock.vue'
+import DocsPager from '../components/DocsPager.vue'
 import MetaTable from '../components/MetaTable.vue'
 import RichText from '../components/RichText.vue'
 import DemoFrame from '../components/DemoFrame.vue'

@@ -206,7 +206,10 @@
     "composables": "Componibles",
     "nuxtGuide": "Nuxt",
     "skillGuide": "Habilidad del agente de IA",
-    "directives": "Directivas"
+    "directives": "Directivas",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pager": "Páginas anterior y siguiente"
   },
   "pageNotes": {
     "Resizable": "La barra lateral de este sitio está construida con Resizable. \nArrastra su borde derecho para probarlo."

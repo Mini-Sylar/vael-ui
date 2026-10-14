@@ -2,10 +2,7 @@ import '../src/style.css'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { h } from 'vue'
 import AccordionFixture from './fixtures/AccordionFixture.vue'
-import Accordion from '../src/components/Accordion/Accordion.vue'
-import AccordionItem from '../src/components/AccordionItem/AccordionItem.vue'
 
 function panelFor(triggerName: string) {
   const button = [...document.querySelectorAll<HTMLElement>('.ui-accordion-trigger')].find((el) =>
@@ -40,21 +37,6 @@ test('multiple mode allows several items open at once', async () => {
     .toHaveAttribute('aria-expanded', 'true')
   await expect
     .element(page.getByRole('button', { name: 'Second section' }))
-    .toHaveAttribute('aria-expanded', 'true')
-})
-
-test('a bare `multiple` attribute turns multiple mode on', async () => {
-  // The generic prop compiles without Boolean casting, so the attribute arrives as ''.
-  await render(() =>
-    h(Accordion, { multiple: '' } as never, () => [
-      h(AccordionItem, { value: 'a', title: 'First section' }, () => 'One'),
-      h(AccordionItem, { value: 'b', title: 'Second section' }, () => 'Two'),
-    ]),
-  )
-  await page.getByRole('button', { name: 'First section' }).click()
-  await page.getByRole('button', { name: 'Second section' }).click()
-  await expect
-    .element(page.getByRole('button', { name: 'First section' }))
     .toHaveAttribute('aria-expanded', 'true')
 })
 

@@ -1323,6 +1323,34 @@ const SNIPPET_ICONS: Record<string, string> = {
   Upload: 'PhUploadSimple',
 }
 const LONG_LIST_PRESET = 'Long list (60)'
+// What you copy is what you read: enough data to show the shape, not the preview's full set.
+const SNIPPET_LIST_LENGTH = 3
+const SNIPPET_TREE = [
+  {
+    label: 'src',
+    value: 'src',
+    children: [
+      { label: 'App.vue', value: 'src/App.vue' },
+      { label: 'main.ts', value: 'src/main.ts' },
+    ],
+  },
+  { label: 'README.md', value: 'README.md' },
+]
+function trimmedItems(): unknown {
+  if (isTreeShaped.value) return SNIPPET_TREE
+  const items = snippetItems.value
+  return Array.isArray(items) ? items.slice(0, SNIPPET_LIST_LENGTH) : items
+}
+const SNIPPET_ROWS = DATATABLE_PLACEHOLDER_ROWS.slice(0, 3).map(({ id, name, role, status }) => ({
+  id,
+  name,
+  role,
+  status,
+}))
+const SNIPPET_STEPS = [
+  { target: '#first', title: 'First stop', description: 'Starts here.' },
+  { target: '#second', title: 'Second stop', description: 'And ends here.' },
+]
 const snippetItems = computed<unknown>(() => {
   if (isTabs.value) return TABS_PLACEHOLDER_ITEMS
   if (isCommandPalette.value) return COMMAND_PALETTE_PLACEHOLDER_ITEMS
@@ -1347,6 +1375,17 @@ function literal(value: unknown, indent: string, icons: Set<string>): string {
   const [open, close] = Array.isArray(value) ? ['[', ']'] : ['{ ', ' }']
   const flat = `${open}${parts.join(', ')}${close}`
   if (flat.length + indent.length <= 80 && !flat.includes('\n')) return flat
+  // A tree node keeps its own fields on one line and hangs its `children` below them.
+  const entries = Array.isArray(value) ? [] : Object.entries(value)
+  const [lastKey, lastValue] = entries.at(-1) ?? []
+  if (
+    lastKey &&
+    typeof lastValue === 'object' &&
+    parts.slice(0, -1).every((part) => !part.includes('\n'))
+  ) {
+    const head = `{ ${parts.slice(0, -1).join(', ')}, ${lastKey}: `
+    if (head.length + indent.length <= 80) return `${head}${literal(lastValue, indent, icons)} }`
+  }
   return `${open.trim()}\n${parts.map((part) => `${inner}${part},`).join('\n')}\n${indent}${close.trim()}`
 }
 
@@ -1360,11 +1399,11 @@ function snippetState(body: string) {
     lines.push(
       dataPreset.value === LONG_LIST_PRESET && !isTabs.value && showDataPreset.value
         ? 'const items = Array.from({ length: 60 }, (_, i) => ({ label: `Item ${i + 1}`, value: i + 1 }))'
-        : `const items = ${literal(snippetItems.value, '', icons)}`,
+        : `const items = ${literal(trimmedItems(), '', icons)}`,
     )
   }
-  if (uses('rows')) lines.push(`const rows = ${literal(DATATABLE_PLACEHOLDER_ROWS, '', icons)}`)
-  if (uses('steps')) lines.push(`const steps = ${literal(TOUR_PLACEHOLDER_STEPS, '', icons)}`)
+  if (uses('rows')) lines.push(`const rows = ${literal(SNIPPET_ROWS, '', icons)}`)
+  if (uses('steps')) lines.push(`const steps = ${literal(SNIPPET_STEPS, '', icons)}`)
   if (uses('active')) {
     refs = true
     lines.push(`const active = ref(${literal(TABS_PLACEHOLDER_ITEMS[0], '', icons)})`)

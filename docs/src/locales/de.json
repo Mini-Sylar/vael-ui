@@ -199,7 +199,10 @@
     "autoImportGuide": "Automatischer Import",
     "nuxtGuide": "Nuxt",
     "skillGuide": "KI-Agent-Fähigkeit",
-    "directives": "Direktiven"
+    "directives": "Direktiven",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "pager": "Vorherige und nächste Seite"
   },
   "pageNotes": {
     "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren."

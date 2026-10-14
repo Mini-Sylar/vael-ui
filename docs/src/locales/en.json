@@ -17,7 +17,10 @@
     "skillGuide": "AI Agent Skill",
     "directives": "Directives",
     "menu": "Menu",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "previous": "Previous",
+    "next": "Next",
+    "pager": "Previous and next pages"
   },
   "header": {
     "colorScheme": "Toggle color scheme",

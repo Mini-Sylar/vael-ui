@@ -206,7 +206,10 @@
     "autoImportGuide": "Importazione automatica",
     "nuxtGuide": "Successivo",
     "skillGuide": "Abilità dell'agente IA",
-    "directives": "Direttive"
+    "directives": "Direttive",
+    "previous": "Precedente",
+    "next": "Successivo",
+    "pager": "Pagine precedente e successiva"
   },
   "pageNotes": {
     "Resizable": "La barra laterale di questo sito è costruita con Resizable. \nTrascina il bordo destro per provarlo."

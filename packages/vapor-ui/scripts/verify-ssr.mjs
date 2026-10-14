@@ -13,7 +13,8 @@ import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const SSR_BUGS = /\b(document|window|navigator|localStorage|requestAnimationFrame) is not defined|does not provide an export/
+const SSR_BUGS =
+  /\b(document|window|navigator|localStorage|requestAnimationFrame) is not defined|does not provide an export/
 
 const entry = `
 import { createSSRApp, h } from 'vue'
@@ -69,7 +70,9 @@ try {
     }
   }
 } catch (error) {
-  problems.push(`a build failed to load on the server: ${String(error?.message ?? error).split('\n')[0]}`)
+  problems.push(
+    `a build failed to load on the server: ${String(error?.message ?? error).split('\n')[0]}`,
+  )
 } finally {
   await vite.close()
 }

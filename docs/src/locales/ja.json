@@ -206,7 +206,10 @@
     "autoImportGuide": "自動インポート",
     "nuxtGuide": "ナクスト",
     "skillGuide": "AIエージェントスキル",
-    "directives": "ディレクティブ"
+    "directives": "ディレクティブ",
+    "previous": "前へ",
+    "next": "次へ",
+    "pager": "前後のページ"
   },
   "pageNotes": {
     "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。"

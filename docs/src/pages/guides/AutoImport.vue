@@ -39,7 +39,7 @@ export default {
 
     <h2 id="vapor">{{ t('autoImport.vaporTitle') }}</h2>
     <p v-html="t('autoImport.vaporIntro')" />
-    <CodeBlock code="VaelUiResolver({ variant: 'vapor' })" />
+    <CodeBlock lang="typescript" code="VaelUiResolver({ variant: 'vapor' })" />
 
     <h2 id="one-import">{{ t('autoImport.oneImportTitle') }}</h2>
     <p v-html="t('autoImport.oneImportIntro')" />

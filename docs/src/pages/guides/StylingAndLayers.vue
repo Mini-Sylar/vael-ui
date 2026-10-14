@@ -7,6 +7,7 @@
 
     <h2 id="cascade-layers">{{ t('stylingLayers.cascadeLayersTitle') }}</h2>
     <CodeBlock
+      lang="css"
       code="/* your app's main stylesheet, e.g. style.css */
 @layer app-base, ui-components;
 

@@ -206,7 +206,10 @@
     "autoImportGuide": "自动导入",
     "nuxtGuide": "努克斯特",
     "skillGuide": "AI代理技能",
-    "directives": "指令"
+    "directives": "指令",
+    "previous": "上一页",
+    "next": "下一页",
+    "pager": "上一页和下一页"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
