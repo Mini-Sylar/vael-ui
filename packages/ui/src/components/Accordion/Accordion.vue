@@ -23,7 +23,7 @@ export interface AccordionContext {
 export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion')
 </script>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends string = string, M extends boolean = false">
 import './Accordion.css'
 import '../shared/tokens.css'
 import { computed, provide, useAttrs, useTemplateRef } from 'vue'
@@ -35,12 +35,12 @@ defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 /** Open item's `value`, or an array of them with `multiple`. @default null */
-const value = defineModel<string | string[] | null>('value', { default: null })
+const value = defineModel<(M extends true ? T[] : T) | null>('value', { default: null })
 
 const props = withDefaults(
   defineProps<{
     /** Lets several items be open at once; the model becomes an array. @default false */
-    multiple?: boolean
+    multiple?: M
     /** Whether the last open item can close, leaving none open. @default true */
     collapsible?: boolean
     /** `false` skips transitions; use exposed `panelEl`/`open` for custom motion. @default true */
@@ -48,34 +48,40 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
-  { multiple: false, collapsible: true, motionCss: true },
+  { collapsible: true, motionCss: true },
 )
 
 const emit = defineEmits<{
   /** Fires when an item opens or closes, with the new value. */
-  change: [value: string | string[] | null]
+  change: [value: (M extends true ? T[] : T) | null]
 }>()
 
+// A generic `multiple` compiles without Boolean casting, so a bare attribute arrives as ''.
+const multiple = () => props.multiple !== undefined && props.multiple !== false
+// Items report plain strings; the model's narrower type is the caller's to choose.
+type Model = (M extends true ? T[] : T) | null
+const current = () => value.value as string | string[] | null
+function commit(next: string | string[] | null) {
+  value.value = next as Model
+  emit('change', next as Model)
+}
+
 function isOpen(itemValue: string): boolean {
-  return props.multiple
-    ? Array.isArray(value.value) && value.value.includes(itemValue)
-    : value.value === itemValue
+  const open = current()
+  return multiple() ? Array.isArray(open) && open.includes(itemValue) : open === itemValue
 }
 
 function toggle(itemValue: string) {
-  if (props.multiple) {
-    const current = Array.isArray(value.value) ? value.value : []
-    const opening = !current.includes(itemValue)
-    if (!opening && !props.collapsible && current.length === 1) return
-    const next = opening ? [...current, itemValue] : current.filter((v) => v !== itemValue)
-    value.value = next
-    emit('change', next)
+  const open = current()
+  if (multiple()) {
+    const list = Array.isArray(open) ? open : []
+    const opening = !list.includes(itemValue)
+    if (!opening && !props.collapsible && list.length === 1) return
+    commit(opening ? [...list, itemValue] : list.filter((v) => v !== itemValue))
     return
   }
-  const next = value.value === itemValue ? (props.collapsible ? null : value.value) : itemValue
-  if (next === value.value) return
-  value.value = next
-  emit('change', next)
+  const next = open === itemValue ? (props.collapsible ? null : open) : itemValue
+  if (next !== open) commit(next)
 }
 
 // ARIA accordion pattern: arrows and Home/End move between this accordion's

@@ -205,18 +205,9 @@
                 v-model:active="tabsActive"
                 :items="TABS_PLACEHOLDER_ITEMS"
               >
-                <template #default="{ active: current, select, items: list }">
-                  <button
-                    v-for="item in list"
-                    :key="item"
-                    type="button"
-                    role="tab"
-                    class="tabs-preview-tab"
-                    :aria-selected="current === item"
-                    :tabindex="current === item ? 0 : -1"
-                    :data-active="current === item ? '' : undefined"
-                    @click="select(item)"
-                  >
+                <template #default="{ items: list, itemProps, indicatorProps }">
+                  <div v-bind="indicatorProps()" />
+                  <button v-for="item in list" :key="item" type="button" v-bind="itemProps(item)">
                     {{ item }}
                   </button>
                 </template>
@@ -274,6 +265,7 @@
                 :is="activeComponent"
                 :key="resetKey"
                 v-bind="boundProps"
+                :on-refresh="refresh"
                 class="pull-to-refresh-preview"
               >
                 <ul class="pull-to-refresh-preview-list">
@@ -376,12 +368,14 @@
                 :key="`${resetKey}-open`"
                 v-model:open="openModelValue"
                 v-bind="boundProps"
+                :open-on-trigger-click="togglesOnTriggerClick || undefined"
                 @update:model-value="onModelUpdate"
               >
-                <template v-if="hasTriggerSlot" #trigger="{ setTriggerEl }">
-                  <Button :ref="setTriggerEl" @click="openModelValue = !openModelValue"
-                    >Trigger</Button
-                  >
+                <template v-if="hasTriggerSlot && togglesOnTriggerClick" #trigger>
+                  <Button>Trigger</Button>
+                </template>
+                <template v-else-if="hasTriggerSlot" #trigger="{ setTriggerEl }">
+                  <Button :ref="setTriggerEl">Trigger</Button>
                 </template>
                 <svg
                   v-if="showIconPreview"
@@ -395,7 +389,7 @@
                     d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
                   />
                 </svg>
-                <template v-else>{{ name }}</template>
+                <template v-else-if="!modelProp">{{ name }}</template>
               </component>
             </template>
           </PlaygroundErrorBoundary>
@@ -603,6 +597,36 @@ const NEEDS_CONTEXT: Record<string, string> = {
   Column: 'Column only renders inside a DataTable. See the examples below.',
 }
 const needsContext = computed(() => NEEDS_CONTEXT[props.name] ?? null)
+// Their snippets show them inside the parent they need.
+const CONTEXT_SNIPPETS: Record<string, { imports: string[]; body: string[] }> = {
+  AccordionItem: {
+    imports: ['Accordion'],
+    body: [
+      '<Accordion>',
+      '  <AccordionItem value="intro" title="What is vael-ui?">',
+      '    A Vue 3 component library with a full Vue Vapor build.',
+      '  </AccordionItem>',
+      '</Accordion>',
+    ],
+  },
+  Column: {
+    imports: ['DataTable'],
+    body: [
+      '<DataTable :data="rows" row-key="id">',
+      '  <template #columns="{ columnData }">',
+      '    <Column :data="columnData" field="name" label="Name" />',
+      '    <Column :data="columnData" field="role" label="Role" />',
+      '  </template>',
+      '</DataTable>',
+    ],
+  },
+}
+function contextSnippet(): string | null {
+  const snippet = CONTEXT_SNIPPETS[props.name]
+  if (!snippet) return null
+  const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
+  return sfcSnippet([...snippet.imports, props.name].join(', '), pkg, snippet.body.join('\n'))
+}
 
 // Has an `open` model but isn't trigger-based — it manages its own sensible
 // default visibility, so the generic v-model:open="openModelValue" (default
@@ -640,6 +664,7 @@ const tabsActive = shallowRef(TABS_PLACEHOLDER_ITEMS[0])
 const isResizable = computed(() => props.name === 'Resizable')
 const isScrollArea = computed(() => props.name === 'ScrollArea')
 const isPullToRefresh = computed(() => props.name === 'PullToRefresh')
+const refresh = () => new Promise<void>((resolve) => setTimeout(resolve, 1000))
 const isAvatarGroup = computed(() => props.name === 'AvatarGroup')
 const isBreadcrumb = computed(() => props.name === 'Breadcrumb')
 const isCommandPalette = computed(() => props.name === 'CommandPalette')
@@ -837,6 +862,8 @@ const controls = computed<NamedControl[]>(() => {
     if (prop.name === 'modelValue') continue
     // A generic control for `open`/`maximized` would seed a static value that fights the component's own state.
     if (prop.name === 'open' || prop.name === 'maximized') continue
+    // Always on in the preview: off, the trigger does nothing until you wire a click yourself.
+    if (prop.name === 'openOnTriggerClick') continue
     const selectOverride = overrides?.select?.[prop.name]
     if (selectOverride) {
       // Listing UNSET_OPTION makes the override start unset, so the snippet omits it.
@@ -867,7 +894,10 @@ const controls = computed<NamedControl[]>(() => {
   return list
 })
 
-const hasItemsProp = computed(() => Boolean(meta.value?.props.some((p) => p.name === 'items')))
+// Breadcrumb's preview uses its children, and `items` would replace them.
+const hasItemsProp = computed(
+  () => !isBreadcrumb.value && Boolean(meta.value?.props.some((p) => p.name === 'items')),
+)
 // These previews pass their own fixed items, so a data picker would change nothing.
 const showDataPreset = computed(
   () =>
@@ -878,6 +908,10 @@ const showDataPreset = computed(
     !isCommandPalette.value,
 )
 const hasTriggerSlot = computed(() => Boolean(meta.value?.slots.some((s) => s.name === 'trigger')))
+// Popover: the trigger toggles it, no ref or click wiring. Tooltip opens on hover and focus by itself.
+const togglesOnTriggerClick = computed(() =>
+  Boolean(meta.value?.props.some((p) => p.name === 'openOnTriggerClick')),
+)
 // Every earlier branch above is for a specifically-named component; this
 // generic tail assumed anything falling through to it is some Popover-like
 // overlay with an `open` model — true for the whole library until a plain
@@ -1203,6 +1237,8 @@ function metaDefault(name: string): unknown {
 }
 const codeNext = computed(() => {
   if (!meta.value) return ''
+  const context = contextSnippet()
+  if (context) return context
   const attrs: string[] = []
   for (const c of controls.value) {
     const v = values[c.name]
@@ -1214,7 +1250,8 @@ const codeNext = computed(() => {
     else if (c.kind === 'number') attrs.push(`:${c.name}="${v}"`)
     else attrs.push(`${c.name}="${v}"`)
   }
-  if (hasItemsProp.value && showDataPreset.value) attrs.push(':items="items"')
+  if (hasItemsProp.value) attrs.push(':items="items"')
+  if (modelProp.value) attrs.push('v-model="value"')
   const { extraAttrs = '', imports = [] } = snippetParts.value
   // A list control's default slot isn't its label, so the name-as-content filler misleads.
   const children = (snippetParts.value.children ?? []).filter(
@@ -1260,11 +1297,108 @@ function sfcSnippet(names: string, pkg: string, body: string): string {
     .split('\n')
     .map((line) => `  ${line}`)
     .join('\n')
-  return `<script setup lang="ts">\nimport { ${names} } from '${pkg}'\n${SCRIPT_CLOSE}\n\n<template>\n${template}\n</template>`
+  const state = snippetState(body)
+  const imports = [
+    ...(state.refs ? ["import { ref } from 'vue'"] : []),
+    `import { ${names} } from '${pkg}'`,
+    ...(state.types.length ? [`import type { ${state.types.join(', ')} } from '${pkg}'`] : []),
+    ...(state.icons.length
+      ? [`import { ${state.icons.join(', ')} } from '@phosphor-icons/vue'`]
+      : []),
+  ]
+  const script = [...imports, ...(state.lines.length ? ['', ...state.lines] : [])].join('\n')
+  return `<script setup lang="ts">\n${script}\n${SCRIPT_CLOSE}\n\n<template>\n${template}\n</template>`
+}
+
+// Declares whatever the snippet's template binds, with the data the preview shows, so a pasted
+// snippet runs as-is.
+const modelProp = computed(() => meta.value?.props.find((p) => p.name === 'modelValue'))
+const SNIPPET_ICONS: Record<string, string> = {
+  Home: 'PhHouse',
+  Messages: 'PhChatCircle',
+  Favorites: 'PhStar',
+  Settings: 'PhGear',
+  'New file': 'PhFile',
+  'New folder': 'PhFolder',
+  Upload: 'PhUploadSimple',
+}
+const LONG_LIST_PRESET = 'Long list (60)'
+const snippetItems = computed<unknown>(() => {
+  if (isTabs.value) return TABS_PLACEHOLDER_ITEMS
+  if (isCommandPalette.value) return COMMAND_PALETTE_PLACEHOLDER_ITEMS
+  if (isDock.value) return DOCK_PLACEHOLDER_ITEMS
+  if (isSpeedDial.value) return SPEED_DIAL_PLACEHOLDER_ITEMS
+  return boundProps.value.items
+})
+
+function literal(value: unknown, indent: string, icons: Set<string>): string {
+  if (typeof value === 'string') return value.includes("'") ? JSON.stringify(value) : `'${value}'`
+  if (typeof value !== 'object' || value === null) return String(value)
+  const inner = `${indent}  `
+  const parts = Array.isArray(value)
+    ? value.map((v) => literal(v, inner, icons))
+    : Object.entries(value).map(([key, v]) => {
+        const name = /^[A-Za-z_$][\w$]*$/.test(key) ? key : literal(key, '', icons)
+        if (key !== 'icon') return `${name}: ${literal(v, inner, icons)}`
+        const icon = SNIPPET_ICONS[(value as { label?: string }).label ?? ''] ?? 'PhCircle'
+        icons.add(icon)
+        return `${name}: ${icon}`
+      })
+  const [open, close] = Array.isArray(value) ? ['[', ']'] : ['{ ', ' }']
+  const flat = `${open}${parts.join(', ')}${close}`
+  if (flat.length + indent.length <= 80 && !flat.includes('\n')) return flat
+  return `${open.trim()}\n${parts.map((part) => `${inner}${part},`).join('\n')}\n${indent}${close.trim()}`
+}
+
+function snippetState(body: string) {
+  const uses = (name: string) => new RegExp(`="${name}"`).test(body)
+  const icons = new Set<string>()
+  const types: string[] = []
+  const lines: string[] = []
+  let refs = false
+  if (uses('items')) {
+    lines.push(
+      dataPreset.value === LONG_LIST_PRESET && !isTabs.value && showDataPreset.value
+        ? 'const items = Array.from({ length: 60 }, (_, i) => ({ label: `Item ${i + 1}`, value: i + 1 }))'
+        : `const items = ${literal(snippetItems.value, '', icons)}`,
+    )
+  }
+  if (uses('rows')) lines.push(`const rows = ${literal(DATATABLE_PLACEHOLDER_ROWS, '', icons)}`)
+  if (uses('steps')) lines.push(`const steps = ${literal(TOUR_PLACEHOLDER_STEPS, '', icons)}`)
+  if (uses('active')) {
+    refs = true
+    lines.push(`const active = ref(${literal(TABS_PLACEHOLDER_ITEMS[0], '', icons)})`)
+  }
+  if (uses('value') && modelProp.value) {
+    refs = true
+    const type = (modelProp.value.type ?? 'unknown').replace(/^undefined \| | \| undefined$/g, '')
+    const raw = modelProp.value.default ?? 'undefined'
+    const initial = raw === '""' ? "''" : raw
+    if (type.includes('CalendarRange')) types.push('CalendarRange')
+    lines.push(
+      initial === 'null' || initial === 'undefined'
+        ? `const value = ref<${type}>(${initial === 'undefined' ? '' : 'null'})`
+        : `const value = ref(${initial})`,
+    )
+  }
+  if (uses('refresh')) {
+    lines.push(
+      'async function refresh() {',
+      '  await new Promise((resolve) => setTimeout(resolve, 1000))',
+      '}',
+    )
+  }
+  if (uses('open')) {
+    refs = true
+    lines.push('const open = ref(false)')
+  }
+  return { refs, lines, types, icons: [...icons] }
 }
 
 const code = computed(() => {
   if (!meta.value) return ''
+  const context = contextSnippet()
+  if (context) return context
   const attrs = controls.value
     .map((c) => {
       const v = values[c.name]
@@ -1276,8 +1410,9 @@ const code = computed(() => {
     .filter(Boolean)
     .join(' ')
   const itemsAttr = hasItemsProp.value ? ' :items="items"' : ''
+  const modelAttr = modelProp.value ? 'v-model="value"' : ''
   const { extraAttrs = '', children = [], imports = [] } = snippetParts.value
-  const openTag = [props.name, attrs, itemsAttr, extraAttrs]
+  const openTag = [props.name, attrs, itemsAttr, modelAttr, extraAttrs]
     .filter(Boolean)
     .join(' ')
     .replace(/ +/g, ' ')
@@ -1359,15 +1494,9 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
       return {
         extraAttrs: 'v-model:active="active"',
         children: [
-          '<template #default="{ active, select, items }">',
-          '  <button',
-          '    v-for="item in items"',
-          '    :key="item"',
-          '    type="button"',
-          '    role="tab"',
-          '    :aria-selected="active === item"',
-          '    @click="select(item)"',
-          '  >',
+          '<template #default="{ items, itemProps, indicatorProps }">',
+          '  <div v-bind="indicatorProps()" />',
+          '  <button v-for="item in items" :key="item" type="button" v-bind="itemProps(item)">',
           '    {{ item }}',
           '  </button>',
           '</template>',
@@ -1409,6 +1538,7 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
     }
     if (isPullToRefresh.value) {
       return {
+        extraAttrs: ':on-refresh="refresh"',
         children: ['<ul>', '  <li v-for="n in 8" :key="n">Row {{ n }}</li>', '</ul>'],
       }
     }
@@ -1447,17 +1577,20 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
     if (!hasOpenProp.value) {
       return sampleSlotText.value ? { children: [sampleSlotText.value] } : {}
     }
-    const trigger = hasTriggerSlot.value
-      ? [
-          '<template #trigger="{ setTriggerEl }">',
-          '  <Button :ref="setTriggerEl" @click="open = !open">Trigger</Button>',
-          '</template>',
-        ]
-      : []
+    const trigger = !hasTriggerSlot.value
+      ? []
+      : togglesOnTriggerClick.value
+        ? ['<template #trigger>', '  <Button>Trigger</Button>', '</template>']
+        : [
+            '<template #trigger="{ setTriggerEl }">',
+            '  <Button :ref="setTriggerEl">Trigger</Button>',
+            '</template>',
+          ]
     return {
-      extraAttrs: open,
+      extraAttrs: togglesOnTriggerClick.value ? `${open} open-on-trigger-click` : open,
       imports: hasTriggerSlot.value ? ['Button'] : [],
-      children: [...trigger, props.name],
+      // A form control's default slot isn't a label.
+      children: [...trigger, ...(modelProp.value ? [] : [props.name])],
     }
   },
 )
@@ -1606,22 +1739,6 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
 .pull-to-refresh-preview-list li {
   padding: 0.5rem 0.75rem;
   border-block-end: 1px solid var(--ui-border);
-}
-
-.tabs-preview-tab {
-  padding: 0.375rem 0.75rem;
-  border: none;
-  background: none;
-  border-radius: var(--ui-radius);
-  font-size: 0.875rem;
-  color: var(--ui-text-muted);
-  cursor: pointer;
-}
-
-.tabs-preview-tab[data-active] {
-  background: var(--ui-surface);
-  color: var(--ui-text);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
 
 .datatable-expansion-row {
