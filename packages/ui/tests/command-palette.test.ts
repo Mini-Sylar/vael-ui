@@ -80,3 +80,57 @@ test('shortcut prop toggles open on the configured global hotkey', async () => {
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
   await vi.waitFor(() => expect(open.value).toBe(true))
 })
+
+// Real transitions, not Vue Test Utils' TransitionGroup stub.
+const realTransitions = { global: { stubs: { 'transition-group': false } } }
+
+test('rows change at once while typing, and the list eases to its new height', async () => {
+  const many = Array.from({ length: 12 }, (_, i) => ({ id: `i${i}`, label: `Item ${i}` }))
+  await render(CommandPalette, { props: { open: true, items: many }, ...realTransitions })
+  const list = document.querySelector<HTMLElement>('.ui-command-palette-list')!
+  const heights: number[] = []
+  const start = performance.now()
+  const sample = () => {
+    heights.push(Math.round(list.getBoundingClientRect().height))
+    if (performance.now() - start < 400) requestAnimationFrame(sample)
+  }
+  requestAnimationFrame(sample)
+  await userEvent.type(page.getByRole('combobox'), 'Item 1')
+
+  expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
+  for (const leaving of document.querySelectorAll('.ui-command-palette-row-leave-active')) {
+    expect(getComputedStyle(leaving).display).toBe('none')
+  }
+  await new Promise((resolve) => setTimeout(resolve, 450))
+  expect(new Set(heights).size).toBeGreaterThan(2)
+  expect(list.style.blockSize).toBe('')
+  expect(list.hasAttribute('data-resizing')).toBe(false)
+})
+
+test('motionCss false hands appearing and disappearing rows to @item-enter/@item-leave', async () => {
+  const entered: Element[] = []
+  const pendingLeaves: (() => void)[] = []
+  await render(CommandPalette, {
+    props: {
+      open: true,
+      items,
+      motionCss: false,
+      'onItem-enter': (el: Element, done: () => void) => {
+        entered.push(el)
+        done()
+      },
+      'onItem-leave': (_el: Element, done: () => void) => pendingLeaves.push(done),
+    },
+    ...realTransitions,
+  })
+  const input = page.getByRole('combobox')
+  await userEvent.type(input, 'folder')
+  await vi.waitFor(() => expect(pendingLeaves.length).toBe(2))
+  expect(page.getByText('New File').query()).not.toBeNull()
+  pendingLeaves.forEach((done) => done())
+  await vi.waitFor(() => expect(page.getByText('New File').query()).toBeNull())
+
+  await userEvent.clear(input)
+  await vi.waitFor(() => expect(entered.length).toBe(2))
+  expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
+})

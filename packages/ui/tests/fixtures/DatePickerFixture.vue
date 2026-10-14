@@ -19,6 +19,9 @@
     locale="en-US"
     placeholder="Pick a date"
   >
+    <template v-if="customDay" #day="{ date, isToday }">
+      <span class="custom-day" :data-today="isToday || undefined">d{{ date.getDate() }}</span>
+    </template>
     <template v-if="customFooter" #footer>
       <span data-testid="custom-footer">custom footer</span>
     </template>
@@ -46,6 +49,7 @@ const props = withDefaults(
     initialValue?: Date
     showButtonBar?: boolean
     customFooter?: boolean
+    customDay?: boolean
     showTime?: boolean
     timeOnly?: boolean
     hourFormat?: '12' | '24'
@@ -61,6 +65,7 @@ const props = withDefaults(
     initialValue: undefined,
     showButtonBar: false,
     customFooter: false,
+    customDay: false,
     showTime: false,
     timeOnly: false,
     hourFormat: undefined,

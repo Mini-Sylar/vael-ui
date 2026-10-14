@@ -1,4 +1,9 @@
 @layer ui-components {
+  @property --ui-command-palette-edge {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
   .ui-dialog-body.ui-command-palette-body {
     display: flex;
     flex-direction: column;
@@ -33,13 +38,32 @@
 
   .ui-command-palette-list {
     flex: 1 1 auto;
-    min-block-size: min(16rem, calc(85dvh - 8rem));
     max-block-size: min(20rem, calc(85dvh - 8rem));
     margin: 0;
     padding: 0.5rem;
     overflow-y: auto;
     overscroll-behavior: contain;
     list-style: none;
+    transition:
+      block-size var(--ui-duration-enter) var(--ui-ease-out),
+      --ui-command-palette-edge var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* While the list eases to a new height: no scrollbar, and its bottom edge is soft, so rows at the
+     moving edge fade into it instead of being cut mid-glyph. The edge eases away once it settles. */
+  .ui-command-palette-list[data-resizing] {
+    overflow-y: hidden;
+  }
+  .ui-command-palette-list[data-resizing='fit'],
+  .ui-command-palette-list[data-growing] {
+    mask-image: linear-gradient(
+      to bottom,
+      #000 calc(100% - var(--ui-command-palette-edge)),
+      transparent
+    );
+  }
+  .ui-command-palette-list[data-growing] {
+    --ui-command-palette-edge: 2rem;
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-out);
   }
   /* dvh is viewport-relative; the panel's own [data-contained] cap (Dialog.css) is the real ceiling. */
   .ui-dialog[data-contained] .ui-command-palette-list {
@@ -133,6 +157,19 @@
   @media (pointer: coarse) {
     .ui-command-palette-input {
       font-size: max(var(--ui-touch-font-size, 16px), 0.9375rem);
+    }
+  }
+  /* Rows change at once while typing: leaving rows go before new ones paint, and kept rows jump to
+     their new place instead of sliding (the press transition would otherwise opt them into a move). */
+  .ui-command-palette-row-leave-active {
+    display: none;
+  }
+  .ui-command-palette-item.ui-command-palette-row-move {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-command-palette-list {
+      transition: none;
     }
   }
 }

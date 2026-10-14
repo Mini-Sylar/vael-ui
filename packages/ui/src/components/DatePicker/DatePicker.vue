@@ -78,7 +78,11 @@
             :ui="calendarUi"
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
-          />
+          >
+            <template v-if="$slots.day" #day="dayProps">
+              <slot name="day" v-bind="dayProps" />
+            </template>
+          </Calendar>
           <div
             v-if="(showTime || timeOnly) && selectionMode !== 'range'"
             :class="timePart.class"
@@ -333,6 +337,15 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /** Custom content inside each day cell, the same as Calendar's `#day`. The cell keeps its own
+   * click, keyboard and aria wiring. */
+  day(props: {
+    date: Date
+    isCurrentMonth: boolean
+    isToday: boolean
+    isSelected: boolean
+    isDisabled: boolean
+  }): unknown
   /** Replaces the built-in Today/Clear button bar. It renders whenever you provide it,
    * regardless of `showButtonBar`. */
   footer(): unknown

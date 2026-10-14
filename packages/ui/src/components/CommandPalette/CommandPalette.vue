@@ -35,65 +35,68 @@
         :aria-activedescendant="activeId"
         @keydown="onInputKeydown($event, close)"
       />
-      <ul
+      <TransitionGroup
         :id="listId"
-        ref="listEl"
+        :ref="registerListEl"
+        tag="ul"
         role="listbox"
         v-scroll-mask
         :class="listPart.class"
         :style="listPart.style"
+        :name="motionCss ? 'ui-command-palette-row' : undefined"
+        :css="motionCss"
+        move-class="ui-command-palette-row-move"
+        @enter="enterHook"
+        @leave="leaveHook"
       >
-        <li v-if="filteredItems.length === 0" :class="emptyPart.class" :style="emptyPart.style">
+        <li
+          v-if="filteredItems.length === 0"
+          key="empty"
+          :class="emptyPart.class"
+          :style="emptyPart.style"
+        >
           <slot name="empty">{{ messages.commandPalette.empty }}</slot>
         </li>
-        <template v-for="group in groupedItems" :key="group.group ?? ''">
-          <li
-            v-if="group.group"
-            role="presentation"
-            :class="groupLabelPart.class"
-            :style="groupLabelPart.style"
+        <li
+          v-for="row in rows"
+          :id="row.kind === 'item' ? optionId(row.index) : undefined"
+          :key="row.key"
+          :role="row.kind === 'item' ? 'option' : 'presentation'"
+          :aria-selected="row.kind === 'item' ? row.index === activeIndex : undefined"
+          :data-active="(row.kind === 'item' && row.index === activeIndex) || undefined"
+          :data-disabled="(row.kind === 'item' && row.item.disabled) || undefined"
+          :class="row.kind === 'item' ? itemPart.class : groupLabelPart.class"
+          :style="row.kind === 'item' ? itemPart.style : groupLabelPart.style"
+          @mousemove="row.kind === 'item' && (activeIndex = row.index)"
+          @click="row.kind === 'item' && selectItem(row.item, close)"
+        >
+          <template v-if="row.kind === 'group'">{{ row.label }}</template>
+          <slot
+            v-else
+            name="item"
+            :item="row.item"
+            :index="row.index"
+            :active="row.index === activeIndex"
+            :select="() => selectItem(row.item, close)"
           >
-            {{ group.group }}
-          </li>
-          <li
-            v-for="{ item, index } in group.entries"
-            :id="optionId(index)"
-            :key="item.id"
-            role="option"
-            :aria-selected="index === activeIndex"
-            :data-active="index === activeIndex || undefined"
-            :data-disabled="item.disabled || undefined"
-            :class="itemPart.class"
-            :style="itemPart.style"
-            @mousemove="activeIndex = index"
-            @click="selectItem(item, close)"
-          >
-            <slot
-              name="item"
-              :item="item"
-              :index="index"
-              :active="index === activeIndex"
-              :select="() => selectItem(item, close)"
-            >
-              <component
-                :is="item.icon"
-                v-if="item.icon"
-                aria-hidden="true"
-                class="ui-command-palette-item-icon"
-              />
-              <span class="ui-command-palette-item-body">
-                <span class="ui-command-palette-item-label">{{ item.label }}</span>
-                <span v-if="item.description" class="ui-command-palette-item-description">{{
-                  item.description
-                }}</span>
-              </span>
-              <span v-if="item.shortcut?.length" class="ui-command-palette-item-shortcut">
-                <Kbd v-for="key in item.shortcut" :key="key">{{ key }}</Kbd>
-              </span>
-            </slot>
-          </li>
-        </template>
-      </ul>
+            <component
+              :is="row.item.icon"
+              v-if="row.item.icon"
+              aria-hidden="true"
+              class="ui-command-palette-item-icon"
+            />
+            <span class="ui-command-palette-item-body">
+              <span class="ui-command-palette-item-label">{{ row.item.label }}</span>
+              <span v-if="row.item.description" class="ui-command-palette-item-description">{{
+                row.item.description
+              }}</span>
+            </span>
+            <span v-if="row.item.shortcut?.length" class="ui-command-palette-item-shortcut">
+              <Kbd v-for="key in row.item.shortcut" :key="key">{{ key }}</Kbd>
+            </span>
+          </slot>
+        </li>
+      </TransitionGroup>
     </template>
   </Dialog>
 </template>
@@ -181,6 +184,12 @@ const props = withDefaults(
      * @default false
      */
     forceMount?: boolean
+    /**
+     * The results list eases to its new height as you type. `false` turns that off and hands
+     * each appearing and disappearing row to `@item-enter`/`@item-leave` instead.
+     * @default true
+     */
+    motionCss?: boolean
     /** Teleport target: a CSS selector. Takes precedence over `container`. */
     teleportTo?: string
     /** Scopes the palette to one element instead of the viewport. Forwarded to the underlying Dialog. */
@@ -205,6 +214,7 @@ const props = withDefaults(
     closeOnEsc: true,
     closeOnOverlay: true,
     forceMount: false,
+    motionCss: true,
   },
 )
 
@@ -213,7 +223,19 @@ const emit = defineEmits<{
   select: [item: T]
   /** Fires before the palette closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: DialogOpenChangeDetails]
+  /** Fires as a row appears while you type, only while `motionCss` is `false`. Run your own
+   * animation, then call `done()`. */
+  'item-enter': [el: Element, done: () => void]
+  /** Same as `@item-enter`, for a row disappearing. */
+  'item-leave': [el: Element, done: () => void]
 }>()
+
+const enterHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-enter', el, done),
+)
+const leaveHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-leave', el, done),
+)
 
 defineSlots<{
   /** Custom row content for each item; call `select()` to pick it. */
@@ -249,6 +271,20 @@ const groupedItems = computed<CommandPaletteGroupView[]>(() => {
   return groups
 })
 
+const rows = computed(() =>
+  groupedItems.value.flatMap((group) => [
+    ...(group.group
+      ? [{ kind: 'group' as const, key: `group:${group.group}`, label: group.group }]
+      : []),
+    ...group.entries.map(({ item, index }) => ({
+      kind: 'item' as const,
+      key: `item:${item.id}`,
+      item,
+      index,
+    })),
+  ]),
+)
+
 const activeIndex = shallowRef(-1)
 
 function enabledIndices(): number[] {
@@ -281,7 +317,60 @@ function optionId(index: number): string {
 }
 const activeId = computed(() => (activeIndex.value >= 0 ? optionId(activeIndex.value) : undefined))
 
-const listEl = useTemplateRef<HTMLElement>('listEl')
+// TransitionGroup's ref is a component. Vapor gives no `$el` and calls this pre-mount: use the id.
+const listEl = shallowRef<HTMLElement | null>(null)
+function registerListEl(el: Element | { $el?: unknown } | null) {
+  if (!el) listEl.value = null
+  else if (el instanceof HTMLElement) listEl.value = el
+  else if ('$el' in el && el.$el instanceof HTMLElement) listEl.value = el.$el
+  else nextTick(() => (listEl.value = document.getElementById(listId)))
+}
+
+// Ease to the new height from the current one, so a restart mid-animation doesn't jump.
+watch(
+  rows,
+  () => {
+    const el = listEl.value
+    if (!el || !props.motionCss || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const from = el.getBoundingClientRect().height
+    nextTick(() => {
+      el.style.transition = 'none'
+      el.style.blockSize = ''
+      const to = el.getBoundingClientRect().height
+      if (Math.abs(to - from) >= 1) {
+        el.dataset.resizing = el.scrollHeight > el.clientHeight + 1 ? 'scroll' : 'fit'
+        if (to > from) el.dataset.growing = ''
+        else delete el.dataset.growing
+        el.style.blockSize = `${from}px`
+        void el.offsetHeight
+        el.style.blockSize = `${to}px`
+      } else {
+        delete el.dataset.resizing
+        delete el.dataset.growing
+      }
+      el.style.transition = ''
+    })
+  },
+  { flush: 'pre' },
+)
+function releaseHeight(event: TransitionEvent) {
+  const el = listEl.value
+  if (!el || event.target !== el) return
+  const heightDone = event.propertyName === 'block-size' || event.propertyName === 'height'
+  // A list that fits eases its soft edge away first. One that scrolls hands it to its scroll fade.
+  if (heightDone && el.dataset.growing !== undefined && el.dataset.resizing === 'fit') {
+    delete el.dataset.growing
+    return
+  }
+  if (heightDone || event.propertyName === '--ui-command-palette-edge') {
+    el.style.blockSize = ''
+    delete el.dataset.resizing
+    delete el.dataset.growing
+  }
+}
+// Not transitioncancel: a restart cancels the previous run after setting the new height.
+useEventListener(listEl, 'transitionend', releaseHeight)
+
 watch(activeIndex, (index) => {
   if (index < 0) return
   nextTick(() => {

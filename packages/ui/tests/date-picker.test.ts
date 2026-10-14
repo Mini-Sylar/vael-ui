@@ -31,6 +31,22 @@ test('opens on trigger click and shows the calendar panel', async () => {
   await vi.waitFor(() => expect(document.querySelector('.ui-calendar-root')).not.toBeNull())
 })
 
+test('#day reaches the calendar inside the panel; without it the day number shows', async () => {
+  const screen = await render(DatePickerFixture, { props: { customDay: true } })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() =>
+    expect(document.querySelectorAll('.custom-day').length).toBeGreaterThan(27),
+  )
+  expect(document.querySelector('.custom-day')!.textContent).toMatch(/^d\d+$/)
+  expect(document.querySelectorAll('.custom-day[data-today]').length).toBe(1)
+  screen.unmount()
+
+  const plain = await render(DatePickerFixture)
+  await plain.getByRole('combobox').click()
+  await vi.waitFor(() => expect(document.querySelector('.ui-calendar-root')).not.toBeNull())
+  expect(document.querySelector('.custom-day')).toBeNull()
+})
+
 test('single mode: picking a date commits it and auto-closes', async () => {
   const screen = await render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
   await screen.getByRole('combobox').click()
