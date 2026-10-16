@@ -5,7 +5,7 @@
 
 import { createChecker } from 'vue-component-meta'
 import ts from 'typescript'
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -239,7 +239,10 @@ function main() {
   }
 
   mkdirSync(dirname(OUT_PATH), { recursive: true })
-  writeFileSync(OUT_PATH, JSON.stringify(meta, null, 2) + '\n')
+  const json = JSON.stringify(meta, null, 2) + '\n'
+  // Unchanged output stays untouched, so the docs dev server doesn't reload for nothing.
+  if (!existsSync(OUT_PATH) || readFileSync(OUT_PATH, 'utf8') !== json)
+    writeFileSync(OUT_PATH, json)
   console.log(`\nwrote docs/src/generated/component-meta.json (${components.length} component(s))`)
 }
 

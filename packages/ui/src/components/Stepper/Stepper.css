@@ -9,6 +9,10 @@
   .ui-stepper--horizontal {
     overflow-x: auto;
     scrollbar-width: none;
+    /* A sideways scroller clips vertically too. Room for a circle's focus ring or a scaled pop,
+       cancelled by the margin so the layout doesn't move. */
+    padding: 0.375rem;
+    margin: -0.375rem;
   }
   .ui-stepper--horizontal::-webkit-scrollbar {
     display: none;
@@ -59,7 +63,7 @@
     border-radius: 50%;
     background: var(--ui-surface);
     color: var(--ui-text-muted);
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     font-weight: 600;
     transition:
       background-color var(--ui-duration-press) ease,
@@ -96,6 +100,8 @@
   .ui-stepper-check-leave-active {
     position: absolute;
     inset: 0;
+    /* Centers the fixed-size check; without it the svg sits in the top-left corner mid-swap. */
+    margin: auto;
     display: grid;
     place-items: center;
     transition:
@@ -116,7 +122,7 @@
   }
   .ui-stepper-label {
     color: var(--ui-text-muted);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     font-weight: 500;
     /* Matches .ui-stepper-circle's own block-size: the label's text centers
        within this line box, lining up with the circle's center regardless
@@ -130,12 +136,30 @@
   }
   .ui-stepper-description {
     color: var(--ui-text-muted);
-    font-size: 0.75rem;
+    font-size: calc(var(--ui-font-size) * 0.75);
     white-space: nowrap;
   }
   .ui-stepper--vertical .ui-stepper-label,
   .ui-stepper--vertical .ui-stepper-description {
     white-space: normal;
+  }
+
+  /* Vertical: the connector sits below the whole step, so a step with a description would leave
+     a gap under its circle. This line bridges it, from the circle down to the connector. */
+  .ui-stepper--vertical .ui-stepper-step {
+    position: relative;
+  }
+  .ui-stepper--vertical .ui-stepper-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    inset-block: calc(1.75rem + 0.375rem) -0.375rem;
+    inset-inline-start: calc(0.875rem - 1px);
+    inline-size: 2px;
+    background: var(--ui-border);
+    transition: background-color var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-stepper--vertical .ui-stepper-step[data-state='completed']:not(:last-child)::after {
+    background: var(--ui-primary);
   }
 
   .ui-stepper-connector {
@@ -166,19 +190,27 @@
     background: var(--ui-primary);
     transition: scale var(--ui-duration-press) var(--ui-ease-out);
   }
+  /* --ui-stepper-fill (0 to 1) set on a connector overrides how full it is, so JS can animate
+     the fill. Unset, data-state decides. */
   .ui-stepper-connector--horizontal::after {
     transform-origin: 0 50%;
-    scale: 0 1;
+    scale: var(--ui-stepper-fill, 0) 1;
   }
   .ui-stepper-connector--vertical::after {
     transform-origin: 50% 0;
-    scale: 1 0;
+    scale: 1 var(--ui-stepper-fill, 0);
   }
   .ui-stepper-connector[data-state='filled'].ui-stepper-connector--horizontal::after {
-    scale: 1 1;
+    scale: var(--ui-stepper-fill, 1) 1;
   }
   .ui-stepper-connector[data-state='filled'].ui-stepper-connector--vertical::after {
-    scale: 1 1;
+    scale: 1 var(--ui-stepper-fill, 1);
+  }
+
+  .ui-stepper--no-anim .ui-stepper-circle,
+  .ui-stepper--no-anim .ui-stepper-step::after,
+  .ui-stepper--no-anim .ui-stepper-connector::after {
+    transition: none;
   }
 
   @media (prefers-reduced-motion: reduce) {

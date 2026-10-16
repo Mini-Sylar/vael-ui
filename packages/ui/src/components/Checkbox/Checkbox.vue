@@ -61,6 +61,7 @@
 <!-- Native checkbox overlay (opacity 0) with SVG box styling + first-paint transition guard -->
 <script setup lang="ts">
 import './Checkbox.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
   computed,
@@ -85,7 +86,7 @@ const attrs = useAttrs()
  */
 const modelValue = defineModel<boolean | unknown[]>({ default: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Label text; the default slot replaces it. */
     label?: string
@@ -106,8 +107,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; box: UiPartValue; label: UiPartValue }>
   }>(),
-  { indeterminate: false, disabled: false, invalid: false, size: 'md', motionCss: true },
+  { indeterminate: false, disabled: false, invalid: false, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true }, ['sm', 'md'])
 
 const emit = defineEmits<{
   /** Fires when you toggle the checkbox, with its new checked state. */

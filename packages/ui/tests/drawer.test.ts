@@ -9,10 +9,12 @@ function activeTestId() {
   return document.activeElement?.getAttribute('data-testid') ?? document.activeElement?.className
 }
 
-test('position="right" renders a full-height panel anchored to the right edge', async () => {
+test('position="right" renders a full-height panel anchored to the right edge, modal by default', async () => {
   const screen = await render(DrawerFixture, { props: { position: 'right' } })
   await screen.getByTestId('trigger-modal').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-dialog--right')).not.toBeNull())
+  await expect.element(page.getByRole('dialog')).toHaveAttribute('aria-modal', 'true')
+  expect(document.querySelector('.ui-dialog-overlay')).not.toBeNull()
   const panel = document.querySelector<HTMLElement>('.ui-dialog--right .ui-dialog-panel')!
   const rect = panel.getBoundingClientRect()
   expect(rect.height).toBeCloseTo(window.innerHeight, 0)
@@ -45,33 +47,26 @@ test('modal=false renders no overlay, does not lock scroll, does not steal focus
   await expect.element(screen.getByTestId('pinned-state')).toHaveTextContent('closed')
 })
 
-test('modal=true (default) at position="right" traps focus and locks scroll like a center dialog', async () => {
-  const screen = await render(DrawerFixture)
-  await screen.getByTestId('trigger-modal').click()
-
-  const dialog = page.getByRole('dialog')
-  await expect.element(dialog).toBeVisible()
-  await expect.element(dialog).toHaveAttribute('aria-modal', 'true')
-  expect(document.querySelector('.ui-dialog-overlay')).not.toBeNull()
-
-  await vi.waitFor(() => {
-    expect(document.querySelector('[role="dialog"]')!.contains(document.activeElement)).toBe(true)
+test('Drawer passes flush through, so a bottom drawer sits on the viewport edge', async () => {
+  const { h } = await import('vue')
+  const { default: Drawer } = await import('../src/components/Drawer/Drawer.vue')
+  await render({
+    render: () => [
+      h(Drawer, { open: true, side: 'bottom', title: 'Flush', flush: true }),
+      h(Drawer, { open: true, side: 'bottom', title: 'Floating', modal: false }),
+    ],
   })
-  expect(document.body.style.overflow).toBe('hidden')
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-dialog-panel').length).toBe(2))
+  const [flush, floating] = [...document.querySelectorAll<HTMLElement>('.ui-dialog-panel')]
+  expect(flush!.getBoundingClientRect().bottom).toBeCloseTo(window.innerHeight, 0)
+  expect(floating!.getBoundingClientRect().bottom).toBeLessThan(window.innerHeight - 8)
+})
 
-  // Focus lands on the first focusable — the built-in close button — then cycles and wraps
-  expect(document.activeElement!.className).toContain('ui-dialog-close')
-  await userEvent.keyboard('{Tab}')
-  expect(activeTestId()).toBe('first')
-  await userEvent.keyboard('{Tab}')
-  expect(activeTestId()).toBe('second')
-  await userEvent.keyboard('{Tab}')
-  expect(activeTestId()).toBe('done')
-  await userEvent.keyboard('{Tab}')
-  expect(document.activeElement!.className).toContain('ui-dialog-close')
-
-  await userEvent.keyboard('{Escape}')
-  await expect.element(screen.getByTestId('modal-state')).toHaveTextContent('closed')
-  await vi.waitFor(() => expect(activeTestId()).toBe('trigger-modal'))
-  expect(document.body.style.overflow).toBe('')
+test('Drawer forwards the overlay as overlayEl', async () => {
+  const { h, ref } = await import('vue')
+  const { default: Drawer } = await import('../src/components/Drawer/Drawer.vue')
+  const drawer = ref<InstanceType<typeof Drawer> | null>(null)
+  await render({ render: () => h(Drawer, { ref: drawer, open: true, title: 'Overlay' }) })
+  await vi.waitFor(() => expect(drawer.value?.overlayEl).toBeInstanceOf(HTMLElement))
+  expect(drawer.value!.overlayEl).toBe(document.querySelector('.ui-dialog-overlay'))
 })

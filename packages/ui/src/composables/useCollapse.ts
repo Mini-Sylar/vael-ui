@@ -10,6 +10,11 @@ export interface UseCollapseOptions {
   el: ElRef<HTMLElement | null>
   /** `false` hands the height over entirely: no inline styles are written, open or closed, so a consumer's own tween isn't cut off. `state` still reports open/closed. */
   motionCss?: () => boolean
+  /**
+   * Whether `motionCss: false` hands the height over (no inline styles) or just makes the change
+   * instant. Defaults to handing over; an app-wide "no animations" switch wants instant.
+   */
+  handOff?: () => boolean
 }
 
 export interface UseCollapseReturn {
@@ -27,7 +32,8 @@ function closedStyle(): Record<string, string> {
 
 export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): UseCollapseReturn {
   const motionOff = () => options.motionCss?.() === false
-  const style = shallowRef<Record<string, string>>(open.value || motionOff() ? {} : closedStyle())
+  const handOff = () => motionOff() && (options.handOff?.() ?? true)
+  const style = shallowRef<Record<string, string>>(open.value || handOff() ? {} : closedStyle())
   const state = shallowRef<CollapseState>(open.value ? 'open' : 'closed')
 
   let token: symbol | null = null
@@ -36,7 +42,7 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
   function settle(target: boolean) {
     token = null
     clearTimeout(fallbackTimer)
-    style.value = target || motionOff() ? {} : closedStyle()
+    style.value = target || handOff() ? {} : closedStyle()
     state.value = target ? 'open' : 'closed'
   }
 

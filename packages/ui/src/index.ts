@@ -250,6 +250,10 @@ export type { Align, UseFloatingPositionOptions } from './composables/useFloatin
 export { useAsyncLoading } from './composables/useAsyncLoading'
 export type { UseAsyncLoadingReturn } from './composables/useAsyncLoading'
 export { useColorScheme } from './composables/useColorScheme'
+export { preventFocusZoom } from './composables/preventFocusZoom'
+// Internal: exported only so vael-ui/vapor's components share them with this build. Not public API.
+export { defaultsKey, validLocale, withProviderDefaults } from './config'
+export type { UiDefaults } from './config'
 export type {
   ColorSchemeMode,
   UseColorSchemeOptions,

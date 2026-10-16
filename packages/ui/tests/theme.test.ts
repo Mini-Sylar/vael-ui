@@ -5,6 +5,13 @@ import ThemedFixture from './fixtures/ThemedFixture.vue'
 import ThemedUiDefaultsFixture from './fixtures/ThemedUiDefaultsFixture.vue'
 import NestedThemeFixture from './fixtures/NestedThemeFixture.vue'
 import ScopedDialogFixture from './fixtures/ScopedDialogFixture.vue'
+import '../src/components/Textarea/Textarea.css'
+import '../src/components/Select/Select.css'
+import '../src/components/CascadeSelect/CascadeSelect.css'
+import '../src/components/TreeSelect/TreeSelect.css'
+import '../src/components/OtpInput/OtpInput.css'
+import '../src/components/internal/TimeField.css'
+import '../src/components/CommandPalette/CommandPalette.css'
 
 function bgOf(testId: string) {
   return getComputedStyle(document.querySelector(`[data-testid="${testId}"]`)!).backgroundColor
@@ -79,6 +86,83 @@ test('no theme prop injects no stylesheet at all', async () => {
   await new Promise((r) => setTimeout(r, 50))
   expect(headStyleCount()).toBe(baselineHeadStyles)
   await screen.unmount()
+})
+
+test('theme.fontSize scales component text within its scope, and leaves the touch minimum alone', async () => {
+  const screen = await render(ThemedFixture, { props: { theme: { fontSize: '20px' } } })
+  const button = screen.container.querySelector('[data-testid="themed-primary"]')!
+  const input = screen.container.querySelector('[data-testid="themed-input"]')!
+  const plain = screen.container.querySelector('[data-testid="themed-plain"]')!
+  const touchFontSize = () =>
+    getComputedStyle(input).getPropertyValue('--ui-touch-font-size').trim()
+
+  await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('17.5px'))
+  expect(getComputedStyle(input).fontSize).toBe('17.5px')
+  expect(getComputedStyle(plain).fontSize).toBe('20px')
+  expect(touchFontSize()).toBe('0px')
+  expect(getComputedStyle(document.documentElement).fontSize).toBe('16px')
+
+  await screen.rerender({ theme: { fontSize: '12px' } })
+  await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('10.5px'))
+  expect(getComputedStyle(input).fontSize).toBe('10.5px')
+  expect(getComputedStyle(plain).fontSize).toBe('12px')
+  expect(touchFontSize()).toBe('0px')
+  await screen.unmount()
+})
+
+test('the document root font size also scales component text', async () => {
+  const originalFontSize = document.documentElement.style.fontSize
+  const screen = await render(ThemedFixture, { props: { theme: {} } })
+  const button = screen.container.querySelector('[data-testid="themed-primary"]')!
+  const input = screen.container.querySelector('[data-testid="themed-input"]')!
+  try {
+    document.documentElement.style.fontSize = '20px'
+    await vi.waitFor(() => expect(getComputedStyle(button).fontSize).toBe('17.5px'))
+    expect(getComputedStyle(input).fontSize).toBe('17.5px')
+  } finally {
+    document.documentElement.style.fontSize = originalFontSize
+    await screen.unmount()
+  }
+})
+
+// Every form control shares one touch rule, so none drifts to a different size than its neighbors.
+test('every form control shares the same touch font-size floor', () => {
+  const TOUCH = '(hover: none) and (pointer: coarse)'
+  const floored = new Set<string>()
+  const queries = new Set<string>()
+  const walk = (rules: CSSRuleList, media?: string) => {
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSMediaRule) walk(rule.cssRules, rule.conditionText)
+      // Before the generic branch: with CSS nesting, a style rule has `cssRules` too.
+      else if (rule instanceof CSSStyleRule) {
+        if (rule.style.cssText.includes('max(var(--ui-touch-font-size)')) {
+          floored.add(rule.selectorText)
+          queries.add(media ?? 'none')
+        }
+      } else if ('cssRules' in rule) walk((rule as CSSGroupingRule).cssRules, media)
+    }
+  }
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      walk(sheet.cssRules)
+    } catch {}
+  }
+  expect([...queries]).toEqual([TOUCH])
+  for (const selector of [
+    '.ui-input--md',
+    '.ui-textarea--md',
+    '.ui-select-trigger--md',
+    '.ui-cascade-select-trigger--md',
+    '.ui-tree-select-trigger--md',
+    '.ui-otp-input',
+    '.ui-time-field-input',
+    '.ui-command-palette-input',
+  ]) {
+    expect(floored, selector).toContain(selector)
+  }
+  expect(
+    getComputedStyle(document.documentElement).getPropertyValue('--ui-touch-font-size').trim(),
+  ).toBe('0px')
 })
 
 test('a nested ConfigProvider theme is scoped to its own subtree — it must NOT leak to buttons outside it', async () => {

@@ -6,11 +6,16 @@ import ChipFixture from './fixtures/ChipFixture.vue'
 import ChipListFixture from './fixtures/ChipListFixture.vue'
 import Chip from '../src/components/Chip/Chip.vue'
 
-test('renders the label prop by default', async () => {
-  const screen = await render(Chip, { props: { label: 'Banana' } })
+test('renders the label prop, at md size unless size is set', async () => {
+  const props: { label: string; size?: 'sm' | 'md' } = { label: 'Banana' }
+  const screen = await render(Chip, { props })
   await expect
     .element(screen.container.querySelector<HTMLElement>('.ui-chip-label')!)
     .toHaveTextContent('Banana')
+  const root = screen.container.querySelector('.ui-chip')!
+  expect(root).toHaveClass('ui-chip--md')
+  await screen.rerender({ size: 'sm' })
+  expect(root).toHaveClass('ui-chip--sm')
 })
 
 test('the default slot overrides the label content', async () => {
@@ -46,15 +51,6 @@ test('disabled sets data-disabled on the root and disables the remove button', a
   // A real disabled <button> never dispatches click at all — the browser
   // itself is the guard here, so there's nothing further to drive.
   expect(button.disabled).toBe(true)
-})
-
-test('size classes apply to the root', async () => {
-  const screen = await render(Chip, { props: { label: 'Small', size: 'sm' } })
-  expect(screen.container.querySelector('.ui-chip--sm')).not.toBeNull()
-
-  await screen.unmount()
-  const md = await render(Chip, { props: { label: 'Medium' } })
-  expect(md.container.querySelector('.ui-chip--md')).not.toBeNull()
 })
 
 test('ui part overrides land on root/label/remove', async () => {

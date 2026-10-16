@@ -35,15 +35,6 @@ function state(): string | undefined {
   return zone().dataset.state
 }
 
-/** Realistic timing, matching bottom-sheet.test.ts's own drag() helper. */
-async function drag(el: Element, startY: number, endY: number, ms: number) {
-  const pointerId = 1
-  el.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
-  await new Promise((r) => setTimeout(r, ms))
-  el.dispatchEvent(new PointerEvent('pointermove', { clientY: endY, pointerId, bubbles: true }))
-  el.dispatchEvent(new PointerEvent('pointerup', { clientY: endY, pointerId, bubbles: true }))
-}
-
 function makeTouch(target: EventTarget, y: number, id = 1): Touch {
   return new Touch({
     identifier: id,
@@ -68,30 +59,95 @@ function fireTouch(el: Element, type: string, live: Touch[], changed: Touch[]): 
   )
 }
 
-/** Mirrors drag() but through TouchEvents — the path real mobile input actually takes. */
-async function touchDrag(el: Element, startY: number, endY: number, ms: number) {
-  const start = makeTouch(el, startY)
-  fireTouch(el, 'touchstart', [start], [start])
+type InputKind = 'pointer' | 'touch'
+
+/** One gesture through either PointerEvents or TouchEvents; `move` returns false when preventDefaulted. */
+function gesture(kind: InputKind, el: Element) {
+  const pointerId = 1
+  const pointer = (type: string, clientY: number) =>
+    el.dispatchEvent(new PointerEvent(type, { clientY, pointerId, bubbles: true }))
+  const touch = (type: string, y: number, live: boolean) => {
+    const t = makeTouch(el, y)
+    return fireTouch(el, type, live ? [t] : [], [t])
+  }
+  return {
+    start: (y: number) =>
+      kind === 'pointer' ? pointer('pointerdown', y) : touch('touchstart', y, true),
+    move: (y: number) =>
+      kind === 'pointer' ? pointer('pointermove', y) : touch('touchmove', y, true),
+    end: (y: number) =>
+      kind === 'pointer' ? pointer('pointerup', y) : touch('touchend', y, false),
+  }
+}
+
+async function drag(kind: InputKind, el: Element, startY: number, endY: number, ms: number) {
+  const g = gesture(kind, el)
+  g.start(startY)
   await new Promise((r) => setTimeout(r, ms))
-  const move = makeTouch(el, endY)
-  const notPrevented = fireTouch(el, 'touchmove', [move], [move])
-  fireTouch(el, 'touchend', [], [makeTouch(el, endY)])
+  const notPrevented = g.move(endY)
+  g.end(endY)
   return { movePrevented: notPrevented === false }
 }
 
-test('a slow pull below threshold releases back to idle without calling onRefresh', async () => {
-  const onRefresh = vi.fn().mockResolvedValue(undefined)
-  await render(PullToRefreshFixture, { props: { onRefresh } })
-  await settle()
+const inputs: InputKind[] = ['pointer', 'touch']
 
-  // delta 30 (below the 60px threshold) over 400ms — 0.075px/ms, well under
-  // the fast-flick gate, so distance is the only thing being exercised here.
-  await drag(root(), 20, 50, 400)
+test.each(inputs)(
+  '%s: a slow pull below threshold releases back to idle without calling onRefresh',
+  async (kind) => {
+    const onRefresh = vi.fn().mockResolvedValue(undefined)
+    await render(PullToRefreshFixture, { props: { onRefresh } })
+    await settle()
 
-  await vi.waitFor(() => expect(state()).toBe('idle'))
-  await vi.waitFor(() => expect(zoneHeight()).toBeCloseTo(0, 0))
-  expect(onRefresh).not.toHaveBeenCalled()
-})
+    // delta 30 (below the 60px threshold) over 150ms — 0.2px/ms, well under
+    // the 0.5px/ms flick gate, so distance is the only thing being exercised.
+    await drag(kind, root(), 20, 50, 150)
+
+    await vi.waitFor(() => expect(state()).toBe('idle'))
+    await vi.waitFor(() => expect(zoneHeight()).toBeCloseTo(0, 0))
+    expect(onRefresh).not.toHaveBeenCalled()
+  },
+)
+
+test.each(inputs)(
+  '%s: a pull past threshold walks pulling -> ready -> loading -> done -> idle and calls onRefresh once',
+  async (kind) => {
+    const onRefresh = vi.fn().mockResolvedValue(undefined)
+    await render(PullToRefreshFixture, { props: { onRefresh } })
+    await settle()
+    const g = gesture(kind, root())
+
+    g.start(20)
+    await new Promise((r) => setTimeout(r, 30))
+    g.move(60) // delta 40
+    await vi.waitFor(() => expect(state()).toBe('pulling'))
+
+    g.move(110) // delta 90
+    await vi.waitFor(() => expect(state()).toBe('ready'))
+
+    g.end(110)
+    await vi.waitFor(() => expect(['loading', 'done']).toContain(state()))
+    await vi.waitFor(() => expect(state()).toBe('idle'), { timeout: 1500 })
+
+    expect(onRefresh).toHaveBeenCalledTimes(1)
+  },
+)
+
+test.each(inputs)(
+  '%s: a drag while scrollTop > 0 never engages and never preventDefaults — pull-to-refresh is top-only',
+  async (kind) => {
+    const onRefresh = vi.fn().mockResolvedValue(undefined)
+    await render(PullToRefreshFixture, { props: { onRefresh } })
+    await settle()
+
+    root().scrollTop = 100
+    const { movePrevented } = await drag(kind, root(), 20, 140, 10)
+
+    expect(movePrevented).toBe(false) // native scroll keeps the gesture
+    expect(state()).toBe('idle')
+    expect(zoneHeight()).toBeCloseTo(0, 0)
+    expect(onRefresh).not.toHaveBeenCalled()
+  },
+)
 
 test('a fast short flick below threshold still calls onRefresh', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
@@ -100,47 +156,9 @@ test('a fast short flick below threshold still calls onRefresh', async () => {
 
   // delta 35 (below the 60px threshold) over 20ms — 1.75px/ms, a decisive
   // flick that should commit despite not reaching the raw distance.
-  await drag(root(), 20, 55, 20)
+  await drag('pointer', root(), 20, 55, 20)
 
   await vi.waitFor(() => expect(onRefresh).toHaveBeenCalledOnce())
-})
-
-test('a pull past threshold walks pulling -> ready -> loading -> done -> idle and calls onRefresh once', async () => {
-  const onRefresh = vi.fn().mockResolvedValue(undefined)
-  await render(PullToRefreshFixture, { props: { onRefresh } })
-  await settle()
-  const pointerId = 1
-
-  root().dispatchEvent(new PointerEvent('pointerdown', { clientY: 20, pointerId, bubbles: true }))
-  await new Promise((r) => setTimeout(r, 30))
-  root().dispatchEvent(
-    new PointerEvent('pointermove', { clientY: 60, pointerId, bubbles: true }), // delta 40
-  )
-  await vi.waitFor(() => expect(state()).toBe('pulling'))
-
-  root().dispatchEvent(
-    new PointerEvent('pointermove', { clientY: 110, pointerId, bubbles: true }), // delta 90
-  )
-  await vi.waitFor(() => expect(state()).toBe('ready'))
-
-  root().dispatchEvent(new PointerEvent('pointerup', { clientY: 110, pointerId, bubbles: true }))
-  await vi.waitFor(() => expect(['loading', 'done']).toContain(state()))
-  await vi.waitFor(() => expect(state()).toBe('idle'), { timeout: 1500 })
-
-  expect(onRefresh).toHaveBeenCalledTimes(1)
-})
-
-test('a drag while scrollTop > 0 does nothing', async () => {
-  const onRefresh = vi.fn().mockResolvedValue(undefined)
-  await render(PullToRefreshFixture, { props: { onRefresh } })
-  await settle()
-
-  root().scrollTop = 100
-  await drag(root(), 20, 110, 50)
-
-  expect(state()).toBe('idle')
-  expect(zoneHeight()).toBeCloseTo(0, 0)
-  expect(onRefresh).not.toHaveBeenCalled()
 })
 
 test('programmatic refresh() walks the same loading/done state machine', async () => {
@@ -189,42 +207,6 @@ test('an onRefresh that rejects still settles back to idle instead of getting st
 // the only thing a browser actually honours to hold back the native scroll /
 // overscroll-bounce for the span of a pull. These cover that path directly.
 
-test('a touch pull past threshold walks pulling -> ready -> loading -> done -> idle and calls onRefresh once', async () => {
-  const onRefresh = vi.fn().mockResolvedValue(undefined)
-  await render(PullToRefreshFixture, { props: { onRefresh } })
-  await settle()
-
-  const t0 = makeTouch(root(), 20)
-  fireTouch(root(), 'touchstart', [t0], [t0])
-  await new Promise((r) => setTimeout(r, 30))
-
-  fireTouch(root(), 'touchmove', [makeTouch(root(), 60)], [makeTouch(root(), 60)]) // delta 40
-  await vi.waitFor(() => expect(state()).toBe('pulling'))
-
-  const t2 = makeTouch(root(), 110) // delta 90
-  fireTouch(root(), 'touchmove', [t2], [t2])
-  await vi.waitFor(() => expect(state()).toBe('ready'))
-
-  fireTouch(root(), 'touchend', [], [t2])
-  await vi.waitFor(() => expect(['loading', 'done']).toContain(state()))
-  await vi.waitFor(() => expect(state()).toBe('idle'), { timeout: 1500 })
-
-  expect(onRefresh).toHaveBeenCalledTimes(1)
-})
-
-test('a slow touch pull below threshold releases back to idle without calling onRefresh', async () => {
-  const onRefresh = vi.fn().mockResolvedValue(undefined)
-  await render(PullToRefreshFixture, { props: { onRefresh } })
-  await settle()
-
-  // delta 30 over 400ms — under both the distance threshold and the flick gate.
-  await touchDrag(root(), 20, 50, 400)
-
-  await vi.waitFor(() => expect(state()).toBe('idle'))
-  await vi.waitFor(() => expect(zoneHeight()).toBeCloseTo(0, 0))
-  expect(onRefresh).not.toHaveBeenCalled()
-})
-
 test('touchmove during a pull is preventDefaulted, so the container cannot scroll under it', async () => {
   const onRefresh = vi.fn().mockResolvedValue(undefined)
   await render(PullToRefreshFixture, { props: { onRefresh } })
@@ -239,25 +221,6 @@ test('touchmove during a pull is preventDefaulted, so the container cannot scrol
   fireTouch(root(), 'touchend', [], [move])
 
   expect(notPrevented).toBe(false) // preventDefault() ran
-})
-
-test('a touch drag while scrollTop > 0 never engages and never preventDefaults — pull-to-refresh is top-only', async () => {
-  const onRefresh = vi.fn().mockResolvedValue(undefined)
-  await render(PullToRefreshFixture, { props: { onRefresh } })
-  await settle()
-
-  root().scrollTop = 100
-  const start = makeTouch(root(), 20)
-  fireTouch(root(), 'touchstart', [start], [start])
-  await new Promise((r) => setTimeout(r, 10))
-  const move = makeTouch(root(), 140)
-  const notPrevented = fireTouch(root(), 'touchmove', [move], [move])
-  fireTouch(root(), 'touchend', [], [move])
-
-  expect(notPrevented).toBe(true) // native scroll keeps the gesture
-  expect(state()).toBe('idle')
-  expect(zoneHeight()).toBeCloseTo(0, 0)
-  expect(onRefresh).not.toHaveBeenCalled()
 })
 
 test('a touch that starts as an upward move at the top does not engage', async () => {

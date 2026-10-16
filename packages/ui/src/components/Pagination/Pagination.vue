@@ -178,6 +178,7 @@
 <!-- Uses MUI/PrimeVue sibling count algorithm for pagination layout. -->
 <script setup lang="ts">
 import './Pagination.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
@@ -215,7 +216,7 @@ const labelsStyle = computed(() => {
   }
 })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Total item count across all pages, not the current page's row count. */
     total: number
@@ -234,8 +235,9 @@ const props = withDefaults(
       sizeSelect: UiPartValue
     }>
   }>(),
-  { siblingCount: 1, motionCss: true },
+  { siblingCount: 1, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const totalPages = computed(() => {
   if (pageSize.value <= 0) return 1

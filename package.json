@@ -17,7 +17,7 @@
     "play": "pnpm --filter vdom dev",
     "play:vapor": "pnpm --filter vapor dev",
     "play:vapor-interop": "pnpm --filter vapor-interop dev",
-    "docs:dev": "pnpm --filter docs dev",
+    "docs:dev": "pnpm --filter vael-ui --filter vapor-ui --filter docs --parallel dev",
     "docs:build": "pnpm build && pnpm --filter docs build",
     "lint": "oxlint . && eslint .",
     "format": "oxfmt .",
@@ -32,13 +32,13 @@
     "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
-    "eslint": "^10.11.0",
+    "eslint": "^10.12.0",
     "eslint-plugin-vue": "^10.11.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
-    "oxfmt": "^0.71.0",
-    "oxlint": "^1.86.0",
-    "typescript-eslint": "^8.71.0"
+    "oxfmt": "^0.73.0",
+    "oxlint": "^1.88.0",
+    "typescript-eslint": "^8.71.2"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,vue}": [

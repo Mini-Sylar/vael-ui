@@ -17,7 +17,8 @@
     border-block-end: 1px solid var(--ui-border);
   }
   /* Frozen columns sit at the left edge, so only the right edge fades. */
-  .ui-datatable-scroll-x[data-frozen].scroll-fade-x {
+  .ui-datatable-scroll-x[data-frozen].scroll-fade-x,
+  .ui-datatable-head-scroll[data-frozen].scroll-fade-x {
     mask-image: linear-gradient(to right, #000 var(--fade-right-start), transparent 99%);
   }
   .ui-datatable-scroll-x {
@@ -33,7 +34,7 @@
   .ui-datatable-th {
     position: relative;
     padding: 0;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     font-weight: 600;
     color: var(--ui-text-muted);
     text-align: start;
@@ -56,7 +57,7 @@
     background: none;
     border: none;
     font: inherit;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     font-weight: 600;
     color: inherit;
     text-align: start;
@@ -100,9 +101,15 @@
   .ui-datatable-sort-chevron[data-state='desc'] {
     opacity: 1;
   }
+  /* A column's width includes its cells' padding with or without an app-wide reset, so header
+     and body cells of the same column always match. */
+  .ui-datatable-th,
+  .ui-datatable-td {
+    box-sizing: border-box;
+  }
   .ui-datatable-td {
     padding: 0.625rem 0.75rem;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     color: var(--ui-text);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -145,7 +152,7 @@
     padding: 2.5rem 1rem;
     text-align: center;
     color: var(--ui-text-muted);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     border-block-end: none;
   }
   .ui-datatable-tr--spacer {
@@ -171,17 +178,74 @@
     text-align: center;
   }
 
-  /* Split head/body tables for scrollHeight — see DataTable.vue's own
-     comment on the .ui-datatable-scroll-x div. table-layout:fixed pairs
-     with a <colgroup> (in DataTable.vue) to keep their columns aligned. */
+  /* Split tables align their columns via fixed layout plus a shared <colgroup>. */
   .ui-datatable-table--split {
     table-layout: fixed;
   }
   .ui-datatable-table--split .ui-datatable-th {
     background: var(--ui-muted);
   }
+  /* The body scrolls both ways, so its frozen cells stick to the box that actually moves. */
   .ui-datatable-scroll-y {
-    overflow-y: auto;
+    overflow: auto;
+    /* No fade on an axis until its fade class sets one. */
+    --ui-datatable-fade-y: linear-gradient(#000, #000);
+    --ui-datatable-fade-x: linear-gradient(#000, #000);
+  }
+  /* Scrolls only by mirroring the body (or a wheel or swipe over it), so no scrollbar. */
+  .ui-datatable-head-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    outline: none;
+    /* The gutter above the body's scrollbar is part of the header, so it shares its look. */
+    background: var(--ui-muted);
+    box-shadow: inset 0 -1px var(--ui-border);
+  }
+  .ui-datatable-head-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  /* A header label spilling out of a squeezed auto column would give the strip a longer
+     scroll range than the body, whose cells clip. */
+  .ui-datatable-head-scroll > .ui-datatable-table {
+    overflow: clip;
+  }
+  /* The fade would also hide the body's own scrollbars, so two solid layers sized to them keep
+     the scrollbars visible. Overlay scrollbars take no space, so the layers are 0px there. */
+  .ui-datatable .ui-datatable-scroll-y:is(.scroll-fade, .scroll-fade-x) {
+    mask-image:
+      linear-gradient(#000, #000), linear-gradient(#000, #000), var(--ui-datatable-fade-y),
+      var(--ui-datatable-fade-x);
+    mask-size:
+      var(--ui-datatable-scrollbar-w, 0px) 100%,
+      100% var(--ui-datatable-scrollbar-h, 0px),
+      100% 100%,
+      100% 100%;
+    mask-position: right, bottom, center, center;
+    mask-repeat: no-repeat;
+    mask-composite: add, add, intersect, add;
+  }
+  .ui-datatable-scroll-y.scroll-fade {
+    --ui-datatable-fade-y: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 var(--fade-top-end),
+      #000 var(--fade-bottom-start),
+      transparent 99%
+    );
+  }
+  .ui-datatable-scroll-y.scroll-fade-x {
+    --ui-datatable-fade-x: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 var(--fade-left-end),
+      #000 var(--fade-right-start),
+      transparent 99%
+    );
+  }
+  /* Frozen columns sit at the left edge, so only the right edge fades. */
+  .ui-datatable-scroll-y[data-frozen].scroll-fade-x {
+    --ui-datatable-fade-x: linear-gradient(to right, #000 var(--fade-right-start), transparent 99%);
   }
 
   .ui-datatable[data-stacked] .ui-datatable-table,
@@ -313,7 +377,7 @@
   .ui-datatable-td--expansion {
     background: var(--ui-muted);
     white-space: normal;
-    padding: 0; /* moved to .ui-datatable-expansion-inner so it collapses on leave */
+    padding: 0; /* on the inner wrapper instead, so it collapses on leave */
   }
   .ui-datatable-expansion-rows {
     overflow: hidden;
@@ -334,38 +398,16 @@
     transform: rotate(90deg);
   }
 
-  /* `move` is transform-only — a <tr> can't take Tree's position-absolute leave trick
-     without breaking table-layout, and applies to every row (sort reorder). Enter/leave
-     fade + height only apply to expansion rows specifically, not plain data rows: a
-     page change replaces the whole visible row set, and pages don't all have the same
-     row count, so some row positions have an old+new row crossfading while others
-     (past the shorter page's count) only have one entering with nothing to fade
-     against — reads as a broken partial fade. Matches every other table library's
-     convention too: pagination snaps, it doesn't animate. ease-out (not ease-in-out)
-     on the expansion row's own fade: entering/exiting, not an on-screen reposition.
-     The height target (max-block-size) comes from beforeEnterHook/beforeLeaveHook in
-     DataTableBody.vue, which measure a real px value first: animating a
-     grid-template-rows fr value interpolates the fr number linearly, not the
-     resulting pixel height, so most of the visible motion happens in an early burst
-     and the rest of the duration runs with nothing visibly changing — reads as a
-     stall, not a smooth open/close. */
+  /* Move is transform-only: a <tr> can't go position-absolute without breaking the table.
+     Only expansion rows fade out. A page change swaps uneven row sets, so it snaps. */
   .ui-datatable-row-move {
     transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
   }
-  /* Vue's move animation is never gated by TransitionGroup's own `:css` prop
-     (only enter/leave are) — it only checks whether this class resolves a
-     transition at all (hasCSSTransform in Vue's TransitionGroup source), so
-     this is the only lever for both motionCss="false" and DataTable.vue's
-     post-mount settling render (see its own comment on rowMotionReady). */
+  /* TransitionGroup's `css` prop doesn't gate move; only a missing transition here does. */
   .ui-datatable-tbody[data-motion='off'] .ui-datatable-row-move {
     transition: none;
   }
-  /* Every row's own enter fade (not scoped to --expansion): a row inserted
-     by a narrowing/widening search lands at its final position instantly
-     while a persisted row can still be mid-flight through that same spot
-     via the move transition above — fading it in avoids two full-opacity
-     rows overlapping. Leave stays --expansion-only: pagination's whole-set
-     swap still snaps out, unaffected (see the comment on move above). */
+  /* Every row fades in, so a new row never overlaps a moving one at full opacity. */
   .ui-datatable-row-enter-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
   }
@@ -408,10 +450,7 @@
     }
   }
 
-  /* `display: contents` unless a grip is present, so every non-reorderable
-     table keeps exactly the layout it had. With one, the cell becomes a flex
-     row — the grip was previously a sibling of the full-width sort button and
-     stacked ABOVE the label instead of sitting beside it. */
+  /* A flex row only with a grip, so it sits beside the label. Otherwise layout is unchanged. */
   .ui-datatable-th-inner {
     display: contents;
   }
@@ -427,9 +466,7 @@
     min-inline-size: 0;
   }
 
-  /* Reorder affordance. A header already has a click action (sort), so the
-     grip is what says "this also drags" — revealed on hover/focus rather than
-     always on, which would clutter a wide table with repeated icons. */
+  /* Headers already sort on click, so the grip is what says they also drag. */
   .ui-datatable-th-grip {
     display: inline-flex;
     align-items: center;
@@ -452,8 +489,7 @@
     cursor: grabbing;
     opacity: 0.4;
   }
-  /* Body cells of the column being dragged ride above their neighbours, which
-     slide underneath them to open the drop gap. */
+  /* The dragged column rides above the neighbours sliding under it. */
   .ui-datatable-td[data-column-dragging] {
     position: relative;
     z-index: 1;

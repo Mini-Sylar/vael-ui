@@ -23,10 +23,7 @@
     </tr>
   </tbody>
 
-  <!-- Virtualized: real in-flow <tr>s for the visible window only, bounded
-       by two spacer rows — an absolutely-positioned <tr> would blockify and
-       break column alignment with the header, so this can't reuse the
-       absolute-positioning approach Select's own listbox uses. -->
+  <!-- Spacer rows, not absolute rows: an absolute <tr> would break column alignment. -->
   <tbody v-else-if="virtualizeActive" :class="tbodyPart.class" :style="tbodyPart.style">
     <tr
       v-if="virtualItems.length > 0"
@@ -327,11 +324,7 @@
   </TransitionGroup>
 </template>
 
-<!-- Internal, DataTable-only: the tbody markup written once and rendered from
-     either of DataTable.vue's two table structures (a single combined table
-     when `scrollHeight` is unset, or the body-only table of the split
-     head/body-scroll layout when it's set) — avoiding a second copy of this
-     whole block. Not in components/internal/ since only DataTable uses it. -->
+<!-- Internal: shared by DataTable's single and split table layouts. -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import Checkbox from '../Checkbox/Checkbox.vue'
 import Radio from '../Radio/Radio.vue'
@@ -385,9 +378,7 @@ const props = defineProps<{
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
   motionCss: boolean
-  /** False while DataTable's own post-mount layout measurements are still
-   * settling — disables just the row-move CSS transition for that render
-   * (see DataTable.vue's own comment), not the enter/leave hooks. */
+  /** False until the first measurement render has passed; row move stays off. */
   rowMotionReady: boolean
   onRowEnter: (el: Element, done: () => void) => void
   onRowLeave: (el: Element, done: () => void) => void
@@ -428,8 +419,7 @@ function ariaSelected(row: T): 'true' | 'false' | undefined {
   return props.isSelected(row) ? 'true' : 'false'
 }
 
-// Same shape as Toaster's own enterHook/leaveHook — a JS hook and Vue's own
-// CSS end-detection can't coexist, so this only wires one when motionCss is false.
+// A JS hook and Vue's CSS end detection can't coexist, so hooks only wire when motionCss is off.
 const rowEnterHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
 )
@@ -437,13 +427,7 @@ const rowLeaveHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowLeave(el, done),
 )
 
-// grid-template-rows: 1fr/0fr interpolates the *fr* value linearly, not the resulting
-// pixel height — most of the visible shrink/grow happens in a short early burst, then
-// the numeric transition keeps running for its full duration with barely anything
-// visibly changing, reading as a stall. Measuring a real px value first (below) and
-// transitioning max-block-size instead interpolates the actual height linearly. Only
-// motionCss's own CSS-driven transition needs this — skipped when false, since the
-// consumer owns the whole animation via row-enter/row-leave.
+// A px max-block-size, not 0fr/1fr rows: fr interpolates unevenly and reads as a stall.
 function beforeEnterHook(el: Element) {
   if (!props.motionCss) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')

@@ -32,6 +32,23 @@ const OUT_VDOM_DIR = join(__dirname, '../src/generated/vdom-demos')
 const OUT_VAPOR_DIR = join(__dirname, '../src/generated/vapor-demos')
 const MANIFEST_PATH = join(__dirname, '../src/generated/demo-manifest.json')
 
+// Rewriting unchanged files would make the docs dev server reload, and deleting the output
+// folders first breaks a typecheck running at the same moment. So only changed files are
+// written, and only files no longer produced are removed.
+const written = new Set()
+function writeIfChanged(path, content) {
+  written.add(path)
+  if (existsSync(path) && readFileSync(path, 'utf8') === content) return
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, content)
+}
+function removeStale(dir) {
+  for (const entry of readdirSync(dir, { recursive: true })) {
+    const path = join(dir, String(entry))
+    if (statSync(path).isFile() && !written.has(path)) rmSync(path)
+  }
+}
+
 // Reads the real, built Vapor export list rather than any script's source
 // list, so a component missing from the actual dist/vapor build (not just
 // from generate-vapor.mjs's COMPONENTS array) is caught here too.
@@ -185,16 +202,14 @@ function emitExample(id, allIds, sourceFor, vaporComponentNames, state) {
     const partDir = parts.slice(0, -1).join('/')
     const source = allSources[index]
     if (!state.copiedVdom.has(partId)) {
-      mkdirSync(join(OUT_VDOM_DIR, partDir), { recursive: true })
-      writeFileSync(join(OUT_VDOM_DIR, partDir, `${partFile}.vue`), source)
+      writeIfChanged(join(OUT_VDOM_DIR, partDir, `${partFile}.vue`), source)
       state.copiedVdom.add(partId)
     }
     if (eligible && !state.copiedVapor.has(partId)) {
-      mkdirSync(join(OUT_VAPOR_DIR, partDir), { recursive: true })
       const vaporSource = suppressKnownVaporDirectiveGaps(
         rewriteToVapor(injectVaporMarker(source), vaporComponentNames),
       )
-      writeFileSync(join(OUT_VAPOR_DIR, partDir, `${partFile}.vue`), vaporSource)
+      writeIfChanged(join(OUT_VAPOR_DIR, partDir, `${partFile}.vue`), vaporSource)
       state.copiedVapor.add(partId)
     }
   })
@@ -244,8 +259,6 @@ function processLegacy(demoName, vaporComponentNames, state) {
 function main() {
   const vaporComponentNames = readVaporComponentNames()
 
-  rmSync(OUT_VDOM_DIR, { recursive: true, force: true })
-  rmSync(OUT_VAPOR_DIR, { recursive: true, force: true })
   mkdirSync(OUT_VDOM_DIR, { recursive: true })
   mkdirSync(OUT_VAPOR_DIR, { recursive: true })
 
@@ -272,7 +285,9 @@ function main() {
     console.log(`${component} -> ${demoName}${example.vaporEligible ? '' : ' (VDOM only)'}`)
   }
 
-  writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n')
+  removeStale(OUT_VDOM_DIR)
+  removeStale(OUT_VAPOR_DIR)
+  writeIfChanged(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n')
   console.log(
     `\nwrote docs/src/generated/demo-manifest.json (${allComponents.length} component(s))`,
   )

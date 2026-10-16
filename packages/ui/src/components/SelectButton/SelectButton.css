@@ -26,15 +26,15 @@
   }
   .ui-select-button--sm .ui-select-button-option {
     block-size: 1.75rem;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
   }
   .ui-select-button--md .ui-select-button-option {
     block-size: 2.25rem;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
   }
   .ui-select-button--lg .ui-select-button-option {
     block-size: 2.5rem;
-    font-size: 1rem;
+    font-size: var(--ui-font-size);
   }
   .ui-select-button-input {
     position: absolute;

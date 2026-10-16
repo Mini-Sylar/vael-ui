@@ -1,6 +1,6 @@
 import vue from '@vitejs/plugin-vue'
 import { playwright } from '@vitest/browser-playwright'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [vue()],
@@ -8,6 +8,8 @@ export default defineConfig({
   // runtime and every motion component crashes in renderSlot (dual instance).
   optimizeDeps: { exclude: ['motion-v'] },
   test: {
+    // Upstream (Vue/motion-v) sentinels run separately: `pnpm test:spikes`.
+    exclude: [...configDefaults.exclude, '**/*.spike.test.ts'],
     browser: {
       enabled: true,
       provider: playwright(),

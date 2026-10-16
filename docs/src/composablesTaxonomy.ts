@@ -22,7 +22,13 @@ export const composableCategories: ComposableCategory[] = [
   {
     key: 'utilities',
     name: 'Utilities',
-    items: ['useAsyncLoading', 'useColorScheme', 'useNumberFormat', 'useFieldControl'],
+    items: [
+      'useAsyncLoading',
+      'useColorScheme',
+      'preventFocusZoom',
+      'useNumberFormat',
+      'useFieldControl',
+    ],
   },
   {
     key: 'dragAndDrop',

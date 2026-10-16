@@ -6,6 +6,8 @@ import Toaster from '../src/components/Toaster/Toaster.vue'
 import Tour from '../src/components/Tour/Tour.vue'
 import Select from '../src/components/Select/Select.vue'
 import Combobox from '../src/components/Combobox/Combobox.vue'
+import TreeSelect from '../src/components/TreeSelect/TreeSelect.vue'
+import DatePicker from '../src/components/DatePicker/DatePicker.vue'
 
 // Components with more than one root (or a Teleport root) route attrs by hand.
 
@@ -57,4 +59,17 @@ test.each([
     expect(document.querySelector('.ui-select-empty.custom-empty')).not.toBeNull(),
   )
   screen.unmount()
+})
+
+test.each([
+  ['Select', Select, { items: [{ label: 'A', value: 'a' }] }],
+  ['Combobox', Combobox, { items: [{ label: 'A', value: 'a' }] }],
+  ['TreeSelect', TreeSelect, { items: [] }],
+  ['DatePicker', DatePicker, {}],
+] as const)('a plain class passed to %s reaches the rendered trigger', async (_, Comp, props) => {
+  const screen = await render(Comp as never, {
+    props: props as never,
+    attrs: { class: 'my-field' },
+  })
+  expect(screen.getByRole('combobox').element().closest('.my-field')).not.toBeNull()
 })

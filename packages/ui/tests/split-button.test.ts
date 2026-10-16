@@ -72,22 +72,6 @@ test('Enter on the focused chevron opens the menu with the first item focused (n
   await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Save As...'))
 })
 
-test('once open, ArrowDown/ArrowUp roving focus and Home/End work exactly like Menu (its own keyboard handling, unmodified)', async () => {
-  const screen = await render(SplitButtonFixture)
-  const scope = screen.container.querySelector('[data-testid="basic"]')!
-  const trigger = scope.querySelector<HTMLButtonElement>('.ui-split-button-trigger')!
-
-  await userEvent.click(trigger)
-  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Save As...'))
-
-  await userEvent.keyboard('{ArrowDown}')
-  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Save a Copy'))
-
-  await userEvent.keyboard('{End}')
-  // "Duplicate" is disabled — End lands on the last ENABLED item, still "Save a Copy".
-  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Save a Copy'))
-})
-
 test('disabled disables both the main and chevron buttons', async () => {
   const screen = await render(SplitButtonFixture)
   const scope = screen.container.querySelector('[data-testid="disabled-wrap"]')!

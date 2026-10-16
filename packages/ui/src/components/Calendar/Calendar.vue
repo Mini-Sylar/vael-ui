@@ -3,7 +3,7 @@
     ref="rootEl"
     :class="rootPart.class"
     :style="rootPart.style"
-    :data-motion="motionCss ? undefined : 'off'"
+    :data-motion="props.motionCss ? undefined : 'off'"
   >
     <div
       :class="[headerPart.class, splitMonths && 'ui-calendar-header--overlay']"
@@ -38,7 +38,10 @@
         aria-live="polite"
         @click="canDrill && drillUp()"
       >
-        <Transition :name="motionCss ? 'ui-calendar-label' : undefined" :css="motionCss">
+        <Transition
+          :name="props.motionCss ? 'ui-calendar-label' : undefined"
+          :css="props.motionCss"
+        >
           <span :key="headerLabel" class="ui-calendar-label-text">
             <slot name="label" :label="headerLabel" :date="viewDate" :level="navLevel">{{
               headerLabel
@@ -73,15 +76,18 @@
       :data-zoom="zoom"
     >
       <Transition
-        :name="motionCss ? 'ui-calendar-level' : undefined"
-        :css="motionCss"
+        :name="props.motionCss ? 'ui-calendar-level' : undefined"
+        :css="props.motionCss"
         @enter="anchorZoom"
       >
         <div :key="navLevel" class="ui-calendar-level">
           <div v-if="navLevel === 'date'" class="ui-calendar-panes">
             <div v-for="(pane, pi) in panes" :key="pi" class="ui-calendar-pane">
               <div v-if="panes.length > 1" class="ui-calendar-pane-head">
-                <Transition :name="motionCss ? 'ui-calendar-label' : undefined" :css="motionCss">
+                <Transition
+                  :name="props.motionCss ? 'ui-calendar-label' : undefined"
+                  :css="props.motionCss"
+                >
                   <button
                     :key="monthKeyOf(pane)"
                     type="button"
@@ -112,7 +118,10 @@
               </div>
 
               <div class="ui-calendar-grid-wrap">
-                <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
+                <Transition
+                  :name="props.motionCss ? 'ui-calendar-grid' : undefined"
+                  :css="props.motionCss"
+                >
                   <div
                     :key="monthKeyOf(pane)"
                     :ref="(el) => pi === 0 && setGridEl(el)"
@@ -156,7 +165,10 @@
           </div>
 
           <template v-else-if="navLevel === 'month'">
-            <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
+            <Transition
+              :name="props.motionCss ? 'ui-calendar-grid' : undefined"
+              :css="props.motionCss"
+            >
               <div
                 :key="`m${viewDate.getFullYear()}`"
                 role="grid"
@@ -194,7 +206,10 @@
           </template>
 
           <template v-else>
-            <Transition :name="motionCss ? 'ui-calendar-grid' : undefined" :css="motionCss">
+            <Transition
+              :name="props.motionCss ? 'ui-calendar-grid' : undefined"
+              :css="props.motionCss"
+            >
               <div
                 :key="`y${yearWindowStart}`"
                 role="grid"
@@ -256,6 +271,7 @@ export type CalendarView = 'date' | 'month' | 'year'
      Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motionCss=false disables. -->
 <script setup lang="ts">
 import './Calendar.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
@@ -266,7 +282,7 @@ import { useThemedUi } from '../../theme'
 /** Selected date, or `{ start, end }` in `range` mode. @default null */
 const model = defineModel<Date | CalendarRange | null>({ default: null })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /**
      * `'range'` picks a start then an end; clicking before the start restarts the range.
@@ -314,10 +330,11 @@ const props = withDefaults(
     locale: undefined,
     firstDayOfWeek: undefined,
     months: 1,
-    motionCss: true,
+    motionCss: undefined,
     ui: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true, locale: undefined })
 
 const emit = defineEmits<{
   /** Fires when you pick a date, month, year or range endpoint. */

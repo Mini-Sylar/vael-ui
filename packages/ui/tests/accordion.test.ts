@@ -86,9 +86,10 @@ test('height pins to a concrete px value while animating, then releases to auto 
   expect(panel.style.blockSize).toBe('0px')
 })
 
-test('motionCss=false skips the pin/transition dance — no inline block-size transition state', async () => {
+test('motionCss=false skips the pin/transition dance and removes the CSS height transition, so a consumer tween is not smoothed by it', async () => {
   await render(AccordionFixture, { props: { motionCss: false } })
   const panel = panelFor('First section')
+  expect(getComputedStyle(panel).transitionDuration).toBe('0s')
 
   await page.getByRole('button', { name: 'First section' }).click()
   await vi.waitFor(() => expect(panel.dataset.state).toBe('open'))
@@ -133,10 +134,4 @@ test('trigger text and panel content share the same inline start edge', async ()
   const range = document.createRange()
   range.selectNodeContents(body)
   expect(range.getBoundingClientRect().left).toBeCloseTo(trigger.getBoundingClientRect().left, 1)
-})
-
-test('motionCss=false removes the panel height transition so a consumer tween is not smoothed by it', async () => {
-  const screen = await render(AccordionFixture, { props: { motionCss: false } })
-  const panel = screen.container.querySelector<HTMLElement>('.ui-accordion-panel')!
-  expect(getComputedStyle(panel).transitionDuration).toBe('0s')
 })

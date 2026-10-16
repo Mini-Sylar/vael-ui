@@ -1,4 +1,5 @@
 import type { MetaRow } from './types'
+import { appearanceHeadCode } from './appearanceHeadCode'
 
 export interface ComposableContent {
   description: string
@@ -14,6 +15,8 @@ export interface ComposableContent {
   extraSourceFiles?: string[]
   /** Shown when there's no live demo: a realistic, accurate usage snippet. */
   exampleCode?: string
+  /** Optional script that must run in the HTML head before Vue loads. */
+  headCode?: string
   params: MetaRow[]
   returns: MetaRow[]
 }
@@ -171,7 +174,7 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'toast(title, options?)',
         type: 'number | string',
         description:
-          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id` if you pass one. Options: `id`, `description`, `variant`, `duration` (in milliseconds, default 4000; `Infinity` keeps it until someone closes it), `action: { label, onClick }` and `pinned`, which shows the toast in its own section where newer toasts can't cover it. Showing a toast with an `id` that's already on screen updates that toast instead of adding another.",
+          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id` if you pass one. Options: `id`, `description`, `variant`, `duration` (in milliseconds, default 4000; `Infinity` keeps it until someone closes it), `action: { label, onClick }` `pinned`, which shows the toast in its own section where newer toasts can't cover it, and `toaster`, which sends it to the `<Toaster>` with that `name` instead of the unnamed one. Showing a toast with an `id` that's already on screen updates that toast instead of adding another.",
       },
       {
         name: 'toast.success / .error / .warning / .info / .loading',
@@ -191,10 +194,10 @@ export const composablesContent: Record<string, ComposableContent> = {
         description: 'Dismisses one toast, or every toast when you omit `id`.',
       },
       {
-        name: 'useToastQueue()',
+        name: 'useToastQueue(toaster?)',
         type: '{ toasts, dismiss, pauseAll, resumeAll, setWaiting }',
         description:
-          "Read-only queue access, plus pause and resume. `<Toaster/>` uses it internally, for example to pause timers on `pointerenter`. `setWaiting(ids)` holds the timers of toasts that aren't on screen yet.",
+          "Read-only access to one Toaster's queue, plus pause and resume: the unnamed one, or the one whose `name` you pass. `<Toaster/>` uses it internally, for example to pause timers on `pointerenter`. `setWaiting(ids)` holds the timers of toasts that aren't on screen yet.",
       },
     ],
   },
@@ -398,9 +401,26 @@ open.value = true`,
     ],
   },
 
+  preventFocusZoom: {
+    description:
+      "iOS zooms the page when you focus a form field with text under 16px. vael-ui's fields follow your font size, so at 14px they would trigger it. Call `preventFocusZoom()` once and fields keep your size on iPhone without the zoom. It adds `maximum-scale=1` to the viewport on iOS only, where pinch-to-zoom keeps working. Android and desktop never focus-zoom, so it leaves them alone. If you'd rather have bigger fields on phones than change the viewport, set `--ui-touch-font-size: 16px` instead.",
+    exampleCode: `// main.ts
+import { preventFocusZoom } from 'vael-ui'
+
+preventFocusZoom()`,
+    params: [],
+    returns: [
+      {
+        name: 'changed',
+        type: 'boolean',
+        description: '`true` on iOS, where it set the viewport. `false` elsewhere, and during SSR.',
+      },
+    ],
+  },
+
   useColorScheme: {
     description:
-      "Sets `document.documentElement.dataset.theme` from a `system`, `light` or `dark` mode. In `system` mode it removes the attribute and follows `prefers-color-scheme` as it changes. The docs site's theme toggle uses this composable. `persist` is structural (like ConfigProvider's `i18n`), so you choose the storage: cookies, a store or `localStorage`. The composable applies the saved mode when the component mounts, after the first paint. A returning visitor with a saved `dark` preference sees the light theme briefly, unless you set the attribute before Vue mounts. The end of the example below shows how.",
+      '`useColorScheme` sets the root `data-theme` to `light` or `dark`; `system` follows the OS preference. Pass `persist` to save the choice in cookies, a store, or `localStorage`. Vue restores saved choices on mount, which can occur after first paint. The HTML head example restores color mode and an optional root font size before paint.',
     exampleCode: `import { useColorScheme } from 'vael-ui'
 
 const { mode, resolvedMode, setMode } = useColorScheme({
@@ -414,26 +434,10 @@ const { mode, resolvedMode, setMode } = useColorScheme({
   },
 })
 
-// mode.value: 'system' | 'light' | 'dark' (what the user picked)
-// resolvedMode.value: 'light' | 'dark' (what's actually applied right now)
-setMode('dark')
-
-// Avoiding a flash of the wrong theme on load
-// ---------------------------------------------
-// useColorScheme can't run before Vue mounts, so a returning user with a
-// saved preference sees the default theme for a frame first. Set the
-// attribute synchronously in a blocking <script> in your HTML's <head>,
-// before your app's bundle loads — same trick as next-themes/Nuxt color-mode.
-// Match whatever persist.get()/set() convention you wired up above.
-//
-    <script>
-       (function () {
-         var saved = localStorage.getItem('theme') // your own persist.get()
-         if (saved === 'light' || saved === 'dark') {
-           document.documentElement.dataset.theme = saved
-         }
-       })()
-     </script>`,
+// mode.value: 'system' | 'light' | 'dark'
+// resolvedMode.value: 'light' | 'dark'
+// Call setMode('dark') from your theme toggle.`,
+    headCode: appearanceHeadCode,
     params: [
       {
         name: 'initial',

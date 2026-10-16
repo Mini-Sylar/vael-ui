@@ -1,6 +1,6 @@
 import { ViteSSG } from 'vite-ssg'
 import './style.css'
-import { vTooltip } from 'vael-ui'
+import { preventFocusZoom, vTooltip } from 'vael-ui'
 import './demo-content.css'
 import './prose.css'
 import App from './App.vue'
@@ -9,6 +9,8 @@ import { i18n } from './i18n'
 
 export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => {
   app.use(i18n).directive('tooltip', vTooltip)
+  // Fields keep the docs' text size on iPhone without the focus zoom.
+  preventFocusZoom()
 
   // vite-ssg registers a `(to, from, next)` guard right after this callback,
   // which vue-router 5 flags as deprecated. Adapt callback-style guards to

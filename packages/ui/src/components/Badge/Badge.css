@@ -9,7 +9,7 @@
     border-radius: 9999px;
     background: var(--ui-muted);
     color: var(--ui-text);
-    font-size: 0.6875rem;
+    font-size: calc(var(--ui-font-size) * 0.6875);
     font-weight: 600;
     line-height: 1;
     white-space: nowrap;

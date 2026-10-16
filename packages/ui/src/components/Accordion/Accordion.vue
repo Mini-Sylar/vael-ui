@@ -18,6 +18,7 @@ export interface AccordionContext {
   isOpen: (value: string) => boolean
   toggle: (value: string) => void
   motionCss: () => boolean
+  handOff: () => boolean
 }
 
 export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion')
@@ -25,6 +26,7 @@ export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion
 
 <script setup lang="ts" generic="V extends string | string[] | null = string | string[] | null">
 import './Accordion.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, provide, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -37,7 +39,7 @@ const attrs = useAttrs()
 /** Open item's `value` (a `string`, or a union of your item values), or an array of them with `multiple`. `V` takes the type you bind, and `@change` hands the same type back. @default null */
 const value = defineModel<V>('value')
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Lets several items be open at once; the model becomes an array. @default false */
     multiple?: boolean
@@ -48,8 +50,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
-  { multiple: false, collapsible: true, motionCss: true },
+  { multiple: false, collapsible: true, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when an item opens or closes, with the new value. */
@@ -108,7 +111,13 @@ defineSlots<{
   default(): unknown
 }>()
 
-provide(accordionKey, { isOpen, toggle, motionCss: () => props.motionCss })
+provide(accordionKey, {
+  isOpen,
+  toggle,
+  motionCss: () => props.motionCss,
+  // Its own motion-css="false" hands the height over; a provider's just makes it instant.
+  handOff: () => rawProps.motionCss === false,
+})
 
 const root = useTemplateRef<HTMLElement>('root')
 const cx = useClassMerge()

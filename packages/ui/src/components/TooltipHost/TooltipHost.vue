@@ -34,15 +34,15 @@ import type { Side } from '@floating-ui/dom'
 import type { UiPartValue } from '../../classes'
 
 export interface TooltipHostProps {
-  /** Default side for targets whose `v-tooltip` value doesn't set one. */
+  /** Default side for targets whose `v-tooltip` value doesn't set one. @default 'top' */
   side?: Side
-  /** Delay before a cold open, in milliseconds. Warm-group opens are instant. */
+  /** Delay before a cold open, in milliseconds. Warm-group opens are instant. @default 400 */
   openDelay?: number
-  /** Grace period after the pointer leaves, in milliseconds, so it can move onto the tooltip. */
+  /** Grace period after the pointer leaves, in milliseconds, so it can move onto the tooltip. @default 100 */
   closeDelay?: number
   /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ beforeClose }"`. */
   beforeClose?: (done: () => void) => void
-  /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ forceMount }"`. */
+  /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ forceMount }"`. @default false */
   forceMount?: boolean
   /** Class and style overrides for each part. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>

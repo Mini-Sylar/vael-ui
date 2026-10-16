@@ -24,7 +24,7 @@
     justify-content: center;
     padding: 1.25rem 0.625rem;
     color: var(--ui-text-muted);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
   }
   .ui-select-loading-more {
     display: flex;
@@ -41,7 +41,7 @@
     padding: 0.5rem 0.625rem;
     border-radius: calc(var(--ui-radius) - 4px);
     color: var(--ui-text);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     line-height: 1.25rem;
     text-align: start;
     cursor: pointer;

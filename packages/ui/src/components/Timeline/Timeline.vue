@@ -6,8 +6,8 @@
     :aria-orientation="orientation"
     :class="rootPart.class"
     :style="rootPart.style"
-    :name="motionCss ? 'ui-timeline-item' : undefined"
-    :css="motionCss"
+    :name="props.motionCss ? 'ui-timeline-item' : undefined"
+    :css="props.motionCss"
     @enter="enterHook"
     @leave="leaveHook"
   >
@@ -113,6 +113,7 @@ export interface TimelineItemParts {
 
 <script setup lang="ts" generic="T = unknown">
 import './Timeline.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, ref, useSlots, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -120,7 +121,7 @@ import { vScrollMask } from '../../directives/vScrollMask'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Entries to show; any shape, rendered through the `#item` slot. */
     items: ReadonlyArray<T>
@@ -155,11 +156,12 @@ const props = withDefaults(
   }>(),
   {
     orientation: 'vertical',
-    motionCss: true,
+    motionCss: undefined,
     pulse: false,
     itemKey: (_item: T, index: number) => index,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when an item enters, only while `motionCss` is `false`. Run your own animation, then call
@@ -185,13 +187,14 @@ function partsOf(el: Element): TimelineItemParts {
     opposite: child(el, 'ui-timeline-opposite'),
   }
 }
+// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  props.motionCss
+  rawProps.motionCss !== false
     ? undefined
     : (el: Element, done: () => void) => emit('item-enter', el, done, partsOf(el)),
 )
 const leaveHook = computed(() =>
-  props.motionCss
+  rawProps.motionCss !== false
     ? undefined
     : (el: Element, done: () => void) => emit('item-leave', el, done, partsOf(el)),
 )

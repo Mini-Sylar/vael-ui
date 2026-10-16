@@ -14,8 +14,10 @@
 
     <div class="playground-body">
       <div class="playground-preview">
-        <component :is="ConfigProviderComp" :theme="theme">
+        <component :is="ConfigProviderComp" :theme="theme" :size="size" :motion-css="motionCss">
           <div class="preview-row">
+            <component :is="InputComp" placeholder="Search" class="preview-input" />
+            <component :is="SwitchComp" v-model="switchOn" aria-label="Notifications" />
             <component :is="ButtonComp">Save changes</component>
             <component :is="BadgeComp" :count="3" />
             <component :is="CardComp" title="Nested content">
@@ -43,6 +45,32 @@
             @update:model-value="onRadiusChange"
           />
         </div>
+        <div class="control-row">
+          <label for="cp-font-size">fontSize</label>
+          <Select
+            id="cp-font-size"
+            size="sm"
+            class="control-input"
+            :items="fontSizeItems"
+            :model-value="fontSize"
+            @update:model-value="onFontSizeChange"
+          />
+        </div>
+        <div class="control-row">
+          <label for="cp-size">size</label>
+          <Select
+            id="cp-size"
+            size="sm"
+            class="control-input"
+            :items="sizeItems"
+            :model-value="size"
+            @update:model-value="onSizeChange"
+          />
+        </div>
+        <div class="control-row">
+          <label for="cp-motion">motionCss</label>
+          <Switch id="cp-motion" v-model="motionCss" size="sm" aria-label="motionCss" />
+        </div>
       </div>
     </div>
 
@@ -53,7 +81,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
-import { Select, SelectButton } from 'vael-ui'
+import { Select, SelectButton, Switch } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import { defaultVariant } from '../preferences'
 import { useVaporComponents } from '../composables/useVaporComponents'
@@ -67,15 +95,36 @@ const ConfigProviderComp = computed(() => pick('ConfigProvider'))
 const ButtonComp = computed(() => pick('Button'))
 const BadgeComp = computed(() => pick('Badge'))
 const CardComp = computed(() => pick('Card'))
+const InputComp = computed(() => pick('Input'))
+const SwitchComp = computed(() => pick('Switch'))
 
 const primary = shallowRef('#ea580c')
 const radius = shallowRef('12px')
+const fontSize = shallowRef('14px')
+const size = shallowRef<'sm' | 'md' | 'lg'>('md')
+const motionCss = shallowRef(true)
+const switchOn = shallowRef(true)
+const sizeItems = [
+  { label: 'sm', value: 'sm' },
+  { label: 'md', value: 'md' },
+  { label: 'lg', value: 'lg' },
+]
+
+function onSizeChange(v: string | number | (string | number)[] | null) {
+  if (v === 'sm' || v === 'md' || v === 'lg') size.value = v
+}
 
 const radiusItems = [
   { label: 'Sharp (0px)', value: '0px' },
   { label: 'Soft (6px)', value: '6px' },
   { label: 'Rounded (12px)', value: '12px' },
   { label: 'Pill (999px)', value: '999px' },
+]
+const fontSizeItems = [
+  { label: 'Small (12px)', value: '12px' },
+  { label: 'Default (14px)', value: '14px' },
+  { label: 'Comfortable (16px)', value: '16px' },
+  { label: 'Large (18px)', value: '18px' },
 ]
 
 function onColorInput(e: Event) {
@@ -86,13 +135,24 @@ function onRadiusChange(v: string | number | (string | number)[] | null) {
   if (typeof v === 'string') radius.value = v
 }
 
-const theme = computed(() => ({ primary: primary.value, radius: radius.value }))
+function onFontSizeChange(v: string | number | (string | number)[] | null) {
+  if (typeof v === 'string') fontSize.value = v
+}
 
-const code = computed(
-  () => `<ConfigProvider :theme="{ primary: '${primary.value}', radius: '${radius.value}' }">
-  <YourApp />
-</ConfigProvider>`,
-)
+const theme = computed(() => ({
+  primary: primary.value,
+  radius: radius.value,
+  fontSize: fontSize.value,
+}))
+
+const code = computed(() => {
+  const attrs = [
+    `:theme="{ primary: '${primary.value}', radius: '${radius.value}', fontSize: '${fontSize.value}' }"`,
+    size.value !== 'md' ? `size="${size.value}"` : '',
+    motionCss.value ? '' : ':motion-css="false"',
+  ].filter(Boolean)
+  return `<ConfigProvider\n  ${attrs.join('\n  ')}\n>\n  <YourApp />\n</ConfigProvider>`
+})
 </script>
 
 <style scoped>
@@ -137,9 +197,13 @@ const code = computed(
   flex-wrap: wrap;
 }
 
+.preview-input {
+  max-inline-size: 10rem;
+}
+
 .preview-text {
   color: var(--ui-text-muted);
-  font-size: 0.85rem;
+  font-size: calc(var(--ui-font-size) * 0.85);
   max-width: 16rem;
 }
 

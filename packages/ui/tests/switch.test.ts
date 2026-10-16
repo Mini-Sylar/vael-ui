@@ -61,3 +61,11 @@ test('motionCss=false keeps the no-anim class permanently, past first paint', as
   await new Promise((resolve) => setTimeout(resolve, 50))
   expect(root).toHaveClass('ui-switch--no-anim')
 })
+
+test('motionCss false turns off the track color fade as well as the thumb slide', async () => {
+  await render(Switch, { props: { modelValue: false, label: 'Wi-Fi', motionCss: false } })
+  const track = document.querySelector('.ui-switch-track')!
+  const thumb = document.querySelector('.ui-switch-thumb')!
+  expect(getComputedStyle(track).transitionProperty).toBe('none')
+  expect(getComputedStyle(thumb).transitionProperty).toBe('none')
+})

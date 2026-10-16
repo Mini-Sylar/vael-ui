@@ -326,10 +326,30 @@ test('selectable renders a built-in leading checkbox column', async () => {
   ).toBe(3)
 })
 
-test('selectable is off by default: no built-in checkbox column renders', async () => {
-  const screen = await renderTable({ rowCount: 3, showStatusColumn: false })
+test('defaults: md size, one combined table, every row on one page, no select/resize/sticky/stacked/virtual extras', async () => {
+  const screen = await renderTable({ rowCount: 5, showStatusColumn: false })
+  const root = screen.container.querySelector('.ui-datatable')!
+  expect(root.classList.contains('ui-datatable--md')).toBe(true)
+  expect(root.hasAttribute('data-stacked')).toBe(false)
+
   expect(screen.container.querySelector('.ui-datatable-th--select')).toBeNull()
   expect(screen.container.querySelector('.ui-datatable-td--select')).toBeNull()
+  expect(screen.container.querySelector('.ui-datatable-resize-handle')).toBeNull()
+  const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
+  expect(getComputedStyle(nameHeader).position).not.toBe('sticky')
+
+  expect(screen.container.querySelector('.ui-datatable-scroll-y')).toBeNull()
+  expect(screen.container.querySelectorAll('.ui-datatable-table').length).toBe(1)
+  // A single table means <thead> and <tbody> are siblings inside it.
+  const table = screen.container.querySelector('.ui-datatable-table')!
+  expect(table.querySelector(':scope > .ui-datatable-thead')).not.toBeNull()
+  expect(table.querySelector(':scope > .ui-datatable-tbody')).not.toBeNull()
+
+  expect(screen.container.querySelectorAll('.ui-datatable-tr--spacer').length).toBe(0)
+  expect(bodyRows(screen.container).length).toBe(5)
+  await expect.element(screen.getByTestId('footer-page')).toHaveTextContent('1')
+  await expect.element(screen.getByTestId('footer-page-count')).toHaveTextContent('1')
+  await expect.element(screen.getByTestId('footer-total')).toHaveTextContent('5')
 })
 
 test('the built-in select-all header checkbox computes checked/indeterminate/none from sortedData vs selected', async () => {
@@ -411,16 +431,6 @@ test('clicking a built-in row checkbox does not also fire row-click (same intera
   await expect.element(screen.getByTestId('row-click-count')).toHaveTextContent('0')
 })
 
-test('scrollHeight is unset by default: a single combined table, no body-scroll wrapper', async () => {
-  const screen = await renderTable({ rowCount: 3, showStatusColumn: false })
-  expect(screen.container.querySelector('.ui-datatable-scroll-y')).toBeNull()
-  expect(screen.container.querySelectorAll('.ui-datatable-table').length).toBe(1)
-  // A single table means <thead> and <tbody> are siblings inside it.
-  const table = screen.container.querySelector('.ui-datatable-table')!
-  expect(table.querySelector(':scope > .ui-datatable-thead')).not.toBeNull()
-  expect(table.querySelector(':scope > .ui-datatable-tbody')).not.toBeNull()
-})
-
 test('scrollHeight splits into a non-scrolling head table + a separately scrollable body table', async () => {
   const screen = await renderTable({ rowCount: 3, showStatusColumn: false, scrollHeight: '200px' })
   // Two real tables now: a head-only one and a body-only one.
@@ -440,11 +450,6 @@ test('scrollHeight splits into a non-scrolling head table + a separately scrolla
   expect(getComputedStyle(scrollY).overflowY).toBe('auto')
   expect(scrollY.querySelector('.ui-datatable-thead')).toBeNull()
   expect(scrollY.querySelector('.ui-datatable-tbody')).not.toBeNull()
-})
-
-test('stackedBreakpoint is unset by default: no data-stacked attribute regardless of viewport', async () => {
-  const screen = await renderTable({ rowCount: 3, showStatusColumn: false })
-  expect(screen.container.querySelector('.ui-datatable')!.hasAttribute('data-stacked')).toBe(false)
 })
 
 test('stackedBreakpoint wider than the viewport activates the stacked layout with data-label content', async () => {
@@ -515,14 +520,6 @@ test('exposes the root element via defineExpose', async () => {
 })
 
 // -------------------------------------------------------------- Pagination
-test('rows unset (default): footer reports page 1/pageCount 1/the full row count, every row renders', async () => {
-  const screen = await renderTable({ rowCount: 5, showStatusColumn: false })
-  await expect.element(screen.getByTestId('footer-page')).toHaveTextContent('1')
-  await expect.element(screen.getByTestId('footer-page-count')).toHaveTextContent('1')
-  await expect.element(screen.getByTestId('footer-total')).toHaveTextContent('5')
-  expect(bodyRows(screen.container).length).toBe(5)
-})
-
 test('rows set: slices sortedData into pages and the footer reports the real page count/total', async () => {
   const screen = await renderTable({ rowCount: 5, showStatusColumn: false, rows: 2 })
   expect(bodyRows(screen.container).length).toBe(2)
@@ -560,21 +557,6 @@ test('rows set: the last page renders the remainder, fewer than a full page', as
 })
 
 // -------------------------------------------------------------- size
-test('size defaults to md; sm/lg add the corresponding modifier class to the root', async () => {
-  const md = await renderTable({ rowCount: 2, showStatusColumn: false })
-  expect(md.container.querySelector('.ui-datatable')!.classList.contains('ui-datatable--md')).toBe(
-    true,
-  )
-  const sm = await renderTable({ rowCount: 2, showStatusColumn: false, size: 'sm' })
-  expect(sm.container.querySelector('.ui-datatable')!.classList.contains('ui-datatable--sm')).toBe(
-    true,
-  )
-  const lg = await renderTable({ rowCount: 2, showStatusColumn: false, size: 'lg' })
-  expect(lg.container.querySelector('.ui-datatable')!.classList.contains('ui-datatable--lg')).toBe(
-    true,
-  )
-})
-
 test('size changes real cell padding density: sm is tighter than lg', async () => {
   const sm = await renderTable({ rowCount: 2, showStatusColumn: false, size: 'sm' })
   const lg = await renderTable({ rowCount: 2, showStatusColumn: false, size: 'lg' })
@@ -719,11 +701,6 @@ test('single: at most one row is ever selected — picking a new row deselects t
 })
 
 // -------------------------------------------------------------- resizableColumns
-test('resizable is off by default: no resize handle renders on any header', async () => {
-  const screen = await renderTable({ rowCount: 2, showStatusColumn: false })
-  expect(screen.container.querySelector('.ui-datatable-resize-handle')).toBeNull()
-})
-
 test('resizableColumns: dragging the trailing handle changes and keeps the column width', async () => {
   const screen = await renderTable({ rowCount: 3, showStatusColumn: false, resizableColumns: true })
   const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
@@ -769,12 +746,6 @@ test('resizableColumns: dragging the trailing handle changes and keeps the colum
 })
 
 // -------------------------------------------------------------- frozenColumns (Tier 2)
-test('frozenColumns is 0 by default: no column is sticky', async () => {
-  const screen = await renderTable({ rowCount: 2, showStatusColumn: false })
-  const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
-  expect(getComputedStyle(nameHeader).position).not.toBe('sticky')
-})
-
 test('frozenColumns freezes the first N columns (sticky-left) and leaves the rest alone', async () => {
   const screen = await renderTable({ rowCount: 3, showStatusColumn: false, frozenColumns: 1 })
   const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
@@ -811,6 +782,113 @@ test('scrollFade with frozen columns fades only the right edge', async () => {
   expect(
     getComputedStyle(scroller).maskImage.startsWith('linear-gradient(to right, rgb(0, 0, 0)'),
   ).toBe(true)
+})
+
+// ------------------------------------------------- scrollHeight + overflowing columns
+// 22rem of columns in a 200px table, so both split tables overflow sideways.
+const narrowSplit = { scrollHeight: '160px', ui: { root: { style: 'width: 200px' } } }
+
+function expectColumnsAligned(container: HTMLElement) {
+  const ths = headerCells(container)
+  const tds = Array.from(bodyRows(container)[0]!.querySelectorAll<HTMLElement>('.ui-datatable-td'))
+  expect(tds.length).toBe(ths.length)
+  ths.forEach((th, i) => {
+    const head = th.getBoundingClientRect()
+    const cell = tds[i]!.getBoundingClientRect()
+    expect(Math.abs(head.left - cell.left)).toBeLessThanOrEqual(1)
+    expect(Math.abs(head.right - cell.right)).toBeLessThanOrEqual(1)
+  })
+}
+
+test('scrollHeight with overflowing columns keeps head and body columns aligned while scrolling', async () => {
+  const screen = await renderTable({ rowCount: 20, ...narrowSplit })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(20))
+  const ths = headerCells(screen.container)
+  const lastTh = ths[ths.length - 1]!
+  // The outer box never scrolls itself, so it's a fixed reference.
+  const left = screen.container
+    .querySelector('.ui-datatable-scroll-x')!
+    .getBoundingClientRect().left
+
+  await userEvent.wheel(body, { delta: { x: 60 } })
+  await vi.waitFor(() => {
+    expect(ths[0]!.getBoundingClientRect().left).toBeLessThan(left - 10)
+    expectColumnsAligned(screen.container)
+  })
+
+  await userEvent.wheel(body, { delta: { x: 1000 } })
+  await vi.waitFor(() => {
+    // Scrolled all the way: the last column ends at the body's visible edge.
+    const bodyRect = body.getBoundingClientRect()
+    const visibleRight = bodyRect.left + body.clientLeft + body.clientWidth
+    expect(Math.abs(lastTh.getBoundingClientRect().right - visibleRight)).toBeLessThanOrEqual(1)
+    expectColumnsAligned(screen.container)
+  })
+})
+
+test('scrollHeight with frozen columns keeps the frozen body cells put while scrolling sideways', async () => {
+  const screen = await renderTable({ rowCount: 20, frozenColumns: 1, ...narrowSplit })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(20))
+  const nameTh = headerCells(screen.container)[0]!
+  const nameTd = () =>
+    bodyRows(screen.container)[0]!.querySelector<HTMLElement>('.ui-datatable-td')!
+  const ageTh = headerCells(screen.container)[1]!
+  const left = screen.container
+    .querySelector('.ui-datatable-scroll-x')!
+    .getBoundingClientRect().left
+  const ageLeftBefore = ageTh.getBoundingClientRect().left
+
+  // Scrolling from the header, then from the body.
+  for (const target of [nameTh, body]) {
+    await userEvent.wheel(target, { delta: { x: target === body ? 1000 : 50 } })
+    await vi.waitFor(() => {
+      expect(ageTh.getBoundingClientRect().left).toBeLessThan(ageLeftBefore - 10)
+      expect(Math.abs(nameTh.getBoundingClientRect().left - left)).toBeLessThanOrEqual(1)
+      expect(Math.abs(nameTd().getBoundingClientRect().left - left)).toBeLessThanOrEqual(1)
+      expectColumnsAligned(screen.container)
+    })
+  }
+})
+
+test('scrollHeight: the header strip follows the body, and a sideways wheel on it scrolls the body', async () => {
+  const screen = await renderTable({ rowCount: 20, ...narrowSplit })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(20))
+  const head = screen.container.querySelector<HTMLElement>('.ui-datatable-head-scroll')!
+  expect(head).not.toBeNull()
+
+  body.scrollLeft = 40
+  await vi.waitFor(() => expect(head.scrollLeft).toBe(body.scrollLeft))
+  expect(body.scrollLeft).toBeGreaterThan(0)
+
+  await userEvent.wheel(head, { delta: { x: 30 } })
+  await vi.waitFor(() => expect(body.scrollLeft).toBeGreaterThan(40))
+  await vi.waitFor(() => expect(head.scrollLeft).toBe(body.scrollLeft))
+})
+
+test('scrollHeight fades the body both ways and the head strip sideways', async () => {
+  const screen = await renderTable({ rowCount: 20, frozenColumns: 1, ...narrowSplit })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  const head = screen.container.querySelector<HTMLElement>('.ui-datatable-head-scroll')!
+  await vi.waitFor(() => {
+    expect(body.classList.contains('scroll-fade')).toBe(true)
+    expect(body.classList.contains('scroll-fade-x')).toBe(true)
+    expect(head.classList.contains('scroll-fade-x')).toBe(true)
+  })
+  const bodyMask = getComputedStyle(body).maskImage
+  // The vertical fade (serialized without "to bottom") and the sideways one, under two solid
+  // layers that keep the body's scrollbars out of the fade.
+  expect(bodyMask).toContain('linear-gradient(rgba(0, 0, 0, 0) 0%')
+  // Frozen columns: the sideways fade is right-edge only, in the body and the head.
+  expect(bodyMask).toContain('linear-gradient(to right, rgb(0, 0, 0)')
+  expect(
+    getComputedStyle(head).maskImage.startsWith('linear-gradient(to right, rgb(0, 0, 0)'),
+  ).toBe(true)
+  expect(screen.container.querySelector('.ui-datatable-scroll-x')!.classList).not.toContain(
+    'scroll-fade-x',
+  )
 })
 
 // -------------------------------------------------------------- #expansion (Tier 2)
@@ -956,12 +1034,6 @@ test('virtualize: reach-end fires once the window nears the last row, then re-ar
   await vi.waitFor(() => {
     expect(screen.getByTestId('reach-end-count').element().textContent).toBe('2')
   })
-})
-
-test('virtualize is off by default: every row renders with no spacer rows', async () => {
-  const screen = await renderTable({ rowCount: 5, showStatusColumn: false })
-  expect(screen.container.querySelectorAll('.ui-datatable-tr--spacer').length).toBe(0)
-  expect(bodyRows(screen.container).length).toBe(5)
 })
 
 test('ui prop overrides root/th/td classes, same convention as every other component', async () => {
@@ -1124,4 +1196,42 @@ test('row expansion: the toggle carries aria-expanded and aria-controls pointing
   const target = document.getElementById(controls)!
   expect(target.tagName).toBe('TR')
   expect(target.querySelector('[data-testid="expansion-p0"]')).not.toBeNull()
+})
+
+test('without a box-sizing reset, a column width includes its cells padding', async () => {
+  // The test page has no app-wide box-sizing reset. In a table too narrow for its columns, each
+  // column sits at its declared width, which must include the cells' padding, as with a reset.
+  const screen = await renderTable({ rowCount: 3, ui: { root: { style: 'width: 120px' } } })
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(3))
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+  const name = bodyRows(screen.container)[0]!.querySelector<HTMLElement>('.ui-datatable-td')!
+  expect(name.getBoundingClientRect().width).toBeCloseTo(8 * rem, 0)
+})
+
+test('scrollHeight: a column without a width keeps a minimum instead of shrinking to nothing', async () => {
+  const { h } = await import('vue')
+  const { default: DataTable } = await import('../src/components/DataTable/DataTable.vue')
+  const data = Array.from({ length: 5 }, (_, i) => ({ id: i, name: `Row ${i}`, note: 'A note' }))
+  const screen = await render(
+    () =>
+      h(
+        DataTable as never,
+        { data, rowKey: 'id', ...narrowSplit },
+        {
+          columns: ({ Column }: { Column: never }) => [
+            h(Column, { field: 'name', label: 'Name', width: '8rem' }),
+            h(Column, { field: 'note', label: 'Note' }),
+          ],
+        },
+      ),
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(5))
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+  await vi.waitFor(() => {
+    expect(headerCells(screen.container)[1]!.getBoundingClientRect().width).toBeGreaterThanOrEqual(
+      8 * rem - 1,
+    )
+    expectColumnsAligned(screen.container)
+  })
 })

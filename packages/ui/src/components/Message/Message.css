@@ -46,7 +46,7 @@
   }
   .ui-message--bare .ui-message-title,
   .ui-message--bare .ui-message-description {
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
   }
   .ui-message--bare .ui-message-description {
     margin-block-start: 0;
@@ -70,13 +70,13 @@
   }
   .ui-message-title {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     font-weight: 600;
     line-height: 1.4;
   }
   .ui-message-description {
     margin: 0.125rem 0 0;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     line-height: 1.5;
     color: var(--ui-text-muted);
   }

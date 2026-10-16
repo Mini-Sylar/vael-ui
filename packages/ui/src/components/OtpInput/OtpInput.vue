@@ -67,6 +67,7 @@
 <!-- Invisible input for caret/paste handling; cellEls keyed on index (not char) to avoid remount on content change. -->
 <script setup lang="ts">
 import './OtpInput.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
   computed,
@@ -91,7 +92,7 @@ const attrs = useAttrs()
 /** Entered code. @default '' */
 const modelValue = defineModel<string>({ default: '' })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Number of cells, and the maximum code length. @default 6 */
     length?: number
@@ -117,8 +118,9 @@ const props = withDefaults(
       separator: UiPartValue
     }>
   }>(),
-  { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false, size: 'md' },
+  { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' })
 
 const emit = defineEmits<{
   /** Fires with the code each time it changes to a full `length` characters, not on every re-render. */

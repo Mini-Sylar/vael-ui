@@ -24,17 +24,17 @@
   }
   .ui-cascade-select-trigger--sm {
     block-size: 1.75rem;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-cascade-select-trigger--md {
     block-size: 2.25rem;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-cascade-select-trigger--lg {
     block-size: 2.5rem;
-    font-size: 1rem;
+    font-size: var(--ui-font-size);
     border-radius: var(--ui-radius);
   }
   .ui-cascade-select-trigger:hover:not(.ui-cascade-select-trigger--disabled) {
@@ -104,7 +104,7 @@
   .ui-cascade-select-empty {
     padding: 0.75rem;
     color: var(--ui-text-muted);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     text-align: center;
   }
 
@@ -128,16 +128,15 @@
     }
   }
 
-  /* Same size across a row of controls on touch screens, and no iOS zoom on focus. */
-  @media (pointer: coarse) {
+  @media (hover: none) and (pointer: coarse) {
     .ui-cascade-select-trigger--sm {
-      font-size: max(var(--ui-touch-font-size, 16px), 0.8125rem);
+      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.8125));
     }
     .ui-cascade-select-trigger--md {
-      font-size: max(var(--ui-touch-font-size, 16px), 0.875rem);
+      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.875));
     }
     .ui-cascade-select-trigger--lg {
-      font-size: max(var(--ui-touch-font-size, 16px), 1rem);
+      font-size: max(var(--ui-touch-font-size), var(--ui-font-size));
     }
   }
 }

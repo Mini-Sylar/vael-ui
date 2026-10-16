@@ -11,6 +11,8 @@
     :initial-focus="initialFocus"
     :show-close="showClose"
     :modal="modal"
+    :flush="flush"
+    :maximizable="maximizable"
     :close-on-esc="closeOnEsc"
     :close-on-overlay="closeOnOverlay"
     :close-on-history-back="closeOnHistoryBack"
@@ -101,6 +103,8 @@ const dialog = useTemplateRef('dialog')
 defineExpose({
   /** Panel element (null while closed). */
   panelEl: computed(() => dialog.value?.panelEl ?? null),
+  /** Backdrop element. `null` while closed or when `modal` is `false`. */
+  overlayEl: computed(() => dialog.value?.overlayEl ?? null),
   /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => dialog.value?.isClosing ?? false),
   /** Closes the drawer, running `beforeClose` first. */

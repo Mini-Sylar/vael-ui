@@ -5,7 +5,7 @@
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     color: var(--ui-text);
   }
   .ui-radio-frame {
@@ -79,7 +79,7 @@
     padding-block-start: 0.0625rem;
   }
   .ui-radio-description {
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     color: var(--ui-text-muted);
   }
 

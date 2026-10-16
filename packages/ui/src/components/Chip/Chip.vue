@@ -40,6 +40,7 @@ const unmountedChips = new WeakSet<Element>()
 <!-- Small reusable pill; remove button stops propagation to avoid toggling parent trigger -->
 <script setup lang="ts">
 import './Chip.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/chip.css'
 import { computed, onBeforeUnmount, onUnmounted, useAttrs, useTemplateRef } from 'vue'
@@ -51,7 +52,7 @@ import { useUiMessages } from '../../messages'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Label text. Also names the remove button, so pass it even when using the default slot. */
     label?: string
@@ -64,8 +65,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; label: UiPartValue; remove: UiPartValue }>
   }>(),
-  { removable: false, disabled: false, size: 'md' },
+  { removable: false, disabled: false },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' }, ['sm', 'md'])
 
 const emit = defineEmits<{
   /** Fires when you click the remove button, or press Delete/Backspace on a focused removable chip. */

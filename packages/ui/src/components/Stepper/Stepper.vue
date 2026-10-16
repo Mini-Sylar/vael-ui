@@ -20,7 +20,7 @@
           :aria-current="index === modelValue ? 'step' : undefined"
           @click="onStepClick(index, item)"
         >
-          <span :class="circlePart.class">
+          <span :ref="(el) => setCircleEl(index, el)" :class="circlePart.class">
             <slot
               name="indicator"
               :item="item"
@@ -30,7 +30,7 @@
               :completed="stateOf(index) === 'completed'"
               :disabled="isDisabled(item)"
             >
-              <Transition :name="motionCss ? 'ui-stepper-check' : undefined">
+              <Transition :name="props.motionCss ? 'ui-stepper-check' : undefined">
                 <svg
                   v-if="stateOf(index) === 'completed'"
                   key="check"
@@ -71,6 +71,7 @@
       </li>
       <li
         v-if="index < items.length - 1"
+        :ref="(el) => setConnectorEl(index, el)"
         aria-hidden="true"
         :class="connectorPart.class"
         :data-state="index < modelValue ? 'filled' : 'unfilled'"
@@ -89,9 +90,10 @@ export interface StepperItem {
 
 <script setup lang="ts" generic="T extends StepperItem = StepperItem">
 import './Stepper.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { nativeTag } from '../../composables/dom'
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, shallowReactive, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { vScrollMask } from '../../directives/vScrollMask'
 import type { UiPartValue } from '../../classes'
@@ -100,7 +102,7 @@ import { useThemedUi } from '../../theme'
 /** Index of the active step. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Steps to show, each with a `label` and optional `description` and `disabled`. */
     items: ReadonlyArray<T>
@@ -114,7 +116,11 @@ const props = withDefaults(
     linear?: boolean
     /** `false` renders a display-only progress indicator with no click handling. @default true */
     clickable?: boolean
-    /** Gates the built-in check-mark/number swap transition inside the step circle. @default true */
+    /**
+     * Built-in transitions: the check swap, circle colors and connector fill. `false` makes them
+     * instant.
+     * @default true
+     */
     motionCss?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
@@ -128,8 +134,9 @@ const props = withDefaults(
       connector: UiPartValue
     }>
   }>(),
-  { orientation: 'horizontal', linear: true, clickable: true, motionCss: true },
+  { orientation: 'horizontal', linear: true, clickable: true, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when you click a step and it becomes active. */
@@ -181,13 +188,33 @@ function onStepClick(index: number, item: T) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+// By index: a circle remounts when its step becomes clickable, and a v-for ref array would reorder.
+const circleSlots = shallowReactive<(HTMLElement | null)[]>([])
+const connectorSlots = shallowReactive<(HTMLElement | null)[]>([])
+function setCircleEl(index: number, el: unknown) {
+  circleSlots[index] = el instanceof HTMLElement ? el : null
+}
+function setConnectorEl(index: number, el: unknown) {
+  connectorSlots[index] = el instanceof HTMLElement ? el : null
+}
+const present = (el: HTMLElement | null): el is HTMLElement => !!el
+const circleEls = computed(() => circleSlots.slice(0, props.items.length).filter(present))
+const connectorEls = computed(() =>
+  connectorSlots.slice(0, Math.max(props.items.length - 1, 0)).filter(present),
+)
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.stepper,
   () => props.ui,
 )
 const rootPart = computed(() =>
-  resolveUiPart(cx, themedUi()?.root, 'ui-stepper', `ui-stepper--${props.orientation}`),
+  resolveUiPart(
+    cx,
+    themedUi()?.root,
+    'ui-stepper',
+    `ui-stepper--${props.orientation}`,
+    !props.motionCss && 'ui-stepper--no-anim',
+  ),
 )
 const stepPart = computed(() => resolveUiPart(cx, themedUi()?.step, 'ui-stepper-step'))
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-stepper-trigger'))
@@ -209,5 +236,9 @@ const connectorPart = computed(() =>
 defineExpose({
   /** Root element. */
   el: root,
+  /** Step circle elements, in order. A circle remounts when its step becomes clickable. */
+  circleEls,
+  /** Connector elements, one fewer than steps. Set `--ui-stepper-fill` (0 to 1) to drive a fill. */
+  connectorEls,
 })
 </script>

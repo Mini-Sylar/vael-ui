@@ -36,9 +36,17 @@ watch(packageManager, (v) => {
 // popover and the home page's swatches stay in sync.
 const PRIMARY_STORAGE_KEY = 'vael-ui-docs-primary'
 
-export const primaryColor = shallowRef<string | null>(
-  typeof localStorage === 'undefined' ? null : localStorage.getItem(PRIMARY_STORAGE_KEY),
-)
+function initialPrimaryColor(): string | null {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const saved = localStorage.getItem(PRIMARY_STORAGE_KEY)
+    return saved && /^#[0-9a-f]{6}$/i.test(saved) ? saved : null
+  } catch {
+    return null
+  }
+}
+
+export const primaryColor = shallowRef<string | null>(initialPrimaryColor())
 
 watch(primaryColor, (color) => {
   if (typeof localStorage === 'undefined') return

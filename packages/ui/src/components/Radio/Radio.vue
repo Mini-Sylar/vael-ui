@@ -41,6 +41,7 @@
 <!-- Injects RadioGroup's name; APG roving arrows are native; throws outside group -->
 <script setup lang="ts">
 import './Radio.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
   computed,
@@ -60,7 +61,7 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Value the parent RadioGroup's model takes when this radio is selected. */
     value: string | number
@@ -80,8 +81,9 @@ const props = withDefaults(
       description: UiPartValue
     }>
   }>(),
-  { motionCss: true },
+  { motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 defineSlots<{
   /** Label content; replaces the `label` text. Receives `checked`. */

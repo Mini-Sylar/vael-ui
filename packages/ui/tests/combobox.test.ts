@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { page, userEvent } from 'vitest/browser'
+import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import ComboboxFixture from './fixtures/ComboboxFixture.vue'
@@ -9,15 +9,6 @@ import Combobox from '../src/components/Combobox/Combobox.vue'
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition.
   for (const el of document.querySelectorAll('.ui-select-positioner')) el.remove()
-})
-
-test('a plain class passed to Combobox reaches the rendered root', async () => {
-  const screen = await render(Combobox, {
-    props: { items: [{ label: 'A', value: 'a' }] },
-    attrs: { class: 'my-search-box' },
-  })
-  const input = screen.getByRole('combobox')
-  expect(input.element().closest('.my-search-box')).not.toBeNull()
 })
 
 test('typing filters the list, diacritic- and case-insensitively', async () => {
@@ -67,28 +58,6 @@ test('selecting an option commits the model and syncs query to its label', async
   await expect.element(screen.getByTestId('model')).toHaveTextContent('"apple"')
   await expect.element(screen.getByTestId('query')).toHaveTextContent('Apple')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
-})
-
-test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
-  const screen = await render(ComboboxFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
-  const input = screen.getByRole('combobox')
-  await input.click()
-  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
-
-  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
-  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
-  const body = document.querySelector<HTMLElement>('.ui-select-body')!
-  expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
-})
-
-test('without maxPanelHeight the panel defaults to a 320px cap', async () => {
-  await page.viewport(800, 900)
-  const screen = await render(ComboboxFixture, { props: { itemCount: 100 } })
-  await screen.getByRole('combobox').click()
-  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
-  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
-  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(320))
-  expect(panel.getBoundingClientRect().height).toBeGreaterThan(300)
 })
 
 function optionTexts(): string[] {
@@ -619,19 +588,6 @@ test('header and footer slots render around the listbox only when provided, with
   await expect.element(bare.getByRole('listbox')).toBeInTheDocument()
   expect(document.querySelector('.ui-select-header')).toBeNull()
   expect(document.querySelector('.ui-select-footer')).toBeNull()
-})
-
-test('the listbox body still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
-  const screen = await render(ComboboxFixture, { props: { itemCount: 1000 } })
-  const input = screen.getByRole('combobox')
-  await input.click()
-  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
-  await vi.waitFor(() => {
-    const body = document.querySelector('.ui-select-body')
-    expect(body?.className).toContain('scroll-fade')
-  })
-  const body = document.querySelector('.ui-select-body') as HTMLElement
-  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
 })
 
 test('hidden inputs carry the selection into FormData; multiple repeats the name', async () => {

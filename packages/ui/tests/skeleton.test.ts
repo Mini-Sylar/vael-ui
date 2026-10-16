@@ -11,14 +11,10 @@ test('default variant is text, animated, and aria-hidden', async () => {
   expect(el.getAttribute('aria-hidden')).toBe('true')
 })
 
-test('variant prop sets the matching part class', async () => {
-  const screen = await render(Skeleton, { props: { variant: 'circle' } })
-  expect(screen.container.querySelector('.ui-skeleton')).toHaveClass('ui-skeleton--circle')
-})
-
-test('animated=false drops the animation class', async () => {
-  const screen = await render(Skeleton, { props: { animated: false } })
+test('variant sets its part class; animated=false drops the animation class', async () => {
+  const screen = await render(Skeleton, { props: { variant: 'circle', animated: false } })
   const el = screen.container.querySelector('.ui-skeleton')!
+  expect(el).toHaveClass('ui-skeleton--circle')
   expect(el).not.toHaveClass('ui-skeleton--animated')
 })
 

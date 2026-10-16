@@ -3,7 +3,7 @@
     ref="root"
     :class="rootPart.class"
     :style="rootPart.style"
-    :data-motion="motionCss ? undefined : 'off'"
+    :data-motion="motionOff ? 'off' : undefined"
     :data-axis="axis"
     :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
     :data-pending="isPending ? '' : undefined"
@@ -67,6 +67,7 @@
      owns that, over the same engine. -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import './Sortable.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -92,7 +93,7 @@ const attrs = useAttrs()
  */
 const items = defineModel<T[]>('items', { default: () => [] })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /**
      * Property that holds each item's stable identity. `value` matches `MenuItemData`, `SelectItemData` and `TreeNode`.
@@ -127,10 +128,12 @@ const props = withDefaults(
     /** This list's identity within `group`. Unset, Sortable assigns one. */
     groupId?: string | number
     /** `group` only: what follows the pointer once a drag leaves this list.
-     * `'element'` moves the real item; `'clone'` floats a copy, for content that can't leave its layout. */
+     * `'element'` moves the real item; `'clone'` floats a copy, for content that can't leave its layout.
+     * @default 'element' */
     previewMode?: 'element' | 'clone'
     /** Milliseconds a touch must hold a row still before a drag starts. Unset, drags start at once.
-     * Set it only when `#item` or `#handle` content is also tappable; the built-in handle never needs it. */
+     * Set it only when `#item` or `#handle` content is also tappable; the built-in handle never needs it.
+     * @default 0 */
     touchDragDelay?: number
     /** Class and style overrides for each part. */
     ui?: Partial<{
@@ -147,12 +150,14 @@ const props = withDefaults(
     beforeDrop: undefined,
     autoScroll: true,
     disabled: false,
-    motionCss: true,
+    motionCss: undefined,
     group: undefined,
     groupId: undefined,
     ui: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
+const motionOff = computed(() => !props.motionCss)
 
 const emit = defineEmits<{
   /** Fires after `items` changes order. Persist optimistically here; on failure, restore your own snapshot of `items`. */

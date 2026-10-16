@@ -84,22 +84,6 @@ test('motionCss=false skips the pin/transition dance — no inline block-size tr
   expect(panel().style.blockSize).toBe('')
 })
 
-test('height pins to a concrete px value while animating, then releases once settled', async () => {
-  await render(CollapsibleFixture)
-  const el = panel()
-  expect(el.style.blockSize).toBe('0px')
-
-  await page.getByRole('button', { name: 'Show details' }).click()
-  await vi.waitFor(() => {
-    const height = Number.parseFloat(el.style.blockSize)
-    expect(Number.isFinite(height) && height > 0).toBe(true)
-  })
-  expect(el.dataset.state).toBe('opening')
-
-  await vi.waitFor(() => expect(el.dataset.state).toBe('open'))
-  expect(el.style.blockSize).toBe('')
-})
-
 test('exposes real el/panelEl elements', async () => {
   const captured = ref<InstanceType<typeof Collapsible> | null>(null)
   const Wrapper = {

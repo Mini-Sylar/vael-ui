@@ -1,5 +1,5 @@
 <template>
-  <ConfigProvider :theme="theme">
+  <ConfigProvider :theme="theme" :size="uiSize" :motion-css="motion" :i18n="i18n">
     <div class="app-shell" :style="primaryColor ? { '--docs-accent': primaryColor } : undefined">
       <header class="app-header">
         <Button
@@ -82,6 +82,19 @@
                       @update:model-value="(v) => (fontSize = v as number)"
                     />
                   </label>
+                  <label class="theme-row">
+                    <span>{{ t('header.size') }}</span>
+                    <SelectButton
+                      v-model="uiSize"
+                      size="sm"
+                      :allow-empty="false"
+                      :items="sizeItems"
+                    />
+                  </label>
+                  <label class="theme-row">
+                    <span>{{ t('header.animations') }}</span>
+                    <Switch v-model="motion" size="sm" />
+                  </label>
                 </div>
               </template>
             </Popover>
@@ -155,6 +168,14 @@
           />
         </label>
         <label class="theme-row">
+          <span>{{ t('header.size') }}</span>
+          <SelectButton v-model="uiSize" size="sm" :allow-empty="false" :items="sizeItems" />
+        </label>
+        <label class="theme-row">
+          <span>{{ t('header.animations') }}</span>
+          <Switch v-model="motion" size="sm" />
+        </label>
+        <label class="theme-row">
           <span>{{ t('header.locale') }}</span>
           <Select
             :model-value="locale"
@@ -218,6 +239,7 @@ import {
   Select,
   SelectButton,
   Slider,
+  Switch,
   Tag,
   Toaster,
   TooltipHost,
@@ -235,6 +257,21 @@ import { useHead } from '@unhead/vue'
 const ThemeSwatches = defineAsyncComponent(() => import('./components/ThemeSwatches.vue'))
 
 const version = shallowRef(__VAEL_UI_VERSION__)
+
+onMounted(() => {
+  const root = document.documentElement
+  if (!root.hasAttribute('data-docs-theme-bootstrap')) return
+  for (const token of [
+    '--ui-radius',
+    '--ui-primary',
+    '--ui-primary-contrast',
+    '--ui-primary-hover',
+    '--docs-accent',
+  ]) {
+    root.style.removeProperty(token)
+  }
+  root.removeAttribute('data-docs-theme-bootstrap')
+})
 
 onMounted(async () => {
   try {
@@ -261,8 +298,6 @@ useHead({
         'A Vue 3 UI library with a real Vue Vapor build, animation-agnostic components, and full i18n support.',
     },
     { name: 'robots', content: 'index, follow' },
-    { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' },
-    { name: 'theme-color', content: '#1f1f23', media: '(prefers-color-scheme: dark)' },
     { property: 'og:type', content: 'website' },
     { property: 'og:site_name', content: 'vael-ui' },
     { property: 'og:url', content: () => canonicalUrl.value },
@@ -316,10 +351,10 @@ const themeOpen = shallowRef(false)
 const mobileNavOpen = shallowRef(false)
 const mobileSettingsOpen = shallowRef(false)
 
-const { t, locale: i18nLocale } = useI18n()
+const i18n = useI18n()
+const { t } = i18n
 const locale = useLocalStorage<Locale>('vael-ui-docs-locale', 'en')
 watch(locale, (l) => setLocale(l), { immediate: true })
-void i18nLocale // useI18n's own ref stays in sync via setLocale(); kept for template t()
 
 const localeItems = SUPPORTED_LOCALES.map((l) => ({
   label: l.toUpperCase(),
@@ -335,6 +370,14 @@ const { resolvedMode, setMode } = useColorScheme({
     set: (m) => localStorage.setItem('vael-ui-docs-theme', m ?? ''),
   },
 })
+
+function updateBrowserThemeColor() {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+  if (meta) meta.content = resolvedMode.value === 'dark' ? '#1f1f23' : '#ffffff'
+}
+
+watch(resolvedMode, updateBrowserThemeColor)
+onMounted(updateBrowserThemeColor)
 
 const mobileDockItems = computed<DockItemData[]>(() => [
   {
@@ -385,10 +428,16 @@ const radiusItems = [
   { label: t('header.radiusRounded'), value: '16px' },
   { label: t('header.radiusPill'), value: '999px' },
 ]
-const radiusChoice = shallowRef(
-  (typeof localStorage === 'undefined' ? null : localStorage.getItem('vael-ui-docs-radius')) ??
-    'default',
-)
+function initialRadiusChoice(): string {
+  if (typeof localStorage === 'undefined') return 'default'
+  try {
+    const saved = localStorage.getItem('vael-ui-docs-radius')
+    return saved && radiusItems.some((item) => item.value === saved) ? saved : 'default'
+  } catch {
+    return 'default'
+  }
+}
+const radiusChoice = shallowRef(initialRadiusChoice())
 watch(radiusChoice, (r) => {
   if (typeof localStorage !== 'undefined') localStorage.setItem('vael-ui-docs-radius', r)
 })
@@ -396,22 +445,30 @@ function onRadiusChange(value: string | number | (string | number)[] | null) {
   if (typeof value === 'string') radiusChoice.value = value
 }
 
-const fontSize = shallowRef(
-  (typeof localStorage === 'undefined' ? null : localStorage.getItem('vael-ui-docs-font-size'))
-    ? parseInt(localStorage.getItem('vael-ui-docs-font-size')!)
-    : 14,
-)
-watch(
-  fontSize,
-  (f) => {
-    if (typeof localStorage !== 'undefined')
-      localStorage.setItem('vael-ui-docs-font-size', String(f))
-    if (typeof document !== 'undefined') {
-      document.documentElement.style.fontSize = `${f}px`
-    }
-  },
-  { immediate: true },
-)
+function storedFontSize(): number {
+  try {
+    const stored = Number(localStorage.getItem('vael-ui-docs-font-size'))
+    return Number.isInteger(stored) && stored >= 12 && stored <= 18 ? stored : 14
+  } catch {
+    return 14
+  }
+}
+const fontSize = shallowRef(typeof localStorage === 'undefined' ? 14 : storedFontSize())
+watch(fontSize, (f) => {
+  try {
+    localStorage.setItem('vael-ui-docs-font-size', String(f))
+  } catch {}
+  document.documentElement.style.setProperty('--docs-font-size', `${f}px`)
+})
+
+// ConfigProvider defaults, so every component on the site follows them.
+const uiSize = useLocalStorage<'sm' | 'md' | 'lg'>('vael-ui-docs-size', 'md')
+const motion = useLocalStorage('vael-ui-docs-motion', true)
+const sizeItems = computed(() => [
+  { label: t('header.sizeSm'), value: 'sm' },
+  { label: t('header.sizeMd'), value: 'md' },
+  { label: t('header.sizeLg'), value: 'lg' },
+])
 
 const theme = computed(() => ({
   ...(primaryColor.value ? { primary: primaryColor.value } : {}),

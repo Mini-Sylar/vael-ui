@@ -126,14 +126,14 @@
 
   .ui-toast-title {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     font-weight: 500;
     line-height: 1.4;
   }
 
   .ui-toast-description {
     margin: 0.125rem 0 0;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     line-height: 1.4;
     color: var(--ui-text-muted);
   }
@@ -149,7 +149,7 @@
     background: var(--ui-muted);
     color: var(--ui-text);
     font: inherit;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     font-weight: 500;
     cursor: pointer;
     transition:

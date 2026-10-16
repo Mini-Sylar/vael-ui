@@ -9,6 +9,8 @@
        layer makes Chromium's compositor rasterise it clipped to a collapsed corner for the whole
        transition, then snap right when it ends. */
     transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+    /* TourSpotlight writes the path here, so your inline clip-path wins. */
+    clip-path: var(--ui-tour-cutout);
   }
   .ui-tour-spotlight-enter-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
@@ -49,7 +51,7 @@
   .ui-tour-progress {
     margin: 0;
     color: var(--ui-text-muted);
-    font-size: 0.6875rem;
+    font-size: calc(var(--ui-font-size) * 0.6875);
     font-weight: 600;
     letter-spacing: 0.02em;
     text-transform: uppercase;
@@ -57,7 +59,7 @@
   .ui-tour-title {
     margin: 0;
     color: var(--ui-text);
-    font-size: 1rem;
+    font-size: var(--ui-font-size);
     font-weight: 600;
     letter-spacing: -0.01em;
   }
@@ -65,7 +67,7 @@
     margin: 0;
     padding: 0.5rem 1rem 0;
     color: var(--ui-text-muted);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     line-height: 1.45;
   }
   .ui-tour-actions {
@@ -86,7 +88,7 @@
     border-radius: calc(var(--ui-radius) - 4px);
     padding: 0.4rem 0.75rem;
     font: inherit;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     font-weight: 500;
     cursor: pointer;
     transition:

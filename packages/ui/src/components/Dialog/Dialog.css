@@ -59,14 +59,14 @@
 
   .ui-dialog-title {
     margin: 0;
-    font-size: 1.0625rem;
+    font-size: calc(var(--ui-font-size) * 1.0625);
     font-weight: 600;
     letter-spacing: -0.01em;
   }
 
   .ui-dialog-description {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     line-height: 1.5;
     color: var(--ui-text-muted);
   }
@@ -173,6 +173,10 @@
     .ui-dialog-overlay {
       opacity: 0;
     }
+  }
+  /* forceMount: an inline opacity means you drive the backdrop, so the CSS fade steps aside. */
+  .ui-dialog[data-force-mount] .ui-dialog-overlay[style*='opacity'] {
+    transition: none;
   }
   .ui-dialog--top.ui-dialog-enter-from .ui-dialog-panel,
   .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel {

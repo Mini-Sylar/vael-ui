@@ -56,7 +56,7 @@
     background: transparent;
     color: var(--ui-text);
     font: inherit;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     line-height: 1.25rem;
     text-align: start;
     text-decoration: none;
@@ -101,7 +101,7 @@
   .ui-menu-item-shortcut {
     margin-inline-start: 1.5rem;
     color: var(--ui-text-muted);
-    font-size: 0.75rem;
+    font-size: calc(var(--ui-font-size) * 0.75);
     font-variant-numeric: tabular-nums;
   }
   .ui-menu-item-chevron {

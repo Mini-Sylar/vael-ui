@@ -38,6 +38,7 @@ import './style.css'  // your base layer, loads first"
     <CodeBlock
       lang="css"
       code="/* your own global stylesheet, unlayered so it always wins */
+html { font-size: 14px; }
 :root {
   --ui-primary: #6366f1;
   --ui-radius: 6px;

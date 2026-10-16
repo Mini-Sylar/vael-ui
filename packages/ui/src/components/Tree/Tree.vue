@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-tree-root" :data-motion="motionCss ? undefined : 'off'">
+  <div class="ui-tree-root" :data-motion="props.motionCss ? undefined : 'off'">
     <div v-if="filterable" :class="filterPart.class" :style="filterPart.style">
       <Input
         ref="filterInputRef"
@@ -227,6 +227,7 @@ export const treeRowContextKey: InjectionKey<TreeRowContext> = Symbol('treeRowCo
      pass below for what that costs and how it's covered. -->
 <script setup lang="ts" generic="T extends TreeNode = TreeNode">
 import './Tree.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
   computed,
@@ -262,7 +263,7 @@ const model = defineModel<string | number | (string | number)[] | null>({ defaul
 /** Filter box text. @default '' */
 const query = defineModel<string>('query', { default: '' })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Tree data: `TreeNode` objects (`value`, `label`, optional `children`) or your own extension of them. */
     items: readonly T[]
@@ -354,7 +355,7 @@ const props = withDefaults(
     filterable: true,
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
-    motionCss: true,
+    motionCss: undefined,
     forceMount: false,
     reorderable: false,
     canNestInto: undefined,
@@ -370,6 +371,7 @@ const props = withDefaults(
     ui: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when you change the selection, with the new model value. */

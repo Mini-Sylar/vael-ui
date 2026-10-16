@@ -43,8 +43,8 @@
         v-scroll-mask
         :class="listPart.class"
         :style="listPart.style"
-        :name="motionCss ? 'ui-command-palette-row' : undefined"
-        :css="motionCss"
+        :name="props.motionCss ? 'ui-command-palette-row' : undefined"
+        :css="props.motionCss"
         move-class="ui-command-palette-row-move"
         @enter="enterHook"
         @leave="leaveHook"
@@ -122,6 +122,7 @@ export interface CommandPaletteItem {
 
 <script setup lang="ts" generic="T extends CommandPaletteItem = CommandPaletteItem">
 import './CommandPalette.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
@@ -146,7 +147,7 @@ const open = defineModel<boolean>('open', { default: false })
 /** Search text. Resets to empty each time the palette opens. @default '' */
 const query = defineModel<string>('query', { default: '' })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Commands to search and run. */
     items: ReadonlyArray<T>
@@ -214,9 +215,10 @@ const props = withDefaults(
     closeOnEsc: true,
     closeOnOverlay: true,
     forceMount: false,
-    motionCss: true,
+    motionCss: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when you pick an enabled item by click or Enter. */
@@ -230,11 +232,16 @@ const emit = defineEmits<{
   'item-leave': [el: Element, done: () => void]
 }>()
 
+// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-enter', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('item-enter', el, done),
 )
 const leaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-leave', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('item-leave', el, done),
 )
 
 defineSlots<{

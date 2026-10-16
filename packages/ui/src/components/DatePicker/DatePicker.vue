@@ -4,7 +4,7 @@
     v-bind="attrs"
     :model-value="displayValue"
     :placeholder="placeholder"
-    :size="size"
+    :size="props.size"
     :disabled="isDisabled"
     :invalid="isInvalid"
     readonly
@@ -72,10 +72,10 @@
             :min-date="minDate"
             :max-date="maxDate"
             :disabled-dates="disabledDates"
-            :locale="locale"
+            :locale="props.locale"
             :first-day-of-week="firstDayOfWeek"
             :months="months"
-            :motion-css="motionCss"
+            :motion-css="props.motionCss"
             :ui="calendarUi"
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
@@ -174,6 +174,7 @@ export type DatePickerAlign = Align
 <!-- Wraps Calendar in Select's popover chrome; input readonly, formatting deferred. -->
 <script setup lang="ts">
 import './DatePicker.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
@@ -210,7 +211,7 @@ function isRangeModel(value: Date | CalendarRange | null): value is CalendarRang
   return value != null && typeof value === 'object' && 'start' in value
 }
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /**
      * `'range'` picks a start then an end; clicking before the start restarts the range.
@@ -312,7 +313,6 @@ const props = withDefaults(
     placeholder: undefined,
     disabled: false,
     invalid: false,
-    size: 'md',
     minDate: undefined,
     maxDate: undefined,
     disabledDates: undefined,
@@ -331,7 +331,7 @@ const props = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
-    motionCss: true,
+    motionCss: undefined,
     showButtonBar: false,
     showTime: false,
     timeOnly: false,
@@ -340,6 +340,7 @@ const props = withDefaults(
     ui: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true, locale: undefined })
 
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */

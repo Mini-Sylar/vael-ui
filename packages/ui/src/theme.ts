@@ -8,6 +8,8 @@ export interface UiTheme {
   danger?: string
   /** Overrides the single `--ui-radius` token every component size derives from. */
   radius?: string
+  /** Component text size. Unset, components follow the root (`html`) font size. */
+  fontSize?: string
   /** App-wide default `ui` part-class/style overrides — same shape as each component's own `ui` prop. */
   button?: {
     ui?: Partial<{
@@ -536,6 +538,10 @@ export function generateThemeCss(theme: UiTheme, scope: string = ':root'): strin
     dark.push(...block.dark)
   }
   if (theme.radius) root.push(`--ui-radius: ${theme.radius};`)
+  if (theme.fontSize) {
+    root.push(`font-size: ${theme.fontSize};`)
+    root.push(`--ui-font-size: ${theme.fontSize};`)
+  }
 
   if (root.length === 0) return ''
 

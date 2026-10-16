@@ -10,7 +10,7 @@
       ref="inputRef"
       v-model="modelValue"
       :type="visible ? 'text' : 'password'"
-      :size="size"
+      :size="props.size"
       :disabled="isDisabled"
       :readonly="readonly"
       :invalid="isInvalid"
@@ -60,7 +60,7 @@
 
     <Transition
       v-if="hintPlacement === 'inline' && hasHintContent"
-      :name="motionCss ? 'ui-field-error' : undefined"
+      :name="props.motionCss ? 'ui-field-error' : undefined"
     >
       <div :class="hintPart.class" :style="hintPart.style">
         <slot name="hint" :value="modelValue" :results="ruleResults">
@@ -156,6 +156,7 @@ export interface PasswordRuleResult {
 
 <script setup lang="ts">
 import './PasswordInput.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useSlots, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
@@ -174,7 +175,7 @@ const modelValue = defineModel<string>({ default: '' })
 /** Whether the password is shown as plain text. @default false */
 const visible = defineModel<boolean>('visible', { default: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
@@ -233,16 +234,16 @@ const props = withDefaults(
     }>
   }>(),
   {
-    size: 'md',
     disabled: false,
     readonly: false,
     invalid: false,
     revealable: true,
     hintPlacement: 'popover',
-    motionCss: true,
+    motionCss: undefined,
     forceMount: false,
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
 
 defineSlots<{
   /** Inline trailing content, placed before the reveal toggle. */

@@ -8,14 +8,14 @@ import ToasterFixture from './fixtures/ToasterFixture.vue'
 import ToasterCustomCardFixture from './fixtures/ToasterCustomCardFixture.vue'
 import Toaster from '../src/components/Toaster/Toaster.vue'
 
-const { dismiss } = useToastQueue()
+const { dismiss, toasts } = useToastQueue()
 
 // The toast queue is module-level (by design — toast() must be callable from
 // anywhere, not scoped to a component instance), so it persists across tests
 // in this file regardless of component mount/unmount. Force a clean slate
 // before every test rather than only relying on each test's own cleanup.
 beforeEach(async () => {
-  dismiss()
+  toast.dismiss()
   document.querySelectorAll('.ui-toaster').forEach((el) => el.remove())
   // Playwright drives a real OS-level cursor, and .click() in an earlier
   // test leaves it sitting wherever it last clicked — e.g. the Dismiss
@@ -76,9 +76,9 @@ test('hovering the stack pauses auto-dismiss; leaving resumes with remaining tim
   const toaster = document.querySelector('.ui-toaster')!
   toaster.dispatchEvent(new PointerEvent('pointerenter'))
 
-  // Well past the original 150ms duration — still present because paused.
-  await new Promise((r) => setTimeout(r, 300))
-  expect(document.querySelector('.ui-toast')).not.toBeNull()
+  // Past the 150ms duration — still queued because paused (a fired timer dequeues at once).
+  await new Promise((r) => setTimeout(r, 200))
+  expect(toasts.some((t) => t.id === id)).toBe(true)
 
   toaster.dispatchEvent(new PointerEvent('pointerleave'))
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
@@ -121,8 +121,8 @@ test('backgrounding the tab pauses every toast; foregrounding resumes them', asy
   Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
   document.dispatchEvent(new Event('visibilitychange'))
 
-  await new Promise((r) => setTimeout(r, 300))
-  expect(document.querySelector('.ui-toast')).not.toBeNull()
+  await new Promise((r) => setTimeout(r, 200))
+  expect(toasts).toHaveLength(1)
 
   Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
   document.dispatchEvent(new Event('visibilitychange'))
@@ -410,14 +410,13 @@ test('expand does not pause timers on its own; toasts still auto-dismiss', async
 })
 
 test('toasts queued past maxVisible keep their full time until they show', async () => {
-  const { toasts } = useToastQueue()
   const screen = await render(ToasterFixture, { props: { maxVisible: 1 } })
   const queued = toast('Queued', { duration: 150 })
   const front = toast('Front', { duration: 10000 })
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(1))
 
-  // Well past the queued toast's duration: it never showed, so it must still be there.
-  await new Promise((r) => setTimeout(r, 300))
+  // Past the queued toast's duration: it never showed, so it must still be there.
+  await new Promise((r) => setTimeout(r, 200))
   expect(toasts.some((t) => t.id === queued)).toBe(true)
 
   dismiss(front)
@@ -441,8 +440,8 @@ test('the tab coming back while the stack is hovered keeps timers paused', async
   Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
   document.dispatchEvent(new Event('visibilitychange'))
 
-  await new Promise((r) => setTimeout(r, 300))
-  expect(document.querySelector('.ui-toast')).not.toBeNull()
+  await new Promise((r) => setTimeout(r, 200))
+  expect(toasts).toHaveLength(1)
 
   toaster.dispatchEvent(new PointerEvent('pointerleave'))
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
@@ -489,8 +488,13 @@ test('a pinned toast sits in its own section that newer toasts never cover', asy
   const toaster = document.querySelector('.ui-toaster')!
   toaster.dispatchEvent(new PointerEvent('pointerenter'))
   await vi.waitFor(() => expect(toaster.getAttribute('data-expanded')).toBe('true'))
-  await new Promise((r) => setTimeout(r, 600))
-  await vi.waitFor(check)
+  // Check once the expand transition has come to rest, not on a passing frame.
+  await vi.waitFor(async () => {
+    const top = pinnedCard.getBoundingClientRect().top
+    for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
+    expect(pinnedCard.getBoundingClientRect().top).toBe(top)
+  })
+  check()
 
   dismiss()
   await screen.unmount()
@@ -513,7 +517,6 @@ test('top positions put the pinned section below the stack', async () => {
 })
 
 test('pinned toasts are outside maxVisible: they never queue and never push others out', async () => {
-  const { toasts } = useToastQueue()
   const screen = await render(ToasterFixture, { props: { maxVisible: 1 } })
   const pinnedId = toast('Pinned', { pinned: true, duration: 150 })
   toast('Regular', { duration: 10000 })
@@ -592,4 +595,95 @@ test('a toast with a custom id swipes away', async () => {
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
   await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+// Two Toasters on one page: the unnamed one and one named "side".
+async function renderPair(props: { plain?: object; side?: object } = {}) {
+  const screen = await render({
+    render: () => [
+      h(Toaster, { position: 'bottom-right', ...props.plain }),
+      h(Toaster, { name: 'side', position: 'top-left', ...props.side }),
+    ],
+  })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(2))
+  const plain = document.querySelector<HTMLElement>('.ui-toaster--bottom-right')!
+  const side = document.querySelector<HTMLElement>('.ui-toaster--top-left')!
+  const titles = (el: Element) =>
+    [...el.querySelectorAll('.ui-toast-title')].map((t) => t.textContent).sort()
+  return { screen, plain, side, titles }
+}
+
+test('a named Toaster shows only toasts sent to it; the unnamed one shows only the rest', async () => {
+  const { screen, plain, side, titles } = await renderPair()
+  toast('Plain', { duration: 10000 })
+  toast('Side', { toaster: 'side', duration: 10000 })
+
+  await vi.waitFor(() => expect(titles(plain)).toEqual(['Plain']))
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side']))
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('maxVisible and queued timers count per Toaster', async () => {
+  const { screen, plain, side, titles } = await renderPair({
+    plain: { maxVisible: 1 },
+    side: { maxVisible: 2 },
+  })
+  toast('Plain', { duration: 200 })
+  toast('Side 1', { toaster: 'side', duration: 10000 })
+  toast('Side 2', { toaster: 'side', duration: 10000 })
+
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side 1', 'Side 2']))
+  expect(titles(plain)).toEqual(['Plain'])
+  // The side toasts don't push 'Plain' past its Toaster's maxVisible, so its timer runs.
+  await vi.waitFor(() => expect(titles(plain)).toEqual([]), { timeout: 2000 })
+  expect(titles(side)).toEqual(['Side 1', 'Side 2'])
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('hovering one Toaster pauses only its own toasts', async () => {
+  const { screen, plain, side, titles } = await renderPair()
+  toast('Plain', { duration: 200 })
+  toast('Side', { toaster: 'side', duration: 200 })
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side']))
+
+  side.dispatchEvent(new PointerEvent('pointerenter'))
+  // Plain's identical timer has fired by now, so a running Side timer would have dequeued it.
+  await vi.waitFor(() => expect(titles(plain)).toEqual([]), { timeout: 2000 })
+  expect(useToastQueue('side').toasts).toHaveLength(1)
+  expect(titles(side)).toEqual(['Side'])
+
+  side.dispatchEvent(new PointerEvent('pointerleave'))
+  await vi.waitFor(() => expect(titles(side)).toEqual([]), { timeout: 2000 })
+  await screen.unmount()
+})
+
+test("dismissing a toast removes it from its own Toaster and leaves the other's alone", async () => {
+  const { screen, plain, side, titles } = await renderPair()
+  toast('Plain', { duration: 10000 })
+  const id = toast('Side', { toaster: 'side', duration: 10000 })
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side']))
+
+  toast.dismiss(id)
+  await vi.waitFor(() => expect(titles(side)).toEqual([]))
+  expect(titles(plain)).toEqual(['Plain'])
+
+  toast('Side', { toaster: 'side', duration: 10000 })
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side']))
+  side.querySelector<HTMLElement>('.ui-toast-close')!.click()
+  await vi.waitFor(() => expect(titles(side)).toEqual([]))
+  expect(titles(plain)).toEqual(['Plain'])
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('an app with one unnamed Toaster never shows toasts sent to a named one', async () => {
+  const screen = await render(ToasterFixture)
+  toast('Elsewhere', { toaster: 'side', duration: 10000 })
+  toast('Here', { duration: 10000 })
+  await expect.element(page.getByText('Here')).toBeVisible()
+  expect(document.querySelectorAll('.ui-toast').length).toBe(1)
+  toast.dismiss()
+  await screen.unmount()
 })

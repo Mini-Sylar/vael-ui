@@ -1,7 +1,7 @@
 @layer ui-components {
   .ui-chip--sm {
     padding: 0.0625rem 0.375rem;
-    font-size: 0.75rem;
+    font-size: calc(var(--ui-font-size) * 0.75);
   }
   .ui-chip--removable.ui-chip--md {
     padding-inline-end: 0.25rem;

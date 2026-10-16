@@ -56,7 +56,7 @@
 
   .ui-timeline-opposite {
     color: var(--ui-text-muted);
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     /* Matches .ui-timeline-marker's own block-size so its text's vertical
        center lines up with the ring's, the same trick Stepper's own label
        uses against its circle (Stepper.css) — safe to do here because this

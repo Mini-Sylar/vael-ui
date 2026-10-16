@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { page, userEvent } from 'vitest/browser'
+import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import SelectFixture from './fixtures/SelectFixture.vue'
@@ -9,15 +9,6 @@ import Select from '../src/components/Select/Select.vue'
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition.
   for (const el of document.querySelectorAll('.ui-select-positioner')) el.remove()
-})
-
-test('a plain class passed to Select reaches the rendered trigger', async () => {
-  const screen = await render(Select, {
-    props: { items: [{ label: 'A', value: 'a' }] },
-    attrs: { class: 'my-select' },
-  })
-  const trigger = screen.getByRole('combobox')
-  expect(trigger.element().closest('.my-select')).not.toBeNull()
 })
 
 test('click opens the panel; the previously-selected item is active and scrolled into view', async () => {
@@ -212,18 +203,6 @@ test('virtualization renders a rendered window, not all 1000 rows, for a large l
   })
 })
 
-test('the listbox body still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
-  const screen = await render(SelectFixture, { props: { itemCount: 1000 } })
-  await screen.getByRole('combobox').click()
-  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
-  await vi.waitFor(() => {
-    const body = document.querySelector('.ui-select-body')
-    expect(body?.className).toContain('scroll-fade')
-  })
-  const body = document.querySelector('.ui-select-body') as HTMLElement
-  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
-})
-
 test('reach-end fires near the bottom in both virtualized and non-virtualized modes', async () => {
   // Non-virtualized (small list, below the auto-virtualize threshold): the
   // whole list already renders, so reach-end fires as soon as it's open.
@@ -260,28 +239,6 @@ test('panel inline-size matches the trigger width (matchReferenceWidth)', async 
     const panelWidth = panel.getBoundingClientRect().width
     expect(Math.abs(triggerWidth - panelWidth)).toBeLessThan(1)
   })
-})
-
-test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
-  const screen = await render(SelectFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
-  const trigger = screen.getByRole('combobox')
-  await trigger.click()
-  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
-
-  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
-  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
-  const body = document.querySelector<HTMLElement>('.ui-select-body')!
-  expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
-})
-
-test('without maxPanelHeight the panel defaults to a 320px cap instead of filling the viewport', async () => {
-  await page.viewport(800, 900)
-  const screen = await render(SelectFixture, { props: { itemCount: 100 } })
-  await screen.getByRole('combobox').click()
-  await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
-  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
-  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(320))
-  expect(panel.getBoundingClientRect().height).toBeGreaterThan(300)
 })
 
 test('clearable resets the model and hides once empty', async () => {

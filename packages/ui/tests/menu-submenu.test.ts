@@ -21,6 +21,13 @@ function menuItemByText(text: string): HTMLElement | null {
   )
 }
 
+/** Waits out HOVER_CLOSE_DELAY (200ms) with margin, then checks every row's submenu is still open. */
+async function expectStillExpanded(...rows: string[]) {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  for (const row of rows)
+    expect(menuItemByText(row)?.getAttribute('aria-expanded'), row).toBe('true')
+}
+
 test('ArrowRight opens a submenu and focuses its first item; ArrowLeft returns to the parent row', async () => {
   const screen = await render(MenuSubmenuFixture)
   await screen.getByTestId('trigger').click()
@@ -79,9 +86,8 @@ test('hovering into the submenu itself keeps it open, not just hovering the trig
   await vi.waitFor(() => expect(menuItemByText('Copy Link')).not.toBeNull(), { timeout: 1000 })
 
   await screen.getByRole('menuitem', { name: 'Copy Link' }).hover()
-  // Longer than HOVER_CLOSE_DELAY (200ms) — if the row's own leave-timer
-  // weren't cancelled, this is exactly when it would have fired.
-  await new Promise((resolve) => setTimeout(resolve, 350))
+  // If the row's own leave-timer weren't cancelled, it would fire within this wait.
+  await expectStillExpanded('Share')
   expect(menuItemByText('Copy Link')).not.toBeNull()
 })
 
@@ -104,9 +110,8 @@ test('hovering a 3rd-level submenu keeps the whole chain open, including the gra
   await vi.waitFor(() => expect(menuItemByText('Twitter')).not.toBeNull(), { timeout: 1000 })
 
   await screen.getByRole('menuitem', { name: 'Twitter' }).hover()
-  // Longer than HOVER_CLOSE_DELAY (200ms), twice over — enough for both
-  // Share's and Social's own close timers to have fired if unguarded.
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  // Share's and Social's own close timers would both fire within this wait if unguarded.
+  await expectStillExpanded('Share', 'Social')
   expect(menuItemByText('Twitter')).not.toBeNull()
   expect(menuItemByText('Copy Link')).not.toBeNull()
 })
@@ -130,9 +135,8 @@ test('hovering a 4th-level submenu keeps the entire chain open, all the way to t
   await vi.waitFor(() => expect(menuItemByText('Post')).not.toBeNull(), { timeout: 1000 })
 
   await screen.getByRole('menuitem', { name: 'Post' }).hover()
-  // Long enough for every level's own 200ms close timer to have fired at
-  // least twice over, if any single hop in the chain weren't guarded.
-  await new Promise((resolve) => setTimeout(resolve, 600))
+  // Every level's own close timer would fire within this wait if any hop weren't guarded.
+  await expectStillExpanded('Share', 'Social', 'Twitter')
   expect(menuItemByText('Post')).not.toBeNull()
   expect(menuItemByText('Twitter')).not.toBeNull()
   expect(menuItemByText('Copy Link')).not.toBeNull()

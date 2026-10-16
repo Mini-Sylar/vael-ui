@@ -1,7 +1,7 @@
 import '../src/style.css'
-import { h, ref } from 'vue'
+import { h, nextTick, ref, shallowRef } from 'vue'
 import { userEvent } from 'vitest/browser'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import Stepper from '../src/components/Stepper/Stepper.vue'
 import type { StepperItem } from '../src/components/Stepper/Stepper.vue'
@@ -160,4 +160,131 @@ test('#indicator slot replaces the circle content and receives the step state', 
   expect(circles[1]!.textContent).toBe('1:active')
   expect(circles[3]!.textContent).toBe('3:upcoming')
   expect(circles[0]!.querySelector('svg')).toBeNull()
+})
+
+test('motionCss=false switches off the circle and connector fill transitions too', async () => {
+  const make = (motionCss: boolean) =>
+    render(Stepper, { props: { items, modelValue: 1, motionCss } })
+  const parts = (container: HTMLElement) => ({
+    circle: container.querySelector<HTMLElement>('.ui-stepper-circle')!,
+    connector: container.querySelector<HTMLElement>('.ui-stepper-connector')!,
+  })
+  const on = await make(true)
+  const animated = parts(on.container)
+  expect(getComputedStyle(animated.circle).transitionProperty).not.toBe('none')
+  expect(getComputedStyle(animated.connector, '::after').transitionProperty).toBe('scale')
+  on.unmount()
+
+  const off = await make(false)
+  const still = parts(off.container)
+  expect(getComputedStyle(still.circle).transitionProperty).toBe('none')
+  expect(getComputedStyle(still.connector, '::after').transitionProperty).toBe('none')
+})
+
+test('exposes circleEls and connectorEls in order, and keeps them right when a circle remounts', async () => {
+  const stepper = shallowRef<{ circleEls: HTMLElement[]; connectorEls: HTMLElement[] } | null>(null)
+  const modelValue = ref(0)
+  const screen = await render(() =>
+    h(Stepper as any, {
+      ref: stepper,
+      items: [{ label: 'A' }, { label: 'B' }, { label: 'C' }, { label: 'D' }],
+      modelValue: modelValue.value,
+    }),
+  )
+  const query = (selector: string) => [...screen.container.querySelectorAll<HTMLElement>(selector)]
+  expect(stepper.value!.circleEls).toHaveLength(4)
+  expect(stepper.value!.connectorEls).toHaveLength(3)
+  expect(stepper.value!.circleEls).toEqual(query('.ui-stepper-circle'))
+  expect(stepper.value!.connectorEls).toEqual(query('.ui-stepper-connector'))
+
+  // Reaching step 2 swaps its trigger from a div to a button, a new circle element.
+  const oldCircle = stepper.value!.circleEls[2]
+  modelValue.value = 2
+  await nextTick()
+  await nextTick()
+  const circles = query('.ui-stepper-circle')
+  expect(circles[2]).not.toBe(oldCircle)
+  expect(stepper.value!.circleEls).toEqual(circles)
+})
+
+test('--ui-stepper-fill on a connector drives its fill, and the default look holds when unset', async () => {
+  // motionCss=false, as JS would: with the CSS transition on, the new value eases in.
+  const screen = await render(Stepper, { props: { items, modelValue: 1, motionCss: false } })
+  const connectors = screen.container.querySelectorAll<HTMLElement>('.ui-stepper-connector')
+  const filled = connectors[0]!
+  const empty = connectors[1]!
+  const scaleOf = (el: HTMLElement) => getComputedStyle(el, '::after').scale
+  expect(scaleOf(filled)).toBe('1')
+  expect(scaleOf(empty)).toBe('0 1')
+  empty.style.setProperty('--ui-stepper-fill', '0.5')
+  filled.style.setProperty('--ui-stepper-fill', '0.25')
+  expect(scaleOf(empty)).toBe('0.5 1')
+  expect(scaleOf(filled)).toBe('0.25 1')
+})
+
+test('horizontal: a circle scaled up for a pop still fits, without scrolling the row', async () => {
+  const { h } = await import('vue')
+  const { render: r } = await import('vitest-browser-vue')
+  const { default: Stepper } = await import('../src/components/Stepper/Stepper.vue')
+  await r(() =>
+    h(Stepper as never, {
+      items: [{ label: 'One' }, { label: 'Two' }, { label: 'Three' }],
+      modelValue: 0,
+    }),
+  )
+  const list = document.querySelector<HTMLElement>('.ui-stepper--horizontal')!
+  const circle = document.querySelector<HTMLElement>('.ui-stepper-circle')!
+  circle.style.scale = '1.15'
+  expect(list.scrollHeight).toBeLessThanOrEqual(list.clientHeight)
+  expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)
+})
+
+test('the check stays centered in its circle while it fades in', async () => {
+  const { h, shallowRef } = await import('vue')
+  const { render: r } = await import('vitest-browser-vue')
+  const { default: Stepper } = await import('../src/components/Stepper/Stepper.vue')
+  const step = shallowRef(0)
+  await r(
+    () =>
+      h(Stepper as never, {
+        items: [{ label: 'One' }, { label: 'Two' }],
+        modelValue: step.value,
+      }),
+    { global: { stubs: { transition: false } } },
+  )
+  step.value = 1
+  const svg = await vi.waitFor(() => {
+    const el = document.querySelector<SVGElement>('.ui-stepper-check-enter-active')
+    if (!el) throw new Error('not entering yet')
+    return el
+  })
+  const circle = svg.closest<HTMLElement>('.ui-stepper-circle')!.getBoundingClientRect()
+  const check = svg.getBoundingClientRect()
+  expect(check.left + check.width / 2).toBeCloseTo(circle.left + circle.width / 2, 0)
+  expect(check.top + check.height / 2).toBeCloseTo(circle.top + circle.height / 2, 0)
+})
+
+test('vertical: the line under a circle starts right below it, even when the step has a description', async () => {
+  const { h } = await import('vue')
+  const { render: r } = await import('vitest-browser-vue')
+  const { default: Stepper } = await import('../src/components/Stepper/Stepper.vue')
+  await r(() =>
+    h(Stepper as never, {
+      orientation: 'vertical',
+      items: [{ label: 'Cart', description: '3 items' }, { label: 'Shipping' }],
+      modelValue: 0,
+    }),
+  )
+  const step = document.querySelector<HTMLElement>('.ui-stepper-step')!
+  const circle = step.querySelector<HTMLElement>('.ui-stepper-circle')!.getBoundingClientRect()
+  const bridge = getComputedStyle(step, '::after')
+  const connector = document
+    .querySelector<HTMLElement>('.ui-stepper-connector')!
+    .getBoundingClientRect()
+  // The bridge runs from just below the circle to where the connector begins.
+  const stepTop = step.getBoundingClientRect().top
+  const bridgeTop = stepTop + parseFloat(bridge.top)
+  const bridgeBottom = step.getBoundingClientRect().bottom - parseFloat(bridge.bottom)
+  expect(bridgeTop - circle.bottom).toBeLessThan(8)
+  expect(Math.abs(bridgeBottom - connector.top)).toBeLessThan(1)
 })

@@ -12,7 +12,10 @@
     <section id="usage" class="section">
       <h2>{{ t('component.examples') }}</h2>
       <DemoFrame v-if="content.hasLiveDemo" :name="name" :examples="examples" />
-      <CodeBlock v-else lang="typescript" :code="exampleCode" />
+      <template v-else>
+        <CodeBlock lang="typescript" :code="exampleCode" />
+        <CodeBlock v-if="content.headCode" lang="html" :code="content.headCode" class="head-code" />
+      </template>
     </section>
 
     <MetaTable
@@ -219,5 +222,9 @@ useBreadcrumbSchema(() => [
   font-size: 1.05rem;
   letter-spacing: -0.01em;
   margin-bottom: 0.85rem;
+}
+
+.head-code {
+  margin-top: 1rem;
 }
 </style>

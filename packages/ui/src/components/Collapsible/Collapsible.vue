@@ -34,6 +34,7 @@
 <!-- Single disclosure with auto-wired trigger slot; imperative aria-expanded/aria-controls via watchEffect -->
 <script setup lang="ts">
 import './Collapsible.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef, watchEffect } from 'vue'
 import { useCollapse } from '../../composables/useCollapse'
@@ -47,7 +48,7 @@ const attrs = useAttrs()
 /** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Blocks toggling and marks the trigger `aria-disabled`. @default false */
     disabled?: boolean
@@ -56,8 +57,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue; body: UiPartValue }>
   }>(),
-  { disabled: false, motionCss: true },
+  { disabled: false, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 defineSlots<{
   /** Toggle control: clicks toggle the panel, and its first button receives `aria-expanded` and `aria-controls`. */
@@ -80,6 +82,8 @@ const panel = useTemplateRef<HTMLElement>('panel')
 const { style: collapseStyle, state: collapseState } = useCollapse(open, {
   el: panel,
   motionCss: () => props.motionCss,
+  // Its own motion-css="false" hands the height over; a provider's just makes it instant.
+  handOff: () => rawProps.motionCss === false,
 })
 
 // Reach into slot's real focusable child to keep expanded state + panel association in sync

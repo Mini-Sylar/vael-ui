@@ -62,7 +62,7 @@ one, match it — don't improvise a variant.
 - Every component's `ui` prop is `Partial<{ partName: UiPartValue }>` —
   `UiPartValue` is a class string or `{ class, style }` (`classes.ts`).
   Resolve every rendered class through `resolveUiPart(cx, themedUi()?.part,
-'ui-my-component', ...conditionalClasses)`, never a raw template literal.
+  'ui-my-component', ...conditionalClasses)`, never a raw template literal.
 - `useThemedUi((theme) => theme.myComponent, () => props.ui)` (`theme.ts`)
   merges an app-wide `ConfigProvider` default with the local `ui` prop,
   local winning per-key. Add your component's shape to `UiTheme`, appended
@@ -70,7 +70,7 @@ one, match it — don't improvise a variant.
   in this file has worked cleanly all session precisely because each
   insertion targets unique, non-overlapping text.
 - `style.css` is one file, everything inside a single `@layer
-ui-components { ... }` block. Never create a second `@layer` statement —
+  ui-components { ... }` block. Never create a second `@layer` statement —
   find your component's logical neighbors (a popover-chrome component goes
   near Select/Menu; a drag primitive goes near Resizable/Slider) and insert
   there. Comments explain WHY a value is what it is, matching the file's
@@ -293,7 +293,7 @@ component; find out which one is actually wrong first.
   component) doesn't error under the current `vue-tsc` when `Column` comes
   from a destructured scoped slot rather than a direct import — a real
   toolchain limitation, not a typing gap in the library. Use `<component
-:is="Column">` in demos/tests that need to prove the generic actually
+  :is="Column">` in demos/tests that need to prove the generic actually
   works, matching the existing DataTable demo's own documented workaround.
 - Slider's thumb position moved from `inset-inline-start` (a logical,
   RTL-aware property) to a `translate` (physical, not logical) as part of
@@ -309,7 +309,7 @@ component; find out which one is actually wrong first.
   runtime (proven by `packages/vapor-ui/tests/built-draggable.test.ts`,
   which exercises the real built bundle). Not a typing gap in the library —
   suppress with `<!-- @vue-expect-error known Volar vapor-directive
-typecheck gap, see generate-doc-demos.mjs -->` directly before the tag,
+  typecheck gap, see generate-doc-demos.mjs -->` directly before the tag,
   matching `generate-doc-demos.mjs`'s `suppressKnownVaporDirectiveGaps` and
   `packages/vapor-ui/tests/fixtures/DraggableRoot.vue`.
 

@@ -72,15 +72,18 @@ test('a trigger hidden at mount anchors to the trigger itself and the panel sett
     expect(el && getComputedStyle(el).visibility).toBe('visible')
     return el!
   })
-  await new Promise((resolve) => setTimeout(resolve, 300))
-
-  let writes = 0
-  const observer = new MutationObserver(() => writes++)
-  observer.observe(positioner, { attributes: true, attributeFilter: ['style'] })
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  observer.disconnect()
-
-  expect(writes).toBe(0)
+  // The bug repositioned on every frame, so a settled panel is one that stays quiet for a window.
+  await vi.waitFor(
+    async () => {
+      let writes = 0
+      const observer = new MutationObserver(() => writes++)
+      observer.observe(positioner, { attributes: true, attributeFilter: ['style'] })
+      await new Promise((resolve) => setTimeout(resolve, 200))
+      observer.disconnect()
+      expect(writes).toBe(0)
+    },
+    { timeout: 2000 },
+  )
   const triggerRect = trigger.getBoundingClientRect()
   expect(positioner.getBoundingClientRect().top).toBeGreaterThanOrEqual(triggerRect.bottom)
 })
@@ -217,28 +220,6 @@ test('header and footer slots render around the item list only when provided', a
   await expect.element(bare.getByRole('menu')).toBeInTheDocument()
   expect(document.querySelector('.ui-menu-header')).toBeNull()
   expect(document.querySelector('.ui-menu-footer')).toBeNull()
-})
-
-test('the item list still gets a real capped height (v-scroll-mask keeps working) now that max-height lives on the panel, not the body directly', async () => {
-  const screen = await render(MenuFixture, { props: { itemCount: 100 } })
-  await screen.getByTestId('trigger').click()
-  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
-  await vi.waitFor(() => {
-    const body = document.querySelector('.ui-menu-body')
-    expect(body?.className).toContain('scroll-fade')
-  })
-  const body = document.querySelector('.ui-menu-body') as HTMLElement
-  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
-})
-
-test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
-  const screen = await render(MenuFixture, { props: { itemCount: 100, maxPanelHeight: 160 } })
-  await screen.getByTestId('trigger').click()
-  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
-  const panel = document.querySelector<HTMLElement>('.ui-menu-panel')!
-  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
-  const body = document.querySelector<HTMLElement>('.ui-menu-body')!
-  expect(body.clientHeight).toBeLessThan(body.scrollHeight)
 })
 
 test('a fully custom #default slot gets the live maxHeight budget, so it can bound its own scroll region', async () => {

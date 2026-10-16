@@ -10,15 +10,15 @@
   },
   "dependencies": {
     "vael-ui": "workspace:*",
-    "vue": "3.6.0-rc.11"
+    "vue": "3.6.0-rc.12"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.9",
-    "@vitest/browser-playwright": "^5.0.2",
-    "playwright": "^1.63.0",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/browser-playwright": "^5.0.5",
+    "playwright": "^1.64.1",
     "typescript": "^6.0.3",
-    "vite": "^8.3.1",
-    "vitest": "^5.0.2",
-    "vue-tsc": "^3.3.11"
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5",
+    "vue-tsc": "3.3.11"
   }
 }

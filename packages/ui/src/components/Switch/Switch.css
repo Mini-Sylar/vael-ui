@@ -5,7 +5,7 @@
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     color: var(--ui-text);
   }
   .ui-switch--sm {
@@ -92,6 +92,7 @@
     cursor: not-allowed;
   }
   /* First paint only — see Checkbox's identical guard. */
+  .ui-switch--no-anim .ui-switch-track,
   .ui-switch--no-anim .ui-switch-thumb {
     transition: none;
   }

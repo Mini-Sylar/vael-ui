@@ -21,19 +21,19 @@
   .ui-button--sm {
     --ui-btn-px: 0.75rem;
     block-size: 1.75rem;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-button--md {
     --ui-btn-px: 1rem;
     block-size: 2.25rem;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-button--lg {
     --ui-btn-px: 1.25rem;
     block-size: 2.5rem;
-    font-size: 1rem;
+    font-size: var(--ui-font-size);
     border-radius: var(--ui-radius);
   }
 

@@ -78,7 +78,7 @@
   }
   .ui-calendar-label {
     position: relative;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     font-weight: 600;
     color: var(--ui-text);
     border: none;
@@ -125,7 +125,7 @@
     display: grid;
     place-items: center;
     padding-block: 0.25rem;
-    font-size: 0.75rem;
+    font-size: calc(var(--ui-font-size) * 0.75);
     font-weight: 500;
     color: var(--ui-text-muted);
   }
@@ -150,7 +150,7 @@
     aspect-ratio: 1;
     border-radius: calc(var(--ui-radius) - 4px);
     color: var(--ui-text);
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     cursor: pointer;
     transition:
       background-color var(--ui-duration-press) ease,
@@ -252,7 +252,7 @@
     min-block-size: 2.5rem;
     border-radius: calc(var(--ui-radius) - 4px);
     color: var(--ui-text);
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     cursor: pointer;
     transition:
       background-color var(--ui-duration-press) ease,

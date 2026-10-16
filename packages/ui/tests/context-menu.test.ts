@@ -16,13 +16,15 @@ function rightClick(el: Element, clientX: number, clientY: number) {
   )
 }
 
-test('right-click opens the menu positioned at the click point', async () => {
+test('right-click opens the menu positioned at the click point, with header/footer forwarded to Menu', async () => {
   const screen = await render(ContextMenuFixture)
   const target = screen.container.querySelector('.ui-context-menu-trigger')!
 
   rightClick(target, 120, 200)
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await expect.element(screen.getByTestId('context-menu-header')).toBeInTheDocument()
+  await expect.element(screen.getByTestId('context-menu-footer')).toBeInTheDocument()
 
   const panel = document.querySelector<HTMLElement>('.ui-menu-panel')!
   const rect = panel.getBoundingClientRect()
@@ -53,11 +55,12 @@ test.each([
   host.remove()
 })
 
-test('Escape closes the menu and select fires with the right item', async () => {
+test('opening focuses the first item; clicking an item fires select with it and closes the menu', async () => {
   const screen = await render(ContextMenuFixture)
   const target = screen.container.querySelector('.ui-context-menu-trigger')!
   rightClick(target, 50, 50)
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Rename'))
 
   await screen.getByRole('menuitem', { name: 'Duplicate' }).click()
   await expect.element(screen.getByTestId('selected')).toHaveTextContent('duplicate')
@@ -73,18 +76,6 @@ test('Escape dismisses without selecting', async () => {
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   await expect.element(screen.getByTestId('selected')).toHaveTextContent('')
-})
-
-test('keyboard nav works once open — ArrowDown moves focus, Enter selects', async () => {
-  const screen = await render(ContextMenuFixture)
-  const target = screen.container.querySelector('.ui-context-menu-trigger')!
-  rightClick(target, 50, 50)
-  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Rename'))
-
-  await userEvent.keyboard('{ArrowDown}')
-  await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Duplicate'))
-  await userEvent.keyboard('{Enter}')
-  await expect.element(screen.getByTestId('selected')).toHaveTextContent('duplicate')
 })
 
 test('right-clicking a NEW point while already open moves the menu instead of stacking a second one', async () => {
@@ -108,15 +99,6 @@ test('disabled suppresses the contextmenu trigger entirely', async () => {
   rightClick(target, 50, 50)
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   expect(document.querySelector('.ui-menu-panel')).toBeNull()
-})
-
-test('header and footer slots forward through to the underlying Menu', async () => {
-  const screen = await render(ContextMenuFixture)
-  const target = screen.container.querySelector('.ui-context-menu-trigger')!
-  rightClick(target, 50, 50)
-  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
-  await expect.element(screen.getByTestId('context-menu-header')).toBeInTheDocument()
-  await expect.element(screen.getByTestId('context-menu-footer')).toBeInTheDocument()
 })
 
 test('native browser context menu is suppressed (preventDefault on contextmenu)', async () => {

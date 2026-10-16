@@ -38,11 +38,7 @@
 
 body {
   margin: 0;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   color: var(--page-text);
   background: var(--page-bg);
   -webkit-font-smoothing: antialiased;

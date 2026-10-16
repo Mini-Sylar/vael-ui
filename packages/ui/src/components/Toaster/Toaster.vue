@@ -7,7 +7,7 @@
       :class="rootPart.class"
       :style="[rootStyle, rootPart.style]"
       v-bind="$attrs"
-      :css="motionCss"
+      :css="props.motionCss"
       role="region"
       aria-live="polite"
       :aria-label="messages.toaster.label"
@@ -105,6 +105,7 @@ export type ToasterPosition =
 
 <script setup lang="ts">
 import './Toaster.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, inject, onScopeDispose, reactive, ref, watch } from 'vue'
 import { useDocumentVisibility } from '@vueuse/core'
@@ -123,8 +124,17 @@ const SWIPE_EXIT_MS = 200
 
 defineOptions({ inheritAttrs: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
+    /**
+     * Shows only toasts sent to this name. Without one, it shows toasts that have no `toaster`.
+     * @example
+     * ```vue
+     * <Toaster name="editor" />
+     * <!-- toast('Copied', { toaster: 'editor' }) -->
+     * ```
+     */
+    name?: string
     /** Screen corner or edge the toasts stack from. @default 'bottom-right' */
     position?: ToasterPosition
     /** Max toasts shown at once. Extra toasts wait off-screen, timers paused, until a slot opens.
@@ -157,9 +167,10 @@ const props = withDefaults(
     expand: false,
     gap: 10,
     teleportTo: 'body',
-    motionCss: true,
+    motionCss: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when a toast enters, only while `motionCss` is `false`. Run your own animation, then call
@@ -169,11 +180,16 @@ const emit = defineEmits<{
   'card-leave': [el: Element, done: () => void]
 }>()
 
+// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('card-enter', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('card-enter', el, done),
 )
 const leaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('card-leave', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('card-leave', el, done),
 )
 
 defineSlots<{
@@ -186,7 +202,12 @@ defineSlots<{
   }): unknown
 }>()
 
-const { toasts, dismiss, pauseAll, resumeAll, setWaiting } = useToastQueue()
+// This Toaster's own queue, so two Toasters never share slots or timers.
+const queue = computed(() => useToastQueue(props.name))
+const toasts = computed(() => queue.value.toasts)
+const dismiss = (id: ToastId) => queue.value.dismiss(id)
+const pauseAll = () => queue.value.pauseAll()
+const resumeAll = () => queue.value.resumeAll()
 const messages = useUiMessages()
 
 // Extracted to bypass oxfmt removing semicolon from multi-statement @click expression.
@@ -206,8 +227,8 @@ function registerToaster(el: Element | { $el?: unknown } | null) {
 }
 
 // Pinned toasts sit in their own section past the stack; only the stack collapses and queues.
-const stack = computed(() => toasts.filter((t) => !t.pinned))
-const pinned = computed(() => toasts.filter((t) => t.pinned))
+const stack = computed(() => toasts.value.filter((t) => !t.pinned))
+const pinned = computed(() => toasts.value.filter((t) => t.pinned))
 const visible = computed(() => stack.value.slice(-props.maxVisible))
 // Pinned cards render last so they layer above the stack while it expands into them.
 const rendered = computed(() => [...visible.value, ...pinned.value])
@@ -225,7 +246,8 @@ const resizeObservers = new Map<ToastId, ResizeObserver>()
 const heightTransitions = new Set<ToastId>()
 function recordHeight(id: ToastId, el: HTMLElement, h = el.offsetHeight) {
   if (el.style.blockSize || heightTransitions.has(id)) return
-  if (h > 0) heights.set(id, h)
+  // Whole pixels, so a mount-time read and a ResizeObserver read of the same card agree.
+  if (h > 0) heights.set(id, Math.round(h))
 }
 
 function registerCard(id: ToastId, el: Element | null) {
@@ -399,7 +421,11 @@ function cardStyle(id: ToastId, index: number, isPinned: boolean) {
   // Sonner's collapsed stack: back cards take the front card's height so each one peeks by
   // exactly `gap`, however tall or short its own content is.
   const frontH = frontHeight.value
-  if (!expanded.value && depth > 0 && frontH != null) style.blockSize = `${frontH}px`
+  // Only once its own height is known: a toast arriving behind the front one renders at its
+  // natural height first, so opening the stack uses real heights instead of a guess.
+  if (!expanded.value && depth > 0 && frontH != null && heights.has(id)) {
+    style.blockSize = `${frontH}px`
+  }
   return style
 }
 
@@ -500,7 +526,7 @@ function onPointerUp(id: ToastId) {
 }
 
 watch(
-  () => toasts.map((t) => t.id),
+  () => toasts.value.map((t) => t.id),
   (ids) => {
     const live = new Set(ids)
     for (const key of heights.keys()) {
@@ -534,10 +560,15 @@ watch(visibility, (visibilityState) => {
 // Toasts past maxVisible aren't on screen yet, so their timers wait until they are.
 watch(
   () => stack.value.slice(0, Math.max(0, stack.value.length - props.maxVisible)).map((t) => t.id),
-  (ids) => setWaiting(ids, !interacting.value && visibility.value !== 'hidden'),
+  (ids) => queue.value.setWaiting(ids, !interacting.value && visibility.value !== 'hidden'),
   { immediate: true },
 )
-onScopeDispose(() => setWaiting([], !interacting.value))
+// On a new `name`, the old queue's toasts stop waiting on this Toaster.
+watch(queue, (next, prev) => {
+  prev.setWaiting([], visibility.value !== 'hidden')
+  if (interacting.value) next.pauseAll()
+})
+onScopeDispose(() => queue.value.setWaiting([], !interacting.value))
 
 defineExpose({
   /** Toast list (root) element. */

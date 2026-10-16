@@ -5,7 +5,7 @@
     :style="[rootStyle, rootPart.style]"
     :data-open-side="openSide || undefined"
     :data-dragging="isDragging || undefined"
-    :data-motion="motionCss ? undefined : 'off'"
+    :data-motion="props.motionCss ? undefined : 'off'"
     :data-reveal-scale="revealScaleOn || undefined"
     :aria-disabled="disabled || undefined"
     v-bind="attrs"
@@ -57,6 +57,7 @@
      direction picks); actions stay in the DOM for a11y; tap-to-close is capture-phase. -->
 <script setup lang="ts">
 import './SwipeToReveal.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
 import { useElementSize } from '@vueuse/core'
@@ -76,7 +77,7 @@ const slots = useSlots()
  */
 const open = defineModel<boolean>('open', { default: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Blocks swiping. `reveal()`, `close()` and `v-model:open` still work. @default false */
     disabled?: boolean
@@ -95,11 +96,12 @@ const props = withDefaults(
   }>(),
   {
     disabled: false,
-    motionCss: true,
+    motionCss: undefined,
     revealScale: true,
     ui: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires once per settled interaction, with `open` and the open edge (or `null`). */

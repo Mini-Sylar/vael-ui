@@ -17,6 +17,9 @@
   <output data-testid="home-select-count">{{ homeSelectCount }}</output>
   <output data-testid="open-state">{{ open }}</output>
   <output data-testid="exposed-el">{{ speedDialRef?.el ? 'yes' : 'no' }}</output>
+  <output data-testid="exposed-icon-el">{{
+    speedDialRef?.iconEl?.classList.contains('ui-speed-dial-trigger-icon') ? 'yes' : 'no'
+  }}</output>
   <button data-testid="call-open" @click="speedDialRef?.open()">open()</button>
   <button data-testid="call-close" @click="speedDialRef?.close()">close()</button>
   <button data-testid="call-toggle" @click="speedDialRef?.toggle()">toggle()</button>

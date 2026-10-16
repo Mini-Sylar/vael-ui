@@ -23,8 +23,9 @@
     --ui-border: #e4e4e7;
     --ui-overlay: rgb(0 0 0 / 0.4);
     --ui-radius: 10px;
-    /* Minimum text size for form controls on touch screens: iOS zooms into anything smaller. 0px turns it off. */
-    --ui-touch-font-size: 16px;
+    --ui-font-size: 1rem;
+    /* Optional floor for form-field text on touch screens. 0px: fields match your text. */
+    --ui-touch-font-size: 0px;
     --ui-border-strong: #d4d4d8;
 
     /* Below dialog: a drag preview floats over page content, never over a modal. */

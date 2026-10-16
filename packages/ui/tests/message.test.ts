@@ -5,34 +5,15 @@ import { render } from 'vitest-browser-vue'
 import MessageFixture from './fixtures/MessageFixture.vue'
 import Message from '../src/components/Message/Message.vue'
 
-test('default variant gets role="status"', async () => {
-  await render(Message, { slots: { default: 'Heads up' } })
-  await expect.element(page.getByRole('status')).toBeVisible()
-})
-
-test('error variant gets role="alert"', async () => {
-  const screen = await render(Message, {
-    props: { variant: 'error' },
-    slots: { default: 'Failed' },
-  })
-  const el = screen.container.querySelector('.ui-message')!
-  expect(el.getAttribute('role')).toBe('alert')
-})
-
-test('warning variant gets role="alert"', async () => {
-  const screen = await render(Message, {
-    props: { variant: 'warning' },
-    slots: { default: 'Careful' },
-  })
-  expect(screen.container.querySelector('.ui-message')!.getAttribute('role')).toBe('alert')
-})
-
-test('explicit role prop overrides the variant-based default', async () => {
-  const screen = await render(Message, {
-    props: { variant: 'error', role: 'status' },
-    slots: { default: 'Failed but calm' },
-  })
-  expect(screen.container.querySelector('.ui-message')!.getAttribute('role')).toBe('status')
+test.each([
+  [{}, 'status'],
+  [{ variant: 'error' }, 'alert'],
+  [{ variant: 'warning' }, 'alert'],
+  [{ variant: 'error', role: 'status' }, 'status'],
+] as const)('%o renders role="%s"', async (props, role) => {
+  const screen = await render(Message, { props, slots: { default: 'Heads up' } })
+  await expect.element(screen.getByRole(role)).toBeVisible()
+  expect(screen.container.querySelector('.ui-message')!.getAttribute('role')).toBe(role)
 })
 
 test('showIcon renders StatusIcon for the variant; false omits the icon wrapper', async () => {

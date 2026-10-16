@@ -14,11 +14,15 @@ const BROKEN_SRC = '/definitely-missing-avatar-image-404.png'
 const image = () => document.querySelector<HTMLImageElement>('.ui-avatar-image')
 const fallback = () => document.querySelector<HTMLElement>('.ui-avatar-fallback')!
 
-test('initials computed from first + last word of name', async () => {
-  const screen = await render(Avatar, { props: { name: 'Jane Doe' } })
+test('initials computed from first + last word of name; size and shape set part classes', async () => {
+  const screen = await render(Avatar, { props: { name: 'Jane Doe', size: 'lg', shape: 'square' } })
   await expect
     .element(screen.container.querySelector<HTMLElement>('.ui-avatar-fallback')!)
     .toHaveTextContent('JD')
+  expect(screen.container.querySelector('.ui-avatar')).toHaveClass(
+    'ui-avatar--lg',
+    'ui-avatar--square',
+  )
 })
 
 test('single-word name uses just its first letter', async () => {
@@ -56,11 +60,4 @@ test('badge slot renders inside the positioned wrapper with data-placement', asy
   const badge = screen.container.querySelector('.ui-avatar-badge')!
   expect(badge.getAttribute('data-placement')).toBe('top-start')
   expect(badge.querySelector('.my-badge')).not.toBeNull()
-})
-
-test('size and shape render the matching part classes', async () => {
-  const screen = await render(Avatar, { props: { name: 'Jane Doe', size: 'lg', shape: 'square' } })
-  const el = screen.container.querySelector('.ui-avatar')!
-  expect(el).toHaveClass('ui-avatar--lg')
-  expect(el).toHaveClass('ui-avatar--square')
 })

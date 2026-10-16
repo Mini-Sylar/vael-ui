@@ -1,6 +1,7 @@
 import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, ref } from 'vue'
 import Tag from '../src/components/Tag/Tag.vue'
 
 test('default slot content renders', async () => {
@@ -8,26 +9,14 @@ test('default slot content renders', async () => {
   await expect.element(screen.getByText('paid')).toBeInTheDocument()
 })
 
-test('default variant/size classes apply', async () => {
+test('variant, size and pill modifier classes render, defaulting to muted/md', async () => {
   const screen = await render(Tag)
   const el = screen.container.querySelector('.ui-tag')!
-  expect(el).toHaveClass('ui-tag--muted')
-  expect(el).toHaveClass('ui-tag--md')
-})
+  expect(el).toHaveClass('ui-tag--muted', 'ui-tag--md')
+  expect(el).not.toHaveClass('ui-tag--pill')
 
-test('variant classes render', async () => {
-  const screen = await render(Tag, { props: { variant: 'success' } })
-  expect(screen.container.querySelector('.ui-tag')).toHaveClass('ui-tag--success')
-})
-
-test('size classes render', async () => {
-  const screen = await render(Tag, { props: { size: 'sm' } })
-  expect(screen.container.querySelector('.ui-tag')).toHaveClass('ui-tag--sm')
-})
-
-test('pill renders the pill modifier class', async () => {
-  const screen = await render(Tag, { props: { pill: true } })
-  expect(screen.container.querySelector('.ui-tag')).toHaveClass('ui-tag--pill')
+  await screen.rerender({ variant: 'success', size: 'sm', pill: true })
+  expect(el).toHaveClass('ui-tag--success', 'ui-tag--sm', 'ui-tag--pill')
 })
 
 test('no #icon slot: no icon wrapper renders', async () => {
@@ -45,7 +34,8 @@ test('#icon slot renders inside the icon wrapper', async () => {
 })
 
 test('exposes el pointing at the real root', async () => {
-  const screen = await render(Tag, { slots: { default: 'active' } })
-  const el = screen.container.querySelector('.ui-tag')
-  expect(el).not.toBeNull()
+  const captured = ref<InstanceType<typeof Tag> | null>(null)
+  const screen = await render({ render: () => h(Tag, { ref: captured }, () => 'active') })
+  expect(captured.value?.el).toBe(screen.container.querySelector('.ui-tag'))
+  expect(captured.value?.el).toBeInstanceOf(HTMLElement)
 })

@@ -103,11 +103,7 @@
   </thead>
 </template>
 
-<!-- Internal, DataTable-only: written once and rendered from either of
-     DataTable.vue's two table structures — see DataTableBody.vue's own
-     header comment for why. Exposes `rowEl` so the parent's frozenColumns
-     offset measurement (which needs the real <th> elements) keeps working
-     regardless of which table currently owns this header. -->
+<!-- Internal: shared by both table layouts. Exposes `rowEl` for frozen offset measuring. -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import { computed, useTemplateRef } from 'vue'
 import Checkbox from '../Checkbox/Checkbox.vue'

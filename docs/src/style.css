@@ -16,13 +16,9 @@
   }
 
   html {
-    font-size: 14px;
-    font-family:
-      'Geist Variable',
-      system-ui,
-      -apple-system,
-      'Segoe UI',
-      sans-serif;
+    color-scheme: light;
+    font-size: var(--docs-font-size, 14px);
+    font-family: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scrollbar-width: thin;
@@ -52,12 +48,7 @@
 
   body {
     min-height: 100dvh;
-    font-family:
-      'Geist Variable',
-      system-ui,
-      -apple-system,
-      'Segoe UI',
-      sans-serif;
+    font-family: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-size: 1rem;
     line-height: 1.55;
     color: var(--ui-text);
@@ -117,6 +108,16 @@
     --docs-page-max: 140rem;
     /* Fixed, not var(--ui-radius) — a Pill radius would clamp our own boxes into ovals. */
     --docs-radius: 10px;
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      color-scheme: dark;
+    }
   }
 
   /* Shiki dual-theme output (defaultColor: false). Only block output carries

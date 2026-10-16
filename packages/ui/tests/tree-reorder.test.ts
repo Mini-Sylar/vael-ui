@@ -74,10 +74,10 @@ test('canDrop=false blocks the move and flags the tree invalid', async () => {
   expect(shape(screen)).toBe('a,folder(f1,f2),z')
 })
 
-test('an async beforeDrop gates the tree move exactly as it gates a list', async () => {
-  let decide!: (value: boolean) => void
-  const gate = new Promise<boolean>((resolve) => {
-    decide = resolve
+test('an async beforeDrop gates the tree move, and a rejection reverts and reports via drop-error', async () => {
+  let fail!: (error: Error) => void
+  const gate = new Promise<boolean>((_, reject) => {
+    fail = reject
   })
   const screen = await render(TreeReorderFixture, { props: { beforeDrop: () => gate } })
   rowFor(screen, 'a').focus()
@@ -87,22 +87,14 @@ test('an async beforeDrop gates the tree move exactly as it gates a list', async
   )
   expect(shape(screen)).toBe('a,folder(f1,f2),z')
 
-  decide(true)
-  await vi.waitFor(() => expect(shape(screen)).toBe('folder(f1,f2),a,z'))
-})
-
-test('a rejecting beforeDrop reverts and reports instead of throwing', async () => {
-  const screen = await render(TreeReorderFixture, {
-    props: { beforeDrop: () => Promise.reject(new Error('server said no')) },
-  })
-  rowFor(screen, 'a').focus()
-  await userEvent.keyboard(' {ArrowDown} ')
+  fail(new Error('server said no'))
   await vi.waitFor(() =>
     expect(screen.container.querySelector('[data-testid="drop-errors"]')!.textContent).toContain(
       'server said no',
     ),
   )
   expect(shape(screen)).toBe('a,folder(f1,f2),z')
+  expect(screen.container.querySelector('[data-drop-pending]')).toBeNull()
 })
 
 test('dropping a folder into its own descendant is refused', async () => {

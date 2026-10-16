@@ -120,15 +120,6 @@ test('canDrop rejecting a target blocks the reorder, on top of the built-in pinn
   expect(headerFields(screen)).toEqual(['name', 'age'])
 })
 
-test('beforeDrop resolving false cancels the reorder without an error', async () => {
-  const screen = await renderTable({ beforeDrop: () => Promise.resolve(false) })
-  const [first, second] = headerEls(screen)
-  dragHeaderOver(first!, second!, 27)()
-  await new Promise((r) => setTimeout(r, 50))
-  expect(headerFields(screen)).toEqual(['name', 'age'])
-  expect(screen.container.querySelector('[data-testid="drop-error-count"]')!.textContent).toBe('0')
-})
-
 test('beforeDrop rejecting cancels the reorder and fires drop-error', async () => {
   const screen = await renderTable({ beforeDrop: () => Promise.reject(new Error('boom')) })
   const [first, second] = headerEls(screen)
@@ -183,8 +174,13 @@ test('dragging the middle of three columns shifts the far one by the dragged wid
   const ageWidth = age!.getBoundingClientRect().width
   const release = dragHeaderOver(age!, status!, 26)
   await vi.waitFor(() => expect(status!.style.translate).not.toBe(''))
-  // The shift is spring-driven, not instant — let it settle before reading it.
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  // The shift is spring-driven, not instant — read it once it has come to rest.
+  await vi.waitFor(async () => {
+    const moving = status!.style.translate
+    await new Promise(requestAnimationFrame)
+    await new Promise(requestAnimationFrame)
+    expect(status!.style.translate).toBe(moving)
+  })
 
   // Untouched — must not have moved at all.
   expect(name!.getBoundingClientRect().left + scrolledX() - scrolledBefore).toBeCloseTo(
@@ -244,4 +240,27 @@ test('body cells follow their header while a column drags, then settle back to r
     },
     { timeout: 3000 },
   )
+})
+
+test('with scrollHeight, dragging a column to the edge autoscrolls the head strip and the body follows', async () => {
+  const screen = await renderTable({
+    rowCount: 20,
+    showStatusColumn: true,
+    scrollHeight: '160px',
+    ui: { root: { style: 'width: 200px' } },
+  })
+  const head = screen.container.querySelector<HTMLElement>('.ui-datatable-head-scroll')!
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(body.scrollWidth).toBeGreaterThan(body.clientWidth))
+  const [name] = headerEls(screen)
+  const box = name!.getBoundingClientRect()
+  const edge = head.getBoundingClientRect().right - 4
+  const y = box.top + box.height / 2
+  const init = { bubbles: true, pointerId: 31, button: 0, clientY: y }
+  name!.dispatchEvent(new PointerEvent('pointerdown', { ...init, clientX: box.left + 8 }))
+  window.dispatchEvent(new PointerEvent('pointermove', { ...init, clientX: box.left + 40 }))
+  window.dispatchEvent(new PointerEvent('pointermove', { ...init, clientX: edge }))
+  await vi.waitFor(() => expect(head.scrollLeft).toBeGreaterThan(20))
+  await vi.waitFor(() => expect(Math.abs(body.scrollLeft - head.scrollLeft)).toBeLessThan(1))
+  window.dispatchEvent(new PointerEvent('pointerup', init))
 })
