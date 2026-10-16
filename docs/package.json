@@ -14,25 +14,25 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@phosphor-icons/vue": "^2.2.1",
-    "@unhead/vue": "^2.1.17",
+    "@unhead/vue": "^3.4.3",
     "@vueuse/core": "^15.0.0",
     "gsap": "^3.15.0",
-    "motion-v": "^2.5.1",
-    "shiki": "^4.4.3",
+    "motion-v": "^2.7.0",
+    "shiki": "^4.5.0",
     "vael-ui": "workspace:*",
     "vee-validate": "^4.15.1",
     "vite-ssg": "^28.3.0",
-    "vue": "3.6.0-rc.11",
-    "vue-i18n": "^11.4.12",
-    "vue-router": "^5.3.1"
+    "vue": "3.6.0-rc.12",
+    "vue-i18n": "^11.4.14",
+    "vue-router": "^5.4.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.9",
+    "@vitejs/plugin-vue": "^6.0.10",
     "beasties": "^0.4.3",
     "typescript": "^6.0.3",
-    "vite": "^8.3.1",
+    "vite": "^8.3.4",
     "vite-ssg-sitemap": "^0.10.0",
-    "vue-component-meta": "^3.3.11",
-    "vue-tsc": "^3.3.11"
+    "vue-component-meta": "3.3.11",
+    "vue-tsc": "3.3.11"
   }
 }

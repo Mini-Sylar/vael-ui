@@ -18,12 +18,7 @@
   html {
     color-scheme: light;
     font-size: var(--docs-font-size, 14px);
-    font-family:
-      'Geist Variable',
-      system-ui,
-      -apple-system,
-      'Segoe UI',
-      sans-serif;
+    font-family: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scrollbar-width: thin;
@@ -53,12 +48,7 @@
 
   body {
     min-height: 100dvh;
-    font-family:
-      'Geist Variable',
-      system-ui,
-      -apple-system,
-      'Segoe UI',
-      sans-serif;
+    font-family: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-size: 1rem;
     line-height: 1.55;
     color: var(--ui-text);

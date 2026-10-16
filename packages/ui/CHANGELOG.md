@@ -338,7 +338,7 @@
     the class contains. The button still receives the same class and paints everything normally.
 
   - **`Menu`:** `.ui-menu-trigger` (the span wrapping the `#trigger` slot) is now `display:
-contents`. It only ever existed for a click handler and a ref, but giving it a box meant a
+    contents`. It only ever existed for a click handler and a ref, but giving it a box meant a
     trigger styled `position: absolute; inset: 0` to cover its own parent lost its sizing — the
     wrapper, containing only an out-of-flow child, collapsed to near-zero and stopped
     participating in the real parent's layout the way the trigger used to directly. A
@@ -667,7 +667,7 @@ contents`. It only ever existed for a click handler and a ref, but giving it a b
   to land on precisely.
 
   **Fixed:** the shared reorder engine's drop hand-off and identity tracking, and `reorderSiblings:
-false` being ignored when dropping past a list's last row.
+  false` being ignored when dropping past a list's last row.
 
   **Fixed:** a cross-container drag stayed locked to its origin list's sort axis until it actually
   crossed into a sibling list, reading as stuck; it now tracks the pointer freely from the moment it
@@ -808,7 +808,7 @@ false` being ignored when dropping past a list's last row.
     tab order, and flips `type="password"`/`"text"` plus its own `aria-label`. Reveal state is a
     real `v-model:visible`.
   - The requirements hint's _placement_ is the component's job (`hintPlacement: 'inline' | 'popover'
-| 'none'`, default `'popover'`); its _content_ is entirely the consumer's (`rules` prop —
+    | 'none'`, default `'popover'`); its _content_ is entirely the consumer's (`rules` prop —
     `{ label, test(value) }` pairs — or a `#hint` slot for full override). No built-in default rule
     set: pass `rules` and/or `#hint`, or the hint doesn't mount.
   - `autocomplete` has no default on purpose: `current-password` for login, `new-password` for
@@ -871,7 +871,7 @@ false` being ignored when dropping past a list's last row.
     the folder a newly created file just landed in).
   - New standalone exports `findTreeNode`, `findTreeParent`, and `removeTreeNode` — the same
     depth-first lookup/removal `Tree` already needed internally, generic over any `T extends
-TreeNode`, so a consumer doesn't have to hand-roll the same recursion for their own `items` array
+    TreeNode`, so a consumer doesn't have to hand-roll the same recursion for their own `items` array
     (e.g. resolving a selected value back to its node, or deleting a node after a context-menu
     action). Also bound per-instance as `findNode`/`findParent`/`removeNode` — pre-scoped to that
     `Tree`/`TreeSelect`'s own `items` — on both the `#node` slot's scope and `defineExpose()`, so
@@ -920,8 +920,8 @@ TreeNode`, so a consumer doesn't have to hand-roll the same recursion for their 
   fixed in rc.4, resolves the upstream bug directly at its source: a Vapor component whose root
   wraps its content in `<Transition>` would have an externally-passed `class` _replace_ its own
   internal classes instead of merging with them (e.g. passing `external-class` to `<Message
-class="external-class">` left the element with only `external-class`, dropping `ui-message
-ui-message--warning` entirely). The `inheritAttrs: false` + `v-bind="attrs"` workaround already
+  class="external-class">` left the element with only `external-class`, dropping `ui-message
+  ui-message--warning` entirely). The `inheritAttrs: false` + `v-bind="attrs"` workaround already
   shipped in this library stays correct either way and needs no change, but the regression test now
   exercises the real upstream fix too, not just the workaround.
 
@@ -1211,7 +1211,7 @@ ui-message--warning` entirely). The `inheritAttrs: false` + `v-bind="attrs"` wor
 ### Patch Changes
 
 - [`0826c21`](https://github.com/Mini-Sylar/vael-ui/commit/0826c2146423a6d091821eaa8cef0f487d58c5aa) Thanks [@Mini-Sylar](https://github.com/Mini-Sylar)! - Fix: `vTooltipVapor`/`vScrollMaskVapor` crashed with `TypeError: value is
-not a function` on bare usage with no bound value (`<div v-scroll-mask>`,
+  not a function` on bare usage with no bound value (`<div v-scroll-mask>`,
   the primary documented pattern for that directive) — Vapor's compiler
   passes no `value` argument at all for a directive with no value
   expression, not a no-op getter. Both now guard with `value?.()`.
@@ -1233,7 +1233,7 @@ not a function` on bare usage with no bound value (`<div v-scroll-mask>`,
   Register `v-tooltip`/`v-scroll-mask` on Vue's `GlobalDirectives` interface
   so Volar/vue-tsc resolves them when registered globally
   (`app.directive('tooltip', vTooltip)`), not just via a local `<script
-setup>` import.
+  setup>` import.
 
   Document directive setup (including the global-registration requirement)
   and Vue Vapor support in the README.
