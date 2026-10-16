@@ -65,6 +65,7 @@
     "build": "pnpm gen && tsdown && node -e \"require('fs').copyFileSync('../../README.md', './README.md')\"",
     "dev": "pnpm gen && tsdown --watch --no-clean --no-report",
     "test": "pnpm gen && vitest run",
+    "test:spikes": "vitest run --config vitest.spikes.config.ts",
     "check:dts": "vue-tsc --noEmit -p dts-check/tsconfig.json",
     "typecheck": "vue-tsc --noEmit"
   },

@@ -95,11 +95,11 @@ test('press-and-hold on a stepper repeats the step beyond the first click', asyn
   const screen = await render(InputNumberFixture, { props: { step: 1 } })
   const inc = basicIncrement(screen)
   inc.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }))
-  // 500ms initial delay + several 60ms repeats.
-  await new Promise((r) => setTimeout(r, 750))
+  // 500ms initial delay, then 60ms repeats.
+  await expect
+    .poll(() => Number(screen.getByTestId('basic-value').element().textContent), { timeout: 2000 })
+    .toBeGreaterThan(2)
   inc.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }))
-  const text = screen.getByTestId('basic-value').element().textContent ?? ''
-  expect(Number(text)).toBeGreaterThan(2)
 })
 
 test('spinbutton ARIA reflects the current value and bounds', async () => {

@@ -15,20 +15,14 @@ function focusedText() {
   return document.activeElement?.textContent?.trim()
 }
 
-test('trigger click opens the panel and focuses the first top-level row', async () => {
-  const screen = await render(CascadeSelectFixture)
-  await screen.getByRole('combobox').click()
-  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
-  await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
-  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
-})
-
-test('header and footer slots forward through to the underlying Menu', async () => {
+test('trigger click opens the panel and focuses the first top-level row; header/footer forward to Menu', async () => {
   const screen = await render(CascadeSelectFixture, {
     props: { withHeader: true, withFooter: true },
   })
   await screen.getByRole('combobox').click()
   await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+  await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   await expect.element(screen.getByTestId('cascade-select-header')).toBeInTheDocument()
   await expect.element(screen.getByTestId('cascade-select-footer')).toBeInTheDocument()
 })

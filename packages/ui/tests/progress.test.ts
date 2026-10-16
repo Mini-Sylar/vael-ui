@@ -6,51 +6,28 @@ import Progress from '../src/components/Progress/Progress.vue'
 
 const bar = (root: HTMLElement) => root.querySelector<HTMLElement>('.ui-progress')!
 
-test('aria-valuenow reflects value, clamped to max', async () => {
-  const screen = await render(Progress, { props: { value: 40 } })
+test.each([
+  [40, '40', 'loading'],
+  [150, '100', 'complete'],
+  [100, '100', 'complete'],
+  [-20, '0', 'loading'],
+  [null, null, 'indeterminate'],
+])('value %s gives aria-valuenow %s and data-state="%s"', async (value, valuenow, state) => {
+  const screen = await render(Progress, { props: { value } })
   const el = bar(screen.container)
-  await expect.element(el).toHaveAttribute('aria-valuenow', '40')
-  await expect.element(el).toHaveAttribute('aria-valuemin', '0')
-  await expect.element(el).toHaveAttribute('aria-valuemax', '100')
+  expect(el.getAttribute('aria-valuemin')).toBe('0')
+  expect(el.getAttribute('aria-valuemax')).toBe('100')
+  expect(el.getAttribute('aria-valuenow')).toBe(valuenow)
+  expect(el.getAttribute('data-state')).toBe(state)
 })
 
-test('value above max clamps aria-valuenow to max', async () => {
-  const screen = await render(Progress, { props: { value: 150, max: 100 } })
-  await expect.element(bar(screen.container)).toHaveAttribute('aria-valuenow', '100')
-})
-
-test('value below 0 clamps aria-valuenow to 0', async () => {
-  const screen = await render(Progress, { props: { value: -20 } })
-  await expect.element(bar(screen.container)).toHaveAttribute('aria-valuenow', '0')
-})
-
-test('indeterminate (value null) drops aria-valuenow and sets data-state', async () => {
-  const screen = await render(Progress, { props: { value: null } })
+test('label sets aria-label; variant and size render as classes', async () => {
+  const screen = await render(Progress, {
+    props: { value: 50, label: 'Uploading', variant: 'danger', size: 'sm' },
+  })
   const el = bar(screen.container)
-  expect(el.hasAttribute('aria-valuenow')).toBe(false)
-  expect(el.getAttribute('data-state')).toBe('indeterminate')
-})
-
-test('value at max sets data-state="complete"', async () => {
-  const screen = await render(Progress, { props: { value: 100, max: 100 } })
-  expect(bar(screen.container).getAttribute('data-state')).toBe('complete')
-})
-
-test('value below max sets data-state="loading"', async () => {
-  const screen = await render(Progress, { props: { value: 30, max: 100 } })
-  expect(bar(screen.container).getAttribute('data-state')).toBe('loading')
-})
-
-test('variant and size classes render', async () => {
-  const screen = await render(Progress, { props: { value: 50, variant: 'danger', size: 'sm' } })
-  const el = bar(screen.container)
-  expect(el).toHaveClass('ui-progress--danger')
-  expect(el).toHaveClass('ui-progress--sm')
-})
-
-test('label sets aria-label', async () => {
-  const screen = await render(Progress, { props: { value: 50, label: 'Uploading' } })
-  await expect.element(bar(screen.container)).toHaveAttribute('aria-label', 'Uploading')
+  await expect.element(el).toHaveAttribute('aria-label', 'Uploading')
+  expect(el).toHaveClass('ui-progress--danger', 'ui-progress--sm')
 })
 
 test('exposes el and fillEl for direct DOM/animation-lib access', async () => {

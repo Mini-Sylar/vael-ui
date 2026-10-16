@@ -4,20 +4,12 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import ScrollArea from '../src/components/ScrollArea/ScrollArea.vue'
 
-test('vertical (default): viewport overflow classes match orientation', async () => {
+test('orientation sets the viewport modifier class, vertical by default', async () => {
   const screen = await render(ScrollArea, { slots: { default: '<p>content</p>' } })
   const viewport = screen.container.querySelector('.ui-scroll-area-viewport')!
   expect(viewport).toHaveClass('ui-scroll-area-viewport--vertical')
-})
-
-test('orientation prop switches the viewport modifier class', async () => {
-  const screen = await render(ScrollArea, {
-    props: { orientation: 'horizontal' },
-    slots: { default: '<p>content</p>' },
-  })
-  expect(screen.container.querySelector('.ui-scroll-area-viewport')).toHaveClass(
-    'ui-scroll-area-viewport--horizontal',
-  )
+  await screen.rerender({ orientation: 'horizontal' })
+  expect(viewport).toHaveClass('ui-scroll-area-viewport--horizontal')
 })
 
 test('scroll-fade class is applied when content overflows', async () => {

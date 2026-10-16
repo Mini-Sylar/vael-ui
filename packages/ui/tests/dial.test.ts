@@ -236,22 +236,13 @@ test('form participation: hidden input carries the value under name', async () =
   expect(data.get('gain')).toBe('2')
 })
 
-test('valueText renders as aria-valuetext when bounded', async () => {
+test.each([
+  ['valuetext', '40%'],
+  ['unbounded', '0'],
+  ['bounded', null],
+])('aria-valuetext on the %s dial is %s', async (testId, expected) => {
   const screen = await render(DialFixture, {})
-  const dial = dialEl(screen, 'valuetext')
-  expect(dial.getAttribute('aria-valuetext')).toBe('40%')
-})
-
-test('unbounded dial falls back to the raw number as aria-valuetext with no valueText prop', async () => {
-  const screen = await render(DialFixture, {})
-  const dial = dialEl(screen, 'unbounded')
-  expect(dial.getAttribute('aria-valuetext')).toBe('0')
-})
-
-test('bounded dial with no valueText omits aria-valuetext entirely', async () => {
-  const screen = await render(DialFixture, {})
-  const dial = dialEl(screen, 'bounded')
-  expect(dial.getAttribute('aria-valuetext')).toBeNull()
+  expect(dialEl(screen, testId).getAttribute('aria-valuetext')).toBe(expected)
 })
 
 test('bounded dial omits aria-valuemin/aria-valuemax when that bound is not set', async () => {

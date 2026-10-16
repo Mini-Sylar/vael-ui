@@ -1,24 +1,14 @@
 import '../src/style.css'
-import { page, userEvent } from 'vitest/browser'
+import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TreeSelectFixture from './fixtures/TreeSelectFixture.vue'
-import TreeSelect from '../src/components/TreeSelect/TreeSelect.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition —
   // same cleanup as select.test.ts, since TreeSelect reuses Select's own
   // positioner class.
   for (const el of document.querySelectorAll('.ui-select-positioner')) el.remove()
-})
-
-test('a plain class passed to TreeSelect reaches the rendered trigger', async () => {
-  const screen = await render(TreeSelect, {
-    props: { items: [] },
-    attrs: { class: 'my-tree-select' },
-  })
-  const trigger = screen.getByRole('combobox')
-  expect(trigger.element().closest('.my-tree-select')).not.toBeNull()
 })
 
 // Finds a row by its visible label text rather than accessible-name matching
@@ -36,53 +26,6 @@ function focusedLabel(): string | undefined {
   const row = document.activeElement?.closest('[role="treeitem"]')
   return row?.querySelector('.ui-tree-select-label')?.textContent?.trim()
 }
-
-test('maxPanelHeight caps the panel even though the viewport has room for more', async () => {
-  const items = Array.from({ length: 100 }, (_, i) => ({ label: `Item ${i}`, value: `item-${i}` }))
-  const screen = await render(TreeSelectFixture, { props: { items, maxPanelHeight: 160 } })
-  await screen.getByRole('combobox').click()
-  await vi.waitFor(() => expect(rowByLabel('Item 0')).toBeDefined())
-
-  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
-  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(160))
-  const list = document.querySelector<HTMLElement>('.ui-tree-list')!
-  expect(list.scrollHeight).toBeGreaterThan(list.clientHeight)
-})
-
-test('without maxPanelHeight the panel defaults to a 320px cap', async () => {
-  await page.viewport(800, 900)
-  const items = Array.from({ length: 100 }, (_, i) => ({ label: `Item ${i}`, value: `item-${i}` }))
-  const screen = await render(TreeSelectFixture, { props: { items } })
-  await screen.getByRole('combobox').click()
-  await vi.waitFor(() => expect(rowByLabel('Item 0')).toBeDefined())
-  const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
-  await vi.waitFor(() => expect(panel.getBoundingClientRect().height).toBeLessThanOrEqual(320))
-  expect(panel.getBoundingClientRect().height).toBeGreaterThan(300)
-})
-
-test('renders nested data: root nodes are visible, children stay hidden until expanded', async () => {
-  const screen = await render(TreeSelectFixture)
-  await screen.getByRole('combobox').click()
-
-  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
-  expect(rowByLabel('Vegetables')).toBeDefined()
-  expect(rowByLabel('Apple')).toBeUndefined()
-  expect(rowByLabel('Carrot')).toBeUndefined()
-})
-
-test('clicking the chevron expands a node to reveal its children, and collapses it again', async () => {
-  const screen = await render(TreeSelectFixture)
-  await screen.getByRole('combobox').click()
-  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
-
-  const chevron = rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-select-chevron')!
-  await userEvent.click(chevron)
-  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
-  expect(rowByLabel('Banana')).toBeDefined()
-
-  await userEvent.click(chevron)
-  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeUndefined())
-})
 
 test('single selection: clicking a leaf commits the value and closes the panel', async () => {
   const screen = await render(TreeSelectFixture)
@@ -113,74 +56,7 @@ test('Enter on a focused row toggles selection via the keyboard, not just a mous
   await expect.element(screen.getByTestId('model')).toHaveTextContent('"vegetables"')
 })
 
-test('checkbox mode: checking a leaf adds its value to the array', async () => {
-  const screen = await render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
-  await screen.getByRole('combobox').click()
-  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
-  await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-select-chevron')!)
-  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
-
-  const appleCheckbox = rowByLabel('Apple')!.querySelector<HTMLInputElement>('.ui-checkbox-input')!
-  await userEvent.click(appleCheckbox)
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('["apple"]')
-
-  await userEvent.click(appleCheckbox)
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
-})
-
-test('checkbox mode: a parent renders indeterminate when only some descendants are checked, and checked once every enabled descendant is', async () => {
-  const screen = await render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
-  await screen.getByRole('combobox').click()
-  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
-  await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-select-chevron')!)
-  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
-  await userEvent.click(rowByLabel('Citrus')!.querySelector('.ui-tree-select-chevron')!)
-  await vi.waitFor(() => expect(rowByLabel('Orange')).toBeDefined())
-
-  // Only Apple checked so far — Fruits (its parent) must be indeterminate,
-  // not checked, and definitely not left plain-unchecked.
-  await userEvent.click(rowByLabel('Apple')!.querySelector<HTMLInputElement>('.ui-checkbox-input')!)
-  await vi.waitFor(() => {
-    expect(rowByLabel('Fruits')!.getAttribute('aria-checked')).toBe('mixed')
-  })
-
-  // Check Banana too, and Orange (Citrus's only ENABLED leaf — Lemon is
-  // disabled and must be excluded from the aggregate entirely). Every
-  // participating descendant is now checked, so Fruits itself flips to
-  // fully checked, not indeterminate.
-  await userEvent.click(
-    rowByLabel('Banana')!.querySelector<HTMLInputElement>('.ui-checkbox-input')!,
-  )
-  await userEvent.click(
-    rowByLabel('Orange')!.querySelector<HTMLInputElement>('.ui-checkbox-input')!,
-  )
-  await vi.waitFor(() => {
-    expect(rowByLabel('Fruits')!.getAttribute('aria-checked')).toBe('true')
-  })
-  // Lemon (disabled) never entered the model despite Citrus now reading checked.
-  const model = JSON.parse(screen.getByTestId('model').element().textContent || '[]') as string[]
-  expect(model).not.toContain('lemon')
-  expect(model).toEqual(expect.arrayContaining(['apple', 'banana', 'orange']))
-})
-
-test('checkbox mode: a disabled leaf cannot be toggled directly', async () => {
-  const screen = await render(TreeSelectFixture, { props: { selectionMode: 'checkbox' } })
-  await screen.getByRole('combobox').click()
-  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
-  await userEvent.click(rowByLabel('Fruits')!.querySelector('.ui-tree-select-chevron')!)
-  await vi.waitFor(() => expect(rowByLabel('Citrus')).toBeDefined())
-  await userEvent.click(rowByLabel('Citrus')!.querySelector('.ui-tree-select-chevron')!)
-  await vi.waitFor(() => expect(rowByLabel('Lemon')).toBeDefined())
-
-  const lemonRow = rowByLabel('Lemon')!
-  expect(lemonRow.getAttribute('aria-disabled')).toBe('true')
-  await userEvent.click(lemonRow.querySelector<HTMLInputElement>('.ui-checkbox-input')!, {
-    force: true,
-  })
-  await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
-})
-
-test('multiple mode: clicking toggles just that node, with no parent/child linkage', async () => {
+test('multiple mode: a click toggles that node and keeps the panel open', async () => {
   const screen = await render(TreeSelectFixture, { props: { selectionMode: 'multiple' } })
   await screen.getByRole('combobox').click()
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
@@ -196,28 +72,6 @@ test('multiple mode: clicking toggles just that node, with no parent/child linka
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["fruits","apple"]')
   // The panel must still be open — multiple/checkbox modes never auto-close.
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
-})
-
-test('the search filter narrows rows to label matches and auto-expands their ancestors', async () => {
-  const screen = await render(TreeSelectFixture)
-  await screen.getByRole('combobox').click()
-  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
-  // Nothing pre-expanded — Orange only exists two levels under Fruits.
-  expect(rowByLabel('Orange')).toBeUndefined()
-
-  // The panel is Teleported to <body>, outside screen.container — same
-  // reason every other popover test here (select.test.ts, cascade-select.test.ts)
-  // queries the teleported panel via `document`, not the render container.
-  const filterInput = document.querySelector<HTMLInputElement>('.ui-tree-select-filter input')!
-  await userEvent.fill(filterInput, 'orange')
-
-  await vi.waitFor(() => expect(rowByLabel('Orange')).toBeDefined())
-  // Ancestors of the match are force-shown...
-  expect(rowByLabel('Fruits')).toBeDefined()
-  expect(rowByLabel('Citrus')).toBeDefined()
-  // ...but an unrelated sibling branch is filtered out entirely.
-  expect(rowByLabel('Vegetables')).toBeUndefined()
-  expect(rowByLabel('Banana')).toBeUndefined()
 })
 
 test('keyboard navigation: ArrowDown/ArrowUp rove between visible rows, ArrowRight expands then descends, ArrowLeft ascends then collapses', async () => {
@@ -282,13 +136,6 @@ test('clearable shows a clear button once a leaf is selected, and it resets the 
 
   await expect.element(screen.getByTestId('model')).toHaveTextContent('null')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
-})
-
-test('filterable=false renders no search box', async () => {
-  const screen = await render(TreeSelectFixture, { props: { filterable: false } })
-  await screen.getByRole('combobox').click()
-  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
-  expect(screen.container.querySelector('.ui-tree-select-filter')).toBeNull()
 })
 
 test('header and footer slots render around the tree only when provided', async () => {

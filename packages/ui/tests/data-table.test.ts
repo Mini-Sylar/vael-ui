@@ -326,10 +326,30 @@ test('selectable renders a built-in leading checkbox column', async () => {
   ).toBe(3)
 })
 
-test('selectable is off by default: no built-in checkbox column renders', async () => {
-  const screen = await renderTable({ rowCount: 3, showStatusColumn: false })
+test('defaults: md size, one combined table, every row on one page, no select/resize/sticky/stacked/virtual extras', async () => {
+  const screen = await renderTable({ rowCount: 5, showStatusColumn: false })
+  const root = screen.container.querySelector('.ui-datatable')!
+  expect(root.classList.contains('ui-datatable--md')).toBe(true)
+  expect(root.hasAttribute('data-stacked')).toBe(false)
+
   expect(screen.container.querySelector('.ui-datatable-th--select')).toBeNull()
   expect(screen.container.querySelector('.ui-datatable-td--select')).toBeNull()
+  expect(screen.container.querySelector('.ui-datatable-resize-handle')).toBeNull()
+  const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
+  expect(getComputedStyle(nameHeader).position).not.toBe('sticky')
+
+  expect(screen.container.querySelector('.ui-datatable-scroll-y')).toBeNull()
+  expect(screen.container.querySelectorAll('.ui-datatable-table').length).toBe(1)
+  // A single table means <thead> and <tbody> are siblings inside it.
+  const table = screen.container.querySelector('.ui-datatable-table')!
+  expect(table.querySelector(':scope > .ui-datatable-thead')).not.toBeNull()
+  expect(table.querySelector(':scope > .ui-datatable-tbody')).not.toBeNull()
+
+  expect(screen.container.querySelectorAll('.ui-datatable-tr--spacer').length).toBe(0)
+  expect(bodyRows(screen.container).length).toBe(5)
+  await expect.element(screen.getByTestId('footer-page')).toHaveTextContent('1')
+  await expect.element(screen.getByTestId('footer-page-count')).toHaveTextContent('1')
+  await expect.element(screen.getByTestId('footer-total')).toHaveTextContent('5')
 })
 
 test('the built-in select-all header checkbox computes checked/indeterminate/none from sortedData vs selected', async () => {
@@ -411,16 +431,6 @@ test('clicking a built-in row checkbox does not also fire row-click (same intera
   await expect.element(screen.getByTestId('row-click-count')).toHaveTextContent('0')
 })
 
-test('scrollHeight is unset by default: a single combined table, no body-scroll wrapper', async () => {
-  const screen = await renderTable({ rowCount: 3, showStatusColumn: false })
-  expect(screen.container.querySelector('.ui-datatable-scroll-y')).toBeNull()
-  expect(screen.container.querySelectorAll('.ui-datatable-table').length).toBe(1)
-  // A single table means <thead> and <tbody> are siblings inside it.
-  const table = screen.container.querySelector('.ui-datatable-table')!
-  expect(table.querySelector(':scope > .ui-datatable-thead')).not.toBeNull()
-  expect(table.querySelector(':scope > .ui-datatable-tbody')).not.toBeNull()
-})
-
 test('scrollHeight splits into a non-scrolling head table + a separately scrollable body table', async () => {
   const screen = await renderTable({ rowCount: 3, showStatusColumn: false, scrollHeight: '200px' })
   // Two real tables now: a head-only one and a body-only one.
@@ -440,11 +450,6 @@ test('scrollHeight splits into a non-scrolling head table + a separately scrolla
   expect(getComputedStyle(scrollY).overflowY).toBe('auto')
   expect(scrollY.querySelector('.ui-datatable-thead')).toBeNull()
   expect(scrollY.querySelector('.ui-datatable-tbody')).not.toBeNull()
-})
-
-test('stackedBreakpoint is unset by default: no data-stacked attribute regardless of viewport', async () => {
-  const screen = await renderTable({ rowCount: 3, showStatusColumn: false })
-  expect(screen.container.querySelector('.ui-datatable')!.hasAttribute('data-stacked')).toBe(false)
 })
 
 test('stackedBreakpoint wider than the viewport activates the stacked layout with data-label content', async () => {
@@ -515,14 +520,6 @@ test('exposes the root element via defineExpose', async () => {
 })
 
 // -------------------------------------------------------------- Pagination
-test('rows unset (default): footer reports page 1/pageCount 1/the full row count, every row renders', async () => {
-  const screen = await renderTable({ rowCount: 5, showStatusColumn: false })
-  await expect.element(screen.getByTestId('footer-page')).toHaveTextContent('1')
-  await expect.element(screen.getByTestId('footer-page-count')).toHaveTextContent('1')
-  await expect.element(screen.getByTestId('footer-total')).toHaveTextContent('5')
-  expect(bodyRows(screen.container).length).toBe(5)
-})
-
 test('rows set: slices sortedData into pages and the footer reports the real page count/total', async () => {
   const screen = await renderTable({ rowCount: 5, showStatusColumn: false, rows: 2 })
   expect(bodyRows(screen.container).length).toBe(2)
@@ -560,21 +557,6 @@ test('rows set: the last page renders the remainder, fewer than a full page', as
 })
 
 // -------------------------------------------------------------- size
-test('size defaults to md; sm/lg add the corresponding modifier class to the root', async () => {
-  const md = await renderTable({ rowCount: 2, showStatusColumn: false })
-  expect(md.container.querySelector('.ui-datatable')!.classList.contains('ui-datatable--md')).toBe(
-    true,
-  )
-  const sm = await renderTable({ rowCount: 2, showStatusColumn: false, size: 'sm' })
-  expect(sm.container.querySelector('.ui-datatable')!.classList.contains('ui-datatable--sm')).toBe(
-    true,
-  )
-  const lg = await renderTable({ rowCount: 2, showStatusColumn: false, size: 'lg' })
-  expect(lg.container.querySelector('.ui-datatable')!.classList.contains('ui-datatable--lg')).toBe(
-    true,
-  )
-})
-
 test('size changes real cell padding density: sm is tighter than lg', async () => {
   const sm = await renderTable({ rowCount: 2, showStatusColumn: false, size: 'sm' })
   const lg = await renderTable({ rowCount: 2, showStatusColumn: false, size: 'lg' })
@@ -719,11 +701,6 @@ test('single: at most one row is ever selected — picking a new row deselects t
 })
 
 // -------------------------------------------------------------- resizableColumns
-test('resizable is off by default: no resize handle renders on any header', async () => {
-  const screen = await renderTable({ rowCount: 2, showStatusColumn: false })
-  expect(screen.container.querySelector('.ui-datatable-resize-handle')).toBeNull()
-})
-
 test('resizableColumns: dragging the trailing handle changes and keeps the column width', async () => {
   const screen = await renderTable({ rowCount: 3, showStatusColumn: false, resizableColumns: true })
   const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
@@ -769,12 +746,6 @@ test('resizableColumns: dragging the trailing handle changes and keeps the colum
 })
 
 // -------------------------------------------------------------- frozenColumns (Tier 2)
-test('frozenColumns is 0 by default: no column is sticky', async () => {
-  const screen = await renderTable({ rowCount: 2, showStatusColumn: false })
-  const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
-  expect(getComputedStyle(nameHeader).position).not.toBe('sticky')
-})
-
 test('frozenColumns freezes the first N columns (sticky-left) and leaves the rest alone', async () => {
   const screen = await renderTable({ rowCount: 3, showStatusColumn: false, frozenColumns: 1 })
   const nameHeader = headerCells(screen.container).find((th) => th.textContent?.includes('Name'))!
@@ -956,12 +927,6 @@ test('virtualize: reach-end fires once the window nears the last row, then re-ar
   await vi.waitFor(() => {
     expect(screen.getByTestId('reach-end-count').element().textContent).toBe('2')
   })
-})
-
-test('virtualize is off by default: every row renders with no spacer rows', async () => {
-  const screen = await renderTable({ rowCount: 5, showStatusColumn: false })
-  expect(screen.container.querySelectorAll('.ui-datatable-tr--spacer').length).toBe(0)
-  expect(bodyRows(screen.container).length).toBe(5)
 })
 
 test('ui prop overrides root/th/td classes, same convention as every other component', async () => {

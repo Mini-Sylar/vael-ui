@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
+    "test:spikes": "vitest run --config vitest.spikes.config.ts",
     "typecheck": "vue-tsc --noEmit",
     "gen": "node ../scripts/generate-vapor.mjs",
     "dev": "node ../scripts/watch-vapor.mjs",

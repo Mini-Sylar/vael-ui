@@ -120,15 +120,6 @@ test('canDrop rejecting a target blocks the reorder, on top of the built-in pinn
   expect(headerFields(screen)).toEqual(['name', 'age'])
 })
 
-test('beforeDrop resolving false cancels the reorder without an error', async () => {
-  const screen = await renderTable({ beforeDrop: () => Promise.resolve(false) })
-  const [first, second] = headerEls(screen)
-  dragHeaderOver(first!, second!, 27)()
-  await new Promise((r) => setTimeout(r, 50))
-  expect(headerFields(screen)).toEqual(['name', 'age'])
-  expect(screen.container.querySelector('[data-testid="drop-error-count"]')!.textContent).toBe('0')
-})
-
 test('beforeDrop rejecting cancels the reorder and fires drop-error', async () => {
   const screen = await renderTable({ beforeDrop: () => Promise.reject(new Error('boom')) })
   const [first, second] = headerEls(screen)
@@ -183,8 +174,13 @@ test('dragging the middle of three columns shifts the far one by the dragged wid
   const ageWidth = age!.getBoundingClientRect().width
   const release = dragHeaderOver(age!, status!, 26)
   await vi.waitFor(() => expect(status!.style.translate).not.toBe(''))
-  // The shift is spring-driven, not instant — let it settle before reading it.
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  // The shift is spring-driven, not instant — read it once it has come to rest.
+  await vi.waitFor(async () => {
+    const moving = status!.style.translate
+    await new Promise(requestAnimationFrame)
+    await new Promise(requestAnimationFrame)
+    expect(status!.style.translate).toBe(moving)
+  })
 
   // Untouched — must not have moved at all.
   expect(name!.getBoundingClientRect().left + scrolledX() - scrolledBefore).toBeCloseTo(

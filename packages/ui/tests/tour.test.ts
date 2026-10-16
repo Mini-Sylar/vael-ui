@@ -193,7 +193,12 @@ async function cutoutAfterNext(tour: { value: TourHandle | null }) {
   await expect.element(page.getByText('Motion B')).toBeVisible()
   await nextFrame()
   const firstFrame = cutoutOf(spotlight)
-  await new Promise((resolve) => setTimeout(resolve, 600))
+  // Settled: unchanged across a few frames (a glide moves it every frame).
+  await vi.waitFor(async () => {
+    const before = cutoutOf(spotlight)
+    for (let i = 0; i < 3; i++) await nextFrame()
+    expect(cutoutOf(spotlight)).toBe(before)
+  })
   return { firstFrame, settled: cutoutOf(spotlight) }
 }
 
@@ -269,7 +274,12 @@ test('the callout is at its new position by the first animation frame after @ste
   const before = read()
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Frame B')).toBeVisible()
-  await new Promise((resolve) => setTimeout(resolve, 300))
+  await expect.poll(() => positions).toHaveLength(1)
+  await vi.waitFor(async () => {
+    const at = read()
+    for (let i = 0; i < 3; i++) await nextFrame()
+    expect(read()).toBe(at)
+  })
   expect(positions).toHaveLength(1)
   expect(positions[0]).not.toBe(before)
   expect(positions[0]).toBe(read())

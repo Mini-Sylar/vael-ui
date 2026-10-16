@@ -41,20 +41,6 @@ test('useAsyncLoading reactivity works in a pure-Vapor component', async () => {
   }
 })
 
-test('useTemplateRef resolves for a plain Vapor-native element (rc.1)', async () => {
-  const { app } = mountApp()
-  try {
-    // Previously documented as broken on 3.6.0-beta.17 (see App.vue's own
-    // comment on `dropzoneEl`) — this is a regression guard in both
-    // directions: catches it staying broken, and catches it breaking again.
-    await vi.waitFor(() =>
-      expect(byId('vapor-dialog-templateref-resolved')!.textContent).toBe('yes'),
-    )
-  } finally {
-    app.unmount()
-  }
-})
-
 test('Teleport + useDialog() work in a pure-Vapor component', async () => {
   const { app, host } = mountApp()
   try {

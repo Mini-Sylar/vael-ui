@@ -5,31 +5,20 @@ import Badge from '../src/components/Badge/Badge.vue'
 
 const content = (root: HTMLElement) => root.querySelector<HTMLElement>('.ui-badge-content')
 
-test('count renders as text', async () => {
-  const screen = await render(Badge, { props: { count: 3 } })
-  await expect.element(content(screen.container)!).toHaveTextContent('3')
+test.each([
+  [{ count: 3 }, '3'],
+  [{ count: 150, max: 99 }, '99+'],
+  [{ count: 12, max: 9 }, '9+'],
+])('%o renders "%s"', async (props, text) => {
+  const screen = await render(Badge, { props })
+  await expect.element(content(screen.container)!).toHaveTextContent(text)
 })
 
-test('count above max clamps to "max+"', async () => {
-  const screen = await render(Badge, { props: { count: 150, max: 99 } })
-  await expect.element(content(screen.container)!).toHaveTextContent('99+')
-})
-
-test('custom max clamps accordingly', async () => {
-  const screen = await render(Badge, { props: { count: 12, max: 9 } })
-  await expect.element(content(screen.container)!).toHaveTextContent('9+')
-})
-
-test('dot renders empty with the dot class, no content span', async () => {
-  const screen = await render(Badge, { props: { dot: true, count: 5 } })
+test('dot and variant render as root modifier classes, with no content span', async () => {
+  const screen = await render(Badge, { props: { dot: true, count: 5, variant: 'success' } })
   const el = screen.container.querySelector<HTMLElement>('.ui-badge')!
-  expect(el).toHaveClass('ui-badge--dot')
+  expect(el).toHaveClass('ui-badge--dot', 'ui-badge--success')
   expect(el.querySelector('.ui-badge-content')).toBeNull()
-})
-
-test('variant classes render', async () => {
-  const screen = await render(Badge, { props: { variant: 'success' } })
-  expect(screen.container.querySelector('.ui-badge')).toHaveClass('ui-badge--success')
 })
 
 test('default slot content wins over count', async () => {

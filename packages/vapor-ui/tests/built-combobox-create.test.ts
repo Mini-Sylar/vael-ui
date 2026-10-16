@@ -89,45 +89,46 @@ for (const mode of ['vapor', 'interop', 'vdom-parent'] as const) {
     await userEvent.keyboard('{Enter}')
     await expect.poll(value).toBe('"tu"')
   })
-
-  test(`[${mode}] Tab by default only moves focus, reverts the text and closes the panel`, async () => {
-    const { input, next, value } = mount(mode)
-    await userEvent.click(input)
-    await userEvent.type(input, 'tu')
-    await expect.poll(panelOpen).toBe(true)
-    await userEvent.tab()
-    expect(document.activeElement).toBe(next)
-    await expect.poll(panelOpen).toBe(false)
-    expect(value()).toBe('null')
-    expect(input.value).toBe('')
-  })
-
-  test(`[${mode}] tabBehavior="select" picks the highlighted option`, async () => {
-    const { input, next, value } = mount(mode, { tabBehavior: 'select' })
-    await userEvent.click(input)
-    await userEvent.type(input, 'tu')
-    await expect.poll(activeOption).toBe('feature')
-    await userEvent.tab()
-    expect(document.activeElement).toBe(next)
-    await expect.poll(value).toBe('"feature"')
-  })
-
-  test(`[${mode}] tabBehavior="create" keeps the typed text`, async () => {
-    const { input, value, reasons } = mount(mode, { tabBehavior: 'create' })
-    await userEvent.click(input)
-    await userEvent.type(input, 'tu')
-    await userEvent.tab()
-    await expect.poll(value).toBe('"tu"')
-    expect(reasons()).toBe('tab')
-    expect(input.value).toBe('tu')
-  })
-
-  test(`[${mode}] Escape discards uncommitted typing`, async () => {
-    const { input, value } = mount(mode)
-    await userEvent.click(input)
-    await userEvent.type(input, 'tu')
-    await userEvent.keyboard('{Escape}')
-    await expect.poll(() => input.value).toBe('')
-    expect(value()).toBe('null')
-  })
 }
+
+// Keyboard commit/revert is component logic, not slot interop: the pure Vapor app is enough.
+test('[vapor] Tab by default only moves focus, reverts the text and closes the panel', async () => {
+  const { input, next, value } = mount('vapor')
+  await userEvent.click(input)
+  await userEvent.type(input, 'tu')
+  await expect.poll(panelOpen).toBe(true)
+  await userEvent.tab()
+  expect(document.activeElement).toBe(next)
+  await expect.poll(panelOpen).toBe(false)
+  expect(value()).toBe('null')
+  expect(input.value).toBe('')
+})
+
+test('[vapor] tabBehavior="select" picks the highlighted option', async () => {
+  const { input, next, value } = mount('vapor', { tabBehavior: 'select' })
+  await userEvent.click(input)
+  await userEvent.type(input, 'tu')
+  await expect.poll(activeOption).toBe('feature')
+  await userEvent.tab()
+  expect(document.activeElement).toBe(next)
+  await expect.poll(value).toBe('"feature"')
+})
+
+test('[vapor] tabBehavior="create" keeps the typed text', async () => {
+  const { input, value, reasons } = mount('vapor', { tabBehavior: 'create' })
+  await userEvent.click(input)
+  await userEvent.type(input, 'tu')
+  await userEvent.tab()
+  await expect.poll(value).toBe('"tu"')
+  expect(reasons()).toBe('tab')
+  expect(input.value).toBe('tu')
+})
+
+test('[vapor] Escape discards uncommitted typing', async () => {
+  const { input, value } = mount('vapor')
+  await userEvent.click(input)
+  await userEvent.type(input, 'tu')
+  await userEvent.keyboard('{Escape}')
+  await expect.poll(() => input.value).toBe('')
+  expect(value()).toBe('null')
+})

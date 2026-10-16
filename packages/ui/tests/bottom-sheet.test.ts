@@ -42,7 +42,7 @@ async function drag(el: Element, startY: number, endY: number, ms: number) {
   el.dispatchEvent(new PointerEvent('pointerup', { clientY: endY, pointerId, bubbles: true }))
 }
 
-test('opens at the initial (smallest) snap point', async () => {
+test('opens at the initial (smallest) snap point; Escape runs the built-in exit to closed', async () => {
   const screen = await render(BottomSheetFixture)
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(document.querySelector('.ui-bottom-sheet-panel')).not.toBeNull())
@@ -53,6 +53,12 @@ test('opens at the initial (smallest) snap point', async () => {
   // this test would have caught: capping block-size at the tallest snap's
   // own px value makes every offsetFor() land short (see useSheetDrag.ts).
   expect(panel().getBoundingClientRect().height).toBeCloseTo(window.innerHeight, -1)
+
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(
+    () => expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed'),
+    { timeout: 1200 },
+  )
 })
 
 test('a fast upward flick jumps straight to the largest snap point', async () => {
@@ -125,23 +131,6 @@ test('a drag on the content while not scrolled to the top is left as an ordinary
 
   expect(Math.abs(visibleHeight() - restingHeight)).toBeLessThan(10)
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
-})
-
-test('Escape closes the sheet and focus-trap still applies (inherited from Dialog)', async () => {
-  const screen = await render(BottomSheetFixture)
-  await screen.getByTestId('trigger').click()
-  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
-
-  expect(document.querySelector('[role="dialog"]')).not.toBeNull()
-  await vi.waitFor(() => {
-    expect(document.querySelector('[role="dialog"]')!.contains(document.activeElement)).toBe(true)
-  })
-
-  await userEvent.keyboard('{Escape}')
-  await vi.waitFor(
-    () => expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed'),
-    { timeout: 1200 },
-  )
 })
 
 test('custom beforeClose overrides the built-in exit for every close path, including a drag-triggered dismiss', async () => {
