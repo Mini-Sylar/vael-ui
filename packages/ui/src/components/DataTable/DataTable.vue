@@ -11,28 +11,35 @@
     </div>
 
     <div
-      v-scroll-mask="scrollFade ? 'x' : false"
+      v-scroll-mask="scrollFade && !scrollHeight ? 'x' : false"
       class="ui-datatable-scroll-x"
       :data-frozen="frozenColumns > 0 || undefined"
     >
       <template v-if="scrollHeight">
-        <table
-          :class="tablePart('ui-datatable-table--split').class"
-          :style="[tablePart().style, { paddingInlineEnd: `${scrollbarWidth}px` }]"
+        <!-- The body is the real scroller. The head strip mirrors it and is its own
+             scroll container, so the head's frozen cells stick to it. -->
+        <div
+          ref="headScrollEl"
+          v-scroll-mask="scrollFade ? 'x' : false"
+          class="ui-datatable-head-scroll"
+          :data-frozen="frozenColumns > 0 || undefined"
+          :style="{ paddingInlineEnd: `${scrollbarWidth}px` }"
+          tabindex="-1"
         >
-          <!-- table-layout:fixed only sizes columns from a table's first row;
-               the body table's first row is a virtualize spacer with no
-               per-column cells, so an explicit colgroup is what actually
-               keeps these two tables' columns aligned. -->
-          <colgroup>
-            <col v-for="(width, i) in colWidths" :key="i" :style="width" />
-          </colgroup>
-          <DataTableHead ref="headComponent" v-bind="headProps" />
-        </table>
+          <table :class="tablePart('ui-datatable-table--split').class" :style="tablePart().style">
+            <!-- Fixed layout sizes columns from the first row, which in the body can be
+                 a colspan spacer, so a colgroup keeps both tables aligned. -->
+            <colgroup>
+              <col v-for="(width, i) in colWidths" :key="i" :style="width" />
+            </colgroup>
+            <DataTableHead ref="headComponent" v-bind="headProps" />
+          </table>
+        </div>
         <div
           ref="bodyScrollEl"
-          v-scroll-mask="scrollFade ? 'y' : false"
+          v-scroll-mask="scrollFade ? 'both' : false"
           class="ui-datatable-scroll-y"
+          :data-frozen="frozenColumns > 0 || undefined"
           :style="{ maxBlockSize: bodyMaxBlockSize }"
         >
           <table :class="tablePart('ui-datatable-table--split').class" :style="tablePart().style">
@@ -75,15 +82,7 @@
   </div>
 </template>
 
-<!-- Slot-based: columns register via provide/inject, no config prop. Generic inference: `T` inferred from `:data` binding.
-     Row enter/exit/reorder is a TransitionGroup in DataTableBody, gated by motionCss — same
-     contract as Toaster (row-enter/row-leave forward its (el, done) hook). Skipped while
-     virtualized. Tests need VTU's transition-group stub disabled — see data-table.test.ts.
-     Pagination (rows/page): array slicing, internal; DataTable provides state to #footer slot.
-     Single-select mode reuses Radio via direct injection (RadioGroup's wrapper incompatible here).
-     Resize drag is direct manipulation per pointermove frame.
-     frozenColumns: table-level math for cumulative offsets, since Column can't know what precedes it.
-     Expansion: full-width row per `Ref<Set<...>>`, collapsed in stacked mode (no toggle). -->
+<!-- Columns register via provide/inject. Tests must disable VTU's transition-group stub. -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import './DataTable.css'
 import { withProviderDefaults } from '../../config'
@@ -133,16 +132,9 @@ const rawProps = withDefaults(
     loading?: boolean
     /** Adds a leading checkbox or radio column that tracks the selection. @default false */
     selectable?: boolean
-    /**
-     * `'checkbox'` adds a leading selection column. `'row'` toggles selection when you click a row;
-     * the rows are then one Tab stop, arrow keys move between them, and Space or Enter toggles.
-     * @default 'checkbox'
-     */
+    /** `'checkbox'` adds a selection column. `'row'` selects on row click, with arrow-key navigation. @default 'checkbox' */
     selectionMode?: 'checkbox' | 'row'
-    /**
-     * Limits selection to one row. In `'checkbox'` mode, the selection column renders Radio buttons.
-     * @default false
-     */
+    /** Limits selection to one row, with Radio buttons in `'checkbox'` mode. @default false */
     single?: boolean
     /** CSS length, such as `'400px'` or `'60vh'`. When set, the body scrolls under a sticky header. */
     scrollHeight?: string
@@ -160,53 +152,29 @@ const rawProps = withDefaults(
     frozenColumns?: number
     /** Fades the edges that have more to scroll to, so it's clear the table scrolls. @default true */
     scrollFade?: boolean
-    /** Rows per page. Unset, all rows render. Set, the table slices rows; pair it with `v-model:page`.
-     * With `lazy`, it also divides `total` into pages. */
+    /** Rows per page. Pair it with `v-model:page`. Unset, all rows render. */
     rows?: number
-    /**
-     * Marks `data` as sorted on the server. DataTable stops sorting locally and only updates `v-model:sort`.
-     * A header click then tells you what to refetch.
-     * @default false
-     */
+    /** Marks `data` as sorted on the server; a header click only updates `v-model:sort`. @default false */
     manualSort?: boolean
-    /**
-     * Marks `data` as the current page only, so DataTable stops slicing it.
-     * Pair it with `total` so `#footer` and Pagination math stays correct.
-     * @default false
-     */
+    /** Marks `data` as the current page only. Pair it with `total`. @default false */
     lazy?: boolean
     /** Row count across all pages. Only used with `lazy`; unset, it falls back to `data.length`. */
     total?: number
-    /** Renders only the visible rows, for large `data`. Requires `scrollHeight`.
-     * `true` measures each row's height; pass an object to tune it (`itemSize` fixes row height). */
+    /** Renders only the visible rows. Requires `scrollHeight`. `itemSize` fixes the row height. */
     virtualize?: boolean | { itemSize?: number; overscan?: number; estimateSize?: number }
-    /** Plays the built-in row enter, exit, reorder and column-drag transitions.
-     * Set `false` to animate rows yourself via `@row-enter` and `@row-leave`. Rows never animate while virtualized.
-     * @default true
-     */
+    /** Plays the built-in row and column-drag transitions. `false` hands rows to `@row-enter`/`@row-leave`. @default true */
     motionCss?: boolean
-    /**
-     * Lets you drag column headers to reorder them. Pair with `v-model:columnOrder` to control or persist the order.
-     * @default false
-     */
+    /** Lets you drag column headers to reorder them. Pair with `v-model:columnOrder`. @default false */
     reorderableColumns?: boolean
     /** When a reorderable column's drag grip shows: `'always'`, or only on hover and focus (`'hover'`). @default 'always' */
     columnGripVisibility?: 'hover' | 'always'
-    /** Runs while a column drags; return `false` to mark the target invalid.
-     * Pinned columns stay in place whatever it returns. */
+    /** Runs while a column drags; return `false` to mark the target invalid. */
     canDrop?: (details: SortableDropDetails) => boolean
-    /** Async check at drop time for a column reorder. Return `false`, or a promise of `false`, to cancel.
-     * Pair it with `confirmAction().result` to confirm before the move. */
+    /** Async check before a column drop. Return `false`, or a promise of it, to cancel. */
     beforeDrop?: (details: SortableDropDetails) => boolean | Promise<boolean>
-    /** What follows the pointer during a column drag. `'clone'` floats a copy of the header.
-     * Avoid `'element'`: it can drop a column from the DOM here.
-     * @default 'clone'
-     */
+    /** What follows the pointer in a column drag. Avoid `'element'` here. @default 'clone' */
     previewMode?: 'element' | 'clone'
-    /** Milliseconds a touch must hold a column header before a drag starts, so taps still sort.
-     * Mouse and pen drags start without the delay.
-     * @default 150
-     */
+    /** Ms a touch must hold a header before a column drag starts, so taps still sort. @default 150 */
     touchDragDelay?: number
     /** Class and style overrides for each part. */
     ui?: Partial<{
@@ -254,7 +222,7 @@ const emit = defineEmits<{
   'update:selection': [rows: T[]]
   /** Fires when you click a row anywhere outside its interactive descendants. */
   'row-click': [row: T]
-  /** Virtualized only: fires when the rendered window nears the end of `data`, so you can fetch the next page. */
+  /** Virtualized only: fires near the end of `data`, to fetch the next page. */
   'reach-end': []
   /** Virtualized only: fires when the rendered window nears the start of `data`, so you can fetch the previous page. */
   'reach-start': []
@@ -270,25 +238,14 @@ const emit = defineEmits<{
 
 /** Current page, 1-based. Only used when `rows` is set; DataTable clamps it to the page count. @default 1 */
 const page = defineModel<number>('page', { default: 1 })
-/**
- * Current sort field and direction. Bind it with `manualSort` to know what to refetch.
- * @default { field: null, dir: null }
- */
+/** Current sort field and direction. @default { field: null, dir: null } */
 const sort = defineModel<{ field: keyof T | null; dir: 'asc' | 'desc' | null }>('sort', {
   default: () => ({ field: null, dir: null }),
 })
 
 const slots = useSlots()
 
-// Two <Column>s CAN legitimately share a `field` (e.g. one showing a row's
-// id, another using that same id for a selection checkbox) — the template's
-// thead/tbody loops key on array INDEX, not `col.field`, for exactly that
-// reason.
-//
-// Cast, not a bare `ref<RegisteredColumn<T>[]>([])`: same UnwrapNestedRefs
-// generic-index-type limitation as `sort` below — `ref()`'s return type
-// recursively unwraps array element properties too, mangling `field: keyof
-// T` back down to `string | number | symbol`.
+// Cast because ref() unwrapping widens `field: keyof T` to `string | number | symbol`.
 const columns = ref<RegisteredColumn<T>[]>([]) as Ref<RegisteredColumn<T>[]>
 function registerColumn(col: RegisteredColumn<T>) {
   columns.value.push(col)
@@ -328,7 +285,6 @@ onMounted(resortColumnsByDom)
 onUpdated(resortColumnsByDom)
 
 const selectColumnRendered = computed(() => props.selectable && props.selectionMode === 'checkbox')
-// Drives the pointer-cursor affordance on click-anywhere-to-select rows.
 const selectableRows = computed(() => props.selectable && props.selectionMode === 'row')
 const expansionColumnRendered = computed(() => !!slots.expansion && !stacked.value)
 const colCount = computed(() => {
@@ -338,9 +294,7 @@ const colCount = computed(() => {
   return Math.max(count, 1)
 })
 
-// Reassigns sort.value wholesale rather than mutating its properties in
-// place — defineModel's local (unbound) fallback only triggers reactivity
-// and emits update:sort through its actual setter, not on nested mutation.
+// Reassigned whole: defineModel only emits update:sort through its setter.
 function toggleSort(field: keyof T) {
   if (sort.value.field !== field) {
     sort.value = { field, dir: 'asc' }
@@ -371,11 +325,7 @@ const sortedData = computed(() => {
   return [...props.data].sort((a, b) => compareValues(a[field], b[field]) * direction)
 })
 
-// Unset `rows` (the default): `totalPages` is always 1 and `pagedData` is
-// always `sortedData` verbatim — zero behavior change for every existing
-// consumer.
-// `lazy`: `data` IS the current page already (the server decided its size),
-// so `total` (not `data.length`) is what page-count math divides by `rows`.
+// With `lazy`, `data` is already one page, so page math divides `total` instead.
 const resolvedTotal = computed(() =>
   props.lazy ? (props.total ?? sortedData.value.length) : sortedData.value.length,
 )
@@ -411,7 +361,6 @@ function setSelection(next: Set<string | number>) {
 }
 function toggleSelectByKey(key: string | number) {
   if (props.single) {
-    // At most one key, ever — same `Ref<Set<...>>` shape, just capped.
     setSelection(selected.value.has(key) ? new Set() : new Set([key]))
     return
   }
@@ -440,7 +389,7 @@ function toggleSelectAll() {
   }
 }
 
-// Provided directly (RadioGroup wrapper architecturally incompatible).
+// Provided directly: RadioGroup's wrapper element can't live inside a table.
 const selectionRadioName = useId()
 provide(radioGroupKey, {
   name: () => selectionRadioName,
@@ -485,8 +434,6 @@ const tableRowEntries = computed<TableRowEntry<T>[]>(() => {
   return entries
 })
 
-// The virtualizer listens to this, not the outer horizontal-scroll div —
-// it's the actual vertically-scrolling ancestor once the header is split out.
 const bodyScrollEl = useTemplateRef<HTMLElement>('bodyScrollEl')
 const virtualizeActive = computed(() => !!props.virtualize)
 const virtualizeConfig = computed(() =>
@@ -497,9 +444,7 @@ const virtualizer = useVirtualizer({
   count: () => (virtualizeActive.value ? tableRowEntries.value.length : 0),
   itemSize: () => virtualizeConfig.value.itemSize,
   overscan: () => virtualizeConfig.value.overscan,
-  // Default to per-row measurement, not a shared itemSize — a DataTable row's
-  // height isn't guaranteed uniform (wrapping #cell content, stackedBreakpoint)
-  // the way a Select option's is. Set itemSize to opt into the faster fixed path.
+  // Rows can wrap or stack, so measure each one unless itemSize fixes the height.
   dynamic: () => virtualizeConfig.value.itemSize === undefined,
   estimateSize: () => virtualizeConfig.value.estimateSize,
   onReachEnd: () => emit('reach-end'),
@@ -513,8 +458,7 @@ const bottomSpacerHeight = computed(() => {
   return Math.max(0, virtualizer.totalSize.value - (last.start + last.size))
 })
 
-// Roving tabindex for selectionMode="row": the body is one Tab stop. Keys are
-// the String()ed row keys tableRowEntries already carries.
+// Roving tabindex for selectionMode="row": the body is one Tab stop.
 const focusedRowKey = ref<string | null>(null)
 const selectedKeyStrings = computed(() => new Set([...selected.value].map(String)))
 const tabStopRowKey = computed<string | null>(() => {
@@ -584,7 +528,6 @@ function onRowKeydown(row: T, event: KeyboardEvent) {
       toggleSelect(row)
       return
     case 'Enter':
-      // Same as a click: toggles selection and fires row-click.
       event.preventDefault()
       toggleSelect(row)
       emit('row-click', row)
@@ -605,7 +548,6 @@ function onRowKeydown(row: T, event: KeyboardEvent) {
   void focusRowEntry(target)
 }
 
-// Guard: interactive descendants (checkbox, button, link) must not also fire row click.
 function onRowClick(row: T, event: MouseEvent) {
   const target = event.target as HTMLElement
   if (
@@ -668,7 +610,6 @@ function tablePart(...extra: (string | false | undefined)[]) {
 }
 const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-datatable-footer'))
 
-// Column's own resizable prop wins over table-level default.
 function isColumnResizable(col: RegisteredColumn<T>): boolean {
   return col.resizable ?? props.resizableColumns
 }
@@ -696,7 +637,6 @@ let resizeStartX = 0
 let resizeStartWidth = 0
 let resizePointerId: number | null = null
 
-// Width commits on every pointermove frame (direct manipulation, no transition).
 function onResizePointerdown(col: RegisteredColumn<T>, event: PointerEvent) {
   event.preventDefault()
   const th = (event.currentTarget as HTMLElement).closest('th')
@@ -721,15 +661,13 @@ useEventListener(ssrWindow, 'pointermove', onResizePointermove)
 useEventListener(ssrWindow, 'pointerup', onResizePointerup)
 useEventListener(ssrWindow, 'pointercancel', onResizePointerup)
 
-// Utility columns (select/expand) are fixed-width; real columns need live measurement.
-const UTILITY_COLUMN_WIDTH = 44 // px — matches --select/--expand's 2.75rem
+const UTILITY_COLUMN_WIDTH = 44 // px, matches the 2.75rem select/expand cells
 const leadingFixedWidth = computed(() => {
   let width = 0
   if (selectColumnRendered.value) width += UTILITY_COLUMN_WIDTH
   if (expansionColumnRendered.value) width += UTILITY_COLUMN_WIDTH
   return width
 })
-// Order must match the cells: select, expand, then real columns.
 const colWidths = computed<(Record<string, string> | undefined)[]>(() => {
   const widths: (Record<string, string> | undefined)[] = []
   if (selectColumnRendered.value) widths.push({ width: `${UTILITY_COLUMN_WIDTH}px` })
@@ -740,8 +678,7 @@ const colWidths = computed<(Record<string, string> | undefined)[]>(() => {
 function isFrozenColumn(colIndex: number): boolean {
   return props.frozenColumns > 0 && colIndex < props.frozenColumns
 }
-// Loosely typed, not `InstanceType<typeof DataTableHead>` — same generic-SFC
-// limitation `TypedColumn` below works around; only `rowEl` is needed here.
+// Loosely typed: InstanceType can't read a generic SFC (see TypedColumn below).
 const headComponent = useTemplateRef<{ rowEl: HTMLElement | null }>('headComponent')
 const frozenOffsets = ref<number[]>([])
 const headerHeight = ref(0)
@@ -778,19 +715,14 @@ function utilityFrozenStyle(kind: 'select' | 'expand'): Record<string, string> |
   const left = kind === 'select' ? 0 : selectColumnRendered.value ? UTILITY_COLUMN_WIDTH : 0
   return { position: 'sticky', insetInlineStart: `${left}px`, zIndex: '2' }
 }
-// Feeds bodyMaxBlockSize below: scrollHeight minus this keeps the total
-// visible area (header + body) equal to what `scrollHeight` always meant.
+// Subtracted from scrollHeight so header plus body stays within it.
 function recomputeHeaderHeight() {
   const row = headComponent.value?.rowEl
   const height = row ? row.getBoundingClientRect().height : 0
   if (height !== headerHeight.value) headerHeight.value = height
 }
-// headerHeight/frozen offsets start at 0 and get corrected once the real DOM
-// (and, via ResizeObserver, the header's settled width) is measurable — a
-// genuine re-render that TransitionGroup can't tell apart from a real row
-// reorder, so it plays the move animation on rows that never actually moved.
-// DataTableBody uses this to disable just that CSS transition (not the
-// hooks) until the first settling render has passed — see its own comment.
+// The first measurement re-render looks like a reorder to TransitionGroup.
+// Row move stays off until it has passed.
 const rowMotionReady = ref(false)
 onMounted(() => {
   recomputeFrozenOffsets()
@@ -823,8 +755,8 @@ onMounted(() => {
 onUpdated(syncHeaderObserver)
 onBeforeUnmount(() => resizeObserver?.disconnect())
 
-// The body's own scrollbar narrows its content width but the head table
-// (not scrolling) doesn't lose that space — pad the head table to match.
+// The body's scrollbar narrows its content box; padding the head strip by the same width
+// keeps columns aligned. Not on the table: collapsed borders ignore table padding.
 const scrollbarWidth = ref(0)
 function recomputeScrollbarWidth() {
   const el = bodyScrollEl.value
@@ -840,6 +772,44 @@ onMounted(() => {
 })
 onUpdated(recomputeScrollbarWidth)
 onBeforeUnmount(() => bodyResizeObserver?.disconnect())
+// Two-way, so wheel, touch, focus and drag autoscroll on the head strip move the body.
+// Echoes of our own writes are skipped, or a stale one would undo momentum scrolling.
+const headScrollEl = useTemplateRef<HTMLElement>('headScrollEl')
+let headWrittenLeft: number | null = null
+let bodyWrittenLeft: number | null = null
+function mirrorScrollLeft(from: HTMLElement, to: HTMLElement): number | null {
+  const left = from.scrollLeft
+  if (Math.abs(to.scrollLeft - left) < 1) return null
+  to.scrollLeft = left
+  return to.scrollLeft
+}
+function onBodyScroll() {
+  const head = headScrollEl.value
+  const body = bodyScrollEl.value
+  if (!head || !body) return
+  if (bodyWrittenLeft !== null && Math.abs(body.scrollLeft - bodyWrittenLeft) < 1) {
+    bodyWrittenLeft = null
+    return
+  }
+  bodyWrittenLeft = null
+  headWrittenLeft = mirrorScrollLeft(body, head)
+}
+function onHeadScroll() {
+  const head = headScrollEl.value
+  const body = bodyScrollEl.value
+  if (!head || !body) return
+  if (headWrittenLeft !== null && Math.abs(head.scrollLeft - headWrittenLeft) < 1) {
+    headWrittenLeft = null
+    return
+  }
+  headWrittenLeft = null
+  bodyWrittenLeft = mirrorScrollLeft(head, body)
+  // The body may stop short of where the head went, so the head snaps back to it.
+  if (Math.abs(head.scrollLeft - body.scrollLeft) >= 1)
+    headWrittenLeft = mirrorScrollLeft(body, head)
+}
+useEventListener(bodyScrollEl, 'scroll', onBodyScroll, { passive: true })
+useEventListener(headScrollEl, 'scroll', onHeadScroll, { passive: true })
 const bodyMaxBlockSize = computed(() =>
   props.scrollHeight ? `calc(${props.scrollHeight} - ${headerHeight.value}px)` : undefined,
 )
@@ -872,8 +842,7 @@ const {
   disabled: () => !props.reorderableColumns,
   motionCss: () => props.motionCss,
   canDrop: (details) => {
-    // A pinned column can't be displaced out of its slot either, regardless
-    // of what a consumer's own canDrop says.
+    // A pinned column can't be displaced, whatever the consumer's canDrop says.
     const target = orderedColumns.value[details.to.index]
     if (target && !isColumnReorderable(target)) return false
     return props.canDrop?.(details) ?? true
@@ -892,9 +861,8 @@ const {
   },
 })
 
-// The sortable engine only moves header cells. Each frame of a drag (and of
-// the drop settle that follows) this copies every header's shift onto its
-// body cells, and moves the dragged column's cells with the floating preview.
+// useSortable only moves header cells. Each frame this copies their shift onto the
+// body cells, and moves the dragged column's cells with the preview.
 let columnFollowFrame = 0
 let lastDraggedColumn: string | null = null
 function bodyCellsFor(field: string): HTMLElement[] {
@@ -1016,20 +984,8 @@ const bodyProps = computed(() => ({
   },
 }))
 
-// The generic-inference handoff (see the SFC comment above): `T` is bound
-// here from `:data="users"` at the usage site, so casting Column's own
-// implementation against it makes `field`/`#cell`/`#header` fully typed for
-// consumers with zero manual annotation on their end.
-//
-// A manual `$props`/`$slots` shape, not `InstanceType<typeof ColumnImpl>` —
-// Column.vue is itself a generic SFC, so vue-tsc types its default export as
-// a generic function over Column's OWN type parameter, which is not a
-// constructor signature `InstanceType` can extract from (Select.vue hits
-// the identical wall with `SelectListBody` and documents the same fix: name
-// the shape directly instead of deriving it). The `new () => { $props;
-// $slots }` class-component shape is what Volar's template checker reads to
-// type-check `<Column field=… #cell=… #header=…>` — ColumnImpl's REAL type
-// is irrelevant to that checking once cast, only this declared shape is.
+// Binds Column to this table's `T`, so `field`, `#cell` and `#header` are typed.
+// A hand-written shape because InstanceType can't read a generic SFC.
 type TypedColumn = new () => {
   $props: {
     field: keyof T

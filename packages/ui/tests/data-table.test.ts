@@ -784,6 +784,112 @@ test('scrollFade with frozen columns fades only the right edge', async () => {
   ).toBe(true)
 })
 
+// ------------------------------------------------- scrollHeight + overflowing columns
+// 22rem of columns in a 200px table, so both split tables overflow sideways.
+const narrowSplit = { scrollHeight: '160px', ui: { root: { style: 'width: 200px' } } }
+
+function expectColumnsAligned(container: HTMLElement) {
+  const ths = headerCells(container)
+  const tds = Array.from(bodyRows(container)[0]!.querySelectorAll<HTMLElement>('.ui-datatable-td'))
+  expect(tds.length).toBe(ths.length)
+  ths.forEach((th, i) => {
+    const head = th.getBoundingClientRect()
+    const cell = tds[i]!.getBoundingClientRect()
+    expect(Math.abs(head.left - cell.left)).toBeLessThanOrEqual(1)
+    expect(Math.abs(head.right - cell.right)).toBeLessThanOrEqual(1)
+  })
+}
+
+test('scrollHeight with overflowing columns keeps head and body columns aligned while scrolling', async () => {
+  const screen = await renderTable({ rowCount: 20, ...narrowSplit })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(20))
+  const ths = headerCells(screen.container)
+  const lastTh = ths[ths.length - 1]!
+  // The outer box never scrolls itself, so it's a fixed reference.
+  const left = screen.container
+    .querySelector('.ui-datatable-scroll-x')!
+    .getBoundingClientRect().left
+
+  await userEvent.wheel(body, { delta: { x: 60 } })
+  await vi.waitFor(() => {
+    expect(ths[0]!.getBoundingClientRect().left).toBeLessThan(left - 10)
+    expectColumnsAligned(screen.container)
+  })
+
+  await userEvent.wheel(body, { delta: { x: 1000 } })
+  await vi.waitFor(() => {
+    // Scrolled all the way: the last column ends at the body's visible edge.
+    const bodyRect = body.getBoundingClientRect()
+    const visibleRight = bodyRect.left + body.clientLeft + body.clientWidth
+    expect(Math.abs(lastTh.getBoundingClientRect().right - visibleRight)).toBeLessThanOrEqual(1)
+    expectColumnsAligned(screen.container)
+  })
+})
+
+test('scrollHeight with frozen columns keeps the frozen body cells put while scrolling sideways', async () => {
+  const screen = await renderTable({ rowCount: 20, frozenColumns: 1, ...narrowSplit })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(20))
+  const nameTh = headerCells(screen.container)[0]!
+  const nameTd = () =>
+    bodyRows(screen.container)[0]!.querySelector<HTMLElement>('.ui-datatable-td')!
+  const ageTh = headerCells(screen.container)[1]!
+  const left = screen.container
+    .querySelector('.ui-datatable-scroll-x')!
+    .getBoundingClientRect().left
+  const ageLeftBefore = ageTh.getBoundingClientRect().left
+
+  // Scrolling from the header, then from the body.
+  for (const target of [nameTh, body]) {
+    await userEvent.wheel(target, { delta: { x: target === body ? 1000 : 50 } })
+    await vi.waitFor(() => {
+      expect(ageTh.getBoundingClientRect().left).toBeLessThan(ageLeftBefore - 10)
+      expect(Math.abs(nameTh.getBoundingClientRect().left - left)).toBeLessThanOrEqual(1)
+      expect(Math.abs(nameTd().getBoundingClientRect().left - left)).toBeLessThanOrEqual(1)
+      expectColumnsAligned(screen.container)
+    })
+  }
+})
+
+test('scrollHeight: the header strip follows the body, and a sideways wheel on it scrolls the body', async () => {
+  const screen = await renderTable({ rowCount: 20, ...narrowSplit })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(20))
+  const head = screen.container.querySelector<HTMLElement>('.ui-datatable-head-scroll')!
+  expect(head).not.toBeNull()
+
+  body.scrollLeft = 40
+  await vi.waitFor(() => expect(head.scrollLeft).toBe(body.scrollLeft))
+  expect(body.scrollLeft).toBeGreaterThan(0)
+
+  await userEvent.wheel(head, { delta: { x: 30 } })
+  await vi.waitFor(() => expect(body.scrollLeft).toBeGreaterThan(40))
+  await vi.waitFor(() => expect(head.scrollLeft).toBe(body.scrollLeft))
+})
+
+test('scrollHeight fades the body both ways and the head strip sideways', async () => {
+  const screen = await renderTable({ rowCount: 20, frozenColumns: 1, ...narrowSplit })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  const head = screen.container.querySelector<HTMLElement>('.ui-datatable-head-scroll')!
+  await vi.waitFor(() => {
+    expect(body.classList.contains('scroll-fade')).toBe(true)
+    expect(body.classList.contains('scroll-fade-x')).toBe(true)
+    expect(head.classList.contains('scroll-fade-x')).toBe(true)
+  })
+  const bodyMask = getComputedStyle(body).maskImage
+  // Two layers: the vertical fade (serialized without "to bottom") and the sideways one.
+  expect(bodyMask.startsWith('linear-gradient(rgba(0, 0, 0, 0) 0%')).toBe(true)
+  // Frozen columns: the sideways fade is right-edge only, in the body and the head.
+  expect(bodyMask).toContain('linear-gradient(to right, rgb(0, 0, 0)')
+  expect(
+    getComputedStyle(head).maskImage.startsWith('linear-gradient(to right, rgb(0, 0, 0)'),
+  ).toBe(true)
+  expect(screen.container.querySelector('.ui-datatable-scroll-x')!.classList).not.toContain(
+    'scroll-fade-x',
+  )
+})
+
 // -------------------------------------------------------------- #expansion (Tier 2)
 async function expansionScreen(props?: {
   stackedBreakpoint?: string

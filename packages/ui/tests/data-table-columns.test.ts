@@ -241,3 +241,26 @@ test('body cells follow their header while a column drags, then settle back to r
     { timeout: 3000 },
   )
 })
+
+test('with scrollHeight, dragging a column to the edge autoscrolls the head strip and the body follows', async () => {
+  const screen = await renderTable({
+    rowCount: 20,
+    showStatusColumn: true,
+    scrollHeight: '160px',
+    ui: { root: { style: 'width: 200px' } },
+  })
+  const head = screen.container.querySelector<HTMLElement>('.ui-datatable-head-scroll')!
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(body.scrollWidth).toBeGreaterThan(body.clientWidth))
+  const [name] = headerEls(screen)
+  const box = name!.getBoundingClientRect()
+  const edge = head.getBoundingClientRect().right - 4
+  const y = box.top + box.height / 2
+  const init = { bubbles: true, pointerId: 31, button: 0, clientY: y }
+  name!.dispatchEvent(new PointerEvent('pointerdown', { ...init, clientX: box.left + 8 }))
+  window.dispatchEvent(new PointerEvent('pointermove', { ...init, clientX: box.left + 40 }))
+  window.dispatchEvent(new PointerEvent('pointermove', { ...init, clientX: edge }))
+  await vi.waitFor(() => expect(head.scrollLeft).toBeGreaterThan(20))
+  await vi.waitFor(() => expect(Math.abs(body.scrollLeft - head.scrollLeft)).toBeLessThan(1))
+  window.dispatchEvent(new PointerEvent('pointerup', init))
+})
