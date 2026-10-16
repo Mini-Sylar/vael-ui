@@ -128,10 +128,12 @@ const rawProps = withDefaults(
     /** This list's identity within `group`. Unset, Sortable assigns one. */
     groupId?: string | number
     /** `group` only: what follows the pointer once a drag leaves this list.
-     * `'element'` moves the real item; `'clone'` floats a copy, for content that can't leave its layout. */
+     * `'element'` moves the real item; `'clone'` floats a copy, for content that can't leave its layout.
+     * @default 'element' */
     previewMode?: 'element' | 'clone'
     /** Milliseconds a touch must hold a row still before a drag starts. Unset, drags start at once.
-     * Set it only when `#item` or `#handle` content is also tappable; the built-in handle never needs it. */
+     * Set it only when `#item` or `#handle` content is also tappable; the built-in handle never needs it.
+     * @default 0 */
     touchDragDelay?: number
     /** Class and style overrides for each part. */
     ui?: Partial<{

@@ -7,16 +7,22 @@
     "gsapExampleIntro": "<code>beforeClose(done)</code> plus die verfügbar gemachte <code>panelEl</code>-Referenz, damit das Tween auf dem echten Panel-Element ausgeführt wird, bevor es entfernt wird:",
     "gsapExampleTitle": "Beispiel: GSAP, Dialog",
     "intro": "Jede animierte Komponente liefert einen einfachen CSS-Übergang mit, und bei jeder können Sie selbst übernehmen: mit GSAP, motion-v oder ganz ohne Animation. Welche Hooks Sie bekommen, hängt davon ab, was die Komponente tut.",
-    "motionCssIntro": "Setzen Sie sie auf <code>false</code>, um den integrierten CSS-Übergang auszuschalten. Die Komponente wechselt ihren Zustand weiterhin, aber sofort, und überlässt Ihnen das DOM zum Animieren.",
+    "motionCssIntro": "Setzen Sie sie auf <code>false</code>, um den integrierten CSS-Übergang auszuschalten. Die Komponente wechselt ihren Zustand weiterhin, aber sofort, und überlässt Ihnen das DOM zum Animieren. Auf einem <code>ConfigProvider</code> bedeutet <code>:motion-css=\"false\"</code> gar keine Animation: Alles darin öffnet, schließt und verschwindet sofort, ohne dass Sie etwas tun müssen.",
     "motionVExampleIntro": "<code>forceMount</code> plus das Flag <code>isClosing</code> des Standardsteckplatzes, eingeschlossen in <code>",
     "motionVExampleTitle": "Beispiel: motion-v, Popover",
     "title": "Bringen Sie Ihre eigene Animation mit",
     "motionCssTitle": "MotionCss",
-    "kindsTitle": "Welche Hooks hat meine Komponente?",
-    "kindsOverlay": "<strong>Öffnet und schließt</strong> (Dialog, Popover, Tooltip, Menu, Select, DatePicker): <code>forceMount</code>, <code>beforeClose(done)</code> und ein bereitgestelltes <code>panelEl</code>. <code>forceMount</code> schaltet den CSS-Übergang bereits ab.",
-    "kindsInPlace": "<strong>Ändert sich an Ort und Stelle</strong> (Calendar, Checkbox, Radio, Collapsible, Pagination, PullToRefresh): <code>motionCss</code> schaltet den Übergang ab, und bereitgestellte Elemente lassen Sie selbst animieren.",
-    "kindsList": "<strong>Einträge, die kommen und gehen</strong> (CommandPalette, Timeline, FileUpload): <code>motionCss</code> sowie <code>{'@'}item-enter</code> und <code>{'@'}item-leave</code>.",
-    "kindsCheck": "Die Tabellen Props, Slots und Exposed einer Komponente zeigen genau, was sie bietet."
+    "kindsTitle": "Hooks für jede Art von Komponente",
+    "kindsKind": "Art",
+    "kindsComponents": "Komponenten",
+    "kindsHooks": "Hooks",
+    "kindsOverlayTitle": "Öffnet und schließt",
+    "kindsInPlaceTitle": "Ändert sich an Ort und Stelle",
+    "kindsListTitle": "Einträge, die kommen und gehen",
+    "kindsCheck": "Die Tabellen Props, Slots und Exposed einer Komponente zeigen genau, was sie bietet.",
+    "exposedTitle": "Bereitgestellte Elemente",
+    "exposedIntro": "Setzen Sie eine Template-Ref auf eine Komponente, und Sie erhalten ihre echten DOM-Elemente: <code>el</code> für die Wurzel, dazu ihre Teile wie <code>panelEl</code>, <code>listEl</code>, <code>thumbEl</code> oder <code>checkEl</code>. Schalten Sie den eingebauten Übergang mit <code>motionCss</code> ab und animieren Sie diese Elemente mit einer beliebigen Bibliothek. Die Exposed-Tabelle jeder Komponente listet auf, was sie hat.",
+    "exposedExampleIntro": "In diesem Beispiel springt das Häkchen mit GSAP herein, sobald das Kästchen angehakt wird:"
   },
   "component": {
     "code": "Code",
@@ -320,7 +326,7 @@
   "i18nKeys": {
     "copyIntro": "Kopieren Sie dies unter dem Schlüssel uiKit in Ihre Sprachdateien und übersetzen Sie dann die Werte:",
     "englishDefault": "Englische Standardeinstellung",
-    "intro": "Jeder integrierte Text (die Schließen-Schaltfläche von Dialogen, das Schließen von Toasts, leere Zustände usw.) hat einen englischen Standardwert. Um die Texte zu übersetzen, übergeben Sie Ihre eigene i18n-Instanz an ConfigProvider. Sie werden aus Ihrem vorhandenen Katalog unter dem Namespace uiKit gelesen, Sie müssen also nichts zusätzlich installieren. Schlüssel, die du nicht übersetzt hast, behalten den englischen Standardtext, ohne Warnungen in der Konsole.",
+    "intro": "Jeder integrierte Text (die Schließen-Schaltfläche von Dialogen, das Schließen von Toasts, leere Zustände usw.) hat einen englischen Standardwert. Um die Texte zu übersetzen, übergeben Sie Ihre eigene i18n-Instanz an ConfigProvider. Sie werden aus Ihrem vorhandenen Katalog unter dem Namespace uiKit gelesen, Sie müssen also nichts zusätzlich installieren. Schlüssel, die Sie nicht übersetzt haben, behalten den englischen Standardtext, ohne Warnungen in der Konsole.",
     "key": "Schlüssel",
     "title": "vael-ui übersetzen"
   },

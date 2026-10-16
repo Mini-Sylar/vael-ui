@@ -223,11 +223,7 @@ tbody tr:target {
 
 /* Type and default are reference detail: highlighted, but a step quieter. */
 .type-cell {
-  min-width: 11rem;
-}
-
-.default-cell {
-  min-width: 5.5rem;
+  min-width: 8rem;
 }
 
 .type-cell :deep(.inline-code),
@@ -240,7 +236,7 @@ tbody tr:target {
 }
 
 .description-cell {
-  min-width: 14rem;
+  min-width: 10rem;
   color: var(--ui-text);
   text-wrap: pretty;
 }
@@ -249,7 +245,6 @@ tbody tr:target {
   font-size: 0.9em;
   padding: 0.05em 0.3em;
   border-radius: 4px;
-  white-space: nowrap;
 }
 
 .description-cell :deep(.inline-code:not(.code-ref)) {

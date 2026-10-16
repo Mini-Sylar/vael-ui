@@ -163,8 +163,8 @@ const rawProps = withDefaults(
     type?: 'button' | 'submit' | 'reset'
     /** Root tag, such as `as="a"` for a link styled as a button. @default 'button' */
     as?: string
-    /** Where the `#badge` slot sits (`'top-end'` when unset). Setting it reserves the wrapper up front,
-     * so a `v-if`'d `#badge` keeps a stable DOM position. */
+    /** Where the `#badge` slot sits. Setting it reserves the wrapper up front, so a `v-if`'d `#badge`
+     * keeps a stable DOM position. @default 'top-end' */
     badgePlacement?: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end'
     /** Class and style overrides for each part. */
     ui?: Partial<{

@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Turn off animations everywhere</h3>
     <p class="note">
-      <code>:motion-css="false"</code> switches off every component's built-in transitions inside,
-      handy for screenshot and end-to-end tests that shouldn't wait on motion, or for an app that
-      animates everything itself. Toggle it and open the accordion or flip the switch.
+      <code>:motion-css="false"</code> turns off every built-in transition inside. Everything still
+      opens, closes and leaves, but instantly. Use it for screenshot and end-to-end tests that
+      shouldn't wait on motion. Toggle it, then open the accordion or flip the switch.
     </p>
     <Switch v-model="animate" label="Built-in animations" />
     <ConfigProvider :motion-css="animate">
@@ -12,8 +12,8 @@
         <Switch v-model="wifi" label="Wi-Fi" />
         <Accordion v-model:value="open">
           <AccordionItem value="one" title="What does this turn off?">
-            Transitions like this panel opening, the switch thumb sliding and the month sliding in a
-            calendar. Your own animations are untouched.
+            It turns off transitions like this panel opening, the switch thumb sliding and a
+            calendar's month sliding in. Your own animations keep running.
           </AccordionItem>
         </Accordion>
       </div>
