@@ -107,6 +107,13 @@
   .ui-speed-dial-actions[data-motion='off'] .ui-speed-dial-action-move {
     transition: none;
   }
+  /* motionCss off: every built-in transition goes, including Button's own press and hover easing
+     on the trigger and actions. State still changes, only instantly. */
+  .ui-speed-dial--no-motion .ui-speed-dial-trigger,
+  .ui-speed-dial--no-motion .ui-speed-dial-trigger-icon,
+  .ui-speed-dial--no-motion .ui-speed-dial-action {
+    transition: none;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-speed-dial-action-enter-active,

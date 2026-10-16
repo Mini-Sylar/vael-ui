@@ -75,27 +75,41 @@ watch(checked, (isChecked) => {
     <p v-html="t('animation.motionVExampleIntro')" />
     <CodeBlock
       code='&lt;script setup lang="ts"&gt;
-import { AnimatePresence, motion } from "motion-v"
+import { ref, useTemplateRef, watch } from "vue"
+import { animate } from "motion-v"
 import { Popover } from "vael-ui"
+
+const open = ref(false)
+const popover = useTemplateRef("popover")
+
+// Runs before the panel shows, so it starts hidden instead of flashing.
+watch(open, (isOpen) => {
+  const panel = popover.value?.panelEl
+  if (!isOpen || !panel) return
+  panel.style.opacity = "0"
+  animate(panel, { opacity: [0, 1], scale: [0.95, 1] }, { duration: 0.2 })
+})
+
+// Popover keeps the panel up until done() is called.
+async function beforeClose(done: () => void) {
+  const panel = popover.value?.panelEl
+  if (panel) await animate(panel, { opacity: 0, scale: 0.95 }, { duration: 0.15 })
+  done()
+}
 &lt;/script&gt;
 
 <template>
-  <Popover force-mount v-model:open="open">
-    <template #trigger="{ setTriggerEl }">
-      <button :ref="setTriggerEl">Open</button>
+  <Popover
+    ref="popover"
+    v-model:open="open"
+    force-mount
+    open-on-trigger-click
+    :before-close="beforeClose"
+  >
+    <template #trigger>
+      <button>Open</button>
     </template>
-    <template #default="{ isClosing }">
-      <AnimatePresence>
-        <motion.div
-          v-if="!isClosing"
-          :initial="{ opacity: 0, scale: 0.95 }"
-          :animate="{ opacity: 1, scale: 1 }"
-          :exit="{ opacity: 0, scale: 0.95 }"
-        >
-          Popover content
-        </motion.div>
-      </AnimatePresence>
-    </template>
+    <template #default>Popover content</template>
   </Popover>
 </template>'
     />

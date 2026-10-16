@@ -68,21 +68,35 @@ provide(classMergerKey, (classes: string) =>
 
 // A nested provider inherits its parent's defaults and overrides only what it sets.
 const parentDefaults = inject(defaultsKey, undefined)
-provide(
-  defaultsKey,
-  computed<UiDefaults>(() => {
-    const own: UiDefaults = {}
-    if (props.size) own.size = props.size
-    if (props.motionCss !== undefined) own.motionCss = props.motionCss
-    const locale = validLocale(toValue(props.i18n?.locale))
-    if (locale) own.locale = locale
-    return { ...parentDefaults?.value, ...own }
-  }),
-)
+const defaults = computed<UiDefaults>(() => {
+  const own: UiDefaults = {}
+  if (props.size) own.size = props.size
+  if (props.motionCss !== undefined) own.motionCss = props.motionCss
+  const locale = validLocale(toValue(props.i18n?.locale))
+  if (locale) own.locale = locale
+  return { ...parentDefaults?.value, ...own }
+})
+provide(defaultsKey, defaults)
 
 const scopeId = useId()
 const scopeSelector = `[data-ui-theme='${scopeId}']`
-const themeCss = computed(() => (props.theme ? generateThemeCss(props.theme, scopeSelector) : ''))
+// Motion off zeroes the duration tokens. Teleported overlays carry this scope too.
+const DURATION_TOKENS = [
+  'drawer',
+  'press',
+  'enter',
+  'exit',
+  'tooltip',
+  'tooltip-exit',
+  'toast',
+  'toast-exit',
+]
+const themeCss = computed(() => {
+  const theme = props.theme ? generateThemeCss(props.theme, scopeSelector) : ''
+  if (defaults.value.motionCss !== false) return theme
+  const zero = DURATION_TOKENS.map((name) => `--ui-duration-${name}: 0s;`).join(' ')
+  return `${theme}\n${scopeSelector} { ${zero} }`
+})
 provide(
   themeKey,
   computed(() => props.theme),

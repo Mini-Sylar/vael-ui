@@ -1,6 +1,6 @@
 import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 
 export interface SheetSnapPoint {
@@ -16,13 +16,18 @@ export interface UseSheetDragOptions {
   handleEl: ElRef<HTMLElement | null>
   /** Pointer-down here only starts a drag once its own scroll is at the top, the drag is vertically dominant, and it moves downward — otherwise it's an ordinary scroll (or a horizontal gesture that belongs to something nested, like a swipe-to-reveal row). */
   contentEl?: ElRef<HTMLElement | null>
+  /** Element the sheet fills instead of the viewport. */
+  bounds?: MaybeRefOrGetter<HTMLElement | null | undefined>
   /** Ordered smallest to largest. */
   snapPoints: MaybeRefOrGetter<SheetSnapPoint[]>
   initialSnap?: MaybeRefOrGetter<string | undefined>
   /** Whether a drag past the smallest snap point can dismiss at all. Default true. */
   dismissible?: MaybeRefOrGetter<boolean>
-  /** Fires the instant a release decides to dismiss — the panel is still at whatever transform the drag left it at. The caller is expected to request its own close flow here (e.g. Dialog's `close()`), whose `beforeClose` then continues the SAME visual off-screen from there. Keeping that in one place (not also animated here) avoids two competing transform animations racing on the same element. */
-  onDismiss: () => void
+  /**
+   * Fires when a release decides to dismiss, with the panel where the drag left it. Request your
+   * close flow here. `velocity` is the release speed in px/ms, positive toward closed.
+   */
+  onDismiss: (velocity: number) => void
 }
 
 export interface UseSheetDragReturn {
@@ -42,6 +47,8 @@ const VELOCITY_THRESHOLD = 0.4 // px/ms — matches Vaul's "was this deliberate"
 const SHORT_DRAG_FRACTION = 0.4 // of viewport height — Vaul's step-one-snap-point vs settle-to-nearest split
 const NESTED_DISPLACEMENT = 16 // px — Vaul's own recede distance for stacked sheets
 const AXIS_LOCK_THRESHOLD = 8 // px — movement before a content drag commits to an axis; matches useSwipeReveal
+// Only the end of a drag counts, so a slow drag that ends in a flick reads as a flick.
+const VELOCITY_WINDOW = 80 // ms
 // Shifted-log curve (Vaul); viewport-scale range.
 const RUBBER_BAND_DAMPEN = 60
 
@@ -72,12 +79,20 @@ export function useSheetDrag(
   const isDragging = shallowRef(false)
   let lastAppliedOffset = 0
 
+  // The area the sheet fills: its container when contained, else the viewport.
+  function areaHeight(): number {
+    return toValue(options.bounds)?.clientHeight ?? viewportHeight()
+  }
+  function areaWidth(): number {
+    return toValue(options.bounds)?.clientWidth ?? viewportWidth()
+  }
+
   function points(): SheetSnapPoint[] {
     return toValue(options.snapPoints)
   }
 
   function offsetFor(point: SheetSnapPoint): number {
-    const height = viewportHeight()
+    const height = areaHeight()
     return height - point.height * height
   }
 
@@ -89,10 +104,10 @@ export function useSheetDrag(
     return points().find((point) => point.id === activeSnap.value)
   }
 
-  // Panel is always viewport tall; translateY(0) = viewport top.
+  // Panel is always as tall as its area; translateY(0) = the area's top.
   function applyFixedHeight() {
     const panel = options.panelEl.value
-    if (panel) panel.style.blockSize = `${viewportHeight()}px`
+    if (panel) panel.style.blockSize = `${areaHeight()}px`
   }
 
   function moveTo(offset: number, animate: boolean) {
@@ -100,7 +115,7 @@ export function useSheetDrag(
     if (!panel) return
     panel.style.transition = animate && !reducedMotion() ? TRANSITION : 'none'
     panel.style.transform = `translateY(${offset}px)`
-    panel.style.setProperty('--sheet-visible-height', `${Math.max(0, viewportHeight() - offset)}px`)
+    panel.style.setProperty('--sheet-visible-height', `${Math.max(0, areaHeight() - offset)}px`)
     lastAppliedOffset = offset
   }
 
@@ -159,6 +174,25 @@ export function useSheetDrag(
   let dragStartOffset = 0
   let dragStartTime = 0
   let dragStartScrollTop = 0
+  let samples: { t: number; y: number }[] = []
+
+  // Keep one sample older than the window, so a release right after a pause still has two points.
+  function addSample(clientY: number) {
+    const now = performance.now()
+    samples.push({ t: now, y: clientY })
+    const firstInWindow = samples.findIndex((sample) => now - sample.t <= VELOCITY_WINDOW)
+    if (firstInWindow > 1) samples = samples.slice(firstInWindow - 1)
+  }
+
+  function releaseVelocity(): number {
+    const last = samples.at(-1)
+    if (!last) return 0
+    const anchor =
+      samples.find((sample) => last.t - sample.t <= VELOCITY_WINDOW && sample !== last) ??
+      samples.at(-2)
+    if (!anchor || last.t === anchor.t) return 0
+    return (last.y - anchor.y) / (last.t - anchor.t)
+  }
 
   function beginDrag(clientY: number) {
     const point = currentPoint()
@@ -166,6 +200,7 @@ export function useSheetDrag(
     dragStartY = clientY
     dragStartOffset = lastAppliedOffset
     dragStartTime = performance.now()
+    samples = [{ t: dragStartTime, y: clientY }]
     isDragging.value = true
     moveTo(dragStartOffset, false)
   }
@@ -208,6 +243,7 @@ export function useSheetDrag(
     }
     const list = offsets()
     if (list.length === 0) return
+    addSample(event.clientY)
     const delta = event.clientY - dragStartY // positive = pointer down
     const rawOffset = dragStartOffset + delta
     // Top boundary gets resistance; bottom is unclamped (dismiss gesture).
@@ -226,6 +262,7 @@ export function useSheetDrag(
     dragSource = null
     isDragging.value = false
     if (!wasDragging || source !== 'handle') return
+    addSample(event.clientY)
 
     const list = points()
     const offsetList = offsets()
@@ -238,7 +275,7 @@ export function useSheetDrag(
     const currentIndex = list.findIndex((point) => point.id === activeSnap.value)
 
     if (velocity > FAST_VELOCITY && !hasDraggedUp) {
-      if (dismissible) options.onDismiss()
+      if (dismissible) options.onDismiss(releaseVelocity())
       else settleTo(list[0])
       return
     }
@@ -249,7 +286,7 @@ export function useSheetDrag(
 
     if (
       velocity > VELOCITY_THRESHOLD &&
-      Math.abs(draggedDistance) < viewportHeight() * SHORT_DRAG_FRACTION
+      Math.abs(draggedDistance) < areaHeight() * SHORT_DRAG_FRACTION
     ) {
       const step = hasDraggedUp ? 1 : -1
       const nextIndex = currentIndex + step
@@ -258,7 +295,7 @@ export function useSheetDrag(
         return
       }
       if (step < 0 && currentIndex === 0) {
-        if (dismissible) options.onDismiss()
+        if (dismissible) options.onDismiss(releaseVelocity())
         else settleTo(list[0])
         return
       }
@@ -269,7 +306,7 @@ export function useSheetDrag(
     // Check if dragging down past all snap points — dismiss if dismissible
     const minOffset = Math.min(...offsetList)
     if (!hasDraggedUp && dismissible && currentOffset > minOffset) {
-      options.onDismiss()
+      options.onDismiss(releaseVelocity())
       return
     }
 
@@ -302,7 +339,7 @@ export function useSheetDrag(
     // Origin at top edge (not center) to avoid swallowing the shift.
     panel.style.transformOrigin = '50% 0'
     panel.style.transition = reducedMotion() ? 'none' : TRANSITION
-    const width = viewportWidth()
+    const width = areaWidth()
     panel.style.transform = receded
       ? `translateY(${offset - NESTED_DISPLACEMENT}px) scale(${(width - NESTED_DISPLACEMENT) / width})`
       : `translateY(${offset}px)`
@@ -316,6 +353,12 @@ export function useSheetDrag(
   useEventListener(
     () => (typeof window === 'undefined' ? undefined : (window.visualViewport ?? window)),
     'resize',
+    () => {
+      if (active.value) applyFixedHeight()
+    },
+  )
+  useResizeObserver(
+    () => toValue(options.bounds) ?? undefined,
     () => {
       if (active.value) applyFixedHeight()
     },

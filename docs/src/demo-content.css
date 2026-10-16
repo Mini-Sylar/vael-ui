@@ -9,7 +9,8 @@
 /* The demo's own <h2> just repeats the component name — already the page's
    <h1> — and .note carries maintainer-facing implementation commentary, not
    consumer docs. Both are still visible in the raw source via "Code" below. */
-.demo h2,
+/* Direct children only: a Dialog or Drawer contained inside a demo renders its title as an <h2>. */
+.demo > h2,
 .demo .note {
   display: none;
 }

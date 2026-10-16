@@ -167,3 +167,48 @@ test('motionCss false from a provider: a dismissed toast still leaves, with no @
   useToastQueue().dismiss(id)
   await expect.poll(() => all('.ui-toast').length).toBe(0)
 })
+
+test('motionCss false from a provider: SpeedDial actions still leave, with no @action-leave listener', async () => {
+  const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
+  const open = shallowRef(true)
+  await render(
+    () =>
+      h(ConfigProvider, { motionCss: false }, () =>
+        h(SpeedDial as never, {
+          items: [{ label: 'Home' }, { label: 'Settings' }],
+          ariaLabel: 'Actions',
+          open: open.value,
+        }),
+      ),
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  await expect.poll(() => all('.ui-speed-dial-action').length).toBe(2)
+  open.value = false
+  await expect.poll(() => all('.ui-speed-dial-action').length).toBe(0)
+  // Instant under the provider: no CSS transition on the trigger icon either.
+  expect(getComputedStyle(q('.ui-speed-dial-trigger-icon')).transitionProperty).toBe('none')
+})
+
+test('motionCss false from a provider zeroes the duration tokens, teleported overlays included', async () => {
+  const { default: Dialog } = await import('../src/components/Dialog/Dialog.vue')
+  const duration = (el: Element) =>
+    getComputedStyle(el).getPropertyValue('--ui-duration-enter').trim()
+  await render(() =>
+    h(ConfigProvider, { motionCss: false }, () => [
+      h(Button, null, () => 'Inside'),
+      h(Dialog, { open: true, title: 'Teleported' }),
+    ]),
+  )
+  await expect.poll(() => document.querySelector('.ui-dialog-panel')).not.toBeNull()
+  expect(duration(q('.ui-button'))).toBe('0s')
+  // The dialog renders under <body>, outside the provider's wrapper, and still gets it.
+  expect(q('.ui-dialog-panel').closest('[data-ui-theme]')).not.toBeNull()
+  expect(duration(q('.ui-dialog-panel'))).toBe('0s')
+})
+
+test('a provider with motion on leaves the duration tokens alone', async () => {
+  await render(() => h(ConfigProvider, null, () => h(Button, null, () => 'Inside')))
+  expect(getComputedStyle(q('.ui-button')).getPropertyValue('--ui-duration-enter').trim()).not.toBe(
+    '0s',
+  )
+})

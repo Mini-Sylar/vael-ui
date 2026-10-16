@@ -12,9 +12,11 @@
         :data-state="isClosing ? 'closing' : 'open'"
         :data-maximized="maximized"
         :data-contained="contained || undefined"
+        :data-force-mount="forceMount || undefined"
       >
         <div
           v-if="modal"
+          ref="overlay"
           :class="overlayPart.class"
           :style="[overlayStyle, overlayPart.style]"
           aria-hidden="true"
@@ -260,6 +262,8 @@ defineSlots<{
 
 // Full panel (for FLIP demos and beforeClose measurement, not just scrollable middle).
 const panelEl = useTemplateRef<HTMLElement>('panel')
+// Exposed so a forceMount consumer can fade the backdrop with the panel.
+const overlayEl = useTemplateRef<HTMLElement>('overlay')
 // Outermost teleported node. `useInert` spares this rather than `panelEl` — otherwise
 // the overlay is a sibling, goes inert, and stops dispatching the outside-click.
 const rootEl = useTemplateRef<HTMLElement>('root')
@@ -437,6 +441,11 @@ const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-dialog
 defineExpose({
   /** Panel element (`null` while closed). */
   panelEl,
+  /**
+   * Backdrop element. `null` while closed or when `modal` is `false`. With `forceMount`, an inline
+   * `opacity` on it replaces the built-in fade.
+   */
+  overlayEl,
   /** `true` while a `beforeClose` close is pending. */
   isClosing,
   /** Closes the dialog, running `@open-change` and `beforeClose` first. */

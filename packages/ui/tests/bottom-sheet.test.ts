@@ -222,3 +222,111 @@ test('a vertically-dominant downward drag on content at the top still promotes t
 
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
+
+test('a beforeClose that moves the panel off screen itself closes the sheet right away', async () => {
+  const screen = await render(BottomSheetFixture, {
+    props: {
+      beforeClose: (done: () => void) => {
+        // A custom exit that has already landed: the panel is below the viewport.
+        panel().style.transition = 'none'
+        panel().style.transform = 'translateY(100%)'
+        done()
+      },
+    },
+  })
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+
+  await userEvent.keyboard('{Escape}')
+  // Two frames, far short of the built-in slide's 520ms.
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+  expect(screen.getByTestId('open-state').element().textContent).toBe('closed')
+  expect(document.querySelector('[data-state="closing"]')).toBeNull()
+
+  // Reopening still rises to the initial snap point.
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+})
+
+test('a beforeClose that only confirms, calling done() with the sheet still up, keeps the slide-out', async () => {
+  const screen = await render(BottomSheetFixture, {
+    props: { beforeClose: (done: () => void) => done() },
+  })
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+
+  await userEvent.keyboard('{Escape}')
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+  expect(document.querySelector('[data-state="closing"]')).not.toBeNull()
+  await vi.waitFor(() =>
+    expect(screen.getByTestId('open-state').element().textContent).toBe('closed'),
+  )
+})
+
+test('releaseVelocity reports the flick speed for a drag dismiss and 0 for any other close', async () => {
+  const screen = await render(BottomSheetFixture, {
+    props: { beforeClose: (done: () => void) => done() },
+  })
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+
+  // A slow start that ends in a flick: the release speed comes from the end, not the average.
+  const startY = window.innerHeight - 40
+  const pointerId = 1
+  const el = handle()
+  el.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
+  await new Promise((r) => setTimeout(r, 200))
+  el.dispatchEvent(
+    new PointerEvent('pointermove', { clientY: startY + 5, pointerId, bubbles: true }),
+  )
+  await new Promise((r) => setTimeout(r, 40))
+  el.dispatchEvent(
+    new PointerEvent('pointermove', { clientY: startY + 85, pointerId, bubbles: true }),
+  )
+  el.dispatchEvent(
+    new PointerEvent('pointerup', { clientY: startY + 85, pointerId, bubbles: true }),
+  )
+
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  // 80px over ~40ms is ~2px/ms; the whole-drag average would be under 0.4px/ms.
+  const flick = Number(screen.getByTestId('release-velocity').element().textContent)
+  expect(flick).toBeGreaterThan(1)
+
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  await expect.element(screen.getByTestId('release-velocity')).toHaveTextContent('0')
+})
+
+test('container: the sheet fills the container and snaps to fractions of its height', async () => {
+  const { h, shallowRef } = await import('vue')
+  const { default: BottomSheet } = await import('../src/components/BottomSheet/BottomSheet.vue')
+  const box = shallowRef<HTMLElement | null>(null)
+  const open = shallowRef(false)
+  await render({
+    render: () => [
+      h('div', {
+        ref: (el: unknown) => (box.value = el as HTMLElement | null),
+        style: 'position: relative; height: 400px; margin-top: 120px; overflow: hidden',
+      }),
+      box.value &&
+        h(BottomSheet, {
+          open: open.value,
+          'onUpdate:open': (v: boolean) => (open.value = v),
+          container: box.value,
+          title: 'Contained',
+        }),
+    ],
+  })
+  await vi.waitFor(() => expect(box.value).not.toBeNull())
+  open.value = true
+  const sheet = () => box.value!.querySelector<HTMLElement>('.ui-dialog-panel')!
+  await vi.waitFor(() => expect(sheet()).not.toBeNull())
+  const boxRect = box.value!.getBoundingClientRect()
+  expect(sheet().getBoundingClientRect().height).toBeCloseTo(400, 0)
+  // The default first snap point shows 60% of the container, not of the viewport.
+  await vi.waitFor(() =>
+    expect(boxRect.bottom - sheet().getBoundingClientRect().top).toBeCloseTo(240, -1),
+  )
+})

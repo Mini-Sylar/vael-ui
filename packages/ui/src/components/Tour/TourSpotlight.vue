@@ -6,7 +6,10 @@
         v-show="active"
         ref="overlay"
         :class="overlayPart.class"
-        :style="[{ clipPath, position: contained ? 'absolute' : undefined }, overlayPart.style]"
+        :style="[
+          { '--ui-tour-cutout': clipPath, position: contained ? 'absolute' : undefined },
+          overlayPart.style,
+        ]"
         aria-hidden="true"
       />
     </Transition>
@@ -31,6 +34,8 @@ export interface TourSpotlightProps {
    * @default false
    */
   instant?: boolean
+  /** `false` turns the glide off: the cutout jumps to each new target. @default true */
+  glide?: boolean
   forceMount?: boolean
   teleportTo?: string | HTMLElement
   /**
@@ -55,6 +60,10 @@ export interface TourSpotlightProps {
   Writing a fresh, static `path()` string each frame sidesteps it — the compositor never sees an
   animating clip-path — and each frame's path is still a complete rounded-rect so there's no
   geometry popping.
+
+  The path goes out as `--ui-tour-cutout`, which the stylesheet reads into `clip-path`. An inline
+  `clip-path` from a consumer animating the cutout (glide off) then wins while it's set, and
+  removing it shows this cutout again.
 -->
 <script setup lang="ts">
 import './Tour.css'
@@ -68,6 +77,7 @@ const props = withDefaults(defineProps<TourSpotlightProps>(), {
   padding: 4,
   radius: 8,
   instant: false,
+  glide: true,
   forceMount: false,
   teleportTo: 'body',
   containerEl: null,
@@ -210,9 +220,8 @@ function tick(now: number) {
 function update() {
   if (!props.targetEl) return
   const next = measure()
-  // First paint, a scroll driven by this same step change (see `instant`), or reduced motion:
-  // land on it outright. Otherwise glide from wherever the cutout currently sits.
-  if (props.instant || current === null || prefersReducedMotion()) {
+  // Jump on first paint, during this step's scroll, with the glide off or with reduced motion.
+  if (props.instant || !props.glide || current === null || prefersReducedMotion()) {
     stopAnim()
     commit(next)
     return

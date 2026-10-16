@@ -6,6 +6,7 @@
     :padding="step?.spotlightPadding ?? spotlightPadding"
     :radius="step?.spotlightRadius ?? spotlightRadius"
     :instant="isScrolling"
+    :glide="props.motionCss"
     :force-mount="forceMount"
     :teleport-to="teleportTarget"
     :container-el="container"
@@ -129,6 +130,12 @@ export interface TourProps<T extends TourStep = TourStep> {
   forceMount?: boolean
   /** Custom exit animation; call `done()` to finish closing. */
   beforeClose?: (done: () => void) => void
+  /**
+   * The spotlight's glide between steps. `false` turns it off so you can animate `spotlightEl`
+   * yourself. For open and close, use `forceMount` and `beforeClose`.
+   * @default true
+   */
+  motionCss?: boolean
   /** Class and style overrides for each part. */
   ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
 }
@@ -154,6 +161,7 @@ import { useLayer } from '../../composables/useLayerStack'
 import { useThemedUi } from '../../theme'
 import { ssrDocument } from '../../ssr'
 import { useUiMessages } from '../../messages'
+import { withProviderDefaults } from '../../config'
 
 // Two roots: attrs go to the popover panel, like Popover's own.
 defineOptions({ inheritAttrs: false })
@@ -163,7 +171,7 @@ const open = defineModel<boolean>('open', { default: false })
 /** Current step index; resets to the first step whenever the tour opens. @default 0 */
 const stepIndex = defineModel<number>('step', { default: 0 })
 
-const props = withDefaults(defineProps<TourProps<T>>(), {
+const rawProps = withDefaults(defineProps<TourProps<T>>(), {
   modal: true,
   closeOnEsc: true,
   closeOnOverlay: false,
@@ -172,10 +180,13 @@ const props = withDefaults(defineProps<TourProps<T>>(), {
   spotlightRadius: 8,
   scrollIntoView: true,
   forceMount: false,
+  motionCss: undefined,
 })
+// Own or provider `false`: both turn the glide off. There are no events to hand over.
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
-  /** Fires after the tour moves to another step, including the first step when it opens. */
+  /** Fires after moving to a step, including the first. The new step renders by the next frame. */
   'step-change': [details: TourStepChangeDetails<T>]
   /** Fires when the tour ends early: the Skip button, Escape, or the step's target disappearing. */
   skip: [details: TourEndDetails<T>]
@@ -267,6 +278,7 @@ const popover = useTemplateRef<InstanceType<typeof Popover>>('popover')
 const popoverPanelEl = computed(() => popover.value?.panelEl ?? null)
 const spotlight = useTemplateRef<InstanceType<typeof TourSpotlight>>('spotlight')
 const spotlightEl = computed(() => spotlight.value?.el ?? null)
+const positionerEl = computed(() => popover.value?.positionerEl ?? null)
 
 const stepOfLabel = computed(() =>
   messages.value.tour.stepOf
@@ -484,6 +496,10 @@ defineExpose({
   targetEl,
   /** Callout panel element (`null` while closed). */
   panelEl: popoverPanelEl,
+  /** Positioning wrapper around the callout panel (`null` while closed). */
+  positionerEl,
+  /** Dimmed overlay with the cutout (`null` while closed). */
+  spotlightEl,
   /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => popover.value?.isClosing ?? false),
   /** Closes the tour, running `@open-change` and `beforeClose` first. */

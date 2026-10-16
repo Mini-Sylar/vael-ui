@@ -1,7 +1,9 @@
 <template>
   <button data-testid="trigger" @click="open = true">Open</button>
   <output data-testid="open-state">{{ open ? 'open' : 'closed' }}</output>
+  <output data-testid="release-velocity">{{ sheet?.releaseVelocity }}</output>
   <BottomSheet
+    ref="sheet"
     v-model:open="open"
     :snap-points="snapPoints"
     :dismissible="dismissible"
@@ -16,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { shallowRef, useTemplateRef } from 'vue'
 import BottomSheet from '../../src/components/BottomSheet/BottomSheet.vue'
 import type { SheetSnapPoint } from '../../src/components/BottomSheet/BottomSheet.vue'
 
@@ -36,4 +38,5 @@ withDefaults(
 )
 
 const open = shallowRef(false)
+const sheet = useTemplateRef('sheet')
 </script>

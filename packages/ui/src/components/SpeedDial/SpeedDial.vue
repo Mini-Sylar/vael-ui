@@ -15,12 +15,12 @@
       role="menu"
       :aria-label="ariaLabel"
       :aria-orientation="orientationFor(direction)"
-      :data-motion="motionCss ? undefined : 'off'"
+      :data-motion="props.motionCss ? undefined : 'off'"
       @keydown="onKeydown"
     >
       <TransitionGroup
         name="ui-speed-dial-action"
-        :css="motionCss"
+        :css="props.motionCss"
         @enter="enterHook"
         @leave="leaveHook"
       >
@@ -61,7 +61,7 @@
       :aria-label="ariaLabel"
       @click="onTriggerClick"
     >
-      <span class="ui-speed-dial-trigger-icon" aria-hidden="true">
+      <span ref="iconEl" class="ui-speed-dial-trigger-icon" aria-hidden="true">
         <slot name="icon" :open="open">
           <svg viewBox="0 0 16 16" width="16" height="16" fill="none">
             <path
@@ -112,8 +112,9 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
   ariaLabel?: string
   /** Arc radius in pixels. Only applies when `direction` is `'quarter-circle'`. @default 96 */
   radius?: number
-  /** Plays the built-in fan-out and fan-in transition.
-   * Set `false` to animate actions yourself via `@action-enter` and `@action-leave`.
+  /**
+   * Built-in transitions for the actions and the icon. `false` hands actions to `@action-enter`
+   * and `@action-leave`, and turns the icon instantly.
    * @default true
    */
   motionCss?: boolean
@@ -150,19 +151,21 @@ import { useLayer } from '../../composables/useLayerStack'
 import { useMenu } from '../../composables/useMenu'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { withProviderDefaults } from '../../config'
 
 /** Whether the actions are shown. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
-const props = withDefaults(defineProps<SpeedDialProps<T>>(), {
+const rawProps = withDefaults(defineProps<SpeedDialProps<T>>(), {
   direction: 'up',
   openOn: 'click',
   disabled: false,
   closeOnSelect: true,
   ariaLabel: 'Actions',
   radius: 96,
-  motionCss: true,
+  motionCss: undefined,
 })
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when you click an action. */
@@ -183,12 +186,16 @@ defineSlots<{
 
 const visibleItems = computed(() => (open.value ? props.items : []))
 
-// Same shape as Toaster's own enterHook/leaveHook.
+// Only the component's own motion-css="false" hands actions to the events. A provider's is instant.
 const enterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('action-enter', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('action-enter', el, done),
 )
 const leaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('action-leave', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('action-leave', el, done),
 )
 
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {
@@ -224,6 +231,7 @@ void STAGGER_STEP_MS
 const root = useTemplateRef<HTMLElement>('root')
 const listEl = useTemplateRef<HTMLElement>('listEl')
 const triggerRef = useTemplateRef<InstanceType<typeof Button>>('triggerRef')
+const iconEl = useTemplateRef<HTMLElement>('iconEl')
 
 function focusTrigger() {
   triggerRef.value?.el?.focus()
@@ -368,7 +376,13 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() =>
-  resolveUiPart(cx, themedUi()?.root, 'ui-speed-dial', props.disabled && 'ui-speed-dial--disabled'),
+  resolveUiPart(
+    cx,
+    themedUi()?.root,
+    'ui-speed-dial',
+    props.disabled && 'ui-speed-dial--disabled',
+    !props.motionCss && 'ui-speed-dial--no-motion',
+  ),
 )
 const actionsPart = computed(() => resolveUiPart(cx, undefined, 'ui-speed-dial-actions'))
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-speed-dial-trigger'))
@@ -379,6 +393,8 @@ defineExpose({
   el: root,
   /** Action list element (`role="menu"`). */
   listEl,
+  /** Trigger icon wrapper. Turns 45deg while open. */
+  iconEl,
   /** Shows the actions. No-op while `disabled`. */
   open: openDial,
   /** Hides the actions. */

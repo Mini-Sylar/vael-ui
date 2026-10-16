@@ -20,7 +20,7 @@
           :aria-current="index === modelValue ? 'step' : undefined"
           @click="onStepClick(index, item)"
         >
-          <span :class="circlePart.class">
+          <span :ref="(el) => setCircleEl(index, el)" :class="circlePart.class">
             <slot
               name="indicator"
               :item="item"
@@ -71,6 +71,7 @@
       </li>
       <li
         v-if="index < items.length - 1"
+        :ref="(el) => setConnectorEl(index, el)"
         aria-hidden="true"
         :class="connectorPart.class"
         :data-state="index < modelValue ? 'filled' : 'unfilled'"
@@ -92,7 +93,7 @@ import './Stepper.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { nativeTag } from '../../composables/dom'
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, shallowReactive, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { vScrollMask } from '../../directives/vScrollMask'
 import type { UiPartValue } from '../../classes'
@@ -115,7 +116,11 @@ const rawProps = withDefaults(
     linear?: boolean
     /** `false` renders a display-only progress indicator with no click handling. @default true */
     clickable?: boolean
-    /** Gates the built-in check-mark/number swap transition inside the step circle. @default true */
+    /**
+     * Built-in transitions: the check swap, circle colors and connector fill. `false` makes them
+     * instant.
+     * @default true
+     */
     motionCss?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
@@ -183,13 +188,33 @@ function onStepClick(index: number, item: T) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+// By index: a circle remounts when its step becomes clickable, and a v-for ref array would reorder.
+const circleSlots = shallowReactive<(HTMLElement | null)[]>([])
+const connectorSlots = shallowReactive<(HTMLElement | null)[]>([])
+function setCircleEl(index: number, el: unknown) {
+  circleSlots[index] = el instanceof HTMLElement ? el : null
+}
+function setConnectorEl(index: number, el: unknown) {
+  connectorSlots[index] = el instanceof HTMLElement ? el : null
+}
+const present = (el: HTMLElement | null): el is HTMLElement => !!el
+const circleEls = computed(() => circleSlots.slice(0, props.items.length).filter(present))
+const connectorEls = computed(() =>
+  connectorSlots.slice(0, Math.max(props.items.length - 1, 0)).filter(present),
+)
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.stepper,
   () => props.ui,
 )
 const rootPart = computed(() =>
-  resolveUiPart(cx, themedUi()?.root, 'ui-stepper', `ui-stepper--${props.orientation}`),
+  resolveUiPart(
+    cx,
+    themedUi()?.root,
+    'ui-stepper',
+    `ui-stepper--${props.orientation}`,
+    !props.motionCss && 'ui-stepper--no-anim',
+  ),
 )
 const stepPart = computed(() => resolveUiPart(cx, themedUi()?.step, 'ui-stepper-step'))
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-stepper-trigger'))
@@ -211,5 +236,9 @@ const connectorPart = computed(() =>
 defineExpose({
   /** Root element. */
   el: root,
+  /** Step circle elements, in order. A circle remounts when its step becomes clickable. */
+  circleEls,
+  /** Connector elements, one fewer than steps. Set `--ui-stepper-fill` (0 to 1) to drive a fill. */
+  connectorEls,
 })
 </script>

@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 // Generates vapor-ui/src/generated/*.vue from ui/src/components/ (add name to COMPONENTS, run pnpm build)
 
-import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+  existsSync,
+  readdirSync,
+  statSync,
+} from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, relative, resolve } from 'node:path'
 import { COMPONENTS } from './component-names.mjs'
@@ -11,6 +19,22 @@ const UI_SRC_DIR = join(__dirname, '../ui/src')
 const UI_COMPONENTS_DIR = join(__dirname, '../ui/src/components')
 const UI_INDEX_PATH = join(__dirname, '../ui/src/index.ts')
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
+
+// Only changed files are written and only files no longer produced are removed, so a running
+// `tsdown --watch` on the Vapor build sees real edits instead of a deleted and recreated folder.
+const written = new Set()
+function writeIfChanged(path, content) {
+  written.add(path)
+  if (existsSync(path) && readFileSync(path, 'utf8') === content) return
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, content)
+}
+function removeStale(dir) {
+  for (const entry of readdirSync(dir, { recursive: true })) {
+    const path = join(dir, String(entry))
+    if (statSync(path).isFile() && !written.has(path)) rmSync(path)
+  }
+}
 
 // Some components have migrated from a flat `<Name>.vue` to a folder
 // (`<Name>/<Name>.vue`, CSS split out per-component — see
@@ -171,8 +195,7 @@ function copyCssImports(source, origFileDir, outFileDir) {
     const absSrc = resolve(origFileDir, relPath)
     const mirroredRel = relative(UI_COMPONENTS_DIR, absSrc)
     const absOut = join(OUT_DIR, mirroredRel)
-    mkdirSync(dirname(absOut), { recursive: true })
-    copyFileSync(absSrc, absOut)
+    writeIfChanged(absOut, readFileSync(absSrc, 'utf8'))
     let newRel = relative(outFileDir, absOut).split('\\').join('/')
     if (!newRel.startsWith('.')) newRel = `./${newRel}`
     return `import '${newRel}'`
@@ -283,8 +306,7 @@ function copyNonComponentSource(specifier) {
   const srcPath = join(UI_SRC_DIR, `${specifier}.ts`)
   const outPath = join(OUT_DIR, `${specifier}.ts`)
   const source = copyCssImports(readFileSync(srcPath, 'utf8'), dirname(srcPath), dirname(outPath))
-  mkdirSync(dirname(outPath), { recursive: true })
-  writeFileSync(outPath, source)
+  writeIfChanged(outPath, source)
   return `./${specifier}`
 }
 
@@ -329,7 +351,6 @@ function main() {
   const requestedModuleIds = new Set(COMPONENTS.map(resolveModuleId))
   const toGenerate = resolveDependencyGraph([...COMPONENTS, ...CONFIRM_ACTION_VUE_DEPS])
 
-  rmSync(OUT_DIR, { recursive: true, force: true })
   mkdirSync(OUT_DIR, { recursive: true })
 
   const errors = []
@@ -342,7 +363,7 @@ function main() {
       source = copyCssImports(source, dirname(srcPath), dirname(outPath))
       source = injectVaporMarker(source, moduleId)
       source = rewriteImports(source, moduleId, publicExports)
-      writeFileSync(outPath, source)
+      writeIfChanged(outPath, source)
       const dep = requestedModuleIds.has(moduleId) ? '' : ' (dependency)'
       console.log(`generated src/generated/${moduleId}.vue${dep}`)
     } catch (err) {
@@ -353,8 +374,7 @@ function main() {
   try {
     const confirmActionSource = generateConfirmActionSource(publicExports)
     const outPath = join(OUT_DIR, 'composables/confirmAction.ts')
-    mkdirSync(dirname(outPath), { recursive: true })
-    writeFileSync(outPath, confirmActionSource)
+    writeIfChanged(outPath, confirmActionSource)
     console.log('generated src/generated/composables/confirmAction.ts')
   } catch (err) {
     errors.push(err.message)
@@ -401,7 +421,8 @@ function main() {
     }
   }
 
-  writeFileSync(join(OUT_DIR, 'index.ts'), barrelLines.join('\n') + '\n')
+  writeIfChanged(join(OUT_DIR, 'index.ts'), barrelLines.join('\n') + '\n')
+  removeStale(OUT_DIR)
   console.log(
     `\ngenerated src/generated/index.ts (${COMPONENTS.length} public component(s), ${toGenerate.size} file(s) total, ${composableCount} composable(s)/utilit(y/ies))`,
   )

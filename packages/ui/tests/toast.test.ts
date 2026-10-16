@@ -1,8 +1,11 @@
 /** Pure composable-level behavior — queue mutation, variants, promise flow. */
-import { expect, expectTypeOf, test, vi } from 'vitest'
+import { beforeEach, expect, expectTypeOf, test, vi } from 'vitest'
 import { toast, useToastQueue } from '../src/composables/useToast'
 
 const { dismiss: dismissAll } = useToastQueue()
+
+// Every test starts from an empty queue, whatever the one before it left behind.
+beforeEach(() => toast.dismiss())
 
 test('toast() adds a default-variant entry with the default 4000ms duration', () => {
   const { toasts, dismiss } = useToastQueue()
@@ -135,17 +138,22 @@ test('your own id updates the toast on screen instead of adding a second one', (
   dismissAll()
 })
 
-test("updating by id restarts the toast's timer", async () => {
-  const { toasts } = useToastQueue()
-  toast('Short', { id: 'restart', duration: 150 })
-  await new Promise((r) => setTimeout(r, 100))
-  toast('Short again', { id: 'restart', duration: 150 })
-  await new Promise((r) => setTimeout(r, 100))
-  // 200ms after the first call, past its 150ms: still here because the update restarted it.
-  expect(toasts.some((t) => t.id === 'restart')).toBe(true)
-  await vi.waitFor(() => expect(toasts.some((t) => t.id === 'restart')).toBe(false), {
-    timeout: 2000,
-  })
+test("updating by id restarts the toast's timer", () => {
+  // Fake timers, so a slow browser can't push either step past the 150ms duration.
+  vi.useFakeTimers()
+  try {
+    const { toasts } = useToastQueue()
+    toast('Short', { id: 'restart', duration: 150 })
+    vi.advanceTimersByTime(100)
+    toast('Short again', { id: 'restart', duration: 150 })
+    vi.advanceTimersByTime(100)
+    // 200ms after the first call, past its 150ms: still here because the update restarted it.
+    expect(toasts.some((t) => t.id === 'restart')).toBe(true)
+    vi.advanceTimersByTime(100)
+    expect(toasts.some((t) => t.id === 'restart')).toBe(false)
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 test("a custom id '0' never touches the automatic toast with id 0", () => {
@@ -176,4 +184,36 @@ test('toast() returns a number without an id and your string with one', () => {
   expectTypeOf(toast('A')).toEqualTypeOf<number>()
   expectTypeOf(toast.success('A', { id: 'a' })).toEqualTypeOf<string>()
   dismissAll()
+})
+
+test('a toast with a toaster lands in that queue only; the unnamed queue stays as it was', () => {
+  const plain = useToastQueue()
+  const side = useToastQueue('side')
+  const a = toast('Plain')
+  const b = toast('Side', { toaster: 'side' })
+  expect(plain.toasts.map((t) => t.id)).toEqual([a])
+  expect(side.toasts.map((t) => t.id)).toEqual([b])
+  expect(side.toasts[0].toaster).toBe('side')
+
+  // A queue's own dismiss() clears only that queue; toast.dismiss(id) finds any toast.
+  side.dismiss()
+  expect(plain.toasts.map((t) => t.id)).toEqual([a])
+  const c = toast('Side again', { toaster: 'side' })
+  toast.dismiss(c)
+  expect(side.toasts.length).toBe(0)
+
+  // toast.dismiss() still clears every queue.
+  toast('Side 3', { toaster: 'side' })
+  toast.dismiss()
+  expect(plain.toasts.length + side.toasts.length).toBe(0)
+})
+
+test('updating a toast by id with a new toaster moves it to that queue', () => {
+  const plain = useToastQueue()
+  const side = useToastQueue('side')
+  toast('Saving', { id: 'move' })
+  toast('Saved', { id: 'move', toaster: 'side' })
+  expect(plain.toasts.some((t) => t.id === 'move')).toBe(false)
+  expect(side.toasts.find((t) => t.id === 'move')!.title).toBe('Saved')
+  toast.dismiss()
 })

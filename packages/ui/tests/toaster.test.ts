@@ -15,7 +15,7 @@ const { dismiss } = useToastQueue()
 // in this file regardless of component mount/unmount. Force a clean slate
 // before every test rather than only relying on each test's own cleanup.
 beforeEach(async () => {
-  dismiss()
+  toast.dismiss()
   document.querySelectorAll('.ui-toaster').forEach((el) => el.remove())
   // Playwright drives a real OS-level cursor, and .click() in an earlier
   // test leaves it sitting wherever it last clicked — e.g. the Dismiss
@@ -592,4 +592,94 @@ test('a toast with a custom id swipes away', async () => {
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull(), { timeout: 2000 })
   await screen.unmount()
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
+})
+
+// Two Toasters on one page: the unnamed one and one named "side".
+async function renderPair(props: { plain?: object; side?: object } = {}) {
+  const screen = await render({
+    render: () => [
+      h(Toaster, { position: 'bottom-right', ...props.plain }),
+      h(Toaster, { name: 'side', position: 'top-left', ...props.side }),
+    ],
+  })
+  await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(2))
+  const plain = document.querySelector<HTMLElement>('.ui-toaster--bottom-right')!
+  const side = document.querySelector<HTMLElement>('.ui-toaster--top-left')!
+  const titles = (el: Element) =>
+    [...el.querySelectorAll('.ui-toast-title')].map((t) => t.textContent).sort()
+  return { screen, plain, side, titles }
+}
+
+test('a named Toaster shows only toasts sent to it; the unnamed one shows only the rest', async () => {
+  const { screen, plain, side, titles } = await renderPair()
+  toast('Plain', { duration: 10000 })
+  toast('Side', { toaster: 'side', duration: 10000 })
+
+  await vi.waitFor(() => expect(titles(plain)).toEqual(['Plain']))
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side']))
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('maxVisible and queued timers count per Toaster', async () => {
+  const { screen, plain, side, titles } = await renderPair({
+    plain: { maxVisible: 1 },
+    side: { maxVisible: 2 },
+  })
+  toast('Plain', { duration: 200 })
+  toast('Side 1', { toaster: 'side', duration: 10000 })
+  toast('Side 2', { toaster: 'side', duration: 10000 })
+
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side 1', 'Side 2']))
+  expect(titles(plain)).toEqual(['Plain'])
+  // The side toasts don't push 'Plain' past its Toaster's maxVisible, so its timer runs.
+  await vi.waitFor(() => expect(titles(plain)).toEqual([]), { timeout: 2000 })
+  expect(titles(side)).toEqual(['Side 1', 'Side 2'])
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('hovering one Toaster pauses only its own toasts', async () => {
+  const { screen, plain, side, titles } = await renderPair()
+  toast('Plain', { duration: 200 })
+  toast('Side', { toaster: 'side', duration: 200 })
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side']))
+
+  side.dispatchEvent(new PointerEvent('pointerenter'))
+  await vi.waitFor(() => expect(titles(plain)).toEqual([]), { timeout: 2000 })
+  await new Promise((r) => setTimeout(r, 300))
+  expect(titles(side)).toEqual(['Side'])
+
+  side.dispatchEvent(new PointerEvent('pointerleave'))
+  await vi.waitFor(() => expect(titles(side)).toEqual([]), { timeout: 2000 })
+  await screen.unmount()
+})
+
+test("dismissing a toast removes it from its own Toaster and leaves the other's alone", async () => {
+  const { screen, plain, side, titles } = await renderPair()
+  toast('Plain', { duration: 10000 })
+  const id = toast('Side', { toaster: 'side', duration: 10000 })
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side']))
+
+  toast.dismiss(id)
+  await vi.waitFor(() => expect(titles(side)).toEqual([]))
+  expect(titles(plain)).toEqual(['Plain'])
+
+  toast('Side', { toaster: 'side', duration: 10000 })
+  await vi.waitFor(() => expect(titles(side)).toEqual(['Side']))
+  side.querySelector<HTMLElement>('.ui-toast-close')!.click()
+  await vi.waitFor(() => expect(titles(side)).toEqual([]))
+  expect(titles(plain)).toEqual(['Plain'])
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('an app with one unnamed Toaster never shows toasts sent to a named one', async () => {
+  const screen = await render(ToasterFixture)
+  toast('Elsewhere', { toaster: 'side', duration: 10000 })
+  toast('Here', { duration: 10000 })
+  await expect.element(page.getByText('Here')).toBeVisible()
+  expect(document.querySelectorAll('.ui-toast').length).toBe(1)
+  toast.dismiss()
+  await screen.unmount()
 })

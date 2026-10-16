@@ -196,3 +196,80 @@ test('content at the end of a body with a footer is not clipped, and the gap abo
   expect(gap).toBeGreaterThanOrEqual(11)
   expect(gap).toBeLessThanOrEqual(13)
 })
+
+test('exposes the overlay as overlayEl, and null when modal is false', async () => {
+  const { h, ref } = await import('vue')
+  const modal = ref<InstanceType<typeof Dialog> | null>(null)
+  const plain = ref<InstanceType<typeof Dialog> | null>(null)
+  await render({
+    render: () => [
+      h(Dialog, { ref: modal, open: true, title: 'Modal' }),
+      h(Dialog, { ref: plain, open: true, title: 'Plain', modal: false }),
+    ],
+  })
+  await vi.waitFor(() => expect(modal.value?.overlayEl).toBeInstanceOf(HTMLElement))
+  expect(modal.value!.overlayEl!.classList.contains('ui-dialog-overlay')).toBe(true)
+  expect(document.querySelectorAll('.ui-dialog-overlay')).toHaveLength(1)
+  expect(plain.value!.overlayEl).toBeNull()
+})
+
+test('forceMount keeps the overlay fade until the consumer sets its opacity inline', async () => {
+  const { h, ref } = await import('vue')
+  const forced = ref<InstanceType<typeof Dialog> | null>(null)
+  const regular = ref<InstanceType<typeof Dialog> | null>(null)
+  await render({
+    render: () => [
+      h(Dialog, { ref: forced, open: true, title: 'Forced', forceMount: true }),
+      h(Dialog, { ref: regular, open: true, title: 'Regular' }),
+    ],
+  })
+  await vi.waitFor(() => expect(forced.value?.overlayEl).toBeInstanceOf(HTMLElement))
+  await vi.waitFor(() => expect(regular.value?.overlayEl).toBeInstanceOf(HTMLElement))
+  const forcedOverlay = forced.value!.overlayEl!
+  const regularOverlay = regular.value!.overlayEl!
+  const fades = (el: HTMLElement) => {
+    const style = getComputedStyle(el)
+    return style.transitionProperty === 'opacity' && parseFloat(style.transitionDuration) > 0
+  }
+  // Untouched, both keep the built-in fade, so existing forceMount code looks the same.
+  expect(fades(forcedOverlay)).toBe(true)
+  expect(fades(regularOverlay)).toBe(true)
+
+  // Driving opacity inline hands the forceMount overlay over: no transition to fight each frame.
+  forcedOverlay.style.opacity = '0.3'
+  regularOverlay.style.opacity = '0.3'
+  expect(fades(forcedOverlay)).toBe(false)
+  expect(getComputedStyle(forcedOverlay).opacity).toBe('0.3')
+  // Without forceMount, an inline opacity (say from ui.overlay.style) keeps the fade.
+  expect(fades(regularOverlay)).toBe(true)
+
+  // Releasing it brings the fade back.
+  forcedOverlay.style.removeProperty('opacity')
+  expect(fades(forcedOverlay)).toBe(true)
+})
+
+test('with forceMount, an inline overlay opacity wins over the closing fade', async () => {
+  const { h, ref } = await import('vue')
+  const dialog = ref<InstanceType<typeof Dialog> | null>(null)
+  let finish: (() => void) | undefined
+  await render({
+    render: () =>
+      h(Dialog, {
+        ref: dialog,
+        open: true,
+        title: 'Closing',
+        forceMount: true,
+        beforeClose: (done: () => void) => {
+          finish = done
+        },
+      }),
+  })
+  await vi.waitFor(() => expect(dialog.value?.overlayEl).toBeInstanceOf(HTMLElement))
+  const overlay = dialog.value!.overlayEl!
+  overlay.style.opacity = '0.8'
+  dialog.value!.close()
+  await vi.waitFor(() => expect(dialog.value!.isClosing).toBe(true))
+  // data-state="closing" would set opacity 0 behind a transition; the consumer's value holds.
+  expect(getComputedStyle(overlay).opacity).toBe('0.8')
+  finish?.()
+})

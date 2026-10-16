@@ -10,6 +10,8 @@
     :close-on-overlay="closeOnOverlay"
     :modal="modal"
     :close-on-history-back="closeOnHistoryBack"
+    :container="container"
+    :teleport-to="teleportTo"
     :show-close="false"
     :ui="dialogUi"
     v-bind="$attrs"
@@ -58,6 +60,7 @@
 import type { InjectionKey } from 'vue'
 import type { SheetSnapPoint } from '../../composables/useSheetDrag'
 import type { UiPartValue } from '../../classes'
+import type { DOMTarget } from '../../composables/dom'
 export type { SheetSnapPoint }
 
 // Nested sheet announces open state; parent recedes Vaul-style (no consumer wiring).
@@ -104,8 +107,15 @@ export interface BottomSheetProps {
    * @default false
    */
   closeOnHistoryBack?: boolean
-  /** Custom exit animation; call `done()` to finish closing. Runs for every close path. */
+  /**
+   * Runs before closing; call `done()` to finish. If your animation already moved the sheet off
+   * screen, it closes at once. Otherwise the built-in slide-out plays.
+   */
   beforeClose?: (done: () => void) => void
+  /** Teleport target: a CSS selector. Wins over `container` either way. */
+  teleportTo?: string
+  /** Element to contain the sheet in, instead of the viewport. Snap points use its height. */
+  container?: DOMTarget
   /** Class and style overrides for each part. */
   ui?: Partial<{
     overlay: UiPartValue
@@ -127,11 +137,12 @@ export interface BottomSheetProps {
 // Dialog import (and its CSS) must precede BottomSheet.css: this panel
 // carries both .ui-dialog-panel and .ui-bottom-sheet-panel, and the latter's
 // overrides (e.g. max-block-size) need to win the cascade.
-import { computed, inject, onScopeDispose, provide, useTemplateRef, watch } from 'vue'
+import { computed, inject, onScopeDispose, provide, shallowRef, useTemplateRef, watch } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
 import '../shared/tokens.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
+import { resolveDOMTarget } from '../../composables/dom'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -189,6 +200,16 @@ function requestDismiss() {
   dialog.value?.close()
 }
 
+// Set right before Dialog calls beforeClose, so only a drag release reads non-zero.
+const velocityAtClose = shallowRef(0)
+const releaseVelocity = computed(() => velocityAtClose.value)
+let dragVelocity = 0
+function dismissFromDrag(velocity: number) {
+  dragVelocity = velocity
+  requestDismiss()
+  dragVelocity = 0
+}
+
 const { activeSnap, isDragging, setReceded } = useSheetDrag(open, {
   panelEl,
   handleEl: handle,
@@ -196,7 +217,8 @@ const { activeSnap, isDragging, setReceded } = useSheetDrag(open, {
   snapPoints: () => resolvedSnapPoints.value,
   initialSnap: () => props.initialSnap,
   dismissible: () => props.dismissible,
-  onDismiss: requestDismiss,
+  onDismiss: dismissFromDrag,
+  bounds: () => resolveDOMTarget(props.container ?? null),
 })
 
 // Nesting auto-detected: instance tells ancestor when opening/closing.
@@ -212,13 +234,20 @@ watch(isClosing, (value) => {
 let exitTimer: ReturnType<typeof setTimeout> | undefined
 onScopeDispose(() => clearTimeout(exitTimer))
 
-// A consumer's own beforeClose gates WHETHER to close (e.g. a confirm prompt) - a separate concern from HOW it exits, so its own done is wired to the slide-out below instead of the real one.
+// Off screen means beforeClose ran its own exit. Still up means it only confirmed, so slide out.
 function beforeClose(done: () => void) {
+  velocityAtClose.value = dragVelocity
   if (props.beforeClose) {
-    props.beforeClose(() => animateClose(done))
+    props.beforeClose(() => (isOffScreen() ? done() : animateClose(done)))
     return
   }
   animateClose(done)
+}
+
+function isOffScreen() {
+  const panel = panelEl.value
+  const bottom = resolveDOMTarget(props.container ?? null)?.getBoundingClientRect().bottom
+  return !panel || panel.getBoundingClientRect().top >= (bottom ?? window.innerHeight) - 1
 }
 
 function animateClose(done: () => void) {
@@ -271,6 +300,8 @@ const contentPart = computed(() =>
 defineExpose({
   /** Panel element (null while closed). */
   panelEl,
+  /** Backdrop element. `null` when `modal` is `false`. */
+  overlayEl: computed(() => dialog.value?.overlayEl ?? null),
   /** `id` of the snap point the sheet rests at. */
   activeSnap,
   /** Whether you're dragging the sheet. */
@@ -281,5 +312,11 @@ defineExpose({
   close: requestDismiss,
   /** Cancels a close pending in `beforeClose` and keeps the sheet open. */
   cancelClose,
+  /**
+   * Drag speed at release in px/ms, positive toward closed. Read it in `beforeClose` to carry a
+   * flick on. `0` when something other than a drag closed the sheet.
+   * @default 0
+   */
+  releaseVelocity,
 })
 </script>

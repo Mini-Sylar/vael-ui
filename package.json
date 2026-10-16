@@ -17,7 +17,7 @@
     "play": "pnpm --filter vdom dev",
     "play:vapor": "pnpm --filter vapor dev",
     "play:vapor-interop": "pnpm --filter vapor-interop dev",
-    "docs:dev": "pnpm --filter docs dev",
+    "docs:dev": "pnpm --filter vael-ui --filter vapor-ui --filter docs --parallel dev",
     "docs:build": "pnpm build && pnpm --filter docs build",
     "lint": "oxlint . && eslint .",
     "format": "oxfmt .",

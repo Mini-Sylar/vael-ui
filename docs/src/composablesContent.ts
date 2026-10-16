@@ -174,7 +174,7 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'toast(title, options?)',
         type: 'number | string',
         description:
-          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id` if you pass one. Options: `id`, `description`, `variant`, `duration` (in milliseconds, default 4000; `Infinity` keeps it until someone closes it), `action: { label, onClick }` and `pinned`, which shows the toast in its own section where newer toasts can't cover it. Showing a toast with an `id` that's already on screen updates that toast instead of adding another.",
+          "Shows a toast with the default variant and returns its id for `dismiss(id)`: a number, or your own `id` if you pass one. Options: `id`, `description`, `variant`, `duration` (in milliseconds, default 4000; `Infinity` keeps it until someone closes it), `action: { label, onClick }` `pinned`, which shows the toast in its own section where newer toasts can't cover it, and `toaster`, which sends it to the `<Toaster>` with that `name` instead of the unnamed one. Showing a toast with an `id` that's already on screen updates that toast instead of adding another.",
       },
       {
         name: 'toast.success / .error / .warning / .info / .loading',
@@ -194,10 +194,10 @@ export const composablesContent: Record<string, ComposableContent> = {
         description: 'Dismisses one toast, or every toast when you omit `id`.',
       },
       {
-        name: 'useToastQueue()',
+        name: 'useToastQueue(toaster?)',
         type: '{ toasts, dismiss, pauseAll, resumeAll, setWaiting }',
         description:
-          "Read-only queue access, plus pause and resume. `<Toaster/>` uses it internally, for example to pause timers on `pointerenter`. `setWaiting(ids)` holds the timers of toasts that aren't on screen yet.",
+          "Read-only access to one Toaster's queue, plus pause and resume: the unnamed one, or the one whose `name` you pass. `<Toaster/>` uses it internally, for example to pause timers on `pointerenter`. `setWaiting(ids)` holds the timers of toasts that aren't on screen yet.",
       },
     ],
   },

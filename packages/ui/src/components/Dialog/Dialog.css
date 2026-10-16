@@ -174,6 +174,10 @@
       opacity: 0;
     }
   }
+  /* forceMount: an inline opacity means you drive the backdrop, so the CSS fade steps aside. */
+  .ui-dialog[data-force-mount] .ui-dialog-overlay[style*='opacity'] {
+    transition: none;
+  }
   .ui-dialog--top.ui-dialog-enter-from .ui-dialog-panel,
   .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel {
     transform: translateY(-12px);

@@ -71,9 +71,10 @@ test('closed by default: trigger renders but no action items are in the DOM', as
   expect(root(screen).getAttribute('data-state')).toBe('closed')
 })
 
-test('exposes the root element via defineExpose', async () => {
+test('exposes the root as el and the trigger icon wrapper as iconEl', async () => {
   const screen = await render(SpeedDialFixture, {})
   await expect.element(screen.getByTestId('exposed-el')).toHaveTextContent('yes')
+  await expect.element(screen.getByTestId('exposed-icon-el')).toHaveTextContent('yes')
 })
 
 test('clicking the trigger opens the dial: items appear, aria-expanded/data-state flip', async () => {
@@ -325,4 +326,55 @@ test('openOn="hover": the click that follows a hover-open keeps the dial open; t
   expect(screen.getByTestId('open-state').element().textContent).toBe('true')
   await userEvent.click(trigger(screen))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('false')
+})
+
+test('motionCss=false turns off every built-in transition: trigger icon, trigger and actions', async () => {
+  const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
+  const screen = await render(SpeedDial, {
+    props: { items: [{ label: 'Home' }, { label: 'Settings' }], motionCss: false },
+    // No-op hooks that finish at once, so the actions mount and stay.
+    attrs: {
+      onActionEnter: (_el: Element, done: () => void) => done(),
+      onActionLeave: (_el: Element, done: () => void) => done(),
+    },
+  })
+  const icon = screen.container.querySelector<HTMLElement>('.ui-speed-dial-trigger-icon')!
+  expect(getComputedStyle(icon).transitionProperty).toBe('none')
+  expect(getComputedStyle(icon).transitionDuration).toBe('0s')
+  expect(getComputedStyle(trigger(screen)).transitionProperty).toBe('none')
+
+  await userEvent.click(trigger(screen))
+  await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(2))
+  for (const action of actionButtons(screen)) {
+    expect(getComputedStyle(action).transitionProperty).toBe('none')
+  }
+})
+
+test('motionCss=false still turns the trigger icon by state, instantly', async () => {
+  const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
+  const screen = await render(SpeedDial, {
+    props: { items: [{ label: 'Home' }], motionCss: false },
+  })
+  const icon = screen.container.querySelector<HTMLElement>('.ui-speed-dial-trigger-icon')!
+  expect(getComputedStyle(icon).transform).toBe('none')
+
+  await userEvent.click(trigger(screen))
+  await vi.waitFor(() => expect(root(screen).getAttribute('data-state')).toBe('open'))
+  // Read in the same frame as the state change: a running transition would still be near 0deg.
+  const [a, b] = getComputedStyle(icon)
+    .transform.match(/matrix\(([^)]+)\)/)![1]!
+    .split(',')
+    .map(Number)
+  expect(Math.atan2(b!, a!) * (180 / Math.PI)).toBeCloseTo(45, 1)
+
+  await userEvent.click(trigger(screen))
+  await vi.waitFor(() => expect(root(screen).getAttribute('data-state')).toBe('closed'))
+  expect(getComputedStyle(icon).transform).toBe('none')
+})
+
+test('motionCss defaults keep the trigger icon turn transition', async () => {
+  const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
+  const screen = await render(SpeedDial, { props: { items: [{ label: 'Home' }] } })
+  const icon = screen.container.querySelector<HTMLElement>('.ui-speed-dial-trigger-icon')!
+  expect(getComputedStyle(icon).transitionProperty).toBe('transform')
 })

@@ -3,6 +3,10 @@ import '../src/style.css'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, shallowRef } from 'vue'
+import Tour from '../src/components/Tour/Tour.vue'
+import type { TourStep, TourStepChangeDetails } from '../src/components/Tour/Tour.vue'
+import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import TourFixture from './fixtures/TourFixture.vue'
 import TourTeleportFixture from './fixtures/TourTeleportFixture.vue'
 
@@ -146,4 +150,127 @@ test('Escape closes the tour and releases the scroll lock', async () => {
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
   await vi.waitFor(() => expect(document.body.style.overflow).toBe(''))
+})
+
+// Tour is generic, so InstanceType can't name it; these are the exposed members the tests read.
+type TourHandle = {
+  spotlightEl: HTMLElement | null
+  positionerEl: HTMLElement | null
+  panelEl: HTMLElement | null
+}
+
+// Two targets far apart, so a glide between them is long enough to catch mid-flight.
+function renderMotionTour(props: Record<string, unknown> = {}, provider?: Record<string, unknown>) {
+  const tour = shallowRef<TourHandle | null>(null)
+  const steps: TourStep[] = [
+    { target: '#motion-a', title: 'Motion A' },
+    { target: '#motion-b', title: 'Motion B', side: 'top' },
+  ]
+  const tree = () => [
+    h('button', { id: 'motion-a', style: 'margin: 16px' }, 'A'),
+    h('div', { id: 'motion-b', style: 'margin: 220px 0 0 200px; width: 160px; height: 80px' }, 'B'),
+    h(Tour as never, {
+      ref: (instance: unknown) => (tour.value = instance as TourHandle | null),
+      open: true,
+      steps,
+      ...props,
+    }),
+  ]
+  return render(() => (provider ? h(ConfigProvider, provider, tree) : tree())).then(async () => {
+    await expect.element(page.getByText('Motion A')).toBeVisible()
+    return tour
+  })
+}
+
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+const cutoutOf = (el: HTMLElement) => el.style.getPropertyValue('--ui-tour-cutout')
+
+// The cutout the spotlight shows one frame after Next, and the one it settles on.
+async function cutoutAfterNext(tour: { value: TourHandle | null }) {
+  const spotlight = tour.value!.spotlightEl as HTMLElement
+  await vi.waitFor(() => expect(cutoutOf(spotlight)).toContain('path('))
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect.element(page.getByText('Motion B')).toBeVisible()
+  await nextFrame()
+  const firstFrame = cutoutOf(spotlight)
+  await new Promise((resolve) => setTimeout(resolve, 600))
+  return { firstFrame, settled: cutoutOf(spotlight) }
+}
+
+test('exposes the spotlight and the callout positioner', async () => {
+  const tour = await renderMotionTour()
+  const spotlight = tour.value!.spotlightEl as HTMLElement | null
+  const positioner = tour.value!.positionerEl as HTMLElement | null
+  expect(spotlight?.classList.contains('ui-tour-spotlight')).toBe(true)
+  expect(positioner?.classList.contains('ui-popover-positioner')).toBe(true)
+  expect(positioner?.contains(tour.value!.panelEl as HTMLElement)).toBe(true)
+})
+
+test('the spotlight glides between steps by default', async () => {
+  const tour = await renderMotionTour()
+  const { firstFrame, settled } = await cutoutAfterNext(tour)
+  expect(firstFrame).not.toBe(settled)
+})
+
+test('motionCss false: the cutout jumps to the next target', async () => {
+  const tour = await renderMotionTour({ motionCss: false })
+  const { firstFrame, settled } = await cutoutAfterNext(tour)
+  expect(firstFrame).toBe(settled)
+})
+
+test('motionCss false from a provider turns the glide off too', async () => {
+  const off = await renderMotionTour({}, { motionCss: false })
+  const result = await cutoutAfterNext(off)
+  expect(result.firstFrame).toBe(result.settled)
+})
+
+test('an inline clip-path on the exposed spotlight wins, and removing it shows Tour’s cutout again', async () => {
+  const tour = await renderMotionTour({ motionCss: false })
+  const spotlight = tour.value!.spotlightEl as HTMLElement
+  await vi.waitFor(() => expect(cutoutOf(spotlight)).toContain('path('))
+  const own = getComputedStyle(spotlight).clipPath
+  expect(own).toContain('path(')
+
+  spotlight.style.clipPath = 'inset(10px)'
+  expect(getComputedStyle(spotlight).clipPath).toBe('inset(10px)')
+  spotlight.style.removeProperty('clip-path')
+  expect(getComputedStyle(spotlight).clipPath).toBe(own)
+})
+
+test('the callout is at its new position by the first animation frame after @step-change', async () => {
+  const positions: string[] = []
+  const tour = shallowRef<TourHandle | null>(null)
+  const read = () => {
+    const el = tour.value!.positionerEl as HTMLElement
+    return `${el.style.top} ${el.style.left}`
+  }
+  await render(() => [
+    h('button', { id: 'frame-a', style: 'margin: 16px' }, 'A'),
+    h('div', { id: 'frame-b', style: 'margin: 220px 0 0 200px; width: 160px; height: 80px' }, 'B'),
+    h(Tour as never, {
+      ref: (instance: unknown) => (tour.value = instance as TourHandle | null),
+      open: true,
+      motionCss: false,
+      steps: [
+        { target: '#frame-a', title: 'Frame A' },
+        {
+          target: '#frame-b',
+          title: 'Frame B',
+          description: 'A longer step, so the callout resizes.',
+        },
+      ],
+      onStepChange: ({ reason }: TourStepChangeDetails) => {
+        if (reason === 'next') requestAnimationFrame(() => positions.push(read()))
+      },
+    }),
+  ])
+  await expect.element(page.getByText('Frame A')).toBeVisible()
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  const before = read()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect.element(page.getByText('Frame B')).toBeVisible()
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  expect(positions).toHaveLength(1)
+  expect(positions[0]).not.toBe(before)
+  expect(positions[0]).toBe(read())
 })

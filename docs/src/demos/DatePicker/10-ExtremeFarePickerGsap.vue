@@ -82,10 +82,15 @@ function wave(date: Date): number {
   return (row + column) * 0.016
 }
 
-// The panel unrolls from the field it hangs off, and rolls back up into it.
-const closed = (side: string) => (side === 'top' ? 'inset(100% 0 0 0)' : 'inset(0 0 100% 0)')
-function sideOf(panel: HTMLElement) {
-  return panel.parentElement?.dataset.side ?? 'bottom'
+// The panel unrolls from the field it hangs off, and rolls back up into it. The clip reaches past
+// the panel's sides and far edge so its shadow unrolls with it instead of being cut off; it's in
+// px so GSAP can tween between the two states.
+const SHADOW = 48
+function clip(panel: HTMLElement, isOpen: boolean) {
+  const far = isOpen ? -SHADOW : panel.offsetHeight
+  return panel.parentElement?.dataset.side === 'top'
+    ? `inset(${far}px -${SHADOW}px 0px -${SHADOW}px)`
+    : `inset(0px -${SHADOW}px ${far}px -${SHADOW}px)`
 }
 
 // Each day registers its element through a ref, so opening animates the days already there
@@ -101,8 +106,8 @@ watch(open, async (isOpen) => {
   if (!panel || reduce()) return
   gsap.fromTo(
     panel,
-    { clipPath: closed(sideOf(panel)) },
-    { clipPath: 'inset(0 0 0% 0)', duration: 0.32, ease: 'power3.out' },
+    { clipPath: clip(panel, false) },
+    { clipPath: clip(panel, true), duration: 0.32, ease: 'power3.out', clearProps: 'clipPath' },
   )
   for (const el of days.keys()) if (!el.isConnected) days.delete(el)
   const shown = [...days.keys()]
@@ -124,12 +129,11 @@ watch(open, async (isOpen) => {
 function rollUp(done: () => void) {
   const panel = picker.value?.panelEl
   if (!panel || reduce()) return done()
-  gsap.to(panel, {
-    clipPath: closed(sideOf(panel)),
-    duration: 0.18,
-    ease: 'power2.in',
-    onComplete: done,
-  })
+  gsap.fromTo(
+    panel,
+    { clipPath: clip(panel, true) },
+    { clipPath: clip(panel, false), duration: 0.18, ease: 'power2.in', onComplete: done },
+  )
 }
 
 const summary = computed(() => {
