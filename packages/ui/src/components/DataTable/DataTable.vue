@@ -26,7 +26,10 @@
           :style="{ paddingInlineEnd: `${scrollbarWidth}px` }"
           tabindex="-1"
         >
-          <table :class="tablePart('ui-datatable-table--split').class" :style="tablePart().style">
+          <table
+            :class="tablePart('ui-datatable-table--split').class"
+            :style="[tablePart().style, { inlineSize: splitWidth }]"
+          >
             <!-- Fixed layout sizes columns from the first row, which in the body can be
                  a colspan spacer, so a colgroup keeps both tables aligned. -->
             <colgroup>
@@ -42,7 +45,10 @@
           :data-frozen="frozenColumns > 0 || undefined"
           :style="{ maxBlockSize: bodyMaxBlockSize }"
         >
-          <table :class="tablePart('ui-datatable-table--split').class" :style="tablePart().style">
+          <table
+            :class="tablePart('ui-datatable-table--split').class"
+            :style="[tablePart().style, { inlineSize: splitWidth }]"
+          >
             <colgroup>
               <col v-for="(width, i) in colWidths" :key="i" :style="width" />
             </colgroup>
@@ -674,6 +680,17 @@ const colWidths = computed<(Record<string, string> | undefined)[]>(() => {
   if (expansionColumnRendered.value) widths.push({ width: `${UTILITY_COLUMN_WIDTH}px` })
   for (const col of columns.value) widths.push(columnStyle(col))
   return widths
+})
+
+// Fixed layout gives a column without a width only the space left over, which is none once the
+// table overflows. Reserve a floor for each, so the table scrolls instead of hiding them.
+const AUTO_COLUMN_MIN = '8rem'
+const splitWidth = computed(() => {
+  const widths = colWidths.value
+  const auto = widths.filter((w) => !w).length
+  if (!auto) return undefined
+  const fixed = widths.flatMap((w) => (w ? [w.width] : []))
+  return `max(100%, ${[...fixed, `${auto} * ${AUTO_COLUMN_MIN}`].join(' + ')})`
 })
 function isFrozenColumn(colIndex: number): boolean {
   return props.frozenColumns > 0 && colIndex < props.frozenColumns

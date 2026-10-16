@@ -105,4 +105,39 @@
       --fade-right-start: 100%;
     }
   }
+
+  /* Both fade classes on one box: intersect the two masks, or the later one wins outright. */
+  .scroll-fade.scroll-fade-x {
+    mask-image:
+      linear-gradient(
+        to bottom,
+        transparent 0%,
+        #000 var(--fade-top-end),
+        #000 var(--fade-bottom-start),
+        transparent 99%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0%,
+        #000 var(--fade-left-end),
+        #000 var(--fade-right-start),
+        transparent 99%
+      );
+    mask-composite: intersect;
+    animation:
+      scroll-fade-top linear both,
+      scroll-fade-bottom linear both,
+      scroll-fade-left linear both,
+      scroll-fade-right linear both;
+    animation-timeline:
+      var(--timeline-self), var(--timeline-self), var(--timeline-self-x), var(--timeline-self-x);
+    animation-range:
+      0px 40px,
+      90% 100%,
+      0px 40px,
+      90% 100%;
+  }
+  .scroll-fade.scroll-fade-x.scroll-fade-manual {
+    animation: none;
+  }
 }

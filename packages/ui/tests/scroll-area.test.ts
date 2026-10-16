@@ -74,3 +74,17 @@ test('autoHide hides the thumb via standard scrollbar-color, revealing it on hov
   expect(thumbColor()).not.toBe('rgba(0, 0, 0, 0)')
   parking.remove()
 })
+
+test('orientation both fades on both axes at once, not only the last one', async () => {
+  const { h } = await import('vue')
+  const { default: ScrollArea } = await import('../src/components/ScrollArea/ScrollArea.vue')
+  await render(() =>
+    h(ScrollArea as never, { orientation: 'both', style: 'width: 120px; height: 120px' }, () =>
+      h('div', { style: 'width: 400px; height: 400px' }),
+    ),
+  )
+  const faded = document.querySelector<HTMLElement>('.scroll-fade.scroll-fade-x')!
+  const style = getComputedStyle(faded)
+  expect(style.maskImage.match(/linear-gradient/g)).toHaveLength(2)
+  expect(style.maskComposite).toContain('intersect')
+})
