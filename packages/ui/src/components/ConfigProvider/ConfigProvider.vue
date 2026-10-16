@@ -41,7 +41,9 @@ const props = withDefaults(
     theme?: UiTheme
     /** Default size for buttons, form controls and tables inside. A component's own `size` wins. */
     size?: 'sm' | 'md' | 'lg'
-    /** `false` turns off every component's built-in transitions inside, e.g. for screenshot tests. */
+    /** `false` makes every component inside change instantly, with no built-in transitions, e.g. for
+     * screenshot tests. Panels still open and close and toasts still leave; a component's own
+     * `motionCss` wins. */
     motionCss?: boolean
   }>(),
   { motionCss: undefined },
