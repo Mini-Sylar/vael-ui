@@ -102,6 +102,12 @@
   .ui-datatable-sort-chevron[data-state='desc'] {
     opacity: 1;
   }
+  /* A column's width includes its cells' padding with or without an app-wide reset, so header
+     and body cells of the same column always match. */
+  .ui-datatable-th,
+  .ui-datatable-td {
+    box-sizing: border-box;
+  }
   .ui-datatable-td {
     padding: 0.625rem 0.75rem;
     font-size: calc(var(--ui-font-size) * 0.875);

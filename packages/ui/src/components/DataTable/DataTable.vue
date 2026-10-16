@@ -911,7 +911,8 @@ function followColumnDrag() {
       shift = Math.abs(dx) < 0.5 ? '' : `${dx}px 0`
     }
     if (shift) moving = true
-    const lifted = field === lastDraggedColumn && shift !== ''
+    // Lifted for the whole drag, and after the drop until the cells settle back.
+    const lifted = field === lastDraggedColumn && (field === dragging || shift !== '')
     for (const cell of cells) {
       cell.style.translate = shift
       cell.toggleAttribute('data-column-dragging', lifted)

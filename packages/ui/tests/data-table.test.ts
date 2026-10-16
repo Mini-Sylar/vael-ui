@@ -1196,3 +1196,41 @@ test('row expansion: the toggle carries aria-expanded and aria-controls pointing
   expect(target.tagName).toBe('TR')
   expect(target.querySelector('[data-testid="expansion-p0"]')).not.toBeNull()
 })
+
+test('without a box-sizing reset, a column width includes its cells padding', async () => {
+  // The test page has no app-wide box-sizing reset. In a table too narrow for its columns, each
+  // column sits at its declared width, which must include the cells' padding, as with a reset.
+  const screen = await renderTable({ rowCount: 3, ui: { root: { style: 'width: 120px' } } })
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(3))
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+  const name = bodyRows(screen.container)[0]!.querySelector<HTMLElement>('.ui-datatable-td')!
+  expect(name.getBoundingClientRect().width).toBeCloseTo(8 * rem, 0)
+})
+
+test('scrollHeight: a column without a width keeps a minimum instead of shrinking to nothing', async () => {
+  const { h } = await import('vue')
+  const { default: DataTable } = await import('../src/components/DataTable/DataTable.vue')
+  const data = Array.from({ length: 5 }, (_, i) => ({ id: i, name: `Row ${i}`, note: 'A note' }))
+  const screen = await render(
+    () =>
+      h(
+        DataTable as never,
+        { data, rowKey: 'id', ...narrowSplit },
+        {
+          columns: ({ Column }: { Column: never }) => [
+            h(Column, { field: 'name', label: 'Name', width: '8rem' }),
+            h(Column, { field: 'note', label: 'Note' }),
+          ],
+        },
+      ),
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(bodyRows(screen.container).length).toBe(5))
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+  await vi.waitFor(() => {
+    expect(headerCells(screen.container)[1]!.getBoundingClientRect().width).toBeGreaterThanOrEqual(
+      8 * rem - 1,
+    )
+    expectColumnsAligned(screen.container)
+  })
+})
