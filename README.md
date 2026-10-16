@@ -91,6 +91,8 @@ const { mode, setMode } = useColorScheme({
 
 `ConfigProvider` applies scoped styles when Vue renders. To restore a saved color mode and app-wide font size before paint, copy the [single HTML head script](https://vael-ui.dev/docs/getting-started#dark-mode) from the docs. Save CSS font sizes such as `13px` under its `app-font-size` key. Persisted scoped font, radius, or primary overrides also need prepaint CSS or server-rendered values to avoid a flash.
 
+`ConfigProvider` also sets app-wide defaults: `size="sm"` for a dense app, `:motion-css="false"` to turn off built-in animations (useful in tests), and dates and numbers follow the locale of the `i18n` you pass it.
+
 Full theming/i18n/ConfigProvider setup: [Global Setup guide](https://vael-ui.dev/docs/guides/global-setup).
 
 ## Directives

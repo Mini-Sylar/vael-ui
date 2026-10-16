@@ -1,5 +1,5 @@
-import { inject, ref } from 'vue'
-import type { InjectionKey, Ref } from 'vue'
+import { inject, ref, toValue } from 'vue'
+import type { InjectionKey, MaybeRefOrGetter, Ref } from 'vue'
 
 export interface UiMessages {
   dialog: {
@@ -112,7 +112,7 @@ export interface UiMessages {
     collapseRow: string
     expandRow: string
   }
-  /** Drag-to-reorder. These carry `{label}`, `{position}`, `{total}` and `{depth}` placeholders rather than being functions, so a consumer's own `i18n.t()` can return them as plain strings like every other entry here. */
+  /** Drag-to-reorder. These carry `{label}`, `{position}`, `{total}` and `{depth}` placeholders rather than being functions, so a consumer's own `t()` can return them as plain strings like every other entry here. */
   sortable: {
     /** Announced on grab, and used as the handle's accessible description. */
     instructions: string
@@ -250,6 +250,8 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
  */
 export interface I18nInstance {
   t: (key: string) => string
+  /** The current locale (vue-i18n's ref, a getter or a string); formats dates and numbers. */
+  locale?: MaybeRefOrGetter<string>
 }
 
 /**
@@ -349,35 +351,61 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
   rating: { valueText: 'uiKit.rating.valueText' },
 }
 
+// vue-i18n reads these options and skips its missing-key warning, since a missing key just means
+// our English default. Libraries whose `t` takes only a key ignore them.
+const quiet = { missingWarn: false, fallbackWarn: false }
+declare const process: { env: { NODE_ENV?: string } }
+// Bundlers replace `process.env.NODE_ENV` with the app's mode, so this is `false` in production
+// builds. Without a bundler `process` doesn't exist; that counts as production.
+function isDev(): boolean {
+  try {
+    return process.env.NODE_ENV !== 'production'
+  } catch {
+    return false
+  }
+}
+const warnedLocales = new Set<string>()
+
 /**
- * Calls `i18n.t()` for each of our known keys. A missing translation is
+ * Calls `t()` for each of our known keys. A missing translation is
  * detected the way most i18n libraries (vue-i18n included) signal it: `t()`
  * returns the key string itself unchanged — that case is omitted from the
  * result entirely (not set to `undefined`) so `mergeMessages` falls through
  * to the English default instead of clobbering it with an empty value.
+ *
+ * An app with no uiKit keys isn't translating vael-ui, so it hears nothing. One that has some but
+ * not all gets a single dev-only warning per locale listing the ones it missed.
  */
 export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   const result: PartialUiMessages = {}
+  const missing: string[] = []
+  let found = 0
+  const t = (key: string) => {
+    const text = (i18n.t as (key: string, named: object, options: object) => string)(key, {}, quiet)
+    if (text === key) missing.push(key)
+    else found++
+    return text
+  }
 
-  const close = i18n.t(i18nKeyMap.dialog.close)
-  const maximize = i18n.t(i18nKeyMap.dialog.maximize)
-  const restore = i18n.t(i18nKeyMap.dialog.restore)
+  const close = t(i18nKeyMap.dialog.close)
+  const maximize = t(i18nKeyMap.dialog.maximize)
+  const restore = t(i18nKeyMap.dialog.restore)
   const dialog: PartialUiMessages['dialog'] = {}
   if (close !== i18nKeyMap.dialog.close) dialog.close = close
   if (maximize !== i18nKeyMap.dialog.maximize) dialog.maximize = maximize
   if (restore !== i18nKeyMap.dialog.restore) dialog.restore = restore
   if (Object.keys(dialog).length > 0) result.dialog = dialog
 
-  const dismiss = i18n.t(i18nKeyMap.toast.dismiss)
+  const dismiss = t(i18nKeyMap.toast.dismiss)
   if (dismiss !== i18nKeyMap.toast.dismiss) result.toast = { dismiss }
 
-  const messageDismiss = i18n.t(i18nKeyMap.message.dismiss)
+  const messageDismiss = t(i18nKeyMap.message.dismiss)
   if (messageDismiss !== i18nKeyMap.message.dismiss) result.message = { dismiss: messageDismiss }
 
-  const pull = i18n.t(i18nKeyMap.pullToRefresh.pull)
-  const release = i18n.t(i18nKeyMap.pullToRefresh.release)
-  const refreshing = i18n.t(i18nKeyMap.pullToRefresh.refreshing)
-  const updated = i18n.t(i18nKeyMap.pullToRefresh.updated)
+  const pull = t(i18nKeyMap.pullToRefresh.pull)
+  const release = t(i18nKeyMap.pullToRefresh.release)
+  const refreshing = t(i18nKeyMap.pullToRefresh.refreshing)
+  const updated = t(i18nKeyMap.pullToRefresh.updated)
   const pullToRefresh: PartialUiMessages['pullToRefresh'] = {}
   if (pull !== i18nKeyMap.pullToRefresh.pull) pullToRefresh.pull = pull
   if (release !== i18nKeyMap.pullToRefresh.release) pullToRefresh.release = release
@@ -385,23 +413,23 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (updated !== i18nKeyMap.pullToRefresh.updated) pullToRefresh.updated = updated
   if (Object.keys(pullToRefresh).length > 0) result.pullToRefresh = pullToRefresh
 
-  const increment = i18n.t(i18nKeyMap.inputNumber.increment)
-  const decrement = i18n.t(i18nKeyMap.inputNumber.decrement)
+  const increment = t(i18nKeyMap.inputNumber.increment)
+  const decrement = t(i18nKeyMap.inputNumber.decrement)
   const inputNumber: PartialUiMessages['inputNumber'] = {}
   if (increment !== i18nKeyMap.inputNumber.increment) inputNumber.increment = increment
   if (decrement !== i18nKeyMap.inputNumber.decrement) inputNumber.decrement = decrement
   if (Object.keys(inputNumber).length > 0) result.inputNumber = inputNumber
 
-  const show = i18n.t(i18nKeyMap.passwordInput.show)
-  const hide = i18n.t(i18nKeyMap.passwordInput.hide)
+  const show = t(i18nKeyMap.passwordInput.show)
+  const hide = t(i18nKeyMap.passwordInput.hide)
   const passwordInput: PartialUiMessages['passwordInput'] = {}
   if (show !== i18nKeyMap.passwordInput.show) passwordInput.show = show
   if (hide !== i18nKeyMap.passwordInput.hide) passwordInput.hide = hide
   if (Object.keys(passwordInput).length > 0) result.passwordInput = passwordInput
 
-  const selectEmpty = i18n.t(i18nKeyMap.select.empty)
-  const selectClear = i18n.t(i18nKeyMap.select.clear)
-  const selectSelectedCount = i18n.t(i18nKeyMap.select.selectedCount)
+  const selectEmpty = t(i18nKeyMap.select.empty)
+  const selectClear = t(i18nKeyMap.select.clear)
+  const selectSelectedCount = t(i18nKeyMap.select.selectedCount)
   const select: PartialUiMessages['select'] = {}
   if (selectEmpty !== i18nKeyMap.select.empty) select.empty = selectEmpty
   if (selectClear !== i18nKeyMap.select.clear) select.clear = selectClear
@@ -409,10 +437,10 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
     select.selectedCount = selectSelectedCount
   if (Object.keys(select).length > 0) result.select = select
 
-  const comboboxEmpty = i18n.t(i18nKeyMap.combobox.empty)
-  const comboboxClear = i18n.t(i18nKeyMap.combobox.clear)
-  const comboboxToggle = i18n.t(i18nKeyMap.combobox.toggle)
-  const comboboxCreate = i18n.t(i18nKeyMap.combobox.create)
+  const comboboxEmpty = t(i18nKeyMap.combobox.empty)
+  const comboboxClear = t(i18nKeyMap.combobox.clear)
+  const comboboxToggle = t(i18nKeyMap.combobox.toggle)
+  const comboboxCreate = t(i18nKeyMap.combobox.create)
   const combobox: PartialUiMessages['combobox'] = {}
   if (comboboxEmpty !== i18nKeyMap.combobox.empty) combobox.empty = comboboxEmpty
   if (comboboxClear !== i18nKeyMap.combobox.clear) combobox.clear = comboboxClear
@@ -420,42 +448,42 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (comboboxCreate !== i18nKeyMap.combobox.create) combobox.create = comboboxCreate
   if (Object.keys(combobox).length > 0) result.combobox = combobox
 
-  const fileUploadBrowse = i18n.t(i18nKeyMap.fileUpload.browse)
-  const fileUploadDrop = i18n.t(i18nKeyMap.fileUpload.drop)
-  const fileUploadRemove = i18n.t(i18nKeyMap.fileUpload.remove)
+  const fileUploadBrowse = t(i18nKeyMap.fileUpload.browse)
+  const fileUploadDrop = t(i18nKeyMap.fileUpload.drop)
+  const fileUploadRemove = t(i18nKeyMap.fileUpload.remove)
   const fileUpload: PartialUiMessages['fileUpload'] = {}
   if (fileUploadBrowse !== i18nKeyMap.fileUpload.browse) fileUpload.browse = fileUploadBrowse
   if (fileUploadDrop !== i18nKeyMap.fileUpload.drop) fileUpload.drop = fileUploadDrop
   if (fileUploadRemove !== i18nKeyMap.fileUpload.remove) fileUpload.remove = fileUploadRemove
   if (Object.keys(fileUpload).length > 0) result.fileUpload = fileUpload
 
-  const cascadeEmpty = i18n.t(i18nKeyMap.cascadeSelect.empty)
-  const cascadeClear = i18n.t(i18nKeyMap.cascadeSelect.clear)
+  const cascadeEmpty = t(i18nKeyMap.cascadeSelect.empty)
+  const cascadeClear = t(i18nKeyMap.cascadeSelect.clear)
   const cascadeSelect: PartialUiMessages['cascadeSelect'] = {}
   if (cascadeEmpty !== i18nKeyMap.cascadeSelect.empty) cascadeSelect.empty = cascadeEmpty
   if (cascadeClear !== i18nKeyMap.cascadeSelect.clear) cascadeSelect.clear = cascadeClear
   if (Object.keys(cascadeSelect).length > 0) result.cascadeSelect = cascadeSelect
 
-  const treeSelectClear = i18n.t(i18nKeyMap.treeSelect.clear)
+  const treeSelectClear = t(i18nKeyMap.treeSelect.clear)
   if (treeSelectClear !== i18nKeyMap.treeSelect.clear) {
     result.treeSelect = { clear: treeSelectClear }
   }
 
-  const chipRemove = i18n.t(i18nKeyMap.chip.remove)
+  const chipRemove = t(i18nKeyMap.chip.remove)
   if (chipRemove !== i18nKeyMap.chip.remove) result.chip = { remove: chipRemove }
 
-  const splitButtonMore = i18n.t(i18nKeyMap.splitButton.more)
+  const splitButtonMore = t(i18nKeyMap.splitButton.more)
   if (splitButtonMore !== i18nKeyMap.splitButton.more) {
     result.splitButton = { more: splitButtonMore }
   }
 
-  const breadcrumbLabel = i18n.t(i18nKeyMap.breadcrumb.label)
+  const breadcrumbLabel = t(i18nKeyMap.breadcrumb.label)
   if (breadcrumbLabel !== i18nKeyMap.breadcrumb.label) {
     result.breadcrumb = { label: breadcrumbLabel }
   }
 
-  const commandPalettePlaceholder = i18n.t(i18nKeyMap.commandPalette.placeholder)
-  const commandPaletteEmpty = i18n.t(i18nKeyMap.commandPalette.empty)
+  const commandPalettePlaceholder = t(i18nKeyMap.commandPalette.placeholder)
+  const commandPaletteEmpty = t(i18nKeyMap.commandPalette.empty)
   const commandPalette: PartialUiMessages['commandPalette'] = {}
   if (commandPalettePlaceholder !== i18nKeyMap.commandPalette.placeholder) {
     commandPalette.placeholder = commandPalettePlaceholder
@@ -465,11 +493,11 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   }
   if (Object.keys(commandPalette).length > 0) result.commandPalette = commandPalette
 
-  const tourNext = i18n.t(i18nKeyMap.tour.next)
-  const tourBack = i18n.t(i18nKeyMap.tour.back)
-  const tourSkip = i18n.t(i18nKeyMap.tour.skip)
-  const tourDone = i18n.t(i18nKeyMap.tour.done)
-  const tourStepOf = i18n.t(i18nKeyMap.tour.stepOf)
+  const tourNext = t(i18nKeyMap.tour.next)
+  const tourBack = t(i18nKeyMap.tour.back)
+  const tourSkip = t(i18nKeyMap.tour.skip)
+  const tourDone = t(i18nKeyMap.tour.done)
+  const tourStepOf = t(i18nKeyMap.tour.stepOf)
   const tour: PartialUiMessages['tour'] = {}
   if (tourNext !== i18nKeyMap.tour.next) tour.next = tourNext
   if (tourBack !== i18nKeyMap.tour.back) tour.back = tourBack
@@ -478,15 +506,15 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (tourStepOf !== i18nKeyMap.tour.stepOf) tour.stepOf = tourStepOf
   if (Object.keys(tour).length > 0) result.tour = tour
 
-  const toasterLabel = i18n.t(i18nKeyMap.toaster.label)
+  const toasterLabel = t(i18nKeyMap.toaster.label)
   if (toasterLabel !== i18nKeyMap.toaster.label) result.toaster = { label: toasterLabel }
 
-  const paginationLabel = i18n.t(i18nKeyMap.pagination.label)
-  const paginationFirst = i18n.t(i18nKeyMap.pagination.first)
-  const paginationPrevious = i18n.t(i18nKeyMap.pagination.previous)
-  const paginationPage = i18n.t(i18nKeyMap.pagination.page)
-  const paginationNext = i18n.t(i18nKeyMap.pagination.next)
-  const paginationLast = i18n.t(i18nKeyMap.pagination.last)
+  const paginationLabel = t(i18nKeyMap.pagination.label)
+  const paginationFirst = t(i18nKeyMap.pagination.first)
+  const paginationPrevious = t(i18nKeyMap.pagination.previous)
+  const paginationPage = t(i18nKeyMap.pagination.page)
+  const paginationNext = t(i18nKeyMap.pagination.next)
+  const paginationLast = t(i18nKeyMap.pagination.last)
   const pagination: PartialUiMessages['pagination'] = {}
   if (paginationLabel !== i18nKeyMap.pagination.label) pagination.label = paginationLabel
   if (paginationFirst !== i18nKeyMap.pagination.first) pagination.first = paginationFirst
@@ -498,15 +526,15 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (paginationLast !== i18nKeyMap.pagination.last) pagination.last = paginationLast
   if (Object.keys(pagination).length > 0) result.pagination = pagination
 
-  const chooseDate = i18n.t(i18nKeyMap.datePicker.chooseDate)
-  const datePickerToday = i18n.t(i18nKeyMap.datePicker.today)
-  const datePickerClear = i18n.t(i18nKeyMap.datePicker.clear)
-  const datePickerHour = i18n.t(i18nKeyMap.datePicker.hour)
-  const datePickerMinute = i18n.t(i18nKeyMap.datePicker.minute)
-  const datePickerIncreaseHour = i18n.t(i18nKeyMap.datePicker.increaseHour)
-  const datePickerDecreaseHour = i18n.t(i18nKeyMap.datePicker.decreaseHour)
-  const datePickerIncreaseMinute = i18n.t(i18nKeyMap.datePicker.increaseMinute)
-  const datePickerDecreaseMinute = i18n.t(i18nKeyMap.datePicker.decreaseMinute)
+  const chooseDate = t(i18nKeyMap.datePicker.chooseDate)
+  const datePickerToday = t(i18nKeyMap.datePicker.today)
+  const datePickerClear = t(i18nKeyMap.datePicker.clear)
+  const datePickerHour = t(i18nKeyMap.datePicker.hour)
+  const datePickerMinute = t(i18nKeyMap.datePicker.minute)
+  const datePickerIncreaseHour = t(i18nKeyMap.datePicker.increaseHour)
+  const datePickerDecreaseHour = t(i18nKeyMap.datePicker.decreaseHour)
+  const datePickerIncreaseMinute = t(i18nKeyMap.datePicker.increaseMinute)
+  const datePickerDecreaseMinute = t(i18nKeyMap.datePicker.decreaseMinute)
   const datePicker: PartialUiMessages['datePicker'] = {}
   if (chooseDate !== i18nKeyMap.datePicker.chooseDate) datePicker.chooseDate = chooseDate
   if (datePickerToday !== i18nKeyMap.datePicker.today) datePicker.today = datePickerToday
@@ -527,10 +555,10 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   }
   if (Object.keys(datePicker).length > 0) result.datePicker = datePicker
 
-  const dataTableSelectAll = i18n.t(i18nKeyMap.dataTable.selectAll)
-  const dataTableSelectRow = i18n.t(i18nKeyMap.dataTable.selectRow)
-  const dataTableCollapseRow = i18n.t(i18nKeyMap.dataTable.collapseRow)
-  const dataTableExpandRow = i18n.t(i18nKeyMap.dataTable.expandRow)
+  const dataTableSelectAll = t(i18nKeyMap.dataTable.selectAll)
+  const dataTableSelectRow = t(i18nKeyMap.dataTable.selectRow)
+  const dataTableCollapseRow = t(i18nKeyMap.dataTable.collapseRow)
+  const dataTableExpandRow = t(i18nKeyMap.dataTable.expandRow)
   const dataTable: PartialUiMessages['dataTable'] = {}
   if (dataTableSelectAll !== i18nKeyMap.dataTable.selectAll) {
     dataTable.selectAll = dataTableSelectAll
@@ -546,12 +574,12 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   }
   if (Object.keys(dataTable).length > 0) result.dataTable = dataTable
 
-  const sortableInstructions = i18n.t(i18nKeyMap.sortable.instructions)
-  const sortableGrabbed = i18n.t(i18nKeyMap.sortable.grabbed)
-  const sortableMoved = i18n.t(i18nKeyMap.sortable.moved)
-  const sortableMovedToLevel = i18n.t(i18nKeyMap.sortable.movedToLevel)
-  const sortableDropped = i18n.t(i18nKeyMap.sortable.dropped)
-  const sortableCancelled = i18n.t(i18nKeyMap.sortable.cancelled)
+  const sortableInstructions = t(i18nKeyMap.sortable.instructions)
+  const sortableGrabbed = t(i18nKeyMap.sortable.grabbed)
+  const sortableMoved = t(i18nKeyMap.sortable.moved)
+  const sortableMovedToLevel = t(i18nKeyMap.sortable.movedToLevel)
+  const sortableDropped = t(i18nKeyMap.sortable.dropped)
+  const sortableCancelled = t(i18nKeyMap.sortable.cancelled)
   const sortable: PartialUiMessages['sortable'] = {}
   if (sortableInstructions !== i18nKeyMap.sortable.instructions) {
     sortable.instructions = sortableInstructions
@@ -573,12 +601,23 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   }
   if (Object.keys(sortable).length > 0) result.sortable = sortable
 
-  const ratingValueText = i18n.t(i18nKeyMap.rating.valueText)
+  const ratingValueText = t(i18nKeyMap.rating.valueText)
   const rating: PartialUiMessages['rating'] = {}
   if (ratingValueText !== i18nKeyMap.rating.valueText) {
     rating.valueText = ratingValueText
   }
   if (Object.keys(rating).length > 0) result.rating = rating
+
+  if (isDev() && found > 0 && missing.length > 0) {
+    const locale = toValue(i18n.locale) ?? ''
+    if (!warnedLocales.has(locale)) {
+      warnedLocales.add(locale)
+      // eslint-disable-next-line no-console -- the one dev-only warning, asked for above
+      console.warn(
+        `vael-ui: ${missing.length} uiKit keys aren't translated${locale ? ` for "${locale}"` : ''}, so they show the English default: ${missing.join(', ')}`,
+      )
+    }
+  }
 
   return result
 }

@@ -38,6 +38,7 @@
 <!-- APG switch pattern via checkbox + role="switch"; no inline style on thumbEl for spring override -->
 <script setup lang="ts">
 import './Switch.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, onMounted, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -52,7 +53,7 @@ const attrs = useAttrs()
 /** Whether the switch is on. @default false */
 const modelValue = defineModel<boolean>({ default: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Label text; the default slot replaces it. */
     label?: string
@@ -69,8 +70,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; track: UiPartValue; thumb: UiPartValue; label: UiPartValue }>
   }>(),
-  { disabled: false, invalid: false, size: 'md', motionCss: true },
+  { disabled: false, invalid: false, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true }, ['sm', 'md'])
 
 defineSlots<{
   /** Label content; replaces the `label` text. */

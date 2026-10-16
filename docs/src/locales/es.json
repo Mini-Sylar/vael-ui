@@ -151,6 +151,11 @@
     "radius": "Radio de esquina",
     "radiusDefault": "Por defecto",
     "radiusPill": "Píldora",
+    "size": "Tamaño",
+    "sizeSm": "Pequeño",
+    "sizeMd": "Mediano",
+    "sizeLg": "Grande",
+    "animations": "Animaciones",
     "radiusRounded": "Redondeado",
     "radiusSharp": "Afilado",
     "radiusSoft": "Suave",
@@ -182,7 +187,7 @@
   "i18nKeys": {
     "copyIntro": "Copia esto en tus archivos de idioma bajo la clave uiKit y luego traduce los valores:",
     "englishDefault": "Inglés predeterminado",
-    "intro": "Cada texto integrado (el botón de cerrar del diálogo, el de descartar un toast, los estados vacíos, etc.) tiene un valor por defecto en inglés. Para traducirlos, pasa tu propia instancia de i18n a ConfigProvider. Lee de tu catálogo existente bajo el espacio de nombres uiKit, así que no hay nada más que instalar.",
+    "intro": "Cada texto integrado (el botón de cerrar del diálogo, el de descartar un toast, los estados vacíos, etc.) tiene un valor por defecto en inglés. Para traducirlos, pasa tu propia instancia de i18n a ConfigProvider. Lee de tu catálogo existente bajo el espacio de nombres uiKit, así que no hay nada más que instalar. Las claves que no hayas traducido conservan el texto en inglés, sin avisos en la consola.",
     "key": "Llave",
     "title": "Traduciendo vael-ui"
   },

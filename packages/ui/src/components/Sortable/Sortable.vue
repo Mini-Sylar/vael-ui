@@ -3,7 +3,7 @@
     ref="root"
     :class="rootPart.class"
     :style="rootPart.style"
-    :data-motion="motionCss ? undefined : 'off'"
+    :data-motion="motionOff ? 'off' : undefined"
     :data-axis="axis"
     :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
     :data-pending="isPending ? '' : undefined"
@@ -67,6 +67,7 @@
      owns that, over the same engine. -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import './Sortable.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -92,7 +93,7 @@ const attrs = useAttrs()
  */
 const items = defineModel<T[]>('items', { default: () => [] })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /**
      * Property that holds each item's stable identity. `value` matches `MenuItemData`, `SelectItemData` and `TreeNode`.
@@ -147,12 +148,14 @@ const props = withDefaults(
     beforeDrop: undefined,
     autoScroll: true,
     disabled: false,
-    motionCss: true,
+    motionCss: undefined,
     group: undefined,
     groupId: undefined,
     ui: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
+const motionOff = computed(() => !props.motionCss)
 
 const emit = defineEmits<{
   /** Fires after `items` changes order. Persist optimistically here; on failure, restore your own snapshot of `items`. */

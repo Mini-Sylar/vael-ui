@@ -4,7 +4,7 @@
     :class="rootClass"
     :style="[rootStyle, attrs.style as never]"
     :data-state="dataState"
-    :data-ui-frame="size"
+    :data-ui-frame="props.size"
     :data-focus-visible="focusVisible || undefined"
     @mousedown="onFrameMousedown"
   >
@@ -38,6 +38,7 @@
 <!-- inheritAttrs: false; class/style → root, input attrs → input; frame mousedown focuses input (guarded) -->
 <script setup lang="ts">
 import './Input.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, onBeforeUnmount, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -52,7 +53,7 @@ defineOptions({ inheritAttrs: false })
 /** Input value. Supports the `.trim` and `.lazy` modifiers. @default '' */
 const [modelValue, modifiers] = defineModel<string>({ default: '' })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Native input `type`. @default 'text' */
     type?: string
@@ -69,8 +70,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; input: UiPartValue; start: UiPartValue; end: UiPartValue }>
   }>(),
-  { type: 'text', size: 'md', disabled: false, readonly: false, invalid: false },
+  { type: 'text', disabled: false, readonly: false, invalid: false },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' })
 
 defineSlots<{
   /** Inline leading content, such as an icon, a Kbd hint or a copy Button. */

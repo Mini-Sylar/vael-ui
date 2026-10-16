@@ -7,7 +7,7 @@
       :class="rootPart.class"
       :style="[rootStyle, rootPart.style]"
       v-bind="$attrs"
-      :css="motionCss"
+      :css="props.motionCss"
       role="region"
       aria-live="polite"
       :aria-label="messages.toaster.label"
@@ -105,6 +105,7 @@ export type ToasterPosition =
 
 <script setup lang="ts">
 import './Toaster.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, inject, onScopeDispose, reactive, ref, watch } from 'vue'
 import { useDocumentVisibility } from '@vueuse/core'
@@ -123,7 +124,7 @@ const SWIPE_EXIT_MS = 200
 
 defineOptions({ inheritAttrs: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Screen corner or edge the toasts stack from. @default 'bottom-right' */
     position?: ToasterPosition
@@ -157,9 +158,10 @@ const props = withDefaults(
     expand: false,
     gap: 10,
     teleportTo: 'body',
-    motionCss: true,
+    motionCss: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when a toast enters, only while `motionCss` is `false`. Run your own animation, then call
@@ -169,11 +171,16 @@ const emit = defineEmits<{
   'card-leave': [el: Element, done: () => void]
 }>()
 
+// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('card-enter', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('card-enter', el, done),
 )
 const leaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('card-leave', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('card-leave', el, done),
 )
 
 defineSlots<{

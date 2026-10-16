@@ -1,7 +1,7 @@
 <template>
   <div
     ref="triggerEl"
-    :data-ui-frame="size"
+    :data-ui-frame="props.size"
     role="combobox"
     :id="fieldControl.id"
     :class="rootPart.class"
@@ -33,8 +33,8 @@
           name="ui-chip-item"
           tag="span"
           class="ui-select-chips"
-          :css="motionCss"
-          :data-motion="motionCss ? undefined : 'off'"
+          :css="props.motionCss"
+          :data-motion="props.motionCss ? undefined : 'off'"
           @enter="chipEnterHook"
           @leave="chipLeaveHook"
         >
@@ -216,6 +216,7 @@ export type SelectFilter<T> = boolean | ((item: T, query: string) => boolean)
 
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
 import './Select.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
@@ -243,7 +244,7 @@ const attrs = useAttrs()
 /** Selected value, or an array of values when `multiple`. @default null */
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Options to choose from. */
     items: ReadonlyArray<T>
@@ -332,7 +333,6 @@ const props = withDefaults(
     multiple: false,
     disabled: false,
     invalid: false,
-    size: 'md',
     loading: false,
     clearable: false,
     display: 'chip',
@@ -348,10 +348,11 @@ const props = withDefaults(
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,
-    motionCss: true,
+    motionCss: undefined,
     filterPlaceholder: 'Search...',
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */

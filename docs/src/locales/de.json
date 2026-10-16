@@ -151,6 +151,11 @@
     "radius": "Eckenradius",
     "radiusDefault": "Standard",
     "radiusPill": "Pille",
+    "size": "Größe",
+    "sizeSm": "Klein",
+    "sizeMd": "Mittel",
+    "sizeLg": "Groß",
+    "animations": "Animationen",
     "radiusRounded": "Gerundet",
     "radiusSharp": "Scharf",
     "radiusSoft": "Weich",
@@ -315,7 +320,7 @@
   "i18nKeys": {
     "copyIntro": "Kopieren Sie dies unter dem Schlüssel uiKit in Ihre Sprachdateien und übersetzen Sie dann die Werte:",
     "englishDefault": "Englische Standardeinstellung",
-    "intro": "Jeder integrierte Text (die Schließen-Schaltfläche von Dialogen, das Schließen von Toasts, leere Zustände usw.) hat einen englischen Standardwert. Um die Texte zu übersetzen, übergeben Sie Ihre eigene i18n-Instanz an ConfigProvider. Sie werden aus Ihrem vorhandenen Katalog unter dem Namespace uiKit gelesen, Sie müssen also nichts zusätzlich installieren.",
+    "intro": "Jeder integrierte Text (die Schließen-Schaltfläche von Dialogen, das Schließen von Toasts, leere Zustände usw.) hat einen englischen Standardwert. Um die Texte zu übersetzen, übergeben Sie Ihre eigene i18n-Instanz an ConfigProvider. Sie werden aus Ihrem vorhandenen Katalog unter dem Namespace uiKit gelesen, Sie müssen also nichts zusätzlich installieren. Schlüssel, die du nicht übersetzt hast, behalten den englischen Standardtext, ohne Warnungen in der Konsole.",
     "key": "Schlüssel",
     "title": "vael-ui übersetzen"
   },

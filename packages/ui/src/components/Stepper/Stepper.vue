@@ -30,7 +30,7 @@
               :completed="stateOf(index) === 'completed'"
               :disabled="isDisabled(item)"
             >
-              <Transition :name="motionCss ? 'ui-stepper-check' : undefined">
+              <Transition :name="props.motionCss ? 'ui-stepper-check' : undefined">
                 <svg
                   v-if="stateOf(index) === 'completed'"
                   key="check"
@@ -89,6 +89,7 @@ export interface StepperItem {
 
 <script setup lang="ts" generic="T extends StepperItem = StepperItem">
 import './Stepper.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { nativeTag } from '../../composables/dom'
 import { computed, ref, useTemplateRef, watch } from 'vue'
@@ -100,7 +101,7 @@ import { useThemedUi } from '../../theme'
 /** Index of the active step. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Steps to show, each with a `label` and optional `description` and `disabled`. */
     items: ReadonlyArray<T>
@@ -128,8 +129,9 @@ const props = withDefaults(
       connector: UiPartValue
     }>
   }>(),
-  { orientation: 'horizontal', linear: true, clickable: true, motionCss: true },
+  { orientation: 'horizontal', linear: true, clickable: true, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when you click a step and it becomes active. */

@@ -151,6 +151,11 @@
     "radius": "Raggio dell'angolo",
     "radiusDefault": "Predefinito",
     "radiusPill": "Pillola",
+    "size": "Dimensione",
+    "sizeSm": "Piccola",
+    "sizeMd": "Media",
+    "sizeLg": "Grande",
+    "animations": "Animazioni",
     "radiusRounded": "Arrotondato",
     "radiusSharp": "Affilato",
     "radiusSoft": "Morbido",
@@ -182,7 +187,7 @@
   "i18nKeys": {
     "copyIntro": "Copia questo nei tuoi file di lingua sotto la chiave uiKit, poi traduci i valori:",
     "englishDefault": "Predefinito inglese",
-    "intro": "Ogni testo integrato (il pulsante di chiusura del dialogo, la chiusura di un toast, gli stati vuoti e così via) ha un valore predefinito in inglese. Per tradurli, passa la tua istanza i18n a ConfigProvider. Legge dal tuo catalogo esistente sotto il namespace uiKit, quindi non c'è altro da installare.",
+    "intro": "Ogni testo integrato (il pulsante di chiusura del dialogo, la chiusura di un toast, gli stati vuoti e così via) ha un valore predefinito in inglese. Per tradurli, passa la tua istanza i18n a ConfigProvider. Legge dal tuo catalogo esistente sotto il namespace uiKit, quindi non c'è altro da installare. Le chiavi che non hai tradotto mantengono il testo inglese predefinito, senza avvisi nella console.",
     "key": "Chiave",
     "title": "Traducendo vael-ui"
   },

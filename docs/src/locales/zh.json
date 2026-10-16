@@ -151,6 +151,11 @@
     "radius": "圆角半径",
     "radiusDefault": "默认",
     "radiusPill": "丸",
+    "size": "尺寸",
+    "sizeSm": "小",
+    "sizeMd": "中",
+    "sizeLg": "大",
+    "animations": "动画",
     "radiusRounded": "圆形",
     "radiusSharp": "锋利的",
     "radiusSoft": "柔软的",
@@ -182,7 +187,7 @@
   "i18nKeys": {
     "copyIntro": "将以下内容复制到你的语言文件中的 uiKit 键下，然后翻译各个值：",
     "englishDefault": "默认英文",
-    "intro": "所有内置文本（对话框关闭按钮、toast 关闭、空状态等）都有英文默认值。要翻译它们，请将你自己的 i18n 实例传给 ConfigProvider。它会从你现有语言包的 uiKit 命名空间中读取，因此无需额外安装任何东西。",
+    "intro": "所有内置文本（对话框关闭按钮、toast 关闭、空状态等）都有英文默认值。要翻译它们，请将你自己的 i18n 实例传给 ConfigProvider。它会从你现有语言包的 uiKit 命名空间中读取，因此无需额外安装任何东西。 未翻译的键保留英文默认值，控制台不会出现警告。",
     "key": "钥匙",
     "title": "翻译 vael-ui"
   },

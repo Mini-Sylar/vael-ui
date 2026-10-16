@@ -54,6 +54,7 @@ export interface SelectButtonItem {
 <!-- Native radios (single) or checkboxes (multiple) with sliding indicator; allowEmpty clears on click -->
 <script setup lang="ts" generic="T extends SelectButtonItem = SelectButtonItem">
 import './SelectButton.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useTabIndicator } from '../../composables/useTabIndicator'
@@ -69,7 +70,7 @@ const attrs = useAttrs()
 /** Selected value, an array of values with `multiple`, or `null` when nothing is selected. @default null */
 const modelValue = defineModel<string | number | (string | number)[] | null>({ default: null })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Options to choose from. */
     items: ReadonlyArray<T>
@@ -86,8 +87,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; option: UiPartValue; indicator: UiPartValue }>
   }>(),
-  { multiple: false, allowEmpty: true, disabled: false, size: 'md' },
+  { multiple: false, allowEmpty: true, disabled: false },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' })
 
 const emit = defineEmits<{
   /** Fires when you change the selection, with the new model value. */

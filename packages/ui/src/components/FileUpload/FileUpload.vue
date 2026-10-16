@@ -44,7 +44,7 @@
       :ref="registerListEl"
       tag="ul"
       name="ui-file-item"
-      :css="motionCss"
+      :css="props.motionCss"
       :class="listPart.class"
       :style="listPart.style"
       @enter="enterHook"
@@ -92,6 +92,7 @@
 -->
 <script setup lang="ts">
 import './FileUpload.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, ref, shallowRef, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
@@ -107,7 +108,7 @@ export type FileRejectReason = 'accept' | 'maxSize' | 'maxFiles'
 /** Accepted files. @default [] */
 const modelValue = defineModel<File[]>('files', { default: () => [] })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Native `accept` syntax: `.pdf`, `image/png`, `image/*`, comma-separated. */
     accept?: string
@@ -142,8 +143,9 @@ const props = withDefaults(
       remove: UiPartValue
     }>
   }>(),
-  { capture: undefined, multiple: true, disabled: false, motionCss: true },
+  { capture: undefined, multiple: true, disabled: false, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { motionCss: true })
 
 const emit = defineEmits<{
   /** Fires for each file that `accept`, `maxSize` or `maxFiles` rejects, with the reason. */
@@ -296,9 +298,11 @@ function registerListEl(el: Element | { $el?: unknown } | null) {
     listEl.value = el.$el
   }
 }
-// Same shape as Toaster's own enterHook/leaveHook.
+// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-enter', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('item-enter', el, done),
 )
 // The built-in exit collapses the row from its measured height.
 const beforeLeaveHook = computed(() =>
@@ -311,7 +315,9 @@ const beforeLeaveHook = computed(() =>
     : undefined,
 )
 const leaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('item-leave', el, done),
+  rawProps.motionCss !== false
+    ? undefined
+    : (el: Element, done: () => void) => emit('item-leave', el, done),
 )
 
 function browse() {

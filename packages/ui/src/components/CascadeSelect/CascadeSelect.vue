@@ -31,7 +31,7 @@
         <div
           :id="fieldControl.id"
           ref="triggerEl"
-          :data-ui-frame="size"
+          :data-ui-frame="props.size"
           role="combobox"
           v-bind="restAttrs"
           :class="triggerClass"
@@ -147,6 +147,7 @@ export type CascadeSelectPath = (string | number)[]
 <!-- Wraps Menu's submenu engine; nodeByKey side-table preserves type at all depths. -->
 <script setup lang="ts" generic="T extends CascadeSelectItem = CascadeSelectItem">
 import './CascadeSelect.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
@@ -167,7 +168,7 @@ const model = defineModel<string | number | null>({ default: null })
 /** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Tree of options; only leaves (nodes without `children`) can be selected. */
     items: readonly T[]
@@ -224,7 +225,6 @@ const props = withDefaults(
     disabled: false,
     clearable: false,
     invalid: false,
-    size: 'md',
     name: undefined,
     side: 'bottom',
     align: 'start',
@@ -239,6 +239,7 @@ const props = withDefaults(
     ui: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' })
 
 const emit = defineEmits<{
   /** Fires before the panel closes, with the reason; `details.cancel()` keeps it open. */

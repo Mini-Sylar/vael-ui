@@ -10,6 +10,7 @@
 <!-- Standalone status label (vs Badge's overlay counter). Soft tinted background; translateY correction for glyph centering. Comment outside <template> to prevent attrs fallthrough. -->
 <script setup lang="ts">
 import './Tag.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -19,7 +20,7 @@ import { useThemedUi } from '../../theme'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Color variant. @default 'muted' */
     variant?: 'primary' | 'muted' | 'success' | 'warning' | 'danger' | 'info'
@@ -30,8 +31,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; icon: UiPartValue; label: UiPartValue }>
   }>(),
-  { variant: 'muted', size: 'md', pill: false },
+  { variant: 'muted', pill: false },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' }, ['sm', 'md'])
 
 defineSlots<{
   /** Tag label. */

@@ -9,7 +9,7 @@
       ref="mainRef"
       v-bind="mainAttrs"
       :variant="variant"
-      :size="size"
+      :size="props.size"
       :disabled="disabled"
       :loading="loading"
       :ui="mainUi"
@@ -46,7 +46,7 @@
         <Button
           ref="triggerRef"
           :variant="variant"
-          :size="size"
+          :size="props.size"
           :disabled="disabled"
           icon
           :ui="triggerUi"
@@ -93,6 +93,7 @@ export type { MenuAlign as SplitButtonAlign, MenuSide as SplitButtonSide }
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './SplitButton.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
@@ -111,7 +112,7 @@ defineOptions({ inheritAttrs: false })
 /** Whether the dropdown menu is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Dropdown rows, in the same shape as Menu's `items`. */
     items: ReadonlyArray<MenuEntry<T>>
@@ -159,7 +160,6 @@ const props = withDefaults(
   }>(),
   {
     variant: 'primary',
-    size: 'md',
     disabled: false,
     loading: 'auto',
     closeOnEsc: undefined,
@@ -167,6 +167,7 @@ const props = withDefaults(
     scrollFade: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' })
 
 const emit = defineEmits<{
   /** Fires before the menu closes; `details` has the `reason` and a `cancel()` that keeps it open. */

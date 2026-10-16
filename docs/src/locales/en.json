@@ -32,6 +32,11 @@
     "radiusSoft": "Soft",
     "radiusRounded": "Rounded",
     "radiusPill": "Pill",
+    "size": "Size",
+    "sizeSm": "Small",
+    "sizeMd": "Medium",
+    "sizeLg": "Large",
+    "animations": "Animations",
     "locale": "Language",
     "defaultMode": "Default demo mode",
     "settings": "Settings"
@@ -331,7 +336,7 @@
   },
   "i18nKeys": {
     "title": "Translating vael-ui",
-    "intro": "Every built-in string (the dialog close button, toast dismiss, empty states, and so on) has an English default. To translate them, pass your own i18n instance to ConfigProvider. It reads from your existing catalog under the uiKit namespace, so there's nothing extra to install.",
+    "intro": "Every built-in string (the dialog close button, toast dismiss, empty states, and so on) has an English default. To translate them, pass your own i18n instance to ConfigProvider. It reads from your existing catalog under the uiKit namespace, so there's nothing extra to install. Keys you haven't translated keep the English default, with no console warnings.",
     "copyIntro": "Copy this into your locale files under the uiKit key, then translate the values:",
     "key": "Key",
     "englishDefault": "English default"

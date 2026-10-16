@@ -14,8 +14,10 @@
 
     <div class="playground-body">
       <div class="playground-preview">
-        <component :is="ConfigProviderComp" :theme="theme">
+        <component :is="ConfigProviderComp" :theme="theme" :size="size" :motion-css="motionCss">
           <div class="preview-row">
+            <component :is="InputComp" placeholder="Search" class="preview-input" />
+            <component :is="SwitchComp" v-model="switchOn" aria-label="Notifications" />
             <component :is="ButtonComp">Save changes</component>
             <component :is="BadgeComp" :count="3" />
             <component :is="CardComp" title="Nested content">
@@ -54,6 +56,21 @@
             @update:model-value="onFontSizeChange"
           />
         </div>
+        <div class="control-row">
+          <label for="cp-size">size</label>
+          <Select
+            id="cp-size"
+            size="sm"
+            class="control-input"
+            :items="sizeItems"
+            :model-value="size"
+            @update:model-value="onSizeChange"
+          />
+        </div>
+        <div class="control-row">
+          <label for="cp-motion">motionCss</label>
+          <Switch id="cp-motion" v-model="motionCss" size="sm" aria-label="motionCss" />
+        </div>
       </div>
     </div>
 
@@ -64,7 +81,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
-import { Select, SelectButton } from 'vael-ui'
+import { Select, SelectButton, Switch } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import { defaultVariant } from '../preferences'
 import { useVaporComponents } from '../composables/useVaporComponents'
@@ -78,10 +95,24 @@ const ConfigProviderComp = computed(() => pick('ConfigProvider'))
 const ButtonComp = computed(() => pick('Button'))
 const BadgeComp = computed(() => pick('Badge'))
 const CardComp = computed(() => pick('Card'))
+const InputComp = computed(() => pick('Input'))
+const SwitchComp = computed(() => pick('Switch'))
 
 const primary = shallowRef('#ea580c')
 const radius = shallowRef('12px')
 const fontSize = shallowRef('14px')
+const size = shallowRef<'sm' | 'md' | 'lg'>('md')
+const motionCss = shallowRef(true)
+const switchOn = shallowRef(true)
+const sizeItems = [
+  { label: 'sm', value: 'sm' },
+  { label: 'md', value: 'md' },
+  { label: 'lg', value: 'lg' },
+]
+
+function onSizeChange(v: string | number | (string | number)[] | null) {
+  if (v === 'sm' || v === 'md' || v === 'lg') size.value = v
+}
 
 const radiusItems = [
   { label: 'Sharp (0px)', value: '0px' },
@@ -114,11 +145,14 @@ const theme = computed(() => ({
   fontSize: fontSize.value,
 }))
 
-const code = computed(
-  () => `<ConfigProvider :theme="{ primary: '${primary.value}', radius: '${radius.value}', fontSize: '${fontSize.value}' }">
-  <YourApp />
-</ConfigProvider>`,
-)
+const code = computed(() => {
+  const attrs = [
+    `:theme="{ primary: '${primary.value}', radius: '${radius.value}', fontSize: '${fontSize.value}' }"`,
+    size.value !== 'md' ? `size="${size.value}"` : '',
+    motionCss.value ? '' : ':motion-css="false"',
+  ].filter(Boolean)
+  return `<ConfigProvider\n  ${attrs.join('\n  ')}\n>\n  <YourApp />\n</ConfigProvider>`
+})
 </script>
 
 <style scoped>
@@ -161,6 +195,10 @@ const code = computed(
   align-items: center;
   gap: 1.25rem;
   flex-wrap: wrap;
+}
+
+.preview-input {
+  max-inline-size: 10rem;
 }
 
 .preview-text {

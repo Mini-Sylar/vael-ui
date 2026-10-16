@@ -121,6 +121,7 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
 -->
 <script setup lang="ts">
 import './Button.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { nativeTag } from '../../composables/dom'
 import '../shared/loader-spinner.css'
@@ -134,7 +135,7 @@ import { useThemedUi } from '../../theme'
 // Manual attrs binding intercepts onClick; rest still fall through.
 defineOptions({ inheritAttrs: false })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** `true` and `false` set the loading state directly. With `'auto'`, the button stays loading
      * until every overlapping promise your `@click` handler returns settles.
@@ -183,7 +184,6 @@ const props = withDefaults(
     loading: false,
     disabled: false,
     variant: 'primary',
-    size: 'md',
     loader: 'overlay',
     icon: false,
     pill: false,
@@ -192,6 +192,7 @@ const props = withDefaults(
     as: 'button',
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' })
 
 defineSlots<{
   /** Button label; receives the loading state, the root element and `run`. */

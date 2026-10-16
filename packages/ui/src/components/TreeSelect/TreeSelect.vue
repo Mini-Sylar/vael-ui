@@ -1,7 +1,7 @@
 <template>
   <div
     ref="triggerEl"
-    :data-ui-frame="size"
+    :data-ui-frame="props.size"
     role="combobox"
     :id="fieldControl.id"
     :class="triggerPart.class"
@@ -77,7 +77,7 @@
           ref="panel"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
-          :data-motion="motionCss ? undefined : 'off'"
+          :data-motion="props.motionCss ? undefined : 'off'"
           v-bind="$attrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -95,7 +95,7 @@
             :filterable="filterable"
             :filter-placeholder="filterPlaceholder"
             :empty-text="emptyText"
-            :motion-css="motionCss"
+            :motion-css="props.motionCss"
             :expand-on-row-click="expandOnRowClick"
             :sticky-scroll="stickyScroll"
             :ui="treeUi"
@@ -147,6 +147,7 @@ export type TreeSelectSelectionMode = TreeSelectionMode
 
 <script setup lang="ts" generic="T extends TreeSelectNode = TreeSelectNode">
 import './TreeSelect.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
@@ -177,7 +178,7 @@ const query = defineModel<string>('query', { default: '' })
  */
 const nodeModel = defineModel<T | T[] | null>('node', { default: null })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Tree data: nodes with `value`, `label` and optional `children`. */
     items: readonly T[]
@@ -269,7 +270,6 @@ const props = withDefaults(
     disabled: false,
     clearable: false,
     invalid: false,
-    size: 'md',
     filterable: true,
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
@@ -286,10 +286,11 @@ const props = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
-    motionCss: true,
+    motionCss: undefined,
     ui: undefined,
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */

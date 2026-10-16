@@ -27,7 +27,15 @@ function resolveModuleId(name) {
 // '../' precede them — internal/*.vue components sit one directory deeper
 // than top-level components, so their imports are '../../composables/...'
 // rather than '../composables/...'.
-const REWRITABLE_BASENAMES = ['composables/', 'classes', 'theme', 'messages', 'directives/', 'ssr']
+const REWRITABLE_BASENAMES = [
+  'composables/',
+  'classes',
+  'theme',
+  'messages',
+  'directives/',
+  'ssr',
+  'config',
+]
 
 function isRewritable(specifier) {
   const stripped = specifier.replace(/^(\.\.\/)+/, '')

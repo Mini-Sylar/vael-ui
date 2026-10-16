@@ -6,7 +6,7 @@
     inputmode="decimal"
     autocomplete="off"
     role="spinbutton"
-    :size="size"
+    :size="props.size"
     :disabled="isDisabled"
     :readonly="readonly"
     :invalid="isInvalid"
@@ -120,6 +120,7 @@
 -->
 <script setup lang="ts">
 import './InputNumber.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import Input from '../Input/Input.vue'
@@ -133,7 +134,7 @@ import { useThemedUi } from '../../theme'
 /** Numeric value; `null` when the field is empty. @default null */
 const modelValue = defineModel<number | null>({ default: null })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Lowest allowed value; blur, Enter and the steppers clamp the value to it. */
     min?: number
@@ -193,12 +194,12 @@ const props = withDefaults(
     controls: true,
     stepperPosition: 'end',
     allowEmpty: true,
-    size: 'md',
     disabled: false,
     readonly: false,
     invalid: false,
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', locale: undefined })
 
 defineSlots<{
   /** Inline leading content, before the value and the `'split'` mode decrement button. */
@@ -226,11 +227,13 @@ const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const displayValue = shallowRef(numberFormat.format(modelValue.value))
 const isFocused = shallowRef(false)
 
-// Resync display on external model writes (reset, programmatic set); skip if focused (avoid fighting caret).
-watch(modelValue, (value) => {
-  if (isFocused.value) return
-  displayValue.value = numberFormat.format(value)
-})
+// Resync on external model writes and on format changes (locale, currency); skip if focused (avoid fighting caret).
+watch(
+  () => numberFormat.format(modelValue.value),
+  (text) => {
+    if (!isFocused.value) displayValue.value = text
+  },
+)
 
 watch(displayValue, (text) => {
   if (text === '') {

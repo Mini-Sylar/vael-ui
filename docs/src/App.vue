@@ -1,5 +1,5 @@
 <template>
-  <ConfigProvider :theme="theme">
+  <ConfigProvider :theme="theme" :size="uiSize" :motion-css="motion" :i18n="i18n">
     <div class="app-shell" :style="primaryColor ? { '--docs-accent': primaryColor } : undefined">
       <header class="app-header">
         <Button
@@ -82,6 +82,19 @@
                       @update:model-value="(v) => (fontSize = v as number)"
                     />
                   </label>
+                  <label class="theme-row">
+                    <span>{{ t('header.size') }}</span>
+                    <SelectButton
+                      v-model="uiSize"
+                      size="sm"
+                      :allow-empty="false"
+                      :items="sizeItems"
+                    />
+                  </label>
+                  <label class="theme-row">
+                    <span>{{ t('header.animations') }}</span>
+                    <Switch v-model="motion" size="sm" />
+                  </label>
                 </div>
               </template>
             </Popover>
@@ -155,6 +168,14 @@
           />
         </label>
         <label class="theme-row">
+          <span>{{ t('header.size') }}</span>
+          <SelectButton v-model="uiSize" size="sm" :allow-empty="false" :items="sizeItems" />
+        </label>
+        <label class="theme-row">
+          <span>{{ t('header.animations') }}</span>
+          <Switch v-model="motion" size="sm" />
+        </label>
+        <label class="theme-row">
           <span>{{ t('header.locale') }}</span>
           <Select
             :model-value="locale"
@@ -218,6 +239,7 @@ import {
   Select,
   SelectButton,
   Slider,
+  Switch,
   Tag,
   Toaster,
   TooltipHost,
@@ -329,10 +351,10 @@ const themeOpen = shallowRef(false)
 const mobileNavOpen = shallowRef(false)
 const mobileSettingsOpen = shallowRef(false)
 
-const { t, locale: i18nLocale } = useI18n()
+const i18n = useI18n()
+const { t } = i18n
 const locale = useLocalStorage<Locale>('vael-ui-docs-locale', 'en')
 watch(locale, (l) => setLocale(l), { immediate: true })
-void i18nLocale // useI18n's own ref stays in sync via setLocale(); kept for template t()
 
 const localeItems = SUPPORTED_LOCALES.map((l) => ({
   label: l.toUpperCase(),
@@ -438,6 +460,15 @@ watch(fontSize, (f) => {
   } catch {}
   document.documentElement.style.setProperty('--docs-font-size', `${f}px`)
 })
+
+// ConfigProvider defaults, so every component on the site follows them.
+const uiSize = useLocalStorage<'sm' | 'md' | 'lg'>('vael-ui-docs-size', 'md')
+const motion = useLocalStorage('vael-ui-docs-motion', true)
+const sizeItems = computed(() => [
+  { label: t('header.sizeSm'), value: 'sm' },
+  { label: t('header.sizeMd'), value: 'md' },
+  { label: t('header.sizeLg'), value: 'lg' },
+])
 
 const theme = computed(() => ({
   ...(primaryColor.value ? { primary: primaryColor.value } : {}),

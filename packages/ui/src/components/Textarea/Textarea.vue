@@ -4,7 +4,7 @@
     :class="rootClass"
     :style="[rootStyle, attrs.style as never]"
     :data-state="dataState"
-    :data-ui-frame="size"
+    :data-ui-frame="props.size"
     :data-focus-visible="focusVisible || undefined"
     :data-multiline="isMultiline || undefined"
     @mousedown="onFrameMousedown"
@@ -53,6 +53,7 @@
 -->
 <script setup lang="ts">
 import './Textarea.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
@@ -68,7 +69,7 @@ defineOptions({ inheritAttrs: false })
 /** Textarea value. Supports the `.trim` and `.lazy` modifiers. @default '' */
 const [modelValue, modifiers] = defineModel<string>({ default: '' })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
@@ -99,8 +100,9 @@ const props = withDefaults(
       bottomEnd: UiPartValue
     }>
   }>(),
-  { size: 'md', disabled: false, readonly: false, invalid: false, rows: 3, autoGrow: false },
+  { disabled: false, readonly: false, invalid: false, rows: 3, autoGrow: false },
 )
+const props = withProviderDefaults(rawProps, { size: 'md' })
 
 defineSlots<{
   /** Inline leading content (centered on the resting height). */

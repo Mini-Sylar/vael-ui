@@ -114,6 +114,7 @@ const panel = useTemplateRef<HTMLElement>('panel')
 const { style: collapseStyle, state: collapseState } = useCollapse(isOpenValue, {
   el: panel,
   motionCss: ctx.motionCss,
+  handOff: ctx.handOff,
 })
 
 const cx = useClassMerge()

@@ -32,6 +32,11 @@
     "radiusSoft": "Doux",
     "radiusRounded": "Arrondi",
     "radiusPill": "Pilule",
+    "size": "Taille",
+    "sizeSm": "Petite",
+    "sizeMd": "Moyenne",
+    "sizeLg": "Grande",
+    "animations": "Animations",
     "locale": "Langue",
     "defaultMode": "Mode de démo par défaut",
     "settings": "Paramètres"
@@ -315,7 +320,7 @@
   "i18nKeys": {
     "copyIntro": "Copiez ceci dans vos fichiers de langue sous la clé uiKit, puis traduisez les valeurs :",
     "englishDefault": "Anglais par défaut",
-    "intro": "Chaque texte intégré (le bouton de fermeture des boîtes de dialogue, la fermeture des toasts, les états vides, etc.) a une valeur par défaut en anglais. Pour les traduire, passez votre propre instance i18n à ConfigProvider. Elle lit votre catalogue existant sous l'espace de noms uiKit, vous n'avez donc rien à installer en plus.",
+    "intro": "Chaque texte intégré (le bouton de fermeture des boîtes de dialogue, la fermeture des toasts, les états vides, etc.) a une valeur par défaut en anglais. Pour les traduire, passez votre propre instance i18n à ConfigProvider. Elle lit votre catalogue existant sous l'espace de noms uiKit, vous n'avez donc rien à installer en plus. Les clés que vous n'avez pas traduites gardent le texte anglais par défaut, sans avertissement dans la console.",
     "key": "Clé",
     "title": "Traduire vael-ui"
   },

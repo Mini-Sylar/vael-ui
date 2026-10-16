@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, provide, useId } from 'vue'
+import { computed, inject, provide, toValue, useId } from 'vue'
 import {
   defaultMessages,
   mergeMessages,
@@ -23,17 +23,29 @@ import { classMergerKey } from '../../classes'
 import type { ClassMerger } from '../../classes'
 import { generateThemeCss, themeKey, themeScopeKey } from '../../theme'
 import type { UiTheme } from '../../theme'
+import { defaultsKey, validLocale } from '../../config'
+import type { UiDefaults } from '../../config'
 
-const props = defineProps<{
-  /** I18n instance (e.g. `useI18n()` return value). Missing keys fall back to English defaults. */
-  i18n?: I18nInstance
-  /** Static message overrides, applied on top of `i18n` resolution. */
-  messages?: PartialUiMessages
-  /** Class merger function (e.g. `twMerge` from tailwind-merge), applied to every `ui.*` part class. */
-  classMerge?: ClassMerger
-  /** Auto-derives colors and applies radius and component font size. Injects a scoped `<style>` tag. */
-  theme?: UiTheme
-}>()
+const props = withDefaults(
+  defineProps<{
+    /**
+     * I18n instance (e.g. `useI18n()` return value). Missing keys fall back to English defaults, and
+     * its current `locale` formats dates and numbers.
+     */
+    i18n?: I18nInstance
+    /** Static message overrides, applied on top of `i18n` resolution. */
+    messages?: PartialUiMessages
+    /** Class merger function (e.g. `twMerge` from tailwind-merge), applied to every `ui.*` part class. */
+    classMerge?: ClassMerger
+    /** Auto-derives colors and applies radius and component font size. Injects a scoped `<style>` tag. */
+    theme?: UiTheme
+    /** Default size for buttons, form controls and tables inside. A component's own `size` wins. */
+    size?: 'sm' | 'md' | 'lg'
+    /** `false` turns off every component's built-in transitions inside, e.g. for screenshot tests. */
+    motionCss?: boolean
+  }>(),
+  { motionCss: undefined },
+)
 
 defineSlots<{
   /** App content that receives these settings. */
@@ -50,6 +62,20 @@ provide(
 )
 provide(classMergerKey, (classes: string) =>
   props.classMerge ? props.classMerge(classes) : classes,
+)
+
+// A nested provider inherits its parent's defaults and overrides only what it sets.
+const parentDefaults = inject(defaultsKey, undefined)
+provide(
+  defaultsKey,
+  computed<UiDefaults>(() => {
+    const own: UiDefaults = {}
+    if (props.size) own.size = props.size
+    if (props.motionCss !== undefined) own.motionCss = props.motionCss
+    const locale = validLocale(toValue(props.i18n?.locale))
+    if (locale) own.locale = locale
+    return { ...parentDefaults?.value, ...own }
+  }),
 )
 
 const scopeId = useId()

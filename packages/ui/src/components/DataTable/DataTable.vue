@@ -86,6 +86,7 @@
      Expansion: full-width row per `Ref<Set<...>>`, collapsed in stacked mode (no toggle). -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import './DataTable.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
   computed,
@@ -122,7 +123,7 @@ import { vScrollMask } from '../../directives/vScrollMask'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Row objects. Each `<Column>` reads its content from them by `field`. */
     data: T[]
@@ -230,7 +231,6 @@ const props = withDefaults(
     selectable: false,
     selectionMode: 'checkbox',
     single: false,
-    size: 'md',
     stripedRows: false,
     showGridlines: false,
     resizableColumns: false,
@@ -238,7 +238,7 @@ const props = withDefaults(
     scrollFade: true,
     manualSort: false,
     lazy: false,
-    motionCss: true,
+    motionCss: undefined,
     reorderableColumns: false,
     columnGripVisibility: 'always',
     canDrop: undefined,
@@ -247,6 +247,7 @@ const props = withDefaults(
     touchDragDelay: 150,
   },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
 
 const emit = defineEmits<{
   /** Fires when the selection changes, with the resolved row objects (not raw keys). */

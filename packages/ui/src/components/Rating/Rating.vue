@@ -49,6 +49,7 @@
 <!-- Single ARIA-slider control (not N focusable radios), same interaction model as Slider.vue: pointer sets/drags the value, arrow keys step it. Hover/drag preview is instant (no transition, `data-tracking`); a committed change (click, drag release, keyboard) gets the fill sweep + pop, keyed like Badge's animated content so the pop never plays on first paint. -->
 <script setup lang="ts">
 import './Rating.css'
+import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -86,7 +87,7 @@ const restAttrs = computed(() =>
 /** Current rating; `0` means unrated. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
 
-const props = withDefaults(
+const rawProps = withDefaults(
   defineProps<{
     /** Number of stars, which is also the highest rating. @default 5 */
     max?: number
@@ -107,8 +108,9 @@ const props = withDefaults(
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
   }>(),
-  { max: 5, allowHalf: false, readonly: false, disabled: false, size: 'md', motionCss: true },
+  { max: 5, allowHalf: false, readonly: false, disabled: false, motionCss: undefined },
 )
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
 
 const fieldControl = useFieldControl({ filled: () => modelValue.value > 0 })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
