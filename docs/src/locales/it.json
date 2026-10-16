@@ -109,6 +109,7 @@
   },
   "gettingStarted": {
     "darkModeIntro": "La modalità scura è solo CSS. Segue <code>&lt;html data-theme=\"dark\"&gt;</code> e, in sua assenza, ricorre a <code>prefers-color-scheme</code>. vael-ui non include alcun selettore di tema. <code>useColorScheme()</code> rileva i cambi di preferenza del sistema e salva la scelta tramite l'opzione <code>persist</code> che passi:",
+    "appearanceHeadIntro": "Se salvi la modalità colore o la dimensione del testo dell’app in <code>localStorage</code>, inserisci questo script nell’<code>&lt;head&gt;</code> HTML prima del codice dell’app. Ripristina entrambi prima del primo rendering. Salva un valore CSS come <code>13px</code> o <code>1rem</code> in <code>app-font-size</code>. I componenti lo ereditano, salvo che tu imposti <code>theme.fontSize</code> nel loro ambito.",
     "darkModeTitle": "Modalità oscura",
     "directivesIntro": "<code>v-tooltip</code> e <code>v-scroll-mask</code> non sono registrate globalmente per impostazione predefinita. Se ne usi una in più di un componente, registrale una volta:",
     "directivesNote": "<code>v-tooltip</code> richiede anche un <code>&lt;TooltipHost /&gt;</code> montato nella tua app. In un'app Vapor, importa entrambe le direttive da <code>vael-ui/vapor</code>.",
@@ -230,7 +231,7 @@
     "cascadeLayersTitle": "Ordine dei livelli",
     "colorsTitle": "Colori",
     "cssVariablesIntro": "Ogni valore di colore, raggio, ombra e movimento di vael-ui proviene da una proprietà personalizzata CSS. Sovrascrivi quelle che vuoi nel tuo foglio di stile senza layer:",
-    "cssVariablesThemeNote": "La prop <code>theme</code> di <code>ConfigProvider</code> imposta <code>primary</code>, <code>danger</code> e <code>radius</code> da JavaScript a runtime. Tutto il resto qui è solo CSS.",
+    "cssVariablesThemeNote": "La prop <code>theme</code> di <code>ConfigProvider</code> imposta <code>primary</code>, <code>danger</code>, <code>radius</code> e <code>fontSize</code>. Senza <code>fontSize</code>, i componenti seguono la dimensione del carattere di <code>html</code>, campi dei moduli compresi. Se è sotto i 16px, chiama una volta <code>preventFocusZoom()</code> così l'iPhone non ingrandisce i campi. Le altre impostazioni usano il CSS.",
     "cssVariablesTitle": "Variabili CSS",
     "default": "Predefinito",
     "description": "Descrizione",
@@ -344,6 +345,7 @@
     "useAsyncLoading": "Tiene traccia di ogni promise in sospeso che le passi, così lo stato di caricamento si azzera solo quando sono state tutte risolte.",
     "useNumberFormat": "Formattazione e analisi dei numeri sensibile alla locale, sempre sincronizzate, così il testo digitato e la visualizzazione formattata coincidono.",
     "useColorScheme": "Passa tra le modalità tema chiaro, scuro e di sistema. La persistenza è opzionale, tramite funzioni di archiviazione fornite da te.",
+    "preventFocusZoom": "Impedisce a iOS di ingrandire i campi dei moduli, così restano della stessa dimensione del resto del testo.",
     "useFloatingPosition": "Il motore di posizionamento dietro Popover, Menu e Tooltip, basato su Floating UI. Usalo per costruire le tue superfici ancorate.",
     "useVirtualizer": "Rendering virtualizzato per elenchi lunghi, così solo le righe visibili esistono nel DOM.",
     "useFieldControl": "Collega un controllo di form personalizzato al Field più vicino: id, attributi ARIA e stato di focus o compilazione."

@@ -12,7 +12,7 @@
   }
   .ui-chip--md {
     padding: 0.125rem 0.5rem;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
   }
   .ui-chip-item-enter-active,
   .ui-chip-item-leave-active {

@@ -12,13 +12,13 @@
   }
   .ui-confirm-popover-title {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: calc(var(--ui-font-size) * 0.9375);
     font-weight: 600;
     letter-spacing: -0.01em;
   }
   .ui-confirm-popover-description {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     line-height: 1.5;
     color: var(--ui-text-muted);
   }

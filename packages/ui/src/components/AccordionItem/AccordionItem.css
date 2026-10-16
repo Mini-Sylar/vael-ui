@@ -19,7 +19,7 @@
     background: transparent;
     color: var(--ui-text);
     font: inherit;
-    font-size: 0.9375rem;
+    font-size: calc(var(--ui-font-size) * 0.9375);
     font-weight: 500;
     text-align: start;
     cursor: pointer;
@@ -51,7 +51,7 @@
     /* Matches the trigger's inline padding so title and content share a start edge. */
     padding: 0 0.125rem 1rem;
     color: var(--ui-text-muted);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     line-height: 1.5;
     opacity: 0;
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);

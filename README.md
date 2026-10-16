@@ -51,9 +51,33 @@ import { Button, ConfigProvider } from 'vael-ui'
 </template>
 ```
 
-Dark mode is CSS-only, the library responds to `<html data-theme="dark">` and, absent that,
-`prefers-color-scheme`. `useColorScheme()` handles the state part (persistence, applying the
-attribute, live OS-preference updates) if you want a toggle:
+Buttons and component text follow the font size on `<html>`. Set `theme.fontSize` to change text inside one provider:
+
+```vue
+<ConfigProvider :theme="{ fontSize: '14px' }">
+  <YourForm />
+</ConfigProvider>
+```
+
+Set `<html>` to change the size across your app:
+
+```css
+html {
+  font-size: 14px;
+}
+```
+
+Use a CSS length such as `13px` or `1rem`, or an expression such as `clamp(...)`. Font-size keywords such as `small` cannot be scaled by the component CSS.
+
+Form fields follow it too. iOS zooms the page into a focused field under 16px, so if your text is smaller, call `preventFocusZoom()` once:
+
+```ts
+import { preventFocusZoom } from 'vael-ui'
+
+preventFocusZoom() // iOS only; pinch-to-zoom keeps working
+```
+
+The library uses `<html data-theme="dark">` for dark mode. Without a manual choice, it follows `prefers-color-scheme`. Add `useColorScheme()` to manage a toggle and save the choice through your persistence hook:
 
 ```ts
 import { useColorScheme } from 'vael-ui'
@@ -64,6 +88,8 @@ const { mode, setMode } = useColorScheme({
   },
 })
 ```
+
+`ConfigProvider` applies scoped styles when Vue renders. To restore a saved color mode and app-wide font size before paint, copy the [single HTML head script](https://vael-ui.dev/docs/getting-started#dark-mode) from the docs. Save CSS font sizes such as `13px` under its `app-font-size` key. Persisted scoped font, radius, or primary overrides also need prepaint CSS or server-rendered values to avoid a flash.
 
 Full theming/i18n/ConfigProvider setup: [Global Setup guide](https://vael-ui.dev/docs/guides/global-setup).
 

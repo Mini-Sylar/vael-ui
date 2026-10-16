@@ -109,6 +109,7 @@
   },
   "gettingStarted": {
     "darkModeIntro": "深色模式完全由 CSS 实现。它跟随 <code>&lt;html data-theme=\"dark\"&gt;</code>，未设置时回退到 <code>prefers-color-scheme</code>。vael-ui 不提供切换 UI。<code>useColorScheme()</code> 会跟踪系统偏好的变化，并通过你传入的 <code>persist</code> 选项保存用户的选择：",
+    "appearanceHeadIntro": "如果将颜色模式或应用字体大小保存在 <code>localStorage</code> 中，请将此脚本放在 HTML 的 <code>&lt;head&gt;</code> 中，并置于应用脚本之前。它会在首次绘制前恢复这两个设置。将 <code>13px</code> 或 <code>1rem</code> 等 CSS 值保存到 <code>app-font-size</code>。除非设置了局部 <code>theme.fontSize</code>，组件会继承该值。",
     "darkModeTitle": "深色模式",
     "directivesIntro": "默认情况下，<code>v-tooltip</code> 和 <code>v-scroll-mask</code> 不会全局注册。如果你在多个组件中使用其中任意一个，请统一注册一次：",
     "directivesNote": "<code>v-tooltip</code> 还需要在应用中挂载一个 <code>&lt;TooltipHost /&gt;</code>。在 Vapor 应用中，请改为从 <code>vael-ui/vapor</code> 导入这两个指令。",
@@ -230,7 +231,7 @@
     "cascadeLayersTitle": "层序",
     "colorsTitle": "颜色",
     "cssVariablesIntro": "vael-ui 中所有的颜色、圆角、阴影和动效值都来自 CSS 自定义属性。你可以在自己的未分层样式表中覆盖其中任意一个：",
-    "cssVariablesThemeNote": "<code>ConfigProvider</code> 的 <code>theme</code> prop 会在运行时通过 JavaScript 设置 <code>primary</code>、<code>danger</code> 和 <code>radius</code>。其余内容都只能通过 CSS 设置。",
+    "cssVariablesThemeNote": "<code>ConfigProvider</code> 的 <code>theme</code> 可设置 <code>primary</code>、<code>danger</code>、<code>radius</code> 和 <code>fontSize</code>。不设置 <code>fontSize</code> 时，组件（包括表单字段）跟随 <code>html</code> 的字号。如果字号小于 16px，请调用一次 <code>preventFocusZoom()</code>，防止 iPhone 放大表单字段。其他值通过 CSS 设置。",
     "cssVariablesTitle": "CSS 变量",
     "default": "默认",
     "description": "描述",
@@ -344,6 +345,7 @@
     "useAsyncLoading": "追踪你传入的每一个待定 Promise，只有全部完成后才会清除加载状态。",
     "useNumberFormat": "支持本地化的数字格式化与解析，二者保持同步，使输入文本与格式化后的显示始终一致。",
     "useColorScheme": "在浅色、深色和跟随系统的主题模式之间切换。持久化是可选的，通过你提供的存储函数实现。",
+    "preventFocusZoom": "阻止 iOS 在聚焦表单字段时放大页面，让字段与其余文字大小一致。",
     "useFloatingPosition": "Popover、Menu 和 Tooltip 背后的定位引擎，基于 Floating UI 构建。可用它构建你自己的锚定浮层。",
     "useVirtualizer": "面向长列表的虚拟化渲染，DOM 中只存在当前可见的行。",
     "useFieldControl": "将自定义表单控件接入最近的 Field：处理 id、ARIA 属性以及聚焦和已填写状态。"

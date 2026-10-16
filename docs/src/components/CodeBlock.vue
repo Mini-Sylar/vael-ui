@@ -40,7 +40,7 @@ import { Button } from 'vael-ui'
 import { highlightBlock } from '../composables/highlightInline'
 
 const props = withDefaults(
-  defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' | 'json' | 'css' }>(),
+  defineProps<{ code: string; lang?: 'vue' | 'typescript' | 'bash' | 'json' | 'css' | 'html' }>(),
   { lang: 'vue' },
 )
 

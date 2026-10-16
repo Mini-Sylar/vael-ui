@@ -91,7 +91,7 @@
 
   /* Stacked, each stepper gets half the field's height: too small for a finger.
      Side by side, each one is the field's full height. */
-  @media (pointer: coarse) {
+  @media (hover: none) and (pointer: coarse) {
     .ui-input-number-steppers {
       flex-direction: row-reverse;
     }

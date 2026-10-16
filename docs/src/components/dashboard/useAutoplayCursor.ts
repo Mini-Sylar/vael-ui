@@ -88,7 +88,11 @@ export function useAutoplayCursor(options: {
       quieted.add(el)
     }
   }
-  const onFocusIn = (event: FocusEvent) => quiet(event.target)
+  // Only the stage's own fields, never the visitor's (the header search).
+  const onFocusIn = (event: FocusEvent) => {
+    if (event.target instanceof Node && options.stage.value?.contains(event.target))
+      quiet(event.target)
+  }
 
   function focusQuietly(target: HTMLElement) {
     quiet(target)

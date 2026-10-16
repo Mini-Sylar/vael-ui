@@ -250,6 +250,7 @@ export type { Align, UseFloatingPositionOptions } from './composables/useFloatin
 export { useAsyncLoading } from './composables/useAsyncLoading'
 export type { UseAsyncLoadingReturn } from './composables/useAsyncLoading'
 export { useColorScheme } from './composables/useColorScheme'
+export { preventFocusZoom } from './composables/preventFocusZoom'
 export type {
   ColorSchemeMode,
   UseColorSchemeOptions,

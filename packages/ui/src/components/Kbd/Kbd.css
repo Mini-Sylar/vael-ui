@@ -10,7 +10,7 @@
     background: var(--ui-surface);
     color: var(--ui-text-muted);
     font-family: inherit;
-    font-size: 0.6875rem;
+    font-size: calc(var(--ui-font-size) * 0.6875);
     font-weight: 500;
     line-height: 1.4;
     box-shadow: 0 1px 0 var(--ui-border-strong);

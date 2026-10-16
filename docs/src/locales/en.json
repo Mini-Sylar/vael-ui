@@ -102,6 +102,7 @@
     "usageIntro": "Then import components from <code>'vael-ui'</code> for the classic VDOM build. For the Vapor build (Vue 3.6's mode without a virtual DOM), import from <code>'vael-ui/vapor'</code>. The props are the same in both:",
     "darkModeTitle": "Dark mode",
     "darkModeIntro": "Dark mode is CSS-only. It follows <code>&lt;html data-theme=\"dark\"&gt;</code> and falls back to <code>prefers-color-scheme</code>. vael-ui ships no toggle UI. <code>useColorScheme()</code> tracks OS-preference changes and saves the choice through the <code>persist</code> option you pass:",
+    "appearanceHeadIntro": "If you save color mode or app-wide font size in <code>localStorage</code>, place this script in your HTML <code>&lt;head&gt;</code> before the app bundle. It restores both before paint. Save a CSS font size such as <code>13px</code> or <code>1rem</code> under <code>app-font-size</code>. Components inherit it unless you set a scoped <code>theme.fontSize</code>.",
     "directivesTitle": "Directives",
     "directivesIntro": "<code>v-tooltip</code> and <code>v-scroll-mask</code> aren't registered globally by default. If you use either one in more than one component, register them once:",
     "directivesNote": "<code>v-tooltip</code> also needs one <code>&lt;TooltipHost /&gt;</code> mounted in your app. In a Vapor app, import both directives from <code>vael-ui/vapor</code> instead."
@@ -142,7 +143,7 @@
     "overrideNoteLink": "Using with Tailwind",
     "cssVariablesTitle": "CSS variables",
     "cssVariablesIntro": "Every color, radius, shadow, and motion value in vael-ui comes from a CSS custom property. Override any of them in your own unlayered stylesheet:",
-    "cssVariablesThemeNote": "<code>ConfigProvider</code>'s <code>theme</code> prop sets <code>primary</code>, <code>danger</code>, and <code>radius</code> from JavaScript at runtime. Everything else here is CSS-only.",
+    "cssVariablesThemeNote": "<code>ConfigProvider</code>'s <code>theme</code> sets <code>primary</code>, <code>danger</code>, <code>radius</code> and <code>fontSize</code>. Without <code>fontSize</code>, components follow your <code>html</code> font size, form fields included. If that's under 16px, call <code>preventFocusZoom()</code> once so iPhones don't zoom into fields. Set other tokens with CSS.",
     "colorsTitle": "Colors",
     "shapeTitle": "Shape",
     "elevationTitle": "Elevation & layering",
@@ -398,6 +399,7 @@
     "useAsyncLoading": "Tracks every pending promise you pass it, so a loading state clears only once all of them have settled.",
     "useNumberFormat": "Locale-aware number formatting and parsing that stay in sync, so typed text and its formatted display always match.",
     "useColorScheme": "Switches between light, dark, and system theme modes. Persistence is optional, through storage functions you provide.",
+    "preventFocusZoom": "Stops iOS zooming into form fields, so they can match the rest of your text size.",
     "useFloatingPosition": "The positioning engine behind Popover, Menu, and Tooltip, built on Floating UI. Use it to build your own anchored surfaces.",
     "useVirtualizer": "Windowed rendering for long lists, so only the visible rows exist in the DOM.",
     "useFieldControl": "Connects a custom form control to the nearest Field: id, ARIA attributes, and focus and filled state."

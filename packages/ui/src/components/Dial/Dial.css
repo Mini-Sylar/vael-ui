@@ -86,7 +86,7 @@
     scale: 0.96;
   }
   .ui-dial-value {
-    font-size: 0.75rem;
+    font-size: calc(var(--ui-font-size) * 0.75);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--ui-text);
@@ -94,10 +94,10 @@
     user-select: none;
   }
   .ui-dial--sm .ui-dial-value {
-    font-size: 0.625rem;
+    font-size: calc(var(--ui-font-size) * 0.625);
   }
   .ui-dial--lg .ui-dial-value {
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
   }
   /* The ring is keyboard-only via [data-focus-visible], not the UA default. */
   .ui-dial-dial:focus-visible {

@@ -236,6 +236,21 @@ const ThemeSwatches = defineAsyncComponent(() => import('./components/ThemeSwatc
 
 const version = shallowRef(__VAEL_UI_VERSION__)
 
+onMounted(() => {
+  const root = document.documentElement
+  if (!root.hasAttribute('data-docs-theme-bootstrap')) return
+  for (const token of [
+    '--ui-radius',
+    '--ui-primary',
+    '--ui-primary-contrast',
+    '--ui-primary-hover',
+    '--docs-accent',
+  ]) {
+    root.style.removeProperty(token)
+  }
+  root.removeAttribute('data-docs-theme-bootstrap')
+})
+
 onMounted(async () => {
   try {
     const res = await fetch('https://registry.npmjs.org/vael-ui/latest', { cache: 'no-store' })
@@ -261,8 +276,6 @@ useHead({
         'A Vue 3 UI library with a real Vue Vapor build, animation-agnostic components, and full i18n support.',
     },
     { name: 'robots', content: 'index, follow' },
-    { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' },
-    { name: 'theme-color', content: '#1f1f23', media: '(prefers-color-scheme: dark)' },
     { property: 'og:type', content: 'website' },
     { property: 'og:site_name', content: 'vael-ui' },
     { property: 'og:url', content: () => canonicalUrl.value },
@@ -336,6 +349,14 @@ const { resolvedMode, setMode } = useColorScheme({
   },
 })
 
+function updateBrowserThemeColor() {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+  if (meta) meta.content = resolvedMode.value === 'dark' ? '#1f1f23' : '#ffffff'
+}
+
+watch(resolvedMode, updateBrowserThemeColor)
+onMounted(updateBrowserThemeColor)
+
 const mobileDockItems = computed<DockItemData[]>(() => [
   {
     label: t('nav.home'),
@@ -385,10 +406,16 @@ const radiusItems = [
   { label: t('header.radiusRounded'), value: '16px' },
   { label: t('header.radiusPill'), value: '999px' },
 ]
-const radiusChoice = shallowRef(
-  (typeof localStorage === 'undefined' ? null : localStorage.getItem('vael-ui-docs-radius')) ??
-    'default',
-)
+function initialRadiusChoice(): string {
+  if (typeof localStorage === 'undefined') return 'default'
+  try {
+    const saved = localStorage.getItem('vael-ui-docs-radius')
+    return saved && radiusItems.some((item) => item.value === saved) ? saved : 'default'
+  } catch {
+    return 'default'
+  }
+}
+const radiusChoice = shallowRef(initialRadiusChoice())
 watch(radiusChoice, (r) => {
   if (typeof localStorage !== 'undefined') localStorage.setItem('vael-ui-docs-radius', r)
 })
@@ -396,22 +423,21 @@ function onRadiusChange(value: string | number | (string | number)[] | null) {
   if (typeof value === 'string') radiusChoice.value = value
 }
 
-const fontSize = shallowRef(
-  (typeof localStorage === 'undefined' ? null : localStorage.getItem('vael-ui-docs-font-size'))
-    ? parseInt(localStorage.getItem('vael-ui-docs-font-size')!)
-    : 14,
-)
-watch(
-  fontSize,
-  (f) => {
-    if (typeof localStorage !== 'undefined')
-      localStorage.setItem('vael-ui-docs-font-size', String(f))
-    if (typeof document !== 'undefined') {
-      document.documentElement.style.fontSize = `${f}px`
-    }
-  },
-  { immediate: true },
-)
+function storedFontSize(): number {
+  try {
+    const stored = Number(localStorage.getItem('vael-ui-docs-font-size'))
+    return Number.isInteger(stored) && stored >= 12 && stored <= 18 ? stored : 14
+  } catch {
+    return 14
+  }
+}
+const fontSize = shallowRef(typeof localStorage === 'undefined' ? 14 : storedFontSize())
+watch(fontSize, (f) => {
+  try {
+    localStorage.setItem('vael-ui-docs-font-size', String(f))
+  } catch {}
+  document.documentElement.style.setProperty('--docs-font-size', `${f}px`)
+})
 
 const theme = computed(() => ({
   ...(primaryColor.value ? { primary: primaryColor.value } : {}),

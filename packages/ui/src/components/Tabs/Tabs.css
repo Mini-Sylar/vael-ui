@@ -25,7 +25,7 @@
     border-radius: calc(var(--ui-radius) - 4px);
     padding: 0.45rem 0.9rem;
     font: inherit;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     color: var(--ui-text-muted);
     cursor: pointer;
     transition:

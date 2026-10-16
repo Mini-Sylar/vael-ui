@@ -43,6 +43,17 @@
             @update:model-value="onRadiusChange"
           />
         </div>
+        <div class="control-row">
+          <label for="cp-font-size">fontSize</label>
+          <Select
+            id="cp-font-size"
+            size="sm"
+            class="control-input"
+            :items="fontSizeItems"
+            :model-value="fontSize"
+            @update:model-value="onFontSizeChange"
+          />
+        </div>
       </div>
     </div>
 
@@ -70,12 +81,19 @@ const CardComp = computed(() => pick('Card'))
 
 const primary = shallowRef('#ea580c')
 const radius = shallowRef('12px')
+const fontSize = shallowRef('14px')
 
 const radiusItems = [
   { label: 'Sharp (0px)', value: '0px' },
   { label: 'Soft (6px)', value: '6px' },
   { label: 'Rounded (12px)', value: '12px' },
   { label: 'Pill (999px)', value: '999px' },
+]
+const fontSizeItems = [
+  { label: 'Small (12px)', value: '12px' },
+  { label: 'Default (14px)', value: '14px' },
+  { label: 'Comfortable (16px)', value: '16px' },
+  { label: 'Large (18px)', value: '18px' },
 ]
 
 function onColorInput(e: Event) {
@@ -86,10 +104,18 @@ function onRadiusChange(v: string | number | (string | number)[] | null) {
   if (typeof v === 'string') radius.value = v
 }
 
-const theme = computed(() => ({ primary: primary.value, radius: radius.value }))
+function onFontSizeChange(v: string | number | (string | number)[] | null) {
+  if (typeof v === 'string') fontSize.value = v
+}
+
+const theme = computed(() => ({
+  primary: primary.value,
+  radius: radius.value,
+  fontSize: fontSize.value,
+}))
 
 const code = computed(
-  () => `<ConfigProvider :theme="{ primary: '${primary.value}', radius: '${radius.value}' }">
+  () => `<ConfigProvider :theme="{ primary: '${primary.value}', radius: '${radius.value}', fontSize: '${fontSize.value}' }">
   <YourApp />
 </ConfigProvider>`,
 )
@@ -139,7 +165,7 @@ const code = computed(
 
 .preview-text {
   color: var(--ui-text-muted);
-  font-size: 0.85rem;
+  font-size: calc(var(--ui-font-size) * 0.85);
   max-width: 16rem;
 }
 

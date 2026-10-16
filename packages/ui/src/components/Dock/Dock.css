@@ -77,7 +77,7 @@
     border-radius: 9999px;
     background: var(--ui-danger);
     color: var(--ui-danger-contrast, #fff);
-    font-size: 0.625rem;
+    font-size: calc(var(--ui-font-size) * 0.625);
     font-weight: 600;
     line-height: 1.125rem;
     text-align: center;

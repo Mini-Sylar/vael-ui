@@ -6,7 +6,7 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
   }
   .ui-breadcrumb-list--wrap {
     flex-wrap: wrap;

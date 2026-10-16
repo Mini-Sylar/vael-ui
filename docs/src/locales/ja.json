@@ -109,6 +109,7 @@
   },
   "gettingStarted": {
     "darkModeIntro": "ダークモードは CSS のみで実装されています。<code>&lt;html data-theme=\"dark\"&gt;</code> に従い、指定がなければ <code>prefers-color-scheme</code> にフォールバックします。vael-ui は切り替え UI を提供しません。<code>useColorScheme()</code> は OS 設定の変更を追跡し、渡した <code>persist</code> オプションを通じて選択を保存します。",
+    "appearanceHeadIntro": "カラーモードやアプリ全体のフォントサイズを <code>localStorage</code> に保存する場合は、このスクリプトをアプリのコードより前にある HTML の <code>&lt;head&gt;</code> に置きます。両方を初回表示前に復元します。<code>13px</code> や <code>1rem</code> などの CSS 値を <code>app-font-size</code> に保存してください。<code>theme.fontSize</code> を指定しない限り、コンポーネントはその値を継承します。",
     "darkModeTitle": "ダークモード",
     "directivesIntro": "<code>v-tooltip</code> と <code>v-scroll-mask</code> は、デフォルトではグローバル登録されていません。どちらかを複数のコンポーネントで使う場合は、一度だけ登録してください。",
     "directivesNote": "<code>v-tooltip</code> を使うには、アプリに <code>&lt;TooltipHost /&gt;</code> を 1 つマウントしておく必要もあります。Vapor アプリでは、両方のディレクティブを <code>vael-ui/vapor</code> からインポートしてください。",
@@ -230,7 +231,7 @@
     "cascadeLayersTitle": "レイヤーの順序",
     "colorsTitle": "色",
     "cssVariablesIntro": "vael-ui のすべての色、角丸、影、モーションの値は CSS カスタムプロパティから来ています。レイヤー外の自分のスタイルシートで、どれでも上書きできます。",
-    "cssVariablesThemeNote": "<code>ConfigProvider</code> の <code>theme</code> prop は、実行時に JavaScript から <code>primary</code>、<code>danger</code>、<code>radius</code> を設定します。それ以外はすべて CSS のみです。",
+    "cssVariablesThemeNote": "<code>ConfigProvider</code> の <code>theme</code> は <code>primary</code>、<code>danger</code>、<code>radius</code>、<code>fontSize</code> を設定します。<code>fontSize</code> を指定しない場合、フォーム欄を含むコンポーネントは <code>html</code> のフォントサイズに従います。16px 未満なら、iPhone が欄にズームしないよう <code>preventFocusZoom()</code> を一度呼び出してください。その他の値は CSS で設定します。",
     "cssVariablesTitle": "CSS変数",
     "default": "デフォルト",
     "description": "説明",
@@ -344,6 +345,7 @@
     "useAsyncLoading": "渡された保留中の Promise をすべて追跡し、すべてが完了したときにだけローディング状態を解除します。",
     "useNumberFormat": "ロケールに対応した数値のフォーマットと解析を同期させ、入力テキストとフォーマット済みの表示が常に一致するようにします。",
     "useColorScheme": "ライト、ダーク、システムのテーマモードを切り替えます。永続化は任意で、あなたが用意するストレージ関数を通じて行います。",
+    "preventFocusZoom": "iOS がフォーム欄にズームしないようにし、欄の文字サイズを他のテキストと揃えられるようにします。",
     "useFloatingPosition": "Popover、Menu、Tooltip の背後にある、Floating UI ベースの位置決めエンジン。独自の固定表示サーフェスを作るのに使えます。",
     "useVirtualizer": "長いリストの仮想レンダリング。表示中の行だけがDOMに存在します。",
     "useFieldControl": "カスタムフォームコントロールを最も近い Field に接続します。id、ARIA 属性、フォーカス状態と入力済み状態を扱います。"

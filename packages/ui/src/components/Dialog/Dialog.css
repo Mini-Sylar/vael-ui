@@ -59,14 +59,14 @@
 
   .ui-dialog-title {
     margin: 0;
-    font-size: 1.0625rem;
+    font-size: calc(var(--ui-font-size) * 1.0625);
     font-weight: 600;
     letter-spacing: -0.01em;
   }
 
   .ui-dialog-description {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     line-height: 1.5;
     color: var(--ui-text-muted);
   }

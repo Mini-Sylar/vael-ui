@@ -15,15 +15,15 @@
       outline-color var(--ui-duration-press) ease;
   }
   .ui-textarea--sm {
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-textarea--md {
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-textarea--lg {
-    font-size: 1rem;
+    font-size: var(--ui-font-size);
     border-radius: var(--ui-radius);
   }
   .ui-textarea-el {
@@ -118,16 +118,15 @@
     cursor: not-allowed;
   }
 
-  /* Same size across a row of controls on touch screens, and no iOS zoom on focus. */
-  @media (pointer: coarse) {
+  @media (hover: none) and (pointer: coarse) {
     .ui-textarea--sm {
-      font-size: max(var(--ui-touch-font-size, 16px), 0.8125rem);
+      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.8125));
     }
     .ui-textarea--md {
-      font-size: max(var(--ui-touch-font-size, 16px), 0.875rem);
+      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.875));
     }
     .ui-textarea--lg {
-      font-size: max(var(--ui-touch-font-size, 16px), 1rem);
+      font-size: max(var(--ui-touch-font-size), var(--ui-font-size));
     }
   }
 }

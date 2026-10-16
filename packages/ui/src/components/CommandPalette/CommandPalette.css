@@ -29,11 +29,16 @@
     background: transparent;
     color: var(--ui-text);
     font: inherit;
-    font-size: 0.9375rem;
+    font-size: calc(var(--ui-font-size) * 0.9375);
     outline: none;
   }
   .ui-command-palette-input::placeholder {
     color: var(--ui-text-muted);
+  }
+  @media (hover: none) and (pointer: coarse) {
+    .ui-command-palette-input {
+      font-size: max(var(--ui-touch-font-size), calc(var(--ui-font-size) * 0.9375));
+    }
   }
 
   .ui-command-palette-list {
@@ -82,7 +87,7 @@
     padding: 0.5rem 0.75rem 0.375rem;
     background: var(--ui-surface);
     color: var(--ui-text-muted);
-    font-size: 0.6875rem;
+    font-size: calc(var(--ui-font-size) * 0.6875);
     font-weight: 600;
     letter-spacing: 0.02em;
     text-transform: uppercase;
@@ -124,13 +129,13 @@
   }
   .ui-command-palette-item-label {
     color: var(--ui-text);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     font-weight: 500;
   }
   .ui-command-palette-item-description {
     overflow: hidden;
     color: var(--ui-text-muted);
-    font-size: 0.75rem;
+    font-size: calc(var(--ui-font-size) * 0.75);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -143,7 +148,7 @@
   .ui-command-palette-empty {
     padding: 2rem 1rem;
     color: var(--ui-text-muted);
-    font-size: 0.875rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
     text-align: center;
   }
 
@@ -153,12 +158,6 @@
     }
   }
 
-  /* iOS zooms the page into any field under 16px. */
-  @media (pointer: coarse) {
-    .ui-command-palette-input {
-      font-size: max(var(--ui-touch-font-size, 16px), 0.9375rem);
-    }
-  }
   /* Rows change at once while typing: leaving rows go before new ones paint, and kept rows jump to
      their new place instead of sliding (the press transition would otherwise opt them into a move). */
   .ui-command-palette-row-leave-active {

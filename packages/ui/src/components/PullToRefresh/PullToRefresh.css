@@ -50,7 +50,7 @@
     transition: transform var(--ui-duration-enter) var(--ui-ease-drawer);
   }
   .ui-pull-to-refresh-label {
-    font-size: 0.75rem;
+    font-size: calc(var(--ui-font-size) * 0.75);
     color: var(--ui-text-muted);
   }
 

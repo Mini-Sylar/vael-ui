@@ -31,7 +31,7 @@
   }
   .ui-file-upload-text {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
     color: var(--ui-text-muted);
   }
   .ui-file-upload-input {
@@ -67,7 +67,7 @@
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--ui-border);
     border-radius: calc(var(--ui-radius) - 2px);
-    font-size: 0.8125rem;
+    font-size: calc(var(--ui-font-size) * 0.8125);
   }
   /* A custom #item slot with one root fills the row. */
   .ui-file-upload-item > :only-child {

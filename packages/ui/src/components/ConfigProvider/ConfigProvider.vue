@@ -31,7 +31,7 @@ const props = defineProps<{
   messages?: PartialUiMessages
   /** Class merger function (e.g. `twMerge` from tailwind-merge), applied to every `ui.*` part class. */
   classMerge?: ClassMerger
-  /** Auto-derives a color system from seed colors and optional radius. Injects a scoped `<style>` tag. */
+  /** Auto-derives colors and applies radius and component font size. Injects a scoped `<style>` tag. */
   theme?: UiTheme
 }>()
 

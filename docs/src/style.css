@@ -16,7 +16,8 @@
   }
 
   html {
-    font-size: 14px;
+    color-scheme: light;
+    font-size: var(--docs-font-size, 14px);
     font-family:
       'Geist Variable',
       system-ui,
@@ -117,6 +118,16 @@
     --docs-page-max: 140rem;
     /* Fixed, not var(--ui-radius) — a Pill radius would clamp our own boxes into ovals. */
     --docs-radius: 10px;
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      color-scheme: dark;
+    }
   }
 
   /* Shiki dual-theme output (defaultColor: false). Only block output carries

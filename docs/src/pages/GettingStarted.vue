@@ -54,6 +54,8 @@ const { mode, setMode } = useColorScheme({
   },
 })"
     />
+    <p v-html="t('gettingStarted.appearanceHeadIntro')" />
+    <CodeBlock lang="html" :code="appearanceHeadCode" />
 
     <h2 id="directives">{{ t('gettingStarted.directivesTitle') }}</h2>
     <p v-html="t('gettingStarted.directivesIntro')" />
@@ -103,6 +105,7 @@ import CodeBlock from '../components/CodeBlock.vue'
 import GuideLayout from '../components/GuideLayout.vue'
 import { defaultVariant, packageManager, packageManagers } from '../preferences'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
+import { appearanceHeadCode } from '../appearanceHeadCode'
 
 const { t } = useI18n()
 useHead({ title: () => t('gettingStarted.title') })

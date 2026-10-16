@@ -109,6 +109,7 @@
   },
   "gettingStarted": {
     "darkModeIntro": "Der Dark Mode funktioniert rein über CSS. Er folgt <code>&lt;html data-theme=\"dark\"&gt;</code> und greift ersatzweise auf <code>prefers-color-scheme</code> zurück. vael-ui liefert keine Umschalt-UI mit. <code>useColorScheme()</code> verfolgt Änderungen der Systemeinstellung und speichert die Auswahl über die von Ihnen übergebene Option <code>persist</code>:",
+    "appearanceHeadIntro": "Wenn Sie Farbmodus oder app-weite Schriftgröße in <code>localStorage</code> speichern, setzen Sie dieses Skript vor das App-Bundle in den HTML-<code>&lt;head&gt;</code>. Es stellt beides vor dem ersten Zeichnen wieder her. Speichern Sie einen CSS-Wert wie <code>13px</code> oder <code>1rem</code> unter <code>app-font-size</code>. Komponenten übernehmen ihn, sofern <code>theme.fontSize</code> keinen eigenen Wert setzt.",
     "darkModeTitle": "Dunkler Modus",
     "directivesIntro": "<code>v-tooltip</code> und <code>v-scroll-mask</code> sind standardmäßig nicht global registriert. Wenn Sie eine davon in mehr als einer Komponente verwenden, registrieren Sie sie einmalig:",
     "directivesNote": "<code>v-tooltip</code> benötigt außerdem einen <code>&lt;TooltipHost /&gt;</code>, der einmal in Ihrer App eingebunden ist. Importieren Sie in einer Vapor-App beide Direktiven stattdessen aus <code>vael-ui/vapor</code>.",
@@ -223,7 +224,7 @@
     "cascadeLayersTitle": "Ebenenreihenfolge",
     "colorsTitle": "Farben",
     "cssVariablesIntro": "Jeder Farb-, Radius-, Schatten- und Bewegungswert in vael-ui stammt aus einer CSS Custom Property. Überschreiben Sie beliebige davon in Ihrem eigenen Stylesheet ohne Layer:",
-    "cssVariablesThemeNote": "Die Prop <code>theme</code> von <code>ConfigProvider</code> setzt <code>primary</code>, <code>danger</code> und <code>radius</code> zur Laufzeit per JavaScript. Alles andere hier funktioniert nur über CSS.",
+    "cssVariablesThemeNote": "Die Prop <code>theme</code> von <code>ConfigProvider</code> setzt <code>primary</code>, <code>danger</code>, <code>radius</code> und <code>fontSize</code>. Ohne <code>fontSize</code> folgen Komponenten der Schriftgröße von <code>html</code>, Formularfelder eingeschlossen. Liegt sie unter 16px, rufen Sie einmal <code>preventFocusZoom()</code> auf, damit iPhones nicht in Felder hineinzoomen. Andere Werte setzen Sie per CSS.",
     "cssVariablesTitle": "CSS-Variablen",
     "default": "Standard",
     "description": "Beschreibung",
@@ -361,6 +362,7 @@
     "useAsyncLoading": "Verfolgt jedes an sie übergebene laufende Promise, sodass ein Ladezustand erst endet, wenn alle abgeschlossen sind.",
     "useNumberFormat": "Locale-bewusste Zahlenformatierung und -analyse, stets synchron, damit eingegebener Text und formatierte Anzeige übereinstimmen.",
     "useColorScheme": "Wechselt zwischen hellem, dunklem und System-Farbmodus. Persistenz ist optional, über Speicherfunktionen, die Sie bereitstellen.",
+    "preventFocusZoom": "Verhindert, dass iOS in Formularfelder hineinzoomt, damit sie zur übrigen Schriftgröße passen.",
     "useFloatingPosition": "Die Floating-UI-basierte Positionierungs-Engine hinter Popover, Menu und Tooltip, zum Bau eigener verankerter Oberflächen.",
     "useVirtualizer": "Virtualisiertes Rendering für lange Listen, sodass nur die sichtbaren Zeilen im DOM existieren.",
     "useFieldControl": "Verbindet ein eigenes Formularelement mit dem nächsten Field: id, ARIA-Attribute sowie Fokus- und Ausfüllstatus."

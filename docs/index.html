@@ -4,11 +4,52 @@
     <meta charset="UTF-8" />
     <!-- Pins @layer order first, before Vite's chunked component CSS can establish it wrong. -->
     <link rel="stylesheet" href="/layer-order.css" />
+    <meta name="theme-color" content="#ffffff" />
+    <!-- Restore saved appearance before the statically rendered app can paint. -->
     <script>
+      var prefersDark = matchMedia('(prefers-color-scheme: dark)').matches
+      var themeColor = document.querySelector('meta[name="theme-color"]')
+      themeColor.content = prefersDark ? '#1f1f23' : '#ffffff'
       try {
         var storedTheme = localStorage.getItem('vael-ui-docs-theme')
         if (storedTheme === 'light' || storedTheme === 'dark') {
           document.documentElement.dataset.theme = storedTheme
+        }
+        var darkMode = storedTheme === 'dark' || (storedTheme !== 'light' && prefersDark)
+        themeColor.content = darkMode ? '#1f1f23' : '#ffffff'
+        var storedFontSize = Number(localStorage.getItem('vael-ui-docs-font-size'))
+        if (Number.isInteger(storedFontSize) && storedFontSize >= 12 && storedFontSize <= 18) {
+          document.documentElement.style.setProperty('--docs-font-size', storedFontSize + 'px')
+        }
+        var storedRadius = localStorage.getItem('vael-ui-docs-radius')
+        if (['0px', '6px', '16px', '999px'].includes(storedRadius)) {
+          document.documentElement.style.setProperty('--ui-radius', storedRadius)
+          document.documentElement.setAttribute('data-docs-theme-bootstrap', '')
+        }
+        var storedPrimary = localStorage.getItem('vael-ui-docs-primary')
+        if (/^#[0-9a-f]{6}$/i.test(storedPrimary || '')) {
+          var channels = [1, 3, 5].map(function (i) {
+            return parseInt(storedPrimary.slice(i, i + 2), 16) / 255
+          })
+          var linear = channels.map(function (c) {
+            return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+          })
+          var luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+          document.documentElement.style.setProperty('--ui-primary', storedPrimary)
+          document.documentElement.style.setProperty(
+            '--ui-primary-contrast',
+            luminance > 0.55 ? '#18181b' : '#fafafa',
+          )
+          document.documentElement.style.setProperty(
+            '--ui-primary-hover',
+            'color-mix(in oklch, ' +
+              storedPrimary +
+              ' 85%, ' +
+              (darkMode ? 'white' : 'black') +
+              ')',
+          )
+          document.documentElement.style.setProperty('--docs-accent', storedPrimary)
+          document.documentElement.setAttribute('data-docs-theme-bootstrap', '')
         }
       } catch (e) {}
     </script>
