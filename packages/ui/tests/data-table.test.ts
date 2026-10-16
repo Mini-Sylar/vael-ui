@@ -878,8 +878,9 @@ test('scrollHeight fades the body both ways and the head strip sideways', async 
     expect(head.classList.contains('scroll-fade-x')).toBe(true)
   })
   const bodyMask = getComputedStyle(body).maskImage
-  // Two layers: the vertical fade (serialized without "to bottom") and the sideways one.
-  expect(bodyMask.startsWith('linear-gradient(rgba(0, 0, 0, 0) 0%')).toBe(true)
+  // The vertical fade (serialized without "to bottom") and the sideways one, under two solid
+  // layers that keep the body's scrollbars out of the fade.
+  expect(bodyMask).toContain('linear-gradient(rgba(0, 0, 0, 0) 0%')
   // Frozen columns: the sideways fade is right-edge only, in the body and the head.
   expect(bodyMask).toContain('linear-gradient(to right, rgb(0, 0, 0)')
   expect(

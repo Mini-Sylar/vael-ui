@@ -18,8 +18,7 @@
   }
   /* Frozen columns sit at the left edge, so only the right edge fades. */
   .ui-datatable-scroll-x[data-frozen].scroll-fade-x,
-  .ui-datatable-head-scroll[data-frozen].scroll-fade-x,
-  .ui-datatable-scroll-y[data-frozen].scroll-fade-x {
+  .ui-datatable-head-scroll[data-frozen].scroll-fade-x {
     mask-image: linear-gradient(to right, #000 var(--fade-right-start), transparent 99%);
   }
   .ui-datatable-scroll-x {
@@ -189,6 +188,9 @@
   /* The body scrolls both ways, so its frozen cells stick to the box that actually moves. */
   .ui-datatable-scroll-y {
     overflow: auto;
+    /* No fade on an axis until its fade class sets one. */
+    --ui-datatable-fade-y: linear-gradient(#000, #000);
+    --ui-datatable-fade-x: linear-gradient(#000, #000);
   }
   /* Scrolls only by mirroring the body (or a wheel or swipe over it), so no scrollbar. */
   .ui-datatable-head-scroll {
@@ -196,6 +198,9 @@
     overflow-y: hidden;
     scrollbar-width: none;
     outline: none;
+    /* The gutter above the body's scrollbar is part of the header, so it shares its look. */
+    background: var(--ui-muted);
+    box-shadow: inset 0 -1px var(--ui-border);
   }
   .ui-datatable-head-scroll::-webkit-scrollbar {
     display: none;
@@ -205,16 +210,42 @@
   .ui-datatable-head-scroll > .ui-datatable-table {
     overflow: clip;
   }
-  .ui-datatable-scroll-y[data-frozen].scroll-fade.scroll-fade-x {
+  /* The fade would also hide the body's own scrollbars, so two solid layers sized to them keep
+     the scrollbars visible. Overlay scrollbars take no space, so the layers are 0px there. */
+  .ui-datatable .ui-datatable-scroll-y:is(.scroll-fade, .scroll-fade-x) {
     mask-image:
-      linear-gradient(
-        to bottom,
-        transparent 0%,
-        #000 var(--fade-top-end),
-        #000 var(--fade-bottom-start),
-        transparent 99%
-      ),
-      linear-gradient(to right, #000 var(--fade-right-start), transparent 99%);
+      linear-gradient(#000, #000), linear-gradient(#000, #000), var(--ui-datatable-fade-y),
+      var(--ui-datatable-fade-x);
+    mask-size:
+      var(--ui-datatable-scrollbar-w, 0px) 100%,
+      100% var(--ui-datatable-scrollbar-h, 0px),
+      100% 100%,
+      100% 100%;
+    mask-position: right, bottom, center, center;
+    mask-repeat: no-repeat;
+    mask-composite: add, add, intersect, add;
+  }
+  .ui-datatable-scroll-y.scroll-fade {
+    --ui-datatable-fade-y: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 var(--fade-top-end),
+      #000 var(--fade-bottom-start),
+      transparent 99%
+    );
+  }
+  .ui-datatable-scroll-y.scroll-fade-x {
+    --ui-datatable-fade-x: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 var(--fade-left-end),
+      #000 var(--fade-right-start),
+      transparent 99%
+    );
+  }
+  /* Frozen columns sit at the left edge, so only the right edge fades. */
+  .ui-datatable-scroll-y[data-frozen].scroll-fade-x {
+    --ui-datatable-fade-x: linear-gradient(to right, #000 var(--fade-right-start), transparent 99%);
   }
 
   .ui-datatable[data-stacked] .ui-datatable-table,

@@ -43,7 +43,11 @@
           v-scroll-mask="scrollFade ? 'both' : false"
           class="ui-datatable-scroll-y"
           :data-frozen="frozenColumns > 0 || undefined"
-          :style="{ maxBlockSize: bodyMaxBlockSize }"
+          :style="{
+            maxBlockSize: bodyMaxBlockSize,
+            '--ui-datatable-scrollbar-w': `${scrollbarWidth}px`,
+            '--ui-datatable-scrollbar-h': `${scrollbarHeight}px`,
+          }"
         >
           <table
             :class="tablePart('ui-datatable-table--split').class"
@@ -775,10 +779,14 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
 // The body's scrollbar narrows its content box; padding the head strip by the same width
 // keeps columns aligned. Not on the table: collapsed borders ignore table padding.
 const scrollbarWidth = ref(0)
+// The fade masks the body's own scrollbars too, so both sizes keep them out of it.
+const scrollbarHeight = ref(0)
 function recomputeScrollbarWidth() {
   const el = bodyScrollEl.value
   const width = el ? el.offsetWidth - el.clientWidth : 0
+  const height = el ? el.offsetHeight - el.clientHeight : 0
   if (width !== scrollbarWidth.value) scrollbarWidth.value = width
+  if (height !== scrollbarHeight.value) scrollbarHeight.value = height
 }
 let bodyResizeObserver: ResizeObserver | undefined
 onMounted(() => {
