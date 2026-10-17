@@ -285,3 +285,18 @@ test('the has-leading class follows a #leading slot added or removed later', asy
   await screen.rerender({ icon: true })
   await vi.waitFor(() => expect(button().classList.contains('ui-button--has-leading')).toBe(true))
 })
+
+test('the hidden spinner only turns while the button is loading', async () => {
+  const screen = await render(Button, {
+    props: { loading: false },
+    slots: { default: () => 'Save' },
+  })
+  const spinner = () => screen.container.querySelector('.ui-loader')!
+  const running = () =>
+    spinner()
+      .getAnimations()
+      .filter((a) => a.playState === 'running').length
+  expect(running()).toBe(0)
+  await screen.rerender({ loading: true })
+  await vi.waitFor(() => expect(running()).toBeGreaterThan(0))
+})

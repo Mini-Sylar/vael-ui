@@ -224,6 +224,13 @@
     opacity: 0;
     pointer-events: none;
   }
+  /* The spinner is always mounted for the crossfade; it only turns while it shows. */
+  .ui-button-loader .ui-loader {
+    animation-play-state: paused;
+  }
+  .ui-button--loading .ui-button-loader .ui-loader {
+    animation-play-state: running;
+  }
 
   .ui-button--loader-overlay .ui-button-loader {
     position: absolute;
