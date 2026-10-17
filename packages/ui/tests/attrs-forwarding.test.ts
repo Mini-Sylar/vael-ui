@@ -8,6 +8,7 @@ import Select from '../src/components/Select/Select.vue'
 import Combobox from '../src/components/Combobox/Combobox.vue'
 import TreeSelect from '../src/components/TreeSelect/TreeSelect.vue'
 import DatePicker from '../src/components/DatePicker/DatePicker.vue'
+import CascadeSelect from '../src/components/CascadeSelect/CascadeSelect.vue'
 
 // Components with more than one root (or a Teleport root) route attrs by hand.
 
@@ -73,3 +74,28 @@ test.each([
   })
   expect(screen.getByRole('combobox').element().closest('.my-field')).not.toBeNull()
 })
+
+test.each([
+  ['Select', Select, { items: [{ label: 'A', value: 'a' }] }],
+  ['Combobox', Combobox, { items: [{ label: 'A', value: 'a' }] }],
+  ['TreeSelect', TreeSelect, { items: [{ value: 'a', label: 'A' }] }],
+  ['DatePicker', DatePicker, {}],
+  ['CascadeSelect', CascadeSelect, { items: [{ label: 'A', value: 'a' }] }],
+] as const)(
+  '%s puts id, aria-* and data-* on the combobox, not the panel',
+  async (_, Comp, props) => {
+    const screen = await render(Comp as never, {
+      props: { ...props, open: true } as never,
+      attrs: { id: 'fruit', 'aria-label': 'Fruit', 'data-testid': 'fruit-control' },
+    })
+    const combobox = screen.getByRole('combobox', { name: 'Fruit' }).element()
+    expect(combobox.id).toBe('fruit')
+    expect(combobox.getAttribute('data-testid')).toBe('fruit-control')
+    // The panel must not duplicate the id or steal the label.
+    await new Promise((r) => setTimeout(r, 50))
+    expect(document.querySelectorAll('#fruit')).toHaveLength(1)
+    expect(document.querySelectorAll('[data-testid="fruit-control"]')).toHaveLength(1)
+    expect(document.querySelectorAll('[aria-label="Fruit"]')).toHaveLength(1)
+    screen.unmount()
+  },
+)

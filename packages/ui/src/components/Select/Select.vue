@@ -4,6 +4,7 @@
     :data-ui-frame="props.size"
     role="combobox"
     :id="fieldControl.id"
+    v-bind="triggerAttrs"
     :class="rootPart.class"
     :style="[rootPart.style, attrs.style as never]"
     :tabindex="isDisabled ? -1 : 0"
@@ -105,7 +106,7 @@
           ref="panel"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
             <slot name="header" :count="filteredItems.length" :total="items.length" />
@@ -240,6 +241,16 @@ import Chip from '../Chip/Chip.vue'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// id, aria-* and data-* name and identify the combobox, so they go on the
+// trigger; the panel keeps the rest (class, style, listeners) as before.
+const isTriggerAttr = (key: string) =>
+  key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
+const panelAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+)
+const triggerAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => isTriggerAttr(key))),
+)
 
 /** Selected value, or an array of values when `multiple`. @default null */
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })

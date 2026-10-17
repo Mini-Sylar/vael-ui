@@ -61,7 +61,7 @@
           :aria-label="messages.datePicker.chooseDate"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <Calendar
             v-if="!timeOnlyEffective"
@@ -200,6 +200,13 @@ import type {
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// The input already gets every attr; id, aria-* and data-* belong to it alone,
+// so the panel skips them rather than duplicating the id or the label.
+const isTriggerAttr = (key: string) =>
+  key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
+const panelAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+)
 const messages = useUiMessages()
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */

@@ -113,7 +113,7 @@
           ref="panel"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
             <slot name="header" :count="filteredItems.length" :total="items.length" />
@@ -249,6 +249,13 @@ import Chip from '../Chip/Chip.vue'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// The input already gets every attr; id, aria-* and data-* belong to it alone,
+// so the panel skips them rather than duplicating the id or the label.
+const isTriggerAttr = (key: string) =>
+  key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
+const panelAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+)
 
 /** Selected value, or an array of values when `multiple`. @default null */
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })
