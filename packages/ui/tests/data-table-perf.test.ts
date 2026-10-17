@@ -89,7 +89,8 @@ test('select-all on 1000 rows builds the selection once and emits once', async (
   expect(screen.getByTestId('selection-emit-count').element().textContent).toBe('1')
   expect(screen.getByTestId('selection-change-count').element().textContent).toBe('1000')
   expect(selectAll.checked).toBe(true)
-  expect(elapsed).toBeLessThan(250)
+  // ~80ms on a laptop and ~350ms on CI; the old per-row selection took over four times as long.
+  expect(elapsed).toBeLessThan(800)
 
   await timeUpdate(screen, () => selectAll.click())
   expect(screen.getByTestId('selection-emit-count').element().textContent).toBe('2')
