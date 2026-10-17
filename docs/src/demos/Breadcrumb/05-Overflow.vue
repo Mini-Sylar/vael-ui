@@ -7,7 +7,7 @@
       break onto multiple lines instead.
     </p>
     <p class="note">Scrolls (default):</p>
-    <Breadcrumb class="breadcrumb-narrow">
+    <Breadcrumb class="breadcrumb-narrow" aria-label="Scrolling breadcrumb">
       <template v-for="(crumb, i) in longTrail" :key="crumb">
         <BreadcrumbItem v-if="i < longTrail.length - 1" href="#">{{ crumb }}</BreadcrumbItem>
         <BreadcrumbItem v-else current>{{ crumb }}</BreadcrumbItem>
@@ -15,7 +15,7 @@
       </template>
     </Breadcrumb>
     <p class="note">Wraps:</p>
-    <Breadcrumb wrap class="breadcrumb-narrow">
+    <Breadcrumb wrap class="breadcrumb-narrow" aria-label="Wrapping breadcrumb">
       <template v-for="(crumb, i) in longTrail" :key="crumb">
         <BreadcrumbItem v-if="i < longTrail.length - 1" href="#">{{ crumb }}</BreadcrumbItem>
         <BreadcrumbItem v-else current>{{ crumb }}</BreadcrumbItem>

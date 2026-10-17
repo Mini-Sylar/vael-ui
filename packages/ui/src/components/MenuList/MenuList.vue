@@ -19,7 +19,7 @@
         :class="separatorPart.class"
         :style="separatorPart.style"
       />
-      <!-- Group labels lack role="menuitem", so useMenu skips them automatically. -->
+      <!-- Group labels lack data-menu-item, so useMenu skips them automatically. -->
       <div
         v-else-if="row.kind === 'group'"
         :class="rowClass(row, 'group')"
@@ -36,7 +36,7 @@
         :is="nativeTag(tagOf(row.entry))"
         v-else
         :type="tagOf(row.entry) === 'button' ? 'button' : undefined"
-        role="menuitem"
+        data-menu-item
         :class="rowClass(row, 'item')"
         :disabled="tagOf(row.entry) === 'button' ? row.entry.disabled : undefined"
         :aria-disabled="tagOf(row.entry) !== 'button' ? row.entry.disabled || undefined : undefined"
@@ -80,8 +80,8 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
 </script>
 
 <!--
-  Reuses useMenu for keyboard/roving; ARIA compromise: role="menuitem" technically
-  wrong in nav but necessary for useMenu's selector (reimplementing would be worse).
+  Reuses useMenu for keyboard/roving. Rows stay native buttons and links (a nav is not a
+  menu), marked with data-menu-item for useMenu's selector.
   Nested items are inert group labels (pair with Collapsible for collapsible groups).
 -->
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">

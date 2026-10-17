@@ -5,6 +5,9 @@
 <!-- Hidden marker: enables DataTable to read column's DOM position; props/slots exposed via getters for reactivity -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import { onBeforeUnmount, useSlots, useTemplateRef } from 'vue'
+import type { VNodeChild } from 'vue'
+import { createSlotRelay } from '../composables/useSlotRelay'
+import { useSlotPresence } from '../composables/dom'
 import { useDataTableContext } from '../composables/useDataTableContext'
 import type { RegisteredColumn } from '../composables/useDataTableContext'
 
@@ -44,6 +47,20 @@ const slots = useSlots()
 const ctx = useDataTableContext<T>()
 const markerEl = useTemplateRef<HTMLElement>('markerEl')
 
+// The table renders these through <component :is>. A bare Vapor slot there counts as a vdom
+// component under vaporInteropPlugin and prints as "[object Text]".
+const cellRelay = createSlotRelay<{ row: T; value: T[keyof T] }>(
+  (relayProps) => slots.cell?.(relayProps) as VNodeChild,
+  ['row', 'value'],
+)
+const headerRelay = createSlotRelay<{ column: RegisteredColumn<T> }>(
+  (relayProps) => slots.header?.(relayProps) as VNodeChild,
+  ['column'],
+)
+
+// The table reads these getters; this keeps them current when a slot is added or removed later.
+const hasSlot = useSlotPresence(slots)
+
 const columnDef: RegisteredColumn<T> = {
   get field() {
     return props.field
@@ -68,6 +85,12 @@ const columnDef: RegisteredColumn<T> = {
   },
   get headerSlot() {
     return slots.header
+  },
+  get cellRelay() {
+    return hasSlot('cell') ? cellRelay : undefined
+  },
+  get headerRelay() {
+    return hasSlot('header') ? headerRelay : undefined
   },
   get el() {
     return markerEl.value

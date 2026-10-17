@@ -1,5 +1,6 @@
-import { reactive, readonly } from 'vue'
+import { getCurrentScope, onScopeDispose, reactive, readonly } from 'vue'
 import type { DeepReadonly } from 'vue'
+import { isClient } from '@vueuse/core'
 
 export type ToastVariant = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading'
 
@@ -52,6 +53,10 @@ interface InternalEntry extends ToastEntry {
 // Module-level, like the scroll-lock counter. One queue per Toaster `name`.
 let nextId = 0
 const queues = new Map<string | undefined, InternalEntry[]>()
+// Queues whose Toaster is hovered, focused or in a hidden tab: new toasts there wait too.
+const pausedQueues = new Set<string | undefined>()
+// How many live scopes hold each queue; Infinity once a call outside any scope holds it.
+const holders = new Map<string | undefined, number>()
 
 function queueOf(toaster: string | undefined) {
   let queue = queues.get(toaster)
@@ -60,6 +65,11 @@ function queueOf(toaster: string | undefined) {
     queues.set(toaster, queue)
   }
   return queue
+}
+
+// Drops empty queues so generated Toaster names don't pile up; a queue holding toasts stays.
+function dropIfUnused(toaster: string | undefined) {
+  if (queues.get(toaster)?.length === 0 && !holders.get(toaster)) queues.delete(toaster)
 }
 
 // Ids are unique across every Toaster, so look in all queues.
@@ -81,6 +91,7 @@ function clearTimer(entry: InternalEntry) {
 function scheduleTimer(entry: InternalEntry) {
   if (entry.timer != null) return
   if (entry.waiting || !Number.isFinite(entry.duration) || entry.remaining <= 0) return
+  if (pausedQueues.has(entry.toaster)) return
   entry.segmentStartedAt = performance.now()
   entry.timer = setTimeout(() => dismiss(entry.id), entry.remaining)
 }
@@ -92,6 +103,8 @@ function pauseTimer(entry: InternalEntry) {
 }
 
 function pushToast(title: string, options: ToastOptions = {}): ToastId {
+  // One server queue would reach every request; the browser runs this call again on hydration.
+  if (!isClient) return options.id ?? nextId++
   const variant = options.variant ?? 'default'
   const duration = options.duration ?? (variant === 'loading' ? Infinity : 4000)
   const queue = queueOf(options.toaster)
@@ -103,6 +116,7 @@ function pushToast(title: string, options: ToastOptions = {}): ToastId {
     if (found.queue !== queue) {
       // A new `toaster` moves it to the end of that Toaster's stack.
       found.queue.splice(found.queue.indexOf(existing), 1)
+      dropIfUnused(existing.toaster)
       existing.waiting = false
       queue.push(existing)
     }
@@ -139,21 +153,24 @@ function pushToast(title: string, options: ToastOptions = {}): ToastId {
   return id
 }
 
-function clearQueue(queue: InternalEntry[]) {
+function clearQueue(queue: InternalEntry[], toaster: string | undefined) {
   for (const entry of queue) clearTimer(entry)
   queue.splice(0, queue.length)
+  dropIfUnused(toaster)
 }
 
 function removeFrom(queue: InternalEntry[], id: ToastId) {
   const index = queue.findIndex((entry) => entry.id === id)
   if (index === -1) return
+  const { toaster } = queue[index]
   clearTimer(queue[index])
   queue.splice(index, 1)
+  dropIfUnused(toaster)
 }
 
 function dismiss(id?: ToastId) {
   if (id === undefined) {
-    for (const queue of queues.values()) clearQueue(queue)
+    for (const [toaster, queue] of queues) clearQueue(queue, toaster)
     return
   }
   const found = findEntry(id)
@@ -241,14 +258,30 @@ export const toast = Object.assign(
  */
 export function useToastQueue(toaster?: string) {
   const queue = queueOf(toaster)
+  if (getCurrentScope()) {
+    holders.set(toaster, (holders.get(toaster) ?? 0) + 1)
+    onScopeDispose(() => {
+      const left = holders.get(toaster)! - 1
+      if (left) holders.set(toaster, left)
+      else holders.delete(toaster)
+      dropIfUnused(toaster)
+    })
+  } else {
+    // Nothing tells us when this caller lets go, so its queue is never dropped.
+    holders.set(toaster, Infinity)
+  }
   return {
     toasts: readonly(queue) as DeepReadonly<ToastEntry[]>,
     /** Dismisses one of this queue's toasts, or all of them when you omit `id`. */
-    dismiss: (id?: ToastId) => (id === undefined ? clearQueue(queue) : removeFrom(queue, id)),
+    dismiss: (id?: ToastId) =>
+      id === undefined ? clearQueue(queue, toaster) : removeFrom(queue, id),
+    /** Pauses every timer, including those of toasts added before `resumeAll()`. */
     pauseAll: () => {
+      pausedQueues.add(toaster)
       for (const entry of queue) pauseTimer(entry)
     },
     resumeAll: () => {
+      pausedQueues.delete(toaster)
       for (const entry of queue) scheduleTimer(entry)
     },
     /** Pauses these toasts' timers while they wait off-screen; every other toast's timer resumes. */

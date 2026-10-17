@@ -1,10 +1,5 @@
 <template>
-  <!-- Teleport theme CSS to head; :is sidesteps compiler check. Scope wrapper with display: contents for transparent layout. -->
-  <Teleport v-if="themeCss" to="head">
-    <component :is="'style'">{{ themeCss }}</component>
-  </Teleport>
-  <!-- Always rendered: swapping between a wrapper and a bare slot when a theme is
-       first set or cleared would remount the whole subtree (losing focus and state). -->
+  <component :is="'style'" v-if="themeCss" :innerHTML="safeThemeCss" />
   <div :data-ui-theme="themeCss ? scopeId : undefined" style="display: contents">
     <slot />
   </div>
@@ -35,6 +30,9 @@ const props = withDefaults(
     i18n?: I18nInstance
     /** Static message overrides, applied on top of `i18n` resolution. */
     messages?: PartialUiMessages
+    /** BCP-47 locale for dates, numbers and the week start inside, e.g. `'de-DE'`. Wins over
+     * `i18n`'s locale. Set it when you render on a server, or they follow the server's language. */
+    locale?: string
     /** Class merger function (e.g. `twMerge` from tailwind-merge), applied to every `ui.*` part class. */
     classMerge?: ClassMerger
     /** Auto-derives colors and applies radius and component font size. Injects a scoped `<style>` tag. */
@@ -72,12 +70,17 @@ const defaults = computed<UiDefaults>(() => {
   const own: UiDefaults = {}
   if (props.size) own.size = props.size
   if (props.motionCss !== undefined) own.motionCss = props.motionCss
-  const locale = validLocale(toValue(props.i18n?.locale))
+  const locale = validLocale(props.locale ?? toValue(props.i18n?.locale))
   if (locale) own.locale = locale
   return { ...parentDefaults?.value, ...own }
 })
 provide(defaultsKey, defaults)
 
+// The <style> renders in place, not teleported to <head>: a head teleport can't hydrate
+// cleanly and in production overwrote the app's own head tags. A <style> in <body> still
+// applies document-wide, so overlays teleported to body (which carry this scope) match too.
+// The `:is` sidesteps the compiler's "no <style> in templates" error. The wrapper is always
+// rendered, since swapping it in when a theme is first set would remount the whole subtree.
 const scopeId = useId()
 const scopeSelector = `[data-ui-theme='${scopeId}']`
 // Motion off zeroes the duration tokens. Teleported overlays carry this scope too.
@@ -97,6 +100,8 @@ const themeCss = computed(() => {
   const zero = DURATION_TOKENS.map((name) => `--ui-duration-${name}: 0s;`).join(' ')
   return `${theme}\n${scopeSelector} { ${zero} }`
 })
+// `<` is the only character that can end a <style> early, and a theme value can be user input.
+const safeThemeCss = computed(() => themeCss.value.replace(/</g, '\\3c '))
 provide(
   themeKey,
   computed(() => props.theme),

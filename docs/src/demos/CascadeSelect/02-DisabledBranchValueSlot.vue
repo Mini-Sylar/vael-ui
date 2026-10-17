@@ -7,18 +7,20 @@
       a breadcrumb via the <code>#value</code> slot: <code>path</code> holds each level's
       <code>value</code>, mapped back to labels here.
     </p>
-    <CascadeSelect v-model="city2" :items="geographyWithDisabled" placeholder="Pick a city">
-      <template #value="{ selected, path: p }">
-        <span v-if="selected">{{ pathLabels(p).join(' / ') }}</span>
-        <span v-else>Pick a city</span>
-      </template>
-    </CascadeSelect>
+    <Field label="City">
+      <CascadeSelect v-model="city2" :items="geographyWithDisabled" placeholder="Pick a city">
+        <template #value="{ selected, path: p }">
+          <span v-if="selected">{{ pathLabels(p).join(' / ') }}</span>
+          <span v-else>Pick a city</span>
+        </template>
+      </CascadeSelect>
+    </Field>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { CascadeSelect } from 'vael-ui'
+import { CascadeSelect, Field } from 'vael-ui'
 import type { CascadeSelectItem, CascadeSelectPath } from 'vael-ui'
 
 const geography: CascadeSelectItem[] = [

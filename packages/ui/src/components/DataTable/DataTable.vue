@@ -2,7 +2,7 @@
   <div
     ref="root"
     :class="rootPart.class"
-    :style="rootPart.style"
+    :style="[rootPart.style, columnVars]"
     :data-stacked="stacked ? '' : undefined"
     v-bind="attrs"
   >
@@ -12,21 +12,26 @@
 
     <div
       v-scroll-mask="scrollFade && !scrollHeight ? 'x' : false"
+      ref="scrollXEl"
       class="ui-datatable-scroll-x"
       :data-frozen="frozenColumns > 0 || undefined"
+      :role="scrollHeight ? 'table' : undefined"
+      :aria-busy="(scrollHeight && loading) || undefined"
     >
       <template v-if="scrollHeight">
         <!-- The body is the real scroller. The head strip mirrors it and is its own
              scroll container, so the head's frozen cells stick to it. -->
         <div
           ref="headScrollEl"
+          role="rowgroup"
           v-scroll-mask="scrollFade ? 'x' : false"
           class="ui-datatable-head-scroll"
           :data-frozen="frozenColumns > 0 || undefined"
           :style="{ paddingInlineEnd: `${scrollbarWidth}px` }"
-          tabindex="-1"
         >
+          <!-- Head and body are separate <table>s, so ARIA roles rebuild one table across them. -->
           <table
+            role="presentation"
             :class="tablePart('ui-datatable-table--split').class"
             :style="[tablePart().style, { inlineSize: splitWidth }]"
           >
@@ -40,6 +45,7 @@
         </div>
         <div
           ref="bodyScrollEl"
+          role="rowgroup"
           v-scroll-mask="scrollFade ? 'both' : false"
           class="ui-datatable-scroll-y"
           :data-frozen="frozenColumns > 0 || undefined"
@@ -50,6 +56,7 @@
           }"
         >
           <table
+            role="presentation"
             :class="tablePart('ui-datatable-table--split').class"
             :style="[tablePart().style, { inlineSize: splitWidth }]"
           >
@@ -65,7 +72,12 @@
         </div>
       </template>
 
-      <table v-else :class="tablePart().class" :style="tablePart().style">
+      <table
+        v-else
+        :class="tablePart().class"
+        :style="tablePart().style"
+        :aria-busy="loading || undefined"
+      >
         <DataTableHead ref="headComponent" v-bind="headProps" />
         <DataTableBody v-bind="bodyProps">
           <template #loading><slot name="loading" /></template>
@@ -84,6 +96,11 @@
         :total="resolvedTotal"
       />
     </div>
+
+    <!-- Always mounted: a live region created on demand isn't reliably read out. -->
+    <span class="ui-datatable-status" role="status" aria-live="polite">{{
+      loading ? messages.dataTable.loading : ''
+    }}</span>
 
     <!-- display:none keeps Column children mounted for registration without rendering them -->
     <div style="display: none" aria-hidden="true">
@@ -105,21 +122,23 @@ import {
   onUpdated,
   provide,
   ref,
+  shallowReactive,
+  shallowRef,
+  toRaw,
   useAttrs,
   useId,
   useSlots,
   useTemplateRef,
   watch,
 } from 'vue'
-import type { Ref } from 'vue'
+import { useSlotPresence } from '../../composables/dom'
 import { useEventListener } from '@vueuse/core'
-import { ssrWindow } from '../../ssr'
 import ColumnImpl from '../Column.vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { provideDataTableContext } from '../../composables/useDataTableContext'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { useVirtualizer } from '../../composables/useVirtualizer'
-import { useSortable } from '../../composables/useSortable'
+import { useLazySortable } from '../../composables/useLazySortable'
 import type { SortableDropDetails } from '../../composables/useSortable'
 import DataTableHead from './DataTableHead.vue'
 import DataTableBody from './DataTableBody.vue'
@@ -127,7 +146,9 @@ import type { TableRowEntry } from './DataTableBody.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useUiMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useFocusableScroller } from '../../composables/useFocusableScroller'
 
 defineOptions({ inheritAttrs: false })
 
@@ -254,15 +275,16 @@ const sort = defineModel<{ field: keyof T | null; dir: 'asc' | 'desc' | null }>(
 })
 
 const slots = useSlots()
+const hasSlot = useSlotPresence(slots)
 
-// Cast because ref() unwrapping widens `field: keyof T` to `string | number | symbol`.
-const columns = ref<RegisteredColumn<T>[]>([]) as Ref<RegisteredColumn<T>[]>
+// Shallow, so the list holds each Column's own object: a deep ref would hand back proxies that
+// never match the raw object a Column unregisters with. Its getters are reactive already.
+const columns = shallowRef<RegisteredColumn<T>[]>([])
 function registerColumn(col: RegisteredColumn<T>) {
-  columns.value.push(col)
+  columns.value = [...columns.value, col]
 }
 function unregisterColumn(col: RegisteredColumn<T>) {
-  const index = columns.value.indexOf(col)
-  if (index !== -1) columns.value.splice(index, 1)
+  if (columns.value.includes(col)) columns.value = columns.value.filter((c) => c !== col)
 }
 
 /** Column `field`s in display order. When empty, columns follow their `<Column>` order in the template. @default [] */
@@ -294,9 +316,11 @@ function resortColumnsByDom() {
 onMounted(resortColumnsByDom)
 onUpdated(resortColumnsByDom)
 
+const messages = useUiMessages()
+
 const selectColumnRendered = computed(() => props.selectable && props.selectionMode === 'checkbox')
 const selectableRows = computed(() => props.selectable && props.selectionMode === 'row')
-const expansionColumnRendered = computed(() => !!slots.expansion && !stacked.value)
+const expansionColumnRendered = computed(() => hasSlot('expansion') && !stacked.value)
 const colCount = computed(() => {
   let count = columns.value.length
   if (selectColumnRendered.value) count++
@@ -366,7 +390,7 @@ function setSelection(next: Set<string | number>) {
   selected.value = next
   emit(
     'update:selection',
-    props.data.filter((row) => next.has(getRowKey(row))),
+    next.size === 0 ? [] : props.data.filter((row) => next.has(getRowKey(row))),
   )
 }
 function toggleSelectByKey(key: string | number) {
@@ -384,19 +408,29 @@ function toggleSelect(row: T) {
 }
 
 // Computed from sortedData not data: app owns bulk-selection policy, DataTable owns mechanism.
-const selectAllState = computed(() => {
-  if (sortedData.value.length === 0) return { all: false, some: false }
-  let selectedCount = 0
-  for (const row of sortedData.value) {
-    if (selected.value.has(getRowKey(row))) selectedCount++
+const sortedKeys = computed(() => new Set(sortedData.value.map(getRowKey)))
+// Keeps the previous object while nothing flips, so toggling one row doesn't re-render the header.
+const selectAllState = computed<{ all: boolean; some: boolean }>((previous) => {
+  const keys = sortedKeys.value
+  const chosen = selected.value
+  let count = 0
+  if (chosen.size <= keys.size) {
+    for (const key of chosen) if (keys.has(key)) count++
+  } else {
+    for (const key of keys) if (chosen.has(key)) count++
   }
-  return { all: selectedCount === sortedData.value.length, some: selectedCount > 0 }
+  const all = keys.size > 0 && count === keys.size
+  const some = count > 0
+  return previous?.all === all && previous.some === some ? previous : { all, some }
 })
 function toggleSelectAll() {
   const shouldSelect = !selectAllState.value.all
-  for (const row of sortedData.value) {
-    if (shouldSelect !== isSelected(row)) toggleSelect(row)
+  const next = new Set(selected.value)
+  for (const key of sortedKeys.value) {
+    if (shouldSelect) next.add(key)
+    else next.delete(key)
   }
+  if (next.size !== selected.value.size) setSelection(next)
 }
 
 // Provided directly: RadioGroup's wrapper element can't live inside a table.
@@ -437,7 +471,7 @@ const tableRowEntries = computed<TableRowEntry<T>[]>(() => {
   for (const row of pagedData.value) {
     const key = String(getRowKey(row))
     entries.push({ kind: 'row', row, key })
-    if (slots.expansion && (stacked.value || isExpanded(row))) {
+    if (hasSlot('expansion') && (stacked.value || isExpanded(row))) {
       entries.push({ kind: 'expansion', row, key: `${key}-expansion` })
     }
   }
@@ -470,20 +504,20 @@ const bottomSpacerHeight = computed(() => {
 
 // Roving tabindex for selectionMode="row": the body is one Tab stop.
 const focusedRowKey = ref<string | null>(null)
-const selectedKeyStrings = computed(() => new Set([...selected.value].map(String)))
 const tabStopRowKey = computed<string | null>(() => {
   if (!selectableRows.value) return null
   const entries = tableRowEntries.value
   const indices = virtualizeActive.value
     ? virtualizer.items.value.map((item) => item.index)
     : entries.map((_, i) => i)
-  const rendered: string[] = []
-  for (const i of indices) if (entries[i]?.kind === 'row') rendered.push(entries[i]!.key)
+  const rendered: TableRowEntry<T>[] = []
+  for (const i of indices) if (entries[i]?.kind === 'row') rendered.push(entries[i]!)
   if (rendered.length === 0) return null
   // A focused row scrolled out of the virtual window can't hold the Tab stop.
   const focused = focusedRowKey.value
-  if (focused !== null && rendered.includes(focused)) return focused
-  return rendered.find((key) => selectedKeyStrings.value.has(key)) ?? rendered[0]!
+  if (focused !== null && rendered.some((entry) => entry.key === focused)) return focused
+  const chosen = selected.value
+  return (rendered.find((entry) => chosen.has(getRowKey(entry.row))) ?? rendered[0]!).key
 })
 function rowTabIndex(row: T): number | undefined {
   if (!selectableRows.value) return undefined
@@ -626,16 +660,41 @@ function isColumnResizable(col: RegisteredColumn<T>): boolean {
 function isColumnReorderable(col: RegisteredColumn<T>): boolean {
   return col.reorderable ?? props.reorderableColumns
 }
-const resizedWidths = ref(new Map<RegisteredColumn<T>, number>())
+// Widths and offsets go through CSS vars, so a drag restyles the root instead of every cell.
+// Names carry the table id, so a nested table can't pick up its parent's values.
+const varPrefix = `--ui-datatable-${tableId.replace(/[^\w-]/g, '')}`
+let columnVarSeq = 0
+const columnVarIds = new WeakMap<RegisteredColumn<T>, number>()
+function columnWidthVar(col: RegisteredColumn<T>): string {
+  const raw = toRaw(col)
+  let id = columnVarIds.get(raw)
+  if (id === undefined) {
+    id = columnVarSeq++
+    columnVarIds.set(raw, id)
+  }
+  return `${varPrefix}-w-${id}`
+}
+const resizedWidths = shallowReactive(new Map<RegisteredColumn<T>, number>())
+// Changes only when a column is resized for the first time, not on every move.
+const resizedColumns = shallowReactive(new Set<RegisteredColumn<T>>())
+const columnVars = computed(() => {
+  const vars: Record<string, string> = {}
+  for (const [col, width] of resizedWidths) vars[columnWidthVar(col)] = `${width}px`
+  frozenOffsets.value.forEach((left, i) => {
+    vars[`${varPrefix}-frozen-${i}`] = `${left}px`
+  })
+  return vars
+})
 function setColumnWidth(col: RegisteredColumn<T>, width: number) {
-  const next = new Map(resizedWidths.value)
-  next.set(col, width)
-  resizedWidths.value = next
-  recomputeFrozenOffsets()
+  const raw = toRaw(col)
+  resizedWidths.set(raw, width)
+  resizedColumns.add(raw)
 }
 function columnStyle(col: RegisteredColumn<T>): Record<string, string> | undefined {
-  const resized = resizedWidths.value.get(col)
-  if (resized !== undefined) return { width: `${resized}px`, minWidth: `${resized}px` }
+  if (resizedColumns.has(toRaw(col))) {
+    const width = `var(${columnWidthVar(col)})`
+    return { width, minWidth: width }
+  }
   if (col.width === undefined) return undefined
   const width = typeof col.width === 'number' ? `${col.width}px` : col.width
   return { width, minWidth: width }
@@ -646,6 +705,8 @@ let resizingColumn: RegisteredColumn<T> | null = null
 let resizeStartX = 0
 let resizeStartWidth = 0
 let resizePointerId: number | null = null
+let resizeClientX = 0
+let resizeFrame = 0
 
 function onResizePointerdown(col: RegisteredColumn<T>, event: PointerEvent) {
   event.preventDefault()
@@ -653,23 +714,42 @@ function onResizePointerdown(col: RegisteredColumn<T>, event: PointerEvent) {
   if (!th) return
   resizingColumn = col
   resizeStartX = event.clientX
-  resizeStartWidth = resizedWidths.value.get(col) ?? th.getBoundingClientRect().width
+  resizeClientX = event.clientX
+  resizeStartWidth = resizedWidths.get(toRaw(col)) ?? th.getBoundingClientRect().width
   resizePointerId = event.pointerId
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  window.addEventListener('pointermove', onResizePointermove)
+  window.addEventListener('pointerup', onResizePointerup)
+  window.addEventListener('pointercancel', onResizePointerup)
 }
-function onResizePointermove(event: PointerEvent) {
-  if (!resizingColumn || resizePointerId !== event.pointerId) return
-  const delta = event.clientX - resizeStartX
+function applyResize() {
+  cancelAnimationFrame(resizeFrame)
+  resizeFrame = 0
+  if (!resizingColumn) return
+  const delta = resizeClientX - resizeStartX
   setColumnWidth(resizingColumn, Math.max(MIN_COLUMN_WIDTH, resizeStartWidth + delta))
 }
-function onResizePointerup(event: PointerEvent) {
-  if (resizePointerId !== event.pointerId) return
+// One width update per frame; pointer events can outpace the display.
+function onResizePointermove(event: PointerEvent) {
+  if (!resizingColumn || resizePointerId !== event.pointerId) return
+  resizeClientX = event.clientX
+  if (!resizeFrame) resizeFrame = requestAnimationFrame(applyResize)
+}
+function stopResize() {
+  window.removeEventListener('pointermove', onResizePointermove)
+  window.removeEventListener('pointerup', onResizePointerup)
+  window.removeEventListener('pointercancel', onResizePointerup)
+  cancelAnimationFrame(resizeFrame)
+  resizeFrame = 0
   resizingColumn = null
   resizePointerId = null
 }
-useEventListener(ssrWindow, 'pointermove', onResizePointermove)
-useEventListener(ssrWindow, 'pointerup', onResizePointerup)
-useEventListener(ssrWindow, 'pointercancel', onResizePointerup)
+function onResizePointerup(event: PointerEvent) {
+  if (resizePointerId !== event.pointerId) return
+  if (resizeFrame) applyResize()
+  stopResize()
+}
+onBeforeUnmount(stopResize)
 
 const UTILITY_COLUMN_WIDTH = 44 // px, matches the 2.75rem select/expand cells
 const leadingFixedWidth = computed(() => {
@@ -714,7 +794,7 @@ function recomputeFrozenOffsets() {
     row.querySelectorAll<HTMLElement>(
       '.ui-datatable-th:not(.ui-datatable-th--select):not(.ui-datatable-th--expand)',
     ),
-  )
+  ).slice(0, props.frozenColumns)
   let cumulative = leadingFixedWidth.value
   const offsets: number[] = []
   for (const th of ths) {
@@ -728,8 +808,8 @@ function recomputeFrozenOffsets() {
 }
 function columnFrozenStyle(colIndex: number): Record<string, string> | undefined {
   if (!isFrozenColumn(colIndex)) return undefined
-  const left = frozenOffsets.value[colIndex] ?? leadingFixedWidth.value
-  return { position: 'sticky', insetInlineStart: `${left}px`, zIndex: '2' }
+  const left = `var(${varPrefix}-frozen-${colIndex}, ${leadingFixedWidth.value}px)`
+  return { position: 'sticky', insetInlineStart: left, zIndex: '2' }
 }
 function utilityFrozenStyle(kind: 'select' | 'expand'): Record<string, string> | undefined {
   if (props.frozenColumns <= 0) return undefined
@@ -800,6 +880,11 @@ onBeforeUnmount(() => bodyResizeObserver?.disconnect())
 // Two-way, so wheel, touch, focus and drag autoscroll on the head strip move the body.
 // Echoes of our own writes are skipped, or a stale one would undo momentum scrolling.
 const headScrollEl = useTemplateRef<HTMLElement>('headScrollEl')
+const scrollXEl = useTemplateRef<HTMLElement>('scrollXEl')
+// Each strip that can scroll takes a tab stop only while it holds nothing focusable.
+useFocusableScroller(scrollXEl)
+useFocusableScroller(headScrollEl)
+useFocusableScroller(bodyScrollEl)
 let headWrittenLeft: number | null = null
 let bodyWrittenLeft: number | null = null
 function mirrorScrollLeft(from: HTMLElement, to: HTMLElement): number | null {
@@ -857,34 +942,37 @@ const {
   activeValue: draggingColumn,
   onHandlePointerdown: onColumnPointerdown,
   consumeSuppressedClick: consumeColumnClick,
-} = useSortable({
-  rows: columnRows,
-  getElement: headerElement,
-  axis: 'x',
-  dragPreview: true,
-  previewMode: () => props.previewMode,
-  touchDragDelay: () => props.touchDragDelay,
-  disabled: () => !props.reorderableColumns,
-  motionCss: () => props.motionCss,
-  canDrop: (details) => {
-    // A pinned column can't be displaced, whatever the consumer's canDrop says.
-    const target = orderedColumns.value[details.to.index]
-    if (target && !isColumnReorderable(target)) return false
-    return props.canDrop?.(details) ?? true
+} = useLazySortable(
+  {
+    rows: columnRows,
+    getElement: headerElement,
+    axis: 'x',
+    dragPreview: true,
+    previewMode: () => props.previewMode,
+    touchDragDelay: () => props.touchDragDelay,
+    disabled: () => !props.reorderableColumns,
+    motionCss: () => props.motionCss,
+    canDrop: (details) => {
+      // A pinned column can't be displaced, whatever the consumer's canDrop says.
+      const target = orderedColumns.value[details.to.index]
+      if (target && !isColumnReorderable(target)) return false
+      return props.canDrop?.(details) ?? true
+    },
+    beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
+    onDropError: (error, details) => emit('drop-error', error, details),
+    onCommit: (value, to) => {
+      const current = orderedColumns.value.map((column) => column.field)
+      const from = current.indexOf(value as keyof T)
+      if (from === -1) return
+      const next = [...current]
+      const [moved] = next.splice(from, 1)
+      next.splice(Math.min(Math.max(to.index, 0), next.length), 0, moved!)
+      columnOrder.value = next
+      emit('column-reorder', next)
+    },
   },
-  beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
-  onDropError: (error, details) => emit('drop-error', error, details),
-  onCommit: (value, to) => {
-    const current = orderedColumns.value.map((column) => column.field)
-    const from = current.indexOf(value as keyof T)
-    if (from === -1) return
-    const next = [...current]
-    const [moved] = next.splice(from, 1)
-    next.splice(Math.min(Math.max(to.index, 0), next.length), 0, moved!)
-    columnOrder.value = next
-    emit('column-reorder', next)
-  },
-})
+  () => props.reorderableColumns,
+)
 
 // useSortable only moves header cells. Each frame this copies their shift onto the
 // body cells, and moves the dragged column's cells with the preview.
@@ -937,6 +1025,7 @@ watch(draggingColumn, (value) => {
 onBeforeUnmount(() => cancelAnimationFrame(columnFollowFrame))
 
 const headProps = computed(() => ({
+  split: !!props.scrollHeight,
   selectColumnRendered: selectColumnRendered.value,
   expansionColumnRendered: expansionColumnRendered.value,
   columns: orderedColumns.value,
@@ -966,7 +1055,22 @@ const headProps = computed(() => ({
     resizeHandle: themedUi()?.resizeHandle,
   },
 }))
+// Outside bodyProps, so a recompute there doesn't hand the body new identities.
+function onRowEnter(el: Element, done: () => void) {
+  emit('row-enter', el, done)
+}
+function onRowLeave(el: Element, done: () => void) {
+  emit('row-leave', el, done)
+}
+const bodyUi = computed(() => ({
+  tbody: themedUi()?.tbody,
+  tr: themedUi()?.tr,
+  td: themedUi()?.td,
+  expansionRow: themedUi()?.expansionRow,
+  expansionContent: themedUi()?.expansionContent,
+}))
 const bodyProps = computed(() => ({
+  split: !!props.scrollHeight,
   colCount: colCount.value,
   columns: orderedColumns.value,
   loading: props.loading,
@@ -999,15 +1103,9 @@ const bodyProps = computed(() => ({
   onRowClick,
   motionCss: props.motionCss,
   rowMotionReady: rowMotionReady.value,
-  onRowEnter: (el: Element, done: () => void) => emit('row-enter', el, done),
-  onRowLeave: (el: Element, done: () => void) => emit('row-leave', el, done),
-  ui: {
-    tbody: themedUi()?.tbody,
-    tr: themedUi()?.tr,
-    td: themedUi()?.td,
-    expansionRow: themedUi()?.expansionRow,
-    expansionContent: themedUi()?.expansionContent,
-  },
+  onRowEnter,
+  onRowLeave,
+  ui: bodyUi.value,
 }))
 
 // Binds Column to this table's `T`, so `field`, `#cell` and `#header` are typed.

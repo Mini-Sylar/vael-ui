@@ -26,9 +26,20 @@
     border-end-start-radius: 0;
     border-end-end-radius: 0;
   }
+  /* Grows by the next segment's 1px overlap to keep a 24px target (WCAG 2.5.8). */
+  .ui-button-group:not(.ui-button-group--vertical) > .ui-button:not(:last-child) {
+    min-inline-size: calc(24px + 1px);
+  }
+  .ui-button-group--vertical > .ui-button:not(:last-child) {
+    min-block-size: calc(24px + 1px);
+  }
+  /* A pressed segment sits above its neighbours so its whole border shows. */
+  .ui-button-group > .ui-button[aria-pressed='true'] {
+    z-index: 1;
+  }
   .ui-button-group > .ui-button:hover,
   .ui-button-group > .ui-button:focus-visible,
   .ui-button-group > .ui-button:active {
-    z-index: 1;
+    z-index: 2;
   }
 }

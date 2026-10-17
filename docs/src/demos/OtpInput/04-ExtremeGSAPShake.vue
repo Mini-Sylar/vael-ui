@@ -10,6 +10,7 @@
     <OtpInput
       ref="shakeOtp"
       v-model="shakeCode"
+      aria-label="Verification code"
       :length="4"
       :invalid="shakeInvalid"
       @complete="onShakeComplete"

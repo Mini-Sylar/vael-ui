@@ -1,9 +1,16 @@
 import '../src/style.css'
-import { expect, test, vi } from 'vitest'
+import { beforeAll, expect, test, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { render } from 'vitest-browser-vue'
+import { loadSortableEngine } from '../src/composables/useLazySortable'
 import type { RenderResult } from 'vitest-browser-vue'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
+import DataTableDynamicColumns from './fixtures/DataTableDynamicColumns.vue'
+import DataTableCellToggle from './fixtures/DataTableCellToggle.vue'
+
+// DataTable loads the drag engine on demand. Loading it up front means a test can drag as soon as
+// the table renders.
+beforeAll(() => loadSortableEngine())
 
 async function renderTable(props: Record<string, unknown> = {}) {
   const screen = await render(DataTableFixture, {
@@ -116,7 +123,7 @@ test('canDrop rejecting a target blocks the reorder, on top of the built-in pinn
   const screen = await renderTable({ canDrop: () => false })
   const [first, second] = headerEls(screen)
   dragHeaderOver(first!, second!, 26)()
-  await new Promise((r) => setTimeout(r, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(headerFields(screen)).toEqual(['name', 'age'])
 })
 
@@ -263,4 +270,24 @@ test('with scrollHeight, dragging a column to the edge autoscrolls the head stri
   await vi.waitFor(() => expect(head.scrollLeft).toBeGreaterThan(20))
   await vi.waitFor(() => expect(Math.abs(body.scrollLeft - head.scrollLeft)).toBeLessThan(1))
   window.dispatchEvent(new PointerEvent('pointerup', init))
+})
+
+test('a Column removed after the columns were reordered leaves the table', async () => {
+  const screen = await render(DataTableDynamicColumns, { props: { cols: ['a', 'b', 'c'] } })
+  await screen.rerender({ cols: ['c', 'b', 'a'] })
+  await vi.waitFor(() => expect(headerFields(screen)).toEqual(['c', 'b', 'a']))
+  await screen.rerender({ cols: ['c', 'b'] })
+  await vi.waitFor(() => expect(headerFields(screen)).toEqual(['c', 'b']))
+})
+
+test('a #cell or #header slot added or removed later shows straight away', async () => {
+  const screen = await render(DataTableCellToggle, { props: { custom: false } })
+  const text = () => screen.container.querySelector('table')!.textContent!
+  expect(text()).toContain('Ada')
+  expect(text()).not.toContain('Custom')
+  await screen.rerender({ custom: true })
+  await vi.waitFor(() => expect(text()).toContain('Custom Ada'))
+  expect(text()).toContain('Custom header')
+  await screen.rerender({ custom: false })
+  await vi.waitFor(() => expect(text()).not.toContain('Custom'))
 })

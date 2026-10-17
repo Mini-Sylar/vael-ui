@@ -12,7 +12,13 @@
       transform once it settles so a later drag measures a clean position again.
     </p>
     <div class="row knob-row">
-      <Knob ref="momentumKnob" v-model="momentumValue" :min="0" :max="100" />
+      <Knob
+        ref="momentumKnob"
+        v-model="momentumValue"
+        :min="0"
+        :max="100"
+        aria-label="Momentum value"
+      />
       <output class="demo-status">{{ momentumValue }}</output>
     </div>
   </section>

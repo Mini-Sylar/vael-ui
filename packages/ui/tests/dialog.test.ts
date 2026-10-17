@@ -273,3 +273,50 @@ test('with forceMount, an inline overlay opacity wins over the closing fade', as
   expect(getComputedStyle(overlay).opacity).toBe('0.8')
   finish?.()
 })
+
+test('openDialog exposes overlayEl on the handle and on useDialogRef()', async () => {
+  const { defineComponent, h } = await import('vue')
+  const { openDialog, useDialogRef } = await import('../src/composables/useDialogService')
+  const DialogHost = (await import('../src/components/DialogHost/DialogHost.vue')).default
+  let fromInside: ReturnType<typeof useDialogRef> | undefined
+  const Body = defineComponent(() => {
+    fromInside = useDialogRef()
+    return () => h('p', 'Body')
+  })
+  await render({ render: () => h(DialogHost) })
+  const handle = openDialog(Body, { title: 'Dynamic' })
+  await vi.waitFor(() => expect(handle.overlayEl.value).toBeInstanceOf(HTMLElement))
+  expect(handle.overlayEl.value!.classList.contains('ui-dialog-overlay')).toBe(true)
+  expect(fromInside!.overlayEl).toBe(handle.overlayEl.value)
+  handle.close()
+  await handle.result
+})
+
+test('openDialog closed in the same tick still settles and leaves nothing open', async () => {
+  const { defineComponent, h } = await import('vue')
+  const { openDialog } = await import('../src/composables/useDialogService')
+  const DialogHost = (await import('../src/components/DialogHost/DialogHost.vue')).default
+  await render({ render: () => h(DialogHost) })
+  const handle = openDialog(defineComponent({ render: () => h('p', 'Body') }), { title: 'Early' })
+  handle.close('early')
+  await expect(handle.result).resolves.toBe('early')
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog')).toBeNull())
+})
+
+test('Escape that ends an IME composition does not close the dialog', async () => {
+  const screen = await render(DialogFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  const input = screen.getByTestId('first').element() as HTMLInputElement
+  input.focus()
+
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Escape', isComposing: true, bubbles: true }),
+  )
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 229, bubbles: true }))
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(screen.getByTestId('state').element().textContent).toBe('open')
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+})

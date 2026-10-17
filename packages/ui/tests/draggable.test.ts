@@ -110,6 +110,28 @@ test('a real drag suppresses the browser trailing click on the dropped row', asy
   expect(evt.defaultPrevented).toBe(true)
 })
 
+test('a drop with no trailing click does not eat the next real click', async () => {
+  const screen = await render(DraggableFixture)
+  drag(rows(screen)[0]!, 40, 18)()
+  await vi.waitFor(() => expect(order(screen)).not.toBe('a,b,c'))
+  // Released over another row, so the browser sent no click. The next press is a fresh tap.
+  const row = rows(screen).find((el) => el.dataset.value === 'b')!
+  row.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 19, button: 0 }))
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 19 }))
+  row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+  await vi.waitFor(() => expect(clicked(screen)).toBe('b'))
+})
+
+test('a keyboard click after a drop is not eaten either', async () => {
+  const screen = await render(DraggableFixture)
+  drag(rows(screen)[0]!, 40, 20)()
+  await vi.waitFor(() => expect(order(screen)).not.toBe('a,b,c'))
+  const row = rows(screen).find((el) => el.dataset.value === 'c')!
+  row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+  row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+  await vi.waitFor(() => expect(clicked(screen)).toBe('c'))
+})
+
 test('a click with no preceding drag reaches the row normally', async () => {
   const screen = await render(DraggableFixture)
   rows(screen)[1]!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))

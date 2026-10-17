@@ -40,9 +40,11 @@ test('the built vapor-lib DataTable (+ its full dependency tree) renders and wor
     )
     expect(firstRowCheckbox).toBeTruthy()
     firstRowCheckbox!.click()
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    const count = host.querySelector('[data-testid="vapor-datatable-selected-count"]')!.textContent
-    expect(count).toBe('1')
+    await vi.waitFor(() =>
+      expect(
+        host.querySelector('[data-testid="vapor-datatable-selected-count"]')!.textContent,
+      ).toBe('1'),
+    )
   } finally {
     app.unmount()
   }

@@ -2,6 +2,7 @@ import '../src/style.css'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, ref } from 'vue'
 import MessageFixture from './fixtures/MessageFixture.vue'
 import Message from '../src/components/Message/Message.vue'
 
@@ -129,4 +130,41 @@ test('the status icon is vertically centred on the title line', async () => {
   const t = title.getBoundingClientRect()
   const lineHeight = parseFloat(getComputedStyle(title).lineHeight)
   expect(Math.abs(i.top + i.height / 2 - (t.top + lineHeight / 2))).toBeLessThan(0.5)
+})
+
+async function renderBetweenButtons() {
+  const open = ref(true)
+  const screen = await render({
+    render: () => [
+      h('button', { type: 'button' }, 'Before'),
+      h(
+        Message,
+        {
+          closable: true,
+          open: open.value,
+          'onUpdate:open': (value: boolean) => (open.value = value),
+        },
+        { default: () => 'Heads up' },
+      ),
+      h('button', { type: 'button' }, 'After'),
+    ],
+  })
+  return { screen, open }
+}
+
+test('closing by keyboard moves focus to the next focusable element, not <body>', async () => {
+  const { screen, open } = await renderBetweenButtons()
+  ;(screen.getByRole('button', { name: 'Before' }).element() as HTMLElement).focus()
+  await userEvent.tab()
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Dismiss' }).element())
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(open.value).toBe(false))
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'After' }).element())
+})
+
+test('closing with the mouse leaves focus where the browser puts it', async () => {
+  const { screen, open } = await renderBetweenButtons()
+  await userEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+  await vi.waitFor(() => expect(open.value).toBe(false))
+  expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'After' }).element())
 })

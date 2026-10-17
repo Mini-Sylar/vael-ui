@@ -7,7 +7,7 @@
     </p>
     <div class="row">
       <Card v-for="review in reviews" :key="review.author" :title="review.author">
-        <Rating :model-value="review.stars" allow-half readonly size="sm" />
+        <Rating :model-value="review.stars" allow-half readonly size="sm" aria-label="Rating" />
         <p class="panel-text">{{ review.text }}</p>
       </Card>
     </div>

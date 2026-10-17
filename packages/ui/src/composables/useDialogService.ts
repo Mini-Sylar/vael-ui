@@ -3,19 +3,24 @@ import {
   type ComputedRef,
   type InjectionKey,
   computed,
+  effectScope,
   inject,
   markRaw,
   reactive,
   watch,
 } from 'vue'
+import { isClient } from '@vueuse/core'
 import type { ComponentProps } from 'vue-component-type-helpers'
 import type { DialogProps } from '../components/Dialog/Dialog.vue'
+import type { DialogOpenChangeDetails } from './useDialog'
 
 export interface DialogRef<D = unknown, T = unknown> {
   /** Whatever was passed via `openDialog(Component, { data })`. */
   readonly data: D
   /** The real panel element, once mounted — for GSAP/motion-v enter animations, same role as static `<Dialog>`'s exposed `panelEl`. */
   readonly panelEl: HTMLElement | null
+  /** The backdrop, once mounted. Same role as static `<Dialog>`'s `overlayEl`; null when `modal` is false. */
+  readonly overlayEl: HTMLElement | null
   /** Closes the dialog; `result` is what the opener's `await`/`onClose` receives. */
   close: (result?: T) => void
 }
@@ -38,6 +43,8 @@ export interface OpenDialogOptions<D = unknown, T = unknown> extends Partial<Dia
   footer?: Component
   /** Fires once with whatever `dialogRef.close(result)` passed, or `undefined` on Escape/outside-click/close-button dismissal. */
   onClose?: (result: T | undefined) => void
+  /** Same as `<Dialog>`'s `@open-change`: runs before it opens or closes, and `details.cancel()` keeps it as it is. */
+  onOpenChange?: (open: boolean, details: DialogOpenChangeDetails) => void
 }
 
 export interface OpenDialogHandle<T = unknown> {
@@ -47,6 +54,8 @@ export interface OpenDialogHandle<T = unknown> {
   close: (result?: T) => void
   /** Same role as static `<Dialog>`'s exposed `panelEl` — null until DialogHost actually mounts it. */
   panelEl: ComputedRef<HTMLElement | null>
+  /** Same role as static `<Dialog>`'s `overlayEl`. Null until mounted, and when `modal` is false. */
+  overlayEl: ComputedRef<HTMLElement | null>
 }
 
 export interface DynamicDialogEntry {
@@ -58,6 +67,7 @@ export interface DynamicDialogEntry {
   dialogProps: Partial<DialogProps>
   data: unknown
   panelEl: HTMLElement | null
+  overlayEl: HTMLElement | null
   open: boolean
   pendingResult: unknown
   closeRequested: boolean
@@ -85,6 +95,11 @@ export function openDialog<
     footerProps?: ComponentProps<F>
   } = {},
 ): OpenDialogHandle<T> {
+  // One server queue would reach every request; the browser runs this call again on hydration.
+  if (!isClient) {
+    const none = computed(() => null)
+    return { result: Promise.resolve(undefined), close: () => {}, panelEl: none, overlayEl: none }
+  }
   const {
     props: componentProps = {},
     footer,
@@ -119,6 +134,7 @@ export function openDialog<
     dialogProps,
     data,
     panelEl: null,
+    overlayEl: null,
     open: true,
     pendingResult: undefined,
     closeRequested: false,
@@ -131,26 +147,31 @@ export function openDialog<
   queue.push(entry)
 
   // Fires on any close path (one settle path either way).
-  watch(
-    () => entry.open,
-    (isOpen) => {
-      if (isOpen) return
-      settle(entry.pendingResult)
-      setTimeout(
-        () => {
-          const i = queue.findIndex((e) => e.id === id)
-          if (i !== -1) queue.splice(i, 1)
-        },
-        hasCustomBeforeClose ? 0 : DIALOG_EXIT_MS,
-      )
-    },
-    { once: true },
+  // Detached so an unmounting opener can't stop it and strand the entry.
+  const scope = effectScope(true)
+  scope.run(() =>
+    watch(
+      () => entry.open,
+      (isOpen) => {
+        if (isOpen) return
+        scope.stop()
+        settle(entry.pendingResult)
+        setTimeout(
+          () => {
+            const i = queue.findIndex((e) => e.id === id)
+            if (i !== -1) queue.splice(i, 1)
+          },
+          hasCustomBeforeClose ? 0 : DIALOG_EXIT_MS,
+        )
+      },
+    ),
   )
 
   return {
     result,
     close: entry.close as (result?: T) => void,
     panelEl: computed(() => entry.panelEl),
+    overlayEl: computed(() => entry.overlayEl),
   }
 }
 

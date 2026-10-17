@@ -24,6 +24,43 @@ import { Button } from 'vael-ui' // classic VDOM build
 import { Button } from 'vael-ui/vapor' // compiled Vapor build, same props/API
 ```
 
+The Vapor build needs Vue 3.6, which is still a prerelease. Pin the exact version vael-ui is
+built against. A range such as `^3.5.0` can install Vue 3.5, which has no Vapor mode.
+
+```sh
+pnpm add vue@3.6.0-rc.12 --save-exact
+```
+
+A minimal Vapor app:
+
+```ts
+// main.ts
+import { createVaporApp } from 'vue'
+import App from './App.vue'
+
+createVaporApp(App).mount('#app')
+```
+
+```vue
+<!-- App.vue -->
+<script setup vapor lang="ts">
+import { Button, Toaster, toast } from 'vael-ui/vapor'
+</script>
+
+<template>
+  <Toaster />
+  <Button @click="toast('Saved')">Save</Button>
+</template>
+```
+
+To compile every `<script setup>` component in your app as Vapor without the `vapor`
+attribute, use `vue({ features: { vapor: true } })` from `@vitejs/plugin-vue` 6.0.8 or later. vael-ui doesn't use the
+Options API, so if your own components don't either, add `optionsAPI: false` to `features` to drop
+its code from your bundle.
+
+To move an existing VDOM app over a few components at a time, keep `createApp` and add
+`app.use(vaporInteropPlugin)`. Details: [Vue Vapor support](https://vael-ui.dev/docs/getting-started#vapor).
+
 `playground/vapor` is a live showcase of the Vapor build with nothing else in the tree, every
 mounted component there is genuinely Vapor, verified via Vue's own `__vapor` flag in
 `packages/vapor-ui/tests`.
@@ -50,6 +87,9 @@ import { Button, ConfigProvider } from 'vael-ui'
   </ConfigProvider>
 </template>
 ```
+
+Components use the page's font and ship none of their own, so set one on `body`
+(for example `font-family: system-ui, sans-serif`).
 
 Buttons and component text follow the font size on `<html>`. Set `theme.fontSize` to change text inside one provider:
 
@@ -103,6 +143,7 @@ Full theming/i18n/ConfigProvider setup: [Global Setup guide](https://vael-ui.dev
 ```ts
 import { createApp } from 'vue'
 import { vTooltip, vScrollMask } from 'vael-ui'
+import App from './App.vue'
 
 const app = createApp(App)
 app.directive('tooltip', vTooltip)
@@ -115,6 +156,14 @@ singleton every tooltip target renders through). Skipping either step is what ca
 
 Vapor apps import the same names from `vael-ui/vapor` instead. Full options and the
 Vapor-specific directive shape: [Animation Integration guide](https://vael-ui.dev/docs/guides/animation-integration).
+
+## Server rendering
+
+Both builds render on the server and hydrate in the browser. In Nuxt, add `vael-ui/nuxt` to
+`modules` ([Nuxt guide](https://vael-ui.dev/docs/guides/nuxt)). With plain Vite SSR, set
+`ssr: { noExternal: ['vael-ui'] }` so Vite bundles its CSS imports, and add `ctx.teleports`
+to your page template, since overlays, toasts and tooltips teleport to `<body>`. See
+[Server rendering](https://vael-ui.dev/docs/getting-started#ssr).
 
 ## Structure
 

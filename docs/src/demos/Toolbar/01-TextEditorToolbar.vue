@@ -4,7 +4,9 @@
     <p class="note">
       Try it with a keyboard: Tab in once (focus lands on Bold, the first button), then use ←/→ to
       move between every button in the group, Home/End jump to the first/last. Tab moves focus OUT
-      of the whole toolbar to the next thing on the page, exactly like a native OS toolbar.
+      of the whole toolbar to the next thing on the page, exactly like a native OS toolbar. Bold,
+      Italic and Underline are toggles: <code>:aria-pressed</code> tells screen readers they're on
+      and shows it on the button.
     </p>
     <div class="row">
       <Toolbar aria-label="Text formatting" class="editor-toolbar">
@@ -51,12 +53,6 @@
         </Button>
       </Toolbar>
     </div>
-    <p class="demo-status">
-      Bold: <strong>{{ bold ? 'on' : 'off' }}</strong
-      >, Italic: <strong>{{ italic ? 'on' : 'off' }}</strong
-      >, Underline: <strong>{{ underline ? 'on' : 'off' }}</strong
-      >, Align: <strong>{{ alignLabel }}</strong>
-    </p>
   </section>
 </template>
 

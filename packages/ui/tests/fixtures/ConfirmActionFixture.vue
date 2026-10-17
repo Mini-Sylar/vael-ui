@@ -28,6 +28,7 @@
   <output data-testid="result">{{ resultText }}</output>
   <output data-testid="confirm-calls">{{ confirmCalls }}</output>
   <output data-testid="error-calls">{{ errorCalls }}</output>
+  <output data-testid="cancel-calls">{{ cancelCalls }}</output>
 </template>
 
 <script setup lang="ts">
@@ -39,6 +40,7 @@ import { confirmAction } from '../../src/composables/confirmAction'
 const resultText = shallowRef('')
 const confirmCalls = shallowRef(0)
 const errorCalls = shallowRef(0)
+const cancelCalls = shallowRef(0)
 
 let resolveGate: (() => void) | undefined
 let rejectGate: ((err: unknown) => void) | undefined
@@ -65,6 +67,9 @@ function openDialogResolving() {
         confirmCalls.value++
         resolveGate = resolve
       }),
+    onCancel: () => {
+      cancelCalls.value++
+    },
   }).result.then((value) => {
     resultText.value = String(value)
   })
@@ -106,6 +111,9 @@ function openPopoverResolving() {
         confirmCalls.value++
         resolveGate = resolve
       }),
+    onCancel: () => {
+      cancelCalls.value++
+    },
   }).result.then((value) => {
     resultText.value = String(value)
   })

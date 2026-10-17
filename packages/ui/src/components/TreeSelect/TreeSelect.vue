@@ -4,6 +4,7 @@
     :data-ui-frame="props.size"
     role="combobox"
     :id="fieldControl.id"
+    v-bind="triggerAttrs"
     :class="triggerPart.class"
     :style="[triggerPart.style, attrs.style as never]"
     :tabindex="isDisabled ? -1 : 0"
@@ -61,7 +62,7 @@
   </div>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" :css="!forceMount">
+    <Transition name="ui-select" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -78,7 +79,7 @@
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
           :data-motion="props.motionCss ? undefined : 'off'"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
             <slot name="header" />
@@ -152,6 +153,7 @@ import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
@@ -165,6 +167,20 @@ import Tree from '../Tree/Tree.vue'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// id, aria-* and data-* name and identify the combobox, so they go on the
+// trigger; the panel keeps the rest (class, style, listeners) as before.
+const isTriggerAttr = (key: string) =>
+  key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
+const panelOwnAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+)
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => panelOwnAttrs.value,
+)
+const triggerAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => isTriggerAttr(key))),
+)
 
 /** Selected value, or an array of values outside `'single'` mode. @default null */
 const model = defineModel<string | number | (string | number)[] | null>({ default: null })

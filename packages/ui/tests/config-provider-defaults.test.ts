@@ -82,6 +82,24 @@ test('locale: dates follow the i18n locale, including when it changes', async ()
   await expect.poll(() => q('.ui-calendar-label').textContent).toContain('Juni 2024')
 })
 
+test('locale: the provider’s own locale wins over i18n and sets the week start', async () => {
+  const i18n = { t: (key: string) => key, locale: 'fr-FR' }
+  const firstWeekday = (id: string) =>
+    q(`[data-testid="${id}"] .ui-calendar-weekday`).textContent!.trim()
+  await render(() => [
+    h(ConfigProvider, { i18n, locale: 'en-US' }, () =>
+      h(Calendar, { 'data-testid': 'us', modelValue: new Date(2024, 5, 15) }),
+    ),
+    h(ConfigProvider, { locale: 'de-DE' }, () =>
+      h(Calendar, { 'data-testid': 'de', modelValue: new Date(2024, 5, 15) }),
+    ),
+  ])
+  expect(q('[data-testid="us"] .ui-calendar-label').textContent).toContain('June 2024')
+  // en-US weeks start on Sunday, de-DE weeks on Monday.
+  expect(firstWeekday('us')).toMatch(/^S/)
+  expect(firstWeekday('de')).toMatch(/^M/)
+})
+
 test('locale: a component’s own locale wins, and a name Intl rejects falls back safely', async () => {
   const i18n = { t: (key: string) => key, locale: 'not a locale!' }
   await render(() =>

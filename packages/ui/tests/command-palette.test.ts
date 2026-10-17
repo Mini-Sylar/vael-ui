@@ -101,10 +101,11 @@ test('rows change at once while typing, and the list eases to its new height', a
   for (const leaving of document.querySelectorAll('.ui-command-palette-row-leave-active')) {
     expect(getComputedStyle(leaving).display).toBe('none')
   }
-  await new Promise((resolve) => setTimeout(resolve, 450))
-  expect(new Set(heights).size).toBeGreaterThan(2)
-  expect(list.style.blockSize).toBe('')
-  expect(list.hasAttribute('data-resizing')).toBe(false)
+  await vi.waitFor(() => {
+    expect(new Set(heights).size).toBeGreaterThan(2)
+    expect(list.style.blockSize).toBe('')
+    expect(list.hasAttribute('data-resizing')).toBe(false)
+  })
 })
 
 test('motionCss false hands appearing and disappearing rows to @item-enter/@item-leave', async () => {
@@ -133,4 +134,13 @@ test('motionCss false hands appearing and disappearing rows to @item-enter/@item
   await userEvent.clear(input)
   await vi.waitFor(() => expect(entered.length).toBe(2))
   expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
+})
+
+test('the dialog has a name, which an aria-label can replace', async () => {
+  const screen = await render(CommandPalette, { props: { open: true, items } })
+  await expect.element(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible()
+  await screen.unmount()
+
+  await render(CommandPalette, { props: { open: true, items }, attrs: { 'aria-label': 'Go to' } })
+  await expect.element(page.getByRole('dialog', { name: 'Go to' })).toBeVisible()
 })

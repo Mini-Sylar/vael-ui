@@ -9,8 +9,9 @@
     <div class="board">
       <div v-for="col in boardColumns" :key="col.id" class="board-column">
         <h4>{{ col.label }}</h4>
-        <ul class="board-list" :ref="(el) => (boardColumnEls[col.id] = el as HTMLElement | null)">
-          <li
+        <!-- Divs, not ul/li: each card is a role="button", which a list item may not be. -->
+        <div class="board-list" :ref="(el) => (boardColumnEls[col.id] = el as HTMLElement | null)">
+          <div
             v-for="card in boardData[col.id].value"
             :key="card.id"
             :data-value="card.id"
@@ -23,8 +24,8 @@
             @keydown="boardEngines[col.id].onHandleKeydown($event, card.id)"
           >
             {{ card.label }}
-          </li>
-        </ul>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -120,7 +121,6 @@ function isBoardGrabbed(columnId: BoardColumnId, cardId: string): boolean {
   gap: 0.5rem;
   margin: 0;
   padding: 0;
-  list-style: none;
   min-block-size: 3rem;
   padding-block-end: 0.5rem;
 }

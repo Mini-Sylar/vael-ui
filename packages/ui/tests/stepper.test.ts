@@ -181,8 +181,12 @@ test('motionCss=false switches off the circle and connector fill transitions too
   expect(getComputedStyle(still.connector, '::after').transitionProperty).toBe('none')
 })
 
-test('exposes circleEls and connectorEls in order, and keeps them right when a circle remounts', async () => {
-  const stepper = shallowRef<{ circleEls: HTMLElement[]; connectorEls: HTMLElement[] } | null>(null)
+test('exposes circleEls, connectorEls and labelEls in order, and keeps them right when a step remounts', async () => {
+  const stepper = shallowRef<{
+    circleEls: HTMLElement[]
+    connectorEls: HTMLElement[]
+    labelEls: HTMLElement[]
+  } | null>(null)
   const modelValue = ref(0)
   const screen = await render(() =>
     h(Stepper as any, {
@@ -196,6 +200,7 @@ test('exposes circleEls and connectorEls in order, and keeps them right when a c
   expect(stepper.value!.connectorEls).toHaveLength(3)
   expect(stepper.value!.circleEls).toEqual(query('.ui-stepper-circle'))
   expect(stepper.value!.connectorEls).toEqual(query('.ui-stepper-connector'))
+  expect(stepper.value!.labelEls.map((el) => el.textContent)).toEqual(['A', 'B', 'C', 'D'])
 
   // Reaching step 2 swaps its trigger from a div to a button, a new circle element.
   const oldCircle = stepper.value!.circleEls[2]
@@ -205,6 +210,7 @@ test('exposes circleEls and connectorEls in order, and keeps them right when a c
   const circles = query('.ui-stepper-circle')
   expect(circles[2]).not.toBe(oldCircle)
   expect(stepper.value!.circleEls).toEqual(circles)
+  expect(stepper.value!.labelEls).toEqual(query('.ui-stepper-label'))
 })
 
 test('--ui-stepper-fill on a connector drives its fill, and the default look holds when unset', async () => {
@@ -288,3 +294,12 @@ test('vertical: the line under a circle starts right below it, even when the ste
   expect(bridgeTop - circle.bottom).toBeLessThan(8)
   expect(Math.abs(bridgeBottom - connector.top)).toBeLessThan(1)
 })
+
+test.each(['horizontal', 'vertical'] as const)(
+  'a %s stepper list carries no aria-orientation, which <ol> does not allow',
+  async (orientation) => {
+    const screen = await render(Stepper, { props: { items, modelValue: 0, orientation } })
+    const list = screen.container.querySelector('ol')!
+    expect(list.hasAttribute('aria-orientation')).toBe(false)
+  },
+)

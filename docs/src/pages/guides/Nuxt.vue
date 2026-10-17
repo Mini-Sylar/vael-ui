@@ -19,6 +19,45 @@ export default defineNuxtConfig({
 </template>'
     />
 
+    <h2 id="app-setup">{{ t('nuxt.appSetupTitle') }}</h2>
+    <i18n-t keypath="nuxt.appSetupIntro" tag="p" scope="global">
+      <template #link>
+        <RouterLink to="/docs/guides/global-setup">{{ t('nuxt.appSetupIntroLink') }}</RouterLink>
+      </template>
+    </i18n-t>
+    <CodeBlock
+      code="<!-- app.vue -->
+<template>
+  <TooltipHost />
+  <DialogHost />
+  <PopoverHost />
+  <Toaster />
+  <NuxtPage />
+</template>"
+    />
+    <p v-html="t('nuxt.composablesIntro')" />
+    <CodeBlock
+      code="<!-- pages/index.vue -->
+<script setup lang=&quot;ts&quot;>
+import { toast } from 'vael-ui'
+</script>
+
+<template>
+  <Button @click=&quot;toast('Saved')&quot;>Save</Button>
+</template>"
+    />
+    <p v-html="t('nuxt.directivesIntro')" />
+    <CodeBlock
+      lang="typescript"
+      code="// plugins/vael-ui.ts
+import { vTooltip, vScrollMask } from 'vael-ui'
+
+export default defineNuxtPlugin((nuxtApp) => {
+  nuxtApp.vueApp.directive('tooltip', vTooltip)
+  nuxtApp.vueApp.directive('scroll-mask', vScrollMask)
+})"
+    />
+
     <h2 id="exclude">{{ t('nuxt.excludeTitle') }}</h2>
     <p v-html="t('nuxt.excludeIntro')" />
     <CodeBlock
@@ -81,6 +120,7 @@ useBreadcrumbSchema(() => [
 
 const tocLinks = computed(() => [
   { id: 'setup', label: t('nuxt.setupTitle') },
+  { id: 'app-setup', label: t('nuxt.appSetupTitle') },
   { id: 'exclude', label: t('nuxt.excludeTitle') },
   { id: 'vapor', label: t('nuxt.vaporTitle') },
   { id: 'resolver', label: t('nuxt.resolverTitle') },

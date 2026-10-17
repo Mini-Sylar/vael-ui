@@ -5,7 +5,7 @@
     :style="rootPart.style"
     :data-state="dataState"
     :data-invalid="isInvalid || undefined"
-    v-bind="attrs"
+    v-bind="rootAttrs"
   >
     <span :class="controlClass">
       <input
@@ -23,6 +23,7 @@
         @change="onNativeChange"
         @focus="onNativeFocus"
         @blur="onNativeBlur"
+        v-bind="inputAttrs"
       />
       <span ref="boxEl" :class="boxPart.class" :style="boxPart.style" aria-hidden="true">
         <svg
@@ -73,13 +74,14 @@ import {
   watchEffect,
 } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-const attrs = useAttrs()
+const { rootAttrs, inputAttrs } = useControlAttrs(useAttrs())
 /**
  * Checked state. Bind an array to add or remove this checkbox's `value` in it (checkbox group).
  * @default false

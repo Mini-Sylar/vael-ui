@@ -159,6 +159,7 @@ import './PasswordInput.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useSlots, useTemplateRef } from 'vue'
+import { useSlotPresence } from '../../composables/dom'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Input from '../Input/Input.vue'
 import Popover from '../Popover/Popover.vue'
@@ -258,8 +259,9 @@ const ruleResults = computed<PasswordRuleResult[]>(() =>
 )
 
 const slots = useSlots()
+const hasSlot = useSlotPresence(slots)
 // Nothing to show: no rules and no #hint override — don't mount an empty popover/hint.
-const hasHintContent = computed(() => resolvedRules.value.length > 0 || !!slots.hint)
+const hasHintContent = computed(() => resolvedRules.value.length > 0 || hasSlot('hint'))
 
 const messages = useUiMessages()
 const fieldControl = useFieldControl()

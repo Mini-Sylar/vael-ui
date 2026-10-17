@@ -4,6 +4,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import Rating from '../src/components/Rating/Rating.vue'
+import Field from '../src/components/Field/Field.vue'
 import { contrast } from './utils/contrast'
 
 const pointerId = 1
@@ -199,4 +200,14 @@ test('empty stars keep ~3:1 contrast against the surface in both themes', async 
   } finally {
     delete document.documentElement.dataset.theme
   }
+})
+
+test("inside a Field, the label's for points at the slider and aria-labelledby stays", async () => {
+  const screen = await render({
+    render: () => h(Field, { label: 'Score' }, { default: () => h(Rating) }),
+  })
+  const label = screen.container.querySelector<HTMLLabelElement>('.ui-field-label')!
+  const slider = screen.getByRole('slider', { name: 'Score' }).element()
+  expect(document.getElementById(label.htmlFor)).toBe(slider)
+  expect(slider.getAttribute('aria-labelledby')).toBe(label.id)
 })

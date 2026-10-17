@@ -31,15 +31,17 @@ test('renders the correct month grid for a known month, including real leading d
   expect(leading!.classList.contains('ui-calendar-cell--outside')).toBe(true)
 })
 
-test('first-day-of-week falls back to Monday, not Sunday, when Intl.Locale.weekInfo is unsupported', async () => {
-  // Simulates an engine without Intl.Locale.weekInfo — even for a locale (en-US) that
-  // would resolve Sunday-first with real weekInfo support, the fallback must not just
-  // parrot that back; it's specifically testing the code path taken when weekInfo is
-  // absent, which used to silently default to Sunday regardless of locale.
+test('first-day-of-week falls back to Monday, not Sunday, when the engine has no week info', async () => {
+  // An engine with neither getWeekInfo() nor the older weekInfo getter. en-US would be
+  // Sunday-first with real support; the fallback must still be Monday.
   const OriginalLocale = Intl.Locale
   class LocaleWithoutWeekInfo extends OriginalLocale {}
   Object.defineProperty(LocaleWithoutWeekInfo.prototype, 'weekInfo', {
     get: () => undefined,
+    configurable: true,
+  })
+  Object.defineProperty(LocaleWithoutWeekInfo.prototype, 'getWeekInfo', {
+    value: undefined,
     configurable: true,
   })
   // @ts-expect-error -- test-only stub of a built-in for a single assertion
@@ -303,4 +305,20 @@ test("#day slot replaces a cell's content and receives the right per-day flags, 
   await vi.waitFor(() =>
     expect(cellByIso('2024-06-20')!.getAttribute('aria-selected')).toBe('true'),
   )
+})
+
+test('#day slot content joins the cell name, after the full date', async () => {
+  const screen = await render(Calendar, {
+    props: { modelValue: new Date(2024, 5, 15), firstDayOfWeek: 0 },
+    slots: {
+      day: (props: { date: Date }) => [
+        h('span', String(props.date.getDate())),
+        h('small', `$${100 + props.date.getDate()}`),
+      ],
+    },
+  })
+  // A price in the cell must be read out too, so the slot can't hide behind an aria-label.
+  const cell = screen.getByRole('gridcell', { name: 'Thursday, June 20, 2024 20 $120' })
+  await expect.element(cell).toBeInTheDocument()
+  expect(cell.element().hasAttribute('aria-label')).toBe(false)
 })

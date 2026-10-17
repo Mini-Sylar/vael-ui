@@ -22,7 +22,11 @@ function verify(label, barrelPath, distDir, cwd) {
   const entries = collectBarrelEntries(barrelPath, cwd)
   const missing = []
   for (const [name, srcPath] of Object.entries(entries)) {
-    if (!existsSync(join(distDir, `${name}.js`))) missing.push({ label, name, srcPath })
+    // The Vapor build imports composables from the vdom build's own files instead of copying them.
+    const file = name.startsWith('external/ui/')
+      ? join(uiRoot, 'dist', `${name.slice('external/ui/'.length)}.js`)
+      : join(distDir, `${name}.js`)
+    if (!existsSync(file)) missing.push({ label, name, srcPath })
   }
   return missing
 }

@@ -76,6 +76,6 @@
   .ui-tag--info {
     background: color-mix(in oklch, var(--ui-info) 14%, var(--ui-surface));
     border-color: color-mix(in oklch, var(--ui-info) 32%, var(--ui-surface));
-    color: var(--ui-info);
+    color: var(--ui-info-text, var(--ui-info));
   }
 }

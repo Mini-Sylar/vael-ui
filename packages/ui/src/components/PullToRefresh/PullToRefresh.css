@@ -9,6 +9,11 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;
   }
+  /* With nothing focusable inside, the scroller takes focus itself (useFocusableScroller). */
+  .ui-pull-to-refresh-root[data-self-scroll]:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+  }
   /* Suppress text selection only while an actual pull is live — a plain tap
      or ordinary scroll should still let a visitor select the list content. */
   .ui-pull-to-refresh-root[data-state='pulling'],

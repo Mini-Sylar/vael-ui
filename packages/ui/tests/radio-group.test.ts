@@ -68,3 +68,13 @@ test('Field label wires aria-labelledby on the group', async () => {
 test('a Radio outside a RadioGroup throws', async () => {
   await expect(render(Radio, { props: { value: 'x' } })).rejects.toThrow()
 })
+
+test('a Radio passes id and aria-* to its native input', async () => {
+  const screen = await render({
+    components: { RadioGroup, Radio },
+    template: `<RadioGroup aria-label="Plan"><Radio value="a" aria-label="Starter" /><Radio value="b" id="pro" data-testid="root" /></RadioGroup><label for="pro">Pro</label>`,
+  })
+  await expect.element(screen.getByRole('radio', { name: 'Starter' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('radio', { name: 'Pro' })).toHaveAttribute('id', 'pro')
+  await expect.element(screen.getByTestId('root')).toHaveClass('ui-radio')
+})

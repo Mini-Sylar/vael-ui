@@ -3,18 +3,20 @@
     <h3>Value bubble in the <code>#thumb</code> slot</h3>
     <p class="note">The bubble shows while dragging, on hover, and on keyboard focus.</p>
     <div class="row">
-      <Slider v-model="opacity" class="bubble-slider" style="max-width: 20rem">
-        <template #thumb="{ value }">
-          <span class="bubble">{{ value }}%</span>
-        </template>
-      </Slider>
+      <Field label="Opacity" label-placement="start" class="slider-field">
+        <Slider v-model="opacity" class="bubble-slider">
+          <template #thumb="{ value }">
+            <span class="bubble">{{ value }}%</span>
+          </template>
+        </Slider>
+      </Field>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Slider } from 'vael-ui'
+import { Field, Slider } from 'vael-ui'
 
 const opacity = shallowRef(60)
 </script>
@@ -22,6 +24,11 @@ const opacity = shallowRef(60)
 <style scoped>
 .row {
   padding-block-start: 2.25rem;
+}
+
+.slider-field {
+  inline-size: 100%;
+  max-inline-size: 20rem;
 }
 
 .bubble {

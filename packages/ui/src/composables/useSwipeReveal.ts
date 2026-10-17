@@ -1,7 +1,6 @@
-import { shallowRef, toValue, watch } from 'vue'
+import { getCurrentScope, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
-import { ssrWindow } from '../ssr'
+import { createClickGuard } from './dom'
 
 export type SwipeRevealSide = 'leading' | 'trailing'
 
@@ -142,6 +141,8 @@ export function useSwipeReveal(
   }
 
   let pointerId: number | null = null
+  // Mirrors `pointerId !== null`, reactive so the window listeners can follow it.
+  const tracking = shallowRef(false)
   let committed = false
   let startX = 0
   let startY = 0
@@ -149,12 +150,14 @@ export function useSwipeReveal(
   let startTime = 0
   let liveOffset = 0
   let dragEl: HTMLElement | null = null
-  // Suppress spurious click after drag-to-open (browser fires trailing click).
-  let suppressNextClick = false
+  // Swallows the trailing click after a drag-to-open.
+  const clickGuard = createClickGuard()
+  if (getCurrentScope()) onScopeDispose(clickGuard.disarm)
 
   function onContentPointerdown(event: PointerEvent) {
     if (isDisabled() || event.button !== 0) return
     pointerId = event.pointerId
+    tracking.value = true
     committed = false
     startX = event.clientX
     startY = event.clientY
@@ -173,6 +176,7 @@ export function useSwipeReveal(
       if (Math.abs(dy) > Math.abs(dx)) {
         // Vertical-dominant: list scroll, abandon tracking.
         pointerId = null
+        tracking.value = false
         return
       }
       committed = true
@@ -192,12 +196,13 @@ export function useSwipeReveal(
     if (pointerId === null || event.pointerId !== pointerId) return
     const wasCommitted = committed
     pointerId = null
+    tracking.value = false
     committed = false
     isDragging.value = false
     // Not a committed drag — a plain tap, or an abandoned vertical scroll.
     if (!wasCommitted) return
 
-    suppressNextClick = true
+    clickGuard.arm()
     const dx = event.clientX - startX
     // Edge this drag worked toward — offset sign at release, or the drag direction if it's at rest.
     const side: SwipeRevealSide =
@@ -220,13 +225,25 @@ export function useSwipeReveal(
     options.onCommit?.(openSide.value)
   }
 
-  useEventListener(ssrWindow, 'pointermove', onPointerMove)
-  useEventListener(ssrWindow, 'pointerup', endDrag)
-  useEventListener(ssrWindow, 'pointercancel', endDrag)
+  // Window listeners only while a press is tracked; idle rows add none.
+  watch(
+    tracking,
+    (active, _, onCleanup) => {
+      if (!active) return
+      window.addEventListener('pointermove', onPointerMove)
+      window.addEventListener('pointerup', endDrag)
+      window.addEventListener('pointercancel', endDrag)
+      onCleanup(() => {
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', endDrag)
+        window.removeEventListener('pointercancel', endDrag)
+      })
+    },
+    { flush: 'sync' },
+  )
 
   function onContentClick(event: MouseEvent) {
-    if (suppressNextClick) {
-      suppressNextClick = false
+    if (clickGuard.consume()) {
       event.preventDefault()
       event.stopPropagation()
       return

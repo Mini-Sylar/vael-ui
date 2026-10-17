@@ -41,7 +41,7 @@
   </Input>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" :css="!forceMount">
+    <Transition name="ui-select" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -61,7 +61,7 @@
           :aria-label="messages.datePicker.chooseDate"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <Calendar
             v-if="!timeOnlyEffective"
@@ -178,6 +178,7 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -200,6 +201,17 @@ import type {
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// The input already gets every attr; id, aria-* and data-* belong to it alone,
+// so the panel skips them rather than duplicating the id or the label.
+const isTriggerAttr = (key: string) =>
+  key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
+const panelOwnAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+)
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => panelOwnAttrs.value,
+)
 const messages = useUiMessages()
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */

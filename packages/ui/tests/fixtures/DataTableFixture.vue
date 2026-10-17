@@ -2,6 +2,7 @@
   <output data-testid="row-click-count">{{ rowClickCount }}</output>
   <output data-testid="last-clicked">{{ lastClicked }}</output>
   <output data-testid="selection-change-count">{{ selectionChangeRows.length }}</output>
+  <output data-testid="selection-emit-count">{{ selectionEmitCount }}</output>
   <output data-testid="exposed-el">{{ table?.el ? 'yes' : 'no' }}</output>
   <output data-testid="sort-field">{{ sort.field ?? '' }}</output>
   <output data-testid="sort-dir">{{ sort.dir ?? '' }}</output>
@@ -209,6 +210,7 @@ const dropErrorCount = shallowRef(0)
 const rowClickCount = shallowRef(0)
 const lastClicked = shallowRef('')
 const selectionChangeRows = shallowRef<Person[]>([])
+const selectionEmitCount = shallowRef(0)
 
 function onRowClick(row: Person) {
   rowClickCount.value++
@@ -216,6 +218,7 @@ function onRowClick(row: Person) {
 }
 function onSelectionChange(rows: Person[]) {
   selectionChangeRows.value = rows
+  selectionEmitCount.value++
 }
 
 const table = useTemplateRef('table')

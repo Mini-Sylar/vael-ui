@@ -292,3 +292,10 @@ test.each([
   expect(order(screen)).toBe('a,b,c')
   expect(screen.container.querySelector('[data-pending]')).toBeNull()
 })
+
+test('the list holds only list items; the live region and instructions sit beside it', async () => {
+  const screen = await render(SortableFixture)
+  const list = screen.container.querySelector('.ui-sortable')!
+  expect([...list.children].every((child) => child.tagName === 'LI')).toBe(true)
+  expect(list.contains(liveRegion(screen))).toBe(false)
+})

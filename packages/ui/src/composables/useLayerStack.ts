@@ -26,8 +26,13 @@ function owns(entry: LayerEntry, origin: Node | null) {
   return scope.contains(origin) || entry.content()?.contains(origin) === true
 }
 
+/** Escape that ends an IME composition belongs to the input method, not the layer. */
+export function isComposing(e: KeyboardEvent) {
+  return e.isComposing || e.keyCode === 229
+}
+
 function onKeydown(e: KeyboardEvent) {
-  if (e.key !== 'Escape' || e.defaultPrevented) return
+  if (e.key !== 'Escape' || e.defaultPrevented || isComposing(e)) return
 
   const layers = stack.value
   const origin = (e.target as Node | null) ?? document.activeElement
@@ -61,7 +66,8 @@ function syncKeydownListener() {
 export interface Layer {
   push: () => void
   pop: () => void
-  isTopmost: () => boolean
+  /** `except` skips a layer by its content, e.g. a callout the caller owns. */
+  isTopmost: (except?: HTMLElement | null) => boolean
   /** This layer's position in the shared stack, or `-1` before it's ever been pushed. Lets a
    * consumer (Dialog) derive a per-instance z-index from open ORDER instead of every instance
    * sharing one constant - otherwise two simultaneously-open layers can only be told apart by DOM
@@ -103,19 +109,22 @@ export function useLayer(options: UseLayerOptions = {}): Layer {
 
   tryOnScopeDispose(pop)
 
-  const isTopmost = () => {
+  const isTopmost = (except?: HTMLElement | null) => {
     const layers = stack.value
     const index = layers.findIndex((e) => e.id === id)
     if (index === -1) return false
 
     const scope = entry.scope()
     for (let i = index + 1; i < layers.length; i++) {
+      if (except && layers[i].content() === except) continue
       if (contends(layers[i].scope(), scope)) return false
     }
     return true
   }
 
-  const index = () => stack.value.findIndex((e) => e.id === id)
+  // Nothing is pushed on a server, and reading the shared stack there would keep
+  // each render's computeds subscribed to it.
+  const index = () => (isClient ? stack.value.findIndex((e) => e.id === id) : -1)
 
   return { push, pop, isTopmost, index }
 }

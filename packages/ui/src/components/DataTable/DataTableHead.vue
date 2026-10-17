@@ -1,9 +1,14 @@
 <template>
-  <thead :class="theadPart.class" :style="theadPart.style">
-    <tr ref="rowEl" class="ui-datatable-tr">
+  <thead
+    :class="theadPart.class"
+    :style="theadPart.style"
+    :role="split ? 'presentation' : undefined"
+  >
+    <tr ref="rowEl" class="ui-datatable-tr" :role="split ? 'row' : undefined">
       <th
         v-if="selectColumnRendered"
         scope="col"
+        :role="split ? 'columnheader' : undefined"
         :class="
           thPart('ui-datatable-th--select', frozenColumns > 0 && 'ui-datatable-th--frozen').class
         "
@@ -16,6 +21,8 @@
           :aria-label="messages.dataTable.selectAll"
           @update:model-value="onToggleSelectAll"
         />
+        <!-- Single select has no select-all box, but a header cell still needs a name. -->
+        <span v-else class="ui-datatable-sr-only">{{ messages.dataTable.selectRow }}</span>
       </th>
       <th
         v-if="expansionColumnRendered"
@@ -24,12 +31,15 @@
           thPart('ui-datatable-th--expand', frozenColumns > 0 && 'ui-datatable-th--frozen').class
         "
         :style="[thPart().style, utilityFrozenStyle('expand')]"
-        aria-hidden="true"
-      ></th>
+        :role="split ? 'columnheader' : undefined"
+      >
+        <span class="ui-datatable-sr-only">{{ messages.dataTable.expandRow }}</span>
+      </th>
       <th
         v-for="(col, colIndex) in columns"
         :key="String(col.field)"
         scope="col"
+        :role="split ? 'columnheader' : undefined"
         :class="
           thPart(
             isFrozenColumn(colIndex) && 'ui-datatable-th--frozen',
@@ -64,7 +74,7 @@
               <circle cx="10" cy="13" r="1.25" />
             </svg>
           </span>
-          <component :is="col.headerSlot" v-if="col.headerSlot" :column="col" />
+          <component :is="col.headerRelay" v-if="col.headerRelay" :column="col" />
           <button
             v-else-if="col.sortable"
             type="button"
@@ -136,6 +146,8 @@ const props = defineProps<{
   draggingColumn: string | number | null
   onColumnPointerdown: (event: PointerEvent, field: string | number) => void
   consumeColumnClick: () => boolean
+  /** scrollHeight layout: head and body are separate tables joined by ARIA roles. */
+  split: boolean
   ui?: Partial<{
     thead: UiPartValue
     th: UiPartValue

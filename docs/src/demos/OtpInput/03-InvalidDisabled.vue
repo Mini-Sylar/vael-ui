@@ -2,15 +2,19 @@
   <section class="demo">
     <h3>Invalid / disabled</h3>
     <div class="row">
-      <OtpInput v-model="invalidCode" invalid :length="4" />
-      <OtpInput v-model="disabledCode" disabled :length="4" />
+      <Field label="Invalid">
+        <OtpInput v-model="invalidCode" invalid :length="4" />
+      </Field>
+      <Field label="Disabled">
+        <OtpInput v-model="disabledCode" disabled :length="4" />
+      </Field>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { OtpInput } from 'vael-ui'
+import { Field, OtpInput } from 'vael-ui'
 
 const invalidCode = shallowRef('12')
 const disabledCode = shallowRef('42')

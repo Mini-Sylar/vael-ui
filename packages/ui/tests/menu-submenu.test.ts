@@ -1,7 +1,9 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
+import type { Locator } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { nextTick } from 'vue'
 import MenuSubmenuFixture from './fixtures/MenuSubmenuFixture.vue'
 
 beforeEach(() => {
@@ -21,9 +23,16 @@ function menuItemByText(text: string): HTMLElement | null {
   )
 }
 
-/** Waits out HOVER_CLOSE_DELAY (200ms) with margin, then checks every row's submenu is still open. */
-async function expectStillExpanded(...rows: string[]) {
-  await new Promise((resolve) => setTimeout(resolve, 300))
+/** Hovers `item`, runs past HOVER_CLOSE_DELAY (200ms) on fake timers, then checks every row's submenu is still open. */
+async function hoverAndExpectStillExpanded(item: Locator, ...rows: string[]) {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  try {
+    await item.hover()
+    vi.advanceTimersByTime(250)
+  } finally {
+    vi.useRealTimers()
+  }
+  await nextTick()
   for (const row of rows)
     expect(menuItemByText(row)?.getAttribute('aria-expanded'), row).toBe('true')
 }
@@ -85,9 +94,8 @@ test('hovering into the submenu itself keeps it open, not just hovering the trig
   await screen.getByRole('menuitem', { name: 'Share' }).hover()
   await vi.waitFor(() => expect(menuItemByText('Copy Link')).not.toBeNull(), { timeout: 1000 })
 
-  await screen.getByRole('menuitem', { name: 'Copy Link' }).hover()
   // If the row's own leave-timer weren't cancelled, it would fire within this wait.
-  await expectStillExpanded('Share')
+  await hoverAndExpectStillExpanded(screen.getByRole('menuitem', { name: 'Copy Link' }), 'Share')
   expect(menuItemByText('Copy Link')).not.toBeNull()
 })
 
@@ -109,9 +117,12 @@ test('hovering a 3rd-level submenu keeps the whole chain open, including the gra
   await screen.getByRole('menuitem', { name: 'Social' }).hover()
   await vi.waitFor(() => expect(menuItemByText('Twitter')).not.toBeNull(), { timeout: 1000 })
 
-  await screen.getByRole('menuitem', { name: 'Twitter' }).hover()
   // Share's and Social's own close timers would both fire within this wait if unguarded.
-  await expectStillExpanded('Share', 'Social')
+  await hoverAndExpectStillExpanded(
+    screen.getByRole('menuitem', { name: 'Twitter' }),
+    'Share',
+    'Social',
+  )
   expect(menuItemByText('Twitter')).not.toBeNull()
   expect(menuItemByText('Copy Link')).not.toBeNull()
 })
@@ -134,9 +145,13 @@ test('hovering a 4th-level submenu keeps the entire chain open, all the way to t
   await screen.getByRole('menuitem', { name: 'Twitter' }).hover()
   await vi.waitFor(() => expect(menuItemByText('Post')).not.toBeNull(), { timeout: 1000 })
 
-  await screen.getByRole('menuitem', { name: 'Post' }).hover()
   // Every level's own close timer would fire within this wait if any hop weren't guarded.
-  await expectStillExpanded('Share', 'Social', 'Twitter')
+  await hoverAndExpectStillExpanded(
+    screen.getByRole('menuitem', { name: 'Post' }),
+    'Share',
+    'Social',
+    'Twitter',
+  )
   expect(menuItemByText('Post')).not.toBeNull()
   expect(menuItemByText('Twitter')).not.toBeNull()
   expect(menuItemByText('Copy Link')).not.toBeNull()

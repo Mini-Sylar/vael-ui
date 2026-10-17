@@ -42,7 +42,7 @@
     color: var(--ui-danger-contrast);
   }
   .ui-badge--info {
-    background: var(--ui-info);
+    background: var(--ui-info-solid, var(--ui-info));
     color: var(--ui-info-contrast);
   }
   .ui-badge-content {

@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import SortableScrollFixture from './fixtures/SortableScrollFixture.vue'
 import SortableNestedScrollFixture from './fixtures/SortableNestedScrollFixture.vue'
@@ -38,20 +38,18 @@ async function dragFirstRowToBottomEdge(autoScroll: boolean) {
 
 test('dragging near the edge of a scrollable list scrolls it and drops past the first visible rows', async () => {
   const { scroller, release, index } = await dragFirstRowToBottomEdge(true)
-  // The drop target steps along with each autoscroll frame, so this needs real elapsed time.
-  await wait(600)
+  // The drop target steps along with each autoscroll frame.
+  await vi.waitFor(() => expect(scroller.scrollTop).toBeGreaterThan(300), { timeout: 2000 })
   release()
-  await wait(50)
-  expect(scroller.scrollTop).toBeGreaterThan(100)
-  expect(index()).toBeGreaterThan(6)
+  await vi.waitFor(() => expect(index()).toBeGreaterThan(6))
 })
 
 test('autoScroll=false leaves the list where it is', async () => {
   const { scroller, release, index } = await dragFirstRowToBottomEdge(false)
   // A negative over time: autoscroll would have moved the list well within this window.
-  await wait(200)
+  await wait(100)
   release()
-  await wait(50)
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(scroller.scrollTop).toBe(0)
   expect(index()).toBeLessThan(6)
 })
@@ -77,7 +75,8 @@ test('a scroll-locked page (open Dialog) is never autoscrolled', async () => {
     )
     const edge = { clientX: start.left + 4, clientY: window.innerHeight - 2 }
     window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId, ...edge }))
-    await wait(200)
+    // Real wait: a negative over time.
+    await wait(100)
     window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId, ...edge }))
     expect(document.scrollingElement!.scrollTop).toBe(0)
   } finally {
@@ -109,7 +108,7 @@ async function dropAfterOuterScroll(rowsScrolled: number) {
   outer.scrollTop = rowsScrolled * stride
   window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId, ...point }))
   window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId, ...point }))
-  await wait(50)
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   const order = screen.container
     .querySelector('[data-testid="order"]')!
     .textContent!.split(',')

@@ -1,6 +1,7 @@
 import '../src/style.css'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { nextTick } from 'vue'
 import PullToRefreshFixture from './fixtures/PullToRefreshFixture.vue'
 
 /**
@@ -12,7 +13,7 @@ import PullToRefreshFixture from './fixtures/PullToRefreshFixture.vue'
  * artifact; this tick absorbs it.
  */
 async function settle() {
-  await new Promise((r) => setTimeout(r, 0))
+  await nextTick()
 }
 
 function root(): HTMLElement {
@@ -83,6 +84,7 @@ function gesture(kind: InputKind, el: Element) {
 async function drag(kind: InputKind, el: Element, startY: number, endY: number, ms: number) {
   const g = gesture(kind, el)
   g.start(startY)
+  // Real wait: release velocity uses elapsed time.
   await new Promise((r) => setTimeout(r, ms))
   const notPrevented = g.move(endY)
   g.end(endY)
@@ -117,7 +119,6 @@ test.each(inputs)(
     const g = gesture(kind, root())
 
     g.start(20)
-    await new Promise((r) => setTimeout(r, 30))
     g.move(60) // delta 40
     await vi.waitFor(() => expect(state()).toBe('pulling'))
 
@@ -182,7 +183,6 @@ test('the #indicator slot receives state and progress', async () => {
   // Holds mid-drag (no release) so `ready` stays observable instead of
   // racing straight into `loading` the instant a release commits.
   root().dispatchEvent(new PointerEvent('pointerdown', { clientY: 20, pointerId, bubbles: true }))
-  await new Promise((r) => setTimeout(r, 30))
   root().dispatchEvent(new PointerEvent('pointermove', { clientY: 110, pointerId, bubbles: true }))
 
   await vi.waitFor(() =>
@@ -214,7 +214,6 @@ test('touchmove during a pull is preventDefaulted, so the container cannot scrol
 
   const start = makeTouch(root(), 20)
   fireTouch(root(), 'touchstart', [start], [start])
-  await new Promise((r) => setTimeout(r, 10))
 
   const move = makeTouch(root(), 70) // downward, from the top
   const notPrevented = fireTouch(root(), 'touchmove', [move], [move])
@@ -230,7 +229,6 @@ test('a touch that starts as an upward move at the top does not engage', async (
 
   const start = makeTouch(root(), 80)
   fireTouch(root(), 'touchstart', [start], [start])
-  await new Promise((r) => setTimeout(r, 10))
   const move = makeTouch(root(), 40) // upward
   const notPrevented = fireTouch(root(), 'touchmove', [move], [move])
   fireTouch(root(), 'touchend', [], [move])

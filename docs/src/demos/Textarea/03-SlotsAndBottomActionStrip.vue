@@ -1,7 +1,14 @@
 <template>
   <section class="demo">
     <h3><code>#start</code>/<code>#end</code> and the bottom action strip</h3>
-    <Textarea v-model="composerValue" auto-grow :rows="2" :max-rows="6" class="textarea-fixed">
+    <Textarea
+      v-model="composerValue"
+      auto-grow
+      :rows="2"
+      :max-rows="6"
+      class="textarea-fixed"
+      aria-label="Write a post"
+    >
       <template #start>
         <span class="textarea-avatar" aria-hidden="true">AL</span>
       </template>

@@ -141,9 +141,10 @@ test('renders every item, including an icon and a badge', async () => {
   const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   expect(buttons).toHaveLength(5)
+  // The badge joins the name as a plain word, not a parenthetical, so text-to-name checks match.
   expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
     'Finder',
-    'Mail (3)',
+    'Mail, 3',
     'Messages',
     'Notes',
     'Trash',
@@ -314,7 +315,7 @@ test('magnify=false disables the size effect entirely, without disabling the doc
   )
   // Give any (incorrect) async magnification a real chance to land before
   // asserting its absence — a poll that immediately passes proves nothing.
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
   expect(scaleOf(buttons[0])).toBeCloseTo(1, 5)
 
   // Still fully interactive — magnify=false isn't disabled=true.

@@ -190,10 +190,8 @@ useBreadcrumbSchema(() => [
   { name: name.value, url: `https://vael-ui.dev/components/${name.value}` },
 ])
 
-// Per-component callouts for the handful that need one, currently just
-// pointing Resizable at its real, already-in-use example instead of a
-// canned demo.
-const PAGE_NOTE_COMPONENTS = ['Resizable']
+// Per-component callouts for the handful that need one.
+const PAGE_NOTE_COMPONENTS = ['Resizable', 'ContextMenu', 'Tree', 'DataTable']
 const note = computed(() => {
   if (!PAGE_NOTE_COMPONENTS.includes(name.value)) return null
   return t(`pageNotes.${name.value}`)

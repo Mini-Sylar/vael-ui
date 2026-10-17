@@ -3,7 +3,10 @@ import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
+import { nextTick } from 'vue'
 import DialFixture from './fixtures/DialFixture.vue'
+import Dial from '../src/components/Dial/Dial.vue'
+import Field from '../src/components/Field/Field.vue'
 
 function dialRect(screen: RenderResult<unknown>, testId: string): DOMRect {
   const el = screen.container.querySelector(`[data-testid="${testId}"] .ui-dial-dial`)
@@ -48,7 +51,7 @@ function pointerup(x: number, y: number) {
 }
 
 function frame(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 16))
+  return nextTick()
 }
 
 /**
@@ -59,12 +62,8 @@ function frame(): Promise<void> {
  * -360) to simulate multiple full rotations, the real scenario this
  * component exists to get right.
  *
- * A real ~16ms frame gap is awaited between dispatches. Firing many
- * synthetic PointerEvents back-to-back with zero yield between them is not
- * representative of a real drag (which is paced by the display's actual
- * frame rate) and this browser test environment measurably drops/aliases
- * events dispatched that way — same reason userEvent-style helpers pace
- * real interactions rather than firing every event in one microtask.
+ * A tick is awaited between dispatches so each update renders before the
+ * next move, as in a real drag, rather than firing every event in one burst.
  */
 async function dragSweep(
   screen: RenderResult<unknown>,
@@ -250,4 +249,24 @@ test('bounded dial omits aria-valuemin/aria-valuemax when that bound is not set'
   const dial = dialEl(screen, 'no-min')
   expect(dial.getAttribute('aria-valuemin')).toBeNull()
   expect(dial.getAttribute('aria-valuemax')).toBe('20')
+})
+
+test('aria-label, aria-labelledby and aria-describedby name the focusable dial, not the wrapper', async () => {
+  const screen = await render({
+    components: { Dial, Field },
+    template: `<div>
+      <span id="gain-label">Gain</span><span id="gain-hint">In decibels</span>
+      <Dial data-testid="labelled" aria-label="Volume" aria-describedby="gain-hint" />
+      <Dial aria-labelledby="gain-label" />
+      <Field label="Pan"><Dial /></Field>
+    </div>`,
+  })
+  const control = screen.getByRole('slider', { name: 'Volume' })
+  await expect.element(control).toBeInTheDocument()
+  expect(control.element().getAttribute('aria-describedby')).toBe('gain-hint')
+  const root = screen.container.querySelector('[data-testid="labelled"]')!
+  expect(root.hasAttribute('aria-label')).toBe(false)
+  expect(root.hasAttribute('aria-describedby')).toBe(false)
+  await expect.element(screen.getByRole('slider', { name: 'Gain' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('slider', { name: 'Pan' })).toBeInTheDocument()
 })

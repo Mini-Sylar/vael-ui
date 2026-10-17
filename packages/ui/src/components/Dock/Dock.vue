@@ -19,7 +19,7 @@
       :style="itemPart.style"
       :tabindex="index === activeIndex ? 0 : -1"
       :disabled="item.disabled"
-      :aria-label="item.badge != null ? `${item.label} (${item.badge})` : item.label"
+      :aria-label="item.badge != null ? `${item.label}, ${item.badge}` : item.label"
       v-tooltip="tooltips ? { content: item.label, side: resolvedTooltipSide } : undefined"
       @click="onItemSelect(item, index)"
       @keydown="onItemKeydown($event, index)"

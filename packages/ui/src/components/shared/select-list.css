@@ -1,6 +1,7 @@
 @layer ui-components {
-  /* Overflow indicator is plain span. */
-  .ui-select-chip--overflow {
+  /* Overflow indicator is plain span. Doubled class so it beats .ui-chip and .ui-chip--md
+     whichever stylesheet loads last. */
+  .ui-chip.ui-select-chip--overflow {
     padding-inline: 0.5rem;
     color: var(--ui-text-muted);
   }

@@ -27,7 +27,12 @@
           <Button :class="labelPart.class" icon size="sm" variant="ghost" tabindex="-1" />
         </span>
         <span v-for="item in pageItems" :key="`label-${item}`">
-          <span v-if="typeof item !== 'number'" :class="labelEllipsisPart.class">…</span>
+          <span
+            v-if="typeof item !== 'number'"
+            :class="labelEllipsisPart.class"
+            :style="labelEllipsisPart.style"
+            >…</span
+          >
           <Button
             v-else
             :class="labelPart.class"
@@ -168,6 +173,7 @@
       :class="sizeSelectPart.class"
       :style="sizeSelectPart.style"
       size="sm"
+      :aria-label="messages.pagination.pageSize"
       :items="pageSizeItems"
       :model-value="pageSize"
       @update:model-value="onPageSizeChange"

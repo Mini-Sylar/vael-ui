@@ -73,15 +73,6 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
-// DataTable/Pagination/Tag/Combobox each hit their own confirmed upstream Vue
-// Vapor-interop bug in this docs site's async demo-loading harness (see
-// nuxt/ui#6395 for the same failure class in another component library). The
-// API is identical either way, so the toggle stays for visual consistency,
-// but it's cosmetic here: selecting "Vapor" still renders the VDOM demo
-// rather than a genuinely broken one.
-const FAKE_VAPOR_TOGGLE_COMPONENTS = ['DataTable', 'Pagination', 'Tag', 'Combobox']
-const isFakeVaporToggle = computed(() => FAKE_VAPOR_TOGGLE_COMPONENTS.includes(props.name))
-
 const codeOpen = shallowRef(false)
 const fileName = computed(() => `${props.example.id.split('/').pop()!.replace(/^\d+-/, '')}.vue`)
 const anchor = computed(() => `example-${props.example.id.split('/').pop()!.replace(/^\d+-/, '')}`)
@@ -124,14 +115,12 @@ watch(
 )
 
 const activeComponent = computed(() =>
-  variant.value === 'vapor' && !isFakeVaporToggle.value
+  variant.value === 'vapor'
     ? (props.example.vaporComponent ?? null)
     : (props.example.vdomComponent ?? null),
 )
 const code = computed(() =>
-  variant.value === 'vapor' && !isFakeVaporToggle.value
-    ? (props.example.vaporCode ?? '')
-    : (props.example.vdomCode ?? ''),
+  variant.value === 'vapor' ? (props.example.vaporCode ?? '') : (props.example.vdomCode ?? ''),
 )
 </script>
 

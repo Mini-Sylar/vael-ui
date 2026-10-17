@@ -9,7 +9,7 @@
   </span>
   <slot v-else-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTarget">
-    <Transition name="ui-popover" :css="!forceMount">
+    <Transition name="ui-popover" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -26,7 +26,7 @@
           ref="panel"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <div class="ui-popover-body" :style="bodyStyle" v-scroll-mask="scrollFade">
             <slot
@@ -102,7 +102,17 @@ export interface PopoverProps {
 <script setup lang="ts">
 import './Popover.css'
 import '../shared/tokens.css'
-import { computed, inject, shallowRef, useId, useTemplateRef, watch, watchEffect } from 'vue'
+import {
+  computed,
+  inject,
+  shallowRef,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+  watchEffect,
+} from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
@@ -189,6 +199,11 @@ const triggerElRef = computed<HTMLElement | null>(() => {
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const attrs = useAttrs()
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => attrs,
+)
 const panelId = useId()
 
 const TRIGGER_SELECTOR = 'button, a[href], [role="button"], [tabindex]'

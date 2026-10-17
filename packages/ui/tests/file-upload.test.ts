@@ -3,6 +3,8 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { nextTick } from 'vue'
 import FileUploadFixture from './fixtures/FileUploadFixture.vue'
+import FileUpload from '../src/components/FileUpload/FileUpload.vue'
+import Field from '../src/components/Field/Field.vue'
 
 function makeFile(name: string, type: string, size: number): File {
   return new File([new Uint8Array(size)], name, { type })
@@ -215,4 +217,17 @@ test('capture is omitted unless set, so mobile opens the photo library by defaul
   const off = await render(FileUpload, { props: { capture: false } })
   await nextTick()
   expect(off.container.querySelector('input[type="file"]')!.hasAttribute('capture')).toBe(false)
+})
+
+test('the native file input has a name on its own and takes a Field label when there is one', async () => {
+  const screen = await render({
+    components: { FileUpload, Field },
+    template: `<div><div data-testid="bare"><FileUpload /></div><div data-testid="field"><Field label="Avatar"><FileUpload /></Field></div></div>`,
+  })
+  const bare = screen.getByTestId('bare').element().querySelector('input[type="file"]')!
+  const inField = screen.getByTestId('field').element().querySelector('input[type="file"]')!
+  expect(bare.getAttribute('aria-label')).toBe('Browse files')
+  // An aria-label would override the Field's <label for>, so it is left off there.
+  expect(inField.hasAttribute('aria-label')).toBe(false)
+  expect(document.querySelector(`label[for="${inField.id}"]`)?.textContent).toContain('Avatar')
 })

@@ -1,7 +1,5 @@
-import { computed, shallowRef, toValue } from 'vue'
+import { computed, shallowRef, toValue, watch } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
-import { ssrWindow } from '../ssr'
 import type { ElRef } from './dom'
 
 export type SliderOrientation = 'horizontal' | 'vertical'
@@ -159,10 +157,22 @@ export function useSlider(
     options.onCommit?.()
   }
 
-  // Bound to window for 1:1 tracking outside hit target via setPointerCapture.
-  useEventListener(ssrWindow, 'pointermove', onPointerMove)
-  useEventListener(ssrWindow, 'pointerup', endDrag)
-  useEventListener(ssrWindow, 'pointercancel', endDrag)
+  // Bound to window for 1:1 tracking outside hit target, only while dragging.
+  watch(
+    isDragging,
+    (active, _, onCleanup) => {
+      if (!active) return
+      window.addEventListener('pointermove', onPointerMove)
+      window.addEventListener('pointerup', endDrag)
+      window.addEventListener('pointercancel', endDrag)
+      onCleanup(() => {
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', endDrag)
+        window.removeEventListener('pointercancel', endDrag)
+      })
+    },
+    { flush: 'sync' },
+  )
 
   function stepValue(index: number, delta: number) {
     setValue(index, values()[index] + delta)

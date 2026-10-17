@@ -20,7 +20,9 @@
     "openMenu": "Open menu",
     "previous": "Previous",
     "next": "Next",
-    "pager": "Previous and next pages"
+    "pager": "Previous and next pages",
+    "mainNav": "Main",
+    "sidebarNav": "Documentation"
   },
   "header": {
     "colorScheme": "Toggle color scheme",
@@ -96,8 +98,12 @@
     "title": "Getting started",
     "intro": "A Vue 3 component library with a full Vue Vapor build. Animations use plain CSS by default, or you can bring your own animation library.",
     "vaporTitle": "Vue Vapor support",
-    "vaporIntro": "Both builds ship from the same package and source. Use the one your app runs, or mix both, since Vue 3.6 supports VDOM/Vapor interop. Every component page has the same toggle to compare them.",
-    "vaporForceIntro": "Your own components opt into Vapor one at a time with <code>&lt;script setup vapor&gt;</code>. To compile every <code>&lt;script setup&gt;</code> component as Vapor without the attribute, turn on <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 or later:",
+    "vaporIntro": "Both builds ship from the same package and source, with the same props. Pick the one your app runs. Every component page has a toggle to compare them.",
+    "vaporPinIntro": "The Vapor build needs Vue 3.6, which is still a prerelease. Install the exact version vael-ui is built against, <code>{version}</code>. A range such as <code>^3.5.0</code> can install Vue 3.5, which has no Vapor mode, and a different prerelease can break the compiled components:",
+    "vaporAppIntro": "A Vapor app starts with <code>createVaporApp</code> and imports components, composables and directives from <code>'vael-ui/vapor'</code>. Your own components opt in with <code>&lt;script setup vapor&gt;</code>:",
+    "vaporForceIntro": "To skip the <code>vapor</code> attribute in every file, turn on <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 or later. Every <code>&lt;script setup&gt;</code> component in your app then compiles as Vapor:",
+    "vaporMixTitle": "Mixing both builds",
+    "vaporMixIntro": "A classic app can also host Vapor components. This helps when you move an existing app to Vapor a few components at a time. Keep <code>createApp</code>, install Vue's <code>vaporInteropPlugin</code>, and import from <code>'vael-ui/vapor'</code> in the components you mark <code>vapor</code>. For a new app, pick one build instead. A component marked <code>vapor</code> also imports directives such as <code>vTooltip</code> from <code>'vael-ui/vapor'</code> itself, because a directive registered with <code>app.directive</code> only reaches classic components.",
     "installTitle": "Install",
     "installIntro": "vael-ui is on npm. Install it with your package manager:",
     "usageTitle": "Usage",
@@ -105,12 +111,19 @@
     "usageImportNote": "Each component imports its own styles. Add this import only if you're on a version before 0.2.0 or want all styles loaded at once. See {link} for base-style setup.",
     "usageImportNoteLink": "Styling and cascade layers",
     "usageIntro": "Then import components from <code>'vael-ui'</code> for the classic VDOM build. For the Vapor build (Vue 3.6's mode without a virtual DOM), import from <code>'vael-ui/vapor'</code>. The props are the same in both:",
+    "fontIntro": "Components use the font of the page around them and ship no font of their own. Without one, the browser falls back to its default serif font, so set a font on <code>body</code>:",
     "darkModeTitle": "Dark mode",
     "darkModeIntro": "Dark mode is CSS-only. It follows <code>&lt;html data-theme=\"dark\"&gt;</code> and falls back to <code>prefers-color-scheme</code>. vael-ui ships no toggle UI. <code>useColorScheme()</code> tracks OS-preference changes and saves the choice through the <code>persist</code> option you pass:",
     "appearanceHeadIntro": "If you save color mode or app-wide font size in <code>localStorage</code>, place this script in your HTML <code>&lt;head&gt;</code> before the app bundle. It restores both before paint. Save a CSS font size such as <code>13px</code> or <code>1rem</code> under <code>app-font-size</code>. Components inherit it unless you set a scoped <code>theme.fontSize</code>.",
     "directivesTitle": "Directives",
     "directivesIntro": "<code>v-tooltip</code> and <code>v-scroll-mask</code> aren't registered globally by default. If you use either one in more than one component, register them once:",
-    "directivesNote": "<code>v-tooltip</code> also needs one <code>&lt;TooltipHost /&gt;</code> mounted in your app. In a Vapor app, import both directives from <code>vael-ui/vapor</code> instead."
+    "directivesNote": "<code>v-tooltip</code> also needs one <code>&lt;TooltipHost /&gt;</code> mounted in your app. In a Vapor app, import both directives from <code>vael-ui/vapor</code> instead.",
+    "ssrTitle": "Server rendering",
+    "ssrIntro": "Both builds render on the server and hydrate in the browser. {link} sets up everything below for you.",
+    "ssrIntroLink": "The Nuxt module",
+    "ssrNoExternal": "With plain Vite SSR, let Vite bundle vael-ui for the server. Each component imports its own CSS, and Node can't load CSS files on its own:",
+    "ssrTeleports": "Dialogs, popovers, toasts and tooltips render into <code>&lt;body&gt;</code> through <code>&lt;Teleport&gt;</code>. Vue returns that HTML separately in <code>ctx.teleports</code>. Add it at the start of <code>&lt;body&gt;</code>, before your app's element, or the page won't hydrate cleanly:",
+    "ssrLocale": "Set <code>locale</code> on <code>ConfigProvider</code> when you render on a server. Without it, dates, numbers and the first day of the week follow the server's language, then change once the page runs in the browser."
   },
   "globalSetup": {
     "title": "Global setup",
@@ -132,7 +145,7 @@
     "layerNote": "vael-ui ships in {layer}. Tailwind v4 also puts its utilities in a layer, so import order matters. Import vael-ui's CSS before your Tailwind entry (shown below) so its layer registers first. Tailwind's utilities layer then comes after it in the cascade, and a Tailwind utility on a vael-ui component always wins. You don't need {important} or specificity fights. See {link} for how layers work.",
     "layerNoteLink": "Styling and cascade layers",
     "orderWarningTitle": "Keep this import first",
-    "orderWarning": "Since 0.2.0, each component loads its own CSS, so most apps don't import vael-ui/style.css. Tailwind v4 is the exception. Its utilities live in their own cascade layer, and the first stylesheet to register a layer name sets the order. Import vael-ui's CSS before your Tailwind entry, in your app's main entry file. The order then holds as more component CSS loads later.",
+    "orderWarning": "Each component loads its own CSS, so you don't import a stylesheet for vael-ui. Tailwind v4 is the one exception. Its utilities live in their own cascade layer, and the first stylesheet to name a layer sets the order. Import <code>vael-ui/layers.css</code> before your Tailwind entry, in your app's main entry file. It only names vael-ui's layer and loads no component CSS, so the order holds as components load their CSS later.",
     "mergingTitle": "Merging classes with tailwind-merge",
     "mergingIntro": "Every component takes a <code>ui</code> prop for part classes (for example <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). To resolve conflicting Tailwind utilities there the way <code>tailwind-merge</code> does (the last one wins per property), set it up once:",
     "mergingNote": "Every <code>ui.*</code> part class in the tree now goes through <code>twMerge</code>."
@@ -312,7 +325,10 @@
     "BreadcrumbSeparator": "The divider between two BreadcrumbItems. It shows a chevron unless you pass your own content."
   },
   "pageNotes": {
-    "Resizable": "This site's own sidebar is built with Resizable. Drag its right edge to try it."
+    "Resizable": "This site's own sidebar is built with Resizable. Drag its right edge to try it.",
+    "ContextMenu": "Keyboard users open the menu with Shift+F10 or the Menu key, which fire contextmenu on the focused element, so make the wrapped target focusable (tabindex=\"0\") and give it an accessible name.",
+    "Tree": "Rows update from reactive state, so a custom #node slot should read reactive values (props, refs, computeds), not plain variables captured from the parent.",
+    "DataTable": "Big tables: with hundreds of rows, add virtualize and a scroll-height, for example scroll-height=\"400px\". The table then draws only the rows in view, so sorting, selecting and scrolling stay fast. When more than 150 rows are on screen at once, rows also stop sliding into place as they sort."
   },
   "taxonomy": {
     "setup": "Setup",
@@ -355,8 +371,10 @@
     "setupOutro": "Write the tag, and the plugin adds the import at build time:",
     "vaporTitle": "Vapor",
     "vaporIntro": "vael-ui ships two builds from the same source: the regular VDOM build and a Vapor build (<code>vael-ui/vapor</code>). The resolver imports from the VDOM build by default. Pass <code>variant: 'vapor'</code> to import from the Vapor build instead. The resolver imports every component from one build, so pick the one your app renders with.",
+    "vaporHostsNote": "In a Vapor template, unplugin-vue-components only finds components that sit inside another component's slot. Import top-level ones by hand, such as <code>&lt;Toaster&gt;</code>, <code>&lt;DialogHost&gt;</code> and <code>&lt;ConfigProvider&gt;</code>, until unplugin-vue-components supports Vapor.",
     "oneImportTitle": "One shared import, no /vapor subpath",
     "oneImportIntro": "Your editor's auto-import may keep suggesting <code>vael-ui</code> instead of <code>vael-ui/vapor</code>. This is a known TypeScript limitation when a package exports the same name from two entry points. To avoid it, set a <code>vapor</code> export condition instead of importing from the subpath. Every <code>import … from 'vael-ui'</code> then resolves to the Vapor build across the project, for components and composables alike. Auto-import has nothing left to get wrong.",
+    "oneImportDefaults": "Add <code>vapor</code> to Vite's default conditions instead of replacing them. A bare <code>['vapor']</code> drops the defaults, and other packages can then load the wrong file. The <code>ssr</code> line does the same for server rendering.",
     "oneImportNoteTitle": "Keep both settings in sync",
     "oneImportNote": "The Vite condition controls which build loads. The TS condition keeps the types in line with it. If you set one without the other, you get a silent mismatch instead of an error: correct types with the wrong build loaded, or the reverse.",
     "cssTitle": "CSS",
@@ -370,10 +388,15 @@
     "setupTitle": "Setup",
     "setupIntro": "Register the module in your Nuxt config:",
     "setupOutro": "Write the tag, and Nuxt resolves the import for you:",
+    "appSetupTitle": "App setup",
+    "appSetupIntro": "The module registers components only. Mount the hosts you use once in app.vue. {link} explains what each one does.",
+    "appSetupIntroLink": "Global setup",
+    "composablesIntro": "Composables such as <code>toast()</code> and <code>openDialog()</code> aren't auto-imported. Import them from <code>'vael-ui'</code>, or from <code>'vael-ui/vapor'</code> with the Vapor variant:",
+    "directivesIntro": "The <code>v-tooltip</code> and <code>v-scroll-mask</code> directives aren't registered either. Register them in a plugin. With the Vapor variant, import them from <code>'vael-ui/vapor'</code>:",
     "excludeTitle": "exclude",
     "excludeIntro": "Skip specific component names, for example to register your own <code>&lt;Button&gt;</code> under the same tag:",
     "vaporTitle": "Vapor",
-    "vaporIntro": "Set <code>variant: 'vapor'</code> to use <code>vael-ui/vapor</code>, the same option <code>vael-ui/resolver</code> takes. The module turns on Nuxt's <code>vue.vapor</code> for you. It needs Nuxt 4.6 or later and Vue 3.6.",
+    "vaporIntro": "Set <code>variant: 'vapor'</code> to use <code>vael-ui/vapor</code>, the same option <code>vael-ui/resolver</code> takes. The module turns on Nuxt's <code>vue.vapor</code> for you. It needs Nuxt 4.6 or later and Vue 3.6. Pin Vue to the exact version given in Getting started.",
     "vaporOutro": "Pages still render on the server. The server turns each component into HTML, and the browser picks it up as a Vapor component, with nothing else to configure.",
     "vaporForceIntro": "To compile your own <code>&lt;script setup&gt;</code> components as Vapor too, without adding <code>vapor</code> to each one, turn on <code>{'@'}vitejs/plugin-vue</code>'s <code>features.vapor</code> through Nuxt's <code>vite.vue</code>:",
     "resolverTitle": "Using unplugin-vue-components instead",

@@ -14,9 +14,15 @@
     </p>
 
     <div class="menu-list-demo-shell">
-      <aside class="menu-list-demo-sidebar">
-        <MenuList :items="navItems" :active="activePage" @select="onSelect" />
-      </aside>
+      <!-- A div, not an aside: this demo already sits inside the page's main landmark. -->
+      <div class="menu-list-demo-sidebar">
+        <MenuList
+          :items="navItems"
+          :active="activePage"
+          aria-label="Workspace"
+          @select="onSelect"
+        />
+      </div>
       <div class="menu-list-demo-main">
         <Card :title="currentItemLabel">
           <p class="panel-text">

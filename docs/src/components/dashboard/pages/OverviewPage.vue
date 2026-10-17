@@ -23,6 +23,7 @@
           <Progress
             v-if="stat.progress != null"
             :value="stat.progress"
+            :label="stat.label"
             size="sm"
             :variant="stat.trendVariant === 'danger' ? 'danger' : 'primary'"
             class="dash-stat-progress"
@@ -63,7 +64,7 @@
       <template #header>
         <div class="dash-recent-orders-header">
           <div>
-            <h3 class="ui-card-title">Recent orders</h3>
+            <h2 class="ui-card-title">Recent orders</h2>
             <p class="ui-card-description">Latest 10 — full table lives on the Orders page.</p>
           </div>
           <AvatarGroup size="sm" :overflow-count="teamOverflowCount" hover-lift>

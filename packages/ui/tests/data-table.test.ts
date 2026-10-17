@@ -1,8 +1,9 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
-import { expect, test, vi } from 'vitest'
+import { beforeAll, expect, test, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { render } from 'vitest-browser-vue'
+import { loadSortableEngine } from '../src/composables/useLazySortable'
 import type { RenderResult } from 'vitest-browser-vue'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
 import DataTableReorderFixture from './fixtures/DataTableReorderFixture.vue'
@@ -10,6 +11,10 @@ import DataTableExpansionFixture from './fixtures/DataTableExpansionFixture.vue'
 import DataTableVirtualizeFixture from './fixtures/DataTableVirtualizeFixture.vue'
 import DataTableDateSortFixture from './fixtures/DataTableDateSortFixture.vue'
 import type { UiPartValue } from '../src/classes'
+
+// DataTable loads the drag engine on demand. Loading it up front means a test can drag as soon as
+// the table renders.
+beforeAll(() => loadSortableEngine())
 
 function headerCells(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>('.ui-datatable-th'))
@@ -741,7 +746,7 @@ test('resizableColumns: dragging the trailing handle changes and keeps the colum
   })
   const settledWidth = nameHeader.getBoundingClientRect().width
   // Stays put after the drag ends — not reset by some later render pass.
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(nameHeader.getBoundingClientRect().width).toBe(settledWidth)
 })
 
@@ -1234,4 +1239,49 @@ test('scrollHeight: a column without a width keeps a minimum instead of shrinkin
     )
     expectColumnsAligned(screen.container)
   })
+})
+
+test('a scrollHeight body with nothing focusable in it is reachable by keyboard', async () => {
+  const screen = await renderTable({ rowCount: 12, showStatusColumn: false, scrollHeight: '120px' })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(body.getAttribute('tabindex')).toBe('0'))
+})
+
+test('the single-select column header still has a name for screen readers', async () => {
+  const screen = await renderTable({
+    rowCount: 2,
+    builtinSelectable: true,
+    selectionMode: 'checkbox',
+    single: true,
+  })
+  const th = screen.container.querySelector<HTMLElement>('.ui-datatable-th--select')!
+  expect(th.textContent?.trim()).toBe('Select row')
+})
+
+test('the expand column header has a name, so its toggle cells have a header', async () => {
+  const screen = await expansionScreen()
+  const th = screen.container.querySelector<HTMLElement>('.ui-datatable-th--expand')!
+  expect(th.hasAttribute('aria-hidden')).toBe(false)
+  expect(th.textContent?.trim()).toBe('Expand row')
+})
+
+test('scrollHeight still reads as one table: body cells sit under the head row', async () => {
+  const screen = await renderTable({ rowCount: 3, showStatusColumn: false, scrollHeight: '200px' })
+  // The two <table> elements are layout only; the wrapper is the table assistive tech sees.
+  expect(screen.container.querySelectorAll('[role="table"]')).toHaveLength(1)
+  for (const table of screen.container.querySelectorAll('table'))
+    expect(table.getAttribute('role')).toBe('presentation')
+  await expect.element(screen.getByRole('columnheader', { name: 'Name' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: 'Alice' })).toBeInTheDocument()
+  expect(screen.getByRole('row').all().length).toBeGreaterThanOrEqual(4)
+})
+
+test('a focusable scroll strip in the split layout is a rowgroup, not a stray child of the table', async () => {
+  const screen = await renderTable({ rowCount: 12, showStatusColumn: false, scrollHeight: '120px' })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(body.getAttribute('tabindex')).toBe('0'))
+  expect(body.getAttribute('role')).toBe('rowgroup')
+  expect(screen.container.querySelector('.ui-datatable-head-scroll')!.getAttribute('role')).toBe(
+    'rowgroup',
+  )
 })

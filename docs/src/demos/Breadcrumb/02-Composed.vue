@@ -7,7 +7,7 @@
       >
       instead — reach for this when a crumb needs custom content, not just a label.
     </p>
-    <Breadcrumb>
+    <Breadcrumb aria-label="Composed breadcrumb">
       <BreadcrumbItem href="/">Home</BreadcrumbItem>
       <BreadcrumbSeparator />
       <BreadcrumbItem href="/docs">Docs</BreadcrumbItem>

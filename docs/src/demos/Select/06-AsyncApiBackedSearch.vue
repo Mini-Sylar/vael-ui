@@ -10,16 +10,18 @@
       <code>ui.panel</code> gives it a wider floor here so the email addresses don't truncate.
     </p>
     <div class="row">
-      <Select
-        v-model="userId"
-        v-model:query="query"
-        :items="results"
-        :loading="loading"
-        :filter="false"
-        filter-placeholder="Search 5,000 users..."
-        placeholder="Pick a user"
-        :ui="{ panel: { style: { minInlineSize: '18rem' } } }"
-      />
+      <Field label="User">
+        <Select
+          v-model="userId"
+          v-model:query="query"
+          :items="results"
+          :loading="loading"
+          :filter="false"
+          filter-placeholder="Search 5,000 users..."
+          placeholder="Pick a user"
+          :ui="{ panel: { style: { minInlineSize: '18rem' } } }"
+        />
+      </Field>
       <output class="panel-text">{{ userId ?? '(none)' }}</output>
     </div>
   </section>
@@ -27,7 +29,7 @@
 
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
-import { Select } from 'vael-ui'
+import { Field, Select } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 
 // Stand-in for a server-side dataset — never sent to the client whole.
@@ -67,6 +69,7 @@ watch(query, (q) => {
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 

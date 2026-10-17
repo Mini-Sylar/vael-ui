@@ -1,7 +1,7 @@
 <template>
   <slot v-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTo">
-    <Transition name="ui-tooltip" :css="!forceMount">
+    <Transition name="ui-tooltip" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -22,7 +22,7 @@
           role="tooltip"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <slot :open="open" :isClosing="isClosing" />
         </div>
@@ -78,9 +78,10 @@ export interface TooltipProps {
 <script setup lang="ts">
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
-import { computed, inject, shallowRef, useId, useTemplateRef, watch } from 'vue'
+import { computed, inject, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
-import { useTooltip } from '../../composables/useTooltip'
+import { setDescribedBy, useTooltip } from '../../composables/useTooltip'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -136,6 +137,11 @@ const triggerElRef = computed<HTMLElement | null>(() =>
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const attrs = useAttrs()
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => attrs,
+)
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.tooltip,
@@ -251,11 +257,8 @@ watch(
   [open, triggerElRef] as const,
   ([isOpen, el], previous) => {
     const previousEl = previous?.[1]
-    if (previousEl && previousEl !== el) previousEl.removeAttribute('aria-describedby')
-    if (!el) return
-    if (isOpen) el.setAttribute('aria-describedby', tooltipId)
-    else if (el.getAttribute('aria-describedby') === tooltipId)
-      el.removeAttribute('aria-describedby')
+    if (previousEl && previousEl !== el) setDescribedBy(previousEl, tooltipId, false)
+    if (el) setDescribedBy(el, tooltipId, isOpen)
   },
   { flush: 'post' },
 )

@@ -20,6 +20,7 @@
     >
       <TransitionGroup
         name="ui-speed-dial-action"
+        appear
         :css="props.motionCss"
         @enter="enterHook"
         @leave="leaveHook"
@@ -152,6 +153,7 @@ import { useMenu } from '../../composables/useMenu'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { withProviderDefaults } from '../../config'
+import { ssrDocument } from '../../ssr'
 
 /** Whether the actions are shown. @default false */
 const open = defineModel<boolean>('open', { default: false })
@@ -314,7 +316,7 @@ function isOutside(target: EventTarget | null): boolean {
 }
 
 useEventListener(
-  () => (open.value ? document : undefined),
+  () => (open.value ? ssrDocument() : undefined),
   'pointerdown',
   (event: PointerEvent) => {
     if (!layer.isTopmost()) return
@@ -323,7 +325,7 @@ useEventListener(
   true,
 )
 useEventListener(
-  () => (open.value ? document : undefined),
+  () => (open.value ? ssrDocument() : undefined),
   'focusin',
   (event: FocusEvent) => {
     if (!layer.isTopmost()) return
@@ -332,7 +334,7 @@ useEventListener(
   true,
 )
 useEventListener(
-  () => (open.value ? document : undefined),
+  () => (open.value ? ssrDocument() : undefined),
   'keydown',
   (event: KeyboardEvent) => {
     if (!layer.isTopmost()) return

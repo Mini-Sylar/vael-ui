@@ -13,13 +13,15 @@
       fetch can't be spammed by scroll ticks in between. Scrolling far enough also crosses Select's
       own 100-item auto-virtualize threshold.
     </p>
-    <Select
-      v-model="pagedValue"
-      :items="pagedItems"
-      :loading="isFetchingNextPage"
-      placeholder="Scroll to load more invoices"
-      @reach-end="fetchNextPage"
-    />
+    <Field label="Invoice">
+      <Select
+        v-model="pagedValue"
+        :items="pagedItems"
+        :loading="isFetchingNextPage"
+        placeholder="Scroll to load more invoices"
+        @reach-end="fetchNextPage"
+      />
+    </Field>
     <p class="demo-status">
       Loaded {{ pagedItems.length }} of {{ TOTAL_REMOTE_ITEMS }},
       {{ isFetchingNextPage ? 'fetching…' : 'idle' }}
@@ -29,7 +31,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Select } from 'vael-ui'
+import { Field, Select } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 
 const TOTAL_REMOTE_ITEMS = 500

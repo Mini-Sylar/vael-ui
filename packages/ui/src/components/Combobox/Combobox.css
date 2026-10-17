@@ -18,6 +18,9 @@
     align-items: center;
     gap: 0.25rem;
     overflow: hidden;
+    /* Clip room for the chip remove's 24px hit area; the margin keeps the layout. */
+    padding-block: 4px;
+    margin-block: -4px;
   }
   /* Uncapped multiple mode: field grows with tag list. */
   .ui-input.ui-combobox-input--wrap {
@@ -27,6 +30,12 @@
   }
   .ui-combobox-input--wrap .ui-combobox-chips {
     flex-wrap: wrap;
+  }
+  /* Lets the chips wrap; the flex: none start slot would otherwise grow to one long line. */
+  .ui-combobox-input--wrap .ui-input-start {
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    max-inline-size: 100%;
   }
   .ui-combobox-input--wrap .ui-input-el {
     min-inline-size: 4rem;

@@ -473,3 +473,69 @@ test("forceMount keeps a collapsed folder's children in the DOM instead of unmou
   // Still mounted after collapsing again - forceMount never unmounts it.
   expect(rowByLabel('Apple')).toBeDefined()
 })
+
+test('typeahead: typing moves focus to the next visible row whose label starts with the typed text', async () => {
+  const items: TreeNode[] = [
+    { label: 'Cherry', value: 'cherry' },
+    { label: 'Apricot', value: 'apricot' },
+    { label: 'Avocado', value: 'avocado' },
+    { label: 'Apple', value: 'apple' },
+    { label: 'Basket', value: 'basket', children: [{ label: 'Blueberry', value: 'blueberry' }] },
+  ]
+  await render(TreeFixture, { props: { items, filterable: false } })
+  await vi.waitFor(() => expect(rowByLabel('Cherry')).toBeDefined())
+  await userEvent.tab()
+  await vi.waitFor(() => expect(focusedLabel()).toBe('Cherry'))
+  const pause = () => new Promise((resolve) => setTimeout(resolve, 600))
+
+  await userEvent.keyboard('a')
+  await vi.waitFor(() => expect(focusedLabel()).toBe('Apricot'))
+  // Repeating the same letter cycles through its matches.
+  await userEvent.keyboard('a')
+  await vi.waitFor(() => expect(focusedLabel()).toBe('Avocado'))
+
+  // After the buffer resets, a longer string refines the match and wraps.
+  await pause()
+  await userEvent.keyboard('ap')
+  await vi.waitFor(() => expect(focusedLabel()).toBe('Apple'))
+  await userEvent.keyboard('r')
+  await vi.waitFor(() => expect(focusedLabel()).toBe('Apricot'))
+
+  // Rows inside a collapsed folder aren't candidates.
+  await pause()
+  await userEvent.keyboard('bl')
+  await vi.waitFor(() => expect(focusedLabel()).toBe('Basket'))
+  expect(rowByLabel('Blueberry')).toBeUndefined()
+})
+
+test('the chevron and the row checkbox take clicks across a 24px area while staying 16px', async () => {
+  const screen = await render(TreeFixture, { props: { selectionMode: 'checkbox' } })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  const chevron = rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-chevron')!
+  const checkbox = rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-checkbox')!
+  const chevronRect = chevron.getBoundingClientRect()
+  const checkboxRect = checkbox.getBoundingClientRect()
+  expect([chevronRect.width, chevronRect.height]).toEqual([16, 16])
+  expect([checkboxRect.width, checkboxRect.height]).toEqual([16, 16])
+
+  const hit = (x: number, y: number) => document.elementFromPoint(x, y)
+  for (const [x, y] of [
+    [chevronRect.left - 3, chevronRect.top - 3],
+    [chevronRect.right + 3, chevronRect.bottom + 3],
+  ])
+    expect(hit(x, y)?.closest('.ui-tree-chevron')).toBe(chevron)
+  for (const [x, y] of [
+    [checkboxRect.left - 1, checkboxRect.top - 3],
+    [checkboxRect.right + 5, checkboxRect.bottom + 3],
+  ])
+    expect(hit(x, y)?.closest('.ui-checkbox')).toBe(checkbox)
+
+  // Outside the chevron's own box: expands, and doesn't also toggle the row.
+  await userEvent.click(chevron, { position: { x: -3, y: -3 } })
+  await vi.waitFor(() => expect(rowByLabel('Apple')).toBeDefined())
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
+
+  // Outside the checkbox's own box: toggles it exactly once.
+  await userEvent.click(checkbox, { position: { x: 21, y: 8 } })
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["apple","banana","orange"]')
+})

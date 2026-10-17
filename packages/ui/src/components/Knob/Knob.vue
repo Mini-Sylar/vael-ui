@@ -6,7 +6,7 @@
     :data-dragging="isDragging || undefined"
     :data-invalid="isInvalid || undefined"
     :aria-disabled="isDisabled || undefined"
-    v-bind="attrs"
+    v-bind="rootAttrs"
   >
     <div
       ref="dialEl"
@@ -21,8 +21,9 @@
       :aria-valuemax="max"
       :aria-valuetext="valueText ? valueText(modelValue) : undefined"
       :aria-disabled="isDisabled || undefined"
-      :aria-describedby="fieldControl.describedBy()"
-      :aria-labelledby="fieldControl.labelledBy()"
+      :aria-label="attrs['aria-label'] as string | undefined"
+      :aria-labelledby="labelledBy"
+      :aria-describedby="describedBy"
       @pointerdown="onDialPointerdown"
       @keydown="onDialKeydownWithRing"
       @focus="onDialFocus"
@@ -61,6 +62,7 @@ import './Knob.css'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { omitAttrs } from '../../composables/forwardedListeners'
 import {
   clearFocusVisible,
   markFocusVisible,
@@ -117,6 +119,18 @@ const props = withDefaults(
 const fieldControl = useFieldControl({ filled: () => true })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
+
+// The label and description name the focusable dial, so the wrapper doesn't get them.
+const rootAttrs = computed(() =>
+  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby']),
+)
+const labelledBy = computed(
+  () => (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy(),
+)
+const describedBy = computed(
+  () =>
+    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
+)
 
 const root = useTemplateRef<HTMLElement>('root')
 const dialEl = useTemplateRef<HTMLElement>('dialEl')

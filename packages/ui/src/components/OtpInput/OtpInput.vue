@@ -5,7 +5,7 @@
     :style="rootPart.style"
     :data-state="dataState"
     :data-focus-visible="focusVisible || undefined"
-    v-bind="attrs"
+    v-bind="rootAttrs"
   >
     <div class="ui-otp-cells" aria-hidden="true">
       <template v-for="(cell, index) in cells" :key="index">
@@ -52,7 +52,9 @@
       spellcheck="false"
       :disabled="isDisabled"
       :name="name"
-      :aria-describedby="fieldControl.describedBy()"
+      :aria-label="attrs['aria-label'] as string | undefined"
+      :aria-labelledby="attrs['aria-labelledby'] as string | undefined"
+      :aria-describedby="describedBy"
       :aria-invalid="isInvalid || undefined"
       :aria-required="fieldControl.required() || undefined"
       @input="onNativeInput"
@@ -80,7 +82,9 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
+import { useSlotPresence } from '../../composables/dom'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { omitAttrs } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -162,8 +166,18 @@ const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 
+// The label and description name the input, so the wrapper doesn't get them.
+const rootAttrs = computed(() =>
+  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby']),
+)
+const describedBy = computed(
+  () =>
+    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
+)
+
 const slots = useSlots()
-const hasCustomCell = computed(() => !!slots.cell)
+const hasSlot = useSlotPresence(slots)
+const hasCustomCell = computed(() => hasSlot('cell'))
 
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const cellEls = useTemplateRef<HTMLElement[]>('cellEls')

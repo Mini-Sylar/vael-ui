@@ -96,10 +96,13 @@ export interface MessageProps {
 import './Message.css'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import StatusIcon from '../internal/StatusIcon.vue'
+import { getFocusable } from '../../composables/dom'
+import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 
 defineOptions({ inheritAttrs: false })
 
@@ -131,7 +134,10 @@ defineSlots<{
 const messages = useUiMessages()
 const root = useTemplateRef<HTMLElement>('root')
 const rawAttrs = useAttrs()
-const attrs = computed(() => ({ ...rawAttrs }))
+const attrs = useAttrListeners(
+  () => root.value,
+  () => rawAttrs,
+)
 
 const isClosing = shallowRef(false)
 let pendingClose: symbol | null = null
@@ -177,8 +183,20 @@ watch(open, (value) => {
   if (!value) {
     pendingClose = null
     isClosing.value = false
+    moveFocusOut()
   }
 })
+
+// Runs before the DOM update, while the message still holds focus, so focus doesn't drop to <body>.
+function moveFocusOut() {
+  const el = root.value
+  const active = document.activeElement
+  if (!el || !active || !el.contains(active) || !focusIsFromKeyboard()) return
+  const stops = getFocusable(document.body).filter((stop) => !el.contains(stop))
+  const after = (stop: Element) =>
+    (el.compareDocumentPosition(stop) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+  ;(stops.find(after) ?? stops.findLast((stop) => !after(stop)))?.focus()
+}
 
 const resolvedRole = computed(
   () =>

@@ -23,8 +23,27 @@ export interface UseCollapseReturn {
   state: Ref<CollapseState>
 }
 
-// Fallback when no transitionend fires (prefers-reduced-motion: reduce)
-const SETTLE_FALLBACK_MS = 240
+// Slack past the panel's own transition before the fallback settles it.
+const SETTLE_BUFFER_MS = 50
+
+function toMs(value: string) {
+  return value
+    .split(',')
+    .map((part) => Number.parseFloat(part) * (part.includes('ms') ? 1 : 1000) || 0)
+}
+
+// Longest duration + delay on the panel, so a themed --ui-duration-enter isn't cut short.
+// Zero (reduced motion, `transition: none`) means no transitionend will ever come.
+function transitionMs(el: HTMLElement) {
+  const style = getComputedStyle(el)
+  const durations = toMs(style.transitionDuration)
+  const delays = toMs(style.transitionDelay)
+  let longest = 0
+  durations.forEach((duration, i) => {
+    longest = Math.max(longest, duration + (delays[i % delays.length] ?? 0))
+  })
+  return longest
+}
 
 function closedStyle(): Record<string, string> {
   return { blockSize: '0px', overflow: 'hidden', visibility: 'hidden' }
@@ -81,9 +100,13 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
       return
     }
     style.value = { blockSize: `${targetHeight}px`, overflow: 'hidden', visibility: 'visible' }
-    fallbackTimer = setTimeout(() => {
-      if (token === myToken) settle(target)
-    }, SETTLE_FALLBACK_MS)
+    const duration = transitionMs(panel)
+    fallbackTimer = setTimeout(
+      () => {
+        if (token === myToken) settle(target)
+      },
+      duration > 0 ? duration + SETTLE_BUFFER_MS : 0,
+    )
   }
 
   watch(open, (value) => run(value))

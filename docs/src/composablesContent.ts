@@ -117,13 +117,13 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'openDialog(component, options)',
         type: 'OpenDialogHandle<T>',
         description:
-          'Mounts `component` inside `<Dialog>`, rendered by the app-level `<DialogHost/>`. `options.props` is typed against the component you pass.',
+          'Mounts `component` inside `<Dialog>`, rendered by the app-level `<DialogHost/>`. `options.props` is typed against the component you pass. The handle has `result`, `close`, and the `panelEl` and `overlayEl` refs for your own animations.',
       },
       {
         name: 'useDialogRef()',
         type: 'DialogRef<D, T>',
         description:
-          "Call it inside the opened component. Returns `{ data, panelEl, close(result) }`. Calling `close()` settles the opener's `result` promise.",
+          "Call it inside the opened component. Returns `{ data, panelEl, overlayEl, close(result) }`. Calling `close()` settles the opener's `result` promise.",
       },
       {
         name: 'useDialogQueue()',
@@ -835,6 +835,7 @@ const { mode, resolvedMode, setMode } = useColorScheme({
     description:
       'Connects a custom form control to the nearest `<Field>`. It returns the id and the ARIA values to bind (`aria-describedby`, `aria-invalid`, `aria-required`), and reports focus and filled state to Field. Field uses that state to move a floating label and set `data-filled`. Every built-in input (Input, Select, Checkbox, RadioGroup, …) uses it. Use it so a custom control works with Field the same way.',
     hasLiveDemo: true,
+    extraSourceFiles: ['CustomTextInput.vue'],
     params: [
       {
         name: 'filled',

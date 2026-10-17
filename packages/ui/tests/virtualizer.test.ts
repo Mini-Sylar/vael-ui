@@ -39,6 +39,23 @@ test('scrolling updates the rendered window to the new position', async () => {
   expect(indices).toContain(100)
 })
 
+test('scrolling within the same window keeps the same items, so lists do not re-render per pixel', async () => {
+  const screen = await render(VirtualizerFixture, { props: { count: 10000 } })
+  await expect.element(screen.getByTestId('rendered-indices')).toBeInTheDocument()
+  const container = screen.getByTestId('container').element() as HTMLElement
+  const updates = () => screen.getByTestId('items-updates').element().textContent
+  await vi.waitFor(() => expect(container.querySelector('[data-virtual-index]')).not.toBeNull())
+  const before = updates()
+
+  // 40px rows: the first visible row stays 0 for every one of these.
+  for (let top = 1; top <= 10; top++) fireScroll(container, top)
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  expect(updates()).toBe(before)
+
+  fireScroll(container, 4000)
+  await vi.waitFor(() => expect(updates()).not.toBe(before))
+})
+
 test('reach-end fires once near the bottom, then re-arms only once count grows', async () => {
   // An 8-row list at 40px/row = 320px total: the 200px viewport's visible
   // rows (5) + 2 overscan already cover every row up to the last index, so

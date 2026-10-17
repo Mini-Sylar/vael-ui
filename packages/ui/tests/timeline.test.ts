@@ -213,3 +213,15 @@ test("@item-enter hands over the entering step's parts, including the line leadi
   expect(parts.connector).toBeNull()
   expect(parts.previousConnector).toBe(steps[1]!.querySelector('.ui-timeline-connector'))
 })
+
+test.each(['horizontal', 'vertical'] as const)(
+  'a %s timeline list carries no aria-orientation, which <ol> does not allow',
+  async (orientation) => {
+    const screen = await render(Timeline, {
+      props: { items: ['a', 'b'], orientation },
+      global: { stubs: { 'transition-group': false } },
+    })
+    const list = screen.container.querySelector('ol')!
+    expect(list.hasAttribute('aria-orientation')).toBe(false)
+  },
+)

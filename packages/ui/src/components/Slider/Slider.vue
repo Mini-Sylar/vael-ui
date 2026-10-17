@@ -7,7 +7,7 @@
     :data-range="isRangeModel || undefined"
     :data-invalid="isInvalid || undefined"
     :aria-disabled="isDisabled || undefined"
-    v-bind="attrs"
+    v-bind="rootAttrs"
   >
     <div
       ref="trackEl"
@@ -21,7 +21,7 @@
         v-for="(value, index) in thumbValues"
         :key="index"
         ref="thumbEls"
-        :id="index === 0 ? fieldControl.id : undefined"
+        :id="thumbId(index)"
         :class="thumbPart.class"
         :style="thumbPart.style"
         role="slider"
@@ -34,8 +34,9 @@
         :aria-valuetext="valueText ? valueText(value) : undefined"
         :aria-orientation="orientation === 'vertical' ? 'vertical' : undefined"
         :aria-disabled="isDisabled || undefined"
-        :aria-describedby="fieldControl.describedBy()"
-        :aria-labelledby="fieldControl.labelledBy()"
+        :aria-label="thumbLabel(index)"
+        :aria-labelledby="thumbLabelledBy(index)"
+        :aria-describedby="describedBy"
         @pointerdown.stop="onThumbPointerdown(index, $event)"
         @keydown="(event: KeyboardEvent) => onThumbKeydownWithRing(index, event)"
         @focus="onThumbFocus"
@@ -69,6 +70,7 @@ import './Slider.css'
 import '../shared/tokens.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { omitAttrs } from '../../composables/forwardedListeners'
 import {
   clearFocusVisible,
   markFocusVisible,
@@ -78,6 +80,7 @@ import { useSlider } from '../../composables/useSlider'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useUiMessages } from '../../messages'
 
 defineOptions({ inheritAttrs: false })
 
@@ -119,6 +122,19 @@ const props = withDefaults(
 const fieldControl = useFieldControl({ filled: () => true })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
+const messages = useUiMessages()
+
+// The label and description name the focusable thumbs, so the wrapper doesn't get them.
+const rootAttrs = computed(() =>
+  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby']),
+)
+const labelledBy = computed(
+  () => (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy(),
+)
+const describedBy = computed(
+  () =>
+    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
+)
 
 const isRangeModel = computed(() => Array.isArray(modelValue.value))
 const thumbValues = computed<number[]>(() =>
@@ -145,6 +161,21 @@ defineSlots<{
   /** Content inside the track, under the thumbs, such as ticks or an inline label. */
   track(props: { values: number[]; percents: number[]; dragging: boolean }): unknown
 }>()
+
+function thumbId(index: number): string {
+  return index === 0 ? fieldControl.id : `${fieldControl.id}-max`
+}
+// Range thumbs read "Minimum" / "Maximum" after the slider's label, e.g. "Price Minimum".
+function thumbLabel(index: number): string | undefined {
+  const label = attrs['aria-label'] as string | undefined
+  if (!isRangeModel.value) return label
+  const part = index === 0 ? messages.value.slider.minimum : messages.value.slider.maximum
+  return label && !labelledBy.value ? `${label} ${part}` : part
+}
+function thumbLabelledBy(index: number): string | undefined {
+  if (!labelledBy.value || !isRangeModel.value) return labelledBy.value
+  return `${labelledBy.value} ${thumbId(index)}`
+}
 
 function thumbMin(index: number): number {
   if (!isRangeModel.value || index === 0) return props.min

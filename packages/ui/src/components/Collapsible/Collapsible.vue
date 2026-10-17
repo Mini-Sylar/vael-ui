@@ -37,6 +37,7 @@ import './Collapsible.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef, watchEffect } from 'vue'
+import { useMutationObserver } from '@vueuse/core'
 import { useCollapse } from '../../composables/useCollapse'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -87,7 +88,7 @@ const { style: collapseStyle, state: collapseState } = useCollapse(open, {
 })
 
 // Reach into slot's real focusable child to keep expanded state + panel association in sync
-watchEffect(() => {
+function syncTrigger() {
   const trigger =
     triggerWrapper.value?.querySelector<HTMLElement>('button, [role="button"], a[href]') ??
     (triggerWrapper.value?.firstElementChild as HTMLElement | null)
@@ -96,7 +97,10 @@ watchEffect(() => {
   trigger.setAttribute('aria-controls', panelId)
   if (props.disabled) trigger.setAttribute('aria-disabled', 'true')
   else trigger.removeAttribute('aria-disabled')
-})
+}
+watchEffect(syncTrigger)
+// A trigger slot that swaps in a different element gets the same wiring.
+useMutationObserver(triggerWrapper, syncTrigger, { childList: true, subtree: true })
 
 const dataState = computed(() => (open.value ? 'open' : 'closed'))
 

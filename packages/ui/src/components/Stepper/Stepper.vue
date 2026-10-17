@@ -2,13 +2,13 @@
   <ol
     ref="root"
     v-scroll-mask="orientation === 'horizontal' ? 'x' : false"
-    :aria-orientation="orientation"
     :class="rootPart.class"
     :style="rootPart.style"
   >
     <template v-for="(item, index) in items" :key="index">
       <li
         :class="stepPart.class"
+        :style="stepPart.style"
         :data-state="stateOf(index)"
         :data-disabled="isDisabled(item) ? '' : undefined"
       >
@@ -16,11 +16,16 @@
           :is="nativeTag(isReachable(index, item) ? 'button' : 'div')"
           :type="isReachable(index, item) ? 'button' : undefined"
           :class="triggerPart.class"
+          :style="triggerPart.style"
           :aria-disabled="isDisabled(item) ? 'true' : undefined"
           :aria-current="index === modelValue ? 'step' : undefined"
           @click="onStepClick(index, item)"
         >
-          <span :ref="(el) => setCircleEl(index, el)" :class="circlePart.class">
+          <span
+            :ref="(el) => setCircleEl(index, el)"
+            :class="circlePart.class"
+            :style="circlePart.style"
+          >
             <slot
               name="indicator"
               :item="item"
@@ -52,7 +57,7 @@
               </Transition>
             </slot>
           </span>
-          <span :class="contentPart.class">
+          <span :class="contentPart.class" :style="contentPart.style">
             <slot
               name="item"
               :item="item"
@@ -61,10 +66,18 @@
               :completed="stateOf(index) === 'completed'"
               :disabled="isDisabled(item)"
             >
-              <span :class="labelPart.class">{{ item.label }}</span>
-              <span v-if="item.description" :class="descriptionPart.class">{{
-                item.description
-              }}</span>
+              <span
+                :ref="(el) => setLabelEl(index, el)"
+                :class="labelPart.class"
+                :style="labelPart.style"
+                >{{ item.label }}</span
+              >
+              <span
+                v-if="item.description"
+                :class="descriptionPart.class"
+                :style="descriptionPart.style"
+                >{{ item.description }}</span
+              >
             </slot>
           </span>
         </component>
@@ -74,6 +87,7 @@
         :ref="(el) => setConnectorEl(index, el)"
         aria-hidden="true"
         :class="connectorPart.class"
+        :style="connectorPart.style"
         :data-state="index < modelValue ? 'filled' : 'unfilled'"
       />
     </template>
@@ -96,6 +110,7 @@ import { nativeTag } from '../../composables/dom'
 import { computed, ref, shallowReactive, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
@@ -188,8 +203,10 @@ function onStepClick(index: number, item: T) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+useFocusableScroller(root)
 // By index: a circle remounts when its step becomes clickable, and a v-for ref array would reorder.
 const circleSlots = shallowReactive<(HTMLElement | null)[]>([])
+const labelSlots = shallowReactive<(HTMLElement | null)[]>([])
 const connectorSlots = shallowReactive<(HTMLElement | null)[]>([])
 function setCircleEl(index: number, el: unknown) {
   circleSlots[index] = el instanceof HTMLElement ? el : null
@@ -197,11 +214,15 @@ function setCircleEl(index: number, el: unknown) {
 function setConnectorEl(index: number, el: unknown) {
   connectorSlots[index] = el instanceof HTMLElement ? el : null
 }
+function setLabelEl(index: number, el: unknown) {
+  labelSlots[index] = el instanceof HTMLElement ? el : null
+}
 const present = (el: HTMLElement | null): el is HTMLElement => !!el
 const circleEls = computed(() => circleSlots.slice(0, props.items.length).filter(present))
 const connectorEls = computed(() =>
   connectorSlots.slice(0, Math.max(props.items.length - 1, 0)).filter(present),
 )
+const labelEls = computed(() => labelSlots.slice(0, props.items.length).filter(present))
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.stepper,
@@ -240,5 +261,7 @@ defineExpose({
   circleEls,
   /** Connector elements, one fewer than steps. Set `--ui-stepper-fill` (0 to 1) to drive a fill. */
   connectorEls,
+  /** Step label elements, in order. Empty when the `item` slot replaces them. */
+  labelEls,
 })
 </script>

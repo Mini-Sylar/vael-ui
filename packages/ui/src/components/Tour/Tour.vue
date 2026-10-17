@@ -157,9 +157,9 @@ import { useTour } from '../../composables/useTour'
 import { useDOMTarget } from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
-import { useLayer } from '../../composables/useLayerStack'
+import { isComposing, useLayer } from '../../composables/useLayerStack'
 import { useThemedUi } from '../../theme'
-import { ssrDocument } from '../../ssr'
+import { ssrDocument, ssrWindow } from '../../ssr'
 import { useUiMessages } from '../../messages'
 import { withProviderDefaults } from '../../config'
 
@@ -237,6 +237,8 @@ const {
   onStepChange: (details) => emit('step-change', details),
   onSkip: (details) => emit('skip', details),
   onFinish: (details) => emit('finish', details),
+  // Through Popover, so `beforeClose` runs.
+  close: () => (popover.value ? popover.value.close() : (open.value = false)),
 })
 
 // Optional controlled step index — two-way sync, useTour stays self-contained either way.
@@ -445,20 +447,30 @@ watch(
   { flush: 'post' },
 )
 
+// Targets stay interactive, so arrows typed into a field or widget belong to it.
+const ARROW_OWNER_SELECTOR =
+  'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="listbox"], [role="combobox"], [role="menu"], [role="menubar"], [role="tablist"], [role="grid"], [role="tree"], [role="treegrid"], [role="radiogroup"], [role="spinbutton"]'
+
 function onKeydown(event: KeyboardEvent) {
-  if (!props.keyboardNav) return
+  if (!props.keyboardNav || event.defaultPrevented) return
+  if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+  if (event.target instanceof Element && event.target.closest(ARROW_OWNER_SELECTOR)) return
   if (event.key === 'ArrowRight') next()
-  else if (event.key === 'ArrowLeft') prev()
+  else prev()
 }
 useEventListener(() => (open.value ? ssrDocument() : undefined), 'keydown', onKeydown)
 
-// A step's own overlay stacks above the callout and would otherwise eat Escape —
-// capturing on window runs first. skip() (not close()) lets the consumer unwind it.
+// A step's own overlay stacks above the callout and would otherwise eat Escape, so capture on
+// window runs first; reclaimTop keeps those overlays below the tour's layer. Anything opened
+// above the tour after that (a Dialog from the target) gets Escape first. skip() (not close())
+// lets the consumer unwind it.
 useEventListener(
-  () => (open.value && props.closeOnEsc ? window : undefined),
+  () => (open.value && props.closeOnEsc ? ssrWindow() : undefined),
   'keydown',
   (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || event.defaultPrevented) return
+    if (event.key !== 'Escape' || event.defaultPrevented || isComposing(event)) return
+    if (!layer.isTopmost(positionerEl.value)) return
     event.preventDefault()
     skip()
   },

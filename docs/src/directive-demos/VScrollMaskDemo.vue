@@ -1,5 +1,11 @@
 <template>
-  <div v-scroll-mask class="v-scroll-mask-demo">
+  <div
+    v-scroll-mask
+    class="v-scroll-mask-demo"
+    tabindex="0"
+    role="region"
+    aria-label="Scrolling content"
+  >
     <p v-for="n in 12" :key="n">Line {{ n }} of a tall block of content.</p>
   </div>
 </template>

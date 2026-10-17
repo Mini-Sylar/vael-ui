@@ -1,10 +1,9 @@
-import { nextTick, onScopeDispose, shallowRef, toValue, useId } from 'vue'
+import { nextTick, onScopeDispose, shallowRef, toValue, useId, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
-import { ssrWindow } from '../ssr'
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
 import { autoScrollAt, contentOffset, findScrollParent } from './sortableAutoScroll'
+import { createClickGuard } from './dom'
 
 /**
  * Reorder engine shared by every sortable surface. All ordering/nesting
@@ -109,132 +108,8 @@ export function resolveInsertionIndex(bands: readonly SortableBand[], pointer: n
   }
   return bands.length
 }
-
-/**
- * How to read a node's identity and children. Defaults match the house item
- * vocabulary (`value` / `children`), so `MenuItemData`, `TreeNode` and friends
- * need no configuration — a flat list of arbitrary records just supplies its
- * own `getKey`, and then reorders through the exact same code path as a tree.
- */
-export interface TreeAccessors<T> {
-  getKey?: (node: T) => string | number
-  getChildren?: (node: T) => T[] | undefined
-  setChildren?: (node: T, children: T[]) => void
-}
-
-function keyOfNode<T>(node: T, accessors?: TreeAccessors<T>): string | number {
-  return accessors?.getKey ? accessors.getKey(node) : (node as SortableTreeNode).value
-}
-function childrenOfNode<T>(node: T, accessors?: TreeAccessors<T>): T[] | undefined {
-  if (accessors?.getChildren) return accessors.getChildren(node)
-  return (node as SortableTreeNode).children as T[] | undefined
-}
-function assignChildren<T>(node: T, children: T[], accessors?: TreeAccessors<T>): void {
-  if (accessors?.setChildren) accessors.setChildren(node, children)
-  else (node as { children?: T[] }).children = children
-}
-
-function findNodeIn<T>(
-  nodes: readonly T[],
-  value: string | number,
-  accessors?: TreeAccessors<T>,
-): T | undefined {
-  for (const node of nodes) {
-    if (keyOfNode(node, accessors) === value) return node
-    const children = childrenOfNode(node, accessors)
-    if (children) {
-      const hit = findNodeIn(children, value, accessors)
-      if (hit) return hit
-    }
-  }
-  return undefined
-}
-
-function containsValue<T>(
-  nodes: readonly T[],
-  value: string | number,
-  accessors?: TreeAccessors<T>,
-): boolean {
-  return nodes.some((node) => {
-    if (keyOfNode(node, accessors) === value) return true
-    const children = childrenOfNode(node, accessors)
-    return !!children && containsValue(children, value, accessors)
-  })
-}
-
-/** Guard on every move: dropping a folder into its own descendant detaches that branch and loses it. */
-export function isDescendantOf<T>(
-  nodes: readonly T[],
-  ancestorValue: string | number,
-  candidateValue: string | number,
-  accessors?: TreeAccessors<T>,
-): boolean {
-  const ancestor = findNodeIn(nodes, ancestorValue, accessors)
-  const children = ancestor && childrenOfNode(ancestor, accessors)
-  if (!children) return false
-  return containsValue(children, candidateValue, accessors)
-}
-
-function detach<T>(
-  nodes: T[],
-  value: string | number,
-  accessors?: TreeAccessors<T>,
-): { node: T; from: T[]; index: number } | null {
-  const index = nodes.findIndex((node) => keyOfNode(node, accessors) === value)
-  if (index !== -1) return { node: nodes.splice(index, 1)[0]!, from: nodes, index }
-  for (const node of nodes) {
-    const children = childrenOfNode(node, accessors)
-    if (!children) continue
-    const hit = detach(children, value, accessors)
-    if (hit) return hit
-  }
-  return null
-}
-
-/**
- * Moves a node to `to`, mutating `nodes` in place — same contract as
- * `removeTreeNode`, which a consumer editing `items` directly already relies
- * on. `to.index` is the node's final resting slot among its new siblings,
- * counted as if it were already removed. Returns false and changes nothing
- * when the move is impossible (unknown value, unknown parent, or a drop into
- * the node's own subtree).
- */
-export function moveTreeNode<T>(
-  nodes: T[],
-  value: string | number,
-  to: DropPosition,
-  accessors?: TreeAccessors<T>,
-): boolean {
-  if (to.parentValue === value) return false
-  if (to.parentValue != null && isDescendantOf(nodes, value, to.parentValue, accessors)) {
-    return false
-  }
-
-  let target: T[]
-  if (to.parentValue == null) {
-    target = nodes
-  } else {
-    const parent = findNodeIn(nodes, to.parentValue, accessors)
-    if (!parent) return false
-    let children = childrenOfNode(parent, accessors)
-    if (!children) {
-      children = []
-      assignChildren(parent, children, accessors)
-    }
-    target = children
-  }
-
-  const detached = detach(nodes, value, accessors)
-  if (!detached) return false
-
-  // `to.index` is the node's FINAL resting slot, counted with the node itself
-  // already gone — which is exactly the basis `resolveDropPosition` works on
-  // (it is handed rows with the dragged subtree removed). Detaching first
-  // therefore lands on that basis directly; no off-by-one correction.
-  target.splice(clamp(to.index, 0, target.length), 0, detached.node)
-  return true
-}
-
+export { isDescendantOf, moveTreeNode } from './sortableTree'
+export type { TreeAccessors } from './sortableTree'
 /** Drops a row and its subtree — depth-first flattening makes descendants the contiguous run of deeper rows after it. */
 export function excludeSubtree(
   rows: readonly FlatSortableRow[],
@@ -1079,7 +954,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let dragEl: HTMLElement | null = null
   let lastAlong = 0
   let lastTime = 0
-  let suppressNextClick = false
+  const clickGuard = createClickGuard()
   let previewEl: HTMLElement | null = null
   let previewSourceEl: HTMLElement | null = null
   let lastPointerEvent: PointerEvent | null = null
@@ -1146,6 +1021,15 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
   onScopeDispose(() => {
     if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame)
+    clearTouchHoldTimer()
+    scheduleAutoExpand(null)
+    releasePointer()
+    pendingValue = null
+    committed = false
+    dragEl = null
+    // Unmounted mid-drag: a clone preview sits on <body>, outside anything that unmounts with us.
+    if (isGrabbed.value) finish()
+    else destroyPreview()
   })
 
   function createPreview(
@@ -1280,6 +1164,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
   function onHandlePointerdown(event: PointerEvent, value: string | number) {
     if (isDisabled() || event.button !== 0 || isGrabbed.value) return
+    releasePointer()
     pointerId = event.pointerId
     pendingValue = value
     committed = false
@@ -1290,6 +1175,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     lastPointerEvent = event
     velocity = 0
     isTouchPointer = event.pointerType === 'touch'
+    listenToPointer()
     // Resolved through the consumer's own accessor, not a DOM selector — Tree
     // rows and Sortable rows share no markup, and a selector only one of them
     // has silently disables capture and the drag preview for the other.
@@ -1325,7 +1211,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   function commitDrag(event: PointerEvent): boolean {
     if (pendingValue == null) return false
     if (!begin(pendingValue, 'pointer')) {
-      pointerId = null
+      releasePointer()
       return false
     }
     committed = true
@@ -1395,7 +1281,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
           else touchScrollEl.scrollTop -= dy
           lastScrollPos = axis() === 'x' ? event.clientX : event.clientY
         } else {
-          pointerId = null
+          releasePointer()
           pendingValue = null
         }
         return
@@ -1494,7 +1380,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     manualScrolling = false
     touchScrollEl = null
     const wasCommitted = committed
-    pointerId = null
+    releasePointer()
     pendingValue = null
     committed = false
     if (!wasCommitted) {
@@ -1502,7 +1388,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       dragEl = null
       return
     }
-    suppressNextClick = true
+    clickGuard.arm()
 
     dragEl = null
     if (options.group) {
@@ -1519,11 +1405,11 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (event.key !== 'Escape' || !isDragging.value) return
     event.preventDefault()
     clearTouchHoldTimer()
-    pointerId = null
+    releasePointer()
     committed = false
     pendingValue = null
     dragEl = null
-    suppressNextClick = true
+    clickGuard.arm()
     if (options.group) {
       options.group.__cancel()
       return
@@ -1532,21 +1418,41 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     void revert()
   }
 
-  useEventListener(ssrWindow, 'keydown', onWindowKeydown)
-  useEventListener(ssrWindow, 'pointermove', onPointerMove)
-  useEventListener(ssrWindow, 'pointerup', endPointer)
-  useEventListener(ssrWindow, 'pointercancel', endPointer)
-  // preventDefault() on a PointerEvent doesn't reliably cancel a touch
-  // scroll — only the real TouchEvent does, and only non-passive (window's
-  // own touchmove default). Backs up touch-action: none on the row itself.
-  useEventListener(
-    ssrWindow,
-    'touchmove',
-    (event: TouchEvent) => {
-      if (pointerId !== null && isTouchPointer) event.preventDefault()
+  // Window listeners live only while they have work; an idle non-passive touchmove slows page scrolls.
+  function onTouchMove(event: TouchEvent) {
+    // preventDefault() on a PointerEvent doesn't reliably cancel a touch
+    // scroll; only the real TouchEvent does. Backs up touch-action: none.
+    if (pointerId !== null && isTouchPointer) event.preventDefault()
+  }
+  let pointerListening = false
+  function listenToPointer() {
+    pointerListening = true
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', endPointer)
+    window.addEventListener('pointercancel', endPointer)
+    if (isTouchPointer) window.addEventListener('touchmove', onTouchMove, { passive: false })
+  }
+  function releasePointer() {
+    pointerId = null
+    if (!pointerListening) return
+    pointerListening = false
+    window.removeEventListener('pointermove', onPointerMove)
+    window.removeEventListener('pointerup', endPointer)
+    window.removeEventListener('pointercancel', endPointer)
+    window.removeEventListener('touchmove', onTouchMove)
+  }
+  watch(
+    isDragging,
+    (dragging) => {
+      if (dragging) window.addEventListener('keydown', onWindowKeydown)
+      else window.removeEventListener('keydown', onWindowKeydown)
     },
-    { passive: false },
+    { flush: 'sync' },
   )
+  onScopeDispose(() => {
+    if (typeof window !== 'undefined') window.removeEventListener('keydown', onWindowKeydown)
+    clickGuard.disarm()
+  })
 
   // --- keyboard --------------------------------------------------------------
 
@@ -1696,11 +1602,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     announcement,
     onHandlePointerdown,
     onHandleKeydown,
-    consumeSuppressedClick: () => {
-      const suppressed = suppressNextClick
-      suppressNextClick = false
-      return suppressed
-    },
+    consumeSuppressedClick: clickGuard.consume,
     cancel,
   }
 }

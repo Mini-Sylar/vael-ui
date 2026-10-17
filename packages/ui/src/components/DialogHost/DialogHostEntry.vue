@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, reactive, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, provide, reactive, useTemplateRef, watch } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
 import { dialogRefKey } from '../../composables/useDialogService'
 import type { DynamicDialogEntry } from '../../composables/useDialogService'
@@ -20,12 +20,17 @@ const panelEl = computed(() => dialogInstance.value?.panelEl ?? null)
 watch(panelEl, (el) => {
   props.entry.panelEl = el
 })
+const overlayEl = computed(() => dialogInstance.value?.overlayEl ?? null)
+watch(overlayEl, (el) => {
+  props.entry.overlayEl = el
+})
 
 provide(
   dialogRefKey,
   reactive({
     data: props.entry.data,
     panelEl,
+    overlayEl,
     close: props.entry.close,
   }),
 )
@@ -37,4 +42,8 @@ watch(
     if (requested) dialogInstance.value?.close()
   },
 )
+// close() called before this mounted: the watch above never saw it change.
+onMounted(() => {
+  if (props.entry.closeRequested) dialogInstance.value?.close()
+})
 </script>

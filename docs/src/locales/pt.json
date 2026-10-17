@@ -119,6 +119,12 @@
     "darkModeTitle": "Modo escuro",
     "directivesIntro": "<code>v-tooltip</code> e <code>v-scroll-mask</code> não são registradas globalmente por padrão. Se você usa alguma delas em mais de um componente, registre-as uma vez:",
     "directivesNote": "<code>v-tooltip</code> também precisa de um <code>&lt;TooltipHost /&gt;</code> montado no seu app. Em um app Vapor, importe as duas diretivas de <code>vael-ui/vapor</code>.",
+    "ssrTitle": "Renderização no servidor",
+    "ssrIntro": "As duas builds renderizam no servidor e são hidratadas no navegador. {link} configura tudo abaixo para você.",
+    "ssrIntroLink": "O módulo do Nuxt",
+    "ssrNoExternal": "Com Vite SSR puro, deixe o Vite empacotar o vael-ui para o servidor. Cada componente importa o próprio CSS, e o Node não consegue carregar arquivos CSS sozinho:",
+    "ssrTeleports": "Diálogos, popovers, toasts e tooltips renderizam no <code>&lt;body&gt;</code> via <code>&lt;Teleport&gt;</code>. O Vue retorna esse HTML separado em <code>ctx.teleports</code>. Adicione-o no início do <code>&lt;body&gt;</code>, antes do elemento da sua app, ou a hidratação falha:",
+    "ssrLocale": "Defina <code>locale</code> no <code>ConfigProvider</code> quando renderizar num servidor. Sem isso, datas, números e o primeiro dia da semana seguem o idioma do servidor e mudam quando a página roda no navegador.",
     "directivesTitle": "Diretivas",
     "installIntro": "O vael-ui está no npm. Instale-o com seu gerenciador de pacotes:",
     "installTitle": "Instalar",
@@ -128,9 +134,14 @@
     "usageImportNoteLink": "Estilo e camadas em cascata",
     "usageImportNoteTitle": "Apenas antes da 0.2.0",
     "usageIntro": "Depois importe os componentes de <code>'vael-ui'</code> para a build VDOM clássica. Para a build Vapor (o modo do Vue 3.6 sem DOM virtual), importe de <code>'vael-ui/vapor'</code>. As props são as mesmas nas duas:",
+    "fontIntro": "Os componentes usam a fonte da página ao redor e não trazem fonte própria. Sem uma fonte, o navegador usa sua fonte serifada padrão, então defina uma fonte no <code>body</code>:",
     "usageTitle": "Uso",
-    "vaporIntro": "As duas builds saem do mesmo pacote e do mesmo código-fonte. Use a que seu app executa ou combine as duas, já que o Vue 3.6 oferece interoperabilidade VDOM/Vapor. Cada página de componente tem o mesmo seletor para compará-las.",
-    "vaporForceIntro": "Seus próprios componentes passam para Vapor um a um com <code>&lt;script setup vapor&gt;</code>. Para compilar todo componente <code>&lt;script setup&gt;</code> como Vapor sem o atributo, ative <code>features.vapor</code> no <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou mais recente:",
+    "vaporIntro": "As duas builds vêm do mesmo pacote e do mesmo código-fonte, com as mesmas props. Escolha a que sua app usa. Cada página de componente tem um seletor para compará-las.",
+    "vaporPinIntro": "A build Vapor precisa do Vue 3.6, que ainda é uma versão prévia. Instale a versão exata usada para compilar o vael-ui, <code>{version}</code>. Um intervalo como <code>^3.5.0</code> pode instalar o Vue 3.5, que não tem modo Vapor, e outra versão prévia pode quebrar os componentes compilados:",
+    "vaporAppIntro": "Uma app Vapor começa com <code>createVaporApp</code> e importa componentes, composables e diretivas de <code>'vael-ui/vapor'</code>. Seus próprios componentes passam para Vapor com <code>&lt;script setup vapor&gt;</code>:",
+    "vaporForceIntro": "Para não escrever o atributo <code>vapor</code> em cada arquivo, ative <code>features.vapor</code> no <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou mais recente. Assim, todo componente <code>&lt;script setup&gt;</code> da sua app é compilado como Vapor:",
+    "vaporMixTitle": "Usar as duas builds",
+    "vaporMixIntro": "Uma app clássica também pode receber componentes Vapor. Isso ajuda quando você migra uma app existente para Vapor aos poucos. Mantenha <code>createApp</code>, instale o <code>vaporInteropPlugin</code> do Vue e importe de <code>'vael-ui/vapor'</code> nos componentes marcados com <code>vapor</code>. Para uma app nova, escolha uma build só. Um componente marcado com <code>vapor</code> também importa diretivas como <code>vTooltip</code> de <code>'vael-ui/vapor'</code> por conta própria, porque uma diretiva registrada com <code>app.directive</code> só chega aos componentes clássicos.",
     "vaporTitle": "Suporte Vue Vapor"
   },
   "globalSetup": {
@@ -226,10 +237,15 @@
     "directives": "Diretivas",
     "previous": "Anterior",
     "next": "Próximo",
-    "pager": "Páginas anterior e seguinte"
+    "pager": "Páginas anterior e seguinte",
+    "mainNav": "Principal",
+    "sidebarNav": "Documentação"
   },
   "pageNotes": {
-    "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar."
+    "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar.",
+    "ContextMenu": "Pelo teclado, o menu abre com Shift+F10 ou a tecla Menu, que disparam contextmenu no elemento em foco. Por isso, torne o alvo envolvido focável (tabindex=\"0\") e dê a ele um nome acessível.",
+    "Tree": "As linhas são atualizadas a partir do estado reativo, então um slot #node personalizado deve ler valores reativos (props, refs, computeds), não variáveis comuns capturadas do pai.",
+    "DataTable": "Tabelas grandes: com centenas de linhas, adicione virtualize e um scroll-height, por exemplo scroll-height=\"400px\". A tabela passa a desenhar só as linhas visíveis, então ordenar, selecionar e rolar continuam rápidos. Com mais de 150 linhas na tela ao mesmo tempo, as linhas também deixam de deslizar para o lugar ao ordenar."
   },
   "stylingLayers": {
     "intro": "O vael-ui é distribuído em {layer}. CSS sem camada sempre vence CSS em camadas, qualquer que seja a especificidade. Assim, um reset base simples e sem camada sobrescreve os estilos internos do vael-ui sem nenhum aviso. Para corrigir isso, coloque seus estilos base em uma camada também e ordene essa camada primeiro.",
@@ -313,7 +329,7 @@
     "layerNote": "O vael-ui é distribuído em {layer}. O Tailwind v4 também coloca seus utilitários em uma camada, então a ordem de importação importa. Importe o CSS do vael-ui antes da entrada do Tailwind (como mostrado abaixo) para que a camada dele seja registrada primeiro. Assim a camada de utilitários do Tailwind fica depois na cascata, e um utilitário do Tailwind em um componente do vael-ui sempre vence. Você não precisa de {important} nem de brigas de especificidade. Veja {link} para entender como as camadas funcionam.",
     "layerNoteLink": "Estilo e camadas em cascata",
     "orderWarningTitle": "Mantenha essa importação primeiro",
-    "orderWarning": "Desde a 0.2.0, cada componente carrega seu próprio CSS, então a maioria dos apps não importa vael-ui/style.css. O Tailwind v4 é a exceção. Seus utilitários ficam em uma camada de cascata própria, e a primeira folha de estilo que registra um nome de camada define a ordem. Importe o CSS do vael-ui antes da entrada do Tailwind, no arquivo de entrada principal do seu app. Assim a ordem se mantém mesmo quando mais CSS de componentes for carregado depois.",
+    "orderWarning": "Cada componente carrega o próprio CSS, então você não importa nenhuma folha de estilo para o vael-ui. O Tailwind v4 é a única exceção. Os utilitários dele ficam em uma camada de cascata própria, e a primeira folha de estilo que nomeia uma camada define a ordem. Importe <code>vael-ui/layers.css</code> antes da sua entrada do Tailwind, no arquivo de entrada principal do app. Ele só nomeia a camada do vael-ui e não carrega CSS de componentes, então a ordem se mantém quando os componentes carregam o CSS depois.",
     "mergingIntro": "Cada componente aceita uma prop <code>ui</code> para as classes das suas partes (por exemplo <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). Para resolver ali utilitários do Tailwind em conflito como o <code>tailwind-merge</code> faz (vence o último por propriedade), configure-o uma vez:",
     "mergingNote": "Agora cada classe de parte <code>ui.*</code> da árvore passa pelo <code>twMerge</code>.",
     "mergingTitle": "Mesclando classes com tailwind-merge"
@@ -372,8 +388,10 @@
     "setupTitle": "Configurar",
     "title": "Importação automática",
     "vaporIntro": "O vael-ui oferece duas builds a partir do mesmo código-fonte: a build VDOM normal e uma build Vapor (<code>vael-ui/vapor</code>). Por padrão, o resolver importa da build VDOM. Passe <code>variant: 'vapor'</code> para importar da build Vapor. O resolver importa todos os componentes de uma única build, então escolha a que seu app usa para renderizar.",
+    "vaporHostsNote": "Em um template Vapor, o unplugin-vue-components só encontra componentes que ficam no slot de outro componente. Importe à mão os do nível superior, como <code>&lt;Toaster&gt;</code>, <code>&lt;DialogHost&gt;</code> e <code>&lt;ConfigProvider&gt;</code>, até o unplugin-vue-components suportar Vapor.",
     "vaporTitle": "Vapor",
     "oneImportIntro": "A importação automática do seu editor pode continuar sugerindo <code>vael-ui</code> em vez de <code>vael-ui/vapor</code>. É uma limitação conhecida do TypeScript quando um pacote exporta o mesmo nome a partir de dois pontos de entrada. Para evitar isso, defina uma condição de exportação <code>vapor</code> em vez de importar do subcaminho. Assim cada <code>import … from 'vael-ui'</code> é resolvido para a build Vapor em todo o projeto, tanto para componentes quanto para composables. A importação automática não tem mais como errar.",
+    "oneImportDefaults": "Adicione <code>vapor</code> às condições padrão do Vite em vez de substituí-las. Um <code>['vapor']</code> sozinho descarta os padrões, e outros pacotes podem carregar o arquivo errado. A linha <code>ssr</code> faz o mesmo para a renderização no servidor.",
     "oneImportNote": "A condição do Vite controla qual build é carregada. A condição do TS mantém os tipos alinhados com ela. Se você definir uma sem a outra, terá uma incompatibilidade silenciosa em vez de um erro: tipos corretos com a build errada carregada, ou o contrário.",
     "oneImportNoteTitle": "Mantenha as duas configurações sincronizadas",
     "oneImportTitle": "Uma importação compartilhada, sem subcaminho /vapor"
@@ -387,9 +405,14 @@
     "resolverTitle": "Usando unplugin-vue-components em vez disso",
     "setupIntro": "Registre o módulo em sua configuração do Nuxt:",
     "setupOutro": "Escreva a tag e o Nuxt resolve a importação para você:",
+    "appSetupTitle": "Configuração da app",
+    "appSetupIntro": "O módulo registra apenas componentes. Monte uma vez em app.vue os hosts que você usa. {link} explica o que cada um faz.",
+    "appSetupIntroLink": "Configuração global",
+    "composablesIntro": "Composables como <code>toast()</code> e <code>openDialog()</code> não são importados automaticamente. Importe-os de <code>'vael-ui'</code>, ou de <code>'vael-ui/vapor'</code> com a variante Vapor:",
+    "directivesIntro": "As diretivas <code>v-tooltip</code> e <code>v-scroll-mask</code> também não são registradas. Registre-as em um plugin. Com a variante Vapor, importe-as de <code>'vael-ui/vapor'</code>:",
     "setupTitle": "Configurar",
     "title": "Nuxt",
-    "vaporIntro": "Defina <code>variant: 'vapor'</code> para usar <code>vael-ui/vapor</code>, a mesma opção que o <code>vael-ui/resolver</code> aceita. O módulo ativa o <code>vue.vapor</code> do Nuxt para você. É preciso Nuxt 4.6 ou mais recente e Vue 3.6.",
+    "vaporIntro": "Defina <code>variant: 'vapor'</code> para usar <code>vael-ui/vapor</code>, a mesma opção que o <code>vael-ui/resolver</code> aceita. O módulo ativa o <code>vue.vapor</code> do Nuxt para você. É preciso Nuxt 4.6 ou mais recente e Vue 3.6. Fixe o Vue na versão exata indicada em Primeiros passos.",
     "vaporOutro": "As páginas continuam sendo renderizadas no servidor. O servidor transforma cada componente em HTML, e o navegador o assume como um componente Vapor, sem mais nada para configurar.",
     "vaporForceIntro": "Para compilar também seus próprios componentes <code>&lt;script setup&gt;</code> como Vapor, sem adicionar <code>vapor</code> a cada um, ative o <code>features.vapor</code> do <code>{'@'}vitejs/plugin-vue</code> pelo <code>vite.vue</code> do Nuxt:",
     "vaporTitle": "Vapor"

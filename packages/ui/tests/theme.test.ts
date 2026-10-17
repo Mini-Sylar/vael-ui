@@ -20,15 +20,11 @@ function colorOf(testId: string) {
   return getComputedStyle(document.querySelector(`[data-testid="${testId}"]`)!).color
 }
 
-// Teleport-to-head content lives outside the test's mount container. Vue
-// correctly removes it on unmount (verified below) — but Vite's own dev-mode
-// CSS injection (from this file's `import '../src/style.css'`) already puts
-// unrelated <style> tags in <head> before any component mounts, so tests
-// compare against a captured baseline rather than assuming zero.
-function headStyleCount() {
-  return document.querySelectorAll('head style').length
+// ConfigProvider renders its theme <style> in place (not in <head>, which broke SSR
+// hydration). Vite's dev CSS injection owns <head>, so only <body> is counted.
+function themeStyleCount() {
+  return document.querySelectorAll('body style').length
 }
-const baselineHeadStyles = headStyleCount()
 
 test('a mid-tone seed color repaints the button, gets white contrast text, and cleans up its <style> on unmount', async () => {
   // indigo-500-ish — clearly not near-white, not near-black
@@ -37,10 +33,10 @@ test('a mid-tone seed color repaints the button, gets white contrast text, and c
   await vi.waitFor(() => expect(bgOf('themed-primary')).toBe('rgb(99, 102, 241)'))
   // luminance of #6366f1 is low enough that WCAG picks light text
   expect(colorOf('themed-primary')).toBe('rgb(250, 250, 250)')
-  expect(headStyleCount()).toBe(baselineHeadStyles + 1)
+  expect(themeStyleCount()).toBe(1)
 
   await screen.unmount()
-  await vi.waitFor(() => expect(headStyleCount()).toBe(baselineHeadStyles))
+  await vi.waitFor(() => expect(themeStyleCount()).toBe(0))
 })
 
 test('a pale seed color flips contrast text to dark (luminance actually computed, not hardcoded)', async () => {
@@ -83,8 +79,8 @@ test('danger seed themes independently from primary', async () => {
 
 test('no theme prop injects no stylesheet at all', async () => {
   const screen = await render(ThemedFixture, { props: { theme: {} } })
-  await new Promise((r) => setTimeout(r, 50))
-  expect(headStyleCount()).toBe(baselineHeadStyles)
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+  expect(themeStyleCount()).toBe(0)
   await screen.unmount()
 })
 

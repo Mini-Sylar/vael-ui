@@ -21,13 +21,14 @@
   <output data-testid="rendered-indices">{{ items.map((r) => r.index).join(',') }}</output>
   <output data-testid="reach-end-count">{{ reachEndCount }}</output>
   <output data-testid="reach-start-count">{{ reachStartCount }}</output>
+  <output data-testid="items-updates">{{ itemsUpdates }}</output>
   <output data-testid="measured-size">{{ measuredSize ?? '' }}</output>
   <button data-testid="scroll-to-2" @click="scrollToIndex(2)">scroll to 2</button>
   <button data-testid="scroll-to-50" @click="scrollToIndex(50)">scroll to 50</button>
 </template>
 
 <script setup lang="ts">
-import { shallowRef, useTemplateRef } from 'vue'
+import { shallowRef, useTemplateRef, watch } from 'vue'
 import { useVirtualizer } from '../../src/composables/useVirtualizer'
 import type { VirtualRow } from '../../src/composables/useVirtualizer'
 
@@ -75,6 +76,9 @@ const { listStyle, items, scrollToIndex, measuredSize, measureRow } = useVirtual
     reachStartCount.value++
   },
 })
+
+const itemsUpdates = shallowRef(0)
+watch(items, () => itemsUpdates.value++)
 
 defineExpose({ containerEl })
 </script>

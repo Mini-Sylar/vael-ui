@@ -6,35 +6,42 @@
     :min="200"
     :max="360"
     aria-label="Resize sidebar"
+    role="complementary"
     class="sidebar-shell"
   >
     <div class="sidebar-mode-toggle">
       <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
     </div>
-    <nav ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
+    <!-- MenuList renders the nav landmark itself. -->
+    <div ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
       <span ref="sidebarIndicator" class="sidebar-indicator" aria-hidden="true" />
-      <MenuList :items="navItems" :active="activeValue">
+      <MenuList :items="navItems" :active="activeValue" :aria-label="t('nav.sidebarNav')">
         <template #item="{ item }">
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
           <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
           <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
         </template>
       </MenuList>
-    </nav>
+    </div>
   </Resizable>
   <Drawer v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
     <div class="sidebar-mode-toggle sidebar-mode-toggle--mobile">
       <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
     </div>
-    <nav class="sidebar-scroll sidebar-scroll--mobile">
-      <MenuList :items="navItems" :active="activeValue" @select="mobileOpen = false">
+    <div class="sidebar-scroll sidebar-scroll--mobile">
+      <MenuList
+        :items="navItems"
+        :active="activeValue"
+        :aria-label="t('nav.sidebarNav')"
+        @select="mobileOpen = false"
+      >
         <template #item="{ item }">
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
           <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
           <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
         </template>
       </MenuList>
-    </nav>
+    </div>
   </Drawer>
 </template>
 

@@ -15,6 +15,7 @@
     :scroll-target="scrollTarget"
     :scroll-fade="false"
     :initial-focus="() => inputEl"
+    :aria-label="messages.commandPalette.label"
     :ui="dialogUi"
     @open-change="(value, details) => emit('open-change', value, details)"
   >

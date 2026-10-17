@@ -119,6 +119,12 @@
     "darkModeTitle": "深色模式",
     "directivesIntro": "默认情况下，<code>v-tooltip</code> 和 <code>v-scroll-mask</code> 不会全局注册。如果你在多个组件中使用其中任意一个，请统一注册一次：",
     "directivesNote": "<code>v-tooltip</code> 还需要在应用中挂载一个 <code>&lt;TooltipHost /&gt;</code>。在 Vapor 应用中，请改为从 <code>vael-ui/vapor</code> 导入这两个指令。",
+    "ssrTitle": "服务端渲染",
+    "ssrIntro": "两种构建都能在服务端渲染，并在浏览器中激活。{link}会自动完成下面的所有设置。",
+    "ssrIntroLink": "Nuxt 模块",
+    "ssrNoExternal": "使用原生 Vite SSR 时，让 Vite 为服务端打包 vael-ui。每个组件都会导入自己的 CSS，而 Node 无法直接加载 CSS 文件：",
+    "ssrTeleports": "对话框、弹出层、提示消息和工具提示通过 <code>&lt;Teleport&gt;</code> 渲染到 <code>&lt;body&gt;</code>。Vue 会把这部分 HTML 单独放在 <code>ctx.teleports</code> 中返回。请把它放在 <code>&lt;body&gt;</code> 开头、应用元素之前，否则页面无法正确激活：",
+    "ssrLocale": "在服务器上渲染时，请在 <code>ConfigProvider</code> 上设置 <code>locale</code>。否则日期、数字和每周的第一天会跟随服务器的语言，并在页面于浏览器中运行后发生变化。",
     "directivesTitle": "指令",
     "installIntro": "vael-ui 已发布在 npm 上。使用你的包管理器安装：",
     "installTitle": "安装",
@@ -128,9 +134,14 @@
     "usageImportNoteLink": "样式和级联层",
     "usageImportNoteTitle": "仅 0.2.0 之前需要",
     "usageIntro": "然后，经典 VDOM 构建从 <code>'vael-ui'</code> 导入组件。Vapor 构建（Vue 3.6 不使用虚拟 DOM 的模式）则从 <code>'vael-ui/vapor'</code> 导入。两者的 props 完全相同：",
+    "fontIntro": "组件使用所在页面的字体，自身不带字体。如果不设置，浏览器会使用默认的衬线字体，所以请在 <code>body</code> 上设置字体：",
     "usageTitle": "用法",
-    "vaporIntro": "两种构建来自同一个包和同一份源码。使用你的应用所运行的那一种即可；由于 Vue 3.6 支持 VDOM/Vapor 互操作，也可以混合使用。每个组件页面都有相同的切换开关，方便对比。",
-    "vaporForceIntro": "你自己的组件可以用 <code>&lt;script setup vapor&gt;</code> 逐个启用 Vapor。若想不加该属性就把所有 <code>&lt;script setup&gt;</code> 组件编译为 Vapor，请在 <code>{'@'}vitejs/plugin-vue</code> 6.0.8 或更高版本中开启 <code>features.vapor</code>：",
+    "vaporIntro": "两种构建来自同一个包和同一份源码，props 也相同。选择你的应用所使用的那一种即可。每个组件页面都有切换开关，方便对比。",
+    "vaporPinIntro": "Vapor 构建需要 Vue 3.6，它目前仍是预发布版本。请安装 vael-ui 构建时所用的确切版本 <code>{version}</code>。像 <code>^3.5.0</code> 这样的范围可能会装上没有 Vapor 模式的 Vue 3.5，而其他预发布版本可能会让编译好的组件出错：",
+    "vaporAppIntro": "Vapor 应用以 <code>createVaporApp</code> 启动，并从 <code>'vael-ui/vapor'</code> 导入组件、组合式函数和指令。你自己的组件用 <code>&lt;script setup vapor&gt;</code> 启用 Vapor：",
+    "vaporForceIntro": "如果不想在每个文件里写 <code>vapor</code> 属性，可以在 <code>{'@'}vitejs/plugin-vue</code> 6.0.8 或更高版本中开启 <code>features.vapor</code>。这样应用里所有 <code>&lt;script setup&gt;</code> 组件都会编译为 Vapor：",
+    "vaporMixTitle": "混用两种构建",
+    "vaporMixIntro": "传统应用也可以包含 Vapor 组件。当你想把现有应用逐步迁移到 Vapor 时，这很有用。保留 <code>createApp</code>，安装 Vue 的 <code>vaporInteropPlugin</code>，并在标记了 <code>vapor</code> 的组件中从 <code>'vael-ui/vapor'</code> 导入。新应用请只选一种构建。标记了 <code>vapor</code> 的组件也要自己从 <code>'vael-ui/vapor'</code> 导入 <code>vTooltip</code> 等指令，因为用 <code>app.directive</code> 注册的指令只会作用于经典组件。",
     "vaporTitle": "Vue 蒸气支持"
   },
   "globalSetup": {
@@ -226,10 +237,15 @@
     "directives": "指令",
     "previous": "上一页",
     "next": "下一页",
-    "pager": "上一页和下一页"
+    "pager": "上一页和下一页",
+    "mainNav": "主导航",
+    "sidebarNav": "文档"
   },
   "pageNotes": {
-    "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
+    "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。",
+    "ContextMenu": "键盘用户通过 Shift+F10 或菜单键打开菜单，这两者会在获得焦点的元素上触发 contextmenu。因此请让被包裹的目标可聚焦（tabindex=\"0\"），并为它提供可访问名称。",
+    "Tree": "行会根据响应式状态更新，所以自定义的 #node 插槽应读取响应式的值（props、ref、computed），而不是从父组件捕获的普通变量。",
+    "DataTable": "大型表格：有几百行时，请添加 virtualize 和 scroll-height，例如 scroll-height=\"400px\"。表格只会绘制可见的行，排序、选择和滚动都能保持流畅。同时显示超过 150 行时，排序时行也不再滑动到新位置。"
   },
   "stylingLayers": {
     "intro": "vael-ui 发布在 {layer} 中。无论优先级如何，未分层的 CSS 总是会覆盖分层的 CSS。因此，一个普通的、未分层的基础重置样式会在没有任何提示的情况下覆盖 vael-ui 的内部样式。要解决这个问题，请把你的基础样式也放进一个层中，并将该层排在最前面。",
@@ -313,7 +329,7 @@
     "layerNote": "vael-ui 发布在 {layer} 中。Tailwind v4 也会把自己的工具类放在一个层中，因此导入顺序很重要。请在 Tailwind 入口（见下方）之前导入 vael-ui 的 CSS，让它的层先注册。这样 Tailwind 的工具类层在级联中位于其后，vael-ui 组件上的 Tailwind 工具类总会生效。你不需要 {important}，也不会有优先级冲突。层的工作原理请参阅 {link}。",
     "layerNoteLink": "样式和级联层",
     "orderWarningTitle": "保持这个导入在最前面",
-    "orderWarning": "自 0.2.0 起，每个组件都会加载自己的 CSS，因此大多数应用无需导入 vael-ui/style.css。Tailwind v4 是例外。它的工具类位于自己的级联层中，而最先注册某个层名的样式表决定层的顺序。请在应用的主入口文件中，在 Tailwind 入口之前导入 vael-ui 的 CSS。这样即使之后加载了更多组件的 CSS，顺序依然保持不变。",
+    "orderWarning": "每个组件都会加载自己的 CSS，所以你不需要为 vael-ui 导入样式表。唯一的例外是 Tailwind v4。它的工具类位于自己的级联层中，而第一个声明层名的样式表决定顺序。请在应用的主入口文件中，在 Tailwind 入口之前导入 <code>vael-ui/layers.css</code>。它只声明 vael-ui 的层，不加载任何组件 CSS，因此之后组件加载 CSS 时顺序依然成立。",
     "mergingIntro": "每个组件都接受用于部件类名的 <code>ui</code> prop（例如 <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>）。若要像 <code>tailwind-merge</code> 那样解决其中冲突的 Tailwind 工具类（每个属性以最后一个为准），只需设置一次：",
     "mergingNote": "现在，树中所有 <code>ui.*</code> 部件类名都会经过 <code>twMerge</code> 处理。",
     "mergingTitle": "使用 tailwind-merge 合并类"
@@ -372,8 +388,10 @@
     "setupTitle": "设置",
     "title": "自动导入",
     "vaporIntro": "vael-ui 从同一份源码提供两种构建：常规的 VDOM 构建和 Vapor 构建（<code>vael-ui/vapor</code>）。解析器默认从 VDOM 构建导入。传入 <code>variant: 'vapor'</code> 即可改为从 Vapor 构建导入。解析器会从同一种构建导入所有组件，因此请选择你的应用实际用于渲染的那一种。",
+    "vaporHostsNote": "在 Vapor 模板中，unplugin-vue-components 只能找到位于其他组件插槽内的组件。在 unplugin-vue-components 支持 Vapor 之前，请手动导入顶层组件，例如 <code>&lt;Toaster&gt;</code>、<code>&lt;DialogHost&gt;</code> 和 <code>&lt;ConfigProvider&gt;</code>。",
     "vaporTitle": "汽",
     "oneImportIntro": "编辑器的自动导入可能会一直建议使用 <code>vael-ui</code>，而不是 <code>vael-ui/vapor</code>。这是当一个包从两个入口点导出同名内容时 TypeScript 的已知限制。为避免这个问题，请设置 <code>vapor</code> 导出条件，而不是从子路径导入。这样，整个项目中所有的 <code>import … from 'vael-ui'</code> 都会解析到 Vapor 构建，组件和组合式函数都是如此。自动导入也就不会再选错了。",
+    "oneImportDefaults": "把 <code>vapor</code> 加到 Vite 的默认条件中，而不是替换它们。只写 <code>['vapor']</code> 会丢掉默认值，其他包可能因此加载错误的文件。<code>ssr</code> 那一行为服务端渲染做同样的设置。",
     "oneImportNote": "Vite 条件控制加载哪一种构建。TS 条件让类型与之保持一致。如果只设置其中一个，你不会得到报错，而是会出现无声的不一致：类型正确但加载了错误的构建，或者相反。",
     "oneImportNoteTitle": "保持两个设置同步",
     "oneImportTitle": "一个共享导入，无 /vapor 子路径"
@@ -387,9 +405,14 @@
     "resolverTitle": "使用 unplugin-vue-components 代替",
     "setupIntro": "在 Nuxt 配置中注册模块：",
     "setupOutro": "只需编写标签，Nuxt 会为你解析导入：",
+    "appSetupTitle": "应用设置",
+    "appSetupIntro": "该模块只注册组件。请在 app.vue 中挂载一次你要用到的宿主组件。{link}介绍了每个宿主的作用。",
+    "appSetupIntroLink": "全局设置",
+    "composablesIntro": "<code>toast()</code>、<code>openDialog()</code> 等组合式函数不会自动导入。请从 <code>'vael-ui'</code> 导入，使用 Vapor 变体时从 <code>'vael-ui/vapor'</code> 导入：",
+    "directivesIntro": "<code>v-tooltip</code> 和 <code>v-scroll-mask</code> 指令同样不会注册。请在插件中注册它们。使用 Vapor 变体时，从 <code>'vael-ui/vapor'</code> 导入：",
     "setupTitle": "设置",
     "title": "努克斯特",
-    "vaporIntro": "设置 <code>variant: 'vapor'</code> 即可使用 <code>vael-ui/vapor</code>，与 <code>vael-ui/resolver</code> 的选项相同。模块会自动开启 Nuxt 的 <code>vue.vapor</code>。需要 Nuxt 4.6 或更高版本以及 Vue 3.6。",
+    "vaporIntro": "设置 <code>variant: 'vapor'</code> 即可使用 <code>vael-ui/vapor</code>，与 <code>vael-ui/resolver</code> 的选项相同。模块会自动开启 Nuxt 的 <code>vue.vapor</code>。需要 Nuxt 4.6 或更高版本以及 Vue 3.6。请将 Vue 固定为“快速开始”中给出的确切版本。",
     "vaporOutro": "页面依然在服务端渲染。服务端把每个组件渲染成 HTML，浏览器再将其作为 Vapor 组件接管，无需其他配置。",
     "vaporForceIntro": "若想把你自己的 <code>&lt;script setup&gt;</code> 组件也编译为 Vapor，而无需逐个添加 <code>vapor</code>，可通过 Nuxt 的 <code>vite.vue</code> 开启 <code>{'@'}vitejs/plugin-vue</code> 的 <code>features.vapor</code>：",
     "vaporTitle": "Vapor"

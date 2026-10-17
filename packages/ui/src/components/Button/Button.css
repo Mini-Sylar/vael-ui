@@ -110,6 +110,15 @@
     color: var(--ui-danger-contrast);
   }
 
+  /* A pressed toggle keeps the hover fill. */
+  .ui-button--ghost[aria-pressed='true'],
+  .ui-button--outline[aria-pressed='true'] {
+    background: var(--ui-muted);
+  }
+  .ui-button--secondary[aria-pressed='true'] {
+    background: var(--ui-muted-hover);
+  }
+
   @media (hover: hover) and (pointer: fine) {
     .ui-button--primary:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
       background: var(--ui-primary-hover);
@@ -129,6 +138,10 @@
     }
     .ui-button--danger:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
       background: var(--ui-danger-solid-hover, var(--ui-danger-hover));
+    }
+    .ui-button--ghost[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled),
+    .ui-button--outline[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled) {
+      background: var(--ui-muted-hover);
     }
   }
 
@@ -210,6 +223,13 @@
     place-items: center;
     opacity: 0;
     pointer-events: none;
+  }
+  /* The spinner is always mounted for the crossfade; it only turns while it shows. */
+  .ui-button-loader .ui-loader {
+    animation-play-state: paused;
+  }
+  .ui-button--loading .ui-button-loader .ui-loader {
+    animation-play-state: running;
   }
 
   .ui-button--loader-overlay .ui-button-loader {

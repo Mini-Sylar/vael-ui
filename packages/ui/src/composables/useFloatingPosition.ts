@@ -157,6 +157,22 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
     { flush: 'post' },
   )
 
+  // autoUpdate only reacts to layout, so a changed option needs its own nudge.
+  watch(
+    () => [
+      toValue(options.side),
+      toValue(options.align),
+      toValue(options.sideOffset),
+      toValue(options.alignOffset),
+      toValue(options.matchReferenceWidth),
+      toValue(options.maxHeightCap),
+    ],
+    () => {
+      if (stopAutoUpdate) void update()
+    },
+    { flush: 'post' },
+  )
+
   onScopeDispose(() => {
     stopAutoUpdate?.()
     disconnectObserver?.disconnect()

@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { defineComponent, h, nextTick, withDirectives } from 'vue'
+import { defineComponent, h, nextTick, shallowRef, withDirectives } from 'vue'
 import { vScrollMask } from '../src/directives/vScrollMask'
 
 afterEach(() => {
@@ -59,4 +59,49 @@ test('with scroll-driven animation support, no scroll listener or inline variabl
   expect(el.classList.contains('scroll-fade')).toBe(true)
   expect(el.classList.contains('scroll-fade-manual')).toBe(false)
   expect(el.style.getPropertyValue('--fade-top-end')).toBe('')
+})
+
+test('content that grows inside a child component turns the fade on, and off again when it shrinks', async () => {
+  const rows = shallowRef(2)
+  // The rows live in a child, so the scroller's own component never re-renders.
+  const Rows = defineComponent({
+    setup: () => () =>
+      Array.from({ length: rows.value }, (_, i) => h('div', { key: i, style: 'height: 40px' })),
+  })
+  const Scroller = defineComponent({
+    setup: () => () =>
+      withDirectives(
+        h('div', { 'data-testid': 'scroller', style: 'height: 200px; overflow-y: auto' }, h(Rows)),
+        [[vScrollMask, 'y']],
+      ),
+  })
+  const screen = await render(Scroller)
+  const el = screen.container.querySelector<HTMLElement>('[data-testid="scroller"]')!
+  expect(el.classList.contains('scroll-fade')).toBe(false)
+
+  rows.value = 20
+  await vi.waitFor(() => expect(el.classList.contains('scroll-fade')).toBe(true))
+  rows.value = 2
+  await vi.waitFor(() => expect(el.classList.contains('scroll-fade')).toBe(false))
+})
+
+test('a child that grows through its style turns the fade on', async () => {
+  const Scroller = defineComponent({
+    setup: () => () =>
+      withDirectives(
+        h('div', { 'data-testid': 'scroller', style: 'height: 200px; overflow-y: scroll' }, [
+          h('div', { style: 'height: 10px' }),
+        ]),
+        [[vScrollMask, 'y']],
+      ),
+  })
+  const screen = await render(Scroller)
+  const el = screen.container.querySelector<HTMLElement>('[data-testid="scroller"]')!
+  expect(el.classList.contains('scroll-fade')).toBe(false)
+  // Past the ResizeObserver's first callback, which would otherwise catch the change by chance.
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  // A scrollbar that's always there keeps the box from resizing, so only the content changes.
+  // Change the child's style directly, as a child component's own re-render would.
+  el.firstElementChild!.setAttribute('style', 'height: 600px')
+  await vi.waitFor(() => expect(el.classList.contains('scroll-fade')).toBe(true))
 })

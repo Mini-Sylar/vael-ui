@@ -2,7 +2,10 @@ import '../src/style.css'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h } from 'vue'
 import AccordionFixture from './fixtures/AccordionFixture.vue'
+import Accordion from '../src/components/Accordion/Accordion.vue'
+import AccordionItem from '../src/components/AccordionItem/AccordionItem.vue'
 
 function panelFor(triggerName: string) {
   const button = [...document.querySelectorAll<HTMLElement>('.ui-accordion-trigger')].find((el) =>
@@ -134,4 +137,29 @@ test('trigger text and panel content share the same inline start edge', async ()
   const range = document.createRange()
   range.selectNodeContents(body)
   expect(range.getBoundingClientRect().left).toBeCloseTo(trigger.getBoundingClientRect().left, 1)
+})
+
+test('headers are <h3> by default; headingLevel on Accordion sets them, an item can override', async () => {
+  const item = (value: string, extra: Record<string, unknown> = {}) =>
+    h(AccordionItem, { value, title: value, ...extra }, { default: () => value })
+  const screen = await render({
+    render: () => [
+      h(Accordion, null, { default: () => [item('Plain')] }),
+      h(
+        Accordion,
+        { headingLevel: 2 },
+        {
+          default: () => [item('Second level'), item('Fourth level', { headingLevel: 4 })],
+        },
+      ),
+    ],
+  })
+  await expect.element(screen.getByRole('heading', { level: 3, name: 'Plain' })).toBeVisible()
+  await expect
+    .element(screen.getByRole('heading', { level: 2, name: 'Second level' }))
+    .toBeVisible()
+  await expect
+    .element(screen.getByRole('heading', { level: 4, name: 'Fourth level' }))
+    .toBeVisible()
+  expect(screen.container.querySelector('h3')!.classList.contains('ui-accordion-header')).toBe(true)
 })

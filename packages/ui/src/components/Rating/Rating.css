@@ -17,6 +17,12 @@
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }
+  /* One slider target, at least 24px tall (WCAG 2.5.8); the stars keep their size. */
+  .ui-rating::before {
+    content: '';
+    position: absolute;
+    inset: min(0px, (100% - 24px) / 2) 0;
+  }
   .ui-rating--readonly {
     cursor: default;
   }

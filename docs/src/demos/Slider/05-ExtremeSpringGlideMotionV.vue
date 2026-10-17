@@ -11,6 +11,7 @@
       <Slider
         ref="slider"
         v-model="value"
+        aria-label="Glide value"
         :min="MIN"
         :max="MAX"
         :step="10"

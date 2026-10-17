@@ -9,6 +9,7 @@ import type { TourStep, TourStepChangeDetails } from '../src/components/Tour/Tou
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import TourFixture from './fixtures/TourFixture.vue'
 import TourTeleportFixture from './fixtures/TourTeleportFixture.vue'
+import TourInteractiveFixture from './fixtures/TourInteractiveFixture.vue'
 
 test('opens on the first step, target stays interactive by default, page scroll-locks', async () => {
   const screen = await render(TourFixture)
@@ -270,7 +271,11 @@ test('the callout is at its new position by the first animation frame after @ste
     }),
   ])
   await expect.element(page.getByText('Frame A')).toBeVisible()
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await vi.waitFor(async () => {
+    const at = read()
+    for (let i = 0; i < 3; i++) await nextFrame()
+    expect(read()).toBe(at)
+  })
   const before = read()
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Frame B')).toBeVisible()
@@ -283,4 +288,72 @@ test('the callout is at its new position by the first animation frame after @ste
   expect(positions).toHaveLength(1)
   expect(positions[0]).not.toBe(before)
   expect(positions[0]).toBe(read())
+})
+
+test('Skip and Done go through beforeClose, so a custom exit runs', async () => {
+  const beforeClose = vi.fn()
+  const open = shallowRef(true)
+  await renderMotionTour({
+    beforeClose,
+    get open() {
+      return open.value
+    },
+    'onUpdate:open': (v: boolean) => (open.value = v),
+  })
+  await page.getByRole('button', { name: 'Skip' }).click()
+  expect(beforeClose).toHaveBeenCalledTimes(1)
+  await expect.element(page.getByText('Motion A')).toBeVisible()
+
+  beforeClose.mock.calls[0]![0]()
+  await vi.waitFor(() => expect(open.value).toBe(false))
+
+  open.value = true
+  await expect.element(page.getByText('Motion A')).toBeVisible()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  expect(beforeClose).toHaveBeenCalledTimes(2)
+  beforeClose.mock.calls[1]![0]()
+  await vi.waitFor(() => expect(open.value).toBe(false))
+})
+
+test('arrow keys typed inside a spotlighted input move the caret, not the tour', async () => {
+  const screen = await render(TourInteractiveFixture)
+  await expect.element(page.getByText('Type your name')).toBeVisible()
+
+  const input = screen.getByTestId('tour-input')
+  await input.click()
+  await userEvent.keyboard('abc{ArrowLeft}{ArrowLeft}')
+  await expect.element(input).toHaveFocus()
+  expect(screen.getByTestId('step-index').element().textContent).toBe('0')
+  expect((input.element() as HTMLInputElement).selectionStart).toBe(1)
+
+  // Modified arrows (e.g. word jumps) are left alone too.
+  await userEvent.keyboard('{Alt>}{ArrowRight}{/Alt}')
+  expect(screen.getByTestId('step-index').element().textContent).toBe('0')
+})
+
+test('Escape closes a Dialog opened from a tour step before it skips the tour', async () => {
+  const screen = await render(TourInteractiveFixture)
+  await expect.element(page.getByText('Type your name')).toBeVisible()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect.element(page.getByText('Open settings')).toBeVisible()
+
+  await screen.getByTestId('open-dialog').click()
+  await expect.element(page.getByRole('dialog', { name: 'Settings dialog' })).toBeVisible()
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('dialog-state')).toHaveTextContent('closed')
+  expect(screen.getByTestId('state').element().textContent).toBe('open')
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+})
+
+test('Escape still skips the tour while a step’s own onBeforeEnter overlay is open', async () => {
+  const screen = await render(TourTeleportFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(page.getByText('Behind a Dialog')).toBeVisible()
+
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(document.body.textContent).not.toContain('Behind a Dialog'))
 })

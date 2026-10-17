@@ -6,7 +6,7 @@
       <em>this actual docs site</em>: use the sidebar or search to navigate anywhere, then look back
       here.
     </p>
-    <Breadcrumb :items="routeCrumbs" />
+    <Breadcrumb :items="routeCrumbs" aria-label="Breadcrumb from the router" />
   </section>
 </template>
 

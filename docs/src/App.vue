@@ -23,7 +23,7 @@
             v{{ version }}
           </Tag>
         </RouterLink>
-        <nav class="main-nav">
+        <nav class="main-nav" :aria-label="t('nav.mainNav')">
           <RouterLink to="/docs/getting-started">{{ t('nav.gettingStarted') }}</RouterLink>
           <a href="https://github.com/Mini-Sylar/vael-ui" target="_blank" rel="noreferrer">{{
             t('nav.github')
@@ -67,6 +67,7 @@
                       :model-value="radiusChoice"
                       size="sm"
                       class="radius-select"
+                      :aria-label="t('header.radius')"
                       :items="radiusItems"
                       @update:model-value="onRadiusChange"
                     />
@@ -75,6 +76,7 @@
                     <span>Font: {{ fontSize }}px</span>
                     <Slider
                       :model-value="fontSize"
+                      aria-label="Font size"
                       :min="12"
                       :max="18"
                       :step="1"
@@ -87,6 +89,7 @@
                     <SelectButton
                       v-model="uiSize"
                       size="sm"
+                      :aria-label="t('header.size')"
                       :allow-empty="false"
                       :items="sizeItems"
                     />
@@ -152,6 +155,7 @@
             :model-value="radiusChoice"
             size="sm"
             class="radius-select"
+            :aria-label="t('header.radius')"
             :items="radiusItems"
             @update:model-value="onRadiusChange"
           />
@@ -160,6 +164,7 @@
           <span>Font: {{ fontSize }}px</span>
           <Slider
             :model-value="fontSize"
+            aria-label="Font size"
             :min="12"
             :max="18"
             :step="1"
@@ -169,7 +174,13 @@
         </label>
         <label class="theme-row">
           <span>{{ t('header.size') }}</span>
-          <SelectButton v-model="uiSize" size="sm" :allow-empty="false" :items="sizeItems" />
+          <SelectButton
+            v-model="uiSize"
+            size="sm"
+            :allow-empty="false"
+            :items="sizeItems"
+            :aria-label="t('header.size')"
+          />
         </label>
         <label class="theme-row">
           <span>{{ t('header.animations') }}</span>
@@ -182,6 +193,7 @@
             size="sm"
             class="locale-select"
             :items="localeItems"
+            :aria-label="t('header.locale')"
             @update:model-value="onLocaleChange"
           />
         </label>
@@ -195,6 +207,7 @@
               { label: t('component.vdom'), value: 'vdom' },
               { label: t('component.vapor'), value: 'vapor' },
             ]"
+            :aria-label="t('header.defaultMode')"
           />
         </label>
       </div>

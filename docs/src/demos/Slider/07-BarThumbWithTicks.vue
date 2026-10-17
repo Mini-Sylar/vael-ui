@@ -5,12 +5,14 @@
       Restyled with CSS, ticks drawn in the <code>#track</code> slot. The bar stretches while you
       drag it.
     </p>
-    <div class="stack">
-      <div class="readout">
-        <span>Volume</span>
-        <output>{{ volume }}</output>
-      </div>
-      <Slider v-model="volume" :step="10" class="bar-slider" aria-label="Volume">
+    <Field class="volume-field">
+      <template #label>
+        <span class="readout">
+          <span>Volume</span>
+          <output aria-hidden="true">{{ volume }}</output>
+        </span>
+      </template>
+      <Slider v-model="volume" :step="10" class="bar-slider">
         <template #track>
           <span
             v-for="tick in 11"
@@ -20,22 +22,19 @@
           />
         </template>
       </Slider>
-    </div>
+    </Field>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Slider } from 'vael-ui'
+import { Field, Slider } from 'vael-ui'
 
 const volume = shallowRef(60)
 </script>
 
 <style scoped>
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.volume-field {
   max-width: 20rem;
 }
 
@@ -43,6 +42,7 @@ const volume = shallowRef(60)
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;
+  font-weight: 400;
   color: var(--ui-text-muted);
   font-variant-numeric: tabular-nums;
 }

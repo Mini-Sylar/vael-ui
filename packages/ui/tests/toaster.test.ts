@@ -1,8 +1,8 @@
 import '../src/style.css'
-import { page } from 'vitest/browser'
-import { beforeEach, expect, test, vi } from 'vitest'
+import { page, userEvent } from 'vitest/browser'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { h, ref } from 'vue'
+import { h, nextTick, ref } from 'vue'
 import { toast, useToastQueue } from '../src/composables/useToast'
 import ToasterFixture from './fixtures/ToasterFixture.vue'
 import ToasterCustomCardFixture from './fixtures/ToasterCustomCardFixture.vue'
@@ -26,6 +26,12 @@ beforeEach(async () => {
   // cursor to a neutral corner before every test so mount never starts
   // "already hovered".
   await page.elementLocator(document.body).hover({ position: { x: 5, y: 5 } })
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  // Drops the override, so a failed test can't leave the page "hidden" for the next one.
+  delete (document as { visibilityState?: unknown }).visibilityState
 })
 
 test('ui prop overrides root/toast/title classes, same convention as every other component', async () => {
@@ -70,6 +76,7 @@ test('renders a live region and one card per toast, dismiss button removes it', 
 
 test('hovering the stack pauses auto-dismiss; leaving resumes with remaining time', async () => {
   const screen = await render(ToasterFixture)
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   const id = toast('Pausable', { duration: 150 })
 
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
@@ -77,7 +84,8 @@ test('hovering the stack pauses auto-dismiss; leaving resumes with remaining tim
   toaster.dispatchEvent(new PointerEvent('pointerenter'))
 
   // Past the 150ms duration — still queued because paused (a fired timer dequeues at once).
-  await new Promise((r) => setTimeout(r, 200))
+  vi.advanceTimersByTime(200)
+  vi.useRealTimers()
   expect(toasts.some((t) => t.id === id)).toBe(true)
 
   toaster.dispatchEvent(new PointerEvent('pointerleave'))
@@ -116,12 +124,15 @@ test('hovering the stack expands it: cards go full-opacity with real gapped offs
 
 test('backgrounding the tab pauses every toast; foregrounding resumes them', async () => {
   const screen = await render(ToasterFixture)
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   toast('Backgrounded', { duration: 150 })
 
   Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
   document.dispatchEvent(new Event('visibilitychange'))
+  await nextTick()
 
-  await new Promise((r) => setTimeout(r, 200))
+  vi.advanceTimersByTime(200)
+  vi.useRealTimers()
   expect(toasts).toHaveLength(1)
 
   Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
@@ -140,6 +151,7 @@ async function drag(el: Element, dx: number, dy: number, ms = 100) {
   el.dispatchEvent(
     new PointerEvent('pointerdown', { clientX: 0, clientY: 0, pointerId, bubbles: true }),
   )
+  // Real wait: velocity reads elapsed time.
   await new Promise((r) => setTimeout(r, ms))
   el.dispatchEvent(
     new PointerEvent('pointermove', { clientX: dx, clientY: dy, pointerId, bubbles: true }),
@@ -392,7 +404,7 @@ test('expand keeps the stack open as a full list without hover', async () => {
   // Leaving after a hover must not collapse a stack the prop holds open.
   toaster.dispatchEvent(new PointerEvent('pointerenter'))
   toaster.dispatchEvent(new PointerEvent('pointerleave'))
-  await new Promise((r) => setTimeout(r, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(toaster.getAttribute('data-expanded')).toBe('true')
 
   dismiss()
@@ -411,12 +423,14 @@ test('expand does not pause timers on its own; toasts still auto-dismiss', async
 
 test('toasts queued past maxVisible keep their full time until they show', async () => {
   const screen = await render(ToasterFixture, { props: { maxVisible: 1 } })
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   const queued = toast('Queued', { duration: 150 })
   const front = toast('Front', { duration: 10000 })
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toast').length).toBe(1))
 
   // Past the queued toast's duration: it never showed, so it must still be there.
-  await new Promise((r) => setTimeout(r, 200))
+  vi.advanceTimersByTime(200)
+  vi.useRealTimers()
   expect(toasts.some((t) => t.id === queued)).toBe(true)
 
   dismiss(front)
@@ -430,6 +444,7 @@ test('toasts queued past maxVisible keep their full time until they show', async
 
 test('the tab coming back while the stack is hovered keeps timers paused', async () => {
   const screen = await render(ToasterFixture)
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   toast('Hovered', { duration: 150 })
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
   const toaster = document.querySelector('.ui-toaster')!
@@ -440,7 +455,8 @@ test('the tab coming back while the stack is hovered keeps timers paused', async
   Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
   document.dispatchEvent(new Event('visibilitychange'))
 
-  await new Promise((r) => setTimeout(r, 200))
+  vi.advanceTimersByTime(200)
+  vi.useRealTimers()
   expect(toasts).toHaveLength(1)
 
   toaster.dispatchEvent(new PointerEvent('pointerleave'))
@@ -685,5 +701,125 @@ test('an app with one unnamed Toaster never shows toasts sent to a named one', a
   await expect.element(page.getByText('Here')).toBeVisible()
   expect(document.querySelectorAll('.ui-toast').length).toBe(1)
   toast.dismiss()
+  await screen.unmount()
+})
+
+test('a toast created while the stack is hovered waits until the pointer leaves', async () => {
+  const screen = await render(ToasterFixture)
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  toast('First', { duration: Infinity })
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
+  const toaster = document.querySelector('.ui-toaster')!
+  toaster.dispatchEvent(new PointerEvent('pointerenter'))
+
+  const id = toast('Arrived while hovered', { duration: 150 })
+  await nextTick()
+  vi.advanceTimersByTime(200)
+  vi.useRealTimers()
+  expect(toasts.some((t) => t.id === id)).toBe(true)
+
+  toaster.dispatchEvent(new PointerEvent('pointerleave'))
+  await vi.waitFor(() => expect(toasts.some((t) => t.id === id)).toBe(false), { timeout: 2000 })
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('a toast created while the tab is hidden waits until it is visible again', async () => {
+  const screen = await render(ToasterFixture)
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+  document.dispatchEvent(new Event('visibilitychange'))
+  await nextTick()
+
+  toast('Arrived while hidden', { duration: 150 })
+  await nextTick()
+  vi.advanceTimersByTime(200)
+  vi.useRealTimers()
+  expect(toasts).toHaveLength(1)
+
+  Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+  document.dispatchEvent(new Event('visibilitychange'))
+  await vi.waitFor(() => expect(toasts).toHaveLength(0), { timeout: 2000 })
+  await screen.unmount()
+})
+
+const realTransitions = { stubs: { transition: false, 'transition-group': false } }
+
+test('the live region wraps a real list, so each toast is a list item', async () => {
+  const screen = await render(ToasterFixture, { global: realTransitions })
+  toast('First')
+  toast('Second')
+  const region = page.getByRole('region', { name: 'Notifications' })
+  await expect.element(region).toHaveAttribute('aria-live', 'polite')
+  await expect.element(region.getByRole('list')).toBeInTheDocument()
+  await expect.poll(() => region.getByRole('listitem').elements().length).toBe(2)
+  const list = document.querySelector('.ui-toaster')!
+  expect(list.tagName).toBe('OL')
+  expect(list.hasAttribute('role')).toBe(false)
+  toast.dismiss()
+  await screen.unmount()
+})
+
+async function renderWithBefore() {
+  return render(
+    { render: () => [h('button', { type: 'button' }, 'Before'), h(Toaster)] },
+    { global: realTransitions },
+  )
+}
+const closeOf = (text: string) => cardFor(text).querySelector<HTMLElement>('.ui-toast-close')!
+
+test('dismissing a toast by keyboard moves focus to the next toast, then back where it came from', async () => {
+  const screen = await renderWithBefore()
+  toast('Alpha')
+  toast('Bravo')
+  await expect.element(page.getByText('Bravo')).toBeInTheDocument()
+  const before = page.getByRole('button', { name: 'Before' })
+  ;(before.element() as HTMLElement).focus()
+  await userEvent.tab()
+  expect(document.activeElement).toBe(closeOf('Alpha'))
+
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(document.activeElement).toBe(closeOf('Bravo')))
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(document.activeElement).toBe(before.element()))
+  await vi.waitFor(() => expect(toasts).toHaveLength(0))
+  await screen.unmount()
+})
+
+test('dismissing the last toast in the list by keyboard moves focus to the previous one', async () => {
+  const screen = await renderWithBefore()
+  toast('Alpha')
+  toast('Bravo')
+  await expect.element(page.getByText('Bravo')).toBeInTheDocument()
+  ;(page.getByRole('button', { name: 'Before' }).element() as HTMLElement).focus()
+  await userEvent.tab()
+  await userEvent.tab()
+  expect(document.activeElement).toBe(closeOf('Bravo'))
+
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(document.activeElement).toBe(closeOf('Alpha')))
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('dismissing a toast with the mouse does not move focus to another toast', async () => {
+  const screen = await render(ToasterFixture, { props: { expand: true } })
+  toast('Alpha')
+  toast('Bravo')
+  await expect.element(page.getByText('Alpha')).toBeVisible()
+  await userEvent.click(closeOf('Bravo'))
+  await vi.waitFor(() => expect(toasts).toHaveLength(1))
+  expect(document.activeElement).not.toBe(closeOf('Alpha'))
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('an aria-label names the live region, so two Toasters on a page stay distinct', async () => {
+  const screen = await render(() =>
+    h('div', [h(Toaster), h(Toaster, { name: 'uploads', 'aria-label': 'Upload status' })]),
+  )
+  await expect.element(page.getByRole('region', { name: 'Notifications' })).toBeInTheDocument()
+  await expect.element(page.getByRole('region', { name: 'Upload status' })).toBeInTheDocument()
+  expect(document.querySelectorAll('[aria-label="Upload status"]')).toHaveLength(1)
   await screen.unmount()
 })

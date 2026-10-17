@@ -66,6 +66,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
+import { useSlotPresence } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { ShallowRef } from 'vue'
 import type { UiPartValue } from '../../classes'
@@ -133,6 +134,7 @@ const descriptionId = useId()
 const errorId = useId()
 
 const slots = useSlots()
+const hasSlot = useSlotPresence(slots)
 const focused = shallowRef(false)
 const filled = shallowRef(false)
 const startInset = shallowRef(0)
@@ -274,10 +276,10 @@ const labelVars = computed(() =>
 
 const isAttached = computed(() => isSide.value && props.attached)
 const joinStart = computed(
-  () => !!slots.prepend || (isAttached.value && props.labelPlacement === 'start'),
+  () => hasSlot('prepend') || (isAttached.value && props.labelPlacement === 'start'),
 )
 const joinEnd = computed(
-  () => !!slots.append || (isAttached.value && props.labelPlacement === 'end'),
+  () => hasSlot('append') || (isAttached.value && props.labelPlacement === 'end'),
 )
 
 const dataAttrs = computed(() => ({

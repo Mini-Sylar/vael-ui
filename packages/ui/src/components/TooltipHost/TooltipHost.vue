@@ -53,11 +53,20 @@ export interface TooltipHostProps {
 <script setup lang="ts">
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
-import { computed, inject, shallowRef, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  shallowRef,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { ssrDocument } from '../../ssr'
-import { useTooltipCore } from '../../composables/useTooltip'
-import { TOOLTIP_ATTR, tooltipTargets } from '../../directives/vTooltip'
+import { setDescribedBy, useTooltipCore } from '../../composables/useTooltip'
+import { TOOLTIP_ATTR, tooltipTargetListeners, tooltipTargets } from '../../directives/vTooltip'
 import type { TooltipDirectiveOptions } from '../../directives/vTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -106,6 +115,15 @@ function adopt(target: HTMLElement) {
   config.value = tooltipTargets.get(target) ?? null
 }
 
+// Only the current target matters, so one listener covers every target.
+function onTargetChange(target: HTMLElement) {
+  if (target !== currentEl.value) return
+  config.value = tooltipTargets.get(target) ?? null
+  if (!config.value) core.hide()
+}
+onMounted(() => tooltipTargetListeners.add(onTargetChange))
+onBeforeUnmount(() => tooltipTargetListeners.delete(onTargetChange))
+
 // pointerover/out bubble (enter/leave don't) — that's what makes delegation work.
 useEventListener(ssrDocument, 'pointerover', (event: PointerEvent) => {
   const target = findTarget(event.target)
@@ -150,11 +168,8 @@ watch(
   [open, currentEl] as const,
   ([isOpen, el], previous) => {
     const previousEl = previous?.[1]
-    if (previousEl && previousEl !== el) previousEl.removeAttribute('aria-describedby')
-    if (!el) return
-    if (isOpen) el.setAttribute('aria-describedby', tooltipId)
-    else if (el.getAttribute('aria-describedby') === tooltipId)
-      el.removeAttribute('aria-describedby')
+    if (previousEl && previousEl !== el) setDescribedBy(previousEl, tooltipId, false)
+    if (el) setDescribedBy(el, tooltipId, isOpen)
   },
   { flush: 'post' },
 )

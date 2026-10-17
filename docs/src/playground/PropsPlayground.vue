@@ -360,7 +360,8 @@
                 v-bind="boundProps"
                 @update:model-value="onModelUpdate"
               >
-                <template v-if="sampleSlotText" #default>{{ sampleSlotText }}</template>
+                <template v-if="iconOnlyButton" #default><PhPlus weight="bold" /></template>
+                <template v-else-if="sampleSlotText" #default>{{ sampleSlotText }}</template>
               </component>
               <component
                 v-else
@@ -399,6 +400,12 @@
             role="separator"
             aria-orientation="vertical"
             aria-label="Resize preview"
+            :aria-valuenow="Math.round(frameWidth ?? stageInlineSize)"
+            :aria-valuemin="MIN_FRAME"
+            :aria-valuemax="Math.round(stageInlineSize)"
+            :aria-valuetext="
+              frameWidth === null ? 'Full width' : `${Math.round(frameWidth)} pixels`
+            "
             tabindex="0"
             @pointerdown="onHandleDown"
             @dblclick="frameWidth = null"
@@ -425,9 +432,11 @@
         </div>
         <div ref="rowsEl" class="pg-rows" v-scroll-mask="next" @scroll.passive="updateMore">
           <div v-if="showDataPreset" class="control-row">
-            <label for="ctl-data-preset">Data</label>
+            <label id="ctl-data-preset-label" for="ctl-data-preset">Data</label>
+            <!-- A <label for> can't name a div combobox, so Select points back at it. -->
             <Select
               id="ctl-data-preset"
+              aria-labelledby="ctl-data-preset-label"
               size="sm"
               class="control-input"
               :items="presetItems"
@@ -443,7 +452,7 @@
               class="control-row"
               :data-changed="next && isChanged(control.name) ? '' : undefined"
             >
-              <label :for="`ctl-${control.name}`">
+              <label :id="`ctl-${control.name}-label`" :for="`ctl-${control.name}`">
                 {{ control.name }}
                 <RouterLink
                   v-if="CONTROL_HELP[control.name]"
@@ -463,6 +472,7 @@
               <Select
                 v-else-if="control.kind === 'select'"
                 :id="`ctl-${control.name}`"
+                :aria-labelledby="`ctl-${control.name}-label`"
                 size="sm"
                 class="control-input"
                 :items="control.options.map((o) => ({ label: o, value: o }))"
@@ -559,6 +569,7 @@ import {
   PhArrowCounterClockwise,
   PhArrowDown,
   PhDotsNine,
+  PhPlus,
   PhSquare,
   PhX,
 } from '@phosphor-icons/vue'
@@ -578,14 +589,7 @@ const meta = computed(() => (componentMeta as Record<string, ComponentMetaEntry>
 const vaelUiVapor = useVaporComponents()
 const vaelUi = VaelUi as unknown as Record<string, Component | undefined>
 
-// Combobox hits a confirmed upstream Vue Vapor-interop crash in this live
-// playground (its floating listbox + filter-input combination), same failure
-// class as DataTable/Pagination/Tag's Examples demo (see DemoFrame.vue). The
-// toggle stays for API-consistency; it's cosmetic here.
-const FAKE_VAPOR_TOGGLE_COMPONENTS = ['Combobox']
-
 const activeComponent = computed<Component | null>(() => {
-  if (FAKE_VAPOR_TOGGLE_COMPONENTS.includes(props.name)) return vaelUi[props.name] ?? null
   const vaporExport = vaelUiVapor.value[props.name]
   if (defaultVariant.value === 'vapor' && vaporExport) return vaporExport
   return vaelUi[props.name] ?? null
@@ -800,6 +804,8 @@ const SAMPLE_SLOT_TEXT: Record<string, string> = {
   Kbd: '⌘K',
 }
 const sampleSlotText = computed(() => SAMPLE_SLOT_TEXT[props.name])
+// `icon` makes Button square, so the preview needs an actual icon and a name for it.
+const iconOnlyButton = computed(() => props.name === 'Button' && values.icon === true)
 
 const openModelValue = shallowRef(false)
 const radioGroupValue = shallowRef<string | number | null>(null)
@@ -1025,7 +1031,13 @@ watchEffect(() => {
   const modelValueProp = meta.value?.props.find((p) => p.name === 'modelValue')
   if (modelValueProp) {
     const control = inferControl(modelValueProp.schema)
-    values.modelValue = control ? defaultControlValue(control, modelValueProp.default) : null
+    // A model with no control still starts at its numeric default.
+    const numericDefault = /^-?\d+(\.\d+)?$/.test(modelValueProp.default ?? '')
+      ? Number(modelValueProp.default)
+      : null
+    values.modelValue = control
+      ? defaultControlValue(control, modelValueProp.default)
+      : numericDefault
   }
 
   for (const control of controls.value) {
@@ -1195,6 +1207,12 @@ watch(
 function stageWidth(): number {
   return previewEl.value?.parentElement?.clientWidth ?? 0
 }
+// The handle is a focusable separator, so it reports its value range like a slider.
+const stageInlineSize = shallowRef(0)
+useResizeObserver(
+  () => previewEl.value?.parentElement,
+  () => (stageInlineSize.value = stageWidth()),
+)
 function clampFrame(width: number): number | null {
   const max = stageWidth()
   return width >= max - 1 ? null : Math.max(MIN_FRAME, width)
@@ -1250,6 +1268,7 @@ const codeNext = computed(() => {
     else if (c.kind === 'number') attrs.push(`:${c.name}="${v}"`)
     else attrs.push(`${c.name}="${v}"`)
   }
+  if (previewLabel.value) attrs.push(`aria-label="${previewLabel.value}"`)
   if (hasItemsProp.value) attrs.push(':items="items"')
   if (modelProp.value) attrs.push('v-model="value"')
   const { extraAttrs = '', imports = [] } = snippetParts.value
@@ -1273,8 +1292,30 @@ const codeNext = computed(() => {
   return sfcSnippet(names, pkg, body)
 })
 
+// Controls with no visible label; the snippet names them too, so copied code stays accessible.
+const PREVIEW_LABELS: Record<string, string> = {
+  Checkbox: 'Accept terms',
+  Switch: 'Notifications',
+  Radio: 'Standard shipping',
+  OtpInput: 'Verification code',
+  Slider: 'Volume',
+  Knob: 'Volume',
+  Dial: 'Value',
+  Rating: 'Rating',
+  Progress: 'Upload progress',
+}
+const LIST_CONTROLS = new Set(['Select', 'Combobox', 'CascadeSelect', 'TreeSelect'])
+const previewLabel = computed(() => {
+  if (typeof values.label === 'string' && values.label.trim() !== '') return undefined
+  if (LIST_CONTROLS.has(props.name)) return dataPreset.value || undefined
+  if (iconOnlyButton.value) return 'Add item'
+  return PREVIEW_LABELS[props.name]
+})
+
 const boundProps = computed(() => ({
-  ...values,
+  // A cleared text control means unset; an empty string would render an empty aria-label.
+  ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== '')),
+  ...(previewLabel.value ? { 'aria-label': previewLabel.value } : {}),
   ...(hasItemsProp.value
     ? {
         items: isTreeShaped.value ? TREE_PRESETS[dataPreset.value] : FLAT_PRESETS[dataPreset.value],
@@ -1391,7 +1432,7 @@ function literal(value: unknown, indent: string, icons: Set<string>): string {
 
 function snippetState(body: string) {
   const uses = (name: string) => new RegExp(`="${name}"`).test(body)
-  const icons = new Set<string>()
+  const icons = new Set<string>([...body.matchAll(/<(Ph[A-Z]\w*)/g)].map((match) => match[1]!))
   const types: string[] = []
   const lines: string[] = []
   let refs = false
@@ -1448,10 +1489,11 @@ const code = computed(() => {
     })
     .filter(Boolean)
     .join(' ')
+  const labelAttr = previewLabel.value ? `aria-label="${previewLabel.value}"` : ''
   const itemsAttr = hasItemsProp.value ? ' :items="items"' : ''
   const modelAttr = modelProp.value ? 'v-model="value"' : ''
   const { extraAttrs = '', children = [], imports = [] } = snippetParts.value
-  const openTag = [props.name, attrs, itemsAttr, modelAttr, extraAttrs]
+  const openTag = [props.name, attrs, labelAttr, itemsAttr, modelAttr, extraAttrs]
     .filter(Boolean)
     .join(' ')
     .replace(/ +/g, ' ')
@@ -1614,6 +1656,7 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
       }
     }
     if (!hasOpenProp.value) {
+      if (iconOnlyButton.value) return { children: ['<PhPlus weight="bold" />'] }
       return sampleSlotText.value ? { children: [sampleSlotText.value] } : {}
     }
     const trigger = !hasTriggerSlot.value

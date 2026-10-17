@@ -4,6 +4,8 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import KnobFixture from './fixtures/KnobFixture.vue'
+import Knob from '../src/components/Knob/Knob.vue'
+import Field from '../src/components/Field/Field.vue'
 
 function dialRect(screen: RenderResult<unknown>, testId: string): DOMRect {
   const el = screen.container.querySelector(`[data-testid="${testId}"] .ui-knob-dial`)
@@ -157,4 +159,24 @@ test('valueText renders as aria-valuetext', async () => {
   const screen = await render(KnobFixture, {})
   const dial = dialEl(screen, 'valuetext')
   expect(dial.getAttribute('aria-valuetext')).toBe('40%')
+})
+
+test('aria-label, aria-labelledby and aria-describedby name the focusable dial, not the wrapper', async () => {
+  const screen = await render({
+    components: { Knob, Field },
+    template: `<div>
+      <span id="gain-label">Gain</span><span id="gain-hint">In decibels</span>
+      <Knob data-testid="labelled" aria-label="Volume" aria-describedby="gain-hint" />
+      <Knob aria-labelledby="gain-label" />
+      <Field label="Pan"><Knob /></Field>
+    </div>`,
+  })
+  const control = screen.getByRole('slider', { name: 'Volume' })
+  await expect.element(control).toBeInTheDocument()
+  expect(control.element().getAttribute('aria-describedby')).toBe('gain-hint')
+  const root = screen.container.querySelector('[data-testid="labelled"]')!
+  expect(root.hasAttribute('aria-label')).toBe(false)
+  expect(root.hasAttribute('aria-describedby')).toBe(false)
+  await expect.element(screen.getByRole('slider', { name: 'Gain' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('slider', { name: 'Pan' })).toBeInTheDocument()
 })

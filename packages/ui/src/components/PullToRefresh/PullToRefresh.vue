@@ -86,6 +86,7 @@ import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
+import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { PullToRefreshState } from '../../composables/usePullToRefresh'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -124,6 +125,7 @@ const zoneEl = useTemplateRef<HTMLElement>('zoneEl')
 // Own scrolling only when the consumer hasn't handed us an existing scroll box — dropping this
 // into an already-scrollable layout shouldn't force that layout to restructure around our root.
 const ownsScroll = computed(() => props.scrollEl === undefined)
+useFocusableScroller(root, ownsScroll)
 const scrollEl = computed(() => (ownsScroll.value ? root.value : unwrapEl(props.scrollEl)))
 
 const messages = useUiMessages()

@@ -11,7 +11,7 @@ import RadioGroup from '../src/components/RadioGroup/RadioGroup.vue'
 // Radio drops its first-paint guard a tick after mounting.
 const settled = async () => {
   await nextTick()
-  await new Promise((resolve) => setTimeout(resolve, 0))
+  await nextTick()
 }
 
 test('Radio: motionCss=false switches its transitions off, and the elements are exposed', async () => {

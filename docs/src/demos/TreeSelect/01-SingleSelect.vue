@@ -5,7 +5,9 @@
       Picking any node (folder or file) replaces the selection and closes the panel.
     </p>
     <div class="row">
-      <TreeSelect v-model="singleValue" :items="fileTree" placeholder="Pick a file or folder" />
+      <Field label="File or folder">
+        <TreeSelect v-model="singleValue" :items="fileTree" placeholder="Pick a file or folder" />
+      </Field>
       <output class="panel-text">
         {{ singleValue ? `Selected: ${singleValue}` : 'Nothing selected yet' }}
       </output>
@@ -15,7 +17,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { TreeSelect } from 'vael-ui'
+import { Field, TreeSelect } from 'vael-ui'
 import type { TreeSelectNode } from 'vael-ui'
 
 const fileTree: TreeSelectNode[] = [
@@ -108,6 +110,7 @@ const singleValue = shallowRef<string | number | null>(null)
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 

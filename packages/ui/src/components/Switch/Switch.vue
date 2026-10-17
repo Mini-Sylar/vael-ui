@@ -5,7 +5,7 @@
     :style="rootPart.style"
     :data-state="dataState"
     :data-invalid="isInvalid || undefined"
-    v-bind="attrs"
+    v-bind="rootAttrs"
   >
     <span class="ui-switch-control">
       <input
@@ -24,6 +24,7 @@
         @change="onNativeChange"
         @focus="onNativeFocus"
         @blur="onNativeBlur"
+        v-bind="inputAttrs"
       />
       <span ref="trackEl" :class="trackPart.class" :style="trackPart.style" aria-hidden="true">
         <span ref="thumbEl" :class="thumbPart.class" :style="thumbPart.style" />
@@ -42,13 +43,14 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, onMounted, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-const attrs = useAttrs()
+const { rootAttrs, inputAttrs } = useControlAttrs(useAttrs())
 
 /** Whether the switch is on. @default false */
 const modelValue = defineModel<boolean>({ default: false })

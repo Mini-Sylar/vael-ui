@@ -47,7 +47,14 @@
           </Button>
           <Menu :items="accountMenuItems" align="end" data-dash-overlay @select="onAccountSelect">
             <template #trigger>
-              <Button id="dash-account-trigger" variant="ghost" icon pill aria-label="Account menu">
+              <!-- The name starts with the initials shown, so it matches what you see. -->
+              <Button
+                id="dash-account-trigger"
+                variant="ghost"
+                icon
+                pill
+                aria-label="MM, account menu"
+              >
                 <Avatar name="Mira Mitchell" size="sm" />
               </Button>
             </template>

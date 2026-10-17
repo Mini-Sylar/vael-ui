@@ -44,6 +44,19 @@ const vaelUiNuxtModule = defineNuxtModule<ModuleOptions>({
     // build on the server by itself, so nothing else is needed here.
     if (vapor) (nuxt.options.vue as { vapor?: boolean }).vapor = true
 
+    // Components come in through Nuxt's #components, which Vite's startup scan doesn't follow, so
+    // dev found these on the first visit and reloaded the page. Naming them up front avoids that.
+    nuxt.hook('vite:extendConfig', (config, { isClient }) => {
+      if (!isClient || !nuxt.options.dev) return
+      const optimizeDeps = ((config as { optimizeDeps?: { include?: string[] } }).optimizeDeps ??=
+        {})
+      optimizeDeps.include = [
+        ...(optimizeDeps.include ?? []),
+        'vael-ui > @floating-ui/dom',
+        'vael-ui > @vueuse/core',
+      ]
+    })
+
     const filePath = vapor ? 'vael-ui/vapor' : 'vael-ui'
     const excluded = new Set(options.exclude ?? [])
     for (const name of COMPONENT_NAMES) {

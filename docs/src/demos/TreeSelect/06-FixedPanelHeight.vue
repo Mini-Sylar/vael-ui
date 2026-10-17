@@ -7,12 +7,14 @@
       fill the screen.
     </p>
     <div class="row">
-      <TreeSelect
-        v-model="value"
-        :items="files"
-        :max-panel-height="160"
-        placeholder="Pick a file"
-      />
+      <Field label="File">
+        <TreeSelect
+          v-model="value"
+          :items="files"
+          :max-panel-height="160"
+          placeholder="Pick a file"
+        />
+      </Field>
       <output class="panel-text">{{
         value ? `Selected: ${value}` : 'Nothing selected yet'
       }}</output>
@@ -22,7 +24,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { TreeSelect } from 'vael-ui'
+import { Field, TreeSelect } from 'vael-ui'
 import type { TreeSelectNode } from 'vael-ui'
 
 const files: TreeSelectNode[] = Array.from({ length: 40 }, (_, i) => ({
@@ -36,6 +38,7 @@ const value = shallowRef<string | number | null>(null)
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 

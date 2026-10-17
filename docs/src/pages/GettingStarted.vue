@@ -27,9 +27,28 @@
       class="usage-toggle"
     />
     <CodeBlock :code="usageCode" />
+    <p v-html="t('gettingStarted.fontIntro')" />
+    <CodeBlock
+      lang="css"
+      code="body {
+  font-family: system-ui, sans-serif;
+}"
+    />
 
     <h2 id="vapor">{{ t('gettingStarted.vaporTitle') }}</h2>
     <p>{{ t('gettingStarted.vaporIntro') }}</p>
+    <p v-html="t('gettingStarted.vaporPinIntro', { version: vaporVueVersion })" />
+    <CodeBlock lang="bash" :code="vueInstallCode" />
+    <p v-html="t('gettingStarted.vaporAppIntro')" />
+    <CodeBlock
+      lang="typescript"
+      code="// main.ts
+import { createVaporApp } from 'vue'
+import App from './App.vue'
+
+createVaporApp(App).mount('#app')"
+    />
+    <CodeBlock :code="vaporAppCode" />
     <p v-html="t('gettingStarted.vaporForceIntro')" />
     <CodeBlock
       lang="typescript"
@@ -37,9 +56,30 @@
 import vue from '@vitejs/plugin-vue'
 
 export default {
-  plugins: [vue({ features: { vapor: true } })],
+  plugins: [
+    vue({
+      features: {
+        vapor: true,
+        // vael-ui doesn't use the Options API. If your own components don't either,
+        // this drops its code from your bundle.
+        optionsAPI: false,
+      },
+    }),
+  ],
 }"
     />
+
+    <h3 id="mixing">{{ t('gettingStarted.vaporMixTitle') }}</h3>
+    <p v-html="t('gettingStarted.vaporMixIntro')" />
+    <CodeBlock
+      lang="typescript"
+      code="// main.ts
+import { createApp, vaporInteropPlugin } from 'vue'
+import App from './App.vue'
+
+createApp(App).use(vaporInteropPlugin).mount('#app')"
+    />
+    <CodeBlock :code="vaporMixCode" />
 
     <h2 id="dark-mode">{{ t('gettingStarted.darkModeTitle') }}</h2>
     <p v-html="t('gettingStarted.darkModeIntro')" />
@@ -64,6 +104,7 @@ const { mode, setMode } = useColorScheme({
       code="// main.ts
 import { createApp } from 'vue'
 import { vTooltip, vScrollMask } from 'vael-ui'
+import App from './App.vue'
 
 const app = createApp(App)
 app.directive('tooltip', vTooltip)
@@ -71,6 +112,40 @@ app.directive('scroll-mask', vScrollMask)
 app.mount('#app')"
     />
     <p v-html="t('gettingStarted.directivesNote')" />
+
+    <h2 id="ssr">{{ t('gettingStarted.ssrTitle') }}</h2>
+    <i18n-t keypath="gettingStarted.ssrIntro" tag="p" scope="global">
+      <template #link>
+        <RouterLink to="/docs/guides/nuxt">{{ t('gettingStarted.ssrIntroLink') }}</RouterLink>
+      </template>
+    </i18n-t>
+    <p v-html="t('gettingStarted.ssrNoExternal')" />
+    <CodeBlock
+      lang="typescript"
+      code="// vite.config.ts
+export default {
+  ssr: { noExternal: ['vael-ui'] },
+}"
+    />
+    <p v-html="t('gettingStarted.ssrTeleports')" />
+    <CodeBlock
+      lang="typescript"
+      code="// server.js
+const ctx = {}
+const appHtml = await renderToString(app, ctx)
+const html = template
+  .replace('<!--app-html-->', appHtml)
+  .replace('<!--teleports-->', ctx.teleports?.body ?? '')"
+    />
+    <CodeBlock
+      lang="html"
+      code='<!-- index.html -->
+<body>
+  <!--teleports-->
+  <div id="app"><!--app-html--></div>
+</body>'
+    />
+    <p v-html="t('gettingStarted.ssrLocale')" />
 
     <Message
       variant="info"
@@ -88,7 +163,7 @@ app.mount('#app')"
       <CodeBlock
         lang="typescript"
         code="// main.ts
-import 'vael-ui/style.css'"
+import 'vael-ui/layers.css'"
         class="callout-code"
       />
     </Message>
@@ -106,6 +181,7 @@ import GuideLayout from '../components/GuideLayout.vue'
 import { defaultVariant, packageManager, packageManagers } from '../preferences'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import { appearanceHeadCode } from '../appearanceHeadCode'
+import uiPackage from '../../../packages/ui/package.json'
 
 const { t } = useI18n()
 useHead({ title: () => t('gettingStarted.title') })
@@ -123,9 +199,25 @@ const INSTALL_COMMANDS: Record<(typeof packageManagers)[number], string> = {
 }
 const installCode = computed(() => INSTALL_COMMANDS[packageManager.value])
 
+// The exact Vue prerelease the Vapor build is compiled against.
+const vaporVueVersion = uiPackage.devDependencies.vue
+const EXACT_FLAGS: Record<(typeof packageManagers)[number], string> = {
+  npm: '--save-exact',
+  pnpm: '--save-exact',
+  yarn: '--exact',
+  bun: '--exact',
+}
+const vueInstallCode = computed(() =>
+  INSTALL_COMMANDS[packageManager.value].replace(
+    'vael-ui',
+    `vue@${vaporVueVersion} ${EXACT_FLAGS[packageManager.value]}`,
+  ),
+)
+
 const usageCode = computed(() => {
-  const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
-  return `<script setup lang="ts">
+  const vapor = defaultVariant.value === 'vapor'
+  const pkg = vapor ? 'vael-ui/vapor' : 'vael-ui'
+  return `<script setup${vapor ? ' vapor' : ''} lang="ts">
 import { Button, ConfigProvider } from '${pkg}'
 <${'/script>'}
 
@@ -136,12 +228,32 @@ import { Button, ConfigProvider } from '${pkg}'
 </template>`
 })
 
+const vaporAppCode = `<!-- App.vue -->
+<script setup vapor lang="ts">
+import { Button, Toaster, toast } from 'vael-ui/vapor'
+<${'/script>'}
+
+<template>
+  <Toaster />
+  <Button @click="toast('Saved')">Save</Button>
+</template>`
+
+const vaporMixCode = `<!-- Chart.vue, one component moved to Vapor -->
+<script setup vapor lang="ts">
+import { Button } from 'vael-ui/vapor'
+<${'/script>'}
+
+<template>
+  <Button>Export</Button>
+</template>`
+
 const tocLinks = computed(() => [
   { id: 'install', label: t('gettingStarted.installTitle') },
   { id: 'usage', label: t('gettingStarted.usageTitle') },
   { id: 'vapor', label: t('gettingStarted.vaporTitle') },
   { id: 'dark-mode', label: t('gettingStarted.darkModeTitle') },
   { id: 'directives', label: t('gettingStarted.directivesTitle') },
+  { id: 'ssr', label: t('gettingStarted.ssrTitle') },
 ])
 </script>
 

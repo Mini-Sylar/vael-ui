@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3>Custom separator</h3>
-    <Breadcrumb>
+    <Breadcrumb aria-label="Breadcrumb with custom separator">
       <BreadcrumbItem href="/">Home</BreadcrumbItem>
       <BreadcrumbSeparator>/</BreadcrumbSeparator>
       <BreadcrumbItem href="/docs">Docs</BreadcrumbItem>

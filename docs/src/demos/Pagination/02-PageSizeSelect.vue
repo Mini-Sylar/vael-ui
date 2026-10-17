@@ -6,6 +6,7 @@
       v-model:page-size="pageSize"
       :total="total"
       :page-size-options="[10, 25, 50]"
+      aria-label="Pagination with page size"
     />
     <p class="demo-status">
       Showing {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, total) }} of
