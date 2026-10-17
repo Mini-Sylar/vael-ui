@@ -87,15 +87,21 @@ test('toast.promise: rejection replaces the loading toast with error', async () 
   dismissAll()
 })
 
-test('setWaiting holds a timer with its remaining time, and releasing it resumes', async () => {
-  const { toasts, setWaiting } = useToastQueue()
-  const id = toast('Held', { duration: 80 })
-  setWaiting([id])
-  await new Promise((r) => setTimeout(r, 200))
-  expect(toasts.some((t) => t.id === id)).toBe(true)
+test('setWaiting holds a timer with its remaining time, and releasing it resumes', () => {
+  vi.useFakeTimers()
+  try {
+    const { toasts, setWaiting } = useToastQueue()
+    const id = toast('Held', { duration: 80 })
+    setWaiting([id])
+    vi.advanceTimersByTime(200)
+    expect(toasts.some((t) => t.id === id)).toBe(true)
 
-  setWaiting([])
-  await vi.waitFor(() => expect(toasts.some((t) => t.id === id)).toBe(false), { timeout: 2000 })
+    setWaiting([])
+    vi.advanceTimersByTime(80)
+    expect(toasts.some((t) => t.id === id)).toBe(false)
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 test('pinned defaults to false and carries through toast.promise', async () => {

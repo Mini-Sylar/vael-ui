@@ -99,7 +99,7 @@ test('hintPlacement="none" renders no hint at all', async () => {
   const screen = await render(PasswordInputFixture, { props: { hintPlacement: 'none' } })
   const input = basicInput(screen)
   input.focus()
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(hintItems()).toHaveLength(0)
 })
 

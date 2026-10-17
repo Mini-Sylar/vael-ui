@@ -270,7 +270,11 @@ test('the callout is at its new position by the first animation frame after @ste
     }),
   ])
   await expect.element(page.getByText('Frame A')).toBeVisible()
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await vi.waitFor(async () => {
+    const at = read()
+    for (let i = 0; i < 3; i++) await nextFrame()
+    expect(read()).toBe(at)
+  })
   const before = read()
   await page.getByRole('button', { name: 'Next' }).click()
   await expect.element(page.getByText('Frame B')).toBeVisible()

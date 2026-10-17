@@ -83,7 +83,7 @@ test('danger seed themes independently from primary', async () => {
 
 test('no theme prop injects no stylesheet at all', async () => {
   const screen = await render(ThemedFixture, { props: { theme: {} } })
-  await new Promise((r) => setTimeout(r, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(headStyleCount()).toBe(baselineHeadStyles)
   await screen.unmount()
 })

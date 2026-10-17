@@ -416,7 +416,7 @@ test('focusing the trigger (Tab) does not open it; Enter does, and a pick return
   const screen = await render(DatePickerFixture, { props: { initialValue: JUNE_15_2024 } })
   const trigger = screen.getByRole('combobox').element() as HTMLElement
   trigger.focus()
-  await new Promise((r) => setTimeout(r, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')

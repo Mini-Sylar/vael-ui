@@ -54,7 +54,7 @@ test('warm group: the next tooltip opens instantly with data-instant', async () 
 test('keyboard focus shows immediately; Escape hides', async () => {
   const screen = await render(TooltipFixture)
   // Listeners attach reactively post-mount — tabbing immediately can race them.
-  await new Promise((r) => setTimeout(r, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
 
   // Focus can start anywhere depending on prior tests — tab until the trigger.
   const trigger = screen.getByTestId('trigger-a').element()
@@ -109,6 +109,7 @@ test('v-tooltip="undefined" renders no tooltip, and toggling to a real value lat
   // No hint bound yet: no directive attribute, no hover-triggered panel.
   expect(target.hasAttribute('data-ui-tooltip')).toBe(false)
   await screen.getByTestId('host-conditional').hover()
+  // Real wait: outlasts the 120ms open delay.
   await new Promise((resolve) => setTimeout(resolve, 200))
   expect(document.querySelector('.ui-tooltip-panel')).toBeNull()
 

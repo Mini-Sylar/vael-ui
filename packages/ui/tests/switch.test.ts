@@ -58,7 +58,7 @@ test('thumb carries no Vue-managed inline style (convention 15 regression guard)
 test('motionCss=false keeps the no-anim class permanently, past first paint', async () => {
   const screen = await render(Switch, { props: { motionCss: false, label: 'No motion' } })
   const root = screen.container.querySelector<HTMLElement>('.ui-switch')!
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(root).toHaveClass('ui-switch--no-anim')
 })
 

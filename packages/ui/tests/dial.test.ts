@@ -3,6 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
+import { nextTick } from 'vue'
 import DialFixture from './fixtures/DialFixture.vue'
 
 function dialRect(screen: RenderResult<unknown>, testId: string): DOMRect {
@@ -48,7 +49,7 @@ function pointerup(x: number, y: number) {
 }
 
 function frame(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 16))
+  return nextTick()
 }
 
 /**
@@ -59,12 +60,8 @@ function frame(): Promise<void> {
  * -360) to simulate multiple full rotations, the real scenario this
  * component exists to get right.
  *
- * A real ~16ms frame gap is awaited between dispatches. Firing many
- * synthetic PointerEvents back-to-back with zero yield between them is not
- * representative of a real drag (which is paced by the display's actual
- * frame rate) and this browser test environment measurably drops/aliases
- * events dispatched that way — same reason userEvent-style helpers pace
- * real interactions rather than firing every event in one microtask.
+ * A tick is awaited between dispatches so each update renders before the
+ * next move, as in a real drag, rather than firing every event in one burst.
  */
 async function dragSweep(
   screen: RenderResult<unknown>,

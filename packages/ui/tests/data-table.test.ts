@@ -741,7 +741,7 @@ test('resizableColumns: dragging the trailing handle changes and keeps the colum
   })
   const settledWidth = nameHeader.getBoundingClientRect().width
   // Stays put after the drag ends — not reset by some later render pass.
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(nameHeader.getBoundingClientRect().width).toBe(settledWidth)
 })
 

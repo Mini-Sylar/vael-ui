@@ -168,7 +168,7 @@ test('openOn="hover": mouseenter opens, mouseleave closes after a short delay', 
 test('openOn="click" (default): hovering the root alone never opens it', async () => {
   const screen = await render(SpeedDialFixture, {})
   await userEvent.hover(root(screen))
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(actionButtons(screen)).toHaveLength(0)
 })
 
@@ -322,7 +322,7 @@ test('openOn="hover": the click that follows a hover-open keeps the dial open; t
   await userEvent.hover(trigger(screen))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('true')
   await userEvent.click(trigger(screen))
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(screen.getByTestId('open-state').element().textContent).toBe('true')
   await userEvent.click(trigger(screen))
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('false')

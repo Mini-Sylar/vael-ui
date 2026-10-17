@@ -90,6 +90,6 @@ test('motionCss=false keeps the no-anim class permanently, past first paint', as
   const root = screen.container.querySelector<HTMLElement>('.ui-checkbox')!
   // Long enough for the sibling test's own first-paint guard to have
   // resolved by now — the class staying past that point is motionCss's doing.
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(root).toHaveClass('ui-checkbox--no-anim')
 })

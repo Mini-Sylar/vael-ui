@@ -101,10 +101,11 @@ test('rows change at once while typing, and the list eases to its new height', a
   for (const leaving of document.querySelectorAll('.ui-command-palette-row-leave-active')) {
     expect(getComputedStyle(leaving).display).toBe('none')
   }
-  await new Promise((resolve) => setTimeout(resolve, 450))
-  expect(new Set(heights).size).toBeGreaterThan(2)
-  expect(list.style.blockSize).toBe('')
-  expect(list.hasAttribute('data-resizing')).toBe(false)
+  await vi.waitFor(() => {
+    expect(new Set(heights).size).toBeGreaterThan(2)
+    expect(list.style.blockSize).toBe('')
+    expect(list.hasAttribute('data-resizing')).toBe(false)
+  })
 })
 
 test('motionCss false hands appearing and disappearing rows to @item-enter/@item-leave', async () => {

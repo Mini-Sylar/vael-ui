@@ -21,9 +21,8 @@ test('listEl is the results <ul>, and the list eases to its new height', async (
   }
   requestAnimationFrame(sample)
   await userEvent.type(page.getByRole('combobox'), 'Item 1')
-  await new Promise((resolve) => setTimeout(resolve, 450))
 
-  expect(new Set(heights).size).toBeGreaterThan(2)
+  await vi.waitFor(() => expect(new Set(heights).size).toBeGreaterThan(2))
   app.unmount()
   host.remove()
 })

@@ -37,6 +37,7 @@ function visibleHeight(): number {
 async function drag(el: Element, startY: number, endY: number, ms: number) {
   const pointerId = 1
   el.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
+  // Real wait: release velocity uses elapsed time.
   await new Promise((r) => setTimeout(r, ms))
   el.dispatchEvent(new PointerEvent('pointermove', { clientY: endY, pointerId, bubbles: true }))
   el.dispatchEvent(new PointerEvent('pointerup', { clientY: endY, pointerId, bubbles: true }))
@@ -169,6 +170,7 @@ test('a horizontally-dominant drag on content at the top is left for a nested ge
   c.dispatchEvent(
     new PointerEvent('pointerdown', { clientX: 60, clientY: 320, pointerId, bubbles: true }),
   )
+  // Real wait: keeps the gesture's velocity realistic.
   await new Promise((r) => setTimeout(r, 30))
   c.dispatchEvent(
     new PointerEvent('pointermove', { clientX: 130, clientY: 326, pointerId, bubbles: true }),
@@ -198,6 +200,7 @@ test('a vertically-dominant downward drag on content at the top still promotes t
   c.dispatchEvent(
     new PointerEvent('pointerdown', { clientX: 100, clientY: 200, pointerId, bubbles: true }),
   )
+  // Real wait: velocity reads elapsed time.
   await new Promise((r) => setTimeout(r, 20))
   c.dispatchEvent(
     new PointerEvent('pointermove', { clientX: 102, clientY: 216, pointerId, bubbles: true }),
@@ -264,6 +267,7 @@ test('releaseVelocity reports the flick speed for a drag dismiss and 0 for any o
   const pointerId = 1
   const el = handle()
   el.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
+  // Real waits: velocity reads elapsed time.
   await new Promise((r) => setTimeout(r, 200))
   el.dispatchEvent(
     new PointerEvent('pointermove', { clientY: startY + 5, pointerId, bubbles: true }),

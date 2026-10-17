@@ -8,7 +8,7 @@
  */
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { shallowRef } from 'vue'
+import { nextTick, shallowRef } from 'vue'
 import I18nAdapterFixture from './fixtures/I18nAdapterFixture.vue'
 
 function closeLabel() {
@@ -49,7 +49,7 @@ test('reacts to the i18n instance changing its own locale, like a real vue-i18n 
   expect(closeLabel()).toBe('Close')
 
   locale.value = 'fr'
-  await new Promise((r) => setTimeout(r, 0)) // flush the computed
+  await nextTick() // flush the computed
   expect(closeLabel()).toBe('Fermer')
 })
 

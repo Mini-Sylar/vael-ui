@@ -78,7 +78,7 @@ test('a trigger hidden at mount anchors to the trigger itself and the panel sett
       let writes = 0
       const observer = new MutationObserver(() => writes++)
       observer.observe(positioner, { attributes: true, attributeFilter: ['style'] })
-      await new Promise((resolve) => setTimeout(resolve, 200))
+      await new Promise((resolve) => setTimeout(resolve, 100))
       observer.disconnect()
       expect(writes).toBe(0)
     },

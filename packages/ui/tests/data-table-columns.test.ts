@@ -116,7 +116,7 @@ test('canDrop rejecting a target blocks the reorder, on top of the built-in pinn
   const screen = await renderTable({ canDrop: () => false })
   const [first, second] = headerEls(screen)
   dragHeaderOver(first!, second!, 26)()
-  await new Promise((r) => setTimeout(r, 50))
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(headerFields(screen)).toEqual(['name', 'age'])
 })
 
