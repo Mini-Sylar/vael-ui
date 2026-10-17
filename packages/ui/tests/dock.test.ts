@@ -141,9 +141,10 @@ test('renders every item, including an icon and a badge', async () => {
   const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   expect(buttons).toHaveLength(5)
+  // The badge joins the name as a plain word, not a parenthetical, so text-to-name checks match.
   expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
     'Finder',
-    'Mail (3)',
+    'Mail, 3',
     'Messages',
     'Notes',
     'Trash',

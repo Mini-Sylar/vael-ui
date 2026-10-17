@@ -52,9 +52,12 @@
         <slot name="empty">{{ emptyText }}</slot>
       </div>
       <div v-else class="ui-tree-rows">
+        <!-- v-memo: the forwarded #node slot is dynamic, so without it each Tree re-render
+             would re-render every row. Vapor ignores v-memo. -->
         <TreeNodeRow
           v-for="node in visibleRootNodes"
           :key="String(node.value)"
+          v-memo="[node]"
           :node="node"
           :depth="0"
         >
@@ -94,6 +97,7 @@
               <span v-else class="ui-tree-chevron-spacer" aria-hidden="true" />
               <Checkbox
                 v-if="selectionMode === 'checkbox'"
+                class="ui-tree-checkbox"
                 :model-value="scope.checked"
                 :indeterminate="scope.indeterminate"
                 :disabled="scope.disabled"
@@ -123,12 +127,12 @@
           </template>
         </TreeNodeRow>
       </div>
-      <!-- Mounted for the life of the tree: a live region created at
-           announcement time is not reliably read out. -->
-      <span v-if="reorderable" class="ui-tree-status" role="status" aria-live="assertive">{{
-        reorderAnnouncement
-      }}</span>
     </div>
+    <!-- Always mounted: a live region created on demand isn't reliably read out.
+         Outside role="tree", which may only hold tree items. -->
+    <span v-if="reorderable" class="ui-tree-status" role="status" aria-live="assertive">{{
+      reorderAnnouncement
+    }}</span>
   </div>
 </template>
 
@@ -197,12 +201,11 @@ export interface TreeRowContext {
   isExpanded: (node: TreeNode) => boolean
   isCheckedNode: (node: TreeNode) => boolean
   isIndeterminateNode: (node: TreeNode) => boolean
-  ariaChecked: (node: TreeNode) => 'true' | 'false' | 'mixed'
   toggleExpand: (node: TreeNode) => void
   activateNode: (node: TreeNode) => void
   onRowClick: (node: TreeNode, event: MouseEvent) => void
   isVisible: (node: TreeNode) => boolean
-  nodePart: (node: TreeNode) => { class: string; style: UiPartStyle | undefined }
+  nodePart: (node: TreeNode, selected: boolean) => { class: string; style: UiPartStyle | undefined }
   findNode: (value: string | number) => TreeNode | undefined
   findParent: (value: string | number) => TreeNode | null
   removeNode: (value: string | number) => boolean
@@ -232,6 +235,7 @@ import '../shared/tokens.css'
 import {
   computed,
   nextTick,
+  onBeforeUnmount,
   onMounted,
   provide,
   reactive,
@@ -389,7 +393,8 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** Row content inside the `role="treeitem"` wrapper. `findNode`/`findParent`/`removeNode` are
-   * `findTreeNode`/`findTreeParent`/`removeTreeNode` bound to this tree's `items`. */
+   * `findTreeNode`/`findTreeParent`/`removeTreeNode` bound to this tree's `items`. Read reactive
+   * state here; plain variables won't update the rows. */
   node(props: {
     node: T
     depth: number
@@ -441,19 +446,15 @@ const stateByValue = computed(() => {
   return map
 })
 
+// Called once per row on every selection change, so lookups stay O(1).
 function isCheckedNode(node: TreeNode): boolean {
   if (props.selectionMode === 'single') return model.value === node.value
-  if (props.selectionMode === 'multiple')
-    return Array.isArray(model.value) && model.value.includes(node.value)
+  if (props.selectionMode === 'multiple') return checkedValueSet.value.has(node.value)
   return stateByValue.value.get(node.value)?.checked ?? false
 }
 function isIndeterminateNode(node: TreeNode): boolean {
   if (props.selectionMode !== 'checkbox') return false
   return stateByValue.value.get(node.value)?.indeterminate ?? false
-}
-function ariaChecked(node: TreeNode): 'true' | 'false' | 'mixed' {
-  if (isIndeterminateNode(node)) return 'mixed'
-  return isCheckedNode(node) ? 'true' : 'false'
 }
 
 function collectLeaves(node: TreeNode, out: TreeNode[]) {
@@ -801,8 +802,56 @@ function onTreeNavigationKeydown(event: KeyboardEvent) {
       }
       return
     default:
+      if (
+        event.key.length === 1 &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !isTextEntry(event.target) &&
+        typeahead(event.key, activeRow)
+      )
+        event.preventDefault()
       return
   }
+}
+
+// Typeahead (WAI-ARIA tree pattern), same buffer and reset as useListbox.
+const TYPEAHEAD_RESET_MS = 500
+let typeaheadBuffer = ''
+let typeaheadTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => clearTimeout(typeaheadTimer))
+// A rename input or other field inside the #node slot keeps its keystrokes.
+function isTextEntry(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  if (target.isContentEditable || target instanceof HTMLTextAreaElement) return true
+  if (target instanceof HTMLSelectElement) return true
+  return (
+    target instanceof HTMLInputElement && !['checkbox', 'radio', 'button'].includes(target.type)
+  )
+}
+function typeahead(key: string, activeRow: HTMLElement | null): boolean {
+  typeaheadBuffer += normalizeText(key)
+  clearTimeout(typeaheadTimer)
+  typeaheadTimer = setTimeout(() => {
+    typeaheadBuffer = ''
+  }, TYPEAHEAD_RESET_MS)
+
+  const rows = flatRows.value
+  const current = activeRow
+    ? rows.findIndex((row) => String(row.node.value) === activeRow.dataset.treeValue)
+    : -1
+  // A repeated character cycles through matches; a longer string refines the current one.
+  const repeated = Array.from(typeaheadBuffer).every((char) => char === typeaheadBuffer[0])
+  const search = repeated ? typeaheadBuffer[0] : typeaheadBuffer
+  const start = repeated ? current + 1 : Math.max(current, 0)
+  for (let offset = 0; offset < rows.length; offset++) {
+    const row = rows[(start + offset) % rows.length]
+    if (normalizeText(row.node.label.trim()).startsWith(search)) {
+      focusRow(treeRowElement(row.node.value) ?? undefined)
+      return true
+    }
+  }
+  return false
 }
 
 function onRowClick(node: TreeNode, event: MouseEvent) {
@@ -841,20 +890,27 @@ onMounted(() => initRoving())
 // CSS-driven, not flow-driven) — checked live rather than by the sticky-
 // capable class, since with stickyScroll on nearly every folder has that
 // class whether or not it's actually pinned right now.
-function isCurrentlyStuck(el: HTMLElement): boolean {
-  if (!el.classList.contains('ui-tree-row--sticky') || !listEl.value) return false
+// Above this many rendered rows the pass is skipped; it would block longer than the slide.
+const FLIP_MAX_ROWS = 150
+function flipRows(): HTMLElement[] {
+  return Array.from(listEl.value?.querySelectorAll<HTMLElement>('[data-tree-value]') ?? [])
+}
+function isCurrentlyStuck(el: HTMLElement, rect: DOMRect, listTop: number): boolean {
+  if (!el.classList.contains('ui-tree-row--sticky')) return false
   const stickyTop = Number.parseFloat(getComputedStyle(el).top)
   if (Number.isNaN(stickyTop)) return false
-  const relativeTop = el.getBoundingClientRect().top - listEl.value.getBoundingClientRect().top
-  return Math.abs(relativeTop - stickyTop) < 1
+  return Math.abs(rect.top - listTop - stickyTop) < 1
 }
-function captureRowRects(): Map<string, DOMRect> {
+// Reads only, so the whole pass costs one layout.
+function captureRowRects(rows: HTMLElement[]): Map<string, DOMRect> {
   const map = new Map<string, DOMRect>()
-  if (!listEl.value) return map
-  for (const el of listEl.value.querySelectorAll<HTMLElement>('[data-tree-value]')) {
-    if (isCurrentlyStuck(el)) continue
+  if (!listEl.value || rows.length === 0) return map
+  const listTop = listEl.value.getBoundingClientRect().top
+  for (const el of rows) {
     const key = el.dataset.treeValue
-    if (key != null) map.set(key, el.getBoundingClientRect())
+    if (key == null) continue
+    const rect = el.getBoundingClientRect()
+    if (!isCurrentlyStuck(el, rect, listTop)) map.set(key, rect)
   }
   return map
 }
@@ -867,11 +923,10 @@ let pendingBeforeRects: Map<string, DOMRect> | null = null
 watch(
   expandedKeys,
   () => {
-    if (!props.motionCss || prefersReducedMotion()) {
-      pendingBeforeRects = null
-      return
-    }
-    pendingBeforeRects = captureRowRects()
+    pendingBeforeRects = null
+    if (!props.motionCss || prefersReducedMotion()) return
+    const rows = flipRows()
+    if (rows.length <= FLIP_MAX_ROWS) pendingBeforeRects = captureRowRects(rows)
   },
   { flush: 'pre' },
 )
@@ -881,21 +936,39 @@ watch(
     const before = pendingBeforeRects
     pendingBeforeRects = null
     if (!before || !listEl.value) return
-    const after = captureRowRects()
-    for (const [key, afterRect] of after) {
-      const beforeRect = before.get(key)
-      if (!beforeRect) continue // entering row — its own local enter transition handles it
+    const rows = flipRows()
+    if (rows.length > FLIP_MAX_ROWS) return
+    const after = captureRowRects(rows)
+    // Rows off screen before and after don't slide; one viewport of margin covers the edges.
+    const listRect = listEl.value.getBoundingClientRect()
+    const viewTop = Math.max(listRect.top, 0)
+    const viewBottom = Math.min(listRect.bottom, window.innerHeight)
+    const margin = Math.max(viewBottom - viewTop, 0)
+    const nearView = (rect: DOMRect) =>
+      rect.bottom >= viewTop - margin && rect.top <= viewBottom + margin
+    const moved: { el: HTMLElement; deltaY: number }[] = []
+    for (const el of rows) {
+      const key = el.dataset.treeValue
+      const afterRect = key == null ? undefined : after.get(key)
+      const beforeRect = key == null ? undefined : before.get(key)
+      if (!afterRect || !beforeRect) continue // entering row — its own local enter transition handles it
       const deltaY = beforeRect.top - afterRect.top
       if (Math.abs(deltaY) < 1) continue
-      const el = listEl.value.querySelector<HTMLElement>(`[data-tree-value="${CSS.escape(key)}"]`)
-      if (!el) continue
+      if (!nearView(beforeRect) && !nearView(afterRect)) continue
+      moved.push({ el, deltaY })
+    }
+    if (moved.length === 0) return
+    // Writes only, after every read.
+    for (const { el, deltaY } of moved) {
       el.style.transition = 'none'
       el.style.transform = `translateY(${deltaY}px)`
-      el.getBoundingClientRect() // force reflow before releasing the transform
-      // Double rAF: matches Vue's own <Transition> enter scheduling, so the
-      // slide and the entering children's fade start on the same frame.
+    }
+    // Double rAF: matches Vue's own <Transition> enter scheduling, so the
+    // slide and the entering children's fade start on the same frame.
+    // The first frame paints the inverted position, so no forced reflow is needed.
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
+        for (const { el } of moved) {
           el.style.transition = 'transform var(--ui-duration-enter) var(--ui-ease-in-out)'
           el.style.transform = ''
           el.addEventListener(
@@ -905,9 +978,9 @@ watch(
             },
             { once: true },
           )
-        })
+        }
       })
-    }
+    })
   },
   { flush: 'post' },
 )
@@ -937,13 +1010,13 @@ const listPart = computed(() => resolveUiPart(cx, themedUi()?.list, 'ui-tree-lis
 const emptyPart = computed(() => resolveUiPart(cx, themedUi()?.empty, 'ui-tree-empty'))
 const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-tree-chevron'))
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-tree-label'))
-function nodePart(node: TreeNode) {
+function nodePart(node: TreeNode, selected: boolean) {
   return resolveUiPart(
     cx,
     themedUi()?.node,
     'ui-tree-row',
     node.disabled && 'ui-tree-row--disabled',
-    props.selectionMode !== 'checkbox' && isCheckedNode(node) && 'ui-tree-row--selected',
+    selected && 'ui-tree-row--selected',
   )
 }
 
@@ -988,7 +1061,6 @@ provide<TreeRowContext>(
     isExpanded,
     isCheckedNode,
     isIndeterminateNode,
-    ariaChecked,
     toggleExpand,
     activateNode,
     onRowClick,

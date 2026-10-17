@@ -178,6 +178,7 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -204,8 +205,12 @@ const attrs = useAttrs()
 // so the panel skips them rather than duplicating the id or the label.
 const isTriggerAttr = (key: string) =>
   key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
-const panelAttrs = computed(() =>
+const panelOwnAttrs = computed(() =>
   Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+)
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => panelOwnAttrs.value,
 )
 const messages = useUiMessages()
 

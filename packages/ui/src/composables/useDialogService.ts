@@ -3,11 +3,13 @@ import {
   type ComputedRef,
   type InjectionKey,
   computed,
+  effectScope,
   inject,
   markRaw,
   reactive,
   watch,
 } from 'vue'
+import { isClient } from '@vueuse/core'
 import type { ComponentProps } from 'vue-component-type-helpers'
 import type { DialogProps } from '../components/Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from './useDialog'
@@ -93,6 +95,11 @@ export function openDialog<
     footerProps?: ComponentProps<F>
   } = {},
 ): OpenDialogHandle<T> {
+  // One server queue would reach every request; the browser runs this call again on hydration.
+  if (!isClient) {
+    const none = computed(() => null)
+    return { result: Promise.resolve(undefined), close: () => {}, panelEl: none, overlayEl: none }
+  }
   const {
     props: componentProps = {},
     footer,
@@ -140,20 +147,24 @@ export function openDialog<
   queue.push(entry)
 
   // Fires on any close path (one settle path either way).
-  watch(
-    () => entry.open,
-    (isOpen) => {
-      if (isOpen) return
-      settle(entry.pendingResult)
-      setTimeout(
-        () => {
-          const i = queue.findIndex((e) => e.id === id)
-          if (i !== -1) queue.splice(i, 1)
-        },
-        hasCustomBeforeClose ? 0 : DIALOG_EXIT_MS,
-      )
-    },
-    { once: true },
+  // Detached so an unmounting opener can't stop it and strand the entry.
+  const scope = effectScope(true)
+  scope.run(() =>
+    watch(
+      () => entry.open,
+      (isOpen) => {
+        if (isOpen) return
+        scope.stop()
+        settle(entry.pendingResult)
+        setTimeout(
+          () => {
+            const i = queue.findIndex((e) => e.id === id)
+            if (i !== -1) queue.splice(i, 1)
+          },
+          hasCustomBeforeClose ? 0 : DIALOG_EXIT_MS,
+        )
+      },
+    ),
   )
 
   return {

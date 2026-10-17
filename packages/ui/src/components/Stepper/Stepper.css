@@ -17,6 +17,11 @@
   .ui-stepper--horizontal::-webkit-scrollbar {
     display: none;
   }
+  /* With nothing focusable inside, the scroller takes focus itself (useFocusableScroller). */
+  .ui-stepper--horizontal:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+  }
   .ui-stepper--vertical {
     flex-direction: column;
     align-items: stretch;

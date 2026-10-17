@@ -7,6 +7,18 @@
     background: var(--ui-surface);
     overflow: hidden;
   }
+  .ui-datatable-status,
+  .ui-datatable-sr-only {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .ui-datatable-toolbar {
     display: flex;
     align-items: center;
@@ -23,6 +35,13 @@
   }
   .ui-datatable-scroll-x {
     overflow-x: auto;
+  }
+  /* A scroller with nothing focusable inside takes focus itself (useFocusableScroller). */
+  .ui-datatable-scroll-x:focus-visible,
+  .ui-datatable-head-scroll:focus-visible,
+  .ui-datatable-scroll-y:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
   }
   .ui-datatable-table {
     inline-size: 100%;
@@ -197,7 +216,6 @@
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
-    outline: none;
     /* The gutter above the body's scrollbar is part of the header, so it shares its look. */
     background: var(--ui-muted);
     box-shadow: inset 0 -1px var(--ui-border);

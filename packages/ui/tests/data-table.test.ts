@@ -1240,3 +1240,48 @@ test('scrollHeight: a column without a width keeps a minimum instead of shrinkin
     expectColumnsAligned(screen.container)
   })
 })
+
+test('a scrollHeight body with nothing focusable in it is reachable by keyboard', async () => {
+  const screen = await renderTable({ rowCount: 12, showStatusColumn: false, scrollHeight: '120px' })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(body.getAttribute('tabindex')).toBe('0'))
+})
+
+test('the single-select column header still has a name for screen readers', async () => {
+  const screen = await renderTable({
+    rowCount: 2,
+    builtinSelectable: true,
+    selectionMode: 'checkbox',
+    single: true,
+  })
+  const th = screen.container.querySelector<HTMLElement>('.ui-datatable-th--select')!
+  expect(th.textContent?.trim()).toBe('Select row')
+})
+
+test('the expand column header has a name, so its toggle cells have a header', async () => {
+  const screen = await expansionScreen()
+  const th = screen.container.querySelector<HTMLElement>('.ui-datatable-th--expand')!
+  expect(th.hasAttribute('aria-hidden')).toBe(false)
+  expect(th.textContent?.trim()).toBe('Expand row')
+})
+
+test('scrollHeight still reads as one table: body cells sit under the head row', async () => {
+  const screen = await renderTable({ rowCount: 3, showStatusColumn: false, scrollHeight: '200px' })
+  // The two <table> elements are layout only; the wrapper is the table assistive tech sees.
+  expect(screen.container.querySelectorAll('[role="table"]')).toHaveLength(1)
+  for (const table of screen.container.querySelectorAll('table'))
+    expect(table.getAttribute('role')).toBe('presentation')
+  await expect.element(screen.getByRole('columnheader', { name: 'Name' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: 'Alice' })).toBeInTheDocument()
+  expect(screen.getByRole('row').all().length).toBeGreaterThanOrEqual(4)
+})
+
+test('a focusable scroll strip in the split layout is a rowgroup, not a stray child of the table', async () => {
+  const screen = await renderTable({ rowCount: 12, showStatusColumn: false, scrollHeight: '120px' })
+  const body = screen.container.querySelector<HTMLElement>('.ui-datatable-scroll-y')!
+  await vi.waitFor(() => expect(body.getAttribute('tabindex')).toBe('0'))
+  expect(body.getAttribute('role')).toBe('rowgroup')
+  expect(screen.container.querySelector('.ui-datatable-head-scroll')!.getAttribute('role')).toBe(
+    'rowgroup',
+  )
+})

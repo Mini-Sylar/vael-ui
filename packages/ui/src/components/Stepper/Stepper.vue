@@ -2,7 +2,6 @@
   <ol
     ref="root"
     v-scroll-mask="orientation === 'horizontal' ? 'x' : false"
-    :aria-orientation="orientation"
     :class="rootPart.class"
     :style="rootPart.style"
   >
@@ -98,6 +97,7 @@ import { nativeTag } from '../../composables/dom'
 import { computed, ref, shallowReactive, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
@@ -190,6 +190,7 @@ function onStepClick(index: number, item: T) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+useFocusableScroller(root)
 // By index: a circle remounts when its step becomes clickable, and a v-for ref array would reorder.
 const circleSlots = shallowReactive<(HTMLElement | null)[]>([])
 const labelSlots = shallowReactive<(HTMLElement | null)[]>([])

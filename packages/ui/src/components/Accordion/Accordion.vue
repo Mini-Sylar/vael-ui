@@ -19,6 +19,7 @@ export interface AccordionContext {
   toggle: (value: string) => void
   motionCss: () => boolean
   handOff: () => boolean
+  headingLevel: () => 1 | 2 | 3 | 4 | 5 | 6
 }
 
 export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion')
@@ -47,10 +48,12 @@ const rawProps = withDefaults(
     collapsible?: boolean
     /** `false` skips transitions; use exposed `panelEl`/`open` for custom motion. @default true */
     motionCss?: boolean
+    /** Heading level wrapping each item's trigger; match it to the surrounding outline. @default 3 */
+    headingLevel?: 1 | 2 | 3 | 4 | 5 | 6
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
-  { multiple: false, collapsible: true, motionCss: undefined },
+  { multiple: false, collapsible: true, motionCss: undefined, headingLevel: 3 },
 )
 const props = withProviderDefaults(rawProps, { motionCss: true })
 
@@ -117,6 +120,7 @@ provide(accordionKey, {
   motionCss: () => props.motionCss,
   // Its own motion-css="false" hands the height over; a provider's just makes it instant.
   handOff: () => rawProps.motionCss === false,
+  headingLevel: () => props.headingLevel,
 })
 
 const root = useTemplateRef<HTMLElement>('root')

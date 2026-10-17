@@ -33,6 +33,7 @@
       :multiple="multiple"
       :name="name"
       :disabled="isDisabled"
+      :aria-label="fieldControl.labelledBy() ? undefined : messages.fileUpload.browse"
       :aria-describedby="fieldControl.describedBy()"
       :aria-required="fieldControl.required() || undefined"
       @change="onInputChange"
@@ -42,6 +43,7 @@
 
     <TransitionGroup
       :ref="registerListEl"
+      :data-ui-group="groupKey"
       tag="ul"
       name="ui-file-item"
       :css="props.motionCss"
@@ -94,7 +96,8 @@
 import './FileUpload.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, nextTick, ref, shallowRef, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, shallowRef, useId, useTemplateRef } from 'vue'
+import { transitionGroupRef } from '../../composables/dom'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFileDrop } from '../../composables/useFileDrop'
@@ -291,13 +294,8 @@ const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const dropzoneEl = useTemplateRef<HTMLElement>('dropzoneEl')
 
 const listEl = ref<HTMLElement | null>(null)
-function registerListEl(el: Element | { $el?: unknown } | null) {
-  if (el instanceof HTMLElement) {
-    listEl.value = el
-  } else if (el && '$el' in el && el.$el instanceof HTMLElement) {
-    listEl.value = el.$el
-  }
-}
+const groupKey = useId()
+const registerListEl = transitionGroupRef(listEl, groupKey)
 // Only the component's own motion-css="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
   rawProps.motionCss !== false

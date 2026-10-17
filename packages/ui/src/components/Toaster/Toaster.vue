@@ -1,96 +1,102 @@
 <template>
   <Teleport :to="teleportTo">
-    <TransitionGroup
-      :ref="registerToaster"
-      name="ui-toast"
-      appear
-      tag="ol"
-      :class="rootPart.class"
-      :style="[rootStyle, rootPart.style]"
-      v-bind="$attrs"
-      :css="props.motionCss"
-      role="region"
+    <!-- The named <section> is the live region, so the <ol> keeps list semantics.
+         Absolute keeps it out of a flex or grid parent's flow. -->
+    <section
       aria-live="polite"
-      :aria-label="messages.toaster.label"
-      :data-expanded="expanded"
-      :data-y-position="yPos"
-      :data-x-position="xPos"
-      :data-ui-theme="themeScope"
-      @pointerenter="onToasterEnter"
-      @pointerleave="onToasterLeave"
-      @focusin="onToasterFocusIn"
-      @focusout="onToasterFocusOut"
-      @enter="enterHook"
-      @leave="leaveHook"
+      :aria-label="(attrs['aria-label'] as string | undefined) ?? messages.toaster.label"
+      style="position: absolute"
     >
-      <li
-        v-for="(entry, index) in rendered"
-        :key="entry.id"
-        :ref="(el) => registerCard(entry.id, el as Element | null)"
-        :class="toastPart(entry.variant).class"
-        :style="[cardStyle(entry.id, index, entry.pinned), toastPart(entry.variant).style]"
-        :data-front="entry.pinned || depthOf(entry.id) === 0"
-        :data-pinned="entry.pinned"
+      <TransitionGroup
+        :ref="registerToaster"
+        :data-ui-group="groupKey"
+        name="ui-toast"
+        appear
+        tag="ol"
+        :class="rootPart.class"
+        :style="[rootStyle, rootPart.style]"
+        v-bind="listAttrs"
+        :css="props.motionCss"
         :data-expanded="expanded"
-        :data-swiping="swipeState.get(entry.id)?.swiping ?? false"
-        :data-swipe-out="swipeState.get(entry.id)?.swipeOut ?? false"
-        :data-swipe-direction="swipeState.get(entry.id)?.direction ?? undefined"
         :data-y-position="yPos"
-        @pointerdown="onPointerDown(entry.id, $event)"
-        @pointermove="onPointerMove(entry.id, $event)"
-        @pointerup="onPointerUp(entry.id)"
-        @pointercancel="onPointerUp(entry.id)"
-        @transitionrun="onCardTransition(entry.id, $event, true)"
-        @transitionend="onCardTransition(entry.id, $event, false)"
-        @transitioncancel="onCardTransition(entry.id, $event, false)"
+        :data-x-position="xPos"
+        :data-ui-theme="themeScope"
+        @pointerenter="onToasterEnter"
+        @pointerleave="onToasterLeave"
+        @focusin="onToasterFocusIn"
+        @focusout="onToasterFocusOut"
+        @enter="enterHook"
+        @leave="leaveHook"
       >
-        <slot
-          :entry="entry"
-          :dismiss="() => dismiss(entry.id)"
-          :depth="depthOf(entry.id)"
-          :expanded="expanded"
+        <li
+          v-for="(entry, index) in rendered"
+          :key="entry.id"
+          :ref="(el) => registerCard(entry.id, el as Element | null)"
+          :class="toastPart(entry.variant).class"
+          :style="[cardStyle(entry.id, index, entry.pinned), toastPart(entry.variant).style]"
+          :data-front="entry.pinned || depthOf(entry.id) === 0"
+          :data-pinned="entry.pinned"
+          :data-expanded="expanded"
+          :data-swiping="swipeState.get(entry.id)?.swiping ?? false"
+          :data-swipe-out="swipeState.get(entry.id)?.swipeOut ?? false"
+          :data-swipe-direction="swipeState.get(entry.id)?.direction ?? undefined"
+          :data-y-position="yPos"
+          @pointerdown="onPointerDown(entry.id, $event)"
+          @pointermove="onPointerMove(entry.id, $event)"
+          @pointerup="onPointerUp(entry.id)"
+          @pointercancel="onPointerUp(entry.id)"
+          @transitionrun="onCardTransition(entry.id, $event, true)"
+          @transitionend="onCardTransition(entry.id, $event, false)"
+          @transitioncancel="onCardTransition(entry.id, $event, false)"
         >
-          <span :class="iconPart.class" :style="iconPart.style" aria-hidden="true">
-            <StatusIcon :variant="entry.variant" />
-          </span>
-          <div :class="contentPart.class" :style="contentPart.style">
-            <p :class="titlePart.class" :style="titlePart.style">{{ entry.title }}</p>
-            <p
-              v-if="entry.description"
-              :class="descriptionPart.class"
-              :style="descriptionPart.style"
+          <slot
+            :entry="entry"
+            :dismiss="() => dismissCard(entry.id)"
+            :depth="depthOf(entry.id)"
+            :expanded="expanded"
+          >
+            <span :class="iconPart.class" :style="iconPart.style" aria-hidden="true">
+              <StatusIcon :variant="entry.variant" />
+            </span>
+            <div :class="contentPart.class" :style="contentPart.style">
+              <p :class="titlePart.class" :style="titlePart.style">{{ entry.title }}</p>
+              <p
+                v-if="entry.description"
+                :class="descriptionPart.class"
+                :style="descriptionPart.style"
+              >
+                {{ entry.description }}
+              </p>
+            </div>
+            <button
+              v-if="entry.action"
+              type="button"
+              :class="actionPart.class"
+              :style="actionPart.style"
+              @click="onActionClick(entry)"
             >
-              {{ entry.description }}
-            </p>
-          </div>
-          <button
-            v-if="entry.action"
-            type="button"
-            :class="actionPart.class"
-            :style="actionPart.style"
-            @click="onActionClick(entry)"
-          >
-            {{ entry.action.label }}
-          </button>
-          <button
-            type="button"
-            :class="closePart.class"
-            :style="closePart.style"
-            :aria-label="messages.toast.dismiss"
-            @click="dismiss(entry.id)"
-          >
-            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none">
-              <path
-                d="M3 3l10 10M13 3L3 13"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
-        </slot>
-      </li>
-    </TransitionGroup>
+              {{ entry.action.label }}
+            </button>
+            <button
+              type="button"
+              :class="closePart.class"
+              :style="closePart.style"
+              :aria-label="messages.toast.dismiss"
+              @click="dismissCard(entry.id)"
+            >
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none">
+                <path
+                  d="M3 3l10 10M13 3L3 13"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </slot>
+        </li>
+      </TransitionGroup>
+    </section>
   </Teleport>
 </template>
 
@@ -108,15 +114,29 @@ export type ToasterPosition =
 import './Toaster.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, inject, onScopeDispose, reactive, ref, watch } from 'vue'
+import {
+  computed,
+  inject,
+  onMounted,
+  onScopeDispose,
+  reactive,
+  ref,
+  shallowRef,
+  useAttrs,
+  useId,
+  watch,
+} from 'vue'
 import { useDocumentVisibility } from '@vueuse/core'
 import { useToastQueue } from '../../composables/useToast'
+import { omitAttrs } from '../../composables/forwardedListeners'
 import type { ToastEntry, ToastId } from '../../composables/useToast'
 import { useUiMessages } from '../../messages'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import StatusIcon from '../internal/StatusIcon.vue'
+import { getFocusable, transitionGroupRef } from '../../composables/dom'
+import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 
 // Port of vue-sonner's swipe-to-dismiss mechanics; constants are Sonner's.
 const SWIPE_THRESHOLD = 45 // px
@@ -124,6 +144,10 @@ const SWIPE_VELOCITY_THRESHOLD = 0.11 // px/ms
 const SWIPE_EXIT_MS = 200
 
 defineOptions({ inheritAttrs: false })
+
+// An aria-label renames the live region landmark, so several Toasters on a page stay distinct.
+const attrs = useAttrs()
+const listAttrs = computed(() => omitAttrs(attrs, ['aria-label']))
 
 const rawProps = withDefaults(
   defineProps<{
@@ -205,7 +229,11 @@ defineSlots<{
 
 // This Toaster's own queue, so two Toasters never share slots or timers.
 const queue = computed(() => useToastQueue(props.name))
-const toasts = computed(() => queue.value.toasts)
+// Empty until mounted, like the server render, so a toast shown during hydration can't make
+// the browser's first render (list, heights, stack size) differ from the server's.
+const mounted = shallowRef(false)
+onMounted(() => (mounted.value = true))
+const toasts = computed(() => (mounted.value ? queue.value.toasts : []))
 const dismiss = (id: ToastId) => queue.value.dismiss(id)
 const pauseAll = () => queue.value.pauseAll()
 const resumeAll = () => queue.value.resumeAll()
@@ -214,18 +242,13 @@ const messages = useUiMessages()
 // Extracted to bypass oxfmt removing semicolon from multi-statement @click expression.
 function onActionClick(entry: ToastEntry) {
   entry.action!.onClick()
-  dismiss(entry.id)
+  dismissCard(entry.id)
 }
 const themeScope = inject(themeScopeKey, undefined)
 const visibility = useDocumentVisibility()
 const toasterEl = ref<HTMLElement | null>(null)
-function registerToaster(el: Element | { $el?: unknown } | null) {
-  if (el instanceof HTMLElement) {
-    toasterEl.value = el
-  } else if (el && '$el' in el && el.$el instanceof HTMLElement) {
-    toasterEl.value = el.$el
-  }
-}
+const groupKey = useId()
+const registerToaster = transitionGroupRef(toasterEl, groupKey)
 
 // Pinned toasts sit in their own section past the stack; only the stack collapses and queues.
 const stack = computed(() => toasts.value.filter((t) => !t.pinned))
@@ -245,6 +268,7 @@ const resizeObservers = new Map<ToastId, ResizeObserver>()
 // Collapsed back cards are forced to the front card's height (inline block-size), so only
 // record natural heights while a card is unforced and not mid height-transition.
 const heightTransitions = new Set<ToastId>()
+const cardEls = new Map<ToastId, HTMLElement>()
 function recordHeight(id: ToastId, el: HTMLElement, h = el.offsetHeight) {
   if (el.style.blockSize || heightTransitions.has(id)) return
   // Whole pixels, so a mount-time read and a ResizeObserver read of the same card agree.
@@ -253,6 +277,7 @@ function recordHeight(id: ToastId, el: HTMLElement, h = el.offsetHeight) {
 
 function registerCard(id: ToastId, el: Element | null) {
   if (!(el instanceof HTMLElement)) return
+  cardEls.set(id, el)
   if (resizeObservers.has(id)) return
   const observer = new ResizeObserver(([entry]) => {
     recordHeight(id, el, entry.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight)
@@ -388,8 +413,14 @@ function onToasterLeave() {
   hovered.value = false
   closeStack()
 }
+// Where focus came from, so dismissing the last toast by keyboard can hand it back.
+let returnFocusEl: HTMLElement | null = null
 // Collapsed back cards hide their content, so keyboard focus expands the stack too.
-function onToasterFocusIn() {
+function onToasterFocusIn(event: FocusEvent) {
+  if (!focusWithin.value) {
+    const from = event.relatedTarget
+    returnFocusEl = from instanceof HTMLElement && !toasterEl.value?.contains(from) ? from : null
+  }
   focusWithin.value = true
   openStack()
 }
@@ -398,6 +429,21 @@ function onToasterFocusOut(event: FocusEvent) {
   if (next && toasterEl.value?.contains(next)) return
   focusWithin.value = false
   closeStack()
+}
+
+// A keyboard dismissal moves focus to a neighbouring toast so it doesn't drop to <body>.
+function dismissCard(id: ToastId) {
+  const card = cardEls.get(id)
+  const index = rendered.value.findIndex((t) => t.id === id)
+  if (index !== -1 && card?.contains(document.activeElement) && focusIsFromKeyboard()) {
+    const neighbour = rendered.value[index + 1] ?? rendered.value[index - 1]
+    const el = neighbour && cardEls.get(neighbour.id)
+    const target =
+      (el && (el.querySelector<HTMLElement>('.ui-toast-close') ?? getFocusable(el)[0])) ||
+      (returnFocusEl?.isConnected ? returnFocusEl : undefined)
+    target?.focus()
+  }
+  dismiss(id)
 }
 
 function cardStyle(id: ToastId, index: number, isPinned: boolean) {
@@ -539,6 +585,9 @@ watch(
     for (const id of heightTransitions) {
       if (!live.has(id)) heightTransitions.delete(id)
     }
+    for (const id of cardEls.keys()) {
+      if (!live.has(id)) cardEls.delete(id)
+    }
     for (const [id, observer] of resizeObservers) {
       if (!live.has(id)) {
         observer.disconnect()
@@ -577,7 +626,7 @@ function release(old: ReturnType<typeof useToastQueue>) {
 onScopeDispose(() => release(queue.value))
 
 defineExpose({
-  /** Toast list (root) element. */
+  /** The toast list (`<ol>`) element, inside the live region. */
   toasterEl,
 })
 </script>

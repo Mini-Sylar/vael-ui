@@ -135,3 +135,12 @@ test('motionCss false hands appearing and disappearing rows to @item-enter/@item
   await vi.waitFor(() => expect(entered.length).toBe(2))
   expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
 })
+
+test('the dialog has a name, which an aria-label can replace', async () => {
+  const screen = await render(CommandPalette, { props: { open: true, items } })
+  await expect.element(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible()
+  await screen.unmount()
+
+  await render(CommandPalette, { props: { open: true, items }, attrs: { 'aria-label': 'Go to' } })
+  await expect.element(page.getByRole('dialog', { name: 'Go to' })).toBeVisible()
+})

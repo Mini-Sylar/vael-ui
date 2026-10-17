@@ -113,3 +113,25 @@ test('a themed duration longer than 240ms runs to the end instead of snapping op
     document.documentElement.style.removeProperty('--ui-duration-enter')
   }
 })
+
+test('a trigger slot that swaps to a different button gets aria-expanded and aria-controls', async () => {
+  const fancy = ref(false)
+  const screen = await render(() =>
+    h(Collapsible, null, {
+      trigger: () =>
+        fancy.value
+          ? h('button', { key: 'b', type: 'button', 'data-testid': 'b' }, 'B')
+          : h('button', { key: 'a', type: 'button', 'data-testid': 'a' }, 'A'),
+      default: () => 'Body',
+    }),
+  )
+  expect(screen.container.querySelector('[data-testid="a"]')!.getAttribute('aria-expanded')).toBe(
+    'false',
+  )
+  fancy.value = true
+  await vi.waitFor(() => {
+    const b = screen.container.querySelector('[data-testid="b"]')!
+    expect(b.getAttribute('aria-expanded')).toBe('false')
+    expect(b.getAttribute('aria-controls')).toBeTruthy()
+  })
+})

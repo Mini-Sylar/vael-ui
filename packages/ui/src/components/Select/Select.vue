@@ -224,6 +224,7 @@ import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
@@ -245,8 +246,12 @@ const attrs = useAttrs()
 // trigger; the panel keeps the rest (class, style, listeners) as before.
 const isTriggerAttr = (key: string) =>
   key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
-const panelAttrs = computed(() =>
+const panelOwnAttrs = computed(() =>
   Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+)
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => panelOwnAttrs.value,
 )
 const triggerAttrs = computed(() =>
   Object.fromEntries(Object.entries(attrs).filter(([key]) => isTriggerAttr(key))),
@@ -557,7 +562,8 @@ function onTriggerClick() {
   else openSelect()
 }
 function onTriggerKeydown(event: KeyboardEvent) {
-  if (isDisabled.value) return
+  // A chip's remove button keeps its own Enter/Space.
+  if (isDisabled.value || event.target !== event.currentTarget) return
   if (!open.value) {
     if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
       event.preventDefault()

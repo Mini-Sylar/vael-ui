@@ -3,6 +3,8 @@ import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import CascadeSelectFixture from './fixtures/CascadeSelectFixture.vue'
+import CascadeSelect from '../src/components/CascadeSelect/CascadeSelect.vue'
+import Field from '../src/components/Field/Field.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition —
@@ -196,4 +198,253 @@ test('the `name` prop renders a hidden input mirroring the committed leaf value 
   await userEvent.keyboard('{Enter}')
 
   await vi.waitFor(() => expect(hidden.value).toBe('accra'))
+})
+
+// --- multiple ---
+
+function row(name: string) {
+  return [...document.querySelectorAll<HTMLElement>('.ui-menu-positioner [data-menu-index]')].find(
+    (el) => el.textContent?.trim() === name,
+  )
+}
+
+function chipLabels(container: Element) {
+  return [...container.querySelectorAll('.ui-chip:not(.ui-cascade-select-chip--overflow)')].map(
+    (chip) => chip.textContent?.trim(),
+  )
+}
+
+test('multiple: Enter/Space on a leaf toggles it into the array, keeps the menu open and focus on that row', async () => {
+  const screen = await render(CascadeSelectFixture, { props: { multiple: true } })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
+  await userEvent.keyboard('{ArrowRight}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Ghana'))
+  await userEvent.keyboard('{ArrowRight}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Accra'))
+
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["accra"]')
+  await expect.element(screen.getByTestId('last-change')).toHaveTextContent('["accra"]')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  expect(focusedText()).toBe('Accra')
+  expect(row('Accra')!.getAttribute('aria-checked')).toBe('true')
+
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Kumasi'))
+  await userEvent.keyboard(' ')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["accra","kumasi"]')
+  expect(focusedText()).toBe('Kumasi')
+
+  // A second toggle removes it again.
+  await userEvent.keyboard('{ArrowUp}{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["kumasi"]')
+  expect(row('Accra')!.getAttribute('aria-checked')).toBe('false')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+
+  // Escape still closes, a level at a time.
+  await userEvent.keyboard('{Escape}{Escape}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
+test('multiple: clicking leaves across branches builds the array; branches stay plain menuitems', async () => {
+  const screen = await render(CascadeSelectFixture, { props: { multiple: true } })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
+
+  await screen.getByRole('menuitem', { name: 'Africa' }).click()
+  await screen.getByRole('menuitem', { name: 'Ghana' }).click()
+  await screen.getByRole('menuitemcheckbox', { name: 'Accra' }).click()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["accra"]')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+
+  // Back out of the submenus, which may cover the root rows in a narrow viewport.
+  await userEvent.keyboard('{Escape}{Escape}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
+  await screen.getByRole('menuitem', { name: 'Europe' }).click()
+  await screen.getByRole('menuitem', { name: 'France' }).click()
+  await screen.getByRole('menuitemcheckbox', { name: 'Lyon' }).click()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["accra","lyon"]')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+
+  const lyon = screen.getByRole('menuitemcheckbox', { name: 'Lyon' }).element()
+  expect(lyon.getAttribute('aria-checked')).toBe('true')
+  expect(lyon.querySelector('.ui-menu-item-check')).not.toBeNull()
+  expect(
+    screen.getByRole('menuitemcheckbox', { name: 'Paris' }).element().getAttribute('aria-checked'),
+  ).toBe('false')
+  const europe = screen.getByRole('menuitem', { name: 'Europe' }).element()
+  expect(europe.hasAttribute('aria-checked')).toBe(false)
+  // Every branch holding a selection keeps the selected tint.
+  expect(europe.hasAttribute('data-cascade-selected')).toBe(true)
+  expect(
+    screen
+      .getByRole('menuitem', { name: 'Africa' })
+      .element()
+      .hasAttribute('data-cascade-selected'),
+  ).toBe(true)
+})
+
+test('single mode rows stay plain menuitems without aria-checked', async () => {
+  const screen = await render(CascadeSelectFixture)
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Africa'))
+  await userEvent.keyboard('{ArrowRight}{ArrowRight}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Accra'))
+  expect(document.querySelector('[role="menuitemcheckbox"]')).toBeNull()
+  expect(document.querySelector('.ui-menu-positioner [aria-checked]')).toBeNull()
+})
+
+test('multiple: chips follow tree order and the remove button drops just that value', async () => {
+  const screen = await render(CascadeSelectFixture, {
+    props: { multiple: true, initial: ['lyon', 'accra'] },
+  })
+  const trigger = screen.getByRole('combobox').element()
+  expect(chipLabels(trigger)).toEqual(['Accra', 'Lyon'])
+  expect(trigger.querySelector('.ui-cascade-select-chips')).not.toBeNull()
+  expect(trigger.hasAttribute('data-placeholder')).toBe(false)
+
+  await screen.getByRole('button', { name: 'Remove Accra' }).click()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["lyon"]')
+  await expect.element(screen.getByTestId('last-change')).toHaveTextContent('["lyon"]')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+
+  // Removing a chip while the panel is open leaves it open.
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Lyon'))
+  await screen.getByRole('button', { name: 'Remove Lyon' }).click()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+})
+
+test('multiple: clearable empties the whole array', async () => {
+  const screen = await render(CascadeSelectFixture, {
+    props: { multiple: true, clearable: true, initial: ['accra', 'paris'] },
+  })
+  await screen.getByLabelText('Clear selection').click()
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('[]')
+  await expect.element(screen.getByTestId('last-change')).toHaveTextContent('[]')
+  await expect.element(screen.getByLabelText('Clear selection')).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('combobox')).toHaveTextContent('Pick a city')
+})
+
+test('multiple: maxLabels collapses extra chips into "+N"', async () => {
+  const screen = await render(CascadeSelectFixture, {
+    props: { multiple: true, maxLabels: 1, initial: ['accra', 'kumasi', 'paris'] },
+  })
+  const trigger = screen.getByRole('combobox').element()
+  expect(chipLabels(trigger)).toEqual(['Accra'])
+  expect(trigger.querySelector('.ui-cascade-select-chip--overflow')?.textContent?.trim()).toBe('+2')
+})
+
+test('multiple: display="text" joins labels and display="count" shows the localized count', async () => {
+  const text = await render(CascadeSelectFixture, {
+    props: { multiple: true, display: 'text', initial: ['accra', 'paris'] },
+  })
+  expect(text.container.querySelector('.ui-chip')).toBeNull()
+  await expect.element(text.getByRole('combobox')).toHaveTextContent('Accra, Paris')
+  await text.unmount()
+
+  const count = await render(CascadeSelectFixture, {
+    props: { multiple: true, display: 'count', initial: ['accra', 'paris'] },
+  })
+  expect(count.container.querySelector('.ui-chip')).toBeNull()
+  await expect.element(count.getByRole('combobox')).toHaveTextContent('2 selected')
+})
+
+test('multiple: the name prop renders one hidden input per selected value', async () => {
+  const screen = await render(CascadeSelectFixture, {
+    props: { multiple: true, initial: ['accra', 'paris'] },
+  })
+  const values = () =>
+    [
+      ...screen.container.querySelectorAll<HTMLInputElement>('input[type="hidden"][name="city"]'),
+    ].map((input) => input.value)
+  expect(values()).toEqual(['accra', 'paris'])
+  await screen.getByRole('button', { name: 'Remove Accra' }).click()
+  await vi.waitFor(() => expect(values()).toEqual(['paris']))
+})
+
+test('multiple: the #value slot receives the selected items and their paths', async () => {
+  const screen = await render({
+    components: { CascadeSelect },
+    data: () => ({
+      model: ['lyon', 'accra'],
+      tree: [
+        { label: 'Ghana', value: 'gh', children: [{ label: 'Accra', value: 'accra' }] },
+        { label: 'France', value: 'fr', children: [{ label: 'Lyon', value: 'lyon' }] },
+      ],
+    }),
+    template: `<CascadeSelect v-model="model" multiple :items="tree">
+      <template #value="{ selected, path }">
+        <span data-testid="slot">{{ selected.map((s) => s.label).join('|') }} {{ path.map((p) => p.join('>')).join('|') }}</span>
+      </template>
+    </CascadeSelect>`,
+  })
+  await expect.element(screen.getByTestId('slot')).toHaveTextContent('Accra|Lyon gh>accra|fr>lyon')
+})
+
+test('multiple: a Field label still names the combobox', async () => {
+  const screen = await render({
+    components: { CascadeSelect, Field },
+    data: () => ({
+      model: ['leaf'],
+      tree: [{ label: 'Root', value: 'root', children: [{ label: 'Leaf', value: 'leaf' }] }],
+    }),
+    template: `<Field label="Cities"><CascadeSelect v-model="model" multiple :items="tree" /></Field>`,
+  })
+  await expect.element(screen.getByRole('combobox', { name: 'Cities' })).toBeInTheDocument()
+})
+
+test('multiple: Enter on a chip remove button removes it without opening the panel', async () => {
+  const screen = await render(CascadeSelectFixture, {
+    props: { multiple: true, initial: ['accra', 'paris'] },
+  })
+  const remove = screen.getByRole('button', { name: 'Remove Accra' }).element() as HTMLElement
+  remove.focus()
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('["paris"]')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+
+  // Enter on the trigger itself still opens it.
+  ;(screen.getByRole('combobox').element() as HTMLElement).focus()
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+})
+
+test('multiple: motionCss=false turns off the built-in chip transition', async () => {
+  const screen = await render(CascadeSelect, {
+    props: {
+      items: [{ label: 'Ghana', value: 'gh', children: [{ label: 'Accra', value: 'accra' }] }],
+      multiple: true,
+      modelValue: ['accra'],
+      motionCss: false,
+    },
+  })
+  const chips = screen.container.querySelector('.ui-cascade-select-chips')!
+  expect(chips.getAttribute('data-motion')).toBe('off')
+})
+
+test('the combobox carries the popup state, not a chip remove button inside it', async () => {
+  const screen = await render({
+    components: { CascadeSelect, Field },
+    data: () => ({
+      model: ['leaf'],
+      tree: [{ label: 'Root', value: 'root', children: [{ label: 'Leaf', value: 'leaf' }] }],
+    }),
+    template: `<Field label="Cities"><CascadeSelect v-model="model" multiple :items="tree" /></Field>`,
+  })
+  const combobox = screen.getByRole('combobox', { name: 'Cities' })
+  await expect.element(combobox).toHaveAttribute('aria-haspopup', 'menu')
+  await expect.element(combobox).toHaveAttribute('aria-expanded', 'false')
+  expect(document.querySelector('.ui-chip-remove')?.hasAttribute('aria-haspopup')).toBe(false)
+
+  await combobox.click()
+  await expect.element(combobox).toHaveAttribute('aria-expanded', 'true')
+  const menu = document.querySelector('[role="menu"]')!
+  expect(menu.id).not.toBe('')
+  await expect.element(combobox).toHaveAttribute('aria-controls', menu.id)
 })

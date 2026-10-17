@@ -5,6 +5,7 @@ import { useLayer } from './useLayerStack'
 import { useScrollLock } from './useScrollLock'
 import { useInert } from './useInert'
 import { getFocusable, useDOMTarget, type DOMTarget, type ElRef } from './dom'
+import { ssrDocument } from '../ssr'
 
 export type DialogCloseReason = 'trigger' | 'escape' | 'outside' | 'history' | 'programmatic'
 
@@ -213,14 +214,14 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   })
 
   const scrollLocked = useScrollLock({
-    target: () => scrollTarget.value ?? container.value ?? document.body,
+    target: () => scrollTarget.value ?? container.value ?? ssrDocument()?.body ?? null,
   })
 
   // Contained only, for now. Applying inert page-wide would also silence anything
   // rendered outside the dialog — Toaster, PopoverHost, skip links — which the
   // Tab trap does not. That is a separate change from this feature.
   const inerted = useInert({
-    root: () => container.value ?? document.body,
+    root: () => container.value ?? ssrDocument()?.body ?? null,
     content: contentEl,
   })
 
@@ -267,7 +268,12 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     }
   }
 
-  useEventListener(() => (isOpen.value ? document : undefined), 'keydown', onDocumentKeydown, true)
+  useEventListener(
+    () => (isOpen.value ? ssrDocument() : undefined),
+    'keydown',
+    onDocumentKeydown,
+    true,
+  )
 
   function activate() {
     if (active) return

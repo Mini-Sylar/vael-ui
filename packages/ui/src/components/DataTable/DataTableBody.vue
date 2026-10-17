@@ -1,7 +1,8 @@
 <template>
-  <tbody v-if="loading" :class="tbodyPart.class" :style="tbodyPart.style">
-    <tr :class="trPart().class" :style="trPart().style">
+  <tbody :role="roles.group" v-if="loading" :class="tbodyPart.class" :style="tbodyPart.style">
+    <tr :role="roles.row" :class="trPart().class" :style="trPart().style">
       <td
+        :role="roles.cell"
         :class="tdPart('ui-datatable-td--loading').class"
         :style="tdPart().style"
         :colspan="colCount"
@@ -11,9 +12,10 @@
     </tr>
   </tbody>
 
-  <tbody v-else-if="isEmpty" :class="tbodyPart.class" :style="tbodyPart.style">
-    <tr :class="trPart().class" :style="trPart().style">
+  <tbody :role="roles.group" v-else-if="isEmpty" :class="tbodyPart.class" :style="tbodyPart.style">
+    <tr :role="roles.row" :class="trPart().class" :style="trPart().style">
       <td
+        :role="roles.cell"
         :class="tdPart('ui-datatable-td--empty').class"
         :style="tdPart().style"
         :colspan="colCount"
@@ -24,14 +26,21 @@
   </tbody>
 
   <!-- Spacer rows, not absolute rows: an absolute <tr> would break column alignment. -->
-  <tbody v-else-if="virtualizeActive" :class="tbodyPart.class" :style="tbodyPart.style">
+  <tbody
+    :role="roles.group"
+    v-else-if="virtualizeActive"
+    :class="tbodyPart.class"
+    :style="tbodyPart.style"
+  >
     <tr
+      :role="roles.row"
       v-if="virtualItems.length > 0"
       :class="trPart('ui-datatable-tr--spacer').class"
       :style="[trPart().style, { blockSize: `${topSpacerHeight}px` }]"
       aria-hidden="true"
     >
       <td
+        :role="roles.cell"
         :colspan="colCount"
         :class="tdPart('ui-datatable-td--spacer').class"
         :style="tdPart().style"
@@ -39,6 +48,7 @@
     </tr>
     <!-- Cell markup here must stay identical to the non-virtualized tbody below. -->
     <tr
+      :role="roles.row"
       v-for="virtualRow in virtualItems"
       :key="tableRowEntries[virtualRow.index]!.key"
       :ref="measureRow(virtualRow.index)"
@@ -89,6 +99,7 @@
     >
       <template v-if="tableRowEntries[virtualRow.index]!.kind === 'row'">
         <td
+          :role="roles.cell"
           v-if="selectColumnRendered"
           :class="
             tdPart('ui-datatable-td--select', frozenColumns > 0 && 'ui-datatable-td--frozen').class
@@ -108,6 +119,7 @@
           />
         </td>
         <td
+          :role="roles.cell"
           v-if="expansionColumnRendered"
           :class="
             tdPart('ui-datatable-td--expand', frozenColumns > 0 && 'ui-datatable-td--frozen').class
@@ -152,6 +164,7 @@
           </Button>
         </td>
         <td
+          :role="roles.cell"
           v-for="(col, colIndex) in columns"
           :key="String(col.field)"
           :class="
@@ -165,8 +178,8 @@
           :data-column-field="String(col.field)"
         >
           <component
-            :is="col.cellSlot"
-            v-if="col.cellSlot"
+            :is="col.cellRelay"
+            v-if="col.cellRelay"
             :row="tableRowEntries[virtualRow.index]!.row"
             :value="tableRowEntries[virtualRow.index]!.row[col.field]"
           />
@@ -174,6 +187,7 @@
         </td>
       </template>
       <td
+        :role="roles.cell"
         v-else
         :class="tdPart('ui-datatable-td--expansion').class"
         :style="tdPart().style"
@@ -187,12 +201,14 @@
       </td>
     </tr>
     <tr
+      :role="roles.row"
       v-if="virtualItems.length > 0"
       :class="trPart('ui-datatable-tr--spacer').class"
       :style="[trPart().style, { blockSize: `${bottomSpacerHeight}px` }]"
       aria-hidden="true"
     >
       <td
+        :role="roles.cell"
         :colspan="colCount"
         :class="tdPart('ui-datatable-td--spacer').class"
         :style="tdPart().style"
@@ -203,17 +219,19 @@
   <TransitionGroup
     v-else
     tag="tbody"
+    :role="roles.group"
     name="ui-datatable-row"
-    :css="motionCss"
+    :css="rowCss"
     :class="tbodyPart.class"
     :style="tbodyPart.style"
-    :data-motion="motionCss && rowMotionReady ? undefined : 'off'"
+    :data-motion="rowCss && rowMotionReady ? undefined : 'off'"
     @before-enter="beforeEnterHook"
     @before-leave="beforeLeaveHook"
     @enter="rowEnterHook"
     @leave="rowLeaveHook"
   >
     <tr
+      :role="roles.row"
       v-for="entry in tableRowEntries"
       :key="entry.key"
       :class="
@@ -234,6 +252,7 @@
     >
       <template v-if="entry.kind === 'row'">
         <td
+          :role="roles.cell"
           v-if="selectColumnRendered"
           :class="
             tdPart('ui-datatable-td--select', frozenColumns > 0 && 'ui-datatable-td--frozen').class
@@ -249,6 +268,7 @@
           <Radio v-else :value="getRowKey(entry.row)" :aria-label="messages.dataTable.selectRow" />
         </td>
         <td
+          :role="roles.cell"
           v-if="expansionColumnRendered"
           :class="
             tdPart('ui-datatable-td--expand', frozenColumns > 0 && 'ui-datatable-td--frozen').class
@@ -287,6 +307,7 @@
           </Button>
         </td>
         <td
+          :role="roles.cell"
           v-for="(col, colIndex) in columns"
           :key="String(col.field)"
           :class="
@@ -300,8 +321,8 @@
           :data-column-field="String(col.field)"
         >
           <component
-            :is="col.cellSlot"
-            v-if="col.cellSlot"
+            :is="col.cellRelay"
+            v-if="col.cellRelay"
             :row="entry.row"
             :value="entry.row[col.field]"
           />
@@ -309,6 +330,7 @@
         </td>
       </template>
       <td
+        :role="roles.cell"
         v-else
         :class="tdPart('ui-datatable-td--expansion').class"
         :style="tdPart().style"
@@ -382,6 +404,8 @@ const props = defineProps<{
   rowMotionReady: boolean
   onRowEnter: (el: Element, done: () => void) => void
   onRowLeave: (el: Element, done: () => void) => void
+  /** scrollHeight layout: head and body are separate tables joined by ARIA roles. */
+  split: boolean
   ui?: Partial<{
     tbody: UiPartValue
     tr: UiPartValue
@@ -390,6 +414,14 @@ const props = defineProps<{
     expansionContent: UiPartValue
   }>
 }>()
+
+// In the split layout the tables are presentational and these roles rebuild one table.
+// The scroll strip is the rowgroup, since a table can't hold a focusable div.
+const roles = computed(() =>
+  props.split
+    ? { group: 'presentation', row: 'row', cell: 'cell' }
+    : { group: undefined, row: undefined, cell: undefined },
+)
 
 const cx = useClassMerge()
 const tbodyPart = computed(() => resolveUiPart(cx, props.ui?.tbody, 'ui-datatable-tbody'))
@@ -419,6 +451,17 @@ function ariaSelected(row: T): 'true' | 'false' | undefined {
   return props.isSelected(row) ? 'true' : 'false'
 }
 
+// Move FLIP and leave transitions force a layout per row, so above this many rows they snap.
+const ROW_MOTION_LIMIT = 150
+const rowMotionFits = computed<{ count: number; fits: boolean }>((previous) => {
+  const count = props.tableRowEntries.length
+  return {
+    count,
+    fits: count <= ROW_MOTION_LIMIT && (previous?.count ?? 0) <= ROW_MOTION_LIMIT,
+  }
+})
+const rowCss = computed(() => props.motionCss && rowMotionFits.value.fits)
+
 // A JS hook and Vue's CSS end detection can't coexist, so hooks only wire when motionCss is off.
 const rowEnterHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
@@ -429,7 +472,7 @@ const rowLeaveHook = computed(() =>
 
 // A px max-block-size, not 0fr/1fr rows: fr interpolates unevenly and reads as a stall.
 function beforeEnterHook(el: Element) {
-  if (!props.motionCss) return
+  if (!rowCss.value) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
   if (!wrap) return
   wrap.style.maxBlockSize = '0px'
@@ -438,7 +481,7 @@ function beforeEnterHook(el: Element) {
   })
 }
 function beforeLeaveHook(el: Element) {
-  if (!props.motionCss) return
+  if (!rowCss.value) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
   if (!wrap) return
   wrap.style.maxBlockSize = `${wrap.scrollHeight}px`

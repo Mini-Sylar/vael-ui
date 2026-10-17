@@ -294,3 +294,12 @@ test('vertical: the line under a circle starts right below it, even when the ste
   expect(bridgeTop - circle.bottom).toBeLessThan(8)
   expect(Math.abs(bridgeBottom - connector.top)).toBeLessThan(1)
 })
+
+test.each(['horizontal', 'vertical'] as const)(
+  'a %s stepper list carries no aria-orientation, which <ol> does not allow',
+  async (orientation) => {
+    const screen = await render(Stepper, { props: { items, modelValue: 0, orientation } })
+    const list = screen.container.querySelector('ol')!
+    expect(list.hasAttribute('aria-orientation')).toBe(false)
+  },
+)

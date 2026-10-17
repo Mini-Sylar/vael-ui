@@ -153,6 +153,7 @@ import '../shared/tokens.css'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
@@ -170,8 +171,12 @@ const attrs = useAttrs()
 // trigger; the panel keeps the rest (class, style, listeners) as before.
 const isTriggerAttr = (key: string) =>
   key === 'id' || key.startsWith('aria-') || key.startsWith('data-')
-const panelAttrs = computed(() =>
+const panelOwnAttrs = computed(() =>
   Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTriggerAttr(key))),
+)
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => panelOwnAttrs.value,
 )
 const triggerAttrs = computed(() =>
   Object.fromEntries(Object.entries(attrs).filter(([key]) => isTriggerAttr(key))),

@@ -122,7 +122,9 @@ export function useLayer(options: UseLayerOptions = {}): Layer {
     return true
   }
 
-  const index = () => stack.value.findIndex((e) => e.id === id)
+  // Nothing is pushed on a server, and reading the shared stack there would keep
+  // each render's computeds subscribed to it.
+  const index = () => (isClient ? stack.value.findIndex((e) => e.id === id) : -1)
 
   return { push, pop, isTopmost, index }
 }

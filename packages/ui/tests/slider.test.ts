@@ -4,6 +4,8 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import SliderFixture from './fixtures/SliderFixture.vue'
+import Slider from '../src/components/Slider/Slider.vue'
+import Field from '../src/components/Field/Field.vue'
 import { contrast } from './utils/contrast'
 
 function trackRect(screen: RenderResult<unknown>, testId: string): DOMRect {
@@ -179,4 +181,45 @@ test('#thumb and #track slots receive the value and its percent', async () => {
   const thumb = thumbEl(screen, 'slots')
   expect(thumb.getAttribute('role')).toBe('slider')
   expect(thumb.contains(screen.getByTestId('thumb-content-0').element())).toBe(true)
+})
+
+test('aria-label, aria-labelledby and aria-describedby name the thumb, not the wrapper', async () => {
+  const screen = await render({
+    components: { Slider, Field },
+    template: `<div>
+      <span id="vol-label">Volume</span><span id="vol-hint">Max 11</span>
+      <Slider data-testid="labelled" aria-label="Brightness" aria-describedby="vol-hint" />
+      <Slider aria-labelledby="vol-label" />
+      <Field label="Balance"><Slider /></Field>
+    </div>`,
+  })
+  const thumb = screen.getByRole('slider', { name: 'Brightness' })
+  await expect.element(thumb).toBeInTheDocument()
+  expect(thumb.element().getAttribute('aria-describedby')).toBe('vol-hint')
+  const root = screen.container.querySelector('[data-testid="labelled"]')!
+  expect(root.hasAttribute('aria-label')).toBe(false)
+  expect(root.hasAttribute('aria-describedby')).toBe(false)
+  await expect.element(screen.getByRole('slider', { name: 'Volume' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('slider', { name: 'Balance' })).toBeInTheDocument()
+})
+
+test('each range thumb gets its own name from the slider label', async () => {
+  const screen = await render({
+    components: { Slider, Field },
+    data: () => ({ a: [10, 20], b: [10, 20], c: [10, 20] }),
+    template: `<div>
+      <Slider v-model="a" aria-label="Price" />
+      <Field label="Year"><Slider v-model="b" /></Field>
+      <Slider v-model="c" />
+    </div>`,
+  })
+  for (const name of ['Price Minimum', 'Price Maximum', 'Year Minimum', 'Year Maximum']) {
+    await expect.element(screen.getByRole('slider', { name, exact: true })).toBeInTheDocument()
+  }
+  await expect
+    .element(screen.getByRole('slider', { name: 'Minimum', exact: true }))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('slider', { name: 'Maximum', exact: true }))
+    .toBeInTheDocument()
 })

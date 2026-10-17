@@ -1,7 +1,5 @@
-import { shallowRef, toValue } from 'vue'
+import { shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
-import { ssrWindow } from '../ssr'
 
 export type ResizeDirection = 'horizontal' | 'vertical'
 
@@ -105,9 +103,22 @@ export function useResizable(
     options.onCommit?.()
   }
 
-  useEventListener(ssrWindow, 'pointermove', onPointerMove)
-  useEventListener(ssrWindow, 'pointerup', endDrag)
-  useEventListener(ssrWindow, 'pointercancel', endDrag)
+  // Window listeners only for the length of a drag; idle instances add none.
+  watch(
+    isDragging,
+    (active, _, onCleanup) => {
+      if (!active) return
+      window.addEventListener('pointermove', onPointerMove)
+      window.addEventListener('pointerup', endDrag)
+      window.addEventListener('pointercancel', endDrag)
+      onCleanup(() => {
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', endDrag)
+        window.removeEventListener('pointercancel', endDrag)
+      })
+    },
+    { flush: 'sync' },
+  )
 
   function onHandleKeydown(event: KeyboardEvent) {
     if (isDisabled()) return

@@ -23,15 +23,16 @@ export interface UseMenuReturn {
 }
 
 const TYPEAHEAD_RESET_MS = 500
+// Checkbox and radio rows are menu items too (APG); MenuList rows opt in with data-menu-item.
+const ITEM_SELECTOR =
+  '[role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [data-menu-item]'
 
 export function useMenu(options: UseMenuOptions): UseMenuReturn {
   let typeaheadBuffer = ''
   let typeaheadTimer: ReturnType<typeof setTimeout> | undefined
 
   function items(): HTMLElement[] {
-    return Array.from(
-      options.listEl.value?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
-    )
+    return Array.from(options.listEl.value?.querySelectorAll<HTMLElement>(ITEM_SELECTOR) ?? [])
   }
 
   function isDisabled(el: HTMLElement): boolean {
@@ -73,7 +74,7 @@ export function useMenu(options: UseMenuOptions): UseMenuReturn {
   useEventListener(options.listEl, 'click', (event: MouseEvent) => {
     const target = event.target
     if (!(target instanceof Element)) return
-    const itemEl = target.closest('[role="menuitem"]')
+    const itemEl = target.closest(ITEM_SELECTOR)
     if (itemEl instanceof HTMLElement && options.listEl.value?.contains(itemEl)) {
       activate(itemEl)
     }

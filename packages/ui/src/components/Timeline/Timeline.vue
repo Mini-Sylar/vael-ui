@@ -1,9 +1,9 @@
 <template>
   <TransitionGroup
     :ref="registerRootEl"
+    :data-ui-group="groupKey"
     v-scroll-mask="orientation === 'horizontal' ? 'x' : false"
     tag="ol"
-    :aria-orientation="orientation"
     :class="rootPart.class"
     :style="rootPart.style"
     :name="props.motionCss ? 'ui-timeline-item' : undefined"
@@ -115,9 +115,11 @@ export interface TimelineItemParts {
 import './Timeline.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, ref, useSlots, useTemplateRef } from 'vue'
+import { computed, ref, useId, useSlots, useTemplateRef } from 'vue'
+import { transitionGroupRef, useSlotPresence } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
@@ -200,6 +202,7 @@ const leaveHook = computed(() =>
 )
 
 const $slots = useSlots()
+const hasSlot = useSlotPresence($slots)
 
 function isCompleted(item: T, index: number): boolean {
   if (props.completed) return props.completed(item, index)
@@ -250,13 +253,9 @@ defineSlots<{
 }>()
 
 const root = ref<HTMLElement | null>(null)
-function registerRootEl(el: Element | { $el?: unknown } | null) {
-  if (el instanceof HTMLElement) {
-    root.value = el
-  } else if (el && '$el' in el && el.$el instanceof HTMLElement) {
-    root.value = el.$el
-  }
-}
+useFocusableScroller(root)
+const groupKey = useId()
+const registerRootEl = transitionGroupRef(root, groupKey)
 
 // Per-item elements, not just the root — an external animation library needs real nodes to
 // stagger-reveal markers, scrub a "draw the line" effect across connectors, etc. `connectorEls`
@@ -276,7 +275,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-timeline',
     `ui-timeline--${props.orientation}`,
-    !!$slots.opposite && 'ui-timeline--has-opposite',
+    hasSlot('opposite') && 'ui-timeline--has-opposite',
     props.pulse && 'ui-timeline--pulse',
     !props.motionCss && 'ui-timeline--no-motion',
   ),

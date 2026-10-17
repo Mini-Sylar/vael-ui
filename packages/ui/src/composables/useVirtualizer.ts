@@ -210,7 +210,7 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     blockSize: `${totalSize.value}px`,
   }))
 
-  const range = computed(() => {
+  function computeRange(): { start: number; end: number } {
     const total = count.value
     if (total === 0) return { start: 0, end: -1 }
     if (isDynamic.value) {
@@ -230,6 +230,11 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
       start: Math.max(0, firstVisible - overscan.value),
       end: Math.min(total - 1, firstVisible + visibleCount + overscan.value),
     }
+  }
+  // Most scroll events don't move the window; returning the same object avoids per-pixel updates.
+  const range = computed<{ start: number; end: number }>((previous) => {
+    const next = computeRange()
+    return previous?.start === next.start && previous.end === next.end ? previous : next
   })
 
   const items = computed<VirtualRow[]>(() => {
@@ -349,6 +354,8 @@ export function useVirtualizer(options: UseVirtualizerOptions): UseVirtualizerRe
     if (target === undefined) return
     container.scrollTop = Math.max(0, target)
     scrollTop.value = container.scrollTop
+    // A fresh container reads 0 until its first resize report, which would miss the target.
+    if (!containerSize.value) containerSize.value = container.clientHeight
   }
 
   return { listStyle, items, scrollToIndex, measuredSize, measureRow, totalSize }

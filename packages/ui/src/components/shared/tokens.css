@@ -87,13 +87,16 @@
       --ui-danger-solid-hover: color-mix(in oklch, oklch(0.586 0.2 26) 88%, white);
       --ui-success: oklch(0.75 0.17 163.225);
       --ui-success-hover: color-mix(in oklch, oklch(0.75 0.17 163.225) 85%, white);
-      --ui-success-contrast: #ffffff;
+      --ui-success-contrast: #18181b;
       --ui-warning: oklch(0.8 0.16 58.315);
       --ui-warning-hover: color-mix(in oklch, oklch(0.8 0.16 58.315) 85%, white);
       --ui-warning-contrast: #18181b;
       --ui-info: #3b82f6;
       --ui-info-hover: #2563eb;
       --ui-info-contrast: #ffffff;
+      /* Dark only: --ui-info lacks contrast under white text and as text on the surface. */
+      --ui-info-solid: #2563eb;
+      --ui-info-text: color-mix(in oklch, var(--ui-info) 85%, white);
       --ui-surface: #1f1f23;
       --ui-text: #fafafa;
       --ui-text-muted: #a1a1aa;
@@ -117,13 +120,16 @@
     --ui-danger-solid-hover: color-mix(in oklch, oklch(0.586 0.2 26) 88%, white);
     --ui-success: oklch(0.75 0.17 163.225);
     --ui-success-hover: color-mix(in oklch, oklch(0.75 0.17 163.225) 85%, white);
-    --ui-success-contrast: #ffffff;
+    --ui-success-contrast: #18181b;
     --ui-warning: oklch(0.8 0.16 58.315);
     --ui-warning-hover: color-mix(in oklch, oklch(0.8 0.16 58.315) 85%, white);
     --ui-warning-contrast: #18181b;
     --ui-info: #3b82f6;
     --ui-info-hover: #2563eb;
     --ui-info-contrast: #ffffff;
+    /* Dark only: --ui-info lacks contrast under white text and as text on the surface. */
+    --ui-info-solid: #2563eb;
+    --ui-info-text: color-mix(in oklch, var(--ui-info) 85%, white);
     --ui-surface: #1f1f23;
     --ui-text: #fafafa;
     --ui-text-muted: #a1a1aa;

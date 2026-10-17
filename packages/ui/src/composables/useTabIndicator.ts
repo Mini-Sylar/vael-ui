@@ -33,6 +33,7 @@ export function useTabIndicator(
     const selector = toValue(options.selector) ?? '[role="tab"][aria-selected="true"]'
     const tab = list?.querySelector<HTMLElement>(selector)
     if (!list) return
+    remeasureAfterAncestorTransitions(list)
     if (!tab) {
       style.value = { ...style.value, opacity: '0' }
       measuredOnce = true
@@ -120,19 +121,24 @@ export function useTabIndicator(
     })
   }
 
-  // A still-animating ancestor (Dialog/Drawer/Popover entering) can make the first measure() above run mid-transition, so re-measure once any ancestor's own transition actually finishes.
-  function onAncestorTransitionEnd(event: Event) {
-    const list = options.listEl.value
-    const target = event.target
-    if (!list || !(target instanceof Node) || target === list || !target.contains(list)) return
-    measuredOnce = false
-    measure()
-  }
-  if (typeof document !== 'undefined') {
-    document.addEventListener('transitionend', onAncestorTransitionEnd, { capture: true })
-    onBeforeUnmount(() =>
-      document.removeEventListener('transitionend', onAncestorTransitionEnd, { capture: true }),
-    )
+  // An ancestor still animating in can make measure() run mid-transition, so re-measure when it ends.
+  const awaited = new WeakSet<Animation>()
+  function remeasureAfterAncestorTransitions(list: HTMLElement) {
+    if (typeof document.getAnimations !== 'function') return
+    for (const animation of document.getAnimations()) {
+      if (!(animation instanceof CSSTransition) || awaited.has(animation)) continue
+      const target = (animation.effect as KeyframeEffect | null)?.target
+      if (!target || target === list || !target.contains(list)) continue
+      awaited.add(animation)
+      animation.finished.then(
+        () => {
+          measuredOnce = false
+          measure()
+        },
+        // Cancelled before it finished: nothing to settle.
+        () => {},
+      )
+    }
   }
 
   let resizeObserver: ResizeObserver | undefined

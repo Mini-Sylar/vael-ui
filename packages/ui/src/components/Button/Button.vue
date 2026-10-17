@@ -123,7 +123,7 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
 import './Button.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { nativeTag } from '../../composables/dom'
+import { nativeTag, useSlotPresence } from '../../composables/dom'
 import '../shared/loader-spinner.css'
 import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
 import type { StyleValue } from 'vue'
@@ -212,6 +212,7 @@ defineSlots<{
 }>()
 
 const slots = useSlots()
+const hasSlot = useSlotPresence(slots)
 const attrs = useAttrs()
 
 const { loading: autoLoading, run } = useAsyncLoading()
@@ -280,8 +281,8 @@ const rootPart = computed(() =>
     props.icon && 'ui-button--icon',
     props.pill && 'ui-button--pill',
     props.block && 'ui-button--block',
-    !!slots.leading && 'ui-button--has-leading',
-    !!slots.trailing && 'ui-button--has-trailing',
+    hasSlot('leading') && 'ui-button--has-leading',
+    hasSlot('trailing') && 'ui-button--has-trailing',
     isLoading.value && 'ui-button--loading',
     props.disabled && 'ui-button--disabled',
   ),

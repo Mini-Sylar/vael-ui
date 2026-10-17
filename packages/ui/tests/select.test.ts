@@ -528,3 +528,26 @@ test('the #filter slot fully replaces the built-in input, and its onKeydown stil
   await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByTestId('model')).toHaveTextContent('"banana"')
 })
+
+test('Enter on a chip remove button removes the chip without opening the panel', async () => {
+  const { h, ref } = await import('vue')
+  const model = ref<string[]>(['a', 'b'])
+  const screen = await render(() =>
+    h(Select as never, {
+      items: [
+        { label: 'Apple', value: 'a' },
+        { label: 'Banana', value: 'b' },
+      ],
+      multiple: true,
+      modelValue: model.value,
+      'onUpdate:modelValue': (value: string[]) => (model.value = value),
+    }),
+  )
+  const remove = screen.container.querySelector<HTMLElement>('.ui-chip-remove')!
+  remove.focus()
+  await userEvent.keyboard('{Enter}')
+  await expect.poll(() => model.value).toEqual(['b'])
+  expect(
+    screen.container.querySelector('[role="combobox"]')!.getAttribute('aria-expanded'),
+  ).not.toBe('true')
+})

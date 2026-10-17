@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, ref } from 'vue'
@@ -740,5 +740,86 @@ test('a toast created while the tab is hidden waits until it is visible again', 
   Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
   document.dispatchEvent(new Event('visibilitychange'))
   await vi.waitFor(() => expect(toasts).toHaveLength(0), { timeout: 2000 })
+  await screen.unmount()
+})
+
+const realTransitions = { stubs: { transition: false, 'transition-group': false } }
+
+test('the live region wraps a real list, so each toast is a list item', async () => {
+  const screen = await render(ToasterFixture, { global: realTransitions })
+  toast('First')
+  toast('Second')
+  const region = page.getByRole('region', { name: 'Notifications' })
+  await expect.element(region).toHaveAttribute('aria-live', 'polite')
+  await expect.element(region.getByRole('list')).toBeInTheDocument()
+  await expect.poll(() => region.getByRole('listitem').elements().length).toBe(2)
+  const list = document.querySelector('.ui-toaster')!
+  expect(list.tagName).toBe('OL')
+  expect(list.hasAttribute('role')).toBe(false)
+  toast.dismiss()
+  await screen.unmount()
+})
+
+async function renderWithBefore() {
+  return render(
+    { render: () => [h('button', { type: 'button' }, 'Before'), h(Toaster)] },
+    { global: realTransitions },
+  )
+}
+const closeOf = (text: string) => cardFor(text).querySelector<HTMLElement>('.ui-toast-close')!
+
+test('dismissing a toast by keyboard moves focus to the next toast, then back where it came from', async () => {
+  const screen = await renderWithBefore()
+  toast('Alpha')
+  toast('Bravo')
+  await expect.element(page.getByText('Bravo')).toBeInTheDocument()
+  const before = page.getByRole('button', { name: 'Before' })
+  ;(before.element() as HTMLElement).focus()
+  await userEvent.tab()
+  expect(document.activeElement).toBe(closeOf('Alpha'))
+
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(document.activeElement).toBe(closeOf('Bravo')))
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(document.activeElement).toBe(before.element()))
+  await vi.waitFor(() => expect(toasts).toHaveLength(0))
+  await screen.unmount()
+})
+
+test('dismissing the last toast in the list by keyboard moves focus to the previous one', async () => {
+  const screen = await renderWithBefore()
+  toast('Alpha')
+  toast('Bravo')
+  await expect.element(page.getByText('Bravo')).toBeInTheDocument()
+  ;(page.getByRole('button', { name: 'Before' }).element() as HTMLElement).focus()
+  await userEvent.tab()
+  await userEvent.tab()
+  expect(document.activeElement).toBe(closeOf('Bravo'))
+
+  await userEvent.keyboard('{Enter}')
+  await vi.waitFor(() => expect(document.activeElement).toBe(closeOf('Alpha')))
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('dismissing a toast with the mouse does not move focus to another toast', async () => {
+  const screen = await render(ToasterFixture, { props: { expand: true } })
+  toast('Alpha')
+  toast('Bravo')
+  await expect.element(page.getByText('Alpha')).toBeVisible()
+  await userEvent.click(closeOf('Bravo'))
+  await vi.waitFor(() => expect(toasts).toHaveLength(1))
+  expect(document.activeElement).not.toBe(closeOf('Alpha'))
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('an aria-label names the live region, so two Toasters on a page stay distinct', async () => {
+  const screen = await render(() =>
+    h('div', [h(Toaster), h(Toaster, { name: 'uploads', 'aria-label': 'Upload status' })]),
+  )
+  await expect.element(page.getByRole('region', { name: 'Notifications' })).toBeInTheDocument()
+  await expect.element(page.getByRole('region', { name: 'Upload status' })).toBeInTheDocument()
+  expect(document.querySelectorAll('[aria-label="Upload status"]')).toHaveLength(1)
   await screen.unmount()
 })

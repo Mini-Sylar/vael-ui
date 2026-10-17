@@ -168,6 +168,7 @@
       :class="sizeSelectPart.class"
       :style="sizeSelectPart.style"
       size="sm"
+      :aria-label="messages.pagination.pageSize"
       :items="pageSizeItems"
       :model-value="pageSize"
       @update:model-value="onPageSizeChange"

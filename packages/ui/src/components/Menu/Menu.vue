@@ -25,17 +25,22 @@
           ref="panel"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
             <slot name="header" />
           </div>
           <div
             ref="list"
+            :id="menuId"
             role="menu"
             class="ui-menu-body"
             v-scroll-mask="scrollFade"
-            @keydown="onKeydown"
+            :data-virtual="virtualActive || undefined"
+            :tabindex="virtualActive ? -1 : undefined"
+            :style="virtualListStyle"
+            @keydown="onListKeydown"
+            @focusin="onListFocusin"
           >
             <!-- Custom slot ignores `items` — consumer owns the markup. -->
             <slot
@@ -48,13 +53,26 @@
               :placement="placement"
               :maxHeight="maxHeight"
             />
-            <template v-else v-for="(entry, i) in items" :key="i">
-              <div v-if="isSeparator(entry)" role="separator" class="ui-menu-separator" />
-              <template v-else>
+            <template v-else>
+              <div
+                v-if="virtualActive"
+                class="ui-menu-spacer"
+                role="none"
+                :style="{ blockSize: `${topSpacerHeight}px` }"
+              />
+              <template v-for="{ entry, i } in renderedEntries" :key="i">
+                <div
+                  v-if="isSeparator(entry)"
+                  :ref="virtualActive ? rowRef(i) : undefined"
+                  role="separator"
+                  class="ui-menu-separator"
+                />
                 <component
                   :is="nativeTag(tagOf(entry))"
+                  v-else
                   :type="tagOf(entry) === 'button' ? 'button' : undefined"
-                  role="menuitem"
+                  :role="isCheckable(entry) ? 'menuitemcheckbox' : 'menuitem'"
+                  :aria-checked="isCheckable(entry) ? entry.checked : undefined"
                   class="ui-menu-item"
                   :class="{ 'ui-menu-item--danger': entry.danger }"
                   :disabled="tagOf(entry) === 'button' ? entry.disabled : undefined"
@@ -65,7 +83,7 @@
                   :data-keep-open="entry.keepOpen ? '' : undefined"
                   :aria-haspopup="entry.items ? 'menu' : undefined"
                   :aria-expanded="entry.items ? !!submenuOpen[i] : undefined"
-                  :ref="(el: unknown) => setRowEl(i, el)"
+                  :ref="rowRef(i)"
                   @mouseenter="entry.items ? onRowMouseEnter(i, entry.disabled) : undefined"
                   @mouseleave="entry.items ? onRowMouseLeave(i) : undefined"
                   v-bind="entry.attrs"
@@ -90,13 +108,38 @@
                       </svg>
                     </span>
                   </slot>
+                  <!-- Outside the slot: a custom row still shows its checked state. -->
+                  <span
+                    v-if="isCheckable(entry) && entry.checked"
+                    class="ui-menu-item-check"
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+                      <path
+                        d="M3.5 8.5l3 3 6-7"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
                 </component>
-                <!-- Teleported to ancestor to stay in same DOM subtree for outside-click detection.
-                     #item is forwarded through `relayItemSlot` so a custom row keeps applying at
-                     every nesting depth instead of reverting to the default row past level one. -->
+              </template>
+              <div
+                v-if="virtualActive"
+                class="ui-menu-spacer"
+                role="none"
+                :style="{ blockSize: `${bottomSpacerHeight}px` }"
+              />
+              <!-- Mounted on first open only, so a long list doesn't build a closed Menu per branch row.
+                   Teleported to ancestor to stay in same DOM subtree for outside-click detection.
+                   #item is forwarded through `relayItemSlot` so a custom row keeps applying at
+                   every nesting depth instead of reverting to the default row past level one. -->
+              <template v-for="i in mountedSubmenus" :key="`submenu-${i}`">
                 <MenuSelf
-                  v-if="entry.items && positionerEl"
-                  :items="entry.items"
+                  v-if="submenuItems(i) && positionerEl"
+                  :items="submenuItems(i)"
                   :trigger-el="rowEls[i]"
                   v-model:open="submenuOpen[i]"
                   :open-path="revealedRow === i ? openPath?.slice(1) : undefined"
@@ -157,6 +200,8 @@ export interface MenuItemData {
   danger?: boolean
   /** Runs the handlers but leaves the menu open, for toggles and multi-select. */
   keepOpen?: boolean
+  /** Makes the row a checkbox toggle, checked when `true`; Menu doesn't flip it, so update it in `@select`. */
+  checked?: boolean
   /** Per-item handler; the `@select` event fires alongside it. */
   onSelect?: () => void
   /**
@@ -228,13 +273,18 @@ import {
   computed,
   inject,
   nextTick,
+  onBeforeUnmount,
   reactive,
+  shallowReactive,
   shallowRef,
+  useAttrs,
+  useId,
   useSlots,
   useTemplateRef,
   watch,
   watchEffect,
 } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { VNodeChild } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { createSlotRelay } from '../../composables/useSlotRelay'
@@ -244,10 +294,11 @@ import { createSlotRelay } from '../../composables/useSlotRelay'
 // circular import resolves fine: the default export is defined by instantiation time, long after
 // this module finishes evaluating.
 import MenuSelf from './Menu.vue'
-import { resolvePastDisplayContents, nativeTag } from '../../composables/dom'
+import { resolvePastDisplayContents, nativeTag, useSlotPresence } from '../../composables/dom'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
+import { useVirtualizer } from '../../composables/useVirtualizer'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -305,6 +356,7 @@ defineSlots<{
 }>()
 
 const slots = useSlots()
+const hasSlot = useSlotPresence(slots)
 
 // Renders the consumer's own #item slot for a nested submenu row. Captured from THIS instance
 // here, so forwarding it into the child <Menu> (see the template) can't turn into a self-call —
@@ -316,6 +368,10 @@ const relayItemSlot = createSlotRelay<{ item: T }>(
 
 function isSeparator(entry: MenuEntry<T>): entry is MenuSeparator {
   return (entry as MenuSeparator).type === 'separator'
+}
+
+function isCheckable(entry: MenuItemData): boolean {
+  return entry.checked !== undefined && !entry.items
 }
 
 // A row with nested `items` is a submenu trigger — always a button,
@@ -371,6 +427,11 @@ function onTriggerKeydown(event: KeyboardEvent) {
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const attrs = useAttrs()
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => attrs,
+)
 const listEl = useTemplateRef<HTMLElement>('list')
 const cx = useClassMerge()
 const themedUi = useThemedUi(
@@ -409,9 +470,35 @@ const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layer
 
 const rowEls = reactive<Record<number, HTMLElement | null>>({})
 const submenuOpen = reactive<Record<number, boolean>>({})
+// Rows whose submenu has opened; kept mounted after closing so the exit runs.
+const mountedSubmenus = shallowReactive(new Set<number>())
+
+function openSubmenu(i: number) {
+  mountedSubmenus.add(i)
+  submenuOpen[i] = true
+}
+
+function submenuItems(i: number): ReadonlyArray<MenuEntry<MenuItemData>> | undefined {
+  const entry = props.items?.[i]
+  return entry && !isSeparator(entry) ? entry.items : undefined
+}
 
 function setRowEl(i: number, el: unknown) {
   rowEls[i] = el instanceof HTMLElement ? el : null
+}
+
+// Stable ref callbacks: an inline arrow makes Vue call it with null, then the element, every update.
+const rowRefs = new Map<number, (el: unknown) => void>()
+function rowRef(i: number) {
+  let fn = rowRefs.get(i)
+  if (!fn) {
+    fn = (el) => {
+      setRowEl(i, el)
+      virtualizer.measureRow(i, el instanceof HTMLElement ? el : null)
+    }
+    rowRefs.set(i, fn)
+  }
+  return fn
 }
 
 const rowHovered: Record<number, boolean> = {}
@@ -464,7 +551,7 @@ function onRowMouseEnter(i: number, disabled?: boolean) {
   clearTimeout(openTimer)
   openTimer = setTimeout(() => {
     closeAllSubmenusExcept(i)
-    submenuOpen[i] = true
+    openSubmenu(i)
   }, HOVER_OPEN_DELAY)
   updateActive()
 }
@@ -537,20 +624,25 @@ const { onKeydown, focusFirst, focusItem } = useMenu({
     clearTimeout(openTimer)
     clearTimeout(closeTimers[i])
     closeAllSubmenusExcept(i)
-    submenuOpen[i] = true
+    openSubmenu(i)
     // Submenu's own focusFirst watcher handles focus (same mechanism as every Menu).
   },
   onCollapse: () => emit('collapse'),
 })
 
-// Set aria-haspopup/aria-expanded on focusable element inside slot wrapper.
+// Set the popup state on the slot's trigger, preferring a root that is itself the control.
+const TRIGGER_SELECTOR = 'button, [role="button"], [role="combobox"], a[href]'
+const menuId = useId()
 watchEffect(() => {
-  const trigger =
-    triggerWrapper.value?.querySelector<HTMLElement>('button, [role="button"], a[href]') ??
-    (triggerWrapper.value?.firstElementChild as HTMLElement | null)
+  const root = resolvedTriggerEl.value
+  const trigger = root?.matches(TRIGGER_SELECTOR)
+    ? root
+    : (triggerWrapper.value?.querySelector<HTMLElement>(TRIGGER_SELECTOR) ?? root)
   if (!trigger) return
   trigger.setAttribute('aria-haspopup', 'menu')
   trigger.setAttribute('aria-expanded', String(open.value))
+  if (open.value) trigger.setAttribute('aria-controls', menuId)
+  else trigger.removeAttribute('aria-controls')
 })
 
 // Row whose submenu `openPath` opened; only that submenu inherits the rest of the path, so a
@@ -569,14 +661,28 @@ function revealOpenPath(): boolean {
   const i = props.items.findIndex(
     (entry) => !isSeparator(entry) && !entry.disabled && (entry.value ?? entry.label) === head,
   )
-  const row = rowEls[i]
-  if (i < 0 || !row) return false
-  focusItem(row)
-  if (rest.length > 0 && (props.items[i] as MenuItemData).items) {
-    closeAllSubmenusExcept(i)
-    revealedRow.value = i
-    submenuOpen[i] = true
+  if (i < 0) return false
+  const reveal = (row: HTMLElement) => {
+    focusItem(row)
+    if (rest.length > 0 && (props.items![i] as MenuItemData).items) {
+      closeAllSubmenusExcept(i)
+      revealedRow.value = i
+      openSubmenu(i)
+    }
   }
+  const row = rowEls[i]
+  if (row) {
+    reveal(row)
+    return true
+  }
+  // A long list may not have rendered that row yet.
+  if (!virtualActive.value) return false
+  virtualizer.scrollToIndex(i, 'center')
+  void nextTick(() => {
+    const rendered = rowEls[i]
+    if (rendered) reveal(rendered)
+    else focusEdge()
+  })
   return true
 }
 
@@ -592,15 +698,164 @@ function focusEdge() {
   const edge = focusOnReady
   focusOnReady = 'first'
   if (edge === 'first') return focusFirst()
+  if (virtualActive.value) return focusIndex(stepEnabled(props.items!.length, -1))
   const rows = listEl.value?.querySelectorAll<HTMLElement>(
-    '[role="menuitem"]:not(:disabled):not([aria-disabled="true"])',
+    ':is([role="menuitem"], [role="menuitemcheckbox"]):not(:disabled):not([aria-disabled="true"])',
   )
   focusItem(rows?.[rows.length - 1])
 }
 
-const panelMaxHeightStyle = computed(() =>
-  maxHeight.value != null ? { maxHeight: `${maxHeight.value}px` } : {},
+// Long data-driven lists render only the rows in view, between two spacers.
+const VIRTUALIZE_THRESHOLD = 100
+const ROW_ESTIMATE = 36
+const virtualActive = computed(
+  () => !hasSlot('default') && (props.items?.length ?? 0) > VIRTUALIZE_THRESHOLD,
 )
+const virtualizer = useVirtualizer({
+  containerEl: listEl,
+  count: () => (virtualActive.value ? props.items!.length : 0),
+  dynamic: () => virtualActive.value,
+  estimateSize: ROW_ESTIMATE,
+})
+const renderedEntries = computed(() => {
+  const items = props.items ?? []
+  if (!virtualActive.value) return items.map((entry, i) => ({ entry, i }))
+  return virtualizer.items.value.map(({ index }) => ({ entry: items[index]!, i: index }))
+})
+const topSpacerHeight = computed(() => virtualizer.items.value[0]?.start ?? 0)
+const bottomSpacerHeight = computed(() => {
+  const rows = virtualizer.items.value
+  const last = rows[rows.length - 1]
+  return last ? Math.max(0, virtualizer.totalSize.value - (last.start + last.size)) : 0
+})
+
+// The panel takes the width of the widest row rendered so far, so it never narrows mid-scroll.
+const lockedWidth = shallowRef(0)
+watch(
+  virtualizer.items,
+  () => {
+    const width = virtualActive.value ? (listEl.value?.offsetWidth ?? 0) : 0
+    if (width > lockedWidth.value) lockedWidth.value = width
+  },
+  { flush: 'post' },
+)
+watch(open, (value) => {
+  if (!value) lockedWidth.value = 0
+})
+// {} not undefined: undefined clears the whole style attribute, dropping v-scroll-mask's vars.
+const virtualListStyle = computed(() =>
+  virtualActive.value && lockedWidth.value
+    ? { minInlineSize: `${lockedWidth.value}px`, boxSizing: 'border-box' as const }
+    : {},
+)
+
+// Keyboard moves span the whole list, not only the rendered rows.
+let activeIndex = -1
+function onListFocusin(event: FocusEvent) {
+  const index = (event.target as HTMLElement).dataset?.menuIndex
+  if (index !== undefined) activeIndex = Number(index)
+}
+function isEnabledIndex(i: number): boolean {
+  const entry = props.items?.[i]
+  return !!entry && !isSeparator(entry) && !entry.disabled
+}
+function stepEnabled(from: number, delta: 1 | -1): number | undefined {
+  const count = props.items?.length ?? 0
+  for (let step = 1; step <= count; step++) {
+    const i = (((from + delta * step) % count) + count) % count
+    if (isEnabledIndex(i)) return i
+  }
+  return undefined
+}
+function focusIndex(i: number | undefined) {
+  if (i === undefined) return
+  activeIndex = i
+  virtualizer.scrollToIndex(i)
+  void nextTick(() => focusItem(rowEls[i] ?? undefined))
+}
+
+const TYPEAHEAD_RESET_MS = 500
+let typeahead = ''
+let typeaheadTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => clearTimeout(typeaheadTimer))
+
+function onVirtualKeydown(event: KeyboardEvent): boolean {
+  const count = props.items!.length
+  const focused = document.activeElement as HTMLElement | null
+  const onRow = !!focused && focused !== listEl.value && !!listEl.value?.contains(focused)
+  const current = onRow ? Number(focused!.dataset.menuIndex ?? activeIndex) : activeIndex
+  let target: number | undefined
+  switch (event.key) {
+    case 'ArrowDown':
+      target = stepEnabled(current, 1)
+      break
+    case 'ArrowUp':
+      target = stepEnabled(current === -1 ? 0 : current, -1)
+      break
+    case 'Home':
+      target = stepEnabled(-1, 1)
+      break
+    case 'End':
+      target = stepEnabled(count, -1)
+      break
+    case ' ':
+      return false
+    default: {
+      if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return false
+      typeahead += event.key.toLowerCase()
+      clearTimeout(typeaheadTimer)
+      typeaheadTimer = setTimeout(() => {
+        typeahead = ''
+      }, TYPEAHEAD_RESET_MS)
+      const start = current === -1 ? 0 : current + 1
+      for (let step = 0; step < count && target === undefined; step++) {
+        const i = (start + step) % count
+        const entry = props.items![i]!
+        if (isEnabledIndex(i) && (entry as MenuItemData).label.toLowerCase().startsWith(typeahead))
+          target = i
+      }
+      if (target === undefined) return true
+    }
+  }
+  event.preventDefault()
+  focusIndex(target)
+  return true
+}
+function onListKeydown(event: KeyboardEvent) {
+  if (virtualActive.value && onVirtualKeydown(event)) return
+  onKeydown(event)
+}
+
+// Before a scroll unmounts the focused row, focus moves to the list and its submenu closes.
+watch(
+  virtualizer.items,
+  (rows) => {
+    if (!virtualActive.value || rows.length === 0) return
+    const first = rows[0]!.index
+    const last = rows[rows.length - 1]!.index
+    const inView = (i: number) => i >= first && i <= last
+    const focused = document.activeElement
+    if (!inView(activeIndex) && focused === rowEls[activeIndex]) {
+      listEl.value?.focus({ preventScroll: true })
+    }
+    for (const key of Object.keys(submenuOpen)) {
+      const i = Number(key)
+      if (submenuOpen[i] && !inView(i)) {
+        submenuOpen[i] = false
+        rowHovered[i] = false
+        panelHovered[i] = false
+        childActive[i] = false
+      }
+    }
+  },
+  { flush: 'pre' },
+)
+
+// Until floating-ui reports a height, the viewport bounds the list so it doesn't render every row.
+const panelMaxHeightStyle = computed(() => {
+  if (maxHeight.value != null) return { maxHeight: `${maxHeight.value}px` }
+  return virtualActive.value ? { maxHeight: '100vh' } : {}
+})
 
 const positionerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.positioner, 'ui-menu-positioner'),

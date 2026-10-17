@@ -5,7 +5,7 @@
     :data-motion="ctx.motionCss() ? undefined : 'off'"
     v-bind="attrs"
   >
-    <h3 :class="headerPart.class" :style="headerPart.style">
+    <component :is="headingTag" :class="headerPart.class" :style="headerPart.style">
       <button
         :id="triggerId"
         type="button"
@@ -37,7 +37,7 @@
           </svg>
         </slot>
       </button>
-    </h3>
+    </component>
     <div
       ref="panel"
       :id="panelId"
@@ -66,6 +66,7 @@ import { useCollapse } from '../../composables/useCollapse'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { nativeTag } from '../../composables/dom'
 
 defineOptions({ inheritAttrs: false })
 
@@ -77,6 +78,8 @@ const props = defineProps<{
   title?: string
   /** Disables the trigger so the item can't be toggled. */
   disabled?: boolean
+  /** Overrides the parent `Accordion`'s `headingLevel` for this item. */
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6
   /** Class and style overrides for each part. */
   ui?: Partial<{
     item: UiPartValue
@@ -106,6 +109,8 @@ function onToggle() {
   if (props.disabled) return
   ctx.toggle(props.value)
 }
+
+const headingTag = computed(() => nativeTag(`h${props.headingLevel ?? ctx.headingLevel()}`))
 
 const triggerId = useId()
 const panelId = useId()

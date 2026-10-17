@@ -21,6 +21,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useFocusableScroller } from '../../composables/useFocusableScroller'
 
 defineOptions({ inheritAttrs: false })
 
@@ -60,6 +61,7 @@ const scrollMaskValue = computed(() => {
 
 const root = useTemplateRef<HTMLElement>('root')
 const viewport = useTemplateRef<HTMLElement>('viewport')
+useFocusableScroller(viewport)
 
 // useScroll's own reactive arrived/direction/isScrolling state replaces this component's former
 // hand-rolled scroll-position tracking. `isScrolling` in particular is what usePullToRefresh now

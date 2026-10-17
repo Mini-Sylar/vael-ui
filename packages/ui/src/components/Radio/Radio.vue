@@ -4,7 +4,7 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="dataState"
-    v-bind="attrs"
+    v-bind="rootAttrs"
   >
     <span class="ui-radio-frame">
       <input
@@ -17,6 +17,7 @@
         :checked="isChecked"
         :disabled="isDisabled"
         @change="onNativeChange"
+        v-bind="inputAttrs"
       />
       <span
         ref="controlEl"
@@ -54,13 +55,14 @@ import {
   useTemplateRef,
 } from 'vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
+import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-const attrs = useAttrs()
+const { rootAttrs, inputAttrs } = useControlAttrs(useAttrs())
 const rawProps = withDefaults(
   defineProps<{
     /** Value the parent RadioGroup's model takes when this radio is selected. */

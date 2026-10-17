@@ -615,3 +615,23 @@ test('hidden inputs carry the selection into FormData; multiple repeats the name
     expect(data.getAll('fruit')).toEqual(['apple', 'banana'])
   })
 })
+
+test('multiple without maxLabels wraps its chips inside the field', async () => {
+  const { h } = await import('vue')
+  const items = Array.from({ length: 10 }, (_, i) => ({ label: `Item ${i + 1}`, value: i + 1 }))
+  const screen = await render(() =>
+    h('div', { style: 'inline-size: 380px' }, [
+      h(Combobox as never, { items, multiple: true, modelValue: items.map((i) => i.value) }),
+    ]),
+  )
+  const field = screen.container.querySelector<HTMLElement>('.ui-input')!.getBoundingClientRect()
+  const chips = [...screen.container.querySelectorAll<HTMLElement>('.ui-chip')].map((chip) =>
+    chip.getBoundingClientRect(),
+  )
+  expect(chips).toHaveLength(10)
+  for (const chip of chips) {
+    expect(chip.left).toBeGreaterThanOrEqual(field.left - 1)
+    expect(chip.right).toBeLessThanOrEqual(field.right + 1)
+  }
+  expect(new Set(chips.map((chip) => Math.round(chip.top))).size).toBeGreaterThan(1)
+})

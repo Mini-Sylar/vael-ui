@@ -32,7 +32,7 @@
           :aria-describedby="description ? descriptionId : undefined"
           :class="panelPart.class"
           :style="[panelPart.style, panelStyle]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <button
             v-if="maximizable"
@@ -205,7 +205,8 @@ export interface DialogProps {
 <script setup lang="ts">
 import './Dialog.css'
 import '../shared/tokens.css'
-import { computed, inject, ref, useId, useTemplateRef } from 'vue'
+import { computed, inject, ref, useAttrs, useId, useTemplateRef } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import { useEventListener } from '@vueuse/core'
 import { useDialog } from '../../composables/useDialog'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
@@ -262,6 +263,11 @@ defineSlots<{
 
 // Full panel (for FLIP demos and beforeClose measurement, not just scrollable middle).
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const attrs = useAttrs()
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => attrs,
+)
 // Exposed so a forceMount consumer can fade the backdrop with the panel.
 const overlayEl = useTemplateRef<HTMLElement>('overlay')
 // Outermost teleported node. `useInert` spares this rather than `panelEl` — otherwise

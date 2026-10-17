@@ -141,6 +141,15 @@
   }
   /* The space between rows is a transparent border, not a gap, so every point in the grid is
      part of a day and a click never lands between two. */
+  .ui-calendar-cell-label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
   .ui-calendar-cell {
     box-sizing: content-box;
     border-block: 1px solid transparent;

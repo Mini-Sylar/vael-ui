@@ -1,5 +1,5 @@
-import { shallowRef, toValue, watch } from 'vue'
-import type { Ref, ShallowRef, MaybeRefOrGetter } from 'vue'
+import { nextTick, onBeforeUpdate, shallowRef, toValue, watch } from 'vue'
+import type { Ref, ShallowRef, MaybeRefOrGetter, Slots } from 'vue'
 import { isClient, tryOnMounted } from '@vueuse/core'
 
 export type DOMTarget = HTMLElement | string | null
@@ -126,4 +126,81 @@ export function focusTargetIn(el: HTMLElement): HTMLElement | undefined {
  */
 export function nativeTag<T>(as: T): T {
   return (typeof as === 'string' && /^[a-z][a-z0-9]*$/.test(as) ? as.toUpperCase() : as) as T
+}
+
+export interface ClickGuard {
+  arm: () => void
+  /** True once if armed, for the click handler to cancel the event. */
+  consume: () => boolean
+  disarm: () => void
+}
+
+/**
+ * Swallows the click a drag's release can produce. The release gets no click when it lands
+ * on another element, so the next press or key disarms the guard instead of letting it eat
+ * a real click later.
+ */
+export function createClickGuard(): ClickGuard {
+  let armed = false
+  const opts = { capture: true, passive: true }
+  function disarm() {
+    if (!armed) return
+    armed = false
+    window.removeEventListener('pointerdown', disarm, opts)
+    window.removeEventListener('keydown', disarm, opts)
+  }
+  return {
+    arm() {
+      if (armed) return
+      armed = true
+      window.addEventListener('pointerdown', disarm, opts)
+      window.addEventListener('keydown', disarm, opts)
+    },
+    consume() {
+      const was = armed
+      disarm()
+      return was
+    },
+    disarm,
+  }
+}
+
+/**
+ * `:ref` callback for a `<TransitionGroup>` that also renders `:data-ui-group="key"`. vdom hands
+ * over the component, whose `$el` is the element. Vapor hands over an object without one, so the
+ * element is found by that attribute once it's in the document.
+ */
+export function transitionGroupRef(target: Ref<HTMLElement | null>, key: string) {
+  return (el: Element | { $el?: unknown } | null): void => {
+    if (!el) target.value = null
+    else if (el instanceof HTMLElement) target.value = el
+    else if ('$el' in el && el.$el instanceof HTMLElement) target.value = el.$el
+    else
+      void nextTick(() => {
+        target.value = document.querySelector<HTMLElement>(`[data-ui-group="${key}"]`)
+      })
+  }
+}
+
+/**
+ * `hasSlot(name)` for use inside a `computed`. Classic components don't track `slots`, so a
+ * computed that checks one would keep its first answer after the slot is added or removed;
+ * this re-runs it when a re-render brings a change, and only then.
+ */
+export function useSlotPresence(slots: Slots): (name: string) => boolean {
+  const seen = new Map<string, boolean>()
+  const version = shallowRef(0)
+  onBeforeUpdate(() => {
+    for (const [name, had] of seen) {
+      if (!!slots[name] === had) continue
+      version.value++
+      return
+    }
+  })
+  return (name) => {
+    void version.value
+    const has = !!slots[name]
+    seen.set(name, has)
+    return has
+  }
 }

@@ -51,6 +51,9 @@
     align-items: center;
     gap: 0.25rem;
     overflow: hidden;
+    /* Clip room for the chip remove's 24px hit area; the margin keeps the layout. */
+    padding-block: 4px;
+    margin-block: -4px;
   }
   .ui-select-filter {
     flex: none;

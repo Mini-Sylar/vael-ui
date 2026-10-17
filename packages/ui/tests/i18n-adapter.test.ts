@@ -10,6 +10,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { nextTick, shallowRef } from 'vue'
 import I18nAdapterFixture from './fixtures/I18nAdapterFixture.vue'
+import { resolveMessagesFromI18n } from '../src/messages'
 
 function closeLabel() {
   return document.querySelector('.ui-dialog-close')?.getAttribute('aria-label')
@@ -99,4 +100,26 @@ test('an app translating some uiKit keys gets one warning per locale listing the
   locale.value = 'xx-partial-2'
   await expect.poll(() => warn.mock.calls.length).toBe(2)
   warn.mockRestore()
+})
+
+test('resolves the page-size label from uiKit.pagination.pageSize', () => {
+  const resolved = resolveMessagesFromI18n({
+    t: (key: string) => (key === 'uiKit.pagination.pageSize' ? 'Filas por página' : key),
+  })
+  expect(resolved.pagination).toEqual({ pageSize: 'Filas por página' })
+})
+
+test('resolves the range slider thumb names from uiKit.slider.*', () => {
+  const resolved = resolveMessagesFromI18n({
+    t: (key: string) =>
+      key === 'uiKit.slider.minimum' ? 'Mínimo' : key === 'uiKit.slider.maximum' ? 'Máximo' : key,
+  })
+  expect(resolved.slider).toEqual({ minimum: 'Mínimo', maximum: 'Máximo' })
+})
+
+test('resolves the CascadeSelect count summary from uiKit.cascadeSelect.selectedCount', () => {
+  const resolved = resolveMessagesFromI18n({
+    t: (key: string) => (key === 'uiKit.cascadeSelect.selectedCount' ? '{count} elegidos' : key),
+  })
+  expect(resolved.cascadeSelect).toEqual({ selectedCount: '{count} elegidos' })
 })

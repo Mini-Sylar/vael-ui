@@ -1,5 +1,5 @@
 import { inject, provide } from 'vue'
-import type { InjectionKey, Ref } from 'vue'
+import type { Component, InjectionKey, Ref } from 'vue'
 
 export interface RegisteredColumn<T> {
   field: keyof T
@@ -14,6 +14,10 @@ export interface RegisteredColumn<T> {
   reorderable?: boolean
   cellSlot?: (p: { row: T; value: T[keyof T] }) => unknown
   headerSlot?: (p: { column: RegisteredColumn<T> }) => unknown
+  /** Internal: what the table renders for `cellSlot`, safe under vaporInteropPlugin. */
+  cellRelay?: Component
+  /** Internal: what the table renders for `headerSlot`. */
+  headerRelay?: Component
   /** Hidden marker; used to resort columns into DOM order after updates. */
   el?: Element | null
 }

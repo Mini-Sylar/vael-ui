@@ -1,4 +1,4 @@
-import { inject, ref, toValue } from 'vue'
+import { inject, shallowRef, toValue } from 'vue'
 import type { InjectionKey, MaybeRefOrGetter, Ref } from 'vue'
 
 export interface UiMessages {
@@ -49,6 +49,8 @@ export interface UiMessages {
   cascadeSelect: {
     empty: string
     clear: string
+    /** `{count}` is replaced with the number of selected leaves, for `display="count"`. */
+    selectedCount: string
   }
   treeSelect: {
     clear: string
@@ -67,6 +69,8 @@ export interface UiMessages {
   commandPalette: {
     placeholder: string
     empty: string
+    /** Accessible name of the palette's dialog. */
+    label: string
   }
   tour: {
     next: string
@@ -89,6 +93,8 @@ export interface UiMessages {
     page: string
     next: string
     last: string
+    /** aria-label for the page-size select. */
+    pageSize: string
   }
   datePicker: {
     /** aria-label for the trigger button that opens the calendar. */
@@ -111,6 +117,8 @@ export interface UiMessages {
     selectRow: string
     collapseRow: string
     expandRow: string
+    /** Read out while `loading` is on. */
+    loading: string
   }
   /** Drag-to-reorder. These carry `{label}`, `{position}`, `{total}` and `{depth}` placeholders rather than being functions, so a consumer's own `t()` can return them as plain strings like every other entry here. */
   sortable: {
@@ -126,6 +134,11 @@ export interface UiMessages {
   /** `{value}` and `{max}` are replaced with the current and maximum rating. */
   rating: {
     valueText: string
+  }
+  /** Range slider thumb names, read after the slider's own label ("Price Minimum"). */
+  slider: {
+    minimum: string
+    maximum: string
   }
 }
 
@@ -153,12 +166,16 @@ export const defaultMessages: UiMessages = {
     create: 'Create "{query}"',
   },
   fileUpload: { browse: 'Browse files', drop: 'Drop files here', remove: 'Remove' },
-  cascadeSelect: { empty: 'No options', clear: 'Clear selection' },
+  cascadeSelect: {
+    empty: 'No options',
+    clear: 'Clear selection',
+    selectedCount: '{count} selected',
+  },
   treeSelect: { clear: 'Clear selection' },
   chip: { remove: 'Remove' },
   splitButton: { more: 'More actions' },
   breadcrumb: { label: 'Breadcrumb' },
-  commandPalette: { placeholder: 'Search…', empty: 'No results' },
+  commandPalette: { placeholder: 'Search…', empty: 'No results', label: 'Command palette' },
   tour: {
     next: 'Next',
     back: 'Back',
@@ -174,6 +191,7 @@ export const defaultMessages: UiMessages = {
     page: 'Page {page}',
     next: 'Next page',
     last: 'Last page',
+    pageSize: 'Rows per page',
   },
   datePicker: {
     chooseDate: 'Choose date',
@@ -191,6 +209,7 @@ export const defaultMessages: UiMessages = {
     selectRow: 'Select row',
     collapseRow: 'Collapse row',
     expandRow: 'Expand row',
+    loading: 'Loading…',
   },
   sortable: {
     instructions:
@@ -202,6 +221,7 @@ export const defaultMessages: UiMessages = {
     cancelled: 'Reordering cancelled. {label} returned to its original position.',
   },
   rating: { valueText: '{value} of {max}' },
+  slider: { minimum: 'Minimum', maximum: 'Maximum' },
 }
 
 export const messagesKey: InjectionKey<Ref<UiMessages>> = Symbol('ui-messages')
@@ -211,7 +231,9 @@ export const messagesKey: InjectionKey<Ref<UiMessages>> = Symbol('ui-messages')
  * `ConfigProvider` (or manual `provide(messagesKey, ...)`) is above us.
  */
 export function useUiMessages(): Ref<UiMessages> {
-  return inject(messagesKey, () => ref(defaultMessages), true)
+  // Shallow: the defaults never change, and a deep ref would make the shared
+  // module object reactive, which keeps each server render's computeds alive.
+  return inject(messagesKey, () => shallowRef(defaultMessages), true)
 }
 
 export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): UiMessages {
@@ -239,6 +261,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     dataTable: { ...base.dataTable, ...overrides.dataTable },
     sortable: { ...base.sortable, ...overrides.sortable },
     rating: { ...base.rating, ...overrides.rating },
+    slider: { ...base.slider, ...overrides.slider },
   }
 }
 
@@ -298,7 +321,11 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     drop: 'uiKit.fileUpload.drop',
     remove: 'uiKit.fileUpload.remove',
   },
-  cascadeSelect: { empty: 'uiKit.cascadeSelect.empty', clear: 'uiKit.cascadeSelect.clear' },
+  cascadeSelect: {
+    empty: 'uiKit.cascadeSelect.empty',
+    clear: 'uiKit.cascadeSelect.clear',
+    selectedCount: 'uiKit.cascadeSelect.selectedCount',
+  },
   treeSelect: { clear: 'uiKit.treeSelect.clear' },
   chip: { remove: 'uiKit.chip.remove' },
   splitButton: { more: 'uiKit.splitButton.more' },
@@ -306,6 +333,7 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
   commandPalette: {
     placeholder: 'uiKit.commandPalette.placeholder',
     empty: 'uiKit.commandPalette.empty',
+    label: 'uiKit.commandPalette.label',
   },
   tour: {
     next: 'uiKit.tour.next',
@@ -322,6 +350,7 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     page: 'uiKit.pagination.page',
     next: 'uiKit.pagination.next',
     last: 'uiKit.pagination.last',
+    pageSize: 'uiKit.pagination.pageSize',
   },
   datePicker: {
     chooseDate: 'uiKit.datePicker.chooseDate',
@@ -339,6 +368,7 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     selectRow: 'uiKit.dataTable.selectRow',
     collapseRow: 'uiKit.dataTable.collapseRow',
     expandRow: 'uiKit.dataTable.expandRow',
+    loading: 'uiKit.dataTable.loading',
   },
   sortable: {
     instructions: 'uiKit.sortable.instructions',
@@ -349,6 +379,7 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     cancelled: 'uiKit.sortable.cancelled',
   },
   rating: { valueText: 'uiKit.rating.valueText' },
+  slider: { minimum: 'uiKit.slider.minimum', maximum: 'uiKit.slider.maximum' },
 }
 
 // vue-i18n reads these options and skips its missing-key warning, since a missing key just means
@@ -459,9 +490,13 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
 
   const cascadeEmpty = t(i18nKeyMap.cascadeSelect.empty)
   const cascadeClear = t(i18nKeyMap.cascadeSelect.clear)
+  const cascadeSelectedCount = t(i18nKeyMap.cascadeSelect.selectedCount)
   const cascadeSelect: PartialUiMessages['cascadeSelect'] = {}
   if (cascadeEmpty !== i18nKeyMap.cascadeSelect.empty) cascadeSelect.empty = cascadeEmpty
   if (cascadeClear !== i18nKeyMap.cascadeSelect.clear) cascadeSelect.clear = cascadeClear
+  if (cascadeSelectedCount !== i18nKeyMap.cascadeSelect.selectedCount) {
+    cascadeSelect.selectedCount = cascadeSelectedCount
+  }
   if (Object.keys(cascadeSelect).length > 0) result.cascadeSelect = cascadeSelect
 
   const treeSelectClear = t(i18nKeyMap.treeSelect.clear)
@@ -491,6 +526,10 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (commandPaletteEmpty !== i18nKeyMap.commandPalette.empty) {
     commandPalette.empty = commandPaletteEmpty
   }
+  const commandPaletteLabel = t(i18nKeyMap.commandPalette.label)
+  if (commandPaletteLabel !== i18nKeyMap.commandPalette.label) {
+    commandPalette.label = commandPaletteLabel
+  }
   if (Object.keys(commandPalette).length > 0) result.commandPalette = commandPalette
 
   const tourNext = t(i18nKeyMap.tour.next)
@@ -515,6 +554,7 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   const paginationPage = t(i18nKeyMap.pagination.page)
   const paginationNext = t(i18nKeyMap.pagination.next)
   const paginationLast = t(i18nKeyMap.pagination.last)
+  const paginationPageSize = t(i18nKeyMap.pagination.pageSize)
   const pagination: PartialUiMessages['pagination'] = {}
   if (paginationLabel !== i18nKeyMap.pagination.label) pagination.label = paginationLabel
   if (paginationFirst !== i18nKeyMap.pagination.first) pagination.first = paginationFirst
@@ -524,6 +564,9 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (paginationPage !== i18nKeyMap.pagination.page) pagination.page = paginationPage
   if (paginationNext !== i18nKeyMap.pagination.next) pagination.next = paginationNext
   if (paginationLast !== i18nKeyMap.pagination.last) pagination.last = paginationLast
+  if (paginationPageSize !== i18nKeyMap.pagination.pageSize) {
+    pagination.pageSize = paginationPageSize
+  }
   if (Object.keys(pagination).length > 0) result.pagination = pagination
 
   const chooseDate = t(i18nKeyMap.datePicker.chooseDate)
@@ -559,6 +602,7 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   const dataTableSelectRow = t(i18nKeyMap.dataTable.selectRow)
   const dataTableCollapseRow = t(i18nKeyMap.dataTable.collapseRow)
   const dataTableExpandRow = t(i18nKeyMap.dataTable.expandRow)
+  const dataTableLoading = t(i18nKeyMap.dataTable.loading)
   const dataTable: PartialUiMessages['dataTable'] = {}
   if (dataTableSelectAll !== i18nKeyMap.dataTable.selectAll) {
     dataTable.selectAll = dataTableSelectAll
@@ -571,6 +615,9 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   }
   if (dataTableExpandRow !== i18nKeyMap.dataTable.expandRow) {
     dataTable.expandRow = dataTableExpandRow
+  }
+  if (dataTableLoading !== i18nKeyMap.dataTable.loading) {
+    dataTable.loading = dataTableLoading
   }
   if (Object.keys(dataTable).length > 0) result.dataTable = dataTable
 
@@ -607,6 +654,13 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
     rating.valueText = ratingValueText
   }
   if (Object.keys(rating).length > 0) result.rating = rating
+
+  const sliderMinimum = t(i18nKeyMap.slider.minimum)
+  const sliderMaximum = t(i18nKeyMap.slider.maximum)
+  const slider: PartialUiMessages['slider'] = {}
+  if (sliderMinimum !== i18nKeyMap.slider.minimum) slider.minimum = sliderMinimum
+  if (sliderMaximum !== i18nKeyMap.slider.maximum) slider.maximum = sliderMaximum
+  if (Object.keys(slider).length > 0) result.slider = slider
 
   if (isDev() && found > 0 && missing.length > 0) {
     const locale = toValue(i18n.locale) ?? ''

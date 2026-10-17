@@ -8,6 +8,18 @@ import { beforeEach, expect, test, vi } from 'vitest'
 // carrying the definition) just enough to exercise setup()'s own logic —
 // which component names it registers, respecting `exclude` — in isolation.
 const addComponent = vi.fn()
+type ViteHook = (
+  config: { optimizeDeps?: { include?: string[] } },
+  env: { isClient: boolean },
+) => void
+function fakeNuxt(dev = true) {
+  const hooks: Record<string, ViteHook> = {}
+  return {
+    options: { vue: {} as { vapor?: boolean }, dev },
+    hooks,
+    hook: (name: string, fn: ViteHook) => void (hooks[name] = fn),
+  }
+}
 vi.mock('@nuxt/kit', () => ({
   addComponent,
   defineNuxtModule: (def: {
@@ -16,7 +28,7 @@ vi.mock('@nuxt/kit', () => ({
     meta: unknown
   }) =>
     Object.assign(
-      (options: Record<string, unknown> = {}, nuxt: unknown = { options: { vue: {} } }) =>
+      (options: Record<string, unknown> = {}, nuxt: unknown = fakeNuxt()) =>
         def.setup({ ...(def.defaults as object), ...options }, nuxt),
       {
         getMeta: () => def.meta,
@@ -52,7 +64,7 @@ test('by default every registration resolves name/export from "vael-ui"', async 
 
 test("variant 'vapor' registers from vael-ui/vapor and turns on Nuxt's vue.vapor", async () => {
   const { default: vaelUiNuxtModule } = await import('../src/nuxt/index')
-  const nuxt = { options: { vue: {} as { vapor?: boolean } } }
+  const nuxt = fakeNuxt()
   vaelUiNuxtModule({ variant: 'vapor' }, nuxt)
 
   expect(nuxt.options.vue.vapor).toBe(true)
@@ -79,4 +91,26 @@ test('module metadata: name/configKey used to identify + configure it in nuxt.co
   ).getMeta()
   expect(meta.name).toBe('vael-ui')
   expect(meta.configKey).toBe('vaelUi')
+})
+
+test('in dev, the client pre-bundles the dependencies vael-ui loads at runtime', async () => {
+  const { default: vaelUiNuxtModule } = await import('../src/nuxt/index')
+  const dev = fakeNuxt(true)
+  vaelUiNuxtModule({}, dev)
+  const client = { optimizeDeps: { include: ['existing'] } }
+  dev.hooks['vite:extendConfig']!(client, { isClient: true })
+  expect(client.optimizeDeps.include).toEqual([
+    'existing',
+    'vael-ui > @floating-ui/dom',
+    'vael-ui > @vueuse/core',
+  ])
+  const server: { optimizeDeps?: { include?: string[] } } = {}
+  dev.hooks['vite:extendConfig']!(server, { isClient: false })
+  expect(server.optimizeDeps).toBeUndefined()
+
+  const prod = fakeNuxt(false)
+  vaelUiNuxtModule({}, prod)
+  const prodClient: { optimizeDeps?: { include?: string[] } } = {}
+  prod.hooks['vite:extendConfig']!(prodClient, { isClient: true })
+  expect(prodClient.optimizeDeps).toBeUndefined()
 })

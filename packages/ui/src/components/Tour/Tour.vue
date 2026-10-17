@@ -159,7 +159,7 @@ import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
 import { isComposing, useLayer } from '../../composables/useLayerStack'
 import { useThemedUi } from '../../theme'
-import { ssrDocument } from '../../ssr'
+import { ssrDocument, ssrWindow } from '../../ssr'
 import { useUiMessages } from '../../messages'
 import { withProviderDefaults } from '../../config'
 
@@ -466,7 +466,7 @@ useEventListener(() => (open.value ? ssrDocument() : undefined), 'keydown', onKe
 // above the tour after that (a Dialog from the target) gets Escape first. skip() (not close())
 // lets the consumer unwind it.
 useEventListener(
-  () => (open.value && props.closeOnEsc ? window : undefined),
+  () => (open.value && props.closeOnEsc ? ssrWindow() : undefined),
   'keydown',
   (event: KeyboardEvent) => {
     if (event.key !== 'Escape' || event.defaultPrevented || isComposing(event)) return

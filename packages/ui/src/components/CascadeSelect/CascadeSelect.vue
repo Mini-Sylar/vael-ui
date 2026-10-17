@@ -40,7 +40,7 @@
           :aria-disabled="isDisabled || undefined"
           :data-state="menuOpen ? 'open' : 'closed'"
           :data-invalid="isInvalid || undefined"
-          :data-placeholder="!selectedItem || undefined"
+          :data-placeholder="isEmpty || undefined"
           :aria-describedby="fieldControl.describedBy()"
           :aria-labelledby="
             (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
@@ -53,16 +53,42 @@
           @blur="onTriggerBlur"
         >
           <span :class="valuePart.class" :style="valuePart.style">
-            <slot name="value" :selected="selectedItem as T | null" :path="selectedPath">
-              <span v-if="!selectedItem" class="ui-cascade-select-placeholder">{{
-                placeholder
-              }}</span>
-              <template v-else>{{ selectedItem.label }}</template>
+            <slot name="value" :selected="selectedForSlot" :path="pathForSlot">
+              <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{ placeholder }}</span>
+              <template v-else-if="!multiple">{{ selectedItem?.label }}</template>
+              <span v-else-if="display === 'text'">{{ displayLabel }}</span>
+              <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
+              <TransitionGroup
+                v-else
+                name="ui-chip-item"
+                tag="span"
+                class="ui-cascade-select-chips"
+                :css="props.motionCss"
+                :data-motion="props.motionCss ? undefined : 'off'"
+                @enter="chipEnterHook"
+                @leave="chipLeaveHook"
+              >
+                <Chip
+                  v-for="match in visibleChips"
+                  :key="match.item.value"
+                  :label="match.item.label"
+                  removable
+                  :disabled="isDisabled"
+                  @remove="removeChip(match.item)"
+                />
+                <span
+                  v-if="hiddenChipCount > 0"
+                  key="__overflow"
+                  class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+                >
+                  +{{ hiddenChipCount }}
+                </span>
+              </TransitionGroup>
             </slot>
           </span>
           <Transition name="ui-clear">
             <button
-              v-if="clearable && selectedItem && !isDisabled"
+              v-if="clearable && !isEmpty && !isDisabled"
               type="button"
               class="ui-cascade-select-clear"
               :aria-label="messages.cascadeSelect.clear"
@@ -123,7 +149,18 @@
         <slot name="footer" />
       </template>
     </Menu>
-    <input v-if="name" type="hidden" :name="name" :value="model ?? ''" />
+    <template v-if="name">
+      <input v-if="!multiple" type="hidden" :name="name" :value="model ?? ''" />
+      <template v-else>
+        <input
+          v-for="value in Array.isArray(model) ? model : []"
+          :key="value"
+          type="hidden"
+          :name="name"
+          :value="value"
+        />
+      </template>
+    </template>
   </div>
 </template>
 
@@ -145,13 +182,22 @@ export type CascadeSelectPath = (string | number)[]
 </script>
 
 <!-- Wraps Menu's submenu engine; nodeByKey side-table preserves type at all depths. -->
-<script setup lang="ts" generic="T extends CascadeSelectItem = CascadeSelectItem">
+<script
+  setup
+  lang="ts"
+  generic="
+    T extends CascadeSelectItem = CascadeSelectItem,
+    V extends string | number | (string | number)[] | null = string | number | null
+  "
+>
 import './CascadeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../shared/chip.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'
+import Chip from '../Chip/Chip.vue'
 import type { MenuAlign, MenuItemData, MenuSide } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -163,8 +209,11 @@ import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-/** Selected leaf value. @default null */
-const model = defineModel<string | number | null>({ default: null })
+/**
+ * Selected leaf value, or an array of leaf values with `multiple`.
+ * @default null
+ */
+const model = defineModel<V>()
 /** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
@@ -174,6 +223,17 @@ const rawProps = withDefaults(
     items: readonly T[]
     /** Text shown in the trigger when nothing is selected. */
     placeholder?: string
+    /**
+     * Selects several leaves: the model becomes an array and the panel stays open on pick.
+     * @default false
+     */
+    multiple?: boolean
+    /** `multiple` only: chips shown before the rest collapse into a "+N" chip. */
+    maxLabels?: number
+    /** `multiple` only: `'chip'` shows chips, `'text'` joined labels, `'count'` "N selected".
+     * @default 'chip'
+     */
+    display?: 'chip' | 'text' | 'count'
     /**
      * Disables the trigger and keeps the panel from opening. A disabled parent Field also disables it.
      * @default false
@@ -185,7 +245,7 @@ const rawProps = withDefaults(
     invalid?: boolean
     /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
-    /** When set, renders an `<input type="hidden">` with this name that mirrors the leaf value, for plain `<form>` posts. */
+    /** Renders hidden inputs so a plain `<form>` post carries the selection. */
     name?: string
     /** Which side of the trigger the panel opens on. @default 'bottom' */
     side?: MenuSide
@@ -210,6 +270,10 @@ const rawProps = withDefaults(
      * @default true
      */
     scrollFade?: boolean
+    /** `false` skips the built-in chip transitions; animate via `@chip-enter`/`@chip-leave`.
+     * @default true
+     */
+    motionCss?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
@@ -222,6 +286,9 @@ const rawProps = withDefaults(
   }>(),
   {
     placeholder: undefined,
+    multiple: false,
+    maxLabels: undefined,
+    display: 'chip',
     disabled: false,
     clearable: false,
     invalid: false,
@@ -236,23 +303,38 @@ const rawProps = withDefaults(
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,
+    motionCss: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md' })
+const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
 
 const emit = defineEmits<{
   /** Fires before the panel closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
-  /** Fires when the value changes by picking a leaf or clearing (`null`). */
-  change: [value: string | number | null]
-  /** Fires when a leaf is picked, with the item and its root-to-leaf path. */
+  /** Fires when you change the selection: picking a leaf, removing a chip, or clearing. */
+  change: [value: V]
+  /** Fires when a leaf is picked or unpicked, with the item and its root-to-leaf path. */
   select: [item: T, path: CascadeSelectPath]
+  /** Replaces the chip enter transition when `motionCss` is `false`; call `done()` when finished. */
+  'chip-enter': [el: Element, done: () => void]
+  /** Same as `@chip-enter`, for a chip's removal. */
+  'chip-leave': [el: Element, done: () => void]
 }>()
 
+const chipEnterHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
+)
+const chipLeaveHook = computed(() =>
+  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-leave', el, done),
+)
+
 defineSlots<{
-  /** Custom trigger content; receives the selected leaf item and its root-to-leaf path. */
-  value(props: { selected: T | null; path: CascadeSelectPath }): unknown
+  /** Custom trigger content; receives the selected leaf and its path, or arrays of both. */
+  value(props: {
+    selected: V extends unknown[] ? T[] : T | null
+    path: V extends unknown[] ? CascadeSelectPath[] : CascadeSelectPath
+  }): unknown
   /** Content above the row list, forwarded to the underlying Menu's `#header`. */
   header(): unknown
   /** Custom row content at any level; the row keeps its expand and select behavior. */
@@ -263,53 +345,110 @@ defineSlots<{
   footer(): unknown
 }>()
 
-function findLeaf(
-  items: readonly CascadeSelectItem[],
-  value: string | number,
-  path: CascadeSelectPath = [],
-): { item: CascadeSelectItem; path: CascadeSelectPath } | null {
-  for (const item of items) {
-    const nextPath = [...path, item.value]
-    if (item.children && item.children.length > 0) {
-      const found = findLeaf(item.children, value, nextPath)
-      if (found) return found
-    } else if (item.value === value) {
-      return { item, path: nextPath }
-    }
-  }
-  return null
+interface LeafMatch {
+  item: CascadeSelectItem
+  path: CascadeSelectPath
 }
 
-// Derive from model + tree at render time, not capture at selection; handles programmatic resets.
-const selectedMatch = computed(() =>
-  model.value == null ? null : findLeaf(props.items, model.value),
-)
-const selectedItem = computed(() => selectedMatch.value?.item ?? null)
-const selectedPath = computed<CascadeSelectPath>(() => selectedMatch.value?.path ?? [])
+// First leaf per value, in tree order; stops once every value is found.
+function collectLeaves(
+  items: readonly CascadeSelectItem[],
+  pending: Set<string | number>,
+  path: CascadeSelectPath,
+  out: LeafMatch[],
+) {
+  for (const item of items) {
+    if (pending.size === 0) return
+    const nextPath = [...path, item.value]
+    if (item.children && item.children.length > 0) {
+      collectLeaves(item.children, pending, nextPath, out)
+    } else if (pending.has(item.value)) {
+      pending.delete(item.value)
+      out.push({ item, path: nextPath })
+    }
+  }
+}
 
-// Side-table rebuilt each render to map synthetic Menu keys back to CascadeSelectItem (preserves type at all depths).
-const nodeByKey = new Map<string, CascadeSelectItem>()
+const selectedValues = computed<(string | number)[]>(() => {
+  const value = model.value
+  if (props.multiple) return Array.isArray(value) ? value : []
+  return value == null || Array.isArray(value) ? [] : [value]
+})
+const selectedSet = computed(() => new Set(selectedValues.value))
+
+// Derive from model + tree at render time, not capture at selection; handles programmatic resets.
+const selectedMatches = computed<LeafMatch[]>(() => {
+  const out: LeafMatch[] = []
+  collectLeaves(props.items, new Set(selectedSet.value), [], out)
+  return out
+})
+const selectedItem = computed(() =>
+  props.multiple ? null : ((selectedMatches.value[0]?.item as T | undefined) ?? null),
+)
+const selectedPath = computed<CascadeSelectPath>(() =>
+  props.multiple ? [] : (selectedMatches.value[0]?.path ?? []),
+)
+const isEmpty = computed(() => selectedMatches.value.length === 0)
+const selectedForSlot = computed(
+  () =>
+    (props.multiple
+      ? selectedMatches.value.map((match) => match.item)
+      : selectedItem.value) as V extends unknown[] ? T[] : T | null,
+)
+const pathForSlot = computed(
+  () =>
+    (props.multiple
+      ? selectedMatches.value.map((match) => match.path)
+      : selectedPath.value) as V extends unknown[] ? CascadeSelectPath[] : CascadeSelectPath,
+)
+const displayLabel = computed(() =>
+  selectedMatches.value.map((match) => match.item.label).join(', '),
+)
+const visibleChips = computed(() =>
+  props.maxLabels != null ? selectedMatches.value.slice(0, props.maxLabels) : selectedMatches.value,
+)
+const hiddenChipCount = computed(() =>
+  props.maxLabels != null ? Math.max(0, selectedMatches.value.length - props.maxLabels) : 0,
+)
+const selectedCountLabel = computed(() =>
+  messages.value.cascadeSelect.selectedCount.replace(
+    '{count}',
+    String(selectedMatches.value.length),
+  ),
+)
+
+// Rebuilt each render: maps synthetic Menu keys back to their node and path.
+const nodeByKey = new Map<string, LeafMatch>()
 let nodeSeq = 0
 
-// `path` is the rest of the selected path while this level is on it; its rows get
-// `data-cascade-selected`.
+// `paths`: the rest of each selected path through this level; those rows get `data-cascade-selected`.
 function buildEntries(
   items: readonly CascadeSelectItem[],
-  path: CascadeSelectPath | undefined,
+  paths: readonly CascadeSelectPath[],
+  parentPath: CascadeSelectPath,
 ): MenuItemData[] {
+  const restByHead = new Map<string | number, CascadeSelectPath[]>()
+  for (const path of paths) {
+    if (path.length === 0) continue
+    const rest = restByHead.get(path[0]!)
+    if (rest) rest.push(path.slice(1))
+    else restByHead.set(path[0]!, [path.slice(1)])
+  }
   return items.map((item) => {
     const key = String(nodeSeq++)
-    nodeByKey.set(key, item)
+    const path = [...parentPath, item.value]
+    nodeByKey.set(key, { item, path })
     const hasChildren = !!item.children && item.children.length > 0
-    const onPath = path !== undefined && path[0] === item.value
+    const rest = restByHead.get(item.value)
     return {
       label: item.label,
       value: key,
       disabled: item.disabled,
-      attrs: onPath ? { 'data-cascade-selected': '' } : undefined,
-      items: hasChildren
-        ? buildEntries(item.children!, onPath ? path.slice(1) : undefined)
-        : undefined,
+      attrs: rest ? { 'data-cascade-selected': '' } : undefined,
+      ...(props.multiple && !hasChildren
+        ? { checked: selectedSet.value.has(item.value), keepOpen: true }
+        : {}),
+      items: hasChildren ? buildEntries(item.children!, rest ?? [], path) : undefined,
     }
   })
 }
@@ -317,10 +456,14 @@ function buildEntries(
 const mappedItems = computed(() => {
   nodeByKey.clear()
   nodeSeq = 0
-  return buildEntries(props.items, selectedPath.value)
+  return buildEntries(
+    props.items,
+    selectedMatches.value.map((match) => match.path),
+    [],
+  )
 })
 
-// Menu keys along the selected path: reopening reveals the selection instead of the first row.
+// Menu keys along the (first) selected path: reopening reveals it instead of the first row.
 const openKeyPath = computed(() => {
   const keys: string[] = []
   let level: readonly MenuItemData[] | undefined = mappedItems.value
@@ -336,18 +479,34 @@ const openKeyPath = computed(() => {
 })
 
 function resolveItem(entry: MenuItemData): CascadeSelectItem {
-  const item = entry.value !== undefined ? nodeByKey.get(entry.value) : undefined
+  const node = entry.value !== undefined ? nodeByKey.get(entry.value) : undefined
   // Every rendered entry is from mappedItems, so this can't miss (fallback for type safety).
-  return item ?? { label: entry.label, value: entry.value ?? '' }
+  return node?.item ?? { label: entry.label, value: entry.value ?? '' }
+}
+
+function commit(value: string | number | (string | number)[] | null) {
+  model.value = value as V
+  emit('change', value as V)
 }
 
 function onMenuSelect(entry: MenuItemData) {
-  const item = entry.value !== undefined ? nodeByKey.get(entry.value) : undefined
-  if (!item) return
-  model.value = item.value
-  const match = findLeaf(props.items, item.value)
-  emit('select', item as T, match?.path ?? [])
-  emit('change', item.value)
+  const node = entry.value !== undefined ? nodeByKey.get(entry.value) : undefined
+  if (!node) return
+  const { item, path } = node
+  let next: string | number | (string | number)[] = item.value
+  if (props.multiple) {
+    next = [...selectedValues.value]
+    const pos = next.indexOf(item.value)
+    if (pos === -1) next.push(item.value)
+    else next.splice(pos, 1)
+  }
+  model.value = next as V
+  emit('select', item as T, path)
+  emit('change', next as V)
+}
+
+function removeChip(item: CascadeSelectItem) {
+  commit(selectedValues.value.filter((value) => value !== item.value))
 }
 
 function onOpenChange(value: boolean, details: PopoverOpenChangeDetails) {
@@ -383,7 +542,8 @@ function onTriggerBlur(event: FocusEvent) {
 
 function onTriggerKeydown(event: KeyboardEvent) {
   try {
-    if (isDisabled.value || open.value) return
+    // A chip's remove button keeps its own Enter/Space.
+    if (isDisabled.value || open.value || event.target !== event.currentTarget) return
     // No native <button> to auto-activate on Enter/Space anymore; drive `open` directly.
     if (
       event.key === 'ArrowDown' ||
@@ -401,12 +561,13 @@ function onTriggerKeydown(event: KeyboardEvent) {
 
 function onClear(event: MouseEvent) {
   event.preventDefault()
-  model.value = null
-  emit('change', null)
+  commit(props.multiple ? [] : null)
 }
 
 const messages = useUiMessages()
-const fieldControl = useFieldControl({ filled: () => model.value != null })
+const fieldControl = useFieldControl({
+  filled: () => (props.multiple ? !isEmpty.value : model.value != null),
+})
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
@@ -451,9 +612,9 @@ defineExpose({
   listEl: computed(() => menuRef.value?.listEl ?? null),
   /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => menuRef.value?.isClosing ?? false),
-  /** Selected leaf item, or `null`. */
+  /** Selected leaf item, or `null`; always `null` with `multiple`. */
   selectedItem,
-  /** Root-to-leaf `value` path of the selection (empty when nothing is selected). */
+  /** Root-to-leaf `value` path of the selection; empty when nothing is selected or with `multiple`. */
   selectedPath,
   /** Opens the panel. */
   open: () => {

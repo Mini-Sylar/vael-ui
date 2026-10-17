@@ -22,7 +22,7 @@
           role="tooltip"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
-          v-bind="$attrs"
+          v-bind="panelAttrs"
         >
           <slot :open="open" :isClosing="isClosing" />
         </div>
@@ -78,7 +78,8 @@ export interface TooltipProps {
 <script setup lang="ts">
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
-import { computed, inject, shallowRef, useId, useTemplateRef, watch } from 'vue'
+import { computed, inject, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
 import { setDescribedBy, useTooltip } from '../../composables/useTooltip'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
@@ -136,6 +137,11 @@ const triggerElRef = computed<HTMLElement | null>(() =>
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const attrs = useAttrs()
+const panelAttrs = useAttrListeners(
+  () => panelEl.value,
+  () => attrs,
+)
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.tooltip,

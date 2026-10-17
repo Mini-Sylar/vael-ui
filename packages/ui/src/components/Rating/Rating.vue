@@ -1,5 +1,6 @@
 <template>
   <div
+    :id="fieldControl.id"
     ref="root"
     :class="rootPart.class"
     :style="rootPart.style"

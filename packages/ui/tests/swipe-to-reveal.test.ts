@@ -126,6 +126,21 @@ test("tapping the content while open closes it, without firing the content's own
   await expect.element(screen.getByTestId('content-click-count')).toHaveTextContent('0')
 })
 
+test('a swipe released off the row does not eat the next tap', async () => {
+  const screen = await render(SwipeToRevealFixture, {})
+  const content = testId(screen, 'content')
+  const rect = content.getBoundingClientRect()
+  pointerdown(content, rect.right - 5, rect.top + 10)
+  pointermove(rect.right - 15, rect.top + 10)
+  pointermove(rect.right - 80, rect.top + 10)
+  pointerup(rect.right - 80, rect.top + 10)
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+
+  // The release got no trailing click, so this tap must close the row.
+  await userEvent.click(content)
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+})
+
 test("a plain tap while closed passes through to the content's own click handler untouched", async () => {
   const screen = await render(SwipeToRevealFixture, {})
   await userEvent.click(testId(screen, 'content'))

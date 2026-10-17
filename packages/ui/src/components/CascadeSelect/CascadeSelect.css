@@ -55,19 +55,36 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+  /* Same 24px target as Select's clear. */
   .ui-cascade-select-clear {
+    position: relative;
+    isolation: isolate;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: none;
-    inline-size: 1.5em;
-    block-size: 1.5em;
+    box-sizing: border-box;
+    inline-size: max(24px, 1.5em);
+    block-size: max(24px, 1.5em);
+    margin-block: min(0px, (1.5em - 24px) / 2);
+    margin-inline-start: min(0px, 1.5em - 24px);
     padding: 0;
+    padding-inline-start: max(0px, 24px - 1.5em);
     border: none;
-    border-radius: 50%;
     background: transparent;
     color: var(--ui-text-muted);
     cursor: pointer;
+  }
+  .ui-cascade-select-clear::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    inset-inline-end: 0;
+    margin-block: auto;
+    inline-size: 1.5em;
+    block-size: 1.5em;
+    border-radius: 50%;
     transition: background-color var(--ui-duration-press) ease;
   }
   .ui-cascade-select-clear svg {
@@ -75,8 +92,10 @@
     block-size: 0.85em;
   }
   .ui-cascade-select-clear:hover {
-    background: var(--ui-muted);
     color: var(--ui-text);
+  }
+  .ui-cascade-select-clear:hover::before {
+    background: var(--ui-muted);
   }
   .ui-cascade-select-value {
     flex: 1 1 auto;
@@ -85,6 +104,26 @@
     text-align: start;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  /* Clip room for a chip remove's 24px hit area. */
+  .ui-cascade-select-value:has(> .ui-cascade-select-chips) {
+    padding-block: 4px;
+    margin-block: -4px;
+  }
+  /* Chips clip horizontally within the fixed-height trigger, as in Select. */
+  .ui-cascade-select-chips {
+    position: relative; /* containing block for a leaving chip's position:absolute */
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+    padding-block: 4px;
+    margin-block: -4px;
+  }
+  /* Doubled class so it beats .ui-chip and .ui-chip--md whichever stylesheet loads last. */
+  .ui-chip.ui-cascade-select-chip--overflow {
+    padding-inline: 0.5rem;
+    color: var(--ui-text-muted);
   }
   .ui-cascade-select-trigger[data-placeholder] .ui-cascade-select-value {
     color: var(--ui-text-muted);

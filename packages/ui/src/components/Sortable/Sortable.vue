@@ -1,52 +1,55 @@
 <template>
-  <ul
-    ref="root"
-    :class="rootPart.class"
-    :style="rootPart.style"
-    :data-motion="motionOff ? 'off' : undefined"
-    :data-axis="axis"
-    :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
-    :data-pending="isPending ? '' : undefined"
-    :data-drop-target="isForeignDropTarget ? '' : undefined"
-    v-bind="attrs"
-  >
-    <li
-      v-for="(item, index) in items"
-      :key="keyOf(item)"
-      data-sortable-item
-      :data-value="keyOf(item)"
-      :data-grabbed="isGrabbedItem(item) || undefined"
-      :class="itemPart.class"
-      :style="itemPart.style"
+  <!-- display: contents keeps the layout while the status nodes stay outside the <ul>. -->
+  <div style="display: contents">
+    <ul
+      ref="root"
+      :class="rootPart.class"
+      :style="rootPart.style"
+      :data-motion="motionOff ? 'off' : undefined"
+      :data-axis="axis"
+      :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
+      :data-pending="isPending ? '' : undefined"
+      :data-drop-target="isForeignDropTarget ? '' : undefined"
+      v-bind="attrs"
     >
-      <button
-        type="button"
-        :class="handlePart.class"
-        :style="handlePart.style"
-        :aria-label="labelOf(item)"
-        aria-roledescription="sortable item"
-        :aria-describedby="instructionsId"
-        :disabled="disabled"
-        @pointerdown="onHandlePointerdown($event, keyOf(item))"
-        @keydown="onHandleKeydown($event, keyOf(item))"
+      <li
+        v-for="(item, index) in items"
+        :key="keyOf(item)"
+        data-sortable-item
+        :data-value="keyOf(item)"
+        :data-grabbed="isGrabbedItem(item) || undefined"
+        :class="itemPart.class"
+        :style="itemPart.style"
       >
-        <slot name="handle" :item="item">
-          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor">
-            <circle cx="6" cy="3" r="1.25" />
-            <circle cx="10" cy="3" r="1.25" />
-            <circle cx="6" cy="8" r="1.25" />
-            <circle cx="10" cy="8" r="1.25" />
-            <circle cx="6" cy="13" r="1.25" />
-            <circle cx="10" cy="13" r="1.25" />
-          </svg>
-        </slot>
-      </button>
-      <div class="ui-sortable-content">
-        <slot name="item" :item="item" :index="index" :grabbed="isGrabbedItem(item)">{{
-          labelOf(item)
-        }}</slot>
-      </div>
-    </li>
+        <button
+          type="button"
+          :class="handlePart.class"
+          :style="handlePart.style"
+          :aria-label="labelOf(item)"
+          aria-roledescription="sortable item"
+          :aria-describedby="instructionsId"
+          :disabled="disabled"
+          @pointerdown="onHandlePointerdown($event, keyOf(item))"
+          @keydown="onHandleKeydown($event, keyOf(item))"
+        >
+          <slot name="handle" :item="item">
+            <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor">
+              <circle cx="6" cy="3" r="1.25" />
+              <circle cx="10" cy="3" r="1.25" />
+              <circle cx="6" cy="8" r="1.25" />
+              <circle cx="10" cy="8" r="1.25" />
+              <circle cx="6" cy="13" r="1.25" />
+              <circle cx="10" cy="13" r="1.25" />
+            </svg>
+          </slot>
+        </button>
+        <div class="ui-sortable-content">
+          <slot name="item" :item="item" :index="index" :grabbed="isGrabbedItem(item)">{{
+            labelOf(item)
+          }}</slot>
+        </div>
+      </li>
+    </ul>
 
     <!-- Both nodes stay mounted for the life of the list: a live region added
          to the DOM at announcement time is not reliably read out. -->
@@ -56,7 +59,7 @@
     <span class="ui-sortable-status" role="status" aria-live="assertive" aria-atomic="true">{{
       announcement
     }}</span>
-  </ul>
+  </div>
 </template>
 
 <!-- Flat drag-to-reorder list over useSortable. The handle is a real button and a real

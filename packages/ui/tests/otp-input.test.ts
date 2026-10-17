@@ -3,6 +3,8 @@ import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import OtpInputFixture from './fixtures/OtpInputFixture.vue'
+import OtpInput from '../src/components/OtpInput/OtpInput.vue'
+import Field from '../src/components/Field/Field.vue'
 
 function basicInput(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLInputElement>('[data-testid="basic"] .ui-otp-input')!
@@ -204,4 +206,24 @@ test('clicking a cell after a separator still targets that cell', async () => {
   await clickCell(input, basicCells(screen)[4]!)
   await userEvent.keyboard('9')
   await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('123496')
+})
+
+test('aria-label, aria-labelledby and aria-describedby name the input, not the wrapper', async () => {
+  const screen = await render({
+    components: { OtpInput, Field },
+    template: `<div>
+      <span id="otp-label">Backup code</span><span id="otp-hint">Sent by SMS</span>
+      <OtpInput data-testid="labelled" aria-label="Verification code" aria-describedby="otp-hint" />
+      <OtpInput aria-labelledby="otp-label" />
+      <Field label="Login code" description="Check your email"><OtpInput /></Field>
+    </div>`,
+  })
+  const input = screen.getByRole('textbox', { name: 'Verification code' })
+  await expect.element(input).toBeInTheDocument()
+  expect(input.element().getAttribute('aria-describedby')).toBe('otp-hint')
+  const root = screen.container.querySelector('[data-testid="labelled"]')!
+  expect(root.hasAttribute('aria-label')).toBe(false)
+  await expect.element(screen.getByRole('textbox', { name: 'Backup code' })).toBeInTheDocument()
+  const fieldInput = screen.getByRole('textbox', { name: 'Login code' })
+  await expect.element(fieldInput).toHaveAccessibleDescription('Check your email')
 })

@@ -24,7 +24,10 @@ const UI_INDEX_PATH = join(__dirname, '../ui/src/index.ts')
 // Vapor build points them at the vdom files, so both builds share one copy.
 const SHARED_MODULES = new Set(Object.keys(collectBarrelEntries(UI_INDEX_PATH, UI_SRC_DIR)))
 // Stateless helpers each build may bundle on its own.
-const PER_BUILD_MODULES = new Set(['composables/useLazySortable'])
+const PER_BUILD_MODULES = new Set([
+  'composables/useLazySortable',
+  'composables/useFocusableScroller',
+])
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 
 // Only changed files are written and only files no longer produced are removed, so a running
@@ -207,6 +210,11 @@ function copyCssImports(source, origFileDir, outFileDir) {
   })
 }
 
+// Vapor ignores v-memo and warns about it at build time, so the copies drop it.
+function stripVMemo(source) {
+  return source.replace(/\s+v-memo="[^"]*"/g, '')
+}
+
 function injectVaporMarker(source, moduleId) {
   // Regex skips quoted values & uses multiline anchor to avoid matching comment prose
   const scriptSetupRe = /^<script\s+setup((?:[^>"]|"[^"]*")*)>/m
@@ -347,6 +355,7 @@ function main() {
       const outPath = join(OUT_DIR, `${moduleId}.vue`)
       mkdirSync(dirname(outPath), { recursive: true }) // for internal/*.vue
       source = copyCssImports(source, dirname(srcPath), dirname(outPath))
+      source = stripVMemo(source)
       source = injectVaporMarker(source, moduleId)
       source = rewriteImports(source, moduleId)
       writeIfChanged(outPath, source)

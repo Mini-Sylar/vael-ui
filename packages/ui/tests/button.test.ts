@@ -5,6 +5,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { useAsyncLoading } from '../src/composables/useAsyncLoading'
 import ButtonFixture from './fixtures/ButtonFixture.vue'
+import ButtonSlotToggle from './fixtures/ButtonSlotToggle.vue'
 import { contrast } from './utils/contrast'
 import Button from '../src/components/Button/Button.vue'
 
@@ -238,4 +239,49 @@ test('dark theme: danger keeps a legible label, enabled and disabled', async () 
   } finally {
     delete document.documentElement.dataset.theme
   }
+})
+
+test.each(['ghost', 'outline', 'secondary'] as const)(
+  'a %s toggle button shows its pressed state from aria-pressed alone',
+  async (variant) => {
+    const { h } = await import('vue')
+    const screen = await render(() => [
+      h(Button, { variant, 'aria-pressed': false, 'data-testid': 'off' }, () => 'Bold'),
+      h(Button, { variant, 'aria-pressed': true, 'data-testid': 'on' }, () => 'Bold'),
+    ])
+    const bg = (id: string) => getComputedStyle(screen.getByTestId(id).element()).backgroundColor
+    const token = (name: string) => {
+      const probe = document.createElement('span')
+      probe.style.backgroundColor = `var(${name})`
+      document.body.append(probe)
+      const value = getComputedStyle(probe).backgroundColor
+      probe.remove()
+      return value
+    }
+    expect(bg('on')).not.toBe(bg('off'))
+    expect(bg('on')).toBe(token(variant === 'secondary' ? '--ui-muted-hover' : '--ui-muted'))
+  },
+)
+
+test('a pressed button in a ButtonGroup sits above its neighbours', async () => {
+  const { h } = await import('vue')
+  const ButtonGroup = (await import('../src/components/ButtonGroup/ButtonGroup.vue')).default
+  const screen = await render(() =>
+    h(ButtonGroup, null, () => [
+      h(Button, { variant: 'outline', 'aria-pressed': false, 'data-testid': 'off' }, () => 'Left'),
+      h(Button, { variant: 'outline', 'aria-pressed': true, 'data-testid': 'on' }, () => 'Center'),
+    ]),
+  )
+  const z = (id: string) => getComputedStyle(screen.getByTestId(id).element()).zIndex
+  expect(Number(z('on'))).toBeGreaterThan(Number(z('off')) || 0)
+})
+
+test('the has-leading class follows a #leading slot added or removed later', async () => {
+  const screen = await render(ButtonSlotToggle, { props: { icon: true } })
+  const button = () => screen.container.querySelector('.ui-button')!
+  expect(button().classList.contains('ui-button--has-leading')).toBe(true)
+  await screen.rerender({ icon: false })
+  await vi.waitFor(() => expect(button().classList.contains('ui-button--has-leading')).toBe(false))
+  await screen.rerender({ icon: true })
+  await vi.waitFor(() => expect(button().classList.contains('ui-button--has-leading')).toBe(true))
 })

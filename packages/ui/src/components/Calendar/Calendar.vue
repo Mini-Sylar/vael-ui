@@ -147,6 +147,12 @@
                         @click="onDayClick(day)"
                         @pointerenter="onDayHover(day)"
                       >
+                        <!-- Custom day content is read after the date, not hidden behind an aria-label. -->
+                        <span
+                          v-if="$slots.day && !isBlank(day, pane)"
+                          class="ui-calendar-cell-label"
+                          >{{ cellLabel(day) }}</span
+                        >
                         <slot
                           name="day"
                           :date="day"
@@ -273,7 +279,16 @@ export type CalendarView = 'date' | 'month' | 'year'
 import './Calendar.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, nextTick, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onMounted,
+  ref,
+  shallowRef,
+  useSlots,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -409,34 +424,50 @@ function isoDate(date: Date): string {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
 }
 
-// Intl.Locale.weekInfo isn't in every engine yet. Falling back to Sunday would be
-// wrong for most of the world's locales (ISO 8601's Monday-first covers a far larger
-// share than Sunday-first, which is mainly the US/Canada) — Monday is the better
-// blind guess when the real per-locale answer isn't available.
+interface WeekInfoLocale {
+  getWeekInfo?: () => { firstDay: number }
+  weekInfo?: { firstDay: number }
+}
+
+// Engines expose either getWeekInfo() (the standard; Chrome dropped the getter) or the
+// older weekInfo getter, and some neither. Monday is the better blind guess: ISO 8601
+// covers far more locales than Sunday-first, which is mainly the US and Canada.
 function resolveFirstDayOfWeek(locale: string | undefined): number {
   try {
     const resolvedLocale = locale ?? Intl.DateTimeFormat().resolvedOptions().locale
-    const info = (new Intl.Locale(resolvedLocale) as unknown as { weekInfo?: { firstDay: number } })
-      .weekInfo
+    const intlLocale = new Intl.Locale(resolvedLocale) as unknown as WeekInfoLocale
+    const info = intlLocale.getWeekInfo?.() ?? intlLocale.weekInfo
     if (info?.firstDay) return info.firstDay % 7
   } catch {}
   return 1
 }
 
-const today = startOfDay(new Date())
+// Unset until mounted. A server can be on a different day than the visitor, and hydration
+// doesn't fix a mismatched highlight or tab stop, so both renders leave it out.
+const today = shallowRef<Date | null>(null)
 
 function isRange(value: Date | CalendarRange | null): value is CalendarRange {
   return value != null && typeof value === 'object' && 'start' in value
 }
-function initialAnchor(): Date {
-  if (!model.value) return today
-  return isRange(model.value) ? (model.value.start ?? model.value.end ?? today) : model.value
+function modelAnchor(): Date | null {
+  if (!model.value) return null
+  return isRange(model.value) ? (model.value.start ?? model.value.end ?? null) : model.value
 }
+// Without a value, the month's 1st stands in for today until mount.
+const initialAnchor = modelAnchor() ?? startOfMonth(new Date())
 
-const viewDate = ref<Date>(startOfMonth(initialAnchor()))
+const viewDate = ref<Date>(startOfMonth(initialAnchor))
 // 1 = forward, -1 = backward; drives month-transition slide direction.
 const direction = ref(1)
-const focusedDate = ref<Date>(initialAnchor())
+const focusedDate = ref<Date>(initialAnchor)
+
+onMounted(() => {
+  const now = startOfDay(new Date())
+  today.value = now
+  if (modelAnchor()) return
+  focusedDate.value = now
+  if (!isSameMonth(viewDate.value, now)) viewDate.value = startOfMonth(now)
+})
 const navLevel = ref<CalendarView>(props.view)
 
 // Moving between days, months and years zooms: out going up a level, in coming back down,
@@ -580,7 +611,7 @@ function monthLabel(month: Date): string {
 }
 
 function isToday(day: Date): boolean {
-  return isSameDay(day, today)
+  return today.value !== null && isSameDay(day, today.value)
 }
 function isDaySelected(day: Date): boolean {
   if (!model.value) return false
@@ -911,6 +942,7 @@ const gridPart = computed(() => resolveUiPart(cx, themedUi()?.grid, 'ui-calendar
 function isBlank(day: Date, month: Date): boolean {
   return panes.value.length > 1 && !isSameMonth(day, month)
 }
+const slots = useSlots()
 function dayAttrs(day: Date, month: Date) {
   if (isBlank(day, month)) return { 'aria-hidden': 'true' as const }
   return {
@@ -919,7 +951,7 @@ function dayAttrs(day: Date, month: Date) {
     'aria-selected': isDaySelected(day) || undefined,
     'aria-current': isToday(day) ? ('date' as const) : undefined,
     'aria-disabled': isDayDisabled(day) || undefined,
-    'aria-label': cellLabel(day),
+    'aria-label': slots.day ? undefined : cellLabel(day),
   }
 }
 function cellPart(day: Date, month: Date) {

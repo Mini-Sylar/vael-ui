@@ -30,6 +30,9 @@ const props = withDefaults(
     i18n?: I18nInstance
     /** Static message overrides, applied on top of `i18n` resolution. */
     messages?: PartialUiMessages
+    /** BCP-47 locale for dates, numbers and the week start inside, e.g. `'de-DE'`. Wins over
+     * `i18n`'s locale. Set it when you render on a server, or they follow the server's language. */
+    locale?: string
     /** Class merger function (e.g. `twMerge` from tailwind-merge), applied to every `ui.*` part class. */
     classMerge?: ClassMerger
     /** Auto-derives colors and applies radius and component font size. Injects a scoped `<style>` tag. */
@@ -67,7 +70,7 @@ const defaults = computed<UiDefaults>(() => {
   const own: UiDefaults = {}
   if (props.size) own.size = props.size
   if (props.motionCss !== undefined) own.motionCss = props.motionCss
-  const locale = validLocale(toValue(props.i18n?.locale))
+  const locale = validLocale(props.locale ?? toValue(props.i18n?.locale))
   if (locale) own.locale = locale
   return { ...parentDefaults?.value, ...own }
 })

@@ -1,10 +1,9 @@
-import { nextTick, onScopeDispose, shallowRef, toValue, useId } from 'vue'
+import { nextTick, onScopeDispose, shallowRef, toValue, useId, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { useEventListener } from '@vueuse/core'
-import { ssrWindow } from '../ssr'
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
 import { autoScrollAt, contentOffset, findScrollParent } from './sortableAutoScroll'
+import { createClickGuard } from './dom'
 
 /**
  * Reorder engine shared by every sortable surface. All ordering/nesting
@@ -955,7 +954,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   let dragEl: HTMLElement | null = null
   let lastAlong = 0
   let lastTime = 0
-  let suppressNextClick = false
+  const clickGuard = createClickGuard()
   let previewEl: HTMLElement | null = null
   let previewSourceEl: HTMLElement | null = null
   let lastPointerEvent: PointerEvent | null = null
@@ -1024,7 +1023,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame)
     clearTouchHoldTimer()
     scheduleAutoExpand(null)
-    pointerId = null
+    releasePointer()
     pendingValue = null
     committed = false
     dragEl = null
@@ -1165,6 +1164,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
   function onHandlePointerdown(event: PointerEvent, value: string | number) {
     if (isDisabled() || event.button !== 0 || isGrabbed.value) return
+    releasePointer()
     pointerId = event.pointerId
     pendingValue = value
     committed = false
@@ -1175,6 +1175,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     lastPointerEvent = event
     velocity = 0
     isTouchPointer = event.pointerType === 'touch'
+    listenToPointer()
     // Resolved through the consumer's own accessor, not a DOM selector — Tree
     // rows and Sortable rows share no markup, and a selector only one of them
     // has silently disables capture and the drag preview for the other.
@@ -1210,7 +1211,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   function commitDrag(event: PointerEvent): boolean {
     if (pendingValue == null) return false
     if (!begin(pendingValue, 'pointer')) {
-      pointerId = null
+      releasePointer()
       return false
     }
     committed = true
@@ -1280,7 +1281,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
           else touchScrollEl.scrollTop -= dy
           lastScrollPos = axis() === 'x' ? event.clientX : event.clientY
         } else {
-          pointerId = null
+          releasePointer()
           pendingValue = null
         }
         return
@@ -1379,7 +1380,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     manualScrolling = false
     touchScrollEl = null
     const wasCommitted = committed
-    pointerId = null
+    releasePointer()
     pendingValue = null
     committed = false
     if (!wasCommitted) {
@@ -1387,7 +1388,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       dragEl = null
       return
     }
-    suppressNextClick = true
+    clickGuard.arm()
 
     dragEl = null
     if (options.group) {
@@ -1404,11 +1405,11 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (event.key !== 'Escape' || !isDragging.value) return
     event.preventDefault()
     clearTouchHoldTimer()
-    pointerId = null
+    releasePointer()
     committed = false
     pendingValue = null
     dragEl = null
-    suppressNextClick = true
+    clickGuard.arm()
     if (options.group) {
       options.group.__cancel()
       return
@@ -1417,21 +1418,41 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     void revert()
   }
 
-  useEventListener(ssrWindow, 'keydown', onWindowKeydown)
-  useEventListener(ssrWindow, 'pointermove', onPointerMove)
-  useEventListener(ssrWindow, 'pointerup', endPointer)
-  useEventListener(ssrWindow, 'pointercancel', endPointer)
-  // preventDefault() on a PointerEvent doesn't reliably cancel a touch
-  // scroll — only the real TouchEvent does, and only non-passive (window's
-  // own touchmove default). Backs up touch-action: none on the row itself.
-  useEventListener(
-    ssrWindow,
-    'touchmove',
-    (event: TouchEvent) => {
-      if (pointerId !== null && isTouchPointer) event.preventDefault()
+  // Window listeners live only while they have work; an idle non-passive touchmove slows page scrolls.
+  function onTouchMove(event: TouchEvent) {
+    // preventDefault() on a PointerEvent doesn't reliably cancel a touch
+    // scroll; only the real TouchEvent does. Backs up touch-action: none.
+    if (pointerId !== null && isTouchPointer) event.preventDefault()
+  }
+  let pointerListening = false
+  function listenToPointer() {
+    pointerListening = true
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', endPointer)
+    window.addEventListener('pointercancel', endPointer)
+    if (isTouchPointer) window.addEventListener('touchmove', onTouchMove, { passive: false })
+  }
+  function releasePointer() {
+    pointerId = null
+    if (!pointerListening) return
+    pointerListening = false
+    window.removeEventListener('pointermove', onPointerMove)
+    window.removeEventListener('pointerup', endPointer)
+    window.removeEventListener('pointercancel', endPointer)
+    window.removeEventListener('touchmove', onTouchMove)
+  }
+  watch(
+    isDragging,
+    (dragging) => {
+      if (dragging) window.addEventListener('keydown', onWindowKeydown)
+      else window.removeEventListener('keydown', onWindowKeydown)
     },
-    { passive: false },
+    { flush: 'sync' },
   )
+  onScopeDispose(() => {
+    if (typeof window !== 'undefined') window.removeEventListener('keydown', onWindowKeydown)
+    clickGuard.disarm()
+  })
 
   // --- keyboard --------------------------------------------------------------
 
@@ -1581,11 +1602,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     announcement,
     onHandlePointerdown,
     onHandleKeydown,
-    consumeSuppressedClick: () => {
-      const suppressed = suppressNextClick
-      suppressNextClick = false
-      return suppressed
-    },
+    consumeSuppressedClick: clickGuard.consume,
     cancel,
   }
 }

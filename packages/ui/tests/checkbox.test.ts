@@ -93,3 +93,16 @@ test('motionCss=false keeps the no-anim class permanently, past first paint', as
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
   expect(root).toHaveClass('ui-checkbox--no-anim')
 })
+
+test('id and aria-* reach the native input, so an outside label or aria-label names it', async () => {
+  const screen = await render({
+    components: { Checkbox },
+    template: `<div><label for="terms">Terms</label><Checkbox id="terms" data-testid="root" /><Checkbox aria-label="Select row" /></div>`,
+  })
+  await expect
+    .element(screen.getByRole('checkbox', { name: 'Terms' }))
+    .toHaveAttribute('id', 'terms')
+  await expect.element(screen.getByRole('checkbox', { name: 'Select row' })).toBeInTheDocument()
+  await expect.element(screen.getByTestId('root')).toHaveClass('ui-checkbox')
+  expect(document.querySelectorAll('[aria-label="Select row"]')).toHaveLength(1)
+})

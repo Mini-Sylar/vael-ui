@@ -8,6 +8,9 @@ export type ScrollMaskValue = boolean | ScrollMaskAxis | undefined
 
 interface ScrollMaskState {
   observer: ResizeObserver
+  /** Content can outgrow a fixed-size box without resizing it. */
+  mutations: MutationObserver
+  frame: number
   axis: ScrollMaskAxis
   onScroll?: () => void
 }
@@ -64,7 +67,15 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
     return
   }
   const observer = new ResizeObserver(() => check(el, state.get(el)?.axis ?? axis))
-  const entry: ScrollMaskState = { observer, axis }
+  // One check per frame, so a list that re-renders while scrolling adds no extra layout.
+  const mutations = new MutationObserver(() => {
+    if (entry.frame) return
+    entry.frame = requestAnimationFrame(() => {
+      entry.frame = 0
+      check(el, entry.axis)
+    })
+  })
+  const entry: ScrollMaskState = { observer, mutations, frame: 0, axis }
   if (!supportsScrollTimeline()) {
     entry.onScroll = () => applyManualFade(el, entry.axis)
     el.classList.add('scroll-fade-manual')
@@ -73,11 +84,20 @@ function start(el: HTMLElement, axis: ScrollMaskAxis) {
   state.set(el, entry)
   check(el, axis)
   observer.observe(el)
+  // Size changes come from new nodes, text, or a child's style, class or hidden.
+  mutations.observe(el, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributeFilter: ['style', 'class', 'hidden'],
+  })
 }
 
 function stop(el: HTMLElement) {
   const entry = state.get(el)
   entry?.observer.disconnect()
+  entry?.mutations.disconnect()
+  if (entry?.frame) cancelAnimationFrame(entry.frame)
   if (entry?.onScroll) {
     el.removeEventListener('scroll', entry.onScroll)
     for (const property of FADE_PROPERTIES) el.style.removeProperty(property)

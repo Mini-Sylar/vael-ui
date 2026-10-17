@@ -506,3 +506,10 @@ test('unmounting mid-drag removes the floating preview from <body>', async () =>
   // A late pointerup from the abandoned gesture is harmless.
   window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }))
 })
+
+test('the reorder live region sits beside the tree, since a tree may only hold tree items', async () => {
+  const screen = await render(TreeReorderFixture)
+  const status = screen.container.querySelector('[role="status"]')!
+  expect(status).not.toBeNull()
+  expect(status.closest('[role="tree"]')).toBeNull()
+})

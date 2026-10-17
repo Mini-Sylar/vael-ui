@@ -156,3 +156,10 @@ test('the list only holds <li> children, and the indicator is presentational', a
   expect(indicator.getAttribute('role')).toBe('presentation')
   expect(indicator.getAttribute('aria-hidden')).toBe('true')
 })
+
+test('the page-size select has an accessible name', async () => {
+  const screen = await render(PaginationFixture, {
+    props: { total: 100, pageSize: 10, pageSizeOptions: [10, 25, 50] },
+  })
+  await expect.element(screen.getByRole('combobox', { name: 'Rows per page' })).toBeVisible()
+})

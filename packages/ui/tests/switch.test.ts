@@ -69,3 +69,15 @@ test('motionCss false turns off the track color fade as well as the thumb slide'
   expect(getComputedStyle(track).transitionProperty).toBe('none')
   expect(getComputedStyle(thumb).transitionProperty).toBe('none')
 })
+
+test('id and aria-* reach the native input, so an outside label or aria-label names it', async () => {
+  const screen = await render({
+    components: { Switch },
+    template: `<div><label for="wifi">Wi-Fi</label><Switch id="wifi" data-testid="root" /><Switch aria-label="Bluetooth" /></div>`,
+  })
+  await expect.element(screen.getByRole('switch', { name: 'Wi-Fi' })).toHaveAttribute('id', 'wifi')
+  await expect.element(screen.getByRole('switch', { name: 'Bluetooth' })).toBeInTheDocument()
+  // The wrapper keeps everything else.
+  await expect.element(screen.getByTestId('root')).toHaveClass('ui-switch')
+  expect(document.querySelectorAll('[aria-label="Bluetooth"]')).toHaveLength(1)
+})

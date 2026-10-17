@@ -5,6 +5,7 @@ import { render } from 'vitest-browser-vue'
 import MenuFixture from './fixtures/MenuFixture.vue'
 import MenuCustomFixture from './fixtures/MenuCustomFixture.vue'
 import MenuHiddenTriggerFixture from './fixtures/MenuHiddenTriggerFixture.vue'
+import Menu from '../src/components/Menu/Menu.vue'
 
 beforeEach(() => {
   // Teleported positioners can outlive a fixture torn down mid-transition.
@@ -251,4 +252,93 @@ test('Tab from an open menu closes it without dropping focus to the page', async
   await userEvent.keyboard('{Tab}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   expect(document.activeElement).not.toBe(document.body)
+})
+
+const toggleTemplate = `
+  <output data-testid="selected">{{ selected }}</output>
+  <Menu v-model:open="open" :items="items" @select="onSelect">
+    <template #trigger><button data-testid="trigger">open menu</button></template>
+  </Menu>`
+
+function toggleMenu(count = 0) {
+  return {
+    components: { Menu },
+    data: () => ({
+      open: false,
+      selected: '',
+      items: count
+        ? Array.from({ length: count }, (_, i) => ({
+            label: `Item ${i}`,
+            value: `item-${i}`,
+            checked: i % 2 === 0,
+            keepOpen: true,
+          }))
+        : [
+            { label: 'Bold', value: 'bold', checked: true, keepOpen: true },
+            { label: 'Italic', value: 'italic', checked: false, keepOpen: true },
+            { label: 'Copy', value: 'copy' },
+          ],
+    }),
+    methods: {
+      onSelect(
+        this: { items: { value: string; checked?: boolean }[]; selected: string },
+        item: {
+          value: string
+        },
+      ) {
+        this.selected = item.value
+        const entry = this.items.find((e) => e.value === item.value)!
+        if (entry.checked !== undefined) entry.checked = !entry.checked
+      },
+    },
+    template: toggleTemplate,
+  }
+}
+
+test('`checked` renders a menuitemcheckbox with aria-checked and a check mark; rows without it are unchanged', async () => {
+  const screen = await render(toggleMenu())
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Bold'))
+
+  const bold = screen.getByRole('menuitemcheckbox', { name: 'Bold' }).element()
+  const italic = screen.getByRole('menuitemcheckbox', { name: 'Italic' }).element()
+  const copy = screen.getByRole('menuitem', { name: 'Copy' }).element()
+  expect(bold.getAttribute('aria-checked')).toBe('true')
+  expect(bold.querySelector('.ui-menu-item-check')).not.toBeNull()
+  expect(italic.getAttribute('aria-checked')).toBe('false')
+  expect(italic.querySelector('.ui-menu-item-check')).toBeNull()
+  expect(copy.hasAttribute('aria-checked')).toBe(false)
+  expect(copy.querySelector('.ui-menu-item-check')).toBeNull()
+
+  // Arrow keys reach checkbox rows, and Enter toggles one without closing (keepOpen).
+  await userEvent.keyboard('{ArrowDown}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Italic'))
+  await userEvent.keyboard('{Enter}')
+  await expect.element(screen.getByTestId('selected')).toHaveTextContent('italic')
+  await vi.waitFor(() => expect(italic.getAttribute('aria-checked')).toBe('true'))
+  expect(focusedText()).toBe('Italic')
+
+  // A click toggles too.
+  await screen.getByRole('menuitemcheckbox', { name: 'Bold' }).click()
+  await vi.waitFor(() => expect(bold.getAttribute('aria-checked')).toBe('false'))
+  await expect.element(screen.getByRole('menu')).toBeInTheDocument()
+})
+
+test('a virtualized menu renders checked rows and keeps End/Space working on them', async () => {
+  const screen = await render(toggleMenu(150))
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(focusedText()).toBe('Item 0'))
+  expect(document.querySelector('.ui-menu-body[data-virtual]')).not.toBeNull()
+
+  const first = screen.getByRole('menuitemcheckbox', { name: 'Item 0' }).element()
+  expect(first.getAttribute('aria-checked')).toBe('true')
+  expect(first.querySelector('.ui-menu-item-check')).not.toBeNull()
+
+  await userEvent.keyboard('{End}')
+  await vi.waitFor(() => expect(focusedText()).toBe('Item 149'))
+  const last = screen.getByRole('menuitemcheckbox', { name: 'Item 149' }).element()
+  expect(last.getAttribute('aria-checked')).toBe('false')
+  await userEvent.keyboard(' ')
+  await expect.element(screen.getByTestId('selected')).toHaveTextContent('item-149')
+  await vi.waitFor(() => expect(last.getAttribute('aria-checked')).toBe('true'))
 })

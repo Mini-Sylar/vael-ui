@@ -7,6 +7,7 @@ import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
 import { focusTargetIn, getFocusable } from './dom'
 import type { ElRef } from './dom'
+import { ssrDocument } from '../ssr'
 
 export type PopoverCloseReason = 'trigger' | 'escape' | 'outside' | 'programmatic'
 
@@ -148,14 +149,24 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     if (isOutside(event.target)) requestClose('outside', event)
   }
 
-  useEventListener(() => (isOpen.value ? document : undefined), 'keydown', onDocumentKeydown, true)
   useEventListener(
-    () => (isOpen.value ? document : undefined),
+    () => (isOpen.value ? ssrDocument() : undefined),
+    'keydown',
+    onDocumentKeydown,
+    true,
+  )
+  useEventListener(
+    () => (isOpen.value ? ssrDocument() : undefined),
     'pointerdown',
     onDocumentPointerdown,
     true,
   )
-  useEventListener(() => (isOpen.value ? document : undefined), 'focusin', onDocumentFocusin, true)
+  useEventListener(
+    () => (isOpen.value ? ssrDocument() : undefined),
+    'focusin',
+    onDocumentFocusin,
+    true,
+  )
 
   // The panel is teleported, so it isn't next to its trigger in tab order.
   // Tab from the trigger steps into the panel; Tab past either end of the
@@ -193,7 +204,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     if (toValue(options.closeOnOutside ?? true)) requestClose('outside', event)
   }
   useEventListener(
-    () => (isOpen.value && options.tabIntoPanel ? document : undefined),
+    () => (isOpen.value && options.tabIntoPanel ? ssrDocument() : undefined),
     'keydown',
     onDocumentTab,
   )

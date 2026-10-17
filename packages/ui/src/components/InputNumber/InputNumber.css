@@ -6,6 +6,16 @@
     align-self: stretch;
     margin-inline-end: -0.75rem;
   }
+  /* Stacked steppers can't each reach 24px (WCAG 2.5.8), so each fills its half of the field. */
+  .ui-input-end:has(> .ui-input-number-steppers) {
+    align-self: stretch;
+  }
+  .ui-input-number-steppers > .ui-input-number-stepper--inc {
+    place-items: end center;
+  }
+  .ui-input-number-steppers > .ui-input-number-stepper--dec {
+    place-items: start center;
+  }
   .ui-input-number-stepper {
     display: grid;
     place-items: center;
@@ -97,6 +107,9 @@
     }
     .ui-input-number-stepper:not(.ui-input-number-stepper--split) {
       inline-size: 2rem;
+    }
+    .ui-input-number-steppers > .ui-input-number-stepper {
+      place-items: center;
     }
     .ui-input-number-stepper--split.ui-input-number-stepper--sm {
       inline-size: 1.75rem;

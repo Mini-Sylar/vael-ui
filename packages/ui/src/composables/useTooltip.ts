@@ -5,6 +5,7 @@ import type { Side } from '@floating-ui/dom'
 import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
 import type { ElRef } from './dom'
+import { ssrWindow } from '../ssr'
 
 export type TooltipCloseReason = 'pointer' | 'focus' | 'trigger' | 'escape' | 'programmatic'
 
@@ -486,7 +487,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
   // Window capture runs before the layer stack's document listener, so a visible
   // tooltip takes this Escape and the dialog around it stays open (WCAG 1.4.13).
   useEventListener(
-    () => (open.value ? window : undefined),
+    () => (open.value ? ssrWindow() : undefined),
     'keydown',
     (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.isComposing || isClosing.value) return

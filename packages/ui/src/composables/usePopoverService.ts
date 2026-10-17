@@ -3,11 +3,13 @@ import {
   type ComputedRef,
   type InjectionKey,
   computed,
+  effectScope,
   inject,
   markRaw,
   reactive,
   watch,
 } from 'vue'
+import { isClient } from '@vueuse/core'
 import type { ComponentProps } from 'vue-component-type-helpers'
 import type { PopoverProps } from '../components/Popover/Popover.vue'
 import type { PopoverOpenChangeDetails } from './usePopover'
@@ -79,6 +81,9 @@ export function openPopover<D = unknown, T = unknown, C extends Component = Comp
   component: C,
   options: OpenPopoverOptions<D, T> & { props?: ComponentProps<C> },
 ): OpenPopoverHandle<T> {
+  // One server queue would reach every request; the browser runs this call again on hydration.
+  if (!isClient)
+    return { result: Promise.resolve(undefined), close: () => {}, panelEl: computed(() => null) }
   const { props: componentProps = {}, data, onClose, ...popoverProps } = options
   const id = nextId++
   const hasCustomBeforeClose = typeof popoverProps.beforeClose === 'function'
@@ -116,20 +121,24 @@ export function openPopover<D = unknown, T = unknown, C extends Component = Comp
   queue.push(entry)
 
   // Fires on any close path (one settle path either way).
-  watch(
-    () => entry.open,
-    (isOpen) => {
-      if (isOpen) return
-      settle(entry.pendingResult)
-      setTimeout(
-        () => {
-          const i = queue.findIndex((e) => e.id === id)
-          if (i !== -1) queue.splice(i, 1)
-        },
-        hasCustomBeforeClose ? 0 : POPOVER_EXIT_MS,
-      )
-    },
-    { once: true },
+  // Detached so an unmounting opener can't stop it and strand the entry.
+  const scope = effectScope(true)
+  scope.run(() =>
+    watch(
+      () => entry.open,
+      (isOpen) => {
+        if (isOpen) return
+        scope.stop()
+        settle(entry.pendingResult)
+        setTimeout(
+          () => {
+            const i = queue.findIndex((e) => e.id === id)
+            if (i !== -1) queue.splice(i, 1)
+          },
+          hasCustomBeforeClose ? 0 : POPOVER_EXIT_MS,
+        )
+      },
+    ),
   )
 
   return {

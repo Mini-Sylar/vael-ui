@@ -39,10 +39,10 @@ const unmountedChips = new WeakSet<Element>()
 
 <!-- Small reusable pill; remove button stops propagation to avoid toggling parent trigger -->
 <script setup lang="ts">
-import './Chip.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/chip.css'
+import './Chip.css'
 import { computed, onBeforeUnmount, onUnmounted, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
