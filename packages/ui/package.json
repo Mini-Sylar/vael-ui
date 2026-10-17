@@ -58,11 +58,12 @@
       "default": "./dist/nuxt/index.js"
     },
     "./style.css": "./dist/style-entry.css",
+    "./layers.css": "./dist/layers.css",
     "./package.json": "./package.json"
   },
   "scripts": {
     "gen": "node ../scripts/generate-resolver-manifest.mjs",
-    "build": "pnpm gen && tsdown && node -e \"require('fs').copyFileSync('../../README.md', './README.md')\"",
+    "build": "pnpm gen && tsdown && node -e \"const fs = require('fs'); fs.copyFileSync('../../README.md', './README.md'); fs.copyFileSync('./src/layers.css', './dist/layers.css')\"",
     "dev": "pnpm gen && tsdown --watch --no-clean --no-report",
     "test": "pnpm gen && vitest run",
     "test:spikes": "vitest run --config vitest.spikes.config.ts",
@@ -71,7 +72,7 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",
-    "@vueuse/core": "^15.0.0"
+    "@vueuse/core": "^12.0.0 || ^13.0.0 || ^14.0.0 || ^15.0.0"
   },
   "devDependencies": {
     "@nuxt/kit": "^4.6.1",

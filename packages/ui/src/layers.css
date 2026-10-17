@@ -1,0 +1,3 @@
+/* Registers vael-ui's cascade layer and nothing else. Import it before Tailwind so Tailwind's
+   utilities layer comes after it, without loading CSS for components you don't use. */
+@layer ui-components;
