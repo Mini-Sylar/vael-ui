@@ -2,9 +2,12 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { effectScope, shallowRef } from 'vue'
 import TooltipFixture from './fixtures/TooltipFixture.vue'
 import TooltipHostFixture from './fixtures/TooltipHostFixture.vue'
+import TooltipInDialogFixture from './fixtures/TooltipInDialogFixture.vue'
 import { __resetTooltipWarmth } from '../src/composables/useTooltip'
+import { vTooltipVapor } from '../src/directives/vTooltip'
 
 beforeEach(() => {
   __resetTooltipWarmth()
@@ -148,4 +151,127 @@ test('v-tooltip on a Button anchors to the real button, not a badge wrapper', as
   // Anchored near the trigger, not clamped to the page's top-left corner
   expect(Math.abs(tooltipRect.left - buttonRect.left)).toBeLessThan(buttonRect.width + 40)
   expect(Math.abs(tooltipRect.top - buttonRect.top)).toBeLessThan(buttonRect.height + 40)
+})
+
+test("Tooltip adds its id to the trigger's aria-describedby without dropping the consumer's own ids", async () => {
+  const screen = await render(TooltipFixture)
+  const trigger = screen.getByTestId('trigger-desc')
+
+  await trigger.hover()
+  await expect.element(screen.getByTestId('tip-desc')).toBeVisible()
+  const tipId = document.querySelector('[data-testid="tip-desc"]')!.closest('[role="tooltip"]')!.id
+  await vi.waitFor(() => {
+    expect(trigger.element().getAttribute('aria-describedby')?.split(' ')).toEqual([
+      'field-error',
+      tipId,
+    ])
+  })
+
+  await screen.getByTestId('plain').hover()
+  await vi.waitFor(() => {
+    expect(document.querySelector('[data-testid="tip-desc"]')).toBeNull()
+  })
+  expect(trigger.element().getAttribute('aria-describedby')).toBe('field-error')
+})
+
+test("v-tooltip keeps the target's own aria-describedby ids, also when the tooltip moves to another target", async () => {
+  const screen = await render(TooltipHostFixture)
+  const target = screen.getByTestId('host-desc').element()
+
+  await screen.getByTestId('host-desc').hover()
+  await vi.waitFor(() => {
+    expect(document.querySelector('.ui-tooltip-panel')?.textContent).toContain(
+      'Has own description',
+    )
+  })
+  const tipId = document.querySelector('.ui-tooltip-panel')!.id
+  await vi.waitFor(() => {
+    expect(target.getAttribute('aria-describedby')?.split(' ')).toEqual(['hint-id', tipId])
+  })
+
+  // Moves while open: the old target gets back exactly its own ids.
+  await screen.getByTestId('host-a').hover()
+  await vi.waitFor(() => {
+    expect(document.querySelector('.ui-tooltip-panel')?.textContent).toContain(
+      'Saved via directive',
+    )
+  })
+  expect(target.getAttribute('aria-describedby')).toBe('hint-id')
+})
+
+test('v-tooltip content that changes while visible updates the open tooltip', async () => {
+  const screen = await render(TooltipHostFixture)
+
+  await screen.getByTestId('host-copy').hover()
+  await vi.waitFor(() => {
+    expect(document.querySelector('.ui-tooltip-panel')?.textContent?.trim()).toBe('Copy')
+  })
+  // Programmatic click: a real one would count as a press and close the tooltip.
+  const copy = screen.getByTestId('host-copy').element() as HTMLElement
+  copy.click()
+  await vi.waitFor(() => {
+    expect(document.querySelector('.ui-tooltip-panel')?.textContent?.trim()).toBe('Copied!')
+  })
+})
+
+test('vTooltipVapor content that changes while visible updates the open tooltip', async () => {
+  const screen = await render(TooltipHostFixture)
+  const label = shallowRef('Copy')
+  const el = document.createElement('button')
+  el.textContent = 'Vapor copy'
+  el.dataset.testid = 'vapor-copy'
+  screen.container.append(el)
+  const scope = effectScope()
+  scope.run(() => vTooltipVapor(el, () => label.value))
+
+  await screen.getByTestId('vapor-copy').hover()
+  await vi.waitFor(() => {
+    expect(document.querySelector('.ui-tooltip-panel')?.textContent?.trim()).toBe('Copy')
+  })
+  label.value = 'Copied!'
+  await vi.waitFor(() => {
+    expect(document.querySelector('.ui-tooltip-panel')?.textContent?.trim()).toBe('Copied!')
+  })
+  scope.stop()
+})
+
+test('Escape on a focus-opened tooltip inside a Dialog closes only the tooltip', async () => {
+  const screen = await render(TooltipInDialogFixture)
+  const inner = screen.getByTestId('inner')
+  await expect.element(inner).toBeVisible()
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+
+  for (let i = 0; i < 8 && document.activeElement !== inner.element(); i++) {
+    await userEvent.keyboard('{Tab}')
+  }
+  expect(document.activeElement).toBe(inner.element())
+  await expect.element(screen.getByTestId('tip-inner')).toBeVisible()
+
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => {
+    expect(document.querySelector('[data-testid="tip-inner"]')).toBeNull()
+  })
+  await new Promise((r) => setTimeout(r, 50))
+  expect(screen.getByTestId('dialog-open').element().textContent).toBe('true')
+
+  // A second Escape, with no tooltip showing, still closes the Dialog.
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('dialog-open')).toHaveTextContent('false')
+})
+
+test('a touch long-press shows the tooltip and swallows the click that follows the release', async () => {
+  const screen = await render(TooltipFixture)
+  const trigger = screen.getByTestId('trigger-a').element() as HTMLElement
+  const clicks = vi.fn()
+  trigger.addEventListener('click', clicks)
+  const touch = { pointerType: 'touch', pointerId: 7, bubbles: true, isPrimary: true }
+
+  trigger.dispatchEvent(new PointerEvent('pointerdown', touch))
+  // onLongPress fires after 500ms of holding still: that elapsed time is the behaviour under test.
+  await new Promise((resolve) => setTimeout(resolve, 550))
+  await expect.element(screen.getByTestId('tip-a')).toBeVisible()
+
+  trigger.dispatchEvent(new PointerEvent('pointerup', touch))
+  trigger.click()
+  expect(clicks).not.toHaveBeenCalled()
 })

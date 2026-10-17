@@ -80,7 +80,7 @@ import '../shared/tooltip.css'
 import '../shared/tokens.css'
 import { computed, inject, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
-import { useTooltip } from '../../composables/useTooltip'
+import { setDescribedBy, useTooltip } from '../../composables/useTooltip'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -251,11 +251,8 @@ watch(
   [open, triggerElRef] as const,
   ([isOpen, el], previous) => {
     const previousEl = previous?.[1]
-    if (previousEl && previousEl !== el) previousEl.removeAttribute('aria-describedby')
-    if (!el) return
-    if (isOpen) el.setAttribute('aria-describedby', tooltipId)
-    else if (el.getAttribute('aria-describedby') === tooltipId)
-      el.removeAttribute('aria-describedby')
+    if (previousEl && previousEl !== el) setDescribedBy(previousEl, tooltipId, false)
+    if (el) setDescribedBy(el, tooltipId, isOpen)
   },
   { flush: 'post' },
 )

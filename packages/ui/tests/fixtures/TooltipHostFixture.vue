@@ -4,6 +4,10 @@
   <Button v-tooltip="'On a component'" data-testid="host-component">C</Button>
   <button v-tooltip="conditionalHint" data-testid="host-conditional">D</button>
   <button data-testid="toggle-conditional-hint" @click="hasHint = !hasHint">toggle</button>
+  <button v-tooltip="'Has own description'" aria-describedby="hint-id" data-testid="host-desc">
+    E
+  </button>
+  <button v-tooltip="copyLabel" data-testid="host-copy" @click="copyLabel = 'Copied!'">Copy</button>
   <TooltipHost :open-delay="120" :close-delay="40" />
 </template>
 
@@ -14,5 +18,6 @@ import Button from '../../src/components/Button/Button.vue'
 import { vTooltip } from '../../src/directives/vTooltip'
 
 const hasHint = shallowRef(false)
+const copyLabel = shallowRef('Copy')
 const conditionalHint = computed(() => (hasHint.value ? 'Now has a hint' : undefined))
 </script>

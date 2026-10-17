@@ -451,8 +451,8 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       if (event.pointerType === 'touch') show()
     },
     {
-      onMouseUp: (_duration, _distance, isLongPress, event) => {
-        if (isLongPress && event.pointerType === 'touch') suppressNextClick = true
+      onMouseUp: (_duration, _distance, isLongPress) => {
+        if (isLongPress && lastPointerWasTouch) suppressNextClick = true
       },
     },
   )
@@ -483,14 +483,16 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     () => scheduleClose(),
   )
 
-  // Don't preventDefault (closing both better than swallowing Escape).
+  // Window capture runs before the layer stack's document listener, so a visible
+  // tooltip takes this Escape and the dialog around it stays open (WCAG 1.4.13).
   useEventListener(
-    () => (open.value ? document : undefined),
+    () => (open.value ? window : undefined),
     'keydown',
     (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && toValue(options.closeOnEsc ?? true)) {
-        requestClose('escape', event)
-      }
+      if (event.key !== 'Escape' || event.isComposing || isClosing.value) return
+      if (!toValue(options.closeOnEsc ?? true)) return
+      requestClose('escape', event)
+      if (!open.value || isClosing.value) event.preventDefault()
     },
     true,
   )
@@ -539,6 +541,16 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     focusLeave,
     press,
   }
+}
+
+/** Adds or removes `id` as one token of `aria-describedby`, keeping the consumer's own ids. */
+export function setDescribedBy(el: HTMLElement, id: string, on: boolean) {
+  const ids = (el.getAttribute('aria-describedby') ?? '')
+    .split(/\s+/)
+    .filter((token) => token && token !== id)
+  if (on) ids.push(id)
+  if (ids.length) el.setAttribute('aria-describedby', ids.join(' '))
+  else el.removeAttribute('aria-describedby')
 }
 
 /** Headless tooltip behavior bound to a trigger element. `Tooltip.vue` is a thin skin over this. */

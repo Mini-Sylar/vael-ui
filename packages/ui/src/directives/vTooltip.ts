@@ -22,13 +22,24 @@ export type TooltipDirectiveValue = string | TooltipDirectiveOptions | null | un
 // its own copy, and a Vapor-compiled v-tooltip would never reach the app's
 // (usually VDOM-sourced) <TooltipHost/>.
 const TOOLTIP_TARGETS_KEY = Symbol.for('vael-ui.tooltipTargets')
+const TOOLTIP_LISTENERS_KEY = Symbol.for('vael-ui.tooltipTargetListeners')
 type TooltipTargetsGlobal = typeof globalThis & {
   [TOOLTIP_TARGETS_KEY]?: WeakMap<HTMLElement, TooltipDirectiveOptions>
+  [TOOLTIP_LISTENERS_KEY]?: Set<(target: HTMLElement) => void>
 }
 const targetsGlobal = globalThis as TooltipTargetsGlobal
 export const tooltipTargets: WeakMap<HTMLElement, TooltipDirectiveOptions> = (targetsGlobal[
   TOOLTIP_TARGETS_KEY
 ] ??= new WeakMap())
+// Told about every value change so a visible tooltip can re-read its target's
+// entry; the WeakMap itself isn't reactive.
+export const tooltipTargetListeners: Set<(target: HTMLElement) => void> = (targetsGlobal[
+  TOOLTIP_LISTENERS_KEY
+] ??= new Set())
+
+function notify(target: HTMLElement) {
+  for (const listener of tooltipTargetListeners) listener(target)
+}
 
 export const TOOLTIP_ATTR = 'data-ui-tooltip'
 
@@ -79,6 +90,7 @@ function apply(
     target.setAttribute(TOOLTIP_ATTR, '')
   }
   tooltipTargets.set(target, normalize(value, modifiers))
+  notify(target)
 }
 
 function teardown(el: HTMLElement) {
@@ -86,6 +98,7 @@ function teardown(el: HTMLElement) {
   target.removeAttribute(TOOLTIP_ATTR)
   tooltipTargets.delete(target)
   resolvedTargets.delete(el)
+  notify(target)
 }
 
 // v-tooltip="'text'" for plain content, or v-tooltip="{ content, side, ... }"

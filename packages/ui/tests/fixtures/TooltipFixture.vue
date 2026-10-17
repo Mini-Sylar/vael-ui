@@ -11,6 +11,11 @@
 
   <button data-testid="plain">plain</button>
 
+  <button ref="descRef" aria-describedby="field-error" data-testid="trigger-desc">Desc</button>
+  <Tooltip :trigger-el="descRef" :open-delay="120" :close-delay="40">
+    <span data-testid="tip-desc">Tooltip Desc</span>
+  </Tooltip>
+
   <Tooltip :open-delay="120" :close-delay="40">
     <template #trigger="{ setTriggerEl }">
       <Button :ref="setTriggerEl" data-testid="trigger-slot">Slot</Button>
@@ -26,4 +31,5 @@ import Button from '../../src/components/Button/Button.vue'
 
 const aRef = useTemplateRef('aRef')
 const bRef = useTemplateRef('bRef')
+const descRef = useTemplateRef('descRef')
 </script>
