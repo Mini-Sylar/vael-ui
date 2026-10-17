@@ -1,7 +1,10 @@
 <template>
   <section class="demo">
     <h3>Vertical</h3>
-    <p class="note">Same collapsing logic, rotated to the block axis.</p>
+    <p class="note">
+      Same collapsing logic, rotated to the block axis. The chosen alignment is pressed through
+      <code>:aria-pressed</code>, which also lifts its border above its neighbours.
+    </p>
     <div class="row">
       <ButtonGroup orientation="vertical" aria-label="Alignment">
         <Button
@@ -17,9 +20,6 @@
         </Button>
       </ButtonGroup>
     </div>
-    <p class="demo-status">
-      Aligned: <strong>{{ align }}</strong>
-    </p>
   </section>
 </template>
 

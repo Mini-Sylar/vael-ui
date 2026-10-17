@@ -7,11 +7,17 @@
       follows at once. A component's own <code>size</code> still wins, like the
       <strong>Cancel</strong> button here.
     </p>
-    <SelectButton v-model="density" :items="densities" :allow-empty="false" size="sm" />
+    <SelectButton
+      v-model="density"
+      :items="densities"
+      :allow-empty="false"
+      size="sm"
+      aria-label="Density"
+    />
     <ConfigProvider :size="density">
       <form class="form" @submit.prevent>
         <Input v-model="name" placeholder="Project name" />
-        <Select v-model="plan" :items="plans" placeholder="Plan" />
+        <Select v-model="plan" :items="plans" placeholder="Plan" aria-label="Plan" />
         <div class="row">
           <Switch v-model="publicProject" label="Public" />
           <Checkbox v-model="notify" label="Email me" />

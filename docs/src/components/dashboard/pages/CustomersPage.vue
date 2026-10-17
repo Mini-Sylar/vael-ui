@@ -3,7 +3,7 @@
     <template #header>
       <div class="dash-customers-header">
         <div>
-          <h3 class="ui-card-title">Customers</h3>
+          <h2 class="ui-card-title">Customers</h2>
           <Transition name="ui-fade" mode="out-in">
             <p :key="segmentFilter ?? 'all'" class="ui-card-description">
               {{ filteredCustomers.length }} of {{ customers.length }} customers.

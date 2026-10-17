@@ -8,8 +8,8 @@
     </p>
     <ConfigProvider :i18n="i18n">
       <div class="row">
-        <DatePicker v-model="date" />
-        <InputNumber v-model="price" mode="currency" currency="EUR" />
+        <DatePicker v-model="date" aria-label="Date" />
+        <InputNumber v-model="price" mode="currency" currency="EUR" aria-label="Price" />
       </div>
     </ConfigProvider>
   </section>

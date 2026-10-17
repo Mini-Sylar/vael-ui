@@ -20,7 +20,9 @@
     "openMenu": "Open menu",
     "previous": "Previous",
     "next": "Next",
-    "pager": "Previous and next pages"
+    "pager": "Previous and next pages",
+    "mainNav": "Main",
+    "sidebarNav": "Documentation"
   },
   "header": {
     "colorScheme": "Toggle color scheme",
@@ -101,7 +103,7 @@
     "vaporAppIntro": "A Vapor app starts with <code>createVaporApp</code> and imports components, composables and directives from <code>'vael-ui/vapor'</code>. Your own components opt in with <code>&lt;script setup vapor&gt;</code>:",
     "vaporForceIntro": "To skip the <code>vapor</code> attribute in every file, turn on <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 or later. Every <code>&lt;script setup&gt;</code> component in your app then compiles as Vapor:",
     "vaporMixTitle": "Mixing both builds",
-    "vaporMixIntro": "A classic app can also host Vapor components. This helps when you move an existing app to Vapor a few components at a time. Keep <code>createApp</code>, install Vue's <code>vaporInteropPlugin</code>, and import from <code>'vael-ui/vapor'</code> in the components you mark <code>vapor</code>. For a new app, pick one build instead.",
+    "vaporMixIntro": "A classic app can also host Vapor components. This helps when you move an existing app to Vapor a few components at a time. Keep <code>createApp</code>, install Vue's <code>vaporInteropPlugin</code>, and import from <code>'vael-ui/vapor'</code> in the components you mark <code>vapor</code>. For a new app, pick one build instead. A component marked <code>vapor</code> also imports directives such as <code>vTooltip</code> from <code>'vael-ui/vapor'</code> itself, because a directive registered with <code>app.directive</code> only reaches classic components.",
     "installTitle": "Install",
     "installIntro": "vael-ui is on npm. Install it with your package manager:",
     "usageTitle": "Usage",
@@ -120,7 +122,8 @@
     "ssrIntro": "Both builds render on the server and hydrate in the browser. {link} sets up everything below for you.",
     "ssrIntroLink": "The Nuxt module",
     "ssrNoExternal": "With plain Vite SSR, let Vite bundle vael-ui for the server. Each component imports its own CSS, and Node can't load CSS files on its own:",
-    "ssrTeleports": "Dialogs, popovers, toasts and tooltips render into <code>&lt;body&gt;</code> through <code>&lt;Teleport&gt;</code>. Vue returns that HTML separately in <code>ctx.teleports</code>. Add it to your page template, or the page won't hydrate cleanly:"
+    "ssrTeleports": "Dialogs, popovers, toasts and tooltips render into <code>&lt;body&gt;</code> through <code>&lt;Teleport&gt;</code>. Vue returns that HTML separately in <code>ctx.teleports</code>. Add it at the start of <code>&lt;body&gt;</code>, before your app's element, or the page won't hydrate cleanly:",
+    "ssrLocale": "Set <code>locale</code> on <code>ConfigProvider</code> when you render on a server. Without it, dates, numbers and the first day of the week follow the server's language, then change once the page runs in the browser."
   },
   "globalSetup": {
     "title": "Global setup",
@@ -322,7 +325,10 @@
     "BreadcrumbSeparator": "The divider between two BreadcrumbItems. It shows a chevron unless you pass your own content."
   },
   "pageNotes": {
-    "Resizable": "This site's own sidebar is built with Resizable. Drag its right edge to try it."
+    "Resizable": "This site's own sidebar is built with Resizable. Drag its right edge to try it.",
+    "ContextMenu": "Keyboard users open the menu with Shift+F10 or the Menu key, which fire contextmenu on the focused element, so make the wrapped target focusable (tabindex=\"0\") and give it an accessible name.",
+    "Tree": "Rows update from reactive state, so a custom #node slot should read reactive values (props, refs, computeds), not plain variables captured from the parent.",
+    "DataTable": "Big tables: with hundreds of rows, add virtualize and a scroll-height, for example scroll-height=\"400px\". The table then draws only the rows in view, so sorting, selecting and scrolling stay fast. When more than 150 rows are on screen at once, rows also stop sliding into place as they sort."
   },
   "taxonomy": {
     "setup": "Setup",

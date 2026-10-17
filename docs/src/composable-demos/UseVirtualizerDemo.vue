@@ -1,6 +1,12 @@
 <template>
   <section class="demo">
-    <div ref="containerEl" class="virtual-container">
+    <div
+      ref="containerEl"
+      class="virtual-container"
+      tabindex="0"
+      role="region"
+      aria-label="Virtual rows"
+    >
       <div :style="listStyle">
         <div
           v-for="row in items"

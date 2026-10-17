@@ -20,7 +20,9 @@
     "directives": "Directives",
     "previous": "Précédent",
     "next": "Suivant",
-    "pager": "Pages précédente et suivante"
+    "pager": "Pages précédente et suivante",
+    "mainNav": "Principale",
+    "sidebarNav": "Documentation"
   },
   "header": {
     "colorScheme": "Changer le mode",
@@ -101,7 +103,8 @@
     "ssrIntro": "Les deux versions s’affichent côté serveur et s’hydratent dans le navigateur. {link} configure tout ce qui suit pour vous.",
     "ssrIntroLink": "Le module Nuxt",
     "ssrNoExternal": "Avec Vite SSR seul, laissez Vite empaqueter vael-ui pour le serveur. Chaque composant importe son propre CSS, et Node ne sait pas charger les fichiers CSS seul :",
-    "ssrTeleports": "Les dialogues, popovers, toasts et infobulles s’affichent dans <code>&lt;body&gt;</code> via <code>&lt;Teleport&gt;</code>. Vue renvoie ce HTML à part dans <code>ctx.teleports</code>. Ajoutez-le au modèle de votre page, sinon l’hydratation échoue :",
+    "ssrTeleports": "Les dialogues, popovers, toasts et infobulles s’affichent dans <code>&lt;body&gt;</code> via <code>&lt;Teleport&gt;</code>. Vue renvoie ce HTML à part dans <code>ctx.teleports</code>. Ajoutez-le au début de <code>&lt;body&gt;</code>, avant l’élément de votre app, sinon l’hydratation échoue :",
+    "ssrLocale": "Définissez <code>locale</code> sur <code>ConfigProvider</code> quand vous faites le rendu sur un serveur. Sinon, les dates, les nombres et le premier jour de la semaine suivent la langue du serveur, puis changent quand la page s’exécute dans le navigateur.",
     "installIntro": "vael-ui est disponible sur npm. Installez-le avec votre gestionnaire de packages :",
     "intro": "Une bibliothèque de composants Vue 3 avec une version Vue Vapor complète. Les animations utilisent du CSS simple par défaut, mais vous pouvez aussi apporter votre propre bibliothèque d'animation.",
     "usageImportNote": "Chaque composant importe ses propres styles. N'ajoutez cet import que si vous utilisez une version antérieure à 0.2.0 ou si vous voulez charger tous les styles d'un coup. Voir {link} pour la configuration des styles de base.",
@@ -114,7 +117,7 @@
     "vaporAppIntro": "Une app Vapor démarre avec <code>createVaporApp</code> et importe composants, composables et directives depuis <code>'vael-ui/vapor'</code>. Vos propres composants passent à Vapor avec <code>&lt;script setup vapor&gt;</code> :",
     "vaporForceIntro": "Pour ne pas écrire l’attribut <code>vapor</code> dans chaque fichier, activez <code>features.vapor</code> dans <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou plus récent. Chaque composant <code>&lt;script setup&gt;</code> de votre app est alors compilé en Vapor :",
     "vaporMixTitle": "Combiner les deux versions",
-    "vaporMixIntro": "Une app classique peut aussi accueillir des composants Vapor. C’est utile pour passer une app existante à Vapor petit à petit. Gardez <code>createApp</code>, installez le <code>vaporInteropPlugin</code> de Vue, et importez depuis <code>'vael-ui/vapor'</code> dans les composants marqués <code>vapor</code>. Pour une nouvelle app, choisissez une seule version."
+    "vaporMixIntro": "Une app classique peut aussi accueillir des composants Vapor. C’est utile pour passer une app existante à Vapor petit à petit. Gardez <code>createApp</code>, installez le <code>vaporInteropPlugin</code> de Vue, et importez depuis <code>'vael-ui/vapor'</code> dans les composants marqués <code>vapor</code>. Pour une nouvelle app, choisissez une seule version. Un composant marqué <code>vapor</code> importe aussi lui-même les directives comme <code>vTooltip</code> depuis <code>'vael-ui/vapor'</code>, car une directive enregistrée avec <code>app.directive</code> n’atteint que les composants classiques."
   },
   "animation": {
     "beforeCloseIntro": "Pour les bibliothèques impératives : passez une fonction qui reçoit <code>done</code>. Le composant reste monté, avec <code>isClosing</code> activé, jusqu'à ce que vous l'appeliez.",
@@ -232,7 +235,10 @@
     "link": "Lien vers"
   },
   "pageNotes": {
-    "Resizable": "La propre barre latérale de ce site est construite avec Resizing. \nFaites glisser son bord droit pour l'essayer."
+    "Resizable": "La propre barre latérale de ce site est construite avec Resizing. \nFaites glisser son bord droit pour l'essayer.",
+    "ContextMenu": "Au clavier, on ouvre le menu avec Maj+F10 ou la touche Menu, qui déclenchent contextmenu sur l'élément qui a le focus. Rendez donc la cible enveloppée focalisable (tabindex=\"0\") et donnez-lui un nom accessible.",
+    "Tree": "Les lignes se mettent à jour à partir de l'état réactif. Un slot #node personnalisé doit donc lire des valeurs réactives (props, refs, computeds), pas de simples variables capturées depuis le parent.",
+    "DataTable": "Grandes tables : avec des centaines de lignes, ajoutez virtualize et une scroll-height, par exemple scroll-height=\"400px\". La table ne dessine alors que les lignes visibles, et le tri, la sélection et le défilement restent rapides. Au-delà de 150 lignes affichées à la fois, les lignes ne glissent plus non plus à leur place pendant le tri."
   },
   "stylingLayers": {
     "intro": "vael-ui est livré dans {layer}. Le CSS hors couche l'emporte toujours sur le CSS en couche, quelle que soit sa spécificité. Un reset de base simple, hors couche, écrase donc les styles internes de vael-ui sans aucun avertissement. Pour corriger cela, placez aussi vos styles de base dans une couche, et ordonnez-la en premier.",

@@ -51,20 +51,22 @@ function removeStale(dir) {
 
 // Reads the real, built Vapor export list rather than any script's source
 // list, so a component missing from the actual dist/vapor build (not just
-// from generate-vapor.mjs's COMPONENTS array) is caught here too.
-function readVaporComponentNames() {
+// from generate-vapor.mjs's COMPONENTS array) is caught here too. Every value
+// export counts, not only components: confirmAction, for one, has its own
+// Vapor build, and the classic one leaves a Vapor DialogHost with no buttons.
+function readVaporExportNames() {
   const dts = readFileSync(VAPOR_DTS_PATH, 'utf8')
-  // tsdown emits one combined `export { ... };` of local bindings at the tail
-  // (no trailing `from '...'`, unlike the old hand-written re-export format).
-  const firstExport = dts.match(/^export\s*\{([^}]+)\}\s*(?:from\s*'[^']*')?;?\s*$/m)
-  if (!firstExport) throw new Error(`couldn't parse ${VAPOR_DTS_PATH}`)
   const names = new Set()
-  for (const raw of firstExport[1].split(',')) {
-    const trimmed = raw.trim().replace(/^type\s+/, '')
-    if (!trimmed) continue
-    const asMatch = trimmed.match(/\bas\s+(\S+)/)
-    names.add(asMatch ? asMatch[1] : trimmed)
+  // tsdown emits `export { ... } from '../index'` lines; `export type` ones carry no values.
+  for (const block of dts.matchAll(/^export\s*\{([^}]+)\}/gm)) {
+    for (const raw of block[1].split(',')) {
+      const trimmed = raw.trim()
+      if (!trimmed || trimmed.startsWith('type ')) continue
+      const asMatch = trimmed.match(/\bas\s+(\S+)/)
+      names.add(asMatch ? asMatch[1] : trimmed)
+    }
   }
+  if (names.size === 0) throw new Error(`couldn't parse ${VAPOR_DTS_PATH}`)
   return names
 }
 
@@ -109,7 +111,7 @@ function usesIneligibleIntegration(sources) {
 // A PascalCase name imported from 'vael-ui' not in the real built Vapor
 // export list means this demo genuinely can't run under Vapor yet — not a
 // script limitation, a real gap in the library's own Vapor build.
-function findMissingVaporComponents(sources, vaporComponentNames) {
+function findMissingVaporComponents(sources, vaporExportNames) {
   const missing = new Set()
   const importRe = /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui['"];?$/gm
   for (const source of sources) {
@@ -119,7 +121,7 @@ function findMissingVaporComponents(sources, vaporComponentNames) {
         .split(',')
         .map((n) => n.trim())
         .filter(Boolean)) {
-        if (/^[A-Z]/.test(raw) && !vaporComponentNames.has(raw)) missing.add(raw)
+        if (/^[A-Z]/.test(raw) && !vaporExportNames.has(raw)) missing.add(raw)
       }
     }
   }
@@ -150,19 +152,18 @@ function suppressKnownVaporDirectiveGaps(source) {
   })
 }
 
-// Only PascalCase names that are real Vapor components move to
-// 'vael-ui/vapor'; composables/functions (openDialog, useTabIndicator,
-// toast, ...) aren't Vapor/VDOM-specific and stay on 'vael-ui'. `import
-// type` lines are untouched — vapor's .d.ts re-exports the same types.
-function rewriteToVapor(source, vaporComponentNames) {
+// Every name the Vapor build exports moves to 'vael-ui/vapor', as the guide
+// tells users to do. Shared composables resolve to the same files either way,
+// and `import type` lines are untouched: vapor's .d.ts re-exports the same types.
+function rewriteToVapor(source, vaporExportNames) {
   const importRe = /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui['"];?$/gm
   return source.replace(importRe, (full, namedClause) => {
     const names = namedClause
       .split(',')
       .map((n) => n.trim())
       .filter(Boolean)
-    const vaporNames = names.filter((n) => vaporComponentNames.has(n))
-    const stayNames = names.filter((n) => !vaporComponentNames.has(n))
+    const vaporNames = names.filter((n) => vaporExportNames.has(n))
+    const stayNames = names.filter((n) => !vaporExportNames.has(n))
     const lines = []
     if (vaporNames.length > 0)
       lines.push(`import { ${vaporNames.join(', ')} } from 'vael-ui/vapor'`)
@@ -190,9 +191,9 @@ function extractTitle(source, fallback) {
 // without extension — "DataTableDemo" for a legacy flat file, or
 // "Sortable/DragToReorder" for a migrated one. Fully self-describing, so
 // nothing here needs to know which shape produced them.
-function emitExample(id, allIds, sourceFor, vaporComponentNames, state) {
+function emitExample(id, allIds, sourceFor, vaporExportNames, state) {
   const allSources = allIds.map((partId) => sourceFor(partId))
-  const missingComponents = findMissingVaporComponents(allSources, vaporComponentNames)
+  const missingComponents = findMissingVaporComponents(allSources, vaporExportNames)
   const eligible = !usesIneligibleIntegration(allSources) && missingComponents.size === 0
   for (const m of missingComponents) state.vaporGaps.add(m)
 
@@ -207,7 +208,7 @@ function emitExample(id, allIds, sourceFor, vaporComponentNames, state) {
     }
     if (eligible && !state.copiedVapor.has(partId)) {
       const vaporSource = suppressKnownVaporDirectiveGaps(
-        rewriteToVapor(injectVaporMarker(source), vaporComponentNames),
+        rewriteToVapor(injectVaporMarker(source), vaporExportNames),
       )
       writeIfChanged(join(OUT_VAPOR_DIR, partDir, `${partFile}.vue`), vaporSource)
       state.copiedVapor.add(partId)
@@ -221,7 +222,7 @@ function emitExample(id, allIds, sourceFor, vaporComponentNames, state) {
 // example. Partial files (a plain child component an example imports, no
 // example content of their own) are found by scanning every file's own
 // relative imports first, then excluded from the example list.
-function processFolder(component, folderPath, vaporComponentNames, state) {
+function processFolder(component, folderPath, vaporExportNames, state) {
   const files = readdirSync(folderPath).filter((f) => f.endsWith('.vue'))
   const sourceById = new Map(
     files.map((f) => [f.replace(/\.vue$/, ''), readFileSync(join(folderPath, f), 'utf8')]),
@@ -242,22 +243,22 @@ function processFolder(component, folderPath, vaporComponentNames, state) {
     const allIds = [exampleId, ...findLocalPartials(sourceById.get(exampleId))].map(
       (id) => `${component}/${id}`,
     )
-    return emitExample(`${component}/${exampleId}`, allIds, sourceFor, vaporComponentNames, state)
+    return emitExample(`${component}/${exampleId}`, allIds, sourceFor, vaporExportNames, state)
   })
 }
 
 // A not-yet-migrated component: one legacy `{name}Demo.vue` file, its whole
 // content treated as a single example — unchanged behavior from before
 // per-example splitting existed.
-function processLegacy(demoName, vaporComponentNames, state) {
+function processLegacy(demoName, vaporExportNames, state) {
   const sourceFor = (id) => readFileSync(join(DEMOS_DIR, `${id}.vue`), 'utf8')
   const partials = [...findLocalPartials(sourceFor(demoName))]
   const allIds = [demoName, ...partials]
-  return emitExample(demoName, allIds, sourceFor, vaporComponentNames, state)
+  return emitExample(demoName, allIds, sourceFor, vaporExportNames, state)
 }
 
 function main() {
-  const vaporComponentNames = readVaporComponentNames()
+  const vaporExportNames = readVaporExportNames()
 
   mkdirSync(OUT_VDOM_DIR, { recursive: true })
   mkdirSync(OUT_VAPOR_DIR, { recursive: true })
@@ -268,7 +269,7 @@ function main() {
   for (const component of allComponents) {
     const folderPath = join(DEMOS_DIR, FOLDER_ALIASES[component] ?? component)
     if (existsSync(folderPath) && statSync(folderPath).isDirectory()) {
-      const examples = processFolder(component, folderPath, vaporComponentNames, state)
+      const examples = processFolder(component, folderPath, vaporExportNames, state)
       manifest[component] = { examples }
       console.log(`${component} -> ${examples.length} example(s) in ${component}/`)
       continue
@@ -280,7 +281,7 @@ function main() {
       console.log(`(no demo) ${component}`)
       continue
     }
-    const example = processLegacy(demoName, vaporComponentNames, state)
+    const example = processLegacy(demoName, vaporExportNames, state)
     manifest[component] = { examples: [example] }
     console.log(`${component} -> ${demoName}${example.vaporEligible ? '' : ' (VDOM only)'}`)
   }

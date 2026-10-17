@@ -7,7 +7,7 @@
       engages only while that element is scrolled to the very top — scroll down and it's an ordinary
       list again.
     </p>
-    <div ref="scroller" class="ptr-scroller">
+    <div ref="scroller" class="ptr-scroller" tabindex="0" role="region" aria-label="Inbox">
       <PullToRefresh :on-refresh="refresh" :scroll-el="scroller">
         <ul class="ptr-list">
           <li v-for="rowLabel in rows" :key="rowLabel" class="ptr-row">{{ rowLabel }}</li>

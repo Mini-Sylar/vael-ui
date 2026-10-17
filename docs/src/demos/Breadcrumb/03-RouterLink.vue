@@ -5,7 +5,7 @@
       <code>as</code> takes any registered component by name — Vue Router auto-registers
       <code>RouterLink</code> globally, so the string name alone is enough, no import required.
     </p>
-    <Breadcrumb>
+    <Breadcrumb aria-label="Router breadcrumb">
       <BreadcrumbItem as="RouterLink" to="/">Home</BreadcrumbItem>
       <BreadcrumbSeparator />
       <BreadcrumbItem as="RouterLink" to="/components">Components</BreadcrumbItem>

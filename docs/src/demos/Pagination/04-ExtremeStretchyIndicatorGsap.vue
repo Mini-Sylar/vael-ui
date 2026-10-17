@@ -11,6 +11,7 @@
     <Pagination
       ref="pagination"
       v-model:page="page"
+      aria-label="Pagination with a stretchy indicator"
       :total="200"
       :sibling-count="2"
       :motion-css="false"

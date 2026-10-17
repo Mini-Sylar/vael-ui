@@ -123,7 +123,8 @@
     "ssrIntro": "两种构建都能在服务端渲染，并在浏览器中激活。{link}会自动完成下面的所有设置。",
     "ssrIntroLink": "Nuxt 模块",
     "ssrNoExternal": "使用原生 Vite SSR 时，让 Vite 为服务端打包 vael-ui。每个组件都会导入自己的 CSS，而 Node 无法直接加载 CSS 文件：",
-    "ssrTeleports": "对话框、弹出层、提示消息和工具提示通过 <code>&lt;Teleport&gt;</code> 渲染到 <code>&lt;body&gt;</code>。Vue 会把这部分 HTML 单独放在 <code>ctx.teleports</code> 中返回。请把它加入页面模板，否则页面无法正确激活：",
+    "ssrTeleports": "对话框、弹出层、提示消息和工具提示通过 <code>&lt;Teleport&gt;</code> 渲染到 <code>&lt;body&gt;</code>。Vue 会把这部分 HTML 单独放在 <code>ctx.teleports</code> 中返回。请把它放在 <code>&lt;body&gt;</code> 开头、应用元素之前，否则页面无法正确激活：",
+    "ssrLocale": "在服务器上渲染时，请在 <code>ConfigProvider</code> 上设置 <code>locale</code>。否则日期、数字和每周的第一天会跟随服务器的语言，并在页面于浏览器中运行后发生变化。",
     "directivesTitle": "指令",
     "installIntro": "vael-ui 已发布在 npm 上。使用你的包管理器安装：",
     "installTitle": "安装",
@@ -140,7 +141,7 @@
     "vaporAppIntro": "Vapor 应用以 <code>createVaporApp</code> 启动，并从 <code>'vael-ui/vapor'</code> 导入组件、组合式函数和指令。你自己的组件用 <code>&lt;script setup vapor&gt;</code> 启用 Vapor：",
     "vaporForceIntro": "如果不想在每个文件里写 <code>vapor</code> 属性，可以在 <code>{'@'}vitejs/plugin-vue</code> 6.0.8 或更高版本中开启 <code>features.vapor</code>。这样应用里所有 <code>&lt;script setup&gt;</code> 组件都会编译为 Vapor：",
     "vaporMixTitle": "混用两种构建",
-    "vaporMixIntro": "传统应用也可以包含 Vapor 组件。当你想把现有应用逐步迁移到 Vapor 时，这很有用。保留 <code>createApp</code>，安装 Vue 的 <code>vaporInteropPlugin</code>，并在标记了 <code>vapor</code> 的组件中从 <code>'vael-ui/vapor'</code> 导入。新应用请只选一种构建。",
+    "vaporMixIntro": "传统应用也可以包含 Vapor 组件。当你想把现有应用逐步迁移到 Vapor 时，这很有用。保留 <code>createApp</code>，安装 Vue 的 <code>vaporInteropPlugin</code>，并在标记了 <code>vapor</code> 的组件中从 <code>'vael-ui/vapor'</code> 导入。新应用请只选一种构建。标记了 <code>vapor</code> 的组件也要自己从 <code>'vael-ui/vapor'</code> 导入 <code>vTooltip</code> 等指令，因为用 <code>app.directive</code> 注册的指令只会作用于经典组件。",
     "vaporTitle": "Vue 蒸气支持"
   },
   "globalSetup": {
@@ -236,10 +237,15 @@
     "directives": "指令",
     "previous": "上一页",
     "next": "下一页",
-    "pager": "上一页和下一页"
+    "pager": "上一页和下一页",
+    "mainNav": "主导航",
+    "sidebarNav": "文档"
   },
   "pageNotes": {
-    "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。"
+    "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。",
+    "ContextMenu": "键盘用户通过 Shift+F10 或菜单键打开菜单，这两者会在获得焦点的元素上触发 contextmenu。因此请让被包裹的目标可聚焦（tabindex=\"0\"），并为它提供可访问名称。",
+    "Tree": "行会根据响应式状态更新，所以自定义的 #node 插槽应读取响应式的值（props、ref、computed），而不是从父组件捕获的普通变量。",
+    "DataTable": "大型表格：有几百行时，请添加 virtualize 和 scroll-height，例如 scroll-height=\"400px\"。表格只会绘制可见的行，排序、选择和滚动都能保持流畅。同时显示超过 150 行时，排序时行也不再滑动到新位置。"
   },
   "stylingLayers": {
     "intro": "vael-ui 发布在 {layer} 中。无论优先级如何，未分层的 CSS 总是会覆盖分层的 CSS。因此，一个普通的、未分层的基础重置样式会在没有任何提示的情况下覆盖 vael-ui 的内部样式。要解决这个问题，请把你的基础样式也放进一个层中，并将该层排在最前面。",

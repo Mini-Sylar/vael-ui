@@ -5,7 +5,8 @@
     class="feature-card"
     :class="{ 'feature-card--link': to }"
   >
-    <div class="feature-visual" aria-hidden="true">
+    <!-- inert, not only aria-hidden: the live visuals hold buttons and inputs. -->
+    <div class="feature-visual" aria-hidden="true" inert>
       <slot name="visual" />
     </div>
     <div class="feature-copy">

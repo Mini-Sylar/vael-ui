@@ -13,6 +13,7 @@
       <Slider
         ref="momentumSlider"
         v-model="momentumValue"
+        aria-label="Momentum value"
         :min="0"
         :max="100"
         style="max-width: 20rem"

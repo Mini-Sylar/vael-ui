@@ -123,7 +123,8 @@
     "ssrIntro": "Entrambe le build vengono renderizzate sul server e idratate nel browser. {link} configura tutto quanto segue per te.",
     "ssrIntroLink": "Il modulo Nuxt",
     "ssrNoExternal": "Con Vite SSR senza framework, lascia che Vite includa vael-ui nel bundle del server. Ogni componente importa il proprio CSS, e Node non sa caricare i file CSS da solo:",
-    "ssrTeleports": "Dialog, popover, toast e tooltip vengono renderizzati in <code>&lt;body&gt;</code> tramite <code>&lt;Teleport&gt;</code>. Vue restituisce quell'HTML a parte in <code>ctx.teleports</code>. Aggiungilo al template della pagina, altrimenti l'idratazione non va a buon fine:",
+    "ssrTeleports": "Dialog, popover, toast e tooltip vengono renderizzati in <code>&lt;body&gt;</code> tramite <code>&lt;Teleport&gt;</code>. Vue restituisce quell'HTML a parte in <code>ctx.teleports</code>. Aggiungilo all'inizio di <code>&lt;body&gt;</code>, prima dell'elemento della tua app, altrimenti l'idratazione non va a buon fine:",
+    "ssrLocale": "Imposta <code>locale</code> su <code>ConfigProvider</code> quando fai il rendering su un server. Altrimenti date, numeri e primo giorno della settimana seguono la lingua del server e cambiano quando la pagina gira nel browser.",
     "directivesTitle": "Direttive",
     "installIntro": "vael-ui è su npm. Installalo con il tuo gestore di pacchetti:",
     "installTitle": "Installare",
@@ -140,7 +141,7 @@
     "vaporAppIntro": "Un'app Vapor parte con <code>createVaporApp</code> e importa componenti, composable e direttive da <code>'vael-ui/vapor'</code>. I tuoi componenti passano a Vapor con <code>&lt;script setup vapor&gt;</code>:",
     "vaporForceIntro": "Per non scrivere l'attributo <code>vapor</code> in ogni file, attiva <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 o successivo. Così ogni componente <code>&lt;script setup&gt;</code> della tua app viene compilato come Vapor:",
     "vaporMixTitle": "Usare entrambe le build",
-    "vaporMixIntro": "Un'app classica può anche ospitare componenti Vapor. Serve quando sposti un'app esistente su Vapor un po' alla volta. Mantieni <code>createApp</code>, installa il <code>vaporInteropPlugin</code> di Vue e importa da <code>'vael-ui/vapor'</code> nei componenti marcati <code>vapor</code>. Per una nuova app, scegli una sola build.",
+    "vaporMixIntro": "Un'app classica può anche ospitare componenti Vapor. Serve quando sposti un'app esistente su Vapor un po' alla volta. Mantieni <code>createApp</code>, installa il <code>vaporInteropPlugin</code> di Vue e importa da <code>'vael-ui/vapor'</code> nei componenti marcati <code>vapor</code>. Per una nuova app, scegli una sola build. Un componente marcato <code>vapor</code> importa anche le direttive come <code>vTooltip</code> da <code>'vael-ui/vapor'</code> da solo, perché una direttiva registrata con <code>app.directive</code> raggiunge solo i componenti classici.",
     "vaporTitle": "Supporto per Vue Vapor"
   },
   "globalSetup": {
@@ -236,10 +237,15 @@
     "directives": "Direttive",
     "previous": "Precedente",
     "next": "Successivo",
-    "pager": "Pagine precedente e successiva"
+    "pager": "Pagine precedente e successiva",
+    "mainNav": "Principale",
+    "sidebarNav": "Documentazione"
   },
   "pageNotes": {
-    "Resizable": "La barra laterale di questo sito è costruita con Resizable. \nTrascina il bordo destro per provarlo."
+    "Resizable": "La barra laterale di questo sito è costruita con Resizable. \nTrascina il bordo destro per provarlo.",
+    "ContextMenu": "Da tastiera il menu si apre con Maiusc+F10 o il tasto Menu, che inviano contextmenu all'elemento con il focus. Rendi quindi focalizzabile il target avvolto (tabindex=\"0\") e dagli un nome accessibile.",
+    "Tree": "Le righe si aggiornano dallo stato reattivo, quindi uno slot #node personalizzato deve leggere valori reattivi (props, ref, computed), non semplici variabili catturate dal genitore.",
+    "DataTable": "Tabelle grandi: con centinaia di righe, aggiungi virtualize e uno scroll-height, per esempio scroll-height=\"400px\". La tabella disegna allora solo le righe visibili, così ordinamento, selezione e scorrimento restano veloci. Con più di 150 righe visibili insieme, le righe smettono anche di scivolare al loro posto durante l'ordinamento."
   },
   "stylingLayers": {
     "intro": "vael-ui è distribuito in {layer}. Il CSS senza layer vince sempre su quello nei layer, qualunque sia la specificità. Così un semplice reset di base senza layer sovrascrive gli stili interni di vael-ui senza alcun avviso. Per evitarlo, metti anche i tuoi stili di base in un layer e ordinalo per primo.",

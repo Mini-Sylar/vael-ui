@@ -8,7 +8,7 @@
       <code>as</code> (<code>href</code> for a plain link, <code>to</code> for a router one); baking
       in one would silently break the other.
     </p>
-    <Breadcrumb :items="itemsData" />
+    <Breadcrumb :items="itemsData" aria-label="Breadcrumb with icons" />
   </section>
 </template>
 

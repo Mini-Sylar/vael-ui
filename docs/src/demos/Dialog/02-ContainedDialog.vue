@@ -20,7 +20,13 @@
         <strong>Project files</strong>
         <Button size="sm" variant="outline" @click="containedOpen = true">Move to…</Button>
       </header>
-      <div ref="paneScroll" class="contained-pane__body">
+      <div
+        ref="paneScroll"
+        class="contained-pane__body"
+        tabindex="0"
+        role="region"
+        aria-label="Project files"
+      >
         <p v-for="n in 14" :key="n" class="contained-pane__row">
           <code>src/components/File{{ n }}.vue</code>
         </p>

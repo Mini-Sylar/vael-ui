@@ -18,7 +18,7 @@
             <DitherArea :values="stat.series" :headroom="1.2" :delay="0.2 + i * 0.05" />
           </div>
           <div v-else class="repo-stat-budget">
-            <Progress :value="stat.progress" size="sm" />
+            <Progress :value="stat.progress" size="sm" :label="stat.label" />
           </div>
         </Card>
       </motion.div>
@@ -28,7 +28,7 @@
       <div class="repo-col">
         <Card class="repo-panel">
           <div class="repo-panel-head">
-            <h3 class="repo-h">Throughput</h3>
+            <h2 class="repo-h">Throughput</h2>
             <span class="repo-label">7-day average per day</span>
             <span class="repo-legend">
               <span><i class="repo-swatch" />merged</span>
@@ -40,7 +40,7 @@
 
         <Card id="dash-activity" class="repo-panel">
           <div class="repo-panel-head">
-            <h3 class="repo-h">Activity</h3>
+            <h2 class="repo-h">Activity</h2>
             <span class="repo-live"><i />live</span>
           </div>
           <Timeline
@@ -74,7 +74,7 @@
       <div class="repo-col">
         <Card class="repo-panel">
           <div class="repo-panel-head">
-            <h3 class="repo-h">Release <span class="repo-mono">v0.4.0</span></h3>
+            <h2 class="repo-h">Release <span class="repo-mono">v0.4.0</span></h2>
             <Tag size="sm" variant="muted" class="repo-push">minor</Tag>
           </div>
           <ol class="repo-stages">
@@ -134,7 +134,7 @@
 
         <Card class="repo-panel repo-queue">
           <div class="repo-panel-head">
-            <h3 class="repo-h">Review queue</h3>
+            <h2 class="repo-h">Review queue</h2>
             <span class="repo-mono repo-muted repo-push">{{ openPulls.length }}</span>
           </div>
           <TransitionGroup tag="ul" name="repo-queue" class="repo-queue-list">

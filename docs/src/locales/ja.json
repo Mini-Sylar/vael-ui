@@ -123,7 +123,8 @@
     "ssrIntro": "どちらのビルドもサーバーでレンダリングでき、ブラウザでハイドレートされます。{link}を使えば、以下の設定はすべて自動で行われます。",
     "ssrIntroLink": "Nuxt モジュール",
     "ssrNoExternal": "素の Vite SSR では、vael-ui をサーバー用にバンドルするよう Vite に指定します。各コンポーネントは自分の CSS をインポートしますが、Node は CSS ファイルを単体で読み込めません:",
-    "ssrTeleports": "ダイアログ、ポップオーバー、トースト、ツールチップは <code>&lt;Teleport&gt;</code> で <code>&lt;body&gt;</code> にレンダリングされます。Vue はその HTML を <code>ctx.teleports</code> に分けて返すので、ページのテンプレートに追加してください。追加しないと正しくハイドレートされません:",
+    "ssrTeleports": "ダイアログ、ポップオーバー、トースト、ツールチップは <code>&lt;Teleport&gt;</code> で <code>&lt;body&gt;</code> にレンダリングされます。Vue はその HTML を <code>ctx.teleports</code> に分けて返すので、<code>&lt;body&gt;</code> の先頭、アプリの要素より前に追加してください。追加しないと正しくハイドレートされません:",
+    "ssrLocale": "サーバーでレンダリングするときは <code>ConfigProvider</code> に <code>locale</code> を設定してください。設定しないと、日付、数値、週の始まりの曜日がサーバーの言語に従い、ブラウザで動き始めたときに変わります。",
     "directivesTitle": "指令",
     "installIntro": "vael-ui は npm で公開されています。お使いのパッケージマネージャーでインストールしてください。",
     "installTitle": "インストール",
@@ -140,7 +141,7 @@
     "vaporAppIntro": "Vapor アプリは <code>createVaporApp</code> で始め、コンポーネント・コンポーザブル・ディレクティブを <code>'vael-ui/vapor'</code> からインポートします。自分のコンポーネントは <code>&lt;script setup vapor&gt;</code> で Vapor にします:",
     "vaporForceIntro": "すべてのファイルに <code>vapor</code> 属性を書かずに済ませるには、<code>{'@'}vitejs/plugin-vue</code> 6.0.8 以降で <code>features.vapor</code> を有効にします。アプリ内のすべての <code>&lt;script setup&gt;</code> コンポーネントが Vapor としてコンパイルされます:",
     "vaporMixTitle": "両方のビルドを併用する",
-    "vaporMixIntro": "従来のアプリの中で Vapor コンポーネントを使うこともできます。既存のアプリを少しずつ Vapor に移すときに役立ちます。<code>createApp</code> はそのままにして Vue の <code>vaporInteropPlugin</code> を登録し、<code>vapor</code> を付けたコンポーネントでは <code>'vael-ui/vapor'</code> からインポートします。新しいアプリでは、どちらか一方のビルドを選んでください。",
+    "vaporMixIntro": "従来のアプリの中で Vapor コンポーネントを使うこともできます。既存のアプリを少しずつ Vapor に移すときに役立ちます。<code>createApp</code> はそのままにして Vue の <code>vaporInteropPlugin</code> を登録し、<code>vapor</code> を付けたコンポーネントでは <code>'vael-ui/vapor'</code> からインポートします。新しいアプリでは、どちらか一方のビルドを選んでください。<code>vapor</code> を付けたコンポーネントでは、<code>vTooltip</code> などのディレクティブも <code>'vael-ui/vapor'</code> から直接インポートします。<code>app.directive</code> で登録したディレクティブはクラシックなコンポーネントにしか届かないためです。",
     "vaporTitle": "Vue Vapor のサポート"
   },
   "globalSetup": {
@@ -236,10 +237,15 @@
     "directives": "ディレクティブ",
     "previous": "前へ",
     "next": "次へ",
-    "pager": "前後のページ"
+    "pager": "前後のページ",
+    "mainNav": "メイン",
+    "sidebarNav": "ドキュメント"
   },
   "pageNotes": {
-    "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。"
+    "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。",
+    "ContextMenu": "キーボードでは Shift+F10 またはメニューキーでメニューを開きます。どちらもフォーカス中の要素で contextmenu を発火させるので、包む対象をフォーカス可能にし（tabindex=\"0\"）、アクセシブルな名前を付けてください。",
+    "Tree": "行はリアクティブな状態から更新されます。カスタムの #node スロットでは、親から取り込んだ普通の変数ではなく、リアクティブな値（props、ref、computed）を読んでください。",
+    "DataTable": "大きなテーブル：数百行ある場合は virtualize と scroll-height（例：scroll-height=\"400px\"）を追加してください。表示中の行だけを描画するので、並べ替え、選択、スクロールが速いまま保たれます。一度に 150 行より多く表示されているときは、並べ替えで行がスライドして移動する動きも省かれます。"
   },
   "stylingLayers": {
     "intro": "vael-ui は {layer} で提供されています。レイヤー外の CSS は、詳細度に関係なく常にレイヤー内の CSS に勝ちます。そのため、レイヤーに入れていない素のベースリセットは、警告なしに vael-ui の内部スタイルを上書きしてしまいます。これを防ぐには、ベーススタイルもレイヤーに入れ、そのレイヤーを先頭に並べてください。",

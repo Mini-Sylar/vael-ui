@@ -835,6 +835,7 @@ const { mode, resolvedMode, setMode } = useColorScheme({
     description:
       'Connects a custom form control to the nearest `<Field>`. It returns the id and the ARIA values to bind (`aria-describedby`, `aria-invalid`, `aria-required`), and reports focus and filled state to Field. Field uses that state to move a floating label and set `data-filled`. Every built-in input (Input, Select, Checkbox, RadioGroup, …) uses it. Use it so a custom control works with Field the same way.',
     hasLiveDemo: true,
+    extraSourceFiles: ['CustomTextInput.vue'],
     params: [
       {
         name: 'filled',

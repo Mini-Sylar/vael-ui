@@ -1,5 +1,6 @@
 <template>
-  <aside
+  <!-- A div, not an aside: the showcase sits inside the docs page's main landmark. -->
+  <div
     ref="asideEl"
     class="dash-sidebar"
     :class="{ 'dash-sidebar--collapsed': collapsed }"
@@ -58,7 +59,7 @@
       </Button>
     </div>
 
-    <nav id="dash-nav" class="dash-nav" aria-label="Main">
+    <nav id="dash-nav" class="dash-nav" aria-label="Dashboard">
       <MenuList
         :items="navItems"
         :active="activePage"
@@ -74,6 +75,7 @@
             />
           </span>
           <span v-if="!collapsed" class="ui-menu-list-item-label">{{ item.label }}</span>
+          <span v-else class="dash-sr-only">{{ item.label }}</span>
           <Badge
             v-if="!collapsed && item.badge"
             :count="item.badge"
@@ -188,7 +190,7 @@
             block
             class="dash-user-trigger"
             :class="{ 'dash-user-trigger--collapsed': collapsed }"
-            :aria-label="collapsed ? 'Account menu' : undefined"
+            :aria-label="collapsed ? 'MM, account menu' : undefined"
           >
             <span class="dash-user-avatar">
               <Avatar name="Mira Mitchell" size="sm">
@@ -205,7 +207,7 @@
         </template>
       </Menu>
     </div>
-  </aside>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -366,6 +368,15 @@ defineExpose({ collapsed })
 </script>
 
 <style scoped>
+.dash-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
 .dash-sidebar {
   position: relative;
   flex: none;

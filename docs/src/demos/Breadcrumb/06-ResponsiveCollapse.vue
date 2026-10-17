@@ -9,7 +9,7 @@
     </p>
     <Resizable v-model:size="resizableSize" class="breadcrumb-resizable" :min="140" :max="480">
       <div ref="collapseContainer" class="breadcrumb-collapse-container">
-        <Breadcrumb>
+        <Breadcrumb aria-label="Collapsing breadcrumb">
           <template v-for="(crumb, i) in visibleCrumbs" :key="i">
             <li v-if="crumb === 'ellipsis'" class="ui-breadcrumb-item">
               <Menu

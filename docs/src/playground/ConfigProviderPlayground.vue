@@ -35,9 +35,10 @@
           </span>
         </div>
         <div class="control-row">
-          <label for="cp-radius">radius</label>
+          <label id="cp-radius-label" for="cp-radius">radius</label>
           <Select
             id="cp-radius"
+            aria-labelledby="cp-radius-label"
             size="sm"
             class="control-input"
             :items="radiusItems"
@@ -46,9 +47,10 @@
           />
         </div>
         <div class="control-row">
-          <label for="cp-font-size">fontSize</label>
+          <label id="cp-font-size-label" for="cp-font-size">fontSize</label>
           <Select
             id="cp-font-size"
+            aria-labelledby="cp-font-size-label"
             size="sm"
             class="control-input"
             :items="fontSizeItems"
@@ -57,9 +59,10 @@
           />
         </div>
         <div class="control-row">
-          <label for="cp-size">size</label>
+          <label id="cp-size-label" for="cp-size">size</label>
           <Select
             id="cp-size"
+            aria-labelledby="cp-size-label"
             size="sm"
             class="control-input"
             :items="sizeItems"

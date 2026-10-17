@@ -1,6 +1,6 @@
 <template>
   <div class="guide-layout">
-    <article v-highlight-code class="prose">
+    <article v-highlight-code v-scrollable-tables class="prose">
       <slot />
       <DocsPager />
     </article>
@@ -12,6 +12,7 @@
 import DocsPager from './DocsPager.vue'
 import OnThisPage from './OnThisPage.vue'
 import { vHighlightCode } from '../composables/vHighlightCode'
+import { vScrollableTables } from '../composables/vScrollableTables'
 
 defineProps<{ links: { id: string; label: string }[] }>()
 </script>

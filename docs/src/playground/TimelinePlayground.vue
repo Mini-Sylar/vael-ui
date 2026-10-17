@@ -38,9 +38,10 @@
 
       <div class="playground-controls">
         <div class="control-row">
-          <label for="ctl-orientation">orientation</label>
+          <label id="ctl-orientation-label" for="ctl-orientation">orientation</label>
           <Select
             id="ctl-orientation"
+            aria-labelledby="ctl-orientation-label"
             size="sm"
             class="control-input"
             :items="orientationItems"

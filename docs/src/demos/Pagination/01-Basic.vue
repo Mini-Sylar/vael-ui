@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3>Basic</h3>
-    <Pagination v-model:page="page" :total="120" />
+    <Pagination v-model:page="page" :total="120" aria-label="Basic pagination" />
     <p class="demo-status">Page {{ page }} of 12</p>
   </section>
 </template>

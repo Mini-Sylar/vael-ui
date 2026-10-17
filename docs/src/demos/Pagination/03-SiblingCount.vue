@@ -2,8 +2,18 @@
   <section class="demo">
     <h3><code>siblingCount</code>, compact vs. wide</h3>
     <div class="pagination-stack">
-      <Pagination v-model:page="page" :total="500" :sibling-count="0" />
-      <Pagination v-model:page="page" :total="500" :sibling-count="2" />
+      <Pagination
+        v-model:page="page"
+        :total="500"
+        :sibling-count="0"
+        aria-label="Compact pagination"
+      />
+      <Pagination
+        v-model:page="page"
+        :total="500"
+        :sibling-count="2"
+        aria-label="Wide pagination"
+      />
     </div>
   </section>
 </template>

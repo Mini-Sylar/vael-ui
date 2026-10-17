@@ -123,7 +123,8 @@
     "ssrIntro": "Beide Builds rendern auf dem Server und hydrieren im Browser. {link} richtet alles Folgende für Sie ein.",
     "ssrIntroLink": "Das Nuxt-Modul",
     "ssrNoExternal": "Mit reinem Vite-SSR lassen Sie Vite vael-ui für den Server bündeln. Jede Komponente importiert ihr eigenes CSS, und Node kann CSS-Dateien nicht selbst laden:",
-    "ssrTeleports": "Dialoge, Popover, Toasts und Tooltips rendern per <code>&lt;Teleport&gt;</code> in <code>&lt;body&gt;</code>. Vue liefert dieses HTML getrennt in <code>ctx.teleports</code>. Fügen Sie es in Ihre Seitenvorlage ein, sonst hydriert die Seite nicht sauber:",
+    "ssrTeleports": "Dialoge, Popover, Toasts und Tooltips rendern per <code>&lt;Teleport&gt;</code> in <code>&lt;body&gt;</code>. Vue liefert dieses HTML getrennt in <code>ctx.teleports</code>. Fügen Sie es am Anfang von <code>&lt;body&gt;</code> ein, vor dem Element Ihrer App, sonst hydriert die Seite nicht sauber:",
+    "ssrLocale": "Setzen Sie <code>locale</code> auf <code>ConfigProvider</code>, wenn Sie auf einem Server rendern. Sonst folgen Datumsangaben, Zahlen und der erste Wochentag der Sprache des Servers und ändern sich, sobald die Seite im Browser läuft.",
     "directivesTitle": "Richtlinien",
     "installIntro": "vael-ui ist auf npm verfügbar. Installieren Sie es mit Ihrem Paketmanager:",
     "installTitle": "Installieren",
@@ -140,7 +141,7 @@
     "vaporAppIntro": "Eine Vapor-App startet mit <code>createVaporApp</code> und importiert Komponenten, Composables und Direktiven aus <code>'vael-ui/vapor'</code>. Eigene Komponenten wechseln mit <code>&lt;script setup vapor&gt;</code> zu Vapor:",
     "vaporForceIntro": "Um das Attribut <code>vapor</code> nicht in jede Datei zu schreiben, aktivieren Sie <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 oder neuer. Dann wird jede <code>&lt;script setup&gt;</code>-Komponente Ihrer App als Vapor kompiliert:",
     "vaporMixTitle": "Beide Builds kombinieren",
-    "vaporMixIntro": "Eine klassische App kann auch Vapor-Komponenten enthalten. Das hilft, wenn Sie eine bestehende App Schritt für Schritt auf Vapor umstellen. Behalten Sie <code>createApp</code>, installieren Sie Vues <code>vaporInteropPlugin</code> und importieren Sie in den mit <code>vapor</code> markierten Komponenten aus <code>'vael-ui/vapor'</code>. Für eine neue App wählen Sie besser einen Build.",
+    "vaporMixIntro": "Eine klassische App kann auch Vapor-Komponenten enthalten. Das hilft, wenn Sie eine bestehende App Schritt für Schritt auf Vapor umstellen. Behalten Sie <code>createApp</code>, installieren Sie Vues <code>vaporInteropPlugin</code> und importieren Sie in den mit <code>vapor</code> markierten Komponenten aus <code>'vael-ui/vapor'</code>. Für eine neue App wählen Sie besser einen Build. Eine mit <code>vapor</code> markierte Komponente importiert auch Direktiven wie <code>vTooltip</code> selbst aus <code>'vael-ui/vapor'</code>, denn eine mit <code>app.directive</code> registrierte Direktive erreicht nur klassische Komponenten.",
     "vaporTitle": "Vue Vapor-Unterstützung"
   },
   "globalSetup": {
@@ -229,10 +230,15 @@
     "directives": "Direktiven",
     "previous": "Zurück",
     "next": "Weiter",
-    "pager": "Vorherige und nächste Seite"
+    "pager": "Vorherige und nächste Seite",
+    "mainNav": "Hauptnavigation",
+    "sidebarNav": "Dokumentation"
   },
   "pageNotes": {
-    "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren."
+    "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren.",
+    "ContextMenu": "Tastaturnutzer öffnen das Menü mit Umschalt+F10 oder der Menütaste. Beide lösen contextmenu auf dem fokussierten Element aus. Machen Sie das umschlossene Ziel daher fokussierbar (tabindex=\"0\") und geben Sie ihm einen zugänglichen Namen.",
+    "Tree": "Zeilen aktualisieren sich aus reaktivem Zustand. Ein eigener #node-Slot sollte daher reaktive Werte lesen (Props, Refs, Computeds), keine einfachen Variablen aus der Elternkomponente.",
+    "DataTable": "Große Tabellen: Bei Hunderten von Zeilen fügen Sie virtualize und eine scroll-height hinzu, zum Beispiel scroll-height=\"400px\". Die Tabelle zeichnet dann nur die sichtbaren Zeilen, sodass Sortieren, Auswählen und Scrollen schnell bleiben. Sind mehr als 150 Zeilen gleichzeitig zu sehen, gleiten die Zeilen beim Sortieren außerdem nicht mehr an ihren Platz."
   },
   "stylingLayers": {
     "intro": "vael-ui wird in {layer} ausgeliefert. CSS ohne Layer schlägt CSS in Layern immer, unabhängig von der Spezifität. Ein einfacher Basis-Reset ohne Layer überschreibt daher die internen Stile von vael-ui, ganz ohne Warnung. Legen Sie Ihre Basisstile deshalb ebenfalls in einen Layer und ordnen Sie diesen zuerst an.",

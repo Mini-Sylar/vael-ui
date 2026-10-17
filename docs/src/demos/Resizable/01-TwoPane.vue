@@ -9,7 +9,7 @@
         class="resizable-sidebar"
         aria-label="Resize sidebar"
       >
-        <nav class="resizable-nav">
+        <nav class="resizable-nav" aria-label="Project">
           <Button
             v-for="item in navItems"
             :key="item"

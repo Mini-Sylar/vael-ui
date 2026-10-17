@@ -123,7 +123,8 @@
     "ssrIntro": "As duas builds renderizam no servidor e são hidratadas no navegador. {link} configura tudo abaixo para você.",
     "ssrIntroLink": "O módulo do Nuxt",
     "ssrNoExternal": "Com Vite SSR puro, deixe o Vite empacotar o vael-ui para o servidor. Cada componente importa o próprio CSS, e o Node não consegue carregar arquivos CSS sozinho:",
-    "ssrTeleports": "Diálogos, popovers, toasts e tooltips renderizam no <code>&lt;body&gt;</code> via <code>&lt;Teleport&gt;</code>. O Vue retorna esse HTML separado em <code>ctx.teleports</code>. Adicione-o ao template da página, ou a hidratação falha:",
+    "ssrTeleports": "Diálogos, popovers, toasts e tooltips renderizam no <code>&lt;body&gt;</code> via <code>&lt;Teleport&gt;</code>. O Vue retorna esse HTML separado em <code>ctx.teleports</code>. Adicione-o no início do <code>&lt;body&gt;</code>, antes do elemento da sua app, ou a hidratação falha:",
+    "ssrLocale": "Defina <code>locale</code> no <code>ConfigProvider</code> quando renderizar num servidor. Sem isso, datas, números e o primeiro dia da semana seguem o idioma do servidor e mudam quando a página roda no navegador.",
     "directivesTitle": "Diretivas",
     "installIntro": "O vael-ui está no npm. Instale-o com seu gerenciador de pacotes:",
     "installTitle": "Instalar",
@@ -140,7 +141,7 @@
     "vaporAppIntro": "Uma app Vapor começa com <code>createVaporApp</code> e importa componentes, composables e diretivas de <code>'vael-ui/vapor'</code>. Seus próprios componentes passam para Vapor com <code>&lt;script setup vapor&gt;</code>:",
     "vaporForceIntro": "Para não escrever o atributo <code>vapor</code> em cada arquivo, ative <code>features.vapor</code> no <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou mais recente. Assim, todo componente <code>&lt;script setup&gt;</code> da sua app é compilado como Vapor:",
     "vaporMixTitle": "Usar as duas builds",
-    "vaporMixIntro": "Uma app clássica também pode receber componentes Vapor. Isso ajuda quando você migra uma app existente para Vapor aos poucos. Mantenha <code>createApp</code>, instale o <code>vaporInteropPlugin</code> do Vue e importe de <code>'vael-ui/vapor'</code> nos componentes marcados com <code>vapor</code>. Para uma app nova, escolha uma build só.",
+    "vaporMixIntro": "Uma app clássica também pode receber componentes Vapor. Isso ajuda quando você migra uma app existente para Vapor aos poucos. Mantenha <code>createApp</code>, instale o <code>vaporInteropPlugin</code> do Vue e importe de <code>'vael-ui/vapor'</code> nos componentes marcados com <code>vapor</code>. Para uma app nova, escolha uma build só. Um componente marcado com <code>vapor</code> também importa diretivas como <code>vTooltip</code> de <code>'vael-ui/vapor'</code> por conta própria, porque uma diretiva registrada com <code>app.directive</code> só chega aos componentes clássicos.",
     "vaporTitle": "Suporte Vue Vapor"
   },
   "globalSetup": {
@@ -236,10 +237,15 @@
     "directives": "Diretivas",
     "previous": "Anterior",
     "next": "Próximo",
-    "pager": "Páginas anterior e seguinte"
+    "pager": "Páginas anterior e seguinte",
+    "mainNav": "Principal",
+    "sidebarNav": "Documentação"
   },
   "pageNotes": {
-    "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar."
+    "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar.",
+    "ContextMenu": "Pelo teclado, o menu abre com Shift+F10 ou a tecla Menu, que disparam contextmenu no elemento em foco. Por isso, torne o alvo envolvido focável (tabindex=\"0\") e dê a ele um nome acessível.",
+    "Tree": "As linhas são atualizadas a partir do estado reativo, então um slot #node personalizado deve ler valores reativos (props, refs, computeds), não variáveis comuns capturadas do pai.",
+    "DataTable": "Tabelas grandes: com centenas de linhas, adicione virtualize e um scroll-height, por exemplo scroll-height=\"400px\". A tabela passa a desenhar só as linhas visíveis, então ordenar, selecionar e rolar continuam rápidos. Com mais de 150 linhas na tela ao mesmo tempo, as linhas também deixam de deslizar para o lugar ao ordenar."
   },
   "stylingLayers": {
     "intro": "O vael-ui é distribuído em {layer}. CSS sem camada sempre vence CSS em camadas, qualquer que seja a especificidade. Assim, um reset base simples e sem camada sobrescreve os estilos internos do vael-ui sem nenhum aviso. Para corrigir isso, coloque seus estilos base em uma camada também e ordene essa camada primeiro.",

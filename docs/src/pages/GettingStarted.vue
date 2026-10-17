@@ -141,10 +141,11 @@ const html = template
       lang="html"
       code='<!-- index.html -->
 <body>
-  <div id="app"><!--app-html--></div>
   <!--teleports-->
+  <div id="app"><!--app-html--></div>
 </body>'
     />
+    <p v-html="t('gettingStarted.ssrLocale')" />
 
     <Message
       variant="info"

@@ -13,6 +13,7 @@
     </div>
     <Toaster
       name="spring"
+      aria-label="Spring notifications"
       position="bottom-center"
       :motion-css="false"
       @card-enter="onEnter"

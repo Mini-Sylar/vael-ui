@@ -42,9 +42,10 @@
 
       <div class="playground-controls">
         <div class="control-row">
-          <label for="ctl-position">position</label>
+          <label id="ctl-position-label" for="ctl-position">position</label>
           <Select
             id="ctl-position"
+            aria-labelledby="ctl-position-label"
             size="sm"
             class="control-input"
             :items="positionItems"
