@@ -145,7 +145,7 @@ html { font-size: 14px; }
         lang="typescript"
         code="// main.ts
 import './style.css'        // your base layer, loads first
-import 'vael-ui/style.css'  // sorts after app-base, if you use it"
+import 'vael-ui/layers.css' // sorts after app-base, if you use it"
         class="callout-code"
       />
     </Message>

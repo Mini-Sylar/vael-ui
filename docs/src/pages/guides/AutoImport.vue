@@ -40,16 +40,21 @@ export default {
     <h2 id="vapor">{{ t('autoImport.vaporTitle') }}</h2>
     <p v-html="t('autoImport.vaporIntro')" />
     <CodeBlock lang="typescript" code="VaelUiResolver({ variant: 'vapor' })" />
+    <p v-html="t('autoImport.vaporHostsNote')" />
 
     <h2 id="one-import">{{ t('autoImport.oneImportTitle') }}</h2>
     <p v-html="t('autoImport.oneImportIntro')" />
     <CodeBlock
       lang="typescript"
       code="// vite.config.ts
+import { defaultClientConditions, defaultServerConditions } from 'vite'
+
 export default {
-  resolve: { conditions: ['vapor'] },
+  resolve: { conditions: [...defaultClientConditions, 'vapor'] },
+  ssr: { resolve: { conditions: [...defaultServerConditions, 'vapor'] } },
 }"
     />
+    <p v-html="t('autoImport.oneImportDefaults')" />
     <CodeBlock
       lang="json"
       code='// tsconfig.json

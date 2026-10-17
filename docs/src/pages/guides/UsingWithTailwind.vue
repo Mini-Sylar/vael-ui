@@ -12,7 +12,7 @@
     </i18n-t>
     <CodeBlock
       lang="typescript"
-      code="import 'vael-ui/style.css'
+      code="import 'vael-ui/layers.css'
 import './style.css' // your Tailwind entry"
     />
     <Message
@@ -21,7 +21,7 @@ import './style.css' // your Tailwind entry"
       class="callout"
       :ui="{ root: 'callout-info' }"
     >
-      {{ t('tailwind.orderWarning') }}
+      <span v-html="t('tailwind.orderWarning')" />
     </Message>
 
     <h2 id="merging">{{ t('tailwind.mergingTitle') }}</h2>
