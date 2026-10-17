@@ -61,7 +61,9 @@
               :completed="stateOf(index) === 'completed'"
               :disabled="isDisabled(item)"
             >
-              <span :class="labelPart.class">{{ item.label }}</span>
+              <span :ref="(el) => setLabelEl(index, el)" :class="labelPart.class">{{
+                item.label
+              }}</span>
               <span v-if="item.description" :class="descriptionPart.class">{{
                 item.description
               }}</span>
@@ -190,6 +192,7 @@ function onStepClick(index: number, item: T) {
 const root = useTemplateRef<HTMLElement>('root')
 // By index: a circle remounts when its step becomes clickable, and a v-for ref array would reorder.
 const circleSlots = shallowReactive<(HTMLElement | null)[]>([])
+const labelSlots = shallowReactive<(HTMLElement | null)[]>([])
 const connectorSlots = shallowReactive<(HTMLElement | null)[]>([])
 function setCircleEl(index: number, el: unknown) {
   circleSlots[index] = el instanceof HTMLElement ? el : null
@@ -197,11 +200,15 @@ function setCircleEl(index: number, el: unknown) {
 function setConnectorEl(index: number, el: unknown) {
   connectorSlots[index] = el instanceof HTMLElement ? el : null
 }
+function setLabelEl(index: number, el: unknown) {
+  labelSlots[index] = el instanceof HTMLElement ? el : null
+}
 const present = (el: HTMLElement | null): el is HTMLElement => !!el
 const circleEls = computed(() => circleSlots.slice(0, props.items.length).filter(present))
 const connectorEls = computed(() =>
   connectorSlots.slice(0, Math.max(props.items.length - 1, 0)).filter(present),
 )
+const labelEls = computed(() => labelSlots.slice(0, props.items.length).filter(present))
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.stepper,
@@ -240,5 +247,7 @@ defineExpose({
   circleEls,
   /** Connector elements, one fewer than steps. Set `--ui-stepper-fill` (0 to 1) to drive a fill. */
   connectorEls,
+  /** Step label elements, in order. Empty when the `item` slot replaces them. */
+  labelEls,
 })
 </script>

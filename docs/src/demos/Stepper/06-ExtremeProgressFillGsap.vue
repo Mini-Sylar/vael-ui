@@ -2,9 +2,10 @@
   <section class="demo">
     <h3>Extreme: the line fills and the next step pops (GSAP)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> hands over the exposed <code>circleEls</code> and
-      <code>connectorEls</code>. Next fills the line through <code>--ui-stepper-fill</code>, and the
-      next step pops when the fill reaches it. Back drains it.
+      <code>:motion-css="false"</code> hands over the exposed <code>circleEls</code>,
+      <code>connectorEls</code> and <code>labelEls</code>. Next fills the line through
+      <code>--ui-stepper-fill</code>, and each step pops and lights its label when the fill reaches
+      it. Back drains it.
     </p>
     <Stepper ref="stepper" v-model="step" :items="steps" :motion-css="false" class="stepper-demo">
       <template #indicator="{ index, completed }">
@@ -55,12 +56,13 @@ const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 let run: gsap.core.Timeline | null = null
 
 type Look = { backgroundColor: string; borderColor: string; color: string; check: number }
-type Snapshot = { look: Look; scale: number }
+type Snapshot = { look: Look; scale: number; label: string }
 
 function parts() {
   return {
     circles: stepper.value?.circleEls ?? [],
     connectors: stepper.value?.connectorEls ?? [],
+    labels: stepper.value?.labelEls ?? [],
   }
 }
 const layers = (circle: HTMLElement) => ({
@@ -89,8 +91,9 @@ const fillOf = (connector: HTMLElement) =>
   )
 
 function release() {
-  const { circles, connectors } = parts()
+  const { circles, connectors, labels } = parts()
   for (const connector of connectors) connector.style.removeProperty('--ui-stepper-fill')
+  gsap.set(labels, { clearProps: 'color' })
   for (const circle of circles) {
     const { check, number } = layers(circle)
     gsap.set(circle, { clearProps: 'transform,backgroundColor,borderColor,color' })
@@ -102,9 +105,10 @@ function release() {
 watch(step, async (to) => {
   const now = parts()
   const from = now.connectors.reduce((sum, connector) => sum + fillOf(connector), 0)
-  const before: Snapshot[] = now.circles.map((circle) => ({
+  const before: Snapshot[] = now.circles.map((circle, index) => ({
     look: lookOf(circle),
     scale: Number(gsap.getProperty(circle, 'scale')),
+    label: now.labels[index] ? getComputedStyle(now.labels[index]).color : '',
   }))
   run?.kill()
   await nextTick()
@@ -112,7 +116,7 @@ watch(step, async (to) => {
   if (reduce() || from === to) return
   // A step that becomes reachable swaps its trigger from a div to a button, so its circle is a
   // new element now, so read the exposed parts again.
-  const { circles, connectors } = parts()
+  const { circles, connectors, labels } = parts()
 
   const forward = to > from
   const distance = Math.abs(to - from)
@@ -152,7 +156,7 @@ watch(step, async (to) => {
   tl.to(progress, { at: to, duration, ease: easeName }, 0)
 
   circles.forEach((circle, index) => {
-    const { look, scale } = before[index]!
+    const { look, scale, label: labelColor } = before[index]!
     const next = lookOf(circle)
     const { check, number } = layers(circle)
     // Hold the old look until the fill gets here.
@@ -165,6 +169,15 @@ watch(step, async (to) => {
     gsap.set(check, { opacity: look.check })
     gsap.set(number, { opacity: 1 - look.check })
     if (scale !== 1) tl.to(circle, { scale: 1 }, 0)
+    // The label changes color as the fill arrives too, not before it.
+    const label = labels[index]
+    if (label && labelColor) {
+      const color = getComputedStyle(label).color
+      if (color !== labelColor) {
+        gsap.set(label, { color: labelColor })
+        tl.to(label, { color }, timeAt(index))
+      }
+    }
     if (sameLook(look, next)) return
 
     const at = timeAt(index)

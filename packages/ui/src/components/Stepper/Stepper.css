@@ -122,6 +122,7 @@
   }
   .ui-stepper-label {
     color: var(--ui-text-muted);
+    transition: color var(--ui-duration-press) ease;
     font-size: calc(var(--ui-font-size) * 0.875);
     font-weight: 500;
     /* Matches .ui-stepper-circle's own block-size: the label's text centers
@@ -208,6 +209,7 @@
   }
 
   .ui-stepper--no-anim .ui-stepper-circle,
+  .ui-stepper--no-anim .ui-stepper-label,
   .ui-stepper--no-anim .ui-stepper-step::after,
   .ui-stepper--no-anim .ui-stepper-connector::after {
     transition: none;
