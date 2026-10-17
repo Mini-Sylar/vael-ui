@@ -52,6 +52,8 @@ interface InternalEntry extends ToastEntry {
 // Module-level, like the scroll-lock counter. One queue per Toaster `name`.
 let nextId = 0
 const queues = new Map<string | undefined, InternalEntry[]>()
+// Queues whose Toaster is hovered, focused or in a hidden tab: new toasts there wait too.
+const pausedQueues = new Set<string | undefined>()
 
 function queueOf(toaster: string | undefined) {
   let queue = queues.get(toaster)
@@ -81,6 +83,7 @@ function clearTimer(entry: InternalEntry) {
 function scheduleTimer(entry: InternalEntry) {
   if (entry.timer != null) return
   if (entry.waiting || !Number.isFinite(entry.duration) || entry.remaining <= 0) return
+  if (pausedQueues.has(entry.toaster)) return
   entry.segmentStartedAt = performance.now()
   entry.timer = setTimeout(() => dismiss(entry.id), entry.remaining)
 }
@@ -245,10 +248,13 @@ export function useToastQueue(toaster?: string) {
     toasts: readonly(queue) as DeepReadonly<ToastEntry[]>,
     /** Dismisses one of this queue's toasts, or all of them when you omit `id`. */
     dismiss: (id?: ToastId) => (id === undefined ? clearQueue(queue) : removeFrom(queue, id)),
+    /** Pauses every timer, including those of toasts added before `resumeAll()`. */
     pauseAll: () => {
+      pausedQueues.add(toaster)
       for (const entry of queue) pauseTimer(entry)
     },
     resumeAll: () => {
+      pausedQueues.delete(toaster)
       for (const entry of queue) scheduleTimer(entry)
     },
     /** Pauses these toasts' timers while they wait off-screen; every other toast's timer resumes. */

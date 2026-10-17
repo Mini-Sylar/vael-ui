@@ -97,3 +97,19 @@ test('exposes real el/panelEl elements', async () => {
   expect(captured.value?.panelEl).toBeInstanceOf(HTMLElement)
   expect(captured.value?.panelEl?.classList.contains('ui-collapsible-panel')).toBe(true)
 })
+
+test('a themed duration longer than 240ms runs to the end instead of snapping open', async () => {
+  document.documentElement.style.setProperty('--ui-duration-enter', '800ms')
+  try {
+    await render(CollapsibleFixture)
+    await page.getByRole('button', { name: 'Show details' }).click()
+    await vi.waitFor(() => expect(panel().dataset.state).toBe('opening'))
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    // Still mid-transition: pinned to a px height, not released to auto.
+    expect(panel().dataset.state).toBe('opening')
+    expect(panel().style.blockSize).not.toBe('')
+    await vi.waitFor(() => expect(panel().dataset.state).toBe('open'), { timeout: 2000 })
+  } finally {
+    document.documentElement.style.removeProperty('--ui-duration-enter')
+  }
+})

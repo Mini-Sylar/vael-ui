@@ -703,3 +703,42 @@ test('an app with one unnamed Toaster never shows toasts sent to a named one', a
   toast.dismiss()
   await screen.unmount()
 })
+
+test('a toast created while the stack is hovered waits until the pointer leaves', async () => {
+  const screen = await render(ToasterFixture)
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  toast('First', { duration: Infinity })
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
+  const toaster = document.querySelector('.ui-toaster')!
+  toaster.dispatchEvent(new PointerEvent('pointerenter'))
+
+  const id = toast('Arrived while hovered', { duration: 150 })
+  await nextTick()
+  vi.advanceTimersByTime(200)
+  vi.useRealTimers()
+  expect(toasts.some((t) => t.id === id)).toBe(true)
+
+  toaster.dispatchEvent(new PointerEvent('pointerleave'))
+  await vi.waitFor(() => expect(toasts.some((t) => t.id === id)).toBe(false), { timeout: 2000 })
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('a toast created while the tab is hidden waits until it is visible again', async () => {
+  const screen = await render(ToasterFixture)
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+  document.dispatchEvent(new Event('visibilitychange'))
+  await nextTick()
+
+  toast('Arrived while hidden', { duration: 150 })
+  await nextTick()
+  vi.advanceTimersByTime(200)
+  vi.useRealTimers()
+  expect(toasts).toHaveLength(1)
+
+  Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+  document.dispatchEvent(new Event('visibilitychange'))
+  await vi.waitFor(() => expect(toasts).toHaveLength(0), { timeout: 2000 })
+  await screen.unmount()
+})

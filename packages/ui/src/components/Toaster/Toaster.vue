@@ -566,10 +566,15 @@ watch(
 )
 // On a new `name`, the old queue's toasts stop waiting on this Toaster.
 watch(queue, (next, prev) => {
-  prev.setWaiting([], visibility.value !== 'hidden')
-  if (interacting.value) next.pauseAll()
+  release(prev)
+  if (interacting.value || visibility.value === 'hidden') next.pauseAll()
 })
-onScopeDispose(() => queue.value.setWaiting([], !interacting.value))
+// A queue left paused would hold every later toast sent to it, even under a new Toaster.
+function release(old: ReturnType<typeof useToastQueue>) {
+  old.setWaiting([], false)
+  old.resumeAll()
+}
+onScopeDispose(() => release(queue.value))
 
 defineExpose({
   /** Toast list (root) element. */
