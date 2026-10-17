@@ -288,3 +288,29 @@ test('the callout is at its new position by the first animation frame after @ste
   expect(positions[0]).not.toBe(before)
   expect(positions[0]).toBe(read())
 })
+
+test('Skip and Done go through beforeClose, so a custom exit runs', async () => {
+  const beforeClose = vi.fn()
+  const open = shallowRef(true)
+  await renderMotionTour({
+    beforeClose,
+    get open() {
+      return open.value
+    },
+    'onUpdate:open': (v: boolean) => (open.value = v),
+  })
+  await page.getByRole('button', { name: 'Skip' }).click()
+  expect(beforeClose).toHaveBeenCalledTimes(1)
+  await expect.element(page.getByText('Motion A')).toBeVisible()
+
+  beforeClose.mock.calls[0]![0]()
+  await vi.waitFor(() => expect(open.value).toBe(false))
+
+  open.value = true
+  await expect.element(page.getByText('Motion A')).toBeVisible()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  expect(beforeClose).toHaveBeenCalledTimes(2)
+  beforeClose.mock.calls[1]![0]()
+  await vi.waitFor(() => expect(open.value).toBe(false))
+})

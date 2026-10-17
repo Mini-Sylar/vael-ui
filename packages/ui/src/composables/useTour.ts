@@ -65,6 +65,8 @@ export interface UseTourOptions<T extends TourStep = TourStep> {
   onStepChange?: (details: TourStepChangeDetails<T>) => void
   onSkip?: (details: TourEndDetails<T>) => void
   onFinish?: (details: TourEndDetails<T>) => void
+  /** How finishing and skipping close the tour. Defaults to `open.value = false`. */
+  close?: () => void
 }
 
 export interface UseTourReturn<T extends TourStep = TourStep> {
@@ -89,6 +91,7 @@ export function useTour<T extends TourStep = TourStep>(
   open: Ref<boolean>,
   options: UseTourOptions<T>,
 ): UseTourReturn<T> {
+  const close = options.close ?? (() => (open.value = false))
   const currentIndex = shallowRef(0)
   const isTransitioning = shallowRef(false)
 
@@ -151,7 +154,7 @@ export function useTour<T extends TourStep = TourStep>(
     if (isLast.value) {
       const step = currentStep.value
       if (step) options.onFinish?.({ index: currentIndex.value, step, id: options.id })
-      open.value = false
+      close()
       return
     }
     await goTo(currentIndex.value + 1, 'next')
@@ -165,7 +168,7 @@ export function useTour<T extends TourStep = TourStep>(
   function skip() {
     const step = currentStep.value
     if (step) options.onSkip?.({ index: currentIndex.value, step, id: options.id })
-    open.value = false
+    close()
   }
 
   return {

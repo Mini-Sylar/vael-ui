@@ -237,6 +237,8 @@ const {
   onStepChange: (details) => emit('step-change', details),
   onSkip: (details) => emit('skip', details),
   onFinish: (details) => emit('finish', details),
+  // Through Popover, so `beforeClose` runs.
+  close: () => (popover.value ? popover.value.close() : (open.value = false)),
 })
 
 // Optional controlled step index — two-way sync, useTour stays self-contained either way.
