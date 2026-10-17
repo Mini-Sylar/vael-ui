@@ -16,10 +16,11 @@
       :key="row.key"
       ref="stepEls"
       :class="itemPart.class"
+      :style="itemPart.style"
       :data-completed="row.completed || undefined"
       :data-active="row.active || undefined"
     >
-      <div v-if="$slots.opposite" :class="oppositePart.class">
+      <div v-if="$slots.opposite" :class="oppositePart.class" :style="oppositePart.style">
         <slot
           name="opposite"
           :item="row.item"
@@ -28,8 +29,13 @@
           :active="row.active"
         />
       </div>
-      <span :class="markerColPart.class">
-        <span ref="markerEls" :class="markerPart.class" aria-hidden="true">
+      <span :class="markerColPart.class" :style="markerColPart.style">
+        <span
+          ref="markerEls"
+          :class="markerPart.class"
+          :style="markerPart.style"
+          aria-hidden="true"
+        >
           <slot
             name="marker"
             :item="row.item"
@@ -44,11 +50,12 @@
           v-if="!row.isLast"
           ref="connectorEls"
           :class="connectorPart.class"
+          :style="connectorPart.style"
           aria-hidden="true"
           :data-filled="row.completed || undefined"
         />
       </span>
-      <div :class="contentPart.class">
+      <div :class="contentPart.class" :style="contentPart.style">
         <slot
           name="item"
           :item="row.item"

@@ -8,6 +8,7 @@
     <template v-for="(item, index) in items" :key="index">
       <li
         :class="stepPart.class"
+        :style="stepPart.style"
         :data-state="stateOf(index)"
         :data-disabled="isDisabled(item) ? '' : undefined"
       >
@@ -15,11 +16,16 @@
           :is="nativeTag(isReachable(index, item) ? 'button' : 'div')"
           :type="isReachable(index, item) ? 'button' : undefined"
           :class="triggerPart.class"
+          :style="triggerPart.style"
           :aria-disabled="isDisabled(item) ? 'true' : undefined"
           :aria-current="index === modelValue ? 'step' : undefined"
           @click="onStepClick(index, item)"
         >
-          <span :ref="(el) => setCircleEl(index, el)" :class="circlePart.class">
+          <span
+            :ref="(el) => setCircleEl(index, el)"
+            :class="circlePart.class"
+            :style="circlePart.style"
+          >
             <slot
               name="indicator"
               :item="item"
@@ -51,7 +57,7 @@
               </Transition>
             </slot>
           </span>
-          <span :class="contentPart.class">
+          <span :class="contentPart.class" :style="contentPart.style">
             <slot
               name="item"
               :item="item"
@@ -60,12 +66,18 @@
               :completed="stateOf(index) === 'completed'"
               :disabled="isDisabled(item)"
             >
-              <span :ref="(el) => setLabelEl(index, el)" :class="labelPart.class">{{
-                item.label
-              }}</span>
-              <span v-if="item.description" :class="descriptionPart.class">{{
-                item.description
-              }}</span>
+              <span
+                :ref="(el) => setLabelEl(index, el)"
+                :class="labelPart.class"
+                :style="labelPart.style"
+                >{{ item.label }}</span
+              >
+              <span
+                v-if="item.description"
+                :class="descriptionPart.class"
+                :style="descriptionPart.style"
+                >{{ item.description }}</span
+              >
             </slot>
           </span>
         </component>
@@ -75,6 +87,7 @@
         :ref="(el) => setConnectorEl(index, el)"
         aria-hidden="true"
         :class="connectorPart.class"
+        :style="connectorPart.style"
         :data-state="index < modelValue ? 'filled' : 'unfilled'"
       />
     </template>
