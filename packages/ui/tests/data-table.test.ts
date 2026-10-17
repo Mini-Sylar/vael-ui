@@ -1,8 +1,9 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
-import { expect, test, vi } from 'vitest'
+import { beforeAll, expect, test, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { render } from 'vitest-browser-vue'
+import { loadSortableEngine } from '../src/composables/useLazySortable'
 import type { RenderResult } from 'vitest-browser-vue'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
 import DataTableReorderFixture from './fixtures/DataTableReorderFixture.vue'
@@ -10,6 +11,10 @@ import DataTableExpansionFixture from './fixtures/DataTableExpansionFixture.vue'
 import DataTableVirtualizeFixture from './fixtures/DataTableVirtualizeFixture.vue'
 import DataTableDateSortFixture from './fixtures/DataTableDateSortFixture.vue'
 import type { UiPartValue } from '../src/classes'
+
+// DataTable loads the drag engine on demand. Loading it up front means a test can drag as soon as
+// the table renders.
+beforeAll(() => loadSortableEngine())
 
 function headerCells(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>('.ui-datatable-th'))

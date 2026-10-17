@@ -119,7 +119,7 @@ import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { provideDataTableContext } from '../../composables/useDataTableContext'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { useVirtualizer } from '../../composables/useVirtualizer'
-import { useSortable } from '../../composables/useSortable'
+import { useLazySortable } from '../../composables/useLazySortable'
 import type { SortableDropDetails } from '../../composables/useSortable'
 import DataTableHead from './DataTableHead.vue'
 import DataTableBody from './DataTableBody.vue'
@@ -857,34 +857,37 @@ const {
   activeValue: draggingColumn,
   onHandlePointerdown: onColumnPointerdown,
   consumeSuppressedClick: consumeColumnClick,
-} = useSortable({
-  rows: columnRows,
-  getElement: headerElement,
-  axis: 'x',
-  dragPreview: true,
-  previewMode: () => props.previewMode,
-  touchDragDelay: () => props.touchDragDelay,
-  disabled: () => !props.reorderableColumns,
-  motionCss: () => props.motionCss,
-  canDrop: (details) => {
-    // A pinned column can't be displaced, whatever the consumer's canDrop says.
-    const target = orderedColumns.value[details.to.index]
-    if (target && !isColumnReorderable(target)) return false
-    return props.canDrop?.(details) ?? true
+} = useLazySortable(
+  {
+    rows: columnRows,
+    getElement: headerElement,
+    axis: 'x',
+    dragPreview: true,
+    previewMode: () => props.previewMode,
+    touchDragDelay: () => props.touchDragDelay,
+    disabled: () => !props.reorderableColumns,
+    motionCss: () => props.motionCss,
+    canDrop: (details) => {
+      // A pinned column can't be displaced, whatever the consumer's canDrop says.
+      const target = orderedColumns.value[details.to.index]
+      if (target && !isColumnReorderable(target)) return false
+      return props.canDrop?.(details) ?? true
+    },
+    beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
+    onDropError: (error, details) => emit('drop-error', error, details),
+    onCommit: (value, to) => {
+      const current = orderedColumns.value.map((column) => column.field)
+      const from = current.indexOf(value as keyof T)
+      if (from === -1) return
+      const next = [...current]
+      const [moved] = next.splice(from, 1)
+      next.splice(Math.min(Math.max(to.index, 0), next.length), 0, moved!)
+      columnOrder.value = next
+      emit('column-reorder', next)
+    },
   },
-  beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
-  onDropError: (error, details) => emit('drop-error', error, details),
-  onCommit: (value, to) => {
-    const current = orderedColumns.value.map((column) => column.field)
-    const from = current.indexOf(value as keyof T)
-    if (from === -1) return
-    const next = [...current]
-    const [moved] = next.splice(from, 1)
-    next.splice(Math.min(Math.max(to.index, 0), next.length), 0, moved!)
-    columnOrder.value = next
-    emit('column-reorder', next)
-  },
-})
+  () => props.reorderableColumns,
+)
 
 // useSortable only moves header cells. Each frame this copies their shift onto the
 // body cells, and moves the dragged column's cells with the preview.

@@ -364,10 +364,10 @@ export type {
 } from './composables/useSwipeReveal'
 
 export { default as Sortable } from './components/Sortable/Sortable.vue'
+export { moveTreeNode, isDescendantOf } from './composables/sortableTree'
+export type { TreeAccessors } from './composables/sortableTree'
 export {
   useSortable,
-  moveTreeNode,
-  isDescendantOf,
   excludeSubtree,
   resolveDropPosition,
   resolveInsertionIndex,
@@ -379,7 +379,6 @@ export type {
   SortableAxis,
   SortableBand,
   SortableDropDetails,
-  TreeAccessors,
   SortableTreeNode,
   SortableSource,
   SortableAnnounceEvent,

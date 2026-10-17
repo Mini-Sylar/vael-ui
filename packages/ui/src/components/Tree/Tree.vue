@@ -248,7 +248,8 @@ import Checkbox from '../Checkbox/Checkbox.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
 import { useUiMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
-import { moveTreeNode, useSortable } from '../../composables/useSortable'
+import { moveTreeNode } from '../../composables/sortableTree'
+import { useLazySortable } from '../../composables/useLazySortable'
 import type {
   DropPosition,
   FlatSortableRow,
@@ -662,49 +663,52 @@ const {
   onHandleKeydown: onSortableKeydown,
   consumeSuppressedClick,
   cancel: cancelReorder,
-} = useSortable({
-  rows: sortableRows,
-  getElement: treeRowElement,
-  nested: true,
-  dropOnTarget: true,
-  dragPreview: true,
-  previewMode: () => props.previewMode,
-  touchDragDelay: () => props.touchDragDelay,
-  disabled: () => !props.reorderable,
-  reorderSiblings: () => props.reorderSiblings,
-  motionCss: () => props.motionCss,
-  autoExpandDelay: () => props.autoExpandDelay,
-  onAutoExpand: (value) => expandNode(value),
-  canNestInto: (value) => {
-    const node = findNode(value)
-    if (!node) return false
-    return props.canNestInto ? props.canNestInto(node as T) : !!node.children
+} = useLazySortable(
+  {
+    rows: sortableRows,
+    getElement: treeRowElement,
+    nested: true,
+    dropOnTarget: true,
+    dragPreview: true,
+    previewMode: () => props.previewMode,
+    touchDragDelay: () => props.touchDragDelay,
+    disabled: () => !props.reorderable,
+    reorderSiblings: () => props.reorderSiblings,
+    motionCss: () => props.motionCss,
+    autoExpandDelay: () => props.autoExpandDelay,
+    onAutoExpand: (value) => expandNode(value),
+    canNestInto: (value) => {
+      const node = findNode(value)
+      if (!node) return false
+      return props.canNestInto ? props.canNestInto(node as T) : !!node.children
+    },
+    childCountOf: (value) => findNode(value)?.children?.length ?? 0,
+    canDrop: (details) => props.canDrop?.(details) ?? true,
+    beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
+    onDropError: (error, details) => emit('drop-error', error, details),
+    labelOf: (value) => findNode(value)?.label ?? String(value),
+    announce: (event) =>
+      messages.value.sortable[
+        event.kind === 'grab'
+          ? 'grabbed'
+          : event.kind === 'move'
+            ? 'movedToLevel'
+            : event.kind === 'drop'
+              ? 'dropped'
+              : 'cancelled'
+      ]
+        .replace('{label}', event.label)
+        .replace('{position}', String(event.position))
+        .replace('{total}', String(event.total))
+        .replace('{depth}', String(event.depth + 1)),
+    onCommit: (value, to) => {
+      // Same shared function Sortable commits through.
+      if (!moveTreeNode(props.items as T[], value, to)) return
+      emit('reorder', value, to)
+    },
   },
-  childCountOf: (value) => findNode(value)?.children?.length ?? 0,
-  canDrop: (details) => props.canDrop?.(details) ?? true,
-  beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
-  onDropError: (error, details) => emit('drop-error', error, details),
-  labelOf: (value) => findNode(value)?.label ?? String(value),
-  announce: (event) =>
-    messages.value.sortable[
-      event.kind === 'grab'
-        ? 'grabbed'
-        : event.kind === 'move'
-          ? 'movedToLevel'
-          : event.kind === 'drop'
-            ? 'dropped'
-            : 'cancelled'
-    ]
-      .replace('{label}', event.label)
-      .replace('{position}', String(event.position))
-      .replace('{total}', String(event.total))
-      .replace('{depth}', String(event.depth + 1)),
-  onCommit: (value, to) => {
-    // Same shared function Sortable commits through.
-    if (!moveTreeNode(props.items as T[], value, to)) return
-    emit('reorder', value, to)
-  },
-})
+  () => props.reorderable,
+)
 
 function onRowPointerdown(node: TreeNode, event: PointerEvent) {
   if (!props.reorderable || node.disabled) return

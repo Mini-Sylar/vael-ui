@@ -1,9 +1,14 @@
 import '../src/style.css'
-import { expect, test, vi } from 'vitest'
+import { beforeAll, expect, test, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { render } from 'vitest-browser-vue'
+import { loadSortableEngine } from '../src/composables/useLazySortable'
 import type { RenderResult } from 'vitest-browser-vue'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
+
+// DataTable loads the drag engine on demand. Loading it up front means a test can drag as soon as
+// the table renders.
+beforeAll(() => loadSortableEngine())
 
 async function renderTable(props: Record<string, unknown> = {}) {
   const screen = await render(DataTableFixture, {

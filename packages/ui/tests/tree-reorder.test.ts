@@ -1,10 +1,15 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
-import { expect, test, vi } from 'vitest'
+import { beforeAll, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { loadSortableEngine } from '../src/composables/useLazySortable'
 import type { RenderResult } from 'vitest-browser-vue'
 import TreeReorderFixture from './fixtures/TreeReorderFixture.vue'
 import type { SortableDropDetails } from '../src/composables/useSortable'
+
+// Tree loads the drag engine on demand. Loading it up front means a test can drag as soon as the
+// tree renders.
+beforeAll(() => loadSortableEngine())
 
 function rowFor(screen: RenderResult<unknown>, value: string): HTMLElement {
   return screen.container.querySelector<HTMLElement>(`[data-tree-value="${value}"]`)!
@@ -475,4 +480,29 @@ test('dragging a folder hides its whole subtree, not just its own row', async ()
     }
   })
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+})
+
+test('unmounting mid-drag removes the floating preview from <body>', async () => {
+  const screen = await render(TreeReorderFixture)
+  const row = rowFor(screen, 'a')
+  const box = row.getBoundingClientRect()
+  const at = { clientX: box.left + 10, clientY: box.top + box.height / 2 }
+
+  row.dispatchEvent(
+    new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, button: 0, ...at }),
+  )
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId: 1,
+      clientX: at.clientX,
+      clientY: at.clientY + 40,
+    }),
+  )
+  expect(document.querySelector('[data-sortable-preview]')).not.toBeNull()
+
+  await screen.unmount()
+  expect(document.querySelector('[data-sortable-preview]')).toBeNull()
+  // A late pointerup from the abandoned gesture is harmless.
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }))
 })
