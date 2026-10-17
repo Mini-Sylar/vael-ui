@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import ConfirmActionFixture from './fixtures/ConfirmActionFixture.vue'
@@ -160,4 +160,52 @@ test('dialog and popover queues are independent — one open does not affect the
       if (button.textContent?.trim() === 'Cancel') button.click()
     })
   await expect.poll(() => popoverQueue.length).toBe(0)
+})
+
+test('dialog: while an async onConfirm is pending, Escape, overlay click and Cancel do not dismiss it', async () => {
+  const screen = await render(ConfirmActionFixture)
+  await screen.getByTestId('open-dialog-resolve').click()
+
+  const dialog = page.getByRole('dialog')
+  await expect.element(dialog).toBeVisible()
+  await page.getByRole('button', { name: 'Confirm' }).click()
+  await expect.element(screen.getByTestId('confirm-calls')).toHaveTextContent('1')
+
+  await userEvent.keyboard('{Escape}')
+  document.querySelector<HTMLElement>('.ui-dialog-overlay')?.click()
+  const cancel = page.getByRole('button', { name: 'Cancel' })
+  await expect.element(cancel).toBeDisabled()
+  cancel.element().dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await new Promise((r) => setTimeout(r, 50))
+
+  await expect.element(dialog).toBeVisible()
+  expect(screen.getByTestId('result').element().textContent).toBe('')
+  expect(screen.getByTestId('cancel-calls').element().textContent).toBe('0')
+
+  clickBehindOverlay(screen.container, 'settle-resolve')
+  await expect.element(dialog).not.toBeInTheDocument()
+  await expect.element(screen.getByTestId('result')).toHaveTextContent('true')
+})
+
+test('popover: while an async onConfirm is pending, Escape and outside click do not dismiss it', async () => {
+  const screen = await render(ConfirmActionFixture)
+  await screen.getByTestId('open-popover-resolve').click()
+
+  const popover = page.getByText('Remove tag?')
+  await expect.element(popover).toBeVisible()
+  await page.getByRole('button', { name: 'Confirm' }).click()
+  await expect.element(screen.getByTestId('confirm-calls')).toHaveTextContent('1')
+
+  await userEvent.keyboard('{Escape}')
+  document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+  await expect.element(page.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  await new Promise((r) => setTimeout(r, 50))
+
+  await expect.element(popover).toBeVisible()
+  expect(screen.getByTestId('result').element().textContent).toBe('')
+  expect(screen.getByTestId('cancel-calls').element().textContent).toBe('0')
+
+  clickBehindOverlay(screen.container, 'settle-resolve')
+  await expect.element(popover).not.toBeInTheDocument()
+  await expect.element(screen.getByTestId('result')).toHaveTextContent('true')
 })

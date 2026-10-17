@@ -10,6 +10,7 @@ import {
 } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
 import type { PopoverProps } from '../components/Popover/Popover.vue'
+import type { PopoverOpenChangeDetails } from './usePopover'
 
 export interface PopoverRef<D = unknown, T = unknown> {
   /** Whatever was passed via `openPopover(Component, { data })`. */
@@ -40,6 +41,8 @@ export interface OpenPopoverOptions<D = unknown, T = unknown> extends Partial<Po
   data?: D
   /** Fires once with whatever `popoverRef.close(result)` passed, or `undefined` on Escape/outside-click dismissal. */
   onClose?: (result: T | undefined) => void
+  /** Same as `<Popover>`'s `@open-change`: runs before it opens or closes, and `details.cancel()` keeps it as it is. */
+  onOpenChange?: (open: boolean, details: PopoverOpenChangeDetails) => void
 }
 
 export interface OpenPopoverHandle<T = unknown> {

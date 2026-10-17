@@ -12,6 +12,7 @@ import { openPopover } from './usePopoverService'
 
 type TriggerRef = NonNullable<PopoverProps['triggerEl']>
 type ButtonPropsPartial = Partial<ComponentProps<typeof Button>>
+type OpenChange = (value: boolean, details: { reason: string; cancel: () => void }) => void
 
 interface ConfirmActionBase {
   title: string
@@ -79,6 +80,25 @@ export function confirmAction(options: ConfirmActionOptions): ConfirmActionHandl
     ...rest
   } = options
 
+  // While onConfirm runs, only the programmatic close (success, or the opener's
+  // handle.close) may close the surface, so the result can't contradict the action.
+  let pending = false
+  const confirm =
+    onConfirm &&
+    (async () => {
+      pending = true
+      try {
+        return await onConfirm()
+      } finally {
+        pending = false
+      }
+    })
+  const userOpenChange = (rest as { onOpenChange?: OpenChange }).onOpenChange
+  const onOpenChange: OpenChange = (value, details) => {
+    if (!value && pending && details.reason !== 'programmatic') details.cancel()
+    else userOpenChange?.(value, details)
+  }
+
   if (options.surface === 'popover') {
     const { triggerEl, ...popoverProps } = rest as Omit<
       Extract<ConfirmActionOptions, { surface: 'popover' }>,
@@ -86,6 +106,7 @@ export function confirmAction(options: ConfirmActionOptions): ConfirmActionHandl
     >
     return openPopover(ConfirmPopoverBody, {
       ...popoverProps,
+      onOpenChange,
       triggerEl,
       props: {
         title,
@@ -97,7 +118,7 @@ export function confirmAction(options: ConfirmActionOptions): ConfirmActionHandl
         cancelButtonProps,
         body,
         bodyProps,
-        onConfirmAction: onConfirm,
+        onConfirmAction: confirm,
         onCancelAction: onCancel,
         onErrorAction: onError,
       },
@@ -110,6 +131,7 @@ export function confirmAction(options: ConfirmActionOptions): ConfirmActionHandl
   >
   return openDialog(body ?? ConfirmEmptyBody, {
     ...dialogProps,
+    onOpenChange,
     title,
     description,
     props: bodyProps as never,
@@ -120,7 +142,7 @@ export function confirmAction(options: ConfirmActionOptions): ConfirmActionHandl
       variant,
       confirmButtonProps,
       cancelButtonProps,
-      onConfirmAction: onConfirm,
+      onConfirmAction: confirm,
       onCancelAction: onCancel,
       onErrorAction: onError,
     },

@@ -10,6 +10,7 @@ import {
 } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
 import type { DialogProps } from '../components/Dialog/Dialog.vue'
+import type { DialogOpenChangeDetails } from './useDialog'
 
 export interface DialogRef<D = unknown, T = unknown> {
   /** Whatever was passed via `openDialog(Component, { data })`. */
@@ -40,6 +41,8 @@ export interface OpenDialogOptions<D = unknown, T = unknown> extends Partial<Dia
   footer?: Component
   /** Fires once with whatever `dialogRef.close(result)` passed, or `undefined` on Escape/outside-click/close-button dismissal. */
   onClose?: (result: T | undefined) => void
+  /** Same as `<Dialog>`'s `@open-change`: runs before it opens or closes, and `details.cancel()` keeps it as it is. */
+  onOpenChange?: (open: boolean, details: DialogOpenChangeDetails) => void
 }
 
 export interface OpenDialogHandle<T = unknown> {

@@ -4,9 +4,14 @@
     <p v-if="description" class="ui-confirm-popover-description">{{ description }}</p>
     <component :is="body" v-if="body" v-bind="bodyProps" />
     <div class="ui-confirm-popover-actions">
-      <Button size="sm" variant="outline" @click="handleCancel" v-bind="cancelButtonProps">{{
-        cancelLabel
-      }}</Button>
+      <Button
+        size="sm"
+        variant="outline"
+        @click="handleCancel"
+        v-bind="cancelButtonProps"
+        :disabled="pending || cancelButtonProps?.disabled"
+        >{{ cancelLabel }}</Button
+      >
       <Button
         size="sm"
         :variant="variant"
@@ -22,7 +27,7 @@
 <script setup lang="ts">
 import '../shared/confirm-popover.css'
 import '../shared/tokens.css'
-import type { Component } from 'vue'
+import { shallowRef, type Component } from 'vue'
 import type { ComponentProps } from 'vue-component-type-helpers'
 import Button from '../Button/Button.vue'
 import type { ButtonVariant } from '../Button/Button.vue'
@@ -48,6 +53,8 @@ const props = withDefaults(
   { confirmLabel: 'Confirm', cancelLabel: 'Cancel', variant: 'primary' },
 )
 
+// Cancelling after confirm already started would report a result the action contradicts.
+const pending = shallowRef(false)
 const popoverRef = usePopoverRef<unknown, boolean>()
 
 async function handleConfirm() {
@@ -55,14 +62,18 @@ async function handleConfirm() {
     popoverRef.close(true)
     return
   }
+  pending.value = true
   try {
     await props.onConfirmAction()
     popoverRef.close(true)
   } catch (err) {
     props.onErrorAction?.(err)
+  } finally {
+    pending.value = false
   }
 }
 function handleCancel() {
+  if (pending.value) return
   props.onCancelAction?.()
   popoverRef.close(false)
 }
