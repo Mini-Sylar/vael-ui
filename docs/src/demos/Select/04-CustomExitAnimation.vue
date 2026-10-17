@@ -9,22 +9,24 @@
       it by picking an item, pressing Escape, clicking outside, or re-clicking the trigger: all four
       route through <code>beforeClose</code>.
     </p>
-    <Select
-      ref="springSelect"
-      v-model="springValue"
-      v-model:open="springOpen"
-      :items="countries"
-      placeholder="Choose a destination"
-      force-mount
-      :before-close="beforeCloseSpring"
-    />
+    <Field label="Destination">
+      <Select
+        ref="springSelect"
+        v-model="springValue"
+        v-model:open="springOpen"
+        :items="countries"
+        placeholder="Choose a destination"
+        force-mount
+        :before-close="beforeCloseSpring"
+      />
+    </Field>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef, useTemplateRef, watch } from 'vue'
 import { animate } from 'motion-v'
-import { Select } from 'vael-ui'
+import { Field, Select } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 
 const countries: SelectItemData[] = [

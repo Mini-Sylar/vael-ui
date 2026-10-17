@@ -9,12 +9,14 @@
       participates in a parent's indeterminate count.
     </p>
     <div class="row">
-      <TreeSelect
-        v-model="checkboxValues"
-        :items="fileTree"
-        selection-mode="checkbox"
-        placeholder="Pick files"
-      />
+      <Field label="Files">
+        <TreeSelect
+          v-model="checkboxValues"
+          :items="fileTree"
+          selection-mode="checkbox"
+          placeholder="Pick files"
+        />
+      </Field>
       <output class="panel-text">
         {{ selectionSummary }}
       </output>
@@ -25,7 +27,7 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { TreeSelect } from 'vael-ui'
+import { Field, TreeSelect } from 'vael-ui'
 import type { TreeSelectNode } from 'vael-ui'
 
 const fileTree: TreeSelectNode[] = [
@@ -125,6 +127,7 @@ const selectionSummary = computed(() => {
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 

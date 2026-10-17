@@ -14,7 +14,12 @@
     >
       <template #hint="{ results }">
         <div class="password-strength">
-          <Progress :value="strengthValue(results)" :variant="strengthVariant(results)" size="sm" />
+          <Progress
+            :value="strengthValue(results)"
+            :variant="strengthVariant(results)"
+            size="sm"
+            label="Password strength"
+          />
           <span class="password-strength-label">{{ strengthLabel(results) }}</span>
         </div>
       </template>

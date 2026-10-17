@@ -11,10 +11,12 @@
     </Field>
     <form
       class="row dial-row"
-      style="align-items: center; margin-top: 1rem"
+      style="align-items: flex-end; margin-top: 1rem"
       @submit.prevent="onSubmit"
     >
-      <Dial v-model="formValue" name="zoom" :min="0" :max="200" />
+      <Field label="Zoom">
+        <Dial v-model="formValue" name="zoom" :min="0" :max="200" />
+      </Field>
       <Button type="submit" size="sm">Submit</Button>
       <output class="demo-status">{{ submitted }}</output>
     </form>

@@ -7,12 +7,14 @@
       the checkbox-tree semantics above.
     </p>
     <div class="row">
-      <TreeSelect
-        v-model="multipleValues"
-        :items="fileTree"
-        selection-mode="multiple"
-        placeholder="Pick any nodes"
-      />
+      <Field label="Nodes">
+        <TreeSelect
+          v-model="multipleValues"
+          :items="fileTree"
+          selection-mode="multiple"
+          placeholder="Pick any nodes"
+        />
+      </Field>
       <output class="panel-text">
         {{
           multipleValues.length
@@ -26,7 +28,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { TreeSelect } from 'vael-ui'
+import { Field, TreeSelect } from 'vael-ui'
 import type { TreeSelectNode } from 'vael-ui'
 
 const fileTree: TreeSelectNode[] = [
@@ -119,6 +121,7 @@ const multipleValues = shallowRef<(string | number)[]>([])
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 

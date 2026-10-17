@@ -2,7 +2,9 @@
   <section class="demo">
     <h3>Continent, country, city</h3>
     <div class="row">
-      <CascadeSelect v-model="city" :items="geography" placeholder="Pick a city" />
+      <Field label="City">
+        <CascadeSelect v-model="city" :items="geography" placeholder="Pick a city" />
+      </Field>
       <output class="panel-text">
         {{ city ? `Selected: ${city} (${path.join(' → ')})` : 'Nothing selected yet' }}
       </output>
@@ -12,7 +14,7 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { CascadeSelect } from 'vael-ui'
+import { CascadeSelect, Field } from 'vael-ui'
 import type { CascadeSelectItem, CascadeSelectPath } from 'vael-ui'
 
 const geography: CascadeSelectItem[] = [
@@ -96,6 +98,7 @@ const path = computed(() => (city.value == null ? [] : findPath(geography, city.
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 

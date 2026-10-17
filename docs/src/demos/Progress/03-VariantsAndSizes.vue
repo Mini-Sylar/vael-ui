@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Variants and sizes</h3>
     <div class="progress-stack" style="max-width: 20rem">
-      <Progress :value="70" variant="primary" />
-      <Progress :value="70" variant="success" />
-      <Progress :value="70" variant="warning" />
-      <Progress :value="70" variant="danger" />
-      <Progress :value="45" size="sm" />
+      <Progress :value="70" variant="primary" label="Upload" />
+      <Progress :value="70" variant="success" label="Backup" />
+      <Progress :value="70" variant="warning" label="Disk usage" />
+      <Progress :value="70" variant="danger" label="Quota" />
+      <Progress :value="45" size="sm" label="Sync" />
     </div>
   </section>
 </template>

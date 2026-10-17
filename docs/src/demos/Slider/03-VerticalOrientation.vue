@@ -2,7 +2,9 @@
   <section class="demo">
     <h3>Vertical orientation</h3>
     <div class="row slider-row" style="align-items: flex-start">
-      <Slider v-model="verticalValue" orientation="vertical" :min="0" :max="100" />
+      <Field label="Level">
+        <Slider v-model="verticalValue" orientation="vertical" :min="0" :max="100" />
+      </Field>
       <output class="demo-status">{{ verticalValue }}</output>
     </div>
   </section>
@@ -10,7 +12,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Slider } from 'vael-ui'
+import { Field, Slider } from 'vael-ui'
 
 const verticalValue = shallowRef(30)
 </script>

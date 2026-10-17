@@ -7,12 +7,14 @@
       growing to fill the screen.
     </p>
     <div class="row">
-      <Select
-        v-model="destination"
-        :items="countries"
-        :max-panel-height="160"
-        placeholder="Choose a destination"
-      />
+      <Field label="Destination">
+        <Select
+          v-model="destination"
+          :items="countries"
+          :max-panel-height="160"
+          placeholder="Choose a destination"
+        />
+      </Field>
       <output class="panel-text">{{ destination ?? '(none)' }}</output>
     </div>
   </section>
@@ -20,7 +22,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Select } from 'vael-ui'
+import { Field, Select } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 
 const countries: SelectItemData[] = [
@@ -50,6 +52,7 @@ const destination = shallowRef<string | number | null>(null)
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 

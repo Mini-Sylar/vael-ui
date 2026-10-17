@@ -3,7 +3,8 @@
     <h3>File card</h3>
     <div class="row">
       <ContextMenu :items="fileItems" @select="onSelect">
-        <Card class="file-card">
+        <!-- Focusable, so Shift+F10 or the Menu key opens the menu from the keyboard. -->
+        <Card class="file-card" tabindex="0" role="group" aria-label="Quarterly report.pdf">
           <template #body>
             <div class="file-card-body">
               <span class="file-icon"><PhFileText :size="28" weight="duotone" /></span>
@@ -61,6 +62,10 @@ const fileItems: MenuEntry[] = [
   display: inline-block;
   inline-size: 16rem;
   cursor: context-menu;
+}
+.file-card:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
 }
 .file-card-body {
   display: flex;

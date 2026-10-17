@@ -6,14 +6,16 @@
       <code>#footer</code> stay fixed above/below the tree, which stays the one scrolling piece.
     </p>
     <div class="row">
-      <TreeSelect v-model="value" :items="fileTree" placeholder="Pick a file or folder">
-        <template #header>
-          <span class="hint">Type to filter, or browse below</span>
-        </template>
-        <template #footer>
-          <span class="hint">node_modules is excluded from search</span>
-        </template>
-      </TreeSelect>
+      <Field label="File or folder">
+        <TreeSelect v-model="value" :items="fileTree" placeholder="Pick a file or folder">
+          <template #header>
+            <span class="hint">Type to filter, or browse below</span>
+          </template>
+          <template #footer>
+            <span class="hint">node_modules is excluded from search</span>
+          </template>
+        </TreeSelect>
+      </Field>
       <output class="panel-text">
         {{ value ? `Selected: ${value}` : 'Nothing selected yet' }}
       </output>
@@ -23,7 +25,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { TreeSelect } from 'vael-ui'
+import { Field, TreeSelect } from 'vael-ui'
 import type { TreeSelectNode } from 'vael-ui'
 
 const fileTree: TreeSelectNode[] = [
@@ -55,6 +57,7 @@ const value = shallowRef<string | number | null>(null)
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 

@@ -6,19 +6,23 @@
       replaces the dash.
     </p>
     <div class="stack">
-      <OtpInput v-model="code" :groups="3" />
-      <OtpInput v-model="licence" type="alphanumeric" :length="8" :groups="[4, 4]">
-        <template #separator>
-          <span class="slash" aria-hidden="true">/</span>
-        </template>
-      </OtpInput>
+      <Field label="Verification code">
+        <OtpInput v-model="code" :groups="3" />
+      </Field>
+      <Field label="Licence key">
+        <OtpInput v-model="licence" type="alphanumeric" :length="8" :groups="[4, 4]">
+          <template #separator>
+            <span class="slash" aria-hidden="true">/</span>
+          </template>
+        </OtpInput>
+      </Field>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { OtpInput } from 'vael-ui'
+import { Field, OtpInput } from 'vael-ui'
 
 const code = shallowRef('')
 const licence = shallowRef('')

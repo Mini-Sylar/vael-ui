@@ -7,19 +7,21 @@
       into a trailing "+N" once there are more than fit; the <code>display</code> prop can also swap
       chips entirely for a comma-joined label list or a localized count summary.
     </p>
-    <Select
-      v-model="targetMarkets"
-      :items="countries"
-      multiple
-      :max-labels="3"
-      placeholder="Target markets"
-    />
+    <Field label="Target markets">
+      <Select
+        v-model="targetMarkets"
+        :items="countries"
+        multiple
+        :max-labels="3"
+        placeholder="Target markets"
+      />
+    </Field>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Select } from 'vael-ui'
+import { Field, Select } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 
 const countries: SelectItemData[] = [

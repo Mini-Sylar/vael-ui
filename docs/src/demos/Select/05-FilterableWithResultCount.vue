@@ -8,16 +8,18 @@
       be a valid use of the slot.
     </p>
     <div class="row">
-      <Select
-        v-model="destination"
-        :items="countries"
-        filter
-        placeholder="Search countries"
-        clearable
-      >
-        <template #header="{ count, total }">{{ count }} of {{ total }}</template>
-        <template #footer>Can't find it? It might still be added soon.</template>
-      </Select>
+      <Field label="Country">
+        <Select
+          v-model="destination"
+          :items="countries"
+          filter
+          placeholder="Search countries"
+          clearable
+        >
+          <template #header="{ count, total }">{{ count }} of {{ total }}</template>
+          <template #footer>Can't find it? It might still be added soon.</template>
+        </Select>
+      </Field>
       <output class="panel-text">{{ destination ?? '(none)' }}</output>
     </div>
   </section>
@@ -25,7 +27,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Select } from 'vael-ui'
+import { Field, Select } from 'vael-ui'
 import type { SelectItemData } from 'vael-ui'
 
 const countries: SelectItemData[] = [
@@ -67,6 +69,7 @@ const destination = shallowRef<string | number | null>(null)
 <style scoped>
 .row {
   display: flex;
+  align-items: last baseline;
   gap: 1rem;
 }
 
