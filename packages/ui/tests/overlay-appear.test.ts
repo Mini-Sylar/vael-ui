@@ -6,6 +6,9 @@ import Dialog from '../src/components/Dialog/Dialog.vue'
 import Drawer from '../src/components/Drawer/Drawer.vue'
 import Popover from '../src/components/Popover/Popover.vue'
 import Tooltip from '../src/components/Tooltip/Tooltip.vue'
+import Select from '../src/components/Select/Select.vue'
+import Menu from '../src/components/Menu/Menu.vue'
+import SpeedDial from '../src/components/SpeedDial/SpeedDial.vue'
 import DialogHost from '../src/components/DialogHost/DialogHost.vue'
 import { openDialog } from '../src/composables/useDialogService'
 
@@ -26,6 +29,21 @@ const cases: [string, () => unknown, string][] = [
     'Tooltip',
     () => h(Tooltip, { open: true }, { trigger, default: () => 'Tip' }),
     '.ui-tooltip-positioner',
+  ],
+  [
+    'Select',
+    () => h(Select as never, { open: true, items: [{ label: 'One', value: 1 }] }),
+    '.ui-select-positioner',
+  ],
+  [
+    'Menu',
+    () => h(Menu as never, { open: true, items: [{ label: 'One' }] }, { trigger }),
+    '.ui-menu-positioner',
+  ],
+  [
+    'SpeedDial',
+    () => h(SpeedDial as never, { open: true, items: [{ label: 'One', value: 'one' }] }),
+    '.ui-speed-dial-action',
   ],
 ]
 

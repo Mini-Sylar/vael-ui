@@ -9,7 +9,7 @@
     <slot name="trigger" :open="open" />
   </span>
   <Teleport :to="teleportTo">
-    <Transition name="ui-menu" :css="!forceMount">
+    <Transition name="ui-menu" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"

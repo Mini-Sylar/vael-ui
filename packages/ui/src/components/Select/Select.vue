@@ -89,7 +89,7 @@
   </div>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" :css="!forceMount">
+    <Transition name="ui-select" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"

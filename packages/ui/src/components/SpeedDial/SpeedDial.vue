@@ -20,6 +20,7 @@
     >
       <TransitionGroup
         name="ui-speed-dial-action"
+        appear
         :css="props.motionCss"
         @enter="enterHook"
         @leave="leaveHook"
