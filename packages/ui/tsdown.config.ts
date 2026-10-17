@@ -11,7 +11,7 @@ export default defineConfig({
     ...collectBarrelEntries('./src/index.ts', process.cwd()),
   },
   platform: 'neutral',
-  plugins: [Vue({ isProduction: true })],
+  plugins: [Vue({ isProduction: true, template: { compilerOptions: { comments: false } } })],
   dts: { vue: true },
   css: { minify: true, splitting: true, inject: true },
   minify: true,

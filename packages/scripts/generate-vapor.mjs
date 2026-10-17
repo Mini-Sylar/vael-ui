@@ -13,11 +13,18 @@ import {
 import { fileURLToPath } from 'node:url'
 import { dirname, join, relative, resolve } from 'node:path'
 import { COMPONENTS } from './component-names.mjs'
+import { collectBarrelEntries } from './collect-barrel-entries.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const UI_SRC_DIR = join(__dirname, '../ui/src')
 const UI_COMPONENTS_DIR = join(__dirname, '../ui/src/components')
 const UI_INDEX_PATH = join(__dirname, '../ui/src/index.ts')
+
+// Modules the vdom build ships as their own files. Vapor components import these by path and the
+// Vapor build points them at the vdom files, so both builds share one copy.
+const SHARED_MODULES = new Set(Object.keys(collectBarrelEntries(UI_INDEX_PATH, UI_SRC_DIR)))
+// Stateless helpers each build may bundle on its own.
+const PER_BUILD_MODULES = new Set(['composables/useLazySortable'])
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 
 // Only changed files are written and only files no longer produced are removed, so a running
@@ -184,11 +191,9 @@ function resolveDependencyGraph(requested) {
 // Mirrors each CSS side-effect import into OUT_DIR (relative to
 // UI_COMPONENTS_DIR, the same root OUT_DIR itself mirrors) and rewrites the
 // import line to match, so vapor's build gets the exact same per-component
-// CSS-splitting the vdom tsdown build already does. Works for sources
-// outside UI_COMPONENTS_DIR too (e.g. directives/vScrollMask.ts, which
-// reaches into components/shared/*.css) since the resolution is anchored to
-// the CSS file's own absolute location, not the importing file's original
-// directory.
+// CSS-splitting the vdom tsdown build already does. The resolution is
+// anchored to the CSS file's own absolute location, not the importing file's
+// original directory.
 function copyCssImports(source, origFileDir, outFileDir) {
   const importLineRe = /^import\s+'([^']+\.css)'\s*$/gm
   return source.replace(importLineRe, (_full, relPath) => {
@@ -235,14 +240,7 @@ function relativeImportPath(specifier, fromDir = '') {
   return relPath
 }
 
-// Like relativeImportPath, but into an already-generated OUT_DIR file, not ui/src.
-function pathToGenerated(specifier, fromDir) {
-  let relPath = relative(join(OUT_DIR, fromDir), join(OUT_DIR, specifier)).split('\\').join('/')
-  if (!relPath.startsWith('.')) relPath = `./${relPath}`
-  return relPath
-}
-
-function rewriteImports(source, moduleId, publicExports) {
+function rewriteImports(source, moduleId) {
   const importLineRe = /^import\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'\s*$/gm
   return source.replace(importLineRe, (full, typeOnly, namedClause, specifier) => {
     if (!isRewritable(specifier)) return full // 'vue', third-party, and sibling ./ imports: untouched
@@ -270,44 +268,32 @@ function rewriteImports(source, moduleId, publicExports) {
         continue
       }
       const [vaporName, modulePath] = alias
-      // vScrollMask.ts has its own CSS import that needs mirroring into
-      // OUT_DIR (see copyNonComponentSource below), so it's referenced from
-      // the copy already generated there rather than back into ui/src.
-      const importPath =
-        localName === 'vScrollMask'
-          ? pathToGenerated(modulePath, fromDir)
-          : relativeImportPath(modulePath, fromDir)
+      const importPath = relativeImportPath(modulePath, fromDir)
       directiveLines.push(
         `import ${typeOnly ?? ''}{${vaporName} as ${localName}} from '${importPath}'`,
       )
     }
 
-    const missing = otherNames.filter((n) => !publicExports.has(n.replace(/^type\s+/, '')))
-    if (missing.length > 0) {
-      throw new Error(
-        `${moduleId}: imports ${missing.join(', ')} from '${specifier}', which ${
-          missing.length === 1 ? "isn't" : "aren't"
-        } in vael-ui's public exports (src/index.ts). Export ${
-          missing.length === 1 ? 'it' : 'them'
-        } publicly first, or exclude this component from COMPONENTS in gen.mjs.`,
-      )
-    }
-
+    // Imported by source path, not through 'vael-ui': without the `vapor` condition that name is
+    // the vdom build, and with it the Vapor build. The Vapor tsdown config turns these into
+    // imports of the vdom build's own files, so both builds share one copy of their state.
     const lines = [...directiveLines]
     if (otherNames.length > 0) {
-      lines.push(`import ${typeOnly ?? ''}{${otherNames.join(', ')}} from 'vael-ui'`)
+      const sourcePath = relative(UI_SRC_DIR, resolve(UI_COMPONENTS_DIR, fromDir, specifier))
+      const typesOnly = typeOnly || otherNames.every((n) => n.startsWith('type '))
+      if (!typesOnly && !SHARED_MODULES.has(sourcePath) && !PER_BUILD_MODULES.has(sourcePath)) {
+        throw new Error(
+          `${moduleId}: imports '${sourcePath}', which the vdom build doesn't ship as its own file, ` +
+            `so the Vapor build would get a second copy with its own state. Export it from ` +
+            `src/index.ts, or add it to PER_BUILD_MODULES if it holds no state.`,
+        )
+      }
+      lines.push(
+        `import ${typeOnly ?? ''}{${otherNames.join(', ')}} from '${relativeImportPath(sourcePath, fromDir)}'`,
+      )
     }
     return lines.join('\n')
   })
-}
-
-// vScrollMask.ts has its own CSS import — same copy-and-rewrite components get.
-function copyNonComponentSource(specifier) {
-  const srcPath = join(UI_SRC_DIR, `${specifier}.ts`)
-  const outPath = join(OUT_DIR, `${specifier}.ts`)
-  const source = copyCssImports(readFileSync(srcPath, 'utf8'), dirname(srcPath), dirname(outPath))
-  writeIfChanged(outPath, source)
-  return `./${specifier}`
 }
 
 // confirmAction.ts renders real components, so its .vue imports need the same
@@ -362,7 +348,7 @@ function main() {
       mkdirSync(dirname(outPath), { recursive: true }) // for internal/*.vue
       source = copyCssImports(source, dirname(srcPath), dirname(outPath))
       source = injectVaporMarker(source, moduleId)
-      source = rewriteImports(source, moduleId, publicExports)
+      source = rewriteImports(source, moduleId)
       writeIfChanged(outPath, source)
       const dep = requestedModuleIds.has(moduleId) ? '' : ' (dependency)'
       console.log(`generated src/generated/${moduleId}.vue${dep}`)
@@ -400,9 +386,7 @@ function main() {
   })
   barrelLines.push(
     `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
-    `export { vScrollMaskVapor as vScrollMask } from '${copyNonComponentSource('directives/vScrollMask')}'`,
-    // Referenced, not copied: unlike vScrollMask this pulls in useSortable, and
-    // a copy into generated/ can't resolve that relative import.
+    `export { vScrollMaskVapor as vScrollMask } from '${relativeImportPath('directives/vScrollMask')}'`,
     `export { vDraggableVapor as vDraggable } from '${relativeImportPath('directives/vDraggable')}'`,
     `export { confirmAction } from './composables/confirmAction'`,
     `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
