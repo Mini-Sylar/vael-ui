@@ -33,7 +33,9 @@ const props = defineProps<{ entry: DynamicPopoverEntry }>()
 const localOpen = shallowRef(false)
 onMounted(() => {
   void nextTick(() => {
-    localOpen.value = true
+    // Closed before it got this far: settle without ever showing it.
+    if (props.entry.closeRequested) props.entry.open = false
+    else localOpen.value = true
   })
 })
 // Propagate any way the popover itself closes (Escape, outside-click, or

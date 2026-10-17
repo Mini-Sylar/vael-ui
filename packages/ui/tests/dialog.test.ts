@@ -291,3 +291,14 @@ test('openDialog exposes overlayEl on the handle and on useDialogRef()', async (
   handle.close()
   await handle.result
 })
+
+test('openDialog closed in the same tick still settles and leaves nothing open', async () => {
+  const { defineComponent, h } = await import('vue')
+  const { openDialog } = await import('../src/composables/useDialogService')
+  const DialogHost = (await import('../src/components/DialogHost/DialogHost.vue')).default
+  await render({ render: () => h(DialogHost) })
+  const handle = openDialog(defineComponent({ render: () => h('p', 'Body') }), { title: 'Early' })
+  handle.close('early')
+  await expect(handle.result).resolves.toBe('early')
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog')).toBeNull())
+})

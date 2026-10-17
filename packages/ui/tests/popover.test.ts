@@ -1,6 +1,6 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import PopoverFixture from './fixtures/PopoverFixture.vue'
 import PopoverOpenAtMountFixture from './fixtures/PopoverOpenAtMountFixture.vue'
@@ -112,4 +112,17 @@ test('a Popover mounted already open positions itself against its trigger', asyn
   ).getBoundingClientRect()
   const rect = positioner().getBoundingClientRect()
   expect(rect.top).toBeGreaterThanOrEqual(triggerRect.bottom)
+})
+
+test('openPopover closed in the same tick still settles and never shows', async () => {
+  const { defineComponent, h } = await import('vue')
+  const { openPopover } = await import('../src/composables/usePopoverService')
+  const PopoverHost = (await import('../src/components/PopoverHost/PopoverHost.vue')).default
+  await render({ render: () => [h(PopoverHost), h('button', { id: 'early-anchor' }, 'Anchor')] })
+  const handle = openPopover(defineComponent({ render: () => h('p', 'Body') }), {
+    triggerEl: document.getElementById('early-anchor')!,
+  })
+  handle.close('early')
+  await expect(handle.result).resolves.toBe('early')
+  await vi.waitFor(() => expect(document.querySelector('.ui-popover-positioner')).toBeNull())
 })
