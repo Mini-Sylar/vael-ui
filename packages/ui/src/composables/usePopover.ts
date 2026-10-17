@@ -2,7 +2,7 @@ import { onMounted, onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { Side } from '@floating-ui/dom'
-import { useLayer } from './useLayerStack'
+import { isComposing, useLayer } from './useLayerStack'
 import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
 import { focusTargetIn, getFocusable } from './dom'
@@ -114,7 +114,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
   function onDocumentKeydown(event: KeyboardEvent) {
     // A layer above already handled this Escape and popped itself; without
     // this, the popover underneath would see itself topmost and close too.
-    if (event.defaultPrevented) return
+    if (event.defaultPrevented || isComposing(event)) return
     if (!layer.isTopmost()) return
     if (event.key === 'Escape' && toValue(options.closeOnEsc ?? true)) {
       event.preventDefault()

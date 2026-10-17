@@ -302,3 +302,21 @@ test('openDialog closed in the same tick still settles and leaves nothing open',
   await expect(handle.result).resolves.toBe('early')
   await vi.waitFor(() => expect(document.querySelector('.ui-dialog')).toBeNull())
 })
+
+test('Escape that ends an IME composition does not close the dialog', async () => {
+  const screen = await render(DialogFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  const input = screen.getByTestId('first').element() as HTMLInputElement
+  input.focus()
+
+  input.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Escape', isComposing: true, bubbles: true }),
+  )
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 229, bubbles: true }))
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(screen.getByTestId('state').element().textContent).toBe('open')
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+})

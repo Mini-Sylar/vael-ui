@@ -47,6 +47,42 @@ export interface UseDialogOptions {
   closeOnHistoryBack?: MaybeRefOrGetter<boolean>
 }
 
+// Shared across dialogs: each popstate must be judged once against every open entry.
+let lastHistoryId = 0
+let pendingBacks = 0
+const historyOwners = new Map<number, () => void>()
+const deferredPushes = new Map<number, () => void>()
+let popStateListening = false
+
+function onPopState() {
+  if (pendingBacks > 0) {
+    // Our own back() landing.
+    pendingBacks--
+    if (pendingBacks === 0) {
+      const pushes = [...deferredPushes.values()]
+      deferredPushes.clear()
+      pushes.forEach((push) => push())
+    }
+  } else {
+    const current = history.state?.__uiDialog
+    const live = typeof current === 'number' ? current : 0
+    for (const [id, close] of historyOwners) {
+      if (id <= live) continue
+      historyOwners.delete(id)
+      close()
+    }
+  }
+  syncPopStateListener()
+}
+
+function syncPopStateListener() {
+  const shouldListen = historyOwners.size > 0 || pendingBacks > 0
+  if (shouldListen === popStateListening) return
+  popStateListening = shouldListen
+  if (shouldListen) window.addEventListener('popstate', onPopState)
+  else window.removeEventListener('popstate', onPopState)
+}
+
 /** Headless dialog: cancelable close, Escape, Tab trap, scroll lock, focus save/restore. */
 export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   const { panelEl } = options
@@ -95,47 +131,45 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   }
 
   // Back-navigation dismiss: push one history entry on open, pop it again on any OTHER close path
-  // (`popHistoryEntryIfOwned`) so the stack stays balanced; a real back gesture instead fires
-  // `popstate` first, which closes the dialog and marks the entry as already gone so the
-  // resulting `deactivate()` doesn't also call `history.back()` and consume a second entry.
-  //
-  // Two things this guards against, both real with nested dialogs or an app router sharing the
-  // same history stack: (1) every open dialog's `popstate` listener fires on the SAME back
-  // action, not just the one whose entry actually got popped - only the topmost dialog may treat
-  // it as its own, via `layer.isTopmost()`, so an underlying dialog's own bookkeeping isn't
-  // clobbered by a pop that wasn't its entry. (2) something else (the app's own router) may have
-  // pushed a newer entry on top of ours before we close normally - `history.state` is checked
-  // right before popping so we only ever consume OUR OWN still-current entry, never someone
-  // else's navigation.
-  let pushedHistoryEntry = false
-  let ignoreNextPopstate = false
+  // so the stack stays balanced. Entries carry an increasing id, and the shared popstate handler
+  // closes only the dialogs whose entry is gone, so popping an inner dialog's entry never closes
+  // the outer one. `history.state` is checked before popping so we only ever consume our own
+  // still-current entry, never an app router's newer navigation.
+  let historyId = 0
 
   function pushHistoryEntry() {
     if (!toValue(options.closeOnHistoryBack) || typeof history === 'undefined') return
-    try {
-      history.pushState({ __uiDialog: true }, '')
-      pushedHistoryEntry = true
-    } catch {
-      // Some engines throttle pushState - fail safe: no entry pushed, no back-gesture-close this time.
+    historyId = ++lastHistoryId
+    const id = historyId
+    const push = () => {
+      try {
+        history.pushState({ __uiDialog: id }, '')
+        historyOwners.set(id, () => {
+          historyId = 0
+          requestClose('history')
+        })
+      } catch {
+        // Some engines throttle pushState - fail safe: no entry pushed, no back-gesture-close this time.
+        historyId = 0
+      }
+      syncPopStateListener()
     }
+    // A back() from an earlier close is still in flight: pushing now would let it pop this entry.
+    if (pendingBacks > 0) deferredPushes.set(id, push)
+    else push()
   }
 
   function popHistoryEntryIfOwned() {
-    if (!pushedHistoryEntry) return
-    pushedHistoryEntry = false
-    if (typeof history === 'undefined' || history.state?.__uiDialog !== true) return
-    ignoreNextPopstate = true
-    history.back()
-  }
-
-  function onPopState() {
-    if (ignoreNextPopstate) {
-      ignoreNextPopstate = false
-      return
+    const id = historyId
+    if (!id) return
+    historyId = 0
+    if (deferredPushes.delete(id)) return
+    historyOwners.delete(id)
+    if (history.state?.__uiDialog === id) {
+      pendingBacks++
+      history.back()
     }
-    if (!pushedHistoryEntry || !layer.isTopmost()) return
-    pushedHistoryEntry = false
-    requestClose('history')
+    syncPopStateListener()
   }
 
   const { el: container } = useDOMTarget(() => toValue(options.container) ?? null)
@@ -234,11 +268,6 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   }
 
   useEventListener(() => (isOpen.value ? document : undefined), 'keydown', onDocumentKeydown, true)
-  useEventListener(
-    () => (typeof window === 'undefined' ? undefined : window),
-    'popstate',
-    onPopState,
-  )
 
   function activate() {
     if (active) return

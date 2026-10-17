@@ -9,6 +9,7 @@ import type { TourStep, TourStepChangeDetails } from '../src/components/Tour/Tou
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import TourFixture from './fixtures/TourFixture.vue'
 import TourTeleportFixture from './fixtures/TourTeleportFixture.vue'
+import TourInteractiveFixture from './fixtures/TourInteractiveFixture.vue'
 
 test('opens on the first step, target stays interactive by default, page scroll-locks', async () => {
   const screen = await render(TourFixture)
@@ -313,4 +314,46 @@ test('Skip and Done go through beforeClose, so a custom exit runs', async () => 
   expect(beforeClose).toHaveBeenCalledTimes(2)
   beforeClose.mock.calls[1]![0]()
   await vi.waitFor(() => expect(open.value).toBe(false))
+})
+
+test('arrow keys typed inside a spotlighted input move the caret, not the tour', async () => {
+  const screen = await render(TourInteractiveFixture)
+  await expect.element(page.getByText('Type your name')).toBeVisible()
+
+  const input = screen.getByTestId('tour-input')
+  await input.click()
+  await userEvent.keyboard('abc{ArrowLeft}{ArrowLeft}')
+  await expect.element(input).toHaveFocus()
+  expect(screen.getByTestId('step-index').element().textContent).toBe('0')
+  expect((input.element() as HTMLInputElement).selectionStart).toBe(1)
+
+  // Modified arrows (e.g. word jumps) are left alone too.
+  await userEvent.keyboard('{Alt>}{ArrowRight}{/Alt}')
+  expect(screen.getByTestId('step-index').element().textContent).toBe('0')
+})
+
+test('Escape closes a Dialog opened from a tour step before it skips the tour', async () => {
+  const screen = await render(TourInteractiveFixture)
+  await expect.element(page.getByText('Type your name')).toBeVisible()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect.element(page.getByText('Open settings')).toBeVisible()
+
+  await screen.getByTestId('open-dialog').click()
+  await expect.element(page.getByRole('dialog', { name: 'Settings dialog' })).toBeVisible()
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('dialog-state')).toHaveTextContent('closed')
+  expect(screen.getByTestId('state').element().textContent).toBe('open')
+
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+})
+
+test('Escape still skips the tour while a step’s own onBeforeEnter overlay is open', async () => {
+  const screen = await render(TourTeleportFixture)
+  await screen.getByTestId('trigger').click()
+  await expect.element(page.getByText('Behind a Dialog')).toBeVisible()
+
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(document.body.textContent).not.toContain('Behind a Dialog'))
 })
