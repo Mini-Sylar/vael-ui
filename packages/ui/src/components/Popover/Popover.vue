@@ -9,7 +9,7 @@
   </span>
   <slot v-else-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTarget">
-    <Transition name="ui-popover" :css="!forceMount">
+    <Transition name="ui-popover" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"

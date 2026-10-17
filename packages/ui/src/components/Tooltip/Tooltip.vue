@@ -1,7 +1,7 @@
 <template>
   <slot v-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTo">
-    <Transition name="ui-tooltip" :css="!forceMount">
+    <Transition name="ui-tooltip" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"

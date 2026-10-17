@@ -3,6 +3,7 @@
     <TransitionGroup
       :ref="registerToaster"
       name="ui-toast"
+      appear
       tag="ol"
       :class="rootPart.class"
       :style="[rootStyle, rootPart.style]"

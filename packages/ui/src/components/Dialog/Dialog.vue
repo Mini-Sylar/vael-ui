@@ -1,6 +1,6 @@
 <template>
   <Teleport :to="teleportTarget">
-    <Transition name="ui-dialog" :css="!forceMount">
+    <Transition name="ui-dialog" appear :css="!forceMount">
       <div
         v-if="forceMount || open"
         v-show="open"
