@@ -20,12 +20,17 @@ const panelEl = computed(() => dialogInstance.value?.panelEl ?? null)
 watch(panelEl, (el) => {
   props.entry.panelEl = el
 })
+const overlayEl = computed(() => dialogInstance.value?.overlayEl ?? null)
+watch(overlayEl, (el) => {
+  props.entry.overlayEl = el
+})
 
 provide(
   dialogRefKey,
   reactive({
     data: props.entry.data,
     panelEl,
+    overlayEl,
     close: props.entry.close,
   }),
 )

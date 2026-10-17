@@ -117,13 +117,13 @@ export const composablesContent: Record<string, ComposableContent> = {
         name: 'openDialog(component, options)',
         type: 'OpenDialogHandle<T>',
         description:
-          'Mounts `component` inside `<Dialog>`, rendered by the app-level `<DialogHost/>`. `options.props` is typed against the component you pass.',
+          'Mounts `component` inside `<Dialog>`, rendered by the app-level `<DialogHost/>`. `options.props` is typed against the component you pass. The handle has `result`, `close`, and the `panelEl` and `overlayEl` refs for your own animations.',
       },
       {
         name: 'useDialogRef()',
         type: 'DialogRef<D, T>',
         description:
-          "Call it inside the opened component. Returns `{ data, panelEl, close(result) }`. Calling `close()` settles the opener's `result` promise.",
+          "Call it inside the opened component. Returns `{ data, panelEl, overlayEl, close(result) }`. Calling `close()` settles the opener's `result` promise.",
       },
       {
         name: 'useDialogQueue()',

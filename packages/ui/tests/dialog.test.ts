@@ -273,3 +273,21 @@ test('with forceMount, an inline overlay opacity wins over the closing fade', as
   expect(getComputedStyle(overlay).opacity).toBe('0.8')
   finish?.()
 })
+
+test('openDialog exposes overlayEl on the handle and on useDialogRef()', async () => {
+  const { defineComponent, h } = await import('vue')
+  const { openDialog, useDialogRef } = await import('../src/composables/useDialogService')
+  const DialogHost = (await import('../src/components/DialogHost/DialogHost.vue')).default
+  let fromInside: ReturnType<typeof useDialogRef> | undefined
+  const Body = defineComponent(() => {
+    fromInside = useDialogRef()
+    return () => h('p', 'Body')
+  })
+  await render({ render: () => h(DialogHost) })
+  const handle = openDialog(Body, { title: 'Dynamic' })
+  await vi.waitFor(() => expect(handle.overlayEl.value).toBeInstanceOf(HTMLElement))
+  expect(handle.overlayEl.value!.classList.contains('ui-dialog-overlay')).toBe(true)
+  expect(fromInside!.overlayEl).toBe(handle.overlayEl.value)
+  handle.close()
+  await handle.result
+})

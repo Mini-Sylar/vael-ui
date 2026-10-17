@@ -16,6 +16,8 @@ export interface DialogRef<D = unknown, T = unknown> {
   readonly data: D
   /** The real panel element, once mounted — for GSAP/motion-v enter animations, same role as static `<Dialog>`'s exposed `panelEl`. */
   readonly panelEl: HTMLElement | null
+  /** The backdrop, once mounted. Same role as static `<Dialog>`'s `overlayEl`; null when `modal` is false. */
+  readonly overlayEl: HTMLElement | null
   /** Closes the dialog; `result` is what the opener's `await`/`onClose` receives. */
   close: (result?: T) => void
 }
@@ -47,6 +49,8 @@ export interface OpenDialogHandle<T = unknown> {
   close: (result?: T) => void
   /** Same role as static `<Dialog>`'s exposed `panelEl` — null until DialogHost actually mounts it. */
   panelEl: ComputedRef<HTMLElement | null>
+  /** Same role as static `<Dialog>`'s `overlayEl`. Null until mounted, and when `modal` is false. */
+  overlayEl: ComputedRef<HTMLElement | null>
 }
 
 export interface DynamicDialogEntry {
@@ -58,6 +62,7 @@ export interface DynamicDialogEntry {
   dialogProps: Partial<DialogProps>
   data: unknown
   panelEl: HTMLElement | null
+  overlayEl: HTMLElement | null
   open: boolean
   pendingResult: unknown
   closeRequested: boolean
@@ -119,6 +124,7 @@ export function openDialog<
     dialogProps,
     data,
     panelEl: null,
+    overlayEl: null,
     open: true,
     pendingResult: undefined,
     closeRequested: false,
@@ -151,6 +157,7 @@ export function openDialog<
     result,
     close: entry.close as (result?: T) => void,
     panelEl: computed(() => entry.panelEl),
+    overlayEl: computed(() => entry.overlayEl),
   }
 }
 
