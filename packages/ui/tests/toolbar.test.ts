@@ -217,6 +217,36 @@ test('overflow: opt-in end-group items collapse into an ellipsis menu once the t
   }
 })
 
+test('overflow: a toggle shows as a checkbox row with its current state, every time the menu opens', async () => {
+  const screen = await render(ToolbarOverflowFixture, { props: { width: '100px' } })
+  try {
+    await vi.waitFor(
+      () =>
+        expect(
+          screen.container
+            .querySelector('[data-testid="pin"]')
+            ?.hasAttribute('data-toolbar-collapsed'),
+        ).toBe(true),
+      { timeout: 2000 },
+    )
+    const trigger = screen.container.querySelector<HTMLElement>('[data-toolbar-ellipsis]')!
+    trigger.click()
+    const pinRow = screen.getByRole('menuitemcheckbox', { name: 'Pin' })
+    await expect.element(pinRow).toHaveAttribute('aria-checked', 'false')
+    await pinRow.click()
+    await expect.element(screen.getByTestId('pinned')).toHaveTextContent('true')
+    await vi.waitFor(() => expect(document.querySelector('[role="menu"]')).toBeNull(), {
+      timeout: 2000,
+    })
+    trigger.click()
+    await expect
+      .element(screen.getByRole('menuitemcheckbox', { name: 'Pin' }))
+      .toHaveAttribute('aria-checked', 'true')
+  } finally {
+    await screen.unmount()
+  }
+})
+
 test("overflow: widening the toolbar past the collapsed items' remembered width removes the ellipsis", async () => {
   const screen = await render(ToolbarOverflowFixture, { props: { width: '100px' } })
   try {

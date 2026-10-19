@@ -17,7 +17,11 @@
     </div>
     <div v-if="slots.end || hasOverflow" :class="groupPart.class" :style="groupPart.style">
       <slot name="end" />
-      <Menu v-if="hasOverflow" :items="overflowItems">
+      <Menu
+        v-if="hasOverflow"
+        :items="overflowItems"
+        @update:open="(open) => open && buildOverflowItems()"
+      >
         <template #trigger>
           <button
             type="button"
@@ -38,7 +42,7 @@
 <script setup lang="ts">
 import './Toolbar.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
+import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useToolbar } from '../../composables/useToolbar'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -99,14 +103,21 @@ const overflowTriggerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.overflowTrigger, 'ui-toolbar-overflow-trigger'),
 )
 
-// Menu items built from hidden children's labels; .click()s real element so handlers run as-is (can't re-render arbitrary slotted markup)
-const overflowItems = computed<MenuItemData[]>(() =>
-  collapsedItems.value.map((el) => ({
+// Menu items built from hidden children's labels; .click()s real element so handlers run as-is (can't re-render arbitrary slotted markup).
+// A toggle (aria-pressed) becomes a checkbox row. The DOM isn't reactive, so the rows are rebuilt
+// whenever the hidden set changes and each time the menu opens, to show each toggle's current state.
+const overflowItems = shallowRef<MenuItemData[]>([])
+function buildOverflowItems() {
+  overflowItems.value = collapsedItems.value.map((el) => ({
     label: el.getAttribute('aria-label') || el.textContent?.trim() || '',
     disabled: el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true',
+    checked: el.hasAttribute('aria-pressed')
+      ? el.getAttribute('aria-pressed') === 'true'
+      : undefined,
     onSelect: () => el.click(),
-  })),
-)
+  }))
+}
+watch(collapsedItems, buildOverflowItems, { immediate: true })
 
 defineExpose({
   /** Root element. */

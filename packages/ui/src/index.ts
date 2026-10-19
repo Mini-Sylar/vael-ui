@@ -7,6 +7,7 @@ export type {
   ButtonVariant,
 } from './components/Button/Button.vue'
 export { default as ButtonGroup } from './components/ButtonGroup/ButtonGroup.vue'
+export type { ButtonGroupValue } from './components/ButtonGroup/ButtonGroup.vue'
 export { default as SplitButton } from './components/SplitButton/SplitButton.vue'
 export type { SplitButtonAlign, SplitButtonSide } from './components/SplitButton/SplitButton.vue'
 export { default as Loader } from './components/Loader/Loader.vue'
