@@ -75,6 +75,7 @@
             :locale="props.locale"
             :first-day-of-week="firstDayOfWeek"
             :months="months"
+            :show-year-buttons="showYearButtons"
             :motion-css="props.motionCss"
             :ui="calendarUi"
             @change="onCalendarChange"
@@ -290,6 +291,8 @@ const rawProps = withDefaults(
      * @default false
      */
     showButtonBar?: boolean
+    /** Adds « and » beside the month arrows to jump a year at a time. See Calendar's `showYearButtons`. @default false */
+    showYearButtons?: boolean
     /** Adds an hour/minute row below the calendar (`single` mode only). Picking a date then keeps
      * the panel open so you can set the time.
      * @default false
@@ -345,6 +348,7 @@ const rawProps = withDefaults(
     teleportTo: 'body',
     motionCss: undefined,
     showButtonBar: false,
+    showYearButtons: false,
     showTime: false,
     timeOnly: false,
     hourFormat: undefined,

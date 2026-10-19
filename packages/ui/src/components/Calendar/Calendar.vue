@@ -6,9 +6,32 @@
     :data-motion="props.motionCss ? undefined : 'off'"
   >
     <div
-      :class="[headerPart.class, splitMonths && 'ui-calendar-header--overlay']"
+      :class="[
+        headerPart.class,
+        splitMonths && 'ui-calendar-header--overlay',
+        yearButtons && 'ui-calendar-header--year-nav',
+      ]"
       :style="[{ '--ui-calendar-direction': direction }, headerPart.style]"
     >
+      <button
+        v-if="yearButtons"
+        type="button"
+        :class="navButtonPart.class"
+        :style="navButtonPart.style"
+        :aria-label="messages.calendar.previousYear"
+        :aria-disabled="!canGoPrevious || undefined"
+        @click="goPreviousYear"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+          <path
+            d="M8 4l-4 4 4 4M12.5 4l-4 4 4 4"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
       <button
         type="button"
         :class="navButtonPart.class"
@@ -36,6 +59,7 @@
         :style="labelPart.style"
         :aria-disabled="!canDrill || undefined"
         aria-live="polite"
+        @pointerenter="titleIfCut"
         @click="canDrill && drillUp()"
       >
         <Transition
@@ -67,6 +91,25 @@
           />
         </svg>
       </button>
+      <button
+        v-if="yearButtons"
+        type="button"
+        :class="navButtonPart.class"
+        :style="navButtonPart.style"
+        :aria-label="messages.calendar.nextYear"
+        :aria-disabled="!canGoNext || undefined"
+        @click="goNextYear"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+          <path
+            d="M3.5 4l4 4-4 4M8 4l4 4-4 4"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
     </div>
 
     <div
@@ -81,7 +124,14 @@
         @enter="anchorZoom"
       >
         <div :key="navLevel" class="ui-calendar-level">
-          <div v-if="navLevel === 'date'" class="ui-calendar-panes">
+          <div
+            v-if="navLevel === 'date'"
+            :class="[
+              'ui-calendar-panes',
+              yearButtons &&
+                (splitMonths ? 'ui-calendar-panes--year-nav-split' : 'ui-calendar-panes--year-nav'),
+            ]"
+          >
             <div v-for="(pane, pi) in panes" :key="pi" class="ui-calendar-pane">
               <div v-if="panes.length > 1" class="ui-calendar-pane-head">
                 <Transition
@@ -98,7 +148,8 @@
                     ]"
                     :style="labelPart.style"
                     aria-live="polite"
-                    @click="drillUp(pane)"
+                    @pointerenter="titleIfCut"
+                    @click="drillUp(pane, pi)"
                   >
                     <slot name="label" :label="monthYearFormat(pane)" :date="pane" level="date">{{
                       monthYearFormat(pane)
@@ -293,6 +344,7 @@ import type { ComponentPublicInstance } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useUiMessages } from '../../messages'
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */
 const model = defineModel<Date | CalendarRange | null>({ default: null })
@@ -322,6 +374,12 @@ const rawProps = withDefaults(
      * @default 1
      */
     months?: number
+    /**
+     * Adds « and » beside the month arrows to jump a year at a time, handy for ranges that
+     * span years. Only in the day view; the month and year grids already step by years.
+     * @default false
+     */
+    showYearButtons?: boolean
     /** `false` skips the month-navigation slide transition. @default true */
     motionCss?: boolean
     /** Class and style overrides for each part. */
@@ -345,6 +403,7 @@ const rawProps = withDefaults(
     locale: undefined,
     firstDayOfWeek: undefined,
     months: 1,
+    showYearButtons: false,
     motionCss: undefined,
     ui: undefined,
   },
@@ -584,19 +643,20 @@ const headerLabel = computed(() => {
   if (navLevel.value === 'month') return yearLabel.value
   return yearRangeLabel.value
 })
+const messages = useUiMessages()
 const previousLabel = computed(() =>
   navLevel.value === 'date'
-    ? 'Previous month'
+    ? messages.value.calendar.previousMonth
     : navLevel.value === 'month'
-      ? 'Previous year'
-      : 'Previous years',
+      ? messages.value.calendar.previousYear
+      : messages.value.calendar.previousYears,
 )
 const nextLabel = computed(() =>
   navLevel.value === 'date'
-    ? 'Next month'
+    ? messages.value.calendar.nextMonth
     : navLevel.value === 'month'
-      ? 'Next year'
-      : 'Next years',
+      ? messages.value.calendar.nextYear
+      : messages.value.calendar.nextYears,
 )
 
 const weekdayLabels = computed(() => {
@@ -736,6 +796,20 @@ function goPrevious() {
   else if (navLevel.value === 'month') setView(addYears(viewDate.value, -1), -1)
   else setView(addYears(viewDate.value, -12), -1)
 }
+// A year back or forward, stopping at minDate/maxDate's month rather than refusing the jump.
+const yearButtons = computed(() => props.showYearButtons && navLevel.value === 'date')
+function goPreviousYear() {
+  if (!canGoPrevious.value) return
+  const min = props.minDate && startOfMonth(props.minDate)
+  const target = addMonths(viewDate.value, -12)
+  setView(min && target < min ? min : target, -1)
+}
+function goNextYear() {
+  if (!canGoNext.value) return
+  const lastPane = props.maxDate && addMonths(startOfMonth(props.maxDate), 1 - panes.value.length)
+  const target = addMonths(viewDate.value, 12)
+  setView(lastPane && target > lastPane ? lastPane : target, 1)
+}
 function goNext() {
   if (!canGoNext.value) return
   if (navLevel.value === 'date') setView(addMonths(viewDate.value, 1), 1)
@@ -743,7 +817,18 @@ function goNext() {
   else setView(addYears(viewDate.value, 12), 1)
 }
 // Header-label click: temporarily drill up to coarser level for fast nav
-function drillUp(month?: Date) {
+// A month name cut short with an ellipsis shows in full on hover; one that fits gets no tooltip.
+function titleIfCut(event: PointerEvent) {
+  const button = event.currentTarget as HTMLElement
+  const text = button.querySelector<HTMLElement>('.ui-calendar-label-text') ?? button
+  if (text.scrollWidth > text.clientWidth) button.title = button.textContent!.trim()
+  else button.removeAttribute('title')
+}
+// Which of the shown months the month grid was opened from, so the month picked there lands
+// back in that spot: open it from the second month, and your pick shows second.
+let drillPane = 0
+function drillUp(month?: Date, pane = 0) {
+  drillPane = pane
   animateBodyHeight(() => {
     if (month) viewDate.value = month
     if (navLevel.value === 'date') navLevel.value = 'month'
@@ -794,8 +879,11 @@ function onMonthPick(month: Date) {
     return
   }
   animateBodyHeight(() => {
+    // The zoom back in centres on the picked month's cell, read when navLevel changes.
     viewDate.value = startOfMonth(month)
     navLevel.value = 'date'
+    viewDate.value = addMonths(startOfMonth(month), -drillPane)
+    drillPane = 0
   })
   emit('month-change', viewDate.value)
 }

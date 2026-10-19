@@ -62,11 +62,11 @@ test('arrow keys cross into the next month in place, and page on past the last o
   await expect.poll(() => document.activeElement?.getAttribute('data-date')).toBe('2024-08-01')
 })
 
-test('picking a month from a month label shows it first', async () => {
+test('a month picked from a month label lands where that label was', async () => {
   await render(CalendarMonthsFixture, { props: { start: JUNE_10_2024 } })
   await page.getByRole('button', { name: 'July 2024' }).click()
   await page.getByText('Oct', { exact: true }).click()
-  await expect.poll(labels).toEqual(['October 2024', 'November 2024'])
+  await expect.poll(labels).toEqual(['September 2024', 'October 2024'])
 })
 
 test('one month renders as before, with the label in the header', async () => {
