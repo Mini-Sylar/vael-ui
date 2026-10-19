@@ -242,7 +242,7 @@ test('dark theme: danger keeps a legible label, enabled and disabled', async () 
 })
 
 test.each(['ghost', 'outline', 'secondary'] as const)(
-  'a %s toggle button shows its pressed state from aria-pressed alone',
+  'a %s toggle button shows its pressed state from aria-pressed alone, unlike a hovered one',
   async (variant) => {
     const { h } = await import('vue')
     const screen = await render(() => [
@@ -259,7 +259,8 @@ test.each(['ghost', 'outline', 'secondary'] as const)(
       return value
     }
     expect(bg('on')).not.toBe(bg('off'))
-    expect(bg('on')).toBe(token(variant === 'secondary' ? '--ui-muted-hover' : '--ui-muted'))
+    // Hovering an off button fills it with this; an on button must never look the same.
+    expect(bg('on')).not.toBe(token(variant === 'secondary' ? '--ui-muted-hover' : '--ui-muted'))
   },
 )
 
