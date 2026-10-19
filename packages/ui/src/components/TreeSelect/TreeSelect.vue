@@ -31,6 +31,7 @@
     </span>
     <Transition
       name="ui-clear"
+      :css="props.motionCss"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -270,7 +271,8 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips all built-in motion (row transitions and chevron rotation). @default true */
+    /** `false` skips all built-in motion (row transitions, chevron rotation, the panel and list easing
+     * to a new height, and the clear button). @default true */
     motionCss?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
@@ -402,8 +404,10 @@ const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 
 // The panel grows and shrinks with the tree's own expand animation instead of jumping to its new
-// height first: Tree.vue's FLIP pass slides rows over --ui-duration-enter on --ui-ease-in-out,
-// starting two frames in, and the panel does the same. Heights ignore the opening scale.
+// height first: Tree.vue's FLIP pass slides rows on --ui-ease-out, starting two frames in, over
+// the enter duration when opening and the exit duration when closing, and the panel does the same.
+// A folder that swaps at once (an arrow key) resizes the panel at once too. Heights ignore the
+// opening scale.
 function onExpandChange(value: string | number, expanded: boolean) {
   emit('expand-change', value, expanded)
   const panel = panelEl.value
@@ -413,14 +417,15 @@ function onExpandChange(value: string | number, expanded: boolean) {
     panel.style.transition = 'none'
     panel.style.height = ''
     const to = panel.offsetHeight
-    if (Math.abs(to - from) < 1) {
+    if (Math.abs(to - from) < 1 || panel.querySelector('.ui-tree-rows[data-instant]')) {
       panel.style.transition = ''
       return
     }
     panel.style.height = `${from}px`
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        panel.style.transition = 'height var(--ui-duration-enter) var(--ui-ease-in-out)'
+        const duration = expanded ? 'var(--ui-duration-enter)' : 'var(--ui-duration-exit)'
+        panel.style.transition = `height ${duration} var(--ui-ease-out)`
         panel.style.height = `${to}px`
         const settle = (event: TransitionEvent) => {
           if (event.target !== panel || event.propertyName !== 'height') return
@@ -434,6 +439,7 @@ function onExpandChange(value: string | number, expanded: boolean) {
   })
 }
 const treeRef = useTemplateRef<ComponentExposed<typeof Tree>>('treeRef')
+
 // Sourced from Tree (owns real role="tree").
 const listEl = computed(() => treeRef.value?.listEl ?? null)
 

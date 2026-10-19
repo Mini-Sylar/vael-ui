@@ -4,6 +4,7 @@
     ref="listEl"
     role="listbox"
     tabindex="-1"
+    :data-motion="props.motion ? undefined : 'off'"
     :class="listPart.class"
     :style="listPart.style"
     :aria-multiselectable="multiple || undefined"
@@ -70,9 +71,27 @@
             :group="section.group"
           >
             <span class="ui-select-option-label">{{ getLabel(items[index]) }}</span>
-            <span v-if="isSelected(items[index])" class="ui-select-option-check" aria-hidden="true"
-              >✓</span
-            >
+            <!-- No `appear`: only a pick on a row already showing draws it in (shared/tick.css). -->
+            <Transition name="ui-tick">
+              <svg
+                v-if="isSelected(items[index])"
+                class="ui-select-option-check ui-tick"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 8.5l3 3 6-7"
+                  pathLength="1"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </Transition>
           </slot>
         </div>
       </div>
@@ -107,12 +126,27 @@
             :selected="isSelected(items[row.index])"
           >
             <span class="ui-select-option-label">{{ getLabel(items[row.index]) }}</span>
-            <span
-              v-if="isSelected(items[row.index])"
-              class="ui-select-option-check"
-              aria-hidden="true"
-              >✓</span
-            >
+            <!-- No `appear`: only a pick on a row already showing draws it in (shared/tick.css). -->
+            <Transition name="ui-tick">
+              <svg
+                v-if="isSelected(items[row.index])"
+                class="ui-select-option-check ui-tick"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 8.5l3 3 6-7"
+                  pathLength="1"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </Transition>
           </slot>
         </div>
       </div>
@@ -180,7 +214,9 @@ export interface SelectListSection<T extends SelectItemData = SelectItemData> {
 -->
 <script setup lang="ts" generic="T extends SelectItemData">
 import '../shared/loader-spinner.css'
+import '../shared/tick.css'
 import { computed, useTemplateRef } from 'vue'
+import { useEasedHeight } from '../../composables/useEasedHeight'
 import { useVirtualizer } from '../../composables/useVirtualizer'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -203,6 +239,8 @@ const props = defineProps<{
    * "not virtualized" case is just an overscan that never clips. */
   overscan: number
   scrollFade?: boolean
+  /** Eases the list to its new height when its options change, as CommandPalette does. */
+  motion?: boolean
   /** Set when the items come in groups: renders each run under its label instead of windowing. */
   sections?: readonly SelectListSection<T>[]
   ui?: Partial<{
@@ -246,6 +284,13 @@ defineSlots<{
 }>()
 
 const listEl = useTemplateRef<HTMLElement>('listEl')
+
+// Eases to the new height when the options change (a search, more loaded), as CommandPalette does.
+useEasedHeight({
+  el: () => listEl.value,
+  source: [() => props.items, () => props.sections, () => props.loading],
+  enabled: () => !!props.motion,
+})
 
 const {
   listStyle,

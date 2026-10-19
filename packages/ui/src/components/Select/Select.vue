@@ -60,6 +60,7 @@
     </span>
     <Transition
       name="ui-clear"
+      :css="props.motionCss"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -167,6 +168,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
+            :motion="props.motionCss"
             :sections="hasGroups ? filtered.sections : undefined"
             :ui="{
               list: themedUi()?.list,
@@ -350,7 +352,8 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips the built-in chip transitions (`multiple` only); animate them yourself via
+    /** `false` skips the built-in motion: the list easing to its new height as you search, the clear
+     * button, and chip transitions (`multiple`), which you can animate yourself via
      * `@chip-enter`/`@chip-leave`.
      * @default true
      */

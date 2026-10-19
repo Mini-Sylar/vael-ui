@@ -134,6 +134,7 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { useEasedHeight } from '../../composables/useEasedHeight'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogPosition, DialogSize } from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
@@ -367,49 +368,12 @@ function registerListEl(el: Element | { $el?: unknown } | null) {
 }
 
 // Ease to the new height from the current one, so a restart mid-animation doesn't jump.
-watch(
-  rows,
-  () => {
-    const el = listEl.value
-    if (!el || !props.motionCss || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const from = el.getBoundingClientRect().height
-    nextTick(() => {
-      el.style.transition = 'none'
-      el.style.blockSize = ''
-      const to = el.getBoundingClientRect().height
-      if (Math.abs(to - from) >= 1) {
-        el.dataset.resizing = el.scrollHeight > el.clientHeight + 1 ? 'scroll' : 'fit'
-        if (to > from) el.dataset.growing = ''
-        else delete el.dataset.growing
-        el.style.blockSize = `${from}px`
-        void el.offsetHeight
-        el.style.blockSize = `${to}px`
-      } else {
-        delete el.dataset.resizing
-        delete el.dataset.growing
-      }
-      el.style.transition = ''
-    })
-  },
-  { flush: 'pre' },
-)
-function releaseHeight(event: TransitionEvent) {
-  const el = listEl.value
-  if (!el || event.target !== el) return
-  const heightDone = event.propertyName === 'block-size' || event.propertyName === 'height'
-  // A list that fits eases its soft edge away first. One that scrolls hands it to its scroll fade.
-  if (heightDone && el.dataset.growing !== undefined && el.dataset.resizing === 'fit') {
-    delete el.dataset.growing
-    return
-  }
-  if (heightDone || event.propertyName === '--ui-command-palette-edge') {
-    el.style.blockSize = ''
-    delete el.dataset.resizing
-    delete el.dataset.growing
-  }
-}
-// Not transitioncancel: a restart cancels the previous run after setting the new height.
-useEventListener(listEl, 'transitionend', releaseHeight)
+useEasedHeight({
+  el: () => listEl.value,
+  source: rows,
+  enabled: () => props.motionCss,
+  edgeProperty: '--ui-command-palette-edge',
+})
 
 watch(activeIndex, (index) => {
   if (index < 0) return

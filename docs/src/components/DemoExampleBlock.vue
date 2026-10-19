@@ -196,9 +196,11 @@ const code = computed(() =>
 }
 
 /* A picker in a Field would otherwise shrink to its placeholder ("Pick a city"); give it room for
-   a typical choice, but never more than the space there is. */
-.demo-preview :deep(.ui-field:has([role='combobox'])) {
-  min-inline-size: min(100%, 16rem);
+   a typical choice, but never more than the space there is. Date pickers get the same room on
+   their own, so a range ("Oct 19, 2026 – Oct 28, 2026") or a date and time fits. */
+.demo-preview :deep(.ui-field:has([role='combobox'])),
+.demo-preview :deep(.ui-input:has(> input[role='combobox'][aria-haspopup='dialog'])) {
+  min-inline-size: min(100%, 18rem);
 }
 
 .demo-preview::before {

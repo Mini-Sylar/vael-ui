@@ -42,6 +42,27 @@
     padding-inline: 0.25rem;
     padding-block: 0 0.25rem;
   }
+  /* Searching eases this list to its new height (useEasedHeight): no scrollbar while it moves, and a
+     soft bottom edge so rows fade in at the moving edge instead of being cut mid-glyph. */
+  .ui-tree-list {
+    transition:
+      block-size var(--ui-duration-enter) var(--ui-ease-out),
+      --ui-list-edge var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-tree-list[data-resizing] {
+    overflow-y: hidden;
+  }
+  .ui-tree-list[data-resizing='fit'],
+  .ui-tree-list[data-growing] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--ui-list-edge)), transparent);
+  }
+  .ui-tree-list[data-growing] {
+    --ui-list-edge: 2rem;
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-tree-root[data-motion='off'] .ui-tree-list {
+    transition: none;
+  }
   .ui-tree-empty {
     display: flex;
     align-items: center;
@@ -133,7 +154,7 @@
     padding: 0;
     color: var(--ui-text-muted);
     cursor: pointer;
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-tree-chevron[data-state='open'] {
     transform: rotate(90deg);
@@ -169,42 +190,83 @@
     flex: none;
     color: var(--ui-primary);
   }
-  /* A folder's own children fade in/out as one block. ease-in-out (not
-     ease-out) to match Tree.vue's FLIP pass, which slides later siblings
-     out of the way on the same curve — a mismatched curve made the fade
-     visibly outrun the slide, so faded-in content overlapped a sibling that
-     hadn't moved yet. */
+  /* The tick draws in on the row you click (shared/tick.css has the draw). CSS only, not a
+     <Transition>: a large tree would carry one per row. A tree rendering or scrolling shows its
+     tick at once, since that row isn't the one under the pointer or focus. */
+  .ui-tree-row:is(:focus, :hover) .ui-tree-check {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-tree-row:is(:focus, :hover) .ui-tree-check path {
+    transition: stroke-dashoffset var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  @starting-style {
+    .ui-tree-row:is(:focus, :hover) .ui-tree-check {
+      opacity: 0;
+    }
+    .ui-tree-row:is(:focus, :hover) .ui-tree-check path {
+      stroke-dashoffset: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-tree-row:is(:focus, :hover) .ui-tree-check path {
+      transition: none;
+    }
+  }
+  .ui-tree-root[data-motion='off'] .ui-tree-row .ui-tree-check,
+  .ui-tree-root[data-motion='off'] .ui-tree-row .ui-tree-check path {
+    transition: none;
+  }
+  /* A folder's children are uncovered from the top edge down, and covered back up, while
+     Tree.vue's FLIP pass slides the rows below by the block's height. Same curve, same duration,
+     same start frame: the reveal edge and the next row move together, so nothing overlaps. Closing
+     uses the exit duration for both. transform carries the block along when its folder row slides
+     too (a tree centred in its box). ease-out, so it moves on the first frame after the click. */
   .ui-tree-rows-enter-active,
   .ui-tree-rows-leave-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+    /* inset(0), not none: clip-path only animates between two insets. */
+    clip-path: inset(0);
+    transition:
+      opacity var(--ui-duration-enter) var(--ui-ease-out),
+      clip-path var(--ui-duration-enter) var(--ui-ease-out),
+      transform var(--ui-duration-enter) var(--ui-ease-out);
   }
-  .ui-tree-rows-enter-from {
+  .ui-tree-rows-enter-from,
+  .ui-tree-rows-leave-to {
     opacity: 0;
+    clip-path: inset(0 0 100% 0);
   }
-  /* position: absolute stays - it's what lets FLIP snap surviving siblings into place instantly,
-     decoupled from this box's own fade (removing it made the whole collapse feel gated on the full
-     transition, a real regression, tried and reverted). max-block-size 40rem -> 0 fixes the actual
-     "layout snaps shut" complaint without needing that decoupling given up. duration-exit (not
-     duration-enter) matches this library's own asymmetric exit/enter convention (toast, tooltip).
-     Nested-level transitionend still unverified - see tree.test.ts. */
+  /* Out of flow, so the rows below can slide up into its place (FLIP) while it covers itself. */
   .ui-tree-rows-leave-active {
     position: absolute;
     inset-inline: 0;
     top: var(--ui-tree-row-height);
-    overflow: hidden;
-    max-block-size: 40rem;
-    transition:
-      opacity var(--ui-duration-exit) var(--ui-ease-in-out),
-      max-block-size var(--ui-duration-exit) var(--ui-ease-in-out);
+    transition-duration: var(--ui-duration-exit);
   }
-  .ui-tree-rows-leave-to {
-    opacity: 0;
-    max-block-size: 0;
+  /* A folder that was already open inside one that's opening comes with it: one reveal, not two. */
+  .ui-tree-rows-enter-active .ui-tree-rows-enter-active {
+    transition: none;
+  }
+  /* A search swap, motion-css off or reduced motion (TreeNodeRow.vue): rows appear and go at
+     once. A leaving block drops out of layout now instead of after the two frames Vue waits. */
+  .ui-tree-rows[data-instant] {
+    transition: none;
+  }
+  .ui-tree-rows-enter-from[data-instant] {
+    opacity: 1;
+    clip-path: none;
+  }
+  .ui-tree-rows-leave-active[data-instant] {
+    display: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-tree-chevron {
+    .ui-tree-chevron,
+    .ui-tree-list {
       transition: none;
+    }
+    /* Opening fades without the wipe; closing is instant (TreeNodeRow.vue). */
+    .ui-tree-rows-enter-from {
+      clip-path: inset(0);
     }
   }
 

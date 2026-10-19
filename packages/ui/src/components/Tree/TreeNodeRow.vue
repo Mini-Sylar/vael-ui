@@ -38,9 +38,13 @@
     <!-- Leaves skip the Transition: on a large tree that's thousands of idle components. -->
     <Transition
       v-if="hasChildren"
-      :name="ctx.motionCss ? 'ui-tree-rows' : undefined"
+      name="ui-tree-rows"
       :css="!ctx.forceMount"
       appear
+      @before-enter="markInstantEnter"
+      @after-enter="unmarkInstant"
+      @enter-cancelled="unmarkInstant"
+      @before-leave="markInstantLeave"
     >
       <div
         v-if="ctx.forceMount || expanded"
@@ -115,6 +119,22 @@ const dropEdge = computed(() =>
   ctx.dropEdge?.value === props.node.value ? ctx.dropEdge.side : undefined,
 )
 // Reuses the previous array when unchanged, so a filter keystroke skips untouched folders.
+// Decided when the hook runs, not through a reactive `:css`: Vapor's Transition reads its props
+// once, so a search swap couldn't turn it off there. A marked block skips its fade (Tree.css).
+function markInstantEnter(el: Element) {
+  if (!ctx.rowMotion) (el as HTMLElement).dataset.instant = ''
+}
+// Reduced motion keeps the opening fade (Tree.css) but closes at once: the rows below don't slide
+// then, so a fading block would sit over them.
+function markInstantLeave(el: Element) {
+  if (!ctx.rowMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    ;(el as HTMLElement).dataset.instant = ''
+  }
+}
+function unmarkInstant(el: Element) {
+  delete (el as HTMLElement).dataset.instant
+}
+
 const visibleChildren = computed<readonly TreeNode[]>((previous) => {
   const next = props.node.children?.filter((child) => ctx.isVisible(child)) ?? []
   if (previous?.length === next.length && next.every((child, index) => child === previous[index]))

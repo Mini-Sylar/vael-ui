@@ -57,6 +57,7 @@
       <slot name="end" />
       <Transition
         name="ui-clear"
+        :css="props.motionCss"
         @enter="measureClearSpace"
         @leave="startClearLeave"
         @leave-cancelled="resetLeaveStyles"
@@ -137,6 +138,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
+            :motion="props.motionCss"
             :sections="listSections"
             :ui="{
               list: themedUi()?.list,
@@ -175,9 +177,27 @@
               </slot>
               <slot v-else name="item" v-bind="slotProps" :query="trimmedQuery">
                 <span class="ui-select-option-label">{{ slotProps.item.label }}</span>
-                <span v-if="slotProps.selected" class="ui-select-option-check" aria-hidden="true"
-                  >✓</span
-                >
+                <!-- No `appear`: only a pick on a row already showing draws it in (shared/tick.css). -->
+                <Transition name="ui-tick">
+                  <svg
+                    v-if="slotProps.selected"
+                    class="ui-select-option-check ui-tick"
+                    viewBox="0 0 16 16"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M3.5 8.5l3 3 6-7"
+                      pathLength="1"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </Transition>
               </slot>
             </template>
             <template v-if="$slots['group-label']" #group-label="slotProps">
@@ -386,7 +406,8 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips the built-in chip transitions (`multiple` only); animate them yourself via
+    /** `false` skips the built-in motion: the list easing to its new height as you search, the clear
+     * button, and chip transitions (`multiple`), which you can animate yourself via
      * `@chip-enter`/`@chip-leave`.
      * @default true
      */

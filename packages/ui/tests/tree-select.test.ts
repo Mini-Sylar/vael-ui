@@ -2,6 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { nextTick } from 'vue'
 import TreeSelectFixture from './fixtures/TreeSelectFixture.vue'
 
 beforeEach(() => {
@@ -178,4 +179,36 @@ test('expanding a folder grows the panel over several frames, not in one jump', 
   for (let i = 1; i < heights.length; i++)
     expect(heights[i]!).toBeGreaterThanOrEqual(heights[i - 1]!)
   expect(heights.filter((h) => h > start + 1 && h < end - 1).length).toBeGreaterThan(1)
+})
+
+test('search results swap at once: clearing a search starts no folder open or close animations', async () => {
+  const screen = await render(TreeSelectFixture, {
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  const input = document.querySelector<HTMLInputElement>('.ui-tree-select-panel input')!
+  await userEvent.type(input, 'o')
+  await vi.waitFor(() => expect(rowByLabel('Orange')).toBeDefined())
+  await new Promise((resolve) => setTimeout(resolve, 400))
+  await userEvent.clear(input)
+  await nextTick()
+  // A leaving block still in layout puts the old rows on top of the new ones; an entering one fades.
+  const blocks = [...document.querySelectorAll<HTMLElement>('.ui-tree-rows')].filter(
+    (el) => el.getClientRects().length > 0,
+  )
+  expect(blocks.filter((el) => /-leave-active/.test(el.className))).toHaveLength(0)
+  expect(blocks.filter((el) => Number(getComputedStyle(el).opacity) < 1)).toHaveLength(0)
+  await vi.waitFor(() => expect(rowByLabel('Orange')).toBeUndefined())
+})
+
+test('clicking a folder still animates its rows open', async () => {
+  const screen = await render(TreeSelectFixture, {
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-select-chevron')!.click()
+  await nextTick()
+  expect(document.querySelectorAll('.ui-tree-rows-enter-active').length).toBeGreaterThan(0)
 })

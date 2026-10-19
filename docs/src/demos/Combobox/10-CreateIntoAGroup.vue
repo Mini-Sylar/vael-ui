@@ -19,6 +19,7 @@
             :filter="step === 'list'"
             :allow-custom="step === 'list'"
             :close-on-esc="step === 'list'"
+            :max-panel-height="420"
             placeholder="Find or create a tag"
             :ui="{
               panel: {

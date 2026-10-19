@@ -432,19 +432,25 @@ test('v-model:node holds an array of node objects in multiple mode', async () =>
   await expect.element(screen.getByTestId('node-model')).toHaveTextContent('Apple,Banana')
 })
 
-test('the leave transition declares a max-block-size collapse alongside opacity, not just opacity, so the vacated space shrinks instead of snapping shut', async () => {
+test('the leave transition covers the rows up with an animated clip, so the vacated space closes instead of snapping shut', async () => {
   await render(TreeFixture, { props: { items: deepItems, height: '120px' } })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
   await userEvent.click(rowByLabel('Root')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Sibling')).toBeDefined())
 
-  // Asserts the CSS declaration, not real transition events - this harness never observes
-  // transitionrun/transitionend for .ui-tree-rows at all, a harness limitation (see Tree.css).
+  // Asserts the CSS declaration; tree-fold-motion.test.ts checks the painted frames.
   const rowsEl = document.querySelector<HTMLElement>('.ui-tree-rows')!
   rowsEl.classList.add('ui-tree-rows-leave-active')
   const style = getComputedStyle(rowsEl)
-  expect(style.transitionProperty).toContain('max-block-size')
-  expect(style.maxBlockSize).not.toBe('none')
+  expect(style.transitionProperty).toContain('clip-path')
+  // An inset, not none: clip-path can't animate from none, so a none start would snap.
+  expect(style.clipPath).toMatch(/^inset\(/)
+  // Its end state covers every row; read without a transition so it isn't mid-way.
+  rowsEl.style.transition = 'none'
+  rowsEl.classList.add('ui-tree-rows-leave-to')
+  expect(getComputedStyle(rowsEl).clipPath).toMatch(/100%\)$/)
+  rowsEl.classList.remove('ui-tree-rows-leave-to')
+  rowsEl.style.transition = ''
   rowsEl.classList.remove('ui-tree-rows-leave-active')
 
   await userEvent.click(rowByLabel('Root')!.querySelector<HTMLElement>('.ui-tree-chevron')!)

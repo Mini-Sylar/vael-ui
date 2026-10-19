@@ -17,7 +17,7 @@
       :scroll-fade="scrollFade"
       :ui="{
         positioner: themedUi()?.positioner,
-        panel: themedUi()?.panel,
+        panel: panelUi,
         header: themedUi()?.header,
         footer: themedUi()?.footer,
       }"
@@ -119,6 +119,7 @@
           </span>
           <Transition
             name="ui-clear"
+            :css="props.motionCss"
             @enter="measureClearSpace"
             @leave="startClearLeave"
             @leave-cancelled="resetLeaveStyles"
@@ -260,6 +261,7 @@ import Menu from '../Menu/Menu.vue'
 import Chip from '../Chip/Chip.vue'
 import Input from '../Input/Input.vue'
 import { normalizeText } from '../../composables/normalizeText'
+import { useEasedHeight } from '../../composables/useEasedHeight'
 import type { MenuAlign, MenuItemData, MenuSide } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -341,7 +343,8 @@ const rawProps = withDefaults(
      * @default true
      */
     scrollFade?: boolean
-    /** `false` skips the built-in chip transitions; animate via `@chip-enter`/`@chip-leave`.
+    /** `false` skips the built-in motion: the menu easing to its new height as you search, the clear
+     * button, and chip transitions, which you can animate via `@chip-enter`/`@chip-leave`.
      * @default true
      */
     motionCss?: boolean
@@ -770,6 +773,12 @@ const restAttrs = computed(() =>
 )
 
 const cx = useClassMerge()
+// The panel is teleported, so motion-css off is marked on it for the CSS that follows it (Menu.css).
+const panelUi = computed<UiPartValue | undefined>(() => {
+  if (props.motionCss) return themedUi()?.panel
+  const { class: panelClass, style } = splitUiPart(themedUi()?.panel)
+  return { class: cx('ui-motion-off', panelClass), style }
+})
 const themedUi = useThemedUi(
   (theme) => theme.cascadeSelect,
   () => props.ui,
@@ -789,6 +798,12 @@ const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-cascad
 const filterPart = computed(() => resolveUiPart(cx, themedUi()?.filter, 'ui-cascade-select-filter'))
 
 // After menuRef exists: the watcher reads it straight away.
+// Searching eases the menu to its new height, the same as Select's and Combobox's lists.
+useEasedHeight({
+  el: () => menuRef.value?.listEl,
+  source: [query, () => props.items],
+  enabled: () => props.motionCss && props.filter !== undefined,
+})
 watch(
   () => menuRef.value?.positionerEl,
   (el, _old, onCleanup) => {

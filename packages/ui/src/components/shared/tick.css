@@ -1,0 +1,53 @@
+@layer ui-components {
+  /* A tick draws itself in when you pick a row, the same draw as Checkbox's, and fades out when you
+     unpick it (never un-draws: that reads as rewinding). Only a pick on a row already showing
+     starts it: Select, Combobox and Menu wrap it in a <Transition> without `appear`, and Tree.css
+     scopes it to the row you click, so a list opening or scrolling shows its ticks at once. */
+  .ui-tick path {
+    stroke-dasharray: 1;
+  }
+  .ui-tick-enter-active {
+    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-tick-enter-active path {
+    transition: stroke-dashoffset var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-tick-enter-from {
+    opacity: 0;
+  }
+  .ui-tick-enter-from path {
+    stroke-dashoffset: 1;
+  }
+  .ui-tick-leave-active {
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-tick-leave-to {
+    opacity: 0;
+  }
+
+  /* Reduced motion: the draw is movement, so it fades in instead, as Checkbox does. */
+  @media (prefers-reduced-motion: reduce) {
+    .ui-tick-enter-active path {
+      transition: none;
+    }
+    .ui-tick-enter-from path {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* motion-css false: the tick shows and goes at once. */
+  :is([data-motion='off'], .ui-motion-off)
+    .ui-tick:is(.ui-tick-enter-active, .ui-tick-leave-active),
+  :is([data-motion='off'], .ui-motion-off) .ui-tick-enter-active path {
+    transition: none;
+  }
+  :is([data-motion='off'], .ui-motion-off) .ui-tick-enter-from {
+    opacity: 1;
+  }
+  :is([data-motion='off'], .ui-motion-off) .ui-tick-leave-active {
+    display: none;
+  }
+  :is([data-motion='off'], .ui-motion-off) .ui-tick-enter-from path {
+    stroke-dashoffset: 0;
+  }
+}

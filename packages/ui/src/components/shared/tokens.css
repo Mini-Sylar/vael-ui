@@ -1,4 +1,10 @@
 @layer ui-components {
+  /* The soft bottom edge of a list easing to a new height (useEasedHeight). Registered so it eases. */
+  @property --ui-list-edge {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
   :root {
     --ui-primary: #18181b;
     --ui-primary-hover: #27272a;

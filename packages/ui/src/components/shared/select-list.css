@@ -17,8 +17,24 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     padding: 0.25rem;
-    /* Max-height is floating-ui live output. */
-    transition: max-height var(--ui-duration-enter) var(--ui-ease-in-out);
+    /* Max-height is floating-ui live output; block-size eases when the options change. */
+    transition:
+      max-height var(--ui-duration-enter) var(--ui-ease-in-out),
+      block-size var(--ui-duration-enter) var(--ui-ease-out),
+      --ui-list-edge var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* While the list eases to a new height: no scrollbar, and its bottom edge is soft, so rows at the
+     moving edge fade into it instead of being cut mid-glyph. The edge eases away once it settles. */
+  .ui-select-body[data-resizing] {
+    overflow-y: hidden;
+  }
+  .ui-select-body[data-resizing='fit'],
+  .ui-select-body[data-growing] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--ui-list-edge)), transparent);
+  }
+  .ui-select-body[data-growing] {
+    --ui-list-edge: 2rem;
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-select-empty,
   .ui-select-loading {

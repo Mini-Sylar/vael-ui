@@ -110,21 +110,25 @@
                     </span>
                   </slot>
                   <!-- Outside the slot: a custom row still shows its checked state. -->
-                  <span
-                    v-if="isCheckable(entry) && entry.checked"
-                    class="ui-menu-item-check"
-                    aria-hidden="true"
-                  >
-                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
-                      <path
-                        d="M3.5 8.5l3 3 6-7"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </span>
+                  <!-- No `appear`: only a check on a row already showing draws in (shared/tick.css). -->
+                  <Transition name="ui-tick">
+                    <span
+                      v-if="isCheckable(entry) && entry.checked"
+                      class="ui-menu-item-check ui-tick"
+                      aria-hidden="true"
+                    >
+                      <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+                        <path
+                          d="M3.5 8.5l3 3 6-7"
+                          pathLength="1"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </Transition>
                 </component>
               </template>
               <div
@@ -273,6 +277,7 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './Menu.css'
+import '../shared/tick.css'
 import '../shared/tokens.css'
 import {
   computed,

@@ -299,7 +299,10 @@ test('multiple + tabBehavior="select": Tab adds the highlighted row but never re
 
   await input.click()
   await userEvent.type(input, 'ban')
-  await vi.waitFor(() => expect(activeOptionText()).toBe('Banana✓'))
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Banana'))
+  expect(
+    document.querySelector('[role="option"][data-active] .ui-select-option-check'),
+  ).toBeTruthy()
   await userEvent.tab()
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["banana"]')
 })
