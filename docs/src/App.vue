@@ -28,6 +28,15 @@
           <a href="https://github.com/Mini-Sylar/vael-ui" target="_blank" rel="noreferrer">{{
             t('nav.github')
           }}</a>
+          <a
+            class="sponsor-link"
+            href="https://github.com/sponsors/Mini-Sylar"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <PhHeart :size="15" weight="fill" class="sponsor-heart" />
+            {{ t('nav.sponsor') }}
+          </a>
         </nav>
         <div class="header-controls">
           <SearchPalette class="header-search" />
@@ -234,6 +243,7 @@ import { useEventListener, useLocalStorage } from '@vueuse/core'
 import {
   PhGear,
   PhGithubLogo,
+  PhHeart,
   PhHouse,
   PhList,
   PhMoon,
@@ -413,6 +423,11 @@ const mobileDockItems = computed<DockItemData[]>(() => [
     icon: PhGithubLogo,
     onSelect: () => window.open('https://github.com/Mini-Sylar/vael-ui', '_blank', 'noreferrer'),
   },
+  {
+    label: t('nav.sponsor'),
+    icon: PhHeart,
+    onSelect: () => window.open('https://github.com/sponsors/Mini-Sylar', '_blank', 'noreferrer'),
+  },
 ])
 
 // The mobile dock floats over the page, so it slides away while scrolling
@@ -578,6 +593,12 @@ const theme = computed(() => ({
   color: var(--ui-primary);
 }
 
+.main-nav .sponsor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .main-nav a.router-link-active {
   color: var(--ui-primary);
   font-weight: 600;
@@ -595,6 +616,40 @@ const theme = computed(() => ({
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.sponsor-heart {
+  color: #db61a2;
+}
+/* Two quick beats on hover or keyboard focus; never a loop that pulls focus from the docs. */
+.sponsor-link:focus-visible .sponsor-heart {
+  animation: sponsor-beat 650ms var(--ui-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .sponsor-link:hover .sponsor-heart {
+    animation: sponsor-beat 650ms var(--ui-ease-out);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sponsor-link .sponsor-heart {
+    animation: none;
+  }
+}
+@keyframes sponsor-beat {
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.22);
+  }
+  30% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.12);
+  }
 }
 
 .mobile-nav-trigger {
