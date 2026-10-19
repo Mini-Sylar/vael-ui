@@ -65,6 +65,15 @@
     --ui-radius-surface: min(var(--ui-radius), 1rem);
   }
 
+  /* Components are sized border-box, as under every common reset; this keeps
+     them that size on pages with no reset. Zero specificity, so a component's
+     own content-box and your styles still win. */
+  :where([class^='ui-'], [class*=' ui-']),
+  :where([class^='ui-'], [class*=' ui-'])::before,
+  :where([class^='ui-'], [class*=' ui-'])::after {
+    box-sizing: border-box;
+  }
+
   @property --ui-dialog-t {
     syntax: '<number>';
     inherits: false;

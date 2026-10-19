@@ -6,6 +6,9 @@
     position: relative;
     display: flex;
     align-items: center;
+    /* The padding gives the thumb room at each end; border-box keeps it inside the container
+       even on a page with no box-sizing reset. */
+    box-sizing: border-box;
     inline-size: 100%;
     min-block-size: var(--ui-slider-thumb-size);
     padding-inline: calc(var(--ui-slider-thumb-size) / 2);
