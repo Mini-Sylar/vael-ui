@@ -17,6 +17,7 @@
     :allow-custom="allowCustom"
     :create-option="createOption"
     :commit-on-blur="commitOnBlur"
+    :revert-on-blur="revertOnBlur"
     :tab-behavior="tabBehavior"
     :open-on-focus="openOnFocus"
     :max-panel-height="maxPanelHeight"
@@ -53,6 +54,7 @@ const props = withDefaults(
     allowCustom?: boolean
     createOption?: boolean
     commitOnBlur?: boolean
+    revertOnBlur?: boolean
     tabBehavior?: ComboboxTabBehavior
     /** Vetoes every create whose text is shorter than this. */
     minCreateLength?: number
@@ -71,6 +73,7 @@ const props = withDefaults(
     allowCustom: false,
     createOption: true,
     commitOnBlur: false,
+    revertOnBlur: true,
     tabBehavior: undefined,
     minCreateLength: 0,
     withCreateSlot: false,

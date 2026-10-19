@@ -3,6 +3,7 @@
     :model-value="null"
     v-model:query="query"
     :items="items"
+    :revert-on-blur="false"
     clearable
     :placeholder="t('nav.search')"
     @update:model-value="onSelect"

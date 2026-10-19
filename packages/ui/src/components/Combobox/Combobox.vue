@@ -317,6 +317,11 @@ const rawProps = withDefaults(
      * @default false
      */
     commitOnBlur?: boolean
+    /** Leaving the field puts back the selected item's label, dropping half-typed text. Set `false`
+     * for a search box, so what you typed stays when you click away. Escape still clears it.
+     * @default true
+     */
+    revertOnBlur?: boolean
     /** What Tab commits before focus moves on. `'select'`: the highlighted row, once you type or move
      * the highlight with the keyboard. `'create'` (`allowCustom` only): the typed text, or the item it names. */
     tabBehavior?: ComboboxTabBehavior
@@ -379,6 +384,7 @@ const rawProps = withDefaults(
     allowCustom: false,
     createOption: true,
     commitOnBlur: false,
+    revertOnBlur: true,
     tabBehavior: undefined,
     virtualize: undefined,
     // Explicit undefined: distinguishes "not set" from "true".
@@ -705,7 +711,7 @@ function onInputBlur(event?: FocusEvent) {
   // Multiple: query is search text, not committed label; chips are source of truth.
   if (props.multiple ? !trimmedQuery.value : query.value === labelFor(model.value)) return
   if (props.allowCustom && props.commitOnBlur && commitCustom('blur')) return
-  revertQuery()
+  if (props.revertOnBlur) revertQuery()
 }
 
 function onInputKeydown(event: KeyboardEvent) {

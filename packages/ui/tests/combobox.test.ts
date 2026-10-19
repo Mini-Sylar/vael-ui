@@ -353,6 +353,21 @@ test('without allowCustom, blur with unmatched text reverts the query to the sel
   await expect.element(screen.getByTestId('query')).toHaveTextContent('Apple')
 })
 
+test('revertOnBlur false keeps typed search text when focus leaves, and the value stays put', async () => {
+  const screen = await render(ComboboxFixture, { props: { revertOnBlur: false } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.keyboard('{Enter}') // commits Apple
+  await userEvent.type(input, 'garbage')
+  await userEvent.tab() // blur
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('Applegarbage')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"apple"')
+  // Escape still discards it.
+  await input.click()
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('Apple')
+})
+
 test('loading renders a loader row and aria-busy on the listbox', async () => {
   const screen = await render(ComboboxFixture, { props: { loading: true } })
   const input = screen.getByRole('combobox')
