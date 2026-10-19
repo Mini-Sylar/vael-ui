@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
+import { loadSortableEngine } from '../src/composables/useLazySortable'
 
 // The drag engine arrives 300ms late here, like a slow network, to cover presses made before it.
 const engine = vi.hoisted(() => ({ loads: 0 }))
@@ -63,7 +64,9 @@ test('a drag started before the engine arrives still reorders once it does', asy
   })
   const [first, second] = headers(screen)
   press(first!, 31)
-  await new Promise((resolve) => setTimeout(resolve, ENGINE_DELAY))
+  // Waits for the engine itself, not a fixed delay: a slow CI runner can take longer than 300ms.
+  await loadSortableEngine()
+  await new Promise((resolve) => requestAnimationFrame(resolve))
   moveOver(second!, 31)
   release(31)
   await vi.waitFor(() => expect(fields(screen)).toEqual(['age', 'name']))
