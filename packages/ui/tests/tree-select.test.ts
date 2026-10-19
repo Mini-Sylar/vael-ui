@@ -2,6 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { nextTick } from 'vue'
 import TreeSelectFixture from './fixtures/TreeSelectFixture.vue'
 
 beforeEach(() => {
@@ -152,4 +153,62 @@ test('header and footer slots render around the tree only when provided', async 
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   expect(document.querySelector('.ui-tree-select-header')).toBeNull()
   expect(document.querySelector('.ui-tree-select-footer')).toBeNull()
+})
+
+test('expanding a folder grows the panel over several frames, not in one jump', async () => {
+  const screen = await render(TreeSelectFixture, {
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  const panel = document.querySelector<HTMLElement>('.ui-tree-select-panel')!
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  const heights: number[] = []
+  const t0 = performance.now()
+  const sample = () => {
+    heights.push(panel.offsetHeight)
+    if (performance.now() - t0 < 600) requestAnimationFrame(sample)
+  }
+  requestAnimationFrame(sample)
+  rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-select-chevron')!.click()
+  await new Promise((resolve) => setTimeout(resolve, 650))
+  const start = heights[0]!
+  const end = heights.at(-1)!
+  expect(end).toBeGreaterThan(start)
+  // Never shrinks on the way, and passes through heights in between.
+  for (let i = 1; i < heights.length; i++)
+    expect(heights[i]!).toBeGreaterThanOrEqual(heights[i - 1]!)
+  expect(heights.filter((h) => h > start + 1 && h < end - 1).length).toBeGreaterThan(1)
+})
+
+test('search results swap at once: clearing a search starts no folder open or close animations', async () => {
+  const screen = await render(TreeSelectFixture, {
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  const input = document.querySelector<HTMLInputElement>('.ui-tree-select-panel input')!
+  await userEvent.type(input, 'o')
+  await vi.waitFor(() => expect(rowByLabel('Orange')).toBeDefined())
+  await new Promise((resolve) => setTimeout(resolve, 400))
+  await userEvent.clear(input)
+  await nextTick()
+  // A leaving block still in layout puts the old rows on top of the new ones; an entering one fades.
+  const blocks = [...document.querySelectorAll<HTMLElement>('.ui-tree-rows')].filter(
+    (el) => el.getClientRects().length > 0,
+  )
+  expect(blocks.filter((el) => /-leave-active/.test(el.className))).toHaveLength(0)
+  expect(blocks.filter((el) => Number(getComputedStyle(el).opacity) < 1)).toHaveLength(0)
+  await vi.waitFor(() => expect(rowByLabel('Orange')).toBeUndefined())
+})
+
+test('clicking a folder still animates its rows open', async () => {
+  const screen = await render(TreeSelectFixture, {
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-select-chevron')!.click()
+  await nextTick()
+  expect(document.querySelectorAll('.ui-tree-rows-enter-active').length).toBeGreaterThan(0)
 })

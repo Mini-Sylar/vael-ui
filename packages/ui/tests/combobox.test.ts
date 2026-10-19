@@ -299,7 +299,10 @@ test('multiple + tabBehavior="select": Tab adds the highlighted row but never re
 
   await input.click()
   await userEvent.type(input, 'ban')
-  await vi.waitFor(() => expect(activeOptionText()).toBe('Banana✓'))
+  await vi.waitFor(() => expect(activeOptionText()).toBe('Banana'))
+  expect(
+    document.querySelector('[role="option"][data-active] .ui-select-option-check'),
+  ).toBeTruthy()
   await userEvent.tab()
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["banana"]')
 })
@@ -350,6 +353,21 @@ test('without allowCustom, blur with unmatched text reverts the query to the sel
   await expect.element(screen.getByTestId('query')).toHaveTextContent('Applegarbage')
 
   await userEvent.tab() // blur
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('Apple')
+})
+
+test('revertOnBlur false keeps typed search text when focus leaves, and the value stays put', async () => {
+  const screen = await render(ComboboxFixture, { props: { revertOnBlur: false } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.keyboard('{Enter}') // commits Apple
+  await userEvent.type(input, 'garbage')
+  await userEvent.tab() // blur
+  await expect.element(screen.getByTestId('query')).toHaveTextContent('Applegarbage')
+  await expect.element(screen.getByTestId('model')).toHaveTextContent('"apple"')
+  // Escape still discards it.
+  await input.click()
+  await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('query')).toHaveTextContent('Apple')
 })
 

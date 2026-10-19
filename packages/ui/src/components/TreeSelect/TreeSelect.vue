@@ -29,7 +29,13 @@
         <span v-else>{{ displayLabel }}</span>
       </slot>
     </span>
-    <Transition name="ui-clear">
+    <Transition
+      name="ui-clear"
+      :css="props.motionCss"
+      @enter="measureClearSpace"
+      @leave="startClearLeave"
+      @leave-cancelled="resetLeaveStyles"
+    >
       <button
         v-if="clearable && !isEmpty && !isDisabled"
         type="button"
@@ -102,7 +108,7 @@
             :ui="treeUi"
             @change="(value) => emit('change', value)"
             @select="onTreeSelect"
-            @expand-change="(value, expanded) => emit('expand-change', value, expanded)"
+            @expand-change="onExpandChange"
           >
             <template #node="slotProps">
               <slot name="node" v-bind="slotProps" />
@@ -150,6 +156,8 @@ export type TreeSelectSelectionMode = TreeSelectionMode
 import './TreeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../shared/clear-transition.css'
+import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
@@ -263,7 +271,8 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips all built-in motion (row transitions and chevron rotation). @default true */
+    /** `false` skips all built-in motion (row transitions, chevron rotation, the panel and list easing
+     * to a new height, and the clear button). @default true */
     motionCss?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
@@ -393,7 +402,44 @@ function onTreeSelect(node: T) {
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+
+// The panel grows and shrinks with the tree's own expand animation instead of jumping to its new
+// height first: Tree.vue's FLIP pass slides rows on --ui-ease-out, starting two frames in, over
+// the enter duration when opening and the exit duration when closing, and the panel does the same.
+// A folder that swaps at once (an arrow key) resizes the panel at once too. Heights ignore the
+// opening scale.
+function onExpandChange(value: string | number, expanded: boolean) {
+  emit('expand-change', value, expanded)
+  const panel = panelEl.value
+  if (!panel || !props.motionCss || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  const from = panel.offsetHeight
+  nextTick(() => {
+    panel.style.transition = 'none'
+    panel.style.height = ''
+    const to = panel.offsetHeight
+    if (Math.abs(to - from) < 1 || panel.querySelector('.ui-tree-rows[data-instant]')) {
+      panel.style.transition = ''
+      return
+    }
+    panel.style.height = `${from}px`
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const duration = expanded ? 'var(--ui-duration-enter)' : 'var(--ui-duration-exit)'
+        panel.style.transition = `height ${duration} var(--ui-ease-out)`
+        panel.style.height = `${to}px`
+        const settle = (event: TransitionEvent) => {
+          if (event.target !== panel || event.propertyName !== 'height') return
+          panel.removeEventListener('transitionend', settle)
+          panel.style.height = ''
+          panel.style.transition = ''
+        }
+        panel.addEventListener('transitionend', settle)
+      }),
+    )
+  })
+}
 const treeRef = useTemplateRef<ComponentExposed<typeof Tree>>('treeRef')
+
 // Sourced from Tree (owns real role="tree").
 const listEl = computed(() => treeRef.value?.listEl ?? null)
 

@@ -243,6 +243,7 @@ export interface UiTheme {
       positioner: UiPartValue
       panel: UiPartValue
       header: UiPartValue
+      filter: UiPartValue
       footer: UiPartValue
     }>
   }
@@ -256,6 +257,8 @@ export interface UiTheme {
       filter: UiPartValue
       list: UiPartValue
       option: UiPartValue
+      group: UiPartValue
+      groupLabel: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
     }>
@@ -269,6 +272,8 @@ export interface UiTheme {
       header: UiPartValue
       list: UiPartValue
       option: UiPartValue
+      group: UiPartValue
+      groupLabel: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
     }>

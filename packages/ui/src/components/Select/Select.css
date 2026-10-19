@@ -46,7 +46,6 @@
   }
   /* Chips clip horizontally within fixed-height trigger. */
   .ui-select-chips {
-    position: relative; /* containing block for a leaving chip's position:absolute below */
     display: flex;
     align-items: center;
     gap: 0.25rem;

@@ -13,6 +13,8 @@
     :multiple="props.multiple"
     :display="props.display"
     :max-labels="props.maxLabels"
+    :filter="props.filter"
+    :ui="props.ui"
     placeholder="Pick a city"
     name="city"
     @select="onSelect"
@@ -46,6 +48,8 @@ const props = withDefaults(
     display?: 'chip' | 'text' | 'count'
     maxLabels?: number
     initial?: (string | number)[]
+    filter?: boolean
+    ui?: Record<string, string>
   }>(),
   {
     disabled: false,
@@ -57,6 +61,8 @@ const props = withDefaults(
     display: 'chip',
     maxLabels: undefined,
     initial: undefined,
+    filter: undefined,
+    ui: undefined,
   },
 )
 

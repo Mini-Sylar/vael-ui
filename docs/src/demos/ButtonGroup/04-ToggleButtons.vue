@@ -2,24 +2,25 @@
   <section class="demo">
     <h3>Toggle buttons</h3>
     <p class="note">
-      Bind <code>:aria-pressed</code> to make a button a toggle. Screen readers hear it as pressed,
-      and the button shows it, with no extra prop. Any number can be on. When exactly one option is
-      chosen, use <code>SelectButton</code> instead.
+      Give the group a <code>v-model</code> and each Button a <code>value</code>, and they turn on
+      and off by themselves, with <code>aria-pressed</code> set for screen readers.
+      <code>multiple</code> lets several be on at once. A Button's own <code>@click</code> still
+      runs first; call <code>event.preventDefault()</code> there to keep it from toggling.
     </p>
     <div class="row">
-      <ButtonGroup aria-label="Text style">
+      <ButtonGroup v-model="active" multiple aria-label="Text style">
         <Button
           v-for="style in styles"
           :key="style.value"
+          :value="style.value"
           variant="outline"
           icon
           :aria-label="style.label"
-          :aria-pressed="active.has(style.value)"
-          @click="toggle(style.value)"
         >
           <component :is="style.icon" weight="bold" />
         </Button>
       </ButtonGroup>
+      <output class="panel-text">{{ active.length ? active.join(', ') : '(none)' }}</output>
     </div>
   </section>
 </template>
@@ -40,12 +41,13 @@ const styles = [
   { value: 'underline', label: 'Underline', icon: PhTextUnderline },
   { value: 'strike', label: 'Strikethrough', icon: PhTextStrikethrough },
 ]
-const active = shallowRef(new Set(['bold']))
-
-function toggle(value: string) {
-  const next = new Set(active.value)
-  if (next.has(value)) next.delete(value)
-  else next.add(value)
-  active.value = next
-}
+const active = shallowRef(['bold'])
 </script>
+
+<style scoped>
+.row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+</style>

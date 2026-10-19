@@ -140,6 +140,15 @@ export interface UiMessages {
     minimum: string
     maximum: string
   }
+  /** Calendar header arrows. In the month grid they step a year, in the year grid 12 years. */
+  calendar: {
+    previousMonth: string
+    nextMonth: string
+    previousYear: string
+    nextYear: string
+    previousYears: string
+    nextYears: string
+  }
 }
 
 export type PartialUiMessages = {
@@ -222,6 +231,14 @@ export const defaultMessages: UiMessages = {
   },
   rating: { valueText: '{value} of {max}' },
   slider: { minimum: 'Minimum', maximum: 'Maximum' },
+  calendar: {
+    previousMonth: 'Previous month',
+    nextMonth: 'Next month',
+    previousYear: 'Previous year',
+    nextYear: 'Next year',
+    previousYears: 'Previous years',
+    nextYears: 'Next years',
+  },
 }
 
 export const messagesKey: InjectionKey<Ref<UiMessages>> = Symbol('ui-messages')
@@ -262,6 +279,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     sortable: { ...base.sortable, ...overrides.sortable },
     rating: { ...base.rating, ...overrides.rating },
     slider: { ...base.slider, ...overrides.slider },
+    calendar: { ...base.calendar, ...overrides.calendar },
   }
 }
 
@@ -380,6 +398,14 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
   },
   rating: { valueText: 'uiKit.rating.valueText' },
   slider: { minimum: 'uiKit.slider.minimum', maximum: 'uiKit.slider.maximum' },
+  calendar: {
+    previousMonth: 'uiKit.calendar.previousMonth',
+    nextMonth: 'uiKit.calendar.nextMonth',
+    previousYear: 'uiKit.calendar.previousYear',
+    nextYear: 'uiKit.calendar.nextYear',
+    previousYears: 'uiKit.calendar.previousYears',
+    nextYears: 'uiKit.calendar.nextYears',
+  },
 }
 
 // vue-i18n reads these options and skips its missing-key warning, since a missing key just means
@@ -661,6 +687,13 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
   if (sliderMinimum !== i18nKeyMap.slider.minimum) slider.minimum = sliderMinimum
   if (sliderMaximum !== i18nKeyMap.slider.maximum) slider.maximum = sliderMaximum
   if (Object.keys(slider).length > 0) result.slider = slider
+
+  const calendar: PartialUiMessages['calendar'] = {}
+  for (const key of Object.keys(i18nKeyMap.calendar) as (keyof UiMessages['calendar'])[]) {
+    const text = t(i18nKeyMap.calendar[key])
+    if (text !== i18nKeyMap.calendar[key]) calendar[key] = text
+  }
+  if (Object.keys(calendar).length > 0) result.calendar = calendar
 
   if (isDev() && found > 0 && missing.length > 0) {
     const locale = toValue(i18n.locale) ?? ''

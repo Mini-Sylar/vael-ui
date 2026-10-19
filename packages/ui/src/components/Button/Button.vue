@@ -8,6 +8,8 @@
       :is="nativeTag(as)"
       ref="root"
       v-bind="restAttrs"
+      :value="value"
+      :aria-pressed="ariaPressed"
       :type="isButtonTag ? type : undefined"
       :class="rootPart.class"
       :disabled="isButtonTag ? disabled : undefined"
@@ -58,6 +60,8 @@
     v-else
     ref="root"
     v-bind="restAttrs"
+    :value="value"
+    :aria-pressed="ariaPressed"
     :type="isButtonTag ? type : undefined"
     :class="rootPart.class"
     :disabled="isButtonTag ? disabled : undefined"
@@ -125,7 +129,8 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { nativeTag, useSlotPresence } from '../../composables/dom'
 import '../shared/loader-spinner.css'
-import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
+import { computed, inject, useAttrs, useSlots, useTemplateRef } from 'vue'
+import { buttonGroupKey } from '../ButtonGroup/ButtonGroup.vue'
 import type { StyleValue } from 'vue'
 import { useAsyncLoading } from '../../composables/useAsyncLoading'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
@@ -166,6 +171,10 @@ const rawProps = withDefaults(
     /** Where the `#badge` slot sits. Setting it reserves the wrapper up front, so a `v-if`'d `#badge`
      * keeps a stable DOM position. @default 'top-end' */
     badgePlacement?: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end'
+    /** In a `ButtonGroup` with a `v-model`, what this button turns on and off. Still the native
+     * `value` attribute, for a submit button in a form. Style the on state with
+     * `[aria-pressed='true']`, or Tailwind's `aria-pressed:`. */
+    value?: string | number
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -215,6 +224,18 @@ const slots = useSlots()
 const hasSlot = useSlotPresence(slots)
 const attrs = useAttrs()
 
+/** Opt-in standalone toggle: `v-model:pressed` turns it on and off and sets `aria-pressed`.
+ * Style the on state with `[aria-pressed='true']`, or Tailwind's `aria-pressed:`. */
+const pressed = defineModel<boolean | undefined>('pressed', { default: undefined })
+const group = inject(buttonGroupKey, null)
+const groupToggle = computed(() => !!group?.toggles() && props.value !== undefined)
+// Toggle state when this button has one; otherwise whatever aria-pressed you passed, untouched.
+const ariaPressed = computed(() => {
+  if (groupToggle.value) return String(group!.isPressed(props.value!))
+  if (pressed.value !== undefined) return String(pressed.value)
+  return attrs['aria-pressed'] as string | boolean | undefined
+})
+
 const { loading: autoLoading, run } = useAsyncLoading()
 const isLoading = computed(() => (props.loading === 'auto' ? autoLoading.value : props.loading))
 
@@ -243,8 +264,7 @@ function onRootClick(event: MouseEvent) {
     | ((e: MouseEvent) => unknown)
     | Array<(e: MouseEvent) => unknown>
     | undefined
-  if (!raw) return
-  for (const handler of Array.isArray(raw) ? raw : [raw]) {
+  for (const handler of raw ? (Array.isArray(raw) ? raw : [raw]) : []) {
     const result = handler(event)
     if (
       props.loading === 'auto' &&
@@ -256,6 +276,10 @@ function onRootClick(event: MouseEvent) {
       void run(() => result as Promise<unknown>)
     }
   }
+  // Your @click runs first and can call preventDefault() to keep the toggle where it is.
+  if (event.defaultPrevented) return
+  if (groupToggle.value) group!.toggle(props.value!)
+  else if (pressed.value !== undefined) pressed.value = !pressed.value
 }
 
 const restAttrs = computed(() => {

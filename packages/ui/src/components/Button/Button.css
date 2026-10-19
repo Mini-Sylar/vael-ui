@@ -110,13 +110,16 @@
     color: var(--ui-danger-contrast);
   }
 
-  /* A pressed toggle keeps the hover fill. */
+  /* A toggle that's on sits a step past any hover, so hovering an off button never looks on, and
+     switching one off under the pointer still visibly changes it. A little primary gives a
+     coloured theme its tint. */
   .ui-button--ghost[aria-pressed='true'],
-  .ui-button--outline[aria-pressed='true'] {
-    background: var(--ui-muted);
-  }
+  .ui-button--outline[aria-pressed='true'],
   .ui-button--secondary[aria-pressed='true'] {
-    background: var(--ui-muted-hover);
+    background: color-mix(in oklab, var(--ui-primary) 10%, var(--ui-muted-hover));
+  }
+  .ui-button--outline[aria-pressed='true'] {
+    border-color: color-mix(in oklab, var(--ui-primary) 18%, var(--ui-border));
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -140,8 +143,9 @@
       background: var(--ui-danger-solid-hover, var(--ui-danger-hover));
     }
     .ui-button--ghost[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled),
-    .ui-button--outline[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled) {
-      background: var(--ui-muted-hover);
+    .ui-button--outline[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled),
+    .ui-button--secondary[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled) {
+      background: color-mix(in oklab, var(--ui-primary) 18%, var(--ui-muted-hover));
     }
   }
 

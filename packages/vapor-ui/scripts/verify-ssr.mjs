@@ -77,10 +77,49 @@ try {
   await vite.close()
 }
 
+// An SSR app with the `vapor` condition on its server imports 'vael-ui' and must get the Vapor
+// server build, not the browser one (which throws "does not provide an export" on the server).
+const vaporConditionEntry = `
+import { createSSRApp, h } from 'vue'
+import { renderToString } from 'vue/server-renderer'
+import { Button } from 'vael-ui'
+export const html = () => renderToString(createSSRApp({ render: () => h(Button, null, () => 'x') }))
+`
+const vaporVite = await createServer({
+  root: join(__dirname, '..'),
+  configFile: false,
+  server: { middlewareMode: true },
+  appType: 'custom',
+  logLevel: 'error',
+  ssr: {
+    noExternal: ['vael-ui'],
+    resolve: { conditions: ['vapor', 'module', 'node', 'development|production'] },
+  },
+  plugins: [
+    {
+      name: 'verify-ssr-vapor-condition',
+      resolveId: (id) =>
+        id === 'virtual:verify-ssr-vapor' ? '\0virtual:verify-ssr-vapor' : undefined,
+      load: (id) => (id === '\0virtual:verify-ssr-vapor' ? vaporConditionEntry : undefined),
+    },
+  ],
+})
+try {
+  const { html } = await vaporVite.ssrLoadModule('virtual:verify-ssr-vapor')
+  if (!(await html()).includes('ui-button'))
+    problems.push("'vael-ui' with the vapor condition rendered no Button")
+} catch (error) {
+  problems.push(
+    `'vael-ui' with the vapor condition failed on the server: ${String(error?.message ?? error).split('\n')[0]}`,
+  )
+} finally {
+  await vaporVite.close()
+}
+
 if (problems.length) {
   console.error(`SSR check failed:\n  ${problems.join('\n  ')}`)
   process.exit(1)
 }
 console.log(
-  `OK: ${rendered.vdom.size} components server-render in vael-ui and vael-ui/vapor alike.`,
+  `OK: ${rendered.vdom.size} components server-render in vael-ui and vael-ui/vapor alike, and with the vapor condition.`,
 )

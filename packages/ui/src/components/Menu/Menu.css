@@ -33,6 +33,8 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    /* A vertical list never scrolls sideways, even while rows slide in. */
+    overflow-x: hidden;
     overscroll-behavior: contain;
     padding: 0.25rem;
   }
@@ -171,6 +173,29 @@
     .ui-menu-enter-from .ui-menu-panel,
     .ui-menu-leave-to .ui-menu-panel {
       transform: none;
+    }
+  }
+  /* Searching eases this list to its new height (useEasedHeight): no scrollbar while it moves, and a
+     soft bottom edge so rows fade in at the moving edge instead of being cut mid-glyph. */
+  .ui-menu-body {
+    transition:
+      block-size var(--ui-duration-enter) var(--ui-ease-out),
+      --ui-list-edge var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  .ui-menu-body[data-resizing] {
+    overflow-y: hidden;
+  }
+  .ui-menu-body[data-resizing='fit'],
+  .ui-menu-body[data-growing] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--ui-list-edge)), transparent);
+  }
+  .ui-menu-body[data-growing] {
+    --ui-list-edge: 2rem;
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-menu-body {
+      transition: none;
     }
   }
 }

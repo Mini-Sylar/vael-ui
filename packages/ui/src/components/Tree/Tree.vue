@@ -108,7 +108,7 @@
               <span :class="labelPart.class" :style="labelPart.style">{{ scope.node.label }}</span>
               <svg
                 v-if="selectionMode === 'single' && scope.checked"
-                class="ui-tree-check"
+                class="ui-tree-check ui-tick"
                 viewBox="0 0 16 16"
                 width="14"
                 height="14"
@@ -117,6 +117,7 @@
               >
                 <path
                   d="M3.5 8.5l3 3 6-7"
+                  pathLength="1"
                   stroke="currentColor"
                   stroke-width="2"
                   stroke-linecap="round"
@@ -196,6 +197,8 @@ export function removeTreeNode<T extends TreeNode>(nodes: T[], value: string | n
 export interface TreeRowContext {
   selectionMode: TreeSelectionMode
   motionCss: boolean
+  /** motionCss, but off for the update a search or an arrow key causes, so those swap at once. */
+  rowMotion: boolean
   stickyScroll: boolean
   maxStickyDepth: number
   isExpanded: (node: TreeNode) => boolean
@@ -230,6 +233,7 @@ export const treeRowContextKey: InjectionKey<TreeRowContext> = Symbol('treeRowCo
      pass below for what that costs and how it's covered. -->
 <script setup lang="ts" generic="T extends TreeNode = TreeNode">
 import './Tree.css'
+import '../shared/tick.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
@@ -240,6 +244,7 @@ import {
   provide,
   reactive,
   ref,
+  shallowRef,
   useId,
   useTemplateRef,
   watch,
@@ -252,6 +257,7 @@ import Checkbox from '../Checkbox/Checkbox.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
 import { useUiMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
+import { useEasedHeight } from '../../composables/useEasedHeight'
 import { moveTreeNode } from '../../composables/sortableTree'
 import { useLazySortable } from '../../composables/useLazySortable'
 import type {
@@ -295,7 +301,8 @@ const rawProps = withDefaults(
      */
     emptyText?: string
     /**
-     * `false` skips all built-in motion (row transitions, chevron rotation and cross-folder moves).
+     * `false` skips all built-in motion (row transitions, chevron rotation, cross-folder moves and
+     * the list easing to its new height as you search).
      * @default true
      */
     motionCss?: boolean
@@ -510,6 +517,19 @@ function activateNode(node: TreeNode) {
 const expandedKeys = ref(new Set<string | number>())
 const normalizedQuery = computed(() => normalizeText(query.value.trim()))
 const isFiltering = computed(() => normalizedQuery.value.length > 0)
+// A search opens and closes folders without the FLIP slide that a click gets, so their rows would
+// fade in and out over rows that already moved. Search results swap at once instead (the list's
+// height still eases); folder animations come back for the next click. Arrow keys swap at once
+// too: someone arrowing through a tree shouldn't wait on motion.
+const instantSwap = shallowRef(false)
+watch(
+  normalizedQuery,
+  () => {
+    instantSwap.value = true
+    nextTick(() => (instantSwap.value = false))
+  },
+  { flush: 'pre' },
+)
 function nodeMatches(node: TreeNode): boolean {
   return normalizeText(node.label).includes(normalizedQuery.value)
 }
@@ -543,6 +563,11 @@ function toggleExpand(node: TreeNode) {
   else next.delete(node.value)
   expandedKeys.value = next
   emit('expand-change', node.value, nowExpanded)
+}
+function toggleExpandInstantly(node: TreeNode) {
+  instantSwap.value = true
+  toggleExpand(node)
+  nextTick(() => (instantSwap.value = false))
 }
 function setExpanded(value: string | number, expanded: boolean) {
   if (expandedKeys.value.has(value) === expanded) return
@@ -585,6 +610,13 @@ const visibleRootNodes = computed(() => props.items.filter(isVisible))
 
 // Roving tabindex + keyboard nav (own copy due to tree semantics).
 const listEl = useTemplateRef<HTMLElement>('listEl')
+// Searching eases the list to its new height, the same as Select's and Combobox's lists. TreeSelect
+// gets it from here.
+useEasedHeight({
+  el: () => listEl.value,
+  source: [normalizedQuery, () => props.items],
+  enabled: () => props.motionCss,
+})
 function rowEls(): HTMLElement[] {
   return Array.from(listEl.value?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? [])
 }
@@ -774,7 +806,7 @@ function onTreeNavigationKeydown(event: KeyboardEvent) {
       if (!row || !row.hasChildren) return
       event.preventDefault()
       // ARIA APG: closed opens (focus stays); open moves to first child.
-      if (!isExpanded(row.node)) toggleExpand(row.node)
+      if (!isExpanded(row.node)) toggleExpandInstantly(row.node)
       else focusRow(rows[currentIndex + 1])
       return
     }
@@ -784,7 +816,7 @@ function onTreeNavigationKeydown(event: KeyboardEvent) {
       if (!row) return
       event.preventDefault()
       if (row.hasChildren && isExpanded(row.node)) {
-        toggleExpand(row.node)
+        toggleExpandInstantly(row.node)
       } else if (row.parentValue != null) {
         const parentIndex = flatRows.value.findIndex((r) => r.node.value === row.parentValue)
         if (parentIndex !== -1) focusRow(rows[parentIndex])
@@ -920,13 +952,36 @@ function prefersReducedMotion(): boolean {
   )
 }
 let pendingBeforeRects: Map<string, DOMRect> | null = null
+interface BlockStart {
+  clipPath: string
+  opacity: string
+}
+// Where an opening or closing block had got to, by its folder's value. A second click mid-way
+// makes Vue cancel that transition and start the other from its far end, a visible jump; reading
+// it here, before Vue does that, lets the new one start from the same place.
+let pendingBlockStarts: Map<string, BlockStart> | null = null
+function captureBlockStarts(): Map<string, BlockStart> {
+  const starts = new Map<string, BlockStart>()
+  for (const block of listEl.value?.querySelectorAll<HTMLElement>(
+    '.ui-tree-rows-enter-active, .ui-tree-rows-leave-active',
+  ) ?? []) {
+    const key = (block.previousElementSibling as HTMLElement | null)?.dataset.treeValue
+    if (key == null || block.dataset.instant !== undefined) continue
+    const style = getComputedStyle(block)
+    starts.set(key, { clipPath: style.clipPath, opacity: style.opacity })
+  }
+  return starts
+}
 watch(
   expandedKeys,
   () => {
     pendingBeforeRects = null
-    if (!props.motionCss || prefersReducedMotion()) return
+    pendingBlockStarts = null
+    if (!props.motionCss || instantSwap.value || prefersReducedMotion()) return
     const rows = flipRows()
-    if (rows.length <= FLIP_MAX_ROWS) pendingBeforeRects = captureRowRects(rows)
+    if (rows.length > FLIP_MAX_ROWS) return
+    pendingBeforeRects = captureRowRects(rows)
+    pendingBlockStarts = captureBlockStarts()
   },
   { flush: 'pre' },
 )
@@ -934,11 +989,21 @@ watch(
   expandedKeys,
   () => {
     const before = pendingBeforeRects
+    const starts = pendingBlockStarts
     pendingBeforeRects = null
+    pendingBlockStarts = null
     if (!before || !listEl.value) return
     const rows = flipRows()
     if (rows.length > FLIP_MAX_ROWS) return
+    // A row still sliding from the last click would add that slide to where it now sits. `before`
+    // already holds where it's drawn, so the new slide picks up from there.
+    const sliding = rows.filter((el) => el.style.transition)
+    for (const el of sliding) {
+      el.style.transition = 'none'
+      el.style.transform = ''
+    }
     const after = captureRowRects(rows)
+    for (const el of sliding) el.style.transition = ''
     // Rows off screen before and after don't slide; one viewport of margin covers the edges.
     const listRect = listEl.value.getBoundingClientRect()
     const viewTop = Math.max(listRect.top, 0)
@@ -952,24 +1017,60 @@ watch(
       const afterRect = key == null ? undefined : after.get(key)
       const beforeRect = key == null ? undefined : before.get(key)
       if (!afterRect || !beforeRect) continue // entering row — its own local enter transition handles it
+      if (el.closest('.ui-tree-rows-leave-active')) continue // moves with its closing block, below
       const deltaY = beforeRect.top - afterRect.top
       if (Math.abs(deltaY) < 1) continue
       if (!nearView(beforeRect) && !nearView(afterRect)) continue
       moved.push({ el, deltaY })
     }
-    if (moved.length === 0) return
+    // An opening or closing block sits where its folder ends up, so when the folder row itself
+    // slides (a tree centred in its box moves every row), the block slides with it. Its own
+    // transition (Tree.css) carries the transform, alongside the reveal. One that interrupted
+    // another starts from where that one was.
+    const deltas = new Map(moved.map(({ el, deltaY }) => [el, deltaY]))
+    const blocks: { el: HTMLElement; deltaY: number; start?: BlockStart }[] = []
+    for (const block of listEl.value.querySelectorAll<HTMLElement>(
+      '.ui-tree-rows-enter-active, .ui-tree-rows-leave-active',
+    )) {
+      if (block.dataset.instant !== undefined) continue
+      const folderRow = block.previousElementSibling as HTMLElement | null
+      const deltaY = (folderRow && deltas.get(folderRow)) || 0
+      const key = folderRow?.dataset.treeValue
+      const start = key == null ? undefined : starts?.get(key)
+      if (deltaY || start) blocks.push({ el: block, deltaY, start })
+    }
+    if (moved.length === 0 && blocks.length === 0) return
+    // The same clock as the blocks' reveal, so rows below track its edge and never overlap it.
+    const closing = !!listEl.value.querySelector('.ui-tree-rows-leave-active')
+    const duration = closing ? 'var(--ui-duration-exit)' : 'var(--ui-duration-enter)'
     // Writes only, after every read.
     for (const { el, deltaY } of moved) {
       el.style.transition = 'none'
       el.style.transform = `translateY(${deltaY}px)`
     }
+    for (const { el, deltaY, start } of blocks) {
+      el.style.transition = 'none'
+      if (deltaY) el.style.transform = `translateY(${deltaY}px)`
+      if (start) {
+        el.style.clipPath = start.clipPath
+        el.style.opacity = start.opacity
+      }
+    }
     // Double rAF: matches Vue's own <Transition> enter scheduling, so the
-    // slide and the entering children's fade start on the same frame.
+    // slide and the blocks' reveal start on the same frame.
     // The first frame paints the inverted position, so no forced reflow is needed.
     requestAnimationFrame(() => {
+      // A frame early for the blocks: Vue reads their transition duration on the next frame, and
+      // an inline `none` there would end their reveal at once.
+      for (const { el } of blocks) el.style.transition = ''
       requestAnimationFrame(() => {
+        for (const { el } of blocks) {
+          el.style.transform = ''
+          el.style.clipPath = ''
+          el.style.opacity = ''
+        }
         for (const { el } of moved) {
-          el.style.transition = 'transform var(--ui-duration-enter) var(--ui-ease-in-out)'
+          el.style.transition = `transform ${duration} var(--ui-ease-out)`
           el.style.transform = ''
           el.addEventListener(
             'transitionend',
@@ -1056,6 +1157,7 @@ provide<TreeRowContext>(
   reactive({
     selectionMode: computed(() => props.selectionMode),
     motionCss: computed(() => props.motionCss),
+    rowMotion: computed(() => props.motionCss && !instantSwap.value),
     stickyScroll: computed(() => props.stickyScroll),
     maxStickyDepth: MAX_STICKY_DEPTH,
     isExpanded,

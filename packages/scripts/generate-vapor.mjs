@@ -27,6 +27,8 @@ const SHARED_MODULES = new Set(Object.keys(collectBarrelEntries(UI_INDEX_PATH, U
 const PER_BUILD_MODULES = new Set([
   'composables/useLazySortable',
   'composables/useFocusableScroller',
+  'composables/selectGroups',
+  'composables/useEasedHeight',
 ])
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 

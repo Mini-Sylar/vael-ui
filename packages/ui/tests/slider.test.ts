@@ -223,3 +223,15 @@ test('each range thumb gets its own name from the slider label', async () => {
     .element(screen.getByRole('slider', { name: 'Maximum', exact: true }))
     .toBeInTheDocument()
 })
+
+test('fits its container on a page with no box-sizing reset', async () => {
+  const { h } = await import('vue')
+  const screen = await render(() =>
+    h('div', { style: 'width: 240px', 'data-testid': 'box' }, [
+      h(Slider as never, { modelValue: 50 }),
+    ]),
+  )
+  const box = screen.getByTestId('box').element().getBoundingClientRect()
+  const slider = screen.container.querySelector('.ui-slider')!.getBoundingClientRect()
+  expect(slider.right).toBeLessThanOrEqual(box.right + 0.5)
+})

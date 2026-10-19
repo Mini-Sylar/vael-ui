@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import DataTableFixture from './fixtures/DataTableFixture.vue'
+import { loadSortableEngine } from '../src/composables/useLazySortable'
 
 // The drag engine arrives 300ms late here, like a slow network, to cover presses made before it.
 const engine = vi.hoisted(() => ({ loads: 0 }))
@@ -11,7 +12,6 @@ vi.mock('../src/composables/useSortable', async (importOriginal) => {
   await new Promise((resolve) => setTimeout(resolve, 300))
   return importOriginal()
 })
-const ENGINE_DELAY = 400
 
 function headers(screen: RenderResult<unknown>): HTMLElement[] {
   return Array.from(
@@ -56,7 +56,9 @@ test('a click made before the engine arrives does not turn into a drag', async (
   const [first, second] = headers(screen)
   press(first!, 32)
   release(32)
-  await new Promise((resolve) => setTimeout(resolve, ENGINE_DELAY))
+  // Waits for the engine itself, not a fixed delay: a slow CI runner can take longer than 300ms.
+  await loadSortableEngine()
+  await new Promise((resolve) => requestAnimationFrame(resolve))
   moveOver(second!, 32)
   expect(document.querySelector('[data-sortable-preview]')).toBeNull()
   expect(fields(screen)).toEqual(['name', 'age'])

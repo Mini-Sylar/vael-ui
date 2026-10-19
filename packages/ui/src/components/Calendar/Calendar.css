@@ -6,6 +6,9 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 0.75rem;
+    /* Border-box, so max-inline-size: 100% includes the padding: a narrow panel or phone screen
+       can't push the calendar, and its last arrow, past the edge. */
+    box-sizing: border-box;
     inline-size: max-content;
     max-inline-size: 100%;
   }
@@ -26,6 +29,14 @@
     justify-content: center;
     gap: 0.75rem 1.5rem;
   }
+  /* Year buttons double the arrows, so the days get side room: in two months the arrows sit beside
+     each month's name, in one the header fits a long month name. */
+  .ui-calendar-panes--year-nav {
+    padding-inline: 1rem;
+  }
+  .ui-calendar-panes--year-nav-split {
+    padding-inline: 1.875rem;
+  }
   .ui-calendar-pane {
     display: flex;
     flex-direction: column;
@@ -38,12 +49,46 @@
   }
   .ui-calendar-pane-label {
     min-block-size: 1.75rem;
+    /* The header's arrows overlay each month's outer edge; a long name ends in an ellipsis
+       before it reaches them. */
+    max-inline-size: calc(100% - 4rem);
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Leaving, it's stretched across the header; capped, it has to be centred by hand or it jumps
+     to the left edge. */
+  .ui-calendar-pane-label.ui-calendar-label-leave-active {
+    margin-inline: auto;
   }
   .ui-calendar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+  }
+  /* Year buttons sit beside the month arrows: each pair stays together, the label stays centred. */
+  .ui-calendar-header--year-nav {
+    justify-content: flex-start;
+    gap: 0.125rem;
+  }
+  .ui-calendar-header--year-nav > .ui-calendar-label {
+    margin-inline: auto;
+    min-inline-size: 0;
+  }
+  /* The days set the width, never the month name, so moving to a longer name can't widen the
+     calendar for a moment. A name that still doesn't fit ends in an ellipsis. */
+  .ui-calendar-header--year-nav:not(.ui-calendar-header--overlay) {
+    contain: inline-size;
+  }
+  .ui-calendar-header--year-nav .ui-calendar-label-text {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ui-calendar-header--overlay.ui-calendar-header--year-nav > :nth-last-child(2) {
+    margin-inline-start: auto;
   }
   .ui-calendar-nav {
     display: inline-grid;
@@ -72,12 +117,20 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
+  /* Right to left, previous sits on the right, so every arrow points the other way. */
+  .ui-calendar-nav:dir(rtl) svg {
+    scale: -1 1;
+  }
   .ui-calendar-nav:focus-visible {
     outline: 2px solid var(--ui-primary);
     outline-offset: 1px;
   }
+  /* A centring grid, like the leaving name's, so the old and new names sit at the same height
+     instead of one riding the text baseline and hopping as they swap. */
   .ui-calendar-label {
     position: relative;
+    display: inline-grid;
+    place-items: center;
     font-size: calc(var(--ui-font-size) * 0.875);
     font-weight: 600;
     color: var(--ui-text);
@@ -296,8 +349,11 @@
 
   /* Month-transition: grid slides by direction. */
   /* Month labels slide with their grid, half as far, so the text stays anchored. */
+  /* Never wraps: the button shrinks to the new name, and an old, longer name fading out inside
+     it would otherwise break onto two lines and jump. */
   .ui-calendar-label-text {
     display: inline-block;
+    white-space: nowrap;
   }
   .ui-calendar-label-enter-active,
   .ui-calendar-label-leave-active {

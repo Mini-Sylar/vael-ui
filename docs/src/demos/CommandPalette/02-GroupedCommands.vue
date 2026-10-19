@@ -5,12 +5,17 @@
       <code>icon</code>, <code>shortcut</code>, and <code>group</code> are all optional per item.
       <code>shortcut</code> is display-only — a <code>Kbd</code> hint, not a functioning key binding
       — items sharing a <code>group</code> cluster under a sticky heading in first-seen order, even
-      when they aren't adjacent in the array.
+      when they aren't adjacent in the array. Arrow keys follow that order. The
+      <code>#group-label</code> slot adds a count to each heading here.
     </p>
     <div class="row">
       <Button variant="outline" @click="groupedOpen = true">Open grouped palette</Button>
     </div>
-    <CommandPalette v-model:open="groupedOpen" :items="groupedCommands" />
+    <CommandPalette v-model:open="groupedOpen" :items="groupedCommands">
+      <template #group-label="{ group, items }">
+        {{ group }} <span class="group-count">{{ items.length }}</span>
+      </template>
+    </CommandPalette>
   </section>
 </template>
 
@@ -65,6 +70,11 @@ const groupedOpen = shallowRef(false)
 </script>
 
 <style scoped>
+.group-count {
+  margin-inline-start: 0.25rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
 .row {
   display: flex;
   gap: 0.5rem;

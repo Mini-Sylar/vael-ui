@@ -27,6 +27,7 @@
       <TransitionGroup
         v-if="multiple"
         name="ui-chip-item"
+        @leave-cancelled="resetLeaveStyles"
         tag="span"
         class="ui-combobox-chips"
         :css="props.motionCss"
@@ -54,7 +55,13 @@
     </template>
     <template #end>
       <slot name="end" />
-      <Transition name="ui-clear">
+      <Transition
+        name="ui-clear"
+        :css="props.motionCss"
+        @enter="measureClearSpace"
+        @leave="startClearLeave"
+        @leave-cancelled="resetLeaveStyles"
+      >
         <button
           v-if="clearable && !isDisabled && (hasValue || query.length > 0)"
           type="button"
@@ -116,7 +123,7 @@
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
-            <slot name="header" :count="filteredItems.length" :total="items.length" />
+            <slot name="header" :count="filteredItems.length" :total="options.length" />
           </div>
           <SelectListBody
             ref="listBody"
@@ -131,7 +138,15 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :ui="{ list: themedUi()?.list, option: themedUi()?.option, empty: themedUi()?.empty }"
+            :motion="props.motionCss"
+            :sections="listSections"
+            :ui="{
+              list: themedUi()?.list,
+              option: themedUi()?.option,
+              empty: themedUi()?.empty,
+              group: themedUi()?.group,
+              groupLabel: themedUi()?.groupLabel,
+            }"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="setActive"
             @reach-end="emit('reach-end')"
@@ -162,10 +177,31 @@
               </slot>
               <slot v-else name="item" v-bind="slotProps" :query="trimmedQuery">
                 <span class="ui-select-option-label">{{ slotProps.item.label }}</span>
-                <span v-if="slotProps.selected" class="ui-select-option-check" aria-hidden="true"
-                  >✓</span
-                >
+                <!-- No `appear`: only a pick on a row already showing draws it in (shared/tick.css). -->
+                <Transition name="ui-tick">
+                  <svg
+                    v-if="slotProps.selected"
+                    class="ui-select-option-check ui-tick"
+                    viewBox="0 0 16 16"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M3.5 8.5l3 3 6-7"
+                      pathLength="1"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </Transition>
               </slot>
+            </template>
+            <template v-if="$slots['group-label']" #group-label="slotProps">
+              <slot name="group-label" v-bind="slotProps" />
             </template>
             <template v-if="$slots.empty" #empty>
               <slot name="empty" />
@@ -196,12 +232,17 @@
 <script lang="ts">
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
-import type { SelectItemData } from '../internal/SelectListBody.vue'
+import type {
+  SelectGroupData,
+  SelectGroupSlotData,
+  SelectItemData,
+  SelectListSection,
+} from '../internal/SelectListBody.vue'
 import type { SelectVirtualizeConfig } from '../Select/Select.vue'
 
 export type ComboboxSide = Side
 export type ComboboxAlign = Align
-export type { SelectItemData }
+export type { SelectGroupData, SelectGroupSlotData, SelectItemData }
 
 export type ComboboxFilter<T> = boolean | ((item: T, query: string) => boolean)
 
@@ -227,6 +268,13 @@ export interface ComboboxCreateDetails {
 import './Combobox.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../shared/clear-transition.css'
+import {
+  collapseLeavingChip,
+  measureClearSpace,
+  resetLeaveStyles,
+  startClearLeave,
+} from '../../composables/dom'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
@@ -245,6 +293,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
+import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
 import Chip from '../Chip/Chip.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -272,8 +321,9 @@ const query = defineModel<string>('query', { default: '' })
 
 const rawProps = withDefaults(
   defineProps<{
-    /** Options to choose from. */
-    items: ReadonlyArray<T>
+    /** Options to choose from. Put `{ label, items }` entries among them to show options under a
+     * group label, the same as Select. */
+    items: ReadonlyArray<T | SelectGroupData<T>>
     /** Text shown in the input while it's empty. */
     placeholder?: string
     /** Lets you select several items. The model becomes an array, the panel stays open on pick, and
@@ -317,6 +367,11 @@ const rawProps = withDefaults(
      * @default false
      */
     commitOnBlur?: boolean
+    /** Leaving the field puts back the selected item's label, dropping half-typed text. Set `false`
+     * for a search box, so what you typed stays when you click away. Escape still clears it.
+     * @default true
+     */
+    revertOnBlur?: boolean
     /** What Tab commits before focus moves on. `'select'`: the highlighted row, once you type or move
      * the highlight with the keyboard. `'create'` (`allowCustom` only): the typed text, or the item it names. */
     tabBehavior?: ComboboxTabBehavior
@@ -351,7 +406,8 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips the built-in chip transitions (`multiple` only); animate them yourself via
+    /** `false` skips the built-in motion: the list easing to its new height as you search, the clear
+     * button, and chip transitions (`multiple`), which you can animate yourself via
      * `@chip-enter`/`@chip-leave`.
      * @default true
      */
@@ -365,6 +421,8 @@ const rawProps = withDefaults(
       header: UiPartValue
       list: UiPartValue
       option: UiPartValue
+      group: UiPartValue
+      groupLabel: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
     }>
@@ -379,6 +437,7 @@ const rawProps = withDefaults(
     allowCustom: false,
     createOption: true,
     commitOnBlur: false,
+    revertOnBlur: true,
     tabBehavior: undefined,
     virtualize: undefined,
     // Explicit undefined: distinguishes "not set" from "true".
@@ -421,7 +480,9 @@ const chipEnterHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
 )
 const chipLeaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-leave', el, done),
+  props.motionCss
+    ? collapseLeavingChip
+    : (el: Element, done: () => void) => emit('chip-leave', el, done),
 )
 
 defineSlots<{
@@ -438,7 +499,12 @@ defineSlots<{
     active: boolean
     selected: boolean
     query: string
+    /** The group this option sits in, if any. */
+    group?: SelectGroupSlotData<T>
   }): unknown
+  /** Custom content for a group's label. `group` is the object you passed, with your own fields;
+   * `items` are its options still showing. Screen readers read this content as the group's name. */
+  'group-label'(props: { group: SelectGroupSlotData<T>; items: T[] }): unknown
   /** Content of the `allowCustom` Create row. */
   create(props: { query: string; active: boolean }): unknown
   /** Replaces the text shown when no items match. */
@@ -459,17 +525,19 @@ const queryDirty = ref(false)
 // Arrow/Home/End since the panel opened — tabBehavior 'select' treats that as intent, like typing.
 const keyboardNavigated = ref(false)
 
-const filteredItems = computed<T[]>(() => {
-  if (props.filter === false || !queryDirty.value) return [...props.items]
+const hasGroups = computed(() => props.items.some(isGroup))
+// Every option, groups flattened, for selection and lookups.
+const options = computed<T[]>(() => flattenOptions(props.items))
+function matcher(): (item: T) => boolean {
   const q = query.value.trim()
-  if (!q) return [...props.items]
-  if (typeof props.filter === 'function') {
-    const match = props.filter
-    return props.items.filter((item) => match(item, q))
-  }
+  if (props.filter === false || !queryDirty.value || !q) return () => true
+  const filter = props.filter
+  if (typeof filter === 'function') return (item) => filter(item, q)
   const nq = normalizeText(q)
-  return props.items.filter((item) => normalizeText(item.label).includes(nq))
-})
+  return (item) => normalizeText(item.label).includes(nq)
+}
+const filtered = computed(() => groupSections(props.items, matcher()))
+const filteredItems = computed<T[]>(() => filtered.value.items)
 
 const CREATE_ROW = Symbol('combobox-create-row')
 function isCreateRow(item: T): boolean {
@@ -481,7 +549,7 @@ const showCreateRow = computed(() => {
   const raw = trimmedQuery.value
   if (!raw) return false
   const nq = normalizeText(raw)
-  if (props.items.some((item) => normalizeText(item.label) === nq)) return false
+  if (options.value.some((item) => normalizeText(item.label) === nq)) return false
   if (props.multiple) return !(Array.isArray(model.value) && model.value.includes(raw))
   return model.value !== raw
 })
@@ -497,13 +565,21 @@ const listItems = computed<T[]>(() =>
       ]
     : filteredItems.value,
 )
+// Grouped lists render by section; the Create row is a last section of its own, outside any group.
+const listSections = computed<SelectListSection<T>[] | undefined>(() => {
+  if (!hasGroups.value) return undefined
+  const sections = [...filtered.value.sections]
+  const end = filteredItems.value.length
+  if (showCreateRow.value) sections.push({ start: end, end: end + 1 })
+  return sections
+})
 const createLabel = computed(() =>
   messages.value.combobox.create.replace('{query}', trimmedQuery.value),
 )
 
 function labelFor(value: string | number | (string | number)[] | null): string {
   if (value == null || Array.isArray(value)) return ''
-  return props.items.find((item) => item.value === value)?.label ?? String(value)
+  return options.value.find((item) => item.value === value)?.label ?? String(value)
 }
 
 function isSelected(item: T): boolean {
@@ -512,7 +588,7 @@ function isSelected(item: T): boolean {
   return model.value != null && item.value === model.value
 }
 // Filter full item list (not map raw values) so chips show current label on reload.
-const selectedItems = computed<T[]>(() => (props.multiple ? props.items.filter(isSelected) : []))
+const selectedItems = computed<T[]>(() => (props.multiple ? options.value.filter(isSelected) : []))
 const visibleChips = computed<T[]>(() =>
   props.maxLabels != null ? selectedItems.value.slice(0, props.maxLabels) : selectedItems.value,
 )
@@ -705,7 +781,7 @@ function onInputBlur(event?: FocusEvent) {
   // Multiple: query is search text, not committed label; chips are source of truth.
   if (props.multiple ? !trimmedQuery.value : query.value === labelFor(model.value)) return
   if (props.allowCustom && props.commitOnBlur && commitCustom('blur')) return
-  revertQuery()
+  if (props.revertOnBlur) revertQuery()
 }
 
 function onInputKeydown(event: KeyboardEvent) {
@@ -765,7 +841,7 @@ function onTab() {
   } else if (props.tabBehavior === 'create') {
     if (!props.allowCustom || !queryDirty.value || !trimmedQuery.value) return
     const nq = normalizeText(trimmedQuery.value)
-    const named = props.items.find((item) => !item.disabled && normalizeText(item.label) === nq)
+    const named = options.value.find((item) => !item.disabled && normalizeText(item.label) === nq)
     if (!named) commitCustom('tab')
     else if (props.multiple && isSelected(named)) revertQuery()
     else selectItem(named, -1)

@@ -112,7 +112,6 @@
   }
   /* Chips clip horizontally within the fixed-height trigger, as in Select. */
   .ui-cascade-select-chips {
-    position: relative; /* containing block for a leaving chip's position:absolute */
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -140,6 +139,20 @@
   .ui-cascade-select-trigger[data-state='open'] .ui-cascade-select-chevron {
     transform: rotate(180deg);
   }
+  .ui-cascade-select-search-icon {
+    color: var(--ui-text-muted);
+  }
+  /* Where a search result lives, quieter than its label and cut short before the row's edge. */
+  .ui-cascade-select-path {
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    margin-inline-start: 0.5rem;
+    overflow: hidden;
+    color: var(--ui-text-muted);
+    font-size: calc(var(--ui-font-size) * 0.75);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .ui-cascade-select-empty {
     padding: 0.75rem;
     color: var(--ui-text-muted);
@@ -156,7 +169,7 @@
   /* Rows on the selected path keep a quiet tint (same as Select's selected option). Rows are
      teleported out of .ui-cascade-select, so this targets Menu's row directly. */
   .ui-menu-item[data-cascade-selected] {
-    background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-surface));
+    background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
   }
   .ui-menu-item[data-cascade-selected]:focus-visible {
     background: var(--ui-muted);

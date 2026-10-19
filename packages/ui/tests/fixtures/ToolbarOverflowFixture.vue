@@ -29,11 +29,21 @@
         <Button data-testid="export" size="sm" variant="ghost" data-toolbar-overflow disabled>
           Export
         </Button>
+        <Button
+          v-model:pressed="pinned"
+          data-testid="pin"
+          size="sm"
+          variant="ghost"
+          data-toolbar-overflow
+        >
+          Pin
+        </Button>
       </template>
     </Toolbar>
   </div>
   <output data-testid="share-clicked">{{ shareClicked }}</output>
   <output data-testid="comment-clicked">{{ commentClicked }}</output>
+  <output data-testid="pinned">{{ pinned }}</output>
 </template>
 
 <script setup lang="ts">
@@ -42,6 +52,7 @@ import Button from '../../src/components/Button/Button.vue'
 import Toolbar from '../../src/components/Toolbar/Toolbar.vue'
 
 withDefaults(defineProps<{ width?: string }>(), { width: '900px' })
+const pinned = shallowRef(false)
 
 const shareClicked = shallowRef(0)
 const commentClicked = shallowRef(0)

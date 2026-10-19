@@ -5,39 +5,18 @@
       Try it with a keyboard: Tab in once (focus lands on Bold, the first button), then use ←/→ to
       move between every button in the group, Home/End jump to the first/last. Tab moves focus OUT
       of the whole toolbar to the next thing on the page, exactly like a native OS toolbar. Bold,
-      Italic and Underline are toggles: <code>:aria-pressed</code> tells screen readers they're on
-      and shows it on the button.
+      Italic and Underline are toggles: <code>v-model:pressed</code> turns each on and off, shows it
+      on the button and tells screen readers.
     </p>
     <div class="row">
       <Toolbar aria-label="Text formatting" class="editor-toolbar">
-        <Button
-          size="sm"
-          variant="ghost"
-          icon
-          :aria-pressed="bold"
-          aria-label="Bold"
-          @click="bold = !bold"
-        >
+        <Button size="sm" variant="ghost" icon v-model:pressed="bold" aria-label="Bold">
           <PhTextBolder weight="bold" />
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          icon
-          :aria-pressed="italic"
-          aria-label="Italic"
-          @click="italic = !italic"
-        >
+        <Button size="sm" variant="ghost" icon v-model:pressed="italic" aria-label="Italic">
           <PhTextItalic weight="bold" />
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          icon
-          :aria-pressed="underline"
-          aria-label="Underline"
-          @click="underline = !underline"
-        >
+        <Button size="sm" variant="ghost" icon v-model:pressed="underline" aria-label="Underline">
           <PhTextUnderline weight="bold" />
         </Button>
         <span class="ui-toolbar-separator" role="separator" />

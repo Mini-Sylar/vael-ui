@@ -71,13 +71,20 @@
           @mousemove="row.kind === 'item' && (activeIndex = row.index)"
           @click="row.kind === 'item' && selectItem(row.item, close)"
         >
-          <template v-if="row.kind === 'group'">{{ row.label }}</template>
+          <slot
+            v-if="row.kind === 'group'"
+            name="group-label"
+            :group="row.label"
+            :items="row.items"
+            >{{ row.label }}</slot
+          >
           <slot
             v-else
             name="item"
             :item="row.item"
             :index="row.index"
             :active="row.index === activeIndex"
+            :group="row.item.group"
             :select="() => selectItem(row.item, close)"
           >
             <component
@@ -127,9 +134,11 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { useEasedHeight } from '../../composables/useEasedHeight'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogPosition, DialogSize } from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
+import { scrollIntoContainer } from '../../composables/dom'
 import type { DOMTarget } from '../../composables/dom'
 import Kbd from '../Kbd/Kbd.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -246,8 +255,17 @@ const leaveHook = computed(() =>
 )
 
 defineSlots<{
-  /** Custom row content for each item; call `select()` to pick it. */
-  item(props: { item: T; index: number; active: boolean; select: () => void }): unknown
+  /** Custom row content for each item; call `select()` to pick it. `group` is its group's name. */
+  item(props: {
+    item: T
+    index: number
+    active: boolean
+    group: string | undefined
+    select: () => void
+  }): unknown
+  /** Custom content for a group's heading. `group` is its name; `items` are its items still
+   * showing. */
+  'group-label'(props: { group: string; items: T[] }): unknown
   /** Replaces the localized "no results" row shown when nothing matches. */
   empty(): unknown
 }>()
@@ -259,11 +277,19 @@ function defaultFilter(item: T, q: string): boolean {
   return item.keywords?.some((k) => k.toLowerCase().includes(q)) ?? false
 }
 
-const filteredItems = computed(() => {
+// Matches, gathered by group in first-seen order: the order rows show in, so arrow keys and
+// indexes follow the screen even when a group is spread through `items`.
+const filteredItems = computed<T[]>(() => {
   const q = query.value.trim().toLowerCase()
-  if (!q) return props.items
   const test = props.filter ?? defaultFilter
-  return props.items.filter((item) => test(item, q))
+  const matched = q ? props.items.filter((item) => test(item, q)) : props.items
+  const byGroup = new Map<string | undefined, T[]>()
+  for (const item of matched) {
+    const bucket = byGroup.get(item.group)
+    if (bucket) bucket.push(item)
+    else byGroup.set(item.group, [item])
+  }
+  return [...byGroup.values()].flat()
 })
 
 const groupedItems = computed<CommandPaletteGroupView[]>(() => {
@@ -282,7 +308,14 @@ const groupedItems = computed<CommandPaletteGroupView[]>(() => {
 const rows = computed(() =>
   groupedItems.value.flatMap((group) => [
     ...(group.group
-      ? [{ kind: 'group' as const, key: `group:${group.group}`, label: group.group }]
+      ? [
+          {
+            kind: 'group' as const,
+            key: `group:${group.group}`,
+            label: group.group,
+            items: group.entries.map((entry) => entry.item),
+          },
+        ]
       : []),
     ...group.entries.map(({ item, index }) => ({
       kind: 'item' as const,
@@ -335,56 +368,18 @@ function registerListEl(el: Element | { $el?: unknown } | null) {
 }
 
 // Ease to the new height from the current one, so a restart mid-animation doesn't jump.
-watch(
-  rows,
-  () => {
-    const el = listEl.value
-    if (!el || !props.motionCss || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const from = el.getBoundingClientRect().height
-    nextTick(() => {
-      el.style.transition = 'none'
-      el.style.blockSize = ''
-      const to = el.getBoundingClientRect().height
-      if (Math.abs(to - from) >= 1) {
-        el.dataset.resizing = el.scrollHeight > el.clientHeight + 1 ? 'scroll' : 'fit'
-        if (to > from) el.dataset.growing = ''
-        else delete el.dataset.growing
-        el.style.blockSize = `${from}px`
-        void el.offsetHeight
-        el.style.blockSize = `${to}px`
-      } else {
-        delete el.dataset.resizing
-        delete el.dataset.growing
-      }
-      el.style.transition = ''
-    })
-  },
-  { flush: 'pre' },
-)
-function releaseHeight(event: TransitionEvent) {
-  const el = listEl.value
-  if (!el || event.target !== el) return
-  const heightDone = event.propertyName === 'block-size' || event.propertyName === 'height'
-  // A list that fits eases its soft edge away first. One that scrolls hands it to its scroll fade.
-  if (heightDone && el.dataset.growing !== undefined && el.dataset.resizing === 'fit') {
-    delete el.dataset.growing
-    return
-  }
-  if (heightDone || event.propertyName === '--ui-command-palette-edge') {
-    el.style.blockSize = ''
-    delete el.dataset.resizing
-    delete el.dataset.growing
-  }
-}
-// Not transitioncancel: a restart cancels the previous run after setting the new height.
-useEventListener(listEl, 'transitionend', releaseHeight)
+useEasedHeight({
+  el: () => listEl.value,
+  source: rows,
+  enabled: () => props.motionCss,
+  edgeProperty: '--ui-command-palette-edge',
+})
 
 watch(activeIndex, (index) => {
   if (index < 0) return
   nextTick(() => {
-    listEl.value
-      ?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)
-      ?.scrollIntoView({ block: 'nearest' })
+    const row = listEl.value?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)
+    if (listEl.value && row) scrollIntoContainer(listEl.value, row)
   })
 })
 

@@ -74,25 +74,6 @@
   .ui-combobox-clear:hover::before {
     background: var(--ui-muted);
   }
-  /* Grows in from zero width (not just opacity) so its neighbors don't
-     visibly teleport when it mounts/unmounts — margin-inline-start cancels
-     the flex row's own `gap` at zero width so nothing pops in early. */
-  .ui-clear-enter-active,
-  .ui-clear-leave-active {
-    transition:
-      opacity var(--ui-duration-press) var(--ui-ease-out),
-      transform var(--ui-duration-press) var(--ui-ease-out),
-      inline-size var(--ui-duration-press) var(--ui-ease-out),
-      margin-inline-start var(--ui-duration-press) var(--ui-ease-out);
-    overflow: hidden;
-  }
-  .ui-clear-enter-from,
-  .ui-clear-leave-to {
-    opacity: 0;
-    transform: scale(0.5);
-    inline-size: 0;
-    margin-inline-start: -0.5rem;
-  }
   .ui-select-chevron,
   .ui-combobox-chevron {
     position: relative;
@@ -125,16 +106,6 @@
     }
     .ui-select-clear:active,
     .ui-combobox-clear:active {
-      transform: none;
-    }
-    .ui-clear-enter-active,
-    .ui-clear-leave-active {
-      transition: opacity var(--ui-duration-press) var(--ui-ease-out);
-    }
-    .ui-clear-enter-from,
-    .ui-clear-leave-to {
-      inline-size: 1.25rem;
-      margin-inline-start: 0;
       transform: none;
     }
   }

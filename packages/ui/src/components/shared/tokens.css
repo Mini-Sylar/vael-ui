@@ -1,4 +1,10 @@
 @layer ui-components {
+  /* The soft bottom edge of a list easing to a new height (useEasedHeight). Registered so it eases. */
+  @property --ui-list-edge {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
   :root {
     --ui-primary: #18181b;
     --ui-primary-hover: #27272a;
@@ -63,6 +69,15 @@
   ::after {
     -webkit-tap-highlight-color: transparent;
     --ui-radius-surface: min(var(--ui-radius), 1rem);
+  }
+
+  /* Components are sized border-box, as under every common reset; this keeps
+     them that size on pages with no reset. Zero specificity, so a component's
+     own content-box and your styles still win. */
+  :where([class^='ui-'], [class*=' ui-']),
+  :where([class^='ui-'], [class*=' ui-'])::before,
+  :where([class^='ui-'], [class*=' ui-'])::after {
+    box-sizing: border-box;
   }
 
   @property --ui-dialog-t {
