@@ -25,6 +25,7 @@
           ref="panel"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
+          :data-level="level"
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -146,6 +147,7 @@
                   side="right"
                   align="start"
                   :teleport-to="positionerEl"
+                  :ui="props.ui"
                   @select="(item) => onDescendantSelect(item, i)"
                   @collapse="() => collapseSubmenu(i)"
                   @active="(value) => onChildActive(i, value)"
@@ -169,10 +171,13 @@
 </template>
 
 <script lang="ts">
-import type { Component } from 'vue'
+import type { Component, InjectionKey } from 'vue'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
 import type { UiPartValue } from '../../classes'
+
+/** @internal How deep a Menu sits: 1 for the top level, 2 for its submenus, and so on. */
+const menuLevelKey: InjectionKey<number> = Symbol('ui-menu-level')
 
 export type MenuSide = Side
 export type MenuAlign = Align
@@ -274,6 +279,7 @@ import {
   inject,
   nextTick,
   onBeforeUnmount,
+  provide,
   reactive,
   shallowReactive,
   shallowRef,
@@ -440,6 +446,9 @@ const themedUi = useThemedUi(
 )
 // Re-apply theme scope on Teleported node since it breaks CSS custom-property inheritance.
 const themeScope = inject(themeScopeKey, undefined)
+// Each level's panel carries `data-level`, so CSS can style one level, like a second menu.
+const level = inject(menuLevelKey, 0) + 1
+provide(menuLevelKey, level)
 
 const {
   positionerStyle,
@@ -690,9 +699,17 @@ function revealOpenPath(): boolean {
 watch(
   () => open.value && positionerStyle.value.visibility === 'visible',
   (ready) => {
-    if (ready) nextTick(() => revealOpenPath() || focusEdge())
+    if (ready) nextTick(() => focusHeaderField() || revealOpenPath() || focusEdge())
   },
 )
+
+// A field in the header that asks for focus, such as CascadeSelect's search box, gets it on open
+// instead of the first row. Internal: set by vael-ui's own components, not a public contract.
+function focusHeaderField(): boolean {
+  const field = panelEl.value?.querySelector<HTMLElement>('[data-menu-autofocus]')
+  field?.focus()
+  return !!field
+}
 
 function focusEdge() {
   const edge = focusOnReady

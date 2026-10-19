@@ -153,3 +153,29 @@ test('header and footer slots render around the tree only when provided', async 
   expect(document.querySelector('.ui-tree-select-header')).toBeNull()
   expect(document.querySelector('.ui-tree-select-footer')).toBeNull()
 })
+
+test('expanding a folder grows the panel over several frames, not in one jump', async () => {
+  const screen = await render(TreeSelectFixture, {
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  const panel = document.querySelector<HTMLElement>('.ui-tree-select-panel')!
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  const heights: number[] = []
+  const t0 = performance.now()
+  const sample = () => {
+    heights.push(panel.offsetHeight)
+    if (performance.now() - t0 < 600) requestAnimationFrame(sample)
+  }
+  requestAnimationFrame(sample)
+  rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-select-chevron')!.click()
+  await new Promise((resolve) => setTimeout(resolve, 650))
+  const start = heights[0]!
+  const end = heights.at(-1)!
+  expect(end).toBeGreaterThan(start)
+  // Never shrinks on the way, and passes through heights in between.
+  for (let i = 1; i < heights.length; i++)
+    expect(heights[i]!).toBeGreaterThanOrEqual(heights[i - 1]!)
+  expect(heights.filter((h) => h > start + 1 && h < end - 1).length).toBeGreaterThan(1)
+})

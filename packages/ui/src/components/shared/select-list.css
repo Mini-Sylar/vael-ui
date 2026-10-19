@@ -13,6 +13,8 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    /* A vertical list never scrolls sideways, even while rows slide in. */
+    overflow-x: hidden;
     overscroll-behavior: contain;
     padding: 0.25rem;
     /* Max-height is floating-ui live output. */
@@ -33,11 +35,27 @@
     justify-content: center;
     padding: 0.5rem;
   }
+  /* A group's heading: quieter than its options and lined up with their text. */
+  .ui-select-group-label {
+    padding: 0.5rem 0.625rem 0.25rem;
+    color: var(--ui-text-muted);
+    font-size: calc(var(--ui-font-size) * 0.75);
+    font-weight: 600;
+    line-height: 1rem;
+  }
+  .ui-select-group + .ui-select-group,
+  .ui-select-group + .ui-select-option,
+  .ui-select-option + .ui-select-group {
+    margin-block-start: 0.25rem;
+  }
   /* Natural sizing: padding + line-height. */
   .ui-select-option {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    /* Border-box: full width including padding, so it fits the list, its check mark clear of the
+       edge, without relying on the page having a box-sizing reset. */
+    box-sizing: border-box;
     inline-size: 100%;
     padding: 0.5rem 0.625rem;
     border-radius: calc(var(--ui-radius) - 4px);
@@ -49,7 +67,7 @@
   }
   /* Current value gets quiet permanent tint. */
   .ui-select-option[data-selected] {
-    background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-surface));
+    background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
   }
   /* Active reads same as hover (APG convention). */
   .ui-select-option[data-active] {

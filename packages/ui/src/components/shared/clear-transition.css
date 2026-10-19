@@ -1,0 +1,39 @@
+@layer ui-components {
+  /* A clear button fades and shrinks where it is, while a negative end margin slides its
+     neighbours across by exactly the room it takes in the row (measured into --ui-clear-space by
+     the transition hooks). Its width never animates, so nothing is left to jump when it goes. */
+  /* Named with the buttons so these beat each button's own base rules, whatever order they load in. */
+  :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
+    .ui-clear-enter-active,
+    .ui-clear-leave-active
+  ) {
+    transition:
+      opacity var(--ui-duration-press) var(--ui-ease-out),
+      transform var(--ui-duration-press) var(--ui-ease-out),
+      margin-inline-end var(--ui-duration-press) var(--ui-ease-out);
+  }
+  :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
+    .ui-clear-enter-from,
+    .ui-clear-leave-to
+  ) {
+    opacity: 0;
+    transform: scale(0.5);
+    margin-inline-end: calc(var(--ui-clear-space, 0px) * -1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
+      .ui-clear-enter-active,
+      .ui-clear-leave-active
+    ) {
+      transition: opacity var(--ui-duration-press) var(--ui-ease-out);
+    }
+    :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
+      .ui-clear-enter-from,
+      .ui-clear-leave-to
+    ) {
+      transform: none;
+      margin-inline-end: 0;
+    }
+  }
+}

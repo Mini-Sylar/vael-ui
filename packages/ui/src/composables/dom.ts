@@ -204,3 +204,72 @@ export function useSlotPresence(slots: Slots): (name: string) => boolean {
     return has
   }
 }
+
+/**
+ * Scrolls `container` so `el` is in view, honouring its `scroll-padding`. Unlike
+ * `el.scrollIntoView()`, nothing outside `container` moves, so opening or arrowing through a
+ * list never scrolls the page under it.
+ */
+export function scrollIntoContainer(
+  container: HTMLElement,
+  el: HTMLElement,
+  align: 'nearest' | 'start' | 'end' | 'center' = 'nearest',
+): void {
+  const style = getComputedStyle(container)
+  const padStart = parseFloat(style.scrollPaddingTop) || 0
+  const padEnd = parseFloat(style.scrollPaddingBottom) || 0
+  const box = container.getBoundingClientRect()
+  const rect = el.getBoundingClientRect()
+  const top = rect.top - box.top - container.clientTop + container.scrollTop
+  const bottom = top + rect.height
+  const view = container.clientHeight
+  let next = container.scrollTop
+  if (align === 'start') next = top - padStart
+  else if (align === 'end') next = bottom + padEnd - view
+  else if (align === 'center') next = top - (view - rect.height) / 2
+  else if (top - padStart < next) next = top - padStart
+  else if (bottom + padEnd > next + view) next = bottom + padEnd - view
+  container.scrollTop = Math.max(0, next)
+}
+
+function rowGap(node: HTMLElement): number {
+  return node.parentElement ? parseFloat(getComputedStyle(node.parentElement).columnGap) || 0 : 0
+}
+
+// Vue applies a leave's end state two frames after removal, which reads as a lag after a click.
+// These start the leave on the same frame instead: commit the current size, then set the end
+// state inline, and the element's leave-active transition carries it from there.
+const LEAVE_STYLES = ['inline-size', 'padding-inline', 'margin-inline-end', 'opacity', 'transform']
+
+/** Collapses a leaving chip where it is: no width, no padding, and the gap after it closed. */
+export function collapseLeavingChip(el: Element): void {
+  const node = el as HTMLElement
+  node.style.inlineSize = `${node.getBoundingClientRect().width}px`
+  void node.offsetWidth
+  node.style.inlineSize = '0px'
+  node.style.paddingInline = '0px'
+  node.style.marginInlineEnd = `${-rowGap(node)}px`
+  node.style.opacity = '0'
+}
+
+/** Undoes a leave started by these helpers, if Vue cancels it. */
+export function resetLeaveStyles(el: Element): void {
+  for (const prop of LEAVE_STYLES) (el as HTMLElement).style.removeProperty(prop)
+}
+
+/** Records how much room a clear button takes in its row, for the shared clear transition. */
+export function measureClearSpace(el: Element): void {
+  const node = el as HTMLElement
+  const start = parseFloat(getComputedStyle(node).marginInlineStart) || 0
+  node.style.setProperty('--ui-clear-space', `${node.offsetWidth + start + rowGap(node)}px`)
+}
+
+/** Starts a clear button's exit on the frame it's removed: fade, shrink, and slide its row across. */
+export function startClearLeave(el: Element): void {
+  const node = el as HTMLElement
+  measureClearSpace(node)
+  void node.offsetWidth
+  node.style.opacity = '0'
+  node.style.transform = 'scale(0.5)'
+  node.style.marginInlineEnd = 'calc(var(--ui-clear-space) * -1)'
+}

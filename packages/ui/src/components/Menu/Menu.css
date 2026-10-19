@@ -33,6 +33,8 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    /* A vertical list never scrolls sideways, even while rows slide in. */
+    overflow-x: hidden;
     overscroll-behavior: contain;
     padding: 0.25rem;
   }

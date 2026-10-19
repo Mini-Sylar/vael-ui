@@ -195,6 +195,12 @@ const code = computed(() =>
     sans-serif;
 }
 
+/* A picker in a Field would otherwise shrink to its placeholder ("Pick a city"); give it room for
+   a typical choice, but never more than the space there is. */
+.demo-preview :deep(.ui-field:has([role='combobox'])) {
+  min-inline-size: min(100%, 16rem);
+}
+
 .demo-preview::before {
   content: '';
   position: absolute;

@@ -14,29 +14,50 @@
     padding: 0.125rem 0.5rem;
     font-size: calc(var(--ui-font-size) * 0.8125);
   }
-  .ui-chip-item-enter-active,
-  .ui-chip-item-leave-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+  /* Arriving: grows in at the end of the row, where nothing follows it. */
+  .ui-chip-item-enter-active {
+    transition:
+      opacity var(--ui-duration-enter) var(--ui-ease-out),
+      scale var(--ui-duration-enter) var(--ui-ease-out);
   }
-  .ui-chip-item-enter-from,
-  .ui-chip-item-leave-to {
+  .ui-chip-item-enter-from {
     opacity: 0;
+    scale: 0.9;
   }
+  /* Leaving: collapses where it is, so the chips after it follow its shrinking edge instead of
+     sliding over it. Its contents keep their size and are clipped like a closing curtain, gone
+     from view before the box finishes. The leave hook sets the end state on the click's own frame. */
   .ui-chip-item-leave-active {
-    position: absolute;
+    overflow: hidden;
+    min-inline-size: 0;
+    max-inline-size: none;
+    transition:
+      inline-size var(--ui-duration-exit) var(--ui-ease-out),
+      padding-inline var(--ui-duration-exit) var(--ui-ease-out),
+      margin-inline-end var(--ui-duration-exit) var(--ui-ease-out),
+      opacity calc(var(--ui-duration-exit) * 0.66) ease;
   }
-  .ui-chip-item-move {
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+  .ui-chip-item-leave-active > * {
+    flex-shrink: 0;
+  }
+  /* Not on a leaving chip: its own transition is the collapse, and this one would replace it. */
+  .ui-chip-item-move:not(.ui-chip-item-leave-active) {
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   [data-motion='off'] .ui-chip-item-move {
     transition: none;
   }
 
+  /* Reduced motion: only opacity transitions, so a leaving chip's space closes at once. */
   @media (prefers-reduced-motion: reduce) {
     .ui-chip-item-enter-active,
     .ui-chip-item-leave-active {
       transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
+    .ui-chip-item-enter-from {
+      scale: none;
+    }
+
     .ui-chip-item-move {
       transition: none;
     }

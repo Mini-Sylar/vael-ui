@@ -24,8 +24,38 @@
       @open-change="onOpenChange"
       @select="onMenuSelect"
     >
-      <template v-if="$slots.header" #header>
+      <template v-if="$slots.header || filter !== undefined" #header>
         <slot name="header" />
+        <div v-if="filter !== undefined" :class="filterPart.class" :style="filterPart.style">
+          <Input
+            ref="filterInputRef"
+            v-model="query"
+            :placeholder="filterPlaceholder"
+            size="sm"
+            :aria-label="filterPlaceholder"
+            data-menu-autofocus
+            @keydown="onFilterKeydown"
+          >
+            <template #start>
+              <svg
+                class="ui-cascade-select-search-icon"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
+                <path
+                  d="M13 13l-2.5-2.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </template>
+          </Input>
+        </div>
       </template>
       <template #trigger="{ open: menuOpen }">
         <div
@@ -61,6 +91,7 @@
               <TransitionGroup
                 v-else
                 name="ui-chip-item"
+                @leave-cancelled="resetLeaveStyles"
                 tag="span"
                 class="ui-cascade-select-chips"
                 :css="props.motionCss"
@@ -86,7 +117,12 @@
               </TransitionGroup>
             </slot>
           </span>
-          <Transition name="ui-clear">
+          <Transition
+            name="ui-clear"
+            @enter="measureClearSpace"
+            @leave="startClearLeave"
+            @leave-cancelled="resetLeaveStyles"
+          >
             <button
               v-if="clearable && !isEmpty && !isDisabled"
               type="button"
@@ -130,8 +166,20 @@
         </div>
       </template>
       <template v-else #item="{ item: entry }">
-        <slot name="item" :item="resolveItem(entry) as T" :has-children="!!entry.items">
+        <slot
+          name="item"
+          :item="resolveItem(entry) as T"
+          :has-children="!!entry.items"
+          :path="pathOf(entry) as T[]"
+        >
           <span class="ui-menu-item-label">{{ entry.label }}</span>
+          <!-- The leading space keeps "Accra Africa / Ghana" apart when read as one name. -->
+          <span v-if="searching && pathOf(entry).length" class="ui-cascade-select-path">{{
+            ' ' +
+            pathOf(entry)
+              .map((ancestor) => ancestor.label)
+              .join(' / ')
+          }}</span>
           <span v-if="entry.items" class="ui-menu-item-chevron" aria-hidden="true">
             <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
               <path
@@ -179,6 +227,11 @@ export interface CascadeSelectItem {
 
 /** Root-to-leaf sequence of `value`s for the current selection. */
 export type CascadeSelectPath = (string | number)[]
+
+/** See the `filter` prop. A function gets each leaf, the typed text and the items above the leaf. */
+export type CascadeSelectFilter<T> =
+  | boolean
+  | ((item: T, query: string, path: readonly T[]) => boolean)
 </script>
 
 <!-- Wraps Menu's submenu engine; nodeByKey side-table preserves type at all depths. -->
@@ -193,11 +246,20 @@ export type CascadeSelectPath = (string | number)[]
 import './CascadeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../shared/clear-transition.css'
+import {
+  collapseLeavingChip,
+  measureClearSpace,
+  resetLeaveStyles,
+  startClearLeave,
+} from '../../composables/dom'
 import '../shared/chip.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'
 import Chip from '../Chip/Chip.vue'
+import Input from '../Input/Input.vue'
+import { normalizeText } from '../../composables/normalizeText'
 import type { MenuAlign, MenuItemData, MenuSide } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -216,6 +278,8 @@ defineOptions({ inheritAttrs: false })
 const model = defineModel<V>()
 /** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
+/** Search box text. Clears when the panel closes. @default '' */
+const query = defineModel<string>('query', { default: '' })
 
 const rawProps = withDefaults(
   defineProps<{
@@ -265,6 +329,13 @@ const rawProps = withDefaults(
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
+    /** Adds a search box to the panel. While you type, the levels become one list of the matching
+     * leaves, each with its path. `true` matches every word against the whole path, ignoring case
+     * and accents; a function matches your way; `false` leaves filtering to you via `v-model:query`.
+     */
+    filter?: CascadeSelectFilter<T>
+    /** Placeholder for the search box. @default 'Search...' */
+    filterPlaceholder?: string
     /**
      * Masks the panel's top/bottom edge as its content scrolls under it, signaling there's more.
      * @default true
@@ -281,6 +352,7 @@ const rawProps = withDefaults(
       positioner: UiPartValue
       panel: UiPartValue
       header: UiPartValue
+      filter: UiPartValue
       footer: UiPartValue
     }>
   }>(),
@@ -302,6 +374,8 @@ const rawProps = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
+    filter: undefined,
+    filterPlaceholder: 'Search...',
     scrollFade: true,
     motionCss: undefined,
     ui: undefined,
@@ -326,7 +400,9 @@ const chipEnterHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
 )
 const chipLeaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-leave', el, done),
+  props.motionCss
+    ? collapseLeavingChip
+    : (el: Element, done: () => void) => emit('chip-leave', el, done),
 )
 
 defineSlots<{
@@ -337,8 +413,9 @@ defineSlots<{
   }): unknown
   /** Content above the row list, forwarded to the underlying Menu's `#header`. */
   header(): unknown
-  /** Custom row content at any level; the row keeps its expand and select behavior. */
-  item(props: { item: T; hasChildren: boolean }): unknown
+  /** Custom row content at any level; the row keeps its expand and select behavior. `path` is the
+   * items above it, so `path.length` is how deep it sits, even in search results. */
+  item(props: { item: T; hasChildren: boolean; path: T[] }): unknown
   /** Replaces the localized "no options" row shown when `items` is empty. */
   empty(): unknown
   /** Content below the row list, forwarded to the underlying Menu's `#footer`. */
@@ -417,8 +494,11 @@ const selectedCountLabel = computed(() =>
   ),
 )
 
-// Rebuilt each render: maps synthetic Menu keys back to their node and path.
-const nodeByKey = new Map<string, LeafMatch>()
+// Rebuilt each render: maps synthetic Menu keys back to their node, path and ancestors.
+interface MenuNode extends LeafMatch {
+  ancestors: CascadeSelectItem[]
+}
+const nodeByKey = new Map<string, MenuNode>()
 let nodeSeq = 0
 
 // `paths`: the rest of each selected path through this level; those rows get `data-cascade-selected`.
@@ -426,6 +506,7 @@ function buildEntries(
   items: readonly CascadeSelectItem[],
   paths: readonly CascadeSelectPath[],
   parentPath: CascadeSelectPath,
+  ancestors: CascadeSelectItem[] = [],
 ): MenuItemData[] {
   const restByHead = new Map<string | number, CascadeSelectPath[]>()
   for (const path of paths) {
@@ -437,7 +518,7 @@ function buildEntries(
   return items.map((item) => {
     const key = String(nodeSeq++)
     const path = [...parentPath, item.value]
-    nodeByKey.set(key, { item, path })
+    nodeByKey.set(key, { item, path, ancestors })
     const hasChildren = !!item.children && item.children.length > 0
     const rest = restByHead.get(item.value)
     return {
@@ -448,20 +529,79 @@ function buildEntries(
       ...(props.multiple && !hasChildren
         ? { checked: selectedSet.value.has(item.value), keepOpen: true }
         : {}),
-      items: hasChildren ? buildEntries(item.children!, rest ?? [], path) : undefined,
+      items: hasChildren
+        ? buildEntries(item.children!, rest ?? [], path, [...ancestors, item])
+        : undefined,
     }
   })
+}
+
+// Searching: every enabled leaf whose path matches, as one flat level. A disabled branch hides
+// its leaves, since they can't be reached in the levels either.
+const searching = computed(
+  () => props.filter !== undefined && props.filter !== false && query.value.trim() !== '',
+)
+function matcher(): (item: CascadeSelectItem, ancestors: CascadeSelectItem[]) => boolean {
+  const q = query.value.trim()
+  const filter = props.filter
+  if (typeof filter === 'function') {
+    return (item, ancestors) => filter(item as T, q, ancestors as T[])
+  }
+  const words = normalizeText(q).split(/\s+/).filter(Boolean)
+  return (item, ancestors) => {
+    const text = normalizeText([...ancestors, item].map((node) => node.label).join(' '))
+    return words.every((word) => text.includes(word))
+  }
+}
+function searchResults(): MenuNode[] {
+  const matches = matcher()
+  const out: MenuNode[] = []
+  const walk = (
+    items: readonly CascadeSelectItem[],
+    path: CascadeSelectPath,
+    ancestors: CascadeSelectItem[],
+  ) => {
+    for (const item of items) {
+      const nextPath = [...path, item.value]
+      if (item.children && item.children.length > 0) {
+        if (!item.disabled) walk(item.children, nextPath, [...ancestors, item])
+      } else if (matches(item, ancestors)) {
+        out.push({ item, path: nextPath, ancestors })
+      }
+    }
+  }
+  walk(props.items, [], [])
+  return out
 }
 
 const mappedItems = computed(() => {
   nodeByKey.clear()
   nodeSeq = 0
+  if (searching.value) {
+    return searchResults().map((node): MenuItemData => {
+      const key = String(nodeSeq++)
+      nodeByKey.set(key, node)
+      const picked = selectedSet.value.has(node.item.value)
+      return {
+        label: node.item.label,
+        value: key,
+        disabled: node.item.disabled,
+        attrs: picked ? { 'data-cascade-selected': '' } : undefined,
+        ...(props.multiple ? { checked: picked, keepOpen: true } : {}),
+      }
+    })
+  }
   return buildEntries(
     props.items,
     selectedMatches.value.map((match) => match.path),
     [],
   )
 })
+
+function pathOf(entry: MenuItemData): CascadeSelectItem[] {
+  const node = entry.value !== undefined ? nodeByKey.get(entry.value) : undefined
+  return node?.ancestors ?? []
+}
 
 // Menu keys along the (first) selected path: reopening reveals it instead of the first row.
 const openKeyPath = computed(() => {
@@ -511,6 +651,54 @@ function removeChip(item: CascadeSelectItem) {
 
 function onOpenChange(value: boolean, details: PopoverOpenChangeDetails) {
   emit('open-change', value, details)
+}
+
+const filterInputRef = useTemplateRef<{ inputEl: HTMLInputElement | null }>('filterInputRef')
+function rows(): HTMLElement[] {
+  const list = menuRef.value?.listEl
+  if (!list) return []
+  return [
+    ...list.querySelectorAll<HTMLElement>(
+      ':is([role="menuitem"], [role="menuitemcheckbox"]):not([aria-disabled="true"])',
+    ),
+  ]
+}
+function focusSearch() {
+  const input = filterInputRef.value?.inputEl
+  if (!input) return
+  input.focus()
+  input.setSelectionRange(input.value.length, input.value.length)
+}
+
+// Arrow Down moves into the results; Enter picks the first one, as in Select.
+function onFilterKeydown(event: KeyboardEvent) {
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    rows()[0]?.focus()
+  } else if (event.key === 'Enter' && searching.value) {
+    event.preventDefault()
+    const first = mappedItems.value.find((entry) => !entry.disabled)
+    if (!first) return
+    onMenuSelect(first)
+    if (!props.multiple) menuRef.value?.close()
+  }
+}
+
+// On a row, typing goes back to the search box, and ArrowUp from the first row returns to it.
+// Capture phase on the positioner, so it runs before Menu's own type-to-find, at every level.
+function onRowsKeydown(event: KeyboardEvent) {
+  if (props.filter === undefined || event.target === filterInputRef.value?.inputEl) return
+  const printable = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey
+  if (printable || event.key === 'Backspace') {
+    event.preventDefault()
+    event.stopPropagation()
+    query.value = event.key === 'Backspace' ? query.value.slice(0, -1) : query.value + event.key
+    nextTick(focusSearch)
+  } else if (event.key === 'ArrowUp' && event.target === rows()[0]) {
+    event.preventDefault()
+    event.stopPropagation()
+    focusSearch()
+  }
 }
 
 // Trigger is a div (role="combobox"), not a real <button> — a click that
@@ -598,6 +786,20 @@ const triggerClass = computed(() =>
 )
 const triggerStyle = computed(() => triggerSplit.value.style)
 const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-cascade-select-value'))
+const filterPart = computed(() => resolveUiPart(cx, themedUi()?.filter, 'ui-cascade-select-filter'))
+
+// After menuRef exists: the watcher reads it straight away.
+watch(
+  () => menuRef.value?.positionerEl,
+  (el, _old, onCleanup) => {
+    if (!el) return
+    el.addEventListener('keydown', onRowsKeydown, true)
+    onCleanup(() => el.removeEventListener('keydown', onRowsKeydown, true))
+  },
+)
+watch(open, (isOpen) => {
+  if (!isOpen) query.value = ''
+})
 
 defineExpose({
   /** Root element. */

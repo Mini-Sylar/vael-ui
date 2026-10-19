@@ -16,6 +16,70 @@
     <div v-else-if="items.length === 0 && loading" class="ui-select-loading">
       <span class="ui-loader" />
     </div>
+    <!-- Grouped: real role="group" wrappers, so screen readers announce each group's name. Rows
+         aren't evenly spaced here, so every option renders and scrolls into view by itself. Keyed
+         by label and value, so a search keeps each group and option on its own element, which
+         animations that track elements rely on. -->
+    <template v-else-if="sections">
+      <div
+        v-for="(section, si) in sections"
+        :key="section.label ?? `loose-${section.start}`"
+        :role="section.label ? 'group' : undefined"
+        :aria-labelledby="section.label ? `${listboxId}-group-${si}` : undefined"
+        :class="section.label ? groupPart.class : undefined"
+        :style="section.label ? groupPart.style : undefined"
+      >
+        <div
+          v-if="section.label"
+          :id="`${listboxId}-group-${si}`"
+          role="presentation"
+          :class="groupLabelPart.class"
+          :style="groupLabelPart.style"
+        >
+          <slot
+            v-if="section.group"
+            name="group-label"
+            :group="section.group"
+            :items="items.slice(section.start, section.end)"
+            >{{ section.label }}</slot
+          >
+          <template v-else>{{ section.label }}</template>
+        </div>
+        <div
+          v-for="index in sectionIndexes(section)"
+          :id="`${listboxId}-opt-${index}`"
+          :key="items[index]!.value"
+          role="option"
+          :class="optionPart.class"
+          :data-active="index === activeIndex || undefined"
+          :data-selected="isSelected(items[index]) || undefined"
+          :data-disabled="items[index]?.disabled || undefined"
+          :aria-selected="isSelected(items[index])"
+          :aria-disabled="items[index]?.disabled || undefined"
+          :style="optionPart.style"
+          @mousemove="onRowHover(index)"
+          @mousedown.prevent
+          @click="onRowClick(index)"
+        >
+          <slot
+            name="item"
+            :item="items[index]"
+            :index="index"
+            :active="index === activeIndex"
+            :selected="isSelected(items[index])"
+            :group="section.group"
+          >
+            <span class="ui-select-option-label">{{ getLabel(items[index]) }}</span>
+            <span v-if="isSelected(items[index])" class="ui-select-option-check" aria-hidden="true"
+              >✓</span
+            >
+          </slot>
+        </div>
+      </div>
+      <div v-if="loading" class="ui-select-loading-more" aria-hidden="true">
+        <span class="ui-loader" />
+      </div>
+    </template>
     <template v-else>
       <div :style="listStyle">
         <div
@@ -68,6 +132,27 @@ export interface SelectItemData {
   value: string | number
   disabled?: boolean
 }
+
+/** A titled group of options in Select's `items`, shown under its label. */
+export interface SelectGroupData<T extends SelectItemData = SelectItemData> {
+  label: string
+  items: readonly T[]
+}
+
+/** A group as the `#group-label` slot sees it: the object you passed, your own fields included. */
+export interface SelectGroupSlotData<
+  T extends SelectItemData = SelectItemData,
+> extends SelectGroupData<T> {
+  [key: string]: any
+}
+
+/** @internal A run of options in the list body's `items`, with its group if it has one. */
+export interface SelectListSection<T extends SelectItemData = SelectItemData> {
+  label?: string
+  group?: SelectGroupSlotData<T>
+  start: number
+  end: number
+}
 </script>
 
 <!--
@@ -99,6 +184,7 @@ import { computed, useTemplateRef } from 'vue'
 import { useVirtualizer } from '../../composables/useVirtualizer'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { scrollIntoContainer } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 
@@ -117,13 +203,29 @@ const props = defineProps<{
    * "not virtualized" case is just an overscan that never clips. */
   overscan: number
   scrollFade?: boolean
-  ui?: Partial<{ list: UiPartValue; option: UiPartValue; empty: UiPartValue }>
+  /** Set when the items come in groups: renders each run under its label instead of windowing. */
+  sections?: readonly SelectListSection<T>[]
+  ui?: Partial<{
+    list: UiPartValue
+    option: UiPartValue
+    empty: UiPartValue
+    group: UiPartValue
+    groupLabel: UiPartValue
+  }>
 }>()
 
 const cx = useClassMerge()
 const listPart = computed(() => resolveUiPart(cx, props.ui?.list, 'ui-select-body'))
 const optionPart = computed(() => resolveUiPart(cx, props.ui?.option, 'ui-select-option'))
 const emptyPart = computed(() => resolveUiPart(cx, props.ui?.empty, 'ui-select-empty'))
+const groupPart = computed(() => resolveUiPart(cx, props.ui?.group, 'ui-select-group'))
+const groupLabelPart = computed(() =>
+  resolveUiPart(cx, props.ui?.groupLabel, 'ui-select-group-label'),
+)
+
+function sectionIndexes(section: SelectListSection<T>): number[] {
+  return Array.from({ length: section.end - section.start }, (_, i) => section.start + i)
+}
 
 const emit = defineEmits<{
   select: [item: T, index: number]
@@ -132,7 +234,14 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  item(props: { item: T; index: number; active: boolean; selected: boolean }): unknown
+  item(props: {
+    item: T
+    index: number
+    active: boolean
+    selected: boolean
+    group?: SelectGroupSlotData<T>
+  }): unknown
+  'group-label'(props: { group: SelectGroupSlotData<T>; items: T[] }): unknown
   empty(): unknown
 }>()
 
@@ -162,6 +271,10 @@ function onRowClick(index: number) {
 
 defineExpose({
   listEl,
-  scrollToIndex: (index: number, align?: ScrollAlign) => scrollToIndex(index, align),
+  scrollToIndex: (index: number, align?: ScrollAlign) => {
+    if (!props.sections) return scrollToIndex(index, align)
+    const row = listEl.value?.querySelector<HTMLElement>(`[id="${props.listboxId}-opt-${index}"]`)
+    if (listEl.value && row) scrollIntoContainer(listEl.value, row, align)
+  },
 })
 </script>

@@ -113,7 +113,7 @@
   }
   /* Quiet permanent tint for current value. */
   .ui-tree-row--selected {
-    background: color-mix(in srgb, var(--ui-primary) 8%, var(--ui-surface));
+    background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
   }
   .ui-tree-row--disabled {
     opacity: 0.5;

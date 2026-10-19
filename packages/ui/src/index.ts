@@ -47,6 +47,8 @@ export { default as Dial } from './components/Dial/Dial.vue'
 export { default as Chip } from './components/Chip/Chip.vue'
 export { default as Select } from './components/Select/Select.vue'
 export type {
+  SelectGroupData,
+  SelectGroupSlotData,
   SelectItemData,
   SelectSide,
   SelectAlign,
@@ -126,6 +128,7 @@ export { default as Tooltip } from './components/Tooltip/Tooltip.vue'
 export type { TooltipAlign, TooltipProps, TooltipSide } from './components/Tooltip/Tooltip.vue'
 export { default as CascadeSelect } from './components/CascadeSelect/CascadeSelect.vue'
 export type {
+  CascadeSelectFilter,
   CascadeSelectItem,
   CascadeSelectPath,
 } from './components/CascadeSelect/CascadeSelect.vue'

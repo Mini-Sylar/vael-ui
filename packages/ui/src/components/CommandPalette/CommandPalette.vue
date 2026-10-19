@@ -71,13 +71,20 @@
           @mousemove="row.kind === 'item' && (activeIndex = row.index)"
           @click="row.kind === 'item' && selectItem(row.item, close)"
         >
-          <template v-if="row.kind === 'group'">{{ row.label }}</template>
+          <slot
+            v-if="row.kind === 'group'"
+            name="group-label"
+            :group="row.label"
+            :items="row.items"
+            >{{ row.label }}</slot
+          >
           <slot
             v-else
             name="item"
             :item="row.item"
             :index="row.index"
             :active="row.index === activeIndex"
+            :group="row.item.group"
             :select="() => selectItem(row.item, close)"
           >
             <component
@@ -130,6 +137,7 @@ import { useEventListener } from '@vueuse/core'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogPosition, DialogSize } from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
+import { scrollIntoContainer } from '../../composables/dom'
 import type { DOMTarget } from '../../composables/dom'
 import Kbd from '../Kbd/Kbd.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -246,8 +254,17 @@ const leaveHook = computed(() =>
 )
 
 defineSlots<{
-  /** Custom row content for each item; call `select()` to pick it. */
-  item(props: { item: T; index: number; active: boolean; select: () => void }): unknown
+  /** Custom row content for each item; call `select()` to pick it. `group` is its group's name. */
+  item(props: {
+    item: T
+    index: number
+    active: boolean
+    group: string | undefined
+    select: () => void
+  }): unknown
+  /** Custom content for a group's heading. `group` is its name; `items` are its items still
+   * showing. */
+  'group-label'(props: { group: string; items: T[] }): unknown
   /** Replaces the localized "no results" row shown when nothing matches. */
   empty(): unknown
 }>()
@@ -259,11 +276,19 @@ function defaultFilter(item: T, q: string): boolean {
   return item.keywords?.some((k) => k.toLowerCase().includes(q)) ?? false
 }
 
-const filteredItems = computed(() => {
+// Matches, gathered by group in first-seen order: the order rows show in, so arrow keys and
+// indexes follow the screen even when a group is spread through `items`.
+const filteredItems = computed<T[]>(() => {
   const q = query.value.trim().toLowerCase()
-  if (!q) return props.items
   const test = props.filter ?? defaultFilter
-  return props.items.filter((item) => test(item, q))
+  const matched = q ? props.items.filter((item) => test(item, q)) : props.items
+  const byGroup = new Map<string | undefined, T[]>()
+  for (const item of matched) {
+    const bucket = byGroup.get(item.group)
+    if (bucket) bucket.push(item)
+    else byGroup.set(item.group, [item])
+  }
+  return [...byGroup.values()].flat()
 })
 
 const groupedItems = computed<CommandPaletteGroupView[]>(() => {
@@ -282,7 +307,14 @@ const groupedItems = computed<CommandPaletteGroupView[]>(() => {
 const rows = computed(() =>
   groupedItems.value.flatMap((group) => [
     ...(group.group
-      ? [{ kind: 'group' as const, key: `group:${group.group}`, label: group.group }]
+      ? [
+          {
+            kind: 'group' as const,
+            key: `group:${group.group}`,
+            label: group.group,
+            items: group.entries.map((entry) => entry.item),
+          },
+        ]
       : []),
     ...group.entries.map(({ item, index }) => ({
       kind: 'item' as const,
@@ -382,9 +414,8 @@ useEventListener(listEl, 'transitionend', releaseHeight)
 watch(activeIndex, (index) => {
   if (index < 0) return
   nextTick(() => {
-    listEl.value
-      ?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)
-      ?.scrollIntoView({ block: 'nearest' })
+    const row = listEl.value?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)
+    if (listEl.value && row) scrollIntoContainer(listEl.value, row)
   })
 })
 

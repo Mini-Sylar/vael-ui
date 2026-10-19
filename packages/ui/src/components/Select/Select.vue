@@ -32,6 +32,7 @@
         <TransitionGroup
           v-else
           name="ui-chip-item"
+          @leave-cancelled="resetLeaveStyles"
           tag="span"
           class="ui-select-chips"
           :css="props.motionCss"
@@ -57,7 +58,12 @@
         </TransitionGroup>
       </slot>
     </span>
-    <Transition name="ui-clear">
+    <Transition
+      name="ui-clear"
+      @enter="measureClearSpace"
+      @leave="startClearLeave"
+      @leave-cancelled="resetLeaveStyles"
+    >
       <button
         v-if="clearable && !isEmpty && !isDisabled"
         type="button"
@@ -109,7 +115,7 @@
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
-            <slot name="header" :count="filteredItems.length" :total="items.length" />
+            <slot name="header" :count="filteredItems.length" :total="options.length" />
           </div>
           <div
             v-if="filter !== undefined || $slots.filter"
@@ -161,13 +167,23 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :ui="{ list: themedUi()?.list, option: themedUi()?.option, empty: themedUi()?.empty }"
+            :sections="hasGroups ? filtered.sections : undefined"
+            :ui="{
+              list: themedUi()?.list,
+              option: themedUi()?.option,
+              empty: themedUi()?.empty,
+              group: themedUi()?.group,
+              groupLabel: themedUi()?.groupLabel,
+            }"
             @select="(item: T, index: number) => selectItem(item, index)"
             @hover="setActive"
             @reach-end="emit('reach-end')"
           >
             <template v-if="$slots.item" #item="slotProps">
               <slot name="item" v-bind="slotProps" />
+            </template>
+            <template v-if="$slots['group-label']" #group-label="slotProps">
+              <slot name="group-label" v-bind="slotProps" />
             </template>
             <template v-if="$slots.empty" #empty>
               <slot name="empty" />
@@ -198,11 +214,15 @@
 <script lang="ts">
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../../composables/useFloatingPosition'
-import type { SelectItemData } from '../internal/SelectListBody.vue'
+import type {
+  SelectGroupData,
+  SelectGroupSlotData,
+  SelectItemData,
+} from '../internal/SelectListBody.vue'
 
 export type SelectSide = Side
 export type SelectAlign = Align
-export type { SelectItemData }
+export type { SelectGroupData, SelectGroupSlotData, SelectItemData }
 
 /** Explicit virtualization tuning — pass `true`/`false` for a blanket
  * on/off, or this shape to also override row size/overscan. */
@@ -219,6 +239,13 @@ export type SelectFilter<T> = boolean | ((item: T, query: string) => boolean)
 import './Select.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../shared/clear-transition.css'
+import {
+  collapseLeavingChip,
+  measureClearSpace,
+  resetLeaveStyles,
+  startClearLeave,
+} from '../../composables/dom'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
@@ -236,6 +263,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
+import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
 import Input from '../Input/Input.vue'
 import Chip from '../Chip/Chip.vue'
 
@@ -262,8 +290,9 @@ const model = defineModel<string | number | (string | number)[] | null>({ defaul
 
 const rawProps = withDefaults(
   defineProps<{
-    /** Options to choose from. */
-    items: ReadonlyArray<T>
+    /** Options to choose from. Put `{ label, items }` entries among them to show options under a
+     * group label, like `<optgroup>`. */
+    items: ReadonlyArray<T | SelectGroupData<T>>
     /** Text shown in the trigger while nothing is selected. */
     placeholder?: string
     /**
@@ -341,6 +370,8 @@ const rawProps = withDefaults(
       filter: UiPartValue
       list: UiPartValue
       option: UiPartValue
+      group: UiPartValue
+      groupLabel: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
     }>
@@ -390,7 +421,9 @@ const chipEnterHook = computed(() =>
   props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
 )
 const chipLeaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-leave', el, done),
+  props.motionCss
+    ? collapseLeavingChip
+    : (el: Element, done: () => void) => emit('chip-leave', el, done),
 )
 
 defineSlots<{
@@ -403,8 +436,18 @@ defineSlots<{
   filter(props: { query: string; onKeydown: (event: KeyboardEvent) => void }): unknown
   /** Replaces only the built-in filter row's leading icon and keeps its Input frame. */
   'filter-icon'(): unknown
-  /** Custom row content for each option. */
-  item(props: { item: T; active: boolean; selected: boolean }): unknown
+  /** Custom row content for each option. `group` is the group it sits in, if any. */
+  item(props: {
+    item: T
+    /** Position among the options showing, across groups. */
+    index: number
+    active: boolean
+    selected: boolean
+    group?: SelectGroupSlotData<T>
+  }): unknown
+  /** Custom content for a group's label. `group` is the object you passed, with your own fields;
+   * `items` are its options still showing. Screen readers read this content as the group's name. */
+  'group-label'(props: { group: SelectGroupSlotData<T>; items: T[] }): unknown
   /** Replaces the text shown when no items match. */
   empty(): unknown
   /** Content below the listbox, such as a "create new" or "view all" action. */
@@ -423,19 +466,20 @@ const selectedSet = computed<Set<string | number>>(() => {
 function isSelected(item: T): boolean {
   return selectedSet.value.has(item.value)
 }
-const filteredItems = computed<T[]>(() => {
-  if (props.filter === false) return [...props.items]
+const hasGroups = computed(() => props.items.some(isGroup))
+const options = computed<T[]>(() => flattenOptions(props.items))
+function matchesQuery(item: T, q: string): boolean {
+  if (props.filter === false || !q) return true
+  if (typeof props.filter === 'function') return props.filter(item, q)
+  return normalizeText(item.label).includes(normalizeText(q))
+}
+const filtered = computed(() => {
   const q = query.value.trim()
-  if (!q) return [...props.items]
-  if (typeof props.filter === 'function') {
-    const match = props.filter
-    return props.items.filter((item) => match(item, q))
-  }
-  const nq = normalizeText(q)
-  return props.items.filter((item) => normalizeText(item.label).includes(nq))
+  return groupSections(props.items, (item) => matchesQuery(item, q))
 })
+const filteredItems = computed<T[]>(() => filtered.value.items)
 // Selection always resolves against the full list — an item filtered out of view stays selected.
-const selectedItems = computed<T[]>(() => props.items.filter(isSelected))
+const selectedItems = computed<T[]>(() => options.value.filter(isSelected))
 const isEmpty = computed(() => selectedItems.value.length === 0)
 const displayLabel = computed(() => selectedItems.value.map((item) => item.label).join(', '))
 const selectedForSlot = computed<T | T[] | null>(() =>
@@ -634,7 +678,8 @@ watch(filteredItems, () => {
 const AUTO_VIRTUALIZE_THRESHOLD = 100
 const DEFAULT_OVERSCAN = 8
 const virtualizeConfig = computed<SelectVirtualizeConfig | null>(() => {
-  if (props.virtualize === false) return null
+  // Group labels make rows uneven, so a grouped list always renders whole.
+  if (props.virtualize === false || hasGroups.value) return null
   if (props.virtualize === true) return {}
   if (props.virtualize && typeof props.virtualize === 'object') return props.virtualize
   return filteredItems.value.length > AUTO_VIRTUALIZE_THRESHOLD ? {} : null
