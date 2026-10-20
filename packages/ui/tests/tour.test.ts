@@ -390,3 +390,41 @@ test('restarting a tour lands the callout on the first step instead of gliding i
     watchGlide.disconnect()
   }
 })
+
+test('a step asking for a side with no room in a narrow contained frame goes below the target instead', async () => {
+  const frame = shallowRef<HTMLElement | null>(null)
+  const open = shallowRef(true)
+  const steps: TourStep[] = [{ target: '#wide-card', title: 'Recent activity', side: 'left' }]
+  await render({
+    setup: () => () =>
+      h(
+        'div',
+        {
+          ref: frame,
+          'data-testid': 'frame',
+          style: 'position: relative; width: 360px; height: 640px; overflow: hidden',
+        },
+        [
+          h('div', { id: 'wide-card', style: 'margin: 120px 12px 0; height: 160px' }, 'Activity'),
+          frame.value
+            ? h(Tour as never, {
+                open: open.value,
+                'onUpdate:open': (v: boolean) => (open.value = v),
+                steps,
+                container: frame.value,
+              })
+            : null,
+        ],
+      ),
+  })
+  await vi.waitFor(() => expect(page.getByText('Recent activity').element()).toBeTruthy())
+  await new Promise((r) => setTimeout(r, 400))
+  const box = document.querySelector<HTMLElement>('[data-testid="frame"]')!.getBoundingClientRect()
+  const card = document.getElementById('wide-card')!.getBoundingClientRect()
+  const panel = page.getByText('Recent activity').element().closest<HTMLElement>('[role="dialog"]')!
+  const r = panel.getBoundingClientRect()
+  // Inside the frame, not cut off at its left edge, and under the card it points at.
+  expect(r.left).toBeGreaterThanOrEqual(box.left - 0.5)
+  expect(r.right).toBeLessThanOrEqual(box.right + 0.5)
+  expect(r.top).toBeGreaterThanOrEqual(card.bottom - 0.5)
+})

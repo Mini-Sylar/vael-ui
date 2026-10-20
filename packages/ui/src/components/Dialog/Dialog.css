@@ -141,6 +141,12 @@
   .ui-dialog-leave-active {
     transition: --ui-dialog-t var(--ui-duration-exit) var(--ui-ease-out);
   }
+  /* A leaving dialog lets taps through: its backdrop and panel stay on screen for the exit, and
+     would otherwise take the next tap (reaching for a dock or a button right after closing). Not
+     while `data-state="closing"`: a custom exit can still be cancelled from inside the dialog. */
+  .ui-dialog-leave-active {
+    pointer-events: none;
+  }
   .ui-dialog-enter-from,
   .ui-dialog-leave-to {
     --ui-dialog-t: 0;
