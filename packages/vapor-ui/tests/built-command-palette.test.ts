@@ -13,16 +13,14 @@ test('listEl is the results <ul>, and the list eases to its new height', async (
 
   await vi.waitFor(() => expect(root.palette.listEl?.tagName).toBe('UL'))
   const list = root.palette.listEl!
-  const heights: number[] = []
-  const start = performance.now()
-  const sample = () => {
-    heights.push(Math.round(list.getBoundingClientRect().height))
-    if (performance.now() - start < 400) requestAnimationFrame(sample)
-  }
-  requestAnimationFrame(sample)
+  // The transition's own start event, not sampled frames: under load the frames can miss it.
+  let eased = false
+  list.addEventListener('transitionstart', (event) => {
+    if (event.propertyName === 'block-size' || event.propertyName === 'height') eased = true
+  })
   await userEvent.type(page.getByRole('combobox'), 'Item 1')
 
-  await vi.waitFor(() => expect(new Set(heights).size).toBeGreaterThan(2))
+  await vi.waitFor(() => expect(eased).toBe(true))
   app.unmount()
   host.remove()
 })

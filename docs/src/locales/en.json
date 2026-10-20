@@ -18,12 +18,14 @@
     "skillGuide": "AI Agent Skill",
     "directives": "Directives",
     "menu": "Menu",
-    "openMenu": "Open menu",
     "previous": "Previous",
     "next": "Next",
     "pager": "Previous and next pages",
     "mainNav": "Main",
-    "sidebarNav": "Documentation"
+    "sidebarNav": "Documentation",
+    "searchShort": "Search",
+    "support": "Support",
+    "searchAll": "Search components, props and guides…"
   },
   "header": {
     "colorScheme": "Toggle color scheme",
@@ -42,7 +44,15 @@
     "animations": "Animations",
     "locale": "Language",
     "defaultMode": "Default demo mode",
-    "settings": "Settings"
+    "settings": "Settings",
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "demos": "Demos",
+    "general": "General",
+    "mode": "Mode",
+    "fontSize": "Font size"
   },
   "composable": {
     "parameters": "Parameters",
@@ -92,7 +102,7 @@
     "browseComponents": "Browse components",
     "themeLabel": "Try a color:",
     "newTag": "New",
-    "newText": "Every prop documented in your editor",
+    "newText": "0.5.0: spring folds, a color picker, inline editing",
     "showcaseLabel": "Live demo built with vael-ui"
   },
   "gettingStarted": {
@@ -271,6 +281,8 @@
     "Textarea": "A multi-line text field that can auto-grow with its content.",
     "InputNumber": "A numeric field with increment and decrement controls and format-aware parsing.",
     "OtpInput": "A row of single-character boxes for one-time codes, with paste and auto-advance.",
+    "Editable": "Text that turns into an input when clicked and saves on Enter or blur, for renaming in place.",
+    "ColorPicker": "A color swatch that opens a picker: a saturation and brightness plane, a hue slider, a hex field, an eyedropper where the browser has one, and optional presets.",
     "PasswordInput": "A password field with a reveal toggle and a requirements hint.",
     "Checkbox": "A checkbox for a single yes/no choice, with an optional indeterminate state.",
     "Radio": "One option in a mutually exclusive set. Always use it inside a RadioGroup.",
@@ -300,7 +312,7 @@
     "Tabs": "Switches between panels of content, with a sliding indicator under the active tab.",
     "Toaster": "Renders the notifications that toast() creates. Mount it once, anywhere in your app.",
     "Message": "An inline banner for status text: info, success, warning, or error.",
-    "Progress": "A progress bar for a task, with determinate and indeterminate states.",
+    "Progress": "A progress bar for a task or stacked shares of a whole, with determinate and indeterminate states and an optional legend.",
     "Loader": "A small spinner that shows something is in progress.",
     "Skeleton": "A placeholder shape that stands in for content while it loads.",
     "DataTable": "A data grid with sorting, selection, column resizing, and virtualization, built from Column components.",
@@ -323,7 +335,13 @@
     "PullToRefresh": "A pull-down gesture at the top of a scroll container that triggers a refresh.",
     "Dock": "A macOS-style row of icons that magnify as the pointer approaches them.",
     "BreadcrumbItem": "One link or the current page in a Breadcrumb trail.",
-    "BreadcrumbSeparator": "The divider between two BreadcrumbItems. It shows a chevron unless you pass your own content."
+    "BreadcrumbSeparator": "The divider between two BreadcrumbItems. It shows a chevron unless you pass your own content.",
+    "ButtonGroup": "Joins buttons into one connected row or column, and can turn them into single or multiple toggles.",
+    "CommandPalette": "A searchable list of commands in a dialog, opened from a button or a keyboard shortcut such as ⌘K.",
+    "Stepper": "Shows progress through a sequence of steps, and lets people move between them.",
+    "Breadcrumb": "A trail of links from the top of the site down to the current page.",
+    "AvatarGroup": "Stacks several avatars into one overlapping row, with a count for the ones that don’t fit.",
+    "ScrollArea": "A scroll box with slim, themed scrollbars and faded edges, in one or both directions."
   },
   "pageNotes": {
     "Resizable": "This site's own sidebar is built with Resizable. Drag its right edge to try it.",
@@ -423,7 +441,8 @@
   "notFound": {
     "title": "Page not found",
     "body": "The page you're looking for doesn't exist or has moved.",
-    "home": "Back home"
+    "home": "Back home",
+    "didYouMean": "Did you mean:"
   },
   "composableDescriptions": {
     "confirmAction": "An async-aware confirm flow, shown as a centered dialog or a popover anchored to a trigger. It waits for your handler before closing.",
@@ -448,5 +467,40 @@
     "orange": "Orange",
     "green": "Green",
     "custom": "Custom color"
+  },
+  "dockTour": {
+    "componentsTitle": "Components are down here",
+    "componentsDescription": "The menu moved from the top bar into the dock, closer to your thumb.",
+    "settingsTitle": "Dark mode lives in Settings",
+    "settingsDescription": "Along with the theme color, corner radius, size, font size, language and more.",
+    "replayLabel": "Tour",
+    "replay": "Show again",
+    "searchTitle": "Search is one tap away",
+    "searchDescription": "Find any component, guide or composable by name, with a short description of each.",
+    "variantTitle": "Vue DOM or Vapor, up top",
+    "variantDescription": "Switch every demo between the classic build and Vapor from here."
+  },
+  "search": {
+    "actions": "Commands",
+    "current": "Current",
+    "on": "On",
+    "off": "Off",
+    "copyInstall": "Copy install command",
+    "reportIssue": "Report an issue",
+    "recent": "Recent",
+    "drillIn": "{name} API",
+    "copy": {
+      "import": "Copy import",
+      "usage": "Copy usage",
+      "link": "Copy link",
+      "command": "Copy"
+    },
+    "noResults": "No results for “{query}”",
+    "didYouMean": "Did you mean",
+    "request": "Ask for it on GitHub",
+    "copied": "Copied to clipboard",
+    "back": "All results",
+    "copiedShort": "Copied",
+    "noCommands": "No commands match “{query}”"
   }
 }

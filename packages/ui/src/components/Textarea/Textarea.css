@@ -90,6 +90,13 @@
   /* margin-inline-start: auto, not space-between on the parent — with only
      #bottom-end provided, space-between has a single flex child and pins it
      to the start instead of the end. */
+  /* Each side is a centred row, so a counter, an icon and a button line up without extra markup. */
+  .ui-textarea-bottom-start,
+  .ui-textarea-bottom-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
   .ui-textarea-bottom-end {
     margin-inline-start: auto;
   }

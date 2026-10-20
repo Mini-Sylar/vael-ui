@@ -16,7 +16,10 @@
       :invalid="isInvalid"
       :placeholder="placeholder"
       :name="name"
-      :autocomplete="autocomplete"
+      :autocomplete="resolvedAutocomplete"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
       :ui="innerUi"
       v-bind="inputAttrs"
       @focus="onFocus"
@@ -190,8 +193,10 @@ const rawProps = withDefaults(
     placeholder?: string
     /** Native `name` on the input, for plain `<form>` submission. */
     name?: string
-    /** `'current-password'` for a login form, `'new-password'` for signup, reset or change forms.
-     * Set it yourself; only the screen's context determines which one fits. */
+    /** Tells password managers what this field is. Defaults to `'new-password'` when the field
+     * shows requirements (`rules` or `#hint`), so the phone offers a strong password, and to
+     * `'current-password'` otherwise, so a saved one fills in. Set it for a case that reads
+     * otherwise, like a sign-up form without rules. */
     autocomplete?: string
     /** `false` hides the reveal toggle, for forms that must never show the password in plain text.
      * @default true
@@ -262,6 +267,10 @@ const slots = useSlots()
 const hasSlot = useSlotPresence(slots)
 // Nothing to show: no rules and no #hint override — don't mount an empty popover/hint.
 const hasHintContent = computed(() => resolvedRules.value.length > 0 || hasSlot('hint'))
+// Requirements mean someone is choosing a password; without them, they're typing one they have.
+const resolvedAutocomplete = computed(
+  () => props.autocomplete ?? (hasHintContent.value ? 'new-password' : 'current-password'),
+)
 
 const messages = useUiMessages()
 const fieldControl = useFieldControl()

@@ -216,7 +216,7 @@ const {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  margin: 0;
+  margin: 0.75rem 0 0;
   padding: 0.375rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);

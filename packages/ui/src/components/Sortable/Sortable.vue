@@ -1,17 +1,20 @@
 <template>
-  <!-- display: contents keeps the layout while the status nodes stay outside the <ul>. -->
-  <div style="display: contents">
-    <ul
-      ref="root"
-      :class="rootPart.class"
-      :style="rootPart.style"
-      :data-motion="motionOff ? 'off' : undefined"
-      :data-axis="axis"
-      :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
-      :data-pending="isPending ? '' : undefined"
-      :data-drop-target="isForeignDropTarget ? '' : undefined"
-      v-bind="attrs"
-    >
+  <!-- The root is the box you style and measure, so a parent's class and scoped styles land on
+       the same element. The <ul> is display: contents: its rows lay out as the root's own
+       children, with the root's gap, and the status nodes stay outside the list. -->
+  <div
+    ref="root"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    :data-motion="motionOff ? 'off' : undefined"
+    :data-axis="axis"
+    :data-invalid-drop="isGrabbed && !isValidDrop ? '' : undefined"
+    :data-settling="isSettling ? '' : undefined"
+    :data-pending="isPending ? '' : undefined"
+    :data-drop-target="isForeignDropTarget ? '' : undefined"
+    v-bind="attrs"
+  >
+    <ul class="ui-sortable-list">
       <li
         v-for="(item, index) in items"
         :key="keyOf(item)"
@@ -203,6 +206,7 @@ function elementFor(value: string | number): HTMLElement | null {
 const {
   activeValue,
   isGrabbed,
+  isSettling,
   isGrabbedValue,
   isValidDrop,
   isPending,
@@ -274,6 +278,10 @@ defineExpose({
   el: root,
   /** Whether an item is held, by pointer or keyboard. */
   isGrabbed,
+  /** Whether rows are still gliding into place after a drop or cancel. The root also carries
+   * `data-settling` then. A list that clips its overflow only while something is held would cut
+   * a row off mid-glide, so keep the clipping off while this is true too. */
+  isSettling,
   /** `false` while hovering a target that `canDrop` rejected. */
   isValidDrop,
   /** Whether an async `beforeDrop` is still deciding. */

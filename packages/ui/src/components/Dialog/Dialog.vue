@@ -1,6 +1,6 @@
 <template>
   <Teleport :to="teleportTarget">
-    <Transition name="ui-dialog" appear :css="!forceMount">
+    <Transition name="ui-dialog" appear :css="!forceMount" @after-leave="releaseScroll">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -281,21 +281,28 @@ const themedUi = useThemedUi(
 )
 const themeScope = inject(themeScopeKey, undefined)
 
-const { isClosing, close, requestClose, cancelClose, container, contained, layerIndex } = useDialog(
-  open,
-  {
-    panelEl,
-    wrapperEl: rootEl,
-    container: () => props.container ?? null,
-    scrollTarget: () => props.scrollTarget ?? null,
-    closeOnEsc: () => props.closeOnEsc,
-    beforeClose: () => props.beforeClose,
-    initialFocus: () => props.initialFocus?.(),
-    modal: () => props.modal,
-    closeOnHistoryBack: () => props.closeOnHistoryBack,
-    onOpenChange: (value, details) => emit('open-change', value, details),
-  },
-)
+const {
+  isClosing,
+  close,
+  requestClose,
+  cancelClose,
+  container,
+  contained,
+  layerIndex,
+  releaseScroll,
+} = useDialog(open, {
+  holdScrollUntilExit: true,
+  panelEl,
+  wrapperEl: rootEl,
+  container: () => props.container ?? null,
+  scrollTarget: () => props.scrollTarget ?? null,
+  closeOnEsc: () => props.closeOnEsc,
+  beforeClose: () => props.beforeClose,
+  initialFocus: () => props.initialFocus?.(),
+  modal: () => props.modal,
+  closeOnHistoryBack: () => props.closeOnHistoryBack,
+  onOpenChange: (value, details) => emit('open-change', value, details),
+})
 
 // The overlay's mousedown is prevented (template) so a click on it never moves focus to <body>:
 // with closeOnOverlay off, focus must stay inside the still-open modal.

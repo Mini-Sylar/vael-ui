@@ -1,70 +1,112 @@
 <template>
   <svg :width="size" :height="size" viewBox="0 0 32 32" aria-hidden="true" class="vael-logo">
+    <!-- A halftone sphere: one dot per cell, sized by how much light reaches that point of the
+         orb, with a Bayer threshold so the falloff dithers instead of fading. The light drifts
+         slowly around the orb, so the dense side keeps moving. Dots taper toward the rim and the
+         whole thing is clipped to the circle, so the edge reads round rather than stepped. -->
     <defs>
-      <clipPath :id="`${uid}-circle`">
+      <clipPath :id="clipId">
         <circle cx="16" cy="16" r="14" />
       </clipPath>
-      <!-- A single orb, not four separate shapes — the dither runs across it
-           as one continuous gradient, sparse to solid. Each band's dot radius
-           breathes on its own cycle (different, non-multiple durations), so
-           which areas read as sparse vs. dense keeps drifting instead of
-           sitting in one fixed arrangement forever. -->
-      <pattern :id="`${uid}-d1`" patternUnits="userSpaceOnUse" width="4.6" height="4.6">
-        <circle cx="1.15" cy="1.15" r="0.55" fill="currentColor">
-          <animate
-            attributeName="r"
-            values="0.4;0.65;0.45;0.6;0.4"
-            dur="6.2s"
-            repeatCount="indefinite"
-          />
-        </circle>
-      </pattern>
-      <pattern :id="`${uid}-d2`" patternUnits="userSpaceOnUse" width="3.4" height="3.4">
-        <circle cx="0.85" cy="0.85" r="0.62" fill="currentColor">
-          <animate
-            attributeName="r"
-            values="0.5;0.75;0.55;0.7;0.5"
-            dur="4.7s"
-            repeatCount="indefinite"
-          />
-        </circle>
-      </pattern>
-      <pattern :id="`${uid}-d3`" patternUnits="userSpaceOnUse" width="2.5" height="2.5">
-        <circle cx="0.625" cy="0.625" r="0.68" fill="currentColor">
-          <animate
-            attributeName="r"
-            values="0.58;0.8;0.62;0.76;0.58"
-            dur="5.5s"
-            repeatCount="indefinite"
-          />
-        </circle>
-      </pattern>
-      <pattern :id="`${uid}-d4`" patternUnits="userSpaceOnUse" width="1.8" height="1.8">
-        <circle cx="0.45" cy="0.45" r="0.75" fill="currentColor">
-          <animate
-            attributeName="r"
-            values="0.66;0.86;0.7;0.82;0.66"
-            dur="3.9s"
-            repeatCount="indefinite"
-          />
-        </circle>
-      </pattern>
     </defs>
-    <g :clip-path="`url(#${uid}-circle)`">
-      <rect x="2" y="2" width="7" height="28" :fill="`url(#${uid}-d1)`" />
-      <rect x="9" y="2" width="7" height="28" :fill="`url(#${uid}-d2)`" />
-      <rect x="16" y="2" width="7" height="28" :fill="`url(#${uid}-d3)`" />
-      <rect x="23" y="2" width="7" height="28" :fill="`url(#${uid}-d4)`" />
+    <g :clip-path="`url(#${clipId})`">
+      <circle
+        v-for="dot in dots"
+        :key="dot.key"
+        :cx="dot.x"
+        :cy="dot.y"
+        :r="dot.r"
+        fill="currentColor"
+      />
     </g>
   </svg>
 </template>
 
 <script setup lang="ts">
-import { useId } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef, useId } from 'vue'
 
 withDefaults(defineProps<{ size?: number }>(), { size: 24 })
 
-const uid = `vael-logo-${useId()}`
+const clipId = `vael-logo-${useId()}`
+
+const RADIUS = 14
+const PITCH = 2.15
+const BAYER = [
+  [0, 8, 2, 10],
+  [12, 4, 14, 6],
+  [3, 11, 1, 9],
+  [15, 7, 13, 5],
+].map((row) => row.map((v) => (v + 0.5) / 16))
+
+interface Cell {
+  key: string
+  x: number
+  y: number
+  nx: number
+  ny: number
+  nz: number
+  /** Shrinks dots toward the edge, so the silhouette stays round. */
+  rim: number
+  threshold: number
+}
+
+// The grid is fixed; only the light moves.
+const cells: Cell[] = []
+const steps = Math.floor((RADIUS * 2) / PITCH)
+for (let row = 0; row <= steps; row++) {
+  for (let col = 0; col <= steps; col++) {
+    const x = 16 - RADIUS + PITCH / 2 + col * PITCH + (row % 2) * (PITCH / 2)
+    const y = 16 - RADIUS + PITCH / 2 + row * PITCH
+    const nx = (x - 16) / RADIUS
+    const ny = (y - 16) / RADIUS
+    const d2 = nx * nx + ny * ny
+    if (d2 > 1.02) continue
+    cells.push({
+      key: `${row}-${col}`,
+      x,
+      y,
+      nx,
+      ny,
+      nz: Math.sqrt(Math.max(0, 1 - d2)),
+      rim: Math.min(1, Math.max(0.3, (1.02 - Math.sqrt(d2)) * 5)),
+      threshold: BAYER[row % 4]![col % 4]!,
+    })
+  }
+}
+
+const angle = shallowRef(-0.9)
+const dots = computed(() => {
+  const lx = Math.cos(angle.value) * 0.62
+  const ly = Math.sin(angle.value) * 0.62
+  const lz = 0.78
+  return cells.map((cell) => {
+    const lit = Math.max(0, cell.nx * lx + cell.ny * ly + cell.nz * lz)
+    // Dithered falloff: the threshold bites hardest in the half-lit band.
+    const level = Math.min(1, Math.max(0, lit * 1.25 - cell.threshold * 0.3 + 0.08))
+    return {
+      key: cell.key,
+      x: cell.x,
+      y: cell.y,
+      r: (0.22 + level * (PITCH * 0.5 - 0.1)) * cell.rim,
+    }
+  })
+})
+
+let frame = 0
+let last = 0
+function tick(now: number) {
+  // One full turn in about 40 seconds, updated 20 times a second: a drift, not a spin.
+  if (now - last > 50) {
+    last = now
+    angle.value += (Math.PI * 2 * 0.05) / 20
+  }
+  frame = requestAnimationFrame(tick)
+}
+onMounted(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  frame = requestAnimationFrame(tick)
+})
+onUnmounted(() => cancelAnimationFrame(frame))
 </script>
 
 <style scoped>

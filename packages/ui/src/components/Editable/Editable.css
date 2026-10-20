@@ -1,0 +1,92 @@
+@layer ui-components {
+  .ui-editable {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    max-inline-size: 100%;
+  }
+  /* The resting text keeps the input's metrics, so opening the edit doesn't shift the line. */
+  .ui-editable-preview {
+    display: inline-block;
+    max-inline-size: 100%;
+    margin: 0;
+    padding: 0 0.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--ui-radius);
+    background: none;
+    color: var(--ui-text);
+    font: inherit;
+    text-align: start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+  }
+  .ui-editable-preview--sm {
+    min-block-size: 2rem;
+    font-size: calc(var(--ui-font-size) * 0.875);
+  }
+  .ui-editable-preview--md {
+    min-block-size: 2.5rem;
+  }
+  .ui-editable-preview--lg {
+    min-block-size: 3rem;
+    font-size: calc(var(--ui-font-size) * 1.125);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-editable-preview:hover:not(:disabled) {
+      background: var(--ui-muted);
+    }
+  }
+  .ui-editable-preview:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: 2px;
+  }
+  .ui-editable-preview[data-placeholder] {
+    color: var(--ui-text-muted);
+  }
+  .ui-editable-preview:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  /* A text swap either way: whichever arrives settles in from 4px below with a touch of blur. */
+  .ui-editable-edit,
+  .ui-editable-preview {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+    transition:
+      opacity var(--ui-duration-exit) var(--ui-ease-in-out),
+      translate var(--ui-duration-exit) var(--ui-ease-in-out),
+      filter var(--ui-duration-exit) var(--ui-ease-in-out),
+      background-color var(--ui-duration-press) ease;
+    @starting-style {
+      opacity: 0;
+      translate: 0 4px;
+      filter: blur(2px);
+    }
+  }
+  .ui-editable[data-motion='off'] .ui-editable-edit,
+  .ui-editable[data-motion='off'] .ui-editable-preview {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-editable-edit,
+    .ui-editable-preview {
+      transition: opacity var(--ui-duration-exit) ease;
+      @starting-style {
+        translate: 0 0;
+        filter: none;
+      }
+    }
+  }
+  .ui-editable-edit {
+    display: inline-flex;
+    min-inline-size: 0;
+  }
+  .ui-editable-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}

@@ -227,3 +227,17 @@ test('aria-label, aria-labelledby and aria-describedby name the input, not the w
   const fieldInput = screen.getByRole('textbox', { name: 'Login code' })
   await expect.element(fieldInput).toHaveAccessibleDescription('Check your email')
 })
+
+test('variant="field" boxes the whole code and a placeholder marks each empty cell', async () => {
+  const screen = await render(OtpInput, {
+    props: { modelValue: '12', variant: 'field', placeholder: '0', 'aria-label': 'Code' },
+  })
+  expect(screen.container.querySelector('.ui-otp')).toHaveClass('ui-otp--field')
+  const chars = [...screen.container.querySelectorAll<HTMLElement>('.ui-otp-cell-char')]
+  expect(chars.map((c) => c.textContent)).toEqual(['1', '2', '0', '0', '0', '0'])
+  expect(chars[0].classList.contains('ui-otp-cell-char--placeholder')).toBe(false)
+  expect(chars[2].classList.contains('ui-otp-cell-char--placeholder')).toBe(true)
+  // Cells inside the box carry no border of their own.
+  const cell = screen.container.querySelector<HTMLElement>('.ui-otp-cell')!
+  expect(getComputedStyle(cell).borderTopColor).toBe('rgba(0, 0, 0, 0)')
+})

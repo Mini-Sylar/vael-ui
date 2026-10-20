@@ -4,6 +4,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+  /* The rows are laid out by the root, so your gap and direction on it apply to them. */
+  .ui-sortable-list {
+    display: contents;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -21,8 +25,8 @@
     border-radius: var(--ui-radius);
     background: var(--ui-surface);
     transition:
-      box-shadow var(--ui-duration-press) var(--ui-ease-out),
-      border-color var(--ui-duration-press) var(--ui-ease-out);
+      box-shadow var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
   }
   .ui-sortable-item[data-dragging],
   .ui-sortable-item[data-grabbed] {
@@ -52,13 +56,15 @@
     cursor: grab;
     touch-action: none;
     transition:
-      color var(--ui-duration-press) var(--ui-ease-out),
-      background-color var(--ui-duration-press) var(--ui-ease-out),
+      color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease,
       transform var(--ui-duration-press) var(--ui-ease-out);
   }
-  .ui-sortable-handle:hover {
-    color: var(--ui-text);
-    background: var(--ui-muted);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-sortable-handle:hover {
+      color: var(--ui-text);
+      background: var(--ui-muted);
+    }
   }
   .ui-sortable-handle:active {
     transform: scale(0.94);

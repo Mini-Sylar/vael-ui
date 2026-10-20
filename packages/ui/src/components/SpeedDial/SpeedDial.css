@@ -68,7 +68,9 @@
       opacity var(--ui-duration-enter) var(--ui-ease-out),
       scale var(--ui-duration-enter) var(--ui-ease-out),
       translate var(--ui-duration-enter) var(--ui-ease-out);
-    transition-delay: calc(var(--ui-speed-dial-action-index, 0) * 40ms);
+    transition-delay: calc(
+      min(var(--ui-speed-dial-action-index, 0), 5) * var(--ui-duration-stagger)
+    );
   }
   .ui-speed-dial-action-leave-active {
     transition:

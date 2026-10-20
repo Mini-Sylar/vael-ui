@@ -20,6 +20,7 @@ export { default as AvatarGroup } from './components/AvatarGroup/AvatarGroup.vue
 export { default as Card } from './components/Card/Card.vue'
 export { default as Separator } from './components/Separator/Separator.vue'
 export { default as Progress } from './components/Progress/Progress.vue'
+export type { ProgressSegment, ProgressVariant } from './components/Progress/Progress.vue'
 export { default as Message } from './components/Message/Message.vue'
 export type {
   MessageOpenChangeDetails,
@@ -33,6 +34,8 @@ export { default as Input } from './components/Input/Input.vue'
 export { default as Textarea } from './components/Textarea/Textarea.vue'
 export { default as InputNumber } from './components/InputNumber/InputNumber.vue'
 export { default as OtpInput } from './components/OtpInput/OtpInput.vue'
+export { default as Editable } from './components/Editable/Editable.vue'
+export { default as ColorPicker } from './components/ColorPicker/ColorPicker.vue'
 export { default as PasswordInput } from './components/PasswordInput/PasswordInput.vue'
 export type { PasswordRule, PasswordRuleResult } from './components/PasswordInput/PasswordInput.vue'
 export { default as Checkbox } from './components/Checkbox/Checkbox.vue'

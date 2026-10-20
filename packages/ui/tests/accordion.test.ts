@@ -163,3 +163,37 @@ test('headers are <h3> by default; headingLevel on Accordion sets them, an item 
     .toBeVisible()
   expect(screen.container.querySelector('h3')!.classList.contains('ui-accordion-header')).toBe(true)
 })
+
+test('a panel opens to its exact height, so nothing hops when the animation lets go', async () => {
+  // 50.75px: scrollHeight reports 51, and opening to that left a quarter-pixel drop at the end.
+  await render({
+    render: () =>
+      h(Accordion, null, {
+        default: () => [
+          h(
+            AccordionItem,
+            { value: 'a', title: 'Open me' },
+            {
+              default: () => h('div', { style: 'height: 50.75px; margin: 0; padding: 0' }),
+            },
+          ),
+        ],
+      }),
+  })
+  const panel = document.querySelector<HTMLElement>('.ui-accordion-panel')!
+  const pinned: string[] = []
+  const watchPin = new MutationObserver(() => {
+    if (panel.style.blockSize) pinned.push(panel.style.blockSize)
+  })
+  watchPin.observe(panel, { attributes: true, attributeFilter: ['style'] })
+  await userEvent.click(page.getByRole('button', { name: 'Open me' }))
+  await vi.waitFor(() => expect(panel.style.blockSize).toBe(''), { timeout: 2000 })
+  watchPin.disconnect()
+  const body = panel.firstElementChild as HTMLElement
+  const open = body.getBoundingClientRect().bottom - panel.getBoundingClientRect().top
+  // Every height it opened towards is the one it settles at; a rounded target moves at the end.
+  const targets = pinned.map(Number.parseFloat).filter((height) => height > 0)
+  expect(targets.length).toBeGreaterThan(0)
+  for (const height of targets) expect(height).toBeCloseTo(open, 2)
+  expect(panel.getBoundingClientRect().height).toBeCloseTo(open, 2)
+})

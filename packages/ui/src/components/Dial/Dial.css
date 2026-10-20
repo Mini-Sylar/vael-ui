@@ -122,10 +122,14 @@
     .ui-dial-face {
       transition: none;
     }
-    .ui-dial-dial:hover .ui-dial-face,
     .ui-dial-dial:active .ui-dial-face,
     .ui-dial-dial[data-active] .ui-dial-face {
       scale: 1;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .ui-dial-dial:hover .ui-dial-face {
+        scale: 1;
+      }
     }
   }
 }

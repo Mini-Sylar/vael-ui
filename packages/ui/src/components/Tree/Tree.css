@@ -71,9 +71,8 @@
     color: var(--ui-text-muted);
     font-size: calc(var(--ui-font-size) * 0.875);
   }
-  /* TreeNodeRow.vue's own root: row + its children block. A real box, not
-     `display: contents`, so the children block's leave-active (absolute) has
-     something to anchor to. */
+  /* TreeNodeRow.vue's own root: row + its children block. A real box, so the
+     block's fold and sticky rows have a containing block. */
   .ui-tree-node {
     display: flex;
     flex-direction: column;
@@ -116,10 +115,18 @@
   .ui-tree[data-reorderable] .ui-tree-row {
     touch-action: none;
   }
-  .ui-tree-row:hover:not(.ui-tree-row--disabled),
   .ui-tree-row:focus-visible {
     background: var(--ui-muted);
-    outline: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-tree-row:hover:not(.ui-tree-row--disabled) {
+      background: var(--ui-muted);
+    }
+  }
+  /* Inset, so the ring fits inside the row and is never clipped by a scroll box around the tree. */
+  .ui-tree-row:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
   }
   /* After .ui-tree-row so padding-block-end wins (equal specificity, later
      source). 1px overscan (negative margin keeps layout height unchanged)
@@ -216,57 +223,26 @@
   .ui-tree-root[data-motion='off'] .ui-tree-row .ui-tree-check path {
     transition: none;
   }
-  /* A folder's children are uncovered from the top edge down, and covered back up, while
-     Tree.vue's FLIP pass slides the rows below by the block's height. Same curve, same duration,
-     same start frame: the reveal edge and the next row move together, so nothing overlaps. Closing
-     uses the exit duration for both. transform carries the block along when its folder row slides
-     too (a tree centred in its box). ease-out, so it moves on the first frame after the click. */
-  .ui-tree-rows-enter-active,
-  .ui-tree-rows-leave-active {
-    /* inset(0), not none: clip-path only animates between two insets. */
-    clip-path: inset(0);
-    transition:
-      opacity var(--ui-duration-enter) var(--ui-ease-out),
-      clip-path var(--ui-duration-enter) var(--ui-ease-out),
-      transform var(--ui-duration-enter) var(--ui-ease-out);
+  /* A folder's rows fold open and shut by the block's own height (useFold): it stays in the flow,
+     so the rows below and a tree centred in its box follow its edge in layout, and nothing is drawn
+     twice. `clip`, not `hidden`: a hidden overflow would make the block a scroll container and
+     unstick any sticky row inside it. */
+  .ui-tree-rows[data-folding] {
+    overflow: clip;
   }
-  .ui-tree-rows-enter-from,
-  .ui-tree-rows-leave-to {
-    opacity: 0;
-    clip-path: inset(0 0 100% 0);
+  /* In a scroll box, anchoring would move the box to hold a row below the fold still, and the row
+     that was clicked would slip away from under the pointer. */
+  .ui-tree-root {
+    overflow-anchor: none;
   }
-  /* Out of flow, so the rows below can slide up into its place (FLIP) while it covers itself. */
-  .ui-tree-rows-leave-active {
-    position: absolute;
-    inset-inline: 0;
-    top: var(--ui-tree-row-height);
-    transition-duration: var(--ui-duration-exit);
-  }
-  /* A folder that was already open inside one that's opening comes with it: one reveal, not two. */
-  .ui-tree-rows-enter-active .ui-tree-rows-enter-active {
-    transition: none;
-  }
-  /* A search swap, motion-css off or reduced motion (TreeNodeRow.vue): rows appear and go at
-     once. A leaving block drops out of layout now instead of after the two frames Vue waits. */
-  .ui-tree-rows[data-instant] {
-    transition: none;
-  }
-  .ui-tree-rows-enter-from[data-instant] {
-    opacity: 1;
-    clip-path: none;
-  }
-  .ui-tree-rows-leave-active[data-instant] {
-    display: none;
+  .ui-tree-rows[data-folding] > * {
+    flex-shrink: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-tree-chevron,
     .ui-tree-list {
       transition: none;
-    }
-    /* Opening fades without the wipe; closing is instant (TreeNodeRow.vue). */
-    .ui-tree-rows-enter-from {
-      clip-path: inset(0);
     }
   }
 
@@ -310,7 +286,7 @@
     scale: 1.01;
     transition:
       scale var(--ui-duration-press) var(--ui-ease-out),
-      background-color var(--ui-duration-press) var(--ui-ease-out);
+      background-color var(--ui-duration-press) ease;
   }
 
   /* Dropping INTO a folder. The whole row fills, because the destination is
@@ -374,6 +350,13 @@
       box-shadow: none;
       scale: 1;
       transition: none;
+    }
+  }
+
+  /* Touch has no hover: the press itself shows the row was hit. */
+  @media (hover: none) and (pointer: coarse) {
+    .ui-tree-row:active:not(.ui-tree-row--disabled, .ui-tree-row--selected) {
+      background: var(--ui-muted);
     }
   }
 }

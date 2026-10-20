@@ -22,7 +22,10 @@
     <template #default="{ close }">
       <input
         ref="inputEl"
-        v-model="query"
+        :value="query"
+        enterkeyhint="go"
+        autocapitalize="off"
+        autocorrect="off"
         type="text"
         role="combobox"
         autocomplete="off"
@@ -34,6 +37,7 @@
         :placeholder="placeholder ?? messages.commandPalette.placeholder"
         :aria-controls="listId"
         :aria-activedescendant="activeId"
+        @input="onInput"
         @keydown="onInputKeydown($event, close)"
       />
       <TransitionGroup
@@ -105,6 +109,9 @@
           </slot>
         </li>
       </TransitionGroup>
+      <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
+        <slot name="footer" :active-item="activeItem" :query="query" />
+      </div>
     </template>
   </Dialog>
 </template>
@@ -215,6 +222,7 @@ const rawProps = withDefaults(
       groupLabel: UiPartValue
       item: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -268,6 +276,8 @@ defineSlots<{
   'group-label'(props: { group: string; items: T[] }): unknown
   /** Replaces the localized "no results" row shown when nothing matches. */
   empty(): unknown
+  /** A strip under the list, such as key hints. `activeItem` is the highlighted item, if any. */
+  footer(props: { activeItem: T | undefined; query: string }): unknown
 }>()
 
 const messages = useUiMessages()
@@ -327,6 +337,7 @@ const rows = computed(() =>
 )
 
 const activeIndex = shallowRef(-1)
+const activeItem = computed<T | undefined>(() => filteredItems.value[activeIndex.value])
 
 function enabledIndices(): number[] {
   const indices: number[] = []
@@ -378,8 +389,20 @@ useEasedHeight({
 watch(activeIndex, (index) => {
   if (index < 0) return
   nextTick(() => {
-    const row = listEl.value?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)
-    if (listEl.value && row) scrollIntoContainer(listEl.value, row)
+    const list = listEl.value
+    const row = list?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)
+    if (!list || !row) return
+    // A group's heading sticks to the top of the list, so moving up, the row has to stop below
+    // its own heading instead of scrolling under it.
+    let heading = row.previousElementSibling
+    while (heading && heading.getAttribute('role') !== 'presentation') {
+      heading = heading.previousElementSibling
+    }
+    // It sticks inside the list's top padding, so the room it takes is both together.
+    const padding = Number.parseFloat(getComputedStyle(list).paddingTop) || 0
+    list.style.scrollPaddingBlockStart =
+      heading instanceof HTMLElement ? `${heading.offsetHeight + padding}px` : ''
+    scrollIntoContainer(list, row)
   })
 })
 
@@ -400,6 +423,12 @@ function selectItem(item: T, close: () => void) {
   if (item.disabled) return
   emit('select', item)
   if (props.closeOnSelect) close()
+}
+
+// Not v-model: it skips input while a keyboard composes, and Android
+// keyboards compose a whole word, so the list would wait for the space bar.
+function onInput(event: Event) {
+  query.value = (event.target as HTMLInputElement).value
 }
 
 function onInputKeydown(event: KeyboardEvent, close: () => void) {
@@ -467,6 +496,9 @@ const groupLabelPart = computed(() =>
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-command-palette-item'))
 const emptyPart = computed(() => resolveUiPart(cx, themedUi()?.empty, 'ui-command-palette-empty'))
+const footerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.footer, 'ui-command-palette-footer'),
+)
 
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 
@@ -487,5 +519,7 @@ defineExpose({
   filteredItems,
   /** Index of the highlighted item in `filteredItems` (`-1` when none). */
   activeIndex,
+  /** The highlighted item, for acting on it from your own keys (copy, open in a new tab). */
+  activeItem,
 })
 </script>

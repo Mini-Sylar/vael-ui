@@ -2,6 +2,8 @@ import { nextTick, onScopeDispose, shallowRef, toValue, useId, watch } from 'vue
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
+import { createSettler } from './sortableSettle'
+import type { Point } from './sortableSettle'
 import { autoScrollAt, contentOffset, findScrollParent } from './sortableAutoScroll'
 import { createClickGuard } from './dom'
 
@@ -275,16 +277,26 @@ export interface GroupMemberBinding {
    * column change, which has no pointer coordinates to follow. */
   setPreviewPosition: (top: number, left: number) => void
   /** Snapshot this member's rows right before the group mutates data out from under it. */
-  beginDepart: () => { before: Map<HTMLElement, number>; shiftVelocities: Map<HTMLElement, number> }
+  beginDepart: () => { before: Map<HTMLElement, Point>; shiftVelocities: Map<HTMLElement, number> }
   /** Re-measure and FLIP the remaining rows into their post-departure layout. */
   finishDepart: (captured: {
-    before: Map<HTMLElement, number>
+    before: Map<HTMLElement, Point>
     shiftVelocities: Map<HTMLElement, number>
   }) => void
   /** = this member's own `commit()` — used when the drop lands back on its own list. */
   commitLocally: () => Promise<void>
   /** = this member's own `revert()` — used on cancel, or a rejected cross-container drop. */
   revertLocally: () => Promise<void>
+  /** Glides a row of this member from `offset` px off its slot into it: the destination side of a transfer. */
+  settle: (
+    el: HTMLElement,
+    value: string | number,
+    offset: Point,
+    velocity: Point,
+    raise?: boolean,
+  ) => void
+  /** Keeps this member's rows watched for a moment, so a re-sort after the drop glides instead of jumping. */
+  watchRows: () => void
   /** Drops this member's floating preview once the destination is ready to take
    * over the visual — a confirmed transfer never un-hides an origin row (there
    * is none left to un-hide), so `commit()`/`revert()`'s own `reveal()` calls
@@ -340,6 +352,9 @@ export interface UseSortableReturn {
   isDragging: Ref<boolean>
   /** True whenever an item is held — by pointer OR keyboard. */
   isGrabbed: Ref<boolean>
+  /** True from a drop or cancel until every row has glided into its slot. A list that clips its
+   * overflow only while `isGrabbed` would cut a row off mid-glide; hold it open while this is true too. */
+  isSettling: Ref<boolean>
   /** Where the drag would land if released right now, live as the pointer moves. */
   dropPosition: Ref<DropPosition | null>
   /** `false` while hovering a target `canDrop` rejected. */
@@ -394,7 +409,15 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   const announcement = shallowRef('')
 
   const springs = new Map<string | number, SpringHandle>()
-  let settling: SpringHandle[] = []
+  const isSettling = shallowRef(false)
+  // The landing after a drop: rows glide into their slots, and keep gliding if the list re-sorts.
+  const settler = createSettler({
+    axis: () => axis(),
+    getElement: options.getElement,
+    onMoving: (moving) => {
+      isSettling.value = moving
+    },
+  })
   let bands: Band[] = []
   let remaining: FlatSortableRow[] = []
   let blockHeight = 0
@@ -541,8 +564,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   function begin(value: string | number, from: SortableSource): boolean {
     if (isDisabled()) return false
     // Grabbing mid-settle: stop the old drop animation writing translate.
-    for (const spring of settling) spring.destroy()
-    settling = []
+    settler.clear()
     const all = rows()
     const startIndex = all.findIndex((row) => row.value === value)
     if (startIndex === -1) return false
@@ -700,37 +722,77 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     springRowsToZero(instant)
     const value = activeValue.value
     const el = value == null ? null : options.getElement(value)
-    if (el && source === 'pointer') {
-      const current = bandOf(el).start
+    const glidesHome = !!el && source === 'pointer'
+    if (el && glidesHome) {
+      // Both axes: a grouped drag carries the row sideways too, and that part of the way back
+      // glides like the rest instead of snapping. Measured where it is now, lifted preview or
+      // not, then put back in the flow before its rest position is read.
+      const current = el.getBoundingClientRect()
+      reveal(el)
       el.style.translate = ''
-      const rest = bandOf(el).start
-      const delta = current - rest
-      el.style.translate = translateFor(delta)
-      const home = createSpring(delta, DROP_SPRING, (offset) => {
-        el.style.translate = translateFor(offset)
-      })
-      home.set(0, { velocity })
-      settling.push(home)
+      const rest = el.getBoundingClientRect()
+      settler.glide(
+        el,
+        value!,
+        { x: current.left - rest.left, y: current.top - rest.top },
+        alongVelocity(velocity),
+        true,
+      )
     }
-    // Let the springs above own the visuals; only the bookkeeping resets now.
-    const keep = [...springs.values()]
+    // The settler takes the rows' shifts over from where they are; only the bookkeeping resets now.
+    for (const [rowValue, spring] of springs) {
+      const rowEl = options.getElement(rowValue)
+      if (rowEl && rowEl !== el)
+        settler.glide(rowEl, rowValue, alongOffset(spring.value), alongVelocity(spring.velocity))
+      spring.destroy()
+    }
     springs.clear()
     grabbedSpring = null
-    settling.push(...keep)
     resetTrackingState()
-    reveal(el)
+    // Already revealed above when it glides; revealing again would clear the glide's lift.
+    if (!glidesHome) reveal(el)
+  }
+
+  /** Runs `change` (the dragged row lifting out of the flow, or dropping back into it) and
+   * springs every other row from where it was to where that leaves it, instead of letting the
+   * rows below snap up or down by the row's height. */
+  function reflowRows(change: () => void) {
+    const before = new Map<string | number, number>()
+    for (const row of remaining) before.set(row.value, bandOf(options.getElement(row.value)).start)
+    change()
+    if (reducedMotion()) return
+    for (const row of remaining) {
+      const delta = before.get(row.value)! - bandOf(options.getElement(row.value)).start
+      if (Math.abs(delta) < 0.5) continue
+      const spring = springFor(row.value)
+      const { velocity: carried, target } = spring
+      spring.jump(spring.value + delta)
+      spring.set(target, { velocity: carried })
+    }
   }
 
   /** Every row's on-screen start, before/after the commit — keyed by DOM
    * node, since `value` can mean a different row after a position-addressed
    * reorder (v-draggable has no stable key). */
-  function captureTops(): Map<HTMLElement, number> {
-    const tops = new Map<HTMLElement, number>()
+  function captureTops(): Map<HTMLElement, Point> {
+    const tops = new Map<HTMLElement, Point>()
     for (const row of rows()) {
       const el = options.getElement(row.value)
-      if (el) tops.set(el, bandOf(el).start)
+      if (!el) continue
+      const rect = el.getBoundingClientRect()
+      tops.set(el, { x: rect.left, y: rect.top })
     }
     return tops
+  }
+  function alongOffset(offset: number): Point {
+    return axis() === 'x' ? { x: offset, y: 0 } : { x: 0, y: offset }
+  }
+  function alongVelocity(speed: number): Point {
+    return alongOffset(speed)
+  }
+  function pointDelta(before: Point, after: Point): Point | null {
+    const delta = { x: before.x - after.x, y: before.y - after.y }
+    return Math.abs(delta.x) < 0.5 && Math.abs(delta.y) < 0.5 ? null : delta
   }
 
   /** Springs the dragged element from its (preview-overridden) `before` top to
@@ -739,22 +801,19 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
    * new element, never dragged locally) can reuse the exact same hand-off. */
   function flipDraggedElement(
     draggedEl: HTMLElement | null,
-    before: Map<HTMLElement, number>,
-    after: Map<HTMLElement, number>,
+    value: string | number,
+    before: Map<HTMLElement, Point>,
+    after: Map<HTMLElement, Point>,
     releaseVelocity: number,
   ) {
     const draggedBefore = draggedEl ? before.get(draggedEl) : undefined
     const draggedAfter = draggedEl ? after.get(draggedEl) : undefined
-    if (draggedEl && draggedBefore != null && draggedAfter != null) {
-      const delta = draggedBefore - draggedAfter
-      if (Math.abs(delta) >= 0.5) {
-        draggedEl.style.translate = translateFor(delta)
+    if (draggedEl && draggedBefore && draggedAfter) {
+      const delta = pointDelta(draggedBefore, draggedAfter)
+      if (delta) {
+        // Revealed first: that clears the drag's own lift, and the glide then applies its own.
         reveal(draggedEl)
-        const spring = createSpring(delta, DROP_SPRING, (offset) => {
-          draggedEl.style.translate = translateFor(offset)
-        })
-        spring.set(0, { velocity: releaseVelocity })
-        settling.push(spring)
+        settler.glide(draggedEl, value, delta, alongVelocity(releaseVelocity), true)
       } else {
         reveal(draggedEl)
       }
@@ -767,23 +826,24 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
    * carrying each row's own mid-shift velocity. Extracted so a cross-container
    * drop's origin side (rows closing the gap left behind) can reuse it too. */
   function flipOtherRows(
-    before: Map<HTMLElement, number>,
-    after: Map<HTMLElement, number>,
+    before: Map<HTMLElement, Point>,
+    after: Map<HTMLElement, Point>,
     shiftVelocities: Map<HTMLElement, number>,
     skipEl: HTMLElement | null,
   ) {
+    const valueOf = new Map<HTMLElement, string | number>()
+    for (const row of rows()) {
+      const el = options.getElement(row.value)
+      if (el) valueOf.set(el, row.value)
+    }
     for (const [el, beforeTop] of before) {
       if (el === skipEl) continue
+      const value = valueOf.get(el)
       const afterTop = after.get(el)
-      if (afterTop == null) continue
-      const delta = beforeTop - afterTop
-      if (Math.abs(delta) < 0.5) continue
-      const spring = createSpring(delta, DROP_SPRING, (offset) => {
-        el.style.translate = translateFor(offset)
-      })
-      el.style.translate = translateFor(delta)
-      spring.set(0, { velocity: shiftVelocities.get(el) ?? undefined })
-      settling.push(spring)
+      if (value == null || !afterTop) continue
+      const delta = pointDelta(beforeTop, afterTop)
+      if (!delta) settler.watch(el, value)
+      else settler.glide(el, value, delta, alongVelocity(shiftVelocities.get(el) ?? 0))
     }
   }
 
@@ -801,15 +861,18 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       return
     }
 
-    // touchDragDelay can commit a grab before any movement — dropped back
-    // at the exact same spot, that's a no-op, not a real drop.
+    // Dropped back at the exact same spot: a no-op for the data, not a real drop. A pointer
+    // drag still carried the row away from its slot, so it springs home like a cancelled one;
+    // a touchDragDelay grab with no movement has nothing to settle.
     if (
       sourceFrom &&
       at.parentValue === sourceFrom.parentValue &&
       at.index === sourceFrom.index &&
       at.depth === sourceFrom.depth
     ) {
-      finish()
+      const el = options.getElement(value)
+      if (source === 'pointer' && el?.style.translate) await revert()
+      else finish()
       return
     }
 
@@ -856,11 +919,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     // actual last position, or the hand-off below teleports from where the
     // drag started instead of from under the pointer.
     if (previewEl && draggedEl) {
-      const previewStart =
-        axis() === 'x'
-          ? parseFloat(previewEl.style.insetInlineStart)
-          : parseFloat(previewEl.style.insetBlockStart)
-      if (!Number.isNaN(previewStart)) before.set(draggedEl, previewStart)
+      const rect = previewEl.getBoundingClientRect()
+      before.set(draggedEl, { x: rect.left, y: rect.top })
     }
     const releaseVelocity = velocity
     const shiftVelocities = captureShiftVelocities()
@@ -889,7 +949,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     // The dragged row is revealed here, first, in the same synchronous step
     // as applying its starting offset — so it never paints a frame at its
     // natural position with no offset before the catch-up spring takes over.
-    flipDraggedElement(draggedEl, before, after, releaseVelocity)
+    flipDraggedElement(draggedEl, value, before, after, releaseVelocity)
     flipOtherRows(before, after, shiftVelocities, draggedEl)
   }
 
@@ -1020,6 +1080,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     if (autoScrollFrame === null) autoScrollFrame = requestAnimationFrame(autoScrollLoop)
   }
   onScopeDispose(() => {
+    settler.clear()
     if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame)
     clearTouchHoldTimer()
     scheduleAutoExpand(null)
@@ -1161,6 +1222,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     previewEl = null
   }
   let velocity = 0
+  /** Where along the axis the row was grabbed, from its start. */
+  let grabAlong = 0
 
   function onHandlePointerdown(event: PointerEvent, value: string | number) {
     if (isDisabled() || event.button !== 0 || isGrabbed.value) return
@@ -1216,6 +1279,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
     committed = true
     isDragging.value = true
+    grabAlong = (axis() === 'x' ? startX : startY) - bandOf(dragEl).start
     startAutoScroll()
     try {
       dragEl?.setPointerCapture(pointerId!)
@@ -1369,7 +1433,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       say('move')
       return
     }
-    currentIndex = resolveInsertionIndex(bands, pointer)
+    // The dragged block's centre, not the pointer: a tall card grabbed near its top would otherwise
+    // have to travel most of its own height past the next row before anything opened for it.
+    currentIndex = resolveInsertionIndex(bands, pointer - grabAlong + blockHeight / 2)
     applyTarget(currentIndex, nested() ? across : 0)
     say('move')
   }
@@ -1553,12 +1619,15 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
           // list — create the preview from the real element's current
           // (already-translated) position, seamlessly.
           if (dragEl && !previewEl) {
-            createPreview(dragEl, lastPointerEvent, toValue(options.previewMode) ?? 'element')
+            const el = dragEl
+            reflowRows(() =>
+              createPreview(el, lastPointerEvent, toValue(options.previewMode) ?? 'element'),
+            )
           }
         } else if (previewEl) {
           // Back on home turf — drop the preview, the real element resumes
           // translating directly on the very next pointermove.
-          destroyPreview()
+          reflowRows(destroyPreview)
         }
       },
       onForeignHover: (isHovered) => {
@@ -1580,6 +1649,15 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
         say('cancel')
         return revert()
       },
+      // Only the dragged row landing in its new list is raised; that list's rows making room aren't.
+      settle: (el, rowValue, offset, releaseVelocity, raise) =>
+        settler.glide(el, rowValue, offset, releaseVelocity, raise),
+      watchRows: () => {
+        for (const row of rows()) {
+          const el = options.getElement(row.value)
+          if (el) settler.watch(el, row.value)
+        }
+      },
       destroyOwnPreview: destroyPreview,
     }
     const unregister = options.group.__register(ownGroupId, binding)
@@ -1590,6 +1668,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     activeValue,
     isDragging,
     isGrabbed,
+    isSettling,
     dropPosition,
     draggedValues,
     isGrabbedValue: (value) => draggedValues.value.has(value),

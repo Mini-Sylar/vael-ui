@@ -25,7 +25,13 @@
     />
     <div class="dash-sidebar-top">
       <!-- Workspace switcher: the store and the repo dashboards share this shell. -->
-      <Menu :items="workspaceItems" align="start" data-dash-overlay @select="onWorkspaceSelect">
+      <Menu
+        :items="workspaceItems"
+        align="start"
+        :teleport-to="shell ?? undefined"
+        data-dash-overlay
+        @select="onWorkspaceSelect"
+      >
         <template #trigger>
           <button
             id="dash-workspace-trigger"
@@ -140,6 +146,7 @@
             :items="settingsChildren"
             side="right"
             align="start"
+            :teleport-to="shell ?? undefined"
             data-dash-overlay
             @select="onSettingsSelect"
           >
@@ -158,6 +165,7 @@
             :items="reportsChildren"
             side="right"
             align="start"
+            :teleport-to="shell ?? undefined"
             data-dash-overlay
             @select="onReportSelect"
           >
@@ -181,6 +189,7 @@
         :items="accountMenuItems"
         side="top"
         align="start"
+        :teleport-to="shell ?? undefined"
         data-dash-overlay
         @select="onAccountSelect"
       >
@@ -211,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef } from 'vue'
+import { computed, inject, shallowRef, useTemplateRef } from 'vue'
 import type { Component } from 'vue'
 import { useElementSize } from '@vueuse/core'
 import {
@@ -240,12 +249,15 @@ import {
   PhStorefront,
   PhUsers,
 } from '@phosphor-icons/vue'
+import { dashboardShellKey } from './dashboardNavigate'
 import type { DashPage, DashVariant } from './dashboardNavigate'
 import { repo } from './repoData'
 import Logo from '../Logo.vue'
 
 const variant = defineModel<DashVariant>('variant', { default: 'store' })
 const activePage = defineModel<DashPage>('activePage', { default: 'overview' })
+// Menus teleport into the dashboard shell so they stay inside the frame.
+const shell = inject(dashboardShellKey, undefined)
 
 const WORKSPACES: Record<DashVariant, string> = { store: 'Acme store', repo: 'vael-ui / main' }
 const workspaceName = computed(() => WORKSPACES[variant.value])
@@ -337,7 +349,9 @@ const settingsChildren: MenuItemData[] = [
   { label: 'Billing', value: 'billing' },
 ]
 function onSettingsSelect(item: MenuItemData) {
-  toast.info(`"${item.label}" isn't wired to a real page in this showcase.`)
+  toast.info(`"${item.label}" isn't wired to a real page in this showcase.`, {
+    toaster: 'dashboard',
+  })
 }
 
 const reportsChildren: MenuItemData[] = [
@@ -345,7 +359,7 @@ const reportsChildren: MenuItemData[] = [
   { label: 'Export CSV', value: 'export-csv' },
 ]
 function onReportSelect(item: MenuItemData) {
-  toast.info(`"${item.label}" isn't a real page in this showcase.`)
+  toast.info(`"${item.label}" isn't a real page in this showcase.`, { toaster: 'dashboard' })
 }
 
 const settingsOpen = shallowRef(true)
@@ -358,10 +372,12 @@ const accountMenuItems: MenuItemData[] = [
 ]
 function onAccountSelect(item: MenuItemData) {
   if (item.value === 'signout') {
-    toast('Signed out (nothing actually happens in this demo).')
+    toast('Signed out (nothing actually happens in this demo).', { toaster: 'dashboard' })
     return
   }
-  toast.info(`"${item.label}" isn't wired to a real page in this showcase.`)
+  toast.info(`"${item.label}" isn't wired to a real page in this showcase.`, {
+    toaster: 'dashboard',
+  })
 }
 
 defineExpose({ collapsed })
@@ -524,6 +540,7 @@ defineExpose({ collapsed })
 
 .dash-nav-group-trigger,
 .dash-nav-group-trigger-collapsed {
+  /* A button's box is its own layer (vael-ui 0.5): colour it through these variables. */
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -532,7 +549,7 @@ defineExpose({ collapsed })
   padding: 0.5rem 0.625rem;
   border: 0;
   border-radius: 8px;
-  background: transparent;
+  --ui-button-bg: transparent;
   color: var(--ui-text-muted);
   font: inherit;
   font-size: 0.8125rem;
@@ -559,7 +576,8 @@ defineExpose({ collapsed })
 }
 .dash-nav-group-trigger:hover,
 .dash-nav-group-trigger-collapsed:hover {
-  background: var(--ui-muted-hover);
+  /* A button's box is its own layer (vael-ui 0.5): colour it through these variables. */
+  --ui-button-bg: var(--ui-muted-hover);
   color: var(--ui-text);
 }
 .dash-nav-group-trigger:focus-visible,
@@ -643,7 +661,8 @@ defineExpose({ collapsed })
   place-items: center;
 }
 .dash-user-trigger:hover {
-  background: var(--ui-muted-hover);
+  /* A button's box is its own layer (vael-ui 0.5): colour it through these variables. */
+  --ui-button-bg: var(--ui-muted-hover);
 }
 .dash-user-trigger:focus-visible {
   outline: 2px solid var(--ui-primary);

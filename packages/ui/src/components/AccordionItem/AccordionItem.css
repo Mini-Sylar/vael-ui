@@ -38,14 +38,14 @@
   .ui-accordion-chevron {
     flex: none;
     color: var(--ui-text-muted);
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-accordion-trigger[aria-expanded='true'] .ui-accordion-chevron {
     transform: rotate(180deg);
   }
   .ui-accordion-panel {
     contain: layout;
-    transition: block-size var(--ui-duration-enter) var(--ui-ease-in-out);
+    transition: block-size var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-accordion-body {
     /* Matches the trigger's inline padding so title and content share a start edge. */

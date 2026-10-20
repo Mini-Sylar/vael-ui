@@ -80,9 +80,11 @@
     "MenuList": "Die Zeilen von Menu, im Seitenfluss statt in einem Dropdown gerendert, für eine dauerhafte Navigation in der Seitenleiste.",
     "Message": "Ein Inline-Banner für Statustext: Info, Erfolg, Warnung oder Fehler.",
     "OtpInput": "Eine Reihe von Einzelzeichenfeldern für Einmalcodes mit Einfügen und automatischem Vorrücken.",
+    "Editable": "Text, der beim Klicken zu einem Eingabefeld wird und mit Enter oder beim Verlassen speichert, zum Umbenennen an Ort und Stelle.",
+    "ColorPicker": "Ein Farbfeld, das einen Farbwähler öffnet: Fläche für Sättigung und Helligkeit, Farbton-Regler, Hex-Feld, Pipette wo der Browser eine hat, und optionale Voreinstellungen.",
     "Pagination": "Seitenzahl-Steuerelemente zum Aufteilen einer langen Liste oder Tabelle auf mehrere Seiten.",
     "Popover": "Ein schwebendes Panel, das an einem Auslöserelement verankert ist, für Menüs, Formulare oder zusätzliche Details.",
-    "Progress": "Ein Fortschrittsbalken für eine Aufgabe, mit bestimmtem und unbestimmtem Zustand.",
+    "Progress": "Ein Fortschrittsbalken für eine Aufgabe oder gestapelte Anteile eines Ganzen, mit bestimmtem und unbestimmtem Zustand und optionaler Legende.",
     "PullToRefresh": "Eine Pulldown-Geste oben in einem Scroll-Container, die eine Aktualisierung auslöst.",
     "Radio": "Eine Option aus einer Gruppe, die sich gegenseitig ausschließt. Verwenden Sie sie immer innerhalb einer RadioGroup.",
     "RadioGroup": "Gruppiert eine Reihe von Radio-Buttons, sodass jeweils nur einer ausgewählt werden kann.",
@@ -111,7 +113,13 @@
     "Rating": "Klicken, ziehen oder verwenden Sie die Pfeiltasten, um einen Wert in einer Reihe von Sternen auszuwählen, optional mit Halbschrittgenauigkeit.",
     "Timeline": "Eine geordnete Liste von Schritten, die durch eine Linie verbunden sind. Jeder Schritt kann beliebigen Inhalt enthalten.",
     "BreadcrumbItem": "Ein Link oder die aktuelle Seite in einem Breadcrumb-Pfad.",
-    "BreadcrumbSeparator": "Das Trennzeichen zwischen zwei BreadcrumbItems: ein Chevron, sofern Sie keinen eigenen Inhalt übergeben."
+    "BreadcrumbSeparator": "Das Trennzeichen zwischen zwei BreadcrumbItems: ein Chevron, sofern Sie keinen eigenen Inhalt übergeben.",
+    "ButtonGroup": "Verbindet Buttons zu einer Zeile oder Spalte und macht sie auf Wunsch zu Einzel- oder Mehrfach-Umschaltern.",
+    "CommandPalette": "Eine durchsuchbare Befehlsliste in einem Dialog, geöffnet per Button oder Tastenkürzel wie ⌘K.",
+    "Stepper": "Zeigt den Fortschritt durch eine Abfolge von Schritten und lässt zwischen ihnen wechseln.",
+    "Breadcrumb": "Eine Linkspur von der obersten Ebene der Seite bis zur aktuellen Seite.",
+    "AvatarGroup": "Stapelt mehrere Avatare überlappend in einer Reihe, mit einer Zahl für die, die nicht passen.",
+    "ScrollArea": "Ein Scrollbereich mit schmalen, gestalteten Scrollleisten und ausgeblendeten Rändern, in eine oder beide Richtungen."
   },
   "gettingStarted": {
     "darkModeIntro": "Der Dark Mode funktioniert rein über CSS. Er folgt <code>&lt;html data-theme=\"dark\"&gt;</code> und greift ersatzweise auf <code>prefers-color-scheme</code> zurück. vael-ui liefert keine Umschalt-UI mit. <code>useColorScheme()</code> verfolgt Änderungen der Systemeinstellung und speichert die Auswahl über die von Ihnen übergebene Option <code>persist</code>:",
@@ -177,7 +185,15 @@
     "radiusSharp": "Scharf",
     "radiusSoft": "Weich",
     "theme": "Thema anpassen",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "appearance": "Darstellung",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System",
+    "demos": "Demos",
+    "general": "Allgemein",
+    "mode": "Modus",
+    "fontSize": "Schriftgröße"
   },
   "home": {
     "tagline": "Über 60 Komponenten für Vue 3, aus einer Quelle kompiliert – für den klassischen VDOM-Build und für Vue Vapor.",
@@ -198,7 +214,7 @@
     "featureSkillTitle": "KI-Agent-Fähigkeit",
     "themeLabel": "Farbe ausprobieren:",
     "newTag": "Neu",
-    "newText": "Jede Prop direkt im Editor dokumentiert",
+    "newText": "0.5.0: federnde Ordner, Farbwähler, Bearbeiten an Ort und Stelle",
     "showcaseLabel": "Live-Demo, gebaut mit vael-ui"
   },
   "metaTable": {
@@ -223,7 +239,6 @@
     "tailwindGuide": "Verwendung mit Rückenwind",
     "i18nKeysGuide": "vael-ui übersetzen",
     "menu": "Speisekarte",
-    "openMenu": "Menü öffnen",
     "composables": "Composables",
     "autoImportGuide": "Automatischer Import",
     "nuxtGuide": "Nuxt",
@@ -233,7 +248,10 @@
     "next": "Weiter",
     "pager": "Vorherige und nächste Seite",
     "mainNav": "Hauptnavigation",
-    "sidebarNav": "Dokumentation"
+    "sidebarNav": "Dokumentation",
+    "searchShort": "Suchen",
+    "support": "Unterstützen",
+    "searchAll": "Komponenten, Props und Guides durchsuchen…"
   },
   "pageNotes": {
     "Resizable": "Die eigene Seitenleiste dieser Site wurde mit Resizable erstellt. \nZiehen Sie am rechten Rand, um es auszuprobieren.",
@@ -369,7 +387,8 @@
   "notFound": {
     "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
     "home": "Zurück zu Hause",
-    "title": "Seite nicht gefunden"
+    "title": "Seite nicht gefunden",
+    "didYouMean": "Meintest du:"
   },
   "composable": {
     "noParameters": "Akzeptiert keine Argumente.",
@@ -448,5 +467,40 @@
     "orange": "Orange",
     "green": "Grün",
     "custom": "Eigene Farbe"
+  },
+  "dockTour": {
+    "componentsTitle": "Die Komponenten sind jetzt hier unten",
+    "componentsDescription": "Das Menü ist aus der oberen Leiste ins Dock gewandert, näher an deinen Daumen.",
+    "settingsTitle": "Der Dunkelmodus ist in den Einstellungen",
+    "settingsDescription": "Zusammen mit Akzentfarbe, Eckenradius, Größe, Schriftgröße, Sprache und mehr.",
+    "replayLabel": "Tour",
+    "replay": "Erneut zeigen",
+    "searchTitle": "Die Suche ist einen Tipp entfernt",
+    "searchDescription": "Finde jede Komponente, jeden Guide und jedes Composable nach Namen, mit einer kurzen Beschreibung.",
+    "variantTitle": "Vue DOM oder Vapor, ganz oben",
+    "variantDescription": "Schalte hier jede Demo zwischen dem klassischen Build und Vapor um."
+  },
+  "search": {
+    "actions": "Befehle",
+    "current": "Aktuell",
+    "on": "An",
+    "off": "Aus",
+    "copyInstall": "Installationsbefehl kopieren",
+    "reportIssue": "Problem melden",
+    "recent": "Zuletzt",
+    "drillIn": "{name}-API",
+    "copy": {
+      "import": "Import kopieren",
+      "usage": "Verwendung kopieren",
+      "link": "Link kopieren",
+      "command": "Kopieren"
+    },
+    "noResults": "Keine Ergebnisse für „{query}“",
+    "didYouMean": "Meintest du",
+    "request": "Auf GitHub anfragen",
+    "copied": "In die Zwischenablage kopiert",
+    "back": "Alle Ergebnisse",
+    "copiedShort": "Kopiert",
+    "noCommands": "Keine Befehle passen zu „{query}“"
   }
 }

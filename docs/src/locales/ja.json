@@ -82,9 +82,11 @@
     "MenuList": "Menu の行をドロップダウンではなくページの流れの中に描画します。常設のサイドバーナビゲーション向け。",
     "Message": "ステータス テキストのインライン バナー: 情報、成功、警告、またはエラー。",
     "OtpInput": "ワンタイム コード用の 1 文字ボックスの行。貼り付けと自動送りが可能。",
+    "Editable": "クリックすると入力欄に変わり、Enter またはフォーカスを外すと保存されるテキスト。その場で名前を変更するために。",
+    "ColorPicker": "カラーピッカーを開く色見本。彩度と明度の平面、色相スライダー、16 進数フィールド、ブラウザが対応していればスポイト、任意のプリセット。",
     "Pagination": "長いリストまたは表を複数のページに分割するためのページ番号コントロール。",
     "Popover": "メニュー、フォーム、または追加の詳細用に、トリガー要素に固定されたフローティング パネル。",
-    "Progress": "タスクの進行状況を示すプログレスバー。確定・不確定の両方の状態に対応。",
+    "Progress": "タスクの進行状況、または全体に対する積み上げ割合を示すプログレスバー。確定・不確定の両状態と任意の凡例に対応。",
     "PullToRefresh": "スクロール コンテナの上部にあるプルダウン ジェスチャで、更新をトリガーします。",
     "Radio": "相互排他的なセットの中の 1 つの選択肢。必ず RadioGroup の中で使います。",
     "RadioGroup": "一度に 1 つだけ選択できるように、複数の Radio ボタンをまとめます。",
@@ -111,7 +113,13 @@
     "BreadcrumbItem": "Breadcrumb 内のリンク、または現在のページを表す項目です。",
     "BreadcrumbSeparator": "2 つの BreadcrumbItem の間の区切り。独自のコンテンツを渡さない限りシェブロンを表示します。",
     "Rating": "クリック、ドラッグ、または矢印キーで星の列から値を選びます。半分の星にも対応できます。",
-    "Timeline": "線でつながった手順の順序付きリストです。各手順には任意のコンテンツを入れられます。"
+    "Timeline": "線でつながった手順の順序付きリストです。各手順には任意のコンテンツを入れられます。",
+    "ButtonGroup": "ボタンを1つの行または列につなげ、単一または複数選択のトグルにもできます。",
+    "CommandPalette": "ダイアログ内で検索できるコマンド一覧。ボタンや ⌘K などのショートカットで開きます。",
+    "Stepper": "一連のステップの進み具合を示し、ステップ間を移動できます。",
+    "Breadcrumb": "サイトの最上位から現在のページまでのリンクの道筋です。",
+    "AvatarGroup": "複数のアバターを重ねて1行に並べ、収まらない分は数で表示します。",
+    "ScrollArea": "テーマに合わせた細いスクロールバーと端のフェードを備えたスクロール領域。縦横どちらにも対応します。"
   },
   "gettingStarted": {
     "darkModeIntro": "ダークモードは CSS のみで実装されています。<code>&lt;html data-theme=\"dark\"&gt;</code> に従い、指定がなければ <code>prefers-color-scheme</code> にフォールバックします。vael-ui は切り替え UI を提供しません。<code>useColorScheme()</code> は OS 設定の変更を追跡し、渡した <code>persist</code> オプションを通じて選択を保存します。",
@@ -177,7 +185,15 @@
     "radiusSharp": "シャープ",
     "radiusSoft": "柔らかい",
     "theme": "テーマのカスタマイズ",
-    "settings": "設定"
+    "settings": "設定",
+    "appearance": "外観",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "demos": "デモ",
+    "general": "一般",
+    "mode": "モード",
+    "fontSize": "文字サイズ"
   },
   "home": {
     "tagline": "Vue 3 向けの 60 以上のコンポーネント。1 つのソースから従来の VDOM ビルドと Vue Vapor の両方にコンパイルされます。",
@@ -198,7 +214,7 @@
     "featureSkillTitle": "AI エージェントスキル",
     "themeLabel": "カラーを試す:",
     "newTag": "新着",
-    "newText": "すべての Prop をエディター上で確認",
+    "newText": "0.5.0: スプリングで開くフォルダー、カラーピッカー、インライン編集",
     "showcaseLabel": "vael-ui で作ったライブデモ"
   },
   "i18nKeys": {
@@ -230,7 +246,6 @@
     "stylingAndLayersGuide": "スタイリング層とカスケード層",
     "tailwindGuide": "Tailwind との併用",
     "menu": "メニュー",
-    "openMenu": "メニューを開く",
     "composables": "コンポーザブル",
     "autoImportGuide": "自動インポート",
     "nuxtGuide": "ナクスト",
@@ -240,7 +255,10 @@
     "next": "次へ",
     "pager": "前後のページ",
     "mainNav": "メイン",
-    "sidebarNav": "ドキュメント"
+    "sidebarNav": "ドキュメント",
+    "searchShort": "検索",
+    "support": "サポート",
+    "searchAll": "コンポーネント、Props、ガイドを検索…"
   },
   "pageNotes": {
     "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。",
@@ -350,7 +368,8 @@
   "notFound": {
     "body": "お探しのページは存在しないか、移動されました。",
     "home": "家に帰ります",
-    "title": "ページが見つかりません"
+    "title": "ページが見つかりません",
+    "didYouMean": "もしかして:"
   },
   "composable": {
     "noParameters": "引数は取りません。",
@@ -448,5 +467,40 @@
     "value": "値",
     "modifiers": "修飾子",
     "noModifiers": "修飾子はありません。"
+  },
+  "dockTour": {
+    "componentsTitle": "コンポーネントはこちらに移動しました",
+    "componentsDescription": "メニューは上部のバーから、親指の届きやすいドックに移りました。",
+    "settingsTitle": "ダークモードは設定にあります",
+    "settingsDescription": "テーマカラー、角の丸み、サイズ、文字サイズ、言語なども設定から変更できます。",
+    "replayLabel": "ツアー",
+    "replay": "もう一度見る",
+    "searchTitle": "検索はワンタップで",
+    "searchDescription": "コンポーネント、ガイド、コンポーザブルを名前で探せます。短い説明付きです。",
+    "variantTitle": "Vue DOM と Vapor は上部で切り替え",
+    "variantDescription": "すべてのデモをここでクラシック版と Vapor で切り替えられます。"
+  },
+  "search": {
+    "actions": "コマンド",
+    "current": "現在",
+    "on": "オン",
+    "off": "オフ",
+    "copyInstall": "インストールコマンドをコピー",
+    "reportIssue": "問題を報告",
+    "recent": "最近",
+    "drillIn": "{name} の API",
+    "copy": {
+      "import": "インポートをコピー",
+      "usage": "使い方をコピー",
+      "link": "リンクをコピー",
+      "command": "コピー"
+    },
+    "noResults": "「{query}」の結果はありません",
+    "didYouMean": "もしかして",
+    "request": "GitHub でリクエスト",
+    "copied": "クリップボードにコピーしました",
+    "back": "すべての結果",
+    "copiedShort": "コピーしました",
+    "noCommands": "「{query}」に一致するコマンドはありません"
   }
 }

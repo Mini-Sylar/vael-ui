@@ -116,7 +116,7 @@
   .ui-stepper-check-enter-from,
   .ui-stepper-check-leave-to {
     opacity: 0;
-    scale: 0.6;
+    scale: 0.9;
   }
 
   .ui-stepper-content {
@@ -162,7 +162,7 @@
     inset-inline-start: calc(0.875rem - 1px);
     inline-size: 2px;
     background: var(--ui-border);
-    transition: background-color var(--ui-duration-press) var(--ui-ease-out);
+    transition: background-color var(--ui-duration-press) ease;
   }
   .ui-stepper--vertical .ui-stepper-step[data-state='completed']:not(:last-child)::after {
     background: var(--ui-primary);
@@ -221,7 +221,12 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-stepper-circle,
+    .ui-stepper-circle {
+      transition:
+        background-color var(--ui-duration-press) ease,
+        border-color var(--ui-duration-press) ease,
+        color var(--ui-duration-press) ease;
+    }
     .ui-stepper-connector::after {
       transition: none;
     }

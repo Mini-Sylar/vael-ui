@@ -16,7 +16,7 @@
         <Button size="sm" variant="ghost">Attach</Button>
       </template>
       <template #bottom-end>
-        <span class="demo-status char-count">{{ composerValue.length }}/280</span>
+        <span class="demo-status">{{ composerValue.length }}/280</span>
         <Button size="sm" :disabled="!composerValue">Post</Button>
       </template>
     </Textarea>
@@ -44,8 +44,5 @@ const composerValue = shallowRef('')
   background: var(--ui-muted);
   font-size: 0.6875rem;
   font-weight: 600;
-}
-.char-count {
-  margin-inline-end: 0.5rem;
 }
 </style>

@@ -12,17 +12,19 @@
         :data-side="resolvedSide"
         :data-instant="instant || undefined"
         :data-traveling="traveling || undefined"
-        :data-sizing-locked="travelActive || undefined"
+        :data-morphing="morphing || undefined"
       >
         <div
           :id="tooltipId"
           ref="panel"
           role="tooltip"
           :class="panelPart.class"
-          :style="[{ transformOrigin }, panelPart.style]"
+          :style="[{ transformOrigin }, panelStyle, panelPart.style]"
           v-bind="$attrs"
         >
-          <slot :content="content" :side="resolvedSide">{{ content }}</slot>
+          <span class="ui-tooltip-content">
+            <slot :content="content" :side="resolvedSide">{{ content }}</slot>
+          </span>
         </div>
       </div>
     </Transition>
@@ -92,12 +94,25 @@ const core = useTooltipCore(open, {
   positionerEl,
   side: () => config.value?.side ?? props.side ?? 'top',
   align: () => config.value?.align ?? 'center',
+  // 8 is the core's own default gap.
+  sideOffset: () => {
+    const offset = config.value?.sideOffset
+    return (typeof offset === 'function' ? offset() : offset) ?? 8
+  },
   openDelay: () => config.value?.openDelay ?? props.openDelay ?? 400,
   closeDelay: () => config.value?.closeDelay ?? props.closeDelay ?? 100,
   beforeClose: () => config.value?.beforeClose ?? props.beforeClose,
 })
-const { positionerStyle, placement, transformOrigin, isClosing, instant, traveling, travelActive } =
-  core
+const {
+  positionerStyle,
+  panelStyle,
+  placement,
+  transformOrigin,
+  isClosing,
+  instant,
+  traveling,
+  morphing,
+} = core
 
 const content = computed(() => config.value?.content ?? '')
 // Per-target override with host default (like side/openDelay/closeDelay).

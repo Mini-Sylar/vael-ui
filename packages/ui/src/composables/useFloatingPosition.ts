@@ -111,10 +111,14 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
     // again) — this result is stale, discard it rather than clobber a more current position.
     if (token !== updateToken) return
 
+    // Whole device pixels: a fractional offset blurs the text, and once an animation ends the
+    // text shifts onto the pixel grid, which reads as a flinch.
+    const dpr = window.devicePixelRatio || 1
+    const snap = (value: number) => Math.round(value * dpr) / dpr
     positionerStyle.value = {
       position: 'absolute',
-      top: `${result.y}px`,
-      left: `${result.x}px`,
+      top: `${snap(result.y)}px`,
+      left: `${snap(result.x)}px`,
       visibility: 'visible',
       ...(anchorInlineSize ? { '--ui-anchor-inline-size': anchorInlineSize } : {}),
     }

@@ -67,6 +67,22 @@
   .ui-dock-item:active:not([style*='transform']) {
     transform: scale(0.94);
   }
+  /* A tapped item pops up and settles, the way a dock icon bounces, in place of the magnification
+     a hovering pointer would have given. */
+  .ui-dock-item[data-bounce] {
+    animation: ui-dock-bounce 420ms var(--ui-ease-out);
+  }
+  @keyframes ui-dock-bounce {
+    0% {
+      transform: translateY(0) scale(1);
+    }
+    35% {
+      transform: translateY(-7px) scale(1.08);
+    }
+    100% {
+      transform: translateY(0) scale(1);
+    }
+  }
   .ui-dock-item-badge {
     position: absolute;
     inset-block-start: -0.25rem;
@@ -90,6 +106,9 @@
     }
     .ui-dock-item:active {
       scale: 1;
+    }
+    .ui-dock-item[data-bounce] {
+      animation: none;
     }
   }
 }

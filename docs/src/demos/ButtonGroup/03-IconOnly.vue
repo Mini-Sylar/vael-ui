@@ -7,7 +7,18 @@
         <Button variant="outline" size="sm" icon aria-label="Zoom out" @click="zoom--">
           <PhMinus weight="bold" />
         </Button>
-        <Button variant="outline" size="sm" @click="zoom = 100"> {{ zoom }}% </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          @click="zoom = 100"
+          :ui="{
+            label: {
+              style: 'font-variant-numeric: tabular-nums; font-weight: 500; padding: 0 0.5rem;',
+            },
+          }"
+        >
+          {{ zoom }}%
+        </Button>
         <Button variant="outline" size="sm" icon aria-label="Zoom in" @click="zoom++">
           <PhPlus weight="bold" />
         </Button>

@@ -215,6 +215,28 @@ test('disabledDates blocks a specific date, given as either a list or a predicat
   await expect.element(predicateScreen.getByTestId('model')).toMatchTextContent('Jun 15 2024')
 })
 
+test("clicking a disabled day from the next or previous month doesn't move to that month", async () => {
+  const screen = await render(CalendarFixture, {
+    props: {
+      initialValue: JUNE_15_2024,
+      firstDayOfWeek: 0,
+      disabledDates: [new Date(2024, 4, 31)],
+    },
+  })
+  const label = screen.container.querySelector<HTMLElement>('.ui-calendar-label')!
+  const may31 = cellByIso('2024-05-31')!
+  expect(may31.classList.contains('ui-calendar-cell--outside')).toBe(true)
+  expect(may31.getAttribute('aria-disabled')).toBe('true')
+  await userEvent.click(may31, { force: true })
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  expect(label.textContent).toContain('June 2024')
+  await expect.element(screen.getByTestId('model')).toMatchTextContent('Jun 15 2024')
+
+  // An enabled adjacent-month day still moves there.
+  await userEvent.click(cellByIso('2024-05-30')!, { force: true })
+  await expect.element(label).toHaveTextContent('May 2024')
+})
+
 test('keyboard navigation: Left/Right/Up/Down move focus by day, Enter selects the focused day', async () => {
   const screen = await render(CalendarFixture, { props: { initialValue: JUNE_15_2024 } })
   const start = cellByIso('2024-06-15')!

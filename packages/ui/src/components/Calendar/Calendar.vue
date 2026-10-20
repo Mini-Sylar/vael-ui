@@ -54,6 +54,7 @@
            dropped when drilling up to the year grid. -->
       <button
         v-if="!splitMonths"
+        ref="labelButton"
         type="button"
         :class="[labelPart.class, canDrill && 'ui-calendar-label--button']"
         :style="labelPart.style"
@@ -65,6 +66,7 @@
         <Transition
           :name="props.motionCss ? 'ui-calendar-label' : undefined"
           :css="props.motionCss"
+          mode="out-in"
         >
           <span :key="headerLabel" class="ui-calendar-label-text">
             <slot name="label" :label="headerLabel" :date="viewDate" :level="navLevel">{{
@@ -137,6 +139,7 @@
                 <Transition
                   :name="props.motionCss ? 'ui-calendar-label' : undefined"
                   :css="props.motionCss"
+                  mode="out-in"
                 >
                   <button
                     :key="monthKeyOf(pane)"
@@ -862,6 +865,8 @@ function selectDate(day: Date) {
   else commitSingle(day)
 }
 function onDayClick(day: Date) {
+  // A disabled day does nothing, including the jump to its month when it's an adjacent month's day.
+  if (isDayDisabled(day)) return
   focusedDate.value = day
   if (!isShownMonth(day)) showMonth(day)
   selectDate(day)
@@ -912,6 +917,51 @@ function setGridEl(el: Element | ComponentPublicInstance | null) {
   gridEl.value = el instanceof HTMLElement ? el : null
 }
 const bodyEl = useTemplateRef<HTMLElement>('bodyEl')
+const labelButton = useTemplateRef<HTMLElement>('labelButton')
+
+// The label button is as wide as its text, so a new name would snap it to a new width and the
+// centred text would jump sideways. The incoming name is measured ahead with a hidden copy, and
+// the width eases over the whole swap (the old name out, the new one in) as one movement.
+watch(
+  headerLabel,
+  (next) => {
+    const button = labelButton.value
+    const text = button?.querySelector<HTMLElement>('.ui-calendar-label-text')
+    if (!button || !text || !props.motionCss) return
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    // A custom #label renders more than text; only the plain name is measured.
+    if (text.childElementCount > 0) return
+    button.style.inlineSize = ''
+    const before = button.offsetWidth
+    const probe = text.cloneNode(false) as HTMLElement
+    probe.textContent = next
+    probe.className = text.className.split(' ')[0] ?? ''
+    probe.style.position = 'absolute'
+    probe.style.visibility = 'hidden'
+    probe.style.whiteSpace = 'nowrap'
+    button.append(probe)
+    const after = before - text.offsetWidth + probe.offsetWidth
+    probe.remove()
+    if (!after || Math.abs(after - before) < 1) return
+    button.style.transition = 'none'
+    button.style.inlineSize = `${before}px`
+    button.style.textOverflow = 'clip'
+    void button.offsetWidth
+    button.style.transition =
+      'inline-size calc(var(--ui-duration-tooltip-exit) + var(--ui-duration-enter)) var(--ui-ease-out)'
+    button.style.inlineSize = `${after}px`
+    button.addEventListener(
+      'transitionend',
+      () => {
+        button.style.transition = ''
+        button.style.inlineSize = ''
+        button.style.textOverflow = ''
+      },
+      { once: true },
+    )
+  },
+  { flush: 'pre' },
+)
 
 // FLIP-style height animation: Vue's Transition already handles the grid's
 // own slide/fade, but the body's overall height (a 4-week vs. 6-week month,
@@ -931,7 +981,7 @@ function animateBodyHeight(mutate: () => void) {
   nextTick(() => {
     const after = body.offsetHeight
     if (!after || before === after) return
-    body.style.overflow = 'hidden'
+    body.style.overflowY = 'clip'
     body.style.blockSize = `${before}px`
     void body.offsetHeight
     requestAnimationFrame(() => {
@@ -941,7 +991,7 @@ function animateBodyHeight(mutate: () => void) {
     body.addEventListener(
       'transitionend',
       () => {
-        body.style.overflow = ''
+        body.style.overflowY = ''
         body.style.blockSize = ''
         body.style.transition = ''
       },

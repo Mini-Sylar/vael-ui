@@ -6,7 +6,7 @@
       label-key="label"
       :group="board"
       group-id="todo"
-      style="width: 160px"
+      style="width: 160px; min-block-size: 200px"
     >
       <template #item="{ item }">
         <span :data-testid="`label-${item.id}`">{{ item.label }}</span>
@@ -18,7 +18,7 @@
       label-key="label"
       :group="board"
       group-id="doing"
-      style="width: 160px"
+      style="width: 160px; min-block-size: 200px"
     >
       <template #item="{ item }">
         <span :data-testid="`label-${item.id}`">{{ item.label }}</span>

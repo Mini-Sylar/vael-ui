@@ -1,11 +1,12 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h } from 'vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import DockFixture from './fixtures/DockFixture.vue'
 import Dock from '../src/components/Dock/Dock.vue'
+import TooltipHost from '../src/components/TooltipHost/TooltipHost.vue'
 import {
   dockFalloff,
   dockItemOffsets,
@@ -406,4 +407,113 @@ test('a narrow container shrinks the items instead of letting the dock overflow'
     expect(rect.width).toBeLessThan(48)
     expect(rect.height).toBeCloseTo(rect.width, 0)
   }
+})
+
+test('the tooltip opens past the room an item can magnify into, and stays put while it grows', async () => {
+  const screen = await render({
+    components: { Dock, TooltipHost },
+    setup: () => ({ items: [{ label: 'Finder' }, { label: 'Mail' }, { label: 'Notes' }] }),
+    template: `<div style="padding: 140px 80px"><TooltipHost :open-delay="0" /><Dock :items="items" :base-size="48" :max-size="76" /></div>`,
+  })
+  const item = screen.container.querySelectorAll<HTMLElement>('.ui-dock-item')[1]!
+  const rest = item.getBoundingClientRect()
+  await userEvent.hover(item)
+  await vi.waitFor(() => expect(item.getBoundingClientRect().height).toBeGreaterThan(74))
+  const clearOfMagnified = rest.top - (76 - 48) - 8
+  await vi.waitFor(() => {
+    const panel = document.querySelector<HTMLElement>('.ui-tooltip-panel')!
+    expect(panel).not.toBeNull()
+    expect(Math.abs(panel.getBoundingClientRect().bottom - clearOfMagnified)).toBeLessThan(1.5)
+  })
+  const magnified = item.getBoundingClientRect()
+  const panel = document.querySelector<HTMLElement>('.ui-tooltip-panel')!.getBoundingClientRect()
+  expect(panel.bottom).toBeLessThanOrEqual(magnified.top - 7)
+})
+
+test('the tooltip travelling to the next item follows it as the magnification spreads, with no late jump', async () => {
+  const screen = await render({
+    components: { Dock, TooltipHost },
+    setup: () => ({
+      items: [{ label: 'Finder' }, { label: 'Mail' }, { label: 'Notes' }, { label: 'Music' }],
+    }),
+    template: `<div style="padding: 160px 80px"><TooltipHost :open-delay="0" /><Dock :items="items" /></div>`,
+  })
+  const items = screen.container.querySelectorAll<HTMLElement>('.ui-dock-item')
+  await userEvent.hover(items[1]!)
+  await vi.waitFor(() => expect(document.querySelector('.ui-tooltip-panel')).not.toBeNull())
+  for (let i = 0; i < 30; i++) await new Promise((r) => requestAnimationFrame(r))
+  const panel = document.querySelector<HTMLElement>('.ui-tooltip-panel')!
+  await userEvent.hover(items[2]!)
+  let last = panel.getBoundingClientRect().left
+  let biggestBackStep = 0
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => requestAnimationFrame(r))
+    const left = panel.getBoundingClientRect().left
+    // Heading right toward the new item; any step back left is the correction, and it must glide.
+    if (left < last) biggestBackStep = Math.max(biggestBackStep, last - left)
+    last = left
+  }
+  expect(biggestBackStep).toBeLessThan(4)
+  const item = items[2]!.getBoundingClientRect()
+  const rect = panel.getBoundingClientRect()
+  expect(Math.abs(rect.left + rect.width / 2 - (item.left + item.width / 2))).toBeLessThan(1.5)
+})
+
+test('a finger sliding along the dock magnifies while it is down and settles when it lifts', async () => {
+  const screen = await render(DockFixture, {})
+  const buttons = itemButtons(screen)
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  const firstRect = buttons[0].getBoundingClientRect()
+  const secondRect = buttons[1].getBoundingClientRect()
+  const touch = (type: string, rect: DOMRect, buttons: number, dx = 0) =>
+    root.dispatchEvent(
+      new PointerEvent(type, {
+        clientX: rect.left + rect.width / 2 + dx,
+        clientY: rect.top + rect.height / 2,
+        bubbles: true,
+        pointerType: 'touch',
+        buttons,
+      }),
+    )
+  // A tap: down and a move within the slide threshold does not magnify.
+  touch('pointerdown', firstRect, 1)
+  touch('pointermove', firstRect, 1, 3)
+  await new Promise((r) => requestAnimationFrame(r))
+  expect(scaleOf(buttons[0])).toBe(1)
+  touch('pointerup', firstRect, 0)
+  // A slide: down on the first item, moving past the threshold onto the second, magnifies it.
+  touch('pointerdown', firstRect, 1)
+  await expect
+    .poll(() => {
+      touch('pointermove', secondRect, 1)
+      return scaleOf(buttons[1])
+    })
+    .toBeGreaterThan(1)
+  // Lifted: settles back to rest.
+  touch('pointerup', secondRect, 0)
+  await expect.poll(() => scaleOf(buttons[1]), { timeout: 2000 }).toBe(1)
+})
+
+test('a tap on an item bounces it instead of magnifying, and the bounce clears when it ends', async () => {
+  const screen = await render(DockFixture, {})
+  const buttons = itemButtons(screen)
+  const rect = buttons[1].getBoundingClientRect()
+  const touch = (type: string, buttons_: number) =>
+    buttons[1].dispatchEvent(
+      new PointerEvent(type, {
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2,
+        bubbles: true,
+        pointerType: 'touch',
+        buttons: buttons_,
+      }),
+    )
+  touch('pointerdown', 1)
+  touch('pointerup', 0)
+  await vi.waitFor(() => expect(buttons[1].hasAttribute('data-bounce')).toBe(true))
+  // The bounce is the CSS animation; no magnification was written to the item.
+  expect(buttons[1].style.transform).toBe('')
+  await vi.waitFor(() => expect(buttons[1].hasAttribute('data-bounce')).toBe(false), {
+    timeout: 2000,
+  })
 })

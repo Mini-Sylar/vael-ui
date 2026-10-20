@@ -1,5 +1,13 @@
 <template>
-  <Transition name="ui-message" :css="!forceMount">
+  <Transition
+    name="ui-message"
+    :css="!forceMount"
+    @before-enter="collapse"
+    @enter="grow"
+    @after-enter="release"
+    @before-leave="hold"
+    @leave="shrink"
+  >
     <div
       v-if="forceMount || open"
       v-show="open"
@@ -225,6 +233,90 @@ const descriptionPart = computed(() =>
 )
 const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-message-close'))
 const actionsPart = computed(() => resolveUiPart(cx, themedUi()?.actions, 'ui-message-actions'))
+
+// The box grows and shrinks with the fade, so what's below moves with it instead of snapping.
+// Shut, it has no height, padding, border or share of the parent's gap, so nothing lingers.
+// With force-mount the consumer owns all of it.
+function shutStyles(node: HTMLElement) {
+  const gap = Number.parseFloat(getComputedStyle(node.parentElement ?? node).rowGap) || 0
+  node.style.blockSize = '0px'
+  node.style.paddingBlock = '0px'
+  node.style.borderBlockWidth = '0px'
+  node.style.marginBlockStart = `${-gap}px`
+}
+function openStyles(node: HTMLElement) {
+  node.style.blockSize = `${node.dataset.size}px`
+  node.style.paddingBlock = ''
+  node.style.borderBlockWidth = ''
+  node.style.marginBlockStart = ''
+}
+function collapse(el: Element) {
+  if (props.forceMount) return
+  const node = el as HTMLElement
+  node.style.boxSizing = 'border-box'
+  node.style.overflow = 'hidden'
+  shutStyles(node)
+}
+// Runs once the box is in the DOM (before-enter is before insertion, so it can't measure).
+function grow(el: Element) {
+  if (props.forceMount) return
+  const node = el as HTMLElement
+  node.style.blockSize = ''
+  node.style.paddingBlock = ''
+  node.style.borderBlockWidth = ''
+  node.style.marginBlockStart = ''
+  node.dataset.size = String(node.offsetHeight)
+  shutStyles(node)
+  // Lays the shut box out before it grows, or the transition would start from `auto`.
+  void node.offsetHeight
+  requestAnimationFrame(() => openStyles(node))
+}
+function release(el: Element) {
+  const node = el as HTMLElement
+  delete node.dataset.size
+  delete node.dataset.shrinking
+  node.style.boxSizing = ''
+  node.style.overflow = ''
+  node.style.transition = ''
+  node.style.blockSize = ''
+  node.style.paddingBlock = ''
+  node.style.borderBlockWidth = ''
+  node.style.marginBlockStart = ''
+}
+function hold(el: Element) {
+  const node = el as HTMLElement
+  // Already shrinking alongside a `beforeClose` tween, or force-mounted.
+  if (props.forceMount || node.style.blockSize) return
+  node.style.boxSizing = 'border-box'
+  node.style.overflow = 'hidden'
+  node.style.blockSize = `${node.offsetHeight}px`
+  void node.offsetHeight
+}
+function shrink(el: Element) {
+  const node = el as HTMLElement
+  if (props.forceMount || node.dataset.shrinking !== undefined) return
+  requestAnimationFrame(() => shutStyles(node))
+}
+// A `beforeClose` tween runs before the leave; the box shrinks with it instead of after it.
+watch(isClosing, (closing) => {
+  const node = root.value
+  if (!node || props.forceMount) return
+  if (closing) {
+    hold(node)
+    node.dataset.shrinking = ''
+    node.style.transition = [
+      'block-size',
+      'padding-block',
+      'border-block-width',
+      'margin-block-start',
+    ]
+      .map((property) => `${property} var(--ui-duration-exit) var(--ui-ease-out)`)
+      .join(', ')
+    requestAnimationFrame(() => shutStyles(node))
+  } else if (open.value) {
+    release(node)
+  }
+})
 
 defineExpose({
   /** Root element (null while closed unless `forceMount`). */

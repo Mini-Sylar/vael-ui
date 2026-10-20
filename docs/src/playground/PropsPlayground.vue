@@ -25,18 +25,24 @@
             class="pg-presets"
           />
           <div class="pg-stage-tools">
-            <button
+            <Button
               v-if="frameWidth !== null"
-              type="button"
+              variant="outline"
+              size="sm"
+              pill
               class="pg-width"
               aria-label="Reset preview width"
               @click="frameWidth = null"
             >
               {{ Math.round(frameWidth) }}px
-              <PhX :size="10" weight="bold" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
+              <template #trailing>
+                <PhX :size="10" weight="bold" aria-hidden="true" />
+              </template>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon
               class="pg-tool"
               :aria-pressed="stageBg === 'plain'"
               :aria-label="stageBg === 'dots' ? 'Plain background' : 'Dotted background'"
@@ -45,7 +51,7 @@
             >
               <PhDotsNine v-if="stageBg === 'dots'" :size="15" aria-hidden="true" />
               <PhSquare v-else :size="15" aria-hidden="true" />
-            </button>
+            </Button>
           </div>
         </div>
         <div
@@ -420,15 +426,18 @@
             Props
             <span class="pg-count">{{ controls.length + (showDataPreset ? 1 : 0) }}</span>
           </span>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             class="pg-reset-all"
             :disabled="changedCount === 0"
             @click="resetAll"
           >
-            <PhArrowCounterClockwise :size="12" aria-hidden="true" />
+            <template #leading>
+              <PhArrowCounterClockwise :size="12" aria-hidden="true" />
+            </template>
             Reset
-          </button>
+          </Button>
         </div>
         <div ref="rowsEl" class="pg-rows" v-scroll-mask="next" @scroll.passive="updateMore">
           <div v-if="showDataPreset" class="control-row">
@@ -503,16 +512,18 @@
                 :model-value="values[control.name] as string"
                 @update:model-value="(v) => (values[control.name] = v)"
               />
-              <button
+              <Button
                 v-if="next"
-                type="button"
+                variant="ghost"
+                size="sm"
+                icon
                 class="pg-row-reset"
                 :disabled="!isChanged(control.name)"
                 :aria-label="`Reset ${control.name}`"
                 @click="resetControl(control.name)"
               >
                 <PhArrowCounterClockwise :size="12" aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           </template>
         </div>
@@ -563,7 +574,7 @@ import {
 import { RouterLink } from 'vue-router'
 import * as VaelUi from 'vael-ui'
 import { Button, Input, InputNumber, Select, SelectButton, Switch, vScrollMask } from 'vael-ui'
-import type { TreeNode } from 'vael-ui'
+import type { ProgressSegment, TreeNode } from 'vael-ui'
 import { useResizeObserver } from '@vueuse/core'
 import {
   PhArrowCounterClockwise,
@@ -661,6 +672,7 @@ const isAccordion = computed(() => props.name === 'Accordion')
 const isCollapsible = computed(() => props.name === 'Collapsible')
 const isSeparator = computed(() => props.name === 'Separator')
 const isDock = computed(() => props.name === 'Dock')
+const isProgress = computed(() => props.name === 'Progress')
 const isSpeedDial = computed(() => props.name === 'SpeedDial')
 const isTabs = computed(() => props.name === 'Tabs')
 const TABS_PLACEHOLDER_ITEMS = ['Overview', 'Activity', 'Settings']
@@ -843,6 +855,8 @@ const COMPONENT_OVERRIDES: Record<
   }
 > = {
   Avatar: { string: { name: 'Ada Lovelace' } },
+  // Each empty cell shows the placeholder's first character, so the generic "Type here…" read "T".
+  OtpInput: { string: { placeholder: '0' } },
   Loader: { select: { size: ['1rem', '1.5rem', '2rem'] } },
   Pagination: { number: { total: 132 } },
   // No static default in defineProps (real default is computed: baseSize * 3.5)
@@ -866,6 +880,7 @@ const controls = computed<NamedControl[]>(() => {
   const list: NamedControl[] = []
   for (const prop of meta.value.props) {
     if (prop.name === 'modelValue') continue
+    if (prop.name === 'value' && progressSegments.value) continue
     // A generic control for `open`/`maximized` would seed a static value that fights the component's own state.
     if (prop.name === 'open' || prop.name === 'maximized') continue
     // Always on in the preview: off, the trigger does nothing until you wire a click yourself.
@@ -907,13 +922,20 @@ const hasItemsProp = computed(
 // These previews pass their own fixed items, so a data picker would change nothing.
 const showDataPreset = computed(
   () =>
-    hasItemsProp.value &&
-    !isDock.value &&
-    !isSpeedDial.value &&
-    !isTabs.value &&
-    !isCommandPalette.value,
+    isProgress.value ||
+    (hasItemsProp.value &&
+      !isDock.value &&
+      !isSpeedDial.value &&
+      !isTabs.value &&
+      !isCommandPalette.value),
 )
-const hasTriggerSlot = computed(() => Boolean(meta.value?.slots.some((s) => s.name === 'trigger')))
+// These draw their own trigger (ColorPicker's swatch); the slot only replaces it, so the playground
+// shows the component as it ships instead of a stand-in Button.
+const OWN_TRIGGER = new Set(['ColorPicker'])
+const hasTriggerSlot = computed(
+  () =>
+    !OWN_TRIGGER.has(props.name) && Boolean(meta.value?.slots.some((s) => s.name === 'trigger')),
+)
 // Popover: the trigger toggles it, no ref or click wiring. Tooltip opens on hover and focus by itself.
 const togglesOnTriggerClick = computed(() =>
   Boolean(meta.value?.props.some((p) => p.name === 'openOnTriggerClick')),
@@ -980,11 +1002,31 @@ const TREE_PRESETS: Record<string, TreeNode[]> = {
   ],
 }
 
+// Progress: one value from the number control, or stacked segments.
+const PROGRESS_SINGLE = 'One value'
+const PROGRESS_PRESETS: Record<string, ProgressSegment[]> = {
+  'Storage breakdown': [
+    { value: 42, label: 'Apps' },
+    { value: 23, label: 'Photos' },
+    { value: 11, label: 'Documents' },
+  ],
+  'Ticket outcomes': [
+    { value: 38, label: 'Resolved', variant: 'success' },
+    { value: 9, label: 'Waiting', variant: 'warning' },
+    { value: 5, label: 'Escalated', variant: 'danger' },
+  ],
+}
+const progressSegments = computed(() =>
+  isProgress.value && dataPreset.value !== PROGRESS_SINGLE
+    ? PROGRESS_PRESETS[dataPreset.value]
+    : undefined,
+)
+
 const presetItems = computed(() =>
-  Object.keys(isTreeShaped.value ? TREE_PRESETS : FLAT_PRESETS).map((key) => ({
-    label: key,
-    value: key,
-  })),
+  (isProgress.value
+    ? [PROGRESS_SINGLE, ...Object.keys(PROGRESS_PRESETS)]
+    : Object.keys(isTreeShaped.value ? TREE_PRESETS : FLAT_PRESETS)
+  ).map((key) => ({ label: key, value: key })),
 )
 const dataPreset = shallowRef(presetItems.value[0]?.value ?? '')
 
@@ -1004,7 +1046,8 @@ const NUMBER_DEFAULT_OVERRIDES: Record<string, number> = {
 // just without built-in matching, so a toggle that could only ever produce
 // `false`/`true` could never show the box actually disappearing.
 // FileUpload's `capture`: `true` opens the camera, so it starts unset too.
-const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter', 'capture'])
+// Select/Combobox's `virtualize`: unset means automatic (on past 100 items), `true` forces it.
+const BOOLEAN_UNSET_WHEN_OFF = new Set(['filter', 'capture', 'virtualize'])
 
 function setBooleanControl(name: string, checked: boolean) {
   values[name] = !checked && BOOLEAN_UNSET_WHEN_OFF.has(name) ? undefined : checked
@@ -1213,10 +1256,35 @@ useResizeObserver(
   () => previewEl.value?.parentElement,
   () => (stageInlineSize.value = stageWidth()),
 )
+// The narrowest the frame got before its content spilled out. Content that can't wrap, like a row
+// of OTP cells, would otherwise slide off-centre and under the grip. Learned from real overflow,
+// not min-content, so a component that adapts to its width (Toolbar, DataTable) still narrows.
+let overflowFloor = 0
 function clampFrame(width: number): number | null {
   const max = stageWidth()
-  return width >= max - 1 ? null : Math.max(MIN_FRAME, width)
+  return width >= max - 1 ? null : Math.max(MIN_FRAME, overflowFloor, width)
 }
+// A frame later, once anything that sizes itself from a ResizeObserver has settled.
+function checkOverflow() {
+  requestAnimationFrame(() => {
+    const el = previewEl.value
+    if (!el || frameWidth.value === null) return
+    const excess = el.scrollWidth - el.clientWidth
+    if (excess <= 1) return
+    overflowFloor = Math.ceil(el.getBoundingClientRect().width + excess)
+    frameWidth.value = clampFrame(frameWidth.value)
+  })
+}
+watch(frameWidth, (width) => width !== null && checkOverflow(), { flush: 'post' })
+// New props can make the content narrower or wider than the frame it was measured in.
+watch(
+  [values, () => props.name],
+  () => {
+    overflowFloor = 0
+    if (frameWidth.value !== null) checkOverflow()
+  },
+  { deep: true, flush: 'post' },
+)
 function onHandleDown(event: PointerEvent) {
   const handle = event.currentTarget as HTMLElement
   const startX = event.clientX
@@ -1246,6 +1314,12 @@ function onHandleKey(event: KeyboardEvent) {
 // attribute per line once it stops fitting on one.
 function metaDefault(name: string): unknown {
   const raw = meta.value?.props.find((p) => p.name === name)?.default
+  // A boolean left `undefined` takes its value from ConfigProvider (motionCss), which is on, so
+  // the playground seeds it on too; only turning it off is worth showing in the snippet.
+  const control = controls.value.find((c) => c.name === name)
+  if (raw === 'undefined' && control?.kind === 'boolean' && !BOOLEAN_UNSET_WHEN_OFF.has(name)) {
+    return true
+  }
   if (raw === undefined || raw === 'undefined') return undefined
   const quoted = /^(['"`])(.*)\1$/.exec(raw)
   if (quoted) return quoted[2]
@@ -1270,6 +1344,7 @@ const codeNext = computed(() => {
   }
   if (previewLabel.value) attrs.push(`aria-label="${previewLabel.value}"`)
   if (hasItemsProp.value) attrs.push(':items="items"')
+  if (progressSegments.value) attrs.push(':value="segments"')
   if (modelProp.value) attrs.push('v-model="value"')
   const { extraAttrs = '', imports = [] } = snippetParts.value
   // A list control's default slot isn't its label, so the name-as-content filler misleads.
@@ -1321,6 +1396,7 @@ const boundProps = computed(() => ({
         items: isTreeShaped.value ? TREE_PRESETS[dataPreset.value] : FLAT_PRESETS[dataPreset.value],
       }
     : {}),
+  ...(progressSegments.value ? { value: progressSegments.value } : {}),
 }))
 
 function onModelUpdate(v: unknown) {
@@ -1444,6 +1520,9 @@ function snippetState(body: string) {
     )
   }
   if (uses('rows')) lines.push(`const rows = ${literal(SNIPPET_ROWS, '', icons)}`)
+  if (uses('segments') && progressSegments.value) {
+    lines.push(`const segments = ${literal(progressSegments.value, '', icons)}`)
+  }
   if (uses('steps')) lines.push(`const steps = ${literal(SNIPPET_STEPS, '', icons)}`)
   if (uses('active')) {
     refs = true
@@ -2016,60 +2095,28 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   margin-inline-start: auto;
 }
 
+/* vael-ui Buttons, kept quiet: muted until hovered. */
 .pg-tool,
 .pg-width,
 .pg-row-reset,
 .pg-reset-all {
-  border: none;
-  background: none;
   color: var(--ui-text-muted);
-  font: inherit;
-  cursor: pointer;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease,
-    transform 120ms var(--ui-ease-out);
-}
-
-.pg-tool {
-  display: grid;
-  place-items: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
-  border-radius: 7px;
-}
-
-.pg-width {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  block-size: 1.5rem;
-  padding-inline: 0.5rem;
-  border-radius: 999px;
-  background: var(--ui-surface);
-  box-shadow: 0 0 0 1px var(--ui-border);
-  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 0.6875rem;
-  font-variant-numeric: tabular-nums;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .pg-tool:hover,
+  .pg-width:hover,
   .pg-row-reset:hover,
   .pg-reset-all:hover:not(:disabled) {
-    background: var(--ui-muted-hover);
-    color: var(--ui-text);
-  }
-  .pg-width:hover {
     color: var(--ui-text);
   }
 }
 
-.pg-tool:active,
-.pg-width:active,
-.pg-row-reset:active,
-.pg-reset-all:active:not(:disabled) {
-  transform: scale(0.96);
+.pg-width {
+  --ui-btn-px: 0.625rem;
+  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
 }
 
 /* The frame's resize grip: quiet until you're over the stage. */
@@ -2232,25 +2279,13 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
 }
 
 .pg-reset-all {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3125rem;
-  block-size: 1.625rem;
-  padding-inline: 0.5rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.pg-reset-all:disabled {
-  opacity: 0.45;
-  cursor: default;
+  --ui-btn-px: 0.5rem;
 }
 
 .playground--next .control-row {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 8.75rem 1.5rem;
+  grid-template-columns: minmax(0, 1fr) 8.75rem 1.75rem;
   align-items: center;
   gap: 0.75rem;
   min-block-size: 2.5rem;
@@ -2284,14 +2319,6 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
 
 .playground--next .control-row :deep(.ui-switch) {
   justify-self: start;
-}
-
-.pg-row-reset {
-  display: grid;
-  place-items: center;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border-radius: 6px;
 }
 
 .pg-row-reset:disabled {
@@ -2337,7 +2364,7 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
     overflow: visible;
   }
   .playground--next .control-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem) 1.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 11rem) 1.75rem;
   }
 }
 
@@ -2346,7 +2373,7 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
     grid-template-columns: minmax(0, 1fr) 20rem;
   }
   .playground--next .control-row {
-    grid-template-columns: minmax(0, 1fr) 7.5rem 1.5rem;
+    grid-template-columns: minmax(0, 1fr) 7.5rem 1.75rem;
   }
 }
 

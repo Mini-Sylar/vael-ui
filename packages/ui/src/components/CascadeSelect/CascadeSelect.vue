@@ -29,6 +29,10 @@
         <div v-if="filter !== undefined" :class="filterPart.class" :style="filterPart.style">
           <Input
             ref="filterInputRef"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            enterkeyhint="enter"
             v-model="query"
             :placeholder="filterPlaceholder"
             size="sm"
@@ -82,39 +86,47 @@
           @focus="onTriggerFocus"
           @blur="onTriggerBlur"
         >
-          <span :class="valuePart.class" :style="valuePart.style">
+          <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
             <slot name="value" :selected="selectedForSlot" :path="pathForSlot">
-              <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{ placeholder }}</span>
+              <span
+                v-if="isEmpty && !(multiple && display === 'chip')"
+                class="ui-cascade-select-placeholder"
+                >{{ placeholder }}</span
+              >
               <template v-else-if="!multiple">{{ selectedItem?.label }}</template>
               <span v-else-if="display === 'text'">{{ displayLabel }}</span>
               <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
-              <TransitionGroup
-                v-else
-                name="ui-chip-item"
-                @leave-cancelled="resetLeaveStyles"
-                tag="span"
-                class="ui-cascade-select-chips"
-                :css="props.motionCss"
-                :data-motion="props.motionCss ? undefined : 'off'"
-                @enter="chipEnterHook"
-                @leave="chipLeaveHook"
-              >
-                <Chip
-                  v-for="match in visibleChips"
-                  :key="match.item.value"
-                  :label="match.item.label"
-                  removable
-                  :disabled="isDisabled"
-                  @remove="removeChip(match.item)"
-                />
-                <span
-                  v-if="hiddenChipCount > 0"
-                  key="__overflow"
-                  class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+              <!-- The chips group stays mounted when the last chip goes, so it leaves like the others;
+                   the placeholder slides in behind it. -->
+              <template v-else>
+                <TransitionGroup
+                  name="ui-chip-item"
+                  tag="span"
+                  class="ui-cascade-select-chips"
+                  :css="props.motionCss"
+                  :data-motion="props.motionCss ? undefined : 'off'"
+                  @enter="chipEnterHook"
+                  @leave="chipLeaveHook"
+                  @leave-cancelled="resetLeaveStyles"
                 >
-                  +{{ hiddenChipCount }}
-                </span>
-              </TransitionGroup>
+                  <Chip
+                    v-for="match in visibleChips"
+                    :key="match.item.value"
+                    :label="match.item.label"
+                    removable
+                    :disabled="isDisabled"
+                    @remove="removeChip(match.item)"
+                  />
+                  <span
+                    v-if="hiddenChipCount > 0"
+                    key="__overflow"
+                    class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+                  >
+                    +{{ hiddenChipCount }}
+                  </span>
+                </TransitionGroup>
+                <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{ placeholder }}</span>
+              </template>
             </slot>
           </span>
           <Transition
@@ -254,6 +266,7 @@ import {
   resetLeaveStyles,
   startClearLeave,
 } from '../../composables/dom'
+import { useChipRowWidth } from '../../composables/useChipRowWidth'
 import '../shared/chip.css'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
@@ -657,6 +670,13 @@ function onOpenChange(value: boolean, details: PopoverOpenChangeDetails) {
 }
 
 const filterInputRef = useTemplateRef<{ inputEl: HTMLInputElement | null }>('filterInputRef')
+const valueEl = useTemplateRef<HTMLElement>('valueEl')
+useChipRowWidth({
+  row: () => valueEl.value,
+  empty: () => isEmpty.value,
+  active: () => props.multiple && props.display === 'chip' && props.motionCss,
+  placeholder: '.ui-cascade-select-placeholder',
+})
 function rows(): HTMLElement[] {
   const list = menuRef.value?.listEl
   if (!list) return []

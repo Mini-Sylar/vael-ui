@@ -82,9 +82,11 @@
     "MenuList": "As linhas do Menu renderizadas no fluxo da página em vez de em um menu suspenso, para uma navegação lateral permanente.",
     "Message": "Um banner embutido para texto de status: informações, sucesso, aviso ou erro.",
     "OtpInput": "Uma linha de caixas de um caractere para códigos únicos, com colagem e avanço automático.",
+    "Editable": "Texto que vira um campo ao clicar e salva com Enter ou ao sair, para renomear no lugar.",
+    "ColorPicker": "Uma amostra de cor que abre um seletor: plano de saturação e brilho, controle de matiz, campo hex, conta-gotas quando o navegador tem um e predefinições opcionais.",
     "Pagination": "Controles de número de página para dividir uma longa lista ou tabela entre páginas.",
     "Popover": "Um painel flutuante ancorado em um elemento acionador, para menus, formulários ou detalhes extras.",
-    "Progress": "Uma barra de progresso para uma tarefa, com estados determinado e indeterminado.",
+    "Progress": "Uma barra de progresso para uma tarefa ou partes empilhadas de um todo, com estados determinado e indeterminado e legenda opcional.",
     "PullToRefresh": "Um gesto suspenso na parte superior de um contêiner de rolagem que aciona uma atualização.",
     "Radio": "Uma opção em um conjunto mutuamente exclusivo. Use sempre dentro de um RadioGroup.",
     "RadioGroup": "Agrupa um conjunto de botões Radio para que só um possa ser selecionado por vez.",
@@ -111,7 +113,13 @@
     "BreadcrumbItem": "Um link ou a página atual em uma trilha Breadcrumb.",
     "BreadcrumbSeparator": "O separador entre dois BreadcrumbItem. Ele mostra um chevron, a menos que você passe seu próprio conteúdo.",
     "Rating": "Clique, arraste ou use as setas para escolher um valor em uma fileira de estrelas, com meias estrelas opcionais.",
-    "Timeline": "Uma lista ordenada de etapas ligadas por uma linha. Cada etapa pode conter qualquer conteúdo."
+    "Timeline": "Uma lista ordenada de etapas ligadas por uma linha. Cada etapa pode conter qualquer conteúdo.",
+    "ButtonGroup": "Une botões em uma linha ou coluna contínua e pode transformá-los em alternadores simples ou múltiplos.",
+    "CommandPalette": "Uma lista de comandos com busca em um diálogo, aberta por um botão ou um atalho como ⌘K.",
+    "Stepper": "Mostra o progresso por uma sequência de etapas e permite navegar entre elas.",
+    "Breadcrumb": "Uma trilha de links do topo do site até a página atual.",
+    "AvatarGroup": "Empilha vários avatares sobrepostos em uma linha, com um contador para os que não cabem.",
+    "ScrollArea": "Uma área de rolagem com barras finas no estilo do tema e bordas esmaecidas, em uma ou nas duas direções."
   },
   "gettingStarted": {
     "darkModeIntro": "O modo escuro é só CSS. Ele segue <code>&lt;html data-theme=\"dark\"&gt;</code> e, na falta dele, usa <code>prefers-color-scheme</code>. O vael-ui não inclui nenhum seletor de tema. <code>useColorScheme()</code> acompanha as mudanças de preferência do sistema e salva a escolha pela opção <code>persist</code> que você passar:",
@@ -177,7 +185,15 @@
     "radiusSharp": "Afiado",
     "radiusSoft": "Macio",
     "theme": "Personalizar tema",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "appearance": "Aparência",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema",
+    "demos": "Demos",
+    "general": "Geral",
+    "mode": "Modo",
+    "fontSize": "Tamanho da fonte"
   },
   "home": {
     "tagline": "Mais de 60 componentes para Vue 3, compilados de uma única fonte para o build VDOM clássico e para o Vue Vapor.",
@@ -198,7 +214,7 @@
     "featureSkillTitle": "Skill para agentes de IA",
     "themeLabel": "Experimente uma cor:",
     "newTag": "Novo",
-    "newText": "Cada prop documentada no seu editor",
+    "newText": "0.5.0: pastas com mola, seletor de cores, edição em linha",
     "showcaseLabel": "Demo ao vivo feita com vael-ui"
   },
   "i18nKeys": {
@@ -230,7 +246,6 @@
     "stylingAndLayersGuide": "Estilo e camadas em cascata",
     "tailwindGuide": "Usando com Tailwind",
     "menu": "Menu",
-    "openMenu": "Abrir menu",
     "composables": "Combináveis",
     "autoImportGuide": "Importação automática",
     "nuxtGuide": "Nuxt",
@@ -240,7 +255,10 @@
     "next": "Próximo",
     "pager": "Páginas anterior e seguinte",
     "mainNav": "Principal",
-    "sidebarNav": "Documentação"
+    "sidebarNav": "Documentação",
+    "searchShort": "Pesquisar",
+    "support": "Apoiar",
+    "searchAll": "Pesquise componentes, props e guias…"
   },
   "pageNotes": {
     "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar.",
@@ -350,7 +368,8 @@
   "notFound": {
     "body": "A página que você procura não existe ou foi movida.",
     "home": "De volta para casa",
-    "title": "Página não encontrada"
+    "title": "Página não encontrada",
+    "didYouMean": "Você quis dizer:"
   },
   "composable": {
     "noParameters": "Não aceita argumentos.",
@@ -448,5 +467,40 @@
     "value": "Valor",
     "modifiers": "Modificadores",
     "noModifiers": "Nenhum modificador."
+  },
+  "dockTour": {
+    "componentsTitle": "Os componentes estão aqui embaixo",
+    "componentsDescription": "O menu saiu da barra superior para o dock, mais perto do seu polegar.",
+    "settingsTitle": "O modo escuro está nas Configurações",
+    "settingsDescription": "Junto com a cor do tema, o raio dos cantos, o tamanho, o tamanho da fonte, o idioma e mais.",
+    "replayLabel": "Tour",
+    "replay": "Ver novamente",
+    "searchTitle": "A busca a um toque",
+    "searchDescription": "Encontre qualquer componente, guia ou composable pelo nome, com uma breve descrição.",
+    "variantTitle": "Vue DOM ou Vapor, no topo",
+    "variantDescription": "Alterne aqui cada demo entre a versão clássica e o Vapor."
+  },
+  "search": {
+    "actions": "Comandos",
+    "current": "Atual",
+    "on": "Ativadas",
+    "off": "Desativadas",
+    "copyInstall": "Copiar comando de instalação",
+    "reportIssue": "Relatar um problema",
+    "recent": "Recentes",
+    "drillIn": "API de {name}",
+    "copy": {
+      "import": "Copiar import",
+      "usage": "Copiar uso",
+      "link": "Copiar link",
+      "command": "Copiar"
+    },
+    "noResults": "Nenhum resultado para “{query}”",
+    "didYouMean": "Você quis dizer",
+    "request": "Peça no GitHub",
+    "copied": "Copiado para a área de transferência",
+    "back": "Todos os resultados",
+    "copiedShort": "Copiado",
+    "noCommands": "Nenhum comando corresponde a “{query}”"
   }
 }

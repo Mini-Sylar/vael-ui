@@ -90,10 +90,68 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
 
   const isClosing = shallowRef(false)
   const instant = shallowRef(false)
+  // Only three things ever animate, all on the compositor: the positioner's translate (while
+  // `traveling`), and the box layer's scale with the content's opacity (while `morphing`). Layout
+  // is written once per open. Two flags, so staging one never cuts the other's transition short.
   const traveling = shallowRef(false)
+  const morphing = shallowRef(false)
+  // True for a travel's whole span, from the frame its from-state is staged until it has settled.
+  const travelActive = shallowRef(false)
   const positionerStyle = shallowRef<Record<string, string>>(floatingStyle.value)
+  // Custom properties the box layer and the content read: the box's scale while it morphs between
+  // two sizes, and the content's opacity while a new label fades in.
+  const panelStyle = shallowRef<Record<string, string>>({})
   let travelFrom: TravelRect | null = null
   let travelToken = 0
+
+  interface Point {
+    left: number
+    top: number
+  }
+  // Where the positioner is laid out while visible. It stays put for the whole open: any later
+  // movement is a `translate` on top of it, which the compositor can move without the text being
+  // laid out and rasterised again every frame (the source of jitter on low-DPR screens).
+  let base: Point | null = null
+  // Where the tooltip should be, in the same coordinates.
+  let target: Point = { left: 0, top: 0 }
+
+  function pointOf(style: Record<string, string>): Point {
+    return { left: Number.parseFloat(style.left), top: Number.parseFloat(style.top) }
+  }
+  function translateFor(from: Point, to: Point): string {
+    const dx = to.left - from.left
+    const dy = to.top - from.top
+    return dx === 0 && dy === 0 ? '' : `${dx}px ${dy}px`
+  }
+  function setPositioner(translate: string) {
+    if (!base) return
+    positionerStyle.value = {
+      position: 'absolute',
+      top: `${base.top}px`,
+      left: `${base.left}px`,
+      translate,
+      visibility: 'visible',
+    }
+  }
+  /** Moves the box to `point` as a translate off `base`: instant when nothing is transitioning. */
+  function commit(point: Point) {
+    target = point
+    if (base) setPositioner(translateFor(base, point))
+  }
+  /** Lays the positioner out at `point`, with no translate: a fresh open, or a settled travel. */
+  function park(point: Point) {
+    base = point
+    target = point
+    setPositioner('')
+    captureSize()
+  }
+  function setMorph(x: number, y: number, contentOpacity: number) {
+    panelStyle.value = {
+      '--ui-tooltip-morph-x': String(x),
+      '--ui-tooltip-morph-y': String(y),
+      '--ui-tooltip-content-opacity': String(contentOpacity),
+    }
+  }
 
   function measureRect(): TravelRect | null {
     const el = options.positionerEl.value
@@ -112,162 +170,241 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     travelFrom = measureRect()
   }
 
-  const TRAVEL_MAX_DISTANCE = 320
-  const TRAVEL_MAX_SIZE_RATIO = 1.75
-  // A ratio alone over-triggers for small tooltips: two adjacent toolbar tooltips at 40px and
-  // 72px width are a 1.8x ratio but only a 32px gap — nowhere near the visible "stretch" a ratio
-  // that high implies for larger content. Only let the ratio bail out once the absolute gap is
-  // big enough to actually read as one.
-  const TRAVEL_MIN_SIZE_DELTA_FOR_RATIO = 60
-  const REPOSITION_MIN_DISTANCE = 4
-  // Matches the CSS transition duration below (--ui-duration-tooltip, 125ms) plus a small buffer
-  // for it to actually finish painting — not an independent value to keep in sync by hand.
-  const TRAVEL_SETTLE_MS = 150
-
-  function repositionDistance(before: Record<string, string>, after: Record<string, string>) {
-    return Math.hypot(
-      Number.parseFloat(after.left) - Number.parseFloat(before.left),
-      Number.parseFloat(after.top) - Number.parseFloat(before.top),
-    )
+  function reducedMotion(): boolean {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
-  // floating-ui's autoUpdate fires its callback more than once right after a reference swap (its
-  // own observers settling independently, sometimes several ms apart, well after the RAFs below
-  // resolve) — for the ENTIRE lifetime of a travel below (staging the from-state through the full
-  // settle), any of those extra fires must be ignored: `positionerStyle` holds a value the plain
-  // reposition branch would otherwise misread as a large, sudden jump — snapping straight to the
-  // target (if it arrives during the staged from-state) or cutting the transition short partway
-  // through (if it arrives after `traveling` has already gone true). They carry no new
-  // information the travel below didn't already capture.
-  //
-  // Reactive (not a plain flag) because it also drives the panel's own clip/no-wrap CSS for that
-  // whole span, not just while `traveling` (the CSS-transition-enabled portion) is true: content
-  // already swapped to the new target the instant the trigger did, but the box is briefly pinned
-  // to the FROM size — a label that only fits on one line at its real target width wraps to two
-  // at that narrower size, and without a no-wrap panel that extra line is fully visible for a
-  // frame before `overflow` clips it back down, reading as a flash of wrapped/doubled text.
-  const travelActive = shallowRef(false)
-  // Handles for whatever's still pending from the travel/reposition branches below — cancelled
-  // outright (not just token-invalidated) whenever a newer one supersedes them, and on scope
-  // dispose, so a `<Tooltip>` unmounted mid-transition doesn't leave a stray rAF/timeout holding
-  // its closure (and everything it captured) alive until it happens to fire on its own.
+  // Further apart than this is not one sweep across a row of triggers: the tooltip just appears.
+  const TRAVEL_MAX_DISTANCE = 320
+  const REPOSITION_MIN_DISTANCE = 4
+  // Matches the CSS transition duration (--ui-duration-tooltip, 125ms) plus a small buffer for it
+  // to finish painting — not an independent value to keep in sync by hand.
+  const TRAVEL_SETTLE_MS = 150
+
+  function distanceBetween(a: Point, b: Point): number {
+    return Math.hypot(a.left - b.left, a.top - b.top)
+  }
+
   let travelRaf1: number | undefined
   let travelRaf2: number | undefined
   let settleTimer: ReturnType<typeof setTimeout> | undefined
+  let settleDone: (() => void) | undefined
 
   function clearTravelSchedule() {
     if (travelRaf1 !== undefined) cancelAnimationFrame(travelRaf1)
     if (travelRaf2 !== undefined) cancelAnimationFrame(travelRaf2)
     clearTimeout(settleTimer)
-    travelRaf1 = travelRaf2 = settleTimer = undefined
+    travelRaf1 = travelRaf2 = settleTimer = settleDone = undefined
     travelActive.value = false
   }
 
-  // The new label's own size. Mid-travel the box is still pinned to the previous
-  // size (inline width/height plus the sizing lock), so measuring it as-is would
-  // carry that stale width into the next travel and clip the longer label.
-  function naturalRect(el: HTMLElement): DOMRect {
-    const { width, height } = el.style
-    const locked = el.hasAttribute('data-sizing-locked')
-    el.style.width = ''
-    el.style.height = ''
-    if (locked) el.removeAttribute('data-sizing-locked')
-    const rect = el.getBoundingClientRect()
-    el.style.width = width
-    el.style.height = height
-    if (locked) el.setAttribute('data-sizing-locked', '')
-    return rect
+  // Ends a transition once it has had its full duration, counted from the last retarget.
+  function armSettle(token: number, done: () => void) {
+    settleDone = done
+    clearTimeout(settleTimer)
+    settleTimer = setTimeout(() => {
+      settleTimer = settleDone = undefined
+      if (token !== travelToken || positionerStyle.value.visibility !== 'visible') {
+        travelActive.value = false
+        return
+      }
+      done()
+    }, TRAVEL_SETTLE_MS)
   }
+
+  // Settles: the positioner is laid out where the box already is, and the translate goes, so
+  // nothing on screen changes.
+  function settle() {
+    travelActive.value = false
+    traveling.value = false
+    morphing.value = false
+    park(target)
+  }
+
+  // The target is still on the move while the box transitions toward it (a dock item spreading
+  // under the pointer): retarget the running transition, which carries on from wherever the box
+  // is now, and give it the full settle again.
+  function follow(point: Point) {
+    if (distanceBetween(target, point) < 0.25) return
+    commit(point)
+    if (settleDone) armSettle(travelToken, settleDone)
+  }
+
+  // The anchor the box layer scales around, as fractions of its size, from the same origin the
+  // open animation uses, so a morph stretches away from the trigger's side.
+  function originFractions(): { x: number; y: number } {
+    const tokens = transformOrigin.value.split(' ')
+    let x = 0.5
+    let y = 0.5
+    for (const token of tokens) {
+      if (token === 'left') x = 0
+      else if (token === 'right') x = 1
+      else if (token === 'top') y = 0
+      else if (token === 'bottom') y = 1
+    }
+    return { x, y }
+  }
+
+  /** The box glides from `from` (where the previous tooltip was) into `point`, morphing between
+   * the two sizes on the way. Nothing is laid out twice: the positioner is laid out at `point`,
+   * the box layer starts scaled to the old size and translated onto the old spot, and both ease
+   * to rest while the new label fades in. */
+  function stageTravel(from: TravelRect, point: Point) {
+    const el = options.positionerEl.value
+    const rect = el?.getBoundingClientRect()
+    const targetWidth = rect?.width || from.width
+    const targetHeight = rect?.height || from.height
+    if (reducedMotion() || distanceBetween(from, point) > TRAVEL_MAX_DISTANCE) {
+      clearTravelSchedule()
+      traveling.value = false
+      morphing.value = false
+      park(point)
+      setMorph(1, 1, 1)
+      return
+    }
+    clearTravelSchedule()
+    const token = ++travelToken
+    travelActive.value = true
+    traveling.value = false
+    morphing.value = false
+    base = point
+    target = point
+    const origin = originFractions()
+    const sx = from.width / targetWidth
+    const sy = from.height / targetHeight
+    // The box's anchor point sits where the old box's anchor was.
+    const staged: Point = {
+      left: from.left + origin.x * from.width - origin.x * targetWidth,
+      top: from.top + origin.y * from.height - origin.y * targetHeight,
+    }
+    setPositioner(translateFor(point, staged))
+    setMorph(sx, sy, 0)
+    travelRaf1 = requestAnimationFrame(() => {
+      travelRaf2 = requestAnimationFrame(() => {
+        travelRaf1 = travelRaf2 = undefined
+        if (token !== travelToken || positionerStyle.value.visibility !== 'visible') {
+          travelActive.value = false
+          return
+        }
+        traveling.value = true
+        morphing.value = true
+        // The freshest position, not the one the travel was staged with: the target may have
+        // moved during the two frames the from-state was held.
+        commit(pointOf(floatingStyle.value))
+        setMorph(1, 1, 1)
+        armSettle(token, settle)
+      })
+    })
+  }
+
+  // Content that changes size while the tooltip is open (a label swap on the same target, rich
+  // content loading): the box morphs from the old size instead of jumping, through the same
+  // layer the travel uses.
+  let sizePrev: { width: number; height: number } | null = null
+  let sizeObserver: ResizeObserver | undefined
+  function captureSize() {
+    const el = options.positionerEl.value
+    sizePrev = el ? { width: el.offsetWidth, height: el.offsetHeight } : null
+  }
+  function onPositionerResize() {
+    const el = options.positionerEl.value
+    if (!el) return
+    const width = el.offsetWidth
+    const height = el.offsetHeight
+    // Hidden, or mid-travel (the content already swapped, the box is morphing to it): just keep
+    // the size as the baseline the next change is measured from.
+    if (positionerStyle.value.visibility !== 'visible' || travelActive.value) {
+      sizePrev = { width, height }
+      return
+    }
+    const prev = sizePrev
+    sizePrev = { width, height }
+    if (!prev || !width || !height) return
+    if (prev.width === width && prev.height === height) return
+    if (reducedMotion()) return
+    clearTravelSchedule()
+    const token = ++travelToken
+    travelActive.value = true
+    // Only the morph is staged; a glide already under way keeps its transition.
+    morphing.value = false
+    setMorph(prev.width / width, prev.height / height, 1)
+    travelRaf1 = requestAnimationFrame(() => {
+      travelRaf2 = requestAnimationFrame(() => {
+        travelRaf1 = travelRaf2 = undefined
+        if (token !== travelToken || positionerStyle.value.visibility !== 'visible') {
+          travelActive.value = false
+          return
+        }
+        traveling.value = true
+        morphing.value = true
+        commit(pointOf(floatingStyle.value))
+        setMorph(1, 1, 1)
+        armSettle(token, settle)
+      })
+    })
+  }
+  watch(
+    options.positionerEl,
+    (el, _previous, onCleanup) => {
+      sizeObserver?.disconnect()
+      sizePrev = null
+      if (!el || typeof ResizeObserver === 'undefined') return
+      sizeObserver = new ResizeObserver(onPositionerResize)
+      sizeObserver.observe(el)
+      onCleanup(() => sizeObserver?.disconnect())
+    },
+    { immediate: true },
+  )
 
   watch(floatingStyle, (next) => {
     const wasVisible = positionerStyle.value.visibility === 'visible'
     const isVisible = next.visibility === 'visible'
-    if (isVisible && travelFrom) {
+    if (!isVisible) {
+      clearTravelSchedule()
+      traveling.value = false
+      morphing.value = false
+      base = null
+      sizePrev = null
+      positionerStyle.value = next
+      setMorph(1, 1, 1)
+      return
+    }
+    const point = pointOf(next)
+    if (travelFrom) {
       const from = travelFrom
       travelFrom = null
-      const el = options.positionerEl.value
-      const targetRect = el ? naturalRect(el) : undefined
-      const targetWidth = targetRect?.width ?? from.width
-      const targetHeight = targetRect?.height ?? from.height
-      const distance = Math.hypot(
-        Number.parseFloat(next.left) - from.left,
-        Number.parseFloat(next.top) - from.top,
-      )
-      const ratio = Math.max(
-        targetWidth / from.width,
-        from.width / targetWidth,
-        targetHeight / from.height,
-        from.height / targetHeight,
-      )
-      const sizeDelta = Math.max(
-        Math.abs(targetWidth - from.width),
-        Math.abs(targetHeight - from.height),
-      )
-      if (
-        distance > TRAVEL_MAX_DISTANCE ||
-        (ratio > TRAVEL_MAX_SIZE_RATIO && sizeDelta > TRAVEL_MIN_SIZE_DELTA_FOR_RATIO)
-      ) {
-        traveling.value = false
-        positionerStyle.value = next
-        return
-      }
+      stageTravel(from, point)
+      return
+    }
+    if (!wasVisible || !base) {
+      clearTravelSchedule()
+      traveling.value = false
+      morphing.value = false
+      park(point)
+      setMorph(1, 1, 1)
+      return
+    }
+    if (traveling.value) {
+      follow(point)
+      return
+    }
+    if (travelActive.value) {
+      // Staged and waiting for its frame: the staged from-state must hold; the travel then
+      // starts toward the freshest position on its own.
+      target = point
+      return
+    }
+    if (distanceBetween(target, point) > REPOSITION_MIN_DISTANCE) {
       clearTravelSchedule()
       const token = ++travelToken
-      travelActive.value = true
-      traveling.value = false
-      // Grow to fit a larger label at once; only shrinking animates. A box easing
-      // up to a longer label would clip it for the length of the tween.
-      positionerStyle.value = {
-        ...next,
-        top: `${from.top}px`,
-        left: `${from.left}px`,
-        width: `${Math.max(from.width, targetWidth)}px`,
-        height: `${Math.max(from.height, targetHeight)}px`,
-      }
-      travelRaf1 = requestAnimationFrame(() => {
-        travelRaf2 = requestAnimationFrame(() => {
-          travelRaf1 = travelRaf2 = undefined
-          if (token !== travelToken || positionerStyle.value.visibility !== 'visible') {
-            travelActive.value = false
-            return
-          }
-          traveling.value = true
-          positionerStyle.value = {
-            ...next,
-            width: `${targetWidth}px`,
-            height: `${targetHeight}px`,
-          }
-          settleTimer = setTimeout(() => {
-            settleTimer = undefined
-            travelActive.value = false
-            if (token !== travelToken || positionerStyle.value.visibility !== 'visible') return
-            traveling.value = false
-            positionerStyle.value = { ...floatingStyle.value }
-          }, TRAVEL_SETTLE_MS)
-        })
+      traveling.value = true
+      commit(point)
+      armSettle(token, () => {
+        traveling.value = false
       })
       return
     }
-    if (travelActive.value) return
-    if (wasVisible && isVisible) {
-      if (repositionDistance(positionerStyle.value, next) > REPOSITION_MIN_DISTANCE) {
-        clearTravelSchedule()
-        const token = ++travelToken
-        traveling.value = true
-        positionerStyle.value = next
-        settleTimer = setTimeout(() => {
-          settleTimer = undefined
-          if (token !== travelToken || positionerStyle.value.visibility !== 'visible') return
-          traveling.value = false
-        }, TRAVEL_SETTLE_MS)
-        return
-      }
-      traveling.value = false
-      positionerStyle.value = next
-      return
-    }
-    traveling.value = false
-    positionerStyle.value = next
+    commit(point)
   })
 
   let pendingClose: symbol | null = null
@@ -339,11 +476,13 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
   if (typeof window === 'undefined') {
     return {
       positionerStyle,
+      panelStyle,
       placement,
       transformOrigin,
       isClosing,
       instant,
       traveling,
+      morphing,
       travelActive,
       show,
       hide,
@@ -374,7 +513,9 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     openTimer = undefined
     instant.value = wasWarm
     if (wasWarm) {
-      for (const other of visiblePeers) {
+      // The newest peer first: an earlier one may still be fading out where it was, and a sweep
+      // across triggers should carry on from the tooltip that is moving now.
+      for (const other of [...visiblePeers].reverse()) {
         if (other === peer) continue
         const rect = other.rect()
         if (rect) {
@@ -443,6 +584,9 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
 
   useEventListener(options.triggerEl, 'pointerdown', (event: PointerEvent) => {
     lastPointerWasTouch = event.pointerType === 'touch'
+    // A new press is a new gesture. Android fires no click after a long press, so a flag left
+    // from one would swallow the next real tap and the trigger would need two.
+    suppressNextClick = false
   })
   // VueUse's own long-press primitive (500ms delay, 10px move tolerance to cancel, both matching
   // platform convention) - it fires for every pointer type, so the handler itself gates on touch.
@@ -525,11 +669,13 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
 
   return {
     positionerStyle,
+    panelStyle,
     placement,
     transformOrigin,
     isClosing,
     instant,
     traveling,
+    morphing,
     travelActive,
     show,
     hide,

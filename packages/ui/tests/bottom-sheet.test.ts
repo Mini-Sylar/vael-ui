@@ -323,3 +323,144 @@ test('container: the sheet fills the container and snaps to fractions of its hei
     expect(boxRect.bottom - sheet().getBoundingClientRect().top).toBeCloseTo(240, -1),
   )
 })
+
+// The body's height cap re-lays out the whole sheet when it changes, so a drag
+// must not change it per frame: that was the jitter on phones.
+test('a drag never resizes the body per frame; a settle lower trims it once the panel stops', async () => {
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  const cap = () => Number.parseFloat(panel().style.getPropertyValue('--sheet-visible-height'))
+  await vi.waitFor(() => expect(cap()).toBeCloseTo(window.innerHeight * 0.6, 0))
+
+  const h = handle()
+  const pointerId = 1
+  const startY = window.innerHeight - 40
+  h.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
+  // Raised once, to the tallest snap point.
+  const raised = cap()
+  expect(raised).toBeCloseTo(window.innerHeight * 0.92, 0)
+  for (const dy of [20, 60, 120, 60, 10]) {
+    h.dispatchEvent(
+      new PointerEvent('pointermove', { clientY: startY - dy, pointerId, bubbles: true }),
+    )
+    await new Promise((r) => requestAnimationFrame(r))
+    expect(cap()).toBe(raised)
+  }
+  await new Promise((r) => setTimeout(r, 400))
+  h.dispatchEvent(new PointerEvent('pointerup', { clientY: startY - 10, pointerId, bubbles: true }))
+
+  // Back at the small snap point: the cap waits for the slide, then follows.
+  expect(cap()).toBe(raised)
+  await vi.waitFor(() => expect(cap()).toBeCloseTo(window.innerHeight * 0.6, 0), { timeout: 1200 })
+  expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1)
+})
+
+test('on touch, a drag down from the top belongs to the sheet: the content does not scroll under it', async () => {
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  const c = content()
+  const touch = (x: number, y: number) =>
+    new Touch({ identifier: 1, target: c, clientX: x, clientY: y })
+  // The first move decides; returns whether it cancelled the browser's scroll.
+  const gesture = (from: number, to: number) => {
+    c.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(100, from)], bubbles: true }))
+    const move = new TouchEvent('touchmove', {
+      touches: [touch(100, to)],
+      bubbles: true,
+      cancelable: true,
+    })
+    c.dispatchEvent(move)
+    c.dispatchEvent(new TouchEvent('touchend', { touches: [], bubbles: true }))
+    return move.defaultPrevented
+  }
+
+  expect(gesture(300, 310)).toBe(true) // down from the top: the sheet's
+  expect(gesture(300, 290)).toBe(false) // up: the content scrolls
+  c.scrollTop = 200
+  expect(gesture(300, 310)).toBe(false) // down while scrolled: the content scrolls back
+})
+
+test('when the viewport height changes (a phone toolbar hides), the sheet stays on its snap point', async () => {
+  const { page } = await import('vitest/browser')
+  const width = window.innerWidth
+  const height = window.innerHeight
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(height * 0.6, -1))
+  const cap = () => Number.parseFloat(panel().style.getPropertyValue('--sheet-visible-height'))
+
+  try {
+    await page.viewport(width, height + 56)
+    const taller = window.innerHeight
+    expect(taller).toBe(height + 56)
+    // Back on 60% of the new height, and the body reaches the new bottom: no empty strip.
+    await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(taller * 0.6, 0), { timeout: 1500 })
+    expect(cap()).toBeCloseTo(taller * 0.6, 0)
+  } finally {
+    await page.viewport(width, height)
+  }
+})
+
+test('pulling a raised sheet back down to where it rests keeps it open', async () => {
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  const h = handle()
+  const pointerId = 1
+  const startY = window.innerHeight - 40
+  const move = (y: number) =>
+    h.dispatchEvent(new PointerEvent('pointermove', { clientY: y, pointerId, bubbles: true }))
+  h.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
+  // Up a little, then back down to a touch below where it started, unhurried.
+  for (const y of [startY - 30, startY - 60, startY - 40, startY - 10, startY + 15]) {
+    move(y)
+    await new Promise((r) => setTimeout(r, 120))
+  }
+  h.dispatchEvent(new PointerEvent('pointerup', { clientY: startY + 15, pointerId, bubbles: true }))
+
+  await new Promise((r) => setTimeout(r, 700))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1)
+})
+
+test('the panel keeps its own layer, so a drag never repaints the sheet', async () => {
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(document.querySelector('.ui-bottom-sheet-panel')).not.toBeNull())
+  expect(getComputedStyle(panel()).willChange).toBe('transform')
+})
+
+test('a raised sheet flicked back down hard returns to rest instead of closing', async () => {
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  const h = handle()
+  const pointerId = 1
+  const startY = window.innerHeight - 40
+  const move = (y: number) =>
+    h.dispatchEvent(new PointerEvent('pointermove', { clientY: y, pointerId, bubbles: true }))
+  h.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
+  move(startY - 80)
+  await new Promise((r) => setTimeout(r, 150))
+  move(startY - 150)
+  await new Promise((r) => setTimeout(r, 150))
+  // Back down fast, let go just above where it rests.
+  move(startY - 90)
+  await new Promise((r) => setTimeout(r, 25))
+  move(startY - 10)
+  h.dispatchEvent(new PointerEvent('pointerup', { clientY: startY - 10, pointerId, bubbles: true }))
+
+  await new Promise((r) => setTimeout(r, 700))
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
+  expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1)
+})
+
+test('the scrolling content fades its edges by default', async () => {
+  const screen = await render(BottomSheetFixture)
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  // 2000px of content in a 60% sheet: there is more below, so the bottom edge fades.
+  await vi.waitFor(() => expect(getComputedStyle(content()).maskImage).not.toBe('none'))
+})

@@ -5,43 +5,72 @@
     align-items: center;
     justify-content: center;
     padding-inline: var(--ui-btn-px);
+    /* Whole pixels, like the sizes below: the label then starts on the pixel grid. */
+    padding-inline: round(var(--ui-btn-px), 1px);
     border: 1px solid transparent;
     font: inherit;
     font-weight: 500;
     line-height: 1;
     cursor: pointer;
     user-select: none;
-
+    /* The element paints nothing and is never transformed. Its box is the layer below, and its
+       contents are the layer inside (.ui-button-inner); the press scales those two. Transforming
+       the element itself would create a layer for it on every press and drop it on release, and
+       everything inside would be rasterised again both times, which reads as the label flinching.
+       Its own stacking context keeps the box layer behind the label and above the page. */
+    background: none;
+    isolation: isolate;
+  }
+  .ui-button::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border: 1px solid var(--ui-button-border, transparent);
+    border-radius: inherit;
+    background: var(--ui-button-bg, transparent);
     transition:
-      transform var(--ui-duration-press) var(--ui-ease-out),
+      scale var(--ui-duration-press) var(--ui-ease-out),
       background-color var(--ui-duration-press) ease,
       border-color var(--ui-duration-press) ease;
   }
 
+  /* Sizes land on whole pixels, and the box on an even number of them, so a 1em icon or a label
+     sits on the pixel grid at any root font size. Off the grid, the press scale can't keep the
+     sub-pixel phase of what it moves, and an icon visibly jumps as the press starts and ends.
+     The first declaration of each pair is the fallback where round() is unsupported. */
   .ui-button--sm {
     --ui-btn-px: 0.75rem;
     block-size: 1.75rem;
+    block-size: round(1.75rem, 2px);
     font-size: calc(var(--ui-font-size) * 0.8125);
+    font-size: round(calc(var(--ui-font-size) * 0.8125), 1px);
     border-radius: calc(var(--ui-radius) - 4px);
   }
   .ui-button--md {
     --ui-btn-px: 1rem;
     block-size: 2.25rem;
+    block-size: round(2.25rem, 2px);
     font-size: calc(var(--ui-font-size) * 0.875);
+    font-size: round(calc(var(--ui-font-size) * 0.875), 1px);
     border-radius: calc(var(--ui-radius) - 2px);
   }
   .ui-button--lg {
     --ui-btn-px: 1.25rem;
     block-size: 2.5rem;
+    block-size: round(2.5rem, 2px);
     font-size: var(--ui-font-size);
+    font-size: round(var(--ui-font-size), 1px);
     border-radius: var(--ui-radius);
   }
 
   .ui-button--has-leading {
     padding-inline-start: calc(var(--ui-btn-px) - 2px);
+    padding-inline-start: round(calc(var(--ui-btn-px) - 2px), 1px);
   }
   .ui-button--has-trailing {
     padding-inline-end: calc(var(--ui-btn-px) - 2px);
+    padding-inline-end: round(calc(var(--ui-btn-px) - 2px), 1px);
   }
 
   .ui-button--icon {
@@ -49,12 +78,15 @@
   }
   .ui-button--icon.ui-button--sm {
     inline-size: 1.75rem;
+    inline-size: round(1.75rem, 2px);
   }
   .ui-button--icon.ui-button--md {
     inline-size: 2.25rem;
+    inline-size: round(2.25rem, 2px);
   }
   .ui-button--icon.ui-button--lg {
     inline-size: 2.5rem;
+    inline-size: round(2.5rem, 2px);
   }
 
   .ui-button--icon::after {
@@ -77,36 +109,36 @@
   }
 
   .ui-button--primary {
-    background: var(--ui-primary);
+    --ui-button-bg: var(--ui-primary);
     color: var(--ui-primary-contrast);
   }
   .ui-button--secondary {
-    background: var(--ui-muted);
+    --ui-button-bg: var(--ui-muted);
     color: var(--ui-text);
   }
   .ui-button--outline {
-    background: transparent;
+    --ui-button-bg: transparent;
     color: var(--ui-text);
-    border-color: var(--ui-border);
+    --ui-button-border: var(--ui-border);
   }
   .ui-button--ghost {
-    background: transparent;
+    --ui-button-bg: transparent;
     color: var(--ui-text);
   }
 
   .ui-button--link {
-    background: transparent;
+    --ui-button-bg: transparent;
     color: var(--ui-text);
     text-underline-offset: 3px;
   }
 
   .ui-button--text {
-    background: transparent;
+    --ui-button-bg: transparent;
     color: var(--ui-text);
   }
   /* --ui-danger-solid: the dark preset's darker fill (its --ui-danger is a light red for text). */
   .ui-button--danger {
-    background: var(--ui-danger-solid, var(--ui-danger));
+    --ui-button-bg: var(--ui-danger-solid, var(--ui-danger));
     color: var(--ui-danger-contrast);
   }
 
@@ -116,22 +148,22 @@
   .ui-button--ghost[aria-pressed='true'],
   .ui-button--outline[aria-pressed='true'],
   .ui-button--secondary[aria-pressed='true'] {
-    background: color-mix(in oklab, var(--ui-primary) 10%, var(--ui-muted-hover));
+    --ui-button-bg: color-mix(in oklab, var(--ui-primary) 10%, var(--ui-muted-hover));
   }
   .ui-button--outline[aria-pressed='true'] {
-    border-color: color-mix(in oklab, var(--ui-primary) 18%, var(--ui-border));
+    --ui-button-border: color-mix(in oklab, var(--ui-primary) 18%, var(--ui-border));
   }
 
   @media (hover: hover) and (pointer: fine) {
     .ui-button--primary:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
-      background: var(--ui-primary-hover);
+      --ui-button-bg: var(--ui-primary-hover);
     }
     .ui-button--secondary:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
-      background: var(--ui-muted-hover);
+      --ui-button-bg: var(--ui-muted-hover);
     }
     .ui-button--outline:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading),
     .ui-button--ghost:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
-      background: var(--ui-muted);
+      --ui-button-bg: var(--ui-muted);
     }
     .ui-button--link:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
       text-decoration: underline;
@@ -140,27 +172,27 @@
       color: var(--ui-text-muted);
     }
     .ui-button--danger:hover:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
-      background: var(--ui-danger-solid-hover, var(--ui-danger-hover));
+      --ui-button-bg: var(--ui-danger-solid-hover, var(--ui-danger-hover));
     }
     .ui-button--ghost[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled),
     .ui-button--outline[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled),
     .ui-button--secondary[aria-pressed='true']:hover:not(:disabled):not(.ui-button--disabled) {
-      background: color-mix(in oklab, var(--ui-primary) 18%, var(--ui-muted-hover));
+      --ui-button-bg: color-mix(in oklab, var(--ui-primary) 18%, var(--ui-muted-hover));
     }
   }
 
-  /* will-change only while actually pressed (not always-on, which forced a permanent compositor
-     layer per button and leaked edges past clipping ancestors) — still promotes the layer ahead
-     of the transform actually starting, so the browser doesn't JIT-promote mid-press and pop the
-     first frame. */
-  .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
-    will-change: transform;
-    transform: scale(0.96);
+  /* The press: the box layer and the contents layer scale together from the centre. */
+  .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)::before,
+  .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)
+    .ui-button-inner {
+    scale: 0.96;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading) {
-      transform: none;
+    .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)::before,
+    .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)
+      .ui-button-inner {
+      scale: 1;
     }
   }
 
@@ -187,6 +219,22 @@
     transition:
       opacity var(--ui-duration-press) ease,
       filter var(--ui-duration-press) ease;
+  }
+  /* The contents, as one unit, kept on their own compositor layer the whole time. The press scales
+     the button around them; a layer that already exists is only scaled by the compositor, while
+     one created at press start and dropped at release end has its text rasterised again both
+     times, which read as the label flinching. */
+  .ui-button-inner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Fills the content box, so this layer starts on a whole pixel (the border edge) and the label
+       is centred inside it; a layer that itself sat on a fraction of a pixel lost that phase as
+       the button scaled. */
+    align-self: stretch;
+    min-inline-size: 0;
+    will-change: transform;
+    transition: scale var(--ui-duration-press) var(--ui-ease-out);
   }
   .ui-button-label {
     display: inline-block;
@@ -217,9 +265,11 @@
   }
   .ui-button-leading {
     margin-inline-end: 0.5em;
+    margin-inline-end: round(0.5em, 1px);
   }
   .ui-button-trailing {
     margin-inline-start: 0.5em;
+    margin-inline-start: round(0.5em, 1px);
   }
 
   .ui-button-loader {
@@ -313,11 +363,14 @@
     display: flex;
     inline-size: 100%;
   }
+  /* Overlapping the button, the badge would be promoted along with it when a press starts and
+     dropped when the release ends, its text rasterised again both times. Its own layer, kept. */
   .ui-button-badge {
     position: absolute;
     z-index: 2;
     display: inline-flex;
     pointer-events: none;
+    will-change: transform;
   }
 
   .ui-button-badge[data-placement='top-start'] {

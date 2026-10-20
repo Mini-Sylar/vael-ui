@@ -275,3 +275,100 @@ test('a touch long-press shows the tooltip and swallows the click that follows t
   trigger.click()
   expect(clicks).not.toHaveBeenCalled()
 })
+
+test('a long-press with no click after it (Android) leaves the next tap working', async () => {
+  const screen = await render(TooltipFixture)
+  const trigger = screen.getByTestId('trigger-a').element() as HTMLElement
+  const clicks = vi.fn()
+  trigger.addEventListener('click', clicks)
+  const touch = { pointerType: 'touch', pointerId: 7, bubbles: true, isPrimary: true }
+
+  trigger.dispatchEvent(new PointerEvent('pointerdown', touch))
+  await new Promise((resolve) => setTimeout(resolve, 550))
+  await expect.element(screen.getByTestId('tip-a')).toBeVisible()
+  // Android sends no click after a long press.
+  trigger.dispatchEvent(new PointerEvent('pointerup', touch))
+
+  // The next tap is a new gesture and must land.
+  trigger.dispatchEvent(new PointerEvent('pointerdown', { ...touch, pointerId: 8 }))
+  trigger.dispatchEvent(new PointerEvent('pointerup', { ...touch, pointerId: 8 }))
+  trigger.click()
+  expect(clicks).toHaveBeenCalledTimes(1)
+})
+
+test('a glide lays the positioner out once, at its destination, and moves it with translate only', async () => {
+  const screen = await render(TooltipHostFixture)
+  await screen.getByTestId('host-a').hover()
+  await vi.waitFor(() => expect(document.querySelector('.ui-tooltip-positioner')).not.toBeNull())
+  const positioner = document.querySelector<HTMLElement>('.ui-tooltip-positioner')!
+  await vi.waitFor(() => expect(positioner.hasAttribute('data-traveling')).toBe(false))
+  const from = positioner.getBoundingClientRect().left
+  await screen.getByTestId('host-component').hover()
+  await vi.waitFor(() => expect(positioner.hasAttribute('data-traveling')).toBe(true))
+  const layoutLeft = positioner.style.left
+  const lefts = new Set<string>()
+  let frames = 0
+  while (positioner.hasAttribute('data-traveling') && frames++ < 60) {
+    lefts.add(positioner.style.left)
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  // Layout never changed under the glide; the whole move was the translate.
+  expect([...lefts]).toEqual([layoutLeft])
+  expect(positioner.style.left).toBe(layoutLeft)
+  expect(positioner.style.translate).toBe('')
+  expect(positioner.getBoundingClientRect().left).not.toBe(from)
+})
+
+test('a tooltip rests on whole device pixels', async () => {
+  const screen = await render(TooltipHostFixture)
+  await screen.getByTestId('host-a').hover()
+  await vi.waitFor(() => expect(document.querySelector('.ui-tooltip-positioner')).not.toBeNull())
+  const positioner = document.querySelector<HTMLElement>('.ui-tooltip-positioner')!
+  const dpr = window.devicePixelRatio || 1
+  for (const value of [positioner.style.left, positioner.style.top]) {
+    const device = Number.parseFloat(value) * dpr
+    expect(Math.abs(device - Math.round(device))).toBeLessThan(0.001)
+  }
+})
+
+test('the panel itself is never scaled: the box layer scales in while the text stays put', async () => {
+  // The default render stubs <Transition>; the open animation needs the real one.
+  const screen = await render(TooltipHostFixture, { global: { stubs: { transition: false } } })
+  await screen.getByTestId('host-a').hover()
+  let panel: HTMLElement | null = null
+  for (let i = 0; i < 120 && !panel; i++) {
+    await new Promise((r) => requestAnimationFrame(r))
+    panel = document.querySelector<HTMLElement>('.ui-tooltip-panel')
+  }
+  expect(panel).not.toBeNull()
+  const layerScales = new Set<string>()
+  for (let i = 0; i < 8; i++) {
+    const panelStyle = getComputedStyle(panel!)
+    expect(panelStyle.transform).toBe('none')
+    expect(panelStyle.scale).toBe('none')
+    layerScales.add(getComputedStyle(panel!, '::before').scale)
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  // The open animation ran on the layer, not on the panel.
+  expect(layerScales.size).toBeGreaterThan(1)
+})
+
+test('content that changes size while open morphs the box layer from the old size', async () => {
+  const label = shallowRef('Short')
+  const screen = await render({
+    components: { Tooltip: (await import('../src/components/Tooltip/Tooltip.vue')).default },
+    setup: () => ({ label }),
+    template: `<div style="padding: 80px"><Tooltip :open-delay="0"><template #trigger="{ setTriggerEl }"><button data-testid="morph-trigger" :ref="(el) => setTriggerEl(el)">T</button></template>{{ label }}</Tooltip></div>`,
+  })
+  await screen.getByTestId('morph-trigger').hover()
+  await vi.waitFor(() => expect(document.querySelector('.ui-tooltip-panel')).not.toBeNull())
+  const panel = document.querySelector<HTMLElement>('.ui-tooltip-panel')!
+  const positioner = panel.closest<HTMLElement>('.ui-tooltip-positioner')!
+  await new Promise((r) => setTimeout(r, 200))
+  label.value = 'Now a considerably longer label'
+  await vi.waitFor(() => expect(positioner.hasAttribute('data-morphing')).toBe(true))
+  const scale = Number.parseFloat(getComputedStyle(panel, '::before').scale)
+  expect(scale).toBeLessThan(0.9)
+  await vi.waitFor(() => expect(positioner.hasAttribute('data-morphing')).toBe(false))
+  expect(getComputedStyle(panel, '::before').scale).toBe('1')
+})

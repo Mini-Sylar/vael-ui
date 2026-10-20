@@ -270,6 +270,6 @@ export function startClearLeave(el: Element): void {
   measureClearSpace(node)
   void node.offsetWidth
   node.style.opacity = '0'
-  node.style.transform = 'scale(0.5)'
+  node.style.transform = 'scale(0.9)'
   node.style.marginInlineEnd = 'calc(var(--ui-clear-space) * -1)'
 }

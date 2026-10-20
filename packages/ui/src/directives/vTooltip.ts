@@ -7,6 +7,9 @@ export interface TooltipDirectiveOptions {
   content: string
   side?: Side
   align?: Align
+  /** Gap between the target and the tooltip, in px (default 8). A function is read each time the
+   * tooltip is positioned, for a target whose size is still changing under it. */
+  sideOffset?: number | (() => number)
   openDelay?: number
   closeDelay?: number
   /** Per-target override for TooltipHost's `beforeClose` prop — same escape hatch as Tooltip.vue's own prop, threaded through since TooltipHost is a single shared singleton. */

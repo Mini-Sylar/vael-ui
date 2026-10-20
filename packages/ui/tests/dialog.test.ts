@@ -320,3 +320,41 @@ test('Escape that ends an IME composition does not close the dialog', async () =
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
 })
+
+// The test renderer stubs <Transition>, which would skip the exit these two are about.
+const realTransitions = { global: { stubs: { transition: false } } }
+
+test('the scroll lock holds until the exit animation ends, so a returning scrollbar cannot nudge the closing panel', async () => {
+  const screen = await render(DialogFixture, realTransitions)
+  await screen.getByTestId('trigger').click()
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  expect(document.body.style.overflow).toBe('hidden')
+
+  await userEvent.keyboard('{Escape}')
+  // Closed, but still fading out: the page must stay locked under it.
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog-leave-active')).not.toBeNull(), {
+    interval: 5,
+  })
+  expect(screen.getByTestId('state').element().textContent).toBe('closed')
+  expect(document.body.style.overflow).toBe('hidden')
+
+  await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull())
+  await vi.waitFor(() => expect(document.body.style.overflow).toBe(''))
+})
+
+test('reopening a dialog mid-exit keeps the scroll lock, and the next close still releases it', async () => {
+  const screen = await render(DialogFixture, realTransitions)
+  const trigger = screen.getByTestId('trigger')
+  await trigger.click()
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+  await trigger.click()
+  await expect.element(screen.getByTestId('state')).toHaveTextContent('open')
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  expect(document.body.style.overflow).toBe('hidden')
+
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull())
+  await vi.waitFor(() => expect(document.body.style.overflow).toBe(''))
+})

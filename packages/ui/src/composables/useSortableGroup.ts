@@ -1,12 +1,6 @@
 import { nextTick, toValue } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
-import {
-  DROP_SPRING,
-  SHIFT_SPRING,
-  resolveInsertionIndex,
-  resolveRowShifts,
-  useSortable,
-} from './useSortable'
+import { SHIFT_SPRING, resolveInsertionIndex, resolveRowShifts, useSortable } from './useSortable'
 import type {
   GroupMemberBinding,
   SortableAxis,
@@ -18,6 +12,7 @@ import type {
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
 import { contentOffset, findScrollParent } from './sortableAutoScroll'
+import type { Point } from './sortableSettle'
 
 /** Where a dragged value sits, or would land, within one member list. */
 export interface GroupDropPosition {
@@ -103,37 +98,15 @@ function translateFor(offset: number, axis: SortableAxis): string {
   return axis === 'x' ? `${offset}px 0` : `0 ${offset}px`
 }
 
-function captureTops(binding: GroupMemberBinding): Map<HTMLElement, number> {
-  const tops = new Map<HTMLElement, number>()
-  const axis = binding.axis()
+function captureTops(binding: GroupMemberBinding): Map<HTMLElement, Point> {
+  const tops = new Map<HTMLElement, Point>()
   for (const row of binding.rows()) {
     const el = binding.getElement(row.value)
     if (!el) continue
     const rect = el.getBoundingClientRect()
-    tops.set(el, axis === 'x' ? rect.left : rect.top)
+    tops.set(el, { x: rect.left, y: rect.top })
   }
   return tops
-}
-
-function flipRows(
-  before: Map<HTMLElement, number>,
-  after: Map<HTMLElement, number>,
-  velocities: Map<HTMLElement, number>,
-  skipEl: HTMLElement | null,
-  axis: SortableAxis,
-) {
-  for (const [el, beforeTop] of before) {
-    if (el === skipEl) continue
-    const afterTop = after.get(el)
-    if (afterTop == null) continue
-    const delta = beforeTop - afterTop
-    if (Math.abs(delta) < 0.5) continue
-    el.style.translate = translateFor(delta, axis)
-    const spring = createSpring(delta, DROP_SPRING, (offset) => {
-      el.style.translate = translateFor(offset, axis)
-    })
-    spring.set(0, { velocity: velocities.get(el) ?? undefined })
-  }
 }
 
 function focusHandle(el: HTMLElement) {
@@ -324,9 +297,20 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     const hostBinding = members.get(currentHostId!)!
     const origin = members.get(originGroupId)!
     const axis = hostBinding.axis()
-    const pointerAlong =
-      (axis === 'x' ? point.x : point.y) + contentOffset(ghostScrollEl, axis) - ghostOffsetAtFreeze
-    currentIndex = resolveInsertionIndex(ghostBands, pointerAlong)
+    // The preview's centre, as a same-list drag uses the block's centre, so where a card lands
+    // doesn't depend on where it was grabbed.
+    const preview = origin.previewRect()
+    const along = preview
+      ? axis === 'x'
+        ? preview.left + preview.width / 2
+        : preview.top + preview.height / 2
+      : axis === 'x'
+        ? point.x
+        : point.y
+    currentIndex = resolveInsertionIndex(
+      ghostBands,
+      along + contentOffset(ghostScrollEl, axis) - ghostOffsetAtFreeze,
+    )
     driveGhost(hostBinding, currentIndex, origin.draggedBlockSize())
   }
 
@@ -420,22 +404,43 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     const destEl = dest.getElement(value)
     origin.destroyOwnPreview()
     if (destEl && previewRect) {
-      const beforeTop = destAxis === 'x' ? previewRect.left : previewRect.top
-      const afterTop = destAfter.get(destEl)
-      if (afterTop != null) {
-        const delta = beforeTop - afterTop
-        if (Math.abs(delta) >= 0.5) {
-          destEl.style.translate = translateFor(delta, destAxis)
-          const spring = createSpring(delta, DROP_SPRING, (offset) => {
-            destEl.style.translate = translateFor(offset, destAxis)
-          })
-          spring.set(0, { velocity: releaseVelocity })
-        } else {
-          destEl.style.translate = ''
-        }
+      const after = destAfter.get(destEl)
+      if (after) {
+        // Both axes: the preview was wherever the pointer left it, and the whole way from there
+        // to the slot glides.
+        const delta = { x: previewRect.left - after.x, y: previewRect.top - after.y }
+        const velocity =
+          destAxis === 'x' ? { x: releaseVelocity, y: 0 } : { x: 0, y: releaseVelocity }
+        if (Math.abs(delta.x) >= 0.5 || Math.abs(delta.y) >= 0.5)
+          dest.settle(destEl, value, delta, velocity, true)
+        else destEl.style.translate = ''
       }
     }
-    flipRows(destBefore, destAfter, destGhostVelocities, destEl ?? null, destAxis)
+    // The landing watches the destination's rows too: an optimistic update that re-sorts the
+    // column right after the drop then glides them instead of snapping.
+    dest.watchRows()
+    // The rest of the destination's rows land through the same settler, so one writer owns
+    // their translate if the column re-sorts while they settle.
+    const destValueOf = new Map<HTMLElement, string | number>()
+    for (const row of dest.rows()) {
+      const el = dest.getElement(row.value)
+      if (el) destValueOf.set(el, row.value)
+    }
+    for (const [el, before] of destBefore) {
+      if (el === destEl) continue
+      const rowValue = destValueOf.get(el)
+      const after = destAfter.get(el)
+      if (rowValue == null || !after) continue
+      const delta = { x: before.x - after.x, y: before.y - after.y }
+      if (Math.abs(delta.x) < 0.5 && Math.abs(delta.y) < 0.5) continue
+      const carried = destGhostVelocities.get(el) ?? 0
+      dest.settle(
+        el,
+        rowValue,
+        delta,
+        destAxis === 'x' ? { x: carried, y: 0 } : { x: 0, y: carried },
+      )
+    }
 
     if (keyboardSourced && destEl) focusHandle(destEl)
   }

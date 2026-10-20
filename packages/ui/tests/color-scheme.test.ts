@@ -35,3 +35,14 @@ test('persists through the provided get/set pair and restores it on the next mou
   const screen2 = await render(ColorSchemeFixture, { props: { persist } })
   await expect.element(screen2.getByTestId('mode')).toHaveTextContent('light')
 })
+
+test('an explicit initial mode resolves on the first render, before mount, so server HTML matches it', async () => {
+  const { createSSRApp, h } = await import('vue')
+  const { renderToString } = await import('vue/server-renderer')
+  // The test browser prefers light, so 'dark' can only come from `initial`.
+  expect(matchMedia('(prefers-color-scheme: dark)').matches).toBe(false)
+  const html = await renderToString(
+    createSSRApp({ render: () => h(ColorSchemeFixture, { initial: 'dark' }) }),
+  )
+  expect(html).toContain('data-testid="resolved">dark<')
+})

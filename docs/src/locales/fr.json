@@ -12,7 +12,6 @@
     "animationIntegrationGuide": "Apportez votre propre animation",
     "stylingAndLayersGuide": "Calques de style et de cascade",
     "i18nKeysGuide": "Traduire vael-ui",
-    "openMenu": "Ouvrir le menu",
     "menu": "Menu",
     "composables": "Composables",
     "autoImportGuide": "Importation automatique",
@@ -23,7 +22,10 @@
     "next": "Suivant",
     "pager": "Pages précédente et suivante",
     "mainNav": "Principale",
-    "sidebarNav": "Documentation"
+    "sidebarNav": "Documentation",
+    "searchShort": "Rechercher",
+    "support": "Soutenir",
+    "searchAll": "Rechercher composants, props et guides…"
   },
   "header": {
     "colorScheme": "Changer le mode",
@@ -42,7 +44,15 @@
     "animations": "Animations",
     "locale": "Langue",
     "defaultMode": "Mode de démo par défaut",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "appearance": "Apparence",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système",
+    "demos": "Démos",
+    "general": "Général",
+    "mode": "Mode",
+    "fontSize": "Taille du texte"
   },
   "component": {
     "vdom": "Vue DOM",
@@ -86,7 +96,7 @@
     "featureSkillTitle": "Compétence d'agent IA",
     "themeLabel": "Essayez une couleur :",
     "newTag": "Nouveau",
-    "newText": "Chaque prop documentée dans votre éditeur",
+    "newText": "0.5.0 : dossiers à ressort, sélecteur de couleur, édition en place",
     "showcaseLabel": "Démo en direct réalisée avec vael-ui"
   },
   "gettingStarted": {
@@ -179,9 +189,11 @@
     "MenuList": "Les lignes de Menu, rendues dans le flux de la page plutôt que dans un menu déroulant, pour une navigation latérale permanente.",
     "Message": "Une bannière en ligne pour le texte d'état : informations, réussite, avertissement ou erreur.",
     "OtpInput": "Une rangée de cases à un seul caractère pour les codes à usage unique, avec collage et avance automatique.",
+    "Editable": "Un texte qui devient un champ au clic et s'enregistre avec Entrée ou à la perte du focus, pour renommer sur place.",
+    "ColorPicker": "Une pastille de couleur qui ouvre un sélecteur : plan de saturation et luminosité, curseur de teinte, champ hex, pipette si le navigateur en a une, et préréglages facultatifs.",
     "Pagination": "Contrôles de numéro de page pour diviser une longue liste ou un tableau sur plusieurs pages.",
     "Popover": "Un panneau flottant ancré à un élément déclencheur, pour des menus, des formulaires ou des détails supplémentaires.",
-    "Progress": "Une barre de progression pour une tâche, avec des états déterminé et indéterminé.",
+    "Progress": "Une barre de progression pour une tâche ou des parts empilées d'un tout, avec des états déterminé et indéterminé et une légende facultative.",
     "PullToRefresh": "Un geste déroulant en haut d’un conteneur de défilement qui déclenche une actualisation.",
     "Radio": "Une option dans un ensemble mutuellement exclusif. Utilisez-la toujours dans un RadioGroup.",
     "RadioGroup": "Regroupe un ensemble de boutons Radio afin qu'un seul puisse être sélectionné à la fois.",
@@ -209,7 +221,13 @@
     "BreadcrumbItem": "Un lien ou la page actuelle dans un fil d’Ariane Breadcrumb.",
     "BreadcrumbSeparator": "Le séparateur entre deux BreadcrumbItem : un chevron, sauf si vous fournissez votre propre contenu.",
     "Rating": "Cliquez, faites glisser ou utilisez les flèches pour choisir une valeur sur une rangée d’étoiles, avec des demi-étoiles en option.",
-    "Timeline": "Une liste ordonnée d’étapes reliées par une ligne. Chaque étape peut contenir n’importe quel contenu."
+    "Timeline": "Une liste ordonnée d’étapes reliées par une ligne. Chaque étape peut contenir n’importe quel contenu.",
+    "ButtonGroup": "Assemble des boutons en une ligne ou une colonne continue, et peut en faire des bascules simples ou multiples.",
+    "CommandPalette": "Une liste de commandes avec recherche dans une boîte de dialogue, ouverte par un bouton ou un raccourci comme ⌘K.",
+    "Stepper": "Montre la progression dans une suite d’étapes et permet de passer de l’une à l’autre.",
+    "Breadcrumb": "Une piste de liens du haut du site jusqu’à la page actuelle.",
+    "AvatarGroup": "Empile plusieurs avatars qui se chevauchent sur une ligne, avec un compteur pour ceux qui ne tiennent pas.",
+    "ScrollArea": "Une zone défilante aux barres fines et thématisées, aux bords estompés, dans un ou deux sens."
   },
   "globalSetup": {
     "allTogetherIntro": "Montez les quatre une seule fois, dans le template racine de votre application :",
@@ -350,7 +368,8 @@
   "notFound": {
     "body": "La page que vous recherchez n'existe pas ou a été déplacée.",
     "home": "De retour à la maison",
-    "title": "Page introuvable"
+    "title": "Page introuvable",
+    "didYouMean": "Vouliez-vous dire :"
   },
   "composable": {
     "noParameters": "Ne prend aucun argument.",
@@ -448,5 +467,40 @@
     "value": "Valeur",
     "modifiers": "Modificateurs",
     "noModifiers": "Aucun modificateur."
+  },
+  "dockTour": {
+    "componentsTitle": "Les composants sont ici en bas",
+    "componentsDescription": "Le menu est passé de la barre du haut au dock, plus près de votre pouce.",
+    "settingsTitle": "Le mode sombre est dans les Paramètres",
+    "settingsDescription": "Avec la couleur du thème, l’arrondi des coins, la taille, la taille du texte, la langue et plus encore.",
+    "replayLabel": "Visite guidée",
+    "replay": "Revoir",
+    "searchTitle": "La recherche en un geste",
+    "searchDescription": "Trouvez un composant, un guide ou un composable par son nom, avec une courte description.",
+    "variantTitle": "Vue DOM ou Vapor, en haut",
+    "variantDescription": "Basculez ici chaque démo entre la version classique et Vapor."
+  },
+  "search": {
+    "actions": "Commandes",
+    "current": "Actuel",
+    "on": "Activées",
+    "off": "Désactivées",
+    "copyInstall": "Copier la commande d’installation",
+    "reportIssue": "Signaler un problème",
+    "recent": "Récents",
+    "drillIn": "API de {name}",
+    "copy": {
+      "import": "Copier l’import",
+      "usage": "Copier l’usage",
+      "link": "Copier le lien",
+      "command": "Copier"
+    },
+    "noResults": "Aucun résultat pour « {query} »",
+    "didYouMean": "Vouliez-vous dire",
+    "request": "Demandez-le sur GitHub",
+    "copied": "Copié dans le presse-papiers",
+    "back": "Tous les résultats",
+    "copiedShort": "Copié",
+    "noCommands": "Aucune commande ne correspond à « {query} »"
   }
 }

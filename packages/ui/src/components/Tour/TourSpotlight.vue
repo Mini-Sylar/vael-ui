@@ -203,16 +203,19 @@ function stopAnim() {
   from = to = null
 }
 
-function commit(cutout: Cutout) {
+// Mid-glide frames go straight to the element; the ref (and so the template) gets the resting value.
+function commit(cutout: Cutout, settled = true) {
   current = cutout
-  clipPath.value = toPath(cutout)
+  const path = toPath(cutout)
+  overlay.value?.style.setProperty('--ui-tour-cutout', path)
+  if (settled) clipPath.value = path
 }
 
 function tick(now: number) {
   animFrame = undefined
   if (!from || !to) return
   const p = animDuration > 0 ? Math.min(1, (now - animStart) / animDuration) : 1
-  commit(p >= 1 ? to : tween(from, to, easeGlide(p)))
+  commit(p >= 1 ? to : tween(from, to, easeGlide(p)), p >= 1)
   if (p < 1) animFrame = requestAnimationFrame(tick)
   else from = to = null
 }

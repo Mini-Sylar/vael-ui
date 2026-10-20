@@ -30,9 +30,7 @@
       <div class="playground-controls">
         <div class="control-row">
           <label for="cp-color">primary</label>
-          <span class="color-swatch">
-            <input id="cp-color" :value="primary" type="color" @input="onColorInput" />
-          </span>
+          <ColorPicker id="cp-color" v-model="primary" size="sm" label="primary" />
         </div>
         <div class="control-row">
           <label id="cp-radius-label" for="cp-radius">radius</label>
@@ -84,7 +82,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
-import { Select, SelectButton, Switch } from 'vael-ui'
+import { ColorPicker, Select, SelectButton, Switch } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
 import { defaultVariant } from '../preferences'
 import { useVaporComponents } from '../composables/useVaporComponents'
@@ -129,10 +127,6 @@ const fontSizeItems = [
   { label: 'Comfortable (16px)', value: '16px' },
   { label: 'Large (18px)', value: '18px' },
 ]
-
-function onColorInput(e: Event) {
-  primary.value = (e.target as HTMLInputElement).value
-}
 
 function onRadiusChange(v: string | number | (string | number)[] | null) {
   if (typeof v === 'string') radius.value = v
@@ -241,25 +235,6 @@ const code = computed(() => {
   .playground-body {
     grid-template-columns: 1fr;
   }
-}
-
-.color-swatch {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  border: 1px solid var(--ui-border);
-  overflow: hidden;
-  display: inline-flex;
-  cursor: pointer;
-}
-
-.color-swatch input[type='color'] {
-  width: 150%;
-  height: 150%;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transform: translate(-15%, -15%);
 }
 
 .playground :deep(.code-block) {

@@ -226,6 +226,7 @@
     :style="tbodyPart.style"
     :data-motion="rowCss && rowMotionReady ? undefined : 'off'"
     @before-enter="beforeEnterHook"
+    @after-enter="afterEnterHook"
     @before-leave="beforeLeaveHook"
     @enter="rowEnterHook"
     @leave="rowLeaveHook"
@@ -479,6 +480,11 @@ function beforeEnterHook(el: Element) {
   requestAnimationFrame(() => {
     wrap.style.maxBlockSize = `${wrap.scrollHeight}px`
   })
+}
+// Released once open, so rows that grow later (async content) aren't clipped.
+function afterEnterHook(el: Element) {
+  const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
+  if (wrap) wrap.style.maxBlockSize = ''
 }
 function beforeLeaveHook(el: Element) {
   if (!rowCss.value) return

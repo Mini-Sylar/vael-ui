@@ -80,9 +80,11 @@
     "MenuList": "Las filas de Menu renderizadas en el flujo de la página en lugar de en un desplegable, para una navegación lateral permanente.",
     "Message": "Un banner en línea para el texto de estado: información, éxito, advertencia o error.",
     "OtpInput": "Una fila de cuadros de un solo carácter para códigos de un solo uso, con pegado y avance automático.",
+    "Editable": "Texto que se convierte en un campo al hacer clic y se guarda con Enter o al salir, para renombrar en el sitio.",
+    "ColorPicker": "Una muestra de color que abre un selector: plano de saturación y brillo, deslizador de tono, campo hex, cuentagotas si el navegador lo ofrece y preajustes opcionales.",
     "Pagination": "Controles de número de página para dividir una lista o tabla larga en páginas.",
     "Popover": "Un panel flotante anclado a un elemento activador, para menús, formularios o detalles adicionales.",
-    "Progress": "Una barra de progreso para una tarea, con estados determinado e indeterminado.",
+    "Progress": "Una barra de progreso para una tarea o partes apiladas de un total, con estados determinado e indeterminado y leyenda opcional.",
     "PullToRefresh": "Un gesto desplegable en la parte superior de un contenedor de desplazamiento que activa una actualización.",
     "Radio": "Una opción dentro de un conjunto mutuamente excluyente. Úsalo siempre dentro de un RadioGroup.",
     "RadioGroup": "Agrupa un conjunto de botones Radio para que solo se pueda seleccionar uno a la vez.",
@@ -111,7 +113,13 @@
     "Rating": "Haga clic, arrastre o use las teclas de flecha para seleccionar un valor en una fila de estrellas, con precisión opcional de medio paso.",
     "Timeline": "Una lista ordenada de pasos unidos por una línea. Cada paso puede contener cualquier contenido.",
     "BreadcrumbItem": "Un enlace o la página actual dentro de un Breadcrumb.",
-    "BreadcrumbSeparator": "El separador entre dos BreadcrumbItem. Muestra un chevron, salvo que pases tu propio contenido."
+    "BreadcrumbSeparator": "El separador entre dos BreadcrumbItem. Muestra un chevron, salvo que pases tu propio contenido.",
+    "ButtonGroup": "Une botones en una fila o columna conectada y puede convertirlos en interruptores simples o múltiples.",
+    "CommandPalette": "Una lista de comandos con búsqueda dentro de un diálogo, que se abre con un botón o un atajo como ⌘K.",
+    "Stepper": "Muestra el avance por una secuencia de pasos y permite moverse entre ellos.",
+    "Breadcrumb": "Un rastro de enlaces desde la parte superior del sitio hasta la página actual.",
+    "AvatarGroup": "Apila varios avatares superpuestos en una fila, con un contador para los que no caben.",
+    "ScrollArea": "Una zona con desplazamiento, barras finas con el estilo del tema y bordes difuminados, en una o ambas direcciones."
   },
   "gettingStarted": {
     "darkModeIntro": "El modo oscuro es solo CSS. Sigue a <code>&lt;html data-theme=\"dark\"&gt;</code> y, si no está, recurre a <code>prefers-color-scheme</code>. vael-ui no incluye ningún selector de tema. <code>useColorScheme()</code> detecta los cambios de preferencia del sistema y guarda la elección mediante la opción <code>persist</code> que le pases:",
@@ -177,7 +185,15 @@
     "radiusSharp": "Afilado",
     "radiusSoft": "Suave",
     "theme": "Personalizar tema",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "appearance": "Apariencia",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema",
+    "demos": "Demos",
+    "general": "General",
+    "mode": "Modo",
+    "fontSize": "Tamaño de letra"
   },
   "home": {
     "tagline": "Más de 60 componentes para Vue 3, compilados desde una sola fuente para el build clásico VDOM y para Vue Vapor.",
@@ -198,7 +214,7 @@
     "featureSkillTitle": "Skill para agentes de IA",
     "themeLabel": "Prueba un color:",
     "newTag": "Nuevo",
-    "newText": "Cada prop documentada en tu editor",
+    "newText": "0.5.0: carpetas con resorte, selector de color, edición en línea",
     "showcaseLabel": "Demo en vivo hecha con vael-ui"
   },
   "i18nKeys": {
@@ -231,7 +247,6 @@
     "stylingAndLayersGuide": "Estilo y capas en cascada",
     "tailwindGuide": "Usando con viento de cola",
     "menu": "Menú",
-    "openMenu": "abrir menú",
     "composables": "Componibles",
     "nuxtGuide": "Nuxt",
     "skillGuide": "Habilidad del agente de IA",
@@ -240,7 +255,10 @@
     "next": "Siguiente",
     "pager": "Páginas anterior y siguiente",
     "mainNav": "Principal",
-    "sidebarNav": "Documentación"
+    "sidebarNav": "Documentación",
+    "searchShort": "Buscar",
+    "support": "Apoyar",
+    "searchAll": "Busca componentes, props y guías…"
   },
   "pageNotes": {
     "Resizable": "La barra lateral de este sitio está construida con Resizable. \nArrastra su borde derecho para probarlo.",
@@ -350,7 +368,8 @@
   "notFound": {
     "body": "La página que estás buscando no existe o se ha movido.",
     "home": "De vuelta a casa",
-    "title": "Página no encontrada"
+    "title": "Página no encontrada",
+    "didYouMean": "¿Quisiste decir?"
   },
   "composable": {
     "noParameters": "No acepta argumentos.",
@@ -448,5 +467,40 @@
     "orange": "Naranja",
     "green": "Verde",
     "custom": "Color personalizado"
+  },
+  "dockTour": {
+    "componentsTitle": "Los componentes están aquí abajo",
+    "componentsDescription": "El menú pasó de la barra superior al dock, más cerca de tu pulgar.",
+    "settingsTitle": "El modo oscuro está en Ajustes",
+    "settingsDescription": "Junto con el color del tema, el radio de las esquinas, el tamaño, el tamaño de letra, el idioma y más.",
+    "replayLabel": "Recorrido",
+    "replay": "Ver de nuevo",
+    "searchTitle": "La búsqueda, a un toque",
+    "searchDescription": "Encuentra cualquier componente, guía o composable por su nombre, con una breve descripción.",
+    "variantTitle": "Vue DOM o Vapor, arriba",
+    "variantDescription": "Cambia aquí cada demo entre la versión clásica y Vapor."
+  },
+  "search": {
+    "actions": "Comandos",
+    "current": "Actual",
+    "on": "Activadas",
+    "off": "Desactivadas",
+    "copyInstall": "Copiar comando de instalación",
+    "reportIssue": "Informar de un problema",
+    "recent": "Recientes",
+    "drillIn": "API de {name}",
+    "copy": {
+      "import": "Copiar import",
+      "usage": "Copiar uso",
+      "link": "Copiar enlace",
+      "command": "Copiar"
+    },
+    "noResults": "Sin resultados para «{query}»",
+    "didYouMean": "¿Quisiste decir?",
+    "request": "Pídelo en GitHub",
+    "copied": "Copiado al portapapeles",
+    "back": "Todos los resultados",
+    "copiedShort": "Copiado",
+    "noCommands": "Ningún comando coincide con «{query}»"
   }
 }

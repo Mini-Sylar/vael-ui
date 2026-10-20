@@ -1,6 +1,12 @@
 <template>
+  <!-- enterkeyhint before attrs so yours wins. Without one, Android's key reads
+       "Next" and moves focus on instead of sending Enter to pick the match. -->
   <Input
     ref="inputRef"
+    enterkeyhint="enter"
+    autocapitalize="off"
+    autocorrect="off"
+    spellcheck="false"
     v-bind="attrs"
     v-model="query"
     :placeholder="placeholder"

@@ -1,0 +1,243 @@
+<template>
+  <div
+    ref="root"
+    :class="rootPart.class"
+    :style="rootPart.style"
+    :data-state="editing ? 'editing' : 'preview'"
+    :data-motion="props.motionCss ? undefined : 'off'"
+    v-bind="attrs"
+  >
+    <template v-if="editing">
+      <!-- Enter, Escape and focus leaving are handled here, so any control in #edit gets them. -->
+      <span
+        ref="editArea"
+        :class="editPart.class"
+        :style="editPart.style"
+        @keydown="onKeydown"
+        @focusout="onFocusout"
+      >
+        <slot
+          name="edit"
+          :value="draft"
+          :update="setDraft"
+          :submit="submit"
+          :cancel="cancel"
+          :size="size"
+        >
+          <Input
+            ref="input"
+            v-model="draft"
+            :size="size"
+            :placeholder="placeholder"
+            :maxlength="maxlength"
+            :enterkeyhint="submitsOnEnter ? 'done' : undefined"
+            :ui="{ root: inputPart }"
+          />
+        </slot>
+      </span>
+      <!-- Pressing an action must not blur the input first, or blur would submit before the click lands. -->
+      <span
+        v-if="$slots.actions"
+        :class="actionsPart.class"
+        :style="actionsPart.style"
+        @pointerdown.prevent
+        @mousedown.prevent
+      >
+        <slot name="actions" :submit="submit" :cancel="cancel" />
+      </span>
+    </template>
+    <button
+      v-else
+      ref="preview"
+      type="button"
+      :class="previewPart.class"
+      :style="previewPart.style"
+      :disabled="disabled"
+      :data-placeholder="modelValue ? undefined : ''"
+      @click="activationMode === 'click' && start()"
+      @dblclick="activationMode === 'dblclick' && start()"
+      @focus="activationMode === 'focus' && start()"
+      @keydown.enter.prevent="start()"
+    >
+      <slot name="preview" :value="modelValue">{{ modelValue || placeholder }}</slot>
+    </button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import './Editable.css'
+import { withProviderDefaults } from '../../config'
+import '../shared/tokens.css'
+import { computed, nextTick, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import Input from '../Input/Input.vue'
+import { useClassMerge, resolveUiPart } from '../../classes'
+import type { UiPartValue } from '../../classes'
+import { useThemedUi } from '../../theme'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
+/** The text. Updates when an edit is submitted, not on every keystroke. @default '' */
+const modelValue = defineModel<string>({ default: '' })
+/** Whether the input is showing. Bind it to open or close the edit from outside. @default false */
+const editing = defineModel<boolean>('editing', { default: false })
+
+const rawProps = withDefaults(
+  defineProps<{
+    /** Shown in the preview when the text is empty, and in the input. @default 'Click to edit' */
+    placeholder?: string
+    /** What opens the input: a click, a double click, or focus arriving. @default 'click' */
+    activationMode?: 'click' | 'dblclick' | 'focus'
+    /** What saves the edit: Enter, leaving the input, either, or only `submit()`. Leaving the input otherwise cancels. @default 'both' */
+    submitMode?: 'enter' | 'blur' | 'both' | 'none'
+    /** Selects the text when the input opens, so typing replaces it. @default true */
+    selectOnFocus?: boolean
+    /** Native `maxlength` on the input. */
+    maxlength?: number
+    /** Blocks editing. @default false */
+    disabled?: boolean
+    /** Control size, as on Input. @default 'md' */
+    size?: 'sm' | 'md' | 'lg'
+    /** `false` skips the swap transition; use the exposed `previewEl` and `inputEl` for your own. @default true */
+    motionCss?: boolean
+    /** Class and style overrides for each part. */
+    ui?: Partial<{
+      root: UiPartValue
+      preview: UiPartValue
+      edit: UiPartValue
+      input: UiPartValue
+      actions: UiPartValue
+    }>
+  }>(),
+  {
+    placeholder: 'Click to edit',
+    activationMode: 'click',
+    submitMode: 'both',
+    selectOnFocus: true,
+    disabled: false,
+    size: 'md',
+    motionCss: undefined,
+  },
+)
+const props = withProviderDefaults(rawProps, { motionCss: true })
+
+const emit = defineEmits<{
+  /** Fires with the saved text. */
+  submit: [value: string]
+  /** Fires when an edit is dropped. */
+  cancel: []
+}>()
+
+defineSlots<{
+  /** The resting text. */
+  preview(props: { value: string }): unknown
+  /**
+   * The control while editing, in place of the Input: a Textarea, a Select, a date picker. Bind
+   * `value` and call `update` with each change; Enter, Escape and focus leaving still work.
+   */
+  edit(props: {
+    value: string
+    update: (value: string) => void
+    submit: () => void
+    cancel: () => void
+    size: 'sm' | 'md' | 'lg'
+  }): unknown
+  /** Buttons beside the control, such as save and cancel. */
+  actions(props: { submit: () => void; cancel: () => void }): unknown
+}>()
+
+const root = useTemplateRef<HTMLElement>('root')
+const input = useTemplateRef<InstanceType<typeof Input>>('input')
+const editArea = useTemplateRef<HTMLElement>('editArea')
+const preview = useTemplateRef<HTMLButtonElement>('preview')
+const draft = shallowRef('')
+// The phone keyboard's action key reads Done when it saves.
+const submitsOnEnter = computed(() => props.submitMode === 'enter' || props.submitMode === 'both')
+function setDraft(value: string) {
+  draft.value = value
+}
+const FOCUSABLE = 'input, textarea, select, button, [tabindex]:not([tabindex="-1"])'
+
+function start() {
+  if (props.disabled || editing.value) return
+  draft.value = modelValue.value
+  editing.value = true
+  nextTick(() => {
+    const el = input.value?.inputEl ?? editArea.value?.querySelector<HTMLElement>(FOCUSABLE)
+    el?.focus()
+    if (
+      props.selectOnFocus &&
+      (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
+    )
+      el.select()
+  })
+}
+function close() {
+  editing.value = false
+  nextTick(() => preview.value?.focus())
+}
+function submit() {
+  if (!editing.value) return
+  modelValue.value = draft.value
+  close()
+  emit('submit', draft.value)
+}
+function cancel() {
+  if (!editing.value) return
+  close()
+  emit('cancel')
+}
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' && submitsOnEnter.value) {
+    // A textarea keeps Enter for new lines; Cmd or Ctrl with it submits.
+    if (event.target instanceof HTMLTextAreaElement && !event.metaKey && !event.ctrlKey) return
+    event.preventDefault()
+    submit()
+  } else if (event.key === 'Escape') {
+    event.preventDefault()
+    cancel()
+  }
+}
+// Focus moving within the component (to an action, or between parts of a custom control) is not leaving.
+function onFocusout(event: FocusEvent) {
+  const next = event.relatedTarget
+  if (next instanceof Node && root.value?.contains(next)) return
+  if (props.submitMode === 'blur' || props.submitMode === 'both') submit()
+  else cancel()
+}
+
+const cx = useClassMerge()
+const themedUi = useThemedUi(
+  (theme) => theme.editable,
+  () => props.ui,
+)
+const rootPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.root, 'ui-editable', props.disabled && 'ui-editable--disabled'),
+)
+const previewPart = computed(() =>
+  resolveUiPart(
+    cx,
+    themedUi()?.preview,
+    'ui-editable-preview',
+    `ui-editable-preview--${props.size}`,
+  ),
+)
+const editPart = computed(() => resolveUiPart(cx, themedUi()?.edit, 'ui-editable-edit'))
+const inputPart = computed(() => resolveUiPart(cx, themedUi()?.input, 'ui-editable-input'))
+const actionsPart = computed(() => resolveUiPart(cx, themedUi()?.actions, 'ui-editable-actions'))
+
+defineExpose({
+  /** Root element. */
+  el: root,
+  /** The resting text's button; `null` while editing. */
+  previewEl: preview,
+  /** The native input; `null` until editing. */
+  inputEl: computed(() => input.value?.inputEl ?? null),
+  /** Opens the input. */
+  start,
+  /** Saves the draft and closes. */
+  submit,
+  /** Drops the draft and closes. */
+  cancel,
+})
+</script>

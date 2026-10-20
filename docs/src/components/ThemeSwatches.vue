@@ -33,24 +33,26 @@
           @click="primaryColor = preset.color"
           @keydown="onKeydown($event, index)"
         />
-        <m.label
-          class="swatch swatch--custom"
-          :class="{ 'swatch--custom-active': isCustom }"
-          :style="isCustom ? { '--swatch': primaryColor! } : undefined"
-          :title="t('theme.custom')"
-          tabindex="-1"
-          :while-hover="{ scale: 1.1 }"
-          :while-press="{ scale: 0.88 }"
-          :transition="PRESS"
+        <ColorPicker
+          :model-value="primaryColor ?? '#2563eb'"
+          :label="t('theme.custom')"
+          @update:model-value="primaryColor = $event"
         >
-          <input
-            type="color"
-            class="swatch-input"
-            :value="primaryColor ?? '#2563eb'"
-            :aria-label="t('theme.custom')"
-            @input="primaryColor = ($event.target as HTMLInputElement).value"
-          />
-        </m.label>
+          <template #trigger="{ open }">
+            <m.button
+              type="button"
+              class="swatch swatch--custom"
+              :class="{ 'swatch--custom-active': isCustom }"
+              :style="isCustom ? { '--swatch': primaryColor! } : undefined"
+              :title="t('theme.custom')"
+              :aria-label="t('theme.custom')"
+              :aria-expanded="open"
+              :while-hover="{ scale: 1.1 }"
+              :while-press="{ scale: 0.88 }"
+              :transition="PRESS"
+            />
+          </template>
+        </ColorPicker>
       </div>
     </LazyMotion>
   </MotionConfig>
@@ -61,6 +63,7 @@ import { computed, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { LazyMotion, MotionConfig, domAnimation, m } from 'motion-v'
+import { ColorPicker } from 'vael-ui'
 import { primaryColor } from '../preferences'
 
 const { t } = useI18n()
@@ -175,8 +178,7 @@ useResizeObserver(row, measureRing)
   transition: border-color var(--ui-duration-press) var(--ui-ease-out);
 }
 
-.swatch:focus-visible,
-.swatch--custom:has(.swatch-input:focus-visible) {
+.swatch:focus-visible {
   outline: 2px solid var(--ui-text);
   outline-offset: 5px;
 }
@@ -193,15 +195,6 @@ useResizeObserver(row, measureRing)
 
 .swatch--custom-active {
   background: var(--swatch);
-}
-
-.swatch-input {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  opacity: 0;
-  cursor: pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {

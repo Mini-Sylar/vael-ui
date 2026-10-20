@@ -357,3 +357,36 @@ test('Escape still skips the tour while a step’s own onBeforeEnter overlay is 
   await userEvent.keyboard('{Escape}')
   await vi.waitFor(() => expect(document.body.textContent).not.toContain('Behind a Dialog'))
 })
+
+test('restarting a tour lands the callout on the first step instead of gliding in from the corner', async () => {
+  const screen = await render(TourFixture)
+  const glided: string[] = []
+  const watchGlide = new MutationObserver(() => {
+    const positioner = document.querySelector('.ui-popover-positioner')
+    if (positioner?.classList.contains('ui-tour-positioner--gliding')) {
+      glided.push(screen.getByTestId('step-index').element().textContent ?? '')
+    }
+  })
+  watchGlide.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] })
+  try {
+    await screen.getByTestId('trigger').click()
+    await expect.element(page.getByText('Step A')).toBeVisible()
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    await page.getByRole('button', { name: 'Next' }).click()
+    await expect.element(page.getByText('Step B')).toBeVisible()
+    // Sanity: a step change inside one session does glide.
+    await vi.waitFor(() => expect(glided.length).toBeGreaterThan(0))
+
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+    glided.length = 0
+
+    // Reopening resets B -> A: that is a fresh placement, not a step to travel from.
+    await screen.getByTestId('trigger').click()
+    await expect.element(page.getByText('Step A')).toBeVisible()
+    for (let i = 0; i < 5; i++) await new Promise((resolve) => requestAnimationFrame(resolve))
+    expect(glided).toEqual([])
+  } finally {
+    watchGlide.disconnect()
+  }
+})

@@ -110,6 +110,7 @@ export function useLazySortable(
     activeValue: read((e) => e.activeValue, null),
     isDragging: read((e) => e.isDragging, false),
     isGrabbed: read((e) => e.isGrabbed, false),
+    isSettling: read((e) => e.isSettling, false),
     dropPosition: read((e) => e.dropPosition, null),
     isValidDrop: read((e) => e.isValidDrop, true),
     isPending: read((e) => e.isPending, false),

@@ -66,10 +66,15 @@
     transition: transform var(--ui-duration-press) var(--ui-ease-out);
   }
   /* Highlight with background, not focus ring (APG convention). */
-  .ui-menu-item:hover:not(:disabled):not([aria-disabled='true']),
   .ui-menu-item:focus-visible {
     outline: none;
     background: var(--ui-muted);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-menu-item:hover:not(:disabled):not([aria-disabled='true']) {
+      outline: none;
+      background: var(--ui-muted);
+    }
   }
   .ui-menu-item:active:not(:disabled):not([aria-disabled='true']) {
     transform: scale(0.96);

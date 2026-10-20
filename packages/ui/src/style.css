@@ -31,6 +31,8 @@
 @import './components/MenuList/MenuList.css';
 @import './components/Message/Message.css';
 @import './components/OtpInput/OtpInput.css';
+@import './components/Editable/Editable.css';
+@import './components/ColorPicker/ColorPicker.css';
 @import './components/Pagination/Pagination.css';
 @import './components/Popover/Popover.css';
 @import './components/Progress/Progress.css';

@@ -19,31 +19,33 @@
       :style="rootPart.style"
       @click="onRootClick"
     >
-      <span class="ui-button-loader" aria-hidden="true">
-        <slot name="loader" :loading="isLoading" :el="el">
-          <span class="ui-loader" />
-        </slot>
-      </span>
-      <span
-        v-if="$slots.leading"
-        :class="leadingPart.class"
-        :style="leadingPart.style"
-        aria-hidden="true"
-      >
-        <slot name="leading" />
-      </span>
-      <span :class="contentPart.class" :style="contentPart.style">
-        <span :class="labelPart.class" :style="labelPart.style"
-          ><slot :loading="isLoading" :el="el" :run="run"
-        /></span>
-      </span>
-      <span
-        v-if="$slots.trailing"
-        :class="trailingPart.class"
-        :style="trailingPart.style"
-        aria-hidden="true"
-      >
-        <slot name="trailing" />
+      <span class="ui-button-inner">
+        <span class="ui-button-loader" aria-hidden="true">
+          <slot name="loader" :loading="isLoading" :el="el">
+            <span class="ui-loader" />
+          </slot>
+        </span>
+        <span
+          v-if="$slots.leading"
+          :class="leadingPart.class"
+          :style="leadingPart.style"
+          aria-hidden="true"
+        >
+          <slot name="leading" />
+        </span>
+        <span :class="contentPart.class" :style="contentPart.style">
+          <span :class="labelPart.class" :style="labelPart.style"
+            ><slot :loading="isLoading" :el="el" :run="run"
+          /></span>
+        </span>
+        <span
+          v-if="$slots.trailing"
+          :class="trailingPart.class"
+          :style="trailingPart.style"
+          aria-hidden="true"
+        >
+          <slot name="trailing" />
+        </span>
       </span>
     </component>
     <span
@@ -71,31 +73,33 @@
     :style="rootPart.style"
     @click="onRootClick"
   >
-    <span class="ui-button-loader" aria-hidden="true">
-      <slot name="loader" :loading="isLoading" :el="el">
-        <span class="ui-loader" />
-      </slot>
-    </span>
-    <span
-      v-if="$slots.leading"
-      :class="leadingPart.class"
-      :style="leadingPart.style"
-      aria-hidden="true"
-    >
-      <slot name="leading" />
-    </span>
-    <span :class="contentPart.class" :style="contentPart.style">
-      <span :class="labelPart.class" :style="labelPart.style"
-        ><slot :loading="isLoading" :el="el" :run="run"
-      /></span>
-    </span>
-    <span
-      v-if="$slots.trailing"
-      :class="trailingPart.class"
-      :style="trailingPart.style"
-      aria-hidden="true"
-    >
-      <slot name="trailing" />
+    <span class="ui-button-inner">
+      <span class="ui-button-loader" aria-hidden="true">
+        <slot name="loader" :loading="isLoading" :el="el">
+          <span class="ui-loader" />
+        </slot>
+      </span>
+      <span
+        v-if="$slots.leading"
+        :class="leadingPart.class"
+        :style="leadingPart.style"
+        aria-hidden="true"
+      >
+        <slot name="leading" />
+      </span>
+      <span :class="contentPart.class" :style="contentPart.style">
+        <span :class="labelPart.class" :style="labelPart.style"
+          ><slot :loading="isLoading" :el="el" :run="run"
+        /></span>
+      </span>
+      <span
+        v-if="$slots.trailing"
+        :class="trailingPart.class"
+        :style="trailingPart.style"
+        aria-hidden="true"
+      >
+        <slot name="trailing" />
+      </span>
     </span>
   </component>
 </template>

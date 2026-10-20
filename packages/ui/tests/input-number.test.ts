@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { nextTick } from 'vue'
 import InputNumberFixture from './fixtures/InputNumberFixture.vue'
+import InputNumber from '../src/components/InputNumber/InputNumber.vue'
 
 function basicInput(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLInputElement>('[data-testid="basic"] .ui-input-el')!
@@ -138,4 +139,17 @@ test('increment/decrement are exposed as imperative step functions', async () =>
   await userEvent.click(screen.getByTestId('call-decrement'))
   await userEvent.click(screen.getByTestId('call-decrement'))
   await expect.element(screen.getByTestId('basic-value')).toHaveTextContent('2')
+})
+
+test('the phone keypad follows the range: decimal, digits for whole non-negative, full keyboard below zero', async () => {
+  const mode = async (props: Record<string, unknown>) => {
+    const screen = await render(InputNumber, { props: { modelValue: 1, ...props } })
+    const value = screen.container.querySelector('.ui-input-el')!.getAttribute('inputmode')
+    await screen.unmount()
+    return value
+  }
+  expect(await mode({})).toBe('decimal')
+  expect(await mode({ min: 0, maxFractionDigits: 0 })).toBe('numeric')
+  // The iPhone's number pads have no minus key.
+  expect(await mode({ min: -10 })).toBe('text')
 })

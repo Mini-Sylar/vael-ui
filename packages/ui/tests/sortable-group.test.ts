@@ -129,3 +129,112 @@ test('Escape while hovering a foreign column reverts both arrays untouched', asy
   expect(order(screen, 'todo-order')).toBe('a,b')
   expect(order(screen, 'doing-order')).toBe('c')
 })
+
+test('leaving the list springs the rows below up instead of snapping them', async () => {
+  const screen = await render(SortableGroupFixture)
+  const bravo = rowFor(screen, 'b')
+  const restTop = bravo.getBoundingClientRect().top
+  const doingBox = rowFor(screen, 'c').getBoundingClientRect()
+  const release = drag(handles(screen)[0]!, doingBox.left + 10, doingBox.top + 10)
+  // Alpha has lifted out of the flow; Bravo holds its place and springs up from there.
+  expect(bravo.style.translate).not.toBe('')
+  expect(Math.abs(bravo.getBoundingClientRect().top - restTop)).toBeLessThan(2)
+  await vi.waitFor(() => expect(bravo.style.translate).toBe(''))
+  expect(bravo.getBoundingClientRect().top).toBeLessThan(restTop)
+  release()
+  await vi.waitFor(() => expect(order(screen, 'doing-order')).toBe('a,c'))
+})
+
+test('an empty list takes a drop anywhere inside its box, not only at its top edge', async () => {
+  const screen = await render(SortableGroupFixture)
+  // Empty "doing" first by moving Charlie over.
+  const todoBox = rowFor(screen, 'b').getBoundingClientRect()
+  drag(handles(screen)[2]!, todoBox.left + 10, todoBox.bottom + 5)()
+  await vi.waitFor(() => expect(order(screen, 'doing-order')).toBe(''))
+  const doing = screen.container.querySelectorAll<HTMLElement>('.ui-sortable')[1]!
+  const box = doing.getBoundingClientRect()
+  expect(box.height).toBeGreaterThanOrEqual(200)
+  drag(handles(screen)[0]!, box.left + box.width / 2, box.top + box.height * 0.7)()
+  await vi.waitFor(() => expect(order(screen, 'doing-order')).toBe('a'))
+})
+
+test('a card let go half-way out of its column glides back on both axes instead of snapping sideways first', async () => {
+  const screen = await render(SortableGroupFixture)
+  const handle = handles(screen)[0]!
+  const alpha = rowFor(screen, 'a')
+  const box = handle.getBoundingClientRect()
+  const pointerId = 71
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId,
+      button: 0,
+      clientX: box.left + 4,
+      clientY: box.top + 4,
+    }),
+  )
+  // Sideways and a little down, still over its own column.
+  for (let step = 1; step <= 6; step++) {
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        pointerId,
+        clientX: box.left + 4 + (60 * step) / 6,
+        clientY: box.top + 4 + (10 * step) / 6,
+      }),
+    )
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  const xOf = () => parseFloat(alpha.style.translate.split(' ')[0] || '0')
+  expect(xOf()).toBeCloseTo(60, 0)
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId }))
+  await new Promise((r) => requestAnimationFrame(r))
+  await new Promise((r) => requestAnimationFrame(r))
+  // Two frames in, the sideways offset is still mostly there, easing out.
+  const mid = xOf()
+  expect(mid).toBeGreaterThan(20)
+  expect(mid).toBeLessThan(60)
+  await vi.waitFor(() => expect(alpha.style.translate).toBe(''))
+  expect(order(screen, 'todo-order')).toBe('a,b')
+})
+
+test('a row gliding home after release stays stacked above the neighbouring list until it has landed', async () => {
+  const screen = await render(SortableGroupFixture)
+  const handle = handles(screen)[0]!
+  const alpha = rowFor(screen, 'a')
+  const box = handle.getBoundingClientRect()
+  const pointerId = 91
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId,
+      button: 0,
+      clientX: box.left + 4,
+      clientY: box.top + 4,
+    }),
+  )
+  for (let step = 1; step <= 6; step++) {
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        pointerId,
+        clientX: box.left + 4 + (70 * step) / 6,
+        clientY: box.top + 4 + (8 * step) / 6,
+      }),
+    )
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId }))
+  await new Promise((r) => requestAnimationFrame(r))
+  await new Promise((r) => requestAnimationFrame(r))
+  expect(alpha.hasAttribute('data-dragging')).toBe(false)
+  expect(getComputedStyle(alpha).zIndex).toBe('1')
+  expect(getComputedStyle(alpha).position).toBe('relative')
+  // Its right edge, hanging past its own list, is what the pointer finds there.
+  const rect = alpha.getBoundingClientRect()
+  const hit = document.elementFromPoint(rect.right - 4, rect.top + rect.height / 2)
+  expect(hit && alpha.contains(hit)).toBe(true)
+  await vi.waitFor(() => expect(alpha.style.translate).toBe(''))
+  expect(getComputedStyle(alpha).zIndex).toBe('auto')
+  expect(alpha.style.position).toBe('')
+})

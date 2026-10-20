@@ -653,3 +653,15 @@ test('multiple without maxLabels wraps its chips inside the field', async () => 
   }
   expect(new Set(chips.map((chip) => Math.round(chip.top))).size).toBeGreaterThan(1)
 })
+
+test('the keyboard key reads Enter by default, so a phone sends Enter to pick the match', async () => {
+  const items = [{ label: 'Apple', value: 'apple' }]
+  const screen = await render(Combobox, { props: { items } })
+  const input = screen.getByRole('combobox').element() as HTMLInputElement
+  expect(input.getAttribute('enterkeyhint')).toBe('enter')
+  await screen.unmount()
+
+  const custom = await render(Combobox, { props: { items }, attrs: { enterkeyhint: 'go' } })
+  const customInput = custom.getByRole('combobox').element() as HTMLInputElement
+  expect(customInput.getAttribute('enterkeyhint')).toBe('go')
+})

@@ -23,7 +23,10 @@ export function useColorScheme(options: UseColorSchemeOptions = {}): UseColorSch
     typeof window === 'undefined' ? null : window.matchMedia('(prefers-color-scheme: dark)')
 
   const mode = shallowRef<ColorSchemeMode>(options.initial ?? 'system')
-  const resolvedMode = shallowRef<'light' | 'dark'>(query?.matches ? 'dark' : 'light')
+  // From `initial` too, so the first render (and server HTML) already matches an explicit choice.
+  const resolvedMode = shallowRef<'light' | 'dark'>(
+    mode.value === 'system' ? (query?.matches ? 'dark' : 'light') : mode.value,
+  )
 
   function apply() {
     if (mode.value === 'system') {

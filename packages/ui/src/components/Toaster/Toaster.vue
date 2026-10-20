@@ -1,11 +1,11 @@
 <template>
-  <Teleport :to="teleportTo">
+  <Teleport :to="teleportTarget">
     <!-- The named <section> is the live region, so the <ol> keeps list semantics.
          Absolute keeps it out of a flex or grid parent's flow. -->
     <section
       aria-live="polite"
       :aria-label="(attrs['aria-label'] as string | undefined) ?? messages.toaster.label"
-      style="position: absolute"
+      :style="sectionStyle"
     >
       <TransitionGroup
         :ref="registerToaster"
@@ -18,6 +18,7 @@
         v-bind="listAttrs"
         :css="props.motionCss"
         :data-expanded="expanded"
+        :data-contained="contained || undefined"
         :data-y-position="yPos"
         :data-x-position="xPos"
         :data-ui-theme="themeScope"
@@ -135,7 +136,8 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import StatusIcon from '../internal/StatusIcon.vue'
-import { getFocusable, transitionGroupRef } from '../../composables/dom'
+import { getFocusable, transitionGroupRef, useDOMTarget } from '../../composables/dom'
+import type { DOMTarget } from '../../composables/dom'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 
 // Port of vue-sonner's swipe-to-dismiss mechanics; constants are Sonner's.
@@ -170,8 +172,13 @@ const rawProps = withDefaults(
     expand?: boolean
     /** Spacing between stacked cards, in pixels. @default 10 */
     gap?: number
-    /** CSS selector to teleport the toast stack to. @default 'body' */
-    teleportTo?: string
+    /** Teleport target: a CSS selector or element. Wins over `container` either way.
+     * @default 'body' */
+    teleportTo?: string | HTMLElement
+    /** Scopes the stack to an element instead of the viewport: it teleports there and sits in that
+     * element's corner, so give the element `position: relative`. Pair with `name` to send only
+     * some toasts there. Omit it for a page-level toaster. */
+    container?: DOMTarget
     /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. @default true */
     motionCss?: boolean
     /** Class and style overrides for each part. */
@@ -191,7 +198,6 @@ const rawProps = withDefaults(
     maxVisible: 4,
     expand: false,
     gap: 10,
-    teleportTo: 'body',
     motionCss: undefined,
   },
 )
@@ -331,20 +337,42 @@ const toasterHeight = computed(() => {
   )
 })
 
+const { el: containerEl } = useDOMTarget(() => props.container ?? null)
+const contained = computed(() => containerEl.value !== null)
+// teleportTo has no default of its own, so an explicit teleportTo="body" is still
+// distinguishable from never setting it, and can win over container either way.
+// || not ??: an empty string is never a valid Teleport target, so it should fall
+// through the same as unset instead of reaching document.querySelector('').
+const teleportTarget = computed<string | HTMLElement>(
+  () => props.teleportTo || containerEl.value || 'body',
+)
+// Inside a container the live region spans it, so the stack's inset is measured from the
+// container's edges; pointer events pass through it to the content underneath.
+const sectionStyle = computed(() => {
+  const style: Record<string, string> = { position: 'absolute' }
+  if (contained.value) Object.assign(style, { inset: '0', pointerEvents: 'none' })
+  return style
+})
+
 // Inlined for structural correctness (position:fixed needs explicit inset); themeable via CSS variables.
 const rootStyle = computed(() => {
   const offset = 'var(--ui-toast-offset, 1rem)'
+  // On the screen, stay clear of the notch and the home indicator in an app
+  // that draws under them (viewport-fit=cover); the insets are 0 otherwise.
+  const edge = (side: string) =>
+    contained.value ? offset : `calc(${offset} + env(safe-area-inset-${side}, 0px))`
   const style: Record<string, string> = {
-    position: 'fixed',
+    position: contained.value ? 'absolute' : 'fixed',
     zIndex: 'var(--ui-z-toast, 60)',
     blockSize: `${toasterHeight.value}px`,
-    [isBottom.value ? 'insetBlockEnd' : 'insetBlockStart']: offset,
+    [isBottom.value ? 'insetBlockEnd' : 'insetBlockStart']: edge(isBottom.value ? 'bottom' : 'top'),
   }
+  if (contained.value) style.pointerEvents = 'auto'
   if (xPos.value === 'center') {
     style.insetInlineStart = '50%'
     style.translate = '-50% 0'
   } else {
-    style[xPos.value === 'left' ? 'insetInlineStart' : 'insetInlineEnd'] = offset
+    style[xPos.value === 'left' ? 'insetInlineStart' : 'insetInlineEnd'] = edge(xPos.value)
   }
   return style
 })

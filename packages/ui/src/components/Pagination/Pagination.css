@@ -55,7 +55,8 @@
     .ui-button--ghost.ui-pagination-page-button--active:hover:not(:disabled):not(
         .ui-button--disabled
       ):not(.ui-button--loading) {
-      background: transparent;
+      /* The indicator behind it is the active look; Button paints its box from this variable. */
+      --ui-button-bg: transparent;
     }
   }
   .ui-pagination--no-motion .ui-pagination-indicator,

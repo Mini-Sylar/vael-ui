@@ -551,3 +551,32 @@ test('Enter on a chip remove button removes the chip without opening the panel',
     screen.container.querySelector('[role="combobox"]')!.getAttribute('aria-expanded'),
   ).not.toBe('true')
 })
+
+test('removing the last chip eases a content-sized trigger to the placeholder width, with the placeholder beside the collapsing chip', async () => {
+  const items = [
+    { label: 'Apple', value: 'a' },
+    { label: 'Banana', value: 'b' },
+  ]
+  const screen = await render(
+    {
+      components: { Select },
+      data: () => ({ model: ['a'] }),
+      template: `<div style="display: flex"><Select v-model="model" :items="items" multiple placeholder="Pick fruit" /></div>`,
+      setup: () => ({ items }),
+    },
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  const row = screen.container.querySelector<HTMLElement>('.ui-select-value')!
+  const trigger = screen.container.querySelector<HTMLElement>('.ui-select-trigger')!
+  const before = trigger.getBoundingClientRect().width
+  screen.container.querySelector<HTMLElement>('.ui-chip-remove')!.click()
+  await vi.waitFor(() => expect(row.style.transition).toContain('inline-size'))
+  // The placeholder is already in the row, waiting behind the chip's edge.
+  const placeholder = screen.container.querySelector<HTMLElement>('.ui-select-placeholder')!
+  expect(placeholder.getBoundingClientRect().left).toBeGreaterThan(row.getBoundingClientRect().left)
+  await vi.waitFor(() => expect(row.style.inlineSize).toBe(''))
+  expect(trigger.getBoundingClientRect().width).toBeLessThan(before)
+  expect(Math.round(placeholder.getBoundingClientRect().left)).toBe(
+    Math.round(row.getBoundingClientRect().left),
+  )
+})

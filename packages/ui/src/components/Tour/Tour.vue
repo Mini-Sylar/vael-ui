@@ -94,7 +94,7 @@ import type {
 } from '../../composables/useTour'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import type { DOMTarget } from '../../composables/dom'
-import type { UiPartValue } from '../../classes'
+import type { UiPartClass, UiPartStyle, UiPartValue } from '../../classes'
 export type { TourStep, TourGroup, TourStepChangeDetails, TourEndDetails }
 
 export interface TourProps<T extends TourStep = TourStep> {
@@ -499,7 +499,54 @@ const themedUi = useThemedUi(
 )
 const ui = computed(() => themedUi())
 const spotlightUi = computed(() => withZIndex(ui.value?.spotlight, spotlightZIndex.value))
-const positionerUi = computed(() => withZIndex(ui.value?.positioner, panelZIndex.value))
+// Between steps the callout travels with the spotlight instead of landing first.
+const gliding = shallowRef(false)
+let glideTimer: ReturnType<typeof setTimeout> | undefined
+// Only once the callout has been placed in this session. Reopening a finished tour shows the last
+// step's target for a tick before resetting to the first; gliding then started from the
+// positioner's unplaced 0,0, so the callout swept in from the corner.
+let placed = false
+let placeFrame: number | undefined
+watch(
+  [open, targetEl],
+  ([isOpen, el]) => {
+    if (!isOpen) {
+      placed = false
+      gliding.value = false
+      clearTimeout(glideTimer)
+      if (placeFrame !== undefined) cancelAnimationFrame(placeFrame)
+      placeFrame = undefined
+      return
+    }
+    if (!el || placed || placeFrame !== undefined) return
+    placeFrame = requestAnimationFrame(() => {
+      placeFrame = undefined
+      if (open.value) placed = true
+    })
+  },
+  { flush: 'post' },
+)
+watch(targetEl, (next, previous) => {
+  if (!next || !previous || !open.value || !props.motionCss || !placed) return
+  gliding.value = true
+  clearTimeout(glideTimer)
+  glideTimer = setTimeout(() => (gliding.value = false), 400)
+})
+onScopeDispose(() => {
+  clearTimeout(glideTimer)
+  if (placeFrame !== undefined) cancelAnimationFrame(placeFrame)
+})
+const positionerUi = computed<UiPartValue>(() => {
+  const part = withZIndex(ui.value?.positioner, panelZIndex.value) as {
+    class?: UiPartClass
+    style?: UiPartStyle
+  }
+  if (!gliding.value || isScrolling.value) return part
+  const cls: UiPartClass = part.class
+    ? [part.class, 'ui-tour-positioner--gliding']
+    : 'ui-tour-positioner--gliding'
+  return { ...part, class: cls }
+})
 
 defineExpose({
   /** Returns the tour's `id` prop. */

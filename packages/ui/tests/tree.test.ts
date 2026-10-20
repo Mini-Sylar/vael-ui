@@ -2,6 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { nextTick } from 'vue'
 import TreeFixture from './fixtures/TreeFixture.vue'
 import { findTreeNode, findTreeParent, removeTreeNode } from '../src/components/Tree/Tree.vue'
 import type { TreeNode } from '../src/components/Tree/Tree.vue'
@@ -432,29 +433,32 @@ test('v-model:node holds an array of node objects in multiple mode', async () =>
   await expect.element(screen.getByTestId('node-model')).toHaveTextContent('Apple,Banana')
 })
 
-test('the leave transition covers the rows up with an animated clip, so the vacated space closes instead of snapping shut', async () => {
+test('collapsing a folder folds its rows block shut in place instead of unmounting it at once', async () => {
   await render(TreeFixture, { props: { items: deepItems, height: '120px' } })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
   await userEvent.click(rowByLabel('Root')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Sibling')).toBeDefined())
+  await new Promise((resolve) => setTimeout(resolve, 400))
 
-  // Asserts the CSS declaration; tree-fold-motion.test.ts checks the painted frames.
-  const rowsEl = document.querySelector<HTMLElement>('.ui-tree-rows')!
-  rowsEl.classList.add('ui-tree-rows-leave-active')
-  const style = getComputedStyle(rowsEl)
-  expect(style.transitionProperty).toContain('clip-path')
-  // An inset, not none: clip-path can't animate from none, so a none start would snap.
-  expect(style.clipPath).toMatch(/^inset\(/)
-  // Its end state covers every row; read without a transition so it isn't mid-way.
-  rowsEl.style.transition = 'none'
-  rowsEl.classList.add('ui-tree-rows-leave-to')
-  expect(getComputedStyle(rowsEl).clipPath).toMatch(/100%\)$/)
-  rowsEl.classList.remove('ui-tree-rows-leave-to')
-  rowsEl.style.transition = ''
-  rowsEl.classList.remove('ui-tree-rows-leave-active')
-
+  // tree-fold-motion.test.ts checks the painted frames; this checks the mechanism.
+  const rowsEl = rowByLabel('Root')!.nextElementSibling as HTMLElement
+  const open = rowsEl.getBoundingClientRect().height
   await userEvent.click(rowByLabel('Root')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
+  await nextTick()
+  expect(rowsEl.isConnected).toBe(true)
+  expect(rowsEl.dataset.folding).toBe('')
+  const style = getComputedStyle(rowsEl)
+  // In flow and clipped while it moves: `clip`, so a sticky row inside stays sticky.
+  expect(style.position).not.toBe('absolute')
+  expect(style.overflowY).toBe('clip')
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  const partway = rowsEl.getBoundingClientRect().height
+  expect(partway).toBeGreaterThan(0)
+  expect(partway).toBeLessThan(open)
+  // Gone once it has shut.
   await vi.waitFor(() => expect(rowByLabel('Sibling')).toBeUndefined())
+  expect(rowsEl.isConnected).toBe(false)
 })
 
 // NOT yet fixed: a NESTED folder's own leave transition (depth >= 1) still never completes -

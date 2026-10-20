@@ -24,38 +24,44 @@
     @focus="fieldControl.onFocus"
     @blur="fieldControl.onBlur"
   >
-    <span :class="valuePart.class" :style="valuePart.style">
+    <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
       <slot name="value" :selected="selectedForSlot">
-        <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
+        <span v-if="isEmpty && !(multiple && display === 'chip')" class="ui-select-placeholder">{{
+          placeholder
+        }}</span>
         <span v-else-if="!multiple || display === 'text'">{{ displayLabel }}</span>
         <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
-        <TransitionGroup
-          v-else
-          name="ui-chip-item"
-          @leave-cancelled="resetLeaveStyles"
-          tag="span"
-          class="ui-select-chips"
-          :css="props.motionCss"
-          :data-motion="props.motionCss ? undefined : 'off'"
-          @enter="chipEnterHook"
-          @leave="chipLeaveHook"
-        >
-          <Chip
-            v-for="item in visibleChips"
-            :key="item.value"
-            :label="item.label"
-            removable
-            :disabled="isDisabled"
-            @remove="removeChip(item)"
-          />
-          <span
-            v-if="hiddenChipCount > 0"
-            key="__overflow"
-            class="ui-chip ui-chip--md ui-select-chip--overflow"
+        <!-- The chips group stays mounted when the last chip goes, so it leaves like the others
+             instead of being unmounted with its group; the placeholder slides in behind it. -->
+        <template v-else>
+          <TransitionGroup
+            name="ui-chip-item"
+            tag="span"
+            class="ui-select-chips"
+            :css="props.motionCss"
+            :data-motion="props.motionCss ? undefined : 'off'"
+            @enter="chipEnterHook"
+            @leave="chipLeaveHook"
+            @leave-cancelled="resetLeaveStyles"
           >
-            +{{ hiddenChipCount }}
-          </span>
-        </TransitionGroup>
+            <Chip
+              v-for="item in visibleChips"
+              :key="item.value"
+              :label="item.label"
+              removable
+              :disabled="isDisabled"
+              @remove="removeChip(item)"
+            />
+            <span
+              v-if="hiddenChipCount > 0"
+              key="__overflow"
+              class="ui-chip ui-chip--md ui-select-chip--overflow"
+            >
+              +{{ hiddenChipCount }}
+            </span>
+          </TransitionGroup>
+          <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
+        </template>
       </slot>
     </span>
     <Transition
@@ -126,6 +132,10 @@
             <slot name="filter" :query="query" :on-keydown="onFilterKeydown">
               <Input
                 ref="filterInputRef"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                enterkeyhint="enter"
                 v-model="query"
                 :placeholder="filterPlaceholder"
                 size="sm"
@@ -249,6 +259,7 @@ import {
   startClearLeave,
 } from '../../composables/dom'
 import '../shared/select-panel.css'
+import { useChipRowWidth } from '../../composables/useChipRowWidth'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
@@ -520,6 +531,13 @@ function onClear(event: MouseEvent) {
 /** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
+const valueEl = useTemplateRef<HTMLElement>('valueEl')
+useChipRowWidth({
+  row: () => valueEl.value,
+  empty: () => isEmpty.value,
+  active: () => props.multiple && props.display === 'chip' && props.motionCss,
+  placeholder: '.ui-select-placeholder',
+})
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 const filterInputRef = useTemplateRef<{ el: HTMLElement | null; inputEl: HTMLInputElement | null }>(

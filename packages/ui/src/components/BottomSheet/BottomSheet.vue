@@ -13,6 +13,7 @@
     :container="container"
     :teleport-to="teleportTo"
     :show-close="false"
+    :scroll-fade="false"
     :ui="dialogUi"
     v-bind="$attrs"
   >
@@ -42,6 +43,7 @@
     </div>
     <div
       ref="content"
+      v-scroll-mask="scrollFade"
       :class="contentPart.class"
       :style="contentPart.style"
       :data-dragging="isDragging || undefined"
@@ -92,6 +94,8 @@ export interface BottomSheetProps {
    * @default false
    */
   fullScreen?: boolean
+  /** Fades the content's top and bottom edges while there's more to scroll, like Dialog. @default true */
+  scrollFade?: boolean
   /** Closes the sheet when you press Escape. @default true */
   closeOnEsc?: boolean
   /** Closes the sheet when you click the overlay. @default true */
@@ -143,6 +147,7 @@ import './BottomSheet.css'
 import '../shared/tokens.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
 import { resolveDOMTarget } from '../../composables/dom'
+import { vScrollMask } from '../../directives/vScrollMask'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -156,6 +161,7 @@ const props = withDefaults(defineProps<BottomSheetProps>(), {
   dismissible: true,
   width: 'full',
   fullScreen: false,
+  scrollFade: true,
   closeOnEsc: true,
   closeOnOverlay: true,
   modal: true,
@@ -257,10 +263,10 @@ function animateClose(done: () => void) {
     return
   }
   panel.style.transition =
-    'transform var(--ui-duration-drawer, 500ms) var(--ui-ease-drawer, cubic-bezier(0.32, 0.72, 0, 1))'
+    'transform var(--ui-duration-drawer-exit, 350ms) var(--ui-ease-drawer, cubic-bezier(0.32, 0.72, 0, 1))'
   panel.style.transform = 'translateY(100%)'
   clearTimeout(exitTimer)
-  exitTimer = setTimeout(done, 520)
+  exitTimer = setTimeout(done, 370)
 }
 
 const cx = useClassMerge()

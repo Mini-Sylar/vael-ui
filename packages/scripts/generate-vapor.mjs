@@ -29,6 +29,9 @@ const PER_BUILD_MODULES = new Set([
   'composables/useFocusableScroller',
   'composables/selectGroups',
   'composables/useEasedHeight',
+  'composables/useFold',
+  'composables/useChipRowWidth',
+  'composables/sortableSettle',
 ])
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 

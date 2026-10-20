@@ -39,6 +39,7 @@ const items = reactive([
 <style scoped>
 .star-toggle[aria-pressed='true'] {
   color: var(--ui-warning);
-  background: color-mix(in oklab, var(--ui-warning) 14%, transparent);
+  /* The box is painted by the button's own layer; recolour it through this variable. */
+  --ui-button-bg: color-mix(in oklab, var(--ui-warning) 14%, transparent);
 }
 </style>

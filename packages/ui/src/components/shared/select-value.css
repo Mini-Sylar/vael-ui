@@ -7,10 +7,19 @@
     white-space: nowrap;
     text-align: start;
   }
-  /* Clip room for a chip remove's 24px hit area. */
+  /* One row, so the placeholder sits beside the last chip while it collapses instead of under it.
+     The padding is clip room for a chip remove's 24px hit area. */
   .ui-select-value:has(> .ui-select-chips) {
+    display: flex;
+    align-items: center;
     padding-block: 4px;
     margin-block: -4px;
+  }
+  /* Neither gives way to the other: the row clips what doesn't fit, so a collapsing chip keeps its
+     size and the placeholder waits behind its edge. */
+  .ui-select-value > .ui-select-chips,
+  .ui-select-value > .ui-select-placeholder {
+    flex: none;
   }
   .ui-select-placeholder {
     color: var(--ui-text-muted);
@@ -66,13 +75,17 @@
     inline-size: 0.85em;
     block-size: 0.85em;
   }
-  .ui-select-clear:hover,
-  .ui-combobox-clear:hover {
-    color: var(--ui-text);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-select-clear:hover,
+    .ui-combobox-clear:hover {
+      color: var(--ui-text);
+    }
   }
-  .ui-select-clear:hover::before,
-  .ui-combobox-clear:hover::before {
-    background: var(--ui-muted);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-select-clear:hover::before,
+    .ui-combobox-clear:hover::before {
+      background: var(--ui-muted);
+    }
   }
   .ui-select-chevron,
   .ui-combobox-chevron {
@@ -84,8 +97,8 @@
     background: none;
     padding: 0;
     color: var(--ui-text-muted);
-    /* On-screen movement. */
-    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+    /* In step with the panel. */
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   /* Scales with the trigger's own font-size (sm/md/lg) instead of staying a
      fixed 14px — matches the trigger's block-size/font-size scale so it

@@ -72,6 +72,17 @@ export interface UiMessages {
     /** Accessible name of the palette's dialog. */
     label: string
   }
+  colorPicker: {
+    /** aria-label of the saturation and brightness plane. */
+    saturationAndBrightness: string
+    saturation: string
+    brightness: string
+    hue: string
+    /** aria-label of the hex field. */
+    hex: string
+    /** aria-label of the eyedropper button. */
+    pickFromScreen: string
+  }
   tour: {
     next: string
     back: string
@@ -185,6 +196,14 @@ export const defaultMessages: UiMessages = {
   splitButton: { more: 'More actions' },
   breadcrumb: { label: 'Breadcrumb' },
   commandPalette: { placeholder: 'Search…', empty: 'No results', label: 'Command palette' },
+  colorPicker: {
+    saturationAndBrightness: 'Saturation and brightness',
+    saturation: 'saturation',
+    brightness: 'brightness',
+    hue: 'Hue',
+    hex: 'Hex color',
+    pickFromScreen: 'Pick a color from the screen',
+  },
   tour: {
     next: 'Next',
     back: 'Back',
@@ -271,6 +290,7 @@ export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): 
     splitButton: { ...base.splitButton, ...overrides.splitButton },
     breadcrumb: { ...base.breadcrumb, ...overrides.breadcrumb },
     commandPalette: { ...base.commandPalette, ...overrides.commandPalette },
+    colorPicker: { ...base.colorPicker, ...overrides.colorPicker },
     tour: { ...base.tour, ...overrides.tour },
     toaster: { ...base.toaster, ...overrides.toaster },
     pagination: { ...base.pagination, ...overrides.pagination },
@@ -352,6 +372,14 @@ const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: strin
     placeholder: 'uiKit.commandPalette.placeholder',
     empty: 'uiKit.commandPalette.empty',
     label: 'uiKit.commandPalette.label',
+  },
+  colorPicker: {
+    saturationAndBrightness: 'uiKit.colorPicker.saturationAndBrightness',
+    saturation: 'uiKit.colorPicker.saturation',
+    brightness: 'uiKit.colorPicker.brightness',
+    hue: 'uiKit.colorPicker.hue',
+    hex: 'uiKit.colorPicker.hex',
+    pickFromScreen: 'uiKit.colorPicker.pickFromScreen',
   },
   tour: {
     next: 'uiKit.tour.next',

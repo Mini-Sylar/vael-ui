@@ -61,7 +61,14 @@
       0 0 0 1px rgb(0 0 0 / 0.06),
       0 1px 2px rgb(0 0 0 / 0.15);
     translate: 0 -50%;
-    transition: translate var(--ui-duration-press) var(--ui-ease-out);
+    transform-origin: 0% 50%;
+    transition:
+      translate var(--ui-duration-press) var(--ui-ease-out),
+      scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  /* Pressed, the thumb stretches toward where it's going. */
+  .ui-switch-input:active:not(:disabled) + .ui-switch-track .ui-switch-thumb {
+    scale: 1.15 1;
   }
   .ui-switch[data-state='checked'] .ui-switch-track {
     background: var(--ui-primary);
@@ -73,6 +80,7 @@
        far side matches the rest position exactly, whatever the thumb's own
        size (it cancels out of the subtraction). */
     translate: calc(var(--ui-switch-track-w) - var(--ui-switch-track-h)) -50%;
+    transform-origin: 100% 50%;
   }
   .ui-switch-input:focus-visible + .ui-switch-track {
     outline: 2px solid var(--ui-primary);
@@ -100,6 +108,9 @@
   @media (prefers-reduced-motion: reduce) {
     .ui-switch-thumb {
       transition: none;
+    }
+    .ui-switch-input:active:not(:disabled) + .ui-switch-track .ui-switch-thumb {
+      scale: 1;
     }
   }
 }

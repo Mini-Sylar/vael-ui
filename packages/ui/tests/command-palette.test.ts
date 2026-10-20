@@ -27,6 +27,24 @@ test('typing filters the list by label and keywords', async () => {
   await expect.element(options.first()).toHaveTextContent('New Folder')
 })
 
+test('filters while a phone keyboard is still composing the word', async () => {
+  await render(CommandPalette, { props: { open: true, items } })
+  const input = page.getByRole('combobox').element() as HTMLInputElement
+  input.focus()
+  // Android keyboards wrap each word in a composition until the space bar.
+  input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
+  input.value = 'fold'
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }))
+  await vi.waitFor(() => expect(page.getByRole('option').all()).toHaveLength(1))
+  await expect.element(page.getByRole('option').first()).toHaveTextContent('New Folder')
+})
+
+test('the keyboard key reads Go, so a phone sends Enter to run the match', async () => {
+  await render(CommandPalette, { props: { open: true, items } })
+  const input = page.getByRole('combobox').element() as HTMLInputElement
+  expect(input.getAttribute('enterkeyhint')).toBe('go')
+})
+
 test('no matches shows the empty message', async () => {
   await render(CommandPalette, { props: { open: true, items } })
   await userEvent.type(page.getByRole('combobox'), 'zzz-nothing-matches')
@@ -88,13 +106,11 @@ test('rows change at once while typing, and the list eases to its new height', a
   const many = Array.from({ length: 12 }, (_, i) => ({ id: `i${i}`, label: `Item ${i}` }))
   await render(CommandPalette, { props: { open: true, items: many }, ...realTransitions })
   const list = document.querySelector<HTMLElement>('.ui-command-palette-list')!
-  const heights: number[] = []
-  const start = performance.now()
-  const sample = () => {
-    heights.push(Math.round(list.getBoundingClientRect().height))
-    if (performance.now() - start < 400) requestAnimationFrame(sample)
-  }
-  requestAnimationFrame(sample)
+  // The transition's own start event, not sampled frames: under load the frames can miss it.
+  let eased = false
+  list.addEventListener('transitionstart', (event) => {
+    if (event.propertyName === 'block-size' || event.propertyName === 'height') eased = true
+  })
   await userEvent.type(page.getByRole('combobox'), 'Item 1')
 
   expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
@@ -102,7 +118,7 @@ test('rows change at once while typing, and the list eases to its new height', a
     expect(getComputedStyle(leaving).display).toBe('none')
   }
   await vi.waitFor(() => {
-    expect(new Set(heights).size).toBeGreaterThan(2)
+    expect(eased).toBe(true)
     expect(list.style.blockSize).toBe('')
     expect(list.hasAttribute('data-resizing')).toBe(false)
   })
@@ -143,4 +159,24 @@ test('the dialog has a name, which an aria-label can replace', async () => {
 
   await render(CommandPalette, { props: { open: true, items }, attrs: { 'aria-label': 'Go to' } })
   await expect.element(page.getByRole('dialog', { name: 'Go to' })).toBeVisible()
+})
+
+test('a footer slot sits under the list and knows the highlighted item', async () => {
+  const Wrapper = {
+    render: () =>
+      h(
+        CommandPalette as any,
+        { open: true, items },
+        {
+          footer: ({ activeItem }: { activeItem?: CommandPaletteItem }) =>
+            h('span', { 'data-testid': 'hint' }, activeItem ? `on ${activeItem.label}` : 'none'),
+        },
+      ),
+  }
+  await render(Wrapper)
+  await expect.element(page.getByTestId('hint')).toHaveTextContent('on New File')
+  await userEvent.click(page.getByRole('combobox'))
+  await userEvent.keyboard('{ArrowDown}')
+  await expect.element(page.getByTestId('hint')).toHaveTextContent('on New Folder')
+  expect(document.querySelector('.ui-command-palette-footer')).not.toBeNull()
 })

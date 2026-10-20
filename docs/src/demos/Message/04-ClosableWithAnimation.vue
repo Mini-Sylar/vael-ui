@@ -50,8 +50,11 @@ function onDeployBeforeClose(done: () => void) {
 </script>
 
 <style scoped>
+/* A flex column, not a grid: a grid keeps its row gap until the message is gone, a flex gap
+   collapses with it. */
 .message-stack {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   max-width: 28rem;
 }

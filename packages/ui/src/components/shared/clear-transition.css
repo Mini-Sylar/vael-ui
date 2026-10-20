@@ -17,7 +17,7 @@
     .ui-clear-leave-to
   ) {
     opacity: 0;
-    transform: scale(0.5);
+    transform: scale(0.9);
     margin-inline-end: calc(var(--ui-clear-space, 0px) * -1);
   }
 

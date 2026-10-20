@@ -28,7 +28,7 @@
     <div class="sidebar-mode-toggle sidebar-mode-toggle--mobile">
       <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
     </div>
-    <div class="sidebar-scroll sidebar-scroll--mobile">
+    <div ref="mobileScrollEl" class="sidebar-scroll sidebar-scroll--mobile">
       <MenuList
         :items="navItems"
         :active="activeValue"
@@ -193,6 +193,23 @@ watch(scrollY, (y) => (persistedScrollTop.value = y))
 onMounted(() => {
   nextTick(() => (scrollY.value = persistedScrollTop.value))
 })
+
+// The drawer's body is built fresh each time it opens, so it would start at
+// the top. Keep where the visitor was in the list and put them back there.
+const mobileScrollEl = useTemplateRef<HTMLElement>('mobileScrollEl')
+let mobileScrollTop = 0
+const rememberMobileScroll = (event: Event) =>
+  (mobileScrollTop = (event.target as HTMLElement).scrollTop)
+watch(
+  mobileScrollEl,
+  (el) => {
+    const body = el?.closest<HTMLElement>('.ui-dialog-body')
+    if (!body) return
+    body.scrollTop = mobileScrollTop
+    body.addEventListener('scroll', rememberMobileScroll, { passive: true })
+  },
+  { flush: 'post' },
+)
 </script>
 
 <style scoped>

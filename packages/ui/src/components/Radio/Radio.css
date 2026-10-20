@@ -35,7 +35,11 @@
     background: var(--ui-surface);
     transition:
       background-color var(--ui-duration-press) ease,
-      border-color var(--ui-duration-press) ease;
+      border-color var(--ui-duration-press) ease,
+      scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-radio-input:active:not(:disabled) + .ui-radio-control {
+    scale: 0.94;
   }
   .ui-radio-dot {
     inline-size: 0.5rem;
@@ -87,6 +91,9 @@
     /* Radio: the dot's scale-in is movement — drop the scale, keep the fade. */
     .ui-radio-dot {
       transition: opacity var(--ui-duration-press) ease;
+    }
+    .ui-radio-input:active:not(:disabled) + .ui-radio-control {
+      scale: 1;
     }
   }
 }

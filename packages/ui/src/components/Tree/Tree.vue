@@ -3,6 +3,9 @@
     <div v-if="filterable" :class="filterPart.class" :style="filterPart.style">
       <Input
         ref="filterInputRef"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
         v-model="query"
         :placeholder="filterPlaceholder"
         size="sm"
@@ -197,8 +200,10 @@ export function removeTreeNode<T extends TreeNode>(nodes: T[], value: string | n
 export interface TreeRowContext {
   selectionMode: TreeSelectionMode
   motionCss: boolean
-  /** motionCss, but off for the update a search or an arrow key causes, so those swap at once. */
+  /** motionCss, but off for the update a search or an arrow key causes, and on very large trees. */
   rowMotion: boolean
+  /** Runs every folder's fold in this tree (useFold). */
+  fold: FoldScheduler
   stickyScroll: boolean
   maxStickyDepth: number
   isExpanded: (node: TreeNode) => boolean
@@ -229,8 +234,8 @@ export const treeRowContextKey: InjectionKey<TreeRowContext> = Symbol('treeRowCo
      Independent DOM class set (ui-tree-*); TreeSelect passes ui overrides for legacy passenger classes (ui-tree-select-*).
      Focus delegation: focusFirstRow/initRoving exposed; roving tabindex internal; focus stealing is popover-specific (TreeSelect only).
      Animation: motionCss=false disables all built-in motion via data-motion="off" on root. Rows render as a
-     recursive TreeNodeRow tree (not a flat list) so stickyScroll can use native `position: sticky` — see the FLIP
-     pass below for what that costs and how it's covered. -->
+     recursive TreeNodeRow tree (not a flat list) so stickyScroll can use native `position: sticky`; a
+     folder folds open and shut by its rows block's height (useFold), so everything below follows in layout. -->
 <script setup lang="ts" generic="T extends TreeNode = TreeNode">
 import './Tree.css'
 import '../shared/tick.css'
@@ -258,6 +263,8 @@ import TreeNodeRow from './TreeNodeRow.vue'
 import { useUiMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
 import { useEasedHeight } from '../../composables/useEasedHeight'
+import { createFoldScheduler } from '../../composables/useFold'
+import type { FoldScheduler } from '../../composables/useFold'
 import { moveTreeNode } from '../../composables/sortableTree'
 import { useLazySortable } from '../../composables/useLazySortable'
 import type {
@@ -517,10 +524,9 @@ function activateNode(node: TreeNode) {
 const expandedKeys = ref(new Set<string | number>())
 const normalizedQuery = computed(() => normalizeText(query.value.trim()))
 const isFiltering = computed(() => normalizedQuery.value.length > 0)
-// A search opens and closes folders without the FLIP slide that a click gets, so their rows would
-// fade in and out over rows that already moved. Search results swap at once instead (the list's
-// height still eases); folder animations come back for the next click. Arrow keys swap at once
-// too: someone arrowing through a tree shouldn't wait on motion.
+// A search opens and closes many folders at once, so their rows swap instead of animating (the
+// list's height still eases); folder animations come back for the next click. Arrow keys swap at
+// once too: someone arrowing through a tree shouldn't wait on motion.
 const instantSwap = shallowRef(false)
 watch(
   normalizedQuery,
@@ -914,177 +920,12 @@ watch(flatRows, () => {
 // Self-initializing: first row tabbable on mount.
 onMounted(() => initRoving())
 
-// Cross-folder FLIP: a folder's own children fade in/out locally (see
-// TreeNodeRow.vue), but a row several levels away that shifts because a
-// NESTED folder changed height gets no local re-render signal. Measures
-// every row's position before/after an expand/collapse and slides whatever
-// moved. Currently-stuck sticky rows are excluded (their position is
-// CSS-driven, not flow-driven) — checked live rather than by the sticky-
-// capable class, since with stickyScroll on nearly every folder has that
-// class whether or not it's actually pinned right now.
-// Above this many rendered rows the pass is skipped; it would block longer than the slide.
-const FLIP_MAX_ROWS = 150
-function flipRows(): HTMLElement[] {
-  return Array.from(listEl.value?.querySelectorAll<HTMLElement>('[data-tree-value]') ?? [])
-}
-function isCurrentlyStuck(el: HTMLElement, rect: DOMRect, listTop: number): boolean {
-  if (!el.classList.contains('ui-tree-row--sticky')) return false
-  const stickyTop = Number.parseFloat(getComputedStyle(el).top)
-  if (Number.isNaN(stickyTop)) return false
-  return Math.abs(rect.top - listTop - stickyTop) < 1
-}
-// Reads only, so the whole pass costs one layout.
-function captureRowRects(rows: HTMLElement[]): Map<string, DOMRect> {
-  const map = new Map<string, DOMRect>()
-  if (!listEl.value || rows.length === 0) return map
-  const listTop = listEl.value.getBoundingClientRect().top
-  for (const el of rows) {
-    const key = el.dataset.treeValue
-    if (key == null) continue
-    const rect = el.getBoundingClientRect()
-    if (!isCurrentlyStuck(el, rect, listTop)) map.set(key, rect)
-  }
-  return map
-}
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
-}
-let pendingBeforeRects: Map<string, DOMRect> | null = null
-interface BlockStart {
-  clipPath: string
-  opacity: string
-}
-// Where an opening or closing block had got to, by its folder's value. A second click mid-way
-// makes Vue cancel that transition and start the other from its far end, a visible jump; reading
-// it here, before Vue does that, lets the new one start from the same place.
-let pendingBlockStarts: Map<string, BlockStart> | null = null
-function captureBlockStarts(): Map<string, BlockStart> {
-  const starts = new Map<string, BlockStart>()
-  for (const block of listEl.value?.querySelectorAll<HTMLElement>(
-    '.ui-tree-rows-enter-active, .ui-tree-rows-leave-active',
-  ) ?? []) {
-    const key = (block.previousElementSibling as HTMLElement | null)?.dataset.treeValue
-    if (key == null || block.dataset.instant !== undefined) continue
-    const style = getComputedStyle(block)
-    starts.set(key, { clipPath: style.clipPath, opacity: style.opacity })
-  }
-  return starts
-}
-watch(
-  expandedKeys,
-  () => {
-    pendingBeforeRects = null
-    pendingBlockStarts = null
-    if (!props.motionCss || instantSwap.value || prefersReducedMotion()) return
-    const rows = flipRows()
-    if (rows.length > FLIP_MAX_ROWS) return
-    pendingBeforeRects = captureRowRects(rows)
-    pendingBlockStarts = captureBlockStarts()
-  },
-  { flush: 'pre' },
-)
-watch(
-  expandedKeys,
-  () => {
-    const before = pendingBeforeRects
-    const starts = pendingBlockStarts
-    pendingBeforeRects = null
-    pendingBlockStarts = null
-    if (!before || !listEl.value) return
-    const rows = flipRows()
-    if (rows.length > FLIP_MAX_ROWS) return
-    // A row still sliding from the last click would add that slide to where it now sits. `before`
-    // already holds where it's drawn, so the new slide picks up from there.
-    const sliding = rows.filter((el) => el.style.transition)
-    for (const el of sliding) {
-      el.style.transition = 'none'
-      el.style.transform = ''
-    }
-    const after = captureRowRects(rows)
-    for (const el of sliding) el.style.transition = ''
-    // Rows off screen before and after don't slide; one viewport of margin covers the edges.
-    const listRect = listEl.value.getBoundingClientRect()
-    const viewTop = Math.max(listRect.top, 0)
-    const viewBottom = Math.min(listRect.bottom, window.innerHeight)
-    const margin = Math.max(viewBottom - viewTop, 0)
-    const nearView = (rect: DOMRect) =>
-      rect.bottom >= viewTop - margin && rect.top <= viewBottom + margin
-    const moved: { el: HTMLElement; deltaY: number }[] = []
-    for (const el of rows) {
-      const key = el.dataset.treeValue
-      const afterRect = key == null ? undefined : after.get(key)
-      const beforeRect = key == null ? undefined : before.get(key)
-      if (!afterRect || !beforeRect) continue // entering row — its own local enter transition handles it
-      if (el.closest('.ui-tree-rows-leave-active')) continue // moves with its closing block, below
-      const deltaY = beforeRect.top - afterRect.top
-      if (Math.abs(deltaY) < 1) continue
-      if (!nearView(beforeRect) && !nearView(afterRect)) continue
-      moved.push({ el, deltaY })
-    }
-    // An opening or closing block sits where its folder ends up, so when the folder row itself
-    // slides (a tree centred in its box moves every row), the block slides with it. Its own
-    // transition (Tree.css) carries the transform, alongside the reveal. One that interrupted
-    // another starts from where that one was.
-    const deltas = new Map(moved.map(({ el, deltaY }) => [el, deltaY]))
-    const blocks: { el: HTMLElement; deltaY: number; start?: BlockStart }[] = []
-    for (const block of listEl.value.querySelectorAll<HTMLElement>(
-      '.ui-tree-rows-enter-active, .ui-tree-rows-leave-active',
-    )) {
-      if (block.dataset.instant !== undefined) continue
-      const folderRow = block.previousElementSibling as HTMLElement | null
-      const deltaY = (folderRow && deltas.get(folderRow)) || 0
-      const key = folderRow?.dataset.treeValue
-      const start = key == null ? undefined : starts?.get(key)
-      if (deltaY || start) blocks.push({ el: block, deltaY, start })
-    }
-    if (moved.length === 0 && blocks.length === 0) return
-    // The same clock as the blocks' reveal, so rows below track its edge and never overlap it.
-    const closing = !!listEl.value.querySelector('.ui-tree-rows-leave-active')
-    const duration = closing ? 'var(--ui-duration-exit)' : 'var(--ui-duration-enter)'
-    // Writes only, after every read.
-    for (const { el, deltaY } of moved) {
-      el.style.transition = 'none'
-      el.style.transform = `translateY(${deltaY}px)`
-    }
-    for (const { el, deltaY, start } of blocks) {
-      el.style.transition = 'none'
-      if (deltaY) el.style.transform = `translateY(${deltaY}px)`
-      if (start) {
-        el.style.clipPath = start.clipPath
-        el.style.opacity = start.opacity
-      }
-    }
-    // Double rAF: matches Vue's own <Transition> enter scheduling, so the
-    // slide and the blocks' reveal start on the same frame.
-    // The first frame paints the inverted position, so no forced reflow is needed.
-    requestAnimationFrame(() => {
-      // A frame early for the blocks: Vue reads their transition duration on the next frame, and
-      // an inline `none` there would end their reveal at once.
-      for (const { el } of blocks) el.style.transition = ''
-      requestAnimationFrame(() => {
-        for (const { el } of blocks) {
-          el.style.transform = ''
-          el.style.clipPath = ''
-          el.style.opacity = ''
-        }
-        for (const { el } of moved) {
-          el.style.transition = `transform ${duration} var(--ui-ease-out)`
-          el.style.transform = ''
-          el.addEventListener(
-            'transitionend',
-            () => {
-              el.style.transition = ''
-            },
-            { once: true },
-          )
-        }
-      })
-    })
-  },
-  { flush: 'post' },
-)
+// Above this many rendered rows a folder opens and closes at once: re-laying out that many rows
+// every frame would cost more than the motion is worth.
+const MOTION_MAX_ROWS = 150
+// One frame loop for every folder folding in this tree (useFold), so nested folders animating
+// together measure once and write once per frame.
+const foldScheduler = createFoldScheduler()
 
 const filterInputRef = useTemplateRef<{ el: HTMLElement | null; inputEl: HTMLInputElement | null }>(
   'filterInputRef',
@@ -1157,7 +998,10 @@ provide<TreeRowContext>(
   reactive({
     selectionMode: computed(() => props.selectionMode),
     motionCss: computed(() => props.motionCss),
-    rowMotion: computed(() => props.motionCss && !instantSwap.value),
+    rowMotion: computed(
+      () => props.motionCss && !instantSwap.value && flatRows.value.length <= MOTION_MAX_ROWS,
+    ),
+    fold: foldScheduler,
     stickyScroll: computed(() => props.stickyScroll),
     maxStickyDepth: MAX_STICKY_DEPTH,
     isExpanded,

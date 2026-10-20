@@ -184,6 +184,28 @@ tbody tr:target {
   background: color-mix(in oklch, var(--ui-info) 10%, transparent);
 }
 
+/* Arrived at from the search palette: the router changes the hash without :target, so the
+   row is marked instead and flashes once, then settles to the target tint. */
+tbody tr[data-landed] {
+  animation: row-landed 1.8s var(--ui-ease-out);
+}
+
+@keyframes row-landed {
+  from {
+    background: color-mix(in oklch, var(--ui-info) 28%, transparent);
+  }
+  to {
+    background: color-mix(in oklch, var(--ui-info) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  tbody tr[data-landed] {
+    animation: none;
+    background: color-mix(in oklch, var(--ui-info) 10%, transparent);
+  }
+}
+
 /* Name: the row's anchor, so it carries the weight. */
 .name-cell {
   font-weight: 400;

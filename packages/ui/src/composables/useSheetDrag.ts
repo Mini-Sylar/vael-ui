@@ -45,6 +45,8 @@ const TRANSITION =
 const FAST_VELOCITY = 2 // px/ms — a real flick, matches Vaul's jump-to-extreme threshold
 const VELOCITY_THRESHOLD = 0.4 // px/ms — matches Vaul's "was this deliberate" gate
 const SHORT_DRAG_FRACTION = 0.4 // of viewport height — Vaul's step-one-snap-point vs settle-to-nearest split
+// Of the lowest snap point's height: a slow drag must go this far below it to close (Vaul's value).
+const CLOSE_THRESHOLD = 0.25
 const NESTED_DISPLACEMENT = 16 // px — Vaul's own recede distance for stacked sheets
 const AXIS_LOCK_THRESHOLD = 8 // px — movement before a content drag commits to an axis; matches useSwipeReveal
 // Only the end of a drag counts, so a slow drag that ends in a flick reads as a flick.
@@ -110,13 +112,53 @@ export function useSheetDrag(
     if (panel) panel.style.blockSize = `${areaHeight()}px`
   }
 
-  function moveTo(offset: number, animate: boolean) {
+  // The scrolling body is capped at the height that shows (--sheet-visible-height), so a sheet
+  // resting at a low snap point still scrolls to its last row. Changing the cap lays out the whole
+  // sheet again, so a drag never touches it: it is raised once when the drag starts, to the highest
+  // snap point, and lowered only after a settle, when the part it cuts is below the screen.
+  let stopPendingCap: (() => void) | null = null
+
+  function currentCap(panel: HTMLElement): number {
+    const value = Number.parseFloat(panel.style.getPropertyValue('--sheet-visible-height'))
+    return Number.isNaN(value) ? -1 : value
+  }
+
+  function setVisibleCap(visible: number) {
+    stopPendingCap?.()
+    stopPendingCap = null
+    const panel = options.panelEl.value
+    if (!panel || currentCap(panel) === visible) return
+    panel.style.setProperty('--sheet-visible-height', `${visible}px`)
+  }
+
+  function setVisibleCapAfterSettle(panel: HTMLElement, visible: number) {
+    stopPendingCap?.()
+    const onEnd = (event: TransitionEvent) => {
+      if (event.target === panel && event.propertyName === 'transform') setVisibleCap(visible)
+    }
+    // In case the transition never ends (interrupted, or the panel was hidden).
+    const duration = getComputedStyle(panel).transitionDuration
+    const ms = Number.parseFloat(duration) * (duration.endsWith('ms') ? 1 : 1000)
+    const timer = setTimeout(() => setVisibleCap(visible), (Number.isNaN(ms) ? 500 : ms) + 50)
+    panel.addEventListener('transitionend', onEnd)
+    stopPendingCap = () => {
+      panel.removeEventListener('transitionend', onEnd)
+      clearTimeout(timer)
+    }
+  }
+
+  function moveTo(offset: number, animate: boolean, dragging = false) {
     const panel = options.panelEl.value
     if (!panel) return
-    panel.style.transition = animate && !reducedMotion() ? TRANSITION : 'none'
+    const animated = animate && !reducedMotion()
+    panel.style.transition = animated ? TRANSITION : 'none'
     panel.style.transform = `translateY(${offset}px)`
-    panel.style.setProperty('--sheet-visible-height', `${Math.max(0, areaHeight() - offset)}px`)
     lastAppliedOffset = offset
+    if (dragging) return
+    const visible = Math.max(0, areaHeight() - offset)
+    // More showing: raise the cap now so nothing comes in blank. Less: wait for the panel to stop.
+    if (!animated || visible >= currentCap(panel)) setVisibleCap(visible)
+    else setVisibleCapAfterSettle(panel, visible)
   }
 
   function settleTo(point: SheetSnapPoint) {
@@ -202,7 +244,13 @@ export function useSheetDrag(
     dragStartTime = performance.now()
     samples = [{ t: dragStartTime, y: clientY }]
     isDragging.value = true
-    moveTo(dragStartOffset, false)
+    moveTo(dragStartOffset, false, true)
+    // Room for the highest snap point up front, so no drag frame resizes the body.
+    const panel = options.panelEl.value
+    if (panel) {
+      const top = Math.max(0, areaHeight() - Math.min(...offsets()))
+      setVisibleCap(Math.max(top, currentCap(panel)))
+    }
   }
 
   function onHandlePointerDown(event: PointerEvent) {
@@ -223,6 +271,39 @@ export function useSheetDrag(
     dragStartScrollTop = options.contentEl?.value?.scrollTop ?? 0
   }
 
+  // Touch: the content is a native scroller, so a drag that belongs to the sheet would also scroll
+  // or bounce the content under the finger, and the browser would cancel the pointer once it took
+  // the gesture. Who owns it is settled on the first move, the last point a scroll can be cancelled:
+  // down from the top is the sheet's, for the whole touch; anything else is the content's.
+  let touchStartX = 0
+  let touchStartY = 0
+  let touchOwner: 'sheet' | 'content' | null = null
+  let nestedClaimed = false
+
+  function onContentTouchStart(event: TouchEvent) {
+    const touch = event.touches[0]
+    if (!touch || event.touches.length > 1) return
+    touchStartX = touch.clientX
+    touchStartY = touch.clientY
+    touchOwner = null
+    nestedClaimed = false
+  }
+
+  function onContentTouchMove(event: TouchEvent) {
+    const touch = event.touches[0]
+    if (!touch || event.touches.length > 1) return
+    if (touchOwner === null) {
+      const dx = touch.clientX - touchStartX
+      const dy = touch.clientY - touchStartY
+      if (dx === 0 && dy === 0) return
+      const atTop = (options.contentEl?.value?.scrollTop ?? 0) <= 0
+      touchOwner = atTop && dy > 0 && Math.abs(dy) > Math.abs(dx) ? 'sheet' : 'content'
+    }
+    // A nested horizontal gesture claimed it after all (see onPointerMove): hand it back.
+    if (touchOwner === 'sheet' && nestedClaimed) touchOwner = 'content'
+    if (touchOwner === 'sheet' && event.cancelable) event.preventDefault()
+  }
+
   function onPointerMove(event: PointerEvent) {
     if (!dragSource) return
     if (dragSource === 'content') {
@@ -232,6 +313,7 @@ export function useSheetDrag(
       // Horizontally-dominant → belongs to something nested (a swipe-to-reveal row), not a dismiss.
       if (Math.abs(dx) >= Math.abs(dy)) {
         dragSource = null
+        nestedClaimed = true
         return
       }
       const draggingDown = dy > 0
@@ -253,7 +335,7 @@ export function useSheetDrag(
       rawOffset < topBoundary
         ? Math.max(0, topBoundary - dampen(topBoundary - rawOffset))
         : rawOffset
-    moveTo(nextOffset, false)
+    moveTo(nextOffset, false, true)
   }
 
   function onPointerUp(event: PointerEvent) {
@@ -274,38 +356,40 @@ export function useSheetDrag(
     const dismissible = toValue(options.dismissible) ?? true
     const currentIndex = list.findIndex((point) => point.id === activeSnap.value)
 
-    if (velocity > FAST_VELOCITY && !hasDraggedUp) {
-      if (dismissible) options.onDismiss(releaseVelocity())
+    // Speed and direction come from the end of the gesture, so a slow drag that ends in a flick
+    // reads as a flick; the whole-drag average covers a release with no recent movement.
+    const endVelocity = releaseVelocity() // px/ms, positive = down
+    const speed = Math.max(velocity, Math.abs(endVelocity))
+    const movingDown = endVelocity !== 0 ? endVelocity > 0 : !hasDraggedUp
+    const last = list.length - 1
+    // Closing takes a sheet let go below where it rests at its lowest. A raised sheet pulled back
+    // down, however fast, only goes back to rest.
+    const maxOffset = Math.max(...offsetList)
+    const closeOrRest = () => {
+      if (dismissible && currentOffset > maxOffset) options.onDismiss(releaseVelocity())
       else settleTo(list[0])
-      return
     }
-    if (velocity > FAST_VELOCITY && hasDraggedUp) {
-      settleTo(list[list.length - 1])
+
+    if (speed > FAST_VELOCITY) {
+      if (movingDown) closeOrRest()
+      else settleTo(list[last])
       return
     }
 
     if (
-      velocity > VELOCITY_THRESHOLD &&
+      speed > VELOCITY_THRESHOLD &&
       Math.abs(draggedDistance) < areaHeight() * SHORT_DRAG_FRACTION
     ) {
-      const step = hasDraggedUp ? 1 : -1
-      const nextIndex = currentIndex + step
-      if (step > 0 && currentIndex === list.length - 1) {
-        settleTo(list[list.length - 1])
-        return
-      }
-      if (step < 0 && currentIndex === 0) {
-        if (dismissible) options.onDismiss(releaseVelocity())
-        else settleTo(list[0])
-        return
-      }
-      settleTo(list[nextIndex])
+      if (!movingDown) settleTo(list[Math.min(currentIndex + 1, last)])
+      else if (currentIndex <= 0) closeOrRest()
+      else settleTo(list[currentIndex - 1])
       return
     }
 
-    // Check if dragging down past all snap points — dismiss if dismissible
-    const minOffset = Math.min(...offsetList)
-    if (!hasDraggedUp && dismissible && currentOffset > minOffset) {
+    // A slow release closes only well below the lowest snap point. Comparing with the highest one
+    // closed the sheet on any slow drag that ended a little lower than it started.
+    const lowestShowing = areaHeight() - maxOffset
+    if (movingDown && dismissible && currentOffset > maxOffset + lowestShowing * CLOSE_THRESHOLD) {
       options.onDismiss(releaseVelocity())
       return
     }
@@ -347,22 +431,29 @@ export function useSheetDrag(
 
   useEventListener(options.handleEl, 'pointerdown', onHandlePointerDown)
   useEventListener(options.contentEl, 'pointerdown', onContentPointerDown)
+  useEventListener(options.contentEl, 'touchstart', onContentTouchStart, { passive: true })
+  // Not passive: it has to be able to cancel the browser's own scroll.
+  useEventListener(options.contentEl, 'touchmove', onContentTouchMove, { passive: false })
   useEventListener(options.panelEl, 'pointermove', onPointerMove)
   useEventListener(options.panelEl, 'pointerup', onPointerUp)
   useEventListener(options.panelEl, 'pointercancel', onPointerCancel)
+  // The area changed size: a phone's toolbars hid or showed (Samsung Internet and Chrome collapse
+  // them on scroll), the keyboard opened, or the container resized. Refit the panel and glide back
+  // to the same snap point, so the sheet doesn't drift off it or leave a toolbar-tall strip with
+  // no content at the bottom. Mid-drag the finger owns the position; the release settles it.
+  function onAreaResize() {
+    if (!active.value) return
+    applyFixedHeight()
+    if (isDragging.value) return
+    const point = currentPoint()
+    if (point) moveTo(offsetFor(point), true)
+  }
   useEventListener(
     () => (typeof window === 'undefined' ? undefined : (window.visualViewport ?? window)),
     'resize',
-    () => {
-      if (active.value) applyFixedHeight()
-    },
+    onAreaResize,
   )
-  useResizeObserver(
-    () => toValue(options.bounds) ?? undefined,
-    () => {
-      if (active.value) applyFixedHeight()
-    },
-  )
+  useResizeObserver(() => toValue(options.bounds) ?? undefined, onAreaResize)
 
   onScopeDispose(() => {
     resetToken = null

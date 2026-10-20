@@ -45,6 +45,13 @@
   gap: 0.75rem;
 }
 
+/* Stacked blocks in a demo (two rows, a control and its "Selected: …" line) get the same space
+   the items in a row do, instead of sitting flush. Skips the hidden heading and note so the first
+   block doesn't gain a gap above it; :where() keeps a demo's own spacing in charge. */
+.demo > :where(:not(h2, h3, .note) ~ :not(h2, h3, .note)) {
+  margin-block-start: 0.75rem;
+}
+
 .demo .panel-text {
   color: var(--ui-text-muted);
   font-size: 0.9rem;

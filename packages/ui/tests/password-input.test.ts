@@ -3,6 +3,7 @@ import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import PasswordInputFixture from './fixtures/PasswordInputFixture.vue'
+import PasswordInput from '../src/components/PasswordInput/PasswordInput.vue'
 
 function basicInput(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLInputElement>('[data-testid="basic"] .ui-input-el')!
@@ -117,4 +118,21 @@ test('wrapped in Field: aria-describedby wires to the error message', async () =
   expect(describedBy).toBeTruthy()
   const errorEl = screen.container.querySelector(`#${describedBy}`)
   expect(errorEl?.textContent).toContain('Too short')
+})
+
+test('autocomplete defaults from the field: current-password, new-password with rules, yours wins', async () => {
+  const field = (screen: Awaited<ReturnType<typeof render>>) =>
+    screen.container.querySelector<HTMLInputElement>('.ui-input-el')!
+  const plain = await render(PasswordInput, { props: { modelValue: '' } })
+  expect(field(plain).getAttribute('autocomplete')).toBe('current-password')
+  expect(field(plain).getAttribute('autocapitalize')).toBe('off')
+  await plain.unmount()
+
+  const rules = [{ label: '8 characters', test: (v: string) => v.length >= 8 }]
+  const signup = await render(PasswordInput, { props: { modelValue: '', rules } })
+  expect(field(signup).getAttribute('autocomplete')).toBe('new-password')
+  await signup.unmount()
+
+  const own = await render(PasswordInput, { props: { modelValue: '', rules, autocomplete: 'off' } })
+  expect(field(own).getAttribute('autocomplete')).toBe('off')
 })

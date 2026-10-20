@@ -18,7 +18,7 @@
   .ui-split-button-chevron {
     inline-size: 0.85em;
     block-size: 0.85em;
-    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-split-button[data-state='open'] .ui-split-button-chevron {
     transform: rotate(180deg);

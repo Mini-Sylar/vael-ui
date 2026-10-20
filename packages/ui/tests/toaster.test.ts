@@ -6,6 +6,7 @@ import { h, nextTick, ref } from 'vue'
 import { toast, useToastQueue } from '../src/composables/useToast'
 import ToasterFixture from './fixtures/ToasterFixture.vue'
 import ToasterCustomCardFixture from './fixtures/ToasterCustomCardFixture.vue'
+import ToasterContainedFixture from './fixtures/ToasterContainedFixture.vue'
 import Toaster from '../src/components/Toaster/Toaster.vue'
 
 const { dismiss, toasts } = useToastQueue()
@@ -821,5 +822,51 @@ test('an aria-label names the live region, so two Toasters on a page stay distin
   await expect.element(page.getByRole('region', { name: 'Notifications' })).toBeInTheDocument()
   await expect.element(page.getByRole('region', { name: 'Upload status' })).toBeInTheDocument()
   expect(document.querySelectorAll('[aria-label="Upload status"]')).toHaveLength(1)
+  await screen.unmount()
+})
+
+test('container renders the stack inside that element, absolute in its corner instead of the viewport', async () => {
+  const screen = await render(ToasterContainedFixture)
+  toast('Framed', { toaster: 'frame' })
+  await expect.element(page.getByText('Framed')).toBeVisible()
+
+  const frame = document.querySelector('[data-testid="frame"]')!
+  const toaster = frame.querySelector<HTMLElement>('.ui-toaster')!
+  expect(toaster).not.toBeNull()
+  expect(getComputedStyle(toaster).position).toBe('absolute')
+  expect(toaster.dataset.contained).toBe('true')
+
+  // The stack sits in the frame's bottom-right corner, with the default 1rem offset.
+  const box = frame.getBoundingClientRect()
+  const stack = toaster.getBoundingClientRect()
+  expect(stack.right).toBeCloseTo(box.right - 16, 0)
+  expect(stack.bottom).toBeCloseTo(box.bottom - 16, 0)
+  expect(stack.left).toBeGreaterThanOrEqual(box.left)
+
+  // The live region spans the frame but lets clicks through to the content underneath.
+  const region = frame.querySelector<HTMLElement>('[aria-live]')!
+  expect(getComputedStyle(region).pointerEvents).toBe('none')
+  await userEvent.click(page.getByRole('button', { name: 'Inside the frame' }))
+
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('a contained Toaster only shows toasts sent to its name; the viewport Toaster keeps the rest', async () => {
+  const screen = await render(() => h('div', [h(Toaster), h(ToasterContainedFixture)]))
+  toast('Global')
+  toast('Framed', { toaster: 'frame' })
+  await expect.element(page.getByText('Framed')).toBeVisible()
+  await expect.element(page.getByText('Global')).toBeVisible()
+
+  const frame = document.querySelector('[data-testid="frame"]')!
+  expect(frame.textContent).toContain('Framed')
+  expect(frame.textContent).not.toContain('Global')
+  const global = Array.from(document.querySelectorAll<HTMLElement>('.ui-toaster')).find(
+    (el) => !frame.contains(el),
+  )!
+  expect(getComputedStyle(global).position).toBe('fixed')
+
+  toast.dismiss()
   await screen.unmount()
 })

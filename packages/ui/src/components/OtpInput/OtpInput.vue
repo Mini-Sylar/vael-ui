@@ -32,9 +32,12 @@
             :active="cell.active"
             :filled="cell.filled"
           >
-            <span :key="`${index}-${cell.char ?? 'empty'}`" class="ui-otp-cell-char">{{
-              cell.char ? (mask ? '•' : cell.char) : ''
-            }}</span>
+            <span
+              :key="`${index}-${cell.char ?? 'empty'}`"
+              class="ui-otp-cell-char"
+              :class="!cell.char && placeholderChar && 'ui-otp-cell-char--placeholder'"
+              >{{ cell.char ? (mask ? '•' : cell.char) : placeholderChar }}</span
+            >
           </slot>
         </span>
       </template>
@@ -110,6 +113,10 @@ const rawProps = withDefaults(
     invalid?: boolean
     /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** `'field'` draws one box around the whole code, like a phone's verification field, instead of a box per cell. @default 'cells' */
+    variant?: 'cells' | 'field'
+    /** One character shown in each empty cell, such as `0` or `•`. */
+    placeholder?: string
     /** Native `name` on the input, for plain `<form>` submission. */
     name?: string
     /** Splits the cells into groups with a separator between them: a group size (`3` for `123-456`), or each group's size (`[3, 4]`). */
@@ -122,7 +129,7 @@ const rawProps = withDefaults(
       separator: UiPartValue
     }>
   }>(),
-  { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false },
+  { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false, variant: 'cells' },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
@@ -277,6 +284,7 @@ function onNativeBlur() {
 // Clamped view used for display/completeness: a bound modelValue can be longer than `length`.
 const displayValue = computed(() => modelValue.value.slice(0, props.length))
 
+const placeholderChar = computed(() => [...(props.placeholder ?? '')][0] ?? '')
 const cells = computed(() => {
   const value = displayValue.value
   return Array.from({ length: props.length }, (_, index) => {
@@ -318,6 +326,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-otp',
     `ui-otp--${props.size}`,
+    props.variant === 'field' && 'ui-otp--field',
     isDisabled.value && 'ui-otp--disabled',
     skipTransition.value && 'ui-otp--no-anim',
   ),

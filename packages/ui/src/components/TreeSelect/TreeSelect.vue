@@ -403,40 +403,8 @@ const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 
-// The panel grows and shrinks with the tree's own expand animation instead of jumping to its new
-// height first: Tree.vue's FLIP pass slides rows on --ui-ease-out, starting two frames in, over
-// the enter duration when opening and the exit duration when closing, and the panel does the same.
-// A folder that swaps at once (an arrow key) resizes the panel at once too. Heights ignore the
-// opening scale.
 function onExpandChange(value: string | number, expanded: boolean) {
   emit('expand-change', value, expanded)
-  const panel = panelEl.value
-  if (!panel || !props.motionCss || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  const from = panel.offsetHeight
-  nextTick(() => {
-    panel.style.transition = 'none'
-    panel.style.height = ''
-    const to = panel.offsetHeight
-    if (Math.abs(to - from) < 1 || panel.querySelector('.ui-tree-rows[data-instant]')) {
-      panel.style.transition = ''
-      return
-    }
-    panel.style.height = `${from}px`
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        const duration = expanded ? 'var(--ui-duration-enter)' : 'var(--ui-duration-exit)'
-        panel.style.transition = `height ${duration} var(--ui-ease-out)`
-        panel.style.height = `${to}px`
-        const settle = (event: TransitionEvent) => {
-          if (event.target !== panel || event.propertyName !== 'height') return
-          panel.removeEventListener('transitionend', settle)
-          panel.style.height = ''
-          panel.style.transition = ''
-        }
-        panel.addEventListener('transitionend', settle)
-      }),
-    )
-  })
 }
 const treeRef = useTemplateRef<ComponentExposed<typeof Tree>>('treeRef')
 

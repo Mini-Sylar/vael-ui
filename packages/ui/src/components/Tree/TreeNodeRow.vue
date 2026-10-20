@@ -1,6 +1,4 @@
 <template>
-  <!-- Real box, not `display: contents` — needed as a containing block for
-       the children block's absolute leave-active (see Tree.css). -->
   <div class="ui-tree-node">
     <div
       role="treeitem"
@@ -35,37 +33,29 @@
         :remove-node="ctx.removeNode"
       />
     </div>
-    <!-- Leaves skip the Transition: on a large tree that's thousands of idle components. -->
-    <Transition
-      v-if="hasChildren"
-      name="ui-tree-rows"
-      :css="!ctx.forceMount"
-      appear
-      @before-enter="markInstantEnter"
-      @after-enter="unmarkInstant"
-      @enter-cancelled="unmarkInstant"
-      @before-leave="markInstantLeave"
+    <!-- A closing block stays while it folds shut (useFold). With forceMount it's always there and
+         `data-state` is yours to animate. -->
+    <div
+      v-if="hasChildren && (ctx.forceMount || expanded || folding)"
+      v-show="!ctx.forceMount || expanded"
+      ref="rowsEl"
+      class="ui-tree-rows"
+      :data-state="expanded ? 'open' : 'closed'"
+      :data-folding="folding ? '' : undefined"
     >
-      <div
-        v-if="ctx.forceMount || expanded"
-        v-show="!ctx.forceMount || expanded"
-        class="ui-tree-rows"
-        :data-state="expanded ? 'open' : 'closed'"
+      <!-- v-memo, as in Tree.vue: the relayed slot is dynamic. -->
+      <TreeNodeRow
+        v-for="child in visibleChildren"
+        :key="String(child.value)"
+        v-memo="[child, depth]"
+        :node="child"
+        :depth="depth + 1"
       >
-        <!-- v-memo, as in Tree.vue: the relayed slot is dynamic. -->
-        <TreeNodeRow
-          v-for="child in visibleChildren"
-          :key="String(child.value)"
-          v-memo="[child, depth]"
-          :node="child"
-          :depth="depth + 1"
-        >
-          <template #node="scope">
-            <slot name="node" v-bind="scope" />
-          </template>
-        </TreeNodeRow>
-      </div>
-    </Transition>
+        <template #node="scope">
+          <slot name="node" v-bind="scope" />
+        </template>
+      </TreeNodeRow>
+    </div>
   </div>
 </template>
 
@@ -74,10 +64,11 @@
      overlay. The #node slot is relayed at every level so Tree.vue's own
      <slot name="node"> stays the one place fallback content is defined. -->
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, useTemplateRef } from 'vue'
 import { treeRowContextKey } from './Tree.vue'
 import type { TreeNode } from './Tree.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
+import { useFold } from '../../composables/useFold'
 
 const props = defineProps<{
   node: TreeNode
@@ -118,23 +109,15 @@ const dropInto = computed(() => ctx.dropIntoValue === props.node.value)
 const dropEdge = computed(() =>
   ctx.dropEdge?.value === props.node.value ? ctx.dropEdge.side : undefined,
 )
-// Reuses the previous array when unchanged, so a filter keystroke skips untouched folders.
-// Decided when the hook runs, not through a reactive `:css`: Vapor's Transition reads its props
-// once, so a search swap couldn't turn it off there. A marked block skips its fade (Tree.css).
-function markInstantEnter(el: Element) {
-  if (!ctx.rowMotion) (el as HTMLElement).dataset.instant = ''
-}
-// Reduced motion keeps the opening fade (Tree.css) but closes at once: the rows below don't slide
-// then, so a fading block would sit over them.
-function markInstantLeave(el: Element) {
-  if (!ctx.rowMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    ;(el as HTMLElement).dataset.instant = ''
-  }
-}
-function unmarkInstant(el: Element) {
-  delete (el as HTMLElement).dataset.instant
-}
+const rowsEl = useTemplateRef<HTMLElement>('rowsEl')
+const { folding } = useFold({
+  scheduler: ctx.fold,
+  el: () => rowsEl.value,
+  open: () => expanded.value,
+  motion: () => ctx.rowMotion && !ctx.forceMount,
+})
 
+// Reuses the previous array when unchanged, so a filter keystroke skips untouched folders.
 const visibleChildren = computed<readonly TreeNode[]>((previous) => {
   const next = props.node.children?.filter((child) => ctx.isVisible(child)) ?? []
   if (previous?.length === next.length && next.every((child, index) => child === previous[index]))

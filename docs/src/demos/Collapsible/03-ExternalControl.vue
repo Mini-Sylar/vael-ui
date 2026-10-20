@@ -52,7 +52,7 @@ watch(panelOpen, (open) => {
 }
 .collapsible-nav-chevron {
   display: inline-flex;
-  transition: transform 0.2s ease;
+  transition: transform var(--ui-duration-enter) var(--ui-ease-out);
 }
 .collapsible-nav-chevron[data-open='true'] {
   transform: rotate(90deg);

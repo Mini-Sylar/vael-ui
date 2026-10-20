@@ -6,8 +6,11 @@
     :class="rootPart.class"
     :style="[sizeStyle, rootPart.style]"
     :data-orientation="orientation"
+    @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerleave="onPointerLeave"
+    @pointerup="onPointerLeave"
+    @pointercancel="onPointerLeave"
     v-bind="attrs"
   >
     <button
@@ -19,8 +22,19 @@
       :style="itemPart.style"
       :tabindex="index === activeIndex ? 0 : -1"
       :disabled="item.disabled"
+      :data-bounce="bouncing === index || undefined"
+      @pointerup="onItemPointerUp($event, index)"
+      @animationend="onItemAnimationEnd(index)"
       :aria-label="item.badge != null ? `${item.label}, ${item.badge}` : item.label"
-      v-tooltip="tooltips ? { content: item.label, side: resolvedTooltipSide } : undefined"
+      v-tooltip="
+        tooltips
+          ? {
+              content: item.label,
+              side: resolvedTooltipSide,
+              sideOffset: () => tooltipOffset(index),
+            }
+          : undefined
+      "
       @click="onItemSelect(item, index)"
       @keydown="onItemKeydown($event, index)"
       @focus="activeIndex = index"
@@ -125,7 +139,7 @@ const emit = defineEmits<{
 
 const rootEl = useTemplateRef<HTMLElement>('rootEl')
 
-const { setItemEl, onPointerMove, onPointerLeave, remeasure } = useDock(
+const { setItemEl, onPointerDown, onPointerMove, onPointerLeave, touchSlid, remeasure } = useDock(
   rootEl,
   () => props.items.length,
   {
@@ -145,9 +159,48 @@ const sizeStyle = computed(() => ({
   '--ui-dock-max-size': `${props.maxSize}px`,
 }))
 
+// A tap (a finger or pen that did not slide) bounces the item it landed on: the magnification
+// never ran, so this is the feedback that the tap was taken.
+const bouncing = shallowRef<number | null>(null)
+function onItemPointerUp(event: PointerEvent, index: number) {
+  if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+  if (touchSlid() || props.disabled) return
+  bouncing.value = index
+}
+function onItemAnimationEnd(index: number) {
+  if (bouncing.value === index) bouncing.value = null
+}
+
 const resolvedTooltipSide = computed<Side>(
   () => props.tooltipSide ?? (props.orientation === 'vertical' ? 'right' : 'top'),
 )
+
+/** The tooltip's own default gap, plus the room the item can still magnify into on that side. */
+const TOOLTIP_GAP = 8
+// Read each time the tooltip is positioned, so whenever it opens it lands past the item's
+// magnified edge and stays put while the item grows under it, instead of riding up with it or
+// being overlapped. Horizontal items grow upward from their base; otherwise they grow around
+// their centre.
+function tooltipOffset(index: number): number {
+  const el = itemButtons[index]
+  if (!el || !props.magnify) return TOOLTIP_GAP
+  const rect = el.getBoundingClientRect()
+  const vertical = props.orientation === 'vertical'
+  const side = resolvedTooltipSide.value
+  const growX = props.maxSize - rect.width
+  const growY = props.maxSize - rect.height
+  const room =
+    side === 'top'
+      ? vertical
+        ? growY / 2
+        : growY
+      : side === 'bottom'
+        ? vertical
+          ? growY / 2
+          : 0
+        : growX / 2
+  return TOOLTIP_GAP + Math.max(0, room)
+}
 
 // Roving tabindex (APG toolbar): one tab stop, arrow keys move focus, Enter/Space native to buttons.
 const activeIndex = shallowRef(0)

@@ -158,7 +158,7 @@ test('motion-css false: a Tree search resizes the list and swaps its folders at 
   const shown = [...tree.querySelectorAll<HTMLElement>('.ui-tree-rows')].filter(
     (el) => el.getClientRects().length > 0,
   )
-  expect(shown.filter((el) => /-leave-active/.test(el.className))).toHaveLength(0)
+  expect(shown.filter((el) => el.dataset.folding !== undefined)).toHaveLength(0)
 })
 
 test('motion-css false: the clear button goes at once', async () => {

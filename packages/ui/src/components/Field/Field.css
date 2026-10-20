@@ -285,6 +285,11 @@
     padding-inline: 0;
     background: transparent;
   }
+  /* The button's box layer fits the cell: the cell owns the borders here. */
+  :is(.ui-field-prepend, .ui-field-append) > .ui-button::before {
+    inset: 0;
+    border: 0;
+  }
   :is(.ui-field-prepend, .ui-field-append) > :is([data-ui-frame], button, .ui-button) {
     align-self: stretch;
     block-size: auto;

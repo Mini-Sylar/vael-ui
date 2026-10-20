@@ -40,15 +40,19 @@ async function renderExpanded(
   props: Record<string, unknown> = {},
   items: TreeNode[] = bigItems(),
   expectedRows = 2040,
+  transitions = false,
 ) {
   const screen = await render(TreeFixture, {
     props: { items, ...props },
-    global: { mixins: [countRowUpdates] },
+    global: {
+      mixins: [countRowUpdates],
+      ...(transitions && { stubs: { transition: false, 'transition-group': false } }),
+    },
   })
   await vi.waitFor(() => expect(rowCount()).toBe(items.length))
   screen.container.querySelector<HTMLButtonElement>('[data-testid="call-expand-all"]')!.click()
   await vi.waitFor(() => expect(rowCount()).toBe(expectedRows))
-  // Let the expand-all FLIP pass finish before measuring anything else.
+  // Let the expand-all motion finish before measuring anything else.
   await new Promise((resolve) => setTimeout(resolve, 400))
   return screen
 }
@@ -119,7 +123,7 @@ test('collapsing one folder re-renders only that folder row', async () => {
   expect(result.updates).toBeLessThanOrEqual(1)
 })
 
-test('a large tree skips the FLIP pass on collapse instead of transforming every row', async () => {
+test('a large tree collapses without transforming any row', async () => {
   await renderExpanded()
   const reads = recordLayoutReads()
 
@@ -131,31 +135,43 @@ test('a large tree skips the FLIP pass on collapse instead of transforming every
   expect(reads.length).toBeLessThan(20)
 })
 
-test('a mid-sized tree batches FLIP reads before writes and only slides rows near the viewport', async () => {
-  // 12 x 10 = 132 rows: under the FLIP threshold, in a list that shows ~9.
-  await renderExpanded({ height: '300px' }, bigItems(12, 10), 132)
-  const reads = recordLayoutReads()
-
+test('a mid-sized tree animates the folder itself and moves no other row with a transform', async () => {
+  // 12 x 10 = 132 rows: under the motion limit, in a list that shows ~9.
+  await renderExpanded({ height: '300px' }, bigItems(12, 10), 132, true)
   await measure(() => rowEl('f0').querySelector<HTMLElement>('.ui-tree-chevron')!.click())
-
-  const sliding = slidingRowCount()
-  const readsAfterFirstWrite = reads.filter((transformed) => transformed > 0).length
-  // Some rows do slide, but not all ~120 that moved, most of them out of view.
-  expect(sliding).toBeGreaterThan(0)
-  expect(sliding).toBeLessThan(60)
-  // One forced reflow at most once writing starts.
-  expect(readsAfterFirstWrite).toBeLessThanOrEqual(1)
+  const block = document.querySelector<HTMLElement>('.ui-tree-rows[data-folding]')
+  expect(block).toBeTruthy()
+  // The rows below follow it in layout, so none of them is transformed.
+  expect(slidingRowCount()).toBe(0)
 })
 
-test('a small tree still slides rows that move when a folder expands', async () => {
-  await render(TreeFixture)
+test('a tree over the motion limit opens and closes folders at once', async () => {
+  await renderExpanded({}, bigItems(), 2040, true)
+  rowEl('f0').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  await nextTick()
+  expect(document.querySelector('.ui-tree-rows[data-folding]')).toBeNull()
+  expect(rowEl('f0').nextElementSibling).toBeNull()
+})
+
+test('a small tree grows the opening folder in flow, and the row below moves with it', async () => {
+  await render(TreeFixture, { global: { stubs: { transition: false, 'transition-group': false } } })
   await vi.waitFor(() => expect(rowCount()).toBe(2))
   const vegetables = rowEl('vegetables')
+  const before = vegetables.getBoundingClientRect().top
 
   rowEl('fruits').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
   await nextTick()
-  expect(vegetables.style.transform).toMatch(/^translateY\(-\d/)
-  await vi.waitFor(() => expect(vegetables.style.transform).toBe(''))
+  const block = rowEl('fruits').nextElementSibling as HTMLElement
+  expect(block.dataset.folding).toBe('')
+  expect(block.style.blockSize).toMatch(/px$/)
+  expect(vegetables.style.transform).toBe('')
+  // Partway there a few frames in, then all the way.
+  for (let i = 0; i < 4; i++) await new Promise((resolve) => requestAnimationFrame(resolve))
+  const partway = vegetables.getBoundingClientRect().top
+  expect(partway).toBeGreaterThan(before)
+  await vi.waitFor(() => expect(block.dataset.folding).toBeUndefined())
+  expect(block.style.blockSize).toBe('')
+  expect(vegetables.getBoundingClientRect().top).toBeGreaterThan(partway)
 })
 
 test('filter keystrokes re-render only rows whose visibility changed, and clearing mounts one component per row', async () => {

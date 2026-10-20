@@ -110,8 +110,10 @@
       transform var(--ui-duration-press) var(--ui-ease-in-out),
       opacity var(--ui-duration-press) ease;
   }
-  .ui-datatable-sort-button:hover .ui-datatable-sort-chevron {
-    opacity: 0.7;
+  @media (hover: hover) and (pointer: fine) {
+    .ui-datatable-sort-button:hover .ui-datatable-sort-chevron {
+      opacity: 0.7;
+    }
   }
   .ui-datatable-sort-chevron[data-state='asc'] {
     opacity: 1;
@@ -410,7 +412,7 @@
     padding: 0.875rem 1rem;
   }
   .ui-datatable-expand-chevron {
-    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-datatable-expand-chevron[data-state='open'] {
     transform: rotate(90deg);
@@ -433,7 +435,7 @@
     opacity: 0;
   }
   .ui-datatable-tr--expansion.ui-datatable-row-leave-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
+    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
   }
   .ui-datatable-tr--expansion.ui-datatable-row-leave-to {
     opacity: 0;
@@ -441,9 +443,11 @@
   .ui-datatable-expansion-rows {
     contain: layout;
   }
-  .ui-datatable-row-enter-active .ui-datatable-expansion-rows,
-  .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
+  .ui-datatable-row-enter-active .ui-datatable-expansion-rows {
     transition: max-block-size var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-datatable-row-leave-active .ui-datatable-expansion-rows {
+    transition: max-block-size var(--ui-duration-exit) var(--ui-ease-out);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -493,12 +497,16 @@
     color: var(--ui-text-muted);
     cursor: grab;
     opacity: 0;
-    transition: opacity var(--ui-duration-press) var(--ui-ease-out);
+    transition: opacity var(--ui-duration-press) ease;
   }
-  .ui-datatable-th:hover .ui-datatable-th-grip,
   .ui-datatable-th:focus-within .ui-datatable-th-grip,
   .ui-datatable-th[data-dragging] .ui-datatable-th-grip {
     opacity: 1;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-datatable-th:hover .ui-datatable-th-grip {
+      opacity: 1;
+    }
   }
   .ui-datatable-th-grip[data-visibility='always'] {
     opacity: 1;

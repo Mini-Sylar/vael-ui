@@ -129,10 +129,14 @@
     .ui-slider-thumb {
       transition: none;
     }
-    .ui-slider-thumb:hover,
     .ui-slider-thumb:active,
     .ui-slider-thumb[data-active] {
       scale: 1;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .ui-slider-thumb:hover {
+        scale: 1;
+      }
     }
   }
 }

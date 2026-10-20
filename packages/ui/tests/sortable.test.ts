@@ -2,8 +2,10 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { ref } from 'vue'
 import type { RenderResult } from 'vitest-browser-vue'
 import SortableFixture from './fixtures/SortableFixture.vue'
+import Sortable from '../src/components/Sortable/Sortable.vue'
 import type { SortableDropDetails } from '../src/composables/useSortable'
 
 function handles(screen: RenderResult<unknown>): HTMLButtonElement[] {
@@ -295,7 +297,247 @@ test.each([
 
 test('the list holds only list items; the live region and instructions sit beside it', async () => {
   const screen = await render(SortableFixture)
-  const list = screen.container.querySelector('.ui-sortable')!
+  const list = screen.container.querySelector('.ui-sortable-list')!
   expect([...list.children].every((child) => child.tagName === 'LI')).toBe(true)
   expect(list.contains(liveRegion(screen))).toBe(false)
+  expect(screen.container.querySelector('.ui-sortable')!.contains(liveRegion(screen))).toBe(true)
+})
+
+test('a pointer drag released over its own slot springs home instead of snapping', async () => {
+  const screen = await render(SortableFixture)
+  const handle = handles(screen)[0]!
+  const item = handle.closest<HTMLElement>('.ui-sortable-item')!
+  const box = handle.getBoundingClientRect()
+  const pointerId = 41
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId,
+      button: 0,
+      clientX: box.left + 8,
+      clientY: box.top + 8,
+    }),
+  )
+  for (const dy of [6, 12, 18, 22]) {
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        pointerId,
+        clientX: box.left + 8,
+        clientY: box.top + 8 + dy,
+      }),
+    )
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  expect(item.style.translate).toBe('0px 22px')
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId }))
+  await new Promise((r) => requestAnimationFrame(r))
+  await new Promise((r) => requestAnimationFrame(r))
+  // Still on its way: a snap would have cleared it on release.
+  const mid = parseFloat(item.style.translate.split(' ')[1] ?? '0')
+  expect(mid).toBeGreaterThan(0)
+  expect(mid).toBeLessThan(22)
+  await vi.waitFor(() => expect(item.style.translate).toBe(''))
+  expect(order(screen)).toBe('a,b,c')
+})
+
+test('the root is one styled box: your class lands on it and the rows lay out as its children', async () => {
+  const screen = await render({
+    components: { Sortable },
+    setup: () => ({ items: [{ value: 'a', label: 'Alpha' }] }),
+    template: `<Sortable v-model:items="items" class="mine" />`,
+  })
+  const root = screen.container.querySelector<HTMLElement>('.ui-sortable')!
+  expect(root.classList.contains('mine')).toBe(true)
+  expect(getComputedStyle(root).display).toBe('flex')
+  expect(getComputedStyle(root.querySelector('.ui-sortable-list')!).display).toBe('contents')
+  expect(root.querySelector('.ui-sortable-list > .ui-sortable-item')).not.toBeNull()
+})
+
+test('a row grabbed near its top opens the next slot once its own centre passes the next row, before the pointer does', async () => {
+  const screen = await render(SortableFixture)
+  const handle = handles(screen)[0]!
+  const row = handle.closest<HTMLElement>('.ui-sortable-item')!
+  const next = handles(screen)[1]!.closest<HTMLElement>('.ui-sortable-item')!
+  const rowBox = row.getBoundingClientRect()
+  const handleBox = handle.getBoundingClientRect()
+  const nextBox = next.getBoundingClientRect()
+  const grabY = handleBox.top + 1
+  // The pointer stops short of the next row's midpoint; the row's centre is past it.
+  const centreLead = rowBox.height / 2 - (grabY - rowBox.top)
+  expect(centreLead).toBeGreaterThan(4)
+  const pointerId = 51
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId,
+      button: 0,
+      clientX: handleBox.left + 4,
+      clientY: grabY,
+    }),
+  )
+  window.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      pointerId,
+      clientX: handleBox.left + 4,
+      clientY: nextBox.top + nextBox.height / 2 - centreLead / 2,
+    }),
+  )
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId }))
+  await vi.waitFor(() => expect(order(screen)).toBe('b,a,c'))
+})
+
+test('a list that re-sorts right after a drop glides its rows to the new order instead of jumping', async () => {
+  const screen = await render({
+    components: { Sortable },
+    setup() {
+      const items = ref([
+        { value: 'a', label: 'Alpha' },
+        { value: 'b', label: 'Bravo' },
+        { value: 'c', label: 'Charlie' },
+      ])
+      // Like a store that orders a column its own way: whatever was dropped, Alpha leads again.
+      const resort = () => {
+        items.value = [...items.value].sort((x, y) => x.value.localeCompare(y.value))
+      }
+      return { items, resort }
+    },
+    template: `<Sortable v-model:items="items" @reorder="resort" />`,
+  })
+  const handle = handles(screen)[0]!
+  const alpha = handle.closest<HTMLElement>('.ui-sortable-item')!
+  const bravo = handles(screen)[1]!.closest<HTMLElement>('.ui-sortable-item')!
+  const box = handle.getBoundingClientRect()
+  const bravoBox = bravo.getBoundingClientRect()
+  const restTop = alpha.getBoundingClientRect().top
+  const pointerId = 61
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId,
+      button: 0,
+      clientX: box.left + 4,
+      clientY: box.top + 4,
+    }),
+  )
+  const travel = bravoBox.bottom + 4 - (box.top + 4)
+  for (let step = 1; step <= 6; step++) {
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        pointerId,
+        clientX: box.left + 4,
+        clientY: box.top + 4 + (travel * step) / 6,
+      }),
+    )
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  const droppedTop = alpha.getBoundingClientRect().top
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId }))
+  // The resort runs on the reorder event, so Alpha is laid out first again at once. On screen it
+  // must travel there from where it was dropped: no frame may jump it more than a fraction of
+  // the way, and Bravo, pushed back down, moves the same way.
+  const domOrder = () =>
+    [...screen.container.querySelectorAll<HTMLElement>('.ui-sortable-item')]
+      .map((el) => el.dataset.value)
+      .join(',')
+  let last = droppedTop
+  let biggestStep = 0
+  let frames = 0
+  await vi.waitFor(() => expect(domOrder()).toBe('a,b,c'))
+  while (frames++ < 90) {
+    await new Promise((r) => requestAnimationFrame(r))
+    const top = alpha.getBoundingClientRect().top
+    biggestStep = Math.max(biggestStep, Math.abs(top - last))
+    last = top
+    if (alpha.style.translate === '' && bravo.style.translate === '') break
+  }
+  expect(biggestStep).toBeLessThan((droppedTop - restTop) / 2)
+  expect(Math.round(alpha.getBoundingClientRect().top)).toBe(Math.round(restTop))
+  expect(Math.round(bravo.getBoundingClientRect().top)).toBe(Math.round(bravoBox.top))
+})
+
+test('isSettling and data-settling hold from the drop until every row has glided into place', async () => {
+  const screen = await render(SortableFixture)
+  const root = screen.container.querySelector<HTMLElement>('.ui-sortable')!
+  const handle = handles(screen)[0]!
+  const box = handle.getBoundingClientRect()
+  const pointerId = 81
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId,
+      button: 0,
+      clientX: box.left + 4,
+      clientY: box.top + 4,
+    }),
+  )
+  for (let step = 1; step <= 5; step++) {
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        pointerId,
+        clientX: box.left + 4,
+        clientY: box.top + 4 + step * 6,
+      }),
+    )
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  expect(root.hasAttribute('data-settling')).toBe(false)
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId }))
+  await new Promise((r) => requestAnimationFrame(r))
+  expect(root.hasAttribute('data-settling')).toBe(true)
+  await vi.waitFor(() => expect(root.hasAttribute('data-settling')).toBe(false))
+  expect(handle.closest<HTMLElement>('.ui-sortable-item')!.style.translate).toBe('')
+})
+
+test('the dragged row stays on top of the rows moving out of its way, during the drag and the landing', async () => {
+  const screen = await render(SortableFixture)
+  const handle = handles(screen)[0]!
+  const items = [...screen.container.querySelectorAll<HTMLElement>('.ui-sortable-item')]
+  const [dragged, next] = items as [HTMLElement, HTMLElement]
+  const box = handle.getBoundingClientRect()
+  const step = next.getBoundingClientRect().top - dragged.getBoundingClientRect().top
+  const pointerId = 42
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId,
+      button: 0,
+      clientX: box.left + 8,
+      clientY: box.top + 8,
+    }),
+  )
+  // Far enough that the next row starts sliding up under the dragged one.
+  for (const fraction of [0.2, 0.4, 0.6, 0.7]) {
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        pointerId,
+        clientX: box.left + 8,
+        clientY: box.top + 8 + step * fraction,
+      }),
+    )
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  // Mid-glide, where the two overlap.
+  const topmostAtOverlap = () => {
+    const a = dragged.getBoundingClientRect()
+    const b = next.getBoundingClientRect()
+    const y = (Math.max(a.top, b.top) + Math.min(a.bottom, b.bottom)) / 2
+    return document.elementFromPoint(a.left + a.width / 2, y)?.closest('.ui-sortable-item')
+  }
+  expect(next.style.zIndex).toBe('')
+  expect(topmostAtOverlap()).toBe(dragged)
+
+  window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId }))
+  await new Promise((r) => requestAnimationFrame(r))
+  await new Promise((r) => requestAnimationFrame(r))
+  const landing = [...screen.container.querySelectorAll<HTMLElement>('.ui-sortable-item')]
+  const landed = landing.find((el) => el.textContent?.includes(dragged.textContent ?? '~'))!
+  const others = landing.filter((el) => el !== landed)
+  // The landing row is raised; the rows settling around it are not.
+  expect(landed.style.zIndex).toBe('1')
+  expect(others.every((el) => el.style.zIndex === '')).toBe(true)
 })

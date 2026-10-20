@@ -82,9 +82,11 @@
     "MenuList": "将 Menu 的行渲染在页面流中而不是下拉菜单里，适用于常驻侧边栏导航。",
     "Message": "状态文本的内嵌横幅：信息、成功、警告或错误。",
     "OtpInput": "一排单字符框，用于一次性代码，具有粘贴和自动前进功能。",
+    "Editable": "点击后变为输入框、按 Enter 或失焦时保存的文本，用于就地重命名。",
+    "ColorPicker": "打开取色器的色块：饱和度与明度平面、色相滑块、十六进制输入框、浏览器支持时的吸管工具，以及可选预设。",
     "Pagination": "页码控件用于跨页拆分长列表或表格。",
     "Popover": "锚定到触发元素的浮动面板，用于菜单、表单或额外细节。",
-    "Progress": "显示任务进度的进度条，支持确定和不确定两种状态。",
+    "Progress": "显示任务进度或整体中堆叠份额的进度条，支持确定和不确定两种状态，可选图例。",
     "PullToRefresh": "滚动容器顶部的下拉手势可触发刷新。",
     "Radio": "互斥选项集合中的一个选项。请始终在 RadioGroup 内使用。",
     "RadioGroup": "将一组 Radio 按钮组合在一起，使同一时间只能选中一个。",
@@ -111,7 +113,13 @@
     "BreadcrumbItem": "Breadcrumb 路径中的一个链接或当前页面。",
     "BreadcrumbSeparator": "两个 BreadcrumbItem 之间的分隔符。除非传入自定义内容，否则显示箭头图标。",
     "Rating": "点击、拖动或使用方向键在一排星星上选择数值，可选半星精度。",
-    "Timeline": "由线条连接的有序步骤列表。每个步骤可以包含任意内容。"
+    "Timeline": "由线条连接的有序步骤列表。每个步骤可以包含任意内容。",
+    "ButtonGroup": "把按钮连成一行或一列，也可以变成单选或多选的切换按钮。",
+    "CommandPalette": "在对话框中可搜索的命令列表，可用按钮或 ⌘K 等快捷键打开。",
+    "Stepper": "展示一系列步骤的进度，并可在步骤之间切换。",
+    "Breadcrumb": "从网站顶层到当前页面的一串链接。",
+    "AvatarGroup": "把多个头像重叠排成一行，放不下的显示为数量。",
+    "ScrollArea": "带有主题化细滚动条和渐隐边缘的滚动区域，支持单向或双向滚动。"
   },
   "gettingStarted": {
     "darkModeIntro": "深色模式完全由 CSS 实现。它跟随 <code>&lt;html data-theme=\"dark\"&gt;</code>，未设置时回退到 <code>prefers-color-scheme</code>。vael-ui 不提供切换 UI。<code>useColorScheme()</code> 会跟踪系统偏好的变化，并通过你传入的 <code>persist</code> 选项保存用户的选择：",
@@ -177,7 +185,15 @@
     "radiusSharp": "锋利的",
     "radiusSoft": "柔软的",
     "theme": "自定义主题",
-    "settings": "设置"
+    "settings": "设置",
+    "appearance": "外观",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统",
+    "demos": "演示",
+    "general": "通用",
+    "mode": "模式",
+    "fontSize": "字号"
   },
   "home": {
     "tagline": "60 多个 Vue 3 组件，从同一份源码编译为经典 VDOM 构建和 Vue Vapor。",
@@ -198,7 +214,7 @@
     "featureSkillTitle": "AI 智能体技能",
     "themeLabel": "试试颜色：",
     "newTag": "新",
-    "newText": "每个 Prop 都在编辑器中有文档",
+    "newText": "0.5.0：弹簧折叠、取色器、行内编辑",
     "showcaseLabel": "使用 vael-ui 构建的在线演示"
   },
   "i18nKeys": {
@@ -218,7 +234,7 @@
   },
   "nav": {
     "animationIntegrationGuide": "自带动画",
-    "components": "成分",
+    "components": "组件",
     "gettingStarted": "入门",
     "github": "GitHub",
     "sponsor": "赞助",
@@ -230,7 +246,6 @@
     "stylingAndLayersGuide": "样式和级联层",
     "tailwindGuide": "与 Tailwind 一起使用",
     "menu": "菜单",
-    "openMenu": "打开菜单",
     "composables": "可组合项",
     "autoImportGuide": "自动导入",
     "nuxtGuide": "努克斯特",
@@ -240,7 +255,10 @@
     "next": "下一页",
     "pager": "上一页和下一页",
     "mainNav": "主导航",
-    "sidebarNav": "文档"
+    "sidebarNav": "文档",
+    "searchShort": "搜索",
+    "support": "支持",
+    "searchAll": "搜索组件、Props 和指南…"
   },
   "pageNotes": {
     "Resizable": "这个网站自己的侧边栏是用Ressized构建的。\n拖动它的右边缘来尝试一下。",
@@ -350,7 +368,8 @@
   "notFound": {
     "body": "您要查找的页面不存在或已移动。",
     "home": "回到家",
-    "title": "找不到页面"
+    "title": "找不到页面",
+    "didYouMean": "你是不是要找："
   },
   "composable": {
     "noParameters": "不接受任何争论。",
@@ -448,5 +467,40 @@
     "value": "值",
     "modifiers": "修饰符",
     "noModifiers": "无修饰符。"
+  },
+  "dockTour": {
+    "componentsTitle": "组件入口移到了这里",
+    "componentsDescription": "菜单从顶部栏移到了底部 Dock，拇指更容易够到。",
+    "settingsTitle": "深色模式在设置里",
+    "settingsDescription": "主题色、圆角、尺寸、字号、语言等也都在设置中。",
+    "replayLabel": "引导",
+    "replay": "再看一次",
+    "searchTitle": "一键搜索",
+    "searchDescription": "按名称查找组件、指南和组合式函数，并附有简短说明。",
+    "variantTitle": "Vue DOM 与 Vapor 在顶部切换",
+    "variantDescription": "在这里把所有演示在经典版本和 Vapor 之间切换。"
+  },
+  "search": {
+    "actions": "命令",
+    "current": "当前",
+    "on": "开",
+    "off": "关",
+    "copyInstall": "复制安装命令",
+    "reportIssue": "报告问题",
+    "recent": "最近",
+    "drillIn": "{name} API",
+    "copy": {
+      "import": "复制导入",
+      "usage": "复制用法",
+      "link": "复制链接",
+      "command": "复制"
+    },
+    "noResults": "没有找到“{query}”的结果",
+    "didYouMean": "你是不是要找",
+    "request": "在 GitHub 上提需求",
+    "copied": "已复制到剪贴板",
+    "back": "全部结果",
+    "copiedShort": "已复制",
+    "noCommands": "没有与“{query}”匹配的命令"
   }
 }

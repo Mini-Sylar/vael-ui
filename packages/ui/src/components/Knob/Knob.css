@@ -106,10 +106,14 @@
     .ui-knob-face {
       transition: none;
     }
-    .ui-knob-dial:hover .ui-knob-face,
     .ui-knob-dial:active .ui-knob-face,
     .ui-knob-dial[data-active] .ui-knob-face {
       scale: 1;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .ui-knob-dial:hover .ui-knob-face {
+        scale: 1;
+      }
     }
   }
 }

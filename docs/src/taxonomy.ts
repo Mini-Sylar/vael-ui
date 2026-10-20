@@ -35,6 +35,8 @@ export const categories: ComponentCategory[] = [
       'InputNumber',
       'OtpInput',
       'PasswordInput',
+      'Editable',
+      'ColorPicker',
       'Checkbox',
       'Radio',
       'RadioGroup',

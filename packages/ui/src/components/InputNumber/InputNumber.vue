@@ -3,7 +3,7 @@
     ref="inputRef"
     v-model="displayValue"
     type="text"
-    inputmode="decimal"
+    :inputmode="inputMode"
     autocomplete="off"
     role="spinbutton"
     :size="props.size"
@@ -223,6 +223,14 @@ const messages = useUiMessages()
 const fieldControl = useFieldControl()
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
+// The phone keypad. The iPhone's number pads have no minus key, so a range that
+// goes below zero gets the full keyboard; whole numbers that can't go negative
+// get plain digits; everything else gets digits with a decimal point.
+const inputMode = computed(() => {
+  if (props.min !== undefined && props.min < 0) return 'text'
+  if (props.maxFractionDigits === 0 && props.min !== undefined) return 'numeric'
+  return 'decimal'
+})
 
 const displayValue = shallowRef(numberFormat.format(modelValue.value))
 const isFocused = shallowRef(false)

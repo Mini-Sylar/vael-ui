@@ -28,7 +28,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .ui-skeleton--animated {
-      animation: ui-pulse var(--ui-duration-pulse) ease-in-out infinite;
+      animation-duration: calc(var(--ui-duration-pulse) * 2);
     }
   }
 
