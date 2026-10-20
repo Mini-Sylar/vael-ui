@@ -3,7 +3,7 @@
     v-model:size="sidebarWidth"
     direction="horizontal"
     edge="end"
-    :min="200"
+    :min="220"
     :max="360"
     aria-label="Resize sidebar"
     role="complementary"
