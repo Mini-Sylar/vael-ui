@@ -1,5 +1,11 @@
 <template>
-  <ConfigProvider :theme="theme" :size="uiSize" :motion-css="motion" :i18n="i18n">
+  <ConfigProvider
+    :theme="theme"
+    :size="uiSize"
+    :motion-css="motion"
+    :loader-type="loaderType"
+    :i18n="i18n"
+  >
     <div class="app-shell" :style="accent ? { '--docs-accent': accent } : undefined">
       <header class="app-header">
         <RouterLink to="/" class="brand">
@@ -99,6 +105,18 @@
                     <span>{{ t('header.animations') }}</span>
                     <Switch v-model="motion" />
                   </label>
+                  <div class="theme-row">
+                    <span class="loader-label">
+                      {{ t('header.loader') }}
+                      <Loader size="0.875rem" />
+                    </span>
+                    <Select
+                      v-model="loaderType"
+                      :items="loaderItems"
+                      :aria-label="t('header.loader')"
+                      class="loader-select"
+                    />
+                  </div>
                 </div>
               </template>
             </Popover>
@@ -209,6 +227,18 @@
             <span>{{ t('header.animations') }}</span>
             <Switch v-model="motion" />
           </label>
+          <div class="theme-row">
+            <span class="loader-label">
+              {{ t('header.loader') }}
+              <Loader size="0.875rem" />
+            </span>
+            <Select
+              v-model="loaderType"
+              :items="loaderItems"
+              :aria-label="t('header.loader')"
+              class="loader-select"
+            />
+          </div>
         </section>
         <section class="settings-group" aria-labelledby="settings-general">
           <h3 id="settings-general" class="settings-heading">{{ t('header.general') }}</h3>
@@ -267,6 +297,7 @@ import {
   ConfigProvider,
   DialogHost,
   Dock,
+  Loader,
   openPopover,
   Popover,
   PopoverHost,
@@ -280,7 +311,7 @@ import {
   Tour,
   useColorScheme,
 } from 'vael-ui'
-import type { ColorSchemeMode, DockItemData, TourStep } from 'vael-ui'
+import type { ColorSchemeMode, DockItemData, LoaderType, TourStep } from 'vael-ui'
 import Sidebar from './components/Sidebar.vue'
 import SiteSearch from './components/SiteSearch.vue'
 import { siteSearchOpen } from './siteSearch'
@@ -289,6 +320,7 @@ import SupportMenu from './components/SupportMenu.vue'
 import Logo from './components/Logo.vue'
 import { setLocale, SUPPORTED_LOCALES, type Locale } from './i18n'
 import { defaultVariant, primaryColor, readableAccent } from './preferences'
+import { syncFavicon } from './favicon'
 import { useHead } from '@unhead/vue'
 
 // Lazy: it pulls in motion, which the rest of the shell doesn't need up front.
@@ -436,6 +468,8 @@ function updateBrowserThemeColor() {
 
 watch(resolvedMode, updateBrowserThemeColor)
 onMounted(updateBrowserThemeColor)
+// Client only: the prerendered page keeps the static icon until the app runs.
+onMounted(() => watch(primaryColor, (color) => void syncFavicon(color), { immediate: true }))
 
 // Taller than the default 60%: every setting shows on most phones, and it pulls up further.
 const settingsSnapPoints = [
@@ -624,9 +658,22 @@ watch(fontSize, (f) => {
 // ConfigProvider defaults, so every component on the site follows them.
 const uiSize = useLocalStorage<'sm' | 'md' | 'lg'>('vael-ui-docs-size', 'md')
 const motion = useLocalStorage('vael-ui-docs-motion', true)
+const LOADER_TYPES: LoaderType[] = ['ring', 'dots', 'bars', 'comet', 'dither']
+const storedLoader = useLocalStorage<LoaderType>('vael-ui-docs-loader', 'ring')
+// A stale or hand-edited value falls back to the ring rather than reaching the library.
+const loaderType = computed<LoaderType>({
+  get: () => (LOADER_TYPES.includes(storedLoader.value) ? storedLoader.value : 'ring'),
+  set: (value) => (storedLoader.value = value),
+})
+const loaderItems = computed(() =>
+  LOADER_TYPES.map((value) => ({
+    label: t(`header.loader${value.charAt(0).toUpperCase()}${value.slice(1)}`),
+    value,
+  })),
+)
 
 // The search palette's actions change these, so it gets them from here.
-provide(docsSettingsKey, { mode, setMode, size: uiSize, motion, locale })
+provide(docsSettingsKey, { mode, setMode, size: uiSize, motion, loaderType, locale })
 const sizeItems = computed(() => [
   { label: t('header.sizeSm'), value: 'sm' },
   { label: t('header.sizeMd'), value: 'md' },
@@ -901,6 +948,22 @@ const theme = computed(() => ({
 }
 
 .radius-select {
+  width: 9rem;
+}
+
+.loader-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loader-label :deep(.ui-loader) {
+  color: var(--ui-text-muted);
+}
+
+/* Select has more than one root, so its own scoped class never applies; reach it through the row. */
+.theme-row :deep(.loader-select) {
+  flex: none;
   width: 9rem;
 }
 

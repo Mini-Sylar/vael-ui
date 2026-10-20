@@ -28,6 +28,17 @@ interface SettlingRow {
   lifted: { position: string; zIndex: string } | null
   /** Only the row that was dragged rises above the others; rows making room stay in order. */
   raised: boolean
+  /** Runs after each frame's write, with the element that is the row right now. */
+  onFrame?: (el: HTMLElement) => void
+  /** Runs once the row has come to rest, or is stopped by a new glide or `clear()`. */
+  onRest?: (el: HTMLElement) => void
+}
+
+export interface GlideHooks {
+  /** After each frame's write, with whichever element is the row now (a re-render can swap it). */
+  onFrame?: (el: HTMLElement) => void
+  /** Once it has come to rest, or is stopped early by another glide or `clear()`. */
+  onRest?: (el: HTMLElement) => void
 }
 
 export interface Settler {
@@ -43,6 +54,7 @@ export interface Settler {
     offset: Point,
     velocity?: Point,
     raise?: boolean,
+    hooks?: GlideHooks,
   ) => void
   /** Keeps a resting row watched for a while, so if the list re-sorts under it, it glides too. */
   watch: (el: HTMLElement, value: string | number) => void
@@ -97,6 +109,12 @@ export function createSettler(options: {
     if (position === 'static' || position === 'relative') style.position = 'relative'
     style.zIndex = '1'
   }
+  function rest(row: SettlingRow) {
+    const done = row.onRest
+    row.onRest = undefined
+    row.onFrame = undefined
+    done?.(row.el)
+  }
   function land(row: SettlingRow) {
     if (!row.lifted) return
     row.el.style.position = row.lifted.position
@@ -113,6 +131,7 @@ export function createSettler(options: {
         const el = options.getElement(row.value)
         if (!el) {
           rows.delete(row.value)
+          rest(row)
           continue
         }
         row.el = el
@@ -137,13 +156,16 @@ export function createSettler(options: {
         row.offset = { x: 0, y: 0 }
         row.velocity = { x: 0, y: 0 }
         row.el.style.translate = ''
+        row.onFrame?.(row.el)
         land(row)
+        rest(row)
         continue
       }
       row.offset = { x: x.value, y: y.value }
       row.velocity = { x: x.velocity, y: y.velocity }
       lift(row)
       row.el.style.translate = translateFor(row.offset)
+      row.onFrame?.(row.el)
       moving = true
     }
     report(moving)
@@ -161,9 +183,12 @@ export function createSettler(options: {
   }
 
   return {
-    glide(el, value, offset, velocity = { x: 0, y: 0 }, raise = false) {
+    glide(el, value, offset, velocity = { x: 0, y: 0 }, raise = false, hooks) {
       const previous = rows.get(value)
-      if (previous) land(previous)
+      if (previous) {
+        land(previous)
+        rest(previous)
+      }
       const row: SettlingRow = {
         el,
         value,
@@ -172,9 +197,19 @@ export function createSettler(options: {
         natural: null,
         lifted: null,
         raised: raise,
+        onFrame: hooks?.onFrame,
+        onRest: hooks?.onRest,
+      }
+      const still = (v: number) => Math.abs(v) < EPSILON
+      if (still(offset.x) && still(offset.y) && still(velocity.x) && still(velocity.y)) {
+        // Already home: nothing to animate, but whoever waits on it (a landing copy) still hears.
+        el.style.translate = ''
+        rest(row)
+        return
       }
       lift(row)
       el.style.translate = translateFor(offset)
+      row.onFrame?.(el)
       rows.set(value, row)
       watchUntil = performance.now() + WATCH_MS
       report(true)
@@ -197,7 +232,10 @@ export function createSettler(options: {
     clear() {
       if (frame) cancelAnimationFrame(frame)
       frame = 0
-      for (const row of rows.values()) land(row)
+      for (const row of rows.values()) {
+        land(row)
+        rest(row)
+      }
       rows.clear()
       report(false)
     },

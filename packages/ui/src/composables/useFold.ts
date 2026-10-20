@@ -11,8 +11,11 @@ const STEP = 1 / 240
 // seconds at once; both get one nominal frame instead.
 const MIN_DT = 1 / 120
 const MAX_DT = 1 / 30
-const SETTLE_PX = 0.5
-const SETTLE_SPEED = 15
+// Tight enough that letting go of the pinned height is invisible: at half a pixel the block
+// visibly hopped into place as the fold ended. The last stretch is sub-pixel, so it costs a
+// few frames nobody sees.
+const SETTLE_PX = 0.05
+const SETTLE_SPEED = 2
 
 interface Fold {
   el: HTMLElement
@@ -80,10 +83,19 @@ export function createFoldScheduler(): FoldScheduler {
 }
 
 // From the children, not scrollHeight: a clipped block still lays its rows out at full size.
+// The last row's bottom margin and the block's own padding and border count too, or the spring
+// settles short of the height the block takes once it's let go.
 function contentHeight(el: HTMLElement): number {
   const last = el.lastElementChild
   if (!last) return 0
-  return last.getBoundingClientRect().bottom - el.getBoundingClientRect().top
+  const box = getComputedStyle(el)
+  return (
+    last.getBoundingClientRect().bottom +
+    (Number.parseFloat(getComputedStyle(last).marginBlockEnd) || 0) -
+    el.getBoundingClientRect().top +
+    (Number.parseFloat(box.paddingBlockEnd) || 0) +
+    (Number.parseFloat(box.borderBlockEndWidth) || 0)
+  )
 }
 
 // The rows keep full opacity for most of the travel and fade only near shut, so the block reads

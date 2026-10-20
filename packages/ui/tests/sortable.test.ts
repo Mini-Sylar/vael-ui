@@ -541,3 +541,211 @@ test('the dragged row stays on top of the rows moving out of its way, during the
   expect(landed.style.zIndex).toBe('1')
   expect(others.every((el) => el.style.zIndex === '')).toBe(true)
 })
+
+// Drags the first row's handle down by `dy` in small steps, leaving the pointer held.
+async function dragFirstRow(container: HTMLElement, dy: number, pointerId: number) {
+  const handle = container.querySelector<HTMLElement>('.ui-sortable-handle')!
+  const box = handle.getBoundingClientRect()
+  const x = box.left + 8
+  const y = box.top + 8
+  handle.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      pointerId,
+      button: 0,
+      clientX: x,
+      clientY: y,
+    }),
+  )
+  for (let moved = 6; moved <= dy; moved += 6) {
+    window.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, pointerId, clientX: x, clientY: y + moved }),
+    )
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  return () => window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId }))
+}
+
+const sixRows = () =>
+  ['a', 'b', 'c', 'd', 'e', 'f'].map((value) => ({ value, label: value.toUpperCase() }))
+
+test('preview-mode="clone" floats a copy from the start of the drag, and the order still lands', async () => {
+  const items = ref(sixRows())
+  const screen = await render({
+    components: { Sortable },
+    setup: () => ({ items }),
+    template: `<Sortable v-model:items="items" preview-mode="clone" />`,
+  })
+  const source = screen.container.querySelector<HTMLElement>('.ui-sortable-item')!
+  const release = await dragFirstRow(screen.container, 72, 61)
+  const copy = document.querySelector<HTMLElement>('body > [data-sortable-preview]')
+  expect(copy).not.toBeNull()
+  expect(copy!.textContent).toContain('A')
+  expect(getComputedStyle(copy!).position).toBe('fixed')
+  expect(getComputedStyle(source).visibility).toBe('hidden')
+  release()
+  await vi.waitFor(() => expect(items.value.map((i) => i.value).join('')).not.toBe('abcdef'))
+  expect(items.value[0]!.value).toBe('b')
+  // The copy flies into the new slot, above everything, while the real row waits hidden there.
+  await new Promise((r) => requestAnimationFrame(r))
+  expect(document.querySelector('body > [data-sortable-preview]')).not.toBeNull()
+  expect(getComputedStyle(source).visibility).toBe('hidden')
+  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
+  expect(getComputedStyle(source).visibility).toBe('visible')
+  expect(source.hasAttribute('data-sortable-source')).toBe(false)
+  // It landed exactly on the row's slot, so showing the row moves nothing.
+  expect(source.style.translate).toBe('')
+})
+
+test('a list that scrolls moves the real row too, with no copy unless preview-mode asks for one', async () => {
+  const items = ref(sixRows())
+  const screen = await render({
+    components: { Sortable },
+    setup: () => ({ items }),
+    template: `<Sortable v-model:items="items" style="max-block-size: 7rem; overflow-y: auto" />`,
+  })
+  const source = screen.container.querySelector<HTMLElement>('.ui-sortable-item')!
+  const release = await dragFirstRow(screen.container, 30, 62)
+  expect(document.querySelector('[data-sortable-preview]')).toBeNull()
+  expect(source.style.translate).not.toBe('')
+  release()
+  await vi.waitFor(() => expect(source.style.translate).toBe(''))
+})
+
+test("a row held at the end of a scrolling list: autoscroll stops at the last row, and the drop doesn't jump", async () => {
+  const items = ref(sixRows())
+  const screen = await render({
+    components: { Sortable },
+    setup: () => ({ items }),
+    template: `<Sortable v-model:items="items" style="max-block-size: 7rem; overflow-y: auto" />`,
+  })
+  const list = screen.container.querySelector<HTMLElement>('.ui-sortable')!
+  // A drop moves rows in the DOM; scroll anchoring would answer by scrolling the list away.
+  expect(getComputedStyle(list).overflowAnchor).toBe('none')
+  const end = list.scrollHeight - list.clientHeight
+  const handle = list.querySelector<HTMLElement>('.ui-sortable-handle')!
+  const release = await dragFirstRow(
+    screen.container,
+    list.getBoundingClientRect().bottom - 4 - (handle.getBoundingClientRect().top + 8),
+    65,
+  )
+  // Parked on the bottom edge. The row still follows the pointer, which makes the list taller
+  // than its rows, but autoscroll stops at the last row.
+  let furthest = 0
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => requestAnimationFrame(r))
+    furthest = Math.max(furthest, list.scrollTop)
+  }
+  expect(furthest).toBeLessThanOrEqual(end + 0.5)
+  expect(list.scrollTop).toBeCloseTo(end, 0)
+  release()
+  for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r))
+  expect(list.scrollTop).toBeCloseTo(end, 0)
+})
+
+for (const restrict of [true, false]) {
+  test(`a floating row ${restrict ? 'stays inside' : 'can leave'} its list past the end with restrict-to-list ${restrict}`, async () => {
+    const items = ref(sixRows())
+    const screen = await render({
+      components: { Sortable },
+      setup: () => ({ items, restrict }),
+      template: `<Sortable v-model:items="items" preview-mode="clone" :restrict-to-list="restrict" />`,
+    })
+    const list = screen.container.querySelector<HTMLElement>('.ui-sortable')!
+    const handle = list.querySelector<HTMLElement>('.ui-sortable-handle')!
+    const below =
+      list.getBoundingClientRect().bottom + 60 - (handle.getBoundingClientRect().top + 8)
+    const release = await dragFirstRow(screen.container, below, restrict ? 66 : 67)
+    const copy = document.querySelector<HTMLElement>('body > [data-sortable-preview]')!
+    const bottom = list.getBoundingClientRect().bottom
+    if (restrict) expect(copy.getBoundingClientRect().bottom).toBeLessThanOrEqual(bottom + 0.5)
+    else expect(copy.getBoundingClientRect().bottom).toBeGreaterThan(bottom + 20)
+    release()
+    await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
+  })
+}
+
+test('a list that does not scroll still moves the real row, with no copy', async () => {
+  const screen = await render(SortableFixture)
+  const source = screen.container.querySelector<HTMLElement>('.ui-sortable-item')!
+  const release = await dragFirstRow(screen.container, 18, 63)
+  expect(document.querySelector('[data-sortable-preview]')).toBeNull()
+  expect(source.style.translate).not.toBe('')
+  release()
+  await vi.waitFor(() => expect(source.style.translate).toBe(''))
+})
+
+test('a landing copy follows its row when the list re-sorts mid-landing, and never shows twice', async () => {
+  const items = ref(sixRows())
+  const screen = await render({
+    components: { Sortable },
+    setup: () => ({ items }),
+    template: `<Sortable v-model:items="items" preview-mode="clone" />`,
+  })
+  const release = await dragFirstRow(screen.container, 72, 64)
+  release()
+  await vi.waitFor(() => expect(items.value[0]!.value).toBe('b'))
+  await new Promise((r) => requestAnimationFrame(r))
+  // A refetch that orders the column its own way: 'a' moves to the end while it's landing.
+  items.value = [
+    ...items.value.filter((i) => i.value !== 'a'),
+    items.value.find((i) => i.value === 'a')!,
+  ]
+  const rowA = () => screen.container.querySelector<HTMLElement>('[data-value="a"]')!
+  let shownWhileLanding = 0
+  let copyOffSlot = 0
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => requestAnimationFrame(r))
+    const copy = document.querySelector<HTMLElement>('body > [data-sortable-preview]')
+    if (!copy) break
+    if (getComputedStyle(rowA()).visibility !== 'hidden') shownWhileLanding++
+    const c = copy.getBoundingClientRect()
+    const r = rowA().getBoundingClientRect()
+    if (Math.abs(c.top - r.top) > 1 || Math.abs(c.left - r.left) > 1) copyOffSlot++
+  }
+  expect(shownWhileLanding).toBe(0)
+  expect(copyOffSlot).toBe(0)
+  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
+  expect(getComputedStyle(rowA()).visibility).toBe('visible')
+  await vi.waitFor(() => expect(rowA().style.translate).toBe(''))
+})
+
+test('with a copy, the original is the placeholder: it moves to the drop slot, and fades out under the landing copy', async () => {
+  const items = ref(sixRows())
+  const screen = await render({
+    components: { Sortable },
+    setup: () => ({ items }),
+    template: `<Sortable v-model:items="items" preview-mode="clone" />`,
+  })
+  const rows = () => [...screen.container.querySelectorAll<HTMLElement>('.ui-sortable-item')]
+  const source = rows()[0]!
+  const release = await dragFirstRow(screen.container, 72, 65)
+  // Let the springs settle where the drop would land.
+  await new Promise((r) => setTimeout(r, 450))
+  expect(source.hasAttribute('data-sortable-source')).toBe(true)
+  const placeholder = source.getBoundingClientRect()
+  // It left its own slot, and no other row sits on top of it.
+  expect(source.style.translate).not.toBe('')
+  for (const row of rows().slice(1)) {
+    const r = row.getBoundingClientRect()
+    const overlap = Math.min(r.bottom, placeholder.bottom) - Math.max(r.top, placeholder.top)
+    expect(overlap).toBeLessThan(1)
+  }
+  release()
+  await new Promise((r) => requestAnimationFrame(r))
+  await new Promise((r) => requestAnimationFrame(r))
+  // Landing: the placeholder fades out under the copy instead of vanishing.
+  expect(source.hasAttribute('data-sortable-source')).toBe(true)
+  expect(source.hasAttribute('data-sortable-landing')).toBe(true)
+  const fading = Number(getComputedStyle(source).opacity)
+  expect(fading).toBeGreaterThan(0)
+  expect(fading).toBeLessThan(1)
+  await vi.waitFor(() => expect(Number(getComputedStyle(source).opacity)).toBe(0))
+  await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
+  // Down: the real row, plain.
+  expect(source.hasAttribute('data-sortable-landing')).toBe(false)
+  expect(source.hasAttribute('data-sortable-source')).toBe(false)
+  expect(getComputedStyle(source).opacity).toBe('1')
+  // It landed where the placeholder showed it would.
+  expect(Math.abs(source.getBoundingClientRect().top - placeholder.top)).toBeLessThan(1)
+})

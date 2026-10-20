@@ -8,6 +8,7 @@
     :aria-hidden="label ? undefined : 'true'"
     v-bind="attrs"
   >
+    <span v-for="n in LOADER_PARTS[type]" :key="n" class="ui-loader-part" aria-hidden="true" />
     <span v-if="label" :id="labelId" class="ui-loader-label">{{ label }}</span>
   </span>
 </template>
@@ -21,6 +22,8 @@ import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { LOADER_PARTS, useLoaderType } from '../../composables/loaderType'
+import type { LoaderType } from '../../composables/loaderType'
 
 defineOptions({ inheritAttrs: false })
 
@@ -30,6 +33,8 @@ const props = defineProps<{
   size?: string
   /** Renders `role="status"` with visually hidden text as the accessible name. Omit it to make the loader `aria-hidden`. */
   label?: string
+  /** The animation. Unset, it follows the nearest ConfigProvider's `loaderType`. @default 'ring' */
+  type?: LoaderType
   /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue }>
 }>()
@@ -41,7 +46,10 @@ const themedUi = useThemedUi(
   (theme) => theme.loader,
   () => props.ui,
 )
-const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-loader'))
+const type = useLoaderType(() => props.type)
+const rootPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.root, 'ui-loader', `ui-loader--${type.value}`),
+)
 const rootStyle = computed(() => (props.size ? { fontSize: props.size } : undefined))
 
 defineExpose({

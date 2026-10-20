@@ -329,3 +329,27 @@ test('clicking a tall folder over and over never makes the rows jump', async () 
     plain + 2,
   )
 })
+
+test('a folder lets go of its pinned height where it already is, so the rows below never hop at the end', async () => {
+  renderCentred()
+  await settle()
+  const heights: number[] = []
+  const watchPin = new MutationObserver((records) => {
+    for (const record of records) {
+      const el = record.target as HTMLElement
+      if (el.classList.contains('ui-tree-rows') && el.style.blockSize) {
+        heights.push(Number.parseFloat(el.style.blockSize))
+      }
+    }
+  })
+  watchPin.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style'] })
+  row('src').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  await settle()
+  watchPin.disconnect()
+  // The block that just opened: the one holding src's first child.
+  const block = row('components').closest<HTMLElement>('.ui-tree-rows')!
+  const released = block.getBoundingClientRect().height
+  expect(heights.length).toBeGreaterThan(3)
+  // At half a pixel short, letting go was a visible hop.
+  expect(Math.abs(released - heights.at(-1)!)).toBeLessThan(0.1)
+})

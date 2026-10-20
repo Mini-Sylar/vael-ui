@@ -25,6 +25,14 @@
             class="pg-presets"
           />
           <div class="pg-stage-tools">
+            <SelectButton
+              v-if="isSortable"
+              v-model="sortableLayout"
+              size="sm"
+              :items="SORTABLE_LAYOUTS"
+              :allow-empty="false"
+              aria-label="Lists"
+            />
             <Button
               v-if="frameWidth !== null"
               variant="outline"
@@ -324,6 +332,19 @@
                 :container="previewEl"
               />
             </template>
+            <!-- Two lists sharing a group, for the options that act between lists. -->
+            <div v-else-if="isSortable && sortableLayout === 'group'" class="pg-sortable-group">
+              <component
+                :is="activeComponent"
+                v-for="column in SORTABLE_COLUMNS"
+                :key="`${resetKey}-${column}`"
+                v-bind="groupColumnProps"
+                v-model:items="groupItems[column]"
+                :group="sortableBoard"
+                :group-id="column"
+                :aria-label="`List ${column.toUpperCase()}`"
+              />
+            </div>
             <template v-else>
               <!-- No default slot in these two: some components override data-driven rendering with any default slot content, even empty. -->
               <component
@@ -400,6 +421,7 @@
               </component>
             </template>
           </PlaygroundErrorBoundary>
+          <p v-if="dragHint" class="playground-drag-hint">{{ dragHint }}</p>
           <span
             v-if="next"
             class="pg-handle"
@@ -464,11 +486,18 @@
               <label :id="`ctl-${control.name}-label`" :for="`ctl-${control.name}`">
                 {{ control.name }}
                 <RouterLink
-                  v-if="CONTROL_HELP[control.name]"
-                  to="/docs/guides/animation-integration"
+                  v-if="CONTROL_HELP[control.name] && CONTROL_GUIDE[control.name]"
+                  :to="CONTROL_GUIDE[control.name]!"
                   v-tooltip="CONTROL_HELP[control.name]"
                   class="control-hint"
                   >?</RouterLink
+                >
+                <span
+                  v-else-if="CONTROL_HELP[control.name]"
+                  v-tooltip="CONTROL_HELP[control.name]"
+                  tabindex="0"
+                  class="control-hint"
+                  >?</span
                 >
               </label>
 
@@ -573,7 +602,16 @@ import {
 } from 'vue'
 import { RouterLink } from 'vue-router'
 import * as VaelUi from 'vael-ui'
-import { Button, Input, InputNumber, Select, SelectButton, Switch, vScrollMask } from 'vael-ui'
+import {
+  Button,
+  Input,
+  InputNumber,
+  Select,
+  SelectButton,
+  Switch,
+  useSortableGroup,
+  vScrollMask,
+} from 'vael-ui'
 import type { ProgressSegment, TreeNode } from 'vael-ui'
 import { useResizeObserver } from '@vueuse/core'
 import {
@@ -599,6 +637,23 @@ const meta = computed(() => (componentMeta as Record<string, ComponentMetaEntry>
 
 const vaelUiVapor = useVaporComponents()
 const vaelUi = VaelUi as unknown as Record<string, Component | undefined>
+
+// Sortable's preview can show one list or two in a group, for the options that act between lists.
+const isSortable = computed(() => props.name === 'Sortable')
+const SORTABLE_LAYOUTS = [
+  { label: 'One list', value: 'single' },
+  { label: 'Lists in a group', value: 'group' },
+]
+const SORTABLE_COLUMNS = ['a', 'b'] as const
+type SortableColumn = (typeof SORTABLE_COLUMNS)[number]
+const sortableLayout = shallowRef<'single' | 'group'>('single')
+const groupItems = reactive<Record<SortableColumn, unknown[]>>({ a: [], b: [] })
+const sortableBoard = useSortableGroup({
+  onTransfer: (_value, from, to) => {
+    const [moved] = groupItems[from.groupId as SortableColumn].splice(from.index, 1)
+    groupItems[to.groupId as SortableColumn].splice(to.index, 0, moved)
+  },
+})
 
 const activeComponent = computed<Component | null>(() => {
   const vaporExport = vaelUiVapor.value[props.name]
@@ -828,8 +883,16 @@ const CONTROL_HELP: Record<string, string> = {
     'Turn off the built-in CSS transition to animate this yourself with GSAP, motion-v, or plain CSS.',
   forceMount:
     'Keeps this mounted while closed, so your animation library runs the exit instead of Vue removing it.',
+  previewMode:
+    'clone floats a copy and leaves the original in the list as a placeholder, which moves to where the row will land. Sortable hides the placeholder by default; it shows dashed here. In an open list the two look alike; clone matters in a list that scrolls or clips its rows.',
   filter:
     'Off leaves filter unset, so the component default applies. On sets filter="true" for built-in matching. filter="false" lets you filter the items yourself. It needs a third state, so it has no toggle here. See the prop docs.',
+}
+
+// Where a hint's "?" leads, for the props a guide covers.
+const CONTROL_GUIDE: Record<string, string> = {
+  motionCss: '/docs/guides/animation-integration',
+  forceMount: '/docs/guides/animation-integration',
 }
 
 interface NamedControl {
@@ -874,6 +937,10 @@ const COMPONENT_OVERRIDES: Record<
   },
 }
 
+const GROUP_ONLY_PROPS = new Set(['groupId'])
+// Sortable options that only act between lists: shown once the preview has two.
+const GROUP_MODE_PROPS = new Set(['restrictToList'])
+const hasGroupProp = computed(() => Boolean(meta.value?.props.some((p) => p.name === 'group')))
 const controls = computed<NamedControl[]>(() => {
   if (!meta.value) return []
   const overrides = COMPONENT_OVERRIDES[props.name]
@@ -885,6 +952,10 @@ const controls = computed<NamedControl[]>(() => {
     if (prop.name === 'open' || prop.name === 'maximized') continue
     // Always on in the preview: off, the trigger does nothing until you wire a click yourself.
     if (prop.name === 'openOnTriggerClick') continue
+    // Only acts across lists that share a `group` handle; one preview never has one, so a control
+    // for it would do nothing.
+    if (hasGroupProp.value && GROUP_ONLY_PROPS.has(prop.name)) continue
+    if (GROUP_MODE_PROPS.has(prop.name) && sortableLayout.value !== 'group') continue
     const selectOverride = overrides?.select?.[prop.name]
     if (selectOverride) {
       // Listing UNSET_OPTION makes the override start unset, so the snippet omits it.
@@ -1145,6 +1216,18 @@ watch(
 function isChanged(name: string): boolean {
   return !Object.is(values[name], initialValues.value[name])
 }
+
+// Props that only act during a drag: changing one shows nothing until you drag, so the preview says so.
+const DRAG_TIME_PROPS: Record<string, string[]> = {
+  Sortable: ['previewMode', 'restrictToList', 'autoScroll', 'touchDragDelay', 'motionCss'],
+}
+const dragHint = computed(() => {
+  const changed = (DRAG_TIME_PROPS[props.name] ?? []).filter((name) => isChanged(name))
+  if (!changed.length) return null
+  const list =
+    changed.length > 1 ? `${changed.slice(0, -1).join(', ')} and ${changed.at(-1)}` : changed[0]
+  return `Drag a row to see ${list}: ${changed.length > 1 ? 'they act' : 'it acts'} only while you drag.`
+})
 const changedCount = computed(() => controls.value.filter((c) => isChanged(c.name)).length)
 
 function resetControl(name: string) {
@@ -1342,6 +1425,7 @@ const codeNext = computed(() => {
     else if (c.kind === 'number') attrs.push(`:${c.name}="${v}"`)
     else attrs.push(`${c.name}="${v}"`)
   }
+  if (isSortable.value && sortableLayout.value === 'group') return sortableGroupSnippet(attrs)
   if (previewLabel.value) attrs.push(`aria-label="${previewLabel.value}"`)
   if (hasItemsProp.value) attrs.push(':items="items"')
   if (progressSegments.value) attrs.push(':value="segments"')
@@ -1398,6 +1482,30 @@ const boundProps = computed(() => ({
     : {}),
   ...(progressSegments.value ? { value: progressSegments.value } : {}),
 }))
+
+// Each column takes half of the chosen data, fresh whenever the data or the layout changes.
+const groupColumnProps = computed(() => {
+  const {
+    items: _items,
+    'aria-label': _label,
+    ...rest
+  } = boundProps.value as Record<string, unknown>
+  return rest
+})
+watch(
+  [sortableLayout, dataPreset],
+  () => {
+    if (!isSortable.value) return
+    const items = [...(FLAT_PRESETS[dataPreset.value] ?? [])]
+    const half = Math.ceil(items.length / 2)
+    groupItems.a = items.slice(0, half)
+    groupItems.b = items.slice(half)
+    if (sortableLayout.value === 'single') {
+      for (const name of GROUP_MODE_PROPS) values[name] = initialValues.value[name]
+    }
+  },
+  { immediate: true },
+)
 
 function onModelUpdate(v: unknown) {
   values.modelValue = v
@@ -1568,6 +1676,7 @@ const code = computed(() => {
     })
     .filter(Boolean)
     .join(' ')
+  if (isSortable.value && sortableLayout.value === 'group') return sortableGroupSnippet(attrs)
   const labelAttr = previewLabel.value ? `aria-label="${previewLabel.value}"` : ''
   const itemsAttr = hasItemsProp.value ? ' :items="items"' : ''
   const modelAttr = modelProp.value ? 'v-model="value"' : ''
@@ -1587,6 +1696,53 @@ const code = computed(() => {
         : `<${openTag}>\n${children.map((line) => `  ${line}`).join('\n')}\n</${props.name}>`
   return sfcSnippet(names, pkg, body)
 })
+
+function sortableGroupSnippet(attrs: string | string[]): string {
+  const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
+  const column = (items: unknown[]) =>
+    `[\n${items
+      .slice(0, 2)
+      .map(
+        (item) =>
+          `    { ${Object.entries(item as Record<string, unknown>)
+            .map(([key, v]) => `${key}: ${typeof v === 'string' ? `'${v}'` : String(v)}`)
+            .join(', ')} },`,
+      )
+      .join('\n')}\n  ]`
+  const tag = [
+    '<Sortable',
+    'v-for="(items, id) in columns"',
+    ':key="id"',
+    'v-model:items="columns[id]"',
+    ':group="board"',
+    ':group-id="id"',
+    ...(Array.isArray(attrs) ? attrs : [attrs]),
+  ]
+    .filter(Boolean)
+    .join('\n      ')
+  return `<script setup lang="ts">
+import { reactive } from 'vue'
+import { Sortable, useSortableGroup } from '${pkg}'
+
+const columns = reactive({
+  a: ${column(groupItems.a)},
+  b: ${column(groupItems.b)},
+})
+const board = useSortableGroup({
+  onTransfer: (value, from, to) => {
+    const [moved] = columns[from.groupId as 'a' | 'b'].splice(from.index, 1)
+    columns[to.groupId as 'a' | 'b'].splice(to.index, 0, moved!)
+  },
+})
+${SCRIPT_CLOSE}
+
+<template>
+  <div class="board">
+    ${tag}
+    />
+  </div>
+</template>`
+}
 
 // Mirrors the preview branches above, so the snippet shows the same slot
 // content the preview renders (and none when the preview has none).
@@ -1798,6 +1954,18 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
     sans-serif;
 }
 
+/* Sortable with previewMode "clone": the original stays as the placeholder, moving to where the
+   row will land. Sortable hides it by default, so clone would look the same as element here;
+   dashed, the floating copy and the placeholder read as two things. */
+.playground-preview :deep(.ui-sortable-item[data-sortable-source]) {
+  visibility: visible;
+  border-style: dashed;
+  background: transparent;
+}
+.playground-preview :deep(.ui-sortable-item[data-sortable-source] > *) {
+  opacity: 0.45;
+}
+
 .playground-preview::before {
   content: '';
   position: absolute;
@@ -1986,6 +2154,25 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   border-top: 1px solid var(--ui-border);
   color: var(--ui-text-muted);
   font-size: 0.85rem;
+}
+
+.pg-sortable-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.pg-sortable-group > :deep(.ui-sortable) {
+  inline-size: 11rem;
+}
+
+/* Its own line under the preview: the preview wraps its children. */
+.playground-drag-hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+  pointer-events: none;
 }
 
 .playground-error {

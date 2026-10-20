@@ -20,6 +20,7 @@ import { generateThemeCss, themeKey, themeScopeKey } from '../../theme'
 import type { UiTheme } from '../../theme'
 import { defaultsKey, validLocale } from '../../config'
 import type { UiDefaults } from '../../config'
+import type { LoaderType } from '../../composables/loaderType'
 
 const props = withDefaults(
   defineProps<{
@@ -43,6 +44,10 @@ const props = withDefaults(
      * screenshot tests. Panels still open and close and toasts still leave; a component's own
      * `motionCss` wins. */
     motionCss?: boolean
+    /** Animation for every loader inside: Loader, Button's loading state, list loading rows,
+     * loading toasts and PullToRefresh. A component's own `type` or `loaderType` wins.
+     * @default 'ring' */
+    loaderType?: LoaderType
   }>(),
   { motionCss: undefined },
 )
@@ -70,6 +75,7 @@ const defaults = computed<UiDefaults>(() => {
   const own: UiDefaults = {}
   if (props.size) own.size = props.size
   if (props.motionCss !== undefined) own.motionCss = props.motionCss
+  if (props.loaderType) own.loaderType = props.loaderType
   const locale = validLocale(props.locale ?? toValue(props.i18n?.locale))
   if (locale) own.locale = locale
   return { ...parentDefaults?.value, ...own }

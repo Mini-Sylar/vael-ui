@@ -122,6 +122,13 @@ const rawProps = withDefaults(
      * @default true
      */
     autoScroll?: boolean
+    /**
+     * For lists in a `group`: keeps the dragged row inside the part of the list it's over that's on
+     * screen, so it never hangs past a fixed-height column. Leave it off for lists that grow with
+     * their rows.
+     * @default false
+     */
+    restrictToList?: boolean
     /** Turns off dragging, so rows stay static. @default false */
     disabled?: boolean
     /**
@@ -133,8 +140,8 @@ const rawProps = withDefaults(
     group?: SortableGroupHandle
     /** This list's identity within `group`. Unset, Sortable assigns one. */
     groupId?: string | number
-    /** `group` only: what follows the pointer once a drag leaves this list.
-     * `'element'` moves the real item; `'clone'` floats a copy, for content that can't leave its layout.
+    /** What follows the pointer. `'element'` moves the real item; `'clone'` floats a copy from the
+     * start of the drag, for content that can't leave its layout.
      * @default 'element' */
     previewMode?: 'element' | 'clone'
     /** Milliseconds a touch must hold a row still before a drag starts. Unset, drags start at once.
@@ -155,6 +162,7 @@ const rawProps = withDefaults(
     canDrop: undefined,
     beforeDrop: undefined,
     autoScroll: true,
+    restrictToList: false,
     disabled: false,
     motionCss: undefined,
     group: undefined,
@@ -228,6 +236,7 @@ const {
   beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
   onDropError: (error, details) => emit('drop-error', error, details),
   autoScroll: () => props.autoScroll,
+  restrictToList: () => props.restrictToList,
   disabled: () => props.disabled,
   motionCss: () => props.motionCss,
   labelOf: (value) => {

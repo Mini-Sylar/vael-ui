@@ -1,5 +1,5 @@
 import type { InjectionKey, Ref } from 'vue'
-import type { ColorSchemeMode } from 'vael-ui'
+import type { ColorSchemeMode, LoaderType } from 'vael-ui'
 import type { Locale } from './i18n'
 
 /** The site's own settings, owned by App, so the search palette's actions can change them. */
@@ -8,6 +8,7 @@ export interface DocsSettings {
   setMode: (mode: ColorSchemeMode) => void
   size: Ref<'sm' | 'md' | 'lg'>
   motion: Ref<boolean>
+  loaderType: Ref<LoaderType>
   locale: Ref<Locale>
 }
 

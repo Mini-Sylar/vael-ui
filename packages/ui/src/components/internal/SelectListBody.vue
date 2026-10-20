@@ -15,7 +15,7 @@
       <slot name="empty">{{ emptyText }}</slot>
     </div>
     <div v-else-if="items.length === 0 && loading" class="ui-select-loading">
-      <span class="ui-loader" />
+      <LoaderMark />
     </div>
     <!-- Grouped: real role="group" wrappers, so screen readers announce each group's name. Rows
          aren't evenly spaced here, so every option renders and scrolls into view by itself. Keyed
@@ -96,7 +96,7 @@
         </div>
       </div>
       <div v-if="loading" class="ui-select-loading-more" aria-hidden="true">
-        <span class="ui-loader" />
+        <LoaderMark />
       </div>
     </template>
     <template v-else>
@@ -151,7 +151,7 @@
         </div>
       </div>
       <div v-if="loading" class="ui-select-loading-more" aria-hidden="true">
-        <span class="ui-loader" />
+        <LoaderMark />
       </div>
     </template>
   </div>
@@ -214,6 +214,7 @@ export interface SelectListSection<T extends SelectItemData = SelectItemData> {
 -->
 <script setup lang="ts" generic="T extends SelectItemData">
 import '../shared/loader-spinner.css'
+import LoaderMark from './LoaderMark.vue'
 import '../shared/tick.css'
 import { computed, useTemplateRef } from 'vue'
 import { useEasedHeight } from '../../composables/useEasedHeight'

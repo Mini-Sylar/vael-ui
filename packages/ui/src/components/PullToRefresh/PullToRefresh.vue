@@ -35,7 +35,7 @@
                 stroke-linejoin="round"
               />
             </svg>
-            <span v-else-if="state === 'loading'" class="ui-loader" aria-hidden="true" />
+            <LoaderMark v-else-if="state === 'loading'" />
             <svg v-else viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none">
               <path
                 d="M3 8.5l3.5 3.5L13 5"
@@ -84,6 +84,7 @@ export interface PullToRefreshProps {
 import './PullToRefresh.css'
 import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
+import LoaderMark from '../internal/LoaderMark.vue'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'

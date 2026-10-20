@@ -11,6 +11,7 @@ import {
   PhPalette,
   PhResize,
   PhSparkle,
+  PhSpinnerGap,
   PhSun,
   PhTerminal,
   PhTranslate,
@@ -137,6 +138,16 @@ export function actionEntries(
         PhResize,
         () => (settings.size.value = value),
         size === value,
+      ),
+    ),
+    ...(['ring', 'dots', 'bars', 'comet', 'dither'] as const).map((value) =>
+      action(
+        `loader-${value}`,
+        `${t('header.loader')}: ${t(`header.loader${value.charAt(0).toUpperCase()}${value.slice(1)}`)}`,
+        PhSpinnerGap,
+        () => (settings.loaderType.value = value),
+        settings.loaderType.value === value,
+        ['spinner', 'loading'],
       ),
     ),
     action(

@@ -279,10 +279,10 @@
     pointer-events: none;
   }
   /* The spinner is always mounted for the crossfade; it only turns while it shows. */
-  .ui-button-loader .ui-loader {
+  .ui-button-loader :is(.ui-loader, .ui-loader-part) {
     animation-play-state: paused;
   }
-  .ui-button--loading .ui-button-loader .ui-loader {
+  .ui-button--loading .ui-button-loader :is(.ui-loader, .ui-loader-part) {
     animation-play-state: running;
   }
 

@@ -32,6 +32,7 @@ const PER_BUILD_MODULES = new Set([
   'composables/useFold',
   'composables/useChipRowWidth',
   'composables/sortableSettle',
+  'composables/loaderType',
 ])
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 

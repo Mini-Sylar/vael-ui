@@ -11,7 +11,7 @@ import type {
 } from './useSortable'
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
-import { contentOffset, findScrollParent } from './sortableAutoScroll'
+import { contentOffset, findScrollParent, scrollIntoReach } from './sortableAutoScroll'
 import type { Point } from './sortableSettle'
 
 /** Where a dragged value sits, or would land, within one member list. */
@@ -245,6 +245,7 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     } else if (currentHostId != null) {
       settleGhost()
       members.get(currentHostId)?.onForeignHover(false)
+      members.get(currentHostId)?.makeRoom(0)
     }
     currentHostId = newHostId
     if (newHostId === originGroupId) {
@@ -252,12 +253,16 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     } else {
       freezeBands(members.get(newHostId)!)
       members.get(newHostId)?.onForeignHover(true)
+      // The list grows to take the row in, so the gap has real room, at its end too.
+      const size = members.get(originGroupId!)?.draggedBlockSize()
+      if (size) members.get(newHostId)?.makeRoom(size)
     }
   }
 
   function resetSession() {
     if (currentHostId != null && currentHostId !== originGroupId) {
       members.get(currentHostId)?.onForeignHover(false)
+      members.get(currentHostId)?.makeRoom(0)
     }
     originGroupId = null
     currentHostId = null
@@ -393,6 +398,12 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     }
     ghostSprings = new Map()
 
+    // Taken now, while the lifted row is still on the page to copy.
+    const lifted = keyboardSourced ? null : origin.copyLiftedRow()
+    origin.fadePlaceholder()
+    // The row takes over the room its new list made for it, in the same frame, so neither moves.
+    dest.makeRoom(0, true)
+    const leaving = origin.draggedBlockSize()
     options.onTransfer(value, from, to)
     resetSession()
 
@@ -400,17 +411,27 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
 
     origin.finishDepart(departCapture)
 
-    const destAfter = captureTops(dest)
     const destEl = dest.getElement(value)
+    // Measured after any scroll that shows the new slot, so the column's rows glide through it.
+    if (destEl) scrollIntoReach(destEl, destAxis)
+    const destAfter = captureTops(dest)
+    const velocity = destAxis === 'x' ? { x: releaseVelocity, y: 0 } : { x: 0, y: releaseVelocity }
+    // A floating copy flies into the new slot above every column, and the card shows once it's
+    // there. The real card would be clipped by its new list and pass under its new neighbours.
+    // A lifted real card ('element') lands the same way, through a copy of itself.
+    const copy = destEl && !keyboardSourced ? (origin.takeCopy() ?? lifted) : null
+    if (copy !== lifted) lifted?.remove()
     origin.destroyOwnPreview()
-    if (destEl && previewRect) {
+    // The list it left closes up behind it instead of snapping to its new size.
+    origin.makeRoom(leaving, true)
+    origin.makeRoom(0)
+    if (copy && destEl) dest.landCopy(copy, destEl, value, velocity)
+    if (!copy && destEl && previewRect) {
       const after = destAfter.get(destEl)
       if (after) {
         // Both axes: the preview was wherever the pointer left it, and the whole way from there
         // to the slot glides.
         const delta = { x: previewRect.left - after.x, y: previewRect.top - after.y }
-        const velocity =
-          destAxis === 'x' ? { x: releaseVelocity, y: 0 } : { x: 0, y: releaseVelocity }
         if (Math.abs(delta.x) >= 0.5 || Math.abs(delta.y) >= 0.5)
           dest.settle(destEl, value, delta, velocity, true)
         else destEl.style.translate = ''
@@ -480,6 +501,15 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     return useSortable({ ...memberOptions, group: handle, groupId: memberOptions.groupId })
   }
 
+  function __hostContainer(): HTMLElement | null {
+    return currentHostId == null ? null : (members.get(currentHostId)?.container() ?? null)
+  }
+
+  function __hostScroller(): HTMLElement | null {
+    const host = currentHostId == null ? undefined : members.get(currentHostId)
+    return host ? findScrollParent(host.container(), host.axis()) : null
+  }
+
   const handle: SortableGroupHandle = {
     join,
     __register,
@@ -488,6 +518,8 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     __keyboardMove,
     __finish,
     __cancel,
+    __hostScroller,
+    __hostContainer,
   }
   return handle
 }
