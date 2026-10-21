@@ -28,6 +28,7 @@ export interface UseHoverIndicatorOptions {
 }
 
 const MARK = 'data-indicated'
+let instances = 0
 const DISABLED = ':disabled, [aria-disabled="true"], [data-disabled]'
 
 /**
@@ -42,6 +43,9 @@ export function useHoverIndicator(
   options: UseHoverIndicatorOptions,
 ): { style: Ref<Record<string, string | undefined>> } {
   const provided = inject(defaultsKey, undefined)
+  // Each instance marks with its own value, so a list nested inside another (a submenu, a table
+  // in an expanded row) never measures the outer list's row, or the outer the inner's.
+  const id = String(++instances)
   const version = shallowRef(0)
   let current: HTMLElement | null = null
   let pointerInside = false
@@ -50,7 +54,7 @@ export function useHoverIndicator(
     if (el === current) return
     current?.removeAttribute(MARK)
     current = el
-    el?.setAttribute(MARK, '')
+    el?.setAttribute(MARK, id)
     version.value++
   }
 
@@ -120,7 +124,7 @@ export function useHoverIndicator(
   return useTabIndicator(version, {
     listEl,
     orientation: options.orientation ?? 'vertical',
-    selector: `[${MARK}]`,
+    selector: `[${MARK}="${id}"]`,
     scroller: options.scroller,
     matchCross: options.matchCross ?? true,
     maxGlide: options.maxGlide ?? 3,
