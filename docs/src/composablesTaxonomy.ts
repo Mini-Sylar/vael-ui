@@ -1,7 +1,7 @@
 // Sidebar grouping for the *standalone* composables — ones with no single
-// owning component (see taxonomy.ts for the component-paired composables,
-// e.g. useSlider/useResizable/useDock, which are documented on their own
-// component's page instead of getting a separate entry here).
+// owning component. Component-paired composables (useSlider, useResizable,
+// useDock...) live in pairedComposables.ts and render on their component's
+// page instead of getting a separate entry here.
 export interface ComposableCategory {
   key: string
   name: string
@@ -28,12 +28,18 @@ export const composableCategories: ComposableCategory[] = [
       'preventFocusZoom',
       'useNumberFormat',
       'useFieldControl',
+      'useScrollLock',
     ],
+  },
+  {
+    key: 'motion',
+    name: 'Motion',
+    items: ['useSpringValue', 'useTabIndicator', 'useHoverIndicator'],
   },
   {
     key: 'dragAndDrop',
     name: 'Drag & Drop',
-    items: ['useSortable', 'useSortableGroup'],
+    items: ['useSortable', 'useSortableGroup', 'moveTreeNode', 'useFileDrop'],
   },
 ]
 

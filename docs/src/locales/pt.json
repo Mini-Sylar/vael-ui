@@ -45,7 +45,8 @@
     "vapor": "Vapor",
     "vaporUnavailable": "Nenhuma demonstração Vapor para este componente ainda",
     "vdom": "Vue DOM",
-    "onThisPage": "Nesta página"
+    "onThisPage": "Nesta página",
+    "headless": "Combinável headless"
   },
   "descriptions": {
     "Accordion": "Uma pilha de seções dobráveis ​​onde a abertura de uma pode fechar as outras.",
@@ -297,6 +298,10 @@
       "durationDrawer": "Duração das transições de slides de gaveta/folha.",
       "durationEnter": "Duração para transições de entrada/abertura.",
       "durationExit": "Duração das transições de saída/fechamento.",
+      "durationIndicator": "Quanto tempo o destaque de hover em listas e menus leva para deslizar até a próxima linha.",
+      "durationIndicatorWide": "O mesmo deslizamento para linhas largas (MenuList, Tree, DataTable), que se movem como um bloco mais pesado.",
+      "easeIndicator": "A curva de easing do destaque de hover.",
+      "indicatorBg": "A cor do destaque de hover. Defina-a em vez de um fundo :hover na linha, que o cobriria.",
       "durationPress": "Duração do feedback de pressionar/tocar.",
       "durationToast": "Duração da entrada de um toast.",
       "durationToastExit": "Duração da saída de um toast.",
@@ -387,6 +392,7 @@
     "overlaysAndConfirmation": "Sobreposições",
     "positioningAndData": "Posicionamento",
     "utilities": "Utilitários",
+    "motion": "Movimento",
     "dragAndDrop": "Arrastar e soltar"
   },
   "composableDescriptions": {
@@ -401,7 +407,13 @@
     "preventFocusZoom": "Impede o iOS de ampliar os campos de formulário, para que acompanhem o restante do texto.",
     "useFloatingPosition": "O motor de posicionamento por trás de Popover, Menu e Tooltip, construído sobre Floating UI. Use-o para criar suas próprias superfícies ancoradas.",
     "useVirtualizer": "Renderização virtualizada para listas longas, para que apenas as linhas visíveis existam no DOM.",
-    "useFieldControl": "Conecta um controle de formulário personalizado ao Field mais próximo: id, atributos ARIA e estado de foco ou preenchimento."
+    "useFieldControl": "Conecta um controle de formulário personalizado ao Field mais próximo: id, atributos ARIA e estado de foco ou preenchimento.",
+    "useHoverIndicator": "O destaque de hover deslizante de todas as listas do vael-ui, também para as suas próprias listas.",
+    "useSpringValue": "Física de molas interrompível: um valor reativo, uma mola imperativa que escreve cada quadro sem nova renderização e a função de passo pura por trás de ambos.",
+    "useTabIndicator": "O indicador de seleção deslizante por trás de Tabs, SelectButton e Pagination, também para os seus próprios controles segmentados e listas.",
+    "useScrollLock": "Bloqueia a rolagem da página ou de qualquer elemento sem deslocar o layout, como os diálogos fazem enquanto estão abertos.",
+    "moveTreeNode": "Move um nó e sua subárvore para um novo pai e índice no próprio array, com uma proteção contra soltar uma pasta dentro de si mesma.",
+    "useFileDrop": "Transforma qualquer elemento em uma área para soltar arquivos, com um estado de arraste que se mantém estável sobre os elementos filhos."
   },
   "autoImport": {
     "bundlersIntro": "O unplugin-vue-components suporta Vite, Webpack, Rollup, esbuild e Rspack. O resolver é uma função comum, então funciona do mesmo jeito com todos eles.",

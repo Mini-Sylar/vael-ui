@@ -378,6 +378,26 @@ const motionRows = computed<TokenRow[]>(() => [
   },
   { name: '--ui-duration-exit', value: '150ms', description: t('stylingLayers.rows.durationExit') },
   {
+    name: '--ui-duration-indicator',
+    value: '120ms',
+    description: t('stylingLayers.rows.durationIndicator'),
+  },
+  {
+    name: '--ui-duration-indicator-wide',
+    value: '200ms',
+    description: t('stylingLayers.rows.durationIndicatorWide'),
+  },
+  {
+    name: '--ui-ease-indicator',
+    value: 'var(--ui-ease-out)',
+    description: t('stylingLayers.rows.easeIndicator'),
+  },
+  {
+    name: '--ui-indicator-bg',
+    value: 'var(--ui-muted)',
+    description: t('stylingLayers.rows.indicatorBg'),
+  },
+  {
     name: '--ui-duration-tooltip',
     value: '125ms',
     description: t('stylingLayers.rows.durationTooltip'),

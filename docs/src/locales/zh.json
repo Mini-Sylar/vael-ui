@@ -45,7 +45,8 @@
     "vaporUnavailable": "该组件还没有 Vapor 演示",
     "vdom": "Vue DOM",
     "events": "活动",
-    "onThisPage": "本页内容"
+    "onThisPage": "本页内容",
+    "headless": "无头可组合项"
   },
   "descriptions": {
     "Accordion": "一堆可折叠的部分，打开一个部分就可以关闭其他部分。",
@@ -297,6 +298,10 @@
       "durationDrawer": "抽屉/纸张滑动过渡的持续时间。",
       "durationEnter": "输入/打开转换的持续时间。",
       "durationExit": "退出/关闭转换的持续时间。",
+      "durationIndicator": "列表和菜单中悬停高亮滑到下一行所需的时间。",
+      "durationIndicatorWide": "宽行 (MenuList、Tree、DataTable) 的同样滑动，它们像更重的板块一样移动。",
+      "easeIndicator": "悬停高亮的缓动曲线。",
+      "indicatorBg": "悬停高亮的颜色。请设置它，而不是给行设置 :hover 背景，后者会盖在高亮之上。",
       "durationPress": "按下/点击反馈的持续时间。",
       "durationToast": "toast 进入时的动画时长。",
       "durationToastExit": "toast 退出时的动画时长。",
@@ -386,7 +391,8 @@
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "叠加层",
     "positioningAndData": "定位",
-    "utilities": "公用事业",
+    "utilities": "实用工具",
+    "motion": "动效",
     "dragAndDrop": "拖放"
   },
   "composableDescriptions": {
@@ -401,7 +407,13 @@
     "preventFocusZoom": "阻止 iOS 在聚焦表单字段时放大页面，让字段与其余文字大小一致。",
     "useFloatingPosition": "Popover、Menu 和 Tooltip 背后的定位引擎，基于 Floating UI 构建。可用它构建你自己的锚定浮层。",
     "useVirtualizer": "面向长列表的虚拟化渲染，DOM 中只存在当前可见的行。",
-    "useFieldControl": "将自定义表单控件接入最近的 Field：处理 id、ARIA 属性以及聚焦和已填写状态。"
+    "useFieldControl": "将自定义表单控件接入最近的 Field：处理 id、ARIA 属性以及聚焦和已填写状态。",
+    "useHoverIndicator": "vael-ui 所有列表背后的滑动悬停高亮，也可用于你自己的列表。",
+    "useSpringValue": "可中断的弹簧物理：一个响应式值、一个每帧直接写入且不触发重新渲染的命令式弹簧，以及两者背后的纯步进函数。",
+    "useTabIndicator": "Tabs、SelectButton 和 Pagination 背后的滑动选中指示器，也可用于你自己的分段控件和列表。",
+    "useScrollLock": "像对话框打开时那样，锁定页面或任意元素的滚动，且不会造成布局偏移。",
+    "moveTreeNode": "将节点及其子树原地移动到新的父节点和索引，并防止把文件夹放进它自己里面。",
+    "useFileDrop": "把任意元素变成文件放置区，拖拽经过子元素时悬停状态保持稳定。"
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components 支持 Vite、Webpack、Rollup、esbuild 和 Rspack。解析器是一个普通函数，因此在所有这些工具中的表现都相同。",

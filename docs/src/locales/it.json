@@ -45,7 +45,8 @@
     "vapor": "Vapor",
     "vaporUnavailable": "Nessuna demo di Vapor per questo componente ancora",
     "vdom": "Vedi DOM",
-    "onThisPage": "In questa pagina"
+    "onThisPage": "In questa pagina",
+    "headless": "Componibile headless"
   },
   "descriptions": {
     "Accordion": "Una pila di sezioni pieghevoli dove aprendone una si possono chiudere le altre.",
@@ -297,6 +298,10 @@
       "durationDrawer": "Durata delle transizioni cassetto/scorrimento foglio.",
       "durationEnter": "Durata delle transizioni di ingresso/apertura.",
       "durationExit": "Durata delle transizioni di uscita/chiusura.",
+      "durationIndicator": "Quanto impiega l'evidenziazione al passaggio in liste e menu a scorrere alla riga successiva.",
+      "durationIndicatorWide": "Lo stesso scorrimento per le righe larghe (MenuList, Tree, DataTable), che si muovono come un blocco più pesante.",
+      "easeIndicator": "La curva di easing dell'evidenziazione al passaggio.",
+      "indicatorBg": "Il colore dell'evidenziazione al passaggio. Impostalo invece di uno sfondo :hover sulla riga, che la coprirebbe.",
       "durationPress": "Durata del feedback tramite pressione/tocco.",
       "durationToast": "Durata dell'entrata di un toast.",
       "durationToastExit": "Durata dell'uscita di un toast.",
@@ -387,6 +392,7 @@
     "overlaysAndConfirmation": "Sovrapposizioni",
     "positioningAndData": "Posizionamento",
     "utilities": "Utilità",
+    "motion": "Movimento",
     "dragAndDrop": "Trascina e rilascia"
   },
   "composableDescriptions": {
@@ -401,7 +407,13 @@
     "preventFocusZoom": "Impedisce a iOS di ingrandire i campi dei moduli, così restano della stessa dimensione del resto del testo.",
     "useFloatingPosition": "Il motore di posizionamento dietro Popover, Menu e Tooltip, basato su Floating UI. Usalo per costruire le tue superfici ancorate.",
     "useVirtualizer": "Rendering virtualizzato per elenchi lunghi, così solo le righe visibili esistono nel DOM.",
-    "useFieldControl": "Collega un controllo di form personalizzato al Field più vicino: id, attributi ARIA e stato di focus o compilazione."
+    "useFieldControl": "Collega un controllo di form personalizzato al Field più vicino: id, attributi ARIA e stato di focus o compilazione.",
+    "useHoverIndicator": "L'evidenziazione al passaggio che scorre in ogni lista di vael-ui, anche per le tue liste.",
+    "useSpringValue": "Fisica delle molle interrompibile: un valore reattivo, una molla imperativa che scrive ogni fotogramma senza nuovi render e la funzione di passo pura alla base di entrambi.",
+    "useTabIndicator": "L'indicatore di selezione scorrevole dietro Tabs, SelectButton e Pagination, anche per i tuoi controlli segmentati e le tue liste.",
+    "useScrollLock": "Blocca lo scorrimento della pagina o di qualsiasi elemento senza spostamenti del layout, come fanno i dialoghi mentre sono aperti.",
+    "moveTreeNode": "Sposta un nodo e il suo sottoalbero sotto un nuovo genitore e indice, sul posto, con una protezione contro il rilascio di una cartella dentro sé stessa.",
+    "useFileDrop": "Trasforma qualsiasi elemento in un'area di rilascio per file, con uno stato di trascinamento che resta stabile sopra gli elementi figli."
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components supporta Vite, Webpack, Rollup, esbuild e Rspack. Il resolver è una normale funzione, quindi funziona allo stesso modo con tutti.",

@@ -27,19 +27,26 @@ Three components render different DOM. Props, slots and events are unchanged, bu
 
 - **Sortable**: the root is now a `div` (`.ui-sortable`) with the `<ul>` inside it as `.ui-sortable-list`. Your class and a parent's scoped styles now reach the root.
 - **Tooltip, TooltipHost**: the label sits in a `.ui-tooltip-content` span, and the box is drawn by `.ui-tooltip-panel::before`. `data-traveling` and `data-morphing` replace `data-sizing-locked`.
+- **Lists' hover backgrounds**: rows in Select, Combobox, CommandPalette, Menu, Tree, TreeSelect, MenuList, DataTable, Pagination, Tabs, SelectButton, Toolbar and Calendar no longer paint their own hover or focus background. One `.ui-indicator` element slides behind them instead. If you restyled the hover with a selector such as `.ui-menu-item:hover { background: … }`, set `--ui-indicator-bg` instead, or your colour paints over the highlight. DataTable's striped and selected rows are now see-through tints, so the highlight shows under them; they look the same over the table's surface.
 
 ## New
 
 - **Editable**: text that becomes an input when you click it, for renaming in place, and saves on Enter or blur. `activation-mode` sets what starts editing, `submit-mode` sets what saves, and `v-model:editing` controls it. The `#edit` slot swaps in any control (a Textarea saves on Cmd or Ctrl+Enter), `#actions` adds save and cancel buttons, and `start`, `submit` and `cancel` are exposed.
 - **ColorPicker**: a swatch that opens a picker with a saturation and brightness plane, a hue slider, a hex field, optional presets and an eyedropper where the browser supports one. The plane works with arrow keys, `v-model:open` controls the panel, and `name` submits the hex value with a form. Customise it with the `#trigger` and `#preset` slots, `show-eye-dropper` and `--ui-color-picker-radius`.
 - **Progress**: `value` also takes segments (`{ value, label?, variant?, color? }`) that stack into one bar with a legend, for a storage breakdown or a budget. `value-text` sets `aria-valuetext`. `type="circle"` draws a ring, with the default slot in the middle for the percentage, and `sweep` turns it into a gauge: `180` is a half-ring, `270` a speedometer. Stacked segments make a donut. The ARIA attributes moved from the root to the track; `data-state` stays on the root.
-- **Loader**: `type` picks the animation: `ring`, `dots`, `bars`, `comet` or `dither`. Each is pure CSS in a 1em square that follows the text color, so swapping one never moves a layout. Button's new `loader-type` picks one for its loading state, and `ConfigProvider`'s `loader-type` sets it for every spinner inside, including Button, list loading rows, loading toasts and PullToRefresh.
+- **Loader**: `type` picks the animation: `ring`, `dots`, `bars`, `comet` or `dither`. Each is pure CSS in a 1em square that follows the text color, so swapping one never moves a layout. Button's new `loader-type` picks one for its loading state, and `ConfigProvider`'s `loader-type` sets it for every spinner inside, including Button, list loading rows, loading toasts and PullToRefresh. All three also take your own component, or a render function such as `() => h(MySpinner, { speed: 2 })`, drawn in the same 1em box. `LoaderSource` types it.
 - **Toaster**: `container` keeps a toaster's stack inside an element instead of the viewport, so a panel or a demo frame can show its own toasts. `teleportTo` also accepts an element.
 - **OtpInput**: `variant="field"` draws one box around the whole code, and `placeholder` marks each empty cell.
 - **CommandPalette**: a `#footer` slot for key hints or a status line, which receives the highlighted `activeItem` and the `query`. `activeItem` is also exposed, so your own shortcuts can act on the highlighted row.
 - **Textarea**: each side of the bottom action strip lines its contents up in one row, so a counter, an icon and a button align without extra markup.
 - **Animation hooks**: Editable, ColorPicker and Progress accept `motion-css="false"` and expose their elements for your own animations: `previewEl`, `inputEl`, `swatchEl`, `panelEl`, `areaEl`, `thumbEl`, `fillEl` and `fillEls`.
-- **Tokens**: `--ui-duration-drawer-exit` and `--ui-duration-stagger`.
+- **Sliding highlight on every list**: the hover and keyboard highlight glides between rows in Select, Combobox, CommandPalette, Menu (and so ContextMenu, SplitButton and CascadeSelect), Tree, TreeSelect, MenuList, DataTable, Pagination, Tabs, SelectButton, Toolbar and Calendar. Keyboard focus always moves it, even with the pointer resting in the list. A move of more than 3 rows (typing to jump, Home, End, a new search) lands at once, and touch never shows it. Each component exposes it as `highlightEl`; `indicatorEl` stays the name for a selection indicator, and MenuList now exposes its current-page one. With `motion-css="false"` it moves at once, for an animation of your own.
+- **ConfigProvider `indicator`**: sets how every sliding indicator inside moves, the hover highlight and the selection in Tabs, SelectButton and MenuList alike: `'glide'` (the default), `'instant'`, or a spring such as `{ damping: 0.5, response: 0.35 }`, where damping below 1 overshoots. A spring writes to the element on each frame, so nothing re-renders. `motion-css="false"` still makes them instant. `IndicatorMode` and `IndicatorSpring` type it, and `useTabIndicator` and `useHoverIndicator` take the same `indicator` option.
+- **useHoverIndicator**: the composable behind that highlight, for your own lists. Mark the rows with `itemSelector`, put an element with the `ui-indicator` class in the list, and bind the `style` it returns. `motion: false` hands the movement to you; the docs show a highlight driven by `createSpring` that overshoots and stretches.
+- **useTabIndicator**: `scroller` for an indicator inside a list that scrolls, `matchCross` to match each row on the other axis too, `maxGlide` to jump instead of gliding over long moves, and `motion: false` to move at once.
+- **Slider, Knob, Dial**: a `change` event fires with the final value when you release or press a key, like a native range input; `v-model` still updates on every move.
+- **BottomSheet**: setting the exposed `activeSnap` moves the sheet to that snap point.
+- **Tokens**: `--ui-duration-drawer-exit`, `--ui-duration-stagger`, and for the highlight `--ui-duration-indicator` (120 ms), `--ui-duration-indicator-wide` (200 ms, for the wide rows of MenuList, Tree and DataTable), `--ui-ease-indicator` and `--ui-indicator-bg`. `ConfigProvider`'s `motion-css="false"` zeroes the two durations along with the rest.
 
 ## Motion
 
@@ -60,6 +67,8 @@ Every built-in animation now follows the same rules: it stays under 300 ms, ease
 - **Drawers, BottomSheet**: close in 350 ms instead of 500 ms.
 - **Chevrons**: in Select, Combobox, TreeSelect, SplitButton, CascadeSelect, DataTable and Accordion, they turn in step with their panel.
 - **DataTable**: expansion rows that grow after opening are no longer clipped.
+- **Tree**: in single selection, the selected row's tint slides from the previous selection, and fades in when it's more than 4 rows away.
+- **Clear buttons** in Select, Combobox, CascadeSelect and TreeSelect: the button fades and shrinks where it is. In a fixed-width trigger the value area widens under it; in one sized to its content the trigger closes up. Leaving fades a quarter faster than appearing, on a plain ease-out, so the fade is visible.
 - **Smaller changes**: Stepper checks and clear buttons scale in from 0.9 instead of 0.5. Under reduced motion, Skeleton pulses slower, OtpInput's caret blinks slower and Stepper keeps its colour fade. A keyboard-focused Tree row shows an inset ring.
 
 ## Fixes
@@ -70,6 +79,15 @@ Every built-in animation now follows the same rules: it stays under 300 ms, ease
 - **useColorScheme**: `resolvedMode` matches `initial` from the first render, so server-rendered HTML no longer starts in the system scheme.
 - **Accordion, Collapsible**: a panel no longer hops by a fraction of a pixel as it finishes opening. It opens to its exact height instead of a rounded one.
 - **Pagination**: hovering the current page no longer covers it with the hover background.
+- **Radio, Checkbox, Switch**: at a fractional pixel ratio (Windows display scaling, or browser zoom) the dot, tick and thumb no longer shift when you press them. Each stays on its own compositor layer. Tables over 150 rendered rows and trees over 150 visible rows make their checkboxes static instead, with no press and no layer, so scrolling stays cheap; a virtualized table keeps them, since it renders only the rows on screen.
+- **SpeedDial**: the trigger's plus sits in the middle of the button instead of a pixel above it, and the press no longer looks like a jitter.
+- **`vael-ui/style.css`**: the full stylesheet now includes AvatarGroup, Breadcrumb, CommandPalette, PasswordInput, Rating, ScrollArea, Sortable, Stepper, Timeline and Tour, and the shared clear-button, tick and indicator styles. Before, an app importing the full stylesheet instead of each component's own CSS rendered those unstyled.
+- **Resizable**: End no longer sizes a panel to `Infinity` when it has no `max`; it does nothing there.
+- **useFileDrop, FileUpload**: dragging selected text or a link no longer lights the drop zone, and turning `disabled` on mid-drag clears the drag-over state instead of leaving it stuck.
+- **moveTreeNode**: a move that fails leaves the data untouched; it used to leave an empty `children` array on the target.
+- **useTabs**: object items each find their own tab; they used to share the first one, so focus jumped there.
+- **Tooltip**: `open-change` reasons are typed as the close reasons that actually fire, without the `'hover'` and `'focus-visible'` that never did.
+- **Forced colors**: in Windows high contrast, the sliding highlight shows as a `Highlight` outline, since the mode removes backgrounds.
 - **Calendar, DatePicker**: clicking a disabled day from the previous or next month no longer moves to that month.
 - **ColorPicker**: on Windows, the panel no longer scrolls sideways, and the eyedropper is the same height as the hex field.
 - **Combobox**: the phone keyboard's action key picks the highlighted match. It sets `enterkeyhint="enter"`, which you can override.

@@ -607,6 +607,271 @@ const { mode, resolvedMode, setMode } = useColorScheme({
     ],
   },
 
+  useSpringValue: {
+    description:
+      "vael-ui's spring engine: the physics behind Sortable, Tree and DataTable reordering, and behind every sliding indicator set to spring mode. A spring has no duration. You give it a target, and it moves there from where it is now, at the speed it already has. That makes every animation interruptible: call `set()` mid-flight and the value turns toward the new target with no jump. `useSpringValue` gives you a ref to bind in a template. `createSpring` writes each frame through a callback instead, so a value that drives a style never re-renders a component. `stepSpring` is the pure integrator step under both, for tests and plots. One shared `requestAnimationFrame` loop drives every moving spring, and it stops scheduling frames once they all rest.",
+    installNames: ['useSpringValue', 'createSpring', 'stepSpring'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'initial',
+        type: 'number',
+        description: 'The starting value. The spring rests there until you call `set()`.',
+      },
+      {
+        name: 'options.damping',
+        type: 'number',
+        description:
+          'Default `1`, critically damped: the value reaches the target with no overshoot. Below `1` it overshoots and oscillates, more the lower you go. Above `1` it creeps in more slowly. Save overshoot for motion the user threw, such as a flick release, not for something that only appeared.',
+      },
+      {
+        name: 'options.response',
+        type: 'number',
+        description:
+          'Default `0.35`, in seconds. Sets how quickly the spring converges, not how long it runs: it is the period of the undamped oscillation. The real settle time comes out of the physics, from the distance, the speed and the damping. Lower is snappier.',
+      },
+      {
+        name: 'options.epsilon',
+        type: 'number',
+        description:
+          'Default `0.05`. Once the distance to the target and the speed per second are both below this, the spring lands on the target and stops. The default suits px. Lower it for a value on a 0 to 1 scale, such as opacity, where 0.05 is a visible step.',
+      },
+      {
+        name: 'onFrame',
+        type: '(value: number) => void',
+        description:
+          '`createSpring` only. Called with the new value on every frame, on `jump()`, and on a `set()` that is already at rest on the target. Write the value straight to a style here.',
+      },
+    ],
+    returns: [
+      {
+        name: 'value',
+        type: 'Ref<number>',
+        description:
+          '`useSpringValue` only. The live value, updated every frame. Read it, and drive it with `set()` and `jump()` rather than assigning to it.',
+      },
+      {
+        name: 'set(target, { velocity? })',
+        type: '(target: number, options?: { velocity?: number }) => void',
+        description:
+          "Retargets from the current value and velocity, never from the previous target, so an interrupted spring turns smoothly. Pass `velocity`, in units per second, to hand off a gesture's release speed: the animation starts at the speed the drag ended with, so there is no seam.",
+      },
+      {
+        name: 'jump(value)',
+        type: '(value: number) => void',
+        description:
+          'Moves to `value` at once, with zero velocity. Use it for the first placement, while a drag follows the pointer, and under reduced motion.',
+      },
+      {
+        name: 'stop()',
+        type: '() => void',
+        description:
+          'Parks the spring where it is now and drops the remaining motion. The current value becomes the target.',
+      },
+      {
+        name: 'createSpring(initial, options?, onFrame?)',
+        type: 'SpringHandle',
+        description:
+          'The same spring without a ref. Besides `set`, `jump` and `stop`, the handle has read-only `value`, `velocity`, `target` and `isAnimating`, and `destroy()`, which takes it off the frame loop. Call `destroy()` when you unmount. `useSpringValue` does that for you when its scope ends. Options are read once, so create a new spring to change them.',
+      },
+      {
+        name: 'stepSpring(state, target, dt, damping?, response?)',
+        type: 'SpringState',
+        description:
+          "One semi-implicit Euler step from `{ value, velocity }` over `dt` seconds. Pure, with no frame loop, so you can test or plot a spring with plain numbers. A `dt` of 0 or less returns the state unchanged. The live loop caps each frame at 1/30 s, so a tab returning from the background doesn't fling every spring.",
+      },
+    ],
+  },
+
+  useTabIndicator: {
+    description:
+      "The sliding selection indicator behind Tabs, SelectButton, Pagination and MenuList, and behind the active option in Select, Combobox and CommandPalette. It measures the active element inside a list and returns a style that places an indicator element on it. When the active element changes, the indicator glides there. `useHoverIndicator` builds the hover highlight on the same measurement. Use it for your own segmented control, nav or list: put the indicator element inside the list, give the list `position: relative`, and bind the `style`. It measures again when the list resizes, when web fonts finish loading, and when an ancestor finishes a CSS transition, such as a dialog scaling in. It also undoes an ancestor's scale, so the px values match the layout.",
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'active',
+        type: 'WatchSource<unknown>',
+        description:
+          'What moves the indicator, such as the selected value. It measures after each change, once the DOM shows it. For a list that also filters, pass a getter of both: `() => [activeIndex.value, items.value]`.',
+      },
+      {
+        name: 'listEl',
+        type: 'Ref<HTMLElement | null>',
+        description:
+          "The list. The indicator element goes inside it, and it is the indicator's containing block. A ResizeObserver on it measures again when its size changes.",
+      },
+      {
+        name: 'orientation',
+        type: "MaybeRefOrGetter<'horizontal' | 'vertical'>",
+        description:
+          "Default `'horizontal'`, which sets the inline position and size. `'vertical'` sets the block position and size.",
+      },
+      {
+        name: 'selector',
+        type: 'MaybeRefOrGetter<string>',
+        description:
+          'Default `\'[role="tab"][aria-selected="true"]\'`. The first match inside `listEl` is the active element. SelectButton uses `\'[data-checked]\'`, and Pagination uses `\'[aria-current="page"]\'`. With no match, the style sets `opacity: 0`.',
+      },
+      {
+        name: 'sizing',
+        type: "MaybeRefOrGetter<'bounds' | 'transform'>",
+        description:
+          "Default `'bounds'`: real position and size in px, so a border radius stays true at any size. `'transform'` uses `translate` and `scale` on a 1 px baseline instead. It is cheaper, but a radius on the scaled axis flattens, and it can look misaligned at fractional pixel ratios. Use it only for an indicator with square ends, such as an underline. `scroller`, `matchCross`, `maxGlide` and a spring need `'bounds'`.",
+      },
+      {
+        name: 'scroller',
+        type: 'boolean',
+        description:
+          '`listEl` scrolls, and the indicator sits inside its scrolled content. Positions include the scroll offset, so the indicator scrolls with the rows.',
+      },
+      {
+        name: 'matchCross',
+        type: 'boolean',
+        description:
+          "Also sets the cross axis from the active element: top and height in a horizontal list, start and width in a vertical one. Use it when rows are inset by the list's padding. Without it, your CSS sets the cross axis.",
+      },
+      {
+        name: 'maxGlide',
+        type: 'MaybeRefOrGetter<number | undefined>',
+        description:
+          "A move longer than this many of the active element's own lengths jumps instead of gliding. That suits typeahead, Home and End, and a filtered list. With it set, a list that loses its match shows the next one in place instead of sliding in. Unset, every move glides.",
+      },
+      {
+        name: 'motion',
+        type: 'MaybeRefOrGetter<boolean | undefined>',
+        description:
+          '`false` moves the indicator at once on every change, so you can animate it yourself. Unset, it moves the way `indicator` says.',
+      },
+      {
+        name: 'indicator',
+        type: "MaybeRefOrGetter<'glide' | 'instant' | { damping?: number; response?: number } | undefined>",
+        description:
+          "How it moves: `'glide'`, a CSS transition, `'instant'`, or a spring (see `useSpringValue`). Unset, it follows the nearest ConfigProvider's `indicator`, else `'glide'`. A spring needs `indicatorEl`. It jumps instead of springing on its first appearance, past `maxGlide`, and under reduced motion.",
+      },
+      {
+        name: 'indicatorEl',
+        type: 'Ref<HTMLElement | null>',
+        description:
+          'The indicator element. A spring writes position and size straight to its inline style each frame, with no re-render.',
+      },
+    ],
+    returns: [
+      {
+        name: 'style',
+        type: 'Ref<Record<string, string | undefined>>',
+        description:
+          "Bind it on the indicator element. It holds the position and size in px, and `opacity: 0` while nothing matches. On first paint, on first appearance and past `maxGlide`, it sets the position and size durations to `0ms`, so the indicator doesn't grow in from the edge. Those overrides go slot by slot, so list your transition as position, size, then opacity, the order the `ui-indicator` classes use. With a spring, it holds only `transition-property: opacity`.",
+      },
+    ],
+  },
+
+  useScrollLock: {
+    description:
+      "Locks scrolling on an element, `document.body` by default. Dialog, Drawer, BottomSheet and Tour use it while they are open. It sets `overflow: hidden` and `overscroll-behavior: contain`. It also pads the element's inline end by the scrollbar's width, so the layout doesn't shift when the scrollbar goes. That width is also set as `--ui-scrollbar-width`, on `<html>` for a body lock, so a fixed header can add the same padding. Locks are counted per element: when two dialogs lock the body, it stays locked until both release. On release, the inline styles from before the lock come back, unless something else changed them meanwhile. On iOS, a body lock also blocks touch scrolling, except inside a scrollable region within the body.",
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'target',
+        type: 'MaybeRefOrGetter<HTMLElement | null>',
+        description:
+          'Default `document.body`. When it changes while locked, the lock moves to the new element. `null` releases it.',
+      },
+      {
+        name: 'initial',
+        type: 'boolean',
+        description: 'Default `false`. `true` locks at once.',
+      },
+    ],
+    returns: [
+      {
+        name: 'locked',
+        type: 'WritableComputedRef<boolean>',
+        description:
+          'The return value is the ref itself: `const locked = useScrollLock()`. Set it to `true` to lock and `false` to release. The lock also releases when the calling scope ends, such as on unmount.',
+      },
+    ],
+  },
+
+  useHoverIndicator: {
+    description:
+      'The sliding hover highlight behind every vael-ui list: Select, Menu, Tree, DataTable, Tabs, Pagination, Calendar and the rest. It follows the row under a mouse or pen, or the row with keyboard focus (keyboard always wins), and slides one indicator element between them. Touch is ignored, as hover styles are. Use it to give your own list the same feel: mark the rows with `itemSelector`, put an element with the `ui-indicator` class inside the list, and bind the `style` it returns. The list needs `position: relative; isolation: isolate`, so the indicator sits behind the rows. Style it with `--ui-indicator-bg`, `--ui-duration-indicator` and `--ui-ease-indicator`, or set `motion: false` and drive it yourself.',
+    installNames: ['useHoverIndicator'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'listEl',
+        type: 'Ref<HTMLElement | null>',
+        description:
+          'The list. The indicator element goes inside it, and moves in its coordinates.',
+      },
+      {
+        name: 'itemSelector',
+        type: 'string',
+        description: 'Matches the rows the indicator moves between. Disabled rows are skipped.',
+      },
+      {
+        name: 'scope',
+        type: 'string',
+        description:
+          'A row counts only when its nearest match for this is `listEl` itself, so a nested list (a submenu, a table in an expanded row) keeps its own rows.',
+      },
+      {
+        name: 'orientation',
+        type: "MaybeRefOrGetter<'vertical' | 'horizontal'>",
+        description:
+          "Default `'vertical'`. For a row of buttons, use `'horizontal'` with the `ui-indicator--inline` class; for a grid, add `ui-indicator--grid` to glide on both axes.",
+      },
+      {
+        name: 'scroller',
+        type: 'boolean',
+        description: '`listEl` scrolls, and the indicator scrolls with the rows inside it.',
+      },
+      {
+        name: 'matchCross',
+        type: 'boolean',
+        description:
+          'Default `true`: also matches each row across the list, for rows inset by its padding.',
+      },
+      {
+        name: 'maxGlide',
+        type: 'number',
+        description: 'Default `3`. A move longer than this many rows jumps instead of gliding.',
+      },
+      {
+        name: 'enabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description:
+          '`false` hides the indicator and stops tracking, while a row is being dragged, say.',
+      },
+      {
+        name: 'motion',
+        type: 'MaybeRefOrGetter<boolean | undefined>',
+        description:
+          "`false` moves the indicator at once, for an animation of your own. Unset, it follows the nearest ConfigProvider's `motionCss`.",
+      },
+      {
+        name: 'indicator',
+        type: "MaybeRefOrGetter<'glide' | 'instant' | { damping?: number; response?: number } | undefined>",
+        description:
+          "How it moves: a CSS glide, an instant move, or a spring. Unset, it follows the nearest ConfigProvider's `indicator`, else `'glide'`. See `useTabIndicator`.",
+      },
+      {
+        name: 'indicatorEl',
+        type: 'Ref<HTMLElement | null>',
+        description:
+          'The indicator element. A spring writes to it directly each frame. Without it, a spring falls back to the glide.',
+      },
+    ],
+    returns: [
+      {
+        name: 'style',
+        type: 'Ref<Record<string, string | undefined>>',
+        description:
+          'Bind it on the indicator element: its position and size in px, and `opacity: 0` while nothing is hovered or focused. The hovered row also carries `data-indicated`.',
+      },
+    ],
+  },
+
   useSortable: {
     description:
       "The spring-driven drag-to-reorder engine behind `<Sortable>`, nested reordering in `<Tree>` and column reordering in `<DataTable>`. Pointer and keyboard input drive the same grabbed state. Pure, separately tested functions make every ordering and nesting decision. `<Sortable>` is an optional wrapper around it. Use the composable directly when you need markup a component can't give you. To move items between lists, use `useSortableGroup()`, which wraps the same engine.",
@@ -827,6 +1092,114 @@ const { mode, resolvedMode, setMode } = useColorScheme({
         type: 'UseSortableReturn',
         description:
           'The usual way to add a list: `useSortable()` with `group` and `groupId` already set, so each column is one call. `groupId` is auto-assigned if you omit it. Pass your own so `onTransfer` knows which array to update.',
+      },
+    ],
+  },
+
+  moveTreeNode: {
+    description:
+      "Moves for a reorderable tree. `moveTreeNode` moves a node and its subtree to a new parent and index, mutating your array in place, the same contract as `removeTreeNode`. Its `to` argument is the `DropPosition` that `useSortable`'s `onCommit` gives you, so the two connect directly. Tree commits its drag reordering through it, and Sortable uses it for flat lists. `isDescendantOf` is the guard it runs first, because dropping a folder into its own descendant would detach that branch and lose it. Nodes are read as `{ value, children }` by default, the shape `TreeNode` and `MenuItemData` already have. Pass accessors for any other shape.",
+    installNames: ['moveTreeNode', 'isDescendantOf'],
+    exampleCode: `import { ref } from 'vue'
+import { isDescendantOf, moveTreeNode } from 'vael-ui'
+import type { DropPosition, TreeAccessors } from 'vael-ui'
+
+interface Folder {
+  id: number
+  name: string
+  folders?: Folder[]
+}
+
+const tree = ref<Folder[]>([
+  { id: 1, name: 'Projects', folders: [{ id: 2, name: 'Drafts' }] },
+  { id: 3, name: 'Archive' },
+])
+
+const accessors: TreeAccessors<Folder> = {
+  getKey: (folder) => folder.id,
+  getChildren: (folder) => folder.folders,
+  setChildren: (folder, folders) => (folder.folders = folders),
+}
+
+// Pass this as useSortable's onCommit, or call it from your own drop handler.
+function onCommit(value: string | number, to: DropPosition) {
+  moveTreeNode(tree.value, value, to, accessors)
+}
+
+// Drafts becomes Archive's first child. Archive had no children array, so one is created.
+moveTreeNode(tree.value, 2, { parentValue: 3, index: 0, depth: 1 }, accessors)
+
+isDescendantOf(tree.value, 3, 2, accessors) // true: Drafts is now inside Archive`,
+    params: [
+      {
+        name: 'nodes',
+        type: 'T[]',
+        description:
+          'The top-level array. `moveTreeNode` changes it, and the arrays inside it, in place.',
+      },
+      {
+        name: 'value',
+        type: 'string | number',
+        description: 'The key of the node to move.',
+      },
+      {
+        name: 'to',
+        type: 'DropPosition',
+        description:
+          "`{ parentValue, index, depth }`. `parentValue` is the new parent's key, or `null` for the top level. `index` is the node's final slot among its new siblings, counted as if the node were already removed, and is clamped to the array. `depth` is not read.",
+      },
+      {
+        name: 'accessors',
+        type: 'TreeAccessors<T>',
+        description:
+          "Optional. `getKey` reads a node's key, `node.value` by default. `getChildren` reads its children, `node.children` by default. `setChildren` attaches a new children array, used when the new parent has none yet. By default it assigns `node.children`.",
+      },
+    ],
+    returns: [
+      {
+        name: 'moveTreeNode(nodes, value, to, accessors?)',
+        type: 'boolean',
+        description:
+          "`true` when the node moved. `false` when nothing moved: the node or the parent wasn't found, or the parent is the node itself or inside its subtree. Check it before you emit or save anything.",
+      },
+      {
+        name: 'isDescendantOf(nodes, ancestorValue, candidateValue, accessors?)',
+        type: 'boolean',
+        description:
+          '`true` when `candidateValue` is anywhere under `ancestorValue`. A node is not its own descendant. Use it to guard a drop handler of your own.',
+      },
+    ],
+  },
+
+  useFileDrop: {
+    description:
+      "The drag-and-drop half of FileUpload. It makes any element a drop target for files from the desktop, tracks whether a drag is over it, and hands you the dropped files. It counts nested `dragenter` and `dragleave` events, so moving over a child element doesn't flicker the state. It doesn't validate anything: check type, size and count yourself, as FileUpload does with `accept`, `maxSize` and `maxFiles`. It doesn't open a file picker either. Pair it with an `<input type=\"file\">` for keyboard and touch users, who can't drag files.",
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'targetEl',
+        type: 'Ref<HTMLElement | null>',
+        description: 'The drop target. The listeners follow it when the ref changes.',
+      },
+      {
+        name: 'onFiles',
+        type: '(files: File[]) => void',
+        description:
+          'Called on a drop with every dropped file. A drop with no files, such as dragged text, does not call it.',
+      },
+      {
+        name: 'disabled',
+        type: 'MaybeRefOrGetter<boolean>',
+        description:
+          'Ignores every drag event while `true`. The browser then handles a drop itself, which usually opens the file in the tab.',
+      },
+    ],
+    returns: [
+      {
+        name: 'isDragOver',
+        type: 'Ref<boolean>',
+        description:
+          'True while a drag carrying files is over the target. Other drags, such as selected text, are ignored, and turning `disabled` on clears it.',
       },
     ],
   },

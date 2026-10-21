@@ -45,7 +45,8 @@
     "vapor": "Vapor",
     "vaporUnavailable": "このコンポーネントの Vapor デモはまだありません",
     "vdom": "Vue DOM",
-    "onThisPage": "このページの内容"
+    "onThisPage": "このページの内容",
+    "headless": "ヘッドレスコンポーザブル"
   },
   "descriptions": {
     "Accordion": "折りたたみ可能なセクションのスタック。1 つを開くと他のセクションを閉じることができます。",
@@ -297,6 +298,10 @@
       "durationDrawer": "ドロワー/シートのスライド遷移の継続時間。",
       "durationEnter": "開始/開始トランジションの継続時間。",
       "durationExit": "終了/終了遷移の継続時間。",
+      "durationIndicator": "リストやメニューのホバーハイライトが次の行へスライドする時間。",
+      "durationIndicatorWide": "幅の広い行 (MenuList、Tree、DataTable) 向けの同じスライド。重い板のように動きます。",
+      "easeIndicator": "ホバーハイライトのイージングカーブ。",
+      "indicatorBg": "ホバーハイライトの色。行の :hover 背景はハイライトの上に描かれるため、代わりにこれを設定してください。",
       "durationPress": "押す/タップするフィードバックの持続時間。",
       "durationToast": "トーストが表示されるときの時間。",
       "durationToastExit": "トーストが消えるときの時間。",
@@ -386,7 +391,8 @@
   "composablesTaxonomy": {
     "overlaysAndConfirmation": "オーバーレイ",
     "positioningAndData": "位置決め",
-    "utilities": "公共事業",
+    "utilities": "ユーティリティ",
+    "motion": "モーション",
     "dragAndDrop": "ドラッグ＆ドロップ"
   },
   "composableDescriptions": {
@@ -401,7 +407,13 @@
     "preventFocusZoom": "iOS がフォーム欄にズームしないようにし、欄の文字サイズを他のテキストと揃えられるようにします。",
     "useFloatingPosition": "Popover、Menu、Tooltip の背後にある、Floating UI ベースの位置決めエンジン。独自の固定表示サーフェスを作るのに使えます。",
     "useVirtualizer": "長いリストの仮想レンダリング。表示中の行だけがDOMに存在します。",
-    "useFieldControl": "カスタムフォームコントロールを最も近い Field に接続します。id、ARIA 属性、フォーカス状態と入力済み状態を扱います。"
+    "useFieldControl": "カスタムフォームコントロールを最も近い Field に接続します。id、ARIA 属性、フォーカス状態と入力済み状態を扱います。",
+    "useHoverIndicator": "vael-ui のすべてのリストで使われる、スライドするホバーハイライト。独自のリストにも使えます。",
+    "useSpringValue": "中断できるスプリング物理。リアクティブな値、再レンダリングせずに毎フレーム書き込む命令的なスプリング、その両方を支える純粋なステップ関数を備えています。",
+    "useTabIndicator": "Tabs、SelectButton、Pagination の背後にある、スライドする選択インジケーター。独自のセグメントコントロールやリストにも使えます。",
+    "useScrollLock": "ダイアログが開いている間と同じように、ページや任意の要素のスクロールをレイアウトのずれなしでロックします。",
+    "moveTreeNode": "ノードとそのサブツリーを、新しい親とインデックスへその場で移動します。フォルダーを自分自身の中にドロップしないようにするガードも備えています。",
+    "useFileDrop": "任意の要素をファイルのドロップ先にします。ドラッグ中の状態は子要素の上でも安定して保たれます。"
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components は Vite、Webpack、Rollup、esbuild、Rspack に対応しています。リゾルバーはただの関数なので、どれでも同じように動作します。",

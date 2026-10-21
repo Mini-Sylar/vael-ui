@@ -262,21 +262,27 @@ function guideHeadings(source: string): { id: string; key: string }[] {
 
 /** The API, examples and guide sections. Loaded once, on first open. */
 export async function loadDeepEntries(t: Translate): Promise<PaletteEntry[]> {
-  const [{ default: meta }, { default: manifest }, { composablesContent }, guides] =
-    await Promise.all([
-      import('../generated/component-meta.json'),
-      import('../generated/demo-manifest.json'),
-      import('../composablesContent'),
-      Promise.all(
-        Object.entries(guideSources).map(async ([path, load]) => ({
-          file: path
-            .split('/')
-            .pop()!
-            .replace(/\.vue$/, ''),
-          source: await load(),
-        })),
-      ),
-    ])
+  const [
+    { default: meta },
+    { default: manifest },
+    { composablesContent },
+    { pairedComposables },
+    guides,
+  ] = await Promise.all([
+    import('../generated/component-meta.json'),
+    import('../generated/demo-manifest.json'),
+    import('../composablesContent'),
+    import('../pairedComposables'),
+    Promise.all(
+      Object.entries(guideSources).map(async ([path, load]) => ({
+        file: path
+          .split('/')
+          .pop()!
+          .replace(/\.vue$/, ''),
+        source: await load(),
+      })),
+    ),
+  ])
   const entries: PaletteEntry[] = []
 
   const componentMeta = meta as Record<string, Partial<Record<ApiKind, MetaRow[]>>>
@@ -394,6 +400,48 @@ export async function loadDeepEntries(t: Translate): Promise<PaletteEntry[]> {
           group: t(`composable.${kind}`),
           copyKind: 'link',
         })
+      }
+    }
+  }
+
+  // Headless engines documented on their component's page (pairedComposables.ts).
+  for (const [component, list] of Object.entries(pairedComposables)) {
+    for (const paired of list) {
+      const id = `composable-${paired.name.replace(/[^\w]+/g, '-')}`
+      const page = { name: 'component', params: { name: component } }
+      entries.push({
+        id: `headless:${paired.name}`,
+        kind: 'section',
+        label: paired.name,
+        parent: component,
+        scope: paired.name,
+        to: { ...page, hash: `#${id}` },
+        description: plain(paired.description),
+        text: plain(paired.description),
+        icon: PhFunction,
+        boost: 5,
+        group: t('nav.composables'),
+        copy: `import { ${(paired.installNames ?? [paired.name]).join(', ')} } from 'vael-ui'`,
+        copyKind: 'import',
+      })
+      for (const kind of ['parameters', 'returns'] as const) {
+        for (const row of kind === 'parameters' ? paired.params : paired.returns) {
+          entries.push({
+            id: `headless:${paired.name}:${kind}:${row.name}`,
+            kind,
+            label: row.name,
+            parent: paired.name,
+            scope: paired.name,
+            to: { ...page, hash: `#${id}-${kind}-${row.name.replace(/[^\w-]/g, '-')}` },
+            type: row.type,
+            description: plain(row.description),
+            text: plain(row.description),
+            icon: API_ICONS[kind],
+            boost: API_BOOST[kind],
+            group: t(`composable.${kind}`),
+            copyKind: 'link',
+          })
+        }
       }
     }
   }

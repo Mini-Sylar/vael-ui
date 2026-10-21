@@ -45,7 +45,8 @@
     "vapor": "Vapor",
     "vaporUnavailable": "Für diese Komponente gibt es noch keine Vapor-Demo",
     "vdom": "Vue DOM",
-    "onThisPage": "Auf dieser Seite"
+    "onThisPage": "Auf dieser Seite",
+    "headless": "Headless-Composable"
   },
   "descriptions": {
     "Accordion": "Ein Stapel zusammenklappbarer Abschnitte, bei denen durch Öffnen eines Abschnitts die anderen geschlossen werden können.",
@@ -290,6 +291,10 @@
       "durationDrawer": "Dauer für Schubladen-/Blattführungsübergänge.",
       "durationEnter": "Dauer für Enter/Open-Übergänge.",
       "durationExit": "Dauer für Exit-/Close-Übergänge.",
+      "durationIndicator": "Wie lange die Hover-Hervorhebung in Listen und Menüs zur nächsten Zeile gleitet.",
+      "durationIndicatorWide": "Dasselbe Gleiten für breite Zeilen (MenuList, Tree, DataTable), die sich als schwerere Fläche bewegen.",
+      "easeIndicator": "Die Easing-Kurve der Hover-Hervorhebung.",
+      "indicatorBg": "Die Farbe der Hover-Hervorhebung. Setze sie statt eines :hover-Hintergrunds auf der Zeile, der sie überdecken würde.",
       "durationPress": "Dauer für das Drücken/Tippen-Feedback.",
       "durationToast": "Dauer für das Einblenden eines Toasts.",
       "durationToastExit": "Dauer für das Ausblenden eines Toasts.",
@@ -406,6 +411,7 @@
     "overlaysAndConfirmation": "Überlagerungen",
     "positioningAndData": "Positionierung",
     "utilities": "Dienstprogramme",
+    "motion": "Bewegung",
     "dragAndDrop": "Ziehen"
   },
   "composableDescriptions": {
@@ -420,7 +426,13 @@
     "preventFocusZoom": "Verhindert, dass iOS in Formularfelder hineinzoomt, damit sie zur übrigen Schriftgröße passen.",
     "useFloatingPosition": "Die Floating-UI-basierte Positionierungs-Engine hinter Popover, Menu und Tooltip, zum Bau eigener verankerter Oberflächen.",
     "useVirtualizer": "Virtualisiertes Rendering für lange Listen, sodass nur die sichtbaren Zeilen im DOM existieren.",
-    "useFieldControl": "Verbindet ein eigenes Formularelement mit dem nächsten Field: id, ARIA-Attribute sowie Fokus- und Ausfüllstatus."
+    "useFieldControl": "Verbindet ein eigenes Formularelement mit dem nächsten Field: id, ARIA-Attribute sowie Fokus- und Ausfüllstatus.",
+    "useHoverIndicator": "Die gleitende Hover-Hervorhebung aller vael-ui-Listen, auch für Ihre eigenen Listen.",
+    "useSpringValue": "Unterbrechbare Federphysik: ein reaktiver Wert, eine imperative Feder, die jeden Frame ohne Neu-Rendern schreibt, und die reine Schrittfunktion hinter beiden.",
+    "useTabIndicator": "Der gleitende Auswahlindikator hinter Tabs, SelectButton und Pagination, auch für Ihre eigenen Segment-Steuerelemente und Listen.",
+    "useScrollLock": "Sperrt das Scrollen der Seite oder eines beliebigen Elements ohne Layoutsprung, so wie Dialoge es tun, solange sie geöffnet sind.",
+    "moveTreeNode": "Verschiebt einen Knoten samt Teilbaum direkt an einen neuen Elternknoten und Index, mit einer Sperre gegen das Ablegen eines Ordners in sich selbst.",
+    "useFileDrop": "Macht jedes Element zum Ablageziel für Dateien, mit einem Drag-over-Zustand, der über Kindelementen stabil bleibt."
   },
   "nuxt": {
     "excludeIntro": "Überspringen Sie bestimmte Komponentennamen, zum Beispiel um Ihren eigenen <code>&lt;Button&gt;</code> unter demselben Tag zu registrieren:",

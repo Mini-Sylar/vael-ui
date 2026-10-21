@@ -81,7 +81,8 @@
     "noSlots": "Aucun slot.",
     "noExposed": "Rien d'exposé via une ref de template.",
     "notFound": "Composant \"{name}\" introuvable.",
-    "onThisPage": "Sur cette page"
+    "onThisPage": "Sur cette page",
+    "headless": "Composable headless"
   },
   "home": {
     "tagline": "Plus de 60 composants pour Vue 3, compilés depuis une seule source pour le build VDOM classique et pour Vue Vapor.",
@@ -290,6 +291,10 @@
       "durationDrawer": "Durée des transitions de diapositives tiroir/feuille.",
       "durationEnter": "Durée des transitions entrée/ouverture.",
       "durationExit": "Durée des transitions de sortie/fermeture.",
+      "durationIndicator": "Durée du glissement du surlignage de survol vers la ligne suivante dans les listes et menus.",
+      "durationIndicatorWide": "Le même glissement pour les lignes larges (MenuList, Tree, DataTable), qui bougent comme un bloc plus lourd.",
+      "easeIndicator": "La courbe d'accélération du surlignage de survol.",
+      "indicatorBg": "La couleur du surlignage de survol. Définissez-la plutôt qu'un fond :hover sur la ligne, qui le recouvrirait.",
       "durationPress": "Durée du retour d’information en appuyant/appuyant.",
       "durationToast": "Durée d'entrée d'un toast.",
       "durationToastExit": "Durée de sortie du toast.",
@@ -387,6 +392,7 @@
     "overlaysAndConfirmation": "Superpositions",
     "positioningAndData": "Positionnement",
     "utilities": "Utilitaires",
+    "motion": "Mouvement",
     "dragAndDrop": "Glisser-déposer"
   },
   "composableDescriptions": {
@@ -401,7 +407,13 @@
     "preventFocusZoom": "Empêche iOS de zoomer sur les champs de formulaire, pour qu'ils gardent la taille du reste du texte.",
     "useFloatingPosition": "Le moteur de positionnement basé sur Floating UI derrière Popover, Menu et Tooltip, pour créer des surfaces ancrées personnalisées.",
     "useVirtualizer": "Rendu virtualisé pour les longues listes, afin que seules les lignes visibles existent dans le DOM.",
-    "useFieldControl": "Connecte un contrôle de formulaire personnalisé au Field le plus proche : id, attributs ARIA, et états de focus et de remplissage."
+    "useFieldControl": "Connecte un contrôle de formulaire personnalisé au Field le plus proche : id, attributs ARIA, et états de focus et de remplissage.",
+    "useHoverIndicator": "Le surlignage de survol glissant de toutes les listes vael-ui, aussi pour vos propres listes.",
+    "useSpringValue": "Une physique de ressort interruptible : une valeur réactive, un ressort impératif qui écrit chaque image sans nouveau rendu, et la fonction de pas pure derrière les deux.",
+    "useTabIndicator": "L'indicateur de sélection glissant derrière Tabs, SelectButton et Pagination, aussi pour vos propres contrôles segmentés et listes.",
+    "useScrollLock": "Bloque le défilement de la page ou de n'importe quel élément sans décalage de mise en page, comme le font les dialogues ouverts.",
+    "moveTreeNode": "Déplace un nœud et son sous-arbre vers un nouveau parent et un nouvel index, sur place, avec une protection contre le dépôt d'un dossier dans lui-même.",
+    "useFileDrop": "Transforme n'importe quel élément en zone de dépôt de fichiers, avec un état de survol qui reste stable au-dessus des éléments enfants."
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components prend en charge Vite, Webpack, Rollup, esbuild et Rspack. Le résolveur est une simple fonction, il fonctionne donc de la même manière avec chacun d'eux.",

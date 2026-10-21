@@ -87,7 +87,8 @@
     "noSlots": "No slots.",
     "noExposed": "Nothing exposed via template ref.",
     "notFound": "Component \"{name}\" not found.",
-    "onThisPage": "On this page"
+    "onThisPage": "On this page",
+    "headless": "Headless composable"
   },
   "home": {
     "eyebrow": "Vue 3 component library",
@@ -218,6 +219,10 @@
       "durationPress": "Duration for press/tap feedback.",
       "durationEnter": "Duration for enter/open transitions.",
       "durationExit": "Duration for exit/close transitions.",
+      "durationIndicator": "How long the hover highlight in lists and menus takes to glide to the next row.",
+      "durationIndicatorWide": "The same glide for wide rows (MenuList, Tree, DataTable), which move as a heavier slab.",
+      "easeIndicator": "The hover highlight's easing curve.",
+      "indicatorBg": "The hover highlight's colour. Set it instead of a row :hover background, which would paint over it.",
       "durationTooltip": "Duration for opening a tooltip.",
       "durationTooltipExit": "Duration for closing a tooltip.",
       "durationToast": "Duration for a toast entering.",
@@ -371,6 +376,7 @@
     "overlaysAndConfirmation": "Overlays & Confirmation",
     "positioningAndData": "Positioning & Data",
     "utilities": "Utilities",
+    "motion": "Motion",
     "dragAndDrop": "Drag & Drop"
   },
   "metaTable": {
@@ -462,7 +468,13 @@
     "preventFocusZoom": "Stops iOS zooming into form fields, so they can match the rest of your text size.",
     "useFloatingPosition": "The positioning engine behind Popover, Menu, and Tooltip, built on Floating UI. Use it to build your own anchored surfaces.",
     "useVirtualizer": "Windowed rendering for long lists, so only the visible rows exist in the DOM.",
-    "useFieldControl": "Connects a custom form control to the nearest Field: id, ARIA attributes, and focus and filled state."
+    "useFieldControl": "Connects a custom form control to the nearest Field: id, ARIA attributes, and focus and filled state.",
+    "useHoverIndicator": "The sliding hover highlight behind every vael-ui list, for your own lists too.",
+    "useSpringValue": "Interruptible spring physics: a reactive value, an imperative spring that writes each frame without re-rendering, and the pure step function behind both.",
+    "useTabIndicator": "The sliding selection indicator behind Tabs, SelectButton and Pagination, for your own segmented controls and lists too.",
+    "useScrollLock": "Locks scrolling on the page or any element without a layout shift, the way dialogs do while they are open.",
+    "moveTreeNode": "Moves a node and its subtree to a new parent and index in place, with a guard against dropping a folder into itself.",
+    "useFileDrop": "Turns any element into a drop target for files, with a drag-over state that holds steady over child elements."
   },
   "theme": {
     "label": "Theme color",

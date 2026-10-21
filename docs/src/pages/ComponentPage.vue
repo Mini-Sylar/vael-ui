@@ -111,6 +111,36 @@
           :empty-text="t('component.noExposed')"
         />
       </section>
+
+      <section
+        v-for="paired in pairedSections"
+        :id="paired.id"
+        :key="paired.id"
+        class="section related"
+      >
+        <p class="eyebrow">{{ t('component.headless') }}</p>
+        <h2>{{ paired.name }}</h2>
+        <p class="description"><RichText :text="paired.description" /></p>
+        <CodeBlock lang="typescript" :code="paired.installCode" />
+        <CodeBlock
+          v-if="paired.exampleCode"
+          :lang="paired.exampleLang"
+          :code="paired.exampleCode"
+          class="paired-example"
+        />
+        <MetaTable
+          :id="`${paired.id}-parameters`"
+          :title="t('composable.parameters')"
+          :rows="paired.params"
+          :empty-text="t('composable.noParameters')"
+        />
+        <MetaTable
+          :id="`${paired.id}-returns`"
+          :title="t('composable.returns')"
+          :rows="paired.returns"
+          :empty-text="t('composable.noReturns')"
+        />
+      </section>
       <DocsPager />
     </article>
     <OnThisPage :links="tocLinks" />
@@ -130,6 +160,7 @@ import demoManifest from '../generated/demo-manifest.json'
 import DemoFrame from '../components/DemoFrame.vue'
 import MetaTable from '../components/MetaTable.vue'
 import CodeBlock from '../components/CodeBlock.vue'
+import RichText from '../components/RichText.vue'
 import DocsPager from '../components/DocsPager.vue'
 import OnThisPage from '../components/OnThisPage.vue'
 import PropsPlayground from '../playground/PropsPlayground.vue'
@@ -138,6 +169,7 @@ import ToasterPlayground from '../playground/ToasterPlayground.vue'
 import TimelinePlayground from '../playground/TimelinePlayground.vue'
 import type { ComponentMetaEntry, DemoManifestEntry } from '../types'
 import { categoryOf } from '../taxonomy'
+import { pairedComposables } from '../pairedComposables'
 import { defaultVariant } from '../preferences'
 import { useBreadcrumbSchema } from '../composables/useBreadcrumbSchema'
 import type { DemoExample } from '../components/DemoFrame.vue'
@@ -212,6 +244,18 @@ const relatedComponents = computed(() =>
     name: n,
     description: describe(n),
     meta: typedMeta[n],
+  })),
+)
+// The headless composable behind this component, documented here rather than
+// as a separate composables page.
+const pairedSections = computed(() =>
+  (pairedComposables[name.value] ?? []).map((paired) => ({
+    ...paired,
+    id: `composable-${paired.name.replace(/[^\w]+/g, '-')}`,
+    installCode: `import { ${(paired.installNames ?? [paired.name]).join(', ')} } from 'vael-ui'`,
+    exampleLang: paired.exampleCode?.trimStart().startsWith('<')
+      ? ('vue' as const)
+      : ('typescript' as const),
   })),
 )
 const manifestEntry = computed(
@@ -294,6 +338,7 @@ const tocLinks = computed(() => [
   { id: 'events', label: t('component.events') },
   { id: 'exposed', label: t('component.exposed') },
   ...relatedComponents.value.map((r) => ({ id: `related-${r.name}`, label: r.name })),
+  ...pairedSections.value.map((p) => ({ id: p.id, label: p.name })),
 ])
 </script>
 
@@ -409,5 +454,13 @@ const tocLinks = computed(() => [
 .related h2 {
   font-size: 1.3rem;
   letter-spacing: -0.015em;
+}
+
+.related .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.paired-example {
+  margin-top: 1rem;
 }
 </style>

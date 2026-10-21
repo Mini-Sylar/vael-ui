@@ -190,9 +190,30 @@ useGlidingIndicator(
 const persistedScrollTop = useLocalStorage('vael-ui-docs-sidebar-scroll', 0)
 const { y: scrollY } = useScroll(sidebarScrollEl)
 watch(scrollY, (y) => (persistedScrollTop.value = y))
+
+// The saved scroll belongs to whichever list was showing. If the current page's row is out of
+// view (the other list, a page reached by search), bring it into view a third of the way down;
+// with no row for this page in the list, start at the top.
+function revealCurrentRow() {
+  const box = sidebarScrollEl.value
+  if (!box) return
+  const row = box.querySelector<HTMLElement>('[aria-current="page"]')
+  if (!row) {
+    box.scrollTop = 0
+    return
+  }
+  const rowRect = row.getBoundingClientRect()
+  const boxRect = box.getBoundingClientRect()
+  if (rowRect.top >= boxRect.top && rowRect.bottom <= boxRect.bottom) return
+  box.scrollTop += rowRect.top - boxRect.top - boxRect.height / 3
+}
 onMounted(() => {
-  nextTick(() => (scrollY.value = persistedScrollTop.value))
+  nextTick(() => {
+    scrollY.value = persistedScrollTop.value
+    revealCurrentRow()
+  })
 })
+watch([sidebarMode, activeValue], () => nextTick(revealCurrentRow), { flush: 'post' })
 
 // The drawer's body is built fresh each time it opens, so it would start at
 // the top. Keep where the visitor was in the list and put them back there.
@@ -286,9 +307,8 @@ watch(
   font-size: 0.72rem;
 }
 
-.sidebar-scroll :deep(.ui-menu-list-item:hover:not(:disabled)),
-.sidebar-scroll :deep(.ui-menu-list-item:focus-visible) {
-  background: color-mix(in oklch, var(--ui-primary) 10%, transparent);
+.sidebar-scroll {
+  --ui-indicator-bg: color-mix(in oklch, var(--ui-primary) 10%, transparent);
 }
 
 /* Sidebar rows have no shortcut hints to push right, unlike Menu/ContextMenu
