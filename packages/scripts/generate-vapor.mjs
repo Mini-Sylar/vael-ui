@@ -71,6 +71,7 @@ function resolveModuleId(name) {
 // rather than '../composables/...'.
 const REWRITABLE_BASENAMES = [
   'composables/',
+  'motion/',
   'classes',
   'theme',
   'messages',
@@ -134,6 +135,8 @@ const NON_COMPONENT_EXPORTS_EXCLUDED = new Set([
   'vScrollMaskVapor',
   'vDraggable',
   'vDraggableVapor',
+  'vAnimate',
+  'vAnimateVapor',
   'confirmAction',
 ])
 
@@ -242,6 +245,7 @@ const VAPOR_ALIASES = {
   vTooltip: ['vTooltipVapor', 'directives/vTooltip'],
   vScrollMask: ['vScrollMaskVapor', 'directives/vScrollMask'],
   vDraggable: ['vDraggableVapor', 'directives/vDraggable'],
+  vAnimate: ['vAnimateVapor', 'directives/vAnimate'],
   // See useSlotRelay.ts: a plain functional component forwarding a captured
   // slot renders as [object Object] under vaporInteropPlugin
   // (https://github.com/vuejs/core/issues/15596) — the vapor build needs the
@@ -405,6 +409,7 @@ function main() {
     `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
     `export { vScrollMaskVapor as vScrollMask } from '${relativeImportPath('directives/vScrollMask')}'`,
     `export { vDraggableVapor as vDraggable } from '${relativeImportPath('directives/vDraggable')}'`,
+    `export { vAnimateVapor as vAnimate } from '${relativeImportPath('directives/vAnimate')}'`,
     `export { confirmAction } from './composables/confirmAction'`,
     `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
   )

@@ -1,0 +1,30 @@
+@layer ui-components {
+  /*
+    The CSS motion engine (motion/css.ts). While a phase runs, an element carries `data-ui-m` and,
+    per property it holds, `data-ui-m-<property>`; the values arrive as custom properties set through
+    the CSSOM. Doubled attributes outrank a component's own rules only for that phase.
+  */
+  [data-ui-m][data-ui-m] {
+    transition:
+      opacity var(--ui-m-opacity-t, 0s),
+      translate var(--ui-m-translate-t, 0s),
+      scale var(--ui-m-scale-t, 0s),
+      rotate var(--ui-m-rotate-t, 0s),
+      filter var(--ui-m-filter-t, 0s);
+  }
+  [data-ui-m-opacity][data-ui-m-opacity] {
+    opacity: var(--ui-m-opacity);
+  }
+  [data-ui-m-translate][data-ui-m-translate] {
+    translate: var(--ui-m-translate);
+  }
+  [data-ui-m-scale][data-ui-m-scale] {
+    scale: var(--ui-m-scale);
+  }
+  [data-ui-m-rotate][data-ui-m-rotate] {
+    rotate: var(--ui-m-rotate);
+  }
+  [data-ui-m-filter][data-ui-m-filter] {
+    filter: var(--ui-m-filter);
+  }
+}

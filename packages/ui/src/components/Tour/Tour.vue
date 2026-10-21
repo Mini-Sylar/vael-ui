@@ -152,6 +152,7 @@ import '../shared/tokens.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
+import type { PopoverExposed } from '../Popover/Popover.vue'
 import TourSpotlight from './TourSpotlight.vue'
 import { useTour } from '../../composables/useTour'
 import { useDOMTarget, prefersReducedMotion } from '../../composables/dom'
@@ -276,7 +277,7 @@ watch(isTransitioning, (transitioning) => {
   if (!transitioning && open.value) refreshTargetEl()
 })
 
-const popover = useTemplateRef<InstanceType<typeof Popover>>('popover')
+const popover = useTemplateRef<PopoverExposed>('popover')
 const popoverPanelEl = computed(() => popover.value?.panelEl ?? null)
 const spotlight = useTemplateRef<InstanceType<typeof TourSpotlight>>('spotlight')
 const spotlightEl = computed(() => spotlight.value?.el ?? null)

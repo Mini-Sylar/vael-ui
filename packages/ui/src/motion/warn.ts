@@ -1,0 +1,20 @@
+// Dev-only warnings, named and actionable. Bundlers replace `process.env.NODE_ENV`, so production drops them.
+declare const process: { env: { NODE_ENV?: string } }
+
+function isDev(): boolean {
+  try {
+    return process.env.NODE_ENV !== 'production'
+  } catch {
+    return false
+  }
+}
+
+const said = new Set<string>()
+
+/** Warns once per message, in development only. */
+export function motionWarn(message: string): void {
+  if (!isDev() || said.has(message)) return
+  said.add(message)
+  // eslint-disable-next-line no-console -- dev-only motion warnings, stripped in production
+  console.warn(`[vael-ui motion] ${message}`)
+}

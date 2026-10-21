@@ -1,5 +1,24 @@
 <template>
   <component :is="'style'" v-if="themeCss" :innerHTML="safeThemeCss" />
+  <svg v-if="filters.length" width="0" height="0" aria-hidden="true" style="position: absolute">
+    <filter
+      v-for="f in filters"
+      :id="f.id"
+      :key="f.id"
+      x="-50%"
+      y="-50%"
+      width="200%"
+      height="200%"
+    >
+      <feGaussianBlur in="SourceGraphic" :stdDeviation="f.blur" result="blur" />
+      <feColorMatrix
+        v-if="f.contrast"
+        in="blur"
+        mode="matrix"
+        :values="`1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${f.contrast[0]} ${f.contrast[1]}`"
+      />
+    </filter>
+  </svg>
   <div :data-ui-theme="themeCss ? scopeId : undefined" style="display: contents">
     <slot />
   </div>
@@ -24,6 +43,8 @@ import type { LoaderSource } from '../../composables/loaderType'
 import type { IndicatorMode } from '../../composables/useTabIndicator'
 import { springTokens } from '../../composables/springEasing'
 import type { MotionOptions } from '../../composables/springEasing'
+import { isMotionStyle, motionStyleKey, useMotionStyle } from '../../motion/context'
+import type { MotionStyle } from '../../motion/types'
 import type { HapticOptions } from '../../composables/useHaptic'
 
 const props = withDefaults(
@@ -47,8 +68,9 @@ const props = withDefaults(
     /** Motion for everything inside. `false` makes every component change instantly, e.g. for
      * screenshot tests: panels still open and close and toasts still leave. `{ spring }` puts
      * drawers, sheets, toasts, sliding indicators and AnimatedNumber on one spring (below 1,
-     * damping overshoots); crossfades such as AnimatedText keep their own timing. A component's own `motion` wins. */
-    motion?: boolean | MotionOptions
+     * damping overshoots); crossfades such as AnimatedText keep their own timing. A full style
+     * (`{ version: 1, … }`) sets how every role and component moves, defined once. A component's own `motion` wins. */
+    motion?: boolean | MotionOptions | MotionStyle
     /** Animation for every loader inside: Loader, Button's loading state, list loading rows,
      * loading toasts and PullToRefresh. A built-in name, or your own component (or render
      * function), drawn in the same 1em box. A component's own `type` or `loaderType` wins.
@@ -86,6 +108,25 @@ provide(classMergerKey, (classes: string) =>
 )
 
 const spring = computed(() => (typeof props.motion === 'object' ? props.motion.spring : undefined))
+
+// A full style reaches every component inside; nested providers inherit their parent's.
+const parentStyle = useMotionStyle()
+const motionStyle = computed<MotionStyle | undefined>(() =>
+  isMotionStyle(props.motion)
+    ? props.motion
+    : props.motion === false
+      ? undefined
+      : parentStyle?.value,
+)
+provide(motionStyleKey, motionStyle)
+// Filters are data, rendered as SVG by the template: numbers only, ids limited to a safe alphabet.
+const filters = computed(() =>
+  Object.entries((isMotionStyle(props.motion) && props.motion.filters) || {}).map(([name, f]) => ({
+    id: name.replace(/[^\w-]/g, ''),
+    blur: Number(f.blur ?? 0),
+    contrast: f.contrast?.map(Number) as [number, number] | undefined,
+  })),
+)
 
 // A nested provider inherits its parent's defaults and overrides only what it sets.
 const parentDefaults = inject(defaultsKey, undefined)

@@ -153,6 +153,7 @@ import { useEasedHeight } from '../../composables/useEasedHeight'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import '../shared/indicator.css'
 import Dialog from '../Dialog/Dialog.vue'
+import type { DialogExposed } from '../Dialog/Dialog.vue'
 import type { DialogPosition, DialogSize } from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 import { scrollIntoContainer } from '../../composables/dom'
@@ -476,7 +477,7 @@ function onInputKeydown(event: KeyboardEvent, close: () => void) {
   }
 }
 
-const dialogRef = useTemplateRef<InstanceType<typeof Dialog>>('dialogRef')
+const dialogRef = useTemplateRef<DialogExposed>('dialogRef')
 
 function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {
   const tokens = shortcut

@@ -9,6 +9,7 @@ import DialogChromeFixture from './fixtures/DialogChromeFixture.vue'
 import DialogLongContentFixture from './fixtures/DialogLongContentFixture.vue'
 import DialogFooterEdgeFixture from './fixtures/DialogFooterEdgeFixture.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
+import type { DialogExposed } from '../src/components/Dialog/Dialog.vue'
 
 function activeTestId() {
   return document.activeElement?.getAttribute('data-testid') ?? document.activeElement?.className
@@ -200,12 +201,12 @@ test('content at the end of a body with a footer is not clipped, and the gap abo
 
 test('exposes the overlay as overlayEl, and null when modal is false', async () => {
   const { h, ref } = await import('vue')
-  const modal = ref<InstanceType<typeof Dialog> | null>(null)
-  const plain = ref<InstanceType<typeof Dialog> | null>(null)
+  const modal = ref<DialogExposed | null>(null)
+  const plain = ref<DialogExposed | null>(null)
   await render({
     render: () => [
-      h(Dialog, { ref: modal, open: true, title: 'Modal' }),
-      h(Dialog, { ref: plain, open: true, title: 'Plain', modal: false }),
+      h(Dialog as never, { ref: modal, open: true, title: 'Modal' }),
+      h(Dialog as never, { ref: plain, open: true, title: 'Plain', modal: false }),
     ],
   })
   await vi.waitFor(() => expect(modal.value?.overlayEl).toBeInstanceOf(HTMLElement))
@@ -216,12 +217,12 @@ test('exposes the overlay as overlayEl, and null when modal is false', async () 
 
 test('forceMount keeps the overlay fade until the consumer sets its opacity inline', async () => {
   const { h, ref } = await import('vue')
-  const forced = ref<InstanceType<typeof Dialog> | null>(null)
-  const regular = ref<InstanceType<typeof Dialog> | null>(null)
+  const forced = ref<DialogExposed | null>(null)
+  const regular = ref<DialogExposed | null>(null)
   await render({
     render: () => [
-      h(Dialog, { ref: forced, open: true, title: 'Forced', forceMount: true }),
-      h(Dialog, { ref: regular, open: true, title: 'Regular' }),
+      h(Dialog as never, { ref: forced, open: true, title: 'Forced', forceMount: true }),
+      h(Dialog as never, { ref: regular, open: true, title: 'Regular' }),
     ],
   })
   await vi.waitFor(() => expect(forced.value?.overlayEl).toBeInstanceOf(HTMLElement))
@@ -251,11 +252,11 @@ test('forceMount keeps the overlay fade until the consumer sets its opacity inli
 
 test('with forceMount, an inline overlay opacity wins over the closing fade', async () => {
   const { h, ref } = await import('vue')
-  const dialog = ref<InstanceType<typeof Dialog> | null>(null)
+  const dialog = ref<DialogExposed | null>(null)
   let finish: (() => void) | undefined
   await render({
     render: () =>
-      h(Dialog, {
+      h(Dialog as never, {
         ref: dialog,
         open: true,
         title: 'Closing',
@@ -374,7 +375,7 @@ test('origin="trigger" grows the panel out of the element that opened it', async
           },
           'Open',
         ),
-        h(Dialog, {
+        h(Dialog as never, {
           open: open.value,
           'onUpdate:open': (v: boolean) => (open.value = v),
           origin: 'trigger',

@@ -130,7 +130,7 @@
 import { computed, nextTick, shallowRef, useTemplateRef } from 'vue'
 import { animate } from 'motion-v'
 import { Button, Dialog } from 'vael-ui'
-import type { DialogProps } from 'vael-ui'
+import type { DialogExposed, DialogProps } from 'vael-ui'
 
 interface SpringConfig {
   type: 'spring'
@@ -180,7 +180,7 @@ const dialogUi = computed<DialogProps['ui']>(() => ({
   body: 'family-body',
 }))
 
-const drawer = useTemplateRef('drawer')
+const drawer = useTemplateRef<DialogExposed>('drawer')
 
 // A sheet arriving on a mouse click shouldn't open with a focus ring on its
 // × button — land focus on the panel itself (tabindex=-1, outline: none);

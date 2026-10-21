@@ -76,6 +76,7 @@
 @import './components/shared/confirm-popover.css';
 @import './components/shared/indicator.css';
 @import './components/shared/loader-spinner.css';
+@import './components/shared/motion.css';
 @import './components/shared/scroll-fade.css';
 @import './components/shared/select-list.css';
 @import './components/shared/select-panel.css';

@@ -149,7 +149,7 @@ test('changing side or sideOffset while open repositions the panel', async () =>
   await render(() => [
     h('button', { ref: anchor, id: 'reposition-trigger', style: 'margin: 200px' }, 'anchor'),
     h(
-      Popover,
+      Popover as never,
       {
         open: true,
         triggerEl: anchor.value,

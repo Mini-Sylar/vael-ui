@@ -121,8 +121,9 @@ async function beforeClose(done: () => void) {
 import { ref } from "vue"
 import gsap from "gsap"
 import { Dialog } from "vael-ui"
+import type { DialogExposed } from "vael-ui"
 
-const dialogRef = ref<InstanceType<typeof Dialog>>()
+const dialogRef = ref<DialogExposed>()
 const open = ref(false)
 
 function beforeClose(done: () => void) {

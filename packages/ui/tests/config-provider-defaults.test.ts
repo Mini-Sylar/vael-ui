@@ -214,7 +214,7 @@ test('motion false from a provider zeroes the duration tokens, teleported overla
   await render(() =>
     h(ConfigProvider, { motion: false }, () => [
       h(Button, null, () => 'Inside'),
-      h(Dialog, { open: true, title: 'Teleported' }),
+      h(Dialog as never, { open: true, title: 'Teleported' }),
     ]),
   )
   await expect.poll(() => document.querySelector('.ui-dialog-panel')).not.toBeNull()

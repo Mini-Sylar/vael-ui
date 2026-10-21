@@ -178,6 +178,7 @@ import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import Input from '../Input/Input.vue'
 import Popover from '../Popover/Popover.vue'
+import type { PopoverExposed } from '../Popover/Popover.vue'
 import Slider from '../Slider/Slider.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -339,7 +340,7 @@ async function pickFromScreen() {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
-const popover = useTemplateRef<InstanceType<typeof Popover>>('popover')
+const popover = useTemplateRef<PopoverExposed>('popover')
 const swatchEl = useTemplateRef<HTMLButtonElement>('swatchEl')
 const thumbEl = useTemplateRef<HTMLElement>('thumbEl')
 const cx = useClassMerge()

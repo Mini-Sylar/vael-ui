@@ -9,7 +9,12 @@
   </span>
   <slot v-else-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTarget">
-    <Transition name="ui-popover" appear :css="!forceMount">
+    <Transition
+      name="ui-popover"
+      appear
+      v-bind="motionHooks"
+      :css="!forceMount && motionTransition.css !== false"
+    >
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -24,6 +29,7 @@
         <div
           :id="panelId"
           ref="panel"
+          data-ui-presence
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
           v-bind="panelAttrs"
@@ -36,6 +42,8 @@
               :cancelClose="cancelClose"
               :panelEl="panelEl"
               :placement="placement"
+              :target="target"
+              :phase="phase"
             />
           </div>
         </div>
@@ -45,7 +53,8 @@
 </template>
 
 <script lang="ts">
-import type { Side } from '@floating-ui/dom'
+import type { Placement, Side } from '@floating-ui/dom'
+import type { MotionPhase } from '../../motion/types'
 import type { Align } from '../../composables/useFloatingPosition'
 import type { UiPartValue } from '../../classes'
 
@@ -74,6 +83,12 @@ export interface PopoverProps {
   beforeClose?: (done: () => void) => void
   /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
+  /**
+   * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, states by part
+   * (`initial: { panel: { … } }`), your `targets`, or `enter`/`leave` hooks for a library.
+   * Unset, it follows the nearest ConfigProvider's style.
+   */
+  motion?: PopoverMotion
   /** Teleport target: a CSS selector or element. Wins over `container` either way. */
   teleportTo?: string | HTMLElement
   /** Scopes the popover to an element. It teleports there instead of `body`, and its Escape handling
@@ -92,6 +107,18 @@ export interface PopoverProps {
   /** Class and style overrides for each part. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
+
+/** What a template ref to Popover gives you; Popover is generic, so `InstanceType<typeof Popover>` can't. */
+export interface PopoverExposed {
+  panelEl: HTMLElement | null
+  phase: MotionPhase
+  positionerEl: HTMLElement | null
+  placement: Placement
+  positionerStyle: Record<string, string>
+  isClosing: boolean
+  close: () => void
+  cancelClose: () => void
+}
 </script>
 
 <!--
@@ -99,9 +126,11 @@ export interface PopoverProps {
   openOnTriggerClick for Menu's fully-managed click-to-toggle contract instead.
   positionerStyle only on positioner (no inline style on panelEl — safe for GSAP/motion-v).
 -->
-<script setup lang="ts">
+<!-- Generic over your target names, so `target('…')` autocompletes from `motion.targets`. -->
+<script setup lang="ts" generic="N extends string = string">
 import './Popover.css'
 import '../shared/tokens.css'
+import '../shared/motion.css'
 import {
   computed,
   inject,
@@ -121,27 +150,38 @@ import { useDOMTarget, resolvePastDisplayContents, type DOMTarget } from '../../
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useComponentMotion } from '../../motion/useComponentMotion'
+import type { MotionRef, PopoverMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
 /** Whether the popover is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
-const props = withDefaults(defineProps<PopoverProps>(), {
-  side: 'bottom',
-  align: 'center',
-  sideOffset: 8,
-  alignOffset: 0,
-  closeOnEsc: true,
-  closeOnOutside: true,
-  forceMount: false,
-  scrollFade: true,
-  openOnTriggerClick: false,
-})
+const props = withDefaults(
+  defineProps<Omit<PopoverProps, 'motion'> & { motion?: PopoverMotion<N> }>(),
+  {
+    // Unset means "follow the app"; without this Vue would read a missing boolean prop as false.
+    motion: undefined,
+    side: 'bottom',
+    align: 'center',
+    sideOffset: 8,
+    alignOffset: 0,
+    closeOnEsc: true,
+    closeOnOutside: true,
+    forceMount: false,
+    scrollFade: true,
+    openOnTriggerClick: false,
+  },
+)
 
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires once it has finished opening. */
+  'after-enter': []
+  /** Fires once it has finished closing. */
+  'after-leave': []
 }>()
 
 defineSlots<{
@@ -153,6 +193,9 @@ defineSlots<{
     cancelClose: () => void
     panelEl: HTMLElement | null
     placement: string
+    /** Marks an element to animate under one of your `motion.targets` names: `:ref="target('rows')"`. */
+    target: (name: N) => MotionRef
+    phase: MotionPhase
   }): unknown
   /** Trigger markup; bind `:ref="setTriggerEl"` to position against it. Clicking it does nothing
    * unless you set `openOnTriggerClick`. */
@@ -199,6 +242,36 @@ const triggerElRef = computed<HTMLElement | null>(() => {
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+
+const motion = useComponentMotion({
+  name: 'Popover',
+  role: 'overlay',
+  key: 'popover',
+  mainPart: 'panel',
+  parts: () => ({ panel: panelEl.value }),
+  root: () => panelEl.value,
+  motion: () => props.motion,
+  // The built-in look; it scales from the trigger via the panel's own transform-origin.
+  defaults: () => ({ panel: { opacity: 0, scale: '0.97' } }),
+})
+const { target, phase } = motion
+const motionTransition = motion.transition
+const motionHooks = computed(() => {
+  const { css: _css, ...hooks } = motionTransition.value
+  return {
+    ...hooks,
+    onBeforeEnter: () => (phase.value = 'entering'),
+    onAfterEnter: () => {
+      phase.value = 'entered'
+      emit('after-enter')
+    },
+    onBeforeLeave: () => (phase.value = 'leaving'),
+    onAfterLeave: () => {
+      phase.value = 'left'
+      emit('after-leave')
+    },
+  }
+})
 const attrs = useAttrs()
 const panelAttrs = useAttrListeners(
   () => panelEl.value,
@@ -293,6 +366,8 @@ const resolvedAlign = computed<PopoverAlign>(() => {
 defineExpose({
   /** Panel element (`null` while closed). */
   panelEl,
+  /** `'entering' | 'entered' | 'leaving' | 'left'`. */
+  phase,
   /** Positioning wrapper around the panel (`null` while closed). */
   positionerEl,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */

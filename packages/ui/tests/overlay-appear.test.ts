@@ -18,11 +18,11 @@ const trigger = ({ setTriggerEl }: { setTriggerEl: (el: unknown) => void }) =>
   h('button', { ref: setTriggerEl }, 'Trigger')
 
 const cases: [string, () => unknown, string][] = [
-  ['Dialog', () => h(Dialog, { open: true, title: 'Dialog' }), '.ui-dialog'],
+  ['Dialog', () => h(Dialog as never, { open: true, title: 'Dialog' }), '.ui-dialog'],
   ['Drawer', () => h(Drawer, { open: true, title: 'Drawer' }), '.ui-dialog'],
   [
     'Popover',
-    () => h(Popover, { open: true }, { trigger, default: () => h('p', 'Body') }),
+    () => h(Popover as never, { open: true }, { trigger, default: () => h('p', 'Body') }),
     '.ui-popover-positioner',
   ],
   [

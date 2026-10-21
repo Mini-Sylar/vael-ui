@@ -36,8 +36,8 @@ test('a Dialog keeps its stacking order while its exit animation plays', async (
   // `second` mounts first, so at an equal z-index it would paint under `first`.
   await render(
     () => [
-      h(Dialog, { open: second.value, 'aria-label': 'Second' }, () => h('p', 'Second')),
-      h(Dialog, { open: first.value, 'aria-label': 'First' }, () => h('p', 'First')),
+      h(Dialog as never, { open: second.value, 'aria-label': 'Second' }, () => h('p', 'Second')),
+      h(Dialog as never, { open: first.value, 'aria-label': 'First' }, () => h('p', 'First')),
     ],
     { global: { stubs: { transition: false, 'transition-group': false } } },
   )

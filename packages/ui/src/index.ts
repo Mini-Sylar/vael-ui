@@ -83,7 +83,12 @@ export { default as Column } from './components/Column.vue'
 export { provideDataTableContext, useDataTableContext } from './composables/useDataTableContext'
 export type { DataTableContext, RegisteredColumn } from './composables/useDataTableContext'
 export { default as Dialog } from './components/Dialog/Dialog.vue'
-export type { DialogPosition, DialogProps, DialogSize } from './components/Dialog/Dialog.vue'
+export type {
+  DialogExposed,
+  DialogPosition,
+  DialogProps,
+  DialogSize,
+} from './components/Dialog/Dialog.vue'
 export { default as DialogHost } from './components/DialogHost/DialogHost.vue'
 export { default as CommandPalette } from './components/CommandPalette/CommandPalette.vue'
 export type { CommandPaletteItem } from './components/CommandPalette/CommandPalette.vue'
@@ -111,7 +116,12 @@ export { default as Accordion } from './components/Accordion/Accordion.vue'
 export { default as AccordionItem } from './components/AccordionItem/AccordionItem.vue'
 export { default as Collapsible } from './components/Collapsible/Collapsible.vue'
 export { default as Popover } from './components/Popover/Popover.vue'
-export type { PopoverAlign, PopoverProps, PopoverSide } from './components/Popover/Popover.vue'
+export type {
+  PopoverAlign,
+  PopoverExposed,
+  PopoverProps,
+  PopoverSide,
+} from './components/Popover/Popover.vue'
 export { default as PopoverHost } from './components/PopoverHost/PopoverHost.vue'
 export { default as Menu } from './components/Menu/Menu.vue'
 export type {
@@ -276,6 +286,59 @@ export type {
 } from './composables/useHaptic'
 export { springEasing } from './composables/springEasing'
 export type { MotionOptions } from './composables/springEasing'
+export { settled } from './motion/engine'
+export { useMotion } from './motion/useMotion'
+export { parseMotionStyle } from './motion/parse'
+export { useComponentMotion } from './motion/useComponentMotion'
+export type { ComponentMotionOptions, ComponentMotionReturn } from './motion/useComponentMotion'
+export {
+  motionStyleKey,
+  useMotionStyle,
+  isMotionStyle,
+  resolveMotion,
+  mergeTargets,
+} from './motion/context'
+export type { ResolvedMotion } from './motion/context'
+export type {
+  AnimateDirectiveValue,
+  Checkpoint,
+  ComponentMotion,
+  DialogMotion,
+  DialogPart,
+  GuardContext,
+  InputMotion,
+  LinkedMotion,
+  MotionContext,
+  MotionFilter,
+  MotionGuard,
+  MotionHook,
+  MotionMoment,
+  MotionPhase,
+  MotionRef,
+  MotionResult,
+  MotionRole,
+  MotionSpec,
+  MotionStep,
+  MotionStyle,
+  MotionTiming,
+  MotionValues,
+  ListContext,
+  MoveContext,
+  PartValues,
+  PopoverMotion,
+  PopoverPart,
+  SeparatorMotion,
+  SliderMotion,
+  Spring,
+  StateMotion,
+  TabsMotion,
+  TargetMotion,
+  Thenable,
+  ToasterMotion,
+  UiDuration,
+  UiEase,
+  UseMotionReturn,
+} from './motion/types'
 export { preventFocusZoom } from './composables/preventFocusZoom'
 // Internal: exported only so vael-ui/vapor's components share them with this build. Not public API.
 export { defaultsKey, validLocale, withProviderDefaults } from './config'
@@ -322,6 +385,7 @@ export type { I18nInstance, PartialUiMessages, UiMessages } from './messages'
 export { classMergerKey, useClassMerge, resolveUiPart, splitUiPart } from './classes'
 export type { ClassMerger, ClassValue, UiPartValue, UiPartStyle } from './classes'
 export { vDraggable, vDraggableVapor } from './directives/vDraggable'
+export { vAnimate, vAnimateVapor } from './directives/vAnimate'
 export type { DraggableOptions, DraggableValue } from './directives/vDraggable'
 export { vScrollMask, vScrollMaskVapor } from './directives/vScrollMask'
 export { vTooltip, vTooltipVapor, tooltipTargets, TOOLTIP_ATTR } from './directives/vTooltip'
@@ -341,6 +405,7 @@ declare module 'vue' {
     vTooltip: typeof import('./directives/vTooltip').vTooltip
     vScrollMask: typeof import('./directives/vScrollMask').vScrollMask
     vDraggable: typeof import('./directives/vDraggable').vDraggable
+    vAnimate: typeof import('./directives/vAnimate').vAnimate
   }
 }
 

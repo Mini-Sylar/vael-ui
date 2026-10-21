@@ -166,7 +166,8 @@
     opacity: 0;
     transform: scale(0.96);
   }
-  .ui-dialog-overlay {
+  /* data-ui-motion: the runtime or your hook drives the backdrop, so its CSS fade steps aside. */
+  .ui-dialog:not([data-ui-motion]) .ui-dialog-overlay {
     transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
   }
   .ui-dialog-enter-active .ui-dialog-overlay {
@@ -178,7 +179,7 @@
     opacity: 0;
   }
   @starting-style {
-    .ui-dialog-overlay {
+    .ui-dialog:not([data-ui-motion]) .ui-dialog-overlay {
       opacity: 0;
     }
   }

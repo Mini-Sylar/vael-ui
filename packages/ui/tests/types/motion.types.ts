@@ -1,0 +1,149 @@
+// Type tests for the motion contract: checked by `pnpm typecheck`, never run.
+// Every @ts-expect-error is a mistake that must stay an error; if the types start accepting it, typecheck fails.
+import type {
+  Checkpoint,
+  DialogMotion,
+  InputMotion,
+  MotionStyle,
+  SeparatorMotion,
+  SliderMotion,
+  TabsMotion,
+  ToasterMotion,
+} from '../../src/motion/types'
+import type { DialogProps } from '../../src/components/Dialog/Dialog.vue'
+
+// ─── Parts come from the component's `ui` keys ──────────────────────────────
+type UiKeys<T> = keyof NonNullable<T extends { ui?: infer U } ? U : never>
+type DialogPartsFromUi = UiKeys<DialogProps>
+export const partsMatchUi: [DialogPartsFromUi] extends [import('../../src/motion/types').DialogPart]
+  ? [import('../../src/motion/types').DialogPart] extends [DialogPartsFromUi]
+    ? true
+    : false
+  : false = true
+
+// ─── The happy paths read naturally ─────────────────────────────────────────
+export const off: DialogMotion = false
+export const springy: DialogMotion = { spring: { damping: 0.85, response: 0.35 } }
+export const timed: DialogMotion = {
+  duration: 'var(--ui-duration-enter)',
+  easing: 'var(--ui-ease-out)',
+}
+export const states: DialogMotion = {
+  initial: {
+    panel: { opacity: 0, y: 16, clipPath: 'inset(10% 0 round 12px)' },
+    overlay: { opacity: 0 },
+  },
+  exit: { panel: { opacity: 0, scale: '0.97' } },
+  exitOrder: 'reverse',
+  morph: 'trigger',
+}
+
+// Targets, chaining, moments and steps.
+export const chained: DialogMotion<'title' | 'chart' | 'legend' | 'footer'> = {
+  targets: {
+    title: { initial: { opacity: 0, y: 8 } },
+    chart: { initial: { opacity: 0, scale: '0.96' }, after: 'panel' },
+    legend: { initial: { opacity: 0 }, after: ['title', 'chart'] },
+    footer: {
+      initial: { opacity: 0, y: 24 },
+      steps: [{ to: { opacity: 0.5, y: 12 } }, { after: 'chart:start' }],
+    },
+  },
+}
+
+// Hooks see the parts and your targets, typed.
+export const gsapish: DialogMotion<'rows'> = {
+  enter: ({ panel, overlay }, { targets, signal }) => {
+    signal.addEventListener('abort', () => {})
+    return panel.animate([{ opacity: 0 }, { opacity: 1 }], 200).finished.then(() => {
+      void overlay
+      void targets.rows.length
+    })
+  },
+}
+
+// Lists stagger and slide; indicators move; swaps choose sync or wait.
+export const toasts: ToasterMotion = {
+  initial: { toast: { opacity: 0, y: -12 } },
+  stagger: 0.04,
+  leaving: 'hold',
+  states: { error: { toast: { x: [0, -6, 6, -3, 0] } } },
+}
+export const tabs: TabsMotion = {
+  swap: 'wait',
+  move: ({ indicator }, { from }) => indicator.animate([{ translate: `${from.x}px 0` }, {}], 200),
+}
+
+// States: keyframes play once, plain values are held.
+export const input: InputMotion = {
+  states: { invalid: { root: { x: [0, -6, 6, -3, 0] } }, focus: { root: { scale: '1.01' } } },
+}
+
+// Appearance on any component; values can start when visible.
+export const separator: SeparatorMotion = { initial: { line: { scale: '0 1' } } }
+export const slider: SliderMotion = { when: 'visible' }
+export const checkpoint: Checkpoint = { at: 80, guard: ({ value }) => value < 100 }
+
+// An app-wide style.
+export const gooey: MotionStyle = {
+  version: 1,
+  spring: { damping: 0.22, response: 0.38 },
+  filters: { goo: { blur: 8, contrast: [22, -10] } },
+  overlay: {
+    initial: { opacity: 0, scale: '0.6 1.35' },
+    morph: 'trigger',
+    surface: { filter: 'url(#goo)' },
+  },
+  list: { initial: { opacity: 0, scale: '0.3 1.8' }, stagger: 0.07 },
+  press: { active: { scale: '0.88 0.8' } },
+  presets: { fadeUp: { initial: { opacity: 0, y: 8 } } },
+  dialog: { exitOrder: 'together' },
+}
+
+// ─── Mistakes stay errors ───────────────────────────────────────────────────
+
+// @ts-expect-error a part Dialog doesn't have (it's `overlay`)
+export const wrongPart: DialogMotion = { initial: { backdrop: { opacity: 0 } } }
+
+// @ts-expect-error a typo in a CSS property
+export const typo: DialogMotion = { initial: { panel: { opacityy: 0 } } }
+
+// @ts-expect-error a spring and a duration together
+export const mixed: DialogMotion = { spring: { damping: 1 }, duration: 200 }
+
+// @ts-expect-error `after` naming a target that doesn't exist
+export const badAfter: DialogMotion<'title'> = { targets: { title: { after: 'titel' } } }
+
+// @ts-expect-error a moment that isn't start/settle
+export const badMoment: DialogMotion<'title'> = { targets: { title: { after: 'title:end' } } }
+
+// @ts-expect-error list keys don't exist on an overlay
+export const notAList: DialogMotion = { stagger: 0.05 }
+
+// @ts-expect-error overlay keys don't exist on a list
+export const notAnOverlay: ToasterMotion = { morph: 'trigger' }
+
+// @ts-expect-error a state the component doesn't have
+export const badState: InputMotion = { states: { success: { root: { opacity: 1 } } } }
+
+// @ts-expect-error a style without its schema version
+export const unversioned: MotionStyle = { spring: { damping: 1 } }
+
+// @ts-expect-error a filter given as markup
+export const markup: MotionStyle = { version: 1, filters: { goo: '<filter id="goo" />' } }
+
+// Percentage moments and per-value timing.
+export const percent: DialogMotion<'total' | 'end'> = {
+  targets: { total: { initial: { opacity: 0 } }, end: { after: 'total:60%' } },
+}
+export const percentTypo: DialogMotion<'total' | 'end'> = {
+  // @ts-expect-error a share needs its % sign
+  targets: { total: {}, end: { after: 'total:60' } },
+}
+export const perValue: DialogMotion = {
+  initial: { panel: { opacity: 0, y: { value: 12, spring: { damping: 0.5, response: 0.4 } } } },
+}
+export const perValueBoth: DialogMotion = {
+  // @ts-expect-error a value takes a spring or a duration, not both
+  initial: { panel: { y: { value: 12, spring: { damping: 0.5, response: 0.4 }, duration: 200 } } },
+}

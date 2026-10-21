@@ -143,6 +143,7 @@ export interface BottomSheetProps {
 // overrides (e.g. max-block-size) need to win the cascade.
 import { computed, inject, onScopeDispose, provide, shallowRef, useTemplateRef, watch } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
+import type { DialogExposed } from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
 import '../shared/tokens.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
@@ -185,7 +186,7 @@ defineSlots<{
 }>()
 
 const messages = useUiMessages()
-const dialog = useTemplateRef('dialog')
+const dialog = useTemplateRef<DialogExposed>('dialog')
 const handle = useTemplateRef<HTMLElement>('handle')
 const content = useTemplateRef<HTMLElement>('content')
 

@@ -3,7 +3,8 @@
     <Transition
       name="ui-dialog"
       appear
-      :css="!forceMount"
+      v-bind="motionHooks"
+      :css="!forceMount && motionTransition.css !== false"
       @enter="aimAtTrigger"
       @before-leave="aimAtTrigger"
       @after-leave="releaseScroll"
@@ -21,6 +22,7 @@
         :data-contained="contained || undefined"
         :data-force-mount="forceMount || undefined"
         :data-origin="fromTrigger ? 'trigger' : undefined"
+        :data-ui-motion="motionTransition.css === false ? '' : undefined"
       >
         <div
           v-if="modal"
@@ -33,6 +35,7 @@
         />
         <div
           ref="panel"
+          data-ui-presence
           :role="role"
           :aria-modal="modal && !contained ? 'true' : undefined"
           tabindex="-1"
@@ -115,6 +118,8 @@
               :isClosing="isClosing"
               :cancelClose="cancelClose"
               :panelEl="panelEl"
+              :target="target"
+              :phase="phase"
             />
           </div>
           <footer v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
@@ -128,6 +133,7 @@
 
 <script lang="ts">
 import type { UiPartValue } from '../../classes'
+import type { MotionPhase } from '../../motion/types'
 
 export type DialogSize = 'sm' | 'md' | 'lg'
 /** `top`/`bottom`/`left`/`right` anchor the panel to that viewport edge and slide instead of scale. */
@@ -184,6 +190,12 @@ export interface DialogProps {
   beforeClose?: (done: () => void) => void
   /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
+  /**
+   * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, states by part
+   * (`initial: { panel: { … } }`), your `targets`, or `enter`/`leave` hooks for a library.
+   * Unset, it follows the nearest ConfigProvider's style.
+   */
+  motion?: DialogMotion
   /** Teleport target: a CSS selector. Wins over `container` either way. */
   teleportTo?: string
   /** Scopes the panel to an element instead of the viewport. The overlay, scroll lock and modality
@@ -212,12 +224,25 @@ export interface DialogProps {
     close: UiPartValue
   }>
 }
+
+/** What a template ref to Dialog gives you; Dialog is generic, so `InstanceType<typeof Dialog>` can't. */
+export interface DialogExposed {
+  panelEl: HTMLElement | null
+  phase: MotionPhase
+  overlayEl: HTMLElement | null
+  isClosing: boolean
+  close: () => void
+  cancelClose: () => void
+  maximized: boolean
+}
 </script>
 
 <!-- v-if mode: Transition owns enter/exit; forceMount: v-show + consumer drives motion. -->
-<script setup lang="ts">
+<!-- Generic over your target names, so `target('…')` autocompletes from `motion.targets`. -->
+<script setup lang="ts" generic="N extends string = string">
 import './Dialog.css'
 import '../shared/tokens.css'
+import '../shared/motion.css'
 import { computed, inject, ref, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { useEventListener } from '@vueuse/core'
@@ -228,6 +253,8 @@ import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useComponentMotion } from '../../motion/useComponentMotion'
+import type { MotionRef, DialogMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -239,35 +266,47 @@ const open = defineModel<boolean>('open', { default: false })
  */
 const maximized = defineModel<boolean>('maximized', { default: false })
 
-const props = withDefaults(defineProps<DialogProps>(), {
-  size: 'md',
-  position: 'center',
-  origin: 'center',
-  role: 'dialog',
-  showClose: true,
-  modal: true,
-  flush: false,
-  closeOnEsc: true,
-  closeOnOverlay: true,
-  closeOnHistoryBack: false,
-  forceMount: false,
-  scrollFade: true,
-  maximizable: false,
-})
+const props = withDefaults(
+  defineProps<Omit<DialogProps, 'motion'> & { motion?: DialogMotion<N> }>(),
+  {
+    // Unset means "follow the app"; without this Vue would read a missing boolean prop as false.
+    motion: undefined,
+    size: 'md',
+    position: 'center',
+    origin: 'center',
+    role: 'dialog',
+    showClose: true,
+    modal: true,
+    flush: false,
+    closeOnEsc: true,
+    closeOnOverlay: true,
+    closeOnHistoryBack: false,
+    forceMount: false,
+    scrollFade: true,
+    maximizable: false,
+  },
+)
 
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the dialog open. */
   'open-change': [value: boolean, details: DialogOpenChangeDetails]
+  /** Fires once it has finished opening. */
+  'after-enter': []
+  /** Fires once it has finished closing. */
+  'after-leave': []
 }>()
 
 defineSlots<{
-  /** Body content; receives `close`, `open`, `isClosing`, `cancelClose` and `panelEl`. */
+  /** Body content; receives `close`, `open`, `isClosing`, `cancelClose`, `panelEl`, `target` and `phase`. */
   default(props: {
     close: () => void
     open: boolean
     isClosing: boolean
     cancelClose: () => void
     panelEl: HTMLElement | null
+    /** Marks an element to animate under one of your `motion.targets` names: `:ref="target('rows')"`. */
+    target: (name: N) => MotionRef
+    phase: MotionPhase
   }): unknown
   /** Replaces the default title/description header. */
   header(props: { close: () => void }): unknown
@@ -397,7 +436,46 @@ function aimAtTrigger() {
   const x = trigger.left + trigger.width / 2 - (parent.left + panel.offsetLeft)
   const y = trigger.top + trigger.height / 2 - (parent.top + panel.offsetTop)
   triggerOrigin.value = `${Math.round(x)}px ${Math.round(y)}px`
+  // Written now as well: the style binding lands a render later, after the first frames have scaled.
+  panel.style.transformOrigin = triggerOrigin.value
 }
+
+const motion = useComponentMotion({
+  name: 'Dialog',
+  role: 'overlay',
+  key: 'dialog',
+  mainPart: 'panel',
+  parts: () => ({ panel: panelEl.value, overlay: overlayEl.value }),
+  root: () => panelEl.value,
+  motion: () => props.motion,
+  // The built-in look, so `{ spring }` alone keeps it and only changes the feel.
+  defaults: () => ({
+    panel: fromTrigger.value
+      ? { opacity: 0, scale: '0.5' }
+      : props.position === 'top'
+        ? { opacity: 0, y: -12 }
+        : { opacity: 0, scale: '0.96' },
+    overlay: { opacity: 0 },
+  }),
+})
+const { target, phase } = motion
+const motionTransition = motion.transition
+const motionHooks = computed(() => {
+  const { css: _css, ...hooks } = motionTransition.value
+  return {
+    ...hooks,
+    onBeforeEnter: () => (phase.value = 'entering'),
+    onAfterEnter: () => {
+      phase.value = 'entered'
+      emit('after-enter')
+    },
+    onBeforeLeave: () => (phase.value = 'leaving'),
+    onAfterLeave: () => {
+      phase.value = 'left'
+      emit('after-leave')
+    },
+  }
+})
 const panelStyle = computed<Record<string, string | undefined>>(() => {
   const base: Record<string, string | undefined> = {
     position: 'relative',
@@ -495,6 +573,8 @@ const closePart = computed(() => resolveUiPart(cx, themedUi()?.close, 'ui-dialog
 defineExpose({
   /** Panel element (`null` while closed). */
   panelEl,
+  /** `'entering' | 'entered' | 'leaving' | 'left'`. */
+  phase,
   /**
    * Backdrop element. `null` while closed or when `modal` is `false`. With `forceMount`, an inline
    * `opacity` on it replaces the built-in fade.
