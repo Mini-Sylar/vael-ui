@@ -303,9 +303,13 @@ test('clicking a tall folder over and over never makes the rows jump', async () 
   chevron().click()
   await settle()
 
-  // The biggest single-frame move in one plain open is the yardstick.
+  // The biggest single-frame move in one plain open is the yardstick. Steps are measured per
+  // 60Hz frame: a frame the runner dropped covers twice the time, and its step would otherwise
+  // read as a jump. A real snap inside a normal frame still counts in full.
+  const FRAME = 1000 / 60
   async function trace(clickEvery: number, clicks: number): Promise<number[]> {
     const tops = [below()]
+    const times = [performance.now()]
     let clicked = 0
     let last = -Infinity
     const t0 = performance.now()
@@ -315,10 +319,14 @@ test('clicking a tall folder over and over never makes the rows jump', async () 
         clicked++
         last = performance.now()
       }
-      await new Promise((resolve) => requestAnimationFrame(resolve))
+      times.push(await new Promise<number>((resolve) => requestAnimationFrame(resolve)))
       tops.push(below())
     }
-    return tops.slice(1).map((top, i) => Math.abs(top - tops[i]!))
+    return tops
+      .slice(1)
+      .map(
+        (top, i) => (Math.abs(top - tops[i]!) * FRAME) / Math.max(FRAME, times[i + 1]! - times[i]!),
+      )
   }
   const plain = Math.max(...(await trace(1000, 1)))
   await settle()
