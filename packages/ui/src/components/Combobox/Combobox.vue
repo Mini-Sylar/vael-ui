@@ -36,8 +36,8 @@
         @leave-cancelled="resetLeaveStyles"
         tag="span"
         class="ui-combobox-chips"
-        :css="props.motionCss"
-        :data-motion="props.motionCss ? undefined : 'off'"
+        :css="props.motion"
+        :data-motion="props.motion ? undefined : 'off'"
         @enter="chipEnterHook"
         @leave="chipLeaveHook"
       >
@@ -59,11 +59,14 @@
       </TransitionGroup>
       <slot name="start" />
     </template>
+    <template v-if="$slots.display" #display="displayProps">
+      <slot name="display" v-bind="displayProps" />
+    </template>
     <template #end>
       <slot name="end" />
       <Transition
         name="ui-clear"
-        :css="props.motionCss"
+        :css="props.motion"
         @enter="measureClearSpace"
         @leave="startClearLeave"
         @leave-cancelled="resetLeaveStyles"
@@ -144,7 +147,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :motion="props.motionCss"
+            :motion="props.motion"
             :sections="listSections"
             :ui="{
               list: themedUi()?.list,
@@ -417,7 +420,7 @@ const rawProps = withDefaults(
      * `@chip-enter`/`@chip-leave`.
      * @default true
      */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -458,10 +461,10 @@ const rawProps = withDefaults(
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,
-    motionCss: undefined,
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */
@@ -475,7 +478,7 @@ const emit = defineEmits<{
   /** Fires before the typed text commits as a custom value. Call `details.cancel()` to veto it,
    * for validation or an async create that sets the model itself. */
   create: [query: string, details: ComboboxCreateDetails]
-  /** Fires instead of the built-in CSS transition when `motionCss` is `false`. Call `done()` once your enter animation finishes. */
+  /** Fires instead of the built-in CSS transition when `motion` is `false`. Call `done()` once your enter animation finishes. */
   'chip-enter': [el: Element, done: () => void]
   /** Same as `@chip-enter`, for a chip's removal. */
   'chip-leave': [el: Element, done: () => void]
@@ -483,10 +486,10 @@ const emit = defineEmits<{
 
 // Same shape as SpeedDial's own enterHook/leaveHook.
 const chipEnterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
+  props.motion ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
 )
 const chipLeaveHook = computed(() =>
-  props.motionCss
+  props.motion
     ? collapseLeavingChip
     : (el: Element, done: () => void) => emit('chip-leave', el, done),
 )
@@ -496,6 +499,11 @@ defineSlots<{
   start(): unknown
   /** Content before the built-in clear button and chevron, inside Input's `#end`. */
   end(): unknown
+  /**
+   * Draws the typed text yourself over the field's own text, as Input's `#display`. With
+   * `multiple`, it covers the query after the chips; the chips stay as they are.
+   */
+  display(props: { value: string; placeholder: string; focused: boolean }): unknown
   /** Content above the listbox, inside the popover panel. `count` and `total` support a result-count readout. */
   header(props: { count: number; total: number }): unknown
   /** Custom row content for each option. `query` is the trimmed typed text, for highlighting the match. */
@@ -959,7 +967,7 @@ defineExpose({
   positionerEl,
   /** Scrollable listbox element (null while closed). */
   listEl,
-  /** The hover and keyboard highlight, sliding between options (null while closed). With `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between options (null while closed). With `motion: false` it moves at once, for your own animation. */
   highlightEl: indicatorEl,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,

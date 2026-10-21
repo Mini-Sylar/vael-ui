@@ -3,6 +3,7 @@ import type { MaybeRefOrGetter } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
 import type { ElRef } from './dom'
+import { prefersReducedMotion } from './dom'
 
 export type DockOrientation = 'horizontal' | 'vertical'
 
@@ -287,7 +288,7 @@ export function useDock(
   function canMagnify(event?: PointerEvent): boolean {
     if (isDisabled() || !magnifyEnabled()) return false
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false
+    if (prefersReducedMotion()) return false
     if (event && (event.pointerType === 'touch' || event.pointerType === 'pen')) {
       if (!touchStart || !(event.buttons > 0 || event.pressure > 0)) return false
       if (!touchSliding)

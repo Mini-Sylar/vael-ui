@@ -184,14 +184,56 @@
   /* The press: the box layer and the contents layer scale together from the centre. */
   .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)::before,
   .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)
-    .ui-button-inner {
+    .ui-button-inner,
+  .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)
+    .ui-button-hold,
+  .ui-button[data-hold='holding']::before,
+  .ui-button[data-hold='holding'] .ui-button-inner,
+  .ui-button[data-hold='holding'] .ui-button-hold {
     scale: 0.96;
+  }
+
+  /* hold: a fill sweeps across while you hold, linear so it reads as time, and snaps back on release. */
+  .ui-button[data-hold] {
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  .ui-button-hold {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0.2;
+    clip-path: inset(0 100% 0 0);
+    pointer-events: none;
+    transition:
+      clip-path 200ms var(--ui-ease-out),
+      scale var(--ui-duration-press) var(--ui-ease-out);
+  }
+  .ui-button-hold:dir(rtl) {
+    clip-path: inset(0 0 0 100%);
+  }
+  .ui-button[data-hold='holding'] .ui-button-hold,
+  .ui-button[data-hold='done'] .ui-button-hold {
+    clip-path: inset(0);
+  }
+  .ui-button[data-hold='holding'] .ui-button-hold {
+    transition:
+      clip-path var(--ui-hold-duration) linear,
+      scale var(--ui-duration-press) var(--ui-ease-out);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)::before,
     .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)
-      .ui-button-inner {
+      .ui-button-inner,
+    .ui-button:active:not(:disabled):not(.ui-button--disabled):not(.ui-button--loading)
+      .ui-button-hold,
+    .ui-button[data-hold='holding']::before,
+    .ui-button[data-hold='holding'] .ui-button-inner,
+    .ui-button[data-hold='holding'] .ui-button-hold {
       scale: 1;
     }
   }

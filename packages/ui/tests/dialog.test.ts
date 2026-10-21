@@ -3,6 +3,7 @@ import '../src/style.css'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, shallowRef } from 'vue'
 import DialogFixture from './fixtures/DialogFixture.vue'
 import DialogChromeFixture from './fixtures/DialogChromeFixture.vue'
 import DialogLongContentFixture from './fixtures/DialogLongContentFixture.vue'
@@ -357,4 +358,44 @@ test('reopening a dialog mid-exit keeps the scroll lock, and the next close stil
   await userEvent.keyboard('{Escape}')
   await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull())
   await vi.waitFor(() => expect(document.body.style.overflow).toBe(''))
+})
+
+test('origin="trigger" grows the panel out of the element that opened it', async () => {
+  const open = shallowRef(false)
+  const screen = await render(
+    {
+      render: () => [
+        h(
+          'button',
+          {
+            id: 'opener',
+            style: 'position: fixed; left: 20px; top: 30px; width: 40px; height: 20px',
+            onClick: () => (open.value = true),
+          },
+          'Open',
+        ),
+        h(Dialog, {
+          open: open.value,
+          'onUpdate:open': (v: boolean) => (open.value = v),
+          origin: 'trigger',
+          title: 'Details',
+        }),
+      ],
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  const opener = screen.container.querySelector<HTMLButtonElement>('#opener')!
+  opener.focus()
+  opener.click()
+  const panel = await vi.waitFor(() => {
+    const el = document.querySelector<HTMLElement>('.ui-dialog-panel')
+    expect(el?.style.transformOrigin).toBeTruthy()
+    return el!
+  })
+  expect(panel.closest('.ui-dialog')!.getAttribute('data-origin')).toBe('trigger')
+  const [x, y] = panel.style.transformOrigin.split(' ').map(parseFloat) as [number, number]
+  const parent = (panel.offsetParent as HTMLElement).getBoundingClientRect()
+  expect(Math.abs(parent.left + panel.offsetLeft + x - 40)).toBeLessThanOrEqual(1)
+  expect(Math.abs(parent.top + panel.offsetTop + y - 40)).toBeLessThanOrEqual(1)
+  open.value = false
 })

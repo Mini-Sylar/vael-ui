@@ -16,7 +16,7 @@
         :class="rootPart.class"
         :style="[rootStyle, rootPart.style]"
         v-bind="listAttrs"
-        :css="props.motionCss"
+        :css="props.motion"
         :data-expanded="expanded"
         :data-contained="contained || undefined"
         :data-y-position="yPos"
@@ -180,7 +180,7 @@ const rawProps = withDefaults(
      * some toasts there. Omit it for a page-level toaster. */
     container?: DOMTarget
     /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -198,27 +198,27 @@ const rawProps = withDefaults(
     maxVisible: 4,
     expand: false,
     gap: 10,
-    motionCss: undefined,
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
-  /** Fires when a toast enters, only while `motionCss` is `false`. Run your own animation, then call
+  /** Fires when a toast enters, only while `motion` is `false`. Run your own animation, then call
    * `done()`. */
   'card-enter': [el: Element, done: () => void]
   /** Same as `@card-enter`, for a toast leaving. */
   'card-leave': [el: Element, done: () => void]
 }>()
 
-// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
+// Only the component's own motion="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('card-enter', el, done),
 )
 const leaveHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('card-leave', el, done),
 )

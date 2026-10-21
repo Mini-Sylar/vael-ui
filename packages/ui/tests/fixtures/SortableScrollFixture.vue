@@ -5,7 +5,7 @@
       item-key="id"
       label-key="label"
       :auto-scroll="autoScroll"
-      :motion-css="false"
+      :motion="false"
     >
       <template #item="{ item }">
         <span style="display: block; height: 24px">{{ item.label }}</span>

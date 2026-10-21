@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Extreme: actions spring out of the trigger (motion-v)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> hands the actions to <code>@action-enter</code> and
+      <code>:motion="false"</code> hands the actions to <code>@action-enter</code> and
       <code>@action-leave</code>. They spring out of the trigger one after another and pull back in
       reverse. The exposed <code>iconEl</code> turns on the same spring.
     </p>
@@ -13,7 +13,7 @@
         aria-label="Quick actions"
         direction="quarter-circle"
         :items="items"
-        :motion-css="false"
+        :motion="false"
         @action-enter="onEnter"
         @action-leave="onLeave"
       />

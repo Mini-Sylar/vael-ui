@@ -48,8 +48,8 @@
         v-scroll-mask
         :class="listPart.class"
         :style="listPart.style"
-        :name="props.motionCss ? 'ui-command-palette-row' : undefined"
-        :css="props.motionCss"
+        :name="props.motion ? 'ui-command-palette-row' : undefined"
+        :css="props.motion"
         move-class="ui-command-palette-row-move"
         @enter="enterHook"
         @leave="leaveHook"
@@ -217,7 +217,7 @@ const rawProps = withDefaults(
      * each appearing and disappearing row to `@item-enter`/`@item-leave` instead.
      * @default true
      */
-    motionCss?: boolean
+    motion?: boolean
     /** Teleport target: a CSS selector. Takes precedence over `container`. */
     teleportTo?: string
     /** Scopes the palette to one element instead of the viewport. Forwarded to the underlying Dialog. */
@@ -243,31 +243,31 @@ const rawProps = withDefaults(
     closeOnEsc: true,
     closeOnOverlay: true,
     forceMount: false,
-    motionCss: undefined,
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when you pick an enabled item by click or Enter. */
   select: [item: T]
   /** Fires before the palette closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: DialogOpenChangeDetails]
-  /** Fires as a row appears while you type, only while `motionCss` is `false`. Run your own
+  /** Fires as a row appears while you type, only while `motion` is `false`. Run your own
    * animation, then call `done()`. */
   'item-enter': [el: Element, done: () => void]
   /** Same as `@item-enter`, for a row disappearing. */
   'item-leave': [el: Element, done: () => void]
 }>()
 
-// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
+// Only the component's own motion="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('item-enter', el, done),
 )
 const leaveHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('item-leave', el, done),
 )
@@ -398,14 +398,14 @@ const { style: indicatorStyle } = useTabIndicator(() => [activeIndex.value, rows
   scroller: true,
   matchCross: true,
   maxGlide: 3,
-  motion: () => props.motionCss,
+  motion: () => props.motion,
   indicatorEl,
 })
 
 useEasedHeight({
   el: () => listEl.value,
   source: rows,
-  enabled: () => props.motionCss,
+  enabled: () => props.motion,
   edgeProperty: '--ui-command-palette-edge',
 })
 
@@ -538,7 +538,7 @@ defineExpose({
   inputEl,
   /** Results list element (null while closed). */
   listEl,
-  /** The hover and keyboard highlight, sliding between items (null while closed). With `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between items (null while closed). With `motion: false` it moves at once, for your own animation. */
   highlightEl: indicatorEl,
   /** Items matching the current query, in `items` order. */
   filteredItems,

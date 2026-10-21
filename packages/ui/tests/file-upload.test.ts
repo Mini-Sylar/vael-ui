@@ -27,12 +27,12 @@ function dropOn(el: Element, files: File[]) {
   el.dispatchEvent(dragEventWithFiles('drop', dataTransfer))
 }
 
-test('motionCss=false hands the item enter/leave transition to item-enter/item-leave instead of running the built-in CSS transition', async () => {
+test('motion=false hands the item enter/leave transition to item-enter/item-leave instead of running the built-in CSS transition', async () => {
   const { default: FileUpload } = await import('../src/components/FileUpload/FileUpload.vue')
   const enters: Array<[Element, () => void]> = []
   const leaves: Array<[Element, () => void]> = []
   const screen = await render(FileUpload, {
-    props: { motionCss: false },
+    props: { motion: false },
     attrs: {
       onItemEnter: (el: Element, done: () => void) => enters.push([el, done]),
       onItemLeave: (el: Element, done: () => void) => leaves.push([el, done]),

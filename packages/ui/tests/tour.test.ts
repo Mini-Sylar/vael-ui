@@ -218,20 +218,20 @@ test('the spotlight glides between steps by default', async () => {
   expect(firstFrame).not.toBe(settled)
 })
 
-test('motionCss false: the cutout jumps to the next target', async () => {
-  const tour = await renderMotionTour({ motionCss: false })
+test('motion false: the cutout jumps to the next target', async () => {
+  const tour = await renderMotionTour({ motion: false })
   const { firstFrame, settled } = await cutoutAfterNext(tour)
   expect(firstFrame).toBe(settled)
 })
 
-test('motionCss false from a provider turns the glide off too', async () => {
-  const off = await renderMotionTour({}, { motionCss: false })
+test('motion false from a provider turns the glide off too', async () => {
+  const off = await renderMotionTour({}, { motion: false })
   const result = await cutoutAfterNext(off)
   expect(result.firstFrame).toBe(result.settled)
 })
 
 test('an inline clip-path on the exposed spotlight wins, and removing it shows Tour’s cutout again', async () => {
-  const tour = await renderMotionTour({ motionCss: false })
+  const tour = await renderMotionTour({ motion: false })
   const spotlight = tour.value!.spotlightEl as HTMLElement
   await vi.waitFor(() => expect(cutoutOf(spotlight)).toContain('path('))
   const own = getComputedStyle(spotlight).clipPath
@@ -256,7 +256,7 @@ test('the callout is at its new position by the first animation frame after @ste
     h(Tour as never, {
       ref: (instance: unknown) => (tour.value = instance as TourHandle | null),
       open: true,
-      motionCss: false,
+      motion: false,
       steps: [
         { target: '#frame-a', title: 'Frame A' },
         {

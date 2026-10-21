@@ -2,6 +2,10 @@ import { inject, shallowRef, toValue } from 'vue'
 import type { InjectionKey, MaybeRefOrGetter, Ref } from 'vue'
 
 export interface UiMessages {
+  button: {
+    /** Read out on a Button with `hold`, which only acts after a press and hold. */
+    hold: string
+  }
   dialog: {
     close: string
     maximize: string
@@ -167,6 +171,7 @@ export type PartialUiMessages = {
 }
 
 export const defaultMessages: UiMessages = {
+  button: { hold: 'Press and hold to confirm' },
   dialog: { close: 'Close', maximize: 'Maximize', restore: 'Restore' },
   toast: { dismiss: 'Dismiss' },
   message: { dismiss: 'Dismiss' },
@@ -275,6 +280,7 @@ export function useUiMessages(): Ref<UiMessages> {
 export function mergeMessages(base: UiMessages, overrides?: PartialUiMessages): UiMessages {
   if (!overrides) return base
   return {
+    button: { ...base.button, ...overrides.button },
     dialog: { ...base.dialog, ...overrides.dialog },
     toast: { ...base.toast, ...overrides.toast },
     message: { ...base.message, ...overrides.message },
@@ -322,6 +328,7 @@ export interface I18nInstance {
  * there falls back to our English default instead of leaking the raw path.
  */
 const i18nKeyMap: { [K in keyof UiMessages]: { [F in keyof UiMessages[K]]: string } } = {
+  button: { hold: 'uiKit.button.hold' },
   dialog: {
     close: 'uiKit.dialog.close',
     maximize: 'uiKit.dialog.maximize',
@@ -471,6 +478,9 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
     else found++
     return text
   }
+
+  const hold = t(i18nKeyMap.button.hold)
+  if (hold !== i18nKeyMap.button.hold) result.button = { hold }
 
   const close = t(i18nKeyMap.dialog.close)
   const maximize = t(i18nKeyMap.dialog.maximize)
@@ -722,6 +732,13 @@ export function resolveMessagesFromI18n(i18n: I18nInstance): PartialUiMessages {
     if (text !== i18nKeyMap.calendar[key]) calendar[key] = text
   }
   if (Object.keys(calendar).length > 0) result.calendar = calendar
+
+  const colorPicker: PartialUiMessages['colorPicker'] = {}
+  for (const key of Object.keys(i18nKeyMap.colorPicker) as (keyof UiMessages['colorPicker'])[]) {
+    const text = t(i18nKeyMap.colorPicker[key])
+    if (text !== i18nKeyMap.colorPicker[key]) colorPicker[key] = text
+  }
+  if (Object.keys(colorPicker).length > 0) result.colorPicker = colorPicker
 
   if (isDev() && found > 0 && missing.length > 0) {
     const locale = toValue(i18n.locale) ?? ''

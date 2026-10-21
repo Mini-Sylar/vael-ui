@@ -26,12 +26,12 @@
     <span :class="valuePart.class" :style="valuePart.style">
       <slot name="value" :selected="selectedNodes as T[]">
         <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
-        <span v-else>{{ displayLabel }}</span>
+        <LazyAnimatedText v-else :value="displayLabel" :motion="props.motion" />
       </slot>
     </span>
     <Transition
       name="ui-clear"
-      :css="props.motionCss"
+      :css="props.motion"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -84,7 +84,7 @@
           ref="panel"
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
-          :data-motion="props.motionCss ? undefined : 'off'"
+          :data-motion="props.motion ? undefined : 'off'"
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -102,7 +102,7 @@
             :filterable="filterable"
             :filter-placeholder="filterPlaceholder"
             :empty-text="emptyText"
-            :motion-css="props.motionCss"
+            :motion="props.motion"
             :expand-on-row-click="expandOnRowClick"
             :sticky-scroll="stickyScroll"
             :ui="treeUi"
@@ -171,6 +171,7 @@ import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import Tree from '../Tree/Tree.vue'
+import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -273,7 +274,7 @@ const rawProps = withDefaults(
     maxPanelHeight?: number
     /** `false` skips all built-in motion (row transitions, chevron rotation, the panel and list easing
      * to a new height, and the clear button). @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
@@ -311,11 +312,11 @@ const rawProps = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
-    motionCss: undefined,
+    motion: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */

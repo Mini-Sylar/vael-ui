@@ -13,6 +13,7 @@ import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
 import { contentOffset, findScrollParent, scrollIntoReach } from './sortableAutoScroll'
 import type { Point } from './sortableSettle'
+import { prefersReducedMotion } from './dom'
 
 /** Where a dragged value sits, or would land, within one member list. */
 export interface GroupDropPosition {
@@ -37,7 +38,7 @@ export interface UseSortableGroupOptions {
   /** `beforeDrop` threw or rejected; the move is already reverted by the time this fires. */
   onDropError?: (error: unknown, details: GroupDropDetails) => void
   /** `false` skips the springs for the ghost gap opened in a foreign column while hovering it. */
-  motionCss?: MaybeRefOrGetter<boolean>
+  motion?: MaybeRefOrGetter<boolean>
 }
 
 interface GroupContainerRect {
@@ -136,10 +137,8 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
   let ghostSprings = new Map<string | number, SpringHandle>()
 
   function reducedMotion(): boolean {
-    if (toValue(options.motionCss) === false) return true
-    return (
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    )
+    if (toValue(options.motion) === false) return true
+    return prefersReducedMotion()
   }
 
   function containerRects(): GroupContainerRect[] {

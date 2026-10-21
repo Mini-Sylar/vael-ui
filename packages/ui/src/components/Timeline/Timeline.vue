@@ -6,8 +6,8 @@
     tag="ol"
     :class="rootPart.class"
     :style="rootPart.style"
-    :name="props.motionCss ? 'ui-timeline-item' : undefined"
-    :css="props.motionCss"
+    :name="props.motion ? 'ui-timeline-item' : undefined"
+    :css="props.motion"
     @enter="enterHook"
     @leave="leaveHook"
   >
@@ -137,7 +137,7 @@ const rawProps = withDefaults(
     /** Lays the entries out in a row or a column. @default 'vertical' */
     orientation?: 'horizontal' | 'vertical'
     /** Gates the connector fill transition and the item enter/leave/move animation. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Adds a looping pulse ring to the active marker. @default false */
     pulse?: boolean
     /**
@@ -165,15 +165,15 @@ const rawProps = withDefaults(
   }>(),
   {
     orientation: 'vertical',
-    motionCss: undefined,
+    motion: undefined,
     pulse: false,
     itemKey: (_item: T, index: number) => index,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
-  /** Fires when an item enters, only while `motionCss` is `false`. Run your own animation, then call
+  /** Fires when an item enters, only while `motion` is `false`. Run your own animation, then call
    * `done()`. `parts` holds the step's marker, connectors, content and opposite elements. */
   'item-enter': [el: Element, done: () => void, parts: TimelineItemParts]
   /** Same as `@item-enter`, for an item leaving. */
@@ -196,14 +196,14 @@ function partsOf(el: Element): TimelineItemParts {
     opposite: child(el, 'ui-timeline-opposite'),
   }
 }
-// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
+// Only the component's own motion="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('item-enter', el, done, partsOf(el)),
 )
 const leaveHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('item-leave', el, done, partsOf(el)),
 )
@@ -284,7 +284,7 @@ const rootPart = computed(() =>
     `ui-timeline--${props.orientation}`,
     hasSlot('opposite') && 'ui-timeline--has-opposite',
     props.pulse && 'ui-timeline--pulse',
-    !props.motionCss && 'ui-timeline--no-motion',
+    !props.motion && 'ui-timeline--no-motion',
   ),
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-timeline-step'))

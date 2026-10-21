@@ -11,11 +11,11 @@
         scope it. The highlight still shows; it moves at once. This switch does exactly that.
       </li>
       <li>
-        <strong>All motion:</strong> <code>&lt;ConfigProvider :motion-css="false"&gt;</code> zeroes
+        <strong>All motion:</strong> <code>&lt;ConfigProvider :motion="false"&gt;</code> zeroes
         every vael-ui duration, the glide included.
       </li>
       <li>
-        <strong>One component:</strong> <code>motion-css="false"</code> on Select, Combobox,
+        <strong>One component:</strong> <code>motion="false"</code> on Select, Combobox,
         CommandPalette, Tree, Pagination, DataTable or Calendar. Its highlight moves at once, and
         its exposed indicator element is yours to animate.
       </li>

@@ -74,7 +74,7 @@ const rawProps = withDefaults(
     /** Secondary line under the label. */
     description?: string
     /** `false` skips built-in transitions; animate the exposed `controlEl`/`dotEl` yourself. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -83,9 +83,9 @@ const rawProps = withDefaults(
       description: UiPartValue
     }>
   }>(),
-  { motionCss: undefined },
+  { motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 defineSlots<{
   /** Label content; replaces the `label` text. Receives `checked`. */
@@ -109,7 +109,7 @@ const dataState = computed(() => (isChecked.value ? 'checked' : 'unchecked'))
 
 // First paint only: suppress transitions to prevent initial render
 const firstPaint = shallowRef(true)
-const skipTransition = computed(() => firstPaint.value || !props.motionCss)
+const skipTransition = computed(() => firstPaint.value || !props.motion)
 onMounted(() => {
   void nextTick(() => {
     firstPaint.value = false

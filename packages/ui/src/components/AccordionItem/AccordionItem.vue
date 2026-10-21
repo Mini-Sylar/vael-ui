@@ -2,7 +2,7 @@
   <div
     :class="itemPart.class"
     :style="itemPart.style"
-    :data-motion="ctx.motionCss() ? undefined : 'off'"
+    :data-motion="ctx.motion() ? undefined : 'off'"
     v-bind="attrs"
   >
     <component :is="headingTag" :class="headerPart.class" :style="headerPart.style">
@@ -56,7 +56,7 @@
   </div>
 </template>
 
-<!-- No beforeClose: panel always mounted (collapsed); data-state + motionCss={false} + exposed panelEl for exit animation -->
+<!-- No beforeClose: panel always mounted (collapsed); data-state + motion={false} + exposed panelEl for exit animation -->
 <script setup lang="ts">
 import './AccordionItem.css'
 import '../shared/tokens.css'
@@ -118,7 +118,7 @@ const panelId = useId()
 const panel = useTemplateRef<HTMLElement>('panel')
 const { style: collapseStyle, state: collapseState } = useCollapse(isOpenValue, {
   el: panel,
-  motionCss: ctx.motionCss,
+  motion: ctx.motion,
   handOff: ctx.handOff,
 })
 

@@ -14,11 +14,11 @@ const settled = async () => {
   await nextTick()
 }
 
-test('Radio: motionCss=false switches its transitions off, and the elements are exposed', async () => {
+test('Radio: motion=false switches its transitions off, and the elements are exposed', async () => {
   const radio = shallowRef<InstanceType<typeof Radio> | null>(null)
-  const make = (motionCss: boolean) =>
+  const make = (motion: boolean) =>
     h(RadioGroup, { modelValue: 'a' }, () => [
-      h(Radio, { ref: radio, value: 'a', label: 'A', motionCss }),
+      h(Radio, { ref: radio, value: 'a', label: 'A', motion }),
     ])
   const on = await render(() => make(true))
   await settled()
@@ -34,11 +34,11 @@ test('Radio: motionCss=false switches its transitions off, and the elements are 
   expect(getComputedStyle(root.querySelector('.ui-radio-dot')!).transitionDuration).toBe('0s')
 })
 
-test('Pagination: motionCss=false stops the indicator sliding, and the elements are exposed', async () => {
+test('Pagination: motion=false stops the indicator sliding, and the elements are exposed', async () => {
   const pagination = shallowRef<InstanceType<typeof Pagination> | null>(null)
   const page = shallowRef(3)
-  const make = (motionCss: boolean) =>
-    h(Pagination, { ref: pagination, page: page.value, total: 100, motionCss })
+  const make = (motion: boolean) =>
+    h(Pagination, { ref: pagination, page: page.value, total: 100, motion })
   const root = () => document.querySelector('.ui-pagination')!
   const slide = async () => {
     page.value = page.value === 3 ? 4 : 3
@@ -59,10 +59,10 @@ test('Pagination: motionCss=false stops the indicator sliding, and the elements 
   expect(await slide()).toBe('0s')
 })
 
-test('PullToRefresh: motionCss=false skips the settle transitions, and zoneEl is exposed', async () => {
+test('PullToRefresh: motion=false skips the settle transitions, and zoneEl is exposed', async () => {
   const ptr = shallowRef<InstanceType<typeof PullToRefresh> | null>(null)
-  const make = (motionCss: boolean) =>
-    h(PullToRefresh, { ref: ptr, onRefresh: () => {}, motionCss, style: 'block-size: 200px' }, () =>
+  const make = (motion: boolean) =>
+    h(PullToRefresh, { ref: ptr, onRefresh: () => {}, motion, style: 'block-size: 200px' }, () =>
       h('div', { style: 'block-size: 800px' }, 'content'),
     )
   const on = await render(() => make(true))

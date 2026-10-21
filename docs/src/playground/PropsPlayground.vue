@@ -879,7 +879,7 @@ const radioGroupValue = shallowRef<string | number | null>(null)
 const previewEl = useTemplateRef<HTMLElement>('previewEl')
 
 const CONTROL_HELP: Record<string, string> = {
-  motionCss:
+  motion:
     'Turn off the built-in CSS transition to animate this yourself with GSAP, motion-v, or plain CSS.',
   forceMount:
     'Keeps this mounted while closed, so your animation library runs the exit instead of Vue removing it.',
@@ -891,7 +891,7 @@ const CONTROL_HELP: Record<string, string> = {
 
 // Where a hint's "?" leads, for the props a guide covers.
 const CONTROL_GUIDE: Record<string, string> = {
-  motionCss: '/docs/guides/animation-integration',
+  motion: '/docs/guides/animation-integration',
   forceMount: '/docs/guides/animation-integration',
 }
 
@@ -1220,7 +1220,7 @@ function isChanged(name: string): boolean {
 
 // Props that only act during a drag: changing one shows nothing until you drag, so the preview says so.
 const DRAG_TIME_PROPS: Record<string, string[]> = {
-  Sortable: ['previewMode', 'restrictToList', 'autoScroll', 'touchDragDelay', 'motionCss'],
+  Sortable: ['previewMode', 'restrictToList', 'autoScroll', 'touchDragDelay', 'motion'],
 }
 const dragHint = computed(() => {
   const changed = (DRAG_TIME_PROPS[props.name] ?? []).filter((name) => isChanged(name))
@@ -1398,7 +1398,7 @@ function onHandleKey(event: KeyboardEvent) {
 // attribute per line once it stops fitting on one.
 function metaDefault(name: string): unknown {
   const raw = meta.value?.props.find((p) => p.name === name)?.default
-  // A boolean left `undefined` takes its value from ConfigProvider (motionCss), which is on, so
+  // A boolean left `undefined` takes its value from ConfigProvider (motion), which is on, so
   // the playground seeds it on too; only turning it off is worth showing in the snippet.
   const control = controls.value.find((c) => c.name === name)
   if (raw === 'undefined' && control?.kind === 'boolean' && !BOOLEAN_UNSET_WHEN_OFF.has(name)) {

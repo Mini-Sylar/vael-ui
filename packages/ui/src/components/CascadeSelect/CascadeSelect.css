@@ -111,6 +111,15 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .ui-cascade-select-value .ui-animated-text-value {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+  }
+  .ui-cascade-select-value .ui-animated-text[data-sizing] .ui-animated-text-value {
+    text-overflow: clip;
+  }
   /* One row, so the placeholder sits beside the last chip while it collapses instead of under it.
      The padding is clip room for a chip remove's 24px hit area. */
   .ui-cascade-select-value:has(> .ui-cascade-select-chips) {

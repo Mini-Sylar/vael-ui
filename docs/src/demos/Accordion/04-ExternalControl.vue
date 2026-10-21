@@ -1,13 +1,13 @@
 <template>
   <section class="demo">
-    <h3>Full external control, <code>motionCss="false"</code> + GSAP height tween</h3>
+    <h3>Full external control, <code>motion="false"</code> + GSAP height tween</h3>
     <p class="note">
       The built-in transition is skipped entirely, GSAP tweens the panel's own height instead,
-      proving the escape hatch, not just the default. With <code>motionCss="false"</code> the panel
+      proving the escape hatch, not just the default. With <code>motion="false"</code> the panel
       gets no inline styles at all, so the demo owns the closed state too: a class keeps a closed
       panel at zero height, and the tween always starts from the panel's current height.
     </p>
-    <Accordion v-model:value="springValue" :motion-css="false" class="accordion-demo">
+    <Accordion v-model:value="springValue" :motion="false" class="accordion-demo">
       <AccordionItem
         ref="springItem"
         value="spring"
@@ -16,7 +16,7 @@
       >
         <p class="spring-panel-text">
           This panel's height is a GSAP tween, not the library's CSS transition. The Accordion only
-          tracks which item is open, <code>motionCss="false"</code> means it renders no inline
+          tracks which item is open, <code>motion="false"</code> means it renders no inline
           block-size style of its own at all.
         </p>
       </AccordionItem>

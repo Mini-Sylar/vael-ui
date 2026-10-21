@@ -2,7 +2,7 @@
   <ConfigProvider
     :theme="theme"
     :size="uiSize"
-    :motion-css="motion"
+    :motion="motion"
     :loader-type="loaderType"
     :i18n="i18n"
   >
@@ -133,7 +133,10 @@
               size="sm"
               icon
               :aria-label="t('header.colorScheme')"
-              @click="setMode(resolvedMode === 'dark' ? 'light' : 'dark')"
+              @click="
+                (event: MouseEvent) =>
+                  setMode(resolvedMode === 'dark' ? 'light' : 'dark', { from: event })
+              "
             >
               <!-- Both icons, picked by CSS: the prerendered HTML can't know the saved theme, so a
                    v-if showed the light icon in dark mode until the app hydrated. -->

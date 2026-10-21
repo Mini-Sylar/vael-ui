@@ -9,6 +9,8 @@
 export const COMPONENTS = [
   'Accordion',
   'AccordionItem',
+  'AnimatedNumber',
+  'AnimatedText',
   'Avatar',
   'AvatarGroup',
   'Badge',

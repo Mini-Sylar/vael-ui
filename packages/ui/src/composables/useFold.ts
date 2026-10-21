@@ -1,5 +1,6 @@
 import { onScopeDispose, shallowRef, watch } from 'vue'
 import type { Ref } from 'vue'
+import { prefersReducedMotion } from './dom'
 
 // A critically damped spring: no overshoot, and it keeps whatever speed it has when its target
 // changes, so a click mid-way turns the motion around instead of restarting it. `response` is the
@@ -119,7 +120,7 @@ export interface UseFoldOptions {
   el: () => HTMLElement | null | undefined
   /** Whether it should be open. */
   open: () => boolean
-  /** False swaps it at once instead: motion-css off, a search, arrow keys, a very large tree. */
+  /** False swaps it at once instead: motion off, a search, arrow keys, a very large tree. */
   motion: () => boolean
 }
 
@@ -134,9 +135,7 @@ export function useFold(options: UseFoldOptions): { folding: Readonly<Ref<boolea
   let pendingOpen = false
 
   function reducedMotion(): boolean {
-    return (
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    )
+    return prefersReducedMotion()
   }
 
   function finish() {

@@ -22,8 +22,8 @@ const List = defineComponent({
   },
 })
 
-const mount = (indicator: IndicatorMode, motionCss?: boolean) =>
-  render(() => h(ConfigProvider as never, { indicator, motionCss }, () => h(List)))
+const mount = (indicator: IndicatorMode, motion?: boolean) =>
+  render(() => h(ConfigProvider as never, { indicator, motion }, () => h(List)))
 
 const indicator = () => document.querySelector<HTMLElement>('.ui-indicator')!
 const top = () => indicator().getBoundingClientRect().top
@@ -57,7 +57,7 @@ test("'instant' moves the highlight with no transition", async () => {
   await vi.waitFor(() => expect(indicator().style.transitionDuration).toBe('0ms'))
 })
 
-test('motion-css false still wins over a spring', async () => {
+test('motion false still wins over a spring', async () => {
   const screen = await mount({ damping: 0.4 }, false)
   await userEvent.hover(screen.getByText('One'))
   await userEvent.hover(screen.getByText('Two'))
@@ -65,7 +65,7 @@ test('motion-css false still wins over a spring', async () => {
   expect(indicator().style.transitionProperty).not.toBe('opacity')
 })
 
-test("a selection indicator without its own motion flag follows ConfigProvider's motion-css off", async () => {
+test("a selection indicator without its own motion flag follows ConfigProvider's motion off", async () => {
   const { shallowRef } = await import('vue')
   const { useTabIndicator } = await import('../src/composables/useTabIndicator')
   const active = shallowRef('a')
@@ -89,9 +89,7 @@ test("a selection indicator without its own motion flag follows ConfigProvider's
     },
   })
   render(() =>
-    h(ConfigProvider as never, { indicator: { damping: 0.4 }, motionCss: false }, () =>
-      h(Selection),
-    ),
+    h(ConfigProvider as never, { indicator: { damping: 0.4 }, motion: false }, () => h(Selection)),
   )
   await vi.waitFor(() => expect(indicator().style.transitionDuration).toBe('0ms'))
   active.value = 'b'

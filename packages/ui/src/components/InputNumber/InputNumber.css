@@ -1,4 +1,12 @@
 @layer ui-components {
+  .ui-input-el[data-ui-roll] {
+    font-variant-numeric: tabular-nums;
+  }
+  .ui-input-el[data-ui-scrub]:not(:focus) {
+    cursor: ew-resize;
+    touch-action: pan-y;
+    user-select: none;
+  }
   /* InputNumber Composes Input's own frame verbatim (InputNumber.vue renders <Input> directly) — only the stepper column, riding Input's `#end` slot, is new here. Steppers are `tabindex="-1"`: APG's spinbutton pattern puts the keyboard path on the input itself (ArrowUp/Down), the buttons are a pointer-only convenience. */
   .ui-input-number-steppers {
     display: inline-flex;

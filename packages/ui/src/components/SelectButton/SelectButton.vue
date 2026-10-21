@@ -189,7 +189,7 @@ defineExpose({
   el: root,
   /** Sliding selection indicator (single mode only; `null` with `multiple`). */
   indicatorEl,
-  /** The hover and keyboard highlight, sliding between options. Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between options. Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
   highlightEl: hoverEl,
 })
 </script>

@@ -5,6 +5,7 @@
     :style="rootPart.style"
     :data-state="dataState"
     :data-invalid="isInvalid || undefined"
+    :data-dragging="dragging || undefined"
     v-bind="rootAttrs"
   >
     <span class="ui-switch-control">
@@ -24,6 +25,11 @@
         @change="onNativeChange"
         @focus="onNativeFocus"
         @blur="onNativeBlur"
+        @pointerdown="onDragStart"
+        @pointermove="onDragMove"
+        @pointerup="onDragEnd"
+        @pointercancel="onDragCancel"
+        @click="onInputClick"
         v-bind="inputAttrs"
       />
       <span ref="trackEl" :class="trackPart.class" :style="trackPart.style" aria-hidden="true">
@@ -42,6 +48,7 @@ import './Switch.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, onMounted, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import { useComponentHaptic } from '../../composables/useHaptic'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -68,13 +75,13 @@ const rawProps = withDefaults(
     /** Native `name` for form submission. */
     name?: string
     /** `false` skips built-in transitions; animate the exposed `trackEl`/`thumbEl` yourself. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; track: UiPartValue; thumb: UiPartValue; label: UiPartValue }>
   }>(),
-  { disabled: false, invalid: false, motionCss: undefined },
+  { disabled: false, invalid: false, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true }, ['sm', 'md'])
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true }, ['sm', 'md'])
 
 defineSlots<{
   /** Label content; replaces the `label` text. */
@@ -85,8 +92,11 @@ const fieldControl = useFieldControl({ filled: () => modelValue.value })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 
+const haptic = useComponentHaptic()
+const tick = () => haptic.selection()
 function onNativeChange(event: Event) {
   modelValue.value = (event.target as HTMLInputElement).checked
+  tick()
 }
 function onNativeFocus() {
   fieldControl.onFocus()
@@ -95,7 +105,60 @@ function onNativeBlur() {
   fieldControl.onBlur()
 }
 
-const dataState = computed(() => (modelValue.value ? 'checked' : 'unchecked'))
+// Drag the thumb: it follows the pointer, the track flips as it passes halfway, and it lands on
+// the side it's released past. A tap without a drag still toggles.
+const dragging = shallowRef(false)
+const dragOn = shallowRef<boolean | null>(null)
+let drag: { x: number; from: number; travel: number; dir: number; moved: boolean } | null = null
+let swallowClick = false
+function onDragStart(event: PointerEvent) {
+  const track = trackEl.value
+  if (isDisabled.value || event.button !== 0 || !track) return
+  const travel = track.offsetWidth - track.offsetHeight
+  const dir = getComputedStyle(track).direction === 'rtl' ? -1 : 1
+  drag = { x: event.clientX, from: modelValue.value ? travel : 0, travel, dir, moved: false }
+  try {
+    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  } catch {
+    // An untrusted event has no active pointer to capture.
+  }
+}
+function onDragMove(event: PointerEvent) {
+  if (!drag || !thumbEl.value) return
+  const dx = (event.clientX - drag.x) * drag.dir
+  if (!drag.moved && Math.abs(dx) < 3) return
+  drag.moved = true
+  dragging.value = true
+  const position = Math.min(drag.travel, Math.max(0, drag.from + dx))
+  thumbEl.value.style.translate = `${position * drag.dir}px -50%`
+  const on = position > drag.travel / 2
+  if (on !== (dragOn.value ?? modelValue.value)) tick()
+  dragOn.value = on
+}
+function endDrag(commit: boolean) {
+  if (!drag) return
+  const moved = drag.moved
+  drag = null
+  if (!moved) return
+  const next = dragOn.value ?? modelValue.value
+  dragging.value = false
+  dragOn.value = null
+  thumbEl.value?.style.removeProperty('translate')
+  if (!commit) return
+  // The click that follows the release would toggle it again.
+  swallowClick = true
+  setTimeout(() => (swallowClick = false))
+  modelValue.value = next
+}
+const onDragEnd = () => endDrag(true)
+const onDragCancel = () => endDrag(false)
+function onInputClick(event: MouseEvent) {
+  if (!swallowClick) return
+  swallowClick = false
+  event.preventDefault()
+}
+
+const dataState = computed(() => ((dragOn.value ?? modelValue.value) ? 'checked' : 'unchecked'))
 
 // First paint only: suppress transitions to prevent initial jump
 const firstPaint = shallowRef(true)
@@ -104,7 +167,7 @@ onMounted(() => {
     firstPaint.value = false
   })
 })
-const skipTransition = computed(() => firstPaint.value || !props.motionCss)
+const skipTransition = computed(() => firstPaint.value || !props.motion)
 
 const root = useTemplateRef<HTMLElement>('root')
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
@@ -138,5 +201,7 @@ defineExpose({
   trackEl,
   /** Thumb element. */
   thumbEl,
+  /** Whether the thumb is being dragged. */
+  dragging,
 })
 </script>

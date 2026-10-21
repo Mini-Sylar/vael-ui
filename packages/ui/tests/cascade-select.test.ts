@@ -415,13 +415,13 @@ test('multiple: Enter on a chip remove button removes it without opening the pan
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
-test('multiple: motionCss=false turns off the built-in chip transition', async () => {
+test('multiple: motion=false turns off the built-in chip transition', async () => {
   const screen = await render(CascadeSelect, {
     props: {
       items: [{ label: 'Ghana', value: 'gh', children: [{ label: 'Accra', value: 'accra' }] }],
       multiple: true,
       modelValue: ['accra'],
-      motionCss: false,
+      motion: false,
     },
   })
   const chips = screen.container.querySelector('.ui-cascade-select-chips')!

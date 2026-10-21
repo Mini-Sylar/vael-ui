@@ -2,13 +2,12 @@
   <section class="demo">
     <h3>Extreme: panels open and their rows stagger in (GSAP)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> on Accordion hands the panel height over, and each item's
-      exposed <code>panelEl</code> is what you animate. The opening panel grows to its full height
-      while its rows fade up one after another, and the <code>#trigger</code> slot's chevron turns
-      in step. Opening one item closes the other in the same timeline, so the list height moves as
-      one.
+      <code>:motion="false"</code> on Accordion hands the panel height over, and each item's exposed
+      <code>panelEl</code> is what you animate. The opening panel grows to its full height while its
+      rows fade up one after another, and the <code>#trigger</code> slot's chevron turns in step.
+      Opening one item closes the other in the same timeline, so the list height moves as one.
     </p>
-    <Accordion v-model:value="openItem" :motion-css="false" class="reveal-accordion">
+    <Accordion v-model:value="openItem" :motion="false" class="reveal-accordion">
       <AccordionItem
         v-for="section in sections"
         :key="section.value"

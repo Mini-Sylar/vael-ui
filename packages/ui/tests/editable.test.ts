@@ -91,10 +91,10 @@ test('actions in the slot submit without the blur getting there first', async ()
   expect(onSubmit).toHaveBeenCalledWith('B')
 })
 
-test('motion-css=false marks the root and hands over previewEl and inputEl', async () => {
+test('motion=false marks the root and hands over previewEl and inputEl', async () => {
   const captured = ref<InstanceType<typeof Editable> | null>(null)
   const Wrapper = {
-    render: () => h(Editable, { modelValue: 'x', motionCss: false, ref: captured }),
+    render: () => h(Editable, { modelValue: 'x', motion: false, ref: captured }),
   }
   const screen = await render(Wrapper)
   expect(screen.container.querySelector('.ui-editable')?.getAttribute('data-motion')).toBe('off')

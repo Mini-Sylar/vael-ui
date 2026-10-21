@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Extreme: tasks check off with a pen stroke (GSAP)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> hands Checkbox's transitions over, and the exposed
+      <code>:motion="false"</code> hands Checkbox's transitions over, and the exposed
       <code>boxEl</code> and <code>checkEl</code> are what you animate. Checking a task pops the
       box, draws the check like a pen stroke and strikes the task through with a few sparks.
       Unchecking fades the check rather than un-drawing it. "All done" checks everything in a quick
@@ -14,7 +14,7 @@
           :ref="(box) => trackBox(ALL, box)"
           :model-value="allDone"
           :indeterminate="someDone"
-          :motion-css="false"
+          :motion="false"
           @update:model-value="toggleAll"
         >
           <span class="task-text">All done</span>
@@ -28,7 +28,7 @@
           :ref="(box) => trackBox(task.id, box)"
           v-model="done"
           :value="task.id"
-          :motion-css="false"
+          :motion="false"
         >
           <span class="task-text">
             {{ task.label }}

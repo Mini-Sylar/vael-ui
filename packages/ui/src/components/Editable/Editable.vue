@@ -4,7 +4,7 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="editing ? 'editing' : 'preview'"
-    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-motion="props.motion ? undefined : 'off'"
     v-bind="attrs"
   >
     <template v-if="editing">
@@ -99,7 +99,7 @@ const rawProps = withDefaults(
     /** Control size, as on Input. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
     /** `false` skips the swap transition; use the exposed `previewEl` and `inputEl` for your own. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -116,10 +116,10 @@ const rawProps = withDefaults(
     selectOnFocus: true,
     disabled: false,
     size: 'md',
-    motionCss: undefined,
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires with the saved text. */

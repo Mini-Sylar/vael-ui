@@ -73,7 +73,7 @@
   .ui-radio--disabled .ui-radio-input {
     cursor: not-allowed;
   }
-  /* First paint, and `motionCss="false"` — see Checkbox's identical guard. */
+  /* First paint, and `motion="false"` — see Checkbox's identical guard. */
   .ui-radio--no-anim .ui-radio-control,
   .ui-radio--no-anim .ui-radio-dot {
     transition: none;

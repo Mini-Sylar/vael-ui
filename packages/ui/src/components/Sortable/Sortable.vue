@@ -76,6 +76,7 @@ import './Sortable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
+import { useComponentHaptic } from '../../composables/useHaptic'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -135,7 +136,7 @@ const rawProps = withDefaults(
      * `false` skips the built-in springs, so rows snap to their new slots. Use it when you drive the motion yourself.
      * @default true
      */
-    motionCss?: boolean
+    motion?: boolean
     /** Handle from `useSortableGroup()`. Lists that share it, `<Sortable>` or `useSortable()`, let items cross between them. */
     group?: SortableGroupHandle
     /** This list's identity within `group`. Unset, Sortable assigns one. */
@@ -166,14 +167,14 @@ const rawProps = withDefaults(
     autoScroll: true,
     restrictToList: false,
     disabled: false,
-    motionCss: undefined,
+    motion: undefined,
     group: undefined,
     groupId: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
-const motionOff = computed(() => !props.motionCss)
+const props = withProviderDefaults(rawProps, { motion: true })
+const motionOff = computed(() => !props.motion)
 
 const emit = defineEmits<{
   /** Fires after `items` changes order. Persist optimistically here; on failure, restore your own snapshot of `items`. */
@@ -213,6 +214,8 @@ function elementFor(value: string | number): HTMLElement | null {
   )
 }
 
+const haptic = useComponentHaptic()
+const tick = () => haptic.impact('medium')
 const {
   activeValue,
   isGrabbed,
@@ -240,7 +243,7 @@ const {
   autoScroll: () => props.autoScroll,
   restrictToList: () => props.restrictToList,
   disabled: () => props.disabled,
-  motionCss: () => props.motionCss,
+  motion: () => props.motion,
   labelOf: (value) => {
     const item = items.value.find((candidate) => keyOf(candidate) === value)
     return item ? labelOf(item) : String(value)
@@ -267,6 +270,7 @@ const {
     const next = [...items.value]
     if (!moveTreeNode(next, value, to, { getKey: keyOf, getChildren: () => undefined })) return
     items.value = next
+    tick()
     emit('reorder', value, to)
   },
 })

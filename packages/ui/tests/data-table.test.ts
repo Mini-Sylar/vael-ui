@@ -60,7 +60,7 @@ async function renderTable(props: {
   manualSort?: boolean
   lazy?: boolean
   total?: number
-  motionCss?: boolean
+  motion?: boolean
   ui?: Partial<{
     root: UiPartValue
     toolbar: UiPartValue
@@ -133,13 +133,13 @@ test('clicking a sortable header cycles none -> asc -> desc -> none and reorders
   expect(rows[0]!.textContent).toContain('Alice')
 })
 
-test('motionCss=false disables the row-move CSS transition (not just enter/leave)', async () => {
+test('motion=false disables the row-move CSS transition (not just enter/leave)', async () => {
   // Vue's TransitionGroup only gates enter/leave on the `css` prop — the move
   // (FLIP) animation is driven purely by whether `.ui-datatable-row-move`
   // resolves an actual transition, so DataTableBody has to disable that CSS
-  // rule itself via data-motion="off" for motionCss="false" to have any
+  // rule itself via data-motion="off" for motion="false" to have any
   // effect on a real reorder.
-  const screen = await renderTable({ rowCount: 4, showStatusColumn: false, motionCss: false })
+  const screen = await renderTable({ rowCount: 4, showStatusColumn: false, motion: false })
   const tbody = screen.container.querySelector('.ui-datatable-tbody')!
   expect(tbody.getAttribute('data-motion')).toBe('off')
 
@@ -154,7 +154,7 @@ test('motionCss=false disables the row-move CSS transition (not just enter/leave
   expect(duration).toBe('0s')
 })
 
-test('motionCss=true (default) leaves the row-move CSS transition active once settled', async () => {
+test('motion=true (default) leaves the row-move CSS transition active once settled', async () => {
   const screen = await renderTable({ rowCount: 4, showStatusColumn: false })
   const tbody = screen.container.querySelector('.ui-datatable-tbody')!
   expect(tbody.getAttribute('data-motion')).toBeNull()

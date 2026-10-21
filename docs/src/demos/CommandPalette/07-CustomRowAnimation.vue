@@ -3,7 +3,7 @@
     <h3>Your own row animation (GSAP)</h3>
     <p class="note">
       By default, rows change at once while you type and only the list's height eases.
-      <code>:motion-css="false"</code> hands each appearing and disappearing row to
+      <code>:motion="false"</code> hands each appearing and disappearing row to
       <code>@item-enter</code> and <code>@item-leave</code> with a <code>done()</code> callback.
       Here new rows rise in with a short stagger.
     </p>
@@ -13,7 +13,7 @@
     <CommandPalette
       v-model:open="open"
       :items="commands"
-      :motion-css="false"
+      :motion="false"
       @item-enter="onEnter"
       @item-leave="onLeave"
     />

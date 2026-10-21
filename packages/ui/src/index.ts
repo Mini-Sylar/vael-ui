@@ -16,6 +16,8 @@ export { default as Skeleton } from './components/Skeleton/Skeleton.vue'
 export { default as Badge } from './components/Badge/Badge.vue'
 export { default as Tag } from './components/Tag/Tag.vue'
 export { default as Kbd } from './components/Kbd/Kbd.vue'
+export { default as AnimatedNumber } from './components/AnimatedNumber/AnimatedNumber.vue'
+export { default as AnimatedText } from './components/AnimatedText/AnimatedText.vue'
 export { default as Avatar } from './components/Avatar/Avatar.vue'
 export { default as AvatarGroup } from './components/AvatarGroup/AvatarGroup.vue'
 export { default as Card } from './components/Card/Card.vue'
@@ -265,12 +267,22 @@ export type { Align, UseFloatingPositionOptions } from './composables/useFloatin
 export { useAsyncLoading } from './composables/useAsyncLoading'
 export type { UseAsyncLoadingReturn } from './composables/useAsyncLoading'
 export { useColorScheme } from './composables/useColorScheme'
+export { useHaptic } from './composables/useHaptic'
+export type {
+  HapticImpact,
+  HapticNotification,
+  HapticOptions,
+  UseHapticReturn,
+} from './composables/useHaptic'
+export { springEasing } from './composables/springEasing'
+export type { MotionOptions } from './composables/springEasing'
 export { preventFocusZoom } from './composables/preventFocusZoom'
 // Internal: exported only so vael-ui/vapor's components share them with this build. Not public API.
 export { defaultsKey, validLocale, withProviderDefaults } from './config'
 export type { UiDefaults } from './config'
 export type {
   ColorSchemeMode,
+  ColorSchemeRevealOptions,
   UseColorSchemeOptions,
   UseColorSchemeReturn,
 } from './composables/useColorScheme'

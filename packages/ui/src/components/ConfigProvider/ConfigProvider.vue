@@ -22,6 +22,9 @@ import { defaultsKey, validLocale } from '../../config'
 import type { UiDefaults } from '../../config'
 import type { LoaderSource } from '../../composables/loaderType'
 import type { IndicatorMode } from '../../composables/useTabIndicator'
+import { springTokens } from '../../composables/springEasing'
+import type { MotionOptions } from '../../composables/springEasing'
+import type { HapticOptions } from '../../composables/useHaptic'
 
 const props = withDefaults(
   defineProps<{
@@ -41,10 +44,11 @@ const props = withDefaults(
     theme?: UiTheme
     /** Default size for buttons, form controls and tables inside. A component's own `size` wins. */
     size?: 'sm' | 'md' | 'lg'
-    /** `false` makes every component inside change instantly, with no built-in transitions, e.g. for
-     * screenshot tests. Panels still open and close and toasts still leave; a component's own
-     * `motionCss` wins. */
-    motionCss?: boolean
+    /** Motion for everything inside. `false` makes every component change instantly, e.g. for
+     * screenshot tests: panels still open and close and toasts still leave. `{ spring }` puts
+     * drawers, sheets, toasts, sliding indicators, AnimatedNumber and AnimatedText on one spring
+     * (below 1, damping overshoots). A component's own `motion` wins. */
+    motion?: boolean | MotionOptions
     /** Animation for every loader inside: Loader, Button's loading state, list loading rows,
      * loading toasts and PullToRefresh. A built-in name, or your own component (or render
      * function), drawn in the same 1em box. A component's own `type` or `loaderType` wins.
@@ -52,11 +56,16 @@ const props = withDefaults(
     loaderType?: LoaderSource
     /** How every sliding indicator inside moves: the hover highlight in lists and menus, and the
      * selection in Tabs, SelectButton, Pagination and MenuList. `'glide'`, `'instant'`, or a spring
-     * such as `{ damping: 0.55, response: 0.3 }` (below 1, damping overshoots). `motionCss: false`
+     * such as `{ damping: 0.55, response: 0.3 }` (below 1, damping overshoots). `motion: false`
      * still makes them instant. @default 'glide' */
     indicator?: IndicatorMode
+    /** Haptics on phones that offer them. `true`, or `{ intensity }` to scale them, turns on
+     * vael-ui's own: a Switch flipping, a swiped row snapping, a Sortable row landing, a pull
+     * passing the refresh point, a held Button completing. `false` silences every `useHaptic`
+     * call inside too, yours included. @default undefined (yours play, vael-ui's stay silent) */
+    haptics?: boolean | HapticOptions
   }>(),
-  { motionCss: undefined },
+  { motion: undefined, haptics: undefined },
 )
 
 defineSlots<{
@@ -76,14 +85,18 @@ provide(classMergerKey, (classes: string) =>
   props.classMerge ? props.classMerge(classes) : classes,
 )
 
+const spring = computed(() => (typeof props.motion === 'object' ? props.motion.spring : undefined))
+
 // A nested provider inherits its parent's defaults and overrides only what it sets.
 const parentDefaults = inject(defaultsKey, undefined)
 const defaults = computed<UiDefaults>(() => {
   const own: UiDefaults = {}
   if (props.size) own.size = props.size
-  if (props.motionCss !== undefined) own.motionCss = props.motionCss
+  if (props.motion !== undefined) own.motion = props.motion !== false
   if (props.loaderType) own.loaderType = props.loaderType
+  if (spring.value) own.indicator = spring.value
   if (props.indicator) own.indicator = props.indicator
+  if (props.haptics !== undefined) own.haptics = props.haptics
   const locale = validLocale(props.locale ?? toValue(props.i18n?.locale))
   if (locale) own.locale = locale
   return { ...parentDefaults?.value, ...own }
@@ -109,10 +122,22 @@ const DURATION_TOKENS = [
   'toast-exit',
   'indicator',
   'indicator-wide',
+  'number',
+  'text',
+  'drawer-exit',
+  'stagger',
 ]
+// The spring's tokens land after the theme and before motion-off, which zeroes durations last.
+const springCss = computed(() => {
+  if (!spring.value) return ''
+  const tokens = Object.entries(springTokens(spring.value))
+  return `${scopeSelector} { ${tokens.map(([name, value]) => `${name}: ${value};`).join(' ')} }`
+})
 const themeCss = computed(() => {
-  const theme = props.theme ? generateThemeCss(props.theme, scopeSelector) : ''
-  if (defaults.value.motionCss !== false) return theme
+  const theme = [props.theme ? generateThemeCss(props.theme, scopeSelector) : '', springCss.value]
+    .filter(Boolean)
+    .join('\n')
+  if (defaults.value.motion !== false) return theme
   const zero = DURATION_TOKENS.map((name) => `--ui-duration-${name}: 0s;`).join(' ')
   return `${theme}\n${scopeSelector} { ${zero} }`
 })

@@ -2,6 +2,8 @@
 @import './components/shared/tokens.css';
 @import './components/Accordion/Accordion.css';
 @import './components/AccordionItem/AccordionItem.css';
+@import './components/AnimatedNumber/AnimatedNumber.css';
+@import './components/AnimatedText/AnimatedText.css';
 @import './components/Avatar/Avatar.css';
 @import './components/AvatarGroup/AvatarGroup.css';
 @import './components/Badge/Badge.css';

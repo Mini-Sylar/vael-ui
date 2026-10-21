@@ -124,14 +124,14 @@ test('rows change at once while typing, and the list eases to its new height', a
   })
 })
 
-test('motionCss false hands appearing and disappearing rows to @item-enter/@item-leave', async () => {
+test('motion false hands appearing and disappearing rows to @item-enter/@item-leave', async () => {
   const entered: Element[] = []
   const pendingLeaves: (() => void)[] = []
   await render(CommandPalette, {
     props: {
       open: true,
       items,
-      motionCss: false,
+      motion: false,
       'onItem-enter': (el: Element, done: () => void) => {
         entered.push(el)
         done()

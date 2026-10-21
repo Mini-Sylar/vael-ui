@@ -224,7 +224,7 @@ const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
 const { style: hoverStyle } = useHoverIndicator(listEl, {
   itemSelector: '.ui-pagination-page-button, .ui-pagination-nav-button',
   orientation: 'horizontal',
-  motion: () => props.motionCss,
+  motion: () => props.motion,
   indicatorEl: hoverEl,
 })
 // The page numbers again in the contrast color, clipped to the indicator, so the
@@ -248,7 +248,7 @@ const rawProps = withDefaults(
     /** Page-number buttons to show on each side of the current page before an ellipsis. @default 1 */
     siblingCount?: number
     /** `false` skips the indicator's built-in sliding; animate the exposed `indicatorEl` and `labelsEl` yourself. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -258,9 +258,9 @@ const rawProps = withDefaults(
       sizeSelect: UiPartValue
     }>
   }>(),
-  { siblingCount: 1, motionCss: undefined },
+  { siblingCount: 1, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const totalPages = computed(() => {
   if (pageSize.value <= 0) return 1
@@ -322,12 +322,7 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() =>
-  resolveUiPart(
-    cx,
-    themedUi()?.root,
-    'ui-pagination',
-    !props.motionCss && 'ui-pagination--no-motion',
-  ),
+  resolveUiPart(cx, themedUi()?.root, 'ui-pagination', !props.motion && 'ui-pagination--no-motion'),
 )
 const listPart = computed(() => resolveUiPart(cx, themedUi()?.list, 'ui-pagination-list'))
 const navButtonPart = computed(() =>
@@ -362,7 +357,7 @@ defineExpose({
   listEl,
   /** The sliding highlight behind the current page. */
   indicatorEl,
-  /** The hover and keyboard highlight, sliding between buttons. With `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between buttons. With `motion: false` it moves at once, for your own animation. */
   highlightEl: hoverEl,
   /** The page numbers in the contrast color, clipped to the indicator. */
   labelsEl,

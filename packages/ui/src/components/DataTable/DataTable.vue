@@ -209,7 +209,7 @@ const rawProps = withDefaults(
     /** Renders only the visible rows. Requires `scrollHeight`. `itemSize` fixes the row height. */
     virtualize?: boolean | { itemSize?: number; overscan?: number; estimateSize?: number }
     /** Plays the built-in row and column-drag transitions. `false` hands rows to `@row-enter`/`@row-leave`. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Lets you drag column headers to reorder them. Pair with `v-model:columnOrder`. @default false */
     reorderableColumns?: boolean
     /** When a reorderable column's drag grip shows: `'always'`, or only on hover and focus (`'hover'`). @default 'always' */
@@ -252,7 +252,7 @@ const rawProps = withDefaults(
     scrollFade: true,
     manualSort: false,
     lazy: false,
-    motionCss: undefined,
+    motion: undefined,
     reorderableColumns: false,
     columnGripVisibility: 'always',
     canDrop: undefined,
@@ -261,7 +261,7 @@ const rawProps = withDefaults(
     touchDragDelay: 150,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const emit = defineEmits<{
   /** Fires when the selection changes, with the resolved row objects (not raw keys). */
@@ -274,7 +274,7 @@ const emit = defineEmits<{
   'reach-start': []
   /** Fires when a column drag commits, with the new `field` order. */
   'column-reorder': [order: (keyof T)[]]
-  /** Fires when a row enters. Call `done()` when finished; set `motionCss` to `false` to own the animation. */
+  /** Fires when a row enters. Call `done()` when finished; set `motion` to `false` to own the animation. */
   'row-enter': [el: Element, done: () => void]
   /** Fires when a row leaves. Call `done()` when finished, as with `@row-enter`. */
   'row-leave': [el: Element, done: () => void]
@@ -908,7 +908,7 @@ const { style: hoverStyle } = useHoverIndicator(
     scope: '.ui-datatable-scroll-y, .ui-datatable-scroll-x',
     scroller: true,
     enabled: () => !stacked.value,
-    motion: () => props.motionCss,
+    motion: () => props.motion,
     indicatorEl: hoverEl,
   },
 )
@@ -982,7 +982,7 @@ const {
     previewMode: () => props.previewMode,
     touchDragDelay: () => props.touchDragDelay,
     disabled: () => !props.reorderableColumns,
-    motionCss: () => props.motionCss,
+    motion: () => props.motion,
     canDrop: (details) => {
       // A pinned column can't be displaced, whatever the consumer's canDrop says.
       const target = orderedColumns.value[details.to.index]
@@ -1132,7 +1132,7 @@ const bodyProps = computed(() => ({
   onToggleSelect: toggleSelect,
   onToggleExpand: toggleExpand,
   onRowClick,
-  motionCss: props.motionCss,
+  motion: props.motion,
   rowMotionReady: rowMotionReady.value,
   onRowEnter,
   onRowLeave,
@@ -1176,7 +1176,7 @@ const root = useTemplateRef<HTMLElement>('root')
 defineExpose({
   /** Root element. */
   el: root,
-  /** The hover and keyboard highlight, sliding between body rows. With `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between body rows. With `motion: false` it moves at once, for your own animation. */
   highlightEl: hoverEl,
 })
 </script>

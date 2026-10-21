@@ -15,13 +15,13 @@
       role="menu"
       :aria-label="ariaLabel"
       :aria-orientation="orientationFor(direction)"
-      :data-motion="props.motionCss ? undefined : 'off'"
+      :data-motion="props.motion ? undefined : 'off'"
       @keydown="onKeydown"
     >
       <TransitionGroup
         name="ui-speed-dial-action"
         appear
-        :css="props.motionCss"
+        :css="props.motion"
         @enter="enterHook"
         @leave="leaveHook"
       >
@@ -118,7 +118,7 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
    * and `@action-leave`, and turns the icon instantly.
    * @default true
    */
-  motionCss?: boolean
+  motion?: boolean
   /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }>
 }
@@ -165,15 +165,15 @@ const rawProps = withDefaults(defineProps<SpeedDialProps<T>>(), {
   closeOnSelect: true,
   ariaLabel: 'Actions',
   radius: 96,
-  motionCss: undefined,
+  motion: undefined,
 })
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when you click an action. */
   select: [item: T]
   /** Fires when an action's fan-out transition starts. Call `done()` when finished.
-   * Only fires when `motionCss` is `false`. */
+   * Only fires when `motion` is `false`. */
   'action-enter': [el: Element, done: () => void]
   /** Fires when an action's fan-in transition starts, as with `@action-enter`. */
   'action-leave': [el: Element, done: () => void]
@@ -188,14 +188,14 @@ defineSlots<{
 
 const visibleItems = computed(() => (open.value ? props.items : []))
 
-// Only the component's own motion-css="false" hands actions to the events. A provider's is instant.
+// Only the component's own motion="false" hands actions to the events. A provider's is instant.
 const enterHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('action-enter', el, done),
 )
 const leaveHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('action-leave', el, done),
 )
@@ -383,7 +383,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-speed-dial',
     props.disabled && 'ui-speed-dial--disabled',
-    !props.motionCss && 'ui-speed-dial--no-motion',
+    !props.motion && 'ui-speed-dial--no-motion',
   ),
 )
 const actionsPart = computed(() => resolveUiPart(cx, undefined, 'ui-speed-dial-actions'))

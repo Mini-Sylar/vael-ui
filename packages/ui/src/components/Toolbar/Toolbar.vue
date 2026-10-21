@@ -139,7 +139,7 @@ watch(collapsedItems, buildOverflowItems, { immediate: true })
 defineExpose({
   /** Root element. */
   el: list,
-  /** The hover and keyboard highlight, sliding between buttons. Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between buttons. Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
   highlightEl: hoverEl,
 })
 </script>

@@ -27,7 +27,7 @@ import { useLiveCard, useTicker } from './useLiveCard'
 // Each hook gets its own entrance so the three read as different handles on
 // the same panel: the built-in CSS fade, a consumer-owned slide, a spring pop.
 const HOOKS = [
-  { name: 'motionCss', effect: 'fade' },
+  { name: 'motion', effect: 'fade' },
   { name: 'forceMount', effect: 'slide' },
   { name: 'beforeClose', effect: 'pop' },
 ] as const

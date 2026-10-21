@@ -66,6 +66,7 @@ export interface TourSpotlightProps {
   removing it shows this cutout again.
 -->
 <script setup lang="ts">
+import { prefersReducedMotion } from '../../composables/dom'
 import './Tour.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { autoUpdate } from '@floating-ui/dom'
@@ -160,9 +161,6 @@ function makeBezierEasing(p1x: number, p1y: number, p2x: number, p2y: number) {
 // `--ui-ease-drawer` tail, which made the far sweeps in the stress test look like they crawl
 // the last stretch after visually already arriving.
 const easeGlide = makeBezierEasing(0.23, 1, 0.32, 1)
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // Travel-aware: a nudge to a neighbouring target resolves quickly; a sweep clear across the
 // viewport earns a longer glide — but a far bound is still faster than the old flat 500ms.

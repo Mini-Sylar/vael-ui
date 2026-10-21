@@ -304,3 +304,10 @@ export function startClearLeave(el: Element): void {
   node.style.marginInlineStart = 'var(--ui-clear-start)'
   node.style.marginInlineEnd = 'var(--ui-clear-end)'
 }
+
+let reducedMotionQuery: MediaQueryList | undefined
+/** @internal Whether the user asks for reduced motion. One shared query, not a new one per call. */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return (reducedMotionQuery ??= window.matchMedia('(prefers-reduced-motion: reduce)')).matches
+}

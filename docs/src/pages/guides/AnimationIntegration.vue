@@ -56,14 +56,14 @@ watch(checked, (isChecked) => {
   <Checkbox
     ref="checkbox"
     v-model="checked"
-    :motion-css="false"
+    :motion="false"
     label="Remember me"
   />
 </template>'
     />
 
-    <h2 id="motion-css">{{ t('animation.motionCssTitle') }}</h2>
-    <p v-html="t('animation.motionCssIntro')" />
+    <h2 id="motion">{{ t('animation.motionTitle') }}</h2>
+    <p v-html="t('animation.motionIntro')" />
 
     <h2 id="force-mount">{{ t('animation.forceMountTitle') }}</h2>
     <p v-html="t('animation.forceMountIntro')" />
@@ -192,24 +192,24 @@ const kinds = [
     components: names
       .filter(
         (name) =>
-          hasProp(name, 'motionCss') && !hasProp(name, 'beforeClose') && !listed.includes(name),
+          hasProp(name, 'motion') && !hasProp(name, 'beforeClose') && !listed.includes(name),
       )
       .join(', '),
-    hooks: ['motionCss'],
+    hooks: ['motion'],
   },
   {
     id: 'kindsList',
     components: [...byPrefix]
       .map(([prefix, group]) => `${group.join(', ')} (@${prefix}-*)`)
       .join('; '),
-    hooks: ['motionCss', '@…-enter', '@…-leave'],
+    hooks: ['motion', '@…-enter', '@…-leave'],
   },
 ]
 
 const tocLinks = computed(() => [
   { id: 'which-hooks', label: t('animation.kindsTitle') },
   { id: 'exposed-elements', label: t('animation.exposedTitle') },
-  { id: 'motion-css', label: t('animation.motionCssTitle') },
+  { id: 'motion', label: t('animation.motionTitle') },
   { id: 'force-mount', label: t('animation.forceMountTitle') },
   { id: 'before-close', label: t('animation.beforeCloseTitle') },
   { id: 'motion-v-example', label: t('animation.motionVExampleTitle') },

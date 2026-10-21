@@ -1,7 +1,8 @@
-import { inject, shallowRef, toValue, watch } from 'vue'
-import type { MaybeRefOrGetter, Ref } from 'vue'
+import { inject, onScopeDispose, toValue, watch } from 'vue'
+import { useEventListener } from '@vueuse/core'
+import type { MaybeRefOrGetter } from 'vue'
 import { useTabIndicator } from './useTabIndicator'
-import type { IndicatorMode } from './useTabIndicator'
+import type { IndicatorMode, UseTabIndicatorReturn } from './useTabIndicator'
 import type { ElRef } from './dom'
 import { defaultsKey } from '../config'
 
@@ -19,7 +20,7 @@ export interface UseHoverIndicatorOptions {
   maxGlide?: number
   /** `false` hides the indicator and stops tracking. */
   enabled?: MaybeRefOrGetter<boolean>
-  /** `false` moves the indicator at once, for an animation of your own. Unset, it follows the nearest ConfigProvider's `motionCss`. */
+  /** `false` moves the indicator at once, for an animation of your own. Unset, it follows the nearest ConfigProvider's `motion`. */
   motion?: MaybeRefOrGetter<boolean | undefined>
   /** How it moves: `'glide'`, `'instant'` or a spring. Unset, it follows the nearest ConfigProvider's `indicator`. */
   indicator?: MaybeRefOrGetter<IndicatorMode | undefined>
@@ -41,21 +42,36 @@ const DISABLED = ':disabled, [aria-disabled="true"], [data-disabled]'
 export function useHoverIndicator(
   listEl: ElRef<HTMLElement | null>,
   options: UseHoverIndicatorOptions,
-): { style: Ref<Record<string, string | undefined>> } {
+): UseTabIndicatorReturn {
   const provided = inject(defaultsKey, undefined)
   // Each instance marks with its own value, so a list nested inside another (a submenu, a table
   // in an expanded row) never measures the outer list's row, or the outer the inner's.
   const id = String(++instances)
-  const version = shallowRef(0)
   let current: HTMLElement | null = null
   let pointerInside = false
+  // Keyboard jumps (typeahead, Home, End) land at once; the pointer always glides, however fast,
+  // so a quick sweep chases the cursor instead of teleporting between the rows it skipped.
+  let fromKeyboard = false
 
-  function mark(el: HTMLElement | null) {
+  const indicator = useTabIndicator(() => listEl.value, {
+    listEl,
+    orientation: options.orientation ?? 'vertical',
+    selector: `[${MARK}="${id}"]`,
+    scroller: options.scroller,
+    matchCross: options.matchCross ?? true,
+    maxGlide: () => (fromKeyboard ? (options.maxGlide ?? 3) : Number.POSITIVE_INFINITY),
+    motion: () => toValue(options.motion) ?? provided?.value.motion,
+    indicator: options.indicator,
+    indicatorEl: options.indicatorEl,
+    position: 'translate',
+  })
+  function mark(el: HTMLElement | null, keyboard = false) {
     if (el === current) return
     current?.removeAttribute(MARK)
     current = el
     el?.setAttribute(MARK, id)
-    version.value++
+    fromKeyboard = keyboard
+    indicator.update()
   }
 
   function rowOf(target: EventTarget | null): HTMLElement | null {
@@ -92,44 +108,28 @@ export function useHoverIndicator(
   function onFocusIn() {
     if (toValue(options.enabled) === false) return
     const row = focusedRow()
-    if (row || !pointerInside) mark(row)
+    if (row || !pointerInside) mark(row, true)
   }
   function onFocusOut(event: FocusEvent) {
     if (!pointerInside && !listEl.value?.contains(event.relatedTarget as Node | null)) mark(null)
   }
 
-  watch(
-    listEl,
-    (el, _prev, onCleanup) => {
-      mark(null)
-      if (!el) return
-      el.addEventListener('pointerover', onPointerOver)
-      el.addEventListener('pointerleave', onPointerLeave)
-      el.addEventListener('focusin', onFocusIn)
-      el.addEventListener('focusout', onFocusOut)
-      onCleanup(() => {
-        el.removeEventListener('pointerover', onPointerOver)
-        el.removeEventListener('pointerleave', onPointerLeave)
-        el.removeEventListener('focusin', onFocusIn)
-        el.removeEventListener('focusout', onFocusOut)
-      })
-    },
-    { immediate: true },
-  )
+  // VueUse re-binds when the list element changes and unbinds with the scope.
+  useEventListener(listEl, 'pointerover', onPointerOver)
+  useEventListener(listEl, 'pointerleave', onPointerLeave)
+  useEventListener(listEl, 'focusin', onFocusIn)
+  useEventListener(listEl, 'focusout', onFocusOut)
+  // A removed list lets go of its last row.
+  watch(listEl, () => {
+    current = null
+  })
+  onScopeDispose(() => {
+    current = null
+  })
   watch(
     () => toValue(options.enabled),
     (enabled) => enabled === false && mark(null),
   )
 
-  return useTabIndicator(version, {
-    listEl,
-    orientation: options.orientation ?? 'vertical',
-    selector: `[${MARK}="${id}"]`,
-    scroller: options.scroller,
-    matchCross: options.matchCross ?? true,
-    maxGlide: options.maxGlide ?? 3,
-    motion: () => toValue(options.motion) ?? provided?.value.motionCss,
-    indicator: options.indicator,
-    indicatorEl: options.indicatorEl,
-  })
+  return indicator
 }

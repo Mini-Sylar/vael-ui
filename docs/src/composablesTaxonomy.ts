@@ -25,6 +25,7 @@ export const composableCategories: ComposableCategory[] = [
     items: [
       'useAsyncLoading',
       'useColorScheme',
+      'useHaptic',
       'preventFocusZoom',
       'useNumberFormat',
       'useFieldControl',
@@ -34,7 +35,7 @@ export const composableCategories: ComposableCategory[] = [
   {
     key: 'motion',
     name: 'Motion',
-    items: ['useSpringValue', 'useTabIndicator', 'useHoverIndicator'],
+    items: ['useSpringValue', 'useTabIndicator', 'useHoverIndicator', 'springEasing'],
   },
   {
     key: 'dragAndDrop',
@@ -44,6 +45,20 @@ export const composableCategories: ComposableCategory[] = [
 ]
 
 export const allComposables = composableCategories.flatMap((c) => c.items)
+
+// Composable name -> the date it shipped or was improved; the sidebar shows a "new" dot until the
+// page is visited, like NEW_COMPONENTS.
+export const NEW_COMPOSABLES: Record<string, string> = {
+  useColorScheme: '2026-10-21',
+  useFileDrop: '2026-10-21',
+  useFloatingPosition: '2026-10-21',
+  useHaptic: '2026-10-21',
+  useHoverIndicator: '2026-10-21',
+  useNumberFormat: '2026-10-21',
+  useSpringValue: '2026-10-21',
+  useTabIndicator: '2026-10-21',
+  springEasing: '2026-10-21',
+}
 
 export function composableCategoryOf(name: string): string | undefined {
   return composableCategories.find((c) => c.items.includes(name))?.key

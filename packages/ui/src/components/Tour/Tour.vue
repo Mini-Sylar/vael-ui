@@ -6,7 +6,7 @@
     :padding="step?.spotlightPadding ?? spotlightPadding"
     :radius="step?.spotlightRadius ?? spotlightRadius"
     :instant="isScrolling"
-    :glide="props.motionCss"
+    :glide="props.motion"
     :force-mount="forceMount"
     :teleport-to="teleportTarget"
     :container-el="container"
@@ -135,7 +135,7 @@ export interface TourProps<T extends TourStep = TourStep> {
    * yourself. For open and close, use `forceMount` and `beforeClose`.
    * @default true
    */
-  motionCss?: boolean
+  motion?: boolean
   /** Class and style overrides for each part. */
   ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
 }
@@ -154,7 +154,7 @@ import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
 import TourSpotlight from './TourSpotlight.vue'
 import { useTour } from '../../composables/useTour'
-import { useDOMTarget } from '../../composables/dom'
+import { useDOMTarget, prefersReducedMotion } from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
 import { isComposing, useLayer } from '../../composables/useLayerStack'
@@ -180,10 +180,10 @@ const rawProps = withDefaults(defineProps<TourProps<T>>(), {
   spotlightRadius: 8,
   scrollIntoView: true,
   forceMount: false,
-  motionCss: undefined,
+  motion: undefined,
 })
 // Own or provider `false`: both turn the glide off. There are no events to hand over.
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires after moving to a step, including the first. The new step renders by the next frame. */
@@ -433,8 +433,7 @@ watch(
       rect.right <= bounds.right
     if (alreadyVisible) return
 
-    const reducedMotion =
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reducedMotion = prefersReducedMotion()
     isScrolling.value = true
     const stopWaiting = () => {
       isScrolling.value = false
@@ -527,7 +526,7 @@ watch(
   { flush: 'post' },
 )
 watch(targetEl, (next, previous) => {
-  if (!next || !previous || !open.value || !props.motionCss || !placed) return
+  if (!next || !previous || !open.value || !props.motion || !placed) return
   gliding.value = true
   clearTimeout(glideTimer)
   glideTimer = setTimeout(() => (gliding.value = false), 400)

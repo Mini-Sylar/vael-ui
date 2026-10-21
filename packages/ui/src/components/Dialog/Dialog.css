@@ -190,6 +190,17 @@
   .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel {
     transform: translateY(-12px);
   }
+  /* origin="trigger": grows out of the element that opened it, on the drawer curve so a motion
+     mode's spring carries it, and fades in faster than it grows. */
+  .ui-dialog[data-origin='trigger'].ui-dialog-enter-from .ui-dialog-panel,
+  .ui-dialog[data-origin='trigger'].ui-dialog-leave-to .ui-dialog-panel {
+    transform: scale(0.5);
+  }
+  .ui-dialog[data-origin='trigger'].ui-dialog-enter-active .ui-dialog-panel {
+    transition:
+      transform var(--ui-duration-drawer) var(--ui-ease-drawer),
+      opacity var(--ui-duration-enter) var(--ui-ease-out);
+  }
   .ui-dialog--bottom.ui-dialog-enter-from .ui-dialog-panel,
   .ui-dialog--bottom.ui-dialog-leave-to .ui-dialog-panel {
     transform: translateY(12px);
@@ -297,8 +308,13 @@
     .ui-dialog--left.ui-dialog-enter-from .ui-dialog-panel,
     .ui-dialog--left.ui-dialog-leave-to .ui-dialog-panel,
     .ui-dialog--right.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--right.ui-dialog-leave-to .ui-dialog-panel {
+    .ui-dialog--right.ui-dialog-leave-to .ui-dialog-panel,
+    .ui-dialog[data-origin='trigger'].ui-dialog-enter-from .ui-dialog-panel,
+    .ui-dialog[data-origin='trigger'].ui-dialog-leave-to .ui-dialog-panel {
       transform: none;
+    }
+    .ui-dialog[data-origin='trigger'].ui-dialog-enter-active .ui-dialog-panel {
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
     .ui-dialog-close:active,
     .ui-dialog-maximize:active {

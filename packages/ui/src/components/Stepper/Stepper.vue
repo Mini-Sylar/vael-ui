@@ -35,7 +35,7 @@
               :completed="stateOf(index) === 'completed'"
               :disabled="isDisabled(item)"
             >
-              <Transition :name="props.motionCss ? 'ui-stepper-check' : undefined">
+              <Transition :name="props.motion ? 'ui-stepper-check' : undefined">
                 <svg
                   v-if="stateOf(index) === 'completed'"
                   key="check"
@@ -136,7 +136,7 @@ const rawProps = withDefaults(
      * instant.
      * @default true
      */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -149,9 +149,9 @@ const rawProps = withDefaults(
       connector: UiPartValue
     }>
   }>(),
-  { orientation: 'horizontal', linear: true, clickable: true, motionCss: undefined },
+  { orientation: 'horizontal', linear: true, clickable: true, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when you click a step and it becomes active. */
@@ -234,7 +234,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-stepper',
     `ui-stepper--${props.orientation}`,
-    !props.motionCss && 'ui-stepper--no-anim',
+    !props.motion && 'ui-stepper--no-anim',
   ),
 )
 const stepPart = computed(() => resolveUiPart(cx, themedUi()?.step, 'ui-stepper-step'))

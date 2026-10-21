@@ -76,7 +76,7 @@
             :first-day-of-week="firstDayOfWeek"
             :months="months"
             :show-year-buttons="showYearButtons"
-            :motion-css="props.motionCss"
+            :motion="props.motion"
             :ui="calendarUi"
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
@@ -285,7 +285,7 @@ const rawProps = withDefaults(
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
     /** `false` skips both the popover enter/leave and Calendar's month-slide transitions. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Shows built-in Today (`single` mode only) and Clear buttons below the calendar.
      * Has no effect once you provide the `#footer` slot, which renders instead.
      * @default false
@@ -346,7 +346,7 @@ const rawProps = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
-    motionCss: undefined,
+    motion: undefined,
     showButtonBar: false,
     showYearButtons: false,
     showTime: false,
@@ -356,7 +356,7 @@ const rawProps = withDefaults(
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true, locale: undefined })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true, locale: undefined })
 
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */

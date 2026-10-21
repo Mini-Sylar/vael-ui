@@ -178,7 +178,7 @@ test('a programmatic model write longer than length is clamped everywhere — ce
 test('groups puts a separator between each group of cells', async () => {
   const screen = await render(OtpInputFixture, { props: { groups: 3 } })
   const row = screen.container.querySelector('[data-testid="basic"] .ui-otp-cells')!
-  const kinds = Array.from(row.children).map((el) =>
+  const kinds = Array.from(row.querySelectorAll(':scope > :not(.ui-otp-ring)')).map((el) =>
     el.classList.contains('ui-otp-separator') ? '-' : 'c',
   )
   expect(kinds.join('')).toBe('ccc-ccc')
@@ -187,7 +187,7 @@ test('groups puts a separator between each group of cells', async () => {
 test('groups takes explicit group sizes', async () => {
   const screen = await render(OtpInputFixture, { props: { groups: [2, 4] } })
   const row = screen.container.querySelector('[data-testid="basic"] .ui-otp-cells')!
-  const kinds = Array.from(row.children).map((el) =>
+  const kinds = Array.from(row.querySelectorAll(':scope > :not(.ui-otp-ring)')).map((el) =>
     el.classList.contains('ui-otp-separator') ? '-' : 'c',
   )
   expect(kinds.join('')).toBe('cc-cccc')
@@ -240,4 +240,22 @@ test('variant="field" boxes the whole code and a placeholder marks each empty ce
   // Cells inside the box carry no border of their own.
   const cell = screen.container.querySelector<HTMLElement>('.ui-otp-cell')!
   expect(getComputedStyle(cell).borderTopColor).toBe('rgba(0, 0, 0, 0)')
+})
+
+test('one ring glides to the active cell and carries the caret while it is empty', async () => {
+  const screen = await render(OtpInputFixture)
+  const otp = screen.container.querySelector<HTMLElement>('[data-testid="basic"]')!
+  const input = otp.querySelector('input')!
+  const ring = otp.querySelector<HTMLElement>('.ui-otp-ring')!
+  input.focus()
+  await vi.waitFor(() => expect(getComputedStyle(ring).opacity).toBe('1'))
+  await userEvent.keyboard('12')
+  await vi.waitFor(() => {
+    const cell = otp.querySelector<HTMLElement>('.ui-otp-cell[data-active]')!
+    expect(cell).toBe(otp.querySelectorAll('.ui-otp-cell')[2])
+    expect(parseFloat(ring.style.translate)).toBe(cell.offsetLeft)
+  })
+  expect(ring.hasAttribute('data-caret')).toBe(true)
+  input.blur()
+  await vi.waitFor(() => expect(getComputedStyle(ring).opacity).toBe('0'))
 })

@@ -2,6 +2,7 @@ import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
+import { prefersReducedMotion } from './dom'
 
 export interface SheetSnapPoint {
   id: string
@@ -61,9 +62,7 @@ function dampen(overshoot: number): number {
 }
 
 function reducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
+  return prefersReducedMotion()
 }
 
 // visualViewport tracks a mobile browser's dynamic toolbar show/hide live; window.innerHeight is a one-time read that only updates on an actual 'resize' event, which mobile browsers don't reliably fire for toolbar changes.

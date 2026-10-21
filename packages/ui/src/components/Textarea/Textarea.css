@@ -1,6 +1,7 @@
 @layer ui-components {
   /* Textarea Grid frame: row 1 is [start][textarea][end], row 2 is a full-width in-frame action strip under the text — an empty grid row with nothing placed in it collapses to 0 height on its own, so the row is always declared and simply disappears when neither bottom slot renders (no `:has()` needed). Auto-grow is native-first (`field-sizing: content`); see Textarea.vue's SFC comment for the JS fallback. */
   .ui-textarea {
+    position: relative;
     display: grid;
     grid-template-columns: auto 1fr auto;
     grid-template-areas:
@@ -39,6 +40,23 @@
   }
   .ui-textarea-el::placeholder {
     color: var(--ui-text-muted);
+  }
+  /* #display draws the text over the textarea; the textarea keeps the caret. */
+  .ui-textarea-display {
+    position: absolute;
+    overflow: hidden;
+    color: var(--ui-text);
+    pointer-events: none;
+  }
+  .ui-textarea-display-track {
+    display: block;
+  }
+  .ui-textarea-el[data-ui-display] {
+    color: transparent;
+    caret-color: var(--ui-text);
+  }
+  .ui-textarea-el[data-ui-display]::placeholder {
+    color: transparent;
   }
   .ui-textarea:not(:has(.ui-textarea-end)):not(:has(.ui-textarea-bottom)) .ui-textarea-el {
     margin-inline-end: -0.75rem;

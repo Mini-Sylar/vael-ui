@@ -2,7 +2,7 @@ import { shallowRef, toValue, watch, onScopeDispose } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 import type { ElRef } from './dom'
 import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
-import type { Placement, Side } from '@floating-ui/dom'
+import type { Middleware, Placement, Side } from '@floating-ui/dom'
 
 export type Align = 'start' | 'center' | 'end'
 
@@ -48,6 +48,22 @@ function toTransformOrigin(placement: Placement): string {
   const block = BLOCK_ORIGIN[side]
   const inline = INLINE_ORIGIN[align]
   return vertical ? `${inline} ${block}` : `${block} ${inline}`
+}
+
+// Grows from the trigger's centre, on the edge facing it, even after flip and shift move the panel.
+const triggerOrigin: Middleware = {
+  name: 'triggerOrigin',
+  fn({ x, y, rects, placement }) {
+    const side = placement.split('-')[0] as Side
+    const clamp = (value: number, max: number) => Math.round(Math.min(Math.max(value, 0), max))
+    const centerX = clamp(rects.reference.x + rects.reference.width / 2 - x, rects.floating.width)
+    const centerY = clamp(rects.reference.y + rects.reference.height / 2 - y, rects.floating.height)
+    const data =
+      side === 'top' || side === 'bottom'
+        ? { x: centerX, y: side === 'top' ? rects.floating.height : 0 }
+        : { x: side === 'left' ? rects.floating.width : 0, y: centerY }
+    return { data }
+  },
 }
 
 // Position absolute to avoid scroll jitter; hidden until computed.
@@ -108,6 +124,7 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
             anchorInlineSize = matchWidth ? `${rects.reference.width}px` : undefined
           },
         }),
+        triggerOrigin,
       ],
     })
     // A newer call already started (or the scope was disposed and `update` will never be called
@@ -126,7 +143,10 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
       ...(anchorInlineSize ? { '--ui-anchor-inline-size': anchorInlineSize } : {}),
     }
     placement.value = result.placement
-    transformOrigin.value = toTransformOrigin(result.placement)
+    const origin = result.middlewareData.triggerOrigin as { x: number; y: number } | undefined
+    transformOrigin.value = origin
+      ? `${origin.x}px ${origin.y}px`
+      : toTransformOrigin(result.placement)
   }
 
   let stopAutoUpdate: (() => void) | undefined

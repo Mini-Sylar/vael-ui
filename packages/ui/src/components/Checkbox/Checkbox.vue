@@ -105,13 +105,13 @@ const rawProps = withDefaults(
     /** Native `name` for form submission. */
     name?: string
     /** `false` skips built-in transitions; animate the exposed `boxEl`/`checkEl` yourself. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; box: UiPartValue; label: UiPartValue }>
   }>(),
-  { indeterminate: false, disabled: false, invalid: false, motionCss: undefined },
+  { indeterminate: false, disabled: false, invalid: false, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true }, ['sm', 'md'])
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true }, ['sm', 'md'])
 
 const emit = defineEmits<{
   /** Fires when you toggle the checkbox, with its new checked state. */
@@ -168,7 +168,7 @@ onMounted(() => {
     firstPaint.value = false
   })
 })
-const skipTransition = computed(() => firstPaint.value || !props.motionCss)
+const skipTransition = computed(() => firstPaint.value || !props.motion)
 
 const root = useTemplateRef<HTMLElement>('root')
 const boxEl = useTemplateRef<HTMLElement>('boxEl')

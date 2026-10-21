@@ -27,11 +27,11 @@ function pointerup(clientX: number, clientY = 0) {
   )
 }
 
-test('motionCss=false sets data-motion="off" and disables the settle transition', async () => {
+test('motion=false sets data-motion="off" and disables the settle transition', async () => {
   const { default: SwipeToReveal } =
     await import('../src/components/SwipeToReveal/SwipeToReveal.vue')
   const screen = await render(SwipeToReveal, {
-    props: { motionCss: false },
+    props: { motion: false },
     slots: { default: 'Content', 'trailing-actions': 'Delete' },
   })
   const root = screen.container.querySelector<HTMLElement>('.ui-swipe-reveal')!

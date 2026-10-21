@@ -29,7 +29,11 @@
         <span v-if="isEmpty && !(multiple && display === 'chip')" class="ui-select-placeholder">{{
           placeholder
         }}</span>
-        <span v-else-if="!multiple || display === 'text'">{{ displayLabel }}</span>
+        <LazyAnimatedText
+          v-else-if="!multiple || display === 'text'"
+          :value="displayLabel"
+          :motion="props.motion"
+        />
         <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
         <!-- The chips group stays mounted when the last chip goes, so it leaves like the others
              instead of being unmounted with its group; the placeholder slides in behind it. -->
@@ -38,8 +42,8 @@
             name="ui-chip-item"
             tag="span"
             class="ui-select-chips"
-            :css="props.motionCss"
-            :data-motion="props.motionCss ? undefined : 'off'"
+            :css="props.motion"
+            :data-motion="props.motion ? undefined : 'off'"
             @enter="chipEnterHook"
             @leave="chipLeaveHook"
             @leave-cancelled="resetLeaveStyles"
@@ -66,7 +70,7 @@
     </span>
     <Transition
       name="ui-clear"
-      :css="props.motionCss"
+      :css="props.motion"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -178,7 +182,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :motion="props.motionCss"
+            :motion="props.motion"
             :sections="hasGroups ? filtered.sections : undefined"
             :ui="{
               list: themedUi()?.list,
@@ -279,6 +283,7 @@ import SelectListBody from '../internal/SelectListBody.vue'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
 import Input from '../Input/Input.vue'
 import Chip from '../Chip/Chip.vue'
+import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -368,7 +373,7 @@ const rawProps = withDefaults(
      * `@chip-enter`/`@chip-leave`.
      * @default true
      */
-    motionCss?: boolean
+    motion?: boolean
     /** Adds a search box to the panel. `true` matches labels ignoring case and accents, a function
      * matches your way, `false` leaves filtering to you via `v-model:query`. */
     filter?: SelectFilter<T>
@@ -409,11 +414,11 @@ const rawProps = withDefaults(
     forceMount: false,
     teleportTo: 'body',
     scrollFade: true,
-    motionCss: undefined,
+    motion: undefined,
     filterPlaceholder: 'Search...',
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */
@@ -424,7 +429,7 @@ const emit = defineEmits<{
   'reach-end': []
   /** Fires when you pick an item, including a pick that deselects it in `multiple` mode. */
   select: [item: T]
-  /** Fires instead of the built-in CSS transition when `motionCss` is `false`. Call `done()` once your enter animation finishes. */
+  /** Fires instead of the built-in CSS transition when `motion` is `false`. Call `done()` once your enter animation finishes. */
   'chip-enter': [el: Element, done: () => void]
   /** Same as `@chip-enter`, for a chip's removal. */
   'chip-leave': [el: Element, done: () => void]
@@ -432,10 +437,10 @@ const emit = defineEmits<{
 
 // Same shape as SpeedDial's own enterHook/leaveHook.
 const chipEnterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
+  props.motion ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
 )
 const chipLeaveHook = computed(() =>
-  props.motionCss
+  props.motion
     ? collapseLeavingChip
     : (el: Element, done: () => void) => emit('chip-leave', el, done),
 )
@@ -535,7 +540,7 @@ const valueEl = useTemplateRef<HTMLElement>('valueEl')
 useChipRowWidth({
   row: () => valueEl.value,
   empty: () => isEmpty.value,
-  active: () => props.multiple && props.display === 'chip' && props.motionCss,
+  active: () => props.multiple && props.display === 'chip' && props.motion,
   placeholder: '.ui-select-placeholder',
 })
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
@@ -757,7 +762,7 @@ defineExpose({
   positionerEl,
   /** Scrollable listbox element (null while closed). */
   listEl,
-  /** The hover and keyboard highlight, sliding between options (null while closed). With `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between options (null while closed). With `motion: false` it moves at once, for your own animation. */
   highlightEl: indicatorEl,
   /** Built-in search Input instance (null without `filter`, with a `#filter` slot, or while closed). */
   filterInputRef,

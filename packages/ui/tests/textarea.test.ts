@@ -2,6 +2,7 @@ import '../src/style.css'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h } from 'vue'
 import TextareaFixture from './fixtures/TextareaFixture.vue'
 import Textarea from '../src/components/Textarea/Textarea.vue'
 
@@ -82,4 +83,26 @@ test('autoGrow JS fallback grows blockSize as the value grows and respects maxRo
   } finally {
     supportsSpy.mockRestore()
   }
+})
+
+test('#display draws wrapped text over the textarea and follows its scroll', async () => {
+  const text = 'line one\nline two\nline three\nline four\nline five\nline six\nline seven'
+  const screen = await render({
+    render: () =>
+      h(
+        Textarea,
+        { modelValue: text, rows: 2, 'aria-label': 'Notes' },
+        { display: ({ value }: { value: string }) => h('span', { class: 'mine' }, value) },
+      ),
+  })
+  const textarea = screen.container.querySelector<HTMLTextAreaElement>('textarea')!
+  const display = screen.container.querySelector<HTMLElement>('.ui-textarea-display')!
+  const track = display.querySelector<HTMLElement>('.ui-textarea-display-track')!
+  expect(display.querySelector('.mine')!.textContent).toBe(text)
+  expect(getComputedStyle(textarea).color).toBe('rgba(0, 0, 0, 0)')
+  await vi.waitFor(() => expect(getComputedStyle(display).whiteSpace).toBe('pre-wrap'))
+  expect(getComputedStyle(display).lineHeight).toBe(getComputedStyle(textarea).lineHeight)
+  textarea.scrollTop = 30
+  textarea.dispatchEvent(new Event('scroll'))
+  await vi.waitFor(() => expect(track.style.translate).toBe(`0px ${-textarea.scrollTop}px`))
 })

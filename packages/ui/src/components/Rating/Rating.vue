@@ -105,13 +105,13 @@ const rawProps = withDefaults(
     /** Drives `aria-valuetext`. Defaults to the `rating.valueText` message ("{value} of {max}"). */
     valueText?: (value: number) => string
     /** `false` skips the built-in fill-sweep and commit-pop animations. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
   }>(),
-  { max: 5, allowHalf: false, readonly: false, disabled: false, motionCss: undefined },
+  { max: 5, allowHalf: false, readonly: false, disabled: false, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const fieldControl = useFieldControl({ filled: () => modelValue.value > 0 })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
@@ -277,7 +277,7 @@ const rootPart = computed(() =>
     `ui-rating--${props.size}`,
     isDisabled.value && 'ui-rating--disabled',
     props.readonly && 'ui-rating--readonly',
-    !props.motionCss && 'ui-rating--no-motion',
+    !props.motion && 'ui-rating--no-motion',
   ),
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-rating-item'))

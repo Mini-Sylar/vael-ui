@@ -6,6 +6,7 @@ import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
 import type { ElRef } from './dom'
 import { ssrWindow } from '../ssr'
+import { prefersReducedMotion } from './dom'
 
 export type TooltipCloseReason = 'pointer' | 'focus' | 'trigger' | 'escape' | 'programmatic'
 
@@ -172,7 +173,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
   }
 
   function reducedMotion(): boolean {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    return prefersReducedMotion()
   }
 
   // Further apart than this is not one sweep across a row of triggers: the tooltip just appears.

@@ -1,6 +1,13 @@
 <template>
   <Teleport :to="teleportTarget">
-    <Transition name="ui-dialog" appear :css="!forceMount" @after-leave="releaseScroll">
+    <Transition
+      name="ui-dialog"
+      appear
+      :css="!forceMount"
+      @enter="aimAtTrigger"
+      @before-leave="aimAtTrigger"
+      @after-leave="releaseScroll"
+    >
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -13,6 +20,7 @@
         :data-maximized="maximized"
         :data-contained="contained || undefined"
         :data-force-mount="forceMount || undefined"
+        :data-origin="fromTrigger ? 'trigger' : undefined"
       >
         <div
           v-if="modal"
@@ -136,6 +144,11 @@ export interface DialogProps {
   /** Where the panel anchors in the viewport. @default 'center' */
   position?: DialogPosition
   /**
+   * `'trigger'` zooms the panel out of the element that opened it, and back into it on close, for
+   * a dialog that expands from a card or a button. Centred dialogs only. @default 'center'
+   */
+  origin?: 'center' | 'trigger'
+  /**
    * Use `'alertdialog'` for urgent messages that need a response, such as confirmations. Screen readers announce it more assertively.
    * @default 'dialog'
    */
@@ -205,7 +218,7 @@ export interface DialogProps {
 <script setup lang="ts">
 import './Dialog.css'
 import '../shared/tokens.css'
-import { computed, inject, ref, useAttrs, useId, useTemplateRef } from 'vue'
+import { computed, inject, ref, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { useEventListener } from '@vueuse/core'
 import { useDialog } from '../../composables/useDialog'
@@ -229,6 +242,7 @@ const maximized = defineModel<boolean>('maximized', { default: false })
 const props = withDefaults(defineProps<DialogProps>(), {
   size: 'md',
   position: 'center',
+  origin: 'center',
   role: 'dialog',
   showClose: true,
   modal: true,
@@ -358,10 +372,37 @@ const overlayStyle = {
 // width/height (typically physical properties) can never permanently defeat maximize's logical
 // inlineSize/blockSize — same-axis logical vs. physical conflicts resolve by declaration order.
 const naturalPanelSize = ref<{ width: number; height: number } | null>(null)
+// origin="trigger": the focused element when it opened, so the panel grows out of it.
+const fromTrigger = computed(() => props.origin === 'trigger' && props.position === 'center')
+let triggerEl: HTMLElement | null = null
+watch(
+  open,
+  (isOpen) => {
+    if (isOpen && typeof document !== 'undefined')
+      triggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  },
+  { immediate: true, flush: 'sync' },
+)
+const triggerOrigin = shallowRef<string>()
+function aimAtTrigger() {
+  const panel = panelEl.value
+  if (!fromTrigger.value || !panel || !triggerEl?.isConnected || triggerEl === document.body) {
+    triggerOrigin.value = undefined
+    return
+  }
+  // offset* ignores the panel's own scale, so this is its resting box.
+  const parent = (panel.offsetParent ?? rootEl.value)?.getBoundingClientRect()
+  const trigger = triggerEl.getBoundingClientRect()
+  if (!parent) return
+  const x = trigger.left + trigger.width / 2 - (parent.left + panel.offsetLeft)
+  const y = trigger.top + trigger.height / 2 - (parent.top + panel.offsetTop)
+  triggerOrigin.value = `${Math.round(x)}px ${Math.round(y)}px`
+}
 const panelStyle = computed<Record<string, string | undefined>>(() => {
   const base: Record<string, string | undefined> = {
     position: 'relative',
     pointerEvents: props.modal ? undefined : 'auto',
+    transformOrigin: triggerOrigin.value,
   }
   if (maximized.value) {
     // dvw/dvh are viewport-relative; inside a container "maximized" means filling it.

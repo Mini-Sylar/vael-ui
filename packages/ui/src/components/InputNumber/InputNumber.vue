@@ -16,7 +16,13 @@
     :aria-valuenow="modelValue ?? undefined"
     :aria-valuemin="min"
     :aria-valuemax="max"
+    :data-ui-roll="animated || undefined"
+    :data-ui-scrub="scrubPx ? (scrubbing ? 'active' : '') : undefined"
     @beforeinput="onBeforeInput"
+    @pointerdown="onInputPointerdown"
+    @pointermove="onScrubMove"
+    @pointerup="onScrubEnd"
+    @pointercancel="onScrubEnd"
     @keydown="onKeydown"
     @focus="onFocus"
     @blur="onBlur"
@@ -40,6 +46,20 @@
           <path d="M2 5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
         </svg>
       </button>
+    </template>
+    <template v-if="$slots.display || animated" #display="displayProps">
+      <slot name="display" v-bind="displayProps">
+        <template v-if="rolling"
+          >{{ prefix
+          }}<LazyAnimatedNumber
+            :value="modelValue!"
+            :locale="props.locale"
+            :format="numberFormat.formatOptions.value"
+          />{{ suffix }}</template
+        >
+        <span v-else-if="displayValue">{{ displayValue }}</span>
+        <span v-else class="ui-input-display-placeholder">{{ placeholder }}</span>
+      </slot>
     </template>
     <template #end>
       <slot name="end" />
@@ -124,6 +144,7 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import Input from '../Input/Input.vue'
+import LazyAnimatedNumber from '../internal/LazyAnimatedNumber.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useNumberFormat } from '../../composables/useNumberFormat'
 import { useUiMessages } from '../../messages'
@@ -179,6 +200,18 @@ const rawProps = withDefaults(
     placeholder?: string
     /** Native `name` on the input; a plain `<form>` submits the formatted text. */
     name?: string
+    /**
+     * Drag sideways on the field, while you're not typing in it, to change the value: one `step`
+     * per this many pixels, ten with Shift held. `true` is 4 px. A click without a drag still
+     * focuses the field for typing.
+     * @default false
+     */
+    scrub?: boolean | number
+    /**
+     * Rolls the digits to each new value from the steppers, the arrow keys or your code, like
+     * AnimatedNumber. Typing shows the plain input. @default false
+     */
+    animated?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -197,6 +230,8 @@ const rawProps = withDefaults(
     disabled: false,
     readonly: false,
     invalid: false,
+    animated: false,
+    scrub: false,
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md', locale: undefined })
@@ -206,6 +241,11 @@ defineSlots<{
   start(): unknown
   /** Inline trailing content, before the stepper buttons. */
   end(): unknown
+  /**
+   * Draws the text yourself over the field's own text, as Input's `#display`; it replaces the
+   * rolling digits of `animated`. `value` is the formatted text.
+   */
+  display(props: { value: string; placeholder: string; focused: boolean }): unknown
 }>()
 
 const numberFormat = useNumberFormat({
@@ -223,23 +263,26 @@ const messages = useUiMessages()
 const fieldControl = useFieldControl()
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
-// The phone keypad. The iPhone's number pads have no minus key, so a range that
-// goes below zero gets the full keyboard; whole numbers that can't go negative
-// get plain digits; everything else gets digits with a decimal point.
+// iPhone number pads have no minus key, so a range that may go negative gets the full keyboard.
 const inputMode = computed(() => {
-  if (props.min !== undefined && props.min < 0) return 'text'
+  if (props.min === undefined || props.min < 0) return 'text'
   if (props.maxFractionDigits === 0 && props.min !== undefined) return 'numeric'
   return 'decimal'
 })
 
 const displayValue = shallowRef(numberFormat.format(modelValue.value))
 const isFocused = shallowRef(false)
+// Typing shows the plain input; a step, Home/End, Enter or blur hands back to the rolling digits.
+const typing = shallowRef(false)
 
 // Resync on external model writes and on format changes (locale, currency); skip if focused (avoid fighting caret).
 watch(
   () => numberFormat.format(modelValue.value),
   (text) => {
-    if (!isFocused.value) displayValue.value = text
+    if (!isFocused.value) {
+      displayValue.value = text
+      typing.value = false
+    }
   },
 )
 
@@ -253,6 +296,7 @@ watch(displayValue, (text) => {
 })
 
 function onBeforeInput(event: InputEvent) {
+  typing.value = true
   if (isDisabled.value || props.readonly || !event.data) return
   const target = event.target as HTMLInputElement
   const start = target.selectionStart ?? target.value.length
@@ -286,6 +330,7 @@ function applyStep(delta: number) {
   const scale = 10 ** decimals
   const base = modelValue.value ?? props.min ?? 0
   const next = clamp(Math.round(base * scale + delta * scale) / scale)
+  typing.value = false
   modelValue.value = next
   displayValue.value = numberFormat.format(next)
 }
@@ -295,6 +340,51 @@ function increment() {
 }
 function decrement() {
   applyStep(-props.step)
+}
+
+// Scrub: a drag from an unfocused field steps the value; a click without one focuses it.
+const scrubPx = computed(() => (props.scrub === true ? 4 : props.scrub || 0))
+const scrubbing = shallowRef(false)
+let drag: { x: number; base: number; moved: boolean } | null = null
+function onInputPointerdown(event: PointerEvent) {
+  const canScrub =
+    scrubPx.value && !isFocused.value && !isDisabled.value && !props.readonly && event.button === 0
+  if (!canScrub) {
+    typing.value = true
+    return
+  }
+  event.preventDefault()
+  try {
+    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  } catch {
+    // An untrusted event has no active pointer to capture.
+  }
+  drag = { x: event.clientX, base: modelValue.value ?? props.min ?? 0, moved: false }
+}
+function onScrubMove(event: PointerEvent) {
+  if (!drag) return
+  const dx = event.clientX - drag.x
+  if (!drag.moved && Math.abs(dx) < 3) return
+  drag.moved = true
+  scrubbing.value = true
+  const steps = Math.trunc(dx / scrubPx.value) * (event.shiftKey ? 10 : 1)
+  const decimals = decimalPlaces.value
+  const scale = 10 ** decimals
+  const next = clamp(Math.round(drag.base * scale + steps * props.step * scale) / scale)
+  if (next === modelValue.value) return
+  typing.value = false
+  modelValue.value = next
+  displayValue.value = numberFormat.format(next)
+}
+function onScrubEnd(event: PointerEvent) {
+  if (!drag) return
+  const clicked = !drag.moved && event.type === 'pointerup'
+  drag = null
+  scrubbing.value = false
+  if (clicked) {
+    typing.value = true
+    inputEl.value?.focus()
+  }
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -311,6 +401,7 @@ function onKeydown(event: KeyboardEvent) {
     case 'Home':
       if (props.min !== undefined) {
         event.preventDefault()
+        typing.value = false
         modelValue.value = props.min
         displayValue.value = numberFormat.format(props.min)
       }
@@ -321,6 +412,7 @@ function onKeydown(event: KeyboardEvent) {
     case 'End':
       if (props.max !== undefined) {
         event.preventDefault()
+        typing.value = false
         modelValue.value = props.max
         displayValue.value = numberFormat.format(props.max)
       }
@@ -373,6 +465,7 @@ function commit() {
     }
   }
   displayValue.value = numberFormat.format(value)
+  typing.value = false
 }
 
 const showColumnControls = computed(() => props.controls && props.stepperPosition === 'end')
@@ -388,6 +481,14 @@ const atMin = computed(
 const inputRef = useTemplateRef('inputRef')
 const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
+
+const rolling = computed(
+  () =>
+    props.animated &&
+    !typing.value &&
+    modelValue.value !== null &&
+    displayValue.value === numberFormat.format(modelValue.value),
+)
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(

@@ -25,6 +25,9 @@
       @focus="onFocus"
       @blur="onBlur"
     >
+      <template v-if="$slots.display" #display="displayProps">
+        <slot name="display" v-bind="displayProps" />
+      </template>
       <template #end>
         <slot name="end" />
         <button
@@ -63,7 +66,7 @@
 
     <Transition
       v-if="hintPlacement === 'inline' && hasHintContent"
-      :name="props.motionCss ? 'ui-field-error' : undefined"
+      :name="props.motion ? 'ui-field-error' : undefined"
     >
       <div :class="hintPart.class" :style="hintPart.style">
         <slot name="hint" :value="modelValue" :results="ruleResults">
@@ -208,7 +211,7 @@ const rawProps = withDefaults(
     /** Where the requirements hint renders. `'none'` disables it outright. @default 'popover' */
     hintPlacement?: 'inline' | 'popover' | 'none'
     /** `false` skips the hint's enter/exit transition. Inline mode only. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Which side of the input the hint appears on, in both `'popover'` and `'inline'` mode.
      * Inline defaults to `'bottom'`. */
     side?: PopoverSide
@@ -245,15 +248,20 @@ const rawProps = withDefaults(
     invalid: false,
     revealable: true,
     hintPlacement: 'popover',
-    motionCss: undefined,
+    motion: undefined,
     forceMount: false,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 defineSlots<{
   /** Inline trailing content, placed before the reveal toggle. */
   end(): unknown
+  /**
+   * Draws the text yourself over the field's own text, as Input's `#display`: the real input keeps
+   * the caret, selection and screen reader text.
+   */
+  display(props: { value: string; placeholder: string; focused: boolean }): unknown
   /** Replaces the default requirements checklist. Falls back to it when omitted. */
   hint(props: { value: string; results: PasswordRuleResult[] }): unknown
 }>()

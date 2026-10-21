@@ -400,7 +400,7 @@ const props = defineProps<{
   onToggleSelect: (row: T) => void
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
-  motionCss: boolean
+  motion: boolean
   /** False until the first measurement render has passed; row move stays off. */
   rowMotionReady: boolean
   onRowEnter: (el: Element, done: () => void) => void
@@ -461,14 +461,14 @@ const rowMotionFits = computed<{ count: number; fits: boolean }>((previous) => {
     fits: count <= ROW_MOTION_LIMIT && (previous?.count ?? 0) <= ROW_MOTION_LIMIT,
   }
 })
-const rowCss = computed(() => props.motionCss && rowMotionFits.value.fits)
+const rowCss = computed(() => props.motion && rowMotionFits.value.fits)
 
-// A JS hook and Vue's CSS end detection can't coexist, so hooks only wire when motionCss is off.
+// A JS hook and Vue's CSS end detection can't coexist, so hooks only wire when motion is off.
 const rowEnterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
+  props.motion ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
 )
 const rowLeaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowLeave(el, done),
+  props.motion ? undefined : (el: Element, done: () => void) => props.onRowLeave(el, done),
 )
 
 // A px max-block-size, not 0fr/1fr rows: fr interpolates unevenly and reads as a stall.

@@ -146,7 +146,7 @@ import Dialog from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
 import '../shared/tokens.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
-import { resolveDOMTarget } from '../../composables/dom'
+import { resolveDOMTarget, prefersReducedMotion } from '../../composables/dom'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -196,9 +196,7 @@ function cancelClose() {
 }
 
 function reducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
+  return prefersReducedMotion()
 }
 
 // Drag dismiss delegates to Dialog's close() — one owner of exit animation (drag/ESC/overlay click).

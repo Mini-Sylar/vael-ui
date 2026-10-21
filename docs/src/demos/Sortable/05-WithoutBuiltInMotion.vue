@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Without the built-in motion</h3>
     <p>
-      <code>motionCss="false"</code> skips the springs entirely — rows snap to their new slots,
-      leaving the motion to you.
+      <code>motion="false"</code> skips the springs entirely — rows snap to their new slots, leaving
+      the motion to you.
     </p>
-    <Sortable v-model:items="plain" item-key="id" label-key="label" :motion-css="false" />
+    <Sortable v-model:items="plain" item-key="id" label-key="label" :motion="false" />
   </section>
 </template>
 

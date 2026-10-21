@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Extreme: the spotlight glides between steps (GSAP)</h3>
     <p class="note">
-      With <code>:motion-css="false"</code> Tour's own glide is off and the cutout jumps to each
-      target. On every <code>@step-change</code>, one GSAP timeline carries the exposed
+      With <code>:motion="false"</code> Tour's own glide is off and the cutout jumps to each target.
+      On every <code>@step-change</code>, one GSAP timeline carries the exposed
       <code>spotlightEl</code> from the old target to the new one. Its position, size and corner
       radius morph together, and <code>panelEl</code> rides along on the same progress value. Press
       Next or Back mid-glide and it turns from where it is.
@@ -23,7 +23,7 @@
         description="Sales, signups and churn for the last seven days."
       />
     </div>
-    <Tour ref="tour" v-model:open="open" :steps="steps" :motion-css="false" @step-change="glide" />
+    <Tour ref="tour" v-model:open="open" :steps="steps" :motion="false" @step-change="glide" />
     <Teleport to="body">
       <div ref="ring" class="glide-ring" aria-hidden="true" />
     </Teleport>

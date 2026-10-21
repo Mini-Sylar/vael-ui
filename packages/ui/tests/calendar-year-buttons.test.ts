@@ -17,7 +17,7 @@ test('off by default: only the month arrows', async () => {
 
 test('« and » jump a whole year and keep the month', async () => {
   const screen = await render(Calendar, {
-    props: { modelValue: JUNE_15_2024, locale: 'en-US', showYearButtons: true, motionCss: false },
+    props: { modelValue: JUNE_15_2024, locale: 'en-US', showYearButtons: true, motion: false },
   })
   const root = screen.container
   expect(root.querySelectorAll('.ui-calendar-nav')).toHaveLength(4)
@@ -36,7 +36,7 @@ test('a jump past minDate stops at its month, and « is disabled there', async (
       minDate: new Date(2023, 10, 20),
       locale: 'en-US',
       showYearButtons: true,
-      motionCss: false,
+      motion: false,
     },
   })
   const root = screen.container
@@ -47,7 +47,7 @@ test('a jump past minDate stops at its month, and « is disabled there', async (
 
 test('the year buttons hide in the month grid, where the arrows already step by year', async () => {
   const screen = await render(Calendar, {
-    props: { modelValue: JUNE_15_2024, locale: 'en-US', showYearButtons: true, motionCss: false },
+    props: { modelValue: JUNE_15_2024, locale: 'en-US', showYearButtons: true, motion: false },
   })
   const root = screen.container
   root.querySelector<HTMLButtonElement>('.ui-calendar-label--button')!.click()
@@ -110,7 +110,7 @@ test('one month: moving to a longer month name never widens the calendar mid-tra
 
 test("two months: a month picked from the second month's header lands second", async () => {
   const screen = await render(Calendar, {
-    props: { modelValue: new Date(2026, 5, 15), locale: 'en-US', months: 2, motionCss: false },
+    props: { modelValue: new Date(2026, 5, 15), locale: 'en-US', months: 2, motion: false },
   })
   const root = screen.container
   const paneLabels = () =>

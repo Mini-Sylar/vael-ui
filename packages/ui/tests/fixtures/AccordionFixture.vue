@@ -5,7 +5,7 @@
     v-model:value="value"
     :multiple="multiple"
     :collapsible="collapsible"
-    :motion-css="motionCss"
+    :motion="motion"
     @change="onChange"
   >
     <AccordionItem ref="firstItem" value="first" title="First section">
@@ -23,7 +23,7 @@ import { shallowRef, useTemplateRef } from 'vue'
 import Accordion from '../../src/components/Accordion/Accordion.vue'
 import AccordionItem from '../../src/components/AccordionItem/AccordionItem.vue'
 
-// collapsible/motionCss need explicit defaults matching Accordion's own — an
+// collapsible/motion need explicit defaults matching Accordion's own — an
 // absent boolean prop resolves to false, not undefined, so without this the
 // fixture silently forwards false and defeats Accordion's real true defaults.
 // (multiple's own absent-default of false already happens to match.)
@@ -31,10 +31,10 @@ const props = withDefaults(
   defineProps<{
     multiple?: boolean
     collapsible?: boolean
-    motionCss?: boolean
+    motion?: boolean
     initial?: string | string[] | null
   }>(),
-  { collapsible: true, motionCss: true },
+  { collapsible: true, motion: true },
 )
 
 const value = shallowRef<string | string[] | null>(props.initial ?? null)

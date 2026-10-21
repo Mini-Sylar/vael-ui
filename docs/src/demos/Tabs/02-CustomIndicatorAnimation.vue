@@ -7,27 +7,30 @@
       Quick, near-flat spring (duration 0.45s, bounce 0.15), no playful overshoot on a control
       pressed this often.
     </p>
-    <div class="row">
-      <Tabs v-model:active="springActive" :items="items">
-        <template #default="{ active: current, items: list, itemProps }">
-          <button v-for="item in list" :key="item" v-bind="itemProps(item)">
-            <motion.span
-              v-if="current === item"
-              layout-id="tab-indicator"
-              class="tab-indicator"
-              :transition="{ type: 'spring', duration: 0.45, bounce: 0.15 }"
-            />
-            <span class="tab-label">{{ item }}</span>
-          </button>
-        </template>
-      </Tabs>
-    </div>
+    <!-- LayoutGroup scopes the layout-id to this demo, so leaving the page releases it. -->
+    <LayoutGroup id="tabs-spring-demo">
+      <div class="row">
+        <Tabs v-model:active="springActive" :items="items">
+          <template #default="{ active: current, items: list, itemProps }">
+            <button v-for="item in list" :key="item" v-bind="itemProps(item)">
+              <motion.span
+                v-if="current === item"
+                layout-id="tab-indicator"
+                class="tab-indicator"
+                :transition="{ type: 'spring', duration: 0.45, bounce: 0.15 }"
+              />
+              <span class="tab-label">{{ item }}</span>
+            </button>
+          </template>
+        </Tabs>
+      </div>
+    </LayoutGroup>
   </section>
 </template>
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { motion } from 'motion-v'
+import { LayoutGroup, motion } from 'motion-v'
 import { Tabs } from 'vael-ui'
 
 type Section = 'overview' | 'analytics' | 'settings'

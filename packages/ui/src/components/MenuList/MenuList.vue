@@ -246,7 +246,7 @@ defineExpose({
   el: list,
   /** The current page's indicator, sliding between rows (null when no row is the current page). */
   indicatorEl: pageIndicatorEl,
-  /** The hover and keyboard highlight, sliding between rows. Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between rows. Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
   highlightEl: hoverEl,
 })
 </script>

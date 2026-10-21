@@ -89,8 +89,8 @@ test('height pins to a concrete px value while animating, then releases to auto 
   expect(panel.style.blockSize).toBe('0px')
 })
 
-test('motionCss=false skips the pin/transition dance and removes the CSS height transition, so a consumer tween is not smoothed by it', async () => {
-  await render(AccordionFixture, { props: { motionCss: false } })
+test('motion=false skips the pin/transition dance and removes the CSS height transition, so a consumer tween is not smoothed by it', async () => {
+  await render(AccordionFixture, { props: { motion: false } })
   const panel = panelFor('First section')
   expect(getComputedStyle(panel).transitionDuration).toBe('0s')
 
@@ -131,7 +131,7 @@ test('ArrowDown/ArrowUp/Home/End move focus between enabled triggers, wrapping a
 })
 
 test('trigger text and panel content share the same inline start edge', async () => {
-  const screen = await render(AccordionFixture, { props: { initial: 'first', motionCss: false } })
+  const screen = await render(AccordionFixture, { props: { initial: 'first', motion: false } })
   const trigger = screen.container.querySelector<HTMLElement>('.ui-accordion-trigger-title')!
   const body = screen.container.querySelector<HTMLElement>('.ui-accordion-body')!
   const range = document.createRange()

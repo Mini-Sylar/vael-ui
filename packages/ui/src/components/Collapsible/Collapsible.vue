@@ -54,13 +54,13 @@ const rawProps = withDefaults(
     /** Blocks toggling and marks the trigger `aria-disabled`. @default false */
     disabled?: boolean
     /** `false` skips transitions; use exposed `panelEl` for custom motion. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue; body: UiPartValue }>
   }>(),
-  { disabled: false, motionCss: undefined },
+  { disabled: false, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 defineSlots<{
   /** Toggle control: clicks toggle the panel, and its first button receives `aria-expanded` and `aria-controls`. */
@@ -82,9 +82,9 @@ const panel = useTemplateRef<HTMLElement>('panel')
 
 const { style: collapseStyle, state: collapseState } = useCollapse(open, {
   el: panel,
-  motionCss: () => props.motionCss,
-  // Its own motion-css="false" hands the height over; a provider's just makes it instant.
-  handOff: () => rawProps.motionCss === false,
+  motion: () => props.motion,
+  // Its own motion="false" hands the height over; a provider's just makes it instant.
+  handOff: () => rawProps.motion === false,
 })
 
 // Reach into slot's real focusable child to keep expanded state + panel association in sync

@@ -419,7 +419,7 @@ const { style, state } = useCollapse(open, { el: panelEl })
             'The panel. It needs a `block-size` transition in your CSS. Without one, it opens and closes at once.',
         },
         {
-          name: 'motionCss',
+          name: 'motion',
           type: '() => boolean',
           description:
             'Return `false` to turn off the built-in animation. By default that hands the height over to you: no inline styles at all, open or closed, so your own tween is never cut off. `state` still reports `open` and `closed`.',
@@ -428,7 +428,7 @@ const { style, state } = useCollapse(open, { el: panelEl })
           name: 'handOff',
           type: '() => boolean',
           description:
-            'Only matters while `motionCss` returns `false`. Default `true` hands the height over. Return `false` to keep the collapsed styles and make the change instant instead, for an app-wide "no animations" setting.',
+            'Only matters while `motion` returns `false`. Default `true` hands the height over. Return `false` to keep the collapsed styles and make the change instant instead, for an app-wide "no animations" setting.',
         },
       ],
       returns: [

@@ -4,7 +4,7 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="state"
-    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-motion="props.motion ? undefined : 'off'"
     v-bind="attrs"
   >
     <div
@@ -117,7 +117,7 @@ const rawProps = withDefaults(
     /** Renders a legend under stacked segments that have labels. @default true */
     legend?: boolean
     /** `false` skips the fill transition; drive `fillEl`/`fillEls` yourself. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -134,10 +134,10 @@ const rawProps = withDefaults(
     sweep: 360,
     size: 'md',
     legend: true,
-    motionCss: undefined,
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 defineSlots<{
   /** Content in the middle of a ring, or inside the arch of a gauge, such as the percentage. */

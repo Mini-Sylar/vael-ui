@@ -116,8 +116,8 @@ test('exposes el and fillEl for direct DOM/animation-lib access', async () => {
   expect(fillEl?.classList.contains('ui-progress-fill')).toBe(true)
 })
 
-test('motion-css=false turns the fill transition off', async () => {
-  const screen = await render(Progress, { props: { value: 50, motionCss: false } })
+test('motion=false turns the fill transition off', async () => {
+  const screen = await render(Progress, { props: { value: 50, motion: false } })
   expect(root(screen.container).getAttribute('data-motion')).toBe('off')
   expect(getComputedStyle(fills(screen.container)[0]).transitionProperty).toBe('none')
 })

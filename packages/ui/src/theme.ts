@@ -38,6 +38,8 @@ export interface UiTheme {
   badge?: { ui?: Partial<{ root: UiPartValue }> }
   tag?: { ui?: Partial<{ root: UiPartValue; icon: UiPartValue; label: UiPartValue }> }
   kbd?: { ui?: Partial<{ root: UiPartValue }> }
+  animatedNumber?: { ui?: Partial<{ root: UiPartValue }> }
+  animatedText?: { ui?: Partial<{ root: UiPartValue }> }
   avatar?: {
     ui?: Partial<{
       root: UiPartValue

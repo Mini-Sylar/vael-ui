@@ -61,7 +61,8 @@ import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable, SelectButton, vScrollMask } from 'vael-ui'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
-import { GUIDE_ROUTES, navSections, routeFor, valueFor } from '../docsNav'
+import { NEW_COMPOSABLES } from '../composablesTaxonomy'
+import { composableValue, GUIDE_ROUTES, navSections, routeFor, valueFor } from '../docsNav'
 import type { DocsMode } from '../docsNav'
 import { useGlidingIndicator } from '../composables/useGlidingIndicator'
 
@@ -148,16 +149,25 @@ const activeValue = computed(() => pendingValue.value ?? valueFor(route))
 // Which component pages the visitor has already seen — dismisses that component's sidebar
 // "new" dot for good, whether they got there by clicking the sidebar row, a direct link, or
 // browser back/forward (see the activeValue watcher below, the single place this is written).
+// Components by name, composables by their sidebar value.
+const NEW_ITEMS: Record<string, string> = {
+  ...NEW_COMPONENTS,
+  ...Object.fromEntries(
+    Object.entries(NEW_COMPOSABLES).map(([name, date]) => [composableValue(name), date]),
+  ),
+}
 const seenNewComponents = useLocalStorage<string[]>('vael-ui-docs-seen-new-components', [])
+// Keyed by date too, so a component improved again shows its dot again.
+const seenKey = (value: string) => `${value}@${NEW_ITEMS[value]}`
 watch(
   activeValue,
   (value) => {
     if (
       typeof value === 'string' &&
-      NEW_COMPONENTS[value] &&
-      !seenNewComponents.value.includes(value)
+      NEW_ITEMS[value] &&
+      !seenNewComponents.value.includes(seenKey(value))
     ) {
-      seenNewComponents.value = [...seenNewComponents.value, value]
+      seenNewComponents.value = [...seenNewComponents.value, seenKey(value)]
     }
   },
   { immediate: true },
@@ -165,8 +175,8 @@ watch(
 
 function isNewBadge(value: string | number | null | undefined): boolean {
   if (typeof value !== 'string') return false
-  const since = NEW_COMPONENTS[value]
-  if (!since || seenNewComponents.value.includes(value)) return false
+  const since = NEW_ITEMS[value]
+  if (!since || seenNewComponents.value.includes(seenKey(value))) return false
   const ageDays = (Date.now() - new Date(since).getTime()) / 86_400_000
   return ageDays >= 0 && ageDays <= NEW_BADGE_DAYS
 }

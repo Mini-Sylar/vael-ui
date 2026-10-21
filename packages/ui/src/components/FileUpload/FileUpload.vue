@@ -46,7 +46,7 @@
       :data-ui-group="groupKey"
       tag="ul"
       name="ui-file-item"
-      :css="props.motionCss"
+      :css="props.motion"
       :class="listPart.class"
       :style="listPart.style"
       @enter="enterHook"
@@ -135,7 +135,7 @@ const rawProps = withDefaults(
      * `false` skips the built-in file-row transition; use `@item-enter`/`@item-leave` for custom motion.
      * @default true
      */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -146,9 +146,9 @@ const rawProps = withDefaults(
       remove: UiPartValue
     }>
   }>(),
-  { capture: undefined, multiple: true, disabled: false, motionCss: undefined },
+  { capture: undefined, multiple: true, disabled: false, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires for each file that `accept`, `maxSize` or `maxFiles` rejects, with the reason. */
@@ -157,7 +157,7 @@ const emit = defineEmits<{
   add: [files: File[]]
   /** Fires when you remove a file from the list. */
   remove: [file: File]
-  /** Fires when a file row enters, with the `(el, done)` transition hook. Only when `motionCss` is `false`. */
+  /** Fires when a file row enters, with the `(el, done)` transition hook. Only when `motion` is `false`. */
   'item-enter': [el: Element, done: () => void]
   /** Same as `item-enter`, for a row's exit. */
   'item-leave': [el: Element, done: () => void]
@@ -296,15 +296,15 @@ const dropzoneEl = useTemplateRef<HTMLElement>('dropzoneEl')
 const listEl = ref<HTMLElement | null>(null)
 const groupKey = useId()
 const registerListEl = transitionGroupRef(listEl, groupKey)
-// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
+// Only the component's own motion="false" hands items to the events; a provider's is instant.
 const enterHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('item-enter', el, done),
 )
 // The built-in exit collapses the row from its measured height.
 const beforeLeaveHook = computed(() =>
-  props.motionCss
+  props.motion
     ? (el: Element) =>
         (el as HTMLElement).style.setProperty(
           '--ui-file-item-block-size',
@@ -313,7 +313,7 @@ const beforeLeaveHook = computed(() =>
     : undefined,
 )
 const leaveHook = computed(() =>
-  rawProps.motionCss !== false
+  rawProps.motion !== false
     ? undefined
     : (el: Element, done: () => void) => emit('item-leave', el, done),
 )

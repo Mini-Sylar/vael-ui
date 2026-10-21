@@ -2,6 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, nextTick, shallowRef } from 'vue'
 import SelectFixture from './fixtures/SelectFixture.vue'
 import SelectFormFixture from './fixtures/SelectFormFixture.vue'
 import Select from '../src/components/Select/Select.vue'
@@ -120,7 +121,7 @@ test('maxLabels collapses extra selections into a "+N" chip', async () => {
   expect(overflow?.textContent?.trim()).toBe('+2')
 })
 
-test('motionCss=false disables the chip transition, including its move (reflow) animation', async () => {
+test('motion=false disables the chip transition, including its move (reflow) animation', async () => {
   const screen = await render(Select, {
     props: {
       items: [
@@ -129,7 +130,7 @@ test('motionCss=false disables the chip transition, including its move (reflow) 
       ],
       multiple: true,
       modelValue: ['apple', 'banana'],
-      motionCss: false,
+      motion: false,
     },
     global: { stubs: { 'transition-group': false } },
   })
@@ -602,4 +603,32 @@ test('removing the last chip eases a content-sized trigger to the placeholder wi
   expect(Math.round(placeholder.getBoundingClientRect().left)).toBe(
     Math.round(row.getBoundingClientRect().left),
   )
+})
+
+test('a new selection crossfades the label; motion false swaps it at once', async () => {
+  const items = [
+    { label: 'Ghana', value: 'gh' },
+    { label: 'South Africa', value: 'za' },
+  ]
+  const value = shallowRef('gh')
+  const motion = shallowRef(true)
+  const screen = await render(
+    {
+      render: () => h(Select as never, { items, modelValue: value.value, motion: motion.value }),
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  const labels = () => screen.container.querySelectorAll('.ui-animated-text-value')
+  expect(labels()).toHaveLength(1)
+  value.value = 'za'
+  await nextTick()
+  expect(labels()).toHaveLength(2)
+  await vi.waitFor(() => expect(labels()).toHaveLength(1))
+  expect(labels()[0]!.textContent).toBe('South Africa')
+  motion.value = false
+  await nextTick()
+  value.value = 'gh'
+  await nextTick()
+  expect(labels()).toHaveLength(1)
+  expect(labels()[0]!.textContent).toBe('Ghana')
 })

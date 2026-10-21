@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Extreme: toasts that spring in from their edge (motion-v)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> hands each card to <code>@card-enter</code> and
+      <code>:motion="false"</code> hands each card to <code>@card-enter</code> and
       <code>@card-leave</code>. Toasts spring up from the bottom edge and slide back out the same
       way. This Toaster has its own <code>name</code>, so other Toasters on the page never show its
       toasts.
@@ -15,7 +15,7 @@
       name="spring"
       aria-label="Spring notifications"
       position="bottom-center"
-      :motion-css="false"
+      :motion="false"
       @card-enter="onEnter"
       @card-leave="onLeave"
     />

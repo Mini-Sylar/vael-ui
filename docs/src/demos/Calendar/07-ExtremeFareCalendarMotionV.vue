@@ -5,7 +5,7 @@
       The <code>#day</code> slot shows each day's fare, coloured from cheap to pricey, with a dot on
       the best deals. Every day is motion-v markup inside the slot, so it animates without any DOM
       querying: a new month falls in on a diagonal wave, departure and return pop when picked, and a
-      finished trip ripples its fares from one end to the other. <code>:motion-css="false"</code>
+      finished trip ripples its fares from one end to the other. <code>:motion="false"</code>
       turns off the built-in slide so the two don't fight.
     </p>
     <div class="fare">
@@ -14,7 +14,7 @@
         selection-mode="range"
         :months="2"
         :min-date="today"
-        :motion-css="false"
+        :motion="false"
         locale="en-US"
       >
         <template #day="{ date, isCurrentMonth, isDisabled, isSelected, isToday }">

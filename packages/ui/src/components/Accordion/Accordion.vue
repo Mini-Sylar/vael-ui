@@ -17,7 +17,7 @@ import type { InjectionKey } from 'vue'
 export interface AccordionContext {
   isOpen: (value: string) => boolean
   toggle: (value: string) => void
-  motionCss: () => boolean
+  motion: () => boolean
   handOff: () => boolean
   headingLevel: () => 1 | 2 | 3 | 4 | 5 | 6
 }
@@ -47,15 +47,15 @@ const rawProps = withDefaults(
     /** Whether the last open item can close, leaving none open. @default true */
     collapsible?: boolean
     /** `false` skips transitions; use exposed `panelEl`/`open` for custom motion. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Heading level wrapping each item's trigger; match it to the surrounding outline. @default 3 */
     headingLevel?: 1 | 2 | 3 | 4 | 5 | 6
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
-  { multiple: false, collapsible: true, motionCss: undefined, headingLevel: 3 },
+  { multiple: false, collapsible: true, motion: undefined, headingLevel: 3 },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when an item opens or closes, with the new value. */
@@ -117,9 +117,9 @@ defineSlots<{
 provide(accordionKey, {
   isOpen,
   toggle,
-  motionCss: () => props.motionCss,
-  // Its own motion-css="false" hands the height over; a provider's just makes it instant.
-  handOff: () => rawProps.motionCss === false,
+  motion: () => props.motion,
+  // Its own motion="false" hands the height over; a provider's just makes it instant.
+  handOff: () => rawProps.motion === false,
   headingLevel: () => props.headingLevel,
 })
 

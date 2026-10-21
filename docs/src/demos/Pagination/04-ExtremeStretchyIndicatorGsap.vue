@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Extreme: a stretchy indicator (GSAP)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> stops the indicator sliding, and the exposed
+      <code>:motion="false"</code> stops the indicator sliding, and the exposed
       <code>indicatorEl</code> and <code>labelsEl</code> are what you drive. Here the edge facing
       the new page runs ahead and the other follows, so the highlight stretches across the gap and
       then catches up with a jelly wobble. The longer the jump, the longer the stretch, and the page
@@ -14,7 +14,7 @@
       aria-label="Pagination with a stretchy indicator"
       :total="200"
       :sibling-count="2"
-      :motion-css="false"
+      :motion="false"
     />
     <p class="demo-status">Page {{ page }} of 20</p>
   </section>

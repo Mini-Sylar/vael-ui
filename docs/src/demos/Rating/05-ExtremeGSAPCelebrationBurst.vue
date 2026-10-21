@@ -3,10 +3,10 @@
     <h3>Extreme: GSAP celebration burst at max rating (gsap)</h3>
     <p class="note">
       Hit the top rating and a GSAP stagger timeline spins/pops every star off the exposed
-      <code>itemEls</code> array — <code>motionCss</code> is off here, so the library's own commit
-      pop never fires underneath and GSAP is the only thing moving these nodes.
+      <code>itemEls</code> array — <code>motion</code> is off here, so the library's own commit pop
+      never fires underneath and GSAP is the only thing moving these nodes.
     </p>
-    <Rating ref="ratingRef" v-model="value" :max="5" :motion-css="false" aria-label="Your rating" />
+    <Rating ref="ratingRef" v-model="value" :max="5" :motion="false" aria-label="Your rating" />
     <p class="demo-status">{{ value === 5 ? 'Perfect score!' : 'Rate it 5 to see the burst.' }}</p>
   </section>
 </template>

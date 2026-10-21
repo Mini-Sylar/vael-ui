@@ -21,8 +21,8 @@ test('steps before/at/after modelValue get completed/active/upcoming data-state'
   expect(steps[2]!.getAttribute('data-state')).toBe('upcoming')
 })
 
-test('motionCss=false disables the check/number swap transition (no ui-stepper-check-* class applied)', async () => {
-  const screen = await render(Stepper, { props: { items, modelValue: 1, motionCss: false } })
+test('motion=false disables the check/number swap transition (no ui-stepper-check-* class applied)', async () => {
+  const screen = await render(Stepper, { props: { items, modelValue: 1, motion: false } })
   const check = screen.container.querySelector('.ui-stepper-step svg')!
   expect(check.getAttribute('class')).toBeNull()
 })
@@ -162,9 +162,8 @@ test('#indicator slot replaces the circle content and receives the step state', 
   expect(circles[0]!.querySelector('svg')).toBeNull()
 })
 
-test('motionCss=false switches off the circle and connector fill transitions too', async () => {
-  const make = (motionCss: boolean) =>
-    render(Stepper, { props: { items, modelValue: 1, motionCss } })
+test('motion=false switches off the circle and connector fill transitions too', async () => {
+  const make = (motion: boolean) => render(Stepper, { props: { items, modelValue: 1, motion } })
   const parts = (container: HTMLElement) => ({
     circle: container.querySelector<HTMLElement>('.ui-stepper-circle')!,
     connector: container.querySelector<HTMLElement>('.ui-stepper-connector')!,
@@ -214,8 +213,8 @@ test('exposes circleEls, connectorEls and labelEls in order, and keeps them righ
 })
 
 test('--ui-stepper-fill on a connector drives its fill, and the default look holds when unset', async () => {
-  // motionCss=false, as JS would: with the CSS transition on, the new value eases in.
-  const screen = await render(Stepper, { props: { items, modelValue: 1, motionCss: false } })
+  // motion=false, as JS would: with the CSS transition on, the new value eases in.
+  const screen = await render(Stepper, { props: { items, modelValue: 1, motion: false } })
   const connectors = screen.container.querySelectorAll<HTMLElement>('.ui-stepper-connector')
   const filled = connectors[0]!
   const empty = connectors[1]!

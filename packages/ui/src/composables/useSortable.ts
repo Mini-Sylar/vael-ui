@@ -12,7 +12,7 @@ import {
   visibleExtent,
 } from './sortableAutoScroll'
 import type { ScrollReach } from './sortableAutoScroll'
-import { createClickGuard } from './dom'
+import { createClickGuard, prefersReducedMotion } from './dom'
 
 /**
  * Reorder engine shared by every sortable surface. All ordering/nesting
@@ -242,7 +242,7 @@ export interface UseSortableOptions {
   /** Turns off dragging; the handlers below become no-ops. */
   disabled?: MaybeRefOrGetter<boolean>
   /** `false` disables the built-in springs — positions snap. */
-  motionCss?: MaybeRefOrGetter<boolean>
+  motion?: MaybeRefOrGetter<boolean>
   /** Apply the reorder. Fires once, on a committed drop. */
   onCommit: (value: string | number, to: DropPosition) => void
   /** Synchronous, re-run as the target changes: `false` marks the target invalid and blocks the drop. Use it for structural rules (only folders take children). Keep it cheap — it runs while dragging. */
@@ -508,10 +508,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     return toValue(options.disabled) ?? false
   }
   function reducedMotion(): boolean {
-    if (toValue(options.motionCss) === false) return true
-    return (
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    )
+    if (toValue(options.motion) === false) return true
+    return prefersReducedMotion()
   }
   function labelOf(value: string | number): string {
     return options.labelOf?.(value) ?? String(value)
@@ -976,7 +974,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     resetTrackingState()
     // A no-preview consumer (Sortable) translates the real element directly
     // during the drag. Clearing it here, before either branch, matters
-    // twice over: skipped for motionCss="false" it left the row stuck at
+    // twice over: skipped for motion="false" it left the row stuck at
     // its stale offset forever, and left in place through the "after"
     // measurement below it's identical in both snapshots and cancels
     // straight out of the delta — silently discarding where the row

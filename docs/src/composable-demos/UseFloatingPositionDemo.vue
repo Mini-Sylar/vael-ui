@@ -35,6 +35,9 @@ const { positionerStyle, placement } = useFloatingPosition({
 <style scoped>
 .demo {
   display: flex;
+  align-items: flex-start;
+  /* Room below the trigger, so the box opens downward inside the example's frame. */
+  min-block-size: 9rem;
 }
 
 .floating-box {

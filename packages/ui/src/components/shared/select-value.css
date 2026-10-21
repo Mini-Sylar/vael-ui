@@ -7,6 +7,17 @@
     white-space: nowrap;
     text-align: start;
   }
+  /* The selected label ellipsizes like plain text; while its box eases to a new width it clips
+     without the ellipsis flashing in. */
+  .ui-select-value .ui-animated-text-value {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+  }
+  .ui-select-value .ui-animated-text[data-sizing] .ui-animated-text-value {
+    text-overflow: clip;
+  }
   /* One row, so the placeholder sits beside the last chip while it collapses instead of under it.
      The padding is clip room for a chip remove's 24px hit area. */
   .ui-select-value:has(> .ui-select-chips) {

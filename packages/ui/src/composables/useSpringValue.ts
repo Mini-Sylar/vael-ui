@@ -36,6 +36,8 @@ export function stepSpring(
   response: number = DEFAULT_RESPONSE,
 ): SpringState {
   if (dt <= 0) return { value: state.value, velocity: state.velocity }
+  // A zero or invalid spring would never settle; it arrives at once instead.
+  if (!(response > 0) || !(damping >= 0)) return { value: target, velocity: 0 }
   const omega = (2 * Math.PI) / response
   const stiffness = omega * omega
   const dampingCoefficient = 2 * damping * omega

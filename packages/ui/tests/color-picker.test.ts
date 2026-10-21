@@ -156,10 +156,10 @@ test('the trigger, preset and default slots take over the swatch, each preset an
   expect(trigger.textContent).toBe('#0000ff')
 })
 
-test('motion-css=false marks the root; swatchEl, panelEl, areaEl and thumbEl are exposed', async () => {
+test('motion=false marks the root; swatchEl, panelEl, areaEl and thumbEl are exposed', async () => {
   const captured = ref<InstanceType<typeof ColorPicker> | null>(null)
   const Wrapper = {
-    render: () => h(ColorPicker, { modelValue: '#000000', motionCss: false, ref: captured }),
+    render: () => h(ColorPicker, { modelValue: '#000000', motion: false, ref: captured }),
   }
   const screen = await render(Wrapper)
   expect(screen.container.querySelector('.ui-color-picker')?.getAttribute('data-motion')).toBe(

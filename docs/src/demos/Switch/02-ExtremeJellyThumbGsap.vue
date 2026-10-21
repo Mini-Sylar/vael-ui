@@ -2,12 +2,12 @@
   <section class="demo">
     <h3>Extreme: a jelly thumb (GSAP)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> hands Switch's transitions over, and the exposed
+      <code>:motion="false"</code> hands Switch's transitions over, and the exposed
       <code>thumbEl</code> and <code>trackEl</code> are what you animate. The thumb stretches as it
       launches, overshoots and wobbles to a stop, while the track squashes and its color fills in
       behind the thumb. Click again mid-flight and it turns around from where it is.
     </p>
-    <Switch ref="turbo" v-model="enabled" label="Turbo mode" :motion-css="false" />
+    <Switch ref="turbo" v-model="enabled" label="Turbo mode" :motion="false" />
   </section>
 </template>
 

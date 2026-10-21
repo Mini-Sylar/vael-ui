@@ -278,11 +278,11 @@ test('the default slot fully replaces built-in card markup — the library still
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
-test("card-enter/card-leave forward TransitionGroup's own (el, done) hooks when motionCss is false — the GSAP/motion-v escape hatch", async () => {
+test("card-enter/card-leave forward TransitionGroup's own (el, done) hooks when motion is false — the GSAP/motion-v escape hatch", async () => {
   const enterCalls: Element[] = []
   const leaveCalls: Element[] = []
   const screen = await render(Toaster, {
-    props: { motionCss: false },
+    props: { motion: false },
     attrs: {
       onCardEnter: (el: Element, done: () => void) => {
         enterCalls.push(el)

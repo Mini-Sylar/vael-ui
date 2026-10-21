@@ -1,7 +1,7 @@
 <template>
   <div
     class="ui-tree-root"
-    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-motion="props.motion ? undefined : 'off'"
     :data-rows="flatRows.length > MOTION_MAX_ROWS ? 'many' : undefined"
   >
     <div v-if="filterable" :class="filterPart.class" :style="filterPart.style">
@@ -209,8 +209,8 @@ export function removeTreeNode<T extends TreeNode>(nodes: T[], value: string | n
 // only follows .vue-extension sibling imports.
 export interface TreeRowContext {
   selectionMode: TreeSelectionMode
-  motionCss: boolean
-  /** motionCss, but off for the update a search or an arrow key causes, and on very large trees. */
+  motion: boolean
+  /** motion, but off for the update a search or an arrow key causes, and on very large trees. */
   rowMotion: boolean
   /** Runs every folder's fold in this tree (useFold). */
   fold: FoldScheduler
@@ -243,7 +243,7 @@ export const treeRowContextKey: InjectionKey<TreeRowContext> = Symbol('treeRowCo
 <!-- Tree extracts logic for standalone or nested use; TreeSelect wraps it in popover.
      Independent DOM class set (ui-tree-*); TreeSelect passes ui overrides for legacy passenger classes (ui-tree-select-*).
      Focus delegation: focusFirstRow/initRoving exposed; roving tabindex internal; focus stealing is popover-specific (TreeSelect only).
-     Animation: motionCss=false disables all built-in motion via data-motion="off" on root. Rows render as a
+     Animation: motion=false disables all built-in motion via data-motion="off" on root. Rows render as a
      recursive TreeNodeRow tree (not a flat list) so stickyScroll can use native `position: sticky`; a
      folder folds open and shut by its rows block's height (useFold), so everything below follows in layout. -->
 <script setup lang="ts" generic="T extends TreeNode = TreeNode">
@@ -324,7 +324,7 @@ const rawProps = withDefaults(
      * the list easing to its new height as you search).
      * @default true
      */
-    motionCss?: boolean
+    motion?: boolean
     /** Keeps collapsed folders' children mounted (`v-show` plus `data-state`) so you can animate
      * expand/collapse yourself instead of using the built-in transition.
      * @default false
@@ -386,7 +386,7 @@ const rawProps = withDefaults(
     filterable: true,
     filterPlaceholder: 'Search...',
     emptyText: 'No results found',
-    motionCss: undefined,
+    motion: undefined,
     forceMount: false,
     reorderable: false,
     canNestInto: undefined,
@@ -402,7 +402,7 @@ const rawProps = withDefaults(
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when you change the selection, with the new model value. */
@@ -659,7 +659,7 @@ watch(
 useEasedHeight({
   el: () => listEl.value,
   source: [normalizedQuery, () => props.items],
-  enabled: () => props.motionCss,
+  enabled: () => props.motion,
 })
 function rowEls(): HTMLElement[] {
   return Array.from(listEl.value?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? [])
@@ -751,7 +751,7 @@ const {
     touchDragDelay: () => props.touchDragDelay,
     disabled: () => !props.reorderable,
     reorderSiblings: () => props.reorderSiblings,
-    motionCss: () => props.motionCss,
+    motion: () => props.motion,
     autoExpandDelay: () => props.autoExpandDelay,
     onAutoExpand: (value) => expandNode(value),
     canNestInto: (value) => {
@@ -794,7 +794,7 @@ const { style: hoverStyle } = useHoverIndicator(listEl, {
   scope: '[role="tree"]',
   scroller: true,
   enabled: () => !isReordering.value,
-  motion: () => props.motionCss,
+  motion: () => props.motion,
   indicatorEl: hoverEl,
 })
 
@@ -1046,9 +1046,9 @@ provide<TreeRowContext>(
   treeRowContextKey,
   reactive({
     selectionMode: computed(() => props.selectionMode),
-    motionCss: computed(() => props.motionCss),
+    motion: computed(() => props.motion),
     rowMotion: computed(
-      () => props.motionCss && !instantSwap.value && flatRows.value.length <= MOTION_MAX_ROWS,
+      () => props.motion && !instantSwap.value && flatRows.value.length <= MOTION_MAX_ROWS,
     ),
     fold: foldScheduler,
     stickyScroll: computed(() => props.stickyScroll),
@@ -1081,7 +1081,7 @@ provide<TreeRowContext>(
 defineExpose({
   /** The `role="tree"` list element. */
   listEl,
-  /** The hover and keyboard highlight, sliding between rows. With `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between rows. With `motion: false` it moves at once, for your own animation. */
   highlightEl: hoverEl,
   /** The filter box's Input instance (null when `filterable` is off). */
   filterInputRef,

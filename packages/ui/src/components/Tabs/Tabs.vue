@@ -201,7 +201,7 @@ function indicatorProps(variant: 'background' | 'underline' = 'background') {
 defineExpose({
   /** Tab list (root) element. */
   listEl,
-  /** The hover and keyboard highlight, sliding between tabs. Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between tabs. Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
   highlightEl: hoverEl,
   /** The id a tab carries. */
   tabId,

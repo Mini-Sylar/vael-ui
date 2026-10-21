@@ -916,7 +916,7 @@ defineExpose({
   positionerEl,
   /** Item list element (null while closed). */
   listEl,
-  /** The hover and keyboard highlight, sliding between rows (null while closed). Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  /** The hover and keyboard highlight, sliding between rows (null while closed). Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
   highlightEl: indicatorEl,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,

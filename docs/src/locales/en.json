@@ -253,8 +253,8 @@
   "animation": {
     "title": "Bring your own animation",
     "intro": "Every component that animates ships a plain CSS transition, and each one lets you take over: drive it with GSAP, motion-v, or nothing at all. Which hooks you get depends on what the component does.",
-    "motionCssTitle": "motionCss",
-    "motionCssIntro": "Set it to <code>false</code> to turn off the built-in CSS transition. The component still changes state, but instantly, and leaves the DOM for you to animate. On a <code>ConfigProvider</code>, <code>:motion-css=\"false\"</code> means no animation at all: everything inside opens, closes and leaves instantly, with nothing for you to handle.",
+    "motionTitle": "motion",
+    "motionIntro": "Set it to <code>false</code> to turn off the built-in CSS transition. The component still changes state, but instantly, and leaves the DOM for you to animate. On a <code>ConfigProvider</code>, <code>:motion=\"false\"</code> means no animation at all: everything inside opens, closes and leaves instantly, with nothing for you to handle.",
     "forceMountTitle": "forceMount",
     "forceMountIntro": "Keeps content mounted while closed, instead of removing it with <code>v-if</code>, and turns off the built-in transition. Animate the exposed <code>panelEl</code> as it opens, and pair it with <code>beforeClose(done)</code> to run your own exit.",
     "beforeCloseTitle": "beforeClose(done)",
@@ -272,7 +272,7 @@
     "kindsListTitle": "Items that come and go",
     "kindsCheck": "A component's Props, Slots and Exposed tables list exactly what it has.",
     "exposedTitle": "Exposed elements",
-    "exposedIntro": "Put a template ref on a component and you get its real DOM elements: <code>el</code> for the root, plus its parts, like <code>panelEl</code>, <code>listEl</code>, <code>thumbEl</code> or <code>checkEl</code>. Turn the built-in transition off with <code>motionCss</code> and animate those elements with any library. Each component's Exposed table lists what it has.",
+    "exposedIntro": "Put a template ref on a component and you get its real DOM elements: <code>el</code> for the root, plus its parts, like <code>panelEl</code>, <code>listEl</code>, <code>thumbEl</code> or <code>checkEl</code>. Turn the built-in transition off with <code>motion</code> and animate those elements with any library. Each component's Exposed table lists what it has.",
     "exposedExampleIntro": "In this example, the check mark pops in with GSAP each time the box is checked:"
   },
   "directive": {
@@ -335,6 +335,8 @@
     "Tag": "A compact label for categorizing or annotating an item inline.",
     "Chip": "A removable, compact token for selected filters, tags, or multi-select values.",
     "Kbd": "Styles a keyboard shortcut so it reads like a physical key.",
+    "AnimatedNumber": "Shows a number that rolls each changed digit to its new value, formatted for any locale.",
+    "AnimatedText": "Swaps one text for the next with a short fade and lift, easing the width so nothing jumps.",
     "Timeline": "An ordered list of steps joined by a line. Each step can hold any content.",
     "Accordion": "A stack of collapsible sections where opening one can close the others.",
     "AccordionItem": "One collapsible section of an Accordion. Always use it inside an Accordion.",
@@ -445,7 +447,7 @@
     "whatsIncludedIntro": "A compact top-level guide and a full reference, generated from the same data as this docs site:",
     "includedComponents": "Every component's props, slots, events, and exposed refs",
     "includedComposables": "Every standalone composable's parameters, return values, and usage examples",
-    "includedAnimation": "The animation-agnostic contract (motionCss, forceMount, beforeClose), with real GSAP and motion-v examples",
+    "includedAnimation": "The animation-agnostic contract (motion, forceMount, beforeClose), with real GSAP and motion-v examples",
     "includedStyling": "Cascade layer ordering and the full CSS variable reference for theming",
     "sourceTitle": "Source",
     "sourceIntro": "The skill's source lives at {link}, along with instructions for updating it outside vael-ui's release cycle."
@@ -465,6 +467,8 @@
     "useAsyncLoading": "Tracks every pending promise you pass it, so a loading state clears only once all of them have settled.",
     "useNumberFormat": "Locale-aware number formatting and parsing that stay in sync, so typed text and its formatted display always match.",
     "useColorScheme": "Switches between light, dark, and system theme modes. Persistence is optional, through storage functions you provide.",
+    "useHaptic": "One short haptic tap on phones that offer one, for moments that commit something.",
+    "springEasing": "Turns a spring into a CSS curve and its settle time, for element.animate() or a transition.",
     "preventFocusZoom": "Stops iOS zooming into form fields, so they can match the rest of your text size.",
     "useFloatingPosition": "The positioning engine behind Popover, Menu, and Tooltip, built on Floating UI. Use it to build your own anchored surfaces.",
     "useVirtualizer": "Windowed rendering for long lists, so only the visible rows exist in the DOM.",

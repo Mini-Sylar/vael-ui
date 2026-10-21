@@ -4,7 +4,7 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :data-state="disabled ? 'disabled' : undefined"
-    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-motion="props.motion ? undefined : 'off'"
     v-bind="attrs"
   >
     <Popover
@@ -209,7 +209,7 @@ const rawProps = withDefaults(
     /** Where the panel is teleported to. @default 'body' */
     teleportTo?: string | HTMLElement
     /** `false` skips the built-in transitions; use the exposed elements for your own. @default true */
-    motionCss?: boolean
+    motion?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -226,10 +226,10 @@ const rawProps = withDefaults(
     disabled: false,
     size: 'md',
     teleportTo: 'body',
-    motionCss: undefined,
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 defineSlots<{
   /** Replaces the swatch; a click on it opens the panel. */

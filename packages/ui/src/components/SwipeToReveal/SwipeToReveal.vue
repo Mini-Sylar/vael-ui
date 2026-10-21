@@ -5,7 +5,7 @@
     :style="[rootStyle, rootPart.style]"
     :data-open-side="openSide || undefined"
     :data-dragging="isDragging || undefined"
-    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-motion="props.motion ? undefined : 'off'"
     :data-reveal-scale="revealScaleOn || undefined"
     :aria-disabled="disabled || undefined"
     v-bind="attrs"
@@ -60,6 +60,7 @@ import './SwipeToReveal.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
+import { useComponentHaptic } from '../../composables/useHaptic'
 import { useElementSize } from '@vueuse/core'
 import { useSwipeReveal } from '../../composables/useSwipeReveal'
 import type { SwipeRevealSide } from '../../composables/useSwipeReveal'
@@ -85,7 +86,7 @@ const rawProps = withDefaults(
      * Plays the built-in release and settle transition. Set `false` to drive the settle yourself.
      * @default true
      */
-    motionCss?: boolean
+    motion?: boolean
     /** Grows the actions panel in from its edge as it opens. A number from 0 to 1 sets the starting scale.
      * `false` turns it off.
      * @default true
@@ -96,12 +97,12 @@ const rawProps = withDefaults(
   }>(),
   {
     disabled: false,
-    motionCss: undefined,
+    motion: undefined,
     revealScale: true,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires once per settled interaction, with `open` and the open edge (or `null`). */
@@ -139,6 +140,8 @@ const { width: trailingWidth } = useElementSize(trailingActionsEl)
 // template ref's own null-to-element transition right after mount, before that first callback
 // lands. A drag committed in that same short window would otherwise measure a stale/zero width
 // and be forced closed regardless of how far it traveled.
+const haptic = useComponentHaptic()
+const tick = () => haptic.impact('light')
 const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reveal, close } =
   useSwipeReveal(open, {
     leading: () => hasLeading.value,
@@ -146,7 +149,10 @@ const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reve
     leadingWidth: () => leadingActionsEl.value?.offsetWidth ?? leadingWidth.value,
     trailingWidth: () => trailingActionsEl.value?.offsetWidth ?? trailingWidth.value,
     disabled: () => props.disabled,
-    onCommit: (side) => emit('change', side !== null, side),
+    onCommit: (side) => {
+      tick()
+      emit('change', side !== null, side)
+    },
   })
 
 // Tabbing into a closed row's actions reveals them, so the focused button is

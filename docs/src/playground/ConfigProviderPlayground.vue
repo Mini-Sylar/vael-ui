@@ -14,7 +14,7 @@
 
     <div class="playground-body">
       <div class="playground-preview">
-        <component :is="ConfigProviderComp" :theme="theme" :size="size" :motion-css="motionCss">
+        <component :is="ConfigProviderComp" :theme="theme" :size="size" :motion="motion">
           <div class="preview-row">
             <component :is="InputComp" placeholder="Search" class="preview-input" />
             <component :is="SwitchComp" v-model="switchOn" aria-label="Notifications" />
@@ -69,8 +69,8 @@
           />
         </div>
         <div class="control-row">
-          <label for="cp-motion">motionCss</label>
-          <Switch id="cp-motion" v-model="motionCss" size="sm" aria-label="motionCss" />
+          <label for="cp-motion">motion</label>
+          <Switch id="cp-motion" v-model="motion" size="sm" aria-label="motion" />
         </div>
       </div>
     </div>
@@ -103,7 +103,7 @@ const primary = shallowRef('#ea580c')
 const radius = shallowRef('12px')
 const fontSize = shallowRef('14px')
 const size = shallowRef<'sm' | 'md' | 'lg'>('md')
-const motionCss = shallowRef(true)
+const motion = shallowRef(true)
 const switchOn = shallowRef(true)
 const sizeItems = [
   { label: 'sm', value: 'sm' },
@@ -146,7 +146,7 @@ const code = computed(() => {
   const attrs = [
     `:theme="{ primary: '${primary.value}', radius: '${radius.value}', fontSize: '${fontSize.value}' }"`,
     size.value !== 'md' ? `size="${size.value}"` : '',
-    motionCss.value ? '' : ':motion-css="false"',
+    motion.value ? '' : ':motion="false"',
   ].filter(Boolean)
   return `<ConfigProvider\n  ${attrs.join('\n  ')}\n>\n  <YourApp />\n</ConfigProvider>`
 })

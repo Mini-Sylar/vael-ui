@@ -508,7 +508,7 @@ test('multiple: selecting options renders removable chips in the input area; the
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
-test('motionCss=false disables the chip transition, including its move (reflow) animation', async () => {
+test('motion=false disables the chip transition, including its move (reflow) animation', async () => {
   const screen = await render(Combobox, {
     props: {
       items: [
@@ -517,7 +517,7 @@ test('motionCss=false disables the chip transition, including its move (reflow) 
       ],
       multiple: true,
       modelValue: ['apple', 'banana'],
-      motionCss: false,
+      motion: false,
     },
     global: { stubs: { 'transition-group': false } },
   })

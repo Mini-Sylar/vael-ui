@@ -143,7 +143,7 @@ test('pulse is off by default — no animation on the active marker unless the p
   expect(offBefore.animationName).toBe('none')
 })
 
-test('motionCss=false also disables the dot and connector transitions, not just list add/remove', async () => {
+test('motion=false also disables the dot and connector transitions, not just list add/remove', async () => {
   const screen = await render(TimelineFixture, {})
 
   const offDot = getComputedStyle(
@@ -199,7 +199,7 @@ test('pushing a new item renders an additional step reactively', async () => {
 test("@item-enter hands over the entering step's parts, including the line leading into it", async () => {
   const onEnter = vi.fn((_el: Element, done: () => void, _parts: TimelineItemParts) => done())
   const screen = await render(Timeline, {
-    props: { items: ['a', 'b'], motionCss: false, 'onItem-enter': onEnter },
+    props: { items: ['a', 'b'], motion: false, 'onItem-enter': onEnter },
     global: { stubs: { 'transition-group': false } },
   })
   await screen.rerender({ items: ['a', 'b', 'c'] })

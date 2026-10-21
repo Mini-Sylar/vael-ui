@@ -2,14 +2,16 @@ import { inject } from 'vue'
 import type { ComputedRef, InjectionKey } from 'vue'
 import type { LoaderSource } from './composables/loaderType'
 import type { IndicatorMode } from './composables/useTabIndicator'
+import type { HapticOptions } from './composables/useHaptic'
 
 /** @internal Defaults a `ConfigProvider` hands down to the components inside it. */
 export interface UiDefaults {
   size?: 'sm' | 'md' | 'lg'
-  motionCss?: boolean
+  motion?: boolean
   locale?: string
   loaderType?: LoaderSource
   indicator?: IndicatorMode
+  haptics?: boolean | HapticOptions
 }
 
 /** @internal */
@@ -25,7 +27,7 @@ export function validLocale(locale: string | undefined): string | undefined {
   }
 }
 
-type Fallbacks = { size?: string; motionCss?: boolean; locale?: undefined }
+type Fallbacks = { size?: string; motion?: boolean; locale?: undefined }
 // An intersection rather than `Omit`, so a generic component's props keep their own types.
 type WithDefaults<P, F> = P & {
   readonly [K in keyof F & keyof P]: undefined extends F[K] ? P[K] : Exclude<P[K], undefined>
@@ -33,7 +35,7 @@ type WithDefaults<P, F> = P & {
 
 /**
  * @internal Not public API; used by vael-ui's own components and may change.
- * The component's props, where `size`, `motionCss` and `locale` fall back to the nearest
+ * The component's props, where `size`, `motion` and `locale` fall back to the nearest
  * `ConfigProvider` when the component doesn't set them, then to `fallbacks`. Stays reactive, so
  * changing the provider updates every component under it. `sizes` lists the sizes the component
  * has; a provider size it lacks falls back to `md`.

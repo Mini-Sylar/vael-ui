@@ -130,7 +130,7 @@
   .ui-tree-select-chevron[data-state='open'] {
     transform: rotate(90deg);
   }
-  /* motionCss=false on panel. */
+  /* motion=false on panel. */
   .ui-tree-select-panel[data-motion='off'] .ui-tree-select-chevron {
     transition: none;
   }

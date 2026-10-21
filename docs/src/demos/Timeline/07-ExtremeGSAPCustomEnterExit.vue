@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Extreme: fully custom enter/exit via GSAP (gsap)</h3>
     <p class="note">
-      <code>:motion-css="false"</code> turns off Timeline's own enter/leave transition entirely and
+      <code>:motion="false"</code> turns off Timeline's own enter/leave transition entirely and
       hands the step's element, a <code>done()</code> callback and its <code>parts</code> (marker,
       connectors, content) to <code>@item-enter</code>/<code>@item-leave</code> instead. A new event
       grows the line down from the step above, pops its marker in where the line lands, then reveals
@@ -10,7 +10,7 @@
     </p>
     <Timeline
       :items="events"
-      :motion-css="false"
+      :motion="false"
       :item-key="(e) => e.id"
       @item-enter="onEnter"
       @item-leave="onLeave"

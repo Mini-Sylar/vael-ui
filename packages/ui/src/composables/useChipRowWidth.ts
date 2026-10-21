@@ -1,4 +1,5 @@
 import { nextTick, watch } from 'vue'
+import { prefersReducedMotion } from './dom'
 
 export interface UseChipRowWidthOptions {
   /** The value row that holds the chips group and, once empty, the placeholder. */
@@ -23,7 +24,7 @@ export function useChipRowWidth(options: UseChipRowWidthOptions): void {
     async (empty) => {
       const row = options.row()
       if (!empty || !row || !options.active()) return
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      if (prefersReducedMotion()) return
       // Measured before the DOM changes: the chip is still at full size.
       const from = row.getBoundingClientRect().width
       await nextTick()

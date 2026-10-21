@@ -7,7 +7,7 @@
     :data-focus-visible="focusVisible || undefined"
     v-bind="rootAttrs"
   >
-    <div class="ui-otp-cells" aria-hidden="true">
+    <div ref="cellsEl" class="ui-otp-cells" aria-hidden="true">
       <template v-for="(cell, index) in cells" :key="index">
         <span
           v-if="groupStarts.has(index)"
@@ -41,6 +41,13 @@
           </slot>
         </span>
       </template>
+      <span
+        v-if="!hasCustomCell"
+        ref="ringEl"
+        class="ui-otp-ring"
+        :data-caret="activeCellEmpty || undefined"
+        :style="ringStyle"
+      />
     </div>
     <input
       ref="inputEl"
@@ -86,6 +93,7 @@ import {
   watch,
 } from 'vue'
 import { useSlotPresence } from '../../composables/dom'
+import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
@@ -314,6 +322,27 @@ onMounted(() => {
   })
 })
 
+// One ring (and caret) glides between cells, following ConfigProvider's `indicator`.
+const cellsEl = useTemplateRef<HTMLElement>('cellsEl')
+const ringEl = useTemplateRef<HTMLElement>('ringEl')
+const activeCellEmpty = computed(
+  () => activeIndex.value >= 0 && activeIndex.value >= displayValue.value.length,
+)
+const { style: ringStyle } = useTabIndicator(activeIndex, {
+  listEl: cellsEl,
+  orientation: 'horizontal',
+  selector: '.ui-otp-cell[data-active]',
+  matchCross: true,
+  indicatorEl: ringEl,
+  position: 'translate',
+})
+// Like a native caret, it stays solid when it moves and blinks once it rests.
+watch(activeIndex, () => {
+  for (const animation of ringEl.value?.getAnimations?.({ subtree: true }) ?? []) {
+    animation.currentTime = 0
+  }
+})
+
 const root = useTemplateRef<HTMLElement>('root')
 const cx = useClassMerge()
 const themedUi = useThemedUi(
@@ -344,5 +373,7 @@ defineExpose({
   inputEl,
   /** Cell elements, one per character slot. */
   cellEls,
+  /** The ring and caret that glide to the active cell. `null` with a custom `#cell` slot. */
+  ringEl,
 })
 </script>

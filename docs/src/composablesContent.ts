@@ -418,9 +418,93 @@ preventFocusZoom()`,
     ],
   },
 
-  useColorScheme: {
+  useHaptic: {
+    hasLiveDemo: true,
     description:
-      '`useColorScheme` sets the root `data-theme` to `light` or `dark`; `system` follows the OS preference. Pass `persist` to save the choice in cookies, a store, or `localStorage`. Vue restores saved choices on mount, which can occur after first paint. The HTML head example restores color mode and an optional root font size before paint.',
+      "Haptic feedback on phones that offer it: `navigator.vibrate` on Android, and on iOS (Safari 17.4+) the tick a native switch plays. Desktops do nothing, and `isSupported` tells you which you have. `selection()` is the lightest tick, for a choice changing; `impact('light' | 'medium' | 'heavy')` is a bump, heavier for bigger moments; `notification('success' | 'warning' | 'error')` plays a short pattern for an outcome; `vibrate(pattern)` plays your own. `intensity` scales every pulse. `ConfigProvider`'s `haptics` sets it app-wide: `false` silences every call, yours included, which suits a \"turn off haptics\" setting; `true` or `{ intensity }` also turns on vael-ui's own components. Call it from a user gesture, and keep it for moments that commit something.",
+    exampleCode: `import { useHaptic } from 'vael-ui'
+
+const haptic = useHaptic({ intensity: 1.5 })
+
+function onSave() {
+  save()
+  haptic.notification('success')
+}
+
+// App-wide, in your root:
+// <ConfigProvider :haptics="{ intensity: 1.2 }"> or :haptics="userWantsHaptics"`,
+    params: [
+      {
+        name: 'intensity',
+        type: 'number',
+        description:
+          "Scales every pulse: `0.5` is softer, `2` stronger. Multiplies with ConfigProvider's `haptics.intensity`. On Android it lengthens each pulse; iOS plays one fixed-strength tick per pulse. Default `1`.",
+      },
+    ],
+    returns: [
+      { name: 'isSupported', type: 'boolean', description: 'Whether this device plays haptics.' },
+      {
+        name: 'selection',
+        type: '() => void',
+        description: 'The lightest tick, for a choice changing.',
+      },
+      {
+        name: 'impact',
+        type: "(weight?: 'light' | 'medium' | 'heavy') => void",
+        description: "A bump. Default `'medium'`.",
+      },
+      {
+        name: 'notification',
+        type: "(type: 'success' | 'warning' | 'error') => void",
+        description: 'A short pattern for an outcome.',
+      },
+      {
+        name: 'vibrate',
+        type: '(pattern: number | number[]) => void',
+        description:
+          'Your own pattern in ms, vibration and pause alternating. iOS plays a tick per pulse.',
+      },
+    ],
+  },
+
+  springEasing: {
+    description:
+      'Turns a spring into a CSS `linear()` curve and the time it takes to settle, in ms. It\'s the curve vael-ui uses for `ConfigProvider`\'s `:motion="{ spring }"`. The result has the same shape as the options `element.animate()` takes, so your own animations can move on the same spring without a library. Damping below 1 overshoots.',
+    exampleCode: `import { springEasing } from 'vael-ui'
+
+// { easing: 'linear(0, …, 1)', duration: 642 }
+const spring = springEasing({ damping: 0.7, response: 0.4 })
+
+panel.animate([{ opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1 }], spring)
+
+// Or in CSS
+el.style.transition = \`transform \${spring.duration}ms \${spring.easing}\``,
+    params: [
+      {
+        name: 'spring',
+        type: '{ damping?: number; response?: number }',
+        description:
+          'Damping 1 settles without overshoot; below 1 it bounces. Response is roughly the time to arrive, in seconds.',
+      },
+    ],
+    returns: [
+      {
+        name: 'easing',
+        type: 'string',
+        description: 'A CSS `linear()` easing that follows the spring.',
+      },
+      {
+        name: 'duration',
+        type: 'number',
+        description: 'How long the spring takes to settle, in ms.',
+      },
+    ],
+  },
+
+  useColorScheme: {
+    hasLiveDemo: true,
+    description:
+      "`useColorScheme` sets the root `data-theme` to `light` or `dark`; `system` follows the OS preference. Pass `persist` to save the choice in cookies, a store, or `localStorage`. Vue restores saved choices on mount, which can occur after first paint. The HTML head example restores color mode and an optional root font size before paint. Pass `{ from: event }` as the second argument to `setMode` and the new scheme spreads in a circle from the click, as the example below and this site's header toggle do. Every call in the browser shares one state, so two toggles never disagree. It uses a View Transition; browsers without one, and reduced motion, switch at once.",
     exampleCode: `import { useColorScheme } from 'vael-ui'
 
 const { mode, resolvedMode, setMode } = useColorScheme({
@@ -436,7 +520,8 @@ const { mode, resolvedMode, setMode } = useColorScheme({
 
 // mode.value: 'system' | 'light' | 'dark'
 // resolvedMode.value: 'light' | 'dark'
-// Call setMode('dark') from your theme toggle.`,
+// From your theme toggle, spreading from the click:
+// <button @click="(e) => setMode(resolvedMode === 'dark' ? 'light' : 'dark', { from: e })">`,
     headCode: appearanceHeadCode,
     params: [
       {
@@ -464,8 +549,9 @@ const { mode, resolvedMode, setMode } = useColorScheme({
       },
       {
         name: 'setMode',
-        type: '(mode) => void',
-        description: 'Sets the mode, persists it and applies it.',
+        type: '(mode, reveal?: { from: Event | Element | { x, y }; duration?; easing? }) => void',
+        description:
+          'Sets the mode, persists it and applies it. With `reveal`, the new scheme spreads in a circle from `from`: a click, an element, or a point. `duration` defaults to 500 ms.',
       },
     ],
   },
@@ -847,7 +933,7 @@ const { mode, resolvedMode, setMode } = useColorScheme({
         name: 'motion',
         type: 'MaybeRefOrGetter<boolean | undefined>',
         description:
-          "`false` moves the indicator at once, for an animation of your own. Unset, it follows the nearest ConfigProvider's `motionCss`.",
+          "`false` moves the indicator at once, for an animation of your own. Unset, it follows the nearest ConfigProvider's `motion`.",
       },
       {
         name: 'indicator',
@@ -956,7 +1042,7 @@ const { mode, resolvedMode, setMode } = useColorScheme({
         description: 'Turns off dragging.',
       },
       {
-        name: 'motionCss',
+        name: 'motion',
         type: 'MaybeRefOrGetter<boolean>',
         description: '`false` turns off the built-in springs, so positions snap.',
       },
@@ -1080,7 +1166,7 @@ const { mode, resolvedMode, setMode } = useColorScheme({
           '`beforeDrop` threw or rejected. The move is already reverted when this fires.',
       },
       {
-        name: 'motionCss',
+        name: 'motion',
         type: 'MaybeRefOrGetter<boolean>',
         description:
           '`false` turns off the springs for the gap that opens in another list while you hover it.',
