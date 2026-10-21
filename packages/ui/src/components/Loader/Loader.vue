@@ -33,7 +33,7 @@ const props = defineProps<{
   size?: string
   /** Renders `role="status"` with visually hidden text as the accessible name. Omit it to make the loader `aria-hidden`. */
   label?: string
-  /** The animation. Unset, it follows the nearest ConfigProvider's `loaderType`. @default 'ring' */
+  /** The animation: `'ring'`, `'dots'`, `'bars'`, `'comet'` or `'dither'`. Unset, it follows the nearest ConfigProvider's `loaderType`. @default 'ring' */
   type?: LoaderType
   /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue }>

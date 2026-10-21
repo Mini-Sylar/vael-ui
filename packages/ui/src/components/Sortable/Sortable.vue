@@ -141,7 +141,9 @@ const rawProps = withDefaults(
     /** This list's identity within `group`. Unset, Sortable assigns one. */
     groupId?: string | number
     /** What follows the pointer. `'element'` moves the real item; `'clone'` floats a copy from the
-     * start of the drag, for content that can't leave its layout.
+     * start of the drag, for content that can't leave its layout. The original is the placeholder:
+     * it moves to where the row will land and carries `data-sortable-source` (hidden by default;
+     * style it to show it dimmed or outlined).
      * @default 'element' */
     previewMode?: 'element' | 'clone'
     /** Milliseconds a touch must hold a row still before a drag starts. Unset, drags start at once.

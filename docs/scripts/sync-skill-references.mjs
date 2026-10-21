@@ -81,7 +81,7 @@ for (const file of readdirSync(REFS_DIR)) {
     if (meta[child]) out += `\n## ${child}\n\n${sections(meta[child], 3)}`
   }
   // Keep the file's existing trailing whitespace so regeneration only diffs content.
-  out = out.trimEnd() + (source.match(/\s*$/)?.[0] || '\n')
+  out = (out.trimEnd() + (source.match(/\s*$/)?.[0] || '\n')).replace(/[ \t]+$/gm, '')
   if (out !== source) {
     writeFileSync(path, out)
     written++
