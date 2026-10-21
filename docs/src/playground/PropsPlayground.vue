@@ -918,8 +918,9 @@ const COMPONENT_OVERRIDES: Record<
   }
 > = {
   Avatar: { string: { name: 'Ada Lovelace' } },
-  // Each empty cell shows the placeholder's first character, so the generic "Type here…" read "T".
-  OtpInput: { string: { placeholder: '0' } },
+  // Starts without one: the generic "Type here…" would fill every empty cell with "T". Typing a
+  // character in the control shows what `placeholder` does.
+  OtpInput: { string: { placeholder: '' } },
   Loader: { select: { size: ['1rem', '1.5rem', '2rem'] } },
   Pagination: { number: { total: 132 } },
   // No static default in defineProps (real default is computed: baseSize * 3.5)
