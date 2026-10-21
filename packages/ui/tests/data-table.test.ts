@@ -1285,3 +1285,20 @@ test('a focusable scroll strip in the split layout is a rowgroup, not a stray ch
     'rowgroup',
   )
 })
+
+test('selection controls keep their press layer in a small table and go static in one too big to animate', async () => {
+  const small = await renderTable({ rowCount: 3, builtinSelectable: true })
+  const box = () => small.container.querySelector<HTMLElement>('tbody .ui-checkbox-box')!
+  await vi.waitFor(() => expect(getComputedStyle(box()).willChange).toBe('transform'))
+  small.unmount()
+
+  // Above 150 rendered rows the body is data-motion="off".
+  const big = await renderTable({ rowCount: 200, builtinSelectable: true })
+  const tbody = big.container.querySelector<HTMLElement>(
+    'tbody.ui-datatable-tbody[data-motion="off"]',
+  )
+  expect(tbody).not.toBeNull()
+  expect(getComputedStyle(tbody!.querySelector<HTMLElement>('.ui-checkbox-box')!).willChange).toBe(
+    'auto',
+  )
+})

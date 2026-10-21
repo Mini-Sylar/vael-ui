@@ -534,4 +534,16 @@
       transition: none;
     }
   }
+
+  /* Too many rows to animate: static selection controls, so no compositor layer each. */
+  .ui-datatable-tbody[data-motion='off'] .ui-checkbox-box,
+  .ui-datatable-tbody[data-motion='off'] .ui-radio-control {
+    will-change: auto;
+  }
+  .ui-datatable-tbody[data-motion='off']
+    .ui-checkbox-input:active:not(:disabled)
+    + .ui-checkbox-box,
+  .ui-datatable-tbody[data-motion='off'] .ui-radio-input:active:not(:disabled) + .ui-radio-control {
+    scale: none;
+  }
 }

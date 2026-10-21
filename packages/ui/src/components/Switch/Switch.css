@@ -65,6 +65,8 @@
     transition:
       translate var(--ui-duration-press) var(--ui-ease-out),
       scale var(--ui-duration-press) var(--ui-ease-out);
+    /* Own layer, so the press can't shift the thumb at fractional zoom (e.g. Windows scaling). */
+    will-change: transform;
   }
   /* Pressed, the thumb stretches toward where it's going. */
   .ui-switch-input:active:not(:disabled) + .ui-switch-track .ui-switch-thumb {

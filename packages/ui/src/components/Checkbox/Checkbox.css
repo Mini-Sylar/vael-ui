@@ -48,6 +48,8 @@
       background-color var(--ui-duration-press) ease,
       border-color var(--ui-duration-press) ease,
       scale var(--ui-duration-press) var(--ui-ease-out);
+    /* Own layer, so the press can't shift the tick at fractional zoom (e.g. Windows scaling). */
+    will-change: transform;
   }
   .ui-checkbox-input:active:not(:disabled) + .ui-checkbox-box {
     scale: 0.94;

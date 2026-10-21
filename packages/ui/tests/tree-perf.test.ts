@@ -112,6 +112,15 @@ test('checkbox mode: checking one leaf re-renders only that leaf and its folder'
   expect(result.updates).toBeLessThanOrEqual(2)
 })
 
+test('past 150 visible rows the row checkboxes drop their press layer, and folders still fold', async () => {
+  await renderExpanded({ selectionMode: 'checkbox' })
+  const root = document.querySelector<HTMLElement>('.ui-tree-root')!
+  expect(root.dataset.rows).toBe('many')
+  expect(getComputedStyle(root.querySelector<HTMLElement>('.ui-checkbox-box')!).willChange).toBe(
+    'auto',
+  )
+})
+
 test('collapsing one folder re-renders only that folder row', async () => {
   await renderExpanded({}, bigItems())
 

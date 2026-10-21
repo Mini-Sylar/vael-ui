@@ -359,4 +359,12 @@
       background: var(--ui-muted);
     }
   }
+
+  /* Too many rows: static checkboxes, so no compositor layer each. Folding is unaffected. */
+  .ui-tree-root[data-rows='many'] .ui-checkbox-box {
+    will-change: auto;
+  }
+  .ui-tree-root[data-rows='many'] .ui-checkbox-input:active:not(:disabled) + .ui-checkbox-box {
+    scale: none;
+  }
 }

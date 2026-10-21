@@ -37,6 +37,8 @@
       background-color var(--ui-duration-press) ease,
       border-color var(--ui-duration-press) ease,
       scale var(--ui-duration-press) var(--ui-ease-out);
+    /* Own layer, so the press can't shift the dot at fractional zoom (e.g. Windows scaling). */
+    will-change: transform;
   }
   .ui-radio-input:active:not(:disabled) + .ui-radio-control {
     scale: 0.94;

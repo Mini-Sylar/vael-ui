@@ -1,5 +1,9 @@
 <template>
-  <div class="ui-tree-root" :data-motion="props.motionCss ? undefined : 'off'">
+  <div
+    class="ui-tree-root"
+    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-rows="flatRows.length > MOTION_MAX_ROWS ? 'many' : undefined"
+  >
     <div v-if="filterable" :class="filterPart.class" :style="filterPart.style">
       <Input
         ref="filterInputRef"

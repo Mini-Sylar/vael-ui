@@ -77,6 +77,15 @@ test('Enter on a focused row toggles selection via the keyboard, not just a mous
   await expect.element(screen.getByTestId('model')).toHaveTextContent('"vegetables"')
 })
 
+test('a small tree keeps each row checkbox on its own press layer', async () => {
+  const screen = await render(TreeFixture, { props: { selectionMode: 'checkbox' } })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  const root = screen.container.querySelector<HTMLElement>('.ui-tree-root')!
+  expect(root.dataset.rows).toBeUndefined()
+  const box = root.querySelector<HTMLElement>('.ui-checkbox-box')!
+  await vi.waitFor(() => expect(getComputedStyle(box).willChange).toBe('transform'))
+})
+
 test('checkbox mode: checking a leaf adds its value to the array', async () => {
   const screen = await render(TreeFixture, { props: { selectionMode: 'checkbox' } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
