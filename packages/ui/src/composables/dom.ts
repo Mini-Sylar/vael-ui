@@ -239,7 +239,14 @@ function rowGap(node: HTMLElement): number {
 // Vue applies a leave's end state two frames after removal, which reads as a lag after a click.
 // These start the leave on the same frame instead: commit the current size, then set the end
 // state inline, and the element's leave-active transition carries it from there.
-const LEAVE_STYLES = ['inline-size', 'padding-inline', 'margin-inline-end', 'opacity', 'transform']
+const LEAVE_STYLES = [
+  'inline-size',
+  'padding-inline',
+  'margin-inline-start',
+  'margin-inline-end',
+  'opacity',
+  'transform',
+]
 
 /** Collapses a leaving chip where it is: no width, no padding, and the gap after it closed. */
 export function collapseLeavingChip(el: Element): void {
@@ -257,19 +264,43 @@ export function resetLeaveStyles(el: Element): void {
   for (const prop of LEAVE_STYLES) (el as HTMLElement).style.removeProperty(prop)
 }
 
-/** Records how much room a clear button takes in its row, for the shared clear transition. */
+/** Whether the row keeps its width with this element gone, i.e. isn't sized to its content. */
+function rowKeepsWidth(node: HTMLElement): boolean {
+  const row = node.parentElement
+  if (!row) return true
+  const width = row.getBoundingClientRect().width
+  const display = node.style.display
+  node.style.display = 'none'
+  const without = row.getBoundingClientRect().width
+  node.style.display = display
+  return Math.abs(width - without) < 0.5
+}
+
+/**
+ * Records the margins that take a clear button out of its row, for the shared clear transition.
+ * The clear stays where it is either way: in a content-sized row its end margin closes up the row;
+ * in a fixed-width row its start margin lets the value area widen underneath it.
+ */
 export function measureClearSpace(el: Element): void {
   const node = el as HTMLElement
   const start = parseFloat(getComputedStyle(node).marginInlineStart) || 0
-  node.style.setProperty('--ui-clear-space', `${node.offsetWidth + start + rowGap(node)}px`)
+  const room = node.offsetWidth + rowGap(node)
+  if (rowKeepsWidth(node)) {
+    node.style.setProperty('--ui-clear-start', `${-room}px`)
+    node.style.setProperty('--ui-clear-end', '0px')
+  } else {
+    node.style.setProperty('--ui-clear-start', `${start}px`)
+    node.style.setProperty('--ui-clear-end', `${-(room + start)}px`)
+  }
 }
 
-/** Starts a clear button's exit on the frame it's removed: fade, shrink, and slide its row across. */
+/** Starts a clear button's exit on the frame it's removed: it fades and shrinks where it is. */
 export function startClearLeave(el: Element): void {
   const node = el as HTMLElement
   measureClearSpace(node)
   void node.offsetWidth
   node.style.opacity = '0'
   node.style.transform = 'scale(0.9)'
-  node.style.marginInlineEnd = 'calc(var(--ui-clear-space) * -1)'
+  node.style.marginInlineStart = 'var(--ui-clear-start)'
+  node.style.marginInlineEnd = 'var(--ui-clear-end)'
 }

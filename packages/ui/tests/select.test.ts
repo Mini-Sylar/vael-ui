@@ -254,6 +254,29 @@ test('clearable resets the model and hides once empty', async () => {
   expect(document.querySelector('.ui-select-clear')).toBeNull()
 })
 
+test('the clear button gives its room back on the side that keeps it in place', async () => {
+  const leaveMargins = async (style: string) => {
+    const screen = await render(Select, {
+      props: { items: [{ label: 'Apple', value: 'apple' }], modelValue: 'apple', clearable: true },
+      attrs: { style },
+      global: { stubs: { transition: false } },
+    })
+    const clear = screen.container.querySelector<HTMLButtonElement>('.ui-select-clear')!
+    clear.click()
+    await vi.waitFor(() => expect(clear.classList.contains('ui-clear-leave-active')).toBe(true))
+    const start = parseFloat(clear.style.getPropertyValue('--ui-clear-start'))
+    const end = parseFloat(clear.style.getPropertyValue('--ui-clear-end'))
+    screen.unmount()
+    return { start, end }
+  }
+  // Fixed width: the value area widens under it.
+  const fixed = await leaveMargins('inline-size: 16rem')
+  expect(fixed.start).toBeLessThan(0)
+  expect(fixed.end).toBe(0)
+  // Sized to its content: the row closes up after it.
+  expect((await leaveMargins('inline-size: max-content')).end).toBeLessThan(0)
+})
+
 test('invalid sets data-invalid on the trigger (not just a class) — the animation-agnostic hook every other control uses', async () => {
   const screen = await render(Select, {
     props: {
