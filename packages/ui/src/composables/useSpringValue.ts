@@ -1,5 +1,10 @@
 import { getCurrentScope, onScopeDispose, shallowRef } from 'vue'
 import type { Ref } from 'vue'
+import { DEFAULT_DAMPING, DEFAULT_RESPONSE, stepSpring } from './springStep'
+import type { SpringState } from './springStep'
+
+export { stepSpring }
+export type { SpringState }
 
 export interface SpringOptions {
   /** Damping ratio. `1` (the default) is critically damped — reaches the target with no overshoot. Below 1 overshoots and oscillates; reserve that for motion the user's own gesture already threw (a flick release), never for something that merely appeared. */
@@ -10,49 +15,11 @@ export interface SpringOptions {
   epsilon?: number
 }
 
-export interface SpringState {
-  value: number
-  velocity: number
-}
-
-const DEFAULT_DAMPING = 1
-const DEFAULT_RESPONSE = 0.35
 const DEFAULT_EPSILON = 0.05
 // A backgrounded tab hands back a multi-second dt on its first frame. Feeding
 // that to the integrator below launches the value into the void — every spring
 // on screen visibly explodes on tab refocus. Clamping costs one slow frame.
 const MAX_DT = 1 / 30
-
-// Semi-implicit Euler goes unstable on a stiff spring at 30fps; 240Hz substeps keep it exact.
-const SUBSTEP = 1 / 240
-
-/**
- * Advances a spring by `dt` seconds. Pure, so the physics is testable with plain
- * numbers instead of through rAF timing (same reasoning as `dockFalloff` and
- * `resolveSwipeCommit`).
- */
-export function stepSpring(
-  state: SpringState,
-  target: number,
-  dt: number,
-  damping: number = DEFAULT_DAMPING,
-  response: number = DEFAULT_RESPONSE,
-): SpringState {
-  if (dt <= 0) return { value: state.value, velocity: state.velocity }
-  // A zero or invalid spring would never settle; it arrives at once instead.
-  if (!(response > 0) || !(damping >= 0)) return { value: target, velocity: 0 }
-  const omega = (2 * Math.PI) / response
-  const stiffness = omega * omega
-  const dampingCoefficient = 2 * damping * omega
-  const steps = Math.ceil(dt / SUBSTEP)
-  const h = dt / steps
-  let { value, velocity } = state
-  for (let i = 0; i < steps; i++) {
-    velocity += (-stiffness * (value - target) - dampingCoefficient * velocity) * h
-    value += velocity * h
-  }
-  return { value, velocity }
-}
 
 export interface SpringHandle {
   /** Live presentation value — what's actually on screen this frame. */
