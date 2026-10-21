@@ -106,3 +106,42 @@ test('without a provider every spinner stays the ring', async () => {
   expect(spinner.classList.contains('ui-loader--ring')).toBe(true)
   expect(getComputedStyle(spinner).animationName).toBe('ui-spin')
 })
+
+const Spinner = {
+  name: 'MySpinner',
+  render: () => h('svg', { class: 'my-spinner', viewBox: '0 0 16 16' }),
+}
+
+test('ConfigProvider loader-type takes your own component, for Loader and a loading Button', async () => {
+  const screen = await render(() =>
+    h(ConfigProvider as never, { loaderType: Spinner }, () => [
+      h(Loader),
+      h(Button as never, { loading: true }, () => 'Save'),
+    ]),
+  )
+  const custom = screen.container.querySelectorAll('.ui-loader--custom')
+  expect(custom).toHaveLength(2)
+  for (const box of custom) {
+    expect(box.querySelector('.my-spinner')).not.toBeNull()
+    // The same 1em box the built-in loaders use.
+    expect(box.getBoundingClientRect().width).toBeCloseTo(box.getBoundingClientRect().height, 0)
+  }
+})
+
+test('a render function works as a loader, and a component from ref() renders without a warning', async () => {
+  const { ref } = await import('vue')
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  const kept = ref(Spinner)
+  const screen = await render(() =>
+    h('div', [
+      h(Loader, { type: () => h('span', { class: 'from-render-fn' }) }),
+      h(Loader, { type: kept.value as never }),
+    ]),
+  )
+  expect(
+    screen.container.querySelector('.ui-loader--custom .from-render-fn, .from-render-fn'),
+  ).not.toBeNull()
+  expect(screen.container.querySelectorAll('.my-spinner')).toHaveLength(1)
+  expect(warn.mock.calls.some((call) => String(call[0]).includes('reactive object'))).toBe(false)
+  warn.mockRestore()
+})

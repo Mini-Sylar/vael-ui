@@ -167,4 +167,17 @@
       opacity: 0.4;
     }
   }
+
+  /* Your own loader: the same 1em box without the ring, and your component filling it. */
+  .ui-loader--custom {
+    display: inline-grid;
+    place-items: center;
+    border: 0;
+    border-radius: 0;
+    animation: none;
+  }
+  :where(.ui-loader--custom) > * {
+    inline-size: 100%;
+    block-size: 100%;
+  }
 }

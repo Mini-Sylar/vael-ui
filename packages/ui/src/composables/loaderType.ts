@@ -1,9 +1,12 @@
-import { computed, inject } from 'vue'
-import type { ComputedRef } from 'vue'
+import { computed, inject, toRaw } from 'vue'
+import type { Component, ComputedRef } from 'vue'
 import { defaultsKey } from '../config'
 
 /** The loading animations every vael-ui spinner can draw. All CSS, `currentColor`, 1em square. */
 export type LoaderType = 'ring' | 'dots' | 'bars' | 'comet' | 'dither'
+
+/** A built-in loader, or your own component (a render function works too) drawn in the same 1em box. */
+export type LoaderSource = LoaderType | Component
 
 /** @internal How many inner parts each type animates. */
 export const LOADER_PARTS: Record<LoaderType, number> = {
@@ -15,7 +18,11 @@ export const LOADER_PARTS: Record<LoaderType, number> = {
 }
 
 /** @internal A component's own type, else the nearest ConfigProvider's `loaderType`, else `'ring'`. */
-export function useLoaderType(own: () => LoaderType | undefined): ComputedRef<LoaderType> {
+export function useLoaderType(own: () => LoaderSource | undefined): ComputedRef<LoaderSource> {
   const provided = inject(defaultsKey, undefined)
-  return computed(() => own() ?? provided?.value.loaderType ?? 'ring')
+  // A component kept in a ref() arrives as a reactive proxy, which Vue warns about rendering.
+  return computed(() => {
+    const source = own() ?? provided?.value.loaderType ?? 'ring'
+    return typeof source === 'string' ? source : toRaw(source)
+  })
 }

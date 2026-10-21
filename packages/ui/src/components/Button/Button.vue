@@ -134,7 +134,7 @@ import '../shared/tokens.css'
 import { nativeTag, useSlotPresence } from '../../composables/dom'
 import '../shared/loader-spinner.css'
 import LoaderMark from '../internal/LoaderMark.vue'
-import type { LoaderType } from '../../composables/loaderType'
+import type { LoaderSource } from '../../composables/loaderType'
 import { computed, inject, useAttrs, useSlots, useTemplateRef } from 'vue'
 import { buttonGroupKey } from '../ButtonGroup/ButtonGroup.vue'
 import type { StyleValue } from 'vue'
@@ -164,8 +164,8 @@ const rawProps = withDefaults(
      * @default 'overlay'
      */
     loader?: ButtonLoaderPlacement
-    /** The loading animation. Unset, it follows the nearest ConfigProvider's `loaderType`. @default 'ring' */
-    loaderType?: LoaderType
+    /** The loading animation: a built-in name, or your own component. Unset, it follows the nearest ConfigProvider's `loaderType`. @default 'ring' */
+    loaderType?: LoaderSource
     /** Renders a square icon-only button; pair it with an `aria-label`. @default false */
     icon?: boolean
     /** Gives the button a fully rounded pill shape. @default false */
