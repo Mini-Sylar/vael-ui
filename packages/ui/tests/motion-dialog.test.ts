@@ -505,3 +505,49 @@ test('static motion is played by CSS transitions; hooks and keyframe arrays by t
     runtime: true,
   })
 })
+
+test('the built-in look keeps its own timing; your values ride the spring; { spring } retimes all', async () => {
+  // The panel's moving transition, once the CSS engine has started it.
+  const panelMove = async (motion: DialogMotion | undefined) => {
+    document.body.innerHTML = ''
+    const { open } = dialog(motion)
+    open.value = true
+    await nextTick()
+    let move: CSSTransition | undefined
+    for (let i = 0; i < 40 && !move; i++) {
+      await frame()
+      move = panel()
+        ?.getAnimations()
+        .find((a): a is CSSTransition =>
+          ['scale', 'translate'].includes((a as CSSTransition).transitionProperty),
+        )
+    }
+    const timing = move!.effect!.getTiming()
+    return {
+      duration: Math.round(Number(timing.duration)),
+      spring: String(timing.easing).startsWith('linear('),
+    }
+  }
+  // Untouched: Dialog's tokens, 200ms on the strong ease-out.
+  expect(await panelMove(undefined)).toEqual({ duration: 200, spring: false })
+  // Your values without a timing: the spring.
+  expect((await panelMove({ initial: { panel: { opacity: 0, y: 20 } } })).spring).toBe(true)
+  // { spring }: the built-in look, on your spring.
+  expect((await panelMove({ spring: { damping: 0.8, response: 0.3 } })).spring).toBe(true)
+})
+
+test("a hook that writes the backdrop's opacity is never fought by a CSS transition", async () => {
+  let fought: boolean | undefined
+  const { open, events } = dialog({
+    enter: ({ overlay }) => {
+      // Like GSAP's from(): read where it is, write where it starts, and see if CSS takes over.
+      void getComputedStyle(overlay).opacity
+      overlay.style.opacity = '0'
+      fought = overlay.getAnimations().some((a) => 'transitionProperty' in a)
+      return overlay.animate([{ opacity: 0 }, { opacity: 1 }], 120)
+    },
+  })
+  open.value = true
+  await vi.waitFor(() => expect(events).toContain('after-enter'))
+  expect(fought).toBe(false)
+})

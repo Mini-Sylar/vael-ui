@@ -129,6 +129,8 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
   })
   stopPresence(el)
   const fill: FillMode = out ? 'forwards' : 'backwards'
+  // vael-ui's exit token: built-in and custom exits agree, and themes can change it.
+  const exitMs = cssTime(token(el, 'var(--ui-duration-exit)')) || EXIT_CAP
   const runs: Promise<unknown>[] = []
   groups.forEach((group, i) => {
     const { easing, duration } = group.timing
@@ -147,7 +149,7 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
       runs.push(
         el.animate(frames(moves, live.moves), {
           id: PRESENCE_ID,
-          duration: out && !own ? Math.min(duration * 0.5, EXIT_CAP) : duration,
+          duration: out && !own ? exitMs : duration,
           easing: out && !own ? EASE_OUT : easing,
           delay,
           fill,
@@ -157,11 +159,7 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
       runs.push(
         el.animate(frames(fades, live.fades), {
           id: PRESENCE_ID,
-          duration: own
-            ? duration
-            : out
-              ? Math.min(duration * 0.5, EXIT_CAP)
-              : Math.min(duration, FADE_CAP),
+          duration: own ? duration : out ? exitMs : Math.min(duration, FADE_CAP),
           easing: own ? easing : EASE_OUT,
           delay,
           fill,

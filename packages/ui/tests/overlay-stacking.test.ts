@@ -5,7 +5,7 @@
 // same shared layer stack (useLayerStack.ts), so whichever opened more recently wins regardless
 // of family.
 import '../src/style.css'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { page } from 'vitest/browser'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef } from 'vue'
@@ -50,6 +50,11 @@ test('a Dialog keeps its stacking order while its exit animation plays', async (
     document.querySelector(`[aria-label="${name}"]`)!.closest<HTMLElement>('.ui-dialog')!
   const z = (name: string) => Number.parseFloat(getComputedStyle(root(name)).zIndex)
   const secondRoot = root('Second')
+  // Fully open first, so closing plays a real exit (closing one still at its starting look has
+  // nothing to animate and leaves at once).
+  await vi.waitFor(() =>
+    expect(getComputedStyle(secondRoot.querySelector('.ui-dialog-panel')!).opacity).toBe('1'),
+  )
 
   second.value = false
   await nextTick()

@@ -45,7 +45,10 @@ export interface ResolvedMotion {
   off: boolean
   /** Whether the runtime drives it; otherwise the component's own CSS motion runs unchanged. */
   custom: boolean
+  /** The timing you set (instance, style key or role); empty means the spring. */
   timing: MotionTiming
+  /** Per part: yours if set, else the built-in timing for a part still showing the built-in look. */
+  partTiming: Record<string, MotionTiming>
   spring?: Spring
   initial: Parts
   exit: Parts
@@ -76,11 +79,25 @@ export function resolveMotion(input: {
   key: keyof MotionStyle
   mainPart: string
   defaults: Parts
+  /** Where each part leaves to when nothing says otherwise. */
+  exitDefaults?: Parts
+  /** The component's own timing when nothing sets one (its built-in look's tokens). */
+  defaultTiming?: MotionTiming
   instance: Instance
   style: MotionStyle | undefined
   providerOff: boolean
 }): ResolvedMotion {
-  const { role, key, mainPart, defaults, instance, style, providerOff } = input
+  const {
+    role,
+    key,
+    mainPart,
+    defaults,
+    exitDefaults,
+    defaultTiming,
+    instance,
+    style,
+    providerOff,
+  } = input
   const own = isObject(instance) ? instance : undefined
   const roleStyle = isObject(style?.[role]) ? (style![role] as Record<string, unknown>) : undefined
   const keyStyle = isObject(style?.[key]) ? (style![key] as Record<string, unknown>) : undefined
@@ -96,6 +113,14 @@ export function resolveMotion(input: {
       ...(own?.[field] as Parts | undefined),
     }
   }
+  // Your values ride your timing, or the spring; the built-in look keeps its own timing (its tokens).
+  const explicit = timingOf(own) ?? timingOf(keyStyle) ?? timingOf(roleStyle)
+  const initial = parts('initial', defaults)
+  const overridden = new Set([
+    ...(isObject(roleStyle?.initial) ? [mainPart] : []),
+    ...Object.keys((keyStyle?.initial as Parts | undefined) ?? {}),
+    ...Object.keys((own?.initial as Parts | undefined) ?? {}),
+  ])
   const targets: Record<string, TargetMotion> = {
     ...(keyStyle?.targets as Record<string, TargetMotion> | undefined),
   }
@@ -105,10 +130,16 @@ export function resolveMotion(input: {
   return {
     off: instance === false || providerOff,
     custom: !!own || !!roleStyle || !!keyStyle || !!style,
-    timing: timingOf(own) ?? timingOf(keyStyle) ?? timingOf(roleStyle) ?? {},
+    timing: explicit ?? {},
+    partTiming: Object.fromEntries(
+      Object.keys(initial).map((part) => [
+        part,
+        explicit ?? (overridden.has(part) ? {} : (defaultTiming ?? {})),
+      ]),
+    ),
     spring: style?.spring,
-    initial: parts('initial', defaults),
-    exit: parts('exit', {}),
+    initial,
+    exit: parts('exit', exitDefaults ?? {}),
     targets,
     content: style?.content,
     presets: style?.presets ?? {},

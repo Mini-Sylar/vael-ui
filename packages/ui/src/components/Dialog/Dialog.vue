@@ -23,6 +23,7 @@
         :data-force-mount="forceMount || undefined"
         :data-origin="fromTrigger ? 'trigger' : undefined"
         :data-ui-motion="motionTransition.css === false ? '' : undefined"
+        :data-ui-hooked="hooked ? '' : undefined"
       >
         <div
           v-if="modal"
@@ -254,7 +255,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useComponentMotion } from '../../motion/useComponentMotion'
-import type { MotionRef, DialogMotion } from '../../motion/types'
+import type { MotionRef, DialogMotion, MotionValues } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -440,6 +441,46 @@ function aimAtTrigger() {
   panel.style.transformOrigin = triggerOrigin.value
 }
 
+const DRAWER = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-drawer)' } as const
+const DRAWER_EXIT = {
+  duration: 'var(--ui-duration-drawer-exit)',
+  easing: 'var(--ui-ease-drawer)',
+} as const
+const DRAWER_FADE = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-out)' } as const
+const DRAWER_FADE_EXIT = {
+  duration: 'var(--ui-duration-drawer-exit)',
+  easing: 'var(--ui-ease-out)',
+} as const
+type Look = { initial: Record<string, MotionValues>; exit: Record<string, MotionValues> }
+/** Each position's built-in look: where the panel comes from, and leaves back to. */
+function builtInLook(): Look {
+  if (props.position === 'left' || props.position === 'right') {
+    const x = props.position === 'left' ? '-100%' : '100%'
+    return {
+      initial: {
+        panel: { x: { value: x, ...DRAWER } },
+        overlay: { opacity: { value: 0, ...DRAWER_FADE } },
+      },
+      exit: {
+        panel: { x: { value: x, ...DRAWER_EXIT } },
+        overlay: { opacity: { value: 0, ...DRAWER_FADE_EXIT } },
+      },
+    }
+  }
+  const panel: MotionValues = fromTrigger.value
+    ? { opacity: 0, scale: { value: '0.5', ...DRAWER } }
+    : props.position === 'top'
+      ? { opacity: 0, y: -12 }
+      : props.position === 'bottom'
+        ? { opacity: 0, y: 12 }
+        : { opacity: 0, scale: '0.96' }
+  const exit: MotionValues = fromTrigger.value ? { opacity: 0, scale: '0.5' } : panel
+  return {
+    initial: { panel, overlay: { opacity: 0 } },
+    exit: { panel: exit, overlay: { opacity: 0 } },
+  }
+}
+
 const motion = useComponentMotion({
   name: 'Dialog',
   role: 'overlay',
@@ -448,17 +489,18 @@ const motion = useComponentMotion({
   parts: () => ({ panel: panelEl.value, overlay: overlayEl.value }),
   root: () => panelEl.value,
   motion: () => props.motion,
-  // The built-in look, so `{ spring }` alone keeps it and only changes the feel.
-  defaults: () => ({
-    panel: fromTrigger.value
-      ? { opacity: 0, scale: '0.5' }
-      : props.position === 'top'
-        ? { opacity: 0, y: -12 }
-        : { opacity: 0, scale: '0.96' },
-    overlay: { opacity: 0 },
-  }),
+  // The built-in look as data, played by the CSS engine: `{ spring }` alone keeps it, only the feel
+  // changes. Plain values follow the shared timing (the enter tokens); the drawer slide and the
+  // grow from the trigger keep the drawer curve, which ConfigProvider's spring drives.
+  defaults: () => builtInLook().initial,
+  exitDefaults: () => builtInLook().exit,
+  timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
+  // forceMount means you drive the motion; otherwise the engine plays the built-in look too.
+  owns: () => !props.forceMount,
 })
 const { target, phase } = motion
+// Your hook writes the backdrop's opacity every frame: no CSS transition may fight it.
+const hooked = computed(() => !!(motion.resolved.value.enter || motion.resolved.value.leave))
 const motionTransition = motion.transition
 const motionHooks = computed(() => {
   const { css: _css, ...hooks } = motionTransition.value

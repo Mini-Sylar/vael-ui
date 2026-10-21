@@ -90,10 +90,14 @@ test('a closing drawer lets taps through to the page under it while it slides aw
   // whole slide on a slow runner, so checking after it returns would race.
   let hitWhileLeaving: Element | null | undefined
   const watch = new MutationObserver(() => {
-    if (hitWhileLeaving === undefined && document.querySelector('.ui-dialog-leave-active'))
+    if (hitWhileLeaving === undefined && document.querySelector('.ui-dialog[data-ui-leaving]'))
       hitWhileLeaving = document.elementFromPoint(x, y)
   })
-  watch.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] })
+  watch.observe(document.body, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-ui-leaving'],
+  })
   await screen.getByTestId('done').click()
   await vi.waitFor(() => expect(hitWhileLeaving).not.toBeUndefined())
   watch.disconnect()

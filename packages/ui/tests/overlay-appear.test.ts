@@ -14,6 +14,15 @@ import { openDialog } from '../src/composables/useDialogService'
 
 // Real transitions: the test renderer stubs them by default.
 const options = { global: { stubs: { transition: false, 'transition-group': false } } }
+// Animating in, whoever plays it: the component's CSS (Vue's enter class) or the motion engine
+// (running animations under it, the engine's cold-start hold included).
+const entering = (el: Element | null | undefined) =>
+  !!el && (/-enter-active/.test(el.className) || el.getAnimations({ subtree: true }).length > 0)
+// Engine-driven (Dialog and what builds on it): the panel itself must really be moving, not just
+// carry a class (and not merely the focused close button fading its own opacity).
+const panelMoving = () =>
+  (document.querySelector('.ui-dialog-panel')?.getAnimations().length ?? 0) > 0
+const engineDriven = new Set(['Dialog', 'Drawer'])
 const trigger = ({ setTriggerEl }: { setTriggerEl: (el: unknown) => void }) =>
   h('button', { ref: setTriggerEl }, 'Trigger')
 
@@ -50,16 +59,16 @@ const cases: [string, () => unknown, string][] = [
 for (const [name, tree, selector] of cases) {
   test(`${name} mounted open plays its enter transition`, async () => {
     await render(defineComponent({ render: tree as never }), options)
-    expect(document.querySelector(selector)?.className).toMatch(/-enter-active/)
+    // The engine may still be loading on a cold start: give it a moment, then the panel moves.
+    if (engineDriven.has(name)) await vi.waitFor(() => expect(panelMoving()).toBe(true))
+    else expect(entering(document.querySelector(selector))).toBe(true)
   })
 }
 
 test('openDialog plays the enter transition', async () => {
   await render(defineComponent({ render: () => h(DialogHost) }), options)
   const handle = openDialog(defineComponent({ render: () => h('p', 'Body') }), { title: 'Code' })
-  await vi.waitFor(() =>
-    expect(document.querySelector('.ui-dialog')?.className).toMatch(/ui-dialog-enter-active/),
-  )
+  await vi.waitFor(() => expect(panelMoving()).toBe(true))
   handle.close()
   await handle.result
 })

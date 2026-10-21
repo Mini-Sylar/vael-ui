@@ -8,7 +8,7 @@ import { PRESENCE_ID } from './ids'
 import { PRESENCE_ATTR, refElement, TARGET_ATTR } from './presence'
 import { resolveMotion, useMotionStyle } from './context'
 import type { ResolvedMotion } from './context'
-import type { MotionPhase, MotionRef, MotionStyle, MotionValues } from './types'
+import type { MotionPhase, MotionRef, MotionStyle, MotionTiming, MotionValues } from './types'
 import type { Runner, RunnerHost } from './host'
 import { needsRuntime } from './playable'
 
@@ -32,6 +32,12 @@ export interface ComponentMotionOptions {
   motion: () => unknown
   /** The built-in look, per part, used when the runtime drives it. */
   defaults: () => Record<string, MotionValues>
+  /** Where each part leaves to by default (mirrors `defaults` for a symmetric exit). */
+  exitDefaults?: () => Record<string, MotionValues>
+  /** The built-in look's timing, used when nothing else sets one. */
+  timing?: () => MotionTiming
+  /** The engine plays the built-in look too, not the component's CSS (false while you drive it). */
+  owns?: () => boolean
   onAfterEnter?: () => void
   onAfterLeave?: () => void
 }
@@ -61,6 +67,8 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       key: options.key,
       mainPart: options.mainPart,
       defaults: options.defaults(),
+      exitDefaults: options.exitDefaults?.(),
+      defaultTiming: options.timing?.(),
       instance: options.motion() as Record<string, unknown> | boolean | undefined,
       style: style?.value,
       providerOff: providerDefaults?.value.motion === false,
@@ -107,12 +115,16 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
   // Customised motion: fetch its engine now, so it's ready long before anyone opens anything.
   if (typeof window !== 'undefined')
     watch(
-      () => resolved.value.custom && !resolved.value.off && kind.value,
+      () => (resolved.value.custom || !!options.owns?.()) && !resolved.value.off && kind.value,
       (needed) => needed && void load(),
       { immediate: true },
     )
 
+  // A leaving element is detached from Vue's render, so a template binding can't mark it: we do.
+  const LEAVING = 'data-ui-leaving'
+
   function enter(el: Element, done: () => void) {
+    el.removeAttribute(LEAVING)
     if (resolved.value.off) {
       cancel()
       phase.value = 'entered'
@@ -135,6 +147,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     })
   }
   function leave(el: Element, done: () => void) {
+    el.setAttribute(LEAVING, '')
     if (resolved.value.off) {
       cancel()
       phase.value = 'left'
@@ -152,7 +165,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
   }
 
   const transition = computed(() =>
-    resolved.value.custom || resolved.value.off
+    resolved.value.custom || resolved.value.off || options.owns?.()
       ? {
           css: false,
           onEnter: enter,

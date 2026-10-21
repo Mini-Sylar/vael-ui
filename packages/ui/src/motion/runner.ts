@@ -201,7 +201,11 @@ export function createRunner(host: RunnerHost): Runner {
               return values
                 ? playValues(partEl, values, {
                     direction: 'in',
-                    timing: resolveTiming(partEl, motion.timing, motion.spring),
+                    timing: resolveTiming(
+                      partEl,
+                      motion.partTiming[part] ?? motion.timing,
+                      motion.spring,
+                    ),
                   })
                 : Promise.resolve()
             },
@@ -232,7 +236,7 @@ export function createRunner(host: RunnerHost): Runner {
       const values = motion.initial[part]
       const m = createMoments()
       moments.set(part, m)
-      const timing = resolveTiming(partEl, motion.timing, motion.spring)
+      const timing = resolveTiming(partEl, motion.partTiming[part] ?? motion.timing, motion.spring)
       startMoments(m, timing.arrival)
       plays.push(
         (values ? playValues(partEl, values, { direction: 'in', timing }) : Promise.resolve()).then(
@@ -277,7 +281,11 @@ export function createRunner(host: RunnerHost): Runner {
                 motion.exit[part] ?? (part === host.mainPart ? QUIET_EXIT : QUIET_FADE),
                 {
                   direction: 'out',
-                  timing: resolveTiming(partEl, motion.timing, motion.spring),
+                  timing: resolveTiming(
+                    partEl,
+                    motion.partTiming[part] ?? motion.timing,
+                    motion.spring,
+                  ),
                 },
               ),
             (pending) => (rest = pending),
@@ -326,7 +334,7 @@ export function createRunner(host: RunnerHost): Runner {
           const values = motion.exit[part] ?? (part === host.mainPart ? QUIET_EXIT : QUIET_FADE)
           return playValues(partEl, values, {
             direction: 'out',
-            timing: resolveTiming(partEl, motion.timing, motion.spring),
+            timing: resolveTiming(partEl, motion.partTiming[part] ?? motion.timing, motion.spring),
           })
         }),
       )

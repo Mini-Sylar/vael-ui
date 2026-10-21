@@ -135,78 +135,25 @@
     outline-offset: 1px;
   }
 
-  .ui-dialog-enter-active {
-    transition: --ui-dialog-t var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-dialog-leave-active {
-    transition: --ui-dialog-t var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  /* A leaving dialog lets taps through: its backdrop and panel stay on screen for the exit, and
-     would otherwise take the next tap (reaching for a dock or a button right after closing). Not
-     while `data-state="closing"`: a custom exit can still be cancelled from inside the dialog. */
-  .ui-dialog-leave-active {
+  /* Enter and leave are played by the CSS engine (motion/css.ts) from Dialog's built-in look; only
+     what happens between them lives here. A leaving dialog lets taps through: its backdrop and panel
+     stay on screen for the exit, and would otherwise take the next tap. Not while
+     `data-state="closing"`: a custom exit can still be cancelled from inside the dialog. */
+  .ui-dialog[data-ui-leaving] {
     pointer-events: none;
   }
-  .ui-dialog-enter-from,
-  .ui-dialog-leave-to {
-    --ui-dialog-t: 0;
-  }
-  .ui-dialog-enter-active .ui-dialog-panel {
-    transition:
-      transform var(--ui-duration-enter) var(--ui-ease-out),
-      opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-dialog-leave-active .ui-dialog-panel {
-    transition:
-      transform var(--ui-duration-exit) var(--ui-ease-out),
-      opacity var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog-leave-to .ui-dialog-panel {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  /* data-ui-motion: the runtime or your hook drives the backdrop, so its CSS fade steps aside. */
-  .ui-dialog:not([data-ui-motion]) .ui-dialog-overlay {
+  /* A close waiting on beforeClose dims the backdrop until it's confirmed or cancelled. Not under
+     your own hook, which writes the backdrop's opacity every frame. */
+  .ui-dialog:not([data-ui-hooked]) .ui-dialog-overlay {
     transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
   }
-  .ui-dialog-enter-active .ui-dialog-overlay {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-dialog-enter-from .ui-dialog-overlay,
-  .ui-dialog-leave-to .ui-dialog-overlay,
   .ui-dialog[data-state='closing'] .ui-dialog-overlay {
     opacity: 0;
-  }
-  @starting-style {
-    .ui-dialog:not([data-ui-motion]) .ui-dialog-overlay {
-      opacity: 0;
-    }
   }
   /* forceMount: an inline opacity means you drive the backdrop, so the CSS fade steps aside. */
   .ui-dialog[data-force-mount] .ui-dialog-overlay[style*='opacity'] {
     transition: none;
   }
-  .ui-dialog--top.ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel {
-    transform: translateY(-12px);
-  }
-  /* origin="trigger": grows out of the element that opened it, on the drawer curve so a motion
-     mode's spring carries it, and fades in faster than it grows. */
-  .ui-dialog[data-origin='trigger'].ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog[data-origin='trigger'].ui-dialog-leave-to .ui-dialog-panel {
-    transform: scale(0.5);
-  }
-  .ui-dialog[data-origin='trigger'].ui-dialog-enter-active .ui-dialog-panel {
-    transition:
-      transform var(--ui-duration-drawer) var(--ui-ease-drawer),
-      opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-dialog--bottom.ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog--bottom.ui-dialog-leave-to .ui-dialog-panel {
-    transform: translateY(12px);
-  }
-
   .ui-dialog--left .ui-dialog-panel,
   .ui-dialog--right .ui-dialog-panel {
     inline-size: min(20rem, 90vw);
@@ -256,67 +203,7 @@
     border-start-end-radius: 0;
     border-end-end-radius: 0;
   }
-  .ui-dialog--left.ui-dialog-enter-active .ui-dialog-panel,
-  .ui-dialog--left.ui-dialog-leave-active .ui-dialog-panel,
-  .ui-dialog--right.ui-dialog-enter-active .ui-dialog-panel,
-  .ui-dialog--right.ui-dialog-leave-active .ui-dialog-panel {
-    transition-duration: var(--ui-duration-drawer);
-    transition-timing-function: var(--ui-ease-drawer), var(--ui-ease-out);
-  }
-  .ui-dialog--left.ui-dialog-enter-active,
-  .ui-dialog--left.ui-dialog-leave-active,
-  .ui-dialog--right.ui-dialog-enter-active,
-  .ui-dialog--right.ui-dialog-leave-active {
-    transition-duration: var(--ui-duration-drawer);
-  }
-  .ui-dialog--left.ui-dialog-enter-active .ui-dialog-overlay,
-  .ui-dialog--left.ui-dialog-leave-active .ui-dialog-overlay,
-  .ui-dialog--right.ui-dialog-enter-active .ui-dialog-overlay,
-  .ui-dialog--right.ui-dialog-leave-active .ui-dialog-overlay {
-    transition-duration: var(--ui-duration-drawer);
-  }
-  /* A drawer gets out of the way faster than it arrived. */
-  .ui-dialog--left.ui-dialog-leave-active,
-  .ui-dialog--right.ui-dialog-leave-active,
-  .ui-dialog--left.ui-dialog-leave-active .ui-dialog-panel,
-  .ui-dialog--right.ui-dialog-leave-active .ui-dialog-panel,
-  .ui-dialog--left.ui-dialog-leave-active .ui-dialog-overlay,
-  .ui-dialog--right.ui-dialog-leave-active .ui-dialog-overlay {
-    transition-duration: var(--ui-duration-drawer-exit);
-  }
-  .ui-dialog--left.ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog--left.ui-dialog-leave-to .ui-dialog-panel {
-    transform: translateX(-100%);
-    opacity: 1;
-  }
-  .ui-dialog--right.ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog--right.ui-dialog-leave-to .ui-dialog-panel {
-    transform: translateX(100%);
-    opacity: 1;
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .ui-dialog-enter-active .ui-dialog-panel,
-    .ui-dialog-leave-active .ui-dialog-panel {
-      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-    }
-    .ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog--top.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog--bottom.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--bottom.ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog--left.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--left.ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog--right.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--right.ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog[data-origin='trigger'].ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog[data-origin='trigger'].ui-dialog-leave-to .ui-dialog-panel {
-      transform: none;
-    }
-    .ui-dialog[data-origin='trigger'].ui-dialog-enter-active .ui-dialog-panel {
-      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-    }
     .ui-dialog-close:active,
     .ui-dialog-maximize:active {
       transform: none;
@@ -326,12 +213,6 @@
     }
     .ui-dialog-panel {
       transition: none;
-    }
-    .ui-dialog-enter-active {
-      transition: --ui-dialog-t var(--ui-duration-enter) var(--ui-ease-out);
-    }
-    .ui-dialog-leave-active {
-      transition: --ui-dialog-t var(--ui-duration-exit) var(--ui-ease-out);
     }
     .ui-dialog-panel--resizing {
       animation: none;

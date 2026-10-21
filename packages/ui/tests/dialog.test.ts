@@ -331,12 +331,17 @@ test('the scroll lock holds until the exit animation ends, so a returning scroll
   await screen.getByTestId('trigger').click()
   await expect.element(page.getByRole('dialog')).toBeVisible()
   expect(document.body.style.overflow).toBe('hidden')
+  // Fully open first, so the close plays a real exit.
+  await vi.waitFor(() =>
+    expect(getComputedStyle(document.querySelector('.ui-dialog-panel')!).opacity).toBe('1'),
+  )
 
   await userEvent.keyboard('{Escape}')
   // Closed, but still fading out: the page must stay locked under it.
-  await vi.waitFor(() => expect(document.querySelector('.ui-dialog-leave-active')).not.toBeNull(), {
-    interval: 5,
-  })
+  await vi.waitFor(
+    () => expect(document.querySelector('.ui-dialog[data-ui-leaving]')).not.toBeNull(),
+    { interval: 5 },
+  )
   expect(screen.getByTestId('state').element().textContent).toBe('closed')
   expect(document.body.style.overflow).toBe('hidden')
 

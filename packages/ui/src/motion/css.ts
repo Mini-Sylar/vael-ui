@@ -105,7 +105,8 @@ function write(
     // Movement rides the spring; fades ease. Leaving is quick and quiet. Values timed on their own keep it.
     if (!own?.timing) {
       if (leaving) {
-        duration = Math.min(duration * 0.5, EXIT_CAP)
+        // vael-ui's exit token: the built-in look's exits and yours agree, and themes can change it.
+        duration = tokenMs(el, 'var(--ui-duration-exit)')
         easing = EASE_OUT
       } else if (!MOVES.has(prop)) {
         duration = Math.min(duration, FADE_CAP)
@@ -165,14 +166,14 @@ async function settle(root: Element): Promise<void> {
 function schedule(
   parts: Record<string, Element>,
   groups: TargetGroup[],
-  partTiming: Timed,
+  partTiming: (part: string) => Timed,
   timedOf: (g: TargetGroup) => Timed,
 ) {
   const start: Record<string, number> = {}
   const span: Record<string, number> = {}
   for (const part of Object.keys(parts)) {
     start[part] = 0
-    span[part] = partTiming.arrival
+    span[part] = partTiming(part).arrival
   }
   const byName = new Map(groups.map((g) => [g.name, g]))
   const resolving = new Set<string>()
@@ -214,6 +215,8 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
   let repeatDones: (() => void)[] = []
   let handedOver: Runner | undefined
 
+  // Inline transitions to put back once the starting look has applied.
+  const paused = new Map<HTMLElement, string>()
   const parts = () =>
     Object.fromEntries(Object.entries(host.parts()).filter((e): e is [string, Element] => !!e[1]))
   const begin = (next: 'entering' | 'leaving') => {
@@ -261,7 +264,8 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     const spring = m.spring ?? DEFAULT_SPRING
     const own = parts()
     const first = Object.values(own)[0] ?? el
-    const partTiming = timing(first, m.timing, spring)
+    const partTiming = (name: string) =>
+      timing(own[name] ?? first, m.partTiming[name] ?? m.timing, spring)
     const timedOf = (g: TargetGroup) =>
       timing(g.els[0] ?? first, ownTiming(g.motion) ? g.motion : m.timing, spring)
     const start = schedule(own, groups, partTiming, timedOf)
@@ -270,11 +274,16 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       // Caught mid-close: keep its transitions, so reopening carries on from what's on screen.
       const midway = node.hasAttribute('data-ui-m')
       const props = write(node, values, t, spring, delay, false)
-      if (!midway) hold(node, props)
+      if (!midway) {
+        // Every transition off while the starting look applies, the component's own included.
+        paused.set(node, node.style.getPropertyValue('transition'))
+        node.style.setProperty('transition', 'none')
+        hold(node, props)
+      }
       moving.push(node)
     }
     for (const [name, part] of Object.entries(own))
-      start$(part as HTMLElement, m.initial[name] ?? {}, partTiming, start[name] ?? 0)
+      start$(part as HTMLElement, m.initial[name] ?? {}, partTiming(name), start[name] ?? 0)
     for (const g of groups) {
       const t = timedOf(g)
       g.els.forEach((target, i) =>
@@ -291,6 +300,8 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     // from its starting look to the element's own style.
     void (el as HTMLElement).offsetWidth
     for (const node of moving) {
+      if (paused.has(node)) node.style.setProperty('transition', paused.get(node)!)
+      paused.delete(node)
       node.setAttribute('data-ui-m', '')
       release(node)
     }
