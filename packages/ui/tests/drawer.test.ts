@@ -86,9 +86,17 @@ test('a closing drawer lets taps through to the page under it while it slides aw
   const y = box.top + box.height / 2
   // Open, the drawer is what's under that point.
   expect(document.elementFromPoint(x, y)?.closest('.ui-dialog')).not.toBeNull()
+  // Hit-test the moment the exit starts: the click's round trip can outlast the
+  // whole slide on a slow runner, so checking after it returns would race.
+  let hitWhileLeaving: Element | null | undefined
+  const watch = new MutationObserver(() => {
+    if (hitWhileLeaving === undefined && document.querySelector('.ui-dialog-leave-active'))
+      hitWhileLeaving = document.elementFromPoint(x, y)
+  })
+  watch.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] })
   await screen.getByTestId('done').click()
-  await new Promise((r) => requestAnimationFrame(r))
+  await vi.waitFor(() => expect(hitWhileLeaving).not.toBeUndefined())
+  watch.disconnect()
   // Still on screen and leaving, yet the button under it is what a tap would hit.
-  expect(document.querySelector('.ui-dialog-leave-active')).not.toBeNull()
-  expect(document.elementFromPoint(x, y)).toBe(outside)
+  expect(hitWhileLeaving).toBe(outside)
 })
