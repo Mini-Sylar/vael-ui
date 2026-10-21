@@ -60,7 +60,7 @@ export const KNOB_ARC_PATH = `M ${start.x.toFixed(3)} ${start.y.toFixed(3)} A ${
 <script setup lang="ts">
 import './Knob.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import {
@@ -78,6 +78,11 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 /** Current value. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
+
+const emit = defineEmits<{
+  /** Fires with the final value when you release the knob or press a key, like a native range input's `change`. `v-model` updates on every move. */
+  change: [value: number]
+}>()
 
 const props = withDefaults(
   defineProps<{
@@ -147,6 +152,8 @@ const {
   max: () => props.max,
   step: () => props.step,
   disabled: () => isDisabled.value,
+  // After the parent applies the update, so `change` carries the committed value.
+  onCommit: () => nextTick(() => emit('change', modelValue.value)),
 })
 
 const cx = useClassMerge()

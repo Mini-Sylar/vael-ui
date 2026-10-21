@@ -9,8 +9,9 @@ import { ssrWindow } from '../ssr'
 
 export type TooltipCloseReason = 'pointer' | 'focus' | 'trigger' | 'escape' | 'programmatic'
 
+/** Sent only when a close is requested (`value` is `false`); `cancel()` keeps the tooltip open. */
 export interface TooltipOpenChangeDetails {
-  reason: TooltipCloseReason | 'hover' | 'focus-visible' | 'programmatic'
+  reason: TooltipCloseReason
   event?: Event
   cancel: () => void
 }

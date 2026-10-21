@@ -130,7 +130,8 @@ export function useResizable(
       options.onCommit?.()
       return
     }
-    if (event.key === 'End') {
+    // With no max there's nowhere for End to go, so the key passes through.
+    if (event.key === 'End' && Number.isFinite(max())) {
       event.preventDefault()
       model.value = max()
       options.onCommit?.()

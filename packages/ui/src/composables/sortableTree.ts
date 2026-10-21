@@ -103,12 +103,16 @@ export function moveTreeNode<T>(
     return false
   }
 
-  let target: T[]
-  if (to.parentValue == null) {
-    target = nodes
-  } else {
-    const parent = findNodeIn(nodes, to.parentValue, accessors)
-    if (!parent) return false
+  // Both ends must exist before anything changes, so a move that fails leaves the data untouched.
+  if (!findNodeIn(nodes, value, accessors)) return false
+  const parent = to.parentValue == null ? undefined : findNodeIn(nodes, to.parentValue, accessors)
+  if (to.parentValue != null && !parent) return false
+
+  const detached = detach(nodes, value, accessors)
+  if (!detached) return false
+
+  let target = nodes
+  if (parent) {
     let children = childrenOfNode(parent, accessors)
     if (!children) {
       children = []
@@ -116,9 +120,6 @@ export function moveTreeNode<T>(
     }
     target = children
   }
-
-  const detached = detach(nodes, value, accessors)
-  if (!detached) return false
 
   // `to.index` is the node's FINAL resting slot, counted with the node itself
   // already gone — which is exactly the basis `resolveDropPosition` works on

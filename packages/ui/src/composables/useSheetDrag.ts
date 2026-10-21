@@ -31,6 +31,7 @@ export interface UseSheetDragOptions {
 }
 
 export interface UseSheetDragReturn {
+  /** The snap point the sheet rests on. Set it to move the sheet there. */
   activeSnap: Ref<string | null>
   isDragging: Ref<boolean>
   /** Re-applies the initial snap position — call after the panel becomes visible again. */
@@ -161,8 +162,25 @@ export function useSheetDrag(
     else setVisibleCapAfterSettle(panel, visible)
   }
 
+  // Writing `activeSnap` from outside settles the sheet there; the sheet's own writes don't.
+  let ownWrite = false
+  function setSnap(id: string) {
+    ownWrite = true
+    activeSnap.value = id
+    ownWrite = false
+  }
+  watch(
+    activeSnap,
+    (id) => {
+      if (ownWrite || isDragging.value) return
+      const point = points().find((candidate) => candidate.id === id)
+      if (point) moveTo(offsetFor(point), !reducedMotion())
+    },
+    { flush: 'sync' },
+  )
+
   function settleTo(point: SheetSnapPoint) {
-    activeSnap.value = point.id
+    setSnap(point.id)
     moveTo(offsetFor(point), true)
   }
 
@@ -173,7 +191,7 @@ export function useSheetDrag(
     const initial = list.find((point) => point.id === toValue(options.initialSnap)) ?? list[0]
     applyFixedHeight()
     const panel = options.panelEl.value
-    activeSnap.value = initial.id
+    setSnap(initial.id)
     if (!panel || reducedMotion()) {
       moveTo(offsetFor(initial), false)
       return

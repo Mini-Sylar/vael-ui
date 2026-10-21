@@ -149,3 +149,20 @@ test('data-resizing is set for the duration of a drag and cleared on release', a
   pointerup(10)
   await vi.waitFor(() => expect(root.hasAttribute('data-resizing')).toBe(false))
 })
+
+test('End does nothing without a max, instead of sizing the panel to Infinity', async () => {
+  const { h, shallowRef } = await import('vue')
+  const { default: Resizable } = await import('../src/components/Resizable/Resizable.vue')
+  const size = shallowRef(150)
+  const screen = await render(() =>
+    h(Resizable as never, {
+      size: size.value,
+      'onUpdate:size': (next: number) => (size.value = next),
+      ariaLabel: 'Panel',
+    }),
+  )
+  const handle = screen.container.querySelector<HTMLElement>('[role="separator"]')!
+  handle.focus()
+  await userEvent.keyboard('{End}')
+  expect(size.value).toBe(150)
+})

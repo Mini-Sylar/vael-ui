@@ -29,10 +29,18 @@ export function useTabs<T>(active: Ref<T>, options: UseTabsOptions<T>): UseTabsR
     options.onChange?.(item)
   }
 
+  // An object can't round-trip through `data-tab-value` (each reads '[object Object]'), so object
+  // items match their tab by position instead.
+  function keyOf(item: T): string | undefined {
+    return typeof item === 'object' && item !== null ? undefined : String(item)
+  }
+
   function getTabEl(item: T, index: number): HTMLElement | undefined {
     const tabs = options.listEl.value?.querySelectorAll<HTMLElement>('[role="tab"]')
     if (!tabs) return undefined
-    const target = Array.from(tabs).find((tab) => tab.dataset.tabValue === String(item))
+    const key = keyOf(item)
+    const target =
+      key === undefined ? undefined : Array.from(tabs).find((tab) => tab.dataset.tabValue === key)
     return target ?? tabs[index]
   }
 
@@ -47,7 +55,8 @@ export function useTabs<T>(active: Ref<T>, options: UseTabsOptions<T>): UseTabsR
 
   function itemForEl(el: HTMLElement, items: readonly T[]): T | undefined {
     const value = el.dataset.tabValue
-    if (value !== undefined) return items.find((item) => String(item) === value)
+    const match = value === undefined ? undefined : items.find((item) => keyOf(item) === value)
+    if (match !== undefined) return match
     const tabs = options.listEl.value?.querySelectorAll<HTMLElement>('[role="tab"]')
     const index = tabs ? Array.from(tabs).indexOf(el) : -1
     return index === -1 ? undefined : items[index]

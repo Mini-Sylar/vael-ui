@@ -114,7 +114,7 @@ export const DIAL_TICKS = Array.from({ length: DIAL_TICK_COUNT }, (_, i) => {
 <script setup lang="ts">
 import './Dial.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import {
@@ -132,6 +132,11 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 /** Current value. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
+
+const emit = defineEmits<{
+  /** Fires with the final value when you release the dial or press a key, like a native range input's `change`. `v-model` updates on every move. */
+  change: [value: number]
+}>()
 
 const props = withDefaults(
   defineProps<{
@@ -224,6 +229,8 @@ const {
   step: () => props.step,
   degreesPerStep: () => props.degreesPerStep,
   disabled: () => isDisabled.value,
+  // After the parent applies the update, so `change` carries the committed value.
+  onCommit: () => nextTick(() => emit('change', modelValue.value)),
 })
 
 const cx = useClassMerge()

@@ -157,6 +157,7 @@ test('drag-over state survives nested-child dragenter/dragleave churn', async ()
   const dropzone = screen.container.querySelector('[data-testid="basic"] .ui-file-upload-dropzone')!
   const child = dropzone.querySelector('p, button')!
   const dataTransfer = new DataTransfer()
+  dataTransfer.items.add(makeFile('a.txt', 'text/plain', 5))
 
   dropzone.dispatchEvent(dragEventWithFiles('dragenter', dataTransfer))
   await vi.waitFor(() => expect(dropzone.hasAttribute('data-drag-over')).toBe(true))
@@ -230,4 +231,40 @@ test('the native file input has a name on its own and takes a Field label when t
   // An aria-label would override the Field's <label for>, so it is left off there.
   expect(inField.hasAttribute('aria-label')).toBe(false)
   expect(document.querySelector(`label[for="${inField.id}"]`)?.textContent).toContain('Avatar')
+})
+
+test('a drag that carries no files, such as selected text, does not light the drop zone', async () => {
+  const screen = await render(FileUploadFixture, {})
+  await nextTick()
+  const dropzone = screen.container.querySelector('[data-testid="basic"] .ui-file-upload-dropzone')!
+  const text = new DataTransfer()
+  text.setData('text/plain', 'hello')
+  const enter = dragEventWithFiles('dragenter', text)
+  dropzone.dispatchEvent(enter)
+  await nextTick()
+  expect(dropzone.hasAttribute('data-drag-over')).toBe(false)
+  expect(enter.defaultPrevented).toBe(false)
+})
+
+test('disabling the drop zone mid-drag clears its drag-over state', async () => {
+  const { defineComponent, h, shallowRef, useTemplateRef } = await import('vue')
+  const { useFileDrop } = await import('../src/composables/useFileDrop')
+  const disabled = shallowRef(false)
+  let over: { value: boolean } = { value: false }
+  const Zone = defineComponent({
+    setup() {
+      const el = useTemplateRef<HTMLElement>('zone')
+      over = useFileDrop(el, { onFiles: () => {}, disabled }).isDragOver
+      return () => h('div', { ref: 'zone', 'data-testid': 'zone', style: 'height: 40px' })
+    },
+  })
+  const screen = await render(Zone)
+  await nextTick()
+  const zone = screen.container.querySelector('[data-testid="zone"]')!
+  const files = new DataTransfer()
+  files.items.add(makeFile('a.txt', 'text/plain', 5))
+  zone.dispatchEvent(dragEventWithFiles('dragenter', files))
+  await vi.waitFor(() => expect(over.value).toBe(true))
+  disabled.value = true
+  await vi.waitFor(() => expect(over.value).toBe(false))
 })

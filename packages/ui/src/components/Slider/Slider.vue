@@ -68,7 +68,7 @@
 <script setup lang="ts">
 import './Slider.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import {
@@ -87,6 +87,11 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 /** Current value. Bind a `[start, end]` tuple for a two-thumb range. @default 0 */
 const modelValue = defineModel<number | [number, number]>({ default: 0 })
+
+const emit = defineEmits<{
+  /** Fires with the final value when you release a thumb or press a key, like a native range input's `change`. `v-model` updates on every move. */
+  change: [value: number | [number, number]]
+}>()
 
 const props = withDefaults(
   defineProps<{
@@ -206,6 +211,8 @@ const {
   step: () => props.step,
   orientation: () => props.orientation,
   disabled: () => isDisabled.value,
+  // After the parent applies the update, so `change` carries the committed value.
+  onCommit: () => nextTick(() => emit('change', modelValue.value)),
 })
 
 const cx = useClassMerge()

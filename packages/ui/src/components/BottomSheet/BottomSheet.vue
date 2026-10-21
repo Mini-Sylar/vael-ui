@@ -308,7 +308,7 @@ defineExpose({
   panelEl,
   /** Backdrop element. `null` when `modal` is `false`. */
   overlayEl: computed(() => dialog.value?.overlayEl ?? null),
-  /** `id` of the snap point the sheet rests at. */
+  /** `id` of the snap point the sheet rests at. Set it to move the sheet there. */
   activeSnap,
   /** Whether you're dragging the sheet. */
   isDragging,

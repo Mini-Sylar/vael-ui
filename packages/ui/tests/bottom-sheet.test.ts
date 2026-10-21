@@ -464,3 +464,31 @@ test('the scrolling content fades its edges by default', async () => {
   // 2000px of content in a 60% sheet: there is more below, so the bottom edge fades.
   await vi.waitFor(() => expect(getComputedStyle(content()).maskImage).not.toBe('none'))
 })
+
+test('setting the exposed activeSnap moves the sheet to that snap point', async () => {
+  const { defineComponent, h, shallowRef, useTemplateRef } = await import('vue')
+  const { default: BottomSheet } = await import('../src/components/BottomSheet/BottomSheet.vue')
+  const open = shallowRef(false)
+  const Host = defineComponent({
+    setup() {
+      const sheet = useTemplateRef<{ activeSnap: string | null }>('sheet')
+      return () => [
+        h('button', { 'data-testid': 'raise', onClick: () => (sheet.value!.activeSnap = 'large') }),
+        h(BottomSheet as never, {
+          ref: 'sheet',
+          open: open.value,
+          'onUpdate:open': (value: boolean) => (open.value = value),
+          ariaLabel: 'Sheet',
+        }),
+      ]
+    },
+  })
+  const screen = await render(Host)
+  open.value = true
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  // The sheet's backdrop covers the page, so call it the way your own code would.
+  screen.getByTestId('raise').element().dispatchEvent(new MouseEvent('click'))
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.92, -1), {
+    timeout: 1200,
+  })
+})
