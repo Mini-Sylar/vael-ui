@@ -260,4 +260,16 @@
       opacity: 0;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-toast-action,
+  .ui-toast-close {
+    position: relative;
+  }
+  .ui-toast-action:active::after,
+  .ui-toast-close:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

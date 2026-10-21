@@ -181,4 +181,14 @@
       transition: none;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-command-palette-item {
+    position: relative;
+  }
+  .ui-command-palette-item:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

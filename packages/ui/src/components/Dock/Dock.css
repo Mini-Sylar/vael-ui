@@ -111,4 +111,11 @@
       animation: none;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-dock-item:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

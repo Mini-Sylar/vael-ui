@@ -179,4 +179,14 @@
       transform: none;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-file-upload-remove {
+    position: relative;
+  }
+  .ui-file-upload-remove:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

@@ -175,4 +175,18 @@
       scale: 1;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-color-picker-eyedropper,
+  .ui-color-picker-preset,
+  .ui-color-picker-swatch {
+    position: relative;
+  }
+  .ui-color-picker-eyedropper:active::after,
+  .ui-color-picker-preset:active::after,
+  .ui-color-picker-swatch:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

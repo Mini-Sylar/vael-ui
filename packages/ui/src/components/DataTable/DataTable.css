@@ -173,12 +173,9 @@
     background: var(--ui-indicator-bg);
   }
   /* selectionMode="row": the whole row is the click target, not just a checkbox. */
+  /* No press scale: a shrinking full-width row drops edge clicks; the hover highlight is feedback. */
   .ui-datatable-tr--clickable {
     cursor: pointer;
-    transition: transform var(--ui-duration-press) var(--ui-ease-out);
-  }
-  .ui-datatable-tr--clickable:active {
-    transform: scale(0.99);
   }
   .ui-datatable-tr--clickable:focus {
     outline: none;
@@ -473,9 +470,6 @@
     .ui-datatable-sort-button:active {
       transform: none;
     }
-    .ui-datatable-tr--clickable:active {
-      transform: none;
-    }
     .ui-datatable-sort-chevron {
       transition: opacity var(--ui-duration-press) ease;
     }
@@ -564,5 +558,15 @@
     + .ui-checkbox-box,
   .ui-datatable-tbody[data-motion='off'] .ui-radio-input:active:not(:disabled) + .ui-radio-control {
     scale: none;
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-datatable-sort-button {
+    position: relative;
+  }
+  .ui-datatable-sort-button:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

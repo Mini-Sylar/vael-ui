@@ -1,6 +1,7 @@
 import '../src/style.css'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { userEvent } from 'vitest/browser'
 import { h, nextTick, shallowRef } from 'vue'
 import type { VNodeChild } from 'vue'
 import MenuList from '../src/components/MenuList/MenuList.vue'
@@ -28,7 +29,8 @@ test('the hover highlight sits on the hovered row', async () => {
   const row = screen.container.querySelectorAll<HTMLElement>('.ui-menu-list-item')[1]!
   // Keyboard focus takes the highlight; earlier files in the same browser can leave some behind.
   ;(document.activeElement as HTMLElement | null)?.blur()
-  row.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))
+  // The real cursor, so one left resting on another row by an earlier file can't win.
+  await userEvent.hover(row)
   // Waits out the glide, which can run long under load.
   await vi.waitFor(() => {
     const highlight = screen.container

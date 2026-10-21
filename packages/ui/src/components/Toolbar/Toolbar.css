@@ -83,4 +83,14 @@
     ):not(.ui-button--disabled):not(.ui-button--loading):not([aria-pressed='true']) {
     --ui-button-bg: transparent;
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-toolbar-overflow-trigger {
+    position: relative;
+  }
+  .ui-toolbar-overflow-trigger:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

@@ -133,4 +133,12 @@
       transform: none;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-combobox-clear:active::after,
+  .ui-select-clear:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

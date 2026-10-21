@@ -336,4 +336,16 @@
       animation: none;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-dialog-close,
+  .ui-dialog-maximize {
+    position: relative;
+  }
+  .ui-dialog-close:active::after,
+  .ui-dialog-maximize:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

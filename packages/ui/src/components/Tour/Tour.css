@@ -145,4 +145,18 @@
       transform: none;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-tour-back,
+  .ui-tour-next,
+  .ui-tour-skip {
+    position: relative;
+  }
+  .ui-tour-back:active::after,
+  .ui-tour-next:active::after,
+  .ui-tour-skip:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

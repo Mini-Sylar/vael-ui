@@ -163,4 +163,14 @@
       transform: none;
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-sortable-handle {
+    position: relative;
+  }
+  .ui-sortable-handle:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }

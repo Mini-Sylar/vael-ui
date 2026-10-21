@@ -506,4 +506,16 @@
       background: var(--ui-muted);
     }
   }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-calendar-label--button,
+  .ui-calendar-nav {
+    position: relative;
+  }
+  .ui-calendar-label--button:active::after,
+  .ui-calendar-nav:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
+  }
 }
