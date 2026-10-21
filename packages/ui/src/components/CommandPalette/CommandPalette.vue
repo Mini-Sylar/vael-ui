@@ -55,6 +55,14 @@
         @leave="leaveHook"
       >
         <li
+          key="indicator"
+          ref="indicatorEl"
+          role="none"
+          aria-hidden="true"
+          class="ui-indicator ui-command-palette-indicator"
+          :style="indicatorStyle"
+        />
+        <li
           v-if="filteredItems.length === 0"
           key="empty"
           :class="emptyPart.class"
@@ -142,6 +150,8 @@ import '../shared/tokens.css'
 import { computed, nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { useEasedHeight } from '../../composables/useEasedHeight'
+import { useTabIndicator } from '../../composables/useTabIndicator'
+import '../shared/indicator.css'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogPosition, DialogSize } from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
@@ -379,6 +389,19 @@ function registerListEl(el: Element | { $el?: unknown } | null) {
 }
 
 // Ease to the new height from the current one, so a restart mid-animation doesn't jump.
+// The highlight slides between items, Tabs-style; a long jump (a new search) lands at once.
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+const { style: indicatorStyle } = useTabIndicator(() => [activeIndex.value, rows.value], {
+  listEl,
+  orientation: 'vertical',
+  selector: '[role="option"][data-active]',
+  scroller: true,
+  matchCross: true,
+  maxGlide: 3,
+  motion: () => props.motionCss,
+  indicatorEl,
+})
+
 useEasedHeight({
   el: () => listEl.value,
   source: rows,
@@ -515,6 +538,8 @@ defineExpose({
   inputEl,
   /** Results list element (null while closed). */
   listEl,
+  /** The hover and keyboard highlight, sliding between items (null while closed). With `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: indicatorEl,
   /** Items matching the current query, in `items` order. */
   filteredItems,
   /** Index of the highlighted item in `filteredItems` (`-1` when none). */

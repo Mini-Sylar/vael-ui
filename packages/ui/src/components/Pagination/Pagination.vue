@@ -9,6 +9,13 @@
       <!-- An <li>, since a <ul> may only hold list items; role="presentation"
            keeps it out of the list's item count. -->
       <li
+        ref="hoverEl"
+        class="ui-indicator ui-indicator--inline ui-pagination-hover"
+        role="presentation"
+        aria-hidden="true"
+        :style="hoverStyle"
+      />
+      <li
         ref="indicatorEl"
         class="ui-pagination-indicator"
         role="presentation"
@@ -195,6 +202,8 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import { useTabIndicator } from '../../composables/useTabIndicator'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 
 defineOptions({ inheritAttrs: false })
 
@@ -210,6 +219,14 @@ const listEl = useTemplateRef<HTMLElement>('list')
 const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
 const labelsEl = useTemplateRef<HTMLElement>('labelsEl')
 const indicator = useTabIndicator(page, { listEl, selector: '[aria-current="page"]' })
+// The hover and keyboard highlight slides between buttons, under the current page's own.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(listEl, {
+  itemSelector: '.ui-pagination-page-button, .ui-pagination-nav-button',
+  orientation: 'horizontal',
+  motion: () => props.motionCss,
+  indicatorEl: hoverEl,
+})
 // The page numbers again in the contrast color, clipped to the indicator, so the
 // color travels with it instead of flipping when the page changes.
 const labelsStyle = computed(() => {
@@ -345,6 +362,8 @@ defineExpose({
   listEl,
   /** The sliding highlight behind the current page. */
   indicatorEl,
+  /** The hover and keyboard highlight, sliding between buttons. With `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
   /** The page numbers in the contrast color, clipped to the indicator. */
   labelsEl,
 })

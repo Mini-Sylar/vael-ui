@@ -99,4 +99,9 @@
       transition: none;
     }
   }
+
+  /* Hover and focus: a pill sliding between tabs, beneath the selected tab's indicator. */
+  .ui-tabs-hover {
+    border-radius: calc(var(--ui-radius) - 4px);
+  }
 }

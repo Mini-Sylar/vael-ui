@@ -8,6 +8,13 @@
     @keydown="onKeydown"
     v-bind="attrs"
   >
+    <div
+      ref="hoverEl"
+      class="ui-indicator ui-tabs-hover"
+      :class="props.orientation !== 'vertical' && 'ui-indicator--inline'"
+      :style="hoverStyle"
+      aria-hidden="true"
+    />
     <slot
       :active="active"
       :focused="focused"
@@ -25,8 +32,11 @@
 import './Tabs.css'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
+import type { ShallowRef } from 'vue'
 import { useTabs } from '../../composables/useTabs'
 import { useTabIndicator } from '../../composables/useTabIndicator'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue, UiPartStyle } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -97,6 +107,14 @@ defineSlots<{
 }>()
 
 const listEl = useTemplateRef<HTMLElement>('list')
+// The hover and keyboard highlight slides between tabs, under the selected tab's indicator.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(listEl, {
+  itemSelector: '[role="tab"]',
+  scope: '[role="tablist"]',
+  orientation: () => props.orientation ?? 'horizontal',
+  indicatorEl: hoverEl,
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.tabs,
@@ -127,7 +145,17 @@ const indicatorPart = computed(() => resolveUiPart(cx, themedUi()?.indicator, 'u
 // function returned to the template, which breaks Vue's setup-time rules.
 // A consumer building a fully custom indicator (e.g. motion-v) just never
 // calls `indicatorProps`; `listEl` stays exposed for that escape hatch.
-const indicator = useTabIndicator(active, { listEl, orientation: () => props.orientation })
+// The selected indicator is your own element, bound with indicatorProps(); a spring finds it here.
+const selectedIndicatorEl = {
+  get value() {
+    return listEl.value?.querySelector<HTMLElement>(':scope > .ui-tabs-indicator') ?? null
+  },
+} as Readonly<ShallowRef<HTMLElement | null>>
+const indicator = useTabIndicator(active, {
+  listEl,
+  orientation: () => props.orientation,
+  indicatorEl: selectedIndicatorEl,
+})
 
 const generatedId = useId()
 const idBase = computed(() => props.idBase ?? generatedId)
@@ -173,6 +201,8 @@ function indicatorProps(variant: 'background' | 'underline' = 'background') {
 defineExpose({
   /** Tab list (root) element. */
   listEl,
+  /** The hover and keyboard highlight, sliding between tabs. Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
   /** The id a tab carries. */
   tabId,
   /** The id a tab's panel should carry. */

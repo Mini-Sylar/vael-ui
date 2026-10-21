@@ -1,5 +1,7 @@
 @layer ui-components {
   .ui-toolbar {
+    position: relative;
+    isolation: isolate;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -72,5 +74,13 @@
     block-size: 1px;
     margin-inline: 0;
     margin-block: 0.25rem;
+  }
+
+  /* Ghost and text buttons' hover and focus fill is the sliding .ui-indicator behind them. */
+  .ui-toolbar
+    .ui-button:is(.ui-button--ghost, .ui-button--text):is(:hover, :focus-visible):not(
+      :disabled
+    ):not(.ui-button--disabled):not(.ui-button--loading):not([aria-pressed='true']) {
+    --ui-button-bg: transparent;
   }
 }

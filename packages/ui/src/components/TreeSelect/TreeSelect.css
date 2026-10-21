@@ -100,14 +100,7 @@
     cursor: pointer;
   }
   .ui-tree-select-row:focus-visible {
-    background: var(--ui-muted);
     outline: none;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-tree-select-row:hover:not(.ui-tree-select-row--disabled) {
-      background: var(--ui-muted);
-      outline: none;
-    }
   }
   /* Quiet permanent tint for current value. */
   .ui-tree-select-row--selected {

@@ -86,3 +86,33 @@ test('Dock: itemEls hands back the item buttons in order', async () => {
   const els = dock.value!.itemEls()
   expect(els.map((el) => el.getAttribute('aria-label'))).toEqual(['Home', 'Search', 'Settings'])
 })
+
+test('every list exposes its hover and keyboard highlight as highlightEl, and a selection as indicatorEl', async () => {
+  const { default: SelectButton } = await import('../src/components/SelectButton/SelectButton.vue')
+  const { default: MenuList } = await import('../src/components/MenuList/MenuList.vue')
+  const { default: Tabs } = await import('../src/components/Tabs/Tabs.vue')
+  const segmented = shallowRef<{ highlightEl: unknown; indicatorEl: unknown } | null>(null)
+  const nav = shallowRef<{ highlightEl: unknown; indicatorEl: unknown } | null>(null)
+  const tabs = shallowRef<{ highlightEl: unknown } | null>(null)
+  const pagination = shallowRef<{ highlightEl: unknown; indicatorEl: unknown } | null>(null)
+  await render(() => [
+    h(SelectButton as never, {
+      ref: segmented,
+      modelValue: 'a',
+      items: [
+        { label: 'A', value: 'a' },
+        { label: 'B', value: 'b' },
+      ],
+    }),
+    h(MenuList as never, { ref: nav, items: [{ label: 'Home', value: 'home' }], active: 'home' }),
+    h(Tabs as never, { ref: tabs, active: 'a', items: ['a', 'b'] }),
+    h(Pagination, { ref: pagination as never, page: 2, total: 50 }),
+  ])
+  await settled()
+  for (const owner of [segmented, nav, pagination]) {
+    expect(owner.value!.highlightEl).toBeInstanceOf(HTMLElement)
+    expect(owner.value!.indicatorEl).toBeInstanceOf(HTMLElement)
+    expect(owner.value!.highlightEl).not.toBe(owner.value!.indicatorEl)
+  }
+  expect(tabs.value!.highlightEl).toBeInstanceOf(HTMLElement)
+})

@@ -77,6 +77,21 @@ test('Enter on a focused row toggles selection via the keyboard, not just a mous
   await expect.element(screen.getByTestId('model')).toHaveTextContent('"vegetables"')
 })
 
+test('single selection slides the highlight from the last selected row to the new one', async () => {
+  await render(TreeFixture)
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await userEvent.click(rowByLabel('Fruits')!)
+  await vi.waitFor(() =>
+    expect(rowByLabel('Fruits')!.querySelector('.ui-tree-row-highlight')).not.toBeNull(),
+  )
+  const second = document.querySelectorAll<HTMLElement>('[role="treeitem"]')[1]!
+  await userEvent.click(second)
+  const highlight = second.querySelector<HTMLElement>('.ui-tree-row-highlight')!
+  await vi.waitFor(() => expect(highlight.dataset.from).toBe('near'))
+  expect(parseFloat(highlight.style.getPropertyValue('--ui-tree-highlight-from'))).toBeLessThan(0)
+  expect(rowByLabel('Fruits')!.querySelector('.ui-tree-row-highlight')).toBeNull()
+})
+
 test('a small tree keeps each row checkbox on its own press layer', async () => {
   const screen = await render(TreeFixture, { props: { selectionMode: 'checkbox' } })
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())

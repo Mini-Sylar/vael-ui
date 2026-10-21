@@ -28,6 +28,8 @@
     border-block-start: 1px solid var(--ui-border);
   }
   .ui-menu-body {
+    position: relative;
+    isolation: isolate;
     /* The one flexible child — header/footer are `flex: none` siblings, and
        max-height (floating-ui live output) is capped on the panel, not here. */
     flex: 1 1 auto;
@@ -65,16 +67,9 @@
     cursor: pointer;
     transition: transform var(--ui-duration-press) var(--ui-ease-out);
   }
-  /* Highlight with background, not focus ring (APG convention). */
+  /* Highlight with background, not focus ring (APG convention): the sliding .ui-indicator. */
   .ui-menu-item:focus-visible {
     outline: none;
-    background: var(--ui-muted);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-menu-item:hover:not(:disabled):not([aria-disabled='true']) {
-      outline: none;
-      background: var(--ui-muted);
-    }
   }
   .ui-menu-item:active:not(:disabled):not([aria-disabled='true']) {
     transform: scale(0.96);

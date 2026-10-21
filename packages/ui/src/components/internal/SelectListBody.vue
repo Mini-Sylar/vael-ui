@@ -11,6 +11,12 @@
     :aria-busy="loading || undefined"
     v-scroll-mask="scrollFade"
   >
+    <div
+      ref="indicatorEl"
+      class="ui-indicator ui-select-indicator"
+      :style="indicatorStyle"
+      aria-hidden="true"
+    />
     <div v-if="items.length === 0 && !loading" :class="emptyPart.class" :style="emptyPart.style">
       <slot name="empty">{{ emptyText }}</slot>
     </div>
@@ -223,6 +229,8 @@ import type { ScrollAlign } from '../../composables/useVirtualizer'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { scrollIntoContainer } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
+import { useTabIndicator } from '../../composables/useTabIndicator'
+import '../shared/indicator.css'
 import type { UiPartValue } from '../../classes'
 
 const props = defineProps<{
@@ -285,6 +293,19 @@ defineSlots<{
 }>()
 
 const listEl = useTemplateRef<HTMLElement>('listEl')
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+
+// The highlight slides between options, Tabs-style; a long jump (typeahead, a search) lands at once.
+const { style: indicatorStyle } = useTabIndicator(() => [props.activeIndex, props.items], {
+  listEl,
+  orientation: 'vertical',
+  selector: '[role="option"][data-active]',
+  scroller: true,
+  matchCross: true,
+  maxGlide: 3,
+  motion: () => props.motion,
+  indicatorEl,
+})
 
 // Eases to the new height when the options change (a search, more loaded), as CommandPalette does.
 useEasedHeight({
@@ -317,6 +338,7 @@ function onRowClick(index: number) {
 
 defineExpose({
   listEl,
+  indicatorEl,
   scrollToIndex: (index: number, align?: ScrollAlign) => {
     if (!props.sections) return scrollToIndex(index, align)
     const row = listEl.value?.querySelector<HTMLElement>(`[id="${props.listboxId}-opt-${index}"]`)

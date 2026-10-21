@@ -11,7 +11,7 @@ export type { ButtonGroupValue } from './components/ButtonGroup/ButtonGroup.vue'
 export { default as SplitButton } from './components/SplitButton/SplitButton.vue'
 export type { SplitButtonAlign, SplitButtonSide } from './components/SplitButton/SplitButton.vue'
 export { default as Loader } from './components/Loader/Loader.vue'
-export type { LoaderType } from './composables/loaderType'
+export type { LoaderSource, LoaderType } from './composables/loaderType'
 export { default as Skeleton } from './components/Skeleton/Skeleton.vue'
 export { default as Badge } from './components/Badge/Badge.vue'
 export { default as Tag } from './components/Tag/Tag.vue'
@@ -208,7 +208,14 @@ export type {
 export { useSheetDrag } from './composables/useSheetDrag'
 export type { UseSheetDragOptions, UseSheetDragReturn } from './composables/useSheetDrag'
 export { useTabIndicator } from './composables/useTabIndicator'
-export type { UseTabIndicatorOptions, UseTabIndicatorReturn } from './composables/useTabIndicator'
+export type {
+  IndicatorMode,
+  IndicatorSpring,
+  UseTabIndicatorOptions,
+  UseTabIndicatorReturn,
+} from './composables/useTabIndicator'
+export { useHoverIndicator } from './composables/useHoverIndicator'
+export type { UseHoverIndicatorOptions } from './composables/useHoverIndicator'
 export { usePopover } from './composables/usePopover'
 export type {
   PopoverCloseReason,

@@ -18,6 +18,11 @@
       @click="ctx.onRowClick(node, $event)"
       @pointerdown="ctx.onRowPointerdown?.(node, $event)"
     >
+      <span
+        v-if="ctx.selectionMode === 'single' && checked"
+        class="ui-tree-row-highlight"
+        aria-hidden="true"
+      />
       <slot
         name="node"
         :node="node"

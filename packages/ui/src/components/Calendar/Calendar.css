@@ -235,15 +235,23 @@
     ) {
     transform: scale(0.94);
   }
+  /* Hover and focus backgrounds are the gliding .ui-indicator behind the cells. */
   .ui-calendar-cell:focus-visible {
-    background: var(--ui-muted);
     outline: none;
   }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-calendar-cell:hover:not(.ui-calendar-cell--disabled) {
-      background: var(--ui-muted);
-      outline: none;
-    }
+  .ui-calendar-body {
+    isolation: isolate;
+  }
+  /* Shaped like the cell under it: its fill clipped inside the same transparent border. */
+  .ui-calendar-hover {
+    box-sizing: border-box;
+    border: 0 solid transparent;
+    border-block-width: 1px;
+    background-clip: padding-box;
+  }
+  .ui-calendar-body:has(:is(.ui-calendar-month-cell, .ui-calendar-year-cell)[data-indicated])
+    .ui-calendar-hover {
+    border-width: 0.125rem;
   }
   .ui-calendar-cell--blank {
     visibility: hidden;
@@ -346,15 +354,7 @@
   }
   .ui-calendar-month-cell:focus-visible,
   .ui-calendar-year-cell:focus-visible {
-    background: var(--ui-muted);
     outline: none;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-calendar-month-cell:hover:not(.ui-calendar-month-cell--disabled),
-    .ui-calendar-year-cell:hover:not(.ui-calendar-year-cell--disabled) {
-      background: var(--ui-muted);
-      outline: none;
-    }
   }
   .ui-calendar-month-cell--selected,
   .ui-calendar-year-cell--selected {

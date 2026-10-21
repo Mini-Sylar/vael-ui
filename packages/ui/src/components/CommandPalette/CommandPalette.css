@@ -42,6 +42,8 @@
   }
 
   .ui-command-palette-list {
+    position: relative;
+    isolation: isolate;
     flex: 1 1 auto;
     max-block-size: min(20rem, calc(85dvh - 8rem));
     margin: 0;
@@ -101,9 +103,6 @@
     padding: 0.625rem 0.75rem;
     cursor: pointer;
     transition: transform var(--ui-duration-press) var(--ui-ease-out);
-  }
-  .ui-command-palette-item[data-active] {
-    background: var(--ui-muted);
   }
   /* Wide rows: a subtler press than a button's, or the edges visibly pull in. */
   .ui-command-palette-item:active {

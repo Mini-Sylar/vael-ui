@@ -115,13 +115,14 @@
   .ui-tree[data-reorderable] .ui-tree-row {
     touch-action: none;
   }
-  .ui-tree-row:focus-visible {
-    background: var(--ui-muted);
+  /* Hover and focus backgrounds are the sliding .ui-indicator; a sticky row covers it, so it paints its own. */
+  .ui-tree-list {
+    position: relative;
+    isolation: isolate;
+    --ui-duration-indicator: var(--ui-duration-indicator-wide);
   }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-tree-row:hover:not(.ui-tree-row--disabled) {
-      background: var(--ui-muted);
-    }
+  .ui-tree-row--sticky[data-indicated] {
+    background: var(--ui-indicator-bg);
   }
   /* Inset, so the ring fits inside the row and is never clipped by a scroll box around the tree. */
   .ui-tree-row:focus-visible {
@@ -142,6 +143,41 @@
   /* Quiet permanent tint for current value. */
   .ui-tree-row--selected {
     background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
+  }
+  /* Single selection paints the tint on its own layer, so it can slide between rows. */
+  .ui-tree-row--selected:has(> .ui-tree-row-highlight) {
+    isolation: isolate;
+    background: none;
+  }
+  .ui-tree-row--selected:not(.ui-tree-row--sticky):has(> .ui-tree-row-highlight) {
+    position: relative;
+  }
+  .ui-tree-row-highlight {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
+    pointer-events: none;
+  }
+  .ui-tree-row-highlight[data-from='near'] {
+    animation: ui-tree-highlight-slide var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-tree-row-highlight[data-from='far'] {
+    animation: ui-tree-highlight-fade var(--ui-duration-enter) ease-out;
+  }
+  @keyframes ui-tree-highlight-slide {
+    from {
+      translate: 0 var(--ui-tree-highlight-from, 0px);
+    }
+  }
+  @keyframes ui-tree-highlight-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .ui-tree-root[data-motion='off'] .ui-tree-row-highlight {
+    animation: none;
   }
   .ui-tree-row--disabled {
     opacity: 0.5;
@@ -345,6 +381,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .ui-tree-row-highlight {
+      animation: none;
+    }
     .ui-tree-row[data-dragging],
     .ui-tree-row[data-drop-into]:not(.ui-tree-row--disabled) {
       box-shadow: none;

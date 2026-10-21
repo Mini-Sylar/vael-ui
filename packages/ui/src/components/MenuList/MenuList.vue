@@ -8,8 +8,15 @@
   >
     <div
       v-if="hasActiveMatch"
+      ref="pageIndicatorEl"
       class="ui-menu-list-indicator"
       :style="indicatorStyle"
+      aria-hidden="true"
+    />
+    <div
+      ref="hoverEl"
+      class="ui-indicator ui-menu-list-hover"
+      :style="hoverStyle"
       aria-hidden="true"
     />
     <template v-for="(row, i) in flatRows" :key="row.key">
@@ -91,6 +98,8 @@ import { nativeTag } from '../../composables/dom'
 import { computed, onMounted, useAttrs, useTemplateRef } from 'vue'
 import { useMenu } from '../../composables/useMenu'
 import { useTabIndicator } from '../../composables/useTabIndicator'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 
@@ -175,10 +184,23 @@ const list = useTemplateRef<HTMLElement>('list')
 const hasActiveMatch = computed(() =>
   flatRows.value.some((row) => row.kind === 'item' && isActive(row.entry)),
 )
+const pageIndicatorEl = useTemplateRef<HTMLElement>('pageIndicatorEl')
 const { style: indicatorStyle } = useTabIndicator(
   computed(() => props.active),
-  { listEl: list, orientation: 'vertical', selector: '[aria-current="page"]' },
+  {
+    listEl: list,
+    orientation: 'vertical',
+    selector: '[aria-current="page"]',
+    indicatorEl: pageIndicatorEl,
+  },
 )
+
+// The hover and keyboard highlight slides between rows, under the current page's own indicator.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(list, {
+  itemSelector: '.ui-menu-list-item:not(.ui-menu-list-item--group)',
+  indicatorEl: hoverEl,
+})
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(
@@ -222,5 +244,9 @@ onMounted(() => initRoving())
 defineExpose({
   /** Root element. */
   el: list,
+  /** The current page's indicator, sliding between rows (null when no row is the current page). */
+  indicatorEl: pageIndicatorEl,
+  /** The hover and keyboard highlight, sliding between rows. Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
 })
 </script>

@@ -1,13 +1,15 @@
 import { inject } from 'vue'
 import type { ComputedRef, InjectionKey } from 'vue'
-import type { LoaderType } from './composables/loaderType'
+import type { LoaderSource } from './composables/loaderType'
+import type { IndicatorMode } from './composables/useTabIndicator'
 
 /** @internal Defaults a `ConfigProvider` hands down to the components inside it. */
 export interface UiDefaults {
   size?: 'sm' | 'md' | 'lg'
   motionCss?: boolean
   locale?: string
-  loaderType?: LoaderType
+  loaderType?: LoaderSource
+  indicator?: IndicatorMode
 }
 
 /** @internal */

@@ -43,6 +43,12 @@
             @keydown="onListKeydown"
             @focusin="onListFocusin"
           >
+            <div
+              ref="indicatorEl"
+              class="ui-indicator ui-menu-indicator"
+              :style="indicatorStyle"
+              aria-hidden="true"
+            />
             <!-- Custom slot ignores `items` — consumer owns the markup. -->
             <slot
               v-if="$slots.default"
@@ -310,6 +316,8 @@ import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
 import { useVirtualizer } from '../../composables/useVirtualizer'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -444,6 +452,14 @@ const panelAttrs = useAttrListeners(
   () => attrs,
 )
 const listEl = useTemplateRef<HTMLElement>('list')
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+// The hover and keyboard highlight slides between rows; a submenu's rows have their own.
+const { style: indicatorStyle } = useHoverIndicator(listEl, {
+  itemSelector: '.ui-menu-item',
+  scope: '.ui-menu-body',
+  scroller: true,
+  indicatorEl,
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.menu,
@@ -900,6 +916,8 @@ defineExpose({
   positionerEl,
   /** Item list element (null while closed). */
   listEl,
+  /** The hover and keyboard highlight, sliding between rows (null while closed). Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: indicatorEl,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
   /** Inline positioning style applied to the positioner. */

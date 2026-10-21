@@ -140,18 +140,37 @@
   .ui-datatable-tr:last-child .ui-datatable-td {
     border-block-end: none;
   }
+  /* Stripes and selection are see-through, so the sliding row hover (.ui-indicator) shows under
+     them; frozen cells stay solid over the columns scrolling beneath, and paint the hover themselves. */
+  .ui-datatable-scroll-x,
+  .ui-datatable-scroll-y {
+    position: relative;
+    isolation: isolate;
+    --ui-duration-indicator: var(--ui-duration-indicator-wide);
+  }
+  .ui-datatable-hover {
+    border-radius: 0;
+  }
   .ui-datatable--striped .ui-datatable-tr:nth-child(even) .ui-datatable-td {
+    background: color-mix(in oklch, var(--ui-primary) 3%, transparent);
+  }
+  .ui-datatable--striped
+    .ui-datatable-tr:nth-child(even)
+    .ui-datatable-td:is(.ui-datatable-td--frozen, .ui-datatable-td--frozen-end) {
     background: color-mix(in oklch, var(--ui-primary) 3%, var(--ui-surface));
   }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-datatable-tbody
-      .ui-datatable-tr:hover
-      .ui-datatable-td:not(.ui-datatable-td--loading):not(.ui-datatable-td--empty) {
-      background: var(--ui-muted-hover);
-    }
-  }
   .ui-datatable-tbody .ui-datatable-tr[data-selected] .ui-datatable-td {
+    background: color-mix(in oklch, var(--ui-primary) 8%, transparent);
+  }
+  .ui-datatable-tbody
+    .ui-datatable-tr[data-selected]
+    .ui-datatable-td:is(.ui-datatable-td--frozen, .ui-datatable-td--frozen-end) {
     background: color-mix(in oklch, var(--ui-primary) 8%, var(--ui-surface));
+  }
+  .ui-datatable-tbody
+    .ui-datatable-tr[data-indicated]
+    .ui-datatable-td:is(.ui-datatable-td--frozen, .ui-datatable-td--frozen-end) {
+    background: var(--ui-indicator-bg);
   }
   /* selectionMode="row": the whole row is the click target, not just a checkbox. */
   .ui-datatable-tr--clickable {

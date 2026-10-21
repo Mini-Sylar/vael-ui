@@ -20,7 +20,8 @@ import { generateThemeCss, themeKey, themeScopeKey } from '../../theme'
 import type { UiTheme } from '../../theme'
 import { defaultsKey, validLocale } from '../../config'
 import type { UiDefaults } from '../../config'
-import type { LoaderType } from '../../composables/loaderType'
+import type { LoaderSource } from '../../composables/loaderType'
+import type { IndicatorMode } from '../../composables/useTabIndicator'
 
 const props = withDefaults(
   defineProps<{
@@ -45,9 +46,15 @@ const props = withDefaults(
      * `motionCss` wins. */
     motionCss?: boolean
     /** Animation for every loader inside: Loader, Button's loading state, list loading rows,
-     * loading toasts and PullToRefresh. A component's own `type` or `loaderType` wins.
+     * loading toasts and PullToRefresh. A built-in name, or your own component (or render
+     * function), drawn in the same 1em box. A component's own `type` or `loaderType` wins.
      * @default 'ring' */
-    loaderType?: LoaderType
+    loaderType?: LoaderSource
+    /** How every sliding indicator inside moves: the hover highlight in lists and menus, and the
+     * selection in Tabs, SelectButton, Pagination and MenuList. `'glide'`, `'instant'`, or a spring
+     * such as `{ damping: 0.55, response: 0.3 }` (below 1, damping overshoots). `motionCss: false`
+     * still makes them instant. @default 'glide' */
+    indicator?: IndicatorMode
   }>(),
   { motionCss: undefined },
 )
@@ -76,6 +83,7 @@ const defaults = computed<UiDefaults>(() => {
   if (props.size) own.size = props.size
   if (props.motionCss !== undefined) own.motionCss = props.motionCss
   if (props.loaderType) own.loaderType = props.loaderType
+  if (props.indicator) own.indicator = props.indicator
   const locale = validLocale(props.locale ?? toValue(props.i18n?.locale))
   if (locale) own.locale = locale
   return { ...parentDefaults?.value, ...own }
@@ -99,6 +107,8 @@ const DURATION_TOKENS = [
   'tooltip-exit',
   'toast',
   'toast-exit',
+  'indicator',
+  'indicator-wide',
 ]
 const themeCss = computed(() => {
   const theme = props.theme ? generateThemeCss(props.theme, scopeSelector) : ''

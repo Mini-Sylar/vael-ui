@@ -51,6 +51,12 @@
       @keydown="onTreeKeydown"
     >
       <div
+        ref="hoverEl"
+        class="ui-indicator ui-tree-indicator"
+        :style="hoverStyle"
+        aria-hidden="true"
+      />
+      <div
         v-if="visibleRootNodes.length === 0"
         :class="emptyPart.class"
         :style="emptyPart.style"
@@ -266,6 +272,8 @@ import Checkbox from '../Checkbox/Checkbox.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
 import { useUiMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 import { useEasedHeight } from '../../composables/useEasedHeight'
 import { createFoldScheduler } from '../../composables/useFold'
 import type { FoldScheduler } from '../../composables/useFold'
@@ -620,6 +628,32 @@ const visibleRootNodes = computed(() => props.items.filter(isVisible))
 
 // Roving tabindex + keyboard nav (own copy due to tree semantics).
 const listEl = useTemplateRef<HTMLElement>('listEl')
+// Single selection: the new row's highlight slides in from where the last one was, or fades in
+// when that's more than a few rows away. CSS owns the motion; this only measures the distance.
+let highlightFrom: number | null = null
+const highlightEl = () => listEl.value?.querySelector<HTMLElement>('.ui-tree-row-highlight') ?? null
+watch(
+  model,
+  () => {
+    if (props.selectionMode === 'single')
+      highlightFrom = highlightEl()?.getBoundingClientRect().top ?? null
+  },
+  { flush: 'pre' },
+)
+watch(
+  model,
+  () => {
+    const from = highlightFrom
+    highlightFrom = null
+    const el = highlightEl()
+    if (from === null || !el) return
+    const { top, height } = el.getBoundingClientRect()
+    if (Math.abs(from - top) < 0.5) return
+    el.style.setProperty('--ui-tree-highlight-from', `${from - top}px`)
+    el.dataset.from = Math.abs(from - top) > height * 4 ? 'far' : 'near'
+  },
+  { flush: 'post' },
+)
 // Searching eases the list to its new height, the same as Select's and Combobox's lists. TreeSelect
 // gets it from here.
 useEasedHeight({
@@ -752,6 +786,17 @@ const {
   },
   () => props.reorderable,
 )
+
+// The hover and keyboard highlight slides between rows; not while a row is being dragged.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(listEl, {
+  itemSelector: '.ui-tree-row',
+  scope: '[role="tree"]',
+  scroller: true,
+  enabled: () => !isReordering.value,
+  motion: () => props.motionCss,
+  indicatorEl: hoverEl,
+})
 
 function onRowPointerdown(node: TreeNode, event: PointerEvent) {
   if (!props.reorderable || node.disabled) return
@@ -1036,6 +1081,8 @@ provide<TreeRowContext>(
 defineExpose({
   /** The `role="tree"` list element. */
   listEl,
+  /** The hover and keyboard highlight, sliding between rows. With `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
   /** The filter box's Input instance (null when `filterable` is off). */
   filterInputRef,
   /** Focuses the first visible row. */

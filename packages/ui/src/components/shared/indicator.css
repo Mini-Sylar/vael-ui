@@ -1,0 +1,49 @@
+@layer ui-components {
+  /* A row highlight that slides between rows (useHoverIndicator, or useTabIndicator on a list).
+     Sits behind the rows, so its list needs `position: relative; isolation: isolate`. */
+  .ui-indicator {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: -1;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: var(--ui-indicator-bg);
+    pointer-events: none;
+    /* Position and size first, opacity third: the order the composable's duration overrides use. */
+    transition:
+      inset-block-start var(--ui-duration-indicator) var(--ui-ease-indicator),
+      block-size var(--ui-duration-indicator) var(--ui-ease-indicator),
+      opacity var(--ui-duration-press) ease;
+  }
+  /* A row of buttons: slides along the inline axis instead. */
+  .ui-indicator--inline {
+    transition:
+      inset-inline-start var(--ui-duration-indicator) var(--ui-ease-indicator),
+      inline-size var(--ui-duration-indicator) var(--ui-ease-indicator),
+      opacity var(--ui-duration-press) ease;
+  }
+  /* A grid of cells: glides on both axes. Position and size of the main axis first, then
+     opacity, so the composable's duration overrides land on the same properties. */
+  .ui-indicator--grid {
+    transition:
+      inset-block-start var(--ui-duration-indicator) var(--ui-ease-indicator),
+      block-size var(--ui-duration-indicator) var(--ui-ease-indicator),
+      opacity var(--ui-duration-press) ease,
+      inset-inline-start var(--ui-duration-indicator) var(--ui-ease-indicator),
+      inline-size var(--ui-duration-indicator) var(--ui-ease-indicator);
+  }
+  /* Forced colors replace backgrounds, so the highlight shows as a system-colored outline. */
+  @media (forced-colors: active) {
+    .ui-indicator {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-indicator,
+    .ui-indicator--inline,
+    .ui-indicator--grid {
+      transition: opacity var(--ui-duration-press) ease;
+    }
+  }
+}

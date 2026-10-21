@@ -173,10 +173,13 @@ test('hovering the current page keeps it clear, so the indicator and its label s
   const box = (el: HTMLElement) => getComputedStyle(el, '::before').backgroundColor
   // The hover box fades in, so read it once the fade has finished.
   const settled = () => new Promise((resolve) => setTimeout(resolve, 400))
+  const hover = screen.container.querySelector<HTMLElement>('.ui-pagination-hover')!
   await userEvent.hover(other)
   await settled()
-  // Sanity: an ordinary page does get the hover box.
-  expect(box(other)).not.toBe('rgba(0, 0, 0, 0)')
+  // An ordinary page gets the sliding hover highlight, not a box of its own.
+  expect(getComputedStyle(hover).opacity).toBe('1')
+  expect(hover.getBoundingClientRect().left).toBeCloseTo(other.getBoundingClientRect().left, 0)
+  expect(box(other)).toBe('rgba(0, 0, 0, 0)')
   await userEvent.hover(active)
   await settled()
   expect(box(active)).toBe('rgba(0, 0, 0, 0)')

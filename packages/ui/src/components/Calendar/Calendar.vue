@@ -120,6 +120,12 @@
       :style="[{ '--ui-calendar-direction': direction }, bodyMinSize]"
       :data-zoom="zoom"
     >
+      <div
+        ref="hoverEl"
+        class="ui-indicator ui-indicator--grid ui-calendar-hover"
+        :style="hoverStyle"
+        aria-hidden="true"
+      />
       <Transition
         :name="props.motionCss ? 'ui-calendar-level' : undefined"
         :css="props.motionCss"
@@ -331,6 +337,8 @@ export type CalendarView = 'date' | 'month' | 'year'
      Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motionCss=false disables. -->
 <script setup lang="ts">
 import './Calendar.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
@@ -917,6 +925,15 @@ function setGridEl(el: Element | ComponentPublicInstance | null) {
   gridEl.value = el instanceof HTMLElement ? el : null
 }
 const bodyEl = useTemplateRef<HTMLElement>('bodyEl')
+// The hover and keyboard highlight glides between days (and months, and years) on both axes.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(bodyEl, {
+  itemSelector:
+    '.ui-calendar-cell:not(.ui-calendar-cell--blank), .ui-calendar-month-cell, .ui-calendar-year-cell',
+  scope: '.ui-calendar-body',
+  motion: () => props.motionCss,
+  indicatorEl: hoverEl,
+})
 const labelButton = useTemplateRef<HTMLElement>('labelButton')
 
 // The label button is as wide as its text, so a new name would snap it to a new width and the
@@ -1115,6 +1132,8 @@ defineExpose({
   rootEl,
   /** Day grid element (`null` while the month or year grid shows). */
   gridEl,
+  /** The hover and keyboard highlight, sliding between cells. With `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
   /** Steps back one page: a month, or a year or 12 years in the month and year grids. */
   goToPreviousMonth: goPrevious,
   /** Steps forward one page: a month, or a year or 12 years in the month and year grids. */

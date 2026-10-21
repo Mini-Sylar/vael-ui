@@ -12,6 +12,12 @@
     :aria-required="fieldControl.required() || undefined"
     v-bind="attrs"
   >
+    <span
+      ref="hoverEl"
+      class="ui-indicator ui-indicator--inline ui-select-button-hover"
+      :style="hoverStyle"
+      aria-hidden="true"
+    />
     <label
       v-for="item in items"
       :key="item.value"
@@ -54,6 +60,8 @@ export interface SelectButtonItem {
 <!-- Native radios (single) or checkboxes (multiple) with sliding indicator; allowEmpty clears on click -->
 <script setup lang="ts" generic="T extends SelectButtonItem = SelectButtonItem">
 import './SelectButton.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
@@ -143,9 +151,18 @@ function onInputChange(item: T, event: Event) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+// The hover and keyboard highlight slides between options, under the selected one's indicator.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(root, {
+  itemSelector: '.ui-select-button-option',
+  orientation: 'horizontal',
+  indicatorEl: hoverEl,
+})
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
 const { style: indicatorStyle } = useTabIndicator(modelValue, {
   listEl: root,
   selector: '[data-checked]',
+  indicatorEl,
 })
 
 const cx = useClassMerge()
@@ -167,11 +184,12 @@ const indicatorPart = computed(() =>
   resolveUiPart(cx, themedUi()?.indicator, 'ui-select-button-indicator'),
 )
 
-const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
 defineExpose({
   /** Root element. */
   el: root,
   /** Sliding selection indicator (single mode only; `null` with `multiple`). */
   indicatorEl,
+  /** The hover and keyboard highlight, sliding between options. Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
 })
 </script>

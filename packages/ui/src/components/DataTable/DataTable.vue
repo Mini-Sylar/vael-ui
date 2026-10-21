@@ -69,6 +69,12 @@
               <template #expansion="{ row }"><slot name="expansion" :row="row" /></template>
             </DataTableBody>
           </table>
+          <div
+            ref="hoverEl"
+            class="ui-indicator ui-datatable-hover"
+            :style="hoverStyle"
+            aria-hidden="true"
+          />
         </div>
       </template>
 
@@ -85,6 +91,13 @@
           <template #expansion="{ row }"><slot name="expansion" :row="row" /></template>
         </DataTableBody>
       </table>
+      <div
+        v-if="!scrollHeight"
+        ref="hoverEl"
+        class="ui-indicator ui-datatable-hover"
+        :style="hoverStyle"
+        aria-hidden="true"
+      />
     </div>
 
     <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
@@ -112,6 +125,8 @@
 <!-- Columns register via provide/inject. Tests must disable VTU's transition-group stub. -->
 <script setup lang="ts" generic="T extends Record<string, any>">
 import './DataTable.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
@@ -881,6 +896,22 @@ onBeforeUnmount(() => bodyResizeObserver?.disconnect())
 // Echoes of our own writes are skipped, or a stale one would undo momentum scrolling.
 const headScrollEl = useTemplateRef<HTMLElement>('headScrollEl')
 const scrollXEl = useTemplateRef<HTMLElement>('scrollXEl')
+
+// The row hover slides between body rows, inside whichever box scrolls the body; a table nested in
+// an expanded row has its own. Not in the stacked card layout.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(
+  computed(() => (props.scrollHeight ? bodyScrollEl.value : scrollXEl.value) ?? null),
+  {
+    itemSelector:
+      '.ui-datatable-tbody > .ui-datatable-tr:not(.ui-datatable-tr--expansion, .ui-datatable-tr--spacer):not(:has(> .ui-datatable-td--loading, > .ui-datatable-td--empty))',
+    scope: '.ui-datatable-scroll-y, .ui-datatable-scroll-x',
+    scroller: true,
+    enabled: () => !stacked.value,
+    motion: () => props.motionCss,
+    indicatorEl: hoverEl,
+  },
+)
 // Each strip that can scroll takes a tab stop only while it holds nothing focusable.
 useFocusableScroller(scrollXEl)
 useFocusableScroller(headScrollEl)
@@ -1145,5 +1176,7 @@ const root = useTemplateRef<HTMLElement>('root')
 defineExpose({
   /** Root element. */
   el: root,
+  /** The hover and keyboard highlight, sliding between body rows. With `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
 })
 </script>

@@ -622,6 +622,7 @@ const panelEl = useTemplateRef<HTMLElement>('panel')
 // Same manual-shape rationale as Select.vue's own listBody ref.
 const listBody = useTemplateRef<{
   listEl: HTMLElement | null
+  indicatorEl: HTMLElement | null
   scrollToIndex: (index: number, align?: ScrollAlign) => void
 }>('listBody')
 
@@ -942,6 +943,7 @@ const resolvedAlign = computed<ComboboxAlign>(() => {
 })
 
 const listEl = computed(() => listBody.value?.listEl ?? null)
+const indicatorEl = computed(() => listBody.value?.indicatorEl ?? null)
 function scrollToIndex(index: number, align?: ScrollAlign) {
   listBody.value?.scrollToIndex(index, align)
 }
@@ -957,6 +959,8 @@ defineExpose({
   positionerEl,
   /** Scrollable listbox element (null while closed). */
   listEl,
+  /** The hover and keyboard highlight, sliding between options (null while closed). With `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: indicatorEl,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
   /** Inline positioning styles applied to the positioner. */

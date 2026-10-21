@@ -1,6 +1,16 @@
-import { nextTick, onBeforeUnmount, shallowRef, toValue, watch } from 'vue'
+import { inject, nextTick, onBeforeUnmount, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref, WatchSource } from 'vue'
 import type { ElRef } from './dom'
+import { defaultsKey } from '../config'
+import { createSpring } from './useSpringValue'
+import type { SpringHandle, SpringOptions } from './useSpringValue'
+
+/**
+ * How a sliding indicator moves: `'glide'` (a CSS transition, the default), `'instant'`, or a
+ * spring, given as `{ damping, response }` (see `createSpring`). Below 1, damping overshoots.
+ */
+export type IndicatorMode = 'glide' | 'instant' | IndicatorSpring
+export type IndicatorSpring = Pick<SpringOptions, 'damping' | 'response'>
 
 export interface UseTabIndicatorOptions {
   listEl: ElRef<HTMLElement | null>
@@ -10,6 +20,18 @@ export interface UseTabIndicatorOptions {
   selector?: MaybeRefOrGetter<string>
   /** Default `'bounds'`: sets real `insetInlineStart`/`inlineSize` (or the block equivalents) in px — a small layout cost on measure, but border-radius computes against the indicator's true size and it renders identically regardless of the display's pixel ratio. `'transform'` instead does compositor-only `translate`+`scale` off a 1px CSS baseline — cheaper, but a border-radius on the SCALED axis is computed against that pre-transform 1px box (clamped to ~0.5px per the spec's own corner-radius-vs-edge-length rule) and only THEN stretched, so any indicator needing a real two-axis rounded pill renders a flattened/sharp corner on that axis instead of a proper curve, and on a fractional device-pixel-ratio display (common on Windows) the scale can round unevenly enough to look visibly misaligned. Only reach for `'transform'` when the indicator has no rounded corners on the scaled axis and the extra compositor-only cheapness genuinely matters. */
   sizing?: MaybeRefOrGetter<'transform' | 'bounds'>
+  /** `listEl` scrolls and the indicator scrolls inside it (a listbox): positions are measured in its scrolled coordinates. `'bounds'` sizing only. */
+  scroller?: boolean
+  /** Also match the active element on the cross axis (a list row inset by the list's padding). `'bounds'` sizing only. */
+  matchCross?: boolean
+  /** A move longer than this many of the active element's own lengths jumps instead of gliding (typeahead, Home/End, a filtered list). `'bounds'` sizing only. */
+  maxGlide?: MaybeRefOrGetter<number | undefined>
+  /** `false` moves the indicator at once, every time, for an animation of your own. */
+  motion?: MaybeRefOrGetter<boolean | undefined>
+  /** How it moves. Unset, it follows the nearest ConfigProvider's `indicator`, else `'glide'`. A spring needs `indicatorEl`. `'bounds'` sizing only. */
+  indicator?: MaybeRefOrGetter<IndicatorMode | undefined>
+  /** The indicator element, which a spring writes to directly each frame instead of re-rendering. */
+  indicatorEl?: ElRef<HTMLElement | null>
 }
 
 export interface UseTabIndicatorReturn {
@@ -22,11 +44,21 @@ export function useTabIndicator(
   options: UseTabIndicatorOptions,
 ): UseTabIndicatorReturn {
   const style = shallowRef<Record<string, string | undefined>>({})
+  const provided = inject(defaultsKey, undefined)
+  const mode = (): IndicatorMode =>
+    toValue(options.indicator) ?? provided?.value.indicator ?? 'glide'
+  // Unset, a ConfigProvider's `motionCss: false` turns it off too, springs included.
+  const motionOff = () =>
+    (toValue(options.motion) ?? provided?.value.motionCss) === false || mode() === 'instant'
+  // One spring per measured property, writing it straight to the element.
+  const springs = new Map<string, SpringHandle>()
+  let springKey = ''
   let measuredOnce = false
   // Tracks whether a real match has ever been positioned, separately from
   // measuredOnce — lets the first real selection (from "nothing selected")
   // skip only the position/size transition, not the opacity fade.
   let hasAppeared = false
+  let lastStart: number | undefined
 
   function measure() {
     const list = options.listEl.value
@@ -35,6 +67,11 @@ export function useTabIndicator(
     if (!list) return
     remeasureAfterAncestorTransitions(list)
     if (!tab) {
+      // A list that loses its highlight shows the next one where it lands, not sliding in.
+      if (toValue(options.maxGlide) !== undefined) {
+        lastStart = undefined
+        hasAppeared = false
+      }
       style.value = { ...style.value, opacity: '0' }
       measuredOnce = true
       return
@@ -51,8 +88,8 @@ export function useTabIndicator(
       list.offsetHeight && Math.abs(listRect.height - list.offsetHeight) > 1
         ? listRect.height / list.offsetHeight
         : 1
-    const left = (tabRect.left - listRect.left) / scaleX
-    const top = (tabRect.top - listRect.top) / scaleY
+    const left = (tabRect.left - listRect.left) / scaleX + (options.scroller ? list.scrollLeft : 0)
+    const top = (tabRect.top - listRect.top) / scaleY + (options.scroller ? list.scrollTop : 0)
     const width = tabRect.width / scaleX
     const height = tabRect.height / scaleY
     const vertical = toValue(options.orientation) === 'vertical'
@@ -80,26 +117,88 @@ export function useTabIndicator(
     const listStyle = getComputedStyle(list)
     const borderInlineStart = parseFloat(listStyle.borderInlineStartWidth) || 0
     const borderBlockStart = parseFloat(listStyle.borderBlockStartWidth) || 0
+    const start = vertical ? top - borderBlockStart : left - borderInlineStart
+    const length = vertical ? height : width
+    const maxGlide = toValue(options.maxGlide)
+    const tooFar =
+      maxGlide !== undefined &&
+      lastStart !== undefined &&
+      Math.abs(start - lastStart) > length * maxGlide
+    lastStart = start
+    const geometry: Record<string, number> = vertical
+      ? { 'inset-block-start': start, 'block-size': height }
+      : { 'inset-inline-start': start, 'inline-size': width }
+    if (options.matchCross) {
+      if (vertical) {
+        geometry['inset-inline-start'] = left - borderInlineStart
+        geometry['inline-size'] = width
+      } else {
+        geometry['inset-block-start'] = top - borderBlockStart
+        geometry['block-size'] = height
+      }
+    }
+    const current = mode()
+    const el = options.indicatorEl?.value
+    if (typeof current === 'object' && el && !motionOff()) {
+      spring(el, current, geometry, firstPaint || firstAppearance || tooFar || reducedMotion())
+      return
+    }
     // Order matches this branch's transition-property list; a partial
     // override still needs a value per slot, so opacity's restates the CSS.
-    const transitionDuration = firstPaint
-      ? '0ms'
-      : firstAppearance
-        ? `0ms, 0ms, var(--ui-duration-press)`
-        : undefined
+    const transitionDuration =
+      firstPaint || motionOff()
+        ? '0ms'
+        : firstAppearance || tooFar
+          ? `0ms, 0ms, var(--ui-duration-press)`
+          : undefined
+    const cross = options.matchCross
+      ? vertical
+        ? { insetInlineStart: `${left - borderInlineStart}px`, inlineSize: `${width}px` }
+        : { insetBlockStart: `${top - borderBlockStart}px`, blockSize: `${height}px` }
+      : {}
     apply(
       vertical
         ? {
-            insetBlockStart: `${top - borderBlockStart}px`,
+            insetBlockStart: `${start}px`,
             blockSize: `${height}px`,
+            ...cross,
             transitionDuration,
           }
         : {
-            insetInlineStart: `${left - borderInlineStart}px`,
+            insetInlineStart: `${start}px`,
             inlineSize: `${width}px`,
+            ...cross,
             transitionDuration,
           },
     )
+  }
+
+  function spring(
+    el: HTMLElement,
+    config: IndicatorSpring,
+    geometry: Record<string, number>,
+    jump: boolean,
+  ) {
+    const key = `${config.damping ?? ''}/${config.response ?? ''}`
+    if (key !== springKey) {
+      springs.forEach((handle) => handle.destroy())
+      springs.clear()
+      springKey = key
+    }
+    for (const [property, value] of Object.entries(geometry)) {
+      let handle = springs.get(property)
+      if (!handle) {
+        handle = createSpring(value, config, (next) => el.style.setProperty(property, `${next}px`))
+        springs.set(property, handle)
+        handle.jump(value)
+        continue
+      }
+      if (jump) handle.jump(value)
+      else handle.set(value)
+    }
+    // The springs own position and size; the bound style keeps only the opacity fade.
+    if (style.value.transitionProperty !== 'opacity' || style.value.opacity !== undefined)
+      style.value = { transitionProperty: 'opacity' }
   }
 
   // Same geometry keeps a pending `0ms`: the ResizeObserver's first callback lands in the
@@ -154,7 +253,14 @@ export function useTabIndicator(
     { immediate: true },
   )
 
-  onBeforeUnmount(() => resizeObserver?.disconnect())
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect()
+    springs.forEach((handle) => handle.destroy())
+  })
 
   return { style }
+}
+
+function reducedMotion(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 }

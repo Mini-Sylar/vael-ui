@@ -8,6 +8,13 @@
     @keydown="onKeydown"
     v-bind="attrs"
   >
+    <div
+      ref="hoverEl"
+      class="ui-indicator ui-toolbar-hover"
+      :class="orientation !== 'vertical' && 'ui-indicator--inline'"
+      :style="hoverStyle"
+      aria-hidden="true"
+    />
     <div v-if="slots.start || slots.default" :class="groupPart.class" :style="groupPart.style">
       <slot name="start" />
       <slot />
@@ -41,6 +48,8 @@
 <!-- role="toolbar"; heterogeneous slot content with roving tabindex; three groups (start/center/end) handle overflow ellipsis placement -->
 <script setup lang="ts">
 import './Toolbar.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useToolbar } from '../../composables/useToolbar'
@@ -79,6 +88,14 @@ defineSlots<{
 
 const slots = useSlots()
 const list = useTemplateRef<HTMLElement>('list')
+// The hover and keyboard highlight slides between the toolbar's ghost and text buttons.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(list, {
+  itemSelector: '.ui-button:is(.ui-button--ghost, .ui-button--text)',
+  scope: '[role="toolbar"]',
+  orientation: () => (props.orientation === 'vertical' ? 'vertical' : 'horizontal'),
+  indicatorEl: hoverEl,
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.toolbar,
@@ -122,5 +139,7 @@ watch(collapsedItems, buildOverflowItems, { immediate: true })
 defineExpose({
   /** Root element. */
   el: list,
+  /** The hover and keyboard highlight, sliding between buttons. Under a ConfigProvider with `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
 })
 </script>

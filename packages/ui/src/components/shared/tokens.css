@@ -54,6 +54,12 @@
     --ui-duration-drawer: 500ms;
     --ui-duration-drawer-exit: 350ms;
     --ui-duration-press: 160ms;
+    /* The highlight sliding between rows in menus and lists (shared/indicator.css). */
+    --ui-duration-indicator: 120ms;
+    /* Wide rows (MenuList, Tree, DataTable) move as a heavier slab, so they glide a little longer. */
+    --ui-duration-indicator-wide: 200ms;
+    --ui-ease-indicator: var(--ui-ease-out);
+    --ui-indicator-bg: var(--ui-muted);
     --ui-duration-enter: 200ms;
     --ui-duration-exit: 150ms;
     --ui-duration-tooltip: 125ms;

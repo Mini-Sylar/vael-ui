@@ -6,7 +6,7 @@ export interface SpringOptions {
   damping?: number
   /** Seconds to reach the target. Deliberately NOT a duration — a spring has no fixed end; this sets how *quickly* it converges and the real settle time emerges from the physics. */
   response?: number
-  /** Below this distance AND this speed (per second), the spring snaps to the target and parks. Defaults suit px; raise it for values on a 0–1 scale. */
+  /** Below this distance AND this speed (per second), the spring snaps to the target and parks. Defaults suit px; lower it for values on a 0–1 scale, or they park early. */
   epsilon?: number
 }
 

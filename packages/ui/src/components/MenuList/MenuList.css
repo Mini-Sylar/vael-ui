@@ -4,8 +4,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
-    /* Containing block for .ui-menu-list-indicator's absolute positioning. */
+    /* Containing block for the indicators' absolute positioning. */
     position: relative;
+    isolation: isolate;
+    --ui-duration-indicator: var(--ui-duration-indicator-wide);
   }
   /* Sliding indicator between rows. */
   .ui-menu-list-indicator {
@@ -49,15 +51,9 @@
     cursor: pointer;
     transition: background-color var(--ui-duration-press) ease;
   }
+  /* Hover and focus backgrounds are the sliding .ui-indicator. */
   .ui-menu-list-item:focus-visible {
     outline: none;
-    background: var(--ui-muted);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-menu-list-item:hover:not(:disabled):not([aria-disabled='true']) {
-      outline: none;
-      background: var(--ui-muted);
-    }
   }
   /* Touch has no hover: the press itself shows the row was hit. */
   @media (hover: none) and (pointer: coarse) {

@@ -546,6 +546,7 @@ const filterInputRef = useTemplateRef<{ el: HTMLElement | null; inputEl: HTMLInp
 // Manual shape since TS can't derive InstanceType from generic SFC.
 const listBody = useTemplateRef<{
   listEl: HTMLElement | null
+  indicatorEl: HTMLElement | null
   scrollToIndex: (index: number, align?: ScrollAlign) => void
 }>('listBody')
 const cx = useClassMerge()
@@ -742,6 +743,7 @@ const resolvedAlign = computed<SelectAlign>(() => {
 })
 
 const listEl = computed(() => listBody.value?.listEl ?? null)
+const indicatorEl = computed(() => listBody.value?.indicatorEl ?? null)
 function scrollToIndex(index: number, align?: ScrollAlign) {
   listBody.value?.scrollToIndex(index, align)
 }
@@ -755,6 +757,8 @@ defineExpose({
   positionerEl,
   /** Scrollable listbox element (null while closed). */
   listEl,
+  /** The hover and keyboard highlight, sliding between options (null while closed). With `motionCss: false` it moves at once, for your own animation. */
+  highlightEl: indicatorEl,
   /** Built-in search Input instance (null without `filter`, with a `#filter` slot, or while closed). */
   filterInputRef,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */

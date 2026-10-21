@@ -7,6 +7,7 @@
   }
   .ui-select-body {
     position: relative;
+    isolation: isolate;
     contain: layout;
     /* Panel is a flex column (filter/header/footer are `flex: none` siblings) —
        this is the one flexible child, capped by the panel's own max-height. */
@@ -86,9 +87,6 @@
     background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
   }
   /* Active reads same as hover (APG convention). */
-  .ui-select-option[data-active] {
-    background: var(--ui-muted);
-  }
   .ui-select-option[data-disabled] {
     opacity: 0.5;
     cursor: not-allowed;
