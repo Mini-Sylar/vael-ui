@@ -85,6 +85,7 @@ export interface UseLayerOptions {
   onDismiss?: (reason: DismissReason, event: Event) => boolean | void
 }
 
+/** @internal Not public API; used by vael-ui's own components and may change. */
 export function useLayer(options: UseLayerOptions = {}): Layer {
   const id = Symbol('layer')
 
