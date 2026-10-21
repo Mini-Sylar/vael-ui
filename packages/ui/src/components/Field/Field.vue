@@ -59,6 +59,7 @@ import '../shared/tokens.css'
 import {
   computed,
   onBeforeUnmount,
+  onMounted,
   provide,
   shallowRef,
   useId,
@@ -138,6 +139,10 @@ const hasSlot = useSlotPresence(slots)
 const focused = shallowRef(false)
 const filled = shallowRef(false)
 const startInset = shallowRef(0)
+// Framed controls register on mount; until then a joined Field assumes it has one.
+const frames = shallowRef<(() => string | undefined)[]>([])
+const mounted = shallowRef(false)
+onMounted(() => (mounted.value = true))
 
 const describedBy = computed(() => {
   const ids: string[] = []
@@ -162,6 +167,10 @@ provide<FieldContext>(fieldKey, {
   },
   reportStartInset: (value) => {
     startInset.value = value
+  },
+  registerFrame: (size) => {
+    frames.value = [...frames.value, size]
+    return () => (frames.value = frames.value.filter((entry) => entry !== size))
   },
 })
 
@@ -286,6 +295,9 @@ const dataAttrs = computed(() => ({
   'data-placement': props.labelPlacement,
   'data-attached': isAttached.value || undefined,
   'data-joined': joinStart.value || joinEnd.value || undefined,
+  'data-frameless':
+    ((joinStart.value || joinEnd.value) && mounted.value && !frames.value.length) || undefined,
+  'data-frame-size': frames.value[0]?.(),
   'data-join-start': joinStart.value || undefined,
   'data-join-end': joinEnd.value || undefined,
   'data-label-align': isSide.value ? props.labelAlign : undefined,

@@ -10,13 +10,15 @@
     --ui-duration-indicator: var(--ui-duration-indicator-wide);
   }
   /* Sliding indicator between rows. */
+  /* Moved with `translate`, so it stays smooth while the next page renders. */
   .ui-menu-list-indicator {
     position: absolute;
+    top: 0;
     inset-inline: 0;
     border-radius: calc(var(--ui-radius) - 4px);
     background: color-mix(in oklch, var(--ui-primary) 7%, var(--ui-surface));
     transition:
-      inset-block-start var(--ui-duration-press) var(--ui-ease-in-out),
+      translate var(--ui-duration-press) var(--ui-ease-in-out),
       block-size var(--ui-duration-press) var(--ui-ease-in-out),
       background-color var(--ui-duration-press) ease;
   }

@@ -1,4 +1,4 @@
-import { inject, toValue, useId, watchEffect } from 'vue'
+import { inject, onBeforeUnmount, onMounted, toValue, useId, watchEffect } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 import { fieldKey } from './fieldContext'
 
@@ -7,6 +7,8 @@ export interface UseFieldControlOptions {
   filled?: MaybeRefOrGetter<boolean>
   /** Reactive px offset to this control's real content, past any leading icon/slot. */
   startInset?: MaybeRefOrGetter<number>
+  /** The control's framed element and its size, so a joined Field has a box to join and match. */
+  frame?: { el: () => Element | null | undefined; size: () => string | undefined }
 }
 
 export interface UseFieldControlReturn {
@@ -42,6 +44,18 @@ export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldC
   const startInset = options.startInset
   if (startInset !== undefined) {
     watchEffect(() => ctx?.reportStartInset(toValue(startInset)))
+  }
+
+  const frame = options.frame
+  const registerFrame = ctx?.registerFrame
+  if (frame && registerFrame) {
+    let unregister: (() => void) | undefined
+    onMounted(() => {
+      const el = frame.el()
+      if (el && !el.closest('.ui-field-prepend, .ui-field-append'))
+        unregister = registerFrame(frame.size)
+    })
+    onBeforeUnmount(() => unregister?.())
   }
 
   return {

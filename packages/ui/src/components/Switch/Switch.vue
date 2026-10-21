@@ -125,8 +125,13 @@ function onDragStart(event: PointerEvent) {
 }
 function onDragMove(event: PointerEvent) {
   if (!drag || !thumbEl.value) return
-  const dx = (event.clientX - drag.x) * drag.dir
-  if (!drag.moved && Math.abs(dx) < 3) return
+  let dx = (event.clientX - drag.x) * drag.dir
+  if (!drag.moved) {
+    if (Math.abs(dx) < 3) return
+    // Track 1:1 from the threshold on, so the thumb doesn't skip its 3px.
+    drag.x += 3 * Math.sign(dx) * drag.dir
+    dx -= 3 * Math.sign(dx)
+  }
   drag.moved = true
   dragging.value = true
   const position = Math.min(drag.travel, Math.max(0, drag.from + dx))

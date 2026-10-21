@@ -338,8 +338,9 @@ const { style: ringStyle } = useTabIndicator(activeIndex, {
 })
 // Like a native caret, it stays solid when it moves and blinks once it rests.
 watch(activeIndex, () => {
+  // Only the caret blink restarts; the ring's own glide keeps going.
   for (const animation of ringEl.value?.getAnimations?.({ subtree: true }) ?? []) {
-    animation.currentTime = 0
+    if (animation instanceof CSSAnimation) animation.currentTime = 0
   }
 })
 

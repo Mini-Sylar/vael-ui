@@ -23,8 +23,11 @@ const DEFAULT_EPSILON = 0.05
 // on screen visibly explodes on tab refocus. Clamping costs one slow frame.
 const MAX_DT = 1 / 30
 
+// Semi-implicit Euler goes unstable on a stiff spring at 30fps; 240Hz substeps keep it exact.
+const SUBSTEP = 1 / 240
+
 /**
- * One semi-implicit Euler step. Pure, so the physics is testable with plain
+ * Advances a spring by `dt` seconds. Pure, so the physics is testable with plain
  * numbers instead of through rAF timing (same reasoning as `dockFalloff` and
  * `resolveSwipeCommit`).
  */
@@ -41,9 +44,14 @@ export function stepSpring(
   const omega = (2 * Math.PI) / response
   const stiffness = omega * omega
   const dampingCoefficient = 2 * damping * omega
-  const acceleration = -stiffness * (state.value - target) - dampingCoefficient * state.velocity
-  const velocity = state.velocity + acceleration * dt
-  return { value: state.value + velocity * dt, velocity }
+  const steps = Math.ceil(dt / SUBSTEP)
+  const h = dt / steps
+  let { value, velocity } = state
+  for (let i = 0; i < steps; i++) {
+    velocity += (-stiffness * (value - target) - dampingCoefficient * velocity) * h
+    value += velocity * h
+  }
+  return { value, velocity }
 }
 
 export interface SpringHandle {

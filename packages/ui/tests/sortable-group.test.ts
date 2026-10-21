@@ -413,8 +413,14 @@ for (const mode of ['clone', 'element'] as const) {
     const growing = heightOf(doing)
     expect(growing).toBeGreaterThan(rest)
     await vi.waitFor(() => expect(heightOf(doing)).toBeGreaterThan(growing + 10))
-    const grown = heightOf(doing)
-    await vi.waitFor(() => expect(heightOf(doing)).toBe(grown))
+    // Settled once two frames in a row read the same height.
+    let grown = heightOf(doing)
+    await vi.waitFor(async () => {
+      const before = heightOf(doing)
+      await frame()
+      grown = heightOf(doing)
+      expect(grown).toBe(before)
+    })
     // The bucket it came from keeps its size until the drop.
     expect(heightOf(todo)).toBeCloseTo(todoRest, 0)
     // Back over its own bucket: the other one closes again.

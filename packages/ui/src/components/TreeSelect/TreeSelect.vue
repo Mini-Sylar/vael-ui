@@ -449,7 +449,10 @@ const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layer
 const treeId = useId()
 
 const messages = useUiMessages()
-const fieldControl = useFieldControl({ filled: () => !isEmpty.value })
+const fieldControl = useFieldControl({
+  filled: () => !isEmpty.value,
+  frame: { el: () => triggerEl.value, size: () => props.size },
+})
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 

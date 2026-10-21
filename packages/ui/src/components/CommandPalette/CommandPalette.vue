@@ -400,6 +400,7 @@ const { style: indicatorStyle } = useTabIndicator(() => [activeIndex.value, rows
   maxGlide: 3,
   motion: () => props.motion,
   indicatorEl,
+  position: 'translate',
 })
 
 useEasedHeight({

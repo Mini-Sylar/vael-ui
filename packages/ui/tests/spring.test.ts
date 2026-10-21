@@ -5,6 +5,7 @@ import { h, nextTick, shallowRef } from 'vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Badge from '../src/components/Badge/Badge.vue'
 import { springEasing, springTokens } from '../src/composables/springEasing'
+import { stepSpring } from '../src/composables/useSpringValue'
 
 test('springEasing turns a spring into a linear() curve and its settle time', () => {
   const crisp = springEasing({ damping: 1, response: 0.3 })
@@ -62,5 +63,18 @@ test('a zero or invalid spring settles at once instead of hanging', () => {
     { damping: Number.NaN, response: 0.3 },
   ]) {
     expect(springEasing(spring).duration).toBeLessThan(10)
+  }
+})
+
+test('a snappy critically damped spring never overshoots, even at 30fps', () => {
+  for (const response of [0.15, 0.2, 0.25]) {
+    let state = { value: 0, velocity: 0 }
+    let peak = 0
+    for (let frame = 0; frame < 60; frame++) {
+      state = stepSpring(state, 100, 1 / 30, 1, response)
+      peak = Math.max(peak, state.value)
+    }
+    expect(peak).toBeLessThanOrEqual(100.0001)
+    expect(state.value).toBeCloseTo(100, 3)
   }
 })

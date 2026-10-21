@@ -46,8 +46,8 @@ const props = withDefaults(
     size?: 'sm' | 'md' | 'lg'
     /** Motion for everything inside. `false` makes every component change instantly, e.g. for
      * screenshot tests: panels still open and close and toasts still leave. `{ spring }` puts
-     * drawers, sheets, toasts, sliding indicators, AnimatedNumber and AnimatedText on one spring
-     * (below 1, damping overshoots). A component's own `motion` wins. */
+     * drawers, sheets, toasts, sliding indicators and AnimatedNumber on one spring (below 1,
+     * damping overshoots); crossfades such as AnimatedText keep their own timing. A component's own `motion` wins. */
     motion?: boolean | MotionOptions
     /** Animation for every loader inside: Loader, Button's loading state, list loading rows,
      * loading toasts and PullToRefresh. A built-in name, or your own component (or render

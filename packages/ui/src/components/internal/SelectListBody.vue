@@ -305,6 +305,7 @@ const { style: indicatorStyle } = useTabIndicator(() => [props.activeIndex, prop
   maxGlide: 3,
   motion: () => props.motion,
   indicatorEl,
+  position: 'translate',
 })
 
 // Eases to the new height when the options change (a search, more loaded), as CommandPalette does.

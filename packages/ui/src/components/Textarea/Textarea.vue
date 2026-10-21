@@ -163,7 +163,10 @@ function onNativeChange(event: Event) {
   }
 }
 
-const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0 })
+const fieldControl = useFieldControl({
+  filled: () => modelValue.value.length > 0,
+  frame: { el: () => root.value, size: () => props.size },
+})
 const focusVisible = shallowRef(false)
 const focused = shallowRef(false)
 function onNativeFocus(event: FocusEvent) {

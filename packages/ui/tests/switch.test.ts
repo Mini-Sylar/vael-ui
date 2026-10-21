@@ -104,7 +104,8 @@ test('dragging the thumb past halfway turns it on, and short of halfway leaves i
   input.dispatchEvent(pointer('pointermove', 100 + travel * 0.3))
   await nextTick()
   expect(screen.container.querySelector('.ui-switch')!.hasAttribute('data-dragging')).toBe(true)
-  expect(parseFloat(thumb.style.translate)).toBeCloseTo(travel * 0.3, 0)
+  // It tracks 1:1 from the 3px drag threshold, so it never jumps.
+  expect(parseFloat(thumb.style.translate)).toBeCloseTo(travel * 0.3 - 3, 0)
   input.dispatchEvent(pointer('pointerup', 100 + travel * 0.3))
   input.click()
   await nextTick()

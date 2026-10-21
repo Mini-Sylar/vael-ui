@@ -192,6 +192,7 @@ const { style: indicatorStyle } = useTabIndicator(
     orientation: 'vertical',
     selector: '[aria-current="page"]',
     indicatorEl: pageIndicatorEl,
+    position: 'translate',
   },
 )
 

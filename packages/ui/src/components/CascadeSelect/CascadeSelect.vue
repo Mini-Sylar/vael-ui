@@ -783,6 +783,7 @@ function onClear(event: MouseEvent) {
 const messages = useUiMessages()
 const fieldControl = useFieldControl({
   filled: () => (props.multiple ? !isEmpty.value : model.value != null),
+  frame: { el: () => triggerEl.value, size: () => props.size },
 })
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())

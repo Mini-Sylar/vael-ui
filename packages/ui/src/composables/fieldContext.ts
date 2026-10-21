@@ -11,6 +11,8 @@ export interface FieldContext {
   reportFilled: (filled: boolean) => void
   /** Px offset to the control's real content, past any leading icon/slot. */
   reportStartInset: (px: number) => void
+  /** Registers a framed control (Input, Select…) outside the cells, with its size; returns its removal. */
+  registerFrame?: (size: () => string | undefined) => () => void
 }
 
 /** Injection key for advanced consumers to provide/inject field-shaped context. */

@@ -523,7 +523,10 @@ function removeChip(item: T) {
   emit('change', next)
 }
 
-const fieldControl = useFieldControl({ filled: () => !isEmpty.value })
+const fieldControl = useFieldControl({
+  filled: () => !isEmpty.value,
+  frame: { el: () => triggerEl.value, size: () => props.size },
+})
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 

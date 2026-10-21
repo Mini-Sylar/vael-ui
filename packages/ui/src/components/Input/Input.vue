@@ -151,6 +151,7 @@ const fieldStartInset = shallowRef(0)
 const fieldControl = useFieldControl({
   filled: () => modelValue.value.length > 0,
   startInset: fieldStartInset,
+  frame: { el: () => root.value, size: () => props.size },
 })
 const focusVisible = shallowRef(false)
 const focused = shallowRef(false)

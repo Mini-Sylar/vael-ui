@@ -98,6 +98,10 @@
     translate: calc(var(--ui-switch-track-h) - var(--ui-switch-track-w)) -50%;
     transform-origin: 0% 50%;
   }
+  /* The checked side flips mid-drag, so the stretch stays centred instead of swapping edges. */
+  .ui-switch[data-dragging] .ui-switch-track .ui-switch-thumb {
+    transform-origin: 50% 50%;
+  }
   .ui-switch-input:focus-visible + .ui-switch-track {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;

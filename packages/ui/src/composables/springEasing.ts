@@ -3,7 +3,7 @@ import type { IndicatorSpring } from './useTabIndicator'
 
 /** ConfigProvider's `motion` as an object: motion stays on, retimed. */
 export interface MotionOptions {
-  /** Drawers, sheets, toasts, sliding indicators, AnimatedNumber and AnimatedText follow this spring. */
+  /** Drawers, sheets, toasts, sliding indicators and AnimatedNumber follow this spring. */
   spring?: IndicatorSpring
 }
 
@@ -13,12 +13,12 @@ export function springEasing(spring: IndicatorSpring): { easing: string; duratio
   const samples: number[] = [0]
   let state = { value: 0, velocity: 0 }
   let t = 0
-  // Settled once it stays within 0.1% of the target and has all but stopped.
+  // Settled once it is within 0.5% of the target and has all but stopped.
   while (t < 5) {
     state = stepSpring(state, 1, dt, spring.damping, spring.response)
     t += dt
     samples.push(state.value)
-    if (Math.abs(1 - state.value) < 0.001 && Math.abs(state.velocity) < 0.01) break
+    if (Math.abs(1 - state.value) < 0.005 && Math.abs(state.velocity) < 0.05) break
   }
   samples[samples.length - 1] = 1
   // About 60 points keeps the curve smooth and the string short.
@@ -32,7 +32,7 @@ export function springEasing(spring: IndicatorSpring): { easing: string; duratio
   }
 }
 
-/** @internal The motion tokens that put drawers, toasts, numbers and labels on one spring. */
+/** @internal The motion tokens that put drawers, toasts and numbers on one spring. Crossfades keep their own timing. */
 export function springTokens(spring: IndicatorSpring): Record<`--ui-${string}`, string> {
   const { easing, duration } = springEasing(spring)
   const ms = `${duration}ms`
@@ -44,7 +44,5 @@ export function springTokens(spring: IndicatorSpring): Record<`--ui-${string}`, 
     '--ui-ease-pop': easing,
     '--ui-ease-number': easing,
     '--ui-duration-number': ms,
-    '--ui-ease-text': easing,
-    '--ui-duration-text': ms,
   }
 }
