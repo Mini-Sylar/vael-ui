@@ -22,38 +22,9 @@
   .ui-popover-body {
     padding: 1rem;
   }
-  .ui-popover-enter-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-popover-leave-active {
-    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-popover-enter-from,
-  .ui-popover-leave-to {
-    opacity: 0;
-  }
-  .ui-popover-enter-active .ui-popover-panel {
-    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-popover-leave-active .ui-popover-panel {
-    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  /* Opens from a touch further than it closes to: the close should get out of the way. Never from scale(0). */
-  .ui-popover-enter-from .ui-popover-panel {
-    transform: scale(0.97);
-  }
-  .ui-popover-leave-to .ui-popover-panel {
-    transform: scale(0.99);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ui-popover-enter-active .ui-popover-panel,
-    .ui-popover-leave-active .ui-popover-panel {
-      transition: none;
-    }
-    .ui-popover-enter-from .ui-popover-panel,
-    .ui-popover-leave-to .ui-popover-panel {
-      transform: none;
-    }
+  /* Enter and leave are played by the CSS engine (motion/css.ts) from Popover's built-in look. A
+     closing popover lets clicks through to what's under it. */
+  .ui-popover-positioner[data-ui-leaving] {
+    pointer-events: none;
   }
 }

@@ -176,3 +176,41 @@ test('changing side or sideOffset while open repositions the panel', async () =>
     ).toBeCloseTo(40, 0),
   )
 })
+
+test('a closing popover lets clicks through to what is under it', async () => {
+  const open = shallowRef(true)
+  await render(
+    () => [
+      h(
+        'button',
+        { 'data-testid': 'under', style: 'position: fixed; inset: 0; z-index: 0' },
+        'under',
+      ),
+      h(
+        Popover as never,
+        { open: open.value },
+        {
+          trigger: ({ setTriggerEl }: { setTriggerEl: (el: unknown) => void }) =>
+            h(
+              'button',
+              { ref: setTriggerEl, style: 'position: relative; margin: 120px' },
+              'Trigger',
+            ),
+          default: () => h('p', { style: 'margin: 0; padding: 2rem' }, 'Body'),
+        },
+      ),
+    ],
+    { global: { stubs: { transition: false } } },
+  )
+  const panel = () => document.querySelector<HTMLElement>('.ui-popover-panel')
+  await vi.waitFor(() => expect(Number(getComputedStyle(panel()!).opacity)).toBe(1))
+  const box = panel()!.getBoundingClientRect()
+  const [x, y] = [box.left + box.width / 2, box.top + box.height / 2]
+  expect(panel()!.contains(document.elementFromPoint(x, y))).toBe(true)
+  open.value = false
+  // The moment it starts leaving, a click there lands on what's underneath.
+  await vi.waitFor(() =>
+    expect(document.querySelector('.ui-popover-positioner[data-ui-leaving]')).not.toBeNull(),
+  )
+  expect(document.elementFromPoint(x, y)?.getAttribute('data-testid')).toBe('under')
+})

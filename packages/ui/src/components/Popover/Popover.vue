@@ -251,8 +251,13 @@ const motion = useComponentMotion({
   parts: () => ({ panel: panelEl.value }),
   root: () => panelEl.value,
   motion: () => props.motion,
-  // The built-in look; it scales from the trigger via the panel's own transform-origin.
+  // The built-in look as data, played by the CSS engine: it opens from a touch further than it
+  // closes to (the close should get out of the way), scaling from the trigger via the panel's own
+  // transform-origin, on the enter tokens. forceMount leaves the motion to you.
   defaults: () => ({ panel: { opacity: 0, scale: '0.97' } }),
+  exitDefaults: () => ({ panel: { opacity: 0, scale: '0.99' } }),
+  timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
+  owns: () => !props.forceMount,
 })
 const { target, phase } = motion
 const motionTransition = motion.transition

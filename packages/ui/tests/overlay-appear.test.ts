@@ -20,9 +20,13 @@ const entering = (el: Element | null | undefined) =>
   !!el && (/-enter-active/.test(el.className) || el.getAnimations({ subtree: true }).length > 0)
 // Engine-driven (Dialog and what builds on it): the panel itself must really be moving, not just
 // carry a class (and not merely the focused close button fading its own opacity).
-const panelMoving = () =>
-  (document.querySelector('.ui-dialog-panel')?.getAnimations().length ?? 0) > 0
-const engineDriven = new Set(['Dialog', 'Drawer'])
+const panelMoving = (panel = '.ui-dialog-panel') =>
+  (document.querySelector(panel)?.getAnimations().length ?? 0) > 0
+const engineDriven: Record<string, string> = {
+  Dialog: '.ui-dialog-panel',
+  Drawer: '.ui-dialog-panel',
+  Popover: '.ui-popover-panel',
+}
 const trigger = ({ setTriggerEl }: { setTriggerEl: (el: unknown) => void }) =>
   h('button', { ref: setTriggerEl }, 'Trigger')
 
@@ -60,7 +64,8 @@ for (const [name, tree, selector] of cases) {
   test(`${name} mounted open plays its enter transition`, async () => {
     await render(defineComponent({ render: tree as never }), options)
     // The engine may still be loading on a cold start: give it a moment, then the panel moves.
-    if (engineDriven.has(name)) await vi.waitFor(() => expect(panelMoving()).toBe(true))
+    const panel = engineDriven[name]
+    if (panel) await vi.waitFor(() => expect(panelMoving(panel)).toBe(true))
     else expect(entering(document.querySelector(selector))).toBe(true)
   })
 }
