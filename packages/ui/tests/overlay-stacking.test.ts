@@ -1,5 +1,5 @@
-// Regression test for the cross-family stacking bug documented in gps-cmms-app's
-// vael-ui-issues.md: a Dialog/Drawer/BottomSheet opened from inside an already-open Popover used
+// Regression test for a cross-family stacking bug reported from a consuming app: a
+// Dialog/Drawer/BottomSheet opened from inside an already-open Popover used
 // to always render underneath it, since each overlay family had its own fixed z-index token with
 // no relationship to actual open order. Popover and Dialog now both derive their z-index from the
 // same shared layer stack (useLayerStack.ts), so whichever opened more recently wins regardless

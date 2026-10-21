@@ -214,7 +214,7 @@ test('a second click mid-way carries the fold on from where it is, with no jump'
   expect(block()?.classList.contains('ui-tree-rows') ?? false).toBe(false)
 })
 
-// gps-cmms-app's sidebar: a tall day with an hour open inside, in a scroll box. 0.4.8 slid the rows
+// An app sidebar: a tall day with an hour open inside, in a scroll box. 0.4.8 slid the rows
 // below with transform while clipping the folder, and the two drifted apart on a folder this tall.
 test('a tall folder with a subfolder open: the row below rides its edge every frame, then settles', async () => {
   const hours = ['7 AM', '6 AM', '5 AM', '4 AM', '3 AM'].map((label, i) => ({
