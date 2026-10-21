@@ -372,9 +372,31 @@ test('motionCss=false still turns the trigger icon by state, instantly', async (
   expect(getComputedStyle(icon).transform).toBe('none')
 })
 
-test('motionCss defaults keep the trigger icon turn transition', async () => {
+test('motionCss defaults keep the trigger icon turn and press transitions', async () => {
   const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
   const screen = await render(SpeedDial, { props: { items: [{ label: 'Home' }] } })
   const icon = screen.container.querySelector<HTMLElement>('.ui-speed-dial-trigger-icon')!
-  expect(getComputedStyle(icon).transitionProperty).toBe('transform')
+  expect(getComputedStyle(icon).transitionProperty).toBe('transform, scale')
+})
+
+test('pressing the trigger sinks its icon further than the button, composing with the open turn', async () => {
+  const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
+  await render(SpeedDial, { props: { items: [{ label: 'Home' }] } })
+  // A real :active can't be held from inside the test frame, so read the shipped rule: `scale`
+  // (not `transform`) is what lets it stack on the open state's rotate.
+  const rules: CSSStyleRule[] = []
+  const walk = (list: CSSRuleList) => {
+    for (const rule of Array.from(list)) {
+      if (rule instanceof CSSStyleRule) rules.push(rule)
+      if ('cssRules' in rule) walk((rule as CSSGroupingRule).cssRules)
+    }
+  }
+  for (const sheet of Array.from(document.styleSheets)) walk(sheet.cssRules)
+  const press = rules.find(
+    (rule) =>
+      rule.selectorText.includes('.ui-speed-dial-trigger:active') &&
+      rule.selectorText.includes('.ui-speed-dial-trigger-icon') &&
+      rule.style.scale === '0.85',
+  )
+  expect(press?.style.transform).toBe('')
 })

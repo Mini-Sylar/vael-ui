@@ -9,10 +9,17 @@
   }
   .ui-speed-dial-trigger-icon {
     display: inline-flex;
-    transition: transform var(--ui-duration-press) var(--ui-ease-in-out);
+    transition:
+      transform var(--ui-duration-press) var(--ui-ease-in-out),
+      scale var(--ui-duration-press) var(--ui-ease-out);
   }
   .ui-speed-dial[data-state='open'] .ui-speed-dial-trigger-icon {
     transform: rotate(45deg);
+  }
+  /* The button's own press scales the box and contents together, which leaves the plus looking
+     still inside it; it sinks further on its own. `scale`, so it composes with the turn. */
+  .ui-speed-dial-trigger:active:not(:disabled) .ui-speed-dial-trigger-icon {
+    scale: 0.85;
   }
   .ui-speed-dial-actions {
     position: absolute;
@@ -135,6 +142,9 @@
     .ui-speed-dial-action-move,
     .ui-speed-dial-trigger-icon {
       transition: none;
+    }
+    .ui-speed-dial-trigger:active:not(:disabled) .ui-speed-dial-trigger-icon {
+      scale: 1;
     }
   }
 }
