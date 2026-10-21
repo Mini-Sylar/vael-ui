@@ -37,6 +37,25 @@ const cell = (text) =>
     .trim()
 const code = (text) => (text ? `\`${cell(text)}\`` : '')
 
+// A named union of literals (`ButtonVariant`) tells an agent nothing on its own, so spell out
+// its members: `ButtonVariant | undefined` becomes `'primary' | 'secondary' | … | undefined`.
+const LITERAL = /^(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|true|false|null|undefined)$/
+function typeText(row) {
+  const members = row.schema?.kind === 'enum' ? row.schema.schema : null
+  if (!members?.length || !members.every((m) => typeof m === 'string' && LITERAL.test(m)))
+    return row.type
+  const expanded = members.map((m) => m.replace(/^"(.*)"$/, "'$1'"))
+  // Already literal (`"circle" | "line" | undefined`), or a boolean: nothing to spell out.
+  if (
+    !/[A-Za-z_]\w*/.test(
+      row.type.replace(/"[^"]*"|'[^']*'|\b(?:undefined|null|true|false|boolean)\b/g, ''),
+    )
+  )
+    return row.type
+  const empty = expanded.filter((m) => m === 'undefined' || m === 'null')
+  return [...expanded.filter((m) => !empty.includes(m)), ...empty].join(' | ')
+}
+
 function table(rows, { withDefault = false } = {}) {
   if (rows.length === 0) return '_None._\n'
   const head = withDefault
@@ -46,8 +65,8 @@ function table(rows, { withDefault = false } = {}) {
     const text = row.defaultText ?? row.default
     const defaultValue = text && text !== 'undefined' ? code(text) : ''
     return withDefault
-      ? `${code(row.name)} | ${code(row.type)} | ${defaultValue} | ${cell(row.description)}`
-      : `${code(row.name)} | ${code(row.type)} | ${cell(row.description)}`
+      ? `${code(row.name)} | ${code(typeText(row))} | ${defaultValue} | ${cell(row.description)}`
+      : `${code(row.name)} | ${code(typeText(row))} | ${cell(row.description)}`
   })
   return `${head}\n${body.join('\n')}\n`
 }
