@@ -1867,6 +1867,12 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           description:
             'Required. Fires when a release decides to dismiss, with the panel left where the drag ended. Run your close flow here. `velocity` is the release speed in px/ms, positive toward closed.',
         },
+        {
+          name: 'onProgress',
+          type: '(progress: number | null, timing?: { duration: number; easing: string }) => void',
+          description:
+            "While dragging, how open the sheet is: `1` at the lowest snap point or above, `0` closed. Once it's let go without closing, `null` with the timing it settles on (unset means the drawer's). Use it to move another element with the sheet, such as the page behind it.",
+        },
       ],
       returns: [
         {

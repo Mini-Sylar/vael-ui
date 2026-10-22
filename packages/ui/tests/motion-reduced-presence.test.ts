@@ -74,3 +74,29 @@ test('a state that only moves does nothing under reduced motion: it never fades 
   expect(getComputedStyle(button()).opacity).toBe('1')
   window.dispatchEvent(new PointerEvent('pointerup', { button: 0 }))
 })
+
+test('reduced motion: a linked page keeps its corners and colour, without moving', async () => {
+  render(
+    {
+      setup: () => () => [
+        h('div', { class: 'page' }, 'Page'),
+        h(Dialog as never, {
+          open: true,
+          title: 'A',
+          motion: {
+            linked: {
+              page: {
+                el: () => document.querySelector('.page'),
+                open: { scale: '0.9', borderRadius: '8px' },
+              },
+            },
+          },
+        }),
+      ],
+    },
+    real,
+  )
+  const page = () => getComputedStyle(document.querySelector('.page')!)
+  await vi.waitFor(() => expect(page().borderTopLeftRadius).toBe('8px'))
+  expect(page().scale).toBe('none')
+})

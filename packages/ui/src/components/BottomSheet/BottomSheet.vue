@@ -5,7 +5,7 @@
     force-mount
     flush
     :before-close="beforeClose"
-    :motion="sheetLook"
+    :motion="sheetMotion"
     position="bottom"
     :close-on-esc="closeOnEsc"
     :close-on-overlay="closeOnOverlay"
@@ -122,6 +122,13 @@ export interface BottomSheetProps {
    * drag's release speed in px/s.
    */
   beforeClose?: BeforeClose<SheetCloseReason>
+  /**
+   * How the sheet moves. `false` makes it instant. Set your own `initial` and `exit` per part,
+   * `targets`, or `linked`: elements outside the sheet that follow it, such as the page receding
+   * while it's open. Linked elements follow a drag too. Your parts replace the built-in rise and
+   * slide-out.
+   */
+  motion?: DialogMotion
   /** Teleport target: a CSS selector. Wins over `container` either way. */
   teleportTo?: string
   /** Element to contain the sheet in, instead of the viewport. Snap points use its height. */
@@ -155,6 +162,8 @@ import '../shared/tokens.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
 import { askGuard, closeContext } from '../../composables/useCloseGuard'
 import { flingTiming } from '../../motion/fling'
+import { gestureKey } from '../../motion/useComponentMotion'
+import type { LinkedGesture } from '../../motion/useComponentMotion'
 import { resolveDOMTarget } from '../../composables/dom'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useUiMessages } from '../../messages'
@@ -175,6 +184,7 @@ const props = withDefaults(defineProps<BottomSheetProps>(), {
   closeOnOverlay: true,
   modal: true,
   closeOnHistoryBack: false,
+  motion: undefined,
 })
 
 const resolvedSnapPoints = computed<SheetSnapPoint[]>(
@@ -222,6 +232,9 @@ function dismissFromDrag(velocity: number) {
   fromDrag = false
 }
 
+const gesture = shallowRef<LinkedGesture | null>(null)
+provide(gestureKey, () => gesture.value)
+
 const { activeSnap, isDragging, setReceded, settle } = useSheetDrag(open, {
   panelEl,
   handleEl: handle,
@@ -230,6 +243,9 @@ const { activeSnap, isDragging, setReceded, settle } = useSheetDrag(open, {
   initialSnap: () => props.initialSnap,
   dismissible: () => props.dismissible,
   onDismiss: dismissFromDrag,
+  // `linked` elements follow the drag, then the settle or the close.
+  onProgress: (progress, timing) =>
+    (gesture.value = progress === null ? { settle: timing ?? DRAWER } : { progress }),
   bounds: () => resolveDOMTarget(props.container ?? null),
 })
 
@@ -275,6 +291,20 @@ const sheetLook = computed<DialogMotion>(() => {
       overlay: { opacity: { value: 0, ...leave } },
     },
   }
+})
+
+// Yours over the built-in look: your parts replace its parts; the rest (`linked`, `targets`) adds.
+const sheetMotion = computed<DialogMotion>(() => {
+  const yours = props.motion
+  const look = sheetLook.value
+  if (yours === false) return false
+  if (typeof yours !== 'object' || typeof look !== 'object') return look
+  return {
+    ...look,
+    ...yours,
+    initial: { ...look.initial, ...yours.initial },
+    exit: { ...look.exit, ...yours.exit },
+  } as DialogMotion
 })
 
 const cx = useClassMerge()

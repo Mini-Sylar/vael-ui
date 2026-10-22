@@ -1,5 +1,6 @@
 // Where a component's motion comes from: built-in < style role < style's component key < the instance's `motion`.
 import type {
+  LinkedMotion,
   MorphFrom,
   MotionHook,
   MotionStyle,
@@ -52,6 +53,8 @@ export interface ResolvedMotion {
   exitOrder: 'together' | 'reverse'
   /** Grow from this element's box and back into it: 'trigger' (the component's) or your getter. */
   morph?: MorphFrom | { from: MorphFrom; hide?: boolean }
+  /** Elements outside it that follow it. Yours only: they're getters, and shared styles are data. */
+  linked?: Record<string, LinkedMotion>
   reducedHooks: 'skip' | 'run'
 }
 
@@ -140,6 +143,7 @@ export function resolveMotion(input: {
     enter: (own?.enter ?? keyStyle?.enter) as AnyHook | undefined,
     leave: (own?.leave ?? keyStyle?.leave) as AnyHook | undefined,
     morph: (own?.morph ?? keyStyle?.morph ?? roleStyle?.morph) as ResolvedMotion['morph'],
+    linked: own?.linked as ResolvedMotion['linked'],
     exitOrder:
       ((own?.exitOrder ?? keyStyle?.exitOrder ?? roleStyle?.exitOrder) as 'together' | 'reverse') ??
       'together',

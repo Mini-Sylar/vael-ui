@@ -1,8 +1,8 @@
 // What a vael-ui component uses to animate: Transition hooks, target(), phase. The CSS engine
 // (css.ts) plays every component's look, so it ships with them: a lazy one made the first open wait
 // on slow networks. The runtime (runner.ts: hooks, steps, keyframes) loads only when one is used.
-import { computed, inject, onScopeDispose, shallowRef, watch } from 'vue'
-import type { ComputedRef, ShallowRef, TransitionProps } from 'vue'
+import { computed, getCurrentScope, inject, onScopeDispose, shallowRef, watch } from 'vue'
+import type { ComputedRef, InjectionKey, ShallowRef, TransitionProps } from 'vue'
 import { defaultsKey } from '../config'
 import { PRESENCE_ID } from './ids'
 import { PRESENCE_ATTR, presenceFor, refElement, TARGET_ATTR } from './presence'
@@ -46,7 +46,16 @@ export interface ComponentMotionOptions {
   trigger?: () => Element | null | undefined
   onAfterEnter?: () => void
   onAfterLeave?: () => void
+  /** Whether it's open, for `linked` elements. */
+  open?: () => boolean
+  /** A gesture driving it (a dragged sheet): `linked` elements follow its progress. */
+  gesture?: () => LinkedGesture | null | undefined
 }
+
+/** @internal 1 open, 0 closed while the gesture moves; `settle` once it's let go without closing. */
+export type LinkedGesture = { progress: number } | { settle: MotionTiming }
+/** @internal A wrapper with a gesture (BottomSheet) hands it to the overlay it wraps. */
+export const gestureKey: InjectionKey<() => LinkedGesture | null> = Symbol('vael-ui-gesture')
 
 export interface ComponentMotionReturn {
   /** Bind to the component's `<Transition>` alongside its own name and hooks. */
@@ -123,6 +132,24 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
         }
       },
       { immediate: true, flush: 'post' },
+    )
+
+  // `linked`: elements outside it follow it. All of it is in its own chunk, loaded once it's set.
+  const scope = getCurrentScope()
+  let linking = false
+  if (typeof window !== 'undefined')
+    watch(
+      () => !!resolved.value.linked,
+      (on) => {
+        if (!on || linking) return
+        linking = true
+        void import('./linked').then((kit) =>
+          scope?.run(() =>
+            kit.attach(resolved, options.open ?? (() => false), options.mainPart, options.gesture),
+          ),
+        )
+      },
+      { immediate: true },
     )
 
   const host: RunnerHost = {

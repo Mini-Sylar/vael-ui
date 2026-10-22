@@ -18,12 +18,15 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // Re-baselined 2026-10-22 when sizes moved to compressed-together (they had been per file).
 // up front 6 → 6.5 KB (2026-10-22): `presence` is counted now (Dialog always loaded it, from a chunk
 // this check didn't recognise), plus late appearances (`appear`, `joined`): +0.3 KB on all of Dialog.
+// linked (2026-10-22): `linked` loads with its own chunk, 1.5 KB, plus values and timing (shared with
+// the runtime and the states player).
 const BUDGET = {
   upFront: 6.5 * 1024,
   runtime: 5 * 1024,
   morph: 1 * 1024,
   button: 1 * 1024,
   states: 3.8 * 1024,
+  linked: 2.6 * 1024,
 }
 
 // Every chunk a file pulls in statically.
@@ -37,7 +40,7 @@ function closure(file, seen = new Set()) {
 // Compressed together, as an app's bundle ships them (per-file gzip overcounts small chunks).
 const gz = (files) => gzipSync(Buffer.concat([...files].map((f) => readFileSync(f)))).length
 const isMotion = (f) =>
-  /[\\/]motion[\\/]|(?:^|[\\/])(?:ids|presence|runner|css|engine|schedule|warn|size|list|playable|targets|values|useComponentMotion|useStateMotion|states|context|morph|springEasing|springStep)[-.]/.test(
+  /[\\/]motion[\\/]|(?:^|[\\/])(?:ids|presence|runner|linked|css|engine|schedule|warn|size|list|playable|targets|values|useComponentMotion|useStateMotion|states|context|morph|springEasing|springStep)[-.]/.test(
     f,
   )
 const chunk = (name) => readdirSync(dist).find((f) => new RegExp(`^${name}-.*\\.js$`).test(f))
@@ -45,7 +48,7 @@ const chunk = (name) => readdirSync(dist).find((f) => new RegExp(`^${name}-.*\\.
 const dialog = closure(join(dist, 'components/Dialog/Dialog.js'))
 const upFront = [...dialog].filter(isMotion)
 const failures = []
-for (const lazy of ['runner', 'morph']) {
+for (const lazy of ['runner', 'morph', 'linked']) {
   if (!chunk(lazy)) failures.push(`no ${lazy} chunk: it is no longer split out`)
   if (upFront.some((f) => new RegExp(`(?:^|[\\\\/])${lazy}-[^/\\\\]*\\.js$`).test(f)))
     failures.push(`Dialog loads ${lazy} up front: keep it behind its loader`)
@@ -65,6 +68,7 @@ const sizes = {
   morph: beyond(chunk('morph')),
   button: gz(buttonMotion),
   states: beyond(chunk('states'), button),
+  linked: beyond(chunk('linked')),
 }
 for (const [name, size] of Object.entries(sizes))
   if (size > BUDGET[name]) failures.push(`motion ${name} ${size} B gz > ${BUDGET[name]} B`)
@@ -75,5 +79,5 @@ if (failures.length) {
 }
 const kb = (n) => `${(n / 1024).toFixed(1)} KB`
 console.log(
-  `OK: motion costs Dialog ${kb(sizes.upFront)} gz up front (the CSS engine included), Button ${kb(sizes.button)}; on demand, the runtime ${kb(sizes.runtime)}, morph ${kb(sizes.morph)}, states ${kb(sizes.states)}.`,
+  `OK: motion costs Dialog ${kb(sizes.upFront)} gz up front (the CSS engine included), Button ${kb(sizes.button)}; on demand, the runtime ${kb(sizes.runtime)}, morph ${kb(sizes.morph)}, states ${kb(sizes.states)}, linked ${kb(sizes.linked)}.`,
 )

@@ -30,6 +30,11 @@ export interface UseSheetDragOptions {
    * close flow here. `velocity` is the release speed in px/ms, positive toward closed.
    */
   onDismiss: (velocity: number) => void
+  /**
+   * While dragging: how open the sheet is, `1` at the lowest snap point or above, `0` closed. Once
+   * it's let go without closing, `null` with the timing it settles on; unset means the drawer's.
+   */
+  onProgress?: (progress: number | null, timing?: { duration: number; easing: string }) => void
 }
 
 export interface UseSheetDragReturn {
@@ -150,6 +155,18 @@ export function useSheetDrag(
     }
   }
 
+  // A drag reported progress: the settle after it says so.
+  let scrubbing = false
+  function progressAt(offset: number): number {
+    const showing = areaHeight() - Math.max(...offsets())
+    return showing > 0 ? Math.min(1, Math.max(0, (areaHeight() - offset) / showing)) : 1
+  }
+  // Closing carries on from where the drag left it.
+  function dismiss(velocity: number) {
+    scrubbing = false
+    options.onDismiss(velocity)
+  }
+
   /** `timing`: a release's own spring, starting at the finger's speed (`flingTiming`). */
   function moveTo(
     offset: number,
@@ -167,7 +184,15 @@ export function useSheetDrag(
         : TRANSITION
     panel.style.transform = `translateY(${offset}px)`
     lastAppliedOffset = offset
-    if (dragging) return
+    if (dragging) {
+      scrubbing = !!options.onProgress
+      options.onProgress?.(progressAt(offset))
+      return
+    }
+    if (scrubbing) {
+      scrubbing = false
+      options.onProgress?.(null, animated ? timing : { duration: 0, easing: 'linear' })
+    }
     const visible = Math.max(0, areaHeight() - offset)
     // More showing: raise the cap now so nothing comes in blank. Less: wait for the panel to stop.
     if (!animated || visible >= currentCap(panel)) setVisibleCap(visible)
@@ -368,7 +393,7 @@ export function useSheetDrag(
     // down, however fast, only goes back to rest.
     const maxOffset = Math.max(...offsetList)
     const closeOrRest = () => {
-      if (dismissible && currentOffset > maxOffset) options.onDismiss(releaseVelocity())
+      if (dismissible && currentOffset > maxOffset) dismiss(releaseVelocity())
       else settleTo(list[0], endVelocity)
     }
 
@@ -392,7 +417,7 @@ export function useSheetDrag(
     // closed the sheet on any slow drag that ended a little lower than it started.
     const lowestShowing = areaHeight() - maxOffset
     if (movingDown && dismissible && currentOffset > maxOffset + lowestShowing * CLOSE_THRESHOLD) {
-      options.onDismiss(releaseVelocity())
+      dismiss(releaseVelocity())
       return
     }
 

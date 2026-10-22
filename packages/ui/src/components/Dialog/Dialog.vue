@@ -245,7 +245,17 @@ import type { DialogCloseReason } from '../../composables/useDialog'
 import type { BeforeClose } from '../../motion/types'
 import './Dialog.css'
 import '../shared/tokens.css'
-import { computed, inject, ref, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  inject,
+  provide,
+  ref,
+  shallowRef,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { useEventListener } from '@vueuse/core'
 import { useDialog } from '../../composables/useDialog'
@@ -255,7 +265,7 @@ import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
-import { useComponentMotion } from '../../motion/useComponentMotion'
+import { gestureKey, useComponentMotion } from '../../motion/useComponentMotion'
 import type { MotionRef, DialogMotion, MotionValues } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
@@ -482,6 +492,9 @@ function builtInLook(): Look {
   }
 }
 
+// A wrapping BottomSheet's drag; overlays opened inside this one don't inherit it.
+const gesture = inject(gestureKey, null)
+provide(gestureKey, () => null)
 const motion = useComponentMotion({
   name: 'Dialog',
   role: 'overlay',
@@ -500,6 +513,8 @@ const motion = useComponentMotion({
   owns: () => !props.forceMount,
   // morph: 'trigger' grows from the element that opened it.
   trigger: () => (triggerEl?.isConnected && triggerEl !== document.body ? triggerEl : null),
+  open: () => open.value,
+  gesture: () => gesture?.() ?? null,
 })
 const { target, phase } = motion
 const motionTransition = motion.transition
