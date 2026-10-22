@@ -286,11 +286,13 @@ export type {
 } from './composables/useHaptic'
 export { springEasing } from './composables/springEasing'
 export type { MotionOptions } from './composables/springEasing'
-export { settled } from './motion/engine'
+export { settled } from './motion/timing'
 export { useMotion } from './motion/useMotion'
 export { parseMotionStyle } from './motion/parse'
 export { useComponentMotion } from './motion/useComponentMotion'
 export type { ComponentMotionOptions, ComponentMotionReturn } from './motion/useComponentMotion'
+export { useStateMotion } from './motion/useStateMotion'
+export type { StateMotionOptions } from './motion/useStateMotion'
 export {
   motionStyleKey,
   useMotionStyle,
@@ -300,8 +302,12 @@ export {
 } from './motion/context'
 export type { ResolvedMotion } from './motion/context'
 export type {
+  AccordionMotion,
+  AccordionPart,
   AnimateDirectiveValue,
   Checkpoint,
+  ButtonMotion,
+  ButtonPart,
   ComponentMotion,
   DialogMotion,
   DialogPart,

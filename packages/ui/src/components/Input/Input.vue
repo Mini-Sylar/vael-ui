@@ -54,7 +54,9 @@
         </slot>
       </span>
     </span>
-    <span v-if="$slots.end" :class="endPart.class" :style="endPart.style"><slot name="end" /></span>
+    <span v-if="$slots.end" ref="endEl" :class="endPart.class" :style="endPart.style"
+      ><slot name="end"
+    /></span>
   </div>
 </template>
 
@@ -80,6 +82,8 @@ import { omitAttrs, useForwardedListener } from '../../composables/forwardedList
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { InputMotion } from '../../motion/types'
 import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
@@ -108,8 +112,18 @@ const rawProps = withDefaults(
     animated?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; input: UiPartValue; start: UiPartValue; end: UiPartValue }>
+    /** Motion for its states: `{ states: { invalid: { root: { x: [0, -6, 6, -3, 0] } } } }`. */
+    motion?: InputMotion
   }>(),
-  { type: 'text', disabled: false, readonly: false, invalid: false, animated: false },
+  {
+    type: 'text',
+    disabled: false,
+    readonly: false,
+    invalid: false,
+    animated: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
@@ -194,6 +208,15 @@ const restAttrs = computed(() =>
 const root = useTemplateRef<HTMLElement>('root')
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const startEl = useTemplateRef<HTMLElement>('startEl')
+const endEl = useTemplateRef<HTMLElement>('endEl')
+
+useStateMotion({
+  key: 'input',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value, input: inputEl.value, start: startEl.value, end: endEl.value }),
+  states: () => ({ invalid: isInvalid.value, disabled: isDisabled.value, focus: focused.value }),
+})
 
 // `all` hides the input's text for #display; `animated` crossfades the placeholder, and the value
 // while you're not in the field, so typing stays plain.

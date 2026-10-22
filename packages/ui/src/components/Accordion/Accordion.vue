@@ -18,6 +18,8 @@ export interface AccordionContext {
   isOpen: (value: string) => boolean
   toggle: (value: string) => void
   motion: () => boolean
+  /** The `motion` object, for each item's `states`. */
+  states: () => unknown
   handOff: () => boolean
   headingLevel: () => 1 | 2 | 3 | 4 | 5 | 6
 }
@@ -32,6 +34,7 @@ import '../shared/tokens.css'
 import { computed, provide, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
+import type { AccordionMotion } from '../../motion/types'
 import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
@@ -46,8 +49,11 @@ const rawProps = withDefaults(
     multiple?: boolean
     /** Whether the last open item can close, leaving none open. @default true */
     collapsible?: boolean
-    /** `false` skips transitions; use exposed `panelEl`/`open` for custom motion. @default true */
-    motion?: boolean
+    /**
+     * `false` skips transitions; use exposed `panelEl`/`open` for custom motion. An object styles
+     * each item's states: `{ states: { open: { chevron: { rotate: '90deg' } } } }`. @default true
+     */
+    motion?: AccordionMotion
     /** Heading level wrapping each item's trigger; match it to the surrounding outline. @default 3 */
     headingLevel?: 1 | 2 | 3 | 4 | 5 | 6
     /** Class and style overrides for each part. */
@@ -117,7 +123,8 @@ defineSlots<{
 provide(accordionKey, {
   isOpen,
   toggle,
-  motion: () => props.motion,
+  motion: () => props.motion !== false,
+  states: () => rawProps.motion,
   // Its own motion="false" hands the height over; a provider's just makes it instant.
   handOff: () => rawProps.motion === false,
   headingLevel: () => props.headingLevel,

@@ -320,6 +320,16 @@ export type SliderMotion = ComponentMotion<{
   value: true
 }>
 
+export type ButtonPart = 'root' | 'leading' | 'trailing' | 'content' | 'label' | 'badge'
+/** `active` is pressed (pointer, Space or Enter); `hover` is fine pointers only. */
+export type ButtonMotion = ComponentMotion<{
+  parts: ButtonPart
+  states: 'active' | 'hover' | 'focus' | 'loading' | 'disabled'
+}>
+
+export type AccordionPart = 'item' | 'header' | 'trigger' | 'chevron' | 'panel' | 'body'
+export type AccordionMotion = ComponentMotion<{ parts: AccordionPart; states: 'open' | 'disabled' }>
+
 export type SeparatorPart = 'root' | 'line' | 'text'
 export type SeparatorMotion = ComponentMotion<{ parts: SeparatorPart }>
 
@@ -365,6 +375,8 @@ export interface MotionStyle {
   toaster?: Exclude<ToasterMotion, boolean>
   tabs?: Exclude<TabsMotion, boolean>
   input?: Exclude<InputMotion, boolean>
+  button?: Exclude<ButtonMotion, boolean>
+  accordion?: Exclude<AccordionMotion, boolean>
   slider?: Exclude<SliderMotion, boolean>
 }
 

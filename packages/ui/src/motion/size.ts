@@ -1,6 +1,6 @@
 // v-animate.size and lists: a box that follows its content's height on a spring instead of jumping.
 import { prefersReducedMotion } from '../composables/dom'
-import { resolveTiming } from './engine'
+import { resolveTiming } from './timing'
 import type { MotionTiming } from './types'
 
 const SIZE_ID = 'ui-size'

@@ -1,6 +1,4 @@
 // Where a component's motion comes from: built-in < style role < style's component key < the instance's `motion`.
-import { inject } from 'vue'
-import type { ComputedRef, InjectionKey } from 'vue'
 import type {
   MorphFrom,
   MotionHook,
@@ -11,14 +9,7 @@ import type {
   TargetMotion,
 } from './types'
 
-/** @internal The nearest ConfigProvider's motion style. */
-export const motionStyleKey: InjectionKey<ComputedRef<MotionStyle | undefined>> =
-  Symbol('ui-motion-style')
-
-/** @internal */
-export function useMotionStyle(): ComputedRef<MotionStyle | undefined> | undefined {
-  return inject(motionStyleKey, undefined)
-}
+export { motionStyleKey, useMotionStyle } from './styleKey'
 
 /** @internal A full style, as opposed to `false`, `true` or the older `{ spring }`. */
 export function isMotionStyle(value: unknown): value is MotionStyle {

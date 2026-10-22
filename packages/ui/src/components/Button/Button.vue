@@ -44,19 +44,21 @@
         </span>
         <span
           v-if="$slots.leading"
+          ref="leadingEl"
           :class="leadingPart.class"
           :style="leadingPart.style"
           aria-hidden="true"
         >
           <slot name="leading" />
         </span>
-        <span :class="contentPart.class" :style="contentPart.style">
-          <span :class="labelPart.class" :style="labelPart.style"
+        <span ref="contentEl" :class="contentPart.class" :style="contentPart.style">
+          <span ref="labelEl" :class="labelPart.class" :style="labelPart.style"
             ><slot :loading="isLoading" :el="el" :run="run" :hold-progress="holdProgress"
           /></span>
         </span>
         <span
           v-if="$slots.trailing"
+          ref="trailingEl"
           :class="trailingPart.class"
           :style="trailingPart.style"
           aria-hidden="true"
@@ -67,6 +69,7 @@
     </component>
     <span
       v-if="$slots.badge"
+      ref="badgeEl"
       :class="badgePart.class"
       :style="badgePart.style"
       :data-placement="resolvedBadgePlacement"
@@ -115,19 +118,21 @@
       </span>
       <span
         v-if="$slots.leading"
+        ref="leadingEl"
         :class="leadingPart.class"
         :style="leadingPart.style"
         aria-hidden="true"
       >
         <slot name="leading" />
       </span>
-      <span :class="contentPart.class" :style="contentPart.style">
-        <span :class="labelPart.class" :style="labelPart.style"
+      <span ref="contentEl" :class="contentPart.class" :style="contentPart.style">
+        <span ref="labelEl" :class="labelPart.class" :style="labelPart.style"
           ><slot :loading="isLoading" :el="el" :run="run" :hold-progress="holdProgress"
         /></span>
       </span>
       <span
         v-if="$slots.trailing"
+        ref="trailingEl"
         :class="trailingPart.class"
         :style="trailingPart.style"
         aria-hidden="true"
@@ -185,6 +190,8 @@ import { buttonGroupKey } from '../ButtonGroup/ButtonGroup.vue'
 import type { StyleValue } from 'vue'
 import { useAsyncLoading } from '../../composables/useAsyncLoading'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ButtonMotion } from '../../motion/types'
 import type { ClassValue, UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 
@@ -248,6 +255,8 @@ const rawProps = withDefaults(
       label: UiPartValue
       badge: UiPartValue
     }>
+    /** Motion for its states: `{ states: { active: { label: { scale: '0.94' } } } }`. */
+    motion?: ButtonMotion
   }>(),
   {
     loading: false,
@@ -260,6 +269,8 @@ const rawProps = withDefaults(
     type: 'button',
     as: 'button',
     hold: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
@@ -426,6 +437,26 @@ const restAttrs = computed(() => {
 })
 
 const el = useTemplateRef<HTMLElement>('root')
+const leadingEl = useTemplateRef<HTMLElement>('leadingEl')
+const contentEl = useTemplateRef<HTMLElement>('contentEl')
+const labelEl = useTemplateRef<HTMLElement>('labelEl')
+const trailingEl = useTemplateRef<HTMLElement>('trailingEl')
+const badgeEl = useTemplateRef<HTMLElement>('badgeEl')
+useStateMotion({
+  key: 'button',
+  role: 'press',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({
+    root: el.value,
+    leading: leadingEl.value,
+    content: contentEl.value,
+    label: labelEl.value,
+    trailing: trailingEl.value,
+    badge: badgeEl.value,
+  }),
+  states: () => ({ loading: isLoading.value, disabled: !!props.disabled || !!ariaDisabled.value }),
+})
 const cx = useClassMerge()
 // Theme from ConfigProvider; instance ui prop overrides per-key.
 const themedUi = useThemedUi(
