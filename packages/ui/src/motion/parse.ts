@@ -270,6 +270,9 @@ function role(name: (typeof ROLES)[number], input: unknown, issues: Issues): Dat
       out.morph = { from: 'trigger', ...(raw.hide === undefined ? {} : { hide: raw.hide }) }
     else if (name === 'overlay' && key === 'exitOrder' && (raw === 'together' || raw === 'reverse'))
       out.exitOrder = raw
+    else if (name === 'overlay' && key === 'swap' && (raw === 'sync' || raw === 'wait'))
+      out.swap = raw
+    else if (name === 'overlay' && key === 'resize' && typeof raw === 'boolean') out.resize = raw
     else if (name === 'list' && key === 'stagger' && inRange(raw, 0, 1)) out.stagger = raw
     else if (name === 'list' && key === 'leaving' && (raw === 'pop' || raw === 'hold'))
       out.leaving = raw

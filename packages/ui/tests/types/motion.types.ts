@@ -63,7 +63,7 @@ export const gsapish: DialogMotion<'rows'> = {
   },
 }
 
-// Lists stagger and slide; indicators move; swaps choose sync or wait.
+// Lists stagger and slide; indicators move.
 export const toasts: ToasterMotion = {
   initial: { toast: { opacity: 0, y: -12 } },
   stagger: 0.04,
@@ -71,7 +71,6 @@ export const toasts: ToasterMotion = {
   states: { error: { toast: { x: [0, -6, 6, -3, 0] } } },
 }
 export const tabs: TabsMotion = {
-  swap: 'wait',
   move: ({ indicator }, { from }) => indicator.animate([{ translate: `${from.x}px 0` }, {}], 200),
 }
 
@@ -162,3 +161,6 @@ export const morphNoFrom: DialogMotion = { morph: { hide: false } }
 
 // @ts-expect-error a shared style is data: no element getters
 export const morphStyleFn: MotionStyle = { version: 1, overlay: { morph: { from: () => null } } }
+
+// @ts-expect-error Tabs renders no panels, so there's nothing to swap
+export const tabsSwap: TabsMotion = { swap: 'wait' }

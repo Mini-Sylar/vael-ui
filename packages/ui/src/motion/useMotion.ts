@@ -2,7 +2,7 @@
 import { computed, onMounted, onScopeDispose, shallowReactive } from 'vue'
 import type { TransitionProps } from 'vue'
 import { PRESENCE_ATTR, refElement } from './presence'
-import type { MotionRole, MotionStyle, MotionValues, UseMotionReturn } from './types'
+import type { MotionRole, MotionStyle, MotionValues, OwnMotion, UseMotionReturn } from './types'
 import { useMotionStyle } from './context'
 import { PRESENCE_ID } from './ids'
 import type { ListMotion } from './list'
@@ -19,6 +19,18 @@ import { useComponentMotion } from './useComponentMotion'
  * No `part()` needed for one element: what the Transition moves is the root. Name your targets
  * (`useMotion<'title' | 'lines'>()`) and expose `target` on a slot: they autocomplete there.
  */
+export function useMotion<N extends string = string>(
+  role: 'list',
+  motion?: () => OwnMotion<'list', N> | undefined,
+): UseMotionReturn<N>
+export function useMotion<N extends string = string>(
+  role: 'reveal' | 'content',
+  motion?: () => OwnMotion<'reveal', N> | undefined,
+): UseMotionReturn<N>
+export function useMotion<N extends string = string>(
+  role?: 'overlay',
+  motion?: () => OwnMotion<'overlay', N> | undefined,
+): UseMotionReturn<N>
 export function useMotion<N extends string = string>(
   role: MotionRole = 'overlay',
   motion?: () => unknown,

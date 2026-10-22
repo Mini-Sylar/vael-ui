@@ -67,8 +67,19 @@ export type MotionValues = {
     | TimedValue<NonNullable<StyleProps[K]>>
 }
 
-/** Values per part, keyed by the component's part names (its `ui` keys). */
-export type PartValues<P extends string> = { [K in P]?: MotionValues }
+/** Where an element is: in a swap, `direction` (1 forward, -1 back, 0 neither); in a list, `index`. */
+export interface MotionWhere {
+  direction: 1 | -1 | 0
+  index: number
+}
+
+/**
+ * Values per part, keyed by the component's part names (its `ui` keys). A function gets `where`,
+ * for motion that depends on the direction of a swap or an item's place; shared styles stay data.
+ */
+export type PartValues<P extends string> = {
+  [K in P]?: MotionValues | ((where: MotionWhere) => MotionValues)
+}
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 
@@ -135,6 +146,8 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   select?: keyof HTMLElementTagNameMap | (string & {})
   /** Limit `select` to one slot. */
   slot?: string
+  /** Plays `initial` again, from it back to rest, whenever this value changes; no remount. */
+  replay?: unknown
 }
 
 // ─── Guards ──────────────────────────────────────────────────────────────────
@@ -222,6 +235,8 @@ type OverlayMotion = {
   linked?: Record<string, LinkedMotion>
   /** Closing: `'together'` (default) or `'reverse'`, children first, capped at ~300ms. */
   exitOrder?: 'together' | 'reverse'
+  /** The panel eases to its content's new size (wizard steps, switched views); `false` jumps. */
+  resize?: boolean
 }
 type ListMotion<S extends MotionSpec, N extends string> = {
   stagger?: number
@@ -263,13 +278,13 @@ export type DialogPart =
   | 'maximize'
   | 'close'
 export type DialogMotion<N extends string = string> = ComponentMotion<
-  { parts: DialogPart; overlay: true },
+  { parts: DialogPart; overlay: true; swap: true },
   N
 >
 
 export type PopoverPart = 'positioner' | 'panel'
 export type PopoverMotion<N extends string = string> = ComponentMotion<
-  { parts: PopoverPart; overlay: true },
+  { parts: PopoverPart; overlay: true; swap: true },
   N
 >
 
@@ -289,7 +304,8 @@ export type ToasterMotion = ComponentMotion<{
 }>
 
 export type TabsPart = 'list' | 'item' | 'indicator'
-export type TabsMotion = ComponentMotion<{ parts: TabsPart; indicator: true; swap: true }>
+// Tabs renders no panels (yours, wired with `panelProps`): it moves its indicator, nothing swaps.
+export type TabsMotion = ComponentMotion<{ parts: TabsPart; indicator: true }>
 
 export type InputPart = 'root' | 'input' | 'start' | 'end'
 export type InputMotion = ComponentMotion<{
@@ -329,6 +345,8 @@ export interface MotionStyle {
     morph?: 'trigger' | { from: 'trigger'; hide?: boolean }
     surface?: MotionValues
     exitOrder?: 'together' | 'reverse'
+    swap?: 'sync' | 'wait'
+    resize?: boolean
   }
   list?: RoleValues & { stagger?: number; leaving?: 'pop' | 'hold' }
   reveal?: RoleValues
@@ -353,6 +371,19 @@ export interface MotionStyle {
 // ─── Your own components and the directive ─────────────────────────────────
 
 export type MotionRole = 'overlay' | 'list' | 'reveal' | 'content'
+
+/** What `useMotion(role, motion)` takes: your part names, and the keys of that role. */
+export type OwnMotion<R extends MotionRole, N extends string = string> = Exclude<
+  ComponentMotion<
+    { parts: string } & (R extends 'overlay'
+      ? { overlay: true; swap: true }
+      : R extends 'list'
+        ? { list: true }
+        : { swap: true }),
+    N
+  >,
+  boolean
+>
 
 /** A function ref: bind it with `:ref`, on an element or a component (its root element is used). */
 export type MotionRef = (el: Element | ComponentPublicInstance | null) => void

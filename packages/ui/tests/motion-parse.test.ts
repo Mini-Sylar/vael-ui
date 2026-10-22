@@ -114,3 +114,12 @@ test("morph's object form comes through; anything else in it is dropped", () => 
     expect(issues).toHaveLength(1)
   }
 })
+
+test('overlay swap and resize come through; bad values are dropped', () => {
+  quiet()
+  const ok = parseMotionStyle({ version: 1, overlay: { swap: 'wait', resize: false } })
+  expect(ok.style.overlay).toEqual({ swap: 'wait', resize: false })
+  const bad = parseMotionStyle({ version: 1, overlay: { swap: 'later', resize: 'no' } })
+  expect(bad.style.overlay).toEqual({})
+  expect(bad.issues).toHaveLength(2)
+})
