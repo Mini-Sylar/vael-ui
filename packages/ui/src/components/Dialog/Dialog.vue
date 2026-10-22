@@ -23,7 +23,6 @@
         :data-force-mount="forceMount || undefined"
         :data-origin="fromTrigger ? 'trigger' : undefined"
         :data-ui-motion="motionTransition.css === false ? '' : undefined"
-        :data-ui-hooked="hooked ? '' : undefined"
       >
         <div
           v-if="modal"
@@ -502,8 +501,6 @@ const motion = useComponentMotion({
   trigger: () => (triggerEl?.isConnected && triggerEl !== document.body ? triggerEl : null),
 })
 const { target, phase } = motion
-// Your hook writes the backdrop's opacity every frame: no CSS transition may fight it.
-const hooked = computed(() => !!(motion.resolved.value.enter || motion.resolved.value.leave))
 const motionTransition = motion.transition
 const motionHooks = computed(() => {
   const { css: _css, ...hooks } = motionTransition.value
