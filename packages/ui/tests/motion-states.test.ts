@@ -7,7 +7,13 @@ import AccordionItem from '../src/components/AccordionItem/AccordionItem.vue'
 import Button from '../src/components/Button/Button.vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Input from '../src/components/Input/Input.vue'
-import type { AccordionMotion, ButtonMotion, InputMotion } from '../src/motion/types'
+import OtpInput from '../src/components/OtpInput/OtpInput.vue'
+import type {
+  AccordionMotion,
+  ButtonMotion,
+  InputMotion,
+  OtpInputMotion,
+} from '../src/motion/types'
 
 const frame = () => new Promise(requestAnimationFrame)
 const states = (el: Element | null) =>
@@ -52,6 +58,38 @@ test('an invalid field shakes on entering the state, not when it mounts invalid,
   invalid.value = false
   await nextTick()
   invalid.value = true
+  await vi.waitFor(() => expect(states(root()).some((a) => a.playState === 'running')).toBe(true))
+})
+
+test('a verification code shakes when it turns invalid, and a complete code plays its look', async () => {
+  const invalid = shallowRef(false)
+  const code = shallowRef('')
+  const motion: OtpInputMotion = {
+    states: {
+      invalid: { root: { x: [0, -6, 6, 0] } },
+      complete: { root: { scale: [1, 1.02, 1] } },
+    },
+  }
+  render({
+    setup: () => () =>
+      h(OtpInput, { modelValue: code.value, length: 4, invalid: invalid.value, motion }),
+  })
+  const root = () => document.querySelector('.ui-otp')
+  await vi.waitFor(() => expect(root()).not.toBeNull())
+  for (let i = 0; i < 5; i++) await frame()
+  expect(states(root())).toHaveLength(0)
+
+  invalid.value = true
+  await vi.waitFor(() => expect(states(root()).some((a) => a.playState === 'running')).toBe(true))
+  // Evenly timed: a third of the way through [0, -6, 6, 0], it's at -6.
+  const run = states(root())[0]!
+  run.pause()
+  run.currentTime = Number(run.effect!.getComputedTiming().duration) / 3
+  expect(getComputedStyle(root()!).translate).toBe('-6px')
+  run.cancel()
+
+  invalid.value = false
+  code.value = '1234'
   await vi.waitFor(() => expect(states(root()).some((a) => a.playState === 'running')).toBe(true))
 })
 

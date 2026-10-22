@@ -27,39 +27,56 @@ function dropOn(el: Element, files: File[]) {
   el.dispatchEvent(dragEventWithFiles('drop', dataTransfer))
 }
 
-test('motion=false hands the item enter/leave transition to item-enter/item-leave instead of running the built-in CSS transition', async () => {
+test('motion hooks: your enter and leave get each row as `item`, and a row waits for what they return', async () => {
   const { default: FileUpload } = await import('../src/components/FileUpload/FileUpload.vue')
-  const enters: Array<[Element, () => void]> = []
-  const leaves: Array<[Element, () => void]> = []
+  const entered: Element[] = []
+  const left: Element[] = []
   const screen = await render(FileUpload, {
-    props: { motion: false },
-    attrs: {
-      onItemEnter: (el: Element, done: () => void) => enters.push([el, done]),
-      onItemLeave: (el: Element, done: () => void) => leaves.push([el, done]),
+    props: {
+      motion: {
+        enter: ({ item }: { item: HTMLElement }) => {
+          entered.push(item)
+          return item.animate([{ opacity: 0 }, { opacity: 1 }], 100)
+        },
+        leave: ({ item }: { item: HTMLElement }) => {
+          left.push(item)
+          return item.animate([{ opacity: 1 }, { opacity: 0 }], 300)
+        },
+      },
     },
     global: { stubs: { transition: false, 'transition-group': false } },
   })
-  // Rendering FileUpload directly (not through a fixture) needs one tick before
-  // useFileDrop's useEventListener-attached drop handler is actually wired up.
   await nextTick()
   const dropzone = screen.container.querySelector('.ui-file-upload-dropzone')!
   const items = () => screen.container.querySelectorAll('.ui-file-upload-item')
 
   // The list stays mounted while empty, so even the very first row animates in.
   dropOn(dropzone, [makeFile('a.txt', 'text/plain', 10)])
-  await vi.waitFor(() => expect(enters).toHaveLength(1))
-  const [enterEl, enterDone] = enters[0]!
-  expect(enterEl.tagName).toBe('LI')
-  enterDone() // consumer's own animation "finished" — must not throw
-  expect(items()).toHaveLength(1)
+  await vi.waitFor(() => expect(entered).toHaveLength(1))
+  expect(entered[0]!.tagName).toBe('LI')
 
-  const removeButton = screen.container.querySelector<HTMLButtonElement>('.ui-file-upload-remove')!
-  removeButton.click()
-  await vi.waitFor(() => expect(leaves).toHaveLength(1))
-  // Removing the last row still animates it out.
-  const [leaveEl, leaveDone] = leaves[0]!
-  expect(leaveEl.tagName).toBe('LI')
-  leaveDone()
+  screen.container.querySelector<HTMLButtonElement>('.ui-file-upload-remove')!.click()
+  await vi.waitFor(() => expect(left).toHaveLength(1))
+  // Still there while its leave plays, gone once it ends.
+  expect(items()).toHaveLength(1)
+  await vi.waitFor(() => expect(items()).toHaveLength(0), { timeout: 1000 })
+})
+
+test('motion false: rows come and go at once', async () => {
+  const { default: FileUpload } = await import('../src/components/FileUpload/FileUpload.vue')
+  const screen = await render(FileUpload, {
+    props: { motion: false },
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  await nextTick()
+  const dropzone = screen.container.querySelector('.ui-file-upload-dropzone')!
+  dropOn(dropzone, [makeFile('a.txt', 'text/plain', 10)])
+  await vi.waitFor(() =>
+    expect(screen.container.querySelectorAll('.ui-file-upload-item')).toHaveLength(1),
+  )
+  screen.container.querySelector<HTMLButtonElement>('.ui-file-upload-remove')!.click()
+  await nextTick()
+  expect(screen.container.querySelectorAll('.ui-file-upload-item')).toHaveLength(0)
 })
 
 test('browse click opens the file picker via the hidden input', async () => {

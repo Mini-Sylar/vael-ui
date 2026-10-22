@@ -15,33 +15,34 @@ function root(screen: RenderResult<unknown>): HTMLElement {
   return screen.container.querySelector<HTMLElement>('.ui-speed-dial')!
 }
 
-test('motion=false hands the action enter/leave transition to action-enter/action-leave instead of running the built-in CSS transition', async () => {
+test('motion hooks: each action goes through your enter and leave as `action`, held where it fanned out to', async () => {
   const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
-  const enters: Array<[Element, () => void]> = []
-  const leaves: Array<[Element, () => void]> = []
+  const entered: Element[] = []
+  const left: Element[] = []
   const screen = await render(SpeedDial, {
     props: {
       items: [{ label: 'Home' }, { label: 'Settings' }],
-      motion: false,
-    },
-    attrs: {
-      onActionEnter: (el: Element, done: () => void) => enters.push([el, done]),
-      onActionLeave: (el: Element, done: () => void) => leaves.push([el, done]),
+      motion: {
+        enter: ({ action }: { action: HTMLElement }) => void entered.push(action),
+        leave: ({ action }: { action: HTMLElement }) => {
+          left.push(action)
+          return action.animate([{ opacity: 1 }, { opacity: 0 }], 200)
+        },
+      },
     },
     global: { stubs: { 'transition-group': false } },
   })
 
   await userEvent.click(trigger(screen))
-  await vi.waitFor(() => expect(enters).toHaveLength(2))
-  const [enterEl] = enters[0]!
-  expect(enterEl.getAttribute('role')).toBe('menuitem')
-  enters.forEach(([, done]) => done()) // consumer's own animation "finished" — must not throw
+  await vi.waitFor(() => expect(entered).toHaveLength(2))
+  expect(entered[0]!.getAttribute('role')).toBe('menuitem')
 
   await userEvent.click(trigger(screen))
-  await vi.waitFor(() => expect(leaves).toHaveLength(2))
-  const [leaveEl, leaveDone] = leaves[0]!
-  expect(leaveEl.getAttribute('role')).toBe('menuitem')
-  leaveDone()
+  await vi.waitFor(() => expect(left).toHaveLength(2))
+  // Held in place (not lifted out) while it leaves.
+  expect((left[0] as HTMLElement).style.position).not.toBe('absolute')
+  expect(actionButtons(screen)).toHaveLength(2)
+  await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(0), { timeout: 1000 })
 })
 
 test('motion=false also disables the action-move CSS transition (not just enter/leave)', async () => {
@@ -332,11 +333,6 @@ test('motion=false turns off every built-in transition: trigger icon, trigger an
   const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
   const screen = await render(SpeedDial, {
     props: { items: [{ label: 'Home' }, { label: 'Settings' }], motion: false },
-    // No-op hooks that finish at once, so the actions mount and stay.
-    attrs: {
-      onActionEnter: (_el: Element, done: () => void) => done(),
-      onActionLeave: (_el: Element, done: () => void) => done(),
-    },
   })
   const icon = screen.container.querySelector<HTMLElement>('.ui-speed-dial-trigger-icon')!
   expect(getComputedStyle(icon).transitionProperty).toBe('none')

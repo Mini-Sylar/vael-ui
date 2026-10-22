@@ -3,7 +3,6 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TimelineFixture from './fixtures/TimelineFixture.vue'
 import Timeline from '../src/components/Timeline/Timeline.vue'
-import type { TimelineItemParts } from '../src/components/Timeline/Timeline.vue'
 
 function stepsIn(
   screen: Awaited<ReturnType<typeof render>>,
@@ -196,22 +195,49 @@ test('pushing a new item renders an additional step reactively', async () => {
   await expect.poll(() => stepsIn(screen, 'reactive').length).toBe(2)
 })
 
-test("@item-enter hands over the entering step's parts, including the line leading into it", async () => {
-  const onEnter = vi.fn((_el: Element, done: () => void, _parts: TimelineItemParts) => done())
+test('motion hooks get the entering step and its parts, including the line leading into it', async () => {
+  const onEnter = vi.fn((_parts: Record<string, HTMLElement>) => undefined)
   const screen = await render(Timeline, {
-    props: { items: ['a', 'b'], motion: false, 'onItem-enter': onEnter },
+    props: { items: ['a', 'b'], motion: { enter: onEnter } },
     global: { stubs: { 'transition-group': false } },
   })
   await screen.rerender({ items: ['a', 'b', 'c'] })
   await vi.waitFor(() => expect(onEnter).toHaveBeenCalled())
 
-  const [el, , parts] = onEnter.mock.calls.at(-1)!
+  const [parts] = onEnter.mock.calls.at(-1)!
   const steps = screen.container.querySelectorAll('.ui-timeline-step')
-  expect(el).toBe(steps[2])
+  expect(parts.item).toBe(steps[2])
   expect(parts.marker).toBe(steps[2]!.querySelector('.ui-timeline-marker'))
   expect(parts.content).toBe(steps[2]!.querySelector('.ui-timeline-content'))
-  expect(parts.connector).toBeNull()
+  // The last step has no line below it.
+  expect(parts.connector).toBeUndefined()
   expect(parts.previousConnector).toBe(steps[1]!.querySelector('.ui-timeline-connector'))
+})
+
+test("motion values for a step's parts play on them with the step; `false` adds at once", async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a'],
+      motion: { initial: { marker: { scale: 0.5 } }, spring: { damping: 1, response: 0.4 } },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  await screen.rerender({ items: ['a', 'b'] })
+  const steps = () => screen.container.querySelectorAll('.ui-timeline-step')
+  await vi.waitFor(() => expect(steps()).toHaveLength(2))
+  const marker = steps()[1]!.querySelector<HTMLElement>('.ui-timeline-marker')!
+  await vi.waitFor(() => expect(marker.getAnimations().length).toBeGreaterThan(0))
+  // And the step itself, on its built-in look.
+  expect(steps()[1]!.getAnimations().length).toBeGreaterThan(0)
+  screen.unmount()
+
+  const off = await render(Timeline, {
+    props: { items: ['a'], motion: false },
+    global: { stubs: { 'transition-group': false } },
+  })
+  await off.rerender({ items: ['a', 'b'] })
+  const added = off.container.querySelectorAll<HTMLElement>('.ui-timeline-step')[1]!
+  expect(added.getAnimations()).toHaveLength(0)
 })
 
 test.each(['horizontal', 'vertical'] as const)(

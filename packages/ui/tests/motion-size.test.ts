@@ -100,3 +100,143 @@ test('v-animate.size: a width change is layout, not content, and never animates'
   expect(el().getBoundingClientRect().height).toBeGreaterThan(before)
   expect(sizing(el())).toHaveLength(0)
 })
+
+test('v-animate.size: content arriving in a box sized by it (a flex item) animates, width and all', async () => {
+  const shown = shallowRef(false)
+  render({
+    setup: () => () =>
+      h('div', { style: { display: 'flex' } }, [
+        withDirectives(
+          h(
+            'div',
+            { 'data-testid': 'wrap' },
+            shown.value ? [h('p', { style: { margin: 0 } }, 'Tools')] : [],
+          ),
+          [[vAnimate, undefined, undefined, { size: true }]],
+        ),
+      ]),
+  })
+  const el = () => document.querySelector<HTMLElement>('[data-testid="wrap"]')!
+  await frame()
+  shown.value = true
+  await nextTick()
+  await frame()
+  expect(sizing(el())).toHaveLength(1)
+})
+
+test('v-animate.size: shrinking a box with a child it stretches runs one animation, not a restart a frame', async () => {
+  const tall = shallowRef(true)
+  render({
+    setup: () => () =>
+      withDirectives(
+        h('div', { 'data-testid': 'wrap', style: { display: 'flex', flexDirection: 'column' } }, [
+          // Stretched by the box: it resizes as the box animates, an echo, not new content.
+          h('div', { style: { flex: '1', minHeight: 0 } }, [
+            h('div', { style: { height: tall.value ? '200px' : '60px' } }),
+          ]),
+        ]),
+        [[vAnimate, { duration: 400, easing: 'linear' }, undefined, { size: true }]],
+      ),
+  })
+  const el = () => document.querySelector<HTMLElement>('[data-testid="wrap"]')!
+  await frame()
+  tall.value = false
+  await nextTick()
+  await frame()
+  const first = sizing(el())[0]
+  expect(first).toBeDefined()
+  const from = (first!.effect as KeyframeEffect).getKeyframes()[0]!.height
+  for (let i = 0; i < 6; i++) {
+    await frame()
+    const now = sizing(el())[0]
+    expect(now).toBe(first)
+    expect((now!.effect as KeyframeEffect).getKeyframes()[0]!.height).toBe(from)
+  }
+})
+
+test('v-animate.size: what only shows past the content (an element mid-slide) never inflates the height', async () => {
+  const shown = shallowRef(false)
+  render({
+    setup: () => () =>
+      withDirectives(
+        h('div', { 'data-testid': 'wrap' }, [
+          h('div', { style: { height: '20px' } }),
+          // 30px tall, painted 20px lower: overflow you see, not height it takes.
+          shown.value ? h('div', { style: { height: '30px', translate: '0 20px' } }) : null,
+        ]),
+        [[vAnimate, { duration: 300, easing: 'linear' }, undefined, { size: true }]],
+      ),
+  })
+  const el = () => document.querySelector<HTMLElement>('[data-testid="wrap"]')!
+  await frame()
+  shown.value = true
+  await nextTick()
+  for (let i = 0; i < 8; i++) {
+    await frame()
+    for (const run of sizing(el()))
+      expect((run.effect as KeyframeEffect).getKeyframes()[1]!.height).toBe('50px')
+  }
+})
+
+test('v-animate.size clips only while growing, past the edges that move; shrinking shows what still moves', async () => {
+  const shown = shallowRef(false)
+  render({
+    setup: () => () =>
+      h('div', { style: { display: 'flex' } }, [
+        withDirectives(
+          h('div', { 'data-testid': 'pill' }, [
+            h('span', 'Icon'),
+            shown.value
+              ? h('span', { style: { display: 'block', height: '40px' } }, 'Label')
+              : null,
+          ]),
+          [[vAnimate, { duration: 300, easing: 'linear' }, undefined, { size: true }]],
+        ),
+      ]),
+  })
+  const el = () => document.querySelector<HTMLElement>('[data-testid="pill"]')!
+  await frame()
+  shown.value = true
+  await vi.waitFor(() => expect(sizing(el())).toHaveLength(1))
+  const growing = (sizing(el())[0]!.effect as KeyframeEffect).getKeyframes()[0]!
+  // Wider and taller: cut at the inline end and the bottom, open above and at the start.
+  expect(growing.clipPath).toBe('inset(-100vmax 0px 0px -100vmax)')
+  await vi.waitFor(() => expect(sizing(el())).toHaveLength(0), { timeout: 1000 })
+  shown.value = false
+  await vi.waitFor(() => expect(sizing(el())).toHaveLength(1))
+  const shrinking = (sizing(el())[0]!.effect as KeyframeEffect).getKeyframes()[0]!
+  expect(shrinking.clipPath).toBeUndefined()
+  expect(shrinking.overflow).toBeUndefined()
+})
+
+test('v-animate.size: what leaves inside the box is clipped to it as it shrinks, then the box is itself again', async () => {
+  const shown = shallowRef(true)
+  render({
+    setup: () => () =>
+      h('div', { style: { display: 'flex' } }, [
+        withDirectives(
+          h('button', { 'data-testid': 'pill' }, [
+            h('span', 'Icon'),
+            shown.value
+              ? withDirectives(h('span', { class: 'label' }, 'Save'), [
+                  [vAnimate, { initial: { opacity: 0 } }],
+                ])
+              : null,
+          ]),
+          [[vAnimate, { duration: 300, easing: 'linear' }, undefined, { size: true }]],
+        ),
+      ]),
+  })
+  const el = () => document.querySelector<HTMLElement>('[data-testid="pill"]')!
+  await vi.waitFor(() => expect(sizing(el())).toHaveLength(0))
+  await vi.waitFor(() => expect(el().querySelector('.label')!.getAnimations()).toHaveLength(0))
+  shown.value = false
+  await nextTick()
+  await vi.waitFor(() => expect(el().querySelector('.label')?.getAnimations().length).toBe(1))
+  // It holds the leaving label (positioned) and clips it.
+  expect(getComputedStyle(el()).position).toBe('relative')
+  expect(getComputedStyle(el()).overflow).toBe('clip')
+  await vi.waitFor(() => expect(el().querySelector('.label')).toBeNull(), { timeout: 1000 })
+  expect(el().style.position).toBe('')
+  expect(el().style.overflow).toBe('')
+})

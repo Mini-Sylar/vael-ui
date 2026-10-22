@@ -123,3 +123,24 @@ test('overlay swap and resize come through; bad values are dropped', () => {
   expect(bad.style.overlay).toEqual({})
   expect(bad.issues).toHaveLength(2)
 })
+
+test('every component key survives, with its states and nested chips', () => {
+  quiet()
+  const { style, issues } = parseMotionStyle({
+    version: 1,
+    switch: { states: { checked: { thumb: { scale: 1.1 } } } },
+    select: { chips: { initial: { chip: { opacity: 0 } }, stagger: 0.03 } },
+    separator: { initial: { line: { opacity: 0 } } },
+  })
+  expect(issues).toEqual([])
+  expect(style.switch).toEqual({ states: { checked: { thumb: { scale: 1.1 } } } })
+  expect(style.select).toEqual({ chips: { initial: { chip: { opacity: 0 } }, stagger: 0.03 } })
+  expect(style.separator).toEqual({ initial: { line: { opacity: 0 } } })
+})
+
+test('an engine is code, never data', () => {
+  quiet()
+  const { style, issues } = parseMotionStyle({ version: 1, engine: () => {} })
+  expect(style.engine).toBeUndefined()
+  expect(issues.some((i) => i.includes('engine'))).toBe(true)
+})

@@ -278,31 +278,31 @@ test('the default slot fully replaces built-in card markup — the library still
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
-test("card-enter/card-leave forward TransitionGroup's own (el, done) hooks when motion is false — the GSAP/motion-v escape hatch", async () => {
-  const enterCalls: Element[] = []
-  const leaveCalls: Element[] = []
+test('motion hooks: each toast goes through your enter and leave as `toast`, held where the stack put it', async () => {
+  const entered: Element[] = []
+  const left: Element[] = []
   const screen = await render(Toaster, {
-    props: { motion: false },
-    attrs: {
-      onCardEnter: (el: Element, done: () => void) => {
-        enterCalls.push(el)
-        done()
-      },
-      onCardLeave: (el: Element, done: () => void) => {
-        leaveCalls.push(el)
-        done()
+    props: {
+      motion: {
+        enter: ({ toast: el }: { toast: HTMLElement }) => void entered.push(el),
+        leave: ({ toast: el }: { toast: HTMLElement }) => {
+          left.push(el)
+          return el.animate([{ opacity: 1 }, { opacity: 0 }], 200)
+        },
       },
     },
     global: { stubs: { transition: false, 'transition-group': false } },
   })
-  const id = toast('Imperative motion', { duration: 10000 })
-  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
-  await vi.waitFor(() => expect(enterCalls.length).toBe(1))
-  expect(enterCalls[0]).toBeInstanceOf(HTMLElement)
+  const id = toast('Your motion', { duration: 10000 })
+  await vi.waitFor(() => expect(entered.length).toBe(1))
+  expect(entered[0]).toBeInstanceOf(HTMLElement)
 
+  const card = entered[0] as HTMLElement
+  const placed = { top: card.style.top, left: card.style.left, width: card.style.width }
   dismiss(id)
-  await vi.waitFor(() => expect(leaveCalls.length).toBe(1))
-  // done() was called synchronously above, so Vue actually removes the node.
+  await vi.waitFor(() => expect(left.length).toBe(1))
+  // Not re-placed while it leaves: the stack's own placement stands.
+  expect({ top: card.style.top, left: card.style.left, width: card.style.width }).toEqual(placed)
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull())
   await screen.unmount()
 })

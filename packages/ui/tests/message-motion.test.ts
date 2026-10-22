@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef, defineComponent } from 'vue'
 import Message from '../src/components/Message/Message.vue'
@@ -45,7 +45,7 @@ test('the box grows in and shrinks out with the fade', async () => {
   expect(below()).toBe(start)
 })
 
-test("with before-close, the box shrinks alongside the consumer's own exit", async () => {
+test('while before-close decides, the box holds as it is; it leaves once allowed', async () => {
   const open = shallowRef(true)
   let finish: (() => void) | null = null
   const Fixture = defineComponent({
@@ -64,16 +64,67 @@ test("with before-close, the box shrinks alongside the consumer's own exit", asy
   const below = () =>
     screen.container.querySelector<HTMLElement>('.below')!.getBoundingClientRect().top
   const start = below()
-  // The dismiss button goes through before-close; flipping `open` from outside does not.
   screen.container.querySelector<HTMLButtonElement>('.ui-message-close')!.click()
   await nextTick()
-  await frame()
-  await frame()
-  await frame()
-  // The consumer's tween is still running (done not called), and the box is already shrinking.
-  expect(below()).toBeLessThan(start)
-  expect(screen.container.querySelector('.ui-message')).not.toBeNull()
+  for (let i = 0; i < 4; i++) await frame()
+  // Still deciding (a confirm, say): nothing moves.
+  expect(below()).toBe(start)
   finish!()
+  await vi.waitFor(() => expect(screen.container.querySelector('.ui-message')).toBeNull())
+})
+
+function renderMessage(motion: unknown) {
+  const open = shallowRef(false)
+  const Fixture = defineComponent({
+    setup: () => () => [
+      h(Message as never, { open: open.value, title: 'Saved', motion }),
+      h('p', { class: 'below' }, 'Below'),
+    ],
+  })
+  const screen = render(Fixture, { global: { stubs: { transition: false } } })
+  return { open, screen }
+}
+
+test('your leave plays first, then the space closes; nothing below jumps', async () => {
+  const left: HTMLElement[] = []
+  const { open, screen } = renderMessage({
+    leave: ({ root }: { root: HTMLElement }) => {
+      left.push(root)
+      return root.animate([{ translate: '0' }, { translate: '24px', opacity: 0 }], {
+        duration: 200,
+        fill: 'forwards',
+      })
+    },
+  })
+  const container = (await screen).container
+  open.value = true
+  await vi.waitFor(() => expect(container.querySelector('.ui-message')).not.toBeNull())
   await new Promise((resolve) => setTimeout(resolve, 400))
-  expect(screen.container.querySelector('.ui-message')).toBeNull()
+  const below = () => container.querySelector<HTMLElement>('.below')!.getBoundingClientRect().top
+  const start = below()
+  open.value = false
+  await vi.waitFor(() => expect(left).toHaveLength(1))
+  // Your exit runs with the space held.
+  await frame()
+  await frame()
+  expect(below()).toBe(start)
+  // Then the space closes, through every frame in between.
+  const tops: number[] = []
+  while (container.querySelector('.ui-message')) {
+    tops.push(below())
+    await frame()
+  }
+  expect(tops.some((top) => top < start && top > below())).toBe(true)
+})
+
+test('`false` shows and hides it at once', async () => {
+  const { open, screen } = renderMessage(false)
+  const container = (await screen).container
+  open.value = true
+  await nextTick()
+  expect(container.querySelector('.ui-message')!.getAnimations()).toHaveLength(0)
+  open.value = false
+  await nextTick()
+  await nextTick()
+  expect(container.querySelector('.ui-message')).toBeNull()
 })

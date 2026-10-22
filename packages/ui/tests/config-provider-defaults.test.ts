@@ -175,7 +175,7 @@ test('a component’s own motion="false" still hands the height over to you', as
   expect(q('.ui-collapsible-panel').getAttribute('style') ?? '').toBe('')
 })
 
-test('motion false from a provider: a dismissed toast still leaves, with no @card-leave listener', async () => {
+test('motion false from a provider: a dismissed toast still leaves', async () => {
   useToastQueue().dismiss()
   await render(() => h(ConfigProvider, { motion: false }, () => h(Toaster)), {
     global: { stubs: { transition: false, 'transition-group': false } },
@@ -186,7 +186,7 @@ test('motion false from a provider: a dismissed toast still leaves, with no @car
   await expect.poll(() => all('.ui-toast').length).toBe(0)
 })
 
-test('motion false from a provider: SpeedDial actions still leave, with no @action-leave listener', async () => {
+test('motion false from a provider: SpeedDial actions leave at once', async () => {
   const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
   const open = shallowRef(true)
   await render(

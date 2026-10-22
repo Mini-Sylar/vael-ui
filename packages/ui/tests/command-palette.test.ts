@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { h, ref } from 'vue'
+import { h, ref, shallowRef } from 'vue'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
@@ -124,32 +124,61 @@ test('rows change at once while typing, and the list eases to its new height', a
   })
 })
 
-test('motion false hands appearing and disappearing rows to @item-enter/@item-leave', async () => {
+test('motion hooks: rows that appear and disappear go through your enter and leave', async () => {
   const entered: Element[] = []
-  const pendingLeaves: (() => void)[] = []
+  const left: Element[] = []
   await render(CommandPalette, {
     props: {
       open: true,
       items,
-      motion: false,
-      'onItem-enter': (el: Element, done: () => void) => {
-        entered.push(el)
-        done()
+      motion: {
+        items: {
+          enter: ({ item }: { item: HTMLElement }) => void entered.push(item),
+          leave: ({ item }: { item: HTMLElement }) => {
+            left.push(item)
+            return item.animate([{ opacity: 1 }, { opacity: 0 }], 200)
+          },
+        },
       },
-      'onItem-leave': (_el: Element, done: () => void) => pendingLeaves.push(done),
     },
     ...realTransitions,
   })
   const input = page.getByRole('combobox')
   await userEvent.type(input, 'folder')
-  await vi.waitFor(() => expect(pendingLeaves.length).toBe(2))
+  await vi.waitFor(() => expect(left.length).toBe(2))
+  // Held while their leave plays, then gone.
   expect(page.getByText('New File').query()).not.toBeNull()
-  pendingLeaves.forEach((done) => done())
   await vi.waitFor(() => expect(page.getByText('New File').query()).toBeNull())
 
   await userEvent.clear(input)
   await vi.waitFor(() => expect(entered.length).toBe(2))
   expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
+})
+
+test('motion hooks at the top move the dialog itself; the rows keep their own look', async () => {
+  const left: HTMLElement[] = []
+  const open = shallowRef(true)
+  await render(
+    () =>
+      h(CommandPalette as never, {
+        open: open.value,
+        'onUpdate:open': (v: boolean) => (open.value = v),
+        items,
+        motion: {
+          leave: ({ panel }: { panel: HTMLElement }) => {
+            left.push(panel)
+            return panel.animate([{ opacity: 1 }, { opacity: 0 }], 300)
+          },
+        },
+      }),
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog-panel')).not.toBeNull())
+  const panel = document.querySelector<HTMLElement>('.ui-dialog-panel')!
+  open.value = false
+  await vi.waitFor(() => expect(left).toEqual([panel]))
+  expect(panel.isConnected).toBe(true)
+  await vi.waitFor(() => expect(panel.isConnected).toBe(false), { timeout: 1000 })
 })
 
 test('the dialog has a name, which an aria-label can replace', async () => {

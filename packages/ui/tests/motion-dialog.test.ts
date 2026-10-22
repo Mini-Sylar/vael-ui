@@ -79,7 +79,9 @@ test('{ spring } keeps the built-in look: it starts small and clear, and settles
   const { open, events } = dialog({ spring: { damping: 0.8, response: 0.3 } })
   open.value = true
   await nextTick()
-  // The first frame you can see: still small, still faint (the built-in look, opacity 0 and scale 0.96).
+  // The first frame you can see (a painted one: the look applies within the same task, before paint):
+  // still small, still faint (the built-in look, opacity 0 and scale 0.96).
+  await frame()
   while (!panel() || visible(panel()!) < 0.02) await frame()
   expect(visible(panel()!)).toBeLessThan(0.6)
   expect(scaleOf(panel()!)).toBeLessThan(0.99)

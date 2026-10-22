@@ -1,6 +1,7 @@
 import '../src/style.css'
 import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { userEvent } from 'vitest/browser'
 import { h, nextTick, shallowRef } from 'vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
 import type { DialogMotion } from '../src/motion/types'
@@ -77,7 +78,9 @@ test(
     expect(Math.abs(first.left - t.left)).toBeLessThan(12)
     expect(Math.abs(first.top - t.top)).toBeLessThan(12)
     expect(Math.abs(first.width - t.width)).toBeLessThan(20)
-    expect(getComputedStyle(trigger()).opacity).toBe('0')
+    // It fades in over the trigger first, so the button's text never blanks; then the trigger hides.
+    expect(Number(getComputedStyle(panel()!).opacity)).toBeLessThan(1)
+    await vi.waitFor(() => expect(getComputedStyle(trigger()).opacity).toBe('0'))
     // Settled: the panel's own box, no clip left.
     await vi.waitFor(() => expect(panel()!.hasAttribute('data-ui-m')).toBe(false), {
       timeout: 3000,
@@ -89,13 +92,17 @@ test(
     await nextTick()
     let last = visibleBox(panel()!)
     const widths = new Set<number>()
+    let shownBeforeGone = false
     while (panel()) {
       last = visibleBox(panel()!)
       widths.add(Math.round(last.width))
+      shownBeforeGone = getComputedStyle(trigger()).opacity === '1'
       await frame()
     }
     // It shrinks through sizes on the way, not in one jump.
     expect(widths.size).toBeGreaterThan(5)
+    // The trigger was back under it before it went, and it had faded off it: no blank frame.
+    expect(shownBeforeGone).toBe(true)
     expect(Math.abs(last.left - t.left)).toBeLessThan(16)
     expect(Math.abs(last.width - t.width)).toBeLessThan(24)
     expect(getComputedStyle(trigger()).opacity).toBe('1')
@@ -157,3 +164,140 @@ test(
     expect(document.activeElement).toBe(trigger())
   },
 )
+
+function setupWith(motion: DialogMotion, label = false, tag = 'button') {
+  const open = shallowRef(false)
+  render(
+    {
+      setup: () => () => [
+        h(
+          tag,
+          {
+            'data-testid': 'trigger',
+            role: tag === 'button' ? undefined : 'button',
+            style:
+              'position: fixed; left: 40px; top: 40px; width: 120px; height: 48px; background: rgb(255, 0, 0); border: 0',
+            onClick: () => (open.value = true),
+          },
+          label
+            ? [
+                h(
+                  'span',
+                  { class: 'from', 'data-layout-id': 'lbl', style: 'display: inline-block' },
+                  'Open',
+                ),
+              ]
+            : 'Open',
+        ),
+        h(
+          Dialog as never,
+          {
+            open: open.value,
+            'onUpdate:open': (v: boolean) => (open.value = v),
+            title: 'Morph',
+            motion,
+          },
+          () =>
+            label
+              ? h(
+                  'span',
+                  { class: 'to', 'data-layout-id': 'lbl', style: 'display: inline-block' },
+                  'Open',
+                )
+              : 'Body',
+        ),
+      ],
+    },
+    real,
+  )
+  return open
+}
+// The first frame the morph shows: clipped onto the trigger.
+const firstFrame = async () => {
+  await nextTick()
+  for (let i = 0; i < 30; i++) {
+    const p = panel()
+    if (p && /^inset\(\d/.test(getComputedStyle(p).clipPath)) return
+    await frame()
+  }
+}
+
+test('a click that leaves focus where it was (Safari) still morphs out of the button', async () => {
+  // A real click on something that can't take focus: focus stays on <body>, as in Safari.
+  setupWith({ morph: 'trigger' }, false, 'div')
+  expect(document.activeElement).toBe(document.body)
+  await userEvent.click(trigger())
+  await firstFrame()
+  // Morphing: clipped to the button's size near it (not opening centred, unclipped).
+  expect(getComputedStyle(panel()!).clipPath).toMatch(/^inset\(\d/)
+  const t = trigger().getBoundingClientRect()
+  const first = visibleBox(panel()!)
+  expect(Math.abs(first.left - t.left)).toBeLessThan(30)
+  expect(Math.abs(first.width - t.width)).toBeLessThan(40)
+})
+
+test("the panel starts in the button's colour, so the button becomes it", async () => {
+  setupWith({ morph: 'trigger' })
+  trigger().focus()
+  trigger().click()
+  await firstFrame()
+  const [r, g, b] = getComputedStyle(panel()!).backgroundColor.match(/\d+/g)!.map(Number)
+  // Still red, on its way to the panel's own surface.
+  expect(r).toBeGreaterThan(200)
+  expect(g! + b!).toBeLessThan(200)
+})
+
+test('with the trigger staying, the panel fades into it as it lands instead of covering it', async () => {
+  const open = setupWith({ morph: { from: 'trigger', hide: false } })
+  trigger().focus()
+  trigger().click()
+  await vi.waitFor(() => expect(panel()?.hasAttribute('data-ui-m')).toBe(false), { timeout: 3000 })
+  open.value = false
+  await nextTick()
+  let last = 1
+  while (panel()) {
+    last = Number(getComputedStyle(panel()!).opacity)
+    await frame()
+  }
+  expect(last).toBeLessThan(0.15)
+  expect(getComputedStyle(trigger()).opacity).toBe('1')
+})
+
+test("an element under the same layoutId in the button and the panel starts on the button's", async () => {
+  setupWith({ morph: 'trigger' }, true)
+  trigger().focus()
+  trigger().click()
+  // Its own first frame: carried (another test's panel may still be leaving).
+  for (let i = 0; i < 60; i++) {
+    const to = document.querySelector('.to')
+    if (to && getComputedStyle(to).translate !== 'none') break
+    await frame()
+  }
+  // Where it starts, whatever frame this is: its resting box, plus where the panel's and its own
+  // translate start (each transition's first keyframe).
+  const xy = (v: unknown) =>
+    String(v ?? '0px 0px')
+      .split(' ')
+      .map((n) => Number.parseFloat(n) || 0)
+  const moving = (el: Element) => {
+    const run = el
+      .getAnimations()
+      .find((a) => (a as CSSTransition).transitionProperty === 'translate')
+    const start = xy((run?.effect as KeyframeEffect | undefined)?.getKeyframes()[0]?.translate)
+    return {
+      start,
+      now: xy(getComputedStyle(el).translate === 'none' ? '' : getComputedStyle(el).translate),
+    }
+  }
+  const label = document.querySelector('.to')!
+  const p = moving(label.closest('.ui-dialog-panel')!)
+  const l = moving(label)
+  const box = label.getBoundingClientRect()
+  const from = document.querySelector('.from')!.getBoundingClientRect()
+  const startLeft = box.left - p.now[0]! - l.now[0]! + p.start[0]! + l.start[0]!
+  const startTop = box.top - p.now[1]! - l.now[1]! + p.start[1]! + l.start[1]!
+  expect(Math.abs(startLeft - from.left)).toBeLessThan(3)
+  expect(Math.abs(startTop - from.top)).toBeLessThan(3)
+  // Seen the whole way: the content fade passes over it.
+  expect(Number(getComputedStyle(document.querySelector('.to')!).opacity)).toBe(1)
+})

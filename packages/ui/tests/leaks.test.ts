@@ -2,7 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { h, nextTick, onMounted, shallowRef } from 'vue'
+import { h, nextTick, onMounted, shallowRef, withDirectives } from 'vue'
 import type { Component } from 'vue'
 import { trackResources } from './utils/resources'
 import AccordionFixture from './fixtures/AccordionFixture.vue'
@@ -59,6 +59,8 @@ import Textarea from '../src/components/Textarea/Textarea.vue'
 import ColorPicker from '../src/components/ColorPicker/ColorPicker.vue'
 import Editable from '../src/components/Editable/Editable.vue'
 import ScrollArea from '../src/components/ScrollArea/ScrollArea.vue'
+import Dialog from '../src/components/Dialog/Dialog.vue'
+import { vAnimate } from '../src/directives/vAnimate'
 
 // Each component is mounted once to install any page-wide singletons (focus-visible tracking,
 // the layer stack), then mounted, used and unmounted again under the tracker. Whatever is still
@@ -227,6 +229,58 @@ const cases: Case[] = [
   {
     name: 'Editable',
     mount: () => ({ render: () => h(Editable, { modelValue: 'Name', 'aria-label': 'e' }) }),
+  },
+  {
+    name: 'v-animate: size, layout, layoutId, replay, when visible, leave in place',
+    mount: () => ({
+      setup() {
+        const shown = shallowRef(true)
+        const key = shallowRef(0)
+        setTimeout(() => {
+          shown.value = false
+          key.value++
+        }, 30)
+        const quick = { duration: 80 }
+        return () =>
+          h('div', [
+            withDirectives(h('section', [shown.value ? h('p', 'grows') : null]), [
+              [vAnimate, quick, undefined, { size: true }],
+            ]),
+            withDirectives(h('p', 'placed'), [[vAnimate, { layout: true, ...quick }]]),
+            shown.value
+              ? withDirectives(h('p', 'goes'), [[vAnimate, { initial: { opacity: 0 }, ...quick }]])
+              : null,
+            withDirectives(h('p', 'replays'), [
+              [vAnimate, { initial: { opacity: 0 }, replay: key.value, ...quick }],
+            ]),
+            withDirectives(h('p', { style: 'margin-top: 3000px' }, 'later'), [
+              [vAnimate, { initial: { opacity: 0 }, when: 'visible' }],
+            ]),
+            shown.value
+              ? withDirectives(h('span', 'from'), [[vAnimate, { layoutId: 'leak', ...quick }]])
+              : withDirectives(h('b', 'to'), [[vAnimate, { layoutId: 'leak', ...quick }]]),
+          ])
+      },
+    }),
+  },
+  {
+    name: 'Dialog morphing, swapping a view, resizing and closing',
+    mount: () => ({
+      setup() {
+        const open = shallowRef(true)
+        const step = shallowRef(1)
+        setTimeout(() => (step.value = 2), 60)
+        setTimeout(() => (open.value = false), 200)
+        return () => [
+          h('button', 'Open'),
+          h(
+            Dialog as never,
+            { open: open.value, title: 'Leak', motion: { morph: 'trigger', swap: 'sync' } },
+            () => h('div', { key: step.value }, `Step ${step.value}`),
+          ),
+        ]
+      },
+    }),
   },
   {
     name: 'ScrollArea',

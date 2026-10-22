@@ -1,7 +1,8 @@
 import '../src/style.css'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { nextTick } from 'vue'
+import type { CalendarMotion } from '../src/motion/types'
 import Calendar from '../src/components/Calendar/Calendar.vue'
 
 const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
@@ -76,4 +77,63 @@ test('the header label eases to its new width when the level changes', async () 
   expect(partway).toBeLessThanOrEqual(Math.max(before, after) + 1)
   expect(offCentre).toBeLessThan(6)
   expect(button().style.inlineSize).toBe('')
+})
+
+test('a motion object: the engine plays the month change, each way the way you moved', async () => {
+  const motion: CalendarMotion = {
+    initial: { grid: ({ direction }) => ({ opacity: 0, x: 20 * direction }) },
+    exit: { grid: ({ direction }) => ({ opacity: 0, x: -20 * direction }) },
+    duration: 300,
+  }
+  const screen = await render(Calendar, {
+    props: { modelValue: new Date(2026, 9, 20), motion },
+    global: { stubs: { transition: false } },
+  })
+  const nav = (name: string) =>
+    screen.container.querySelector<HTMLElement>(`[aria-label="${name}"]`)!
+  const leavingTo = async () => {
+    const height = screen.container.querySelector('[role="grid"]')!.getBoundingClientRect().height
+    await vi.waitFor(() =>
+      expect(screen.container.querySelectorAll('[role="grid"]')).toHaveLength(2),
+    )
+    const [leaving, entering] = screen.container.querySelectorAll<HTMLElement>('[role="grid"]')
+    // Played by the engine, not the CSS classes; it keeps its place and size while it goes.
+    expect(leaving!.className).not.toContain('leave-active')
+    expect(leaving!.getBoundingClientRect().height).toBeCloseTo(height, 0)
+    expect(leaving!.getBoundingClientRect().top).toBeCloseTo(
+      entering!.getBoundingClientRect().top,
+      0,
+    )
+    await vi.waitFor(() => expect(leaving!.getAnimations()).toHaveLength(1))
+    const end = (leaving!.getAnimations()[0]!.effect as KeyframeEffect).getKeyframes().at(-1)!
+    return String(end.translate)
+  }
+  nav('Next month').click()
+  // The label goes first (one after the other), so it gets out of the way quickly.
+  await vi.waitFor(() => {
+    const label = screen.container.querySelector('.ui-calendar-label-text')!
+    const run = label.getAnimations()[0]
+    expect(Number(run?.effect?.getComputedTiming().duration)).toBeLessThanOrEqual(150)
+  })
+  expect(await leavingTo()).toMatch(/^-20px/)
+  await vi.waitFor(() => expect(screen.container.querySelectorAll('[role="grid"]')).toHaveLength(1))
+  nav('Previous month').click()
+  expect(await leavingTo()).toMatch(/^20px/)
+})
+
+test("a motion object, in the month view: the leaving grid keeps the entering grid's height", async () => {
+  const screen = await render(Calendar, {
+    props: { modelValue: new Date(2026, 9, 20), motion: { duration: 300 } },
+    global: { stubs: { transition: false } },
+  })
+  screen.container.querySelector<HTMLElement>('.ui-calendar-label--button')!.click()
+  await settle()
+  screen.container.querySelector<HTMLElement>('[aria-label*="next" i]')!.click()
+  await vi.waitFor(() => expect(screen.container.querySelectorAll('[role="grid"]')).toHaveLength(2))
+  await frame()
+  const [leaving, entering] = screen.container.querySelectorAll<HTMLElement>('[role="grid"]')
+  expect(leaving!.getBoundingClientRect().height).toBeCloseTo(
+    entering!.getBoundingClientRect().height,
+    0,
+  )
 })

@@ -24,3 +24,25 @@ test('listEl is the results <ul>, and the list eases to its new height', async (
   app.unmount()
   host.remove()
 })
+
+test("the panel doesn't ease the change the list already eases (one animation, not two racing)", async () => {
+  const host = document.createElement('div')
+  document.body.append(host)
+  const app = createVaporApp(CommandPaletteVaporRoot)
+  const root = app.mount(host) as unknown as { palette: { listEl: HTMLElement | null } }
+  await vi.waitFor(() => expect(root.palette.listEl?.tagName).toBe('UL'))
+  const panel = root.palette.listEl!.closest<HTMLElement>('.ui-dialog-panel')!
+  await vi.waitFor(() => expect(panel.getAnimations()).toHaveLength(0))
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  let resized = false
+  const watch = () => {
+    if (panel.getAnimations().some((a) => a.id === 'ui-size')) resized = true
+    if (panel.isConnected) requestAnimationFrame(watch)
+  }
+  watch()
+  await userEvent.type(page.getByRole('combobox'), 'Item 1')
+  for (let i = 0; i < 10; i++) await new Promise(requestAnimationFrame)
+  expect(resized).toBe(false)
+  app.unmount()
+  host.remove()
+})

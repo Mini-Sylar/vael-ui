@@ -2,7 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { defineComponent, h, useTemplateRef } from 'vue'
+import { defineComponent, h, nextTick, shallowRef, useTemplateRef } from 'vue'
 import { useHoverIndicator } from '../src/composables/useHoverIndicator'
 
 const List = defineComponent({
@@ -74,4 +74,40 @@ test('a list nested inside another keeps its own highlight', async () => {
   await vi.waitFor(() =>
     expect(getComputedStyle(document.querySelector('.outer-indicator')!).opacity).toBe('0'),
   )
+})
+
+test('a list shown again (a menu reopened) gets its indicator placed on the same row', async () => {
+  const shown = shallowRef(true)
+  const Toggled = defineComponent({
+    setup() {
+      const list = useTemplateRef<HTMLElement>('list')
+      const indicator = useTemplateRef<HTMLElement>('indicator')
+      useHoverIndicator(list, { itemSelector: '.row', indicatorEl: indicator })
+      return () =>
+        shown.value
+          ? h(
+              'div',
+              { ref: 'list', style: 'position: relative; isolation: isolate; width: 200px' },
+              [
+                h('div', { ref: 'indicator', class: 'ui-indicator', 'aria-hidden': 'true' }),
+                ...['One', 'Two'].map((label) =>
+                  h('button', { class: 'row', style: 'display: block; width: 100%' }, label),
+                ),
+              ],
+            )
+          : null
+    },
+  })
+  const screen = await render(Toggled)
+  const placed = () => document.querySelector<HTMLElement>('.ui-indicator')!.style.translate
+  await userEvent.hover(screen.getByText('Two'))
+  await vi.waitFor(() => expect(placed()).not.toBe(''))
+  // Gone with the pointer still on it (an item chosen), then back.
+  shown.value = false
+  await nextTick()
+  shown.value = true
+  await nextTick()
+  await userEvent.unhover(document.body)
+  await userEvent.hover(screen.getByText('Two'))
+  await vi.waitFor(() => expect(placed()).not.toBe(''))
 })

@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeAll, expect, test, vi } from 'vitest'
-import { nextTick } from 'vue'
+import { h, nextTick, shallowRef } from 'vue'
 import { render } from 'vitest-browser-vue'
 import { loadSortableEngine } from '../src/composables/useLazySortable'
 import type { RenderResult } from 'vitest-browser-vue'
@@ -1301,4 +1301,40 @@ test('selection controls keep their press layer in a small table and go static i
   expect(getComputedStyle(tbody!.querySelector<HTMLElement>('.ui-checkbox-box')!).willChange).toBe(
     'auto',
   )
+})
+
+test('motion hooks: rows that come and go go through your enter and leave as `row`, kept in the table', async () => {
+  const { default: DataTable } = await import('../src/components/DataTable/DataTable.vue')
+  const { default: Column } = await import('../src/components/Column.vue')
+  const rows = shallowRef([{ id: 1, name: 'One' }])
+  const entered: Element[] = []
+  const left: Element[] = []
+  const motion = {
+    enter: ({ row }: { row: HTMLElement }) => void entered.push(row),
+    leave: ({ row }: { row: HTMLElement }) => {
+      left.push(row)
+      return row.animate([{ opacity: 1 }, { opacity: 0 }], 200)
+    },
+  }
+  await render(
+    {
+      setup: () => () =>
+        h(DataTable as never, { data: rows.value, rowKey: 'id', motion }, () =>
+          h(Column as never, { field: 'name', header: 'Name' }),
+        ),
+    },
+    { global: { stubs: { 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(document.querySelectorAll('tbody tr')).toHaveLength(1))
+  rows.value = [...rows.value, { id: 2, name: 'Two' }]
+  await vi.waitFor(() => expect(entered).toHaveLength(1))
+  expect(entered[0]!.tagName).toBe('TR')
+  rows.value = rows.value.slice(1)
+  await vi.waitFor(() => expect(left).toHaveLength(1))
+  // In the table's flow while it leaves, then gone.
+  expect((left[0] as HTMLElement).style.position).toBe('')
+  expect(document.querySelectorAll('tbody tr')).toHaveLength(2)
+  await vi.waitFor(() => expect(document.querySelectorAll('tbody tr')).toHaveLength(1), {
+    timeout: 1000,
+  })
 })
