@@ -100,6 +100,8 @@ import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { OtpInputMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -129,6 +131,8 @@ const rawProps = withDefaults(
     name?: string
     /** Splits the cells into groups with a separator between them: a group size (`3` for `123-456`), or each group's size (`[3, 4]`). */
     groups?: number | number[]
+    /** Animates its states, like a shake when the code is wrong: `{ states: { invalid: { root: { x: [0, -6, 6, -3, 0] } } } }`. */
+    motion?: OtpInputMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -137,7 +141,16 @@ const rawProps = withDefaults(
       separator: UiPartValue
     }>
   }>(),
-  { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false, variant: 'cells' },
+  {
+    length: 6,
+    type: 'numeric',
+    mask: false,
+    disabled: false,
+    invalid: false,
+    variant: 'cells',
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
@@ -345,6 +358,18 @@ watch(activeIndex, () => {
 })
 
 const root = useTemplateRef<HTMLElement>('root')
+useStateMotion({
+  key: 'otpInput',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value }),
+  states: () => ({
+    invalid: isInvalid.value,
+    complete: dataState.value === 'complete',
+    disabled: isDisabled.value,
+    focus: isFocused.value,
+  }),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.otpInput,

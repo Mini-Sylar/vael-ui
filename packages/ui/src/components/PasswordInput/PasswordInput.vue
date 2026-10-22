@@ -176,6 +176,8 @@ import { omitAttrs } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { PasswordInputMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -212,8 +214,12 @@ const rawProps = withDefaults(
     rules?: PasswordRule[]
     /** Where the requirements hint renders. `'none'` disables it outright. @default 'popover' */
     hintPlacement?: 'inline' | 'popover' | 'none'
-    /** `false` skips the hint's enter/exit transition. Inline mode only. @default true */
-    motion?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { invalid: { root: { x: [0, -6, 6, 0] } } } }`). The inline `hint` is a part;
+     * the popover one is not. `false` skips the inline hint's enter/exit transition. @default true
+     */
+    motion?: PasswordInputMotion
     /** Which side of the input the hint appears on, in both `'popover'` and `'inline'` mode.
      * Inline defaults to `'bottom'`. */
     side?: PopoverSide
@@ -308,6 +314,20 @@ const root = useTemplateRef<HTMLElement>('root')
 const inputRef = useTemplateRef<ComponentExposed<typeof Input>>('inputRef')
 const el = computed(() => root.value)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
+const parts = useStateMotion({
+  key: 'passwordInput',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  // The popover hint is teleported, so only the inline one is found.
+  selectors: {
+    root: '.ui-password-input',
+    input: '.ui-input-el',
+    toggle: '.ui-password-input-toggle',
+    hint: '.ui-password-input-hint',
+  },
+  states: () => ({ invalid: isInvalid.value, disabled: isDisabled.value }),
+})
 
 const popoverRef = useTemplateRef<ComponentExposed<typeof Popover>>('popoverRef')
 const hintPanelEl = computed(() => popoverRef.value?.panelEl ?? null)
@@ -365,5 +385,9 @@ defineExpose({
   closeHint,
   /** Aborts a pending `beforeClose` exit and keeps the hint popover open. */
   cancelCloseHint,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

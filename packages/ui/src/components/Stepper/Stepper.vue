@@ -113,6 +113,8 @@ import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { StepperMotion } from '../../motion/types'
 
 /** Index of the active step. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
@@ -132,11 +134,12 @@ const rawProps = withDefaults(
     /** `false` renders a display-only progress indicator with no click handling. @default true */
     clickable?: boolean
     /**
-     * Built-in transitions: the check swap, circle colors and connector fill. `false` makes them
-     * instant.
+     * How it moves: its parts' appearance, step by step (`{ initial: { step: { opacity: 0, y: 4 } }, stagger: 0.06 }`),
+     * over `root`, `step`, `circle`, `connector` and `content`. The built-in transitions are the
+     * check swap, circle colors and connector fill; `false` makes them instant.
      * @default true
      */
-    motion?: boolean
+    motion?: StepperMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -204,6 +207,20 @@ function onStepClick(index: number, item: T) {
 
 const root = useTemplateRef<HTMLElement>('root')
 useFocusableScroller(root)
+const parts = useStateMotion({
+  key: 'stepper',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-stepper',
+    step: '.ui-stepper-step',
+    circle: '.ui-stepper-circle',
+    connector: '.ui-stepper-connector',
+    content: '.ui-stepper-content',
+  },
+  states: () => ({}),
+})
 // By index: a circle remounts when its step becomes clickable, and a v-for ref array would reorder.
 const circleSlots = shallowReactive<(HTMLElement | null)[]>([])
 const labelSlots = shallowReactive<(HTMLElement | null)[]>([])
@@ -263,5 +280,9 @@ defineExpose({
   connectorEls,
   /** Step label elements, in order. Empty when the `item` slot replaces them. */
   labelEls,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

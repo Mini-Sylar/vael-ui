@@ -40,6 +40,8 @@ import type { ResizeDirection, ResizeEdge } from '../../composables/useResizable
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ResizableMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -68,6 +70,12 @@ const props = withDefaults(
     disabled?: boolean
     /** Accessible label for the handle. @default 'Resize' */
     ariaLabel?: string
+    /**
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0 } } }`) and its states
+     * (`{ states: { dragging: { handle: { scale: '1.2' } } } }`). `false` turns its own animation
+     * off.
+     */
+    motion?: ResizableMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; handle: UiPartValue }>
   }>(),
@@ -78,6 +86,8 @@ const props = withDefaults(
     edge: 'end',
     disabled: false,
     ariaLabel: 'Resize',
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 
@@ -97,6 +107,15 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(modelV
   direction: () => props.direction,
   edge: () => props.edge,
   disabled: () => props.disabled,
+})
+
+// The root is the panel: `panel` has no element of its own.
+const parts = useStateMotion({
+  key: 'resizable',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value, handle: handleEl.value }),
+  states: () => ({ dragging: isDragging.value }),
 })
 
 const sizeStyle = computed(() => ({
@@ -126,5 +145,9 @@ defineExpose({
   handleEl,
   /** Whether you're dragging the handle with a pointer. */
   isDragging,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

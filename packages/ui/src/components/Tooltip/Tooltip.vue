@@ -1,7 +1,7 @@
 <template>
   <slot v-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTo">
-    <Transition name="ui-tooltip" appear :css="!forceMount">
+    <Transition name="ui-tooltip" appear v-bind="tooltipTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -68,8 +68,14 @@ export interface TooltipProps {
   closeOnEsc?: boolean
   /** Runs before the tooltip closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The tooltip stays open while the promise is pending. */
   beforeClose?: BeforeClose<TooltipCloseReason>
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How it moves. `false` shows and hides it at once. An object moves it your way, like Popover's:
+   * values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. A warm open, right after
+   * another tooltip, stays instant either way.
+   */
+  motion?: TooltipMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
   /** Class and style overrides for each part. */
@@ -79,13 +85,14 @@ export interface TooltipProps {
 
 <script setup lang="ts">
 import type { TooltipCloseReason } from '../../composables/useTooltip'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, TooltipMotion } from '../../motion/types'
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
 import { computed, inject, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentPublicInstance } from 'vue'
 import { setDescribedBy, useTooltip } from '../../composables/useTooltip'
+import { useTooltipMotion } from '../../composables/useTooltipMotion'
 import type { TooltipOpenChangeDetails } from '../../composables/useTooltip'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -105,6 +112,7 @@ const props = withDefaults(defineProps<TooltipProps>(), {
   interactive: true,
   closeOnEsc: true,
   forceMount: false,
+  motion: undefined,
   teleportTo: 'body',
 })
 
@@ -181,6 +189,17 @@ const {
 })
 
 const tooltipId = useId()
+
+const tooltipTransition = useTooltipMotion({
+  name: 'Tooltip',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => triggerElRef.value,
+  forceMount: () => props.forceMount,
+  instant: () => instant.value,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 
 // A content resize while open morphs the box from the old size, inside useTooltip.
 

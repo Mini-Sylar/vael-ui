@@ -84,6 +84,8 @@ import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { TextareaMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -111,6 +113,12 @@ const rawProps = withDefaults(
     autoGrow?: boolean
     /** Maximum rows `autoGrow` grows to; unset means no cap. */
     maxRows?: number
+    /**
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { invalid: { root: { x: [0, -6, 6, 0] } } } }`). `false` turns its own animation
+     * off.
+     */
+    motion?: TextareaMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -121,7 +129,15 @@ const rawProps = withDefaults(
       bottomEnd: UiPartValue
     }>
   }>(),
-  { disabled: false, readonly: false, invalid: false, rows: 3, autoGrow: false },
+  {
+    disabled: false,
+    readonly: false,
+    invalid: false,
+    rows: 3,
+    autoGrow: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
@@ -252,6 +268,13 @@ const textareaStyle = computed(() => ({
 }))
 
 const root = useTemplateRef<HTMLElement>('root')
+const parts = useStateMotion({
+  key: 'textarea',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value, textarea: textareaEl.value }),
+  states: () => ({ invalid: isInvalid.value, disabled: isDisabled.value }),
+})
 const slots = useSlots()
 const hasSlot = useSlotPresence(slots)
 const overlay = useTextOverlay(textareaEl, root, () => hasSlot('display'), { multiline: true })
@@ -290,5 +313,9 @@ defineExpose({
   el: root,
   /** Native `<textarea>` element. */
   textareaEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

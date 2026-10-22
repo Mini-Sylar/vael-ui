@@ -32,21 +32,17 @@
         <LazyAnimatedText
           v-else-if="!multiple || display === 'text'"
           :value="displayLabel"
-          :motion="props.motion"
+          :motion="!!props.motion"
         />
         <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
         <!-- The chips group stays mounted when the last chip goes, so it leaves like the others
              instead of being unmounted with its group; the placeholder slides in behind it. -->
         <template v-else>
           <TransitionGroup
-            name="ui-chip-item"
+            v-bind="chipsTransition"
+            :data-motion="props.motion ? undefined : 'off'"
             tag="span"
             class="ui-select-chips"
-            :css="props.motion"
-            :data-motion="props.motion ? undefined : 'off'"
-            @enter="chipEnterHook"
-            @leave="chipLeaveHook"
-            @leave-cancelled="resetLeaveStyles"
           >
             <Chip
               v-for="item in visibleChips"
@@ -70,7 +66,7 @@
     </span>
     <Transition
       name="ui-clear"
-      :css="props.motion"
+      :css="!!props.motion"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -107,7 +103,7 @@
   </div>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" appear :css="!forceMount">
+    <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -182,7 +178,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :motion="props.motion"
+            :motion="!!props.motion"
             :sections="hasGroups ? filtered.sections : undefined"
             :ui="{
               list: themedUi()?.list,
@@ -253,25 +249,22 @@ export type SelectFilter<T> = boolean | ((item: T, query: string) => boolean)
 
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
 import type { PopoverCloseReason } from '../../composables/usePopover'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, SelectMotion } from '../../motion/types'
 import './Select.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/clear-transition.css'
-import {
-  collapseLeavingChip,
-  measureClearSpace,
-  resetLeaveStyles,
-  startClearLeave,
-} from '../../composables/dom'
+import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
 import '../shared/select-panel.css'
 import { useChipRowWidth } from '../../composables/useChipRowWidth'
+import { useChipTransition } from '../../composables/useChipTransition'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
+import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
@@ -355,7 +348,7 @@ const rawProps = withDefaults(
     closeOnOutside?: boolean
     /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
     beforeClose?: BeforeClose<PopoverCloseReason>
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
@@ -370,12 +363,14 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips the built-in motion: the list easing to its new height as you search, the clear
-     * button, and chip transitions (`multiple`), which you can animate yourself via
-     * `@chip-enter`/`@chip-leave`.
+    /**
+     * How it moves. `false` skips all of it: the panel opening, the list easing to its new height as
+     * you search, the clear button and the chips. An object moves the panel your way, like
+     * Popover's: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. `chips` does
+     * the same for the chips (`{ chips: { initial: { chip: { opacity: 0, y: 4 } } } }`).
      * @default true
      */
-    motion?: boolean
+    motion?: SelectMotion
     /** Adds a search box to the panel. `true` matches labels ignoring case and accents, a function
      * matches your way, `false` leaves filtering to you via `v-model:query`. */
     filter?: SelectFilter<T>
@@ -431,20 +426,13 @@ const emit = defineEmits<{
   'reach-end': []
   /** Fires when you pick an item, including a pick that deselects it in `multiple` mode. */
   select: [item: T]
-  /** Fires instead of the built-in CSS transition when `motion` is `false`. Call `done()` once your enter animation finishes. */
-  'chip-enter': [el: Element, done: () => void]
-  /** Same as `@chip-enter`, for a chip's removal. */
-  'chip-leave': [el: Element, done: () => void]
 }>()
 
-// Same shape as SpeedDial's own enterHook/leaveHook.
-const chipEnterHook = computed(() =>
-  props.motion ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
-)
-const chipLeaveHook = computed(() =>
-  props.motion
-    ? collapseLeavingChip
-    : (el: Element, done: () => void) => emit('chip-leave', el, done),
+const chipsTransition = useChipTransition(
+  () => rawProps.motion,
+  () => !!props.motion,
+  'select',
+  'Select',
 )
 
 defineSlots<{
@@ -545,11 +533,21 @@ const valueEl = useTemplateRef<HTMLElement>('valueEl')
 useChipRowWidth({
   row: () => valueEl.value,
   empty: () => isEmpty.value,
-  active: () => props.multiple && props.display === 'chip' && props.motion,
+  active: () => props.multiple && props.display === 'chip' && !!props.motion,
   placeholder: '.ui-select-placeholder',
 })
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const panelTransition = useSelectPanelMotion({
+  name: 'Select',
+  key: 'select',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => triggerEl.value,
+  forceMount: () => props.forceMount,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 const filterInputRef = useTemplateRef<{ el: HTMLElement | null; inputEl: HTMLInputElement | null }>(
   'filterInputRef',
 )

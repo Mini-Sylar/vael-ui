@@ -73,6 +73,8 @@ import Input from '../Input/Input.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { EditableMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -98,8 +100,12 @@ const rawProps = withDefaults(
     disabled?: boolean
     /** Control size, as on Input. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
-    /** `false` skips the swap transition; use the exposed `previewEl` and `inputEl` for your own. @default true */
-    motion?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { editing: { root: { scale: '1.01' } } } }`). `false` skips the swap transition;
+     * use the exposed `previewEl` and `inputEl` for your own. @default true
+     */
+    motion?: EditableMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -151,6 +157,20 @@ const input = useTemplateRef<InstanceType<typeof Input>>('input')
 const editArea = useTemplateRef<HTMLElement>('editArea')
 const preview = useTemplateRef<HTMLButtonElement>('preview')
 const draft = shallowRef('')
+const parts = useStateMotion({
+  key: 'editable',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-editable',
+    preview: '.ui-editable-preview',
+    edit: '.ui-editable-edit',
+    input: '.ui-editable-input',
+    actions: '.ui-editable-actions',
+  },
+  states: () => ({ editing: editing.value, disabled: props.disabled }),
+})
 // The phone keyboard's action key reads Done when it saves.
 const submitsOnEnter = computed(() => props.submitMode === 'enter' || props.submitMode === 'both')
 function setDraft(value: string) {
@@ -239,5 +259,9 @@ defineExpose({
   submit,
   /** Drops the draft and closes. */
   cancel,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

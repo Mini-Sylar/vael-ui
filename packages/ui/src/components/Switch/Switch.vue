@@ -54,6 +54,8 @@ import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { SwitchMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -74,8 +76,13 @@ const rawProps = withDefaults(
     size?: 'sm' | 'md'
     /** Native `name` for form submission. */
     name?: string
-    /** `false` skips built-in transitions; animate the exposed `trackEl`/`thumbEl` yourself. @default true */
-    motion?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { thumb: { opacity: 0, scale: 0.6 } } }`) and its
+     * states, like `checked`, `dragging` or `invalid` (`{ states: { checked: { thumb: { scale: '1.1' } } } }`).
+     * `false` turns its own animation off, built-in transitions too; animate the exposed `trackEl`/`thumbEl` yourself.
+     * @default true
+     */
+    motion?: SwitchMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; track: UiPartValue; thumb: UiPartValue; label: UiPartValue }>
   }>(),
@@ -178,6 +185,20 @@ const root = useTemplateRef<HTMLElement>('root')
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const trackEl = useTemplateRef<HTMLElement>('trackEl')
 const thumbEl = useTemplateRef<HTMLElement>('thumbEl')
+const parts = useStateMotion({
+  key: 'switch',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-switch', track: '.ui-switch-track', thumb: '.ui-switch-thumb' },
+  // `checked` follows the thumb while it's dragged across.
+  states: () => ({
+    checked: dataState.value === 'checked',
+    invalid: isInvalid.value,
+    disabled: isDisabled.value,
+    dragging: dragging.value,
+  }),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.switch,
@@ -208,5 +229,9 @@ defineExpose({
   thumbEl,
   /** Whether the thumb is being dragged. */
   dragging,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

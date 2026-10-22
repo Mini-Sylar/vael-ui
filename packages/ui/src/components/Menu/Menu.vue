@@ -9,7 +9,12 @@
     <slot name="trigger" :open="open" />
   </span>
   <Teleport :to="teleportTo">
-    <Transition name="ui-menu" appear :css="!forceMount">
+    <Transition
+      name="ui-menu"
+      appear
+      v-bind="motionHooks"
+      :css="!forceMount && motionTransition.css !== false"
+    >
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -26,6 +31,7 @@
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
           :data-level="level"
+          data-ui-presence
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -255,8 +261,14 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   closeOnOutside?: boolean
   /** Runs before the menu closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The menu stays open while the promise is pending. */
   beforeClose?: BeforeClose<PopoverCloseReason>
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, your own
+   * `initial` and `exit` for the panel, or `targets` for the rows (`select: '.ui-menu-item'`).
+   * Unset, it follows the nearest ConfigProvider's style.
+   */
+  motion?: MenuMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
   /**
@@ -283,7 +295,7 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import type { PopoverCloseReason } from '../../composables/usePopover'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, MenuMotion } from '../../motion/types'
 import './Menu.css'
 import '../shared/tick.css'
 import '../shared/tokens.css'
@@ -318,6 +330,8 @@ import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
 import { useVirtualizer } from '../../composables/useVirtualizer'
+import { useComponentMotion } from '../../motion/useComponentMotion'
+import { whenPlaced } from '../../composables/useSelectPanelMotion'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -340,6 +354,7 @@ const props = withDefaults(defineProps<MenuProps<T>>(), {
   forceMount: false,
   teleportTo: 'body',
   scrollFade: true,
+  motion: undefined,
 })
 
 const emit = defineEmits<{
@@ -495,6 +510,39 @@ const {
   beforeClose: () => props.beforeClose,
   maxHeightCap: () => props.maxPanelHeight,
   onOpenChange: (value, details) => emit('open-change', value, details),
+})
+
+const motion = useComponentMotion({
+  name: 'Menu',
+  role: 'overlay',
+  key: 'menu',
+  mainPart: 'panel',
+  parts: () => ({ positioner: positionerEl.value, panel: panelEl.value }),
+  root: () => panelEl.value,
+  motion: () => props.motion,
+  // The built-in look as data: it opens from a touch further than it closes to, scaling from the
+  // trigger via the panel's own transform-origin, on the enter tokens. forceMount leaves it to you.
+  defaults: () => ({ panel: { opacity: 0, scale: '0.97' } }),
+  exitDefaults: () => ({ panel: { opacity: 0, scale: '0.99' } }),
+  timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
+  owns: () => !props.forceMount,
+  trigger: () => triggerElRef.value,
+  ready: () => whenPlaced(() => positionerStyle.value.visibility === 'visible'),
+})
+const { phase } = motion
+const motionTransition = motion.transition
+const motionHooks = computed(() => {
+  const { css: _css, ...hooks } = motionTransition.value
+  return {
+    ...hooks,
+    onBeforeEnter: (el: Element) => {
+      hooks.onBeforeEnter?.(el)
+      phase.value = 'entering'
+    },
+    onAfterEnter: () => (phase.value = 'entered'),
+    onBeforeLeave: () => (phase.value = 'leaving'),
+    onAfterLeave: () => (phase.value = 'left'),
+  }
 })
 
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.

@@ -41,7 +41,7 @@
   </Input>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" appear :css="!forceMount">
+    <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -76,7 +76,7 @@
             :first-day-of-week="firstDayOfWeek"
             :months="months"
             :show-year-buttons="showYearButtons"
-            :motion="props.motion"
+            :motion="!!props.motion"
             :ui="calendarUi"
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
@@ -175,7 +175,7 @@ export type DatePickerAlign = Align
 <!-- Wraps Calendar in Select's popover chrome; input readonly, formatting deferred. -->
 <script setup lang="ts">
 import type { PopoverCloseReason } from '../../composables/usePopover'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, DatePickerMotion } from '../../motion/types'
 import './DatePicker.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
@@ -183,6 +183,7 @@ import '../shared/select-panel.css'
 import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
+import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -282,12 +283,17 @@ const rawProps = withDefaults(
     closeOnOutside?: boolean
     /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
     beforeClose?: BeforeClose<PopoverCloseReason>
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
-    /** `false` skips both the popover enter/leave and Calendar's month-slide transitions. @default true */
-    motion?: boolean
+    /**
+     * How the panel moves, like Popover's: `false` opens and closes it at once, and skips Calendar's
+     * month slide. An object retimes it (`{ spring }`), or gives values for the `panel` part or
+     * `enter` / `leave` hooks for your own library.
+     * @default true
+     */
+    motion?: DatePickerMotion
     /** Shows built-in Today (`single` mode only) and Clear buttons below the calendar.
      * Has no effect once you provide the `#footer` slot, which renders instead.
      * @default false
@@ -525,6 +531,16 @@ const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const panelTransition = useSelectPanelMotion({
+  name: 'DatePicker',
+  key: 'datePicker',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => el.value,
+  forceMount: () => props.forceMount,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 const calendarRef = useTemplateRef<InstanceType<typeof Calendar>>('calendarRef')
 const hourFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('hourFieldRef')
 const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('minuteFieldRef')

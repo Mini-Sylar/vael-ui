@@ -47,6 +47,8 @@ import { computed, onBeforeUnmount, onUnmounted, useAttrs, useTemplateRef } from
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ChipMotion } from '../../motion/types'
 import { useUiMessages } from '../../messages'
 
 defineOptions({ inheritAttrs: false })
@@ -64,8 +66,15 @@ const rawProps = withDefaults(
     size?: 'sm' | 'md'
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; label: UiPartValue; remove: UiPartValue }>
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, scale: 0.9 } } }`) and its press states (`{ states: { active: { root: { scale: '0.96' } } } }`). `false` turns its own animation off. */
+    motion?: ChipMotion
   }>(),
-  { removable: false, disabled: false },
+  {
+    removable: false,
+    disabled: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' }, ['sm', 'md'])
 
@@ -97,6 +106,18 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+const parts = useStateMotion({
+  key: 'chip',
+  // A shared style's press look only on a chip you can click or focus.
+  get role() {
+    return attrs.onClick || attrs.tabindex !== undefined ? ('press' as const) : undefined
+  },
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-chip', remove: '.ui-chip-remove' },
+  states: () => ({ disabled: props.disabled }),
+})
 
 const FOCUSABLE =
   'button:not(:disabled), [href], input:not(:disabled), [tabindex]:not([tabindex="-1"])'
@@ -152,5 +173,9 @@ const removePart = computed(() => resolveUiPart(cx, themedUi()?.remove, 'ui-chip
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

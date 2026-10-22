@@ -6,7 +6,7 @@
     :padding="step?.spotlightPadding ?? spotlightPadding"
     :radius="step?.spotlightRadius ?? spotlightRadius"
     :instant="isScrolling"
-    :glide="props.motion"
+    :glide="!!props.motion"
     :force-mount="forceMount"
     :teleport-to="teleportTarget"
     :container-el="container"
@@ -27,6 +27,7 @@
     :close-on-outside="closeOnOverlay"
     :force-mount="forceMount"
     :before-close="beforeClose"
+    :motion="props.motion"
     :teleport-to="teleportTarget"
     :container="container"
     :ui="{ positioner: positionerUi, panel: ui?.panel }"
@@ -126,16 +127,17 @@ export interface TourProps<T extends TourStep = TourStep> {
   container?: DOMTarget
   /** Element to scroll-lock while open. Defaults to `container`, then `document.body`. */
   scrollTarget?: DOMTarget
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
   /** Runs before the tour closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The tour stays open while the promise is pending. */
   beforeClose?: BeforeClose<PopoverCloseReason>
   /**
-   * The spotlight's glide between steps. `false` turns it off so you can animate `spotlightEl`
-   * yourself. For open and close, use `forceMount` and `beforeClose`.
+   * How the callout moves, like Popover's, and whether the spotlight glides between steps. `false`
+   * turns both off, so you can animate `spotlightEl` yourself. An object moves the callout your
+   * way: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks.
    * @default true
    */
-  motion?: boolean
+  motion?: PopoverMotion
   /** Class and style overrides for each part. */
   ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
 }
@@ -148,7 +150,7 @@ export interface TourProps<T extends TourStep = TourStep> {
 -->
 <script setup lang="ts" generic="T extends TourStep = TourStep">
 import type { PopoverCloseReason } from '../../composables/usePopover'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, PopoverMotion } from '../../motion/types'
 import './Tour.css'
 import '../shared/tokens.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'

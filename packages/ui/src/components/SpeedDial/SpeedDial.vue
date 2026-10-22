@@ -18,13 +18,7 @@
       :data-motion="props.motion ? undefined : 'off'"
       @keydown="onKeydown"
     >
-      <TransitionGroup
-        name="ui-speed-dial-action"
-        appear
-        :css="props.motion"
-        @enter="enterHook"
-        @leave="leaveHook"
-      >
+      <TransitionGroup appear v-bind="actionsTransition">
         <Button
           v-for="(item, i) in visibleItems"
           :key="item.value ?? item.label"
@@ -114,11 +108,12 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
   /** Arc radius in pixels. Only applies when `direction` is `'quarter-circle'`. @default 96 */
   radius?: number
   /**
-   * Built-in transitions for the actions and the icon. `false` hands actions to `@action-enter`
-   * and `@action-leave`, and turns the icon instantly.
+   * How the actions fan out and back, and the icon turns. `false` shows them and turns the icon
+   * at once. An object animates the actions your way: values for the `action` part, `stagger`,
+   * or `enter` / `leave` hooks for your own library.
    * @default true
    */
-  motion?: boolean
+  motion?: SpeedDialMotion
   /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }>
 }
@@ -154,6 +149,9 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { withProviderDefaults } from '../../config'
 import { ssrDocument } from '../../ssr'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { SpeedDialMotion } from '../../motion/types'
 
 /** Whether the actions are shown. @default false */
 const open = defineModel<boolean>('open', { default: false })
@@ -172,11 +170,6 @@ const props = withProviderDefaults(rawProps, { motion: true })
 const emit = defineEmits<{
   /** Fires when you click an action. */
   select: [item: T]
-  /** Fires when an action's fan-out transition starts. Call `done()` when finished.
-   * Only fires when `motion` is `false`. */
-  'action-enter': [el: Element, done: () => void]
-  /** Fires when an action's fan-in transition starts, as with `@action-enter`. */
-  'action-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
@@ -188,16 +181,22 @@ defineSlots<{
 
 const visibleItems = computed(() => (open.value ? props.items : []))
 
-// Only the component's own motion="false" hands actions to the events. A provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motion !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('action-enter', el, done),
-)
-const leaveHook = computed(() =>
-  rawProps.motion !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('action-leave', el, done),
+// Yours (an object, or a shared style): actions come and go on the motion system, held where they
+// fanned out to as they leave. Otherwise the built-in CSS fan.
+const style = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' || style?.value?.speedDial || style?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'speedDial',
+        part: 'action',
+        name: 'SpeedDial',
+        look: { opacity: 0, scale: '0.9' },
+        leaving: 'hold',
+      })
+    : undefined
+const actionsTransition = computed(() =>
+  listMotion ? listMotion.transition : { name: 'ui-speed-dial-action', css: !!props.motion },
 )
 
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {

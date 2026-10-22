@@ -143,40 +143,7 @@
   .ui-menu-body[data-virtual]:focus {
     outline: none;
   }
-  .ui-menu-enter-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-menu-leave-active {
-    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-menu-enter-from,
-  .ui-menu-leave-to {
-    opacity: 0;
-  }
-  .ui-menu-enter-active .ui-menu-panel {
-    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-menu-leave-active .ui-menu-panel {
-    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  /* Opens from a touch further than it closes to: the close should get out of the way. Never from scale(0). */
-  .ui-menu-enter-from .ui-menu-panel {
-    transform: scale(0.97);
-  }
-  .ui-menu-leave-to .ui-menu-panel {
-    transform: scale(0.99);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ui-menu-enter-active .ui-menu-panel,
-    .ui-menu-leave-active .ui-menu-panel {
-      transition: none;
-    }
-    .ui-menu-enter-from .ui-menu-panel,
-    .ui-menu-leave-to .ui-menu-panel {
-      transform: none;
-    }
-  }
+  /* Enter and leave are played by the CSS engine (motion/css.ts) from Menu's built-in look. */
   /* Searching eases this list to its new height (useEasedHeight): no scrollbar while it moves, and a
      soft bottom edge so rows fade in at the moving edge instead of being cut mid-glyph. */
   .ui-menu-body {

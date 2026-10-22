@@ -5,6 +5,15 @@
   .ui-popover-trigger {
     display: contents;
   }
+  /* Behind the panel, above the page: the positioner is its stacking context. */
+  .ui-popover-surface {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+  }
+  .ui-popover-surface-shape {
+    position: absolute;
+  }
   .ui-popover-positioner {
     z-index: var(--ui-z-popover, 55);
     inline-size: max-content;

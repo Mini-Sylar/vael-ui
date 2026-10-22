@@ -220,16 +220,13 @@
     v-else
     tag="tbody"
     :role="roles.group"
-    name="ui-datatable-row"
-    :css="rowCss"
+    v-bind="rowsTransition"
     :class="tbodyPart.class"
     :style="tbodyPart.style"
     :data-motion="rowCss && rowMotionReady ? undefined : 'off'"
     @before-enter="beforeEnterHook"
     @after-enter="afterEnterHook"
     @before-leave="beforeLeaveHook"
-    @enter="rowEnterHook"
-    @leave="rowLeaveHook"
   >
     <tr
       :role="roles.row"
@@ -403,8 +400,8 @@ const props = defineProps<{
   motion: boolean
   /** False until the first measurement render has passed; row move stays off. */
   rowMotionReady: boolean
-  onRowEnter: (el: Element, done: () => void) => void
-  onRowLeave: (el: Element, done: () => void) => void
+  /** Your rows' motion (the motion system's TransitionGroup props), or none: the built-in CSS. */
+  rowTransition?: Record<string, unknown>
   /** scrollHeight layout: head and body are separate tables joined by ARIA roles. */
   split: boolean
   ui?: Partial<{
@@ -463,12 +460,11 @@ const rowMotionFits = computed<{ count: number; fits: boolean }>((previous) => {
 })
 const rowCss = computed(() => props.motion && rowMotionFits.value.fits)
 
-// A JS hook and Vue's CSS end detection can't coexist, so hooks only wire when motion is off.
-const rowEnterHook = computed(() =>
-  props.motion ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
-)
-const rowLeaveHook = computed(() =>
-  props.motion ? undefined : (el: Element, done: () => void) => props.onRowLeave(el, done),
+// Yours plays through the motion system, the built-in look through CSS; past the limit, neither.
+const rowsTransition = computed(() =>
+  props.rowTransition && rowMotionFits.value.fits
+    ? props.rowTransition
+    : { name: 'ui-datatable-row', css: rowCss.value },
 )
 
 // A px max-block-size, not 0fr/1fr rows: fr interpolates unevenly and reads as a stall.

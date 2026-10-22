@@ -31,15 +31,11 @@
     <template v-if="multiple || $slots.start" #start>
       <!-- v-if="multiple" not && selectedItems.length: empty wrapper keeps last chip's leave transition -->
       <TransitionGroup
+        v-bind="chipsTransition"
+        :data-motion="props.motion ? undefined : 'off'"
         v-if="multiple"
-        name="ui-chip-item"
-        @leave-cancelled="resetLeaveStyles"
         tag="span"
         class="ui-combobox-chips"
-        :css="props.motion"
-        :data-motion="props.motion ? undefined : 'off'"
-        @enter="chipEnterHook"
-        @leave="chipLeaveHook"
       >
         <Chip
           v-for="item in visibleChips"
@@ -66,7 +62,7 @@
       <slot name="end" />
       <Transition
         name="ui-clear"
-        :css="props.motion"
+        :css="!!props.motion"
         @enter="measureClearSpace"
         @leave="startClearLeave"
         @leave-cancelled="resetLeaveStyles"
@@ -113,7 +109,7 @@
   </Input>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" appear :css="!forceMount">
+    <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -147,7 +143,7 @@
             :item-size="virtualizeConfig?.itemSize"
             :overscan="effectiveOverscan"
             :scroll-fade="scrollFade"
-            :motion="props.motion"
+            :motion="!!props.motion"
             :sections="listSections"
             :ui="{
               list: themedUi()?.list,
@@ -275,17 +271,12 @@ export interface ComboboxCreateDetails {
      away is rarely an intent to create — only an explicit pick of the Create row (or Enter) commits. -->
 <script setup lang="ts" generic="T extends SelectItemData = SelectItemData">
 import type { PopoverCloseReason } from '../../composables/usePopover'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, ComboboxMotion } from '../../motion/types'
 import './Combobox.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/clear-transition.css'
-import {
-  collapseLeavingChip,
-  measureClearSpace,
-  resetLeaveStyles,
-  startClearLeave,
-} from '../../composables/dom'
+import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
@@ -294,6 +285,8 @@ import { computed, inject, nextTick, ref, useAttrs, useId, useTemplateRef, watch
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import Input from '../Input/Input.vue'
 import { usePopover } from '../../composables/usePopover'
+import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
+import { useChipTransition } from '../../composables/useChipTransition'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
@@ -402,7 +395,7 @@ const rawProps = withDefaults(
     closeOnOutside?: boolean
     /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
     beforeClose?: BeforeClose<PopoverCloseReason>
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
@@ -417,12 +410,14 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips the built-in motion: the list easing to its new height as you search, the clear
-     * button, and chip transitions (`multiple`), which you can animate yourself via
-     * `@chip-enter`/`@chip-leave`.
+    /**
+     * How it moves. `false` skips all of it: the panel opening, the list easing to its new height as
+     * you search, the clear button and the chips. An object moves the panel your way, like
+     * Popover's: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. `chips` does
+     * the same for the chips (`{ chips: { initial: { chip: { opacity: 0, y: 4 } } } }`).
      * @default true
      */
-    motion?: boolean
+    motion?: ComboboxMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -480,20 +475,13 @@ const emit = defineEmits<{
   /** Fires before the typed text commits as a custom value. Call `details.cancel()` to veto it,
    * for validation or an async create that sets the model itself. */
   create: [query: string, details: ComboboxCreateDetails]
-  /** Fires instead of the built-in CSS transition when `motion` is `false`. Call `done()` once your enter animation finishes. */
-  'chip-enter': [el: Element, done: () => void]
-  /** Same as `@chip-enter`, for a chip's removal. */
-  'chip-leave': [el: Element, done: () => void]
 }>()
 
-// Same shape as SpeedDial's own enterHook/leaveHook.
-const chipEnterHook = computed(() =>
-  props.motion ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
-)
-const chipLeaveHook = computed(() =>
-  props.motion
-    ? collapseLeavingChip
-    : (el: Element, done: () => void) => emit('chip-leave', el, done),
+const chipsTransition = useChipTransition(
+  () => rawProps.motion,
+  () => !!props.motion,
+  'combobox',
+  'Combobox',
 )
 
 defineSlots<{
@@ -629,6 +617,16 @@ const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const panelTransition = useSelectPanelMotion({
+  name: 'Combobox',
+  key: 'combobox',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => el.value,
+  forceMount: () => props.forceMount,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 // Same manual-shape rationale as Select.vue's own listBody ref.
 const listBody = useTemplateRef<{
   listEl: HTMLElement | null

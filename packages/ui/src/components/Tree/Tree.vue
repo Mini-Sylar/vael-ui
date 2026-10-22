@@ -267,6 +267,8 @@ import {
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { TreeMotion } from '../../motion/types'
 import Input from '../Input/Input.vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
@@ -320,11 +322,13 @@ const rawProps = withDefaults(
      */
     emptyText?: string
     /**
-     * `false` skips all built-in motion (row transitions, chevron rotation, cross-folder moves and
-     * the list easing to its new height as you search).
+     * How it moves: its appearance, row by row (`{ initial: { node: { opacity: 0, x: -4 } }, stagger: 0.03 }`),
+     * over `list`, `node`, `chevron` and `label`. `false` skips all built-in motion (row
+     * transitions, chevron rotation, cross-folder moves and the list easing to its new height as
+     * you search).
      * @default true
      */
-    motion?: boolean
+    motion?: TreeMotion
     /** Keeps collapsed folders' children mounted (`v-show` plus `data-state`) so you can animate
      * expand/collapse yourself instead of using the built-in transition.
      * @default false
@@ -659,7 +663,7 @@ watch(
 useEasedHeight({
   el: () => listEl.value,
   source: [normalizedQuery, () => props.items],
-  enabled: () => props.motion,
+  enabled: () => props.motion !== false,
 })
 function rowEls(): HTMLElement[] {
   return Array.from(listEl.value?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? [])
@@ -751,7 +755,7 @@ const {
     touchDragDelay: () => props.touchDragDelay,
     disabled: () => !props.reorderable,
     reorderSiblings: () => props.reorderSiblings,
-    motion: () => props.motion,
+    motion: () => props.motion !== false,
     autoExpandDelay: () => props.autoExpandDelay,
     onAutoExpand: (value) => expandNode(value),
     canNestInto: (value) => {
@@ -794,8 +798,22 @@ const { style: hoverStyle } = useHoverIndicator(listEl, {
   scope: '[role="tree"]',
   scroller: true,
   enabled: () => !isReordering.value,
-  motion: () => props.motion,
+  motion: () => props.motion !== false,
   indicatorEl: hoverEl,
+})
+
+const parts = useStateMotion({
+  key: 'tree',
+  mainPart: 'list',
+  motion: () => props.motion,
+  root: () => listEl.value,
+  selectors: {
+    list: '.ui-tree-list',
+    node: '.ui-tree-row',
+    chevron: '.ui-tree-chevron',
+    label: '.ui-tree-label',
+  },
+  states: () => ({}),
 })
 
 function onRowPointerdown(node: TreeNode, event: PointerEvent) {
@@ -1046,9 +1064,10 @@ provide<TreeRowContext>(
   treeRowContextKey,
   reactive({
     selectionMode: computed(() => props.selectionMode),
-    motion: computed(() => props.motion),
+    motion: computed(() => props.motion !== false),
     rowMotion: computed(
-      () => props.motion && !instantSwap.value && flatRows.value.length <= MOTION_MAX_ROWS,
+      () =>
+        props.motion !== false && !instantSwap.value && flatRows.value.length <= MOTION_MAX_ROWS,
     ),
     fold: foldScheduler,
     stickyScroll: computed(() => props.stickyScroll),
@@ -1107,5 +1126,9 @@ defineExpose({
   isReordering,
   /** Aborts an in-flight reorder and springs every row back into place. */
   cancelReorder,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

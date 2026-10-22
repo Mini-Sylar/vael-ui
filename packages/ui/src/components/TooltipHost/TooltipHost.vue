@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <Transition name="ui-tooltip" :css="!forceMount">
+    <Transition name="ui-tooltip" v-bind="tooltipTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -50,6 +50,11 @@ export interface TooltipHostProps {
   beforeClose?: BeforeClose<TooltipCloseReason>
   /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ forceMount }"`. @default false */
   forceMount?: boolean
+  /**
+   * How every `v-tooltip` moves, like Tooltip's `motion`: `false` shows and hides them at once, an
+   * object moves them your way. Warm opens stay instant either way.
+   */
+  motion?: TooltipMotion
   /** Class and style overrides for each part. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
@@ -57,8 +62,9 @@ export interface TooltipHostProps {
 
 <!-- Singleton behind v-tooltip; document delegation to every target -->
 <script setup lang="ts">
+import { useTooltipMotion } from '../../composables/useTooltipMotion'
 import type { TooltipCloseReason } from '../../composables/useTooltip'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, TooltipMotion } from '../../motion/types'
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
 import {
@@ -81,7 +87,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
 
-const props = defineProps<TooltipHostProps>()
+const props = withDefaults(defineProps<TooltipHostProps>(), { motion: undefined })
 
 defineSlots<{
   /** Custom tooltip body; defaults to the text `content`. */
@@ -123,6 +129,16 @@ const {
 const content = computed(() => config.value?.content ?? '')
 // Per-target override with host default (like side/openDelay/closeDelay).
 const forceMount = computed(() => config.value?.forceMount ?? props.forceMount ?? false)
+const tooltipTransition = useTooltipMotion({
+  name: 'TooltipHost',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => currentEl.value,
+  forceMount: () => forceMount.value,
+  instant: () => instant.value,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 
 function findTarget(node: EventTarget | null): HTMLElement | null {
   if (!(node instanceof Element)) return null

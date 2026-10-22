@@ -40,6 +40,9 @@ import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue, UiPartStyle } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import { useIndicatorMotion } from '../../composables/useIndicatorMotion'
+import type { TabsMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -67,8 +70,11 @@ const props = withDefaults(
     idBase?: string
     /** Class and style overrides for each part. */
     ui?: Partial<{ list: UiPartValue; item: UiPartValue; indicator: UiPartValue }>
+    /** How it moves: its appearance, tab by tab (`{ initial: { item: { opacity: 0, y: 4 } } }`), over `list`, `item` and your `indicator`. `spring` retimes the indicator; `move` hands its moves to your own animation. `false` turns its own animation off. */
+    motion?: TabsMotion
   }>(),
-  { orientation: 'horizontal', activation: 'automatic' },
+  // `motion`: absent must read as unset, not `false` (Vue's boolean casting would turn it off).
+  { orientation: 'horizontal', activation: 'automatic', motion: undefined },
 )
 
 const emit = defineEmits<{
@@ -115,6 +121,14 @@ const { style: hoverStyle } = useHoverIndicator(listEl, {
   orientation: () => props.orientation ?? 'horizontal',
   indicatorEl: hoverEl,
 })
+const parts = useStateMotion({
+  key: 'tabs',
+  mainPart: 'list',
+  motion: () => props.motion,
+  root: () => listEl.value,
+  selectors: { list: '.ui-tabs', item: '.ui-tabs-item', indicator: '.ui-tabs-indicator' },
+  states: () => ({}),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.tabs,
@@ -151,10 +165,18 @@ const selectedIndicatorEl = {
     return listEl.value?.querySelector<HTMLElement>(':scope > .ui-tabs-indicator') ?? null
   },
 } as Readonly<ShallowRef<HTMLElement | null>>
+const indicatorMotion = useIndicatorMotion({
+  name: 'Tabs',
+  motion: () => props.motion,
+  indicator: () => selectedIndicatorEl.value,
+  parts: () => parts(),
+})
 const indicator = useTabIndicator(active, {
   listEl,
   orientation: () => props.orientation,
   indicatorEl: selectedIndicatorEl,
+  indicator: indicatorMotion.spring,
+  motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
 })
 
 const generatedId = useId()
@@ -209,5 +231,9 @@ defineExpose({
   panelId,
   /** `id`, `role="tabpanel"`, `aria-labelledby` and `tabindex` for a panel you render. */
   panelProps,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

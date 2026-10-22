@@ -37,6 +37,8 @@ import { computed, onMounted, ref, useAttrs, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { AvatarMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -55,6 +57,8 @@ const props = withDefaults(
     shape?: 'circle' | 'square'
     /** Which corner the `#badge` slot sits on. @default 'bottom-end' */
     badgePlacement?: 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end'
+    /** How it moves: its parts' appearance, like the image fading in over the fallback (`{ initial: { image: { opacity: 0 } } }`). `false` turns its own animation off. */
+    motion?: AvatarMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -63,7 +67,13 @@ const props = withDefaults(
       badge: UiPartValue
     }>
   }>(),
-  { size: 'md', shape: 'circle', badgePlacement: 'bottom-end' },
+  {
+    size: 'md',
+    shape: 'circle',
+    badgePlacement: 'bottom-end',
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 
 const emit = defineEmits<{
@@ -117,6 +127,19 @@ onMounted(() => {
 })
 
 const root = useTemplateRef<HTMLElement>('root')
+const motionParts = useStateMotion({
+  key: 'avatar',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-avatar',
+    image: '.ui-avatar-image',
+    fallback: '.ui-avatar-fallback',
+    badge: '.ui-avatar-badge',
+  },
+  states: () => ({}),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.avatar,
@@ -140,5 +163,9 @@ defineExpose({
   el: root,
   /** Image element (null without `src`). */
   imgEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return motionParts()
+  },
 })
 </script>

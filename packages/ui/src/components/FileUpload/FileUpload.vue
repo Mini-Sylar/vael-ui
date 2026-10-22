@@ -45,13 +45,9 @@
       :ref="registerListEl"
       :data-ui-group="groupKey"
       tag="ul"
-      name="ui-file-item"
-      :css="props.motion"
+      v-bind="rowsTransition"
       :class="listPart.class"
       :style="listPart.style"
-      @enter="enterHook"
-      @before-leave="beforeLeaveHook"
-      @leave="leaveHook"
     >
       <li
         v-for="(file, index) in modelValue"
@@ -105,6 +101,9 @@ import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { FileUploadMotion } from '../../motion/types'
 
 export type FileRejectReason = 'accept' | 'maxSize' | 'maxFiles'
 
@@ -132,10 +131,12 @@ const rawProps = withDefaults(
     /** Native `name` on the file input. */
     name?: string
     /**
-     * `false` skips the built-in file-row transition; use `@item-enter`/`@item-leave` for custom motion.
+     * How file rows come and go. `false` adds and removes them at once. An object animates them
+     * your way: values for the `item` part (`{ initial: { item: { opacity: 0, y: 6 } } }`),
+     * `stagger`, or `enter` / `leave` hooks for your own library.
      * @default true
      */
-    motion?: boolean
+    motion?: FileUploadMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -157,10 +158,6 @@ const emit = defineEmits<{
   add: [files: File[]]
   /** Fires when you remove a file from the list. */
   remove: [file: File]
-  /** Fires when a file row enters, with the `(el, done)` transition hook. Only when `motion` is `false`. */
-  'item-enter': [el: Element, done: () => void]
-  /** Same as `item-enter`, for a row's exit. */
-  'item-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
@@ -265,7 +262,10 @@ const FOCUSABLE =
 
 function liveRows(): Element[] {
   return [...(listEl.value?.children ?? [])].filter(
-    (el) => !el.classList.contains('ui-file-item-leave-active'),
+    // A leaving row: the CSS look's class, or lifted out of the flow by the motion system.
+    (el) =>
+      !el.classList.contains('ui-file-item-leave-active') &&
+      (el as HTMLElement).style.position !== 'absolute',
   )
 }
 
@@ -296,26 +296,33 @@ const dropzoneEl = useTemplateRef<HTMLElement>('dropzoneEl')
 const listEl = ref<HTMLElement | null>(null)
 const groupKey = useId()
 const registerListEl = transitionGroupRef(listEl, groupKey)
-// Only the component's own motion="false" hands items to the events; a provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motion !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-enter', el, done),
-)
-// The built-in exit collapses the row from its measured height.
-const beforeLeaveHook = computed(() =>
-  props.motion
-    ? (el: Element) =>
-        (el as HTMLElement).style.setProperty(
-          '--ui-file-item-block-size',
-          `${el.getBoundingClientRect().height}px`,
-        )
-    : undefined,
-)
-const leaveHook = computed(() =>
-  rawProps.motion !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-leave', el, done),
+// Yours (an object, or a shared style): rows come and go on the motion system. Otherwise the
+// built-in CSS look, its exit collapsing the row from its measured height.
+const style = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' || style?.value?.fileUpload || style?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'fileUpload',
+        part: 'item',
+        name: 'FileUpload',
+        look: { opacity: 0 },
+      })
+    : undefined
+const rowsTransition = computed(() =>
+  listMotion
+    ? listMotion.transition
+    : {
+        name: 'ui-file-item',
+        css: !!props.motion,
+        onBeforeLeave: props.motion
+          ? (el: Element) =>
+              (el as HTMLElement).style.setProperty(
+                '--ui-file-item-block-size',
+                `${el.getBoundingClientRect().height}px`,
+              )
+          : undefined,
+      },
 )
 
 function browse() {

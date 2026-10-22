@@ -1,5 +1,6 @@
 <template>
   <nav
+    ref="root"
     :class="rootPart.class"
     :style="rootPart.style"
     :aria-label="messages.pagination.label"
@@ -200,6 +201,9 @@ import type { SelectItemData } from '../Select/Select.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import { useIndicatorMotion } from '../../composables/useIndicatorMotion'
+import type { PaginationMotion } from '../../motion/types'
 import { useUiMessages } from '../../messages'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
@@ -215,16 +219,28 @@ const page = defineModel<number>('page', { default: 1 })
 /** Rows per page. Picking a size from the dropdown resets `page` to 1. @default 10 */
 const pageSize = defineModel<number>('pageSize', { default: 10 })
 
+const root = useTemplateRef<HTMLElement>('root')
 const listEl = useTemplateRef<HTMLElement>('list')
 const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
 const labelsEl = useTemplateRef<HTMLElement>('labelsEl')
-const indicator = useTabIndicator(page, { listEl, selector: '[aria-current="page"]' })
+const indicatorMotion = useIndicatorMotion({
+  name: 'Pagination',
+  motion: () => props.motion,
+  indicator: () => parts().indicator as HTMLElement | null,
+  parts: () => parts(),
+})
+const indicator = useTabIndicator(page, {
+  listEl,
+  selector: '[aria-current="page"]',
+  indicator: indicatorMotion.spring,
+  motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
+})
 // The hover and keyboard highlight slides between buttons, under the current page's own.
 const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
 const { style: hoverStyle } = useHoverIndicator(listEl, {
   itemSelector: '.ui-pagination-page-button, .ui-pagination-nav-button',
   orientation: 'horizontal',
-  motion: () => props.motion,
+  motion: () => props.motion !== false,
   indicatorEl: hoverEl,
 })
 // The page numbers again in the contrast color, clipped to the indicator, so the
@@ -247,8 +263,13 @@ const rawProps = withDefaults(
     pageSizeOptions?: number[]
     /** Page-number buttons to show on each side of the current page before an ellipsis. @default 1 */
     siblingCount?: number
-    /** `false` skips the indicator's built-in sliding; animate the exposed `indicatorEl` and `labelsEl` yourself. @default true */
-    motion?: boolean
+    /**
+     * How it moves: its appearance, button by button (`{ initial: { button: { opacity: 0, y: 4 } }, stagger: 0.03 }`),
+     * over `root`, `button` and the current page's `indicator`. `spring` retimes the indicator; `move` hands its moves to your own animation. `false` skips the indicator's
+     * built-in sliding; animate the exposed `indicatorEl` and `labelsEl` yourself.
+     * @default true
+     */
+    motion?: PaginationMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -261,6 +282,19 @@ const rawProps = withDefaults(
   { siblingCount: 1, motion: undefined },
 )
 const props = withProviderDefaults(rawProps, { motion: true })
+
+const parts = useStateMotion({
+  key: 'pagination',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-pagination',
+    button: '.ui-pagination-nav-button, .ui-pagination-page-button',
+    indicator: '.ui-pagination-indicator',
+  },
+  states: () => ({}),
+})
 
 const totalPages = computed(() => {
   if (pageSize.value <= 0) return 1
@@ -361,5 +395,9 @@ defineExpose({
   highlightEl: hoverEl,
   /** The page numbers in the contrast color, clipped to the indicator. */
   labelsEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

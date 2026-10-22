@@ -112,7 +112,26 @@
             </slot>
           </header>
           <div :class="bodyPart.class" :style="bodyPart.style" v-scroll-mask="scrollFade">
+            <!-- `swap`: one keyed root inside; the old view leaves as the new one comes in. -->
+            <Transition
+              v-if="motion.resolved.value.swap"
+              :css="false"
+              :mode="motion.resolved.value.swap === 'wait' ? 'out-in' : undefined"
+              @enter="motion.swap.onEnter"
+              @leave="motion.swap.onLeave"
+            >
+              <slot
+                :close="close"
+                :open="open"
+                :isClosing="isClosing"
+                :cancelClose="cancelClose"
+                :panelEl="panelEl"
+                :target="target"
+                :phase="phase"
+              />
+            </Transition>
             <slot
+              v-else
               :close="close"
               :open="open"
               :isClosing="isClosing"
@@ -188,7 +207,7 @@ export interface DialogProps {
   closeOnHistoryBack?: boolean
   /** Runs before the dialog closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The dialog stays open while the promise is pending. */
   beforeClose?: BeforeClose<DialogCloseReason>
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
   /**
    * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, states by part
@@ -240,7 +259,7 @@ export interface DialogExposed {
 <!-- v-if mode: Transition owns enter/exit; forceMount: v-show + consumer drives motion. -->
 <!-- Generic over your target names, so `target('…')` autocompletes from `motion.targets`. -->
 <script setup lang="ts" generic="N extends string = string">
-import { FLING_SPRING } from '../../motion/fling'
+import { FLING_SPRING } from '../../composables/springEasing'
 import type { DialogCloseReason } from '../../composables/useDialog'
 import type { BeforeClose } from '../../motion/types'
 import './Dialog.css'
@@ -261,6 +280,7 @@ import { useEventListener } from '@vueuse/core'
 import { useDialog } from '../../composables/useDialog'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 import type { DOMTarget } from '../../composables/dom'
+import { opener } from '../../composables/dom'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -429,14 +449,13 @@ const overlayStyle = {
 // width/height (typically physical properties) can never permanently defeat maximize's logical
 // inlineSize/blockSize — same-axis logical vs. physical conflicts resolve by declaration order.
 const naturalPanelSize = ref<{ width: number; height: number } | null>(null)
-// origin="trigger": the focused element when it opened, so the panel grows out of it.
+// origin="trigger": what opened it (clicked or focused), so the panel grows out of it.
 const fromTrigger = computed(() => props.origin === 'trigger' && props.position === 'center')
 let triggerEl: HTMLElement | null = null
 watch(
   open,
   (isOpen) => {
-    if (isOpen && typeof document !== 'undefined')
-      triggerEl = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    if (isOpen && typeof document !== 'undefined') triggerEl = opener()
   },
   { immediate: true, flush: 'sync' },
 )
@@ -515,6 +534,7 @@ const motion = useComponentMotion({
   trigger: () => (triggerEl?.isConnected && triggerEl !== document.body ? triggerEl : null),
   open: () => open.value,
   gesture: () => gesture?.() ?? null,
+  resizes: true,
 })
 const { target, phase } = motion
 const motionTransition = motion.transition
@@ -524,7 +544,8 @@ const motionHooks = computed(() => {
   const { css: _css, ...hooks } = motionTransition.value
   return {
     ...hooks,
-    onBeforeEnter: () => {
+    onBeforeEnter: (el: Element) => {
+      hooks.onBeforeEnter?.(el)
       phase.value = 'entering'
       told = false
     },

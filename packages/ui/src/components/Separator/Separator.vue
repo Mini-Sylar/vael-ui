@@ -30,6 +30,8 @@ import { computed, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { SeparatorMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -42,9 +44,24 @@ const props = withDefaults(
     orientation?: 'horizontal' | 'vertical'
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; line: UiPartValue; text: UiPartValue }>
+    /** How it moves: its appearance, like the lines drawing out from a label (`{ initial: { line: { scale: '0 1' } } }`). `false` turns its own animation off. */
+    motion?: SeparatorMotion
   }>(),
-  { orientation: 'horizontal' },
+  {
+    orientation: 'horizontal',
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
+
+const parts = useStateMotion({
+  key: 'separator',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-separator', line: '.ui-separator-line', text: '.ui-separator-text' },
+  states: () => ({}),
+})
 
 defineSlots<{
   /** Optional label centered in the line, e.g. "OR". Plain divider without it. */
@@ -67,5 +84,9 @@ const textPart = computed(() => resolveUiPart(cx, themedUi()?.text, 'ui-separato
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

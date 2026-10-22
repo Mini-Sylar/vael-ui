@@ -26,12 +26,12 @@
     <span :class="valuePart.class" :style="valuePart.style">
       <slot name="value" :selected="selectedNodes as T[]">
         <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
-        <LazyAnimatedText v-else :value="displayLabel" :motion="props.motion" />
+        <LazyAnimatedText v-else :value="displayLabel" :motion="!!props.motion" />
       </slot>
     </span>
     <Transition
       name="ui-clear"
-      :css="props.motion"
+      :css="!!props.motion"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -68,7 +68,7 @@
   </div>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" appear :css="!forceMount">
+    <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -102,7 +102,7 @@
             :filterable="filterable"
             :filter-placeholder="filterPlaceholder"
             :empty-text="emptyText"
-            :motion="props.motion"
+            :motion="!!props.motion"
             :expand-on-row-click="expandOnRowClick"
             :sticky-scroll="stickyScroll"
             :ui="treeUi"
@@ -154,7 +154,7 @@ export type TreeSelectSelectionMode = TreeSelectionMode
 
 <script setup lang="ts" generic="T extends TreeSelectNode = TreeSelectNode">
 import type { PopoverCloseReason } from '../../composables/usePopover'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, TreeSelectMotion } from '../../motion/types'
 import './TreeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
@@ -166,6 +166,7 @@ import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } fr
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { usePopover } from '../../composables/usePopover'
+import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useUiMessages } from '../../messages'
@@ -264,7 +265,7 @@ const rawProps = withDefaults(
     closeOnOutside?: boolean
     /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
     beforeClose?: BeforeClose<PopoverCloseReason>
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
@@ -274,9 +275,13 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips all built-in motion (row transitions, chevron rotation, the panel and list easing
-     * to a new height, and the clear button). @default true */
-    motion?: boolean
+    /**
+     * `false` skips all built-in motion: the panel opening, rows, the chevron, the list easing to a
+     * new height, and the clear button. An object moves the panel your way, like Popover's: values
+     * for the `panel` part, `{ spring }`, or `enter` / `leave` hooks for your own library.
+     * @default true
+     */
+    motion?: TreeSelectMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
@@ -405,6 +410,16 @@ function onTreeSelect(node: T) {
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const panelTransition = useSelectPanelMotion({
+  name: 'TreeSelect',
+  key: 'treeSelect',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => triggerEl.value,
+  forceMount: () => props.forceMount,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 
 function onExpandChange(value: string | number, expanded: boolean) {
   emit('expand-change', value, expanded)

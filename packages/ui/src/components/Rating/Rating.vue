@@ -64,6 +64,8 @@ import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { RatingMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -104,8 +106,13 @@ const rawProps = withDefaults(
     name?: string
     /** Drives `aria-valuetext`. Defaults to the `rating.valueText` message ("{value} of {max}"). */
     valueText?: (value: number) => string
-    /** `false` skips the built-in fill-sweep and commit-pop animations. @default true */
-    motion?: boolean
+    /**
+     * How it moves: its appearance, star by star (`{ initial: { item: { opacity: 0, scale: 0.6 } }, stagger: 0.04 }`),
+     * and its states (`{ states: { disabled: { root: { opacity: 0.5 } } } }`). `false` turns its own
+     * animation off, the built-in fill sweep and commit pop too.
+     * @default true
+     */
+    motion?: RatingMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
   }>(),
@@ -153,6 +160,14 @@ const root = useTemplateRef<HTMLElement>('root')
 // One element per star — an external animation library needs real nodes to stagger-reveal,
 // wobble, or morph individual stars, not just the row as a whole.
 const itemEls = useTemplateRef<HTMLElement[]>('itemEls')
+const parts = useStateMotion({
+  key: 'rating',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-rating', item: '.ui-rating-item' },
+  states: () => ({ disabled: isDisabled.value }),
+})
 function valueFromPointer(event: PointerEvent): number {
   const rect = root.value!.getBoundingClientRect()
   const fraction = rect.width === 0 ? 0 : (event.clientX - rect.left) / rect.width
@@ -287,5 +302,9 @@ defineExpose({
   el: root,
   /** Star elements, one per star. */
   itemEls,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

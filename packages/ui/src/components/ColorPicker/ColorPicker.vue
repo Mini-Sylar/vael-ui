@@ -17,6 +17,7 @@
       tabindex="-1"
       :aria-label="label"
       :teleport-to="teleportTo"
+      :motion="panelMotion"
       :ui="{
         panel: {
           class: panelPart.class,
@@ -184,6 +185,8 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ColorPickerMotion, PopoverMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -209,8 +212,13 @@ const rawProps = withDefaults(
     size?: 'sm' | 'md' | 'lg'
     /** Where the panel is teleported to. @default 'body' */
     teleportTo?: string | HTMLElement
-    /** `false` skips the built-in transitions; use the exposed elements for your own. @default true */
-    motion?: boolean
+    /**
+     * How it moves: the swatch's appearance (`{ initial: { swatch: { opacity: 0 } } }`) and states
+     * (`{ states: { disabled: { swatch: { opacity: 0.5 } } } }`), and the panel's like Popover's
+     * (`{ initial: { panel: { opacity: 0, y: -4 } } }`). `false` skips the built-in transitions;
+     * use the exposed elements for your own. @default true
+     */
+    motion?: ColorPickerMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -343,6 +351,15 @@ const root = useTemplateRef<HTMLElement>('root')
 const popover = useTemplateRef<PopoverExposed>('popover')
 const swatchEl = useTemplateRef<HTMLButtonElement>('swatchEl')
 const thumbEl = useTemplateRef<HTMLElement>('thumbEl')
+// The swatch is this component's; the panel is Popover's, which plays the same `motion`.
+const parts = useStateMotion({
+  key: 'colorPicker',
+  mainPart: 'swatch',
+  motion: () => props.motion,
+  parts: () => ({ swatch: swatchEl.value }),
+  states: () => ({ disabled: props.disabled }),
+})
+const panelMotion = computed(() => rawProps.motion as PopoverMotion | undefined)
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.colorPicker,
@@ -376,5 +393,13 @@ defineExpose({
   areaEl,
   /** The plane's thumb; `null` while closed. */
   thumbEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return {
+      ...parts(),
+      positioner: popover.value?.positionerEl ?? null,
+      panel: popover.value?.panelEl ?? null,
+    }
+  },
 })
 </script>

@@ -151,6 +151,8 @@ import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { InputNumberMotion } from '../../motion/types'
 
 /** Numeric value; `null` when the field is empty. @default null */
 const modelValue = defineModel<number | null>({ default: null })
@@ -212,6 +214,12 @@ const rawProps = withDefaults(
      * AnimatedNumber. Typing shows the plain input. @default false
      */
     animated?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { invalid: { root: { x: [0, -6, 6, 0] } } } }`). `false` turns its own animation
+     * off.
+     */
+    motion?: InputNumberMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -232,6 +240,8 @@ const rawProps = withDefaults(
     invalid: false,
     animated: false,
     scrub: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md', locale: undefined })
@@ -481,6 +491,19 @@ const atMin = computed(
 const inputRef = useTemplateRef('inputRef')
 const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
+const parts = useStateMotion({
+  key: 'inputNumber',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => el.value,
+  selectors: {
+    root: '.ui-input',
+    input: '.ui-input-el',
+    increment: '.ui-input-number-stepper--inc',
+    decrement: '.ui-input-number-stepper--dec',
+  },
+  states: () => ({ invalid: isInvalid.value, disabled: isDisabled.value }),
+})
 
 const rolling = computed(
   () =>
@@ -526,5 +549,9 @@ defineExpose({
   increment,
   /** Subtracts one `step`, clamped to `min`. No-op when disabled or read-only. */
   decrement,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

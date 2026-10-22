@@ -82,10 +82,12 @@ export interface ProgressSegment {
 import './Progress.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, onMounted, onScopeDispose, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ProgressMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -116,8 +118,12 @@ const rawProps = withDefaults(
     size?: 'sm' | 'md'
     /** Renders a legend under stacked segments that have labels. @default true */
     legend?: boolean
-    /** `false` skips the fill transition; drive `fillEl`/`fillEls` yourself. @default true */
-    motion?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { track: { opacity: 0 } } }`) and its states
+     * (`{ states: { complete: { root: { scale: [1, 1.02, 1] } } } }`). `{ when: 'visible' }` fills it once it scrolls into view. `false` skips the fill
+     * transition; drive `fillEl`/`fillEls` yourself. @default true
+     */
+    motion?: ProgressMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -158,6 +164,27 @@ interface ResolvedSegment {
 const indeterminate = computed(() => props.value == null)
 const range = computed(() => Math.max(0, props.max))
 
+// `when: 'visible'`: the fill waits at empty until the bar scrolls into view, then fills.
+const waiting = shallowRef(
+  typeof rawProps.motion === 'object' && (rawProps.motion as { when?: string }).when === 'visible',
+)
+onMounted(() => {
+  const el = root.value
+  if (!waiting.value || !el || typeof IntersectionObserver === 'undefined')
+    return void (waiting.value = false)
+  const viewer = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry?.isIntersecting) return
+      waiting.value = false
+      viewer.disconnect()
+    },
+    // Its own document's viewport: inside an iframe too, not the top page's.
+    { root: document, rootMargin: '0px 0px -10% 0px' },
+  )
+  viewer.observe(el)
+  onScopeDispose(() => viewer.disconnect())
+})
+
 // A custom property, not an inline transform, so motion-v/GSAP consumers can drive a fill directly.
 const segments = computed<ResolvedSegment[]>(() => {
   const sources: ProgressSegment[] = Array.isArray(props.value)
@@ -168,7 +195,7 @@ const segments = computed<ResolvedSegment[]>(() => {
   return sources.map((source) => {
     const value = Math.min(Math.max(0, source.value), range.value - used)
     const style: Record<string, string> = {
-      '--ui-progress-scale': String(range.value > 0 ? value / range.value : 0),
+      '--ui-progress-scale': String(range.value > 0 && !waiting.value ? value / range.value : 0),
       // Where a ring segment begins: the share every segment before it takes.
       '--ui-progress-start': String(range.value > 0 ? used / range.value : 0),
     }
@@ -256,6 +283,22 @@ function formatPercent(percent: number): string {
 
 const root = useTemplateRef<HTMLElement>('root')
 const fills = useTemplateRef<(HTMLElement | SVGPathElement)[]>('fills')
+const parts = useStateMotion({
+  key: 'progress',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-progress',
+    track: '.ui-progress-track',
+    fill: '.ui-progress-fill',
+    legend: '.ui-progress-legend',
+  },
+  states: () => ({
+    complete: state.value === 'complete',
+    indeterminate: indeterminate.value,
+  }),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.progress,
@@ -291,5 +334,9 @@ defineExpose({
   fillEl: computed(() => fills.value?.[0] ?? null),
   /** Every fill, one per stacked segment, in order. */
   fillEls: computed(() => fills.value ?? []),
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

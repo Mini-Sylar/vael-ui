@@ -9,6 +9,7 @@
     :close-on-esc="closeOnEsc"
     :close-on-overlay="closeOnOverlay"
     :force-mount="forceMount"
+    :motion="dialogMotion"
     :before-close="beforeClose"
     :teleport-to="teleportTo"
     :container="container"
@@ -48,11 +49,7 @@
         v-scroll-mask
         :class="listPart.class"
         :style="listPart.style"
-        :name="props.motion ? 'ui-command-palette-row' : undefined"
-        :css="props.motion"
-        move-class="ui-command-palette-row-move"
-        @enter="enterHook"
-        @leave="leaveHook"
+        v-bind="rowsTransition"
       >
         <li
           key="indicator"
@@ -166,6 +163,9 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { CommandPaletteMotion } from '../../motion/types'
 
 interface CommandPaletteGroupView {
   group: string | undefined
@@ -211,16 +211,19 @@ const rawProps = withDefaults(
     /** Runs before the palette closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The palette stays open while the promise is pending. CommandPalette passes it to its Dialog. */
     beforeClose?: BeforeClose<DialogCloseReason>
     /**
-     * Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. Forwarded to the underlying Dialog.
+     * Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui
+     * then leaves its motion to you. Forwarded to the underlying Dialog.
      * @default false
      */
     forceMount?: boolean
     /**
-     * The results list eases to its new height as you type. `false` turns that off and hands
-     * each appearing and disappearing row to `@item-enter`/`@item-leave` instead.
+     * How it moves. `false` skips all of it: opening, closing, and the results easing to their new
+     * height as you type (rows change at once). An object moves the dialog your way, like Dialog's:
+     * values for its parts, `{ spring }`, or `enter` / `leave` hooks. `items` animates the rows
+     * (`{ items: { initial: { item: { opacity: 0 } } } }`).
      * @default true
      */
-    motion?: boolean
+    motion?: CommandPaletteMotion
     /** Teleport target: a CSS selector. Takes precedence over `container`. */
     teleportTo?: string
     /** Scopes the palette to one element instead of the viewport. Forwarded to the underlying Dialog. */
@@ -256,23 +259,30 @@ const emit = defineEmits<{
   select: [item: T]
   /** Fires before the palette closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: DialogOpenChangeDetails]
-  /** Fires as a row appears while you type, only while `motion` is `false`. Run your own
-   * animation, then call `done()`. */
-  'item-enter': [el: Element, done: () => void]
-  /** Same as `@item-enter`, for a row disappearing. */
-  'item-leave': [el: Element, done: () => void]
 }>()
 
-// Only the component's own motion="false" hands items to the events; a provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motion !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-enter', el, done),
-)
-const leaveHook = computed(() =>
-  rawProps.motion !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-leave', el, done),
+// Yours (an object, or a shared style): rows come and go on the motion system, which eases the
+// list's height too. Otherwise rows change at once and the list eases its height itself.
+const style = useMotionStyle()
+const itemsOf = (source: unknown) => (source as { items?: object } | undefined)?.items
+const items = () => itemsOf(rawProps.motion) ?? itemsOf(style?.value?.commandPalette)
+const listMotion =
+  (typeof items() === 'object' || style?.value?.list) && props.motion !== false
+    ? useComponentList(items, {
+        key: 'list',
+        part: 'item',
+        name: 'CommandPalette',
+        look: { opacity: 0 },
+      })
+    : undefined
+const rowsTransition = computed(() =>
+  listMotion
+    ? listMotion.transition
+    : {
+        name: props.motion ? 'ui-command-palette-row' : undefined,
+        css: !!props.motion,
+        moveClass: 'ui-command-palette-row-move',
+      },
 )
 
 defineSlots<{
@@ -401,15 +411,24 @@ const { style: indicatorStyle } = useTabIndicator(() => [activeIndex.value, rows
   scroller: true,
   matchCross: true,
   maxGlide: 3,
-  motion: () => props.motion,
+  motion: () => !!props.motion,
   indicatorEl,
   position: 'translate',
 })
 
+// The list eases its own height (with a soft edge): the panel mustn't ease the same change too.
+// The dialog gets yours without `items`, which the rows read.
+const dialogMotion = computed(() => {
+  if (props.forceMount) return undefined
+  if (props.motion === false) return false
+  if (typeof props.motion !== 'object') return { resize: false }
+  const { items: _items, ...dialog } = props.motion
+  return { resize: false, ...dialog }
+})
 useEasedHeight({
   el: () => listEl.value,
   source: rows,
-  enabled: () => props.motion,
+  enabled: () => !!props.motion && !listMotion,
   edgeProperty: '--ui-command-palette-edge',
 })
 

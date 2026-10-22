@@ -65,6 +65,8 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { vTooltip } from '../../directives/vTooltip'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { DockMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -119,6 +121,8 @@ const props = withDefaults(
     tooltipSide?: Side
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
+    /** How it moves: its appearance, item by item (`{ initial: { item: { opacity: 0, y: 8 } }, stagger: 0.04 }`). `false` turns its own animation off. */
+    motion?: DockMotion
   }>(),
   {
     orientation: 'horizontal',
@@ -129,6 +133,8 @@ const props = withDefaults(
     grow: false,
     tooltips: true,
     tooltipSide: undefined,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 
@@ -138,6 +144,15 @@ const emit = defineEmits<{
 }>()
 
 const rootEl = useTemplateRef<HTMLElement>('rootEl')
+
+const parts = useStateMotion({
+  key: 'dock',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => rootEl.value,
+  selectors: { root: '.ui-dock', item: '.ui-dock-item' },
+  states: () => ({}),
+})
 
 const { setItemEl, onPointerDown, onPointerMove, onPointerLeave, touchSlid, remeasure } = useDock(
   rootEl,
@@ -288,5 +303,9 @@ defineExpose({
   itemEls: () => itemButtons.filter((el): el is HTMLButtonElement => !!el),
   /** Re-measures item positions for magnification, after a layout change the dock can't detect. */
   remeasure,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

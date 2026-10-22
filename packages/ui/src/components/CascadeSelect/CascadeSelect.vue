@@ -13,6 +13,7 @@
       :close-on-outside="closeOnOutside"
       :before-close="beforeClose"
       :force-mount="forceMount"
+      :motion="menuMotion"
       :teleport-to="teleportTo"
       :scroll-fade="scrollFade"
       :ui="{
@@ -96,7 +97,7 @@
               <LazyAnimatedText
                 v-else-if="!multiple"
                 :value="selectedItem?.label ?? ''"
-                :motion="props.motion"
+                :motion="!!props.motion"
               />
               <span v-else-if="display === 'text'">{{ displayLabel }}</span>
               <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
@@ -104,14 +105,10 @@
                    the placeholder slides in behind it. -->
               <template v-else>
                 <TransitionGroup
-                  name="ui-chip-item"
+                  v-bind="chipsTransition"
+                  :data-motion="props.motion ? undefined : 'off'"
                   tag="span"
                   class="ui-cascade-select-chips"
-                  :css="props.motion"
-                  :data-motion="props.motion ? undefined : 'off'"
-                  @enter="chipEnterHook"
-                  @leave="chipLeaveHook"
-                  @leave-cancelled="resetLeaveStyles"
                 >
                   <Chip
                     v-for="match in visibleChips"
@@ -135,7 +132,7 @@
           </span>
           <Transition
             name="ui-clear"
-            :css="props.motion"
+            :css="!!props.motion"
             @enter="measureClearSpace"
             @leave="startClearLeave"
             @leave-cancelled="resetLeaveStyles"
@@ -260,19 +257,15 @@ export type CascadeSelectFilter<T> =
     V extends string | number | (string | number)[] | null = string | number | null
   "
 >
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, CascadeSelectMotion } from '../../motion/types'
 import type { PopoverCloseReason } from '../../composables/usePopover'
 import './CascadeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/clear-transition.css'
-import {
-  collapseLeavingChip,
-  measureClearSpace,
-  resetLeaveStyles,
-  startClearLeave,
-} from '../../composables/dom'
+import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
 import { useChipRowWidth } from '../../composables/useChipRowWidth'
+import { useChipTransition } from '../../composables/useChipTransition'
 import '../shared/chip.css'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
@@ -347,7 +340,7 @@ const rawProps = withDefaults(
     closeOnOutside?: boolean
     /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
     beforeClose?: BeforeClose<PopoverCloseReason>
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
@@ -363,11 +356,14 @@ const rawProps = withDefaults(
      * @default true
      */
     scrollFade?: boolean
-    /** `false` skips the built-in motion: the menu easing to its new height as you search, the clear
-     * button, and chip transitions, which you can animate via `@chip-enter`/`@chip-leave`.
+    /**
+     * How it moves. `false` skips all of it: the menu opening and easing to its new height as you
+     * search, the clear button and the chips. An object moves the menu your way, like
+     * Menu's: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. `chips` does
+     * the same for the chips (`{ chips: { initial: { chip: { opacity: 0, y: 4 } } } }`).
      * @default true
      */
-    motion?: boolean
+    motion?: CascadeSelectMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
@@ -413,19 +409,19 @@ const emit = defineEmits<{
   change: [value: V]
   /** Fires when a leaf is picked or unpicked, with the item and its root-to-leaf path. */
   select: [item: T, path: CascadeSelectPath]
-  /** Replaces the chip enter transition when `motion` is `false`; call `done()` when finished. */
-  'chip-enter': [el: Element, done: () => void]
-  /** Same as `@chip-enter`, for a chip's removal. */
-  'chip-leave': [el: Element, done: () => void]
 }>()
 
-const chipEnterHook = computed(() =>
-  props.motion ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
-)
-const chipLeaveHook = computed(() =>
-  props.motion
-    ? collapseLeavingChip
-    : (el: Element, done: () => void) => emit('chip-leave', el, done),
+// The menu's motion: yours without `chips`, which the chips row reads.
+const menuMotion = computed(() => {
+  if (typeof props.motion !== 'object') return props.motion
+  const { chips: _chips, ...menu } = props.motion
+  return menu
+})
+const chipsTransition = useChipTransition(
+  () => rawProps.motion,
+  () => !!props.motion,
+  'cascadeSelect',
+  'CascadeSelect',
 )
 
 defineSlots<{
@@ -681,7 +677,7 @@ const valueEl = useTemplateRef<HTMLElement>('valueEl')
 useChipRowWidth({
   row: () => valueEl.value,
   empty: () => isEmpty.value,
-  active: () => props.multiple && props.display === 'chip' && props.motion,
+  active: () => props.multiple && props.display === 'chip' && !!props.motion,
   placeholder: '.ui-cascade-select-placeholder',
 })
 function rows(): HTMLElement[] {

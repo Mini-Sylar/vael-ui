@@ -164,6 +164,9 @@ import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { DataTableMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -208,8 +211,13 @@ const rawProps = withDefaults(
     total?: number
     /** Renders only the visible rows. Requires `scrollHeight`. `itemSize` fixes the row height. */
     virtualize?: boolean | { itemSize?: number; overscan?: number; estimateSize?: number }
-    /** Plays the built-in row and column-drag transitions. `false` hands rows to `@row-enter`/`@row-leave`. @default true */
-    motion?: boolean
+    /**
+     * Plays the built-in row and column-drag transitions; `false` changes them at once. An object
+     * animates the rows your way: values for the `row` part, or `enter` / `leave` hooks for your
+     * own library. Past 150 rows, changes are instant either way.
+     * @default true
+     */
+    motion?: DataTableMotion
     /** Lets you drag column headers to reorder them. Pair with `v-model:columnOrder`. @default false */
     reorderableColumns?: boolean
     /** When a reorderable column's drag grip shows: `'always'`, or only on hover and focus (`'hover'`). @default 'always' */
@@ -274,10 +282,6 @@ const emit = defineEmits<{
   'reach-start': []
   /** Fires when a column drag commits, with the new `field` order. */
   'column-reorder': [order: (keyof T)[]]
-  /** Fires when a row enters. Call `done()` when finished; set `motion` to `false` to own the animation. */
-  'row-enter': [el: Element, done: () => void]
-  /** Fires when a row leaves. Call `done()` when finished, as with `@row-enter`. */
-  'row-leave': [el: Element, done: () => void]
   /** Fires when `beforeDrop` throws or rejects during a column reorder, after DataTable reverts the move. */
   'drop-error': [error: unknown, details: SortableDropDetails]
 }>()
@@ -1086,13 +1090,23 @@ const headProps = computed(() => ({
     resizeHandle: themedUi()?.resizeHandle,
   },
 }))
-// Outside bodyProps, so a recompute there doesn't hand the body new identities.
-function onRowEnter(el: Element, done: () => void) {
-  emit('row-enter', el, done)
-}
-function onRowLeave(el: Element, done: () => void) {
-  emit('row-leave', el, done)
-}
+// Yours (an object, or a shared style): rows come and go on the motion system, kept in the table's
+// flow as they leave. Otherwise the built-in CSS look.
+const motionStyle = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' ||
+    motionStyle?.value?.dataTable ||
+    motionStyle?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'dataTable',
+        part: 'row',
+        name: 'DataTable',
+        look: { opacity: 0 },
+        leaving: 'hold',
+        arranged: true,
+      })
+    : undefined
 const bodyUi = computed(() => ({
   tbody: themedUi()?.tbody,
   tr: themedUi()?.tr,
@@ -1132,10 +1146,9 @@ const bodyProps = computed(() => ({
   onToggleSelect: toggleSelect,
   onToggleExpand: toggleExpand,
   onRowClick,
-  motion: props.motion,
+  motion: !!props.motion,
   rowMotionReady: rowMotionReady.value,
-  onRowEnter,
-  onRowLeave,
+  rowTransition: listMotion?.transition as Record<string, unknown> | undefined,
   ui: bodyUi.value,
 }))
 

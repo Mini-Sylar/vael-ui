@@ -42,6 +42,8 @@ import { useCollapse } from '../../composables/useCollapse'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { CollapsibleMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -53,8 +55,12 @@ const rawProps = withDefaults(
   defineProps<{
     /** Blocks toggling and marks the trigger `aria-disabled`. @default false */
     disabled?: boolean
-    /** `false` skips transitions; use exposed `panelEl` for custom motion. @default true */
-    motion?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { panel: { opacity: 0 } } }`) and its states
+     * (`{ states: { open: { trigger: { opacity: 0.7 } } } }`). `false` skips the height transition;
+     * use the exposed `panelEl` for your own. @default true
+     */
+    motion?: CollapsibleMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; panel: UiPartValue; body: UiPartValue }>
   }>(),
@@ -82,9 +88,17 @@ const panel = useTemplateRef<HTMLElement>('panel')
 
 const { style: collapseStyle, state: collapseState } = useCollapse(open, {
   el: panel,
-  motion: () => props.motion,
+  motion: () => props.motion !== false,
   // Its own motion="false" hands the height over; a provider's just makes it instant.
   handOff: () => rawProps.motion === false,
+})
+
+const parts = useStateMotion({
+  key: 'collapsible',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value, trigger: triggerWrapper.value, panel: panel.value }),
+  states: () => ({ open: open.value, disabled: props.disabled }),
 })
 
 // Reach into slot's real focusable child to keep expanded state + panel association in sync
@@ -126,5 +140,9 @@ defineExpose({
   el: root,
   /** Panel element, always mounted. */
   panelEl: panel,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

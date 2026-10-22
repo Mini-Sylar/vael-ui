@@ -2,7 +2,7 @@
   <div
     ref="root"
     :class="rootPart.class"
-    :style="rootPart.style"
+    :style="[springVars, rootPart.style]"
     data-accordion-root
     @keydown="onKeydown"
     v-bind="attrs"
@@ -34,8 +34,10 @@ import '../shared/tokens.css'
 import { computed, provide, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
-import type { AccordionMotion } from '../../motion/types'
+import type { AccordionMotion, Spring } from '../../motion/types'
 import { useThemedUi } from '../../theme'
+import { springEasing } from '../../composables/springEasing'
+import { useMotionStyle } from '../../motion/context'
 
 defineOptions({ inheritAttrs: false })
 
@@ -138,6 +140,24 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-accordion'))
+// `{ spring }` retimes the height and the chevron: opening on your spring, closing on it without the
+// bounce (an accordion is one reversible motion: same pace both ways). Your CSS can use them too.
+const motionStyle = useMotionStyle()
+const springVars = computed(() => {
+  const own = rawProps.motion
+  const spring = ((typeof own === 'object' && own.spring) || motionStyle?.value?.spring) as
+    | Spring
+    | undefined
+  if (!spring) return undefined
+  const open = springEasing(spring)
+  const close = springEasing({ damping: 1, response: spring.response ?? 0.32 })
+  return {
+    '--ui-accordion-ease': open.easing,
+    '--ui-accordion-duration': `${open.duration}ms`,
+    '--ui-accordion-ease-close': close.easing,
+    '--ui-accordion-duration-close': `${close.duration}ms`,
+  }
+})
 
 defineExpose({
   /** Root element. */

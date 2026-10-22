@@ -10,13 +10,11 @@
       <TransitionGroup
         :ref="registerToaster"
         :data-ui-group="groupKey"
-        name="ui-toast"
         appear
         tag="ol"
         :class="rootPart.class"
         :style="[rootStyle, rootPart.style]"
-        v-bind="listAttrs"
-        :css="props.motion"
+        v-bind="{ ...listAttrs, ...toastsTransition }"
         :data-expanded="expanded"
         :data-contained="contained || undefined"
         :data-y-position="yPos"
@@ -26,8 +24,6 @@
         @pointerleave="onToasterLeave"
         @focusin="onToasterFocusIn"
         @focusout="onToasterFocusOut"
-        @enter="enterHook"
-        @leave="leaveHook"
       >
         <li
           v-for="(entry, index) in rendered"
@@ -139,6 +135,9 @@ import StatusIcon from '../internal/StatusIcon.vue'
 import { getFocusable, transitionGroupRef, useDOMTarget } from '../../composables/dom'
 import type { DOMTarget } from '../../composables/dom'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { ToasterMotion } from '../../motion/types'
 
 // Port of vue-sonner's swipe-to-dismiss mechanics; constants are Sonner's.
 const SWIPE_THRESHOLD = 45 // px
@@ -179,8 +178,13 @@ const rawProps = withDefaults(
      * element's corner, so give the element `position: relative`. Pair with `name` to send only
      * some toasts there. Omit it for a page-level toaster. */
     container?: DOMTarget
-    /** `false` delegates enter/leave animations to `@card-enter`/`@card-leave` events. @default true */
-    motion?: boolean
+    /**
+     * How toasts come and go. `false` shows and removes them at once. An object animates them
+     * your way: values for the `toast` part, or `enter` / `leave` hooks for your own library.
+     * The stack places them either way.
+     * @default true
+     */
+    motion?: ToasterMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -203,24 +207,23 @@ const rawProps = withDefaults(
 )
 const props = withProviderDefaults(rawProps, { motion: true })
 
-const emit = defineEmits<{
-  /** Fires when a toast enters, only while `motion` is `false`. Run your own animation, then call
-   * `done()`. */
-  'card-enter': [el: Element, done: () => void]
-  /** Same as `@card-enter`, for a toast leaving. */
-  'card-leave': [el: Element, done: () => void]
-}>()
-
-// Only the component's own motion="false" hands items to the events; a provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motion !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('card-enter', el, done),
-)
-const leaveHook = computed(() =>
-  rawProps.motion !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('card-leave', el, done),
+// Yours (an object, or a shared style): toasts come and go on the motion system, held where the
+// stack placed them. Otherwise the built-in CSS look.
+const style = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' || style?.value?.toaster || style?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'toaster',
+        part: 'toast',
+        name: 'Toaster',
+        look: { opacity: 0, y: 12 },
+        leaving: 'hold',
+        arranged: true,
+      })
+    : undefined
+const toastsTransition = computed(() =>
+  listMotion ? listMotion.transition : { name: 'ui-toast', css: !!props.motion },
 )
 
 defineSlots<{

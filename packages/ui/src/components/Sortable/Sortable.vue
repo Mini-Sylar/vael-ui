@@ -80,6 +80,8 @@ import { useComponentHaptic } from '../../composables/useHaptic'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { SortableMotion } from '../../motion/types'
 import { useUiMessages } from '../../messages'
 import { useSortable } from '../../composables/useSortable'
 import { moveTreeNode } from '../../composables/useSortable'
@@ -133,10 +135,12 @@ const rawProps = withDefaults(
     /** Turns off dragging, so rows stay static. @default false */
     disabled?: boolean
     /**
-     * `false` skips the built-in springs, so rows snap to their new slots. Use it when you drive the motion yourself.
+     * How it moves: its appearance, row by row (`{ initial: { item: { opacity: 0, y: 8 } }, stagger: 0.04 }`),
+     * and its states (`{ states: { dragging: { root: { scale: '1.01' } } } }`). `false` skips the
+     * built-in springs, so rows snap to their new slots. Use it when you drive the motion yourself.
      * @default true
      */
-    motion?: boolean
+    motion?: SortableMotion
     /** Handle from `useSortableGroup()`. Lists that share it, `<Sortable>` or `useSortable()`, let items cross between them. */
     group?: SortableGroupHandle
     /** This list's identity within `group`. Unset, Sortable assigns one. */
@@ -243,7 +247,11 @@ const {
   autoScroll: () => props.autoScroll,
   restrictToList: () => props.restrictToList,
   disabled: () => props.disabled,
-  motion: () => props.motion,
+  motion: () => props.motion !== false,
+  spring: () =>
+    typeof rawProps.motion === 'object'
+      ? (rawProps.motion.spring as { damping: number; response: number } | undefined)
+      : undefined,
   labelOf: (value) => {
     const item = items.value.find((candidate) => keyOf(candidate) === value)
     return item ? labelOf(item) : String(value)
@@ -273,6 +281,15 @@ const {
     tick()
     emit('reorder', value, to)
   },
+})
+
+const parts = useStateMotion({
+  key: 'sortable',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-sortable', item: '.ui-sortable-item' },
+  states: () => ({ dragging: isGrabbed.value, settling: isSettling.value }),
 })
 
 function isGrabbedItem(item: T): boolean {
@@ -305,5 +322,9 @@ defineExpose({
   isForeignDropTarget,
   /** Key of the item being dragged, or `null`. */
   activeValue,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

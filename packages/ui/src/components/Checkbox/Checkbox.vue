@@ -78,6 +78,8 @@ import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { CheckboxMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -104,8 +106,13 @@ const rawProps = withDefaults(
     size?: 'sm' | 'md'
     /** Native `name` for form submission. */
     name?: string
-    /** `false` skips built-in transitions; animate the exposed `boxEl`/`checkEl` yourself. @default true */
-    motion?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { control: { opacity: 0, scale: 0.8 } } }`) and its
+     * states, like `checked`, `indeterminate` or `invalid` (`{ states: { checked: { control: { scale: '1.1' } } } }`).
+     * `false` turns its own animation off, built-in transitions too; animate the exposed `boxEl`/`checkEl` yourself.
+     * @default true
+     */
+    motion?: CheckboxMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; box: UiPartValue; label: UiPartValue }>
   }>(),
@@ -173,6 +180,24 @@ const skipTransition = computed(() => firstPaint.value || !props.motion)
 const root = useTemplateRef<HTMLElement>('root')
 const boxEl = useTemplateRef<HTMLElement>('boxEl')
 const checkEl = useTemplateRef<SVGElement>('checkEl')
+const parts = useStateMotion({
+  key: 'checkbox',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-checkbox',
+    control: '.ui-checkbox-box',
+    indicator: '.ui-checkbox-check',
+    label: '.ui-checkbox-label',
+  },
+  states: () => ({
+    checked: isChecked.value,
+    indeterminate: props.indeterminate,
+    invalid: isInvalid.value,
+    disabled: isDisabled.value,
+  }),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.checkbox,
@@ -201,5 +226,9 @@ defineExpose({
   boxEl,
   /** Check-mark SVG element. */
   checkEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

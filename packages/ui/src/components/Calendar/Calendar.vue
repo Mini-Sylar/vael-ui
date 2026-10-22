@@ -3,7 +3,7 @@
     ref="rootEl"
     :class="rootPart.class"
     :style="rootPart.style"
-    :data-motion="props.motion ? undefined : 'off'"
+    :data-motion="motionOn ? undefined : 'off'"
   >
     <div
       :class="[
@@ -63,11 +63,7 @@
         @pointerenter="titleIfCut"
         @click="canDrill && drillUp()"
       >
-        <Transition
-          :name="props.motion ? 'ui-calendar-label' : undefined"
-          :css="props.motion"
-          mode="out-in"
-        >
+        <Transition v-bind="labelTransition" mode="out-in">
           <span :key="headerLabel" class="ui-calendar-label-text">
             <slot name="label" :label="headerLabel" :date="viewDate" :level="navLevel">{{
               headerLabel
@@ -127,8 +123,8 @@
         aria-hidden="true"
       />
       <Transition
-        :name="props.motion ? 'ui-calendar-level' : undefined"
-        :css="props.motion"
+        :name="motionOn ? 'ui-calendar-level' : undefined"
+        :css="motionOn"
         @enter="anchorZoom"
       >
         <div :key="navLevel" class="ui-calendar-level">
@@ -142,11 +138,7 @@
           >
             <div v-for="(pane, pi) in panes" :key="pi" class="ui-calendar-pane">
               <div v-if="panes.length > 1" class="ui-calendar-pane-head">
-                <Transition
-                  :name="props.motion ? 'ui-calendar-label' : undefined"
-                  :css="props.motion"
-                  mode="out-in"
-                >
+                <Transition v-bind="labelTransition" mode="out-in">
                   <button
                     :key="monthKeyOf(pane)"
                     type="button"
@@ -178,10 +170,7 @@
               </div>
 
               <div class="ui-calendar-grid-wrap">
-                <Transition
-                  :name="props.motion ? 'ui-calendar-grid' : undefined"
-                  :css="props.motion"
-                >
+                <Transition v-bind="gridTransition">
                   <div
                     :key="monthKeyOf(pane)"
                     :ref="(el) => pi === 0 && setGridEl(el)"
@@ -231,7 +220,7 @@
           </div>
 
           <template v-else-if="navLevel === 'month'">
-            <Transition :name="props.motion ? 'ui-calendar-grid' : undefined" :css="props.motion">
+            <Transition v-bind="gridTransition">
               <div
                 :key="`m${viewDate.getFullYear()}`"
                 role="grid"
@@ -269,7 +258,7 @@
           </template>
 
           <template v-else>
-            <Transition :name="props.motion ? 'ui-calendar-grid' : undefined" :css="props.motion">
+            <Transition v-bind="gridTransition">
               <div
                 :key="`y${yearWindowStart}`"
                 role="grid"
@@ -350,6 +339,8 @@ import type { ComponentPublicInstance } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useSwapMotion } from '../../motion/useSwapMotion'
+import type { CalendarMotion } from '../../motion/types'
 import { useUiMessages } from '../../messages'
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */
@@ -386,8 +377,11 @@ const rawProps = withDefaults(
      * @default false
      */
     showYearButtons?: boolean
-    /** `false` skips the month-navigation slide transition. @default true */
-    motion?: boolean
+    /**
+     * `false` skips the month change's slide. An object restyles it: give the `label` and `grid`
+     * looks as values, or as functions of `where.direction` (`1` forward, `-1` back). @default true
+     */
+    motion?: CalendarMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -524,6 +518,30 @@ const initialAnchor = modelAnchor() ?? startOfMonth(new Date())
 const viewDate = ref<Date>(startOfMonth(initialAnchor))
 // 1 = forward, -1 = backward; drives month-transition slide direction.
 const direction = ref(1)
+const motionOn = computed(() => !!props.motion)
+// Yours set: the engine plays the label and grid swaps; otherwise their CSS classes do.
+const swapMotion = useSwapMotion({
+  key: 'calendar',
+  motion: () => props.motion,
+  direction: () => (direction.value < 0 ? -1 : 1),
+  initial: {
+    label: ({ direction: d }) => ({ opacity: 0, x: 4 * d, blur: 2 }),
+    grid: ({ direction: d }) => ({ opacity: 0, x: 8 * d, blur: 3 }),
+  },
+  exit: {
+    label: ({ direction: d }) => ({ opacity: 0, x: -4 * d, blur: 2 }),
+    grid: ({ direction: d }) => ({ opacity: 0, x: -8 * d, blur: 3 }),
+  },
+  timing: { duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' },
+})
+const labelSwap = swapMotion.hooks('label', 'wait')
+const gridSwap = swapMotion.hooks('grid', 'sync')
+const swapped = (name: string, hooks: typeof labelSwap) =>
+  swapMotion.active.value
+    ? { css: false, onEnter: hooks.onEnter, onLeave: hooks.onLeave }
+    : { name: motionOn.value ? name : undefined, css: motionOn.value }
+const labelTransition = computed(() => swapped('ui-calendar-label', labelSwap))
+const gridTransition = computed(() => swapped('ui-calendar-grid', gridSwap))
 const focusedDate = ref<Date>(initialAnchor)
 
 onMounted(() => {
@@ -926,7 +944,7 @@ const { style: hoverStyle } = useHoverIndicator(bodyEl, {
   itemSelector:
     '.ui-calendar-cell:not(.ui-calendar-cell--blank), .ui-calendar-month-cell, .ui-calendar-year-cell',
   scope: '.ui-calendar-body',
-  motion: () => props.motion,
+  motion: () => motionOn.value,
   indicatorEl: hoverEl,
 })
 const labelButton = useTemplateRef<HTMLElement>('labelButton')
@@ -939,7 +957,7 @@ watch(
   (next) => {
     const button = labelButton.value
     const text = button?.querySelector<HTMLElement>('.ui-calendar-label-text')
-    if (!button || !text || !props.motion) return
+    if (!button || !text || !motionOn.value) return
     if (prefersReducedMotion()) return
     // A custom #label renders more than text; only the plain name is measured.
     if (text.childElementCount > 0) return
@@ -983,7 +1001,7 @@ function animateBodyHeight(mutate: () => void) {
   if (navLevel.value === 'date' && bodyEl.value) {
     dateBodySize.value = { inline: bodyEl.value.offsetWidth, block: bodyEl.value.offsetHeight }
   }
-  if (!props.motion || !bodyEl.value) {
+  if (!motionOn.value || !bodyEl.value) {
     mutate()
     return
   }

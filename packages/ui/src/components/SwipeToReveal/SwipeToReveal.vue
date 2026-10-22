@@ -67,6 +67,8 @@ import type { SwipeRevealSide } from '../../composables/useSwipeReveal'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { SwipeToRevealMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -83,10 +85,12 @@ const rawProps = withDefaults(
     /** Blocks swiping. `reveal()`, `close()` and `v-model:open` still work. @default false */
     disabled?: boolean
     /**
-     * Plays the built-in release and settle transition. Set `false` to drive the settle yourself.
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { open: { actions: { opacity: 1 } } } }`). The built-in release and settle
+     * transition plays unless it's `false`, so you can drive the settle yourself.
      * @default true
      */
-    motion?: boolean
+    motion?: SwipeToRevealMotion
     /** Grows the actions panel in from its edge as it opens. A number from 0 to 1 sets the starting scale.
      * `false` turns it off.
      * @default true
@@ -154,6 +158,19 @@ const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reve
       emit('change', side !== null, side)
     },
   })
+
+const parts = useStateMotion({
+  key: 'swipeToReveal',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-swipe-reveal',
+    content: '.ui-swipe-reveal-content',
+    actions: '.ui-swipe-reveal-actions',
+  },
+  states: () => ({ open: openSide.value !== null, dragging: isDragging.value }),
+})
 
 // Tabbing into a closed row's actions reveals them, so the focused button is
 // visible; tabbing out of the row closes what focus opened.
@@ -230,5 +247,9 @@ defineExpose({
   reveal,
   /** Closes the open edge. */
   close,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

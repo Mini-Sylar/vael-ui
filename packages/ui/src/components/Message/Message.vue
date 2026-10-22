@@ -1,13 +1,5 @@
 <template>
-  <Transition
-    name="ui-message"
-    :css="!forceMount"
-    @before-enter="collapse"
-    @enter="grow"
-    @after-enter="release"
-    @before-leave="hold"
-    @leave="shrink"
-  >
+  <Transition name="ui-message" v-bind="messageTransition">
     <div
       v-if="forceMount || open"
       v-show="open"
@@ -55,7 +47,7 @@
 
 <script lang="ts">
 import type { UiPartValue } from '../../classes'
-import type { BeforeClose } from '../../motion/types'
+import type { BeforeClose, MessageMotion } from '../../motion/types'
 
 /** Why a message closes: its dismiss button, or your code. */
 export type MessageCloseReason = 'dismiss' | 'programmatic'
@@ -82,8 +74,15 @@ export interface MessageProps {
   closable?: boolean
   /** Runs before the message closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. `v-model` stays `true` while the promise is pending. */
   beforeClose?: BeforeClose<MessageCloseReason>
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How it comes and goes. `false` shows and hides it at once. An object moves it your way: values
+   * for the `root` part (`{ exit: { root: { opacity: 0, x: 24 } } }`), `{ spring }`, or `enter` /
+   * `leave` hooks for your own library. Its space opens as it enters, and closes after it leaves.
+   * @default true
+   */
+  motion?: MessageMotion
   /** Shows the leading status icon (or the `#icon` slot). @default true */
   showIcon?: boolean
   /** Defaults to `'alert'` for `'error'` and `'warning'`, `'status'` otherwise. */
@@ -101,9 +100,6 @@ export interface MessageProps {
 }
 </script>
 
-<!--
-  forceMount + beforeClose(done) contract reimplemented locally (Message needs no focus-trap/scroll-lock).
--->
 <script setup lang="ts">
 import './Message.css'
 import '../shared/tokens.css'
@@ -116,6 +112,7 @@ import StatusIcon from '../internal/StatusIcon.vue'
 import { getFocusable } from '../../composables/dom'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useCloseGuard } from '../../composables/useCloseGuard'
+import { useMessageMotion } from '../../composables/useMessageMotion'
 
 defineOptions({ inheritAttrs: false })
 
@@ -127,6 +124,7 @@ const props = withDefaults(defineProps<MessageProps>(), {
   appearance: 'default',
   closable: false,
   forceMount: false,
+  motion: undefined,
   showIcon: true,
 })
 
@@ -237,7 +235,6 @@ function openStyles(node: HTMLElement) {
   node.style.marginBlockStart = ''
 }
 function collapse(el: Element) {
-  if (props.forceMount) return
   const node = el as HTMLElement
   node.style.boxSizing = 'border-box'
   node.style.overflow = 'hidden'
@@ -245,7 +242,6 @@ function collapse(el: Element) {
 }
 // Runs once the box is in the DOM (before-enter is before insertion, so it can't measure).
 function grow(el: Element) {
-  if (props.forceMount) return
   const node = el as HTMLElement
   node.style.blockSize = ''
   node.style.paddingBlock = ''
@@ -260,7 +256,6 @@ function grow(el: Element) {
 function release(el: Element) {
   const node = el as HTMLElement
   delete node.dataset.size
-  delete node.dataset.shrinking
   node.style.boxSizing = ''
   node.style.overflow = ''
   node.style.transition = ''
@@ -271,8 +266,6 @@ function release(el: Element) {
 }
 function hold(el: Element) {
   const node = el as HTMLElement
-  // Already shrinking alongside a `beforeClose` tween, or force-mounted.
-  if (props.forceMount || node.style.blockSize) return
   node.style.boxSizing = 'border-box'
   node.style.overflow = 'hidden'
   node.style.blockSize = `${node.offsetHeight}px`
@@ -280,28 +273,19 @@ function hold(el: Element) {
 }
 function shrink(el: Element) {
   const node = el as HTMLElement
-  if (props.forceMount || node.dataset.shrinking !== undefined) return
   requestAnimationFrame(() => shutStyles(node))
 }
-// A `beforeClose` tween runs before the leave; the box shrinks with it instead of after it.
-watch(isClosing, (closing) => {
-  const node = root.value
-  if (!node || props.forceMount) return
-  if (closing) {
-    hold(node)
-    node.dataset.shrinking = ''
-    node.style.transition = [
-      'block-size',
-      'padding-block',
-      'border-block-width',
-      'margin-block-start',
-    ]
-      .map((property) => `${property} var(--ui-duration-exit) var(--ui-ease-out)`)
-      .join(', ')
-    requestAnimationFrame(() => shutStyles(node))
-  } else if (open.value) {
-    release(node)
-  }
+const messageTransition = useMessageMotion({
+  motion: () => props.motion,
+  root: () => root.value,
+  forceMount: () => props.forceMount,
+  builtIn: {
+    onBeforeEnter: collapse,
+    onEnter: grow,
+    onAfterEnter: release,
+    onBeforeLeave: hold,
+    onLeave: shrink,
+  },
 })
 
 defineExpose({

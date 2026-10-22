@@ -8,7 +8,7 @@
   >
     <Transition
       :name="props.motion ? 'ui-animated-text' : undefined"
-      :css="props.motion"
+      :css="!!props.motion"
       @before-leave="keepWidth"
       @after-leave="releaseWidth"
     >
@@ -28,6 +28,8 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { withProviderDefaults } from '../../config'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { AnimatedTextMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -37,10 +39,11 @@ const rawProps = withDefaults(
     /** The text to show. Changing it crossfades to the new text. */
     value: string
     /**
-     * `false` swaps the text at once. Unset, it follows the nearest `ConfigProvider`.
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`). `false` swaps
+     * the text at once. Unset, it follows the nearest `ConfigProvider`.
      * @default true
      */
-    motion?: boolean
+    motion?: AnimatedTextMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
@@ -49,6 +52,14 @@ const rawProps = withDefaults(
 const props = withProviderDefaults(rawProps, { motion: true })
 
 const root = useTemplateRef<HTMLElement>('root')
+const parts = useStateMotion({
+  key: 'animatedText',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-animated-text' },
+  states: () => ({}),
+})
 
 // Hold the old width for one frame, then ease to the new one.
 let fromWidth = 0
@@ -94,5 +105,9 @@ const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-animated
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

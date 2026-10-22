@@ -13,13 +13,13 @@
       dir="ltr"
       aria-hidden="true"
       :name="props.motion ? 'ui-animated-number' : undefined"
-      :css="props.motion"
+      :css="!!props.motion"
     >
       <span
         v-for="part in parts"
         :key="part.key"
         :class="part.kind === 'digit' ? 'ui-animated-number-digit' : 'ui-animated-number-symbol'"
-        :style="part.kind === 'digit' ? { '--ui-digit': part.digit } : undefined"
+        :style="part.kind === 'digit' ? { '--ui-digit': seen ? part.digit : 0 } : undefined"
       >
         <template v-if="part.kind === 'digit'">
           <span class="ui-animated-number-placeholder">{{ part.text }}</span>
@@ -39,12 +39,22 @@
 <script setup lang="ts">
 import './AnimatedNumber.css'
 import '../shared/tokens.css'
-import { computed, TransitionGroup, useAttrs, useTemplateRef } from 'vue'
+import {
+  computed,
+  onMounted,
+  onScopeDispose,
+  shallowRef,
+  TransitionGroup,
+  useAttrs,
+  useTemplateRef,
+} from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { validLocale, withProviderDefaults } from '../../config'
 import { digitGlyphs, numberParts, visualOrder } from '../../composables/numberParts'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { AnimatedNumberMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -58,10 +68,13 @@ const rawProps = withDefaults(
     /** BCP 47 locale for the digits and separators. Unset, it follows the nearest `ConfigProvider`, then the browser. */
     locale?: string
     /**
-     * `false` swaps digits without rolling. Unset, it follows the nearest `ConfigProvider`.
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`).
+     * `{ when: 'visible' }` holds every digit at 0 until the number scrolls into view, then rolls
+     * them to the value. `false` swaps digits without rolling. Unset, it follows the nearest
+     * `ConfigProvider`.
      * @default true
      */
-    motion?: boolean
+    motion?: AnimatedNumberMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
@@ -70,6 +83,34 @@ const rawProps = withDefaults(
 const props = withProviderDefaults(rawProps, { motion: true, locale: undefined })
 
 const root = useTemplateRef<HTMLElement>('root')
+const motionParts = useStateMotion({
+  key: 'animatedNumber',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-animated-number' },
+  states: () => ({}),
+})
+// `when: 'visible'`: the reels wait at 0 until it's scrolled into view (screen readers get the value).
+const waits = typeof props.motion === 'object' && props.motion.when === 'visible'
+const seen = shallowRef(!waits)
+let viewer: IntersectionObserver | undefined
+if (waits)
+  onMounted(() => {
+    if (!root.value || typeof IntersectionObserver === 'undefined') return void (seen.value = true)
+    viewer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        seen.value = true
+        viewer?.disconnect()
+      },
+      // Its own document's viewport, so it works inside an iframe too.
+      { root: document, rootMargin: '0px 0px -10% 0px' },
+    )
+    viewer.observe(root.value)
+  })
+onScopeDispose(() => viewer?.disconnect())
+
 const formatter = computed(() => new Intl.NumberFormat(validLocale(props.locale), props.format))
 const glyphs = computed(() => digitGlyphs(formatter.value))
 const text = computed(() => formatter.value.format(props.value))
@@ -93,5 +134,9 @@ const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-animated
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return motionParts()
+  },
 })
 </script>

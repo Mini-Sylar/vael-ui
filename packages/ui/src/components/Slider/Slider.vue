@@ -80,6 +80,8 @@ import { useSlider } from '../../composables/useSlider'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { SliderMotion } from '../../motion/types'
 import { useUiMessages } from '../../messages'
 
 defineOptions({ inheritAttrs: false })
@@ -113,6 +115,8 @@ const props = withDefaults(
     valueText?: (value: number) => string
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; track: UiPartValue; fill: UiPartValue; thumb: UiPartValue }>
+    /** How it moves: its appearance (`{ initial: { thumb: { opacity: 0, scale: 0.6 } } }`) and its states (`{ states: { focus: { thumb: { scale: '1.15' } } } }`). `{ when: 'visible' }` holds its appearance until it scrolls into view. `false` turns its own animation off. */
+    motion?: SliderMotion
   }>(),
   {
     min: 0,
@@ -121,6 +125,8 @@ const props = withDefaults(
     orientation: 'horizontal',
     disabled: false,
     invalid: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 
@@ -195,6 +201,19 @@ const root = useTemplateRef<HTMLElement>('root')
 const trackEl = useTemplateRef<HTMLElement>('trackEl')
 const fillEl = useTemplateRef<HTMLElement>('fillEl')
 const thumbEls = useTemplateRef<HTMLElement[]>('thumbEls')
+const parts = useStateMotion({
+  key: 'slider',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-slider',
+    track: '.ui-slider-track',
+    fill: '.ui-slider-fill',
+    thumb: '.ui-slider-thumb',
+  },
+  states: () => ({ disabled: isDisabled.value }),
+})
 
 const {
   isDragging,
@@ -244,6 +263,10 @@ defineExpose({
   thumbEls,
   /** `true` while a thumb is being dragged. */
   dragging: isDragging,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 
 function onThumbFocus(event: FocusEvent) {

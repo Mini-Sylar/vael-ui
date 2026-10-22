@@ -27,6 +27,16 @@
         :data-align="resolvedAlign"
       >
         <div
+          v-if="surface"
+          ref="surfaceLayer"
+          class="ui-popover-surface"
+          aria-hidden="true"
+          :style="surface as StyleValue"
+        >
+          <span ref="surfacePill" class="ui-popover-surface-shape" />
+          <span ref="surfaceBlob" class="ui-popover-surface-shape" />
+        </div>
+        <div
           :id="panelId"
           ref="panel"
           data-ui-presence
@@ -35,7 +45,27 @@
           v-bind="panelAttrs"
         >
           <div class="ui-popover-body" :style="bodyStyle" v-scroll-mask="scrollFade">
+            <!-- `swap`: one keyed root inside; the old view leaves as the new one comes in. -->
+            <Transition
+              v-if="motion.resolved.value.swap"
+              :css="false"
+              :mode="motion.resolved.value.swap === 'wait' ? 'out-in' : undefined"
+              @enter="motion.swap.onEnter"
+              @leave="motion.swap.onLeave"
+            >
+              <slot
+                :close="close"
+                :open="open"
+                :isClosing="isClosing"
+                :cancelClose="cancelClose"
+                :panelEl="panelEl"
+                :placement="placement"
+                :target="target"
+                :phase="phase"
+              />
+            </Transition>
             <slot
+              v-else
               :close="close"
               :open="open"
               :isClosing="isClosing"
@@ -81,7 +111,7 @@ export interface PopoverProps {
   closeOnOutside?: boolean
   /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
   beforeClose?: BeforeClose<PopoverCloseReason>
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
   /**
    * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, states by part
@@ -143,7 +173,7 @@ import {
   watchEffect,
 } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
-import type { ComponentPublicInstance } from 'vue'
+import type { ComponentPublicInstance, StyleValue } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
@@ -242,6 +272,12 @@ const triggerElRef = computed<HTMLElement | null>(() => {
 })
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
+const surfaceLayer = useTemplateRef<HTMLElement>('surfaceLayer')
+const surfacePill = useTemplateRef<HTMLElement>('surfacePill')
+const surfaceBlob = useTemplateRef<HTMLElement>('surfaceBlob')
+// Vue nulls refs as a close begins, before the leave: the blob must still follow the panel out.
+let lastBlob: HTMLElement | null = null
+watch(surfaceBlob, (el) => el && (lastBlob = el))
 const panelEl = useTemplateRef<HTMLElement>('panel')
 
 const motion = useComponentMotion({
@@ -259,8 +295,102 @@ const motion = useComponentMotion({
   exitDefaults: () => ({ panel: { opacity: 0, scale: '0.99' } }),
   timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
   owns: () => !props.forceMount,
+  // morph: 'trigger' grows from the trigger.
+  trigger: () => triggerElRef.value,
+  ready: placed,
+  mirror: () => (motion.resolved.value.surface ? lastBlob : null),
+  resizes: true,
 })
 const { target, phase } = motion
+// `surface`: a layer of shapes above the page and behind the panel: a pill on the trigger and a
+// blob that moves exactly as the panel does, both in the panel's colour, so they melt into one
+// shape under your filter. The trigger is cut out of the layer, so the real one shows through.
+// The panel goes clear while open: the blob is its body, and your filter never touches text.
+const surface = computed(() => motion.resolved.value.surface)
+let panelColour: string | undefined
+// Closed: the panel's own background and shadow again.
+watch(phase, (now) => {
+  if (now !== 'left' || !panelColour) return
+  panelColour = undefined
+  panelEl.value?.style.removeProperty('background')
+  panelEl.value?.style.removeProperty('box-shadow')
+})
+// Room around the shapes for the filter to spread into before the layer's edge clips it.
+const SURFACE_BLEED = 24
+// The hole is a touch smaller than the trigger and the pill its size: the goo covers the trigger's
+// edge, so no gap of page shows between them as an outline.
+const HOLE_GROW = -1
+const PILL_INSET = 0
+function measureSurface() {
+  const trigger = triggerElRef.value
+  const panel = panelEl.value
+  const positioner = positionerEl.value
+  const layer = surfaceLayer.value
+  if (!trigger || !panel || !positioner || !layer || !surfacePill.value || !surfaceBlob.value)
+    return
+  panelColour ??= getComputedStyle(panel).backgroundColor
+  panel.style.setProperty('background', 'transparent')
+  panel.style.setProperty('box-shadow', 'none')
+  // Both in the positioner's coordinates; the panel by its layout box (a morph is moving it).
+  const at = positioner.getBoundingClientRect()
+  const box = trigger.getBoundingClientRect()
+  const t = { x: box.left - at.left, y: box.top - at.top, w: box.width, h: box.height }
+  const p = { x: panel.offsetLeft, y: panel.offsetTop, w: panel.offsetWidth, h: panel.offsetHeight }
+  const left = Math.min(t.x, p.x) - SURFACE_BLEED
+  const top = Math.min(t.y, p.y) - SURFACE_BLEED
+  const width = Math.max(t.x + t.w, p.x + p.w) + SURFACE_BLEED - left
+  const height = Math.max(t.y + t.h, p.y + p.h) + SURFACE_BLEED - top
+  const radius = Math.min(
+    Number.parseFloat(getComputedStyle(trigger).borderTopLeftRadius) || 0,
+    t.w / 2,
+    t.h / 2,
+  )
+  const px = (n: number) => `${n}px`
+  Object.assign(layer.style, { left: px(left), top: px(top), width: px(width), height: px(height) })
+  // The layer's box, with the trigger cut out of it (evenodd).
+  const g = HOLE_GROW
+  const x = t.x - left - g
+  const y = t.y - top - g
+  const w = t.w + g * 2
+  const h = t.h + g * 2
+  const r = radius + g
+  const arc = `A${r} ${r} 0 0 1`
+  const hole =
+    `M${x + r} ${y}H${x + w - r}${arc} ${x + w} ${y + r}` +
+    `V${y + h - r}${arc} ${x + w - r} ${y + h}H${x + r}${arc} ${x} ${y + h - r}` +
+    `V${y + r}${arc} ${x + r} ${y}Z`
+  layer.style.clipPath = `path(evenodd, "M0 0H${width}V${height}H0Z ${hole}")`
+  const place = (shape: HTMLElement, r: typeof t, corner: string) =>
+    Object.assign(shape.style, {
+      left: px(r.x - left),
+      top: px(r.y - top),
+      width: px(r.w),
+      height: px(r.h),
+      borderRadius: corner,
+      background: panelColour,
+    })
+  const i = PILL_INSET
+  place(surfacePill.value, { x: t.x + i, y: t.y + i, w: t.w - i * 2, h: t.h - i * 2 }, px(radius))
+  place(surfaceBlob.value, p, getComputedStyle(panel).borderTopLeftRadius)
+}
+// Placed: floating-ui has put it where it opens. A panel that's never placed opens anyway.
+function placed(): Promise<void> {
+  return new Promise((resolve) => {
+    let stop: (() => void) | undefined
+    const done = () => {
+      clearTimeout(timer)
+      stop?.()
+      measureSurface()
+      resolve()
+    }
+    const timer = setTimeout(done, 150)
+    // Already placed: at once.
+    if (positionerStyle.value.visibility === 'visible') return done()
+    stop = watch(positionerStyle, (style) => style.visibility === 'visible' && done(), {
+      flush: 'post',
+    })
+  })
+}
 const motionTransition = motion.transition
 // Whether this open's after-enter (or this close's after-leave) has been emitted.
 let told = false
@@ -268,7 +398,8 @@ const motionHooks = computed(() => {
   const { css: _css, ...hooks } = motionTransition.value
   return {
     ...hooks,
-    onBeforeEnter: () => {
+    onBeforeEnter: (el: Element) => {
+      hooks.onBeforeEnter?.(el)
       phase.value = 'entering'
       told = false
     },
@@ -358,6 +489,8 @@ const {
   onOpenChange: (value, details) => emit('open-change', value, details),
   scope: container,
 })
+// Moved while open (scroll, flip, shift): the shapes follow.
+watch(positionerStyle, () => open.value && measureSurface(), { flush: 'post' })
 
 // Same shared-layer-stack stacking Dialog uses (see Dialog.vue's rootStyle.zIndex) - deliberately --ui-z-dialog, not --ui-z-popover, so both families compare on one shared axis.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
