@@ -445,6 +445,7 @@ export const parseMotionStyle: ParseMotionStyle = (input) => {
     }
   }
   if (issues.length)
-    motionWarn(`parseMotionStyle dropped what it couldn't trust:\n  ${issues.join('\n  ')}`)
+    if (process.env.NODE_ENV !== 'production')
+      motionWarn(`parseMotionStyle dropped what it couldn't trust:\n  ${issues.join('\n  ')}`)
   return { style: style as unknown as MotionStyle, issues }
 }

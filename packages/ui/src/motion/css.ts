@@ -116,7 +116,7 @@ function stage(
   leaving: boolean,
 ): Staged {
   const steps = plan(values, getComputedStyle(el).direction === 'rtl')
-  dev?.warnOwnTransition(el, Object.keys(steps))
+  if (process.env.NODE_ENV !== 'production') dev?.warnOwnTransition(el, Object.keys(steps))
   const exitMs = leaving ? tokenMs(el, 'var(--ui-duration-exit)') : 0
   const held: Staged['values'] = {}
   const moving = PROPS.some((prop) => MOVES.has(prop) && steps[prop])

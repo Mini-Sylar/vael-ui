@@ -73,7 +73,8 @@ test('`spring` on one SelectButton puts its indicator on that spring (written ev
     const screen = await render({
       setup: () => () => h(SelectButton as never, { items, modelValue: at.value, motion }),
     })
-    for (let i = 0; i < 4; i++) await frame()
+    // The spring engine loads once mounted; a real first move comes long after that.
+    await new Promise((resolve) => setTimeout(resolve, 300))
     const indicator = screen.container.querySelector<HTMLElement>('.ui-select-button-indicator')!
     let count = 0
     new MutationObserver(() => count++).observe(indicator, { attributeFilter: ['style'] })

@@ -17,7 +17,8 @@ export async function runHook(
   try {
     result = run()
   } catch (error) {
-    motionWarn(`${name} ${phase} hook threw, so it finished at once: ${String(error)}`)
+    if (process.env.NODE_ENV !== 'production')
+      motionWarn(`${name} ${phase} hook threw, so it finished at once: ${String(error)}`)
     return
   }
   // A leave ends where it went: without fill, the element would snap back for a frame before removal.
@@ -49,17 +50,19 @@ export async function runHook(
     )
   else {
     if (parts.some((el) => el.getAnimations?.().some((a) => a.playState === 'running')))
-      motionWarn(
-        `${name} ${phase}: something was still animating when the hook returned. Return the animation so ${name} waits: \`${phase}: (parts) => gsap.to(...)\`.`,
-      )
+      if (process.env.NODE_ENV !== 'production')
+        motionWarn(
+          `${name} ${phase}: something was still animating when the hook returned. Return the animation so ${name} waits: \`${phase}: (parts) => gsap.to(...)\`.`,
+        )
     finished = Promise.resolve()
   }
   let timer: ReturnType<typeof setTimeout> | undefined
   const cap = new Promise<void>((resolve) => {
     timer = setTimeout(() => {
-      motionWarn(
-        `${name} ${phase} didn't finish within ${HOOK_CAP / 1000}s, so it was ended. Loops belong in CSS on a child.`,
-      )
+      if (process.env.NODE_ENV !== 'production')
+        motionWarn(
+          `${name} ${phase} didn't finish within ${HOOK_CAP / 1000}s, so it was ended. Loops belong in CSS on a child.`,
+        )
       resolve()
     }, HOOK_CAP)
   })

@@ -72,14 +72,11 @@ function play(pattern: number[], intensity: number) {
   })
 }
 
-/**
- * Haptic feedback on phones that offer it. `ConfigProvider`'s `haptics` sets it app-wide:
- * `false` silences every call, yours included (a "turn off haptics" setting); `true` or
- * `{ intensity }` also turns on vael-ui's own components. Works outside components too.
- */
-export function useHaptic(options: HapticOptions = {}): UseHapticReturn {
-  const provided = hasInjectionContext() ? inject(defaultsKey, undefined) : undefined
-  const setting = () => provided?.value.haptics
+/** @internal The player behind `useHaptic`, for a setting read from anywhere (no injection needed). */
+export function createHaptic(
+  setting: () => boolean | HapticOptions | undefined,
+  options: HapticOptions = {},
+): UseHapticReturn {
   const intensity = () => {
     const app = setting()
     const appIntensity = typeof app === 'object' ? (app.intensity ?? 1) : 1
@@ -101,19 +98,12 @@ export function useHaptic(options: HapticOptions = {}): UseHapticReturn {
   }
 }
 
-/** @internal vael-ui's own components: silent unless ConfigProvider turns `haptics` on. */
-export function useComponentHaptic(): UseHapticReturn {
-  const provided = inject(defaultsKey, undefined)
-  const haptic = useHaptic()
-  const on = () => {
-    const setting = provided?.value.haptics
-    return setting === true || typeof setting === 'object'
-  }
-  return {
-    isSupported: haptic.isSupported,
-    selection: () => on() && haptic.selection(),
-    impact: (weight) => on() && haptic.impact(weight),
-    notification: (type) => on() && haptic.notification(type),
-    vibrate: (pattern) => on() && haptic.vibrate(pattern),
-  }
+/**
+ * Haptic feedback on phones that offer it. `ConfigProvider`'s `haptics` sets it app-wide:
+ * `false` silences every call, yours included (a "turn off haptics" setting); `true` or
+ * `{ intensity }` also turns on vael-ui's own components. Works outside components too.
+ */
+export function useHaptic(options: HapticOptions = {}): UseHapticReturn {
+  const provided = hasInjectionContext() ? inject(defaultsKey, undefined) : undefined
+  return createHaptic(() => provided?.value.haptics, options)
 }

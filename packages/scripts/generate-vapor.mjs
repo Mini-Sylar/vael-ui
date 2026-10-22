@@ -36,6 +36,8 @@ const PER_BUILD_MODULES = new Set([
   'composables/useTooltipMotion',
   'composables/useMessageMotion',
   'composables/useIndicatorMotion',
+  'composables/componentHaptic',
+  'composables/lazyParts',
   'composables/sortableSettle',
   'composables/loaderType',
   'composables/numberParts',
@@ -180,7 +182,8 @@ function collectNonComponentExports(indexSource) {
 // '../internal/StatusIcon.vue', not './internal/StatusIcon.vue'.
 function findSiblingModuleIds(source, fromId) {
   const ids = new Set()
-  const re = /from\s+'(\.\.?\/[^']+)\.vue'/g
+  // Static (`from './X.vue'`) and lazy (`import('./X.vue')`) alike: a lazy one still ships.
+  const re = /(?:from\s+|import\(\s*)'(\.\.?\/[^']+)\.vue'/g
   const fromDir = dirname(fromId) // 'Message/Message' -> 'Message'; 'Select' -> '.'
   let match
   while ((match = re.exec(source))) {

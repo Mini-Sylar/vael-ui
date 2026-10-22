@@ -138,11 +138,7 @@ import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { ToasterMotion } from '../../motion/types'
-
-// Port of vue-sonner's swipe-to-dismiss mechanics; constants are Sonner's.
-const SWIPE_THRESHOLD = 45 // px
-const SWIPE_VELOCITY_THRESHOLD = 0.11 // px/ms
-const SWIPE_EXIT_MS = 200
+import { loadToastSwipe } from '../../composables/lazyParts'
 
 defineOptions({ inheritAttrs: false })
 
@@ -519,21 +515,23 @@ const pointerStart = new Map<ToastId, { x: number; y: number; time: number }>()
 const swipeAxis = new Map<ToastId, 'x' | 'y' | null>()
 const activeSwipeId = ref<ToastId | null>(null)
 
-function allowedDirections(): Array<'left' | 'right' | 'up' | 'down'> {
-  return ['left', 'right', isBottom.value ? 'down' : 'up']
-}
-function dampen(delta: number) {
-  return delta / (1.5 + Math.abs(delta) / 20)
-}
-
-function state(id: ToastId): SwipeState {
-  let s = swipeState.get(id)
-  if (!s) {
-    swipeState.set(id, { x: 0, y: 0, swiping: false, swipeOut: false, direction: null })
-    s = swipeState.get(id)!
-  }
-  return s
-}
+// The move and release maths (toastSwipe.ts) arrive as the Toaster mounts, long before a swipe.
+let swipe: ReturnType<typeof import('../../composables/toastSwipe').createToastSwipe> | undefined
+onMounted(
+  () =>
+    void loadToastSwipe().then(
+      (kit) =>
+        (swipe = kit.createToastSwipe({
+          swipeState,
+          pointerStart,
+          swipeAxis,
+          activeSwipeId,
+          bottom: () => isBottom.value,
+          dismiss: (id) => dismiss(id),
+          settle: () => !interacting.value && resumeAll(),
+        })),
+    ),
+)
 
 function onPointerDown(id: ToastId, event: PointerEvent) {
   if (event.button === 2) return
@@ -545,63 +543,8 @@ function onPointerDown(id: ToastId, event: PointerEvent) {
   activeSwipeId.value = id
 }
 
-function onPointerMove(id: ToastId, event: PointerEvent) {
-  const start = pointerStart.get(id)
-  if (!start) return
-  const dx = event.clientX - start.x
-  const dy = event.clientY - start.y
-  let axis = swipeAxis.get(id)
-  if (!axis && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
-    axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-    swipeAxis.set(id, axis)
-  }
-  if (!axis) return
-
-  const s = state(id)
-  const allowed = allowedDirections()
-  if (axis === 'y') {
-    const wantsDown = dy > 0
-    s.y =
-      (wantsDown && allowed.includes('down')) || (!wantsDown && allowed.includes('up'))
-        ? dy
-        : dampen(dy)
-    s.x = 0
-  } else {
-    const wantsRight = dx > 0
-    s.x =
-      (wantsRight && allowed.includes('right')) || (!wantsRight && allowed.includes('left'))
-        ? dx
-        : dampen(dx)
-    s.y = 0
-  }
-  s.swiping = true
-}
-
-function onPointerUp(id: ToastId) {
-  const start = pointerStart.get(id)
-  const axis = swipeAxis.get(id)
-  pointerStart.delete(id)
-  swipeAxis.delete(id)
-  activeSwipeId.value = null
-  const s = swipeState.get(id)
-  if (!start || !s) return
-
-  const delta = axis === 'x' ? s.x : s.y
-  const elapsed = Math.max(1, performance.now() - start.time)
-  const velocity = Math.abs(delta) / elapsed
-
-  if (axis && (Math.abs(delta) >= SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD)) {
-    s.swiping = false
-    s.swipeOut = true
-    s.direction = axis === 'x' ? (delta > 0 ? 'right' : 'left') : delta > 0 ? 'down' : 'up'
-    setTimeout(() => dismiss(id), SWIPE_EXIT_MS)
-  } else {
-    s.swiping = false
-    s.x = 0
-    s.y = 0
-  }
-  if (!interacting.value) resumeAll()
-}
+const onPointerMove = (id: ToastId, event: PointerEvent) => swipe?.move(id, event)
+const onPointerUp = (id: ToastId) => swipe?.up(id)
 
 watch(
   () => toasts.value.map((t) => t.id),

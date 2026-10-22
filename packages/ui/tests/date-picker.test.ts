@@ -311,6 +311,7 @@ test('typing digits into the hour field commits immediately; out-of-range values
   })
   await screen.getByRole('combobox').click()
   const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await expect.element(hourField).toBeVisible()
   await hourField.fill('')
   await userEvent.type(hourField, '9')
   await expect.element(screen.getByTestId('model-time')).toHaveTextContent('09:00')
@@ -322,6 +323,7 @@ test('a complete typed hour moves on to the minutes like a native time input: "1
   })
   await screen.getByRole('combobox').click()
   const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await expect.element(hourField).toBeVisible()
   ;(hourField.element() as HTMLElement).focus()
   await userEvent.keyboard('1830')
   await expect.element(screen.getByTestId('model-time')).toHaveTextContent('18:30')
@@ -356,6 +358,7 @@ test('ArrowUp wraps the hour past 23 back to 0, and past 0 back to 23 on ArrowDo
   })
   await screen.getByRole('combobox').click()
   const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await expect.element(hourField).toBeVisible()
   ;(hourField.element() as HTMLElement).focus()
   await userEvent.keyboard('{ArrowUp}')
   await expect.element(screen.getByTestId('model-time')).toHaveTextContent('00:00')
@@ -370,6 +373,7 @@ test('12h mode wraps hour 12 -> 1 on increment, not 12 -> 0', async () => {
   })
   await screen.getByRole('combobox').click()
   const hourField = screen.getByRole('spinbutton', { name: 'Hour' })
+  await expect.element(hourField).toBeVisible()
   ;(hourField.element() as HTMLElement).focus()
   await userEvent.keyboard('{ArrowUp}')
   // 12 PM + 1 hour = 1 PM = 13:00 in 24h storage.
@@ -382,6 +386,9 @@ test('clicking the minute stepper increments by minuteStep, and the AM/PM toggle
     props: { showTime: true, hourFormat: '12', minuteStep: 15, initialValue: nineAM },
   })
   await screen.getByRole('combobox').click()
+  // The time row loads with the picker; wait for it and the AM/PM toggle.
+  await expect.element(screen.getByRole('spinbutton', { name: 'Minute' })).toBeVisible()
+  await vi.waitFor(() => expect(document.querySelector('.ui-date-picker-ampm')).not.toBeNull())
 
   const minuteField = document.querySelector('.ui-time-field:has([aria-label="Minute"])')!
   const incButton = minuteField.querySelector<HTMLButtonElement>('.ui-time-field-stepper')!

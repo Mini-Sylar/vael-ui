@@ -21,7 +21,7 @@ import type { ResolvedMotion } from './context'
 import type { MotionPhase, MotionRef, MotionStyle, MotionTiming, MotionValues } from './types'
 import type { Runner, RunnerHost } from './host'
 import { needsRuntime, valuesAt } from './playable'
-import { dev, inDev } from './warn'
+import { dev } from './warn'
 import { targetsOf } from './targets'
 import { stepOut } from './stepOut'
 
@@ -174,7 +174,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
   // Dev: which layers set it, and each open and close timed, in DevTools.
   let trace: ((now: string) => void) | undefined
   // Development only: in production no watcher is made at all.
-  if (inDev)
+  if (process.env.NODE_ENV !== 'production')
     watch(
       phase,
       (now) =>

@@ -1,0 +1,5 @@
+// Feature code components load only when it's used: a Button with `hold`, a Toaster's swipe, a
+// Tooltip's glide. The `import()`s live here, beside the code, so both builds resolve them alike.
+export const loadButtonHold = () => import('./buttonHold')
+export const loadToastSwipe = () => import('./toastSwipe')
+export const loadSurface = () => import('../motion/surface')

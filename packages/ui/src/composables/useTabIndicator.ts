@@ -1,10 +1,15 @@
-import { inject, nextTick, onBeforeUnmount, shallowRef, toValue, watch } from 'vue'
+import { inject, nextTick, onBeforeUnmount, onMounted, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref, WatchSource } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { defaultsKey } from '../config'
-import { createSpring } from './useSpringValue'
 import type { SpringHandle, SpringOptions } from './useSpringValue'
+
+// The spring engine loads only for an indicator set to a spring, fetched as soon as one is.
+let springs$: typeof import('./useSpringValue') | undefined
+let loadingSprings: Promise<unknown> | undefined
+const loadSprings = () =>
+  (loadingSprings ??= import('./useSpringValue').then((m) => (springs$ = m)))
 import { prefersReducedMotion } from './dom'
 
 /**
@@ -60,6 +65,16 @@ export function useTabIndicator(
   // Unset, a ConfigProvider's `motion: false` turns it off too, springs included.
   const motionOff = () =>
     (toValue(options.motion) ?? provided?.value.motion) === false || mode() === 'instant'
+  // A spring set: its engine is fetched once mounted, long before anything moves (until then it
+  // glides). Not in setup: a component may set this up before its own props exist.
+  onMounted(() =>
+    watch(
+      mode,
+      // Arrived: measured once more, so its springs start where it rests and the next move glides.
+      (now) => typeof now === 'object' && void loadSprings().then(() => update()),
+      { immediate: true },
+    ),
+  )
   // One spring per measured property, writing it straight to the element.
   const springs = new Map<string, SpringHandle>()
   let springKey = ''
@@ -140,7 +155,7 @@ export function useTabIndicator(
     lastStart = start
     const currentMode = mode()
     const el = options.indicatorEl?.value
-    const springing = typeof currentMode === 'object' && !!el && !motionOff()
+    const springing = typeof currentMode === 'object' && !!el && !motionOff() && !!springs$
     const transitionDuration =
       firstPaint || motionOff()
         ? '0ms'
@@ -238,7 +253,7 @@ export function useTabIndicator(
     for (const [property, value] of Object.entries(geometry)) {
       let handle = springs.get(property)
       if (!handle) {
-        handle = createSpring(value, config, (next) =>
+        handle = springs$!.createSpring(value, config, (next) =>
           property.startsWith('translate-')
             ? writeTranslate()
             : el.style.setProperty(property, `${next}px`),

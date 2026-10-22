@@ -36,8 +36,11 @@ function appearAlone(
 ) {
   if (el._uiAppeared) return
   el._uiAppeared = true
-  if (typeof value === 'string')
-    return motionWarn(`v-animate preset '${value}' needs a vael-ui component or a style around it.`)
+  if (typeof value === 'string') {
+    if (process.env.NODE_ENV !== 'production')
+      motionWarn(`v-animate preset '${value}' needs a vael-ui component or a style around it.`)
+    return
+  }
   if (!value?.initial) return
   queueAppearance(el, name, value)
 }
@@ -164,9 +167,10 @@ export function vAnimateVapor(
   if (value && typeof value === 'object') {
     // A VDOM template turns a function directive into mounted + updated only: no unmount, so no
     // layoutId and no cleanup. Its VDOM form is the one that works there.
-    motionWarn(
-      "v-animate from 'vael-ui/vapor' is in a VDOM template: import vAnimate from 'vael-ui' there.",
-    )
+    if (process.env.NODE_ENV !== 'production')
+      motionWarn(
+        "v-animate from 'vael-ui/vapor' is in a VDOM template: import vAnimate from 'vael-ui' there.",
+      )
     return vAnimate.mounted!(el, value as never, null as never, null)
   }
   const name = typeof argument === 'function' ? argument() : argument

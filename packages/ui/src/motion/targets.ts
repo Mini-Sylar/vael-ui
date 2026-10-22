@@ -19,7 +19,8 @@ export function targetsOf(entries: PresenceEntry[], motion: ResolvedMotion): Tar
   for (const entry of entries) {
     const own = typeof entry.motion === 'string' ? motion.presets[entry.motion] : entry.motion
     if (typeof entry.motion === 'string' && !own)
-      motionWarn(`v-animate preset '${entry.motion}' isn't in the style's presets.`)
+      if (process.env.NODE_ENV !== 'production')
+        motionWarn(`v-animate preset '${entry.motion}' isn't in the style's presets.`)
     merged.set(
       entry.name,
       mergeTargets(motion.content, motion.targets[entry.name], merged.get(entry.name), own),

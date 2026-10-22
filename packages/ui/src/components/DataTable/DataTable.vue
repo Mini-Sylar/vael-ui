@@ -153,7 +153,7 @@ import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
 import { provideDataTableContext } from '../../composables/useDataTableContext'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { useVirtualizer } from '../../composables/useVirtualizer'
-import { useLazySortable } from '../../composables/useLazySortable'
+import { loadColumnFollow, useLazySortable } from '../../composables/useLazySortable'
 import type { SortableDropDetails } from '../../composables/useSortable'
 import DataTableHead from './DataTableHead.vue'
 import DataTableBody from './DataTableBody.vue'
@@ -1009,55 +1009,22 @@ const {
   () => props.reorderableColumns,
 )
 
-// useSortable only moves header cells. Each frame this copies their shift onto the
-// body cells, and moves the dragged column's cells with the preview.
-let columnFollowFrame = 0
-let lastDraggedColumn: string | null = null
-function bodyCellsFor(field: string): HTMLElement[] {
-  return Array.from(
-    root.value?.querySelectorAll<HTMLElement>(
-      `.ui-datatable-tbody .ui-datatable-td[data-column-field="${CSS.escape(field)}"]`,
-    ) ?? [],
-  )
-}
-function translateX(el: HTMLElement): number {
-  return parseFloat(el.style.translate) || 0
-}
-function followColumnDrag() {
-  columnFollowFrame = 0
-  const head = headComponent.value?.rowEl
-  if (!head) return
-  const dragging = draggingColumn.value == null ? null : String(draggingColumn.value)
-  if (dragging !== null) lastDraggedColumn = dragging
-  let moving = dragging !== null
-  for (const th of head.querySelectorAll<HTMLElement>('[data-column-field]')) {
-    const field = th.dataset.columnField!
-    const cells = bodyCellsFor(field)
-    let shift = th.style.translate
-    if (field === dragging && cells.length > 0) {
-      // Clone mode floats a copy; element mode lifts the header itself.
-      const preview = document.querySelector<HTMLElement>('[data-sortable-preview]') ?? th
-      const cellLeft = cells[0]!.getBoundingClientRect().left - translateX(cells[0]!)
-      const dx = preview.getBoundingClientRect().left - cellLeft
-      shift = Math.abs(dx) < 0.5 ? '' : `${dx}px 0`
-    }
-    if (shift) moving = true
-    // Lifted for the whole drag, and after the drop until the cells settle back.
-    const lifted = field === lastDraggedColumn && (field === dragging || shift !== '')
-    for (const cell of cells) {
-      cell.style.translate = shift
-      cell.toggleAttribute('data-column-dragging', lifted)
-    }
-  }
-  if (moving) columnFollowFrame = requestAnimationFrame(followColumnDrag)
-  else lastDraggedColumn = null
-}
+// useSortable only moves header cells; the body cells follow them (columnFollow.ts, fetched with
+// reorderable columns, before any drag).
+if (rawProps.reorderableColumns) void loadColumnFollow()
+let columnFollow: { start: () => void; stop: () => void } | undefined
 watch(draggingColumn, (value) => {
-  if (value != null && !columnFollowFrame) {
-    columnFollowFrame = requestAnimationFrame(followColumnDrag)
-  }
+  if (value == null) return
+  void loadColumnFollow().then((module) => {
+    columnFollow ??= module.createColumnFollow(
+      () => root.value,
+      () => headComponent.value?.rowEl,
+      () => (draggingColumn.value == null ? null : String(draggingColumn.value)),
+    )
+    columnFollow.start()
+  })
 })
-onBeforeUnmount(() => cancelAnimationFrame(columnFollowFrame))
+onBeforeUnmount(() => columnFollow?.stop())
 
 const headProps = computed(() => ({
   split: !!props.scrollHeight,

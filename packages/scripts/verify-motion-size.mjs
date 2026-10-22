@@ -23,6 +23,8 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // button 1 → 1.25 KB (2026-10-22): every component's appearance (`initial`), `parts` on its ref
 // and its own timing as tokens (RFC 3.4, 3.7) live in useStateMotion; their work loads lazily
 // (appearance with its batch, the tokens with the states player). Measured: 1219 B.
+// runtime 5 → 5.05 KB (2026-10-22): dev warnings are guarded with `process.env.NODE_ENV` so an
+// app's bundler drops them and their messages; the guards themselves stay in these files.
 // Trim (2026-10-22): up front 7 → 6.85 KB and button 1.25 → 1.05 KB. The morph's orchestration
 // (hiding the source, opening, closing) moved from the CSS engine into the morph chunk, so only a
 // component that morphs pays for it: morph 1.25 → 1.45 KB. useStateMotion's states merge and its
@@ -39,7 +41,7 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // stays, and carries `layoutId` pairs (a label) between the two. Loaded only by morphing components.
 const BUDGET = {
   upFront: 6.85 * 1024,
-  runtime: 5 * 1024,
+  runtime: 5.05 * 1024,
   morph: 1.45 * 1024,
   button: 1.05 * 1024,
   states: 3.8 * 1024,

@@ -25,7 +25,8 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
-    "prepare": "husky"
+    "prepare": "husky",
+    "size:app": "node packages/scripts/measure-app-size.mjs"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.1",

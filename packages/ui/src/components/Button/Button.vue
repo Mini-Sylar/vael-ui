@@ -183,9 +183,12 @@ import {
   useId,
   useSlots,
   useTemplateRef,
+  watch,
 } from 'vue'
 import { useUiMessages } from '../../messages'
-import { useComponentHaptic } from '../../composables/useHaptic'
+import { useComponentHaptic } from '../../composables/componentHaptic'
+import { loadButtonHold } from '../../composables/lazyParts'
+import type { ButtonHold } from '../../composables/buttonHold'
 import { buttonGroupKey } from '../ButtonGroup/ButtonGroup.vue'
 import type { StyleValue } from 'vue'
 import { useAsyncLoading } from '../../composables/useAsyncLoading'
@@ -342,44 +345,44 @@ const holding = shallowRef(false)
 const held = shallowRef(false)
 // 0 to 1 while holding, for your own stages; also `--ui-hold-progress` on the button for CSS.
 const holdProgress = shallowRef(0)
-let holdTimer: ReturnType<typeof setTimeout> | undefined
-let holdFrame = 0
 let completing = false
-function setHoldProgress(value: number) {
-  holdProgress.value = value
-  el.value?.style.setProperty('--ui-hold-progress', String(value))
-}
-function trackHold(start: number) {
-  holdFrame = requestAnimationFrame((now) => {
-    setHoldProgress(Math.max(0, Math.min(1, (now - start) / holdMs.value)))
-    if (holding.value) trackHold(start)
-  })
-}
+// The hold's timing loads with a Button that has `hold`, as it's set up (buttonHold.ts).
+let holdKit: ButtonHold | undefined
+let ready: Promise<unknown> | undefined
+// Pressed before it arrived (a press right as the page loads): it starts then, if still held.
+let pressed$ = false
+watch(
+  holdMs,
+  (ms) =>
+    ms &&
+    !holdKit &&
+    (ready = loadButtonHold().then(
+      (kit) =>
+        (holdKit ??= kit.createButtonHold({
+          ms: () => holdMs.value,
+          blocked: () => isLoading.value || !!props.disabled,
+          el: () => el.value,
+          holding,
+          held,
+          progress: holdProgress,
+          complete: () => {
+            tick()
+            completing = true
+            el.value?.click()
+            completing = false
+          },
+        })),
+    )),
+  { immediate: true },
+)
 function startHold() {
-  if (!holdMs.value || isLoading.value || props.disabled || holding.value) return
-  held.value = false
-  holding.value = true
-  clearTimeout(holdTimer)
-  cancelAnimationFrame(holdFrame)
-  trackHold(performance.now())
-  holdTimer = setTimeout(() => {
-    holding.value = false
-    held.value = true
-    cancelAnimationFrame(holdFrame)
-    setHoldProgress(1)
-    tick()
-    completing = true
-    el.value?.click()
-    completing = false
-  }, holdMs.value)
+  pressed$ = true
+  if (holdKit) holdKit.start()
+  else void ready?.then(() => pressed$ && holdKit?.start())
 }
 function releaseHold() {
-  if (!holding.value && !held.value) return
-  clearTimeout(holdTimer)
-  cancelAnimationFrame(holdFrame)
-  holding.value = false
-  held.value = false
-  setHoldProgress(0)
+  pressed$ = false
+  holdKit?.release()
 }
 function onHoldPointerdown(event: PointerEvent) {
   if (event.button === 0) startHold()
@@ -392,10 +395,7 @@ function onHoldKeydown(event: KeyboardEvent) {
 function onHoldKeyup(event: KeyboardEvent) {
   if (event.key === ' ' || event.key === 'Enter') releaseHold()
 }
-onScopeDispose(() => {
-  clearTimeout(holdTimer)
-  if (holdFrame) cancelAnimationFrame(holdFrame)
-})
+onScopeDispose(() => holdKit?.dispose())
 
 // Detects promise-returning handlers to trigger auto-loading.
 function onRootClick(event: MouseEvent) {

@@ -180,7 +180,16 @@ import './DatePicker.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/select-panel.css'
-import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
 import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
@@ -192,9 +201,8 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import Input from '../Input/Input.vue'
 import Button from '../Button/Button.vue'
-import SelectButton from '../SelectButton/SelectButton.vue'
 import Calendar from '../Calendar/Calendar.vue'
-import TimeField from '../internal/TimeField.vue'
+import type TimeFieldType from '../internal/TimeField.vue'
 import type {
   CalendarDisabledDates,
   CalendarRange,
@@ -365,6 +373,17 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { size: 'md', motion: true, locale: undefined })
+
+// The time row's parts load only for a picker that shows time, fetched as it's set up, long before
+// the panel opens. A ref on an async component reaches the inner one once it's loaded.
+const loadTimeField = () => import('../internal/TimeField.vue')
+const loadSelectButton = () => import('../SelectButton/SelectButton.vue')
+const TimeField = defineAsyncComponent(loadTimeField)
+const SelectButton = defineAsyncComponent(loadSelectButton)
+if (rawProps.showTime || rawProps.timeOnly) {
+  void loadTimeField()
+  void loadSelectButton()
+}
 
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */
@@ -542,8 +561,8 @@ const panelTransition = useSelectPanelMotion({
   placed: () => positionerStyle.value.visibility === 'visible',
 })
 const calendarRef = useTemplateRef<InstanceType<typeof Calendar>>('calendarRef')
-const hourFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('hourFieldRef')
-const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('minuteFieldRef')
+const hourFieldRef = useTemplateRef<InstanceType<typeof TimeFieldType>>('hourFieldRef')
+const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeFieldType>>('minuteFieldRef')
 
 // Like a native time input: a complete hour moves on to the minutes (focus selects them).
 function focusMinuteField() {
@@ -602,7 +621,8 @@ watch(
   (ready) => {
     if (!ready) return
     if (timeOnlyEffective.value) {
-      nextTick(() => hourFieldRef.value?.inputEl?.focus())
+      // The time fields may still be on their way: focus once they're in.
+      void loadTimeField().then(() => nextTick(() => hourFieldRef.value?.inputEl?.focus()))
       return
     }
     const value = model.value

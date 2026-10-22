@@ -24,10 +24,12 @@ export async function askGuard<R extends string>(
     // Nothing returned at all (a missing `return`, or old `beforeClose(done)` code): say so, rather
     // than stay open silently. A promise that resolves to nothing is a plain "no".
     if (result === undefined)
-      motionWarn('beforeClose returned nothing, so it stays open. Return true to close.')
+      if (process.env.NODE_ENV !== 'production')
+        motionWarn('beforeClose returned nothing, so it stays open. Return true to close.')
     return (await result) === true
   } catch (error) {
-    motionWarn(`beforeClose threw, so it stays open: ${String(error)}`)
+    if (process.env.NODE_ENV !== 'production')
+      motionWarn(`beforeClose threw, so it stays open: ${String(error)}`)
     return false
   }
 }

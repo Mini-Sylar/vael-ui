@@ -18,6 +18,8 @@ const EMPTY: ReadonlySet<string | number> = new Set()
 let engineModule: Promise<typeof import('./useSortable')> | undefined
 /** Loads the drag engine once; every lazy sortable shares the same request. */
 export const loadSortableEngine = () => (engineModule ??= import('./useSortable'))
+/** DataTable's column drag: body cells following the headers (columnFollow.ts). */
+export const loadColumnFollow = () => import('./columnFollow')
 
 /**
  * `useSortable`, loaded the first time `enabled()` is true in the browser. A DataTable or Tree that
