@@ -182,3 +182,86 @@ export function morphLeave(
     ]),
   ]
 }
+
+// A morph's cross-fades with its source: the first share of the open, the last of the close.
+const FADE_SHARE = 0.3
+const LAND_SHARE = 0.4
+
+/** The same values, each on the duration `t` sets, eased out (a fade alongside a morph). */
+export function along(values: MotionValues, t: MotionTiming): MotionValues {
+  const out: Record<string, unknown> = {}
+  for (const [key, raw] of Object.entries(values))
+    // A timed value (`{ value, … }`) keeps its value; its own timing gives way to `t`.
+    out[key] = {
+      value: raw && typeof raw === 'object' && 'value' in raw ? raw.value : raw,
+      duration: t.duration,
+      easing: EASE_OUT,
+    }
+  return out as MotionValues
+}
+
+/**
+ * One component's morphs: the element it grew from is hidden while it has "become" the panel.
+ * Faded to 0, not visibility: hidden, so focus can return to it when the panel closes.
+ */
+export function createSession() {
+  let hidden: HTMLElement | null = null
+  let own = { opacity: '', transition: '' }
+  // Its own styles back, unchanged ones left alone (an empty longhand would cut a shorthand).
+  const put = (el: HTMLElement, prop: string, value: string) =>
+    el.style.getPropertyValue(prop) === value ||
+    (value ? el.style.setProperty(prop, value) : el.style.removeProperty(prop))
+  const hide = (el: HTMLElement) => {
+    if (hidden !== el) {
+      show()
+      own = {
+        opacity: el.style.getPropertyValue('opacity'),
+        transition: el.style.getPropertyValue('transition'),
+      }
+    }
+    hidden = el
+    el.style.setProperty('transition', 'none')
+    el.style.setProperty('opacity', '0')
+  }
+  const show = () => {
+    const el = hidden
+    if (!el) return
+    hidden = null
+    // Back at once; its own transition returns only after that.
+    put(el, 'opacity', own.opacity)
+    void getComputedStyle(el).opacity
+    put(el, 'transition', own.transition)
+  }
+  return {
+    hidden: () => hidden,
+    show,
+    /** Opening: the panel fades in over the source first (its text never blanks), then hides it. */
+    open(
+      source: HTMLElement,
+      main: HTMLElement,
+      t: MotionTiming,
+      start: (node: HTMLElement, values: MotionValues, t: MotionTiming) => number,
+      arrival: number,
+      hideIt: boolean,
+      live: () => boolean,
+    ) {
+      const rest = morphEnter(source, main, t, start, arrival)
+      if (hideIt) setTimeout(() => live() && hide(source), arrival * FADE_SHARE)
+      return rest
+    },
+    /** Closing: nearly there, the source shows again under the panel, which fades off it as it lands. */
+    close(
+      source: Element,
+      main: HTMLElement,
+      t: MotionTiming,
+      mirror: HTMLElement | null | undefined,
+      arrival: number,
+      live: () => boolean,
+    ) {
+      const morphed = morphLeave(source, main, t, mirror, arrival)
+      if (morphed.length && hidden) setTimeout(() => live() && show(), arrival * (1 - LAND_SHARE))
+      return morphed
+    },
+  }
+}
+export type MorphSession = ReturnType<typeof createSession>

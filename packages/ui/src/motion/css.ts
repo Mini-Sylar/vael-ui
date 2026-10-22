@@ -30,9 +30,6 @@ const DEFAULT_SPRING: Spring = { damping: 1, response: 0.32 }
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
 const FADE_CAP = 250
 const SAFETY_CAP = 3000
-// A morph's cross-fades with its source: the first share of the open, the last of the close.
-const FADE_SHARE = 0.3
-const LAND_SHARE = 0.4
 const QUIET_EXIT: MotionValues = { opacity: 0, scale: '0.97' }
 const QUIET_FADE: MotionValues = { opacity: 0 }
 interface Timed {
@@ -200,14 +197,6 @@ async function settle(root: Element): Promise<void> {
     ])
 }
 
-/** The same values, each on the duration `t` sets, eased out (a fade alongside a morph). */
-function along(values: MotionValues, t: MotionTiming): MotionValues {
-  const out: Record<string, unknown> = {}
-  for (const [key, raw] of Object.entries(values))
-    out[key] = { value: isTimed(raw) ? raw.value : raw, duration: t.duration, easing: EASE_OUT }
-  return out as MotionValues
-}
-
 let morphKit: Promise<typeof Morph> | undefined
 const loadMorph = () => (morphKit ??= import('./morph'))
 
@@ -280,22 +269,8 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
   let repeatDones: (() => void)[] = []
   let handedOver: Runner | undefined
 
-  // The element a morph grew from: hidden while it's "become" the panel. Faded to 0, not
-  // visibility: hidden, so focus can return to it when the panel closes.
-  let hiddenSource: HTMLElement | null = null
-  let sourceOwn = { opacity: '', transition: '' }
-  const hideSource = (el: HTMLElement) => {
-    if (hiddenSource !== el) {
-      showSource()
-      sourceOwn = {
-        opacity: el.style.getPropertyValue('opacity'),
-        transition: el.style.getPropertyValue('transition'),
-      }
-    }
-    hiddenSource = el
-    el.style.setProperty('transition', 'none')
-    el.style.setProperty('opacity', '0')
-  }
+  // Its morphs' state (the source it hides), from the morph kit once one plays.
+  let held: Morph.MorphSession | undefined
   const morphOf = (m: ResolvedMotion) =>
     typeof m.morph === 'object' ? m.morph : { from: m.morph, hide: true }
   const morphSource = (m: ResolvedMotion): HTMLElement | null => {
@@ -305,15 +280,6 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     return source instanceof HTMLElement && source.isConnected && !prefersReducedMotion()
       ? source
       : null
-  }
-  const showSource = () => {
-    const el = hiddenSource
-    if (!el) return
-    hiddenSource = null
-    // Back at once; its own transition returns only after that.
-    put(el, 'opacity', sourceOwn.opacity)
-    void getComputedStyle(el).opacity
-    put(el, 'transition', sourceOwn.transition)
   }
   // A component that morphs fetches the morph kit as soon as it's set up.
   if (host.resolved().morph) void loadMorph().catch(() => {})
@@ -421,7 +387,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     if (kit && source && main) {
       const t = morphTiming(m, kit.MORPH_IN)
       const arrival = timing(main, t, spring).arrival
-      rest = kit.morphEnter(
+      rest = (held ??= kit.createSession()).open(
         source,
         main,
         t,
@@ -431,10 +397,9 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
           return timed.arrival
         },
         arrival,
+        morphOf(m).hide !== false,
+        () => id === generation,
       )
-      // The panel fades in over the source first (its text never blanks), then it hides under it.
-      if (morphOf(m).hide !== false)
-        setTimeout(() => id === generation && hideSource(source), arrival * FADE_SHARE)
     }
     // The starting look applies with transitions off (an element already on screen would otherwise
     // transition into it). Then transitions on and let go, in one change: each property transitions
@@ -467,7 +432,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     const base = timing(first, m.timing, spring)
     // Morph: shrink back onto the source where it is now, the content fading out first.
     const main = own[host.mainPart] as HTMLElement | undefined
-    const source = main ? (hiddenSource ?? morphSource(m)) : null
+    const source = main ? (held?.hidden() ?? morphSource(m)) : null
     const kit = source && main ? await loadMorph().catch(() => undefined) : undefined
     if (id !== generation) return
     const mirror = host.mirror?.() as HTMLElement | null | undefined
@@ -477,10 +442,16 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     const closeTiming = kit ? kit.closing(morphTiming(m, kit.MORPH_OUT)) : {}
     const arrival = main ? timing(main, closeTiming, spring).arrival : 0
     const morphed =
-      kit && source && main ? kit.morphLeave(source, main, closeTiming, mirror, arrival) : []
-    // Nearly there, the source shows again under the panel, which fades off it as it lands.
-    if (morphed.length && hiddenSource)
-      setTimeout(() => id === generation && showSource(), arrival * (1 - LAND_SHARE))
+      kit && source && main
+        ? (held ??= kit.createSession()).close(
+            source,
+            main,
+            closeTiming,
+            mirror,
+            arrival,
+            () => id === generation,
+          )
+        : []
     const moving: [HTMLElement, MotionValues, number][] = [
       ...groups.flatMap((g) =>
         g.els.map((target, index): [HTMLElement, MotionValues, number] => [
@@ -497,7 +468,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
           // against the dim until it lands (its shadow is clipped with it).
           return [
             part as HTMLElement,
-            kit && morphed.length ? along(values, kit.MORPH_OUT) : values,
+            kit && morphed.length ? kit.along(values, kit.MORPH_OUT) : values,
             0,
           ]
         }),
@@ -526,7 +497,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     }
     await settle(el)
     // Back where it came from: the source shows again as the panel goes.
-    if (id === generation) showSource()
+    if (id === generation) held?.show()
     finish()
   }
 
@@ -534,7 +505,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     enter: (el, done) => void enter(el, done),
     leave: (el, done) => void leave(el, done),
     // Unmounted mid-morph: the source must never stay hidden.
-    dispose: showSource,
+    dispose: () => held?.show(),
     cancel() {
       enteringEl = null
       repeatDones = []

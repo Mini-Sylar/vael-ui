@@ -21,7 +21,7 @@ import type { ResolvedMotion } from './context'
 import type { MotionPhase, MotionRef, MotionStyle, MotionTiming, MotionValues } from './types'
 import type { Runner, RunnerHost } from './host'
 import { needsRuntime, valuesAt } from './playable'
-import { dev } from './warn'
+import { dev, inDev } from './warn'
 import { targetsOf } from './targets'
 import { stepOut } from './stepOut'
 
@@ -173,18 +173,20 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
 
   // Dev: which layers set it, and each open and close timed, in DevTools.
   let trace: ((now: string) => void) | undefined
-  watch(
-    phase,
-    (now) =>
-      (trace ??= dev?.traceMotion({
-        ...options,
-        style: () => style?.value,
-        root: currentRoot,
-        phase: () => phase.value,
-        engine: () => kind.value,
-      }))?.(now),
-    { flush: 'sync' },
-  )
+  // Development only: in production no watcher is made at all.
+  if (inDev)
+    watch(
+      phase,
+      (now) =>
+        (trace ??= dev?.traceMotion({
+          ...options,
+          style: () => style?.value,
+          root: currentRoot,
+          phase: () => phase.value,
+          engine: () => kind.value,
+        }))?.(now),
+      { flush: 'sync' },
+    )
   const scope = getCurrentScope()
   // `swap` and `resize`, in their own chunk, loaded as it first opens.
   const swapHost = { resolved, root: () => currentRoot() }

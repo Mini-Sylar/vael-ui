@@ -261,3 +261,29 @@ export function putTimingTokens(el: HTMLElement | SVGElement, timing: MotionTimi
   put(EASE_TOKENS, easing)
   return set
 }
+
+/** A style's press look, then its states, then yours: one spec, by state, then part. */
+export function specOf(
+  from:
+    | {
+        own: unknown
+        keyStyle?: Record<string, unknown>
+        press?: { active?: MotionValues; hover?: MotionValues }
+        mainPart: string
+      }
+    | undefined,
+): Record<string, PartValues<string>> {
+  const out: Record<string, PartValues<string>> = {}
+  if (!from) return out
+  const add = (states: unknown) => {
+    if (!states || typeof states !== 'object') return
+    for (const [state, parts] of Object.entries(states))
+      if (parts && typeof parts === 'object')
+        out[state] = { ...out[state], ...(parts as PartValues<string>) }
+  }
+  if (from.press?.active) add({ active: { [from.mainPart]: from.press.active } })
+  if (from.press?.hover) add({ hover: { [from.mainPart]: from.press.hover } })
+  add(from.keyStyle?.states)
+  add((from.own as { states?: unknown } | null)?.states)
+  return out
+}

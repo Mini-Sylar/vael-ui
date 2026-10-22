@@ -23,6 +23,11 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // button 1 → 1.25 KB (2026-10-22): every component's appearance (`initial`), `parts` on its ref
 // and its own timing as tokens (RFC 3.4, 3.7) live in useStateMotion; their work loads lazily
 // (appearance with its batch, the tokens with the states player). Measured: 1219 B.
+// Trim (2026-10-22): up front 7 → 6.85 KB and button 1.25 → 1.05 KB. The morph's orchestration
+// (hiding the source, opening, closing) moved from the CSS engine into the morph chunk, so only a
+// component that morphs pays for it: morph 1.25 → 1.45 KB. useStateMotion's states merge and its
+// appearance work moved into their lazy chunks. In a Vite app (Vue external, gzipped), up front:
+// Switch 4.5 KB, Button 6.6 KB, Dialog 16.6 KB, each component and everything it needs.
 // up front 6.5 → 6.75 KB (2026-10-22): swap, resize, swap direction, select targets, the morph
 // mirror and ready, and late arrivals the runtime plays, against `after` chains and reverse exits
 // moved to the runtime (−0.3 KB). A byte pass follows the showcase.
@@ -33,10 +38,10 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // morph 1 → 1.25 KB (2026-10-22): the panel takes the trigger's colour, cross-fades when the trigger
 // stays, and carries `layoutId` pairs (a label) between the two. Loaded only by morphing components.
 const BUDGET = {
-  upFront: 7 * 1024,
+  upFront: 6.85 * 1024,
   runtime: 5 * 1024,
-  morph: 1.25 * 1024,
-  button: 1.25 * 1024,
+  morph: 1.45 * 1024,
+  button: 1.05 * 1024,
   states: 3.8 * 1024,
   linked: 2.6 * 1024,
 }

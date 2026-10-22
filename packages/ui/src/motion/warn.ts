@@ -19,9 +19,12 @@ export function motionWarn(message: string): void {
   console.warn(`[vael-ui motion] ${message}`)
 }
 
+/** Whether this is a development build, read once: production skips dev-only work entirely. */
+export const inDev = isDev()
+
 /** Dev only: inspection (devtools.ts), in its own chunk that production never fetches. */
 export let dev: typeof import('./devtools') | undefined
-if (isDev())
+if (inDev)
   void import('./devtools').then(
     (tools) => (dev = tools),
     () => {},

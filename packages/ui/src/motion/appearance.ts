@@ -1,7 +1,7 @@
 // Appearances with no component playing them (`v-animate` on its own, a component's `initial`):
 // those that mount together play in page order, up to a budget, and only where they're seen.
 import { staggerAt, valuesAt } from './playable'
-import type { TargetMotion } from './types'
+import type { MotionTiming, MotionValues, TargetMotion } from './types'
 import { appear } from './useComponentMotion'
 
 // `when: 'visible'`: settles once the element scrolls into view, a little past the edge so it
@@ -77,4 +77,29 @@ function flush() {
 export function queueAppearance(el: HTMLElement, name: string | undefined, value: TargetMotion) {
   if (!batch.size) queueMicrotask(flush)
   batch.set(name ?? '', [...(batch.get(name ?? '') ?? []), { el, value }])
+}
+
+/** A component's `initial` by part, its own over its style's; a repeated part element by element. */
+export function appearParts(
+  key: string,
+  keyStyle: Record<string, unknown> | undefined,
+  own: unknown,
+  els: (part: string) => Element[],
+  timing: MotionTiming,
+) {
+  const mine = (own ?? {}) as { initial?: object; stagger?: number; when?: string }
+  const initial = { ...(keyStyle?.initial as object), ...mine.initial } as Record<
+    string,
+    MotionValues
+  >
+  for (const [part, values] of Object.entries(initial))
+    for (const el of els(part))
+      if (values && (el instanceof HTMLElement || el instanceof SVGElement))
+        queueAppearance(el as HTMLElement, `${key}:${part}`, {
+          ...timing,
+          stagger: mine.stagger,
+          // `when: 'visible'`: it waits until it scrolls into view.
+          when: mine.when === 'visible' ? 'visible' : undefined,
+          initial: values,
+        })
 }
