@@ -96,7 +96,11 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     }
   }
 
-  const layer = useLayer({ scope: options.scope, content: options.positionerEl })
+  const layer = useLayer({
+    scope: options.scope,
+    content: options.positionerEl,
+    anchor: options.triggerEl,
+  })
   const isOpen = shallowRef(false)
 
   function onDocumentKeydown(event: KeyboardEvent) {

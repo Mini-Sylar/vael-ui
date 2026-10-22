@@ -336,7 +336,8 @@ export function useDock(
 
   function onPointerMove(event: PointerEvent) {
     if (!canMagnify(event)) {
-      if (event.pointerType !== 'touch' && event.pointerType !== 'pen') resetSizes()
+      // Only what it drew itself: with `magnify` off the items' styles are yours.
+      if (magnified && event.pointerType !== 'touch' && event.pointerType !== 'pen') resetSizes()
       return
     }
     const root = rootEl.value
@@ -375,7 +376,7 @@ export function useDock(
   function onPointerLeave() {
     touchStart = null
     touchSliding = false
-    settleToRest()
+    if (magnified || rafId != null) settleToRest()
   }
 
   onMounted(() => {

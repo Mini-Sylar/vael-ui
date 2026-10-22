@@ -30,6 +30,7 @@ const PER_BUILD_MODULES = new Set([
   'composables/selectGroups',
   'composables/useEasedHeight',
   'composables/useFold',
+  'composables/tourGlide',
   'composables/useChipRowWidth',
   'composables/useChipTransition',
   'composables/useSelectPanelMotion',

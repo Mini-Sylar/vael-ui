@@ -1,16 +1,7 @@
 // What a vael-ui component uses to animate: Transition hooks, target(), phase. The CSS engine
 // (css.ts) plays every component's look, so it ships with them: a lazy one made the first open wait
 // on slow networks. The runtime (runner.ts: hooks, steps, keyframes) loads only when one is used.
-import {
-  computed,
-  getCurrentInstance,
-  getCurrentScope,
-  inject,
-  onMounted,
-  onScopeDispose,
-  shallowRef,
-  watch,
-} from 'vue'
+import { computed, getCurrentScope, inject, onScopeDispose, shallowRef, watch } from 'vue'
 import type { ComputedRef, InjectionKey, ShallowRef, TransitionProps } from 'vue'
 import { defaultsKey } from '../config'
 import { pageHidden } from '../composables/dom'
@@ -141,6 +132,9 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       () => options.root(),
       (root) => {
         if (!root) return
+        // Seen as it mounts, so a close before the enter (not placed yet) still hands over its parts.
+        currentParts()
+        currentRoot()
         presenceFor(root).joined = (entry) => {
           // SVG too: a badge popping, a check drawing.
           if (!(entry.el instanceof HTMLElement || entry.el instanceof SVGElement)) return
@@ -276,7 +270,10 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
 
   let fromServer = false
   let mounted = false
-  if (getCurrentInstance()) onMounted(() => (mounted = true))
+  // Past its first render: hydration runs inside the same mount as this setup, so an enter after
+  // this microtask is a real open. Not onMounted: in Vapor getCurrentInstance() is the VDOM
+  // component rendering it, or nothing, so the hook would never fire for this one.
+  queueMicrotask(() => (mounted = true))
   function enter(el: Element, done: () => void) {
     el.removeAttribute(LEAVING)
     leaving = null

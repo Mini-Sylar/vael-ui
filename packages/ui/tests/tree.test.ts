@@ -4,6 +4,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { nextTick } from 'vue'
 import TreeFixture from './fixtures/TreeFixture.vue'
+import Tree from '../src/components/Tree/Tree.vue'
 import { findTreeNode, findTreeParent, removeTreeNode } from '../src/components/Tree/Tree.vue'
 import type { TreeNode } from '../src/components/Tree/Tree.vue'
 
@@ -572,4 +573,27 @@ test('the chevron and the row checkbox take clicks across a 24px area while stay
   // Outside the checkbox's own box: toggles it exactly once.
   await userEvent.click(checkbox, { position: { x: 21, y: 8 } })
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["apple","banana","orange"]')
+})
+
+test('a list taller than its box fades its edges; with stickyScroll the top stays solid', async () => {
+  const items = Array.from({ length: 30 }, (_, i) => ({ value: `n${i}`, label: `Node ${i}` }))
+  const list = { style: { maxBlockSize: '160px' } }
+  const screen = await render(Tree, {
+    props: { items, ui: { list }, stickyScroll: false, scrollFade: true },
+  })
+  const el = () => screen.container.querySelector<HTMLElement>('.ui-tree-list')!
+  await vi.waitFor(() => expect(el().classList.contains('scroll-fade')).toBe(true))
+  el().scrollTop = 200
+  await vi.waitFor(() =>
+    expect(getComputedStyle(el()).getPropertyValue('--fade-top-end')).not.toBe('0%'),
+  )
+
+  await screen.rerender({ items, ui: { list }, stickyScroll: true })
+  await vi.waitFor(() =>
+    expect(getComputedStyle(el()).getPropertyValue('--fade-top-end')).toBe('0%'),
+  )
+  expect(el().classList.contains('scroll-fade')).toBe(true)
+
+  await screen.rerender({ items, ui: { list }, stickyScroll: true, scrollFade: false })
+  await vi.waitFor(() => expect(el().classList.contains('scroll-fade')).toBe(false))
 })

@@ -51,6 +51,10 @@
       block-size var(--ui-duration-enter) var(--ui-ease-out),
       --ui-list-edge var(--ui-duration-exit) var(--ui-ease-out);
   }
+  /* Pinned rows sit on the top edge, so only the bottom fades (important outranks the animation). */
+  .ui-tree-list[data-sticky].scroll-fade {
+    --fade-top-end: 0% !important;
+  }
   .ui-tree-list[data-resizing] {
     overflow-y: hidden;
   }

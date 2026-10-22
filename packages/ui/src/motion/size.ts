@@ -65,6 +65,24 @@ export function followSize(
   let last = measure()
   let target = last
   let running: Animation | undefined
+  // While the width moves, each child holds the width it lands at (the box clips what isn't
+  // revealed yet), so text keeps its final wrap instead of re-wrapping every frame.
+  let pinned: [HTMLElement, string][] = []
+  const pins = new WeakSet<Element>()
+  function pin() {
+    unpin()
+    for (const child of el.children) {
+      if (!(child instanceof HTMLElement)) continue
+      pins.add(child)
+      pinned.push([child, child.style.inlineSize])
+      // Its computed width: offsetWidth rounds, and a fraction of a pixel short re-wraps text.
+      child.style.inlineSize = getComputedStyle(child).width
+    }
+  }
+  function unpin() {
+    for (const [child, was] of pinned) child.style.inlineSize = was
+    pinned = []
+  }
 
   function play(from: Box, to: Box) {
     const { easing, duration } = resolveTiming(el, timing() ?? {}, undefined)
@@ -77,6 +95,7 @@ export function followSize(
       ...(close(from.width, to.width) ? {} : { width: cssSize(el, box.width, 'width') }),
       ...clip,
     })
+    if (!close(from.width, to.width)) pin()
     // Clipped while it moves: growing reveals new content, children are never stretched.
     run(el.animate([frame(from), frame(to)], { id: SIZE_ID, duration, easing }))
   }
@@ -84,7 +103,9 @@ export function followSize(
     running = animation
     animation.finished.then(
       () => {
-        if (running === animation) running = undefined
+        if (running !== animation) return
+        running = undefined
+        unpin()
       },
       () => {},
     )
@@ -101,11 +122,14 @@ export function followSize(
       // shows past the content (a button's 1px rim, an element mid-slide) and overshot the size.
       const animation = running
       const at = animation.currentTime
+      const held = pinned.length > 0
       animation.cancel()
+      unpin()
       // Only our own animation resizing a child it stretches (a dialog's body), or nothing new:
       // carry on from where it was. Restarting on each of these made it crawl.
       const natural = measure()
       if (close(natural.height, target.height) && close(natural.width, target.width)) {
+        if (held) pin()
         animation.currentTime = at
         animation.play()
         run(animation)
@@ -126,7 +150,13 @@ export function followSize(
     for (const child of el.children) sizes.observe(child)
   }
   // New content: nodes, text, or something inside changing. Its own style or class is layout.
-  const changes = new MutationObserver((records) => {
+  const changes = new MutationObserver((all) => {
+    // Its own pins aren't new content.
+    const records = all.filter(
+      (r) =>
+        !(r.type === 'attributes' && r.attributeName === 'style' && pins.has(r.target as Element)),
+    )
+    if (!records.length) return
     watchChildren()
     sync(records.some((r) => r.target !== el || r.type !== 'attributes'))
   })
@@ -145,6 +175,7 @@ export function followSize(
       changes.disconnect()
       sizes.disconnect()
       running?.cancel()
+      unpin()
     },
   }
 }

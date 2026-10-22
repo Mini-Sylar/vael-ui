@@ -324,6 +324,27 @@ test('magnify=false disables the size effect entirely, without disabling the doc
   await expect.element(screen.getByTestId('selected')).toHaveTextContent('mail')
 })
 
+test("magnify=false leaves the items' styles to you: moving and leaving never clear your transform", async () => {
+  const screen = await render(DockFixture, { props: { magnify: false } })
+  const buttons = itemButtons(screen)
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  // Your own animation, as with itemEls().
+  for (const button of buttons) button.style.transform = 'translateX(4px) scale(1.5)'
+  const rect = buttons[2].getBoundingClientRect()
+  for (const type of ['pointermove', 'pointermove', 'pointerleave']) {
+    root.dispatchEvent(
+      new PointerEvent(type, {
+        clientX: rect.left + rect.width / 2,
+        clientY: rect.top + rect.height / 2,
+        pointerType: 'mouse',
+        bubbles: true,
+      }),
+    )
+    for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
+    for (const button of buttons) expect(button.style.transform).toBe('translateX(4px) scale(1.5)')
+  }
+})
+
 function contains(outer: DOMRect, inner: DOMRect) {
   return (
     inner.left >= outer.left - 0.5 &&

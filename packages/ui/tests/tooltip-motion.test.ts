@@ -73,3 +73,20 @@ test('`false` shows and hides it at once', async () => {
   await nextTick()
   expect(panel()).toBeNull()
 })
+
+test('closed before it was placed, your leave still gets the panel', async () => {
+  const left: unknown[] = []
+  const open = renderTip({
+    leave: ({ panel }: { panel: HTMLElement }) => {
+      left.push(panel)
+    },
+  })
+  open.value = true
+  await nextTick()
+  const shown = panel()
+  expect(shown).not.toBeNull()
+  // Its position isn't measured yet, so its enter hasn't run.
+  expect(positioner()!.style.visibility).toBe('hidden')
+  open.value = false
+  await vi.waitFor(() => expect(left).toEqual([shown]))
+})

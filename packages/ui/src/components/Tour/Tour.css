@@ -96,12 +96,6 @@
       opacity var(--ui-duration-press) ease,
       background-color var(--ui-duration-press) ease;
   }
-  /* In step with the spotlight's glide (220 to 380ms by distance, TourSpotlight.vue). */
-  .ui-tour-positioner--gliding {
-    transition:
-      top 300ms var(--ui-ease-out),
-      left 300ms var(--ui-ease-out);
-  }
   .ui-tour-back,
   .ui-tour-skip {
     background: transparent;
@@ -132,9 +126,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-tour-positioner--gliding {
-      transition: none;
-    }
     .ui-tour-spotlight,
     .ui-tour-spotlight-enter-active {
       transition: opacity var(--ui-duration-exit) ease;

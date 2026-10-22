@@ -105,6 +105,7 @@
             :motion="!!props.motion"
             :expand-on-row-click="expandOnRowClick"
             :sticky-scroll="stickyScroll"
+            :scroll-fade="scrollFade"
             :ui="treeUi"
             @change="(value) => emit('change', value)"
             @select="onTreeSelect"
@@ -249,6 +250,12 @@ const rawProps = withDefaults(
      * @default false
      */
     stickyScroll?: boolean
+    /**
+     * Fades the panel's top and bottom edges while there are more rows past them. With
+     * `stickyScroll`, only the bottom fades, so pinned rows stay solid.
+     * @default true
+     */
+    scrollFade?: boolean
     /** Renders hidden `<input>`(s) so a plain `<form>` post carries the selection, repeating `name` outside `'single'` mode. */
     name?: string
     /** Which side of the trigger the panel opens on. @default 'bottom' */
@@ -308,6 +315,7 @@ const rawProps = withDefaults(
     emptyText: 'No results found',
     expandOnRowClick: false,
     stickyScroll: false,
+    scrollFade: true,
     name: undefined,
     side: 'bottom',
     align: 'start',

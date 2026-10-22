@@ -9,6 +9,8 @@ interface LayerEntry {
   scope: () => HTMLElement | null
   /** The content itself, which may be teleported outside its own scope. */
   content: () => HTMLElement | null
+  /** What opened it (a picker's trigger), so focus in the content counts as inside the opener. */
+  anchor: () => HTMLElement | null
   onDismiss?: (reason: DismissReason, event: Event) => boolean | void
 }
 
@@ -24,6 +26,23 @@ function owns(entry: LayerEntry, origin: Node | null) {
   if (scope === null) return true
   if (!origin) return false
   return scope.contains(origin) || entry.content()?.contains(origin) === true
+}
+
+/** Whether `node` is in `root`, or in a teleported layer opened from inside it (a DatePicker's panel). */
+export function containsThroughLayers(root: HTMLElement | null, node: Node | null): boolean {
+  const layers = stack.value
+  // Each hop moves from a layer's content to its anchor; a chain can't be longer than the stack.
+  for (let hops = 0; root && node && hops <= layers.length; hops++) {
+    if (root.contains(node)) return true
+    let next: Node | null = null
+    for (let i = layers.length - 1; i >= 0; i--)
+      if (layers[i].content()?.contains(node)) {
+        next = layers[i].anchor()
+        break
+      }
+    node = next
+  }
+  return false
 }
 
 /** Escape that ends an IME composition belongs to the input method, not the layer. */
@@ -82,6 +101,8 @@ export interface UseLayerOptions {
   scope?: MaybeRefOrGetter<HTMLElement | null>
   /** The content itself, which may be teleported outside its own scope. */
   content?: MaybeRefOrGetter<HTMLElement | null>
+  /** What opened it, for `containsThroughLayers`. */
+  anchor?: MaybeRefOrGetter<HTMLElement | null>
   onDismiss?: (reason: DismissReason, event: Event) => boolean | void
 }
 
@@ -93,6 +114,7 @@ export function useLayer(options: UseLayerOptions = {}): Layer {
     id,
     scope: () => toValue(options.scope) ?? null,
     content: () => toValue(options.content) ?? null,
+    anchor: () => toValue(options.anchor) ?? null,
     onDismiss: options.onDismiss,
   }
 

@@ -67,6 +67,7 @@ export interface TourSpotlightProps {
 -->
 <script setup lang="ts">
 import { prefersReducedMotion } from '../../composables/dom'
+import { glideMs } from '../../composables/tourGlide'
 import './Tour.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { autoUpdate } from '@floating-ui/dom'
@@ -163,14 +164,11 @@ function makeBezierEasing(p1x: number, p1y: number, p2x: number, p2y: number) {
 const easeGlide = makeBezierEasing(0.23, 1, 0.32, 1)
 
 // Travel-aware: a nudge to a neighbouring target resolves quickly; a sweep clear across the
-// viewport earns a longer glide — but a far bound is still faster than the old flat 500ms.
-// Range/curve follow the transitions-polish doctrine for a position change (~250–400ms).
-const GLIDE_MIN_MS = 220
+// viewport earns a longer glide (tourGlide.ts, shared with the callout).
 const GLIDE_MAX_MS = 380
 function glideDuration(a: Cutout, b: Cutout): number {
   const travel = Math.hypot(b.x + b.w / 2 - (a.x + a.w / 2), b.y + b.h / 2 - (a.y + a.h / 2))
-  const t = Math.min(1, travel / (Math.hypot(a.vw, a.vh) || 1))
-  return GLIDE_MIN_MS + (GLIDE_MAX_MS - GLIDE_MIN_MS) * Math.sqrt(t)
+  return glideMs(travel, Math.hypot(a.vw, a.vh))
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t

@@ -112,3 +112,31 @@ test(
     expect(document.getAnimations().filter((a) => a.playState === 'running')).toHaveLength(0)
   },
 )
+
+test('list: items arriving together stagger in page order, whatever order Vue inserts them', async () => {
+  const items = shallowRef(['a', 'b', 'c'])
+  const order: string[] = []
+  const List = defineComponent({
+    setup() {
+      const motion = useMotion('list', () => ({
+        enter: (({ item }: { item: HTMLElement }, { index }: { index: number }) => {
+          order[index] = item.textContent!
+        }) as never,
+      }))
+      return () =>
+        h(TransitionGroup, { tag: 'ul', ...motion.transition }, () =>
+          items.value.map((n) => h('li', { key: n }, n)),
+        )
+    },
+  })
+  render(List, real)
+  await import('../src/motion/list').then(() => new Promise((resolve) => setTimeout(resolve)))
+  await nextTick()
+  // Filtered down to the last one, then back: the ones before the kept row are inserted last.
+  items.value = ['c']
+  await nextTick()
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  items.value = ['a', 'b', 'c', 'd']
+  await nextTick()
+  await vi.waitFor(() => expect(order).toEqual(['a', 'b', 'd']))
+})

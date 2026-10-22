@@ -56,7 +56,7 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
   // Layout positions as of the last change. Slides add, so old layout minus new layout is the slide.
   let before = new Map<Element, DOMRect>()
   let capturing = false
-  let batch: Element[] = []
+  let batch: { el: Element; done: () => void }[] = []
 
   const timingFor = (el: Element) => {
     const motion = options.resolved()
@@ -159,20 +159,32 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     adopt(el.parentElement)
     const motion = options.resolved()
     if (motion.off) return done()
-    // Items arriving in the same tick are one group: they stagger in page order.
-    if (!batch.length) queueMicrotask(() => (batch = []))
-    const index = batch.push(el) - 1
-    if (hooked(el, 'enter', index, done)) return
-    playItem(el, motion.initial, motion.initial[part] ?? {}, {
-      direction: 'in',
-      engine: motion.engine,
-      timing: timingFor(el),
-      delay: index * options.stagger(),
-    }).then(done)
+    // Items arriving in the same tick are one group, started together before the next paint.
+    if (!batch.length) queueMicrotask(enterBatch)
+    batch.push({ el, done })
+  }
+  // They stagger in page order, not the order Vue inserts them (rows before a kept one come last).
+  function enterBatch() {
+    const group = batch.sort((a, b) =>
+      a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+    )
+    batch = []
+    const motion = options.resolved()
+    group.forEach(({ el, done }, index) => {
+      if (hooked(el, 'enter', index, done)) return
+      playItem(el, motion.initial, motion.initial[part] ?? {}, {
+        direction: 'in',
+        engine: motion.engine,
+        timing: timingFor(el),
+        delay: index * options.stagger(),
+      }).then(done)
+    })
   }
 
   function onLeave(el: Element, done: () => void) {
     adopt(el.parentElement)
+    // Left in the tick it came: it never starts entering (Vue cancels that entry itself).
+    batch = batch.filter((entry) => entry.el !== el)
     const motion = options.resolved()
     if (motion.off) return done()
     const box = el as Pinned

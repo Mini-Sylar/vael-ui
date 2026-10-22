@@ -43,6 +43,18 @@ test('v-draggable reorders the bound array in place', async () => {
   await vi.waitFor(() => expect(order(screen)).not.toBe('a,b,c'))
 })
 
+test("a decorative child (aria-hidden, like Tabs' indicator) is not a row", async () => {
+  for (const decor of [false, true]) {
+    const screen = await render(DraggableFixture, { props: { decor } })
+    const first = rows(screen)[0]!
+    const release = drag(first, first.getBoundingClientRect().height * 1.3)
+    await new Promise(requestAnimationFrame)
+    release()
+    await vi.waitFor(() => expect(order(screen)).toBe('b,a,c'))
+    screen.unmount()
+  }
+})
+
 test('it lifts the row into the same floating preview the components use', async () => {
   const screen = await render(DraggableFixture)
   const release = drag(rows(screen)[0]!, 40, 12)

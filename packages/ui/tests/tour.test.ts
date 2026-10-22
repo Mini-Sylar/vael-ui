@@ -362,13 +362,14 @@ test('Escape still skips the tour while a step’s own onBeforeEnter overlay is 
 test('restarting a tour lands the callout on the first step instead of gliding in from the corner', async () => {
   const screen = await render(TourFixture)
   const glided: string[] = []
-  const watchGlide = new MutationObserver(() => {
+  let polling = true
+  const poll = () => {
     const positioner = document.querySelector('.ui-popover-positioner')
-    if (positioner?.classList.contains('ui-tour-positioner--gliding')) {
+    if (positioner?.getAnimations().some((a) => a.id === 'ui-tour-glide'))
       glided.push(screen.getByTestId('step-index').element().textContent ?? '')
-    }
-  })
-  watchGlide.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] })
+    if (polling) requestAnimationFrame(poll)
+  }
+  requestAnimationFrame(poll)
   try {
     await screen.getByTestId('trigger').click()
     await expect.element(page.getByText('Step A')).toBeVisible()
@@ -388,8 +389,52 @@ test('restarting a tour lands the callout on the first step instead of gliding i
     for (let i = 0; i < 5; i++) await new Promise((resolve) => requestAnimationFrame(resolve))
     expect(glided).toEqual([])
   } finally {
-    watchGlide.disconnect()
+    polling = false
   }
+})
+
+test('the callout glides to a step on another side of its target instead of jumping', async () => {
+  const open = shallowRef(true)
+  const steps: TourStep[] = [
+    { target: '#glide-a', title: 'Below' },
+    { target: '#glide-b', title: 'Above', side: 'top' },
+  ]
+  await render({
+    setup: () => () =>
+      h('div', { style: 'padding: 200px 40px' }, [
+        h('button', { id: 'glide-a' }, 'A'),
+        h('button', { id: 'glide-b', style: 'margin-inline-start: 300px' }, 'B'),
+        h(Tour as never, {
+          steps,
+          open: open.value,
+          'onUpdate:open': (v: boolean) => (open.value = v),
+        }),
+      ]),
+  })
+  await expect.element(page.getByText('Below')).toBeVisible()
+  for (let i = 0; i < 3; i++) await new Promise((resolve) => requestAnimationFrame(resolve))
+  const positioner = document.querySelector<HTMLElement>('.ui-popover-positioner')!
+  const seen: DOMRect[] = []
+  let sampling = true
+  const sample = () => {
+    seen.push(positioner.getBoundingClientRect())
+    if (sampling) requestAnimationFrame(sample)
+  }
+  sample()
+
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect.element(page.getByText('Above')).toBeVisible()
+  const gliding = () => positioner.getAnimations().some((a) => a.id === 'ui-tour-glide')
+  await vi.waitFor(() => expect(gliding()).toBe(true))
+  await vi.waitFor(() => expect(gliding()).toBe(false))
+  sampling = false
+  // No frame covers half the trip: it travels instead of landing.
+  const trip = Math.hypot(seen.at(-1)!.x - seen[0]!.x, seen.at(-1)!.y - seen[0]!.y)
+  const moves = seen.slice(1).map((r, i) => Math.hypot(r.x - seen[i]!.x, r.y - seen[i]!.y))
+  expect(trip).toBeGreaterThan(100)
+  expect(Math.max(...moves)).toBeLessThan(trip / 2)
+  const after = positioner.getBoundingClientRect()
+  expect(after.bottom).toBeLessThan(document.querySelector('#glide-b')!.getBoundingClientRect().top)
 })
 
 test('a step asking for a side with no room in a narrow contained frame goes below the target instead', async () => {

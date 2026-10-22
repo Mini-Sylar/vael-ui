@@ -4,6 +4,7 @@ import { userEvent } from 'vitest/browser'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, ref } from 'vue'
 import Editable from '../src/components/Editable/Editable.vue'
+import DatePicker from '../src/components/DatePicker/DatePicker.vue'
 
 const preview = (root: HTMLElement) => root.querySelector<HTMLButtonElement>('.ui-editable-preview')
 const input = (root: HTMLElement) => root.querySelector<HTMLInputElement>('.ui-editable input')
@@ -136,4 +137,89 @@ test('#edit swaps in any control: a textarea keeps Enter, Cmd+Enter saves, Tab t
   await userEvent.tab({ shift: true })
   await userEvent.keyboard('{Meta>}{Enter}{/Meta}')
   expect(onSubmit).toHaveBeenCalledWith('one\ntwo')
+})
+
+test("focus in a picker's teleported panel stays inside the edit; leaving the panel for the page submits", async () => {
+  const onSubmit = vi.fn()
+  const due = ref('2026-11-06')
+  const day = (iso: string) => document.querySelector<HTMLElement>(`[data-date="${iso}"]`)
+  const screen = await render({
+    setup: () => () =>
+      h('div', [
+        h(
+          Editable,
+          {
+            modelValue: due.value,
+            'onUpdate:modelValue': (v: string) => (due.value = v),
+            onSubmit,
+            ariaLabel: 'Due',
+          },
+          {
+            edit: ({
+              value,
+              update,
+              submit,
+            }: {
+              value: string
+              update: (v: string) => void
+              submit: () => void
+            }) =>
+              h(DatePicker as never, {
+                modelValue: new Date(`${value}T00:00`),
+                'onUpdate:modelValue': (next: Date | null) => {
+                  if (!next) return
+                  update(
+                    `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`,
+                  )
+                  submit()
+                },
+              }),
+          },
+        ),
+        h('button', { class: 'elsewhere' }, 'Elsewhere'),
+      ]),
+  })
+  const editing = () => screen.container.querySelector('.ui-editable[data-state="editing"]')
+
+  // A pick from the panel saves it.
+  preview(screen.container)!.click()
+  await vi.waitFor(() => expect(editing()).not.toBeNull())
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(day('2026-11-12')).not.toBeNull())
+  day('2026-11-12')!.focus()
+  await nextTick()
+  expect(editing()).not.toBeNull()
+  expect(onSubmit).not.toHaveBeenCalled()
+  day('2026-11-12')!.click()
+  await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledWith('2026-11-12'))
+
+  // Panel open, focus moves on to the page: that is leaving.
+  onSubmit.mockClear()
+  await vi.waitFor(() => expect(editing()).toBeNull())
+  preview(screen.container)!.click()
+  await vi.waitFor(() => expect(editing()).not.toBeNull())
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(day('2026-11-20')).not.toBeNull())
+  day('2026-11-20')!.focus()
+  await nextTick()
+  screen.container.querySelector<HTMLButtonElement>('.elsewhere')!.focus()
+  await vi.waitFor(() => expect(editing()).toBeNull())
+  expect(onSubmit).toHaveBeenCalledWith('2026-11-12')
+
+  // Safari: pressing a panel button drops focus to nowhere. Still inside; a press outside leaves.
+  onSubmit.mockClear()
+  preview(screen.container)!.click()
+  await vi.waitFor(() => expect(editing()).not.toBeNull())
+  await screen.getByRole('combobox').click()
+  await vi.waitFor(() => expect(day('2026-11-20')).not.toBeNull())
+  day('2026-11-20')!.focus()
+  const press = (el: Element) =>
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }))
+  press(document.querySelector('.ui-date-picker-panel button')!)
+  ;(document.activeElement as HTMLElement).blur()
+  await nextTick()
+  expect(editing()).not.toBeNull()
+  press(screen.container.querySelector('.elsewhere')!)
+  await vi.waitFor(() => expect(editing()).toBeNull())
+  expect(onSubmit).toHaveBeenCalledWith('2026-11-12')
 })

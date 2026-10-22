@@ -11,6 +11,7 @@ import DataTableExpansionFixture from './fixtures/DataTableExpansionFixture.vue'
 import DataTableVirtualizeFixture from './fixtures/DataTableVirtualizeFixture.vue'
 import DataTableDateSortFixture from './fixtures/DataTableDateSortFixture.vue'
 import type { UiPartValue } from '../src/classes'
+import DataTable from '../src/components/DataTable/DataTable.vue'
 
 // DataTable loads the drag engine on demand. Loading it up front means a test can drag as soon as
 // the table renders.
@@ -1337,4 +1338,38 @@ test('motion hooks: rows that come and go go through your enter and leave as `ro
   await vi.waitFor(() => expect(document.querySelectorAll('tbody tr')).toHaveLength(1), {
     timeout: 1000,
   })
+})
+
+test('a page change swaps the rows at once; a removed row leaves the flow at once', async () => {
+  const people = Array.from({ length: 8 }, (_, i) => ({ id: `p${i}`, name: `Person ${i}` }))
+  const data = shallowRef(people)
+  const page = shallowRef(1)
+  const screen = await render(
+    {
+      setup: () => () =>
+        h(
+          DataTable as never,
+          { data: data.value, rowKey: 'id', rows: 4, page: page.value },
+          {
+            columns: ({ Column }: { Column: never }) => h(Column, { field: 'name', label: 'Name' }),
+          },
+        ),
+    },
+    { global: { stubs: { 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(bodyRows(screen.container)).toHaveLength(4))
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  page.value = 2
+  await nextTick()
+  // The same frame: only the new page, fully shown (no row still leaving, none fading in).
+  const rows = bodyRows(screen.container)
+  expect(rows.map((tr) => tr.textContent)).toEqual(['Person 4', 'Person 5', 'Person 6', 'Person 7'])
+  for (const tr of rows) expect(getComputedStyle(tr).opacity).toBe('1')
+
+  // Filtering one out keeps the rest: it fades nothing, and the leaving row takes no room.
+  data.value = people.filter((person) => person.id !== 'p5')
+  await nextTick()
+  const leaving = bodyRows(screen.container).find((tr) => tr.textContent === 'Person 5')
+  expect(getComputedStyle(leaving!).display).toBe('none')
 })

@@ -111,3 +111,31 @@ test('a list shown again (a menu reopened) gets its indicator placed on the same
   await userEvent.hover(screen.getByText('Two'))
   await vi.waitFor(() => expect(placed()).not.toBe(''))
 })
+
+test('a group label between rows keeps the highlight on the last row, to glide on from there', async () => {
+  const Grouped = defineComponent({
+    setup() {
+      const list = useTemplateRef<HTMLElement>('list')
+      const { style } = useHoverIndicator(list, { itemSelector: '.row' })
+      const row = (label: string) =>
+        h('button', { class: 'row', style: 'display: block; height: 30px' }, label)
+      return () =>
+        h('div', { ref: 'list', style: 'position: relative; width: 200px' }, [
+          h('div', { class: 'ui-indicator grouped-indicator', style: style.value }),
+          row('First'),
+          h('div', { style: 'height: 24px' }, 'Group'),
+          row('Second'),
+        ])
+    },
+  })
+  const screen = await render(Grouped)
+  const indicated = () => document.querySelector('[data-indicated]')?.textContent
+  await userEvent.hover(screen.getByText('First'))
+  await vi.waitFor(() => expect(indicated()).toBe('First'))
+  await userEvent.hover(screen.getByText('Group'))
+  for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
+  expect(indicated()).toBe('First')
+  expect(getComputedStyle(document.querySelector('.grouped-indicator')!).opacity).toBe('1')
+  await userEvent.hover(screen.getByText('Second'))
+  await vi.waitFor(() => expect(indicated()).toBe('Second'))
+})

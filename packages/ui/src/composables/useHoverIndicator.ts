@@ -93,10 +93,10 @@ export function useHoverIndicator(
     if (event.pointerType === 'touch' || toValue(options.enabled) === false) return
     pointerInside = true
     const row = rowOf(event.target)
-    // A gap between rows, or a wrapper around them, keeps the last row; a separator or label clears it.
-    const between =
-      !row && event.target instanceof Element && !!event.target.querySelector(options.itemSelector)
-    if (!between) mark(row)
+    if (row) return mark(row)
+    // Between rows (a gap, a group label, a separator) it keeps the last one and glides on from
+    // there; a row it can't take (disabled, or a nested list's) clears it.
+    if (event.target instanceof Element && event.target.closest(options.itemSelector)) mark(null)
   }
   function onPointerLeave(event: PointerEvent) {
     if (event.pointerType === 'touch') return

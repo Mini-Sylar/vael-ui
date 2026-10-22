@@ -95,7 +95,7 @@ import type {
 } from '../../composables/useTour'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import type { DOMTarget } from '../../composables/dom'
-import type { UiPartClass, UiPartStyle, UiPartValue } from '../../classes'
+import type { UiPartValue } from '../../classes'
 export type { TourStep, TourGroup, TourStepChangeDetails, TourEndDetails }
 
 export interface TourProps<T extends TourStep = TourStep> {
@@ -158,6 +158,7 @@ import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
 import type { PopoverExposed } from '../Popover/Popover.vue'
 import TourSpotlight from './TourSpotlight.vue'
+import { GLIDE_EASE, glideMs } from '../../composables/tourGlide'
 import { useTour } from '../../composables/useTour'
 import { useDOMTarget, prefersReducedMotion } from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
@@ -503,9 +504,6 @@ const themedUi = useThemedUi(
 )
 const ui = computed(() => themedUi())
 const spotlightUi = computed(() => withZIndex(ui.value?.spotlight, spotlightZIndex.value))
-// Between steps the callout travels with the spotlight instead of landing first.
-const gliding = shallowRef(false)
-let glideTimer: ReturnType<typeof setTimeout> | undefined
 // Only once the callout has been placed in this session. Reopening a finished tour shows the last
 // step's target for a tick before resetting to the first; gliding then started from the
 // positioner's unplaced 0,0, so the callout swept in from the corner.
@@ -516,8 +514,7 @@ watch(
   ([isOpen, el]) => {
     if (!isOpen) {
       placed = false
-      gliding.value = false
-      clearTimeout(glideTimer)
+      stopGlide()
       if (placeFrame !== undefined) cancelAnimationFrame(placeFrame)
       placeFrame = undefined
       return
@@ -530,27 +527,61 @@ watch(
   },
   { flush: 'post' },
 )
-watch(targetEl, (next, previous) => {
-  if (!next || !previous || !open.value || !props.motion || !placed) return
-  gliding.value = true
+
+// Between steps the callout travels with the spotlight. A FLIP, not a top/left transition: above
+// its target the callout pins its bottom edge instead, and `top: auto` doesn't animate.
+const GLIDE_ID = 'ui-tour-glide'
+let glideObserver: MutationObserver | undefined
+let glideTimer: ReturnType<typeof setTimeout> | undefined
+function stopGlide() {
+  glideObserver?.disconnect()
+  glideObserver = undefined
   clearTimeout(glideTimer)
-  glideTimer = setTimeout(() => (gliding.value = false), 400)
+}
+// Where the glide has the callout right now, on top of where its layout puts it.
+function glideOffset(el: HTMLElement): [number, number] {
+  const [x = '0', y = '0'] = getComputedStyle(el).translate.split(' ')
+  return [Number.parseFloat(x) || 0, Number.parseFloat(y) || 0]
+}
+watch(targetEl, (next, previous) => {
+  const el = popover.value?.positionerEl as HTMLElement | null | undefined
+  if (!el || !next || !previous || !open.value || !props.motion || !placed) return
+  if (prefersReducedMotion()) return
+  stopGlide()
+  const a = previous.getBoundingClientRect()
+  const b = next.getBoundingClientRect()
+  const box = container.value?.getBoundingClientRect()
+  const ms = glideMs(
+    Math.hypot(b.x + b.width / 2 - a.x - a.width / 2, b.y + b.height / 2 - a.y - a.height / 2),
+    box ? Math.hypot(box.width, box.height) : Math.hypot(innerWidth, innerHeight),
+  )
+  const [tx, ty] = glideOffset(el)
+  let layout = { x: el.getBoundingClientRect().x - tx, y: el.getBoundingClientRect().y - ty }
+  // Runs before the paint that would show the new spot: play from where it was seen instead.
+  glideObserver = new MutationObserver(() => {
+    const [ox, oy] = glideOffset(el)
+    const seen = { x: layout.x + ox, y: layout.y + oy }
+    for (const running of el.getAnimations()) if (running.id === GLIDE_ID) running.cancel()
+    layout = el.getBoundingClientRect()
+    const dx = seen.x - layout.x
+    const dy = seen.y - layout.y
+    if (isScrolling.value || (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5)) return
+    const glide = el.animate([{ translate: `${dx}px ${dy}px` }, { translate: '0px 0px' }], {
+      duration: ms,
+      easing: GLIDE_EASE,
+    })
+    glide.id = GLIDE_ID
+  })
+  glideObserver.observe(el, { attributes: true, attributeFilter: ['style'] })
+  glideTimer = setTimeout(stopGlide, ms + 100)
 })
 onScopeDispose(() => {
-  clearTimeout(glideTimer)
+  stopGlide()
   if (placeFrame !== undefined) cancelAnimationFrame(placeFrame)
 })
-const positionerUi = computed<UiPartValue>(() => {
-  const part = withZIndex(ui.value?.positioner, panelZIndex.value) as {
-    class?: UiPartClass
-    style?: UiPartStyle
-  }
-  if (!gliding.value || isScrolling.value) return part
-  const cls: UiPartClass = part.class
-    ? [part.class, 'ui-tour-positioner--gliding']
-    : 'ui-tour-positioner--gliding'
-  return { ...part, class: cls }
-})
+const positionerUi = computed<UiPartValue>(() =>
+  withZIndex(ui.value?.positioner, panelZIndex.value),
+)
 
 defineExpose({
   /** Returns the tour's `id` prop. */

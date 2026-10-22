@@ -491,3 +491,40 @@ test('removed by v-if, it leaves in place: back the way it came, quieter, then i
   await frame()
   expect(document.querySelector('.goes')).toBeNull()
 })
+
+test('a popover easing wider for new text keeps that text on its final line the whole way', async () => {
+  const text = shallowRef('Was it helpful?')
+  render(
+    {
+      setup: () => () =>
+        h(
+          Popover as never,
+          { open: true, motion: { duration: 300 } },
+          {
+            trigger: () => h('button', 'Open'),
+            default: () => h('p', { class: 'said', style: 'margin: 0' }, text.value),
+          },
+        ),
+    },
+    real,
+  )
+  const panel = () => document.querySelector<HTMLElement>('.ui-popover-panel')!
+  const said = () => document.querySelector<HTMLElement>('.said')!
+  await vi.waitFor(() => expect(panel().getAnimations().length).toBeGreaterThan(0))
+  await vi.waitFor(() => expect(panel().getAnimations()).toHaveLength(0))
+  text.value = 'Thanks for the feedback, it helps a lot!'
+  const widths = new Set<number>()
+  const lines = new Set<number>()
+  for (let i = 0; i < 12; i++) {
+    await frame()
+    widths.add(Math.round(panel().getBoundingClientRect().width))
+    lines.add(said().getBoundingClientRect().height)
+  }
+
+  // It did ease wider, through widths in between.
+  expect(widths.size).toBeGreaterThan(3)
+  await vi.waitFor(() => expect(panel().getAnimations()).toHaveLength(0))
+  expect(said().style.inlineSize).toBe('')
+  // And the text sat in its final wrap on every one of those frames.
+  expect([...lines]).toEqual([said().getBoundingClientRect().height])
+})

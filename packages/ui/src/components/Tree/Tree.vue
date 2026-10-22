@@ -45,9 +45,11 @@
       :data-reordering="isReordering ? '' : undefined"
       :data-invalid-drop="isReordering && !isValidDrop ? '' : undefined"
       :data-drop-pending="isDropPending ? '' : undefined"
+      :data-sticky="stickyScroll ? '' : undefined"
       :aria-multiselectable="selectionMode !== 'single' || undefined"
       :class="listPart.class"
       :style="listPart.style"
+      v-scroll-mask="scrollFade"
       @keydown="onTreeKeydown"
     >
       <div
@@ -278,6 +280,7 @@ import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/indicator.css'
 import { useEasedHeight } from '../../composables/useEasedHeight'
 import { createFoldScheduler } from '../../composables/useFold'
+import { vScrollMask } from '../../directives/vScrollMask'
 import type { FoldScheduler } from '../../composables/useFold'
 import { moveTreeNode } from '../../composables/sortableTree'
 import { useLazySortable } from '../../composables/useLazySortable'
@@ -372,6 +375,12 @@ const rawProps = withDefaults(
      * @default false
      */
     stickyScroll?: boolean
+    /**
+     * Fades the list's top and bottom edges while there are more rows past them. With
+     * `stickyScroll`, only the bottom fades, so pinned rows stay solid.
+     * @default true
+     */
+    scrollFade?: boolean
     /** Id for the `role="tree"` list element. Auto-generated when omitted. */
     id?: string
     /** Class and style overrides for each part. */
@@ -402,6 +411,7 @@ const rawProps = withDefaults(
     autoExpandDelay: 600,
     expandOnRowClick: false,
     stickyScroll: false,
+    scrollFade: true,
     id: undefined,
     ui: undefined,
   },

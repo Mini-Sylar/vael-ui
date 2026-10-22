@@ -69,11 +69,13 @@ import './Editable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import Input from '../Input/Input.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
+import { containsThroughLayers } from '../../composables/useLayerStack'
 import type { EditableMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
@@ -218,13 +220,40 @@ function onKeydown(event: KeyboardEvent) {
     cancel()
   }
 }
-// Focus moving within the component (to an action, or between parts of a custom control) is not leaving.
-function onFocusout(event: FocusEvent) {
-  const next = event.relatedTarget
-  if (next instanceof Node && root.value?.contains(next)) return
+function leave() {
   if (props.submitMode === 'blur' || props.submitMode === 'both') submit()
   else cancel()
 }
+const inside = (node: unknown) => containsThroughLayers(root.value, node as Node | null)
+// Safari doesn't focus a pressed button, so focus drops to nowhere: after a press inside, that's not leaving.
+let pressedInside = false
+// Focus moving within the component (to an action, between parts of a custom control, or into a
+// picker's teleported panel) is not leaving.
+function onFocusout(event: FocusEvent) {
+  if (inside(event.relatedTarget) || (event.relatedTarget === null && pressedInside)) return
+  leave()
+}
+const whileEditing = () => (editing.value ? document : null)
+// Focus leaving that panel doesn't bubble through the teleport to the edit area.
+useEventListener(
+  whileEditing,
+  'focusout',
+  (event: FocusEvent) => {
+    if (!root.value?.contains(event.target as Node) && inside(event.target)) onFocusout(event)
+  },
+  true,
+)
+useEventListener(
+  whileEditing,
+  'pointerdown',
+  (event: PointerEvent) => {
+    pressedInside = inside(event.target)
+    // Focus already lost that way never blurs again, so a press outside is the leave.
+    if (!pressedInside && !inside(document.activeElement)) leave()
+  },
+  true,
+)
+useEventListener(whileEditing, 'keydown', () => (pressedInside = false), true)
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(

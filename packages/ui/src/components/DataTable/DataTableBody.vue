@@ -459,17 +459,24 @@ const rowMotionFits = computed<{ count: number; fits: boolean }>((previous) => {
   }
 })
 const rowCss = computed(() => props.motion && rowMotionFits.value.fits)
+// A change that keeps no row (a page change, new data) shows at once: every row fading in flashes.
+const rowSwap = computed<{ keys: Set<string>; swap: boolean }>((previous) => {
+  const keys = new Set(props.tableRowEntries.map((entry) => entry.key))
+  const kept = previous ? [...keys].some((key) => previous.keys.has(key)) : true
+  return { keys, swap: !kept && (previous?.keys.size ?? 0) > 0 }
+})
+const rowFade = computed(() => rowCss.value && !rowSwap.value.swap)
 
 // Yours plays through the motion system, the built-in look through CSS; past the limit, neither.
 const rowsTransition = computed(() =>
   props.rowTransition && rowMotionFits.value.fits
     ? props.rowTransition
-    : { name: 'ui-datatable-row', css: rowCss.value },
+    : { name: 'ui-datatable-row', css: rowFade.value },
 )
 
 // A px max-block-size, not 0fr/1fr rows: fr interpolates unevenly and reads as a stall.
 function beforeEnterHook(el: Element) {
-  if (!rowCss.value) return
+  if (!rowFade.value) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
   if (!wrap) return
   wrap.style.maxBlockSize = '0px'
@@ -483,7 +490,7 @@ function afterEnterHook(el: Element) {
   if (wrap) wrap.style.maxBlockSize = ''
 }
 function beforeLeaveHook(el: Element) {
-  if (!rowCss.value) return
+  if (!rowFade.value) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
   if (!wrap) return
   wrap.style.maxBlockSize = `${wrap.scrollHeight}px`
