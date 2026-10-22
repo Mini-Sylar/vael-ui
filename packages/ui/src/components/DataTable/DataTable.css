@@ -225,6 +225,8 @@
   /* The body scrolls both ways, so its frozen cells stick to the box that actually moves. */
   .ui-datatable-scroll-y {
     overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     /* No fade on an axis until its fade class sets one. */
     --ui-datatable-fade-y: linear-gradient(#000, #000);
     --ui-datatable-fade-x: linear-gradient(#000, #000);

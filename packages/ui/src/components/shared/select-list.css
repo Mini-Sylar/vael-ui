@@ -14,6 +14,8 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     /* A vertical list never scrolls sideways, even while rows slide in. */
     overflow-x: hidden;
     overscroll-behavior: contain;

@@ -7,6 +7,8 @@
      dropping this into an already-scrollable layout keeps their own overflow untouched. */
   .ui-pull-to-refresh-root[data-self-scroll] {
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     overscroll-behavior-y: contain;
   }
   /* With nothing focusable inside, the scroller takes focus itself (useFocusableScroller). */

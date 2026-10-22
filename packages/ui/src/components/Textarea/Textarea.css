@@ -71,6 +71,8 @@
     field-sizing: content;
     resize: none;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     /* The +1rem budget is real padding-block (0.5rem top + bottom), not just size inflation: a <textarea> renders its content top-aligned with no vertical centering of its own, so without an actual padding split the whole 1rem buffer sat below the text, pushing the box's geometric center — and anything centered against it, like an avatar in #start — visibly below the text's true center. */
     padding-block: 0.5rem;
     min-block-size: calc(var(--ui-textarea-rows, 3) * 1lh + 1rem);

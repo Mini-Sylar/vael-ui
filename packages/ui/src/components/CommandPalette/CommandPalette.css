@@ -49,6 +49,8 @@
     margin: 0;
     padding: 0.5rem;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     overscroll-behavior: contain;
     list-style: none;
     transition:

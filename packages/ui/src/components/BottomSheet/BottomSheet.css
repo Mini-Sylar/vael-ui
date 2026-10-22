@@ -96,6 +96,8 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     overscroll-behavior: contain;
     /* Room above the first row: this box scrolls, so it clips, and a focus ring or a selection
        ring on the first control would otherwise lose its top edge. */

@@ -75,6 +75,8 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     /* Reaching the end of a long body doesn't scroll the page behind the dialog. */
     overscroll-behavior: contain;
     padding: 1.5rem;

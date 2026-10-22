@@ -39,6 +39,8 @@
     min-block-size: 0;
     min-inline-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     padding-inline: 0.25rem;
     padding-block: 0 0.25rem;
   }
