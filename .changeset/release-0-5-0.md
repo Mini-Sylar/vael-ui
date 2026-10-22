@@ -8,6 +8,22 @@
 
 - **`motionCss` is now `motion` (breaking)**: on every component, on `ConfigProvider`, and in the options of `useCollapse`, `useSortable` and `useSortableGroup`. It works the same way: `:motion="false"` turns off the built-in animation. Find and replace `motion-css` and `motionCss` with `motion`.
 
+- **`beforeClose` is a guard (breaking)**: it decides whether to close, and no longer runs your exit. Return `true` to close, `false` to stay open, or a promise of either, like `() => confirmAction(…).result`. The `(done) => …` form is gone. While it decides, the overlay holds still. To animate a close, use `motion` (below).
+
+  ```ts
+  // Before
+  beforeClose: (done) => gsap.to(panel, { opacity: 0, onComplete: done })
+  // After
+  motion: {
+    leave: ({ panel }) => gsap.to(panel, { opacity: 0 })
+  }
+  ```
+
+- **List events are gone (breaking)**: `chip-enter`/`chip-leave` (Select, Combobox), `item-enter`/`item-leave` (CommandPalette, FileUpload, Timeline), `card-enter`/`card-leave` (Toaster), `row-enter`/`row-leave` (DataTable) and `action-enter`/`action-leave` (SpeedDial). Pass `enter` and `leave` hooks in `motion` instead: each gets the item by name (`{ toast }`, `{ row }`, `{ item }`, `{ action }`) and waits for the animation you return, so there's no `done()`. Chips live under `motion.chips` and CommandPalette's rows under `motion.items`, because the top level moves the panel. Timeline's hooks get the step's `marker`, `connector`, `previousConnector`, `content` and `opposite`, which replaces the removed `TimelineItemParts` type.
+- **`force-mount` is for keeping content mounted**: it no longer switches animation over to you. With it, vael-ui leaves the element's motion alone; for your own animation, use `motion` hooks.
+- **`motion="false"` covers the panel too**: on Select, Combobox, CascadeSelect, DatePicker, TreeSelect and CommandPalette, `false` now opens and closes the panel at once as well.
+- **Message**: no longer shrinks while `beforeClose` decides. It leaves once the guard says yes.
+
 Three components render different DOM. Their props, slots and events are unchanged, but a selector or a test that reaches inside them may need updating.
 
 - **Button (breaking if you colour buttons)**: the box is now its own layer, `.ui-button::before`, and the contents sit in `.ui-button-inner`. A `background` or `border` you set on the button element paints under that layer, so it disappears on hover for ghost and outline buttons, and always for primary, secondary and danger. Set the button's variables instead:
@@ -30,6 +46,24 @@ Three components render different DOM. Their props, slots and events are unchang
 - **Sortable**: the root is now a `div` (`.ui-sortable`) with the `<ul>` inside it as `.ui-sortable-list`. Your class and a parent's scoped styles now reach the root.
 - **Tooltip, TooltipHost**: the label sits in a `.ui-tooltip-content` span, and the box is drawn by `.ui-tooltip-panel::before`. `data-traveling` and `data-morphing` replace `data-sizing-locked`.
 - **Lists' hover backgrounds**: rows in Select, Combobox, CommandPalette, Menu, Tree, TreeSelect, MenuList, DataTable, Pagination, Tabs, SelectButton, Toolbar and Calendar no longer paint their own hover or focus background. One `.ui-indicator` element slides behind them instead. If you restyled the hover with a selector such as `.ui-menu-item:hover { background: … }`, set `--ui-indicator-bg` instead, or your colour paints over the highlight. DataTable's striped and selected rows are now see-through tints, so the highlight shows under them; they look the same over the table's surface.
+
+## The motion system
+
+Every animated component now takes one `motion` prop, and every animation runs on one engine: CSS transitions and Web Animations on `transform` and `opacity`, loaded in small pieces as a page needs them.
+
+- **`motion`**: `false` turns a component's motion off. An object changes it: values for each part (`{ initial: { panel: { opacity: 0, y: 8 } } }`, `exit`), timing (`{ spring: { damping, response } }`, or `duration` and `easing`), or `enter` and `leave` hooks. Each component exports its own type, such as `DialogMotion`, `SelectMotion` or `ToasterMotion`, so parts autocomplete.
+- **Your own library**: a hook returns whatever GSAP, motion's `animate()` or `element.animate()` returns, or a promise, and the component waits for it. Closing mid-open or reopening mid-close stops it (`kill`, `stop` or `cancel`) and aborts `signal`. Hooks are skipped under reduced motion unless you set `reducedMotion: 'run'`.
+- **Lists**: Toaster, Timeline, FileUpload, SpeedDial, DataTable rows, CommandPalette `items` and the Select family's `chips` stagger new items (`stagger`), lift a leaving item out so the rest close the gap (`leaving: 'pop'`, or `'hold'` to keep the gap until it's gone), and slide the others into place.
+- **Overlays**: `morph: 'trigger'` grows a Dialog or Popover out of the element that opened it and back into it. `linked` moves other elements with the overlay, such as the page receding behind a drawer, and follows a sheet's drag. `surface` draws a shape layer behind a Popover for gooey effects, `exitOrder: 'reverse'` closes children first, and `resize: false` stops a panel easing to new content sizes.
+- **Your own engine**: a style's `engine` plays every component's values through your library instead of the Web Animations API. It gets the element, `from` and `to` in vael-ui's names (`x`, `y`, `scale`, `opacity`), and the timing with the spring behind it, and returns what your library returns.
+- **`ConfigProvider`'s `motion` style**: set the motion for a whole app, by role (`overlay`, `list`, `reveal`) or by component (`dialog`, `toaster`, `select`). A component's own `motion` wins. `parseMotionStyle` checks a style loaded from JSON.
+- **`v-animate`**: animate your own elements. `v-animate="{ initial: { opacity: 0, y: 8 } }"` plays when the element appears, and when Vue removes it the element leaves back the way it came; `exit: false` turns that off. `.size` eases an element to its content's size, `layout: true` slides it when the layout moves it, `layoutId` carries an element between two places (a card into a dialog), `replay` plays it again when the value changes, and `when: 'visible'` waits until it scrolls into view. `v-animate:name` hands an element to the nearest component, which plays it with its own motion.
+- **Every component can animate in**: `initial` on any component's parts plays when it mounts, never on hydration, such as `<Separator :motion="{ initial: { line: { opacity: 0 } } }" />`. Repeated parts, like Rating's stars or a Stepper's steps, come in one after another with `stagger`. Each component exposes its elements as `parts` on its ref.
+- **`motion` on every component**: each has its own type (`SwitchMotion`, `ProgressMotion`, …) for its parts and states, so a style can shake every invalid field or lift every pressed card. A `spring`, or a `duration` and `easing`, on one component retimes its own transitions: a Switch's release, a Progress fill, an AnimatedNumber's roll. Indicators in Tabs, SelectButton, MenuList, Pagination and Toolbar take a `spring`, and a `move` hook animates them yourself. Breadcrumb and AvatarGroup animate crumbs and avatars that come and go. `false` holds a Loader still and stops a Skeleton pulsing.
+- **Server rendering**: a `v-animate` appearance is written into the server HTML as CSS, so it plays before any script loads and doesn't play again on hydration. An overlay that is open on load shows as it is. The Nuxt module registers `v-animate` for you.
+- **Your own components**: `useMotion` gives a component of yours the same `motion` prop behaviour, and `useStateMotion` and `useSwapMotion` cover states (a shake on error) and swaps (one view replacing another). In tests, `await settled()` waits until nothing vael-ui started is still animating.
+- **Out of the way**: nothing animates in a hidden tab, a view coming back from `KeepAlive` doesn't replay, at most 24 elements appear together (the rest show without animating), and rows recycled while a list scrolls don't animate.
+- **Development**: each animated part carries `data-motion`, naming where its motion came from, and each open and close shows up as a measure in the DevTools Performance panel. A part with its own CSS transition on a property the motion animates gets a warning.
 
 ## New
 
