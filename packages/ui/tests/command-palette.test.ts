@@ -155,6 +155,34 @@ test('motion hooks: rows that appear and disappear go through your enter and lea
   expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
 })
 
+test('`items.appear`: each opening enters the rows, top first; without it they show at once', async () => {
+  for (const appear of [true, false]) {
+    const open = shallowRef(false)
+    const entered: string[] = []
+    const screen = await render(
+      () =>
+        h(CommandPalette as never, {
+          open: open.value,
+          items,
+          motion: {
+            items: {
+              appear,
+              enter: ({ item }: { item: HTMLElement }, { index }: { index: number }) => {
+                entered[index] = item.textContent!.trim()
+              },
+            },
+          },
+        }),
+      realTransitions,
+    )
+    open.value = true
+    await expect.element(page.getByRole('dialog')).toBeVisible()
+    for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
+    expect(entered).toEqual(appear ? ['New File', 'New Folder', 'Open Settings'] : [])
+    screen.unmount()
+  }
+})
+
 test('motion hooks at the top move the dialog itself; the rows keep their own look', async () => {
   const left: HTMLElement[] = []
   const open = shallowRef(true)

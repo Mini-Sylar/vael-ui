@@ -140,3 +140,28 @@ test('list: items arriving together stagger in page order, whatever order Vue in
   await nextTick()
   await vi.waitFor(() => expect(order).toEqual(['a', 'b', 'd']))
 })
+
+test('list: `appear` enters the items already there as it mounts, in order; without it they just show', async () => {
+  for (const appear of [true, false]) {
+    const entered: string[] = []
+    const List = defineComponent({
+      setup() {
+        const motion = useMotion('list', () => ({
+          appear,
+          enter: (({ item }: { item: HTMLElement }, { index }: { index: number }) => {
+            entered[index] = item.textContent!
+          }) as never,
+        }))
+        return () =>
+          h(TransitionGroup, { tag: 'ul', ...motion.transition }, () =>
+            ['a', 'b', 'c'].map((n) => h('li', { key: n }, n)),
+          )
+      },
+    })
+    await import('../src/motion/list')
+    const screen = await render(List, real)
+    for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
+    expect(entered).toEqual(appear ? ['a', 'b', 'c'] : [])
+    screen.unmount()
+  }
+})

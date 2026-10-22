@@ -306,6 +306,8 @@ type ListMotion<S extends MotionSpec, N extends string> = {
   move?: MotionHook<Parts<S>, MoveContext<N>>
   /** Leaving items: `'pop'` (default) closes the gap at once, `'hold'` keeps it until they're gone. */
   leaving?: 'pop' | 'hold'
+  /** Also enters the items already there when the list mounts, such as each time a palette opens. Hydration never plays it. @default false */
+  appear?: boolean
 }
 type IndicatorMotion<S extends MotionSpec, N extends string> = {
   move?: MotionHook<Parts<S>, MoveContext<N>>
@@ -753,7 +755,7 @@ export interface MotionStyle {
     swap?: 'sync' | 'wait'
     resize?: boolean
   }
-  list?: RoleValues & { stagger?: number; leaving?: 'pop' | 'hold' }
+  list?: RoleValues & { stagger?: number; leaving?: 'pop' | 'hold'; appear?: boolean }
   reveal?: RoleValues
   indicator?: MotionTiming & { style?: MotionValues }
   press?: MotionTiming & { active?: MotionValues; hover?: MotionValues }

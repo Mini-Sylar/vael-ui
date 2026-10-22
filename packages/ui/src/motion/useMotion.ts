@@ -111,6 +111,8 @@ export function useComponentList<N extends string = string>(
   return useListMotion<N>(motion, as)
 }
 let lists = 0
+// Not an item: a decorative child of the list, such as its sliding highlight.
+const decorative = (el: Element) => el.getAttribute('aria-hidden') === 'true'
 
 /**
  * `useMotion('list')` on a `<TransitionGroup>`: items stagger in, leave lifted out where they were,
@@ -135,8 +137,9 @@ function useListMotion<N extends string>(
       [part]: (typeof as.look === 'function' ? as.look() : as.look) ?? LIST_DEFAULT,
     }),
   })
-  const own = () => (motion?.() ?? {}) as { stagger?: number; leaving?: 'pop' | 'hold' }
-  const role = () => (style?.value?.list ?? {}) as { stagger?: number; leaving?: 'pop' | 'hold' }
+  type ListOptions = { stagger?: number; leaving?: 'pop' | 'hold'; appear?: boolean }
+  const own = () => (motion?.() ?? {}) as ListOptions
+  const role = () => (style?.value?.list ?? {}) as ListOptions
   // The list engine loads on demand, from setup, so it's here long before the list first changes.
   const id = String(++lists)
   let list: ListMotion | undefined
@@ -165,11 +168,17 @@ function useListMotion<N extends string>(
   onScopeDispose(() => void loading.then((ready) => ready.stop()).catch(() => {}))
   const transition: TransitionProps = {
     css: false,
+    // Read as it renders: the items there when the list mounts (an opening) enter too. Hydration
+    // never runs it (tested), so server-rendered items stay as they are.
+    get appear() {
+      return own().appear ?? role().appear ?? false
+    },
     // TransitionGroup passes this to its element, so the list finds its box before any change.
     ...({ 'data-ui-list': id } as TransitionProps),
     onBeforeEnter: (el) => list?.hooks.onBeforeEnter(el),
     onBeforeLeave: (el) => list?.hooks.onBeforeLeave(el),
     onEnter(el, done) {
+      if (decorative(el)) return done()
       if (list) return list.hooks.onEnter(el, done)
       // Not loaded yet: hidden meanwhile, then it enters from there.
       const hidden = el.animate([{ opacity: 0 }, { opacity: 0 }], {
@@ -187,6 +196,7 @@ function useListMotion<N extends string>(
       )
     },
     onLeave(el, done) {
+      if (decorative(el)) return done()
       if (list) return list.hooks.onLeave(el, done)
       loading.then(
         (ready) => ready.hooks.onLeave(el, done),

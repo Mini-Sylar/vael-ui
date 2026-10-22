@@ -4,8 +4,9 @@
     <p class="note">
       By default, rows change at once while you type and only the list's height eases.
       <code>motion.items</code> with <code>enter</code> and <code>leave</code> hooks hands each row
-      to your library: return the tween and the row waits for it. Type to filter, then clear it: the
-      rows that come back rise in with a short stagger, top first. Opening shows them at once.
+      to your library: return the tween and the row waits for it. <code>appear</code> plays it for
+      the rows already there each time it opens, so they rise in top first; filtering brings rows
+      back the same way.
     </p>
     <div class="row">
       <Button @click="open = true">Open command palette</Button>
@@ -33,6 +34,7 @@ const commands: CommandPaletteItem[] = [
 
 const rows: CommandPaletteMotion = {
   items: {
+    appear: true,
     // `index` counts rows arriving together; capped, so a long list never feels slow.
     enter: ({ item }, { index }) =>
       gsap.fromTo(
