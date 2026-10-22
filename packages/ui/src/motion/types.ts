@@ -36,7 +36,12 @@ type PickOne = 'use spring, or duration with easing, not both'
 /** A spring, or a duration with an easing; never both. */
 export type MotionTiming =
   | { spring?: Spring; duration?: PickOne; easing?: PickOne }
-  | { spring?: PickOne; duration?: number | UiDuration; easing?: UiEase | (string & {}) }
+  | {
+      spring?: PickOne
+      /** Milliseconds, or a `--ui-duration-*` token. */
+      duration?: number | UiDuration
+      easing?: UiEase | (string & {})
+    }
 
 type Length = number | (string & {})
 interface Shorthands {
@@ -57,8 +62,9 @@ export type TimedValue<V> = MotionTiming & {
 }
 
 /**
- * What an element looks like at one moment: any CSS property, plus `x`, `y` and `blur`. An array is
- * keyframes; `{ value, spring | duration, easing, delay }` gives that one value its own timing.
+ * What an element looks like at one moment: any CSS property, plus `x`, `y` and `blur`. A plain number
+ * is px, or degrees for `rotate`, except where CSS takes a bare number (`opacity`, `scale`). An array
+ * is keyframes; `{ value, spring | duration, easing, delay }` gives that one value its own timing.
  */
 export type MotionValues = {
   [K in keyof StyleProps]?:

@@ -39,12 +39,15 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // aims to win this back under 6.75 KB.
 // morph 1 → 1.25 KB (2026-10-22): the panel takes the trigger's colour, cross-fades when the trigger
 // stays, and carries `layoutId` pairs (a label) between the two. Loaded only by morphing components.
+// runtime 5.05 → 5.15 KB, states 3.8 → 3.9 KB (2026-10-23): a plain number in motion values means
+// px, or degrees for `rotate` (`width: 100`, `strokeDashoffset: 1`); before, it went in unitless and
+// silently didn't animate. Measured +93 B and +94 B; the code is inlined in each lazy chunk.
 const BUDGET = {
   upFront: 6.85 * 1024,
-  runtime: 5.05 * 1024,
+  runtime: 5.15 * 1024,
   morph: 1.45 * 1024,
   button: 1.05 * 1024,
-  states: 3.8 * 1024,
+  states: 3.9 * 1024,
   linked: 2.6 * 1024,
 }
 

@@ -45,6 +45,14 @@ export function groupValues(values: MotionValues): ValueGroup[] {
 }
 
 /** One keyframe from a state. `x` mirrors in right-to-left layouts. `axis` names where x and y go. */
+// Plain numbers: these stay numbers, `rotate` is degrees, and any other property is px.
+const UNITLESS = /^(opacity|scale|zIndex|order|flex|fontWeight|lineHeight|(fill|stroke)Opacity)/
+/** A value for a keyframe: `width: 100` is `100px`, `rotate: 45` is `45deg`. */
+export const cssValue = (key: string, value: unknown): string =>
+  typeof value !== 'number' || UNITLESS.test(key)
+    ? `${value}`
+    : `${value}${key === 'rotate' ? 'deg' : 'px'}`
+
 export function toKeyframe(
   input: MotionValues,
   rtl = false,
@@ -59,7 +67,7 @@ export function toKeyframe(
     if (key === 'blur') frame.filter = `blur(${px(value)})`
     else
       frame[camel(key)] =
-        typeof value === 'number' && key !== 'opacity' ? String(value) : (value as string)
+        key === 'opacity' && typeof value === 'number' ? value : cssValue(key, value)
   }
   if ('x' in values || 'y' in values) {
     const x = first(values.x)

@@ -86,7 +86,14 @@ function plan(values: MotionValues, rtl: boolean): Plan {
   else if ('filter' in values)
     out.filter = { value: String(value(at('filter'))), ...extra(at('filter')) }
   for (const prop of ['opacity', 'scale', 'rotate'] as const)
-    if (prop in values) out[prop] = { value: String(value(at(prop))), ...extra(at(prop)) }
+    if (prop in values) {
+      const v = value(at(prop))
+      // `rotate: 45` is degrees, as in the runtime engine.
+      out[prop] = {
+        value: prop === 'rotate' && typeof v === 'number' ? `${v}deg` : String(v),
+        ...extra(at(prop)),
+      }
+    }
   if ('clipPath' in values)
     out['clip-path'] = { value: String(value(at('clipPath'))), ...extra(at('clipPath')) }
   if ('backgroundColor' in values)
