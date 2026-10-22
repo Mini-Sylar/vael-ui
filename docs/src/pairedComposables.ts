@@ -1882,9 +1882,15 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
         },
         {
           name: 'reset',
-          type: '() => Promise<void>',
+          type: '() => void',
           description:
-            'Slides the panel in to `initialSnap` again. `active` turning `true` already calls it.',
+            'Puts the panel at `initialSnap` at once. `active` turning `true` already calls it. The entrance itself is yours to animate, with `useMotion` for instance; `<BottomSheet>` plays its own.',
+        },
+        {
+          name: 'settle',
+          type: '() => void',
+          description:
+            'Moves the panel back to the snap point it rests on. `<BottomSheet>` calls it when a `before-close` guard refuses a drag dismiss, so the sheet springs back from where it was let go.',
         },
         {
           name: 'setReceded',

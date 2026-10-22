@@ -134,7 +134,7 @@ test('a drag on the content while not scrolled to the top is left as an ordinary
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
 })
 
-test('custom beforeClose overrides the built-in exit for every close path, including a drag-triggered dismiss', async () => {
+test('the guard is asked on every close path, including a drag-triggered dismiss', async () => {
   const captured: Array<() => void> = []
   const screen = await render(BottomSheetFixture, {
     props: {
@@ -147,7 +147,7 @@ test('custom beforeClose overrides the built-in exit for every close path, inclu
   const startY = window.innerHeight - 40
   await drag(handle(), startY, startY + 60, 20)
 
-  // The built-in slide-to-off-screen must NOT run — captured, not resolved.
+  // Asked, and still deciding: the sheet holds.
   await vi.waitFor(() => expect(captured.length).toBe(1), { timeout: 1200 })
   await expect.element(screen.getByTestId('closing-state')).toHaveTextContent('closing')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
@@ -217,44 +217,81 @@ test('a vertically-dominant downward drag on content at the top still promotes t
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
-test('a beforeClose that moves the panel off screen itself closes the sheet right away', async () => {
-  const screen = await render(BottomSheetFixture, {
-    props: {
-      beforeClose: () => {
-        // A custom exit that has already landed: the panel is below the viewport.
-        panel().style.transition = 'none'
-        panel().style.transform = 'translateY(100%)'
-        return true
-      },
-    },
-  })
+test('closing slides the sheet down while its backdrop fades, together', async () => {
+  const screen = await render(BottomSheetFixture, { global: { stubs: { transition: false } } })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
-
+  const overlay = document.querySelector<HTMLElement>('.ui-bottom-sheet-overlay')!
   await userEvent.keyboard('{Escape}')
-  // Two frames, far short of the built-in slide's 520ms.
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-  expect(screen.getByTestId('open-state').element().textContent).toBe('closed')
-  expect(document.querySelector('[data-state="closing"]')).toBeNull()
-
-  // Reopening still rises to the initial snap point.
-  await screen.getByTestId('trigger').click()
-  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  const frames: { visible: number; backdrop: number }[] = []
+  while (
+    screen.getByTestId('open-state').element().textContent !== 'closed' ||
+    frames.length < 30
+  ) {
+    frames.push({ visible: visibleHeight(), backdrop: Number(getComputedStyle(overlay).opacity) })
+    await new Promise(requestAnimationFrame)
+    if (frames.length > 120) break
+  }
+  // Halfway down, the backdrop is already fading, not waiting for the sheet to be gone.
+  const half = frames.find((f) => f.visible < window.innerHeight * 0.3 && f.visible > 0)
+  expect(half).toBeDefined()
+  expect(half!.backdrop).toBeLessThan(0.9)
+  expect(half!.backdrop).toBeGreaterThan(0)
 })
 
-test('a beforeClose that only confirms, returning true with the sheet still up, keeps the slide-out', async () => {
+test('a refused drag dismiss holds where it was let go, then springs back to rest', async () => {
+  let answer!: (allowed: boolean) => void
   const screen = await render(BottomSheetFixture, {
-    props: { beforeClose: () => true },
+    props: { beforeClose: () => new Promise<boolean>((resolve) => (answer = resolve)) },
   })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  const resting = visibleHeight()
+  const startY = window.innerHeight - 40
+  // A slow drag well below the lowest snap point: a dismiss.
+  await drag(handle(), startY - resting + 40, window.innerHeight - 60, 400)
+  await expect.element(screen.getByTestId('closing-state')).toHaveTextContent('closing')
+  const held = visibleHeight()
+  expect(held).toBeLessThan(resting - 100)
+  await new Promise((r) => setTimeout(r, 300))
+  // Still where it was let go while the guard decides.
+  expect(visibleHeight()).toBeCloseTo(held, -1)
+  answer(false)
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(resting, -1), { timeout: 1500 })
+  expect(screen.getByTestId('open-state').element().textContent).toBe('open')
+})
 
+test("a drag dismiss leaves on a spring from the finger's speed; Escape on the drawer's curve", async () => {
+  const exit = () =>
+    /translate \d+ms ([^,]+?)(?: \d+ms|,|$)/.exec(panel().style.transition)?.[1] ?? ''
+  const screen = await render(BottomSheetFixture, { global: { stubs: { transition: false } } })
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  await new Promise((r) => setTimeout(r, 600))
   await userEvent.keyboard('{Escape}')
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-  expect(document.querySelector('[data-state="closing"]')).not.toBeNull()
-  await vi.waitFor(() =>
-    expect(screen.getByTestId('open-state').element().textContent).toBe('closed'),
+  await vi.waitFor(() => expect(exit()).not.toBe(''))
+  expect(exit()).not.toMatch(/^linear\(/)
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  await new Promise((r) => setTimeout(r, 600))
+  const startY = window.innerHeight - visibleHeight() + 20
+  const pointerId = 1
+  const el = handle()
+  el.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
+  await new Promise((r) => setTimeout(r, 30))
+  el.dispatchEvent(
+    new PointerEvent('pointermove', { clientY: startY + 40, pointerId, bubbles: true }),
   )
+  await new Promise((r) => setTimeout(r, 16))
+  el.dispatchEvent(
+    new PointerEvent('pointermove', { clientY: startY + 140, pointerId, bubbles: true }),
+  )
+  el.dispatchEvent(
+    new PointerEvent('pointerup', { clientY: startY + 140, pointerId, bubbles: true }),
+  )
+  await vi.waitFor(() => expect(exit()).toMatch(/^linear\(/))
 })
 
 test('releaseVelocity reports the flick speed for a drag dismiss and 0 for any other close', async () => {

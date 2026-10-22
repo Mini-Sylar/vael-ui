@@ -1,8 +1,9 @@
-import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
+import { shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { prefersReducedMotion } from './dom'
+import { flingTiming } from '../motion/fling'
 
 export interface SheetSnapPoint {
   id: string
@@ -39,6 +40,8 @@ export interface UseSheetDragReturn {
   reset: () => void
   /** Vaul's nested-drawer recede: scales the panel down slightly and shifts it up while a child sheet is stacked on top, COMPOSED with the current snap offset — overwriting the transform outright would throw the panel to the viewport top. */
   setReceded: (receded: boolean) => void
+  /** Back to where it rests: a refused dismiss springs back from where it was let go. */
+  settle: () => void
 }
 
 // Vaul physics: translateY on fixed height, not per-frame resize.
@@ -147,11 +150,21 @@ export function useSheetDrag(
     }
   }
 
-  function moveTo(offset: number, animate: boolean, dragging = false) {
+  /** `timing`: a release's own spring, starting at the finger's speed (`flingTiming`). */
+  function moveTo(
+    offset: number,
+    animate: boolean,
+    dragging = false,
+    timing?: { duration: number; easing: string },
+  ) {
     const panel = options.panelEl.value
     if (!panel) return
     const animated = animate && !reducedMotion()
-    panel.style.transition = animated ? TRANSITION : 'none'
+    panel.style.transition = !animated
+      ? 'none'
+      : timing
+        ? `transform ${timing.duration}ms ${timing.easing}`
+        : TRANSITION
     panel.style.transform = `translateY(${offset}px)`
     lastAppliedOffset = offset
     if (dragging) return
@@ -178,54 +191,26 @@ export function useSheetDrag(
     { flush: 'sync' },
   )
 
-  function settleTo(point: SheetSnapPoint) {
+  /** `velocity` (px/ms, positive down): the release speed it carries on from. */
+  function settleTo(point: SheetSnapPoint, velocity = 0) {
     setSnap(point.id)
-    moveTo(offsetFor(point), true)
+    const offset = offsetFor(point)
+    const timing = velocity ? flingTiming(offset - lastAppliedOffset, velocity) : undefined
+    moveTo(offset, true, false, timing)
   }
 
-  // Paint twice before transition so browser has "before" value to animate from.
-  async function reset() {
+  // Opening: rest at the first snap point at once. The rise from below is the motion engine's
+  // (on `translate`), so the drag's `transform` never animates in or out.
+  function reset() {
     const list = points()
     if (list.length === 0) return
     const initial = list.find((point) => point.id === toValue(options.initialSnap)) ?? list[0]
     applyFixedHeight()
-    const panel = options.panelEl.value
     setSnap(initial.id)
-    if (!panel || reducedMotion()) {
-      moveTo(offsetFor(initial), false)
-      return
-    }
-    const myToken = Symbol('sheet-reset')
-    resetToken = myToken
-    panel.style.transition = 'none'
-    panel.style.transform = 'translateY(100%)'
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    )
-    if (resetToken !== myToken) return
-    settleTo(initial)
+    moveTo(offsetFor(initial), false)
   }
-  let resetToken: symbol | null = null
-
-  // The falsy transition matters just as much as the truthy one: without handling it explicitly,
-  // a close that arrives while a PREVIOUS reset()'s two-rAF wait is still pending left that pending
-  // reset free to resolve and call settleTo() after the sheet should already be closed - visually
-  // reopening it. Cancelling the in-flight token AND snapping the panel to the closed transform
-  // synchronously here means a reopen that lands in that same window starts its own reset() from a
-  // known, definitely-closed state instead of racing whatever the interrupted one was mid-way
-  // through.
-  watch(active, (value) => {
-    if (value) {
-      reset()
-      return
-    }
-    resetToken = null
-    const panel = options.panelEl.value
-    if (panel) {
-      panel.style.transition = 'none'
-      panel.style.transform = 'translateY(100%)'
-    }
-  })
+  // Closing leaves the panel where it is: the engine slides it out from there.
+  watch(active, (value) => value && reset())
 
   let dragSource: 'handle' | 'content' | null = null
   let dragStartX = 0
@@ -384,12 +369,12 @@ export function useSheetDrag(
     const maxOffset = Math.max(...offsetList)
     const closeOrRest = () => {
       if (dismissible && currentOffset > maxOffset) options.onDismiss(releaseVelocity())
-      else settleTo(list[0])
+      else settleTo(list[0], endVelocity)
     }
 
     if (speed > FAST_VELOCITY) {
       if (movingDown) closeOrRest()
-      else settleTo(list[last])
+      else settleTo(list[last], endVelocity)
       return
     }
 
@@ -397,9 +382,9 @@ export function useSheetDrag(
       speed > VELOCITY_THRESHOLD &&
       Math.abs(draggedDistance) < areaHeight() * SHORT_DRAG_FRACTION
     ) {
-      if (!movingDown) settleTo(list[Math.min(currentIndex + 1, last)])
+      if (!movingDown) settleTo(list[Math.min(currentIndex + 1, last)], endVelocity)
       else if (currentIndex <= 0) closeOrRest()
-      else settleTo(list[currentIndex - 1])
+      else settleTo(list[currentIndex - 1], endVelocity)
       return
     }
 
@@ -420,7 +405,7 @@ export function useSheetDrag(
         closestIndex = i
       }
     }
-    settleTo(list[closestIndex])
+    settleTo(list[closestIndex], endVelocity)
   }
 
   function onPointerCancel() {
@@ -472,9 +457,11 @@ export function useSheetDrag(
   )
   useResizeObserver(() => toValue(options.bounds) ?? undefined, onAreaResize)
 
-  onScopeDispose(() => {
-    resetToken = null
-  })
+  /** Back to where it rests (a refused dismiss springs back from where it was let go). */
+  function settle() {
+    const point = currentPoint()
+    if (point) settleTo(point)
+  }
 
-  return { activeSnap, isDragging, reset, setReceded }
+  return { activeSnap, isDragging, reset, setReceded, settle }
 }

@@ -5,6 +5,7 @@
     force-mount
     flush
     :before-close="beforeClose"
+    :motion="sheetLook"
     position="bottom"
     :close-on-esc="closeOnEsc"
     :close-on-overlay="closeOnOverlay"
@@ -63,7 +64,7 @@ import type { InjectionKey } from 'vue'
 import type { SheetSnapPoint } from '../../composables/useSheetDrag'
 import type { UiPartValue } from '../../classes'
 import type { DOMTarget } from '../../composables/dom'
-import type { BeforeClose, CloseContext } from '../../motion/types'
+import type { BeforeClose, CloseContext, DialogMotion } from '../../motion/types'
 import type { DialogCloseReason } from '../../composables/useDialog'
 export type { SheetSnapPoint }
 
@@ -114,9 +115,8 @@ export interface BottomSheetProps {
    */
   closeOnHistoryBack?: boolean
   /**
-   * Runs before closing: return `true` to close, `false` to stay open, or a promise of either.
-   * `velocity` is the drag's release speed (px/s). If your own animation already moved the sheet
-   * off screen, it closes at once; otherwise the built-in slide-out plays.
+   * Runs before the sheet closes. Return `true` to close it, `false` to keep it open, or a
+   * promise of either. `velocity` is the drag's release speed in px/s.
    */
   beforeClose?: BeforeClose<DialogCloseReason>
   /** Teleport target: a CSS selector. Wins over `container` either way. */
@@ -144,14 +144,15 @@ export interface BottomSheetProps {
 // Dialog import (and its CSS) must precede BottomSheet.css: this panel
 // carries both .ui-dialog-panel and .ui-bottom-sheet-panel, and the latter's
 // overrides (e.g. max-block-size) need to win the cascade.
-import { computed, inject, onScopeDispose, provide, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, inject, provide, shallowRef, useTemplateRef, watch } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogExposed } from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
 import '../shared/tokens.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
 import { askGuard, closeContext } from '../../composables/useCloseGuard'
-import { resolveDOMTarget, prefersReducedMotion } from '../../composables/dom'
+import { flingTiming } from '../../motion/fling'
+import { resolveDOMTarget } from '../../composables/dom'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -200,10 +201,6 @@ function cancelClose() {
   dialog.value?.cancelClose()
 }
 
-function reducedMotion(): boolean {
-  return prefersReducedMotion()
-}
-
 // Drag dismiss delegates to Dialog's close() — one owner of exit animation (drag/ESC/overlay click).
 function requestDismiss() {
   dialog.value?.close()
@@ -213,13 +210,16 @@ function requestDismiss() {
 const velocityAtClose = shallowRef(0)
 const releaseVelocity = computed(() => velocityAtClose.value)
 let dragVelocity = 0
+let fromDrag = false
 function dismissFromDrag(velocity: number) {
   dragVelocity = velocity
+  fromDrag = true
   requestDismiss()
   dragVelocity = 0
+  fromDrag = false
 }
 
-const { activeSnap, isDragging, setReceded } = useSheetDrag(open, {
+const { activeSnap, isDragging, setReceded, settle } = useSheetDrag(open, {
   panelEl,
   handleEl: handle,
   contentEl: content,
@@ -234,46 +234,48 @@ const { activeSnap, isDragging, setReceded } = useSheetDrag(open, {
 const parentSheet = inject(nestingKey, null)
 provide(nestingKey, { onNestedOpenChange: setReceded })
 watch(open, (value) => parentSheet?.onNestedOpenChange(value))
-// isClosing flips the instant a close is requested, well before `open` itself flips once the
-// exit animation finishes — un-recede the parent then, so both animate out together.
-watch(isClosing, (value) => {
-  if (value) parentSheet?.onNestedOpenChange(false)
-})
-
-let exitTimer: ReturnType<typeof setTimeout> | undefined
-onScopeDispose(() => clearTimeout(exitTimer))
-
-// Dialog's guard: yours first (with the drag's release speed), then the slide-out, unless your own
-// animation already took the sheet off screen.
-async function beforeClose(context: CloseContext<DialogCloseReason>): Promise<boolean> {
+// Your guard, asked with the drag's release speed. While it decides, a dragged sheet stays where
+// it was let go; refused, it springs back to rest. Deciding only: the exit is the engine's.
+async function beforeClose(context: CloseContext<DialogCloseReason>) {
   velocityAtClose.value = dragVelocity
-  if (props.beforeClose) {
-    const ask = closeContext(context.reason, { velocity: dragVelocity * 1000 })
-    if (!(await askGuard(props.beforeClose, ask))) return false
-    if (isOffScreen()) return true
-  }
-  await new Promise<void>((resolve) => animateClose(resolve))
-  return true
+  const dragged = fromDrag
+  if (!props.beforeClose) return true
+  const ask = closeContext(context.reason, { velocity: dragVelocity * 1000 })
+  const allowed = await askGuard(props.beforeClose, ask)
+  if (!allowed && dragged) settle()
+  return allowed
 }
 
-function isOffScreen() {
-  const panel = panelEl.value
-  const bottom = resolveDOMTarget(props.container ?? null)?.getBoundingClientRect().bottom
-  return !panel || panel.getBoundingClientRect().top >= (bottom ?? window.innerHeight) - 1
-}
-
-function animateClose(done: () => void) {
-  const panel = panelEl.value
-  if (!panel || reducedMotion()) {
-    done()
-    return
+// The built-in look, played by the motion engine: the panel rises from below and goes back down,
+// its backdrop fading on the same curve. The engine moves `translate`; the drag owns `transform`.
+const DRAWER = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-drawer)' } as const
+const DRAWER_EXIT = {
+  duration: 'var(--ui-duration-drawer-exit)',
+  easing: 'var(--ui-ease-drawer)',
+} as const
+const FADE = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-out)' } as const
+const FADE_EXIT = {
+  duration: 'var(--ui-duration-drawer-exit)',
+  easing: 'var(--ui-ease-out)',
+} as const
+// A flick carries on from the finger's speed, on a spring over the panel's own height; any other
+// close leaves at the drawer's pace.
+const sheetLook = computed<DialogMotion>(() => {
+  const speed = Math.max(0, velocityAtClose.value)
+  const fling = speed && panelEl.value ? flingTiming(panelEl.value.offsetHeight, speed) : null
+  return {
+    initial: {
+      panel: { y: { value: '100%', ...DRAWER } },
+      overlay: { opacity: { value: 0, ...FADE } },
+    },
+    exit: {
+      panel: { y: { value: '100%', ...(fling ?? DRAWER_EXIT) } },
+      overlay: {
+        opacity: { value: 0, ...(fling ? { ...FADE_EXIT, duration: fling.duration } : FADE_EXIT) },
+      },
+    },
   }
-  panel.style.transition =
-    'transform var(--ui-duration-drawer-exit, 350ms) var(--ui-ease-drawer, cubic-bezier(0.32, 0.72, 0, 1))'
-  panel.style.transform = 'translateY(100%)'
-  clearTimeout(exitTimer)
-  exitTimer = setTimeout(done, 370)
-}
+})
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(

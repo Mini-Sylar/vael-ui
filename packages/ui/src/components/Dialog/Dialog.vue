@@ -377,6 +377,12 @@ const descriptionId = useId()
 
 // STRUCTURAL: inlined for zero-CSS functionality; align-items/justify-content non-interpolable, padding/size animate instead.
 const isSidePosition = computed(() => props.position === 'left' || props.position === 'right')
+// Its stacking place, kept while it leaves: dropping it mid-exit slid a closing dialog under the one
+// beneath. It also keeps the style below from changing at close, which in Vapor would hide a
+// force-mount (v-show) dialog at once: Vapor marks it hidden before the leave, not after.
+const stackIndex = computed<number>((previous) =>
+  open.value ? Math.max(0, layerIndex()) : (previous ?? 0),
+)
 const rootStyle = computed<Record<string, string | number | undefined>>(() => ({
   position: contained.value ? 'absolute' : 'fixed',
   inset: 0,
@@ -388,7 +394,7 @@ const rootStyle = computed<Record<string, string | number | undefined>>(() => ({
   // from useDialog's own layer (via layerIndex above) rather than registering a second one here -
   // useDialog already pushes/pops it for focus-trap/Escape/scroll-lock, and a second registration
   // for the same dialog would give it two stack slots instead of one.
-  zIndex: `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`,
+  zIndex: `calc(var(--ui-z-dialog, 50) + ${stackIndex.value})`,
   display: 'flex',
   alignItems: isSidePosition.value
     ? 'stretch'
