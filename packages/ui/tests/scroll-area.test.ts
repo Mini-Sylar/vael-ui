@@ -80,6 +80,7 @@ test('orientation both fades on both axes at once, not only the last one', async
   )
   const faded = document.querySelector<HTMLElement>('.scroll-fade.scroll-fade-x')!
   const style = getComputedStyle(faded)
-  expect(style.maskImage.match(/linear-gradient/g)).toHaveLength(2)
+  // Two fades, plus the two solid strips that keep the scrollbars out of them.
+  expect(style.maskImage.match(/linear-gradient/g)).toHaveLength(4)
   expect(style.maskComposite).toContain('intersect')
 })
