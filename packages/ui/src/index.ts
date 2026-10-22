@@ -308,6 +308,7 @@ export type {
   GuardContext,
   InputMotion,
   LinkedMotion,
+  MorphFrom,
   MotionContext,
   MotionFilter,
   MotionGuard,

@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef } from 'vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
+import type { DialogMotion } from '../src/motion/types'
 
 const real = { global: { stubs: { transition: false } } }
 const frame = () => new Promise(requestAnimationFrame)
@@ -34,7 +35,7 @@ function visibleBox(el: HTMLElement) {
   }
 }
 
-function setup() {
+function setup(motion: DialogMotion = { morph: 'trigger' }) {
   const open = shallowRef(false)
   render(
     {
@@ -52,7 +53,7 @@ function setup() {
           open: open.value,
           'onUpdate:open': (v: boolean) => (open.value = v),
           title: 'Morph',
-          motion: { morph: 'trigger' },
+          motion,
         }),
       ],
     },
@@ -62,7 +63,7 @@ function setup() {
 }
 
 test(
-  "morph: 'trigger' grows from the trigger's box, hides it while open, and shrinks back",
+  "morph: 'trigger' grows from the trigger's box, hides it while open, shrinks back, and gets focus back",
   { timeout: 8000 },
   async () => {
     const open = setup()
@@ -76,7 +77,7 @@ test(
     expect(Math.abs(first.left - t.left)).toBeLessThan(12)
     expect(Math.abs(first.top - t.top)).toBeLessThan(12)
     expect(Math.abs(first.width - t.width)).toBeLessThan(20)
-    expect(getComputedStyle(trigger()).visibility).toBe('hidden')
+    expect(getComputedStyle(trigger()).opacity).toBe('0')
     // Settled: the panel's own box, no clip left.
     await vi.waitFor(() => expect(panel()!.hasAttribute('data-ui-m')).toBe(false), {
       timeout: 3000,
@@ -97,7 +98,9 @@ test(
     expect(widths.size).toBeGreaterThan(5)
     expect(Math.abs(last.left - t.left)).toBeLessThan(16)
     expect(Math.abs(last.width - t.width)).toBeLessThan(24)
-    expect(getComputedStyle(trigger()).visibility).toBe('visible')
+    expect(getComputedStyle(trigger()).opacity).toBe('1')
+    // Hidden by opacity, not visibility, so focus could return to it.
+    expect(document.activeElement).toBe(trigger())
   },
 )
 
@@ -123,6 +126,34 @@ test(
       expect(Math.abs(boxes[i]!.left - boxes[i - 1]!.left)).toBeLessThan(60)
       expect(Math.abs(boxes[i]!.width - boxes[i - 1]!.width)).toBeLessThan(90)
     }
-    expect(getComputedStyle(trigger()).visibility).toBe('visible')
+    expect(getComputedStyle(trigger()).opacity).toBe('1')
+  },
+)
+
+test(
+  'hide: false keeps the trigger on screen while the panel still grows out of it',
+  { timeout: 8000 },
+  async () => {
+    const open = setup({ morph: { from: 'trigger', hide: false } })
+    trigger().focus()
+    trigger().click()
+    await nextTick()
+    while (!panel() || !panel()!.hasAttribute('data-ui-m')) await frame()
+    // It still grows out of the trigger (the starting box itself is pinned by the first test).
+    const first = visibleBox(panel()!).width
+    const seen = new Set<string>()
+    while (panel()?.hasAttribute('data-ui-m')) {
+      seen.add(getComputedStyle(trigger()).opacity)
+      await frame()
+    }
+    expect(visibleBox(panel()!).width).toBeGreaterThan(first + 100)
+    open.value = false
+    await nextTick()
+    while (panel()) {
+      seen.add(getComputedStyle(trigger()).opacity)
+      await frame()
+    }
+    expect([...seen]).toEqual(['1'])
+    expect(document.activeElement).toBe(trigger())
   },
 )

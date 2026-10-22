@@ -98,3 +98,19 @@ test('numbers stay in sane ranges; layout properties and unknown keys are droppe
   expect(style.content).toEqual({})
   expect(issues.some((i) => i.startsWith('mystery'))).toBe(true)
 })
+
+test("morph's object form comes through; anything else in it is dropped", () => {
+  quiet()
+  const ok = parseMotionStyle({ version: 1, overlay: { morph: { from: 'trigger', hide: false } } })
+  expect(ok.style.overlay).toEqual({ morph: { from: 'trigger', hide: false } })
+  expect(ok.issues).toEqual([])
+  for (const morph of [
+    { from: 'body' },
+    { from: 'trigger', hide: 'no' },
+    { from: 'trigger', x: 1 },
+  ]) {
+    const { style, issues } = parseMotionStyle({ version: 1, overlay: { morph } })
+    expect(style.overlay?.morph).toBeUndefined()
+    expect(issues).toHaveLength(1)
+  }
+})

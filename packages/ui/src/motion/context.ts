@@ -2,6 +2,7 @@
 import { inject } from 'vue'
 import type { ComputedRef, InjectionKey } from 'vue'
 import type {
+  MorphFrom,
   MotionHook,
   MotionStyle,
   MotionTiming,
@@ -59,7 +60,7 @@ export interface ResolvedMotion {
   leave?: AnyHook
   exitOrder: 'together' | 'reverse'
   /** Grow from this element's box and back into it: 'trigger' (the component's) or your getter. */
-  morph?: 'trigger' | (() => Element | null | undefined)
+  morph?: MorphFrom | { from: MorphFrom; hide?: boolean }
   reducedHooks: 'skip' | 'run'
 }
 

@@ -237,18 +237,40 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
   let repeatDones: (() => void)[] = []
   let handedOver: Runner | undefined
 
-  // The element a morph grew from: hidden while it's "become" the panel.
+  // The element a morph grew from: hidden while it's "become" the panel. Faded to 0, not
+  // visibility: hidden, so focus can return to it when the panel closes.
   let hiddenSource: HTMLElement | null = null
+  let sourceOwn = { opacity: '', transition: '' }
+  const hideSource = (el: HTMLElement) => {
+    if (hiddenSource !== el) {
+      showSource()
+      sourceOwn = {
+        opacity: el.style.getPropertyValue('opacity'),
+        transition: el.style.getPropertyValue('transition'),
+      }
+    }
+    hiddenSource = el
+    el.style.setProperty('transition', 'none')
+    el.style.setProperty('opacity', '0')
+  }
+  const morphOf = (m: ResolvedMotion) =>
+    typeof m.morph === 'object' ? m.morph : { from: m.morph, hide: true }
   const morphSource = (m: ResolvedMotion): HTMLElement | null => {
+    const { from } = morphOf(m)
     const source =
-      m.morph === 'trigger' ? host.trigger?.() : typeof m.morph === 'function' ? m.morph() : null
+      from === 'trigger' ? host.trigger?.() : typeof from === 'function' ? from() : null
     return source instanceof HTMLElement && source.isConnected && !prefersReducedMotion()
       ? source
       : null
   }
   const showSource = () => {
-    if (hiddenSource) hiddenSource.style.visibility = ''
+    const el = hiddenSource
+    if (!el) return
     hiddenSource = null
+    // Back at once; its own transition returns only after that.
+    put(el, 'opacity', sourceOwn.opacity)
+    void getComputedStyle(el).opacity
+    put(el, 'transition', sourceOwn.transition)
   }
   // A component that morphs fetches the morph kit as soon as it's set up.
   if (host.resolved().morph) void loadMorph().catch(() => {})
@@ -358,7 +380,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
         start$(node, values, timed, 0)
         return timed.arrival
       })
-      hiddenSource = source
+      if (morphOf(m).hide !== false) hideSource(source)
     }
     // The starting look applies with transitions off (an element already on screen would otherwise
     // transition into it). Then transitions on and let go, in one change: each property transitions

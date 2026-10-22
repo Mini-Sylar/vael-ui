@@ -5,6 +5,7 @@ import type {
   DialogMotion,
   InputMotion,
   MotionStyle,
+  PopoverMotion,
   SeparatorMotion,
   SliderMotion,
   TabsMotion,
@@ -147,3 +148,17 @@ export const perValueBoth: DialogMotion = {
   // @ts-expect-error a value takes a spring or a duration, not both
   initial: { panel: { y: { value: 12, spring: { damping: 0.5, response: 0.4 }, duration: 200 } } },
 }
+
+// Morph: the short form hides the trigger; the object form decides.
+export const morphKeep: DialogMotion = { morph: { from: 'trigger', hide: false } }
+export const morphFromAny: PopoverMotion = { morph: { from: () => document.body } }
+export const morphStyle: MotionStyle = {
+  version: 1,
+  overlay: { morph: { from: 'trigger', hide: false } },
+}
+
+// @ts-expect-error the object form needs `from`
+export const morphNoFrom: DialogMotion = { morph: { hide: false } }
+
+// @ts-expect-error a shared style is data: no element getters
+export const morphStyleFn: MotionStyle = { version: 1, overlay: { morph: { from: () => null } } }

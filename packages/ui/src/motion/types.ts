@@ -208,9 +208,15 @@ type BaseMotion<S extends MotionSpec, N extends string> = MotionTiming & {
   reducedMotion?: 'skip' | 'run'
 }
 
+/** Where a morph grows from: the element that opened it, or any element. */
+export type MorphFrom = 'trigger' | (() => Element | null | undefined)
+
 type OverlayMotion = {
-  /** Grow from the trigger's (or any element's) box and back into it. */
-  morph?: 'trigger' | (() => Element | null | undefined)
+  /**
+   * Grow from the trigger's (or any element's) box and back into it. The trigger hides while
+   * open, as if it became the panel; `{ from: 'trigger', hide: false }` keeps it on screen.
+   */
+  morph?: MorphFrom | { from: MorphFrom; /** @default true */ hide?: boolean }
   /** A shapes-only layer behind trigger and panel; filters here never touch text. */
   surface?: MotionValues
   linked?: Record<string, LinkedMotion>
@@ -320,7 +326,7 @@ export interface MotionStyle {
   filters?: Record<string, MotionFilter>
   reducedMotion?: 'user' | 'always' | 'never'
   overlay?: RoleValues & {
-    morph?: 'trigger'
+    morph?: 'trigger' | { from: 'trigger'; hide?: boolean }
     surface?: MotionValues
     exitOrder?: 'together' | 'reverse'
   }

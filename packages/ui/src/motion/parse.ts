@@ -259,6 +259,15 @@ function role(name: (typeof ROLES)[number], input: unknown, issues: Issues): Dat
       const parsed = values(raw, `${path}.${key}`, issues)
       if (parsed) out[key] = parsed
     } else if (name === 'overlay' && key === 'morph' && raw === 'trigger') out.morph = raw
+    else if (
+      name === 'overlay' &&
+      key === 'morph' &&
+      isData(raw) &&
+      raw.from === 'trigger' &&
+      Object.keys(raw).every((k) => k === 'from' || k === 'hide') &&
+      (raw.hide === undefined || typeof raw.hide === 'boolean')
+    )
+      out.morph = { from: 'trigger', ...(raw.hide === undefined ? {} : { hide: raw.hide }) }
     else if (name === 'overlay' && key === 'exitOrder' && (raw === 'together' || raw === 'reverse'))
       out.exitOrder = raw
     else if (name === 'list' && key === 'stagger' && inRange(raw, 0, 1)) out.stagger = raw

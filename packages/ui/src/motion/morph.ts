@@ -46,8 +46,8 @@ export function onto(source: Element, main: Element, t: MotionTiming): MotionVal
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
 
 /**
- * Opening: the main part starts on the source's box and its content fades in once under way; the
- * source hides, having "become" the panel. `start` is the engine's (it returns the arrival in ms).
+ * Opening: the main part starts on the source's box and its content fades in once under way.
+ * `start` is the engine's (it returns the arrival in ms).
  * Returns the resting clip, read now: a style read after the release would make the clip snap.
  */
 export function morphEnter(
@@ -63,7 +63,6 @@ export function morphEnter(
       { opacity: { value: 0, duration: 220, easing: EASE_OUT, delay: (arrival * 0.25) / 1000 } },
       t,
     )
-  source.style.visibility = 'hidden'
   return restingClip(main)
 }
 
