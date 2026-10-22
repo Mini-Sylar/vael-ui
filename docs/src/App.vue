@@ -168,6 +168,7 @@
       tooltips
     />
     <Tour v-model:open="dockTourOpen" :steps="dockTourSteps" :scroll-into-view="false" />
+    <Tour v-model:open="settingTourOpen" :steps="settingTourSteps" :scroll-into-view="false" />
 
     <BottomSheet
       v-model:open="mobileSettingsOpen"
@@ -676,7 +677,38 @@ const loaderItems = computed(() =>
 )
 
 // The search palette's actions change these, so it gets them from here.
-provide(docsSettingsKey, { mode, setMode, size: uiSize, motion, loaderType, locale })
+// "Show me how": opens Settings where it lives on this screen, then points at the row once it's open.
+const settingTourOpen = shallowRef(false)
+const settingTourSteps = shallowRef<TourStep[]>([])
+async function showSetting(name: 'loader') {
+  const phone = window.matchMedia('(max-width: 850px)').matches
+  if (phone) mobileSettingsOpen.value = true
+  else themeOpen.value = true
+  const panel = phone ? '.mobile-settings' : '.theme-panel'
+  // The panel's own entrance, so the step lands where the row comes to rest.
+  await new Promise((resolve) => setTimeout(resolve, phone ? 450 : 250))
+  const row = document.querySelector(`${panel} .loader-select`)?.closest<HTMLElement>('.theme-row')
+  if (!row) return
+  settingTourSteps.value = [
+    {
+      target: row,
+      side: phone ? 'top' : 'left',
+      title: t(`showMe.${name}Title`),
+      description: t(`showMe.${name}Description`),
+    },
+  ]
+  settingTourOpen.value = true
+}
+
+provide(docsSettingsKey, {
+  mode,
+  setMode,
+  size: uiSize,
+  motion,
+  loaderType,
+  locale,
+  showSetting,
+})
 const sizeItems = computed(() => [
   { label: t('header.sizeSm'), value: 'sm' },
   { label: t('header.sizeMd'), value: 'md' },

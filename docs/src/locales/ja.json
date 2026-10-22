@@ -544,5 +544,9 @@
     "back": "すべての結果",
     "copiedShort": "コピーしました",
     "noCommands": "「{query}」に一致するコマンドはありません"
+  },
+  "showMe": {
+    "loaderTitle": "すべてのローダーを一か所で",
+    "loaderDescription": "このサイトはここで ConfigProvider の loader-type を設定しているので、ボタン、リストの行、トースト、プルして更新など、すべてのスピナーがそれに従います。選んで変化を見てください。"
   }
 }

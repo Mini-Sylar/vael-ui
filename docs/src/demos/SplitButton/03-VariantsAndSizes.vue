@@ -1,6 +1,10 @@
 <template>
   <section class="demo">
     <h3>Variants and sizes</h3>
+    <p class="note">
+      A thin line separates the action from its menu. <code>unified</code> joins them into one
+      surface.
+    </p>
     <div class="row">
       <SplitButton v-for="variant in variants" :key="variant" :variant="variant" :items="saveItems">
         {{ variant }}
@@ -11,6 +15,17 @@
       <SplitButton size="sm" :items="saveItems">Small</SplitButton>
       <SplitButton size="md" :items="saveItems">Medium</SplitButton>
       <SplitButton size="lg" :items="saveItems">Large</SplitButton>
+    </div>
+    <div class="row">
+      <SplitButton
+        v-for="variant in variants"
+        :key="variant"
+        :variant="variant"
+        :items="saveItems"
+        unified
+      >
+        {{ variant }}
+      </SplitButton>
     </div>
   </section>
 </template>

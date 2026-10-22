@@ -810,6 +810,8 @@ const { style: hoverStyle } = useHoverIndicator(listEl, {
   enabled: () => !isReordering.value,
   motion: () => props.motion !== false,
   indicatorEl: hoverEl,
+  // Trees stacked as sections (an explorer's) share one highlight.
+  group: 'tree',
 })
 
 const parts = useStateMotion({

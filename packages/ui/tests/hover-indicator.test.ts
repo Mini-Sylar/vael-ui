@@ -139,3 +139,56 @@ test('a group label between rows keeps the highlight on the last row, to glide o
   await userEvent.hover(screen.getByText('Second'))
   await vi.waitFor(() => expect(indicated()).toBe('Second'))
 })
+
+test('lists in a group hand the highlight over: it glides into a neighbour, not across a gap', async () => {
+  for (const [group, gap, hands] of [
+    ['nav', 8, true],
+    [undefined, 8, false],
+    ['nav', 400, false],
+  ] as const) {
+    const Pair = defineComponent({
+      setup() {
+        const a = useTemplateRef<HTMLElement>('a')
+        const b = useTemplateRef<HTMLElement>('b')
+        const aEl = useTemplateRef<HTMLElement>('aEl')
+        const bEl = useTemplateRef<HTMLElement>('bEl')
+        useHoverIndicator(a, { itemSelector: '.row', indicatorEl: aEl, group })
+        useHoverIndicator(b, { itemSelector: '.row', indicatorEl: bEl, group })
+        const list = (ref: string, indicator: string, label: string) =>
+          h('div', { ref, style: 'position: relative; width: 200px' }, [
+            h('div', { ref: indicator, class: `ui-indicator ${indicator}` }),
+            h('button', { class: 'row', style: 'display: block; height: 30px' }, label),
+          ])
+        return () =>
+          h('div', [
+            list('a', 'aEl', 'In A'),
+            h('div', { style: `height: ${gap}px` }),
+            list('b', 'bEl', 'In B'),
+          ])
+      },
+    })
+    const screen = await render(Pair)
+    await userEvent.hover(screen.getByText('In A'))
+    await vi.waitFor(() =>
+      expect(getComputedStyle(document.querySelector('.aEl')!).opacity).toBe('1'),
+    )
+    await userEvent.hover(screen.getByText('In B'))
+    await vi.waitFor(() =>
+      expect(document.querySelector('[data-indicated]')?.textContent).toBe('In B'),
+    )
+    for (let i = 0; i < 2; i++) await new Promise(requestAnimationFrame)
+    const glide = document
+      .querySelector<HTMLElement>('.bEl')!
+      .getAnimations()
+      .filter((a) => a.id === 'ui-indicator-handoff')
+    expect(glide.length > 0).toBe(hands)
+    // One highlight: A's is gone at once while B's travels.
+    if (hands) expect(getComputedStyle(document.querySelector('.aEl')!).opacity).toBe('0')
+    // It starts where A's was: above, by the gap and a row.
+    if (hands)
+      expect(String((glide[0]!.effect as KeyframeEffect).getKeyframes()[0]!.transform)).toMatch(
+        /translate\(0px, -3\dpx\)/,
+      )
+    screen.unmount()
+  }
+})

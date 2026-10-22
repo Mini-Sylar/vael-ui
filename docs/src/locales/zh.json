@@ -544,5 +544,9 @@
     "back": "全部结果",
     "copiedShort": "已复制",
     "noCommands": "没有与“{query}”匹配的命令"
+  },
+  "showMe": {
+    "loaderTitle": "所有加载器，一处设置",
+    "loaderDescription": "本站在这里设置 ConfigProvider 的 loader-type，所以每个加载指示器都会跟随它：按钮、列表行、提示消息和下拉刷新。选一个，看看它们如何变化。"
   }
 }

@@ -123,6 +123,8 @@ const rawProps = withDefaults(
     variant?: ButtonVariant
     /** Size of both buttons. @default 'md' */
     size?: ButtonSize
+    /** Joins the two buttons into one surface, without the thin line between them. @default false */
+    unified?: boolean
     /** Disables both buttons and blocks interaction. @default false */
     disabled?: boolean
     /** Forwarded to the main action Button only. @default 'auto' */
@@ -169,6 +171,7 @@ const rawProps = withDefaults(
   }>(),
   {
     variant: 'primary',
+    unified: false,
     disabled: false,
     loading: 'auto',
     closeOnEsc: undefined,
@@ -219,7 +222,12 @@ const themedUi = useThemedUi(
 // Theme override, then attrs win last (see Input.vue).
 const rootSplit = computed(() => splitUiPart(themedUi()?.root))
 const rootClass = computed(() =>
-  cx('ui-split-button', rootSplit.value.class, attrs.class as string | undefined),
+  cx(
+    'ui-split-button',
+    rawProps.unified && 'ui-split-button--unified',
+    rootSplit.value.class,
+    attrs.class as string | undefined,
+  ),
 )
 const rootStyle = computed(() => rootSplit.value.style)
 const mainUi = computed(() => ({

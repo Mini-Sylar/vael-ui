@@ -230,6 +230,8 @@ const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
 const { style: hoverStyle } = useHoverIndicator(list, {
   itemSelector: '.ui-menu-list-item:not(.ui-menu-list-item--group)',
   indicatorEl: hoverEl,
+  // Two nav lists one above the other share one highlight.
+  group: 'menu-list',
 })
 
 const cx = useClassMerge()

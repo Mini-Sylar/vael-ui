@@ -544,5 +544,9 @@
     "back": "Todos los resultados",
     "copiedShort": "Copiado",
     "noCommands": "Ningún comando coincide con «{query}»"
+  },
+  "showMe": {
+    "loaderTitle": "Todos los loaders, desde un sitio",
+    "loaderDescription": "Este sitio fija aquí el loader-type de ConfigProvider, así que todos los spinners lo siguen: botones, filas de listas, toasts y tirar para actualizar. Elige uno y míralos cambiar."
   }
 }

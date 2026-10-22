@@ -544,5 +544,9 @@
     "back": "All results",
     "copiedShort": "Copied",
     "noCommands": "No commands match “{query}”"
+  },
+  "showMe": {
+    "loaderTitle": "Every loader, from one place",
+    "loaderDescription": "This site sets ConfigProvider's loader-type here, so every spinner follows it: buttons, list rows, toasts and pull to refresh. Pick one and watch them change."
   }
 }

@@ -422,6 +422,13 @@
             </template>
           </PlaygroundErrorBoundary>
           <p v-if="dragHint" class="playground-drag-hint">{{ dragHint }}</p>
+          <p v-if="name === 'Loader'" class="playground-drag-hint playground-note">
+            ConfigProvider's <code>loader-type</code> sets every loader in an app at once, the ones
+            inside buttons, lists and toasts too.
+            <Button variant="link" size="sm" @click="docsSettings?.showSetting('loader')">
+              Show me how
+            </Button>
+          </p>
           <span
             v-if="next"
             class="pg-handle"
@@ -591,6 +598,7 @@
 import {
   computed,
   h,
+  inject,
   reactive,
   shallowRef,
   nextTick,
@@ -629,6 +637,7 @@ import { inferControl, defaultControlValue, type PlaygroundControl } from './inf
 import componentMeta from '../generated/component-meta.json'
 import type { ComponentMetaEntry } from '../types'
 import { defaultVariant } from '../preferences'
+import { docsSettingsKey } from '../docsSettings'
 import { useVaporComponents } from '../composables/useVaporComponents'
 
 const props = defineProps<{ name: string }>()
@@ -921,8 +930,17 @@ const COMPONENT_OVERRIDES: Record<
   // Starts without one: the generic "Type here…" would fill every empty cell with "T". Typing a
   // character in the control shows what `placeholder` does.
   OtpInput: { string: { placeholder: '' } },
-  Loader: { select: { size: ['1rem', '1.5rem', '2rem'] } },
+  // `type` also takes your own component, so it can't be inferred: the built-in five. Unset, it
+  // follows ConfigProvider (this site's Loader setting).
+  Loader: {
+    select: {
+      size: ['1rem', '1.5rem', '2rem'],
+      type: [UNSET_OPTION, 'ring', 'dots', 'bars', 'comet', 'dither'],
+    },
+  },
   Pagination: { number: { total: 132 } },
+  // Room to drag both ways, with limits you can feel: 0 and Infinity leave nothing to play with.
+  Resizable: { number: { size: 200, min: 120, max: 280 } },
   // No static default in defineProps (real default is computed: baseSize * 3.5)
   // — seeding to 0 makes dockFalloff's `range <= 0` guard kill magnification entirely.
   Dock: { number: { range: 168 } },
@@ -1222,6 +1240,7 @@ function isChanged(name: string): boolean {
 const DRAG_TIME_PROPS: Record<string, string[]> = {
   Sortable: ['previewMode', 'restrictToList', 'autoScroll', 'touchDragDelay', 'motion'],
 }
+const docsSettings = inject(docsSettingsKey, undefined)
 const dragHint = computed(() => {
   const changed = (DRAG_TIME_PROPS[props.name] ?? []).filter((name) => isChanged(name))
   if (!changed.length) return null
@@ -2174,6 +2193,10 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   font-size: 0.8125rem;
   text-align: center;
   pointer-events: none;
+}
+
+.playground-note {
+  pointer-events: auto;
 }
 
 .playground-error {

@@ -10,6 +10,8 @@ export interface DocsSettings {
   motion: Ref<boolean>
   loaderType: Ref<LoaderType>
   locale: Ref<Locale>
+  /** Opens Settings where it lives (header or sheet) and points a Tour step at one of its rows. */
+  showSetting: (name: 'loader') => void
 }
 
 export const docsSettingsKey: InjectionKey<DocsSettings> = Symbol('docs-settings')

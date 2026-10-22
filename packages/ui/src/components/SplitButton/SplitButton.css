@@ -11,8 +11,9 @@
   .ui-split-button-trigger {
     border-start-start-radius: 0;
     border-end-start-radius: 0;
-    border-inline-start-width: 1px;
-    border-inline-start-style: solid;
+  }
+  /* The thin line between the two, on the trigger's box layer, which paints over its own border. */
+  .ui-split-button:not(.ui-split-button--unified) .ui-split-button-trigger::before {
     border-inline-start-color: color-mix(in oklch, currentColor 22%, transparent);
   }
   .ui-split-button-chevron {

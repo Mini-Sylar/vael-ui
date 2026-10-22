@@ -544,5 +544,9 @@
     "back": "Alle Ergebnisse",
     "copiedShort": "Kopiert",
     "noCommands": "Keine Befehle passen zu „{query}“"
+  },
+  "showMe": {
+    "loaderTitle": "Jeder Loader, an einer Stelle",
+    "loaderDescription": "Diese Seite setzt hier loader-type im ConfigProvider, daher folgt ihm jeder Spinner: Buttons, Listenzeilen, Toasts und Pull-to-Refresh. Wähle einen aus und sieh zu, wie sie sich ändern."
   }
 }
