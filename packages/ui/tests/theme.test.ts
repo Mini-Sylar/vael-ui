@@ -255,3 +255,16 @@ test('setting or clearing a theme keeps the subtree mounted (focus and DOM ident
   await screen.rerender({ theme: undefined })
   expect(screen.container.querySelector('[data-testid="inner"]')).toBe(before)
 })
+
+test('native parts follow the theme: color-scheme is dark with the dark tokens, light otherwise', () => {
+  const root = document.documentElement
+  const scheme = () => getComputedStyle(document.body).colorScheme
+  try {
+    root.setAttribute('data-theme', 'dark')
+    expect(scheme()).toBe('dark')
+    root.setAttribute('data-theme', 'light')
+    expect(scheme()).toBe('light')
+  } finally {
+    root.removeAttribute('data-theme')
+  }
+})

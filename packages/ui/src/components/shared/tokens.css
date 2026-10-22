@@ -6,6 +6,8 @@
     initial-value: 0px;
   }
   :root {
+    /* Native parts (scrollbars, form controls) follow the theme too. */
+    color-scheme: light;
     --ui-primary: #18181b;
     --ui-primary-hover: #27272a;
     --ui-primary-contrast: #fafafa;
@@ -125,6 +127,7 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
+      color-scheme: dark;
       --ui-primary: #fafafa;
       --ui-primary-hover: #e4e4e7;
       --ui-primary-contrast: #18181b;
@@ -160,6 +163,7 @@
   }
 
   :root[data-theme='dark'] {
+    color-scheme: dark;
     --ui-primary: #fafafa;
     --ui-primary-hover: #e4e4e7;
     --ui-primary-contrast: #18181b;
