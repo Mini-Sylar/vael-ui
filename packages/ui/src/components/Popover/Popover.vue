@@ -191,7 +191,16 @@ defineOptions({ inheritAttrs: false })
 const open = defineModel<boolean>('open', { default: false })
 
 const props = withDefaults(
-  defineProps<Omit<PopoverProps, 'motion'> & { motion?: PopoverMotion<N> }>(),
+  defineProps<
+    Omit<PopoverProps, 'motion'> & {
+      /**
+       * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, states by part
+       * (`initial: { panel: { … } }`), your `targets`, or `enter`/`leave` hooks for a library.
+       * Unset, it follows the nearest ConfigProvider's style.
+       */
+      motion?: PopoverMotion<N>
+    }
+  >(),
   {
     // Unset means "follow the app"; without this Vue would read a missing boolean prop as false.
     motion: undefined,

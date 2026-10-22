@@ -35,11 +35,17 @@ type PickOne = 'use spring, or duration with easing, not both'
 
 /** A spring, or a duration with an easing; never both. */
 export type MotionTiming =
-  | { spring?: Spring; duration?: PickOne; easing?: PickOne }
+  | {
+      /** A spring: `damping` below 1 overshoots, `response` is roughly its length in seconds. */
+      spring?: Spring
+      duration?: PickOne
+      easing?: PickOne
+    }
   | {
       spring?: PickOne
       /** Milliseconds, or a `--ui-duration-*` token. */
       duration?: number | UiDuration
+      /** A CSS easing, or a `--ui-ease-*` token. */
       easing?: UiEase | (string & {})
     }
 
@@ -75,7 +81,9 @@ export type MotionValues = {
 
 /** Where an element is: in a swap, `direction` (1 forward, -1 back, 0 neither); in a list, `index`. */
 export interface MotionWhere {
+  /** In a swap: `1` forward, `-1` back, `0` neither. */
   direction: 1 | -1 | 0
+  /** In a list or a group: its position. */
   index: number
 }
 
@@ -100,9 +108,13 @@ export type MotionResult = Thenable | Animation | void
 
 /** What your engine gets: seconds, a CSS easing, and the spring behind it when there is one. */
 export interface EngineTiming {
+  /** Seconds. */
   duration: number
+  /** Seconds before it starts. */
   delay: number
+  /** A CSS easing, a spring's included (as `linear()`). */
   easing: string
+  /** The spring behind `easing`, for a library with springs of its own. */
   spring?: Spring
 }
 /**
@@ -117,21 +129,25 @@ export type MotionEngine = (
   timing: EngineTiming,
 ) => MotionResult
 
+/** What your `enter` and `leave` hooks get, besides the elements. */
 export interface MotionContext<N extends string = string> {
   /** Aborts when the motion is interrupted (closed mid-open, reopened mid-close). */
   signal: AbortSignal
   /** Where it grows from, as a `transform-origin` value. */
   origin: string
+  /** The user prefers reduced motion: hooks run anyway only with `reducedMotion: 'run'`. */
   reducedMotion: boolean
   /** Your elements, by the names you marked them with; a `v-for` gives several. */
   targets: Record<N, HTMLElement[]>
   /** For swaps: `1` forward, `-1` back, `0` neither. */
   direction: 1 | -1 | 0
 }
+/** What a list's hooks get: the context, and the item's place. */
 export interface ListContext<N extends string = string> extends MotionContext<N> {
   /** The item's position, for staggering. */
   index: number
 }
+/** What a `move` hook gets: the context, and where the element came from. */
 export interface MoveContext<N extends string = string> extends MotionContext<N> {
   /** Where it was, relative to where it now sits. */
   from: { x: number; y: number; scaleX: number; scaleY: number }
@@ -195,9 +211,13 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
 
 // ─── Guards ──────────────────────────────────────────────────────────────────
 
+/** What a guard gets: the change it's asked about. */
 export interface GuardContext<V = unknown> {
+  /** The value now. */
   value: V
+  /** Where the change started. */
   from: V
+  /** Where it would land if allowed. */
   to: V
   /** 0–1 through a gesture or hold. */
   progress: number
@@ -222,9 +242,11 @@ export type BeforeClose<R extends string = string> = (
   context: CloseContext<R>,
 ) => boolean | undefined | Promise<boolean | undefined>
 
+/** A point along a motion where it stops and asks `guard` before going on. */
 export interface Checkpoint<V = number> {
   /** The value where the motion stops to ask. */
   at: V
+  /** Answers whether it may go on. */
   guard: MotionGuard<V>
 }
 
@@ -232,6 +254,7 @@ export interface Checkpoint<V = number> {
 
 /** An element outside the component that follows it. */
 export type LinkedMotion = MotionTiming & {
+  /** The element, read when it opens (a getter, so a ref or a query that isn't there yet works). */
   el: () => Element | null | undefined
   /** Values while the component is open. */
   open?: MotionValues
@@ -343,6 +366,7 @@ export type ComponentMotion<S extends MotionSpec, N extends string = string> =
       (S['value'] extends true ? ValueMotion : unknown))
 
 // Exemplars, one per kind; M3–M5 add the rest from each component's `ui` keys and real states.
+/** Dialog's parts, by their `ui` names: the elements its `motion` can animate. */
 export type DialogPart =
   | 'overlay'
   | 'panel'
@@ -353,12 +377,22 @@ export type DialogPart =
   | 'footer'
   | 'maximize'
   | 'close'
+/**
+ * Dialog's `motion`, and Drawer's and BottomSheet's: values or hooks for its parts (DialogPart), how
+ * it opens and closes (`morph`, `linked`, `exitOrder`, `resize`) and swapped content. `false` turns
+ * it off.
+ */
 export type DialogMotion<N extends string = string> = ComponentMotion<
   { parts: DialogPart; overlay: true; swap: true },
   N
 >
 
+/** Popover's parts, by their `ui` names: the elements its `motion` can animate. */
 export type PopoverPart = 'positioner' | 'panel'
+/**
+ * Popover's `motion`: values or hooks for `positioner` and `panel`, how it opens and closes (`morph`,
+ * `surface`, `linked`, `resize`) and swapped content. `false` turns it off.
+ */
 export type PopoverMotion<N extends string = string> = ComponentMotion<
   { parts: PopoverPart; overlay: true; swap: true },
   N
@@ -373,12 +407,18 @@ export type TooltipMotion<N extends string = string> = ComponentMotion<
 /** Message coming and going: values or hooks for `root`. */
 export type MessageMotion<N extends string = string> = ComponentMotion<{ parts: 'root' }, N>
 
+/** Menu's parts, by their `ui` names: the elements its `motion` can animate. */
 export type MenuPart = 'positioner' | 'panel'
+/**
+ * Menu's `motion`, and ContextMenu's and SplitButton's: values or hooks for `positioner` and `panel`,
+ * and how it opens and closes. `false` turns it off.
+ */
 export type MenuMotion<N extends string = string> = ComponentMotion<
   { parts: MenuPart; overlay: true },
   N
 >
 
+/** Toaster's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ToasterPart =
   | 'root'
   | 'toast'
@@ -388,32 +428,41 @@ export type ToasterPart =
   | 'description'
   | 'action'
   | 'close'
+/** Toaster's `motion`: values or hooks for its parts (ToasterPart), its states (`loading`, `success`, `error`, `warning`, `info`), how its items come and go (`stagger`, `leaving`, `appear`). `false` turns it off. */
 export type ToasterMotion = ComponentMotion<{
   parts: ToasterPart
   states: 'loading' | 'success' | 'error' | 'warning' | 'info'
   list: true
 }>
 
+/** Tabs's parts, by their `ui` names: the elements its `motion` can animate. */
 export type TabsPart = 'list' | 'item' | 'indicator'
 // Tabs renders no panels (yours, wired with `panelProps`): it moves its indicator, nothing swaps.
+/** Tabs's `motion`: values or hooks for its parts (TabsPart), how its indicator moves (a `move` hook). `false` turns it off. */
 export type TabsMotion = ComponentMotion<{ parts: TabsPart; indicator: true }>
 
+/** Input's parts, by their `ui` names: the elements its `motion` can animate. */
 export type InputPart = 'root' | 'input' | 'start' | 'end'
+/** Input's `motion`: values or hooks for its parts (InputPart), its states (`invalid`, `disabled`, `focus`). `false` turns it off. */
 export type InputMotion = ComponentMotion<{
   parts: InputPart
   states: 'invalid' | 'disabled' | 'focus'
 }>
 
+/** OtpInput's parts, by their `ui` names: the elements its `motion` can animate. */
 export type OtpInputPart = 'root'
+/** OtpInput's `motion`: values or hooks for its parts (OtpInputPart), its states (`invalid`, `complete`, `disabled`, `focus`). `false` turns it off. */
 export type OtpInputMotion = ComponentMotion<{
   parts: OtpInputPart
   states: 'invalid' | 'complete' | 'disabled' | 'focus'
 }>
 
+/** FileUpload's parts, by their `ui` names: the elements its `motion` can animate. */
 export type FileUploadPart = 'item'
 /** FileUpload's rows: values or hooks for `item`, and the list's `stagger` and `leaving`. */
 export type FileUploadMotion = ComponentMotion<{ parts: FileUploadPart; list: true }>
 
+/** CommandPalette's parts, by their `ui` names: the elements its `motion` can animate. */
 export type CommandPalettePart = DialogPart
 /** CommandPalette's result rows: values or hooks for `item`, and the list's `stagger`. */
 export type CommandPaletteItemsMotion = Exclude<
@@ -431,6 +480,7 @@ export type CommandPaletteMotion<N extends string = string> =
         }
     : never
 
+/** SpeedDial's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SpeedDialPart = 'action'
 /** SpeedDial's actions: values or hooks for `action`, the list's `stagger` and `leaving`. */
 export type SpeedDialMotion = ComponentMotion<{ parts: SpeedDialPart; list: true }>
@@ -444,6 +494,7 @@ type WithChips<M> = M extends boolean
       chips?: ChipsMotion
     }
 
+/** Select's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SelectPart = 'positioner' | 'panel'
 /** Select's panel: values or hooks for its parts, like Popover's. `chips` moves the chips. */
 export type SelectMotion<N extends string = string> = WithChips<
@@ -461,6 +512,7 @@ export type DatePickerMotion<N extends string = string> = ComponentMotion<
 /** TreeSelect's panel: values or hooks for its parts, like Popover's. */
 export type TreeSelectMotion<N extends string = string> = DatePickerMotion<N>
 
+/** Timeline's parts, by their `ui` names: the elements its `motion` can animate. */
 export type TimelinePart =
   | 'item'
   | 'marker'
@@ -474,10 +526,12 @@ export type TimelinePart =
  */
 export type TimelineMotion = ComponentMotion<{ parts: TimelinePart; list: true }>
 
+/** DataTable's parts, by their `ui` names: the elements its `motion` can animate. */
 export type DataTablePart = 'row'
 /** DataTable's body rows: values or hooks for `row`, and the list's `stagger`. */
 export type DataTableMotion = ComponentMotion<{ parts: DataTablePart; list: true }>
 
+/** Calendar's parts, by their `ui` names: the elements its `motion` can animate. */
 export type CalendarPart = 'label' | 'grid'
 /**
  * How Calendar's label and grid change months. Give each part's look as values, or as a
@@ -487,13 +541,16 @@ export type CalendarMotion =
   | boolean
   | (MotionTiming & { initial?: PartValues<CalendarPart>; exit?: PartValues<CalendarPart> })
 
+/** Slider's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SliderPart = 'root' | 'track' | 'fill' | 'thumb'
+/** Slider's `motion`: values or hooks for its parts (SliderPart), its states (`disabled`, `focus`), how its value changes. `false` turns it off. */
 export type SliderMotion = ComponentMotion<{
   parts: SliderPart
   states: 'disabled' | 'focus'
   value: true
 }>
 
+/** Button's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ButtonPart = 'root' | 'leading' | 'trailing' | 'content' | 'label' | 'badge'
 /** `active` is pressed (pointer, Space or Enter); `hover` responds to a mouse only. */
 export type ButtonMotion = ComponentMotion<{
@@ -501,10 +558,14 @@ export type ButtonMotion = ComponentMotion<{
   states: 'active' | 'hover' | 'focus' | 'loading' | 'disabled'
 }>
 
+/** Accordion's parts, by their `ui` names: the elements its `motion` can animate. */
 export type AccordionPart = 'item' | 'header' | 'trigger' | 'chevron' | 'panel' | 'body'
+/** Accordion's `motion`: values or hooks for its parts (AccordionPart), its states (`open`, `disabled`). `false` turns it off. */
 export type AccordionMotion = ComponentMotion<{ parts: AccordionPart; states: 'open' | 'disabled' }>
 
+/** Separator's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SeparatorPart = 'root' | 'line' | 'text'
+/** Separator's `motion`: values or hooks for its parts (SeparatorPart). `false` turns it off. */
 export type SeparatorMotion = ComponentMotion<{ parts: SeparatorPart }>
 
 // ─── Every other component: appearance (`initial`), states, and its kind ───
@@ -513,38 +574,47 @@ export type SeparatorMotion = ComponentMotion<{ parts: SeparatorPart }>
 type Staggered = { stagger?: number }
 type WithStagger<M> = M extends boolean ? M : M & Staggered
 
+/** AnimatedNumber's parts, by their `ui` names: the elements its `motion` can animate. */
 export type AnimatedNumberPart = 'root'
 /** AnimatedNumber: its appearance, timing for the roll, and `when: 'visible'`. */
 export type AnimatedNumberMotion = ComponentMotion<{ parts: AnimatedNumberPart; value: true }>
 
+/** AnimatedText's parts, by their `ui` names: the elements its `motion` can animate. */
 export type AnimatedTextPart = 'root'
 /** AnimatedText: its appearance and the swap's timing. */
 export type AnimatedTextMotion = ComponentMotion<{ parts: AnimatedTextPart }>
 
+/** Avatar's parts, by their `ui` names: the elements its `motion` can animate. */
 export type AvatarPart = 'root' | 'image' | 'fallback' | 'badge'
 /** Avatar: its parts' appearance, like the image fading in over the fallback. */
 export type AvatarMotion = ComponentMotion<{ parts: AvatarPart }>
 
+/** AvatarGroup's parts, by their `ui` names: the elements its `motion` can animate. */
 export type AvatarGroupPart = 'root' | 'avatar'
 /** AvatarGroup: its appearance, avatar by avatar. */
 export type AvatarGroupMotion = ComponentMotion<{ parts: AvatarGroupPart; list: true }>
 
+/** Badge's parts, by their `ui` names: the elements its `motion` can animate. */
 export type BadgePart = 'root'
 /** Badge: its appearance. */
 export type BadgeMotion = ComponentMotion<{ parts: BadgePart }>
 
+/** Breadcrumb's parts, by their `ui` names: the elements its `motion` can animate. */
 export type BreadcrumbPart = 'root' | 'item'
 /** Breadcrumb: its appearance, crumb by crumb. */
 export type BreadcrumbMotion = ComponentMotion<{ parts: BreadcrumbPart; list: true }>
 
+/** ButtonGroup's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ButtonGroupPart = 'root'
 /** ButtonGroup: its appearance; its buttons keep their own `motion`. */
 export type ButtonGroupMotion = ComponentMotion<{ parts: ButtonGroupPart }>
 
+/** Card's parts, by their `ui` names: the elements its `motion` can animate. */
 export type CardPart = 'root' | 'header' | 'title' | 'description' | 'body' | 'footer'
 /** Card: its parts' appearance, and press states on an interactive card. */
 export type CardMotion = ComponentMotion<{ parts: CardPart; states: 'active' | 'hover' | 'focus' }>
 
+/** Checkbox's parts, by their `ui` names: the elements its `motion` can animate. */
 export type CheckboxPart = 'root' | 'control' | 'indicator' | 'label'
 /** Checkbox: its appearance and states. */
 export type CheckboxMotion = ComponentMotion<{
@@ -552,6 +622,7 @@ export type CheckboxMotion = ComponentMotion<{
   states: 'checked' | 'indeterminate' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover'
 }>
 
+/** Chip's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ChipPart = 'root' | 'remove'
 /** Chip: its appearance and press states. */
 export type ChipMotion = ComponentMotion<{
@@ -559,6 +630,7 @@ export type ChipMotion = ComponentMotion<{
   states: 'disabled' | 'focus' | 'active' | 'hover'
 }>
 
+/** Collapsible's parts, by their `ui` names: the elements its `motion` can animate. */
 export type CollapsiblePart = 'root' | 'trigger' | 'panel'
 /** Collapsible: its appearance and states. */
 export type CollapsibleMotion = ComponentMotion<{
@@ -566,6 +638,7 @@ export type CollapsibleMotion = ComponentMotion<{
   states: 'open' | 'disabled'
 }>
 
+/** Dial's parts, by their `ui` names: the elements its `motion` can animate. */
 export type DialPart = 'root' | 'track' | 'fill' | 'face' | 'ticks'
 /** Dial: its appearance, states and the fill's timing. */
 export type DialMotion = ComponentMotion<{
@@ -573,10 +646,12 @@ export type DialMotion = ComponentMotion<{
   states: 'disabled' | 'focus' | 'active'
 }>
 
+/** Dock's parts, by their `ui` names: the elements its `motion` can animate. */
 export type DockPart = 'root' | 'item'
 /** Dock: its appearance, item by item. */
 export type DockMotion = WithStagger<ComponentMotion<{ parts: DockPart }>>
 
+/** Editable's parts, by their `ui` names: the elements its `motion` can animate. */
 export type EditablePart = 'root' | 'preview' | 'edit' | 'input' | 'actions'
 /** Editable: its appearance and states. */
 export type EditableMotion = ComponentMotion<{
@@ -584,6 +659,7 @@ export type EditableMotion = ComponentMotion<{
   states: 'editing' | 'disabled' | 'focus'
 }>
 
+/** Field's parts, by their `ui` names: the elements its `motion` can animate. */
 export type FieldPart = 'root' | 'label' | 'control' | 'description' | 'error'
 /** Field: its parts' appearance and states. */
 export type FieldMotion = ComponentMotion<{
@@ -591,6 +667,7 @@ export type FieldMotion = ComponentMotion<{
   states: 'invalid' | 'disabled' | 'focus'
 }>
 
+/** InputNumber's parts, by their `ui` names: the elements its `motion` can animate. */
 export type InputNumberPart = 'root' | 'input' | 'increment' | 'decrement'
 /** InputNumber: its appearance and states. */
 export type InputNumberMotion = ComponentMotion<{
@@ -598,10 +675,12 @@ export type InputNumberMotion = ComponentMotion<{
   states: 'invalid' | 'disabled' | 'focus'
 }>
 
+/** Kbd's parts, by their `ui` names: the elements its `motion` can animate. */
 export type KbdPart = 'root'
 /** Kbd: its appearance. */
 export type KbdMotion = ComponentMotion<{ parts: KbdPart }>
 
+/** Knob's parts, by their `ui` names: the elements its `motion` can animate. */
 export type KnobPart = 'root' | 'track' | 'fill' | 'indicator'
 /** Knob: its appearance, states and the fill's timing. */
 export type KnobMotion = ComponentMotion<{
@@ -609,10 +688,12 @@ export type KnobMotion = ComponentMotion<{
   states: 'disabled' | 'focus' | 'active'
 }>
 
+/** Loader's parts, by their `ui` names: the elements its `motion` can animate. */
 export type LoaderPart = 'root'
 /** Loader: its appearance; `false` holds it still. */
 export type LoaderMotion = ComponentMotion<{ parts: LoaderPart }>
 
+/** PasswordInput's parts, by their `ui` names: the elements its `motion` can animate. */
 export type PasswordInputPart = 'root' | 'input' | 'toggle' | 'hint'
 /** PasswordInput: its appearance and states. */
 export type PasswordInputMotion = ComponentMotion<{
@@ -620,6 +701,7 @@ export type PasswordInputMotion = ComponentMotion<{
   states: 'invalid' | 'disabled' | 'focus'
 }>
 
+/** Progress's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ProgressPart = 'root' | 'track' | 'fill' | 'legend'
 /** Progress: its appearance, states, and the fill's timing and `when: 'visible'`. */
 export type ProgressMotion = ComponentMotion<{
@@ -628,6 +710,7 @@ export type ProgressMotion = ComponentMotion<{
   value: true
 }>
 
+/** PullToRefresh's parts, by their `ui` names: the elements its `motion` can animate. */
 export type PullToRefreshPart = 'root' | 'indicator'
 /** PullToRefresh: its appearance and states. */
 export type PullToRefreshMotion = ComponentMotion<{
@@ -635,6 +718,7 @@ export type PullToRefreshMotion = ComponentMotion<{
   states: 'pulling' | 'refreshing'
 }>
 
+/** Radio's parts, by their `ui` names: the elements its `motion` can animate. */
 export type RadioPart = 'root' | 'control' | 'label' | 'description'
 /** Radio: its appearance and states. */
 export type RadioMotion = ComponentMotion<{
@@ -642,38 +726,46 @@ export type RadioMotion = ComponentMotion<{
   states: 'checked' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover'
 }>
 
+/** RadioGroup's parts, by their `ui` names: the elements its `motion` can animate. */
 export type RadioGroupPart = 'root'
 /** RadioGroup: its appearance; its radios keep their own `motion`. */
 export type RadioGroupMotion = ComponentMotion<{ parts: RadioGroupPart }>
 
+/** Rating's parts, by their `ui` names: the elements its `motion` can animate. */
 export type RatingPart = 'root' | 'item'
 /** Rating: its appearance, star by star, and states. */
 export type RatingMotion = WithStagger<
   ComponentMotion<{ parts: RatingPart; states: 'disabled' | 'focus' }>
 >
 
+/** Resizable's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ResizablePart = 'root' | 'handle'
 /** Resizable: its appearance and states. */
 export type ResizableMotion = ComponentMotion<{ parts: ResizablePart; states: 'dragging' }>
 
+/** ScrollArea's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ScrollAreaPart = 'root'
 /** ScrollArea: its appearance. */
 export type ScrollAreaMotion = ComponentMotion<{ parts: ScrollAreaPart }>
 
+/** Skeleton's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SkeletonPart = 'root'
 /** Skeleton: its appearance; `false` holds the pulse still. */
 export type SkeletonMotion = ComponentMotion<{ parts: SkeletonPart }>
 
+/** Sortable's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SortablePart = 'root' | 'item'
 /** Sortable: its appearance, row by row, and states. */
 export type SortableMotion = WithStagger<
   ComponentMotion<{ parts: SortablePart; states: 'dragging' | 'settling' }>
 >
 
+/** Stepper's parts, by their `ui` names: the elements its `motion` can animate. */
 export type StepperPart = 'root' | 'step' | 'circle' | 'connector' | 'content'
 /** Stepper: its parts' appearance, step by step. */
 export type StepperMotion = WithStagger<ComponentMotion<{ parts: StepperPart }>>
 
+/** SwipeToReveal's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SwipeToRevealPart = 'root' | 'content' | 'actions'
 /** SwipeToReveal: its appearance and states. */
 export type SwipeToRevealMotion = ComponentMotion<{
@@ -681,6 +773,7 @@ export type SwipeToRevealMotion = ComponentMotion<{
   states: 'open' | 'dragging'
 }>
 
+/** Switch's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SwitchPart = 'root' | 'track' | 'thumb'
 /** Switch: its appearance and states. */
 export type SwitchMotion = ComponentMotion<{
@@ -688,6 +781,7 @@ export type SwitchMotion = ComponentMotion<{
   states: 'checked' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover' | 'dragging'
 }>
 
+/** Tag's parts, by their `ui` names: the elements its `motion` can animate. */
 export type TagPart = 'root'
 /** Tag: its appearance and press states. */
 export type TagMotion = ComponentMotion<{
@@ -695,6 +789,7 @@ export type TagMotion = ComponentMotion<{
   states: 'focus' | 'active' | 'hover'
 }>
 
+/** Textarea's parts, by their `ui` names: the elements its `motion` can animate. */
 export type TextareaPart = 'root' | 'textarea'
 /** Textarea: its appearance and states. */
 export type TextareaMotion = ComponentMotion<{
@@ -702,30 +797,36 @@ export type TextareaMotion = ComponentMotion<{
   states: 'invalid' | 'disabled' | 'focus'
 }>
 
+/** Tree's parts, by their `ui` names: the elements its `motion` can animate. */
 export type TreePart = 'list' | 'node' | 'chevron' | 'label'
 /** Tree: its appearance, row by row. */
 export type TreeMotion = WithStagger<ComponentMotion<{ parts: TreePart }>>
 
+/** MenuList's parts, by their `ui` names: the elements its `motion` can animate. */
 export type MenuListPart = 'root' | 'item' | 'indicator'
 /** MenuList: its appearance, and how the current-page indicator moves. */
 export type MenuListMotion = WithStagger<ComponentMotion<{ parts: MenuListPart; indicator: true }>>
 
+/** Pagination's parts, by their `ui` names: the elements its `motion` can animate. */
 export type PaginationPart = 'root' | 'button' | 'indicator'
 /** Pagination: its appearance, and how the current-page indicator moves. */
 export type PaginationMotion = WithStagger<
   ComponentMotion<{ parts: PaginationPart; indicator: true }>
 >
 
+/** SelectButton's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SelectButtonPart = 'root' | 'option' | 'indicator'
 /** SelectButton: its appearance, and how the selection moves. */
 export type SelectButtonMotion = WithStagger<
   ComponentMotion<{ parts: SelectButtonPart; states: 'disabled'; indicator: true }>
 >
 
+/** Toolbar's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ToolbarPart = 'root' | 'item' | 'indicator'
 /** Toolbar: its appearance, and how the hover highlight moves. */
 export type ToolbarMotion = WithStagger<ComponentMotion<{ parts: ToolbarPart; indicator: true }>>
 
+/** ColorPicker's parts, by their `ui` names: the elements its `motion` can animate. */
 export type ColorPickerPart = 'swatch' | 'positioner' | 'panel'
 /** ColorPicker: the swatch's appearance and states, and the panel like Popover's. */
 export type ColorPickerMotion = ComponentMotion<{
