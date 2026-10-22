@@ -74,12 +74,12 @@ export function morphLeave(
   t: MotionTiming,
 ): [HTMLElement, MotionValues][] {
   // From the resting inset (clip-path can't interpolate from `none`), with transitions off.
-  if (!main.hasAttribute('data-ui-m-clip-path')) {
+  if (getComputedStyle(main).clipPath === 'none') {
+    const transition = main.style.getPropertyValue('transition')
     main.style.setProperty('transition', 'none')
-    main.style.setProperty('--ui-m-clip-path', restingClip(main))
-    main.setAttribute('data-ui-m-clip-path', '')
+    main.style.setProperty('clip-path', restingClip(main))
     void main.offsetWidth
-    main.style.removeProperty('transition')
+    main.style.setProperty('transition', transition)
   }
   return [
     [main, onto(source, main, t)],

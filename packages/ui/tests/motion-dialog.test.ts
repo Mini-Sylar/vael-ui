@@ -111,13 +111,30 @@ test('closing is quick and quiet, then emits after-leave', async () => {
   expect(panel()).toBeNull()
 })
 
-test("the engine's values stay on the element they move: a big dialog's content isn't restyled", async () => {
-  const { open } = dialog(undefined, () => h('p', { 'data-testid': 'inside' }, 'Body'))
+test("the engine plays through inline styles, nothing !important, and puts back the panel's own", async () => {
+  const open = shallowRef(false)
+  render(
+    {
+      setup: () => () =>
+        h(Dialog as never, {
+          open: open.value,
+          title: 'Orders',
+          ui: { panel: { style: { scale: '1.02', transition: 'box-shadow 1s' } } },
+        }),
+    },
+    real,
+  )
   open.value = true
   await vi.waitFor(() => expect(panel()?.hasAttribute('data-ui-m')).toBe(true))
-  const inside = document.querySelector('[data-testid="inside"]')!
-  expect(getComputedStyle(panel()!).getPropertyValue('--ui-m-opacity-t')).not.toBe('')
-  expect(getComputedStyle(inside).getPropertyValue('--ui-m-opacity-t')).toBe('')
+  await vi.waitFor(() => expect(panel()!.hasAttribute('data-ui-m')).toBe(false), { timeout: 3000 })
+  // Settled: its own inline styles are back, the engine's are gone.
+  expect(panel()!.style.scale).toBe('1.02')
+  expect(panel()!.style.transition).toBe('box-shadow 1s')
+  expect(panel()!.style.opacity).toBe('')
+  // Closing holds the exit inline and not !important: an important value keeps it off the compositor.
+  open.value = false
+  await vi.waitFor(() => expect(panel()!.style.opacity).toBe('0'))
+  expect(panel()!.style.getPropertyPriority('opacity')).toBe('')
 })
 
 test('motion: false opens and closes instantly', async () => {

@@ -1,7 +1,6 @@
 // The CSS engine: static motion (values, springs, per-value timing, stagger, `after` chains) played
-// by the browser's own transitions. JS writes custom properties through the CSSOM, flips attributes
-// (shared/motion.css applies them), and waits. Hooks, steps and keyframe arrays go to the runtime.
-import '../components/shared/motion.css'
+// by the browser's own transitions. JS writes inline styles and waits; nothing is !important, which
+// would keep a close off the compositor. Hooks, steps and keyframe arrays go to the runtime.
 import { nextTick } from 'vue'
 import { prefersReducedMotion } from '../composables/dom'
 import { springArrival, springEasing } from '../composables/springEasing'
@@ -88,23 +87,25 @@ function plan(values: MotionValues, rtl: boolean): Plan {
   return out
 }
 
-/**
- * Writes one element's state and its transitions. `hold`: the properties to hold at `values` now
- * (attribute on); the rest of its timing is written so a later release or change transitions.
- */
-function write(
+/** One element's next phase: the values to hold and its transition list. Reads only, no writes. */
+interface Staged {
+  values: Partial<Record<Prop, string>>
+  transition: string
+}
+function stage(
   el: HTMLElement,
   values: MotionValues,
   base: Timed,
   fallback: Spring,
   delayMs: number,
   leaving: boolean,
-): Prop[] {
-  // Reads before any write: a read after one forces a style recalc.
+): Staged {
   const steps = plan(values, getComputedStyle(el).direction === 'rtl')
   const exitMs = leaving ? tokenMs(el, 'var(--ui-duration-exit)') : 0
-  for (const prop of PROPS) {
+  const held: Staged['values'] = {}
+  const list = PROPS.map((prop) => {
     const own = steps[prop]
+    if (own) held[prop] = own.value
     const t = own?.timing ? timing(el, own.timing, fallback) : base
     let { duration, easing } = t
     // Movement rides the spring; fades ease. Leaving is quick and quiet. Values timed on their own keep it.
@@ -119,28 +120,33 @@ function write(
       }
     }
     const delay = Math.max(0, delayMs + (own?.delay ?? 0) * 1000)
-    el.style.setProperty(
-      `--ui-m-${prop}-t`,
-      `${Math.round(duration)}ms ${easing} ${Math.round(delay)}ms`,
-    )
-    if (own) el.style.setProperty(`--ui-m-${prop}`, own.value)
-  }
-  return PROPS.filter((prop) => steps[prop])
+    return `${prop} ${Math.round(duration)}ms ${easing} ${Math.round(delay)}ms`
+  })
+  return { values: held, transition: list.join(', ') }
 }
 
-const hold = (el: Element, props: Prop[]) => {
-  for (const prop of props) el.setAttribute(`data-ui-m-${prop}`, '')
+// The element's own inline styles, before the engine touched it: put back once it's done.
+const STYLED = [...PROPS, 'transition'] as const
+const before = new WeakMap<HTMLElement, Record<string, string>>()
+const keep = (el: HTMLElement) => {
+  if (!before.has(el))
+    before.set(el, Object.fromEntries(STYLED.map((p) => [p, el.style.getPropertyValue(p)])))
 }
-const release = (el: Element) => {
-  for (const prop of PROPS) el.removeAttribute(`data-ui-m-${prop}`)
+const put = (el: HTMLElement, prop: string, value: string | undefined) =>
+  value ? el.style.setProperty(prop, value) : el.style.removeProperty(prop)
+const hold = (el: HTMLElement, values: Staged['values']) => {
+  for (const [prop, value] of Object.entries(values)) put(el, prop, value)
+}
+// Back to its own values: with transitions on, each property transitions there.
+const release = (el: HTMLElement) => {
+  const own = before.get(el)
+  for (const prop of PROPS) put(el, prop, own?.[prop])
 }
 const clear = (el: HTMLElement) => {
-  release(el)
+  const own = before.get(el)
+  for (const prop of STYLED) put(el, prop, own?.[prop])
+  before.delete(el)
   el.removeAttribute('data-ui-m')
-  for (const prop of PROPS) {
-    el.style.removeProperty(`--ui-m-${prop}`)
-    el.style.removeProperty(`--ui-m-${prop}-t`)
-  }
 }
 
 // Only what will end: transitions and finite, playing animations (a paused spinner never finishes).
@@ -231,8 +237,6 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
   let repeatDones: (() => void)[] = []
   let handedOver: Runner | undefined
 
-  // Inline transitions to put back once the starting look has applied.
-  const paused = new Map<HTMLElement, string>()
   // The element a morph grew from: hidden while it's "become" the panel.
   let hiddenSource: HTMLElement | null = null
   const morphSource = (m: ResolvedMotion): HTMLElement | null => {
@@ -305,18 +309,17 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     const timedOf = (g: TargetGroup) =>
       timing(g.els[0] ?? first, ownTiming(g.motion) ? g.motion : m.timing, spring)
     const start = schedule(own, groups, partTiming, timedOf)
-    const moving: HTMLElement[] = []
+    const moving: [HTMLElement, string][] = []
     const start$ = (node: HTMLElement, values: MotionValues, t: Timed, delay: number) => {
+      keep(node)
+      const next = stage(node, values, t, spring, delay, false)
       // Caught mid-close: keep its transitions, so reopening carries on from what's on screen.
-      const midway = node.hasAttribute('data-ui-m')
-      const props = write(node, values, t, spring, delay, false)
-      if (!midway) {
+      if (!node.hasAttribute('data-ui-m')) {
         // Every transition off while the starting look applies, the component's own included.
-        paused.set(node, node.style.getPropertyValue('transition'))
         node.style.setProperty('transition', 'none')
-        hold(node, props)
+        hold(node, next.values)
       }
-      moving.push(node)
+      moving.push([node, next.transition])
     }
     // Morph: the main part grows from the source's box, and its content fades in once under way.
     const main = own[host.mainPart] as HTMLElement | undefined
@@ -361,20 +364,16 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     // transition into it). Then transitions on and let go, in one change: each property transitions
     // from its starting look to the element's own style.
     void (el as HTMLElement).offsetWidth
-    for (const node of moving) {
-      if (paused.has(node)) node.style.setProperty('transition', paused.get(node)!)
-      paused.delete(node)
+    for (const [node, transition] of moving) {
+      node.style.setProperty('transition', transition)
       node.setAttribute('data-ui-m', '')
       release(node)
     }
     // The clip can't interpolate to `none`: it goes to its resting inset, removed once settled.
-    if (rest && main) {
-      main.style.setProperty('--ui-m-clip-path', rest)
-      hold(main, ['clip-path'])
-    }
+    if (rest && main) main.style.setProperty('clip-path', rest)
     await settle(el)
     if (id !== generation) return
-    for (const node of moving) clear(node)
+    for (const [node] of moving) clear(node)
     finish()
   }
 
@@ -406,6 +405,8 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     const source = main ? (hiddenSource ?? morphSource(m)) : null
     const kit = source && main ? await loadMorph().catch(() => undefined) : undefined
     if (id !== generation) return
+    // Its own styles noted before the morph sets its resting clip.
+    if (kit && main) keep(main)
     const morphed =
       kit && source && main ? kit.morphLeave(source, main, morphTiming(m, kit.MORPH_OUT)) : []
     const moving: [HTMLElement, MotionValues, number][] = [
@@ -433,22 +434,22 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       ]),
     ]
     for (const [node, values, delay] of moving) {
-      // Transitions on first: any style read below (or for the next element) must already see them,
-      // or a value changed before they're on would snap instead of transitioning.
+      keep(node)
       node.setAttribute('data-ui-m', '')
+      const next = stage(node, values, base, spring, delay, true)
+      const now = getComputedStyle(node)
+      // Transitions and values in one change: a style read between them would make a value snap.
+      node.style.setProperty('transition', next.transition)
+      hold(node, next.values)
       // Anything mid-transition that the exit doesn't name freezes where it is: left to "back to
       // normal", a pending enter with the same end keeps running, delay and all (CSS Transitions §3).
-      const now = getComputedStyle(node)
-      const named = write(node, values, base, spring, delay, true)
       const running = node
         .getAnimations()
         .map((a) => (a as CSSTransition).transitionProperty as Prop | undefined)
         .filter(
-          (p): p is Prop => !!p && (PROPS as readonly string[]).includes(p) && !named.includes(p),
+          (p): p is Prop => !!p && (PROPS as readonly string[]).includes(p) && !(p in next.values),
         )
-      for (const prop of running)
-        node.style.setProperty(`--ui-m-${prop}`, now.getPropertyValue(prop))
-      hold(node, [...named, ...running])
+      for (const prop of running) put(node, prop, now.getPropertyValue(prop))
     }
     await settle(el)
     // Back where it came from: the source shows again as the panel goes.

@@ -243,7 +243,6 @@ export interface DialogExposed {
 <script setup lang="ts" generic="N extends string = string">
 import './Dialog.css'
 import '../shared/tokens.css'
-import '../shared/motion.css'
 import { computed, inject, ref, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { useEventListener } from '@vueuse/core'

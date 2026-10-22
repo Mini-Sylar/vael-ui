@@ -130,7 +130,6 @@ export interface PopoverExposed {
 <script setup lang="ts" generic="N extends string = string">
 import './Popover.css'
 import '../shared/tokens.css'
-import '../shared/motion.css'
 import {
   computed,
   inject,
