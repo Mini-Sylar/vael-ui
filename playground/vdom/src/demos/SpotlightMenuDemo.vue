@@ -3,10 +3,10 @@
     <h2>Spotlight menu — extreme</h2>
     <p class="note">
       Still driven by plain <code>items</code> — the extreme layer bolts on through
-      <code>force-mount</code> + <code>before-close(done)</code> and the exposed
-      <code>panelEl</code>/<code>listEl</code>, the same recipe Bloom and Gooey use. motion-v
-      springs the panel in from its real <code>transformOrigin</code>, staggers each row, and a
-      "spotlight" pill tracks focus/hover between rows by reading their real <code>offsetTop</code>/
+      <code>motion</code>'s <code>enter</code>/<code>leave</code> hooks and the exposed
+      <code>listEl</code>, the same recipe Bloom and Gooey use. motion-v springs the panel in from
+      its real <code>transformOrigin</code>, staggers each row, and a "spotlight" pill tracks
+      focus/hover between rows by reading their real <code>offsetTop</code>/
       <code>offsetHeight</code> on every <code>focusin</code> — nothing here required giving up the
       data-driven API.
     </p>
@@ -15,10 +15,9 @@
         v-if="teleportTarget"
         ref="menuRef"
         v-model:open="isOpen"
-        force-mount
         :items="items"
         :teleport-to="teleportTarget"
-        :before-close="beforeClose"
+        :motion="look"
         @select="onSelect"
       >
         <template #trigger>
@@ -49,7 +48,7 @@
 import { nextTick, onUnmounted, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { animate } from 'motion-v'
 import { Button, Menu } from 'vael-ui'
-import type { MenuEntry, MenuItemData } from 'vael-ui'
+import type { MenuEntry, MenuItemData, MenuMotion } from 'vael-ui'
 
 const items: MenuEntry[] = [
   { label: 'New Document', value: 'new-doc', shortcut: '⌘N' },
@@ -91,7 +90,7 @@ interface SpringConfig {
 const PANEL_SPRING: SpringConfig = { type: 'spring', visualDuration: 0.32, bounce: 0.28 }
 const ITEM_SPRING: SpringConfig = { type: 'spring', visualDuration: 0.28, bounce: 0.22 }
 const SPOT_SPRING: SpringConfig = { type: 'spring', visualDuration: 0.35, bounce: 0.15 }
-const EXIT_TWEEN = { duration: 0.15, ease: 'easeIn' as const }
+const EXIT_TWEEN = { duration: 0.15, ease: 'easeOut' as const }
 
 const reducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -134,45 +133,36 @@ function onListPointerOver(event: PointerEvent) {
 }
 
 // Attach listeners before visibility wait to avoid racing focusFirst()
+let listenedList: HTMLElement | null | undefined
 watch(isOpen, async (open) => {
+  listenedList?.removeEventListener('focusin', onListFocusin)
+  listenedList?.removeEventListener('pointerover', onListPointerOver)
+  listenedList = null
   if (!open) return
   await nextTick()
-  const list = menuRef.value?.listEl
-  if (list) {
-    list.addEventListener('focusin', onListFocusin)
-    list.addEventListener('pointerover', onListPointerOver)
-  }
-
-  // Wait for positioner visibility (floating-ui positioning)
-  const positioner = menuRef.value?.positionerEl
-  for (let i = 0; i < 10 && positioner && positioner.style.visibility === 'hidden'; i++) {
-    await nextFrame()
-  }
-  if (reducedMotion()) return
-
-  const panel = menuRef.value?.panelEl
-  if (panel) animate(panel, { opacity: [0, 1], scale: [0.92, 1] }, PANEL_SPRING)
-
-  const rows = list ? Array.from(list.querySelectorAll<HTMLElement>('.ui-menu-item')) : []
-  rows.forEach((row, i) => {
-    animate(row, { opacity: [0, 1], y: [8, 0] }, { ...ITEM_SPRING, delay: i * 0.03 })
-  })
+  listenedList = menuRef.value?.listEl
+  listenedList?.addEventListener('focusin', onListFocusin)
+  listenedList?.addEventListener('pointerover', onListPointerOver)
 })
 
-function beforeClose(): Promise<boolean> {
-  // Resolves true once the exit has finished, which lets the close through.
-  return new Promise((resolve) => {
-    const done = () => resolve(true)
-    const list = menuRef.value?.listEl
-    list?.removeEventListener('focusin', onListFocusin)
-    list?.removeEventListener('pointerover', onListPointerOver)
-    const panel = menuRef.value?.panelEl
-    if (!panel || reducedMotion()) {
-      done()
-      return
+const look: MenuMotion = {
+  async enter({ panel }, { signal }) {
+    // Wait for positioner visibility (floating-ui positioning)
+    const positioner = menuRef.value?.positionerEl
+    for (let i = 0; i < 10 && positioner && positioner.style.visibility === 'hidden'; i++) {
+      await nextFrame()
     }
-    animate(panel, { opacity: 0, scale: 0.95 }, EXIT_TWEEN).finished.then(done)
-  })
+    if (signal.aborted) return
+    const rows = Array.from(panel.querySelectorAll<HTMLElement>('.ui-menu-item'))
+    const rowSprings = rows.map((row, i) =>
+      animate(row, { opacity: [0, 1], y: [8, 0] }, { ...ITEM_SPRING, delay: i * 0.03 }),
+    )
+    const panelSpring = animate(panel, { opacity: [0, 1], scale: [0.92, 1] }, PANEL_SPRING)
+    // The exit takes over the panel; rows finish landing under it
+    signal.addEventListener('abort', () => panelSpring.stop())
+    await Promise.all([panelSpring, ...rowSprings].map((s) => s.finished))
+  },
+  leave: ({ panel }) => animate(panel, { opacity: 0, scale: 0.95 }, EXIT_TWEEN),
 }
 </script>
 

@@ -3,19 +3,19 @@
     <h2>Bloom menu</h2>
     <p class="note">
       Built on <code>&lt;Popover&gt;</code> and <code>&lt;Button&gt;</code> only. The trigger stays
-      mounted the whole time; the force-mounted panel overlaps it exactly (a negative
-      <code>sideOffset</code> of the trigger's own height puts the panel's top edge on the
-      trigger's), and the exposed <code>panelEl</code> is clipped per-frame from the measured
-      trigger rect to the full panel — the pill morphs into the menu, folder-open style. The
-      positioner's <code>data-state="closing"</code> attribute hides the content in pure CSS the
-      instant a close starts, and <code>isClosing</code>/<code>cancelClose</code> reverse an exit
-      mid-flight. The surface has no CSS border: a border paints on the unclipped box, so a
-      clip-path morph slices it off around the rounded corners and leaves stray fragments mid-morph
-      — the hairline is a <code>drop-shadow</code>, which traces the clipped silhouette instead.
+      mounted the whole time; the panel overlaps it exactly (a negative <code>sideOffset</code> of
+      the trigger's own height puts the panel's top edge on the trigger's), and
+      <code>motion</code>'s <code>enter</code>/<code>leave</code> hooks clip the panel per-frame
+      from the measured trigger rect to the full panel — the pill morphs into the menu, folder-open
+      style. The positioner's <code>data-ui-leaving</code> attribute hides the content in pure CSS
+      the instant a close starts, and a click mid-exit springs it back open from where it is. The
+      surface has no CSS border: a border paints on the unclipped box, so a clip-path morph slices
+      it off around the rounded corners and leaves stray fragments mid-morph — the hairline is a
+      <code>drop-shadow</code>, which traces the clipped silhouette instead.
     </p>
     <div class="bloom-stage">
       <div ref="anchorRef" class="bloom-anchor">
-        <Button ref="triggerRef" aria-haspopup="dialog" :aria-expanded="open" @click="toggle">
+        <Button ref="triggerRef" aria-haspopup="dialog" :aria-expanded="open" @click="open = !open">
           <template #leading>
             <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
               <path
@@ -33,23 +33,21 @@
           v-if="teleportTarget"
           ref="popoverRef"
           v-model:open="open"
-          force-mount
           role="dialog"
           aria-label="Create"
           :trigger-el="triggerRef"
-          :before-close="beforeClose"
+          :motion="look"
           :teleport-to="teleportTarget"
           :scroll-fade="false"
           side="bottom"
           align="center"
           :side-offset="overlapOffset"
           class="bloom-panel"
-          @click="onPanelClick"
         >
           <div v-if="open" class="bloom-content">
             <div class="bloom-header">
               <span>Create</span>
-              <Button size="sm" icon variant="ghost" aria-label="Close" @click.stop="close">
+              <Button size="sm" icon variant="ghost" aria-label="Close" @click.stop="open = false">
                 <svg viewBox="0 0 16 16" width="12" height="12" fill="none">
                   <path
                     d="M4 4l8 8M12 4l-8 8"
@@ -67,7 +65,7 @@
                 variant="ghost"
                 class="bloom-item"
                 :style="{ '--bloom-delay': `${itemDelay(i)}ms` }"
-                @click.stop="close()"
+                @click.stop="open = false"
               >
                 <svg viewBox="0 0 16 16" width="18" height="18" fill="none" aria-hidden="true">
                   <path
@@ -89,9 +87,10 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
+import { onMounted, onUnmounted, shallowRef, useTemplateRef } from 'vue'
 import { animate } from 'motion-v'
 import { Button, Popover } from 'vael-ui'
+import type { PopoverMotion } from 'vael-ui'
 
 interface SpringConfig {
   type: 'spring'
@@ -160,6 +159,8 @@ interface Rect {
 
 let progress = 0
 let geo: { from: Rect; fromRadius: number; panel: { w: number; h: number } } | null = null
+// The panel being morphed; a leaving one is no longer in popoverRef
+let panelEl: HTMLElement | null = null
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
@@ -167,7 +168,6 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 // from wherever the trigger really is in panel coordinates, flips included.
 function measure() {
   const triggerEl = triggerRef.value?.el
-  const panelEl = popoverRef.value?.panelEl
   if (!triggerEl || !panelEl) return
   const t = triggerEl.getBoundingClientRect()
   const p = panelEl.getBoundingClientRect()
@@ -181,7 +181,6 @@ function measure() {
 }
 
 function render() {
-  const panelEl = popoverRef.value?.panelEl
   if (!panelEl || !geo) return
   const { from, fromRadius, panel } = geo
   // The clip clamps at full-open: past 1 the rect would leave the box and its
@@ -198,88 +197,55 @@ function render() {
   panelEl.style.transform = over > 0 ? `scale(${1 + over})` : ''
 }
 
-const reducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
 let springControls: ReturnType<typeof animate> | undefined
 
-// onSettle only fires if this spring is still the active one — a stopped,
-// superseded spring must never call a stale done() after a reversal.
-function springTo(target: number, spring: SpringConfig, onSettle?: () => void) {
+function springTo(target: number, spring: SpringConfig) {
   springControls?.stop()
-  const controls = animate(progress, target, {
+  springControls = animate(progress, target, {
     ...spring,
     onUpdate: (v: number) => {
       progress = v
       render()
     },
   })
-  springControls = controls
-  if (onSettle) {
-    controls.finished.then(() => {
-      if (springControls === controls) onSettle()
-    })
-  }
+  return springControls
 }
 
 const nextFrame = () => new Promise(requestAnimationFrame)
 
-async function openMenu() {
-  open.value = true
-  await nextTick()
-  // The positioner stays visibility:hidden until floating-ui's first
-  // computePosition resolves — that flip is the "panel has landed" signal.
-  const positioner = popoverRef.value?.positionerEl
-  for (let i = 0; i < 10 && positioner && positioner.style.visibility === 'hidden'; i++) {
-    await nextFrame()
-  }
-  measure()
-  if (reducedMotion()) {
-    progress = 1
+const look: PopoverMotion = {
+  // The morph is the only thing that reveals the panel, so it runs under reduced motion too
+  reducedMotion: 'run',
+  async enter({ panel }, { signal, reducedMotion }) {
+    panelEl = panel
+    // Claimed now, so nothing scales the panel before it's measured
+    panel.style.clipPath = 'inset(0 100% 100% 0)'
+    // The positioner stays visibility:hidden until floating-ui's first
+    // computePosition resolves — that flip is the "panel has landed" signal.
+    const positioner = popoverRef.value?.positionerEl
+    for (let i = 0; i < 10 && positioner && positioner.style.visibility === 'hidden'; i++) {
+      await nextFrame()
+    }
+    if (signal.aborted) return
+    measure()
+    if (reducedMotion) {
+      progress = 1
+      render()
+      return
+    }
     render()
-    return
-  }
-  render()
-  springTo(1, MORPH_SPRING_OPEN)
-}
-
-function toggle() {
-  const popover = popoverRef.value
-  if (popover?.isClosing) {
-    popover.cancelClose()
-    springTo(1, MORPH_SPRING_OPEN)
-    return
-  }
-  if (open.value) popover?.close()
-  else openMenu()
-}
-
-// The panel fully covers the trigger while open, so a click mid-close lands
-// here, not on the trigger — same reversal path.
-function onPanelClick() {
-  const popover = popoverRef.value
-  if (popover?.isClosing) {
-    popover.cancelClose()
-    springTo(1, MORPH_SPRING_OPEN)
-  }
-}
-
-function close() {
-  popoverRef.value?.close()
-}
-
-function beforeClose(): Promise<boolean> {
-  // Resolves true once the exit has finished, which lets the close through.
-  return new Promise((resolve) => {
-    const done = () => resolve(true)
-    if (reducedMotion() || !geo) {
+    await springTo(1, MORPH_SPRING_OPEN)
+  },
+  leave({ panel }, { reducedMotion }) {
+    panelEl = panel
+    if (reducedMotion || !geo) {
       springControls?.stop()
       progress = 0
       render()
-      return done()
+      return
     }
-    springTo(0, MORPH_SPRING_CLOSE, done)
-  })
+    return springTo(0, MORPH_SPRING_CLOSE)
+  },
 }
 
 onUnmounted(() => {
@@ -344,13 +310,13 @@ onUnmounted(() => {
 
 /* Content arrives a beat after the surface starts growing (the box itself is
    the entrance affordance), and vanishes the instant a close starts — the
-   library's data-state hook drives it in pure CSS. pointer-events off while
-   closing so a mid-close click falls through to the panel's reversal
-   handler instead of a hidden item. */
+   library's data-ui-leaving hook drives it in pure CSS. pointer-events off
+   while closing so a mid-close click falls through to the trigger and
+   reopens instead of hitting a hidden item. */
 .bloom-anchor :deep(.bloom-content) {
   animation: bloom-content-in 200ms ease-out 100ms both;
 }
-.bloom-anchor :deep(.ui-popover-positioner[data-state='closing'] .bloom-content) {
+.bloom-anchor :deep(.ui-popover-positioner[data-ui-leaving] .bloom-content) {
   animation: none;
   opacity: 0;
   pointer-events: none;

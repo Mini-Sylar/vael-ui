@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Closable, with a custom exit animation (GSAP)</h3>
     <p class="note">
-      <code>beforeClose</code> returns a promise, and the message stays until it resolves: GSAP
-      plays the exit tween, then the close goes through. The dismiss button (and the exposed
-      <code>close()</code> method) both go through this hook.
+      A <code>leave</code> hook in the <code>motion</code> prop hands the message to GSAP, and
+      Message closes the space it took once the tween ends. The dismiss button and the exposed
+      <code>close()</code> method both play it.
     </p>
     <div class="row">
       <Button
@@ -19,11 +19,10 @@
     <div class="message-stack">
       <Message
         v-model:open="showDeployMessage"
-        ref="deployMessageRef"
         title="Deploy finished"
         variant="success"
         closable
-        :before-close="onDeployBeforeClose"
+        :motion="slideAway"
       >
         Your build finished successfully.
       </Message>
@@ -32,24 +31,15 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, useTemplateRef } from 'vue'
+import { shallowRef } from 'vue'
 import { gsap } from 'gsap'
 import { Button, Message } from 'vael-ui'
+import type { MessageMotion } from 'vael-ui'
 
 const showDeployMessage = shallowRef(false)
-const deployMessageRef = useTemplateRef<InstanceType<typeof Message>>('deployMessageRef')
 
-function onDeployBeforeClose(): Promise<boolean> {
-  // Resolves true once the exit has finished, which lets the close through.
-  return new Promise((resolve) => {
-    const done = () => resolve(true)
-    const el = deployMessageRef.value?.el
-    if (!el) {
-      done()
-      return
-    }
-    gsap.to(el, { opacity: 0, x: 24, duration: 0.2, ease: 'power3.out', onComplete: done })
-  })
+const slideAway: MessageMotion = {
+  leave: ({ root }) => gsap.to(root, { opacity: 0, x: 24, duration: 0.2, ease: 'power3.out' }),
 }
 </script>
 

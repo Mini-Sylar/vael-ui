@@ -2,19 +2,17 @@
   <section class="demo">
     <h2>Gooey popover</h2>
     <p class="note">
-      Built on <code>&lt;Popover&gt;</code> itself: <code>force-mount</code> keeps the panel alive,
-      <code>beforeClose(done)</code> runs the exit ooze for every dismissal path (Escape, outside
-      click, the Done button), <code>teleportTo</code> drops the panel into a local element so it
-      shares the trigger's stacking context, and the exposed <code>panelEl</code> is clipped
-      per-frame by a spring-driven <code>clip-path</code> morph — safe to own imperatively because
-      the panel carries no Vue-managed inline styles. floating-ui still positions for real: the goo
-      geometry re-measures from wherever the panel actually is, on every reposition (scroll, flip,
-      shift), via the exposed reactive <code>positionerStyle</code>. A click mid-exit
-      <code>cancelClose()</code>s the pending close and springs back open. This demo is also a
-      stress test that promoted three library additions: <code>isClosing</code>/
-      <code>cancelClose</code>, idempotent close requests, and the exposed positioning refs. The
-      filter (blur → alpha-sharpen → <code>feComposite atop</code>) only ever sees the blob shapes —
-      the text is never blurred.
+      Built on <code>&lt;Popover&gt;</code> itself: <code>motion</code>'s <code>leave</code> hook
+      runs the exit ooze for every dismissal path (Escape, outside click, the Done button),
+      <code>teleportTo</code> drops the panel into a local element so it shares the trigger's
+      stacking context, and the hooks clip the panel per-frame with a spring-driven
+      <code>clip-path</code> morph — safe to own imperatively because the panel carries no
+      Vue-managed inline styles. floating-ui still positions for real: the goo geometry re-measures
+      from wherever the panel actually is, on every reposition (scroll, flip, shift), via the
+      exposed reactive <code>positionerStyle</code>. A click mid-exit springs it back open from
+      where it is. This demo is also a stress test that promoted idempotent close requests and the
+      exposed positioning refs. The filter (blur → alpha-sharpen → <code>feComposite atop</code>)
+      only ever sees the blob shapes — the text is never blurred.
     </p>
     <div class="gooey-stage">
       <div ref="rootRef" class="gooey-root">
@@ -43,7 +41,7 @@
           class="gooey-trigger"
           aria-haspopup="dialog"
           :aria-expanded="open"
-          @click="toggle"
+          @click="open = !open"
         >
           Gooey
         </Button>
@@ -52,10 +50,9 @@
           v-if="gooTarget"
           ref="popoverRef"
           v-model:open="open"
-          force-mount
           role="dialog"
           :trigger-el="triggerRef"
-          :before-close="beforeClose"
+          :motion="look"
           :teleport-to="gooTarget"
           :scroll-fade="false"
           side="left"
@@ -74,9 +71,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { animate } from 'motion-v'
 import { Button, Popover } from 'vael-ui'
+import type { PopoverMotion } from 'vael-ui'
 
 const GOO_SPRING = { type: 'spring', visualDuration: 0.32, bounce: 0.28 } as const
 const MORPH_RADIUS = 16
@@ -104,6 +102,8 @@ const popoverRef = useTemplateRef('popoverRef')
 
 const open = shallowRef(false)
 const geo = shallowRef<GooGeo | null>(null)
+// The panel being clipped; a leaving one is no longer in popoverRef
+let panelEl: HTMLElement | null = null
 
 const gooTarget = shallowRef<HTMLElement | null>(null)
 let gooTargetEl: HTMLElement | null = null
@@ -119,7 +119,6 @@ onMounted(() => {
 function measure(): GooGeo | null {
   const rootEl = rootRef.value
   const triggerEl = triggerRef.value?.el
-  const panelEl = popoverRef.value?.panelEl
   if (!rootEl || !triggerEl || !panelEl) return null
   const r = rootEl.getBoundingClientRect()
   const t = triggerEl.getBoundingClientRect()
@@ -177,7 +176,6 @@ function lerpRect(a: Rect, b: Rect, t: number): Rect {
 // as a single shape.
 function render() {
   const g = geo.value
-  const panelEl = popoverRef.value?.panelEl
   if (!g) return
   const triggerRadius = Math.min(g.trigger.h / 2, MORPH_RADIUS)
   const radius = lerp(triggerRadius, MORPH_RADIUS, progress)
@@ -196,32 +194,9 @@ function render() {
   }
 }
 
-const reducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
 let springControls: ReturnType<typeof animate> | undefined
 
 const nextFrame = () => new Promise(requestAnimationFrame)
-
-watch(open, async (isOpen) => {
-  if (!isOpen) return
-  springControls?.stop()
-  await nextTick()
-  // The positioner stays visibility:hidden until floating-ui's first
-  // computePosition resolves — that flip is the "panel has landed" signal.
-  const positioner = popoverRef.value?.positionerEl
-  for (let i = 0; i < 10 && positioner && positioner.style.visibility === 'hidden'; i++) {
-    await nextFrame()
-  }
-  geo.value = measure()
-  if (reducedMotion()) {
-    progress = 1
-    render()
-    return
-  }
-  render()
-  springTo(1)
-})
 
 // floating-ui keeps moving the panel while open — scroll tracking, flip and
 // shift near viewport edges — so the goo geometry re-measures on every
@@ -237,56 +212,52 @@ watch(
   { flush: 'post' },
 )
 
-// onSettle only fires if this spring is still the active one — a stopped,
-// superseded spring must never call a stale done() and close a popover that
-// was reversed back open.
-function springTo(target: number, onSettle?: () => void) {
+function springTo(target: number) {
   springControls?.stop()
-  const spring = animate(progress, target, {
+  springControls = animate(progress, target, {
     ...GOO_SPRING,
     onUpdate: (v: number) => {
       progress = v
       render()
     },
   })
-  springControls = spring
-  if (onSettle) {
-    spring.finished.then(() => {
-      if (springControls === spring) onSettle()
-    })
-  }
+  return springControls
 }
 
-// The trigger toggles through close(), never a raw model write — a direct
-// `open = false` bypasses beforeClose, instantly hiding the panel while the
-// blob is still painted fully open. A click mid-exit cancels the pending
-// close (the model never flipped) and springs back to open.
-function toggle() {
-  const popover = popoverRef.value
-  if (!open.value) {
-    open.value = true
-    return
-  }
-  if (popover?.isClosing) {
-    popover.cancelClose()
-    springTo(1)
-    return
-  }
-  popover?.close()
-}
-
-function beforeClose(): Promise<boolean> {
-  // Resolves true once the exit has finished, which lets the close through.
-  return new Promise((resolve) => {
-    const done = () => resolve(true)
-    if (reducedMotion() || !geo.value) {
+const look: PopoverMotion = {
+  // The blob is the panel's only surface, so it runs under reduced motion too
+  reducedMotion: 'run',
+  async enter({ panel }, { signal, reducedMotion }) {
+    springControls?.stop()
+    panelEl = panel
+    // Claimed now, so nothing scales the panel before it's measured
+    panel.style.clipPath = 'inset(0 100% 100% 0)'
+    // The positioner stays visibility:hidden until floating-ui's first
+    // computePosition resolves — that flip is the "panel has landed" signal.
+    const positioner = popoverRef.value?.positionerEl
+    for (let i = 0; i < 10 && positioner && positioner.style.visibility === 'hidden'; i++) {
+      await nextFrame()
+    }
+    if (signal.aborted) return
+    geo.value = measure()
+    if (reducedMotion) {
+      progress = 1
+      render()
+      return
+    }
+    render()
+    await springTo(1)
+  },
+  leave({ panel }, { reducedMotion }) {
+    panelEl = panel
+    if (reducedMotion || !geo.value) {
       springControls?.stop()
       progress = 0
       render()
-      return done()
+      return
     }
-    springTo(0, done)
-  })
+    return springTo(0)
+  },
 }
 
 onUnmounted(() => {

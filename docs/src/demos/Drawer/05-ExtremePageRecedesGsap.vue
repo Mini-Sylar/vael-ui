@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: the page recedes behind the sheet (GSAP)</h3>
     <p class="note">
-      <code>force-mount</code> hands the drawer's motion over, and <code>beforeClose</code> returns
-      a promise that keeps it open until the sheet has slid away. One GSAP tween drives a single
-      progress value, and each frame it places the exposed <code>panelEl</code> and the page behind
-      it. The page shrinks, rounds and dims as the sheet rises, and both reverse together on close.
+      The <code>motion</code> prop's <code>enter</code> and <code>leave</code> hooks hand the panel
+      to GSAP. One tween drives a single progress value, and each frame it places the panel and the
+      page behind it: the page shrinks, rounds and dims as the sheet rises, and both reverse
+      together on close. The drawer waits for the returned tween before it unmounts.
     </p>
     <div ref="stage" class="stage">
       <article ref="page" class="page">
@@ -22,12 +22,10 @@
         <Button class="page-action" size="sm" @click="open = true">Share trip</Button>
       </article>
       <Drawer
-        ref="sheet"
         v-model:open="open"
         :container="stage"
         side="bottom"
-        force-mount
-        :before-close="slideAway"
+        :motion="sheetMotion"
         :ui="sheetUi"
         title="Share trip"
         description="Anyone with the link can view the itinerary."
@@ -43,10 +41,11 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, shallowRef, useTemplateRef, watch } from 'vue'
+import { shallowRef, useTemplateRef } from 'vue'
 import { gsap } from 'gsap'
 import { CustomEase } from 'gsap/CustomEase'
 import { Button, Drawer } from 'vael-ui'
+import type { DialogMotion } from 'vael-ui'
 
 gsap.registerPlugin(CustomEase)
 // The iOS sheet curve: a fast start that glides to a long, soft stop.
@@ -62,16 +61,13 @@ const targets = ['Messages', 'Mail', 'Copy link']
 
 const stage = useTemplateRef('stage')
 const page = useTemplateRef('page')
-const sheet = useTemplateRef('sheet')
 const open = shallowRef(false)
 
 // The scrim would fade on its own CSS timer, so it goes clear and the page dims itself instead.
 const sheetUi = { overlay: { style: { background: 'transparent' } } }
 
-const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 // 0 is closed, 1 is open. Interrupting a tween leaves it wherever it was on screen.
 const state = { progress: 0 }
-let tween: gsap.core.Tween | null = null
 
 // From its resting spot to fully below the stage, its gap and shadow included, so no shadow peeks
 // over the bottom edge while it is closed.
@@ -80,10 +76,9 @@ const offscreen = (panel: HTMLElement) =>
   (panel.offsetParent?.clientHeight ?? 0) - panel.offsetTop + SHADOW
 
 // The sheet and the page both read the same number each frame, so they can't drift apart.
-function draw() {
-  const panel = sheet.value?.panelEl
+function draw(panel: HTMLElement) {
   const card = page.value
-  if (!panel || !card) return
+  if (!card) return
   const t = state.progress
   panel.style.transform = `translateY(${(1 - t) * offscreen(panel)}px)`
   card.style.transform = `translateY(${t * 12}px) scale(${1 - t * 0.06})`
@@ -91,47 +86,27 @@ function draw() {
   card.style.setProperty('--dim', String(t * 0.35))
 }
 
-function release(all: boolean) {
-  sheet.value?.panelEl?.style.removeProperty('transform')
-  if (!all || !page.value) return
-  for (const prop of ['transform', 'border-radius', '--dim']) page.value.style.removeProperty(prop)
-}
+const PAGE_STYLES = ['transform', 'border-radius', '--dim']
 
-function run(to: 0 | 1, onComplete: () => void) {
-  tween?.kill()
-  if (reduce()) {
-    state.progress = to
-    draw()
-    return onComplete()
-  }
-  tween = gsap.to(state, {
+function slide(panel: HTMLElement, to: 0 | 1) {
+  // Paint the starting frame now, before the browser shows the sheet at its resting spot.
+  draw(panel)
+  return gsap.to(state, {
     progress: to,
     duration: to ? 0.48 : 0.3,
     ease: sheetEase,
-    onUpdate: draw,
-    onComplete,
+    onUpdate: () => draw(panel),
+    onComplete: () => {
+      // Open, the panel goes back to its own styles; closed, the page does.
+      if (to) panel.style.removeProperty('transform')
+      else for (const prop of PAGE_STYLES) page.value?.style.removeProperty(prop)
+    },
   })
 }
 
-watch(open, async (isOpen) => {
-  if (!isOpen) return
-  await nextTick()
-  // Paint the starting frame now, before the browser shows the sheet at its resting spot.
-  draw()
-  run(1, () => release(false))
-})
-
-onBeforeUnmount(() => tween?.kill())
-
-function slideAway(): Promise<boolean> {
-  // Resolves true once the exit has finished, which lets the close through.
-  return new Promise((resolve) => {
-    const done = () => resolve(true)
-    run(0, () => {
-      done()
-      release(true)
-    })
-  })
+const sheetMotion: DialogMotion = {
+  enter: ({ panel }) => slide(panel, 1),
+  leave: ({ panel }) => slide(panel, 0),
 }
 </script>
 

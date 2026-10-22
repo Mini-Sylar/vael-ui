@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: toasts that spring in from their edge (motion-v)</h3>
     <p class="note">
-      <code>:motion="false"</code> hands each card to <code>@card-enter</code> and
-      <code>@card-leave</code>. Toasts spring up from the bottom edge and slide back out the same
-      way. This Toaster has its own <code>name</code>, so other Toasters on the page never show its
-      toasts.
+      A <code>motion</code> object with <code>enter</code> and <code>leave</code> hooks hands each
+      card to motion's <code>animate()</code>. Toasts spring up from the bottom edge and slide back
+      out the same way. This Toaster has its own <code>name</code>, so other Toasters on the page
+      never show its toasts.
     </p>
     <div class="row">
       <Button @click="send">Send a toast</Button>
@@ -15,19 +15,17 @@
       name="spring"
       aria-label="Spring notifications"
       position="bottom-center"
-      :motion="false"
-      @card-enter="onEnter"
-      @card-leave="onLeave"
+      :motion="cardsMotion"
     />
   </section>
 </template>
 
 <script setup lang="ts">
-import { animate, useReducedMotion } from 'motion-v'
+import { animate } from 'motion-v'
 import type { AnimationPlaybackControls } from 'motion-v'
 import { Button, Toaster, toast } from 'vael-ui'
+import type { ToasterMotion } from 'vael-ui'
 
-const reduce = useReducedMotion()
 const messages = ['Draft saved', 'Invite sent to Sam', 'Build passed', 'Backup complete']
 let count = 0
 
@@ -51,15 +49,14 @@ function draw(el: HTMLElement, offset: number) {
   el.style.opacity = String(rest * Math.min(Math.max(1 - offset / 0.6, 0), 1))
 }
 
-function slide(el: Element, from: number, to: number, options: object, done: () => void) {
-  if (!(el instanceof HTMLElement) || reduce.value) return done()
+function slide(el: HTMLElement, from: number, to: number, options: object) {
   const card = cards.get(el) ?? { offset: from, motion: null }
   cards.set(el, card)
   card.motion?.stop()
   // The card's CSS transitions `transform` and `opacity`, which would smear every frame we write.
   el.style.transitionProperty = 'translate, scale, block-size'
   draw(el, card.offset)
-  card.motion = animate(card.offset, to, {
+  const controls = animate(card.offset, to, {
     ...options,
     onUpdate: (offset) => {
       card.offset = offset
@@ -70,23 +67,29 @@ function slide(el: Element, from: number, to: number, options: object, done: () 
         el.style.removeProperty(prop)
       }
       cards.delete(el)
-      done()
     },
   })
+  card.motion = controls
+  // Returned, so the Toaster waits for it.
+  return controls
 }
 
-function onEnter(el: Element, done: () => void) {
-  slide(
-    el,
-    1,
-    0,
-    { type: 'spring', bounce: 0.15, visualDuration: 0.35, restDelta: 0.005, restSpeed: 0.05 },
-    done,
-  )
-}
-function onLeave(el: Element, done: () => void) {
-  // A card closed mid-entrance starts from its current offset, so it covers less ground.
-  const offset = cards.get(el)?.offset ?? 0
-  slide(el, offset, 1, { duration: 0.2 * (1 - offset) + 0.05, ease: [0.23, 1, 0.32, 1] }, done)
+const cardsMotion: ToasterMotion = {
+  enter: ({ toast }) =>
+    slide(toast, 1, 0, {
+      type: 'spring',
+      bounce: 0.15,
+      visualDuration: 0.35,
+      restDelta: 0.005,
+      restSpeed: 0.05,
+    }),
+  leave({ toast }) {
+    // A card closed mid-entrance starts from its current offset, so it covers less ground.
+    const offset = cards.get(toast)?.offset ?? 0
+    return slide(toast, offset, 1, {
+      duration: 0.2 * (1 - offset) + 0.05,
+      ease: [0.23, 1, 0.32, 1],
+    })
+  },
 }
 </script>

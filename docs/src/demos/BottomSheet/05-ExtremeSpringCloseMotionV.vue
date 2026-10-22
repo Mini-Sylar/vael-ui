@@ -2,9 +2,10 @@
   <section class="demo">
     <h3>Extreme: a spring close that keeps your flick (motion-v)</h3>
     <p class="note">
-      <code>before-close</code> hands the exit to a motion-v spring on the exposed
-      <code>panelEl</code>. A flick starts it at <code>releaseVelocity</code>, so the sheet keeps
-      your finger's momentum. The page behind recedes with the sheet's position, drag included.
+      A <code>motion</code> object with a <code>leave</code> hook hands the close to a motion-v
+      spring. A flick starts it at the sheet's <code>releaseVelocity</code>, so the sheet keeps your
+      finger's momentum, and the sheet waits for the returned spring. The page behind recedes with
+      the sheet's position, drag included.
     </p>
     <div ref="stage" class="stage">
       <article ref="page" class="page">
@@ -27,7 +28,7 @@
         title="Share trip"
         aria-label="Share trip"
         :snap-points="[{ id: 'peek', height: SNAP }]"
-        :before-close="springClose"
+        :motion="springClose"
         :ui="sheetUi"
       >
         <template #default="{ close }">
@@ -45,8 +46,8 @@
 import { onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { animate } from 'motion-v'
-import type { AnimationPlaybackControls } from 'motion-v'
 import { Button, BottomSheet } from 'vael-ui'
+import type { DialogMotion } from 'vael-ui'
 
 const SNAP = 0.55
 const stops = [
@@ -64,9 +65,14 @@ const page = useTemplateRef('page')
 // The scrim would fade on its own CSS timer, so it goes clear and the page dims itself instead.
 const sheetUi = { overlay: { style: { background: 'transparent' } } }
 
-const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches
-const offsetOf = (panel: HTMLElement) => new DOMMatrix(getComputedStyle(panel).transform).m42
-let spring: AnimationPlaybackControls | null = null
+// How far the sheet sits below its layout spot on screen: the drag's `transform` plus the rise's
+// `translate`, read from its box so both count.
+function offsetOf(panel: HTMLElement) {
+  const parent = panel.offsetParent
+  if (!parent) return 0
+  const top = parent.getBoundingClientRect().top + parent.clientTop + panel.offsetTop
+  return panel.getBoundingClientRect().top - top
+}
 
 // The page reads one number: how far the sheet sits between closed (0) and its rest (1).
 // The panel is as tall as the stage, so translateY(100%) is closed and the snap height sets the rest.
@@ -102,8 +108,7 @@ function tick() {
   drawPage(t)
   still = Math.abs(t - last) < 0.0005 ? still + 1 : 0
   last = t
-  const busy = sheet.value?.isDragging || sheet.value?.isClosing
-  if ((still > 8 && !busy) || (t === 0 && !open.value)) return stop()
+  if ((still > 8 && !sheet.value?.isDragging) || (t === 0 && !open.value)) return stop()
   frame = requestAnimationFrame(tick)
 }
 function wake() {
@@ -116,28 +121,19 @@ function stop() {
   frame = 0
 }
 watch(open, wake)
-watch(() => sheet.value?.isClosing, wake)
 useEventListener(() => sheet.value?.panelEl, 'pointerdown', wake)
-onScopeDispose(() => {
-  spring?.stop()
-  stop()
-})
+onScopeDispose(stop)
 
-function springClose(): Promise<boolean> {
-  // Resolves true once the exit has finished, which lets the close through.
-  return new Promise((resolve) => {
-    const done = () => resolve(true)
-    const panel = sheet.value?.panelEl
-    spring?.stop()
-    if (!panel || reduce()) return done()
-    // Mid-rise or mid-settle, the computed transform is where the panel is on screen. Pin it there
-    // before the spring's first frame, or turning the transition off jumps it to the old target.
+const springClose: DialogMotion = {
+  leave: ({ panel }) => {
+    // Mid-rise or mid-settle, pin the panel where it is on screen before the spring's first frame.
     const from = offsetOf(panel)
+    for (const animation of panel.getAnimations()) animation.cancel()
     panel.style.transition = 'none'
     panel.style.transform = `translateY(${from}px)`
     // A duration-based spring drops the velocity you give it, so this one is set by stiffness and
     // damping instead: critically damped (damping = 2√stiffness), done in about 350ms from rest.
-    spring = animate(from, panel.offsetHeight, {
+    return animate(from, panel.offsetHeight, {
       type: 'spring',
       stiffness: 400,
       damping: 40,
@@ -147,13 +143,8 @@ function springClose(): Promise<boolean> {
       // px/ms from BottomSheet, px/s for motion-v. It's 0 for any close that isn't a flick.
       velocity: (sheet.value?.releaseVelocity ?? 0) * 1000,
       onUpdate: (y) => (panel.style.transform = `translateY(${y}px)`),
-      // Ends on translateY(100%), the transform BottomSheet uses for closed, so it takes over cleanly.
-      onComplete: () => {
-        spring = null
-        done()
-      },
     })
-  })
+  },
 }
 </script>
 

@@ -3,19 +3,18 @@
     <h3>Custom exit: GSAP shared-element FLIP</h3>
     <p class="note">
       Grows out of the button's real <code>getBoundingClientRect()</code> position and size (iOS
-      app-icon style) instead of scaling from the viewport — the same FLIP technique
-      <code>Dialog</code>'s own demo uses, driven off <code>panelEl</code> here instead.
+      app-icon style) instead of scaling from the viewport, the same FLIP technique
+      <code>Dialog</code>'s own demo uses. The <code>motion</code> prop's <code>enter</code> and
+      <code>leave</code> hooks run it on the panel, and the palette waits for the returned tween.
     </p>
     <div class="row">
-      <Button ref="gsapTrigger" variant="secondary" @click="gsapEnter"
+      <Button ref="gsapTrigger" variant="secondary" @click="gsapOpen = true"
         >Grow from here (GSAP)</Button
       >
     </div>
     <CommandPalette
-      ref="gsapPalette"
       v-model:open="gsapOpen"
-      force-mount
-      :before-close="gsapBeforeClose"
+      :motion="flipLook"
       :items="commands"
       @select="(item) => (lastSelected = item.label)"
     />
@@ -26,7 +25,7 @@
 import { shallowRef, useTemplateRef } from 'vue'
 import { gsap } from 'gsap'
 import { Button, CommandPalette } from 'vael-ui'
-import type { CommandPaletteItem } from 'vael-ui'
+import type { CommandPaletteItem, CommandPaletteMotion } from 'vael-ui'
 import {
   PhArchive,
   PhFileArrowDown,
@@ -69,15 +68,14 @@ const commands: CommandPaletteItem[] = [
 
 const lastSelected = shallowRef<string | null>(null)
 const gsapOpen = shallowRef(false)
-const gsapPalette = useTemplateRef('gsapPalette')
 const gsapTrigger = useTemplateRef('gsapTrigger')
 
-function flipDelta(triggerEl: HTMLElement | null, panel: HTMLElement | null) {
-  if (!triggerEl || !panel) return null
+function flipDelta(panel: HTMLElement) {
+  const triggerEl = (gsapTrigger.value as { el?: HTMLElement } | null)?.el
+  if (!triggerEl) return null
   const t = triggerEl.getBoundingClientRect()
   const p = panel.getBoundingClientRect()
   return {
-    panel,
     x: t.left + t.width / 2 - (p.left + p.width / 2),
     y: t.top + t.height / 2 - (p.top + p.height / 2),
     scaleX: t.width / p.width,
@@ -85,15 +83,13 @@ function flipDelta(triggerEl: HTMLElement | null, panel: HTMLElement | null) {
   }
 }
 
-function gsapEnter() {
-  gsapOpen.value = true
-  requestAnimationFrame(() => {
-    const triggerEl = (gsapTrigger.value as { el?: HTMLElement } | null)?.el ?? null
-    const delta = flipDelta(triggerEl, gsapPalette.value?.panelEl ?? null)
+const flipLook: CommandPaletteMotion = {
+  enter: ({ panel }) => {
+    const delta = flipDelta(panel)
     if (!delta) return
-    gsap.fromTo(
-      delta.panel,
-      { x: delta.x, y: delta.y, scaleX: delta.scaleX, scaleY: delta.scaleY, opacity: 0.4 },
+    return gsap.fromTo(
+      panel,
+      { ...delta, opacity: 0.4 },
       {
         x: 0,
         y: 0,
@@ -102,32 +98,15 @@ function gsapEnter() {
         opacity: 1,
         duration: 0.45,
         ease: 'power3.out',
-        onComplete: () => gsap.set(delta.panel, { clearProps: 'transform,opacity' }),
+        clearProps: 'transform,opacity',
       },
     )
-  })
-}
-function gsapBeforeClose(): Promise<boolean> {
-  // Resolves true once the exit has finished, which lets the close through.
-  return new Promise((resolve) => {
-    const done = () => resolve(true)
-    const triggerEl = (gsapTrigger.value as { el?: HTMLElement } | null)?.el ?? null
-    const delta = flipDelta(triggerEl, gsapPalette.value?.panelEl ?? null)
-    if (!delta) return done()
-    gsap.to(delta.panel, {
-      x: delta.x,
-      y: delta.y,
-      scaleX: delta.scaleX,
-      scaleY: delta.scaleY,
-      opacity: 0.4,
-      duration: 0.3,
-      ease: 'power3.in',
-      onComplete: () => {
-        done()
-        requestAnimationFrame(() => gsap.set(delta.panel, { clearProps: 'transform,opacity' }))
-      },
-    })
-  })
+  },
+  leave: ({ panel }) => {
+    const delta = flipDelta(panel)
+    if (!delta) return
+    return gsap.to(panel, { ...delta, opacity: 0.4, duration: 0.3, ease: 'power3.out' })
+  },
 }
 </script>
 

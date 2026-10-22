@@ -3,12 +3,12 @@
     <h3>Extreme: groups in motion (GSAP)</h3>
     <p class="note">
       Every group is a real element (<code>ui.group</code>), so is its label
-      (<code>ui.groupLabel</code>) and each option (<code>ui.option</code>), and Select exposes
-      <code>panelEl</code>. That's all GSAP needs. On open, each label wipes in behind its accent
-      bar and its options rise in after it. While you search, the options and labels that stay glide
-      to their new places, because a search keeps each one on its own element: a small FLIP,
-      measured inside the list so it stays right while the panel resizes. Each count pops when it
-      changes. <code>before-close</code> holds the panel for a quick fade. With reduced motion, it
+      (<code>ui.groupLabel</code>) and each option (<code>ui.option</code>), and a
+      <code>motion</code> object hands GSAP the panel. That's all it needs. On open, each label
+      wipes in behind its accent bar and its options rise in after it. While you search, the options
+      and labels that stay glide to their new places, because a search keeps each one on its own
+      element: a small FLIP, measured inside the list so it stays right while the panel resizes.
+      Each count pops when it changes. Closing gives the panel a quick fade. With reduced motion, it
       all switches off.
     </p>
     <div class="row">
@@ -20,8 +20,7 @@
           v-model:query="query"
           :items="toolGroups"
           filter
-          force-mount
-          :before-close="beforeClose"
+          :motion="groupsInMotion"
           placeholder="Pick a tool"
           :ui="{
             panel: { style: { minInlineSize: '18rem' } },
@@ -56,6 +55,7 @@
 import { shallowRef, useTemplateRef, watch } from 'vue'
 import { gsap } from 'gsap'
 import { Field, Select } from 'vael-ui'
+import type { SelectMotion } from 'vael-ui'
 import { PhChatsCircle, PhCheck, PhCode, PhFileText, PhPaintBrush } from '@phosphor-icons/vue'
 
 const toolGroups = [
@@ -101,10 +101,7 @@ const toolGroups = [
   },
 ]
 
-const select = useTemplateRef<{
-  panelEl: HTMLElement | null
-  positionerStyle: { visibility: string }
-}>('select')
+const select = useTemplateRef<{ panelEl: HTMLElement | null }>('select')
 const tool = shallowRef<string | null>(null)
 const open = shallowRef(false)
 const query = shallowRef('')
@@ -114,31 +111,16 @@ const reducedMotion = () =>
 const panel = () => select.value?.panelEl ?? null
 const all = (selector: string) => [...(panel()?.querySelectorAll<HTMLElement>(selector) ?? [])]
 
-// Hidden once the options render but before the browser paints, so nothing flashes first.
-watch(
-  open,
-  (isOpen) => {
-    const el = panel()
-    if (!isOpen || !el || reducedMotion()) return
-    gsap.set(el, { opacity: 0, scale: 0.96 })
-    gsap.set(all('.motion-label'), { clipPath: 'inset(0 100% 0 0)' })
-    gsap.set(all('.motion-option'), { opacity: 0, y: 8, filter: 'blur(2px)' })
-  },
-  { flush: 'post' },
-)
-
-// Runs once floating-ui has placed the panel, the same gate as the motion-v example.
-watch(
-  () => open.value && select.value?.positionerStyle.visibility === 'visible',
-  (ready) => {
-    const el = panel()
-    if (!ready || !el || reducedMotion()) return
+const groupsInMotion: SelectMotion = {
+  enter({ panel: el }) {
+    // fromTo sets each start at once, so nothing shows at rest before its turn.
     const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
-    timeline.to(el, { opacity: 1, scale: 1, duration: 0.22 })
-    all('.motion-group').forEach((group, i) => {
+    timeline.fromTo(el, { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.22 })
+    el.querySelectorAll('.motion-group').forEach((group, i) => {
       const at = 0.06 + i * 0.07
-      timeline.to(
+      timeline.fromTo(
         group.querySelector('.motion-label'),
+        { clipPath: 'inset(0 100% 0 0)' },
         { clipPath: 'inset(0 0% 0 0)', duration: 0.3 },
         at,
       )
@@ -147,14 +129,18 @@ watch(
         { scaleY: 0, transformOrigin: 'top', duration: 0.3 },
         at,
       )
-      timeline.to(
+      timeline.fromTo(
         group.querySelectorAll('.motion-option'),
+        { opacity: 0, y: 8, filter: 'blur(2px)' },
         { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.26, stagger: 0.03 },
         at + 0.05,
       )
     })
+    return timeline
   },
-)
+  leave: ({ panel: el }) =>
+    gsap.to(el, { opacity: 0, scale: 0.97, duration: 0.15, ease: 'power2.out' }),
+}
 
 // Search: FLIP measured inside the list, not on the page, because the panel itself moves as it
 // shrinks or grows and page positions would glide from the wrong place.
@@ -200,25 +186,6 @@ watch(
   },
   { flush: 'post' },
 )
-
-function beforeClose(): Promise<boolean> {
-  // Resolves true once the exit has finished, which lets the close through.
-  return new Promise((resolve) => {
-    const done = () => resolve(true)
-    const el = panel()
-    if (!el || reducedMotion()) return done()
-    gsap.to(el, {
-      opacity: 0,
-      scale: 0.97,
-      duration: 0.15,
-      ease: 'power2.in',
-      onComplete: () => {
-        gsap.set([el, ...all('.motion-label, .motion-option')], { clearProps: 'all' })
-        done()
-      },
-    })
-  })
-}
 </script>
 
 <style scoped>

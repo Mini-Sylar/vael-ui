@@ -25,19 +25,11 @@
     </div>
 
     <p class="note">
-      Custom entrance/exit animation (motion-v): <code>force-mount</code> + a
-      <code>beforeClose</code> that resolves after the exit + the exposed <code>panelEl</code> hand
-      motion-v full control of entrance and exit, the same escape hatch Popover and Dialog use.
+      Custom entrance and exit (motion-v): <code>enter</code> and <code>leave</code> hooks in the
+      <code>motion</code> prop hand the panel to motion-v, as they do on Popover and Dialog.
     </p>
     <div class="row">
-      <Tooltip
-        ref="motionTip"
-        v-model:open="motionOpen"
-        force-mount
-        :open-delay="200"
-        :trigger-el="motionTriggerRef"
-        :before-close="motionBeforeClose"
-      >
+      <Tooltip :open-delay="200" :trigger-el="motionTriggerRef" :motion="sprung">
         <span>Sprung by motion-v.</span>
       </Tooltip>
       <Button ref="motionTriggerRef" variant="secondary">motion-v tooltip</Button>
@@ -46,33 +38,21 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, useTemplateRef, watch } from 'vue'
-import { useAnimate } from 'motion-v'
+import { useTemplateRef } from 'vue'
+import { animate } from 'motion-v'
 import { Button, Tooltip } from 'vael-ui'
+import type { TooltipMotion } from 'vael-ui'
 
 const motionTriggerRef = useTemplateRef('motionTriggerRef')
-const motionTip = useTemplateRef('motionTip')
-const motionOpen = shallowRef(false)
-const [, animate] = useAnimate()
 
-watch(motionOpen, (open) => {
-  if (!open) return
-  requestAnimationFrame(() => {
-    const panel = motionTip.value?.panelEl
-    if (!panel) return
+const sprung: TooltipMotion = {
+  enter: ({ panel }) =>
     animate(
       panel,
       { opacity: [0, 1], scale: [0.6, 1], rotate: [-6, 0] },
       { type: 'spring', visualDuration: 0.3, bounce: 0.4 },
-    )
-  })
-})
-
-async function motionBeforeClose() {
-  const panel = motionTip.value?.panelEl
-  if (!panel) return true
-  await animate(panel, { opacity: 0, scale: 0.6, rotate: 6 }, { duration: 0.15 }).finished
-  return true
+    ),
+  leave: ({ panel }) => animate(panel, { opacity: 0, scale: 0.6, rotate: 6 }, { duration: 0.15 }),
 }
 </script>
 
