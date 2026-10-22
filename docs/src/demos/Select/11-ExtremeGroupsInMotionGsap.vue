@@ -201,18 +201,22 @@ watch(
   { flush: 'post' },
 )
 
-function beforeClose(done: () => void) {
-  const el = panel()
-  if (!el || reducedMotion()) return done()
-  gsap.to(el, {
-    opacity: 0,
-    scale: 0.97,
-    duration: 0.15,
-    ease: 'power2.in',
-    onComplete: () => {
-      gsap.set([el, ...all('.motion-label, .motion-option')], { clearProps: 'all' })
-      done()
-    },
+function beforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const el = panel()
+    if (!el || reducedMotion()) return done()
+    gsap.to(el, {
+      opacity: 0,
+      scale: 0.97,
+      duration: 0.15,
+      ease: 'power2.in',
+      onComplete: () => {
+        gsap.set([el, ...all('.motion-label, .motion-option')], { clearProps: 'all' })
+        done()
+      },
+    })
   })
 }
 </script>

@@ -3,10 +3,11 @@
     <h3>Extreme: a fare picker (GSAP)</h3>
     <p class="note">
       <code>force-mount</code> hands the panel to you: GSAP unrolls the exposed
-      <code>panelEl</code> from the field when it opens, and <code>beforeClose(done)</code> rolls it
-      back up, and each opening ripples the <code>#day</code> slot's days in behind it. The
-      <code>#label</code> slot puts each month's cheapest fare next to its name.
-      <code>:close-on-select="false"</code> keeps it open while you try a few returns.
+      <code>panelEl</code> from the field when it opens, and <code>beforeClose</code> rolls it back
+      up, resolving once it's rolled so the close goes through. Each opening ripples the
+      <code>#day</code> slot's days in behind it. The <code>#label</code> slot puts each month's
+      cheapest fare next to its name. <code>:close-on-select="false"</code> keeps it open while you
+      try a few returns.
     </p>
     <div class="fare">
       <DatePicker
@@ -126,14 +127,18 @@ watch(open, async (isOpen) => {
   )
 })
 
-function rollUp(done: () => void) {
-  const panel = picker.value?.panelEl
-  if (!panel || reduce()) return done()
-  gsap.fromTo(
-    panel,
-    { clipPath: clip(panel, true) },
-    { clipPath: clip(panel, false), duration: 0.18, ease: 'power2.in', onComplete: done },
-  )
+function rollUp(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const panel = picker.value?.panelEl
+    if (!panel || reduce()) return done()
+    gsap.fromTo(
+      panel,
+      { clipPath: clip(panel, true) },
+      { clipPath: clip(panel, false), duration: 0.18, ease: 'power2.in', onComplete: done },
+    )
+  })
 }
 
 const summary = computed(() => {

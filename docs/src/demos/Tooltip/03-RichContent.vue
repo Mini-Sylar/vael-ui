@@ -25,9 +25,9 @@
     </div>
 
     <p class="note">
-      Custom entrance/exit animation (motion-v): <code>force-mount</code> +
-      <code>beforeClose(done)</code> + the exposed <code>panelEl</code> hand motion-v full control
-      of entrance and exit, the same escape hatch Popover and Dialog use.
+      Custom entrance/exit animation (motion-v): <code>force-mount</code> + a
+      <code>beforeClose</code> that resolves after the exit + the exposed <code>panelEl</code> hand
+      motion-v full control of entrance and exit, the same escape hatch Popover and Dialog use.
     </p>
     <div class="row">
       <Tooltip

@@ -268,14 +268,18 @@ function close() {
   popoverRef.value?.close()
 }
 
-function beforeClose(done: () => void) {
-  if (reducedMotion() || !geo) {
-    springControls?.stop()
-    progress = 0
-    render()
-    return done()
-  }
-  springTo(0, MORPH_SPRING_CLOSE, done)
+function beforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    if (reducedMotion() || !geo) {
+      springControls?.stop()
+      progress = 0
+      render()
+      return done()
+    }
+    springTo(0, MORPH_SPRING_CLOSE, done)
+  })
 }
 
 onUnmounted(() => {

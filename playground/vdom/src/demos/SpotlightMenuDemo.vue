@@ -159,16 +159,20 @@ watch(isOpen, async (open) => {
   })
 })
 
-function beforeClose(done: () => void) {
-  const list = menuRef.value?.listEl
-  list?.removeEventListener('focusin', onListFocusin)
-  list?.removeEventListener('pointerover', onListPointerOver)
-  const panel = menuRef.value?.panelEl
-  if (!panel || reducedMotion()) {
-    done()
-    return
-  }
-  animate(panel, { opacity: 0, scale: 0.95 }, EXIT_TWEEN).finished.then(done)
+function beforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const list = menuRef.value?.listEl
+    list?.removeEventListener('focusin', onListFocusin)
+    list?.removeEventListener('pointerover', onListPointerOver)
+    const panel = menuRef.value?.panelEl
+    if (!panel || reducedMotion()) {
+      done()
+      return
+    }
+    animate(panel, { opacity: 0, scale: 0.95 }, EXIT_TWEEN).finished.then(done)
+  })
 }
 </script>
 

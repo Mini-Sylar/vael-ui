@@ -169,18 +169,16 @@ export type MotionGuard<V = unknown> = (context: GuardContext<V>) => boolean | P
 /** What `before-close` gets: why it's closing and, for a dragged sheet, how far and how fast. */
 export interface CloseContext<R extends string = string> extends GuardContext<boolean> {
   reason: R
-  /** @deprecated The old `beforeClose(done)`: return `true` instead. Removed in 0.6. */
-  (): void
 }
 
 /**
- * Allows or refuses a close. Return `true` to close, `false` to stay open, or a promise of either,
- * like `() => confirmAction(…).result`. The overlay stays open while the promise is pending, and
- * a guard that throws or rejects keeps it open.
+ * Allows or refuses a close. Return `true` to close; `false` or nothing keeps it open. A promise
+ * holds the overlay until it settles, so `() => confirmAction(…).result` works as is: a dismissed
+ * confirm resolves to nothing and keeps it open. A guard that throws or rejects keeps it open too.
  */
 export type BeforeClose<R extends string = string> = (
   context: CloseContext<R>,
-) => boolean | Promise<boolean> | void
+) => boolean | undefined | Promise<boolean | undefined>
 
 export interface Checkpoint<V = number> {
   /** The value where the motion stops to ask. */

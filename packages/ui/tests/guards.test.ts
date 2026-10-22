@@ -4,7 +4,9 @@ import { render } from 'vitest-browser-vue'
 import { userEvent } from 'vitest/browser'
 import { h, nextTick, shallowRef } from 'vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
-import type { BeforeClose, CloseContext } from '../src/motion/types'
+import DialogHost from '../src/components/DialogHost/DialogHost.vue'
+import { confirmAction } from '../src/composables/confirmAction'
+import type { BeforeClose } from '../src/motion/types'
 
 afterEach(() => {
   document.body.innerHTML = ''
@@ -104,26 +106,50 @@ test('cancelClose keeps it open and voids a late answer', async () => {
   expect(open.value).toBe(true)
 })
 
-test('the old beforeClose(done) still works, with one deprecation warning', async () => {
+test('returning nothing stays open, with a warning that says to return true', async () => {
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-  let done!: CloseContext<string>
-  const { open, state } = dialog((context) => void (done = context))
+  const { open, state } = dialog(() => undefined)
   await vi.waitFor(() => expect(state()).toBe('open'))
   await userEvent.keyboard('{Escape}')
-  await vi.waitFor(() => expect(state()).toBe('closing'))
-  done()
-  await vi.waitFor(() => expect(open.value).toBe(false))
-  expect(warn.mock.calls.flat().join(' ')).toContain('beforeClose(done) is deprecated')
+  await vi.waitFor(() => expect(warn.mock.calls.flat().join(' ')).toContain('Return true to close'))
+  expect(open.value).toBe(true)
+  expect(state()).toBe('open')
 })
 
-test('old code that returns something, like (done) => list.push(done), still waits for done()', async () => {
-  vi.spyOn(console, 'warn').mockImplementation(() => {})
-  const captured: (() => void)[] = []
-  const pushes = ((done: () => void) => captured.push(done)) as unknown as BeforeClose<string>
-  const { open, state } = dialog(pushes)
-  await vi.waitFor(() => expect(state()).toBe('open'))
+test('confirmAction plugs in: dismissing the confirm keeps the dialog open, never stuck closing', async () => {
+  const open = shallowRef(true)
+  render({
+    setup: () => () => [
+      h(DialogHost),
+      h(Dialog as never, {
+        open: open.value,
+        'onUpdate:open': (v: boolean) => (open.value = v),
+        title: 'Form',
+        beforeClose: () => confirmAction({ title: 'Discard changes?' }).result,
+      }),
+    ],
+  })
+  const form = () =>
+    [...document.querySelectorAll<HTMLElement>('.ui-dialog')].find((d) =>
+      d.textContent?.includes('Form'),
+    )
+  const confirm = () =>
+    [...document.querySelectorAll<HTMLElement>('.ui-dialog')].find((d) =>
+      d.textContent?.includes('Discard changes?'),
+    )
+  await vi.waitFor(() => expect(form()?.dataset.state).toBe('open'))
   await userEvent.keyboard('{Escape}')
-  await vi.waitFor(() => expect(state()).toBe('closing'))
-  captured[0]!()
+  await vi.waitFor(() => expect(confirm()).toBeDefined())
+  // Escape on the confirm: it resolves to nothing, which is a "no".
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(confirm()).toBeUndefined())
+  await vi.waitFor(() => expect(form()?.dataset.state).toBe('open'))
+  expect(open.value).toBe(true)
+
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(confirm()).toBeDefined())
+  ;[...confirm()!.querySelectorAll<HTMLButtonElement>('button')]
+    .find((b) => b.textContent?.trim() === 'Confirm')!
+    .click()
   await vi.waitFor(() => expect(open.value).toBe(false))
 })

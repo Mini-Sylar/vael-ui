@@ -34,7 +34,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
       },
       {
         name: 'beforeClose',
-        type: '(done: () => void) => void',
+        type: 'BeforeClose',
         description:
           "Overrides TooltipHost's `beforeClose` prop for this target. The host is shared, so this is how you set it per target.",
       },

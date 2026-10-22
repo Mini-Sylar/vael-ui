@@ -136,20 +136,24 @@ async function openMotionDrawer() {
   }
 }
 
-function beforeCloseMotion(done: () => void) {
-  const panel = motionDrawer.value?.panelEl
-  if (resizeHandler) {
-    window.removeEventListener('resize', resizeHandler)
-    resizeHandler = undefined
-  }
-  if (!panel || reducedMotion()) {
-    done()
-    return
-  }
-  animateTo(panel, 0, () => {
-    panel.style.transform = ''
-    panel.style.opacity = ''
-    done()
+function beforeCloseMotion(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const panel = motionDrawer.value?.panelEl
+    if (resizeHandler) {
+      window.removeEventListener('resize', resizeHandler)
+      resizeHandler = undefined
+    }
+    if (!panel || reducedMotion()) {
+      done()
+      return
+    }
+    animateTo(panel, 0, () => {
+      panel.style.transform = ''
+      panel.style.opacity = ''
+      done()
+    })
   })
 }
 </script>

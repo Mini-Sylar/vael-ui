@@ -6,10 +6,11 @@
       <code>AnimatePresence</code> for exit animation the way an un-Teleported component can. The
       escape hatch is the same three hooks every animated component in this library exposes:
       <code>force-mount</code> (keep the panel mounted, own it via <code>v-show</code>),
-      <code>before-close(done)</code> (run your own exit, then call <code>done()</code> to actually
-      unmount), and the exposed <code>panelEl</code> ref to animate. "Grow from here" is the extreme
-      end: it reads the trigger button's real <code>getBoundingClientRect()</code> on open and
-      morphs the panel out of that exact position and size, then shrinks back into it on close.
+      <code>before-close</code> (return a promise that resolves once your exit has played, and the
+      dialog closes then), and the exposed <code>panelEl</code> ref to animate. "Grow from here" is
+      the extreme end: it reads the trigger button's real <code>getBoundingClientRect()</code> on
+      open and morphs the panel out of that exact position and size, then shrinks back into it on
+      close.
     </p>
     <div class="row">
       <Button @click="gsapEnter">Force-mount fade (GSAP)</Button>
@@ -39,7 +40,7 @@
       :before-close="gsapBeforeClose"
       aria-label="GSAP dialog"
       title="Imperative exit"
-      description="force-mount + beforeClose(done): GSAP animates the exposed panelEl, then done() flips the model."
+      description="force-mount + beforeClose: GSAP animates the exposed panelEl, then the promise resolves and the dialog closes."
     >
       <template #footer="{ close }">
         <Button @click="close()">Close with GSAP</Button>
@@ -93,10 +94,20 @@ function gsapEnter() {
   })
 }
 
-function gsapBeforeClose(done: () => void) {
-  const panel = gsapDialog.value?.panelEl
-  if (!panel) return done()
-  gsap.to(panel, { opacity: 0, scale: 0.96, duration: 0.15, ease: 'power3.out', onComplete: done })
+function gsapBeforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const panel = gsapDialog.value?.panelEl
+    if (!panel) return done()
+    gsap.to(panel, {
+      opacity: 0,
+      scale: 0.96,
+      duration: 0.15,
+      ease: 'power3.out',
+      onComplete: done,
+    })
+  })
 }
 
 const flipOpen = shallowRef(false)
@@ -139,24 +150,28 @@ function flipEnter() {
   })
 }
 
-function flipBeforeClose(done: () => void) {
-  const triggerEl = (flipTrigger.value as { el?: HTMLElement } | null)?.el ?? null
-  const delta = flipDelta(triggerEl, flipDialog.value?.panelEl ?? null)
-  if (!delta) return done()
-  gsap.to(delta.panel, {
-    x: delta.x,
-    y: delta.y,
-    scaleX: delta.scaleX,
-    scaleY: delta.scaleY,
-    opacity: 0.4,
-    duration: 0.3,
-    ease: 'power3.in',
-    onComplete: () => {
-      done()
-      requestAnimationFrame(() => {
-        gsap.set(delta.panel, { clearProps: 'transform,opacity' })
-      })
-    },
+function flipBeforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const triggerEl = (flipTrigger.value as { el?: HTMLElement } | null)?.el ?? null
+    const delta = flipDelta(triggerEl, flipDialog.value?.panelEl ?? null)
+    if (!delta) return done()
+    gsap.to(delta.panel, {
+      x: delta.x,
+      y: delta.y,
+      scaleX: delta.scaleX,
+      scaleY: delta.scaleY,
+      opacity: 0.4,
+      duration: 0.3,
+      ease: 'power3.in',
+      onComplete: () => {
+        done()
+        requestAnimationFrame(() => {
+          gsap.set(delta.panel, { clearProps: 'transform,opacity' })
+        })
+      },
+    })
   })
 }
 

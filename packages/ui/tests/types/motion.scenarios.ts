@@ -144,5 +144,16 @@ export const discard: BeforeClose = () =>
 export const byReason: BeforeClose<'escape' | 'outside' | 'trigger'> = ({ reason }) =>
   reason === 'outside' ? false : confirmAction({}).result
 
-// 21. The old shape still compiles while it's deprecated.
+// 21. The old `beforeClose(done)` is gone: the context can't be called.
+// @ts-expect-error not callable
 export const legacy: BeforeClose = (done) => void done()
+
+// 22. Everything above is reachable from the package entry, not only from motion/types.
+export type FromEntry = [
+  import('../../src/index').BeforeClose,
+  import('../../src/index').CloseContext,
+  import('../../src/index').MotionWhere,
+  import('../../src/index').OwnMotion<'overlay'>,
+  import('../../src/index').ButtonMotion,
+  import('../../src/index').AccordionMotion,
+]

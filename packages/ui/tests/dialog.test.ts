@@ -261,9 +261,7 @@ test('with forceMount, an inline overlay opacity wins over the closing fade', as
         open: true,
         title: 'Closing',
         forceMount: true,
-        beforeClose: (done: () => void) => {
-          finish = done
-        },
+        beforeClose: () => new Promise<boolean>((allow) => (finish = () => allow(true))),
       }),
   })
   await vi.waitFor(() => expect(dialog.value?.overlayEl).toBeInstanceOf(HTMLElement))

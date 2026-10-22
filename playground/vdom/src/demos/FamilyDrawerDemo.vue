@@ -332,25 +332,29 @@ async function openDrawer() {
   if (open.value) overlayVisible.value = true
 }
 
-function beforeClose(done: () => void) {
-  overlayVisible.value = false
-  const panel = drawer.value?.panelEl
-  if (!panel || reducedMotion()) {
-    done()
-    return
-  }
-  heightSpring?.stop()
-  panel.style.blockSize = ''
-  // Height morphs may have moved the resting top since open — re-derive the
-  // slide distance from the untransformed top, then remap progress so the
-  // panel's current visual position is unchanged (matters when Escape lands
-  // mid-entrance).
-  const currentY = (1 - progress) * slideDistance
-  slideDistance = window.innerHeight - (panel.getBoundingClientRect().top - currentY)
-  progress = 1 - currentY / slideDistance
-  animatePanelTo(0, { duration: 0.3, ease: EASE_DRAWER }, () => {
-    panel.style.transform = ''
-    done()
+function beforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    overlayVisible.value = false
+    const panel = drawer.value?.panelEl
+    if (!panel || reducedMotion()) {
+      done()
+      return
+    }
+    heightSpring?.stop()
+    panel.style.blockSize = ''
+    // Height morphs may have moved the resting top since open — re-derive the
+    // slide distance from the untransformed top, then remap progress so the
+    // panel's current visual position is unchanged (matters when Escape lands
+    // mid-entrance).
+    const currentY = (1 - progress) * slideDistance
+    slideDistance = window.innerHeight - (panel.getBoundingClientRect().top - currentY)
+    progress = 1 - currentY / slideDistance
+    animatePanelTo(0, { duration: 0.3, ease: EASE_DRAWER }, () => {
+      panel.style.transform = ''
+      done()
+    })
   })
 }
 </script>

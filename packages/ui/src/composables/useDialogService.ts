@@ -73,10 +73,12 @@ export interface DynamicDialogEntry {
   closeRequested: boolean
   /** Same function returned to the opener as `handle.close` — the injected dialogRef uses it too. */
   close: (result?: unknown) => void
+  /** Called on `after-leave`: the exit has finished, so the entry can go. */
+  left?: () => void
 }
 
-// Delay matches --ui-duration-exit (CSS exit animation still in-flight).
-const DIALOG_EXIT_MS = 150
+// Only if `after-leave` never comes: the entry goes once its exit has finished, not on a guess.
+const EXIT_FALLBACK_MS = 4000
 
 let nextId = 0
 const queue = reactive<DynamicDialogEntry[]>([])
@@ -154,14 +156,14 @@ export function openDialog<
         if (isOpen) return
         scope.stop()
         settle(entry.pendingResult)
-        setTimeout(
-          () => {
-            const i = queue.findIndex((e) => e.id === id)
-            if (i !== -1) queue.splice(i, 1)
-          },
-          // `beforeClose` only allows or refuses now: the exit always plays.
-          DIALOG_EXIT_MS,
-        )
+        // Unmounting the entry mid-exit would cut the exit short: it goes on `after-leave`.
+        const remove = () => {
+          clearTimeout(fallback)
+          const i = queue.findIndex((e) => e.id === id)
+          if (i !== -1) queue.splice(i, 1)
+        }
+        const fallback = setTimeout(remove, EXIT_FALLBACK_MS)
+        entry.left = remove
       },
     ),
   )

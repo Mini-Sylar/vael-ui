@@ -107,22 +107,26 @@ function gsapEnter() {
     )
   })
 }
-function gsapBeforeClose(done: () => void) {
-  const triggerEl = (gsapTrigger.value as { el?: HTMLElement } | null)?.el ?? null
-  const delta = flipDelta(triggerEl, gsapPalette.value?.panelEl ?? null)
-  if (!delta) return done()
-  gsap.to(delta.panel, {
-    x: delta.x,
-    y: delta.y,
-    scaleX: delta.scaleX,
-    scaleY: delta.scaleY,
-    opacity: 0.4,
-    duration: 0.3,
-    ease: 'power3.in',
-    onComplete: () => {
-      done()
-      requestAnimationFrame(() => gsap.set(delta.panel, { clearProps: 'transform,opacity' }))
-    },
+function gsapBeforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const triggerEl = (gsapTrigger.value as { el?: HTMLElement } | null)?.el ?? null
+    const delta = flipDelta(triggerEl, gsapPalette.value?.panelEl ?? null)
+    if (!delta) return done()
+    gsap.to(delta.panel, {
+      x: delta.x,
+      y: delta.y,
+      scaleX: delta.scaleX,
+      scaleY: delta.scaleY,
+      opacity: 0.4,
+      duration: 0.3,
+      ease: 'power3.in',
+      onComplete: () => {
+        done()
+        requestAnimationFrame(() => gsap.set(delta.panel, { clearProps: 'transform,opacity' }))
+      },
+    })
   })
 }
 </script>

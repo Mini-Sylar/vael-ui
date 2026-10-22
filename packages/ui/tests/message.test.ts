@@ -36,10 +36,12 @@ test('closable renders a localized dismiss button that flips the model closed', 
   await vi.waitFor(() => expect(screen.container.querySelector('.ui-message')).toBeNull())
 })
 
-test('beforeClose defers the close: data-state="closing" until done() runs', async () => {
+test('beforeClose defers the close: data-state="closing" until the guard allows it', async () => {
   const captured: Array<() => void> = []
   const screen = await render(MessageFixture, {
-    props: { beforeClose: (done: () => void) => void captured.push(done) },
+    props: {
+      beforeClose: () => new Promise<boolean>((allow) => void captured.push(() => allow(true))),
+    },
   })
 
   await screen.getByTestId('trigger').click()
@@ -55,10 +57,12 @@ test('beforeClose defers the close: data-state="closing" until done() runs', asy
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
 
-test('cancelClose reverses a pending close and voids the stale done()', async () => {
+test('cancelClose reverses a pending close and voids a late answer', async () => {
   const captured: Array<() => void> = []
   const screen = await render(MessageFixture, {
-    props: { beforeClose: (done: () => void) => void captured.push(done) },
+    props: {
+      beforeClose: () => new Promise<boolean>((allow) => void captured.push(() => allow(true))),
+    },
   })
 
   await screen.getByTestId('trigger').click()

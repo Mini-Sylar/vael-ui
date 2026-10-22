@@ -55,9 +55,7 @@ test("with before-close, the box shrinks alongside the consumer's own exit", asy
         'onUpdate:open': (value: boolean) => (open.value = value),
         title: 'Saved',
         closable: true,
-        beforeClose: (done: () => void) => {
-          finish = done
-        },
+        beforeClose: () => new Promise<boolean>((allow) => (finish = () => allow(true))),
       }),
       h('p', { class: 'below' }, 'Below'),
     ],

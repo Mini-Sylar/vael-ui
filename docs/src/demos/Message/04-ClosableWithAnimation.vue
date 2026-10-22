@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Closable, with a custom exit animation (GSAP)</h3>
     <p class="note">
-      <code>beforeClose(done)</code> defers the real close until <code>done()</code> runs, letting
-      an imperative library like GSAP own the exit tween instead of the built-in CSS fade. The
-      dismiss button (and the exposed <code>close()</code> method) both go through this hook.
+      <code>beforeClose</code> returns a promise, and the message stays until it resolves: GSAP
+      plays the exit tween, then the close goes through. The dismiss button (and the exposed
+      <code>close()</code> method) both go through this hook.
     </p>
     <div class="row">
       <Button
@@ -39,13 +39,17 @@ import { Button, Message } from 'vael-ui'
 const showDeployMessage = shallowRef(false)
 const deployMessageRef = useTemplateRef<InstanceType<typeof Message>>('deployMessageRef')
 
-function onDeployBeforeClose(done: () => void) {
-  const el = deployMessageRef.value?.el
-  if (!el) {
-    done()
-    return
-  }
-  gsap.to(el, { opacity: 0, x: 24, duration: 0.2, ease: 'power3.out', onComplete: done })
+function onDeployBeforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const el = deployMessageRef.value?.el
+    if (!el) {
+      done()
+      return
+    }
+    gsap.to(el, { opacity: 0, x: 24, duration: 0.2, ease: 'power3.out', onComplete: done })
+  })
 }
 </script>
 

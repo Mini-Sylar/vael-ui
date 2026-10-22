@@ -143,6 +143,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
 
   function enter(el: Element, done: () => void) {
     el.removeAttribute(LEAVING)
+    leaving = null
     if (resolved.value.off) return enterNow(done)
     const ready = engines[kind.value]
     if (ready) return ready.enter(el, done)
@@ -165,8 +166,15 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       },
     )
   }
-  function leave(el: Element, done: () => void) {
+  // A leave in flight, so an unmount mid-exit can still let Vue remove the element.
+  let leaving: (() => void) | null = null
+  function leave(el: Element, finish: () => void) {
     el.setAttribute(LEAVING, '')
+    const done = () => {
+      leaving = null
+      finish()
+    }
+    leaving = done
     if (resolved.value.off) return leaveNow(done)
     const ready = engines[kind.value]
     if (ready) return ready.leave(el, done)
@@ -187,7 +195,10 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
           onEnter: enter,
           onLeave: leave,
           onEnterCancelled: cancel,
-          onLeaveCancelled: cancel,
+          onLeaveCancelled: () => {
+            leaving = null
+            cancel()
+          },
         }
       : { css: true },
   )
@@ -202,6 +213,8 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
 
   onScopeDispose(() => {
     cancel()
+    // Unmounted mid-exit: finish it, or Vue keeps the faded-out element in the page for good.
+    leaving?.()
     engines.css?.dispose?.()
     engines.runtime?.dispose?.()
     for (const part of Object.values(options.parts()))

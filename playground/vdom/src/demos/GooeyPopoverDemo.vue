@@ -275,14 +275,18 @@ function toggle() {
   popover?.close()
 }
 
-function beforeClose(done: () => void) {
-  if (reducedMotion() || !geo.value) {
-    springControls?.stop()
-    progress = 0
-    render()
-    return done()
-  }
-  springTo(0, done)
+function beforeClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    if (reducedMotion() || !geo.value) {
+      springControls?.stop()
+      progress = 0
+      render()
+      return done()
+    }
+    springTo(0, done)
+  })
 }
 
 onUnmounted(() => {

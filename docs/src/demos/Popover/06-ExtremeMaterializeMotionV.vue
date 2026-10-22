@@ -85,17 +85,21 @@ function materializeIn(fresh = false) {
   settle(run, panel)
 }
 
-function materializeOut(done: () => void) {
-  const panel = popover.value?.panelEl
-  if (!panel) return done()
-  current?.stop()
-  const run = animate(
-    panel,
-    { opacity: 0, scale: 0.96, filter: 'blur(2px)' },
-    { duration: 0.15, ease: easeOut },
-  )
-  current = run
-  settle(run, panel, done)
+function materializeOut(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const panel = popover.value?.panelEl
+    if (!panel) return done()
+    current?.stop()
+    const run = animate(
+      panel,
+      { opacity: 0, scale: 0.96, filter: 'blur(2px)' },
+      { duration: 0.15, ease: easeOut },
+    )
+    current = run
+    settle(run, panel, done)
+  })
 }
 
 function toggle() {

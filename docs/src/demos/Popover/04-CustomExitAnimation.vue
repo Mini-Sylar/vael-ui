@@ -3,9 +3,9 @@
     <h3>Custom animation (motion-v): <code>forceMount</code> + <code>beforeClose</code></h3>
     <p class="note">
       <code>force-mount</code> turns off the built-in transition and hands you the panel: motion-v
-      animates the exposed <code>panelEl</code> in when it opens, and
-      <code>beforeClose(done)</code> runs the exit before calling <code>done()</code>. Answering
-      swaps in a thank-you first; clicking outside or pressing Escape just closes.
+      animates the exposed <code>panelEl</code> in when it opens, and <code>beforeClose</code> plays
+      the exit, then resolves to let the close through. Answering swaps in a thank-you first;
+      clicking outside or pressing Escape just closes.
     </p>
     <div class="row">
       <Popover

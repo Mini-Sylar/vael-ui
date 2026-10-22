@@ -547,9 +547,9 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
         },
         {
           name: 'beforeClose',
-          type: '() => ((done: () => void) => void) | undefined',
+          type: '() => BeforeClose | undefined',
           description:
-            'A getter for a close hook. When it returns a function, the close waits until you call `done`, for an exit animation of your own. `isClosing` is `true` meanwhile.',
+            'A getter for the close guard. Return `true` to close, `false` or nothing to stay open, or a promise of either. `isClosing` is `true` while a promise is pending.',
         },
       ],
       returns: [
@@ -746,9 +746,9 @@ const { positionerStyle, close } = usePopover(open, {
         },
         {
           name: 'beforeClose',
-          type: '() => ((done: () => void) => void) | undefined',
+          type: '() => BeforeClose | undefined',
           description:
-            'A getter for a close hook. When it returns a function, the close waits until you call `done`. `isClosing` is `true` meanwhile.',
+            'A getter for the close guard. Return `true` to close, `false` or nothing to stay open, or a promise of either. `isClosing` is `true` while a promise is pending.',
         },
         {
           name: 'scope',
@@ -889,9 +889,9 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
         },
         {
           name: 'beforeClose',
-          type: '() => ((done: () => void) => void) | undefined',
+          type: '() => BeforeClose | undefined',
           description:
-            'A getter for a close hook. When it returns a function, the close waits until you call `done`. `isClosing` is `true` meanwhile.',
+            'A getter for the close guard. Return `true` to close, `false` or nothing to stay open, or a promise of either. `isClosing` is `true` while a promise is pending.',
         },
         {
           name: 'initialFocus',

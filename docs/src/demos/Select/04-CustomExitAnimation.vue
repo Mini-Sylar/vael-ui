@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Custom exit animation (motion-v)</h3>
     <p class="note">
-      <code>force-mount</code> + <code>before-close(done)</code> + the exposed
-      <code>panelEl</code> hand a motion-v spring the whole open/close pop; Select's own CSS
+      <code>force-mount</code> + a <code>before-close</code> that resolves after the exit + the
+      exposed <code>panelEl</code> hand a motion-v spring the whole open/close pop; Select's own CSS
       transition never runs. The panel's <code>positionerStyle.visibility</code> (also exposed)
       gates the entrance so it never starts before floating-ui has actually placed the panel. Close
       it by picking an item, pressing Escape, clicking outside, or re-clicking the trigger: all four
@@ -103,12 +103,16 @@ watch(
   },
 )
 
-function beforeCloseSpring(done: () => void) {
-  const panel = springSelect.value?.panelEl
-  if (!panel) {
-    done()
-    return
-  }
-  void animatePanel(panel, { scale: 0.92, opacity: 0 }).then(done)
+function beforeCloseSpring(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const panel = springSelect.value?.panelEl
+    if (!panel) {
+      done()
+      return
+    }
+    void animatePanel(panel, { scale: 0.92, opacity: 0 }).then(done)
+  })
 }
 </script>

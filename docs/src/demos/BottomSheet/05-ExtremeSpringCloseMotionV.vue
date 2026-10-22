@@ -123,32 +123,36 @@ onScopeDispose(() => {
   stop()
 })
 
-function springClose(done: () => void) {
-  const panel = sheet.value?.panelEl
-  spring?.stop()
-  if (!panel || reduce()) return done()
-  // Mid-rise or mid-settle, the computed transform is where the panel is on screen. Pin it there
-  // before the spring's first frame, or turning the transition off jumps it to the old target.
-  const from = offsetOf(panel)
-  panel.style.transition = 'none'
-  panel.style.transform = `translateY(${from}px)`
-  // A duration-based spring drops the velocity you give it, so this one is set by stiffness and
-  // damping instead: critically damped (damping = 2√stiffness), done in about 350ms from rest.
-  spring = animate(from, panel.offsetHeight, {
-    type: 'spring',
-    stiffness: 400,
-    damping: 40,
-    // Stop within half a pixel of closed, not after a sub-pixel tail the eye can't see.
-    restDelta: 0.5,
-    restSpeed: 20,
-    // px/ms from BottomSheet, px/s for motion-v. It's 0 for any close that isn't a flick.
-    velocity: (sheet.value?.releaseVelocity ?? 0) * 1000,
-    onUpdate: (y) => (panel.style.transform = `translateY(${y}px)`),
-    // Ends on translateY(100%), the transform BottomSheet uses for closed, so it takes over cleanly.
-    onComplete: () => {
-      spring = null
-      done()
-    },
+function springClose(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const panel = sheet.value?.panelEl
+    spring?.stop()
+    if (!panel || reduce()) return done()
+    // Mid-rise or mid-settle, the computed transform is where the panel is on screen. Pin it there
+    // before the spring's first frame, or turning the transition off jumps it to the old target.
+    const from = offsetOf(panel)
+    panel.style.transition = 'none'
+    panel.style.transform = `translateY(${from}px)`
+    // A duration-based spring drops the velocity you give it, so this one is set by stiffness and
+    // damping instead: critically damped (damping = 2√stiffness), done in about 350ms from rest.
+    spring = animate(from, panel.offsetHeight, {
+      type: 'spring',
+      stiffness: 400,
+      damping: 40,
+      // Stop within half a pixel of closed, not after a sub-pixel tail the eye can't see.
+      restDelta: 0.5,
+      restSpeed: 20,
+      // px/ms from BottomSheet, px/s for motion-v. It's 0 for any close that isn't a flick.
+      velocity: (sheet.value?.releaseVelocity ?? 0) * 1000,
+      onUpdate: (y) => (panel.style.transform = `translateY(${y}px)`),
+      // Ends on translateY(100%), the transform BottomSheet uses for closed, so it takes over cleanly.
+      onComplete: () => {
+        spring = null
+        done()
+      },
+    })
   })
 }
 </script>

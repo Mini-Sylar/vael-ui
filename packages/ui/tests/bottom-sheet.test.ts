@@ -137,7 +137,9 @@ test('a drag on the content while not scrolled to the top is left as an ordinary
 test('custom beforeClose overrides the built-in exit for every close path, including a drag-triggered dismiss', async () => {
   const captured: Array<() => void> = []
   const screen = await render(BottomSheetFixture, {
-    props: { beforeClose: (done: () => void) => void captured.push(done) },
+    props: {
+      beforeClose: () => new Promise<boolean>((allow) => void captured.push(() => allow(true))),
+    },
   })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
@@ -218,11 +220,11 @@ test('a vertically-dominant downward drag on content at the top still promotes t
 test('a beforeClose that moves the panel off screen itself closes the sheet right away', async () => {
   const screen = await render(BottomSheetFixture, {
     props: {
-      beforeClose: (done: () => void) => {
+      beforeClose: () => {
         // A custom exit that has already landed: the panel is below the viewport.
         panel().style.transition = 'none'
         panel().style.transform = 'translateY(100%)'
-        done()
+        return true
       },
     },
   })
@@ -240,9 +242,9 @@ test('a beforeClose that moves the panel off screen itself closes the sheet righ
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
 })
 
-test('a beforeClose that only confirms, calling done() with the sheet still up, keeps the slide-out', async () => {
+test('a beforeClose that only confirms, returning true with the sheet still up, keeps the slide-out', async () => {
   const screen = await render(BottomSheetFixture, {
-    props: { beforeClose: (done: () => void) => done() },
+    props: { beforeClose: () => true },
   })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
@@ -257,7 +259,7 @@ test('a beforeClose that only confirms, calling done() with the sheet still up, 
 
 test('releaseVelocity reports the flick speed for a drag dismiss and 0 for any other close', async () => {
   const screen = await render(BottomSheetFixture, {
-    props: { beforeClose: (done: () => void) => done() },
+    props: { beforeClose: () => true },
   })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))

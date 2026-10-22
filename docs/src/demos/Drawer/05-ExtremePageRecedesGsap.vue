@@ -2,11 +2,10 @@
   <section class="demo">
     <h3>Extreme: the page recedes behind the sheet (GSAP)</h3>
     <p class="note">
-      <code>force-mount</code> hands the drawer's motion over, and
-      <code>beforeClose(done)</code> holds it open until the sheet has slid away. One GSAP tween
-      drives a single progress value, and each frame it places the exposed <code>panelEl</code> and
-      the page behind it. The page shrinks, rounds and dims as the sheet rises, and both reverse
-      together on close.
+      <code>force-mount</code> hands the drawer's motion over, and <code>beforeClose</code> returns
+      a promise that keeps it open until the sheet has slid away. One GSAP tween drives a single
+      progress value, and each frame it places the exposed <code>panelEl</code> and the page behind
+      it. The page shrinks, rounds and dims as the sheet rises, and both reverse together on close.
     </p>
     <div ref="stage" class="stage">
       <article ref="page" class="page">
@@ -124,10 +123,14 @@ watch(open, async (isOpen) => {
 
 onBeforeUnmount(() => tween?.kill())
 
-function slideAway(done: () => void) {
-  run(0, () => {
-    done()
-    release(true)
+function slideAway(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    run(0, () => {
+      done()
+      release(true)
+    })
   })
 }
 </script>

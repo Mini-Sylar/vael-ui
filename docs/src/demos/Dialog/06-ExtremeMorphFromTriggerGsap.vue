@@ -4,7 +4,8 @@
     <p class="note">
       <code>force-mount</code> hands you the exposed <code>panelEl</code> and
       <code>overlayEl</code>. The panel grows out of the button and the backdrop fades on the same
-      progress. <code>before-close(done)</code> shrinks it back into the button.
+      progress. <code>before-close</code> shrinks it back into the button and resolves when it's
+      there, which lets the close through.
     </p>
     <Button ref="trigger" @click="openFromTrigger">Invite teammates</Button>
 
@@ -130,25 +131,29 @@ async function openFromTrigger() {
     .to(state, { content: 1, duration: 0.2 }, 0.12 * left)
 }
 
-function shrinkIntoTrigger(done: () => void) {
-  const g = reduce() ? null : measure()
-  if (!g) return done()
-  morph?.kill()
-  // A panel at rest has no inline styles; pick up from the fully open state.
-  if (!g.panel.style.clipPath) state.progress = state.content = 1
-  draw(g)
-  morph = gsap
-    .timeline({
-      onUpdate: () => draw(g),
-      onComplete: () => {
-        done()
-        // The panel hides before the next paint, so clearing here can't flash it.
-        release(g)
-        state.progress = state.content = 0
-      },
-    })
-    .to(state, { content: 0, duration: 0.1, ease: 'power2.out' }, 0)
-    .to(state, { progress: 0, duration: 0.1 + 0.18 * state.progress, ease: 'power2.inOut' }, 0)
+function shrinkIntoTrigger(): Promise<boolean> {
+  // Resolves true once the exit has finished, which lets the close through.
+  return new Promise((resolve) => {
+    const done = () => resolve(true)
+    const g = reduce() ? null : measure()
+    if (!g) return done()
+    morph?.kill()
+    // A panel at rest has no inline styles; pick up from the fully open state.
+    if (!g.panel.style.clipPath) state.progress = state.content = 1
+    draw(g)
+    morph = gsap
+      .timeline({
+        onUpdate: () => draw(g),
+        onComplete: () => {
+          done()
+          // The panel hides before the next paint, so clearing here can't flash it.
+          release(g)
+          state.progress = state.content = 0
+        },
+      })
+      .to(state, { content: 0, duration: 0.1, ease: 'power2.out' }, 0)
+      .to(state, { progress: 0, duration: 0.1 + 0.18 * state.progress, ease: 'power2.inOut' }, 0)
+  })
 }
 
 onUnmounted(() => morph?.kill())
