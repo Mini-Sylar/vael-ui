@@ -3,6 +3,7 @@
 // directive unused, so typecheck fails until the scenario is updated.
 import type {
   AnimateDirectiveValue,
+  BeforeClose,
   ComponentMotion,
   DialogMotion,
   InputMotion,
@@ -132,3 +133,16 @@ export function OwnSheetTypo() {
   // @ts-expect-error not an overlay key
   return useMotion('overlay', () => ({ stagger: 0.04 }))
 }
+
+// 19. Confirm before discarding a form: the guard returns confirmAction's promise.
+declare const confirmAction: (options: object) => { result: Promise<boolean> }
+declare const hasUnsavedChanges: { value: boolean }
+export const discard: BeforeClose = () =>
+  hasUnsavedChanges.value ? confirmAction({ title: 'Discard changes?' }).result : true
+
+// 20. A click outside never closes a half-filled form; Escape asks first.
+export const byReason: BeforeClose<'escape' | 'outside' | 'trigger'> = ({ reason }) =>
+  reason === 'outside' ? false : confirmAction({}).result
+
+// 21. The old shape still compiles while it's deprecated.
+export const legacy: BeforeClose = (done) => void done()

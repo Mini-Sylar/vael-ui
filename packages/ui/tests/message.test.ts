@@ -39,7 +39,7 @@ test('closable renders a localized dismiss button that flips the model closed', 
 test('beforeClose defers the close: data-state="closing" until done() runs', async () => {
   const captured: Array<() => void> = []
   const screen = await render(MessageFixture, {
-    props: { beforeClose: (done: () => void) => captured.push(done) },
+    props: { beforeClose: (done: () => void) => void captured.push(done) },
   })
 
   await screen.getByTestId('trigger').click()
@@ -58,7 +58,7 @@ test('beforeClose defers the close: data-state="closing" until done() runs', asy
 test('cancelClose reverses a pending close and voids the stale done()', async () => {
   const captured: Array<() => void> = []
   const screen = await render(MessageFixture, {
-    props: { beforeClose: (done: () => void) => captured.push(done) },
+    props: { beforeClose: (done: () => void) => void captured.push(done) },
   })
 
   await screen.getByTestId('trigger').click()

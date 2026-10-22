@@ -260,6 +260,8 @@ export type CascadeSelectFilter<T> =
     V extends string | number | (string | number)[] | null = string | number | null
   "
 >
+import type { BeforeClose } from '../../motion/types'
+import type { PopoverCloseReason } from '../../composables/usePopover'
 import './CascadeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
@@ -343,8 +345,8 @@ const rawProps = withDefaults(
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
+    /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
     /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */

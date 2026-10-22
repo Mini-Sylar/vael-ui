@@ -6,6 +6,8 @@ import { useScrollLock } from './useScrollLock'
 import { useInert } from './useInert'
 import { getFocusable, useDOMTarget, type DOMTarget, type ElRef } from './dom'
 import { ssrDocument } from '../ssr'
+import { useCloseGuard } from './useCloseGuard'
+import type { BeforeClose } from '../motion/types'
 
 export type DialogCloseReason = 'trigger' | 'escape' | 'outside' | 'history' | 'programmatic'
 
@@ -39,7 +41,7 @@ export interface UseDialogOptions {
   /** Called before the model flips to false. Call `cancel()` on the details to veto the close. Components wire this to their `open-change` emit. */
   onOpenChange?: (value: boolean, details: DialogOpenChangeDetails) => void
   /** Getter so the underlying prop stays reactive without being invoked by `toValue`. */
-  beforeClose?: () => ((done: () => void) => void) | undefined
+  beforeClose?: () => BeforeClose<DialogCloseReason> | undefined
   /** Overrides which element receives focus on open. Return null/undefined to fall back to the first focusable element (or the panel itself). */
   initialFocus?: () => HTMLElement | null | undefined
   /** Gates scroll-lock, the Tab focus-trap, and the initial-focus steal. Escape-close and layer stacking stay active either way. Default true. */
@@ -98,9 +100,11 @@ function syncPopStateListener() {
 export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   const { panelEl } = options
 
-  // Logically open but visually closing: exposes third state for animations.
-  const isClosing = shallowRef(false)
-  let pendingClose: symbol | null = null
+  const {
+    isClosing,
+    close: closeGuarded,
+    cancelClose,
+  } = useCloseGuard(open, () => options.beforeClose?.())
 
   function requestClose(reason: DialogCloseReason, event?: Event) {
     if (!open.value) return
@@ -116,25 +120,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     options.onOpenChange?.(false, details)
     if (cancelled) return
 
-    const beforeClose = options.beforeClose?.()
-    if (!beforeClose) {
-      open.value = false
-      return
-    }
-    const token = Symbol('pending-close')
-    pendingClose = token
-    isClosing.value = true
-    beforeClose(() => {
-      if (pendingClose !== token) return
-      pendingClose = null
-      isClosing.value = false
-      open.value = false
-    })
-  }
-
-  function cancelClose() {
-    pendingClose = null
-    isClosing.value = false
+    closeGuarded(reason)
   }
 
   function close() {
@@ -336,8 +322,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     previouslyFocused = null
     exitEl = null
     // Clear pending close on raw model writes mid-close.
-    pendingClose = null
-    isClosing.value = false
+    cancelClose()
   }
 
   watch(open, (value) => (value ? activate() : deactivate()), { flush: 'post' })

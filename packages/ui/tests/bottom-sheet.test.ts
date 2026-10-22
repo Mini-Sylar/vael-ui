@@ -137,7 +137,7 @@ test('a drag on the content while not scrolled to the top is left as an ordinary
 test('custom beforeClose overrides the built-in exit for every close path, including a drag-triggered dismiss', async () => {
   const captured: Array<() => void> = []
   const screen = await render(BottomSheetFixture, {
-    props: { beforeClose: (done: () => void) => captured.push(done) },
+    props: { beforeClose: (done: () => void) => void captured.push(done) },
   })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
@@ -290,6 +290,43 @@ test('releaseVelocity reports the flick speed for a drag dismiss and 0 for any o
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   await expect.element(screen.getByTestId('release-velocity')).toHaveTextContent('0')
+})
+
+test('before-close gets the drag release speed in px/s, and 0 for any other close', async () => {
+  const asked: { reason: string; velocity: number }[] = []
+  const screen = await render(BottomSheetFixture, {
+    props: {
+      beforeClose: ({ reason, velocity }: { reason: string; velocity: number }) =>
+        asked.push({ reason, velocity }) > 0,
+    },
+  })
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  const startY = window.innerHeight - 40
+  const pointerId = 1
+  const el = handle()
+  el.dispatchEvent(new PointerEvent('pointerdown', { clientY: startY, pointerId, bubbles: true }))
+  // Real waits: velocity reads elapsed time.
+  await new Promise((r) => setTimeout(r, 200))
+  el.dispatchEvent(
+    new PointerEvent('pointermove', { clientY: startY + 5, pointerId, bubbles: true }),
+  )
+  await new Promise((r) => setTimeout(r, 40))
+  el.dispatchEvent(
+    new PointerEvent('pointermove', { clientY: startY + 85, pointerId, bubbles: true }),
+  )
+  el.dispatchEvent(
+    new PointerEvent('pointerup', { clientY: startY + 85, pointerId, bubbles: true }),
+  )
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  // About 80px over 40ms: some 2000 px/s.
+  expect(asked[0]!.velocity).toBeGreaterThan(1000)
+
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
+  expect(asked[1]).toEqual({ reason: 'escape', velocity: 0 })
 })
 
 test('container: the sheet fills the container and snaps to fractions of its height', async () => {

@@ -2,6 +2,8 @@ import { watchEffect } from 'vue'
 import type { Directive, DirectiveBinding } from 'vue'
 import type { Side } from '@floating-ui/dom'
 import type { Align } from '../composables/useFloatingPosition'
+import type { TooltipCloseReason } from '../composables/useTooltip'
+import type { BeforeClose } from '../motion/types'
 
 export interface TooltipDirectiveOptions {
   content: string
@@ -12,8 +14,8 @@ export interface TooltipDirectiveOptions {
   sideOffset?: number | (() => number)
   openDelay?: number
   closeDelay?: number
-  /** Per-target override for TooltipHost's `beforeClose` prop — same escape hatch as Tooltip.vue's own prop, threaded through since TooltipHost is a single shared singleton. */
-  beforeClose?: (done: () => void) => void
+  /** This target's own `beforeClose`, in place of TooltipHost's: one TooltipHost serves every target. */
+  beforeClose?: BeforeClose<TooltipCloseReason>
   /** Per-target override for TooltipHost's `forceMount` prop. */
   forceMount?: boolean
 }

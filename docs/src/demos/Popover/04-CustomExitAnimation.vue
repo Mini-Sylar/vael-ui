@@ -74,13 +74,13 @@ function answer(close: () => void) {
   close()
 }
 
-async function feedbackBeforeClose(done: () => void) {
+async function feedbackBeforeClose() {
   const panel = popover.value?.panelEl
-  if (!panel) return done()
+  if (!panel) return true
   // Long enough to read the thank-you.
   if (answered.value) await new Promise((resolve) => setTimeout(resolve, 900))
   await animate(panel, { opacity: 0, scale: 0.96 }, { duration: 0.15, ease: easeOut }).finished
-  done()
+  return true
 }
 </script>
 

@@ -177,17 +177,17 @@ function openDynamicFlipMotion() {
     title: 'Dynamic FLIP (motion-v)',
     size: 'sm',
     forceMount: true,
-    async beforeClose(done) {
+    async beforeClose() {
       const delta = flipDelta(triggerEl, panelEl.value)
-      if (!delta) return done()
+      if (!delta) return true
       const controls = animateMotion(
         delta.panel,
         { x: delta.x, y: delta.y, scaleX: delta.scaleX, scaleY: delta.scaleY, opacity: 0.4 },
         { duration: 0.3, ease: [0.36, 0, 0.66, -0.03] },
       )
       await controls.finished
-      done()
       requestAnimationFrame(() => clearPanelOverrides(delta.panel))
+      return true
     },
   })
   watch(

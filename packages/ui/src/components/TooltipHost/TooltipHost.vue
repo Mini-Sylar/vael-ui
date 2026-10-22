@@ -42,8 +42,12 @@ export interface TooltipHostProps {
   openDelay?: number
   /** Grace period after the pointer leaves, in milliseconds, so it can move onto the tooltip. @default 100 */
   closeDelay?: number
-  /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ beforeClose }"`. */
-  beforeClose?: (done: () => void) => void
+  /**
+   * The `beforeClose` for every `v-tooltip` target; set `v-tooltip="{ beforeClose }"` to override one.
+   * Return `true` to close the tooltip, `false` to keep it open, or a promise of either. The
+   * tooltip stays open while the promise is pending.
+   */
+  beforeClose?: BeforeClose<TooltipCloseReason>
   /** Global default for every `v-tooltip` target; override it per target with `v-tooltip="{ forceMount }"`. @default false */
   forceMount?: boolean
   /** Class and style overrides for each part. */
@@ -53,6 +57,8 @@ export interface TooltipHostProps {
 
 <!-- Singleton behind v-tooltip; document delegation to every target -->
 <script setup lang="ts">
+import type { TooltipCloseReason } from '../../composables/useTooltip'
+import type { BeforeClose } from '../../motion/types'
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
 import {

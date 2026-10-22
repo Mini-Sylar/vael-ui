@@ -292,6 +292,7 @@ export { parseMotionStyle } from './motion/parse'
 export { useComponentMotion } from './motion/useComponentMotion'
 export type { ComponentMotionOptions, ComponentMotionReturn } from './motion/useComponentMotion'
 export { useStateMotion } from './motion/useStateMotion'
+export { askGuard, closeContext, useCloseGuard } from './composables/useCloseGuard'
 export type { StateMotionOptions } from './motion/useStateMotion'
 export {
   motionStyleKey,

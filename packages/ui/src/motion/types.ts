@@ -74,8 +74,9 @@ export interface MotionWhere {
 }
 
 /**
- * Values per part, keyed by the component's part names (its `ui` keys). A function gets `where`,
- * for motion that depends on the direction of a swap or an item's place; shared styles stay data.
+ * Values per part, keyed by the component's part names (its `ui` keys). To depend on a swap's
+ * direction or an item's position, give a function: it receives `where`. Shared styles accept
+ * plain values only.
  */
 export type PartValues<P extends string> = {
   [K in P]?: MotionValues | ((where: MotionWhere) => MotionValues)
@@ -146,7 +147,7 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   select?: keyof HTMLElementTagNameMap | (string & {})
   /** Limit `select` to one slot. */
   slot?: string
-  /** Plays `initial` again, from it back to rest, whenever this value changes; no remount. */
+  /** Plays `initial` again whenever this value changes, without remounting the element. */
   replay?: unknown
 }
 
@@ -162,8 +163,24 @@ export interface GuardContext<V = unknown> {
   velocity: number
 }
 
-/** Allow or refuse a commit. While it's pending the motion holds; refused, it springs back. */
+/** Allows or refuses a commit. The motion stops where it is until the answer comes; refused, it springs back. */
 export type MotionGuard<V = unknown> = (context: GuardContext<V>) => boolean | Promise<boolean>
+
+/** What `before-close` gets: why it's closing and, for a dragged sheet, how far and how fast. */
+export interface CloseContext<R extends string = string> extends GuardContext<boolean> {
+  reason: R
+  /** @deprecated The old `beforeClose(done)`: return `true` instead. Removed in 0.6. */
+  (): void
+}
+
+/**
+ * Allows or refuses a close. Return `true` to close, `false` to stay open, or a promise of either,
+ * like `() => confirmAction(…).result`. The overlay stays open while the promise is pending, and
+ * a guard that throws or rejects keeps it open.
+ */
+export type BeforeClose<R extends string = string> = (
+  context: CloseContext<R>,
+) => boolean | Promise<boolean> | void
 
 export interface Checkpoint<V = number> {
   /** The value where the motion stops to ask. */
@@ -233,9 +250,9 @@ type OverlayMotion = {
   /** A shapes-only layer behind trigger and panel; filters here never touch text. */
   surface?: MotionValues
   linked?: Record<string, LinkedMotion>
-  /** Closing: `'together'` (default) or `'reverse'`, children first, capped at ~300ms. */
+  /** Closing: `'together'` (default) or `'reverse'`, children first, adding about 300 ms at most. */
   exitOrder?: 'together' | 'reverse'
-  /** The panel eases to its content's new size (wizard steps, switched views); `false` jumps. */
+  /** The panel eases to its content's new size (wizard steps, switched views); `false` snaps to it. */
   resize?: boolean
 }
 type ListMotion<S extends MotionSpec, N extends string> = {
@@ -321,7 +338,7 @@ export type SliderMotion = ComponentMotion<{
 }>
 
 export type ButtonPart = 'root' | 'leading' | 'trailing' | 'content' | 'label' | 'badge'
-/** `active` is pressed (pointer, Space or Enter); `hover` is fine pointers only. */
+/** `active` is pressed (pointer, Space or Enter); `hover` responds to a mouse only. */
 export type ButtonMotion = ComponentMotion<{
   parts: ButtonPart
   states: 'active' | 'hover' | 'focus' | 'loading' | 'disabled'

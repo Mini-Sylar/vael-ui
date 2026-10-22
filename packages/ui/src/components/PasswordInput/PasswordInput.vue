@@ -161,6 +161,8 @@ export interface PasswordRuleResult {
 </script>
 
 <script setup lang="ts">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose } from '../../motion/types'
 import './PasswordInput.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
@@ -229,8 +231,8 @@ const rawProps = withDefaults(
      * @default false
      */
     forceMount?: boolean
-    /** Custom exit animation for the hint popover; call `done()` when it's complete. Popover mode only. */
-    beforeClose?: (done: () => void) => void
+    /** Runs before the hint closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The hint stays open while the promise is pending. Popover mode only. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue

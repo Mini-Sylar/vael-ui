@@ -112,7 +112,7 @@ const rawProps = withDefaults(
     animated?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; input: UiPartValue; start: UiPartValue; end: UiPartValue }>
-    /** Motion for its states: `{ states: { invalid: { root: { x: [0, -6, 6, -3, 0] } } } }`. */
+    /** Animates its states, like a shake when it turns invalid: `{ states: { invalid: { root: { x: [0, -6, 6, -3, 0] } } } }`. */
     motion?: InputMotion
   }>(),
   {

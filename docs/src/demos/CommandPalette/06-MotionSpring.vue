@@ -89,16 +89,16 @@ function motionEnter() {
     })
   })
 }
-async function motionBeforeClose(done: () => void) {
+async function motionBeforeClose() {
   const panel = motionPalette.value?.panelEl
-  if (!panel) return done()
+  if (!panel) return true
   const controls = animateMotion(
     panel,
     { opacity: 0, scale: 0.92, y: 12 },
     { duration: 0.15, ease: [0.4, 0, 1, 1] },
   )
   await controls.finished
-  done()
+  return true
 }
 </script>
 

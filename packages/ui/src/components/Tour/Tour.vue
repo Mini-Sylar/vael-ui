@@ -128,8 +128,8 @@ export interface TourProps<T extends TourStep = TourStep> {
   scrollTarget?: DOMTarget
   /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
+  /** Runs before the tour closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The tour stays open while the promise is pending. */
+  beforeClose?: BeforeClose<PopoverCloseReason>
   /**
    * The spotlight's glide between steps. `false` turns it off so you can animate `spotlightEl`
    * yourself. For open and close, use `forceMount` and `beforeClose`.
@@ -147,6 +147,8 @@ export interface TourProps<T extends TourStep = TourStep> {
   scroll-lock/inert since Popover doesn't dim the page.
 -->
 <script setup lang="ts" generic="T extends TourStep = TourStep">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose } from '../../motion/types'
 import './Tour.css'
 import '../shared/tokens.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'

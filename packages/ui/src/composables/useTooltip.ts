@@ -6,6 +6,8 @@ import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
 import type { ElRef } from './dom'
 import { ssrWindow } from '../ssr'
+import { useCloseGuard } from './useCloseGuard'
+import type { BeforeClose } from '../motion/types'
 import { prefersReducedMotion } from './dom'
 
 export type TooltipCloseReason = 'pointer' | 'focus' | 'trigger' | 'escape' | 'programmatic'
@@ -66,7 +68,7 @@ export interface UseTooltipOptions {
   closeOnEsc?: MaybeRefOrGetter<boolean>
   onOpenChange?: (value: boolean, details: TooltipOpenChangeDetails) => void
   /** Getter so the underlying prop stays reactive without being invoked by `toValue`. */
-  beforeClose?: () => ((done: () => void) => void) | undefined
+  beforeClose?: () => BeforeClose<TooltipCloseReason> | undefined
 }
 
 // Core state machine; TooltipHost drives intents via delegation.
@@ -90,7 +92,11 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     },
   })
 
-  const isClosing = shallowRef(false)
+  const {
+    isClosing,
+    close: closeGuarded,
+    cancelClose,
+  } = useCloseGuard(open, () => options.beforeClose?.())
   const instant = shallowRef(false)
   // Only three things ever animate, all on the compositor: the positioner's translate (while
   // `traveling`), and the box layer's scale with the content's opacity (while `morphing`). Layout
@@ -409,8 +415,6 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     commit(point)
   })
 
-  let pendingClose: symbol | null = null
-
   function requestClose(reason: TooltipCloseReason, event?: Event) {
     if (!open.value) return
     if (isClosing.value) return
@@ -430,25 +434,7 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
       warmth.lastRect = measureRect() ?? warmth.lastRect
     }
 
-    const beforeClose = options.beforeClose?.()
-    if (!beforeClose) {
-      open.value = false
-      return
-    }
-    const token = Symbol('pending-close')
-    pendingClose = token
-    isClosing.value = true
-    beforeClose(() => {
-      if (pendingClose !== token) return
-      pendingClose = null
-      isClosing.value = false
-      open.value = false
-    })
-  }
-
-  function cancelClose() {
-    pendingClose = null
-    isClosing.value = false
+    closeGuarded(reason)
   }
 
   function show() {

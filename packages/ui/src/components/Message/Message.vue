@@ -55,6 +55,10 @@
 
 <script lang="ts">
 import type { UiPartValue } from '../../classes'
+import type { BeforeClose } from '../../motion/types'
+
+/** Why a message closes: its dismiss button, or your code. */
+export type MessageCloseReason = 'dismiss' | 'programmatic'
 
 export type MessageVariant = 'default' | 'success' | 'error' | 'warning' | 'info'
 
@@ -76,8 +80,8 @@ export interface MessageProps {
   appearance?: 'default' | 'bare'
   /** Renders the built-in dismiss button. @default false */
   closable?: boolean
-  /** Custom exit animation; call `done()` to finish closing. The model stays `true` until you do. */
-  beforeClose?: (done: () => void) => void
+  /** Runs before the message closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. `v-model` stays `true` while the promise is pending. */
+  beforeClose?: BeforeClose<MessageCloseReason>
   /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
   /** Shows the leading status icon (or the `#icon` slot). @default true */
@@ -103,7 +107,7 @@ export interface MessageProps {
 <script setup lang="ts">
 import './Message.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import { computed, useAttrs, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -111,6 +115,7 @@ import { useThemedUi } from '../../theme'
 import StatusIcon from '../internal/StatusIcon.vue'
 import { getFocusable } from '../../composables/dom'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
+import { useCloseGuard } from '../../composables/useCloseGuard'
 
 defineOptions({ inheritAttrs: false })
 
@@ -147,8 +152,7 @@ const attrs = useAttrListeners(
   () => rawAttrs,
 )
 
-const isClosing = shallowRef(false)
-let pendingClose: symbol | null = null
+const { isClosing, close: closeGuarded, cancelClose } = useCloseGuard(open, () => props.beforeClose)
 
 function requestClose(event?: Event) {
   if (!open.value || isClosing.value) return
@@ -162,24 +166,7 @@ function requestClose(event?: Event) {
   emit('open-change', false, details)
   if (cancelled) return
 
-  if (!props.beforeClose) {
-    open.value = false
-    return
-  }
-  const token = Symbol('pending-close')
-  pendingClose = token
-  isClosing.value = true
-  props.beforeClose(() => {
-    if (pendingClose !== token) return
-    pendingClose = null
-    isClosing.value = false
-    open.value = false
-  })
-}
-
-function cancelClose() {
-  pendingClose = null
-  isClosing.value = false
+  closeGuarded(event ? 'dismiss' : 'programmatic')
 }
 
 function close() {
@@ -189,8 +176,7 @@ function close() {
 // Guard stale pending token (same as useDialog.ts deactivate).
 watch(open, (value) => {
   if (!value) {
-    pendingClose = null
-    isClosing.value = false
+    cancelClose()
     moveFocusOut()
   }
 })

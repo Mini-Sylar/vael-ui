@@ -109,8 +109,6 @@ export function openDialog<
     ...dialogProps
   } = options
   const id = nextId++
-  const hasCustomBeforeClose = typeof dialogProps.beforeClose === 'function'
-
   let settled = false
   let resolveResult!: (value: T | undefined) => void
   const result = new Promise<T | undefined>((resolve) => {
@@ -161,7 +159,8 @@ export function openDialog<
             const i = queue.findIndex((e) => e.id === id)
             if (i !== -1) queue.splice(i, 1)
           },
-          hasCustomBeforeClose ? 0 : DIALOG_EXIT_MS,
+          // `beforeClose` only allows or refuses now: the exit always plays.
+          DIALOG_EXIT_MS,
         )
       },
     ),

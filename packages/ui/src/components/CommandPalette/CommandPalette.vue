@@ -144,6 +144,8 @@ export interface CommandPaletteItem {
 </script>
 
 <script setup lang="ts" generic="T extends CommandPaletteItem = CommandPaletteItem">
+import type { DialogCloseReason } from '../../composables/useDialog'
+import type { BeforeClose } from '../../motion/types'
 import './CommandPalette.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
@@ -206,8 +208,8 @@ const rawProps = withDefaults(
      * @default true
      */
     closeOnOverlay?: boolean
-    /** Custom exit animation; call `done()` to finish closing. Forwarded to the underlying Dialog. */
-    beforeClose?: (done: () => void) => void
+    /** Runs before the palette closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The palette stays open while the promise is pending. CommandPalette passes it to its Dialog. */
+    beforeClose?: BeforeClose<DialogCloseReason>
     /**
      * Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. Forwarded to the underlying Dialog.
      * @default false

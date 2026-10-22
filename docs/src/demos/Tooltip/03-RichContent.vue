@@ -68,11 +68,11 @@ watch(motionOpen, (open) => {
   })
 })
 
-async function motionBeforeClose(done: () => void) {
+async function motionBeforeClose() {
   const panel = motionTip.value?.panelEl
-  if (!panel) return done()
+  if (!panel) return true
   await animate(panel, { opacity: 0, scale: 0.6, rotate: 6 }, { duration: 0.15 }).finished
-  done()
+  return true
 }
 </script>
 

@@ -147,7 +147,7 @@ export interface StatesContext {
 /** @internal Run inside the component's scope: everything stops with it. */
 export function startStates(ctx: StatesContext): void {
   const player = createStatePlayer()
-  // Hover (fine pointers only), press (pointer, Space or Enter) and focus, on the main part.
+  // Hover (a mouse only), press (pointer, Space or Enter) and focus, on the main part.
   const pointer = shallowReactive({ hover: false, active: false, focus: false })
   let unlisten: (() => void) | undefined
   function listen(el: Element | null | undefined, wanted: Set<string>) {

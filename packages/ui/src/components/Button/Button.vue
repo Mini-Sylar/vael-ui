@@ -255,7 +255,7 @@ const rawProps = withDefaults(
       label: UiPartValue
       badge: UiPartValue
     }>
-    /** Motion for its states: `{ states: { active: { label: { scale: '0.94' } } } }`. */
+    /** Animates its states, like a label that sinks while pressed: `{ states: { active: { label: { scale: '0.94' } } } }`. */
     motion?: ButtonMotion
   }>(),
   {

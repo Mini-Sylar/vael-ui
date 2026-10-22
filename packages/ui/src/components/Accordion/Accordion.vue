@@ -50,8 +50,9 @@ const rawProps = withDefaults(
     /** Whether the last open item can close, leaving none open. @default true */
     collapsible?: boolean
     /**
-     * `false` skips transitions; use exposed `panelEl`/`open` for custom motion. An object styles
-     * each item's states: `{ states: { open: { chevron: { rotate: '90deg' } } } }`. @default true
+     * `false` turns the transitions off, so you can animate the exposed `panelEl` and `open`
+     * yourself. An object animates each item's states, like a quarter-turn chevron:
+     * `{ states: { open: { chevron: { rotate: '90deg' } } } }`. @default true
      */
     motion?: AccordionMotion
     /** Heading level wrapping each item's trigger; match it to the surrounding outline. @default 3 */

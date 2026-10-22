@@ -79,8 +79,8 @@ export interface PopoverProps {
   closeOnEsc?: boolean
   /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
+  /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+  beforeClose?: BeforeClose<PopoverCloseReason>
   /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
   forceMount?: boolean
   /**
@@ -128,6 +128,8 @@ export interface PopoverExposed {
 -->
 <!-- Generic over your target names, so `target('…')` autocompletes from `motion.targets`. -->
 <script setup lang="ts" generic="N extends string = string">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose } from '../../motion/types'
 import './Popover.css'
 import '../shared/tokens.css'
 import {

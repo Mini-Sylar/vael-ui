@@ -86,8 +86,6 @@ export function openPopover<D = unknown, T = unknown, C extends Component = Comp
     return { result: Promise.resolve(undefined), close: () => {}, panelEl: computed(() => null) }
   const { props: componentProps = {}, data, onClose, ...popoverProps } = options
   const id = nextId++
-  const hasCustomBeforeClose = typeof popoverProps.beforeClose === 'function'
-
   let settled = false
   let resolveResult!: (value: T | undefined) => void
   const result = new Promise<T | undefined>((resolve) => {
@@ -135,7 +133,8 @@ export function openPopover<D = unknown, T = unknown, C extends Component = Comp
             const i = queue.findIndex((e) => e.id === id)
             if (i !== -1) queue.splice(i, 1)
           },
-          hasCustomBeforeClose ? 0 : POPOVER_EXIT_MS,
+          // `beforeClose` only allows or refuses now: the exit always plays.
+          POPOVER_EXIT_MS,
         )
       },
     ),

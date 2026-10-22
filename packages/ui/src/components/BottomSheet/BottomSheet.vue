@@ -63,6 +63,8 @@ import type { InjectionKey } from 'vue'
 import type { SheetSnapPoint } from '../../composables/useSheetDrag'
 import type { UiPartValue } from '../../classes'
 import type { DOMTarget } from '../../composables/dom'
+import type { BeforeClose, CloseContext } from '../../motion/types'
+import type { DialogCloseReason } from '../../composables/useDialog'
 export type { SheetSnapPoint }
 
 // Nested sheet announces open state; parent recedes Vaul-style (no consumer wiring).
@@ -112,10 +114,11 @@ export interface BottomSheetProps {
    */
   closeOnHistoryBack?: boolean
   /**
-   * Runs before closing; call `done()` to finish. If your animation already moved the sheet off
-   * screen, it closes at once. Otherwise the built-in slide-out plays.
+   * Runs before closing: return `true` to close, `false` to stay open, or a promise of either.
+   * `velocity` is the drag's release speed (px/s). If your own animation already moved the sheet
+   * off screen, it closes at once; otherwise the built-in slide-out plays.
    */
-  beforeClose?: (done: () => void) => void
+  beforeClose?: BeforeClose<DialogCloseReason>
   /** Teleport target: a CSS selector. Wins over `container` either way. */
   teleportTo?: string
   /** Element to contain the sheet in, instead of the viewport. Snap points use its height. */
@@ -147,6 +150,7 @@ import type { DialogExposed } from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
 import '../shared/tokens.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
+import { askGuard, closeContext } from '../../composables/useCloseGuard'
 import { resolveDOMTarget, prefersReducedMotion } from '../../composables/dom'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useUiMessages } from '../../messages'
@@ -239,14 +243,17 @@ watch(isClosing, (value) => {
 let exitTimer: ReturnType<typeof setTimeout> | undefined
 onScopeDispose(() => clearTimeout(exitTimer))
 
-// Off screen means beforeClose ran its own exit. Still up means it only confirmed, so slide out.
-function beforeClose(done: () => void) {
+// Dialog's guard: yours first (with the drag's release speed), then the slide-out, unless your own
+// animation already took the sheet off screen.
+async function beforeClose(context: CloseContext<DialogCloseReason>): Promise<boolean> {
   velocityAtClose.value = dragVelocity
   if (props.beforeClose) {
-    props.beforeClose(() => (isOffScreen() ? done() : animateClose(done)))
-    return
+    const ask = closeContext(context.reason, { velocity: dragVelocity * 1000 })
+    if (!(await askGuard(props.beforeClose, ask))) return false
+    if (isOffScreen()) return true
   }
-  animateClose(done)
+  await new Promise<void>((resolve) => animateClose(resolve))
+  return true
 }
 
 function isOffScreen() {

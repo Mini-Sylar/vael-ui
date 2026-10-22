@@ -92,6 +92,8 @@ export type { MenuAlign as SplitButtonAlign, MenuSide as SplitButtonSide }
 </script>
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose } from '../../motion/types'
 import './SplitButton.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
@@ -138,8 +140,8 @@ const rawProps = withDefaults(
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
+    /** Runs before the menu closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The menu stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
     /** Keeps the panel mounted (toggled with `v-show`) and skips the built-in transition, for JS
      * animation libraries. */
     forceMount?: boolean
