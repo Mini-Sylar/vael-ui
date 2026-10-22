@@ -8,7 +8,17 @@ export function isTimed(raw: unknown): raw is TimedValue<unknown> {
 }
 
 // What a value may name for the CSS engine; anything else is the runtime's.
-const KEYS = new Set(['opacity', 'x', 'y', 'translate', 'scale', 'rotate', 'blur', 'filter'])
+const KEYS = new Set([
+  'opacity',
+  'x',
+  'y',
+  'translate',
+  'scale',
+  'rotate',
+  'blur',
+  'filter',
+  'clipPath',
+])
 
 /** Known keys, no keyframe arrays, and x/y not timed apart (they share `translate`). */
 export function cssCanPlay(values: MotionValues | undefined): boolean {

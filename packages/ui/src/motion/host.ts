@@ -12,6 +12,8 @@ export interface RunnerHost {
   parts: () => Record<string, Element | null | undefined>
   root: () => Element | null | undefined
   phase: ShallowRef<MotionPhase>
+  /** The element `morph: 'trigger'` grows from: the one that opened the component. */
+  trigger?: () => Element | null | undefined
   onAfterEnter?: () => void
   onAfterLeave?: () => void
 }
@@ -20,4 +22,6 @@ export interface Runner {
   enter: (el: Element, done: () => void) => void
   leave: (el: Element, done: () => void) => void
   cancel: () => void
+  /** The component is going away: undo anything left on other elements. */
+  dispose?: () => void
 }

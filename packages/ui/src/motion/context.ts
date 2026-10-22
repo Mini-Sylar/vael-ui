@@ -58,6 +58,8 @@ export interface ResolvedMotion {
   enter?: AnyHook
   leave?: AnyHook
   exitOrder: 'together' | 'reverse'
+  /** Grow from this element's box and back into it: 'trigger' (the component's) or your getter. */
+  morph?: 'trigger' | (() => Element | null | undefined)
   reducedHooks: 'skip' | 'run'
 }
 
@@ -145,6 +147,7 @@ export function resolveMotion(input: {
     presets: style?.presets ?? {},
     enter: (own?.enter ?? keyStyle?.enter) as AnyHook | undefined,
     leave: (own?.leave ?? keyStyle?.leave) as AnyHook | undefined,
+    morph: (own?.morph ?? keyStyle?.morph ?? roleStyle?.morph) as ResolvedMotion['morph'],
     exitOrder:
       ((own?.exitOrder ?? keyStyle?.exitOrder ?? roleStyle?.exitOrder) as 'together' | 'reverse') ??
       'together',

@@ -497,6 +497,8 @@ const motion = useComponentMotion({
   timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
   // forceMount means you drive the motion; otherwise the engine plays the built-in look too.
   owns: () => !props.forceMount,
+  // morph: 'trigger' grows from the element that opened it.
+  trigger: () => (triggerEl?.isConnected && triggerEl !== document.body ? triggerEl : null),
 })
 const { target, phase } = motion
 // Your hook writes the backdrop's opacity every frame: no CSS transition may fight it.

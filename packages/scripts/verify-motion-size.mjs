@@ -8,8 +8,10 @@ import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
 
 const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
-// Measured sizes plus a little headroom: a budget catches regressions, it is not a target.
-const BUDGET = { shell: 2.5 * 1024, css: 4 * 1024, runtime: 6.5 * 1024 }
+// Measured sizes plus a little headroom: a budget catches regressions, it is not a target. Raise
+// one only for a deliberate, measured change, and say why here.
+// css 4 → 4.5 KB (2026-10-21): morph's glue stays in the engine (~0.4 KB); its kit is lazy (0.7 KB).
+const BUDGET = { shell: 2.5 * 1024, css: 4.5 * 1024, runtime: 6.5 * 1024 }
 
 // Every chunk a file pulls in statically.
 function closure(file, seen = new Set()) {

@@ -38,6 +38,8 @@ export interface ComponentMotionOptions {
   timing?: () => MotionTiming
   /** The engine plays the built-in look too, not the component's CSS (false while you drive it). */
   owns?: () => boolean
+  /** The element that opened it, for `morph: 'trigger'`. */
+  trigger?: () => Element | null | undefined
   onAfterEnter?: () => void
   onAfterLeave?: () => void
 }
@@ -99,6 +101,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     parts: currentParts,
     root: currentRoot,
     phase,
+    trigger: options.trigger,
     onAfterEnter: options.onAfterEnter,
     onAfterLeave: options.onAfterLeave,
   }
@@ -186,6 +189,8 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
 
   onScopeDispose(() => {
     cancel()
+    engines.css?.dispose?.()
+    engines.runtime?.dispose?.()
     for (const part of Object.values(options.parts()))
       for (const animation of part?.getAnimations?.() ?? [])
         if (animation.id === PRESENCE_ID) animation.cancel()

@@ -5,17 +5,19 @@ import '../components/shared/motion.css'
 import { nextTick } from 'vue'
 import { prefersReducedMotion } from '../composables/dom'
 import { springArrival, springEasing } from '../composables/springEasing'
+import type { ResolvedMotion } from './context'
 import type { Runner, RunnerHost } from './host'
 import { cssCanPlay, targetCanPlay } from './playable'
+import type * as Morph from './morph'
 import { collectEntries } from './presence'
 import { targetsOf } from './targets'
 import type { TargetGroup } from './targets'
 import type { MotionTiming, MotionValues, Spring } from './types'
 import { isTimed } from './values'
 
-const PROPS = ['opacity', 'translate', 'scale', 'rotate', 'filter'] as const
+const PROPS = ['opacity', 'translate', 'scale', 'rotate', 'filter', 'clip-path'] as const
 type Prop = (typeof PROPS)[number]
-const MOVES = new Set<Prop>(['translate', 'scale', 'rotate'])
+const MOVES = new Set<Prop>(['translate', 'scale', 'rotate', 'clip-path'])
 const DEFAULT_SPRING: Spring = { damping: 1, response: 0.32 }
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
 const FADE_CAP = 250
@@ -25,7 +27,6 @@ const REVERSE_STEP = 40
 const REVERSE_CAP = 200
 const QUIET_EXIT: MotionValues = { opacity: 0, scale: '0.97' }
 const QUIET_FADE: MotionValues = { opacity: 0 }
-
 interface Timed {
   easing: string
   duration: number
@@ -81,6 +82,8 @@ function plan(values: MotionValues, rtl: boolean): Plan {
     out.filter = { value: String(value(at('filter'))), ...extra(at('filter')) }
   for (const prop of ['opacity', 'scale', 'rotate'] as const)
     if (prop in values) out[prop] = { value: String(value(at(prop))), ...extra(at(prop)) }
+  if ('clipPath' in values)
+    out['clip-path'] = { value: String(value(at('clipPath'))), ...extra(at('clipPath')) }
   if (prefersReducedMotion()) for (const prop of PROPS) if (prop !== 'opacity') delete out[prop]
   return out
 }
@@ -162,6 +165,14 @@ async function settle(root: Element): Promise<void> {
     ])
 }
 
+/** The same values, each on the duration `t` sets, eased out (a fade alongside a morph). */
+function along(values: MotionValues, t: MotionTiming): MotionValues {
+  const out: Record<string, unknown> = {}
+  for (const [key, raw] of Object.entries(values))
+    out[key] = { value: isTimed(raw) ? raw.value : raw, duration: t.duration, easing: EASE_OUT }
+  return out as MotionValues
+}
+
 /** Start times (ms) of every part and target, from `after`, `delay` and `stagger`. */
 function schedule(
   parts: Record<string, Element>,
@@ -207,6 +218,9 @@ function schedule(
   return start
 }
 
+let morphKit: Promise<typeof Morph> | undefined
+const loadMorph = () => (morphKit ??= import('./morph'))
+
 /** The CSS engine. `fallback` loads the runtime for motion this engine can't play. */
 export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner>): Runner {
   let generation = 0
@@ -217,6 +231,23 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
 
   // Inline transitions to put back once the starting look has applied.
   const paused = new Map<HTMLElement, string>()
+  // The element a morph grew from: hidden while it's "become" the panel.
+  let hiddenSource: HTMLElement | null = null
+  const morphSource = (m: ResolvedMotion): HTMLElement | null => {
+    const source =
+      m.morph === 'trigger' ? host.trigger?.() : typeof m.morph === 'function' ? m.morph() : null
+    return source instanceof HTMLElement && source.isConnected && !prefersReducedMotion()
+      ? source
+      : null
+  }
+  const showSource = () => {
+    if (hiddenSource) hiddenSource.style.visibility = ''
+    hiddenSource = null
+  }
+  // A component that morphs fetches the morph kit as soon as it's set up.
+  if (host.resolved().morph) void loadMorph()
+  const morphTiming = (m: ResolvedMotion, fallback: MotionTiming) =>
+    ownTiming(m.timing) ? m.timing : fallback
   const parts = () =>
     Object.fromEntries(Object.entries(host.parts()).filter((e): e is [string, Element] => !!e[1]))
   const begin = (next: 'entering' | 'leaving') => {
@@ -282,8 +313,24 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       }
       moving.push(node)
     }
-    for (const [name, part] of Object.entries(own))
+    // Morph: the main part grows from the source's box, and its content fades in once under way.
+    const main = own[host.mainPart] as HTMLElement | undefined
+    const source = main ? morphSource(m) : null
+    // Not fetched yet: hidden meanwhile, so nothing shows at rest before the morph starts.
+    let kit: typeof Morph | undefined
+    if (source && main) {
+      const wait = (el as HTMLElement).animate([{ opacity: 0 }, { opacity: 0 }], {
+        duration: 1,
+        fill: 'forwards',
+      })
+      kit = await loadMorph()
+      wait.cancel()
+      if (id !== generation) return
+    }
+    for (const [name, part] of Object.entries(own)) {
+      if (kit && part === main) continue
       start$(part as HTMLElement, m.initial[name] ?? {}, partTiming(name), start[name] ?? 0)
+    }
     for (const g of groups) {
       const t = timedOf(g)
       g.els.forEach((target, i) =>
@@ -295,6 +342,15 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
         ),
       )
     }
+    let rest = ''
+    if (kit && source && main) {
+      rest = kit.morphEnter(source, main, morphTiming(m, kit.MORPH_IN), (node, values, t) => {
+        const timed = timing(node, t, spring)
+        start$(node, values, timed, 0)
+        return timed.arrival
+      })
+      hiddenSource = source
+    }
     // The starting look applies with transitions off (an element already on screen would otherwise
     // transition into it). Then transitions on and let go, in one change: each property transitions
     // from its starting look to the element's own style.
@@ -304,6 +360,11 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       paused.delete(node)
       node.setAttribute('data-ui-m', '')
       release(node)
+    }
+    // The clip can't interpolate to `none`: it goes to its resting inset, removed once settled.
+    if (rest && main) {
+      main.style.setProperty('--ui-m-clip-path', rest)
+      hold(main, ['clip-path'])
     }
     await settle(el)
     if (id !== generation) return
@@ -334,19 +395,41 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     const ordered = reverse ? [...content].reverse() : content
     const step = reverse ? Math.min(REVERSE_STEP, REVERSE_CAP / Math.max(1, ordered.length)) : 0
     const contentTime = reverse ? ordered.length * step + EXIT_CAP : 0
+    // Morph: shrink back onto the source where it is now, the content fading out first.
+    const main = own[host.mainPart] as HTMLElement | undefined
+    const source = main ? (hiddenSource ?? morphSource(m)) : null
+    const kit = source && main ? await loadMorph() : undefined
+    if (id !== generation) return
+    const morphed =
+      kit && source && main ? kit.morphLeave(source, main, morphTiming(m, kit.MORPH_OUT)) : []
     const moving: [HTMLElement, MotionValues, number][] = [
       ...ordered.map(({ g, target }, i): [HTMLElement, MotionValues, number] => [
         target,
         g.motion.exit ?? QUIET_FADE,
         i * step,
       ]),
-      ...Object.entries(own).map(([name, part]): [HTMLElement, MotionValues, number] => [
-        part as HTMLElement,
-        m.exit[name] ?? (name === host.mainPart ? QUIET_EXIT : QUIET_FADE),
+      ...Object.entries(own)
+        .filter(([, part]) => !morphed.length || part !== main)
+        .map(([name, part]): [HTMLElement, MotionValues, number] => {
+          const values = m.exit[name] ?? (name === host.mainPart ? QUIET_EXIT : QUIET_FADE)
+          // Morphing: the rest (the backdrop) leaves along with the box, so the box stays readable
+          // against the dim until it lands (its shadow is clipped with it).
+          return [
+            part as HTMLElement,
+            kit && morphed.length ? along(values, kit.MORPH_OUT) : values,
+            contentTime,
+          ]
+        }),
+      ...morphed.map(([node, values]): [HTMLElement, MotionValues, number] => [
+        node,
+        values,
         contentTime,
       ]),
     ]
     for (const [node, values, delay] of moving) {
+      // Transitions on first: any style read below (or for the next element) must already see them,
+      // or a value changed before they're on would snap instead of transitioning.
+      node.setAttribute('data-ui-m', '')
       // Anything mid-transition that the exit doesn't name freezes where it is: left to "back to
       // normal", a pending enter with the same end keeps running, delay and all (CSS Transitions §3).
       const now = getComputedStyle(node)
@@ -359,16 +442,19 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
         )
       for (const prop of running)
         node.style.setProperty(`--ui-m-${prop}`, now.getPropertyValue(prop))
-      node.setAttribute('data-ui-m', '')
       hold(node, [...named, ...running])
     }
     await settle(el)
+    // Back where it came from: the source shows again as the panel goes.
+    if (id === generation) showSource()
     finish()
   }
 
   return {
     enter: (el, done) => void enter(el, done),
     leave: (el, done) => void leave(el, done),
+    // Unmounted mid-morph: the source must never stay hidden.
+    dispose: showSource,
     cancel() {
       enteringEl = null
       repeatDones = []
