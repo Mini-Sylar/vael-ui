@@ -1,5 +1,12 @@
 <template>
-  <svg :width="size" :height="size" viewBox="0 0 32 32" aria-hidden="true" class="vael-logo">
+  <svg
+    ref="svg"
+    :width="size"
+    :height="size"
+    viewBox="0 0 32 32"
+    aria-hidden="true"
+    class="vael-logo"
+  >
     <!-- A halftone sphere: one dot per cell, sized by how much light reaches that point of the
          orb, with a Bayer threshold so the falloff dithers instead of fading. The light drifts
          slowly around the orb, so the dense side keeps moving. Dots taper toward the rim and the
@@ -11,11 +18,11 @@
     </defs>
     <g :clip-path="`url(#${clipId})`">
       <circle
-        v-for="dot in dots"
-        :key="dot.key"
-        :cx="dot.x"
-        :cy="dot.y"
-        :r="dot.r"
+        v-for="(cell, i) in cells"
+        :key="cell.key"
+        :cx="cell.x"
+        :cy="cell.y"
+        :r="initial[i]"
         fill="currentColor"
       />
     </g>
@@ -23,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, shallowRef, useId } from 'vue'
+import { onMounted, onUnmounted, useId, useTemplateRef } from 'vue'
 
 withDefaults(defineProps<{ size?: number }>(), { size: 24 })
 
@@ -74,39 +81,53 @@ for (let row = 0; row <= steps; row++) {
   }
 }
 
-const angle = shallowRef(-0.9)
-const dots = computed(() => {
-  const lx = Math.cos(angle.value) * 0.62
-  const ly = Math.sin(angle.value) * 0.62
+// Each dot's radius for a light at `angle` around the orb.
+function radii(angle: number): number[] {
+  const lx = Math.cos(angle) * 0.62
+  const ly = Math.sin(angle) * 0.62
   const lz = 0.78
   return cells.map((cell) => {
     const lit = Math.max(0, cell.nx * lx + cell.ny * ly + cell.nz * lz)
     // Dithered falloff: the threshold bites hardest in the half-lit band.
     const level = Math.min(1, Math.max(0, lit * 1.25 - cell.threshold * 0.3 + 0.08))
-    return {
-      key: cell.key,
-      x: cell.x,
-      y: cell.y,
-      r: (0.22 + level * (PITCH * 0.5 - 0.1)) * cell.rim,
-    }
+    return (0.22 + level * (PITCH * 0.5 - 0.1)) * cell.rim
   })
-})
+}
+const initial = radii(-0.9)
 
+// Every frame, straight to the dots (Vue at 20 Hz stuttered); a turn per ~40 s, paused off screen.
+const svg = useTemplateRef<SVGSVGElement>('svg')
+let angle = -0.9
 let frame = 0
 let last = 0
+let observer: IntersectionObserver | undefined
+let dots: Element[] = []
 function tick(now: number) {
-  // One full turn in about 40 seconds, updated 20 times a second: a drift, not a spin.
-  if (now - last > 50) {
-    last = now
-    angle.value += (Math.PI * 2 * 0.05) / 20
-  }
+  const dt = last ? Math.min(now - last, 100) : 16
+  last = now
+  angle += (Math.PI * 2 * dt) / 40_000
+  const next = radii(angle)
+  dots.forEach((dot, i) => dot.setAttribute('r', next[i]!.toFixed(3)))
   frame = requestAnimationFrame(tick)
 }
+function stop() {
+  cancelAnimationFrame(frame)
+  frame = 0
+  last = 0
+}
 onMounted(() => {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  frame = requestAnimationFrame(tick)
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !svg.value) return
+  dots = [...svg.value.querySelectorAll('circle[fill]')]
+  observer = new IntersectionObserver(([entry]) => {
+    if (!entry?.isIntersecting) stop()
+    else if (!frame) frame = requestAnimationFrame(tick)
+  })
+  observer.observe(svg.value)
 })
-onUnmounted(() => cancelAnimationFrame(frame))
+onUnmounted(() => {
+  observer?.disconnect()
+  stop()
+})
 </script>
 
 <style scoped>

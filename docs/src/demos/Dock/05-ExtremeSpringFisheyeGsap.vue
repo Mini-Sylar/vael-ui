@@ -3,9 +3,9 @@
     <h3>Extreme: a spring fisheye (GSAP)</h3>
     <p class="note">
       <code>:magnify="false"</code> turns the built-in magnification off, and
-      <code>itemEls()</code> hands you the item buttons. Here GSAP's <code>quickTo</code> springs
-      each icon's scale from its distance to the pointer, pushes its neighbors aside so the dock
-      grows around the cursor, and clicking an app launches it with a double bounce.
+      <code>itemEls()</code> hands you the item buttons. Here a spring per icon, stepped on GSAP's
+      ticker, sizes each one by its distance to the pointer and pushes its neighbors aside, so the
+      dock grows around the cursor. Clicking an app launches it with a double bounce.
     </p>
     <div class="stage">
       <Dock
@@ -53,32 +53,64 @@ const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const PEAK = 1.8
 const REACH = 62
+// A spring per icon, stepped on GSAP's ticker. A new pointer position only moves its target, so the
+// icon keeps its speed: restarting an elastic tween on every pointer event made it judder.
+const STIFFNESS = 420
+const DAMPING = 28
+interface Spring {
+  scale: number
+  x: number
+  vScale: number
+  vX: number
+  toScale: number
+  toX: number
+}
 let items: HTMLElement[] = []
-let toScaleX: ((value: number) => void)[] = []
-let toScaleY: ((value: number) => void)[] = []
-let toShift: ((value: number) => void)[] = []
+let springs: Spring[] = []
+let ticking = false
 
 function setup() {
   items = dock.value?.itemEls() ?? []
-  // A soft spring: quick to react, with a little overshoot as it settles.
-  const spring = { duration: 0.45, ease: 'elastic.out(1, 0.6)' }
-  toScaleX = items.map((el) => gsap.quickTo(el, 'scaleX', spring))
-  toScaleY = items.map((el) => gsap.quickTo(el, 'scaleY', spring))
-  toShift = items.map((el) =>
-    gsap.quickTo(el, 'x', { duration: 0.45, ease: 'elastic.out(1, 0.75)' }),
-  )
+  springs = items.map(() => ({ scale: 1, x: 0, vScale: 0, vX: 0, toScale: 1, toX: 0 }))
 }
 
-// Where each icon sits when nothing is magnified, across the dock.
-function rest(root: HTMLElement) {
-  return items.map((el) => el.offsetLeft - root.offsetLeft + el.offsetWidth / 2)
+function step(_time: number, deltaMs: number) {
+  const dt = Math.min(deltaMs, 32) / 1000
+  let moving = false
+  let grow = 0
+  springs.forEach((s, i) => {
+    s.vScale += (STIFFNESS * (s.toScale - s.scale) - DAMPING * s.vScale) * dt
+    s.scale += s.vScale * dt
+    s.vX += (STIFFNESS * (s.toX - s.x) - DAMPING * s.vX) * dt
+    s.x += s.vX * dt
+    if (Math.abs(s.toScale - s.scale) + Math.abs(s.toX - s.x) / 100 > 1e-4) moving = true
+    else Object.assign(s, { scale: s.toScale, x: s.toX, vScale: 0, vX: 0 })
+    gsap.set(items[i]!, { scale: s.scale, x: s.x })
+    grow += (s.scale - 1) * items[i]!.offsetWidth
+  })
+  // The bar widens with the icons, so the outer ones never hang off its ends.
+  dock.value?.el?.style.setProperty('--grow', `${grow}px`)
+  if (!moving) {
+    gsap.ticker.remove(step)
+    ticking = false
+  }
+}
+function aim(scales: number[], shifts: number[]) {
+  springs.forEach((s, i) => Object.assign(s, { toScale: scales[i], toX: shifts[i] }))
+  if (!ticking) gsap.ticker.add(step)
+  ticking = true
+}
+
+// Where each icon sits when nothing is magnified, across the dock (positioned, so it's their offsetParent).
+function rest() {
+  return items.map((el) => el.offsetLeft + el.offsetWidth / 2)
 }
 
 function onMove(event: PointerEvent) {
   const root = dock.value?.el
   if (!root || reduce() || event.pointerType !== 'mouse') return
   const pointer = event.clientX - root.getBoundingClientRect().left
-  const centers = rest(root)
+  const centers = rest()
   const scales = centers.map(
     (c) => 1 + (PEAK - 1) * Math.exp(-((pointer - c) ** 2) / (2 * REACH ** 2)),
   )
@@ -86,20 +118,19 @@ function onMove(event: PointerEvent) {
   const grown = items.map((el, i) => (scales[i]! - 1) * el.offsetWidth)
   const total = grown.reduce((sum, g) => sum + g, 0)
   let before = 0
-  items.forEach((_, i) => {
-    toScaleX[i]!(scales[i]!)
-    toScaleY[i]!(scales[i]!)
-    toShift[i]!(before + grown[i]! / 2 - total / 2)
-    before += grown[i]!
+  const shifts = grown.map((g) => {
+    const shift = before + g / 2 - total / 2
+    before += g
+    return shift
   })
+  aim(scales, shifts)
 }
 
 function onLeave() {
-  items.forEach((_, i) => {
-    toScaleX[i]!(1)
-    toScaleY[i]!(1)
-    toShift[i]!(0)
-  })
+  aim(
+    items.map(() => 1),
+    items.map(() => 0),
+  )
 }
 
 // Launching: two hops, the second lower, like an app starting up.
@@ -125,6 +156,7 @@ onBeforeUnmount(() => {
   const root = dock.value?.el
   root?.removeEventListener('pointermove', onMove)
   root?.removeEventListener('pointerleave', onLeave)
+  gsap.ticker.remove(step)
   gsap.killTweensOf(items)
 })
 </script>
@@ -138,5 +170,23 @@ onBeforeUnmount(() => {
 /* GSAP owns each icon's transform here, so the CSS transition would only smooth it a second time. */
 .stage :deep(.ui-dock-item) {
   transition: none;
+}
+/* The bar is drawn behind the icons, widened by --grow as they swell. */
+.stage :deep(.ui-dock) {
+  position: relative;
+  isolation: isolate;
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+.stage :deep(.ui-dock)::before {
+  content: '';
+  position: absolute;
+  inset: -1px calc(var(--grow, 0px) / -2 - 1px);
+  z-index: -1;
+  border: 1px solid var(--ui-border);
+  border-radius: inherit;
+  background: var(--ui-surface);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);
 }
 </style>

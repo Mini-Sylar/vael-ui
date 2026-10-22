@@ -52,6 +52,7 @@
           role="option"
           :aria-selected="i === active"
           :data-active="i === active || undefined"
+          @pointermove="active = i"
           @mousedown.prevent="pick(person)"
         >
           <strong>{{ person.name }}</strong> <span>{{ person.role }}</span>
@@ -94,8 +95,10 @@ function syncCaret() {
   if (!el) return
   caret.value = el.selectionStart
   const match = /@(\w*)$/.exec(text.value.slice(0, caret.value))
-  draft.value = match ? { start: match.index, query: match[1]!.toLowerCase() } : null
-  active.value = 0
+  const next = match ? { start: match.index, query: match[1]!.toLowerCase() } : null
+  // Keyup after an arrow lands here too: keep the highlight unless the query changed.
+  if (next?.start !== draft.value?.start || next?.query !== draft.value?.query) active.value = 0
+  draft.value = next
 }
 const listId = useId()
 const optionId = (person: Person) => `${listId}-${person.handle}`

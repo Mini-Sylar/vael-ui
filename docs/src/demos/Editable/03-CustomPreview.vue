@@ -56,12 +56,12 @@
         </template>
         <template #edit="{ value, update, submit }">
           <DatePicker
-            :model-value="value ? new Date(value) : null"
+            :model-value="value ? fromIso(value) : null"
             size="sm"
             aria-label="Due date"
             @update:model-value="
               (next) => {
-                update(next instanceof Date ? next.toISOString().slice(0, 10) : '')
+                update(next instanceof Date ? toIso(next) : '')
                 submit()
               }
             "
@@ -83,8 +83,12 @@ const long = shallowRef(
 const empty = shallowRef('')
 const status = shallowRef('In review')
 const due = shallowRef('2026-11-06')
+// Local days both ways: `new Date('2026-11-06')` and toISOString() are UTC and shift a day.
+const fromIso = (iso: string) => new Date(`${iso}T00:00`)
+const toIso = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 const dateLabel = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  fromIso(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 const statuses = ['Draft', 'In review', 'Approved', 'Shipped'].map((s) => ({ label: s, value: s }))
 const statusVariant: Record<string, 'muted' | 'success' | 'warning' | 'info'> = {
   Draft: 'muted',

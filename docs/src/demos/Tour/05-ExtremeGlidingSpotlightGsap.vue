@@ -100,11 +100,16 @@ let shown: Box | null = null
 let ringOpacity = 0
 // The elements we wrote inline styles on, to clean up even after Tour unmounts them.
 let touched: { spotlight: HTMLElement; panel: HTMLElement } | null = null
+// The positioner lands on its new spot after GSAP's frame, before the paint: redraw right then,
+// or the panel shows there for one frame.
+let follow: MutationObserver | null = null
 
 // An inline clip-path wins over Tour's own cutout. Removing it hands the spotlight back to Tour.
 function release() {
   timeline?.kill()
   timeline = null
+  follow?.disconnect()
+  follow = null
   shown = null
   ringOpacity = 0
   ring.value?.removeAttribute('style')
@@ -166,6 +171,9 @@ function glide({ step, previousStep, reason }: TourStepChangeDetails) {
     panel.style.translate = `${dx}px ${dy}px`
   }
   draw()
+  follow?.disconnect()
+  follow = new MutationObserver(draw)
+  follow.observe(positioner, { attributes: true, attributeFilter: ['style'] })
 
   timeline = gsap
     .timeline({ onUpdate: draw, onComplete: release })
