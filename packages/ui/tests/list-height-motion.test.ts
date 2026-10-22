@@ -49,15 +49,32 @@ test('narrowing a search eases the list to its new height instead of jumping', a
 async function heightsWhileTyping(list: HTMLElement, text: string): Promise<number[]> {
   const heights: number[] = []
   let typedAt = Infinity
+  // Under load the list can update late: keep sampling until it changes (up to 2s), then 300ms more.
+  let changedAt = Infinity
+  let done!: () => void
+  const finished = new Promise<void>((resolve) => (done = resolve))
   const sample = () => {
-    heights.push(list.getBoundingClientRect().height)
-    if (performance.now() - typedAt < 300) requestAnimationFrame(sample)
-    else if (typedAt === Infinity) requestAnimationFrame(sample)
+    const height = list.getBoundingClientRect().height
+    if (changedAt === Infinity && heights.length && Math.abs(height - heights[0]!) > 1)
+      changedAt = performance.now()
+    heights.push(height)
+    const now = performance.now()
+    if (
+      typedAt === Infinity ||
+      now - changedAt < 300 ||
+      (changedAt === Infinity && now - typedAt < 2000)
+    )
+      requestAnimationFrame(sample)
+    else done()
   }
   requestAnimationFrame(sample)
   await userEvent.keyboard(text)
   typedAt = performance.now()
-  await new Promise((resolve) => setTimeout(resolve, 550))
+  await finished
+  // And at least as long as before: callers then check the eased height has let go.
+  await new Promise((resolve) =>
+    setTimeout(resolve, Math.max(0, 550 - (performance.now() - typedAt))),
+  )
   return heights
 }
 function expectEased(heights: number[]) {
