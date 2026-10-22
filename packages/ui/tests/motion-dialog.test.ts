@@ -111,6 +111,15 @@ test('closing is quick and quiet, then emits after-leave', async () => {
   expect(panel()).toBeNull()
 })
 
+test("the engine's values stay on the element they move: a big dialog's content isn't restyled", async () => {
+  const { open } = dialog(undefined, () => h('p', { 'data-testid': 'inside' }, 'Body'))
+  open.value = true
+  await vi.waitFor(() => expect(panel()?.hasAttribute('data-ui-m')).toBe(true))
+  const inside = document.querySelector('[data-testid="inside"]')!
+  expect(getComputedStyle(panel()!).getPropertyValue('--ui-m-opacity-t')).not.toBe('')
+  expect(getComputedStyle(inside).getPropertyValue('--ui-m-opacity-t')).toBe('')
+})
+
 test('motion: false opens and closes instantly', async () => {
   const { open, events } = dialog(false)
   open.value = true

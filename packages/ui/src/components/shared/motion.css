@@ -1,3 +1,53 @@
+/* Not inherited: set on a panel, they'd otherwise restyle everything inside it on every write. */
+@property --ui-m-opacity {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-opacity-t {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-translate {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-translate-t {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-scale {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-scale-t {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-rotate {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-rotate-t {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-filter {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-filter-t {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-clip-path {
+  syntax: '*';
+  inherits: false;
+}
+@property --ui-m-clip-path-t {
+  syntax: '*';
+  inherits: false;
+}
+
 @layer ui-components {
   /*
     The CSS motion engine (motion/css.ts). While a phase runs, an element carries `data-ui-m` and,

@@ -100,7 +100,9 @@ function write(
   delayMs: number,
   leaving: boolean,
 ): Prop[] {
+  // Reads before any write: a read after one forces a style recalc.
   const steps = plan(values, getComputedStyle(el).direction === 'rtl')
+  const exitMs = leaving ? tokenMs(el, 'var(--ui-duration-exit)') : 0
   for (const prop of PROPS) {
     const own = steps[prop]
     const t = own?.timing ? timing(el, own.timing, fallback) : base
@@ -109,7 +111,7 @@ function write(
     if (!own?.timing) {
       if (leaving) {
         // vael-ui's exit token: the built-in look's exits and yours agree, and themes can change it.
-        duration = tokenMs(el, 'var(--ui-duration-exit)')
+        duration = exitMs
         easing = EASE_OUT
       } else if (!MOVES.has(prop)) {
         duration = Math.min(duration, FADE_CAP)
