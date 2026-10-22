@@ -81,6 +81,35 @@ export function useMotion<N extends string = string>(
 }
 
 const LIST_DEFAULT: MotionValues = { opacity: 0, y: 6 }
+
+interface ComponentListOptions {
+  /** Its key in a shared style (`fileUpload`); the `list` role's values apply under it. */
+  key?: keyof MotionStyle
+  /** The items' part name (`row`, `chip`, `toast`). */
+  part?: string
+  /** Shown in warnings. */
+  name?: string
+  /** The built-in look, for what your values leave out. */
+  look?: MotionValues | (() => MotionValues)
+  /** How leaving items go by default: `'hold'` for items already placed by hand (a fan). */
+  leaving?: 'pop' | 'hold'
+  /** The component places its items itself (a toast stack): no height to follow, no slides. */
+  arranged?: boolean
+  /** An item's own parts (a timeline step's `marker`): handed to hooks, and values play on them. */
+  parts?: (el: HTMLElement) => Record<string, HTMLElement | null>
+}
+
+/**
+ * @internal A component's own list (rows, chips, toasts) on the motion system: bind `transition`
+ * to its TransitionGroup when `motion` is yours (an object) or a shared style reaches it; otherwise
+ * it keeps its own CSS and this is never called.
+ */
+export function useComponentList<N extends string = string>(
+  motion: () => unknown,
+  as: ComponentListOptions,
+): UseMotionReturn<N> {
+  return useListMotion<N>(motion, as)
+}
 let lists = 0
 
 /**
@@ -88,17 +117,23 @@ let lists = 0
  * the rest slide into place, and the list's box follows its height. Keys: `initial.item`,
  * `exit.item`, `stagger`, `leaving`.
  */
-function useListMotion<N extends string>(motion?: () => unknown): UseMotionReturn<N> {
+function useListMotion<N extends string>(
+  motion?: () => unknown,
+  as: ComponentListOptions = {},
+): UseMotionReturn<N> {
   const style = useMotionStyle()
+  const part = as.part ?? 'item'
   const inner = useComponentMotion({
-    name: 'useMotion(list)',
+    name: as.name ?? 'useMotion(list)',
     role: 'list',
-    key: 'list',
-    mainPart: 'item',
+    key: as.key ?? 'list',
+    mainPart: part,
     parts: () => ({}),
     root: () => null,
     motion: () => motion?.() ?? {},
-    defaults: () => ({ item: LIST_DEFAULT }),
+    defaults: () => ({
+      [part]: (typeof as.look === 'function' ? as.look() : as.look) ?? LIST_DEFAULT,
+    }),
   })
   const own = () => (motion?.() ?? {}) as { stagger?: number; leaving?: 'pop' | 'hold' }
   const role = () => (style?.value?.list ?? {}) as { stagger?: number; leaving?: 'pop' | 'hold' }
@@ -109,9 +144,13 @@ function useListMotion<N extends string>(motion?: () => unknown): UseMotionRetur
   const loading = import('./list').then((module) => {
     list = module.createListMotion({
       id,
+      part,
+      name: as.name,
+      arranged: as.arranged,
+      parts: as.parts,
       resolved: () => inner.resolved.value,
       stagger: () => own().stagger ?? role().stagger ?? 0.03,
-      leaving: () => own().leaving ?? role().leaving ?? 'pop',
+      leaving: () => own().leaving ?? role().leaving ?? as.leaving ?? 'pop',
     })
     if (mounted) list.ready()
     return list

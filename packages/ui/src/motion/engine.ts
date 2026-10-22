@@ -3,9 +3,11 @@ import { prefersReducedMotion } from '../composables/dom'
 import { PRESENCE_ID, SLIDE_ID } from './ids'
 import { cssTime, resolveTiming, token, track } from './timing'
 import type { ResolvedTiming } from './timing'
-import type { MotionValues } from './types'
+import type { MotionEngine, MotionValues } from './types'
+import { runHook } from './hook'
 import {
   groupValues,
+  plainValues,
   reducePresence,
   reduceValues,
   splitFrame,
@@ -32,6 +34,8 @@ const canAnimate = (el: Element): el is HTMLElement =>
 
 /** Stops the enter/leave animations we started on an element (not slides, which add on top). */
 export function stopPresence(el: Element): void {
+  through.get(el)?.abort()
+  through.delete(el)
   if (!canAnimate(el)) return
   for (const animation of el.getAnimations()) if (animation.id === PRESENCE_ID) animation.cancel()
 }
@@ -42,6 +46,58 @@ export interface PlayOptions {
   /** Seconds before it starts. */
   delay?: number
   reduced?: boolean
+  /** A style's engine: your library plays it instead of WAAPI. */
+  engine?: MotionEngine
+}
+
+// What an engine is playing on each element, stopped like our own when it's interrupted.
+const through = new WeakMap<Element, AbortController>()
+const rest = (key: string, style: CSSStyleDeclaration): string | number =>
+  key === 'x' || key === 'y' ? 0 : key === 'scale' ? 1 : style.getPropertyValue(cssName(key))
+
+/** Plays `values` through your engine, in vael-ui's names, and waits for what it returns. */
+function playThrough(
+  engine: MotionEngine,
+  el: HTMLElement,
+  values: MotionValues,
+  options: PlayOptions,
+) {
+  const style = getComputedStyle(el)
+  const rtl = style.direction === 'rtl'
+  const at: Record<string, string | number> = {}
+  const home: Record<string, string | number> = {}
+  for (const [key, raw] of Object.entries(plainValues(values))) {
+    // Keyframe arrays aren't a from and a to: they stay ours.
+    if (Array.isArray(raw) || raw === undefined) continue
+    const value = raw as string | number
+    if (key === 'blur') {
+      at.filter = `blur(${typeof value === 'number' ? `${value}px` : value})`
+      home.filter = 'blur(0px)'
+    } else {
+      at[key] = key === 'x' && rtl && typeof value === 'number' ? -value : value
+      home[key] = rest(key, style)
+    }
+  }
+  through.get(el)?.abort()
+  const controller = new AbortController()
+  through.set(el, controller)
+  const { duration, easing, spring } = options.timing
+  const [from, to] = options.direction === 'out' ? [home, at] : [at, home]
+  return track(
+    runHook(
+      'engine',
+      options.direction === 'out' ? 'leave' : 'enter',
+      () =>
+        engine(el, from, to, {
+          duration: duration / 1000,
+          delay: options.delay ?? 0,
+          easing,
+          spring,
+        }),
+      controller.signal,
+      [el],
+    ),
+  )
 }
 
 /**
@@ -55,6 +111,10 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
   if (!Object.keys(state).length) {
     stopPresence(el)
     return Promise.resolve()
+  }
+  if (options.engine) {
+    stopPresence(el)
+    return playThrough(options.engine, el, state, options)
   }
   const style = getComputedStyle(el)
   const rtl = style.direction === 'rtl'
@@ -138,7 +198,7 @@ export function playKeyframes(
   const run = el.animate(frames, {
     id: PRESENCE_ID,
     duration: Math.min(timing.duration, 400),
-    easing: EASE_OUT,
+    easing: 'linear',
   })
   return track(
     run.finished.then(

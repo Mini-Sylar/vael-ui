@@ -7,6 +7,9 @@ export interface MotionOptions {
   spring?: IndicatorSpring
 }
 
+/** The drawer's spring: critically damped, so a flick never bounces past where it rests. */
+export const FLING_SPRING: IndicatorSpring = { damping: 1, response: 0.4 }
+
 const cache = new Map<string, { easing: string; duration: number; arrival: number }>()
 
 /**

@@ -25,7 +25,80 @@ const ROLES = [
   'content',
   'gesture',
 ] as const
-const COMPONENTS = ['dialog', 'popover', 'toaster', 'tabs', 'input', 'slider'] as const
+const COMPONENTS = [
+  'dialog',
+  'popover',
+  'menu',
+  'toaster',
+  'tabs',
+  'input',
+  'otpInput',
+  'calendar',
+  'fileUpload',
+  'commandPalette',
+  'speedDial',
+  'dataTable',
+  'select',
+  'combobox',
+  'cascadeSelect',
+  'datePicker',
+  'tooltip',
+  'message',
+  'treeSelect',
+  'timeline',
+  'button',
+  'accordion',
+  'slider',
+  'animatedNumber',
+  'animatedText',
+  'avatar',
+  'avatarGroup',
+  'badge',
+  'breadcrumb',
+  'buttonGroup',
+  'card',
+  'checkbox',
+  'chip',
+  'collapsible',
+  'dial',
+  'dock',
+  'editable',
+  'field',
+  'inputNumber',
+  'kbd',
+  'knob',
+  'loader',
+  'passwordInput',
+  'progress',
+  'pullToRefresh',
+  'radio',
+  'radioGroup',
+  'rating',
+  'resizable',
+  'scrollArea',
+  'skeleton',
+  'sortable',
+  'stepper',
+  'swipeToReveal',
+  'switch',
+  'tag',
+  'textarea',
+  'tree',
+  'menuList',
+  'pagination',
+  'selectButton',
+  'toolbar',
+  'colorPicker',
+  'separator',
+] as const
+// Every component key in MotionStyle, so a style for one is never dropped as unknown.
+type ComponentKey = Exclude<
+  keyof MotionStyle,
+  'version' | 'spring' | 'engine' | 'filters' | 'reducedMotion' | 'presets' | (typeof ROLES)[number]
+>
+type Unlisted = Exclude<ComponentKey, (typeof COMPONENTS)[number]>
+const everyComponent: [Unlisted] extends [never] ? true : Unlisted = true
+void everyComponent
 
 // Animatable properties a shared style may set: paint and transform, never layout.
 const PROPERTIES = new Set([
@@ -233,7 +306,24 @@ function component(input: unknown, path: string, issues: Issues): Data | undefin
         }
         out.targets = targets
       }
-    } else if (key === 'exitOrder' && (raw === 'together' || raw === 'reverse')) out.exitOrder = raw
+    } else if (key === 'states') {
+      if (!isData(raw)) issues.push(`${path}.states: expected states by name`)
+      else {
+        const states: Data = {}
+        for (const [name, value] of entries(raw, `${path}.states`, issues)) {
+          const parsed = parts(value, `${path}.states.${name}`, issues)
+          if (parsed) states[name] = parsed
+        }
+        out.states = states
+      }
+    } else if (key === 'chips' || key === 'items') {
+      const parsed = component(raw, `${path}.${key}`, issues)
+      if (parsed) out[key] = parsed
+    } else if (key === 'resize' && typeof raw === 'boolean') out.resize = raw
+    else if (key === 'swap' && (raw === 'sync' || raw === 'wait')) out.swap = raw
+    else if (key === 'when' && (raw === 'mount' || raw === 'visible')) out.when = raw
+    else if (key === 'morph' && raw === 'trigger') out.morph = raw
+    else if (key === 'exitOrder' && (raw === 'together' || raw === 'reverse')) out.exitOrder = raw
     else if (key === 'stagger' && inRange(raw, 0, 1)) out.stagger = raw
     else if (key === 'leaving' && (raw === 'pop' || raw === 'hold')) out.leaving = raw
     else issues.push(`${path}.${key}: unknown or invalid`)

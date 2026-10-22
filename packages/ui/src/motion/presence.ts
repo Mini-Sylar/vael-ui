@@ -64,18 +64,27 @@ export function presenceFor(root: Element): Presence {
 }
 
 /**
- * Everything that belongs to a root, in page order: `v-animate` registrations plus elements `target()` stamped.
+ * Everything that belongs to a root, in page order: `v-animate` registrations, elements `target()`
+ * stamped, and the ones your targets' `select` finds (rows a component renders from data).
  * Read at enter/leave time, so it doesn't matter that Vue calls function refs before the root has its marker.
  */
-export function collectEntries(root: Element): PresenceEntry[] {
+export function collectEntries(
+  root: Element,
+  targets: Record<string, TargetMotion> = {},
+): PresenceEntry[] {
   const registered = presenceFor(root).entries()
   const seen = new Set(registered.map((entry) => entry.el))
   const stamped: PresenceEntry[] = []
-  for (const el of root.querySelectorAll(`[${TARGET_ATTR}]`)) {
-    // Elements inside a nested component belong to that component.
-    if (seen.has(el) || el.parentElement?.closest(`[${PRESENCE_ATTR}]`) !== root) continue
-    stamped.push({ el, name: el.getAttribute(TARGET_ATTR)! })
+  const take = (selector: string, name: (el: Element) => string) => {
+    for (const el of root.querySelectorAll(selector)) {
+      // Elements inside a nested component belong to that component.
+      if (seen.has(el) || el.parentElement?.closest(`[${PRESENCE_ATTR}]`) !== root) continue
+      seen.add(el)
+      stamped.push({ el, name: name(el) })
+    }
   }
+  take(`[${TARGET_ATTR}]`, (el) => el.getAttribute(TARGET_ATTR)!)
+  for (const [name, t] of Object.entries(targets)) if (t.select) take(t.select, () => name)
   return [...registered, ...stamped].sort((a, b) =>
     a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
   )

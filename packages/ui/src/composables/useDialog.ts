@@ -4,7 +4,7 @@ import { useEventListener } from '@vueuse/core'
 import { useLayer } from './useLayerStack'
 import { useScrollLock } from './useScrollLock'
 import { useInert } from './useInert'
-import { getFocusable, useDOMTarget, type DOMTarget, type ElRef } from './dom'
+import { getFocusable, opener, useDOMTarget, type DOMTarget, type ElRef } from './dom'
 import { ssrDocument } from '../ssr'
 import { useCloseGuard } from './useCloseGuard'
 import type { BeforeClose } from '../motion/types'
@@ -287,8 +287,8 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     isOpen.value = true
     pushHistoryEntry()
     if (modalActive) {
-      previouslyFocused =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null
+      // What opened it, even in Safari (a clicked button isn't focused there): focus goes back to it.
+      previouslyFocused = opener()
       scrollLocked.value = true
       // inert blurs whatever is focused inside it, so this must happen before the focus steal.
       if (containedActive) inerted.value = true

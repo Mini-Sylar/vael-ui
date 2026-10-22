@@ -92,6 +92,25 @@ export interface Thenable {
 /** Return your animation and vael-ui waits for it, and stops it (`kill`/`stop`/`cancel`) if interrupted. */
 export type MotionResult = Thenable | Animation | void
 
+/** What your engine gets: seconds, a CSS easing, and the spring behind it when there is one. */
+export interface EngineTiming {
+  duration: number
+  delay: number
+  easing: string
+  spring?: Spring
+}
+/**
+ * Animates `el` from `from` to `to` with your library, and returns what it returns, so vael-ui waits
+ * for it and stops it when interrupted. Values use vael-ui's names (`x`, `y`, `scale`, `opacity`, any
+ * CSS property); `blur` arrives as `filter`.
+ */
+export type MotionEngine = (
+  el: HTMLElement,
+  from: Record<string, string | number>,
+  to: Record<string, string | number>,
+  timing: EngineTiming,
+) => MotionResult
+
 export interface MotionContext<N extends string = string> {
   /** Aborts when the motion is interrupted (closed mid-open, reopened mid-close). */
   signal: AbortSignal
@@ -135,10 +154,18 @@ export type MotionStep<N extends string = string> = MotionTiming & {
 }
 
 export type TargetMotion<N extends string = string> = MotionTiming & {
-  initial?: MotionValues
-  exit?: MotionValues
-  /** Seconds between the elements under this name. */
-  stagger?: number
+  /** Where it comes in from. A function receives `where`: a swap's direction, its index. */
+  initial?: MotionValues | ((where: MotionWhere) => MotionValues)
+  /**
+   * Where it leaves to. A function receives `where`, read as it leaves. Unset, it leaves back the
+   * way it came, quieter and quicker; `false` leaves at once.
+   */
+  exit?: MotionValues | ((where: MotionWhere) => MotionValues) | false
+  /**
+   * Seconds between the elements under this name. A function gives each its own start, in seconds
+   * after the first: `(index, count) => …`, such as outward from the centre of a grid.
+   */
+  stagger?: number | ((index: number, count: number) => number)
   /** After this moment, or after all of these. Unset: with the component. */
   after?: MotionMoment<N> | MotionMoment<N>[]
   delay?: number
@@ -149,6 +176,15 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   slot?: string
   /** Plays `initial` again whenever this value changes, without remounting the element. */
   replay?: unknown
+  /**
+   * Elements sharing a `layoutId` are one element moving between places: when one leaves and
+   * another arrives in the same moment, the newcomer slides from the old one's box into its own.
+   */
+  layoutId?: string
+  /** Slides to wherever layout puts it (a sibling growing, a list reordering): its position. */
+  layout?: boolean
+  /** `'visible'`: on its own (no component around it), it appears once scrolled into view. */
+  when?: 'mount' | 'visible'
 }
 
 // ─── Guards ──────────────────────────────────────────────────────────────────
@@ -220,6 +256,13 @@ export interface MotionSpec {
 type Parts<S extends MotionSpec> = S['parts']
 type States<S extends MotionSpec> = S['states'] extends string ? S['states'] : never
 
+type HookContext<S extends MotionSpec, N extends string> = MotionContext<NoInfer<N>> &
+  (S['list'] extends true ? ListHookContext : unknown)
+export interface ListHookContext {
+  /** Its place among the items entering together, for your own stagger; `0` when leaving. */
+  index: number
+}
+
 type BaseMotion<S extends MotionSpec, N extends string> = MotionTiming & {
   /** Appearance: where it comes in from (mount, `v-if`, opening). Opt-in, never on hydration. */
   initial?: PartValues<Parts<S>>
@@ -228,8 +271,8 @@ type BaseMotion<S extends MotionSpec, N extends string> = MotionTiming & {
   /** Your elements inside it, by name. Names are read from these keys only, never from `after`. */
   targets?: { [K in N]?: TargetMotion<NoInfer<N> | Parts<S>> }
   states?: StateMotion<States<S>, Parts<S>>
-  enter?: MotionHook<Parts<S>, MotionContext<NoInfer<N>>>
-  leave?: MotionHook<Parts<S>, MotionContext<NoInfer<N>>>
+  enter?: MotionHook<Parts<S>, HookContext<S, N>>
+  leave?: MotionHook<Parts<S>, HookContext<S, N>>
   /** Opening: `false` starts on its own instead of after the component it sits in. */
   join?: boolean
   /** Hooks under reduced motion: skipped unless `'run'`. */
@@ -245,7 +288,12 @@ type OverlayMotion = {
    * open, as if it became the panel; `{ from: 'trigger', hide: false }` keeps it on screen.
    */
   morph?: MorphFrom | { from: MorphFrom; /** @default true */ hide?: boolean }
-  /** A shapes-only layer behind trigger and panel; filters here never touch text. */
+  /**
+   * A layer of shapes above the page and behind the panel: a pill on the trigger and a blob that
+   * moves as the panel does, both in the panel's colour. Give it a filter, such as a goo, and the
+   * text stays sharp. Popover only. The trigger is cut out of the layer so the real one shows, and
+   * the panel goes clear while open.
+   */
   surface?: MotionValues
   linked?: Record<string, LinkedMotion>
   /** Closing: `'together'` (default) or `'reverse'`, children first, adding about 300 ms at most. */
@@ -265,6 +313,11 @@ type IndicatorMotion<S extends MotionSpec, N extends string> = {
 type SwapMotion = {
   /** `'sync'` (default) cross-fades; `'wait'` lets the old one leave first. */
   swap?: 'sync' | 'wait'
+  /**
+   * Which way the next swap goes: `1` forward, `-1` back. Values written as functions receive it
+   * as `where.direction` when the swap happens, so the view leaving reads the new direction too.
+   */
+  direction?: 1 | -1 | 0
 }
 type ValueMotion = {
   /** `'visible'` starts when scrolled into view instead of on mount. */
@@ -303,6 +356,21 @@ export type PopoverMotion<N extends string = string> = ComponentMotion<
   N
 >
 
+/** Tooltip's box: values or hooks for its parts, like Popover's. Warm opens stay instant. */
+export type TooltipMotion<N extends string = string> = ComponentMotion<
+  { parts: PopoverPart; overlay: true },
+  N
+>
+
+/** Message coming and going: values or hooks for `root`. */
+export type MessageMotion<N extends string = string> = ComponentMotion<{ parts: 'root' }, N>
+
+export type MenuPart = 'positioner' | 'panel'
+export type MenuMotion<N extends string = string> = ComponentMotion<
+  { parts: MenuPart; overlay: true },
+  N
+>
+
 export type ToasterPart =
   | 'root'
   | 'toast'
@@ -328,6 +396,89 @@ export type InputMotion = ComponentMotion<{
   states: 'invalid' | 'disabled' | 'focus'
 }>
 
+export type OtpInputPart = 'root'
+export type OtpInputMotion = ComponentMotion<{
+  parts: OtpInputPart
+  states: 'invalid' | 'complete' | 'disabled' | 'focus'
+}>
+
+export type FileUploadPart = 'item'
+/** FileUpload's rows: values or hooks for `item`, and the list's `stagger` and `leaving`. */
+export type FileUploadMotion = ComponentMotion<{ parts: FileUploadPart; list: true }>
+
+export type CommandPalettePart = DialogPart
+/** CommandPalette's result rows: values or hooks for `item`, and the list's `stagger`. */
+export type CommandPaletteItemsMotion = Exclude<
+  ComponentMotion<{ parts: 'item'; list: true }>,
+  boolean
+>
+/** CommandPalette's dialog, like Dialog's. `items` moves the result rows. */
+export type CommandPaletteMotion<N extends string = string> =
+  DialogMotion<N> extends infer M
+    ? M extends boolean
+      ? M
+      : M & {
+          /** The result rows: values or hooks for `item`, and the list's `stagger`. */
+          items?: CommandPaletteItemsMotion
+        }
+    : never
+
+export type SpeedDialPart = 'action'
+/** SpeedDial's actions: values or hooks for `action`, the list's `stagger` and `leaving`. */
+export type SpeedDialMotion = ComponentMotion<{ parts: SpeedDialPart; list: true }>
+
+/** A select's chips (`multiple`): values or hooks for `chip`, and the list's `stagger` and `leaving`. */
+export type ChipsMotion = Exclude<ComponentMotion<{ parts: 'chip'; list: true }>, boolean>
+type WithChips<M> = M extends boolean
+  ? M
+  : M & {
+      /** The chips (`multiple`): values or hooks for `chip`, and the list's `stagger` and `leaving`. */
+      chips?: ChipsMotion
+    }
+
+export type SelectPart = 'positioner' | 'panel'
+/** Select's panel: values or hooks for its parts, like Popover's. `chips` moves the chips. */
+export type SelectMotion<N extends string = string> = WithChips<
+  ComponentMotion<{ parts: SelectPart; overlay: true }, N>
+>
+/** Combobox's panel: values or hooks for its parts, like Popover's. `chips` moves the chips. */
+export type ComboboxMotion<N extends string = string> = SelectMotion<N>
+/** CascadeSelect's menu, like Menu's. `chips` moves the chips. */
+export type CascadeSelectMotion<N extends string = string> = WithChips<MenuMotion<N>>
+/** DatePicker's panel: values or hooks for its parts, like Popover's. */
+export type DatePickerMotion<N extends string = string> = ComponentMotion<
+  { parts: SelectPart; overlay: true },
+  N
+>
+/** TreeSelect's panel: values or hooks for its parts, like Popover's. */
+export type TreeSelectMotion<N extends string = string> = DatePickerMotion<N>
+
+export type TimelinePart =
+  | 'item'
+  | 'marker'
+  | 'connector'
+  | 'previousConnector'
+  | 'content'
+  | 'opposite'
+/**
+ * Timeline's steps: values or hooks for `item` and its parts (`connector` is missing on the last
+ * step, `previousConnector` on the first, `opposite` without the slot), `stagger` and `leaving`.
+ */
+export type TimelineMotion = ComponentMotion<{ parts: TimelinePart; list: true }>
+
+export type DataTablePart = 'row'
+/** DataTable's body rows: values or hooks for `row`, and the list's `stagger`. */
+export type DataTableMotion = ComponentMotion<{ parts: DataTablePart; list: true }>
+
+export type CalendarPart = 'label' | 'grid'
+/**
+ * How Calendar's label and grid change months. Give each part's look as values, or as a
+ * function of `where`: its `direction` is `1` going forward and `-1` going back.
+ */
+export type CalendarMotion =
+  | boolean
+  | (MotionTiming & { initial?: PartValues<CalendarPart>; exit?: PartValues<CalendarPart> })
+
 export type SliderPart = 'root' | 'track' | 'fill' | 'thumb'
 export type SliderMotion = ComponentMotion<{
   parts: SliderPart
@@ -348,6 +499,233 @@ export type AccordionMotion = ComponentMotion<{ parts: AccordionPart; states: 'o
 export type SeparatorPart = 'root' | 'line' | 'text'
 export type SeparatorMotion = ComponentMotion<{ parts: SeparatorPart }>
 
+// ─── Every other component: appearance (`initial`), states, and its kind ───
+
+/** Parts that repeat (stars, rows, steps) appear one after another, this many seconds apart. */
+type Staggered = { stagger?: number }
+type WithStagger<M> = M extends boolean ? M : M & Staggered
+
+export type AnimatedNumberPart = 'root'
+/** AnimatedNumber: its appearance, timing for the roll, and `when: 'visible'`. */
+export type AnimatedNumberMotion = ComponentMotion<{ parts: AnimatedNumberPart; value: true }>
+
+export type AnimatedTextPart = 'root'
+/** AnimatedText: its appearance and the swap's timing. */
+export type AnimatedTextMotion = ComponentMotion<{ parts: AnimatedTextPart }>
+
+export type AvatarPart = 'root' | 'image' | 'fallback' | 'badge'
+/** Avatar: its parts' appearance, like the image fading in over the fallback. */
+export type AvatarMotion = ComponentMotion<{ parts: AvatarPart }>
+
+export type AvatarGroupPart = 'root' | 'avatar'
+/** AvatarGroup: its appearance, avatar by avatar. */
+export type AvatarGroupMotion = ComponentMotion<{ parts: AvatarGroupPart; list: true }>
+
+export type BadgePart = 'root'
+/** Badge: its appearance. */
+export type BadgeMotion = ComponentMotion<{ parts: BadgePart }>
+
+export type BreadcrumbPart = 'root' | 'item'
+/** Breadcrumb: its appearance, crumb by crumb. */
+export type BreadcrumbMotion = ComponentMotion<{ parts: BreadcrumbPart; list: true }>
+
+export type ButtonGroupPart = 'root'
+/** ButtonGroup: its appearance; its buttons keep their own `motion`. */
+export type ButtonGroupMotion = ComponentMotion<{ parts: ButtonGroupPart }>
+
+export type CardPart = 'root' | 'header' | 'title' | 'description' | 'body' | 'footer'
+/** Card: its parts' appearance, and press states on an interactive card. */
+export type CardMotion = ComponentMotion<{ parts: CardPart; states: 'active' | 'hover' | 'focus' }>
+
+export type CheckboxPart = 'root' | 'control' | 'indicator' | 'label'
+/** Checkbox: its appearance and states. */
+export type CheckboxMotion = ComponentMotion<{
+  parts: CheckboxPart
+  states: 'checked' | 'indeterminate' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover'
+}>
+
+export type ChipPart = 'root' | 'remove'
+/** Chip: its appearance and press states. */
+export type ChipMotion = ComponentMotion<{
+  parts: ChipPart
+  states: 'disabled' | 'focus' | 'active' | 'hover'
+}>
+
+export type CollapsiblePart = 'root' | 'trigger' | 'panel'
+/** Collapsible: its appearance and states. */
+export type CollapsibleMotion = ComponentMotion<{
+  parts: CollapsiblePart
+  states: 'open' | 'disabled'
+}>
+
+export type DialPart = 'root' | 'track' | 'fill' | 'face' | 'ticks'
+/** Dial: its appearance, states and the fill's timing. */
+export type DialMotion = ComponentMotion<{
+  parts: DialPart
+  states: 'disabled' | 'focus' | 'active'
+}>
+
+export type DockPart = 'root' | 'item'
+/** Dock: its appearance, item by item. */
+export type DockMotion = WithStagger<ComponentMotion<{ parts: DockPart }>>
+
+export type EditablePart = 'root' | 'preview' | 'edit' | 'input' | 'actions'
+/** Editable: its appearance and states. */
+export type EditableMotion = ComponentMotion<{
+  parts: EditablePart
+  states: 'editing' | 'disabled' | 'focus'
+}>
+
+export type FieldPart = 'root' | 'label' | 'control' | 'description' | 'error'
+/** Field: its parts' appearance and states. */
+export type FieldMotion = ComponentMotion<{
+  parts: FieldPart
+  states: 'invalid' | 'disabled' | 'focus'
+}>
+
+export type InputNumberPart = 'root' | 'input' | 'increment' | 'decrement'
+/** InputNumber: its appearance and states. */
+export type InputNumberMotion = ComponentMotion<{
+  parts: InputNumberPart
+  states: 'invalid' | 'disabled' | 'focus'
+}>
+
+export type KbdPart = 'root'
+/** Kbd: its appearance. */
+export type KbdMotion = ComponentMotion<{ parts: KbdPart }>
+
+export type KnobPart = 'root' | 'track' | 'fill' | 'indicator'
+/** Knob: its appearance, states and the fill's timing. */
+export type KnobMotion = ComponentMotion<{
+  parts: KnobPart
+  states: 'disabled' | 'focus' | 'active'
+}>
+
+export type LoaderPart = 'root'
+/** Loader: its appearance; `false` holds it still. */
+export type LoaderMotion = ComponentMotion<{ parts: LoaderPart }>
+
+export type PasswordInputPart = 'root' | 'input' | 'toggle' | 'hint'
+/** PasswordInput: its appearance and states. */
+export type PasswordInputMotion = ComponentMotion<{
+  parts: PasswordInputPart
+  states: 'invalid' | 'disabled' | 'focus'
+}>
+
+export type ProgressPart = 'root' | 'track' | 'fill' | 'legend'
+/** Progress: its appearance, states, and the fill's timing and `when: 'visible'`. */
+export type ProgressMotion = ComponentMotion<{
+  parts: ProgressPart
+  states: 'complete' | 'indeterminate'
+  value: true
+}>
+
+export type PullToRefreshPart = 'root' | 'indicator'
+/** PullToRefresh: its appearance and states. */
+export type PullToRefreshMotion = ComponentMotion<{
+  parts: PullToRefreshPart
+  states: 'pulling' | 'refreshing'
+}>
+
+export type RadioPart = 'root' | 'control' | 'label' | 'description'
+/** Radio: its appearance and states. */
+export type RadioMotion = ComponentMotion<{
+  parts: RadioPart
+  states: 'checked' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover'
+}>
+
+export type RadioGroupPart = 'root'
+/** RadioGroup: its appearance; its radios keep their own `motion`. */
+export type RadioGroupMotion = ComponentMotion<{ parts: RadioGroupPart }>
+
+export type RatingPart = 'root' | 'item'
+/** Rating: its appearance, star by star, and states. */
+export type RatingMotion = WithStagger<
+  ComponentMotion<{ parts: RatingPart; states: 'disabled' | 'focus' }>
+>
+
+export type ResizablePart = 'root' | 'handle'
+/** Resizable: its appearance and states. */
+export type ResizableMotion = ComponentMotion<{ parts: ResizablePart; states: 'dragging' }>
+
+export type ScrollAreaPart = 'root'
+/** ScrollArea: its appearance. */
+export type ScrollAreaMotion = ComponentMotion<{ parts: ScrollAreaPart }>
+
+export type SkeletonPart = 'root'
+/** Skeleton: its appearance; `false` holds the pulse still. */
+export type SkeletonMotion = ComponentMotion<{ parts: SkeletonPart }>
+
+export type SortablePart = 'root' | 'item'
+/** Sortable: its appearance, row by row, and states. */
+export type SortableMotion = WithStagger<
+  ComponentMotion<{ parts: SortablePart; states: 'dragging' | 'settling' }>
+>
+
+export type StepperPart = 'root' | 'step' | 'circle' | 'connector' | 'content'
+/** Stepper: its parts' appearance, step by step. */
+export type StepperMotion = WithStagger<ComponentMotion<{ parts: StepperPart }>>
+
+export type SwipeToRevealPart = 'root' | 'content' | 'actions'
+/** SwipeToReveal: its appearance and states. */
+export type SwipeToRevealMotion = ComponentMotion<{
+  parts: SwipeToRevealPart
+  states: 'open' | 'dragging'
+}>
+
+export type SwitchPart = 'root' | 'track' | 'thumb'
+/** Switch: its appearance and states. */
+export type SwitchMotion = ComponentMotion<{
+  parts: SwitchPart
+  states: 'checked' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover' | 'dragging'
+}>
+
+export type TagPart = 'root'
+/** Tag: its appearance and press states. */
+export type TagMotion = ComponentMotion<{
+  parts: TagPart
+  states: 'focus' | 'active' | 'hover'
+}>
+
+export type TextareaPart = 'root' | 'textarea'
+/** Textarea: its appearance and states. */
+export type TextareaMotion = ComponentMotion<{
+  parts: TextareaPart
+  states: 'invalid' | 'disabled' | 'focus'
+}>
+
+export type TreePart = 'list' | 'node' | 'chevron' | 'label'
+/** Tree: its appearance, row by row. */
+export type TreeMotion = WithStagger<ComponentMotion<{ parts: TreePart }>>
+
+export type MenuListPart = 'root' | 'item' | 'indicator'
+/** MenuList: its appearance, and how the current-page indicator moves. */
+export type MenuListMotion = WithStagger<ComponentMotion<{ parts: MenuListPart; indicator: true }>>
+
+export type PaginationPart = 'root' | 'button' | 'indicator'
+/** Pagination: its appearance, and how the current-page indicator moves. */
+export type PaginationMotion = WithStagger<
+  ComponentMotion<{ parts: PaginationPart; indicator: true }>
+>
+
+export type SelectButtonPart = 'root' | 'option' | 'indicator'
+/** SelectButton: its appearance, and how the selection moves. */
+export type SelectButtonMotion = WithStagger<
+  ComponentMotion<{ parts: SelectButtonPart; states: 'disabled'; indicator: true }>
+>
+
+export type ToolbarPart = 'root' | 'item' | 'indicator'
+/** Toolbar: its appearance, and how the hover highlight moves. */
+export type ToolbarMotion = WithStagger<ComponentMotion<{ parts: ToolbarPart; indicator: true }>>
+
+export type ColorPickerPart = 'swatch' | 'positioner' | 'panel'
+/** ColorPicker: the swatch's appearance and states, and the panel like Popover's. */
+export type ColorPickerMotion = ComponentMotion<{
+  parts: ColorPickerPart
+  states: 'disabled'
+  overlay: true
+}>
+
 // ─── App-wide style (ConfigProvider `motion`) ────────────────────────────────
 
 /** An SVG filter as data. Rendered once by ConfigProvider; reference it as `url(#name)`. */
@@ -364,6 +742,8 @@ export interface MotionStyle {
   /** Schema version, so a style outlives releases. */
   version: 1
   spring?: Spring
+  /** Your animation library behind vael-ui's values, for components inside. Code only, never data. */
+  engine?: MotionEngine
   filters?: Record<string, MotionFilter>
   reducedMotion?: 'user' | 'always' | 'never'
   overlay?: RoleValues & {
@@ -387,12 +767,68 @@ export interface MotionStyle {
   /** Per-component overrides, beating the role. */
   dialog?: Exclude<DialogMotion, boolean>
   popover?: Exclude<PopoverMotion, boolean>
+  menu?: Exclude<MenuMotion, boolean>
   toaster?: Exclude<ToasterMotion, boolean>
   tabs?: Exclude<TabsMotion, boolean>
   input?: Exclude<InputMotion, boolean>
+  otpInput?: Exclude<OtpInputMotion, boolean>
+  calendar?: Exclude<CalendarMotion, boolean>
+  fileUpload?: Exclude<FileUploadMotion, boolean>
+  commandPalette?: Exclude<CommandPaletteMotion, boolean>
+  speedDial?: Exclude<SpeedDialMotion, boolean>
+  dataTable?: Exclude<DataTableMotion, boolean>
+  select?: Exclude<SelectMotion, boolean>
+  combobox?: Exclude<ComboboxMotion, boolean>
+  cascadeSelect?: Exclude<CascadeSelectMotion, boolean>
+  datePicker?: Exclude<DatePickerMotion, boolean>
+  tooltip?: Exclude<TooltipMotion, boolean>
+  message?: Exclude<MessageMotion, boolean>
+  treeSelect?: Exclude<TreeSelectMotion, boolean>
+  timeline?: Exclude<TimelineMotion, boolean>
   button?: Exclude<ButtonMotion, boolean>
   accordion?: Exclude<AccordionMotion, boolean>
   slider?: Exclude<SliderMotion, boolean>
+  animatedNumber?: Exclude<AnimatedNumberMotion, boolean>
+  animatedText?: Exclude<AnimatedTextMotion, boolean>
+  avatar?: Exclude<AvatarMotion, boolean>
+  avatarGroup?: Exclude<AvatarGroupMotion, boolean>
+  badge?: Exclude<BadgeMotion, boolean>
+  breadcrumb?: Exclude<BreadcrumbMotion, boolean>
+  buttonGroup?: Exclude<ButtonGroupMotion, boolean>
+  card?: Exclude<CardMotion, boolean>
+  checkbox?: Exclude<CheckboxMotion, boolean>
+  chip?: Exclude<ChipMotion, boolean>
+  collapsible?: Exclude<CollapsibleMotion, boolean>
+  dial?: Exclude<DialMotion, boolean>
+  dock?: Exclude<DockMotion, boolean>
+  editable?: Exclude<EditableMotion, boolean>
+  field?: Exclude<FieldMotion, boolean>
+  inputNumber?: Exclude<InputNumberMotion, boolean>
+  kbd?: Exclude<KbdMotion, boolean>
+  knob?: Exclude<KnobMotion, boolean>
+  loader?: Exclude<LoaderMotion, boolean>
+  passwordInput?: Exclude<PasswordInputMotion, boolean>
+  progress?: Exclude<ProgressMotion, boolean>
+  pullToRefresh?: Exclude<PullToRefreshMotion, boolean>
+  radio?: Exclude<RadioMotion, boolean>
+  radioGroup?: Exclude<RadioGroupMotion, boolean>
+  rating?: Exclude<RatingMotion, boolean>
+  resizable?: Exclude<ResizableMotion, boolean>
+  scrollArea?: Exclude<ScrollAreaMotion, boolean>
+  skeleton?: Exclude<SkeletonMotion, boolean>
+  sortable?: Exclude<SortableMotion, boolean>
+  stepper?: Exclude<StepperMotion, boolean>
+  swipeToReveal?: Exclude<SwipeToRevealMotion, boolean>
+  switch?: Exclude<SwitchMotion, boolean>
+  tag?: Exclude<TagMotion, boolean>
+  textarea?: Exclude<TextareaMotion, boolean>
+  tree?: Exclude<TreeMotion, boolean>
+  menuList?: Exclude<MenuListMotion, boolean>
+  pagination?: Exclude<PaginationMotion, boolean>
+  selectButton?: Exclude<SelectButtonMotion, boolean>
+  toolbar?: Exclude<ToolbarMotion, boolean>
+  colorPicker?: Exclude<ColorPickerMotion, boolean>
+  separator?: Exclude<SeparatorMotion, boolean>
 }
 
 // ─── Your own components and the directive ─────────────────────────────────

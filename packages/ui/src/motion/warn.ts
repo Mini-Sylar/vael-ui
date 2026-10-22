@@ -18,3 +18,11 @@ export function motionWarn(message: string): void {
   // eslint-disable-next-line no-console -- dev-only motion warnings, stripped in production
   console.warn(`[vael-ui motion] ${message}`)
 }
+
+/** Dev only: inspection (devtools.ts), in its own chunk that production never fetches. */
+export let dev: typeof import('./devtools') | undefined
+if (isDev())
+  void import('./devtools').then(
+    (tools) => (dev = tools),
+    () => {},
+  )

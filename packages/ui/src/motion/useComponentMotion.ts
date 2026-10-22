@@ -1,25 +1,37 @@
 // What a vael-ui component uses to animate: Transition hooks, target(), phase. The CSS engine
 // (css.ts) plays every component's look, so it ships with them: a lazy one made the first open wait
 // on slow networks. The runtime (runner.ts: hooks, steps, keyframes) loads only when one is used.
-import { computed, getCurrentScope, inject, onScopeDispose, shallowRef, watch } from 'vue'
+import {
+  computed,
+  getCurrentInstance,
+  getCurrentScope,
+  inject,
+  onMounted,
+  onScopeDispose,
+  shallowRef,
+  watch,
+} from 'vue'
 import type { ComputedRef, InjectionKey, ShallowRef, TransitionProps } from 'vue'
 import { defaultsKey } from '../config'
+import { pageHidden } from '../composables/dom'
 import { PRESENCE_ID } from './ids'
 import { PRESENCE_ATTR, presenceFor, refElement, TARGET_ATTR } from './presence'
 import { resolveMotion, useMotionStyle } from './context'
 import type { ResolvedMotion } from './context'
 import type { MotionPhase, MotionRef, MotionStyle, MotionTiming, MotionValues } from './types'
 import type { Runner, RunnerHost } from './host'
-import { needsRuntime, targetCanPlay } from './playable'
+import { needsRuntime, valuesAt } from './playable'
+import { dev } from './warn'
 import { targetsOf } from './targets'
+import { stepOut } from './stepOut'
 
 let runtime: Promise<typeof import('./runner')> | undefined
 import * as cssModule from './css'
 
 /** @internal Loads the motion runtime once, for every component. */
-export const loadMotionRuntime = () => (runtime ??= import('./runner'))
-/** @internal The CSS engine, bundled: every animating component uses it. */
-export const loadCssEngine = () => Promise.resolve(cssModule)
+const loadMotionRuntime = () => (runtime ??= import('./runner'))
+let swapKit: Promise<typeof import('./swap')> | undefined
+const loadSwap = () => (swapKit ??= import('./swap'))
 /** @internal One element's appearance on its own (`v-animate` with no component, or joining late). */
 export const appear = cssModule.appear
 
@@ -44,8 +56,14 @@ export interface ComponentMotionOptions {
   owns?: () => boolean
   /** The element that opened it, for `morph: 'trigger'`. */
   trigger?: () => Element | null | undefined
+  /** Resolves once it's laid out where it opens: a morph measures from there. */
+  ready?: () => Promise<void>
+  /** Moves exactly as the main part does: a surface's blob under the panel. */
+  mirror?: () => Element | null | undefined
   onAfterEnter?: () => void
   onAfterLeave?: () => void
+  /** It has a panel that eases to its content's new height while open (`resize`). */
+  resizes?: boolean
   /** Whether it's open, for `linked` elements. */
   open?: () => boolean
   /** A gesture driving it (a dragged sheet): `linked` elements follow its progress. */
@@ -60,7 +78,12 @@ export const gestureKey: InjectionKey<() => LinkedGesture | null> = Symbol('vael
 export interface ComponentMotionReturn {
   /** Bind to the component's `<Transition>` alongside its own name and hooks. */
   transition: ComputedRef<
-    Pick<TransitionProps, 'css' | 'onEnter' | 'onLeave' | 'onEnterCancelled' | 'onLeaveCancelled'>
+    Pick<
+      TransitionProps,
+      'css' | 'onEnter' | 'onLeave' | 'onEnterCancelled' | 'onLeaveCancelled'
+    > & {
+      onBeforeEnter?: (el: Element) => void
+    }
   >
   /** A function ref: `:ref="target('rows')"`. */
   target: (name: string) => MotionRef
@@ -68,6 +91,11 @@ export interface ComponentMotionReturn {
   /** Spread on the root element: the marker `v-animate` finds. */
   presenceAttrs: { [PRESENCE_ATTR]: '' }
   resolved: ComputedRef<ResolvedMotion>
+  /** Bind to a `<Transition>` around the content when `swap` is set: one keyed root inside. */
+  swap: {
+    onEnter: (el: Element, done: () => void) => void
+    onLeave: (el: Element, done: () => void) => void
+  }
 }
 
 /** @internal */
@@ -114,12 +142,21 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       (root) => {
         if (!root) return
         presenceFor(root).joined = (entry) => {
-          if (!(entry.el instanceof HTMLElement)) return
-          const el = entry.el
+          // SVG too: a badge popping, a check drawing.
+          if (!(entry.el instanceof HTMLElement || entry.el instanceof SVGElement)) return
+          const el = entry.el as HTMLElement
           const play = () => {
             const group = targetsOf([entry], resolved.value)[0]
-            if (!group?.motion.initial || !targetCanPlay(group.motion)) return
-            void cssModule.appear(el, group.motion.initial, group.motion, resolved.value.spring)
+            const where = { direction: resolved.value.direction, index: 0 }
+            const initial = valuesAt(group?.motion.initial, where)
+            if (!group || !initial) return
+            void cssModule.appear(
+              el,
+              initial,
+              group.motion,
+              resolved.value.spring,
+              (group.motion.delay ?? 0) * 1000,
+            )
           }
           if (phase.value === 'entered') return play()
           // Joined mid-opening: once it's open, unless the opening already brought it in.
@@ -134,8 +171,44 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       { immediate: true, flush: 'post' },
     )
 
-  // `linked`: elements outside it follow it. All of it is in its own chunk, loaded once it's set.
+  // Dev: which layers set it, and each open and close timed, in DevTools.
+  let trace: ((now: string) => void) | undefined
+  watch(
+    phase,
+    (now) =>
+      (trace ??= dev?.traceMotion({
+        ...options,
+        style: () => style?.value,
+        root: currentRoot,
+        phase: () => phase.value,
+        engine: () => kind.value,
+      }))?.(now),
+    { flush: 'sync' },
+  )
   const scope = getCurrentScope()
+  // `swap` and `resize`, in their own chunk, loaded as it first opens.
+  const swapHost = { resolved, root: () => currentRoot() }
+  let resizing = false
+  if (typeof window !== 'undefined' && options.resizes)
+    watch(phase, (now) => {
+      if (now !== 'entering' || resizing || !resolved.value.resize) return
+      resizing = true
+      void loadSwap().then((kit) =>
+        scope?.run(() =>
+          kit.attachResize(swapHost, () => currentParts()[options.mainPart] as HTMLElement, phase),
+        ),
+      )
+    })
+  const swap = {
+    onEnter: (el: Element, done: () => void) =>
+      void loadSwap().then((kit) => kit.swapIn(el, done, swapHost), done),
+    onLeave: (el: Element, done: () => void) => {
+      if (!resolved.value.off && resolved.value.swap !== 'wait') stepOut(el)
+      void loadSwap().then((kit) => kit.swapOut(el, done, swapHost), done)
+    },
+  }
+
+  // `linked`: elements outside it follow it. All of it is in its own chunk, loaded once it's set.
   let linking = false
   if (typeof window !== 'undefined')
     watch(
@@ -160,6 +233,8 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     root: currentRoot,
     phase,
     trigger: options.trigger,
+    mirror: options.mirror,
+    ready: options.ready,
     onAfterEnter: options.onAfterEnter,
     onAfterLeave: options.onAfterLeave,
   }
@@ -170,9 +245,8 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
   const load = (): Promise<Runner> =>
     kind.value === 'runtime'
       ? runtimeEngine()
-      : loadCssEngine().then(
-          (module) => (engines.css ??= module.createCssEngine(host, runtimeEngine)),
-        )
+      : // The CSS engine is bundled: every animating component uses it.
+        Promise.resolve((engines.css ??= cssModule.createCssEngine(host, runtimeEngine)))
   // Customised motion: fetch its engine now, so it's ready long before anyone opens anything.
   if (typeof window !== 'undefined')
     watch(
@@ -198,10 +272,16 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     options.onAfterLeave?.()
   }
 
+  let fromServer = false
+  let mounted = false
+  if (getCurrentInstance()) onMounted(() => (mounted = true))
   function enter(el: Element, done: () => void) {
     el.removeAttribute(LEAVING)
     leaving = null
-    if (resolved.value.off) return enterNow(done)
+    if (resolved.value.off || pageHidden() || fromServer) {
+      fromServer = false
+      return enterNow(done)
+    }
     const ready = engines[kind.value]
     if (ready) return ready.enter(el, done)
     // Not loaded yet (opened the instant it mounted): keep it hidden meanwhile, then hand over. The
@@ -232,7 +312,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       finish()
     }
     leaving = done
-    if (resolved.value.off) return leaveNow(done)
+    if (resolved.value.off || pageHidden()) return leaveNow(done)
     const ready = engines[kind.value]
     if (ready) return ready.leave(el, done)
     load().then(
@@ -249,6 +329,9 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     resolved.value.custom || resolved.value.off || options.owns?.()
       ? {
           css: false,
+          // Already on the page as it enters, before the component has even mounted: hydration,
+          // the server rendered it open. (Shown again later by v-show, it's on the page too.)
+          onBeforeEnter: (el: Element) => (fromServer = !mounted && el.isConnected),
           onEnter: enter,
           onLeave: leave,
           onEnterCancelled: cancel,
@@ -279,5 +362,5 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
         if (animation.id === PRESENCE_ID) animation.cancel()
   })
 
-  return { transition, target, phase, presenceAttrs: { [PRESENCE_ATTR]: '' }, resolved }
+  return { transition, target, phase, presenceAttrs: { [PRESENCE_ATTR]: '' }, resolved, swap }
 }

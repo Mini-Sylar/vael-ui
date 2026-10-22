@@ -1,5 +1,6 @@
 // Runs your targets in, honouring `after` (names, lists, moments), `delay`, `stagger` and `steps`.
 import { holdValues, playBetween, playValues, resolveTiming } from './engine'
+import { staggerAt, valuesAt } from './playable'
 import { motionWarn as warn } from './warn'
 import type { MotionValues, Spring, TargetMotion } from './types'
 
@@ -73,7 +74,9 @@ export async function runTargets(
   for (const target of targets) moments.set(target.name, createMoments())
   // Pinned at `initial` now, before paint: a target waiting on `after` or a stagger must not show early.
   for (const target of targets)
-    for (const el of target.els) holdValues(el, target.motion.initial ?? {})
+    target.els.forEach((el, index) =>
+      holdValues(el, valuesAt(target.motion.initial, { direction: 0, index }) ?? {}),
+    )
   const looped = cyclic(targets)
   if (looped.size)
     warn(`circular \`after\` between ${[...looped].join(', ')}; they start together.`)
@@ -110,10 +113,10 @@ export async function runTargets(
         return
       }
       const timing = resolveTiming(first, motion, options.spring)
-      const stagger = motion.stagger ?? 0
-      const lastStart = (els.length - 1) * stagger * 1000
+      const at = (i: number) => staggerAt(motion.stagger, i, els.length)
+      const lastStart = Math.max(0, ...els.map((_, i) => at(i))) * 1000
       startMoments(m, lastStart + timing.arrival)
-      await Promise.all(els.map((el, i) => playTarget(el, motion, i * stagger, options, waitFor)))
+      await Promise.all(els.map((el, i) => playTarget(el, motion, at(i), options, waitFor, i)))
       m.arrive.resolve()
       m.settle.resolve()
     }),
@@ -126,9 +129,10 @@ async function playTarget(
   delay: number,
   options: { spring?: Spring; signal: AbortSignal },
   waitFor: (moment: string) => Promise<void>,
+  index = 0,
 ): Promise<void> {
   const timing = resolveTiming(el, motion, options.spring)
-  const initial = motion.initial ?? {}
+  const initial = valuesAt(motion.initial, { direction: 0, index }) ?? {}
   if (!motion.steps?.length) {
     await playValues(el, initial, { direction: 'in', timing, delay })
     return

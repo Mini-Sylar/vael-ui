@@ -1,15 +1,18 @@
-// v-animate.size and lists: a box that follows its content's height on a spring instead of jumping.
-import { prefersReducedMotion } from '../composables/dom'
+// v-animate.size and lists: a box that follows its content's size on a spring instead of jumping.
+import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { resolveTiming } from './timing'
 import type { MotionTiming } from './types'
 
 const SIZE_ID = 'ui-size'
 
-/** A border-box height as a CSS `height`, which excludes padding and border under content-box. */
-function cssHeight(el: HTMLElement, borderBox: number): string {
+/** A border-box size as CSS, which excludes padding and border under content-box. */
+function cssSize(el: HTMLElement, borderBox: number, axis: 'height' | 'width'): string {
   const style = getComputedStyle(el)
   if (style.boxSizing === 'border-box') return `${borderBox}px`
-  const edges = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'] as const
+  const edges =
+    axis === 'height'
+      ? (['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'] as const)
+      : (['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'] as const)
   const extra = edges.reduce((sum, key) => sum + (Number.parseFloat(style[key]) || 0), 0)
   return `${Math.max(0, borderBox - extra)}px`
 }
@@ -20,31 +23,64 @@ export interface FollowSize {
   stop: () => void
 }
 
+type Box = { width: number; height: number }
+const close = (a: number, b: number) => Math.abs(a - b) < 0.5
+
 /**
- * Eases `el`'s height to its content's whenever the content changes it, from wherever it is now.
- * It watches the content (DOM changes, children's sizes), never its own box, so animating the box
- * can't feed back. A width change (a window resize) isn't a content change and never animates.
+ * Eases `el`'s size to its content's whenever the content changes it, from wherever it is now:
+ * its height, and its width when the content sizes that too (a pill, a flex item; a block's width
+ * is its container's and stays). It watches the content (DOM changes, children's sizes), never its
+ * own box, so animating the box can't feed back. New content always animates. A change that moved
+ * its width without new content (a window or container resize, its own style) is layout, and
+ * doesn't.
  */
-export function followSize(el: HTMLElement, timing: () => MotionTiming | undefined): FollowSize {
+export function followSize(
+  el: HTMLElement,
+  timing: () => MotionTiming | undefined,
+  /** Clip only past the bottom edge, so content moving in from above or the sides stays visible. */
+  clipEnd = false,
+): FollowSize {
   if (typeof ResizeObserver === 'undefined' || typeof MutationObserver === 'undefined')
     return { sync: () => {}, stop: () => {} }
-  let { height, width } = el.getBoundingClientRect()
+  // Growing, it clips what isn't revealed yet: past the edges that move only, or the whole box (a
+  // panel: clip-path would cut its shadow too). Shrinking, nothing: what still moves inside (a card
+  // sliding up, a label fading out) stays seen.
+  const clipFor = (from: Box, to: Box): Keyframe => {
+    const taller = to.height > from.height + 0.5
+    const wider = to.width > from.width + 0.5
+    if (!taller && !wider) return {}
+    if (!clipEnd) return { overflow: 'hidden' }
+    const rtl = getComputedStyle(el).direction === 'rtl'
+    const edge = (moves: boolean) => (moves ? '0' : '-100vmax')
+    return {
+      clipPath: `inset(-100vmax ${edge(wider && !rtl)} ${edge(taller)} ${edge(wider && rtl)})`,
+    }
+  }
+  const measure = (): Box => {
+    const { width, height } = el.getBoundingClientRect()
+    return { width, height }
+  }
+  // Marked, so what leaves inside it is clipped to it (leaveInPlace).
+  el.setAttribute('data-ui-size', '')
+  let last = measure()
+  let target = last
   let running: Animation | undefined
-  let target = height
 
-  function play(from: number, to: number) {
+  function play(from: Box, to: Box) {
     const { easing, duration } = resolveTiming(el, timing() ?? {}, undefined)
     running?.cancel()
     target = to
-    // Clipped while it moves: growing reveals new content, children are never stretched. `hidden`,
-    // not `clip`: only a scroll container reports its content's height in scrollHeight.
-    const animation = el.animate(
-      [
-        { height: cssHeight(el, from), overflow: 'hidden' },
-        { height: cssHeight(el, to), overflow: 'hidden' },
-      ],
-      { id: SIZE_ID, duration, easing },
-    )
+    // Only the sides that change: an animated width would pin one that's its container's.
+    const clip = clipFor(from, to)
+    const frame = (box: Box): Keyframe => ({
+      height: cssSize(el, box.height, 'height'),
+      ...(close(from.width, to.width) ? {} : { width: cssSize(el, box.width, 'width') }),
+      ...clip,
+    })
+    // Clipped while it moves: growing reveals new content, children are never stretched.
+    run(el.animate([frame(from), frame(to)], { id: SIZE_ID, duration, easing }))
+  }
+  function run(animation: Animation) {
     running = animation
     animation.finished.then(
       () => {
@@ -54,51 +90,58 @@ export function followSize(el: HTMLElement, timing: () => MotionTiming | undefin
     )
   }
 
-  function sync() {
-    // What's on screen: mid-animation, the animated height; otherwise the last height we saw (the
-    // observers run after the DOM changed, so the box already measures its new height).
-    const showing = running ? el.getBoundingClientRect().height : height
+  function sync(changed = false) {
+    // Parked off the page (KeepAlive): it measures nothing; it comes back the size it was.
+    if (!el.isConnected) return
+    // What's on screen: mid-animation, the animated size; otherwise the last size we saw (the
+    // observers run after the DOM changed, so the box already measures its new size).
+    const showing = running ? measure() : last
     if (running) {
-      // Taller content shows in scrollHeight; only a new destination retargets.
-      const content = el.scrollHeight + (el.offsetHeight - el.clientHeight)
-      if (content > showing + 0.5) {
-        if (Math.abs(content - target) > 0.5) play(showing, content)
-        height = content
+      // Measure without our animation (no paint in between). Not scrollHeight: it counts what only
+      // shows past the content (a button's 1px rim, an element mid-slide) and overshot the size.
+      const animation = running
+      const at = animation.currentTime
+      animation.cancel()
+      // Only our own animation resizing a child it stretches (a dialog's body), or nothing new:
+      // carry on from where it was. Restarting on each of these made it crawl.
+      const natural = measure()
+      if (close(natural.height, target.height) && close(natural.width, target.width)) {
+        animation.currentTime = at
+        animation.play()
+        run(animation)
         return
       }
-      // It may have shrunk: measure without our animation (no paint in between).
-      running.cancel()
       running = undefined
     }
-    const box = el.getBoundingClientRect()
-    const widthChanged = Math.abs(box.width - width) > 0.5
-    width = box.width
-    const from = showing
-    height = box.height
-    if (Math.abs(box.height - from) < 0.5 || widthChanged || prefersReducedMotion()) return
-    play(from, box.height)
+    const box = measure()
+    const widthMoved = !changed && !close(box.width, last.width)
+    last = box
+    if (widthMoved || prefersReducedMotion() || pageHidden()) return
+    if (close(box.height, showing.height) && close(box.width, showing.width)) return
+    play(showing, box)
   }
-
-  const sizes = new ResizeObserver(sync)
+  const sizes = new ResizeObserver(() => sync())
   const watchChildren = () => {
     sizes.disconnect()
     for (const child of el.children) sizes.observe(child)
   }
-  const changes = new MutationObserver(() => {
+  // New content: nodes, text, or something inside changing. Its own style or class is layout.
+  const changes = new MutationObserver((records) => {
     watchChildren()
-    sync()
+    sync(records.some((r) => r.target !== el || r.type !== 'attributes'))
   })
   changes.observe(el, {
     childList: true,
     subtree: true,
     characterData: true,
+    // Any attribute: a `data-open` on the box can rearrange what's in it.
     attributes: true,
-    attributeFilter: ['style', 'class', 'hidden'],
   })
   watchChildren()
   return {
-    sync,
+    sync: () => sync(true),
     stop() {
+      el.removeAttribute('data-ui-size')
       changes.disconnect()
       sizes.disconnect()
       running?.cancel()

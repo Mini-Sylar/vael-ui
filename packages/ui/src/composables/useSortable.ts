@@ -243,6 +243,8 @@ export interface UseSortableOptions {
   disabled?: MaybeRefOrGetter<boolean>
   /** `false` disables the built-in springs — positions snap. */
   motion?: MaybeRefOrGetter<boolean>
+  /** Your spring for rows moving and landing; unset, the built-in ones. */
+  spring?: MaybeRefOrGetter<{ damping: number; response: number } | undefined>
   /** Apply the reorder. Fires once, on a committed drop. */
   onCommit: (value: string | number, to: DropPosition) => void
   /** Synchronous, re-run as the target changes: `false` marks the target invalid and blocks the drop. Use it for structural rules (only folders take children). Keep it cheap — it runs while dragging. */
@@ -443,6 +445,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   // The landing after a drop: rows glide into their slots, and keep gliding if the list re-sorts.
   const settler = createSettler({
     axis: () => axis(),
+    spring: () => toValue(options.spring),
     getElement: options.getElement,
     onMoving: (moving) => {
       isSettling.value = moving
@@ -519,7 +522,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     let spring = springs.get(value)
     if (!spring) {
       const el = options.getElement(value)
-      spring = createSpring(0, SHIFT_SPRING, (offset) => {
+      spring = createSpring(0, toValue(options.spring) ?? SHIFT_SPRING, (offset) => {
         if (el) el.style.translate = translateFor(offset)
       })
       springs.set(value, spring)
@@ -673,7 +676,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const el = options.getElement(grabbed)
     if (!el) return
     if (!grabbedSpring) {
-      grabbedSpring = createSpring(0, SHIFT_SPRING, (offset) => {
+      grabbedSpring = createSpring(0, toValue(options.spring) ?? SHIFT_SPRING, (offset) => {
         el.style.translate = translateFor(offset)
       })
     }
@@ -723,7 +726,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const el = options.getElement(grabbed)
     if (!el) return
     if (!grabbedSpring) {
-      grabbedSpring = createSpring(0, SHIFT_SPRING, (offset) => {
+      grabbedSpring = createSpring(0, toValue(options.spring) ?? SHIFT_SPRING, (offset) => {
         el.style.translate = translateFor(offset)
       })
     }
@@ -1120,15 +1123,19 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     const side = axis() === 'x' ? 'paddingInlineEnd' : 'paddingBlockEnd'
     if (!roomSpring) {
       const base = parseFloat(getComputedStyle(el)[side]) || 0
-      const spring: SpringHandle = createSpring(0, SHIFT_SPRING, (value) => {
-        if (spring.isAnimating || spring.target !== 0) {
-          el.style[side] = `${base + Math.max(0, value)}px`
-          return
-        }
-        el.style[side] = ''
-        spring.destroy()
-        if (roomSpring === spring) roomSpring = null
-      })
+      const spring: SpringHandle = createSpring(
+        0,
+        toValue(options.spring) ?? SHIFT_SPRING,
+        (value) => {
+          if (spring.isAnimating || spring.target !== 0) {
+            el.style[side] = `${base + Math.max(0, value)}px`
+            return
+          }
+          el.style[side] = ''
+          spring.destroy()
+          if (roomSpring === spring) roomSpring = null
+        },
+      )
       roomSpring = spring
     }
     if (instant || reducedMotion()) roomSpring.jump(size)

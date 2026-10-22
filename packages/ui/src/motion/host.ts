@@ -14,6 +14,10 @@ export interface RunnerHost {
   phase: ShallowRef<MotionPhase>
   /** The element `morph: 'trigger'` grows from: the one that opened the component. */
   trigger?: () => Element | null | undefined
+  /** Resolves once the component is laid out where it opens (a popover placed by floating-ui). */
+  ready?: () => Promise<void>
+  /** Moves exactly as the main part does, morph included: a surface's blob under the panel. */
+  mirror?: () => Element | null | undefined
   onAfterEnter?: () => void
   onAfterLeave?: () => void
 }

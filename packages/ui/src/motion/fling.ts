@@ -1,10 +1,9 @@
 // Gestures hand their speed to the motion that follows: a spring that starts at the release speed
 // and settles, compiled to CSS `linear()` so it still runs on the compositor.
-import { springEasing } from '../composables/springEasing'
+import { FLING_SPRING, springEasing } from '../composables/springEasing'
 import type { Spring } from './types'
 
-/** The drawer's spring: critically damped, so a flick never bounces past where it rests. */
-export const FLING_SPRING: Spring = { damping: 1, response: 0.4 }
+export { FLING_SPRING }
 
 /**
  * Timing for covering `distance` px when the finger let go at `velocity` px/ms (positive toward

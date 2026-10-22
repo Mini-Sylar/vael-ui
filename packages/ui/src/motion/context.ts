@@ -8,6 +8,7 @@ import type {
   MotionValues,
   Spring,
   TargetMotion,
+  MotionEngine,
 } from './types'
 
 export { motionStyleKey, useMotionStyle } from './styleKey'
@@ -36,6 +37,8 @@ type AnyHook = MotionHook<string, never>
 export interface ResolvedMotion {
   /** Instant: `false` on the instance or a provider. */
   off: boolean
+  /** A style's engine: values play through your library. */
+  engine?: MotionEngine
   /** Whether the runtime drives it; otherwise the component's own CSS motion runs unchanged. */
   custom: boolean
   /** The timing you set (instance, style key or role); empty means the spring. */
@@ -53,6 +56,14 @@ export interface ResolvedMotion {
   exitOrder: 'together' | 'reverse'
   /** Grow from this element's box and back into it: 'trigger' (the component's) or your getter. */
   morph?: MorphFrom | { from: MorphFrom; hide?: boolean }
+  /** Inside it, a view replacing another: cross-fade (`'sync'`) or one after the other (`'wait'`). */
+  swap?: 'sync' | 'wait'
+  /** Which way the next swap goes, for values written as functions of `where`. */
+  direction: 1 | -1 | 0
+  /** The panel eases to its content's new height while open. */
+  resize: boolean
+  /** A shapes-only layer behind trigger and panel (the goo); its filter never touches text. */
+  surface?: MotionValues
   /** Elements outside it that follow it. Yours only: they're getters, and shared styles are data. */
   linked?: Record<string, LinkedMotion>
   reducedHooks: 'skip' | 'run'
@@ -135,6 +146,7 @@ export function resolveMotion(input: {
       ]),
     ),
     spring: style?.spring,
+    engine: style?.engine,
     initial,
     exit: parts('exit', exitDefaults ?? {}),
     targets,
@@ -143,7 +155,11 @@ export function resolveMotion(input: {
     enter: (own?.enter ?? keyStyle?.enter) as AnyHook | undefined,
     leave: (own?.leave ?? keyStyle?.leave) as AnyHook | undefined,
     morph: (own?.morph ?? keyStyle?.morph ?? roleStyle?.morph) as ResolvedMotion['morph'],
+    surface: (own?.surface ?? keyStyle?.surface ?? roleStyle?.surface) as MotionValues | undefined,
     linked: own?.linked as ResolvedMotion['linked'],
+    swap: (own?.swap ?? keyStyle?.swap ?? roleStyle?.swap) as ResolvedMotion['swap'],
+    direction: (own?.direction as ResolvedMotion['direction']) ?? 0,
+    resize: (own?.resize ?? keyStyle?.resize ?? roleStyle?.resize) !== false,
     exitOrder:
       ((own?.exitOrder ?? keyStyle?.exitOrder ?? roleStyle?.exitOrder) as 'together' | 'reverse') ??
       'together',

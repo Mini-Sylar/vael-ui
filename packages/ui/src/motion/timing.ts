@@ -10,6 +10,8 @@ export interface ResolvedTiming {
   duration: number
   /** When it first reaches its place, for `after`. */
   arrival: number
+  /** The spring behind it, for an engine that has its own physics. */
+  spring?: Spring
 }
 
 export function cssTime(value: string): number {
@@ -36,7 +38,7 @@ export function resolveTiming(
     return { easing, duration, arrival: duration }
   }
   const spring = (timing.spring as Spring | undefined) ?? fallback ?? DEFAULT_SPRING
-  return { ...springEasing(spring), arrival: springArrival(spring) }
+  return { ...springEasing(spring), arrival: springArrival(spring), spring }
 }
 
 // ─── settled() ───────────────────────────────────────────────────────────────

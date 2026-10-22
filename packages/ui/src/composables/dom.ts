@@ -311,3 +311,28 @@ export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
   return (reducedMotionQuery ??= window.matchMedia('(prefers-reduced-motion: reduce)')).matches
 }
+
+/**
+ * A background tab paints no frames: motion there would wait out its safety cap, then play when
+ * you come back. It finishes at once instead.
+ */
+export function pageHidden(): boolean {
+  return typeof document !== 'undefined' && document.visibilityState === 'hidden'
+}
+
+/**
+ * What opened something: the element a click or tap is on, else the focused one (a keyboard).
+ * Safari doesn't focus a button you click, so focus alone would find `<body>`.
+ */
+export function opener(): HTMLElement | null {
+  if (typeof document === 'undefined') return null
+  const event = typeof window !== 'undefined' ? (window.event as Event | undefined) : undefined
+  const target = event && /^(click|pointer|mouse|touch)/.test(event.type) ? event.target : null
+  const pressed =
+    target instanceof Element
+      ? target.closest<HTMLElement>('button, a, [role="button"], [tabindex], input, select')
+      : null
+  if (pressed) return pressed
+  const active = document.activeElement
+  return active instanceof HTMLElement && active !== document.body ? active : null
+}

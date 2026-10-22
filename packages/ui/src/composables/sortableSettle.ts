@@ -75,6 +75,8 @@ export function createSettler(options: {
   getElement: (value: string | number) => HTMLElement | null
   /** Called when rows start moving and once they have all come to rest. */
   onMoving?: (moving: boolean) => void
+  /** Your spring for the landing; unset, the drop spring. */
+  spring?: () => { damping: number; response: number } | undefined
 }): Settler {
   const rows = new Map<string | number, SettlingRow>()
   let frame = 0
@@ -148,8 +150,9 @@ export function createSettler(options: {
     for (const row of rows.values()) {
       const { offset, velocity } = row
       if (offset.x === 0 && offset.y === 0 && velocity.x === 0 && velocity.y === 0) continue
-      const x = stepSpring({ value: offset.x, velocity: velocity.x }, 0, dt, 1, RESPONSE)
-      const y = stepSpring({ value: offset.y, velocity: velocity.y }, 0, dt, 1, RESPONSE)
+      const { damping, response } = options.spring?.() ?? { damping: 1, response: RESPONSE }
+      const x = stepSpring({ value: offset.x, velocity: velocity.x }, 0, dt, damping, response)
+      const y = stepSpring({ value: offset.y, velocity: velocity.y }, 0, dt, damping, response)
       const still = (s: { value: number; velocity: number }) =>
         Math.abs(s.value) < EPSILON && Math.abs(s.velocity) < EPSILON
       if (still(x) && still(y)) {

@@ -52,6 +52,7 @@ export function usePopover(open: Ref<boolean>, options: UsePopoverOptions) {
     alignOffset: options.alignOffset,
     matchReferenceWidth: options.matchReferenceWidth,
     maxHeightCap: options.maxHeightCap,
+    holdFacingEdge: true,
   })
 
   const {

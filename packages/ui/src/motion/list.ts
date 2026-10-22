@@ -1,8 +1,10 @@
 // Lists: items enter staggered, leave pinned where they were, and the rest slide to their new places
 // on the spring. Slides add, so spam-adding stacks smoothly instead of snapping. The list's box
 // follows its content's height on the same timing.
+import { prefersReducedMotion } from '../composables/dom'
 import type { ResolvedMotion } from './context'
 import { playValues, resolveTiming, slideFrom } from './engine'
+import { runHook } from './hook'
 import { followSize } from './size'
 import type { FollowSize } from './size'
 import type { MotionValues } from './types'
@@ -17,6 +19,14 @@ export interface ListMotionOptions {
   stagger: () => number
   /** `'pop'` (default): a leaving item lifts out at once so the rest close the gap while it fades. */
   leaving: () => 'pop' | 'hold'
+  /** The items' part name in your values and hooks (`item`, a component's `row`, `chip`, `toast`). */
+  part?: string
+  /** Shown in warnings. */
+  name?: string
+  /** The component places its items itself (a toast stack): no height to follow, no slides. */
+  arranged?: boolean
+  /** An item's own parts (a timeline step's `marker`): handed to hooks, and values play on them. */
+  parts?: (el: HTMLElement) => Record<string, HTMLElement | null>
 }
 
 export interface ListMotion {
@@ -62,6 +72,7 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
       if (!capturing) play()
     })
     reorders.observe(box, { childList: true })
+    if (options.arranged) return
     // Leaving items are pinned against it; its height follows its content on the list's timing.
     if (getComputedStyle(box).position === 'static') box.style.position = 'relative'
     size = followSize(box, () => options.resolved().timing)
@@ -85,6 +96,7 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
   }
 
   function play() {
+    if (options.arranged) return
     const now = positions()
     if (!options.resolved().off)
       for (const [el, rect] of now) {
@@ -94,6 +106,55 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     before = now
   }
 
+  const part = options.part ?? 'item'
+  const name = options.name ?? 'list'
+  // An item's hook in flight, stopped if the item turns around (enters again, or leaves mid-entry).
+  const running = new WeakMap<Element, AbortController>()
+  /** Your `enter` / `leave` hook for this item, if you gave one: it plays instead of the values. */
+  function hooked(el: Element, phase: 'enter' | 'leave', index: number, done: () => void): boolean {
+    const motion = options.resolved()
+    const hook = motion[phase]
+    if (!hook || (prefersReducedMotion() && motion.reducedHooks === 'skip')) return false
+    running.get(el)?.abort()
+    const controller = new AbortController()
+    running.set(el, controller)
+    const context = {
+      signal: controller.signal,
+      origin: 'center',
+      reducedMotion: prefersReducedMotion(),
+      targets: {},
+      direction: motion.direction,
+      index,
+    }
+    void runHook(
+      name,
+      phase,
+      () => hook({ ...partsOf(el), [part]: el as HTMLElement }, context as never),
+      controller.signal,
+      [el],
+    ).then(done)
+    return true
+  }
+
+  /** The item's own parts that it has (a last step has no connector). */
+  const partsOf = (el: Element) =>
+    Object.fromEntries(
+      Object.entries(options.parts?.(el as HTMLElement) ?? {}).filter(([, sub]) => sub),
+    ) as Record<string, HTMLElement>
+
+  /** Plays an item's values, and those for its own parts, together. */
+  function playItem(
+    el: Element,
+    values: Record<string, MotionValues | undefined>,
+    main: MotionValues,
+    look: Parameters<typeof playValues>[2],
+  ): Promise<unknown> {
+    const runs = [playValues(el, main, look)]
+    for (const [key, sub] of Object.entries(partsOf(el)))
+      if (values[key]) runs.push(playValues(sub, values[key], look))
+    return Promise.all(runs)
+  }
+
   function onEnter(el: Element, done: () => void) {
     adopt(el.parentElement)
     const motion = options.resolved()
@@ -101,8 +162,10 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     // Items arriving in the same tick are one group: they stagger in page order.
     if (!batch.length) queueMicrotask(() => (batch = []))
     const index = batch.push(el) - 1
-    playValues(el, motion.initial.item ?? {}, {
+    if (hooked(el, 'enter', index, done)) return
+    playItem(el, motion.initial, motion.initial[part] ?? {}, {
       direction: 'in',
+      engine: motion.engine,
       timing: timingFor(el),
       delay: index * options.stagger(),
     }).then(done)
@@ -128,8 +191,10 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
       box._uiPinned = true
       size?.sync()
     }
-    playValues(el, motion.exit.item ?? QUIET_FADE, {
+    if (hooked(el, 'leave', 0, done)) return
+    playItem(el, motion.exit, motion.exit[part] ?? QUIET_FADE, {
       direction: 'out',
+      engine: motion.engine,
       timing: timingFor(el),
     }).then(done)
   }

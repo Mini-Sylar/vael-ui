@@ -23,6 +23,8 @@ export interface UseFloatingPositionOptions {
   maxHeightCap?: MaybeRefOrGetter<number | undefined>
   /** Fires once if `referenceEl` is removed from the document while `active` — a route change under a delegated/external reference otherwise leaves `autoUpdate` repositioning against a detached node, which degenerates to a `{0,0,0,0}` rect. */
   onReferenceDisconnected?: () => void
+  /** @internal Pins the edge facing the trigger (`bottom` above it, `right` to its left), so a panel that resizes grows away from the trigger instead of a frame behind it. */
+  holdFacingEdge?: boolean
 }
 
 // Coarse mapping for transform-origin (enough for scale/fade).
@@ -72,6 +74,30 @@ const HIDDEN_STYLE: Record<string, string> = {
   top: '0px',
   left: '0px',
   visibility: 'hidden',
+}
+
+/** Insets from the far side for the edges that face the trigger: its containing block is whatever the insets resolve against now. */
+function facingEdge(
+  el: HTMLElement,
+  placement: Placement,
+  x: number,
+  y: number,
+  snap: (value: number) => number,
+): Record<string, string> {
+  const [side, align] = placement.split('-') as [Side, Align | undefined]
+  const vertical = side === 'top' || side === 'bottom'
+  const fromBottom = side === 'top' || (!vertical && align === 'end')
+  const fromRight = side === 'left' || (vertical && align === 'end')
+  // top + size + bottom spans the containing block, so the new bottom is top + bottom - y.
+  const style = getComputedStyle(el)
+  const far = (start: string, end: string, at: number) =>
+    `${snap(Number.parseFloat(start) + Number.parseFloat(end) - at)}px`
+  return {
+    top: fromBottom ? 'auto' : `${snap(y)}px`,
+    bottom: fromBottom ? far(style.top, style.bottom, y) : 'auto',
+    left: fromRight ? 'auto' : `${snap(x)}px`,
+    right: fromRight ? far(style.left, style.right, x) : 'auto',
+  }
 }
 
 export function useFloatingPosition(options: UseFloatingPositionOptions) {
@@ -137,8 +163,9 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
     const snap = (value: number) => Math.round(value * dpr) / dpr
     positionerStyle.value = {
       position: 'absolute',
-      top: `${snap(result.y)}px`,
-      left: `${snap(result.x)}px`,
+      ...(options.holdFacingEdge
+        ? facingEdge(floating, result.placement, result.x, result.y, snap)
+        : { top: `${snap(result.y)}px`, left: `${snap(result.x)}px` }),
       visibility: 'visible',
       ...(anchorInlineSize ? { '--ui-anchor-inline-size': anchorInlineSize } : {}),
     }

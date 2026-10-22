@@ -71,7 +71,7 @@ export function toKeyframe(
   return frame
 }
 
-/** Keyframes for values given as arrays (a shake), or undefined when no value is an array. */
+/** Keyframes for values given as arrays (a shake), or undefined when no value is an array. Play them `linear`. */
 export function toKeyframes(input: MotionValues, rtl = false): Keyframe[] | undefined {
   const values = plainValues(input)
   const lengths = Object.values(values)
@@ -84,7 +84,8 @@ export function toKeyframes(input: MotionValues, rtl = false): Keyframe[] | unde
     for (const [key, raw] of Object.entries(values)) {
       step[key] = Array.isArray(raw) ? raw[Math.min(i, raw.length - 1)] : raw
     }
-    return toKeyframe(step as MotionValues, rtl)
+    // Each segment eases on its own (play it linear): every keyframe gets an even share of time.
+    return { ...toKeyframe(step as MotionValues, rtl), easing: 'ease-in-out' }
   })
 }
 

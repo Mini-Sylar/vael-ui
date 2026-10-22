@@ -20,11 +20,23 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // this check didn't recognise), plus late appearances (`appear`, `joined`): +0.3 KB on all of Dialog.
 // linked (2026-10-22): `linked` loads with its own chunk, 1.5 KB, plus values and timing (shared with
 // the runtime and the states player).
+// button 1 → 1.25 KB (2026-10-22): every component's appearance (`initial`), `parts` on its ref
+// and its own timing as tokens (RFC 3.4, 3.7) live in useStateMotion; their work loads lazily
+// (appearance with its batch, the tokens with the states player). Measured: 1219 B.
+// up front 6.5 → 6.75 KB (2026-10-22): swap, resize, swap direction, select targets, the morph
+// mirror and ready, and late arrivals the runtime plays, against `after` chains and reverse exits
+// moved to the runtime (−0.3 KB). A byte pass follows the showcase.
+// up front 6.75 → 7 KB (2026-10-22): hidden tabs finish at once, a morph cross-fades with its
+// source (open and close), `background-color` in the CSS engine, the swap's synchronous step-out,
+// the dev trace hook (the inspection itself is a dev-only chunk). The stress pass's byte shedding
+// aims to win this back under 6.75 KB.
+// morph 1 → 1.25 KB (2026-10-22): the panel takes the trigger's colour, cross-fades when the trigger
+// stays, and carries `layoutId` pairs (a label) between the two. Loaded only by morphing components.
 const BUDGET = {
-  upFront: 6.5 * 1024,
+  upFront: 7 * 1024,
   runtime: 5 * 1024,
-  morph: 1 * 1024,
-  button: 1 * 1024,
+  morph: 1.25 * 1024,
+  button: 1.25 * 1024,
   states: 3.8 * 1024,
   linked: 2.6 * 1024,
 }

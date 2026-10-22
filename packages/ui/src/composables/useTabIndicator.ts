@@ -332,6 +332,14 @@ export function useTabIndicator(
   }
 
   watch(active, () => nextTick(measure), { immediate: true, flush: 'post' })
+  // A new indicator element (a menu opened again) starts bare: nothing written, no springs on it.
+  if (options.indicatorEl)
+    watch(options.indicatorEl, () => {
+      written = {}
+      springs.forEach((handle) => handle.destroy())
+      springs.clear()
+      springKey = ''
+    })
 
   if (typeof document !== 'undefined' && document.fonts) {
     document.fonts.ready.then(() => {

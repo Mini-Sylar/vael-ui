@@ -5,6 +5,7 @@
 import { onScopeDispose, shallowReactive, watch } from 'vue'
 import { prefersReducedMotion } from '../composables/dom'
 import { resolveTiming, track } from './timing'
+import { springEasing } from '../composables/springEasing'
 import { isTimed } from './playable'
 import type { MotionTiming, MotionValues, MotionWhere, PartValues, Spring } from './types'
 import { splitFrame, toKeyframe, toKeyframes } from './values'
@@ -97,7 +98,7 @@ function createStatePlayer() {
     const run = el.animate(frames, {
       id: STATE_ID,
       duration: Math.min(duration, ONCE_CAP),
-      easing: EASE_OUT,
+      easing: 'linear',
     })
     void track(run.finished.catch(() => {}))
   }
@@ -219,4 +220,44 @@ export function startStates(ctx: StatesContext): void {
     unlisten?.()
     player.dispose()
   })
+}
+
+const DURATION_TOKENS = [
+  '--ui-duration-press',
+  '--ui-duration-enter',
+  '--ui-duration-text',
+  '--ui-duration-number',
+]
+const EASE_TOKENS = [
+  '--ui-ease-out',
+  '--ui-ease-in-out',
+  '--ui-ease-drawer',
+  '--ui-ease-text',
+  '--ui-ease-number',
+]
+
+/** Writes `timing` as the motion tokens on `el`, so its own transitions follow it. */
+export function putTimingTokens(el: HTMLElement | SVGElement, timing: MotionTiming): string[] {
+  let duration: string | undefined
+  let easing: string | undefined
+  if (timing.spring && typeof timing.spring === 'object') {
+    const curve = springEasing(timing.spring as never)
+    duration = `${Math.round(curve.duration)}ms`
+    easing = curve.easing
+  } else {
+    const raw = timing.duration
+    if (raw !== undefined) duration = typeof raw === 'number' ? `${raw}ms` : String(raw)
+    if (timing.easing) easing = String(timing.easing)
+  }
+  const set: string[] = []
+  const put = (names: string[], value: string | undefined) => {
+    if (!value) return
+    for (const name of names) {
+      el.style.setProperty(name, value)
+      set.push(name)
+    }
+  }
+  put(DURATION_TOKENS, duration)
+  put(EASE_TOKENS, easing)
+  return set
 }

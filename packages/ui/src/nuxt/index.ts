@@ -1,4 +1,4 @@
-import { addComponent, defineNuxtModule } from '@nuxt/kit'
+import { addComponent, addPluginTemplate, defineNuxtModule } from '@nuxt/kit'
 import { COMPONENT_NAMES } from '../resolver/generated/component-names'
 
 export interface ModuleOptions {
@@ -58,6 +58,20 @@ const vaelUiNuxtModule = defineNuxtModule<ModuleOptions>({
     })
 
     const filePath = vapor ? 'vael-ui/vapor' : 'vael-ui'
+    // `v-animate` in any template, no import: the object form, for the app's VDOM templates (Nuxt's
+    // own are VDOM even with Vapor on) and the server, whose `getSSRProps` renders a first
+    // appearance as CSS. A `<script setup vapor>` component imports `vAnimate` from 'vael-ui/vapor'.
+    addPluginTemplate({
+      filename: 'vael-ui-directives.mjs',
+      getContents: () =>
+        [
+          `import { defineNuxtPlugin } from '#app'`,
+          `import { vAnimate } from 'vael-ui'`,
+          `export default defineNuxtPlugin((nuxtApp) => {`,
+          `  nuxtApp.vueApp.directive('animate', vAnimate)`,
+          `})`,
+        ].join('\n'),
+    })
     const excluded = new Set(options.exclude ?? [])
     for (const name of COMPONENT_NAMES) {
       if (excluded.has(name)) continue

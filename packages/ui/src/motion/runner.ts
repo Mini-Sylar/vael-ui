@@ -1,6 +1,7 @@
 // The motion runtime, loaded the first time a component's motion is customised: hooks, part
 // ownership, scheduling, enter and leave. Components hold a light shell (useComponentMotion).
 import { nextTick } from 'vue'
+import { valuesAt } from './playable'
 import { prefersReducedMotion } from '../composables/dom'
 import { holdValues, playValues, resolveTiming } from './engine'
 import { PRESENCE_ID } from './ids'
@@ -10,9 +11,8 @@ import type { Moments } from './schedule'
 import type { MotionPhase, MotionResult, MotionValues } from './types'
 import type { Runner, RunnerHost } from './host'
 import { targetsOf } from './targets'
-import { motionWarn } from './warn'
+import { runHook } from './hook'
 
-const HOOK_CAP = 3000
 const QUIET_EXIT: MotionValues = { opacity: 0, scale: '0.97' }
 const QUIET_FADE: MotionValues = { opacity: 0 }
 // `exitOrder: 'reverse'`: seconds between leaving targets, and the most the cascade may add.
@@ -36,72 +36,6 @@ function holdUntilTaken(el: Element, values: MotionValues): void {
     else requestAnimationFrame(check)
   }
   requestAnimationFrame(check)
-}
-
-/** Adapts whatever a hook returns to a promise, stops it on interrupt, and never waits forever. */
-async function runHook(
-  name: string,
-  phase: 'enter' | 'leave',
-  run: () => MotionResult,
-  signal: AbortSignal,
-  parts: Element[],
-): Promise<void> {
-  let result: MotionResult
-  try {
-    result = run()
-  } catch (error) {
-    motionWarn(`${name} ${phase} hook threw, so it finished at once: ${String(error)}`)
-    return
-  }
-  // A leave ends where it went: without fill, the element would snap back for a frame before removal.
-  if (phase === 'leave')
-    for (const el of parts)
-      for (const animation of el.getAnimations?.() ?? [])
-        if (!('transitionProperty' in animation) && !('animationName' in animation)) {
-          const fill = animation.effect?.getTiming().fill
-          if (fill === 'none' || fill === 'auto')
-            animation.effect?.updateTiming({ fill: 'forwards' })
-        }
-  const stoppable = result as
-    | { kill?: () => void; stop?: () => void; cancel?: () => void }
-    | undefined
-  signal.addEventListener(
-    'abort',
-    () => (stoppable?.kill ?? stoppable?.stop ?? stoppable?.cancel)?.call(stoppable),
-    { once: true },
-  )
-  let finished: Promise<void>
-  if (typeof Animation !== 'undefined' && result instanceof Animation)
-    finished = result.finished.then(
-      () => undefined,
-      () => undefined,
-    )
-  else if (result && typeof (result as { then?: unknown }).then === 'function')
-    finished = new Promise<void>((resolve) =>
-      (result as { then: (f: () => void) => unknown }).then(() => resolve()),
-    )
-  else {
-    if (parts.some((el) => el.getAnimations?.().some((a) => a.playState === 'running')))
-      motionWarn(
-        `${name} ${phase}: something was still animating when the hook returned. Return the animation so ${name} waits: \`${phase}: (parts) => gsap.to(...)\`.`,
-      )
-    finished = Promise.resolve()
-  }
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const cap = new Promise<void>((resolve) => {
-    timer = setTimeout(() => {
-      motionWarn(
-        `${name} ${phase} didn't finish within ${HOOK_CAP / 1000}s, so it was ended. Loops belong in CSS on a child.`,
-      )
-      resolve()
-    }, HOOK_CAP)
-  })
-  // Interrupted: a stopped GSAP timeline or motion animation never resolves, so stop waiting at once.
-  const interrupted = new Promise<void>((resolve) =>
-    signal.aborted ? resolve() : signal.addEventListener('abort', () => resolve(), { once: true }),
-  )
-  await Promise.race([finished, cap, interrupted])
-  clearTimeout(timer)
 }
 
 export function createRunner(host: RunnerHost): Runner {
@@ -185,10 +119,21 @@ export function createRunner(host: RunnerHost): Runner {
     if (id !== generation) return
     const parts = host.parts()
     const root = host.root()
-    const entries = root ? collectEntries(root) : []
+    const entries = root ? collectEntries(root, motion.targets) : []
     const partEls = Object.values(parts).filter((p): p is Element => !!p)
     if (motion.enter && !(prefersReducedMotion() && motion.reducedHooks === 'skip')) {
       const targets = Object.fromEntries(targetsOf(entries, motion).map((t) => [t.name, t.els]))
+      // A floating panel is placed a moment after it's inserted: your hook measures it there.
+      const main = parts[host.mainPart] as HTMLElement | null | undefined
+      if (host.ready && main) {
+        const hidden = main.animate([{ opacity: 0 }, { opacity: 0 }], {
+          duration: 1,
+          fill: 'forwards',
+        })
+        await host.ready()
+        hidden.cancel()
+        if (id !== generation) return
+      }
       let rest: Promise<unknown> = Promise.resolve()
       await runHook(
         host.name,
@@ -201,6 +146,7 @@ export function createRunner(host: RunnerHost): Runner {
               return values
                 ? playValues(partEl, values, {
                     direction: 'in',
+                    engine: motion.engine,
                     timing: resolveTiming(
                       partEl,
                       motion.partTiming[part] ?? motion.timing,
@@ -239,12 +185,13 @@ export function createRunner(host: RunnerHost): Runner {
       const timing = resolveTiming(partEl, motion.partTiming[part] ?? motion.timing, motion.spring)
       startMoments(m, timing.arrival)
       plays.push(
-        (values ? playValues(partEl, values, { direction: 'in', timing }) : Promise.resolve()).then(
-          () => {
-            m.arrive.resolve()
-            m.settle.resolve()
-          },
-        ),
+        (values
+          ? playValues(partEl, values, { direction: 'in', timing, engine: motion.engine })
+          : Promise.resolve()
+        ).then(() => {
+          m.arrive.resolve()
+          m.settle.resolve()
+        }),
       )
     }
     plays.push(runTargets(targetsOf(entries, motion), moments, { spring: motion.spring, signal }))
@@ -264,7 +211,7 @@ export function createRunner(host: RunnerHost): Runner {
     if (motion.off) return finish()
     const parts = host.parts()
     const root = host.root()
-    const entries = root ? collectEntries(root) : []
+    const entries = root ? collectEntries(root, motion.targets) : []
     const partEls = Object.values(parts).filter((p): p is Element => !!p)
     if (motion.leave && !(prefersReducedMotion() && motion.reducedHooks === 'skip')) {
       const targets = Object.fromEntries(targetsOf(entries, motion).map((t) => [t.name, t.els]))
@@ -281,6 +228,7 @@ export function createRunner(host: RunnerHost): Runner {
                 motion.exit[part] ?? (part === host.mainPart ? QUIET_EXIT : QUIET_FADE),
                 {
                   direction: 'out',
+                  engine: motion.engine,
                   timing: resolveTiming(
                     partEl,
                     motion.partTiming[part] ?? motion.timing,
@@ -316,8 +264,10 @@ export function createRunner(host: RunnerHost): Runner {
       Promise.all(
         leaving.map((entry, i) => {
           const own = byName.get(entry.name)
-          return playValues(entry.el, own?.exit ?? QUIET_FADE, {
+          const exit = valuesAt(own?.exit, { direction: motion.direction, index: i })
+          return playValues(entry.el, exit ?? QUIET_FADE, {
             direction: 'out',
+            engine: motion.engine,
             timing: resolveTiming(
               entry.el,
               own?.duration || own?.spring ? own : motion.timing,
@@ -334,6 +284,7 @@ export function createRunner(host: RunnerHost): Runner {
           const values = motion.exit[part] ?? (part === host.mainPart ? QUIET_EXIT : QUIET_FADE)
           return playValues(partEl, values, {
             direction: 'out',
+            engine: motion.engine,
             timing: resolveTiming(partEl, motion.partTiming[part] ?? motion.timing, motion.spring),
           })
         }),
