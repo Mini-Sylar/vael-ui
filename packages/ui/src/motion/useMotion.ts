@@ -104,12 +104,14 @@ function useListMotion<N extends string>(motion?: () => unknown): UseMotionRetur
     if (mounted) list.ready()
     return list
   })
+  // A failed load is handled where it's used; it must not surface as an unhandled rejection.
+  loading.catch(() => {})
   // Whichever comes last, mounting or the engine, notes where everything is.
   onMounted(() => {
     mounted = true
     list?.ready()
   })
-  onScopeDispose(() => void loading.then((ready) => ready.stop()))
+  onScopeDispose(() => void loading.then((ready) => ready.stop()).catch(() => {}))
   const transition: TransitionProps = {
     css: false,
     // TransitionGroup passes this to its element, so the list finds its box before any change.
@@ -119,16 +121,26 @@ function useListMotion<N extends string>(motion?: () => unknown): UseMotionRetur
     onEnter(el, done) {
       if (list) return list.hooks.onEnter(el, done)
       // Not loaded yet: hidden meanwhile, then it enters from there.
-      el.animate([{ opacity: 0 }, { opacity: 0 }], {
+      const hidden = el.animate([{ opacity: 0 }, { opacity: 0 }], {
         id: PRESENCE_ID,
         duration: 1,
         fill: 'forwards',
       })
-      void loading.then((ready) => ready.hooks.onEnter(el, done))
+      // Couldn't load (offline, a flaky network): the item appears at once.
+      loading.then(
+        (ready) => ready.hooks.onEnter(el, done),
+        () => {
+          hidden.cancel()
+          done()
+        },
+      )
     },
     onLeave(el, done) {
       if (list) return list.hooks.onLeave(el, done)
-      void loading.then((ready) => ready.hooks.onLeave(el, done))
+      loading.then(
+        (ready) => ready.hooks.onLeave(el, done),
+        () => done(),
+      )
     },
   }
   return {

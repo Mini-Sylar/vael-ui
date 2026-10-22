@@ -1,6 +1,6 @@
-// What a vael-ui component uses to animate: Transition hooks, target(), phase. A light shell: the
-// built-in look is the component's own CSS; customised motion loads an engine on demand, the CSS
-// engine (css.ts) for static motion, the runtime (runner.ts) for hooks, steps and keyframes.
+// What a vael-ui component uses to animate: Transition hooks, target(), phase. The CSS engine
+// (css.ts) plays every component's look, so it ships with them: a lazy one made the first open wait
+// on slow networks. The runtime (runner.ts: hooks, steps, keyframes) loads only when one is used.
 import { computed, inject, onScopeDispose, shallowRef, watch } from 'vue'
 import type { ComputedRef, ShallowRef, TransitionProps } from 'vue'
 import { defaultsKey } from '../config'
@@ -13,11 +13,12 @@ import type { Runner, RunnerHost } from './host'
 import { needsRuntime } from './playable'
 
 let runtime: Promise<typeof import('./runner')> | undefined
-let cssEngine: Promise<typeof import('./css')> | undefined
+import * as cssModule from './css'
+
 /** @internal Loads the motion runtime once, for every component. */
 export const loadMotionRuntime = () => (runtime ??= import('./runner'))
-/** @internal Loads the CSS engine once, for every component. */
-export const loadCssEngine = () => (cssEngine ??= import('./css'))
+/** @internal The CSS engine, bundled: every animating component uses it. */
+export const loadCssEngine = () => Promise.resolve(cssModule)
 
 export interface ComponentMotionOptions {
   /** Shown in warnings, e.g. `Dialog`. */
@@ -119,22 +120,30 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
   if (typeof window !== 'undefined')
     watch(
       () => (resolved.value.custom || !!options.owns?.()) && !resolved.value.off && kind.value,
-      (needed) => needed && void load(),
+      (needed) => needed && void load().catch(() => {}),
       { immediate: true },
     )
 
   // A leaving element is detached from Vue's render, so a template binding can't mark it: we do.
   const LEAVING = 'data-ui-leaving'
 
+  // No animation this time: motion off, or its code couldn't load (offline, a flaky network).
+  function enterNow(done: () => void) {
+    cancel()
+    phase.value = 'entered'
+    done()
+    options.onAfterEnter?.()
+  }
+  function leaveNow(done: () => void) {
+    cancel()
+    phase.value = 'left'
+    done()
+    options.onAfterLeave?.()
+  }
+
   function enter(el: Element, done: () => void) {
     el.removeAttribute(LEAVING)
-    if (resolved.value.off) {
-      cancel()
-      phase.value = 'entered'
-      done()
-      options.onAfterEnter?.()
-      return
-    }
+    if (resolved.value.off) return enterNow(done)
     const ready = engines[kind.value]
     if (ready) return ready.enter(el, done)
     // Not loaded yet (opened the instant it mounted): keep it hidden meanwhile, then hand over. The
@@ -144,23 +153,27 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       duration: 1,
       fill: 'forwards',
     })
-    void load().then((ready) => {
-      hidden.cancel()
-      ready.enter(el, done)
-    })
+    load().then(
+      (ready) => {
+        hidden.cancel()
+        ready.enter(el, done)
+      },
+      () => {
+        // Couldn't load: open at once rather than stay hidden.
+        hidden.cancel()
+        enterNow(done)
+      },
+    )
   }
   function leave(el: Element, done: () => void) {
     el.setAttribute(LEAVING, '')
-    if (resolved.value.off) {
-      cancel()
-      phase.value = 'left'
-      done()
-      options.onAfterLeave?.()
-      return
-    }
+    if (resolved.value.off) return leaveNow(done)
     const ready = engines[kind.value]
     if (ready) return ready.leave(el, done)
-    void load().then((ready) => ready.leave(el, done))
+    load().then(
+      (ready) => ready.leave(el, done),
+      () => leaveNow(done),
+    )
   }
   function cancel() {
     engines.css?.cancel()

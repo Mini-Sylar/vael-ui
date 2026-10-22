@@ -245,7 +245,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     hiddenSource = null
   }
   // A component that morphs fetches the morph kit as soon as it's set up.
-  if (host.resolved().morph) void loadMorph()
+  if (host.resolved().morph) void loadMorph().catch(() => {})
   const morphTiming = (m: ResolvedMotion, fallback: MotionTiming) =>
     ownTiming(m.timing) ? m.timing : fallback
   const parts = () =>
@@ -286,8 +286,11 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     const root = host.root()
     const groups = root ? targetsOf(collectEntries(root), host.resolved()) : []
     if (!playable(groups)) {
-      handedOver = await fallback()
-      if (id === generation) handedOver.enter(el, finish)
+      // The runtime plays this; if it can't load, open at once.
+      handedOver = await fallback().catch(() => undefined)
+      if (id !== generation) return
+      if (handedOver) handedOver.enter(el, finish)
+      else finish()
       return
     }
     handedOver = undefined
@@ -323,7 +326,8 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
         duration: 1,
         fill: 'forwards',
       })
-      kit = await loadMorph()
+      // Couldn't load: no morph this time, the regular look instead.
+      kit = await loadMorph().catch(() => undefined)
       wait.cancel()
       if (id !== generation) return
     }
@@ -398,7 +402,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     // Morph: shrink back onto the source where it is now, the content fading out first.
     const main = own[host.mainPart] as HTMLElement | undefined
     const source = main ? (hiddenSource ?? morphSource(m)) : null
-    const kit = source && main ? await loadMorph() : undefined
+    const kit = source && main ? await loadMorph().catch(() => undefined) : undefined
     if (id !== generation) return
     const morphed =
       kit && source && main ? kit.morphLeave(source, main, morphTiming(m, kit.MORPH_OUT)) : []

@@ -1,7 +1,7 @@
 import '../src/style.css'
 import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { Transition, defineComponent, h, nextTick, shallowRef } from 'vue'
+import { Transition, defineComponent, h, shallowRef } from 'vue'
 import { useMotion } from '../src/motion/useMotion'
 
 const real = { global: { stubs: { transition: false } } }
@@ -29,9 +29,9 @@ test('useMotion: bind it to <Transition>, no refs, and the moving element animat
   const sheet = () => document.querySelector<HTMLElement>('[data-testid="sheet"]')
   const frame = () => new Promise(requestAnimationFrame)
   open.value = true
-  await nextTick()
-  // The first frame you can see: still on its way, from 10px down.
-  while (!sheet() || Number(getComputedStyle(sheet()!).opacity) < 0.02) await frame()
+  // The first frame you can see (nothing paints before one): still on its way, from 10px down.
+  do await frame()
+  while (!sheet() || Number(getComputedStyle(sheet()!).opacity) < 0.02)
   expect(
     Number.parseFloat(getComputedStyle(sheet()!).translate.split(' ')[1] ?? '0'),
   ).toBeGreaterThan(2)
