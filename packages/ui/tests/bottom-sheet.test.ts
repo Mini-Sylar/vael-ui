@@ -241,8 +241,14 @@ test('closing slides the sheet down while its backdrop fades, together', async (
 
 test('a refused drag dismiss holds where it was let go, then springs back to rest', async () => {
   let answer!: (allowed: boolean) => void
+  const reasons: string[] = []
   const screen = await render(BottomSheetFixture, {
-    props: { beforeClose: () => new Promise<boolean>((resolve) => (answer = resolve)) },
+    props: {
+      beforeClose: ({ reason }: { reason: string }) => (
+        reasons.push(reason),
+        new Promise<boolean>((resolve) => (answer = resolve))
+      ),
+    },
   })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
@@ -259,18 +265,35 @@ test('a refused drag dismiss holds where it was let go, then springs back to res
   answer(false)
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(resting, -1), { timeout: 1500 })
   expect(screen.getByTestId('open-state').element().textContent).toBe('open')
+  // The guard hears how it was asked: dragged away, then Escape.
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(reasons).toEqual(['drag', 'escape']))
+  answer(false)
 })
 
-test("a drag dismiss leaves on a spring from the finger's speed; Escape on the drawer's curve", async () => {
-  const exit = () =>
-    /translate \d+ms ([^,]+?)(?: \d+ms|,|$)/.exec(panel().style.transition)?.[1] ?? ''
+test("every close leaves on one spring: Escape from rest, a flick from the finger's speed", async () => {
+  const curve = (el: HTMLElement, prop: string) =>
+    new RegExp(`${prop} \\d+ms (linear\\([^)]*\\)|[^,]+)`).exec(el.style.transition)?.[1] ?? ''
+  const exit = () => curve(panel(), 'translate')
+  // How it starts against a straight line: below 1 from rest, above 1 when thrown.
+  const start = () => {
+    const [, value, at] =
+      /translate \d+ms linear\(0[^,]*, ([\d.]+) ([\d.]+)%/.exec(panel().style.transition) ?? []
+    return Number(value) / (Number(at) / 100)
+  }
   const screen = await render(BottomSheetFixture, { global: { stubs: { transition: false } } })
   await screen.getByTestId('trigger').click()
   await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
   await new Promise((r) => setTimeout(r, 600))
   await userEvent.keyboard('{Escape}')
   await vi.waitFor(() => expect(exit()).not.toBe(''))
-  expect(exit()).not.toMatch(/^linear\(/)
+  // The drawer curve starts at full speed and flings; the spring from rest eases in.
+  expect(exit()).toMatch(/^linear\(/)
+  expect(start()).toBeLessThan(1)
+  // The backdrop leaves on the same curve.
+  expect(curve(document.querySelector<HTMLElement>('.ui-bottom-sheet-overlay')!, 'opacity')).toBe(
+    exit(),
+  )
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 
   await screen.getByTestId('trigger').click()
@@ -292,6 +315,7 @@ test("a drag dismiss leaves on a spring from the finger's speed; Escape on the d
     new PointerEvent('pointerup', { clientY: startY + 140, pointerId, bubbles: true }),
   )
   await vi.waitFor(() => expect(exit()).toMatch(/^linear\(/))
+  expect(start()).toBeGreaterThan(1.5)
 })
 
 test('releaseVelocity reports the flick speed for a drag dismiss and 0 for any other close', async () => {

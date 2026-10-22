@@ -16,8 +16,10 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // button / states (2026-10-22): `states` on Button, Input, Accordion. Button carries only the check
 // for whether states are customised; the player and its listeners load when they are.
 // Re-baselined 2026-10-22 when sizes moved to compressed-together (they had been per file).
+// up front 6 → 6.5 KB (2026-10-22): `presence` is counted now (Dialog always loaded it, from a chunk
+// this check didn't recognise), plus late appearances (`appear`, `joined`): +0.3 KB on all of Dialog.
 const BUDGET = {
-  upFront: 6 * 1024,
+  upFront: 6.5 * 1024,
   runtime: 5 * 1024,
   morph: 1 * 1024,
   button: 1 * 1024,
@@ -35,7 +37,7 @@ function closure(file, seen = new Set()) {
 // Compressed together, as an app's bundle ships them (per-file gzip overcounts small chunks).
 const gz = (files) => gzipSync(Buffer.concat([...files].map((f) => readFileSync(f)))).length
 const isMotion = (f) =>
-  /[\\/]motion[\\/]|(?:^|[\\/])(?:ids|runner|css|engine|schedule|warn|size|list|playable|targets|values|useComponentMotion|useStateMotion|states|context|morph|springEasing|springStep)[-.]/.test(
+  /[\\/]motion[\\/]|(?:^|[\\/])(?:ids|presence|runner|css|engine|schedule|warn|size|list|playable|targets|values|useComponentMotion|useStateMotion|states|context|morph|springEasing|springStep)[-.]/.test(
     f,
   )
 const chunk = (name) => readdirSync(dist).find((f) => new RegExp(`^${name}-.*\\.js$`).test(f))

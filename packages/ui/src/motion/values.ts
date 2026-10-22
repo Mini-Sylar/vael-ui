@@ -100,3 +100,9 @@ export function splitFrame(frame: Keyframe): { moves: Keyframe; fades: Keyframe 
 export function reduceValues(values: MotionValues): MotionValues {
   return values.opacity === undefined ? {} : { opacity: values.opacity }
 }
+
+/** Entering or leaving under reduced motion: movement drops, and with no fade left it fades. */
+export function reducePresence(values: MotionValues): MotionValues {
+  const reduced = reduceValues(values)
+  return Object.keys(values).length && reduced.opacity === undefined ? { opacity: 0 } : reduced
+}

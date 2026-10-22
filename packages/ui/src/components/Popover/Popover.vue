@@ -262,19 +262,30 @@ const motion = useComponentMotion({
 })
 const { target, phase } = motion
 const motionTransition = motion.transition
+// Whether this open's after-enter (or this close's after-leave) has been emitted.
+let told = false
 const motionHooks = computed(() => {
   const { css: _css, ...hooks } = motionTransition.value
   return {
     ...hooks,
-    onBeforeEnter: () => (phase.value = 'entering'),
+    onBeforeEnter: () => {
+      phase.value = 'entering'
+      told = false
+    },
+    // Once per open and per close: v-if and v-show each run an enter, and each calls this.
     onAfterEnter: () => {
       phase.value = 'entered'
-      emit('after-enter')
+      if (!told) emit('after-enter')
+      told = true
     },
-    onBeforeLeave: () => (phase.value = 'leaving'),
+    onBeforeLeave: () => {
+      phase.value = 'leaving'
+      told = false
+    },
     onAfterLeave: () => {
       phase.value = 'left'
-      emit('after-leave')
+      if (!told) emit('after-leave')
+      told = true
     },
   }
 })

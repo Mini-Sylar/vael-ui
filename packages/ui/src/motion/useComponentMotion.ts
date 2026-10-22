@@ -5,12 +5,13 @@ import { computed, inject, onScopeDispose, shallowRef, watch } from 'vue'
 import type { ComputedRef, ShallowRef, TransitionProps } from 'vue'
 import { defaultsKey } from '../config'
 import { PRESENCE_ID } from './ids'
-import { PRESENCE_ATTR, refElement, TARGET_ATTR } from './presence'
+import { PRESENCE_ATTR, presenceFor, refElement, TARGET_ATTR } from './presence'
 import { resolveMotion, useMotionStyle } from './context'
 import type { ResolvedMotion } from './context'
 import type { MotionPhase, MotionRef, MotionStyle, MotionTiming, MotionValues } from './types'
 import type { Runner, RunnerHost } from './host'
-import { needsRuntime } from './playable'
+import { needsRuntime, targetCanPlay } from './playable'
+import { targetsOf } from './targets'
 
 let runtime: Promise<typeof import('./runner')> | undefined
 import * as cssModule from './css'
@@ -19,6 +20,8 @@ import * as cssModule from './css'
 export const loadMotionRuntime = () => (runtime ??= import('./runner'))
 /** @internal The CSS engine, bundled: every animating component uses it. */
 export const loadCssEngine = () => Promise.resolve(cssModule)
+/** @internal One element's appearance on its own (`v-animate` with no component, or joining late). */
+export const appear = cssModule.appear
 
 export interface ComponentMotionOptions {
   /** Shown in warnings, e.g. `Dialog`. */
@@ -94,6 +97,33 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     last.root = options.root() ?? last.root
     return last.root
   }
+
+  // An element that joins while it's open (a v-if turning true inside) plays its appearance.
+  if (typeof window !== 'undefined')
+    watch(
+      () => options.root(),
+      (root) => {
+        if (!root) return
+        presenceFor(root).joined = (entry) => {
+          if (!(entry.el instanceof HTMLElement)) return
+          const el = entry.el
+          const play = () => {
+            const group = targetsOf([entry], resolved.value)[0]
+            if (!group?.motion.initial || !targetCanPlay(group.motion)) return
+            void cssModule.appear(el, group.motion.initial, group.motion, resolved.value.spring)
+          }
+          if (phase.value === 'entered') return play()
+          // Joined mid-opening: once it's open, unless the opening already brought it in.
+          if (phase.value !== 'entering') return
+          const stop = watch(phase, (now) => {
+            if (now === 'entering') return
+            stop()
+            if (now === 'entered') play()
+          })
+        }
+      },
+      { immediate: true, flush: 'post' },
+    )
 
   const host: RunnerHost = {
     name: options.name,

@@ -104,3 +104,24 @@ test('a closing drawer lets taps through to the page under it while it slides aw
   // Still on screen and leaving, yet the button under it is what a tap would hit.
   expect(hitWhileLeaving).toBe(outside)
 })
+
+test('a drawer leaves on a spring from rest, its backdrop on the same curve', async () => {
+  const screen = await render(DrawerFixture, {
+    props: { position: 'right' },
+    global: { stubs: { transition: false } },
+  })
+  await screen.getByTestId('trigger-modal').click()
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog--right')).not.toBeNull())
+  await new Promise((r) => setTimeout(r, 700))
+  const panel = document.querySelector<HTMLElement>('.ui-dialog--right .ui-dialog-panel')!
+  const overlay = document.querySelector<HTMLElement>('.ui-dialog-overlay')!
+  const timingOf = (el: HTMLElement, prop: string) =>
+    new RegExp(`${prop} (\\d+ms (?:[a-z-]+\\([^)]*\\)|[^ ,]+))`).exec(el.style.transition)?.[1] ??
+    ''
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(timingOf(panel, 'translate')).toMatch(/^\d+ms linear\(/))
+  // Below a straight line at its first sample: it starts from rest, it isn't thrown.
+  const [, value, at] = /linear\(0[^,]*, ([\d.]+) ([\d.]+)%/.exec(timingOf(panel, 'translate'))!
+  expect(Number(value) / (Number(at) / 100)).toBeLessThan(1)
+  expect(timingOf(overlay, 'opacity')).toBe(timingOf(panel, 'translate'))
+})

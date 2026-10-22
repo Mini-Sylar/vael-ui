@@ -93,7 +93,11 @@ export { default as DialogHost } from './components/DialogHost/DialogHost.vue'
 export { default as CommandPalette } from './components/CommandPalette/CommandPalette.vue'
 export type { CommandPaletteItem } from './components/CommandPalette/CommandPalette.vue'
 export { default as BottomSheet } from './components/BottomSheet/BottomSheet.vue'
-export type { BottomSheetProps, SheetSnapPoint } from './components/BottomSheet/BottomSheet.vue'
+export type {
+  BottomSheetProps,
+  SheetCloseReason,
+  SheetSnapPoint,
+} from './components/BottomSheet/BottomSheet.vue'
 export { default as Drawer } from './components/Drawer/Drawer.vue'
 export type { DrawerProps, DrawerSide } from './components/Drawer/Drawer.vue'
 export { default as Tabs } from './components/Tabs/Tabs.vue'

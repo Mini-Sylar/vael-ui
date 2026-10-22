@@ -67,6 +67,8 @@ import type { DOMTarget } from '../../composables/dom'
 import type { BeforeClose, CloseContext, DialogMotion } from '../../motion/types'
 import type { DialogCloseReason } from '../../composables/useDialog'
 export type { SheetSnapPoint }
+/** Why the sheet is closing: a dialog's reasons, plus `'drag'` when it was dragged away. */
+export type SheetCloseReason = DialogCloseReason | 'drag'
 
 // Nested sheet announces open state; parent recedes Vaul-style (no consumer wiring).
 const nestingKey: InjectionKey<{ onNestedOpenChange: (open: boolean) => void }> =
@@ -116,9 +118,10 @@ export interface BottomSheetProps {
   closeOnHistoryBack?: boolean
   /**
    * Runs before the sheet closes. Return `true` to close it, `false` to keep it open, or a
-   * promise of either. `velocity` is the drag's release speed in px/s.
+   * promise of either. `reason` is `'drag'` when it was dragged away, and `velocity` is the
+   * drag's release speed in px/s.
    */
-  beforeClose?: BeforeClose<DialogCloseReason>
+  beforeClose?: BeforeClose<SheetCloseReason>
   /** Teleport target: a CSS selector. Wins over `container` either way. */
   teleportTo?: string
   /** Element to contain the sheet in, instead of the viewport. Snap points use its height. */
@@ -240,7 +243,9 @@ async function beforeClose(context: CloseContext<DialogCloseReason>) {
   velocityAtClose.value = dragVelocity
   const dragged = fromDrag
   if (!props.beforeClose) return true
-  const ask = closeContext(context.reason, { velocity: dragVelocity * 1000 })
+  const ask = closeContext<SheetCloseReason>(dragged ? 'drag' : context.reason, {
+    velocity: dragVelocity * 1000,
+  })
   const allowed = await askGuard(props.beforeClose, ask)
   if (!allowed && dragged) settle()
   return allowed
@@ -249,30 +254,25 @@ async function beforeClose(context: CloseContext<DialogCloseReason>) {
 // The built-in look, played by the motion engine: the panel rises from below and goes back down,
 // its backdrop fading on the same curve. The engine moves `translate`; the drag owns `transform`.
 const DRAWER = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-drawer)' } as const
+const FADE = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-out)' } as const
 const DRAWER_EXIT = {
   duration: 'var(--ui-duration-drawer-exit)',
   easing: 'var(--ui-ease-drawer)',
 } as const
-const FADE = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-out)' } as const
-const FADE_EXIT = {
-  duration: 'var(--ui-duration-drawer-exit)',
-  easing: 'var(--ui-ease-out)',
-} as const
-// A flick carries on from the finger's speed, on a spring over the panel's own height; any other
-// close leaves at the drawer's pace.
+// Every close leaves on one spring over the panel's height: a flick carries on at the finger's
+// speed, the X or Escape start from rest (the drawer curve starts at full speed, so it flings).
+// The backdrop rides the same spring, so the two leave together.
 const sheetLook = computed<DialogMotion>(() => {
   const speed = Math.max(0, velocityAtClose.value)
-  const fling = speed && panelEl.value ? flingTiming(panelEl.value.offsetHeight, speed) : null
+  const leave = panelEl.value ? flingTiming(panelEl.value.offsetHeight, speed) : DRAWER_EXIT
   return {
     initial: {
       panel: { y: { value: '100%', ...DRAWER } },
       overlay: { opacity: { value: 0, ...FADE } },
     },
     exit: {
-      panel: { y: { value: '100%', ...(fling ?? DRAWER_EXIT) } },
-      overlay: {
-        opacity: { value: 0, ...(fling ? { ...FADE_EXIT, duration: fling.duration } : FADE_EXIT) },
-      },
+      panel: { y: { value: '100%', ...leave } },
+      overlay: { opacity: { value: 0, ...leave } },
     },
   }
 })

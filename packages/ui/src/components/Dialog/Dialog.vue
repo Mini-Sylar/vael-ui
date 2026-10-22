@@ -240,6 +240,7 @@ export interface DialogExposed {
 <!-- v-if mode: Transition owns enter/exit; forceMount: v-show + consumer drives motion. -->
 <!-- Generic over your target names, so `target('…')` autocompletes from `motion.targets`. -->
 <script setup lang="ts" generic="N extends string = string">
+import { FLING_SPRING } from '../../motion/fling'
 import type { DialogCloseReason } from '../../composables/useDialog'
 import type { BeforeClose } from '../../motion/types'
 import './Dialog.css'
@@ -448,15 +449,7 @@ function aimAtTrigger() {
 }
 
 const DRAWER = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-drawer)' } as const
-const DRAWER_EXIT = {
-  duration: 'var(--ui-duration-drawer-exit)',
-  easing: 'var(--ui-ease-drawer)',
-} as const
 const DRAWER_FADE = { duration: 'var(--ui-duration-drawer)', easing: 'var(--ui-ease-out)' } as const
-const DRAWER_FADE_EXIT = {
-  duration: 'var(--ui-duration-drawer-exit)',
-  easing: 'var(--ui-ease-out)',
-} as const
 type Look = { initial: Record<string, MotionValues>; exit: Record<string, MotionValues> }
 /** Each position's built-in look: where the panel comes from, and leaves back to. */
 function builtInLook(): Look {
@@ -468,8 +461,10 @@ function builtInLook(): Look {
         overlay: { opacity: { value: 0, ...DRAWER_FADE } },
       },
       exit: {
-        panel: { x: { value: x, ...DRAWER_EXIT } },
-        overlay: { opacity: { value: 0, ...DRAWER_FADE_EXIT } },
+        // Off screen, the drawer curve's slow end is never seen and it flings: it leaves on a spring
+        // from rest, the backdrop with it.
+        panel: { x: { value: x, spring: FLING_SPRING } },
+        overlay: { opacity: { value: 0, spring: FLING_SPRING } },
       },
     }
   }
@@ -508,19 +503,30 @@ const motion = useComponentMotion({
 })
 const { target, phase } = motion
 const motionTransition = motion.transition
+// Whether this open's after-enter (or this close's after-leave) has been emitted.
+let told = false
 const motionHooks = computed(() => {
   const { css: _css, ...hooks } = motionTransition.value
   return {
     ...hooks,
-    onBeforeEnter: () => (phase.value = 'entering'),
+    onBeforeEnter: () => {
+      phase.value = 'entering'
+      told = false
+    },
+    // Once per open and per close: v-if and v-show each run an enter, and each calls this.
     onAfterEnter: () => {
       phase.value = 'entered'
-      emit('after-enter')
+      if (!told) emit('after-enter')
+      told = true
     },
-    onBeforeLeave: () => (phase.value = 'leaving'),
+    onBeforeLeave: () => {
+      phase.value = 'leaving'
+      told = false
+    },
     onAfterLeave: () => {
       phase.value = 'left'
-      emit('after-leave')
+      if (!told) emit('after-leave')
+      told = true
     },
   }
 })

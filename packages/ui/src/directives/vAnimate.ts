@@ -3,13 +3,44 @@ import { onScopeDispose, watchPostEffect } from 'vue'
 import type { DirectiveBinding, ObjectDirective } from 'vue'
 import { findPresence } from '../motion/presence'
 import { followSize } from '../motion/size'
-import type { AnimateDirectiveValue, MotionTiming } from '../motion/types'
+import { appear } from '../motion/useComponentMotion'
+import type { AnimateDirectiveValue, MotionTiming, TargetMotion } from '../motion/types'
 import { motionWarn } from '../motion/warn'
 
 type Marked = HTMLElement & {
   _uiAnimateLeave?: () => void
   _uiSizeStop?: () => void
   _uiAnimateValue?: AnimateDirectiveValue
+  _uiAppeared?: boolean
+}
+
+// No component around it: it plays its own appearance. Those that mount together under one name
+// stagger in page order (`stagger`, `delay`).
+const batch = new Map<string, { el: Marked; value: TargetMotion }[]>()
+function flush() {
+  for (const items of batch.values()) {
+    items.sort((a, b) =>
+      a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+    )
+    items.forEach(({ el, value }, i) => {
+      const delay = ((value.delay ?? 0) + i * (value.stagger ?? 0)) * 1000
+      void appear(el, value.initial!, value, undefined, delay)
+    })
+  }
+  batch.clear()
+}
+function appearAlone(
+  el: Marked,
+  name: string | undefined,
+  value: AnimateDirectiveValue | undefined,
+) {
+  if (el._uiAppeared) return
+  el._uiAppeared = true
+  if (typeof value === 'string')
+    return motionWarn(`v-animate preset '${value}' needs a vael-ui component or a style around it.`)
+  if (!value?.initial) return
+  if (!batch.size) queueMicrotask(flush)
+  batch.set(name ?? '', [...(batch.get(name ?? '') ?? []), { el, value }])
 }
 
 const timingOf = (value: AnimateDirectiveValue | undefined): MotionTiming | undefined =>
@@ -22,12 +53,7 @@ function join(
 ): void {
   el._uiAnimateLeave?.()
   const presence = findPresence(el)
-  if (!presence) {
-    motionWarn(
-      `v-animate${name ? `:${name}` : ''} isn't inside a vael-ui component, so it has nothing to join.`,
-    )
-    return
-  }
+  if (!presence) return appearAlone(el, name, value)
   // A string names one of the style's presets; the component resolves it when it plays.
   el._uiAnimateLeave = presence.register(el, name ?? 'default', value)
 }

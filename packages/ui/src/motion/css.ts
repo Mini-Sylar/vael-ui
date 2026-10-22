@@ -83,7 +83,11 @@ function plan(values: MotionValues, rtl: boolean): Plan {
     if (prop in values) out[prop] = { value: String(value(at(prop))), ...extra(at(prop)) }
   if ('clipPath' in values)
     out['clip-path'] = { value: String(value(at('clipPath'))), ...extra(at('clipPath')) }
-  if (prefersReducedMotion()) for (const prop of PROPS) if (prop !== 'opacity') delete out[prop]
+  if (prefersReducedMotion()) {
+    for (const prop of PROPS) if (prop !== 'opacity') delete out[prop]
+    // Movement dropped and no fade left: it fades instead of popping in or out.
+    if (Object.keys(values).length && !out.opacity) out.opacity = { value: '0', delay: 0 }
+  }
   return out
 }
 
@@ -103,18 +107,20 @@ function stage(
   const steps = plan(values, getComputedStyle(el).direction === 'rtl')
   const exitMs = leaving ? tokenMs(el, 'var(--ui-duration-exit)') : 0
   const held: Staged['values'] = {}
+  const moving = PROPS.some((prop) => MOVES.has(prop) && steps[prop])
   const list = PROPS.map((prop) => {
     const own = steps[prop]
     if (own) held[prop] = own.value
     const t = own?.timing ? timing(el, own.timing, fallback) : base
     let { duration, easing } = t
-    // Movement rides the spring; fades ease. Leaving is quick and quiet. Values timed on their own keep it.
+    // Movement rides the spring, and a fade beside it lands with it; a fade alone eases. Leaving is
+    // quick and quiet. Values timed on their own keep it.
     if (!own?.timing) {
       if (leaving) {
         // vael-ui's exit token: the built-in look's exits and yours agree, and themes can change it.
         duration = exitMs
         easing = EASE_OUT
-      } else if (!MOVES.has(prop)) {
+      } else if (!moving) {
         duration = Math.min(duration, FADE_CAP)
         easing = EASE_OUT
       }
@@ -229,6 +235,46 @@ function schedule(
 let morphKit: Promise<typeof Morph> | undefined
 const loadMorph = () => (morphKit ??= import('./morph'))
 
+// Elements an opening or an appearance has already brought in.
+const shown = new WeakSet<Element>()
+
+/** Holds an element's starting look with every transition off; the returned call lets it go. */
+function bringIn(node: HTMLElement, values: MotionValues, t: Timed, spring: Spring, delay: number) {
+  shown.add(node)
+  keep(node)
+  const next = stage(node, values, t, spring, delay, false)
+  // Caught mid-close: keep its transitions, so reopening carries on from what's on screen.
+  if (!node.hasAttribute('data-ui-m')) {
+    node.style.setProperty('transition', 'none')
+    hold(node, next.values)
+  }
+  return () => {
+    node.style.setProperty('transition', next.transition)
+    node.setAttribute('data-ui-m', '')
+    release(node)
+  }
+}
+
+/**
+ * One element's appearance on its own: it joined a component that's already open, or it has no
+ * component (a page's own v-animate). The same starting look and release as an opening.
+ */
+export async function appear(
+  el: HTMLElement,
+  values: MotionValues,
+  own: MotionTiming = {},
+  spring: Spring = DEFAULT_SPRING,
+  delayMs = 0,
+): Promise<void> {
+  // Already brought in by its component's opening: never twice.
+  if (!Object.keys(values).length || shown.has(el)) return
+  const go = bringIn(el, values, timing(el, own, spring), spring, delayMs)
+  void el.offsetWidth
+  go()
+  await settle(el)
+  clear(el)
+}
+
 /** The CSS engine. `fallback` loads the runtime for motion this engine can't play. */
 export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner>): Runner {
   let generation = 0
@@ -331,18 +377,9 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     const timedOf = (g: TargetGroup) =>
       timing(g.els[0] ?? first, ownTiming(g.motion) ? g.motion : m.timing, spring)
     const start = schedule(own, groups, partTiming, timedOf)
-    const moving: [HTMLElement, string][] = []
-    const start$ = (node: HTMLElement, values: MotionValues, t: Timed, delay: number) => {
-      keep(node)
-      const next = stage(node, values, t, spring, delay, false)
-      // Caught mid-close: keep its transitions, so reopening carries on from what's on screen.
-      if (!node.hasAttribute('data-ui-m')) {
-        // Every transition off while the starting look applies, the component's own included.
-        node.style.setProperty('transition', 'none')
-        hold(node, next.values)
-      }
-      moving.push([node, next.transition])
-    }
+    const moving: [HTMLElement, () => void][] = []
+    const start$ = (node: HTMLElement, values: MotionValues, t: Timed, delay: number) =>
+      moving.push([node, bringIn(node, values, t, spring, delay)])
     // Morph: the main part grows from the source's box, and its content fades in once under way.
     const main = own[host.mainPart] as HTMLElement | undefined
     const source = main ? morphSource(m) : null
@@ -386,11 +423,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
     // transition into it). Then transitions on and let go, in one change: each property transitions
     // from its starting look to the element's own style.
     void (el as HTMLElement).offsetWidth
-    for (const [node, transition] of moving) {
-      node.style.setProperty('transition', transition)
-      node.setAttribute('data-ui-m', '')
-      release(node)
-    }
+    for (const [, go] of moving) go()
     // The clip can't interpolate to `none`: it goes to its resting inset, removed once settled.
     if (rest && main) main.style.setProperty('clip-path', rest)
     await settle(el)

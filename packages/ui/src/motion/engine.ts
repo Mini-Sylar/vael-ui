@@ -4,7 +4,14 @@ import { PRESENCE_ID, SLIDE_ID } from './ids'
 import { cssTime, resolveTiming, token, track } from './timing'
 import type { ResolvedTiming } from './timing'
 import type { MotionValues } from './types'
-import { groupValues, reduceValues, splitFrame, toKeyframe, toKeyframes } from './values'
+import {
+  groupValues,
+  reducePresence,
+  reduceValues,
+  splitFrame,
+  toKeyframe,
+  toKeyframes,
+} from './values'
 
 export { resolveTiming, settled, track } from './timing'
 export type { ResolvedTiming } from './timing'
@@ -44,7 +51,7 @@ export interface PlayOptions {
 export function playValues(el: Element, values: MotionValues, options: PlayOptions): Promise<void> {
   if (!canAnimate(el)) return Promise.resolve()
   const reduced = options.reduced ?? prefersReducedMotion()
-  const state = reduced ? reduceValues(values) : values
+  const state = reduced ? reducePresence(values) : values
   if (!Object.keys(state).length) {
     stopPresence(el)
     return Promise.resolve()
@@ -203,7 +210,7 @@ export function playBetween(
 export function holdValues(el: Element, values: MotionValues): void {
   if (!canAnimate(el) || !Object.keys(values).length) return
   const frame = toKeyframe(
-    prefersReducedMotion() ? reduceValues(values) : values,
+    prefersReducedMotion() ? reducePresence(values) : values,
     getComputedStyle(el).direction === 'rtl',
   )
   el.animate([frame, frame], { id: PRESENCE_ID, duration: 1, fill: 'forwards' })

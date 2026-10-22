@@ -13,6 +13,8 @@ export interface Presence {
   register: (el: Element, name: string, motion?: TargetMotion | string) => () => void
   /** Everything registered, in page order: VDOM and Vapor register in different orders. */
   entries: () => PresenceEntry[]
+  /** Set by the component that owns it: an element joining while it's open plays its appearance. */
+  joined?: (entry: PresenceEntry) => void
 }
 
 /** The attribute that marks a presence root, so `v-animate` can find it through the DOM in both builds. */
@@ -24,13 +26,16 @@ const byRoot = new WeakMap<Element, Presence>()
 
 function createPresence(): Presence {
   const list: PresenceEntry[] = []
-  return {
+  const presence: Presence = {
     register(el, name, motion) {
       // A `:ref` written inline is a new function each render; the same element registers once.
       const existing = list.find((e) => e.el === el && e.name === name)
       const entry = existing ?? { el, name, motion }
       if (existing) existing.motion = motion ?? existing.motion
-      else list.push(entry)
+      else {
+        list.push(entry)
+        presence.joined?.(entry)
+      }
       // Vue unmounts children before the parent's leave runs; keep the entry until the element is gone.
       return () =>
         queueMicrotask(() => {
@@ -45,6 +50,7 @@ function createPresence(): Presence {
       )
     },
   }
+  return presence
 }
 
 /** The presence for a root element, created on first sight: children often register before their parent. */
