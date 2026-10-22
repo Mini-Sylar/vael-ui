@@ -66,7 +66,9 @@
     "vaporUnavailable": "Aún no hay demostración de Vapor para este componente",
     "vdom": "vista DOM",
     "onThisPage": "En esta página",
-    "headless": "Componible headless"
+    "headless": "Componible headless",
+    "motion": "Movimiento",
+    "new": "Nuevo"
   },
   "descriptions": {
     "Accordion": "Una pila de secciones plegables donde al abrir una se pueden cerrar las demás.",

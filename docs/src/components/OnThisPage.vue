@@ -7,17 +7,42 @@
   >
     <span ref="indicator" class="toc-indicator" aria-hidden="true" />
     <p class="label">{{ t('component.onThisPage') }}</p>
-    <a
-      v-for="link in links"
-      :key="link.id"
-      :href="`#${link.id}`"
-      class="toc-link"
-      :class="{ 'toc-link-active': link.id === activeId }"
-      :aria-current="link.id === activeId ? 'location' : undefined"
-      @click="onLinkClick(link.id)"
-    >
-      {{ link.label }}
-    </a>
+    <template v-for="link in links" :key="link.id">
+      <a
+        :href="`#${link.id}`"
+        class="toc-link"
+        :class="{ 'toc-link-active': link.id === activeId }"
+        :aria-current="link.id === activeId ? 'location' : undefined"
+        @click="onLinkClick(link.id)"
+      >
+        {{ link.label }}
+        <span v-if="link.isNew" class="toc-new" :aria-label="t('component.new')" />
+      </a>
+      <!-- A section's own links, open while you're in it; the rail curves in to meet them. -->
+      <div
+        v-if="link.children?.length"
+        class="toc-children"
+        :data-open="expanded(link) || undefined"
+      >
+        <div class="toc-children-inner">
+          <svg class="toc-curve" viewBox="0 0 32 14" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0.5 0 C0.5 9 31.5 5 31.5 14" />
+          </svg>
+          <a
+            v-for="child in link.children"
+            :key="child.id"
+            :href="`#${child.id}`"
+            class="toc-link toc-child"
+            :class="{ 'toc-link-active': child.id === activeId }"
+            :aria-current="child.id === activeId ? 'location' : undefined"
+            :tabindex="expanded(link) ? undefined : -1"
+            @click="onLinkClick(child.id)"
+          >
+            {{ child.label }}
+          </a>
+        </div>
+      </div>
+    </template>
   </nav>
 </template>
 
@@ -27,7 +52,18 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useGlidingIndicator } from '../composables/useGlidingIndicator'
 
-const props = defineProps<{ links: { id: string; label: string }[] }>()
+interface TocLink {
+  id: string
+  label: string
+  /** A "new" dot beside it. */
+  isNew?: boolean
+  /** Shown under it while it or one of them is the current section. */
+  children?: { id: string; label: string }[]
+}
+const props = defineProps<{ links: TocLink[] }>()
+const allLinks = () => props.links.flatMap((link) => [link, ...(link.children ?? [])])
+const expanded = (link: TocLink) =>
+  link.id === activeId.value || !!link.children?.some((child) => child.id === activeId.value)
 const route = useRoute()
 const { t } = useI18n()
 
@@ -51,7 +87,7 @@ const TARGET_Y = 88 // matches router.ts's scrollBehavior offset
 function updateActive() {
   let best: string | null = null
   let bestDistance = Infinity
-  for (const link of props.links) {
+  for (const link of allLinks()) {
     const distance = Math.abs(
       (document.getElementById(link.id)?.getBoundingClientRect().top ?? Infinity) - TARGET_Y,
     )
@@ -144,6 +180,78 @@ onUnmounted(() => {
 .toc-link-active {
   color: var(--ui-primary);
   font-weight: 600;
+}
+
+.toc-new {
+  display: inline-block;
+  inline-size: 0.375rem;
+  block-size: 0.375rem;
+  margin-inline-start: 0.35rem;
+  vertical-align: 0.15em;
+  border-radius: 50%;
+  background: var(--ui-info);
+}
+
+/* Opens to its links' height; rarely toggled, so it eases rather than snapping. */
+.toc-children {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-block: -0.25rem;
+  /* Clipped top and bottom only, so the curve can reach back to the main rail. */
+  clip-path: inset(0 -1rem 0 -3rem);
+  transition: grid-template-rows 250ms var(--ui-ease-out);
+}
+
+.toc-children[data-open] {
+  grid-template-rows: 1fr;
+}
+
+.toc-children-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-block-size: 0;
+  margin-inline-start: 0.5rem;
+  padding: 0.85rem 0 0.25rem 0.875rem;
+  opacity: 0;
+  transition: opacity 200ms var(--ui-ease-out);
+}
+
+.toc-children[data-open] .toc-children-inner {
+  opacity: 1;
+}
+
+/* Its own rail, below the curve that bends in from the main one. */
+.toc-children-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0.85rem auto 0.25rem 0;
+  border-inline-start: 1px solid var(--ui-border);
+}
+
+.toc-curve {
+  position: absolute;
+  top: 0;
+  left: -2rem;
+  inline-size: 2rem;
+  block-size: 0.875rem;
+  fill: none;
+  stroke: var(--ui-border);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.toc-child {
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toc-children,
+  .toc-children-inner {
+    transition: none;
+  }
 }
 
 /* One bar for the whole list, gliding to the active link (useGlidingIndicator

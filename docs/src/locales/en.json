@@ -88,7 +88,9 @@
     "noExposed": "Nothing exposed via template ref.",
     "notFound": "Component \"{name}\" not found.",
     "onThisPage": "On this page",
-    "headless": "Headless composable"
+    "headless": "Headless composable",
+    "motion": "Motion",
+    "new": "New"
   },
   "home": {
     "eyebrow": "Vue 3 component library",

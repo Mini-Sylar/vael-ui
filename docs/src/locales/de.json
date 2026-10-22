@@ -66,7 +66,9 @@
     "vaporUnavailable": "Für diese Komponente gibt es noch keine Vapor-Demo",
     "vdom": "Vue DOM",
     "onThisPage": "Auf dieser Seite",
-    "headless": "Headless-Composable"
+    "headless": "Headless-Composable",
+    "motion": "Bewegung",
+    "new": "Neu"
   },
   "descriptions": {
     "Accordion": "Ein Stapel zusammenklappbarer Abschnitte, bei denen durch Öffnen eines Abschnitts die anderen geschlossen werden können.",

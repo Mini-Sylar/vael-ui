@@ -53,12 +53,19 @@
         <DemoFrame :name="name" :examples="examples" />
       </section>
 
+      <MotionTable v-if="motionInfo" :name="name" :info="motionInfo" />
+
       <MetaTable
         id="props"
         :title="t('component.props')"
         :rows="meta.props"
         kind="props"
         :empty-text="t('component.noProps')"
+        :type-link="
+          motionInfo
+            ? { prop: 'motion', href: '#motion', tip: motionInfo.doc.replace(/`/g, '') }
+            : undefined
+        "
         show-default
       />
       <MetaTable
@@ -159,6 +166,9 @@ import componentMeta from '../generated/component-meta.json'
 import demoManifest from '../generated/demo-manifest.json'
 import DemoFrame from '../components/DemoFrame.vue'
 import MetaTable from '../components/MetaTable.vue'
+import MotionTable from '../components/MotionTable.vue'
+import type { MotionInfo } from '../components/MotionTable.vue'
+import motionMeta from '../generated/motion-meta.json'
 import CodeBlock from '../components/CodeBlock.vue'
 import RichText from '../components/RichText.vue'
 import DocsPager from '../components/DocsPager.vue'
@@ -229,6 +239,7 @@ const note = computed(() => {
   return t(`pageNotes.${name.value}`)
 })
 const typedMeta = componentMeta as Record<string, ComponentMetaEntry>
+const motionInfo = computed(() => (motionMeta as Record<string, MotionInfo>)[name.value])
 const meta = computed(() => typedMeta[name.value])
 
 // Sub-components that only render inside a specific parent (Column needs
@@ -332,7 +343,22 @@ watchEffect(async (onCleanup) => {
 const tocLinks = computed(() => [
   { id: 'install', label: t('component.install') },
   { id: 'playground', label: t('component.playground') },
-  ...(examples.value.length > 0 ? [{ id: 'examples', label: t('component.examples') }] : []),
+  ...(examples.value.length > 0
+    ? [
+        {
+          id: 'examples',
+          label: t('component.examples'),
+          children:
+            examples.value.length > 1
+              ? examples.value.map((example) => ({
+                  id: `example-${example.id.split('/').pop()!.replace(/^\d+-/, '')}`,
+                  label: example.title,
+                }))
+              : undefined,
+        },
+      ]
+    : []),
+  ...(motionInfo.value ? [{ id: 'motion', label: t('component.motion'), isNew: true }] : []),
   { id: 'props', label: t('component.props') },
   { id: 'slots', label: t('component.slots') },
   { id: 'events', label: t('component.events') },
