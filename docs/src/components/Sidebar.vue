@@ -10,7 +10,7 @@
     class="sidebar-shell"
   >
     <div class="sidebar-mode-toggle">
-      <ModeSwitcher v-model="sidebarMode" />
+      <ModeSwitcher v-model="sidebarMode" @switch="goToMode" />
     </div>
     <!-- MenuList renders the nav landmark itself. -->
     <div ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
@@ -33,7 +33,7 @@
   </Resizable>
   <Drawer v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
     <div class="sidebar-mode-toggle sidebar-mode-toggle--mobile">
-      <ModeSwitcher v-model="sidebarMode" />
+      <ModeSwitcher v-model="sidebarMode" @switch="goToMode" />
     </div>
     <div ref="mobileScrollEl" class="sidebar-scroll sidebar-scroll--mobile">
       <MenuList
@@ -77,7 +77,7 @@ import ModeSwitcher from './ModeSwitcher.vue'
 import { componentIcons } from '../componentIcons'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
-import { NEW_COMPOSABLES } from '../composablesTaxonomy'
+import { NEW_COMPOSABLES, composableCategories } from '../composablesTaxonomy'
 import {
   composableValue,
   GUIDE_ROUTES,
@@ -105,6 +105,36 @@ const storedMode =
     ? null
     : (sessionStorage.getItem(MODE_STORAGE_KEY) as DocsMode | null)
 const sidebarMode = shallowRef<DocsMode>(storedMode ?? 'components')
+
+// Switching modes takes you there: back to the last component or composable you read, or to
+// the section's first page. A reload then lands where the switch took you.
+const LAST_KEY = 'vael-ui-docs-last'
+function remembered(kind: 'component' | 'composable'): string | null {
+  try {
+    return sessionStorage.getItem(`${LAST_KEY}-${kind}`)
+  } catch {
+    return null
+  }
+}
+watch(
+  () => [route.name, route.params.name] as const,
+  ([name, param]) => {
+    if ((name === 'component' || name === 'composable') && typeof param === 'string')
+      try {
+        sessionStorage.setItem(`${LAST_KEY}-${name}`, param)
+      } catch {}
+  },
+  { immediate: true },
+)
+function goToMode(mode: DocsMode) {
+  if (mode === 'motion') return router.push({ name: 'motion-overview' })
+  if (mode === 'composables') {
+    const name = remembered('composable') ?? composableCategories[0]!.items[0]!
+    return router.push({ name: 'composable', params: { name } })
+  }
+  const name = remembered('component')
+  return router.push(name ? { name: 'component', params: { name } } : { name: 'getting-started' })
+}
 watch(sidebarMode, (mode) => {
   if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(MODE_STORAGE_KEY, mode)
 })

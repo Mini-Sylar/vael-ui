@@ -102,8 +102,8 @@ function draw() {
     d += ` V${top} C${MAIN_X} ${top + CURVE * 0.6} ${BRANCH_X} ${top + CURVE * 0.4} ${BRANCH_X} ${top + CURVE}`
     d += ` V${bottom - CURVE} C${BRANCH_X} ${bottom - CURVE * 0.4} ${MAIN_X} ${bottom - CURVE * 0.6} ${MAIN_X} ${bottom}`
   }
-  railPath.value = `${d} V${box.scrollHeight}`
-  railHeight.value = box.scrollHeight
+  railPath.value = `${d} V${box.offsetHeight}`
+  railHeight.value = box.offsetHeight
 }
 
 // The lit stretch: where it starts and ends along the path, each on its own spring, so it

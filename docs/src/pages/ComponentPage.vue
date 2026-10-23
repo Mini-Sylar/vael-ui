@@ -53,8 +53,6 @@
         <DemoFrame :name="name" :examples="examples" />
       </section>
 
-      <MotionTable v-if="motionInfo" :name="name" :info="motionInfo" />
-
       <MetaTable
         id="props"
         :title="t('component.props')"
@@ -68,6 +66,7 @@
         "
         show-default
       />
+      <MotionTable v-if="motionInfo" :name="name" :info="motionInfo" />
       <MetaTable
         id="slots"
         :title="t('component.slots')"
@@ -364,8 +363,8 @@ const tocLinks = computed(() => [
         },
       ]
     : []),
-  ...(motionInfo.value ? [{ id: 'motion', label: t('component.motion'), isNew: true }] : []),
   { id: 'props', label: t('component.props') },
+  ...(motionInfo.value ? [{ id: 'motion', label: t('component.motion'), isNew: true }] : []),
   { id: 'slots', label: t('component.slots') },
   { id: 'events', label: t('component.events') },
   { id: 'exposed', label: t('component.exposed') },

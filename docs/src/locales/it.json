@@ -660,7 +660,26 @@
       "gooey": {
         "label": "Viscoso",
         "body": "Macchie sfocate che prendono forma"
+      },
+      "tune": "Regola {name}",
+      "reset": "Ripristina",
+      "dial": {
+        "response": "Durata",
+        "damping": "Rimbalzo",
+        "press": "Pressione",
+        "stagger": "Sfalsamento"
       }
+    },
+    "tour": {
+      "cta": "Novità",
+      "menuTitle": "Movimento per tutto il sito",
+      "menuBody": "Scegli un preset e ogni componente di ogni pagina lo segue. Regolalo con i controlli sotto.",
+      "modeTitle": "Una sezione Movimento",
+      "modeBody": "Passa a Motion per molle, motori e i composable dietro.",
+      "tabTitle": "Movimento nel playground",
+      "tabBody": "Cambia come questo componente entra, esce e reagisce quando lo premi, poi copia il codice.",
+      "sectionTitle": "Ogni parte, per nome",
+      "sectionBody": "Ogni componente elenca le parti e gli stati animabili, subito dopo le sue props."
     }
   }
 }

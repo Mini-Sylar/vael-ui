@@ -660,7 +660,26 @@
       "gooey": {
         "label": "Gluant",
         "body": "Des taches floues qui prennent forme"
+      },
+      "tune": "Ajuster {name}",
+      "reset": "Réinitialiser",
+      "dial": {
+        "response": "Durée",
+        "damping": "Rebond",
+        "press": "Enfoncement",
+        "stagger": "Décalage"
       }
+    },
+    "tour": {
+      "cta": "Nouveautés",
+      "menuTitle": "Le mouvement de tout le site",
+      "menuBody": "Choisissez un preset et chaque composant de chaque page le suit. Ajustez-le avec les réglages en dessous.",
+      "modeTitle": "Une section Mouvement",
+      "modeBody": "Passez à Motion pour les ressorts, les moteurs et les composables derrière.",
+      "tabTitle": "Le mouvement dans le playground",
+      "tabBody": "Changez comment ce composant entre, sort et réagit quand on l'appuie, puis copiez le code.",
+      "sectionTitle": "Chaque partie, par son nom",
+      "sectionBody": "Chaque composant liste les parties et états animables, juste après ses props."
     }
   }
 }

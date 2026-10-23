@@ -660,7 +660,26 @@
       "gooey": {
         "label": "Gooey",
         "body": "Blurred blobs swelling into shape"
+      },
+      "tune": "Tune {name}",
+      "reset": "Reset",
+      "dial": {
+        "response": "Duration",
+        "damping": "Bounce",
+        "press": "Press depth",
+        "stagger": "Stagger"
       }
+    },
+    "tour": {
+      "cta": "What's new",
+      "menuTitle": "Motion for the whole site",
+      "menuBody": "Pick a preset and every component on every page follows it. Tune it with the dials underneath.",
+      "modeTitle": "A Motion section",
+      "modeBody": "Switch to Motion for springs, engines and the composables behind them.",
+      "tabTitle": "Motion in the playground",
+      "tabBody": "Change how this component comes in, leaves and reacts while you press it, then copy the code.",
+      "sectionTitle": "Every part, by name",
+      "sectionBody": "Each component lists the parts and states you can animate, right after its props."
     }
   }
 }

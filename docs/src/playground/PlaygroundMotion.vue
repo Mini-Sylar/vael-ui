@@ -31,7 +31,7 @@
             :items="[
               { label: 'Spring', value: 'spring' },
               { label: 'Duration', value: 'duration' },
-              { label: 'Its own', value: 'own' },
+              { label: 'Built-in', value: 'own' },
             ]"
             @update:model-value="touch"
           />

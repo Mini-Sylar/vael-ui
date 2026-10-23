@@ -660,7 +660,26 @@
       "gooey": {
         "label": "黏稠",
         "body": "模糊的团块膨胀成形"
+      },
+      "tune": "调整{name}",
+      "reset": "重置",
+      "dial": {
+        "response": "时长",
+        "damping": "回弹",
+        "press": "按压深度",
+        "stagger": "错开"
       }
+    },
+    "tour": {
+      "cta": "新功能",
+      "menuTitle": "全站动效",
+      "menuBody": "选一个预设，每个页面上的每个组件都会跟着变。用下面的旋钮微调。",
+      "modeTitle": "动效专区",
+      "modeBody": "切换到 Motion，查看弹簧、引擎和背后的组合式函数。",
+      "tabTitle": "演练场里的动效",
+      "tabBody": "改变这个组件的进入、离开和按下时的反应，然后复制代码。",
+      "sectionTitle": "每个部件都有名字",
+      "sectionBody": "每个组件在 props 之后列出可动画的部件和状态。"
     }
   }
 }

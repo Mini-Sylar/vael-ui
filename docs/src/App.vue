@@ -48,7 +48,7 @@
             :aria-label="t('header.defaultMode')"
           />
           <div class="header-desktop-controls">
-            <MotionMenu v-model="motionPreset" />
+            <MotionMenu v-model="motionPreset" v-model:tune="motionTune" @tour="startWhatsNew" />
             <Popover v-model:open="themeOpen">
               <template #trigger="{ setTriggerEl }">
                 <Button
@@ -174,6 +174,7 @@
     />
     <Tour v-model:open="dockTourOpen" :steps="dockTourSteps" :scroll-into-view="false" />
     <Tour v-model:open="settingTourOpen" :steps="settingTourSteps" :scroll-into-view="false" />
+    <Tour v-model:open="whatsNewOpen" :steps="whatsNewSteps" />
 
     <BottomSheet
       v-model:open="mobileSettingsOpen"
@@ -241,6 +242,7 @@
             <Select
               v-model="motionPreset"
               :items="presetItems"
+              @update:model-value="motionTune = null"
               :aria-label="t('motionDocs.presets.label')"
               class="loader-select"
             />
@@ -332,8 +334,8 @@ import {
 import type { ColorSchemeMode, DockItemData, LoaderType, TourStep } from 'vael-ui'
 import MotionMenu from './components/MotionMenu.vue'
 import DitherBackground from './components/DitherBackground.vue'
-import { MOTION_PRESETS, motionPresets } from './motionPresets'
-import type { MotionPreset } from './motionPresets'
+import { MOTION_PRESETS, motionPresets, tunedStyle } from './motionPresets'
+import type { MotionPreset, MotionTune } from './motionPresets'
 import Sidebar from './components/Sidebar.vue'
 import SiteSearch from './components/SiteSearch.vue'
 import { siteSearchOpen } from './siteSearch'
@@ -684,8 +686,15 @@ const uiSize = useLocalStorage<'sm' | 'md' | 'lg'>('vael-ui-docs-size', 'md')
 const motion = useLocalStorage('vael-ui-docs-motion', true)
 // The header's motion menu: a preset style on every component, unless animations are off.
 const motionPreset = useLocalStorage<MotionPreset>('vael-ui-docs-motion-preset', 'default')
+const motionTune = useLocalStorage<MotionTune | null>('vael-ui-docs-motion-tune', null, {
+  serializer: { read: (raw) => (raw ? JSON.parse(raw) : null), write: JSON.stringify },
+})
 const presetStyle = computed(() =>
-  motionPreset.value === 'default' ? undefined : motionPresets[motionPreset.value],
+  motionTune.value
+    ? tunedStyle(motionPreset.value, motionTune.value)
+    : motionPreset.value === 'default'
+      ? undefined
+      : motionPresets[motionPreset.value],
 )
 const presetItems = computed(() =>
   MOTION_PRESETS.map((id) => ({ label: t(`motionDocs.presets.${id}.label`), value: id })),
@@ -706,6 +715,30 @@ const loaderItems = computed(() =>
 
 // The search palette's actions change these, so it gets them from here.
 // "Show me how": opens Settings where it lives on this screen, then points at the row once it's open.
+// What's new in motion, from the motion menu: on a component page, where every piece is.
+const whatsNewOpen = shallowRef(false)
+const whatsNewSteps = shallowRef<TourStep[]>([])
+async function startWhatsNew() {
+  if (route.name !== 'component') {
+    await router.push({ name: 'component', params: { name: 'Dialog' } })
+    await new Promise((resolve) => setTimeout(resolve, 700))
+  }
+  const find = (selector: string) =>
+    [...document.querySelectorAll<HTMLElement>(selector)].find((el) => el.offsetParent !== null)
+  const step = (selector: string, id: string, side: TourStep['side']) => ({
+    target: find(selector) as HTMLElement,
+    side,
+    title: t(`motionDocs.tour.${id}Title`),
+    description: t(`motionDocs.tour.${id}Body`),
+  })
+  whatsNewSteps.value = [
+    step('.motion-menu-trigger', 'menu', 'bottom'),
+    step('.mode-trigger', 'mode', 'right'),
+    step('.pg-inspector-head .ui-select-button', 'tab', 'left'),
+    step('.toc-link[data-toc="motion"]', 'section', 'left'),
+  ].filter((s) => !!s.target)
+  whatsNewOpen.value = true
+}
 const settingTourOpen = shallowRef(false)
 const settingTourSteps = shallowRef<TourStep[]>([])
 async function showSetting(name: 'loader') {

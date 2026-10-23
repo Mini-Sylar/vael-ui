@@ -660,7 +660,26 @@
       "gooey": {
         "label": "Zähflüssig",
         "body": "Verschwommene Tropfen, die Form annehmen"
+      },
+      "tune": "{name} anpassen",
+      "reset": "Zurücksetzen",
+      "dial": {
+        "response": "Dauer",
+        "damping": "Federung",
+        "press": "Drucktiefe",
+        "stagger": "Versatz"
       }
+    },
+    "tour": {
+      "cta": "Was ist neu",
+      "menuTitle": "Bewegung für die ganze Seite",
+      "menuBody": "Wähle ein Preset, und jede Komponente auf jeder Seite folgt ihm. Darunter feinjustieren.",
+      "modeTitle": "Ein Bereich für Bewegung",
+      "modeBody": "Wechsle zu Motion für Federn, Engines und die Composables dahinter.",
+      "tabTitle": "Bewegung im Playground",
+      "tabBody": "Ändere, wie diese Komponente erscheint, verschwindet und beim Drücken reagiert, und kopiere den Code.",
+      "sectionTitle": "Jeder Teil mit Namen",
+      "sectionBody": "Jede Komponente listet die Teile und Zustände, die du animieren kannst, direkt nach ihren Props."
     }
   }
 }

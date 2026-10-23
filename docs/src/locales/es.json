@@ -660,7 +660,26 @@
       "gooey": {
         "label": "Viscoso",
         "body": "Manchas borrosas que toman forma"
+      },
+      "tune": "Ajustar {name}",
+      "reset": "Restablecer",
+      "dial": {
+        "response": "Duración",
+        "damping": "Rebote",
+        "press": "Presión",
+        "stagger": "Escalonado"
       }
+    },
+    "tour": {
+      "cta": "Novedades",
+      "menuTitle": "Movimiento para todo el sitio",
+      "menuBody": "Elige un preset y todos los componentes de cada página lo siguen. Ajústalo con los controles de abajo.",
+      "modeTitle": "Una sección de movimiento",
+      "modeBody": "Cambia a Motion para ver muelles, motores y los composables que hay detrás.",
+      "tabTitle": "Movimiento en el playground",
+      "tabBody": "Cambia cómo entra este componente, cómo sale y cómo reacciona al pulsarlo, y copia el código.",
+      "sectionTitle": "Cada parte, por su nombre",
+      "sectionBody": "Cada componente lista las partes y estados que puedes animar, justo después de sus props."
     }
   }
 }

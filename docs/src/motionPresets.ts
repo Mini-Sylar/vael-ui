@@ -47,3 +47,36 @@ export const motionPresets: Record<Exclude<MotionPreset, 'default'>, MotionStyle
     press: { active: { scale: '0.92' } },
   },
 }
+
+// The four dials the motion menu tunes a preset by.
+export interface MotionTune {
+  damping: number
+  response: number
+  press: number
+  stagger: number
+}
+
+// Where each dial sits for a preset: the library's own values for the default.
+export function tuneOf(id: MotionPreset): MotionTune {
+  const style = id === 'default' ? undefined : motionPresets[id]
+  const spring = style?.spring as { damping?: number; response?: number } | undefined
+  const press = (style?.press as { active?: { scale?: string } } | undefined)?.active?.scale
+  return {
+    damping: spring?.damping ?? 1,
+    response: spring?.response ?? 0.32,
+    press: Number(press?.split(' ')[0] ?? 0.96),
+    stagger: (style?.list as { stagger?: number } | undefined)?.stagger ?? 0.03,
+  }
+}
+
+// The preset with your dials on top: only the ones you moved, so a preset keeps its own shape.
+export function tunedStyle(id: MotionPreset, tune: MotionTune): MotionStyle {
+  const base = id === 'default' ? { version: 1 as const } : motionPresets[id]
+  const was = tuneOf(id)
+  const style: MotionStyle = { ...base }
+  if (tune.damping !== was.damping || tune.response !== was.response)
+    style.spring = { damping: tune.damping, response: tune.response }
+  if (tune.press !== was.press) style.press = { ...base.press, active: { scale: `${tune.press}` } }
+  if (tune.stagger !== was.stagger) style.list = { ...base.list, stagger: tune.stagger }
+  return style
+}
