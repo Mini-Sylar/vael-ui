@@ -550,5 +550,87 @@
   "showMe": {
     "loaderTitle": "Ogni loader, da un solo punto",
     "loaderDescription": "Questo sito imposta qui il loader-type di ConfigProvider, quindi ogni spinner lo segue: pulsanti, righe delle liste, toast e trascina per aggiornare. Scegline uno e guardali cambiare."
+  },
+  "motionDocs": {
+    "eyebrow": "Il sistema di movimento",
+    "title": "Movimento",
+    "lede": "Ogni componente si muove con un unico sistema. Il suo aspetto integrato funziona così com'è, una prop <code>motion</code> lo cambia, e la tua libreria può subentrare quando vuoi.",
+    "logoToV": "Trasforma la sfera in una V",
+    "logoToOrb": "Mostra la sfera di vael-ui",
+    "tourTitle": "Inizia da qui",
+    "card": {
+      "springs": {
+        "title": "Molle e tempi",
+        "body": "Senti come damping e response cambiano un movimento, poi imposta una molla per tutta l'app."
+      },
+      "engines": {
+        "title": "Il tuo motore",
+        "body": "Riproduci gli stessi valori con GSAP, motion o la Web Animations API, fianco a fianco."
+      },
+      "guide": {
+        "title": "Porta la tua animazione",
+        "body": "Il contratto completo: valori, hook, liste, guardie e stili per tutta l'app."
+      }
+    },
+    "propTitle": "Una sola prop",
+    "propIntro": "Ogni componente accetta <code>motion</code>. <code>false</code> disattiva la sua animazione. Un oggetto la cambia: valori per le sue parti, una molla o una durata, oppure hook <code>enter</code> e <code>leave</code> per la tua libreria.",
+    "propTable": "Ogni pagina di componente ha una sezione <strong>Movimento</strong> con le sue parti, i suoi stati e tutto il resto che sa fare.",
+    "yoursTitle": "Nei tuoi componenti",
+    "yoursIntro": "<code>v-animate</code> dà lo stesso movimento ai tuoi elementi: un'entrata, un'uscita, una dimensione che si adatta con dolcezza, o un elemento che scivola quando il layout lo sposta.",
+    "yoursComposables": "Questi composable sono i pezzi che ci stanno dietro, per un movimento tutto tuo:",
+    "composable": {
+      "springEasing": "Trasforma una molla in un easing CSS e nel suo tempo di assestamento.",
+      "useSpringValue": "Un valore che segue il suo obiettivo su una molla.",
+      "useHoverIndicator": "L'evidenziazione scorrevole al passaggio del mouse, per le tue liste.",
+      "useTabIndicator": "La selezione scorrevole dietro Tabs e SelectButton."
+    },
+    "nav": {
+      "motion": "Movimento",
+      "overview": "Panoramica",
+      "springs": "Molle e tempi",
+      "engines": "Il tuo motore"
+    },
+    "mode": {
+      "components": "Ogni componente, per tipo",
+      "composables": "La logica dietro di essi",
+      "motion": "Come si muove tutto"
+    },
+    "springs": {
+      "title": "Molle e tempi",
+      "intro": "Una molla ha due numeri. <code>damping</code> decide come si assesta: 1 arriva senza oltrepassare, sotto rimbalza. <code>response</code> è all'incirca quanto dura, in secondi. Una molla non ha una durata fissa, quindi si può interrompere e invertire da dove si trova.",
+      "labTitle": "Prova una molla",
+      "presets": "Preimpostazioni",
+      "preset": {
+        "snappy": "Scattante",
+        "smooth": "Fluida",
+        "bouncy": "Elastica",
+        "gentle": "Delicata"
+      },
+      "reads": "Si assesta in circa {settle} ms.",
+      "play": "Riproduci",
+      "everywhereTitle": "Una molla per tutta l'app",
+      "everywhereIntro": "Imposta una molla su <code>ConfigProvider</code> e drawer, sheet, toast, selezioni scorrevoli e AnimatedNumber si muovono tutti con essa. Questi seguono i cursori qui sopra.",
+      "switch": "Notifiche",
+      "openDrawer": "Apri un drawer",
+      "drawerTitle": "Sulla tua molla",
+      "drawerBody": "Questo drawer si è aperto con la molla che hai impostato."
+    },
+    "engines": {
+      "title": "Il tuo motore",
+      "intro": "Di default vael-ui riproduce il movimento con la Web Animations API, che gira fuori dal thread principale. L'<code>engine</code> di uno stile passa ogni valore a una libreria a tua scelta: gli stessi valori e tempi, riprodotti dalla tua libreria.",
+      "compareTitle": "Fianco a fianco",
+      "compareIntro": "Tre popover con gli stessi valori, ciascuno nel proprio <code>ConfigProvider</code>. Aprili insieme per confrontarli.",
+      "openAll": "Apri tutti e tre",
+      "open": "Apri",
+      "note": {
+        "waapi": "Integrato. Niente da installare.",
+        "gsap": "GSAP riproduce i valori, con il suo easing.",
+        "motion": "motion li riproduce sulla sua molla."
+      },
+      "adaptersTitle": "Scrivere un adattatore",
+      "adaptersIntro": "Un motore riceve l'elemento, da dove parte, dove arriva e i tempi in secondi, con la molla dietro quando c'è. Restituisci ciò che restituisce la tua libreria: vael-ui lo attende e lo ferma se viene interrotto.",
+      "appWideTitle": "Cambiare motore in tutta l'app",
+      "appWideIntro": "Metti l'adattatore nel <code>ConfigProvider</code> alla radice e ogni componente al suo interno lo usa. Gli hook propri di un componente hanno comunque la precedenza."
+    }
   }
 }

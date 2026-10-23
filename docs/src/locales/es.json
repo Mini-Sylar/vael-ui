@@ -550,5 +550,87 @@
   "showMe": {
     "loaderTitle": "Todos los loaders, desde un sitio",
     "loaderDescription": "Este sitio fija aquí el loader-type de ConfigProvider, así que todos los spinners lo siguen: botones, filas de listas, toasts y tirar para actualizar. Elige uno y míralos cambiar."
+  },
+  "motionDocs": {
+    "eyebrow": "El sistema de movimiento",
+    "title": "Movimiento",
+    "lede": "Cada componente se mueve con un solo sistema. Su aspecto integrado funciona tal cual, una prop <code>motion</code> lo cambia, y tu propia biblioteca puede tomar el control cuando quieras.",
+    "logoToV": "Convertir el orbe en una V",
+    "logoToOrb": "Mostrar el orbe de vael-ui",
+    "tourTitle": "Empieza aquí",
+    "card": {
+      "springs": {
+        "title": "Resortes y tiempos",
+        "body": "Siente cómo damping y response cambian un movimiento, y luego fija un resorte para toda la app."
+      },
+      "engines": {
+        "title": "Tu propio motor",
+        "body": "Reproduce los mismos valores con GSAP, motion o la Web Animations API, uno al lado del otro."
+      },
+      "guide": {
+        "title": "Usa tu propia animación",
+        "body": "El contrato completo: valores, hooks, listas, guardas y estilos para toda la app."
+      }
+    },
+    "propTitle": "Una prop",
+    "propIntro": "Cada componente acepta <code>motion</code>. <code>false</code> desactiva su animación. Un objeto la cambia: valores para sus partes, un resorte o una duración, o hooks <code>enter</code> y <code>leave</code> para tu propia biblioteca.",
+    "propTable": "Cada página de componente tiene una sección <strong>Movimiento</strong> con sus partes, sus estados y todo lo demás que puede hacer.",
+    "yoursTitle": "En tus propios componentes",
+    "yoursIntro": "<code>v-animate</code> da a tus propios elementos el mismo movimiento: una entrada, una salida, un tamaño que se suaviza o un elemento que se desliza cuando el diseño lo mueve.",
+    "yoursComposables": "Estos composables son las piezas que hay detrás, para tu propio movimiento:",
+    "composable": {
+      "springEasing": "Convierte un resorte en un easing de CSS y su tiempo de asentamiento.",
+      "useSpringValue": "Un valor que sigue a su objetivo sobre un resorte.",
+      "useHoverIndicator": "El resaltado deslizante al pasar el cursor, para tus propias listas.",
+      "useTabIndicator": "La selección deslizante detrás de Tabs y SelectButton."
+    },
+    "nav": {
+      "motion": "Movimiento",
+      "overview": "Resumen",
+      "springs": "Resortes y tiempos",
+      "engines": "Tu propio motor"
+    },
+    "mode": {
+      "components": "Cada componente, por tipo",
+      "composables": "La lógica que hay detrás",
+      "motion": "Cómo se mueve todo"
+    },
+    "springs": {
+      "title": "Resortes y tiempos",
+      "intro": "Un resorte tiene dos números. <code>damping</code> define cómo se asienta: 1 llega sin pasarse, menos rebota. <code>response</code> es aproximadamente cuánto tarda, en segundos. Un resorte no tiene una duración fija, así que se puede interrumpir y dar la vuelta desde donde esté.",
+      "labTitle": "Prueba un resorte",
+      "presets": "Preajustes",
+      "preset": {
+        "snappy": "Ágil",
+        "smooth": "Suave",
+        "bouncy": "Con rebote",
+        "gentle": "Tranquilo"
+      },
+      "reads": "Se asienta en unos {settle} ms.",
+      "play": "Reproducir",
+      "everywhereTitle": "Un resorte para toda la app",
+      "everywhereIntro": "Fija un resorte en <code>ConfigProvider</code> y los drawers, sheets, toasts, selecciones deslizantes y AnimatedNumber se mueven con él. Estos siguen a los controles de arriba.",
+      "switch": "Notificaciones",
+      "openDrawer": "Abrir un drawer",
+      "drawerTitle": "Con tu resorte",
+      "drawerBody": "Este drawer se abrió con el resorte que elegiste."
+    },
+    "engines": {
+      "title": "Tu propio motor",
+      "intro": "Por defecto, vael-ui reproduce el movimiento con la Web Animations API, que se ejecuta fuera del hilo principal. El <code>engine</code> de un estilo pasa cada valor a una biblioteca que elijas: los mismos valores y tiempos, reproducidos por tu biblioteca.",
+      "compareTitle": "Uno al lado del otro",
+      "compareIntro": "Tres popovers con los mismos valores, cada uno dentro de su propio <code>ConfigProvider</code>. Ábrelos juntos para compararlos.",
+      "openAll": "Abrir los tres",
+      "open": "Abrir",
+      "note": {
+        "waapi": "Integrado. Nada que instalar.",
+        "gsap": "GSAP reproduce los valores, con su propio easing.",
+        "motion": "motion los reproduce con su resorte."
+      },
+      "adaptersTitle": "Escribir un adaptador",
+      "adaptersIntro": "Un motor recibe el elemento, dónde empieza, dónde termina y el tiempo en segundos, con el resorte que hay detrás cuando lo hay. Devuelve lo que devuelva tu biblioteca: vael-ui lo espera y lo detiene si se interrumpe.",
+      "appWideTitle": "Cambiar de motor en toda la app",
+      "appWideIntro": "Pon el adaptador en el <code>ConfigProvider</code> de la raíz y todos los componentes de dentro lo usan. Los hooks propios de un componente siguen teniendo prioridad."
+    }
   }
 }

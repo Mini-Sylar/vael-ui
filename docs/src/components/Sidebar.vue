@@ -10,7 +10,7 @@
     class="sidebar-shell"
   >
     <div class="sidebar-mode-toggle">
-      <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
+      <ModeSwitcher v-model="sidebarMode" />
     </div>
     <!-- MenuList renders the nav landmark itself. -->
     <div ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
@@ -26,7 +26,7 @@
   </Resizable>
   <Drawer v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
     <div class="sidebar-mode-toggle sidebar-mode-toggle--mobile">
-      <SelectButton v-model="sidebarMode" size="sm" :allow-empty="false" :items="modeItems" />
+      <ModeSwitcher v-model="sidebarMode" />
     </div>
     <div ref="mobileScrollEl" class="sidebar-scroll sidebar-scroll--mobile">
       <MenuList
@@ -58,11 +58,19 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useLocalStorage, useScroll } from '@vueuse/core'
-import { Drawer, MenuList, Resizable, SelectButton, vScrollMask } from 'vael-ui'
+import { Drawer, MenuList, Resizable, vScrollMask } from 'vael-ui'
+import ModeSwitcher from './ModeSwitcher.vue'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { NEW_COMPOSABLES } from '../composablesTaxonomy'
-import { composableValue, GUIDE_ROUTES, navSections, routeFor, valueFor } from '../docsNav'
+import {
+  composableValue,
+  GUIDE_ROUTES,
+  MOTION_ROUTES,
+  navSections,
+  routeFor,
+  valueFor,
+} from '../docsNav'
 import type { DocsMode } from '../docsNav'
 import { useGlidingIndicator } from '../composables/useGlidingIndicator'
 
@@ -86,11 +94,6 @@ watch(sidebarMode, (mode) => {
   if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(MODE_STORAGE_KEY, mode)
 })
 
-const modeItems = computed(() => [
-  { label: t('nav.components'), value: 'components' },
-  { label: t('nav.composables'), value: 'composables' },
-])
-
 // Landing directly on a components/composables page (a shared link, a
 // search result) always shows the sidebar mode that page actually belongs
 // to — sessionStorage only matters for route-agnostic pages (Home), where
@@ -98,11 +101,15 @@ const modeItems = computed(() => [
 watch(
   () => route.name,
   (routeName) => {
-    if (routeName === 'composable') sidebarMode.value = 'composables'
+    if (MOTION_ROUTES.some((g) => g.routeName === routeName)) sidebarMode.value = 'motion'
+    // A motion composable opened from the Motion list keeps that list.
+    else if (routeName === 'composable' && sidebarMode.value !== 'motion')
+      sidebarMode.value = 'composables'
     else if (
       routeName === 'component' ||
       routeName === 'directive' ||
-      GUIDE_ROUTES.some((g) => g.routeName === routeName)
+      (GUIDE_ROUTES.some((g) => g.routeName === routeName) &&
+        !(sidebarMode.value === 'motion' && routeName === 'guide-animation-integration'))
     ) {
       sidebarMode.value = 'components'
     }

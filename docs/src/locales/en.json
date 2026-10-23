@@ -550,5 +550,87 @@
   "showMe": {
     "loaderTitle": "Every loader, from one place",
     "loaderDescription": "This site sets ConfigProvider's loader-type here, so every spinner follows it: buttons, list rows, toasts and pull to refresh. Pick one and watch them change."
+  },
+  "motionDocs": {
+    "eyebrow": "The motion system",
+    "title": "Motion",
+    "lede": "Every component moves on one system. Its built-in look works as it is, one <code>motion</code> prop changes it, and your own library can take over when you want it.",
+    "logoToV": "Turn the orb into a V",
+    "logoToOrb": "Show the vael-ui orb",
+    "tourTitle": "Start here",
+    "card": {
+      "springs": {
+        "title": "Springs and timing",
+        "body": "Feel how damping and response change a motion, then set one spring for the whole app."
+      },
+      "engines": {
+        "title": "Your own engine",
+        "body": "Play the same values through GSAP, motion or the Web Animations API, side by side."
+      },
+      "guide": {
+        "title": "Bring your own animation",
+        "body": "The whole contract: values, hooks, lists, guards and app-wide styles."
+      }
+    },
+    "propTitle": "One prop",
+    "propIntro": "Every component takes <code>motion</code>. <code>false</code> turns its animation off. An object changes it: values for its parts, a spring or a duration, or <code>enter</code> and <code>leave</code> hooks for your own library.",
+    "propTable": "Each component page has a <strong>Motion</strong> section listing its parts, its states and what else it can do.",
+    "yoursTitle": "In your own components",
+    "yoursIntro": "<code>v-animate</code> gives your own elements the same motion: an entrance, an exit, a size that eases, or an element sliding when the layout moves it.",
+    "yoursComposables": "These composables are the pieces behind it, for motion of your own:",
+    "composable": {
+      "springEasing": "Turns a spring into a CSS easing and its settle time.",
+      "useSpringValue": "A value that follows its target on a spring.",
+      "useHoverIndicator": "The sliding hover highlight, for your own lists.",
+      "useTabIndicator": "The sliding selection behind Tabs and SelectButton."
+    },
+    "nav": {
+      "motion": "Motion",
+      "overview": "Overview",
+      "springs": "Springs and timing",
+      "engines": "Your own engine"
+    },
+    "mode": {
+      "components": "Every component, by kind",
+      "composables": "The logic behind them",
+      "motion": "How everything moves"
+    },
+    "springs": {
+      "title": "Springs and timing",
+      "intro": "A spring has two numbers. <code>damping</code> sets how it settles: 1 lands without overshooting, lower bounces. <code>response</code> is roughly how long it takes, in seconds. A spring has no fixed duration, so it can be interrupted and turned around from wherever it is.",
+      "labTitle": "Try a spring",
+      "presets": "Presets",
+      "preset": {
+        "snappy": "Snappy",
+        "smooth": "Smooth",
+        "bouncy": "Bouncy",
+        "gentle": "Gentle"
+      },
+      "reads": "Settles in about {settle} ms.",
+      "play": "Play",
+      "everywhereTitle": "One spring for the whole app",
+      "everywhereIntro": "Set a spring on <code>ConfigProvider</code> and drawers, sheets, toasts, sliding selections and AnimatedNumber all move on it. These follow the sliders above.",
+      "switch": "Notifications",
+      "openDrawer": "Open a drawer",
+      "drawerTitle": "On your spring",
+      "drawerBody": "This drawer opened on the spring you set."
+    },
+    "engines": {
+      "title": "Your own engine",
+      "intro": "By default vael-ui plays motion with the Web Animations API, which runs off the main thread. A style's <code>engine</code> hands every value to a library you choose instead: the same values and timing, played by your library.",
+      "compareTitle": "Side by side",
+      "compareIntro": "Three popovers with the same values, each inside its own <code>ConfigProvider</code>. Open them together to compare.",
+      "openAll": "Open all three",
+      "open": "Open",
+      "note": {
+        "waapi": "Built in. Nothing to install.",
+        "gsap": "GSAP plays the values, with its own easing.",
+        "motion": "motion plays them on its spring."
+      },
+      "adaptersTitle": "Writing an adapter",
+      "adaptersIntro": "An engine gets the element, where it starts, where it ends, and the timing in seconds, with the spring behind it when there is one. Return what your library returns: vael-ui waits for it, and stops it if interrupted.",
+      "appWideTitle": "Switching engines app-wide",
+      "appWideIntro": "Put the adapter in the <code>ConfigProvider</code> at the root, and every component inside uses it. A component's own hooks still win."
+    }
   }
 }

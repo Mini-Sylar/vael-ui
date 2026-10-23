@@ -51,6 +51,21 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/guides/Skill.vue'),
   },
   {
+    path: '/motion',
+    name: 'motion-overview',
+    component: () => import('./pages/motion/MotionOverview.vue'),
+  },
+  {
+    path: '/motion/springs',
+    name: 'motion-springs',
+    component: () => import('./pages/motion/MotionSprings.vue'),
+  },
+  {
+    path: '/motion/engines',
+    name: 'motion-engines',
+    component: () => import('./pages/motion/MotionEngines.vue'),
+  },
+  {
     path: '/components/:name',
     name: 'component',
     component: () => import('./pages/ComponentPage.vue'),

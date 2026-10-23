@@ -550,5 +550,87 @@
   "showMe": {
     "loaderTitle": "すべてのローダーを一か所で",
     "loaderDescription": "このサイトはここで ConfigProvider の loader-type を設定しているので、ボタン、リストの行、トースト、プルして更新など、すべてのスピナーがそれに従います。選んで変化を見てください。"
+  },
+  "motionDocs": {
+    "eyebrow": "モーションシステム",
+    "title": "モーション",
+    "lede": "すべてのコンポーネントは一つの仕組みで動きます。組み込みの見た目はそのまま使え、<code>motion</code> プロップひとつで変えられ、必要なら自分のライブラリに任せることもできます。",
+    "logoToV": "球体を V に変える",
+    "logoToOrb": "vael-ui の球体を表示する",
+    "tourTitle": "ここから始める",
+    "card": {
+      "springs": {
+        "title": "スプリングとタイミング",
+        "body": "damping と response で動きがどう変わるかを体感し、アプリ全体のスプリングをひとつ決めます。"
+      },
+      "engines": {
+        "title": "独自のエンジン",
+        "body": "同じ値を GSAP、motion、Web Animations API で並べて再生します。"
+      },
+      "guide": {
+        "title": "独自のアニメーションを使う",
+        "body": "仕組みのすべて：値、フック、リスト、ガード、アプリ全体のスタイル。"
+      }
+    },
+    "propTitle": "プロップはひとつ",
+    "propIntro": "すべてのコンポーネントは <code>motion</code> を受け取ります。<code>false</code> でアニメーションを止め、オブジェクトで変更します。パーツごとの値、スプリングまたはデュレーション、あるいは独自ライブラリ用の <code>enter</code> と <code>leave</code> フックを渡せます。",
+    "propTable": "各コンポーネントのページには<strong>モーション</strong>セクションがあり、パーツ、状態、そのほかにできることを一覧にしています。",
+    "yoursTitle": "独自のコンポーネントで",
+    "yoursIntro": "<code>v-animate</code> は自分の要素にも同じモーションを与えます。登場、退場、なめらかに変わるサイズ、レイアウトの変化に合わせてスライドする要素などです。",
+    "yoursComposables": "その裏にある部品は、独自のモーション用にコンポーザブルとして使えます：",
+    "composable": {
+      "springEasing": "スプリングを CSS のイージングと収束時間に変換します。",
+      "useSpringValue": "目標値にスプリングで追従する値。",
+      "useHoverIndicator": "スライドするホバーハイライトを独自のリストに。",
+      "useTabIndicator": "Tabs と SelectButton の裏にあるスライドする選択表示。"
+    },
+    "nav": {
+      "motion": "モーション",
+      "overview": "概要",
+      "springs": "スプリングとタイミング",
+      "engines": "独自のエンジン"
+    },
+    "mode": {
+      "components": "すべてのコンポーネントを種類別に",
+      "composables": "その裏にあるロジック",
+      "motion": "すべての動き方"
+    },
+    "springs": {
+      "title": "スプリングとタイミング",
+      "intro": "スプリングは 2 つの数値で決まります。<code>damping</code> は落ち着き方を決め、1 では行き過ぎずに止まり、それより小さいと弾みます。<code>response</code> はおおよその所要時間（秒）です。スプリングには決まった長さがないので、途中で中断して今の位置から向きを変えられます。",
+      "labTitle": "スプリングを試す",
+      "presets": "プリセット",
+      "preset": {
+        "snappy": "キビキビ",
+        "smooth": "なめらか",
+        "bouncy": "弾む",
+        "gentle": "ゆったり"
+      },
+      "reads": "約 {settle} ms で落ち着きます。",
+      "play": "再生",
+      "everywhereTitle": "アプリ全体にひとつのスプリング",
+      "everywhereIntro": "<code>ConfigProvider</code> にスプリングを設定すると、ドロワー、シート、トースト、スライドする選択表示、AnimatedNumber がすべてそれで動きます。下のコンポーネントは上のスライダーに従います。",
+      "switch": "通知",
+      "openDrawer": "ドロワーを開く",
+      "drawerTitle": "あなたのスプリングで",
+      "drawerBody": "このドロワーは設定したスプリングで開きました。"
+    },
+    "engines": {
+      "title": "独自のエンジン",
+      "intro": "vael-ui は標準で Web Animations API を使ってモーションを再生し、メインスレッドの外で動きます。スタイルの <code>engine</code> を使うと、すべての値を好きなライブラリに渡せます。値もタイミングも同じまま、あなたのライブラリが再生します。",
+      "compareTitle": "並べて比べる",
+      "compareIntro": "同じ値を持つ 3 つのポップオーバーを、それぞれ別の <code>ConfigProvider</code> に入れています。まとめて開いて比べてください。",
+      "openAll": "3 つとも開く",
+      "open": "開く",
+      "note": {
+        "waapi": "組み込み。インストール不要です。",
+        "gsap": "GSAP が独自のイージングで値を再生します。",
+        "motion": "motion が自身のスプリングで再生します。"
+      },
+      "adaptersTitle": "アダプターを書く",
+      "adaptersIntro": "エンジンは要素、開始値、終了値、秒単位のタイミング、そしてスプリングがあればその設定を受け取ります。ライブラリの戻り値をそのまま返してください。vael-ui はそれを待ち、中断されたら止めます。",
+      "appWideTitle": "アプリ全体でエンジンを切り替える",
+      "appWideIntro": "ルートの <code>ConfigProvider</code> にアダプターを置くと、その中のすべてのコンポーネントが使います。コンポーネント自身のフックは引き続き優先されます。"
+    }
   }
 }

@@ -2,11 +2,9 @@
   <section class="demo">
     <h3>Nested / stacked sheets</h3>
     <p class="note">
-      A sheet rendered inside another sheet's slot is detected automatically (provide/inject, same
-      as Vaul's nested drawers): the parent recedes behind the child with Vaul's own 16px
-      displacement, composed with its snap position, and comes back in sync with the child's real
-      exit. Escape and focus stay scoped to the topmost one via Dialog's layer stack, with zero
-      consumer wiring.
+      Open a sheet from inside another and they stack: the one behind steps back a little, and comes
+      forward again as the one on top closes. Escape and focus act on the top sheet only. There's
+      nothing to wire up.
     </p>
     <Button @click="parentOpen = true">Open parent sheet</Button>
     <BottomSheet v-model:open="parentOpen" title="Parent sheet" aria-label="Parent sheet">

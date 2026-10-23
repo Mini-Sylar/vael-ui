@@ -18,7 +18,21 @@ export const GUIDE_ROUTES = [
   { routeName: 'guide-skill', labelKey: 'nav.skillGuide' },
 ] as const
 
-export type DocsMode = 'components' | 'composables'
+// The Motion section's own pages, then the guide that covers the contract in full.
+export const MOTION_ROUTES = [
+  { routeName: 'motion-overview', labelKey: 'motionDocs.nav.overview' },
+  { routeName: 'motion-springs', labelKey: 'motionDocs.nav.springs' },
+  { routeName: 'motion-engines', labelKey: 'motionDocs.nav.engines' },
+  { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
+] as const
+const MOTION_COMPOSABLES = [
+  'springEasing',
+  'useSpringValue',
+  'useHoverIndicator',
+  'useTabIndicator',
+]
+
+export type DocsMode = 'components' | 'composables' | 'motion'
 export interface DocsNavItem {
   label: string
   value: string
@@ -50,10 +64,23 @@ export function valueFor(
   if (to.name === 'composable') return composableValue(to.params.name as string)
   if (to.name === 'directive') return directiveValue(to.params.name as string)
   if (GUIDE_ROUTES.some((g) => g.routeName === to.name)) return guideValue(to.name as string)
+  if (MOTION_ROUTES.some((g) => g.routeName === to.name)) return guideValue(to.name as string)
   return null
 }
 
 export function navSections(mode: DocsMode, t: (key: string) => string): DocsNavSection[] {
+  if (mode === 'motion') {
+    return [
+      {
+        label: t('motionDocs.nav.motion'),
+        items: MOTION_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
+      },
+      {
+        label: t('nav.composables'),
+        items: MOTION_COMPOSABLES.map((name) => ({ label: name, value: composableValue(name) })),
+      },
+    ]
+  }
   if (mode === 'composables') {
     return composableCategories.map((category) => ({
       label: t(`composablesTaxonomy.${category.key}`),

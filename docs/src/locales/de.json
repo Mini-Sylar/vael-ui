@@ -550,5 +550,87 @@
   "showMe": {
     "loaderTitle": "Jeder Loader, an einer Stelle",
     "loaderDescription": "Diese Seite setzt hier loader-type im ConfigProvider, daher folgt ihm jeder Spinner: Buttons, Listenzeilen, Toasts und Pull-to-Refresh. Wähle einen aus und sieh zu, wie sie sich ändern."
+  },
+  "motionDocs": {
+    "eyebrow": "Das Bewegungssystem",
+    "title": "Bewegung",
+    "lede": "Jede Komponente bewegt sich nach einem System. Ihr eingebautes Aussehen funktioniert so, wie es ist, eine <code>motion</code>-Prop ändert es, und deine eigene Bibliothek kann übernehmen, wann immer du willst.",
+    "logoToV": "Die Kugel in ein V verwandeln",
+    "logoToOrb": "Die vael-ui-Kugel zeigen",
+    "tourTitle": "Hier anfangen",
+    "card": {
+      "springs": {
+        "title": "Federn und Timing",
+        "body": "Spüre, wie Dämpfung und Reaktion eine Bewegung verändern, und setze dann eine Feder für die ganze App."
+      },
+      "engines": {
+        "title": "Deine eigene Engine",
+        "body": "Spiele dieselben Werte mit GSAP, motion oder der Web Animations API ab, nebeneinander."
+      },
+      "guide": {
+        "title": "Eigene Animationen einbinden",
+        "body": "Der ganze Vertrag: Werte, Hooks, Listen, Guards und appweite Stile."
+      }
+    },
+    "propTitle": "Eine Prop",
+    "propIntro": "Jede Komponente nimmt <code>motion</code>. <code>false</code> schaltet ihre Animation ab. Ein Objekt ändert sie: Werte für ihre Teile, eine Feder oder eine Dauer, oder <code>enter</code>- und <code>leave</code>-Hooks für deine eigene Bibliothek.",
+    "propTable": "Jede Komponentenseite hat einen Abschnitt <strong>Bewegung</strong> mit ihren Teilen, ihren Zuständen und allem, was sie sonst kann.",
+    "yoursTitle": "In deinen eigenen Komponenten",
+    "yoursIntro": "<code>v-animate</code> gibt deinen eigenen Elementen dieselbe Bewegung: einen Auftritt, einen Abgang, eine Größe, die sich anpasst, oder ein Element, das gleitet, wenn das Layout es verschiebt.",
+    "yoursComposables": "Diese Composables sind die Bausteine dahinter, für eigene Bewegung:",
+    "composable": {
+      "springEasing": "Macht aus einer Feder ein CSS-Easing und ihre Einschwingzeit.",
+      "useSpringValue": "Ein Wert, der seinem Ziel auf einer Feder folgt.",
+      "useHoverIndicator": "Die gleitende Hover-Markierung, für deine eigenen Listen.",
+      "useTabIndicator": "Die gleitende Auswahl hinter Tabs und SelectButton."
+    },
+    "nav": {
+      "motion": "Bewegung",
+      "overview": "Überblick",
+      "springs": "Federn und Timing",
+      "engines": "Deine eigene Engine"
+    },
+    "mode": {
+      "components": "Jede Komponente, nach Art",
+      "composables": "Die Logik dahinter",
+      "motion": "Wie sich alles bewegt"
+    },
+    "springs": {
+      "title": "Federn und Timing",
+      "intro": "Eine Feder hat zwei Zahlen. <code>damping</code> bestimmt, wie sie zur Ruhe kommt: 1 landet ohne Überschwingen, darunter federt sie. <code>response</code> ist ungefähr ihre Dauer in Sekunden. Eine Feder hat keine feste Dauer, daher kann sie unterbrochen und von jeder Stelle aus umgekehrt werden.",
+      "labTitle": "Eine Feder ausprobieren",
+      "presets": "Vorlagen",
+      "preset": {
+        "snappy": "Knackig",
+        "smooth": "Weich",
+        "bouncy": "Federnd",
+        "gentle": "Sanft"
+      },
+      "reads": "Kommt in etwa {settle} ms zur Ruhe.",
+      "play": "Abspielen",
+      "everywhereTitle": "Eine Feder für die ganze App",
+      "everywhereIntro": "Setze eine Feder auf <code>ConfigProvider</code>, und Drawer, Sheets, Toasts, gleitende Auswahlen und AnimatedNumber bewegen sich alle darauf. Diese hier folgen den Reglern oben.",
+      "switch": "Benachrichtigungen",
+      "openDrawer": "Einen Drawer öffnen",
+      "drawerTitle": "Auf deiner Feder",
+      "drawerBody": "Dieser Drawer hat sich auf der Feder geöffnet, die du eingestellt hast."
+    },
+    "engines": {
+      "title": "Deine eigene Engine",
+      "intro": "Standardmäßig spielt vael-ui Bewegung mit der Web Animations API ab, die abseits des Main Threads läuft. Die <code>engine</code> eines Stils gibt stattdessen jeden Wert an eine Bibliothek deiner Wahl: dieselben Werte und dasselbe Timing, abgespielt von deiner Bibliothek.",
+      "compareTitle": "Nebeneinander",
+      "compareIntro": "Drei Popover mit denselben Werten, jedes in seinem eigenen <code>ConfigProvider</code>. Öffne sie zusammen, um sie zu vergleichen.",
+      "openAll": "Alle drei öffnen",
+      "open": "Öffnen",
+      "note": {
+        "waapi": "Eingebaut. Nichts zu installieren.",
+        "gsap": "GSAP spielt die Werte ab, mit seinem eigenen Easing.",
+        "motion": "motion spielt sie auf seiner Feder ab."
+      },
+      "adaptersTitle": "Einen Adapter schreiben",
+      "adaptersIntro": "Eine Engine bekommt das Element, wo es anfängt, wo es endet, und das Timing in Sekunden, mit der Feder dahinter, wenn es eine gibt. Gib zurück, was deine Bibliothek zurückgibt: vael-ui wartet darauf und stoppt es bei einer Unterbrechung.",
+      "appWideTitle": "Engines appweit wechseln",
+      "appWideIntro": "Setze den Adapter in den <code>ConfigProvider</code> an der Wurzel, und jede Komponente darin nutzt ihn. Die eigenen Hooks einer Komponente haben weiterhin Vorrang."
+    }
   }
 }

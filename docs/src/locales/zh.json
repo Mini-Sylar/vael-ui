@@ -550,5 +550,87 @@
   "showMe": {
     "loaderTitle": "所有加载器，一处设置",
     "loaderDescription": "本站在这里设置 ConfigProvider 的 loader-type，所以每个加载指示器都会跟随它：按钮、列表行、提示消息和下拉刷新。选一个，看看它们如何变化。"
+  },
+  "motionDocs": {
+    "eyebrow": "动效系统",
+    "title": "动效",
+    "lede": "每个组件都由同一套系统驱动。内置效果开箱即用，一个 <code>motion</code> 属性就能修改，需要时也可以交给你自己的动画库。",
+    "logoToV": "把球体变成 V",
+    "logoToOrb": "显示 vael-ui 球体",
+    "tourTitle": "从这里开始",
+    "card": {
+      "springs": {
+        "title": "弹簧与时间",
+        "body": "感受 damping 和 response 如何改变动效，再为整个应用设定一个弹簧。"
+      },
+      "engines": {
+        "title": "自定义引擎",
+        "body": "用 GSAP、motion 或 Web Animations API 并排播放同一组数值。"
+      },
+      "guide": {
+        "title": "使用你自己的动画",
+        "body": "完整的约定：数值、钩子、列表、守卫和全局样式。"
+      }
+    },
+    "propTitle": "一个属性",
+    "propIntro": "每个组件都接受 <code>motion</code>。<code>false</code> 关闭动画，对象则修改它：各部件的数值、弹簧或时长，或交给你自己库的 <code>enter</code> 和 <code>leave</code> 钩子。",
+    "propTable": "每个组件页面都有<strong>动效</strong>一节，列出它的部件、状态以及其他能力。",
+    "yoursTitle": "在你自己的组件中",
+    "yoursIntro": "<code>v-animate</code> 让你自己的元素拥有同样的动效：入场、离场、平滑变化的尺寸，或在布局变化时滑动的元素。",
+    "yoursComposables": "背后的这些组合式函数，也可用于你自己的动效：",
+    "composable": {
+      "springEasing": "把弹簧转换为 CSS 缓动和稳定所需的时间。",
+      "useSpringValue": "一个沿弹簧追随目标的值。",
+      "useHoverIndicator": "滑动的悬停高亮，用于你自己的列表。",
+      "useTabIndicator": "Tabs 和 SelectButton 背后滑动的选中指示。"
+    },
+    "nav": {
+      "motion": "动效",
+      "overview": "概览",
+      "springs": "弹簧与时间",
+      "engines": "自定义引擎"
+    },
+    "mode": {
+      "components": "按类别列出所有组件",
+      "composables": "组件背后的逻辑",
+      "motion": "一切如何运动"
+    },
+    "springs": {
+      "title": "弹簧与时间",
+      "intro": "弹簧由两个数决定。<code>damping</code> 决定它如何停下：1 时不会冲过头，更小则会回弹。<code>response</code> 大致是它所需的时间，单位为秒。弹簧没有固定时长，所以随时可以打断，并从当前位置转向。",
+      "labTitle": "试试弹簧",
+      "presets": "预设",
+      "preset": {
+        "snappy": "利落",
+        "smooth": "顺滑",
+        "bouncy": "弹跳",
+        "gentle": "柔和"
+      },
+      "reads": "约 {settle} 毫秒后稳定。",
+      "play": "播放",
+      "everywhereTitle": "整个应用一个弹簧",
+      "everywhereIntro": "在 <code>ConfigProvider</code> 上设定弹簧，抽屉、面板、通知、滑动选择和 AnimatedNumber 都会随之运动。下面这些会跟随上方的滑块。",
+      "switch": "通知",
+      "openDrawer": "打开抽屉",
+      "drawerTitle": "按你的弹簧",
+      "drawerBody": "这个抽屉按你设定的弹簧打开。"
+    },
+    "engines": {
+      "title": "自定义引擎",
+      "intro": "默认情况下，vael-ui 用 Web Animations API 播放动效，它在主线程之外运行。样式中的 <code>engine</code> 会把每个数值交给你选择的库：数值和时间都不变，由你的库来播放。",
+      "compareTitle": "并排对比",
+      "compareIntro": "三个弹出框使用相同的数值，各自位于自己的 <code>ConfigProvider</code> 中。一起打开来对比。",
+      "openAll": "三个一起打开",
+      "open": "打开",
+      "note": {
+        "waapi": "内置，无需安装。",
+        "gsap": "由 GSAP 以它自己的缓动播放。",
+        "motion": "由 motion 以它的弹簧播放。"
+      },
+      "adaptersTitle": "编写适配器",
+      "adaptersIntro": "引擎会收到元素、起点、终点和以秒为单位的时间，有弹簧时还会附带弹簧参数。返回你的库返回的内容：vael-ui 会等待它，并在被打断时停止它。",
+      "appWideTitle": "在整个应用中切换引擎",
+      "appWideIntro": "把适配器放进根部的 <code>ConfigProvider</code>，其中的每个组件都会使用它。组件自己的钩子仍然优先。"
+    }
   }
 }
