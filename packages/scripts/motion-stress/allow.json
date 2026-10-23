@@ -10,6 +10,12 @@
     "reason": "Stacked toasts sit behind the front one until the stack is expanded."
   },
   {
+    "page": "motion/blocks",
+    "demo": "Notification stack",
+    "check": "visible at rest",
+    "reason": "Closed, each card sits behind the one before until the stack spreads into a list."
+  },
+  {
     "page": "components/Sortable",
     "demo": "Moving cards between lists",
     "check": "visible at rest",

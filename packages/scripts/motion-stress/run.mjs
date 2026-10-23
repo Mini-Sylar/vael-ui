@@ -166,8 +166,10 @@ async function runJob(browser, { setup, page: path }) {
     return context.close()
   }
 
-  // After a press: rest, then what's hidden; a loop that never rests is said once per demo.
+  // After a press: rest, then what's hidden; a loop that never rests, or one thing covered, is said
+  // once per demo.
   let loops = false
+  const said = new Set()
   const afterPress = async (d, where, after = '') => {
     const r = await p.evaluate(
       ([i, cap]) => window.__stress.rest(i, cap),
@@ -181,8 +183,11 @@ async function runJob(browser, { setup, page: path }) {
         detail: `still moving ${SETTLE_MS}ms ${after || 'after the press'}: ${JSON.stringify(r.stuck)}`,
       })
     }
-    for (const h of r.hidden)
+    for (const h of r.hidden) {
+      if (said.has(`${where.demo} ${h}`)) continue
+      said.add(`${where.demo} ${h}`)
       report({ ...where, check: 'visible at rest', detail: after ? `${h} (${after})` : h })
+    }
     return r
   }
   const back = async (url) => {
