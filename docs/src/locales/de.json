@@ -679,7 +679,7 @@
       "tabTitle": "Bewegung im Playground",
       "tabBody": "Ändere, wie diese Komponente erscheint, verschwindet und beim Drücken reagiert, und kopiere den Code.",
       "sectionTitle": "Jeder Teil mit Namen",
-      "sectionBody": "Jede Komponente listet die Teile und Zustände, die du animieren kannst, direkt nach ihren Props."
+      "sectionBody": "Jede Komponentenseite hat einen Motion-Abschnitt: die Teile und Zustände, die du animieren kannst."
     }
   }
 }

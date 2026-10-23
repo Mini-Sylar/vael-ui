@@ -42,6 +42,7 @@ import {
   PhRectangle,
   PhRows,
   PhScroll,
+  PhSparkle,
   PhSelection,
   PhSidebar,
   PhSignpost,
@@ -138,4 +139,6 @@ export const componentIcons: Record<string, Component> = {
   PullToRefresh: PhArrowsClockwise,
   Dock: PhLayout,
   Sortable: PhDotsSixVertical,
+  // The one guide with an icon: the AI agent skill is unlike the rest.
+  'guide:guide-skill': PhSparkle,
 }

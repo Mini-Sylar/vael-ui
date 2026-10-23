@@ -53,6 +53,10 @@ const tabsDraggable = computed(() => ({ items: tabs, axis: 'x' as const, touchDr
 .draggable-tabs .ui-tabs-item {
   touch-action: none;
 }
+/* No sliding hover highlight here: the tabs themselves move. */
+.draggable-tabs :deep(.ui-tabs-hover) {
+  display: none;
+}
 .sortable-demo-order {
   display: block;
   margin-block-start: 0.75rem;

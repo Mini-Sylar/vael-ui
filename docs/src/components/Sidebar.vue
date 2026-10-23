@@ -356,16 +356,17 @@ watch(
   pointer-events: none;
   transition: opacity 200ms var(--ui-ease-out);
 }
-/* A faint dither feathering out to the bar's left, in the gutter, so it never sits under text. */
-.sidebar-indicator::before {
+/* A faint dither on the selected row, feathering out from the bar before it reaches the text. */
+.sidebar-indicator::after {
   content: '';
   position: absolute;
-  inset-block: 0;
-  inset-inline-end: 100%;
-  inline-size: 0.875rem;
+  /* The bar's borders inset it; the dither spans the whole row. */
+  inset-block: -4px;
+  inset-inline-start: 100%;
+  inline-size: 2rem;
   background: radial-gradient(circle, var(--ui-primary) 0.6px, transparent 0.9px) 0 0 / 3px 3px;
-  opacity: 0.45;
-  mask-image: linear-gradient(to left, #000, transparent);
+  opacity: 0.35;
+  mask-image: linear-gradient(to right, #000, transparent);
 }
 
 /* The drawer body scrolls; this box would trap the scroll otherwise. */

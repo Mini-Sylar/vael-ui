@@ -75,8 +75,13 @@ const { t } = useI18n()
 
 const activeId = shallowRef<string | null>(null)
 const allLinks = () => props.links.flatMap((link) => [link, ...(link.children ?? [])])
+// Open while you're in it, and already open as you come near, from above or below, so the
+// indicator has somewhere to go when it gets there.
+const near = shallowRef<ReadonlySet<string>>(new Set())
 const expanded = (link: TocLink) =>
-  link.id === activeId.value || !!link.children?.some((child) => child.id === activeId.value)
+  link.id === activeId.value ||
+  near.value.has(link.id) ||
+  !!link.children?.some((child) => child.id === activeId.value)
 
 // ─── The rail ────────────────────────────────────────────────────────────────
 
@@ -110,20 +115,98 @@ function draw() {
   railHeight.value = box.offsetHeight
 }
 
-// The lit stretch: its top and bottom edges, as heights on the rail, each on its own spring, so
-// it stretches toward where it's going and settles. Heights, not lengths along the path: a branch
-// opening or closing changes the path's length, but not where a link sits.
+// The lit stretch: its top and bottom edges, each on its own spring, so it stretches toward
+// where it's going and settles. They're heights in the layout the list is heading for, once every
+// branch has finished opening or closing: a branch opening above the stretch moves it with its
+// link, instead of the stretch chasing a link that's still moving.
 const LEAD = { type: 'spring', bounce: 0, duration: 0.3 } as const
 const TRAIL = { type: 'spring', bounce: 0, duration: 0.5 } as const
 const start = motionValue(0)
 const end = motionValue(0)
+const targets = new Map([
+  [start, 0],
+  [end, 0],
+])
 let placed = false
+
+interface Branch {
+  el: HTMLElement
+  top: number
+  height: number
+  settled: number
+}
+function branches(box: HTMLElement): Branch[] {
+  return [...box.querySelectorAll<HTMLElement>('.toc-children')].map((el) => ({
+    el,
+    top: el.offsetTop,
+    height: el.offsetHeight,
+    settled: el.hasAttribute('data-open')
+      ? (el.querySelector<HTMLElement>('.toc-children-list')?.offsetHeight ?? 0)
+      : 0,
+  }))
+}
+// A settled height, where it's drawn right now.
+function toCurrent(list: Branch[], y: number): number {
+  let offset = 0
+  for (const branch of list) {
+    const top = branch.top + offset
+    if (y <= top) break
+    if (y < top + branch.settled) return branch.top + Math.min(y - top, branch.height)
+    offset += branch.settled - branch.height
+  }
+  return y - offset
+}
+// Where a link will sit once every branch above it has settled.
+function settledTop(list: Branch[], box: HTMLElement, link: HTMLElement): number {
+  let y = link.getBoundingClientRect().top - box.getBoundingClientRect().top
+  for (const branch of list) {
+    if (branch.el.contains(link)) continue
+    if (!(branch.el.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING)) continue
+    y += branch.settled - branch.height
+  }
+  return y
+}
+
+// A branch just set off opening or closing: everything below it in the settled layout moves by
+// its change, the stretch and where it's heading included, keeping its velocity.
+const lastSettled = new WeakMap<HTMLElement, number>()
+function reconcile(list: Branch[]) {
+  let offset = 0
+  for (const branch of list) {
+    const before = lastSettled.get(branch.el) ?? branch.settled
+    lastSettled.set(branch.el, branch.settled)
+    const top = branch.top + offset
+    offset += branch.settled - branch.height
+    if (before === branch.settled) continue
+    const move = (y: number) =>
+      y >= top + before
+        ? y + branch.settled - before
+        : y > top
+          ? top + Math.min(y - top, branch.settled)
+          : y
+    for (const [value, target] of targets) {
+      targets.set(value, move(target))
+      const moved = move(value.get())
+      if (Math.abs(moved - value.get()) < 0.01) continue
+      const velocity = value.getVelocity()
+      const running = value.isAnimating()
+      value.jump(moved)
+      if (running)
+        animate(value, targets.get(value)!, { ...(value === start ? TRAIL : LEAD), velocity })
+    }
+    goal = targets.get(start)!
+  }
+}
+
 function paint() {
   const path = lit.value
-  if (!path || !railPath.value) return
+  const box = nav.value
+  if (!path || !box || !railPath.value) return
+  const list = branches(box)
+  reconcile(list)
   const total = path.getTotalLength()
-  const from = lengthAt(path, start.get())
-  const to = lengthAt(path, end.get())
+  const from = lengthAt(path, toCurrent(list, start.get()))
+  const to = lengthAt(path, toCurrent(list, end.get()))
   path.style.strokeDasharray = `${Math.max(0, to - from)} ${total + 1}`
   path.style.strokeDashoffset = `${-from}`
 }
@@ -142,20 +225,6 @@ function lengthAt(path: SVGPathElement, y: number): number {
   return high
 }
 
-// Where a link will sit once every branch above it has finished opening or closing, so the
-// stretch heads straight there instead of chasing a link that's still moving.
-function settledTop(box: HTMLElement, link: HTMLElement): number {
-  let y = link.getBoundingClientRect().top - box.getBoundingClientRect().top
-  for (const branch of box.querySelectorAll<HTMLElement>('.toc-children')) {
-    if (branch.contains(link)) continue
-    if (!(branch.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING)) continue
-    const list = branch.querySelector<HTMLElement>('.toc-children-list')
-    const settled = branch.hasAttribute('data-open') ? (list?.offsetHeight ?? 0) : 0
-    y += settled - branch.offsetHeight
-  }
-  return y
-}
-
 let litId: string | null = null
 let goal = -1
 function light() {
@@ -168,11 +237,14 @@ function light() {
     return
   }
   path.style.opacity = '1'
-  const top = settledTop(box, target)
+  const list = branches(box)
+  reconcile(list)
+  const top = settledTop(list, box, target)
   const bottom = top + target.offsetHeight
   if (!placed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     start.jump(top)
     end.jump(bottom)
+    targets.set(start, top).set(end, bottom)
     placed = true
     litId = activeId.value
     goal = top
@@ -183,6 +255,7 @@ function light() {
   if (litId === activeId.value && Math.abs(goal - top) < 0.5) return
   litId = activeId.value
   goal = top
+  targets.set(start, top).set(end, bottom)
   const down = top > start.get()
   animate(start, top, down ? TRAIL : LEAD)
   animate(end, bottom, down ? LEAD : TRAIL)
@@ -222,6 +295,15 @@ function updateActive() {
     }
   }
   activeId.value = best
+  const reach = window.innerHeight * 0.5
+  const next = new Set<string>()
+  for (const link of props.links) {
+    if (!link.children?.length) continue
+    const box = document.getElementById(link.id)?.closest('section')?.getBoundingClientRect()
+    if (box && box.top < window.innerHeight + reach && box.bottom > -reach) next.add(link.id)
+  }
+  if (next.size !== near.value.size || [...next].some((id) => !near.value.has(id)))
+    near.value = next
 }
 
 // A click's own smooth scroll can end with a neighbor geometrically "closer"

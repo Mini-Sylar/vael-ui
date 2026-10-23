@@ -119,6 +119,16 @@
                       class="loader-select"
                     />
                   </div>
+                  <div class="theme-row">
+                    <span>{{ t('dockTour.replayLabel') }}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      @click="((themeOpen = false), startWhatsNew())"
+                    >
+                      {{ t('motionDocs.tour.cta') }}
+                    </Button>
+                  </div>
                 </div>
               </template>
             </Popover>

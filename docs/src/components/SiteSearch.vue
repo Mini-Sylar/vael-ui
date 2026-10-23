@@ -1,22 +1,24 @@
 <template>
   <!-- A read-only vael-ui Input, so its radius, border and size follow the ConfigProvider like
-       every other field in the header. Pressing it opens the palette. -->
-  <Input
-    readonly
-    class="site-search-trigger"
-    :placeholder="t('nav.search')"
-    aria-haspopup="dialog"
-    v-bind="$attrs"
-    @click="siteSearchOpen = true"
-    @keydown="onTriggerKeydown"
-  >
-    <template #start>
-      <PhMagnifyingGlass :size="16" aria-hidden="true" />
-    </template>
-    <template #end>
-      <Kbd>{{ shortcutLabel }}</Kbd>
-    </template>
-  </Input>
+       every other field in the header. Pressing anywhere on it, the icon and the shortcut hint
+       too, opens the palette. -->
+  <span class="site-search-hit" @click="siteSearchOpen = true">
+    <Input
+      readonly
+      class="site-search-trigger"
+      :placeholder="t('nav.search')"
+      aria-haspopup="dialog"
+      v-bind="$attrs"
+      @keydown="onTriggerKeydown"
+    >
+      <template #start>
+        <PhMagnifyingGlass :size="16" aria-hidden="true" />
+      </template>
+      <template #end>
+        <Kbd>{{ shortcutLabel }}</Kbd>
+      </template>
+    </Input>
+  </span>
   <CommandPalette
     ref="palette"
     v-model:open="siteSearchOpen"
@@ -568,6 +570,10 @@ onMounted(async () => {
 
 <style scoped>
 /* Reads as a field, acts as a button: no text caret, a pointer instead. */
+.site-search-hit {
+  display: contents;
+}
+
 .site-search-trigger,
 .site-search-trigger :deep(input) {
   cursor: pointer;

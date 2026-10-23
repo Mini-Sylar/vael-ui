@@ -679,7 +679,7 @@
       "tabTitle": "Le mouvement dans le playground",
       "tabBody": "Changez comment ce composant entre, sort et réagit quand on l'appuie, puis copiez le code.",
       "sectionTitle": "Chaque partie, par son nom",
-      "sectionBody": "Chaque composant liste les parties et états animables, juste après ses props."
+      "sectionBody": "Chaque page de composant a une section Motion : les parties et états que vous pouvez animer."
     }
   }
 }

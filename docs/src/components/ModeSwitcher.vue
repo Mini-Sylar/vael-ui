@@ -2,13 +2,7 @@
   <div class="mode-switcher">
     <Menu :items="items" @select="(item) => pick(item.value as DocsMode)">
       <template #trigger="{ open }">
-        <Button
-          variant="outline"
-          size="sm"
-          block
-          class="mode-trigger"
-          :data-open="open || undefined"
-        >
+        <Button variant="outline" block class="mode-trigger" :data-open="open || undefined">
           <template #leading>
             <!-- The icon swaps softly: it shrinks, blurs and fades out as the next one comes in. -->
             <Transition name="mode-icon" mode="out-in">

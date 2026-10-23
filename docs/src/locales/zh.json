@@ -679,7 +679,7 @@
       "tabTitle": "演练场里的动效",
       "tabBody": "改变这个组件的进入、离开和按下时的反应，然后复制代码。",
       "sectionTitle": "每个部件都有名字",
-      "sectionBody": "每个组件在 props 之后列出可动画的部件和状态。"
+      "sectionBody": "每个组件页面都有 Motion 部分：列出可动画的部件和状态。"
     }
   }
 }

@@ -53,19 +53,6 @@
         <DemoFrame :name="name" :examples="examples" />
       </section>
 
-      <MetaTable
-        id="props"
-        :title="t('component.props')"
-        :rows="meta.props"
-        kind="props"
-        :empty-text="t('component.noProps')"
-        :type-link="
-          motionInfo
-            ? { prop: 'motion', href: '#motion', tip: motionInfo.doc.replace(/`/g, '') }
-            : undefined
-        "
-        show-default
-      />
       <MotionTable v-if="motionInfo" :name="name" :info="motionInfo" />
       <MetaTable
         id="slots"
@@ -87,6 +74,19 @@
         :rows="meta.exposed"
         kind="exposed"
         :empty-text="t('component.noExposed')"
+      />
+      <MetaTable
+        id="props"
+        :title="t('component.props')"
+        :rows="meta.props"
+        kind="props"
+        :empty-text="t('component.noProps')"
+        :type-link="
+          motionInfo
+            ? { prop: 'motion', href: '#motion', tip: motionInfo.doc.replace(/`/g, '') }
+            : undefined
+        "
+        show-default
       />
 
       <section
@@ -363,11 +363,11 @@ const tocLinks = computed(() => [
         },
       ]
     : []),
-  { id: 'props', label: t('component.props') },
   ...(motionInfo.value ? [{ id: 'motion', label: t('component.motion'), isNew: true }] : []),
   { id: 'slots', label: t('component.slots') },
   { id: 'events', label: t('component.events') },
   { id: 'exposed', label: t('component.exposed') },
+  { id: 'props', label: t('component.props') },
   ...relatedComponents.value.map((r) => ({ id: `related-${r.name}`, label: r.name })),
   ...pairedSections.value.map((p) => ({ id: p.id, label: p.name })),
 ])

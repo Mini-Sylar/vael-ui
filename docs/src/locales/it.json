@@ -679,7 +679,7 @@
       "tabTitle": "Movimento nel playground",
       "tabBody": "Cambia come questo componente entra, esce e reagisce quando lo premi, poi copia il codice.",
       "sectionTitle": "Ogni parte, per nome",
-      "sectionBody": "Ogni componente elenca le parti e gli stati animabili, subito dopo le sue props."
+      "sectionBody": "Ogni pagina di componente ha una sezione Motion: le parti e gli stati che puoi animare."
     }
   }
 }
