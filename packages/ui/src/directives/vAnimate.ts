@@ -39,6 +39,8 @@ type Marked = HTMLElement & {
   _uiLeavingPlace?: LeavingPlace
   _uiTarget?: ReturnType<typeof import('../motion/animateTarget').holdTarget>
   _uiTargetKey?: string
+  /** What the look written at mount covered, put back once its player holds it. */
+  _uiShown?: [string, string][]
 }
 
 /** `animate`: the look it holds, moving to each new one as it changes (from the states player). */
@@ -47,6 +49,7 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined) {
   if (!animate) {
     el._uiTarget?.stop()
     el._uiTarget = el._uiTargetKey = undefined
+    putBack(el)
     return
   }
   const key = JSON.stringify(animate)
@@ -61,6 +64,7 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined) {
       if (el._uiTargetKey !== key) return
       el._uiTarget ??= module.holdTarget(el)
       el._uiTarget.scrub(animate, progress, timingOf(value) ?? {}, true)
+      putBack(el)
     })
     return
   }
@@ -68,13 +72,18 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined) {
   const changed = el._uiTargetKey !== undefined
   el._uiTargetKey = key
   // Mounting: shown in that look at once, so nothing flashes while its player loads.
-  const shown = changed ? [] : showNow(el, animate)
+  if (!changed) el._uiShown = showNow(el, animate)
   void loadAnimateTarget().then((module) => {
+    // Changed again before it loaded: the latest call puts the mount look back.
     if (el._uiTargetKey !== key) return
     el._uiTarget ??= module.holdTarget(el)
     el._uiTarget.update(animate, timingOf(value) ?? {}, motionStyleAround(el)?.spring, changed)
-    for (const [prop, before] of shown) put(el, prop, before)
+    putBack(el)
   })
+}
+function putBack(el: Marked) {
+  for (const [prop, before] of el._uiShown ?? []) put(el, prop, before)
+  el._uiShown = undefined
 }
 const cssName = (key: string) =>
   key.startsWith('--') ? key : key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)

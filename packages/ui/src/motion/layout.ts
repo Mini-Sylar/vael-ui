@@ -9,8 +9,8 @@ import type { MotionTiming, MotionValues } from './types'
 import { isTimed } from './playable'
 import { groupValues, reducePresence, toKeyframe } from './values'
 
-// Just now: one flush, give or take a frame.
-const FRESH = 100
+// Just now: the same flush or the next frame (a late tick, an async part). Later is a new arrival.
+const FRESH = 34
 const boxes = new Map<string, { box: DOMRect; at: number }>()
 
 // Boxes read as the owner starts to re-render: by the time one leaves, the same flush may have
@@ -19,7 +19,13 @@ const painted = new WeakMap<Element, DOMRect>()
 const watched = new WeakMap<ComponentInternalInstance, Set<Element>>()
 /** Notes `el`'s box each time `owner` is about to re-render, for `rememberLayout` and leaving. */
 export function watchPaintedBox(el: Element, owner: ComponentInternalInstance | null): void {
-  if (!owner) return
+  // A component's root is removed by the parent rendering it: noted as that one updates too.
+  for (let at = owner; at; at = at.parent as ComponentInternalInstance | null) {
+    watchOwner(el, at)
+    if (at.subTree?.el !== el) break
+  }
+}
+function watchOwner(el: Element, owner: ComponentInternalInstance) {
   let els = watched.get(owner)
   if (!els) {
     const set = (els = new Set<Element>())
@@ -92,8 +98,13 @@ const LAYOUT_ID = 'ui-layout'
 
 /** From `from` to where it is (`to`), as a transform that ends at none. */
 function slide(el: Element, from: DOMRect, to: DOMRect, timing: MotionTiming) {
-  const dx = from.left - to.left
-  const dy = from.top - to.top
+  // A scaled ancestor scales the translate too: the gap on screen, in its own pixels.
+  // offsetWidth rounds, so only a real scale (over 2%) counts.
+  const scaleOf = (shown: number, own: number) =>
+    own && shown && Math.abs(shown / own - 1) > 0.02 ? shown / own : 1
+  const html = el instanceof HTMLElement
+  const dx = (from.left - to.left) / (html ? scaleOf(to.width, el.offsetWidth) : 1)
+  const dy = (from.top - to.top) / (html ? scaleOf(to.height, el.offsetHeight) : 1)
   // `layout: 'position'`: it travels at its own size, so text in it never stretches.
   const resize = (timing as { layout?: unknown }).layout !== 'position'
   const sx = resize && to.width ? from.width / to.width : 1
@@ -118,9 +129,12 @@ function slide(el: Element, from: DOMRect, to: DOMRect, timing: MotionTiming) {
 
 // `layout`: each element's last place in its parent, and per parent, the elements watched under it.
 type Point = { x: number; y: number }
-const placeOf = new WeakMap<Element, Point>()
+const placeOf = new WeakMap<Element, Point | undefined>()
 const timingOf = new WeakMap<Element, () => MotionTiming>()
-const groups = new WeakMap<Element, { observer: MutationObserver; members: Set<Element> }>()
+const groups = new WeakMap<
+  Element,
+  { observer: MutationObserver; resize: ResizeObserver; members: Set<Element> }
+>()
 // A running slide's starting offset, so an interruption carries on from where it shows.
 const offsets = new WeakMap<Animation, Point>()
 
@@ -129,7 +143,9 @@ const offsets = new WeakMap<Animation, Point>()
  * an entrance or a glide on its way, aren't moves), and scrolling or the parent moving as a whole
  * neither.
  */
-function placeIn(el: Element, parent: Element): Point {
+function placeIn(el: Element, parent: Element): Point | undefined {
+  // Not rendered (display: none around it): no place, so showing it isn't a move.
+  if (el instanceof HTMLElement && !el.offsetParent && !el.getClientRects().length) return undefined
   if (el instanceof HTMLElement && parent instanceof HTMLElement) {
     if (el.offsetParent === parent) return { x: el.offsetLeft, y: el.offsetTop }
     if (el.offsetParent === parent.offsetParent)
@@ -201,14 +217,16 @@ function relayout(parent: Element, members: Set<Element>) {
   const now = list.map((el) => placeIn(el, parent))
   list.forEach((el, i) => {
     const last = placeOf.get(el)
-    placeOf.set(el, now[i]!)
+    const place = now[i]
+    placeOf.set(el, place)
     // Unmoved: a glide on its way carries on undisturbed.
-    if (!last || (Math.abs(last.x - now[i]!.x) < 0.5 && Math.abs(last.y - now[i]!.y) < 0.5)) return
+    if (!last || !place || (Math.abs(last.x - place.x) < 0.5 && Math.abs(last.y - place.y) < 0.5))
+      return
     for (const run of runs[i]!) run.cancel()
     if (reduced) return
     const offset = {
-      x: last.x + shown[i]!.x - now[i]!.x,
-      y: last.y + shown[i]!.y - now[i]!.y,
+      x: last.x + shown[i]!.x - place.x,
+      y: last.y + shown[i]!.y - place.y,
     }
     slideBy(el, offset, timingOf.get(el)?.() ?? {})
   })
@@ -236,7 +254,12 @@ export function followLayout(el: Element, timing: () => MotionTiming): () => voi
       attributes: true,
       characterData: true,
     })
-    group = { observer, members }
+    // Resized from outside (the window, a pane): places noted again, nothing slides.
+    const resize = new ResizeObserver(() => {
+      for (const each of members) if (each.isConnected) placeOf.set(each, placeIn(each, parent))
+    })
+    resize.observe(parent)
+    group = { observer, resize, members }
     groups.set(parent, group)
   }
   group.members.add(el)
@@ -245,6 +268,7 @@ export function followLayout(el: Element, timing: () => MotionTiming): () => voi
     own.members.delete(el)
     if (own.members.size) return
     own.observer.disconnect()
+    own.resize.disconnect()
     groups.delete(parent)
   }
 }
@@ -307,7 +331,11 @@ function untransformed(el: Element): DOMRect {
     (Number.parseFloat(ty) || 0) -
     (m?.f ?? 0) -
     (Number.parseFloat(oy) || 0) * (1 - scaleY)
-  return new DOMRect(left, top, el.offsetWidth || box.width, el.offsetHeight || box.height)
+  // Untransformed, the box is exact; offsetWidth rounds to whole pixels.
+  const flat = scaleX === 1 && scaleY === 1 && style.rotate === 'none' && (!m || (!m.b && !m.c))
+  const width = flat ? box.width : el.offsetWidth || box.width
+  const height = flat ? box.height : el.offsetHeight || box.height
+  return new DOMRect(left, top, width, height)
 }
 
 // Removed in the flush it started leaving in. Later, a Transition held it and played its own leave.
@@ -358,6 +386,33 @@ function clipWhileLeaving(box: HTMLElement): () => void {
 }
 
 /**
+ * A scroller between it and what holds it, unpositioned, doesn't clip it once it's out of the
+ * flow: clipped to what that scroller shows instead.
+ */
+function clipToScrollers(el: HTMLElement | SVGSVGElement, place: LeavingPlace) {
+  const holder = el instanceof HTMLElement ? el.offsetParent : null
+  if (!holder || (place.look?.['clip-path'] ?? 'none') !== 'none') return
+  let view: { top: number; right: number; bottom: number; left: number } | undefined
+  for (let up = el.parentElement; up && up !== holder; up = up.parentElement) {
+    if (getComputedStyle(up).overflow === 'visible') continue
+    const r = up.getBoundingClientRect()
+    view = view
+      ? {
+          top: Math.max(view.top, r.top),
+          right: Math.min(view.right, r.right),
+          bottom: Math.min(view.bottom, r.bottom),
+          left: Math.max(view.left, r.left),
+        }
+      : { top: r.top, right: r.right, bottom: r.bottom, left: r.left }
+  }
+  if (!view) return
+  const { top, right, bottom, left } = place.box
+  const inset = [view.top - top, right - view.right, bottom - view.bottom, view.left - left]
+  if (inset.some((side) => side > 0))
+    el.style.clipPath = `inset(${inset.map((side) => `${Math.max(0, side)}px`).join(' ')})`
+}
+
+/**
  * Vue removed it, its parent stays: it goes back where it was, out of the flow, plays its exit and
  * is gone (auto-animate's approach). Nothing holds it already (a Transition keeps its own).
  */
@@ -377,6 +432,7 @@ export function leaveInPlace(
       left: '0px',
       width: `${place.box.width}px`,
       height: `${place.box.height}px`,
+      boxSizing: 'border-box',
       margin: '0',
       pointerEvents: 'none',
     })
@@ -395,6 +451,7 @@ export function leaveInPlace(
     el.style.left = `${place.box.left - at.left}px`
     // From the look it had, not its resting one: on top of the place it's measured into.
     for (const [prop, value] of Object.entries(place.look ?? {})) el.style.setProperty(prop, value)
+    clipToScrollers(el, place)
     const look = prefersReducedMotion() ? reducePresence(values) : values
     const rtl = getComputedStyle(el).direction === 'rtl'
     // A value with its own timing leaves on it; x and y timed apart can't share `translate`.
