@@ -171,7 +171,7 @@ Some components render different DOM or styles. Their props, slots and events ar
   `false` silences every `useHaptic` call inside the provider, yours included, for a “turn off haptics” setting. When it’s unset, your haptics play and vael-ui’s stay silent.
 
 - **Switch**: you can drag the thumb. It follows the pointer, the track flips as the thumb passes halfway, and the switch settles on the side you release it past. A tap still toggles. `dragging` is exposed, and the root carries `data-dragging`.
-- **One spring for everything**: `ConfigProvider`’s `:motion="{ spring: { damping, response } }"` puts drawers, sheets, toasts, AnimatedNumber and the sliding indicators on one spring. Crossfades such as AnimatedText keep their own short timing. Damping below 1 overshoots, and binding the values to refs retunes the app live. `indicator` still sets the indicators on their own. `springEasing` turns a spring into a CSS `linear()` curve and its settle time, in the shape `element.animate()` takes, so your own animations can use it.
+- **One spring for everything**: `ConfigProvider`’s `:motion="{ spring: { damping, response } }"` puts drawers, sheets, toasts, AnimatedNumber, the sliding indicators, and the folds of Tree and Accordion on one spring. Crossfades such as AnimatedText keep their own short timing. Damping below 1 overshoots, and binding the values to refs retunes the app live. `indicator` still sets the indicators on their own. `springEasing` turns a spring into a CSS `linear()` curve and its settle time, in the shape `element.animate()` takes, so your own animations can use it.
 - **Dialog**: `origin="trigger"` zooms the panel out of the element that opened it, and back into it on close. It uses the drawer curve, so `ConfigProvider`’s spring applies to it. It works on centered dialogs only, and reduced motion keeps a fade.
 - **ColorPicker**: a swatch that opens a picker with a saturation and brightness plane, a hue slider, a hex field, optional presets and an eyedropper where the browser supports one:
   - the plane works with the arrow keys
@@ -190,6 +190,12 @@ Some components render different DOM or styles. Their props, slots and events ar
 - **useNumberFormat**: returns `formatOptions`, the `Intl.NumberFormat` options it builds, so you can pass the same format to AnimatedNumber.
 - **CommandPalette**: a `#footer` slot for key hints or a status line. It receives the highlighted `activeItem` and the `query`. `activeItem` is also exposed, so your own shortcuts can act on the highlighted row.
 - **Textarea**: each side of the bottom action strip lines up its contents in one row, so a counter, an icon and a button align without extra markup.
+- **Large trees**: past 500 visible rows, Tree and TreeSelect render only the rows in view: a tree of 50,000 rows keeps about two dozen in the page, so it opens and scrolls like a small one and still folds its folders on the spring. It works whatever scrolls the tree: the list itself, a sidebar around it or the page.
+  - sticky scroll pins the folders being scrolled through, as a copy that screen readers skip
+  - arrow keys, Home and End move through the whole tree, scrolling the row into view first; the focused row stays in the page while you scroll away from it
+  - each row tells screen readers its level, its position among its siblings and how many there are
+  - the code for it loads with the first tree that needs it, so an app of smaller trees doesn’t ship it
+  - a reorderable tree and `forceMount` keep rendering every row
 - **Animation hooks**: Editable, ColorPicker and Progress accept `motion="false"` and expose their elements for your own animations: `previewEl`, `inputEl`, `swatchEl`, `panelEl`, `areaEl`, `thumbEl`, `fillEl` and `fillEls`.
 - **Sliding highlight on every list**: the hover and keyboard highlight glides between rows in Select, Combobox, CommandPalette, Menu (and so ContextMenu, SplitButton and CascadeSelect), Tree, TreeSelect, MenuList, DataTable, Pagination, Tabs, SelectButton, Toolbar and Calendar:
   - keyboard focus always moves it, even with the pointer resting in the list
@@ -234,7 +240,7 @@ These components changed how they move:
 - **Popover, Menu, Tooltip**: panels grow from the exact center of their trigger instead of the nearest corner, even after flipping or shifting to stay on screen.
 - **Button**: pressing no longer makes the label or icon flinch. The box and its contents scale together, and sizes snap to whole pixels at any root font size. At a 16 px root, no size changes; at 14 px, the medium button grows from 31.5 px to 32 px.
 - **Tooltip**: text no longer jitters, blurs or shifts, including on Windows. Moving between triggers glides from wherever the tooltip is, and follows a target that’s still moving, such as a magnifying Dock item. The tooltip resizes smoothly when its content changes.
-- **Tree, TreeSelect**: folders open and close with a spring, and the rows below move with them, with no overlap or jitter on tall folders. Clicking again partway reverses the motion. Keyboard navigation, search, and trees over 150 visible rows still change instantly. TreeSelect’s panel grows with the tree, and an opening folder no longer shifts the scroll position.
+- **Tree, TreeSelect**: folders open and close with a spring, and the rows below move with them, with no overlap or jitter on tall folders. The spring follows the motion system: the tree’s own `motion`, then a style’s `tree` key, then the app’s spring; a bouncy one makes folders overshoot as they open, and every folder closes without the bounce. Clicking again partway reverses the motion. Keyboard navigation and search still change instantly. TreeSelect’s panel grows with the tree, and an opening folder no longer shifts the scroll position.
 - **Sortable**: rows spring into place in every case: back into their own slot when released over it, between lists in a group, and into new slots when your data re-sorts after a drop. A dragged row picks its slot by its center, not the pointer, and stays above the other rows throughout. While rows settle, the root has `data-settling` and `isSettling` is exposed.
 - **Calendar, DatePicker**: the month label resizes smoothly, and grids switching months or years no longer overlap or get clipped at the sides.
 - **Collapsible, Accordion**: content that grows while a panel opens is no longer clipped, and panels ease out.
@@ -285,7 +291,7 @@ These fix behavior in 0.4.8 and earlier.
 - **useColorScheme**: `resolvedMode` matches `initial` from the first render, so server-rendered HTML no longer starts in the system scheme.
 - **Accordion, Collapsible**: a panel no longer jumps by a fraction of a pixel as it finishes opening, because it opens to its exact height instead of a rounded one.
 - **Pagination**: hovering the current page no longer covers it with the hover background.
-- **Radio, Checkbox, Switch**: at a fractional pixel ratio (Windows display scaling or browser zoom), the dot, tick and thumb no longer shift when you press them. Each stays on its own compositor layer. Tables over 150 rendered rows and trees over 150 visible rows make their checkboxes static instead, with no press feedback and no layer, so scrolling stays cheap. A virtualized table keeps them, since it renders only the rows on screen.
+- **Radio, Checkbox, Switch**: at a fractional pixel ratio (Windows display scaling or browser zoom), the dot, tick and thumb no longer shift when you press them. Each stays on its own compositor layer. Tables over 150 rendered rows and trees between 150 and 500 visible rows make their checkboxes static instead, with no press feedback and no layer, so scrolling stays cheap. A virtualized table and a large tree keep them, since they render only the rows on screen.
 - **SelectButton**: the selection glides to a new choice. Before, it jumped, because the first measurement turned its transition off for good.
 - **SpeedDial**: the trigger’s plus sits in the middle of the button instead of a pixel above it, and pressing it no longer looks like a jitter.
 - **`vael-ui/style.css`**: the full stylesheet now includes AvatarGroup, Breadcrumb, CommandPalette, PasswordInput, Rating, ScrollArea, Sortable, Stepper, Timeline and Tour, and the shared clear-button, tick and indicator styles. Before, an app that imported the full stylesheet instead of each component’s own CSS rendered those components unstyled.
@@ -297,6 +303,7 @@ These fix behavior in 0.4.8 and earlier.
 - **Forced colors**: in Windows high contrast mode, the sliding highlight shows as a `Highlight` outline, since the mode removes backgrounds.
 - **Calendar, DatePicker**: clicking a disabled day from the previous or next month no longer moves to that month.
 - **ColorPicker**: on Windows, the panel no longer scrolls sideways, and the eyedropper is the same height as the hex field.
+- **Combobox**: with `multiple`, content in `#start`, such as an icon, sits at the start of the field before the chips, instead of moving along after them as you pick.
 - **Combobox**: the phone keyboard’s action key picks the highlighted match. Combobox sets `enterkeyhint="enter"`, which you can override.
 - **Touch screens**: hover styles no longer stick after a tap, and pressed rows show a background instead. Two taps in a row on a stepper or a calendar arrow count as two presses instead of zooming the page on iOS.
 - **Sortable `preview-mode="clone"`**:
