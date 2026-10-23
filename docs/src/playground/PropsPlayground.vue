@@ -422,6 +422,12 @@
             </template>
           </PlaygroundErrorBoundary>
           <p v-if="dragHint" class="playground-drag-hint">{{ dragHint }}</p>
+          <!-- What the prop you just changed does, in its own words. -->
+          <Transition name="pg-hint">
+            <p v-if="changeHint" :key="changeHint.name" class="playground-drag-hint pg-change-hint">
+              <code>{{ changeHint.name }}</code> <RichText :text="changeHint.text" />
+            </p>
+          </Transition>
           <p v-if="name === 'Loader'" class="playground-drag-hint playground-note">
             ConfigProvider's <code>loader-type</code> sets every loader in an app at once, the ones
             inside buttons, lists and toasts too.
@@ -451,7 +457,18 @@
 
       <div v-if="controls.length > 0 || showDataPreset" class="playground-controls">
         <div v-if="next" class="pg-inspector-head">
-          <span>
+          <SelectButton
+            v-if="motionInfo"
+            v-model="inspector"
+            size="sm"
+            aria-label="Edit"
+            :allow-empty="false"
+            :items="[
+              { label: `Props ${controls.length + (showDataPreset ? 1 : 0)}`, value: 'props' },
+              { label: 'Motion', value: 'motion' },
+            ]"
+          />
+          <span v-else>
             Props
             <span class="pg-count">{{ controls.length + (showDataPreset ? 1 : 0) }}</span>
           </span>
@@ -459,7 +476,7 @@
             variant="ghost"
             size="sm"
             class="pg-reset-all"
-            :disabled="changedCount === 0"
+            :disabled="changedCount === 0 && motionTab.look === 'default'"
             @click="resetAll"
           >
             <template #leading>
@@ -468,7 +485,13 @@
             Reset
           </Button>
         </div>
-        <div ref="rowsEl" class="pg-rows" v-scroll-mask="next" @scroll.passive="updateMore">
+        <PlaygroundMotion
+          v-if="next && motionInfo && inspector === 'motion'"
+          v-model="motionTab"
+          :parts="motionInfo.parts"
+          :overlay="motionInfo.kinds.includes('overlay')"
+        />
+        <div v-else ref="rowsEl" class="pg-rows" v-scroll-mask="next" @scroll.passive="updateMore">
           <div v-if="showDataPreset" class="control-row">
             <label id="ctl-data-preset-label" for="ctl-data-preset">Data</label>
             <!-- A <label for> can't name a div combobox, so Select points back at it. -->
@@ -600,6 +623,7 @@ import {
   h,
   inject,
   reactive,
+  ref,
   shallowRef,
   nextTick,
   toRaw,
@@ -633,6 +657,11 @@ import {
 import CodeBlock from '../components/CodeBlock.vue'
 import { layoutNext as next } from '../layoutNext'
 import PlaygroundErrorBoundary from './PlaygroundErrorBoundary.vue'
+import PlaygroundMotion from './PlaygroundMotion.vue'
+import type { MotionTabState } from './PlaygroundMotion.vue'
+import RichText from '../components/RichText.vue'
+import motionMeta from '../generated/motion-meta.json'
+import type { MotionInfo } from '../components/MotionTable.vue'
 import { inferControl, defaultControlValue, type PlaygroundControl } from './inferControl'
 import componentMeta from '../generated/component-meta.json'
 import type { ComponentMetaEntry } from '../types'
@@ -1254,6 +1283,7 @@ function resetControl(name: string) {
   values[name] = initialValues.value[name]
 }
 function resetAll() {
+  motionTab.value = freshMotion()
   for (const c of controls.value) values[c.name] = initialValues.value[c.name]
 }
 
@@ -1438,6 +1468,7 @@ const codeNext = computed(() => {
   for (const c of controls.value) {
     const v = values[c.name]
     const d = metaDefault(c.name)
+    if (c.name === 'motion' && motionValue.value !== undefined) continue
     if (v === undefined || v === '' || v === null) continue
     if (c.kind === 'boolean' && v === false && (d === undefined || d === false)) continue
     if (Object.is(v, d) || String(v) === String(d)) continue
@@ -1445,6 +1476,7 @@ const codeNext = computed(() => {
     else if (c.kind === 'number') attrs.push(`:${c.name}="${v}"`)
     else attrs.push(`${c.name}="${v}"`)
   }
+  if (motionValue.value !== undefined) attrs.push(`:motion="${motionLiteral(motionValue.value)}"`)
   if (isSortable.value && sortableLayout.value === 'group') return sortableGroupSnippet(attrs)
   if (previewLabel.value) attrs.push(`aria-label="${previewLabel.value}"`)
   if (hasItemsProp.value) attrs.push(':items="items"')
@@ -1491,6 +1523,87 @@ const previewLabel = computed(() => {
   return PREVIEW_LABELS[props.name]
 })
 
+// The Motion tab: a look for the `motion` prop, written into the preview and the snippet.
+const motionInfo = computed(() => (motionMeta as Record<string, MotionInfo>)[props.name])
+const inspector = shallowRef<'props' | 'motion'>('props')
+const MAIN_PARTS = ['panel', 'row', 'item', 'toast', 'chip', 'action', 'root', 'thumb', 'track']
+const freshMotion = (): MotionTabState => ({
+  look: 'default',
+  damping: 0.85,
+  response: 0.35,
+  part:
+    MAIN_PARTS.find((p) => motionInfo.value?.parts.includes(p)) ??
+    motionInfo.value?.parts[0] ??
+    'root',
+  fade: true,
+  y: 8,
+  scale: 0.98,
+  blur: 0,
+})
+// Deep: the panel edits its fields in place.
+const motionTab = ref<MotionTabState>(freshMotion())
+watch(
+  () => props.name,
+  () => {
+    motionTab.value = freshMotion()
+    inspector.value = 'props'
+  },
+)
+const motionValue = computed(() => {
+  const m = motionTab.value
+  if (m.look === 'default') return undefined
+  if (m.look === 'off') return false
+  const from: Record<string, number> = {}
+  if (m.fade) from.opacity = 0
+  if (m.y) from.y = m.y
+  if (m.scale !== 1) from.scale = m.scale
+  if (m.blur) from.blur = m.blur
+  return {
+    spring: { damping: m.damping, response: m.response },
+    ...(Object.keys(from).length ? { initial: { [m.part]: from } } : {}),
+  }
+})
+// `{ spring: { damping: 0.85 } }`: the object as you'd write it in a template.
+function motionLiteral(value: unknown): string {
+  if (value === null || typeof value !== 'object') return String(value)
+  const entries = Object.entries(value).map(([k, v]) => `${k}: ${motionLiteral(v)}`)
+  return `{ ${entries.join(', ')} }`
+}
+// A new look replays: the preview remounts once the sliders rest.
+const motionRevision = shallowRef(0)
+let motionTimer: ReturnType<typeof setTimeout> | undefined
+watch(motionValue, () => {
+  clearTimeout(motionTimer)
+  motionTimer = setTimeout(() => motionRevision.value++, 250)
+})
+
+// What a prop does, from its own description, for a few seconds after you change it.
+const changeHint = shallowRef<{ name: string; text: string } | null>(null)
+let hintTimer: ReturnType<typeof setTimeout> | undefined
+let lastValues: Record<string, unknown> = {}
+watch(
+  () => ({ ...values }),
+  (now) => {
+    const changed = Object.keys(now).find((k) => !Object.is(now[k], lastValues[k]))
+    lastValues = now
+    // Seeding a prop's starting value isn't a change you made.
+    if (!changed || Object.is(now[changed], initialValues.value[changed])) return
+    const text = meta.value?.props.find((p) => p.name === changed)?.description
+    if (!text) return
+    changeHint.value = { name: changed, text: text.split(/(?<=\.)\s/)[0]! }
+    clearTimeout(hintTimer)
+    hintTimer = setTimeout(() => (changeHint.value = null), 4000)
+  },
+  { immediate: true },
+)
+watch(
+  () => props.name,
+  () => {
+    lastValues = {}
+    changeHint.value = null
+  },
+)
+
 const boundProps = computed(() => ({
   // A cleared text control means unset; an empty string would render an empty aria-label.
   ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== '')),
@@ -1501,6 +1614,7 @@ const boundProps = computed(() => ({
       }
     : {}),
   ...(progressSegments.value ? { value: progressSegments.value } : {}),
+  ...(motionValue.value !== undefined ? { motion: motionValue.value } : {}),
 }))
 
 // Each column takes half of the chosen data, fresh whenever the data or the layout changes.
@@ -1531,7 +1645,7 @@ function onModelUpdate(v: unknown) {
   values.modelValue = v
 }
 
-const resetKey = computed(() => `${props.name}:${defaultVariant.value}`)
+const resetKey = computed(() => `${props.name}:${defaultVariant.value}:${motionRevision.value}`)
 
 // A whole SFC rather than an import line plus loose markup: it pastes straight
 // into a .vue file, and the highlighter only colors markup inside <template>.
@@ -2197,6 +2311,24 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
 
 .playground-note {
   pointer-events: auto;
+}
+
+.pg-change-hint :deep(code),
+.pg-change-hint > code {
+  font-size: 0.92em;
+}
+.pg-hint-enter-active,
+.pg-hint-leave-active {
+  transition:
+    opacity var(--ui-duration-enter) var(--ui-ease-out),
+    translate var(--ui-duration-enter) var(--ui-ease-out);
+}
+.pg-hint-enter-from {
+  opacity: 0;
+  translate: 0 4px;
+}
+.pg-hint-leave-to {
+  opacity: 0;
 }
 
 .playground-error {
