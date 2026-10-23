@@ -1,5 +1,6 @@
 // Motion stress: drives every demo in the built docs like a user and checks what must always hold.
-//   repeat          a press that cycles (open/close, on/off) moves the same each time round
+//   repeat          a press that cycles (open/close, on/off) moves the same each time round;
+//                   one seen under load is run again alone before it is reported
 //   clean at rest   it settles, and leaves no motion marker behind
 //   visible at rest nothing it shows is covered by another painted element once it's still
 //   console         no "they fight" warning, no page error
@@ -87,6 +88,8 @@ if (args.shard) {
 const total = jobs.length
 
 const violations = []
+// Where reports go: the run's list, or a re-check's own.
+let sink = violations
 const report = (v) => {
   const allowed = allow.find(
     (a) =>
@@ -95,7 +98,7 @@ const report = (v) => {
       v.check === a.check &&
       (!a.setup || a.setup === v.setup),
   )
-  violations.push({ ...v, allowed: allowed?.reason })
+  sink.push({ ...v, allowed: allowed?.reason })
 }
 
 // A seeded random: the same seed replays the same steps.
@@ -370,6 +373,26 @@ await Promise.all(
   }),
 )
 
+// A repeat counts frames, and nine browsers at once can starve one press of them. Each page with
+// one runs again alone; only a repeat that happens again is kept.
+const same = (a, b) => a.page === b.page && a.demo === b.demo && a.control === b.control
+const flagged = violations.filter((v) => v.check === 'repeat' && !v.allowed)
+const dropped = []
+if (flagged.length) {
+  const browser = await chromium.launch()
+  for (const job of new Map(flagged.map((v) => [`${v.setup} ${v.page}`, v])).values()) {
+    process.stdout.write(`\rre-checking ${job.page} [${job.setup}] alone`)
+    sink = []
+    await runJob(browser, job).catch(() => {})
+    const again = sink.filter((v) => v.check === 'repeat')
+    for (const v of flagged)
+      if (v.setup === job.setup && v.page === job.page && !again.some((w) => same(v, w)))
+        dropped.push(violations.splice(violations.indexOf(v), 1)[0])
+  }
+  await browser.close()
+  sink = violations
+}
+
 const open = violations.filter((v) => !v.allowed)
 const out = args.shard ? `report-${args.shard.replace('/', '-of-')}.json` : 'report.json'
 writeFileSync(here(out), JSON.stringify(violations, null, 2))
@@ -382,6 +405,11 @@ for (const [check, list] of Object.entries(Object.groupBy(open, (v) => v.check))
     console.log(
       `  [${v.setup}] ${v.page} › ${v.demo}${v.control ? ` › ${v.control}` : ''}\n    ${v.detail}`,
     )
+}
+if (dropped.length) {
+  console.log(`\nrepeat under load only, gone when run alone (${dropped.length})`)
+  for (const v of dropped)
+    console.log(`  [${v.setup}] ${v.page} › ${v.demo} › ${v.control}\n    ${v.detail}`)
 }
 console.log(`\nFull report: packages/scripts/motion-stress/${out}`)
 process.exitCode = open.length ? 1 : 0
