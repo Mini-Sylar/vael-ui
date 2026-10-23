@@ -84,7 +84,9 @@
     "onThisPage": "Sur cette page",
     "headless": "Composable headless",
     "motion": "Animation",
-    "new": "Nouveau"
+    "new": "Nouveau",
+    "highlights": "À la une",
+    "moreExamples": "Plus d'exemples"
   },
   "home": {
     "tagline": "Plus de 60 composants pour Vue 3, compilés depuis une seule source pour le build VDOM classique et pour Vue Vapor.",

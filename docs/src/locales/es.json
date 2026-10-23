@@ -68,7 +68,9 @@
     "onThisPage": "En esta página",
     "headless": "Componible headless",
     "motion": "Movimiento",
-    "new": "Nuevo"
+    "new": "Nuevo",
+    "highlights": "Destacados",
+    "moreExamples": "Más ejemplos"
   },
   "descriptions": {
     "Accordion": "Una pila de secciones plegables donde al abrir una se pueden cerrar las demás.",

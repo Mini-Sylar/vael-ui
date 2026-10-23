@@ -68,7 +68,9 @@
     "onThisPage": "In questa pagina",
     "headless": "Componibile headless",
     "motion": "Movimento",
-    "new": "Nuovo"
+    "new": "Nuovo",
+    "highlights": "In evidenza",
+    "moreExamples": "Altri esempi"
   },
   "descriptions": {
     "Accordion": "Una pila di sezioni pieghevoli dove aprendone una si possono chiudere le altre.",

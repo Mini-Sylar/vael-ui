@@ -68,7 +68,9 @@
     "onThisPage": "本页内容",
     "headless": "无头可组合项",
     "motion": "动效",
-    "new": "新"
+    "new": "新",
+    "highlights": "精选",
+    "moreExamples": "更多示例"
   },
   "descriptions": {
     "Accordion": "一堆可折叠的部分，打开一个部分就可以关闭其他部分。",

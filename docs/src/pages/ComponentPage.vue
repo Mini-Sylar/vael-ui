@@ -327,9 +327,14 @@ watchEffect(async (onCleanup) => {
         ? stripDemoProse((await vaporSourceLoader()) as string)
         : ''
 
+      // The showpieces lead, without the label that marked them.
+      const highlight = /^extreme\b/i.test(entry.title)
       return {
         id: entry.id,
-        title: entry.title,
+        title: highlight
+          ? entry.title.replace(/^extreme:?\s*/i, '').replace(/^./, (c) => c.toUpperCase())
+          : entry.title,
+        highlight,
         vdomComponent,
         vaporComponent,
         vdomCode,
@@ -337,7 +342,8 @@ watchEffect(async (onCleanup) => {
       }
     }),
   )
-  if (!stale) examples.value = loaded
+  if (!stale)
+    examples.value = [...loaded.filter((e) => e.highlight), ...loaded.filter((e) => !e.highlight)]
 })
 
 const tocLinks = computed(() => [

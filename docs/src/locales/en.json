@@ -90,7 +90,9 @@
     "onThisPage": "On this page",
     "headless": "Headless composable",
     "motion": "Motion",
-    "new": "New"
+    "new": "New",
+    "highlights": "Highlights",
+    "moreExamples": "More examples"
   },
   "home": {
     "eyebrow": "Vue 3 component library",

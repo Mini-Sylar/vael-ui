@@ -68,7 +68,9 @@
     "onThisPage": "Nesta página",
     "headless": "Combinável headless",
     "motion": "Movimento",
-    "new": "Novo"
+    "new": "Novo",
+    "highlights": "Destaques",
+    "moreExamples": "Mais exemplos"
   },
   "descriptions": {
     "Accordion": "Uma pilha de seções dobráveis ​​onde a abertura de uma pode fechar as outras.",

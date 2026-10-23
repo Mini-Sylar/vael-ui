@@ -68,7 +68,9 @@
     "onThisPage": "このページの内容",
     "headless": "ヘッドレスコンポーザブル",
     "motion": "モーション",
-    "new": "新規"
+    "new": "新規",
+    "highlights": "ハイライト",
+    "moreExamples": "その他の例"
   },
   "descriptions": {
     "Accordion": "折りたたみ可能なセクションのスタック。1 つを開くと他のセクションを閉じることができます。",

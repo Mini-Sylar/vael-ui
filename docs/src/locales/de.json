@@ -68,7 +68,9 @@
     "onThisPage": "Auf dieser Seite",
     "headless": "Headless-Composable",
     "motion": "Bewegung",
-    "new": "Neu"
+    "new": "Neu",
+    "highlights": "Highlights",
+    "moreExamples": "Weitere Beispiele"
   },
   "descriptions": {
     "Accordion": "Ein Stapel zusammenklappbarer Abschnitte, bei denen durch Öffnen eines Abschnitts die anderen geschlossen werden können.",
