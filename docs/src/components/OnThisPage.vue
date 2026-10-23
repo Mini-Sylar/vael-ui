@@ -11,6 +11,8 @@
       <path class="toc-rail-line" :d="railPath" />
       <path ref="lit" class="toc-rail-lit" :d="railPath" />
     </svg>
+    <!-- The sidebar's dither, feathering out from the lit stretch toward its link. -->
+    <span ref="litDither" class="toc-lit-dither" aria-hidden="true" />
     <p class="label">{{ t('component.onThisPage') }}</p>
     <template v-for="link in links" :key="link.id">
       <a
@@ -91,6 +93,7 @@ const BRANCH_X = 18.5
 const CURVE = 14
 const nav = useTemplateRef<HTMLElement>('nav')
 const lit = useTemplateRef<SVGPathElement>('lit')
+const litDither = useTemplateRef<HTMLElement>('litDither')
 const railPath = shallowRef('')
 const railHeight = shallowRef(0)
 
@@ -119,6 +122,7 @@ function draw() {
 // where it's going and settles. They're heights in the layout the list is heading for, once every
 // branch has finished opening or closing: a branch opening above the stretch moves it with its
 // link, instead of the stretch chasing a link that's still moving.
+const PAD = 3
 const LEAD = { type: 'spring', bounce: 0, duration: 0.3 } as const
 const TRAIL = { type: 'spring', bounce: 0, duration: 0.5 } as const
 const start = motionValue(0)
@@ -209,6 +213,12 @@ function paint() {
   const to = lengthAt(path, toCurrent(list, end.get()))
   path.style.strokeDasharray = `${Math.max(0, to - from)} ${total + 1}`
   path.style.strokeDashoffset = `${-from}`
+  const dither = litDither.value
+  if (!dither) return
+  const head = path.getPointAtLength(from)
+  const tail = path.getPointAtLength(to)
+  dither.style.translate = `${head.x + 1}px ${head.y}px`
+  dither.style.blockSize = `${Math.max(0, tail.y - head.y)}px`
 }
 const stops = [start.on('change', paint), end.on('change', paint)]
 onScopeDispose(() => stops.forEach((stop) => stop()))
@@ -233,14 +243,17 @@ function light() {
   const target = box?.querySelector<HTMLElement>(`[data-toc="${activeId.value}"]`)
   if (!path || !box || !target || !railPath.value) {
     path?.style.setProperty('opacity', '0')
+    litDither.value?.style.setProperty('opacity', '0')
     placed = false
     return
   }
   path.style.opacity = '1'
+  if (litDither.value) litDither.value.style.opacity = '1'
   const list = branches(box)
   reconcile(list)
-  const top = settledTop(list, box, target)
-  const bottom = top + target.offsetHeight
+  // A little past the link's line box, like the sidebar's bar on its row.
+  const top = settledTop(list, box, target) - PAD
+  const bottom = top + target.offsetHeight + PAD * 2
   if (!placed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     start.jump(top)
     end.jump(bottom)
@@ -375,6 +388,18 @@ onUnmounted(() => {
 .toc-rail-line {
   stroke: var(--ui-border);
   stroke-width: 1;
+}
+
+.toc-lit-dither {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 1.1rem;
+  background: radial-gradient(circle, var(--ui-primary) 0.6px, transparent 0.9px) 0 0 / 3px 3px;
+  opacity: 0;
+  mask-image: linear-gradient(to right, rgb(0 0 0 / 0.85), transparent);
+  pointer-events: none;
+  transition: opacity 200ms var(--ui-ease-out);
 }
 
 .toc-rail-lit {

@@ -572,6 +572,14 @@
       "guide": {
         "title": "Eigene Animationen einbinden",
         "body": "Der ganze Vertrag: Werte, Hooks, Listen, Guards und appweite Stile."
+      },
+      "types": {
+        "title": "TypeScript",
+        "body": "Autovervollständigung für jeden Teil und Zustand, und Typfehler für die Fehler."
+      },
+      "showcase": {
+        "title": "Showcase",
+        "body": "Das Glanzstück jeder Komponente, live, nebeneinander."
       }
     },
     "propTitle": "Eine Prop",
@@ -590,7 +598,9 @@
       "motion": "Bewegung",
       "overview": "Überblick",
       "springs": "Federn und Timing",
-      "engines": "Deine eigene Engine"
+      "engines": "Deine eigene Engine",
+      "types": "TypeScript",
+      "showcase": "Showcase"
     },
     "mode": {
       "components": "Jede Komponente, nach Art",
@@ -680,6 +690,56 @@
       "tabBody": "Ändere, wie diese Komponente erscheint, verschwindet und beim Drücken reagiert, und kopiere den Code.",
       "sectionTitle": "Jeder Teil mit Namen",
       "sectionBody": "Jede Komponentenseite hat einen Motion-Abschnitt: die Teile und Zustände, die du animieren kannst."
+    },
+    "types": {
+      "title": "TypeScript",
+      "intro": "Dein Editor kennt die Teile und Zustände jeder Komponente, jede CSS-Eigenschaft und die Timing-Tokens von vael-ui. Ein Fehler wird rot, bevor du speicherst.",
+      "component": "Komponente",
+      "completeTitle": "Autovervollständigung",
+      "completeIntro": "Drück auf einen Namen im Code, um zu sehen, was dein Editor dort anbietet, und wähl einen aus, um ihn einzusetzen.",
+      "completeHint": "Drück auf einen gepunkteten Namen, um die Vorschläge deines Editors zu sehen.",
+      "completeNote": "Dieselben Namen stehen in {link}.",
+      "completeLink": "dem Motion-Abschnitt von {name}",
+      "mistakesTitle": "Fehler sind Typfehler",
+      "mistakesIntro": "Die eigenen Typtests von vael-ui halten jeden davon als Fehler fest, damit kein Release ihn stillschweigend akzeptiert.",
+      "unitsTitle": "Einheiten",
+      "unitsIntro": "Eine bloße Zahl bekommt die gezeigte Einheit. Ein String geht direkt an CSS, also funktionieren auch <code>'2rem'</code> und <code>'50%'</code>.",
+      "tokensTitle": "Timing-Tokens",
+      "tokensIntro": "<code>duration</code> und <code>easing</code> nehmen die Tokens von vael-ui, und dein Editor listet sie. Das sind ihre Werte auf dieser Seite gerade. Wähle oben im Motion-Menü ein Preset, und die von einer Feder gesteuerten ändern sich mit.",
+      "warningsTitle": "In der Konsole",
+      "warningsIntro": "In der Entwicklung sagt Motion, was schiefging und was du ändern sollst. Produktions-Builds lassen diese Meldungen weg.",
+      "devtools": "Um zu sehen, was sich warum bewegt hat, untersuche die Komponente: <code>data-motion</code> nennt die Ebenen, die ihre Bewegung setzen, und jedes Öffnen und Schließen erscheint in der Timings-Spur des Performance-Panels.",
+      "mistake": {
+        "part": "Ein Teil, den es nicht gibt",
+        "property": "Eine falsch geschriebene CSS-Eigenschaft",
+        "timing": "Feder und Dauer zusammen",
+        "state": "Ein Zustand, den es nicht gibt",
+        "kind": "Eine Listenoption an einem Dialog",
+        "version": "Ein Style ohne Version"
+      },
+      "unit": {
+        "ms": "Millisekunden",
+        "s": "Sekunden",
+        "px": "Pixel",
+        "deg": "Grad",
+        "none": "ohne Einheit"
+      },
+      "orAnyProperty": "oder jede CSS-Eigenschaft",
+      "orAnyEasing": "oder jedes CSS-Easing",
+      "orMs": "oder eine Zahl in ms"
+    },
+    "showcase": {
+      "title": "Showcase",
+      "intro": "{count} Komponenten, jede so weit getrieben, wie ihre Bewegung reicht. Alle sind live: drücken, ziehen, öffnen.",
+      "engine": "Engine",
+      "engines": {
+        "all": "Alle",
+        "builtin": "Eingebaut",
+        "gsap": "GSAP",
+        "motion": "motion"
+      },
+      "blocksTitle": "Blocks",
+      "blocksBody": "Ganze Screens aus diesen Komponenten, zum Kopieren in deine App."
     }
   }
 }

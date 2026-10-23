@@ -572,6 +572,14 @@
       "guide": {
         "title": "使用你自己的动画",
         "body": "完整的约定：数值、钩子、列表、守卫和全局样式。"
+      },
+      "types": {
+        "title": "TypeScript",
+        "body": "每个部件和状态都能自动补全，错误会报类型错误。"
+      },
+      "showcase": {
+        "title": "展示",
+        "body": "每个组件的亮点作品，实时运行，并排展示。"
       }
     },
     "propTitle": "一个属性",
@@ -590,7 +598,9 @@
       "motion": "动效",
       "overview": "概览",
       "springs": "弹簧与时间",
-      "engines": "自定义引擎"
+      "engines": "自定义引擎",
+      "types": "TypeScript",
+      "showcase": "展示"
     },
     "mode": {
       "components": "按类别列出所有组件",
@@ -680,6 +690,56 @@
       "tabBody": "改变这个组件的进入、离开和按下时的反应，然后复制代码。",
       "sectionTitle": "每个部件都有名字",
       "sectionBody": "每个组件页面都有 Motion 部分：列出可动画的部件和状态。"
+    },
+    "types": {
+      "title": "TypeScript",
+      "intro": "编辑器知道每个组件的部件和状态、每个 CSS 属性，以及 vael-ui 的时间令牌。错误在保存前就会标红。",
+      "component": "组件",
+      "completeTitle": "自动补全",
+      "completeIntro": "点击代码中的名称，查看编辑器在那里提供的候选，选一个即可填入。",
+      "completeHint": "点击带点线的名称，查看编辑器的候选。",
+      "completeNote": "同样的名称列在{link}中。",
+      "completeLink": "{name} 的 Motion 部分",
+      "mistakesTitle": "错误就是类型错误",
+      "mistakesIntro": "vael-ui 自己的类型测试让这些始终报错，任何版本都不会悄悄接受它们。",
+      "unitsTitle": "单位",
+      "unitsIntro": "纯数字使用所示单位。字符串直接交给 CSS，所以 <code>'2rem'</code> 和 <code>'50%'</code> 也可以。",
+      "tokensTitle": "时间令牌",
+      "tokensIntro": "<code>duration</code> 和 <code>easing</code> 接受 vael-ui 的令牌，编辑器会列出它们。这是它们此刻在本页的值。在页眉的动效菜单里选一个预设，由弹簧驱动的那些会随之改变。",
+      "warningsTitle": "在控制台中",
+      "warningsIntro": "开发时，motion 会说明哪里出错、该改什么。生产构建不包含这些消息。",
+      "devtools": "想知道什么动了、为什么动，检查组件即可：<code>data-motion</code> 列出设置其动效的层，每次打开和关闭都会显示在 Performance 面板的 Timings 轨道上。",
+      "mistake": {
+        "part": "不存在的部件",
+        "property": "拼错的 CSS 属性",
+        "timing": "同时给了弹簧和时长",
+        "state": "不存在的状态",
+        "kind": "对话框上的列表选项",
+        "version": "缺少 version 的样式"
+      },
+      "unit": {
+        "ms": "毫秒",
+        "s": "秒",
+        "px": "像素",
+        "deg": "度",
+        "none": "无单位"
+      },
+      "orAnyProperty": "或任意 CSS 属性",
+      "orAnyEasing": "或任意 CSS 缓动",
+      "orMs": "或数字，单位 ms"
+    },
+    "showcase": {
+      "title": "展示",
+      "intro": "{count} 个组件，每个都把动效推到极致。全部可交互：按一按、拖一拖、打开看看。",
+      "engine": "引擎",
+      "engines": {
+        "all": "全部",
+        "builtin": "内置",
+        "gsap": "GSAP",
+        "motion": "motion"
+      },
+      "blocksTitle": "区块",
+      "blocksBody": "用这些组件搭成的完整页面，可直接复制到你的应用。"
     }
   }
 }

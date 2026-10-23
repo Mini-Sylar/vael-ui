@@ -572,6 +572,14 @@
       "guide": {
         "title": "Use sua própria animação",
         "body": "O contrato completo: valores, hooks, listas, guardas e estilos para o app todo."
+      },
+      "types": {
+        "title": "TypeScript",
+        "body": "Autocompletar para cada parte e estado, e erros de tipo para os enganos."
+      },
+      "showcase": {
+        "title": "Vitrine",
+        "body": "A peça de destaque de cada componente, ao vivo, lado a lado."
       }
     },
     "propTitle": "Uma prop",
@@ -590,7 +598,9 @@
       "motion": "Movimento",
       "overview": "Visão geral",
       "springs": "Molas e tempo",
-      "engines": "Seu próprio motor"
+      "engines": "Seu próprio motor",
+      "types": "TypeScript",
+      "showcase": "Vitrine"
     },
     "mode": {
       "components": "Cada componente, por tipo",
@@ -680,6 +690,56 @@
       "tabBody": "Mude como este componente entra, sai e reage ao ser pressionado, depois copie o código.",
       "sectionTitle": "Cada parte, pelo nome",
       "sectionBody": "Toda página de componente tem uma seção Motion: as partes e estados que você pode animar."
+    },
+    "types": {
+      "title": "TypeScript",
+      "intro": "Seu editor conhece as partes e estados de cada componente, cada propriedade CSS e os tokens de tempo do vael-ui. Um erro fica vermelho antes de salvar.",
+      "component": "Componente",
+      "completeTitle": "Autocompletar",
+      "completeIntro": "Toque num nome no código para ver o que seu editor oferece ali, e escolha um para inseri-lo.",
+      "completeHint": "Toque num nome pontilhado para ver o que seu editor oferece.",
+      "completeNote": "Os mesmos nomes estão {link}.",
+      "completeLink": "na seção Motion de {name}",
+      "mistakesTitle": "Erros são erros de tipo",
+      "mistakesIntro": "Os testes de tipo do vael-ui mantêm cada um como erro, para que nenhuma versão passe a aceitá-lo em silêncio.",
+      "unitsTitle": "Unidades",
+      "unitsIntro": "Um número sozinho usa a unidade mostrada. Uma string vai direto para o CSS, então <code>'2rem'</code> e <code>'50%'</code> também funcionam.",
+      "tokensTitle": "Tokens de tempo",
+      "tokensIntro": "<code>duration</code> e <code>easing</code> aceitam os tokens do vael-ui, e seu editor os lista. Estes são os valores nesta página agora. Escolha um preset no menu de movimento do cabeçalho, e os que uma mola move mudam junto.",
+      "warningsTitle": "No console",
+      "warningsIntro": "Em desenvolvimento, o motion diz o que deu errado e o que mudar. Builds de produção deixam essas mensagens de fora.",
+      "devtools": "Para ver o que se moveu e por quê, inspecione o componente: <code>data-motion</code> nomeia as camadas que definem seu movimento, e cada abertura e fechamento aparece na trilha Timings do painel Performance.",
+      "mistake": {
+        "part": "Uma parte que ele não tem",
+        "property": "Uma propriedade CSS escrita errado",
+        "timing": "Uma mola e uma duração juntas",
+        "state": "Um estado que ele não tem",
+        "kind": "Uma opção de lista num diálogo",
+        "version": "Um estilo sem versão"
+      },
+      "unit": {
+        "ms": "milissegundos",
+        "s": "segundos",
+        "px": "pixels",
+        "deg": "graus",
+        "none": "sem unidade"
+      },
+      "orAnyProperty": "ou qualquer propriedade CSS",
+      "orAnyEasing": "ou qualquer easing CSS",
+      "orMs": "ou um número, em ms"
+    },
+    "showcase": {
+      "title": "Vitrine",
+      "intro": "{count} componentes, cada um levado até onde vai seu movimento. Todos estão vivos: pressione, arraste e abra.",
+      "engine": "Motor",
+      "engines": {
+        "all": "Todos",
+        "builtin": "Embutido",
+        "gsap": "GSAP",
+        "motion": "motion"
+      },
+      "blocksTitle": "Blocos",
+      "blocksBody": "Telas inteiras feitas com estes componentes, para copiar para seu app."
     }
   }
 }

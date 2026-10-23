@@ -25,6 +25,12 @@
             aria-hidden="true"
           />
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
+          <PhArrowUpRight
+            v-if="leavesSection(item.value)"
+            :size="13"
+            class="sidebar-link-icon"
+            aria-hidden="true"
+          />
           <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
           <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
         </template>
@@ -51,6 +57,12 @@
             aria-hidden="true"
           />
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
+          <PhArrowUpRight
+            v-if="leavesSection(item.value)"
+            :size="13"
+            class="sidebar-link-icon"
+            aria-hidden="true"
+          />
           <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
           <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
         </template>
@@ -75,12 +87,14 @@ import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable, vScrollMask } from 'vael-ui'
 import ModeSwitcher from './ModeSwitcher.vue'
 import { componentIcons } from '../componentIcons'
+import { PhArrowUpRight } from '@phosphor-icons/vue'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { NEW_COMPOSABLES, composableCategories } from '../composablesTaxonomy'
 import {
   composableValue,
   GUIDE_ROUTES,
+  guideValue,
   MOTION_ROUTES,
   navSections,
   routeFor,
@@ -105,6 +119,9 @@ const storedMode =
     ? null
     : (sessionStorage.getItem(MODE_STORAGE_KEY) as DocsMode | null)
 const sidebarMode = shallowRef<DocsMode>(storedMode ?? 'components')
+// The one Motion entry that takes you out of the section, to its guide: marked like a link.
+const leavesSection = (value: unknown) =>
+  sidebarMode.value === 'motion' && value === guideValue('guide-animation-integration')
 
 // Switching modes takes you there: back to the last component or composable you read, or to
 // the section's first page. A reload then lands where the switch took you.
@@ -396,6 +413,12 @@ watch(
    and the dot can sit right after the text instead of at the row's far edge. */
 .sidebar-scroll :deep(.ui-menu-list-item-label) {
   flex: initial;
+}
+
+.sidebar-link-icon {
+  flex-shrink: 0;
+  margin-inline-start: 0.3rem;
+  color: var(--ui-text-muted);
 }
 
 .sidebar-new-dot {

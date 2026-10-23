@@ -93,12 +93,28 @@ const plays = reactive<Record<string, number>>({})
 const replay = (id: string) => (plays[id] = (plays[id] ?? 0) + 1)
 const cards = [
   {
+    id: 'showcase',
+    to: { name: 'motion-showcase' },
+    // A burst: they pop up one after another, with a little overshoot.
+    look: (n: number) => ({
+      initial: { opacity: 0, scale: '0.4' },
+      spring: { damping: 0.5, response: 0.4 },
+      delay: n * 0.05,
+    }),
+  },
+  {
     id: 'springs',
     to: { name: 'motion-springs' },
     look: (n: number) => ({
       initial: { y: 18, opacity: 0 },
       spring: { damping: 0.45 + n * 0.15, response: 0.5 },
     }),
+  },
+  {
+    id: 'types',
+    to: { name: 'motion-types' },
+    // Like characters typed in: one after another, no bounce.
+    look: (n: number) => ({ initial: { opacity: 0, x: -6 }, duration: 160, delay: n * 0.09 }),
   },
   {
     id: 'engines',

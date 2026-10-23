@@ -572,6 +572,14 @@
       "guide": {
         "title": "Apportez votre animation",
         "body": "Le contrat complet : valeurs, hooks, listes, gardes et styles pour toute l'app."
+      },
+      "types": {
+        "title": "TypeScript",
+        "body": "L'autocomplétion pour chaque partie et état, et des erreurs de type pour les fautes."
+      },
+      "showcase": {
+        "title": "Vitrine",
+        "body": "La pièce maîtresse de chaque composant, en direct, côte à côte."
       }
     },
     "propTitle": "Une seule prop",
@@ -590,7 +598,9 @@
       "motion": "Animation",
       "overview": "Vue d'ensemble",
       "springs": "Ressorts et timing",
-      "engines": "Votre propre moteur"
+      "engines": "Votre propre moteur",
+      "types": "TypeScript",
+      "showcase": "Vitrine"
     },
     "mode": {
       "components": "Chaque composant, par type",
@@ -680,6 +690,56 @@
       "tabBody": "Changez comment ce composant entre, sort et réagit quand on l'appuie, puis copiez le code.",
       "sectionTitle": "Chaque partie, par son nom",
       "sectionBody": "Chaque page de composant a une section Motion : les parties et états que vous pouvez animer."
+    },
+    "types": {
+      "title": "TypeScript",
+      "intro": "Votre éditeur connaît les parties et états de chaque composant, chaque propriété CSS et les tokens de timing de vael-ui. Une erreur passe au rouge avant l'enregistrement.",
+      "component": "Composant",
+      "completeTitle": "Autocomplétion",
+      "completeIntro": "Appuyez sur un nom dans le code pour voir ce que votre éditeur propose à cet endroit, puis choisissez-en un pour l'insérer.",
+      "completeHint": "Appuyez sur un nom en pointillé pour voir ce que propose votre éditeur.",
+      "completeNote": "Les mêmes noms figurent dans {link}.",
+      "completeLink": "la section Motion de {name}",
+      "mistakesTitle": "Les erreurs sont des erreurs de type",
+      "mistakesIntro": "Les tests de types de vael-ui gardent chacune comme erreur, pour qu'aucune version ne se mette à l'accepter en silence.",
+      "unitsTitle": "Unités",
+      "unitsIntro": "Un nombre seul prend l'unité indiquée. Une chaîne va directement au CSS, donc <code>'2rem'</code> et <code>'50%'</code> fonctionnent aussi.",
+      "tokensTitle": "Tokens de timing",
+      "tokensIntro": "<code>duration</code> et <code>easing</code> acceptent les tokens de vael-ui, et votre éditeur les liste. Voici leurs valeurs sur cette page en ce moment. Choisissez un preset dans le menu mouvement de l'en-tête, et ceux qu'un ressort pilote changent avec lui.",
+      "warningsTitle": "Dans la console",
+      "warningsIntro": "En développement, motion dit ce qui n'a pas marché et quoi changer. Les builds de production omettent ces messages.",
+      "devtools": "Pour voir ce qui a bougé et pourquoi, inspectez le composant : <code>data-motion</code> nomme les couches qui fixent son mouvement, et chaque ouverture et fermeture apparaît sur la piste Timings du panneau Performance.",
+      "mistake": {
+        "part": "Une partie qu'il n'a pas",
+        "property": "Une propriété CSS mal écrite",
+        "timing": "Un ressort et une durée ensemble",
+        "state": "Un état qu'il n'a pas",
+        "kind": "Une option de liste sur une boîte de dialogue",
+        "version": "Un style sans sa version"
+      },
+      "unit": {
+        "ms": "millisecondes",
+        "s": "secondes",
+        "px": "pixels",
+        "deg": "degrés",
+        "none": "sans unité"
+      },
+      "orAnyProperty": "ou toute propriété CSS",
+      "orAnyEasing": "ou tout easing CSS",
+      "orMs": "ou un nombre, en ms"
+    },
+    "showcase": {
+      "title": "Vitrine",
+      "intro": "{count} composants, chacun poussé aussi loin que va son mouvement. Tous sont vivants : appuyez, glissez, ouvrez-les.",
+      "engine": "Moteur",
+      "engines": {
+        "all": "Tous",
+        "builtin": "Intégré",
+        "gsap": "GSAP",
+        "motion": "motion"
+      },
+      "blocksTitle": "Blocs",
+      "blocksBody": "Des écrans entiers construits avec ces composants, à copier dans votre app."
     }
   }
 }

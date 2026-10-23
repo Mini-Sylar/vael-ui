@@ -572,6 +572,14 @@
       "guide": {
         "title": "Bring your own animation",
         "body": "The whole contract: values, hooks, lists, guards and app-wide styles."
+      },
+      "types": {
+        "title": "TypeScript",
+        "body": "Autocomplete for every part and state, and type errors for the mistakes."
+      },
+      "showcase": {
+        "title": "Showcase",
+        "body": "Every component's showpiece, live, side by side."
       }
     },
     "propTitle": "One prop",
@@ -590,7 +598,9 @@
       "motion": "Motion",
       "overview": "Overview",
       "springs": "Springs and timing",
-      "engines": "Your own engine"
+      "engines": "Your own engine",
+      "types": "TypeScript",
+      "showcase": "Showcase"
     },
     "mode": {
       "components": "Every component, by kind",
@@ -680,6 +690,56 @@
       "tabBody": "Change how this component comes in, leaves and reacts while you press it, then copy the code.",
       "sectionTitle": "Every part, by name",
       "sectionBody": "Every component page has a Motion section: the parts and states you can animate."
+    },
+    "types": {
+      "title": "TypeScript",
+      "intro": "Your editor knows every component's parts and states, every CSS property and vael-ui's timing tokens. A mistake turns red before you save.",
+      "component": "Component",
+      "completeTitle": "Autocomplete",
+      "completeIntro": "Press a name in the code to see what your editor offers there, then pick one to put it in.",
+      "completeHint": "Press a dotted name to see what your editor offers.",
+      "completeNote": "The same names are listed in {link}.",
+      "completeLink": "{name}'s Motion section",
+      "mistakesTitle": "Mistakes are type errors",
+      "mistakesIntro": "vael-ui's own type tests keep each of these an error, so no release quietly starts accepting one.",
+      "unitsTitle": "Units",
+      "unitsIntro": "A plain number takes the unit shown. A string goes straight to CSS, so <code>'2rem'</code> and <code>'50%'</code> work too.",
+      "tokensTitle": "Timing tokens",
+      "tokensIntro": "<code>duration</code> and <code>easing</code> accept vael-ui's tokens, and your editor lists them. These are their values on this page right now. Pick a preset from the motion menu in the header, and the ones a spring drives change with it.",
+      "warningsTitle": "In the console",
+      "warningsIntro": "In development, motion says what went wrong and what to change. Production builds leave these messages out.",
+      "devtools": "To see what moved and why, inspect the component: <code>data-motion</code> names the layers that set its motion, and each open and close shows on the Performance panel's Timings track.",
+      "mistake": {
+        "part": "A part it doesn't have",
+        "property": "A misspelled CSS property",
+        "timing": "A spring and a duration together",
+        "state": "A state it doesn't have",
+        "kind": "A list option on a dialog",
+        "version": "A style without its version"
+      },
+      "unit": {
+        "ms": "milliseconds",
+        "s": "seconds",
+        "px": "pixels",
+        "deg": "degrees",
+        "none": "no unit"
+      },
+      "orAnyProperty": "or any CSS property",
+      "orAnyEasing": "or any CSS easing",
+      "orMs": "or a number, in ms"
+    },
+    "showcase": {
+      "title": "Showcase",
+      "intro": "{count} components, each pushed as far as its motion goes. They're all live: press, drag and open them.",
+      "engine": "Engine",
+      "engines": {
+        "all": "All",
+        "builtin": "Built-in",
+        "gsap": "GSAP",
+        "motion": "motion"
+      },
+      "blocksTitle": "Blocks",
+      "blocksBody": "Whole screens built from these components, to copy into your app."
     }
   }
 }

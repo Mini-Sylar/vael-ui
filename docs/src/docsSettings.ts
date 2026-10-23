@@ -10,6 +10,8 @@ export interface DocsSettings {
   motion: Ref<boolean>
   loaderType: Ref<LoaderType>
   locale: Ref<Locale>
+  /** The header's motion preset as a style, so a page can re-read the tokens it sets. */
+  motionStyle: Readonly<Ref<unknown>>
   /** Opens Settings where it lives (header or sheet) and points a Tour step at one of its rows. */
   showSetting: (name: 'loader') => void
 }

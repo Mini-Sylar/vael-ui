@@ -61,6 +61,16 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/motion/MotionSprings.vue'),
   },
   {
+    path: '/motion/showcase',
+    name: 'motion-showcase',
+    component: () => import('./pages/motion/MotionShowcase.vue'),
+  },
+  {
+    path: '/motion/types',
+    name: 'motion-types',
+    component: () => import('./pages/motion/MotionTypes.vue'),
+  },
+  {
     path: '/motion/engines',
     name: 'motion-engines',
     component: () => import('./pages/motion/MotionEngines.vue'),

@@ -787,6 +787,7 @@ provide(docsSettingsKey, {
   motion,
   loaderType,
   locale,
+  motionStyle: presetStyle,
   showSetting,
 })
 const sizeItems = computed(() => [

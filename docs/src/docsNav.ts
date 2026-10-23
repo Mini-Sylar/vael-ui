@@ -21,7 +21,9 @@ export const GUIDE_ROUTES = [
 // The Motion section's own pages, then the guide that covers the contract in full.
 export const MOTION_ROUTES = [
   { routeName: 'motion-overview', labelKey: 'motionDocs.nav.overview' },
+  { routeName: 'motion-showcase', labelKey: 'motionDocs.nav.showcase' },
   { routeName: 'motion-springs', labelKey: 'motionDocs.nav.springs' },
+  { routeName: 'motion-types', labelKey: 'motionDocs.nav.types' },
   { routeName: 'motion-engines', labelKey: 'motionDocs.nav.engines' },
   { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
 ] as const

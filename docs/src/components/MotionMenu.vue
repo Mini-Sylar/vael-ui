@@ -126,7 +126,7 @@ const DIALS = [
     step: 0.005,
     read: (m: MotionTune) => m.stagger,
     write: (v: number) => ({ stagger: v }),
-    show: (v: number) => `${Math.round(v * 1000)}ms`,
+    show: (v: number) => `${Math.round(v * 1000)} ms`,
   },
 ] as const
 const dials = computed(() => tune.value ?? tuneOf(preset.value))

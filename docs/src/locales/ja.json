@@ -572,6 +572,14 @@
       "guide": {
         "title": "独自のアニメーションを使う",
         "body": "仕組みのすべて：値、フック、リスト、ガード、アプリ全体のスタイル。"
+      },
+      "types": {
+        "title": "TypeScript",
+        "body": "すべてのパーツと状態の補完と、間違いへの型エラー。"
+      },
+      "showcase": {
+        "title": "ショーケース",
+        "body": "各コンポーネントの見せ場を、実際に動かして並べました。"
       }
     },
     "propTitle": "プロップはひとつ",
@@ -590,7 +598,9 @@
       "motion": "モーション",
       "overview": "概要",
       "springs": "スプリングとタイミング",
-      "engines": "独自のエンジン"
+      "engines": "独自のエンジン",
+      "types": "TypeScript",
+      "showcase": "ショーケース"
     },
     "mode": {
       "components": "すべてのコンポーネントを種類別に",
@@ -680,6 +690,56 @@
       "tabBody": "このコンポーネントの登場、退場、押したときの反応を変えて、コードをコピーできます。",
       "sectionTitle": "すべてのパーツに名前",
       "sectionBody": "各コンポーネントのページに Motion セクションがあり、アニメーションできるパーツと状態が載っています。"
+    },
+    "types": {
+      "title": "TypeScript",
+      "intro": "エディタは、各コンポーネントのパーツと状態、すべての CSS プロパティ、vael-ui のタイミングトークンを知っています。間違いは保存する前に赤くなります。",
+      "component": "コンポーネント",
+      "completeTitle": "補完",
+      "completeIntro": "コード内の名前を押すと、その場所でエディタが出す候補が見られます。選ぶとコードに入ります。",
+      "completeHint": "点線の名前を押すと、エディタの候補が見られます。",
+      "completeNote": "同じ名前が{link}に載っています。",
+      "completeLink": "{name} の Motion セクション",
+      "mistakesTitle": "間違いは型エラーになる",
+      "mistakesIntro": "vael-ui 自身の型テストが、これらをエラーのまま保ちます。どのリリースでも黙って受け入れることはありません。",
+      "unitsTitle": "単位",
+      "unitsIntro": "数値だけなら表示の単位になります。文字列はそのまま CSS に渡るので、<code>'2rem'</code> や <code>'50%'</code> も使えます。",
+      "tokensTitle": "タイミングトークン",
+      "tokensIntro": "<code>duration</code> と <code>easing</code> は vael-ui のトークンを受け取り、エディタが一覧にします。これはこのページでの今の値です。ヘッダーのモーションメニューでプリセットを選ぶと、スプリングで動くものが一緒に変わります。",
+      "warningsTitle": "コンソールで",
+      "warningsIntro": "開発中、motion は何が起きたか、何を変えればよいかを伝えます。本番ビルドではこれらのメッセージは含まれません。",
+      "devtools": "何がなぜ動いたかは、コンポーネントを調べると分かります。<code>data-motion</code> がモーションを設定したレイヤーを示し、開閉はそれぞれ Performance パネルの Timings トラックに表示されます。",
+      "mistake": {
+        "part": "存在しないパーツ",
+        "property": "綴りを間違えた CSS プロパティ",
+        "timing": "スプリングと duration の併用",
+        "state": "存在しない状態",
+        "kind": "ダイアログにリストのオプション",
+        "version": "version のないスタイル"
+      },
+      "unit": {
+        "ms": "ミリ秒",
+        "s": "秒",
+        "px": "ピクセル",
+        "deg": "度",
+        "none": "単位なし"
+      },
+      "orAnyProperty": "または任意の CSS プロパティ",
+      "orAnyEasing": "または任意の CSS イージング",
+      "orMs": "または数値（ms）"
+    },
+    "showcase": {
+      "title": "ショーケース",
+      "intro": "{count} 個のコンポーネントを、それぞれモーションの限界まで。どれも実際に動きます。押して、ドラッグして、開いてみてください。",
+      "engine": "エンジン",
+      "engines": {
+        "all": "すべて",
+        "builtin": "組み込み",
+        "gsap": "GSAP",
+        "motion": "motion"
+      },
+      "blocksTitle": "ブロック",
+      "blocksBody": "これらのコンポーネントで作った画面全体。アプリにそのままコピーできます。"
     }
   }
 }
