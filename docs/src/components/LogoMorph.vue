@@ -145,7 +145,8 @@ onUnmounted(() => {
   border: 0;
   border-radius: 50%;
   background: none;
-  color: var(--ui-text);
+  /* The picked primary, like the header's logo. */
+  color: var(--ui-primary);
   cursor: pointer;
 }
 .logo-morph:focus-visible {

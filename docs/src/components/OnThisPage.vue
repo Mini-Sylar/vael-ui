@@ -5,41 +5,49 @@
     class="on-this-page"
     :aria-label="t('component.onThisPage')"
   >
-    <span ref="indicator" class="toc-indicator" aria-hidden="true" />
+    <!-- One rail for the page, branching out to a section's own links and back; the indicator is
+         a lit stretch of the same path, so it travels around the curves to get there. -->
+    <svg class="toc-rail" :width="RAIL_WIDTH" :height="railHeight" aria-hidden="true">
+      <path class="toc-rail-line" :d="railPath" />
+      <path ref="lit" class="toc-rail-lit" :d="railPath" />
+    </svg>
     <p class="label">{{ t('component.onThisPage') }}</p>
     <template v-for="link in links" :key="link.id">
       <a
         :href="`#${link.id}`"
         class="toc-link"
         :class="{ 'toc-link-active': link.id === activeId }"
+        :data-toc="link.id"
+        :data-text="link.label"
         :aria-current="link.id === activeId ? 'location' : undefined"
         @click="onLinkClick(link.id)"
       >
         {{ link.label }}
         <span v-if="link.isNew" class="toc-new" :aria-label="t('component.new')" />
       </a>
-      <!-- A section's own links, open while you're in it; the rail curves in to meet them. -->
+      <!-- Closed until you reach the section, then it splits open. -->
       <div
         v-if="link.children?.length"
         class="toc-children"
         :data-open="expanded(link) || undefined"
       >
-        <div class="toc-children-inner">
-          <svg class="toc-curve" viewBox="0 0 32 14" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0.5 0 C0.5 9 31.5 5 31.5 14" />
-          </svg>
-          <a
-            v-for="child in link.children"
-            :key="child.id"
-            :href="`#${child.id}`"
-            class="toc-link toc-child"
-            :class="{ 'toc-link-active': child.id === activeId }"
-            :aria-current="child.id === activeId ? 'location' : undefined"
-            :tabindex="expanded(link) ? undefined : -1"
-            @click="onLinkClick(child.id)"
-          >
-            {{ child.label }}
-          </a>
+        <div class="toc-children-clip">
+          <div class="toc-children-list">
+            <a
+              v-for="child in link.children"
+              :key="child.id"
+              :href="`#${child.id}`"
+              class="toc-link toc-child"
+              :class="{ 'toc-link-active': child.id === activeId }"
+              :data-toc="child.id"
+              :data-text="child.label"
+              :aria-current="child.id === activeId ? 'location' : undefined"
+              :tabindex="expanded(link) ? undefined : -1"
+              @click="onLinkClick(child.id)"
+            >
+              {{ child.label }}
+            </a>
+          </div>
         </div>
       </div>
     </template>
@@ -47,10 +55,11 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { onMounted, onScopeDispose, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { useGlidingIndicator } from '../composables/useGlidingIndicator'
+import { useResizeObserver } from '@vueuse/core'
+import { animate, motionValue } from 'motion-v'
 
 interface TocLink {
   id: string
@@ -61,22 +70,107 @@ interface TocLink {
   children?: { id: string; label: string }[]
 }
 const props = defineProps<{ links: TocLink[] }>()
-const allLinks = () => props.links.flatMap((link) => [link, ...(link.children ?? [])])
-const expanded = (link: TocLink) =>
-  link.id === activeId.value || !!link.children?.some((child) => child.id === activeId.value)
 const route = useRoute()
 const { t } = useI18n()
 
 const activeId = shallowRef<string | null>(null)
+const allLinks = () => props.links.flatMap((link) => [link, ...(link.children ?? [])])
+const expanded = (link: TocLink) =>
+  link.id === activeId.value || !!link.children?.some((child) => child.id === activeId.value)
 
+// ─── The rail ────────────────────────────────────────────────────────────────
+
+const RAIL_WIDTH = 40
+const MAIN_X = 0.5
+const BRANCH_X = 18.5
+const CURVE = 14
 const nav = useTemplateRef<HTMLElement>('nav')
-const indicator = useTemplateRef<HTMLElement>('indicator')
-useGlidingIndicator(
-  nav,
-  indicator,
-  () => nav.value?.querySelector<HTMLElement>('.toc-link-active'),
-  () => [activeId.value, props.links.length],
-)
+const lit = useTemplateRef<SVGPathElement>('lit')
+const railPath = shallowRef('')
+const railHeight = shallowRef(0)
+
+// Straight down the left, out along a curve to an open branch, down it, and back in at its end.
+function draw() {
+  const box = nav.value
+  if (!box) return
+  let d = `M${MAIN_X} 0`
+  for (const branch of box.querySelectorAll<HTMLElement>('.toc-children')) {
+    const top = branch.offsetTop
+    const bottom = top + branch.offsetHeight
+    // Closed, or still opening past the curves' own height: no branch yet.
+    if (bottom - top < CURVE * 2 + 2) continue
+    d += ` V${top} C${MAIN_X} ${top + CURVE * 0.6} ${BRANCH_X} ${top + CURVE * 0.4} ${BRANCH_X} ${top + CURVE}`
+    d += ` V${bottom - CURVE} C${BRANCH_X} ${bottom - CURVE * 0.4} ${MAIN_X} ${bottom - CURVE * 0.6} ${MAIN_X} ${bottom}`
+  }
+  railPath.value = `${d} V${box.scrollHeight}`
+  railHeight.value = box.scrollHeight
+}
+
+// The lit stretch: where it starts and ends along the path, each on its own spring, so it
+// stretches toward where it's going and settles.
+const LEAD = { type: 'spring', bounce: 0, duration: 0.3 } as const
+const TRAIL = { type: 'spring', bounce: 0, duration: 0.5 } as const
+const start = motionValue(0)
+const end = motionValue(0)
+let placed = false
+function paint() {
+  const path = lit.value
+  if (!path) return
+  const total = path.getTotalLength()
+  path.style.strokeDasharray = `${Math.max(0, end.get() - start.get())} ${total + 1}`
+  path.style.strokeDashoffset = `${-start.get()}`
+}
+const stops = [start.on('change', paint), end.on('change', paint)]
+onScopeDispose(() => stops.forEach((stop) => stop()))
+
+// How far along the path it reaches a given height: the path only ever goes down.
+function lengthAt(path: SVGPathElement, y: number): number {
+  let low = 0
+  let high = path.getTotalLength()
+  for (let i = 0; i < 18; i++) {
+    const mid = (low + high) / 2
+    if (path.getPointAtLength(mid).y < y) low = mid
+    else high = mid
+  }
+  return high
+}
+
+function light() {
+  const path = lit.value
+  const box = nav.value
+  const target = box?.querySelector<HTMLElement>(`[data-toc="${activeId.value}"]`)
+  if (!path || !box || !target || !railPath.value) {
+    path?.style.setProperty('opacity', '0')
+    placed = false
+    return
+  }
+  path.style.opacity = '1'
+  const top = target.getBoundingClientRect().top - box.getBoundingClientRect().top
+  const from = lengthAt(path, top)
+  const to = lengthAt(path, top + target.offsetHeight)
+  if (!placed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    start.jump(from)
+    end.jump(to)
+    placed = true
+    paint()
+    return
+  }
+  const forward = from > start.get()
+  animate(start, from, forward ? TRAIL : LEAD)
+  animate(end, to, forward ? LEAD : TRAIL)
+}
+
+function refresh() {
+  draw()
+  // The path is in the DOM once Vue has patched `d`.
+  requestAnimationFrame(light)
+}
+watch([activeId, () => props.links], () => requestAnimationFrame(refresh), { flush: 'post' })
+// A branch opening or closing resizes the nav each frame, so the rail follows it there.
+useResizeObserver(nav, refresh)
+
+// ─── Which section you're in ────────────────────────────────────────────────
+
 const TARGET_Y = 88 // matches router.ts's scrollBehavior offset
 
 // Closest heading to the target line wins, rather than "last one past a
@@ -132,6 +226,7 @@ onMounted(() => {
   // Trust an explicit #hash the same way a click is trusted.
   if (route.hash) onLinkClick(route.hash.slice(1))
   else updateActive()
+  refresh()
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('scrollend', releaseHold)
 })
@@ -153,7 +248,28 @@ onUnmounted(() => {
   justify-self: end;
   width: 12rem;
   padding-left: 1.5rem;
-  border-left: 1px solid var(--ui-border);
+}
+
+.toc-rail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+}
+
+.toc-rail-line {
+  stroke: var(--ui-border);
+  stroke-width: 1;
+}
+
+.toc-rail-lit {
+  stroke: var(--ui-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 200ms var(--ui-ease-out);
 }
 
 .label {
@@ -165,12 +281,24 @@ onUnmounted(() => {
   margin-bottom: 0.25rem;
 }
 
+/* Bold when current without re-wrapping: each link keeps room for its bold text. */
 .toc-link {
   position: relative;
+  display: inline-grid;
+  align-self: flex-start;
   font-size: 0.85rem;
   color: var(--ui-text-muted);
   text-decoration: none;
   transition: color var(--ui-duration-press) var(--ui-ease-out);
+}
+
+.toc-link::after {
+  content: attr(data-text);
+  block-size: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 600;
+  pointer-events: none;
 }
 
 .toc-link:hover {
@@ -183,63 +311,43 @@ onUnmounted(() => {
 }
 
 .toc-new {
-  display: inline-block;
+  position: absolute;
+  inset-inline-end: -0.7rem;
+  inset-block-start: 0.45em;
   inline-size: 0.375rem;
   block-size: 0.375rem;
-  margin-inline-start: 0.35rem;
-  vertical-align: 0.15em;
   border-radius: 50%;
   background: var(--ui-info);
 }
 
-/* Opens to its links' height; rarely toggled, so it eases rather than snapping. */
+/* Closed it takes no room at all; reached, it splits open. Rarely toggled, so it eases. */
 .toc-children {
   display: grid;
   grid-template-rows: 0fr;
   margin-block: -0.25rem;
-  /* Clipped top and bottom only, so the curve can reach back to the main rail. */
-  clip-path: inset(0 -1rem 0 -3rem);
-  transition: grid-template-rows 250ms var(--ui-ease-out);
+  transition: grid-template-rows 280ms var(--ui-ease-out);
 }
 
 .toc-children[data-open] {
   grid-template-rows: 1fr;
 }
 
-.toc-children-inner {
-  position: relative;
+.toc-children-clip {
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.toc-children-list {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  min-block-size: 0;
-  margin-inline-start: 0.5rem;
-  padding: 0.85rem 0 0.25rem 0.875rem;
+  padding: 1.1rem 0 1.1rem 0.9rem;
   opacity: 0;
   transition: opacity 200ms var(--ui-ease-out);
 }
 
-.toc-children[data-open] .toc-children-inner {
+.toc-children[data-open] .toc-children-list {
   opacity: 1;
-}
-
-/* Its own rail, below the curve that bends in from the main one. */
-.toc-children-inner::before {
-  content: '';
-  position: absolute;
-  inset: 0.85rem auto 0.25rem 0;
-  border-inline-start: 1px solid var(--ui-border);
-}
-
-.toc-curve {
-  position: absolute;
-  top: 0;
-  left: -2rem;
-  inline-size: 2rem;
-  block-size: 0.875rem;
-  fill: none;
-  stroke: var(--ui-border);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
 }
 
 .toc-child {
@@ -249,23 +357,9 @@ onUnmounted(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .toc-children,
-  .toc-children-inner {
+  .toc-children-list {
     transition: none;
   }
-}
-
-/* One bar for the whole list, gliding to the active link (useGlidingIndicator
-   sets its offset and height). It sits over the nav's left rule. */
-.toc-indicator {
-  position: absolute;
-  top: 0;
-  left: -1.5px;
-  width: 2px;
-  border-radius: 9999px;
-  background: var(--ui-primary);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 200ms var(--ui-ease-out);
 }
 
 @media (max-width: 1100px) {
