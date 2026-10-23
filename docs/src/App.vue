@@ -165,6 +165,10 @@
           <div v-if="pageDither" class="page-dither" aria-hidden="true">
             <DitherBackground still />
           </div>
+          <!-- And its echo at the bottom, feathering up, so the page ends the way it starts. -->
+          <div v-if="pageDither" class="page-dither page-dither--end" aria-hidden="true">
+            <DitherBackground still />
+          </div>
           <RouterView v-slot="{ Component }">
             <Transition name="page" mode="out-in">
               <component :is="Component" />
@@ -859,6 +863,17 @@ const theme = computed(() => ({
   backdrop-filter: blur(12px) saturate(1.4);
   z-index: 10;
 }
+/* A dotted seam along the header's lower edge, fading out at both ends. */
+.app-header::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  block-size: 4px;
+  background: radial-gradient(circle, var(--ui-text) 0.55px, transparent 0.85px) 0 0 / 4px 4px;
+  opacity: 0.18;
+  mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent);
+  pointer-events: none;
+}
 
 @media (prefers-reduced-transparency: reduce) {
   .app-header {
@@ -1115,6 +1130,11 @@ const theme = computed(() => ({
   pointer-events: none;
   --dither-alpha: 0.045;
   mask-image: linear-gradient(to bottom, #000, transparent);
+}
+.page-dither--end {
+  inset: auto 0 0;
+  block-size: 10rem;
+  mask-image: linear-gradient(to top, #000, transparent);
 }
 
 @media (max-width: 850px) {
