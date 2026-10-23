@@ -4,7 +4,8 @@
 //   clean at rest   it settles, and leaves no motion marker behind
 //   visible at rest nothing it shows is covered by another painted element once it's still
 //   console         no "they fight" warning, no page error
-// Usage: pnpm stress [--base http://localhost:4175] [--only Dialog,motion/blocks] [--workers N]
+// Usage: pnpm stress [--base http://localhost:4175] [--browser chromium|firefox|webkit]
+//        [--only Dialog,motion/blocks] [--workers N]
 //        [--controls 4] [--setup default|off|reduced|rtl|vapor|preset:<name>|all, comma-separated]
 //        [--shard 1/3] [--fuzz <steps> [--seed <n>]]: random presses, Escapes, hovers and short
 //        waits instead; every failure prints the seed and steps to replay it.
@@ -17,13 +18,17 @@ import { cpus } from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url))
-const { chromium } = createRequire(here('../../ui/package.json'))('playwright')
+const playwright = createRequire(here('../../ui/package.json'))('playwright')
 const args = Object.fromEntries(
   process.argv
     .slice(2)
     .flatMap((a, i, all) => (a.startsWith('--') ? [[a.slice(2), all[i + 1]]] : [])),
 )
 const BASE = args.base ?? 'http://localhost:4175'
+// chromium (default), firefox or webkit (Safari's engine).
+const BROWSER = args.browser ?? 'chromium'
+const browserType = playwright[BROWSER]
+if (!browserType) throw new Error(`Unknown browser "${BROWSER}"`)
 const WORKERS = Number(args.workers ?? Math.max(1, cpus().length - 1))
 const CONTROLS = Number(args.controls ?? 4)
 const FUZZ = Number(args.fuzz ?? 0)
@@ -121,6 +126,9 @@ function compare(first, third) {
     // Nor what runs on the pointer or a timer: a hover indicator, a tooltip, a toast that times out.
     if (/-hover\b|ui-tooltip|ui-toast/.test(a.label)) continue
     const b = third[key]
+    // Carried by a parent that moved again (a sheet's body in its panel): sampled only when touched.
+    if (!b && Object.keys(third).some((k) => key.startsWith(k + '>') && moved(third[k]) >= 24))
+      continue
     // How far it went, and in how many steps: a slide that turned into a pop goes as far in a few.
     const shrank = moved(a) >= 24 && moved(b) < moved(a) * 0.3
     const popped = moved(a) >= 24 && a.frames >= 6 && (b?.frames ?? 0) < a.frames * 0.4
@@ -142,7 +150,8 @@ async function runJob(browser, { setup, page: path }) {
   const context = await browser.newContext({
     viewport: { width: 1300, height: 900 },
     reducedMotion,
-    permissions: ['clipboard-read', 'clipboard-write'],
+    // Chromium names the clipboard permissions; the others refuse names they don't know.
+    ...(BROWSER === 'chromium' && { permissions: ['clipboard-read', 'clipboard-write'] }),
   })
   await context.addInitScript((entries) => {
     for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value)
@@ -155,7 +164,11 @@ async function runJob(browser, { setup, page: path }) {
     'console',
     (m) => m.type() === 'warning' && m.text().includes('they fight') && warnings.push(m.text()),
   )
-  p.on('pageerror', (e) => warnings.push(`page error: ${e.message}`))
+  // WebKit reports a ResizeObserver that skipped a round as a page error; it's a notice, not a crash.
+  p.on(
+    'pageerror',
+    (e) => !/ResizeObserver loop/.test(e.message) && warnings.push(`page error: ${e.message}`),
+  )
   const base = { setup, page: path }
   try {
     await p.goto(`${BASE}/${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 })
@@ -360,7 +373,7 @@ let done = 0
 await Promise.all(
   Array.from({ length: Math.min(WORKERS, jobs.length) }, async () => {
     // A browser per worker: no queueing behind one shared browser process.
-    const browser = await chromium.launch()
+    const browser = await browserType.launch()
     for (let job = jobs.shift(); job; job = jobs.shift()) {
       await runJob(browser, job).catch((e) =>
         report({
@@ -384,7 +397,7 @@ const same = (a, b) => a.page === b.page && a.demo === b.demo && a.control === b
 const flagged = violations.filter((v) => v.check === 'repeat' && !v.allowed)
 const dropped = []
 if (flagged.length) {
-  const browser = await chromium.launch()
+  const browser = await browserType.launch()
   for (const job of new Map(flagged.map((v) => [`${v.setup} ${v.page}`, v])).values()) {
     process.stdout.write(`\rre-checking ${job.page} [${job.setup}] alone`)
     sink = []
@@ -402,7 +415,7 @@ const open = violations.filter((v) => !v.allowed)
 const out = args.shard ? `report-${args.shard.replace('/', '-of-')}.json` : 'report.json'
 writeFileSync(here(out), JSON.stringify(violations, null, 2))
 console.log(
-  `\n${total} page runs (${setups.length} setup(s), ${WORKERS} workers) in ${Math.round((Date.now() - started) / 1000)}s: ${open.length} problems, ${violations.length - open.length} allowed`,
+  `\n${total} page runs in ${BROWSER} (${setups.length} setup(s), ${WORKERS} workers) in ${Math.round((Date.now() - started) / 1000)}s: ${open.length} problems, ${violations.length - open.length} allowed`,
 )
 for (const [check, list] of Object.entries(Object.groupBy(open, (v) => v.check))) {
   console.log(`\n${check} (${list.length})`)

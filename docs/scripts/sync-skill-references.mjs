@@ -119,7 +119,8 @@ function motionKeys(type, seen = new Set()) {
     if (has('stretch')) for (const k of ['stretch', 'squash']) keys.add(k)
     if (has('swap')) for (const k of ['swap', 'direction', 'exit']) keys.add(k)
     if (has('value')) keys.add('when')
-    if (!has('overlay') && !has('presence') && !has('list')) for (const k of ['replay', 'appear']) keys.add(k)
+    if (!has('overlay') && !has('presence') && !has('list'))
+      for (const k of ['replay', 'appear']) keys.add(k)
     if (/^export type \w+ = WithStagger</m.test(body)) keys.add('stagger')
   }
   for (const m of body.matchAll(/\b(chips|items)\?:/g)) keys.add(m[1])
@@ -140,7 +141,8 @@ function motionSection(name, level) {
   if (info.parts.length) lines.push(`- Parts: ${list(info.parts)}`)
   if (info.states.length) lines.push(`- States: ${list(info.states)}`)
   lines.push(`- Keys: ${list([...new Set(keys)])}`)
-  for (const extra of info.extras) lines.push(`- \`${extra.key}\` (\`${extra.type}\`): ${cell(extra.doc)}`)
+  for (const extra of info.extras)
+    lines.push(`- \`${extra.key}\` (\`${extra.type}\`): ${cell(extra.doc)}`)
   lines.push('', 'See the [Motion guide](../guides/motion.md) for what each key does.')
   return `\n${lines.join('\n')}\n`
 }
