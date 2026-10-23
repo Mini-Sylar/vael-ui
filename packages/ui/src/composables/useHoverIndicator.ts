@@ -4,7 +4,7 @@ import type { MaybeRefOrGetter } from 'vue'
 import { useTabIndicator } from './useTabIndicator'
 import type { IndicatorMode, UseTabIndicatorReturn } from './useTabIndicator'
 import type { ElRef } from './dom'
-import { prefersReducedMotion } from './dom'
+import { loadHoverHandoff } from './lazyParts'
 import { defaultsKey } from '../config'
 
 export interface UseHoverIndicatorOptions {
@@ -33,15 +33,6 @@ export interface UseHoverIndicatorOptions {
 
 const MARK = 'data-indicated'
 let instances = 0
-// The highlight a grouped list just let go of, for a neighbour to pick up.
-let released: {
-  group: string
-  list: HTMLElement
-  indicator: HTMLElement
-  rect: DOMRect
-  at: number
-} | null = null
-const HANDOFF_MS = 250
 const DISABLED = ':disabled, [aria-disabled="true"], [data-disabled]'
 
 /**
@@ -106,56 +97,19 @@ export function useHoverIndicator(
       options.indicatorEl?.value ?? listEl.value?.querySelector(':scope > .ui-indicator') ?? null
     )
   }
-  // Picks up a neighbour's highlight: plays from where it was seen to where this one lands.
-  function receive(row: HTMLElement) {
-    const from = released
-    const list = listEl.value
-    released = null
-    if (!from || !list || from.group !== options.group || from.list === list) return
-    if (performance.now() - from.at > HANDOFF_MS || prefersReducedMotion()) return
-    if ((toValue(options.motion) ?? provided?.value.motion) === false) return
-    if ((toValue(options.indicator) ?? provided?.value.indicator) === 'instant') return
-    const near = row.getBoundingClientRect()
-    const gap = Math.max(near.top - from.rect.bottom, from.rect.top - near.bottom, 0)
-    if (gap > near.height * 3) return
-    // After the indicator's own measure, which runs in the frame before this one's paint.
-    requestAnimationFrame(() => {
-      const el = indicatorOf()
-      const to = el?.getBoundingClientRect()
-      if (!el || !to?.width || !to.height) return
-      const style = getComputedStyle(el)
-      const raw = style.getPropertyValue('--ui-duration-indicator-wide').trim()
-      const n = Number.parseFloat(raw)
-      // `200ms` or `0.2s`; unset, 200 ms.
-      const ms = Number.isNaN(n) ? 200 : n * (raw.endsWith('ms') ? 1 : 1000)
-      const easing = style.getPropertyValue('--ui-ease-indicator').trim() || 'ease-out'
-      const fromX = from.rect.left - to.left
-      const fromY = from.rect.top - to.top
-      const scale = `${from.rect.width / to.width}, ${from.rect.height / to.height}`
-      el.animate(
-        [
-          {
-            transformOrigin: '0 0',
-            transform: `translate(${fromX}px, ${fromY}px) scale(${scale})`,
-            opacity: 1,
-          },
-          { transformOrigin: '0 0', transform: 'none', opacity: 1 },
-        ],
-        { id: 'ui-indicator-handoff', duration: ms, easing },
-      )
-      // One highlight: the one it came from is gone at once instead of fading beside it.
-      from.indicator.animate([{ opacity: 0 }, { opacity: 0 }], { duration: ms })
-    })
-  }
+  // Lists in a group hand the highlight over; that code loads only for them.
+  let handoff: typeof import('./hoverHandoff') | undefined
+  if (options.group) void loadHoverHandoff().then((kit) => (handoff = kit))
 
   function onPointerOver(event: PointerEvent) {
     if (event.pointerType === 'touch' || toValue(options.enabled) === false) return
     pointerInside = true
     const row = rowOf(event.target)
     if (row) {
-      const arriving = !current && options.group !== undefined
+      const arriving = !current
       mark(row)
-      if (arriving) receive(row)
+      if (arriving && listEl.value)
+        handoff?.receive(options, provided?.value, listEl.value, row, indicatorOf)
       return
     }
     // Between rows (a gap, a group label, a separator) it keeps the last one and glides on from
@@ -166,14 +120,7 @@ export function useHoverIndicator(
     if (event.pointerType === 'touch') return
     pointerInside = false
     const shown = current && indicatorOf()
-    if (options.group && shown && listEl.value)
-      released = {
-        group: options.group,
-        list: listEl.value,
-        indicator: shown,
-        rect: shown.getBoundingClientRect(),
-        at: performance.now(),
-      }
+    if (shown && listEl.value) handoff?.release(options.group!, listEl.value, shown)
     mark(focusedRow())
   }
   // Keyboard focus always wins, even with the pointer resting in the list: arrow keys move the
