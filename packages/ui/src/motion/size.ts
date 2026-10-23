@@ -45,16 +45,20 @@ export function followSize(
   // Growing, it clips what isn't revealed yet: past the edges that move only, or the whole box (a
   // panel: clip-path would cut its shadow too). Shrinking, nothing: what still moves inside (a card
   // sliding up, a label fading out) stays seen.
-  const clipFor = (from: Box, to: Box): Keyframe => {
+  // The moving edges open out by the shadows (its own, its children's) as it lands: no pop at the end.
+  const clipFor = (from: Box, to: Box): [Keyframe, Keyframe] | [] => {
     const taller = to.height > from.height + 0.5
     const wider = to.width > from.width + 0.5
-    if (!taller && !wider) return {}
-    if (!clipEnd) return { overflow: 'hidden' }
+    if (!taller && !wider) return []
+    if (!clipEnd) return [{ overflow: 'hidden' }, { overflow: 'hidden' }]
     const rtl = getComputedStyle(el).direction === 'rtl'
-    const edge = (moves: boolean) => (moves ? '0' : '-100vmax')
-    return {
-      clipPath: `inset(-100vmax ${edge(wider && !rtl)} ${edge(taller)} ${edge(wider && rtl)})`,
+    const at = (margin: number) => {
+      const edge = (moves: boolean) => (moves ? `${-margin}px` : '-100vmax')
+      return {
+        clipPath: `inset(-100vmax ${edge(wider && !rtl)} ${edge(taller)} ${edge(wider && rtl)})`,
+      }
     }
+    return [at(0), at(shadowReach(el))]
   }
   const measure = (): Box => {
     const { width, height } = el.getBoundingClientRect()
@@ -89,15 +93,15 @@ export function followSize(
     running?.cancel()
     target = to
     // Only the sides that change: an animated width would pin one that's its container's.
-    const clip = clipFor(from, to)
-    const frame = (box: Box): Keyframe => ({
+    const [clipFrom, clipTo] = clipFor(from, to)
+    const frame = (box: Box, clip?: Keyframe): Keyframe => ({
       height: cssSize(el, box.height, 'height'),
       ...(close(from.width, to.width) ? {} : { width: cssSize(el, box.width, 'width') }),
       ...clip,
     })
     if (!close(from.width, to.width)) pin()
     // Clipped while it moves: growing reveals new content, children are never stretched.
-    run(el.animate([frame(from), frame(to)], { id: SIZE_ID, duration, easing }))
+    run(el.animate([frame(from, clipFrom), frame(to, clipTo)], { id: SIZE_ID, duration, easing }))
   }
   function run(animation: Animation) {
     running = animation
@@ -178,4 +182,21 @@ export function followSize(
       unpin()
     },
   }
+}
+
+/** How far its own shadow and its children's reach past their boxes, in px. */
+function shadowReach(el: Element): number {
+  let reach = 0
+  for (const node of [el, ...el.children]) {
+    const shadows = getComputedStyle(node).boxShadow
+    if (shadows === 'none') continue
+    for (const shadow of shadows.split(/,(?![^(]*\))/)) {
+      if (shadow.includes('inset')) continue
+      const [x = 0, y = 0, blur = 0, spread = 0] = (shadow.match(/-?[\d.]+px/g) ?? []).map(
+        parseFloat,
+      )
+      reach = Math.max(reach, Math.max(Math.abs(x), Math.abs(y)) + blur + spread)
+    }
+  }
+  return Math.min(reach, 64)
 }

@@ -240,3 +240,41 @@ test('v-animate.size: what leaves inside the box is clipped to it as it shrinks,
   expect(el().style.position).toBe('')
   expect(el().style.overflow).toBe('')
 })
+
+// A card's shadow past the edge that grows: cut until the end, it would pop in as the clip goes.
+test("v-animate.size: growing, the clip opens out by its children's shadows, so they're whole as it lands", async () => {
+  const rows = shallowRef(1)
+  render({
+    setup: () => () =>
+      withDirectives(
+        h(
+          'section',
+          { 'data-testid': 'box', style: { width: '300px' } },
+          Array.from({ length: rows.value }, (_, i) =>
+            h('p', {
+              key: i,
+              style: { margin: 0, height: '20px', boxShadow: '0 4px 12px rgb(0 0 0 / 0.2)' },
+            }),
+          ),
+        ),
+        [[vAnimate, { duration: 300, easing: 'linear' }, undefined, { size: true }]],
+      ),
+  })
+  const el = () => document.querySelector<HTMLElement>('[data-testid="box"]')!
+  await frame()
+  rows.value = 3
+  await nextTick()
+  await frame()
+  const bottom = () => {
+    const clip = getComputedStyle(el()).clipPath
+    return Number.parseFloat(clip.match(/inset\(\S+ \S+ (-?[\d.]+)px/)?.[1] ?? 'NaN')
+  }
+  const run = sizing(el())[0]!
+  run.pause()
+  run.currentTime = 0
+  expect(bottom()).toBeCloseTo(0, 1)
+  // 4px down plus a 12px blur: whole by the end.
+  run.currentTime = 299
+  expect(bottom()).toBeLessThan(-15.5)
+  run.play()
+})
