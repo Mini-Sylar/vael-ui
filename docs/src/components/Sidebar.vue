@@ -119,9 +119,9 @@ const storedMode =
     ? null
     : (sessionStorage.getItem(MODE_STORAGE_KEY) as DocsMode | null)
 const sidebarMode = shallowRef<DocsMode>(storedMode ?? 'components')
-// The one Motion entry that takes you out of the section, to its guide: marked like a link.
+// Among the components' guides, the motion guide is marked like a link: it belongs to Motion.
 const leavesSection = (value: unknown) =>
-  sidebarMode.value === 'motion' && value === guideValue('guide-animation-integration')
+  sidebarMode.value === 'components' && value === guideValue('guide-animation-integration')
 
 // Switching modes takes you there: back to the last component or composable you read, or to
 // the section's first page. A reload then lands where the switch took you.
@@ -364,11 +364,9 @@ watch(
   top: 0;
   z-index: 1;
   width: 2px;
-  /* Transparent borders inset the visible bar 4 px from the row's edges. */
-  border-block: 4px solid transparent;
+  /* As tall as the row it marks. */
   border-radius: 9999px;
   background: var(--ui-primary);
-  background-clip: padding-box;
   opacity: 0;
   pointer-events: none;
   transition: opacity 200ms var(--ui-ease-out);
@@ -377,8 +375,7 @@ watch(
 .sidebar-indicator::after {
   content: '';
   position: absolute;
-  /* The bar's borders inset it; the dither spans the whole row. */
-  inset-block: -4px;
+  inset-block: 0;
   inset-inline-start: 100%;
   inline-size: 2rem;
   background: radial-gradient(circle, var(--ui-primary) 0.6px, transparent 0.9px) 0 0 / 3px 3px;
