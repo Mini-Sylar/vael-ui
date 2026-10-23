@@ -11,6 +11,11 @@ let springs$: typeof import('./useSpringValue') | undefined
 let loadingSprings: Promise<unknown> | undefined
 const loadSprings = () =>
   (loadingSprings ??= import('./useSpringValue').then((m) => (springs$ = m)))
+// A stretch or squash's own springs, for the indicators that set one.
+let stretch$: typeof import('./indicatorStretch') | undefined
+let loadingStretch: Promise<unknown> | undefined
+const loadStretch = () =>
+  (loadingStretch ??= import('./indicatorStretch').then((m) => (stretch$ = m)))
 import { prefersReducedMotion } from './dom'
 
 /**
@@ -91,7 +96,12 @@ export function useTabIndicator(
     watch(
       () => lead() && [lead(), toValue(options.stretch)],
       // Arrived: measured once more, so its springs start where it rests and the next move glides.
-      (now) => !!now && void loadSprings().then(() => update()),
+      (now) =>
+        !!now &&
+        void Promise.all([
+          loadSprings(),
+          (toValue(options.stretch) || toValue(options.squash) !== undefined) && loadStretch(),
+        ]).then(() => update()),
       { immediate: true },
     ),
   )
@@ -269,9 +279,12 @@ export function useTabIndicator(
           response: (config.response ?? DEFAULT_RESPONSE) * 1.25,
         }
       : undefined
+    if (stretch$) stretcher ??= stretch$.createIndicatorStretch()
+    // The stretch's own springs arriving starts the set afresh, so no plain edge spring lingers.
     const key =
       `${config.damping ?? ''}/${config.response ?? ''}` +
-      (trail ? `/${trail.damping ?? ''}/${trail.response ?? ''}` : '')
+      (trail ? `/${trail.damping ?? ''}/${trail.response ?? ''}` : '') +
+      (stretcher ? '/s' : '')
     const fresh = key !== springKey
     if (fresh) {
       dropSprings()
@@ -284,26 +297,20 @@ export function useTabIndicator(
     const owned = Object.keys(geometry).map((key) =>
       key.startsWith('translate-') ? 'translate' : camelCase(key),
     )
-    if (trail) {
+    if (trail && stretcher) {
       const startKey = vertical ? 'inset-block-start' : 'inset-inline-start'
       const sizeKey = vertical ? 'block-size' : 'inline-size'
       const { [startKey]: start, [sizeKey]: size, ...rest } = geometry
       const delay = typeof stretch === 'object' ? (stretch.delay ?? 0.05) : 0.05
-      stretchTo(el, config, trail, delay, { startKey, sizeKey, to: [start!, start! + size!], jump })
+      stretcher.stretchTo(el, config, trail, delay, {
+        startKey,
+        sizeKey,
+        to: [start!, start! + size!],
+        jump,
+      })
       geometry = rest
     }
-    const squash = toValue(options.squash)
-    if (squash !== undefined || squashing) {
-      // The cross axis only, from the middle; cleared once back at 1.
-      squashing ??= springs$!.createSpring(1, { ...(trail ?? config), epsilon: 0.001 }, (scale) => {
-        el.style.scale = scale === 1 ? '' : vertical ? `${scale} 1` : `1 ${scale}`
-        el.style.transformOrigin = scale === 1 ? '' : 'center'
-      })
-      if (squash !== undefined && moved) {
-        squashing.jump(squash)
-        squashing.set(1)
-      } else if (jump || squash === undefined) squashing.jump(1)
-    }
+    stretcher?.squash(el, toValue(options.squash), trail ?? config, { moved, jump, vertical })
     // translate-x and translate-y share one `translate`, written from both springs' current values.
     const writeTranslate = () =>
       (el.style.translate = `${springs.get('translate-x')?.value ?? 0}px ${springs.get('translate-y')?.value ?? 0}px`)
@@ -326,63 +333,13 @@ export function useTabIndicator(
     write({ transitionProperty: 'opacity' }, owned)
   }
 
-  // A stretch: each edge on its own spring. The edge facing the move leads; the other trails it.
-  let edges: SpringHandle[] | undefined
-  let edgeTargets: number[] = []
-  let trailing: ReturnType<typeof setTimeout> | undefined
-  let squashing: SpringHandle | undefined
+  // A stretch or squash, once its springs have loaded.
+  let stretcher: ReturnType<NonNullable<typeof stretch$>['createIndicatorStretch']> | undefined
   let lastShape = ''
-  function stretchTo(
-    el: HTMLElement,
-    lead: IndicatorSpring,
-    trail: IndicatorSpring,
-    delay: number,
-    {
-      startKey,
-      sizeKey,
-      to,
-      jump,
-    }: { startKey: string; sizeKey: string; to: number[]; jump: boolean },
-  ) {
-    const paint = () => {
-      const [a, b] = edges!
-      el.style.setProperty(startKey, `${Math.min(a!.value, b!.value)}px`)
-      el.style.setProperty(sizeKey, `${Math.abs(b!.value - a!.value)}px`)
-    }
-    if (!edges || jump) {
-      clearTimeout(trailing)
-      edges?.forEach((edge) => edge.destroy())
-      edges = to.map((value) => springs$!.createSpring(value, lead, paint))
-      edgeTargets = to
-      paint()
-      return
-    }
-    // Same place: a trailing edge still waiting keeps its turn.
-    if (to[0] === edgeTargets[0] && to[1] === edgeTargets[1]) return
-    clearTimeout(trailing)
-    edgeTargets = to
-    // A new spring per move, picking up the edge's place and speed.
-    const move = (index: number, config: IndicatorSpring) => {
-      const was = edges![index]!
-      const next = springs$!.createSpring(was.value, config, paint)
-      was.destroy()
-      edges![index] = next
-      next.set(to[index]!, { velocity: was.velocity })
-    }
-    const leading = to[0]! > edges[0]!.value ? 1 : 0
-    move(leading, lead)
-    if (delay > 0) trailing = setTimeout(() => move(1 - leading, trail), delay * 1000)
-    else move(1 - leading, trail)
-  }
-
   function dropSprings() {
     springs.forEach((handle) => handle.destroy())
     springs.clear()
-    clearTimeout(trailing)
-    edges?.forEach((edge) => edge.destroy())
-    squashing?.jump(1)
-    squashing?.destroy()
-    edges = squashing = undefined
+    stretcher?.drop()
   }
 
   // Same geometry keeps a pending `0ms`: the ResizeObserver's first callback lands in the

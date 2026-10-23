@@ -16,6 +16,8 @@
     :ui="innerUi"
     @click="onTriggerClick"
     @keydown="onTriggerKeydown"
+    @pointerenter="prefetchCalendar"
+    @focusin="prefetchCalendar"
   >
     <template #end>
       <span class="ui-date-picker-icon" aria-hidden="true">
@@ -186,6 +188,7 @@ import {
   defineAsyncComponent,
   inject,
   nextTick,
+  onMounted,
   useAttrs,
   useId,
   useTemplateRef,
@@ -202,7 +205,7 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import Input from '../Input/Input.vue'
 import Button from '../Button/Button.vue'
-import Calendar from '../Calendar/Calendar.vue'
+import type CalendarType from '../Calendar/Calendar.vue'
 import type TimeFieldType from '../internal/TimeField.vue'
 import type {
   CalendarDisabledDates,
@@ -380,6 +383,17 @@ const props = withProviderDefaults(rawProps, { size: 'md', motion: true, locale:
 const loadTimeField = () => import('../internal/TimeField.vue')
 const loadSelectButton = () => import('../SelectButton/SelectButton.vue')
 const TimeField = defineAsyncComponent(loadTimeField)
+// The calendar is drawn only in the open panel, so it loads apart from the field: while the browser
+// is idle after mount, or as the pointer or focus reaches the field, whichever comes first.
+const loadCalendar = () => import('../Calendar/Calendar.vue')
+const Calendar = defineAsyncComponent(loadCalendar)
+const prefetchCalendar = () => {
+  if (!rawProps.timeOnly) void loadCalendar()
+}
+onMounted(() => {
+  const idle = window.requestIdleCallback ?? ((run: () => void) => setTimeout(run, 200))
+  idle(prefetchCalendar)
+})
 const SelectButton = defineAsyncComponent(loadSelectButton)
 if (rawProps.showTime || rawProps.timeOnly) {
   void loadTimeField()
@@ -561,7 +575,7 @@ const panelTransition = useSelectPanelMotion({
   forceMount: () => props.forceMount,
   placed: () => positionerStyle.value.visibility === 'visible',
 })
-const calendarRef = useTemplateRef<InstanceType<typeof Calendar>>('calendarRef')
+const calendarRef = useTemplateRef<InstanceType<typeof CalendarType>>('calendarRef')
 const hourFieldRef = useTemplateRef<InstanceType<typeof TimeFieldType>>('hourFieldRef')
 const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeFieldType>>('minuteFieldRef')
 
@@ -633,7 +647,8 @@ watch(
         : isRangeModel(value)
           ? (value.end ?? value.start ?? new Date())
           : value
-    nextTick(() => calendarRef.value?.focusDay(anchor))
+    // The calendar may still be on its way: focus the day once it's in.
+    void loadCalendar().then(() => nextTick(() => calendarRef.value?.focusDay(anchor)))
   },
 )
 const innerUi = computed(() => ({
