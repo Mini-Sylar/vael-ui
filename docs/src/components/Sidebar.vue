@@ -17,6 +17,13 @@
       <span ref="sidebarIndicator" class="sidebar-indicator" aria-hidden="true" />
       <MenuList :items="navItems" :active="activeValue" :aria-label="t('nav.sidebarNav')">
         <template #item="{ item }">
+          <component
+            :is="componentIcons[String(item.value)]"
+            v-if="componentIcons[String(item.value)]"
+            :size="16"
+            class="sidebar-icon"
+            aria-hidden="true"
+          />
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
           <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
           <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
@@ -36,6 +43,13 @@
         @select="mobileOpen = false"
       >
         <template #item="{ item }">
+          <component
+            :is="componentIcons[String(item.value)]"
+            v-if="componentIcons[String(item.value)]"
+            :size="16"
+            class="sidebar-icon"
+            aria-hidden="true"
+          />
           <span class="ui-menu-list-item-label">{{ item.label }}</span>
           <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
           <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
@@ -60,6 +74,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable, vScrollMask } from 'vael-ui'
 import ModeSwitcher from './ModeSwitcher.vue'
+import { componentIcons } from '../componentIcons'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { NEW_COMPOSABLES } from '../composablesTaxonomy'
@@ -251,6 +266,12 @@ watch(
 </script>
 
 <style scoped>
+/* Quiet beside the name: outlined, muted, the name's own weight. */
+.sidebar-icon {
+  flex: none;
+  color: var(--ui-text-muted);
+}
+
 .sidebar-shell {
   flex-shrink: 0;
   display: flex;
