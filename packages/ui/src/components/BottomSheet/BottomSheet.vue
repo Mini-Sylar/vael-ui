@@ -278,28 +278,31 @@ const DRAWER_EXIT = {
 // Every close leaves on one spring over what's left of the panel's height (your `motion.spring`,
 // or a fling's): a flick carries on at the finger's speed, the X or Escape start from rest. The
 // backdrop rides the same spring, so the two leave together.
-// Where the drag or a snap point had it as it starts to close: the exit covers only what's left.
-const offsetAtClose = shallowRef(0)
+// What's left of the panel below the drag or snap point, measured as it starts to close: read
+// later, a closed panel is detached and measures 0.
+const leftAtClose = shallowRef<number | null>(null)
 watch(
   open,
   (value) => {
-    if (value || !panelEl.value) return
-    offsetAtClose.value = new DOMMatrix(getComputedStyle(panelEl.value).transform).m42
+    const panel = panelEl.value
+    if (value || !panel) return
+    const offset = new DOMMatrix(getComputedStyle(panel).transform).m42
+    leftAtClose.value = Math.max(0, panel.offsetHeight - offset)
   },
   { flush: 'sync' },
 )
 const sheetLook = computed<DialogMotion>(() => {
   const speed = Math.max(0, velocityAtClose.value)
   const yours = typeof props.motion === 'object' ? (props.motion.spring as Spring) : undefined
-  const left = panelEl.value ? Math.max(0, panelEl.value.offsetHeight - offsetAtClose.value) : 0
-  const leave = panelEl.value ? flingTiming(left, speed, yours) : DRAWER_EXIT
+  const left = leftAtClose.value
+  const leave = left === null ? DRAWER_EXIT : flingTiming(left, speed, yours)
   return {
     initial: {
       panel: { y: { value: '100%', ...DRAWER } },
       overlay: { opacity: { value: 0, ...FADE } },
     },
     exit: {
-      panel: { y: { value: panelEl.value ? `${left}px` : '100%', ...leave } },
+      panel: { y: { value: left === null ? '100%' : `${left}px`, ...leave } },
       overlay: { opacity: { value: 0, ...leave } },
     },
   }

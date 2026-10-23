@@ -2,6 +2,8 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, shallowRef } from 'vue'
+import BottomSheet from '../src/components/BottomSheet/BottomSheet.vue'
 import BottomSheetFixture from './fixtures/BottomSheetFixture.vue'
 
 function panel(): HTMLElement {
@@ -604,4 +606,42 @@ test('closing from a snap point travels only what is left of the panel, not its 
   // Down by what shows, landing just off the bottom edge.
   const [, y = '0'] = panel().style.translate.split(' ')
   expect(Number.parseFloat(y)).toBeCloseTo(showing, -1)
+})
+
+// A new `motion` each open recomputes the look while the last panel is detached and measures 0.
+test('a new motion object on every open still slides the sheet in and out, every time', async () => {
+  const open = shallowRef(false)
+  const motion = shallowRef<object>()
+  await render(
+    {
+      setup: () => () =>
+        h(BottomSheet as never, {
+          open: open.value,
+          'onUpdate:open': (value: boolean) => (open.value = value),
+          motion: motion.value,
+          'aria-label': 'Test sheet',
+        }),
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  for (let round = 1; round <= 3; round++) {
+    motion.value = {}
+    open.value = true
+    await vi.waitFor(() => expect(document.querySelector('.ui-bottom-sheet-panel')).not.toBeNull())
+    // Rises from below the screen.
+    let lowest = 0
+    const start = performance.now()
+    while (performance.now() - start < 700) {
+      lowest = Math.max(lowest, panel().getBoundingClientRect().top)
+      await new Promise((r) => requestAnimationFrame(r))
+    }
+    expect(lowest, `open ${round}`).toBeGreaterThan(window.innerHeight * 0.9)
+    const showing = visibleHeight()
+    await userEvent.keyboard('{Escape}')
+    await vi.waitFor(() => expect(panel().style.translate).not.toBe(''))
+    const [, y = '0'] = panel().style.translate.split(' ')
+    expect(Number.parseFloat(y), `close ${round}`).toBeCloseTo(showing, -1)
+    // Closed: hidden, kept in the DOM.
+    await vi.waitFor(() => expect(panel().getClientRects()).toHaveLength(0), { timeout: 1500 })
+  }
 })
