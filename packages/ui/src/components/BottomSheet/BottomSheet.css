@@ -24,9 +24,6 @@
   .ui-bottom-sheet-panel--full-screen {
     border-radius: 0;
   }
-  .ui-bottom-sheet-overlay {
-    transition-duration: var(--ui-duration-drawer);
-  }
   .ui-bottom-sheet-body {
     display: flex;
     flex-direction: column;

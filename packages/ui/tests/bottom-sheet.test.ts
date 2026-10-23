@@ -645,3 +645,17 @@ test('a new motion object on every open still slides the sheet in and out, every
     await vi.waitFor(() => expect(panel().getClientRects()).toHaveLength(0), { timeout: 1500 })
   }
 })
+
+// The built-in look is the engine's: its own CSS never sets off motion's "they fight" warning.
+test('opening the sheet sets off no warning about its own CSS fighting its motion', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    const screen = await render(BottomSheetFixture, { global: { stubs: { transition: false } } })
+    await screen.getByTestId('trigger').click()
+    await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+    const fights = warn.mock.calls.filter((call) => String(call[0]).includes('they fight'))
+    expect(fights).toEqual([])
+  } finally {
+    warn.mockRestore()
+  }
+})
