@@ -111,6 +111,36 @@ test(
   },
 )
 
+// A timer runs late on a busy page while the compositor keeps fading the panel: a blank frame.
+test(
+  "the trigger's return is on the panel's own timeline, before the panel starts fading off it",
+  { timeout: 8000 },
+  async () => {
+    const open = setup()
+    trigger().focus()
+    trigger().click()
+    await nextTick()
+    while (!panel()?.hasAttribute('data-ui-m')) await frame()
+    await vi.waitFor(() => expect(panel()!.hasAttribute('data-ui-m')).toBe(false), {
+      timeout: 3000,
+    })
+    open.value = false
+    await nextTick()
+    const fade = () =>
+      panel()
+        ?.getAnimations()
+        .find((a) => (a as CSSTransition).transitionProperty === 'opacity')
+    await vi.waitFor(() => expect(typeof fade()?.startTime).toBe('number'))
+    const starts = (a: Animation) => (a.startTime as number) + (a.effect!.getTiming().delay ?? 0)
+    const back = trigger().getAnimations()
+    expect(back).toHaveLength(1)
+    expect(starts(back[0]!)).toBeLessThanOrEqual(starts(fade()!))
+    await vi.waitFor(() => expect(panel()).toBeNull(), { timeout: 3000 })
+    expect(getComputedStyle(trigger()).opacity).toBe('1')
+    expect(trigger().getAnimations()).toHaveLength(0)
+  },
+)
+
 test(
   'closing mid-morph turns back without a jump, and the trigger comes back',
   { timeout: 8000 },

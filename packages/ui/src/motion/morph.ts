@@ -147,6 +147,9 @@ export function morphEnter(
  * Closing: where the main part and its content go, back onto the source where it is now. A
  * `mirror` (a surface's blob) starts from the same clip.
  */
+// The close's cross-fade with its source: its second half, so it lands as one motion.
+const LAND_SHARE = 0.5
+
 export function morphLeave(
   source: Element,
   main: HTMLElement,
@@ -167,7 +170,12 @@ export function morphLeave(
       el.style.setProperty('transition', transition)
     }
   const fade = {
-    opacity: { value: 0, duration: arrival * 0.4, delay: (arrival * 0.6) / 1000, easing: EASE_OUT },
+    opacity: {
+      value: 0,
+      duration: arrival * LAND_SHARE,
+      delay: (arrival * (1 - LAND_SHARE)) / 1000,
+      easing: EASE_OUT,
+    },
   }
   const panel = onto(source, main, t)
   const matched = pairs(source, main)
@@ -186,9 +194,6 @@ export function morphLeave(
     ]),
   ]
 }
-
-// The close's cross-fade with its source: its last share, as it lands.
-const LAND_SHARE = 0.4
 
 /** The same values, each on the duration `t` sets, eased out (a fade alongside a morph). */
 export function along(values: MotionValues, t: MotionTiming): MotionValues {
@@ -210,6 +215,8 @@ export function along(values: MotionValues, t: MotionTiming): MotionValues {
 export function createSession() {
   let hidden: HTMLElement | null = null
   let own = { opacity: '', transition: '' }
+  // Its return on the panel's own timeline: a timer runs late when the page is busy.
+  let back: Animation | undefined
   // Its own styles back, unchanged ones left alone (an empty longhand would cut a shorthand).
   const put = (el: HTMLElement, prop: string, value: string) =>
     el.style.getPropertyValue(prop) === value ||
@@ -222,6 +229,7 @@ export function createSession() {
         transition: el.style.getPropertyValue('transition'),
       }
     }
+    back?.cancel()
     hidden = el
     el.style.setProperty('transition', 'none')
     el.style.setProperty('opacity', '0')
@@ -234,6 +242,7 @@ export function createSession() {
     put(el, 'opacity', own.opacity)
     void getComputedStyle(el).opacity
     put(el, 'transition', own.transition)
+    back?.cancel()
   }
   return {
     hidden: () => hidden,
@@ -260,7 +269,13 @@ export function createSession() {
       live: () => boolean,
     ) {
       const morphed = morphLeave(source, main, t, mirror, arrival)
-      if (morphed.length && hidden) setTimeout(() => live() && show(), arrival * (1 - LAND_SHARE))
+      // Back a frame before the panel starts fading off it: under the panel, early never shows.
+      if (morphed.length && hidden && live())
+        back = hidden.animate([{ opacity: own.opacity || 1 }], {
+          delay: Math.max(0, arrival * (1 - LAND_SHARE) - 16),
+          duration: 1,
+          fill: 'forwards',
+        })
       return morphed
     },
   }
