@@ -9,8 +9,9 @@
     </p>
     <p class="note">
       The last row is a hand-built <code>&lt;input&gt;</code> that joins through
-      <code>data-ui-frame</code> and Field's <code>data-join-*</code> and <code>data-focused</code>
-      attributes (see Advanced in the styling guide). The copy button animates with motion-v.
+      <code>data-ui-frame</code> and Field's <code>data-join-*</code> and
+      <code>data-focused</code> attributes (see Advanced in the styling guide). The copy button
+      swaps its icon with <code>v-animate</code>, and the email field shakes when Error turns on.
     </p>
     <div class="toolbar">
       <SelectButton v-model="size" :items="sizes" size="sm" :allow-empty="false" />
@@ -34,6 +35,7 @@
         attached
         :label-width="132"
         :error="invalid ? 'That address bounced last month.' : undefined"
+        :motion="shake"
       >
         <Input v-model="email" type="email" :size="size" />
         <template #append>
@@ -44,19 +46,10 @@
             :aria-label="copied ? 'Copied' : 'Copy email'"
             @click="copy"
           >
-            <AnimatePresence mode="wait" :initial="false">
-              <motion.span
-                :key="copied ? 'check' : 'copy'"
-                class="icon-swap"
-                :initial="{ scale: 0.4, opacity: 0, rotate: -45 }"
-                :animate="{ scale: 1, opacity: 1, rotate: 0 }"
-                :exit="{ scale: 0.4, opacity: 0, rotate: 45 }"
-                :transition="{ type: 'spring', duration: 0.3, bounce: 0.4 }"
-              >
-                <PhCheck v-if="copied" weight="bold" />
-                <PhCopy v-else weight="bold" />
-              </motion.span>
-            </AnimatePresence>
+            <span class="icon-swap">
+              <PhCheck v-if="copied" v-animate="iconSwap" weight="bold" />
+              <PhCopy v-else v-animate="iconSwap" weight="bold" />
+            </span>
           </Button>
         </template>
       </Field>
@@ -81,8 +74,18 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { AnimatePresence, motion } from 'motion-v'
-import { Button, Field, Input, InputNumber, Select, SelectButton, Switch, Textarea } from 'vael-ui'
+import {
+  Button,
+  Field,
+  Input,
+  InputNumber,
+  Select,
+  SelectButton,
+  Switch,
+  Textarea,
+  vAnimate,
+} from 'vael-ui'
+import type { FieldMotion } from 'vael-ui'
 import { PhCheck, PhCopy, PhStack } from '@phosphor-icons/vue'
 
 const sizes = [
@@ -112,6 +115,18 @@ const plans = [
 ]
 const notes = shallowRef('Type a few lines: the cells stretch with the Textarea as it grows.')
 const tag = shallowRef('')
+
+// Both icons sit in one grid cell: one springs in as the other turns away.
+const iconSwap = {
+  initial: {
+    scale: 0.85,
+    opacity: 0,
+    rotate: { value: '-60deg', spring: { damping: 0.55, response: 0.35 } },
+  },
+  exit: { scale: 0.85, opacity: 0, rotate: '60deg' },
+}
+// The control jolts side to side when the field turns invalid.
+const shake: FieldMotion = { states: { invalid: { control: { x: [0, -6, 6, -3, 0] } } } }
 
 const copied = shallowRef(false)
 let resetTimer: ReturnType<typeof setTimeout> | undefined
@@ -148,6 +163,9 @@ function copy() {
 .icon-swap {
   display: inline-grid;
   place-items: center;
+}
+.icon-swap > * {
+  grid-area: 1 / 1;
 }
 /* A hand-built control: unlayered CSS beats Field's layered join rules, so it reads Field's state hooks itself. */
 .own-frame {

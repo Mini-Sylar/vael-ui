@@ -8,7 +8,8 @@
       <code>ui.groupLabel</code> pins each region to the top while you scroll through it, and
       <code>scroll-padding</code> on <code>ui.list</code> keeps the highlighted zone clear of that
       label as arrow keys scroll. <code>ui.group</code> draws the line between regions. Search by
-      city or by offset, such as <code>+1</code>.
+      city or by offset, such as <code>+1</code>. A <code>v-animate</code> with
+      <code>replay</code> nudges each count when search changes it.
     </p>
     <div class="row">
       <Field label="Timezone">
@@ -30,7 +31,7 @@
             <component :is="group.icon" class="tz-icon" weight="bold" aria-hidden="true" />
             <span class="tz-region">{{ group.label }}</span>
             <span class="tz-hint">{{ group.hint }}</span>
-            <span class="tz-count"
+            <span class="tz-count" v-animate="pop(shown.length)"
               >{{ shown.length }} {{ shown.length === 1 ? 'zone' : 'zones' }}</span
             >
           </template>
@@ -38,7 +39,13 @@
             <span class="tz-city">{{ item.label }}</span>
             <span class="tz-offset">{{ item.offset }}</span>
             <time class="tz-time">{{ timeIn(item.value) }}</time>
-            <PhCheck v-if="selected" class="tz-check" weight="bold" aria-hidden="true" />
+            <PhCheck
+              v-if="selected"
+              v-animate="tick"
+              class="tz-check"
+              weight="bold"
+              aria-hidden="true"
+            />
           </template>
         </Select>
       </Field>
@@ -49,7 +56,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, shallowRef } from 'vue'
-import { Field, Select } from 'vael-ui'
+import { Field, Select, vAnimate } from 'vael-ui'
 import { PhCheck, PhGlobeHemisphereEast, PhGlobeHemisphereWest, PhGlobe } from '@phosphor-icons/vue'
 
 interface Zone {
@@ -110,6 +117,13 @@ const regions = [
     ],
   },
 ]
+
+// The count nudges whenever search changes it; the tick springs in when a zone is picked.
+const pop = (count: number) => ({ initial: { scale: 1.25 }, replay: count })
+const tick = {
+  initial: { opacity: 0, scale: 0.9, x: -4 },
+  spring: { damping: 0.6, response: 0.35 },
+}
 
 const zone = shallowRef<string | null>(null)
 

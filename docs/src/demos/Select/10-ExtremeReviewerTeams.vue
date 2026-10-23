@@ -7,7 +7,7 @@
       you've picked, read from your own <code>v-model</code>. <code>#item</code> also gets the
       option's <code>group</code>, so each person's avatar takes their team's colour. The label is
       also the group's name for screen readers, so they hear the team, its channel and "1 of 3
-      picked".
+      picked". A <code>v-animate</code> with <code>replay</code> nudges each tally as you pick.
     </p>
     <div class="row">
       <Field label="Reviewers">
@@ -27,7 +27,11 @@
             <span class="team-dot" :style="{ background: group.color }" aria-hidden="true" />
             <span class="team-name">{{ group.label }}</span>
             <span class="team-channel">{{ group.channel }}</span>
-            <span class="team-picked" :data-any="pickedIn(group.items) > 0 || undefined">
+            <span
+              v-animate="{ initial: { scale: 1.15 }, replay: pickedIn(group.items) }"
+              class="team-picked"
+              :data-any="pickedIn(group.items) > 0 || undefined"
+            >
               {{ pickedIn(group.items) }} of {{ group.items.length }} picked
             </span>
           </template>
@@ -39,7 +43,13 @@
               {{ item.label }}
               <small>{{ item.role }}</small>
             </span>
-            <PhCheck v-if="selected" class="person-check" weight="bold" aria-hidden="true" />
+            <PhCheck
+              v-if="selected"
+              v-animate="tick"
+              class="person-check"
+              weight="bold"
+              aria-hidden="true"
+            />
           </template>
         </Select>
       </Field>
@@ -50,7 +60,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Field, Select } from 'vael-ui'
+import { Field, Select, vAnimate } from 'vael-ui'
 import { PhCheck } from '@phosphor-icons/vue'
 
 const teams = [
@@ -85,6 +95,12 @@ const teams = [
     ],
   },
 ]
+
+// The tick springs in when someone is picked; each team's tally nudges as it changes.
+const tick = {
+  initial: { opacity: 0, scale: 0.9, x: -4 },
+  spring: { damping: 0.6, response: 0.35 },
+}
 
 const reviewers = shallowRef<string[]>(['alex', 'jordan'])
 
