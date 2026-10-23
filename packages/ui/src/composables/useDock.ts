@@ -69,14 +69,18 @@ export function dockItemOffsets(
   gap: number,
 ): number[] {
   if (sizes.length === 0) return []
+  // Laid out in the order they sit on screen, not index order: right to left (or row-reverse),
+  // the first item is at the far end.
+  const order = centers.map((_, i) => i).sort((a, b) => centers[a]! - centers[b]!)
   const virtualCenters: number[] = []
   let cursor = 0
-  for (const size of sizes) {
-    virtualCenters.push(cursor + size / 2)
-    cursor += size + gap
+  for (const i of order) {
+    virtualCenters[i] = cursor + sizes[i]! / 2
+    cursor += sizes[i]! + gap
   }
-  const restingMid = (centers[0]! + centers[centers.length - 1]!) / 2
-  const virtualMid = (virtualCenters[0]! + virtualCenters[virtualCenters.length - 1]!) / 2
+  const [first, last] = [order[0]!, order[order.length - 1]!]
+  const restingMid = (centers[first]! + centers[last]!) / 2
+  const virtualMid = (virtualCenters[first]! + virtualCenters[last]!) / 2
   const shift = restingMid - virtualMid
   return virtualCenters.map((center, i) => center + shift - centers[i]!)
 }

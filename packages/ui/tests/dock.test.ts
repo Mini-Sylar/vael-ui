@@ -115,6 +115,21 @@ test('dockItemOffsets: virtual re-layout preserves the real gap between every ad
   }
 })
 
+// Right to left, item 0 sits at the far end: spread in screen order, never index order.
+test('dockItemOffsets: right to left, the re-layout keeps the real gap in screen order', () => {
+  const options = { baseSize: 48, maxSize: 76, range: 150 }
+  const centers = [240, 180, 120, 60, 0]
+  const gap = 12
+  const sizes = dockItemSizes(120, centers, options)
+  const offsets = dockItemOffsets(sizes, centers, gap)
+  // Item i+1 is to the left of item i on screen.
+  for (let i = 0; i < sizes.length - 1; i++) {
+    const leftEdgeOfI = centers[i]! + offsets[i]! - sizes[i]! / 2
+    const rightEdgeOfNext = centers[i + 1]! + offsets[i + 1]! + sizes[i + 1]! / 2
+    expect(leftEdgeOfI - rightEdgeOfNext).toBeCloseTo(gap, 5)
+  }
+})
+
 test('dockItemOffsets: no magnification (all items at baseSize) yields zero offset everywhere', () => {
   const centers = [0, 60, 120, 180]
   const sizes = centers.map(() => 48)
@@ -538,3 +553,39 @@ test('a tap on an item bounces it instead of magnifying, and the bounce clears w
     timeout: 2000,
   })
 })
+
+// Mirrored, the magnified items must still spread apart, not pile onto each other.
+for (const grow of [false, true])
+  test(`right to left${grow ? ', growing' : ''}: hovering spreads the items without any overlapping`, async () => {
+    document.documentElement.dir = 'rtl'
+    try {
+      const screen = await render(DockFixture, { props: { grow } })
+      const buttons = itemButtons(screen)
+      const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+      // Off the middle: hovering the exact middle is symmetric, so a reversed spread looks right.
+      const middle = buttons[1]!
+      const rest = middle.offsetWidth
+      await expect
+        .poll(() => {
+          hoverItem(root, middle)
+          return middle.getBoundingClientRect().width
+        })
+        .toBeGreaterThan(rest + 10)
+      // A resting pointer converges instead of feeding back into the layout it grew.
+      const widths: number[] = []
+      for (let i = 0; i < 30; i++) {
+        hoverItem(root, middle)
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        widths.push(middle.getBoundingClientRect().width)
+      }
+      expect(Math.abs(widths.at(-1)! - widths.at(-2)!)).toBeLessThanOrEqual(1)
+      // The hovered item is the biggest, and on screen no item reaches into the next one.
+      const boxes = buttons.map((b) => b.getBoundingClientRect()).sort((a, b) => a.left - b.left)
+      for (let i = 0; i < boxes.length - 1; i++)
+        expect(boxes[i + 1]!.left - boxes[i]!.right).toBeGreaterThan(-0.5)
+      const widest = Math.max(...buttons.map((b) => b.getBoundingClientRect().width))
+      expect(middle.getBoundingClientRect().width).toBeCloseTo(widest, 0)
+    } finally {
+      document.documentElement.dir = ''
+    }
+  })
