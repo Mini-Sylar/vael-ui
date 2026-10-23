@@ -8,8 +8,10 @@ import {
   exitFrom,
   followLayout,
   leaveInPlace,
+  notePaintedSiblings,
   placeOnLeave,
   rememberLayout,
+  watchLeaving,
   watchPaintedBox,
 } from '../motion/layout'
 import type { LeavingPlace } from '../motion/layout'
@@ -200,10 +202,15 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
     if (typeof binding.value === 'object' && binding.value.layout)
       marked._uiLayoutStop = followLayout(el, () => timingOf(marked._uiAnimateValue) ?? {})
     if (!binding.arg && binding.modifiers.size) return
+    const owner = binding.instance?.$ ?? null
+    if (leaving(resolved(el, binding.value))) {
+      watchPaintedBox(el, owner)
+      watchLeaving(el)
+    }
     const id = layoutIdOf(binding.value)
     // A morph finds it by this: in the trigger and the panel, it travels between the two.
     if (id) el.dataset.layoutId = id
-    if (id) watchPaintedBox(el, binding.instance?.$ ?? null)
+    if (id) watchPaintedBox(el, owner)
     // Arriving where another under its `layoutId` just left: it slides over instead of appearing.
     if (id)
       arriveLayout(el, id, timingOf(binding.value)!, () => join(marked, binding.arg, binding.value))
@@ -213,6 +220,9 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
     const id = layoutIdOf(binding.value)
     if (id) rememberLayout(el, id)
     if (leaving(resolved(el, binding.value))) (el as Marked)._uiLeavingPlace = placeOnLeave(el)
+  },
+  beforeUpdate(el) {
+    notePaintedSiblings(el)
   },
   updated(el, binding) {
     ;(el as Marked)._uiAnimateValue = binding.value

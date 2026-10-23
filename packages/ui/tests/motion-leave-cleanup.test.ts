@@ -1,7 +1,8 @@
 import '../src/style.css'
 import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { defineComponent, h, nextTick, shallowRef } from 'vue'
+import { defineComponent, h, nextTick, shallowRef, withDirectives } from 'vue'
+import { vAnimate } from '../src/directives/vAnimate'
 import Dialog from '../src/components/Dialog/Dialog.vue'
 import DialogHost from '../src/components/DialogHost/DialogHost.vue'
 import { openDialog } from '../src/composables/useDialogService'
@@ -51,4 +52,67 @@ test('a component unmounted in the middle of its exit leaves nothing behind', as
   await vi.waitFor(() => expect(document.querySelector('.ui-dialog')).toBeNull(), {
     timeout: 1000,
   })
+})
+
+// The same render grows a sibling: by the time it's removed, the row has already moved it.
+test('an element leaves from where it was painted, even when the same render moves it', async () => {
+  const wide = shallowRef(false)
+  render({
+    setup: () => () =>
+      h('div', { style: 'display: flex; justify-content: center; width: 400px' }, [
+        h('div', { style: { width: wide.value ? '200px' : '100px', height: '20px' } }),
+        wide.value
+          ? null
+          : withDirectives(h('div', { class: 'leaving', style: 'width: 40px; height: 20px' }), [
+              [vAnimate, { exit: { opacity: 0 }, duration: 400 }],
+            ]),
+      ]),
+  })
+  await vi.waitFor(() => expect(document.querySelector('.leaving')).not.toBeNull())
+  await frame()
+  const before = document.querySelector('.leaving')!.getBoundingClientRect().left
+  wide.value = true
+  await nextTick()
+  await frame()
+  const leaving = document.querySelector<HTMLElement>('.leaving')
+  expect(leaving?.getAnimations()).toHaveLength(1)
+  expect(leaving!.getBoundingClientRect().left).toBeCloseTo(before, 0)
+})
+
+// Inside a slot the owner doesn't re-render; the component around it does.
+test('in a slot, an element leaves from where it was painted when a sibling grows', async () => {
+  const wide = shallowRef(false)
+  const Row = defineComponent({
+    setup:
+      (_, { slots }) =>
+      () =>
+        h(
+          'div',
+          { style: 'display: flex; justify-content: center; width: 400px' },
+          slots.default?.(),
+        ),
+  })
+  render({
+    setup: () => () =>
+      h(Row, null, () => [
+        withDirectives(
+          h('div', { style: { width: wide.value ? '200px' : '100px', height: '20px' } }),
+          [[vAnimate, {}]],
+        ),
+        wide.value
+          ? null
+          : withDirectives(h('div', { class: 'leaving', style: 'width: 40px; height: 20px' }), [
+              [vAnimate, { exit: { opacity: 0 }, duration: 400 }],
+            ]),
+      ]),
+  })
+  await vi.waitFor(() => expect(document.querySelector('.leaving')).not.toBeNull())
+  await frame()
+  const before = document.querySelector('.leaving')!.getBoundingClientRect().left
+  wide.value = true
+  await nextTick()
+  await frame()
+  const leaving = document.querySelector<HTMLElement>('.leaving')
+  expect(leaving?.getAnimations()).toHaveLength(1)
+  expect(leaving!.getBoundingClientRect().left).toBeCloseTo(before, 0)
 })

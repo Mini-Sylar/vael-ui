@@ -17,7 +17,7 @@ const boxes = new Map<string, { box: DOMRect; at: number }>()
 // moved it (a row inserted above). Dropped once the flush is over.
 const painted = new WeakMap<Element, DOMRect>()
 const watched = new WeakMap<ComponentInternalInstance, Set<Element>>()
-/** Notes `el`'s box each time `owner` is about to re-render, for `rememberLayout`. */
+/** Notes `el`'s box each time `owner` is about to re-render, for `rememberLayout` and leaving. */
 export function watchPaintedBox(el: Element, owner: ComponentInternalInstance | null): void {
   if (!owner) return
   let els = watched.get(owner)
@@ -32,6 +32,33 @@ export function watchPaintedBox(el: Element, owner: ComponentInternalInstance | 
     }, owner)
   }
   els.add(el)
+}
+
+// Elements that can leave, by parent: a sibling patched first in the same render may move them
+// before they're removed, and inside a slot their owner doesn't re-render to note them.
+const leavers = new WeakMap<Element, Set<Element>>()
+const noted = new Set<Element>()
+/** Notes `el`'s box whenever a `v-animate` sibling is about to be patched. */
+export function watchLeaving(el: Element): void {
+  const parent = el.parentElement
+  if (!parent) return
+  let set = leavers.get(parent)
+  if (!set) leavers.set(parent, (set = new Set()))
+  set.add(el)
+}
+/** `el` is about to be patched: its siblings that can leave note where they're painted. */
+export function notePaintedSiblings(el: Element): void {
+  const set = el.parentElement && leavers.get(el.parentElement)
+  if (!set) return
+  if (!noted.size)
+    queueMicrotask(() => noted.forEach((each) => noted.delete(each) && painted.delete(each)))
+  for (const each of set) {
+    if (!each.isConnected) set.delete(each)
+    else if (!painted.has(each)) {
+      painted.set(each, each.getBoundingClientRect())
+      noted.add(each)
+    }
+  }
 }
 
 /** Leaving: where it was, for whoever arrives next under the same id. */
@@ -245,7 +272,14 @@ export function placeOnLeave(el: Element): LeavingPlace | undefined {
   const style = getComputedStyle(el)
   const look: Record<string, string> = {}
   for (const prop of HELD_LOOK) look[prop] = style.getPropertyValue(prop)
-  return { parent: el.parentNode, next: el.nextSibling, box: untransformed(el), at, look }
+  // Where it was painted: the render removing it may have moved it already (a sibling grew).
+  let box = untransformed(el)
+  const was = painted.get(el)
+  if (was) {
+    const now = el.getBoundingClientRect()
+    box = new DOMRect(box.x + was.x - now.x, box.y + was.y - now.y, box.width, box.height)
+  }
+  return { parent: el.parentNode, next: el.nextSibling, box, at, look }
 }
 const HELD_LOOK = ['translate', 'scale', 'rotate', 'transform', 'opacity', 'filter', 'clip-path']
 
