@@ -12,7 +12,8 @@
           :aria-hidden="layer === 'shapes' || undefined"
         >
           <div v-animate.size="island" class="island">
-            <div v-animate="content" class="content">
+            <!-- One per activity: the old one shrinks into the shape as the new one grows out. -->
+            <div :key="activity" v-animate="content" class="content">
               <template v-if="activity === 'call'"
                 ><PhPhone :size="18" /><span>Maya · 02:14</span><span class="dot"
               /></template>
@@ -27,7 +28,11 @@
               <span v-else class="idle" />
             </div>
           </div>
-          <div v-if="activity === 'timer' || activity === 'call'" v-animate="bubble" class="bubble">
+          <div
+            v-if="activity === 'timer' || activity === 'call'"
+            v-animate="layer === 'ink' ? icon : bubble"
+            class="bubble"
+          >
             <PhBellRinging v-if="activity === 'timer'" :size="18" />
             <PhMicrophone v-else :size="18" />
           </div>
@@ -43,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { shallowRef } from 'vue'
 import { Button, ConfigProvider, vAnimate } from 'vael-ui'
 import type { MotionStyle } from 'vael-ui'
 import { PhBellRinging, PhMicrophone, PhPause, PhPhone, PhTimer } from '@phosphor-icons/vue'
@@ -57,19 +62,28 @@ const layers = ['shapes', 'ink']
 const activities = ['idle', 'call', 'timer', 'music'] as const
 const activity = shallowRef<(typeof activities)[number]>('idle')
 // A shape arriving at a new size: a touch of bounce.
-const spring = { spring: { damping: 0.78, response: 0.35 } }
-// Follows its content's size, and slides over as the bubble makes room.
-const island = { layout: true, ...spring }
-// Out of the island's edge, and back into it.
-const bubble = { initial: { x: -40, scale: '0.6' }, ...spring }
-const content = computed(() => ({
-  initial: { opacity: 0, blur: 4, scale: '0.97' },
-  // Plays again on each switch, just behind the shape.
-  replay: activity.value,
-  delay: 0.05,
+const spring = { spring: { damping: 0.72, response: 0.42 } }
+// Follows its content's size, growing around its middle.
+const island = spring
+// Out of the island's edge, and back into it the same way.
+const tucked = { x: -40, scale: '0.6' }
+const bubble = { initial: tucked, exit: tucked, ...spring }
+// Its icon rides along, and fades before it can reach the island's content.
+const icon = {
+  initial: { ...tucked, opacity: 0 },
+  exit: { ...tucked, opacity: { value: 0, duration: 100 } },
+  ...spring,
+}
+// Grows out of the shape as it nears its new size; the old one shrinks away quicker.
+const hidden = { opacity: 0, blur: 3, scale: '0.9' }
+const quick = (value: number | string) => ({ value, duration: 150 })
+const content = {
+  initial: hidden,
+  exit: { opacity: quick(0), blur: quick(3), scale: quick('0.9') },
+  delay: 0.08,
   duration: 250,
   easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
-}))
+}
 </script>
 
 <style scoped>
@@ -84,18 +98,15 @@ const content = computed(() => ({
   display: grid;
   justify-items: center;
 }
+/* Positioned: the bubble hangs off it, and the ink paints over the filtered shapes at rest. */
 .layer {
+  position: relative;
   grid-area: 1 / 1;
   display: flex;
   align-items: center;
-  gap: 0.375rem;
 }
 .shapes {
   filter: url(#island-goo);
-}
-/* Positioned, so it paints over the filtered shapes even when nothing is moving. */
-.ink {
-  position: relative;
 }
 .shapes .content,
 .shapes .bubble svg {
@@ -111,6 +122,7 @@ const content = computed(() => ({
   background: transparent;
 }
 .island {
+  position: relative;
   display: inline-flex;
   /* A bigger activity is revealed from the middle as the shape grows. */
   justify-content: center;
@@ -118,7 +130,11 @@ const content = computed(() => ({
   overflow: hidden;
   border-radius: 28px;
 }
+/* Hangs off the island's side, so it comes and goes without moving the island. */
 .bubble {
+  position: absolute;
+  inset-block-start: calc(50% - 1.25rem);
+  inset-inline-start: calc(100% + 0.375rem);
   display: grid;
   place-items: center;
   inline-size: 2.5rem;

@@ -34,13 +34,6 @@ export const MOTION_ROUTES = [
   { routeName: 'motion-showpieces', labelKey: 'motionDocs.nav.showpieces' },
   { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
 ] as const
-// The Motion pages the Components sidebar lists too, so they're there without switching modes.
-export const COMPONENT_MOTION_ROUTES: readonly string[] = [
-  'motion-overview',
-  'motion-start',
-  'motion-elements',
-  'motion-blocks',
-]
 const MOTION_COMPOSABLES = [
   'springEasing',
   'useSpringValue',
@@ -106,15 +99,11 @@ export function navSections(mode: DocsMode, t: (key: string) => string): DocsNav
   return [
     {
       label: t('nav.guides'),
-      items: GUIDE_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
-    },
-    {
-      label: t('motionDocs.nav.motion'),
-      items: MOTION_ROUTES.filter((g) => COMPONENT_MOTION_ROUTES.includes(g.routeName)).map(
-        (g) => ({
-          label: t(g.labelKey),
-          value: guideValue(g.routeName),
-        }),
+      // Motion has its own section: one row here takes you there, in place of its guide.
+      items: GUIDE_ROUTES.map((g) =>
+        g.routeName === 'guide-animation-integration'
+          ? { label: t('motionDocs.nav.motion'), value: guideValue('motion-overview') }
+          : { label: t(g.labelKey), value: guideValue(g.routeName) },
       ),
     },
     {

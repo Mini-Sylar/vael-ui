@@ -6,14 +6,14 @@
       v-model:value="open"
       multiple
       class="stack"
-      :motion="{ spring: { damping: 0.75, response: 0.3 } }"
+      :motion="{ spring: { damping: 0.5, response: 0.42 } }"
     >
       <AccordionItem
         v-for="(item, i) in items"
         :key="item.value"
         :value="item.value"
         :title="item.title"
-        :class="['row', shape(i)]"
+        :class="['fold', shape(i)]"
       >
         {{ item.text }}
       </AccordionItem>
@@ -26,10 +26,26 @@ import { shallowRef } from 'vue'
 import { Accordion, AccordionItem } from 'vael-ui'
 
 const items = [
-  { value: 'design', title: 'Product design', text: 'From wireframes to a shipped interface.' },
-  { value: 'build', title: 'Development', text: 'Vue 3 and TypeScript, built to last.' },
-  { value: 'growth', title: 'Growth', text: 'Experiments, funnels and retention.' },
-  { value: 'ops', title: 'Operations', text: 'Billing, support and the quiet essentials.' },
+  {
+    value: 'design',
+    title: 'Product design',
+    text: 'From the first wireframe to a shipped, tested interface your team can grow.',
+  },
+  {
+    value: 'build',
+    title: 'Development',
+    text: 'Vue 3 and TypeScript, with tests and docs, built to outlast the first launch.',
+  },
+  {
+    value: 'growth',
+    title: 'Growth',
+    text: 'Experiments, funnels and retention, measured every week and kept honest.',
+  },
+  {
+    value: 'ops',
+    title: 'Operations',
+    text: 'Billing, support and the quiet essentials that keep a product running.',
+  },
 ]
 const open = shallowRef<string[]>(['design'])
 const isOpen = (i: number) => !!items[i] && open.value.includes(items[i].value)
@@ -51,7 +67,7 @@ const shape = (i: number) => ({
   inline-size: min(22rem, 100%);
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.06)) drop-shadow(0 12px 24px rgb(0 0 0 / 0.08));
 }
-.demo :deep(.row) {
+.demo :deep(.fold) {
   overflow: hidden;
   border: 0;
   background: var(--ui-surface);
@@ -60,18 +76,18 @@ const shape = (i: number) => ({
   transition-duration: var(--ui-accordion-duration);
   transition-timing-function: var(--ui-accordion-ease);
 }
-.demo :deep(.row .ui-accordion-trigger),
-.demo :deep(.row .ui-accordion-body) {
+.demo :deep(.fold .ui-accordion-trigger),
+.demo :deep(.fold .ui-accordion-body) {
   padding-inline: 1.25rem;
 }
-.demo :deep(.row.gap) {
+.demo :deep(.fold.gap) {
   margin-block-start: 12px;
 }
-.demo :deep(.row.top) {
+.demo :deep(.fold.top) {
   border-start-start-radius: 24px;
   border-start-end-radius: 24px;
 }
-.demo :deep(.row.bottom) {
+.demo :deep(.fold.bottom) {
   border-end-start-radius: 24px;
   border-end-end-radius: 24px;
 }

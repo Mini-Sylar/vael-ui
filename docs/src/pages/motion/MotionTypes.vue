@@ -36,10 +36,11 @@
           </template>
         </div>
         <p v-if="!open" class="ty-hint">{{ t('motionDocs.types.completeHint') }}</p>
+        <!-- One box: it springs to each list's size and glides to the name you pressed. -->
         <div
           v-else
           ref="completeEl"
-          :key="`${picked}-${caret}`"
+          v-animate.size="grow"
           class="ty-complete"
           :style="{ insetInlineStart: `${at.x}px`, insetBlockStart: `${at.y}px` }"
         >
@@ -155,12 +156,14 @@ import {
   PhWaveSine,
   PhXCircle,
 } from '@phosphor-icons/vue'
-import { SelectButton } from 'vael-ui'
+import { SelectButton, vAnimate } from 'vael-ui'
 import GuideLayout from '../../components/GuideLayout.vue'
 import { docsSettingsKey } from '../../docsSettings'
 import motionMeta from '../../generated/motion-meta.json'
 
 const { t } = useI18n()
+// The completion box: its size and its place, on one calm spring.
+const grow = { layout: true, spring: { damping: 1, response: 0.3 } }
 useHead({ title: () => t('motionDocs.types.title') })
 
 // ─── Autocomplete, from the same metadata as each page's Motion section ─────

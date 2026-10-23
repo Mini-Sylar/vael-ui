@@ -25,26 +25,29 @@
     <!-- MenuList renders the nav landmark itself. -->
     <div ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
       <span ref="sidebarIndicator" class="sidebar-indicator" aria-hidden="true" />
-      <MenuList :items="navItems" :active="activeValue" :aria-label="t('nav.sidebarNav')">
-        <template #item="{ item }">
-          <component
-            :is="componentIcons[String(item.value)]"
-            v-if="componentIcons[String(item.value)]"
-            :size="16"
-            class="sidebar-icon"
-            aria-hidden="true"
-          />
-          <span class="ui-menu-list-item-label">{{ item.label }}</span>
-          <PhArrowUpRight
-            v-if="leavesSection(item.value)"
-            :size="13"
-            class="sidebar-link-icon"
-            aria-hidden="true"
-          />
-          <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
-          <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
-        </template>
-      </MenuList>
+      <!-- A new mode's list slides in the way you went; the old one leaves the other way. -->
+      <div :key="sidebarMode" v-animate="swap(sidebarMode)">
+        <MenuList :items="navItems" :active="activeValue" :aria-label="t('nav.sidebarNav')">
+          <template #item="{ item }">
+            <component
+              :is="componentIcons[String(item.value)]"
+              v-if="componentIcons[String(item.value)]"
+              :size="16"
+              class="sidebar-icon"
+              aria-hidden="true"
+            />
+            <span class="ui-menu-list-item-label">{{ item.label }}</span>
+            <PhArrowUpRight
+              v-if="leavesSection(item.value)"
+              :size="13"
+              class="sidebar-link-icon"
+              aria-hidden="true"
+            />
+            <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
+            <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
+          </template>
+        </MenuList>
+      </div>
     </div>
   </Resizable>
   <Drawer v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
@@ -62,31 +65,33 @@
       </button>
     </div>
     <div ref="mobileScrollEl" class="sidebar-scroll sidebar-scroll--mobile">
-      <MenuList
-        :items="navItems"
-        :active="activeValue"
-        :aria-label="t('nav.sidebarNav')"
-        @select="mobileOpen = false"
-      >
-        <template #item="{ item }">
-          <component
-            :is="componentIcons[String(item.value)]"
-            v-if="componentIcons[String(item.value)]"
-            :size="16"
-            class="sidebar-icon"
-            aria-hidden="true"
-          />
-          <span class="ui-menu-list-item-label">{{ item.label }}</span>
-          <PhArrowUpRight
-            v-if="leavesSection(item.value)"
-            :size="13"
-            class="sidebar-link-icon"
-            aria-hidden="true"
-          />
-          <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
-          <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
-        </template>
-      </MenuList>
+      <div :key="sidebarMode" v-animate="swap(sidebarMode)">
+        <MenuList
+          :items="navItems"
+          :active="activeValue"
+          :aria-label="t('nav.sidebarNav')"
+          @select="mobileOpen = false"
+        >
+          <template #item="{ item }">
+            <component
+              :is="componentIcons[String(item.value)]"
+              v-if="componentIcons[String(item.value)]"
+              :size="16"
+              class="sidebar-icon"
+              aria-hidden="true"
+            />
+            <span class="ui-menu-list-item-label">{{ item.label }}</span>
+            <PhArrowUpRight
+              v-if="leavesSection(item.value)"
+              :size="13"
+              class="sidebar-link-icon"
+              aria-hidden="true"
+            />
+            <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
+            <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
+          </template>
+        </MenuList>
+      </div>
     </div>
   </Drawer>
 </template>
@@ -104,7 +109,7 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useLocalStorage, useScroll } from '@vueuse/core'
-import { Drawer, MenuList, Resizable, vScrollMask } from 'vael-ui'
+import { Drawer, MenuList, Resizable, vAnimate, vScrollMask } from 'vael-ui'
 import ModeSwitcher from './ModeSwitcher.vue'
 import { componentIcons } from '../componentIcons'
 import { PhArrowLeft, PhArrowUpRight } from '@phosphor-icons/vue'
@@ -112,7 +117,6 @@ import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { NEW_COMPOSABLES, composableCategories } from '../composablesTaxonomy'
 import {
-  COMPONENT_MOTION_ROUTES,
   composableValue,
   GUIDE_ROUTES,
   guideValue,
@@ -140,9 +144,24 @@ const storedMode =
     ? null
     : (sessionStorage.getItem(MODE_STORAGE_KEY) as DocsMode | null)
 const sidebarMode = shallowRef<DocsMode>(storedMode ?? 'components')
-// Among the components' guides, the motion guide is marked like a link: it belongs to Motion.
+// Components on the left, the other modes on its right: a switch slides the lists that way. Not
+// on the first render, so a page never loads with its sidebar moving.
+const SIDE: Record<DocsMode, number> = { components: -1, composables: 1, motion: 1 }
+const switched = shallowRef(false)
+watch(sidebarMode, () => (switched.value = true))
+const swap = (mode: DocsMode) => {
+  const x = SIDE[mode] * 12
+  return {
+    initial: switched.value ? { opacity: 0, x } : undefined,
+    exit: { opacity: { value: 0, duration: 150 }, x: { value: x, duration: 150 } },
+    duration: 250,
+    easing: 'var(--ui-ease-out)',
+  }
+}
+
+// Among the components' guides, Motion is marked like a link: it opens its own section.
 const leavesSection = (value: unknown) =>
-  sidebarMode.value === 'components' && value === guideValue('guide-animation-integration')
+  sidebarMode.value === 'components' && value === guideValue('motion-overview')
 
 // Switching modes takes you there: back to the last component or composable you read, or to
 // the section's first page. A reload then lands where the switch took you.
@@ -184,9 +203,7 @@ watch(sidebarMode, (mode) => {
 watch(
   () => route.name,
   (routeName) => {
-    // A Motion page the Components list carries keeps that list; any other goes to Motion's.
-    if (COMPONENT_MOTION_ROUTES.includes(routeName as string) && sidebarMode.value === 'components')
-      return
+    // Every Motion page, its overview included, shows Motion's own list.
     if (MOTION_ROUTES.some((g) => g.routeName === routeName)) sidebarMode.value = 'motion'
     // A motion composable opened from the Motion list keeps that list.
     else if (routeName === 'composable' && sidebarMode.value !== 'motion')
@@ -194,8 +211,7 @@ watch(
     else if (
       routeName === 'component' ||
       routeName === 'directive' ||
-      (GUIDE_ROUTES.some((g) => g.routeName === routeName) &&
-        !(sidebarMode.value === 'motion' && routeName === 'guide-animation-integration'))
+      GUIDE_ROUTES.some((g) => g.routeName === routeName)
     ) {
       sidebarMode.value = 'components'
     }
