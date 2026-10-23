@@ -93,6 +93,10 @@ const content = computed(() => ({
 .shapes {
   filter: url(#island-goo);
 }
+/* Positioned, so it paints over the filtered shapes even when nothing is moving. */
+.ink {
+  position: relative;
+}
 .shapes .content,
 .shapes .bubble svg {
   visibility: hidden;
