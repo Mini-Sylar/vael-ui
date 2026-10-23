@@ -28,6 +28,7 @@ const PER_BUILD_MODULES = new Set([
   'composables/useLazySortable',
   'composables/useFocusableScroller',
   'composables/selectGroups',
+  'composables/useRememberedSelection',
   'composables/useEasedHeight',
   'composables/useFold',
   'composables/tourGlide',

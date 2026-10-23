@@ -29,6 +29,8 @@
     @click="onInputClick"
   >
     <template v-if="multiple || $slots.start" #start>
+      <!-- Yours first, so an icon stays at the start of the field however many chips follow it. -->
+      <slot name="start" />
       <!-- v-if="multiple" not && selectedItems.length: empty wrapper keeps last chip's leave transition -->
       <TransitionGroup
         v-bind="chipsTransition"
@@ -53,7 +55,6 @@
           +{{ hiddenChipCount }}
         </span>
       </TransitionGroup>
-      <slot name="start" />
     </template>
     <template v-if="$slots.display" #display="displayProps">
       <slot name="display" v-bind="displayProps" />
@@ -278,6 +279,7 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/clear-transition.css'
 import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
+import { useRememberedSelection } from '../../composables/useRememberedSelection'
 import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
@@ -486,7 +488,7 @@ const chipsTransition = useChipTransition(
 )
 
 defineSlots<{
-  /** Content before the input text, after any chips. */
+  /** Content at the start of the field, such as an icon. It comes before any chips, so it stays put as they come and go. */
   start(): unknown
   /** Content before the built-in clear button and chevron, inside Input's `#end`. */
   end(): unknown
@@ -584,7 +586,10 @@ const createLabel = computed(() =>
 
 function labelFor(value: string | number | (string | number)[] | null): string {
   if (value == null || Array.isArray(value)) return ''
-  return options.value.find((item) => item.value === value)?.label ?? String(value)
+  const item =
+    options.value.find((option) => option.value === value) ??
+    chosen.value.find((option) => option.value === value)
+  return item?.label ?? String(value)
 }
 
 function isSelected(item: T): boolean {
@@ -592,8 +597,22 @@ function isSelected(item: T): boolean {
   if (props.multiple) return Array.isArray(model.value) && model.value.includes(item.value)
   return model.value != null && item.value === model.value
 }
-// Filter full item list (not map raw values) so chips show current label on reload.
-const selectedItems = computed<T[]>(() => (props.multiple ? options.value.filter(isSelected) : []))
+// Filter full item list (not map raw values) so chips show current label on reload; a choice
+// missing from `items` (a remote search's latest response) keeps the item it was picked from.
+const chosen = useRememberedSelection(
+  () => options.value.filter((item) => !isCreateRow(item)),
+  () =>
+    new Set(
+      props.multiple
+        ? Array.isArray(model.value)
+          ? model.value
+          : []
+        : model.value == null
+          ? []
+          : [model.value as string | number],
+    ),
+)
+const selectedItems = computed<T[]>(() => (props.multiple ? chosen.value : []))
 const visibleChips = computed<T[]>(() =>
   props.maxLabels != null ? selectedItems.value.slice(0, props.maxLabels) : selectedItems.value,
 )

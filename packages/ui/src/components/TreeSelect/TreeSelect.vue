@@ -25,8 +25,12 @@
   >
     <span :class="valuePart.class" :style="valuePart.style">
       <slot name="value" :selected="selectedNodes as T[]">
-        <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
-        <LazyAnimatedText v-else :value="displayLabel" :motion="!!props.motion" />
+        <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+        <LazyAnimatedText
+          :class="isEmpty && 'ui-select-placeholder'"
+          :value="isEmpty ? (placeholder ?? '') : displayLabel"
+          :motion="!!props.motion"
+        />
       </slot>
     </span>
     <Transition

@@ -2,6 +2,7 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { beforeEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, shallowRef } from 'vue'
 import ComboboxFixture from './fixtures/ComboboxFixture.vue'
 import ComboboxFormFixture from './fixtures/ComboboxFormFixture.vue'
 import Combobox from '../src/components/Combobox/Combobox.vue'
@@ -664,4 +665,34 @@ test('the keyboard key reads Enter by default, so a phone sends Enter to pick th
   const custom = await render(Combobox, { props: { items }, attrs: { enterkeyhint: 'go' } })
   const customInput = custom.getByRole('combobox').element() as HTMLInputElement
   expect(customInput.getAttribute('enterkeyhint')).toBe('go')
+})
+
+test('multiple: content in #start stays at the start of the field, before the chips', async () => {
+  const value = shallowRef<number[]>([])
+  await render(() =>
+    h(
+      Combobox as never,
+      {
+        items: [
+          { label: 'No error', value: 1 },
+          { label: 'Fixed', value: 2 },
+        ],
+        multiple: true,
+        modelValue: value.value,
+        placeholder: 'Outcome',
+      },
+      { start: () => h('span', { class: 'test-flag' }, '⚑') },
+    ),
+  )
+  const flag = () => document.querySelector<HTMLElement>('.test-flag')!.getBoundingClientRect()
+  const input = () => document.querySelector<HTMLElement>('input')!.getBoundingClientRect()
+  await vi.waitFor(() => expect(flag().width).toBeGreaterThan(0))
+  // No chips: nothing between the icon and the text but the field's own gap.
+  const emptyGap = input().left - flag().right
+  value.value = [1]
+  await vi.waitFor(() => expect(document.querySelector('.ui-chip')).not.toBeNull())
+  const chip = document.querySelector<HTMLElement>('.ui-chip')!.getBoundingClientRect()
+  expect(flag().right).toBeLessThanOrEqual(chip.left)
+  expect(chip.right).toBeLessThanOrEqual(input().left)
+  expect(emptyGap).toBeLessThan(12)
 })

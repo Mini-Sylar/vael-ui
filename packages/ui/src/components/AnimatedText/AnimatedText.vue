@@ -18,7 +18,7 @@
 </template>
 
 <!--
-  A new value blurs in as the old one blurs out, and the box eases to the new width.
+  A new value rises in as the old one fades out, and the box eases to the new width.
 -->
 <script setup lang="ts">
 import './AnimatedText.css'

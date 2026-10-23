@@ -4,7 +4,10 @@
     display: inline-block;
     max-inline-size: 100%;
     vertical-align: bottom;
-    transition: inline-size var(--ui-duration-text) var(--ui-ease-out);
+    /* A color change, such as a placeholder turning into a value, eases with the swap. */
+    transition:
+      inline-size var(--ui-duration-text) var(--ui-ease-out),
+      color var(--ui-duration-text) var(--ui-ease-text);
   }
   .ui-animated-text-value {
     display: inline-block;

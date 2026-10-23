@@ -26,14 +26,16 @@
   >
     <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
       <slot name="value" :selected="selectedForSlot">
-        <span v-if="isEmpty && !(multiple && display === 'chip')" class="ui-select-placeholder">{{
-          placeholder
-        }}</span>
+        <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
         <LazyAnimatedText
-          v-else-if="!multiple || display === 'text'"
-          :value="displayLabel"
+          v-if="!multiple || display === 'text'"
+          :class="isEmpty && 'ui-select-placeholder'"
+          :value="isEmpty ? (placeholder ?? '') : displayLabel"
           :motion="!!props.motion"
         />
+        <span v-else-if="isEmpty && display === 'count'" class="ui-select-placeholder">{{
+          placeholder
+        }}</span>
         <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
         <!-- The chips group stays mounted when the last chip goes, so it leaves like the others
              instead of being unmounted with its group; the placeholder slides in behind it. -->
@@ -280,6 +282,7 @@ import { flattenOptions, groupSections, isGroup } from '../../composables/select
 import Input from '../Input/Input.vue'
 import Chip from '../Chip/Chip.vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
+import { useRememberedSelection } from '../../composables/useRememberedSelection'
 
 defineOptions({ inheritAttrs: false })
 
@@ -437,7 +440,7 @@ const chipsTransition = useChipTransition(
 )
 
 defineSlots<{
-  /** Custom trigger content for the current selection (an array when `multiple`). */
+  /** Custom trigger content for the current selection (an array when `multiple`). It replaces the built-in label and its crossfade; to keep the crossfade, put the text in `<AnimatedText :value="…" />`. */
   value(props: { selected: T | T[] | null }): unknown
   /** Content above the filter input (when `filter` is on) or the listbox. `count` and `total` support a result-count readout. */
   header(props: { count: number; total: number }): unknown
@@ -489,7 +492,10 @@ const filtered = computed(() => {
 })
 const filteredItems = computed<T[]>(() => filtered.value.items)
 // Selection always resolves against the full list — an item filtered out of view stays selected.
-const selectedItems = computed<T[]>(() => options.value.filter(isSelected))
+const selectedItems = useRememberedSelection(
+  () => options.value,
+  () => selectedSet.value,
+)
 const isEmpty = computed(() => selectedItems.value.length === 0)
 const displayLabel = computed(() => selectedItems.value.map((item) => item.label).join(', '))
 const selectedForSlot = computed<T | T[] | null>(() =>

@@ -605,6 +605,13 @@ test('removing the last chip eases a content-sized trigger to the placeholder wi
   )
 })
 
+// Select loads AnimatedText after mount and shows plain text until then; the same import resolves
+// once it has, whichever test runs first.
+async function animatedTextLoaded() {
+  await import('../src/components/AnimatedText/AnimatedText.vue')
+  await nextTick()
+}
+
 test('a new selection crossfades the label; motion false swaps it at once', async () => {
   const items = [
     { label: 'Ghana', value: 'gh' },
@@ -618,6 +625,7 @@ test('a new selection crossfades the label; motion false swaps it at once', asyn
     },
     { global: { stubs: { transition: false } } },
   )
+  await animatedTextLoaded()
   const labels = () => screen.container.querySelectorAll('.ui-animated-text-value')
   expect(labels()).toHaveLength(1)
   value.value = 'za'
@@ -631,4 +639,57 @@ test('a new selection crossfades the label; motion false swaps it at once', asyn
   await nextTick()
   expect(labels()).toHaveLength(1)
   expect(labels()[0]!.textContent).toBe('Ghana')
+})
+
+// The placeholder and the value are one text, so every change of what the trigger says crossfades.
+const fruits = [
+  { label: 'Apple', value: 'apple' },
+  { label: 'Banana', value: 'banana' },
+]
+// Both texts on screen at once: the old one leaving while the new one comes in.
+async function sawCrossfade(from: string, to: string) {
+  const seen = new Set<string>()
+  const start = performance.now()
+  while (performance.now() - start < 500) {
+    const texts = [...document.querySelectorAll('.ui-select-value .ui-animated-text-value')].map(
+      (el) => el.textContent?.trim(),
+    )
+    if (texts.length === 2) seen.add(texts.join(' / '))
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  return [...seen].some((pair) => pair.includes(from) && pair.includes(to))
+}
+
+test('the first choice crossfades out of the placeholder, and clearing crossfades back', async () => {
+  const value = shallowRef<string | null>(null)
+  await render(
+    {
+      setup: () => () =>
+        h(Select as never, {
+          modelValue: value.value,
+          'onUpdate:modelValue': (v: string | null) => (value.value = v),
+          items: fruits,
+          placeholder: 'Pick a fruit',
+          clearable: true,
+        }),
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  await animatedTextLoaded()
+  expect(document.querySelector('.ui-select-placeholder')?.textContent?.trim()).toBe('Pick a fruit')
+  value.value = 'apple'
+  expect(await sawCrossfade('Pick a fruit', 'Apple')).toBe(true)
+  expect(document.querySelector('.ui-select-placeholder')).toBeNull()
+  value.value = null
+  expect(await sawCrossfade('Apple', 'Pick a fruit')).toBe(true)
+  expect(document.querySelector('.ui-select-placeholder')?.textContent?.trim()).toBe('Pick a fruit')
+})
+
+test('a Select that mounts with a value shows it at once, without crossfading from the placeholder', async () => {
+  await render(
+    () => h(Select as never, { modelValue: 'banana', items: fruits, placeholder: 'Pick a fruit' }),
+    { global: { stubs: { transition: false } } },
+  )
+  expect(await sawCrossfade('Pick a fruit', 'Banana')).toBe(false)
+  expect(document.querySelector('.ui-select-value')?.textContent?.trim()).toBe('Banana')
 })

@@ -89,16 +89,18 @@
         >
           <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
             <slot name="value" :selected="selectedForSlot" :path="pathForSlot">
+              <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+              <LazyAnimatedText
+                v-if="!multiple"
+                :class="isEmpty && 'ui-cascade-select-placeholder'"
+                :value="isEmpty ? (placeholder ?? '') : (selectedItem?.label ?? '')"
+                :motion="!!props.motion"
+              />
               <span
-                v-if="isEmpty && !(multiple && display === 'chip')"
+                v-else-if="isEmpty && display !== 'chip'"
                 class="ui-cascade-select-placeholder"
                 >{{ placeholder }}</span
               >
-              <LazyAnimatedText
-                v-else-if="!multiple"
-                :value="selectedItem?.label ?? ''"
-                :motion="!!props.motion"
-              />
               <span v-else-if="display === 'text'">{{ displayLabel }}</span>
               <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
               <!-- The chips group stays mounted when the last chip goes, so it leaves like the others;
