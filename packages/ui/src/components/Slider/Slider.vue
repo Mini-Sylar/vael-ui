@@ -4,6 +4,8 @@
     :class="rootPart.class"
     :style="[sliderStyle, rootPart.style]"
     :data-dragging="isDragging || undefined"
+    :data-instant="isInstant || undefined"
+    :data-motion="props.motion === false ? 'off' : undefined"
     :data-range="isRangeModel || undefined"
     :data-invalid="isInvalid || undefined"
     :aria-disabled="isDisabled || undefined"
@@ -217,6 +219,7 @@ const parts = useStateMotion({
 
 const {
   isDragging,
+  isInstant,
   activeThumb,
   rootStyle: sliderStyle,
   onThumbPointerdown,

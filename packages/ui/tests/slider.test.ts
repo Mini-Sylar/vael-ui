@@ -235,3 +235,29 @@ test('fits its container on a page with no box-sizing reset', async () => {
   const slider = screen.container.querySelector('.ui-slider')!.getBoundingClientRect()
   expect(slider.right).toBeLessThanOrEqual(box.right + 0.5)
 })
+
+test('a value set from outside glides the thumb there; a key press moves it at once', async () => {
+  const { ref, nextTick } = await import('vue')
+  const value = ref(0)
+  const screen = await render({
+    components: { Slider },
+    setup: () => ({ value }),
+    template: `<Slider v-model="value" aria-label="Volume" style="inline-size: 200px" />`,
+  })
+  const root = screen.container.querySelector<HTMLElement>('.ui-slider')!
+  const shown = () => Number(getComputedStyle(root).getPropertyValue('--ui-slider-p0'))
+  // Styled once at its first value, as on any page, so there's somewhere to glide from.
+  expect(shown()).toBe(0)
+  value.value = 100
+  await nextTick()
+  await new Promise(requestAnimationFrame)
+  await new Promise(requestAnimationFrame)
+  // Partway there, not jumped.
+  expect(shown()).toBeGreaterThan(0)
+  expect(shown()).toBeLessThan(1)
+  await vi.waitFor(() => expect(shown()).toBe(1))
+  root.querySelector<HTMLElement>('.ui-slider-thumb')!.focus()
+  await userEvent.keyboard('{Home}')
+  await nextTick()
+  expect(shown()).toBe(0)
+})

@@ -1,4 +1,15 @@
 @layer ui-components {
+  /* Registered, so a value set from outside can glide the thumb and fill. */
+  @property --ui-slider-p0 {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0;
+  }
+  @property --ui-slider-p1 {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 0;
+  }
   /* Slider Direct manipulation: pointer drag tracks 1:1 with zero position transition — the same "never gate a live drag" stance as PullToRefresh. Thumb/fill placement is driven entirely by two 0–1 fraction custom properties set on the ROOT by useSlider.ts (--ui-slider-p0/-p1, the sole Vue-managed style location); thumbs and the fill carry no inline style of their own, so an imperative spring library may own their transform directly. * The root reserves half a thumb's worth of padding on the value axis so the track's 0%/100% edges land the thumb flush with the root's own outer edge (the native <input type="range"> look) — pure CSS, no per-frame pixel measurement needed. */
   .ui-slider {
     --ui-slider-track: 0.25rem;
@@ -13,6 +24,16 @@
     min-block-size: var(--ui-slider-thumb-size);
     padding-inline: calc(var(--ui-slider-thumb-size) / 2);
     touch-action: none;
+    /* A value set from outside (a reset, a preset) glides on the number tokens, which a
+       ConfigProvider spring retunes; a drag or a key press moves it at once. */
+    transition:
+      --ui-slider-p0 var(--ui-duration-number) var(--ui-ease-number),
+      --ui-slider-p1 var(--ui-duration-number) var(--ui-ease-number);
+  }
+  .ui-slider[data-dragging],
+  .ui-slider[data-instant],
+  .ui-slider[data-motion='off'] {
+    transition: none;
   }
   .ui-slider--vertical {
     flex-direction: column;
@@ -126,6 +147,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     /* Slider: the live drag position was NEVER transitioned (direct manipulation, gated on nothing) — this only drops the decorative hover/press scale, the same :active reset as Button's list above. */
+    .ui-slider,
     .ui-slider-thumb {
       transition: none;
     }

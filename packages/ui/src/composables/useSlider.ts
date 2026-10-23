@@ -21,6 +21,9 @@ export interface UseSliderOptions {
 export interface UseSliderReturn {
   /** True for the entire span of a pointer drag — from pointerdown to release. */
   isDragging: Ref<boolean>
+  /** True for a moment after your own drag or key press moves a thumb, so it moves at once;
+   * a value set from outside glides. */
+  isInstant: Ref<boolean>
   /** Index of the thumb currently captured by a pointer drag; `null` when idle. */
   activeThumb: Ref<number | null>
   /** Bind to the root element's `:style`. Two 0–1 fraction custom properties (`--ui-slider-p0`/`--ui-slider-p1`, p1 only meaningful in range mode) — the SOLE Vue-managed style location. Thumbs and the fill carry no inline style of their own; CSS `translate`/`inset` calc reads these off the root, so an imperative spring library may still own a thumb's transform directly if a consumer wants to override the default feel. */
@@ -70,7 +73,15 @@ export function useSlider(
     return Math.min(hi, Math.max(lo, clean))
   }
 
+  // Your own drag or key moves the thumb at once; a value set from outside glides there.
+  const isInstant = shallowRef(false)
+  let instantFrame = 0
   function setValue(index: number, raw: number) {
+    isInstant.value = true
+    cancelAnimationFrame(instantFrame)
+    instantFrame = requestAnimationFrame(() => {
+      instantFrame = requestAnimationFrame(() => (isInstant.value = false))
+    })
     const next = clampToStep(raw)
     if (isRange()) {
       const [v0, v1] = model.value as [number, number]
@@ -216,6 +227,7 @@ export function useSlider(
 
   return {
     isDragging,
+    isInstant,
     activeThumb,
     rootStyle,
     onThumbPointerdown,

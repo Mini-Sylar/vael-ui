@@ -116,6 +116,7 @@ Every built-in animation now follows the same rules: it stays under 300 ms (draw
 - **Tour**: the callout travels with the spotlight between steps, including to a step on the other side of its target.
 - **Tour**, **Popover**, **Tooltip**: asked for `left` or `right` with no room on either side (a full-width card on a phone), the panel goes below or above instead of being cut off.
 - **Switch, Checkbox, Radio**: press feedback.
+- **Slider**: a value set from your code, like a reset or a preset, glides the thumb and fill there, on the same timing as AnimatedNumber, so a ConfigProvider spring retunes it. Your own drag or key press still moves it at once, and `motion: false` turns the glide off.
 - **Drawers, BottomSheet**: close in 350 ms instead of 500 ms.
 - **Chevrons**: in Select, Combobox, TreeSelect, SplitButton, CascadeSelect, DataTable and Accordion, they turn in step with their panel.
 - **DataTable**: expansion rows that grow after opening are no longer clipped.
