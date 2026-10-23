@@ -577,9 +577,9 @@
         "title": "TypeScript",
         "body": "すべてのパーツと状態の補完と、間違いへの型エラー。"
       },
-      "showcase": {
-        "title": "ショーケース",
-        "body": "各コンポーネントの見せ場を、実際に動かして並べました。"
+      "blocks": {
+        "title": "ブロック",
+        "body": "いくつかのコンポーネントで作ったメニュー、シート、ウィジェット。そのままコピーできます。"
       }
     },
     "propTitle": "プロップはひとつ",
@@ -600,8 +600,9 @@
       "springs": "スプリングとタイミング",
       "engines": "独自のエンジン",
       "types": "TypeScript",
-      "showcase": "ショーケース",
-      "back": "コンポーネントに戻る"
+      "back": "コンポーネントに戻る",
+      "blocks": "ブロック",
+      "showpieces": "並べて比較"
     },
     "mode": {
       "components": "すべてのコンポーネントを種類別に",
@@ -729,16 +730,238 @@
       "orAnyEasing": "または任意の CSS イージング",
       "orMs": "または数値（ms）"
     },
-    "showcase": {
-      "title": "ショーケース",
-      "intro": "{count} 個のコンポーネントを、それぞれモーションの限界まで。どれも実際に動きます。押して、ドラッグして、開いてみてください。",
-      "engine": "エンジン",
-      "engines": {
-        "all": "すべて",
-        "builtin": "組み込み",
-        "gsap": "GSAP",
-        "motion": "motion"
+    "chapters": {
+      "eyebrow": "モーションガイド · {n} / {total}",
+      "start": {
+        "title": "はじめに",
+        "intro": "vael-ui のコンポーネントは最初から動きます。どう動かすかは、ひとつのコンポーネントからアプリ全体まで、同じいくつかの言葉で決められます。",
+        "already": {
+          "title": "最初から動く",
+          "body": "下のダイアログ、セレクト、トーストを開いてみてください。オーバーレイ、リスト、コントロールにはすべてモーションが組み込まれていて、素早く、邪魔にならないよう調整されています。"
+        },
+        "one": {
+          "title": "ひとつのコンポーネントを変える",
+          "body": "すべてのコンポーネントは <code>motion</code> プロップを受け取ります。パーツがどこから入ってくるか（<code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>）と、そこまで運ぶスプリングを指定します。"
+        },
+        "spring": {
+          "title": "すべてにひとつのスプリング",
+          "body": "<code>ConfigProvider</code> に <code>spring</code> を置くと、その中のすべてのコンポーネントがそれに従います。<code>damping</code> が 1 未満だと行き過ぎて戻ります。<code>response</code> はおおよその所要時間（秒）です。"
+        },
+        "off": {
+          "title": "オフにする",
+          "body": "コンポーネントに <code>:motion=\"false\"</code> を付けると、開閉が即座になります。<code>ConfigProvider</code> に付ければ、その中すべてに効きます。システムで動きを減らす設定にしている人には、どちらの場合も移動のないフェードだけが表示されます。"
+        }
+      },
+      "elements": {
+        "title": "あらゆる要素",
+        "intro": "モーションは vael-ui のコンポーネントだけのものではありません。<code>v-animate</code> を使えば、自分の要素にもテンプレートから直接、登場と退場の動きを付けられます。",
+        "appear": {
+          "title": "登場と退場",
+          "body": "<code>initial</code> は入ってくる起点です。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。"
+        },
+        "scroll": {
+          "title": "スクロールで画面に入ったとき",
+          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番でひとつずつ入ってきます。"
+        },
+        "replay": {
+          "title": "もう一度再生する",
+          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、変わるステータス、失敗したコピーなどに使えます。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。"
+        },
+        "layout": {
+          "title": "新しい位置へスライド",
+          "body": "<code>layout: true</code> は、リストの並べ替えや隣の要素の拡大などでレイアウトが変わったとき、要素を新しい位置までスライドさせます。"
+        },
+        "shared": {
+          "title": "ある場所から別の場所へ",
+          "body": "同じ <code>layoutId</code> を持つ 2 つの要素は、ひとつの要素の移動として扱われます。一方が去りもう一方が現れると、新しい要素が古い要素のボックスからスライドして出てきます。<code>layout: 'position'</code> を加えると移動中もサイズが保たれ、中のテキストが伸びません。"
+        },
+        "animate": {
+          "title": "見た目を保つ",
+          "body": "<code>animate</code> は、要素がページにある間ずっと保つ見た目です。値を変えると、要素は今の位置からそこへ動きます。<code>duration</code> を指定しなければスプリングで動きます。例：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。キーフレームの配列では、<code>progress</code> が再生する代わりにキーフレームを 0 から 1 のある位置に止めるので、スワイプやスクロールに合わせて動かせます。<code>spring</code> を指定すると、少し遅れて追従します。"
+        },
+        "size": {
+          "title": "中身に合わせる",
+          "body": "<code>v-animate.size</code> は、要素の高さが中身の変化に合わせてジャンプせず、なめらかに変わるようにします。"
+        },
+        "own": {
+          "title": "自作のコンポーネント",
+          "body": "<code>useMotion</code> を使うと、自作のコンポーネントも vael-ui と同じように動きます。その <code>transition</code> を Vue の <code>&lt;Transition&gt;</code> にバインドすると、アプリのモーションに従って出入りし、子要素もそれに加われます。"
+        }
+      },
+      "states": {
+        "title": "状態とリスト",
+        "intro": "コンポーネントは画面に表示されている間も動きます。押したとき、チェックに失敗したとき、パネルが開くとき。リストは項目の出入りに合わせて動きます。",
+        "press": {
+          "title": "押下とホバー",
+          "body": "<code>states</code> は、コンポーネントがある状態にある間、パーツをアニメーションさせます。単一の値は状態がオンの間ずっと保たれます。<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> は押している間ボタンを縮めます。"
+        },
+        "shake": {
+          "title": "チェックの失敗",
+          "body": "配列は状態がオンになったときに一度だけ再生されます。<code>invalid: {'{'} root: {'{'} x: [0, -8, 8, -4, 4, 0] {'}'} {'}'}</code> は、フィールドが無効になるたびにそれを揺らします。"
+        },
+        "toggle": {
+          "title": "開く、チェック、押下",
+          "body": "Accordion は <code>open</code> で矢印を回し、Switch は <code>active</code> でつまみをつぶします。各コンポーネントのページの Motion に、パーツと状態の一覧があります。"
+        },
+        "keyframes": {
+          "title": "キーフレーム",
+          "body": "配列はキーフレームの並びです。<code>times</code> で各キーフレームを 0 から 1 の間に配置し、<code>easing</code> でその間の各ステップをイージングします。ステップごとにイージングを並べたリストを渡すこともでき、たとえば上昇のあとに弾む動きにできます。<code>repeat</code> で繰り返し再生し、<code>repeat: Infinity</code> なら状態がオフになるか見た目が変わるまで続きます。"
+        },
+        "each": {
+          "title": "ひとつずつ",
+          "body": "ステッパーの円、ドックの項目、コード入力のセルのように、何度も現れるパーツがあります。それぞれが自分の状態を再生するので、<code>current</code> になったステップだけが弾みます。値を関数で渡すと <code>index</code> が使えるので、セルごとに順に伝わる揺れなども作れます。"
+        },
+        "again": {
+          "title": "もう一度",
+          "body": "コンポーネントの <code>motion</code> も <code>replay</code> を受け取ります。値が変わると、コンポーネントは再マウントせずに <code>initial</code> をもう一度再生します。たとえば星 5 つの評価で星をはじけさせる、といった使い方です。<code>appear: false</code> にすると、コンポーネントのマウント時には再生しません。"
+        },
+        "lists": {
+          "title": "リスト",
+          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable の行、Select ファミリーのチップは、新しい項目をひとつずつ順に入れます。<code>leaving: 'pop'</code> はすぐに隙間を詰め、<code>'hold'</code> は項目が消えるまで隙間を残します。<code>initial</code> や <code>exit</code> を関数で渡すと、一緒に出入りする項目の <code>{'{'} index, count {'}'}</code> を受け取れるので、最後の項目から順に閉じることもできます。"
+        },
+        "toasts": {
+          "title": "変化するトースト",
+          "body": "Toaster の <code>states</code> は、トーストのバリアントが変わったときに再生されます。保存中のトーストが <code>error</code> になったら揺らし、<code>success</code> になったらアイコンを弾ませる、といったことができます。"
+        }
+      },
+      "overlays": {
+        "title": "オーバーレイ",
+        "intro": "ダイアログ、ドロワー、シート、ポップオーバー、メニューはモーションシステムで開閉します。そのため、開いた元の要素から広がったり、ページを一緒に動かしたり、中身を切り替えたりできます。",
+        "morph": {
+          "title": "トリガーから広がる",
+          "body": "<code>morph: 'trigger'</code> は、開いたボタンからパネルを広げ、閉じるときはそこへ縮めて戻します。"
+        },
+        "morphAny": {
+          "title": "任意の要素から広がる",
+          "body": "<code>morph</code> に、クリックした行などの要素を返す関数を渡します。<code>hide: false</code> にすると、ダイアログが開いている間もその行が画面に残ります。"
+        },
+        "recede": {
+          "title": "ページを一緒に動かす",
+          "body": "<code>linked</code> は、Dialog、Drawer、BottomSheet が開いている間、ほかの要素を動かします。ドロワーの後ろでページが奥へ下がる、といった動きです。各エントリーには要素と、開いている間の見た目を指定します。"
+        },
+        "inner": {
+          "title": "中のパーツ",
+          "body": "<code>initial</code> はダイアログのタイトル、本文、フッターにも届くので、それらをパネルに続いて入ってこさせられます。<code>exitOrder: 'reverse'</code> にすると、それらを先に閉じます。"
+        },
+        "swap": {
+          "title": "中身を切り替える",
+          "body": "ダイアログに key 付きの要素をひとつ置き、その key を変えます。<code>swap: 'wait'</code> は古い要素を先に退場させ、<code>direction</code> はどちらの方向へ進んだかを値に伝えます。"
+        },
+        "guard": {
+          "title": "閉じる前に確認する",
+          "body": "<code>before-close</code> は閉じてよいかを決めます。閉じるなら <code>true</code> を返します。確認ダイアログなどの Promise を返すと、ダイアログは答えを待ちます。"
+        }
+      },
+      "choreography": {
+        "title": "コレオグラフィー",
+        "intro": "ダイアログやポップオーバーの中では、自分の要素もそのモーションに加われます。要素に名前を付け、要素同士やパネルに合わせてタイミングを決めます。",
+        "after": {
+          "title": "順番に",
+          "body": "<code>targets</code> で要素に名前を付け、スロットの <code>target('name')</code> か <code>v-animate:name</code> で印を付けます。<code>after: 'summary:60%'</code> は、サマリーが 60% 入ったところで行を動かし始めます。"
+        },
+        "moments": {
+          "title": "タイミング",
+          "body": "<code>after</code> は、ほかの要素のモーションのある時点を待ちます。",
+          "items": [
+            "<code>'summary'</code>：到着したとき",
+            "<code>'summary:start'</code>：動き始めたとき",
+            "<code>'summary:settle'</code>：スプリングが静止したとき",
+            "<code>'summary:40%'</code>：途中まで入ったとき",
+            "<code>'panel'</code>：コンポーネント自身のパーツも使えます",
+            "<code>['summary', 'chart']</code>：すべてが終わったあと"
+          ]
+        },
+        "steps": {
+          "title": "途中の停止点",
+          "body": "<code>steps</code> は要素を複数の停止点へ順に動かし、それぞれで自分の <code>after</code> が来るまで止まります。"
+        },
+        "own": {
+          "title": "自分のタイムライン",
+          "body": "<code>enter</code> フックはパーツとターゲットを受け取るので、ひとつの GSAP タイムラインですべてを再生できます。タイムラインを返すと、ダイアログはそれを待ち、早く閉じた場合は止めます。"
+        }
+      },
+      "styles": {
+        "title": "アプリのモーション",
+        "intro": "モーションスタイルは <code>ConfigProvider</code> に渡すひとつのオブジェクトで、アプリ全体の動きを決めます。ロール別、コンポーネント別に設定でき、自分の要素用のプリセットも持てます。",
+        "style": {
+          "title": "アプリにひとつのオブジェクト",
+          "body": "スタイルには <code>version: 1</code>、<code>spring</code>、そしてロール別（<code>overlay</code>、<code>list</code>、<code>press</code>、<code>reveal</code>、<code>content</code>）またはコンポーネント別（<code>dialog</code>、<code>toaster</code>）のキーがあります。コンポーネント自身の <code>motion</code> が引き続き優先されます。"
+        },
+        "presets": {
+          "title": "プリセット",
+          "body": "<code>presets</code> は見た目に名前を付けます。プロバイダーの中ならどこでも <code>v-animate=\"'rise'\"</code> で使えるので、自分の要素もコンポーネントと同じように動きます。"
+        },
+        "parse": {
+          "title": "コードの外から来るスタイル",
+          "body": "<code>parseMotionStyle</code> は、設定ページ、データベース、ネットワークから来たスタイルを検証します。安全でないものや不明なものは取り除き、取り除いた内容を <code>issues</code> に一覧で返します。"
+        }
       }
+    },
+    "blocks": {
+      "title": "ブロック",
+      "intro": "vael-ui のいくつかのコンポーネントとそのモーションで作った、まとまった UI の部品です。アプリにコピーして自分のものにしてください。",
+      "comingTitle": "今後も追加予定",
+      "comingBody": "ブロックの置き場所、blocks.vael-ui.dev を準備中です。ここにあるのはその最初の一部です。",
+      "items": {
+        "Bloom": {
+          "title": "Bloom メニュー",
+          "body": "作成ボタンがメニューに広がり、項目が中心から外へ開きます。"
+        },
+        "Family": {
+          "title": "ウォレットシート",
+          "body": "浮かぶシートのビューがその場でクロスフェードし、それぞれの高さに合わせて伸縮します。"
+        },
+        "Island": {
+          "title": "ダイナミックアイランド",
+          "body": "アクティビティごとの大きさにばねで変わるピルと、横からにじみ出る泡。"
+        },
+        "Feedback": {
+          "title": "フィードバックウィジェット",
+          "body": "ボタンがフォームに広がり、送信とお礼がその場で切り替わります。"
+        },
+        "Stack": {
+          "title": "通知スタック",
+          "body": "スタックを指すと、カードが一覧に広がります。"
+        },
+        "Composer": {
+          "title": "返信欄",
+          "body": "欄にフォーカスすると、ツールがばねで開き、返信ボタンがその下へ滑ります。"
+        },
+        "ActionBar": {
+          "title": "広がるアクションバー",
+          "body": "アクションを指すとラベルまで広がり、バーがついてきます。"
+        },
+        "Otp": {
+          "title": "確認コード",
+          "body": "間違ったコードでは欄が揺れ、424242 でチェックが描かれます。"
+        },
+        "Reveal": {
+          "title": "スクロールで表示",
+          "body": "カードは画面に入ると浮かび上がり、数字が一度だけカウントアップします。"
+        },
+        "Calendar": {
+          "title": "スライドする月",
+          "body": "グリッドは移動した方向へスライドし、ラベルも一緒に回ります。"
+        },
+        "Accordion": {
+          "title": "弾むアコーディオン",
+          "body": "高さ、矢印、余白、角がひとつのばねに乗ります。"
+        },
+        "Spotlight": {
+          "title": "コマンドメニュー",
+          "body": "一日に何度も開くので、控えめな組み込みの見た目のままです。"
+        }
+      }
+    },
+    "showpieces": {
+      "title": "並べて比較",
+      "intro": "このドキュメントの見どころとなるデモを、GSAP、motion、または vael-ui の組み込みの見た目で最初に作ったものと、vael-ui のモーションだけで作った同じものとで並べています。どちらも同じように再生でき、それぞれのコードを開けます。",
+      "filter": "最初の作り方",
+      "all": "すべて",
+      "builtin": "組み込み",
+      "with": "{engine} で作成",
+      "vael": "vael-ui のモーションで作成",
+      "none": "vael-ui 版はまだありません。"
     }
   }
 }

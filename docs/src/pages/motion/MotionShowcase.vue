@@ -1,86 +1,127 @@
 <template>
   <GuideLayout :links="[]" wide>
-    <h1>{{ t('motionDocs.showcase.title') }}</h1>
-    <p class="lede">{{ t('motionDocs.showcase.intro', { count: pieces.length }) }}</p>
-
+    <h1>{{ t('motionDocs.showpieces.title') }}</h1>
+    <p class="lede">{{ t('motionDocs.showpieces.intro') }}</p>
     <SelectButton
       v-model="engine"
       :allow-empty="false"
       size="sm"
-      :aria-label="t('motionDocs.showcase.engine')"
-      :items="ENGINES.map((id) => ({ label: t(`motionDocs.showcase.engines.${id}`), value: id }))"
+      :aria-label="t('motionDocs.showpieces.filter')"
+      :items="ENGINES.map((id) => ({ label: engineLabel(id), value: id }))"
     />
-    <div class="sc-grid">
-      <article
-        v-for="piece in shown"
-        :key="piece.id"
-        :ref="(el) => watchCard(el as HTMLElement | null, piece.id)"
-        class="sc-card"
-        :class="{ 'sc-card--wide': WIDE.has(piece.component) }"
-      >
-        <header class="sc-head">
-          <component
-            :is="componentIcons[piece.component]"
-            v-if="componentIcons[piece.component]"
-            :size="16"
-            aria-hidden="true"
+
+    <article
+      v-for="piece in shown"
+      :id="piece.anchor"
+      :key="piece.id"
+      :ref="(el) => watchRow(el as HTMLElement | null, piece.id)"
+      class="sp-row"
+    >
+      <header class="sp-head">
+        <component
+          :is="componentIcons[piece.component]"
+          v-if="componentIcons[piece.component]"
+          :size="16"
+          aria-hidden="true"
+        />
+        <RouterLink
+          :to="{ name: 'component', params: { name: piece.component }, hash: `#${piece.anchor}` }"
+        >
+          {{ piece.component }}
+        </RouterLink>
+        <span class="sp-title">{{ piece.title }}</span>
+      </header>
+      <div class="sp-pair">
+        <section class="sp-side">
+          <p class="sp-label">
+            {{ t('motionDocs.showpieces.with', { engine: engineLabel(piece.engine) }) }}
+          </p>
+          <DemoExampleBlock
+            v-if="near.has(piece.id) && examples[piece.original]"
+            :name="piece.component"
+            :example="examples[piece.original]!"
+            :show-title="false"
           />
-          <RouterLink
-            :to="{ name: 'component', params: { name: piece.component }, hash: `#${piece.anchor}` }"
-          >
-            {{ piece.component }}
-          </RouterLink>
-          <span class="sc-engine" :data-engine="piece.engine">{{
-            t(`motionDocs.showcase.engines.${piece.engine}`)
-          }}</span>
-        </header>
-        <p class="sc-title">{{ piece.title }}</p>
-        <!-- Mounted once it comes near the screen, then kept: 37 live demos at once would be heavy. -->
-        <div class="sc-stage demo-preview">
-          <component :is="componentFor(piece)" v-if="near.has(piece.id)" />
-        </div>
-      </article>
-    </div>
+        </section>
+        <section class="sp-side">
+          <p class="sp-label">{{ t('motionDocs.showpieces.vael') }}</p>
+          <template v-if="near.has(piece.id)">
+            <DemoExampleBlock
+              v-if="piece.parity && examples[piece.parity]"
+              :name="piece.component"
+              :example="examples[piece.parity]!"
+              :show-title="false"
+            />
+            <p v-else-if="!piece.parity" class="sp-none">{{ t('motionDocs.showpieces.none') }}</p>
+          </template>
+        </section>
+      </div>
+    </article>
   </GuideLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onScopeDispose, shallowRef, triggerRef } from 'vue'
+import { computed, defineAsyncComponent, onScopeDispose, shallowReactive, shallowRef } from 'vue'
 import type { Component } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { SelectButton } from 'vael-ui'
 import GuideLayout from '../../components/GuideLayout.vue'
+import DemoExampleBlock from '../../components/DemoExampleBlock.vue'
+import type { DemoExample } from '../../components/DemoFrame.vue'
 import { componentIcons } from '../../componentIcons'
 import demoManifest from '../../generated/demo-manifest.json'
-import { defaultVariant } from '../../preferences'
 
 const { t } = useI18n()
-useHead({ title: () => t('motionDocs.showcase.title') })
+useHead({ title: () => t('motionDocs.showpieces.title') })
 
-const ENGINES = ['all', 'builtin', 'gsap', 'motion'] as const
-type Engine = Exclude<(typeof ENGINES)[number], 'all'>
+// Every showpiece as it was first built, with GSAP, motion or vael-ui's built-in look, beside the
+// same piece on vael-ui's own motion, each with its code.
+const ENGINES = ['all', 'gsap', 'motion', 'builtin'] as const
+type Engine = (typeof ENGINES)[number]
+const engineLabel = (id: Engine) =>
+  id === 'all'
+    ? t('motionDocs.showpieces.all')
+    : id === 'gsap'
+      ? 'GSAP'
+      : id === 'motion'
+        ? 'motion'
+        : t('motionDocs.showpieces.builtin')
+
+const originals = import.meta.glob<{ default: Component }>('../../demos/**/*.vue')
+const originalSources = import.meta.glob<string>('../../demos/**/*.vue', {
+  query: '?raw',
+  import: 'default',
+})
+const parities = import.meta.glob<{ default: Component }>('../../motion-parity/**/*.vue')
+const paritySources = import.meta.glob<string>('../../motion-parity/**/*.vue', {
+  query: '?raw',
+  import: 'default',
+})
+
 interface Piece {
   id: string
   component: string
   anchor: string
   title: string
-  engine: Engine
-  vapor: boolean
+  engine: Exclude<Engine, 'all'>
+  original: string
+  parity?: string
 }
 
-// Every component's showpieces, from the same manifest its page uses.
-const manifest = demoManifest as Record<
-  string,
-  { examples: { id: string; title: string; vaporEligible?: boolean }[] }
->
+const manifest = demoManifest as Record<string, { examples: { id: string; title: string }[] }>
 const pieces: Piece[] = Object.entries(manifest)
   .sort(([a], [b]) => a.localeCompare(b))
   .flatMap(([component, entry]) =>
     entry.examples
       .filter((example) => /^extreme\b/i.test(example.title))
-      .map((example) => {
-        const file = example.id.split('/').pop()!
+      .map((example): Piece => {
+        const [folder, file] = example.id.split('/') as [string, string]
+        const prefix = file.match(/^\d+-/)?.[0] ?? ''
+        // Its vael-ui version: same folder, same number.
+        const parity = Object.keys(parities).find((path) =>
+          path.startsWith(`../../motion-parity/${folder}/${prefix}`),
+        )
         return {
           id: example.id,
           component,
@@ -90,68 +131,62 @@ const pieces: Piece[] = Object.entries(manifest)
             .replace(/\s*\((gsap|motion-v|motion)\)\s*$/i, '')
             .replace(/^./, (c) => c.toUpperCase()),
           engine: /gsap/i.test(file) ? 'gsap' : /motionv/i.test(file) ? 'motion' : 'builtin',
-          vapor: !!example.vaporEligible,
+          original: `../../demos/${example.id}.vue`,
+          parity,
         }
       }),
   )
 
-// Showpieces that need more room than one card: they span two.
-const WIDE = new Set([
-  'Calendar',
-  'DatePicker',
-  'ColorPicker',
-  'Dock',
-  'Pagination',
-  'Select',
-  'Stepper',
-])
-
-const engine = shallowRef<(typeof ENGINES)[number]>('all')
+const engine = shallowRef<Engine>('all')
 const shown = computed(() =>
   engine.value === 'all' ? pieces : pieces.filter((piece) => piece.engine === engine.value),
 )
 
-const vdomModules = import.meta.glob<{ default: Component }>('../../generated/vdom-demos/**/*.vue')
-const vaporModules = import.meta.glob<{ default: Component }>(
-  '../../generated/vapor-demos/**/*.vue',
-)
-const loaded = new Map<string, Component>()
-function componentFor(piece: Piece): Component | null {
-  const vapor = defaultVariant.value === 'vapor' && piece.vapor
-  const key = `${vapor ? 'vapor' : 'vdom'}:${piece.id}`
-  let component = loaded.get(key)
-  if (!component) {
-    const loader = (vapor ? vaporModules : vdomModules)[
-      `../../generated/${vapor ? 'vapor' : 'vdom'}-demos/${piece.id}.vue`
-    ]
-    if (!loader) return null
-    component = defineAsyncComponent(loader)
-    loaded.set(key, component)
+// The heading and maintainer notes stay out of the code you copy.
+const strip = (source: string) =>
+  source
+    .replace(/[ \t]*<p class="note">[\s\S]*?<\/p>\n?/g, '')
+    .replace(/[ \t]*<h[23]>[\s\S]*?<\/h[23]>\n?/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+
+// Each side's example, built once its row comes near the screen.
+const examples = shallowReactive<Record<string, DemoExample>>({})
+async function build(path: string | undefined) {
+  if (!path || examples[path]) return
+  const load = originals[path] ?? parities[path]
+  const source = originalSources[path] ?? paritySources[path]
+  if (!load || !source) return
+  examples[path] = {
+    id: path.replace(/^\.\.\/\.\.\//, '').replace(/\.vue$/, ''),
+    title: '',
+    vdomComponent: defineAsyncComponent(load),
+    vaporComponent: null,
+    vdomCode: strip(await source()),
+    vaporCode: '',
   }
-  return component
 }
 
-// Which cards are near the screen: they mount then, and stay.
-const near = shallowRef(new Set<string>())
+// Rows mount as they come near the screen, then stay.
+const near = shallowReactive(new Set<string>())
 const observer =
   typeof IntersectionObserver === 'undefined'
     ? null
     : new IntersectionObserver(
         (entries) => {
-          let added = false
           for (const entry of entries) {
             const id = (entry.target as HTMLElement).dataset.piece
-            if (!entry.isIntersecting || !id || near.value.has(id)) continue
-            near.value.add(id)
+            if (!entry.isIntersecting || !id || near.has(id)) continue
+            const piece = pieces.find((each) => each.id === id)
+            near.add(id)
+            void build(piece?.original)
+            void build(piece?.parity)
             observer?.unobserve(entry.target)
-            added = true
           }
-          if (added) triggerRef(near)
         },
         { rootMargin: '400px 0px' },
       )
-function watchCard(el: HTMLElement | null, id: string) {
-  if (!el || near.value.has(id)) return
+function watchRow(el: HTMLElement | null, id: string) {
+  if (!el || near.has(id)) return
   el.dataset.piece = id
   observer?.observe(el)
 }
@@ -160,79 +195,51 @@ onScopeDispose(() => observer?.disconnect())
 
 <style scoped>
 .lede {
-  max-inline-size: 38rem;
+  max-inline-size: 44rem;
   color: var(--ui-text-muted);
   font-size: 1.0625rem;
 }
-.sc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
-  grid-auto-flow: dense;
-  gap: 1rem;
-  margin-block: 1rem 3rem;
+.sp-row {
+  margin-block-start: 2rem;
+  padding-block-start: 1.25rem;
+  border-block-start: 1px solid var(--ui-border);
+  scroll-margin-block-start: 5rem;
 }
-.sc-card {
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  min-inline-size: 0;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--docs-radius);
-  background: var(--ui-surface);
-}
-.sc-card--wide {
-  grid-column: span 2;
-}
-@media (max-width: 760px) {
-  .sc-card--wide {
-    grid-column: auto;
-  }
-}
-.sc-head {
+.sp-head {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem 0;
-  font-size: 0.875rem;
+  margin-block-end: 0.75rem;
   font-weight: 600;
 }
-.sc-head a {
+.sp-head a {
   color: var(--ui-text);
-  text-decoration: none;
 }
-@media (hover: hover) and (pointer: fine) {
-  .sc-head a:hover {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-}
-.sc-engine {
-  margin-inline-start: auto;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: var(--ui-muted);
+.sp-title {
   color: var(--ui-text-muted);
-  font-size: 0.6875rem;
-  font-weight: 500;
+  font-weight: 400;
 }
-.sc-engine[data-engine='builtin'] {
-  background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 12%, transparent);
-  color: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 75%, var(--ui-text));
+.sp-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
 }
-.sc-title {
-  margin: 0.25rem 0 0;
-  padding-inline: 1rem;
+.sp-side {
+  min-inline-size: 0;
+}
+.sp-label {
+  margin: 0 0 0.4rem;
   color: var(--ui-text-muted);
   font-size: 0.8125rem;
+  font-weight: 600;
 }
-/* The demo's own heading and notes stay hidden, as on its page. */
-.sc-stage {
-  display: grid;
-  align-content: center;
-  min-block-size: 14rem;
-  padding: 1.5rem 1rem;
-  overflow: hidden;
+.sp-none {
+  margin: 0;
+  color: var(--ui-text-muted);
 }
-.sc-stage :deep(.demo > h3:first-of-type) {
-  display: none;
+@media (max-width: 900px) {
+  .sp-pair {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

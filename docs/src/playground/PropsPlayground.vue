@@ -2282,10 +2282,14 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   inline-size: 11rem;
 }
 
-/* Its own line under the preview: the preview wraps its children. */
+/* Pinned to the foot of the preview, out of its flow: a hint coming or going never moves the
+   component. */
 .playground-drag-hint {
-  flex-basis: 100%;
+  position: absolute;
+  inset-inline: 1rem;
+  inset-block-end: 0.5rem;
   margin: 0;
+  text-wrap: balance;
   color: var(--ui-text-muted);
   font-size: 0.8125rem;
   text-align: center;

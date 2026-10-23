@@ -2,6 +2,7 @@ import type { NavigationGuard, RouteRecordRaw, RouterScrollBehavior } from 'vue-
 import { allComponents } from './taxonomy'
 import { allComposables } from './composablesTaxonomy'
 import { DIRECTIVES } from './directivesTaxonomy'
+import { MOTION_CHAPTERS } from './motionChapters'
 
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: () => import('./pages/Home.vue') },
@@ -60,10 +61,22 @@ export const routes: RouteRecordRaw[] = [
     name: 'motion-springs',
     component: () => import('./pages/motion/MotionSprings.vue'),
   },
+  // The Motion guide's chapters share one page, driven by motionChapters.ts.
+  ...MOTION_CHAPTERS.map((chapter) => ({
+    path: chapter.path,
+    name: chapter.routeName,
+    component: () => import('./pages/motion/MotionChapter.vue'),
+  })),
+  // Internal: every showpiece side by side, to compare engines. Not in the nav.
   {
-    path: '/motion/showcase',
-    name: 'motion-showcase',
+    path: '/motion/side-by-side',
+    name: 'motion-showpieces',
     component: () => import('./pages/motion/MotionShowcase.vue'),
+  },
+  {
+    path: '/motion/blocks',
+    name: 'motion-blocks',
+    component: () => import('./pages/motion/MotionBlocks.vue'),
   },
   {
     path: '/motion/types',

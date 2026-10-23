@@ -4,7 +4,8 @@
     <p class="note">
       The content is a sheet lying on a tray. Pull it and it comes away from the top: its corners
       round, it lifts and its shadow deepens, all from the exposed <code>progress</code>. Let go and
-      it springs back on a <code>useSpringValue</code> spring, with a little bounce as it settles.
+      it springs back on a spring from <code>springEasing</code>, holding just far enough down to
+      show the spinner while it refreshes. No animation library.
     </p>
     <div class="tray">
       <PullToRefresh ref="ptr" class="tray-scroll" :on-refresh="refresh">
@@ -26,8 +27,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef, watchEffect } from 'vue'
-import { Loader, PullToRefresh, useSpringValue } from 'vael-ui'
+import { computed, shallowRef, useTemplateRef } from 'vue'
+import { Loader, PullToRefresh, springEasing } from 'vael-ui'
 
 const ptr = useTemplateRef('ptr')
 const rows = shallowRef(['Inbox', 'Design review', 'Standup notes', 'Invoices', 'Reading list'])
@@ -37,21 +38,21 @@ async function refresh() {
   rows.value = [`New at ${new Date().toLocaleTimeString()}`, ...rows.value]
 }
 
-// Held, the sheet follows your finger exactly; let go and it settles home with a little bounce.
-const lift = useSpringValue(0, { damping: 0.75, response: 0.45 })
-watchEffect(() => {
-  const held = ptr.value?.state === 'pulling' || ptr.value?.state === 'ready'
-  if (held) lift.jump(Math.min(1, ptr.value?.progress ?? 0))
-  else lift.set(0)
-})
+// A little bounce on the way back, as a released sheet settles.
+const settle = springEasing({ damping: 0.75, response: 0.45 })
 
+// While your finger is on it, the sheet follows exactly; let go, and it eases home on the spring.
 const sheetStyle = computed(() => {
-  const p = lift.value.value
+  const p = Math.min(1, ptr.value?.progress ?? 0)
+  const held = ptr.value?.state === 'pulling' || ptr.value?.state === 'ready'
   return {
     borderStartStartRadius: `${4 + p * 20}px`,
     borderStartEndRadius: `${4 + p * 20}px`,
     scale: `${1 - p * 0.03}`,
     boxShadow: `0 ${-2 - p * 10}px ${8 + p * 24}px rgb(0 0 0 / ${0.08 + p * 0.22})`,
+    transition: held
+      ? 'none'
+      : `scale ${settle.duration}ms ${settle.easing}, border-radius ${settle.duration}ms ${settle.easing}, box-shadow ${settle.duration}ms ${settle.easing}`,
   }
 })
 </script>

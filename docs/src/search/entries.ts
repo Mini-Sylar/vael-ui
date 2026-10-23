@@ -20,6 +20,7 @@ import {
   PhPlayCircle,
   PhPlug,
   PhPuzzlePiece,
+  PhShootingStar,
   PhSlidersHorizontal,
   PhStack,
   PhSwatches,
@@ -32,7 +33,16 @@ import { categories } from '../taxonomy'
 import { composableCategories } from '../composablesTaxonomy'
 import { DIRECTIVES } from '../directivesTaxonomy'
 import { directivesContent } from '../directivesContent'
-import { GUIDE_ROUTES, composableValue, directiveValue, guideValue, routeFor } from '../docsNav'
+import {
+  GUIDE_ROUTES,
+  MOTION_ROUTES,
+  composableValue,
+  directiveValue,
+  guideValue,
+  routeFor,
+} from '../docsNav'
+import { MOTION_CHAPTERS } from '../motionChapters'
+import { BLOCKS } from '../motionBlocks'
 
 export type ApiKind = 'props' | 'events' | 'slots' | 'exposed' | 'parameters' | 'returns'
 export type EntryKind = 'page' | 'action' | 'example' | 'section' | 'token' | ApiKind
@@ -90,6 +100,14 @@ const API_BOOST: Record<ApiKind, number> = {
   exposed: -4,
 }
 
+// The Motion guide's copy carries inline HTML (<code>); the palette searches its text.
+const htmlText = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+
 /** Descriptions are written for the pages, with `code` in backticks; the palette shows plain text. */
 export const plain = (text: string | undefined) =>
   text?.replace(/`/g, '').replace(/\s+/g, ' ').trim() || undefined
@@ -131,6 +149,19 @@ export function pageEntries(t: Translate, te: Has): PaletteEntry[] {
       icon: PhBookOpen,
       boost: 6,
       group: t('nav.guides'),
+    })),
+    // The Motion guide's pages; the animation guide is already among the guides.
+    ...MOTION_ROUTES.filter(
+      (page) => !GUIDE_ROUTES.some((g) => g.routeName === page.routeName),
+    ).map((page) => ({
+      id: guideValue(page.routeName),
+      kind: 'page' as const,
+      label: t(page.labelKey),
+      to: routeFor(guideValue(page.routeName)),
+      icon: PhShootingStar,
+      keywords: [t('motionDocs.nav.motion')],
+      boost: 6,
+      group: t('motionDocs.nav.motion'),
     })),
     ...composableCategories.flatMap((category) =>
       category.items.map((name) => ({
@@ -444,6 +475,39 @@ export async function loadDeepEntries(t: Translate): Promise<PaletteEntry[]> {
         }
       }
     }
+  }
+
+  // Each section of the Motion guide, and each block.
+  for (const chapter of MOTION_CHAPTERS) {
+    const chapterTitle = t(`motionDocs.chapters.${chapter.id}.title`)
+    for (const section of chapter.sections) {
+      entries.push({
+        id: `section:${chapter.routeName}:${section.id}`,
+        kind: 'section',
+        label: plain(t(`motionDocs.chapters.${chapter.id}.${section.id}.title`))!,
+        parent: chapterTitle,
+        to: { name: chapter.routeName, hash: `#${section.id}` },
+        text: plain(htmlText(t(`motionDocs.chapters.${chapter.id}.${section.id}.body`))),
+        icon: PhHash,
+        boost: 4,
+        group: t('motionDocs.nav.motion'),
+        copyKind: 'link',
+      })
+    }
+  }
+  for (const block of BLOCKS) {
+    entries.push({
+      id: `section:motion-blocks:${block}`,
+      kind: 'section',
+      label: t(`motionDocs.blocks.items.${block}.title`),
+      parent: t('motionDocs.nav.blocks'),
+      to: { name: 'motion-blocks', hash: `#${block}` },
+      text: plain(t(`motionDocs.blocks.items.${block}.body`)),
+      icon: PhHash,
+      boost: 3,
+      group: t('motionDocs.nav.motion'),
+      copyKind: 'link',
+    })
   }
 
   for (const { file, source } of guides) {

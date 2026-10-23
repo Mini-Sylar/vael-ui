@@ -326,7 +326,7 @@ watchEffect(async (onCleanup) => {
         ? stripDemoProse((await vaporSourceLoader()) as string)
         : ''
 
-      // The showpieces lead, without the label that marked them.
+      // The showpieces close the examples, without the label that marked them.
       const highlight = /^extreme\b/i.test(entry.title)
       return {
         id: entry.id,
@@ -342,7 +342,7 @@ watchEffect(async (onCleanup) => {
     }),
   )
   if (!stale)
-    examples.value = [...loaded.filter((e) => e.highlight), ...loaded.filter((e) => !e.highlight)]
+    examples.value = [...loaded.filter((e) => !e.highlight), ...loaded.filter((e) => e.highlight)]
 })
 
 const tocLinks = computed(() => [

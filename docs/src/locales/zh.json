@@ -577,9 +577,9 @@
         "title": "TypeScript",
         "body": "每个部件和状态都能自动补全，错误会报类型错误。"
       },
-      "showcase": {
-        "title": "展示",
-        "body": "每个组件的亮点作品，实时运行，并排展示。"
+      "blocks": {
+        "title": "区块",
+        "body": "由几个组件搭成的菜单、面板和小部件，可直接复制。"
       }
     },
     "propTitle": "一个属性",
@@ -600,8 +600,9 @@
       "springs": "弹簧与时间",
       "engines": "自定义引擎",
       "types": "TypeScript",
-      "showcase": "展示",
-      "back": "返回组件"
+      "back": "返回组件",
+      "blocks": "区块",
+      "showpieces": "并排对比"
     },
     "mode": {
       "components": "按类别列出所有组件",
@@ -729,16 +730,238 @@
       "orAnyEasing": "或任意 CSS 缓动",
       "orMs": "或数字，单位 ms"
     },
-    "showcase": {
-      "title": "展示",
-      "intro": "{count} 个组件，每个都把动效推到极致。全部可交互：按一按、拖一拖、打开看看。",
-      "engine": "引擎",
-      "engines": {
-        "all": "全部",
-        "builtin": "内置",
-        "gsap": "GSAP",
-        "motion": "motion"
+    "chapters": {
+      "eyebrow": "动效指南 · {n} / {total}",
+      "start": {
+        "title": "快速上手",
+        "intro": "vael-ui 的组件开箱即动。怎么动由你决定，从单个组件到整个应用，用的都是同样几个词。",
+        "already": {
+          "title": "本来就会动",
+          "body": "打开下面的对话框、选择器和消息提示。每个浮层、列表和控件都内置了动效，调得又快又不打扰。"
+        },
+        "one": {
+          "title": "修改一个组件",
+          "body": "每个组件都接受 <code>motion</code> 属性。指定某个部件从哪里进入，比如 <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>，以及把它带到位的弹簧。"
+        },
+        "spring": {
+          "title": "一个弹簧管全部",
+          "body": "在 <code>ConfigProvider</code> 上设置 <code>spring</code>，里面的每个组件都会跟着它。<code>damping</code> 小于 1 会冲过头再回来；<code>response</code> 大致是所需的秒数。"
+        },
+        "off": {
+          "title": "关闭动效",
+          "body": "在组件上加 <code>:motion=\"false\"</code>，或加在 <code>ConfigProvider</code> 上作用于其中所有内容，打开和关闭就会立即完成。在系统中开启了减弱动态效果的用户，无论哪种情况都只会看到淡入淡出，没有位移。"
+        }
+      },
+      "elements": {
+        "title": "任意元素",
+        "intro": "动效不只属于 vael-ui 的组件。<code>v-animate</code> 能直接在模板里给你自己的任意元素加上进入和离开动效。",
+        "appear": {
+          "title": "进入与离开",
+          "body": "<code>initial</code> 是它进入的起点。Vue 移除它时，它会沿原路离开，更快也更轻，除非你给它一个 <code>exit</code>。"
+        },
+        "scroll": {
+          "title": "滚动到视野中时",
+          "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序依次进入。"
+        },
+        "replay": {
+          "title": "再播一次",
+          "body": "<code>replay</code> 的值每次变化时，都会重新播放 <code>initial</code>，而不重新挂载元素：比如数字增加、状态变化、复制失败。设置 <code>appear: false</code> 后，它只在这时播放，挂载时不播放。"
+        },
+        "layout": {
+          "title": "滑到新位置",
+          "body": "<code>layout: true</code> 会让元素滑到布局为它安排的新位置，比如列表重新排序或相邻元素变大时。"
+        },
+        "shared": {
+          "title": "从一处到另一处",
+          "body": "<code>layoutId</code> 相同的两个元素就是同一个元素在移动：一个离开、另一个到来时，新元素会从旧元素的盒子里滑出来。加上 <code>layout: 'position'</code> 能让它在途中保持尺寸，里面的文字就不会被拉伸。"
+        },
+        "animate": {
+          "title": "保持一种外观",
+          "body": "<code>animate</code> 是元素在页面上时一直保持的外观。修改它，元素就会从当前位置移动过去；除非你指定 <code>duration</code>，否则用弹簧：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。使用关键帧数组时，<code>progress</code> 会把它们停在 0 到 1 之间的某个位置，而不是播放它们，这样滑动或滚动就能拖着它们走；配上 <code>spring</code>，它们会慢半拍地跟上。"
+        },
+        "size": {
+          "title": "跟随内容",
+          "body": "<code>v-animate.size</code> 让元素平滑过渡到内容的新高度，而不是直接跳变。"
+        },
+        "own": {
+          "title": "你自己的组件",
+          "body": "<code>useMotion</code> 能让你自己的组件像 vael-ui 的组件一样动。把它的 <code>transition</code> 绑定到 Vue 的 <code>&lt;Transition&gt;</code>：它会跟随应用的动效进出，子元素也能一起加入。"
+        }
+      },
+      "states": {
+        "title": "状态与列表",
+        "intro": "组件在屏幕上时也会动：按下、校验失败、面板展开。列表会随着条目的进出而动。",
+        "press": {
+          "title": "按下与悬停",
+          "body": "<code>states</code> 会在组件处于某个状态时为部件添加动画。普通值在状态开启期间一直保持：<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> 会在你按住按钮时把它压小。"
+        },
+        "shake": {
+          "title": "校验失败",
+          "body": "数组会在状态开启时播放一次：<code>invalid: {'{'} root: {'{'} x: [0, -8, 8, -4, 4, 0] {'}'} {'}'}</code> 会在字段每次变为无效时晃动它。"
+        },
+        "toggle": {
+          "title": "展开、选中、按下",
+          "body": "Accordion 在 <code>open</code> 状态旋转箭头，Switch 在 <code>active</code> 状态压扁滑块。每个组件页面的 Motion 部分都列出了它的部件和状态。"
+        },
+        "keyframes": {
+          "title": "关键帧",
+          "body": "数组就是一组关键帧。<code>times</code> 把每一帧放在 0 到 1 之间的位置，<code>easing</code> 为帧与帧之间的每一步加上缓动，也可以给一个列表，每一步一个缓动，比如先上升再回弹。<code>repeat</code> 会重播它们，<code>repeat: Infinity</code> 会一直播放，直到状态关闭或外观改变。"
+        },
+        "each": {
+          "title": "逐个播放",
+          "body": "有些部件会出现很多次：步骤条的圆圈、程序坞的条目、验证码的格子。每一个都播放自己的状态，所以只有变成 <code>current</code> 的那一步会弹一下。把值写成函数就能用它的 <code>index</code>，比如让晃动一格一格地传过去。"
+        },
+        "again": {
+          "title": "再来一次",
+          "body": "组件的 <code>motion</code> 也接受 <code>replay</code>：它变化时，组件会重新播放 <code>initial</code>，而不重新挂载，比如打出五星评分时迸出一串星星。<code>appear: false</code> 让它在组件挂载时不播放。"
+        },
+        "lists": {
+          "title": "列表",
+          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable 的行以及 Select 系列的标签，都会让新条目依次进入。<code>leaving: 'pop'</code> 会立即合上空位；<code>'hold'</code> 会保留空位，直到条目离开。把 <code>initial</code> 或 <code>exit</code> 写成函数，它会收到一起进出的条目的 <code>{'{'} index, count {'}'}</code>，这样关闭时可以从最后一个到第一个依次进行。"
+        },
+        "toasts": {
+          "title": "会变化的消息提示",
+          "body": "Toaster 的 <code>states</code> 会在消息提示切换变体时播放：正在保存的提示变成 <code>error</code> 时可以晃动，变成 <code>success</code> 时可以让图标弹一下。"
+        }
+      },
+      "overlays": {
+        "title": "浮层",
+        "intro": "对话框、抽屉、面板、弹出框和菜单都通过动效系统打开和关闭，因此可以从触发它们的元素中展开、带动页面一起动，还能切换里面的内容。",
+        "morph": {
+          "title": "从触发器展开",
+          "body": "<code>morph: 'trigger'</code> 会让面板从打开它的按钮中展开，关闭时再缩回去。"
+        },
+        "morphAny": {
+          "title": "从任意元素展开",
+          "body": "给 <code>morph</code> 传一个返回元素的函数，比如返回你点击的那一行。<code>hide: false</code> 会让这一行在对话框打开时仍留在屏幕上。"
+        },
+        "recede": {
+          "title": "带动页面",
+          "body": "<code>linked</code> 会在 Dialog、Drawer 或 BottomSheet 打开时移动其他元素，比如让页面在抽屉后方向后退去。每一项指定一个元素，以及它在打开时的样子。"
+        },
+        "inner": {
+          "title": "内部的部件",
+          "body": "<code>initial</code> 也能作用到对话框的标题、正文和页脚，让它们跟着面板进入。<code>exitOrder: 'reverse'</code> 会先关闭它们。"
+        },
+        "swap": {
+          "title": "切换内容",
+          "body": "在对话框里放一个带 key 的元素，然后改变它的 key。<code>swap: 'wait'</code> 让旧元素先离开，<code>direction</code> 告诉你的值是往哪个方向切换的。"
+        },
+        "guard": {
+          "title": "关闭前先确认",
+          "body": "<code>before-close</code> 决定是否可以关闭。返回 <code>true</code> 就关闭；返回一个 Promise，比如一个确认框，对话框就会等待答复。"
+        }
+      },
+      "choreography": {
+        "title": "编排",
+        "intro": "在对话框或弹出框里，你自己的元素也能加入它的动效。先给它们命名，再安排它们彼此之间以及与面板的时间关系。",
+        "after": {
+          "title": "依次进行",
+          "body": "在 <code>targets</code> 中为元素命名，并用插槽提供的 <code>target('name')</code> 或 <code>v-animate:name</code> 标记它们。<code>after: 'summary:60%'</code> 会在摘要进入到 60% 时开始播放各行。"
+        },
+        "moments": {
+          "title": "时间点",
+          "body": "<code>after</code> 会等待另一个元素动效中的某个时刻：",
+          "items": [
+            "<code>'summary'</code>：到达时",
+            "<code>'summary:start'</code>：开始时",
+            "<code>'summary:settle'</code>：弹簧静止时",
+            "<code>'summary:40%'</code>：进入到一部分时",
+            "<code>'panel'</code>：组件自身的部件也可以",
+            "<code>['summary', 'chart']</code>：全部完成之后"
+          ]
+        },
+        "steps": {
+          "title": "途中的停靠点",
+          "body": "<code>steps</code> 让元素经过一系列停靠点，在每一处停住，直到轮到它的 <code>after</code>。"
+        },
+        "own": {
+          "title": "你自己的时间线",
+          "body": "<code>enter</code> 钩子会收到各个部件和你的目标元素，这样一条 GSAP 时间线就能播放全部内容。返回这条时间线：对话框会等待它，如果你提前关闭，就会停止它。"
+        }
+      },
+      "styles": {
+        "title": "你的应用的动效",
+        "intro": "动效风格是 <code>ConfigProvider</code> 上的一个对象，决定整个应用如何运动：按角色、按组件，还可以为你自己的元素设置预设。",
+        "style": {
+          "title": "整个应用一个对象",
+          "body": "风格包含 <code>version: 1</code>、一个 <code>spring</code>，以及按角色（<code>overlay</code>、<code>list</code>、<code>press</code>、<code>reveal</code>、<code>content</code>）或按组件（<code>dialog</code>、<code>toaster</code>）划分的键。组件自己的 <code>motion</code> 仍然优先。"
+        },
+        "presets": {
+          "title": "预设",
+          "body": "<code>presets</code> 为外观命名，在 provider 内的任何地方都能通过 <code>v-animate=\"'rise'\"</code> 使用，让你的元素和组件以同样的方式运动。"
+        },
+        "parse": {
+          "title": "来自代码之外的风格",
+          "body": "<code>parseMotionStyle</code> 会检查来自设置页、数据库或网络的风格。它会丢弃任何不安全或未知的内容，并在 <code>issues</code> 中列出被丢弃的部分。"
+        }
       }
+    },
+    "blocks": {
+      "title": "区块",
+      "intro": "完整的界面片段，每个都由几个 vael-ui 组件和它们的动效组成。复制到你的应用里，再改成你的样子。",
+      "comingTitle": "更多即将到来",
+      "comingBody": "区块的专属站点 blocks.vael-ui.dev 正在准备中，这里是第一批。",
+      "items": {
+        "Bloom": {
+          "title": "绽放菜单",
+          "body": "“新建”按钮展开成菜单，选项从中心向外打开。"
+        },
+        "Family": {
+          "title": "钱包面板",
+          "body": "浮动面板的视图在原地交叉淡入，同时缓动到每个视图的高度。"
+        },
+        "Island": {
+          "title": "灵动岛",
+          "body": "一个按每项活动弹性变大小的胶囊，旁边会冒出一个气泡。"
+        },
+        "Feedback": {
+          "title": "反馈小部件",
+          "body": "按钮展开成表单，发送与致谢在原地切换。"
+        },
+        "Stack": {
+          "title": "通知堆叠",
+          "body": "指向堆叠，卡片会展开成列表。"
+        },
+        "Composer": {
+          "title": "回复框",
+          "body": "聚焦输入框：工具以弹簧打开，“回复”按钮滑到它们下方。"
+        },
+        "ActionBar": {
+          "title": "可展开的操作栏",
+          "body": "指向某个操作，它会展开出标签，整栏随之变化。"
+        },
+        "Otp": {
+          "title": "验证码",
+          "body": "错误的验证码会让输入框抖动；输入 424242 会画出对勾。"
+        },
+        "Reveal": {
+          "title": "滚动出现",
+          "body": "卡片进入视野时上浮，数字向上滚动，只播一次。"
+        },
+        "Calendar": {
+          "title": "滑动的月份",
+          "body": "网格朝你翻动的方向滑动，标签随之滚动。"
+        },
+        "Accordion": {
+          "title": "弹性手风琴",
+          "body": "高度、箭头、间距和圆角都跟随同一个弹簧。"
+        },
+        "Spotlight": {
+          "title": "命令菜单",
+          "body": "每天要打开很多次，所以保留安静的内置效果。"
+        }
+      }
+    },
+    "showpieces": {
+      "title": "并排对比",
+      "intro": "文档中的每个展示作品，最初用 GSAP、motion 或 vael-ui 的内置效果做成，旁边是只用 vael-ui 自身动效做出的同一作品。用同样的方式播放它们，并可打开任一边的代码。",
+      "filter": "最初实现方式",
+      "all": "全部",
+      "builtin": "内置",
+      "with": "使用 {engine}",
+      "vael": "使用 vael-ui 动效",
+      "none": "暂无 vael-ui 版本。"
     }
   }
 }

@@ -5,10 +5,9 @@
       Every level's panel carries <code>data-level</code>, so one <code>ui.panel</code> class plus
       <code>[data-level='2']</code> styles just the second menu. Here the first level is a rail of
       departments, the second a wide panel of categories with a line of description, and the third a
-      list of products with prices, each arriving its own way: a <code>v-animate</code> in each
-      level's row slot staggers its rows in with a different move and spring.
-      <code>#item</code> gets the row's <code>path</code>, so rows read their department's colour
-      from it, and search results show where they live.
+      list of products with prices, each sliding in its own way. <code>#item</code> gets the row's
+      <code>path</code>, so rows read their department's colour from it, and search results show
+      where they live.
     </p>
     <div class="row">
       <Field label="Product">
@@ -25,13 +24,13 @@
             <!-- Level 1: a department, with its icon. -->
             <template v-if="path.length === 0 && hasChildren">
               <component :is="item.icon" class="dept-icon" weight="duotone" aria-hidden="true" />
-              <span v-animate:depts="departments" class="dept-name">{{ item.label }}</span>
+              <span class="dept-name">{{ item.label }}</span>
               <PhCaretRight class="caret" weight="bold" aria-hidden="true" />
             </template>
             <!-- Level 2: a category, coloured by its department. -->
             <template v-else-if="hasChildren">
               <span class="cat-bar" :style="{ background: path[0]?.accent }" aria-hidden="true" />
-              <span v-animate:cats="categories" class="cat-text">
+              <span class="cat-text">
                 <span class="cat-name">{{ item.label }}</span>
                 <span class="cat-description">{{ item.description }}</span>
               </span>
@@ -41,7 +40,7 @@
             <!-- Level 3, and every search result: a product. -->
             <template v-else>
               <span class="dot" :style="{ background: path[0]?.accent }" aria-hidden="true" />
-              <span v-animate:products="products" class="product-name">
+              <span class="product-name">
                 {{ item.label }}
                 <span v-if="query" class="product-path">
                   {{ path.map((ancestor) => ancestor.label).join(' / ') }}
@@ -60,7 +59,7 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import type { Component } from 'vue'
-import { CascadeSelect, Field, vAnimate } from 'vael-ui'
+import { CascadeSelect, Field } from 'vael-ui'
 import type { CascadeSelectItem } from 'vael-ui'
 import { PhCaretRight, PhHouseLine, PhLaptop, PhTent } from '@phosphor-icons/vue'
 
@@ -147,20 +146,6 @@ const catalogue: CatalogueNode[] = [
   },
 ]
 
-// Rows of each level arrive their own way: the rail glides in, categories slide out of their
-// parent on a soft spring, products settle with a little bounce.
-const departments = { initial: { opacity: 0, x: -6 }, stagger: 0.03 }
-const categories = {
-  initial: { opacity: 0, x: -12 },
-  spring: { damping: 0.85, response: 0.3 },
-  stagger: 0.04,
-}
-const products = {
-  initial: { opacity: 0, y: 8, scale: 0.97 },
-  spring: { damping: 0.6, response: 0.35 },
-  stagger: 0.03,
-}
-
 const product = shallowRef<string | null>(null)
 const query = shallowRef('')
 </script>
@@ -237,14 +222,18 @@ const query = shallowRef('')
 <style>
 /* Level 1: a rail in the theme's text colour, so it stands out in light and dark alike. */
 .shop-panel[data-level='1'] {
-  background: color-mix(in oklab, var(--ui-text) 90%, var(--ui-surface));
+  --rail: color-mix(in oklab, var(--ui-text) 90%, var(--ui-surface));
+  --rail-hover: color-mix(in oklab, var(--ui-surface) 14%, var(--rail));
+  /* The sliding hover highlight takes the rail's tint too. */
+  --ui-indicator-bg: var(--rail-hover);
+  background: var(--rail);
   color: var(--ui-surface);
 }
 .shop-panel[data-level='1'] .ui-menu-item {
   color: inherit;
 }
-.shop-panel[data-level='1'] .ui-menu-item:is(:hover, :focus-visible, [aria-expanded='true']) {
-  background: color-mix(in oklab, var(--ui-surface) 14%, transparent);
+.shop-panel[data-level='1'] .ui-menu-item[aria-expanded='true'] {
+  background: var(--rail-hover);
 }
 /* The department you picked from, marked in the rail's own colours. */
 .shop-panel[data-level='1'] .ui-menu-item[data-cascade-selected] {
@@ -269,5 +258,32 @@ const query = shallowRef('')
 }
 .shop-panel[data-level='3'] .ui-menu-item {
   padding-block: 0.375rem;
+}
+
+/* Each deeper level arrives its own way: the second slides from its parent, the third settles. */
+.shop-panel[data-level='2'] {
+  animation: shop-slide 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.shop-panel[data-level='3'] {
+  transform-origin: left top;
+  animation: shop-settle 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes shop-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+@keyframes shop-settle {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shop-panel[data-level='2'],
+  .shop-panel[data-level='3'] {
+    animation: none;
+  }
 }
 </style>

@@ -577,9 +577,9 @@
         "title": "TypeScript",
         "body": "Autocompletado para cada parte y estado, y errores de tipo para las equivocaciones."
       },
-      "showcase": {
-        "title": "Escaparate",
-        "body": "La pieza estrella de cada componente, en vivo, lado a lado."
+      "blocks": {
+        "title": "Bloques",
+        "body": "Menús, hojas y widgets hechos con unos pocos componentes, listos para copiar."
       }
     },
     "propTitle": "Una prop",
@@ -600,8 +600,9 @@
       "springs": "Resortes y tiempos",
       "engines": "Tu propio motor",
       "types": "TypeScript",
-      "showcase": "Escaparate",
-      "back": "Volver a los componentes"
+      "back": "Volver a los componentes",
+      "blocks": "Bloques",
+      "showpieces": "Lado a lado"
     },
     "mode": {
       "components": "Cada componente, por tipo",
@@ -729,16 +730,238 @@
       "orAnyEasing": "o cualquier easing de CSS",
       "orMs": "o un número, en ms"
     },
-    "showcase": {
-      "title": "Escaparate",
-      "intro": "{count} componentes, cada uno llevado hasta donde llega su movimiento. Todos están vivos: púlsalos, arrástralos y ábrelos.",
-      "engine": "Motor",
-      "engines": {
-        "all": "Todos",
-        "builtin": "Integrado",
-        "gsap": "GSAP",
-        "motion": "motion"
+    "chapters": {
+      "eyebrow": "Guía de movimiento · {n} de {total}",
+      "start": {
+        "title": "Primeros pasos",
+        "intro": "Los componentes de vael-ui se mueven desde el primer momento. Tú decides cómo se mueven, desde un componente hasta toda tu app, con las mismas pocas palabras.",
+        "already": {
+          "title": "Ya se mueve",
+          "body": "Abre el diálogo, el select y el toast de abajo. Cada overlay, lista y control trae su movimiento integrado, ajustado para ser rápido y no estorbar."
+        },
+        "one": {
+          "title": "Cambia un componente",
+          "body": "Cada componente acepta una prop <code>motion</code>. Di desde dónde entra una parte, <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>, y el resorte que la lleva hasta allí."
+        },
+        "spring": {
+          "title": "Un resorte para todo",
+          "body": "Pon un <code>spring</code> en <code>ConfigProvider</code> y todos los componentes de dentro lo siguen. Con <code>damping</code> por debajo de 1 se pasa del final y vuelve; <code>response</code> es más o menos lo que tarda, en segundos."
+        },
+        "off": {
+          "title": "Desactívalo",
+          "body": "<code>:motion=\"false\"</code> en un componente, o en <code>ConfigProvider</code> para todo lo que contiene, hace que abrir y cerrar sean instantáneos. Quien pide a su sistema movimiento reducido recibe fundidos sin desplazamiento en cualquier caso."
+        }
+      },
+      "elements": {
+        "title": "Cualquier elemento",
+        "intro": "El movimiento no es solo para los componentes de vael-ui. <code>v-animate</code> da a cualquier elemento tuyo una entrada y una salida, directamente desde la plantilla.",
+        "appear": {
+          "title": "Entrar y salir",
+          "body": "<code>initial</code> es desde dónde entra. Cuando Vue lo quita, sale por donde vino, más rápido y más discreto, salvo que le des un <code>exit</code>."
+        },
+        "scroll": {
+          "title": "Cuando aparece al hacer scroll",
+          "body": "<code>when: 'visible'</code> espera a que el elemento esté en pantalla y luego se reproduce una vez. Los elementos que comparten nombre, como <code>v-animate:tiles</code>, entran uno tras otro, en el orden de la página."
+        },
+        "replay": {
+          "title": "Reprodúcelo de nuevo",
+          "body": "<code>replay</code> vuelve a reproducir <code>initial</code> cada vez que cambia su valor, sin volver a montar el elemento: un contador que sube, un estado que cambia, una copia que falló. Con <code>appear: false</code> solo se reproduce entonces, no al montarse."
+        },
+        "layout": {
+          "title": "Deslízalo a un nuevo sitio",
+          "body": "<code>layout: true</code> desliza un elemento a donde lo coloque el layout, como cuando una lista se reordena o un elemento vecino crece."
+        },
+        "shared": {
+          "title": "De un sitio a otro",
+          "body": "Dos elementos con el mismo <code>layoutId</code> son un solo elemento en movimiento: cuando uno sale y el otro llega, el nuevo se desliza desde la caja del antiguo. Añade <code>layout: 'position'</code> para que conserve su tamaño por el camino, así el texto que contiene nunca se estira."
+        },
+        "animate": {
+          "title": "Mantén un aspecto",
+          "body": "<code>animate</code> es un aspecto que el elemento mantiene mientras está en la página. Cámbialo y el elemento va hasta él desde donde esté, con un resorte salvo que le des una <code>duration</code>: <code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>. Con arrays de keyframes, <code>progress</code> los fija en un punto de 0 a 1 en lugar de reproducirlos, así un deslizamiento o un scroll puede recorrerlos; con un <code>spring</code>, lo siguen con un instante de retraso."
+        },
+        "size": {
+          "title": "Sigue a su contenido",
+          "body": "<code>v-animate.size</code> lleva un elemento suavemente a la nueva altura de su contenido en lugar de saltar."
+        },
+        "own": {
+          "title": "Tus propios componentes",
+          "body": "<code>useMotion</code> hace que un componente tuyo se mueva como los de vael-ui. Vincula su <code>transition</code> al <code>&lt;Transition&gt;</code> de Vue: sigue el movimiento de tu app, entra y sale, y sus hijos pueden unirse."
+        }
+      },
+      "states": {
+        "title": "Estados y listas",
+        "intro": "Los componentes también se mueven mientras están en pantalla: una pulsación, una validación fallida, un panel que se abre. Las listas se mueven cuando entran y salen elementos.",
+        "press": {
+          "title": "Pulsar y pasar el cursor",
+          "body": "<code>states</code> anima una parte mientras el componente está en un estado. Un valor simple se mantiene mientras el estado está activo: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> encoge un botón mientras lo pulsas."
+        },
+        "shake": {
+          "title": "Una validación fallida",
+          "body": "Un array se reproduce una vez, cuando el estado se activa: <code>invalid: {'{'} root: {'{'} x: [0, -8, 8, -4, 4, 0] {'}'} {'}'}</code> sacude un campo cada vez que pasa a ser inválido."
+        },
+        "toggle": {
+          "title": "Abierto, marcado, pulsado",
+          "body": "Accordion gira su flecha en <code>open</code> y Switch aplasta su indicador en <code>active</code>. La página de cada componente lista sus partes y estados, en Motion."
+        },
+        "keyframes": {
+          "title": "Keyframes",
+          "body": "Un array es un conjunto de keyframes. <code>times</code> coloca cada uno, de 0 a 1, y <code>easing</code> suaviza cada paso entre ellos, o da una lista con un easing por paso, como una subida y luego un rebote. <code>repeat</code> los reproduce otra vez, y <code>repeat: Infinity</code> sigue hasta que el estado se desactiva o cambia el aspecto."
+        },
+        "each": {
+          "title": "Uno a uno",
+          "body": "Algunas partes aparecen muchas veces: los círculos de un stepper, los elementos de un dock, las celdas de un código. Cada una reproduce sus propios estados, así que solo salta el paso que pasa a ser <code>current</code>. Da los valores como función para usar su <code>index</code>, como una sacudida que recorre celda a celda."
+        },
+        "again": {
+          "title": "Otra vez",
+          "body": "El <code>motion</code> de un componente también acepta <code>replay</code>: cuando cambia, el componente vuelve a reproducir su <code>initial</code> sin volver a montarse, como una ráfaga de estrellas en una valoración de cinco estrellas. <code>appear: false</code> evita que se reproduzca cuando el componente se monta."
+        },
+        "lists": {
+          "title": "Listas",
+          "body": "Toaster, Timeline, FileUpload, SpeedDial, las filas de DataTable y los chips de la familia Select hacen entrar los elementos nuevos uno tras otro. <code>leaving: 'pop'</code> cierra el hueco al instante; <code>'hold'</code> lo mantiene hasta que el elemento se ha ido. Da <code>initial</code> o <code>exit</code> como función y recibe <code>{'{'} index, count {'}'}</code> de los elementos que entran o salen juntos, así un cierre puede ir del último al primero."
+        },
+        "toasts": {
+          "title": "Un toast que cambia",
+          "body": "Los <code>states</code> de Toaster se reproducen cuando un toast cambia de variante: un toast de guardado que acaba en <code>error</code> puede sacudirse, y uno que acaba en <code>success</code> puede hacer saltar su icono."
+        }
+      },
+      "overlays": {
+        "title": "Overlays",
+        "intro": "Diálogos, drawers, sheets, popovers y menús se abren y cierran con el sistema de movimiento, así que pueden crecer desde lo que los abrió, mover la página con ellos y cambiar lo que tienen dentro.",
+        "morph": {
+          "title": "Crece desde el disparador",
+          "body": "<code>morph: 'trigger'</code> hace crecer el panel desde el botón que lo abrió, y lo encoge de vuelta al cerrar."
+        },
+        "morphAny": {
+          "title": "Crece desde cualquier elemento",
+          "body": "Pasa a <code>morph</code> una función que devuelva un elemento, como la fila en la que hiciste clic. <code>hide: false</code> mantiene la fila en pantalla mientras el diálogo está abierto."
+        },
+        "recede": {
+          "title": "Mueve la página con él",
+          "body": "<code>linked</code> mueve otros elementos mientras un Dialog, Drawer o BottomSheet está abierto, como la página que retrocede detrás de un drawer. Cada entrada nombra un elemento y su aspecto mientras está abierto."
+        },
+        "inner": {
+          "title": "Las partes de dentro",
+          "body": "<code>initial</code> llega también al título, el cuerpo y el pie de un diálogo, para que sigan al panel al entrar. <code>exitOrder: 'reverse'</code> los cierra primero."
+        },
+        "swap": {
+          "title": "Cambia lo de dentro",
+          "body": "Pon un elemento con key en el diálogo y cambia su key. <code>swap: 'wait'</code> deja que el antiguo salga primero, y <code>direction</code> indica a tus valores hacia dónde fuiste."
+        },
+        "guard": {
+          "title": "Pregunta antes de cerrar",
+          "body": "<code>before-close</code> decide si se puede cerrar. Devuelve <code>true</code> para cerrar, o una promesa, como una confirmación, y el diálogo espera la respuesta."
+        }
+      },
+      "choreography": {
+        "title": "Coreografía",
+        "intro": "Dentro de un diálogo o un popover, tus propios elementos pueden unirse a su movimiento. Les pones nombre y luego los sincronizas entre sí y con el panel.",
+        "after": {
+          "title": "Uno tras otro",
+          "body": "Nombra tus elementos en <code>targets</code> y márcalos con <code>target('name')</code> del slot, o con <code>v-animate:name</code>. <code>after: 'summary:60%'</code> arranca las filas cuando el resumen ha entrado un 60%."
+        },
+        "moments": {
+          "title": "Momentos",
+          "body": "<code>after</code> espera a un momento del movimiento de otro elemento:",
+          "items": [
+            "<code>'summary'</code>: cuando llega",
+            "<code>'summary:start'</code>: cuando empieza",
+            "<code>'summary:settle'</code>: cuando su resorte se detiene",
+            "<code>'summary:40%'</code>: a parte del recorrido",
+            "<code>'panel'</code>: las partes propias del componente también sirven",
+            "<code>['summary', 'chart']</code>: después de todos ellos"
+          ]
+        },
+        "steps": {
+          "title": "Paradas en el camino",
+          "body": "<code>steps</code> lleva un elemento por varias paradas y espera en cada una hasta que llega su <code>after</code>."
+        },
+        "own": {
+          "title": "Tu propia timeline",
+          "body": "Un hook <code>enter</code> recibe las partes y tus targets, así una sola timeline de GSAP puede reproducirlo todo. Devuelve la timeline: el diálogo la espera y la detiene si cierras antes."
+        }
+      },
+      "styles": {
+        "title": "El movimiento de tu app",
+        "intro": "Un estilo de movimiento es un objeto en <code>ConfigProvider</code> que define cómo se mueve toda tu app: por rol, por componente y con presets para tus propios elementos.",
+        "style": {
+          "title": "Un objeto para la app",
+          "body": "Un estilo tiene <code>version: 1</code>, un <code>spring</code> y claves por rol (<code>overlay</code>, <code>list</code>, <code>press</code>, <code>reveal</code>, <code>content</code>) o por componente (<code>dialog</code>, <code>toaster</code>). El <code>motion</code> propio de un componente sigue teniendo prioridad."
+        },
+        "presets": {
+          "title": "Presets",
+          "body": "<code>presets</code> da nombre a aspectos que <code>v-animate=\"'rise'\"</code> usa en cualquier parte dentro del provider, así tus elementos se mueven como tus componentes."
+        },
+        "parse": {
+          "title": "Un estilo de fuera de tu código",
+          "body": "<code>parseMotionStyle</code> comprueba un estilo que viene de una página de ajustes, una base de datos o la red. Descarta todo lo inseguro o desconocido y lista lo descartado en <code>issues</code>."
+        }
       }
+    },
+    "blocks": {
+      "title": "Bloques",
+      "intro": "Piezas completas de interfaz, cada una hecha con unos pocos componentes de vael-ui y su movimiento. Copia una a tu app y hazla tuya.",
+      "comingTitle": "Vienen más",
+      "comingBody": "Un hogar para los bloques, blocks.vael-ui.dev, está en camino. Estos son los primeros.",
+      "items": {
+        "Bloom": {
+          "title": "Menú Bloom",
+          "body": "Un botón Crear se convierte en su menú y los elementos se abren desde su centro."
+        },
+        "Family": {
+          "title": "Hoja de cartera",
+          "body": "Una hoja flotante cuyas vistas se funden en su sitio mientras se ajusta a la altura de cada una."
+        },
+        "Island": {
+          "title": "Isla dinámica",
+          "body": "Una píldora que salta al tamaño de cada actividad, con una burbuja que brota de su lado."
+        },
+        "Feedback": {
+          "title": "Widget de opiniones",
+          "body": "El botón se convierte en un formulario; el envío y el agradecimiento cambian en su sitio."
+        },
+        "Stack": {
+          "title": "Pila de notificaciones",
+          "body": "Señala la pila y las tarjetas se abren en una lista."
+        },
+        "Composer": {
+          "title": "Caja de respuesta",
+          "body": "Enfoca la caja: las herramientas se abren con un muelle y el botón Responder baja hasta ellas."
+        },
+        "ActionBar": {
+          "title": "Barra de acciones que crece",
+          "body": "Señala una acción y crece hasta su etiqueta; la barra la sigue."
+        },
+        "Otp": {
+          "title": "Código de verificación",
+          "body": "Un código incorrecto sacude el campo; 424242 dibuja una marca."
+        },
+        "Reveal": {
+          "title": "Aparecer al desplazar",
+          "body": "Las tarjetas suben al entrar en vista y sus números ruedan hacia arriba, una vez."
+        },
+        "Calendar": {
+          "title": "Meses que se deslizan",
+          "body": "La cuadrícula se desliza hacia donde fuiste y la etiqueta rueda con ella."
+        },
+        "Accordion": {
+          "title": "Acordeón con rebote",
+          "body": "Altura, flecha, espacios y esquinas siguen un mismo muelle."
+        },
+        "Spotlight": {
+          "title": "Menú de comandos",
+          "body": "Se abre muchas veces al día, así que conserva el aspecto integrado y tranquilo."
+        }
+      }
+    },
+    "showpieces": {
+      "title": "Lado a lado",
+      "intro": "Cada pieza destacada de esta documentación, hecha primero con GSAP, motion o el aspecto integrado de vael-ui, junto a la misma pieza hecha solo con el movimiento propio de vael-ui. Reprodúcelas de la misma forma y abre el código de cualquiera de las dos.",
+      "filter": "Hecho primero con",
+      "all": "Todos",
+      "builtin": "Integrado",
+      "with": "Con {engine}",
+      "vael": "Con movimiento de vael-ui",
+      "none": "Todavía no hay versión de vael-ui."
     }
   }
 }

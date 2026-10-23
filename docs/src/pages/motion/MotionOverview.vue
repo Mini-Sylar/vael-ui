@@ -93,8 +93,8 @@ const plays = reactive<Record<string, number>>({})
 const replay = (id: string) => (plays[id] = (plays[id] ?? 0) + 1)
 const cards = [
   {
-    id: 'showcase',
-    to: { name: 'motion-showcase' },
+    id: 'blocks',
+    to: { name: 'motion-blocks' },
     // A burst: they pop up one after another, with a little overshoot.
     look: (n: number) => ({
       initial: { opacity: 0, scale: '0.4' },
