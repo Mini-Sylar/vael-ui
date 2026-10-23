@@ -320,7 +320,7 @@
       "durationIndicator": "Wie lange die Hover-Hervorhebung in Listen und Menüs zur nächsten Zeile gleitet.",
       "durationIndicatorWide": "Dasselbe Gleiten für die breiten Zeilen von MenuList, Tree und DataTable.",
       "easeIndicator": "Easing-Kurve der Hover-Hervorhebung.",
-      "indicatorBg": "Farbe der Hover-Hervorhebung. Setze sie statt eines :hover-Hintergrunds auf der Zeile, der die Hervorhebung überdecken würde.",
+      "indicatorBg": "Farbe der Hover-Hervorhebung. Setzen Sie sie statt eines :hover-Hintergrunds auf der Zeile, der die Hervorhebung überdecken würde.",
       "durationPress": "Dauer des Feedbacks beim Drücken.",
       "durationToast": "Dauer des Einblendens eines Toasts.",
       "durationToastExit": "Dauer des Ausblendens eines Toasts.",
@@ -351,7 +351,7 @@
       "zPopover": "Stapelreihenfolge für Popover, Menüs und Selects.",
       "zToast": "Stapelreihenfolge für Toasts.",
       "zTooltip": "Stapelreihenfolge für Tooltips, die oberste Ebene.",
-      "joinFrame": "Gehört auf das umrandete Element deines Controls, nicht auf Field. Optionaler Wert: sm, md oder lg.",
+      "joinFrame": "Gehört auf das umrandete Element Ihres Controls, nicht auf Field. Optionaler Wert: sm, md oder lg.",
       "joinStart": "Eine Zelle oder ein angehängtes Label liegt an der Startkante des Controls.",
       "joinEnd": "Eine Zelle oder ein angehängtes Label liegt an der Endkante des Controls.",
       "joinFocused": "Das Control hat den Fokus.",
@@ -364,9 +364,9 @@
     "shapeTitle": "Form",
     "variable": "Variable",
     "joinTitle": "Eigene Controls mit einem Field verbinden",
-    "joinIntro": "Das <code>attached</code>-Label eines Field und seine Zellen <code>#prepend</code> und <code>#append</code> schließen an den umrandeten Rahmen des Controls an. Die eigenen Controls von vael-ui markieren diesen Rahmen mit <code>data-ui-frame</code>. Füge dasselbe Attribut zu deinem eigenen Control hinzu, dann schließt es ebenfalls an. Setze es auf die Größe des Controls (<code>sm</code>, <code>md</code> oder <code>lg</code>), dann übernehmen die Zellen seinen Eckenradius und seine Schriftgröße.",
-    "joinLayerNote": "Die Verbindungsregeln von Field liegen in {layer}, daher gewinnen die Styles deines Controls ohne Layer gegen sie. Flache in dem Fall die Ecken selbst ab und färbe den Rahmen selbst um, mit den Attributen, die Field auf seinem Root setzt:",
-    "joinCellNote": "Gib einem Control in einer Zelle ein eigenes <code>aria-label</code>. Es steht für sich, das Label des Field benennt es also nicht.",
+    "joinIntro": "Das <code>attached</code>-Label eines Field und seine Zellen <code>#prepend</code> und <code>#append</code> schließen an den umrandeten Rahmen des Controls an. Die eigenen Controls von vael-ui markieren diesen Rahmen mit <code>data-ui-frame</code>. Fügen Sie dasselbe Attribut zu Ihrem eigenen Control hinzu, dann schließt es ebenfalls an. Setzen Sie es auf die Größe des Controls (<code>sm</code>, <code>md</code> oder <code>lg</code>), dann übernehmen die Zellen seinen Eckenradius und seine Schriftgröße.",
+    "joinLayerNote": "Die Verbindungsregeln von Field liegen in {layer}, daher gewinnen die Styles Ihres Controls ohne Layer gegen sie. Flachen Sie in dem Fall die Ecken selbst ab und färben Sie den Rahmen selbst um, mit den Attributen, die Field auf seinem Root setzt:",
+    "joinCellNote": "Geben Sie einem Control in einer Zelle ein eigenes <code>aria-label</code>. Es steht für sich, das Label des Field benennt es also nicht.",
     "attributesTitle": "Field-Attribute",
     "variablesTitle": "Field-Variablen",
     "attribute": "Attribut",
@@ -425,7 +425,7 @@
     "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
     "home": "Zurück zu Hause",
     "title": "Seite nicht gefunden",
-    "didYouMean": "Meintest du:"
+    "didYouMean": "Meinten Sie:"
   },
   "composable": {
     "noParameters": "Akzeptiert keine Argumente.",
@@ -472,15 +472,15 @@
     "setupIntro": "Registrieren Sie das Modul in Ihrer Nuxt-Konfiguration:",
     "setupOutro": "Schreiben Sie das Tag, und Nuxt löst den Import für Sie auf:",
     "appSetupTitle": "App-Einrichtung",
-    "appSetupIntro": "Das Modul bindet die Hosts nicht ein. Binde die, die du nutzt, einmal in app.vue ein. {link} erklärt, was jeder davon tut.",
+    "appSetupIntro": "Das Modul bindet die Hosts nicht ein. Binden Sie die, die Sie nutzen, einmal in app.vue ein. {link} erklärt, was jeder davon tut.",
     "appSetupIntroLink": "Globale Einrichtung",
-    "composablesIntro": "Composables wie <code>toast()</code> und <code>openDialog()</code> werden nicht automatisch importiert. Importiere sie aus <code>'vael-ui'</code>, oder mit der Vapor-Variante aus <code>'vael-ui/vapor'</code>:",
-    "directivesIntro": "Das Modul registriert <code>v-animate</code> für dich, aber nicht <code>v-tooltip</code> oder <code>v-scroll-mask</code>. Registriere diese beiden in einem Plugin. Mit der Vapor-Variante importierst du sie aus <code>'vael-ui/vapor'</code>:",
+    "composablesIntro": "Composables wie <code>toast()</code> und <code>openDialog()</code> werden nicht automatisch importiert. Importieren Sie sie aus <code>'vael-ui'</code>, oder mit der Vapor-Variante aus <code>'vael-ui/vapor'</code>:",
+    "directivesIntro": "Das Modul registriert <code>v-animate</code> für Sie, aber nicht <code>v-tooltip</code> oder <code>v-scroll-mask</code>. Registrieren Sie diese beiden in einem Plugin. Mit der Vapor-Variante importieren Sie sie aus <code>'vael-ui/vapor'</code>:",
     "setupTitle": "Aufstellen",
     "title": "Nuxt",
-    "vaporIntro": "Setze <code>variant: 'vapor'</code>, um <code>vael-ui/vapor</code> zu verwenden, dieselbe Option, die auch <code>vael-ui/resolver</code> kennt. Das Modul aktiviert Nuxts <code>vue.vapor</code> für dich. Voraussetzung sind Nuxt 4.6 oder neuer und Vue 3.6. Fixiere Vue auf die genaue Version aus „Erste Schritte“.",
+    "vaporIntro": "Setzen Sie <code>variant: 'vapor'</code>, um <code>vael-ui/vapor</code> zu verwenden, dieselbe Option, die auch <code>vael-ui/resolver</code> kennt. Das Modul aktiviert Nuxts <code>vue.vapor</code> für Sie. Voraussetzung sind Nuxt 4.6 oder neuer und Vue 3.6. Fixieren Sie Vue auf die genaue Version aus „Erste Schritte“.",
     "vaporOutro": "Seiten werden weiterhin auf dem Server gerendert. Der Server rendert jede Komponente zu HTML, und der Browser hydriert sie als Vapor-Komponente, ohne weitere Konfiguration.",
-    "vaporForceIntro": "Um auch eigene <code>&lt;script setup&gt;</code>-Komponenten als Vapor zu kompilieren, ohne jeder <code>vapor</code> hinzuzufügen, aktiviere <code>features.vapor</code> von <code>{'@'}vitejs/plugin-vue</code> über Nuxts <code>vite.vue</code>:",
+    "vaporForceIntro": "Um auch eigene <code>&lt;script setup&gt;</code>-Komponenten als Vapor zu kompilieren, ohne jeder <code>vapor</code> hinzuzufügen, aktivieren Sie <code>features.vapor</code> von <code>{'@'}vitejs/plugin-vue</code> über Nuxts <code>vite.vue</code>:",
     "vaporTitle": "Vapor"
   },
   "skill": {
@@ -516,15 +516,15 @@
   },
   "dockTour": {
     "componentsTitle": "Die Komponenten sind jetzt hier unten",
-    "componentsDescription": "Das Menü ist aus der oberen Leiste ins Dock gewandert, näher an deinen Daumen.",
+    "componentsDescription": "Das Menü ist aus der oberen Leiste ins Dock gewandert, näher an Ihren Daumen.",
     "settingsTitle": "Der Dunkelmodus ist in den Einstellungen",
     "settingsDescription": "Ebenso Theme-Farbe, Eckenradius, Größe, Schriftgröße, Bewegung, Loader und Sprache.",
     "replayLabel": "Tour",
     "replay": "Erneut zeigen",
     "searchTitle": "Die Suche ist einen Tipp entfernt",
-    "searchDescription": "Finde jede Komponente, jeden Guide und jedes Composable nach Namen, mit einer kurzen Beschreibung.",
+    "searchDescription": "Finden Sie jede Komponente, jeden Guide und jedes Composable nach Namen, mit einer kurzen Beschreibung.",
     "variantTitle": "VDOM oder Vapor, ganz oben",
-    "variantDescription": "Schalte hier jede Demo zwischen dem VDOM-Build und dem Vapor-Build um."
+    "variantDescription": "Schalten Sie hier jede Demo zwischen dem VDOM-Build und dem Vapor-Build um."
   },
   "search": {
     "actions": "Befehle",
@@ -542,7 +542,7 @@
       "command": "Kopieren"
     },
     "noResults": "Keine Ergebnisse für „{query}“",
-    "didYouMean": "Meintest du",
+    "didYouMean": "Meinten Sie",
     "request": "Auf GitHub anfragen",
     "copied": "In die Zwischenablage kopiert",
     "back": "Alle Ergebnisse",
@@ -551,23 +551,23 @@
   },
   "showMe": {
     "loaderTitle": "Jeder Loader, an einer Stelle",
-    "loaderDescription": "Diese Einstellung ist loader-type im ConfigProvider, daher folgt ihr jeder Spinner auf dieser Site: Buttons, Listenzeilen, Toasts und Pull-to-Refresh. Wähle einen aus, um zu sehen, wie sich alle ändern."
+    "loaderDescription": "Diese Einstellung ist loader-type im ConfigProvider, daher folgt ihr jeder Spinner auf dieser Site: Buttons, Listenzeilen, Toasts und Pull-to-Refresh. Wählen Sie einen aus, um zu sehen, wie sich alle ändern."
   },
   "motionDocs": {
     "eyebrow": "Das Bewegungssystem",
     "title": "Bewegung",
-    "lede": "Jede vael-ui-Komponente animiert mit einem Bewegungssystem. Nutze die eingebaute Bewegung so, wie sie ist, ändere sie mit einer <code>motion</code>-Prop oder lass sie von deiner eigenen Bibliothek abspielen.",
+    "lede": "Jede vael-ui-Komponente animiert mit einem Bewegungssystem. Nutzen Sie die eingebaute Bewegung so, wie sie ist, ändern Sie sie mit einer <code>motion</code>-Prop oder lassen Sie sie von Ihrer eigenen Bibliothek abspielen.",
     "logoToV": "Die Kugel in ein V verwandeln",
     "logoToOrb": "Die vael-ui-Kugel zeigen",
     "tourTitle": "Hier anfangen",
     "card": {
       "springs": {
         "title": "Federn und Timing",
-        "body": "Sieh, wie Dämpfung und Reaktion eine Bewegung verändern, und setze dann eine Feder für die ganze App."
+        "body": "Sehen Sie, wie Dämpfung und Reaktion eine Bewegung verändern, und setzen Sie dann eine Feder für die ganze App."
       },
       "engines": {
-        "title": "Deine eigene Engine",
-        "body": "Spiele dieselben Werte mit GSAP, motion oder der Web Animations API ab, nebeneinander."
+        "title": "Ihre eigene Engine",
+        "body": "Spielen Sie dieselben Werte mit GSAP, motion oder der Web Animations API ab, nebeneinander."
       },
       "guide": {
         "title": "Eigene Animationen einbinden",
@@ -583,22 +583,22 @@
       }
     },
     "propTitle": "Eine Prop",
-    "propIntro": "Jede Komponente nimmt <code>motion</code>. <code>false</code> schaltet ihre Bewegung ab. Ein Objekt ändert sie: Werte für ihre Teile, eine Feder oder eine Dauer, oder <code>enter</code>- und <code>leave</code>-Hooks für deine eigene Bibliothek.",
+    "propIntro": "Jede Komponente nimmt <code>motion</code>. <code>false</code> schaltet ihre Bewegung ab. Ein Objekt ändert sie: Werte für ihre Teile, eine Feder oder eine Dauer, oder <code>enter</code>- und <code>leave</code>-Hooks für Ihre eigene Bibliothek.",
     "propTable": "Jede Komponentenseite hat einen Abschnitt <strong>Motion</strong>, der ihre Teile, ihre Zustände und ihre weiteren Bewegungsoptionen auflistet.",
-    "yoursTitle": "In deinen eigenen Komponenten",
-    "yoursIntro": "<code>v-animate</code> gibt deinen eigenen Elementen dieselbe Bewegung: einen Auftritt, einen Abgang, eine Größe, die sich weich an ihren Inhalt anpasst, oder ein Gleiten an einen neuen Platz, wenn sich das Layout ändert.",
-    "yoursComposables": "Für eigene Bewegung nutze die Composables dahinter:",
+    "yoursTitle": "In Ihren eigenen Komponenten",
+    "yoursIntro": "<code>v-animate</code> gibt Ihren eigenen Elementen dieselbe Bewegung: einen Auftritt, einen Abgang, eine Größe, die sich weich an ihren Inhalt anpasst, oder ein Gleiten an einen neuen Platz, wenn sich das Layout ändert.",
+    "yoursComposables": "Für eigene Bewegung nutzen Sie die Composables dahinter:",
     "composable": {
       "springEasing": "Macht aus einer Feder ein CSS-Easing und ihre Einschwingzeit.",
       "useSpringValue": "Ein Wert, der seinem Ziel auf einer Feder folgt.",
-      "useHoverIndicator": "Die gleitende Hover-Markierung, für deine eigenen Listen.",
+      "useHoverIndicator": "Die gleitende Hover-Markierung, für Ihre eigenen Listen.",
       "useTabIndicator": "Der gleitende Indikator hinter Tabs und SelectButton."
     },
     "nav": {
       "motion": "Bewegung",
       "overview": "Überblick",
       "springs": "Federn und Timing",
-      "engines": "Deine eigene Engine",
+      "engines": "Ihre eigene Engine",
       "types": "TypeScript",
       "back": "Zurück zu den Komponenten",
       "blocks": "Blocks",
@@ -611,7 +611,7 @@
     },
     "springs": {
       "title": "Federn und Timing",
-      "intro": "Eine Feder nimmt zwei Zahlen. <code>damping</code> bestimmt, wie sie zur Ruhe kommt: 1 stoppt ohne Überschwingen, kleinere Werte federn nach. <code>response</code> ist ungefähr ihre Dauer in Sekunden. Eine Feder hat keine feste Dauer, daher kannst du sie unterbrechen und von jeder Stelle aus umkehren.",
+      "intro": "Eine Feder nimmt zwei Zahlen. <code>damping</code> bestimmt, wie sie zur Ruhe kommt: 1 stoppt ohne Überschwingen, kleinere Werte federn nach. <code>response</code> ist ungefähr ihre Dauer in Sekunden. Eine Feder hat keine feste Dauer, daher können Sie sie unterbrechen und von jeder Stelle aus umkehren.",
       "labTitle": "Eine Feder ausprobieren",
       "presets": "Vorlagen",
       "preset": {
@@ -623,17 +623,17 @@
       "reads": "Kommt in etwa {settle} ms zur Ruhe.",
       "play": "Abspielen",
       "everywhereTitle": "Eine Feder für die ganze App",
-      "everywhereIntro": "Setze eine Feder auf <code>ConfigProvider</code>, und Drawer, Sheets, Toasts, Indikatoren und AnimatedNumber darin nutzen alle diese Feder. Die Demos unten folgen den Reglern oben.",
+      "everywhereIntro": "Setzen Sie eine Feder auf <code>ConfigProvider</code>, und Drawer, Sheets, Toasts, Indikatoren und AnimatedNumber darin nutzen alle diese Feder. Die Demos unten folgen den Reglern oben.",
       "switch": "Benachrichtigungen",
       "openDrawer": "Einen Drawer öffnen",
-      "drawerTitle": "Auf deiner Feder",
-      "drawerBody": "Dieser Drawer hat sich auf der Feder geöffnet, die du eingestellt hast."
+      "drawerTitle": "Auf Ihrer Feder",
+      "drawerBody": "Dieser Drawer hat sich auf der Feder geöffnet, die Sie eingestellt haben."
     },
     "engines": {
-      "title": "Deine eigene Engine",
-      "intro": "Standardmäßig spielt vael-ui Bewegung selbst mit CSS-Transitions und der Web Animations API ab, sodass transform und opacity abseits des Main Threads laufen. Die <code>engine</code> eines Stils spielt Overlay-Teile, Listeneinträge und deine eigenen Ziele stattdessen über eine Bibliothek deiner Wahl ab, mit denselben Werten und demselben Timing. Zustände, Wechsel und <code>linked</code>-Elemente nutzen immer die eingebaute Engine.",
+      "title": "Ihre eigene Engine",
+      "intro": "Standardmäßig spielt vael-ui Bewegung selbst mit CSS-Transitions und der Web Animations API ab, sodass transform und opacity abseits des Main Threads laufen. Die <code>engine</code> eines Stils spielt Overlay-Teile, Listeneinträge und Ihre eigenen Ziele stattdessen über eine Bibliothek Ihrer Wahl ab, mit denselben Werten und demselben Timing. Zustände, Wechsel und <code>linked</code>-Elemente nutzen immer die eingebaute Engine.",
       "compareTitle": "Nebeneinander",
-      "compareIntro": "Drei Popover mit denselben Werten, jedes in seinem eigenen <code>ConfigProvider</code>. Öffne sie zusammen, um sie zu vergleichen.",
+      "compareIntro": "Drei Popover mit denselben Werten, jedes in seinem eigenen <code>ConfigProvider</code>. Öffnen Sie sie zusammen, um sie zu vergleichen.",
       "openAll": "Alle drei öffnen",
       "open": "Öffnen",
       "note": {
@@ -642,9 +642,9 @@
         "motion": "motion spielt sie mit seiner eigenen Feder ab."
       },
       "adaptersTitle": "Einen Adapter schreiben",
-      "adaptersIntro": "Eine Engine bekommt das Element, die Start- und Endwerte und das Timing in Sekunden, dazu die Feder dahinter, wenn es eine gibt. Gib zurück, was deine Bibliothek zurückgibt. vael-ui wartet darauf und stoppt es, wenn die Animation unterbrochen wird.",
+      "adaptersIntro": "Eine Engine bekommt das Element, die Start- und Endwerte und das Timing in Sekunden, dazu die Feder dahinter, wenn es eine gibt. Geben Sie zurück, was Ihre Bibliothek zurückgibt. vael-ui wartet darauf und stoppt es, wenn die Animation unterbrochen wird.",
       "appWideTitle": "Engines appweit wechseln",
-      "appWideIntro": "Setze den Adapter in den <code>ConfigProvider</code> an der Wurzel, und jede Komponente darin nutzt ihn. Die eigenen Hooks einer Komponente haben weiterhin Vorrang."
+      "appWideIntro": "Setzen Sie den Adapter in den <code>ConfigProvider</code> an der Wurzel, und jede Komponente darin nutzt ihn. Die eigenen Hooks einer Komponente haben weiterhin Vorrang."
     },
     "presets": {
       "label": "Bewegung",
@@ -685,21 +685,21 @@
     "tour": {
       "cta": "Was ist neu",
       "menuTitle": "Bewegung für die ganze Seite",
-      "menuBody": "Wähle ein Preset, und jede Komponente auf jeder Seite nutzt es. Stimme es mit den Reglern darunter fein ab.",
+      "menuBody": "Wählen Sie ein Preset, und jede Komponente auf jeder Seite nutzt es. Stimmen Sie es mit den Reglern darunter fein ab.",
       "modeTitle": "Ein Bereich für Bewegung",
-      "modeBody": "Wechsle zu Motion für Federn, Engines und die Composables dahinter.",
+      "modeBody": "Wechseln Sie zu Motion für Federn, Engines und die Composables dahinter.",
       "tabTitle": "Bewegung im Playground",
-      "tabBody": "Ändere, wie diese Komponente erscheint, verschwindet und beim Drücken reagiert, und kopiere dann den Code.",
+      "tabBody": "Ändern Sie, wie diese Komponente erscheint, verschwindet und beim Drücken reagiert, und kopieren Sie dann den Code.",
       "sectionTitle": "Jeder Teil mit Namen",
-      "sectionBody": "Jede Komponentenseite hat einen Motion-Abschnitt, der die Teile und Zustände auflistet, die du animieren kannst."
+      "sectionBody": "Jede Komponentenseite hat einen Motion-Abschnitt, der die Teile und Zustände auflistet, die Sie animieren können."
     },
     "types": {
       "title": "TypeScript",
-      "intro": "Dein Editor kennt die Teile und Zustände jeder Komponente, jede CSS-Eigenschaft und die Timing-Tokens von vael-ui. Ein Fehler wird rot, bevor du speicherst.",
+      "intro": "Ihr Editor kennt die Teile und Zustände jeder Komponente, jede CSS-Eigenschaft und die Timing-Tokens von vael-ui. Ein Fehler wird rot, bevor Sie speichern.",
       "component": "Komponente",
       "completeTitle": "Autovervollständigung",
-      "completeIntro": "Wähle einen Namen im Code, um zu sehen, was dein Editor dort vorschlägt, und wähle dann einen Vorschlag, um ihn einzufügen.",
-      "completeHint": "Wähle einen gepunkteten Namen, um die Vorschläge deines Editors zu sehen.",
+      "completeIntro": "Wählen Sie einen Namen im Code, um zu sehen, was Ihr Editor dort vorschlägt, und wählen Sie dann einen Vorschlag, um ihn einzufügen.",
+      "completeHint": "Wählen Sie einen gepunkteten Namen, um die Vorschläge Ihres Editors zu sehen.",
       "completeNote": "Dieselben Namen stehen in {link}.",
       "completeLink": "dem Motion-Abschnitt von {name}",
       "mistakesTitle": "Fehler sind Typfehler",
@@ -707,10 +707,10 @@
       "unitsTitle": "Einheiten",
       "unitsIntro": "Eine bloße Zahl nutzt die gezeigte Einheit. Ein String geht direkt an CSS, also funktionieren auch <code>'2rem'</code> und <code>'50%'</code>.",
       "tokensTitle": "Timing-Tokens",
-      "tokensIntro": "<code>duration</code> und <code>easing</code> akzeptieren die Tokens von vael-ui, und dein Editor listet sie auf. Unten stehen ihre aktuellen Werte auf dieser Seite. Wähle im Motion-Menü in der Kopfzeile ein Preset, und die Tokens, die eine Feder steuert, ändern sich mit.",
+      "tokensIntro": "<code>duration</code> und <code>easing</code> akzeptieren die Tokens von vael-ui, und Ihr Editor listet sie auf. Unten stehen ihre aktuellen Werte auf dieser Seite. Wählen Sie im Motion-Menü in der Kopfzeile ein Preset, und die Tokens, die eine Feder steuert, ändern sich mit.",
       "warningsTitle": "In der Konsole",
-      "warningsIntro": "In der Entwicklung protokolliert vael-ui, was schiefging und was du ändern sollst. Produktions-Builds lassen diese Meldungen weg.",
-      "devtools": "Um zu sehen, was sich warum bewegt hat, untersuche die Komponente. <code>data-motion</code> nennt die Ebenen, die ihre Bewegung festlegen, und jedes Öffnen und Schließen erscheint in der Timings-Spur des Performance-Panels.",
+      "warningsIntro": "In der Entwicklung protokolliert vael-ui, was schiefging und was Sie ändern sollen. Produktions-Builds lassen diese Meldungen weg.",
+      "devtools": "Um zu sehen, was sich warum bewegt hat, untersuchen Sie die Komponente. <code>data-motion</code> nennt die Ebenen, die ihre Bewegung festlegen, und jedes Öffnen und Schließen erscheint in der Timings-Spur des Performance-Panels.",
       "mistake": {
         "part": "Ein Teil, den es nicht gibt",
         "property": "Eine falsch geschriebene CSS-Eigenschaft",
@@ -734,18 +734,18 @@
       "eyebrow": "Bewegungsleitfaden · {n} von {total}",
       "start": {
         "title": "Erste Schritte",
-        "intro": "Die Komponenten von vael-ui animieren von Haus aus. Du kannst ändern, wie sie sich bewegen, für eine einzelne Komponente oder für deine ganze App, mit denselben wenigen Optionen.",
+        "intro": "Die Komponenten von vael-ui animieren von Haus aus. Sie können ändern, wie sie sich bewegen, für eine einzelne Komponente oder für Ihre ganze App, mit denselben wenigen Optionen.",
         "already": {
           "title": "Es bewegt sich schon",
-          "body": "Öffne unten den Dialog, das Select und den Toast. Jedes Overlay, jede Liste und jedes Bedienelement hat eingebaute Bewegung. Sie bleibt kurz und schließt schneller, als sie öffnet."
+          "body": "Öffnen Sie unten den Dialog, das Select und den Toast. Jedes Overlay, jede Liste und jedes Bedienelement hat eingebaute Bewegung. Sie bleibt kurz und schließt schneller, als sie öffnet."
         },
         "one": {
           "title": "Eine Komponente ändern",
-          "body": "Jede Komponente nimmt eine <code>motion</code>-Prop an. Gib an, woher ein Teil kommt, etwa <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>, und auf welcher Feder er sich bewegt."
+          "body": "Jede Komponente nimmt eine <code>motion</code>-Prop an. Geben Sie an, woher ein Teil kommt, etwa <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>, und auf welcher Feder er sich bewegt."
         },
         "spring": {
           "title": "Eine Feder für alles",
-          "body": "Setze eine <code>spring</code> auf <code>ConfigProvider</code>, und jede Komponente darin nutzt sie. Mit <code>damping</code> unter 1 schwingt sie über, und <code>response</code> ist ungefähr ihre Dauer in Sekunden."
+          "body": "Setzen Sie eine <code>spring</code> auf <code>ConfigProvider</code>, und jede Komponente darin nutzt sie. Mit <code>damping</code> unter 1 schwingt sie über, und <code>response</code> ist ungefähr ihre Dauer in Sekunden."
         },
         "off": {
           "title": "Ausschalten",
@@ -754,10 +754,10 @@
       },
       "elements": {
         "title": "Jedes Element",
-        "intro": "Bewegung gibt es nicht nur für die Komponenten von vael-ui. <code>v-animate</code> gibt jedem deiner Elemente einen Auftritt und einen Abgang, direkt im Template.",
+        "intro": "Bewegung gibt es nicht nur für die Komponenten von vael-ui. <code>v-animate</code> gibt jedem Ihrer Elemente einen Auftritt und einen Abgang, direkt im Template.",
         "appear": {
           "title": "Rein und raus",
-          "body": "<code>initial</code> legt fest, woher das Element kommt. Wenn Vue es entfernt, geht es den Weg zurück, den es gekommen ist, schneller und leiser, außer du gibst ihm ein <code>exit</code>."
+          "body": "<code>initial</code> legt fest, woher das Element kommt. Wenn Vue es entfernt, geht es den Weg zurück, den es gekommen ist, schneller und leiser, außer Sie geben ihm ein <code>exit</code>."
         },
         "scroll": {
           "title": "Wenn es ins Bild scrollt",
@@ -765,7 +765,7 @@
         },
         "replay": {
           "title": "Noch einmal abspielen",
-          "body": "<code>replay</code> spielt <code>initial</code> jedes Mal erneut, wenn sich sein Wert ändert, ohne das Element neu zu mounten. Nutze es für einen steigenden Zähler, einen Statuswechsel oder ein fehlgeschlagenes Kopieren. Mit <code>appear: false</code> spielt es nur bei diesen Änderungen, nicht beim Mounten des Elements."
+          "body": "<code>replay</code> spielt <code>initial</code> jedes Mal erneut, wenn sich sein Wert ändert, ohne das Element neu zu mounten. Nutzen Sie es für einen steigenden Zähler, einen Statuswechsel oder ein fehlgeschlagenes Kopieren. Mit <code>appear: false</code> spielt es nur bei diesen Änderungen, nicht beim Mounten des Elements."
         },
         "layout": {
           "title": "An einen neuen Platz gleiten",
@@ -773,19 +773,19 @@
         },
         "shared": {
           "title": "Von einem Ort zum anderen",
-          "body": "Zwei Elemente mit derselben <code>layoutId</code> verhalten sich wie ein Element. Wenn eines geht und das andere kommt, wächst das neue aus der Box des alten. Füge <code>layout: 'position'</code> hinzu, damit es unterwegs seine Größe behält und sein Text nie gestreckt wird."
+          "body": "Zwei Elemente mit derselben <code>layoutId</code> verhalten sich wie ein Element. Wenn eines geht und das andere kommt, wächst das neue aus der Box des alten. Fügen Sie <code>layout: 'position'</code> hinzu, damit es unterwegs seine Größe behält und sein Text nie gestreckt wird."
         },
         "animate": {
           "title": "Ein Aussehen halten",
-          "body": "<code>animate</code> legt ein Aussehen fest, das das Element behält, solange es auf der Seite ist. Ändere es, und das Element animiert von seiner aktuellen Stelle dorthin, auf einer Feder, außer du setzt eine <code>duration</code>: <code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>. Bei Keyframe-Arrays hält <code>progress</code> (0 bis 1) sie an einem Punkt fest, statt sie abzuspielen, sodass ein Wischen oder Scrollen sie durchfahren kann. Mit einer <code>spring</code> folgen sie ihm mit kurzer Verzögerung."
+          "body": "<code>animate</code> legt ein Aussehen fest, das das Element behält, solange es auf der Seite ist. Ändern Sie es, und das Element animiert von seiner aktuellen Stelle dorthin, auf einer Feder, außer Sie setzen eine <code>duration</code>: <code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>. Bei Keyframe-Arrays hält <code>progress</code> (0 bis 1) sie an einem Punkt fest, statt sie abzuspielen, sodass ein Wischen oder Scrollen sie durchfahren kann. Mit einer <code>spring</code> folgen sie ihm mit kurzer Verzögerung."
         },
         "size": {
           "title": "Dem Inhalt folgen",
           "body": "<code>v-animate.size</code> führt ein Element weich zur neuen Größe seines Inhalts, statt zu springen."
         },
         "own": {
-          "title": "Deine eigenen Komponenten",
-          "body": "<code>useMotion</code> gibt deiner eigenen Komponente dieselbe Bewegung wie denen von vael-ui. Binde ihre <code>transition</code> an Vues <code>&lt;Transition&gt;</code>. Die Komponente folgt dann der Bewegung deiner App, animiert hinein und hinaus und animiert ihre benannten Kinder mit."
+          "title": "Ihre eigenen Komponenten",
+          "body": "<code>useMotion</code> gibt Ihrer eigenen Komponente dieselbe Bewegung wie denen von vael-ui. Binden Sie ihre <code>transition</code> an Vues <code>&lt;Transition&gt;</code>. Die Komponente folgt dann der Bewegung Ihrer App, animiert hinein und hinaus und animiert ihre benannten Kinder mit."
         }
       },
       "states": {
@@ -793,7 +793,7 @@
         "intro": "Komponenten animieren auch, während sie auf dem Bildschirm sind, etwa bei einem Druck, einer fehlgeschlagenen Prüfung oder einem sich öffnenden Panel. Listen animieren Einträge, wenn sie kommen und gehen.",
         "press": {
           "title": "Drücken und Hovern",
-          "body": "<code>states</code> animiert einen Teil, solange die Komponente in einem Zustand ist. Ein einfacher Wert gilt, solange der Zustand an ist: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> staucht einen Button, während du ihn drückst."
+          "body": "<code>states</code> animiert einen Teil, solange die Komponente in einem Zustand ist. Ein einfacher Wert gilt, solange der Zustand an ist: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> staucht einen Button, während Sie ihn drücken."
         },
         "shake": {
           "title": "Eine fehlgeschlagene Prüfung",
@@ -805,11 +805,11 @@
         },
         "keyframes": {
           "title": "Keyframes",
-          "body": "Ein Array ist eine Folge von Keyframes. <code>times</code> platziert jeden davon, von 0 bis 1, und <code>easing</code> glättet jeden Schritt. Gib eine Liste von Easings an, um jedem Schritt sein eigenes zu geben, etwa erst ein Anstieg und dann ein Abprallen. <code>repeat</code> spielt sie erneut, und <code>repeat: Infinity</code> läuft weiter, bis der Zustand ausgeht oder sich das Aussehen ändert."
+          "body": "Ein Array ist eine Folge von Keyframes. <code>times</code> platziert jeden davon, von 0 bis 1, und <code>easing</code> glättet jeden Schritt. Geben Sie eine Liste von Easings an, um jedem Schritt sein eigenes zu geben, etwa erst ein Anstieg und dann ein Abprallen. <code>repeat</code> spielt sie erneut, und <code>repeat: Infinity</code> läuft weiter, bis der Zustand ausgeht oder sich das Aussehen ändert."
         },
         "each": {
           "title": "Einer nach dem anderen",
-          "body": "Manche Teile kommen mehrfach vor, etwa die Kreise eines Steppers, die Einträge eines Docks oder die Zellen eines OtpInput. Jedes Element spielt seine eigenen Zustände, also springt nur der Schritt auf, der <code>current</code> wird. Gib die Werte als Funktion an, um den <code>index</code> jedes Elements zu nutzen, etwa für ein Schütteln, das Zelle für Zelle durchläuft."
+          "body": "Manche Teile kommen mehrfach vor, etwa die Kreise eines Steppers, die Einträge eines Docks oder die Zellen eines OtpInput. Jedes Element spielt seine eigenen Zustände, also springt nur der Schritt auf, der <code>current</code> wird. Geben Sie die Werte als Funktion an, um den <code>index</code> jedes Elements zu nutzen, etwa für ein Schütteln, das Zelle für Zelle durchläuft."
         },
         "again": {
           "title": "Den Auftritt erneut abspielen",
@@ -817,7 +817,7 @@
         },
         "lists": {
           "title": "Listen",
-          "body": "Toaster, Timeline, FileUpload, SpeedDial, DataTable-Zeilen, CommandPalette-Zeilen und die Chips der Select-Familie bringen neue Einträge nacheinander herein. <code>leaving: 'pop'</code> hebt einen gehenden Eintrag aus dem Layout, sodass die übrigen die Lücke sofort schließen. <code>'hold'</code> hält die Lücke offen, bis der Eintrag weg ist. Gib <code>initial</code> oder <code>exit</code> als Funktion an, um <code>{'{'} index, count {'}'}</code> für die Einträge zu bekommen, die gemeinsam kommen oder gehen, sodass ein Schließen vom letzten zum ersten laufen kann."
+          "body": "Toaster, Timeline, FileUpload, SpeedDial, DataTable-Zeilen, CommandPalette-Zeilen und die Chips der Select-Familie bringen neue Einträge nacheinander herein. <code>leaving: 'pop'</code> hebt einen gehenden Eintrag aus dem Layout, sodass die übrigen die Lücke sofort schließen. <code>'hold'</code> hält die Lücke offen, bis der Eintrag weg ist. Geben Sie <code>initial</code> oder <code>exit</code> als Funktion an, um <code>{'{'} index, count {'}'}</code> für die Einträge zu bekommen, die gemeinsam kommen oder gehen, sodass ein Schließen vom letzten zum ersten laufen kann."
         },
         "toasts": {
           "title": "Ein Toast, der sich ändert",
@@ -833,7 +833,7 @@
         },
         "morphAny": {
           "title": "Aus einem beliebigen Element wachsen",
-          "body": "Gib <code>morph</code> eine Funktion, die ein Element zurückgibt, etwa die angeklickte Zeile. <code>hide: false</code> lässt die Zeile sichtbar, solange der Dialog offen ist."
+          "body": "Geben Sie <code>morph</code> eine Funktion, die ein Element zurückgibt, etwa die angeklickte Zeile. <code>hide: false</code> lässt die Zeile sichtbar, solange der Dialog offen ist."
         },
         "recede": {
           "title": "Die Seite mitbewegen",
@@ -845,19 +845,19 @@
         },
         "swap": {
           "title": "Den Inhalt wechseln",
-          "body": "Setze ein Element mit Key in den Dialog und ändere seinen Key. <code>swap: 'wait'</code> lässt das alte Element gehen, bevor das neue kommt, und <code>direction</code> sagt deinen Werten, in welche Richtung du dich bewegt hast."
+          "body": "Setzen Sie ein Element mit Key in den Dialog und ändern Sie seinen Key. <code>swap: 'wait'</code> lässt das alte Element gehen, bevor das neue kommt, und <code>direction</code> sagt Ihren Werten, in welche Richtung Sie sich bewegt haben."
         },
         "guard": {
           "title": "Vor dem Schließen fragen",
-          "body": "<code>before-close</code> entscheidet, ob der Dialog schließt. Gib <code>true</code> zurück, um zu schließen, <code>false</code>, um offen zu bleiben, oder ein Promise mit einem der beiden, etwa eine Bestätigung. Der Dialog bleibt ruhig, bis die Antwort kommt."
+          "body": "<code>before-close</code> entscheidet, ob der Dialog schließt. Geben Sie <code>true</code> zurück, um zu schließen, <code>false</code>, um offen zu bleiben, oder ein Promise mit einem der beiden, etwa eine Bestätigung. Der Dialog bleibt ruhig, bis die Antwort kommt."
         }
       },
       "choreography": {
         "title": "Choreografie",
-        "intro": "In einem Dialog oder Popover können deine eigenen Elemente bei seiner Bewegung mitmachen. Du benennst sie und stimmst sie dann aufeinander und auf das Panel ab.",
+        "intro": "In einem Dialog oder Popover können Ihre eigenen Elemente bei seiner Bewegung mitmachen. Sie benennen sie und stimmen sie dann aufeinander und auf das Panel ab.",
         "after": {
           "title": "Einer nach dem anderen",
-          "body": "Benenne deine Elemente in <code>targets</code> und markiere sie mit <code>target('name')</code> aus dem Slot oder mit <code>v-animate:name</code>. <code>after: 'summary:60%'</code> startet die Zeilen, wenn die Zusammenfassung zu 60 % hereingekommen ist."
+          "body": "Benennen Sie Ihre Elemente in <code>targets</code> und markieren Sie sie mit <code>target('name')</code> aus dem Slot oder mit <code>v-animate:name</code>. <code>after: 'summary:60%'</code> startet die Zeilen, wenn die Zusammenfassung zu 60 % hereingekommen ist."
         },
         "moments": {
           "title": "Momente",
@@ -876,30 +876,30 @@
           "body": "<code>steps</code> führt ein Element durch eine Reihe von Halten. Es wartet an jedem Halt, bis dessen <code>after</code>-Moment kommt."
         },
         "own": {
-          "title": "Deine eigene Timeline",
-          "body": "Ein <code>enter</code>-Hook bekommt die Teile und deine Targets, sodass eine GSAP-Timeline sie alle animieren kann. Gib die Timeline zurück. Der Dialog wartet auf sie und stoppt sie, wenn du früher schließt."
+          "title": "Ihre eigene Timeline",
+          "body": "Ein <code>enter</code>-Hook bekommt die Teile und Ihre Targets, sodass eine GSAP-Timeline sie alle animieren kann. Geben Sie die Timeline zurück. Der Dialog wartet auf sie und stoppt sie, wenn Sie früher schließen."
         }
       },
       "styles": {
-        "title": "Die Bewegung deiner App",
-        "intro": "Ein Bewegungsstil ist ein Objekt auf <code>ConfigProvider</code>, das festlegt, wie sich deine ganze App bewegt: nach Rolle, nach Komponente und mit Presets für deine eigenen Elemente.",
+        "title": "Die Bewegung Ihrer App",
+        "intro": "Ein Bewegungsstil ist ein Objekt auf <code>ConfigProvider</code>, das festlegt, wie sich Ihre ganze App bewegt: nach Rolle, nach Komponente und mit Presets für Ihre eigenen Elemente.",
         "style": {
           "title": "Ein Objekt für die App",
           "body": "Ein Stil hat <code>version: 1</code>, eine <code>spring</code> und Keys nach Rolle (<code>overlay</code>, <code>list</code>, <code>press</code>, <code>reveal</code>, <code>content</code>) oder nach Komponente (<code>dialog</code>, <code>toaster</code>). Die eigene <code>motion</code> einer Komponente überschreibt ihn."
         },
         "presets": {
           "title": "Presets",
-          "body": "<code>presets</code> benennt Looks, die du mit <code>v-animate=\"'rise'\"</code> überall im Provider nutzen kannst, damit sich deine Elemente wie deine Komponenten bewegen."
+          "body": "<code>presets</code> benennt Looks, die Sie mit <code>v-animate=\"'rise'\"</code> überall im Provider nutzen können, damit sich Ihre Elemente wie Ihre Komponenten bewegen."
         },
         "parse": {
-          "title": "Ein Stil von außerhalb deines Codes",
+          "title": "Ein Stil von außerhalb Ihres Codes",
           "body": "<code>parseMotionStyle</code> prüft einen Stil aus einer Einstellungsseite, einer Datenbank oder dem Netzwerk. Es verwirft alles Unsichere oder Unbekannte und listet das Verworfene in <code>issues</code> auf."
         }
       }
     },
     "blocks": {
       "title": "Blocks",
-      "intro": "Vollständige Teile einer Oberfläche, jeweils aus ein paar vael-ui-Komponenten und ihrer Bewegung gebaut. Kopiere einen in deine App und passe ihn an.",
+      "intro": "Vollständige Teile einer Oberfläche, jeweils aus ein paar vael-ui-Komponenten und ihrer Bewegung gebaut. Kopieren Sie einen in Ihre App und passen Sie ihn an.",
       "comingTitle": "Mehr kommt",
       "comingBody": "Blocks bekommen eine eigene Site, blocks.vael-ui.dev. Das hier sind die ersten.",
       "items": {
@@ -921,15 +921,15 @@
         },
         "Stack": {
           "title": "Benachrichtigungsstapel",
-          "body": "Zeig auf den Stapel, und die Karten fächern sich zu einer Liste auf."
+          "body": "Zeigen Sie auf den Stapel, und die Karten fächern sich zu einer Liste auf."
         },
         "Composer": {
           "title": "Antwortfeld",
-          "body": "Fokussiere das Feld, und die Werkzeuge öffnen sich federnd, während der Antworten-Button zu ihnen hinuntergleitet."
+          "body": "Fokussieren Sie das Feld, und die Werkzeuge öffnen sich federnd, während der Antworten-Button zu ihnen hinuntergleitet."
         },
         "ActionBar": {
           "title": "Wachsende Aktionsleiste",
-          "body": "Zeig auf eine Aktion, und sie klappt auf, um ihr Label zu zeigen. Die Leiste passt ihre Größe mit an."
+          "body": "Zeigen Sie auf eine Aktion, und sie klappt auf, um ihr Label zu zeigen. Die Leiste passt ihre Größe mit an."
         },
         "Otp": {
           "title": "Bestätigungscode",
@@ -941,7 +941,7 @@
         },
         "Calendar": {
           "title": "Gleitende Monate",
-          "body": "Das Raster gleitet in die Richtung, in die du dich bewegt hast, und die Beschriftung rollt mit."
+          "body": "Das Raster gleitet in die Richtung, in die Sie sich bewegt haben, und die Beschriftung rollt mit."
         },
         "Accordion": {
           "title": "Federndes Akkordeon",
@@ -949,13 +949,13 @@
         },
         "Spotlight": {
           "title": "Befehlsmenü",
-          "body": "Du öffnest es viele Male am Tag, darum behält es die ruhige eingebaute Bewegung."
+          "body": "Sie öffnen es viele Male am Tag, darum behält es die ruhige eingebaute Bewegung."
         }
       }
     },
     "showpieces": {
       "title": "Nebeneinander",
-      "intro": "Jedes Vorzeigestück dieser Doku wurde zuerst mit GSAP, motion oder der eingebauten Bewegung von vael-ui gebaut. Hier steht jedes neben demselben Stück, nur mit der Bewegung von vael-ui neu gebaut. Spiele beide gleich ab, und öffne den Code von jedem.",
+      "intro": "Jedes Vorzeigestück dieser Doku wurde zuerst mit GSAP, motion oder der eingebauten Bewegung von vael-ui gebaut. Hier steht jedes neben demselben Stück, nur mit der Bewegung von vael-ui neu gebaut. Spielen Sie beide gleich ab, und öffnen Sie den Code von jedem.",
       "filter": "Zuerst gebaut mit",
       "all": "Alle",
       "builtin": "Eingebaut",

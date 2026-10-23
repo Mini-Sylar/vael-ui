@@ -19,10 +19,14 @@
         <span /><span /><span />
         <code>App.vue</code>
       </div>
-      <div ref="codeEl" class="ty-code">
+      <div ref="codeEl" class="ty-code shiki">
         <div v-for="(line, n) in code" :key="n" class="ty-line">
           <template v-for="(segment, i) in line" :key="i">
-            <span v-if="typeof segment === 'string'">{{ segment }}</span>
+            <span v-if="typeof segment === 'string'"
+              ><span v-for="(piece, p) in pieces(n, i)" :key="p" :style="piece.style">{{
+                piece.text
+              }}</span></span
+            >
             <button
               v-else
               type="button"
@@ -31,12 +35,14 @@
               :aria-pressed="open && caret === segment.slot"
               @click="press(segment.slot)"
             >
-              {{ chosen[segment.slot] }}
+              <span v-for="(piece, p) in pieces(n, i)" :key="p" :style="piece.style">{{
+                piece.text
+              }}</span>
             </button>
           </template>
         </div>
         <p v-if="!open" class="ty-hint">{{ t('motionDocs.types.completeHint') }}</p>
-        <!-- One box: it springs to each list's size and glides to the name you pressed. -->
+        <!-- One box, like an editor's: it shows at the name you pressed and springs to each list's size. -->
         <div
           v-else
           ref="completeEl"
@@ -157,13 +163,16 @@ import {
   PhXCircle,
 } from '@phosphor-icons/vue'
 import { SelectButton, vAnimate } from 'vael-ui'
+import { tokenizeBlock } from '../../composables/highlightInline'
+import type { StyledToken } from '../../composables/highlightInline'
 import GuideLayout from '../../components/GuideLayout.vue'
 import { docsSettingsKey } from '../../docsSettings'
 import motionMeta from '../../generated/motion-meta.json'
 
 const { t } = useI18n()
-// The completion box: its size and its place, on one calm spring.
-const grow = { layout: true, spring: { damping: 1, response: 0.3 } }
+// The completion box: its size on a calm spring. It doesn't travel between names: an editor's
+// suggestions show where you are, they don't slide over the code.
+const grow = { spring: { damping: 1, response: 0.3 } }
 useHead({ title: () => t('motionDocs.types.title') })
 
 // ─── Autocomplete, from the same metadata as each page's Motion section ─────
@@ -237,6 +246,45 @@ const code = computed<Segment[][]>(() => {
   lines.push(['}" />'])
   return lines
 })
+
+// Colored as the whole snippet reads, names filled in, then split back onto the text and the names.
+const tokens = shallowRef<{ lines: StyledToken[][]; starts: number[] } | null>(null)
+const textOf = (segment: Segment) => (typeof segment === 'string' ? segment : chosen[segment.slot])
+watch(
+  code,
+  (lines) => {
+    const text = lines.map((line) => line.map(textOf).join('')).join('\n')
+    const starts = lines.reduce<number[]>(
+      (acc, line, i) =>
+        i ? [...acc, acc[i - 1]! + lines[i - 1]!.map(textOf).join('').length + 1] : [0],
+      [],
+    )
+    void tokenizeBlock(text, 'vue').then((result) => {
+      if (code.value === lines) tokens.value = { lines: result, starts }
+    })
+  },
+  { immediate: true },
+)
+function pieces(line: number, index: number): { text: string; style?: string }[] {
+  const segments = code.value[line]!
+  const text = textOf(segments[index]!)
+  const lineTokens = tokens.value?.lines[line]
+  if (!lineTokens?.length) return [{ text }]
+  const lineStart = tokens.value!.starts[line]!
+  const start = lineStart + segments.slice(0, index).reduce((sum, s) => sum + textOf(s).length, 0)
+  const end = start + text.length
+  const out: { text: string; style?: string }[] = []
+  for (const token of lineTokens) {
+    const from = Math.max(token.offset, start)
+    const to = Math.min(token.offset + token.content.length, end)
+    if (from < to)
+      out.push({
+        text: token.content.slice(from - token.offset, to - token.offset),
+        style: token.style,
+      })
+  }
+  return out.length ? out : [{ text }]
+}
 
 const offers = computed(() => {
   const partType = meta.value.type.replace(/Motion$/, 'Part')
