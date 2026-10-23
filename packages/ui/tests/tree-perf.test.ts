@@ -6,8 +6,10 @@ import type { ComponentPublicInstance } from 'vue'
 import TreeFixture from './fixtures/TreeFixture.vue'
 import type { TreeNode } from '../src/components/Tree/Tree.vue'
 
-// 40 x 50 = 2040 rows expanded. Counts are the main assertion; times get wide headroom.
-function bigItems(folders = 40, perFolder = 50): TreeNode[] {
+// 12 x 30 = 372 rows expanded: the most a tree keeps as nested rows (past 500 it's a flat list
+// that renders only what's in view; see tree-virtual.test.ts). Counts are the main assertion;
+// times get wide headroom.
+function bigItems(folders = 12, perFolder = 30): TreeNode[] {
   return Array.from({ length: folders }, (_, f) => ({
     label: `Folder ${f}`,
     value: `f${f}`,
@@ -39,7 +41,7 @@ function rowCount(): number {
 async function renderExpanded(
   props: Record<string, unknown> = {},
   items: TreeNode[] = bigItems(),
-  expectedRows = 2040,
+  expectedRows = 372,
   transitions = false,
 ) {
   const screen = await render(TreeFixture, {
@@ -154,12 +156,12 @@ test('a mid-sized tree animates the folder itself and moves no other row with a 
   expect(slidingRowCount()).toBe(0)
 })
 
-test('a tree over the motion limit opens and closes folders at once', async () => {
-  await renderExpanded({}, bigItems(), 2040, true)
-  rowEl('f0').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
-  await nextTick()
-  expect(document.querySelector('.ui-tree-rows[data-folding]')).toBeNull()
-  expect(rowEl('f0').nextElementSibling).toBeNull()
+test('a 300-row tree, past the checkbox limit, still folds with its animation', async () => {
+  // 30 x 9 = 300 rows: past 150 (static checkboxes) but under the 500-row fold limit.
+  await renderExpanded({ height: '300px', selectionMode: 'checkbox' }, bigItems(30, 9), 300, true)
+  expect(document.querySelector<HTMLElement>('.ui-tree-root')!.dataset.rows).toBe('many')
+  await measure(() => rowEl('f0').querySelector<HTMLElement>('.ui-tree-chevron')!.click())
+  expect(document.querySelector('.ui-tree-rows[data-folding]')).toBeTruthy()
 })
 
 test('a small tree grows the opening folder in flow, and the row below moves with it', async () => {
@@ -194,17 +196,17 @@ test('filter keystrokes re-render only rows whose visibility changed, and cleari
   // Every row still matches, so nothing visible changes.
   await measure(() => type('I'))
   const allVisible = await measure(() => type('It'))
-  expect(rowCount()).toBe(2040)
+  expect(rowCount()).toBe(372)
   const narrow = await measure(() => type('Item 3-4'))
-  await vi.waitFor(() => expect(rowCount()).toBe(12))
+  await vi.waitFor(() => expect(rowCount()).toBe(2))
 
   componentMounts = 0
   const clear = await measure(() => type(''))
-  await vi.waitFor(() => expect(rowCount()).toBe(2040))
+  await vi.waitFor(() => expect(rowCount()).toBe(372))
   console.log(
     `filter: all-visible keystroke ${allVisible.ms.toFixed(1)}ms (${allVisible.updates} rows), narrow ${narrow.ms.toFixed(1)}ms, clear ${clear.ms.toFixed(1)}ms (${componentMounts} components mounted)`,
   )
   expect(allVisible.updates).toBeLessThanOrEqual(1)
-  // 2028 rows come back without a Transition per leaf.
-  expect(componentMounts).toBeLessThan(2040 + 100)
+  // 370 rows come back without a Transition per leaf.
+  expect(componentMounts).toBeLessThan(372 + 100)
 })

@@ -29,9 +29,9 @@ export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion
 
 <script setup lang="ts" generic="V extends string | string[] | null = string | string[] | null">
 import './Accordion.css'
-import { withProviderDefaults } from '../../config'
+import { defaultsKey, withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, provide, useAttrs, useTemplateRef } from 'vue'
+import { computed, inject, provide, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import type { AccordionMotion, Spring } from '../../motion/types'
@@ -143,11 +143,12 @@ const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-accordio
 // `{ spring }` retimes the height and the chevron: opening on your spring, closing on it without the
 // bounce (an accordion is one reversible motion: same pace both ways). Your CSS can use them too.
 const motionStyle = useMotionStyle()
+const providerDefaults = inject(defaultsKey, undefined)
 const springVars = computed(() => {
   const own = rawProps.motion
-  const spring = ((typeof own === 'object' && own.spring) || motionStyle?.value?.spring) as
-    | Spring
-    | undefined
+  const spring = ((typeof own === 'object' && own.spring) ||
+    motionStyle?.value?.spring ||
+    providerDefaults?.value.spring) as Spring | undefined
   if (!spring) return undefined
   const open = springEasing(spring)
   const close = springEasing({ damping: 1, response: spring.response ?? 0.32 })

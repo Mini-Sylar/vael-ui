@@ -265,6 +265,28 @@
   .ui-tree-root[data-motion='off'] .ui-tree-row .ui-tree-check path {
     transition: none;
   }
+  /* A large tree: a block as tall as every row, the rows in view placed in it by translate, and
+     the pinned folders (copies, for the eye) stuck to the top. During a fold, the rows below a
+     folder are shifted up by --ui-tree-shift, written each frame. */
+  .ui-tree-rows--virtual {
+    display: block;
+    position: relative;
+  }
+  .ui-tree-rows--virtual > [data-virtual-index] {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+  }
+  /* No height of its own, so the pins take no room in the block: each sticks at its own top. */
+  .ui-tree-rows--virtual > .ui-tree-pin {
+    position: sticky;
+    block-size: 0;
+    overflow: visible;
+  }
+  .ui-tree-pin > .ui-tree-row {
+    flex-shrink: 0;
+  }
+
   /* A folder's rows fold open and shut by the block's own height (useFold): it stays in the flow,
      so the rows below and a tree centred in its box follow its edge in layout, and nothing is drawn
      twice. `clip`, not `hidden`: a hidden overflow would make the block a scroll container and

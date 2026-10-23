@@ -146,7 +146,10 @@ const defaults = computed<UiDefaults>(() => {
   if (props.size) own.size = props.size
   if (props.motion !== undefined) own.motion = props.motion !== false
   if (props.loaderType) own.loaderType = props.loaderType
-  if (spring.value) own.indicator = spring.value
+  if (spring.value) {
+    own.spring = spring.value
+    own.indicator = spring.value
+  }
   if (props.indicator) own.indicator = props.indicator
   if (props.haptics !== undefined) own.haptics = props.haptics
   const locale = validLocale(props.locale ?? toValue(props.i18n?.locale))
