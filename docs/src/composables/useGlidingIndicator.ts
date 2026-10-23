@@ -46,12 +46,22 @@ export function useGlidingIndicator(
       placed = false
       return
     }
-    const boxRect = box.getBoundingClientRect()
-    const rect = target.getBoundingClientRect()
-    const nextTop = rect.top - boxRect.top + box.scrollTop
-    const nextBottom = nextTop + rect.height
+    // Where layout puts the item, not where a transform shows it (a list sliding in).
+    let left = 0
+    let nextTop = 0
+    for (let at: HTMLElement | null = target; at && at !== box;) {
+      left += at.offsetLeft
+      nextTop += at.offsetTop
+      const parent = at.offsetParent as HTMLElement | null
+      if (parent !== box && box.contains(parent)) {
+        left += parent?.clientLeft ?? 0
+        nextTop += parent?.clientTop ?? 0
+      }
+      at = parent && box.contains(parent) ? parent : null
+    }
+    const nextBottom = nextTop + target.offsetHeight
     el.style.opacity = '1'
-    if (offsetX !== undefined) el.style.left = `${rect.left - boxRect.left + offsetX}px`
+    if (offsetX !== undefined) el.style.left = `${left + offsetX}px`
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     // The first placement (and any placement under reduced motion) jumps

@@ -26,7 +26,11 @@
     <div ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
       <span ref="sidebarIndicator" class="sidebar-indicator" aria-hidden="true" />
       <!-- A new mode's list slides in the way you went; the old one leaves the other way. -->
-      <div :key="sidebarMode" v-animate="swap(sidebarMode)">
+      <div
+        :key="sidebarMode"
+        v-animate="swap(sidebarMode)"
+        :class="{ 'sidebar-over': sidebarMode !== 'components' }"
+      >
         <MenuList :items="navItems" :active="activeValue" :aria-label="t('nav.sidebarNav')">
           <template #item="{ item }">
             <component
@@ -65,7 +69,11 @@
       </button>
     </div>
     <div ref="mobileScrollEl" class="sidebar-scroll sidebar-scroll--mobile">
-      <div :key="sidebarMode" v-animate="swap(sidebarMode)">
+      <div
+        :key="sidebarMode"
+        v-animate="swap(sidebarMode)"
+        :class="{ 'sidebar-over': sidebarMode !== 'components' }"
+      >
         <MenuList
           :items="navItems"
           :active="activeValue"
@@ -144,18 +152,17 @@ const storedMode =
     ? null
     : (sessionStorage.getItem(MODE_STORAGE_KEY) as DocsMode | null)
 const sidebarMode = shallowRef<DocsMode>(storedMode ?? 'components')
-// Components on the left, the other modes on its right: a switch slides the lists that way. Not
-// on the first render, so a page never loads with its sidebar moving.
-const SIDE: Record<DocsMode, number> = { components: -1, composables: 1, motion: 1 }
+// A mode switch is a push, like drilling into a page: Motion and Composables slide in over the
+// components from the right edge as the components fall back a third and fade; back reverses it.
+// One spring for both, so they move as one. Never on the first render: no page loads moving.
 const switched = shallowRef(false)
 watch(sidebarMode, () => (switched.value = true))
 const swap = (mode: DocsMode) => {
-  const x = SIDE[mode] * 12
+  const away = mode === 'components' ? { x: '-30%', opacity: 0 } : { x: '100%' }
   return {
-    initial: switched.value ? { opacity: 0, x } : undefined,
-    exit: { opacity: { value: 0, duration: 150 }, x: { value: x, duration: 150 } },
-    duration: 250,
-    easing: 'var(--ui-ease-out)',
+    initial: switched.value ? away : undefined,
+    exit: away,
+    spring: { damping: 1, response: 0.4 },
   }
 }
 
@@ -299,11 +306,26 @@ const sidebarScrollEl = useTemplateRef<HTMLElement>('sidebarScrollEl')
 // One bar gliding to the current page instead of a bar per row. -8 px sits
 // it in the gutter left of the row, where the per-row bar used to be.
 const sidebarIndicator = useTemplateRef<HTMLElement>('sidebarIndicator')
+// A mode switch is a new list, not a move: the bar hides while it's pushed in, then sits on its
+// row once it lands (the leaving list's row is inert and never the one).
+const pushing = shallowRef(false)
+let landing: ReturnType<typeof setTimeout> | undefined
+watch(sidebarMode, () => {
+  pushing.value = true
+  clearTimeout(landing)
+  landing = setTimeout(() => (pushing.value = false), 500)
+})
+onScopeDispose(() => clearTimeout(landing))
 useGlidingIndicator(
   sidebarScrollEl,
   sidebarIndicator,
-  () => sidebarScrollEl.value?.querySelector<HTMLElement>('[aria-current="page"]'),
-  () => [activeValue.value, sidebarMode.value],
+  () =>
+    pushing.value
+      ? null
+      : [
+          ...(sidebarScrollEl.value?.querySelectorAll<HTMLElement>('[aria-current="page"]') ?? []),
+        ].find((row) => !row.closest('[inert]')),
+  () => [activeValue.value, sidebarMode.value, pushing.value],
   -8,
 )
 const persistedScrollTop = useLocalStorage('vael-ui-docs-sidebar-scroll', 0)
@@ -398,6 +420,11 @@ watch(
   /* Hitting the end of the nav shouldn't start scrolling the page behind it. */
   overscroll-behavior: contain;
   padding: 1.25rem 1rem;
+}
+
+/* The list pushed in covers the one under it, in the sidebar's own colour. */
+.sidebar-over {
+  background: color-mix(in oklch, var(--ui-muted) 40%, var(--ui-surface));
 }
 
 .sidebar-indicator {
