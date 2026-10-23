@@ -474,3 +474,43 @@ test('a step asking for a side with no room in a narrow contained frame goes bel
   expect(r.right).toBeLessThanOrEqual(box.right + 0.5)
   expect(r.top).toBeGreaterThanOrEqual(card.bottom - 0.5)
 })
+
+test('a right-side step near the top of the window stays on the right instead of dropping below', async () => {
+  // A desktop window: room beside the row, as in an app's sidebar.
+  await page.viewport(1100, 700)
+  const open = shallowRef(true)
+  const steps: TourStep[] = [
+    {
+      target: '#corner-row',
+      title: 'Quick search',
+      description: 'Search anything in the app from here, and jump to what you find.',
+      side: 'right',
+    },
+  ]
+  await render({
+    setup: () => () => [
+      h(
+        'div',
+        {
+          id: 'corner-row',
+          style: 'position: fixed; top: 4px; left: 4px; width: 260px; height: 40px',
+        },
+        'Search',
+      ),
+      h(Tour as never, {
+        open: open.value,
+        'onUpdate:open': (v: boolean) => (open.value = v),
+        steps,
+      }),
+    ],
+  })
+  await vi.waitFor(() => expect(page.getByText('Quick search').element()).toBeTruthy())
+  await new Promise((r) => setTimeout(r, 400))
+  const row = document.getElementById('corner-row')!.getBoundingClientRect()
+  const panel = page.getByText('Quick search').element().closest<HTMLElement>('[role="dialog"]')!
+  const r = panel.getBoundingClientRect()
+  // Sticking out above the window is the shift's to fix; there's room on the right, so it stays there.
+  expect(r.left).toBeGreaterThanOrEqual(row.right - 0.5)
+  expect(r.top).toBeGreaterThanOrEqual(-0.5)
+  await page.viewport(414, 896)
+})

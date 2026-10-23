@@ -139,8 +139,13 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
         // flip/shift/size believe there's no room anywhere.
         // Asked for left or right with no room on either (a full-width card on a phone), it goes
         // below or above instead of overflowing: shift only moves along the side it's on. Top and
-        // bottom keep their axis; there `size` makes the panel fit by scrolling.
-        flip(side === 'left' || side === 'right' ? { fallbackAxisSideDirection: 'end' } : {}),
+        // bottom keep their axis; there `size` makes the panel fit by scrolling. Only room beside the
+        // trigger counts: poking out above or below is shift's, or a row near the top would drop under.
+        flip(
+          side === 'left' || side === 'right'
+            ? { fallbackAxisSideDirection: 'end', crossAxis: false }
+            : {},
+        ),
         shift({ padding: 8 }),
         size({
           padding: 8,

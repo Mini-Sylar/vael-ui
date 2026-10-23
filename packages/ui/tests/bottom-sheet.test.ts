@@ -677,3 +677,37 @@ test('closed mid-open, the kept panel carries no motion marker and none of the c
   expect(panel().style.translate).toBe('')
   expect(panel().style.opacity).toBe('')
 })
+
+test('a sheet whose width resets as it closes keeps its width until it is gone', async () => {
+  await (await import('vitest/browser')).page.viewport(1100, 700)
+  const width = shallowRef<'sm' | 'full'>('sm')
+  const open = shallowRef(true)
+  await render(
+    {
+      setup: () => () =>
+        h(BottomSheet as never, {
+          open: open.value,
+          width: width.value,
+          'onUpdate:open': (value: boolean) => {
+            open.value = value
+            // What a page does when one ref drives both: closed means no width.
+            if (!value) width.value = 'full'
+          },
+          'aria-label': 'Test sheet',
+        }),
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  await vi.waitFor(() => expect(panel().getBoundingClientRect().width).toBeGreaterThan(0))
+  await new Promise((r) => setTimeout(r, 600))
+  const openWidth = panel().getBoundingClientRect().width
+  expect(openWidth).toBeLessThan(window.innerWidth * 0.8)
+  await userEvent.keyboard('{Escape}')
+  let widest = 0
+  while (panel().getClientRects().length) {
+    widest = Math.max(widest, panel().getBoundingClientRect().width)
+    await new Promise((r) => requestAnimationFrame(r))
+  }
+  expect(widest).toBeCloseTo(openWidth, 0)
+  await (await import('vitest/browser')).page.viewport(414, 896)
+})

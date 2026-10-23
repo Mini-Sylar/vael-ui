@@ -154,7 +154,7 @@ export interface BottomSheetProps {
 // Dialog import (and its CSS) must precede BottomSheet.css: this panel
 // carries both .ui-dialog-panel and .ui-bottom-sheet-panel, and the latter's
 // overrides (e.g. max-block-size) need to win the cascade.
-import { computed, inject, provide, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, inject, provide, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogExposed } from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
@@ -327,14 +327,19 @@ const themedUi = useThemedUi(
   (theme) => theme.bottomSheet,
   () => props.ui,
 )
+// A closing sheet keeps the size it was open at, even when its width changes as it closes.
+const shownSize = shallowRef({ width: props.width, fullScreen: props.fullScreen })
+watchEffect(() => {
+  if (open.value) shownSize.value = { width: props.width, fullScreen: props.fullScreen }
+})
 // Forward to Dialog as { class, style } pair (bare string would drop style half).
 const panelPart = computed(() =>
   resolveUiPart(
     cx,
     themedUi()?.panel,
     'ui-bottom-sheet-panel',
-    props.width !== 'full' && `ui-bottom-sheet-panel--${props.width}`,
-    props.fullScreen && 'ui-bottom-sheet-panel--full-screen',
+    shownSize.value.width !== 'full' && `ui-bottom-sheet-panel--${shownSize.value.width}`,
+    shownSize.value.fullScreen && 'ui-bottom-sheet-panel--full-screen',
   ),
 )
 const overlayPart = computed(() =>
