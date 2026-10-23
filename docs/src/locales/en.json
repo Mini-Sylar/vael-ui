@@ -631,6 +631,34 @@
       "adaptersIntro": "An engine gets the element, where it starts, where it ends, and the timing in seconds, with the spring behind it when there is one. Return what your library returns: vael-ui waits for it, and stops it if interrupted.",
       "appWideTitle": "Switching engines app-wide",
       "appWideIntro": "Put the adapter in the <code>ConfigProvider</code> at the root, and every component inside uses it. A component's own hooks still win."
+    },
+    "presets": {
+      "label": "Motion",
+      "changed": "Motion: {name}",
+      "default": {
+        "label": "Default",
+        "body": "vael-ui's own look"
+      },
+      "calm": {
+        "label": "Calm",
+        "body": "Soft fades, no overshoot"
+      },
+      "snappy": {
+        "label": "Snappy",
+        "body": "Quick and crisp"
+      },
+      "bouncy": {
+        "label": "Bouncy",
+        "body": "A little overshoot everywhere"
+      },
+      "jelly": {
+        "label": "Jelly",
+        "body": "Squash and stretch, wobbling to rest"
+      },
+      "gooey": {
+        "label": "Gooey",
+        "body": "Blurred blobs swelling into shape"
+      }
     }
   }
 }

@@ -631,6 +631,34 @@
       "adaptersIntro": "引擎会收到元素、起点、终点和以秒为单位的时间，有弹簧时还会附带弹簧参数。返回你的库返回的内容：vael-ui 会等待它，并在被打断时停止它。",
       "appWideTitle": "在整个应用中切换引擎",
       "appWideIntro": "把适配器放进根部的 <code>ConfigProvider</code>，其中的每个组件都会使用它。组件自己的钩子仍然优先。"
+    },
+    "presets": {
+      "label": "动效",
+      "changed": "动效：{name}",
+      "default": {
+        "label": "默认",
+        "body": "vael-ui 自带的效果"
+      },
+      "calm": {
+        "label": "平静",
+        "body": "柔和淡入，不冲过头"
+      },
+      "snappy": {
+        "label": "利落",
+        "body": "快速干脆"
+      },
+      "bouncy": {
+        "label": "弹跳",
+        "body": "处处带点回弹"
+      },
+      "jelly": {
+        "label": "果冻",
+        "body": "挤压拉伸，晃动后停下"
+      },
+      "gooey": {
+        "label": "黏稠",
+        "body": "模糊的团块膨胀成形"
+      }
     }
   }
 }

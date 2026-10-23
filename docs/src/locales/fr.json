@@ -631,6 +631,34 @@
       "adaptersIntro": "Un moteur reçoit l'élément, son point de départ, son point d'arrivée et le timing en secondes, avec le ressort derrière quand il y en a un. Renvoyez ce que renvoie votre bibliothèque : vael-ui l'attend, et l'arrête en cas d'interruption.",
       "appWideTitle": "Changer de moteur pour toute l'app",
       "appWideIntro": "Placez l'adaptateur dans le <code>ConfigProvider</code> à la racine, et chaque composant à l'intérieur l'utilise. Les hooks propres à un composant restent prioritaires."
+    },
+    "presets": {
+      "label": "Animation",
+      "changed": "Animation : {name}",
+      "default": {
+        "label": "Par défaut",
+        "body": "Le rendu propre à vael-ui"
+      },
+      "calm": {
+        "label": "Calme",
+        "body": "Fondus doux, sans dépassement"
+      },
+      "snappy": {
+        "label": "Vif",
+        "body": "Rapide et net"
+      },
+      "bouncy": {
+        "label": "Rebondissant",
+        "body": "Un léger rebond partout"
+      },
+      "jelly": {
+        "label": "Gelée",
+        "body": "S'écrase et s'étire jusqu'à se poser"
+      },
+      "gooey": {
+        "label": "Gluant",
+        "body": "Des taches floues qui prennent forme"
+      }
     }
   }
 }

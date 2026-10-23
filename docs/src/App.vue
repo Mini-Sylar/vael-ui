@@ -2,7 +2,7 @@
   <ConfigProvider
     :theme="theme"
     :size="uiSize"
-    :motion="motion"
+    :motion="motion ? (presetStyle ?? true) : false"
     :loader-type="loaderType"
     :i18n="i18n"
   >
@@ -48,6 +48,7 @@
             :aria-label="t('header.defaultMode')"
           />
           <div class="header-desktop-controls">
+            <MotionMenu v-model="motionPreset" />
             <Popover v-model:open="themeOpen">
               <template #trigger="{ setTriggerEl }">
                 <Button
@@ -231,6 +232,15 @@
             <span>{{ t('header.animations') }}</span>
             <Switch v-model="motion" />
           </label>
+          <label class="theme-row">
+            <span>{{ t('motionDocs.presets.label') }}</span>
+            <Select
+              v-model="motionPreset"
+              :items="presetItems"
+              :aria-label="t('motionDocs.presets.label')"
+              class="loader-select"
+            />
+          </label>
           <div class="theme-row">
             <span class="loader-label">
               {{ t('header.loader') }}
@@ -316,6 +326,9 @@ import {
   useColorScheme,
 } from 'vael-ui'
 import type { ColorSchemeMode, DockItemData, LoaderType, TourStep } from 'vael-ui'
+import MotionMenu from './components/MotionMenu.vue'
+import { MOTION_PRESETS, motionPresets } from './motionPresets'
+import type { MotionPreset } from './motionPresets'
 import Sidebar from './components/Sidebar.vue'
 import SiteSearch from './components/SiteSearch.vue'
 import { siteSearchOpen } from './siteSearch'
@@ -662,6 +675,14 @@ watch(fontSize, (f) => {
 // ConfigProvider defaults, so every component on the site follows them.
 const uiSize = useLocalStorage<'sm' | 'md' | 'lg'>('vael-ui-docs-size', 'md')
 const motion = useLocalStorage('vael-ui-docs-motion', true)
+// The header's motion menu: a preset style on every component, unless animations are off.
+const motionPreset = useLocalStorage<MotionPreset>('vael-ui-docs-motion-preset', 'default')
+const presetStyle = computed(() =>
+  motionPreset.value === 'default' ? undefined : motionPresets[motionPreset.value],
+)
+const presetItems = computed(() =>
+  MOTION_PRESETS.map((id) => ({ label: t(`motionDocs.presets.${id}.label`), value: id })),
+)
 const LOADER_TYPES: LoaderType[] = ['ring', 'dots', 'bars', 'comet', 'dither']
 const storedLoader = useLocalStorage<LoaderType>('vael-ui-docs-loader', 'ring')
 // A stale or hand-edited value falls back to the ring rather than reaching the library.

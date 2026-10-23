@@ -631,6 +631,34 @@
       "adaptersIntro": "Un motore riceve l'elemento, da dove parte, dove arriva e i tempi in secondi, con la molla dietro quando c'è. Restituisci ciò che restituisce la tua libreria: vael-ui lo attende e lo ferma se viene interrotto.",
       "appWideTitle": "Cambiare motore in tutta l'app",
       "appWideIntro": "Metti l'adattatore nel <code>ConfigProvider</code> alla radice e ogni componente al suo interno lo usa. Gli hook propri di un componente hanno comunque la precedenza."
+    },
+    "presets": {
+      "label": "Movimento",
+      "changed": "Movimento: {name}",
+      "default": {
+        "label": "Predefinito",
+        "body": "L'aspetto di vael-ui"
+      },
+      "calm": {
+        "label": "Calmo",
+        "body": "Dissolvenze morbide, senza oltrepassare"
+      },
+      "snappy": {
+        "label": "Scattante",
+        "body": "Rapido e preciso"
+      },
+      "bouncy": {
+        "label": "Elastico",
+        "body": "Un leggero rimbalzo ovunque"
+      },
+      "jelly": {
+        "label": "Gelatina",
+        "body": "Si schiaccia e si allunga fino a fermarsi"
+      },
+      "gooey": {
+        "label": "Viscoso",
+        "body": "Macchie sfocate che prendono forma"
+      }
     }
   }
 }

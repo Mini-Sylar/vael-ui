@@ -631,6 +631,34 @@
       "adaptersIntro": "Eine Engine bekommt das Element, wo es anfängt, wo es endet, und das Timing in Sekunden, mit der Feder dahinter, wenn es eine gibt. Gib zurück, was deine Bibliothek zurückgibt: vael-ui wartet darauf und stoppt es bei einer Unterbrechung.",
       "appWideTitle": "Engines appweit wechseln",
       "appWideIntro": "Setze den Adapter in den <code>ConfigProvider</code> an der Wurzel, und jede Komponente darin nutzt ihn. Die eigenen Hooks einer Komponente haben weiterhin Vorrang."
+    },
+    "presets": {
+      "label": "Bewegung",
+      "changed": "Bewegung: {name}",
+      "default": {
+        "label": "Standard",
+        "body": "Das Aussehen von vael-ui"
+      },
+      "calm": {
+        "label": "Ruhig",
+        "body": "Weiche Übergänge, kein Überschwingen"
+      },
+      "snappy": {
+        "label": "Knackig",
+        "body": "Schnell und präzise"
+      },
+      "bouncy": {
+        "label": "Federnd",
+        "body": "Überall ein wenig Überschwingen"
+      },
+      "jelly": {
+        "label": "Wackelpudding",
+        "body": "Stauchen und Strecken, wackelnd zur Ruhe"
+      },
+      "gooey": {
+        "label": "Zähflüssig",
+        "body": "Verschwommene Tropfen, die Form annehmen"
+      }
     }
   }
 }

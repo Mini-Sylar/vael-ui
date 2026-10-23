@@ -631,6 +631,34 @@
       "adaptersIntro": "Um motor recebe o elemento, onde ele começa, onde termina e o tempo em segundos, com a mola por trás quando houver. Retorne o que sua biblioteca retornar: o vael-ui espera por isso e para se for interrompido.",
       "appWideTitle": "Trocando de motor no app todo",
       "appWideIntro": "Coloque o adaptador no <code>ConfigProvider</code> da raiz, e todo componente dentro dele o usa. Os hooks próprios de um componente continuam tendo prioridade."
+    },
+    "presets": {
+      "label": "Movimento",
+      "changed": "Movimento: {name}",
+      "default": {
+        "label": "Padrão",
+        "body": "O visual próprio do vael-ui"
+      },
+      "calm": {
+        "label": "Calmo",
+        "body": "Esmaecimentos suaves, sem passar do ponto"
+      },
+      "snappy": {
+        "label": "Ágil",
+        "body": "Rápido e preciso"
+      },
+      "bouncy": {
+        "label": "Saltitante",
+        "body": "Um pouco de rebote em tudo"
+      },
+      "jelly": {
+        "label": "Gelatina",
+        "body": "Achata e estica até se acomodar"
+      },
+      "gooey": {
+        "label": "Viscoso",
+        "body": "Manchas borradas que tomam forma"
+      }
     }
   }
 }
