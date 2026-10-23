@@ -96,6 +96,27 @@ test('many appearing at once: those in view play, up to a budget; the rest, and 
   expect(getComputedStyle(document.querySelector('.far')!).opacity).toBe('1')
 })
 
+test('timed by you (a stagger), they all play, past the budget; one with nothing to come in from never counts', async () => {
+  render({
+    setup: () => () =>
+      h('div', [
+        withDirectives(h('p', { class: 'still' }, 'Still'), [[vAnimate, { initial: {} }, 'cell']]),
+        ...Array.from({ length: 40 }, (_, i) =>
+          withDirectives(h('p', { class: 'cell', style: 'margin: 0; height: 4px' }, String(i)), [
+            [vAnimate, { initial: { opacity: 0 }, duration: 400, stagger: 0.005 }, 'cell'],
+          ]),
+        ),
+      ]),
+  })
+  await vi.waitFor(() => expect(document.querySelectorAll('.cell')).toHaveLength(40))
+  await frame()
+  await frame()
+  const cells = [...document.querySelectorAll<HTMLElement>('.cell')]
+  expect(cells.filter((el) => el.getAnimations().length)).toHaveLength(40)
+  // The first cell starts the stagger: the empty one before it took no place in it.
+  expect(cells[0]!.style.transition).not.toMatch(/ms \d+ms/)
+})
+
 test("dev: a part with its own CSS transition on what motion animates gets a warning; ours don't", async () => {
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
   const open = shallowRef(false)

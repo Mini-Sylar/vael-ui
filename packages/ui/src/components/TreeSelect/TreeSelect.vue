@@ -82,6 +82,7 @@
       >
         <div
           ref="panel"
+          data-ui-presence
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
           :data-motion="props.motion ? undefined : 'off'"

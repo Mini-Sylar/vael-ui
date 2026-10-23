@@ -124,3 +124,22 @@ for (const [name, load, props, selector] of wrappers) {
     expect(entered[0]!.matches(selector)).toBe(true)
   })
 }
+
+// Their panels carry the presence marker: your targets inside join the opening.
+for (const [name, component, props, row] of [
+  ['Select', Select, { items }, '[role="option"]'],
+  ['Combobox', Combobox, { items }, '[role="option"]'],
+  ['DatePicker', DatePicker, {}, '[role="gridcell"]'],
+  ['TreeSelect', TreeSelect, { items: tree }, '[role="treeitem"]'],
+] as const) {
+  test(`${name}: targets inside the panel come in with it`, async () => {
+    const open = renderPanel(component, props, {
+      targets: { rows: { select: row, initial: { opacity: 0 }, duration: 400 } },
+    })
+    open.value = true
+    await vi.waitFor(() => expect(document.querySelector(row)).not.toBeNull())
+    await vi.waitFor(() =>
+      expect(Number(getComputedStyle(document.querySelector(row)!).opacity)).toBeLessThan(0.9),
+    )
+  })
+}

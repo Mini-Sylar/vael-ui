@@ -13,8 +13,9 @@
         :data-disabled="isDisabled(item) ? '' : undefined"
       >
         <component
-          :is="nativeTag(isReachable(index, item) ? 'button' : 'div')"
-          :type="isReachable(index, item) ? 'button' : undefined"
+          :is="nativeTag(clickable ? 'button' : 'div')"
+          :type="clickable ? 'button' : undefined"
+          :disabled="clickable && !isReachable(index, item) ? true : undefined"
           :class="triggerPart.class"
           :style="triggerPart.style"
           :aria-disabled="isDisabled(item) ? 'true' : undefined"
@@ -220,8 +221,19 @@ const parts = useStateMotion({
     content: '.ui-stepper-content',
   },
   states: () => ({}),
+  // Step by step: each step, circle and line plays its own states.
+  repeated: ['step', 'circle', 'connector', 'content'],
+  each: (part, _, index) =>
+    part === 'connector'
+      ? { completed: index < modelValue.value, upcoming: index >= modelValue.value }
+      : {
+          current: index === modelValue.value,
+          completed: index < modelValue.value,
+          upcoming: index > modelValue.value,
+          disabled: isDisabled(props.items[index]!),
+        },
 })
-// By index: a circle remounts when its step becomes clickable, and a v-for ref array would reorder.
+// By index: a v-for ref array would reorder.
 const circleSlots = shallowReactive<(HTMLElement | null)[]>([])
 const labelSlots = shallowReactive<(HTMLElement | null)[]>([])
 const connectorSlots = shallowReactive<(HTMLElement | null)[]>([])
@@ -274,7 +286,7 @@ const connectorPart = computed(() =>
 defineExpose({
   /** Root element. */
   el: root,
-  /** Step circle elements, in order. A circle remounts when its step becomes clickable. */
+  /** Step circle elements, in order. */
   circleEls,
   /** Connector elements, one fewer than steps. Set `--ui-stepper-fill` (0 to 1) to drive a fill. */
   connectorEls,

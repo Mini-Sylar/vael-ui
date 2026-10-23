@@ -29,6 +29,7 @@ const KEYS = new Set([
   'filter',
   'clipPath',
   'backgroundColor',
+  'color',
 ])
 
 /** Known keys, no keyframe arrays, and x/y not timed apart (they share `translate`). */
@@ -56,8 +57,8 @@ export function needsRuntime(m: ResolvedMotion): boolean {
     // Your engine is called from the runtime.
     !!m.engine ||
     !!m.leave ||
-    // Children leaving first, last to first: the runtime's.
-    m.exitOrder === 'reverse' ||
+    // Children leaving first, last to first: the runtime's. A morph empties its box first anyway.
+    (m.exitOrder === 'reverse' && !m.morph) ||
     !Object.values(m.initial).every(cssCanPlay) ||
     !Object.values(m.exit).every(cssCanPlay) ||
     !Object.values(m.targets).every(targetCanPlay) ||

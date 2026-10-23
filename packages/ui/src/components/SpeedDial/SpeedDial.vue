@@ -12,6 +12,7 @@
       ref="listEl"
       :class="actionsPart.class"
       :style="actionsPart.style"
+      :data-ui-list="listMarker"
       role="menu"
       :aria-label="ariaLabel"
       :aria-orientation="orientationFor(direction)"
@@ -195,9 +196,15 @@ const listMotion =
         leaving: 'hold',
       })
     : undefined
-const actionsTransition = computed(() =>
-  listMotion ? listMotion.transition : { name: 'ui-speed-dial-action', css: !!props.motion },
+// The actions render with no wrapper of their own, so the list engine's marker goes on the menu.
+const listMarker = computed(
+  () => (listMotion?.transition as Record<string, unknown> | undefined)?.['data-ui-list'],
 )
+const actionsTransition = computed(() => {
+  if (!listMotion) return { name: 'ui-speed-dial-action', css: !!props.motion }
+  const { 'data-ui-list': _, ...transition } = listMotion.transition as Record<string, unknown>
+  return transition
+})
 
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {
   if (direction === 'up' || direction === 'down') return 'vertical'

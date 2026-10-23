@@ -592,3 +592,16 @@ test('setting the exposed activeSnap moves the sheet to that snap point', async 
     timeout: 1200,
   })
 })
+
+test('closing from a snap point travels only what is left of the panel, not its whole height', async () => {
+  const screen = await render(BottomSheetFixture, { global: { stubs: { transition: false } } })
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(visibleHeight()).toBeCloseTo(window.innerHeight * 0.6, -1))
+  await new Promise((r) => setTimeout(r, 600))
+  const showing = visibleHeight()
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(panel().style.translate).not.toBe(''))
+  // Down by what shows, landing just off the bottom edge.
+  const [, y = '0'] = panel().style.translate.split(' ')
+  expect(Number.parseFloat(y)).toBeCloseTo(showing, -1)
+})

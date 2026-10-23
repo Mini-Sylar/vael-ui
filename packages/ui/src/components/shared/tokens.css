@@ -61,7 +61,6 @@
     /* Wide rows (MenuList, Tree, DataTable) move as a heavier slab, so they glide a little longer. */
     --ui-duration-indicator-wide: 200ms;
     --ui-ease-indicator: var(--ui-ease-out);
-    --ui-indicator-bg: var(--ui-muted);
     --ui-duration-enter: 200ms;
     --ui-duration-exit: 150ms;
     --ui-duration-tooltip: 125ms;

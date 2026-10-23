@@ -49,7 +49,8 @@ let frameId = 0
 let lastFrameTime = 0
 
 function tick(now: number) {
-  const dt = Math.min((now - lastFrameTime) / 1000, MAX_DT)
+  // The first frame moves a frame's worth: its timestamp can predate the call that scheduled it.
+  const dt = lastFrameTime ? Math.min((now - lastFrameTime) / 1000, MAX_DT) : 1 / 60
   lastFrameTime = now
   ticking.length = 0
   for (const spring of active) ticking.push(spring)
@@ -62,7 +63,7 @@ function schedule(spring: SpringRunner) {
   if (typeof requestAnimationFrame === 'undefined') return
   active.add(spring)
   if (frameId) return
-  lastFrameTime = performance.now()
+  lastFrameTime = 0
   frameId = requestAnimationFrame(tick)
 }
 

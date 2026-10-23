@@ -53,7 +53,8 @@
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }
-  div.ui-stepper-trigger {
+  div.ui-stepper-trigger,
+  button.ui-stepper-trigger:disabled {
     cursor: default;
   }
 
@@ -79,6 +80,9 @@
   .ui-stepper-step[data-state='active'] .ui-stepper-circle {
     border-color: var(--ui-primary);
     color: var(--ui-primary);
+    /* It lights up as the line reaching it fills. */
+    transition-delay:
+      var(--ui-duration-press), var(--ui-duration-press), var(--ui-duration-press), 0s;
   }
   .ui-stepper-step[data-state='completed'] .ui-stepper-circle {
     border-color: var(--ui-primary);
@@ -86,18 +90,22 @@
     color: var(--ui-primary-contrast);
   }
   @media (hover: hover) and (pointer: fine) {
-    button.ui-stepper-trigger:hover .ui-stepper-circle {
+    button.ui-stepper-trigger:enabled:hover .ui-stepper-circle {
       border-color: var(--ui-text-muted);
     }
-    .ui-stepper-step[data-state='active'] button.ui-stepper-trigger:hover .ui-stepper-circle {
+    .ui-stepper-step[data-state='active']
+      button.ui-stepper-trigger:enabled:hover
+      .ui-stepper-circle {
       border-color: var(--ui-primary-hover);
     }
-    .ui-stepper-step[data-state='completed'] button.ui-stepper-trigger:hover .ui-stepper-circle {
+    .ui-stepper-step[data-state='completed']
+      button.ui-stepper-trigger:enabled:hover
+      .ui-stepper-circle {
       border-color: var(--ui-primary-hover);
       background: var(--ui-primary-hover);
     }
   }
-  button.ui-stepper-trigger:active .ui-stepper-circle {
+  button.ui-stepper-trigger:enabled:active .ui-stepper-circle {
     transform: scale(0.9);
   }
 
@@ -139,6 +147,10 @@
   .ui-stepper-step[data-state='active'] .ui-stepper-label,
   .ui-stepper-step[data-state='completed'] .ui-stepper-label {
     color: var(--ui-text);
+  }
+  /* With its circle, it lights up as the line reaching it fills. */
+  .ui-stepper-step[data-state='active'] .ui-stepper-label {
+    transition-delay: var(--ui-duration-press);
   }
   .ui-stepper-description {
     color: var(--ui-text-muted);
@@ -230,7 +242,11 @@
     .ui-stepper-connector::after {
       transition: none;
     }
-    button.ui-stepper-trigger:active .ui-stepper-circle {
+    .ui-stepper-step[data-state='active'] .ui-stepper-circle,
+    .ui-stepper-step[data-state='active'] .ui-stepper-label {
+      transition-delay: 0s;
+    }
+    button.ui-stepper-trigger:enabled:active .ui-stepper-circle {
       transform: none;
     }
     .ui-stepper-check-enter-active,

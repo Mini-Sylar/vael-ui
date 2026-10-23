@@ -25,6 +25,14 @@ export function token(el: Element, value: string): string {
   return match ? getComputedStyle(el).getPropertyValue(match[1]!).trim() : value
 }
 
+/** A keyframe sequence's easing, one or one per segment, with tokens resolved against the element. */
+export const easingOf = (el: Element, easing: unknown): string | string[] | undefined =>
+  easing === undefined
+    ? undefined
+    : Array.isArray(easing)
+      ? easing.map((each) => token(el, String(each)))
+      : token(el, String(easing))
+
 /** A spring, or a duration with an easing; tokens resolve against the element. */
 export function resolveTiming(
   el: Element,
@@ -34,7 +42,9 @@ export function resolveTiming(
   if (timing.duration !== undefined || timing.easing !== undefined) {
     const raw = timing.duration ?? 'var(--ui-duration-enter)'
     const duration = typeof raw === 'number' ? raw : cssTime(token(el, raw))
-    const easing = timing.easing ? token(el, timing.easing) || EASE_OUT : EASE_OUT
+    // One easing per keyframe segment: the whole runs linear, each segment eases on its own.
+    const given = timing.easing as string | string[] | undefined
+    const easing = Array.isArray(given) ? 'linear' : given ? token(el, given) || EASE_OUT : EASE_OUT
     return { easing, duration, arrival: duration }
   }
   const spring = (timing.spring as Spring | undefined) ?? fallback ?? DEFAULT_SPRING

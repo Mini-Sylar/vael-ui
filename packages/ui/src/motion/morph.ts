@@ -21,6 +21,13 @@ export const MORPH_OUT: MotionTiming = {
 }
 
 const radius = (el: Element) => getComputedStyle(el).borderTopLeftRadius || '0px'
+// The corner it draws: a pill's 9999px or a 50% is at most half its shorter side.
+function drawnRadius(el: Element, box: DOMRect): string {
+  const raw = radius(el)
+  const n = Number.parseFloat(raw) || 0
+  const px = raw.endsWith('%') ? (n / 100) * Math.min(box.width, box.height) : n
+  return `${Math.min(px, box.width / 2, box.height / 2)}px`
+}
 export const restingClip = (main: Element) => `inset(-${OUTSET}px round ${radius(main)})`
 
 /** Where layout put it: its box without the translate it may be carrying mid-morph. */
@@ -59,7 +66,7 @@ export function onto(source: Element, main: Element, t: MotionTiming): MotionVal
   return {
     x: timed(Math.round(from.left + from.width / 2 - (to.left + to.width / 2))),
     y: timed(Math.round(from.top + from.height / 2 - (to.top + to.height / 2))),
-    clipPath: timed(`inset(${iy}px ${ix}px round ${radius(source)})`),
+    clipPath: timed(`inset(${iy}px ${ix}px round ${drawnRadius(source, from)})`),
     ...(clear(colour) || clear(own) || colour === own ? {} : { backgroundColor: timed(colour) }),
   }
 }
@@ -108,8 +115,8 @@ function around(root: Element, keep: Element[]): HTMLElement[] {
 }
 
 /**
- * Opening: the main part starts on the source's box and its content fades in once under way.
- * `start` is the engine's (it returns the arrival in ms).
+ * Opening: the main part starts as the source itself, on its box and in its colour, and its
+ * content fades in once under way. `start` is the engine's (it returns the arrival in ms).
  * Returns the resting clip, read now: a style read after the release would make the clip snap.
  */
 export function morphEnter(
@@ -117,15 +124,12 @@ export function morphEnter(
   main: HTMLElement,
   t: MotionTiming,
   start: (node: HTMLElement, values: MotionValues, t: MotionTiming) => number,
-  /** The morph's arrival (ms): the panel fades in over the source in its first share. */
-  arrival = 0,
 ): string {
-  const fade = { opacity: { value: 0, duration: arrival * 0.3, easing: EASE_OUT } }
   const panel = onto(source, main, t)
   const matched = pairs(source, main)
   // Measured before the panel takes its starting offset.
   const carries = matched.map(([el, match]) => [el, carried(el, match, panel, t)] as const)
-  const landed = start(main, { ...panel, ...fade }, t)
+  const landed = start(main, panel, t)
   for (const [el, values] of carries) start(el, values, t)
   for (const child of around(
     main,
@@ -183,8 +187,7 @@ export function morphLeave(
   ]
 }
 
-// A morph's cross-fades with its source: the first share of the open, the last of the close.
-const FADE_SHARE = 0.3
+// The close's cross-fade with its source: its last share, as it lands.
 const LAND_SHARE = 0.4
 
 /** The same values, each on the duration `t` sets, eased out (a fade alongside a morph). */
@@ -235,18 +238,16 @@ export function createSession() {
   return {
     hidden: () => hidden,
     show,
-    /** Opening: the panel fades in over the source first (its text never blanks), then hides it. */
+    /** Opening: the panel takes the source's place at once, and grows out of it. */
     open(
       source: HTMLElement,
       main: HTMLElement,
       t: MotionTiming,
       start: (node: HTMLElement, values: MotionValues, t: MotionTiming) => number,
-      arrival: number,
       hideIt: boolean,
-      live: () => boolean,
     ) {
-      const rest = morphEnter(source, main, t, start, arrival)
-      if (hideIt) setTimeout(() => live() && hide(source), arrival * FADE_SHARE)
+      const rest = morphEnter(source, main, t, start)
+      if (hideIt) hide(source)
       return rest
     },
     /** Closing: nearly there, the source shows again under the panel, which fades off it as it lands. */

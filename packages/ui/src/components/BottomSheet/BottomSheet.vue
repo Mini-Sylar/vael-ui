@@ -64,7 +64,7 @@ import type { InjectionKey } from 'vue'
 import type { SheetSnapPoint } from '../../composables/useSheetDrag'
 import type { UiPartValue } from '../../classes'
 import type { DOMTarget } from '../../composables/dom'
-import type { BeforeClose, CloseContext, DialogMotion } from '../../motion/types'
+import type { BeforeClose, CloseContext, DialogMotion, Spring } from '../../motion/types'
 import type { DialogCloseReason } from '../../composables/useDialog'
 export type { SheetSnapPoint }
 /** Why the sheet is closing: a dialog's reasons, plus `'drag'` when it was dragged away. */
@@ -275,19 +275,31 @@ const DRAWER_EXIT = {
   duration: 'var(--ui-duration-drawer-exit)',
   easing: 'var(--ui-ease-drawer)',
 } as const
-// Every close leaves on one spring over the panel's height: a flick carries on at the finger's
-// speed, the X or Escape start from rest (the drawer curve starts at full speed, so it flings).
-// The backdrop rides the same spring, so the two leave together.
+// Every close leaves on one spring over what's left of the panel's height (your `motion.spring`,
+// or a fling's): a flick carries on at the finger's speed, the X or Escape start from rest. The
+// backdrop rides the same spring, so the two leave together.
+// Where the drag or a snap point had it as it starts to close: the exit covers only what's left.
+const offsetAtClose = shallowRef(0)
+watch(
+  open,
+  (value) => {
+    if (value || !panelEl.value) return
+    offsetAtClose.value = new DOMMatrix(getComputedStyle(panelEl.value).transform).m42
+  },
+  { flush: 'sync' },
+)
 const sheetLook = computed<DialogMotion>(() => {
   const speed = Math.max(0, velocityAtClose.value)
-  const leave = panelEl.value ? flingTiming(panelEl.value.offsetHeight, speed) : DRAWER_EXIT
+  const yours = typeof props.motion === 'object' ? (props.motion.spring as Spring) : undefined
+  const left = panelEl.value ? Math.max(0, panelEl.value.offsetHeight - offsetAtClose.value) : 0
+  const leave = panelEl.value ? flingTiming(left, speed, yours) : DRAWER_EXIT
   return {
     initial: {
       panel: { y: { value: '100%', ...DRAWER } },
       overlay: { opacity: { value: 0, ...FADE } },
     },
     exit: {
-      panel: { y: { value: '100%', ...leave } },
+      panel: { y: { value: panelEl.value ? `${left}px` : '100%', ...leave } },
       overlay: { opacity: { value: 0, ...leave } },
     },
   }

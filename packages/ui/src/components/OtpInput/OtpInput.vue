@@ -362,12 +362,19 @@ useStateMotion({
   key: 'otpInput',
   mainPart: 'root',
   motion: () => props.motion,
-  parts: () => ({ root: root.value }),
+  root: () => root.value,
+  selectors: { root: '.ui-otp', cell: '.ui-otp-cell' },
   states: () => ({
     invalid: isInvalid.value,
     complete: dataState.value === 'complete',
     disabled: isDisabled.value,
     focus: isFocused.value,
+  }),
+  // Cell by cell, each with its index (a shake that ripples): filled, and where the caret is.
+  repeated: ['cell'],
+  each: (_, __, index) => ({
+    filled: index < modelValue.value.length,
+    current: index === activeIndex.value,
   }),
 })
 const cx = useClassMerge()

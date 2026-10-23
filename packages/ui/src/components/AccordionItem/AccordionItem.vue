@@ -135,6 +135,8 @@ useStateMotion({
   key: 'accordion',
   mainPart: 'trigger',
   motion: ctx.states,
+  // Your timing reaches the whole item: the panel's height as well as the chevron.
+  root: () => item.value,
   parts: () => ({
     item: item.value,
     header: header.value,

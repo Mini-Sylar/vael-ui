@@ -36,6 +36,8 @@ export interface ScheduledTarget {
   name: string
   els: Element[]
   motion: TargetMotion
+  /** Each element's own (its `initial` and `delay`), beside `els`. */
+  each?: TargetMotion[]
 }
 
 const toList = <T>(value: T | T[] | undefined): T[] =>
@@ -75,7 +77,14 @@ export async function runTargets(
   // Pinned at `initial` now, before paint: a target waiting on `after` or a stagger must not show early.
   for (const target of targets)
     target.els.forEach((el, index) =>
-      holdValues(el, valuesAt(target.motion.initial, { direction: 0, index }) ?? {}),
+      holdValues(
+        el,
+        valuesAt((target.each?.[index] ?? target.motion).initial, {
+          direction: 0,
+          index,
+          count: target.els.length,
+        }) ?? {},
+      ),
     )
   const looped = cyclic(targets)
   if (looped.size)
@@ -103,8 +112,12 @@ export async function runTargets(
     targets.map(async (target) => {
       const m = moments.get(target.name)!
       const { motion, els } = target
+      const own = (i: number) => target.each?.[i] ?? motion
       if (!looped.has(target.name)) await Promise.all(toList(motion.after).map(waitFor))
-      if (motion.delay && motion.delay > 0) await sleep(motion.delay * 1000)
+      // The earliest delay is the name's; each element waits the rest of its own.
+      const delays = els.map((_, i) => Math.max(0, own(i).delay ?? 0))
+      const shared = delays.length ? Math.min(...delays) : 0
+      if (shared > 0) await sleep(shared * 1000)
       if (options.signal.aborted) return
       const first = els[0]
       if (!first) {
@@ -113,10 +126,10 @@ export async function runTargets(
         return
       }
       const timing = resolveTiming(first, motion, options.spring)
-      const at = (i: number) => staggerAt(motion.stagger, i, els.length)
+      const at = (i: number) => staggerAt(motion.stagger, i, els.length) + delays[i]! - shared
       const lastStart = Math.max(0, ...els.map((_, i) => at(i))) * 1000
       startMoments(m, lastStart + timing.arrival)
-      await Promise.all(els.map((el, i) => playTarget(el, motion, at(i), options, waitFor, i)))
+      await Promise.all(els.map((el, i) => playTarget(el, own(i), at(i), options, waitFor, i)))
       m.arrive.resolve()
       m.settle.resolve()
     }),

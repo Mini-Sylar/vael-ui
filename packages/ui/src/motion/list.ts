@@ -7,7 +7,8 @@ import { playValues, resolveTiming, slideFrom } from './engine'
 import { runHook } from './hook'
 import { followSize } from './size'
 import type { FollowSize } from './size'
-import type { MotionValues } from './types'
+import { valuesAt } from './playable'
+import type { MotionValues, MotionWhere } from './types'
 
 const QUIET_FADE: MotionValues = { opacity: 0 }
 
@@ -142,16 +143,20 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
       Object.entries(options.parts?.(el as HTMLElement) ?? {}).filter(([, sub]) => sub),
     ) as Record<string, HTMLElement>
 
-  /** Plays an item's values, and those for its own parts, together. */
+  type Values = Record<string, MotionValues | ((where: MotionWhere) => MotionValues) | undefined>
+  /** Plays an item's values, and those for its own parts, together; functions get `where`. */
   function playItem(
     el: Element,
-    values: Record<string, MotionValues | undefined>,
+    values: Values,
     main: MotionValues,
+    where: MotionWhere,
     look: Parameters<typeof playValues>[2],
   ): Promise<unknown> {
     const runs = [playValues(el, main, look)]
-    for (const [key, sub] of Object.entries(partsOf(el)))
-      if (values[key]) runs.push(playValues(sub, values[key], look))
+    for (const [key, sub] of Object.entries(partsOf(el))) {
+      const own = valuesAt(values[key], where)
+      if (own) runs.push(playValues(sub, own, look))
+    }
     return Promise.all(runs)
   }
 
@@ -172,7 +177,8 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     const motion = options.resolved()
     group.forEach(({ el, done }, index) => {
       if (hooked(el, 'enter', index, done)) return
-      playItem(el, motion.initial, motion.initial[part] ?? {}, {
+      const where: MotionWhere = { direction: 0, index, count: group.length }
+      playItem(el, motion.initial, valuesAt(motion.initial[part], where) ?? {}, where, {
         direction: 'in',
         engine: motion.engine,
         timing: timingFor(el),
@@ -203,12 +209,34 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
       box._uiPinned = true
       size?.sync()
     }
-    if (hooked(el, 'leave', 0, done)) return
-    playItem(el, motion.exit, motion.exit[part] ?? QUIET_FADE, {
-      direction: 'out',
-      engine: motion.engine,
-      timing: timingFor(el),
-    }).then(done)
+    // Held in place until now: the rest slide on from where they are, not from before it left.
+    const finish = () => {
+      if (!box._uiPinned) before = positions()
+      done()
+    }
+    // Items leaving in the same tick are one group: each knows its place in it, in page order.
+    if (!leavingBatch.length) queueMicrotask(leaveBatch)
+    leavingBatch.push({ el, done: finish })
+  }
+  let leavingBatch: { el: Element; done: () => void }[] = []
+  function leaveBatch() {
+    const group = leavingBatch.sort((a, b) =>
+      a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+    )
+    leavingBatch = []
+    const motion = options.resolved()
+    group.forEach(({ el, done }, index) => {
+      if (hooked(el, 'leave', index, done)) return
+      const where: MotionWhere = { direction: 0, index, count: group.length }
+      // Its parts given their own exits: the item stays as it is around them.
+      const parted = Object.keys(partsOf(el)).some((key) => motion.exit[key])
+      const main = valuesAt(motion.exit[part], where) ?? (parted ? {} : QUIET_FADE)
+      playItem(el, motion.exit, main, where, {
+        direction: 'out',
+        engine: motion.engine,
+        timing: timingFor(el),
+      }).then(done)
+    })
   }
 
   return {

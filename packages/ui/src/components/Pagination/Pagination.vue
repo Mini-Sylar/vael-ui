@@ -29,7 +29,7 @@
         role="presentation"
         aria-hidden="true"
         inert
-        :style="labelsStyle"
+        :style="labelsHidden"
       >
         <span v-for="n in 2" :key="`start-${n}`" class="ui-pagination-labels-spacer">
           <Button :class="labelPart.class" icon size="sm" variant="ghost" tabindex="-1" />
@@ -194,7 +194,7 @@
 import './Pagination.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, useAttrs, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
 import Select from '../Select/Select.vue'
 import type { SelectItemData } from '../Select/Select.vue'
@@ -232,8 +232,11 @@ const indicatorMotion = useIndicatorMotion({
 const indicator = useTabIndicator(page, {
   listEl,
   selector: '[aria-current="page"]',
+  indicatorEl,
   indicator: indicatorMotion.spring,
   motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
+  stretch: () => (typeof props.motion === 'object' ? props.motion.stretch : undefined),
+  squash: () => (typeof props.motion === 'object' ? props.motion.squash : undefined),
 })
 // The hover and keyboard highlight slides between buttons, under the current page's own.
 const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
@@ -245,15 +248,32 @@ const { style: hoverStyle } = useHoverIndicator(listEl, {
 })
 // The page numbers again in the contrast color, clipped to the indicator, so the
 // color travels with it instead of flipping when the page changes.
-const labelsStyle = computed(() => {
-  const { insetInlineStart, inlineSize, transitionDuration } = indicator.style.value
-  const left = parseFloat(insetInlineStart ?? '0') || 0
-  const right = left + (parseFloat(inlineSize ?? '0') || 0)
-  return {
-    clipPath: `inset(0 calc(100% - ${right}px) 0 ${left}px round calc(var(--ui-radius) - 4px))`,
-    transitionDuration: transitionDuration?.startsWith('0ms') ? '0ms' : undefined,
-  }
+function clipLabels() {
+  const labels = labelsEl.value
+  if (!labels || !indicatorEl.value) return
+  const { insetInlineStart, inlineSize, scale, transitionDuration, transitionProperty } =
+    indicatorEl.value.style
+  const left = parseFloat(insetInlineStart) || 0
+  const right = left + (parseFloat(inlineSize) || 0)
+  // A squash scales the indicator's height from its middle.
+  const squash = scale ? (1 - parseFloat(scale.split(' ')[1] ?? '1')) * 50 : 0
+  const block = squash ? `${squash}%` : '0'
+  labels.style.clipPath = `inset(${block} calc(100% - ${right}px) ${block} ${left}px round calc(var(--ui-radius) - 4px))`
+  // A spring writes every frame, so the clip follows at once; a glide transitions alongside.
+  labels.style.transitionDuration =
+    transitionProperty === 'opacity' || transitionDuration.startsWith('0ms') ? '0ms' : ''
+}
+// Hidden until the indicator is first placed; one object, so a re-render never rewrites it.
+const labelsHidden = { clipPath: 'inset(0 100% 0 0)' }
+// Its new place lands in its inline style, every frame on a spring.
+let indicatorObserver: MutationObserver | undefined
+onMounted(() => {
+  clipLabels()
+  indicatorObserver = new MutationObserver(clipLabels)
+  if (indicatorEl.value)
+    indicatorObserver.observe(indicatorEl.value, { attributes: true, attributeFilter: ['style'] })
 })
+onBeforeUnmount(() => indicatorObserver?.disconnect())
 
 const rawProps = withDefaults(
   defineProps<{

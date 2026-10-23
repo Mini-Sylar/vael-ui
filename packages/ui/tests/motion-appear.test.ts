@@ -70,7 +70,7 @@ test('one that mounts mid-opening appears once the dialog is open, and only once
   expect(rising).toBeGreaterThanOrEqual(0)
   for (let i = rising + 1; i < seen.length; i++)
     expect(seen[i]!).toBeGreaterThanOrEqual(seen[i - 1]! - 0.01)
-  expect(seen.at(-1)).toBe(1)
+  await vi.waitFor(() => expect(opacity(document.querySelector('.note'))).toBe(1))
 })
 
 test('after-enter and after-leave fire once per open and close', async () => {

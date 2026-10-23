@@ -7,6 +7,7 @@
     :radius="step?.spotlightRadius ?? spotlightRadius"
     :instant="isScrolling"
     :glide="!!props.motion"
+    :glide-timing="glideTiming"
     :force-mount="forceMount"
     :teleport-to="teleportTarget"
     :container-el="container"
@@ -135,9 +136,11 @@ export interface TourProps<T extends TourStep = TourStep> {
    * How the callout moves, like Popover's, and whether the spotlight glides between steps. `false`
    * turns both off, so you can animate `spotlightEl` yourself. An object moves the callout your
    * way: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks.
+   * Its `{ duration, easing }` or `{ spring }` also times the glide between steps. Unset, the glide
+   * is quick to a nearby target and longer across the screen.
    * @default true
    */
-  motion?: PopoverMotion
+  motion?: TourMotion
   /** Class and style overrides for each part. */
   ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
 }
@@ -150,7 +153,7 @@ export interface TourProps<T extends TourStep = TourStep> {
 -->
 <script setup lang="ts" generic="T extends TourStep = TourStep">
 import type { PopoverCloseReason } from '../../composables/usePopover'
-import type { BeforeClose, PopoverMotion } from '../../motion/types'
+import type { BeforeClose, TourMotion } from '../../motion/types'
 import './Tour.css'
 import '../shared/tokens.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
@@ -158,7 +161,8 @@ import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
 import type { PopoverExposed } from '../Popover/Popover.vue'
 import TourSpotlight from './TourSpotlight.vue'
-import { GLIDE_EASE, glideMs } from '../../composables/tourGlide'
+import { glideOf, timingOf } from '../../composables/tourGlide'
+import { useMotionStyle } from '../../motion/context'
 import { useTour } from '../../composables/useTour'
 import { useDOMTarget, prefersReducedMotion } from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
@@ -223,6 +227,10 @@ defineSlots<{
 }>()
 
 const messages = useUiMessages()
+
+// The glide's timing: your `motion`, then a style's `tour`; unset, it scales with the distance.
+const motionStyle = useMotionStyle()
+const glideTiming = computed(() => timingOf(props.motion) ?? timingOf(motionStyle?.value?.tour))
 
 const {
   currentIndex,
@@ -328,7 +336,7 @@ watch(
         const target = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? panel
         target.focus({ preventScroll: true })
       },
-      { flush: 'post', immediate: true },
+      { flush: 'post' },
     )
   },
   { flush: 'post' },
@@ -504,6 +512,16 @@ const themedUi = useThemedUi(
 )
 const ui = computed(() => themedUi())
 const spotlightUi = computed(() => withZIndex(ui.value?.spotlight, spotlightZIndex.value))
+// Between steps the callout travels with the spotlight. A FLIP, not a top/left transition: above
+// its target the callout pins its bottom edge instead, and `top: auto` doesn't animate.
+const GLIDE_ID = 'ui-tour-glide'
+let glideObserver: MutationObserver | undefined
+let glideTimer: ReturnType<typeof setTimeout> | undefined
+function stopGlide() {
+  glideObserver?.disconnect()
+  glideObserver = undefined
+  clearTimeout(glideTimer)
+}
 // Only once the callout has been placed in this session. Reopening a finished tour shows the last
 // step's target for a tick before resetting to the first; gliding then started from the
 // positioner's unplaced 0,0, so the callout swept in from the corner.
@@ -525,24 +543,10 @@ watch(
       if (open.value) placed = true
     })
   },
-  { flush: 'post' },
+  // Mounted already open: placed too, so the first step change glides.
+  { flush: 'post', immediate: true },
 )
 
-// Between steps the callout travels with the spotlight. A FLIP, not a top/left transition: above
-// its target the callout pins its bottom edge instead, and `top: auto` doesn't animate.
-const GLIDE_ID = 'ui-tour-glide'
-let glideObserver: MutationObserver | undefined
-let glideTimer: ReturnType<typeof setTimeout> | undefined
-function stopGlide() {
-  glideObserver?.disconnect()
-  glideObserver = undefined
-  clearTimeout(glideTimer)
-}
-// Where the glide has the callout right now, on top of where its layout puts it.
-function glideOffset(el: HTMLElement): [number, number] {
-  const [x = '0', y = '0'] = getComputedStyle(el).translate.split(' ')
-  return [Number.parseFloat(x) || 0, Number.parseFloat(y) || 0]
-}
 watch(targetEl, (next, previous) => {
   const el = popover.value?.positionerEl as HTMLElement | null | undefined
   if (!el || !next || !previous || !open.value || !props.motion || !placed) return
@@ -551,26 +555,39 @@ watch(targetEl, (next, previous) => {
   const a = previous.getBoundingClientRect()
   const b = next.getBoundingClientRect()
   const box = container.value?.getBoundingClientRect()
-  const ms = glideMs(
+  const { duration: ms, easing } = glideOf(
+    el,
+    glideTiming.value,
     Math.hypot(b.x + b.width / 2 - a.x - a.width / 2, b.y + b.height / 2 - a.y - a.height / 2),
     box ? Math.hypot(box.width, box.height) : Math.hypot(innerWidth, innerHeight),
   )
-  const [tx, ty] = glideOffset(el)
-  let layout = { x: el.getBoundingClientRect().x - tx, y: el.getBoundingClientRect().y - ty }
-  // Runs before the paint that would show the new spot: play from where it was seen instead.
+  // Where it was seen as the step changed (a glide on its way included): this step's glide
+  // starts there.
+  const start = el.getBoundingClientRect()
+  const origin = { x: start.x, y: start.y }
+  let first = true
+  // Runs before the paint that would show the new spot. Placement writes the style again while the
+  // panel settles to the new content: each time, the same glide re-aims at the new spot from the
+  // same origin and carries on at the same moment, instead of starting over.
   glideObserver = new MutationObserver(() => {
-    const [ox, oy] = glideOffset(el)
-    const seen = { x: layout.x + ox, y: layout.y + oy }
-    for (const running of el.getAnimations()) if (running.id === GLIDE_ID) running.cancel()
-    layout = el.getBoundingClientRect()
-    const dx = seen.x - layout.x
-    const dy = seen.y - layout.y
+    // The last step's glide, if still going, hands over; this step's own keeps its clock.
+    let elapsed = 0
+    for (const running of el.getAnimations())
+      if (running.id === GLIDE_ID) {
+        if (!first) elapsed = Number(running.currentTime ?? 0)
+        running.cancel()
+      }
+    first = false
+    const layout = el.getBoundingClientRect()
+    const dx = origin.x - layout.x
+    const dy = origin.y - layout.y
     if (isScrolling.value || (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5)) return
     const glide = el.animate([{ translate: `${dx}px ${dy}px` }, { translate: '0px 0px' }], {
       duration: ms,
-      easing: GLIDE_EASE,
+      easing,
     })
     glide.id = GLIDE_ID
+    glide.currentTime = elapsed
   })
   glideObserver.observe(el, { attributes: true, attributeFilter: ['style'] })
   glideTimer = setTimeout(stopGlide, ms + 100)
@@ -592,7 +609,10 @@ defineExpose({
   panelEl: popoverPanelEl,
   /** Positioning wrapper around the callout panel (`null` while closed). */
   positionerEl,
-  /** Dimmed overlay with the cutout (`null` while closed). */
+  /**
+   * Dimmed overlay with the cutout (`null` while closed). It carries the cutout's box, kept current
+   * through the glide: `--ui-tour-cutout-x`, `-y`, `-width`, `-height` and `-radius`, in px.
+   */
   spotlightEl,
   /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => popover.value?.isClosing ?? false),

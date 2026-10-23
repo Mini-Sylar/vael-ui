@@ -45,6 +45,20 @@ test('motion hooks: each action goes through your enter and leave as `action`, h
   await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(0), { timeout: 1000 })
 })
 
+test("with motion, the list engine's marker sits on the actions' menu, with no Vue warning", async () => {
+  const { default: SpeedDial } = await import('../src/components/SpeedDial/SpeedDial.vue')
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  const screen = await render(SpeedDial, {
+    props: { items: [{ label: 'Home' }], motion: { initial: { action: { opacity: 0 } } } },
+    global: { stubs: { 'transition-group': false } },
+  })
+  await userEvent.click(trigger(screen))
+  await vi.waitFor(() => expect(actionButtons(screen)).toHaveLength(1))
+  expect(screen.container.querySelector('[role="menu"]')!.hasAttribute('data-ui-list')).toBe(true)
+  expect(warn.mock.calls.flat().join(' ')).not.toContain('data-ui-list')
+  warn.mockRestore()
+})
+
 test('motion=false also disables the action-move CSS transition (not just enter/leave)', async () => {
   // Same gap as DataTable's row-move: Vue's TransitionGroup move animation
   // isn't gated by the css prop, only enter/leave are, so this needs its own

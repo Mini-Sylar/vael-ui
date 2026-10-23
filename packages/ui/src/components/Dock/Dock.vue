@@ -145,13 +145,20 @@ const emit = defineEmits<{
 
 const rootEl = useTemplateRef<HTMLElement>('rootEl')
 
+const picked = shallowRef(-1)
 const parts = useStateMotion({
   key: 'dock',
   mainPart: 'root',
   motion: () => props.motion,
   root: () => rootEl.value,
   selectors: { root: '.ui-dock', item: '.ui-dock-item' },
-  states: () => ({}),
+  states: () => ({ disabled: props.disabled }),
+  // Item by item: hover, press, focus, and `selected` for a moment as one is picked (a launch hop).
+  repeated: ['item'],
+  each: (_, __, index) => ({
+    disabled: props.disabled || !!props.items[index]?.disabled,
+    selected: index === picked.value,
+  }),
 })
 
 const { setItemEl, onPointerDown, onPointerMove, onPointerLeave, touchSlid, remeasure } = useDock(
@@ -275,6 +282,9 @@ function onItemKeydown(event: KeyboardEvent, index: number) {
 function onItemSelect(item: DockItemData, index: number) {
   if (item.disabled) return
   activeIndex.value = index
+  // On for a frame: each pick plays `selected` again, the same item included.
+  picked.value = index
+  requestAnimationFrame(() => (picked.value = -1))
   item.onSelect?.()
   emit('select', item, index)
 }

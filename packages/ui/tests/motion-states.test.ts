@@ -8,6 +8,7 @@ import Button from '../src/components/Button/Button.vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Input from '../src/components/Input/Input.vue'
 import OtpInput from '../src/components/OtpInput/OtpInput.vue'
+import Switch from '../src/components/Switch/Switch.vue'
 import type {
   AccordionMotion,
   ButtonMotion,
@@ -61,6 +62,179 @@ test('an invalid field shakes on entering the state, not when it mounts invalid,
   await vi.waitFor(() => expect(states(root()).some((a) => a.playState === 'running')).toBe(true))
 })
 
+test('a pop from one value to another rides its own spring, overshoot and all, after its delay', async () => {
+  const invalid = shallowRef(false)
+  const spring = { damping: 0.35, response: 0.45 }
+  const motion: InputMotion = {
+    states: {
+      invalid: {
+        root: { scale: { value: [0.8, 1], spring }, opacity: { value: [0.5, 1], delay: 0.2 } },
+      },
+    },
+  }
+  render({ setup: () => () => h(Input, { invalid: invalid.value, motion }) })
+  const root = () => document.querySelector('.ui-input')
+  await vi.waitFor(() => expect(root()).not.toBeNull())
+  for (let i = 0; i < 5; i++) await frame()
+  invalid.value = true
+  await vi.waitFor(() => expect(states(root()).length).toBe(2))
+  expect(states(root()).map((a) => a.effect!.getTiming().delay)).toContain(200)
+  let most = 0
+  while (states(root()).some((a) => a.playState === 'running')) {
+    most = Math.max(most, Number(getComputedStyle(root()!).scale.split(' ')[0]))
+    await frame()
+  }
+  expect(most).toBeGreaterThan(1.05)
+})
+
+test('a switch plays its unchecked keyframes when turned off, and its checked ones when turned on', async () => {
+  const on = shallowRef(false)
+  render({
+    setup: () => () =>
+      h(Switch, {
+        modelValue: on.value,
+        motion: {
+          states: {
+            checked: { thumb: { scale: [1, 1.4, 1] } },
+            unchecked: { thumb: { scale: [1, 0.6, 1] } },
+          },
+        },
+      }),
+  })
+  const thumb = () => document.querySelector('.ui-switch-thumb')
+  await vi.waitFor(() => expect(thumb()).not.toBeNull())
+  for (let i = 0; i < 5; i++) await frame()
+  // Mounted off: shown as is.
+  expect(states(thumb())).toHaveLength(0)
+  const peak = async () => {
+    await vi.waitFor(() => expect(states(thumb()).length).toBeGreaterThan(0))
+    const seen: number[] = []
+    while (states(thumb()).some((a) => a.playState === 'running')) {
+      seen.push(Number(getComputedStyle(thumb()!).scale))
+      await frame()
+    }
+    return seen
+  }
+  on.value = true
+  expect(Math.max(...(await peak()))).toBeGreaterThan(1.2)
+  on.value = false
+  expect(Math.min(...(await peak()))).toBeLessThan(0.8)
+})
+
+test("a held value with its own timing keeps it, delay and all; the rest share the component's", async () => {
+  const invalid = shallowRef(false)
+  const motion: InputMotion = {
+    states: {
+      invalid: {
+        root: {
+          backgroundColor: { value: 'rgb(255, 0, 0)', duration: 600, delay: 0.3 },
+          scale: '0.98',
+        },
+      },
+    },
+  }
+  render({ setup: () => () => h(Input, { invalid: invalid.value, motion }) })
+  const root = () => document.querySelector('.ui-input')
+  await vi.waitFor(() => expect(root()).not.toBeNull())
+  for (let i = 0; i < 5; i++) await frame()
+  invalid.value = true
+  await vi.waitFor(() => expect(states(root()).length).toBe(2))
+  const timings = states(root()).map((a) => a.effect!.getTiming())
+  expect(timings).toContainEqual(expect.objectContaining({ duration: 600, delay: 300 }))
+  expect(timings.filter((t) => t.delay === 0)).toHaveLength(1)
+})
+
+test('a new timing reaches its tokens in the same flush: nothing starts on the default between', async () => {
+  const duration = shallowRef(350)
+  let seen = ''
+  render({
+    setup: () => () => {
+      const d = duration.value
+      // Queued during the render, as a replay's appearance is: it runs as soon as the flush ends.
+      if (d === 220)
+        queueMicrotask(() => (seen = root().style.getPropertyValue('--ui-duration-enter')))
+      return h(Input, { motion: { duration: d } })
+    },
+  })
+  const root = () => document.querySelector<HTMLElement>('.ui-input')!
+  await vi.waitFor(() => expect(root().style.getPropertyValue('--ui-duration-enter')).toBe('350ms'))
+  duration.value = 220
+  await vi.waitFor(() => expect(seen).not.toBe(''))
+  expect(seen).toBe('220ms')
+})
+
+test('keyframes take times, an easing per segment and repeats; an endless one stops with its state', async () => {
+  const invalid = shallowRef(false)
+  const pressed = shallowRef(false)
+  const motion: InputMotion = {
+    states: {
+      invalid: {
+        root: {
+          scale: {
+            value: [1, 1.2, 0.9, 1],
+            times: [0, 0.4, 0.7, 1],
+            easing: 'ease-out',
+            duration: 400,
+            repeat: 1,
+          },
+        },
+      },
+      disabled: {
+        root: { x: { value: [0, 2], duration: 50, repeat: Infinity, repeatType: 'reverse' } },
+      },
+    },
+  }
+  render({
+    setup: () => () => h(Input, { invalid: invalid.value, disabled: pressed.value, motion }),
+  })
+  const root = () => document.querySelector<HTMLElement>('.ui-input')!
+  await vi.waitFor(() => expect(root()).not.toBeNull())
+  for (let i = 0; i < 5; i++) await frame()
+  invalid.value = true
+  await vi.waitFor(() => expect(states(root()).length).toBeGreaterThan(0))
+  const run = states(root())[0]!
+  const frames = (run.effect as KeyframeEffect).getKeyframes()
+  expect(frames.map((k) => k.offset)).toEqual([0, 0.4, 0.7, 1])
+  expect(frames[0]!.easing).toBe('ease-out')
+  expect(run.effect!.getTiming().iterations).toBe(2)
+  await settle()
+
+  pressed.value = true
+  await vi.waitFor(() =>
+    expect(states(root()).some((a) => a.effect!.getTiming().iterations === Infinity)).toBe(true),
+  )
+  await new Promise((r) => setTimeout(r, 300))
+  expect(states(root()).some((a) => a.playState === 'running')).toBe(true)
+  pressed.value = false
+  await vi.waitFor(() =>
+    expect(states(root()).some((a) => a.effect!.getTiming().iterations === Infinity)).toBe(false),
+  )
+  await settle()
+  expect(getComputedStyle(root()).translate).toBe('none')
+})
+
+test('keyframes take one easing per step from a list: a rise, then a bounce', async () => {
+  const invalid = shallowRef(false)
+  const motion: InputMotion = {
+    states: {
+      invalid: {
+        root: { y: { value: [0, -20, 0], easing: ['ease-out', 'ease-in'], duration: 400 } },
+      },
+    },
+  }
+  render({ setup: () => () => h(Input, { invalid: invalid.value, motion }) })
+  const root = () => document.querySelector<HTMLElement>('.ui-input')!
+  await vi.waitFor(() => expect(root()).not.toBeNull())
+  for (let i = 0; i < 5; i++) await frame()
+  invalid.value = true
+  await vi.waitFor(() => expect(states(root()).length).toBeGreaterThan(0))
+  const run = states(root())[0]!
+  const frames = (run.effect as KeyframeEffect).getKeyframes()
+  expect(frames.slice(0, 2).map((k) => k.easing)).toEqual(['ease-out', 'ease-in'])
+  expect(run.effect!.getTiming().easing).toBe('linear')
+  expect(run.effect!.getTiming().duration).toBe(400)
+})
+
 test('a verification code shakes when it turns invalid, and a complete code plays its look', async () => {
   const invalid = shallowRef(false)
   const code = shallowRef('')
@@ -91,6 +265,22 @@ test('a verification code shakes when it turns invalid, and a complete code play
   invalid.value = false
   code.value = '1234'
   await vi.waitFor(() => expect(states(root()).some((a) => a.playState === 'running')).toBe(true))
+})
+
+test("an accordion's timing reaches its panel's height, not only the chevron", async () => {
+  render({
+    setup: () => () =>
+      h(Accordion as never, { motion: { duration: 1000, easing: 'linear' } }, () =>
+        h(AccordionItem, { value: 'a', title: 'A' }, () => 'Body'),
+      ),
+  })
+  const panel = () => document.querySelector<HTMLElement>('.ui-accordion-panel')
+  await vi.waitFor(() => expect(panel()).not.toBeNull())
+  await vi.waitFor(() =>
+    expect(getComputedStyle(panel()!).getPropertyValue('--ui-duration-enter').trim()).toBe(
+      '1000ms',
+    ),
+  )
 })
 
 test("an accordion's chevron holds its open look while open and eases back when closed", async () => {
@@ -194,4 +384,77 @@ test("a shared style's press.active reaches every button; motion false opts one 
   })
   expect(states(get('off'))).toHaveLength(0)
   window.dispatchEvent(new PointerEvent('pointerup', { button: 0 }))
+})
+
+test("a repeated part plays its states element by element: only the step that's now current pops", async () => {
+  const { default: Stepper } = await import('../src/components/Stepper/Stepper.vue')
+  const step = shallowRef(0)
+  render({
+    setup: () => () =>
+      h(Stepper as never, {
+        items: [{ label: 'A' }, { label: 'B' }, { label: 'C' }],
+        modelValue: step.value,
+        motion: {
+          states: {
+            current: {
+              circle: ({ index }: { index: number }) => ({ scale: [1, 1.2 + index / 10, 1] }),
+            },
+          },
+        },
+      }),
+  })
+  const circles = () => [...document.querySelectorAll<HTMLElement>('.ui-stepper-circle')]
+  await vi.waitFor(() => expect(circles()).toHaveLength(3))
+  for (let i = 0; i < 5; i++) await frame()
+  // Mounted: shown as is.
+  expect(circles().flatMap((c) => states(c))).toHaveLength(0)
+  step.value = 1
+  await vi.waitFor(() => expect(states(circles()[1]!).length).toBeGreaterThan(0))
+  expect(states(circles()[0]!)).toHaveLength(0)
+  expect(states(circles()[2]!)).toHaveLength(0)
+  // Its own index reached its values.
+  const peak = (states(circles()[1]!)[0]!.effect as KeyframeEffect).getKeyframes()[1]!.scale
+  expect(peak).toBe('1.3')
+})
+
+test('a verification code ripples its shake cell by cell, each from its index', async () => {
+  const invalid = shallowRef(false)
+  const motion: OtpInputMotion = {
+    states: {
+      invalid: {
+        cell: ({ index }) => ({ x: { value: [0, 7, 0], duration: 200, delay: index * 0.05 } }),
+      },
+    },
+  }
+  render({ setup: () => () => h(OtpInput, { length: 4, invalid: invalid.value, motion }) })
+  const cells = () => [...document.querySelectorAll<HTMLElement>('.ui-otp-cell')]
+  await vi.waitFor(() => expect(cells()).toHaveLength(4))
+  for (let i = 0; i < 5; i++) await frame()
+  invalid.value = true
+  await vi.waitFor(() => expect(states(cells()[3]!).length).toBeGreaterThan(0))
+  const delays = cells().map((c) => Math.round(Number(states(c)[0]?.effect?.getTiming().delay)))
+  expect(delays).toEqual([0, 50, 100, 150])
+})
+
+test('Dock: picking an item plays its selected keyframes, again on the same item', async () => {
+  const { default: Dock } = await import('../src/components/Dock/Dock.vue')
+  render({
+    setup: () => () =>
+      h(Dock as never, {
+        items: [{ label: 'Mail' }, { label: 'Notes' }],
+        motion: { states: { selected: { item: { y: { value: [0, -20, 0], duration: 200 } } } } },
+      }),
+  })
+  const items = () => [...document.querySelectorAll<HTMLElement>('.ui-dock-item')]
+  await vi.waitFor(() => expect(items()).toHaveLength(2))
+  for (let i = 0; i < 5; i++) await frame()
+  items()[1]!.click()
+  await vi.waitFor(() => expect(states(items()[1]!).length).toBeGreaterThan(0))
+  expect(states(items()[0]!)).toHaveLength(0)
+  await new Promise((r) => setTimeout(r, 300))
+  expect(states(items()[1]!).filter((a) => a.playState === 'running')).toHaveLength(0)
+  items()[1]!.click()
+  await vi.waitFor(() =>
+    expect(states(items()[1]!).some((a) => a.playState === 'running')).toBe(true),
+  )
 })

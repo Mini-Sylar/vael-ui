@@ -4,6 +4,7 @@ import { useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { defaultsKey } from '../config'
 import type { SpringHandle, SpringOptions } from './useSpringValue'
+import { DEFAULT_DAMPING, DEFAULT_RESPONSE } from './springStep'
 
 // The spring engine loads only for an indicator set to a spring, fetched as soon as one is.
 let springs$: typeof import('./useSpringValue') | undefined
@@ -18,6 +19,14 @@ import { prefersReducedMotion } from './dom'
  */
 export type IndicatorMode = 'glide' | 'instant' | IndicatorSpring
 export type IndicatorSpring = Pick<SpringOptions, 'damping' | 'response'>
+
+/** How a stretching indicator's trailing edge follows the leading one. */
+export interface IndicatorStretch {
+  /** The trailing edge's spring. Unset, a slightly softer and bouncier copy of the leading one. */
+  trail?: IndicatorSpring
+  /** Seconds the trailing edge waits before it follows. @default 0.05 */
+  delay?: number
+}
 
 export interface UseTabIndicatorOptions {
   listEl: ElRef<HTMLElement | null>
@@ -43,6 +52,11 @@ export interface UseTabIndicatorOptions {
    * compositor animates without layout; its CSS must pin `top: 0; left: 0` and transition
    * `translate`. `'bounds'` sizing only. @default 'inset' */
   position?: 'inset' | 'translate'
+  /** Its two edges move on their own springs, so it stretches in flight: the edge facing the move
+   * leads and the other trails. Moves on a spring even when `indicator` is `'glide'`. `'inset'` position only. */
+  stretch?: MaybeRefOrGetter<boolean | IndicatorStretch | undefined>
+  /** The cross-axis scale it starts each move from (`0.82`), springing back to 1. Needs `indicatorEl`. */
+  squash?: MaybeRefOrGetter<number | undefined>
 }
 
 export interface UseTabIndicatorReturn {
@@ -65,13 +79,19 @@ export function useTabIndicator(
   // Unset, a ConfigProvider's `motion: false` turns it off too, springs included.
   const motionOff = () =>
     (toValue(options.motion) ?? provided?.value.motion) === false || mode() === 'instant'
+  // The spring it moves on: its own, or for a stretch or squash the engine's default.
+  const lead = (): IndicatorSpring | undefined => {
+    const now = mode()
+    if (typeof now === 'object') return now
+    return toValue(options.stretch) || toValue(options.squash) !== undefined ? {} : undefined
+  }
   // A spring set: its engine is fetched once mounted, long before anything moves (until then it
   // glides). Not in setup: a component may set this up before its own props exist.
   onMounted(() =>
     watch(
-      mode,
+      () => lead() && [lead(), toValue(options.stretch)],
       // Arrived: measured once more, so its springs start where it rests and the next move glides.
-      (now) => typeof now === 'object' && void loadSprings().then(() => update()),
+      (now) => !!now && void loadSprings().then(() => update()),
       { immediate: true },
     ),
   )
@@ -153,9 +173,9 @@ export function useTabIndicator(
       lastStart !== undefined &&
       Math.abs(start - lastStart) > length * maxGlide
     lastStart = start
-    const currentMode = mode()
+    const currentMode = lead()
     const el = options.indicatorEl?.value
-    const springing = typeof currentMode === 'object' && !!el && !motionOff() && !!springs$
+    const springing = !!currentMode && !!el && !motionOff() && !!springs$
     const transitionDuration =
       firstPaint || motionOff()
         ? '0ms'
@@ -241,11 +261,48 @@ export function useTabIndicator(
     geometry: Record<string, number>,
     jump: boolean,
   ) {
-    const key = `${config.damping ?? ''}/${config.response ?? ''}`
-    if (key !== springKey) {
-      springs.forEach((handle) => handle.destroy())
-      springs.clear()
+    const stretch = options.position === 'translate' ? undefined : toValue(options.stretch)
+    // Unset, the trailing edge is a little softer and bouncier than the leading one.
+    const trail = stretch
+      ? (stretch !== true && stretch.trail) || {
+          damping: (config.damping ?? DEFAULT_DAMPING) * 0.75,
+          response: (config.response ?? DEFAULT_RESPONSE) * 1.25,
+        }
+      : undefined
+    const key =
+      `${config.damping ?? ''}/${config.response ?? ''}` +
+      (trail ? `/${trail.damping ?? ''}/${trail.response ?? ''}` : '')
+    const fresh = key !== springKey
+    if (fresh) {
+      dropSprings()
       springKey = key
+    }
+    const shape = Object.values(geometry).join()
+    const moved = !fresh && !jump && shape !== lastShape
+    lastShape = shape
+    const vertical = toValue(options.orientation) === 'vertical'
+    const owned = Object.keys(geometry).map((key) =>
+      key.startsWith('translate-') ? 'translate' : camelCase(key),
+    )
+    if (trail) {
+      const startKey = vertical ? 'inset-block-start' : 'inset-inline-start'
+      const sizeKey = vertical ? 'block-size' : 'inline-size'
+      const { [startKey]: start, [sizeKey]: size, ...rest } = geometry
+      const delay = typeof stretch === 'object' ? (stretch.delay ?? 0.05) : 0.05
+      stretchTo(el, config, trail, delay, { startKey, sizeKey, to: [start!, start! + size!], jump })
+      geometry = rest
+    }
+    const squash = toValue(options.squash)
+    if (squash !== undefined || squashing) {
+      // The cross axis only, from the middle; cleared once back at 1.
+      squashing ??= springs$!.createSpring(1, { ...(trail ?? config), epsilon: 0.001 }, (scale) => {
+        el.style.scale = scale === 1 ? '' : vertical ? `${scale} 1` : `1 ${scale}`
+        el.style.transformOrigin = scale === 1 ? '' : 'center'
+      })
+      if (squash !== undefined && moved) {
+        squashing.jump(squash)
+        squashing.set(1)
+      } else if (jump || squash === undefined) squashing.jump(1)
     }
     // translate-x and translate-y share one `translate`, written from both springs' current values.
     const writeTranslate = () =>
@@ -266,10 +323,66 @@ export function useTabIndicator(
       else handle.set(value)
     }
     // The springs own position and size; the style keeps only the opacity fade.
-    const owned = Object.keys(geometry).map((key) =>
-      key.startsWith('translate-') ? 'translate' : camelCase(key),
-    )
     write({ transitionProperty: 'opacity' }, owned)
+  }
+
+  // A stretch: each edge on its own spring. The edge facing the move leads; the other trails it.
+  let edges: SpringHandle[] | undefined
+  let edgeTargets: number[] = []
+  let trailing: ReturnType<typeof setTimeout> | undefined
+  let squashing: SpringHandle | undefined
+  let lastShape = ''
+  function stretchTo(
+    el: HTMLElement,
+    lead: IndicatorSpring,
+    trail: IndicatorSpring,
+    delay: number,
+    {
+      startKey,
+      sizeKey,
+      to,
+      jump,
+    }: { startKey: string; sizeKey: string; to: number[]; jump: boolean },
+  ) {
+    const paint = () => {
+      const [a, b] = edges!
+      el.style.setProperty(startKey, `${Math.min(a!.value, b!.value)}px`)
+      el.style.setProperty(sizeKey, `${Math.abs(b!.value - a!.value)}px`)
+    }
+    if (!edges || jump) {
+      clearTimeout(trailing)
+      edges?.forEach((edge) => edge.destroy())
+      edges = to.map((value) => springs$!.createSpring(value, lead, paint))
+      edgeTargets = to
+      paint()
+      return
+    }
+    // Same place: a trailing edge still waiting keeps its turn.
+    if (to[0] === edgeTargets[0] && to[1] === edgeTargets[1]) return
+    clearTimeout(trailing)
+    edgeTargets = to
+    // A new spring per move, picking up the edge's place and speed.
+    const move = (index: number, config: IndicatorSpring) => {
+      const was = edges![index]!
+      const next = springs$!.createSpring(was.value, config, paint)
+      was.destroy()
+      edges![index] = next
+      next.set(to[index]!, { velocity: was.velocity })
+    }
+    const leading = to[0]! > edges[0]!.value ? 1 : 0
+    move(leading, lead)
+    if (delay > 0) trailing = setTimeout(() => move(1 - leading, trail), delay * 1000)
+    else move(1 - leading, trail)
+  }
+
+  function dropSprings() {
+    springs.forEach((handle) => handle.destroy())
+    springs.clear()
+    clearTimeout(trailing)
+    edges?.forEach((edge) => edge.destroy())
+    squashing?.jump(1)
+    squashing?.destroy()
+    edges = squashing = undefined
   }
 
   // Same geometry keeps a pending `0ms`: the ResizeObserver's first callback lands in the
@@ -285,14 +398,21 @@ export function useTabIndicator(
   // With the indicator element in hand, styles go straight onto it, like motion-v does: a hover
   // never re-renders the component that owns the list. Without it, the bound `style` carries them.
   let written: Record<string, string | undefined> = {}
+  // The element `written` was written to: a new one (a menu opened again) starts bare.
+  let writtenTo: HTMLElement | undefined
   function current(): Record<string, string | undefined> {
-    return options.indicatorEl?.value ? written : style.value
+    const el = options.indicatorEl?.value
+    return el ? (el === writtenTo ? written : {}) : style.value
   }
   function write(next: Record<string, string | undefined>, keep: string[] = []) {
     const el = options.indicatorEl?.value
     if (!el) {
       style.value = next
       return
+    }
+    if (el !== writtenTo) {
+      written = {}
+      writtenTo = el
     }
     if (Object.keys(style.value).length) style.value = {}
     const css = el.style as unknown as Record<string, string>
@@ -347,12 +467,10 @@ export function useTabIndicator(
   }
 
   watch(active, () => nextTick(measure), { immediate: true, flush: 'post' })
-  // A new indicator element (a menu opened again) starts bare: nothing written, no springs on it.
+  // A new indicator element (a menu opened again) starts with no springs on it.
   if (options.indicatorEl)
     watch(options.indicatorEl, () => {
-      written = {}
-      springs.forEach((handle) => handle.destroy())
-      springs.clear()
+      dropSprings()
       springKey = ''
     })
 
@@ -390,7 +508,7 @@ export function useTabIndicator(
 
   onBeforeUnmount(() => {
     if (frame) cancelAnimationFrame(frame)
-    springs.forEach((handle) => handle.destroy())
+    dropSprings()
   })
 
   return { style, update }

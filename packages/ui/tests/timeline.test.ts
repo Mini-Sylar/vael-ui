@@ -251,3 +251,111 @@ test.each(['horizontal', 'vertical'] as const)(
     expect(list.hasAttribute('aria-orientation')).toBe(false)
   },
 )
+
+test('a step whose parts have exits stays opaque around them', async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a', 'b'],
+      itemKey: (item: unknown) => String(item),
+      motion: { exit: { marker: { scale: 0.4 } } },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const first = () => screen.container.querySelector<HTMLElement>('.ui-timeline-step')!
+  await vi.waitFor(() => expect(first()).not.toBeNull())
+  const leaving = first()
+  await screen.rerender({ items: ['b'] })
+  let opacity = 1
+  expect(leaving.isConnected).toBe(true)
+  for (let i = 0; i < 20 && leaving.isConnected; i++) {
+    await new Promise(requestAnimationFrame)
+    // Gone during the frame: a detached element has no computed opacity.
+    if (leaving.isConnected) opacity = Math.min(opacity, Number(getComputedStyle(leaving).opacity))
+  }
+  expect(opacity).toBe(1)
+})
+
+test("held while it closes, the steps after it don't jump back once it's gone", async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a', 'b'],
+      itemKey: (item: unknown) => String(item),
+      motion: {
+        leaving: 'hold',
+        exit: { item: { height: { value: 0, duration: 300, easing: 'linear' } } },
+      },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const steps = () => [...screen.container.querySelectorAll<HTMLElement>('.ui-timeline-step')]
+  await vi.waitFor(() => expect(steps()).toHaveLength(2))
+  const second = steps()[1]!
+  const start = second.getBoundingClientRect().top
+  await screen.rerender({ items: ['b'] })
+  const tops: number[] = []
+  for (let i = 0; i < 40; i++) {
+    await new Promise(requestAnimationFrame)
+    tops.push(second.getBoundingClientRect().top - start)
+  }
+  // It moved up as the step closed; it never went back down after.
+  const up = tops.findIndex((t) => t < -10)
+  expect(up).toBeGreaterThan(-1)
+  expect(Math.max(...tops.slice(up + 1))).toBeLessThan(tops[up]! + 5)
+})
+
+test("held while your leave hook closes it, the steps after it don't jump back once it's gone", async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a', 'b'],
+      itemKey: (item: unknown) => String(item),
+      motion: {
+        leaving: 'hold',
+        leave: ({ item }: { item: HTMLElement }) =>
+          item.animate([{ height: `${item.offsetHeight}px` }, { height: '0px' }], {
+            duration: 300,
+            fill: 'forwards',
+          }),
+      },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const steps = () => [...screen.container.querySelectorAll<HTMLElement>('.ui-timeline-step')]
+  await vi.waitFor(() => expect(steps()).toHaveLength(2))
+  const second = steps()[1]!
+  const start = second.getBoundingClientRect().top
+  await screen.rerender({ items: ['b'] })
+  const tops: number[] = []
+  for (let i = 0; i < 40; i++) {
+    await new Promise(requestAnimationFrame)
+    tops.push(second.getBoundingClientRect().top - start)
+  }
+  const up = tops.findIndex((t) => t < -10)
+  expect(up).toBeGreaterThan(-1)
+  expect(Math.max(...tops.slice(up + 1))).toBeLessThan(tops[up]! + 5)
+})
+
+test('steps leaving together know their place and how many go: a close that staggers in reverse', async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a', 'b', 'c', 'd'],
+      itemKey: (item: unknown) => String(item),
+      motion: {
+        exit: {
+          item: ({ index, count = 1 }: { index: number; count?: number }) => ({
+            opacity: { value: 0, duration: 200, delay: (count - 1 - index) * 0.1 },
+          }),
+        },
+      },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const steps = () => [...screen.container.querySelectorAll<HTMLElement>('.ui-timeline-step')]
+  await vi.waitFor(() => expect(steps()).toHaveLength(4))
+  const leaving = steps().slice(0, 3)
+  await screen.rerender({ items: ['d'] })
+  await vi.waitFor(() => expect(leaving[0]!.getAnimations().length).toBeGreaterThan(0))
+  const delays = leaving.map((el) =>
+    Math.round(Number(el.getAnimations()[0]!.effect!.getTiming().delay)),
+  )
+  expect(delays).toEqual([200, 100, 0])
+})

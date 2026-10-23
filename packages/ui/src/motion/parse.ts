@@ -17,6 +17,7 @@ const ROLES = ['overlay', 'list', 'reveal', 'press', 'content'] as const
 const COMPONENTS = [
   'dialog',
   'popover',
+  'tour',
   'menu',
   'toaster',
   'tabs',

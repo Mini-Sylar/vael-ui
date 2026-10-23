@@ -42,13 +42,26 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // runtime 5.05 → 5.15 KB, states 3.8 → 3.9 KB (2026-10-23): a plain number in motion values means
 // px, or degrees for `rotate` (`width: 100`, `strokeDashoffset: 1`); before, it went in unitless and
 // silently didn't animate. Measured +93 B and +94 B; the code is inlined in each lazy chunk.
+// up front 6.85 → 7.3 KB, runtime 5.15 → 5.5 KB, morph 1.45 → 1.5 KB, states 3.9 → 4.1 KB
+// (2026-10-23): the showpiece parity pass. A replay starts over; reopening mid-close turns around
+// from where a replaced panel was; clip wipes to and from none; `color`; a fade keeps your
+// duration; each element's own delay and look under one name; `exit: false`; appearances you time
+// aren't capped; a `layoutId` starts where it was painted; an icon's <svg> leaves; keyframe arrays,
+// exits from `auto` and custom properties in the runtime; per-value timing and springs in states.
+// Measured 7411, 5556, 1501 and 4143 B.
+// runtime 5.5 → 5.8 KB, states 4.1 → 4.9 KB, button 1.05 → 1.2 KB, linked 2.6 → 2.7 KB
+// (2026-10-23): the motion basics. Keyframes take `times`, an easing per step and `repeat` (loops
+// that stop with their state); each element of a repeated part plays its own states (Stepper,
+// Dock, OtpInput cells) with its own pointer; `animate` holds a look and `progress` scrubs it;
+// a component's `replay` and `appear: false` (the watch is on every state component, so Button
+// pays ~100 B). Measured 5871, 4925, 1177 and 2705 B.
 const BUDGET = {
-  upFront: 6.85 * 1024,
-  runtime: 5.15 * 1024,
-  morph: 1.45 * 1024,
-  button: 1.05 * 1024,
-  states: 3.9 * 1024,
-  linked: 2.6 * 1024,
+  upFront: 7.3 * 1024,
+  runtime: 5.8 * 1024,
+  morph: 1.5 * 1024,
+  button: 1.2 * 1024,
+  states: 4.9 * 1024,
+  linked: 2.7 * 1024,
 }
 
 // Every chunk a file pulls in statically.

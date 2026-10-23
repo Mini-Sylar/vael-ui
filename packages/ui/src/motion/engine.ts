@@ -1,7 +1,7 @@
 // Plays MotionValues on elements with WAAPI. What's running, for settled(), lives in timing.ts.
 import { prefersReducedMotion } from '../composables/dom'
 import { PRESENCE_ID, SLIDE_ID } from './ids'
-import { cssTime, resolveTiming, token, track } from './timing'
+import { cssTime, easingOf, resolveTiming, token, track } from './timing'
 import type { ResolvedTiming } from './timing'
 import type { MotionEngine, MotionValues } from './types'
 import { runHook } from './hook'
@@ -11,6 +11,7 @@ import {
   reducePresence,
   reduceValues,
   splitFrame,
+  repeatOf,
   toKeyframe,
   toKeyframes,
 } from './values'
@@ -100,6 +101,11 @@ function playThrough(
   )
 }
 
+// The clip at rest: `none` can't interpolate to or from an inset.
+const NO_CLIP = 'inset(0px)'
+const unclipped = (value: string, key: string) =>
+  key === 'clipPath' && value === 'none' ? NO_CLIP : value
+
 /**
  * Plays from `values` to the element's own style (in), or from its style to `values` (out).
  * Movement rides the spring; fades ease. Out is quick and quiet. Resolves when done or cancelled.
@@ -125,14 +131,29 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
     const moves = 'x' in group.values || 'y' in group.values
     const axis: 'translate' | 'transform' = moves && translateTaken ? 'transform' : 'translate'
     if (moves) translateTaken = true
-    return { ...group, frame: toKeyframe(group.values, rtl, axis) }
+    // Keyframe arrays play through on their own; the rest go to or from the element's style.
+    const listed = Object.entries(group.values).filter(([, v]) => Array.isArray(v))
+    const plain = Object.fromEntries(
+      Object.entries(group.values).filter(([, v]) => !Array.isArray(v)),
+    )
+    return {
+      ...group,
+      frame: toKeyframe(plain as MotionValues, rtl, axis),
+      sequence: listed.length
+        ? toKeyframes(Object.fromEntries(listed) as MotionValues, rtl, {
+            easing: easingOf(el, group.timing?.easing),
+            times: (group.timing as { times?: number[] } | undefined)?.times,
+          })
+        : undefined,
+    }
   })
-  // Interrupted mid-way, or still held at `initial`: start from what's on screen, never from a reset.
+  // Interrupted mid-way, or leaving: start from what's on screen (a height of `auto` measured).
   const interrupted = el.getAnimations().some((a) => a.id === PRESENCE_ID)
   const current = groups.map(({ frame }) => {
     const live: Keyframe = {}
-    if (interrupted)
-      for (const key of Object.keys(frame)) live[key] = style.getPropertyValue(cssName(key))
+    if (interrupted || out)
+      for (const key of Object.keys(frame))
+        live[key] = unclipped(style.getPropertyValue(cssName(key)), key)
     return live
   })
   stopPresence(el)
@@ -145,11 +166,28 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
       ? resolveTiming(el, group.timing, undefined)
       : options.timing
     const delay = Math.max(0, ((options.delay ?? 0) + group.delay) * 1000)
+    // Keyframe arrays play through, start to end, each segment eased; repeating forever, they
+    // loop until it leaves, and the entrance doesn't wait for them.
+    if (group.sequence) {
+      const repeat = repeatOf(group.timing as Parameters<typeof repeatOf>[0])
+      const run = el.animate(group.sequence, {
+        id: PRESENCE_ID,
+        duration: out && !group.timing ? exitMs : duration,
+        easing: 'linear',
+        delay,
+        fill,
+        ...repeat,
+      })
+      if (repeat.iterations !== Infinity) runs.push(run.finished)
+    }
     const { moves, fades } = splitFrame(group.frame)
     const live = splitFrame(current[i]!)
+    // Back to its own style; a clip it doesn't have rests at no inset, as `none` can't be reached.
+    const rest = (frame: Keyframe): Keyframe =>
+      'clipPath' in frame && style.clipPath === 'none' ? { clipPath: NO_CLIP } : {}
     const frames = (frame: Keyframe, from: Keyframe) => {
-      const start = interrupted ? from : out ? {} : frame
-      return out ? [start, frame] : [start, {}]
+      const start = interrupted || out ? from : frame
+      return out ? [start, frame] : [start, rest(frame)]
     }
     // A value timed on its own keeps its curve; shared values split: moves spring, fades ease.
     const own = !!group.timing
@@ -163,12 +201,14 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
           fill,
         }).finished,
       )
+    // Fades: their own timing; leaving, the exit token; on a spring, eased and capped; else yours.
+    const sprung = !own && !out && !!options.timing.spring
     if (Object.keys(fades).length)
       runs.push(
         el.animate(frames(fades, live.fades), {
           id: PRESENCE_ID,
-          duration: own ? duration : out ? exitMs : Math.min(duration, FADE_CAP),
-          easing: own ? easing : EASE_OUT,
+          duration: out && !own ? exitMs : sprung ? Math.min(duration, FADE_CAP) : duration,
+          easing: (out && !own) || sprung ? EASE_OUT : easing,
           delay,
           fill,
         }).finished,

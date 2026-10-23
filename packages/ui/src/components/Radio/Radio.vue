@@ -141,6 +141,7 @@ const parts = useStateMotion({
   },
   states: () => ({
     checked: isChecked.value,
+    unchecked: !isChecked.value,
     invalid: ctx.invalid?.(),
     disabled: isDisabled.value,
   }),

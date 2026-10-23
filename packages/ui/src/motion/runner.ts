@@ -1,7 +1,6 @@
 // The motion runtime, loaded the first time a component's motion is customised: hooks, part
 // ownership, scheduling, enter and leave. Components hold a light shell (useComponentMotion).
 import { nextTick } from 'vue'
-import { valuesAt } from './playable'
 import { prefersReducedMotion } from '../composables/dom'
 import { holdValues, playValues, resolveTiming } from './engine'
 import { PRESENCE_ID } from './ids'
@@ -10,8 +9,9 @@ import { createMoments, runTargets, startMoments } from './schedule'
 import type { Moments } from './schedule'
 import type { MotionPhase, MotionResult, MotionValues } from './types'
 import type { Runner, RunnerHost } from './host'
-import { targetsOf } from './targets'
+import { exitOf, targetsOf } from './targets'
 import { runHook } from './hook'
+import { motionWarn } from './warn'
 
 const QUIET_EXIT: MotionValues = { opacity: 0, scale: '0.97' }
 const QUIET_FADE: MotionValues = { opacity: 0 }
@@ -105,6 +105,10 @@ export function createRunner(host: RunnerHost): Runner {
     const { id, signal } = begin('entering')
     enteringEl = el
     const motion = host.resolved()
+    if (process.env.NODE_ENV !== 'production' && motion.morph)
+      motionWarn(
+        `${host.name}: \`morph\` doesn't play alongside hooks, an engine, keyframes or \`after\`; it opens without it.`,
+      )
     const finish = () => {
       if (id !== generation) return
       host.phase.value = 'entered'
@@ -261,20 +265,26 @@ export function createRunner(host: RunnerHost): Runner {
     }
     const reverse = motion.exitOrder === 'reverse'
     // Each target leaves to its own `exit`; reversed, last first, the whole cascade within REVERSE_CAP.
-    const byName = new Map(targetsOf(entries, motion).map((t) => [t.name, t.motion]))
+    const ownOf = new Map(
+      targetsOf(entries, motion).flatMap((t) => t.els.map((el, i) => [el, t.each[i]!])),
+    )
     const leaving = reverse ? [...entries].reverse() : entries
     const step = reverse ? Math.min(REVERSE_STEP, REVERSE_CAP / Math.max(1, leaving.length)) : 0
     const content = () =>
       Promise.all(
         leaving.map((entry, i) => {
-          const own = byName.get(entry.name)
-          const exit = valuesAt(own?.exit, { direction: motion.direction, index: i })
-          return playValues(entry.el, exit ?? QUIET_FADE, {
+          const own = ownOf.get(entry.el) ?? {}
+          const exit = exitOf(
+            own,
+            { direction: motion.direction, index: i, count: leaving.length },
+            QUIET_FADE,
+          )
+          return playValues(entry.el, exit, {
             direction: 'out',
             engine: motion.engine,
             timing: resolveTiming(
               entry.el,
-              own?.duration || own?.spring ? own : motion.timing,
+              own.duration || own.spring ? own : motion.timing,
               motion.spring,
             ),
             delay: i * step,

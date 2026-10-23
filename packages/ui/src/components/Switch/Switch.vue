@@ -194,6 +194,7 @@ const parts = useStateMotion({
   // `checked` follows the thumb while it's dragged across.
   states: () => ({
     checked: dataState.value === 'checked',
+    unchecked: dataState.value !== 'checked',
     invalid: isInvalid.value,
     disabled: isDisabled.value,
     dragging: dragging.value,

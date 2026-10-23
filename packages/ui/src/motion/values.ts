@@ -9,7 +9,9 @@ const MOVES = new Set(['translate', 'scale', 'rotate', 'transform'])
 const px = (value: unknown): string =>
   typeof value === 'number' ? `${value}px` : String(value ?? 0)
 const first = (value: unknown): unknown => (Array.isArray(value) ? value[0] : value)
-const camel = (key: string): string => key.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
+// A custom property (`--count`) keeps its name; the rest go camelCase for WAAPI.
+const camel = (key: string): string =>
+  key.startsWith('--') ? key : key.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
 
 /** The values with any per-value timing stripped. */
 export function plainValues(values: MotionValues): MotionValues {
@@ -79,23 +81,49 @@ export function toKeyframe(
   return frame
 }
 
-/** Keyframes for values given as arrays (a shake), or undefined when no value is an array. Play them `linear`. */
-export function toKeyframes(input: MotionValues, rtl = false): Keyframe[] | undefined {
+/** How a keyframe sequence plays: each segment's easing (one for all, or one each), where each keyframe falls. */
+export interface Sequence {
+  easing?: string | string[]
+  times?: number[]
+}
+
+/**
+ * Keyframes for values given as arrays (a shake), or undefined when no value is an array. Play them
+ * `linear`: each segment eases on its own (`easing`, ease-in-out by default), and the keyframes
+ * fall at `times`, or evenly.
+ */
+export function toKeyframes(
+  input: MotionValues,
+  rtl = false,
+  sequence: Sequence = {},
+): Keyframe[] | undefined {
   const values = plainValues(input)
   const lengths = Object.values(values)
     .filter(Array.isArray)
     .map((list) => list.length)
   if (!lengths.length) return undefined
   const count = Math.max(...lengths)
+  const times = sequence.times?.length === count ? sequence.times : undefined
   return Array.from({ length: count }, (_, i) => {
     const step: Record<string, unknown> = {}
     for (const [key, raw] of Object.entries(values)) {
       step[key] = Array.isArray(raw) ? raw[Math.min(i, raw.length - 1)] : raw
     }
-    // Each segment eases on its own (play it linear): every keyframe gets an even share of time.
-    return { ...toKeyframe(step as MotionValues, rtl), easing: 'ease-in-out' }
+    const easing = Array.isArray(sequence.easing) ? sequence.easing[i] : sequence.easing
+    const frame: Keyframe = {
+      ...toKeyframe(step as MotionValues, rtl),
+      easing: easing ?? (Array.isArray(sequence.easing) ? 'linear' : 'ease-in-out'),
+    }
+    if (times) frame.offset = Math.min(1, Math.max(0, times[i]!))
+    return frame
   })
 }
+
+/** How many times keyframes play, and which way: WAAPI's `iterations` and `direction`. */
+export const repeatOf = (t: { repeat?: number; repeatType?: 'loop' | 'reverse' } | undefined) => ({
+  iterations: (t?.repeat ?? 0) + 1,
+  direction: (t?.repeatType === 'reverse' ? 'alternate' : 'normal') as PlaybackDirection,
+})
 
 /** Movement rides a spring; opacity, colour and blur ease, so a wobble never turns anything see-through. */
 export function splitFrame(frame: Keyframe): { moves: Keyframe; fades: Keyframe } {

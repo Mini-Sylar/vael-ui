@@ -27,7 +27,10 @@
     @blur="onBlur"
     v-bind="restAttrs"
   >
-    <span :key="committedKey" class="ui-rating-track">
+    <span
+      class="ui-rating-track"
+      :data-pop="committedKey ? (committedKey % 2 ? 'a' : 'b') : undefined"
+    >
       <span
         v-for="index in max"
         :key="index"
@@ -47,7 +50,7 @@
   </div>
 </template>
 
-<!-- Single ARIA-slider control (not N focusable radios), same interaction model as Slider.vue: pointer sets/drags the value, arrow keys step it. Hover/drag preview is instant (no transition, `data-tracking`); a committed change (click, drag release, keyboard) gets the fill sweep + pop, keyed like Badge's animated content so the pop never plays on first paint. -->
+<!-- Single ARIA-slider control (not N focusable radios), same interaction model as Slider.vue: pointer sets/drags the value, arrow keys step it. Hover/drag preview is instant (no transition, `data-tracking`); a committed change (click, drag release, keyboard) gets the fill sweep + pop, restarted by flipping between two copies of its keyframes, so the pop never plays on first paint and the stars are never remounted. -->
 <script setup lang="ts">
 import './Rating.css'
 import { withProviderDefaults } from '../../config'
@@ -144,15 +147,12 @@ const hoverValue = shallowRef<number | null>(null)
 const isTracking = shallowRef(false)
 const displayValue = computed(() => hoverValue.value ?? modelValue.value)
 
-// Re-keying the item on every commit restarts its CSS `animation` (same
-// technique Badge.vue uses for its pop), skipped on first paint so mounting
-// with an existing value never pops.
+// Each commit flips `data-pop` between two copies of the pop, which restarts it without remounting
+// the stars (your animations hold them); mounting with an existing value never pops.
 const committedKey = shallowRef(0)
-let mounted = false
 function commit(value: number) {
   const next = clamp(value)
-  if (mounted && next !== modelValue.value) committedKey.value++
-  mounted = true
+  if (next !== modelValue.value) committedKey.value++
   modelValue.value = next
 }
 

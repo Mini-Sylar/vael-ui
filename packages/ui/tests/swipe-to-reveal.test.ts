@@ -27,17 +27,46 @@ function pointerup(clientX: number, clientY = 0) {
   )
 }
 
-test('motion=false sets data-motion="off" and disables the settle transition', async () => {
+async function revealed(motion: boolean) {
   const { default: SwipeToReveal } =
     await import('../src/components/SwipeToReveal/SwipeToReveal.vue')
-  const screen = await render(SwipeToReveal, {
-    props: { motion: false },
-    slots: { default: 'Content', 'trailing-actions': 'Delete' },
+  const { h, ref } = await import('vue')
+  const row = ref<{ reveal: (side?: 'leading' | 'trailing') => void } | null>(null)
+  const screen = await render({
+    setup: () => () =>
+      h(
+        SwipeToReveal,
+        { ref: row, motion },
+        {
+          default: () => 'Content',
+          'trailing-actions': () => h('button', { style: 'width: 100px' }, 'Delete'),
+        },
+      ),
   })
-  const root = screen.container.querySelector<HTMLElement>('.ui-swipe-reveal')!
   const content = screen.container.querySelector<HTMLElement>('.ui-swipe-reveal-content')!
-  expect(root.getAttribute('data-motion')).toBe('off')
-  expect(getComputedStyle(content).transitionProperty).toBe('none')
+  const actions = screen.container.querySelector<HTMLElement>('.ui-swipe-reveal-actions')!
+  const x = () => new DOMMatrix(getComputedStyle(content).transform).m41
+  const progress = () => Number(actions.style.getPropertyValue('--ui-swipe-reveal-progress'))
+  row.value!.reveal('trailing')
+  await new Promise(requestAnimationFrame)
+  await new Promise(requestAnimationFrame)
+  return { screen, x, progress, width: actions.offsetWidth }
+}
+
+test('motion=false sets data-motion="off" and the row lands at once', async () => {
+  const { screen, x, width } = await revealed(false)
+  expect(screen.container.querySelector('.ui-swipe-reveal')!.getAttribute('data-motion')).toBe(
+    'off',
+  )
+  expect(x()).toBeCloseTo(-width, 0)
+})
+
+test('it glides to where it settles, and its progress is where it is on screen', async () => {
+  const { x, progress, width } = await revealed(true)
+  // Partway: neither closed nor open yet, and the progress says the same.
+  expect(x()).toBeLessThan(-1)
+  expect(x()).toBeGreaterThan(-width + 1)
+  expect(progress()).toBeCloseTo(-x() / width, 2)
 })
 
 // ---------------------------------------------------------------------------

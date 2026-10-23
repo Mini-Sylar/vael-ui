@@ -1,19 +1,42 @@
 // Layout motion, a transform from where an element was to where it is now (FLIP: the compositor's).
 // `layoutId`: elements sharing one are one element moving between places; the newcomer starts at
 // the box of the one that just left. `layout`: the element slides to wherever layout puts it.
+import { onBeforeUpdate } from 'vue'
+import type { ComponentInternalInstance } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { resolveTiming, track } from './timing'
 import type { MotionTiming, MotionValues } from './types'
 import { isTimed } from './playable'
-import { reducePresence, toKeyframe } from './values'
+import { groupValues, reducePresence, toKeyframe } from './values'
 
 // Just now: one flush, give or take a frame.
 const FRESH = 100
 const boxes = new Map<string, { box: DOMRect; at: number }>()
 
+// Boxes read as the owner starts to re-render: by the time one leaves, the same flush may have
+// moved it (a row inserted above). Dropped once the flush is over.
+const painted = new WeakMap<Element, DOMRect>()
+const watched = new WeakMap<ComponentInternalInstance, Set<Element>>()
+/** Notes `el`'s box each time `owner` is about to re-render, for `rememberLayout`. */
+export function watchPaintedBox(el: Element, owner: ComponentInternalInstance | null): void {
+  if (!owner) return
+  let els = watched.get(owner)
+  if (!els) {
+    const set = (els = new Set<Element>())
+    watched.set(owner, set)
+    onBeforeUpdate(() => {
+      for (const each of set)
+        if (each.isConnected) painted.set(each, each.getBoundingClientRect())
+        else set.delete(each)
+      queueMicrotask(() => set.forEach((each) => painted.delete(each)))
+    }, owner)
+  }
+  els.add(el)
+}
+
 /** Leaving: where it was, for whoever arrives next under the same id. */
 export function rememberLayout(el: Element, id: string): void {
-  const box = el.getBoundingClientRect()
+  const box = painted.get(el) ?? el.getBoundingClientRect()
   if (box.width || box.height) boxes.set(id, { box, at: performance.now() })
 }
 
@@ -44,8 +67,10 @@ const LAYOUT_ID = 'ui-layout'
 function slide(el: Element, from: DOMRect, to: DOMRect, timing: MotionTiming) {
   const dx = from.left - to.left
   const dy = from.top - to.top
-  const sx = to.width ? from.width / to.width : 1
-  const sy = to.height ? from.height / to.height : 1
+  // `layout: 'position'`: it travels at its own size, so text in it never stretches.
+  const resize = (timing as { layout?: unknown }).layout !== 'position'
+  const sx = resize && to.width ? from.width / to.width : 1
+  const sy = resize && to.height ? from.height / to.height : 1
   if (
     Math.abs(dx) < 0.5 &&
     Math.abs(dy) < 0.5 &&
@@ -73,8 +98,9 @@ const groups = new WeakMap<Element, { observer: MutationObserver; members: Set<E
 const offsets = new WeakMap<Animation, Point>()
 
 /**
- * Where layout puts it in its parent, its own transforms left out (a card's own scale or offset
- * isn't a move), and scrolling or the parent moving as a whole neither.
+ * Where layout puts it in its parent, its own transforms left out (a card's own scale or offset,
+ * an entrance or a glide on its way, aren't moves), and scrolling or the parent moving as a whole
+ * neither.
  */
 function placeIn(el: Element, parent: Element): Point {
   if (el instanceof HTMLElement && parent instanceof HTMLElement) {
@@ -84,7 +110,24 @@ function placeIn(el: Element, parent: Element): Point {
   }
   const box = el.getBoundingClientRect()
   const at = parent.getBoundingClientRect()
-  return { x: box.left - at.left, y: box.top - at.top }
+  const style = getComputedStyle(el)
+  const [tx = '0', ty = '0'] = style.translate === 'none' ? [] : style.translate.split(' ')
+  const matrix = style.transform === 'none' ? undefined : new DOMMatrix(style.transform)
+  // The parent scaled evenly (a panel opening from 0.97): so is the gap to its edge. A box resizing
+  // on one axis (a panel easing to new content) isn't scaling what's in it.
+  const sx = parent instanceof HTMLElement && parent.offsetWidth ? at.width / parent.offsetWidth : 1
+  const sy =
+    parent instanceof HTMLElement && parent.offsetHeight ? at.height / parent.offsetHeight : 1
+  const scale = sx > 0 && Math.abs(sx - sy) < 0.005 ? sx : 1
+  let x = (box.left - at.left) / scale - (Number.parseFloat(tx) || 0) - (matrix?.m41 ?? 0)
+  let y = (box.top - at.top) / scale - (Number.parseFloat(ty) || 0) - (matrix?.m42 ?? 0)
+  // Scrolled containers in between add back: scrolling isn't a move.
+  for (let up = el.parentElement; up; up = up.parentElement) {
+    x += up.scrollLeft
+    y += up.scrollTop
+    if (up === parent) break
+  }
+  return { x, y }
 }
 
 /** Where a slide shows it now, relative to its layout place: its start offset, eased away. */
@@ -114,24 +157,28 @@ function relayout(parent: Element, members: Set<Element>) {
   for (const el of members) if (!el.isConnected) members.delete(el)
   const list = [...members]
   const reduced = prefersReducedMotion()
-  // Offsets read first, the cancels, then one layout read for all.
-  const shown = list.map((el) => {
-    const runs = el.getAnimations().filter((run) => run.id === LAYOUT_ID)
-    const offset = runs.reduce(
+  // Its own glides only (a `layoutId` travel is left alone), and where they show it now.
+  const runs = list.map((el) =>
+    el.getAnimations().filter((run) => run.id === LAYOUT_ID && offsets.has(run)),
+  )
+  const shown = runs.map((own) =>
+    own.reduce(
       (sum, run) => {
         const o = shownOffset(run)
         return { x: sum.x + o.x, y: sum.y + o.y }
       },
       { x: 0, y: 0 },
-    )
-    for (const run of runs) run.cancel()
-    return offset
-  })
+    ),
+  )
+  // One layout read for all.
   const now = list.map((el) => placeIn(el, parent))
   list.forEach((el, i) => {
     const last = placeOf.get(el)
     placeOf.set(el, now[i]!)
-    if (!last || reduced) return
+    // Unmoved: a glide on its way carries on undisturbed.
+    if (!last || (Math.abs(last.x - now[i]!.x) < 0.5 && Math.abs(last.y - now[i]!.y) < 0.5)) return
+    for (const run of runs[i]!) run.cancel()
+    if (reduced) return
     const offset = {
       x: last.x + shown[i]!.x - now[i]!.x,
       y: last.y + shown[i]!.y - now[i]!.y,
@@ -142,11 +189,13 @@ function relayout(parent: Element, members: Set<Element>) {
 
 /**
  * `layout: true`: the element slides to wherever layout puts it (a sibling growing, a list
- * reordering), watched through its parent's changes, the way auto-animate does. Position only.
- * Returns the stop.
+ * reordering), watched through its parent's changes (inside a component, its panel's), the way
+ * auto-animate does. Position only. Returns the stop.
  */
 export function followLayout(el: Element, timing: () => MotionTiming): () => void {
-  const parent = el.parentElement
+  // Inside a component's panel, measured against the panel: content in a slot moves with the row
+  // around it (a filtered option), not within its own parent.
+  const parent = el.parentElement?.closest('[data-ui-presence]') ?? el.parentElement
   if (!parent) return () => {}
   placeOf.set(el, placeIn(el, parent))
   timingOf.set(el, timing)
@@ -181,12 +230,50 @@ export interface LeavingPlace {
   next: Node | null
   box: DOMRect
   at: number
+  /** Its look as it started leaving: where its exit starts from. */
+  look?: Record<string, string>
 }
 
+// An element that can be lifted out and placed: HTML, or an icon's outermost <svg>.
+export const placeable = (el: Element): el is HTMLElement | SVGSVGElement =>
+  el instanceof HTMLElement || (el instanceof SVGSVGElement && !el.ownerSVGElement)
+
 export function placeOnLeave(el: Element): LeavingPlace | undefined {
-  if (!(el instanceof HTMLElement) || !el.parentNode || !el.isConnected) return undefined
+  if (!placeable(el) || !el.parentNode || !el.isConnected) return undefined
   const at = performance.now()
-  return { parent: el.parentNode, next: el.nextSibling, box: el.getBoundingClientRect(), at }
+  // How it looks now, an entrance mid-way included: its animations end when Vue removes it.
+  const style = getComputedStyle(el)
+  const look: Record<string, string> = {}
+  for (const prop of HELD_LOOK) look[prop] = style.getPropertyValue(prop)
+  return { parent: el.parentNode, next: el.nextSibling, box: untransformed(el), at, look }
+}
+const HELD_LOOK = ['translate', 'scale', 'rotate', 'transform', 'opacity', 'filter', 'clip-path']
+
+/**
+ * Its box as layout has it, without its own translate and scale: caught mid-animation (a strike
+ * half drawn), it keeps that look as it leaves, so the look mustn't be in its size too.
+ */
+function untransformed(el: Element): DOMRect {
+  const box = el.getBoundingClientRect()
+  if (!(el instanceof HTMLElement)) return box
+  const style = getComputedStyle(el)
+  const [tx = '0', ty = '0'] = style.translate === 'none' ? [] : style.translate.split(' ')
+  const [sx = '1', sy = sx] = style.scale === 'none' ? [] : style.scale.split(' ')
+  const m = style.transform === 'none' ? undefined : new DOMMatrix(style.transform)
+  const scaleX = Number(sx) * (m?.a ?? 1)
+  const scaleY = Number(sy) * (m?.d ?? 1)
+  const [ox = '0', oy = '0'] = style.transformOrigin.split(' ')
+  const left =
+    box.left -
+    (Number.parseFloat(tx) || 0) -
+    (m?.e ?? 0) -
+    (Number.parseFloat(ox) || 0) * (1 - scaleX)
+  const top =
+    box.top -
+    (Number.parseFloat(ty) || 0) -
+    (m?.f ?? 0) -
+    (Number.parseFloat(oy) || 0) * (1 - scaleY)
+  return new DOMRect(left, top, el.offsetWidth || box.width, el.offsetHeight || box.height)
 }
 
 // Removed in the flush it started leaving in. Later, a Transition held it and played its own leave.
@@ -241,7 +328,7 @@ function clipWhileLeaving(box: HTMLElement): () => void {
  * is gone (auto-animate's approach). Nothing holds it already (a Transition keeps its own).
  */
 export function leaveInPlace(
-  el: HTMLElement,
+  el: HTMLElement | SVGSVGElement,
   place: LeavingPlace,
   values: MotionValues,
   timing: MotionTiming,
@@ -259,8 +346,10 @@ export function leaveInPlace(
       margin: '0',
       pointerEvents: 'none',
     })
+    // Placed there, not transitioned to it.
+    el.style.setProperty('transition', 'none')
     el.setAttribute('aria-hidden', 'true')
-    el.inert = true
+    if (el instanceof HTMLElement) el.inert = true
     // In a box that follows its size, it leaves inside it: the box shrinks over it, not past it.
     const box =
       place.parent instanceof Element ? place.parent.closest<HTMLElement>('[data-ui-size]') : null
@@ -270,14 +359,33 @@ export function leaveInPlace(
     const at = el.getBoundingClientRect()
     el.style.top = `${place.box.top - at.top}px`
     el.style.left = `${place.box.left - at.left}px`
+    // From the look it had, not its resting one: on top of the place it's measured into.
+    for (const [prop, value] of Object.entries(place.look ?? {})) el.style.setProperty(prop, value)
     const look = prefersReducedMotion() ? reducePresence(values) : values
-    const frame = toKeyframe(look, getComputedStyle(el).direction === 'rtl')
-    const { duration, easing } = resolveTiming(el, timing)
-    const run = el.animate([{ ...frame, offset: 1 }], { duration, easing, fill: 'forwards' })
+    const rtl = getComputedStyle(el).direction === 'rtl'
+    // A value with its own timing leaves on it; x and y timed apart can't share `translate`.
+    let translateTaken = false
+    const runs = groupValues(look).map((group) => {
+      const moves = 'x' in group.values || 'y' in group.values
+      const frame = toKeyframe(
+        group.values,
+        rtl,
+        moves && translateTaken ? 'transform' : 'translate',
+      )
+      if (moves) translateTaken = true
+      if (!Object.keys(frame).length) return undefined
+      const { duration, easing } = resolveTiming(el, group.timing ?? timing)
+      return el.animate([{ ...frame, offset: 1 }], {
+        duration,
+        easing,
+        delay: group.delay * 1000,
+        fill: 'forwards',
+      }).finished
+    })
     const gone = () => {
       el.remove()
       unclip()
     }
-    void track(run.finished.then(gone, gone))
+    void track(Promise.all(runs).then(gone, gone))
   })
 }

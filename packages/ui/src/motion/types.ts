@@ -1,6 +1,6 @@
 // The motion API contract (plans/008, plans/009 M0). Types only; the runtime implements them.
 import type { ComponentPublicInstance, CSSProperties, TransitionProps } from 'vue'
-import type { IndicatorSpring } from '../composables/useTabIndicator'
+import type { IndicatorSpring, IndicatorStretch } from '../composables/useTabIndicator'
 
 // ─── Vocabulary ──────────────────────────────────────────────────────────────
 
@@ -63,10 +63,24 @@ interface Shorthands {
 type StyleProps = Omit<CSSProperties, keyof Shorthands> & Shorthands
 
 /** One value with its own timing: `y: { value: 12, spring: { damping: 0.4, response: 0.5 } }`. */
-export type TimedValue<V> = MotionTiming & {
+export type TimedValue<V> = (
+  | MotionTiming
+  | {
+      spring?: PickOne
+      duration?: number | UiDuration
+      /** Keyframes: one easing per step between them, such as a rise, then a bounce. */
+      easing: (UiEase | (string & {}))[]
+    }
+) & {
   value: V | V[]
   /** Seconds before this value starts, on top of the element's own delay. */
   delay?: number
+  /** Keyframes: where each one falls, from 0 to 1 (`[0, 0.3, 1]`). Unset, they're evenly spaced. */
+  times?: number[]
+  /** Keyframes: plays this many more times; `Infinity` loops until the element or state goes. */
+  repeat?: number
+  /** Keyframes, repeating: `'loop'` starts over each time; `'reverse'` plays back and forth. */
+  repeatType?: 'loop' | 'reverse'
 }
 
 /**
@@ -87,6 +101,8 @@ export interface MotionWhere {
   direction: 1 | -1 | 0
   /** In a list or a group: its position. */
   index: number
+  /** In a list or a group: how many there are, or how many come or go together. */
+  count?: number
 }
 
 /**
@@ -203,8 +219,11 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
    * another arrives in the same moment, the newcomer slides from the old one's box into its own.
    */
   layoutId?: string
-  /** Slides to wherever layout puts it (a sibling growing, a list reordering): its position. */
-  layout?: boolean
+  /**
+   * Slides to wherever layout puts it (a sibling growing, a list reordering). With `layoutId`,
+   * `'position'` travels without resizing on the way, so text never stretches.
+   */
+  layout?: boolean | 'position'
   /** `'visible'`: on its own (no component around it), it appears once scrolled into view. */
   when?: 'mount' | 'visible'
 }
@@ -271,6 +290,8 @@ export interface MotionSpec {
   linked?: true
   list?: true
   indicator?: true
+  /** Its indicator is a pill that can stretch and squash as it moves. */
+  stretch?: true
   swap?: true
   value?: true
 }
@@ -335,6 +356,13 @@ type ListMotion = {
 type IndicatorMotion<S extends MotionSpec, N extends string> = {
   move?: MotionHook<Parts<S>, MoveContext<N>>
 }
+type StretchMotion = {
+  /** The indicator stretches as it moves: the edge facing the move leaves first and the other
+   * follows on a softer spring. An object tunes that edge's spring (`trail`) and its `delay` in seconds. */
+  stretch?: boolean | IndicatorStretch
+  /** The cross-axis scale the indicator starts each move from (`0.82`), springing back to 1. */
+  squash?: number
+}
 type SwapMotion = {
   /** `'sync'` (default) cross-fades; `'wait'` lets the old one leave first. */
   swap?: 'sync' | 'wait'
@@ -364,8 +392,24 @@ export type ComponentMotion<S extends MotionSpec, N extends string = string> =
       (S['linked'] extends true ? LinkedMotions : unknown) &
       (S['list'] extends true ? ListMotion & PresenceMotion<S, N> : unknown) &
       (S['indicator'] extends true ? IndicatorMotion<S, N> : unknown) &
+      (S['stretch'] extends true ? StretchMotion : unknown) &
       (S['swap'] extends true ? SwapMotion & { exit?: PartValues<Parts<S>> } : unknown) &
-      (S['value'] extends true ? ValueMotion : unknown))
+      (S['value'] extends true ? ValueMotion : unknown) &
+      (S['overlay'] extends true
+        ? unknown
+        : S['presence'] extends true
+          ? unknown
+          : S['list'] extends true
+            ? unknown
+            : ReplayMotion))
+
+/** What a component that's always on the page has: its appearance, played again. */
+type ReplayMotion = {
+  /** Plays its `initial` again whenever this value changes, without remounting: a burst on a pick. */
+  replay?: unknown
+  /** `false`: its `initial` doesn't play when it mounts, only on `replay`. @default true */
+  appear?: boolean
+}
 
 // Exemplars, one per kind; M3–M5 add the rest from each component's `ui` keys and real states.
 /** Dialog's parts, by their `ui` names: the elements its `motion` can animate. */
@@ -399,6 +443,13 @@ export type PopoverMotion<N extends string = string> = ComponentMotion<
   { parts: PopoverPart; overlay: true; swap: true },
   N
 >
+
+/**
+ * Tour's `motion`: the callout opens and closes like Popover's. Its timing, `{ duration, easing }` or
+ * `{ spring }`, also sets how the spotlight and the callout glide between steps. Unset, the glide is
+ * quick to a nearby target and longer across the screen. `false` turns it all off.
+ */
+export type TourMotion<N extends string = string> = PopoverMotion<N>
 
 /** Tooltip's box: values or hooks for its parts, like Popover's. Warm opens stay instant. */
 export type TooltipMotion<N extends string = string> = ComponentMotion<
@@ -444,7 +495,7 @@ export type ToasterMotion = ComponentMotion<{
 export type TabsPart = 'list' | 'item' | 'indicator'
 // Tabs renders no panels (yours, wired with `panelProps`): it moves its indicator, nothing swaps.
 /** Tabs's `motion`: values or hooks for its parts (TabsPart), how its indicator moves (a `move` hook). `false` turns it off. */
-export type TabsMotion = ComponentMotion<{ parts: TabsPart; indicator: true }>
+export type TabsMotion = ComponentMotion<{ parts: TabsPart; indicator: true; stretch: true }>
 
 /** Input's parts, by their `ui` names: the elements its `motion` can animate. */
 export type InputPart = 'root' | 'input' | 'start' | 'end'
@@ -455,11 +506,15 @@ export type InputMotion = ComponentMotion<{
 }>
 
 /** OtpInput's parts, by their `ui` names: the elements its `motion` can animate. */
-export type OtpInputPart = 'root'
-/** OtpInput's `motion`: values or hooks for its parts (OtpInputPart), its states (`invalid`, `complete`, `disabled`, `focus`). `false` turns it off. */
+export type OtpInputPart = 'root' | 'cell'
+/**
+ * OtpInput's `motion`: its parts (OtpInputPart) and states (`invalid`, `complete`, `disabled`,
+ * `focus`). Each cell plays them on its own, plus `filled` and `current` (the caret's); give a
+ * cell's values as a function to use its `index`. `false` turns it off.
+ */
 export type OtpInputMotion = ComponentMotion<{
   parts: OtpInputPart
-  states: 'invalid' | 'complete' | 'disabled' | 'focus'
+  states: 'invalid' | 'complete' | 'disabled' | 'focus' | 'filled' | 'current'
 }>
 
 /** FileUpload's parts, by their `ui` names: the elements its `motion` can animate. */
@@ -624,7 +679,15 @@ export type CheckboxPart = 'root' | 'control' | 'indicator' | 'label'
 /** Checkbox: its appearance and states. */
 export type CheckboxMotion = ComponentMotion<{
   parts: CheckboxPart
-  states: 'checked' | 'indeterminate' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover'
+  states:
+    | 'checked'
+    | 'unchecked'
+    | 'indeterminate'
+    | 'invalid'
+    | 'disabled'
+    | 'focus'
+    | 'active'
+    | 'hover'
 }>
 
 /** Chip's parts, by their `ui` names: the elements its `motion` can animate. */
@@ -653,8 +716,16 @@ export type DialMotion = ComponentMotion<{
 
 /** Dock's parts, by their `ui` names: the elements its `motion` can animate. */
 export type DockPart = 'root' | 'item'
-/** Dock: its appearance, item by item. */
-export type DockMotion = WithStagger<ComponentMotion<{ parts: DockPart }>>
+/**
+ * Dock: its appearance, item by item, and each item's states: `hover`, `active` (pressed), `focus`,
+ * and `selected`, which plays each time the item is picked (a launch hop).
+ */
+export type DockMotion = WithStagger<
+  ComponentMotion<{
+    parts: DockPart
+    states: 'hover' | 'active' | 'focus' | 'disabled' | 'selected'
+  }>
+>
 
 /** Editable's parts, by their `ui` names: the elements its `motion` can animate. */
 export type EditablePart = 'root' | 'preview' | 'edit' | 'input' | 'actions'
@@ -728,7 +799,7 @@ export type RadioPart = 'root' | 'control' | 'label' | 'description'
 /** Radio: its appearance and states. */
 export type RadioMotion = ComponentMotion<{
   parts: RadioPart
-  states: 'checked' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover'
+  states: 'checked' | 'unchecked' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover'
 }>
 
 /** RadioGroup's parts, by their `ui` names: the elements its `motion` can animate. */
@@ -767,8 +838,16 @@ export type SortableMotion = WithStagger<
 
 /** Stepper's parts, by their `ui` names: the elements its `motion` can animate. */
 export type StepperPart = 'root' | 'step' | 'circle' | 'connector' | 'content'
-/** Stepper: its parts' appearance, step by step. */
-export type StepperMotion = WithStagger<ComponentMotion<{ parts: StepperPart }>>
+/**
+ * Stepper: its parts' appearance and their states, step by step. Each step, circle and line plays
+ * its own: `current`, `completed` or `upcoming` (a line is `completed` once it's filled).
+ */
+export type StepperMotion = WithStagger<
+  ComponentMotion<{
+    parts: StepperPart
+    states: 'current' | 'completed' | 'upcoming' | 'disabled' | 'hover' | 'focus'
+  }>
+>
 
 /** SwipeToReveal's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SwipeToRevealPart = 'root' | 'content' | 'actions'
@@ -783,7 +862,15 @@ export type SwitchPart = 'root' | 'track' | 'thumb'
 /** Switch: its appearance and states. */
 export type SwitchMotion = ComponentMotion<{
   parts: SwitchPart
-  states: 'checked' | 'invalid' | 'disabled' | 'focus' | 'active' | 'hover' | 'dragging'
+  states:
+    | 'checked'
+    | 'unchecked'
+    | 'invalid'
+    | 'disabled'
+    | 'focus'
+    | 'active'
+    | 'hover'
+    | 'dragging'
 }>
 
 /** Tag's parts, by their `ui` names: the elements its `motion` can animate. */
@@ -816,14 +903,19 @@ export type MenuListMotion = WithStagger<ComponentMotion<{ parts: MenuListPart; 
 export type PaginationPart = 'root' | 'button' | 'indicator'
 /** Pagination: its appearance, and how the current-page indicator moves. */
 export type PaginationMotion = WithStagger<
-  ComponentMotion<{ parts: PaginationPart; indicator: true }>
+  ComponentMotion<{ parts: PaginationPart; indicator: true; stretch: true }>
 >
 
 /** SelectButton's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SelectButtonPart = 'root' | 'option' | 'indicator'
 /** SelectButton: its appearance, and how the selection moves. */
 export type SelectButtonMotion = WithStagger<
-  ComponentMotion<{ parts: SelectButtonPart; states: 'disabled'; indicator: true }>
+  ComponentMotion<{
+    parts: SelectButtonPart
+    states: 'disabled'
+    indicator: true
+    stretch: true
+  }>
 >
 
 /** Toolbar's parts, by their `ui` names: the elements its `motion` can animate. */
@@ -876,6 +968,8 @@ export interface MotionStyle {
   /** A style is data: `linked` reads elements, so it's set on the component, not here. */
   dialog?: Omit<Exclude<DialogMotion, boolean>, 'linked'>
   popover?: Exclude<PopoverMotion, boolean>
+  /** Tour's glide between steps: a spring, or a duration with an easing. Its callout follows `popover`. */
+  tour?: MotionTiming
   menu?: Exclude<MenuMotion, boolean>
   toaster?: Exclude<ToasterMotion, boolean>
   tabs?: Exclude<TabsMotion, boolean>
@@ -972,7 +1066,24 @@ export interface UseMotionReturn<N extends string = string> {
 }
 
 /** `v-animate:name="value"`: a preset name or values. */
-export type AnimateDirectiveValue = string | TargetMotion
+export type AnimateDirectiveValue =
+  | string
+  | (TargetMotion & {
+      /**
+       * A look it holds while bound, moving to each new one as it changes, from wherever it is on
+       * screen: `animate: { rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or
+       * loop with `repeat`.
+       */
+      animate?: MotionValues
+      /** `false`: no entrance when it mounts; `replay` and its exit still play. @default true */
+      appear?: boolean
+      /**
+       * With keyframe arrays in `animate`: holds them at this point, from 0 to 1, instead of
+       * playing them, so a swipe or a scroll scrubs them: `progress: swipe.progress`. With a
+       * `spring`, they follow it on that spring instead of at once.
+       */
+      progress?: number
+    })
 
 /** Validates a style from outside your code (settings, a database, the network). */
 export type ParseMotionStyle = (input: unknown) => { style: MotionStyle; issues: string[] }

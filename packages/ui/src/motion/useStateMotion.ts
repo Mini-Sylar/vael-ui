@@ -14,8 +14,11 @@ import { defaultsKey } from '../config'
 import { useMotionStyle } from './styleKey'
 import type { MotionStyle, MotionTiming } from './types'
 
+let appearance: typeof import('./appearance') | undefined
+const loadAppearance = () => import('./appearance').then((module) => (appearance = module))
 let statesModule: Promise<typeof import('./states')> | undefined
-const loadStates = () => (statesModule ??= import('./states'))
+let loaded: typeof import('./states') | undefined
+const loadStates = () => (statesModule ??= import('./states').then((module) => (loaded = module)))
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
@@ -42,6 +45,10 @@ export interface StateMotionOptions {
   selectors?: Record<string, string>
   /** What the component knows (`invalid`, `loading`); hover, press and focus are tracked here. */
   states: () => Record<string, boolean | undefined>
+  /** Parts with many elements (a stepper's circles): each plays its states on its own. */
+  repeated?: string[]
+  /** What one element of a repeated part knows, over the component's states. */
+  each?: (part: string, el: Element, index: number) => Record<string, boolean | undefined>
 }
 
 /** Its parts by name, for the component's exposed `parts`; a repeated part is an array. */
@@ -101,9 +108,12 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
         live = false
         set.forEach((name) => el.style.removeProperty(name))
       })
-      void loadStates().then((module) => {
+      const put = (module: typeof import('./states')) => {
         if (live) set = module.putTimingTokens(el, t as MotionTiming)
-      })
+      }
+      // Loaded already: in the same flush, so nothing starts on the default timing in between.
+      if (loaded) put(loaded)
+      else void loadStates().then(put)
     },
     { flush: 'post', immediate: true },
   )
@@ -127,6 +137,7 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
               spec: () => spec.value,
               timing: () => timing.value,
               spring: () => style?.value?.spring,
+              repeated: () => Object.fromEntries((options.repeated ?? []).map((n) => [n, els(n)])),
             })
           }),
         () => {},
@@ -144,10 +155,29 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
     const own = options.motion()
     const keyStyle = style?.value?.[options.key] as Record<string, unknown> | undefined
     if (fromServer || own === false || provider?.value.motion === false) return
+    if (isObject(own) && own.appear === false) return
     if (!(isObject(own) && own.initial) && !keyStyle?.initial) return
-    void import('./appearance').then((module) =>
+    void loadAppearance().then((module) =>
       module.appearParts(String(options.key), keyStyle, own, els, timing.value),
     )
   })
+  // `replay`: when it changes, the appearance plays again, without remounting.
+  watch(
+    () => {
+      const own = options.motion()
+      return isObject(own) ? own.replay : undefined
+    },
+    (next, before) => {
+      const own = options.motion()
+      if (Object.is(next, before) || !isObject(own) || !own.initial) return
+      const keyStyle = style?.value?.[options.key] as Record<string, unknown> | undefined
+      // Loaded already (it played on mount, or replayed before): at once, in this flush.
+      const play = (module: typeof import('./appearance')) =>
+        module.appearParts(String(options.key), keyStyle, own, els, timing.value, true)
+      if (appearance) play(appearance)
+      else void loadAppearance().then(play)
+    },
+    { flush: 'post' },
+  )
   return exposed
 }

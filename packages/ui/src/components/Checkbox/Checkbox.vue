@@ -193,6 +193,7 @@ const parts = useStateMotion({
   },
   states: () => ({
     checked: isChecked.value,
+    unchecked: !isChecked.value && !props.indeterminate,
     indeterminate: props.indeterminate,
     invalid: isInvalid.value,
     disabled: isDisabled.value,

@@ -170,7 +170,7 @@
   .ui-datatable-tbody
     .ui-datatable-tr[data-indicated]
     .ui-datatable-td:is(.ui-datatable-td--frozen, .ui-datatable-td--frozen-end) {
-    background: var(--ui-indicator-bg);
+    background: var(--ui-indicator-bg, var(--ui-muted));
   }
   /* selectionMode="row": the whole row is the click target, not just a checkbox. */
   /* No press scale: a shrinking full-width row drops edge clicks; the hover highlight is feedback. */

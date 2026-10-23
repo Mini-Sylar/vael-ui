@@ -177,6 +177,8 @@ const indicator = useTabIndicator(active, {
   indicatorEl: selectedIndicatorEl,
   indicator: indicatorMotion.spring,
   motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
+  stretch: () => (typeof props.motion === 'object' ? props.motion.stretch : undefined),
+  squash: () => (typeof props.motion === 'object' ? props.motion.squash : undefined),
 })
 
 const generatedId = useId()

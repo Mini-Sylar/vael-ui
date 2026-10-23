@@ -137,3 +137,17 @@ test("a motion object, in the month view: the leaving grid keeps the entering gr
     0,
   )
 })
+
+test('with motion off, next month changes the month and its label without an error', async () => {
+  const errors: unknown[] = []
+  const screen = await render(Calendar, {
+    props: { modelValue: new Date(2026, 9, 20), motion: false },
+    global: { stubs: { transition: false }, config: { errorHandler: (e) => errors.push(e) } },
+  })
+  const label = () => screen.container.querySelector('.ui-calendar-label-text')?.textContent
+  const before = label()
+  screen.container.querySelector<HTMLElement>('[aria-label*="next" i]')!.click()
+  await vi.waitFor(() => expect(label()).not.toBe(before))
+  await frame()
+  expect(errors).toEqual([])
+})

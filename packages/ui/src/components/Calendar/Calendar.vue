@@ -63,7 +63,7 @@
         @pointerenter="titleIfCut"
         @click="canDrill && drillUp()"
       >
-        <Transition v-bind="labelTransition" mode="out-in">
+        <Transition v-bind="labelTransition">
           <span :key="headerLabel" class="ui-calendar-label-text">
             <slot name="label" :label="headerLabel" :date="viewDate" :level="navLevel">{{
               headerLabel
@@ -138,7 +138,7 @@
           >
             <div v-for="(pane, pi) in panes" :key="pi" class="ui-calendar-pane">
               <div v-if="panes.length > 1" class="ui-calendar-pane-head">
-                <Transition v-bind="labelTransition" mode="out-in">
+                <Transition v-bind="labelTransition">
                   <button
                     :key="monthKeyOf(pane)"
                     type="button"
@@ -536,11 +536,16 @@ const swapMotion = useSwapMotion({
 })
 const labelSwap = swapMotion.hooks('label', 'wait')
 const gridSwap = swapMotion.hooks('grid', 'sync')
-const swapped = (name: string, hooks: typeof labelSwap) =>
+// Motion off: no `mode` either, since Vue throws on an out-in leave that ends at once (3.6 rc.12).
+const swapped = (name: string, hooks: typeof labelSwap, mode?: 'out-in') =>
   swapMotion.active.value
-    ? { css: false, onEnter: hooks.onEnter, onLeave: hooks.onLeave }
-    : { name: motionOn.value ? name : undefined, css: motionOn.value }
-const labelTransition = computed(() => swapped('ui-calendar-label', labelSwap))
+    ? { css: false, onEnter: hooks.onEnter, onLeave: hooks.onLeave, mode }
+    : {
+        name: motionOn.value ? name : undefined,
+        css: motionOn.value,
+        mode: motionOn.value ? mode : undefined,
+      }
+const labelTransition = computed(() => swapped('ui-calendar-label', labelSwap, 'out-in'))
 const gridTransition = computed(() => swapped('ui-calendar-grid', gridSwap))
 const focusedDate = ref<Date>(initialAnchor)
 

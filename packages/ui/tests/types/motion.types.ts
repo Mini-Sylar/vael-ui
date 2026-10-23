@@ -199,3 +199,43 @@ export const messageLeaves: MessageMotion = { exit: { root: { opacity: 0, y: -4 
 export const dialogLinked: DialogMotion = {
   linked: { page: { el: () => document.body, open: { scale: '0.96' } } },
 }
+
+// ─── Keyframes, held looks, repeated parts, replay (2026-10-23) ─────────────
+export const keyframes: InputMotion = {
+  states: {
+    invalid: {
+      root: {
+        x: { value: [0, -8, 8, 0], times: [0, 0.3, 0.6, 1], easing: 'ease-out', duration: 400 },
+        rotate: { value: [0, 4], repeat: Infinity, repeatType: 'reverse', duration: 80 },
+      },
+    },
+  },
+}
+export const badRepeatType: InputMotion = {
+  // @ts-expect-error repeatType is 'loop' or 'reverse'
+  states: { invalid: { root: { x: { value: [0, 4], repeatType: 'yoyo' } } } },
+}
+export const held: import('../../src/motion/types').AnimateDirectiveValue = {
+  animate: { rotate: 180, backgroundColor: 'red' },
+  appear: false,
+  layoutId: 'card',
+  layout: 'position',
+  spring: { damping: 0.6, response: 0.4 },
+}
+export const eachStep: import('../../src/motion/types').StepperMotion = {
+  states: { current: { circle: ({ index }) => ({ scale: [1, 1.1 + index / 20, 1] }) } },
+}
+export const eachCell: import('../../src/motion/types').OtpInputMotion = {
+  states: {
+    invalid: {
+      cell: ({ index, count = 1 }) => ({ x: { value: [0, 6, 0], delay: (count - index) * 0.02 } }),
+    },
+  },
+}
+export const replayed: import('../../src/motion/types').RatingMotion = { replay: 1 }
+// @ts-expect-error an overlay opens and closes: it has no replay
+export const overlayReplay: DialogMotion = { replay: 1 }
+export const stepperActive: import('../../src/motion/types').StepperMotion = {
+  // @ts-expect-error a Stepper step is `current`, not `active` (that's the press)
+  states: { active: { circle: { scale: 1 } } },
+}

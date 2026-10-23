@@ -128,7 +128,7 @@
     --ui-duration-indicator: var(--ui-duration-indicator-wide);
   }
   .ui-tree-row--sticky[data-indicated] {
-    background: var(--ui-indicator-bg);
+    background: var(--ui-indicator-bg, var(--ui-muted));
   }
   /* Inset, so the ring fits inside the row and is never clipped by a scroll box around the tree. */
   .ui-tree-row:focus-visible {

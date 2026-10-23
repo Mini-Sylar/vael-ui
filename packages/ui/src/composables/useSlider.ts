@@ -21,8 +21,8 @@ export interface UseSliderOptions {
 export interface UseSliderReturn {
   /** True for the entire span of a pointer drag — from pointerdown to release. */
   isDragging: Ref<boolean>
-  /** True for a moment after your own drag or key press moves a thumb, so it moves at once;
-   * a value set from outside glides. */
+  /** True for a moment while a drag moves a thumb, so it follows the pointer at once; a key, a
+   * press on the track or a value set from outside glides. */
   isInstant: Ref<boolean>
   /** Index of the thumb currently captured by a pointer drag; `null` when idle. */
   activeThumb: Ref<number | null>
@@ -73,15 +73,18 @@ export function useSlider(
     return Math.min(hi, Math.max(lo, clean))
   }
 
-  // Your own drag or key moves the thumb at once; a value set from outside glides there.
+  // A drag follows the pointer at once; a jump (a key, a press on the track, a value from
+  // outside) glides there.
   const isInstant = shallowRef(false)
   let instantFrame = 0
-  function setValue(index: number, raw: number) {
-    isInstant.value = true
-    cancelAnimationFrame(instantFrame)
-    instantFrame = requestAnimationFrame(() => {
-      instantFrame = requestAnimationFrame(() => (isInstant.value = false))
-    })
+  function setValue(index: number, raw: number, instant = false) {
+    if (instant) {
+      isInstant.value = true
+      cancelAnimationFrame(instantFrame)
+      instantFrame = requestAnimationFrame(() => {
+        instantFrame = requestAnimationFrame(() => (isInstant.value = false))
+      })
+    }
     const next = clampToStep(raw)
     if (isRange()) {
       const [v0, v1] = model.value as [number, number]
@@ -156,7 +159,7 @@ export function useSlider(
   function onPointerMove(event: PointerEvent) {
     if (!isDragging.value || activeThumb.value === null) return
     if (capturedPointerId !== null && event.pointerId !== capturedPointerId) return
-    setValue(activeThumb.value, valueFromPointer(event))
+    setValue(activeThumb.value, valueFromPointer(event), true)
   }
 
   function endDrag(event: PointerEvent) {

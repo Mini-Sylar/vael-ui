@@ -8,7 +8,7 @@
     left: 0;
     z-index: -1;
     border-radius: calc(var(--ui-radius) - 4px);
-    background: var(--ui-indicator-bg);
+    background: var(--ui-indicator-bg, var(--ui-muted));
     pointer-events: none;
     /* Position and size first, opacity third: the order the composable's duration overrides use. */
     transition:

@@ -456,6 +456,7 @@ export type {
   TargetMotion,
   Thenable,
   ToasterMotion,
+  TourMotion,
   UiDuration,
   UiEase,
   UseMotionReturn,

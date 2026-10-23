@@ -236,7 +236,7 @@ test('fits its container on a page with no box-sizing reset', async () => {
   expect(slider.right).toBeLessThanOrEqual(box.right + 0.5)
 })
 
-test('a value set from outside glides the thumb there; a key press moves it at once', async () => {
+test('a jump glides: a value from outside, a key, a press on the track; a drag follows at once', async () => {
   const { ref, nextTick } = await import('vue')
   const value = ref(0)
   const screen = await render({
@@ -246,18 +246,30 @@ test('a value set from outside glides the thumb there; a key press moves it at o
   })
   const root = screen.container.querySelector<HTMLElement>('.ui-slider')!
   const shown = () => Number(getComputedStyle(root).getPropertyValue('--ui-slider-p0'))
+  const partway = async () => {
+    await nextTick()
+    await new Promise(requestAnimationFrame)
+    await new Promise(requestAnimationFrame)
+    const now = shown()
+    return now > 0.02 && now < 0.98
+  }
   // Styled once at its first value, as on any page, so there's somewhere to glide from.
   expect(shown()).toBe(0)
   value.value = 100
-  await nextTick()
-  await new Promise(requestAnimationFrame)
-  await new Promise(requestAnimationFrame)
-  // Partway there, not jumped.
-  expect(shown()).toBeGreaterThan(0)
-  expect(shown()).toBeLessThan(1)
+  expect(await partway()).toBe(true)
   await vi.waitFor(() => expect(shown()).toBe(1))
   root.querySelector<HTMLElement>('.ui-slider-thumb')!.focus()
   await userEvent.keyboard('{Home}')
+  expect(await partway()).toBe(true)
+  await vi.waitFor(() => expect(shown()).toBe(0))
+  const track = root.querySelector<HTMLElement>('.ui-slider-track')!
+  const rect = track.getBoundingClientRect()
+  pointerdown(track, rect.left + rect.width * 0.9)
+  expect(await partway()).toBe(true)
+  // Then dragged: with the pointer, at once.
+  pointermove(rect.left + rect.width * 0.3)
   await nextTick()
-  expect(shown()).toBe(0)
+  await new Promise(requestAnimationFrame)
+  expect(shown()).toBeCloseTo(0.3, 1)
+  pointerup(rect.left + rect.width * 0.3)
 })

@@ -189,6 +189,8 @@ const { style: indicatorStyle } = useTabIndicator(modelValue, {
   indicatorEl,
   indicator: indicatorMotion.spring,
   motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
+  stretch: () => (typeof props.motion === 'object' ? props.motion.stretch : undefined),
+  squash: () => (typeof props.motion === 'object' ? props.motion.squash : undefined),
 })
 
 const cx = useClassMerge()

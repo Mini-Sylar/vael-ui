@@ -44,7 +44,7 @@
     <div
       ref="contentEl"
       :class="contentPart.class"
-      :style="[{ transform: `translateX(${offset}px)` }, contentPart.style]"
+      :style="[{ transform: `translateX(${shown}px)` }, contentPart.style]"
       @pointerdown="onContentPointerdown"
       @click.capture="onContentClick"
     >
@@ -59,7 +59,7 @@
 import './SwipeToReveal.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
+import { computed, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useElementSize } from '@vueuse/core'
 import { useSwipeReveal } from '../../composables/useSwipeReveal'
@@ -68,7 +68,10 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
-import type { SwipeToRevealMotion } from '../../motion/types'
+import { useMotionStyle } from '../../motion/context'
+import { useSpringValue } from '../../composables/useSpringValue'
+import { prefersReducedMotion } from '../../composables/dom'
+import type { Spring, SwipeToRevealMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -107,6 +110,7 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { motion: true })
+const DEFAULT_SPRING = { damping: 1, response: 0.32 }
 
 const emit = defineEmits<{
   /** Fires once per settled interaction, with `open` and the open edge (or `null`). */
@@ -187,16 +191,35 @@ function onFocusout(event: FocusEvent) {
   close()
 }
 
-// 0 → 1: how far the drag/settle has revealed each edge. Exposed for consumer-driven effects;
-// also drives the opt-in `revealScale` grow-in.
+// Where the row is on screen: with the finger while dragging, then on a spring to where it
+// settles, so the progress below is what you see, not where it's going.
+const style = useMotionStyle()
+const own = typeof rawProps.motion === 'object' ? (rawProps.motion.spring as Spring) : undefined
+const {
+  value: shown,
+  set: glide,
+  jump,
+} = useSpringValue(offset.value, {
+  ...(own ?? style?.value?.spring ?? DEFAULT_SPRING),
+  epsilon: 0.1,
+})
+watch(
+  offset,
+  (next) =>
+    isDragging.value || !props.motion || prefersReducedMotion() ? jump(next) : glide(next),
+  { flush: 'sync' },
+)
+
+// 0 → 1: how far each edge is revealed on screen. Exposed for consumer-driven effects; also
+// drives the opt-in `revealScale` grow-in.
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
 const leadingProgress = computed(() => {
   const width = leadingActionsEl.value?.offsetWidth ?? leadingWidth.value
-  return width > 0 ? clamp01(offset.value / width) : 0
+  return width > 0 ? clamp01(shown.value / width) : 0
 })
 const trailingProgress = computed(() => {
   const width = trailingActionsEl.value?.offsetWidth ?? trailingWidth.value
-  return width > 0 ? clamp01(-offset.value / width) : 0
+  return width > 0 ? clamp01(-shown.value / width) : 0
 })
 
 const revealScaleOn = computed(() => props.revealScale !== false)
@@ -239,9 +262,9 @@ defineExpose({
   isDragging,
   /** Which edge is open, or `null` when closed. */
   openSide,
-  /** Reveal progress of the leading edge, from 0 to 1. Live during a drag, settled after. */
+  /** Reveal progress of the leading edge, from 0 to 1, as it is on screen. */
   leadingProgress,
-  /** Reveal progress of the trailing edge, from 0 to 1. Live during a drag, settled after. */
+  /** Reveal progress of the trailing edge, from 0 to 1, as it is on screen. */
   trailingProgress,
   /** Opens an edge. Without `side`, it opens the trailing edge, or the leading one if it's the only edge. */
   reveal,

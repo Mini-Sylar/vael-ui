@@ -56,6 +56,7 @@
         <div
           :id="panelId"
           ref="panel"
+          data-ui-presence
           role="dialog"
           aria-modal="false"
           :aria-label="messages.datePicker.chooseDate"

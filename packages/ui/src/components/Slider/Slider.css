@@ -24,13 +24,12 @@
     min-block-size: var(--ui-slider-thumb-size);
     padding-inline: calc(var(--ui-slider-thumb-size) / 2);
     touch-action: none;
-    /* A value set from outside (a reset, a preset) glides on the number tokens, which a
-       ConfigProvider spring retunes; a drag or a key press moves it at once. */
+    /* A jump (a key, a press on the track, a value from outside) glides on the number tokens,
+       which a ConfigProvider spring retunes; a drag follows the pointer at once. */
     transition:
       --ui-slider-p0 var(--ui-duration-number) var(--ui-ease-number),
       --ui-slider-p1 var(--ui-duration-number) var(--ui-ease-number);
   }
-  .ui-slider[data-dragging],
   .ui-slider[data-instant],
   .ui-slider[data-motion='off'] {
     transition: none;

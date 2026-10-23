@@ -10,16 +10,23 @@ import {
   leaveInPlace,
   placeOnLeave,
   rememberLayout,
+  watchPaintedBox,
 } from '../motion/layout'
 import type { LeavingPlace } from '../motion/layout'
 import { followSize } from '../motion/size'
 import { firstPaint, handOver } from '../motion/firstPaint'
 import { valuesAt } from '../motion/playable'
 import { queueAppearance, scrolling, seen, unwatchView } from '../motion/appearance'
-import { appear } from '../motion/useComponentMotion'
-import type { AnimateDirectiveValue, MotionTiming, TargetMotion } from '../motion/types'
+import type {
+  AnimateDirectiveValue,
+  MotionTiming,
+  MotionValues,
+  TargetMotion,
+} from '../motion/types'
 import { motionWarn } from '../motion/warn'
 import { motionStyleAround } from '../motion/styleHolder'
+import { toKeyframe } from '../motion/values'
+import { loadAnimateTarget } from '../composables/lazyParts'
 
 type Marked = HTMLElement & {
   _uiAnimateLeave?: () => void
@@ -28,6 +35,58 @@ type Marked = HTMLElement & {
   _uiAnimateValue?: AnimateDirectiveValue
   _uiAppeared?: boolean
   _uiLeavingPlace?: LeavingPlace
+  _uiTarget?: ReturnType<typeof import('../motion/animateTarget').holdTarget>
+  _uiTargetKey?: string
+}
+
+/** `animate`: the look it holds, moving to each new one as it changes (from the states player). */
+function followTarget(el: Marked, value: AnimateDirectiveValue | undefined) {
+  const animate = typeof value === 'object' ? value.animate : undefined
+  if (!animate) {
+    el._uiTarget?.stop()
+    el._uiTarget = el._uiTargetKey = undefined
+    return
+  }
+  const key = JSON.stringify(animate)
+  // `progress`: the keyframes held at that point, moved every time it changes.
+  const progress = typeof value === 'object' ? value.progress : undefined
+  if (progress !== undefined) {
+    const rebuild = key !== el._uiTargetKey
+    el._uiTargetKey = key
+    const seek = () => el._uiTarget?.scrub(animate, progress, timingOf(value) ?? {}, rebuild)
+    if (el._uiTarget) return seek()
+    void loadAnimateTarget().then((module) => {
+      if (el._uiTargetKey !== key) return
+      el._uiTarget ??= module.holdTarget(el)
+      el._uiTarget.scrub(animate, progress, timingOf(value) ?? {}, true)
+    })
+    return
+  }
+  if (key === el._uiTargetKey) return
+  const changed = el._uiTargetKey !== undefined
+  el._uiTargetKey = key
+  // Mounting: shown in that look at once, so nothing flashes while its player loads.
+  const shown = changed ? [] : showNow(el, animate)
+  void loadAnimateTarget().then((module) => {
+    if (el._uiTargetKey !== key) return
+    el._uiTarget ??= module.holdTarget(el)
+    el._uiTarget.update(animate, timingOf(value) ?? {}, motionStyleAround(el)?.spring, changed)
+    for (const [prop, before] of shown) put(el, prop, before)
+  })
+}
+const cssName = (key: string) =>
+  key.startsWith('--') ? key : key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
+const put = (el: HTMLElement, prop: string, value: string) =>
+  value ? el.style.setProperty(prop, value) : el.style.removeProperty(prop)
+/** Writes a look inline, returning what each property was before. */
+function showNow(el: HTMLElement, values: MotionValues): [string, string][] {
+  const frame = toKeyframe(values, getComputedStyle(el).direction === 'rtl')
+  return Object.entries(frame).map(([key, value]) => {
+    const prop = cssName(key)
+    const before = el.style.getPropertyValue(prop)
+    put(el, prop, String(value))
+    return [prop, before]
+  })
 }
 
 function appearAlone(
@@ -48,7 +107,7 @@ function appearAlone(
     }
     value = preset
   }
-  if (!value?.initial) return
+  if (!value?.initial || value.appear === false) return
   queueAppearance(el, name, value)
 }
 
@@ -90,16 +149,19 @@ function leaveIfRemoved(
     leaveInPlace(el, place, look.values, look.timing)
 }
 
-/** `replay`: when its value changes, the element plays its `initial` again, without remounting. */
+/**
+ * `replay`: when its value changes, the element plays its `initial` again, without remounting.
+ * Those under one name that replay together stagger, as when they first appeared.
+ */
 function replayIfChanged(
   el: HTMLElement,
   value: AnimateDirectiveValue | undefined,
   before: AnimateDirectiveValue | undefined,
+  name: string | undefined,
 ) {
   if (typeof value !== 'object' || !('replay' in value) || !value.initial) return
   if (typeof before === 'object' && Object.is(before.replay, value.replay)) return
-  const initial = valuesAt(value.initial, { direction: 0, index: 0 })
-  if (initial) void appear(el, initial, value, undefined, 0, true)
+  queueAppearance(el, name, value, true)
 }
 
 function join(
@@ -110,8 +172,11 @@ function join(
   el._uiAnimateLeave?.()
   const presence = findPresence(el)
   if (!presence) return appearAlone(el, name, value)
+  // `appear: false`: it doesn't come in with the component; its exit stays.
+  const joined =
+    typeof value === 'object' && value.appear === false ? { ...value, initial: undefined } : value
   // A string names one of the style's presets; the component resolves it when it plays.
-  el._uiAnimateLeave = presence.register(el, name ?? 'default', value)
+  el._uiAnimateLeave = presence.register(el, name ?? 'default', joined)
 }
 
 /**
@@ -127,6 +192,7 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
   mounted(el, binding) {
     const marked = el as Marked
     marked._uiAnimateValue = binding.value
+    followTarget(marked, binding.value)
     // Hydrated: the server's CSS is playing (or has played) its appearance; never twice.
     if (handOver(el)) marked._uiAppeared = true
     if (binding.modifiers.size)
@@ -137,6 +203,7 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
     const id = layoutIdOf(binding.value)
     // A morph finds it by this: in the trigger and the panel, it travels between the two.
     if (id) el.dataset.layoutId = id
+    if (id) watchPaintedBox(el, binding.instance?.$ ?? null)
     // Arriving where another under its `layoutId` just left: it slides over instead of appearing.
     if (id)
       arriveLayout(el, id, timingOf(binding.value)!, () => join(marked, binding.arg, binding.value))
@@ -149,7 +216,8 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
   },
   updated(el, binding) {
     ;(el as Marked)._uiAnimateValue = binding.value
-    replayIfChanged(el, binding.value, binding.oldValue ?? undefined)
+    followTarget(el as Marked, binding.value)
+    replayIfChanged(el, binding.value, binding.oldValue ?? undefined, binding.arg)
     if (binding.value !== binding.oldValue && (binding.arg || !binding.modifiers.size))
       join(el as Marked, binding.arg, binding.value)
   },
@@ -159,6 +227,7 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
     ;(el as Marked)._uiAnimateLeave?.()
     ;(el as Marked)._uiSizeStop?.()
     ;(el as Marked)._uiLayoutStop?.()
+    followTarget(el as Marked, undefined)
   },
 }
 
@@ -202,7 +271,8 @@ export function vAnimateVapor(
   let before: AnimateDirectiveValue | undefined
   watchPostEffect(() => {
     const current = value?.()
-    if (arrived) replayIfChanged(el, current, before)
+    followTarget(el as Marked, current)
+    if (arrived) replayIfChanged(el, current, before, name)
     before = current
     // After the flush: in setup it has no parent yet to watch.
     if (!arrived && typeof current === 'object' && current.layout)
@@ -224,6 +294,7 @@ export function vAnimateVapor(
   })
   const leave = () => (el as Marked)._uiAnimateLeave?.()
   onScopeDispose(leave)
+  onScopeDispose(() => followTarget(el as Marked, undefined))
   onScopeDispose(() => unwatchView(el))
   return leave
 }

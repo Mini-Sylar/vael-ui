@@ -64,7 +64,7 @@ function setup(motion: DialogMotion = { morph: 'trigger' }) {
 }
 
 test(
-  "morph: 'trigger' grows from the trigger's box, hides it while open, shrinks back, and gets focus back",
+  "morph: 'trigger' grows out of the trigger itself, hides it while open, shrinks back, and gets focus back",
   { timeout: 8000 },
   async () => {
     const open = setup()
@@ -78,9 +78,9 @@ test(
     expect(Math.abs(first.left - t.left)).toBeLessThan(12)
     expect(Math.abs(first.top - t.top)).toBeLessThan(12)
     expect(Math.abs(first.width - t.width)).toBeLessThan(20)
-    // It fades in over the trigger first, so the button's text never blanks; then the trigger hides.
-    expect(Number(getComputedStyle(panel()!).opacity)).toBeLessThan(1)
-    await vi.waitFor(() => expect(getComputedStyle(trigger()).opacity).toBe('0'))
+    // It is the button from the first frame: the panel opaque in its place, the button gone.
+    expect(Number(getComputedStyle(panel()!).opacity)).toBe(1)
+    expect(getComputedStyle(trigger()).opacity).toBe('0')
     // Settled: the panel's own box, no clip left.
     await vi.waitFor(() => expect(panel()!.hasAttribute('data-ui-m')).toBe(false), {
       timeout: 3000,
@@ -300,4 +300,46 @@ test("an element under the same layoutId in the button and the panel starts on t
   expect(Math.abs(startTop - from.top)).toBeLessThan(3)
   // Seen the whole way: the content fade passes over it.
   expect(Number(getComputedStyle(document.querySelector('.to')!).opacity)).toBe(1)
+})
+
+test("exitOrder: 'reverse' beside a morph still morphs out of the button", async () => {
+  setup({ morph: 'trigger', exitOrder: 'reverse' })
+  trigger().focus()
+  trigger().click()
+  await nextTick()
+  while (!panel() || !panel()!.hasAttribute('data-ui-m')) await frame()
+  const t = trigger().getBoundingClientRect()
+  const first = visibleBox(panel()!)
+  // Near the button's box, not the panel's: without the morph it opens at full width.
+  expect(Math.abs(first.left - t.left)).toBeLessThan(24)
+  expect(first.width).toBeLessThan(t.width * 1.5)
+})
+
+test("a pill trigger's 9999px corner is drawn as half its height: the panel's clip starts there", async () => {
+  const open = shallowRef(false)
+  render(
+    {
+      setup: () => () => [
+        h(
+          'button',
+          {
+            'data-testid': 'trigger',
+            style:
+              'position: fixed; left: 40px; top: 40px; width: 120px; height: 48px; border-radius: 9999px',
+            onClick: () => (open.value = true),
+          },
+          'Open',
+        ),
+        h(Dialog as never, { open: open.value, title: 'Pill', motion: { morph: 'trigger' } }),
+      ],
+    },
+    real,
+  )
+  trigger().focus()
+  trigger().click()
+  await nextTick()
+  while (!panel() || !panel()!.hasAttribute('data-ui-m')) await frame()
+  const corner = Number.parseFloat(getComputedStyle(panel()!).clipPath.split('round')[1] ?? '0')
+  expect(corner).toBeGreaterThan(10)
+  expect(corner).toBeLessThan(60)
 })
