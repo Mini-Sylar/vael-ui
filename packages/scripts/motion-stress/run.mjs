@@ -37,7 +37,13 @@ const SETUPS = {
   default: {},
   off: { storage: { 'vael-ui-docs-motion': 'false' } },
   reduced: { reducedMotion: 'reduce' },
-  rtl: { script: "document.documentElement.setAttribute('dir', 'rtl')" },
+  // Init scripts run before <html> exists: set it as soon as it does, and keep it if the app resets it.
+  rtl: {
+    script: `new MutationObserver((_, o) => {
+      const html = document.documentElement
+      if (html && html.getAttribute('dir') !== 'rtl') html.setAttribute('dir', 'rtl')
+    }).observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['dir'] })`,
+  },
   vapor: { storage: { 'vael-ui-docs-default-variant': 'vapor' } },
 }
 const setupOf = (name) =>
