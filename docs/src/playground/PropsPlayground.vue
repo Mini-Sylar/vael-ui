@@ -488,8 +488,10 @@
         <PlaygroundMotion
           v-if="next && motionInfo && inspector === 'motion'"
           v-model="motionTab"
-          :parts="motionInfo.parts"
-          :overlay="motionInfo.kinds.includes('overlay')"
+          v-scroll-mask
+          class="pg-rows"
+          :info="motionInfo"
+          @replay="motionRevision++"
         />
         <div v-else ref="rowsEl" class="pg-rows" v-scroll-mask="next" @scroll.passive="updateMore">
           <div v-if="showDataPreset" class="control-row">
@@ -587,7 +589,12 @@
           </template>
         </div>
         <Transition name="pg-more">
-          <button v-if="next && moreBelow > 0" type="button" class="pg-more" @click="scrollRows">
+          <button
+            v-if="next && moreBelow > 0 && inspector === 'props'"
+            type="button"
+            class="pg-more"
+            @click="scrollRows"
+          >
             <PhArrowDown :size="12" weight="bold" aria-hidden="true" />
             {{ moreBelow }} more
           </button>
@@ -658,6 +665,7 @@ import CodeBlock from '../components/CodeBlock.vue'
 import { layoutNext as next } from '../layoutNext'
 import PlaygroundErrorBoundary from './PlaygroundErrorBoundary.vue'
 import PlaygroundMotion from './PlaygroundMotion.vue'
+import { freshMotionTab, motionFromTab } from './PlaygroundMotion.vue'
 import type { MotionTabState } from './PlaygroundMotion.vue'
 import RichText from '../components/RichText.vue'
 import motionMeta from '../generated/motion-meta.json'
@@ -1526,20 +1534,7 @@ const previewLabel = computed(() => {
 // The Motion tab: a look for the `motion` prop, written into the preview and the snippet.
 const motionInfo = computed(() => (motionMeta as Record<string, MotionInfo>)[props.name])
 const inspector = shallowRef<'props' | 'motion'>('props')
-const MAIN_PARTS = ['panel', 'row', 'item', 'toast', 'chip', 'action', 'root', 'thumb', 'track']
-const freshMotion = (): MotionTabState => ({
-  look: 'default',
-  damping: 0.85,
-  response: 0.35,
-  part:
-    MAIN_PARTS.find((p) => motionInfo.value?.parts.includes(p)) ??
-    motionInfo.value?.parts[0] ??
-    'root',
-  fade: true,
-  y: 8,
-  scale: 0.98,
-  blur: 0,
-})
+const freshMotion = () => freshMotionTab(motionInfo.value)
 // Deep: the panel edits its fields in place.
 const motionTab = ref<MotionTabState>(freshMotion())
 watch(
@@ -1549,22 +1544,10 @@ watch(
     inspector.value = 'props'
   },
 )
-const motionValue = computed(() => {
-  const m = motionTab.value
-  if (m.look === 'default') return undefined
-  if (m.look === 'off') return false
-  const from: Record<string, number> = {}
-  if (m.fade) from.opacity = 0
-  if (m.y) from.y = m.y
-  if (m.scale !== 1) from.scale = m.scale
-  if (m.blur) from.blur = m.blur
-  return {
-    spring: { damping: m.damping, response: m.response },
-    ...(Object.keys(from).length ? { initial: { [m.part]: from } } : {}),
-  }
-})
+const motionValue = computed(() => motionFromTab(motionTab.value))
 // `{ spring: { damping: 0.85 } }`: the object as you'd write it in a template.
 function motionLiteral(value: unknown): string {
+  if (typeof value === 'string') return `'${value}'`
   if (value === null || typeof value !== 'object') return String(value)
   const entries = Object.entries(value).map(([k, v]) => `${k}: ${motionLiteral(v)}`)
   return `{ ${entries.join(', ')} }`
