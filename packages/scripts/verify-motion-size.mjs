@@ -55,12 +55,14 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // Dock, OtpInput cells) with its own pointer; `animate` holds a look and `progress` scrubs it;
 // a component's `replay` and `appear: false` (the watch is on every state component, so Button
 // pays ~100 B). Measured 5871, 4925, 1177 and 2705 B.
+// states 4.9 → 5.2 KB (2026-10-23): a hover that moves its element off a still cursor holds until
+// the cursor leaves the element's resting box, instead of flickering on and off. Measured 5228 B.
 const BUDGET = {
   upFront: 7.3 * 1024,
   runtime: 5.8 * 1024,
   morph: 1.5 * 1024,
   button: 1.2 * 1024,
-  states: 4.9 * 1024,
+  states: 5.2 * 1024,
   linked: 2.7 * 1024,
 }
 

@@ -1,6 +1,7 @@
 import '../src/style.css'
 import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { userEvent } from 'vitest/browser'
 import { h, nextTick, shallowRef } from 'vue'
 import Accordion from '../src/components/Accordion/Accordion.vue'
 import AccordionItem from '../src/components/AccordionItem/AccordionItem.vue'
@@ -345,6 +346,36 @@ test('a button presses by pointer and by keyboard, and hovers only for a mouse',
   expect(states(button())).toHaveLength(0)
   pointer('pointerenter')
   await vi.waitFor(() => expect(getComputedStyle(button()).opacity).toBe('0.5'), { timeout: 2000 })
+})
+
+// The lift carries the button off a still cursor; hover must hold rather than flicker on and off.
+test('a hover that lifts the element off a cursor at its edge stays on, without flickering', async () => {
+  const motion: ButtonMotion = { states: { hover: { root: { y: -8 } } } }
+  render({ setup: () => () => h(Button, { motion, style: 'margin: 40px' }, () => 'Save') })
+  const button = () => document.querySelector<HTMLElement>('.ui-button')!
+  await vi.waitFor(() => expect(button()).not.toBeNull())
+  await frame()
+  // Page coordinates: relative to the button, the cursor would ride up with the lift.
+  const rest = button().getBoundingClientRect()
+  const at = (x: number, y: number) =>
+    userEvent.hover(document.documentElement, { position: { x, y } })
+  const lifts = new Set<string>()
+  const start = performance.now()
+  // A hand is never still: the cursor wobbles a pixel in place, and each wobble asks again.
+  for (let i = 0; performance.now() - start < 1500; i++) {
+    await at(rest.left + rest.width / 2 + (i % 2), rest.bottom - 2)
+    if (performance.now() - start > 700) lifts.add(getComputedStyle(button()).translate)
+    await frame()
+  }
+  expect([...lifts]).toEqual(['0px -8px'])
+  // Off the resting box: it settles back.
+  await at(rest.left + rest.width / 2, rest.bottom + 20)
+  await vi.waitFor(
+    () => expect(getComputedStyle(button()).translate).toMatch(/^(none|0px( 0px)?)$/),
+    {
+      timeout: 2000,
+    },
+  )
 })
 
 test('with nothing customised, states never run: the built-in look is the CSS', async () => {

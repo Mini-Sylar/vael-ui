@@ -225,16 +225,40 @@ type Pointer = { hover: boolean; active: boolean; focus: boolean }
 /** Hover (a mouse only), press (pointer, Space or Enter) and focus, on one element. */
 function pointerOn(el: Element, wanted: Set<string>, pointer: Pointer): () => void {
   const handlers: [EventTarget, string, (e: Event) => void][] = []
+  const cleanups: (() => void)[] = []
   const on = (target: EventTarget, type: string, fn: (e: Event) => void) => {
     target.addEventListener(type, fn)
     handlers.push([target, type, fn])
   }
   const release = () => (pointer.active = false)
   if (wanted.has('hover')) {
+    // A hover that moves the element off a still cursor holds until the cursor leaves where it rests.
+    let away: (() => void) | undefined
+    const stay = () => {
+      away?.()
+      away = undefined
+    }
+    const leave = () => {
+      stay()
+      pointer.hover = false
+    }
     on(el, 'pointerenter', (e) => {
+      stay()
       if ((e as PointerEvent).pointerType === 'mouse') pointer.hover = true
     })
-    on(el, 'pointerleave', () => (pointer.hover = false))
+    const resting = (e: Event) => pointer.hover && inside(restingBox(el), e as PointerEvent)
+    on(el, 'pointerleave', (e) => {
+      if (!resting(e)) return leave()
+      const move = (event: Event) => resting(event) || leave()
+      const root = document.documentElement
+      window.addEventListener('pointermove', move)
+      root.addEventListener('pointerleave', leave)
+      away = () => {
+        window.removeEventListener('pointermove', move)
+        root.removeEventListener('pointerleave', leave)
+      }
+    })
+    cleanups.push(stay)
   }
   if (wanted.has('active')) {
     on(el, 'pointerdown', (e) => {
@@ -255,8 +279,27 @@ function pointerOn(el: Element, wanted: Set<string>, pointer: Pointer): () => vo
   })
   return () => {
     for (const [target, type, fn] of handlers) target.removeEventListener(type, fn)
+    for (const cleanup of cleanups) cleanup()
     pointer.hover = pointer.active = pointer.focus = false
   }
+}
+
+const inside = (box: DOMRect, { clientX: x, clientY: y }: PointerEvent) =>
+  x >= box.left && x <= box.right && y >= box.top && y <= box.bottom
+
+/** Its box without its own `translate` and `scale`: where it rests, wherever a state has moved it. */
+function restingBox(el: Element): DOMRect {
+  const box = el.getBoundingClientRect()
+  const { translate, scale, transformOrigin } = getComputedStyle(el)
+  const [sx = 1, sy = sx] = scale === 'none' ? [] : scale.split(' ').map(Number)
+  const [tx = 0, ty = 0] = translate === 'none' ? [] : translate.split(' ').map(parseFloat)
+  const [ox = 0, oy = 0] = transformOrigin.split(' ').map(parseFloat)
+  return new DOMRect(
+    box.left - tx - ox * (1 - sx),
+    box.top - ty - oy * (1 - sy),
+    box.width / sx,
+    box.height / sy,
+  )
 }
 
 const POINTER_STATES = ['hover', 'active', 'focus'] as const
