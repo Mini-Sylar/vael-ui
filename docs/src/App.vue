@@ -49,7 +49,8 @@
           />
           <div class="header-desktop-controls">
             <MotionMenu v-model="motionPreset" v-model:tune="motionTune" @tour="startWhatsNew" />
-            <Popover v-model:open="themeOpen">
+            <!-- Held open while a "Show me how" points into it, so you can change the setting right there. -->
+            <Popover v-model:open="themeOpen" :close-on-outside="!holdSettings">
               <template #trigger="{ setTriggerEl }">
                 <Button
                   :ref="setTriggerEl"
@@ -344,7 +345,6 @@ import SupportMenu from './components/SupportMenu.vue'
 import Logo from './components/Logo.vue'
 import { setLocale, SUPPORTED_LOCALES, type Locale } from './i18n'
 import { defaultVariant, primaryColor, readableAccent } from './preferences'
-import { syncFavicon } from './favicon'
 import { useHead } from '@unhead/vue'
 
 // Lazy: it pulls in motion, which the rest of the shell doesn't need up front.
@@ -494,8 +494,6 @@ function updateBrowserThemeColor() {
 
 watch(resolvedMode, updateBrowserThemeColor)
 onMounted(updateBrowserThemeColor)
-// Client only: the prerendered page keeps the static icon until the app runs.
-onMounted(() => watch(primaryColor, (color) => void syncFavicon(color), { immediate: true }))
 
 // Taller than the default 60%: every setting shows on most phones, and it pulls up further.
 const settingsSnapPoints = [
@@ -741,6 +739,17 @@ async function startWhatsNew() {
 }
 const settingTourOpen = shallowRef(false)
 const settingTourSteps = shallowRef<TourStep[]>([])
+// The tour hands focus back as it closes; the panel stays until your own next click or key.
+const holdSettings = shallowRef(false)
+watch(settingTourOpen, (open) => {
+  if (open) holdSettings.value = true
+  else
+    for (const type of ['pointerdown', 'keydown'])
+      window.addEventListener(type, () => (holdSettings.value = false), {
+        capture: true,
+        once: true,
+      })
+})
 async function showSetting(name: 'loader') {
   const phone = window.matchMedia('(max-width: 850px)').matches
   if (phone) mobileSettingsOpen.value = true

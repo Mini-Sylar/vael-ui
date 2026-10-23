@@ -193,7 +193,7 @@ tbody tr:hover {
 
 /* A followed anchor briefly marks its row so the eye lands on it. */
 tbody tr:target {
-  background: color-mix(in oklch, var(--ui-info) 10%, transparent);
+  background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 10%, transparent);
 }
 
 /* Arrived at from the search palette: the router changes the hash without :target, so the
@@ -204,17 +204,17 @@ tbody tr[data-landed] {
 
 @keyframes row-landed {
   from {
-    background: color-mix(in oklch, var(--ui-info) 28%, transparent);
+    background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 28%, transparent);
   }
   to {
-    background: color-mix(in oklch, var(--ui-info) 0%, transparent);
+    background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 0%, transparent);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   tbody tr[data-landed] {
     animation: none;
-    background: color-mix(in oklch, var(--ui-info) 10%, transparent);
+    background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 10%, transparent);
   }
 }
 

@@ -189,8 +189,8 @@ h2 {
   gap: 0.3rem;
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
-  background: color-mix(in oklch, var(--ui-info) 12%, transparent);
-  color: var(--ui-info-text, var(--ui-info));
+  background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 12%, transparent);
+  color: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 75%, var(--ui-text));
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -251,7 +251,7 @@ tbody tr {
 }
 
 tbody tr:target {
-  background: color-mix(in oklch, var(--ui-info) 10%, transparent);
+  background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 10%, transparent);
 }
 
 .name-cell {

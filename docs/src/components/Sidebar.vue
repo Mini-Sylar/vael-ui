@@ -356,6 +356,17 @@ watch(
   pointer-events: none;
   transition: opacity 200ms var(--ui-ease-out);
 }
+/* A faint dither feathering out to the bar's left, in the gutter, so it never sits under text. */
+.sidebar-indicator::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 100%;
+  inline-size: 0.875rem;
+  background: radial-gradient(circle, var(--ui-primary) 0.6px, transparent 0.9px) 0 0 / 3px 3px;
+  opacity: 0.45;
+  mask-image: linear-gradient(to left, #000, transparent);
+}
 
 /* The drawer body scrolls; this box would trap the scroll otherwise. */
 .sidebar-scroll--mobile {
@@ -391,7 +402,7 @@ watch(
   inline-size: 6px;
   block-size: 6px;
   border-radius: 50%;
-  background: var(--ui-primary);
+  background: var(--docs-accent, var(--ui-info));
   margin-inline-start: 0.375rem;
 }
 

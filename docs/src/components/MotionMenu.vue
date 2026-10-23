@@ -203,7 +203,7 @@ function pick(next: MotionPreset) {
   inline-size: 0.4rem;
   block-size: 0.4rem;
   border-radius: 50%;
-  background: var(--ui-info);
+  background: var(--docs-accent, var(--ui-info));
   box-shadow: 0 0 0 2px var(--ui-surface);
 }
 </style>

@@ -93,8 +93,8 @@ const current = computed(() => items.value.find((item) => item.value === mode.va
   position: absolute;
   inset: -0.6rem -0.75rem;
   z-index: -1;
-  background: radial-gradient(circle, var(--ui-text) 0.6px, transparent 0.9px) 0 0 / 4px 4px;
-  opacity: 0.22;
+  background: radial-gradient(circle, var(--ui-primary) 0.6px, transparent 0.9px) 0 0 / 4px 4px;
+  opacity: 0.3;
   mask-image: radial-gradient(ellipse 70% 100% at 18% 50%, #000 20%, transparent 72%);
   pointer-events: none;
 }

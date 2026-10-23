@@ -89,25 +89,30 @@ const lit = useTemplateRef<SVGPathElement>('lit')
 const railPath = shallowRef('')
 const railHeight = shallowRef(0)
 
-// Straight down the left, out along a curve to an open branch, down it, and back in at its end.
+// Straight down the left, out along a curve to a branch, down it, and back in at its end. The
+// branch grows with its list, so the path changes smoothly as a section opens or closes.
 function draw() {
   const box = nav.value
   if (!box) return
   let d = `M${MAIN_X} 0`
   for (const branch of box.querySelectorAll<HTMLElement>('.toc-children')) {
     const top = branch.offsetTop
-    const bottom = top + branch.offsetHeight
-    // Closed, or still opening past the curves' own height: no branch yet.
-    if (bottom - top < CURVE * 2 + 2) continue
-    d += ` V${top} C${MAIN_X} ${top + CURVE * 0.6} ${BRANCH_X} ${top + CURVE * 0.4} ${BRANCH_X} ${top + CURVE}`
-    d += ` V${bottom - CURVE} C${BRANCH_X} ${bottom - CURVE * 0.4} ${MAIN_X} ${bottom - CURVE * 0.6} ${MAIN_X} ${bottom}`
+    const height = branch.offsetHeight
+    if (height < 1) continue
+    const bottom = top + height
+    const out = Math.min(1, height / (CURVE * 2))
+    const x = MAIN_X + (BRANCH_X - MAIN_X) * out
+    const c = Math.min(CURVE, height / 2)
+    d += ` V${top} C${MAIN_X} ${top + c * 0.6} ${x} ${top + c * 0.4} ${x} ${top + c}`
+    d += ` V${bottom - c} C${x} ${bottom - c * 0.4} ${MAIN_X} ${bottom - c * 0.6} ${MAIN_X} ${bottom}`
   }
   railPath.value = `${d} V${box.offsetHeight}`
   railHeight.value = box.offsetHeight
 }
 
-// The lit stretch: where it starts and ends along the path, each on its own spring, so it
-// stretches toward where it's going and settles.
+// The lit stretch: its top and bottom edges, as heights on the rail, each on its own spring, so
+// it stretches toward where it's going and settles. Heights, not lengths along the path: a branch
+// opening or closing changes the path's length, but not where a link sits.
 const LEAD = { type: 'spring', bounce: 0, duration: 0.3 } as const
 const TRAIL = { type: 'spring', bounce: 0, duration: 0.5 } as const
 const start = motionValue(0)
@@ -115,10 +120,12 @@ const end = motionValue(0)
 let placed = false
 function paint() {
   const path = lit.value
-  if (!path) return
+  if (!path || !railPath.value) return
   const total = path.getTotalLength()
-  path.style.strokeDasharray = `${Math.max(0, end.get() - start.get())} ${total + 1}`
-  path.style.strokeDashoffset = `${-start.get()}`
+  const from = lengthAt(path, start.get())
+  const to = lengthAt(path, end.get())
+  path.style.strokeDasharray = `${Math.max(0, to - from)} ${total + 1}`
+  path.style.strokeDashoffset = `${-from}`
 }
 const stops = [start.on('change', paint), end.on('change', paint)]
 onScopeDispose(() => stops.forEach((stop) => stop()))
@@ -135,6 +142,22 @@ function lengthAt(path: SVGPathElement, y: number): number {
   return high
 }
 
+// Where a link will sit once every branch above it has finished opening or closing, so the
+// stretch heads straight there instead of chasing a link that's still moving.
+function settledTop(box: HTMLElement, link: HTMLElement): number {
+  let y = link.getBoundingClientRect().top - box.getBoundingClientRect().top
+  for (const branch of box.querySelectorAll<HTMLElement>('.toc-children')) {
+    if (branch.contains(link)) continue
+    if (!(branch.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING)) continue
+    const list = branch.querySelector<HTMLElement>('.toc-children-list')
+    const settled = branch.hasAttribute('data-open') ? (list?.offsetHeight ?? 0) : 0
+    y += settled - branch.offsetHeight
+  }
+  return y
+}
+
+let litId: string | null = null
+let goal = -1
 function light() {
   const path = lit.value
   const box = nav.value
@@ -145,25 +168,33 @@ function light() {
     return
   }
   path.style.opacity = '1'
-  const top = target.getBoundingClientRect().top - box.getBoundingClientRect().top
-  const from = lengthAt(path, top)
-  const to = lengthAt(path, top + target.offsetHeight)
+  const top = settledTop(box, target)
+  const bottom = top + target.offsetHeight
   if (!placed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    start.jump(from)
-    end.jump(to)
+    start.jump(top)
+    end.jump(bottom)
     placed = true
+    litId = activeId.value
+    goal = top
     paint()
     return
   }
-  const forward = from > start.get()
-  animate(start, from, forward ? TRAIL : LEAD)
-  animate(end, to, forward ? LEAD : TRAIL)
+  // Already heading there: the rail redraws under it as branches move.
+  if (litId === activeId.value && Math.abs(goal - top) < 0.5) return
+  litId = activeId.value
+  goal = top
+  const down = top > start.get()
+  animate(start, top, down ? TRAIL : LEAD)
+  animate(end, bottom, down ? LEAD : TRAIL)
 }
 
 function refresh() {
   draw()
   // The path is in the DOM once Vue has patched `d`.
-  requestAnimationFrame(light)
+  requestAnimationFrame(() => {
+    paint()
+    light()
+  })
 }
 watch([activeId, () => props.links], () => requestAnimationFrame(refresh), { flush: 'post' })
 // A branch opening or closing resizes the nav each frame, so the rail follows it there.
@@ -317,7 +348,7 @@ onUnmounted(() => {
   inline-size: 0.375rem;
   block-size: 0.375rem;
   border-radius: 50%;
-  background: var(--ui-info);
+  background: var(--docs-accent, var(--ui-info));
 }
 
 /* Closed it takes no room at all; reached, it splits open. Rarely toggled, so it eases. */
