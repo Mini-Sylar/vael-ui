@@ -591,6 +591,15 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       leavingNow = false
     }
     finish()
+    // Kept on the page once closed (hidden, not removed): its own styles back, no marker left, so
+    // the next open starts from its declared look. That includes what an open it cut short had
+    // marked and this close never moved.
+    if (id === generation)
+      for (const node of new Set([
+        ...moving.map(([n]) => n),
+        ...el.querySelectorAll<HTMLElement>('[data-ui-m]'),
+      ]))
+        if (node.isConnected) clear(node)
   }
 
   return {

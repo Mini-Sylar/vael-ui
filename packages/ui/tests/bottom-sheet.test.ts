@@ -659,3 +659,21 @@ test('opening the sheet sets off no warning about its own CSS fighting its motio
     warn.mockRestore()
   }
 })
+
+// The panel stays on the page once closed: the close must leave no marker or styles on it, nor on
+// what an open it cut short had marked.
+test('closed mid-open, the kept panel carries no motion marker and none of the close’s styles', async () => {
+  const screen = await render(BottomSheetFixture, { global: { stubs: { transition: false } } })
+  await screen.getByTestId('trigger').click()
+  await vi.waitFor(() => expect(document.querySelector('[data-ui-m]')).not.toBeNull())
+  await new Promise((r) => setTimeout(r, 100))
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() =>
+    expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed'),
+  )
+  await vi.waitFor(() => expect(panel().getClientRects()).toHaveLength(0), { timeout: 1500 })
+  await new Promise((r) => setTimeout(r, 1000))
+  expect([...document.querySelectorAll('[data-ui-m]')].map((el) => el.className)).toEqual([])
+  expect(panel().style.translate).toBe('')
+  expect(panel().style.opacity).toBe('')
+})
