@@ -14,6 +14,8 @@ import { dirname, join, resolve } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const META_PATH = join(__dirname, '../src/generated/component-meta.json')
+const MOTION_PATH = join(__dirname, '../src/generated/motion-meta.json')
+const TYPES_PATH = join(__dirname, '../../packages/ui/src/motion/types.ts')
 const skillsRepo = resolve(process.argv[2] ?? join(__dirname, '../../../vael-ui-skills'))
 const REFS_DIR = join(skillsRepo, 'skills/vael-ui/references/docs')
 
@@ -29,6 +31,8 @@ if (!existsSync(REFS_DIR)) {
   process.exit(1)
 }
 const meta = JSON.parse(readFileSync(META_PATH, 'utf8'))
+const motionMeta = existsSync(MOTION_PATH) ? JSON.parse(readFileSync(MOTION_PATH, 'utf8')) : {}
+const motionTypes = readFileSync(TYPES_PATH, 'utf8')
 
 const cell = (text) =>
   (text ?? '')
@@ -81,6 +85,66 @@ function sections(entry, level) {
   ].join('\n')
 }
 
+// The keys a component's `motion` object takes, read from its type in motion/types.ts.
+function declOf(type) {
+  const start = motionTypes.indexOf(`export type ${type}`)
+  if (start === -1) return ''
+  const next = motionTypes.slice(start + 1).search(/\n(?:\/\*\*|\/\/|export )/)
+  return motionTypes.slice(start, next === -1 ? undefined : start + 1 + next)
+}
+function motionKeys(type, seen = new Set()) {
+  if (seen.has(type)) return new Set()
+  seen.add(type)
+  const body = declOf(type)
+  const keys = new Set()
+  const spec = body.match(/ComponentMotion<\s*\{([\s\S]*?)\}/)?.[1]
+  if (!spec) {
+    // An alias (Tooltip's is Popover's), or written out by hand (Calendar's).
+    const alias = body.match(/=\s*(?:\w+<\s*)*?(\w+Motion)\b/)?.[1]
+    if (alias && alias !== type) for (const key of motionKeys(alias, seen)) keys.add(key)
+    for (const m of body.matchAll(/\b(initial|exit|spring|duration|easing)\?:/g)) keys.add(m[1])
+  } else {
+    const has = (kind) => new RegExp(`\\b${kind}:\\s*true`).test(spec)
+    keys.add('initial')
+    if (/states:/.test(spec)) keys.add('states')
+    if (has('overlay'))
+      for (const k of ['exit', 'enter', 'leave', 'targets', 'morph', 'exitOrder', 'resize'])
+        keys.add(k)
+    if (type === 'PopoverMotion') keys.add('surface')
+    if (has('presence')) for (const k of ['exit', 'enter', 'leave', 'targets']) keys.add(k)
+    if (has('list'))
+      for (const k of ['exit', 'enter', 'leave', 'stagger', 'leaving', 'appear']) keys.add(k)
+    if (has('linked')) keys.add('linked')
+    if (has('indicator')) keys.add('move')
+    if (has('stretch')) for (const k of ['stretch', 'squash']) keys.add(k)
+    if (has('swap')) for (const k of ['swap', 'direction', 'exit']) keys.add(k)
+    if (has('value')) keys.add('when')
+    if (!has('overlay') && !has('presence') && !has('list')) for (const k of ['replay', 'appear']) keys.add(k)
+    if (/^export type \w+ = WithStagger</m.test(body)) keys.add('stagger')
+  }
+  for (const m of body.matchAll(/\b(chips|items)\?:/g)) keys.add(m[1])
+  return keys
+}
+function motionSection(name, level) {
+  const info = motionMeta[name]
+  if (!info) return ''
+  const h = '#'.repeat(level)
+  const list = (items) => items.map((item) => `\`${item}\``).join(', ')
+  const keys = [...motionKeys(info.type)]
+  if (keys.some((k) => ['initial', 'exit', 'states'].includes(k)) || keys.includes('move'))
+    keys.unshift('spring', 'duration', 'easing')
+  const lines = [
+    `${h} Motion\n`,
+    `\`motion\` takes \`${info.type}\` (exported from \`'vael-ui'\`); \`false\` turns it off. ${cell(info.doc).replace(/\s*`false` turns it off\.$/, '')}\n`,
+  ]
+  if (info.parts.length) lines.push(`- Parts: ${list(info.parts)}`)
+  if (info.states.length) lines.push(`- States: ${list(info.states)}`)
+  lines.push(`- Keys: ${list([...new Set(keys)])}`)
+  for (const extra of info.extras) lines.push(`- \`${extra.key}\` (\`${extra.type}\`): ${cell(extra.doc)}`)
+  lines.push('', 'See the [Motion guide](../guides/motion.md) for what each key does.')
+  return `\n${lines.join('\n')}\n`
+}
+
 let written = 0
 const missing = []
 for (const file of readdirSync(REFS_DIR)) {
@@ -95,7 +159,7 @@ for (const file of readdirSync(REFS_DIR)) {
   const source = readFileSync(path, 'utf8')
   const headerEnd = source.indexOf('\n## Props')
   const header = headerEnd === -1 ? `# ${name}\n` : source.slice(0, headerEnd + 1)
-  let out = `${header}${sections(entry, 2)}`
+  let out = `${header}${sections(entry, 2)}${motionSection(name, 2)}`
   for (const child of RELATED[name] ?? []) {
     if (meta[child]) out += `\n## ${child}\n\n${sections(meta[child], 3)}`
   }
