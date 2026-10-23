@@ -150,6 +150,10 @@
       <div class="app-body">
         <Sidebar v-model:mobile-open="mobileNavOpen" />
         <main class="app-content">
+          <!-- A faint dither at the top of the page, feathering out; still, so it costs one draw. -->
+          <div v-if="pageDither" class="page-dither" aria-hidden="true">
+            <DitherBackground still />
+          </div>
           <RouterView v-slot="{ Component }">
             <Transition name="page" mode="out-in">
               <component :is="Component" />
@@ -327,6 +331,7 @@ import {
 } from 'vael-ui'
 import type { ColorSchemeMode, DockItemData, LoaderType, TourStep } from 'vael-ui'
 import MotionMenu from './components/MotionMenu.vue'
+import DitherBackground from './components/DitherBackground.vue'
 import { MOTION_PRESETS, motionPresets } from './motionPresets'
 import type { MotionPreset } from './motionPresets'
 import Sidebar from './components/Sidebar.vue'
@@ -452,6 +457,8 @@ useHead({
     },
   ],
 })
+// Home and the Motion overview have their own dither heroes.
+const pageDither = computed(() => route.name !== 'home' && route.name !== 'motion-overview')
 const isToasterPage = computed(() => route.name === 'component' && route.params.name === 'Toaster')
 
 const themeOpen = shallowRef(false)
@@ -1040,9 +1047,21 @@ const theme = computed(() => ({
 }
 
 .app-content {
+  position: relative;
+  isolation: isolate;
   flex: 1;
   min-width: 0;
   padding: 2.5rem 3.5rem 4rem;
+}
+
+.page-dither {
+  position: absolute;
+  inset: 0 0 auto;
+  block-size: 15rem;
+  z-index: -1;
+  pointer-events: none;
+  --dither-alpha: 0.045;
+  mask-image: linear-gradient(to bottom, #000, transparent);
 }
 
 @media (max-width: 850px) {
