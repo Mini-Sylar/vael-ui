@@ -579,3 +579,50 @@ test("a hook that writes the backdrop's opacity is never fought by a CSS transit
   await vi.waitFor(() => expect(events).toContain('after-enter'))
   expect(fought).toBe(false)
 })
+
+test('the title, body and other inner parts take initial values too, and stay put when not given', async () => {
+  const title = () => document.querySelector<HTMLElement>('.ui-dialog-title')
+  const body = () => document.querySelector<HTMLElement>('.ui-dialog-body')
+  const { open, events } = dialog({ initial: { title: { opacity: 0, y: 16 } } })
+  open.value = true
+  await nextTick()
+  await frame()
+  // The title comes in from below; the body, not given values, moves only with the panel.
+  expect(offset(title()!).y).toBeGreaterThan(8)
+  expect(offset(body()!).y).toBe(0)
+  await vi.waitFor(() => expect(events).toContain('after-enter'), { timeout: 3000 })
+  expect(offset(title()!).y).toBe(0)
+  // Closing: the body, never animated, gets no fade of its own.
+  open.value = false
+  await frame()
+  await frame()
+  expect(Number(getComputedStyle(body()!).opacity)).toBe(1)
+  await vi.waitFor(() => expect(events).toContain('after-leave'))
+})
+
+test('steps: a target stops at each step, holds, then goes on to rest', async () => {
+  const note = () => document.querySelector<HTMLElement>('.step-note')
+  const { open, events } = dialog(
+    {
+      targets: {
+        note: {
+          initial: { opacity: 0 },
+          steps: [
+            { to: { opacity: 0.5 }, duration: 80 },
+            { delay: 0.35, duration: 80 },
+          ],
+        },
+      },
+    },
+    () => withDirectives(h('p', { class: 'step-note' }, 'Saved'), [[vAnimate, undefined, 'note']]),
+  )
+  open.value = true
+  // Partway: it has reached the first step and holds there.
+  await new Promise((r) => setTimeout(r, 250))
+  expect(Number(getComputedStyle(note()!).opacity)).toBeCloseTo(0.5, 1)
+  // Then it goes on to its resting look.
+  await vi.waitFor(() => expect(Number(getComputedStyle(note()!).opacity)).toBe(1), {
+    timeout: 2000,
+  })
+  await vi.waitFor(() => expect(events).toContain('after-enter'))
+})

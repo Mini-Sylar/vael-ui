@@ -13,18 +13,7 @@ const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 const NAME = /^[a-z][\w-]{0,31}$/i
 const UNSAFE = /url\(|[{};<>]|\/\*|\\|expression\(/i
 
-const ROLES = [
-  'overlay',
-  'list',
-  'reveal',
-  'indicator',
-  'press',
-  'toggle',
-  'value',
-  'resize',
-  'content',
-  'gesture',
-] as const
+const ROLES = ['overlay', 'list', 'reveal', 'press', 'content'] as const
 const COMPONENTS = [
   'dialog',
   'popover',
@@ -94,7 +83,7 @@ const COMPONENTS = [
 // Every component key in MotionStyle, so a style for one is never dropped as unknown.
 type ComponentKey = Exclude<
   keyof MotionStyle,
-  'version' | 'spring' | 'engine' | 'filters' | 'reducedMotion' | 'presets' | (typeof ROLES)[number]
+  'version' | 'spring' | 'engine' | 'filters' | 'presets' | (typeof ROLES)[number]
 >
 type Unlisted = Exclude<ComponentKey, (typeof COMPONENTS)[number]>
 const everyComponent: [Unlisted] extends [never] ? true : Unlisted = true
@@ -343,7 +332,6 @@ function role(name: (typeof ROLES)[number], input: unknown, issues: Issues): Dat
       ((name === 'overlay' || name === 'list' || name === 'reveal') &&
         (key === 'initial' || key === 'exit')) ||
       (name === 'overlay' && key === 'surface') ||
-      (name === 'indicator' && key === 'style') ||
       (name === 'press' && (key === 'active' || key === 'hover'))
     if (valuesKey) {
       const parsed = values(raw, `${path}.${key}`, issues)
@@ -366,8 +354,7 @@ function role(name: (typeof ROLES)[number], input: unknown, issues: Issues): Dat
     else if (name === 'list' && key === 'stagger' && inRange(raw, 0, 1)) out.stagger = raw
     else if (name === 'list' && key === 'leaving' && (raw === 'pop' || raw === 'hold'))
       out.leaving = raw
-    else if (name === 'value' && key === 'when' && (raw === 'mount' || raw === 'visible'))
-      out.when = raw
+    else if (name === 'list' && key === 'appear' && typeof raw === 'boolean') out.appear = raw
     else issues.push(`${path}.${key}: unknown or invalid`)
   }
   return out
@@ -385,9 +372,6 @@ export const parseMotionStyle: ParseMotionStyle = (input) => {
       if (key === 'spring') {
         const parsed = spring(raw, 'spring', issues)
         if (parsed) style.spring = parsed
-      } else if (key === 'reducedMotion') {
-        if (raw === 'user' || raw === 'always' || raw === 'never') style.reducedMotion = raw
-        else issues.push(`reducedMotion: 'user', 'always' or 'never'`)
       } else if (key === 'filters') {
         if (!isData(raw)) {
           issues.push('filters: expected filters by name')

@@ -52,7 +52,7 @@ interface Held {
   target: Keyframe
 }
 
-function createStatePlayer() {
+export function createStatePlayer() {
   const holds = new Map<Element, Held>()
   let before: Record<string, boolean> = {}
 

@@ -146,3 +146,26 @@ test('a fade beside a move lands with it; a fade on its own eases quickly', asyn
   expect(timingOf('.moves', 'opacity')).toBe(timingOf('.moves', 'translate'))
   expect(timingOf('.fades', 'opacity')).toMatch(/^\d+ms cubic-bezier\(/)
 })
+
+test('a v-animate preset on its own plays from the nearest ConfigProvider style', async () => {
+  const { default: ConfigProvider } =
+    await import('../src/components/ConfigProvider/ConfigProvider.vue')
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  render(
+    {
+      setup: () => () =>
+        h(
+          ConfigProvider as never,
+          { motion: { version: 1, presets: { rise: { initial: { opacity: 0, y: 12 } } } } },
+          () => withDirectives(h('p', { class: 'risen' }, 'Hello'), [[vAnimate, 'rise']]),
+        ),
+    },
+    real,
+  )
+  const seen = await framesOf(() => document.querySelector('.risen'), 6)
+  // It came in from the preset's look, not straight to rest.
+  expect(Math.min(...seen)).toBeLessThan(0.9)
+  await vi.waitFor(() => expect(opacity(document.querySelector('.risen'))).toBe(1))
+  expect(warn).not.toHaveBeenCalled()
+  warn.mockRestore()
+})

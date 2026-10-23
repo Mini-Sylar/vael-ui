@@ -870,3 +870,21 @@ test('a contained Toaster only shows toasts sent to its name; the viewport Toast
   toast.dismiss()
   await screen.unmount()
 })
+
+test('states: a toast moving into a variant plays that state; its first variant plays nothing', async () => {
+  render(Toaster, {
+    props: { motion: { states: { error: { toast: { x: [0, -8, 8, -4, 0] } } } } },
+  })
+  toast('Saving', { id: 'save', variant: 'loading' })
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
+  const card = () => document.querySelector<HTMLElement>('.ui-toast')!
+  const shaking = () =>
+    card()
+      .getAnimations()
+      .filter((a) => a.id === 'ui-state').length
+  await new Promise((r) => setTimeout(r, 200))
+  expect(shaking()).toBe(0)
+  // The save failed: the same toast turns into an error, and shakes.
+  toast('Could not save', { id: 'save', variant: 'error' })
+  await vi.waitFor(() => expect(shaking()).toBeGreaterThan(0))
+})

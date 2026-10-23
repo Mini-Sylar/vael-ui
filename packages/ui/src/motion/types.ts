@@ -57,6 +57,8 @@ interface Shorthands {
   y?: Length
   /** `filter: blur()`, in px when a number. */
   blur?: Length
+  /** Turns it, in degrees when a number: `rotate: 90`. */
+  rotate?: number | (string & {})
 }
 type StyleProps = Omit<CSSProperties, keyof Shorthands> & Shorthands
 
@@ -194,8 +196,6 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   steps?: MotionStep<N>[]
   /** Find the elements with a selector inside the component instead of marking them. */
   select?: keyof HTMLElementTagNameMap | (string & {})
-  /** Limit `select` to one slot. */
-  slot?: string
   /** Plays `initial` again whenever this value changes, without remounting the element. */
   replay?: unknown
   /**
@@ -225,9 +225,6 @@ export interface GuardContext<V = unknown> {
   velocity: number
 }
 
-/** Allows or refuses a commit. The motion stops where it is until the answer comes; refused, it springs back. */
-export type MotionGuard<V = unknown> = (context: GuardContext<V>) => boolean | Promise<boolean>
-
 /** What `before-close` gets: why it's closing and, for a dragged sheet, how far and how fast. */
 export interface CloseContext<R extends string = string> extends GuardContext<boolean> {
   reason: R
@@ -241,14 +238,6 @@ export interface CloseContext<R extends string = string> extends GuardContext<bo
 export type BeforeClose<R extends string = string> = (
   context: CloseContext<R>,
 ) => boolean | undefined | Promise<boolean | undefined>
-
-/** A point along a motion where it stops and asks `guard` before going on. */
-export interface Checkpoint<V = number> {
-  /** The value where the motion stops to ask. */
-  at: V
-  /** Answers whether it may go on. */
-  guard: MotionGuard<V>
-}
 
 // ─── Linking ─────────────────────────────────────────────────────────────────
 
@@ -276,6 +265,10 @@ export interface MotionSpec {
   parts: string
   states?: string
   overlay?: true
+  /** It comes and goes on its own (Message, your `useMotion('reveal')`): it has an exit and hooks. */
+  presence?: true
+  /** It moves other elements with it while open (Dialog, Drawer, BottomSheet). */
+  linked?: true
   list?: true
   indicator?: true
   swap?: true
@@ -292,20 +285,23 @@ export interface ListHookContext {
   index: number
 }
 
-type BaseMotion<S extends MotionSpec, N extends string> = MotionTiming & {
+type BaseMotion<S extends MotionSpec> = MotionTiming & {
   /** Appearance: where it comes in from (mount, `v-if`, opening). Opt-in, never on hydration. */
   initial?: PartValues<Parts<S>>
+  states?: StateMotion<States<S>, Parts<S>>
+}
+/** What only something that comes and goes has: where it leaves to, and hooks for both ways. */
+type PresenceMotion<S extends MotionSpec, N extends string> = {
   /** Where it leaves to. Unset: a quiet fade with a slight shrink. */
   exit?: PartValues<Parts<S>>
-  /** Your elements inside it, by name. Names are read from these keys only, never from `after`. */
-  targets?: { [K in N]?: TargetMotion<NoInfer<N> | Parts<S>> }
-  states?: StateMotion<States<S>, Parts<S>>
   enter?: MotionHook<Parts<S>, HookContext<S, N>>
   leave?: MotionHook<Parts<S>, HookContext<S, N>>
-  /** Opening: `false` starts on its own instead of after the component it sits in. */
-  join?: boolean
   /** Hooks under reduced motion: skipped unless `'run'`. */
   reducedMotion?: 'skip' | 'run'
+}
+type TargetsMotion<S extends MotionSpec, N extends string> = {
+  /** Your elements inside it, by name. Names are read from these keys only, never from `after`. */
+  targets?: { [K in N]?: TargetMotion<NoInfer<N> | Parts<S>> }
 }
 
 /** Where a morph grows from: the element that opened it, or any element. */
@@ -324,15 +320,13 @@ type OverlayMotion = {
    * the panel goes clear while open.
    */
   surface?: MotionValues
-  linked?: Record<string, LinkedMotion>
-  /** Closing: `'together'` (default) or `'reverse'`, children first, adding about 300 ms at most. */
+  /** Closing: `'together'` (default) or `'reverse'`, children first, adding about 200 ms at most. */
   exitOrder?: 'together' | 'reverse'
   /** The panel eases to its content's new size (wizard steps, switched views); `false` snaps to it. */
   resize?: boolean
 }
-type ListMotion<S extends MotionSpec, N extends string> = {
+type ListMotion = {
   stagger?: number
-  move?: MotionHook<Parts<S>, MoveContext<N>>
   /** Leaving items: `'pop'` (default) closes the gap at once, `'hold'` keeps it until they're gone. */
   leaving?: 'pop' | 'hold'
   /** Also enters the items already there when the list mounts, such as each time a palette opens. Hydration never plays it. @default false */
@@ -350,6 +344,10 @@ type SwapMotion = {
    */
   direction?: 1 | -1 | 0
 }
+type LinkedMotions = {
+  /** Elements outside it that move with it while it's open, by a name you choose. */
+  linked?: Record<string, LinkedMotion>
+}
 type ValueMotion = {
   /** `'visible'` starts when scrolled into view instead of on mount. */
   when?: 'mount' | 'visible'
@@ -358,11 +356,15 @@ type ValueMotion = {
 /** A component's `motion` prop. */
 export type ComponentMotion<S extends MotionSpec, N extends string = string> =
   | boolean
-  | (BaseMotion<S, N> &
-      (S['overlay'] extends true ? OverlayMotion : unknown) &
-      (S['list'] extends true ? ListMotion<S, N> : unknown) &
+  | (BaseMotion<S> &
+      (S['overlay'] extends true
+        ? OverlayMotion & PresenceMotion<S, N> & TargetsMotion<S, N>
+        : unknown) &
+      (S['presence'] extends true ? PresenceMotion<S, N> & TargetsMotion<S, N> : unknown) &
+      (S['linked'] extends true ? LinkedMotions : unknown) &
+      (S['list'] extends true ? ListMotion & PresenceMotion<S, N> : unknown) &
       (S['indicator'] extends true ? IndicatorMotion<S, N> : unknown) &
-      (S['swap'] extends true ? SwapMotion : unknown) &
+      (S['swap'] extends true ? SwapMotion & { exit?: PartValues<Parts<S>> } : unknown) &
       (S['value'] extends true ? ValueMotion : unknown))
 
 // Exemplars, one per kind; M3–M5 add the rest from each component's `ui` keys and real states.
@@ -383,7 +385,7 @@ export type DialogPart =
  * it off.
  */
 export type DialogMotion<N extends string = string> = ComponentMotion<
-  { parts: DialogPart; overlay: true; swap: true },
+  { parts: DialogPart; overlay: true; swap: true; linked: true },
   N
 >
 
@@ -391,7 +393,7 @@ export type DialogMotion<N extends string = string> = ComponentMotion<
 export type PopoverPart = 'positioner' | 'panel'
 /**
  * Popover's `motion`: values or hooks for `positioner` and `panel`, how it opens and closes (`morph`,
- * `surface`, `linked`, `resize`) and swapped content. `false` turns it off.
+ * `surface`, `resize`) and swapped content. `false` turns it off.
  */
 export type PopoverMotion<N extends string = string> = ComponentMotion<
   { parts: PopoverPart; overlay: true; swap: true },
@@ -405,7 +407,10 @@ export type TooltipMotion<N extends string = string> = ComponentMotion<
 >
 
 /** Message coming and going: values or hooks for `root`. */
-export type MessageMotion<N extends string = string> = ComponentMotion<{ parts: 'root' }, N>
+export type MessageMotion<N extends string = string> = ComponentMotion<
+  { parts: 'root'; presence: true },
+  N
+>
 
 /** Menu's parts, by their `ui` names: the elements its `motion` can animate. */
 export type MenuPart = 'positioner' | 'panel'
@@ -854,7 +859,6 @@ export interface MotionStyle {
   /** Your animation library behind vael-ui's values, for components inside. Code only, never data. */
   engine?: MotionEngine
   filters?: Record<string, MotionFilter>
-  reducedMotion?: 'user' | 'always' | 'never'
   overlay?: RoleValues & {
     morph?: 'trigger' | { from: 'trigger'; hide?: boolean }
     surface?: MotionValues
@@ -864,17 +868,13 @@ export interface MotionStyle {
   }
   list?: RoleValues & { stagger?: number; leaving?: 'pop' | 'hold'; appear?: boolean }
   reveal?: RoleValues
-  indicator?: MotionTiming & { style?: MotionValues }
   press?: MotionTiming & { active?: MotionValues; hover?: MotionValues }
-  toggle?: MotionTiming
-  value?: MotionTiming & { when?: 'mount' | 'visible' }
-  resize?: MotionTiming
   content?: TargetMotion
-  gesture?: MotionTiming
   /** Presets for `v-animate`, by name. */
   presets?: Record<string, TargetMotion>
   /** Per-component overrides, beating the role. */
-  dialog?: Exclude<DialogMotion, boolean>
+  /** A style is data: `linked` reads elements, so it's set on the component, not here. */
+  dialog?: Omit<Exclude<DialogMotion, boolean>, 'linked'>
   popover?: Exclude<PopoverMotion, boolean>
   menu?: Exclude<MenuMotion, boolean>
   toaster?: Exclude<ToasterMotion, boolean>
@@ -883,7 +883,7 @@ export interface MotionStyle {
   otpInput?: Exclude<OtpInputMotion, boolean>
   calendar?: Exclude<CalendarMotion, boolean>
   fileUpload?: Exclude<FileUploadMotion, boolean>
-  commandPalette?: Exclude<CommandPaletteMotion, boolean>
+  commandPalette?: Omit<Exclude<CommandPaletteMotion, boolean>, 'linked'>
   speedDial?: Exclude<SpeedDialMotion, boolean>
   dataTable?: Exclude<DataTableMotion, boolean>
   select?: Exclude<SelectMotion, boolean>
@@ -951,7 +951,7 @@ export type OwnMotion<R extends MotionRole, N extends string = string> = Exclude
       ? { overlay: true; swap: true }
       : R extends 'list'
         ? { list: true }
-        : { swap: true }),
+        : { presence: true; swap: true }),
     N
   >,
   boolean

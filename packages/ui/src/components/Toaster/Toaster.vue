@@ -138,7 +138,7 @@ import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { ToasterMotion } from '../../motion/types'
-import { loadToastSwipe } from '../../composables/lazyParts'
+import { loadToastStates, loadToastSwipe } from '../../composables/lazyParts'
 
 defineOptions({ inheritAttrs: false })
 
@@ -261,6 +261,28 @@ const pinned = computed(() => toasts.value.filter((t) => t.pinned))
 const visible = computed(() => stack.value.slice(-props.maxVisible))
 // Pinned cards render last so they layer above the stack while it expands into them.
 const rendered = computed(() => [...visible.value, ...pinned.value])
+
+// `states`: a toast moving into a variant (a promise toast landing on success or error) plays
+// that state on its parts. The player loads only when states are set.
+const ownMotion = () =>
+  (typeof rawProps.motion === 'object' ? rawProps.motion : style?.value?.toaster) as
+    | Exclude<ToasterMotion, boolean>
+    | undefined
+let toastStates: import('../../motion/toastStates').ToastStates | undefined
+watch(
+  () =>
+    props.motion !== false && ownMotion()?.states
+      ? rendered.value.map((e) => `${e.id}:${e.variant}`).join('|')
+      : '',
+  async (key) => {
+    if (!key) return
+    toastStates ??= (await loadToastStates()).createToastStates()
+    toastStates.sync(rendered.value, cardEls, ownMotion()!, style?.value?.spring)
+  },
+  { flush: 'post' },
+)
+onScopeDispose(() => toastStates?.dispose())
+
 const isBottom = computed(() => props.position.startsWith('bottom'))
 const yPos = computed(() => props.position.split('-')[0])
 const xPos = computed(() => props.position.split('-')[1])

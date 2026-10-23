@@ -21,7 +21,11 @@ type AccordionMotion = ComponentMotion<{
   parts: 'item' | 'trigger' | 'chevron' | 'panel'
   states: 'open'
 }>
-type DrawerMotion = ComponentMotion<{ parts: 'overlay' | 'panel' | 'body'; overlay: true }>
+type DrawerMotion = ComponentMotion<{
+  parts: 'overlay' | 'panel' | 'body'
+  overlay: true
+  linked: true
+}>
 type ButtonMotion = ComponentMotion<{
   parts: 'root' | 'icon' | 'label'
   states: 'active' | 'hover' | 'focus' | 'loading'

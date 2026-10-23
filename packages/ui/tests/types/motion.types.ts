@@ -1,9 +1,10 @@
 // Type tests for the motion contract: checked by `pnpm typecheck`, never run.
 // Every @ts-expect-error is a mistake that must stay an error; if the types start accepting it, typecheck fails.
 import type {
-  Checkpoint,
   DialogMotion,
   InputMotion,
+  ButtonMotion,
+  MessageMotion,
   MotionStyle,
   PopoverMotion,
   SeparatorMotion,
@@ -82,7 +83,6 @@ export const input: InputMotion = {
 // Appearance on any component; values can start when visible.
 export const separator: SeparatorMotion = { initial: { line: { scale: '0 1' } } }
 export const slider: SliderMotion = { when: 'visible' }
-export const checkpoint: Checkpoint = { at: 80, guard: ({ value }) => value < 100 }
 
 // An app-wide style.
 export const gooey: MotionStyle = {
@@ -164,3 +164,38 @@ export const morphStyleFn: MotionStyle = { version: 1, overlay: { morph: { from:
 
 // @ts-expect-error Tabs renders no panels, so there's nothing to swap
 export const tabsSwap: TabsMotion = { swap: 'wait' }
+
+// ─── Only what runs is typed ────────────────────────────────────────────────
+
+// @ts-expect-error a Button never comes or goes, so it has no enter hook
+export const buttonEnter: ButtonMotion = { enter: () => {} }
+
+// @ts-expect-error nor an exit
+export const inputExit: InputMotion = { exit: { root: { opacity: 0 } } }
+
+// @ts-expect-error only Dialog, Drawer and BottomSheet move other elements with them
+export const popoverLinked: PopoverMotion = { linked: { page: { el: () => null } } }
+
+// @ts-expect-error list slides are the built-in spring; there's no move hook
+export const listMove: ToasterMotion = { move: () => {} }
+
+// @ts-expect-error a component can't opt out of its parent's timing
+export const joinOff: DialogMotion = { join: false }
+
+// @ts-expect-error the operating system's reduced-motion setting always applies
+export const styleReduced: MotionStyle = { version: 1, reducedMotion: 'never' }
+
+// @ts-expect-error no component reads an indicator role
+export const styleIndicator: MotionStyle = { version: 1, indicator: { spring: { damping: 1 } } }
+
+// @ts-expect-error a style is data: `linked` reads elements, so it's set on the dialog
+export const styleLinked: MotionStyle = { version: 1, dialog: { linked: {} } }
+
+// A number turns in degrees, as the runtime plays it.
+export const turned: DialogMotion = { initial: { panel: { rotate: -4 } } }
+
+// Message comes and goes; Drawer moves the page.
+export const messageLeaves: MessageMotion = { exit: { root: { opacity: 0, y: -4 } } }
+export const dialogLinked: DialogMotion = {
+  linked: { page: { el: () => document.body, open: { scale: '0.96' } } },
+}

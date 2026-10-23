@@ -19,6 +19,7 @@ import { queueAppearance, scrolling, seen, unwatchView } from '../motion/appeara
 import { appear } from '../motion/useComponentMotion'
 import type { AnimateDirectiveValue, MotionTiming, TargetMotion } from '../motion/types'
 import { motionWarn } from '../motion/warn'
+import { motionStyleAround } from '../motion/styleHolder'
 
 type Marked = HTMLElement & {
   _uiAnimateLeave?: () => void
@@ -37,9 +38,15 @@ function appearAlone(
   if (el._uiAppeared) return
   el._uiAppeared = true
   if (typeof value === 'string') {
-    if (process.env.NODE_ENV !== 'production')
-      motionWarn(`v-animate preset '${value}' needs a vael-ui component or a style around it.`)
-    return
+    const preset = presetAround(el, value)
+    if (!preset) {
+      if (process.env.NODE_ENV !== 'production')
+        motionWarn(
+          `v-animate preset '${value}' isn't in the presets of a ConfigProvider style around it.`,
+        )
+      return
+    }
+    value = preset
   }
   if (!value?.initial) return
   queueAppearance(el, name, value)
@@ -54,6 +61,14 @@ const layoutIdOf = (value: AnimateDirectiveValue | undefined) =>
 const EXIT: MotionTiming = { duration: 'var(--ui-duration-exit)', easing: 'var(--ui-ease-out)' }
 const ownTiming = (t: TargetMotion) =>
   t.spring !== undefined || t.duration !== undefined || t.easing !== undefined
+
+// A preset on its own: the nearest ConfigProvider style's, read through the DOM.
+function presetAround(el: Element, name: string): TargetMotion | undefined {
+  return motionStyleAround(el)?.presets?.[name]
+}
+// What a leaving element plays: a preset name on its own resolves the same way.
+const resolved = (el: Element, value: AnimateDirectiveValue | undefined) =>
+  typeof value === 'string' && !findPresence(el) ? presetAround(el, value) : value
 
 /** How it leaves when Vue removes it: its `exit`, or one from its `initial`; nothing if neither. */
 function leaving(value: AnimateDirectiveValue | undefined) {
@@ -130,7 +145,7 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
   beforeUnmount(el, binding) {
     const id = layoutIdOf(binding.value)
     if (id) rememberLayout(el, id)
-    if (leaving(binding.value)) (el as Marked)._uiLeavingPlace = placeOnLeave(el)
+    if (leaving(resolved(el, binding.value))) (el as Marked)._uiLeavingPlace = placeOnLeave(el)
   },
   updated(el, binding) {
     ;(el as Marked)._uiAnimateValue = binding.value
@@ -139,7 +154,7 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
       join(el as Marked, binding.arg, binding.value)
   },
   unmounted(el, binding) {
-    leaveIfRemoved(el, binding.value, (el as Marked)._uiLeavingPlace)
+    leaveIfRemoved(el, resolved(el, binding.value), (el as Marked)._uiLeavingPlace)
     unwatchView(el)
     ;(el as Marked)._uiAnimateLeave?.()
     ;(el as Marked)._uiSizeStop?.()
@@ -204,7 +219,8 @@ export function vAnimateVapor(
     const current = value?.()
     const id = layoutIdOf(current)
     if (id && el.isConnected) rememberLayout(el, id)
-    if (leaving(current)) leaveIfRemoved(el, current, placeOnLeave(el))
+    const leavingValue = resolved(el, current)
+    if (leaving(leavingValue)) leaveIfRemoved(el, leavingValue, placeOnLeave(el))
   })
   const leave = () => (el as Marked)._uiAnimateLeave?.()
   onScopeDispose(leave)

@@ -19,7 +19,12 @@
       />
     </filter>
   </svg>
-  <div :data-ui-theme="themeCss ? scopeId : undefined" style="display: contents">
+  <div
+    :ref="holdStyle"
+    :data-ui-theme="themeCss ? scopeId : undefined"
+    :data-ui-motion-style="motionStyle ? '' : undefined"
+    style="display: contents"
+  >
     <slot />
   </div>
 </template>
@@ -44,6 +49,7 @@ import type { IndicatorMode } from '../../composables/useTabIndicator'
 import { springTokens } from '../../composables/springEasing'
 import type { MotionOptions } from '../../composables/springEasing'
 import { isMotionStyle, motionStyleKey, useMotionStyle } from '../../motion/context'
+import { holdMotionStyle } from '../../motion/styleHolder'
 import type { MotionStyle } from '../../motion/types'
 import type { HapticOptions } from '../../composables/useHaptic'
 
@@ -119,6 +125,11 @@ const motionStyle = computed<MotionStyle | undefined>(() =>
       : parentStyle?.value,
 )
 provide(motionStyleKey, motionStyle)
+// v-animate on its own finds the style (its presets) through this element. A function ref is set
+// before the directives inside run their mounted hooks; onMounted would come after them.
+const holdStyle = (el: unknown) => {
+  if (el instanceof Element) holdMotionStyle(el, () => motionStyle.value)
+}
 // Filters are data, rendered as SVG by the template: numbers only, ids limited to a safe alphabet.
 const filters = computed(() =>
   Object.entries((isMotionStyle(props.motion) && props.motion.filters) || {}).map(([name, f]) => ({

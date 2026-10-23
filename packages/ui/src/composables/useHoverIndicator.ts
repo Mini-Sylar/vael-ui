@@ -97,9 +97,11 @@ export function useHoverIndicator(
       options.indicatorEl?.value ?? listEl.value?.querySelector(':scope > .ui-indicator') ?? null
     )
   }
-  // Lists in a group hand the highlight over; that code loads only for them.
+  // Lists in a group hand the highlight over; that code loads only for them, and only in a browser
+  // (a server render would start an import that outlives it).
   let handoff: typeof import('./hoverHandoff') | undefined
-  if (options.group) void loadHoverHandoff().then((kit) => (handoff = kit))
+  if (options.group && typeof window !== 'undefined')
+    void loadHoverHandoff().then((kit) => (handoff = kit))
 
   function onPointerOver(event: PointerEvent) {
     if (event.pointerType === 'touch' || toValue(options.enabled) === false) return

@@ -469,6 +469,8 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       ),
       ...Object.entries(own)
         .filter(([, part]) => !morphed.length || part !== main)
+        // A part you never animated (Dialog's title, say) stays put inside the leaving panel.
+        .filter(([name]) => !!(m.exit[name] ?? m.initial[name]))
         .map(([name, part]): [HTMLElement, MotionValues, number] => {
           const values = m.exit[name] ?? (name === host.mainPart ? QUIET_EXIT : QUIET_FADE)
           // Morphing: the rest (the backdrop) leaves along with the box, so the box stays readable

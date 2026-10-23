@@ -213,6 +213,11 @@ export function createRunner(host: RunnerHost): Runner {
     const root = host.root()
     const entries = root ? collectEntries(root, motion.targets) : []
     const partEls = Object.values(parts).filter((p): p is Element => !!p)
+    // Where a part leaves to: its own `exit`, else a quiet fade, but only for a part that came in
+    // (the built-in look always does). One you never animated stays put inside the leaving panel.
+    const leaveOf = (part: string): MotionValues | null =>
+      motion.exit[part] ??
+      (motion.initial[part] ? (part === host.mainPart ? QUIET_EXIT : QUIET_FADE) : null)
     if (motion.leave && !(prefersReducedMotion() && motion.reducedHooks === 'skip')) {
       const targets = Object.fromEntries(targetsOf(entries, motion).map((t) => [t.name, t.els]))
       let rest: Promise<unknown> = Promise.resolve()
@@ -222,20 +227,19 @@ export function createRunner(host: RunnerHost): Runner {
         () =>
           aside(
             parts,
-            (part, partEl) =>
-              playValues(
-                partEl,
-                motion.exit[part] ?? (part === host.mainPart ? QUIET_EXIT : QUIET_FADE),
-                {
-                  direction: 'out',
-                  engine: motion.engine,
-                  timing: resolveTiming(
-                    partEl,
-                    motion.partTiming[part] ?? motion.timing,
-                    motion.spring,
-                  ),
-                },
-              ),
+            (part, partEl) => {
+              const values = leaveOf(part)
+              if (!values) return Promise.resolve()
+              return playValues(partEl, values, {
+                direction: 'out',
+                engine: motion.engine,
+                timing: resolveTiming(
+                  partEl,
+                  motion.partTiming[part] ?? motion.timing,
+                  motion.spring,
+                ),
+              })
+            },
             (pending) => (rest = pending),
             (tracked) =>
               motion.leave!(
@@ -280,8 +284,8 @@ export function createRunner(host: RunnerHost): Runner {
     const own = () =>
       Promise.all(
         Object.entries(parts).map(([part, partEl]) => {
-          if (!partEl) return Promise.resolve()
-          const values = motion.exit[part] ?? (part === host.mainPart ? QUIET_EXIT : QUIET_FADE)
+          const values = leaveOf(part)
+          if (!partEl || !values) return Promise.resolve()
           return playValues(partEl, values, {
             direction: 'out',
             engine: motion.engine,

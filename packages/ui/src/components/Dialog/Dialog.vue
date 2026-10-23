@@ -528,7 +528,22 @@ const motion = useComponentMotion({
   role: 'overlay',
   key: 'dialog',
   mainPart: 'panel',
-  parts: () => ({ panel: panelEl.value, overlay: overlayEl.value }),
+  // Its inner parts too, so `initial: { title: … }` moves the title; they only move when given values.
+  parts: () => {
+    const panel = panelEl.value
+    const inner = (name: string) => panel?.querySelector(`.ui-dialog-${name}`) ?? null
+    return {
+      panel,
+      overlay: overlayEl.value,
+      header: inner('header'),
+      title: inner('title'),
+      description: inner('description'),
+      body: inner('body'),
+      footer: inner('footer'),
+      maximize: inner('maximize'),
+      close: inner('close'),
+    }
+  },
   root: () => panelEl.value,
   motion: () => props.motion,
   // The built-in look as data, played by the CSS engine: `{ spring }` alone keeps it, only the feel
