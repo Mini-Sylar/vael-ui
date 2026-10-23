@@ -90,16 +90,19 @@ function onMove(event: PointerEvent) {
   const root = dock.value?.el
   if (!root || reduce() || event.pointerType !== 'mouse') return
   const x = event.clientX - root.getBoundingClientRect().left
-  const scales = rest().map((c) => 1 + (PEAK - 1) * Math.exp(-((x - c) ** 2) / (2 * REACH ** 2)))
+  const centers = rest()
+  const scales = centers.map((c) => 1 + (PEAK - 1) * Math.exp(-((x - c) ** 2) / (2 * REACH ** 2)))
   // Growing icons push their neighbors out of the way, so the dock widens around the pointer.
   const grown = items.map((el, i) => (scales[i]! - 1) * el.offsetWidth)
   const total = grown.reduce((sum, g) => sum + g, 0)
+  // Left to right as they sit: right to left, the first icon is at the far end.
+  const order = centers.map((_, i) => i).sort((a, b) => centers[a]! - centers[b]!)
+  const offsets: number[] = []
   let before = 0
-  const offsets = grown.map((g) => {
-    const shift = before + g / 2 - total / 2
-    before += g
-    return shift
-  })
+  for (const i of order) {
+    offsets[i] = before + grown[i]! / 2 - total / 2
+    before += grown[i]!
+  }
   aim(scales, offsets)
 }
 const onLeave = () =>

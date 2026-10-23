@@ -117,12 +117,14 @@ function onMove(event: PointerEvent) {
   // Growing icons push their neighbors out of the way, so the dock widens around the pointer.
   const grown = items.map((el, i) => (scales[i]! - 1) * el.offsetWidth)
   const total = grown.reduce((sum, g) => sum + g, 0)
+  // Left to right as they sit: right to left, the first icon is at the far end.
+  const order = centers.map((_, i) => i).sort((a, b) => centers[a]! - centers[b]!)
+  const shifts: number[] = []
   let before = 0
-  const shifts = grown.map((g) => {
-    const shift = before + g / 2 - total / 2
-    before += g
-    return shift
-  })
+  for (const i of order) {
+    shifts[i] = before + grown[i]! / 2 - total / 2
+    before += grown[i]!
+  }
   aim(scales, shifts)
 }
 
