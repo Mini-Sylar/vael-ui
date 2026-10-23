@@ -154,7 +154,7 @@
               groupLabel: themedUi()?.groupLabel,
             }"
             @select="(item: T, index: number) => selectItem(item, index)"
-            @hover="setActive"
+            @hover="point"
             @reach-end="emit('reach-end')"
           >
             <template #item="slotProps">
@@ -734,6 +734,7 @@ const {
   activeIndex,
   activeId,
   setActive,
+  point,
   onKeydown: listboxKeydown,
 } = useListbox<T>({
   items: () => listItems.value,

@@ -204,7 +204,7 @@ const fruits = [
 ]
 const picked = shallowRef<string>()
 const listboxId = useId()
-const { activeIndex, activeId, onKeydown, setActive, optionId } = useListbox({
+const { activeIndex, activeId, onKeydown, point, optionId } = useListbox({
   items: fruits,
   getLabel: (fruit) => fruit.label,
   isDisabled: (fruit) => !!fruit.disabled,
@@ -233,7 +233,7 @@ const { activeIndex, activeId, onKeydown, setActive, optionId } = useListbox({
       :aria-selected="picked === fruit.value"
       :aria-disabled="fruit.disabled"
       :data-active="index === activeIndex || undefined"
-      @pointermove="setActive(index)"
+      @pointermove="point(index)"
     >
       {{ fruit.label }}
     </li>
@@ -297,7 +297,13 @@ const { activeIndex, activeId, onKeydown, setActive, optionId } = useListbox({
           name: 'setActive',
           type: '(index: number) => void',
           description:
-            'Makes `index` active, for a pointer moving over the options. Calls `onActiveChange` first.',
+            'Makes `index` active from code, such as when the list opens. Calls `onActiveChange` first, so the list can scroll to it.',
+        },
+        {
+          name: 'point',
+          type: '(index: number) => void',
+          description:
+            'Makes `index` active without calling `onActiveChange`. Use it for a pointer moving over the options: the option is already on screen, and scrolling would move the list out from under the pointer.',
         },
         {
           name: 'optionId',

@@ -77,7 +77,7 @@
           :data-disabled="(row.kind === 'item' && row.item.disabled) || undefined"
           :class="row.kind === 'item' ? itemPart.class : groupLabelPart.class"
           :style="row.kind === 'item' ? itemPart.style : groupLabelPart.style"
-          @mousemove="row.kind === 'item' && (activeIndex = row.index)"
+          @mousemove="row.kind === 'item' && point(row.index)"
           @click="row.kind === 'item' && selectItem(row.item, close)"
         >
           <slot
@@ -432,8 +432,18 @@ useEasedHeight({
   edgeProperty: '--ui-command-palette-edge',
 })
 
+// Pointing at a half-hidden row mustn't scroll the list out from under the pointer.
+let pointed = false
+function point(index: number) {
+  if (activeIndex.value === index) return
+  pointed = true
+  activeIndex.value = index
+}
+
 watch(activeIndex, (index) => {
-  if (index < 0) return
+  const byPointer = pointed
+  pointed = false
+  if (index < 0 || byPointer) return
   nextTick(() => {
     const list = listEl.value
     const row = list?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)

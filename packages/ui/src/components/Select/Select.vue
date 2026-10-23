@@ -189,7 +189,7 @@
               groupLabel: themedUi()?.groupLabel,
             }"
             @select="(item: T, index: number) => selectItem(item, index)"
-            @hover="setActive"
+            @hover="point"
             @reach-end="emit('reach-end')"
           >
             <template v-if="$slots.item" #item="slotProps">
@@ -617,6 +617,7 @@ const {
   activeId,
   onKeydown: listboxKeydown,
   setActive,
+  point,
 } = useListbox<T>({
   items: () => filteredItems.value,
   getLabel: (item) => item.label,
