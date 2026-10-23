@@ -600,7 +600,8 @@
       "springs": "Springs and timing",
       "engines": "Your own engine",
       "types": "TypeScript",
-      "showcase": "Showcase"
+      "showcase": "Showcase",
+      "back": "Back to components"
     },
     "mode": {
       "components": "Every component, by kind",
@@ -737,9 +738,7 @@
         "builtin": "Built-in",
         "gsap": "GSAP",
         "motion": "motion"
-      },
-      "blocksTitle": "Blocks",
-      "blocksBody": "Whole screens built from these components, to copy into your app."
+      }
     }
   }
 }

@@ -600,7 +600,8 @@
       "springs": "Molle e tempi",
       "engines": "Il tuo motore",
       "types": "TypeScript",
-      "showcase": "Vetrina"
+      "showcase": "Vetrina",
+      "back": "Torna ai componenti"
     },
     "mode": {
       "components": "Ogni componente, per tipo",
@@ -737,9 +738,7 @@
         "builtin": "Integrato",
         "gsap": "GSAP",
         "motion": "motion"
-      },
-      "blocksTitle": "Blocchi",
-      "blocksBody": "Schermate intere costruite con questi componenti, da copiare nella tua app."
+      }
     }
   }
 }

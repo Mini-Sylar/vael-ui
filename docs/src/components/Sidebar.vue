@@ -11,6 +11,16 @@
   >
     <div class="sidebar-mode-toggle">
       <ModeSwitcher v-model="sidebarMode" @switch="goToMode" />
+      <!-- Most people come to Motion from a component, and want to get back to it. -->
+      <button
+        v-if="sidebarMode === 'motion'"
+        type="button"
+        class="sidebar-back"
+        @click="((sidebarMode = 'components'), goToMode('components'))"
+      >
+        <PhArrowLeft :size="13" aria-hidden="true" />
+        {{ t('motionDocs.nav.back') }}
+      </button>
     </div>
     <!-- MenuList renders the nav landmark itself. -->
     <div ref="sidebarScrollEl" v-scroll-mask class="sidebar-scroll">
@@ -40,6 +50,16 @@
   <Drawer v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
     <div class="sidebar-mode-toggle sidebar-mode-toggle--mobile">
       <ModeSwitcher v-model="sidebarMode" @switch="goToMode" />
+      <!-- Most people come to Motion from a component, and want to get back to it. -->
+      <button
+        v-if="sidebarMode === 'motion'"
+        type="button"
+        class="sidebar-back"
+        @click="((sidebarMode = 'components'), goToMode('components'))"
+      >
+        <PhArrowLeft :size="13" aria-hidden="true" />
+        {{ t('motionDocs.nav.back') }}
+      </button>
     </div>
     <div ref="mobileScrollEl" class="sidebar-scroll sidebar-scroll--mobile">
       <MenuList
@@ -87,11 +107,12 @@ import { useLocalStorage, useScroll } from '@vueuse/core'
 import { Drawer, MenuList, Resizable, vScrollMask } from 'vael-ui'
 import ModeSwitcher from './ModeSwitcher.vue'
 import { componentIcons } from '../componentIcons'
-import { PhArrowUpRight } from '@phosphor-icons/vue'
+import { PhArrowLeft, PhArrowUpRight } from '@phosphor-icons/vue'
 import type { MenuEntry, MenuListItemData } from 'vael-ui'
 import { NEW_COMPONENTS, NEW_BADGE_DAYS } from '../taxonomy'
 import { NEW_COMPOSABLES, composableCategories } from '../composablesTaxonomy'
 import {
+  COMPONENT_MOTION_ROUTES,
   composableValue,
   GUIDE_ROUTES,
   guideValue,
@@ -163,6 +184,9 @@ watch(sidebarMode, (mode) => {
 watch(
   () => route.name,
   (routeName) => {
+    // A Motion page the Components list carries keeps that list; any other goes to Motion's.
+    if (COMPONENT_MOTION_ROUTES.includes(routeName as string) && sidebarMode.value === 'components')
+      return
     if (MOTION_ROUTES.some((g) => g.routeName === routeName)) sidebarMode.value = 'motion'
     // A motion composable opened from the Motion list keeps that list.
     else if (routeName === 'composable' && sidebarMode.value !== 'motion')
@@ -340,7 +364,8 @@ watch(
 .sidebar-mode-toggle {
   flex-shrink: 0;
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
   padding: 1rem 1rem 0;
 }
 
@@ -410,6 +435,31 @@ watch(
    and the dot can sit right after the text instead of at the row's far edge. */
 .sidebar-scroll :deep(.ui-menu-list-item-label) {
   flex: initial;
+}
+
+.sidebar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-block-start: 0.6rem;
+  padding: 0.15rem 0.25rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ui-text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: color var(--ui-duration-press) var(--ui-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-back:hover {
+    color: var(--ui-text);
+  }
+}
+.sidebar-back:focus-visible {
+  outline: 2px solid var(--ui-ring, var(--ui-primary));
+  outline-offset: 2px;
 }
 
 .sidebar-link-icon {

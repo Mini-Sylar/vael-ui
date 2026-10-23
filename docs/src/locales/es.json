@@ -600,7 +600,8 @@
       "springs": "Resortes y tiempos",
       "engines": "Tu propio motor",
       "types": "TypeScript",
-      "showcase": "Escaparate"
+      "showcase": "Escaparate",
+      "back": "Volver a los componentes"
     },
     "mode": {
       "components": "Cada componente, por tipo",
@@ -737,9 +738,7 @@
         "builtin": "Integrado",
         "gsap": "GSAP",
         "motion": "motion"
-      },
-      "blocksTitle": "Bloques",
-      "blocksBody": "Pantallas completas hechas con estos componentes, para copiar a tu app."
+      }
     }
   }
 }

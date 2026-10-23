@@ -600,7 +600,8 @@
       "springs": "Ressorts et timing",
       "engines": "Votre propre moteur",
       "types": "TypeScript",
-      "showcase": "Vitrine"
+      "showcase": "Vitrine",
+      "back": "Retour aux composants"
     },
     "mode": {
       "components": "Chaque composant, par type",
@@ -737,9 +738,7 @@
         "builtin": "Intégré",
         "gsap": "GSAP",
         "motion": "motion"
-      },
-      "blocksTitle": "Blocs",
-      "blocksBody": "Des écrans entiers construits avec ces composants, à copier dans votre app."
+      }
     }
   }
 }

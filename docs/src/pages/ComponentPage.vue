@@ -51,43 +51,43 @@
       <section v-if="examples.length > 0" id="examples" class="section">
         <h2>{{ t('component.examples') }}</h2>
         <DemoFrame :name="name" :examples="examples" />
+        <MetaTable
+          id="props"
+          :title="t('component.props')"
+          :rows="meta.props"
+          kind="props"
+          :empty-text="t('component.noProps')"
+          :type-link="
+            motionInfo
+              ? { prop: 'motion', href: '#motion', tip: motionInfo.doc.replace(/`/g, '') }
+              : undefined
+          "
+          show-default
+        />
+        <MetaTable
+          id="events"
+          :title="t('component.events')"
+          :rows="meta.events"
+          kind="events"
+          :empty-text="t('component.noEvents')"
+        />
+        <MetaTable
+          id="slots"
+          :title="t('component.slots')"
+          :rows="meta.slots"
+          kind="slots"
+          :empty-text="t('component.noSlots')"
+        />
+        <MetaTable
+          id="exposed"
+          :title="t('component.exposed')"
+          :rows="meta.exposed"
+          kind="exposed"
+          :empty-text="t('component.noExposed')"
+        />
       </section>
 
       <MotionTable v-if="motionInfo" :name="name" :info="motionInfo" />
-      <MetaTable
-        id="slots"
-        :title="t('component.slots')"
-        :rows="meta.slots"
-        kind="slots"
-        :empty-text="t('component.noSlots')"
-      />
-      <MetaTable
-        id="events"
-        :title="t('component.events')"
-        :rows="meta.events"
-        kind="events"
-        :empty-text="t('component.noEvents')"
-      />
-      <MetaTable
-        id="exposed"
-        :title="t('component.exposed')"
-        :rows="meta.exposed"
-        kind="exposed"
-        :empty-text="t('component.noExposed')"
-      />
-      <MetaTable
-        id="props"
-        :title="t('component.props')"
-        :rows="meta.props"
-        kind="props"
-        :empty-text="t('component.noProps')"
-        :type-link="
-          motionInfo
-            ? { prop: 'motion', href: '#motion', tip: motionInfo.doc.replace(/`/g, '') }
-            : undefined
-        "
-        show-default
-      />
 
       <section
         v-for="related in relatedComponents"
@@ -363,11 +363,11 @@ const tocLinks = computed(() => [
         },
       ]
     : []),
-  ...(motionInfo.value ? [{ id: 'motion', label: t('component.motion'), isNew: true }] : []),
-  { id: 'slots', label: t('component.slots') },
-  { id: 'events', label: t('component.events') },
-  { id: 'exposed', label: t('component.exposed') },
   { id: 'props', label: t('component.props') },
+  { id: 'events', label: t('component.events') },
+  { id: 'slots', label: t('component.slots') },
+  { id: 'exposed', label: t('component.exposed') },
+  ...(motionInfo.value ? [{ id: 'motion', label: t('component.motion'), isNew: true }] : []),
   ...relatedComponents.value.map((r) => ({ id: `related-${r.name}`, label: r.name })),
   ...pairedSections.value.map((p) => ({ id: p.id, label: p.name })),
 ])

@@ -41,19 +41,6 @@
         </div>
       </article>
     </div>
-
-    <!-- The next step up: whole screens built from these pieces. -->
-    <section id="blocks" class="sc-blocks">
-      <DitherBackground class="sc-blocks-dither" still />
-      <div class="sc-blocks-text">
-        <h2>{{ t('motionDocs.showcase.blocksTitle') }}</h2>
-        <p>{{ t('motionDocs.showcase.blocksBody') }}</p>
-      </div>
-      <Button as="a" :href="BLOCKS_URL" target="_blank" rel="noopener" variant="outline">
-        {{ BLOCKS_URL.replace('https://', '') }}
-        <template #trailing><PhArrowUpRight :size="14" aria-hidden="true" /></template>
-      </Button>
-    </section>
   </GuideLayout>
 </template>
 
@@ -62,9 +49,7 @@ import { computed, defineAsyncComponent, onScopeDispose, shallowRef, triggerRef 
 import type { Component } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
-import { PhArrowUpRight } from '@phosphor-icons/vue'
-import { Button, SelectButton } from 'vael-ui'
-import DitherBackground from '../../components/DitherBackground.vue'
+import { SelectButton } from 'vael-ui'
 import GuideLayout from '../../components/GuideLayout.vue'
 import { componentIcons } from '../../componentIcons'
 import demoManifest from '../../generated/demo-manifest.json'
@@ -72,9 +57,6 @@ import { defaultVariant } from '../../preferences'
 
 const { t } = useI18n()
 useHead({ title: () => t('motionDocs.showcase.title') })
-
-// Not live yet; one place to change it.
-const BLOCKS_URL = 'https://blocks.vael-ui.dev'
 
 const ENGINES = ['all', 'builtin', 'gsap', 'motion'] as const
 type Engine = Exclude<(typeof ENGINES)[number], 'all'>
@@ -252,33 +234,5 @@ onScopeDispose(() => observer?.disconnect())
 }
 .sc-stage :deep(.demo > h3:first-of-type) {
   display: none;
-}
-
-/* ─── Blocks ─── */
-.sc-blocks {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem 2rem;
-  padding: 2rem;
-  overflow: hidden;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--docs-radius);
-  isolation: isolate;
-}
-.sc-blocks-dither {
-  --dither-alpha: 0.08;
-  z-index: -1;
-  mask-image: radial-gradient(ellipse 70% 120% at 100% 50%, #000 20%, transparent 75%);
-}
-.sc-blocks-text h2 {
-  margin: 0 0 0.35rem;
-}
-.sc-blocks-text p {
-  margin: 0;
-  max-inline-size: 32rem;
-  color: var(--ui-text-muted);
 }
 </style>

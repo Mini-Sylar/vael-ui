@@ -600,7 +600,8 @@
       "springs": "弹簧与时间",
       "engines": "自定义引擎",
       "types": "TypeScript",
-      "showcase": "展示"
+      "showcase": "展示",
+      "back": "返回组件"
     },
     "mode": {
       "components": "按类别列出所有组件",
@@ -737,9 +738,7 @@
         "builtin": "内置",
         "gsap": "GSAP",
         "motion": "motion"
-      },
-      "blocksTitle": "区块",
-      "blocksBody": "用这些组件搭成的完整页面，可直接复制到你的应用。"
+      }
     }
   }
 }

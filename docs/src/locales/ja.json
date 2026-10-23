@@ -600,7 +600,8 @@
       "springs": "スプリングとタイミング",
       "engines": "独自のエンジン",
       "types": "TypeScript",
-      "showcase": "ショーケース"
+      "showcase": "ショーケース",
+      "back": "コンポーネントに戻る"
     },
     "mode": {
       "components": "すべてのコンポーネントを種類別に",
@@ -737,9 +738,7 @@
         "builtin": "組み込み",
         "gsap": "GSAP",
         "motion": "motion"
-      },
-      "blocksTitle": "ブロック",
-      "blocksBody": "これらのコンポーネントで作った画面全体。アプリにそのままコピーできます。"
+      }
     }
   }
 }

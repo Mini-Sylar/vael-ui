@@ -600,7 +600,8 @@
       "springs": "Federn und Timing",
       "engines": "Deine eigene Engine",
       "types": "TypeScript",
-      "showcase": "Showcase"
+      "showcase": "Showcase",
+      "back": "Zurück zu den Komponenten"
     },
     "mode": {
       "components": "Jede Komponente, nach Art",
@@ -737,9 +738,7 @@
         "builtin": "Eingebaut",
         "gsap": "GSAP",
         "motion": "motion"
-      },
-      "blocksTitle": "Blocks",
-      "blocksBody": "Ganze Screens aus diesen Komponenten, zum Kopieren in deine App."
+      }
     }
   }
 }

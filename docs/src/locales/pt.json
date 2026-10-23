@@ -600,7 +600,8 @@
       "springs": "Molas e tempo",
       "engines": "Seu próprio motor",
       "types": "TypeScript",
-      "showcase": "Vitrine"
+      "showcase": "Vitrine",
+      "back": "Voltar aos componentes"
     },
     "mode": {
       "components": "Cada componente, por tipo",
@@ -737,9 +738,7 @@
         "builtin": "Embutido",
         "gsap": "GSAP",
         "motion": "motion"
-      },
-      "blocksTitle": "Blocos",
-      "blocksBody": "Telas inteiras feitas com estes componentes, para copiar para seu app."
+      }
     }
   }
 }
