@@ -158,3 +158,22 @@ test('Escape aborts a directive drag too', async () => {
   await vi.waitFor(() => expect(document.querySelector('[data-sortable-preview]')).toBeNull())
   expect(order(screen)).toBe('a,b,c')
 })
+
+test('a row grabbed while the last drop is still landing leaves no row off its slot (positional values collide after a reorder)', async () => {
+  const screen = await render(DraggableFixture)
+  const slots = rows(screen).map((row) => row.getBoundingClientRect().top)
+  const height = rows(screen)[0]!.getBoundingClientRect().height
+  drag(rows(screen)[1]!, -height * 1.3)()
+  await vi.waitFor(() => expect(order(screen)).toBe('b,a,c'))
+  await new Promise(requestAnimationFrame)
+  // Grabbed again mid-landing, and carried past the end.
+  const release = drag(rows(screen)[0]!, height * 3.5, 13)
+  await new Promise(requestAnimationFrame)
+  release()
+  await vi.waitFor(() => expect(order(screen)).toBe('a,c,b'))
+  await new Promise((r) => setTimeout(r, 1200))
+  for (const [i, row] of rows(screen).entries()) {
+    expect(row.style.translate).toBe('')
+    expect(Math.abs(row.getBoundingClientRect().top - slots[i]!)).toBeLessThan(1)
+  }
+})

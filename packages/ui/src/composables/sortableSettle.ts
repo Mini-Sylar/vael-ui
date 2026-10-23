@@ -78,7 +78,9 @@ export function createSettler(options: {
   /** Your spring for the landing; unset, the drop spring. */
   spring?: () => { damping: number; response: number } | undefined
 }): Settler {
-  const rows = new Map<string | number, SettlingRow>()
+  // Keyed by value; a row a positional value (v-draggable's) lost to another element keeps
+  // landing under a key of its own.
+  const rows = new Map<string | number | symbol, SettlingRow>()
   let frame = 0
   let lastTime = 0
   let watchUntil = 0
@@ -128,11 +130,12 @@ export function createSettler(options: {
     frame = 0
     const dt = Math.min(Math.max((now - lastTime) / 1000, 0), MAX_DT)
     lastTime = now
-    for (const row of rows.values()) {
+    for (const [key, row] of rows) {
       if (!row.el.isConnected) {
-        const el = options.getElement(row.value)
+        // A row under a key of its own can't be re-found by value: that value is another row's now.
+        const el = typeof key === 'symbol' ? null : options.getElement(row.value)
         if (!el) {
-          rows.delete(row.value)
+          rows.delete(key)
           rest(row)
           continue
         }
@@ -188,7 +191,8 @@ export function createSettler(options: {
   return {
     glide(el, value, offset, velocity = { x: 0, y: 0 }, raise = false, hooks) {
       const previous = rows.get(value)
-      if (previous) {
+      if (previous && previous.el !== el && previous.el.isConnected) rows.set(Symbol(), previous)
+      else if (previous) {
         land(previous)
         rest(previous)
       }

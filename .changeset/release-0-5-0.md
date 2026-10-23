@@ -162,5 +162,6 @@ Every built-in animation now follows the same rules: it stays under 300 ms (draw
 - **DataTable**: changing page no longer flashes the table. The old page's rows stayed for two frames, doubling its height, and then every new row faded in. The new page now shows at once, and a removed row leaves the layout at once, so the rows below slide up.
 - **Dock**: with `magnify` off, moving over the dock no longer clears the transforms your own animation sets on its items.
 - **v-draggable**: a decorative child marked `aria-hidden`, such as Tabs' sliding highlight, is no longer counted as a row. It shifted every row by one, so a drag moved the wrong item.
+- **v-draggable**: grabbing a row while the last drop is still landing no longer leaves a row stuck off its slot.
 - **PasswordInput**: Edge no longer adds its own reveal button. Only `revealable` shows one.
 - **Dialog**, **Drawer**, **BottomSheet**: a closing one lets taps through while it animates out, so reaching for a button (or a dock) right after closing no longer takes two taps.
