@@ -2,9 +2,10 @@
   <section class="demo">
     <h3>Custom animation (motion-v)</h3>
     <p class="note">
-      A <code>motion</code> object hands the panel to motion-v's <code>animate()</code> as it opens
-      and closes, and Popover waits for the exit before removing it. Answering swaps in a thank-you
-      and closes a moment later; clicking outside or pressing Escape closes at once.
+      <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate the panel with
+      motion-v's <code>animate()</code>, and Popover waits for the exit before removing the panel.
+      Answering shows a thank-you and closes a moment later; clicking outside or pressing Escape
+      closes at once.
     </p>
     <div class="row">
       <Popover v-model:open="feedbackOpen" open-on-trigger-click :motion="look">

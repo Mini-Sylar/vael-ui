@@ -2,14 +2,13 @@
   <section class="demo">
     <h3>Extreme: groups in motion (GSAP)</h3>
     <p class="note">
-      Every group is a real element (<code>ui.group</code>), so is its label
-      (<code>ui.groupLabel</code>) and each option (<code>ui.option</code>), and a
-      <code>motion</code> object hands GSAP the panel. That's all it needs. On open, each label
-      wipes in behind its accent bar and its options rise in after it. While you search, the options
-      and labels that stay glide to their new places, because a search keeps each one on its own
-      element: a small FLIP, measured inside the list so it stays right while the panel resizes.
-      Each count pops when it changes. Closing gives the panel a quick fade. With reduced motion, it
-      all switches off.
+      <code>ui.group</code>, <code>ui.groupLabel</code> and <code>ui.option</code> give each group,
+      label and option a class, and <code>enter</code> and <code>leave</code> hooks in
+      <code>motion</code> animate them with GSAP. On open, each label wipes in behind its accent bar
+      and its options rise in after it. While you search, the labels and options that stay slide to
+      their new places, measured inside the list so they stay correct while the panel resizes. Each
+      count pops when it changes, and closing fades the panel. Under reduced motion, none of it
+      runs.
     </p>
     <div class="row">
       <Field label="Tool">

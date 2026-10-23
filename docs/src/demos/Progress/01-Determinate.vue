@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Determinate, with a real numeric value</h3>
+    <h3>Determinate, with a numeric value</h3>
     <div class="row progress-row">
       <Progress :value="uploadValue" label="Uploading" style="max-width: 20rem" />
       <Button size="sm" variant="outline" @click="startUpload">

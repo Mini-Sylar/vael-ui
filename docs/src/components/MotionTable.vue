@@ -93,7 +93,7 @@ const KINDS: Record<string, Omit<Row, 'id'>> = {
   indicator: {
     keys: ['move'],
     takes: '(parts, context) => animation',
-    does: 'Its sliding indicator: a `spring` retimes it, a `move` hook animates it with your library from `context.from`.',
+    does: 'Moves its sliding indicator. A `spring` retimes it, and a `move` hook animates it with your own library, starting from `context.from`.',
   },
   swap: {
     keys: ['swap', 'resize'],
@@ -103,7 +103,7 @@ const KINDS: Record<string, Omit<Row, 'id'>> = {
   value: {
     keys: ['spring'],
     takes: '{ damping, response }',
-    does: 'How its value moves when it changes, from the steppers, the keyboard or your code.',
+    does: 'Times how its value moves when it changes, from the steppers, the keyboard or your code.',
   },
 }
 
@@ -115,7 +115,7 @@ const rows = computed<Row[]>(() => {
       keys: ['initial', 'exit'],
       takes: '',
       chips: parts,
-      does: 'Values per part, any CSS property plus `x`, `y` and `blur`: where it comes in from and where it leaves to. A plain number is px, or degrees for `rotate`.',
+      does: 'Sets where each part comes in from and leaves to: any CSS property, plus `x`, `y` and `blur`. A plain number is px, or degrees for `rotate`.',
     },
   ]
   if (states.length)
@@ -124,13 +124,13 @@ const rows = computed<Row[]>(() => {
       keys: ['states'],
       takes: '',
       chips: states,
-      does: 'Values per part held while a state is on. Arrays are keyframes that play once as it turns on, like a shake on `invalid`.',
+      does: 'Sets values per part that hold while a state is on. An array is a set of keyframes that plays once as the state turns on, such as a shake on `invalid`.',
     })
   out.push({
     id: 'hooks',
     keys: ['enter', 'leave'],
     takes: '(parts, context) => animation',
-    does: 'Hands the parts to GSAP, motion or `element.animate()`. Return what it returns and the component waits for it, and stops it if interrupted.',
+    does: 'Animates the parts with GSAP, motion or `element.animate()`. Return the animation and the component waits for it, and stops it if interrupted.',
   })
   for (const kind of kinds) if (KINDS[kind]) out.push({ id: kind, ...KINDS[kind]! })
   for (const extra of extras)
@@ -140,7 +140,7 @@ const rows = computed<Row[]>(() => {
       id: 'timing',
       keys: ['spring', 'duration', 'easing'],
       takes: '{ damping, response } | number | string',
-      does: 'Timing for all of it: a spring, or a duration in milliseconds with an easing. Never both.',
+      does: 'Times all of it: a spring, or a duration in ms with an easing. Never both.',
     },
     {
       id: 'off',

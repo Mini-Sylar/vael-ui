@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Shipping method</h3>
     <p class="note">
-      Zero keyboard JS: same-name native radios give the entire APG roving-arrow-key pattern (arrows
-      move AND select, Tab enters/leaves the group) for free. Radio can't render outside a
-      RadioGroup, so every example here uses both.
+      No keyboard code: native radios with the same name give you the full arrow-key pattern, where
+      the arrows move and select and Tab enters and leaves the group. Radio only renders inside a
+      RadioGroup, so every example uses both.
     </p>
     <RadioGroup v-model="shipping">
       <Radio value="standard" label="Standard" description="5-7 business days, free" />

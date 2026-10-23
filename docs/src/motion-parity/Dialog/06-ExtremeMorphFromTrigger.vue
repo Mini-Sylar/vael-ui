@@ -3,7 +3,7 @@
     <h3>Extreme: the dialog morphs out of its button</h3>
     <p class="note">
       <code>morph: 'trigger'</code> grows the panel out of the button that opened it, with the
-      button's colour and corners handing over to the surface, and shrinks it back on close. The
+      button's color and corners blending into the surface, and shrinks it back on close. The
       contents fade out before the panel folds away, and the backdrop fades on the same progress.
     </p>
     <Button @click="open = true">Invite teammates</Button>

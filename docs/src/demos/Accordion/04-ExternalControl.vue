@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Full external control, <code>motion="false"</code> + GSAP height tween</h3>
+    <h3>Your own height animation: <code>:motion="false"</code> and GSAP</h3>
     <p class="note">
-      The built-in transition is skipped entirely, GSAP tweens the panel's own height instead,
-      proving the escape hatch, not just the default. With <code>motion="false"</code> the panel
-      gets no inline styles at all, so the demo owns the closed state too: a class keeps a closed
-      panel at zero height, and the tween always starts from the panel's current height.
+      With <code>:motion="false"</code>, Accordion skips its height transition, and GSAP tweens the
+      height of the exposed <code>panelEl</code> instead. The panel then gets no inline styles, so
+      the demo styles the closed state too: a class keeps a closed panel at zero height. Each tween
+      starts from the panel’s current height.
     </p>
     <Accordion v-model:value="springValue" :motion="false" class="accordion-demo">
       <AccordionItem

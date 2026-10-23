@@ -3,7 +3,7 @@
     <h3>Extreme: a spring fisheye</h3>
     <p class="note">
       <code>:magnify="false"</code> turns the built-in magnification off, and
-      <code>itemEls()</code> hands you the item buttons. A <code>useSpringValue</code> per icon for
+      <code>itemEls()</code> returns the item buttons. A <code>useSpringValue</code> per icon for
       its size and one for its shift chase where the pointer puts them, so each icon swells, pushes
       its neighbors aside and overshoots on its own. Picking an app launches it with a double hop:
       <code>states.selected</code> plays it on that <code>item</code>, keyframes placed with

@@ -2,11 +2,10 @@
   <section class="demo">
     <h3>Notification badge: the <code>#badge</code> slot</h3>
     <p class="note">
-      Button owns the positioned wrapper (<code>badgePlacement</code>, default
-      <code>top-end</code>); <code>Badge</code> stays the same context-free component it is
-      everywhere else. The wrapper renders only when a badge is in play — a
-      <code>#badge</code> slot, or <code>badgePlacement</code> set to reserve the structure ahead of
-      a conditional badge — so it costs nothing on every other Button in this file.
+      Button renders the positioned wrapper (<code>badgePlacement</code>, default
+      <code>top-end</code>), and <code>Badge</code> stays the same component it is everywhere else.
+      The wrapper renders only when you use a badge, through a <code>#badge</code> slot or a set
+      <code>badgePlacement</code>, so other Buttons don’t render it.
     </p>
     <div class="row">
       <Button variant="secondary" icon aria-label="Notifications">

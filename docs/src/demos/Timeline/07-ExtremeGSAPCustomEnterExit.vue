@@ -1,12 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Extreme: fully custom enter/exit via GSAP (gsap)</h3>
+    <h3>Extreme: steps that grow along the line (gsap)</h3>
     <p class="note">
-      A <code>motion</code> object with <code>enter</code> and <code>leave</code> hooks gets each
-      step with its parts (marker, connectors, content). Return the timeline and the step waits for
-      it. A new event grows the line down from the step above, pops its marker in where the line
-      lands, then reveals its label. Removing one plays it in reverse, the line retracting into the
-      next marker.
+      <code>enter</code> and <code>leave</code> hooks in <code>motion</code> receive each step's
+      parts, such as <code>marker</code>, <code>connector</code>, <code>previousConnector</code> and
+      <code>content</code>. Return the GSAP timeline and the step waits for it. A new event grows
+      the line down from the step above, pops in its marker where the line ends, then shows its
+      label. Removing one plays it in reverse, and the line retracts into the next marker.
     </p>
     <Timeline :items="events" :motion="steps" :item-key="(e) => e.id">
       <template #item="{ item }">

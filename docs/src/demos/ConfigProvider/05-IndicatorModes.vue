@@ -4,9 +4,9 @@
     <p class="note">
       <code>indicator</code> sets how every sliding indicator inside moves: the hover highlight in
       lists and menus, and the selection in Tabs, SelectButton and MenuList. <code>'glide'</code> is
-      the default; <code>'instant'</code> keeps the highlight without motion; an object is a spring,
-      <code>{ damping, response }</code>, where damping below 1 overshoots. Pick one, then hover the
-      tabs and rows and change the selection.
+      the default, <code>'instant'</code> keeps the highlight but drops the motion, and an object is
+      a spring, <code>{ damping, response }</code>, where damping below 1 overshoots. Pick one, then
+      hover the tabs and rows and change the selection.
     </p>
     <div class="row">
       <SelectButton

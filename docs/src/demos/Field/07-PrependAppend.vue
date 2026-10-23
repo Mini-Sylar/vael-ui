@@ -2,12 +2,12 @@
   <section class="demo">
     <h3><code>#prepend</code> / <code>#append</code> cells</h3>
     <p class="note">
-      Field's cells work with every control: an Input, a Select, a Combobox, a growing Textarea.
+      Field’s cells work with every control: an Input, a Select, a Combobox or a growing Textarea.
       Text and icons share one segment, and each control gets its own, as in the price row (<code
         >$</code
       >
-      plus a currency Select) and the search row (a scope Select and a Button). Next to a control
-      without a frame (a Switch, a Slider), cells render as plain text and an
+      and a currency Select) and the search row (a scope Select and a Button). Next to a control
+      without a frame, such as a Switch or a Slider, cells render as plain text and an
       <code>attached</code> label becomes a plain side label.
     </p>
     <div class="side-form">

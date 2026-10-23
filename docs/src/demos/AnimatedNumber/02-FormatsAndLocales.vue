@@ -3,9 +3,9 @@
     <h3>Formats and locales</h3>
     <p class="note">
       <code>format</code> takes any <code>Intl.NumberFormat</code> options, and the locale follows
-      <code>ConfigProvider</code> unless you set <code>locale</code>. Digits roll in the locale's
-      own numbering system, Arabic-Indic included. Screen readers hear the formatted value, not the
-      reels.
+      <code>ConfigProvider</code> unless you set <code>locale</code>. Digits roll in the locale’s
+      own numbering system, including Arabic-Indic. Screen readers hear the formatted value, not the
+      digit reels.
     </p>
     <div class="row">
       <SelectButton

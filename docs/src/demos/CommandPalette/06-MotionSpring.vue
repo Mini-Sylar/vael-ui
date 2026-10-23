@@ -1,12 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Custom exit: motion-v spring + staggered rows</h3>
+    <h3>A motion-v spring with staggered rows</h3>
     <p class="note">
-      The panel springs in with real overshoot (<code>bounce: 0.35</code>), then each row cascades
-      in individually with a 40ms stagger, a class of choreography a single CSS
-      <code>transition</code> on the panel alone can't express. Both run in the
-      <code>motion</code> prop's <code>enter</code> hook, and <code>leave</code> returns the exit
-      for the palette to wait on.
+      The panel springs in with overshoot (<code>bounce: 0.35</code>), and each row rises in 40 ms
+      after the one before. Both run in the <code>motion</code> prop’s <code>enter</code> hook, and
+      <code>leave</code> returns the exit for the palette to wait for.
     </p>
     <div class="row">
       <Button variant="secondary" @click="motionOpen = true">Open (motion-v)</Button>

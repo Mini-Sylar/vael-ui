@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Swatch opens the picker</h3>
     <p class="note">
-      Drag on the plane for saturation and brightness, slide the hue, or type a hex. Browsers with
-      an EyeDropper show a button to pick a color from the screen.
+      Drag on the plane for saturation and brightness, drag the hue slider, or type a hex value. In
+      browsers with an EyeDropper, a button picks a color from the screen.
     </p>
     <div class="picker-row">
       <ColorPicker v-model="color" label="Accent" />

@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Both edges on one row: <code>#leading-actions</code> + <code>#trailing-actions</code></h3>
+    <h3>Both edges on one row: <code>#leading-actions</code> and <code>#trailing-actions</code></h3>
     <p class="note">
-      One instance, two panels — the drag's own direction decides which one opens. Provide just one
-      slot to make it a single-edge row; omit both and the row is inert.
+      One SwipeToReveal, two panels: the drag direction picks which one opens. Fill only one slot
+      for a row with one edge; with neither, the row doesn't swipe.
     </p>
     <ul class="swipe-list">
       <li v-for="row in rows" :key="row.id" class="swipe-row">

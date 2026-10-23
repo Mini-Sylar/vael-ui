@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Extreme: segments land one after another (GSAP)</h3>
+    <h3>Extreme: segments fill in one after another (GSAP)</h3>
     <p class="note">
-      The exposed <code>fillEls</code> are the stacked segments. Each one is driven with GSAP from
-      nothing to its share with a little overshoot, in turn, while the legend counts up to the real
-      numbers through the <code>#legend</code> slot. The built-in width transition is switched off
-      on each fill first, so the two never fight.
+      The exposed <code>fillEls</code> are the stacked segments. GSAP grows each one from zero to
+      its share in turn, with a slight overshoot, while the <code>#legend</code> slot counts up to
+      the real numbers. The demo turns off each fill's built-in width transition first, so the two
+      don't conflict.
     </p>
     <Progress
       ref="bar"

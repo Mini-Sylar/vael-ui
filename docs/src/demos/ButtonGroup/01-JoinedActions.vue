@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3>Joined actions</h3>
-    <p class="note">Each button is still independently clickable and independently disableable.</p>
+    <p class="note">Each button keeps its own click handler and can be disabled on its own.</p>
     <div class="row">
       <ButtonGroup aria-label="Message actions">
         <Button variant="outline" @click="archived = !archived">{{

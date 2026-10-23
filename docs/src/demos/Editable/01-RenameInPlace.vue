@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Rename in place</h3>
     <p class="note">
-      Click the name to edit it. Enter saves, Escape drops the change, and leaving the field saves
-      too (<code>submit-mode="both"</code>).
+      Click the name to edit it. Enter saves, Escape cancels, and leaving the field saves too
+      (<code>submit-mode="both"</code>, the default).
     </p>
     <div class="editable-stack">
       <Editable v-model="name" aria-label="Project name" />

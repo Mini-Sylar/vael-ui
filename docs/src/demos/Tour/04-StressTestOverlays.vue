@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Stress test: every overlay primitive behind one step each</h3>
+    <h3>Stress test: each step behind a different overlay</h3>
     <p class="note">
-      Each step here lives behind a <em>different</em> overlay primitive — Dialog, Drawer, Popover,
-      BottomSheet, and CommandPalette — each independently teleported to <code>body</code>, each
-      opened and the previous one closed from that step's own <code>onBeforeEnter</code>. Confirms
-      the same re-resolve logic holds no matter which primitive is doing the teleporting.
+      Each step's target sits inside a different overlay: Dialog, Drawer, Popover, BottomSheet and
+      CommandPalette, each teleported to <code>body</code>. Each step's
+      <code>onBeforeEnter</code> opens its overlay and closes the previous one. Tour finds the
+      target the same way, whichever overlay teleported it.
     </p>
     <div class="row">
       <Button ref="teleportPopoverTrigger" @click="teleportTourOpen = true">Start tour</Button>

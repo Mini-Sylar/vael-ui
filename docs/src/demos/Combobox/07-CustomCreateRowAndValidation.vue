@@ -1,12 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Custom Create row, validated <code>@create</code></h3>
+    <h3>Custom Create row and a validated <code>@create</code></h3>
     <p class="note">
-      <code>#create</code> replaces the row's content while the library keeps its keyboard and click
-      behavior, so anything goes in there: here motion-v springs the row in, turns the icon when the
-      row is active, and flips the typed text in on each keystroke. <code>@create</code> receives
-      <code>{ reason, cancel }</code>: calling <code>cancel()</code> vetoes the commit, here for
-      anything with a space in it.
+      <code>#create</code> replaces the row’s content while Combobox keeps its keyboard and click
+      behavior, so the row can hold anything. Here motion-v springs the row in, turns the icon when
+      the row is active, and fades the typed text up on each keystroke.
+      <code>@create</code> receives <code>{ reason, cancel }</code>, and <code>cancel()</code> stops
+      the commit, here for anything with a space in it.
     </p>
     <div class="row">
       <Combobox

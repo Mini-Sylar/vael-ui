@@ -5,8 +5,8 @@
       Flick the thumb and let go: it overshoots past the release point and rings back, scaled to how
       fast you were moving. The value stays where you let go. <code>v-animate</code>'s
       <code>replay</code> plays the swing on each release, from the overshoot back to rest on an
-      elastic curve, and a CSS variable adds it to the thumb as a <code>transform</code>, apart from
-      the <code>translate</code> Slider places it with, so the drag itself is never delayed.
+      elastic curve, and a CSS variable adds it to the thumb as a <code>transform</code>, separate
+      from the <code>translate</code> Slider places it with, so the drag itself is never delayed.
     </p>
     <div
       v-animate="swing"

@@ -1,10 +1,10 @@
 {
   "animation": {
-    "title": "独自のアニメーションを持ち込む",
+    "title": "モーションのカスタマイズ",
     "intro": "アニメーションするコンポーネントには、組み込みのモーションと <code>motion</code> プロパティがあります。組み込みのモーションをそのまま使う、オフにする、値を変える、GSAP・motion・Web Animations API で動かす、のいずれかを選べます。",
     "builtInTitle": "組み込みのモーション",
-    "builtInIntro": "<code>motion</code> を指定しなければ、組み込みのモーションが使われます。たいていのアプリはこれで十分です。<code>false</code> にすると状態がすぐに切り替わります。開閉や項目の削除はそのままで、アニメーションだけがなくなります。",
-    "builtInProvider": "スクリーンショットテストなどで全体のモーションをオフにするには、<code>ConfigProvider</code> に <code>:motion=\"false\"</code> を指定します。",
+    "builtInIntro": "<code>motion</code> を指定しなければ、コンポーネントは組み込みのモーションを使います。たいていのアプリはこれで十分です。<code>false</code> にすると状態がすぐに切り替わります。開閉や項目の削除はそのままで、アニメーションだけがなくなります。",
+    "builtInProvider": "スクリーンショットテストなどで全体のモーションをオフにするには、<code>ConfigProvider</code> に <code>:motion=\"false\"</code> を指定します。視差効果を減らす設定では、組み込みのモーションはフェードを残し、移動をなくします。",
     "kindsTitle": "各コンポーネントが受け取るもの",
     "kindsKind": "種類",
     "kindsComponents": "コンポーネント",
@@ -12,13 +12,13 @@
     "kindsOverlayTitle": "開閉するもの",
     "kindsInPlaceTitle": "その場で変化するもの",
     "kindsListTitle": "項目が出入りするもの",
-    "kindsCheck": "各コンポーネントの <code>motion</code> 型（<code>DialogMotion</code> など）にパーツ名が載っています。パーツ名は <code>ui</code> のキーと同じです。リストでは、括弧内が各項目に渡されるパーツです。Checkbox など一部のコンポーネントは <code>true</code> か <code>false</code> だけを受け取ります。",
+    "kindsCheck": "各コンポーネントは、パーツと状態を列挙した独自の <code>motion</code> 型（<code>DialogMotion</code> など）をエクスポートしています。パーツ名は <code>ui</code> のキーと同じです。リストでは、括弧内が各項目に渡されるパーツです。",
     "valuesTitle": "値を変える",
     "valuesIntro": "オブジェクトを渡すと、モーションをデータとして記述できます。<code>initial</code> は各パーツがどこから入るか、<code>exit</code> はどこへ出ていくかを決めます。キーはパーツ名で、値は CSS プロパティと <code>x</code>・<code>y</code>・<code>blur</code> です。",
-    "valuesTiming": "タイミングには <code>spring</code>、または <code>duration</code>（ミリ秒）と <code>easing</code> のどちらかを指定します。両方は指定できません。スプリングの <code>damping</code> は 1 で行き過ぎずに止まり、小さいほど弾みます。<code>response</code> は到着までのおおよその秒数です。<code>exit</code> を省くと、パーツは少し縮みながらフェードアウトします。",
+    "valuesTiming": "タイミングには <code>spring</code>、または <code>duration</code>（ミリ秒）と <code>easing</code> のどちらかを指定します。両方は指定できません。スプリングの <code>damping</code> は 1 で行き過ぎずに止まり、小さいほど行き過ぎます。<code>response</code> は到着までのおおよその秒数です。<code>exit</code> を省くと、パーツは少し縮みながらフェードアウトします。",
     "hooksTitle": "独自のライブラリを使う",
-    "hooksIntro": "値だけで足りないときは、<code>enter(parts, ctx)</code> と <code>leave(parts, ctx)</code> のフックを追加します。<code>parts</code> にはコンポーネントの要素がパーツ名ごとに入っています。ライブラリの戻り値をそのまま返してください。WAAPI の <code>Animation</code>、GSAP のトゥイーンやタイムライン、motion の <code>animate()</code> のコントロール、Promise のいずれでも構いません。コンポーネントはそれを待ってから開き終えたり、要素を取り除いたりします。",
-    "hooksInterrupt": "開いている途中で閉じるなど、モーションが中断されると、コンポーネントは返されたものを <code>kill</code>・<code>stop</code>・<code>cancel</code> で止め、<code>ctx.signal</code> を中断します。ユーザーが視差効果を減らす設定にしている場合、フックはスキップされます。それでも実行するには <code>reducedMotion: 'run'</code> を指定し、<code>ctx.reducedMotion</code> を自分で確認してください。",
+    "hooksIntro": "値だけで足りないときは、<code>enter(parts, ctx)</code> と <code>leave(parts, ctx)</code> のフックを追加します。<code>parts</code> にはコンポーネントの要素がパーツ名ごとに入っています。ライブラリの戻り値をそのまま返してください。Web Animations の <code>Animation</code>、GSAP のトゥイーンやタイムライン、motion の <code>animate()</code> のコントロール、Promise のいずれでも構いません。コンポーネントはそれを待ってから開き終えたり、要素を取り除いたりします。",
+    "hooksInterrupt": "開いている途中で閉じるなど、モーションが中断されると、コンポーネントは返されたものを <code>kill</code>・<code>stop</code>・<code>cancel</code> で止め、<code>ctx.signal</code> を中断します。視差効果を減らす設定では、フックは実行されません。それでも実行するには <code>reducedMotion: 'run'</code> を指定し、<code>ctx.reducedMotion</code> を自分で確認してください。",
     "gsapExampleTitle": "GSAP",
     "gsapExampleIntro": "タイムラインを返します。この例では、Dialog がオーバーレイをフェードさせ、パネルをスライドさせます。",
     "motionExampleTitle": "motion",
@@ -27,34 +27,34 @@
     "waapiExampleIntro": "ライブラリは不要です。<code>element.animate()</code> は <code>Animation</code> を返します。この例では、Message が閉じるときに横へスライドして消えます。",
     "listsTitle": "リスト",
     "listsIntro": "Toaster・Timeline・FileUpload・SpeedDial・DataTable は、項目に対して同じ <code>motion</code> オブジェクトを受け取ります。CommandPalette は <code>items</code> の下に、Select・Combobox・CascadeSelect は <code>chips</code> の下に指定します。値とフックは項目ごとに適用されます。フックには 1 項目分のパーツ（<code>{'{'} toast {'}'}</code>・<code>{'{'} item {'}'}</code>・<code>{'{'} row {'}'}</code>・<code>{'{'} action {'}'}</code>・<code>{'{'} chip {'}'}</code> など）と、独自のずらしに使える <code>ctx.index</code> が渡されます。",
-    "listsOptions": "リストにはさらに 2 つのキーがあります。<code>stagger</code> は同時に追加された項目どうしの間隔（秒）です。<code>leaving</code> は空いたスペースの扱いを決めます。既定の <code>'pop'</code> では、ほかの項目がすぐに隙間を詰めます。<code>'hold'</code> では、項目が消えるまでスペースを保ちます。",
+    "listsOptions": "リストにはさらに 3 つのキーがあります。<code>stagger</code> は同時に追加された項目どうしの間隔（秒）です。<code>leaving</code> は去る項目のスペースの扱いを決めます。既定の <code>'pop'</code> では、ほかの項目がすぐに隙間を詰めます。<code>'hold'</code> では、項目が消えるまでスペースを保ちます。<code>appear: true</code> にすると、リストのマウント時にすでにある項目もアニメーションします。",
     "listsHooksIntro": "フックを使うと、Timeline の各ステップにマーカー・コネクター・コンテンツが渡されます。",
     "listsEvents": "<code>{'@'}item-enter</code> や <code>{'@'}item-leave</code> などの旧リストイベントは削除されました。そのコードは <code>enter</code> と <code>leave</code> に移してください。",
     "guardsTitle": "beforeClose は判定するだけでアニメーションしない",
-    "guardsIntro": "<code>beforeClose</code> はガードです。閉じるなら <code>true</code>、開いたままにするなら <code>false</code>、またはそのどちらかの Promise を返します。Promise が解決するまで、オーバーレイはそのままの状態で開いています。確認ダイアログなら 1 行で書けます。",
+    "guardsIntro": "<code>beforeClose</code> はガードです。閉じるなら <code>true</code>、開いたままにするなら <code>false</code>、またはそのどちらかの Promise を返します。Promise が保留中の間、オーバーレイは開いたまま静止しています。確認なら 1 行で書けます:",
     "guardsExit": "ガードには閉じる理由 <code>reason</code> が渡されます。退場アニメーションは実行しないので、それは <code>motion.leave</code> に書いてください。<code>done()</code> コールバックはなくなりました。",
     "forceMountTitle": "forceMount",
-    "forceMountIntro": "<code>forceMount</code> は、閉じている間もコンテンツをマウントしたままにし、<code>v-show</code> で切り替えます。状態を保ちたい、サイズを測りたいなど、コンテンツを DOM に残す必要があるときに使います。アニメーション用ではありません。指定するとモーションシステムは要素に手を出さず、要素はすぐに表示・非表示になります。",
+    "forceMountIntro": "<code>forceMount</code> は、閉じている間もコンテンツをマウントしたままにし、<code>v-show</code> で切り替えます。状態を保ちたい、サイズを測りたいなど、コンテンツを DOM に残す必要があるときに使います。この方法で残したコンテンツでは組み込みのモーションは再生されず、すぐに表示・非表示になります。アニメーションさせるには <code>motion</code> フックを使ってください。",
     "appWideTitle": "アプリ全体で 1 つのスタイル",
-    "appWideIntro": "<code>ConfigProvider</code> にスタイルを渡すと、モーションを一度で設定できます。<code>overlay</code> や <code>list</code> などのロールキーは、その種類のすべてのコンポーネントに適用されます。<code>dialog</code> や <code>toaster</code> などのコンポーネントキーは、ロールの設定を上書きします。コンポーネント自身の <code>motion</code> プロパティはその両方より優先されます。<code>version: 1</code> は形式を示すもので、保存したスタイルが今後のリリースでも使えるようにします。",
-    "vAnimateTitle": "独自の要素：v-animate",
+    "appWideIntro": "<code>ConfigProvider</code> にスタイルを渡すと、モーションを一度で設定できます。<code>overlay</code> や <code>list</code> などのロールキーは、その種類のすべてのコンポーネントに適用されます。<code>dialog</code> や <code>toaster</code> などのコンポーネントキーは、ロールの設定を上書きします。コンポーネント自身の <code>motion</code> prop はその両方より優先されます。<code>version: 1</code> は形式を示すもので、保存したスタイルが今後のリリースでも使えるようにします。",
+    "vAnimateTitle": "v-animate で独自の要素をアニメーションする",
     "vAnimateIntro": "<code>v-animate</code> ディレクティブを使うと、自分の要素にも同じモーションを付けられます。<code>v-animate=\"{'{'} initial: {'{'} opacity: 0, y: 8 {'}'} {'}'}\"</code> は要素のマウント時に再生されます。アンマウント時は、来た方向へ少し控えめに、少し速く戻っていきます。",
     "vAnimateNamed": "コンポーネントの中では名前を付けます。<code>v-animate:rows</code> は、そのコンポーネントのモーションに <code>rows</code> という名前のターゲットとして加わります。要素はパネルと一緒に現れ、一緒に去ります。値は要素に直接書くか、コンポーネントの <code>motion</code> の <code>targets.rows</code> に書きます。",
     "exposedTitle": "公開された要素",
-    "exposedIntro": "あるパーツを完全に制御したいときは、<code>:motion=\"false\"</code> を指定し、コンポーネントにテンプレート ref を付けて、実際の DOM 要素をアニメーションさせます。ルートは <code>el</code>、パーツは <code>checkEl</code> や <code>thumbEl</code> などです。各コンポーネントの Exposed の表に一覧があります。",
-    "exposedExampleIntro": "この例では、ボックスにチェックを入れるたびに GSAP でチェックマークが現れます。"
+    "exposedIntro": "あるパーツを完全に制御したいときは、<code>:motion=\"false\"</code> を指定し、コンポーネントにテンプレート ref を付けて、その DOM 要素をアニメーションさせます。ルートは <code>el</code>、パーツは <code>checkEl</code> や <code>thumbEl</code> などです。各コンポーネントの Exposed の表に一覧があります。",
+    "exposedExampleIntro": "この例では、ボックスにチェックを入れるたびに GSAP でチェックマークが現れます:"
   },
   "component": {
     "code": "コード",
     "hideCode": "コードを隠す",
-    "copied": "コピーしました！",
+    "copied": "コピーしました",
     "copy": "コピー",
     "events": "イベント",
     "examples": "例",
     "exposed": "露出",
     "install": "インストール",
     "noEvents": "イベントはありません。",
-    "noExposed": "テンプレート参照を介して公開されるものは何もありません。",
+    "noExposed": "テンプレート参照から公開されるものはありません。",
     "noProps": "小道具はありません。",
     "noSlots": "スロットはありません。",
     "notFound": "コンポーネント「{name}」が見つかりません。",
@@ -64,7 +64,7 @@
     "slots": "スロット",
     "vapor": "Vapor",
     "vaporUnavailable": "このコンポーネントの Vapor デモはまだありません",
-    "vdom": "Vue DOM",
+    "vdom": "VDOM",
     "onThisPage": "このページの内容",
     "headless": "ヘッドレスコンポーザブル",
     "motion": "モーション",
@@ -73,126 +73,126 @@
     "moreExamples": "その他の例"
   },
   "descriptions": {
-    "Accordion": "折りたたみ可能なセクションのスタック。1 つを開くと他のセクションを閉じることができます。",
+    "Accordion": "折りたたみ可能なセクションのスタック。1 つを開くとほかを閉じることもできます。FAQ や、セクションに分けた長いコンテンツに使います。",
     "AccordionItem": "Accordion 内の折りたたみ可能な 1 セクション。必ず Accordion の中で使います。",
-    "Avatar": "人物や対象を表す、円形または四角形の画像やイニシャル。",
-    "Badge": "別の要素の隅に重ねられる小さなドット、カウント、またはラベル。",
-    "BottomSheet": "タッチ向けレイアウト用の、下端からスライドアップするパネル。",
-    "Button": "バリアント、サイズ、読み込み状態、アイコン スロットが組み込まれたクリック可能なアクション。",
-    "Calendar": "単一の日付または日付範囲を選ぶための月グリッド。",
-    "Card": "関連コンテンツをグループ化するための境界線付きのコンテナー。オプションのタイトルとアクションが含まれます。",
-    "CascadeSelect": "ネストされたオプションのパスを一度に 1 レベルずつ選択するためのドロップダウン。",
-    "Checkbox": "単一の「はい/いいえ」の選択に使うチェックボックス。不定状態にも対応します。",
-    "Chip": "選択したフィルター、タグ、または複数選択値の取り外し可能なコンパクトなトークン。",
-    "Collapsible": "補足的・副次的なコンテンツを表示/非表示にする単一のセクション。",
-    "Column": "DataTable の 1 列を定義します。必ず DataTable の中で使います。",
-    "Combobox": "フリー テキストも受け入れる検索可能なドロップダウンであるため、オートコンプリートとタグ付けは 1 つのコンポーネントです。",
-    "ConfigProvider": "アプリをラップし、内側のすべてのコンポーネントにテーマ、i18n、クラスのマージを提供します。",
-    "ContextMenu": "右クリックするとポインターで開くメニューで、ネイティブ ブラウザー メニューを置き換えます。",
-    "Tour": "要素を 1 つずつハイライトし、その横にコールアウトを表示するガイド付きウォークスルー。オンボーディングや製品ツアーに。",
-    "DataTable": "並べ替え、選択、列のリサイズ、仮想化に対応したデータグリッド。Column コンポーネントで構成します。",
-    "DatePicker": "日付または範囲を選択するためのカレンダー ポップオーバーと組み合わせられたテキスト フィールド。",
-    "Dial": "ボリュームノブと同様に、数値を選択するための円形のドラッグコントロール。",
-    "Dialog": "応答するか閉じるまでページ操作をブロックするモーダルオーバーレイ。",
-    "Dock": "ポインターが近づくと拡大する macOS スタイルのアイコンの行。",
-    "Drawer": "ナビゲーションまたはサイド コンテンツ用にビューポートの端からスライドインするパネル。",
-    "Field": "フォーム コントロールをラベル、ヘルプ テキスト、エラー メッセージでラップし、結び付けます。",
-    "FileUpload": "ファイルを選ぶためのドロップゾーンとファイルリスト。バリデーション付き。",
-    "Input": "サイズ、状態、アイコンまたはヒントのスロットを含む単一行のテキスト フィールド。",
-    "InputNumber": "増減コントロールとフォーマットを考慮した解析を備えた数値フィールド。",
-    "Kbd": "物理キーのように見えるようにキーボード ショートカットのスタイルを設定します。",
-    "AnimatedNumber": "変化した桁が新しい値まで回転する数値を、任意のロケールの書式で表示します。",
-    "AnimatedText": "短いフェードと持ち上げで次のテキストに切り替え、幅も滑らかに合わせます。",
-    "Knob": "固定円弧内の数値を選択するための回転コントロール。",
-    "Loader": "処理が進行中であることを示す小さなスピナー。",
-    "Menu": "フルキーボードナビゲーションを備えた、トリガーから開かれるアクションのドロップダウンリスト。",
-    "MenuList": "Menu の行をドロップダウンではなくページの流れの中に描画します。常設のサイドバーナビゲーション向け。",
-    "Message": "ステータス テキストのインライン バナー: 情報、成功、警告、またはエラー。",
-    "OtpInput": "ワンタイム コード用の 1 文字ボックスの行。貼り付けと自動送りが可能。",
-    "Editable": "クリックすると入力欄に変わり、Enter またはフォーカスを外すと保存されるテキスト。その場で名前を変更するために。",
-    "ColorPicker": "カラーピッカーを開く色見本。彩度と明度の平面、色相スライダー、16 進数フィールド、ブラウザが対応していればスポイト、任意のプリセット。",
-    "Pagination": "長いリストまたは表を複数のページに分割するためのページ番号コントロール。",
-    "Popover": "メニュー、フォーム、または追加の詳細用に、トリガー要素に固定されたフローティング パネル。",
-    "Progress": "タスクの進行状況、または全体に対する積み上げ割合を示すプログレスバー。確定・不確定の両状態と任意の凡例に対応。",
-    "PullToRefresh": "スクロール コンテナの上部にあるプルダウン ジェスチャで、更新をトリガーします。",
-    "Radio": "相互排他的なセットの中の 1 つの選択肢。必ず RadioGroup の中で使います。",
-    "RadioGroup": "一度に 1 つだけ選択できるように、複数の Radio ボタンをまとめます。",
-    "Resizable": "パネルのサイズを最小値と最大値の間で変更するドラッグハンドル。",
-    "Select": "リストから 1 つ以上の値を選ぶドロップダウン。絞り込みと仮想化に対応。",
-    "SelectButton": "短いリストから 1 つ以上の値を選ぶためのセグメントコントロール。",
-    "Separator": "コンテンツをグループに分ける細い線。ラベルも付けられます。",
-    "Skeleton": "読み込み中のコンテンツの代わりに表示されるプレースホルダー。",
-    "Slider": "トラックに沿ってハンドル (範囲の場合は 2 つ) をドラッグして、数値を選択します。",
-    "SpeedDial": "オンデマンドで二次アクションを展開するフローティング アクション ボタン。",
-    "SplitButton": "ドロップダウンで代替アクションを開く山形マークと融合したプライマリ アクション。",
-    "SwipeToReveal": "アイテムをスワイプすると、ネイティブ モバイル リストの行のように、その下のアクションが表示されます。",
-    "Switch": "物理スイッチのようなスタイルのオン/オフ切り替えにより、設定を即時に反映します。",
-    "Tabs": "アクティブなタブの下にスライド インジケーターが表示され、コンテンツのパネルが切り替わります。",
-    "Tag": "項目をインラインで分類したり注釈を付けたりするためのコンパクトなラベル。",
-    "Textarea": "コンテンツに応じて自動拡張できる複数行のテキスト フィールド。",
-    "Toaster": "toast() が作成した通知を描画します。アプリ内のどこかに一度だけマウントしてください。",
-    "Toolbar": "関連するアクションをグループ化するための水平ストリップ。キーボード フォーカスが移動します。",
-    "Tooltip": "要素を説明するためにホバーまたはフォーカスすると表示される小さな浮動ラベル。",
-    "Tree": "階層データを表示する、折りたたみ可能なインデント付きリスト。単一選択と複数選択に対応。",
-    "TreeSelect": "パネルがツリーであるドロップダウン。階層から 1 つ以上のノードを選択します。",
-    "PasswordInput": "表示トグルと要件のヒントを備えたパスワード フィールド。",
-    "Sortable": "ドラッグで並べ替えられるリスト。ポインターだけでなくキーボードでも操作できます。",
-    "BreadcrumbItem": "Breadcrumb 内のリンク、または現在のページを表す項目です。",
-    "BreadcrumbSeparator": "2 つの BreadcrumbItem の間の区切り。独自のコンテンツを渡さない限りシェブロンを表示します。",
-    "Rating": "クリック、ドラッグ、または矢印キーで星の列から値を選びます。半分の星にも対応できます。",
-    "Timeline": "線でつながった手順の順序付きリストです。各手順には任意のコンテンツを入れられます。",
-    "ButtonGroup": "ボタンを1つの行または列につなげ、単一または複数選択のトグルにもできます。",
-    "CommandPalette": "ダイアログ内で検索できるコマンド一覧。ボタンや ⌘K などのショートカットで開きます。",
-    "Stepper": "一連のステップの進み具合を示し、ステップ間を移動できます。",
-    "Breadcrumb": "サイトの最上位から現在のページまでのリンクの道筋です。",
-    "AvatarGroup": "複数のアバターを重ねて1行に並べ、収まらない分は数で表示します。",
-    "ScrollArea": "テーマに合わせた細いスクロールバーと端のフェードを備えたスクロール領域。縦横どちらにも対応します。"
+    "Avatar": "人物や対象を表す、円形または四角形の画像やイニシャル。リスト、コメント、ヘッダーの名前の横に使います。",
+    "Badge": "ステータスや新着を示す小さなドット、カウント、ラベル。Button や Avatar の badge スロットに入れると隅に固定されます。",
+    "BottomSheet": "下端からスライドアップし、設定した高さにスナップするパネル。上下にドラッグしたり払いのけたりするタッチ画面で使います。",
+    "Button": "バリアント、サイズ、アイコン、読み込み状態を備えたアクション用のボタン。あらゆるアクションに使い、破壊的なアクションで長押しの確認が必要なときは hold を追加します。",
+    "Calendar": "単一の日付または日付範囲を選ぶための月グリッド。カレンダーをページ上に表示したままにしたいときに使います。",
+    "Card": "関連コンテンツをまとめる枠線付きのコンテナー。タイトルとアクションを任意で付けられます。概要、設定、詳細へのリンクに使います。",
+    "CascadeSelect": "ネストされた選択肢から、1 レベルずつパスを選ぶドロップダウン。より小さな単位に分かれるカテゴリーや場所に使います。",
+    "Checkbox": "1 つの「はい/いいえ」の選択に使うボックス。不定状態にも対応します。各選択肢がほかと独立しているときに使います。",
+    "Chip": "選択したフィルター、タグ、値を示すコンパクトなトークン。削除可能にもできます。取り消せる選択を表示するのに使います。",
+    "Collapsible": "コンテンツを表示/非表示にする単一のセクション。任意のコンテンツや副次的なコンテンツに使います。",
+    "Column": "DataTable の 1 列。必ず DataTable の中で使います。",
+    "Combobox": "フリーテキストも受け付ける検索可能なドロップダウン。オートコンプリートや、入力しながら作るタグに使います。",
+    "ConfigProvider": "内側のすべてのコンポーネントのテーマ、サイズ、言語、クラスのマージ、モーションを設定するラッパー。アプリのルートで使い、一度で設定します。",
+    "ContextMenu": "右クリック、またはタッチ画面での長押しでポインターの位置に開くメニュー。ポインターの下にある項目へのアクションに使います。",
+    "Tour": "要素を 1 つずつハイライトし、その横にコールアウトを表示するガイド付きウォークスルー。オンボーディングや製品ツアーに使います。",
+    "DataTable": "並べ替え、選択、列のリサイズ、仮想化に対応したデータグリッド。Column コンポーネントで構成します。並べ替え、選択、比較するレコードに使います。",
+    "DatePicker": "日付、範囲、時刻を選ぶカレンダーポップオーバー付きのテキストフィールド。日付を入力したり選んだりするフォームで使います。",
+    "Dial": "回して数値を変えるホイール。min や max を設定しない限り終端はありません。上限のない値や細かい調整に使います。",
+    "Dialog": "応答するか閉じるまで待つ、ページの上のモーダルウィンドウ。先に答えが必要なタスクや判断に使います。",
+    "Dock": "ポインターや指が上を動くと拡大する macOS スタイルのアイコンの行。アプリ風のナビゲーションやランチャーに使います。",
+    "Drawer": "画面の端からスライドインするパネル。ページの横に置くナビゲーション、フィルター、詳細に使います。",
+    "Field": "ラベル、ヘルプテキスト、エラーメッセージをフォームコントロールに結び付けるラッパー。id や ARIA 属性を自分で配線せずにコントロールにラベルを付けるのに使います。",
+    "FileUpload": "ファイルを選ぶためのドロップゾーンとファイルリスト。バリデーション付き。フォームの添付ファイルやアップロードに使います。",
+    "Input": "サイズ、状態、アイコンやボタン用の start・end スロットを備えた単一行のテキストフィールド。名前、メールアドレス、検索などの短いテキストに使います。",
+    "InputNumber": "増減ボタンと、ロケールに応じた書式化・解析を備えた数値フィールド。数量、価格、割合に使います。",
+    "Kbd": "物理キーのようなスタイルのキーボードのキーやショートカット。ヒントやヘルプテキストで使います。",
+    "AnimatedNumber": "変化した桁が新しい値まで回転する数値。任意のロケールの書式で表示します。画面上で変わるカウンター、価格、統計に使います。",
+    "AnimatedText": "短いフェードと持ち上げで次のテキストに切り替わり、幅も滑らかに変わるので横の要素が跳ねません。その場で変わるラベルやステータスに使います。",
+    "Knob": "固定された円弧の中で数値を設定する回転コントロール。音量やレベルなど、範囲のある値に使います。",
+    "Loader": "5 種類のスタイルを持ち、周囲のテキストに合わせたサイズになる小さなスピナー。処理が進行中であることを示すのに使います。",
+    "Menu": "トリガーから開く、フルキーボードナビゲーションを備えたアクションのドロップダウンリスト。1 つのボタンの裏にまとめたアクションに使います。",
+    "MenuList": "Menu の行をドロップダウンではなくページ内に描画したもの。画面に常に表示するサイドバーや設定のナビゲーションに使います。",
+    "Message": "ステータステキスト（情報、成功、警告、エラー）用のインラインバナー。ページ内に残しておく通知に使います。",
+    "OtpInput": "ワンタイムコード用の 1 文字ボックスの行。貼り付けと自動送りに対応します。サインインや認証コードに使います。",
+    "Editable": "クリックすると入力欄に変わり、Enter またはフォーカスを外すと保存されるテキスト。その場で名前を変更するのに使います。",
+    "ColorPicker": "ピッカーを開く色見本。彩度と明度の平面、色相スライダー、16 進数フィールド、任意のプリセット、対応環境ではスポイトを備えます。限られた色ではなく、任意の色を選べるときに使います。",
+    "Pagination": "長いリストや表を複数のページに分けるページ番号コントロール。特定のページに移動する必要があるときに使います。",
+    "Popover": "トリガー要素に固定されたフローティングパネル。短いフォーム、ピッカー、追加の詳細に使います。",
+    "Progress": "タスクの進捗（確定・不確定）、または凡例付きで全体に対する積み上げ割合を示すバーまたはリング。アップロード、長いタスク、ストレージの内訳に使います。",
+    "PullToRefresh": "スクロールコンテナーの上部で引き下げると更新が始まるジェスチャー。タッチ画面のフィードやリストに使います。",
+    "Radio": "1 つだけ選べるセットの中の 1 つの選択肢。必ず RadioGroup の中で使います。",
+    "RadioGroup": "一度に 1 つだけ選べる Radio の選択肢のグループ。すべて表示しておきたい短い選択肢のリストに使います。",
+    "Resizable": "パネルのサイズを最小値と最大値の間で変更するドラッグハンドル。サイドバーや分割ビューに使います。",
+    "Select": "リストから 1 つ以上の値を選ぶドロップダウン。絞り込みと仮想化に対応。ラジオや SelectButton には長すぎるリストに使います。",
+    "SelectButton": "短いリストから 1 つ以上の値を選ぶセグメントコントロール。すべての選択肢が 1 行に収まるときに、ラジオやチェックボックスの代わりに使います。",
+    "Separator": "コンテンツをグループに分ける細い線。ラベルも付けられます。セクションの間や、2 つの選択肢の間に「または」などのラベルを付けて使います。",
+    "Skeleton": "読み込み中のコンテンツの代わりに表示されるプレースホルダーの形。データが届く前にレイアウトがわかっているときに使います。",
+    "Slider": "値には 1 つ、範囲には 2 つのつまみを持つトラック。ドラッグで数値を選ぶのに使います。",
+    "SpeedDial": "二次アクションを扇状に展開するフローティングアクションボタン。画面にメインのボタンが 1 つと、いくつかの関連アクションがあるときに使います。",
+    "SplitButton": "メインのアクションと、関連アクションのドロップダウンを開く山形マークを結合したもの。いつもの選択肢が 1 つあり、その横にいくつかのアクションを置きたいときに使います。",
+    "SwipeToReveal": "ネイティブのモバイルリストの行のように、スワイプすると下のアクションが現れる行。タッチ画面でのアーカイブや削除などのアクションに使います。",
+    "Switch": "物理スイッチのようなオン/オフの切り替え。すぐに反映される設定に使います。",
+    "Tabs": "パネルを切り替えるタブの行。アクティブなタブの下にスライドするインジケーターがあります。関連するコンテンツを 1 ページ内のビューに分けるのに使います。",
+    "Tag": "項目をインラインで分類したり注釈を付けたりするコンパクトなラベル。ステータス、カテゴリー、キーワードに使います。",
+    "Textarea": "内容に応じて広がる複数行のテキストフィールド。コメント、メモなどの長いテキストに使います。",
+    "Toaster": "toast() が作成した通知を表示するコンテナー。アプリ内のどこかに一度だけマウントしてください。",
+    "Toolbar": "関連するコントロールを並べた帯。矢印キーでフォーカスが移動し、収まらないものはオーバーフローメニューに入ります。1 つのビューやエディターのアクションをまとめるのに使います。",
+    "Tooltip": "ホバーまたはフォーカスで表示される短いラベル。アイコンボタンに名前を付けたり、コントロールを説明したりするのに使います。",
+    "Tree": "階層データを表示する、折りたたみ可能なインデント付きリスト。単一選択と複数選択に対応。ファイルエクスプローラーやネストしたナビゲーションに使います。",
+    "TreeSelect": "パネルに Tree を持つドロップダウン。階層から 1 つ以上のノードを選びます。フォームの欄で階層データから値を選ぶときに使います。",
+    "PasswordInput": "表示ボタンと要件のヒントを備えたパスワードフィールド。サインアップやサインインのフォームで使います。",
+    "Sortable": "ドラッグまたはキーボードで並べ替えられるリスト。1 つのリスト内でも複数のリスト間でも、手で決める順序に使います。",
+    "BreadcrumbItem": "Breadcrumb 内の 1 つのリンク、または現在のページ。必ず Breadcrumb の中で使います。",
+    "BreadcrumbSeparator": "2 つの BreadcrumbItem の間の区切り。独自のコンテンツを渡さない限りシェブロンを表示します。必ず Breadcrumb の中で使います。",
+    "Rating": "クリック、ドラッグ、矢印キーで設定する星の列。半分の星にも対応できます。レビューやフィードバックに使います。",
+    "Timeline": "線でつながった手順の順序付きリスト。各手順には任意のコンテンツを入れられます。履歴、注文の進捗、変更履歴に使います。",
+    "ButtonGroup": "ボタンをつなげた行または列。単一または複数選択のトグルとしても使えます。関連するアクションや、まとまった選択肢に使います。",
+    "CommandPalette": "ダイアログ内で検索できるコマンドのリスト。ボタンや ⌘K などのキーボードショートカットで開きます。キーボードから任意のアクションやページに移動できるようにするのに使います。",
+    "Stepper": "進み具合を示し、ステップ間を移動できる一連のステップ。購入手続き、サインアップの流れ、セットアップウィザードに使います。",
+    "Breadcrumb": "サイトの最上位から現在のページまでのリンクの道筋。階層の深いページで使います。",
+    "AvatarGroup": "複数のアバターを重ねて 1 行に並べ、収まらない分は数で表示します。チーム、チャット、ドキュメントのメンバーを示すのに使います。",
+    "ScrollArea": "テーマに合わせた細いスクロールバーと端のフェードを備えたスクロール領域。縦横どちらにも対応します。ページ内でスクロールするパネルやリストに使います。"
   },
   "gettingStarted": {
-    "darkModeIntro": "ダークモードは CSS のみで実装されています。<code>&lt;html data-theme=\"dark\"&gt;</code> に従い、指定がなければ <code>prefers-color-scheme</code> にフォールバックします。vael-ui は切り替え UI を提供しません。<code>useColorScheme()</code> は OS 設定の変更を追跡し、渡した <code>persist</code> オプションを通じて選択を保存します。",
-    "appearanceHeadIntro": "カラーモードやアプリ全体のフォントサイズを <code>localStorage</code> に保存する場合は、このスクリプトをアプリのコードより前にある HTML の <code>&lt;head&gt;</code> に置きます。両方を初回表示前に復元します。<code>13px</code> や <code>1rem</code> などの CSS 値を <code>app-font-size</code> に保存してください。<code>theme.fontSize</code> を指定しない限り、コンポーネントはその値を継承します。",
+    "darkModeIntro": "ダークモードは CSS のみで実装されています。<code>&lt;html data-theme=\"dark\"&gt;</code> に従い、指定がなければ <code>prefers-color-scheme</code> にフォールバックします。vael-ui は切り替え UI を提供しませんが、<code>useColorScheme()</code> は OS 設定の変更を追跡し、渡した <code>persist</code> オプションを通じて選択を保存します:",
+    "appearanceHeadIntro": "カラーモードやアプリ全体のフォントサイズを <code>localStorage</code> に保存する場合は、このスクリプトを HTML の <code>&lt;head&gt;</code> の、アプリのバンドルより前に置きます。両方を初回表示前に復元します。<code>13px</code> や <code>1rem</code> などの CSS フォントサイズを <code>app-font-size</code> に保存してください。スコープ付きの <code>theme.fontSize</code> を指定しない限り、コンポーネントはその値を継承します。",
     "darkModeTitle": "ダークモード",
-    "directivesIntro": "<code>v-tooltip</code> と <code>v-scroll-mask</code> は、デフォルトではグローバル登録されていません。どちらかを複数のコンポーネントで使う場合は、一度だけ登録してください。",
+    "directivesIntro": "<code>v-tooltip</code> と <code>v-scroll-mask</code> は、デフォルトではグローバル登録されていません。どちらかを複数のコンポーネントで使う場合は、一度だけ登録してください:",
     "directivesNote": "<code>v-tooltip</code> を使うには、アプリに <code>&lt;TooltipHost /&gt;</code> を 1 つマウントしておく必要もあります。Vapor アプリでは、両方のディレクティブを <code>vael-ui/vapor</code> からインポートしてください。",
     "ssrTitle": "サーバーレンダリング",
     "ssrIntro": "どちらのビルドもサーバーでレンダリングでき、ブラウザでハイドレートされます。{link}を使えば、以下の設定はすべて自動で行われます。",
     "ssrIntroLink": "Nuxt モジュール",
-    "ssrNoExternal": "素の Vite SSR では、vael-ui をサーバー用にバンドルするよう Vite に指定します。各コンポーネントは自分の CSS をインポートしますが、Node は CSS ファイルを単体で読み込めません:",
+    "ssrNoExternal": "素の Vite のサーバーレンダリングでは、vael-ui をサーバー用にバンドルするよう Vite に指定します。各コンポーネントは自分の CSS をインポートしますが、Node は CSS ファイルを単体で読み込めません:",
     "ssrTeleports": "ダイアログ、ポップオーバー、トースト、ツールチップは <code>&lt;Teleport&gt;</code> で <code>&lt;body&gt;</code> にレンダリングされます。Vue はその HTML を <code>ctx.teleports</code> に分けて返すので、<code>&lt;body&gt;</code> の先頭、アプリの要素より前に追加してください。追加しないと正しくハイドレートされません:",
     "ssrLocale": "サーバーでレンダリングするときは <code>ConfigProvider</code> に <code>locale</code> を設定してください。設定しないと、日付、数値、週の始まりの曜日がサーバーの言語に従い、ブラウザで動き始めたときに変わります。",
     "directivesTitle": "指令",
     "installIntro": "vael-ui は npm で公開されています。お使いのパッケージマネージャーでインストールしてください。",
     "installTitle": "インストール",
-    "intro": "完全な Vue Vapor ビルドを備えた Vue 3 コンポーネントライブラリです。アニメーションはデフォルトでプレーンな CSS を使いますが、好きなアニメーションライブラリを使うこともできます。",
+    "intro": "vael-ui は、完全な Vue Vapor ビルドを備えた Vue 3 コンポーネントライブラリです。すべてのコンポーネントは 1 つのモーションシステムでアニメーションし、任意のパーツを自分のライブラリでアニメーションすることもできます。",
     "title": "はじめに",
     "usageImportNote": "各コンポーネントは自身のスタイルをインポートします。このインポートが必要なのは、0.2.0 より前のバージョンを使っている場合か、すべてのスタイルを一度に読み込みたい場合だけです。ベーススタイルの設定については {link} を参照してください。",
     "usageImportNoteLink": "スタイリング層とカスケード層",
-    "usageImportNoteTitle": "0.2.0 より前のみ必要",
-    "usageIntro": "次に、従来の VDOM ビルドでは <code>'vael-ui'</code> からコンポーネントをインポートします。Vapor ビルド（仮想 DOM を使わない Vue 3.6 のモード）では <code>'vael-ui/vapor'</code> からインポートします。props はどちらも同じです。",
+    "usageImportNoteTitle": "0.2.0 より前のみ",
+    "usageIntro": "VDOM ビルドでは <code>'vael-ui'</code> からコンポーネントをインポートします。Vapor ビルド（仮想 DOM を使わない Vue 3.6 のモード）では <code>'vael-ui/vapor'</code> からインポートします。props はどちらも同じです:",
     "fontIntro": "コンポーネントは周囲のページのフォントを使い、独自のフォントは持ちません。指定がないとブラウザ既定のセリフ体になるので、<code>body</code> にフォントを設定してください:",
     "usageTitle": "使用法",
-    "vaporIntro": "どちらのビルドも同じパッケージ・同じソースから提供され、props も同じです。アプリで使っている方を選んでください。各コンポーネントページにも、両者を比較できる切り替えがあります。",
+    "vaporIntro": "どちらのビルドも同じパッケージ・同じソースから提供され、props も同じです。アプリで使っている方を選んでください。各コンポーネントページに、両者を比較できる切り替えがあります。",
     "vaporPinIntro": "Vapor ビルドには Vue 3.6 が必要ですが、まだプレリリースです。vael-ui のビルドに使われた正確なバージョン <code>{version}</code> をインストールしてください。<code>^3.5.0</code> のような範囲指定では Vapor モードのない Vue 3.5 が入ることがあり、別のプレリリースではコンパイル済みコンポーネントが壊れることがあります:",
     "vaporAppIntro": "Vapor アプリは <code>createVaporApp</code> で始め、コンポーネント・コンポーザブル・ディレクティブを <code>'vael-ui/vapor'</code> からインポートします。自分のコンポーネントは <code>&lt;script setup vapor&gt;</code> で Vapor にします:",
     "vaporForceIntro": "すべてのファイルに <code>vapor</code> 属性を書かずに済ませるには、<code>{'@'}vitejs/plugin-vue</code> 6.0.8 以降で <code>features.vapor</code> を有効にします。アプリ内のすべての <code>&lt;script setup&gt;</code> コンポーネントが Vapor としてコンパイルされます:",
     "vaporMixTitle": "両方のビルドを併用する",
-    "vaporMixIntro": "従来のアプリの中で Vapor コンポーネントを使うこともできます。既存のアプリを少しずつ Vapor に移すときに役立ちます。<code>createApp</code> はそのままにして Vue の <code>vaporInteropPlugin</code> を登録し、<code>vapor</code> を付けたコンポーネントでは <code>'vael-ui/vapor'</code> からインポートします。新しいアプリでは、どちらか一方のビルドを選んでください。<code>vapor</code> を付けたコンポーネントでは、<code>vTooltip</code> などのディレクティブも <code>'vael-ui/vapor'</code> から直接インポートします。<code>app.directive</code> で登録したディレクティブはクラシックなコンポーネントにしか届かないためです。",
+    "vaporMixIntro": "VDOM アプリの中で Vapor コンポーネントを使うこともできるので、既存のアプリを少しずつ Vapor に移せます。<code>createApp</code> はそのままにして Vue の <code>vaporInteropPlugin</code> を登録し、<code>vapor</code> を付けたコンポーネントでは <code>'vael-ui/vapor'</code> からインポートします。新しいアプリでは、どちらか一方のビルドを選んでください。<code>vapor</code> を付けたコンポーネントでは、<code>vTooltip</code> などのディレクティブも <code>'vael-ui/vapor'</code> からインポートします。<code>app.directive</code> で登録したディレクティブは VDOM コンポーネントにしか届かないためです。",
     "vaporTitle": "Vue Vapor のサポート"
   },
   "globalSetup": {
-    "allTogetherIntro": "アプリのルートテンプレートに、4 つすべてを一度だけマウントします。",
+    "allTogetherIntro": "アプリのルートテンプレートに、4 つすべてを一度だけマウントします:",
     "allTogetherTitle": "みんなで一緒に",
-    "dialogHostIntro": "<code>openDialog()</code> や <code>confirmAction()</code> によってコードから開かれたダイアログを描画します。自分のテンプレート内の <code>&lt;Dialog v-model:open&gt;</code> には不要です。props や設定はありません。",
+    "dialogHostIntro": "<code>openDialog()</code> や <code>confirmAction()</code> でコードから開いたダイアログを描画します。自分のテンプレート内の <code>&lt;Dialog v-model:open&gt;</code> には不要です。props や設定はありません。",
     "dialogHostTitle": "ダイアログホスト",
-    "intro": "vael-ui には 4 つのシングルトンがあります。それぞれをアプリ内のどこかに一度だけマウントすれば、必要とするコンポーネントが自動的に見つけます。",
+    "intro": "vael-ui には 4 つのシングルトンがあります。アプリ内のどこかに一度だけマウントすれば、他のすべてのコンポーネントが使えるコンポーネントです。",
     "title": "グローバルセットアップ",
     "toasterIntro": "{code} が作成したトーストを描画します。独自の props があるため、{link} で解説しています。",
     "toasterIntroLink": "自分のページ",
     "toasterTitle": "トースター",
-    "tooltipHostIntro": "すべての <code>v-tooltip</code> を描画します。マウントされていないと、ツールチップは表示されず、エラーも出ません。",
+    "tooltipHostIntro": "すべての <code>v-tooltip</code> を描画します。マウントされていないとツールチップは表示されず、理由を示すエラーも出ません。",
     "tooltipHostOptions": "各ツールチップで上書きできるものと同じオプションを受け取ります。",
     "tooltipHostTitle": "ツールチップホスト",
-    "popoverHostIntro": "<code>openPopover()</code>、または <code>surface: 'popover'</code> を指定した <code>confirmAction()</code> によってコードから開かれたポップオーバーを描画します。自分のテンプレート内の <code>&lt;Popover v-model:open&gt;</code> には不要です。props や設定はありません。",
+    "popoverHostIntro": "<code>openPopover()</code>、または <code>surface: 'popover'</code> を指定した <code>confirmAction()</code> でコードから開いたポップオーバーを描画します。自分のテンプレート内の <code>&lt;Popover v-model:open&gt;</code> には不要です。props や設定はありません。",
     "popoverHostTitle": "ポップオーバーホスト"
   },
   "header": {
@@ -207,7 +207,7 @@
     "sizeSm": "小",
     "sizeMd": "中",
     "sizeLg": "大",
-    "animations": "アニメーション",
+    "animations": "モーション",
     "loader": "ローダー",
     "loaderRing": "リング",
     "loaderDots": "ドット",
@@ -229,31 +229,31 @@
     "fontSize": "文字サイズ"
   },
   "home": {
-    "tagline": "Vue 3 向けの 60 以上のコンポーネント。1 つのソースから従来の VDOM ビルドと Vue Vapor の両方にコンパイルされます。",
+    "tagline": "Vue 3 向けの 60 以上のコンポーネント。モーションシステムを 1 つ内蔵しています。1 つのソースから VDOM ビルドと Vue Vapor の両方にコンパイルされます。",
     "browseComponents": "コンポーネントを参照する",
     "eyebrow": "Vue 3 コンポーネント ライブラリ",
-    "featureAnimationBody": "デフォルトではプレーン CSS を使用するか、GSAP または motion-v を使用して自分で実行します。",
-    "featureAnimationTitle": "独自のアニメーションを持ち込む",
+    "featureAnimationBody": "すべてのコンポーネントが独自のモーションを備えています。motion prop とスプリングで調整するか、GSAP や motion で任意のパーツをアニメーションできます。",
+    "featureAnimationTitle": "1 つのモーションシステム",
     "featureI18nBody": "すべての組み込み文字列は、独自の i18n インスタンスを通じて変換されます。",
-    "featureI18nTitle": "i18n内蔵",
-    "featurePrimitivesBody": "複合コンポーネントが乱立することも、隠れたコンテキストを配線する必要もありません。",
+    "featureI18nTitle": "翻訳を内蔵",
+    "featurePrimitivesBody": "組み立てる複合コンポーネントも、配線する隠れたコンテキストもありません。",
     "featurePrimitivesTitle": "プリミティブごとに 1 つのコンポーネント",
-    "featureSsrBody": "各コンポーネントは window や document に触れる前に、実際のブラウザ環境かどうかを確認します。そのため Nuxt、サーバーサイドレンダリングのアプリ、静的サイトジェネレーターでも安全に描画できます。このドキュメントサイトも、同じコンポーネントを使って Vite SSG で構築されています。",
-    "featureSsrTitle": "SSR 対応",
-    "featureVaporBody": "すべてのコンポーネントは、同じソースから Vue 3.6 の Vapor モードを通じてコン​​パイルされます。",
+    "featureSsrBody": "各コンポーネントは window や document に触れる前にブラウザかどうかを確認するので、Nuxt、サーバーレンダリングのアプリ、静的サイトジェネレーターでも描画できます。このドキュメントサイトも、同じコンポーネントを使って Vite SSG で構築されています。",
+    "featureSsrTitle": "サーバーレンダリング対応",
+    "featureVaporBody": "すべてのコンポーネントは、同じソースから Vue 3.6 の Vapor モードでコンパイルされます。",
     "featureVaporTitle": "シムではなく本物の Vapor ビルド",
     "headline": "Vapor を中心にコンパイルするのではなく、Vapor に直接コンパイルするコンポーネント。",
-    "featureSkillBody": "Claude Code、GitHub Copilot、Codex などのエージェントに、全コンポーネントの実際の API を教えるコンパニオンパッケージです。手書きではなく、ライブラリ自身の型から生成されています。",
+    "featureSkillBody": "Claude Code、GitHub Copilot、Codex などのエージェントに、全コンポーネントの実際の API を教えるコンパニオンパッケージです。手書きではなく、vael-ui 自身の型から生成されています。",
     "featureSkillTitle": "AI エージェントスキル",
     "themeLabel": "カラーを試す:",
     "newTag": "新着",
-    "newText": "0.5.0: スプリングで開くフォルダー、カラーピッカー、インライン編集",
+    "newText": "0.5.0: 新しいモーションシステム",
     "showcaseLabel": "vael-ui で作ったライブデモ"
   },
   "i18nKeys": {
     "copyIntro": "これをロケールファイルの uiKit キーの下にコピーし、値を翻訳してください。",
     "englishDefault": "英語のデフォルト",
-    "intro": "すべての組み込み文字列（ダイアログの閉じるボタン、トーストの閉じる操作、空の状態など）には英語のデフォルトがあります。翻訳するには、独自の i18n インスタンスを ConfigProvider に渡してください。既存のカタログの uiKit 名前空間から読み取るため、追加でインストールするものはありません。 翻訳していないキーは英語の既定値のままで、コンソールに警告は出ません。",
+    "intro": "すべての組み込み文字列（ダイアログの閉じるボタン、トーストの閉じる操作、空の状態など）には英語のデフォルトがあります。翻訳するには、独自の i18n インスタンスを ConfigProvider に渡してください。既存のカタログの uiKit 名前空間から読み取るため、追加でインストールするものはありません。翻訳していないキーは英語のデフォルトで表示されます。一部のキーだけを翻訳した場合、開発ビルドではロケールごとに 1 回、不足しているキーを列挙した警告が出ます。",
     "key": "鍵",
     "title": "vael-ui の翻訳"
   },
@@ -266,9 +266,9 @@
     "link": "リンク:"
   },
   "nav": {
-    "animationIntegrationGuide": "独自のアニメーションを持ち込む",
+    "animationIntegrationGuide": "モーションのカスタマイズ",
     "components": "コンポーネント",
-    "gettingStarted": "はじめる",
+    "gettingStarted": "はじめに",
     "github": "GitHub",
     "sponsor": "スポンサー",
     "globalSetup": "グローバルセットアップ",
@@ -276,7 +276,7 @@
     "home": "ヴァエル・ウイ",
     "i18nKeysGuide": "vael-ui の翻訳",
     "search": "コンポーネントを検索…",
-    "stylingAndLayersGuide": "スタイリング層とカスケード層",
+    "stylingAndLayersGuide": "スタイリングとカスケードレイヤー",
     "tailwindGuide": "Tailwind との併用",
     "menu": "メニュー",
     "composables": "コンポーザブル",
@@ -294,70 +294,70 @@
     "searchAll": "コンポーネント、Props、ガイドを検索…"
   },
   "pageNotes": {
-    "Resizable": "このサイト独自のサイドバーは Resizable で構築されています。\n右端をドラッグして試してください。",
+    "Resizable": "このサイトのサイドバーは Resizable で構築されています。右端をドラッグして試してください。",
     "ContextMenu": "キーボードでは Shift+F10 またはメニューキーでメニューを開きます。どちらもフォーカス中の要素で contextmenu を発火させるので、包む対象をフォーカス可能にし（tabindex=\"0\"）、アクセシブルな名前を付けてください。",
     "Tree": "行はリアクティブな状態から更新されます。カスタムの #node スロットでは、親から取り込んだ普通の変数ではなく、リアクティブな値（props、ref、computed）を読んでください。",
-    "DataTable": "大きなテーブル：数百行ある場合は virtualize と scroll-height（例：scroll-height=\"400px\"）を追加してください。表示中の行だけを描画するので、並べ替え、選択、スクロールが速いまま保たれます。一度に 150 行より多く表示されているときは、並べ替えで行がスライドして移動する動きも省かれます。"
+    "DataTable": "数百行ある場合は virtualize と scroll-height（例：scroll-height=\"400px\"）を追加してください。表示中の行だけを描画するので、並べ替え、選択、スクロールが速いまま保たれます。描画される行が 150 を超えると、並べ替えで行がスライドして移動する動きも省かれます。"
   },
   "stylingLayers": {
-    "intro": "vael-ui は {layer} で提供されています。レイヤー外の CSS は、詳細度に関係なく常にレイヤー内の CSS に勝ちます。そのため、レイヤーに入れていない素のベースリセットは、警告なしに vael-ui の内部スタイルを上書きしてしまいます。これを防ぐには、ベーススタイルもレイヤーに入れ、そのレイヤーを先頭に並べてください。",
+    "intro": "vael-ui は {layer} で提供されています。レイヤー外の CSS は、詳細度に関係なく常にレイヤー内の CSS に勝ちます。そのため、レイヤーに入れていないベースリセットは、警告なしに vael-ui のスタイルを上書きしてしまいます。これを防ぐには、ベーススタイルもレイヤーに入れ、そのレイヤーを先頭に並べてください。",
     "orderNote": "ここでのインポート順は、レイヤーの位置を決めるだけです。レイヤー外の上書きは、どこで読み込まれても常に優先されます。",
-    "bundlerNoteTitle": "0.2.0 より前のみ必要",
+    "bundlerNoteTitle": "0.2.0 より前のみ",
     "bundlerNote": "各コンポーネントは自身のスタイルをインポートします。下記のインポートが必要なのは、0.2.0 より前のバージョンを使っている場合か、すべてのスタイルを一度に読み込みたい場合だけです。",
-    "overrideNote": "特定のコンポーネントを意図的に上書きする場合（{code} prop や Tailwind ユーティリティを使う場合）は、自分のルールを優先させたいはずです。その CSS はレイヤー外のままにしてください。デフォルトではそうなっています。{link} を参照してください。",
+    "overrideNote": "特定のコンポーネントを意図的に上書きする場合（{code} prop や Tailwind ユーティリティを使う場合）は、自分のルールを優先させたいはずです。その CSS はデフォルトのとおりレイヤー外のままにしてください。{link} を参照してください。",
     "overrideNoteLink": "Tailwind との併用",
     "title": "スタイリング層とカスケード層",
     "cascadeLayersTitle": "レイヤーの順序",
     "colorsTitle": "色",
-    "cssVariablesIntro": "vael-ui のすべての色、角丸、影、モーションの値は CSS カスタムプロパティから来ています。レイヤー外の自分のスタイルシートで、どれでも上書きできます。",
-    "cssVariablesThemeNote": "<code>ConfigProvider</code> の <code>theme</code> は <code>primary</code>、<code>danger</code>、<code>radius</code>、<code>fontSize</code> を設定します。<code>fontSize</code> を指定しない場合、フォーム欄を含むコンポーネントは <code>html</code> のフォントサイズに従います。16px 未満なら、iPhone が欄にズームしないよう <code>preventFocusZoom()</code> を一度呼び出してください。その他の値は CSS で設定します。",
+    "cssVariablesIntro": "vael-ui の色、角丸、影、デフォルトのモーションタイミングは CSS カスタムプロパティから来ています。レイヤー外の自分のスタイルシートで、どれでも上書きできます:",
+    "cssVariablesThemeNote": "<code>ConfigProvider</code> の <code>theme</code> は <code>primary</code>、<code>danger</code>、<code>radius</code>、<code>fontSize</code> を設定します。<code>fontSize</code> を指定しない場合、フォーム欄を含むコンポーネントは <code>html</code> のフォントサイズに従います。16 px 未満なら、iPhone が欄にズームしないよう <code>preventFocusZoom()</code> を一度呼び出してください。その他のトークンは CSS で設定します。",
     "cssVariablesTitle": "CSS変数",
     "default": "デフォルト",
     "description": "説明",
-    "elevationTitle": "標高",
+    "elevationTitle": "エレベーションと重なり",
     "motionTitle": "モーション",
     "rows": {
       "border": "デフォルトの境界線の色。",
       "borderStrong": "境界線の色を強めてエッジを強調します。",
-      "contrastVariant": "この色の上にテキスト/アイコンの色を重ねます。",
-      "danger": "破壊/エラーの色。",
-      "durationDrawer": "ドロワー/シートのスライド遷移の継続時間。",
-      "durationEnter": "開始/開始トランジションの継続時間。",
-      "durationExit": "終了/終了遷移の継続時間。",
+      "contrastVariant": "この色の上に置くテキストとアイコンの色。",
+      "danger": "破壊的な操作とエラーの色。",
+      "durationDrawer": "ドロワーやシートがスライドして開くまでの時間。",
+      "durationEnter": "開く・現れるときの時間。",
+      "durationExit": "閉じる・去るときの時間。",
       "durationIndicator": "リストやメニューのホバーハイライトが次の行へスライドする時間。",
-      "durationIndicatorWide": "幅の広い行 (MenuList、Tree、DataTable) 向けの同じスライド。重い板のように動きます。",
-      "easeIndicator": "ホバーハイライトのイージングカーブ。",
+      "durationIndicatorWide": "MenuList、Tree、DataTable の幅の広い行向けの同じスライド。",
+      "easeIndicator": "ホバーハイライトのイージング。",
       "indicatorBg": "ホバーハイライトの色。行の :hover 背景はハイライトの上に描かれるため、代わりにこれを設定してください。",
-      "durationPress": "押す/タップするフィードバックの持続時間。",
-      "durationToast": "トーストが表示されるときの時間。",
+      "durationPress": "押したときのフィードバックの時間。",
+      "durationToast": "トーストが現れるときの時間。",
       "durationToastExit": "トーストが消えるときの時間。",
-      "durationTooltip": "ツールチップを開くときの時間。",
-      "durationTooltipExit": "ツールチップを閉じるときの時間。",
-      "easeDrawer": "エッジに固定されたスライド (引き出し、シート) のイージング。",
-      "easeInOut": "画面上の移動（サイズ変更、位置変更）を容易にします。",
-      "easeOut": "トランジションの開始/終了のためのデフォルトのイージング。",
-      "easeToast": "トーストトランジションのイージング。",
-      "hoverVariant": "この色のホバー状態。",
+      "durationTooltip": "ツールチップが開くときの時間。",
+      "durationTooltipExit": "ツールチップが閉じるときの時間。",
+      "easeDrawer": "ドロワーやシートなど、端からスライドするときのイージング。",
+      "easeInOut": "サイズ変更や位置変更など、画面上の移動のイージング。",
+      "easeOut": "要素が現れて落ち着くときのデフォルトのイージング。",
+      "easeToast": "トーストのイージング。",
+      "hoverVariant": "この色のホバー時の色。",
       "info": "情報色。",
       "muted": "二次サーフェスの微妙な背景。",
-      "mutedHover": "ミュートされた背景のホバー状態。",
-      "overlay": "モーダルとダイアログの背景色。",
+      "mutedHover": "控えめな背景のホバー時の色。",
+      "overlay": "ダイアログなどのモーダルの背後にある背景の色。",
       "panelShadow": "フローティング パネルのドロップ シャドウ。",
-      "primary": "主要なアクションの色 (ボタン、リンク、フォーカス アクセント)。",
-      "primaryContrast": "原色の上にテキスト/アイコンの色を重ねます。",
-      "primaryHover": "原色のホバー状態。",
-      "radius": "コントロール (ボタン、入力、バッジ) の基本コーナー半径。",
-      "radiusSurface": "大きな面（パネル、カード、テーブル）用の上限付き角丸。角丸を大きく設定しても、ピル型にならないようにします。",
+      "primary": "主要なアクションの色（ボタン、リンク、フォーカスのアクセント）。",
+      "primaryContrast": "primary の上に置くテキストとアイコンの色。",
+      "primaryHover": "primary のホバー時の色。",
+      "radius": "ボタン、入力欄、バッジなどのコントロールの基本の角丸。",
+      "radiusSurface": "パネル、カード、テーブルなどの大きな面の角丸。上限があるので、大きな値でもピル型になりません。",
       "success": "成功の色。",
       "surface": "パネル、カード、ダイアログの基本背景。",
       "text": "主要なテキストの色。",
-      "textMuted": "二次/ミュートされたテキストの色。",
-      "toastOffset": "トースト スタックのエッジ オフセット。",
+      "textMuted": "補助的なテキストの色。",
+      "toastOffset": "画面の端からトーストの重なりまでの距離。",
       "warning": "警告色。",
       "zDialog": "ダイアログの重なり順。",
-      "zPopover": "ポップオーバー、メニュー、選択の重なり順。",
+      "zPopover": "ポップオーバー、メニュー、セレクトの重なり順。",
       "zToast": "トーストの重ね順。",
-      "zTooltip": "ツールチップの重なり順 (一番上)。",
+      "zTooltip": "ツールチップの重なり順（最前面）。",
       "joinFrame": "Field ではなく、独自コントロールの枠線付き要素に付けます。値は任意で sm・md・lg。",
       "joinStart": "セルまたは結合ラベルがコントロールの開始側にあるとき。",
       "joinEnd": "セルまたは結合ラベルがコントロールの終了側にあるとき。",
@@ -371,22 +371,22 @@
     "shapeTitle": "形",
     "variable": "変数",
     "joinTitle": "独自のコントロールを Field に結合する",
-    "joinIntro": "Field の <code>attached</code> ラベルと <code>#prepend</code>/<code>#append</code> のセルは、コントロールの枠線付きフレームに結合します。vael-ui のコントロールはそのフレームに <code>data-ui-frame</code> を付けています。独自のコントロールにも同じ属性を付ければ結合されます。値にコントロールのサイズ（<code>sm</code>・<code>md</code>・<code>lg</code>）を指定すると、セルの角丸とフォントサイズがそれに合わせて変わります。",
-    "joinLayerNote": "Field の結合ルールは {layer} にあります。そのため、コントロール自身のスタイルがレイヤー外にある場合はそちらが優先されます。その場合は、Field がルート要素に付ける属性を使って、角を平らにし、枠線の色を自分で変えてください。",
-    "joinCellNote": "セル内のコントロールには専用の <code>aria-label</code> を付けてください。セル内のコントロールは独立しており、Field のラベルでは名前が付きません。",
+    "joinIntro": "Field の <code>attached</code> ラベルと <code>#prepend</code>・<code>#append</code> のセルは、コントロールの枠線付きフレームに結合します。vael-ui のコントロールはそのフレームに <code>data-ui-frame</code> を付けています。独自のコントロールにも同じ属性を付ければ結合されます。値にコントロールのサイズ（<code>sm</code>・<code>md</code>・<code>lg</code>）を指定すると、セルの角丸とフォントサイズがそれに合わせて変わります。",
+    "joinLayerNote": "Field の結合ルールは {layer} にあるため、コントロール自身のレイヤー外のスタイルがそちらより優先されます。その場合は、Field がルート要素に付ける属性を使って、角を平らにし、枠線の色を自分で変えてください:",
+    "joinCellNote": "セル内のコントロールには専用の <code>aria-label</code> を付けてください。独立しているため、Field のラベルでは名前が付きません。",
     "attributesTitle": "Field の属性",
     "variablesTitle": "Field の変数",
     "attribute": "属性",
     "setWhen": "付与される条件",
     "advancedTitle": "上級",
-    "advancedNote": "通常の利用では必要ありません。vael-ui に組み込める独自のコントロールを作るときのための内容です。"
+    "advancedNote": "ほとんどのアプリでは必要ありません。vael-ui に組み込める独自のコントロールを作るときのための内容です。"
   },
   "tailwind": {
-    "layerNote": "vael-ui は {layer} で提供されています。Tailwind v4 も自身のユーティリティをレイヤーに入れるため、インポート順が重要です。Tailwind のエントリー（下記）より前に vael-ui の CSS をインポートして、そのレイヤーを先に登録してください。すると Tailwind のユーティリティレイヤーがカスケード上でその後に来るため、vael-ui コンポーネントに付けた Tailwind ユーティリティが常に優先されます。{important} も詳細度の競合も不要です。レイヤーの仕組みについては {link} を参照してください。",
+    "layerNote": "vael-ui は {layer} で提供されています。Tailwind v4 もユーティリティをレイヤーに入れるため、インポート順が重要です。下記のように Tailwind のエントリーより前に vael-ui の CSS をインポートして、そのレイヤーを先に登録してください。すると Tailwind のユーティリティがカスケード上で後に来るため、vael-ui コンポーネントに付けた Tailwind ユーティリティが常に優先されます。{important} も詳細度の競合も不要です。レイヤーの仕組みについては {link} を参照してください。",
     "layerNoteLink": "スタイリング層とカスケード層",
     "orderWarningTitle": "このインポートを先頭に保つ",
-    "orderWarning": "各コンポーネントは自分の CSS を読み込むため、vael-ui 用のスタイルシートをインポートする必要はありません。唯一の例外が Tailwind v4 です。そのユーティリティは独自のカスケードレイヤーにあり、最初にレイヤー名を宣言したスタイルシートが順序を決めます。アプリのメインのエントリーファイルで、Tailwind のエントリーより前に <code>vael-ui/layers.css</code> をインポートしてください。これは vael-ui のレイヤー名を宣言するだけでコンポーネントの CSS は読み込まないので、後からコンポーネントが CSS を読み込んでも順序は保たれます。",
-    "mergingIntro": "すべてのコンポーネントは、パーツごとのクラスを指定する <code>ui</code> prop を受け取ります（例：<code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>）。そこで競合する Tailwind ユーティリティを <code>tailwind-merge</code> と同じ方法（プロパティごとに最後の指定が優先）で解決するには、一度だけ設定します。",
+    "orderWarning": "各コンポーネントは自分の CSS を読み込むため、vael-ui 用のスタイルシートをインポートする必要はありません。例外は Tailwind v4 です。そのユーティリティは独自のカスケードレイヤーにあり、最初にレイヤー名を宣言したスタイルシートが順序を決めます。アプリのメインのエントリーファイルで、Tailwind のエントリーより前に <code>vael-ui/layers.css</code> をインポートしてください。これは vael-ui のレイヤー名を宣言するだけでコンポーネントの CSS は読み込まないので、後からコンポーネントが CSS を読み込んでも順序は保たれます。",
+    "mergingIntro": "すべてのコンポーネントは、パーツごとのクラスを指定する <code>ui</code> prop を受け取ります（例：<code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>）。そこで競合する Tailwind ユーティリティを <code>tailwind-merge</code> と同じ方法（プロパティごとに最後の指定が優先）で解決するには、一度だけ設定します:",
     "mergingNote": "これで、ツリー内のすべての <code>ui.*</code> パーツクラスが <code>twMerge</code> を通るようになります。",
     "mergingTitle": "tailwind-merge を使用したクラスのマージ"
   },
@@ -394,10 +394,10 @@
     "actions": "アクション",
     "dataDisplay": "データ表示",
     "feedback": "フィードバック",
-    "formsAndInputs": "フォーム",
+    "formsAndInputs": "フォームと入力",
     "gestures": "ジェスチャー",
-    "layoutAndStructure": "レイアウト",
-    "navigationAndMenus": "ナビゲーション",
+    "layoutAndStructure": "レイアウトと構造",
+    "navigationAndMenus": "ナビゲーションとメニュー",
     "overlays": "オーバーレイ",
     "selection": "選択",
     "setup": "設定"
@@ -415,83 +415,83 @@
     "returns": "返品"
   },
   "composablesTaxonomy": {
-    "overlaysAndConfirmation": "オーバーレイ",
-    "positioningAndData": "位置決め",
+    "overlaysAndConfirmation": "オーバーレイと確認",
+    "positioningAndData": "位置決めとデータ",
     "utilities": "ユーティリティ",
     "motion": "モーション",
     "dragAndDrop": "ドラッグ＆ドロップ"
   },
   "composableDescriptions": {
-    "confirmAction": "非同期に対応した確認フロー。中央のダイアログ、またはトリガーに固定したポップオーバーとして表示します。閉じる前にハンドラーの完了を待ちます。",
-    "useDialogService": "マークアップではなくコードから、任意のコンポーネントをダイアログとして開きます。ダイアログが閉じたときの値で解決される Promise を返します。",
-    "usePopoverService": "マークアップではなくコードから、任意のコンポーネントを固定表示のポップオーバーとして開きます。ポップオーバーが閉じたときの値で解決される Promise を返します。",
-    "useToast": "アプリ内のどこからでもトースト通知を表示します。バリアントのショートカットと、ローディング中のトーストを成功またはエラーに切り替える Promise ヘルパーを備えています。",
-    "useTour": "Tour の背後にあるヘッドレスな状態マシン。ステップとグループのナビゲーションを担い、DOM や描画は一切含みません。",
-    "useAsyncLoading": "渡された保留中の Promise をすべて追跡し、すべてが完了したときにだけローディング状態を解除します。",
-    "useNumberFormat": "ロケールに対応した数値のフォーマットと解析を同期させ、入力テキストとフォーマット済みの表示が常に一致するようにします。",
-    "useColorScheme": "ライト、ダーク、システムのテーマモードを切り替えます。永続化は任意で、あなたが用意するストレージ関数を通じて行います。",
-    "useHaptic": "対応するスマートフォンで短い触覚フィードバックを1回鳴らします。何かを確定する瞬間に。",
-    "springEasing": "ばねを CSS のカーブと収束時間に変換します。element.animate() やトランジションで使えます。",
-    "preventFocusZoom": "iOS がフォーム欄にズームしないようにし、欄の文字サイズを他のテキストと揃えられるようにします。",
-    "useFloatingPosition": "Popover、Menu、Tooltip の背後にある、Floating UI ベースの位置決めエンジン。独自の固定表示サーフェスを作るのに使えます。",
-    "useVirtualizer": "長いリストの仮想レンダリング。表示中の行だけがDOMに存在します。",
-    "useFieldControl": "カスタムフォームコントロールを最も近い Field に接続します。id、ARIA 属性、フォーカス状態と入力済み状態を扱います。",
-    "useHoverIndicator": "vael-ui のすべてのリストで使われる、スライドするホバーハイライト。独自のリストにも使えます。",
-    "useSpringValue": "中断できるスプリング物理。リアクティブな値、再レンダリングせずに毎フレーム書き込む命令的なスプリング、その両方を支える純粋なステップ関数を備えています。",
-    "useTabIndicator": "Tabs、SelectButton、Pagination の背後にある、スライドする選択インジケーター。独自のセグメントコントロールやリストにも使えます。",
-    "useScrollLock": "ダイアログが開いている間と同じように、ページや任意の要素のスクロールをレイアウトのずれなしでロックします。",
-    "moveTreeNode": "ノードとそのサブツリーを、新しい親とインデックスへその場で移動します。フォルダーを自分自身の中にドロップしないようにするガードも備えています。",
-    "useFileDrop": "任意の要素をファイルのドロップ先にします。ドラッグ中の状態は子要素の上でも安定して保たれます。"
+    "confirmAction": "中央のダイアログ、またはトリガーに固定したポップオーバーとして表示する確認ステップ。閉じる前に非同期ハンドラーの完了を待ちます。取り消しにくいアクションの前に使います。",
+    "useDialogService": "マークアップではなくコードから、任意のコンポーネントをダイアログとして開きます。結果の Promise は、ダイアログが閉じたときの値で解決されます。関数から開くダイアログに使います。",
+    "usePopoverService": "マークアップではなくコードから、任意のコンポーネントを固定表示のポップオーバーとして開きます。結果の Promise は、ポップオーバーが閉じたときの値で解決されます。関数から開くポップオーバーに使います。",
+    "useToast": "アプリ内のどこからでもトースト通知を表示します。バリアントのショートカットと、ローディング中のトーストを成功またはエラーに切り替える Promise ヘルパーを備えています。ページを中断すべきでないフィードバックに使います。",
+    "useTour": "Tour の背後にあるステップとグループのナビゲーションを、DOM も描画も持たないヘッドレスな状態として提供します。独自のツアーを作るのに使います。",
+    "useAsyncLoading": "これを通して実行した非同期タスクをすべて追跡し、すべてが完了するまでローディング状態を保ちます。複数のリクエストに 1 つのローディング状態を使うときに使います。",
+    "useNumberFormat": "同じオプションでロケールに応じて数値を書式化・解析するので、入力テキストと書式化された表示が常に一致します。独自の数値フィールドや、AnimatedNumber に同じ書式を与えるのに使います。",
+    "useColorScheme": "ライト、ダーク、システムのモードを切り替えます。クリックした位置から新しい配色を円状に広げることもできます。テーマの切り替えに使い、選択を記憶するには独自のストレージ関数を渡します。",
+    "useHaptic": "対応するスマートフォンで触覚フィードバックを鳴らします。軽いティック、バンプ、短い成功・警告・エラーのパターン、または独自のパターンです。何かを確定する瞬間に使います。",
+    "springEasing": "スプリングを CSS の linear() カーブと収束時間に変換します。element.animate() や CSS トランジションに vael-ui と同じスプリングを与えるのに使います。",
+    "preventFocusZoom": "フォーム欄にフォーカスしたときに iOS がズームしないようにし、欄の文字サイズを他のテキストと揃えられるようにします。main.ts などで、クライアント上で一度だけ呼び出してください。",
+    "useFloatingPosition": "Popover、Menu、Tooltip の背後にある、Floating UI ベースの位置決めエンジン。独自の固定表示パネルを作るのに使います。",
+    "useVirtualizer": "長いリストの表示中の行だけを描画するので、DOM が小さく保たれます。独自の長いリストに使います。",
+    "useFieldControl": "カスタムフォームコントロールを最も近い Field に接続します。id、ARIA 属性、フォーカス状態と入力済み状態を扱います。独自のコントロールを Field の中に置くときに使います。",
+    "useHoverIndicator": "vael-ui のリストの背後にある、スライドするホバーとキーボードのハイライト。独自のリストに同じハイライトを付けるのに使います。",
+    "useSpringValue": "中断できるスプリング物理を 3 つの形で提供します。リアクティブな値、再レンダリングせずに毎フレーム書き込む命令的なスプリング、その両方を支える純粋なステップ関数です。途中で目標が変わるモーションに使います。",
+    "useTabIndicator": "Tabs、SelectButton、MenuList、Pagination の背後にある、スライドする選択インジケーター。独自のセグメントコントロールやリストに使います。",
+    "useScrollLock": "ダイアログが開いている間と同じように、ページや任意の要素のスクロールをレイアウトのずれなしでロックします。独自のオーバーレイや全画面パネルに使います。",
+    "moveTreeNode": "ノードとそのサブツリーを、新しい親とインデックスへその場で移動します。フォルダーを自分自身の中へ移すなど、不可能な移動では何も変わりません。ドラッグ＆ドロップの移動をツリーデータに反映するのに使います。",
+    "useFileDrop": "任意の要素をファイルのドロップ先にします。ドラッグ中の状態は子要素の上でも安定して保たれ、ドラッグされたテキストやリンクは無視します。独自のドロップゾーンを作るのに使います。"
   },
   "autoImport": {
     "bundlersIntro": "unplugin-vue-components は Vite、Webpack、Rollup、esbuild、Rspack に対応しています。リゾルバーはただの関数なので、どれでも同じように動作します。",
     "bundlersTitle": "バンドラー",
     "cssIntro": "ここでは追加の設定は不要です。vael-ui のコンポーネントはそれぞれ自身の CSS をインポートするため、コンポーネントを解決するとそのスタイルも読み込まれます。ほとんどの unplugin-vue-components のリゾルバーでは、そのために別途 <code>sideEffects</code> エントリーが必要です。",
     "cssTitle": "CSS",
-    "intro": "vael-ui/resolver は unplugin-vue-components 用のリゾルバーです。一度登録すれば、インポートなしでテンプレート内の任意の vael-ui コンポーネントを使えます。",
+    "intro": "vael-ui/resolver は unplugin-vue-components 用のリゾルバーです。一度登録すれば、インポートなしでテンプレート内の任意の vael-ui コンポーネントを使えます。解決するのはコンポーネントで、ディレクティブは対象外です。",
     "setupIntro": "unplugin-vue-components が既に構成されている場所にリゾルバーを追加します。",
     "setupOutro": "タグを書けば、プラグインがビルド時にインポートを追加します。",
     "setupTitle": "設定",
     "title": "自動インポート",
-    "vaporIntro": "vael-ui は同じソースから 2 つのビルドを提供しています。通常の VDOM ビルドと Vapor ビルド（<code>vael-ui/vapor</code>）です。リゾルバーはデフォルトで VDOM ビルドからインポートします。代わりに Vapor ビルドからインポートするには <code>variant: 'vapor'</code> を渡してください。リゾルバーはすべてのコンポーネントを 1 つのビルドからインポートするので、アプリが描画に使う方を選んでください。",
-    "vaporHostsNote": "Vapor テンプレートでは、unplugin-vue-components は他のコンポーネントのスロット内にあるコンポーネントしか見つけられません。<code>&lt;Toaster&gt;</code>、<code>&lt;DialogHost&gt;</code>、<code>&lt;ConfigProvider&gt;</code> など最上位のものは、unplugin-vue-components が Vapor に対応するまで手動でインポートしてください。",
+    "vaporIntro": "vael-ui は同じソースから 2 つのビルドを提供しています。VDOM ビルドと Vapor ビルド（<code>vael-ui/vapor</code>）です。リゾルバーはデフォルトで VDOM ビルドからインポートします。代わりに Vapor ビルドからインポートするには <code>variant: 'vapor'</code> を渡してください。リゾルバーはすべてのコンポーネントを 1 つのビルドからインポートするので、アプリが描画に使う方を選んでください。",
+    "vaporHostsNote": "Vapor テンプレートでは、unplugin-vue-components は他のコンポーネントのスロット内にあるコンポーネントしか見つけられません。Vapor に対応するまでは、<code>&lt;Toaster&gt;</code>、<code>&lt;DialogHost&gt;</code>、<code>&lt;ConfigProvider&gt;</code> など最上位のものを手動でインポートしてください。",
     "vaporTitle": "蒸気",
-    "oneImportIntro": "エディターの自動インポートが、<code>vael-ui/vapor</code> ではなく <code>vael-ui</code> を提案し続けることがあります。これは、パッケージが 2 つのエントリーポイントから同じ名前をエクスポートする場合の、TypeScript の既知の制限です。これを避けるには、サブパスからインポートする代わりに <code>vapor</code> エクスポート条件を設定してください。すると、プロジェクト全体ですべての <code>import … from 'vael-ui'</code> が、コンポーネントもコンポーザブルも Vapor ビルドに解決されます。自動インポートが間違える余地はなくなります。",
+    "oneImportIntro": "エディターの自動インポートが、<code>vael-ui/vapor</code> ではなく <code>vael-ui</code> を提案し続けることがあります。これは、パッケージが 2 つのエントリーポイントから同じ名前をエクスポートする場合の、TypeScript の既知の制限です。これを避けるには、サブパスからインポートする代わりに <code>vapor</code> エクスポート条件を設定してください。すると、プロジェクト全体ですべての <code>import … from 'vael-ui'</code> が、コンポーネントもコンポーザブルも Vapor ビルドに解決されるので、自動インポートが間違えることはありません。",
     "oneImportDefaults": "Vite の既定の条件を置き換えずに、そこへ <code>vapor</code> を追加します。<code>['vapor']</code> だけを書くと既定値が消え、ほかのパッケージが誤ったファイルを読み込むことがあります。<code>ssr</code> の行はサーバーレンダリングに同じ設定をします。",
-    "oneImportNote": "Vite の条件は、どのビルドを読み込むかを制御します。TS の条件は、型をそれに合わせます。片方だけを設定すると、エラーにはならず、気づかないうちに不一致が起きます。型は正しいのに間違ったビルドが読み込まれる、あるいはその逆です。",
+    "oneImportNote": "Vite の条件はどのビルドを読み込むかを決め、TypeScript の条件は型をそれに合わせます。片方だけを設定してもエラーにはならず、型は正しいのにビルドが間違っている、あるいはその逆の状態になります。",
     "oneImportNoteTitle": "両方の設定を同期させます",
     "oneImportTitle": "1 つの共有インポート、/vapor サブパスなし"
   },
   "nuxt": {
-    "excludeIntro": "特定のコンポーネント名をスキップします。たとえば、同じタグで独自の <code>&lt;Button&gt;</code> を登録したい場合に使います。",
+    "excludeIntro": "特定のコンポーネント名をスキップします。たとえば、同じタグで独自の <code>&lt;Button&gt;</code> を登録したい場合に使います:",
     "excludeTitle": "除外する",
-    "intro": "vael-ui/nuxt は Nuxt モジュールです。一度追加すれば、インポートなしでテンプレート内の任意の vael-ui コンポーネントを使えます。unplugin-vue-components ではなく、Nuxt 組み込みのコンポーネント登録を使います。",
+    "intro": "vael-ui/nuxt は Nuxt モジュールです。一度追加すれば、インポートなしでテンプレート内の任意の vael-ui コンポーネントを使えます。unplugin-vue-components ではなく、Nuxt 自身のコンポーネント登録を使います。",
     "resolverIntro": "Nuxt アプリで既に unplugin-vue-components を使って他のライブラリを自動インポートしている場合は、代わりに vael-ui/resolver を使ってください。{link} ガイドを参照してください。",
     "resolverIntroLink": "自動インポート",
     "resolverTitle": "代わりに unplugin-vue-components を使用する",
     "setupIntro": "Nuxt 構成にモジュールを登録します。",
     "setupOutro": "タグを書けば、Nuxt がインポートを解決します。",
     "appSetupTitle": "アプリのセットアップ",
-    "appSetupIntro": "モジュールが登録するのはコンポーネントだけです。使うホストを app.vue に一度だけ配置してください。各ホストの役割は{link}で説明しています。",
+    "appSetupIntro": "モジュールはホストをマウントしません。使うホストを app.vue に一度だけマウントしてください。各ホストの役割は {link} で説明しています。",
     "appSetupIntroLink": "グローバル設定",
     "composablesIntro": "<code>toast()</code> や <code>openDialog()</code> などのコンポーザブルは自動インポートされません。<code>'vael-ui'</code> から、Vapor バリアントでは <code>'vael-ui/vapor'</code> からインポートしてください:",
-    "directivesIntro": "<code>v-tooltip</code> と <code>v-scroll-mask</code> ディレクティブも登録されません。プラグインで登録してください。Vapor バリアントでは <code>'vael-ui/vapor'</code> からインポートします:",
+    "directivesIntro": "モジュールは <code>v-animate</code> を登録しますが、<code>v-tooltip</code> と <code>v-scroll-mask</code> は登録しません。この 2 つはプラグインで登録してください。Vapor バリアントでは <code>'vael-ui/vapor'</code> からインポートします:",
     "setupTitle": "設定",
     "title": "ナクスト",
     "vaporIntro": "<code>variant: 'vapor'</code> を設定すると <code>vael-ui/vapor</code> を使います。<code>vael-ui/resolver</code> と同じオプションです。モジュールが Nuxt の <code>vue.vapor</code> を自動で有効にします。Nuxt 4.6 以降と Vue 3.6 が必要です。Vue は「はじめに」に記載の正確なバージョンに固定してください。",
-    "vaporOutro": "ページは引き続きサーバーでレンダリングされます。サーバーが各コンポーネントを HTML にし、ブラウザーがそれを Vapor コンポーネントとして引き継ぎます。追加の設定は不要です。",
-    "vaporForceIntro": "自分の <code>&lt;script setup&gt;</code> コンポーネントも、それぞれに <code>vapor</code> を付けずに Vapor でコンパイルするには、Nuxt の <code>vite.vue</code> で <code>{'@'}vitejs/plugin-vue</code> の <code>features.vapor</code> を有効にします：",
+    "vaporOutro": "ページは引き続きサーバーでレンダリングされます。サーバーが各コンポーネントを HTML にし、ブラウザーがそれを Vapor コンポーネントとしてハイドレートします。追加の設定は不要です。",
+    "vaporForceIntro": "自分の <code>&lt;script setup&gt;</code> コンポーネントも、それぞれに <code>vapor</code> を付けずに Vapor でコンパイルするには、Nuxt の <code>vite.vue</code> で <code>{'@'}vitejs/plugin-vue</code> の <code>features.vapor</code> を有効にします:",
     "vaporTitle": "Vapor"
   },
   "skill": {
     "claudeCodeIntro": "マーケットプレイスを一度追加してから、スキルをインストールします。",
     "claudeCodeTitle": "クロード・コード",
-    "includedAnimation": "アニメーションに依存しない契約（motion、forceMount、beforeClose）と、GSAP と motion-v の実例",
-    "includedComponents": "すべてのコンポーネントのプロパティ、スロット、イベント、および公開された参照",
-    "includedComposables": "すべてのスタンドアロン コンポーザブルのパラメータ、戻り値、および使用例",
-    "includedStyling": "カスケード レイヤーの順序付けとテーマ設定のための完全な CSS 変数リファレンス",
-    "intro": "AI コーディングエージェントに vael-ui の使い方を教えるコンパニオンパッケージです。Claude Code、GitHub Copilot、Codex、Cursor などで動作します。すべてのコンポーネントの props、スロット、イベント、すべてのコンポーザブル、そしてアニメーション、テーマ、VDOM/Vapor の使い分けの設定方法をカバーしています。手書きではなく、ライブラリ自身の型とドキュメントの内容から生成されるため、ライブラリの変更に合わせて正確さが保たれます。vael-ui とは別にバージョン管理・リリースされています。",
-    "otherAgentsIntro": "共通の <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 仕様に対応したエージェントであれば、<a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> でインストールできます。GitHub Copilot、Codex、Cursor をはじめ、70 以上のエージェントが対応しています。",
+    "includedAnimation": "モーションシステム（motion prop、enter と leave のフック、v-animate）と、GSAP と motion の実例",
+    "includedComponents": "すべてのコンポーネントの props、スロット、イベント、公開された ref",
+    "includedComposables": "すべてのスタンドアロンのコンポーザブルの引数、戻り値、使用例",
+    "includedStyling": "カスケードレイヤーの順序と、テーマ設定用のすべての CSS 変数",
+    "intro": "AI コーディングエージェントに vael-ui の使い方を教えるコンパニオンパッケージです。Claude Code、GitHub Copilot、Codex、Cursor などで動作します。すべてのコンポーネントの props、スロット、イベント、すべてのコンポーザブル、そしてモーション、テーマ、VDOM と Vapor ビルドの設定方法をカバーしています。手書きではなく、vael-ui 自身の型とドキュメントから生成されるため、vael-ui の変更に合わせて正確さが保たれます。vael-ui とは別にバージョン管理・リリースされています。",
+    "otherAgentsIntro": "共通の <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> 仕様に対応したエージェントであれば、<a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a> でインストールできます。GitHub Copilot、Codex、Cursor をはじめ、70 以上のエージェントが対応しています:",
     "otherAgentsTitle": "その他のエージェント",
     "sourceIntro": "スキルのソースは {link} にあります。vael-ui のリリースサイクルとは別に更新する手順も掲載しています。",
     "sourceTitle": "ソース",
@@ -518,13 +518,13 @@
     "componentsTitle": "コンポーネントはこちらに移動しました",
     "componentsDescription": "メニューは上部のバーから、親指の届きやすいドックに移りました。",
     "settingsTitle": "ダークモードは設定にあります",
-    "settingsDescription": "テーマカラー、角の丸み、サイズ、文字サイズ、言語なども設定から変更できます。",
+    "settingsDescription": "テーマカラー、角丸、サイズ、文字サイズ、モーション、ローダー、言語も設定にあります。",
     "replayLabel": "ツアー",
     "replay": "もう一度見る",
     "searchTitle": "検索はワンタップで",
     "searchDescription": "コンポーネント、ガイド、コンポーザブルを名前で探せます。短い説明付きです。",
-    "variantTitle": "Vue DOM と Vapor は上部で切り替え",
-    "variantDescription": "すべてのデモをここでクラシック版と Vapor で切り替えられます。"
+    "variantTitle": "VDOM と Vapor は上部で切り替え",
+    "variantDescription": "ここで、すべてのデモを VDOM ビルドと Vapor ビルドで切り替えられます。"
   },
   "search": {
     "actions": "コマンド",
@@ -551,19 +551,19 @@
   },
   "showMe": {
     "loaderTitle": "すべてのローダーを一か所で",
-    "loaderDescription": "このサイトはここで ConfigProvider の loader-type を設定しているので、ボタン、リストの行、トースト、プルして更新など、すべてのスピナーがそれに従います。選んで変化を見てください。"
+    "loaderDescription": "この設定は ConfigProvider の loader-type なので、このサイトのすべてのスピナー（ボタン、リストの行、トースト、プルして更新）がそれに従います。選んで全体が変わるのを見てください。"
   },
   "motionDocs": {
     "eyebrow": "モーションシステム",
     "title": "モーション",
-    "lede": "すべてのコンポーネントは一つの仕組みで動きます。組み込みの見た目はそのまま使え、<code>motion</code> プロップひとつで変えられ、必要なら自分のライブラリに任せることもできます。",
+    "lede": "vael-ui のすべてのコンポーネントは、1 つのモーションシステムでアニメーションします。組み込みのモーションをそのまま使うことも、<code>motion</code> prop ひとつで変えることも、自分のライブラリで再生することもできます。",
     "logoToV": "球体を V に変える",
     "logoToOrb": "vael-ui の球体を表示する",
     "tourTitle": "ここから始める",
     "card": {
       "springs": {
         "title": "スプリングとタイミング",
-        "body": "damping と response で動きがどう変わるかを体感し、アプリ全体のスプリングをひとつ決めます。"
+        "body": "damping と response で動きがどう変わるかを確かめ、アプリ全体のスプリングをひとつ決めます。"
       },
       "engines": {
         "title": "独自のエンジン",
@@ -571,11 +571,11 @@
       },
       "guide": {
         "title": "独自のアニメーションを使う",
-        "body": "仕組みのすべて：値、フック、リスト、ガード、アプリ全体のスタイル。"
+        "body": "値、フック、リスト、ガード、アプリ全体のスタイルの完全ガイド。"
       },
       "types": {
         "title": "TypeScript",
-        "body": "すべてのパーツと状態の補完と、間違いへの型エラー。"
+        "body": "すべてのパーツと状態の補完と、よくある間違いへの型エラー。"
       },
       "blocks": {
         "title": "ブロック",
@@ -583,16 +583,16 @@
       }
     },
     "propTitle": "プロップはひとつ",
-    "propIntro": "すべてのコンポーネントは <code>motion</code> を受け取ります。<code>false</code> でアニメーションを止め、オブジェクトで変更します。パーツごとの値、スプリングまたはデュレーション、あるいは独自ライブラリ用の <code>enter</code> と <code>leave</code> フックを渡せます。",
-    "propTable": "各コンポーネントのページには<strong>モーション</strong>セクションがあり、パーツ、状態、そのほかにできることを一覧にしています。",
+    "propIntro": "すべてのコンポーネントは <code>motion</code> を受け取ります。<code>false</code> でモーションをオフにし、オブジェクトで変更します。パーツごとの値、スプリングまたはデュレーション、あるいは独自ライブラリ用の <code>enter</code> と <code>leave</code> フックを渡せます。",
+    "propTable": "各コンポーネントのページには<strong>モーション</strong>セクションがあり、パーツ、状態、そのほかのモーションのオプションを一覧にしています。",
     "yoursTitle": "独自のコンポーネントで",
-    "yoursIntro": "<code>v-animate</code> は自分の要素にも同じモーションを与えます。登場、退場、なめらかに変わるサイズ、レイアウトの変化に合わせてスライドする要素などです。",
-    "yoursComposables": "その裏にある部品は、独自のモーション用にコンポーザブルとして使えます：",
+    "yoursIntro": "<code>v-animate</code> は自分の要素にも同じモーションを与えます。登場、退場、内容に合わせてなめらかに変わるサイズ、レイアウトの変化に合わせた新しい位置へのスライドなどです。",
+    "yoursComposables": "独自のモーションには、その裏にあるコンポーザブルを使います:",
     "composable": {
       "springEasing": "スプリングを CSS のイージングと収束時間に変換します。",
       "useSpringValue": "目標値にスプリングで追従する値。",
       "useHoverIndicator": "スライドするホバーハイライトを独自のリストに。",
-      "useTabIndicator": "Tabs と SelectButton の裏にあるスライドする選択表示。"
+      "useTabIndicator": "Tabs と SelectButton の裏にあるスライドするインジケーター。"
     },
     "nav": {
       "motion": "モーション",
@@ -611,7 +611,7 @@
     },
     "springs": {
       "title": "スプリングとタイミング",
-      "intro": "スプリングは 2 つの数値で決まります。<code>damping</code> は落ち着き方を決め、1 では行き過ぎずに止まり、それより小さいと弾みます。<code>response</code> はおおよその所要時間（秒）です。スプリングには決まった長さがないので、途中で中断して今の位置から向きを変えられます。",
+      "intro": "スプリングは 2 つの数値で決まります。<code>damping</code> は落ち着き方を決め、1 では行き過ぎずに止まり、それより小さいと弾みます。<code>response</code> はおおよその所要時間（秒）です。スプリングには決まった長さがないので、どの位置からでも中断して向きを変えられます。",
       "labTitle": "スプリングを試す",
       "presets": "プリセット",
       "preset": {
@@ -623,7 +623,7 @@
       "reads": "約 {settle} ms で落ち着きます。",
       "play": "再生",
       "everywhereTitle": "アプリ全体にひとつのスプリング",
-      "everywhereIntro": "<code>ConfigProvider</code> にスプリングを設定すると、ドロワー、シート、トースト、スライドする選択表示、AnimatedNumber がすべてそれで動きます。下のコンポーネントは上のスライダーに従います。",
+      "everywhereIntro": "<code>ConfigProvider</code> にスプリングを設定すると、その中のドロワー、シート、トースト、インジケーター、AnimatedNumber がすべてそのスプリングを使います。下のデモは上のスライダーに従います。",
       "switch": "通知",
       "openDrawer": "ドロワーを開く",
       "drawerTitle": "あなたのスプリングで",
@@ -631,7 +631,7 @@
     },
     "engines": {
       "title": "独自のエンジン",
-      "intro": "vael-ui は標準で Web Animations API を使ってモーションを再生し、メインスレッドの外で動きます。スタイルの <code>engine</code> を使うと、すべての値を好きなライブラリに渡せます。値もタイミングも同じまま、あなたのライブラリが再生します。",
+      "intro": "vael-ui は標準で CSS トランジションと Web Animations API を使ってモーションを自ら再生するので、transform と opacity はメインスレッドの外で動きます。スタイルの <code>engine</code> を使うと、オーバーレイのパーツ、リストの項目、独自のターゲットを、選んだライブラリで同じ値とタイミングのまま再生できます。状態、切り替え、<code>linked</code> の要素は常に組み込みのエンジンを使います。",
       "compareTitle": "並べて比べる",
       "compareIntro": "同じ値を持つ 3 つのポップオーバーを、それぞれ別の <code>ConfigProvider</code> に入れています。まとめて開いて比べてください。",
       "openAll": "3 つとも開く",
@@ -639,10 +639,10 @@
       "note": {
         "waapi": "組み込み。インストール不要です。",
         "gsap": "GSAP が独自のイージングで値を再生します。",
-        "motion": "motion が自身のスプリングで再生します。"
+        "motion": "motion が独自のスプリングで再生します。"
       },
       "adaptersTitle": "アダプターを書く",
-      "adaptersIntro": "エンジンは要素、開始値、終了値、秒単位のタイミング、そしてスプリングがあればその設定を受け取ります。ライブラリの戻り値をそのまま返してください。vael-ui はそれを待ち、中断されたら止めます。",
+      "adaptersIntro": "エンジンは要素、開始値と終了値、秒単位のタイミング、そしてスプリングがあればその設定を受け取ります。ライブラリの戻り値をそのまま返してください。vael-ui はそれを待ち、アニメーションが中断されたら止めます。",
       "appWideTitle": "アプリ全体でエンジンを切り替える",
       "appWideIntro": "ルートの <code>ConfigProvider</code> にアダプターを置くと、その中のすべてのコンポーネントが使います。コンポーネント自身のフックは引き続き優先されます。"
     },
@@ -685,7 +685,7 @@
     "tour": {
       "cta": "新機能",
       "menuTitle": "サイト全体のモーション",
-      "menuBody": "プリセットを選ぶと、すべてのページのコンポーネントがそれに従います。下のダイヤルで調整できます。",
+      "menuBody": "プリセットを選ぶと、すべてのページのコンポーネントがそれを使います。下のダイヤルで調整できます。",
       "modeTitle": "モーションのセクション",
       "modeBody": "Motion に切り替えると、スプリング、エンジン、それを支えるコンポーザブルが見られます。",
       "tabTitle": "プレイグラウンドのモーション",
@@ -698,18 +698,18 @@
       "intro": "エディタは、各コンポーネントのパーツと状態、すべての CSS プロパティ、vael-ui のタイミングトークンを知っています。間違いは保存する前に赤くなります。",
       "component": "コンポーネント",
       "completeTitle": "補完",
-      "completeIntro": "コード内の名前を押すと、その場所でエディタが出す候補が見られます。選ぶとコードに入ります。",
-      "completeHint": "点線の名前を押すと、エディタの候補が見られます。",
+      "completeIntro": "コード内の名前を選ぶと、その場所でエディターが出す候補が見られます。選ぶとコードに入ります。",
+      "completeHint": "点線の名前を選ぶと、エディターの候補が見られます。",
       "completeNote": "同じ名前が{link}に載っています。",
       "completeLink": "{name} の Motion セクション",
       "mistakesTitle": "間違いは型エラーになる",
-      "mistakesIntro": "vael-ui 自身の型テストが、これらをエラーのまま保ちます。どのリリースでも黙って受け入れることはありません。",
+      "mistakesIntro": "vael-ui 自身の型テストが、これらがそれぞれエラーのままであることを確認しているので、どのリリースでもうっかり受け入れるようになることはありません。",
       "unitsTitle": "単位",
       "unitsIntro": "数値だけなら表示の単位になります。文字列はそのまま CSS に渡るので、<code>'2rem'</code> や <code>'50%'</code> も使えます。",
       "tokensTitle": "タイミングトークン",
-      "tokensIntro": "<code>duration</code> と <code>easing</code> は vael-ui のトークンを受け取り、エディタが一覧にします。これはこのページでの今の値です。ヘッダーのモーションメニューでプリセットを選ぶと、スプリングで動くものが一緒に変わります。",
+      "tokensIntro": "<code>duration</code> と <code>easing</code> は vael-ui のトークンを受け取り、エディターが一覧にします。下はこのページでの今の値です。ヘッダーのモーションメニューでプリセットを選ぶと、スプリングで決まるトークンも一緒に変わります。",
       "warningsTitle": "コンソールで",
-      "warningsIntro": "開発中、motion は何が起きたか、何を変えればよいかを伝えます。本番ビルドではこれらのメッセージは含まれません。",
+      "warningsIntro": "開発中、vael-ui は何が問題で、何を変えればよいかをログに出します。本番ビルドではこれらのメッセージは含まれません。",
       "devtools": "何がなぜ動いたかは、コンポーネントを調べると分かります。<code>data-motion</code> がモーションを設定したレイヤーを示し、開閉はそれぞれ Performance パネルの Timings トラックに表示されます。",
       "mistake": {
         "part": "存在しないパーツ",
@@ -734,38 +734,38 @@
       "eyebrow": "モーションガイド · {n} / {total}",
       "start": {
         "title": "はじめに",
-        "intro": "vael-ui のコンポーネントは最初から動きます。どう動かすかは、ひとつのコンポーネントからアプリ全体まで、同じいくつかの言葉で決められます。",
+        "intro": "vael-ui のコンポーネントは最初からアニメーションします。動き方は、ひとつのコンポーネントでもアプリ全体でも、同じいくつかのオプションで変えられます。",
         "already": {
           "title": "最初から動く",
-          "body": "下のダイアログ、セレクト、トーストを開いてみてください。オーバーレイ、リスト、コントロールにはすべてモーションが組み込まれていて、素早く、邪魔にならないよう調整されています。"
+          "body": "下のダイアログ、セレクト、トーストを開いてみてください。オーバーレイ、リスト、コントロールにはすべてモーションが組み込まれています。短く抑えられていて、開くときより閉じるときのほうが速く動きます。"
         },
         "one": {
           "title": "ひとつのコンポーネントを変える",
-          "body": "すべてのコンポーネントは <code>motion</code> プロップを受け取ります。パーツがどこから入ってくるか（<code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>）と、そこまで運ぶスプリングを指定します。"
+          "body": "すべてのコンポーネントは <code>motion</code> prop を受け取ります。パーツがどこから入ってくるか（<code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code> など）と、そのときのスプリングを指定します。"
         },
         "spring": {
           "title": "すべてにひとつのスプリング",
-          "body": "<code>ConfigProvider</code> に <code>spring</code> を置くと、その中のすべてのコンポーネントがそれに従います。<code>damping</code> が 1 未満だと行き過ぎて戻ります。<code>response</code> はおおよその所要時間（秒）です。"
+          "body": "<code>ConfigProvider</code> に <code>spring</code> を置くと、その中のすべてのコンポーネントがそれを使います。<code>damping</code> が 1 未満だと行き過ぎます。<code>response</code> はおおよその所要時間（秒）です。"
         },
         "off": {
           "title": "オフにする",
-          "body": "コンポーネントに <code>:motion=\"false\"</code> を付けると、開閉が即座になります。<code>ConfigProvider</code> に付ければ、その中すべてに効きます。システムで動きを減らす設定にしている人には、どちらの場合も移動のないフェードだけが表示されます。"
+          "body": "コンポーネントに <code>:motion=\"false\"</code> を付けると、開閉が即座になります。<code>ConfigProvider</code> に付ければ、その中すべてに効きます。モーションがオンの間、動きを減らす設定にしている人には、移動のないフェードだけが表示されます。"
         }
       },
       "elements": {
         "title": "あらゆる要素",
-        "intro": "モーションは vael-ui のコンポーネントだけのものではありません。<code>v-animate</code> を使えば、自分の要素にもテンプレートから直接、登場と退場の動きを付けられます。",
+        "intro": "モーションは vael-ui のコンポーネントだけのものではありません。<code>v-animate</code> を使えば、自分のどの要素にもテンプレートから直接、登場と退場の動きを付けられます。",
         "appear": {
           "title": "登場と退場",
-          "body": "<code>initial</code> は入ってくる起点です。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。"
+          "body": "<code>initial</code> は要素が入ってくる起点を決めます。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。"
         },
         "scroll": {
           "title": "スクロールで画面に入ったとき",
-          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番でひとつずつ入ってきます。"
+          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。"
         },
         "replay": {
           "title": "もう一度再生する",
-          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、変わるステータス、失敗したコピーなどに使えます。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。"
+          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、ステータスの変化、失敗したコピーなどに使います。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。"
         },
         "layout": {
           "title": "新しい位置へスライド",
@@ -773,24 +773,24 @@
         },
         "shared": {
           "title": "ある場所から別の場所へ",
-          "body": "同じ <code>layoutId</code> を持つ 2 つの要素は、ひとつの要素の移動として扱われます。一方が去りもう一方が現れると、新しい要素が古い要素のボックスからスライドして出てきます。<code>layout: 'position'</code> を加えると移動中もサイズが保たれ、中のテキストが伸びません。"
+          "body": "同じ <code>layoutId</code> を持つ 2 つの要素は、ひとつの要素として振る舞います。一方が去りもう一方が現れると、新しい要素が古い要素のボックスから広がって出てきます。<code>layout: 'position'</code> を加えると移動中もサイズが保たれ、中のテキストが伸びません。"
         },
         "animate": {
           "title": "見た目を保つ",
-          "body": "<code>animate</code> は、要素がページにある間ずっと保つ見た目です。値を変えると、要素は今の位置からそこへ動きます。<code>duration</code> を指定しなければスプリングで動きます。例：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。キーフレームの配列では、<code>progress</code> が再生する代わりにキーフレームを 0 から 1 のある位置に止めるので、スワイプやスクロールに合わせて動かせます。<code>spring</code> を指定すると、少し遅れて追従します。"
+          "body": "<code>animate</code> は、要素がページにある間ずっと保つ見た目を決めます。値を変えると、要素は今の位置からそこへアニメーションします。<code>duration</code> を指定しなければスプリングで動きます。例：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。キーフレームの配列では、<code>progress</code>（0 から 1）が再生する代わりにキーフレームをある位置に止めるので、スワイプやスクロールに合わせて動かせます。<code>spring</code> を指定すると、少し遅れて追従します。"
         },
         "size": {
           "title": "中身に合わせる",
-          "body": "<code>v-animate.size</code> は、要素の高さが中身の変化に合わせてジャンプせず、なめらかに変わるようにします。"
+          "body": "<code>v-animate.size</code> は、要素のサイズが中身の新しいサイズへジャンプせず、なめらかに変わるようにします。"
         },
         "own": {
           "title": "自作のコンポーネント",
-          "body": "<code>useMotion</code> を使うと、自作のコンポーネントも vael-ui と同じように動きます。その <code>transition</code> を Vue の <code>&lt;Transition&gt;</code> にバインドすると、アプリのモーションに従って出入りし、子要素もそれに加われます。"
+          "body": "<code>useMotion</code> を使うと、自作のコンポーネントも vael-ui と同じモーションになります。その <code>transition</code> を Vue の <code>&lt;Transition&gt;</code> にバインドすると、コンポーネントはアプリのモーションに従って出入りし、名前を付けた子要素も一緒にアニメーションします。"
         }
       },
       "states": {
         "title": "状態とリスト",
-        "intro": "コンポーネントは画面に表示されている間も動きます。押したとき、チェックに失敗したとき、パネルが開くとき。リストは項目の出入りに合わせて動きます。",
+        "intro": "コンポーネントは画面に表示されている間も、押したとき、チェックに失敗したとき、パネルが開くときなどにアニメーションします。リストは項目の出入りに合わせてアニメーションします。",
         "press": {
           "title": "押下とホバー",
           "body": "<code>states</code> は、コンポーネントがある状態にある間、パーツをアニメーションさせます。単一の値は状態がオンの間ずっと保たれます。<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> は押している間ボタンを縮めます。"
@@ -805,31 +805,31 @@
         },
         "keyframes": {
           "title": "キーフレーム",
-          "body": "配列はキーフレームの並びです。<code>times</code> で各キーフレームを 0 から 1 の間に配置し、<code>easing</code> でその間の各ステップをイージングします。ステップごとにイージングを並べたリストを渡すこともでき、たとえば上昇のあとに弾む動きにできます。<code>repeat</code> で繰り返し再生し、<code>repeat: Infinity</code> なら状態がオフになるか見た目が変わるまで続きます。"
+          "body": "配列はキーフレームの並びです。<code>times</code> で各キーフレームを 0 から 1 の間に配置し、<code>easing</code> で各ステップをイージングします。イージングのリストを渡すと、上昇のあとに弾むなど、ステップごとに別のイージングを付けられます。<code>repeat</code> で繰り返し再生し、<code>repeat: Infinity</code> なら状態がオフになるか見た目が変わるまで続きます。"
         },
         "each": {
           "title": "ひとつずつ",
-          "body": "ステッパーの円、ドックの項目、コード入力のセルのように、何度も現れるパーツがあります。それぞれが自分の状態を再生するので、<code>current</code> になったステップだけが弾みます。値を関数で渡すと <code>index</code> が使えるので、セルごとに順に伝わる揺れなども作れます。"
+          "body": "Stepper の円、Dock の項目、OtpInput のセルのように、繰り返し現れるパーツがあります。各要素が自分の状態を再生するので、<code>current</code> になったステップだけが弾みます。値を関数で書くと各要素の <code>index</code> が使えるので、セルごとに順に伝わる揺れなども作れます。"
         },
         "again": {
-          "title": "もう一度",
+          "title": "登場をもう一度再生する",
           "body": "コンポーネントの <code>motion</code> も <code>replay</code> を受け取ります。値が変わると、コンポーネントは再マウントせずに <code>initial</code> をもう一度再生します。たとえば星 5 つの評価で星をはじけさせる、といった使い方です。<code>appear: false</code> にすると、コンポーネントのマウント時には再生しません。"
         },
         "lists": {
           "title": "リスト",
-          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable の行、Select ファミリーのチップは、新しい項目をひとつずつ順に入れます。<code>leaving: 'pop'</code> はすぐに隙間を詰め、<code>'hold'</code> は項目が消えるまで隙間を残します。<code>initial</code> や <code>exit</code> を関数で渡すと、一緒に出入りする項目の <code>{'{'} index, count {'}'}</code> を受け取れるので、最後の項目から順に閉じることもできます。"
+          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable の行、CommandPalette の行、Select ファミリーのチップは、新しい項目をひとつずつ順に入れます。<code>leaving: 'pop'</code> は去る項目をレイアウトから外すので、残りがすぐに隙間を詰めます。<code>'hold'</code> は項目が消えるまで隙間を残します。<code>initial</code> や <code>exit</code> を関数で書くと、一緒に出入りする項目の <code>{'{'} index, count {'}'}</code> を受け取れるので、閉じるときに最後の項目から順に動かせます。"
         },
         "toasts": {
           "title": "変化するトースト",
-          "body": "Toaster の <code>states</code> は、トーストのバリアントが変わったときに再生されます。保存中のトーストが <code>error</code> になったら揺らし、<code>success</code> になったらアイコンを弾ませる、といったことができます。"
+          "body": "Toaster の <code>states</code> は、トーストのバリアントが変わったときに再生されます。保存中のトーストが <code>error</code> で終わったら揺らし、<code>success</code> で終わったらアイコンを弾ませる、といったことができます。"
         }
       },
       "overlays": {
         "title": "オーバーレイ",
-        "intro": "ダイアログ、ドロワー、シート、ポップオーバー、メニューはモーションシステムで開閉します。そのため、開いた元の要素から広がったり、ページを一緒に動かしたり、中身を切り替えたりできます。",
+        "intro": "Dialog、Drawer、BottomSheet、Popover、Menu などのオーバーレイは、モーションシステムで開閉します。開いた元の要素から広がったり、ページを一緒に動かしたり、中身を切り替えたりできます。",
         "morph": {
           "title": "トリガーから広がる",
-          "body": "<code>morph: 'trigger'</code> は、開いたボタンからパネルを広げ、閉じるときはそこへ縮めて戻します。"
+          "body": "<code>morph: 'trigger'</code> は、開いた元の要素からパネルを広げ、閉じるときはその要素へ縮めて戻します。"
         },
         "morphAny": {
           "title": "任意の要素から広がる",
@@ -837,19 +837,19 @@
         },
         "recede": {
           "title": "ページを一緒に動かす",
-          "body": "<code>linked</code> は、Dialog、Drawer、BottomSheet が開いている間、ほかの要素を動かします。ドロワーの後ろでページが奥へ下がる、といった動きです。各エントリーには要素と、開いている間の見た目を指定します。"
+          "body": "<code>linked</code> は、Dialog、Drawer、BottomSheet が開いている間、ほかの要素を動かします。ドロワーの後ろでページが奥へ下がる、といった動きです。各エントリーには要素と、オーバーレイが開いている間の見た目を指定します。"
         },
         "inner": {
           "title": "中のパーツ",
-          "body": "<code>initial</code> はダイアログのタイトル、本文、フッターにも届くので、それらをパネルに続いて入ってこさせられます。<code>exitOrder: 'reverse'</code> にすると、それらを先に閉じます。"
+          "body": "<code>initial</code> はダイアログのタイトル、本文、フッターもアニメーションさせるので、それらをパネルに続いて入ってこさせられます。<code>exitOrder: 'reverse'</code> にすると、それらをパネルより先に閉じます。"
         },
         "swap": {
           "title": "中身を切り替える",
-          "body": "ダイアログに key 付きの要素をひとつ置き、その key を変えます。<code>swap: 'wait'</code> は古い要素を先に退場させ、<code>direction</code> はどちらの方向へ進んだかを値に伝えます。"
+          "body": "ダイアログに key 付きの要素をひとつ置き、その key を変えます。<code>swap: 'wait'</code> は新しい要素が現れる前に古い要素を退場させ、<code>direction</code> はどちらの方向へ進んだかを値に伝えます。"
         },
         "guard": {
           "title": "閉じる前に確認する",
-          "body": "<code>before-close</code> は閉じてよいかを決めます。閉じるなら <code>true</code> を返します。確認ダイアログなどの Promise を返すと、ダイアログは答えを待ちます。"
+          "body": "<code>before-close</code> はダイアログを閉じるかどうかを決めます。閉じるなら <code>true</code>、開いたままにするなら <code>false</code>、または確認などのそのどちらかの Promise を返します。答えが届くまで、ダイアログは静止したままです。"
         }
       },
       "choreography": {
@@ -868,16 +868,16 @@
             "<code>'summary:settle'</code>：スプリングが静止したとき",
             "<code>'summary:40%'</code>：途中まで入ったとき",
             "<code>'panel'</code>：コンポーネント自身のパーツも使えます",
-            "<code>['summary', 'chart']</code>：すべてが終わったあと"
+            "<code>['summary', 'chart']</code>：すべてが到着したとき"
           ]
         },
         "steps": {
           "title": "途中の停止点",
-          "body": "<code>steps</code> は要素を複数の停止点へ順に動かし、それぞれで自分の <code>after</code> が来るまで止まります。"
+          "body": "<code>steps</code> は要素を複数の停止点へ順に動かします。各停止点では、その <code>after</code> のタイミングが来るまで止まります。"
         },
         "own": {
           "title": "自分のタイムライン",
-          "body": "<code>enter</code> フックはパーツとターゲットを受け取るので、ひとつの GSAP タイムラインですべてを再生できます。タイムラインを返すと、ダイアログはそれを待ち、早く閉じた場合は止めます。"
+          "body": "<code>enter</code> フックはパーツとターゲットを受け取るので、ひとつの GSAP タイムラインですべてをアニメーションできます。タイムラインを返してください。ダイアログはそれを待ち、早く閉じた場合は止めます。"
         }
       },
       "styles": {
@@ -885,7 +885,7 @@
         "intro": "モーションスタイルは <code>ConfigProvider</code> に渡すひとつのオブジェクトで、アプリ全体の動きを決めます。ロール別、コンポーネント別に設定でき、自分の要素用のプリセットも持てます。",
         "style": {
           "title": "アプリにひとつのオブジェクト",
-          "body": "スタイルには <code>version: 1</code>、<code>spring</code>、そしてロール別（<code>overlay</code>、<code>list</code>、<code>press</code>、<code>reveal</code>、<code>content</code>）またはコンポーネント別（<code>dialog</code>、<code>toaster</code>）のキーがあります。コンポーネント自身の <code>motion</code> が引き続き優先されます。"
+          "body": "スタイルには <code>version: 1</code>、<code>spring</code>、そしてロール別（<code>overlay</code>、<code>list</code>、<code>press</code>、<code>reveal</code>、<code>content</code>）またはコンポーネント別（<code>dialog</code>、<code>toaster</code>）のキーがあります。コンポーネント自身の <code>motion</code> がそれを上書きします。"
         },
         "presets": {
           "title": "プリセット",
@@ -899,9 +899,9 @@
     },
     "blocks": {
       "title": "ブロック",
-      "intro": "vael-ui のいくつかのコンポーネントとそのモーションで作った、まとまった UI の部品です。アプリにコピーして自分のものにしてください。",
+      "intro": "vael-ui のいくつかのコンポーネントとそのモーションで作った、完成した UI の部品です。アプリにコピーして調整してください。",
       "comingTitle": "今後も追加予定",
-      "comingBody": "ブロックの置き場所、blocks.vael-ui.dev を準備中です。ここにあるのはその最初の一部です。",
+      "comingBody": "ブロックは専用のサイト blocks.vael-ui.dev に移る予定です。ここにあるのはその最初のものです。",
       "items": {
         "Bloom": {
           "title": "Bloom メニュー",
@@ -909,7 +909,7 @@
         },
         "Family": {
           "title": "ウォレットシート",
-          "body": "浮かぶシートのビューがその場でクロスフェードし、それぞれの高さに合わせて伸縮します。"
+          "body": "浮かぶシートのビューがその場でクロスフェードし、それぞれのビューの高さへなめらかに変わります。"
         },
         "Island": {
           "title": "ダイナミックアイランド",
@@ -917,7 +917,7 @@
         },
         "Feedback": {
           "title": "フィードバックウィジェット",
-          "body": "ボタンがフォームに広がり、送信とお礼がその場で切り替わります。"
+          "body": "ボタンがフォームに広がり、送信中の状態とお礼のメッセージがその場で切り替わります。"
         },
         "Stack": {
           "title": "通知スタック",
@@ -925,15 +925,15 @@
         },
         "Composer": {
           "title": "返信欄",
-          "body": "欄にフォーカスすると、ツールがばねで開き、返信ボタンがその下へ滑ります。"
+          "body": "欄にフォーカスすると、ツールがスプリングで開き、返信ボタンがその下へ滑ります。"
         },
         "ActionBar": {
           "title": "広がるアクションバー",
-          "body": "アクションを指すとラベルまで広がり、バーがついてきます。"
+          "body": "アクションを指すとラベルまで広がり、バーもそれに合わせてサイズが変わります。"
         },
         "Otp": {
           "title": "確認コード",
-          "body": "間違ったコードでは欄が揺れ、424242 でチェックが描かれます。"
+          "body": "間違ったコードでは欄が揺れ、424242 でチェックマークが描かれます。"
         },
         "Reveal": {
           "title": "スクロールで表示",
@@ -945,17 +945,17 @@
         },
         "Accordion": {
           "title": "弾むアコーディオン",
-          "body": "高さ、矢印、余白、角がひとつのばねに乗ります。"
+          "body": "高さ、矢印、余白、角がすべてひとつのスプリングで動きます。"
         },
         "Spotlight": {
           "title": "コマンドメニュー",
-          "body": "一日に何度も開くので、控えめな組み込みの見た目のままです。"
+          "body": "一日に何度も開くので、控えめな組み込みのモーションのままです。"
         }
       }
     },
     "showpieces": {
       "title": "並べて比較",
-      "intro": "このドキュメントの見どころとなるデモを、GSAP、motion、または vael-ui の組み込みの見た目で最初に作ったものと、vael-ui のモーションだけで作った同じものとで並べています。どちらも同じように再生でき、それぞれのコードを開けます。",
+      "intro": "このドキュメントの見どころとなる各デモは、最初は GSAP、motion、または vael-ui の組み込みのモーションで作られました。ここでは、それぞれを vael-ui のモーションだけで作り直した同じデモと並べています。どちらも同じように再生でき、それぞれのコードを開けます。",
       "filter": "最初の作り方",
       "all": "すべて",
       "builtin": "組み込み",

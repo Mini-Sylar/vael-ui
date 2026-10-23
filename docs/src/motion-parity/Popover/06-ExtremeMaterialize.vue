@@ -3,8 +3,8 @@
     <h3>Extreme: a panel that materializes out of its trigger</h3>
     <p class="note">
       The panel's <code>motion</code> gives it an <code>initial</code> and an <code>exit</code>. It
-      grows out of the corner nearest the trigger, coming into focus on a soft spring, and fades
-      back quicker than it came. Click the trigger mid-exit and it turns around from where it is.
+      grows out of the trigger's center, coming into focus on a soft spring, and fades back faster
+      than it came. Click the trigger mid-exit and it turns around from where it is.
     </p>
     <Popover v-model:open="open" side="bottom" align="start" :motion="materialize">
       <template #trigger="{ setTriggerEl }">

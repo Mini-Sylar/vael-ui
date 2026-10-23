@@ -2,9 +2,10 @@
   <section class="demo">
     <h3>Your own preview and your own control</h3>
     <p class="note">
-      <code>#preview</code> owns the resting look, so the same component renders a page heading, a
-      one-line title that has to truncate, and an empty value that still has somewhere to click. The
-      input keeps the preview's size through <code>size</code>.
+      <code>#preview</code> sets the resting look: a page heading, a one-line title that truncates,
+      and an empty value you can still click. <code>size</code> keeps the input the same size as the
+      preview. The status and the due date use <code>#edit</code> with a Select and a DatePicker
+      that save as soon as you pick.
     </p>
     <div class="stack">
       <Editable v-model="heading" size="lg" aria-label="Page title">

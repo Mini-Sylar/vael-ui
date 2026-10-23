@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Year buttons</h3>
     <p class="note">
-      <code>show-year-buttons</code> adds « and » to the panel's header, so a range starting a year
-      back is two clicks: « then the day.
+      <code>show-year-buttons</code> adds « and » to the panel’s header, so a range that starts a
+      year back takes two clicks: « and then the day.
     </p>
     <div class="row">
       <DatePicker

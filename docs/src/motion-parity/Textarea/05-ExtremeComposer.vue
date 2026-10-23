@@ -8,7 +8,7 @@
       <code>animate</code> eases the ring per keystroke, warming near the limit, and
       <code>states.invalid</code> shakes the box when you go over. The draft is drawn through
       <code>#display</code> under a <code>layoutId</code> the new bubble's text shares, so Send
-      carries the text itself out of the box into the thread, while the bubble lands behind it with
+      moves the text itself out of the box into the thread, while the bubble settles behind it with
       a little give and the ones above slide with <code>layout</code>. Cmd or Ctrl with Enter sends.
     </p>
     <div class="thread">

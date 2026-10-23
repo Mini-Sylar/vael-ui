@@ -1,7 +1,10 @@
 <template>
   <section class="demo">
     <h3>Custom <code>#indicator</code> slot</h3>
-    <p class="note">Fully consumer-owned, no bubble, no arrow, just a progress-driven bar.</p>
+    <p class="note">
+      The <code>#indicator</code> slot replaces the bubble and the arrow; here it draws a bar from
+      <code>progress</code>.
+    </p>
     <PullToRefresh class="ptr-box" :on-refresh="refreshCustom">
       <template #indicator="{ state, progress }">
         <div class="ptr-custom-indicator">

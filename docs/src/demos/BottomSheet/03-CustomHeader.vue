@@ -2,7 +2,8 @@
   <section class="demo">
     <h3>Custom <code>#header</code> slot</h3>
     <p class="note">
-      Replaces the title and close row entirely: the default is opt-in, not forced.
+      <code>#header</code> replaces the title and close button row. Here it has its own Done button
+      that calls <code>close()</code>.
     </p>
     <Button @click="customHeaderOpen = true">Share this page</Button>
     <BottomSheet v-model:open="customHeaderOpen" aria-label="Share">

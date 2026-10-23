@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>The ring glides, and springs if you like</h3>
+    <h3>A ring that glides or springs between cells</h3>
     <p class="note">
-      One ring follows the active cell, carrying the caret, so typing, Backspace and arrow keys move
-      it like a highlight in a list. It follows <code>ConfigProvider</code>'s
-      <code>indicator</code>: <code>'glide'</code> by default, <code>'instant'</code>, or a spring.
-      Type a code, then press Backspace a few times.
+      One ring follows the active cell with the caret, so typing, Backspace and the arrow keys move
+      it like the highlight in a list. It follows <code>ConfigProvider</code>'s
+      <code>indicator</code>: <code>'glide'</code> (the default), <code>'instant'</code> or a
+      spring. Type a code, then press Backspace a few times.
     </p>
     <div class="row">
       <SelectButton

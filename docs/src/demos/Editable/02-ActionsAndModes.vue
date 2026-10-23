@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Save and cancel buttons, double-click to open</h3>
     <p class="note">
-      <code>activation-mode="dblclick"</code> keeps a single click free for selecting text, and
-      <code>submit-mode="enter"</code> means leaving the field drops the change, so the buttons in
-      <code>#actions</code> are the way to commit with the pointer.
+      <code>activation-mode="dblclick"</code> leaves a single click free for selecting text. With
+      <code>submit-mode="enter"</code>, leaving the field cancels the change, so the buttons in
+      <code>#actions</code> are how you save with the pointer.
     </p>
     <Editable v-model="title" activation-mode="dblclick" submit-mode="enter" aria-label="Title">
       <template #actions="{ submit, cancel }">
@@ -14,11 +14,11 @@
     </Editable>
     <p class="demo-status">Title: {{ title }}</p>
 
-    <h3>Any control in #edit</h3>
+    <h3>Any control in <code>#edit</code></h3>
     <p class="note">
-      <code>#edit</code> hands you the draft and an <code>update</code> function, so the control can
-      be a Textarea, a Select, a date picker. Enter stays a new line in a textarea; Cmd or Ctrl with
-      Enter saves, and so does leaving.
+      <code>#edit</code> receives the draft and an <code>update</code> function, so the control can
+      be a Textarea, a Select or a DatePicker. In a Textarea, Enter adds a new line; Cmd+Enter or
+      Ctrl+Enter saves, and so does leaving the field.
     </p>
     <Editable v-model="note" placeholder="Add a note" aria-label="Note" class="note-editable">
       <template #preview="{ value }">

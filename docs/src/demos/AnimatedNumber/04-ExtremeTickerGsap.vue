@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Extreme: a ticker that flashes its direction (GSAP)</h3>
     <p class="note">
-      AnimatedNumber rolls the digits; you add the rest. Here each change flashes the number green
-      or red by direction, and GSAP kicks the arrow up or down. The roll runs on a slightly
+      AnimatedNumber rolls the digits, and you add the rest. Here the number turns green or red by
+      direction, and GSAP pulses its scale and pops the arrow in. The roll uses a slightly
       overshooting curve set through <code>--ui-ease-number</code>.
     </p>
     <div class="ticker">

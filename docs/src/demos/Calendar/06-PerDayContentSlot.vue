@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Per-day content via the #day slot</h3>
+    <h3>Per-day content with the <code>#day</code> slot</h3>
     <p class="note">
-      A dot badge for days with scheduled items, without forking the grid/keyboard-nav/month-
-      transition logic Calendar already owns. The slot receives
-      <code>{ date, isCurrentMonth, isToday, isSelected, isDisabled }</code> and only replaces what
-      renders inside the cell - click/hover/focus and aria attributes stay Calendar's own.
+      A dot marks days with scheduled items, while Calendar keeps its grid, keyboard navigation and
+      month transition. The slot receives
+      <code>{ date, isCurrentMonth, isToday, isSelected, isDisabled }</code> and replaces only the
+      cell’s content. Click, hover, focus and ARIA attributes stay with Calendar.
     </p>
     <div class="row">
       <Calendar v-model="value" :locale="currentLocale">

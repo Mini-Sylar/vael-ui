@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Single select, sizes</h3>
+    <h3>Single select and sizes</h3>
     <div class="row">
       <SelectButton v-model="viewSm" size="sm" :items="viewItems" />
       <SelectButton v-model="viewMd" size="md" :items="viewItems" />

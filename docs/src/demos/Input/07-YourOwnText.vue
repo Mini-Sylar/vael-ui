@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Your own text: letters rise in, tags light up</h3>
     <p class="note">
-      The <code>#display</code> slot draws the text yourself. vael-ui sets it exactly over the
-      input's own text and scrolls it with a long value, while the real input underneath keeps the
-      caret, selection, autofill and screen reader text. Here each letter rises in as you type and
-      <code>#tags</code> light up. Letters animated with a transform need
+      The <code>#display</code> slot draws the field’s text yourself. vael-ui places it exactly over
+      the input’s own text and scrolls it with a long value, while the real input underneath keeps
+      the caret, selection, autofill and screen reader text. Here each letter rises in as you type,
+      and hashtags light up. Letters animated with a transform need
       <code>display: inline-block</code>, which drops kerning, so the input turns kerning off too
       and the caret stays on the letters.
     </p>

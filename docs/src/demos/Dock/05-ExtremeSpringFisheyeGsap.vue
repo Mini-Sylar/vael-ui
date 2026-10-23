@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: a spring fisheye (GSAP)</h3>
     <p class="note">
-      <code>:magnify="false"</code> turns the built-in magnification off, and
-      <code>itemEls()</code> hands you the item buttons. Here a spring per icon, stepped on GSAP's
-      ticker, sizes each one by its distance to the pointer and pushes its neighbors aside, so the
-      dock grows around the cursor. Clicking an app launches it with a double bounce.
+      <code>:magnify="false"</code> turns off the built-in magnification, and
+      <code>itemEls()</code> returns the item buttons. Here a spring per icon, stepped on GSAP’s
+      ticker, scales each one by its distance to the pointer and pushes its neighbors aside, so the
+      dock grows around the cursor. Clicking an app makes it bounce twice.
     </p>
     <div class="stage">
       <Dock

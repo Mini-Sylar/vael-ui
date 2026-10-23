@@ -3,7 +3,7 @@
     <h3>Extreme: segments land one after another</h3>
     <p class="note">
       The fill's <code>initial</code> starts each segment at nothing, a beat after the one before,
-      and it lands with a little overshoot. Each count rolls up from 0 with a
+      and it settles with a little overshoot. Each count rolls up from 0 with a
       <code>v-animate</code> of its own. Land again draws the bar afresh, so both play again.
     </p>
     <Progress

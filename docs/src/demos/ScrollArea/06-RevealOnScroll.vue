@@ -3,8 +3,8 @@
     <h3>Reveal as you scroll</h3>
     <p class="note">
       <code>v-animate</code> with <code>when: 'visible'</code> plays each card's entrance the first
-      time it scrolls into view, here inside the ScrollArea's own viewport. One line per element; no
-      observers to wire.
+      time it scrolls into view, here inside ScrollArea's viewport. Cards that appear together come
+      in one after another with <code>stagger</code>. You don't set up an observer.
     </p>
     <ScrollArea class="reveal-area">
       <ul class="reveal-list">

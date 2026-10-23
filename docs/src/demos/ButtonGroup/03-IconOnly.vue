@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3>Icon-only</h3>
-    <p class="note">A compact zoom control, no labels needed once the icons are unambiguous.</p>
+    <p class="note">A compact zoom control. Clear icons don’t need visible labels.</p>
     <div class="row">
       <ButtonGroup aria-label="Zoom">
         <Button variant="outline" size="sm" icon aria-label="Zoom out" @click="zoom--">

@@ -3,10 +3,10 @@
     <h3>Styling a toggle</h3>
     <p class="note">
       <code>v-model:pressed</code> turns a Button into a toggle, and a ghost, outline or secondary
-      one already looks pressed when it's on. For your own look, bind a class from the same value.
-      To style every toggle in the app at once, target <code>[aria-pressed='true']</code>, which
-      Button sets for you, from ConfigProvider's <code>button.ui.root</code>, or use Tailwind's
-      <code>aria-pressed:</code> variant. Your styles win over vael-ui's without
+      one already looks pressed when it’s on. For your own look, bind a class from the same value.
+      To style every toggle in the app, target <code>[aria-pressed='true']</code>, which Button sets
+      for you, from ConfigProvider’s <code>button.ui.root</code>, or use Tailwind’s
+      <code>aria-pressed:</code> variant. Your styles win over vael-ui’s without
       <code>!important</code>.
     </p>
     <div class="row">

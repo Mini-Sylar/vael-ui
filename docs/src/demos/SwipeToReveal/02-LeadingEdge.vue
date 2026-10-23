@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Reveal from the leading edge, <code>#leading-actions</code></h3>
+    <h3>Actions on the leading edge with <code>#leading-actions</code></h3>
     <ul class="swipe-list">
       <li class="swipe-row">
         <SwipeToReveal>

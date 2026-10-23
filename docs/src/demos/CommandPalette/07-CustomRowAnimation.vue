@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Your own row animation (GSAP)</h3>
     <p class="note">
-      By default, rows change at once while you type and only the list's height eases.
-      <code>motion.items</code> with <code>enter</code> and <code>leave</code> hooks hands each row
-      to your library: return the tween and the row waits for it. <code>appear</code> plays it for
-      the rows already there each time it opens, so they rise in top first; filtering brings rows
-      back the same way.
+      By default, rows change at once while you type, and only the list’s height eases.
+      <code>motion.items</code> with <code>enter</code> and <code>leave</code> hooks animates each
+      row with your library: return the tween, and vael-ui waits for it. <code>appear</code> plays
+      it for the rows already there each time the palette opens, so they rise in from the top;
+      filtering brings rows back the same way.
     </p>
     <div class="row">
       <Button @click="open = true">Open command palette</Button>

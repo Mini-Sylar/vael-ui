@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Rich content, the <code>&lt;Tooltip&gt;</code> component path</h3>
+    <h3>Rich content with the <code>&lt;Tooltip&gt;</code> component</h3>
     <div class="row">
       <Tooltip :open-delay="300">
         <template #trigger="{ setTriggerEl }">
@@ -25,8 +25,8 @@
     </div>
 
     <p class="note">
-      Custom entrance and exit (motion-v): <code>enter</code> and <code>leave</code> hooks in the
-      <code>motion</code> prop hand the panel to motion-v, as they do on Popover and Dialog.
+      Custom animation (motion-v): <code>enter</code> and <code>leave</code> hooks in
+      <code>motion</code> animate the panel with motion-v, as they do on Popover and Dialog.
     </p>
     <div class="row">
       <Tooltip :open-delay="200" :trigger-el="motionTriggerRef" :motion="sprung">

@@ -3,9 +3,8 @@
     <h3>Grow from what you clicked</h3>
     <p class="note">
       <code>origin="trigger"</code> zooms the dialog out of the element that opened it, and back
-      into it on close, so a card reads as expanding into its details. It rides the drawer curve, so
-      a <code>ConfigProvider</code> motion mode's spring carries it too. Reduced motion keeps a
-      plain fade.
+      into it on close, so a card looks like it expands into its details. It uses the drawer curve,
+      so a <code>ConfigProvider</code> spring applies to it too. Reduced motion keeps a plain fade.
     </p>
     <div class="grid">
       <button

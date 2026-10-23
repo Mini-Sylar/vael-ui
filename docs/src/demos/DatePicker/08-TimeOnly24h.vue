@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Time only, forced 24h</h3>
+    <h3>Time only, 24-hour</h3>
     <p class="note">
-      <code>timeOnly</code> hides the calendar entirely — just the hour/minute row.
-      <code>hourFormat="24"</code> forces 24h even though the locale would otherwise default to 12h,
-      and drops the AM/PM toggle since it isn't needed.
+      <code>timeOnly</code> shows only the hour and minute row, without the calendar.
+      <code>hourFormat="24"</code> uses 24-hour time even where the locale defaults to 12-hour, and
+      drops the AM/PM toggle.
     </p>
     <div class="row">
       <DatePicker

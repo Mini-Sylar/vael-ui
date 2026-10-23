@@ -1,7 +1,9 @@
 <template>
   <section class="demo">
-    <h3><code>allowHalf</code> precision</h3>
-    <p class="note">Half-star steps for both pointer and keyboard (arrow keys step by 0.5).</p>
+    <h3>Half stars with <code>allowHalf</code></h3>
+    <p class="note">
+      Half-star steps for the pointer and the keyboard, where the arrow keys step by 0.5.
+    </p>
     <Field label="Your rating">
       <Rating v-model="value" allow-half :max="5" />
     </Field>

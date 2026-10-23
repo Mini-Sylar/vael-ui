@@ -1,14 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Custom exit animations: GSAP and motion-v</h3>
+    <h3>Your own enter and exit: GSAP and motion-v</h3>
     <p class="note">
-      Dialog's panel Teleports to <code>&lt;body&gt;</code>, so it can't be wrapped in
-      <code>AnimatePresence</code> for exit animation the way an un-Teleported component can.
-      Instead, the <code>motion</code> prop takes <code>enter</code> and <code>leave</code> hooks
-      that receive the panel: return your tween and the dialog stays mounted until it finishes.
-      "Grow from here" is the extreme end: it reads the trigger button's real
-      <code>getBoundingClientRect()</code> on open and morphs the panel out of that exact position
-      and size, then shrinks back into it on close.
+      The <code>motion</code> prop’s <code>enter</code> and <code>leave</code> hooks receive the
+      panel. Return your tween, and the dialog stays mounted until it finishes. “Grow from here”
+      reads the button’s <code>getBoundingClientRect()</code> on open, grows the panel out of that
+      position and size, and shrinks it back on close.
     </p>
     <div class="row">
       <Button @click="gsapOpen = true">Fade (GSAP)</Button>
@@ -24,10 +21,10 @@
       >
     </div>
     <p class="note">
-      "Dynamic FLIP" runs the identical shared-element math as "Grow from here," but through
+      “Dynamic FLIP” runs the same animation with motion-v, through
       <code>openDialog()</code> instead of a template <code>&lt;Dialog&gt;</code>: the same
-      <code>motion</code> hooks go in its options. Nothing about a dynamic dialog is
-      animation-limited compared to a static one.
+      <code>motion</code> hooks go in its options. A dialog opened from code animates the same way
+      as one in a template.
     </p>
 
     <Dialog

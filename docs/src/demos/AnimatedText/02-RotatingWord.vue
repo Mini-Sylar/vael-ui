@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>A rotating word</h3>
     <p class="note">
-      Swap the value on a timer for a headline. The words after it ease along with the width. Tune
-      it with <code>--ui-duration-text</code> and <code>--ui-ease-text</code>.
+      Swap the value on a timer for a headline. The words after it move as the width eases. Tune it
+      with <code>--ui-duration-text</code> and <code>--ui-ease-text</code>.
     </p>
     <p class="headline">
       Design for every <AnimatedText :value="words[index]!" class="word" />, in one place.

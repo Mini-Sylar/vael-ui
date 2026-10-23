@@ -3,7 +3,7 @@
     <h3>Animated placeholder and values</h3>
     <p class="note">
       <code>animated</code> crossfades a placeholder that changes, even while the field is focused
-      and empty, and a value your code sets while you're away from the field. What you type never
+      and empty, and a value your code sets while the field isn’t focused. What you type never
       animates.
     </p>
     <div class="stack">

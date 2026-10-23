@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Extreme: gesture-scrubbed GSAP timeline for the actions (gsap)</h3>
+    <h3>Extreme: actions that spin in with your finger (gsap)</h3>
     <p class="note">
-      The panel's <code>progress</code> slot prop (0 → 1 as the edge is revealed) scrubs a paused
-      GSAP timeline, so the buttons cartwheel in <em>with</em> your finger and reverse when you drag
-      back. On release the library owns the settle — the timeline just eases to the same endpoint.
-      No internal classes touched; <code>:reveal-scale="false"</code> hands the panel to GSAP.
+      The exposed <code>trailingProgress</code>, from 0 to 1 as the edge opens, scrubs a paused GSAP
+      timeline, so the buttons spin in as you drag and reverse when you drag back. When you let go,
+      the timeline eases to where the row settles. <code>:reveal-scale="false"</code> turns off the
+      built-in scale on the actions, so GSAP is the only animation on them.
     </p>
     <ul class="swipe-list">
       <li v-for="row in rows" :key="row.id" class="swipe-row">

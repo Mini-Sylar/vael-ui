@@ -2,12 +2,12 @@
   <section class="demo">
     <h3>Extreme: a fare calendar</h3>
     <p class="note">
-      The <code>#day</code> slot shows each day's fare, coloured from cheap to pricey, with a dot on
+      The <code>#day</code> slot shows each day's fare, colored from cheap to pricey, with a dot on
       the best deals. Every day is <code>v-animate</code> markup: a new month falls in on a diagonal
       wave (<code>delay</code> from the cell's place, <code>replay</code> on the date), departure
       and return spring up to the size CSS gives a picked day (<code>replay</code> on the pick), and
-      a finished trip ripples its fares from one end to the other.
-      <code>:motion="false"</code> turns off the built-in slide so the two don't fight.
+      a finished trip ripples its fares from one end to the other. <code>:motion="false"</code>
+      turns off the built-in slide so the two don't fight.
     </p>
     <div class="fare">
       <Calendar

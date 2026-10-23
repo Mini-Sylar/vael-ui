@@ -3,7 +3,7 @@
     <h3>Extreme: a step grows out of the line</h3>
     <p class="note">
       A <code>motion</code> object gives each step's parts their own look and timing. A new event
-      grows the line down from the step above, then its marker springs in where the line lands, then
+      grows the line down from the step above, then its marker springs in where the line ends, then
       its label settles. Removing one plays it back, the line retracting into the next marker, and
       <code>leaving: 'hold'</code> keeps the gap until it has gone.
     </p>

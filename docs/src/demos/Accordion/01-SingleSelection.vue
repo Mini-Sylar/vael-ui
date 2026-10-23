@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Single selection (FAQ)</h3>
     <p class="note">
-      Opening one item closes the previous one. Set <code>:collapsible="false"</code> if you want
-      the currently open item to stay open when its own trigger is clicked, useful for a settings
-      panel where some section should never fully collapse.
+      Opening one item closes the one that was open. Set <code>:collapsible="false"</code> to keep
+      the open item open when you click its own trigger, such as a settings panel where one section
+      always stays open.
     </p>
     <Accordion v-model:value="singleValue" class="accordion-demo">
       <AccordionItem value="shipping" title="What are the shipping options?">

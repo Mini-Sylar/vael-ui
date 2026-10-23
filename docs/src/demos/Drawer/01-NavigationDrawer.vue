@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Navigation drawer: <code>side="left"</code> / <code>"right"</code></h3>
+    <h3>Navigation drawer: <code>side="left"</code> or <code>"right"</code></h3>
     <div class="row">
       <Button @click="navOpen = true">Open navigation</Button>
       <Button variant="outline" @click="cartOpen = true">Open cart</Button>

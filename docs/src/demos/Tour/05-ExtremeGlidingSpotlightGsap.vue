@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Extreme: the spotlight glides between steps (GSAP)</h3>
     <p class="note">
-      With <code>:motion="false"</code> Tour's own glide is off and the cutout jumps to each target.
-      On every <code>@step-change</code>, one GSAP timeline carries the exposed
-      <code>spotlightEl</code> from the old target to the new one. Its position, size and corner
-      radius morph together, and <code>panelEl</code> rides along on the same progress value. Press
-      Next or Back mid-glide and it turns from where it is.
+      With <code>:motion="false"</code>, Tour's own glide is off and the cutout jumps to each
+      target. On every <code>@step-change</code>, one GSAP timeline moves the exposed
+      <code>spotlightEl</code> from the old target to the new one, changing its position, size and
+      corner radius together, and <code>panelEl</code> follows on the same progress. Press Next or
+      Back mid-glide and it heads for the new target from where it is.
     </p>
     <div class="row">
       <Button @click="open = true">Start tour</Button>

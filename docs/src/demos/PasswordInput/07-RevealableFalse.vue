@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3><code>revealable=false</code></h3>
-    <p class="note">For forms that never want the value shown in plain text.</p>
+    <p class="note">For forms that should never show the password as plain text.</p>
     <PasswordInput
       v-model="hidden"
       :revealable="false"

@@ -1,10 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Extreme: a panel that materializes out of its trigger (motion-v)</h3>
+    <h3>Extreme: a panel that grows out of its trigger, from a blur (motion-v)</h3>
     <p class="note">
-      A <code>motion</code> object hands the panel to motion-v. It grows out of the corner nearest
-      the trigger, coming into focus on a soft spring, and fades back quicker than it came. Click
-      the trigger mid-exit and it turns around from where it is.
+      <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate the panel with
+      motion-v. It grows out of its trigger and comes into focus on a soft spring, then fades out
+      faster than it came in. Click the trigger during the exit and the panel reopens from where it
+      is.
     </p>
     <Popover v-model:open="open" side="bottom" align="start" :motion="materialize">
       <template #trigger="{ setTriggerEl }">

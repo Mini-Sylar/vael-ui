@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Spring fill with vael-ui's spring</h3>
     <p class="note">
-      The same flaky feed as the GSAP example, driven by <code>createSpring</code> from vael-ui: no
-      animation library. Each new value retargets from where the fill is now, keeping its speed, so
-      a jump back down reads as one continuous motion. Below 1, damping overshoots a little.
+      The same jumpy feed as the GSAP example, driven by vael-ui's <code>createSpring</code> with no
+      animation library. Each new value starts from where the fill is and keeps its speed, so a step
+      back still moves as one motion. Damping below 1 overshoots.
     </p>
     <div class="row">
       <Progress ref="bar" :value="null" label="Upload" class="bar" />

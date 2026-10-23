@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3><code>#start</code>/<code>#end</code> and the bottom action strip</h3>
+    <h3><code>#start</code>, <code>#end</code> and the bottom action strip</h3>
     <Textarea
       v-model="composerValue"
       auto-grow

@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Icons, shortcut hints, and groups</h3>
     <p class="note">
-      <code>icon</code>, <code>shortcut</code>, and <code>group</code> are all optional per item.
-      <code>shortcut</code> is display-only — a <code>Kbd</code> hint, not a functioning key binding
-      — items sharing a <code>group</code> cluster under a sticky heading in first-seen order, even
-      when they aren't adjacent in the array. Arrow keys follow that order. The
-      <code>#group-label</code> slot adds a count to each heading here.
+      <code>icon</code>, <code>shortcut</code> and <code>group</code> are optional on each item.
+      <code>shortcut</code> only shows a <code>Kbd</code> hint; it doesn’t bind the key. Items that
+      share a <code>group</code> appear under a sticky heading, in the order each group first
+      appears, even when they aren’t next to each other in the array. The arrow keys follow that
+      order, and the <code>#group-label</code> slot adds a count to each heading here.
     </p>
     <div class="row">
       <Button variant="outline" @click="groupedOpen = true">Open grouped palette</Button>

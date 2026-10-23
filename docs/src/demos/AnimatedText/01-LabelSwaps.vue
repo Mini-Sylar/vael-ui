@@ -2,8 +2,9 @@
   <section class="demo">
     <h3>Label swaps</h3>
     <p class="note">
-      A new value blurs in as the old one blurs out, and the box eases to the new width, so the
-      button and the text after it slide instead of jumping. Press Copy, then Save.
+      The new value rises into place while the old one fades out, and the box eases to the new
+      width, so the button and the text after it slide instead of jumping. Press Copy link, then
+      Save changes.
     </p>
     <div class="row">
       <Button variant="secondary" @click="copy">

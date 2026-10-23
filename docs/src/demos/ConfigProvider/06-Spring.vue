@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>One spring for everything</h3>
     <p class="note">
-      <code>:motion="{ spring }"</code> takes a damping and a response, and the drawer, the number
-      and the tab indicator all move on it. The label's crossfade keeps its own quick timing. Below
-      1, damping overshoots. Bind it to the sliders and the whole app retunes live. Open the drawer,
-      change the number and switch tabs.
+      <code>:motion="{ spring: { damping, response } }"</code> puts the drawer, the number and the
+      tab indicator on one spring. The label’s crossfade keeps its own short timing. Damping below 1
+      overshoots, and <code>response</code> is in seconds. The sliders are bound to both values, so
+      everything inside retunes as you drag. Open the drawer, change the number and switch tabs.
     </p>
     <div class="tuning">
       <Field :label="`Damping ${damping}`">

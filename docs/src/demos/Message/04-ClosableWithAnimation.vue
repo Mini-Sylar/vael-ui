@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Closable, with a custom exit animation (GSAP)</h3>
     <p class="note">
-      A <code>leave</code> hook in the <code>motion</code> prop hands the message to GSAP, and
-      Message closes the space it took once the tween ends. The dismiss button and the exposed
-      <code>close()</code> method both play it.
+      A <code>leave</code> hook in <code>motion</code> animates the message out with GSAP, and
+      Message closes the space it took once the tween ends. The close button and the exposed
+      <code>close()</code> both play it.
     </p>
     <div class="row">
       <Button

@@ -4,7 +4,7 @@
     <p class="note">
       Pagination's <code>stretch</code> lets the edge facing the new page leave first and the other
       follow on a bouncier spring, and <code>squash</code> starts each move a little flattened. The
-      page numbers in the contrast color ride along with the pill.
+      page numbers in the contrast color move with the pill.
     </p>
     <Pagination
       v-model:page="page"

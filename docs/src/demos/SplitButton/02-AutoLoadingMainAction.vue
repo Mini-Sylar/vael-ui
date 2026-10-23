@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Auto-loading main action</h3>
+    <h3>Loading state from the main action</h3>
     <p class="note">
-      The main action forwards straight onto its own inner <code>Button</code>, so returning a
-      promise from <code>@click</code> drives Button's loading state with zero extra wiring, exactly
-      like a plain <code>&lt;Button @click&gt;</code> would.
+      The main action is its own <code>Button</code>, so returning a promise from
+      <code>@click</code> shows its loading state with no extra code, as on a plain
+      <code>&lt;Button @click&gt;</code>.
     </p>
     <div class="row">
       <SplitButton :items="saveItems" @click="onSlowSave">Publish</SplitButton>

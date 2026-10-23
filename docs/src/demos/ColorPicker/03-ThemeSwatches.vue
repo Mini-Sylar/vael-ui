@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>A palette, edited live</h3>
     <p class="note">
-      Five pickers bound to five custom properties on the card. Each panel offers the other four as
-      presets, so a palette can be built from itself. The card restyles as you drag.
+      Five pickers bound to five custom properties on the card. Each panel offers the other four
+      colors as presets, so the palette reuses its own colors. The card updates as you drag.
     </p>
     <div class="card" :style="cardStyle">
       <div class="card-head">

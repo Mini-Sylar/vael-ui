@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Invalid / disabled</h3>
+    <h3>Invalid and disabled</h3>
     <div class="row">
       <Field label="Invalid">
         <OtpInput v-model="invalidCode" invalid :length="4" />

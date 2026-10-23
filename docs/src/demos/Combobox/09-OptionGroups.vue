@@ -3,8 +3,8 @@
     <h3>Option groups</h3>
     <p class="note">
       The same <code>{ label, items }</code> entries as Select. Typing filters inside each group and
-      hides a group with no match, and arrow keys move through every group. The
-      <code>#group-label</code> slot shows how many of each group still match.
+      hides a group with no match, and the arrow keys move through every group. The
+      <code>#group-label</code> slot shows how many items in each group still match.
     </p>
     <div class="row">
       <Field label="Ingredient">

@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Stepper position: <code>end</code> (default) vs <code>split</code></h3>
+    <h3>Stepper position: <code>end</code> (default) or <code>split</code></h3>
     <p class="note">
-      <code>end</code> stacks +/- into one column after the value. <code>split</code> puts one
-      full-height button on each side instead, closer to a quantity stepper in a cart.
+      <code>end</code> stacks + and − in one column after the value. <code>split</code> puts a
+      full-height button on each side, like a quantity stepper in a cart.
     </p>
     <div class="row">
       <Field label="Guests">

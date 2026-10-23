@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Inline appearance for form validation</h3>
     <p class="note">
-      <code>appearance="bare"</code> drops the border/background/padding, icon plus colored text
-      only, sized for sitting directly under a field instead of standing alone as a banner.
+      <code>appearance="bare"</code> drops the border, background and padding, leaving the icon and
+      colored text. It fits under a field instead of standing alone as a banner.
     </p>
     <div class="field">
       <label class="field-label" for="email-field">Email</label>

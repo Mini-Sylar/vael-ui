@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Basic usage</h3>
     <p class="note">
-      Default <code>hintPlacement="popover"</code>: the checklist appears while focused, next to the
-      field, and doesn't shift anything else on the page.
+      With the default <code>hintPlacement="popover"</code>, the checklist shows next to the field
+      while it's focused, without moving anything else on the page.
     </p>
     <PasswordInput
       v-model="basic"

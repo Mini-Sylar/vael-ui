@@ -1,13 +1,13 @@
 <template>
   <section class="demo">
-    <h3>Extreme: a message composer that grows, counts, and sends (GSAP)</h3>
+    <h3>Extreme: a message composer that grows, counts and sends (GSAP)</h3>
     <p class="note">
-      Everything lives in Textarea's own slots: an avatar in <code>#start</code>, an attach button
-      in <code>#bottom-start</code>, and the budget ring with Send in <code>#bottom-end</code>.
-      <code>auto-grow</code> keeps the box the size of the message. GSAP eases the ring per
-      keystroke, warming near the limit, and Send lifts the text out of the box (through the exposed
-      <code>textareaEl</code>) into a bubble that lands with a little give. Cmd or Ctrl with Enter
-      sends.
+      Everything sits in Textarea's own slots: an avatar in <code>#start</code>, an attach button in
+      <code>#bottom-start</code>, and the character-count ring with Send in
+      <code>#bottom-end</code>. <code>auto-grow</code> keeps the box the size of the message. GSAP
+      eases the ring on each keystroke and warms its color near the limit. Send lifts the text out
+      of the exposed <code>textareaEl</code> into a bubble that settles with a slight bounce.
+      Cmd+Enter or Ctrl+Enter sends.
     </p>
     <div class="thread">
       <TransitionGroup name="bubble" tag="div" class="bubbles">

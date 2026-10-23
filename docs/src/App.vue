@@ -484,7 +484,15 @@ const mobileSettingsOpen = shallowRef(false)
 const i18n = useI18n()
 const { t } = i18n
 const locale = useLocalStorage<Locale>('vael-ui-docs-locale', 'en')
-watch(locale, (l) => setLocale(l), { immediate: true })
+watch(
+  locale,
+  (l) => {
+    void setLocale(l)
+    // Screen readers and the browser's translate prompt read the page's language from here.
+    if (typeof document !== 'undefined') document.documentElement.lang = l
+  },
+  { immediate: true },
+)
 
 const localeItems = SUPPORTED_LOCALES.map((l) => ({
   label: l.toUpperCase(),

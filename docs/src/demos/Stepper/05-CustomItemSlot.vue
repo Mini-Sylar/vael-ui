@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3><code>#item</code> and <code>#indicator</code> slots, custom label and circle content</h3>
+    <h3><code>#item</code> and <code>#indicator</code>: your own label and circle content</h3>
     <Stepper v-model="freeStep" :items="checkoutSteps" class="stepper-demo">
       <template #indicator="{ index, completed }">
         <PhCheck v-if="completed" weight="bold" />

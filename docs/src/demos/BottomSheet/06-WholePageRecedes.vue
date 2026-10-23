@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>The whole page recedes</h3>
     <p class="note">
-      The same <code>linked</code> entry as the Drawer's: the page recedes while the sheet is open,
-      and follows your finger as you drag the sheet down, coming back as it closes.
+      The same <code>linked</code> entry as the Drawer demo: the page recedes while the sheet is
+      open, follows the sheet as you drag it down, and comes back as it closes.
     </p>
     <Button @click="show">Open the sheet</Button>
     <BottomSheet v-model:open="open" title="Share" :motion="recede" @after-leave="reset">

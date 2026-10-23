@@ -21,7 +21,7 @@ export const pairedComposables: Record<string, PairedComposable[]> = {
       name: 'useTabs',
       installNames: ['useTabs'],
       description:
-        'The keyboard engine behind `<Tabs>`: selection, roving focus and arrow key navigation from the APG tabs pattern. It renders nothing. You render the `role="tab"` elements and bind `onKeydown` on the list. `<Tabs>` adds the markup, ids, panel wiring and the sliding indicators on top. Use the composable when your tabs need markup the `#item` slot can\'t give you.',
+        'The keyboard engine behind `<Tabs>`: selection, roving focus and arrow key navigation from the ARIA Authoring Practices Guide (APG) tabs pattern. It renders nothing. You render the `role="tab"` elements and bind `onKeydown` on the list. `<Tabs>` adds the markup, ids, panel wiring and the sliding indicators on top. Use the composable when your tabs need markup the `#item` slot can\'t give you.',
       exampleCode: `<script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
 import { useTabs } from 'vael-ui'
@@ -52,31 +52,31 @@ const { select, onKeydown } = useTabs(active, { items: tabs, listEl })
           name: 'active',
           type: 'Ref<T>',
           description:
-            'First argument. The selected item. `select()` and the arrow keys write to it.',
+            'The selected item (first argument). `select()` and the arrow keys write to it.',
         },
         {
           name: 'items',
           type: 'MaybeRefOrGetter<readonly T[]>',
           description:
-            'Every tab, in order. Items should be strings or numbers: a tab element is matched by `data-tab-value="String(item)"`, then by its position among the `role="tab"` elements.',
+            'Every tab, in order. Use strings or numbers: a tab element is matched by `data-tab-value="String(item)"`, then by its position among the `role="tab"` elements.',
         },
         {
           name: 'listEl',
           type: 'Ref<HTMLElement | null>',
           description:
-            'The tab list. Its `role="tab"` descendants are the tabs. A tab with `disabled` or `aria-disabled="true"` is skipped.',
+            'The tab list. Its `role="tab"` descendants are the tabs. It skips a tab with `disabled` or `aria-disabled="true"`.',
         },
         {
           name: 'orientation',
           type: "MaybeRefOrGetter<'horizontal' | 'vertical'>",
           description:
-            'Horizontal tabs move with Left and Right arrows, vertical tabs with Up and Down. Default `horizontal`.',
+            'The arrow keys it uses: Left and Right for horizontal tabs, Up and Down for vertical ones. Default `horizontal`.',
         },
         {
           name: 'activation',
           type: "MaybeRefOrGetter<'automatic' | 'manual'>",
           description:
-            'Default `automatic`: the arrow keys select as they move focus. `manual`: the arrow keys only move focus, and Enter or Space selects the focused tab. Use `manual` when switching tabs is expensive, such as a tab that loads data.',
+            'When a tab gets selected. Default `automatic`: the arrow keys select as they move focus. With `manual`, the arrow keys only move focus, and Enter or Space selects the focused tab. Use `manual` when switching tabs is expensive, such as a tab that loads data.',
         },
         {
           name: 'onChange',
@@ -95,7 +95,7 @@ const { select, onKeydown } = useTabs(active, { items: tabs, listEl })
           name: 'onKeydown',
           type: '(event: KeyboardEvent) => void',
           description:
-            'Bind it on the list. Arrow keys move to the next enabled tab and wrap around the ends. Home and End jump to the first and last enabled tab. Focus follows after the next render.',
+            'Bind it on the list. The arrow keys move to the next enabled tab and wrap around the ends. Home and End jump to the first and last enabled tab. Focus follows after the next render.',
         },
         {
           name: 'focused',
@@ -112,7 +112,7 @@ const { select, onKeydown } = useTabs(active, { items: tabs, listEl })
       name: 'useMenu',
       installNames: ['useMenu'],
       description:
-        'The keyboard engine behind `<Menu>`, `<MenuList>` and the SpeedDial actions: roving focus, wrapping arrow keys, Home and End, and typeahead. It finds items by `role="menuitem"`, `menuitemcheckbox`, `menuitemradio` or a `data-menu-item` attribute, and skips disabled ones. It also listens for clicks on the list, so you don\'t bind `@click` on each item. Enter and Space click the focused item, so its own click handlers run once. The composable never closes anything: `onSelect` tells you an item fired, and you decide what happens next.',
+        'The keyboard engine behind `<Menu>`, `<MenuList>` and the SpeedDial actions: roving focus, wrapping arrow keys, Home and End, and typeahead. It finds items by `role="menuitem"`, `menuitemcheckbox`, `menuitemradio` or a `data-menu-item` attribute, and skips disabled ones. It listens for clicks on the list, so you don\'t bind `@click` on each item. Enter and Space click the focused item, so its own click listeners run once. The composable never closes anything: `onSelect` fires, and you decide what happens next.',
       exampleCode: `<script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
 import { useMenu } from 'vael-ui'
@@ -143,19 +143,19 @@ onMounted(initRoving)
           name: 'onSelect',
           type: '(itemEl: HTMLElement) => void',
           description:
-            "Fires when an enabled item is activated, by click or by Enter or Space while it has focus. It doesn't fire for submenu triggers. `<Menu>` closes here unless the item carries `data-keep-open`.",
+            "Fires when an enabled item is activated, by click or by Enter or Space while it has focus. It doesn't fire for submenu triggers. `<Menu>` closes here unless the item has `data-keep-open`.",
         },
         {
           name: 'onExpand',
           type: '(itemEl: HTMLElement) => void',
           description:
-            'Fires instead of `onSelect` when the activated item has `aria-haspopup="menu"`. ArrowRight on such an item clicks it, so it lands here too. `<Menu>` opens the nested submenu.',
+            'Fires instead of `onSelect` when the activated item has `aria-haspopup="menu"`. ArrowRight on such an item clicks it, so it fires this too. `<Menu>` opens the nested submenu.',
         },
         {
           name: 'onCollapse',
           type: '() => void',
           description:
-            'Fires on ArrowLeft. Wire it only when this list is a submenu, to close it and return focus to the parent row. Without it, ArrowLeft does nothing.',
+            'Fires on ArrowLeft. Pass it only when this list is a submenu, to close it and return focus to the parent row. Without it, ArrowLeft does nothing.',
         },
       ],
       returns: [
@@ -181,7 +181,7 @@ onMounted(initRoving)
           name: 'initRoving',
           type: '() => void',
           description:
-            'Gives the first enabled item `tabindex="0"` without focusing it. Call it once on mount for a list that is always on screen, like `<MenuList>`.',
+            'Gives the first enabled item `tabindex="0"` without focusing it. Call it once on mount for a list that is always on screen, such as `<MenuList>`.',
         },
       ],
     },
@@ -192,7 +192,7 @@ onMounted(initRoving)
       name: 'useListbox',
       installNames: ['useListbox'],
       description:
-        'The active option and keyboard engine behind `<Select>` and `<Combobox>`. Focus stays on the trigger or input, and the active option travels through `aria-activedescendant`. The composable only tracks an index: it renders nothing and reads no DOM. `<Select>` adds the popover, filtering, virtualization and the option markup. Use it to build a listbox of your own with the same keyboard behaviour.',
+        'The active option and keyboard engine behind `<Select>` and `<Combobox>`. Focus stays on the trigger or input, and `aria-activedescendant` points at the active option. The composable only tracks an index: it renders nothing and reads no DOM. `<Select>` adds the popover, filtering, virtualization and the option markup. Use it to build a listbox of your own with the same keyboard behavior.',
       exampleCode: `<script setup lang="ts">
 import { shallowRef, useId } from 'vue'
 import { useListbox } from 'vael-ui'
@@ -255,12 +255,12 @@ const { activeIndex, activeId, onKeydown, point, optionId } = useListbox({
           name: 'isDisabled',
           type: '(item: T) => boolean',
           description:
-            'Disabled options are skipped by the arrow keys and typeahead, and Enter ignores them.',
+            'Marks options as disabled. The arrow keys and typeahead skip them, and Enter ignores them.',
         },
         {
           name: 'onSelect',
           type: '(item: T, index: number) => void',
-          description: 'Required. Fires when Enter commits the active option.',
+          description: 'Fires when Enter commits the active option. Required.',
         },
         {
           name: 'onActiveChange',
@@ -271,7 +271,7 @@ const { activeIndex, activeId, onKeydown, point, optionId } = useListbox({
         {
           name: 'listboxId',
           type: 'string',
-          description: "Required. The listbox element's id. Option ids derive from it.",
+          description: "The listbox element's id. Option ids are built from it. Required.",
         },
       ],
       returns: [
@@ -308,7 +308,8 @@ const { activeIndex, activeId, onKeydown, point, optionId } = useListbox({
         {
           name: 'optionId',
           type: '(index: number) => string',
-          description: 'The id to put on the option at `index`: `${listboxId}-opt-${index}`.',
+          description:
+            'Returns the id to put on the option at `index`: `${listboxId}-opt-${index}`.',
         },
       ],
     },
@@ -319,7 +320,7 @@ const { activeIndex, activeId, onKeydown, point, optionId } = useListbox({
       name: 'useToolbar',
       installNames: ['useToolbar'],
       description:
-        "The engine behind `<Toolbar>`: one Tab stop for the whole toolbar, arrow keys between its controls (APG toolbar pattern), and Priority+ overflow. Controls are the list's buttons, links, inputs, selects, textareas and anything with a non-negative `tabindex`. Mark controls that may collapse with `data-toolbar-overflow`; when the toolbar runs out of room, they hide from the end backward and land in `collapsedItems`. `<Toolbar>` adds the groups, the hover highlight and a `…` Menu built from the collapsed controls' labels. Use the composable to give your own toolbar markup the same behaviour.",
+        "The engine behind `<Toolbar>`: one Tab stop for the whole toolbar, arrow keys between its controls (the APG toolbar pattern), and Priority+ overflow. Controls are the list's buttons, links, inputs, selects, textareas and anything with a non-negative `tabindex`. Mark controls that may collapse with `data-toolbar-overflow`; when the toolbar runs out of room, they hide from the end backward and move into `collapsedItems`. `<Toolbar>` adds the groups, the hover highlight and a `…` Menu built from the collapsed controls' labels. Use the composable to give your own toolbar markup the same behavior.",
       exampleCode: `<script setup lang="ts">
 import { useTemplateRef } from 'vue'
 import { useToolbar } from 'vael-ui'
@@ -348,13 +349,13 @@ const { onKeydown, collapsedItems, hasOverflow } = useToolbar(toolbarEl)
           name: 'listEl',
           type: 'Ref<HTMLElement | null>',
           description:
-            "First argument. The toolbar element. Overflow compares the sum of its direct children's sizes, plus its `gap`, with its own client size, so give the children `flex-shrink: 0`.",
+            "The toolbar element (first argument). Overflow compares the sum of its direct children's sizes, plus its `gap`, with its own client size, so give the children `flex-shrink: 0`.",
         },
         {
           name: 'orientation',
           type: "MaybeRefOrGetter<'horizontal' | 'vertical'>",
           description:
-            'Horizontal toolbars use Left and Right arrows and measure width; vertical ones use Up and Down and measure height. Default `horizontal`.',
+            'The axis it works along: horizontal toolbars use Left and Right and measure width; vertical ones use Up and Down and measure height. Default `horizontal`.',
         },
       ],
       returns: [
@@ -368,19 +369,19 @@ const { onKeydown, collapsedItems, hasOverflow } = useToolbar(toolbarEl)
           name: 'collapsedItems',
           type: 'Ref<HTMLElement[]>',
           description:
-            'The `data-toolbar-overflow` controls hidden right now, in DOM order. A hidden control gets `data-toolbar-collapsed` and inline `visibility: hidden; position: absolute`, and leaves the arrow key order. Call `el.click()` from your overflow menu to run its handlers.',
+            'The `data-toolbar-overflow` controls hidden right now, in DOM order. A hidden control gets `data-toolbar-collapsed` and inline `visibility: hidden; position: absolute`, and leaves the arrow key order. Call `el.click()` from your overflow menu to run its click listeners.',
         },
         {
           name: 'hasOverflow',
           type: 'ComputedRef<boolean>',
           description:
-            'True while anything is collapsed. Render your `…` trigger only then, and mark it `data-toolbar-ellipsis` so its size is reserved when controls come back.',
+            '`true` while anything is collapsed. Render your `…` trigger only then, and mark it `data-toolbar-ellipsis` so its size is reserved when controls come back.',
         },
         {
           name: 'hasOverflowCandidates',
           type: 'ComputedRef<boolean>',
           description:
-            'True whenever the toolbar has any `data-toolbar-overflow` control, collapsed or not. Use it to turn on `overflow: hidden`, so nothing spills out before the next measurement.',
+            '`true` whenever the toolbar has any `data-toolbar-overflow` control, collapsed or not. Use it to turn on `overflow: hidden`, so nothing spills out before the next measurement.',
         },
       ],
     },
@@ -416,7 +417,7 @@ const { style, state } = useCollapse(open, { el: panelEl })
           name: 'open',
           type: 'Ref<boolean>',
           description:
-            "First argument. Every change starts a transition from the panel's current height.",
+            "Whether the panel is open (first argument). Every change starts a transition from the panel's current height.",
         },
         {
           name: 'el',
@@ -428,13 +429,13 @@ const { style, state } = useCollapse(open, { el: panelEl })
           name: 'motion',
           type: '() => boolean',
           description:
-            'Return `false` to turn off the built-in animation. By default that hands the height over to you: no inline styles at all, open or closed, so your own tween is never cut off. `state` still reports `open` and `closed`.',
+            'Return `false` to turn off the built-in animation. By default that leaves the height to you: no inline styles at all, open or closed, so your own tween is never cut off. `state` still reports `open` and `closed`.',
         },
         {
           name: 'handOff',
           type: '() => boolean',
           description:
-            'Only matters while `motion` returns `false`. Default `true` hands the height over. Return `false` to keep the collapsed styles and make the change instant instead, for an app-wide "no animations" setting.',
+            'What `motion: false` does. Default `true` leaves the height to you. Return `false` to keep the collapsed styles and make the change instant instead, for an app-wide "no animations" setting.',
         },
       ],
       returns: [
@@ -459,7 +460,7 @@ const { style, state } = useCollapse(open, { el: panelEl })
       name: 'useTooltip',
       installNames: ['useTooltip'],
       description:
-        "The headless tooltip behind `<Tooltip>`: open and close delays, a warm group in which the next tooltip opens at once and glides from the last one, hover onto the tooltip, Escape, and touch long-press. It positions through `useFloatingPosition` and listens on the trigger for you. It doesn't render or set `aria-describedby`. `<Tooltip>` adds the panel, the teleport, the ARIA wiring and the glide styles. Use it to attach the same behaviour to markup of your own.",
+        "The headless tooltip behind `<Tooltip>`: open and close delays, a warm group in which the next tooltip opens at once and glides from the last one, hover onto the tooltip, Escape, and touch long-press. It positions through `useFloatingPosition` and listens on the trigger for you. It doesn't render or set `aria-describedby`. `<Tooltip>` adds the panel, the teleport, the ARIA wiring and the glide styles. Use it to attach the same behavior to markup of your own.",
       exampleCode: `<script setup lang="ts">
 import { shallowRef, useId, useTemplateRef } from 'vue'
 import { useTooltip } from 'vael-ui'
@@ -487,7 +488,8 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
         {
           name: 'open',
           type: 'Ref<boolean>',
-          description: 'First argument. The tooltip writes to it as it opens and closes.',
+          description:
+            'Whether the tooltip is open (first argument). The tooltip writes to it as it opens and closes.',
         },
         {
           name: 'triggerEl',
@@ -504,46 +506,47 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
         {
           name: 'side',
           type: "MaybeRefOrGetter<'top' | 'right' | 'bottom' | 'left'>",
-          description: 'Default `top`. It flips when there is no room.',
+          description:
+            'The side of the trigger to open on. It flips when there is no room. Default `top`.',
         },
         {
           name: 'align',
           type: "MaybeRefOrGetter<'start' | 'center' | 'end'>",
-          description: 'Default `center`.',
+          description: 'How it lines up along that side. Default `center`.',
         },
         {
           name: 'sideOffset',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Gap from the trigger, in px. Default `8`.',
+          description: 'The gap from the trigger, in px. Default `8`.',
         },
         {
           name: 'alignOffset',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Shift along the aligned edge, in px. Default `0`.',
+          description: 'The shift along the aligned edge, in px. Default `0`.',
         },
         {
           name: 'openDelay',
           type: 'MaybeRefOrGetter<number>',
           description:
-            'Delay before a cold open, in ms. Default `400`. A warm open is always instant: another tooltip is visible, or one closed less than 300 ms ago.',
+            'The delay before a cold open, in ms. Default `400`. A warm open is always instant: another tooltip is visible, or one closed less than 300 ms ago.',
         },
         {
           name: 'closeDelay',
           type: 'MaybeRefOrGetter<number>',
           description:
-            'Grace period after the pointer leaves, in ms, long enough to move onto the tooltip. Default `100`.',
+            'The wait after the pointer leaves, in ms, long enough to move onto the tooltip. Default `100`.',
         },
         {
           name: 'interactive',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Default `true`: hovering the tooltip itself keeps it open, so its content can be selected or clicked.',
+            'Keeps the tooltip open while you hover it, so its content can be selected or clicked. Default `true`.',
         },
         {
           name: 'closeOnEsc',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Default `true`. The tooltip takes the Escape before any dialog around it, so the dialog stays open.',
+            'Closes on Escape. The tooltip takes the Escape before any dialog around it, so the dialog stays open. Default `true`.',
         },
         {
           name: 'onOpenChange',
@@ -569,7 +572,7 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
           name: 'panelStyle',
           type: 'Ref<Record<string, string>>',
           description:
-            'Custom properties for the glide between triggers: `--ui-tooltip-morph-x`, `--ui-tooltip-morph-y` (the box scale) and `--ui-tooltip-content-opacity`. Bind it on the panel if you style the morph.',
+            'The custom properties for the glide between triggers: `--ui-tooltip-morph-x`, `--ui-tooltip-morph-y` (the box scale) and `--ui-tooltip-content-opacity`. Bind it on the panel if you style the morph.',
         },
         {
           name: 'placement',
@@ -585,18 +588,18 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
         {
           name: 'isClosing',
           type: 'Ref<boolean>',
-          description: '`true` while a `beforeClose` hook holds the close.',
+          description: '`true` while the `beforeClose` guard decides.',
         },
         {
           name: 'instant',
           type: 'Ref<boolean>',
-          description: '`true` when this open was warm. Skip the enter animation then.',
+          description: '`true` when this open was warm. Skip the entrance then.',
         },
         {
           name: 'traveling / morphing / travelActive',
           type: 'Ref<boolean>',
           description:
-            'Glide state. `traveling` and `morphing` are on while the position and size transitions should run; `travelActive` covers the whole glide, from the staged first frame until it settles.',
+            'The glide state. `traveling` and `morphing` are on while the position and size transitions should run; `travelActive` covers the whole glide, from the staged first frame until it settles.',
         },
         {
           name: 'show / hide',
@@ -612,7 +615,7 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
         {
           name: 'cancelClose',
           type: '() => void',
-          description: 'Drops a close that a `beforeClose` hook holds, and keeps the tooltip open.',
+          description: 'Keeps the tooltip open and ignores the pending `beforeClose` answer.',
         },
       ],
     },
@@ -620,13 +623,13 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
       name: 'useTooltipCore',
       installNames: ['useTooltipCore'],
       description:
-        '`useTooltip` without its trigger hover, focus and press listeners, so one tooltip can serve many triggers through event delegation. `<TooltipHost>` and `v-tooltip` run on it. It takes the same options and returns the same values as `useTooltip`, plus the handlers below. You route events to them yourself and swap `triggerEl` as the pointer moves between targets. It still binds touch long-press, Escape and positioner hover.',
+        '`useTooltip` without its trigger hover, focus and press listeners, so one tooltip can serve many triggers through event delegation. `<TooltipHost>` and `v-tooltip` run on it. It takes the same options and returns the same values as `useTooltip`, plus the functions below. You call them from your own event listeners and swap `triggerEl` as the pointer moves between targets. It still binds touch long-press, Escape and positioner hover.',
       params: [
         {
           name: 'open / options',
           type: 'Ref<boolean>, UseTooltipOptions',
           description:
-            'The same as `useTooltip`. `triggerEl` can change while open: call `beginTravel()` first, and the tooltip glides to the new trigger.',
+            'The same as in `useTooltip`. `triggerEl` can change while open: call `beginTravel()` first, and the tooltip glides to the new trigger.',
         },
       ],
       returns: [
@@ -634,19 +637,19 @@ const { positionerStyle, transformOrigin } = useTooltip(open, {
           name: 'pointerEnter / pointerLeave',
           type: '(event?: PointerEvent) => void',
           description:
-            "Call on the current trigger's pointer enter and leave. Enter opens after `openDelay`, or at once when warm, and ignores touch. Leave closes after `closeDelay`.",
+            "Open and close for the current trigger's pointer enter and leave. Enter opens after `openDelay`, or at once when warm, and ignores touch. Leave closes after `closeDelay`.",
         },
         {
           name: 'focusEnter / focusLeave',
           type: '(event?: Event) => void',
           description:
-            "Call on focus in and out. Focus opens only when the trigger matches `:focus-visible`, so a mouse click doesn't open it. Losing focus closes it.",
+            "Open and close on focus in and out. Focus opens only when the trigger matches `:focus-visible`, so a mouse click doesn't open it. Losing focus closes it.",
         },
         {
           name: 'press',
           type: '(event?: Event) => void',
           description:
-            'Call on pointer down. It closes the tooltip and keeps it closed until the pointer leaves.',
+            'Closes the tooltip on pointer down and keeps it closed until the pointer leaves.',
         },
         {
           name: 'beginTravel',
@@ -694,7 +697,7 @@ const { positionerStyle, close } = usePopover(open, {
           name: 'open',
           type: 'Ref<boolean>',
           description:
-            'First argument. You set it to `true`; the popover sets it to `false` when it closes.',
+            'Whether the popover is open (first argument). You set it to `true`; the popover sets it to `false` when it closes.',
         },
         {
           name: 'triggerEl',
@@ -710,17 +713,19 @@ const { positionerStyle, close } = usePopover(open, {
         {
           name: 'side',
           type: "MaybeRefOrGetter<'top' | 'right' | 'bottom' | 'left'>",
-          description: 'Default `bottom`. It flips when there is no room.',
+          description:
+            'The side of the trigger to open on. It flips when there is no room. Default `bottom`.',
         },
         {
           name: 'align',
           type: "MaybeRefOrGetter<'start' | 'center' | 'end'>",
-          description: 'Default `center`.',
+          description: 'How it lines up along that side. Default `center`.',
         },
         {
           name: 'sideOffset / alignOffset',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Gap from the trigger and shift along it, in px. Defaults `8` and `0`.',
+          description:
+            'The gap from the trigger and the shift along it, in px. Default `8` and `0`.',
         },
         {
           name: 'matchReferenceWidth',
@@ -731,18 +736,19 @@ const { positionerStyle, close } = usePopover(open, {
         {
           name: 'maxHeightCap',
           type: 'MaybeRefOrGetter<number | undefined>',
-          description: 'Caps the returned `maxHeight` in px, even when the viewport has more room.',
+          description:
+            'Caps the returned `maxHeight`, in px, even when the viewport has more room.',
         },
         {
           name: 'closeOnEsc',
           type: 'MaybeRefOrGetter<boolean>',
-          description: 'Default `true`. Only the topmost layer closes.',
+          description: 'Closes on Escape. Only the topmost layer closes. Default `true`.',
         },
         {
           name: 'closeOnOutside',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Default `true`. Closes on pointer down or focus outside the trigger and panel, and when Tab leaves the panel.',
+            'Closes on pointer down or focus outside the trigger and panel, and when Tab leaves the panel. Default `true`.',
         },
         {
           name: 'onOpenChange',
@@ -766,14 +772,14 @@ const { positionerStyle, close } = usePopover(open, {
           name: 'tabIntoPanel',
           type: 'boolean',
           description:
-            'Tab from the trigger moves into the panel, and Tab past either end closes it and carries on from the trigger. Turn it on for panels that take focus. Leave it off when focus stays on the trigger, as in a combobox. Not reactive.',
+            'Tab from the trigger moves into the panel, and Tab past either end closes it and continues from the trigger. Turn it on for panels that take focus. Leave it off when focus stays on the trigger, as in a combobox. Not reactive.',
         },
       ],
       returns: [
         {
           name: 'positionerStyle',
           type: 'Ref<Record<string, string>>',
-          description: 'Bind it on the positioner. Hidden until the first measurement.',
+          description: 'Bind it on the positioner. It stays hidden until the first measurement.',
         },
         {
           name: 'placement',
@@ -794,7 +800,7 @@ const { positionerStyle, close } = usePopover(open, {
         {
           name: 'isClosing',
           type: 'Ref<boolean>',
-          description: '`true` while a `beforeClose` hook holds the close.',
+          description: '`true` while the `beforeClose` guard decides.',
         },
         {
           name: 'close',
@@ -811,7 +817,7 @@ const { positionerStyle, close } = usePopover(open, {
         {
           name: 'cancelClose',
           type: '() => void',
-          description: 'Drops a close that a `beforeClose` hook holds.',
+          description: 'Keeps it open and ignores the pending `beforeClose` answer.',
         },
         {
           name: 'layerIndex',
@@ -828,7 +834,7 @@ const { positionerStyle, close } = usePopover(open, {
       name: 'useDialog',
       installNames: ['useDialog'],
       description:
-        "The headless modal behaviour behind `<Dialog>`: a cancelable close, Escape through the shared layer stack, a Tab focus trap, scroll lock, initial focus and focus return, and optional back-button dismiss. It doesn't render an overlay or listen for outside clicks: call `requestClose('outside', event)` from your own overlay. `<Dialog>` adds the teleport, overlay, panel, title ids and animations. `<Drawer>` and `<BottomSheet>` are built on `<Dialog>`.",
+        "The headless modal behavior behind `<Dialog>`: a cancelable close, Escape through the shared layer stack, a Tab focus trap, scroll lock, initial focus and focus return, and optional back-button dismiss. It doesn't render an overlay or listen for outside clicks: call `requestClose('outside', event)` from your own overlay. `<Dialog>` adds the teleport, overlay, panel, title ids and animations. `<Drawer>` and `<BottomSheet>` are built on `<Dialog>`.",
       exampleCode: `<script setup lang="ts">
 import { shallowRef, useTemplateRef } from 'vue'
 import { useDialog } from 'vael-ui'
@@ -856,7 +862,7 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
           name: 'open',
           type: 'Ref<boolean>',
           description:
-            'First argument. You set it to `true`; the dialog sets it to `false` when it closes.',
+            'Whether the dialog is open (first argument). You set it to `true`; the dialog sets it to `false` when it closes.',
         },
         {
           name: 'panelEl',
@@ -880,12 +886,12 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
           name: 'scrollTarget',
           type: 'MaybeRefOrGetter<HTMLElement | string | null>',
           description:
-            'The element whose scrolling locks while open. Defaults to `container`, then `document.body`.',
+            'The element whose scrolling locks while open. Default: `container`, then `document.body`.',
         },
         {
           name: 'closeOnEsc',
           type: 'MaybeRefOrGetter<boolean>',
-          description: 'Default `true`. Escape closes the topmost layer only.',
+          description: 'Closes on Escape. Only the topmost layer closes. Default `true`.',
         },
         {
           name: 'onOpenChange',
@@ -909,26 +915,26 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
           name: 'modal',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Default `true`. `false` skips the scroll lock, the Tab trap and the focus moves; Escape and layer stacking still work. Read once per open.',
+            'Locks scroll, traps Tab and moves focus. `false` skips all three; Escape and layer stacking still work. Default `true`. Read once per open.',
         },
         {
           name: 'closeOnHistoryBack',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            "Default `false`. Pushes a history entry on open, so the back button or back gesture closes the dialog with the `'history'` reason instead of leaving the page. Any other close removes the entry again.",
+            "Closes the dialog on the back button or back gesture, with the `'history'` reason, instead of leaving the page. It pushes a history entry on open, and any other close removes it. Default `false`.",
         },
         {
           name: 'holdScrollUntilExit',
           type: 'boolean',
           description:
-            "Default `false`. Keeps the scroll lock after the close until you call `releaseScroll()`, so a returning scrollbar doesn't shift the panel during its exit. It releases on its own after 1000 ms.",
+            "Keeps the scroll lock after the close until you call `releaseScroll()`, so a returning scrollbar doesn't shift the panel during its exit. It releases on its own after 1000 ms. Default `false`.",
         },
       ],
       returns: [
         {
           name: 'isClosing',
           type: 'Ref<boolean>',
-          description: '`true` while a `beforeClose` hook holds the close.',
+          description: '`true` while the `beforeClose` guard decides.',
         },
         {
           name: 'close',
@@ -945,7 +951,7 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
         {
           name: 'cancelClose',
           type: '() => void',
-          description: 'Drops a close that a `beforeClose` hook holds.',
+          description: 'Keeps it open and ignores the pending `beforeClose` answer.',
         },
         {
           name: 'container / scrollTarget',
@@ -957,7 +963,7 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
           name: 'contained',
           type: 'ComputedRef<boolean>',
           description:
-            'True when `container` resolved to an element. Position the dialog `absolute` instead of `fixed` then.',
+            '`true` when `container` resolved to an element. Position the dialog `absolute` instead of `fixed` then.',
         },
         {
           name: 'layerIndex',
@@ -969,7 +975,7 @@ const { close, requestClose } = useDialog(open, { panelEl, wrapperEl })
           name: 'releaseScroll',
           type: '() => void',
           description:
-            "Ends the lock that `holdScrollUntilExit` keeps. Call it when your exit animation ends, such as a Transition's `@after-leave`. Does nothing while open.",
+            'Ends the lock that `holdScrollUntilExit` keeps. Call it when your exit animation ends. It does nothing while open.',
         },
       ],
     },
@@ -1008,7 +1014,7 @@ const table = useDataTableContext<Person>()
           name: 'provideDataTableContext(ctx)',
           type: '(ctx: DataTableContext<T>) => void',
           description:
-            'What `<DataTable>` calls in its setup. Call it yourself only to render a cell component outside a table, in a test or a story, with a stub context.',
+            'Provides the context; `<DataTable>` calls it in its setup. Call it yourself only to render a cell component outside a table, such as in a test or a story, with a stub context.',
         },
       ],
       returns: [
@@ -1104,13 +1110,13 @@ const { rootStyle, onTrackPointerdown, onThumbPointerdown, onThumbKeydown } = us
           name: 'model',
           type: 'Ref<number | [number, number]>',
           description:
-            'First argument. The value the slider writes to. A tuple turns on range mode with two thumbs that can touch but never cross.',
+            'The value the slider writes to (first argument). A tuple turns on range mode with two thumbs that can touch but never cross.',
         },
         {
           name: 'trackEl',
           type: 'Ref<HTMLElement | null>',
           description:
-            'The track. Pointer positions map against its rect, so the value follows the pointer 1:1 along it.',
+            'The track. Pointer positions are measured against its box, so the value follows the pointer 1:1 along it.',
         },
         {
           name: 'thumbEls',
@@ -1121,28 +1127,29 @@ const { rootStyle, onTrackPointerdown, onThumbPointerdown, onThumbKeydown } = us
         {
           name: 'min',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Default `0`.',
+          description: 'The lowest value. Default `0`.',
         },
         {
           name: 'max',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Default `100`.',
+          description: 'The highest value. Default `100`.',
         },
         {
           name: 'step',
           type: 'MaybeRefOrGetter<number>',
           description:
-            'Default `1`. Every value snaps to it, counted from `min`. Arrow keys move one step, Page Up and Page Down move ten.',
+            'The step every value snaps to, counted from `min`. Default `1`. The arrow keys move one step, Page Up and Page Down move ten.',
         },
         {
           name: 'orientation',
           type: "MaybeRefOrGetter<'horizontal' | 'vertical'>",
-          description: "Default `'horizontal'`. A vertical track counts up from its bottom edge.",
+          description:
+            "The track's direction. A vertical track counts up from its bottom edge. Default `'horizontal'`.",
         },
         {
           name: 'disabled',
           type: 'MaybeRefOrGetter<boolean>',
-          description: 'Default `false`. Ignores every pointer and key handler while `true`.',
+          description: 'Ignores pointer and key input while `true`. Default `false`.',
         },
         {
           name: 'onCommit',
@@ -1168,13 +1175,13 @@ const { rootStyle, onTrackPointerdown, onThumbPointerdown, onThumbKeydown } = us
           name: 'onThumbPointerdown',
           type: '(index: number, event: PointerEvent) => void',
           description:
-            'Bind it on each thumb with `.stop`, so the track handler does not run as well.',
+            "Bind it on each thumb with `.stop`, so the track's own listener doesn't run as well.",
         },
         {
           name: 'onThumbKeydown',
           type: '(index: number, event: KeyboardEvent) => void',
           description:
-            'Bind it on each thumb. Handles the arrow keys, Page Up, Page Down, Home and End.',
+            'Bind it on each thumb. It handles the arrow keys, Page Up, Page Down, Home and End.',
         },
         {
           name: 'isDragging',
@@ -1195,7 +1202,7 @@ const { rootStyle, onTrackPointerdown, onThumbPointerdown, onThumbKeydown } = us
       name: 'useKnob',
       installNames: ['useKnob', 'KNOB_SWEEP_START_DEG', 'KNOB_SWEEP_DEG', 'KNOB_SWEEP_END_DEG'],
       description:
-        "The headless engine behind `<Knob>`: a value on a 270° sweep, from −135° to +135° with the gap at the bottom. Dragging reads the pointer's angle around the dial's centre, so the value follows your finger round the circle instead of a straight-line distance. Arrow keys step, Page Up and Page Down jump 10 steps, Home and End go to the bounds. It renders nothing: bind `rootStyle` on your root and draw the dial from `--ui-knob-angle` and `--ui-knob-fraction`. The `KNOB_SWEEP_*` constants give the arc in degrees, for drawing a track that matches.",
+        "The headless engine behind `<Knob>`: a value on a 270° sweep, from −135° to +135° with the gap at the bottom. Dragging reads the pointer's angle around the dial's center, so the value follows your finger around the circle instead of a straight-line distance. The arrow keys step, Page Up and Page Down jump 10 steps, and Home and End go to the bounds. It renders nothing: bind `rootStyle` on your root and draw the dial from `--ui-knob-angle` and `--ui-knob-fraction`. The `KNOB_SWEEP_*` constants give the arc in degrees, for drawing a track that matches.",
       exampleCode: `<script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
 import { useKnob } from 'vael-ui'
@@ -1238,23 +1245,23 @@ const { rootStyle, onDialPointerdown, onDialKeydown } = useKnob(volume, {
           name: 'model',
           type: 'Ref<number>',
           description:
-            'The value. Set on every drag frame and key press, clamped and snapped to `step`.',
+            'The value. It updates on every drag frame and key press, clamped and snapped to `step`.',
         },
         {
           name: 'dialEl',
           type: 'Ref<HTMLElement | null>',
-          description: 'The round element. Pointer angles are measured around its centre.',
+          description: 'The round element. Pointer angles are measured around its center.',
         },
         {
           name: 'min / max',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Default `0` and `100`. The sweep always spans this whole range.',
+          description: 'The range. The sweep always spans all of it. Default `0` and `100`.',
         },
         {
           name: 'step',
           type: 'MaybeRefOrGetter<number>',
           description:
-            'Default `1`. Values snap to it, without float drift such as 0.30000000000000004.',
+            'The step values snap to, without float drift such as 0.30000000000000004. Default `1`.',
         },
         {
           name: 'disabled',
@@ -1272,24 +1279,25 @@ const { rootStyle, onDialPointerdown, onDialKeydown } = useKnob(volume, {
         {
           name: 'isDragging',
           type: 'Ref<boolean>',
-          description: 'True from pointer down to release.',
+          description: '`true` from pointer down to release.',
         },
         {
           name: 'rootStyle',
           type: 'ComputedRef<Record<string, string>>',
           description:
-            "Bind on your root: `--ui-knob-angle` (−135deg to 135deg) and `--ui-knob-fraction` (0 to 1). Draw the pointer's rotation and the fill arc from them in CSS.",
+            "Bind it on your root: `--ui-knob-angle` (−135deg to 135deg) and `--ui-knob-fraction` (0 to 1). Draw the pointer's rotation and the fill arc from them in CSS.",
         },
         {
           name: 'onDialPointerdown',
           type: '(event: PointerEvent) => void',
           description:
-            'Bind on the dial. It tracks the drag on the window until release, so leaving the dial mid-drag keeps it going.',
+            'Bind it on the dial. It tracks the drag on the window until release, so leaving the dial mid-drag keeps it going.',
         },
         {
           name: 'onDialKeydown',
           type: '(event: KeyboardEvent) => void',
-          description: 'Bind on the focusable element: arrows, Page Up, Page Down, Home and End.',
+          description:
+            'Bind it on the focusable element: the arrow keys, Page Up, Page Down, Home and End.',
         },
       ],
     },
@@ -1339,23 +1347,29 @@ const { rootStyle, onDialPointerdown, onDialKeydown } = useDial(zoom, {
           name: 'model',
           type: 'Ref<number>',
           description:
-            'The value. Changes by `step` for every `degreesPerStep` of rotation, and on key presses.',
+            'The value. It changes by `step` for every `degreesPerStep` of rotation, and on key presses.',
         },
         {
           name: 'dialEl',
           type: 'Ref<HTMLElement | null>',
-          description: 'The round element. Pointer angles are measured around its centre.',
+          description: 'The round element. Pointer angles are measured around its center.',
         },
         {
           name: 'min / max',
           type: 'MaybeRefOrGetter<number | undefined>',
-          description: 'Unset by default, so the value is unbounded. Each side clamps on its own.',
+          description:
+            'The bounds. Each side clamps on its own. Unset by default, so the value is unbounded.',
         },
-        { name: 'step', type: 'MaybeRefOrGetter<number>', description: 'Default `1`.' },
+        {
+          name: 'step',
+          type: 'MaybeRefOrGetter<number>',
+          description: 'The change per notch. Default `1`.',
+        },
         {
           name: 'degreesPerStep',
           type: 'MaybeRefOrGetter<number | undefined>',
-          description: 'Default `DIAL_DEFAULT_DEGREES_PER_STEP` (15). Lower turns faster.',
+          description:
+            'The rotation per step. Lower turns faster. Default `DIAL_DEFAULT_DEGREES_PER_STEP` (15).',
         },
         {
           name: 'disabled',
@@ -1373,29 +1387,29 @@ const { rootStyle, onDialPointerdown, onDialKeydown } = useDial(zoom, {
         {
           name: 'isDragging',
           type: 'Ref<boolean>',
-          description: 'True from pointer down to release.',
+          description: '`true` from pointer down to release.',
         },
         {
           name: 'rootStyle',
           type: 'ComputedRef<Record<string, string>>',
           description:
-            "Bind on your root: `--ui-dial-rotation`, the dial's own rotation in degrees, which keeps counting past 360°, and `--ui-dial-fraction` (0 to 1) when both bounds are set.",
+            "Bind it on your root: `--ui-dial-rotation`, the dial's own rotation in degrees, which keeps counting past 360°, and `--ui-dial-fraction` (0 to 1) when both bounds are set.",
         },
         {
           name: 'fraction',
           type: 'ComputedRef<number | undefined>',
           description:
-            'Progress from 0 to 1, or `undefined` when the range is open on either side.',
+            'The progress from 0 to 1, or `undefined` when the range is open on either side.',
         },
         {
           name: 'onDialPointerdown',
           type: '(event: PointerEvent) => void',
-          description: 'Bind on the dial. It tracks the drag on the window until release.',
+          description: 'Bind it on the dial. It tracks the drag on the window until release.',
         },
         {
           name: 'onDialKeydown',
           type: '(event: KeyboardEvent) => void',
-          description: 'Bind on the focusable element.',
+          description: 'Bind it on the focusable element.',
         },
       ],
     },
@@ -1439,41 +1453,41 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
         {
           name: 'model',
           type: 'Ref<number>',
-          description: 'First argument. The size in px, written on every drag frame.',
+          description: 'The size in px (first argument), written on every drag frame.',
         },
         {
           name: 'min',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Default `0`.',
+          description: 'The smallest size. Default `0`.',
         },
         {
           name: 'max',
           type: 'MaybeRefOrGetter<number>',
           description:
-            'Default `Infinity`, no limit. End jumps the size to `max` when there is one, and does nothing without it.',
+            'The largest size. End jumps the size to it, and does nothing without one. Default `Infinity`, no limit.',
         },
         {
           name: 'direction',
           type: "MaybeRefOrGetter<'horizontal' | 'vertical'>",
           description:
-            "Default `'horizontal'`, which reads `clientX` and the Left and Right arrows. `'vertical'` reads `clientY` and the Up and Down arrows.",
+            "The drag axis. Default `'horizontal'`, which reads `clientX` and the Left and Right arrows. `'vertical'` reads `clientY` and the Up and Down arrows.",
         },
         {
           name: 'edge',
           type: "MaybeRefOrGetter<'start' | 'end'>",
           description:
-            "Default `'end'`: the handle sits on the trailing edge, so dragging right or down grows the panel. `'start'` flips it, for a handle on a right-docked panel's left border.",
+            "Which edge the handle sits on. Default `'end'`, the trailing edge, so dragging right or down grows the panel. `'start'` flips it, for a handle on a right-docked panel's left border.",
         },
         {
           name: 'disabled',
           type: 'MaybeRefOrGetter<boolean>',
-          description: 'Default `false`. Ignores pointer and key input while `true`.',
+          description: 'Ignores pointer and key input while `true`. Default `false`.',
         },
         {
           name: 'onCommit',
           type: '() => void',
           description:
-            'Fires once per settled interaction: on pointer release, or after each key press. Persist the size here rather than on every drag frame.',
+            'Fires once per settled interaction: on pointer release, or after each key press. Save the size here instead of on every drag frame.',
         },
       ],
       returns: [
@@ -1503,7 +1517,7 @@ const { isDragging, onHandlePointerdown, onHandleKeydown } = useResizable(width,
       name: 'useDock',
       installNames: ['useDock'],
       description:
-        'The magnification engine behind `<Dock>`. Items near the pointer grow along a smooth cosine falloff, and their neighbours spread apart to make room. It writes `transform`, or the real size in `grow` mode, straight onto each item every animation frame, so the effect costs no re-renders. A mouse magnifies on hover. A finger or pen magnifies once it slides 8 px along the dock, so a tap stays a tap. It stays at rest under `prefers-reduced-motion: reduce`. `<Dock>` adds the buttons, tooltips, roving keyboard focus and the tap bounce.',
+        'The magnification engine behind `<Dock>`. Items near the pointer grow along a smooth cosine falloff, and their neighbors spread apart to make room. It writes `transform`, or the real size in `grow` mode, straight onto each item every animation frame, so the effect costs no re-renders. A mouse magnifies on hover. A finger or pen magnifies once it slides 8 px along the dock, so a tap stays a tap. It stays at rest under `prefers-reduced-motion: reduce`. `<Dock>` adds the buttons, tooltips, roving keyboard focus and the tap bounce.',
       exampleCode: `<script setup lang="ts">
 import { useTemplateRef } from 'vue'
 import { useDock } from 'vael-ui'
@@ -1543,51 +1557,53 @@ const { setItemEl, onPointerDown, onPointerMove, onPointerLeave } = useDock(
           name: 'rootEl',
           type: 'Ref<HTMLElement | null>',
           description:
-            'First argument. The dock. Item centres and its `gap` are measured against it.',
+            'The dock (first argument). Item centers and its `gap` are measured against it.',
         },
         {
           name: 'itemCount',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Second argument. A change re-measures the items after the next render.',
+          description:
+            'The number of items (second argument). A change measures the items again after the next render.',
         },
         {
           name: 'orientation',
           type: "MaybeRefOrGetter<'horizontal' | 'vertical'>",
-          description: "Default `'horizontal'`. Sets the axis items grow and spread along.",
+          description: "The axis items grow and spread along. Default `'horizontal'`.",
         },
         {
           name: 'baseSize',
           type: 'MaybeRefOrGetter<number>',
           description:
-            'Default `48`. The resting item size in px that `maxSize` and `range` are designed against. Items that rest smaller, in a narrow container, magnify in proportion.',
+            'The resting item size in px that `maxSize` and `range` are designed against. Default `48`. Items that rest smaller, in a narrow container, magnify in proportion.',
         },
         {
           name: 'maxSize',
           type: 'MaybeRefOrGetter<number>',
-          description: 'Default `76`. The item size in px directly under the pointer.',
+          description: 'The item size in px directly under the pointer. Default `76`.',
         },
         {
           name: 'range',
           type: 'MaybeRefOrGetter<number | undefined>',
           description:
-            'Default `baseSize * 3.5`. The distance in px from the pointer at which items are back to `baseSize`.',
+            'The distance in px from the pointer at which items are back to `baseSize`. Default `baseSize * 3.5`.',
         },
         {
           name: 'magnify',
           type: 'MaybeRefOrGetter<boolean>',
-          description: 'Default `true`. `false` keeps every item at rest.',
+          description:
+            'Magnifies items near the pointer. `false` keeps every item at rest. Default `true`.',
         },
         {
           name: 'disabled',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Default `false`. Here it only turns magnification off, the same as `magnify: false`. Blocking clicks is up to your markup.',
+            "Turns magnification off, the same as `magnify: false`. It doesn't block clicks; your markup does that. Default `false`.",
         },
         {
           name: 'grow',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            "Default `false`, which scales and shifts items with `transform`: the dock keeps its size and end items can reach past it. `true` sets each item's real `inline-size` and `block-size`, so the dock grows with them.",
+            "Sets each item's real `inline-size` and `block-size`, so the dock grows with them. Default `false`, which scales and shifts items with `transform`: the dock keeps its size and end items can reach past it.",
         },
       ],
       returns: [
@@ -1600,7 +1616,8 @@ const { setItemEl, onPointerDown, onPointerMove, onPointerLeave } = useDock(
         {
           name: 'onPointerMove',
           type: '(event: PointerEvent) => void',
-          description: 'Bind it on the root `pointermove`. It retargets every item.',
+          description:
+            'Bind it on the root `pointermove`. It moves every item toward its new size.',
         },
         {
           name: 'onPointerLeave',
@@ -1612,7 +1629,7 @@ const { setItemEl, onPointerDown, onPointerMove, onPointerLeave } = useDock(
           name: 'onPointerDown',
           type: '(event: PointerEvent) => void',
           description:
-            'Bind it on the root `pointerdown`. It records where a finger or pen landed, for the 8 px slide check.',
+            'Bind it on the root `pointerdown`. It records where a finger or pen touched down, for the 8 px slide check.',
         },
         {
           name: 'touchSlid',
@@ -1624,7 +1641,7 @@ const { setItemEl, onPointerDown, onPointerMove, onPointerLeave } = useDock(
           name: 'remeasure',
           type: '() => void',
           description:
-            'Re-measures the resting item centres. It already runs on mount, on root resize and when `itemCount` changes. Call it after a layout change none of those catch, such as a font swap.',
+            'Measures the resting item centers again. It already runs on mount, on root resize and when `itemCount` changes. Call it after a layout change none of those catch, such as a font swap.',
         },
       ],
     },
@@ -1643,19 +1660,19 @@ dockItemSizes(56, [0, 56, 112, 168], { baseSize: 48, maxSize: 76, range: 168 })`
           name: 'dockFalloff(distance, range)',
           type: 'number',
           description:
-            'A raised cosine from `1` at distance 0 to `0` at `range` and beyond. The sign of `distance` is ignored. Returns `0` when `range` is 0 or less.',
+            'Returns a raised cosine from `1` at distance 0 to `0` at `range` and beyond. The sign of `distance` is ignored. Returns `0` when `range` is 0 or less.',
         },
         {
           name: 'dockItemSize(distance, options)',
           type: 'number',
           description:
-            'The item size in px at `distance` from the pointer: `baseSize` plus `maxSize - baseSize` times the falloff. `options` is `{ baseSize, maxSize, range }`.',
+            'Returns the item size in px at `distance` from the pointer: `baseSize` plus `maxSize - baseSize` times the falloff. `options` is `{ baseSize, maxSize, range }`.',
         },
         {
           name: 'dockItemSizes(pointerPosition, centers, options)',
           type: 'number[]',
           description:
-            "Every item's size at once, from the pointer position and each item's resting centre along the same axis.",
+            "Returns every item's size at once, from the pointer position and each item's resting center along the same axis.",
         },
       ],
     },
@@ -1666,7 +1683,7 @@ dockItemSizes(56, [0, 56, 112, 168], { baseSize: 48, maxSize: 76, range: 168 })`
       name: 'useSwipeReveal',
       installNames: ['useSwipeReveal'],
       description:
-        "The drag engine behind `<SwipeToReveal>`. You drag a row's content sideways to uncover an actions panel on its leading or trailing edge. A press must move 8 px before it counts as a drag, and a mostly vertical move hands the gesture back to the list's scroll. On release, the row opens or closes based on how fast and how far you dragged. The component adds the action panels, their measured widths, focus handling and the `change` event.",
+        "The drag engine behind `<SwipeToReveal>`. You drag a row's content sideways to uncover an actions panel on its leading or trailing edge. A press must move 8 px before it counts as a drag, and a mostly vertical move scrolls the list instead. On release, the row opens or closes based on how fast and how far you dragged. The component adds the action panels, their measured widths, focus handling and the `change` event.",
       exampleCode: `<script setup lang="ts">
 import { ref } from 'vue'
 import { useSwipeReveal } from 'vael-ui'
@@ -1703,33 +1720,33 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'open',
           type: 'Ref<boolean>',
           description:
-            'First argument. Written on every settled release, `reveal()` and `close()`. Setting it yourself opens or closes the row at its default side.',
+            'Whether the row is open (first argument). It is written on every settled release, `reveal()` and `close()`. Setting it yourself opens or closes the row at its default side.',
         },
         {
           name: 'leading',
           type: 'MaybeRefOrGetter<boolean>',
-          description: 'Default `false`. Whether a leading actions panel exists to reveal.',
+          description: 'Whether a leading actions panel exists to reveal. Default `false`.',
         },
         {
           name: 'trailing',
           type: 'MaybeRefOrGetter<boolean>',
-          description: 'Default `true`. Whether a trailing actions panel exists to reveal.',
+          description: 'Whether a trailing actions panel exists to reveal. Default `true`.',
         },
         {
           name: 'leadingWidth',
           type: 'MaybeRefOrGetter<number>',
           description:
-            "Required. The leading panel's width in px, its fully open position. A getter that reads the panel's `offsetWidth` keeps it measured.",
+            "The leading panel's width in px, its fully open position. A getter that reads the panel's `offsetWidth` keeps it measured. Required.",
         },
         {
           name: 'trailingWidth',
           type: 'MaybeRefOrGetter<number>',
-          description: "Required. The trailing panel's width in px.",
+          description: "The trailing panel's width in px. Required.",
         },
         {
           name: 'disabled',
           type: 'MaybeRefOrGetter<boolean>',
-          description: 'Default `false`. Ignores new presses while `true`.',
+          description: 'Ignores new presses while `true`. Default `false`.',
         },
         {
           name: 'onCommit',
@@ -1743,7 +1760,7 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'offset',
           type: 'Ref<number>',
           description:
-            'The live signed offset in px for `translateX()`: positive shows the leading panel, negative the trailing one, `0` is closed. Past either end it stretches with rubber-band resistance.',
+            'The live offset in px for `translateX()`: positive shows the leading panel, negative the trailing one, `0` is closed. Past either end it stretches with rubber-band resistance.',
         },
         {
           name: 'openSide',
@@ -1765,7 +1782,7 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'reveal',
           type: "(side?: 'leading' | 'trailing') => void",
           description:
-            'Opens one side. With a single panel you can leave out `side`; with both it defaults to `trailing`. Does nothing for a side that has no panel.',
+            'Opens one side. With a single panel you can leave out `side`; with both, the default is `trailing`. It does nothing for a side that has no panel.',
         },
         {
           name: 'close',
@@ -1784,13 +1801,13 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
       name: 'resolveSwipeCommit',
       installNames: ['resolveSwipeCommit'],
       description:
-        'The pure open or close decision `useSwipeReveal` makes on release. A flick faster than 0.11 px/ms opens when it moved toward open and closes when it moved away. A slower drag opens when more than half the panel shows. Use it to give a gesture of your own the same feel.',
+        'Decides whether a released row opens or closes, as `useSwipeReveal` does. A flick faster than 0.11 px/ms opens when it moved toward open and closes when it moved away. A slower drag opens when more than half the panel shows. Use it to give a gesture of your own the same feel.',
       params: [
         {
           name: 'velocity',
           type: 'number',
           description:
-            'Drag speed in px/ms, never negative. `useSwipeReveal` passes the distance moved divided by the time since the press.',
+            'The drag speed in px/ms, never negative. `useSwipeReveal` passes the distance moved divided by the time since the press.',
         },
         {
           name: 'towardOpen',
@@ -1801,7 +1818,7 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'openFraction',
           type: 'number',
           description:
-            "How far open the panel is at release, as a fraction of the panel's width. It can go below 0 or above 1 while rubber-banding.",
+            'How far open the panel is at release, as a fraction of its width. It can go below 0 or above 1 while rubber-banding.',
         },
       ],
       returns: [
@@ -1819,19 +1836,19 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
       name: 'useSheetDrag',
       installNames: ['useSheetDrag'],
       description:
-        'The drag and snap engine behind `<BottomSheet>`, modeled on Vaul. The panel stays as tall as its area and only moves with `translateY`, so a drag never triggers a resize. A release settles on a snap point, steps one point for a quick short flick, or asks you to dismiss. It decides from the speed over the last 80 ms, so a slow drag that ends in a flick reads as a flick. A drag on the content only moves the sheet when the content is scrolled to the top and the drag goes down. `<BottomSheet>` adds the overlay, focus trap, enter and exit, the close flow and nested sheet detection.',
+        'The drag and snap engine behind `<BottomSheet>`, modeled on Vaul. The panel stays as tall as its area and only moves with `translateY`, so a drag never triggers a resize. A release settles on a snap point, steps one point for a quick short flick, or calls `onDismiss`. It decides from the speed over the last 80 ms, so a slow drag that ends in a flick reads as a flick. A drag on the content only moves the sheet when the content is scrolled to the top and the drag goes down. `<BottomSheet>` adds the overlay, focus trap, enter and exit, the close flow and nested sheet detection.',
       params: [
         {
           name: 'active',
           type: 'Ref<boolean>',
           description:
-            'First argument. Turning it `true` places the panel off screen, waits two frames, then slides it to `initialSnap`. Turning it `false` snaps the panel off screen at once.',
+            'Whether the sheet is open (first argument). Turning it `true` places the panel at `initialSnap` at once, so the entrance is yours to animate. Turning it `false` leaves the panel where it is, so your exit slides it out from there.',
         },
         {
           name: 'panelEl',
           type: 'Ref<HTMLElement | null>',
           description:
-            'The element that moves. The composable owns its `transform`, `transition` and `block-size` inline styles. It also sets `--sheet-visible-height` to the height on screen, for capping a scroll body inside.',
+            'The element that moves. The composable sets its `transform`, `transition` and `block-size` inline styles. It also sets `--sheet-visible-height` to the height on screen, for capping a scroll body inside.',
         },
         {
           name: 'handleEl',
@@ -1848,12 +1865,12 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'snapPoints',
           type: 'MaybeRefOrGetter<SheetSnapPoint[]>',
           description:
-            'Required. `{ id, height }` entries ordered from smallest to largest. `height` is a fraction of the area: `0.6` shows 60% of it.',
+            'The heights the sheet rests at: `{ id, height }` entries from smallest to largest. `height` is a fraction of the area: `0.6` shows 60% of it. Required.',
         },
         {
           name: 'initialSnap',
           type: 'MaybeRefOrGetter<string | undefined>',
-          description: 'The `id` to open at. Default: the first snap point.',
+          description: 'The `id` of the snap point to open at. Default: the first snap point.',
         },
         {
           name: 'bounds',
@@ -1865,19 +1882,19 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'dismissible',
           type: 'MaybeRefOrGetter<boolean>',
           description:
-            'Default `true`. `false` returns a drag past the smallest snap point to it instead of dismissing.',
+            'Lets a drag past the smallest snap point dismiss the sheet. `false` returns it to that point instead. Default `true`.',
         },
         {
           name: 'onDismiss',
           type: '(velocity: number) => void',
           description:
-            'Required. Fires when a release decides to dismiss, with the panel left where the drag ended. Run your close flow here. `velocity` is the release speed in px/ms, positive toward closed.',
+            'Fires when a release should dismiss the sheet, with the panel left where the drag ended. Run your close flow here. Required. `velocity` is the release speed in px/ms, positive toward closed.',
         },
         {
           name: 'onProgress',
           type: '(progress: number | null, timing?: { duration: number; easing: string }) => void',
           description:
-            "While dragging, how open the sheet is: `1` at the lowest snap point or above, `0` closed. Once it's let go without closing, `null` with the timing it settles on (unset means the drawer's). Use it to move another element with the sheet, such as the page behind it.",
+            "Reports how open the sheet is while dragging: `1` at the lowest snap point or above, `0` closed. Once it's let go without closing, `null` with the timing it settles on (unset means the drawer's). Use it to move another element with the sheet, such as the page behind it.",
         },
       ],
       returns: [
@@ -1885,7 +1902,7 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'activeSnap',
           type: 'Ref<string | null>',
           description:
-            'The `id` of the snap point the sheet rests at. Read it only: writing it does not move the panel.',
+            'The `id` of the snap point the sheet rests at. Set it to move the sheet there.',
         },
         {
           name: 'isDragging',
@@ -1896,7 +1913,7 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'reset',
           type: '() => void',
           description:
-            'Puts the panel at `initialSnap` at once. `active` turning `true` already calls it. The entrance itself is yours to animate, with `useMotion` for instance; `<BottomSheet>` plays its own.',
+            'Puts the panel at `initialSnap` at once. `active` turning `true` already calls it. The entrance is yours to animate, such as with `useMotion`; `<BottomSheet>` plays its own.',
         },
         {
           name: 'settle',
@@ -1908,7 +1925,7 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
           name: 'setReceded',
           type: '(receded: boolean) => void',
           description:
-            'Scales the panel down and shifts it up 16 px while another sheet stacks on top, from its current snap point. `<BottomSheet>` calls it on the parent sheet when a nested one opens.',
+            'Scales the panel down and shifts it up 16 px from its current snap point while another sheet stacks on top. `<BottomSheet>` calls it on the parent sheet when a nested one opens.',
         },
       ],
     },
@@ -1919,7 +1936,7 @@ const { offset, onContentPointerdown, onContentClick } = useSwipeReveal(open, {
       name: 'usePullToRefresh',
       installNames: ['usePullToRefresh'],
       description:
-        "The gesture engine and state machine behind `<PullToRefresh>`. A downward drag at scroll top pulls a distance you render, then a release past `threshold` runs `onRefresh`. It moves through `idle`, `pulling`, `ready`, `loading` and `done`, then back to `idle`. Touch drives it through a non-passive `touchmove`, the one way to hold back the browser's own scroll and bounce. A mouse drags it through pointer events. `<PullToRefresh>` adds the pull zone, the arrow and loader indicator and the `#indicator` slot.",
+        "The gesture engine and state machine behind `<PullToRefresh>`. A downward drag at scroll top pulls a distance you render, then a release past `threshold` runs `onRefresh`. Its `state` goes from `idle` to `pulling`, `ready`, `loading` and `done`, then back to `idle`. Touch drives it through a non-passive `touchmove`, the one way to hold back the browser's own scroll and bounce. A mouse drags it through pointer events. `<PullToRefresh>` adds the pull zone, the arrow and loader indicator and the `#indicator` slot.",
       exampleCode: `<script setup lang="ts">
 import { useTemplateRef } from 'vue'
 import { usePullToRefresh } from 'vael-ui'
@@ -1944,55 +1961,54 @@ const { state, pullDistance } = usePullToRefresh({
           name: 'scrollEl',
           type: 'Ref<HTMLElement | null>',
           description:
-            'The scroll container. A pull starts only when it rests at `scrollTop` 0 and the drag moves down at least 8 px. Scrolling away mid drag hands the gesture back.',
+            'The scroll container. A pull starts only when it rests at `scrollTop` 0 and the drag moves down at least 8 px. Scrolling away mid drag ends the pull.',
         },
         {
           name: 'onRefresh',
           type: '() => Promise<void> | void',
           description:
-            'Required. Awaited while `state` is `loading`. A rejection still settles back to `idle`, and the error is swallowed, so handle it inside.',
+            'Runs the refresh, while `state` is `loading`. A rejection still settles back to `idle` and the error is dropped, so handle it inside. Required.',
         },
         {
           name: 'threshold',
           type: 'MaybeRefOrGetter<number | undefined>',
           description:
-            'Default `60`. The pull distance in px at which a release commits. A quick flick past half of it commits too.',
+            'The pull distance in px at which a release refreshes. A quick flick past half of it refreshes too. Default `60`.',
         },
         {
           name: 'maxPull',
           type: 'MaybeRefOrGetter<number | undefined>',
           description:
-            'Default `80`. Past this many px, the pull meets rubber-band resistance. The zone holds at this height while loading.',
+            'The pull in px past which it meets rubber-band resistance. The zone holds at this height while loading. Default `80`.',
         },
         {
           name: 'doneHoldMs',
           type: 'MaybeRefOrGetter<number | undefined>',
-          description: 'Default `650`. How long `done` shows, in ms, before returning to `idle`.',
+          description: 'How long `done` shows, in ms, before returning to `idle`. Default `650`.',
         },
       ],
       returns: [
         {
           name: 'state',
           type: "Ref<'idle' | 'pulling' | 'ready' | 'loading' | 'done'>",
-          description: '`ready` means a release now refreshes.',
+          description: 'Where the pull is. `ready` means a release now refreshes.',
         },
         {
           name: 'pullDistance',
           type: 'Ref<number>',
-          description:
-            'The current pull in px, dampened past `maxPull`. Bind it to the zone height.',
+          description: 'The current pull in px, damped past `maxPull`. Bind it to the zone height.',
         },
         {
           name: 'progress',
           type: 'ComputedRef<number>',
           description:
-            'From 0 to 1, relative to `threshold`, not `maxPull`. It reaches 1 exactly where `ready` starts.',
+            'The pull from 0 to 1, relative to `threshold`, not `maxPull`. It reaches 1 exactly where `ready` starts.',
         },
         {
           name: 'refresh',
           type: '() => Promise<void>',
           description:
-            'Runs the same `loading` and `done` sequence a release does, from code. Does nothing while a refresh is already running or showing `done`.',
+            'Runs the same `loading` and `done` sequence a release does, from code. It does nothing while a refresh is already running or showing `done`.',
         },
       ],
     },

@@ -1,8 +1,8 @@
 <template>
   <section class="demo">
-    <h3>Single-select, <code>selectionMode="single"</code></h3>
+    <h3>Single selection: <code>selectionMode="single"</code></h3>
     <p class="note">
-      Picking any node (folder or file) replaces the selection and closes the panel.
+      Picking any node, folder or file, replaces the selection and closes the panel.
     </p>
     <div class="row">
       <Field label="File or folder">

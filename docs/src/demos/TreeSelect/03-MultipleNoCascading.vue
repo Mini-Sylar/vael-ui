@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Multiple, <code>selectionMode="multiple"</code>, no cascading</h3>
+    <h3>Multiple: <code>selectionMode="multiple"</code>, without cascading</h3>
     <p class="note">
-      Each click toggles just that one node's own membership in the array, with no checkboxes, no
-      parent/child linkage, no indeterminate state. Useful when a consumer wants multi-pick without
-      the checkbox-tree semantics above.
+      Each click adds or removes that one node, with no checkboxes, no link between parents and
+      children, and no indeterminate state. Use it when you want several picks without the checkbox
+      tree above.
     </p>
     <div class="row">
       <Field label="Nodes">

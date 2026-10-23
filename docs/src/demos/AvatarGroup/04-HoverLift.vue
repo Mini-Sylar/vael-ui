@@ -1,7 +1,10 @@
 <template>
   <section class="demo">
     <h3><code>hoverLift</code></h3>
-    <p class="note">Off by default. Lifts an avatar above its neighbors on hover.</p>
+    <p class="note">
+      <code>hoverLift</code> lifts the avatar under the pointer above its neighbors. It’s off by
+      default.
+    </p>
     <div class="row">
       <AvatarGroup hover-lift>
         <Avatar v-for="person in team.slice(0, 4)" :key="person" :name="person" />

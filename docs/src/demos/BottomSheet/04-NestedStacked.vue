@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Nested / stacked sheets</h3>
+    <h3>Stacked sheets</h3>
     <p class="note">
-      Open a sheet from inside another and they stack: the one behind steps back a little, and comes
-      forward again as the one on top closes. Escape and focus act on the top sheet only. There's
-      nothing to wire up.
+      Open a sheet from inside another and they stack: the sheet behind scales back, and comes
+      forward again when the top one closes. Escape and focus apply to the top sheet only. You don’t
+      need to set anything up.
     </p>
     <Button @click="parentOpen = true">Open parent sheet</Button>
     <BottomSheet v-model:open="parentOpen" title="Parent sheet" aria-label="Parent sheet">

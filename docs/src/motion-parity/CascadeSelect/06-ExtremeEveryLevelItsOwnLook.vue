@@ -3,11 +3,11 @@
     <h3>Extreme: every level its own look</h3>
     <p class="note">
       Every level's panel carries <code>data-level</code>, so one <code>ui.panel</code> class plus
-      <code>[data-level='2']</code> styles just the second menu. Here the first level is a rail of
+      <code>[data-level='2']</code> styles only the second menu. Here the first level is a rail of
       departments, the second a wide panel of categories with a line of description, and the third a
       list of products with prices, each arriving its own way: a <code>v-animate</code> in each
       level's row slot staggers its rows in with a different move and spring.
-      <code>#item</code> gets the row's <code>path</code>, so rows read their department's colour
+      <code>#item</code> gets the row's <code>path</code>, so rows read their department's color
       from it, and search results show where they live.
     </p>
     <div class="row">

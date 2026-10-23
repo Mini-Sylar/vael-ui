@@ -1,12 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Submenus: recursive, no separate component</h3>
+    <h3>Submenus from nested <code>items</code></h3>
     <p class="note">
-      Nest another <code>items</code> array on an entry and it becomes a submenu trigger, a submenu
-      is just another Menu instance, one level deeper, reusing everything (positioning, roving
-      focus, typeahead). Opens on hover-intent, click, Enter/Space, or ArrowRight; ArrowLeft (or
-      moving the pointer away) closes it and returns focus to the parent row. Selecting a leaf
-      action closes the whole chain, not just the submenu, try "Copy Link".
+      An entry with its own <code>items</code> array becomes a submenu. Each submenu is another Menu
+      one level deeper, with the same positioning, roving focus and typeahead. It opens on hover,
+      click, Enter, Space or ArrowRight. ArrowLeft, or moving the pointer away, closes it and
+      returns focus to the parent row. Picking an action closes every open level; try “Copy Link”.
     </p>
     <div class="row">
       <Menu :items="fileItems" @select="onSelect">

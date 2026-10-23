@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Hold to confirm</h3>
     <p class="note">
-      <code>hold</code> makes a destructive action ask for a press and hold instead of a dialog. A
-      fill sweeps across while you hold, linear so it reads as time, and <code>@click</code> fires
-      when it completes. Letting go early snaps it back. Space and Enter hold too, and screen
-      readers hear "Press and hold to confirm".
+      <code>hold</code> asks for a press and hold before a destructive action, instead of a dialog.
+      A fill sweeps across at a constant speed while you hold, and <code>@click</code> fires when it
+      completes. Letting go early resets it. Space and Enter hold too, and screen readers hear
+      “Press and hold to confirm”.
     </p>
     <div class="row">
       <Button variant="danger" hold @click="deleted++">Delete project</Button>

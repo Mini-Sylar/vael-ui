@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Extreme: an elastic orb</h3>
     <p class="note">
-      The <code>#indicator</code> slot hands you the pull's <code>state</code> and
+      The <code>#indicator</code> slot receives the pull's <code>state</code> and
       <code>progress</code>. While you pull, a ring fills with your finger. Each part has a
       <code>v-animate</code> whose <code>replay</code> follows the state: crossing the threshold
       blips the orb and flips the arrow on an elastic curve, refreshing fades the arrow and spins

@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: a spring close that keeps your flick (motion-v)</h3>
     <p class="note">
-      A <code>motion</code> object with a <code>leave</code> hook hands the close to a motion-v
-      spring. A flick starts it at the sheet's <code>releaseVelocity</code>, so the sheet keeps your
-      finger's momentum, and the sheet waits for the returned spring. The page behind recedes with
-      the sheet's position, drag included.
+      A <code>leave</code> hook in <code>motion</code> runs the close as a motion-v spring. A flick
+      starts the spring at the sheet’s exposed <code>releaseVelocity</code>, so the sheet keeps your
+      finger’s speed, and the sheet waits for the returned animation. The page behind follows the
+      sheet’s position, during a drag too.
     </p>
     <div ref="stage" class="stage">
       <article ref="page" class="page">

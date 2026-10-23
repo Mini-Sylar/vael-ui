@@ -2,10 +2,9 @@
   <section class="demo">
     <h3>Filterable, with a live result count and a footer hint</h3>
     <p class="note">
-      This is the country picker the phone-input demo needed — <code>filter</code> renders a
-      built-in search box and matches diacritic/case-insensitively, <code>#header</code> shows how
-      many options survived, and <code>#footer</code> is just plain content, no action required to
-      be a valid use of the slot.
+      <code>filter</code> adds a search box that ignores case and accents.
+      <code>#header</code> shows how many options match, and <code>#footer</code> can hold plain
+      content, such as a hint.
     </p>
     <div class="row">
       <Field label="Country">

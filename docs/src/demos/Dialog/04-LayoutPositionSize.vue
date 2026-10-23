@@ -9,12 +9,11 @@
       <Button variant="outline" @click="blurredOpen = true">Blurred backdrop</Button>
     </div>
     <p class="note">
-      Long content triggers <code>scroll-fade</code> automatically once the panel actually
-      overflows; the shorter dialogs above never get it. <code>position</code> and
-      <code>maximizable</code> are just props. "Blurred backdrop" sets
-      <code>:ui="{ overlay: 'blurred-overlay' }"</code>: the overlay is a separate DOM node from the
-      panel, so this is the only way to reach it, since a plain <code>class</code> on
-      <code>&lt;Dialog&gt;</code> would land on the panel instead.
+      Long content gets <code>scroll-fade</code> once the panel overflows; the shorter dialogs above
+      don’t. <code>position</code> and <code>maximizable</code> are props. “Blurred backdrop” sets
+      <code>:ui="{ overlay: 'blurred-overlay' }"</code>: the overlay is a separate element from the
+      panel, so <code>ui.overlay</code> is the only way to reach it. A plain <code>class</code> on
+      <code>&lt;Dialog&gt;</code> goes on the panel.
     </p>
 
     <Dialog

@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Multi-file drag-and-drop, with per-file progress</h3>
+    <h3>Drag and drop several files, with progress for each</h3>
     <p class="note">
-      Upload progress is a consumer composition, not a library feature: each added file gets a fake
-      timer driving its own <code>Progress</code> value. Constrained here to images/PDF/text,
-      5&nbsp;MB max, 3 files max, drop something else (or something huge) to see the reject-toast
-      path.
+      Upload progress is your code, not a FileUpload feature: each added file gets a fake timer that
+      drives its own <code>Progress</code>. This one accepts images, PDFs and text files, up to
+      5&nbsp;MB each and 3 files. Drop anything else, or something larger, to see the rejection
+      toast.
     </p>
     <FileUpload
       v-model:files="uploadFiles"

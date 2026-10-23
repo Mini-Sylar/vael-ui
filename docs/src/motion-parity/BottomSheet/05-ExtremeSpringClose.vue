@@ -3,9 +3,9 @@
     <h3>Extreme: a spring close that keeps your flick</h3>
     <p class="note">
       BottomSheet already closes on a spring that starts at the finger's release speed, so a flick
-      carries on. One <code>linked</code> entry on a stage element dims, rounds and shrinks the page
-      with the sheet's position, drag included, and <code>overlay</code> is cleared so the page dims
-      itself instead of a scrim.
+      keeps its speed. One <code>linked</code> entry on a stage element dims, rounds and shrinks the
+      page with the sheet's position, drag included, and the <code>overlay</code> is transparent, so
+      the page dims itself instead of a scrim.
     </p>
     <div ref="stage" class="stage">
       <article ref="page" class="page">

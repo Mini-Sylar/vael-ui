@@ -1,11 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Multiple, removable chips</h3>
+    <h3>Multiple, with removable chips</h3>
     <p class="note">
-      Every selection renders as a removable chip (each carries its own <code>×</code>, a real Tab
-      stop, no need to reopen the panel to deselect one). <code>maxLabels</code> collapses the rest
-      into a trailing "+N" once there are more than fit; the <code>display</code> prop can also swap
-      chips entirely for a comma-joined label list or a localized count summary.
+      Each selection shows as a chip with its own <code>×</code> button, which Tab reaches, so you
+      can remove one without opening the panel. <code>maxLabels</code> folds the rest into a “+N”
+      chip. <code>display</code> can show a comma-separated list or a count instead of chips.
     </p>
     <Field label="Target markets">
       <Select

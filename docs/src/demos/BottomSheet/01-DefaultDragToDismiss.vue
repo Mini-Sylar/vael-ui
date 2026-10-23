@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Default, <code>title</code> prop, drag-to-dismiss</h3>
+    <h3>Default: <code>title</code> and drag to dismiss</h3>
     <Button @click="basicOpen = true">Choose a plan</Button>
     <BottomSheet v-model:open="basicOpen" title="Choose a plan" aria-label="Choose a plan">
       <div class="sheet-plan-list">

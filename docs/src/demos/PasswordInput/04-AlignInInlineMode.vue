@@ -2,9 +2,9 @@
   <section class="demo">
     <h3><code>align</code> in inline mode</h3>
     <p class="note">
-      Same idea as <code>side</code> — cross-axis alignment of the hint relative to the input,
-      instead of floating-ui's own align. Fields below are widened so the (narrower) hint block
-      actually has room to move.
+      Like <code>side</code>, <code>align</code> lays out the inline hint instead of the floating
+      one: it aligns the hint along the input's other axis. The fields are wider here so the
+      narrower hint has room to move.
     </p>
     <div class="example-grid example-grid--1">
       <div class="example">

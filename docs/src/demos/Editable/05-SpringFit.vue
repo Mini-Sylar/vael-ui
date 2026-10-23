@@ -1,10 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Spring: the field fits what you type, and the saved name lands</h3>
+    <h3>Spring: the field fits what you type, and the saved name drops in</h3>
     <p class="note">
-      With <code>motion="false"</code>, the swap is yours. Two <code>createSpring</code>s write
-      straight to the elements Editable exposes: one sizes the field to its text as you type,
-      overshooting a little, and one drops the saved name into place. Nothing re-renders per frame.
+      With <code>:motion="false"</code>, the swap between preview and input is yours. Two
+      <code>createSpring</code> calls write to the elements Editable exposes: one sizes the input to
+      its text as you type, with a little overshoot, and one drops the saved name into place.
+      Nothing re-renders on each frame.
     </p>
     <Editable
       ref="editable"

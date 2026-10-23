@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Custom exit animation (motion-v)</h3>
+    <h3>Custom animation (motion-v)</h3>
     <p class="note">
-      A <code>motion</code> object hands the panel to a motion-v spring as it opens and closes, and
-      Select waits for the exit before removing it. Picking an item, pressing Escape, clicking
-      outside and re-clicking the trigger all close it the same way.
+      <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate the panel on a
+      motion-v spring, and Select waits for the exit before removing the panel. Picking an item,
+      pressing Escape, clicking outside and clicking the trigger again all close it the same way.
     </p>
     <Field label="Destination">
       <Select

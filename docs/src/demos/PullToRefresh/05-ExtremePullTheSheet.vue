@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: pull the page down like a sheet</h3>
     <p class="note">
-      The content is a sheet lying on a tray. Pull it and it comes away from the top: its corners
-      round, it lifts and its shadow deepens, all from the exposed <code>progress</code>. Let go and
-      it springs back on a spring from <code>springEasing</code>, holding just far enough down to
-      show the spinner while it refreshes. No animation library.
+      The content is a sheet lying on a tray. As you pull it from the top, its corners round, it
+      lifts and its shadow deepens, all from the exposed <code>progress</code>. When you let go, it
+      eases back on a curve from <code>springEasing</code> and stays low enough to show the spinner
+      while it refreshes. No animation library.
     </p>
     <div class="tray">
       <PullToRefresh ref="ptr" class="tray-scroll" :on-refresh="refresh">

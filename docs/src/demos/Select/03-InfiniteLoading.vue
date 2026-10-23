@@ -1,17 +1,17 @@
 <template>
   <section class="demo">
-    <h3>Infinite loading, the TanStack Query fit</h3>
+    <h3>Infinite loading with TanStack Query</h3>
     <p class="note">
-      Select stays dumb: bind <code>:loading</code>, listen for <code>@reach-end</code>, append to
-      your own <code>items</code> array. This is exactly the <code>useInfiniteQuery</code> shape,
+      Select only shows what you give it: bind <code>:loading</code>, listen for
+      <code>@reach-end</code> and append to your own <code>items</code>. That matches
+      <code>useInfiniteQuery</code> with no adapter:
       <code
         >&#64;reach-end="() =&gt; !isFetchingNextPage &amp;&amp; hasNextPage &amp;&amp;
         fetchNextPage()"</code
-      >, <code>:items="data.pages.flatMap(p =&gt; p.items)"</code>,
-      <code>:loading="isFetchingNextPage"</code>, no adapter needed. <code>reach-end</code> fires
-      once per items-length value and re-arms only once the array actually grows, so a slow page
-      fetch can't be spammed by scroll ticks in between. Scrolling far enough also crosses Select's
-      own 100-item auto-virtualize threshold.
+      >, <code>:items="data.pages.flatMap(p =&gt; p.items)"</code> and
+      <code>:loading="isFetchingNextPage"</code>. <code>reach-end</code> fires once per list length
+      and fires again only after <code>items</code> grows, so scrolling can't request a slow page
+      twice. Scroll far enough and the list passes 100 items, where Select virtualizes on its own.
     </p>
     <Field label="Invoice">
       <Select

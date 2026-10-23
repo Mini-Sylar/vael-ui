@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Truncated, <code>overflowCount</code></h3>
+    <h3>Truncated with <code>overflowCount</code></h3>
     <div class="row">
       <AvatarGroup :overflow-count="team.length - 4">
         <Avatar v-for="person in team.slice(0, 4)" :key="person" :name="person" />

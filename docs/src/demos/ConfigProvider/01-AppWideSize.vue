@@ -3,8 +3,8 @@
     <h3>One size for the whole app</h3>
     <p class="note">
       <code>size</code> sets the default for every button, field and table inside, so a dense
-      dashboard doesn't repeat <code>size="sm"</code> on each one. Switch it below: everything
-      follows at once. A component's own <code>size</code> still wins, like the
+      dashboard doesn’t repeat <code>size="sm"</code> on each one. Switch it below and everything
+      follows. A component’s own <code>size</code> still wins, like the
       <strong>Cancel</strong> button here.
     </p>
     <SelectButton

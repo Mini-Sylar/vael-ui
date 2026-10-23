@@ -3,11 +3,11 @@
     <h3>Types, and one setting for every spinner</h3>
     <p class="note">
       <code>type</code> picks the animation: <code>ring</code>, <code>dots</code>,
-      <code>bars</code>, <code>comet</code> or <code>dither</code>. Each is pure CSS in a 1em square
-      that follows <code>currentColor</code>, so swapping one never moves the layout. Set
-      <code>loader-type</code> on <code>ConfigProvider</code> and every spinner inside follows it:
-      Loader, Button's loading state, list loading rows, loading toasts and PullToRefresh. A
-      Button's own <code>loader-type</code> wins.
+      <code>bars</code>, <code>comet</code> or <code>dither</code>. Each is pure CSS in a
+      <code>1em</code> square that follows <code>currentColor</code>, so swapping one never shifts
+      the layout. Set <code>loader-type</code> on <code>ConfigProvider</code> and every spinner
+      inside follows it: Loader, Button’s loading state, list loading rows, loading toasts and
+      PullToRefresh. A Button’s own <code>loader-type</code> wins.
     </p>
     <div class="stack">
       <div class="row types">

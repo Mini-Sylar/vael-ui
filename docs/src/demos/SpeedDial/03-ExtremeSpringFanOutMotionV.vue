@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Extreme: actions spring out of the trigger (motion-v)</h3>
     <p class="note">
-      A <code>motion</code> object with <code>enter</code> and <code>leave</code> hooks hands the
-      actions to motion's <code>animate()</code>. They spring out of the trigger one after another
-      and pull back in reverse. The exposed <code>iconEl</code> turns on the same spring.
+      <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate the actions
+      with motion-v's <code>animate()</code>. They spring out of the trigger one after another and
+      return in reverse order. The exposed <code>iconEl</code> turns on the same spring.
     </p>
     <div class="speed-dial-stage">
       <SpeedDial

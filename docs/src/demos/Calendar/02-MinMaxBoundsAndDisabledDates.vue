@@ -1,9 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Min/max bounds and disabled dates</h3>
+    <h3>Min and max dates, and disabled dates</h3>
     <p class="note">
-      Bounded to the current month, with every Sunday disabled via a predicate, both min/maxDate and
-      disabledDates gray out and block the same day.
+      <code>min-date</code> and <code>max-date</code> limit the calendar to this month, and a
+      <code>disabled-dates</code> function disables every Sunday. Both gray out the day and block
+      it.
     </p>
     <div class="row">
       <Calendar

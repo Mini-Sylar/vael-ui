@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>v-draggable: reorderable tabs</h3>
+    <h3><code>v-draggable</code>: reorderable tabs</h3>
     <p>
       The directive is the "just make this list draggable" escape hatch — it runs the same engine,
       so the springs and the lift-out preview are identical. A directive on a component attaches to

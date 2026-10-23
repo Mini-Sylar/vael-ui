@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Inside a container</h3>
     <p class="note">
-      <code>container</code> scopes a Toaster to an element instead of the viewport: it teleports
-      there and stacks in that element's corner, the way <code>container</code> works on Dialog and
+      <code>container</code> keeps a Toaster inside an element instead of the viewport: it teleports
+      there and stacks in that element's corner, as <code>container</code> does on Dialog and
       Popover. The element needs <code>position: relative</code>. This Toaster has its own
-      <code>name</code>, so the page-level one never shows its toasts.
+      <code>name</code>, so the page's main Toaster never shows its toasts.
     </p>
     <div ref="frame" class="frame">
       <div class="row">

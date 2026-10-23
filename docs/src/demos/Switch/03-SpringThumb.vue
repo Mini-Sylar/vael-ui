@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>A spring thumb with vael-ui's spring</h3>
     <p class="note">
-      One <code>createSpring</code> moves the thumb, and its stretch comes from the spring's own
-      speed, so it stretches as it accelerates, overshoots, and settles round. Click again
-      mid-flight and it turns around keeping its momentum. <code>:motion="false"</code> hands the
-      movement over; the exposed <code>thumbEl</code> is what the spring writes to.
+      One <code>createSpring</code> moves the thumb, and the stretch comes from the spring's speed:
+      the thumb stretches as it speeds up, overshoots and settles round. Click again mid-flight and
+      it reverses, keeping its momentum. <code>:motion="false"</code> turns off Switch's own
+      movement, and the spring writes to the exposed <code>thumbEl</code>.
     </p>
     <Switch ref="sw" v-model="enabled" label="Turbo mode" :motion="false" />
   </section>

@@ -2,12 +2,13 @@
   <section class="demo">
     <h3>Your own loader, app-wide</h3>
     <p class="note">
-      <code>loader-type</code> also takes your own component. vael-ui draws it in the same 1em box
-      as the built-in ones, sized by the text and coloured with <code>currentColor</code>, so a
-      Button's loading state, list loading rows, loading toasts and PullToRefresh all use it. For
-      props, pass a render function: <code>() =&gt; h(MySpinner, { speed: 2 })</code>. You don't
-      need <code>markRaw</code>: only a component you keep in your own <code>ref()</code> or
-      <code>reactive()</code> becomes reactive, and vael-ui unwraps that too.
+      <code>loader-type</code> also takes your own component. vael-ui draws it in the same
+      <code>1em</code> box as the built-in ones, sized by the text and colored with
+      <code>currentColor</code>, so Button’s loading state, list loading rows, loading toasts and
+      PullToRefresh all use it. To pass props, use a render function:
+      <code>() =&gt; h(MySpinner, { speed: 2 })</code>. You don’t need <code>markRaw</code>: only a
+      component you keep in your own <code>ref()</code> or <code>reactive()</code> becomes reactive,
+      and vael-ui unwraps that too.
     </p>
     <ConfigProvider :loader-type="OrbitLoader">
       <div class="row">

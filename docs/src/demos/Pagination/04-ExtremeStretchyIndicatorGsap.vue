@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Extreme: a stretchy indicator (GSAP)</h3>
     <p class="note">
-      <code>:motion="false"</code> stops the indicator sliding, and the exposed
-      <code>indicatorEl</code> and <code>labelsEl</code> are what you drive. Here the edge facing
-      the new page runs ahead and the other follows, so the highlight stretches across the gap and
-      then catches up with a jelly wobble. The longer the jump, the longer the stretch, and the page
-      numbers keep their color in step with it.
+      <code>:motion="false"</code> turns off the built-in indicator slide, and you animate the
+      exposed <code>indicatorEl</code> and <code>labelsEl</code>. Here the edge facing the new page
+      moves first and the other edge follows, so the indicator stretches across the gap, then
+      settles with a wobble. A longer jump stretches further, and the page numbers change color in
+      step with it.
     </p>
     <Pagination
       ref="pagination"

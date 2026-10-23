@@ -291,8 +291,8 @@ const tourSteps = computed<TourStep[]>(() => [
     title: 'Your workspace',
     description:
       variant.value === 'repo'
-        ? 'Jump between Overview, Pull requests, and Files from here.'
-        : 'Jump between Overview, Orders, and Customers from here.',
+        ? 'Jump between Overview, Pull requests and Files from here.'
+        : 'Jump between Overview, Orders and Customers from here.',
     side: 'right',
   },
   {
@@ -310,7 +310,7 @@ const tourSteps = computed<TourStep[]>(() => [
   {
     target: '#dash-account-trigger',
     title: 'Your account',
-    description: 'Profile, billing, and signing out all live in this menu.',
+    description: 'Profile, billing and sign out are in this menu.',
     side: 'bottom',
     align: 'end',
   },
@@ -318,7 +318,7 @@ const tourSteps = computed<TourStep[]>(() => [
     ? {
         target: '#dash-activity',
         title: 'Recent activity',
-        description: 'Merges, reviews and deploys land here the moment they happen.',
+        description: 'Merges, reviews and deploys show up here as they happen.',
         side: 'left',
         onBeforeEnter: async () => {
           if (activePage.value !== 'overview') activePage.value = 'overview'
@@ -328,7 +328,7 @@ const tourSteps = computed<TourStep[]>(() => [
     : {
         target: '#dash-view-all-link',
         title: 'Recent activity',
-        description: 'Every new order lands on this list — click through for the full history.',
+        description: 'Every new order shows up in this list. Click through for the full history.',
         side: 'bottom',
         onBeforeEnter: async () => {
           if (activePage.value !== 'overview') activePage.value = 'overview'

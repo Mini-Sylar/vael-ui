@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>Advancing from inside the active step</h3>
     <p class="note">
-      The "Approve" action lives inside the active step's own <code>Message</code>, not in a
-      separate button below the list — approving it advances <code>current</code>, which reveals the
-      next step's own action in turn.
+      The “Approve” button sits in the active step's own <code>Message</code> instead of below the
+      list. Approving advances <code>current</code>, which shows the next step's action.
     </p>
     <Timeline class="approval-timeline" :items="steps" :current="current">
       <template #item="{ item, completed, active }">

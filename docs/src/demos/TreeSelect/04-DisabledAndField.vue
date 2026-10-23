@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Disabled + <code>#value</code> slot override</h3>
+    <h3>Disabled, inside a Field</h3>
     <p class="note">
-      Same "standalone-or-Field" contract as every other control: wire it into a Field and
-      label/description/required wiring appears for free, or leave it disabled entirely.
+      Like every other control, TreeSelect works alone or inside a Field, which adds the label,
+      description and required state. <code>disabled</code> locks it.
     </p>
     <Field label="Project entry point" description="Read-only for this demo" :required="true">
       <TreeSelect

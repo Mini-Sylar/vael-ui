@@ -4,7 +4,7 @@
       <div class="hero-copy">
         <a class="news-pill" :href="CHANGELOG_URL" target="_blank" rel="noreferrer">
           <span class="news-pill-tag">{{ t('home.newTag') }}</span>
-          <span>{{ t('home.newText') }}</span>
+          <span class="news-pill-text">{{ t('home.newText') }}</span>
           <PhArrowRight :size="12" aria-hidden="true" />
         </a>
         <p class="eyebrow">{{ t('home.eyebrow') }}</p>
@@ -364,6 +364,17 @@ const githubMenuItems = computed<MenuItemData[]>(() => [
   color: var(--ui-text-muted);
   text-decoration: none;
   transition: color var(--ui-duration-press) var(--ui-ease-out);
+}
+
+/* One line, always: a narrow screen trims the end instead of wrapping. */
+.news-pill {
+  max-inline-size: 100%;
+}
+.news-pill-text {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .news-pill::before,

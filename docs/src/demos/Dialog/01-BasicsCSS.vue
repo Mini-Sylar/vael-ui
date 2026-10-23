@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Basics, CSS transition, footer slot, nested dialogs</h3>
+    <h3>Basics: footer slot and nested dialogs</h3>
     <div class="row">
       <Button @click="cssOpen = true">Rename project</Button>
       <Button variant="outline" @click="outerOpen = true">Nested dialogs</Button>

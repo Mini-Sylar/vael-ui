@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Extreme: the dialog morphs out of its button (GSAP)</h3>
     <p class="note">
-      The <code>motion</code> prop's <code>enter</code> and <code>leave</code> hooks receive the
-      panel and the backdrop. A GSAP timeline grows the panel out of the button with the backdrop
-      fading on the same progress, then shrinks it back on close; the dialog waits for the returned
+      The <code>motion</code> prop’s <code>enter</code> and <code>leave</code> hooks receive the
+      panel and the overlay. A GSAP timeline grows the panel out of the button while the overlay
+      fades on the same progress, then shrinks it back on close. The dialog waits for the returned
       timeline before it unmounts.
     </p>
     <Button ref="trigger" @click="open = true">Invite teammates</Button>

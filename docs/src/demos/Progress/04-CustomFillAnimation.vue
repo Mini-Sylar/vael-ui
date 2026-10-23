@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Custom fill animation (GSAP)</h3>
     <p class="note">
-      <code>value</code> is never set here; the fill's <code>scaleX</code> is driven straight
-      through <code>gsap.to(fillEl, ...)</code>, bypassing the built-in CSS transition entirely.
-      Retargeting mid-tween (a flaky "real" progress feed) composes cleanly since GSAP kills the
-      previous tween on the same target.
+      <code>value</code> stays <code>null</code> here. GSAP tweens the <code>scaleX</code> of the
+      exposed <code>fillEl</code> directly, after the demo turns off the fill's built-in animation
+      and transition. The fake feed jumps around, including a step back, and each new tween starts
+      from wherever the fill is.
     </p>
     <div class="row progress-row">
       <Progress

@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Basic popover</h3>
     <p class="note">
-      <code>open-on-trigger-click</code> makes the <code>#trigger</code> slot toggle the popover and
-      anchors it there, with no ref or click handler to wire.
+      <code>open-on-trigger-click</code> makes the <code>#trigger</code> slot open and close the
+      popover and anchors the panel there, with no ref or click handler to set up.
     </p>
     <Popover v-model:open="basicOpen" open-on-trigger-click>
       <template #trigger="{ open }">

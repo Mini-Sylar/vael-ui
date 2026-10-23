@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Side and align: same floating-ui middleware as Popover</h3>
+    <h3><code>side</code> and <code>align</code>, placed like Popover</h3>
     <p class="note">
-      <code>align</code> defaults to <code>start</code> here (not Popover's <code>center</code>), a
-      menu hangs off its trigger's edge, the way a native dropdown does.
+      Menu's <code>align</code> defaults to <code>start</code>, not Popover's <code>center</code>,
+      so the menu lines up with its trigger's edge like a native dropdown.
     </p>
     <div class="row">
       <Menu

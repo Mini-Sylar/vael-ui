@@ -2,11 +2,10 @@
   <section class="demo">
     <h3>Extreme: tasks check off with a pen stroke (GSAP)</h3>
     <p class="note">
-      <code>:motion="false"</code> hands Checkbox's transitions over, and the exposed
-      <code>boxEl</code> and <code>checkEl</code> are what you animate. Checking a task pops the
-      box, draws the check like a pen stroke and strikes the task through with a few sparks.
-      Unchecking fades the check rather than un-drawing it. "All done" checks everything in a quick
-      cascade.
+      With <code>:motion="false"</code>, Checkbox leaves its transitions to you, and you animate the
+      exposed <code>boxEl</code> and <code>checkEl</code>. Checking a task pops the box, draws the
+      check like a pen stroke and strikes the task through with a few sparks. Unchecking fades the
+      check out instead of erasing the stroke. “All done” checks every task, one after another.
     </p>
     <div class="tasks">
       <div :ref="(row) => trackRow(ALL, row)" class="task task--all">

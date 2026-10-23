@@ -1,12 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Free text, <code>allowCustom</code></h3>
+    <h3>Free text: <code>allowCustom</code></h3>
     <p class="note">
-      Typing something that isn't an existing label adds a <code>Create "…"</code> row, even when
-      the text partially matches an option (type <code>tu</code>, then arrow down past
-      <code>feature</code>). Picking it fires <code>@create</code>; pushing the new value into
-      <code>items</code> there makes it a real option from then on. Clicking away reverts
-      uncommitted text unless <code>commit-on-blur</code> is set.
+      Typing text that isn’t an existing label adds a <code>Create "…"</code> row, even when it
+      partly matches an option (type <code>tu</code>, then arrow down past <code>feature</code>).
+      Picking it fires <code>@create</code>; push the new value into <code>items</code> there to
+      make it a real option. Clicking away reverts text you didn’t commit, unless
+      <code>commit-on-blur</code> is set.
     </p>
     <div class="row">
       <Combobox

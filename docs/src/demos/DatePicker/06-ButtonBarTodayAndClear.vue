@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Today/Clear button bar</h3>
+    <h3>Today and Clear buttons</h3>
     <p class="note">
-      <code>showButtonBar</code> adds a footer with Today and Clear — Today doesn't just set the
-      value, Calendar's own model watcher navigates the visible month to match it too.
+      <code>showButtonBar</code> adds a footer with Today and Clear. Today sets the value and also
+      moves the calendar to today’s month.
     </p>
     <div class="row">
       <DatePicker

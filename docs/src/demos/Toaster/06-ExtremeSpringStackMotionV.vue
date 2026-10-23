@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: toasts that spring in from their edge (motion-v)</h3>
     <p class="note">
-      A <code>motion</code> object with <code>enter</code> and <code>leave</code> hooks hands each
-      card to motion's <code>animate()</code>. Toasts spring up from the bottom edge and slide back
-      out the same way. This Toaster has its own <code>name</code>, so other Toasters on the page
-      never show its toasts.
+      <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate each card with
+      motion-v's <code>animate()</code>. Toasts spring up from the bottom edge and slide back out
+      the same way. This Toaster has its own <code>name</code>, so other Toasters on the page never
+      show its toasts.
     </p>
     <div class="row">
       <Button @click="send">Send a toast</Button>

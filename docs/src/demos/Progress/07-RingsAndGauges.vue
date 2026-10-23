@@ -3,7 +3,7 @@
     <h3>Rings and gauges</h3>
     <p class="note">
       <code>type="circle"</code> draws a ring. <code>sweep</code> sets how much of the circle it
-      covers, in degrees: <code>180</code> is a half-ring, <code>270</code> a speedometer,
+      covers, in degrees: <code>180</code> is a half ring, <code>270</code> a speedometer and
       <code>90</code> a quarter. The value always fills the whole arc. The default slot sits in the
       middle and receives the percentage and the value.
     </p>

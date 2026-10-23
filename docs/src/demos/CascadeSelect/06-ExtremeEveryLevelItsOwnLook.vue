@@ -2,12 +2,12 @@
   <section class="demo">
     <h3>Extreme: every level its own look</h3>
     <p class="note">
-      Every level's panel carries <code>data-level</code>, so one <code>ui.panel</code> class plus
-      <code>[data-level='2']</code> styles just the second menu. Here the first level is a rail of
-      departments, the second a wide panel of categories with a line of description, and the third a
-      list of products with prices, each sliding in its own way. <code>#item</code> gets the row's
-      <code>path</code>, so rows read their department's colour from it, and search results show
-      where they live.
+      Each level’s panel has <code>data-level</code>, so one <code>ui.panel</code> class plus
+      <code>[data-level='2']</code> styles only the second menu. Here the first level is a rail of
+      departments, the second a wide panel of categories with a short description, and the third a
+      list of products with prices, and each level slides in its own way.
+      <code>#item</code> receives the row’s <code>path</code>, so each row reads its department’s
+      color from it, and search results show their location.
     </p>
     <div class="row">
       <Field label="Product">

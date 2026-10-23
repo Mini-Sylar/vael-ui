@@ -2,11 +2,12 @@
   <section class="demo">
     <h3>Haptics</h3>
     <p class="note">
-      <code>haptics</code> adds a short tap, on phones that offer one, when something commits: a
-      Switch flips, a swiped row snaps, a Sortable row lands, a held Button completes, a pull passes
-      the refresh point. Each gets fitting feedback: a tick for the Switch, a light bump for the
-      row, a firmer one for the drop, the heaviest for the hold. <code>{ intensity }</code> scales
-      them all. Open this page on a phone to feel it; desktops stay silent.
+      <code>haptics</code> plays a short vibration, on phones that support it, when something
+      commits: a Switch flips, a swiped row snaps, a Sortable row drops into place, a held Button
+      completes, or a pull passes the refresh point. Each has its own strength: a tick for the
+      Switch, a light bump for the row, a firmer bump for the drop and the strongest for the hold.
+      <code>{ intensity }</code> scales them all. Open this page on a phone to feel it; desktops
+      stay silent.
     </p>
     <ConfigProvider :haptics="{ intensity: 1.2 }">
       <div class="stack">

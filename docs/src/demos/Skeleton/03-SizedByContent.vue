@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Sized by real content, pass the content it stands in for as a slot</h3>
+    <h3>Sized by the content it stands in for</h3>
     <p class="note">
-      The slotted content stays in the layout (so the skeleton box matches its real size) but never
-      paints, only the pulsing background shows.
+      Pass the real content in the slot. It keeps its place in the layout, so the skeleton matches
+      its size, but it never paints; only the pulsing background shows.
     </p>
     <div class="row">
       <Skeleton variant="rect">

@@ -2,10 +2,11 @@
   <section class="demo">
     <h3>Extreme: a fare picker (GSAP)</h3>
     <p class="note">
-      A <code>motion</code> object hands the panel to GSAP: it unrolls from the field when it opens
-      and rolls back up when it closes. Each opening ripples the <code>#day</code> slot's days in
-      behind it. The <code>#label</code> slot puts each month's cheapest fare next to its name.
-      <code>:close-on-select="false"</code> keeps it open while you try a few returns.
+      The <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate the panel
+      with GSAP: it unrolls from the field on open and rolls back up on close. Each opening ripples
+      the <code>#day</code> slot’s days in after it. The <code>#label</code> slot shows each month’s
+      cheapest fare next to its name, and <code>:close-on-select="false"</code> keeps the panel open
+      while you try a few return dates.
     </p>
     <div class="fare">
       <DatePicker

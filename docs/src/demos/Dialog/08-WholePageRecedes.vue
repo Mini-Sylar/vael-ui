@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>The whole page recedes</h3>
     <p class="note">
-      A centred dialog can take the page with it too: the same <code>linked</code> entry, on the
-      dialog's own timing. Keep it for moments that deserve the weight, like a checkout.
+      A centered dialog can move the page too, with the same <code>linked</code> entry on the
+      dialog’s own timing. Save it for moments that matter, such as a checkout.
     </p>
     <Button @click="show">Open the dialog</Button>
     <Dialog v-model:open="open" title="Confirm your order" :motion="recede" @after-leave="reset">

@@ -3,8 +3,8 @@
     <h3>Extreme: a saved title cascades in, letter by letter (GSAP)</h3>
     <p class="note">
       <code>#preview</code> renders one span per character, and after <code>submit</code> GSAP
-      staggers them up into place, so a rename reads as the title being retyped. A table of inline
-      fields behind it saves the same way, with the row flashing on commit.
+      staggers them up into place, so a rename looks retyped. The inline fields in the table below
+      save the same way, and each row flashes when it saves.
     </p>
     <Editable v-model="title" size="lg" aria-label="Document title" @submit="cascade">
       <template #preview="{ value }">

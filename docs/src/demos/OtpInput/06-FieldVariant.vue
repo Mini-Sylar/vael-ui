@@ -2,8 +2,9 @@
   <section class="demo">
     <h3>One field, like a phone's verification screen</h3>
     <p class="note">
-      <code>variant="field"</code> draws one box around the code and <code>placeholder="0"</code>
-      shows where each digit will land. Focus, the invalid state and the caret belong to the box.
+      <code>variant="field"</code> draws one box around the code, and
+      <code>placeholder="0"</code> marks each empty cell. The box shows the focus, the invalid state
+      and the caret.
     </p>
     <div class="otp-stack">
       <OtpInput v-model="code" variant="field" placeholder="0" aria-label="Verification code" />

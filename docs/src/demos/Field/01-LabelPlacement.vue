@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Label placement: <code>top</code> / <code>float</code> / <code>inset</code></h3>
     <p class="note">
-      <code>float</code>/<code>inset</code> read focus/filled from the same context, not
-      <code>:placeholder-shown</code>, needed once a control isn't a plain text input (Select's
-      trigger is a button, InputNumber can be empty-but-focused). Try focusing each, then typing.
+      <code>float</code> and <code>inset</code> read the focused and filled state from Field, not
+      from <code>:placeholder-shown</code>, because some controls aren’t plain text inputs: Select’s
+      trigger is a button, and InputNumber can be empty while focused. Focus each one, then type.
     </p>
     <div class="field-grid">
       <Field label="Top (default)" label-placement="top">

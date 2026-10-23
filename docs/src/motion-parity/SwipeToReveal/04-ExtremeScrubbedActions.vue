@@ -8,7 +8,8 @@
       revealed on screen). So the buttons cartwheel in <em>with</em> your finger, one after another,
       and rewind as the row slides back. Once you let go, a <code>spring</code> beside
       <code>progress</code> has them follow it a beat behind, so they lag the row slightly.
-      <code>:reveal-scale="false"</code> hands the panel over.
+      <code>:reveal-scale="false"</code> stops the panel growing in from its edge, so only the
+      buttons move.
     </p>
     <ul class="swipe-list">
       <li v-for="row in rows" :key="row.id" class="swipe-row">

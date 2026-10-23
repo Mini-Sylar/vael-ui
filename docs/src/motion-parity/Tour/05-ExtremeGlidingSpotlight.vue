@@ -4,9 +4,9 @@
     <p class="note">
       Tour's spotlight and callout glide between steps on their own, timed by its
       <code>motion</code>: the cutout's position, size and corner radius morph together and the
-      callout rides along. The ring reads the cutout's box from the spotlight's
+      callout moves with them. The ring reads the cutout's box from the spotlight's
       <code>--ui-tour-cutout-*</code> properties, and <code>v-animate</code>'s <code>replay</code>
-      shows it on each step change and fades it out as the glide lands. Press Next or Back mid-glide
+      shows it on each step change and fades it out as the glide ends. Press Next or Back mid-glide
       and it turns from where it is.
     </p>
     <div class="row">

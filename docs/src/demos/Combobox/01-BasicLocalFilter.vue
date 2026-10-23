@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>Basic, local filter</h3>
     <p class="note">
-      Same 30-country list as the Select demo, so the two feel like siblings. Default
-      <code>filter</code> is case- and diacritic-insensitive on the label: try "cote" to match "Côte
-      d'Ivoire", or "turkiye" to match "Türkiye".
+      The default <code>filter</code> ignores case and accents in the label: type “cote” to match
+      “Côte d’Ivoire”, or “turkiye” to match “Türkiye”.
     </p>
     <div class="row">
       <Combobox

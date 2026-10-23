@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Range selection</h3>
     <p class="note">
-      First click sets the start, a second click completes the range (landing before the start
-      restarts it there instead of silently swapping). Hover between picking the two ends to preview
-      the range that would commit.
+      The first click sets the start and the second completes the range. Clicking a day before the
+      start moves the start there instead of swapping the ends. Between the two clicks, hover to
+      preview the range.
     </p>
     <div class="row">
       <Calendar v-model="rangeValue" selection-mode="range" />

@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Custom <code>#hint</code> content: a strength meter</h3>
     <p class="note">
-      The checklist is only the default. Replace it entirely via the <code>#hint</code> slot — a
-      <code>Progress</code> bar driven by <code>results</code>, no bespoke widget.
+      The checklist is only the default. The <code>#hint</code> slot replaces it; here a
+      <code>Progress</code> bar reads <code>results</code> to show the password's strength.
     </p>
     <PasswordInput
       v-model="strength"

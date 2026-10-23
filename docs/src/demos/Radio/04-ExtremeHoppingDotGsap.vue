@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: the dot hops to the next option (GSAP)</h3>
     <p class="note">
-      <code>:motion="false"</code> hands Radio's transitions over, and the exposed
-      <code>controlEl</code> and <code>dotEl</code> are what you animate. Choosing a plan sends the
-      dot out of the old circle on a springy arc that overshoots and settles into the new one, while
-      the old circle empties and the new one fills as it arrives.
+      <code>:motion="false"</code> turns off Radio's own transitions, and you animate the exposed
+      <code>controlEl</code> and <code>dotEl</code>. Choosing a plan sends the dot out of the old
+      circle on an arc that overshoots and settles into the new one. The old circle empties and the
+      new one fills as the dot arrives.
     </p>
     <RadioGroup v-model="plan">
       <Radio

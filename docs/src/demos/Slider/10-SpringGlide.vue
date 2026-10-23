@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Spring glide with vael-ui's spring</h3>
     <p class="note">
-      The motion-v example above, rebuilt on <code>createSpring</code> from vael-ui. Arrow keys and
-      track clicks glide the thumb and fill on a spring; a drag still follows the pointer 1:1. The
-      spring writes Slider's <code>--ui-slider-p0</code> on the exposed <code>trackEl</code> each
-      frame, and hands it back once it settles.
+      The motion-v example above, rebuilt on vael-ui's <code>createSpring</code> with no animation
+      library. Arrow keys and track clicks glide the thumb and the fill on the spring, and a drag
+      still follows the pointer 1:1. The spring writes <code>--ui-slider-p0</code> on the exposed
+      <code>trackEl</code> each frame and removes it once it settles.
     </p>
     <div class="row">
       <Slider

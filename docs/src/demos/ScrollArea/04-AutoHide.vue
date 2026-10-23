@@ -2,12 +2,11 @@
   <section class="demo">
     <h3><code>autoHide</code>: transparent until hover, focus or scroll</h3>
     <p class="note">
-      An overlay-style scrollbar: invisible at rest, fades in on hover, focus or while scrolling so
-      it doesn't compete with content for attention. Customize thumb color/size by overriding
-      <code>--ui-scroll-thumb</code>/<code>--ui-scroll-thumb-hover</code>/<code
-        >--ui-scroll-size</code
-      >
-      via the <code>ui.viewport</code> style escape hatch, no dedicated color/size props needed.
+      An overlay scrollbar: hidden at rest, it fades in on hover, on focus and while you scroll, so
+      it stays out of the content's way. To change the thumb's color or size, set
+      <code>--ui-scroll-thumb</code>, <code>--ui-scroll-thumb-hover</code> and
+      <code>--ui-scroll-size</code> through <code>ui.viewport</code>; there are no separate props
+      for them.
     </p>
     <ScrollArea auto-hide class="scroll-demo scroll-demo--vertical">
       <ul class="scroll-list">

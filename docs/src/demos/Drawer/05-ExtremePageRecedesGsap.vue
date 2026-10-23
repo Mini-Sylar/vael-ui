@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: the page recedes behind the sheet (GSAP)</h3>
     <p class="note">
-      The <code>motion</code> prop's <code>enter</code> and <code>leave</code> hooks hand the panel
-      to GSAP. One tween drives a single progress value, and each frame it places the panel and the
-      page behind it: the page shrinks, rounds and dims as the sheet rises, and both reverse
-      together on close. The drawer waits for the returned tween before it unmounts.
+      The <code>motion</code> prop’s <code>enter</code> and <code>leave</code> hooks animate the
+      panel with GSAP. One tween drives a single progress value, and on each frame it places both
+      the panel and the page behind it: the page shrinks, rounds and dims as the sheet rises, and
+      both reverse together on close. The drawer waits for the returned tween before it unmounts.
     </p>
     <div ref="stage" class="stage">
       <article ref="page" class="page">

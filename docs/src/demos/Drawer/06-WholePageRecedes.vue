@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>The whole page recedes</h3>
     <p class="note">
-      One <code>linked</code> entry moves your app's root with the drawer: the page shrinks and
-      rounds while it's open, on the drawer's own curve, and comes back as it closes. A second entry
-      darkens the space around it. The same object works on a BottomSheet or a Dialog.
+      One <code>linked</code> entry moves your app’s root with the drawer: the page shrinks and
+      rounds while the drawer is open, on the drawer’s own curve, and comes back as it closes. A
+      second entry darkens the space around it. The same object works on a BottomSheet or a Dialog.
     </p>
     <Button @click="show">Open the drawer</Button>
     <Drawer v-model:open="open" side="right" title="Filters" :motion="recede" @after-leave="reset">

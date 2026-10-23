@@ -3,8 +3,8 @@
     <h3>Tune the roll</h3>
     <p class="note">
       The roll reads <code>--ui-duration-number</code> and <code>--ui-ease-number</code>, so set
-      them on <code>:root</code> or on one number. An overshooting curve lets each digit bounce past
-      its value and settle. <code>:motion="false"</code> swaps digits without rolling.
+      them on <code>:root</code> or on one number. An overshooting curve makes each digit bounce
+      past its value and settle. <code>:motion="false"</code> swaps digits without rolling.
     </p>
     <div class="row">
       <SelectButton

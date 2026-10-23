@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Custom icon markers via <code>#marker</code></h3>
+    <h3>Custom icon markers with <code>#marker</code></h3>
     <p class="note">
-      The default dot is just what renders when <code>#marker</code> is left empty — swap in
-      anything, including per-item icons.
+      The default dot renders only when <code>#marker</code> is empty. Put anything there, including
+      an icon for each item.
     </p>
     <Timeline :items="checks" :completed="(check) => check.passed">
       <template #marker="{ completed }">

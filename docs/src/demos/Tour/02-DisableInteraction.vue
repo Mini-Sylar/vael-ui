@@ -2,8 +2,8 @@
   <section class="demo">
     <h3><code>disableInteraction</code></h3>
     <p class="note">
-      Per step, not tour-wide. The target goes inert like the rest of the page instead of staying
-      clickable — a "look, don't touch" step.
+      Set it per step, not for the whole tour. The target becomes inert like the rest of the page
+      instead of staying clickable, for a step that only points at something.
     </p>
     <div class="row">
       <Button @click="lockedOpen = true">Start tour</Button>

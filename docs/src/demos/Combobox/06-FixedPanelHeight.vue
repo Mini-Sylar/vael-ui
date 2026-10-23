@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>Fixed panel height</h3>
     <p class="note">
-      <code>maxPanelHeight</code> caps the panel at a set size regardless of how much viewport space
-      is actually available — the option list scrolls internally past it instead of the panel
-      growing to fill the screen.
+      <code>maxPanelHeight</code> caps the panel’s height, however much room the viewport has. Past
+      it, the options scroll inside the panel instead of the panel growing.
     </p>
     <div class="row">
       <Combobox

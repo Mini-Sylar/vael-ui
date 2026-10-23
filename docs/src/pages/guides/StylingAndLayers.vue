@@ -8,7 +8,7 @@
     <h2 id="cascade-layers">{{ t('stylingLayers.cascadeLayersTitle') }}</h2>
     <CodeBlock
       lang="css"
-      code="/* your app's main stylesheet, e.g. style.css */
+      code="/* your app's main stylesheet, such as style.css */
 @layer app-base, ui-components;
 
 @layer app-base {
@@ -144,8 +144,8 @@ html { font-size: 14px; }
       <CodeBlock
         lang="typescript"
         code="// main.ts
-import './style.css'        // your base layer, loads first
-import 'vael-ui/layers.css' // sorts after app-base, if you use it"
+import './style.css'       // your base layer, loads first
+import 'vael-ui/style.css' // every component's CSS at once"
         class="callout-code"
       />
     </Message>

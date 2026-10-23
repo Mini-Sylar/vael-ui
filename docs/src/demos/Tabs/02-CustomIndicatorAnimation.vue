@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Custom indicator animation (motion-v)</h3>
     <p class="note">
-      Same zero-ownership contract, reached for a spring instead of the CSS default: a
-      <code>motion.span</code> with a shared <code>layout-id</code> per tab, no composable needed.
-      Quick, near-flat spring (duration 0.45s, bounce 0.15), no playful overshoot on a control
-      pressed this often.
+      Instead of <code>indicatorProps</code>, each tab renders a motion-v
+      <code>motion.span</code> with a shared <code>layout-id</code>, so motion-v slides it to the
+      active tab. The spring is short with little bounce (<code>duration: 0.45</code>,
+      <code>bounce: 0.15</code>), because tabs are pressed often.
     </p>
     <!-- LayoutGroup scopes the layout-id to this demo, so leaving the page releases it. -->
     <LayoutGroup id="tabs-spring-demo">

@@ -24,12 +24,12 @@
 import { shallowRef, useTemplateRef, watch } from 'vue'
 import { useLiveCard, useTicker } from './useLiveCard'
 
-// Each hook gets its own entrance so the three read as different handles on
-// the same panel: the built-in CSS fade, a consumer-owned slide, a spring pop.
+// Each one gets its own entrance so the three read as different handles on the same panel: a
+// component's own motion, an element of yours with v-animate, and a spring.
 const HOOKS = [
   { name: 'motion', effect: 'fade' },
-  { name: 'forceMount', effect: 'slide' },
-  { name: 'beforeClose', effect: 'pop' },
+  { name: 'v-animate', effect: 'slide' },
+  { name: 'spring', effect: 'pop' },
 ] as const
 
 const root = useTemplateRef<HTMLElement>('root')

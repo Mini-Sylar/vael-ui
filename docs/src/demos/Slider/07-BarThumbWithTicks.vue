@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Bar thumb with ticks</h3>
     <p class="note">
-      Restyled with CSS, ticks drawn in the <code>#track</code> slot. The bar stretches while you
-      drag it.
+      CSS restyles the thumb as a bar, and the <code>#track</code> slot draws the ticks. The bar
+      stretches while you drag it.
     </p>
     <Field class="volume-field">
       <template #label>

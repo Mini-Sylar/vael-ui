@@ -3,7 +3,7 @@
     <h3>Extreme: a brand studio, every pick tweened through the page</h3>
     <p class="note">
       <code>#trigger</code> replaces the swatch with an orb that <code>v-animate</code>'s
-      <code>animate</code> spins open. Each pick eases the mock page's brand colour over 600ms the
+      <code>animate</code> spins open. Each pick eases the mock page's brand color over 600 ms the
       same way instead of snapping, the default slot adds a "recent" strip whose chips
       <code>v-animate</code> staggers in when the panel opens, and <code>#preset</code> marks the
       current preset with a check. The eyedropper is hidden with

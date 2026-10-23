@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3><code>#start</code> / <code>#end</code> slots</h3>
-    <p class="note">The library owns the wrapper spans, icons/kbd hints only fill them.</p>
+    <p class="note">Input renders the wrapper spans; your icons and key hints go inside them.</p>
     <div class="row">
       <Input v-model="searchValue" placeholder="Search..." class="input-fixed">
         <template #start>

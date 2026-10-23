@@ -4,8 +4,8 @@
     <p class="note">
       Drop several files at once and each row pops in after the one before it. The row's content is
       <code>v-animate</code> with an <code>initial</code> and a <code>stagger</code>, so rows added
-      in the same moment rise one after another, layered on top of (not instead of) the library's
-      own opacity fade on the <code>&lt;li&gt;</code>.
+      in the same moment rise one after another, on top of FileUpload's own opacity fade on the
+      <code>&lt;li&gt;</code>.
     </p>
     <FileUpload v-model:files="files">
       <template #item="{ file, remove }">

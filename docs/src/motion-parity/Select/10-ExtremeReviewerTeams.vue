@@ -3,9 +3,9 @@
     <h3>Extreme: reviewers by team, with picks per team in the label</h3>
     <p class="note">
       Each team brings its own <code>color</code> and <code>channel</code>.
-      <code>#group-label</code> turns them into a coloured header that counts how many of the team
+      <code>#group-label</code> turns them into a colored header that counts how many of the team
       you've picked, read from your own <code>v-model</code>. <code>#item</code> also gets the
-      option's <code>group</code>, so each person's avatar takes their team's colour. The label is
+      option's <code>group</code>, so each person's avatar takes their team's color. The label is
       also the group's name for screen readers, so they hear the team, its channel and "1 of 3
       picked". The panel opens on Select's own motion; nothing inside it adds any.
     </p>

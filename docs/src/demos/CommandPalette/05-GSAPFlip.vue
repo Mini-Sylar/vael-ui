@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Custom exit: GSAP shared-element FLIP</h3>
+    <h3>Grow from the button with GSAP</h3>
     <p class="note">
-      Grows out of the button's real <code>getBoundingClientRect()</code> position and size (iOS
-      app-icon style) instead of scaling from the viewport, the same FLIP technique
-      <code>Dialog</code>'s own demo uses. The <code>motion</code> prop's <code>enter</code> and
-      <code>leave</code> hooks run it on the panel, and the palette waits for the returned tween.
+      The <code>motion</code> prop’s <code>enter</code> and <code>leave</code> hooks run a FLIP
+      animation on the panel. It grows out of the button’s
+      <code>getBoundingClientRect()</code> position and size instead of scaling from the center of
+      the viewport, and shrinks back into it on close. The palette waits for the returned tween.
     </p>
     <div class="row">
       <Button ref="gsapTrigger" variant="secondary" @click="gsapOpen = true"

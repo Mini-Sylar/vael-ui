@@ -2,8 +2,9 @@
   <section class="demo">
     <h3>Extreme: your own swap, a slot-machine drop (GSAP)</h3>
     <p class="note">
-      With <code>motion="false"</code> AnimatedText swaps at once and the motion is yours. Here GSAP
-      drops each new word in from above with a little bounce, and squashes it as it lands.
+      With <code>:motion="false"</code>, AnimatedText swaps at once and the animation is yours. Here
+      GSAP animates the exposed <code>el</code>: each new word drops in from above with a small
+      bounce, then squashes as it stops.
     </p>
     <p class="line">
       Ship it on

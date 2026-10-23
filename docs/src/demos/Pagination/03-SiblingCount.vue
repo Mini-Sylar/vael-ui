@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3><code>siblingCount</code>, compact vs. wide</h3>
+    <h3><code>siblingCount</code>: compact and wide</h3>
     <div class="pagination-stack">
       <Pagination
         v-model:page="page"

@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Extreme: a celebration burst at max rating</h3>
     <p class="note">
-      Hit the top rating and the stars spin and pop one after another. Each star's
+      Pick the top rating and the stars spin and pop one after another. Each star's
       <code>initial</code> is a list of keyframes (grow and tip, dip back, settle) with
       <code>times</code>, an easing per step and a <code>stagger</code>.
       <code>appear: false</code> keeps it still on load, and <code>replay</code> plays it each time

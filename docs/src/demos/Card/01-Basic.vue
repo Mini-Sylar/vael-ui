@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Basic, title, description, body, footer</h3>
+    <h3>Basic: title, description, body and footer</h3>
     <div class="row">
       <Card title="Team plan" description="For growing teams that need more seats.">
         <p class="panel-text">$29/month, billed annually. Unlimited projects, priority support.</p>

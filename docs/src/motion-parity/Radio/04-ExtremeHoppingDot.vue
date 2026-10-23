@@ -3,12 +3,11 @@
     <h3>Extreme: the dot hops to the next option</h3>
     <p class="note">
       The dot is one element with a shared <code>layoutId</code>: choosing a plan removes it from
-      the old circle and adds it to the new one, and its <code>easing</code> carries it across with
-      an overshoot. Inside it, <code>v-animate</code> keyframes throw the ball out sideways, stretch
-      it in flight, squash it on landing and whiten it. Radio's
-      <code>states.unchecked</code> pinches and empties the old circle;
-      <code>states.checked</code> fills the new one as the ball lands, pops it and sends a ripple
-      out.
+      the old circle and adds it to the new one, and its <code>easing</code> moves it across with an
+      overshoot. Inside it, <code>v-animate</code> keyframes throw the ball out sideways, stretch it
+      in flight, squash it on landing and whiten it. Radio's <code>states.unchecked</code> pinches
+      and empties the old circle; <code>states.checked</code> fills the new one as the ball lands,
+      pops it and sends a ripple out.
     </p>
     <RadioGroup v-model="plan">
       <div v-for="option in plans" :key="option.value" class="option">

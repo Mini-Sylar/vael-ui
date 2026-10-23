@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Full external control, <code>motion="false"</code> + GSAP height tween</h3>
+    <h3>Your own height animation: <code>:motion="false"</code> and GSAP</h3>
     <p class="note">
-      Same escape hatch as Accordion's: skip the built-in transition and drive the panel's height
-      with GSAP instead. <code>useCollapse</code> writes no inline style at all once
-      <code>motion</code> is <code>false</code>, so nothing fights the tween.
+      The same approach as the Accordion demo. With <code>:motion="false"</code>, Collapsible skips
+      its height transition and writes no inline styles, so GSAP tweens the height of a wrapper
+      inside the panel with nothing to conflict with it.
     </p>
     <Collapsible v-model:open="panelOpen" :motion="false" class="collapsible-demo">
       <template #trigger="{ open }">

@@ -91,7 +91,7 @@ function openAll() {
 const GSAP_CODE = `import { gsap } from 'gsap'
 import type { MotionEngine } from 'vael-ui'
 
-// vael-ui hands over the element and its values, in seconds; return the tween.
+// The engine receives the element, its values and the timing in seconds; return the tween.
 export const gsapEngine: MotionEngine = (el, from, to, { duration, delay }) =>
   gsap.fromTo(el, from, { ...to, duration, delay, ease: 'power3.out' })`
 
@@ -104,7 +104,12 @@ export const motionEngine: MotionEngine = (el, from, to, { duration, delay, spri
     el,
     Object.fromEntries(Object.keys(to).map((key) => [key, [from[key], to[key]]])),
     spring
-      ? { type: 'spring', visualDuration: spring.response, bounce: 1 - spring.damping, delay }
+      ? {
+          type: 'spring',
+          visualDuration: spring.response,
+          bounce: Math.max(0, 1 - (spring.damping ?? 1)),
+          delay,
+        }
       : { duration, delay },
   )`
 

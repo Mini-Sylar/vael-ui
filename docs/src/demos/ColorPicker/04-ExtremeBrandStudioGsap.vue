@@ -2,11 +2,10 @@
   <section class="demo">
     <h3>Extreme: a brand studio, every pick tweened through the page (GSAP)</h3>
     <p class="note">
-      <code>#trigger</code> replaces the swatch with an orb that GSAP spins open. Each pick tweens
-      the mock page's custom properties over 600ms instead of snapping, the default slot adds a
-      "recent" strip that staggers in when the panel opens, and <code>#preset</code> marks the
-      current preset with a check. The eyedropper is hidden with
-      <code>:show-eye-dropper="false"</code>.
+      <code>#trigger</code> replaces the swatch with an orb that GSAP spins as the panel opens. Each
+      pick tweens the page’s custom properties over 600 ms instead of switching at once. The default
+      slot adds a “Recent” row that staggers in when the panel opens, <code>#preset</code> marks the
+      current preset with a check, and <code>:show-eye-dropper="false"</code> hides the eyedropper.
     </p>
     <div ref="page" class="page">
       <header class="page-head">

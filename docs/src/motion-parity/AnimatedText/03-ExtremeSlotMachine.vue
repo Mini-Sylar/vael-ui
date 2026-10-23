@@ -4,7 +4,8 @@
     <p class="note">
       <code>:motion="false"</code> swaps the word at once, and one <code>v-animate</code> with
       <code>replay</code> makes the drop: the new word falls from above with a little overshoot,
-      squashed wide and flat, and springs back to shape as it lands. Each value has its own timing.
+      squashed wide and flat, and springs back to shape as it settles. Each value has its own
+      timing.
     </p>
     <p class="line">
       Ship it on

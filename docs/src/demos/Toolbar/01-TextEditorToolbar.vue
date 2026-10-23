@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Text editor toolbar</h3>
     <p class="note">
-      Try it with a keyboard: Tab in once (focus lands on Bold, the first button), then use ←/→ to
-      move between every button in the group, Home/End jump to the first/last. Tab moves focus OUT
-      of the whole toolbar to the next thing on the page, exactly like a native OS toolbar. Bold,
-      Italic and Underline are toggles: <code>v-model:pressed</code> turns each on and off, shows it
-      on the button and tells screen readers.
+      Try it with the keyboard: Tab once to focus Bold, the first button, then use ← and → to move
+      between buttons, and Home and End to jump to the first and last. Tab again leaves the toolbar
+      for the next element on the page, like a native toolbar. Bold, Italic and Underline are
+      toggles: <code>v-model:pressed</code> turns each on and off, shows its state on the button and
+      announces it to screen readers.
     </p>
     <div class="row">
       <Toolbar aria-label="Text formatting" class="editor-toolbar">

@@ -4,7 +4,7 @@
     <p class="note">
       The default slot gets <code>holdProgress</code>, from 0 to 1, so the label can change at 20%,
       50% and 100%, crossfading with AnimatedText, and <code>--ui-hold-progress</code> deepens the
-      colour. Past 60% the button trembles: <code>states.active</code> plays a nudge with
+      color. Past 60% the button trembles: <code>states.active</code> plays a nudge with
       <code>repeat</code> that loops until you let go, then eases home. A
       <code>v-animate</code> with <code>replay</code> pops the button when the hold completes.
     </p>

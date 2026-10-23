@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Extreme: the label changes as you hold (GSAP)</h3>
     <p class="note">
-      The default slot gets <code>holdProgress</code>, from 0 to 1, so the label can change at 20%,
+      The default slot receives <code>holdProgress</code>, from 0 to 1, so the label changes at 20%,
       50% and 100%, crossfading with AnimatedText. The button also sets
-      <code>--ui-hold-progress</code>, which CSS reads here to deepen the colour as you hold. GSAP
-      adds a shake that grows past 60% and a pop when it completes.
+      <code>--ui-hold-progress</code>, which CSS reads here to deepen the color as you hold. GSAP
+      adds a shake that grows past 60% and a pop when the hold completes.
     </p>
     <Button
       ref="button"

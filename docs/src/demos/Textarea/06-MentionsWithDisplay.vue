@@ -1,12 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Mentions with #display</h3>
+    <h3>Mentions with <code>#display</code></h3>
     <p class="note">
-      <code>#display</code> draws the text over the textarea, wrapped and scrolled exactly like it,
-      so finished <code>@mentions</code> can be highlighted and the one you're typing is a real
-      element a Popover can anchor to. Type <code>@</code>, pick someone with the arrow keys and
-      Enter, then hover a mention: it opts into <code>pointer-events: auto</code> to take a tooltip.
-      The textarea underneath still owns the caret, selection and screen reader text.
+      <code>#display</code> draws the text over the textarea, wrapped and scrolled the same way, so
+      finished <code>@mentions</code> can be highlighted and the one you're typing is a real element
+      a Popover can anchor to. Type <code>@</code>, pick someone with the arrow keys and Enter, then
+      hover a mention: it sets <code>pointer-events: auto</code> to show a tooltip. The textarea
+      underneath still handles the caret, selection and screen reader text.
     </p>
     <Textarea
       ref="field"

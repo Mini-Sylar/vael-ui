@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Extreme: the page recedes behind the sheet</h3>
     <p class="note">
-      The sheet slides up from below the stage on the iOS sheet curve, and two
-      <code>linked</code> entries ride its timing: the page shrinks, sinks and rounds, and a shade
-      dims it. Both reverse together on close.
+      The sheet slides up from below the stage on the iOS sheet curve, and two <code>linked</code>
+      entries follow its timing: the page shrinks, sinks and rounds, and a shade dims it. Both
+      reverse together on close.
     </p>
     <div ref="stage" class="stage">
       <article ref="page" class="page">

@@ -2,10 +2,9 @@
   <section class="demo">
     <h3><code>onBeforeEnter</code>: targets behind a drawer</h3>
     <p class="note">
-      A step's target doesn't have to exist yet — <code>onBeforeEnter</code> runs (and is awaited)
-      before Tour goes looking for it, so opening whatever the target lives behind (a drawer, an
-      accordion panel, a route change) and awaiting <code>nextTick()</code> is enough to guarantee
-      it's mounted in time.
+      A step's target doesn't have to exist yet. Tour awaits <code>onBeforeEnter</code> before it
+      looks for the target, so you can open what the target sits behind, such as a drawer, an
+      accordion panel or a route, and await <code>nextTick()</code> to make sure it's mounted.
     </p>
     <div class="row">
       <Button @click="drawerTourOpen = true">Start tour</Button>
