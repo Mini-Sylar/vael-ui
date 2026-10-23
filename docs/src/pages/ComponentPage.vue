@@ -188,6 +188,34 @@ import type { DemoExample } from '../components/DemoFrame.vue'
 // one is still flat — `vdom-demos/DataTableDemo.vue`. Both match either way.
 const vdomModules = import.meta.glob<{ default: Component }>('../generated/vdom-demos/**/*.vue')
 const vaporModules = import.meta.glob<{ default: Component }>('../generated/vapor-demos/**/*.vue')
+// A showpiece's twin, made with vael-ui's own motion: same folder, same number.
+const parityModules = import.meta.glob<{ default: Component }>('../motion-parity/**/*.vue')
+const paritySources = import.meta.glob<string>('../motion-parity/**/*.vue', {
+  query: '?raw',
+  import: 'default',
+})
+async function parityOf(id: string): Promise<DemoExample | undefined> {
+  const [folder, file] = id.split('/') as [string, string]
+  const prefix = file.match(/^\d+-/)?.[0] ?? ''
+  const path = Object.keys(parityModules).find((each) =>
+    each.startsWith(`../motion-parity/${folder}/${prefix}`),
+  )
+  if (!path) return undefined
+  let component = vdomComponentCache.get(path)
+  if (!component) {
+    component = defineAsyncComponent(parityModules[path]!)
+    vdomComponentCache.set(path, component)
+  }
+  return {
+    id: `${folder}/${file}-vael-ui`,
+    title: '',
+    vdomComponent: component,
+    vaporComponent: null,
+    vdomCode: stripDemoProse(await paritySources[path]!()),
+    vaporCode: '',
+  }
+}
+
 const vdomSources = import.meta.glob('../generated/vdom-demos/**/*.vue', {
   query: '?raw',
   import: 'default',
@@ -326,14 +354,21 @@ watchEffect(async (onCleanup) => {
         ? stripDemoProse((await vaporSourceLoader()) as string)
         : ''
 
-      // The showpieces close the examples, without the label that marked them.
+      // The showpieces close the examples, without the label that marked them, each beside its
+      // twin on vael-ui's own motion.
       const highlight = /^extreme\b/i.test(entry.title)
+      const file = entry.id.split('/').pop()!
       return {
         id: entry.id,
         title: highlight
-          ? entry.title.replace(/^extreme:?\s*/i, '').replace(/^./, (c) => c.toUpperCase())
+          ? entry.title
+              .replace(/^extreme:?\s*/i, '')
+              .replace(/\s*\((gsap|motion-v|motion)\)\s*$/i, '')
+              .replace(/^./, (c) => c.toUpperCase())
           : entry.title,
         highlight,
+        engine: /gsap/i.test(file) ? 'GSAP' : /motionv/i.test(file) ? 'motion' : undefined,
+        twin: highlight ? await parityOf(entry.id) : undefined,
         vdomComponent,
         vaporComponent,
         vdomCode,
@@ -341,8 +376,7 @@ watchEffect(async (onCleanup) => {
       }
     }),
   )
-  if (!stale)
-    examples.value = [...loaded.filter((e) => !e.highlight), ...loaded.filter((e) => e.highlight)]
+  if (!stale) examples.value = loaded
 })
 
 const tocLinks = computed(() => [
@@ -355,7 +389,10 @@ const tocLinks = computed(() => [
           label: t('component.examples'),
           children:
             examples.value.length > 1
-              ? examples.value.map((example) => ({
+              ? [
+                  ...examples.value.filter((example) => !example.highlight),
+                  ...examples.value.filter((example) => example.highlight),
+                ].map((example) => ({
                   id: `example-${example.id.split('/').pop()!.replace(/^\d+-/, '')}`,
                   label: example.title,
                 }))
