@@ -20,3 +20,5 @@ __screenshots__/
 .vite-ssg-temp/
 /playground/nuxt/.nuxt/
 /playground/nuxt/.output/
+# motion stress output
+/packages/scripts/motion-stress/report*.json
