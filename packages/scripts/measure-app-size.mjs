@@ -7,14 +7,17 @@
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { gzipSync } from 'node:zlib'
 
 const here = dirname(fileURLToPath(import.meta.url))
 // `VAEL_DIST` measures another build the same way (a published version, an older commit).
 const dist = process.env.VAEL_DIST ?? join(here, '../ui/dist/index.js')
 const baselineFile = join(here, 'app-size-baseline.json')
-const { build } = await import(join(here, '../ui/node_modules/vite/dist/node/index.js'))
+// A file URL: on Windows, import() refuses a plain C:\ path.
+const { build } = await import(
+  pathToFileURL(join(here, '../ui/node_modules/vite/dist/node/index.js')).href
+)
 
 // Single components, then an app using the common ones together (shared code counted once).
 const ENTRIES = [

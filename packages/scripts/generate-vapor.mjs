@@ -313,7 +313,10 @@ function rewriteImports(source, moduleId) {
     // imports of the vdom build's own files, so both builds share one copy of their state.
     const lines = [...directiveLines]
     if (otherNames.length > 0) {
+      // Forward slashes, as the module lists spell them, on Windows too.
       const sourcePath = relative(UI_SRC_DIR, resolve(UI_COMPONENTS_DIR, fromDir, specifier))
+        .split('\\')
+        .join('/')
       const typesOnly = typeOnly || otherNames.every((n) => n.startsWith('type '))
       if (!typesOnly && !SHARED_MODULES.has(sourcePath) && !PER_BUILD_MODULES.has(sourcePath)) {
         throw new Error(
