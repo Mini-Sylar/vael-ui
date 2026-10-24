@@ -85,8 +85,8 @@
   }
   .ui-slider-thumb {
     position: absolute;
-    /* Static (never recalculated) anchor at the track's logical-start corner — the actual live-drag position lives entirely in `translate` below, not here, so this declaration costs one layout pass at mount and never again. */
-    inset-inline-start: 0;
+    /* Static (never recalculated) anchor at the track's left corner, physical like the `translate` that positions it — the actual live-drag position lives entirely in `translate` below, not here, so this declaration costs one layout pass at mount and never again. */
+    left: 0;
     inset-block-start: 0;
     inline-size: var(--ui-slider-thumb-size);
     block-size: var(--ui-slider-thumb-size);
@@ -100,13 +100,27 @@
     cursor: grab;
     touch-action: none;
     scale: 1;
-    /* Position rides `translate`, not `inset-inline-start` (a layout property) — --ui-slider-p0 is rewritten every pointermove frame during a live drag, so this must stay compositor-only (skips layout+paint, matching .ui-slider-fill's scale above). `cqi`/`cqb` (enabled by .ui-slider-track's container-type: size) read the track's own box size directly, so `p0 * 100cqi` reproduces the exact px offset `inset-inline-start: calc(p0 * 100%)` used to produce; the trailing -50% on each axis is the same "center the thumb on its point" offset the old inset+translate combo did, just folded into one translate — translate/rotate/scale stay independent properties (see the fill rule above), so this doesn't disturb the hover/press scale below. Caveat: unlike inset-inline-start, translate's X/Y are physical, not logical — this hasn't been verified correct under dir="rtl" (neither had the pre-existing rule, in practice). */
+    /* Position rides `translate`, not `inset-inline-start` (a layout property) — --ui-slider-p0 is rewritten every pointermove frame during a live drag, so this must stay compositor-only (skips layout+paint, matching .ui-slider-fill's scale above). `cqi`/`cqb` (enabled by .ui-slider-track's container-type: size) read the track's own box size directly, so `p0 * 100cqi` reproduces the exact px offset `inset-inline-start: calc(p0 * 100%)` used to produce; the trailing -50% on each axis is the same "center the thumb on its point" offset the old inset+translate combo did, just folded into one translate — translate/rotate/scale stay independent properties (see the fill rule above), so this doesn't disturb the hover/press scale below. translate's X/Y are physical, so right to left has its own rules below. */
     translate: calc(var(--ui-slider-p0, 0) * 100cqi - 50%) calc(50cqb - 50%);
     /* Only the hover/press feedback scale transitions — position never does. */
     transition: scale var(--ui-duration-press) var(--ui-ease-out);
   }
   .ui-slider-thumb[data-index='1'] {
     translate: calc(var(--ui-slider-p1, 0) * 100cqi - 50%) calc(50cqb - 50%);
+  }
+  /* Right to left, a horizontal slider starts at its right edge: the fill grows from there, and the
+     thumbs sit that far in from it. */
+  .ui-slider:not(.ui-slider--vertical):dir(rtl) .ui-slider-fill {
+    transform-origin: right center;
+  }
+  .ui-slider:not(.ui-slider--vertical)[data-range]:dir(rtl) .ui-slider-fill {
+    translate: calc(var(--ui-slider-p0, 0) * -100%) 0;
+  }
+  .ui-slider:not(.ui-slider--vertical):dir(rtl) .ui-slider-thumb {
+    translate: calc((1 - var(--ui-slider-p0, 0)) * 100cqi - 50%) calc(50cqb - 50%);
+  }
+  .ui-slider:not(.ui-slider--vertical):dir(rtl) .ui-slider-thumb[data-index='1'] {
+    translate: calc((1 - var(--ui-slider-p1, 0)) * 100cqi - 50%) calc(50cqb - 50%);
   }
   .ui-slider--vertical .ui-slider-thumb {
     translate: calc(50cqi - 50%) calc((1 - var(--ui-slider-p0, 0)) * 100cqb - 50%);

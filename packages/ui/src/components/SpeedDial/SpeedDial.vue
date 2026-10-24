@@ -94,7 +94,8 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
   /** Actions to fan out, one icon button each. */
   items: ReadonlyArray<T>
   /**
-   * Which way the actions fan out from the trigger. `'quarter-circle'` lays them on an arc of `radius`.
+   * Which way the actions fan out from the trigger, on screen: `'left'` is left on a right-to-left
+   * page too. `'quarter-circle'` lays them on an arc of `radius`.
    * @default 'up'
    */
   direction?: SpeedDialDirection

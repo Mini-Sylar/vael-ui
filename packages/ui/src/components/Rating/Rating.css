@@ -101,6 +101,10 @@
     clip-path: inset(0 calc(100% - var(--ui-rating-fill, 0%)) 0 0);
     transition: clip-path var(--ui-duration-press) var(--ui-ease-out);
   }
+  /* Right to left, a part-filled star fills from its right edge. */
+  .ui-rating-icon--filled:dir(rtl) {
+    clip-path: inset(0 0 0 calc(100% - var(--ui-rating-fill, 0%)));
+  }
   /* Instant during an active pointer gesture — 1:1 tracking, no lag between
      cursor position and fill. The commit-pop above still marks the moment
      a value actually lands. */

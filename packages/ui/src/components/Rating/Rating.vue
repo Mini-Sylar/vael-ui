@@ -56,6 +56,7 @@ import './Rating.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import { inlineKey, isRtl } from '../../composables/dom'
 import { useFieldControl } from '../../composables/useFieldControl'
 import {
   clearFocusVisible,
@@ -170,7 +171,9 @@ const parts = useStateMotion({
 })
 function valueFromPointer(event: PointerEvent): number {
   const rect = root.value!.getBoundingClientRect()
-  const fraction = rect.width === 0 ? 0 : (event.clientX - rect.left) / rect.width
+  // Right to left, the stars count from the right edge.
+  const from = isRtl(root.value) ? rect.right - event.clientX : event.clientX - rect.left
+  const fraction = rect.width === 0 ? 0 : from / rect.width
   const raw = Math.max(0, Math.min(1, fraction)) * props.max
   return props.allowHalf ? Math.ceil(raw * 2) / 2 : Math.ceil(raw)
 }
@@ -249,7 +252,7 @@ function onKeydown(event: KeyboardEvent) {
     if (['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
       hoverValue.value = null
     }
-    switch (event.key) {
+    switch (inlineKey(event.key, event.currentTarget as Element)) {
       case 'ArrowRight':
       case 'ArrowUp':
         event.preventDefault()

@@ -160,7 +160,7 @@
                   :trigger-el="rowEls[i]"
                   v-model:open="submenuOpen[i]"
                   :open-path="revealedRow === i ? openPath?.slice(1) : undefined"
-                  side="right"
+                  :side="submenuSide()"
                   align="start"
                   :teleport-to="positionerEl"
                   :ui="props.ui"
@@ -227,7 +227,7 @@ export interface MenuItemData {
   onSelect?: () => void
   /**
    * Nested rows; the row becomes a submenu trigger that opens on hover intent, click, Enter/Space or
-   * ArrowRight. Nested levels don't support custom item types. In MenuList, the row becomes an inert
+   * ArrowRight (ArrowLeft right to left, where the submenu opens to the left). Nested levels don't support custom item types. In MenuList, the row becomes an inert
    * group label with its `items` rendered beneath it (see the `isGroup` prop of the `#item` slot).
    */
   items?: ReadonlyArray<MenuEntry<MenuItemData>>
@@ -325,7 +325,12 @@ import { createSlotRelay } from '../../composables/useSlotRelay'
 // circular import resolves fine: the default export is defined by instantiation time, long after
 // this module finishes evaluating.
 import MenuSelf from './Menu.vue'
-import { resolvePastDisplayContents, nativeTag, useSlotPresence } from '../../composables/dom'
+import {
+  isRtl,
+  resolvePastDisplayContents,
+  nativeTag,
+  useSlotPresence,
+} from '../../composables/dom'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
@@ -362,7 +367,7 @@ const emit = defineEmits<{
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
   /** Fires when a data-driven row is activated, including rows in submenus. */
   select: [item: T]
-  /** Fires on ArrowLeft inside the menu; a parent menu uses it to close this submenu. */
+  /** Fires on ArrowLeft inside the menu (ArrowRight right to left); a parent menu uses it to close this submenu. */
   collapse: []
   /** Fires when the pointer enters or leaves any submenu row or panel in this subtree; a parent menu uses it to stay open. */
   active: [value: boolean]
@@ -463,6 +468,8 @@ function onTriggerKeydown(event: KeyboardEvent) {
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+// A submenu opens toward the end of the line: to the left, right to left.
+const submenuSide = (): MenuSide => (isRtl(panelEl.value) ? 'left' : 'right')
 const attrs = useAttrs()
 const panelAttrs = useAttrListeners(
   () => panelEl.value,

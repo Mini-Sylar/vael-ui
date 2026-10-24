@@ -336,3 +336,16 @@ export function opener(): HTMLElement | null {
   const active = document.activeElement
   return active instanceof HTMLElement && active !== document.body ? active : null
 }
+
+/** Laid out right to left (`dir="rtl"` around it). */
+export const isRtl = (el: Element | null | undefined): boolean =>
+  !!el && getComputedStyle(el).direction === 'rtl'
+
+/**
+ * The arrow key as it reads on screen: right to left, ArrowLeft moves toward the end of the line
+ * and ArrowRight toward its start, so they swap. Every other key is returned as it is.
+ */
+export function inlineKey(key: string, el: Element | null | undefined): string {
+  if ((key !== 'ArrowLeft' && key !== 'ArrowRight') || !isRtl(el)) return key
+  return key === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft'
+}

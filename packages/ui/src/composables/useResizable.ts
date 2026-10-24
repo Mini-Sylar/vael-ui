@@ -1,5 +1,6 @@
 import { shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
+import { inlineKey, isRtl } from './dom'
 
 export type ResizeDirection = 'horizontal' | 'vertical'
 
@@ -71,6 +72,8 @@ export function useResizable(
   }
 
   let pointerId: number | null = null
+  // Right to left, the trailing edge is on the left: a drag that grows it moves the other way.
+  let mirrored = false
   let startCoord = 0
   let startSize = 0
   let liveSize = 0
@@ -80,6 +83,7 @@ export function useResizable(
     event.preventDefault()
     pointerId = event.pointerId
     startCoord = coordFrom(event)
+    mirrored = direction() === 'horizontal' && isRtl(event.currentTarget as Element)
     startSize = model.value
     liveSize = startSize
     isDragging.value = true
@@ -88,7 +92,7 @@ export function useResizable(
 
   function onPointerMove(event: PointerEvent) {
     if (pointerId === null || event.pointerId !== pointerId) return
-    const delta = coordFrom(event) - startCoord
+    const delta = (coordFrom(event) - startCoord) * (mirrored ? -1 : 1)
     const signed = edge() === 'end' ? delta : -delta
     liveSize = rubberBand(startSize + signed)
     model.value = liveSize
@@ -138,8 +142,9 @@ export function useResizable(
       return
     }
     let delta = 0
-    if (event.key === forwardKey) delta = KEYBOARD_STEP
-    else if (event.key === backwardKey) delta = -KEYBOARD_STEP
+    const key = inlineKey(event.key, event.currentTarget as Element)
+    if (key === forwardKey) delta = KEYBOARD_STEP
+    else if (key === backwardKey) delta = -KEYBOARD_STEP
     else return
     event.preventDefault()
     const signed = edge() === 'end' ? delta : -delta

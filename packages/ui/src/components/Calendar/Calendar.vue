@@ -319,7 +319,7 @@ export type CalendarView = 'date' | 'month' | 'year'
      Keyboard (date): ARIA APG pattern with roving focusedDate; Month/year grids use Tab between tabindex="0" cells.
      Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motion=false disables. -->
 <script setup lang="ts">
-import { prefersReducedMotion } from '../../composables/dom'
+import { inlineKey, prefersReducedMotion } from '../../composables/dom'
 import './Calendar.css'
 import '../shared/indicator.css'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
@@ -1052,8 +1052,9 @@ function focusDay(day: Date) {
 
 function onGridKeydown(event: KeyboardEvent) {
   let next: Date | null = null
-  // ARIA APG keyboard nav: arrow keys move focus, Enter/Space select.
-  switch (event.key) {
+  // ARIA APG keyboard nav: arrow keys move focus, Enter/Space select. Right to left, the week
+  // runs from the right.
+  switch (inlineKey(event.key, event.currentTarget as Element)) {
     case 'ArrowLeft':
       next = addDays(focusedDate.value, -1)
       break

@@ -1,14 +1,15 @@
 import { onScopeDispose } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { ElRef } from './dom'
+import { inlineKey } from './dom'
 
 export interface UseMenuOptions {
   listEl: ElRef<HTMLElement | null>
   /** Fires when an enabled menuitem is activated — click, or Enter/Space while it has focus — and it isn't a submenu trigger (`aria-haspopup="menu"`; those route to `onExpand` instead). Firing means "activated," nothing more: the close-vs-keep decision is the caller's, since only it knows whether the item is a one-shot action or a toggle. `Menu.vue` closes unless the element carries `data-keep-open`; a bare useMenu consumer applies whatever policy it wants. */
   onSelect?: (itemEl: HTMLElement) => void
-  /** Fires instead of `onSelect` when the activated item carries `aria-haspopup="menu"` — click, Enter/Space, or ArrowRight all converge here through the same real-click dispatch as a normal activation. `Menu.vue` wires this to open that row's nested submenu. */
+  /** Fires instead of `onSelect` when the activated item carries `aria-haspopup="menu"` — click, Enter/Space, or ArrowRight (ArrowLeft right to left) all converge here through the same real-click dispatch as a normal activation. `Menu.vue` wires this to open that row's nested submenu. */
   onExpand?: (itemEl: HTMLElement) => void
-  /** Fires on ArrowLeft, unconditionally — only meaningful when this list IS a submenu; `Menu.vue` always wires it to close this level and return focus to the parent row. A bare top-level useMenu with no listener makes ArrowLeft a no-op, same as native menus ignore it there. */
+  /** Fires on ArrowLeft (ArrowRight right to left), unconditionally — only meaningful when this list IS a submenu; `Menu.vue` always wires it to close this level and return focus to the parent row. A bare top-level useMenu with no listener makes ArrowLeft a no-op, same as native menus ignore it there. */
   onCollapse?: () => void
 }
 
@@ -91,7 +92,7 @@ export function useMenu(options: UseMenuOptions): UseMenuReturn {
       return list[index]
     }
 
-    switch (event.key) {
+    switch (inlineKey(event.key, event.currentTarget as Element)) {
       case 'ArrowDown':
         event.preventDefault()
         focusItem(wrap(currentIndex, 1))

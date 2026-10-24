@@ -2,6 +2,7 @@ import { nextTick, shallowRef, toValue } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { ElRef } from './dom'
+import { inlineKey } from './dom'
 
 export interface UseTabsOptions<T> {
   items: MaybeRefOrGetter<readonly T[]>
@@ -107,7 +108,7 @@ export function useTabs<T>(active: Ref<T>, options: UseTabsOptions<T>): UseTabsR
 
     const current = items.indexOf(manual ? focused.value : active.value)
     let next: number
-    switch (event.key) {
+    switch (inlineKey(event.key, event.currentTarget as Element)) {
       case forwardKey:
         next = step(current, 1, items)
         break

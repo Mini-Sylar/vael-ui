@@ -1,6 +1,7 @@
 import { computed, shallowRef, toValue, watch } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import type { ElRef } from './dom'
+import { inlineKey, isRtl } from './dom'
 
 export type SliderOrientation = 'horizontal' | 'vertical'
 
@@ -118,10 +119,11 @@ export function useSlider(
     const rect = track.getBoundingClientRect()
     const lo = min()
     const hi = max()
+    // Right to left, a horizontal slider starts at its right edge.
     const fraction =
       orientation() === 'vertical'
         ? 1 - (event.clientY - rect.top) / rect.height
-        : (event.clientX - rect.left) / rect.width
+        : (isRtl(track) ? rect.right - event.clientX : event.clientX - rect.left) / rect.width
     const clamped = Math.min(1, Math.max(0, fraction))
     return lo + clamped * (hi - lo)
   }
@@ -196,7 +198,12 @@ export function useSlider(
   function onThumbKeydown(index: number, event: KeyboardEvent) {
     if (isDisabled()) return
     const s = step()
-    switch (event.key) {
+    // Right to left, a horizontal slider runs from the right: the arrows follow it.
+    const key =
+      orientation() === 'horizontal'
+        ? inlineKey(event.key, event.currentTarget as Element)
+        : event.key
+    switch (key) {
       case 'ArrowRight':
       case 'ArrowUp':
         event.preventDefault()

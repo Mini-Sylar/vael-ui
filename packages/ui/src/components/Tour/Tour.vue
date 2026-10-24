@@ -110,7 +110,7 @@ export interface TourProps<T extends TourStep = TourStep> {
   closeOnEsc?: boolean
   /** Clicking the dimmed area closes the tour. @default false */
   closeOnOverlay?: boolean
-  /** `ArrowLeft` and `ArrowRight` move back and forward a step. @default true */
+  /** `ArrowLeft` and `ArrowRight` move back and forward a step, swapped right to left. @default true */
   keyboardNav?: boolean
   /**
    * Space between the target and the spotlight cutout, in pixels. Per-step `spotlightPadding` wins.
@@ -164,7 +164,7 @@ import TourSpotlight from './TourSpotlight.vue'
 import { glideOf, timingOf } from '../../composables/tourGlide'
 import { useMotionStyle } from '../../motion/context'
 import { useTour } from '../../composables/useTour'
-import { useDOMTarget, prefersReducedMotion } from '../../composables/dom'
+import { inlineKey, useDOMTarget, prefersReducedMotion } from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
 import { isComposing, useLayer } from '../../composables/useLayerStack'
@@ -469,7 +469,8 @@ function onKeydown(event: KeyboardEvent) {
   if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
   if (event.target instanceof Element && event.target.closest(ARROW_OWNER_SELECTOR)) return
-  if (event.key === 'ArrowRight') next()
+  // Right to left, the next step reads to the left.
+  if (inlineKey(event.key, ssrDocument()?.documentElement) === 'ArrowRight') next()
   else prev()
 }
 useEventListener(() => (open.value ? ssrDocument() : undefined), 'keydown', onKeydown)

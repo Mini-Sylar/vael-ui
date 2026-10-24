@@ -310,7 +310,7 @@ import { createFoldScheduler } from '../../composables/useFold'
 import { loadVirtualTree, loadedVirtualTree } from '../../composables/lazyVirtualTree'
 import type { useVirtualTree } from '../../composables/useVirtualTree'
 import { useEventListener } from '@vueuse/core'
-import { prefersReducedMotion } from '../../composables/dom'
+import { inlineKey, prefersReducedMotion } from '../../composables/dom'
 import { vScrollMask } from '../../directives/vScrollMask'
 import type { FoldScheduler, FoldSpring } from '../../composables/useFold'
 import { DEFAULT_FOLD_SPRING } from '../../composables/useFold'
@@ -935,7 +935,7 @@ function onTreeNavigationKeydown(event: KeyboardEvent) {
     ? (rowIndexByValue.value.get(activeRow.dataset.treeValue ?? '') ?? -1)
     : -1
 
-  switch (event.key) {
+  switch (inlineKey(event.key, event.currentTarget as Element)) {
     case 'ArrowDown':
       event.preventDefault()
       focusAt(Math.min(currentIndex + 1, rows.length - 1))

@@ -59,6 +59,7 @@ import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import type { Component } from 'vue'
 import type { Side } from '@floating-ui/dom'
+import { inlineKey } from '../../composables/dom'
 import { useDock } from '../../composables/useDock'
 import type { DockOrientation } from '../../composables/useDock'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -268,8 +269,9 @@ function onItemKeydown(event: KeyboardEvent, index: number) {
   const backwardKey = props.orientation === 'vertical' ? 'ArrowUp' : 'ArrowLeft'
   const enabled = enabledIndices()
   let nextIndex: number | undefined
-  if (event.key === forwardKey) nextIndex = step(index, 1)
-  else if (event.key === backwardKey) nextIndex = step(index, -1)
+  const key = inlineKey(event.key, event.currentTarget as Element)
+  if (key === forwardKey) nextIndex = step(index, 1)
+  else if (key === backwardKey) nextIndex = step(index, -1)
   else if (event.key === 'Home') nextIndex = enabled[0]
   else if (event.key === 'End') nextIndex = enabled[enabled.length - 1]
   else return
