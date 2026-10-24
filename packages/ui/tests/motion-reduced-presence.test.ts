@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, shallowRef } from 'vue'
 import Button from '../src/components/Button/Button.vue'
+import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
 
 vi.mock('../src/composables/dom', async (original) => ({
@@ -99,4 +100,26 @@ test('reduced motion: a linked page keeps its corners and colour, without moving
   const page = () => getComputedStyle(document.querySelector('.page')!)
   await vi.waitFor(() => expect(page().borderTopLeftRadius).toBe('8px'))
   expect(page().scale).toBe('none')
+})
+
+test('reduced motion: an engine gets the fade without the movement', async () => {
+  const seen: Record<string, unknown>[] = []
+  const engine = (el: HTMLElement, from: Record<string, unknown>) => {
+    if (el.classList.contains('ui-dialog-panel')) seen.push(from)
+  }
+  const open = shallowRef(false)
+  render(
+    {
+      setup: () => () =>
+        h(ConfigProvider as never, { motion: { version: 1, engine } }, () =>
+          h(Dialog as never, { open: open.value, title: 'Engine' }),
+        ),
+    },
+    real,
+  )
+  open.value = true
+  await vi.waitFor(() => expect(seen).toHaveLength(1))
+  expect(seen[0]).toHaveProperty('opacity')
+  expect(seen[0]).not.toHaveProperty('scale')
+  expect(seen[0]).not.toHaveProperty('y')
 })

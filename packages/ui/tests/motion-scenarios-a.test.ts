@@ -556,15 +556,18 @@ test('10. fast key changes and fast v-if flips leave no ghosts, only the latest 
     if (i) await wait(30)
     n.value++
   }
-  await wait(300)
-  await frame()
-  await frame()
+  // The last entrance is 300ms from the last change: waited out, however slow the machine.
+  await vi.waitFor(
+    () => {
+      expect(all('.v10')).toHaveLength(1)
+      expect(opacityOf(all('.v10')[0]!)).toBe(1)
+    },
+    { timeout: 2000 },
+  )
   sampling = false
   expect(counts.map((c) => c.live)).toEqual(counts.map(() => 1))
   expect(Math.max(...counts.map((c) => c.ghosts))).toBeLessThanOrEqual(6)
-  expect(all('.v10')).toHaveLength(1)
   expect(all('.v10')[0]!.textContent).toBe('6')
-  expect(opacityOf(all('.v10')[0]!)).toBe(1)
   expect(document.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0)
   await view.unmount()
   document.body.innerHTML = ''
@@ -583,10 +586,7 @@ test('10. fast key changes and fast v-if flips leave no ghosts, only the latest 
     if (i) await wait(14)
     shown.value = !shown.value
   }
-  await wait(300)
-  await frame()
-  await frame()
-  expect(all('.v10b')).toHaveLength(0)
+  await vi.waitFor(() => expect(all('.v10b')).toHaveLength(0), { timeout: 2000 })
   expect(document.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0)
 })
 
