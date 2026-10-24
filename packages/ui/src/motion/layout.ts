@@ -71,7 +71,10 @@ export function notePaintedSiblings(el: Element): void {
 /** Leaving: where it was, for whoever arrives next under the same id. */
 export function rememberLayout(el: Element, id: string): void {
   const box = painted.get(el) ?? el.getBoundingClientRect()
-  if (box.width || box.height) boxes.set(id, { box, at: performance.now() })
+  const now = performance.now()
+  // Ids that left and never came back: dropped, so one id per item can't grow this for good.
+  for (const [key, left] of boxes) if (now - left.at > FRESH) boxes.delete(key)
+  if (box.width || box.height) boxes.set(id, { box, at: now })
 }
 
 /**

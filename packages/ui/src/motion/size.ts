@@ -63,6 +63,9 @@ export function followSize(
   }
   const measure = (): Box => {
     const { width, height } = el.getBoundingClientRect()
+    // Scaled (its own entrance, or an opening around it): its layout size, not the drawn one.
+    if (Math.abs(width - el.offsetWidth) >= 1 || Math.abs(height - el.offsetHeight) >= 1)
+      return { width: el.offsetWidth, height: el.offsetHeight }
     return { width, height }
   }
   // Marked, so what leaves inside it is clipped to it (leaveInPlace).

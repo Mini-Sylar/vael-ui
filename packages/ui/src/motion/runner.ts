@@ -95,7 +95,8 @@ export function createRunner(host: RunnerHost): Runner {
 
   function sampleWhileLeaving(id: number, motion: ReturnType<RunnerHost['resolved']>) {
     const tick = () => {
-      if (id !== generation) return
+      // Until it has left, or something else began: no frame loop once it's gone.
+      if (id !== generation || !leavingNow) return
       for (const [part, partEl] of Object.entries(host.parts()))
         if (partEl instanceof HTMLElement && partEl.isConnected && motion.initial[part])
           leftAt.set(part, { el: partEl, look: painted(partEl, motion.initial[part]!) })

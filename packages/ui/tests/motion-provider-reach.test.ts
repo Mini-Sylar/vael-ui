@@ -166,3 +166,81 @@ test('motion: false reaches a Teleport written beside the provider', async () =>
   expect(el.getAnimations()).toHaveLength(0)
   expect(opacity(el)).toBe(1)
 })
+
+test('an engine close leaves no frame loop running once it has finished', async () => {
+  const engine = (el: HTMLElement, from: Record<string, unknown>, to: Record<string, unknown>) => {
+    const run = el.animate(
+      [{ opacity: String(from.opacity ?? 1) }, { opacity: String(to.opacity ?? 1) }],
+      { duration: 120, fill: 'forwards' },
+    )
+    return Object.assign(
+      run.finished.then(
+        () => {},
+        () => {},
+      ),
+      { stop: () => (run.commitStyles(), run.cancel()) },
+    )
+  }
+  const open = shallowRef(false)
+  render(
+    () =>
+      h(ConfigProvider as never, { motion: { version: 1, engine } }, () =>
+        h(Dialog as never, { open: open.value, title: 'Loop' }),
+      ),
+    { global },
+  )
+  open.value = true
+  await wait(400)
+  open.value = false
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog-panel')).toBeNull(), {
+    timeout: 2000,
+  })
+  await wait(200)
+  // Frames asked for in the next half second, once everything has settled.
+  const real = window.requestAnimationFrame
+  let asked = 0
+  window.requestAnimationFrame = (callback) => (asked++, real(callback))
+  await wait(500)
+  window.requestAnimationFrame = real
+  expect(asked).toBe(0)
+})
+
+test('a close cut short by a switch to an engine leaves no frame loop on a kept-mounted part', async () => {
+  const engine = (el: HTMLElement, _from: Record<string, unknown>, to: Record<string, unknown>) => {
+    const run = el.animate([{}, { opacity: String(to.opacity ?? 1) }], { duration: 100 })
+    return Object.assign(
+      run.finished.then(
+        () => {},
+        () => {},
+      ),
+      { stop: () => run.cancel() },
+    )
+  }
+  const open = shallowRef(false)
+  const motion = shallowRef<object | undefined>(undefined)
+  render(
+    () =>
+      h(ConfigProvider as never, { motion: motion.value }, () =>
+        h(Dialog as never, {
+          open: open.value,
+          forceMount: true,
+          title: 'Kept',
+          motion: { exit: { panel: { opacity: 0 } }, duration: 1500 },
+        }),
+      ),
+    { global },
+  )
+  open.value = true
+  await wait(400)
+  open.value = false
+  await wait(200)
+  motion.value = { version: 1, engine }
+  open.value = true
+  await wait(600)
+  const real = window.requestAnimationFrame
+  let asked = 0
+  window.requestAnimationFrame = (callback) => (asked++, real(callback))
+  await wait(500)
+  window.requestAnimationFrame = real
+  expect(asked).toBe(0)
+})

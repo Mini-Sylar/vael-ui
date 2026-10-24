@@ -485,6 +485,67 @@ test('a popover above its trigger keeps its bottom edge there while it eases to 
   expect(heights.size).toBeGreaterThan(3)
 })
 
+test('content that changes while a popover is still opening eases to its new size too', async () => {
+  const step = shallowRef(1)
+  render(
+    {
+      setup: () => () =>
+        h(
+          Popover as never,
+          { open: true, motion: { swap: 'sync', duration: 300 } },
+          {
+            trigger: () => h('button', 'Open'),
+            default: () =>
+              h(
+                'div',
+                { key: step.value },
+                h('div', { style: `height: ${step.value === 1 ? 160 : 40}px` }),
+              ),
+          },
+        ),
+    },
+    real,
+  )
+  const panel = () => document.querySelector<HTMLElement>('.ui-popover-panel')!
+  await vi.waitFor(() => expect(panel().getAnimations().length).toBeGreaterThan(0))
+  await new Promise((r) => setTimeout(r, 120))
+  step.value = 2
+  // Its layout height, which the entrance's scale doesn't touch.
+  const heights = new Set<number>()
+  for (let i = 0; i < 12; i++) {
+    await frame()
+    heights.add(panel().offsetHeight)
+  }
+  expect(heights.size).toBeGreaterThan(3)
+})
+
+test('a change inside a popover mid-entrance that keeps its size starts no resize, though it is scaled', async () => {
+  render(
+    {
+      setup: () => () =>
+        h(
+          Popover as never,
+          { open: true, motion: { initial: { panel: { scale: 0.5 } }, duration: 600 } },
+          {
+            trigger: () => h('button', 'Open'),
+            default: () => h('div', { class: 'content', style: 'height: 120px' }),
+          },
+        ),
+    },
+    real,
+  )
+  const panel = () => document.querySelector<HTMLElement>('.ui-popover-panel')!
+  await vi.waitFor(() => expect(panel().getAnimations().length).toBeGreaterThan(0))
+  await new Promise((r) => setTimeout(r, 150))
+  document.querySelector('.content')!.setAttribute('data-touched', '')
+  for (let i = 0; i < 4; i++) await frame()
+  expect(
+    panel()
+      .getAnimations()
+      .filter((a) => a.id === 'ui-size'),
+  ).toHaveLength(0)
+})
+
 test('layout: an element with its own offset and scale slides by its layout move only, onto them', async () => {
   const spread = shallowRef(false)
   render({

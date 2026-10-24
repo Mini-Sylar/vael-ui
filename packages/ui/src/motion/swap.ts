@@ -100,23 +100,34 @@ export function attachResize(
   phase: ShallowRef<MotionPhase>,
 ): void {
   let follow: FollowSize | undefined
+  let followed: HTMLElement | undefined
   const stop = () => {
     follow?.stop()
-    follow = undefined
+    follow = followed = undefined
   }
-  // Each opening may bring a new panel (a `v-if` overlay renders it afresh).
+  // From the start of its entrance (content can arrive mid-open), one follower per panel: each
+  // opening may bring a new one (a `v-if` overlay renders it afresh).
   watch(
     phase,
     (now) => {
-      stop()
       const el = panel()
       const m = host.resolved.value
-      if (now === 'entered' && el && !m.off) follow = followSize(el, () => calm(mainTiming(m)))
+      const open = now === 'entered' || (now === 'entering' && !sizesItself(m))
+      if (open && el && el === followed) return
+      stop()
+      if (open && el && !m.off) {
+        followed = el
+        follow = followSize(el, () => calm(mainTiming(m)))
+      }
     },
     { immediate: true, flush: 'post' },
   )
   onScopeDispose(stop)
 }
+
+/** Its entrance moves its own size: the follower waits for it to end, or the two would fight. */
+const sizesItself = (m: ResolvedMotion) =>
+  Object.keys(m.initial.panel ?? {}).some((key) => /height|width|size/i.test(key))
 
 /** A height change isn't an entrance: the same spring, without the bounce. */
 const calm = (t: MotionTiming): MotionTiming =>
