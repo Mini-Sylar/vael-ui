@@ -30,14 +30,15 @@
     font-size: var(--ui-font-size);
     border-radius: var(--ui-radius);
   }
-  .ui-tree-select-trigger:focus-visible {
+  /* The frame rings while the combobox inside it has keyboard focus. */
+  .ui-tree-select-trigger:has(> .ui-select-control:focus-visible) {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }
   .ui-tree-select-trigger[data-invalid] {
     border-color: var(--ui-danger);
   }
-  .ui-tree-select-trigger[data-invalid]:focus-visible {
+  .ui-tree-select-trigger[data-invalid]:has(> .ui-select-control:focus-visible) {
     outline-color: var(--ui-danger);
   }
   .ui-tree-select-trigger--disabled {

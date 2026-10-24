@@ -185,6 +185,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
+import { useFormReset } from '../../composables/useFormReset'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { ColorPickerMotion, PopoverMotion } from '../../motion/types'
 
@@ -348,6 +349,7 @@ async function pickFromScreen() {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const popover = useTemplateRef<PopoverExposed>('popover')
 const swatchEl = useTemplateRef<HTMLButtonElement>('swatchEl')
 const thumbEl = useTemplateRef<HTMLElement>('thumbEl')

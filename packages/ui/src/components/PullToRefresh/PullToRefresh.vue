@@ -51,6 +51,8 @@
       </div>
     </div>
     <slot />
+    <!-- Always mounted: a live region created on demand isn't reliably read out. -->
+    <span class="ui-pull-to-refresh-status" role="status" aria-live="polite">{{ statusText }}</span>
   </div>
 </template>
 
@@ -209,6 +211,15 @@ const labelText = computed(() => {
       return messages.value.pullToRefresh.pull
   }
 })
+
+// The zone is aria-hidden, so the refresh is read from here instead.
+const statusText = computed(() =>
+  state.value === 'loading'
+    ? messages.value.pullToRefresh.refreshing
+    : state.value === 'done'
+      ? messages.value.pullToRefresh.updated
+      : '',
+)
 
 defineExpose({
   /** Root element. */

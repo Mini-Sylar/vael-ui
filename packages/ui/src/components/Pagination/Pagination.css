@@ -16,6 +16,11 @@
     margin: 0;
     padding: 0;
   }
+  /* Server-rendered, before the indicator is measured: the current page draws its look. */
+  .ui-pagination:not([data-indicator-placed]) .ui-pagination-page-button--active {
+    --ui-button-bg: var(--ui-primary);
+    color: var(--ui-primary-contrast);
+  }
   .ui-pagination-indicator {
     position: absolute;
     z-index: -1;

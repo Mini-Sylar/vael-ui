@@ -5,10 +5,32 @@
     /* Never wider than the screen, so several months stack on a phone instead of overflowing. */
     max-inline-size: calc(100vw - 1rem);
   }
+  /* The calendar button: out of the tab order, ArrowDown opens the panel from the input. */
   .ui-date-picker-icon {
     display: inline-grid;
     place-items: center;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    margin-inline-end: -0.25rem;
+    padding: 0;
+    border: none;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: none;
     color: var(--ui-text-muted);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-date-picker-icon:hover:not(:disabled) {
+      background: var(--ui-muted);
+      color: var(--ui-text);
+    }
+  }
+  .ui-date-picker-icon:disabled {
+    cursor: not-allowed;
   }
   .ui-date-picker-time {
     display: flex;

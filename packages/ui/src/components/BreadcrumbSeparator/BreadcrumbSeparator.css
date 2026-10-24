@@ -5,4 +5,8 @@
     flex-shrink: 0;
     color: var(--ui-text-muted);
   }
+  /* Right to left, the trail reads leftward, so the chevron points there. */
+  .ui-breadcrumb-separator-icon:dir(rtl) {
+    scale: -1 1;
+  }
 }

@@ -32,6 +32,15 @@
       background: color-mix(in oklch, var(--ui-primary) 12%, var(--ui-surface));
     }
   }
+  /* Server-rendered, before the indicator is measured: the current row draws its look. */
+  .ui-menu-list:not([data-indicator-placed]) .ui-menu-list-item[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: calc(var(--ui-radius) - 4px);
+    background: color-mix(in oklch, var(--ui-primary) 7%, var(--ui-surface));
+  }
   .ui-menu-list-item {
     /* Positioning context for item slot. */
     position: relative;

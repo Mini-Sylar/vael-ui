@@ -48,7 +48,8 @@ test('the keyboard key reads Go, so a phone sends Enter to run the match', async
 test('no matches shows the empty message', async () => {
   await render(CommandPalette, { props: { open: true, items } })
   await userEvent.type(page.getByRole('combobox'), 'zzz-nothing-matches')
-  await expect.element(page.getByText('No results')).toBeVisible()
+  // The list's row, not the hidden status that reads it out.
+  await expect.element(page.getByRole('listbox').getByText('No results')).toBeVisible()
 })
 
 test('ArrowDown then Enter selects the active item and closes (closeOnSelect default)', async () => {
@@ -136,7 +137,8 @@ test('motion hooks: rows that appear and disappear go through your enter and lea
           enter: ({ item }: { item: HTMLElement }) => void entered.push(item),
           leave: ({ item }: { item: HTMLElement }) => {
             left.push(item)
-            return item.animate([{ opacity: 1 }, { opacity: 0 }], 200)
+            // Long enough to see it held, however busy the machine.
+            return item.animate([{ opacity: 1 }, { opacity: 0 }], 800)
           },
         },
       },
@@ -148,7 +150,7 @@ test('motion hooks: rows that appear and disappear go through your enter and lea
   await vi.waitFor(() => expect(left.length).toBe(2))
   // Held while their leave plays, then gone.
   expect(page.getByText('New File').query()).not.toBeNull()
-  await vi.waitFor(() => expect(page.getByText('New File').query()).toBeNull())
+  await vi.waitFor(() => expect(page.getByText('New File').query()).toBeNull(), { timeout: 2000 })
 
   await userEvent.clear(input)
   await vi.waitFor(() => expect(entered.length).toBe(2))

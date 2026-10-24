@@ -92,6 +92,8 @@ export interface Layer {
    * sharing one constant - otherwise two simultaneously-open layers can only be told apart by DOM
    * paint order, which follows mount order, not which one opened more recently. */
   index: () => number
+  /** Contents of the layers opened after this one, such as a popover opened from inside a dialog. */
+  above: () => HTMLElement[]
 }
 
 export interface UseLayerOptions {
@@ -149,5 +151,17 @@ export function useLayer(options: UseLayerOptions = {}): Layer {
   // each render's computeds subscribed to it.
   const index = () => (isClient ? stack.value.findIndex((e) => e.id === id) : -1)
 
-  return { push, pop, isTopmost, index }
+  const above = () => {
+    const layers = stack.value
+    const index = layers.findIndex((e) => e.id === id)
+    if (index === -1) return []
+    const contents: HTMLElement[] = []
+    for (let i = index + 1; i < layers.length; i++) {
+      const content = layers[i].content()
+      if (content) contents.push(content)
+    }
+    return contents
+  }
+
+  return { push, pop, isTopmost, index, above }
 }

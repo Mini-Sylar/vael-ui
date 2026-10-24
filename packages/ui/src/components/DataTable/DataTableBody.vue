@@ -109,13 +109,13 @@
           <Checkbox
             v-if="!single"
             :model-value="isSelected(tableRowEntries[virtualRow.index]!.row)"
-            :aria-label="messages.dataTable.selectRow"
+            :aria-labelledby="`${selectLabelId} ${rowLabelId(tableRowEntries[virtualRow.index]!.row)}`"
             @update:model-value="() => onToggleSelect(tableRowEntries[virtualRow.index]!.row)"
           />
           <Radio
             v-else
             :value="getRowKey(tableRowEntries[virtualRow.index]!.row)"
-            :aria-label="messages.dataTable.selectRow"
+            :aria-labelledby="`${selectLabelId} ${rowLabelId(tableRowEntries[virtualRow.index]!.row)}`"
           />
         </td>
         <td
@@ -176,6 +176,11 @@
           :style="[tdPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
           :data-label="col.label ?? String(col.field)"
           :data-column-field="String(col.field)"
+          :id="
+            colIndex === 0 && selectColumnRendered
+              ? rowLabelId(tableRowEntries[virtualRow.index]!.row)
+              : undefined
+          "
         >
           <component
             :is="col.cellRelay"
@@ -260,10 +265,14 @@
           <Checkbox
             v-if="!single"
             :model-value="isSelected(entry.row)"
-            :aria-label="messages.dataTable.selectRow"
+            :aria-labelledby="`${selectLabelId} ${rowLabelId(entry.row)}`"
             @update:model-value="() => onToggleSelect(entry.row)"
           />
-          <Radio v-else :value="getRowKey(entry.row)" :aria-label="messages.dataTable.selectRow" />
+          <Radio
+            v-else
+            :value="getRowKey(entry.row)"
+            :aria-labelledby="`${selectLabelId} ${rowLabelId(entry.row)}`"
+          />
         </td>
         <td
           :role="roles.cell"
@@ -317,6 +326,7 @@
           :style="[tdPart().style, columnStyle(col), columnFrozenStyle(colIndex)]"
           :data-label="col.label ?? String(col.field)"
           :data-column-field="String(col.field)"
+          :id="colIndex === 0 && selectColumnRendered ? rowLabelId(entry.row) : undefined"
         >
           <component
             :is="col.cellRelay"
@@ -394,6 +404,8 @@ const props = defineProps<{
   onRowFocus: (row: T, event: FocusEvent) => void
   onRowKeydown: (row: T, event: KeyboardEvent) => void
   expansionId: (row: T) => string
+  rowLabelId: (row: T) => string
+  selectLabelId: string
   onToggleSelect: (row: T) => void
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
@@ -414,10 +426,10 @@ const props = defineProps<{
 }>()
 
 // In the split layout the tables are presentational and these roles rebuild one table.
-// The scroll strip is the rowgroup, since a table can't hold a focusable div.
+// The scroll strip is the rowgroup, since a table can't hold a focusable div. Selectable, it's a grid.
 const roles = computed(() =>
   props.split
-    ? { group: 'presentation', row: 'row', cell: 'cell' }
+    ? { group: 'presentation', row: 'row', cell: props.selectable ? 'gridcell' : 'cell' }
     : { group: undefined, row: undefined, cell: undefined },
 )
 

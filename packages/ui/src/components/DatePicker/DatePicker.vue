@@ -2,26 +2,35 @@
   <Input
     ref="inputRef"
     v-bind="attrs"
-    :model-value="displayValue"
+    :model-value="inputText"
     :placeholder="placeholder"
     :size="props.size"
     :disabled="isDisabled"
-    :invalid="isInvalid"
-    readonly
+    :invalid="isInvalid || typedInvalid"
     role="combobox"
     aria-haspopup="dialog"
     :aria-expanded="open"
     :aria-controls="panelId"
     autocomplete="off"
     :ui="innerUi"
+    @update:model-value="onType"
+    @blur="commitDraft"
     @click="onTriggerClick"
     @keydown="onTriggerKeydown"
     @pointerenter="prefetchCalendar"
     @focusin="prefetchCalendar"
   >
     <template #end>
-      <span class="ui-date-picker-icon" aria-hidden="true">
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+      <button
+        type="button"
+        class="ui-date-picker-icon"
+        tabindex="-1"
+        :aria-label="messages.datePicker.chooseDate"
+        :disabled="isDisabled"
+        @mousedown="keepInputFocus"
+        @click="onButtonClick"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
           <rect
             x="2.5"
             y="3.5"
@@ -38,7 +47,7 @@
             stroke-linecap="round"
           />
         </svg>
-      </span>
+      </button>
     </template>
   </Input>
 
@@ -79,6 +88,7 @@
             :first-day-of-week="firstDayOfWeek"
             :months="months"
             :show-year-buttons="showYearButtons"
+            :show-week-numbers="showWeekNumbers"
             :motion="!!props.motion"
             :ui="calendarUi"
             @change="onCalendarChange"
@@ -175,7 +185,7 @@ export type DatePickerSide = Side
 export type DatePickerAlign = Align
 </script>
 
-<!-- Wraps Calendar in Select's popover chrome; input readonly, formatting deferred. -->
+<!-- Wraps Calendar in Select's popover chrome; the input takes typed dates too (composables/dateText). -->
 <script setup lang="ts">
 import type { PopoverCloseReason } from '../../composables/usePopover'
 import type { BeforeClose, DatePickerMotion } from '../../motion/types'
@@ -189,6 +199,7 @@ import {
   inject,
   nextTick,
   onMounted,
+  shallowRef,
   useAttrs,
   useId,
   useTemplateRef,
@@ -199,10 +210,12 @@ import { usePopover } from '../../composables/usePopover'
 import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
+import { loadDateText } from '../../composables/lazyParts'
 import Input from '../Input/Input.vue'
 import Button from '../Button/Button.vue'
 import type CalendarType from '../Calendar/Calendar.vue'
@@ -265,7 +278,10 @@ const rawProps = withDefaults(
     maxDate?: Date
     /** List of unavailable dates, or a predicate function. Matching compares calendar days and ignores time. */
     disabledDates?: CalendarDisabledDates
-    /** BCP-47 locale for the input text, month and weekday names, and the week start day. */
+    /**
+     * BCP-47 locale for the input text, month and weekday names, and the week start day. Typed
+     * dates read in its order too: month/day/year in `en-US`, day/month/year in `de`.
+     */
     locale?: string
     /** `0` (Sunday) to `6` (Saturday). Unset, it derives from `locale` and falls back to Monday. */
     firstDayOfWeek?: number
@@ -313,6 +329,8 @@ const rawProps = withDefaults(
     showButtonBar?: boolean
     /** Adds « and » beside the month arrows to jump a year at a time. See Calendar's `showYearButtons`. @default false */
     showYearButtons?: boolean
+    /** Shows each week's number (ISO 8601) at the start of its row. @default false */
+    showWeekNumbers?: boolean
     /** Adds an hour/minute row below the calendar (`single` mode only). Picking a date then keeps
      * the panel open so you can set the time.
      * @default false
@@ -369,6 +387,7 @@ const rawProps = withDefaults(
     motion: undefined,
     showButtonBar: false,
     showYearButtons: false,
+    showWeekNumbers: false,
     showTime: false,
     timeOnly: false,
     hourFormat: undefined,
@@ -403,7 +422,7 @@ if (rawProps.showTime || rawProps.timeOnly) {
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
-  /** Fires when you pick a date, time or range endpoint, or use Today or Clear. */
+  /** Fires when you pick a date, time or range endpoint, type one, or use Today or Clear. */
   change: [value: Date | CalendarRange | null]
   /** Fires when the calendar's displayed month changes. */
   'month-change': [value: Date]
@@ -500,6 +519,91 @@ const displayValue = computed(() => {
   return formatOne(value)
 })
 
+// Typed text, until it's committed on Enter or blur; null shows the value.
+const draft = shallowRef<string | null>(null)
+// The parser loads with the first keystroke: a picker nobody types into never ships it.
+let dateText: Awaited<ReturnType<typeof loadDateText>> | undefined
+const parser = () => loadDateText().then((module) => (dateText = module))
+// An entry that didn't read as an available date: the value stays, the field shows invalid.
+const typedInvalid = shallowRef(false)
+const inputText = computed(() => draft.value ?? displayValue.value)
+function readOne(text: string): Date | null {
+  const { parseDateText, isDateUnavailable } = dateText!
+  const date = parseDateText(text, {
+    locale: props.locale,
+    view: props.view,
+    time: timeOnlyEffective.value ? 'only' : props.showTime && props.selectionMode !== 'range',
+    base: isRangeModel(model.value) ? null : model.value,
+  })
+  if (!date || timeOnlyEffective.value) return date
+  return isDateUnavailable(date, props.view, props.minDate, props.maxDate, props.disabledDates)
+    ? null
+    : date
+}
+// `undefined` when the text isn't a date the picker would accept.
+function readTyped(text: string): Date | CalendarRange | null | undefined {
+  if (!text.trim()) return null
+  if (props.selectionMode !== 'range') return readOne(text) ?? undefined
+  const [startText = '', endText = '', ...extra] = dateText!.splitDateRange(text.trim())
+  if (extra.length) return undefined
+  const start = readOne(startText)
+  // A missing end, or the "…" shown while it's unset, leaves the range open.
+  const openEnd = /^(…|\.\.\.)?$/.test(endText.trim())
+  const end = openEnd ? null : readOne(endText)
+  if (!start || (!openEnd && !end)) return undefined
+  return end && end < start ? { start: end, end: start } : { start, end }
+}
+function sameValue(a: Date | CalendarRange | null, b: Date | CalendarRange | null): boolean {
+  const time = (d: Date | null | undefined) => d?.getTime() ?? null
+  if (isRangeModel(a) || isRangeModel(b)) {
+    return (
+      isRangeModel(a) &&
+      isRangeModel(b) &&
+      time(a.start) === time(b.start) &&
+      time(a.end) === time(b.end)
+    )
+  }
+  return time(a) === time(b)
+}
+function onType(text: string) {
+  draft.value = text
+  if (!dateText) void parser()
+  // Once flagged, the flag lifts as soon as the text reads, or is emptied.
+  if (typedInvalid.value && dateText) typedInvalid.value = readTyped(text) === undefined
+}
+// Returns false when the text didn't read; the value is kept and the field marked invalid.
+function commitDraft(): boolean {
+  const text = draft.value
+  if (text === null) return true
+  if (text === displayValue.value) {
+    draft.value = null
+    typedInvalid.value = false
+    return true
+  }
+  // Committed before the parser arrived (a paste, then Enter): commit once it's here.
+  if (!dateText) {
+    void parser().then(() => commitDraft())
+    return false
+  }
+  const next = readTyped(text)
+  if (next === undefined) {
+    typedInvalid.value = true
+    return false
+  }
+  draft.value = null
+  typedInvalid.value = false
+  if (!sameValue(next, model.value)) {
+    model.value = next
+    emit('change', next)
+  }
+  return true
+}
+// A value set from anywhere else replaces what was typed.
+watch(model, () => {
+  draft.value = null
+  typedInvalid.value = false
+})
+
 // Time state reads/writes straight off `model` — a JS Date already carries hour/minute, so
 // there's no separate time model to keep in sync, just this Date's own setHours.
 const timeBase = computed<Date>(() => {
@@ -563,6 +667,14 @@ function onCalendarChange(value: Date | CalendarRange | null) {
 const inputRef = useTemplateRef('inputRef')
 const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
+useFormReset(
+  model,
+  () => inputEl.value,
+  () => {
+    draft.value = null
+    typedInvalid.value = false
+  },
+)
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 const panelTransition = useSelectPanelMotion({
@@ -616,39 +728,79 @@ const fieldControl = useFieldControl()
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
-// Opens on click or ArrowDown/Enter/Space, not on focus: tabbing through a
-// form shouldn't pop a calendar open at every date field.
+// Opens on click, the button, ArrowDown or Enter, not on focus: tabbing through a form shouldn't
+// pop a calendar open at every date field. A click leaves focus in the input for typing; the
+// button and the keys move it into the panel.
+let focusOnOpen = true
+function openPanel(moveFocus: boolean) {
+  if (isDisabled.value) return
+  focusOnOpen = moveFocus
+  open.value = true
+}
 function onTriggerClick() {
-  if (!isDisabled.value) open.value = !open.value
+  if (!open.value) openPanel(false)
+}
+function keepInputFocus(event: MouseEvent) {
+  event.preventDefault()
+  inputEl.value?.focus()
+}
+function onButtonClick() {
+  if (open.value) close()
+  else {
+    commitDraft()
+    openPanel(true)
+  }
 }
 function onTriggerKeydown(event: KeyboardEvent) {
-  if (isDisabled.value || open.value) return
-  if (event.key === 'Escape') return
-  if (['ArrowDown', 'Enter', ' '].includes(event.key)) {
+  if (isDisabled.value || event.isComposing) return
+  if (event.key === 'Escape') {
+    // An open panel takes the first Escape; the next one drops what was typed.
+    if (event.defaultPrevented || draft.value === null) return
     event.preventDefault()
-    open.value = true
+    draft.value = null
+    typedInvalid.value = false
+    return
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    if (draft.value !== null) {
+      if (commitDraft() && open.value) close()
+    } else if (open.value) close()
+    else openPanel(true)
+    return
+  }
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    commitDraft()
+    if (open.value) focusPanel()
+    else openPanel(true)
   }
 }
 
+function focusPanel() {
+  if (timeOnlyEffective.value) {
+    // The time fields may still be on their way: focus once they're in.
+    void loadTimeField().then(() => nextTick(() => hourFieldRef.value?.inputEl?.focus()))
+    return
+  }
+  const value = model.value
+  const anchor =
+    value == null
+      ? new Date()
+      : isRangeModel(value)
+        ? (value.end ?? value.start ?? new Date())
+        : value
+  // The calendar may still be on its way: focus the day once it's in.
+  void loadCalendar().then(() => nextTick(() => calendarRef.value?.focusDay(anchor)))
+}
 // Focus panel once positioner is visible; wait for floating-ui's computePosition() to resolve.
 watch(
   () => open.value && positionerStyle.value.visibility === 'visible',
   (ready) => {
     if (!ready) return
-    if (timeOnlyEffective.value) {
-      // The time fields may still be on their way: focus once they're in.
-      void loadTimeField().then(() => nextTick(() => hourFieldRef.value?.inputEl?.focus()))
-      return
-    }
-    const value = model.value
-    const anchor =
-      value == null
-        ? new Date()
-        : isRangeModel(value)
-          ? (value.end ?? value.start ?? new Date())
-          : value
-    // The calendar may still be on its way: focus the day once it's in.
-    void loadCalendar().then(() => nextTick(() => calendarRef.value?.focusDay(anchor)))
+    const moveFocus = focusOnOpen
+    focusOnOpen = true
+    if (moveFocus) focusPanel()
   },
 )
 const innerUi = computed(() => ({
@@ -697,9 +849,7 @@ defineExpose({
   /** `true` while a `beforeClose` close is pending. */
   isClosing,
   /** Opens the panel unless disabled. */
-  open: () => {
-    if (!isDisabled.value) open.value = true
-  },
+  open: () => openPanel(true),
   /** Closes the panel, running `@open-change` and `beforeClose` first. */
   close,
   /** Cancels a close pending in `beforeClose` and keeps the panel open. */

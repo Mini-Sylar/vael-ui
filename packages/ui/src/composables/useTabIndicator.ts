@@ -69,6 +69,11 @@ export interface UseTabIndicatorReturn {
   style: Ref<Record<string, string | undefined>>
   /** Re-measures before the next paint; several calls in one go measure once. */
   update: () => void
+  /**
+   * True once it has been placed on a selection. Server-rendered, nothing has measured it yet:
+   * until then the selected item draws the same look itself (`data-indicator-placed` CSS).
+   */
+  placed: Readonly<Ref<boolean>>
 }
 
 const camelCase = (name: string) => name.replace(/-(\w)/g, (_, char: string) => char.toUpperCase())
@@ -78,6 +83,7 @@ export function useTabIndicator(
   options: UseTabIndicatorOptions,
 ): UseTabIndicatorReturn {
   const style = shallowRef<Record<string, string | undefined>>({})
+  const placed = shallowRef(false)
   const provided = inject(defaultsKey, undefined)
   const mode = (): IndicatorMode =>
     toValue(options.indicator) ?? provided?.value.indicator ?? 'glide'
@@ -156,6 +162,7 @@ export function useTabIndicator(
     const firstAppearance = !hasAppeared
     measuredOnce = true
     hasAppeared = true
+    placed.value = true
     if (toValue(options.sizing) === 'transform') {
       const transitionDuration = firstPaint ? '0ms' : firstAppearance ? '0ms, 0ms' : undefined
       apply(
@@ -468,7 +475,7 @@ export function useTabIndicator(
     dropSprings()
   })
 
-  return { style, update }
+  return { style, update, placed }
 }
 
 function reducedMotion(): boolean {

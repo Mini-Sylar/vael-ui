@@ -50,6 +50,7 @@ import '../shared/tokens.css'
 import { computed, nextTick, onMounted, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -182,6 +183,7 @@ onMounted(() => {
 const skipTransition = computed(() => firstPaint.value || !props.motion)
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const trackEl = useTemplateRef<HTMLElement>('trackEl')
 const thumbEl = useTemplateRef<HTMLElement>('thumbEl')

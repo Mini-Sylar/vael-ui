@@ -3,6 +3,8 @@ import type { InjectionKey } from 'vue'
 export interface FieldContext {
   controlId: string
   labelId: string
+  /** Whether the label renders, so `labelId` names something. Treated as `true` when absent. */
+  hasLabel?: () => boolean
   describedBy: () => string | undefined
   invalid: () => boolean
   required: () => boolean

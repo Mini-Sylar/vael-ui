@@ -5,6 +5,8 @@
     :aria-orientation="props.orientation === 'vertical' ? 'vertical' : undefined"
     :class="listPart.class"
     :style="listPart.style"
+    v-scroll-mask="props.orientation === 'vertical' ? false : 'x'"
+    :data-indicator-placed="indicator.placed.value || undefined"
     @keydown="onKeydown"
     v-bind="attrs"
   >
@@ -35,6 +37,7 @@ import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import type { ShallowRef } from 'vue'
 import { useTabs } from '../../composables/useTabs'
 import { useTabIndicator } from '../../composables/useTabIndicator'
+import { vScrollMask } from '../../directives/vScrollMask'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -120,6 +123,8 @@ const { style: hoverStyle } = useHoverIndicator(listEl, {
   scope: '[role="tablist"]',
   orientation: () => props.orientation ?? 'horizontal',
   indicatorEl: hoverEl,
+  // A long row scrolls: both highlights follow it.
+  scroller: true,
 })
 const parts = useStateMotion({
   key: 'tabs',
@@ -175,6 +180,7 @@ const indicator = useTabIndicator(active, {
   listEl,
   orientation: () => props.orientation,
   indicatorEl: selectedIndicatorEl,
+  scroller: true,
   indicator: indicatorMotion.spring,
   motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
   stretch: () => (typeof props.motion === 'object' ? props.motion.stretch : undefined),

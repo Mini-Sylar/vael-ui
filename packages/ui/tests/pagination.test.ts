@@ -60,19 +60,19 @@ test('the contrast labels are clipped to the indicator, and are not real control
 test('prev/first are disabled on page 1, next/last are disabled on the last page', async () => {
   const screen = await render(PaginationFixture, { props: { total: 50, pageSize: 10 } })
   const [first, prev, next, last] = navButtons(screen.container)
-  expect(first!.hasAttribute('disabled')).toBe(true)
-  expect(prev!.hasAttribute('disabled')).toBe(true)
-  expect(next!.hasAttribute('disabled')).toBe(false)
-  expect(last!.hasAttribute('disabled')).toBe(false)
+  expect(first!.getAttribute('aria-disabled')).toBe('true')
+  expect(prev!.getAttribute('aria-disabled')).toBe('true')
+  expect(next!.hasAttribute('aria-disabled')).toBe(false)
+  expect(last!.hasAttribute('aria-disabled')).toBe(false)
 
   await userEvent.click(last!)
   await expect.element(screen.getByTestId('page')).toHaveTextContent('5')
   await vi.waitFor(() => {
     const [first2, prev2, next2, last2] = navButtons(screen.container)
-    expect(first2!.hasAttribute('disabled')).toBe(false)
-    expect(prev2!.hasAttribute('disabled')).toBe(false)
-    expect(next2!.hasAttribute('disabled')).toBe(true)
-    expect(last2!.hasAttribute('disabled')).toBe(true)
+    expect(first2!.hasAttribute('aria-disabled')).toBe(false)
+    expect(prev2!.hasAttribute('aria-disabled')).toBe(false)
+    expect(next2!.getAttribute('aria-disabled')).toBe('true')
+    expect(last2!.getAttribute('aria-disabled')).toBe('true')
   })
 })
 

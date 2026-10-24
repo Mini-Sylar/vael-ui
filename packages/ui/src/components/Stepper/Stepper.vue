@@ -81,6 +81,9 @@
               >
             </slot>
           </span>
+          <span v-if="stateOf(index) === 'completed'" :style="visuallyHidden">{{
+            messages.stepper.completed
+          }}</span>
         </component>
       </li>
       <li
@@ -114,6 +117,7 @@ import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useUiMessages } from '../../messages'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { StepperMotion } from '../../motion/types'
 
@@ -252,6 +256,16 @@ const connectorEls = computed(() =>
   connectorSlots.slice(0, Math.max(props.items.length - 1, 0)).filter(present),
 )
 const labelEls = computed(() => labelSlots.slice(0, props.items.length).filter(present))
+const messages = useUiMessages()
+// The check is drawn, not read: a completed step says so in words.
+const visuallyHidden = {
+  position: 'absolute',
+  inlineSize: '1px',
+  blockSize: '1px',
+  overflow: 'hidden',
+  clipPath: 'inset(50%)',
+  whiteSpace: 'nowrap',
+} as const
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.stepper,

@@ -125,6 +125,10 @@
     /* This is the REAL, actually-focused element — full row width, not any one cell's shape. Without this, the browser's own default focus ring renders on ITS bounding box regardless of what the synthetic data-active/data-focus-visible per-cell styling below does, which is exactly the "square outline" bug: a native rectangular ring around the whole row, sitting on top of whatever shape (circular, in the custom-cell demo) the visible cells actually are. The per-cell data-focus-visible outline above is the library's own, deliberate replacement for this. */
     outline: none;
   }
+  /* `mask` makes it a password field: no Edge reveal button over the last cell. */
+  .ui-otp-input::-ms-reveal {
+    display: none;
+  }
   .ui-otp[data-state='invalid'] .ui-otp-cell {
     border-color: var(--ui-danger);
   }

@@ -16,6 +16,7 @@
       :style="itemPart.style"
       :data-completed="row.completed || undefined"
       :data-active="row.active || undefined"
+      :aria-current="row.active ? 'step' : undefined"
     >
       <div v-if="$slots.opposite" :class="oppositePart.class" :style="oppositePart.style">
         <slot

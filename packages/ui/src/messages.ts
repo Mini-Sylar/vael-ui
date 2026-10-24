@@ -23,6 +23,10 @@ export interface UiMessages {
     refreshing: string
     updated: string
   }
+  input: {
+    /** The `clearable` button's name. */
+    clear: string
+  }
   inputNumber: {
     increment: string
     decrement: string
@@ -30,6 +34,10 @@ export interface UiMessages {
   passwordInput: {
     show: string
     hide: string
+    /** Read after a requirement that the password meets. */
+    met: string
+    /** Read after a requirement that the password doesn't meet yet. */
+    unmet: string
   }
   select: {
     empty: string
@@ -49,6 +57,10 @@ export interface UiMessages {
     browse: string
     drop: string
     remove: string
+    /** Announced for a file that `accept`, `maxSize` or `maxFiles` turned away; `{name}` is its name. */
+    rejectedAccept: string
+    rejectedMaxSize: string
+    rejectedMaxFiles: string
   }
   cascadeSelect: {
     empty: string
@@ -58,6 +70,28 @@ export interface UiMessages {
   }
   treeSelect: {
     clear: string
+    /** `{count}` is replaced with the number of selected nodes, for `display="count"`. */
+    selectedCount: string
+  }
+  speedDial: {
+    /** The actions menu's name, when no `ariaLabel` prop is given. */
+    label: string
+  }
+  toolbar: {
+    /** The overflow button's name, when no `overflowLabel` prop is given. */
+    more: string
+  }
+  stepper: {
+    /** Read after a step that's done. */
+    completed: string
+  }
+  bottomSheet: {
+    /** The drag handle's name; it also moves between snap points with the arrow keys. */
+    resize: string
+  }
+  resizable: {
+    /** The handle's name, when no `ariaLabel` prop is given. */
+    label: string
   }
   chip: {
     remove: string
@@ -75,6 +109,8 @@ export interface UiMessages {
     empty: string
     /** Accessible name of the palette's dialog. */
     label: string
+    /** Announced as you type; `{count}` is the number of results. */
+    results: string
   }
   colorPicker: {
     /** aria-label of the saturation and brightness plane. */
@@ -134,6 +170,8 @@ export interface UiMessages {
     expandRow: string
     /** Read out while `loading` is on. */
     loading: string
+    /** Read after a keyboard column resize; `{label}` is the column, `{width}` its width in pixels. */
+    columnWidth: string
   }
   /** Drag-to-reorder. These carry `{label}`, `{position}`, `{total}` and `{depth}` placeholders rather than being functions, so a consumer's own `t()` can return them as plain strings like every other entry here. */
   sortable: {
@@ -157,6 +195,8 @@ export interface UiMessages {
   }
   /** Calendar header arrows. In the month grid they step a year, in the year grid 12 years. */
   calendar: {
+    /** Names a week's row header with `showWeekNumbers`; `{week}` is its ISO week number. */
+    weekNumber: string
     previousMonth: string
     nextMonth: string
     previousYear: string
@@ -181,8 +221,9 @@ export const defaultMessages: UiMessages = {
     refreshing: 'Refreshing…',
     updated: 'Updated',
   },
+  input: { clear: 'Clear' },
   inputNumber: { increment: 'Increase', decrement: 'Decrease' },
-  passwordInput: { show: 'Show password', hide: 'Hide password' },
+  passwordInput: { show: 'Show password', hide: 'Hide password', met: 'met', unmet: 'not met' },
   select: { empty: 'No options', clear: 'Clear selection', selectedCount: '{count} selected' },
   combobox: {
     empty: 'No results',
@@ -190,17 +231,34 @@ export const defaultMessages: UiMessages = {
     toggle: 'Toggle options',
     create: 'Create "{query}"',
   },
-  fileUpload: { browse: 'Browse files', drop: 'Drop files here', remove: 'Remove' },
+  fileUpload: {
+    browse: 'Browse files',
+    drop: 'Drop files here',
+    remove: 'Remove',
+    rejectedAccept: '{name} wasn’t added: that type of file isn’t accepted.',
+    rejectedMaxSize: '{name} wasn’t added: it’s too large.',
+    rejectedMaxFiles: '{name} wasn’t added: there are already as many files as allowed.',
+  },
   cascadeSelect: {
     empty: 'No options',
     clear: 'Clear selection',
     selectedCount: '{count} selected',
   },
-  treeSelect: { clear: 'Clear selection' },
+  treeSelect: { clear: 'Clear selection', selectedCount: '{count} selected' },
+  speedDial: { label: 'Actions' },
+  toolbar: { more: 'More' },
+  stepper: { completed: 'Completed' },
+  bottomSheet: { resize: 'Resize sheet' },
+  resizable: { label: 'Resize' },
   chip: { remove: 'Remove' },
   splitButton: { more: 'More actions' },
   breadcrumb: { label: 'Breadcrumb' },
-  commandPalette: { placeholder: 'Search…', empty: 'No results', label: 'Command palette' },
+  commandPalette: {
+    placeholder: 'Search…',
+    empty: 'No results',
+    label: 'Command palette',
+    results: '{count} results',
+  },
   colorPicker: {
     saturationAndBrightness: 'Saturation and brightness',
     saturation: 'saturation',
@@ -243,6 +301,7 @@ export const defaultMessages: UiMessages = {
     collapseRow: 'Collapse row',
     expandRow: 'Expand row',
     loading: 'Loading…',
+    columnWidth: '{label}: {width} pixels',
   },
   sortable: {
     instructions:
@@ -256,6 +315,7 @@ export const defaultMessages: UiMessages = {
   rating: { valueText: '{value} of {max}' },
   slider: { minimum: 'Minimum', maximum: 'Maximum' },
   calendar: {
+    weekNumber: 'Week {week}',
     previousMonth: 'Previous month',
     nextMonth: 'Next month',
     previousYear: 'Previous year',

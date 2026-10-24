@@ -4,6 +4,7 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :aria-label="messages.pagination.label"
+    :data-indicator-placed="indicator.placed.value || undefined"
     v-bind="attrs"
   >
     <ul ref="list" :class="listPart.class" :style="listPart.style">
@@ -59,14 +60,14 @@
       </li>
       <li>
         <Button
-          :class="navButtonPart.class"
+          :class="[navButtonPart.class, isFirstPage && 'ui-button--disabled']"
           :style="navButtonPart.style"
           icon
           size="sm"
           variant="ghost"
           type="button"
           :aria-label="messages.pagination.first"
-          :disabled="isFirstPage"
+          :aria-disabled="isFirstPage || undefined"
           @click="goToPage(1)"
         >
           <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
@@ -82,14 +83,14 @@
       </li>
       <li>
         <Button
-          :class="navButtonPart.class"
+          :class="[navButtonPart.class, isFirstPage && 'ui-button--disabled']"
           :style="navButtonPart.style"
           icon
           size="sm"
           variant="ghost"
           type="button"
           :aria-label="messages.pagination.previous"
-          :disabled="isFirstPage"
+          :aria-disabled="isFirstPage || undefined"
           @click="goToPage(page - 1)"
         >
           <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
@@ -130,14 +131,14 @@
 
       <li>
         <Button
-          :class="navButtonPart.class"
+          :class="[navButtonPart.class, isLastPage && 'ui-button--disabled']"
           :style="navButtonPart.style"
           icon
           size="sm"
           variant="ghost"
           type="button"
           :aria-label="messages.pagination.next"
-          :disabled="isLastPage"
+          :aria-disabled="isLastPage || undefined"
           @click="goToPage(page + 1)"
         >
           <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
@@ -153,14 +154,14 @@
       </li>
       <li>
         <Button
-          :class="navButtonPart.class"
+          :class="[navButtonPart.class, isLastPage && 'ui-button--disabled']"
           :style="navButtonPart.style"
           icon
           size="sm"
           variant="ghost"
           type="button"
           :aria-label="messages.pagination.last"
-          :disabled="isLastPage"
+          :aria-disabled="isLastPage || undefined"
           @click="goToPage(totalPages)"
         >
           <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
@@ -320,6 +321,7 @@ const totalPages = computed(() => {
   if (pageSize.value <= 0) return 1
   return Math.max(1, Math.ceil(props.total / pageSize.value))
 })
+// At either end the nav buttons stay focusable (aria-disabled); goToPage ignores the press.
 const isFirstPage = computed(() => page.value <= 1)
 const isLastPage = computed(() => page.value >= totalPages.value)
 

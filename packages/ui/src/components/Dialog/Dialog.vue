@@ -37,7 +37,7 @@
           ref="panel"
           data-ui-presence
           :role="role"
-          :aria-modal="modal && !contained ? 'true' : undefined"
+          :aria-modal="modal ? 'true' : undefined"
           tabindex="-1"
           :aria-labelledby="title ? titleId : undefined"
           :aria-describedby="description ? descriptionId : undefined"
@@ -183,7 +183,7 @@ export interface DialogProps {
   /** Shows the built-in close button (×). Hide it when the footer carries the only sensible actions. @default true */
   showClose?: boolean
   /**
-   * `false` disables the overlay, scroll lock and focus trap. Escape-close and layer stacking still apply.
+   * `false` turns off the overlay, scroll lock, focus trap and the inert page behind it. Escape-close and layer stacking still apply.
    * @default true
    */
   modal?: boolean

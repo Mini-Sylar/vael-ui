@@ -18,7 +18,8 @@ export interface UseFieldControlReturn {
   /** Bind to `aria-describedby`. */
   describedBy: () => string | undefined
   /** Bind to `aria-labelledby` on group-shaped controls (RadioGroup) that
-   * have no single native input for Field's `<label for>` to target. */
+   * have no single native input for Field's `<label for>` to target. `undefined`
+   * when the Field shows no label. */
   labelledBy: () => string | undefined
   /** OR this into the control's own `invalid` prop, if it has one. */
   invalid: () => boolean
@@ -61,7 +62,8 @@ export function useFieldControl(options: UseFieldControlOptions = {}): UseFieldC
   return {
     id: ctx?.controlId ?? ownId,
     describedBy: () => ctx?.describedBy(),
-    labelledBy: () => ctx?.labelId,
+    // No label rendered: nothing to point at.
+    labelledBy: () => (ctx && (ctx.hasLabel?.() ?? true) ? ctx.labelId : undefined),
     invalid: () => ctx?.invalid() ?? false,
     required: () => ctx?.required() ?? false,
     disabled: () => ctx?.disabled() ?? false,

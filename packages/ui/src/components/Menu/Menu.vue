@@ -41,6 +41,8 @@
             ref="list"
             :id="menuId"
             role="menu"
+            :aria-label="ownLabel"
+            :aria-labelledby="ownLabel ? undefined : labelledBy"
             class="ui-menu-body"
             v-scroll-mask="scrollFade"
             :data-virtual="virtualActive || undefined"
@@ -315,7 +317,7 @@ import {
   watch,
   watchEffect,
 } from 'vue'
-import { useAttrListeners } from '../../composables/forwardedListeners'
+import { omitAttrs, useAttrListeners } from '../../composables/forwardedListeners'
 import type { VNodeChild } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { createSlotRelay } from '../../composables/useSlotRelay'
@@ -471,9 +473,11 @@ const panelEl = useTemplateRef<HTMLElement>('panel')
 // A submenu opens toward the end of the line: to the left, right to left.
 const submenuSide = (): MenuSide => (isRtl(panelEl.value) ? 'left' : 'right')
 const attrs = useAttrs()
+// Your `aria-label` names the menu itself, not the panel around it.
+const ownLabel = computed(() => attrs['aria-label'] as string | undefined)
 const panelAttrs = useAttrListeners(
   () => panelEl.value,
-  () => attrs,
+  () => omitAttrs(attrs, ['aria-label']),
 )
 const listEl = useTemplateRef<HTMLElement>('list')
 const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
@@ -720,11 +724,19 @@ const { onKeydown, focusFirst, focusItem } = useMenu({
 // Set the popup state on the slot's trigger, preferring a root that is itself the control.
 const TRIGGER_SELECTOR = 'button, [role="button"], [role="combobox"], a[href]'
 const menuId = useId()
+const triggerId = useId()
+const labelledBy = shallowRef<string>()
 watchEffect(() => {
   const root = resolvedTriggerEl.value
   const trigger = root?.matches(TRIGGER_SELECTOR)
     ? root
     : (triggerWrapper.value?.querySelector<HTMLElement>(TRIGGER_SELECTOR) ?? root)
+  // The menu is named by what opens it: the trigger, a `triggerEl`, or a submenu's row.
+  // One hidden from screen readers (ContextMenu's anchor) can't name it.
+  const shown = props.triggerEl !== undefined ? triggerElRef.value : trigger
+  const label = shown?.getAttribute('aria-hidden') === 'true' ? undefined : shown
+  if (label && !label.id) label.id = triggerId
+  labelledBy.value = label?.id || undefined
   if (!trigger) return
   trigger.setAttribute('aria-haspopup', 'menu')
   trigger.setAttribute('aria-expanded', String(open.value))

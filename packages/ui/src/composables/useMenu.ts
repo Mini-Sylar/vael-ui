@@ -143,8 +143,11 @@ export function useMenu(options: UseMenuOptions): UseMenuReturn {
       }, TYPEAHEAD_RESET_MS)
 
       const startIndex = currentIndex === -1 ? 0 : currentIndex + 1
+      // An icon-only item has no text, so its aria-label stands in.
       const matches = (el: HTMLElement) =>
-        el.textContent?.trim().toLowerCase().startsWith(typeaheadBuffer) ?? false
+        (el.textContent?.trim() || el.getAttribute('aria-label') || '')
+          .toLowerCase()
+          .startsWith(typeaheadBuffer)
       const match = list.slice(startIndex).find(matches) ?? list.slice(0, startIndex).find(matches)
       if (match) {
         event.preventDefault()

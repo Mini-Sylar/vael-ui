@@ -74,6 +74,7 @@ import {
   watchEffect,
 } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useControlAttrs } from '../../composables/forwardedListeners'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -178,6 +179,7 @@ onMounted(() => {
 const skipTransition = computed(() => firstPaint.value || !props.motion)
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const boxEl = useTemplateRef<HTMLElement>('boxEl')
 const checkEl = useTemplateRef<SVGElement>('checkEl')
 const parts = useStateMotion({

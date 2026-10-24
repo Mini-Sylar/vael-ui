@@ -19,11 +19,12 @@
       :aria-orientation="direction === 'horizontal' ? 'vertical' : 'horizontal'"
       :aria-valuenow="Math.round(modelValue)"
       :aria-valuemin="min"
-      :aria-valuemax="Number.isFinite(max) ? max : undefined"
-      :aria-label="ariaLabel"
+      :aria-valuemax="valueMax"
+      :aria-label="ariaLabel ?? messages.resizable.label"
       :tabindex="disabled ? -1 : 0"
       @pointerdown="onHandlePointerdown"
       @keydown="onHandleKeydown"
+      @focus="measureAvailable"
     >
       <slot name="handle" />
     </div>
@@ -34,7 +35,9 @@
 <script setup lang="ts">
 import './Resizable.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import { useResizeObserver } from '@vueuse/core'
+import { useUiMessages } from '../../messages'
 import { useResizable } from '../../composables/useResizable'
 import type { ResizeDirection, ResizeEdge } from '../../composables/useResizable'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -85,7 +88,7 @@ const props = withDefaults(
     direction: 'horizontal',
     edge: 'end',
     disabled: false,
-    ariaLabel: 'Resize',
+    ariaLabel: undefined,
     // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
     motion: undefined,
   },
@@ -117,6 +120,25 @@ const parts = useStateMotion({
   parts: () => ({ root: root.value, handle: handleEl.value }),
   states: () => ({ dragging: isDragging.value }),
 })
+
+const messages = useUiMessages()
+// Without a `max`, the most the panel can take is the room its container gives it.
+const available = shallowRef(0)
+function measureAvailable() {
+  if (Number.isFinite(props.max)) return
+  const parent = root.value?.parentElement
+  if (!parent) return
+  available.value = props.direction === 'horizontal' ? parent.clientWidth : parent.clientHeight
+}
+useResizeObserver(
+  () => (Number.isFinite(props.max) ? null : root.value?.parentElement),
+  measureAvailable,
+)
+const valueMax = computed(() =>
+  Number.isFinite(props.max)
+    ? props.max
+    : Math.max(Math.round(available.value), Math.round(modelValue.value), props.min),
+)
 
 const sizeStyle = computed(() => ({
   [props.direction === 'horizontal' ? 'inlineSize' : 'blockSize']: `${modelValue.value}px`,

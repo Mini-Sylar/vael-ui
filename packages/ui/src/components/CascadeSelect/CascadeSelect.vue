@@ -63,75 +63,84 @@
         </div>
       </template>
       <template #trigger="{ open: menuOpen }">
+        <!-- A menu button (Menu sets its popup state); the clear button sits beside it, not in it. -->
         <div
-          :id="fieldControl.id"
           ref="triggerEl"
           :data-ui-frame="props.size"
-          role="combobox"
-          v-bind="restAttrs"
           :class="triggerClass"
           :style="[triggerStyle, attrs.style as never]"
-          :tabindex="isDisabled ? -1 : 0"
-          :aria-disabled="isDisabled || undefined"
+          tabindex="-1"
           :data-state="menuOpen ? 'open' : 'closed'"
           :data-invalid="isInvalid || undefined"
           :data-placeholder="isEmpty || undefined"
-          :aria-describedby="fieldControl.describedBy()"
-          :aria-labelledby="
-            (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
-          "
-          :aria-invalid="isInvalid || undefined"
-          :aria-required="fieldControl.required() || undefined"
           @click="onTriggerClick"
-          @keydown="onTriggerKeydown"
-          @focus="onTriggerFocus"
-          @blur="onTriggerBlur"
+          @focus="focusControl"
         >
-          <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
-            <slot name="value" :selected="selectedForSlot" :path="pathForSlot">
-              <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
-              <LazyAnimatedText
-                v-if="!multiple"
-                :class="isEmpty && 'ui-cascade-select-placeholder'"
-                :value="isEmpty ? (placeholder ?? '') : (selectedItem?.label ?? '')"
-                :motion="!!props.motion"
-              />
-              <span
-                v-else-if="isEmpty && display !== 'chip'"
-                class="ui-cascade-select-placeholder"
-                >{{ placeholder }}</span
-              >
-              <span v-else-if="display === 'text'">{{ displayLabel }}</span>
-              <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
-              <!-- The chips group stays mounted when the last chip goes, so it leaves like the others;
-                   the placeholder slides in behind it. -->
-              <template v-else>
-                <TransitionGroup
-                  v-bind="chipsTransition"
-                  :data-motion="props.motion ? undefined : 'off'"
-                  tag="span"
-                  class="ui-cascade-select-chips"
+          <span v-if="ownLabel" :id="ownLabelId" hidden>{{ ownLabel }}</span>
+          <div
+            :id="controlId"
+            ref="controlEl"
+            class="ui-cascade-select-control"
+            role="button"
+            v-bind="restAttrs"
+            :tabindex="isDisabled ? -1 : 0"
+            :aria-disabled="isDisabled || undefined"
+            :aria-describedby="fieldControl.describedBy()"
+            :aria-labelledby="controlLabelledBy"
+            :aria-invalid="isInvalid || undefined"
+            :aria-required="fieldControl.required() || undefined"
+            @keydown="onTriggerKeydown"
+            @focus="onTriggerFocus"
+            @blur="onTriggerBlur"
+          >
+            <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
+              <slot name="value" :selected="selectedForSlot" :path="pathForSlot">
+                <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+                <LazyAnimatedText
+                  v-if="!multiple"
+                  :class="isEmpty && 'ui-cascade-select-placeholder'"
+                  :value="isEmpty ? (placeholder ?? '') : (selectedItem?.label ?? '')"
+                  :motion="!!props.motion"
+                />
+                <span
+                  v-else-if="isEmpty && display !== 'chip'"
+                  class="ui-cascade-select-placeholder"
+                  >{{ placeholder }}</span
                 >
-                  <Chip
-                    v-for="match in visibleChips"
-                    :key="match.item.value"
-                    :label="match.item.label"
-                    removable
-                    :disabled="isDisabled"
-                    @remove="removeChip(match.item)"
-                  />
-                  <span
-                    v-if="hiddenChipCount > 0"
-                    key="__overflow"
-                    class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+                <span v-else-if="display === 'text'">{{ displayLabel }}</span>
+                <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
+                <!-- The chips group stays mounted when the last chip goes, so it leaves like the others;
+                     the placeholder slides in behind it. -->
+                <template v-else>
+                  <TransitionGroup
+                    v-bind="chipsTransition"
+                    :data-motion="props.motion ? undefined : 'off'"
+                    tag="span"
+                    class="ui-cascade-select-chips"
                   >
-                    +{{ hiddenChipCount }}
-                  </span>
-                </TransitionGroup>
-                <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{ placeholder }}</span>
-              </template>
-            </slot>
-          </span>
+                    <Chip
+                      v-for="match in visibleChips"
+                      :key="match.item.value"
+                      :label="match.item.label"
+                      removable
+                      :disabled="isDisabled"
+                      @remove="removeChip(match.item)"
+                    />
+                    <span
+                      v-if="hiddenChipCount > 0"
+                      key="__overflow"
+                      class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+                    >
+                      +{{ hiddenChipCount }}
+                    </span>
+                  </TransitionGroup>
+                  <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{
+                    placeholder
+                  }}</span>
+                </template>
+              </slot>
+            </span>
+          </div>
           <Transition
             name="ui-clear"
             :css="!!props.motion"
@@ -269,10 +278,10 @@ import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../comp
 import { useChipRowWidth } from '../../composables/useChipRowWidth'
 import { useChipTransition } from '../../composables/useChipTransition'
 import '../shared/chip.css'
-import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, provide, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'
-import Chip from '../Chip/Chip.vue'
+import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import Input from '../Input/Input.vue'
 import { normalizeText } from '../../composables/normalizeText'
@@ -280,6 +289,7 @@ import { useEasedHeight } from '../../composables/useEasedHeight'
 import type { MenuAlign, MenuItemData, MenuSide } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
@@ -729,7 +739,7 @@ function onRowsKeydown(event: KeyboardEvent) {
   }
 }
 
-// Trigger is a div (role="combobox"), not a real <button> — a click that
+// Trigger is a div (role="button"), not a real <button> — a click that
 // bubbles up still reaches Menu's own wrapping span (which toggles), so this
 // only needs to swallow the click while disabled; opening itself is Menu's job.
 function onTriggerClick(event: MouseEvent) {
@@ -758,8 +768,17 @@ function onTriggerBlur(event: FocusEvent) {
 
 function onTriggerKeydown(event: KeyboardEvent) {
   try {
-    // A chip's remove button keeps its own Enter/Space.
-    if (isDisabled.value || open.value || event.target !== event.currentTarget) return
+    if (isDisabled.value || event.target !== event.currentTarget) return
+    // Chips' remove buttons are pointer-only, so the keyboard removes the last chip, as in Combobox.
+    if ((event.key === 'Backspace' || event.key === 'Delete') && props.multiple) {
+      const last = props.display === 'chip' ? selectedMatches.value.at(-1) : undefined
+      if (last) {
+        event.preventDefault()
+        removeChip(last.item)
+      }
+      return
+    }
+    if (open.value) return
     // No native <button> to auto-activate on Enter/Space anymore; drive `open` directly.
     if (
       event.key === 'ArrowDown' ||
@@ -778,6 +797,8 @@ function onTriggerKeydown(event: KeyboardEvent) {
 function onClear(event: MouseEvent) {
   event.preventDefault()
   commit(props.multiple ? [] : null)
+  // The clear button goes with the value, so focus goes back to the trigger.
+  controlEl.value?.focus()
 }
 
 const messages = useUiMessages()
@@ -789,14 +810,33 @@ const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(model, () => root.value)
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
+const controlEl = useTemplateRef<HTMLElement>('controlEl')
+function focusControl() {
+  controlEl.value?.focus()
+}
+provide(chipFocusFallbackKey, () => controlEl.value)
 const menuRef = useTemplateRef<ComponentExposed<typeof Menu>>('menuRef')
 
 const attrs = useAttrs()
 const forward = useForwardedListener(attrs)
+// Your `aria-label` names it through a hidden copy (below): on the button it would replace the value.
 const restAttrs = computed(() =>
-  omitAttrs(attrs, ['class', 'style', 'onClick', 'onKeydown', 'onFocus', 'onBlur']),
+  omitAttrs(attrs, ['class', 'style', 'onClick', 'onKeydown', 'onFocus', 'onBlur', 'aria-label']),
 )
+const controlId = computed(() => (attrs.id as string | undefined) ?? fieldControl.id)
+// A button is named by its label, so the label leads and its own text (the value) follows. Your
+// `aria-label` takes the label's place, through a hidden copy, so the value still follows it.
+const ownLabel = computed(() => attrs['aria-label'] as string | undefined)
+const ownLabelId = useId()
+const controlLabelledBy = computed(() => {
+  const label =
+    (attrs['aria-labelledby'] as string | undefined) ??
+    fieldControl.labelledBy() ??
+    (ownLabel.value ? ownLabelId : undefined)
+  return label ? `${label} ${controlId.value}` : undefined
+})
 
 const cx = useClassMerge()
 // The panel is teleported, so motion off is marked on it for the CSS that follows it (Menu.css).
@@ -845,7 +885,7 @@ watch(open, (isOpen) => {
 defineExpose({
   /** Root element. */
   el: root,
-  /** Trigger element. */
+  /** Trigger element: the frame around the button and its clear button. Focusing it focuses the button. */
   triggerEl,
   /** Panel element (null while closed). */
   panelEl: computed(() => menuRef.value?.panelEl ?? null),

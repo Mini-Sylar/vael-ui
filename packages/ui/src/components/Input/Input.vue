@@ -23,7 +23,7 @@
       :placeholder="placeholder"
       :disabled="isDisabled"
       :readonly="readonly || undefined"
-      :aria-describedby="fieldControl.describedBy()"
+      :aria-describedby="describedBy"
       :aria-invalid="isInvalid || undefined"
       :aria-required="fieldControl.required() || undefined"
       :data-ui-display="displayMode"
@@ -54,6 +54,30 @@
         </slot>
       </span>
     </span>
+    <Transition
+      name="ui-clear"
+      @enter="measureClearSpace"
+      @leave="startClearLeave"
+      @leave-cancelled="resetLeaveStyles"
+    >
+      <button
+        v-if="clearable && modelValue !== '' && !isDisabled && !readonly"
+        type="button"
+        class="ui-input-clear"
+        :aria-label="messages.input.clear"
+        @click="onClear"
+        @mousedown.prevent
+      >
+        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
+          <path
+            d="M4 4l8 8M12 4l-8 8"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </Transition>
     <span v-if="$slots.end" ref="endEl" :class="endPart.class" :style="endPart.style"
       ><slot name="end"
     /></span>
@@ -63,6 +87,7 @@
 <!-- inheritAttrs: false; class/style → root, input attrs → input; frame mousedown focuses input (guarded) -->
 <script setup lang="ts">
 import './Input.css'
+import '../shared/clear-transition.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
@@ -77,9 +102,16 @@ import {
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import { useTextOverlay } from '../../composables/useTextOverlay'
 import { useFieldControl } from '../../composables/useFieldControl'
-import { useSlotPresence } from '../../composables/dom'
+import {
+  measureClearSpace,
+  resetLeaveStyles,
+  startClearLeave,
+  useSlotPresence,
+} from '../../composables/dom'
+import { useUiMessages } from '../../messages'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useStateMotion } from '../../motion/useStateMotion'
@@ -105,6 +137,8 @@ const rawProps = withDefaults(
     invalid?: boolean
     /** Text shown while the input is empty. */
     placeholder?: string
+    /** Shows a button that empties the input while it has text. @default false */
+    clearable?: boolean
     /**
      * Crossfades a placeholder or value that changes on its own, like AnimatedText. What you type
      * never animates. @default false
@@ -120,6 +154,7 @@ const rawProps = withDefaults(
     disabled: false,
     readonly: false,
     invalid: false,
+    clearable: false,
     animated: false,
     // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
     motion: undefined,
@@ -139,6 +174,11 @@ defineSlots<{
    * `pointer-events: auto` to let it take hover, say for a popover on a mention.
    */
   display(props: { value: string; placeholder: string; focused: boolean }): unknown
+}>()
+
+const emit = defineEmits<{
+  /** Fires when the clear button empties the input. */
+  clear: []
 }>()
 
 function commit(value: string) {
@@ -188,6 +228,13 @@ function onNativeBlur(event: FocusEvent) {
   }
 }
 
+// Focus stays in the input, or comes back to it from the clear button.
+function onClear() {
+  modelValue.value = ''
+  emit('clear')
+  inputEl.value?.focus()
+}
+
 function onFrameMousedown(event: MouseEvent) {
   const target = event.target as HTMLElement
   if (target.closest('button, a, input, select, textarea, [tabindex]')) return
@@ -195,6 +242,7 @@ function onFrameMousedown(event: MouseEvent) {
   inputEl.value?.focus()
 }
 
+const messages = useUiMessages()
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const dataState = computed(() => (isInvalid.value ? 'invalid' : 'idle'))
@@ -202,10 +250,24 @@ const dataState = computed(() => (isInvalid.value ? 'invalid' : 'idle'))
 const attrs = useAttrs()
 const forward = useForwardedListener(attrs)
 const restAttrs = computed(() =>
-  omitAttrs(attrs, ['class', 'style', 'onInput', 'onChange', 'onFocus', 'onBlur']),
+  omitAttrs(attrs, [
+    'class',
+    'style',
+    'aria-describedby',
+    'onInput',
+    'onChange',
+    'onFocus',
+    'onBlur',
+  ]),
+)
+// Yours first, then the Field's description and error.
+const describedBy = computed(
+  () =>
+    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
 )
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const startEl = useTemplateRef<HTMLElement>('startEl')
 const endEl = useTemplateRef<HTMLElement>('endEl')

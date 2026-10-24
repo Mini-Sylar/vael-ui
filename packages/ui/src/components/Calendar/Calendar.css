@@ -181,6 +181,17 @@
     display: grid;
     grid-template-columns: repeat(7, minmax(2rem, 1fr));
   }
+  /* Week numbers: a narrow column before the days. */
+  .ui-calendar-root--week-numbers :is(.ui-calendar-weekdays, .ui-calendar-week) {
+    grid-template-columns: minmax(1.75rem, auto) repeat(7, minmax(2rem, 1fr));
+  }
+  .ui-calendar-week-number {
+    display: grid;
+    place-items: center;
+    font-size: calc(var(--ui-font-size) * 0.6875);
+    font-variant-numeric: tabular-nums;
+    color: var(--ui-text-muted);
+  }
   .ui-calendar-weekday {
     display: grid;
     place-items: center;

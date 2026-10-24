@@ -10,6 +10,7 @@
     :aria-disabled="disabled || undefined"
     v-bind="attrs"
     @focusout="onFocusout"
+    @keydown="onKeydown"
   >
     <div
       v-if="hasLeading"
@@ -27,6 +28,15 @@
       />
     </div>
     <div
+      ref="contentEl"
+      :class="contentPart.class"
+      :style="[{ transform: `translateX(${shown}px)` }, contentPart.style]"
+      @pointerdown="onContentPointerdown"
+      @click.capture="onContentClick"
+    >
+      <slot :open="open" :open-side="openSide" :reveal="reveal" :close="close" />
+    </div>
+    <div
       v-if="hasTrailing"
       ref="trailingActionsEl"
       :class="actionsPart.class"
@@ -41,20 +51,11 @@
         :progress="trailingProgress"
       />
     </div>
-    <div
-      ref="contentEl"
-      :class="contentPart.class"
-      :style="[{ transform: `translateX(${shown}px)` }, contentPart.style]"
-      @pointerdown="onContentPointerdown"
-      @click.capture="onContentClick"
-    >
-      <slot :open="open" :open-side="openSide" :reveal="reveal" :close="close" />
-    </div>
   </div>
 </template>
 
 <!-- Swipe-to-reveal primitive. Either or both edges (#leading-actions / #trailing-actions, drag
-     direction picks); actions stay in the DOM for a11y; tap-to-close is capture-phase. -->
+     direction picks); actions stay in the DOM for a11y, in screen order; tap-to-close is capture-phase. -->
 <script setup lang="ts">
 import './SwipeToReveal.css'
 import { withProviderDefaults } from '../../config'
@@ -187,6 +188,14 @@ function onActionsFocus(side: SwipeRevealSide) {
 function onFocusout(event: FocusEvent) {
   if (!openedByFocus) return
   if (root.value?.contains(event.relatedTarget as Node | null)) return
+  openedByFocus = false
+  close()
+}
+// Escape closes an open row, and only the row: a dialog around it stays open.
+function onKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || openSide.value === null || event.defaultPrevented) return
+  event.preventDefault()
+  event.stopPropagation()
   openedByFocus = false
   close()
 }

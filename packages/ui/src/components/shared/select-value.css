@@ -1,4 +1,13 @@
 @layer ui-components {
+  /* The combobox inside a trigger's frame fills its height; the frame draws the focus ring. */
+  .ui-select-control {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    align-self: stretch;
+    min-inline-size: 0;
+    outline: none;
+  }
   .ui-select-value {
     flex: 1 1 auto;
     min-inline-size: 0;

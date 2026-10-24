@@ -284,7 +284,17 @@ import '../shared/select-panel.css'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
-import { computed, inject, nextTick, ref, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  inject,
+  nextTick,
+  provide,
+  ref,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import Input from '../Input/Input.vue'
 import { usePopover } from '../../composables/usePopover'
@@ -294,6 +304,7 @@ import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -301,7 +312,7 @@ import { useUiMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
-import Chip from '../Chip/Chip.vue'
+import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -635,6 +646,9 @@ const open = defineModel<boolean>('open', { default: false })
 const inputRef = useTemplateRef('inputRef')
 const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
+// Removing the last focused chip puts focus back in the input.
+provide(chipFocusFallbackKey, () => inputEl.value)
+useFormReset(model, () => inputEl.value)
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 const panelTransition = useSelectPanelMotion({

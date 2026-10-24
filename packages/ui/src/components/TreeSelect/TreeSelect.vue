@@ -1,38 +1,46 @@
 <template>
+  <!-- The clear button sits beside the combobox, not in it; a press on the frame focuses the combobox. -->
   <div
     ref="triggerEl"
     :data-ui-frame="props.size"
-    role="combobox"
-    :id="fieldControl.id"
-    v-bind="triggerAttrs"
     :class="triggerPart.class"
     :style="[triggerPart.style, attrs.style as never]"
-    :tabindex="isDisabled ? -1 : 0"
-    :aria-disabled="isDisabled || undefined"
-    aria-haspopup="tree"
-    :aria-expanded="open"
-    :aria-controls="treeId"
-    :aria-describedby="fieldControl.describedBy()"
-    :aria-labelledby="(attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()"
-    :aria-invalid="isInvalid || undefined"
-    :aria-required="fieldControl.required() || undefined"
+    tabindex="-1"
     :data-state="open ? 'open' : 'closed'"
     :data-invalid="isInvalid || undefined"
     @click="onTriggerClick"
-    @keydown="onTriggerKeydown"
-    @focus="fieldControl.onFocus"
-    @blur="fieldControl.onBlur"
+    @focus="focusControl"
   >
-    <span :class="valuePart.class" :style="valuePart.style">
-      <slot name="value" :selected="selectedNodes as T[]">
-        <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
-        <LazyAnimatedText
-          :class="isEmpty && 'ui-select-placeholder'"
-          :value="isEmpty ? (placeholder ?? '') : displayLabel"
-          :motion="!!props.motion"
-        />
-      </slot>
-    </span>
+    <div
+      ref="controlEl"
+      class="ui-select-control"
+      role="combobox"
+      :id="fieldControl.id"
+      v-bind="triggerAttrs"
+      :tabindex="isDisabled ? -1 : 0"
+      :aria-disabled="isDisabled || undefined"
+      aria-haspopup="tree"
+      :aria-expanded="open"
+      :aria-controls="treeId"
+      :aria-describedby="fieldControl.describedBy()"
+      :aria-labelledby="labelledBy"
+      :aria-invalid="isInvalid || undefined"
+      :aria-required="fieldControl.required() || undefined"
+      @keydown="onTriggerKeydown"
+      @focus="fieldControl.onFocus"
+      @blur="fieldControl.onBlur"
+    >
+      <span :class="valuePart.class" :style="valuePart.style">
+        <slot name="value" :selected="selectedNodes as T[]">
+          <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+          <LazyAnimatedText
+            :class="isEmpty && 'ui-select-placeholder'"
+            :value="isEmpty ? (placeholder ?? '') : displayLabel"
+            :motion="!!props.motion"
+          />
+        </slot>
+      </span>
+    </div>
     <Transition
       name="ui-clear"
       :css="!!props.motion"
@@ -98,6 +106,8 @@
           <Tree
             ref="treeRef"
             :id="treeId"
+            :aria-labelledby="labelledBy"
+            :aria-label="labelledBy ? undefined : (attrs['aria-label'] as string | undefined)"
             v-model="model"
             v-model:query="query"
             v-model:node="nodeModel"
@@ -175,6 +185,7 @@ import { usePopover } from '../../composables/usePopover'
 import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -405,13 +416,18 @@ const isEmpty = computed(() => selectedNodes.value.length === 0)
 const displayLabel = computed(() => {
   if (selectedNodes.value.length === 0) return ''
   if (selectedNodes.value.length === 1) return selectedNodes.value[0]!.label
-  return `${selectedNodes.value.length} selected`
+  return messages.value.treeSelect.selectedCount.replace(
+    '{count}',
+    String(selectedNodes.value.length),
+  )
 })
 
 function onClear(event: MouseEvent) {
   event.preventDefault()
   model.value = props.selectionMode === 'single' ? null : []
   emit('change', model.value)
+  // The clear button goes with the value, so focus goes back to the combobox.
+  controlEl.value?.focus()
 }
 
 // Single-select commits and closes; multiple/checkbox stay open.
@@ -421,6 +437,11 @@ function onTreeSelect(node: T) {
 }
 
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
+useFormReset(model, () => triggerEl.value)
+const controlEl = useTemplateRef<HTMLElement>('controlEl')
+function focusControl() {
+  controlEl.value?.focus()
+}
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
 const panelTransition = useSelectPanelMotion({
@@ -485,6 +506,10 @@ const fieldControl = useFieldControl({
 })
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
+// The trigger's name names the tree too.
+const labelledBy = computed(
+  () => (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy(),
+)
 
 function openTree() {
   if (isDisabled.value) return
@@ -509,9 +534,13 @@ watch(
   (ready) => {
     if (!ready) return
     nextTick(() => {
-      treeRef.value?.initRoving()
-      if (props.filterable) treeRef.value?.filterInputRef?.inputEl?.focus()
-      else treeRef.value?.focusFirstRow()
+      const tree = treeRef.value
+      const selected = selectedNodes.value[0]
+      if (props.filterable) {
+        tree?.initRoving()
+        tree?.filterInputRef?.inputEl?.focus()
+      } else if (selected) tree?.focusNode(selected.value)
+      else tree?.focusFirstRow()
     })
   },
 )
@@ -521,7 +550,7 @@ watch(open, (value) => {
   nextTick(() => {
     const active = document.activeElement
     if (active instanceof Node && positionerEl.value?.contains(active)) {
-      triggerEl.value?.focus()
+      controlEl.value?.focus()
     }
   })
 })
@@ -575,7 +604,7 @@ const resolvedAlign = computed<TreeSelectAlign>(() => {
 })
 
 defineExpose({
-  /** Trigger element. */
+  /** Trigger element: the frame around the combobox and its clear button. Focusing it focuses the combobox. */
   triggerEl,
   /** Panel element (null while closed). */
   panelEl,

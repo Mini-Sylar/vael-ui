@@ -5,7 +5,7 @@
     :style="rootPart.style"
     :data-state="state"
     :data-motion="props.motion ? undefined : 'off'"
-    v-bind="attrs"
+    v-bind="rootAttrs"
   >
     <div
       :class="trackPart.class"
@@ -15,7 +15,9 @@
       :aria-valuemax="max"
       :aria-valuenow="indeterminate ? undefined : total"
       :aria-valuetext="valueText"
-      :aria-label="label"
+      :aria-label="label ?? (attrs['aria-label'] as string | undefined)"
+      :aria-labelledby="attrs['aria-labelledby'] as string | undefined"
+      :aria-describedby="attrs['aria-describedby'] as string | undefined"
     >
       <template v-if="ring">
         <svg class="ui-progress-ring" :viewBox="ring.viewBox" aria-hidden="true">
@@ -88,10 +90,15 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { ProgressMotion } from '../../motion/types'
+import { omitAttrs } from '../../composables/forwardedListeners'
 
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// Naming attributes belong on the progressbar, not the wrapper.
+const rootAttrs = computed(() =>
+  omitAttrs(attrs, ['aria-label', 'aria-labelledby', 'aria-describedby']),
+)
 const rawProps = withDefaults(
   defineProps<{
     /**

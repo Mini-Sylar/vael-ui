@@ -57,6 +57,11 @@ export interface UseDialogOptions {
   holdScrollUntilExit?: boolean
 }
 
+// Toasts, live regions and tooltips outside the dialog; a control that is also a live region still goes inert.
+const REACHABLE =
+  '.ui-toaster, [aria-live]:not([aria-live="off"]), [role="status"], [role="alert"], [role="log"], [role="tooltip"]'
+const CONTROL = 'button, a[href], input, select, textarea'
+
 // Longer than any built-in exit, so it only fires if the exit never reports its end.
 const EXIT_FALLBACK_MS = 1000
 
@@ -213,12 +218,40 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     target: () => scrollTarget.value ?? container.value ?? ssrDocument()?.body ?? null,
   })
 
-  // Contained only, for now. Applying inert page-wide would also silence anything
-  // rendered outside the dialog — Toaster, PopoverHost, skip links — which the
-  // Tab trap does not. That is a separate change from this feature.
+  const isOpen = shallowRef(false)
+
+  // Spared while the rest goes inert: toasts stay clickable, live regions still announce, tooltips still describe.
+  // One that appears later (a tooltip teleported into a box that was already inert) re-reads them.
+  const domTick = shallowRef(0)
+  const reachable = () => {
+    void domTick.value
+    return [...document.querySelectorAll<HTMLElement>(REACHABLE)].filter(
+      (el) => !el.matches(CONTROL),
+    )
+  }
+  let newcomers: MutationObserver | undefined
+  watch(isOpen, (open) => {
+    newcomers?.disconnect()
+    newcomers = undefined
+    if (!open || typeof MutationObserver === 'undefined') return
+    newcomers = new MutationObserver((records) => {
+      const arrived = records.some((record) =>
+        [...record.addedNodes].some(
+          (node) =>
+            node instanceof Element &&
+            (node.matches(REACHABLE) || node.querySelector(REACHABLE) !== null),
+        ),
+      )
+      if (arrived) domTick.value++
+    })
+    newcomers.observe(document.body, { childList: true, subtree: true })
+  })
+  onScopeDispose(() => newcomers?.disconnect())
+
+  // Overlays opened on top (a popover, a nested dialog) stay reachable too, re-read as they open.
   const inerted = useInert({
     root: () => container.value ?? ssrDocument()?.body ?? null,
-    content: contentEl,
+    content: () => (isOpen.value ? [contentEl(), ...layer.above(), ...reachable()] : contentEl()),
   })
 
   let previouslyFocused: HTMLElement | null = null
@@ -230,7 +263,6 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   // Snapshot at activate() to avoid desync on reactive flips mid-open.
   let modalActive = true
   let containedActive = false
-  const isOpen = shallowRef(false)
 
   function onDocumentKeydown(event: KeyboardEvent) {
     // Escape is dispatched by the layer stack, which picks a single winner by focus —
@@ -291,7 +323,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
       previouslyFocused = opener()
       scrollLocked.value = true
       // inert blurs whatever is focused inside it, so this must happen before the focus steal.
-      if (containedActive) inerted.value = true
+      inerted.value = true
       // Focus immediately (don't wait for animation).
       nextTick(() => {
         const panel = panelEl.value

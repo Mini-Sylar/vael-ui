@@ -38,6 +38,7 @@ import './RadioGroup.css'
 import '../shared/tokens.css'
 import { computed, provide, useAttrs, useId, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -102,6 +103,7 @@ provide<RadioGroupContext>(radioGroupKey, {
 })
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const parts = useStateMotion({
   key: 'radioGroup',
   mainPart: 'root',

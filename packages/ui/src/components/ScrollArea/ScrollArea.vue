@@ -1,9 +1,11 @@
 <template>
-  <div ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
+  <div ref="root" :class="rootPart.class" :style="rootPart.style" v-bind="rootAttrs()">
     <div
       ref="viewport"
       :class="viewportPart.class"
       :style="viewportPart.style"
+      :role="attrs['aria-label'] || attrs['aria-labelledby'] ? 'region' : undefined"
+      v-bind="nameAttrs()"
       :data-scrolling="thumbRevealed ? '' : undefined"
       v-scroll-mask="scrollMaskValue"
     >
@@ -28,6 +30,11 @@ import type { ScrollAreaMotion } from '../../motion/types'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// The name goes where the focus goes: the viewport, a region once named. Read each render: attrs aren't reactive.
+const isNameAttr = (key: string) => key === 'aria-label' || key === 'aria-labelledby'
+const rootAttrs = () =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isNameAttr(key)))
+const nameAttrs = () => Object.fromEntries(Object.entries(attrs).filter(([key]) => isNameAttr(key)))
 const props = withDefaults(
   defineProps<{
     /** Which axis (or axes) the viewport scrolls along. @default 'vertical' */

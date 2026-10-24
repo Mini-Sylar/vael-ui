@@ -1,4 +1,4 @@
-import { shallowRef, toValue, watch } from 'vue'
+import { onMounted, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
@@ -236,6 +236,8 @@ export function useSheetDrag(
   }
   // Closing leaves the panel where it is: the engine slides it out from there.
   watch(active, (value) => value && reset())
+  // Mounted already open: no change for the watch to see.
+  onMounted(() => toValue(active) && reset())
 
   let dragSource: 'handle' | 'content' | null = null
   let dragStartX = 0

@@ -21,6 +21,7 @@
       :aria-valuemax="max"
       :aria-valuetext="valueText ? valueText(modelValue) : undefined"
       :aria-disabled="isDisabled || undefined"
+      :aria-invalid="isInvalid || undefined"
       :aria-label="attrs['aria-label'] as string | undefined"
       :aria-labelledby="labelledBy"
       :aria-describedby="describedBy"
@@ -69,6 +70,7 @@ import {
   showFocusVisible,
 } from '../../composables/useFocusVisible'
 import { useKnob } from '../../composables/useKnob'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -144,6 +146,7 @@ const describedBy = computed(
 )
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const dialEl = useTemplateRef<HTMLElement>('dialEl')
 const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
 const parts = useStateMotion({

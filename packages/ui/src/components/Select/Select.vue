@@ -1,71 +1,81 @@
 <template>
+  <!-- The clear button sits beside the combobox, not in it; a press on the frame focuses the combobox. -->
   <div
     ref="triggerEl"
     :data-ui-frame="props.size"
-    role="combobox"
-    :id="fieldControl.id"
-    v-bind="triggerAttrs"
     :class="rootPart.class"
     :style="[rootPart.style, attrs.style as never]"
-    :tabindex="isDisabled ? -1 : 0"
-    :aria-disabled="isDisabled || undefined"
-    aria-haspopup="listbox"
-    :aria-expanded="open"
-    :aria-controls="listboxId"
-    :aria-activedescendant="open ? activeId : undefined"
-    :aria-describedby="fieldControl.describedBy()"
-    :aria-labelledby="(attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()"
-    :aria-invalid="isInvalid || undefined"
-    :aria-required="fieldControl.required() || undefined"
+    tabindex="-1"
     :data-state="open ? 'open' : 'closed'"
     :data-invalid="isInvalid || undefined"
     @click="onTriggerClick"
-    @keydown="onTriggerKeydown"
-    @focus="fieldControl.onFocus"
-    @blur="fieldControl.onBlur"
+    @focus="focusControl"
   >
-    <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
-      <slot name="value" :selected="selectedForSlot">
-        <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
-        <LazyAnimatedText
-          v-if="!multiple || display === 'text'"
-          :class="isEmpty && 'ui-select-placeholder'"
-          :value="isEmpty ? (placeholder ?? '') : displayLabel"
-          :motion="!!props.motion"
-        />
-        <span v-else-if="isEmpty && display === 'count'" class="ui-select-placeholder">{{
-          placeholder
-        }}</span>
-        <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
-        <!-- The chips group stays mounted when the last chip goes, so it leaves like the others
-             instead of being unmounted with its group; the placeholder slides in behind it. -->
-        <template v-else>
-          <TransitionGroup
-            v-bind="chipsTransition"
-            :data-motion="props.motion ? undefined : 'off'"
-            tag="span"
-            class="ui-select-chips"
-          >
-            <Chip
-              v-for="item in visibleChips"
-              :key="item.value"
-              :label="item.label"
-              removable
-              :disabled="isDisabled"
-              @remove="removeChip(item)"
-            />
-            <span
-              v-if="hiddenChipCount > 0"
-              key="__overflow"
-              class="ui-chip ui-chip--md ui-select-chip--overflow"
+    <div
+      ref="controlEl"
+      class="ui-select-control"
+      role="combobox"
+      :id="fieldControl.id"
+      v-bind="triggerAttrs"
+      :tabindex="isDisabled ? -1 : 0"
+      :aria-disabled="isDisabled || undefined"
+      aria-haspopup="listbox"
+      :aria-expanded="open"
+      :aria-controls="listboxId"
+      :aria-activedescendant="open && !filter ? activeId : undefined"
+      :aria-describedby="fieldControl.describedBy()"
+      :aria-labelledby="
+        (attrs['aria-labelledby'] as string | undefined) ?? fieldControl.labelledBy()
+      "
+      :aria-invalid="isInvalid || undefined"
+      :aria-required="fieldControl.required() || undefined"
+      @keydown="onTriggerKeydown"
+      @focus="fieldControl.onFocus"
+      @blur="fieldControl.onBlur"
+    >
+      <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
+        <slot name="value" :selected="selectedForSlot">
+          <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+          <LazyAnimatedText
+            v-if="!multiple || display === 'text'"
+            :class="isEmpty && 'ui-select-placeholder'"
+            :value="isEmpty ? (placeholder ?? '') : displayLabel"
+            :motion="!!props.motion"
+          />
+          <span v-else-if="isEmpty && display === 'count'" class="ui-select-placeholder">{{
+            placeholder
+          }}</span>
+          <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
+          <!-- The chips group stays mounted when the last chip goes, so it leaves like the others
+               instead of being unmounted with its group; the placeholder slides in behind it. -->
+          <template v-else>
+            <TransitionGroup
+              v-bind="chipsTransition"
+              :data-motion="props.motion ? undefined : 'off'"
+              tag="span"
+              class="ui-select-chips"
             >
-              +{{ hiddenChipCount }}
-            </span>
-          </TransitionGroup>
-          <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
-        </template>
-      </slot>
-    </span>
+              <Chip
+                v-for="item in visibleChips"
+                :key="item.value"
+                :label="item.label"
+                removable
+                :disabled="isDisabled"
+                @remove="removeChip(item)"
+              />
+              <span
+                v-if="hiddenChipCount > 0"
+                key="__overflow"
+                class="ui-chip ui-chip--md ui-select-chip--overflow"
+              >
+                +{{ hiddenChipCount }}
+              </span>
+            </TransitionGroup>
+            <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
+          </template>
+        </slot>
+      </span>
+    </div>
     <Transition
       name="ui-clear"
       :css="!!props.motion"
@@ -143,6 +153,11 @@
                 :placeholder="filterPlaceholder"
                 size="sm"
                 :aria-label="filterPlaceholder"
+                role="combobox"
+                aria-autocomplete="list"
+                :aria-expanded="open"
+                :aria-controls="listboxId"
+                :aria-activedescendant="open ? activeId : undefined"
                 @keydown="onFilterKeydown"
               >
                 <template #start>
@@ -264,7 +279,7 @@ import { useChipTransition } from '../../composables/useChipTransition'
 import '../shared/select-value.css'
 import '../shared/select-list.css'
 import '../shared/chip.css'
-import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import { computed, inject, nextTick, provide, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
 import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
@@ -272,6 +287,7 @@ import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useListbox } from '../../composables/useListbox'
 import type { ScrollAlign } from '../../composables/useVirtualizer'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -280,7 +296,7 @@ import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
 import Input from '../Input/Input.vue'
-import Chip from '../Chip/Chip.vue'
+import Chip, { chipFocusFallbackKey } from '../Chip/Chip.vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import { useRememberedSelection } from '../../composables/useRememberedSelection'
 
@@ -531,11 +547,19 @@ function onClear(event: MouseEvent) {
   event.preventDefault()
   model.value = props.multiple ? [] : null
   emit('change', model.value)
+  // The clear button goes with the value, so focus goes back to the combobox.
+  controlEl.value?.focus()
 }
 
 /** Whether the panel is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
+useFormReset(model, () => triggerEl.value)
+const controlEl = useTemplateRef<HTMLElement>('controlEl')
+function focusControl() {
+  controlEl.value?.focus()
+}
+provide(chipFocusFallbackKey, () => controlEl.value)
 const valueEl = useTemplateRef<HTMLElement>('valueEl')
 useChipRowWidth({
   row: () => valueEl.value,
@@ -644,8 +668,16 @@ function onTriggerClick() {
   else openSelect()
 }
 function onTriggerKeydown(event: KeyboardEvent) {
-  // A chip's remove button keeps its own Enter/Space.
   if (isDisabled.value || event.target !== event.currentTarget) return
+  // Chips' remove buttons are pointer-only, so the keyboard removes the last chip, as in Combobox.
+  if ((event.key === 'Backspace' || event.key === 'Delete') && props.multiple) {
+    const last = props.display === 'chip' ? selectedItems.value.at(-1) : undefined
+    if (last) {
+      event.preventDefault()
+      removeChip(last)
+    }
+    return
+  }
   if (!open.value) {
     if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
       event.preventDefault()
@@ -677,7 +709,7 @@ function onFilterKeydown(event: KeyboardEvent) {
     case 'Escape':
       event.preventDefault()
       close()
-      triggerEl.value?.focus()
+      controlEl.value?.focus()
       return
     default:
       return
@@ -765,7 +797,7 @@ function scrollToIndex(index: number, align?: ScrollAlign) {
 }
 
 defineExpose({
-  /** Trigger element. */
+  /** Trigger element: the frame around the combobox and its clear button. Focusing it focuses the combobox. */
   triggerEl,
   /** Panel element (null while closed). */
   panelEl,

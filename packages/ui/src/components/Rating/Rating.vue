@@ -13,6 +13,7 @@
     :aria-valuetext="resolveValueText(modelValue)"
     :aria-disabled="isDisabled || undefined"
     :aria-readonly="readonly || undefined"
+    :aria-invalid="fieldControl.invalid() || undefined"
     :aria-describedby="fieldControl.describedBy()"
     :aria-labelledby="fieldControl.labelledBy()"
     :data-tracking="isTracking || undefined"
@@ -64,6 +65,7 @@ import {
   showFocusVisible,
 } from '../../composables/useFocusVisible'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
+import { useFormReset } from '../../composables/useFormReset'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -158,6 +160,7 @@ function commit(value: number) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 // One element per star — an external animation library needs real nodes to stagger-reveal,
 // wobble, or morph individual stars, not just the row as a whole.
 const itemEls = useTemplateRef<HTMLElement[]>('itemEls')

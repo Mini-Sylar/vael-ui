@@ -76,26 +76,31 @@ test.each([
 })
 
 test.each([
-  ['Select', Select, { items: [{ label: 'A', value: 'a' }] }],
-  ['Combobox', Combobox, { items: [{ label: 'A', value: 'a' }] }],
-  ['TreeSelect', TreeSelect, { items: [{ value: 'a', label: 'A' }] }],
-  ['DatePicker', DatePicker, {}],
-  ['CascadeSelect', CascadeSelect, { items: [{ label: 'A', value: 'a' }] }],
+  ['Select', Select, { items: [{ label: 'A', value: 'a' }] }, 'combobox'],
+  ['Combobox', Combobox, { items: [{ label: 'A', value: 'a' }] }, 'combobox'],
+  ['TreeSelect', TreeSelect, { items: [{ value: 'a', label: 'A' }] }, 'combobox'],
+  ['DatePicker', DatePicker, {}, 'combobox'],
+  // A menu button.
+  ['CascadeSelect', CascadeSelect, { items: [{ label: 'A', value: 'a' }] }, 'button'],
 ] as const)(
-  '%s puts id, aria-* and data-* on the combobox, not the panel',
-  async (_, Comp, props) => {
+  '%s puts id, aria-* and data-* on the trigger, not the panel',
+  async (name, Comp, props, role) => {
     const screen = await render(Comp as never, {
       props: { ...props, open: true } as never,
       attrs: { id: 'fruit', 'aria-label': 'Fruit', 'data-testid': 'fruit-control' },
     })
-    const combobox = screen.getByRole('combobox', { name: 'Fruit' }).element()
+    const combobox = screen.getByRole(role, { name: 'Fruit' }).element()
     expect(combobox.id).toBe('fruit')
     expect(combobox.getAttribute('data-testid')).toBe('fruit-control')
     // The panel must not duplicate the id or steal the label.
     await new Promise((r) => setTimeout(r, 50))
     expect(document.querySelectorAll('#fruit')).toHaveLength(1)
     expect(document.querySelectorAll('[data-testid="fruit-control"]')).toHaveLength(1)
-    expect(document.querySelectorAll('[aria-label="Fruit"]')).toHaveLength(1)
+    // TreeSelect's tree takes the trigger's name on purpose; CascadeSelect reads it through a hidden
+    // copy so its value follows.
+    expect(document.querySelectorAll('[aria-label="Fruit"]:not([role="tree"])')).toHaveLength(
+      name === 'CascadeSelect' ? 0 : 1,
+    )
     screen.unmount()
   },
 )

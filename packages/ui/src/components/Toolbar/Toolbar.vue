@@ -35,7 +35,7 @@
             data-toolbar-ellipsis
             :class="overflowTriggerPart.class"
             :style="overflowTriggerPart.style"
-            :aria-label="overflowLabel"
+            :aria-label="overflowLabel ?? messages.toolbar.more"
           >
             <span class="ui-toolbar-overflow-label">&hellip;</span>
           </button>
@@ -53,6 +53,7 @@ import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useToolbar } from '../../composables/useToolbar'
+import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -78,7 +79,7 @@ const props = withDefaults(
     motion?: ToolbarMotion
   }>(),
   // `motion`: absent must read as unset, not `false` (Vue's boolean casting would turn it off).
-  { orientation: 'horizontal', overflowLabel: 'More', motion: undefined },
+  { orientation: 'horizontal', overflowLabel: undefined, motion: undefined },
 )
 
 defineSlots<{
@@ -93,6 +94,7 @@ defineSlots<{
 }>()
 
 const slots = useSlots()
+const messages = useUiMessages()
 const list = useTemplateRef<HTMLElement>('list')
 // The hover and keyboard highlight slides between the toolbar's ghost and text buttons.
 const hoverEl = useTemplateRef<HTMLElement>('hoverEl')

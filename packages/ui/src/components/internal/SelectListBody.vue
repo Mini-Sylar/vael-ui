@@ -105,6 +105,7 @@
         <LoaderMark />
       </div>
     </template>
+    <!-- Each option says its place in the whole list, which a long list renders only part of. -->
     <template v-else>
       <div :style="listStyle">
         <div
@@ -119,6 +120,8 @@
           :data-disabled="items[row.index]?.disabled || undefined"
           :aria-selected="isSelected(items[row.index])"
           :aria-disabled="items[row.index]?.disabled || undefined"
+          :aria-setsize="items.length"
+          :aria-posinset="row.index + 1"
           :style="[row.style, optionPart.style]"
           @mousemove="onRowHover(row.index)"
           @mousedown.prevent

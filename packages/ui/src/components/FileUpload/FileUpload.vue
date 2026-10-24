@@ -10,11 +10,17 @@
       <slot :is-drag-over="isDragOver" :browse="browse">
         <p class="ui-file-upload-text">{{ messages.fileUpload.drop }}</p>
         <Button
+          :id="browseId"
           type="button"
           size="sm"
           variant="secondary"
           :ui="{ root: themedUi()?.browse }"
           :disabled="isDisabled"
+          :aria-labelledby="
+            fieldControl.labelledBy() ? `${fieldControl.labelledBy()} ${browseId}` : undefined
+          "
+          :aria-describedby="fieldControl.describedBy()"
+          :aria-invalid="isInvalid || undefined"
           @click="browse"
         >
           {{ messages.fileUpload.browse }}
@@ -35,11 +41,13 @@
       :disabled="isDisabled"
       :aria-label="fieldControl.labelledBy() ? undefined : messages.fileUpload.browse"
       :aria-describedby="fieldControl.describedBy()"
+      :aria-invalid="isInvalid || undefined"
       :aria-required="fieldControl.required() || undefined"
       @change="onInputChange"
       @focus="fieldControl.onFocus"
       @blur="fieldControl.onBlur"
     />
+    <span class="ui-file-upload-status" aria-live="polite">{{ announcement }}</span>
 
     <TransitionGroup
       :ref="registerListEl"
@@ -97,6 +105,7 @@ import { transitionGroupRef } from '../../composables/dom'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFileDrop } from '../../composables/useFileDrop'
+import { useFormReset } from '../../composables/useFormReset'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -154,7 +163,7 @@ const props = withProviderDefaults(rawProps, { motion: true })
 const emit = defineEmits<{
   /** Fires for each file that `accept`, `maxSize` or `maxFiles` rejects, with the reason. */
   reject: [{ file: File; reason: FileRejectReason }]
-  /** Fires with the files accepted from a pick or drop. */
+  /** Fires with the files accepted from a pick, a drop or a paste. */
   add: [files: File[]]
   /** Fires when you remove a file from the list. */
   remove: [file: File]
@@ -172,7 +181,28 @@ const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
 const hadReject = shallowRef(false)
-const dataState = computed(() => (hadReject.value || fieldControl.invalid() ? 'invalid' : 'idle'))
+const isInvalid = computed(() => hadReject.value || fieldControl.invalid())
+const dataState = computed(() => (isInvalid.value ? 'invalid' : 'idle'))
+// In a Field, Browse reads the label first: "Attachments Browse files".
+const browseId = useId()
+
+// Rejected files are read out politely; emptied first so the same message reads again.
+const announcement = shallowRef('')
+const REJECT_MESSAGE = {
+  accept: 'rejectedAccept',
+  maxSize: 'rejectedMaxSize',
+  maxFiles: 'rejectedMaxFiles',
+} as const
+function announce(rejects: { file: File; reason: FileRejectReason }[]) {
+  announcement.value = ''
+  if (rejects.length === 0) return
+  const text = rejects
+    .map(({ file, reason }) =>
+      messages.value.fileUpload[REJECT_MESSAGE[reason]].replace('{name}', file.name),
+    )
+    .join(' ')
+  nextTick(() => (announcement.value = text))
+}
 
 function fileKey(file: File): string {
   return `${file.name}:${file.size}:${file.lastModified}`
@@ -225,32 +255,34 @@ function processFiles(incoming: File[]) {
   const limit = props.maxFiles ?? (props.multiple ? Infinity : 1)
   const seenKeys = new Set(existing.map(fileKey))
   const accepted: File[] = []
-  let rejected = false
+  const rejects: { file: File; reason: FileRejectReason }[] = []
+  const reject = (file: File, reason: FileRejectReason) => {
+    emit('reject', { file, reason })
+    rejects.push({ file, reason })
+  }
 
   for (const file of pool) {
     if (props.accept && !matchesAccept(file, props.accept)) {
-      emit('reject', { file, reason: 'accept' })
-      rejected = true
+      reject(file, 'accept')
       continue
     }
     if (props.maxSize !== undefined && file.size > props.maxSize) {
-      emit('reject', { file, reason: 'maxSize' })
-      rejected = true
+      reject(file, 'maxSize')
       continue
     }
     const key = fileKey(file)
     if (seenKeys.has(key)) continue // silent dedupe, not a rejection
     const projectedCount = (props.multiple ? existing.length : 0) + accepted.length
     if (projectedCount >= limit) {
-      emit('reject', { file, reason: 'maxFiles' })
-      rejected = true
+      reject(file, 'maxFiles')
       continue
     }
     seenKeys.add(key)
     accepted.push(file)
   }
 
-  hadReject.value = rejected
+  hadReject.value = rejects.length > 0
+  announce(rejects)
   if (accepted.length === 0) return
   accepted.forEach((file, i) => staggerIndex.set(fileKey(file), Math.min(i, STAGGER_CAP - 1)))
   modelValue.value = props.multiple ? [...existing, ...accepted] : accepted
@@ -290,6 +322,7 @@ function removeFile(file: File) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const dropzoneEl = useTemplateRef<HTMLElement>('dropzoneEl')
 
@@ -343,9 +376,11 @@ function onInputChange(event: Event) {
   target.value = '' // so picking the identical file again still fires change
 }
 
+// Drop files or a folder on the dropzone, or paste them while it has focus or the pointer.
 const { isDragOver } = useFileDrop(dropzoneEl, {
   onFiles: processFiles,
   disabled: () => isDisabled.value,
+  paste: true,
 })
 
 const cx = useClassMerge()

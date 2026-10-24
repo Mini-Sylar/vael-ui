@@ -16,6 +16,8 @@
       :class="removePart.class"
       :style="removePart.style"
       :aria-label="label ? `${messages.chip.remove} ${label}` : messages.chip.remove"
+      :tabindex="pointerOnly ? -1 : undefined"
+      :aria-hidden="pointerOnly || undefined"
       :disabled="disabled"
       @click.stop="onRemoveClick"
       @mousedown.stop.prevent
@@ -33,8 +35,15 @@
 </template>
 
 <script lang="ts">
+import type { InjectionKey } from 'vue'
+
 // Shared across instances: chips still in the DOM for a leave transition must not receive focus.
 const unmountedChips = new WeakSet<Element>()
+
+/** @internal Where focus goes when the focused chip is removed and no chip is left beside it:
+ * Select, CascadeSelect and Combobox give their own field. */
+export const chipFocusFallbackKey: InjectionKey<() => HTMLElement | null | undefined> =
+  Symbol('ui-chip-focus-fallback')
 </script>
 
 <!-- Small reusable pill; remove button stops propagation to avoid toggling parent trigger -->
@@ -43,7 +52,16 @@ import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/chip.css'
 import './Chip.css'
-import { computed, onBeforeUnmount, onUnmounted, useAttrs, useTemplateRef } from 'vue'
+import {
+  computed,
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  onUnmounted,
+  shallowRef,
+  useAttrs,
+  useTemplateRef,
+} from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -106,6 +124,13 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+// Inside a combobox or button (Select's trigger) nothing may be interactive: the remove is for the
+// pointer only, and the field removes the last chip with Backspace instead.
+const pointerOnly = shallowRef(false)
+onMounted(() => {
+  pointerOnly.value = !!root.value?.parentElement?.closest('[role="combobox"], [role="button"]')
+})
+const focusFallback = inject(chipFocusFallbackKey, null)
 const parts = useStateMotion({
   key: 'chip',
   // A shared style's press look only on a chip you can click or focus.
@@ -120,14 +145,14 @@ const parts = useStateMotion({
 })
 
 const FOCUSABLE =
-  'button:not(:disabled), [href], input:not(:disabled), [tabindex]:not([tabindex="-1"])'
+  'button:not(:disabled, [tabindex="-1"]), [href], input:not(:disabled), [tabindex]:not([tabindex="-1"])'
 
 function focusTargetOf(chip: Element): HTMLElement | null {
   if (chip.matches('[tabindex]:not([tabindex="-1"])')) return chip as HTMLElement
   return chip.querySelector<HTMLElement>(FOCUSABLE)
 }
 
-// Removing the focused chip would drop focus to <body>; hand it to a neighbour instead.
+// Removing the focused chip would drop focus to <body>; hand it to a neighbour, or the field.
 let focusAfterUnmount: HTMLElement | null = null
 onBeforeUnmount(() => {
   const el = root.value
@@ -145,7 +170,11 @@ onBeforeUnmount(() => {
     }
     return null
   }
-  focusAfterUnmount = pick(siblings.slice(index + 1)) ?? pick(siblings.slice(0, index).reverse())
+  focusAfterUnmount =
+    pick(siblings.slice(index + 1)) ??
+    pick(siblings.slice(0, index).reverse()) ??
+    focusFallback?.() ??
+    null
 })
 onUnmounted(() => {
   const target = focusAfterUnmount

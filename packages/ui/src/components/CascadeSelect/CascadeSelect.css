@@ -42,15 +42,23 @@
       border-color: var(--ui-border-strong);
     }
   }
-  /* Div role="combobox" needs own focus-visible. */
-  .ui-cascade-select-trigger:focus-visible {
+  /* The button inside the frame fills its height; the frame rings while it has keyboard focus. */
+  .ui-cascade-select-control {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    align-self: stretch;
+    min-inline-size: 0;
+    outline: none;
+  }
+  .ui-cascade-select-trigger:has(> .ui-cascade-select-control:focus-visible) {
     outline: 2px solid var(--ui-primary);
     outline-offset: 2px;
   }
   .ui-cascade-select-trigger[data-invalid] {
     border-color: var(--ui-danger);
   }
-  .ui-cascade-select-trigger[data-invalid]:focus-visible {
+  .ui-cascade-select-trigger[data-invalid]:has(> .ui-cascade-select-control:focus-visible) {
     outline-color: var(--ui-danger);
   }
   .ui-cascade-select-trigger--disabled {

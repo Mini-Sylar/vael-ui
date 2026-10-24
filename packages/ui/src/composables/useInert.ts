@@ -44,7 +44,11 @@ function release(el: HTMLElement) {
  * elsewhere), nothing inside `root` needs to stay reachable, so the whole of it goes inert.
  */
 function collectInertTargets(root: HTMLElement, contents: HTMLElement[]): HTMLElement[] {
-  const insideContents = contents.filter((content) => root.contains(content))
+  const inRoot = contents.filter((content) => root.contains(content))
+  // A content inside another is kept by the outer one's subtree; walking it would inert its siblings.
+  const insideContents = inRoot.filter(
+    (content) => !inRoot.some((other) => other !== content && other.contains(content)),
+  )
 
   if (insideContents.length === 0) {
     const targets: HTMLElement[] = []

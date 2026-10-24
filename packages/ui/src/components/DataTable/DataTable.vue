@@ -15,7 +15,8 @@
       ref="scrollXEl"
       class="ui-datatable-scroll-x"
       :data-frozen="frozenColumns > 0 || undefined"
-      :role="scrollHeight ? 'table' : undefined"
+      :role="scrollHeight ? (selectable ? 'grid' : 'table') : undefined"
+      :aria-multiselectable="(scrollHeight && multiselectable) || undefined"
       :aria-busy="(scrollHeight && loading) || undefined"
     >
       <template v-if="scrollHeight">
@@ -82,6 +83,8 @@
         v-else
         :class="tablePart().class"
         :style="tablePart().style"
+        :role="selectable ? 'grid' : undefined"
+        :aria-multiselectable="multiselectable || undefined"
         :aria-busy="loading || undefined"
       >
         <DataTableHead ref="headComponent" v-bind="headProps" />
@@ -112,7 +115,11 @@
 
     <!-- Always mounted: a live region created on demand isn't reliably read out. -->
     <span class="ui-datatable-status" role="status" aria-live="polite">{{
-      loading ? messages.dataTable.loading : ''
+      loading ? messages.dataTable.loading : announcement
+    }}</span>
+    <!-- Each row checkbox reads this, then its row's first cell. -->
+    <span v-if="selectColumnRendered" :id="selectLabelId" hidden>{{
+      messages.dataTable.selectRow
     }}</span>
 
     <!-- display:none keeps Column children mounted for registration without rendering them -->
@@ -146,7 +153,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import { useSlotPresence } from '../../composables/dom'
+import { inlineKey, useSlotPresence } from '../../composables/dom'
 import { useEventListener } from '@vueuse/core'
 import ColumnImpl from '../Column.vue'
 import { radioGroupKey } from '../RadioGroup/RadioGroup.vue'
@@ -340,6 +347,8 @@ const messages = useUiMessages()
 const selectColumnRendered = computed(() => props.selectable && props.selectionMode === 'checkbox')
 const selectableRows = computed(() => props.selectable && props.selectionMode === 'row')
 const expansionColumnRendered = computed(() => hasSlot('expansion') && !stacked.value)
+// Selectable rows carry aria-selected, which only a grid allows.
+const multiselectable = computed(() => props.selectable && !props.single)
 const colCount = computed(() => {
   let count = columns.value.length
   if (selectColumnRendered.value) count++
@@ -467,15 +476,23 @@ function isExpanded(row: T): boolean {
 }
 // Row keys can hold characters an id can't, so ids come from a per-key counter.
 const tableId = useId()
-const expansionIds = new Map<string | number, string>()
-function expansionId(row: T): string {
+const rowIdIndex = new Map<string | number, number>()
+function rowIdSuffix(row: T): number {
   const key = getRowKey(row)
-  let id = expansionIds.get(key)
-  if (!id) {
-    id = `${tableId}-expansion-${expansionIds.size}`
-    expansionIds.set(key, id)
+  let index = rowIdIndex.get(key)
+  if (index === undefined) {
+    index = rowIdIndex.size
+    rowIdIndex.set(key, index)
   }
-  return id
+  return index
+}
+function expansionId(row: T): string {
+  return `${tableId}-expansion-${rowIdSuffix(row)}`
+}
+const selectLabelId = `${tableId}-select-label`
+// The row's first cell, which names its checkbox.
+function rowLabelId(row: T): string {
+  return `${tableId}-label-${rowIdSuffix(row)}`
 }
 function toggleExpand(row: T) {
   const key = getRowKey(row)
@@ -770,6 +787,96 @@ function onResizePointerup(event: PointerEvent) {
 }
 onBeforeUnmount(stopResize)
 
+// Read politely through the status region: keyboard resizes and column moves.
+const announcement = ref('')
+function columnLabel(col: RegisteredColumn<T>): string {
+  return col.label ?? String(col.field)
+}
+// Widths for the resize handles' aria-valuenow, until a resize sets its own.
+const measuredWidths = shallowReactive(new Map<RegisteredColumn<T>, number>())
+function measureColumnWidths() {
+  for (const col of orderedColumns.value) {
+    if (!isColumnResizable(col) || resizedColumns.has(toRaw(col))) continue
+    const th = headerElement(col.field as string | number)
+    if (!th) continue
+    const width = Math.round(th.getBoundingClientRect().width)
+    if (measuredWidths.get(toRaw(col)) !== width) measuredWidths.set(toRaw(col), width)
+  }
+}
+function columnWidthNow(col: RegisteredColumn<T>): number | undefined {
+  const width = resizedWidths.get(toRaw(col)) ?? measuredWidths.get(toRaw(col))
+  return width === undefined ? undefined : Math.round(width)
+}
+const KEYBOARD_RESIZE_STEP = 16 // px, as Resizable
+function onResizeKeydown(col: RegisteredColumn<T>, event: KeyboardEvent) {
+  if (event.altKey) return
+  const handle = event.currentTarget as HTMLElement
+  // Right to left the handle sits on the left edge, so ArrowLeft grows the column.
+  const key = inlineKey(event.key, handle)
+  const step =
+    key === 'ArrowRight' ? KEYBOARD_RESIZE_STEP : key === 'ArrowLeft' ? -KEYBOARD_RESIZE_STEP : 0
+  if (!step) return
+  event.preventDefault()
+  const th = handle.closest('th')
+  if (!th) return
+  const start = resizedWidths.get(toRaw(col)) ?? th.getBoundingClientRect().width
+  const width = Math.max(MIN_COLUMN_WIDTH, Math.round(start + step))
+  setColumnWidth(col, width)
+  announcement.value = messages.value.dataTable.columnWidth
+    .replace('{label}', columnLabel(col))
+    .replace('{width}', String(width))
+}
+
+// Alt + ArrowLeft / ArrowRight moves a reorderable column one place, from its header.
+async function onHeaderKeydown(col: RegisteredColumn<T>, event: KeyboardEvent) {
+  if (!event.altKey || event.ctrlKey || event.metaKey || !isColumnReorderable(col)) return
+  const th = event.currentTarget as HTMLElement
+  const key = inlineKey(event.key, th)
+  const step = key === 'ArrowRight' ? 1 : key === 'ArrowLeft' ? -1 : 0
+  if (!step) return
+  event.preventDefault()
+  const columnsNow = orderedColumns.value
+  const from = columnsNow.indexOf(col)
+  const to = from + step
+  const target = columnsNow[to]
+  if (from === -1 || !target || !isColumnReorderable(target)) return
+  const value = col.field as string | number
+  const details: SortableDropDetails = {
+    value,
+    from: { parentValue: null, index: from, depth: 0 },
+    to: { parentValue: null, index: to, depth: 0 },
+  }
+  if (props.canDrop && !props.canDrop(details)) return
+  if (props.beforeDrop) {
+    try {
+      if (!(await props.beforeDrop(details))) return
+    } catch (error) {
+      emit('drop-error', error, details)
+      return
+    }
+  }
+  const focused = document.activeElement as HTMLElement | null
+  commitColumnMove(value, to)
+  announcement.value = messages.value.sortable.moved
+    .replace('{label}', columnLabel(col))
+    .replace('{position}', String(to + 1))
+    .replace('{total}', String(columnsNow.length))
+  // Moving the header can drop focus; it stays where it was.
+  await nextTick()
+  if (focused?.isConnected && document.activeElement !== focused)
+    focused.focus({ preventScroll: true })
+}
+function commitColumnMove(value: string | number, toIndex: number) {
+  const current = orderedColumns.value.map((column) => column.field)
+  const from = current.indexOf(value as keyof T)
+  if (from === -1) return
+  const next = [...current]
+  const [moved] = next.splice(from, 1)
+  next.splice(Math.min(Math.max(toIndex, 0), next.length), 0, moved!)
+  columnOrder.value = next
+  emit('column-reorder', next)
+}
+
 const UTILITY_COLUMN_WIDTH = 44 // px, matches the 2.75rem select/expand cells
 const leadingFixedWidth = computed(() => {
   let width = 0
@@ -869,6 +976,7 @@ onMounted(() => {
   resizeObserver = new ResizeObserver(() => {
     recomputeFrozenOffsets()
     recomputeHeaderHeight()
+    measureColumnWidths()
   })
   syncHeaderObserver()
 })
@@ -995,16 +1103,7 @@ const {
     },
     beforeDrop: props.beforeDrop ? (details) => props.beforeDrop!(details) : undefined,
     onDropError: (error, details) => emit('drop-error', error, details),
-    onCommit: (value, to) => {
-      const current = orderedColumns.value.map((column) => column.field)
-      const from = current.indexOf(value as keyof T)
-      if (from === -1) return
-      const next = [...current]
-      const [moved] = next.splice(from, 1)
-      next.splice(Math.min(Math.max(to.index, 0), next.length), 0, moved!)
-      columnOrder.value = next
-      emit('column-reorder', next)
-    },
+    onCommit: (value, to) => commitColumnMove(value, to.index),
   },
   () => props.reorderableColumns,
 )
@@ -1044,6 +1143,10 @@ const headProps = computed(() => ({
   onToggleSelectAll: toggleSelectAll,
   onToggleSort: toggleSort,
   onResizePointerdown,
+  onResizeKeydown,
+  onResizeFocus: measureColumnWidths,
+  columnWidthNow,
+  onHeaderKeydown,
   isColumnReorderable,
   columnGripVisibility: props.columnGripVisibility,
   draggingColumn: draggingColumn.value,
@@ -1110,6 +1213,8 @@ const bodyProps = computed(() => ({
   onRowFocus,
   onRowKeydown,
   expansionId,
+  rowLabelId,
+  selectLabelId,
   onToggleSelect: toggleSelect,
   onToggleExpand: toggleExpand,
   onRowClick,

@@ -235,8 +235,10 @@ test('panel inline-size matches the trigger width (matchReferenceWidth)', async 
   await expect.element(screen.getByRole('listbox')).toBeInTheDocument()
 
   const panel = document.querySelector<HTMLElement>('.ui-select-panel')!
+  // The panel matches the trigger's frame, which holds the combobox and its clear button.
+  const frame = trigger.element().closest('.ui-select-trigger')!
   await vi.waitFor(() => {
-    const triggerWidth = trigger.element().getBoundingClientRect().width
+    const triggerWidth = frame.getBoundingClientRect().width
     const panelWidth = panel.getBoundingClientRect().width
     expect(Math.abs(triggerWidth - panelWidth)).toBeLessThan(1)
   })
@@ -286,7 +288,8 @@ test('invalid sets data-invalid on the trigger (not just a class) — the animat
     },
   })
   const el = screen.getByRole('combobox').element() as HTMLElement
-  expect(el.hasAttribute('data-invalid')).toBe(true)
+  // The frame carries the styling hook, the combobox inside it the state.
+  expect(el.closest('.ui-select-trigger')!.hasAttribute('data-invalid')).toBe(true)
   expect(el.getAttribute('aria-invalid')).toBe('true')
 })
 

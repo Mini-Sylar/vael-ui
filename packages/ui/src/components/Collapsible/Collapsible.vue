@@ -18,6 +18,7 @@
       ref="panel"
       :id="panelId"
       role="region"
+      :aria-labelledby="triggerId"
       :class="panelPart.class"
       :style="[collapseStyle, panelPart.style]"
       :data-state="collapseState"
@@ -36,7 +37,7 @@
 import './Collapsible.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, useAttrs, useId, useTemplateRef, watchEffect } from 'vue'
+import { computed, shallowRef, useAttrs, useId, useTemplateRef, watchEffect } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { useCollapse } from '../../composables/useCollapse'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -81,6 +82,8 @@ function onToggle() {
 }
 
 const panelId = useId()
+// The trigger names the panel's region.
+const triggerId = shallowRef<string>()
 
 const root = useTemplateRef<HTMLElement>('root')
 const triggerWrapper = useTemplateRef<HTMLElement>('triggerWrapper')
@@ -107,6 +110,8 @@ function syncTrigger() {
     triggerWrapper.value?.querySelector<HTMLElement>('button, [role="button"], a[href]') ??
     (triggerWrapper.value?.firstElementChild as HTMLElement | null)
   if (!trigger) return
+  if (!trigger.id) trigger.id = `${panelId}-trigger`
+  triggerId.value = trigger.id
   trigger.setAttribute('aria-expanded', String(open.value))
   trigger.setAttribute('aria-controls', panelId)
   if (props.disabled) trigger.setAttribute('aria-disabled', 'true')

@@ -6,6 +6,7 @@
     :class="rootPart.class"
     :style="rootPart.style"
     :data-invalid="isInvalid || undefined"
+    :data-indicator-placed="indicatorPlaced || undefined"
     :aria-labelledby="fieldControl.labelledBy()"
     :aria-describedby="fieldControl.describedBy()"
     :aria-invalid="isInvalid || undefined"
@@ -67,6 +68,7 @@ import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -157,6 +159,7 @@ function onInputChange(item: T, event: Event) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const parts = useStateMotion({
   key: 'selectButton',
   mainPart: 'root',
@@ -183,7 +186,7 @@ const indicatorMotion = useIndicatorMotion({
   indicator: () => indicatorEl.value,
   parts: () => parts(),
 })
-const { style: indicatorStyle } = useTabIndicator(modelValue, {
+const { style: indicatorStyle, placed: indicatorPlaced } = useTabIndicator(modelValue, {
   listEl: root,
   selector: '[data-checked]',
   indicatorEl,

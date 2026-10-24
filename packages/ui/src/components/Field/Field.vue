@@ -164,6 +164,7 @@ const isInvalid = computed(() => !!props.error)
 provide<FieldContext>(fieldKey, {
   controlId,
   labelId,
+  hasLabel: () => !!(props.label || slots.label),
   describedBy: () => describedBy.value,
   invalid: () => isInvalid.value,
   required: () => !!props.required,

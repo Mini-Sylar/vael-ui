@@ -10,6 +10,7 @@
       v-bind="restAttrs"
       :value="value"
       :aria-pressed="ariaPressed"
+      :role="role"
       :type="isButtonTag ? type : undefined"
       :class="rootPart.class"
       :disabled="isButtonTag ? disabled : undefined"
@@ -24,9 +25,9 @@
       @pointerup="releaseHold"
       @pointerleave="releaseHold"
       @pointercancel="releaseHold"
-      @keydown="onHoldKeydown"
-      @keyup="onHoldKeyup"
-      @blur="releaseHold"
+      @keydown="onKeydown"
+      @keyup="onKeyup"
+      @blur="onBlur"
       @contextmenu="holdMs && $event.preventDefault()"
     >
       <span
@@ -84,6 +85,7 @@
     v-bind="restAttrs"
     :value="value"
     :aria-pressed="ariaPressed"
+    :role="role"
     :type="isButtonTag ? type : undefined"
     :class="rootPart.class"
     :disabled="isButtonTag ? disabled : undefined"
@@ -98,9 +100,9 @@
     @pointerup="releaseHold"
     @pointerleave="releaseHold"
     @pointercancel="releaseHold"
-    @keydown="onHoldKeydown"
-    @keyup="onHoldKeyup"
-    @blur="releaseHold"
+    @keydown="onKeydown"
+    @keyup="onKeyup"
+    @blur="onBlur"
     @contextmenu="holdMs && $event.preventDefault()"
   >
     <span
@@ -317,16 +319,28 @@ const { loading: autoLoading, run } = useAsyncLoading()
 const isLoading = computed(() => (props.loading === 'auto' ? autoLoading.value : props.loading))
 
 const isButtonTag = computed(() => props.as === 'button')
-// Non-button tags use aria-disabled (no native disabled attribute).
-const ariaDisabled = computed<true | undefined>(() => {
+// A plain tag with no semantics of its own (div, span, a without href) acts as a button.
+const INTERACTIVE_TAGS = new Set(['button', 'input', 'select', 'textarea', 'summary'])
+const actsAsButton = computed(() => {
+  const tag = props.as
+  if (!/^[a-z][a-z0-9]*$/.test(tag) || INTERACTIVE_TAGS.has(tag)) return false
+  return !((tag === 'a' || tag === 'area') && attrs.href != null)
+})
+const role = computed(
+  () => (attrs.role as string | undefined) ?? (actsAsButton.value ? 'button' : undefined),
+)
+// Non-button tags use aria-disabled (no native disabled attribute); your own aria-disabled stays.
+const ariaDisabled = computed(() => {
   if (isButtonTag.value && props.disabled) return undefined
-  return isLoading.value || props.disabled ? true : undefined
+  if (isLoading.value || props.disabled) return true
+  return attrs['aria-disabled'] as boolean | 'true' | 'false' | undefined
 })
 // An explicit incoming tabindex (e.g. a roving-tabindex tablist) always wins
 // — this only supplies the non-button-tag disabled fallback otherwise.
 const rootTabindex = computed(() => {
   if (attrs.tabindex !== undefined) return attrs.tabindex as number | string
-  return !isButtonTag.value && props.disabled ? -1 : undefined
+  if (!isButtonTag.value && props.disabled) return -1
+  return actsAsButton.value ? 0 : undefined
 })
 
 // Hold: the fill runs while you hold, and only the click fired on completion gets through.
@@ -396,6 +410,30 @@ function onHoldKeyup(event: KeyboardEvent) {
   if (event.key === ' ' || event.key === 'Enter') releaseHold()
 }
 onScopeDispose(() => holdKit?.dispose())
+
+// A plain tag acting as a button: Enter clicks on keydown, Space on keyup, as a native button does.
+let spaceDown = false
+function onKeydown(event: KeyboardEvent) {
+  onHoldKeydown(event)
+  if (!actsAsButton.value || holdMs.value || event.target !== event.currentTarget) return
+  if (event.key === ' ') {
+    event.preventDefault()
+    spaceDown = true
+  } else if (event.key === 'Enter') {
+    event.preventDefault()
+    el.value?.click()
+  }
+}
+function onKeyup(event: KeyboardEvent) {
+  const click = event.key === ' ' && spaceDown
+  if (event.key === ' ') spaceDown = false
+  onHoldKeyup(event)
+  if (click) el.value?.click()
+}
+function onBlur() {
+  spaceDown = false
+  releaseHold()
+}
 
 // Detects promise-returning handlers to trigger auto-loading.
 function onRootClick(event: MouseEvent) {

@@ -3,7 +3,7 @@
      the start margin in a fixed-width row (the value area widens under it), the end margin in a
      content-sized one (the row closes up). Measured into --ui-clear-start/-end by the hooks. */
   /* Named with the buttons so these beat each button's own base rules, whatever order they load in. */
-  :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
+  :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear, .ui-input-clear):is(
     .ui-clear-enter-active,
     .ui-clear-leave-active
   ) {
@@ -15,12 +15,17 @@
       margin-inline-end var(--ui-duration-press) var(--ui-ease-out);
   }
   /* Leaving fades out quicker than it came in. */
-  :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear).ui-clear-leave-active {
+  :is(
+    .ui-select-clear,
+    .ui-combobox-clear,
+    .ui-cascade-select-clear,
+    .ui-input-clear
+  ).ui-clear-leave-active {
     transition-duration:
       calc(var(--ui-duration-press) * 0.75), var(--ui-duration-press), var(--ui-duration-press),
       var(--ui-duration-press);
   }
-  :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
+  :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear, .ui-input-clear):is(
     .ui-clear-enter-from,
     .ui-clear-leave-to
   ) {
@@ -32,13 +37,13 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
+    :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear, .ui-input-clear):is(
       .ui-clear-enter-active,
       .ui-clear-leave-active
     ) {
       transition: opacity var(--ui-duration-press) ease-out;
     }
-    :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
+    :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear, .ui-input-clear):is(
       .ui-clear-enter-from,
       .ui-clear-leave-to
     ) {

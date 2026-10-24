@@ -24,7 +24,7 @@
       :disabled="isDisabled"
       :readonly="readonly || undefined"
       :rows="rows"
-      :aria-describedby="fieldControl.describedBy()"
+      :aria-describedby="describedBy"
       :aria-invalid="isInvalid || undefined"
       :aria-required="fieldControl.required() || undefined"
       :data-ui-display="hasSlot('display') ? 'all' : undefined"
@@ -81,6 +81,7 @@ import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -259,7 +260,20 @@ watch(
 const attrs = useAttrs()
 const forward = useForwardedListener(attrs)
 const restAttrs = computed(() =>
-  omitAttrs(attrs, ['class', 'style', 'onInput', 'onChange', 'onFocus', 'onBlur']),
+  omitAttrs(attrs, [
+    'class',
+    'style',
+    'aria-describedby',
+    'onInput',
+    'onChange',
+    'onFocus',
+    'onBlur',
+  ]),
+)
+// Yours first, then the Field's description and error.
+const describedBy = computed(
+  () =>
+    [attrs['aria-describedby'], fieldControl.describedBy()].filter(Boolean).join(' ') || undefined,
 )
 
 const textareaStyle = computed(() => ({
@@ -268,6 +282,7 @@ const textareaStyle = computed(() => ({
 }))
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const parts = useStateMotion({
   key: 'textarea',
   mainPart: 'root',

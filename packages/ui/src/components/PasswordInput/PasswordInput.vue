@@ -70,7 +70,7 @@
     >
       <div :class="hintPart.class" :style="hintPart.style">
         <slot name="hint" :value="modelValue" :results="ruleResults">
-          <ul :class="hintListPart.class" :style="hintListPart.style" aria-live="polite">
+          <ul :id="hintListId" :class="hintListPart.class" :style="hintListPart.style">
             <li
               v-for="result in ruleResults"
               :key="result.label"
@@ -90,11 +90,18 @@
                 </svg>
               </span>
               {{ result.label }}
+              <span class="ui-password-input-sr">{{
+                result.passed ? messages.passwordInput.met : messages.passwordInput.unmet
+              }}</span>
             </li>
           </ul>
         </slot>
       </div>
     </Transition>
+    <!-- One polite announcement per change, not the whole list on every keystroke. -->
+    <span v-if="resolvedRules.length" class="ui-password-input-status" aria-live="polite">{{
+      announcement
+    }}</span>
   </div>
 
   <Popover
@@ -113,7 +120,7 @@
   >
     <template #default>
       <slot name="hint" :value="modelValue" :results="ruleResults">
-        <ul :class="hintListPart.class" :style="hintListPart.style" aria-live="polite">
+        <ul :id="hintListId" :class="hintListPart.class" :style="hintListPart.style">
           <li
             v-for="result in ruleResults"
             :key="result.label"
@@ -133,6 +140,9 @@
               </svg>
             </span>
             {{ result.label }}
+            <span class="ui-password-input-sr">{{
+              result.passed ? messages.passwordInput.met : messages.passwordInput.unmet
+            }}</span>
           </li>
         </ul>
       </slot>
@@ -166,7 +176,7 @@ import type { BeforeClose } from '../../motion/types'
 import './PasswordInput.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, shallowRef, useAttrs, useSlots, useTemplateRef } from 'vue'
+import { computed, shallowRef, useAttrs, useId, useSlots, useTemplateRef, watch } from 'vue'
 import { useSlotPresence } from '../../composables/dom'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Input from '../Input/Input.vue'
@@ -279,6 +289,17 @@ const ruleResults = computed<PasswordRuleResult[]>(() =>
   resolvedRules.value.map((rule) => ({ label: rule.label, passed: rule.test(modelValue.value) })),
 )
 
+// Reads only the requirements that just changed, e.g. "A number met".
+const announcement = shallowRef('')
+watch(ruleResults, (next, prev) => {
+  const changed = next.filter((result, i) => prev[i] && prev[i].passed !== result.passed)
+  if (!changed.length) return
+  const { met, unmet } = messages.value.passwordInput
+  announcement.value = changed
+    .map((result) => `${result.label} ${result.passed ? met : unmet}`)
+    .join(', ')
+})
+
 const slots = useSlots()
 const hasSlot = useSlotPresence(slots)
 // Nothing to show: no rules and no #hint override — don't mount an empty popover/hint.
@@ -347,7 +368,15 @@ const innerUi = computed(() => ({ root: themedUi()?.frame, input: themedUi()?.in
 // Two roots (the field and the hints popover), so attrs are routed by hand:
 // class and style to the wrapper, everything else to the input.
 const attrs = useAttrs()
-const inputAttrs = computed(() => omitAttrs(attrs, ['class', 'style']))
+// The requirements list describes the input, after your own description.
+const hintListId = useId()
+const inputAttrs = computed(() => ({
+  ...omitAttrs(attrs, ['class', 'style']),
+  'aria-describedby':
+    [attrs['aria-describedby'], hasHintContent.value && !hasSlot('hint') ? hintListId : undefined]
+      .filter(Boolean)
+      .join(' ') || undefined,
+}))
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-password-input'))
 const togglePart = computed(() =>
   resolveUiPart(

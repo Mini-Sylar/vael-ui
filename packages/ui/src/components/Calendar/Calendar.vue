@@ -1,7 +1,7 @@
 <template>
   <div
     ref="rootEl"
-    :class="rootPart.class"
+    :class="[rootPart.class, showWeekNumbers && 'ui-calendar-root--week-numbers']"
     :style="rootPart.style"
     :data-motion="motionOn ? undefined : 'off'"
   >
@@ -159,6 +159,7 @@
                 </Transition>
               </div>
               <div :class="weekdaysPart.class" :style="weekdaysPart.style" aria-hidden="true">
+                <span v-if="showWeekNumbers" class="ui-calendar-week-number" />
                 <span
                   v-for="(label, i) in weekdayLabels"
                   :key="i"
@@ -186,6 +187,14 @@
                       role="row"
                       class="ui-calendar-week"
                     >
+                      <div
+                        v-if="showWeekNumbers"
+                        role="rowheader"
+                        class="ui-calendar-week-number"
+                        :aria-label="weekLabel(week)"
+                      >
+                        {{ isoWeek(week) }}
+                      </div>
                       <div
                         v-for="day in week"
                         :key="isoDate(day)"
@@ -226,6 +235,7 @@
                 role="grid"
                 :aria-label="headerLabel"
                 class="ui-calendar-month-grid"
+                @keydown="onMonthKeydown"
               >
                 <div
                   v-for="(row, ri) in monthRows"
@@ -238,7 +248,7 @@
                     :key="month.getMonth()"
                     :data-month="month.getMonth()"
                     role="gridcell"
-                    tabindex="0"
+                    :tabindex="month.getMonth() === viewDate.getMonth() ? 0 : -1"
                     :aria-selected="isMonthSelected(month) || undefined"
                     :aria-disabled="isMonthDisabled(month) || undefined"
                     class="ui-calendar-month-cell"
@@ -264,6 +274,7 @@
                 role="grid"
                 :aria-label="headerLabel"
                 class="ui-calendar-year-grid"
+                @keydown="onYearKeydown"
               >
                 <div
                   v-for="(row, ri) in yearRows"
@@ -276,7 +287,7 @@
                     :key="year"
                     :data-year="year"
                     role="gridcell"
-                    tabindex="0"
+                    :tabindex="year === yearStop ? 0 : -1"
                     :aria-selected="isYearSelected(year) || undefined"
                     :aria-disabled="isYearDisabled(year) || undefined"
                     class="ui-calendar-year-cell"
@@ -316,7 +327,7 @@ export type CalendarView = 'date' | 'month' | 'year'
      Model: `Date | CalendarRange | null`, never ISO strings (timezone footguns).
      Range: two-click state machine; landing before start restarts (no silent swap).
      view vs navLevel: view is prop granularity; navLevel can drill up/down temporarily.
-     Keyboard (date): ARIA APG pattern with roving focusedDate; Month/year grids use Tab between tabindex="0" cells.
+     Keyboard: ARIA APG grid pattern, one roving tab stop per level (focusedDate, viewDate's month, focusedYear).
      Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motion=false disables. -->
 <script setup lang="ts">
 import { inlineKey, prefersReducedMotion } from '../../composables/dom'
@@ -377,6 +388,8 @@ const rawProps = withDefaults(
      * @default false
      */
     showYearButtons?: boolean
+    /** Shows each week's number (ISO 8601) at the start of its row. @default false */
+    showWeekNumbers?: boolean
     /**
      * `false` skips the month change's slide. An object restyles it: give the `label` and `grid`
      * looks as values, or as functions of `where.direction` (`1` forward, `-1` back). @default true
@@ -404,6 +417,7 @@ const rawProps = withDefaults(
     firstDayOfWeek: undefined,
     months: 1,
     showYearButtons: false,
+    showWeekNumbers: false,
     motion: undefined,
     ui: undefined,
   },
@@ -588,6 +602,7 @@ watch(
     zoom.value = LEVEL_DEPTH[to] > LEVEL_DEPTH[from] ? 'out' : 'in'
     zoomLink = LEVEL_DEPTH[to] > LEVEL_DEPTH[from] ? to : from
     if (zoom.value === 'in') linkCellOrigin()
+    if (to === 'year') focusedYear.value = viewDate.value.getFullYear()
   },
   { flush: 'sync' },
 )
@@ -658,6 +673,13 @@ const yearRows = computed<number[][]>(() => {
 })
 
 const canDrill = computed(() => navLevel.value !== 'year')
+// The year grid's tab stop: the focused year while it's on show, else viewDate's.
+const focusedYear = ref(viewDate.value.getFullYear())
+const yearStop = computed(() =>
+  yearsInWindow.value.includes(focusedYear.value)
+    ? focusedYear.value
+    : viewDate.value.getFullYear(),
+)
 
 function monthYearFormat(month: Date): string {
   return new Intl.DateTimeFormat(props.locale, { month: 'long', year: 'numeric' }).format(month)
@@ -694,6 +716,18 @@ const weekdayLabels = computed(() => {
 })
 function cellLabel(day: Date): string {
   return new Intl.DateTimeFormat(props.locale, { dateStyle: 'full' }).format(day)
+}
+// The ISO week of the row's Thursday, which shares its week with most of the row whatever day
+// the week starts on.
+function isoWeek(week: Date[]): number {
+  const thursday = week.find((day) => day.getDay() === 4)!
+  const dayOfYear = Math.round(
+    (startOfDay(thursday).getTime() - new Date(thursday.getFullYear(), 0, 1).getTime()) / 864e5,
+  )
+  return Math.floor(dayOfYear / 7) + 1
+}
+function weekLabel(week: Date[]): string {
+  return messages.value.calendar.weekNumber.replace('{week}', String(isoWeek(week)))
 }
 function monthLabel(month: Date): string {
   return new Intl.DateTimeFormat(props.locale, { month: 'short' }).format(month)
@@ -737,6 +771,13 @@ function rangeBounds(): { start: Date; end: Date } | null {
       : { start: hoveredDate.value, end: start }
   }
   return null
+}
+// The committed days between a range's ends; a hover preview isn't a selection.
+function isBetweenEnds(day: Date): boolean {
+  const value = model.value
+  if (!isRange(value) || !value.start || !value.end) return false
+  const [from, to] = value.start <= value.end ? [value.start, value.end] : [value.end, value.start]
+  return day > startOfDay(from) && day < startOfDay(to)
 }
 function isDayInRange(day: Date): boolean {
   const bounds = rangeBounds()
@@ -909,6 +950,10 @@ function onMonthPick(month: Date) {
     emit('change', value)
     return
   }
+  // The same day of the picked month takes the tab stop, and focus if the calendar had it.
+  const day = Math.min(focusedDate.value.getDate(), endOfMonth(month).getDate())
+  focusedDate.value = new Date(month.getFullYear(), month.getMonth(), day)
+  const moveFocus = hasFocus()
   animateBodyHeight(() => {
     // The zoom back in centres on the picked month's cell, read when navLevel changes.
     viewDate.value = startOfMonth(month)
@@ -916,6 +961,7 @@ function onMonthPick(month: Date) {
     viewDate.value = addMonths(startOfMonth(month), -drillPane)
     drillPane = 0
   })
+  if (moveFocus) focusLevelCell(`[data-date="${isoDate(focusedDate.value)}"]`)
   emit('month-change', viewDate.value)
 }
 function onYearPick(year: number) {
@@ -934,6 +980,7 @@ function onYearPick(year: number) {
     viewDate.value = new Date(year, viewDate.value.getMonth(), 1)
     navLevel.value = 'month'
   })
+  if (hasFocus()) focusLevelCell(`[data-month="${viewDate.value.getMonth()}"]`)
 }
 
 const rootEl = useTemplateRef<HTMLElement>('rootEl')
@@ -1043,11 +1090,70 @@ function moveFocus(day: Date) {
   if (!isShownMonth(day)) showMonth(day)
   nextTick(() => focusCellEl(day))
 }
-/** Roving-tabindex to a specific day; only resets navLevel to 'date' if that view exists. */
+/** Roving-tabindex to a specific day, or its month or year in those views. */
 function focusDay(day: Date) {
   navLevel.value = props.view
-  if (props.view !== 'date') return
-  moveFocus(day)
+  if (props.view === 'date') return moveFocus(day)
+  viewDate.value = startOfMonth(day)
+  focusedYear.value = day.getFullYear()
+  focusLevelCell(
+    props.view === 'month'
+      ? `[data-month="${day.getMonth()}"]`
+      : `[data-year="${day.getFullYear()}"]`,
+  )
+}
+function hasFocus(): boolean {
+  return !!rootEl.value?.contains(document.activeElement)
+}
+// A grid swap leaves the old grid in place before the new one, so the last match that takes
+// focus is the arriving cell.
+function focusLevelCell(selector: string) {
+  nextTick(() => {
+    const cells = [...(bodyEl.value?.querySelectorAll<HTMLElement>(selector) ?? [])]
+    for (const cell of cells.reverse()) {
+      cell.focus()
+      if (document.activeElement === cell) return
+    }
+  })
+}
+
+// Month and year grids are four wide: arrows step a cell or a row, Home and End go to the row's
+// ends, Page keys a page (a year of months, twelve years).
+const GRID_STEPS: Record<string, number> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -4,
+  ArrowDown: 4,
+}
+function gridStep(event: KeyboardEvent, index: number, page: number): number | null {
+  const key = inlineKey(event.key, event.currentTarget as Element)
+  if (key in GRID_STEPS) return GRID_STEPS[key]!
+  if (key === 'Home') return -(index % 4)
+  if (key === 'End') return 3 - (index % 4)
+  if (key === 'PageUp') return -page
+  if (key === 'PageDown') return page
+  return null
+}
+function onMonthKeydown(event: KeyboardEvent) {
+  const step = gridStep(event, viewDate.value.getMonth(), 12)
+  if (step === null) return
+  event.preventDefault()
+  const next = addMonths(viewDate.value, step)
+  if (next.getFullYear() === viewDate.value.getFullYear()) viewDate.value = next
+  else setView(next, step < 0 ? -1 : 1)
+  focusLevelCell(`[data-month="${next.getMonth()}"]`)
+}
+function onYearKeydown(event: KeyboardEvent) {
+  const step = gridStep(event, yearStop.value - yearWindowStart.value, 12)
+  if (step === null) return
+  event.preventDefault()
+  const year = yearStop.value + step
+  focusedYear.value = year
+  const offset = year - yearWindowStart.value
+  if (offset < 0 || offset >= 12) {
+    setView(addYears(viewDate.value, offset < 0 ? -12 : 12), offset < 0 ? -1 : 1)
+  }
+  focusLevelCell(`[data-year="${year}"]`)
 }
 
 function onGridKeydown(event: KeyboardEvent) {
@@ -1122,7 +1228,7 @@ function dayAttrs(day: Date, month: Date) {
   return {
     'data-date': isoDate(day),
     tabindex: isSameDay(day, focusedDate.value) ? 0 : -1,
-    'aria-selected': isDaySelected(day) || undefined,
+    'aria-selected': isDaySelected(day) || isBetweenEnds(day) || undefined,
     'aria-current': isToday(day) ? ('date' as const) : undefined,
     'aria-disabled': isDayDisabled(day) || undefined,
     'aria-label': slots.day ? undefined : cellLabel(day),
@@ -1157,7 +1263,7 @@ defineExpose({
   goToPreviousMonth: goPrevious,
   /** Steps forward one page: a month, or a year or 12 years in the month and year grids. */
   goToNextMonth: goNext,
-  /** Moves keyboard focus to the given day, switching months if needed. Does nothing unless `view` is `'date'`. */
+  /** Moves keyboard focus to the given day, switching months if needed. With `view` set to `'month'` or `'year'`, focuses its month or year. */
   focusDay,
 })
 </script>

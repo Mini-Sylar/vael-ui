@@ -1012,6 +1012,7 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
   }
 
   function resetTrackingState() {
+    unwatchHandleBlur()
     draggedValues.value = new Set()
     scheduleAutoExpand(null)
     dropIntoValue.value = null
@@ -1754,6 +1755,26 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
   // --- keyboard --------------------------------------------------------------
 
+  // Focus leaving the handle cancels a keyboard grab. A handle hidden or removed under focus doesn't count.
+  let blurHandle: HTMLElement | null = null
+  function onKeyboardHandleBlur() {
+    const handle = blurHandle
+    if (!handle || !isGrabbed.value || source !== 'keyboard' || isPending.value) return
+    if (!handle.isConnected || !handle.checkVisibility({ visibilityProperty: true })) return
+    cancel()
+  }
+  function watchHandleBlur(handle: HTMLElement | null) {
+    unwatchHandleBlur()
+    if (!handle) return
+    blurHandle = handle
+    handle.addEventListener('blur', onKeyboardHandleBlur)
+  }
+  function unwatchHandleBlur() {
+    blurHandle?.removeEventListener('blur', onKeyboardHandleBlur)
+    blurHandle = null
+  }
+  onScopeDispose(unwatchHandleBlur)
+
   function onHandleKeydown(event: KeyboardEvent, value: string | number) {
     if (isDisabled()) return
 
@@ -1761,6 +1782,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       event.preventDefault()
       if (!isGrabbed.value) {
         if (begin(value, 'keyboard')) {
+          // A replayed key (useLazySortable) has no currentTarget left.
+          watchHandleBlur((event.currentTarget ?? event.target) as HTMLElement | null)
           currentIndex = sourceSlot
           if (options.group && ownGroupId != null) {
             createPreview(
@@ -1784,6 +1807,11 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
 
     if (!isGrabbed.value || source !== 'keyboard') return
+    // Tab takes focus away, and the grab can't follow it.
+    if (event.key === 'Tab') {
+      cancel()
+      return
+    }
     // Right to left, a row (or a row of columns) runs from the right: the arrows follow it.
     const key = inlineKey(event.key, event.currentTarget as Element)
 

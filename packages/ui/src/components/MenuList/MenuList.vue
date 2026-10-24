@@ -3,6 +3,7 @@
     ref="list"
     :class="rootPart.class"
     :style="rootPart.style"
+    :data-indicator-placed="indicatorPlaced || undefined"
     @keydown="onKeydown"
     v-bind="attrs"
   >
@@ -212,7 +213,7 @@ const indicatorMotion = useIndicatorMotion({
   indicator: () => pageIndicatorEl.value,
   parts: () => parts(),
 })
-const { style: indicatorStyle } = useTabIndicator(
+const { style: indicatorStyle, placed: indicatorPlaced } = useTabIndicator(
   computed(() => props.active),
   {
     listEl: list,

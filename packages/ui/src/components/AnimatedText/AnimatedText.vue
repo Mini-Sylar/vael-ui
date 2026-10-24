@@ -86,7 +86,9 @@ watch(
   { flush: 'post' },
 )
 // The old text leaves out of flow; holding its width stops it rewrapping in the new box.
+// Hidden from screen readers as it goes, so only the new text is read.
 function keepWidth(el: Element) {
+  el.setAttribute('aria-hidden', 'true')
   ;(el as HTMLElement).style.inlineSize = `${el.getBoundingClientRect().width}px`
 }
 function releaseWidth() {

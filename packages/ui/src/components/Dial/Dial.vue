@@ -17,6 +17,7 @@
       role="slider"
       :tabindex="isDisabled ? -1 : 0"
       :data-active="isDragging || undefined"
+      :aria-invalid="isInvalid || undefined"
       :aria-valuenow="modelValue"
       :aria-valuemin="min"
       :aria-valuemax="max"
@@ -116,6 +117,7 @@ import './Dial.css'
 import '../shared/tokens.css'
 import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useFormReset } from '../../composables/useFormReset'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import {
   clearFocusVisible,
@@ -220,6 +222,7 @@ const ariaValueText = computed(() => {
 })
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const dialEl = useTemplateRef<HTMLElement>('dialEl')
 const ticksEl = useTemplateRef<SVGGElement>('ticksEl')
 const parts = useStateMotion({

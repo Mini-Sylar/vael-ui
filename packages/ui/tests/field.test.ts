@@ -364,7 +364,7 @@ test('a control inside #prepend stands alone: own id, no Field label, error or r
       <Input />
     </Field>`,
   })
-  const trigger = screen.container.querySelector<HTMLElement>('.ui-select-trigger')!
+  const trigger = screen.container.querySelector<HTMLElement>('[role="combobox"]')!
   const input = screen.container.querySelector<HTMLInputElement>('.ui-input-el')!
   const label = screen.container.querySelector<HTMLLabelElement>('.ui-field-label')!
   expect(trigger.id).not.toBe(input.id)
@@ -575,7 +575,7 @@ test('two controls in a cell get their own ids; a disabled Field disables them a
     '<Select :items="items" aria-label="Currency" /><Select :items="items" aria-label="Unit" />',
     { fieldAttrs: 'disabled' },
   )
-  const [a, b] = cell.querySelectorAll<HTMLElement>('.ui-select-trigger')
+  const [a, b] = cell.querySelectorAll<HTMLElement>('[role="combobox"]')
   const input = screen.container.querySelector<HTMLInputElement>('.ui-input-el')!
   expect(new Set([a!.id, b!.id, input.id]).size).toBe(3)
   expect(a!.getAttribute('aria-disabled')).toBe('true')

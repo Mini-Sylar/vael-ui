@@ -9,13 +9,14 @@
     @mouseleave="onRootMouseLeave"
   >
     <div
+      :id="menuId"
       ref="listEl"
       :class="actionsPart.class"
       :style="actionsPart.style"
       :data-ui-list="listMarker"
-      role="menu"
-      :aria-label="ariaLabel"
-      :aria-orientation="orientationFor(direction)"
+      :role="open ? 'menu' : undefined"
+      :aria-label="open ? label : undefined"
+      :aria-orientation="open ? orientationFor(direction) : undefined"
       :data-motion="props.motion ? undefined : 'off'"
       @keydown="onKeydown"
     >
@@ -54,7 +55,8 @@
       :disabled="disabled"
       :aria-expanded="open"
       aria-haspopup="menu"
-      :aria-label="ariaLabel"
+      :aria-controls="open ? menuId : undefined"
+      :aria-label="label"
       @click="onTriggerClick"
     >
       <span ref="iconEl" class="ui-speed-dial-trigger-icon" aria-hidden="true">
@@ -142,7 +144,7 @@ export function quarterCirclePoint(
 <script setup lang="ts" generic="T extends SpeedDialItem = SpeedDialItem">
 import './SpeedDial.css'
 import '../shared/tokens.css'
-import { computed, nextTick, onMounted, onScopeDispose, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, onScopeDispose, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Button from '../Button/Button.vue'
 import { useLayer } from '../../composables/useLayerStack'
@@ -151,6 +153,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { withProviderDefaults } from '../../config'
 import { ssrDocument } from '../../ssr'
+import { useUiMessages } from '../../messages'
 import { useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { SpeedDialMotion } from '../../motion/types'
@@ -163,7 +166,7 @@ const rawProps = withDefaults(defineProps<SpeedDialProps<T>>(), {
   openOn: 'click',
   disabled: false,
   closeOnSelect: true,
-  ariaLabel: 'Actions',
+  ariaLabel: undefined,
   radius: 96,
   motion: undefined,
 })
@@ -182,6 +185,10 @@ defineSlots<{
 }>()
 
 const visibleItems = computed(() => (open.value ? props.items : []))
+
+const messages = useUiMessages()
+const label = computed(() => props.ariaLabel ?? messages.value.speedDial.label)
+const menuId = useId()
 
 // Yours (an object, or a shared style): actions come and go on the motion system, held where they
 // fanned out to as they leave. Otherwise the built-in CSS fan.
@@ -248,6 +255,8 @@ function focusTrigger() {
 
 // Set when a hover opened the dial and no pointer click on the trigger has landed since.
 let openedByHover = false
+// Set by a trigger click (pointer or keyboard); a hover or v-model open leaves focus where it is.
+let focusOnOpen = false
 
 function openDial() {
   if (props.disabled) return
@@ -268,6 +277,7 @@ function onTriggerClick(event: MouseEvent) {
     openedByHover = false
     return
   }
+  focusOnOpen = !open.value
   toggleDial()
 }
 
@@ -283,7 +293,7 @@ function selectItem(item: T) {
 }
 
 // useMenu handles roving-tabindex/arrows; onSelect unwired (clicks via @click).
-const { onKeydown: onMenuKeydown, focusFirst, focusItem } = useMenu({ listEl })
+const { onKeydown: onMenuKeydown, focusFirst, focusItem, initRoving } = useMenu({ listEl })
 
 // Arrow keys follow the visual direction; useMenu's vertical-only mapping would
 // send ArrowUp toward the trigger on an upward dial and ignore Left/Right.
@@ -303,9 +313,11 @@ function onKeydown(event: KeyboardEvent) {
   focusItem(items[(from + step + items.length) % items.length])
 }
 
-// Focus first action on open (Menu pattern, minus floating-position gate).
+// Focus first action on a click open (Menu pattern); other opens only set the roving tab stop.
 watch(open, (value) => {
-  if (value) nextTick(() => focusFirst())
+  const focus = focusOnOpen
+  focusOnOpen = false
+  if (value) nextTick(() => (focus ? focusFirst() : initRoving()))
   else openedByHover = false
 })
 
@@ -347,8 +359,10 @@ useEventListener(
     if (!layer.isTopmost()) return
     if (event.key !== 'Escape') return
     event.preventDefault()
+    // Focus returns only from inside; a hover open never took it.
+    const hadFocus = root.value?.contains(document.activeElement)
     closeDial()
-    focusTrigger()
+    if (hadFocus) focusTrigger()
   },
   true,
 )

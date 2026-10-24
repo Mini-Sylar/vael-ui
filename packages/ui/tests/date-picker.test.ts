@@ -338,7 +338,8 @@ test('a complete typed hour moves on to the minutes like a native time input: "1
 
 test('Enter in a time field commits and closes the time-only panel, returning focus to the input', async () => {
   const screen = await render(DatePickerFixture, { props: { timeOnly: true, hourFormat: '24' } })
-  await screen.getByRole('combobox').click()
+  // The button moves focus into the panel; a click in the input leaves it there for typing.
+  await screen.getByRole('button', { name: 'Choose date' }).click()
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('open')
   await vi.waitFor(() =>
     expect(document.activeElement).toBe(screen.getByRole('spinbutton', { name: 'Hour' }).element()),

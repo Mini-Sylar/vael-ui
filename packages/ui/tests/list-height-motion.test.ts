@@ -103,7 +103,7 @@ test('TreeSelect: searching eases the tree to its new height', async () => {
 
 test('CascadeSelect: searching eases the menu to its new height', async () => {
   const screen = await render(CascadeSelectFixture, { props: { filter: true }, global })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   const menu = await vi.waitFor(() => {
     const el = document.querySelector<HTMLElement>('[role="menu"]')
     expect(document.activeElement?.closest('.ui-cascade-select-filter')).toBeTruthy()

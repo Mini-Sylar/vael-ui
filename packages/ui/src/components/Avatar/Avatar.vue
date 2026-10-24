@@ -12,6 +12,7 @@
         ref="imgEl"
         :src="src"
         :alt="alt ?? name ?? ''"
+        :aria-hidden="showImage ? undefined : 'true'"
         :class="imagePart.class"
         :style="[{ opacity: showImage ? 1 : 0 }, imagePart.style]"
         @load="onLoad"

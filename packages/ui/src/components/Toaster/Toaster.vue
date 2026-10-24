@@ -1,6 +1,7 @@
 <template>
   <Teleport :to="teleportTarget">
-    <!-- The named <section> is the live region, so the <ol> keeps list semantics.
+    <!-- The named <section> is the live region, so the <ol> keeps list semantics; an error toast
+         is its own assertive region, read once and first. No role="alert", which reads twice.
          Absolute keeps it out of a flex or grid parent's flow. -->
     <section
       aria-live="polite"
@@ -38,6 +39,7 @@
           :data-swipe-out="swipeState.get(entry.id)?.swipeOut ?? false"
           :data-swipe-direction="swipeState.get(entry.id)?.direction ?? undefined"
           :data-y-position="yPos"
+          :aria-live="entry.variant === 'error' ? 'assertive' : undefined"
           @pointerdown="onPointerDown(entry.id, $event)"
           @pointermove="onPointerMove(entry.id, $event)"
           @pointerup="onPointerUp(entry.id)"

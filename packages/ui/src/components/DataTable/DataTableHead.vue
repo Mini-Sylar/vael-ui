@@ -51,8 +51,11 @@
         :data-column-field="String(col.field)"
         :data-dragging="draggingColumn === col.field || undefined"
         :aria-roledescription="isColumnReorderable(col) ? 'draggable column' : undefined"
+        :tabindex="headerTabStop(col) ? 0 : undefined"
+        :aria-keyshortcuts="headerTabStop(col) ? MOVE_KEYS : undefined"
         @pointerdown="isColumnReorderable(col) && onColumnPointerdown($event, col.field as string)"
         @click.capture="onHeaderClickCapture"
+        @keydown="onHeaderKeydown(col, $event)"
       >
         <div
           class="ui-datatable-th-inner"
@@ -80,6 +83,7 @@
             type="button"
             :class="sortButtonPart.class"
             :style="sortButtonPart.style"
+            :aria-keyshortcuts="isColumnReorderable(col) ? MOVE_KEYS : undefined"
             @click="onToggleSort(col.field)"
           >
             <span class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
@@ -105,8 +109,15 @@
           v-if="isColumnResizable(col)"
           :class="resizeHandlePart.class"
           :style="resizeHandlePart.style"
-          aria-hidden="true"
+          role="separator"
+          tabindex="0"
+          aria-orientation="vertical"
+          :aria-label="`${messages.resizable.label} ${col.label ?? String(col.field)}`"
+          :aria-valuenow="columnWidthNow(col)"
+          :aria-valuemin="MIN_COLUMN_WIDTH"
           @pointerdown="onResizePointerdown(col, $event)"
+          @keydown="onResizeKeydown(col, $event)"
+          @focus="onResizeFocus"
         ></span>
       </th>
     </tr>
@@ -141,6 +152,10 @@ const props = defineProps<{
   onToggleSelectAll: () => void
   onToggleSort: (field: keyof T) => void
   onResizePointerdown: (col: RegisteredColumn<T>, event: PointerEvent) => void
+  onResizeKeydown: (col: RegisteredColumn<T>, event: KeyboardEvent) => void
+  onResizeFocus: () => void
+  columnWidthNow: (col: RegisteredColumn<T>) => number | undefined
+  onHeaderKeydown: (col: RegisteredColumn<T>, event: KeyboardEvent) => void
   isColumnReorderable: (col: RegisteredColumn<T>) => boolean
   columnGripVisibility: 'hover' | 'always'
   draggingColumn: string | number | null
@@ -156,6 +171,13 @@ const props = defineProps<{
     resizeHandle: UiPartValue
   }>
 }>()
+
+const MIN_COLUMN_WIDTH = 40 // DataTable's resize floor
+const MOVE_KEYS = 'Alt+ArrowLeft Alt+ArrowRight'
+// A reorderable header with no sort button of its own takes the focus for Alt + arrow moves.
+function headerTabStop(col: RegisteredColumn<T>): boolean {
+  return props.isColumnReorderable(col) && (!!col.headerRelay || !col.sortable)
+}
 
 const cx = useClassMerge()
 const theadPart = computed(() => resolveUiPart(cx, props.ui?.thead, 'ui-datatable-thead'))

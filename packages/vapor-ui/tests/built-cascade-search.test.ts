@@ -10,7 +10,8 @@ test('CascadeSelect search and per-level panels work in the built vapor bundle',
   const app = createVaporApp(CascadeSearchRoot)
   app.mount(host)
   try {
-    await userEvent.click(host.querySelector<HTMLElement>('[role="combobox"]')!)
+    // CascadeSelect's trigger is a menu button.
+    await userEvent.click(host.querySelector<HTMLElement>('.ui-cascade-select-control')!)
     await expect
       .poll(() => document.activeElement?.closest('.ui-cascade-select-filter'))
       .toBeTruthy()

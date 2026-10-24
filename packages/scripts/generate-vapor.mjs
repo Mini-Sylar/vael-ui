@@ -32,6 +32,8 @@ const PER_BUILD_MODULES = new Set([
   'composables/useVirtualTree',
   'composables/lazyVirtualTree',
   'composables/indicatorStretch',
+  'composables/dateText',
+  'composables/useFormReset',
   'composables/useEasedHeight',
   'composables/useFold',
   'composables/tourGlide',

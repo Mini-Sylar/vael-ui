@@ -5,7 +5,7 @@
     :style="rootPart.style"
     :data-state="editing ? 'editing' : 'preview'"
     :data-motion="props.motion ? undefined : 'off'"
-    v-bind="attrs"
+    v-bind="rootAttrs"
   >
     <template v-if="editing">
       <!-- Enter, Escape and focus leaving are handled here, so any control in #edit gets them. -->
@@ -31,6 +31,8 @@
             :placeholder="placeholder"
             :maxlength="maxlength"
             :enterkeyhint="submitsOnEnter ? 'done' : undefined"
+            :aria-label="attrs['aria-label'] as string | undefined"
+            :aria-labelledby="attrs['aria-labelledby'] as string | undefined"
             :ui="{ root: inputPart }"
           />
         </slot>
@@ -56,7 +58,7 @@
       :data-placeholder="modelValue ? undefined : ''"
       @click="activationMode === 'click' && start()"
       @dblclick="activationMode === 'dblclick' && start()"
-      @focus="activationMode === 'focus' && start()"
+      @focus="activationMode === 'focus' && !refocusing && start()"
       @keydown.enter.prevent="start()"
     >
       <slot name="preview" :value="modelValue">{{ modelValue || placeholder }}</slot>
@@ -76,11 +78,14 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import { containsThroughLayers } from '../../composables/useLayerStack'
+import { omitAttrs } from '../../composables/forwardedListeners'
 import type { EditableMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
+// The label names the input, so the wrapper doesn't get it.
+const rootAttrs = computed(() => omitAttrs(attrs, ['aria-label', 'aria-labelledby']))
 /** The text. Updates when an edit is submitted, not on every keystroke. @default '' */
 const modelValue = defineModel<string>({ default: '' })
 /** Whether the input is showing. Bind it to open or close the edit from outside. @default false */
@@ -194,9 +199,18 @@ function start() {
       el.select()
   })
 }
+// Focus coming back on close must not reopen a focus-activated edit.
+let refocusing = false
 function close() {
   editing.value = false
-  nextTick(() => preview.value?.focus())
+  nextTick(() => {
+    // Focus already moved on to the page stays there.
+    const active = document.activeElement
+    if (active && active !== document.body && !inside(active)) return
+    refocusing = true
+    preview.value?.focus()
+    refocusing = false
+  })
 }
 function submit() {
   if (!editing.value) return

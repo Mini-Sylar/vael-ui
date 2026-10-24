@@ -28,6 +28,16 @@ const TOOLBAR_ITEM_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ')
 
+// Inputs that don't use the arrow keys themselves.
+const BUTTON_LIKE_INPUTS = new Set(['button', 'checkbox', 'image', 'reset', 'submit'])
+// Text fields, selects and contenteditable keep their own arrow keys, Home and End.
+function ownsArrowKeys(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  if (target.isContentEditable) return true
+  if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true
+  return target instanceof HTMLInputElement && !BUTTON_LIKE_INPUTS.has(target.type)
+}
+
 const OVERFLOW_ITEM_SELECTOR = '[data-toolbar-overflow]'
 const ELLIPSIS_SELECTOR = '[data-toolbar-ellipsis]'
 
@@ -188,7 +198,7 @@ export function useToolbar(
 
   function onKeydown(event: KeyboardEvent) {
     // Children claim keys first; toolbar never fights for same keypress.
-    if (event.defaultPrevented) return
+    if (event.defaultPrevented || ownsArrowKeys(event.target)) return
 
     const all = items()
     if (all.length === 0) return

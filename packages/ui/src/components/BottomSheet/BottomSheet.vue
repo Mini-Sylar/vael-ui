@@ -16,14 +16,25 @@
     :show-close="false"
     :scroll-fade="false"
     :ui="dialogUi"
+    :aria-labelledby="title && !$slots.header ? titleId : undefined"
+    :initial-focus="initialFocus"
     v-bind="$attrs"
   >
     <div ref="handle" :class="handleZonePart.class" :style="handleZonePart.style">
-      <div :class="handlePart.class" :style="handlePart.style" aria-hidden="true" />
+      <button
+        v-if="resolvedSnapPoints.length > 1"
+        ref="handleButton"
+        type="button"
+        :class="handlePart.class"
+        :style="handlePart.style"
+        :aria-label="messages.bottomSheet.resize"
+        @keydown="onHandleKeydown"
+      />
+      <div v-else :class="handlePart.class" :style="handlePart.style" aria-hidden="true" />
     </div>
     <div v-if="title || $slots.header" :class="headerPart.class" :style="headerPart.style">
       <slot name="header" :close="requestDismiss">
-        <span :class="titlePart.class" :style="titlePart.style">{{ title }}</span>
+        <span :id="titleId" :class="titlePart.class" :style="titlePart.style">{{ title }}</span>
         <button
           type="button"
           :class="closePart.class"
@@ -80,7 +91,7 @@ const DEFAULT_SNAP_POINTS: SheetSnapPoint[] = [
 ]
 
 export interface BottomSheetProps {
-  /** Renders the default header with a built-in close button. */
+  /** Renders the default header with a built-in close button, and names the sheet. */
   title?: string
   /** Snap points, ordered smallest to largest. Unset, the sheet snaps at 60% and 92% of viewport height,
    * or fills it when `fullScreen` is set. */
@@ -154,7 +165,16 @@ export interface BottomSheetProps {
 // Dialog import (and its CSS) must precede BottomSheet.css: this panel
 // carries both .ui-dialog-panel and .ui-bottom-sheet-panel, and the latter's
 // overrides (e.g. max-block-size) need to win the cascade.
-import { computed, inject, provide, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
+import {
+  computed,
+  inject,
+  provide,
+  shallowRef,
+  useId,
+  useTemplateRef,
+  watch,
+  watchEffect,
+} from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogExposed } from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
@@ -164,7 +184,7 @@ import { askGuard, closeContext } from '../../composables/useCloseGuard'
 import { flingTiming } from '../../motion/fling'
 import { gestureKey } from '../../motion/useComponentMotion'
 import type { LinkedGesture } from '../../motion/useComponentMotion'
-import { resolveDOMTarget } from '../../composables/dom'
+import { getFocusable, resolveDOMTarget } from '../../composables/dom'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -207,6 +227,8 @@ const messages = useUiMessages()
 const dialog = useTemplateRef<DialogExposed>('dialog')
 const handle = useTemplateRef<HTMLElement>('handle')
 const content = useTemplateRef<HTMLElement>('content')
+const handleButton = useTemplateRef<HTMLElement>('handleButton')
+const titleId = useId()
 
 const panelEl = computed(() => dialog.value?.panelEl ?? null)
 const isClosing = computed(() => dialog.value?.isClosing ?? false)
@@ -248,6 +270,22 @@ const { activeSnap, isDragging, setReceded, settle } = useSheetDrag(open, {
     (gesture.value = progress === null ? { settle: timing ?? DRAWER } : { progress }),
   bounds: () => resolveDOMTarget(props.container ?? null),
 })
+
+// ArrowUp and ArrowDown on the handle step through the snap points; it never closes the sheet.
+function onHandleKeydown(event: KeyboardEvent) {
+  const step = event.key === 'ArrowUp' ? 1 : event.key === 'ArrowDown' ? -1 : 0
+  if (!step) return
+  event.preventDefault()
+  const list = resolvedSnapPoints.value
+  const index = list.findIndex((point) => point.id === activeSnap.value)
+  const next = list[Math.min(list.length - 1, Math.max(0, index + step))]
+  if (next) activeSnap.value = next.id
+}
+// Opening focuses the first control after the handle, so focus doesn't land on the resize grip.
+function initialFocus() {
+  const panel = panelEl.value
+  return panel ? getFocusable(panel).find((el) => el !== handleButton.value) : undefined
+}
 
 // Nesting auto-detected: instance tells ancestor when opening/closing.
 const parentSheet = inject(nestingKey, null)

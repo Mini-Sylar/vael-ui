@@ -36,6 +36,7 @@
         :aria-valuetext="valueText ? valueText(value) : undefined"
         :aria-orientation="orientation === 'vertical' ? 'vertical' : undefined"
         :aria-disabled="isDisabled || undefined"
+        :aria-invalid="isInvalid || undefined"
         :aria-label="thumbLabel(index)"
         :aria-labelledby="thumbLabelledBy(index)"
         :aria-describedby="describedBy"
@@ -79,6 +80,7 @@ import {
   showFocusVisible,
 } from '../../composables/useFocusVisible'
 import { useSlider } from '../../composables/useSlider'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -200,6 +202,7 @@ function thumbMax(index: number): number {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 const trackEl = useTemplateRef<HTMLElement>('trackEl')
 const fillEl = useTemplateRef<HTMLElement>('fillEl')
 const thumbEls = useTemplateRef<HTMLElement[]>('thumbEls')

@@ -75,7 +75,7 @@
 import './Sortable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, useAttrs, useId, useTemplateRef } from 'vue'
+import { computed, nextTick, useAttrs, useId, useTemplateRef } from 'vue'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -277,9 +277,17 @@ const {
     // because the bound array may be a shared constant.
     const next = [...items.value]
     if (!moveTreeNode(next, value, to, { getKey: keyOf, getChildren: () => undefined })) return
+    // Moving the row in the DOM can drop the focus a keyboard drop left on its handle.
+    const focused = document.activeElement as HTMLElement | null
+    const handle = elementFor(value)?.querySelector<HTMLElement>('.ui-sortable-handle')
     items.value = next
     tick()
     emit('reorder', value, to)
+    if (handle && focused === handle)
+      void nextTick(() => {
+        if (handle.isConnected && document.activeElement !== handle)
+          handle.focus({ preventScroll: true })
+      })
   },
 })
 

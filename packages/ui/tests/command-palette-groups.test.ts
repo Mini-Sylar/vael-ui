@@ -85,12 +85,10 @@ test('moving up through a long grouped list never leaves the active row under th
     await new Promise((r) => requestAnimationFrame(r))
     const row = list.querySelector<HTMLElement>('[data-active]')!.getBoundingClientRect()
     // No heading, stuck or not, may cover any part of the active row.
-    const covering = [...list.querySelectorAll<HTMLElement>('[role="presentation"]')].filter(
-      (heading) => {
-        const box = heading.getBoundingClientRect()
-        return box.bottom > row.top + 1 && box.top < row.bottom - 1
-      },
-    )
+    const covering = [...list.querySelectorAll<HTMLElement>('[role="group"]')].filter((heading) => {
+      const box = heading.getBoundingClientRect()
+      return box.bottom > row.top + 1 && box.top < row.bottom - 1
+    })
     expect(covering).toHaveLength(0)
   }
 })

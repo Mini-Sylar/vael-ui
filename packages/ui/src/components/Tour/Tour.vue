@@ -18,6 +18,7 @@
     v-model:open="open"
     role="dialog"
     tabindex="-1"
+    :aria-modal="modal ? 'true' : undefined"
     :aria-label="step?.title || stepOfLabel"
     :trigger-el="targetEl"
     :side="step?.side"
@@ -156,7 +157,7 @@ import type { PopoverCloseReason } from '../../composables/usePopover'
 import type { BeforeClose, TourMotion } from '../../motion/types'
 import './Tour.css'
 import '../shared/tokens.css'
-import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
 import type { PopoverExposed } from '../Popover/Popover.vue'
@@ -164,7 +165,13 @@ import TourSpotlight from './TourSpotlight.vue'
 import { glideOf, timingOf } from '../../composables/tourGlide'
 import { useMotionStyle } from '../../motion/context'
 import { useTour } from '../../composables/useTour'
-import { inlineKey, useDOMTarget, prefersReducedMotion } from '../../composables/dom'
+import {
+  getFocusable,
+  inlineKey,
+  opener,
+  useDOMTarget,
+  prefersReducedMotion,
+} from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
 import { isComposing, useLayer } from '../../composables/useLayerStack'
@@ -487,6 +494,52 @@ useEventListener(
     if (!layer.isTopmost(positionerEl.value)) return
     event.preventDefault()
     skip()
+  },
+  true,
+)
+
+// Closing returns focus to what started the tour, even in Safari, where a clicked button isn't
+// focused and Popover would fall back to the last step's target.
+let startedBy: HTMLElement | null = null
+watch(
+  open,
+  (value) => {
+    if (value) startedBy = opener()
+  },
+  { flush: 'sync' },
+)
+watch(open, (value) => {
+  if (value) return
+  const from = [positionerEl.value, targetEl.value]
+  const back = startedBy
+  startedBy = null
+  // After Popover's own restore.
+  nextTick(() => {
+    const active = document.activeElement
+    const lost = !active || active === document.body || from.some((el) => el?.contains(active))
+    if (lost && back?.isConnected && back !== active) back.focus({ preventScroll: true })
+  })
+})
+
+// Modal: Tab cycles inside the callout, as in a Dialog. Capture, so Popover's own Tab-out never runs.
+useEventListener(
+  () => (open.value && props.modal ? ssrDocument() : undefined),
+  'keydown',
+  (event: KeyboardEvent) => {
+    if (event.key !== 'Tab' || event.defaultPrevented) return
+    if (!layer.isTopmost(positionerEl.value)) return
+    const panel = popoverPanelEl.value
+    if (!panel) return
+    event.preventDefault()
+    const focusables = getFocusable(panel)
+    const current = document.activeElement as HTMLElement | null
+    const index = current ? focusables.indexOf(current) : -1
+    const step = event.shiftKey ? -1 : 1
+    const next =
+      index === -1
+        ? focusables[event.shiftKey ? focusables.length - 1 : 0]
+        : focusables[(index + step + focusables.length) % focusables.length]
+    ;(next ?? panel).focus()
   },
   true,
 )

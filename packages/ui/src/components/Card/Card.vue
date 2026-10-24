@@ -6,7 +6,7 @@
     :style="rootPart.style"
     v-bind="attrs"
   >
-    <header
+    <div
       v-if="title || description || $slots.header"
       ref="headerEl"
       :class="headerPart.class"
@@ -25,17 +25,17 @@
           {{ description }}
         </p>
       </slot>
-    </header>
+    </div>
     <div ref="bodyEl" :class="bodyPart.class" :style="bodyPart.style">
       <slot />
     </div>
-    <footer v-if="$slots.footer" ref="footerEl" :class="footerPart.class" :style="footerPart.style">
+    <div v-if="$slots.footer" ref="footerEl" :class="footerPart.class" :style="footerPart.style">
       <slot name="footer" />
-    </footer>
+    </div>
   </component>
 </template>
 
-<!-- Part naming mirrors Dialog for muscle memory -->
+<!-- Part naming mirrors Dialog for muscle memory. Header and footer are divs: outside a sectioning element, <header> and <footer> are page landmarks. -->
 <script setup lang="ts">
 import './Card.css'
 import '../shared/tokens.css'

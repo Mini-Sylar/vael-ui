@@ -16,14 +16,14 @@ const rowTexts = () =>
 
 test('with filter, opening focuses the search box and the levels show as before', async () => {
   const screen = await render(CascadeSelectFixture, { props: { filter: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(document.activeElement).toBe(searchBox()))
   expect(rowTexts()).toEqual(['Africa', 'Europe'])
 })
 
 test('typing lists matching leaves with their path; a disabled branch hides its leaves', async () => {
   const screen = await render(CascadeSelectFixture, { props: { filter: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(document.activeElement).toBe(searchBox()))
   await userEvent.keyboard('acc')
   await vi.waitFor(() => expect(rowTexts()).toEqual(['Accra Africa / Ghana']))
@@ -36,7 +36,7 @@ test('typing lists matching leaves with their path; a disabled branch hides its 
 
 test('every word matches somewhere in the path, ignoring case and accents', async () => {
   const screen = await render(CascadeSelectFixture, { props: { filter: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(document.activeElement).toBe(searchBox()))
   await userEvent.keyboard('EUROPE ly')
   await vi.waitFor(() => expect(rowTexts()).toEqual(['Lyon Europe / France']))
@@ -44,7 +44,7 @@ test('every word matches somewhere in the path, ignoring case and accents', asyn
 
 test('Enter in the search box picks the first result, with its full path, and closes', async () => {
   const screen = await render(CascadeSelectFixture, { props: { filter: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(document.activeElement).toBe(searchBox()))
   await userEvent.keyboard('par')
   await vi.waitFor(() => expect(rowTexts()).toEqual(['Paris Europe / France']))
@@ -56,7 +56,7 @@ test('Enter in the search box picks the first result, with its full path, and cl
 
 test('Arrow Down moves into the results, ArrowUp from the first returns, typing on a row goes back to the box', async () => {
   const screen = await render(CascadeSelectFixture, { props: { filter: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(document.activeElement).toBe(searchBox()))
   await userEvent.keyboard('a')
   await vi.waitFor(() => expect(rowTexts().length).toBeGreaterThan(1))
@@ -74,20 +74,20 @@ test('Arrow Down moves into the results, ArrowUp from the first returns, typing 
 
 test('closing clears the search, so reopening shows the levels', async () => {
   const screen = await render(CascadeSelectFixture, { props: { filter: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(document.activeElement).toBe(searchBox()))
   await userEvent.keyboard('par')
   await vi.waitFor(() => expect(rowTexts()).toHaveLength(1))
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(rowTexts()).toEqual(['Africa', 'Europe']))
   expect(searchBox()!.value).toBe('')
 })
 
 test('multiple: picking a result toggles it and keeps the panel and the search open', async () => {
   const screen = await render(CascadeSelectFixture, { props: { filter: true, multiple: true } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(document.activeElement).toBe(searchBox()))
   await userEvent.keyboard('a')
   await vi.waitFor(() => expect(rowTexts().length).toBeGreaterThan(1))
@@ -99,7 +99,7 @@ test('multiple: picking a result toggles it and keeps the panel and the search o
 
 test('every level of the panel gets ui.panel and says which level it is', async () => {
   const screen = await render(CascadeSelectFixture, { props: { ui: { panel: 'my-panel' } } })
-  await screen.getByRole('combobox').click()
+  await screen.getByRole('button').first().click()
   await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Africa'))
   await userEvent.keyboard('{ArrowRight}')
   await vi.waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Ghana'))

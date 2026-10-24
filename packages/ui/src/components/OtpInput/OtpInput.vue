@@ -52,7 +52,7 @@
     <input
       ref="inputEl"
       :id="fieldControl.id"
-      type="text"
+      :type="mask ? 'password' : 'text'"
       :class="inputPart.class"
       :style="inputPart.style"
       :value="displayValue"
@@ -97,6 +97,7 @@ import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
+import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -115,7 +116,7 @@ const rawProps = withDefaults(
     length?: number
     /** Restricts input to digits or to alphanumeric characters. @default 'numeric' */
     type?: 'numeric' | 'alphanumeric'
-    /** Shows a bullet instead of the entered character in every filled cell. @default false */
+    /** Shows a bullet instead of the entered character in every filled cell, and keeps screen readers from reading the code. @default false */
     mask?: boolean
     /** Disables the input and blocks interaction. A disabled parent Field also disables it. @default false */
     disabled?: boolean
@@ -358,6 +359,7 @@ watch(activeIndex, () => {
 })
 
 const root = useTemplateRef<HTMLElement>('root')
+useFormReset(modelValue, () => root.value)
 useStateMotion({
   key: 'otpInput',
   mainPart: 'root',

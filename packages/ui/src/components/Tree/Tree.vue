@@ -1,6 +1,7 @@
 <template>
   <div
     class="ui-tree-root"
+    v-bind="rootAttrs"
     :data-motion="props.motion ? undefined : 'off'"
     :data-rows="flatRows.length > STATIC_CONTROLS_ROWS && !virtual ? 'many' : undefined"
   >
@@ -41,6 +42,7 @@
       ref="listEl"
       :id="listId"
       role="tree"
+      v-bind="treeAttrs"
       :aria-busy="loadingFlat || undefined"
       :data-reorderable="reorderable ? '' : undefined"
       :data-reordering="isReordering ? '' : undefined"
@@ -133,8 +135,10 @@
                 </svg>
               </span>
               <span v-else class="ui-tree-chevron-spacer" aria-hidden="true" />
+              <!-- The row is the tab stop and Space checks it, so the box stays out of the tab order. -->
               <Checkbox
                 v-if="selectionMode === 'checkbox'"
+                :ref="leaveTabOrder"
                 class="ui-tree-checkbox"
                 :model-value="scope.checked"
                 :indeterminate="scope.indeterminate"
@@ -289,10 +293,13 @@ import {
   reactive,
   ref,
   shallowRef,
+  unref,
+  useAttrs,
   useId,
   useTemplateRef,
   watch,
 } from 'vue'
+import type { MaybeRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -324,6 +331,8 @@ import type {
   FlatSortableRow,
   SortableDropDetails,
 } from '../../composables/useSortable'
+
+defineOptions({ inheritAttrs: false })
 
 /**
  * Selected value: one value in `'single'` mode, an array in `'multiple'`, leaf values in `'checkbox'`.
@@ -452,6 +461,21 @@ const rawProps = withDefaults(
   },
 )
 const props = withProviderDefaults(rawProps, { motion: true })
+
+const attrs = useAttrs()
+// Your name and description go on the `role="tree"` element; the rest stays on the root.
+const isTreeAttr = (key: string) =>
+  key === 'aria-label' || key === 'aria-labelledby' || key === 'aria-describedby'
+const treeAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => isTreeAttr(key))),
+)
+const rootAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => !isTreeAttr(key))),
+)
+function leaveTabOrder(checkbox: unknown) {
+  const input = unref((checkbox as { inputEl?: MaybeRef<HTMLInputElement | null> } | null)?.inputEl)
+  if (input) input.tabIndex = -1
+}
 
 const emit = defineEmits<{
   /** Fires when you change the selection, with the new model value. */
@@ -746,8 +770,25 @@ function focusAt(index: number) {
 function focusFirstRow() {
   focusAt(0)
 }
+// The tab stop starts on the first selected row, else the first row (APG tree view).
 function initRoving() {
-  setRoving(rowEls()[0])
+  const rows = rowEls()
+  setRoving(
+    rows.find(
+      (el) =>
+        el.getAttribute('aria-selected') === 'true' || el.getAttribute('aria-checked') === 'true',
+    ) ?? rows[0],
+  )
+}
+// Opens the folders above the row, then focuses it.
+function focusNode(value: string | number) {
+  instantSwap.value = true
+  for (let parent = findParent(value); parent; parent = findParent(parent.value))
+    setExpanded(parent.value, true)
+  void nextTick(() => {
+    instantSwap.value = false
+    focusValue(value)
+  })
 }
 
 // Depth-first flatten of currently VISIBLE rows, used only for keyboard-nav
@@ -1446,8 +1487,10 @@ defineExpose({
   filterInputRef,
   /** Focuses the first visible row. */
   focusFirstRow,
-  /** Makes the first visible row the tab stop without focusing it. */
+  /** Makes the first selected row, or else the first visible row, the tab stop without focusing it. */
   initRoving,
+  /** Expands the folders above the row with this value and focuses it. */
+  focusNode,
   /** Expands every folder. */
   expandAll,
   /** Collapses every folder. */

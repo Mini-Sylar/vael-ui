@@ -1,7 +1,13 @@
 <template>
   <li ref="root" aria-hidden="true" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <slot>
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+      <svg
+        class="ui-breadcrumb-separator-icon"
+        viewBox="0 0 16 16"
+        width="14"
+        height="14"
+        fill="none"
+      >
         <path
           d="M6 3l4 5-4 5"
           stroke="currentColor"

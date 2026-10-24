@@ -20,7 +20,7 @@
       type="button"
       :class="itemPart.class"
       :style="itemPart.style"
-      :tabindex="index === activeIndex ? 0 : -1"
+      :tabindex="index === tabStop ? 0 : -1"
       :disabled="item.disabled"
       :data-bounce="bouncing === index || undefined"
       @pointerup="onItemPointerUp($event, index)"
@@ -232,6 +232,11 @@ watch(
   (length) => {
     if (activeIndex.value >= length) activeIndex.value = Math.max(0, length - 1)
   },
+)
+
+// A disabled item can't take focus, so the tab stop falls to the first enabled one.
+const tabStop = computed(() =>
+  props.items[activeIndex.value]?.disabled ? (enabledIndices()[0] ?? -1) : activeIndex.value,
 )
 
 const itemButtons: (HTMLButtonElement | null)[] = []

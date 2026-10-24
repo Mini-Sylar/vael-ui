@@ -34,7 +34,8 @@
     font-size: calc(var(--ui-font-size) * 0.8125);
     color: var(--ui-text-muted);
   }
-  .ui-file-upload-input {
+  .ui-file-upload-input,
+  .ui-file-upload-status {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;

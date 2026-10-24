@@ -36,6 +36,7 @@
         :class="inputPart.class"
         :style="inputPart.style"
         :placeholder="placeholder ?? messages.commandPalette.placeholder"
+        :aria-label="messages.commandPalette.label"
         :aria-controls="listId"
         :aria-activedescendant="activeId"
         @input="onInput"
@@ -71,8 +72,11 @@
           v-for="row in rows"
           :id="row.kind === 'item' ? optionId(row.index) : undefined"
           :key="row.key"
-          :role="row.kind === 'item' ? 'option' : 'presentation'"
+          :role="row.kind === 'item' ? 'option' : 'group'"
           :aria-selected="row.kind === 'item' ? row.index === activeIndex : undefined"
+          :aria-disabled="(row.kind === 'item' && row.item.disabled) || undefined"
+          :aria-labelledby="row.kind === 'group' ? row.labelId : undefined"
+          :aria-owns="row.kind === 'group' ? row.owns : undefined"
           :data-active="(row.kind === 'item' && row.index === activeIndex) || undefined"
           :data-disabled="(row.kind === 'item' && row.item.disabled) || undefined"
           :class="row.kind === 'item' ? itemPart.class : groupLabelPart.class"
@@ -80,12 +84,10 @@
           @mousemove="row.kind === 'item' && point(row.index)"
           @click="row.kind === 'item' && selectItem(row.item, close)"
         >
-          <slot
-            v-if="row.kind === 'group'"
-            name="group-label"
-            :group="row.label"
-            :items="row.items"
-            >{{ row.label }}</slot
+          <span v-if="row.kind === 'group'" :id="row.labelId"
+            ><slot name="group-label" :group="row.label" :items="row.items">{{
+              row.label
+            }}</slot></span
           >
           <slot
             v-else
@@ -114,6 +116,7 @@
           </slot>
         </li>
       </TransitionGroup>
+      <span role="status" :style="visuallyHidden">{{ resultsText }}</span>
       <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
         <slot name="footer" :active-item="activeItem" :query="query" />
       </div>
@@ -197,7 +200,7 @@ const rawProps = withDefaults(
      */
     position?: DialogPosition
     /**
-     * `false` disables the overlay, scroll lock and focus trap. Escape-to-close and layer stacking still apply.
+     * `false` turns off the overlay, scroll lock, focus trap and the inert page behind it. Escape-to-close and layer stacking still apply.
      * @default true
      */
     modal?: boolean
@@ -325,6 +328,11 @@ const filteredItems = computed<T[]>(() => {
   return [...byGroup.values()].flat()
 })
 
+const listId = useId()
+function optionId(index: number): string {
+  return `${listId}-opt-${index}`
+}
+
 const groupedItems = computed<CommandPaletteGroupView[]>(() => {
   const groups: CommandPaletteGroupView[] = []
   filteredItems.value.forEach((item, index) => {
@@ -338,14 +346,17 @@ const groupedItems = computed<CommandPaletteGroupView[]>(() => {
   return groups
 })
 
+// A heading row is the group: its options sit beside it, so it claims them with aria-owns.
 const rows = computed(() =>
-  groupedItems.value.flatMap((group) => [
+  groupedItems.value.flatMap((group, groupIndex) => [
     ...(group.group
       ? [
           {
             kind: 'group' as const,
             key: `group:${group.group}`,
             label: group.group,
+            labelId: `${listId}-group-${groupIndex}`,
+            owns: group.entries.map((entry) => optionId(entry.index)).join(' '),
             items: group.entries.map((entry) => entry.item),
           },
         ]
@@ -386,10 +397,6 @@ watch(
   { immediate: true },
 )
 
-const listId = useId()
-function optionId(index: number): string {
-  return `${listId}-opt-${index}`
-}
 const activeId = computed(() => (activeIndex.value >= 0 ? optionId(activeIndex.value) : undefined))
 
 // TransitionGroup's ref is a component. Vapor gives no `$el` and calls this pre-mount: use the id.
@@ -451,7 +458,7 @@ watch(activeIndex, (index) => {
     // A group's heading sticks to the top of the list, so moving up, the row has to stop below
     // its own heading instead of scrolling under it.
     let heading = row.previousElementSibling
-    while (heading && heading.getAttribute('role') !== 'presentation') {
+    while (heading && heading.getAttribute('role') !== 'group') {
       heading = heading.previousElementSibling
     }
     // It sticks inside the list's top padding, so the room it takes is both together.
@@ -461,6 +468,22 @@ watch(activeIndex, (index) => {
     scrollIntoContainer(list, row)
   })
 })
+
+// Read out politely as you type: how many match, or that nothing does.
+const resultsText = computed(() => {
+  if (!query.value.trim()) return ''
+  const count = filteredItems.value.length
+  if (count === 0) return messages.value.commandPalette.empty
+  return messages.value.commandPalette.results.replace('{count}', String(count))
+})
+const visuallyHidden = {
+  position: 'absolute',
+  inlineSize: '1px',
+  blockSize: '1px',
+  overflow: 'hidden',
+  clipPath: 'inset(50%)',
+  whiteSpace: 'nowrap',
+} as const
 
 function moveActive(delta: number) {
   const enabled = enabledIndices()
