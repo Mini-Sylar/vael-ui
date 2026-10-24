@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { h, ref } from 'vue'
+import { h, ref, shallowRef } from 'vue'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
@@ -25,6 +25,24 @@ test('typing filters the list by label and keywords', async () => {
   const options = page.getByRole('option')
   expect(options.all()).toHaveLength(1)
   await expect.element(options.first()).toHaveTextContent('New Folder')
+})
+
+test('filters while a phone keyboard is still composing the word', async () => {
+  await render(CommandPalette, { props: { open: true, items } })
+  const input = page.getByRole('combobox').element() as HTMLInputElement
+  input.focus()
+  // Android keyboards wrap each word in a composition until the space bar.
+  input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
+  input.value = 'fold'
+  input.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }))
+  await vi.waitFor(() => expect(page.getByRole('option').all()).toHaveLength(1))
+  await expect.element(page.getByRole('option').first()).toHaveTextContent('New Folder')
+})
+
+test('the keyboard key reads Go, so a phone sends Enter to run the match', async () => {
+  await render(CommandPalette, { props: { open: true, items } })
+  const input = page.getByRole('combobox').element() as HTMLInputElement
+  expect(input.getAttribute('enterkeyhint')).toBe('go')
 })
 
 test('no matches shows the empty message', async () => {
@@ -88,13 +106,11 @@ test('rows change at once while typing, and the list eases to its new height', a
   const many = Array.from({ length: 12 }, (_, i) => ({ id: `i${i}`, label: `Item ${i}` }))
   await render(CommandPalette, { props: { open: true, items: many }, ...realTransitions })
   const list = document.querySelector<HTMLElement>('.ui-command-palette-list')!
-  const heights: number[] = []
-  const start = performance.now()
-  const sample = () => {
-    heights.push(Math.round(list.getBoundingClientRect().height))
-    if (performance.now() - start < 400) requestAnimationFrame(sample)
-  }
-  requestAnimationFrame(sample)
+  // The transition's own start event, not sampled frames: under load the frames can miss it.
+  let eased = false
+  list.addEventListener('transitionstart', (event) => {
+    if (event.propertyName === 'block-size' || event.propertyName === 'height') eased = true
+  })
   await userEvent.type(page.getByRole('combobox'), 'Item 1')
 
   expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
@@ -102,38 +118,95 @@ test('rows change at once while typing, and the list eases to its new height', a
     expect(getComputedStyle(leaving).display).toBe('none')
   }
   await vi.waitFor(() => {
-    expect(new Set(heights).size).toBeGreaterThan(2)
+    expect(eased).toBe(true)
     expect(list.style.blockSize).toBe('')
     expect(list.hasAttribute('data-resizing')).toBe(false)
   })
 })
 
-test('motionCss false hands appearing and disappearing rows to @item-enter/@item-leave', async () => {
+test('motion hooks: rows that appear and disappear go through your enter and leave', async () => {
   const entered: Element[] = []
-  const pendingLeaves: (() => void)[] = []
+  const left: Element[] = []
   await render(CommandPalette, {
     props: {
       open: true,
       items,
-      motionCss: false,
-      'onItem-enter': (el: Element, done: () => void) => {
-        entered.push(el)
-        done()
+      motion: {
+        items: {
+          enter: ({ item }: { item: HTMLElement }) => void entered.push(item),
+          leave: ({ item }: { item: HTMLElement }) => {
+            left.push(item)
+            return item.animate([{ opacity: 1 }, { opacity: 0 }], 200)
+          },
+        },
       },
-      'onItem-leave': (_el: Element, done: () => void) => pendingLeaves.push(done),
     },
     ...realTransitions,
   })
   const input = page.getByRole('combobox')
   await userEvent.type(input, 'folder')
-  await vi.waitFor(() => expect(pendingLeaves.length).toBe(2))
+  await vi.waitFor(() => expect(left.length).toBe(2))
+  // Held while their leave plays, then gone.
   expect(page.getByText('New File').query()).not.toBeNull()
-  pendingLeaves.forEach((done) => done())
   await vi.waitFor(() => expect(page.getByText('New File').query()).toBeNull())
 
   await userEvent.clear(input)
   await vi.waitFor(() => expect(entered.length).toBe(2))
   expect(document.querySelector('.ui-command-palette-row-enter-active')).toBeNull()
+})
+
+test('`items.appear`: each opening enters the rows, top first; without it they show at once', async () => {
+  for (const appear of [true, false]) {
+    const open = shallowRef(false)
+    const entered: string[] = []
+    const screen = await render(
+      () =>
+        h(CommandPalette as never, {
+          open: open.value,
+          items,
+          motion: {
+            items: {
+              appear,
+              enter: ({ item }: { item: HTMLElement }, { index }: { index: number }) => {
+                entered[index] = item.textContent!.trim()
+              },
+            },
+          },
+        }),
+      realTransitions,
+    )
+    open.value = true
+    await expect.element(page.getByRole('dialog')).toBeVisible()
+    for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame)
+    expect(entered).toEqual(appear ? ['New File', 'New Folder', 'Open Settings'] : [])
+    screen.unmount()
+  }
+})
+
+test('motion hooks at the top move the dialog itself; the rows keep their own look', async () => {
+  const left: HTMLElement[] = []
+  const open = shallowRef(true)
+  await render(
+    () =>
+      h(CommandPalette as never, {
+        open: open.value,
+        'onUpdate:open': (v: boolean) => (open.value = v),
+        items,
+        motion: {
+          leave: ({ panel }: { panel: HTMLElement }) => {
+            left.push(panel)
+            return panel.animate([{ opacity: 1 }, { opacity: 0 }], 300)
+          },
+        },
+      }),
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(document.querySelector('.ui-dialog-panel')).not.toBeNull())
+  const panel = document.querySelector<HTMLElement>('.ui-dialog-panel')!
+  open.value = false
+  await vi.waitFor(() => expect(left).toEqual([panel]))
+  expect(panel.isConnected).toBe(true)
+  await vi.waitFor(() => expect(panel.isConnected).toBe(false), { timeout: 1000 })
 })
 
 test('the dialog has a name, which an aria-label can replace', async () => {
@@ -143,4 +216,24 @@ test('the dialog has a name, which an aria-label can replace', async () => {
 
   await render(CommandPalette, { props: { open: true, items }, attrs: { 'aria-label': 'Go to' } })
   await expect.element(page.getByRole('dialog', { name: 'Go to' })).toBeVisible()
+})
+
+test('a footer slot sits under the list and knows the highlighted item', async () => {
+  const Wrapper = {
+    render: () =>
+      h(
+        CommandPalette as any,
+        { open: true, items },
+        {
+          footer: ({ activeItem }: { activeItem?: CommandPaletteItem }) =>
+            h('span', { 'data-testid': 'hint' }, activeItem ? `on ${activeItem.label}` : 'none'),
+        },
+      ),
+  }
+  await render(Wrapper)
+  await expect.element(page.getByTestId('hint')).toHaveTextContent('on New File')
+  await userEvent.click(page.getByRole('combobox'))
+  await userEvent.keyboard('{ArrowDown}')
+  await expect.element(page.getByTestId('hint')).toHaveTextContent('on New Folder')
+  expect(document.querySelector('.ui-command-palette-footer')).not.toBeNull()
 })

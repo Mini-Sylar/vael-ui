@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Vertical, needs a sized container</h3>
+    <h3>Vertical, inside a sized container</h3>
     <div class="row separator-vertical-row">
       <span>Left</span>
       <Separator orientation="vertical" />

@@ -1,9 +1,7 @@
 <template>
   <section class="demo">
-    <h3>Range, two cross-clamped thumbs</h3>
-    <p class="note">
-      Try dragging one thumb past the other, it stops flush against it instead of crossing.
-    </p>
+    <h3>Range with two thumbs that never cross</h3>
+    <p class="note">Drag one thumb past the other: it stops against it instead of crossing.</p>
     <div class="row slider-row">
       <Field label="Price range" class="slider-field">
         <Slider v-model="range" :min="0" :max="100" />

@@ -69,3 +69,28 @@ test('#group-label gets the name and the items still showing; #item gets its gro
   await userEvent.type(page.getByRole('combobox'), 'zoom')
   await vi.waitFor(() => expect(headings()).toEqual(['View · 1']))
 })
+
+test('moving up through a long grouped list never leaves the active row under the sticky heading', async () => {
+  const many: CommandPaletteItem[] = ['Alpha', 'Beta', 'Gamma'].flatMap((group) =>
+    Array.from({ length: 8 }, (_, i) => ({ id: `${group}-${i}`, label: `${group} ${i}`, group })),
+  )
+  await render(CommandPalette, { props: { open: true, items: many } })
+  await vi.waitFor(() => expect(page.getByRole('option').all()).toHaveLength(24))
+  const input = page.getByRole('combobox')
+  await userEvent.click(input)
+  await userEvent.keyboard('{End}')
+  const list = document.querySelector<HTMLElement>('.ui-command-palette-list')!
+  for (let i = 0; i < 23; i++) {
+    await userEvent.keyboard('{ArrowUp}')
+    await new Promise((r) => requestAnimationFrame(r))
+    const row = list.querySelector<HTMLElement>('[data-active]')!.getBoundingClientRect()
+    // No heading, stuck or not, may cover any part of the active row.
+    const covering = [...list.querySelectorAll<HTMLElement>('[role="presentation"]')].filter(
+      (heading) => {
+        const box = heading.getBoundingClientRect()
+        return box.bottom > row.top + 1 && box.top < row.bottom - 1
+      },
+    )
+    expect(covering).toHaveLength(0)
+  }
+})

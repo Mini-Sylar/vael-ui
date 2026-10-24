@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3>Basic usage and sizes</h3>
-    <p class="note">Click, or drag across the row, to set the value. Defaults to 5 stars.</p>
+    <p class="note">Click, or drag across the row, to set the value. The default is 5 stars.</p>
     <div class="row">
       <Rating v-model="smValue" size="sm" aria-label="Small rating" />
       <Rating v-model="mdValue" size="md" aria-label="Medium rating" />

@@ -20,6 +20,8 @@ import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { BadgeMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -39,10 +41,19 @@ const props = withDefaults(
      * @default true
      */
     animated?: boolean
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, scale: 0.6 } } }`). `false` turns its own appearance off; `animated` keeps the count change. */
+    motion?: BadgeMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
-  { variant: 'primary', max: 99, dot: false, animated: true },
+  {
+    variant: 'primary',
+    max: 99,
+    dot: false,
+    animated: true,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 
 defineSlots<{
@@ -56,6 +67,14 @@ const display = computed(() => {
 })
 
 const root = useTemplateRef<HTMLElement>('root')
+const parts = useStateMotion({
+  key: 'badge',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-badge' },
+  states: () => ({}),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.badge,
@@ -95,5 +114,9 @@ function contentStyle(): Record<string, string> | undefined {
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

@@ -18,6 +18,8 @@ export interface UseListboxReturn {
   activeId: ComputedRef<string | undefined>
   onKeydown: (event: KeyboardEvent) => void
   setActive: (index: number) => void
+  /** Makes an option active without scrolling the list. Use it for the option under the pointer. */
+  point: (index: number) => void
   optionId: (index: number) => string
 }
 
@@ -46,6 +48,11 @@ export function useListbox<T>(options: UseListboxOptions<T>): UseListboxReturn {
   function setActive(index: number) {
     if (index === activeIndex.value) return
     options.onActiveChange?.(index)
+    activeIndex.value = index
+  }
+
+  // Pointing at a half-hidden option mustn't scroll the list out from under the pointer.
+  function point(index: number) {
     activeIndex.value = index
   }
 
@@ -134,5 +141,5 @@ export function useListbox<T>(options: UseListboxOptions<T>): UseListboxReturn {
 
   onScopeDispose(() => clearTimeout(typeaheadTimer))
 
-  return { activeIndex, activeId, onKeydown, setActive, optionId }
+  return { activeIndex, activeId, onKeydown, setActive, point, optionId }
 }

@@ -3,7 +3,6 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import TimelineFixture from './fixtures/TimelineFixture.vue'
 import Timeline from '../src/components/Timeline/Timeline.vue'
-import type { TimelineItemParts } from '../src/components/Timeline/Timeline.vue'
 
 function stepsIn(
   screen: Awaited<ReturnType<typeof render>>,
@@ -143,7 +142,7 @@ test('pulse is off by default — no animation on the active marker unless the p
   expect(offBefore.animationName).toBe('none')
 })
 
-test('motionCss=false also disables the dot and connector transitions, not just list add/remove', async () => {
+test('motion=false also disables the dot and connector transitions, not just list add/remove', async () => {
   const screen = await render(TimelineFixture, {})
 
   const offDot = getComputedStyle(
@@ -196,22 +195,49 @@ test('pushing a new item renders an additional step reactively', async () => {
   await expect.poll(() => stepsIn(screen, 'reactive').length).toBe(2)
 })
 
-test("@item-enter hands over the entering step's parts, including the line leading into it", async () => {
-  const onEnter = vi.fn((_el: Element, done: () => void, _parts: TimelineItemParts) => done())
+test('motion hooks get the entering step and its parts, including the line leading into it', async () => {
+  const onEnter = vi.fn((_parts: Record<string, HTMLElement>) => undefined)
   const screen = await render(Timeline, {
-    props: { items: ['a', 'b'], motionCss: false, 'onItem-enter': onEnter },
+    props: { items: ['a', 'b'], motion: { enter: onEnter } },
     global: { stubs: { 'transition-group': false } },
   })
   await screen.rerender({ items: ['a', 'b', 'c'] })
   await vi.waitFor(() => expect(onEnter).toHaveBeenCalled())
 
-  const [el, , parts] = onEnter.mock.calls.at(-1)!
+  const [parts] = onEnter.mock.calls.at(-1)!
   const steps = screen.container.querySelectorAll('.ui-timeline-step')
-  expect(el).toBe(steps[2])
+  expect(parts.item).toBe(steps[2])
   expect(parts.marker).toBe(steps[2]!.querySelector('.ui-timeline-marker'))
   expect(parts.content).toBe(steps[2]!.querySelector('.ui-timeline-content'))
-  expect(parts.connector).toBeNull()
+  // The last step has no line below it.
+  expect(parts.connector).toBeUndefined()
   expect(parts.previousConnector).toBe(steps[1]!.querySelector('.ui-timeline-connector'))
+})
+
+test("motion values for a step's parts play on them with the step; `false` adds at once", async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a'],
+      motion: { initial: { marker: { scale: 0.5 } }, spring: { damping: 1, response: 0.4 } },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  await screen.rerender({ items: ['a', 'b'] })
+  const steps = () => screen.container.querySelectorAll('.ui-timeline-step')
+  await vi.waitFor(() => expect(steps()).toHaveLength(2))
+  const marker = steps()[1]!.querySelector<HTMLElement>('.ui-timeline-marker')!
+  await vi.waitFor(() => expect(marker.getAnimations().length).toBeGreaterThan(0))
+  // And the step itself, on its built-in look.
+  expect(steps()[1]!.getAnimations().length).toBeGreaterThan(0)
+  screen.unmount()
+
+  const off = await render(Timeline, {
+    props: { items: ['a'], motion: false },
+    global: { stubs: { 'transition-group': false } },
+  })
+  await off.rerender({ items: ['a', 'b'] })
+  const added = off.container.querySelectorAll<HTMLElement>('.ui-timeline-step')[1]!
+  expect(added.getAnimations()).toHaveLength(0)
 })
 
 test.each(['horizontal', 'vertical'] as const)(
@@ -225,3 +251,111 @@ test.each(['horizontal', 'vertical'] as const)(
     expect(list.hasAttribute('aria-orientation')).toBe(false)
   },
 )
+
+test('a step whose parts have exits stays opaque around them', async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a', 'b'],
+      itemKey: (item: unknown) => String(item),
+      motion: { exit: { marker: { scale: 0.4 } } },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const first = () => screen.container.querySelector<HTMLElement>('.ui-timeline-step')!
+  await vi.waitFor(() => expect(first()).not.toBeNull())
+  const leaving = first()
+  await screen.rerender({ items: ['b'] })
+  let opacity = 1
+  expect(leaving.isConnected).toBe(true)
+  for (let i = 0; i < 20 && leaving.isConnected; i++) {
+    await new Promise(requestAnimationFrame)
+    // Gone during the frame: a detached element has no computed opacity.
+    if (leaving.isConnected) opacity = Math.min(opacity, Number(getComputedStyle(leaving).opacity))
+  }
+  expect(opacity).toBe(1)
+})
+
+test("held while it closes, the steps after it don't jump back once it's gone", async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a', 'b'],
+      itemKey: (item: unknown) => String(item),
+      motion: {
+        leaving: 'hold',
+        exit: { item: { height: { value: 0, duration: 300, easing: 'linear' } } },
+      },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const steps = () => [...screen.container.querySelectorAll<HTMLElement>('.ui-timeline-step')]
+  await vi.waitFor(() => expect(steps()).toHaveLength(2))
+  const second = steps()[1]!
+  const start = second.getBoundingClientRect().top
+  await screen.rerender({ items: ['b'] })
+  const tops: number[] = []
+  for (let i = 0; i < 40; i++) {
+    await new Promise(requestAnimationFrame)
+    tops.push(second.getBoundingClientRect().top - start)
+  }
+  // It moved up as the step closed; it never went back down after.
+  const up = tops.findIndex((t) => t < -10)
+  expect(up).toBeGreaterThan(-1)
+  expect(Math.max(...tops.slice(up + 1))).toBeLessThan(tops[up]! + 5)
+})
+
+test("held while your leave hook closes it, the steps after it don't jump back once it's gone", async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a', 'b'],
+      itemKey: (item: unknown) => String(item),
+      motion: {
+        leaving: 'hold',
+        leave: ({ item }: { item: HTMLElement }) =>
+          item.animate([{ height: `${item.offsetHeight}px` }, { height: '0px' }], {
+            duration: 300,
+            fill: 'forwards',
+          }),
+      },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const steps = () => [...screen.container.querySelectorAll<HTMLElement>('.ui-timeline-step')]
+  await vi.waitFor(() => expect(steps()).toHaveLength(2))
+  const second = steps()[1]!
+  const start = second.getBoundingClientRect().top
+  await screen.rerender({ items: ['b'] })
+  const tops: number[] = []
+  for (let i = 0; i < 40; i++) {
+    await new Promise(requestAnimationFrame)
+    tops.push(second.getBoundingClientRect().top - start)
+  }
+  const up = tops.findIndex((t) => t < -10)
+  expect(up).toBeGreaterThan(-1)
+  expect(Math.max(...tops.slice(up + 1))).toBeLessThan(tops[up]! + 5)
+})
+
+test('steps leaving together know their place and how many go: a close that staggers in reverse', async () => {
+  const screen = await render(Timeline, {
+    props: {
+      items: ['a', 'b', 'c', 'd'],
+      itemKey: (item: unknown) => String(item),
+      motion: {
+        exit: {
+          item: ({ index, count = 1 }: { index: number; count?: number }) => ({
+            opacity: { value: 0, duration: 200, delay: (count - 1 - index) * 0.1 },
+          }),
+        },
+      },
+    },
+    global: { stubs: { 'transition-group': false } },
+  })
+  const steps = () => [...screen.container.querySelectorAll<HTMLElement>('.ui-timeline-step')]
+  await vi.waitFor(() => expect(steps()).toHaveLength(4))
+  const leaving = steps().slice(0, 3)
+  await screen.rerender({ items: ['d'] })
+  await vi.waitFor(() => expect(leaving[0]!.getAnimations().length).toBeGreaterThan(0))
+  const delays = leaving.map((el) =>
+    Math.round(Number(el.getAnimations()[0]!.effect!.getTiming().delay)),
+  )
+  expect(delays).toEqual([200, 100, 0])
+})

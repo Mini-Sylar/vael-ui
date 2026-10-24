@@ -38,6 +38,8 @@ export interface UiTheme {
   badge?: { ui?: Partial<{ root: UiPartValue }> }
   tag?: { ui?: Partial<{ root: UiPartValue; icon: UiPartValue; label: UiPartValue }> }
   kbd?: { ui?: Partial<{ root: UiPartValue }> }
+  animatedNumber?: { ui?: Partial<{ root: UiPartValue }> }
+  animatedText?: { ui?: Partial<{ root: UiPartValue }> }
   avatar?: {
     ui?: Partial<{
       root: UiPartValue
@@ -71,7 +73,15 @@ export interface UiTheme {
     }>
   }
   separator?: { ui?: Partial<{ root: UiPartValue; line: UiPartValue; text: UiPartValue }> }
-  progress?: { ui?: Partial<{ root: UiPartValue; track: UiPartValue; fill: UiPartValue }> }
+  progress?: {
+    ui?: Partial<{
+      root: UiPartValue
+      track: UiPartValue
+      fill: UiPartValue
+      legend: UiPartValue
+      legendItem: UiPartValue
+    }>
+  }
   message?: {
     ui?: Partial<{
       root: UiPartValue
@@ -104,6 +114,25 @@ export interface UiTheme {
       input: UiPartValue
       increment: UiPartValue
       decrement: UiPartValue
+    }>
+  }
+  editable?: {
+    ui?: Partial<{
+      root: UiPartValue
+      preview: UiPartValue
+      edit: UiPartValue
+      input: UiPartValue
+      actions: UiPartValue
+    }>
+  }
+  colorPicker?: {
+    ui?: Partial<{
+      root: UiPartValue
+      swatch: UiPartValue
+      panel: UiPartValue
+      value: UiPartValue
+      presets: UiPartValue
+      preset: UiPartValue
     }>
   }
   otpInput?: {
@@ -378,6 +407,7 @@ export interface UiTheme {
       groupLabel: UiPartValue
       item: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }
   tour?: {

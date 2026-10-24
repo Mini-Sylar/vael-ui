@@ -1,12 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Long content, capped to available space</h3>
+    <h3>Long content, capped to the available space</h3>
     <p class="note">
-      floating-ui's <code>size()</code> middleware measures real available space per-open and sets a
-      <code>max-height</code> plus scroll on the panel, so long content never overflows the viewport
-      regardless of where the trigger sits or how little room is left. The fade at the top/bottom
-      edge is <code>v-scroll-mask</code>, the same directive Dialog's <code>scrollFade</code> prop
-      uses internally.
+      floating-ui's <code>size()</code> middleware measures the free space each time the popover
+      opens and sets a <code>max-height</code> on the panel, which then scrolls. Long content never
+      overflows the viewport, wherever the trigger sits. The fade at the top and bottom edges is
+      <code>scrollFade</code>, which uses the same <code>v-scroll-mask</code> directive as Dialog.
     </p>
     <Popover v-model:open="longContentOpen">
       <template #trigger="{ open, setTriggerEl }">

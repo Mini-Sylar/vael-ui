@@ -60,7 +60,7 @@ export const KNOB_ARC_PATH = `M ${start.x.toFixed(3)} ${start.y.toFixed(3)} A ${
 <script setup lang="ts">
 import './Knob.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import {
@@ -72,12 +72,19 @@ import { useKnob } from '../../composables/useKnob'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { KnobMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 /** Current value. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
+
+const emit = defineEmits<{
+  /** Fires with the final value when you release the knob or press a key, like a native range input's `change`. `v-model` updates on every move. */
+  change: [value: number]
+}>()
 
 const props = withDefaults(
   defineProps<{
@@ -105,6 +112,8 @@ const props = withDefaults(
       fill: UiPartValue
       indicator: UiPartValue
     }>
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, scale: 0.9 } } }`) and its states, like `active` while you turn it (`{ states: { active: { indicator: { scale: '1.2' } } } }`). `false` turns its own animation off. */
+    motion?: KnobMotion
   }>(),
   {
     min: 0,
@@ -113,6 +122,8 @@ const props = withDefaults(
     size: 'md',
     disabled: false,
     invalid: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 
@@ -135,6 +146,19 @@ const describedBy = computed(
 const root = useTemplateRef<HTMLElement>('root')
 const dialEl = useTemplateRef<HTMLElement>('dialEl')
 const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+const parts = useStateMotion({
+  key: 'knob',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-knob',
+    track: '.ui-knob-track',
+    fill: '.ui-knob-fill',
+    indicator: '.ui-knob-indicator',
+  },
+  states: () => ({ disabled: isDisabled.value }),
+})
 
 const {
   isDragging,
@@ -147,6 +171,8 @@ const {
   max: () => props.max,
   step: () => props.step,
   disabled: () => isDisabled.value,
+  // After the parent applies the update, so `change` carries the committed value.
+  onCommit: () => nextTick(() => emit('change', modelValue.value)),
 })
 
 const cx = useClassMerge()
@@ -175,6 +201,10 @@ defineExpose({
   dialEl,
   /** Pointer mark that rotates with the value. */
   indicatorEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 
 function onDialFocus(event: FocusEvent) {

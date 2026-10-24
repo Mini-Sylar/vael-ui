@@ -220,15 +220,13 @@
     v-else
     tag="tbody"
     :role="roles.group"
-    name="ui-datatable-row"
-    :css="rowCss"
+    v-bind="rowsTransition"
     :class="tbodyPart.class"
     :style="tbodyPart.style"
     :data-motion="rowCss && rowMotionReady ? undefined : 'off'"
     @before-enter="beforeEnterHook"
+    @after-enter="afterEnterHook"
     @before-leave="beforeLeaveHook"
-    @enter="rowEnterHook"
-    @leave="rowLeaveHook"
   >
     <tr
       :role="roles.row"
@@ -399,11 +397,11 @@ const props = defineProps<{
   onToggleSelect: (row: T) => void
   onToggleExpand: (row: T) => void
   onRowClick: (row: T, event: MouseEvent) => void
-  motionCss: boolean
+  motion: boolean
   /** False until the first measurement render has passed; row move stays off. */
   rowMotionReady: boolean
-  onRowEnter: (el: Element, done: () => void) => void
-  onRowLeave: (el: Element, done: () => void) => void
+  /** Your rows' motion (the motion system's TransitionGroup props), or none: the built-in CSS. */
+  rowTransition?: Record<string, unknown>
   /** scrollHeight layout: head and body are separate tables joined by ARIA roles. */
   split: boolean
   ui?: Partial<{
@@ -460,19 +458,25 @@ const rowMotionFits = computed<{ count: number; fits: boolean }>((previous) => {
     fits: count <= ROW_MOTION_LIMIT && (previous?.count ?? 0) <= ROW_MOTION_LIMIT,
   }
 })
-const rowCss = computed(() => props.motionCss && rowMotionFits.value.fits)
+const rowCss = computed(() => props.motion && rowMotionFits.value.fits)
+// A change that keeps no row (a page change, new data) shows at once: every row fading in flashes.
+const rowSwap = computed<{ keys: Set<string>; swap: boolean }>((previous) => {
+  const keys = new Set(props.tableRowEntries.map((entry) => entry.key))
+  const kept = previous ? [...keys].some((key) => previous.keys.has(key)) : true
+  return { keys, swap: !kept && (previous?.keys.size ?? 0) > 0 }
+})
+const rowFade = computed(() => rowCss.value && !rowSwap.value.swap)
 
-// A JS hook and Vue's CSS end detection can't coexist, so hooks only wire when motionCss is off.
-const rowEnterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowEnter(el, done),
-)
-const rowLeaveHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => props.onRowLeave(el, done),
+// Yours plays through the motion system, the built-in look through CSS; past the limit, neither.
+const rowsTransition = computed(() =>
+  props.rowTransition && rowMotionFits.value.fits
+    ? props.rowTransition
+    : { name: 'ui-datatable-row', css: rowFade.value },
 )
 
 // A px max-block-size, not 0fr/1fr rows: fr interpolates unevenly and reads as a stall.
 function beforeEnterHook(el: Element) {
-  if (!rowCss.value) return
+  if (!rowFade.value) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
   if (!wrap) return
   wrap.style.maxBlockSize = '0px'
@@ -480,8 +484,13 @@ function beforeEnterHook(el: Element) {
     wrap.style.maxBlockSize = `${wrap.scrollHeight}px`
   })
 }
+// Released once open, so rows that grow later (async content) aren't clipped.
+function afterEnterHook(el: Element) {
+  const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
+  if (wrap) wrap.style.maxBlockSize = ''
+}
 function beforeLeaveHook(el: Element) {
-  if (!rowCss.value) return
+  if (!rowFade.value) return
   const wrap = (el as HTMLElement).querySelector<HTMLElement>('.ui-datatable-expansion-rows')
   if (!wrap) return
   wrap.style.maxBlockSize = `${wrap.scrollHeight}px`

@@ -46,7 +46,13 @@
     color: var(--ui-primary-contrast);
     transition:
       background-color var(--ui-duration-press) ease,
-      border-color var(--ui-duration-press) ease;
+      border-color var(--ui-duration-press) ease,
+      scale var(--ui-duration-press) var(--ui-ease-out);
+    /* Own layer, so the press can't shift the tick at fractional zoom (e.g. Windows scaling). */
+    will-change: transform;
+  }
+  .ui-checkbox-input:active:not(:disabled) + .ui-checkbox-box {
+    scale: 0.94;
   }
   .ui-checkbox-check,
   .ui-checkbox-indeterminate {
@@ -110,6 +116,9 @@
     /* Checkbox: the check "draws" via stroke-dashoffset — movement — so it becomes an opacity-only fade instead, same swap as everywhere else in this file. Colors and the indeterminate fade (already opacity-only) are kept as-is. */
     .ui-checkbox[data-state='checked'] .ui-checkbox-check path {
       transition: none;
+    }
+    .ui-checkbox-input:active:not(:disabled) + .ui-checkbox-box {
+      scale: 1;
     }
   }
 }

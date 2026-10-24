@@ -6,6 +6,8 @@
     initial-value: 0px;
   }
   :root {
+    /* Native parts (scrollbars, form controls) follow the theme too. */
+    color-scheme: light;
     --ui-primary: #18181b;
     --ui-primary-hover: #27272a;
     --ui-primary-contrast: #fafafa;
@@ -52,7 +54,13 @@
 
     --ui-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
     --ui-duration-drawer: 500ms;
+    --ui-duration-drawer-exit: 350ms;
     --ui-duration-press: 160ms;
+    /* The highlight sliding between rows in menus and lists (shared/indicator.css). */
+    --ui-duration-indicator: 120ms;
+    /* Wide rows (MenuList, Tree, DataTable) move as a heavier slab, so they glide a little longer. */
+    --ui-duration-indicator-wide: 200ms;
+    --ui-ease-indicator: var(--ui-ease-out);
     --ui-duration-enter: 200ms;
     --ui-duration-exit: 150ms;
     --ui-duration-tooltip: 125ms;
@@ -60,6 +68,13 @@
     --ui-duration-toast: 400ms;
     --ui-duration-toast-exit: 200ms;
     --ui-duration-pulse: 1.2s;
+    /* AnimatedNumber's digits rolling to a new value. */
+    --ui-duration-number: 500ms;
+    --ui-ease-number: var(--ui-ease-out);
+    /* AnimatedText's swap between two values. */
+    --ui-duration-text: 150ms;
+    --ui-ease-text: cubic-bezier(0.65, 0, 0.35, 1);
+    --ui-duration-stagger: 40ms;
     --ui-ease-toast: var(--ui-ease-out);
     --ui-toast-offset: 1rem;
   }
@@ -69,6 +84,29 @@
   ::after {
     -webkit-tap-highlight-color: transparent;
     --ui-radius-surface: min(var(--ui-radius), 1rem);
+  }
+
+  /* Two quick taps on a stepper, a calendar arrow or a tab are two presses:
+     without this, iOS takes them as a double tap and zooms the page. Pinch
+     zoom still works. Zero specificity, so a drag surface's own touch-action
+     wins. */
+  :where(
+    button,
+    label,
+    summary,
+    [role='button'],
+    [role='option'],
+    [role='menuitem'],
+    [role='menuitemradio'],
+    [role='menuitemcheckbox'],
+    [role='tab'],
+    [role='treeitem'],
+    [role='switch'],
+    [role='checkbox'],
+    [role='radio'],
+    [role='slider']
+  ):where([class^='ui-'], [class*=' ui-']) {
+    touch-action: manipulation;
   }
 
   /* Components are sized border-box, as under every common reset; this keeps
@@ -88,6 +126,7 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
+      color-scheme: dark;
       --ui-primary: #fafafa;
       --ui-primary-hover: #e4e4e7;
       --ui-primary-contrast: #18181b;
@@ -123,6 +162,7 @@
   }
 
   :root[data-theme='dark'] {
+    color-scheme: dark;
     --ui-primary: #fafafa;
     --ui-primary-hover: #e4e4e7;
     --ui-primary-contrast: #18181b;

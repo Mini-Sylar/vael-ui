@@ -2,7 +2,9 @@ import '../src/style.css'
 import { userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { nextTick } from 'vue'
 import TreeFixture from './fixtures/TreeFixture.vue'
+import Tree from '../src/components/Tree/Tree.vue'
 import { findTreeNode, findTreeParent, removeTreeNode } from '../src/components/Tree/Tree.vue'
 import type { TreeNode } from '../src/components/Tree/Tree.vue'
 
@@ -74,6 +76,30 @@ test('Enter on a focused row toggles selection via the keyboard, not just a mous
   await vi.waitFor(() => expect(focusedLabel()).toBe('Vegetables'))
   await userEvent.keyboard('{Enter}')
   await expect.element(screen.getByTestId('model')).toHaveTextContent('"vegetables"')
+})
+
+test('single selection slides the highlight from the last selected row to the new one', async () => {
+  await render(TreeFixture)
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  await userEvent.click(rowByLabel('Fruits')!)
+  await vi.waitFor(() =>
+    expect(rowByLabel('Fruits')!.querySelector('.ui-tree-row-highlight')).not.toBeNull(),
+  )
+  const second = document.querySelectorAll<HTMLElement>('[role="treeitem"]')[1]!
+  await userEvent.click(second)
+  const highlight = second.querySelector<HTMLElement>('.ui-tree-row-highlight')!
+  await vi.waitFor(() => expect(highlight.dataset.from).toBe('near'))
+  expect(parseFloat(highlight.style.getPropertyValue('--ui-tree-highlight-from'))).toBeLessThan(0)
+  expect(rowByLabel('Fruits')!.querySelector('.ui-tree-row-highlight')).toBeNull()
+})
+
+test('a small tree keeps each row checkbox on its own press layer', async () => {
+  const screen = await render(TreeFixture, { props: { selectionMode: 'checkbox' } })
+  await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
+  const root = screen.container.querySelector<HTMLElement>('.ui-tree-root')!
+  expect(root.dataset.rows).toBeUndefined()
+  const box = root.querySelector<HTMLElement>('.ui-checkbox-box')!
+  await vi.waitFor(() => expect(getComputedStyle(box).willChange).toBe('transform'))
 })
 
 test('checkbox mode: checking a leaf adds its value to the array', async () => {
@@ -432,29 +458,32 @@ test('v-model:node holds an array of node objects in multiple mode', async () =>
   await expect.element(screen.getByTestId('node-model')).toHaveTextContent('Apple,Banana')
 })
 
-test('the leave transition covers the rows up with an animated clip, so the vacated space closes instead of snapping shut', async () => {
+test('collapsing a folder folds its rows block shut in place instead of unmounting it at once', async () => {
   await render(TreeFixture, { props: { items: deepItems, height: '120px' } })
   await vi.waitFor(() => expect(rowByLabel('Root')).toBeDefined())
   await userEvent.click(rowByLabel('Root')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
   await vi.waitFor(() => expect(rowByLabel('Sibling')).toBeDefined())
+  await new Promise((resolve) => setTimeout(resolve, 400))
 
-  // Asserts the CSS declaration; tree-fold-motion.test.ts checks the painted frames.
-  const rowsEl = document.querySelector<HTMLElement>('.ui-tree-rows')!
-  rowsEl.classList.add('ui-tree-rows-leave-active')
-  const style = getComputedStyle(rowsEl)
-  expect(style.transitionProperty).toContain('clip-path')
-  // An inset, not none: clip-path can't animate from none, so a none start would snap.
-  expect(style.clipPath).toMatch(/^inset\(/)
-  // Its end state covers every row; read without a transition so it isn't mid-way.
-  rowsEl.style.transition = 'none'
-  rowsEl.classList.add('ui-tree-rows-leave-to')
-  expect(getComputedStyle(rowsEl).clipPath).toMatch(/100%\)$/)
-  rowsEl.classList.remove('ui-tree-rows-leave-to')
-  rowsEl.style.transition = ''
-  rowsEl.classList.remove('ui-tree-rows-leave-active')
-
+  // tree-fold-motion.test.ts checks the painted frames; this checks the mechanism.
+  const rowsEl = rowByLabel('Root')!.nextElementSibling as HTMLElement
+  const open = rowsEl.getBoundingClientRect().height
   await userEvent.click(rowByLabel('Root')!.querySelector<HTMLElement>('.ui-tree-chevron')!)
+  await nextTick()
+  expect(rowsEl.isConnected).toBe(true)
+  expect(rowsEl.dataset.folding).toBe('')
+  const style = getComputedStyle(rowsEl)
+  // In flow and clipped while it moves: `clip`, so a sticky row inside stays sticky.
+  expect(style.position).not.toBe('absolute')
+  expect(style.overflowY).toBe('clip')
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  const partway = rowsEl.getBoundingClientRect().height
+  expect(partway).toBeGreaterThan(0)
+  expect(partway).toBeLessThan(open)
+  // Gone once it has shut.
   await vi.waitFor(() => expect(rowByLabel('Sibling')).toBeUndefined())
+  expect(rowsEl.isConnected).toBe(false)
 })
 
 // NOT yet fixed: a NESTED folder's own leave transition (depth >= 1) still never completes -
@@ -544,4 +573,27 @@ test('the chevron and the row checkbox take clicks across a 24px area while stay
   // Outside the checkbox's own box: toggles it exactly once.
   await userEvent.click(checkbox, { position: { x: 21, y: 8 } })
   await expect.element(screen.getByTestId('model')).toHaveTextContent('["apple","banana","orange"]')
+})
+
+test('a list taller than its box fades its edges; with stickyScroll the top stays solid', async () => {
+  const items = Array.from({ length: 30 }, (_, i) => ({ value: `n${i}`, label: `Node ${i}` }))
+  const list = { style: { maxBlockSize: '160px' } }
+  const screen = await render(Tree, {
+    props: { items, ui: { list }, stickyScroll: false, scrollFade: true },
+  })
+  const el = () => screen.container.querySelector<HTMLElement>('.ui-tree-list')!
+  await vi.waitFor(() => expect(el().classList.contains('scroll-fade')).toBe(true))
+  el().scrollTop = 200
+  await vi.waitFor(() =>
+    expect(getComputedStyle(el()).getPropertyValue('--fade-top-end')).not.toBe('0%'),
+  )
+
+  await screen.rerender({ items, ui: { list }, stickyScroll: true })
+  await vi.waitFor(() =>
+    expect(getComputedStyle(el()).getPropertyValue('--fade-top-end')).toBe('0%'),
+  )
+  expect(el().classList.contains('scroll-fade')).toBe(true)
+
+  await screen.rerender({ items, ui: { list }, stickyScroll: true, scrollFade: false })
+  await vi.waitFor(() => expect(el().classList.contains('scroll-fade')).toBe(false))
 })

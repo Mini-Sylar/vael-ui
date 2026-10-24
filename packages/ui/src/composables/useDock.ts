@@ -3,6 +3,7 @@ import type { MaybeRefOrGetter } from 'vue'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
 import type { ElRef } from './dom'
+import { prefersReducedMotion } from './dom'
 
 export type DockOrientation = 'horizontal' | 'vertical'
 
@@ -24,8 +25,12 @@ export interface UseDockOptions {
 export interface UseDockReturn {
   /** Bind as `:ref="setItemEl(index)"` on each item's own root element. */
   setItemEl: (index: number) => (el: unknown) => void
+  /** Bind to the root's `pointerdown`: a finger or pen magnifies only once it has slid from here. */
+  onPointerDown: (event: PointerEvent) => void
   onPointerMove: (event: PointerEvent) => void
   onPointerLeave: () => void
+  /** Whether the finger or pen that is down has slid far enough to magnify; false means a tap. */
+  touchSlid: () => boolean
   /** Re-measures each item's resting center. Called automatically on mount, on root resize, and when `itemCount` changes — exposed for a consumer that mutates layout some other way (e.g. a font swap mid-session). */
   remeasure: () => void
 }
@@ -64,14 +69,18 @@ export function dockItemOffsets(
   gap: number,
 ): number[] {
   if (sizes.length === 0) return []
+  // Laid out in the order they sit on screen, not index order: right to left (or row-reverse),
+  // the first item is at the far end.
+  const order = centers.map((_, i) => i).sort((a, b) => centers[a]! - centers[b]!)
   const virtualCenters: number[] = []
   let cursor = 0
-  for (const size of sizes) {
-    virtualCenters.push(cursor + size / 2)
-    cursor += size + gap
+  for (const i of order) {
+    virtualCenters[i] = cursor + sizes[i]! / 2
+    cursor += sizes[i]! + gap
   }
-  const restingMid = (centers[0]! + centers[centers.length - 1]!) / 2
-  const virtualMid = (virtualCenters[0]! + virtualCenters[virtualCenters.length - 1]!) / 2
+  const [first, last] = [order[0]!, order[order.length - 1]!]
+  const restingMid = (centers[first]! + centers[last]!) / 2
+  const virtualMid = (virtualCenters[first]! + virtualCenters[last]!) / 2
   const shift = restingMid - virtualMid
   return virtualCenters.map((center, i) => center + shift - centers[i]!)
 }
@@ -267,13 +276,31 @@ export function useDock(
     gap = parseFloat(getComputedStyle(root)[gapProperty]) || 0
   }
 
-  function canMagnify(): boolean {
+  // A finger or a pen has no hover, so it magnifies while it is down and sliding along the dock
+  // (the dock's touch-action: none keeps the page from scrolling then), and settles when it
+  // lifts. It has to travel this far first: a tap on an item is a tap, not a slide.
+  const TOUCH_SLIDE = 8
+  let touchStart: { x: number; y: number } | null = null
+  let touchSliding = false
+
+  function onPointerDown(event: PointerEvent) {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+    touchStart = { x: event.clientX, y: event.clientY }
+    touchSliding = false
+  }
+
+  function canMagnify(event?: PointerEvent): boolean {
     if (isDisabled() || !magnifyEnabled()) return false
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
-    return (
-      window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    )
+    if (prefersReducedMotion()) return false
+    if (event && (event.pointerType === 'touch' || event.pointerType === 'pen')) {
+      if (!touchStart || !(event.buttons > 0 || event.pressure > 0)) return false
+      if (!touchSliding)
+        touchSliding =
+          Math.hypot(event.clientX - touchStart.x, event.clientY - touchStart.y) >= TOUCH_SLIDE
+      return touchSliding
+    }
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches
   }
 
   // Instant — stops live tracking and jumps straight to rest, no easing.
@@ -312,8 +339,9 @@ export function useDock(
   }
 
   function onPointerMove(event: PointerEvent) {
-    if (!canMagnify()) {
-      resetSizes()
+    if (!canMagnify(event)) {
+      // Only what it drew itself: with `magnify` off the items' styles are yours.
+      if (magnified && event.pointerType !== 'touch' && event.pointerType !== 'pen') resetSizes()
       return
     }
     const root = rootEl.value
@@ -350,7 +378,9 @@ export function useDock(
   }
 
   function onPointerLeave() {
-    settleToRest()
+    touchStart = null
+    touchSliding = false
+    if (magnified || rafId != null) settleToRest()
   }
 
   onMounted(() => {
@@ -375,5 +405,12 @@ export function useDock(
     if (rafId != null) cancelAnimationFrame(rafId)
   })
 
-  return { setItemEl, onPointerMove, onPointerLeave, remeasure: measure }
+  return {
+    setItemEl,
+    onPointerDown,
+    onPointerMove,
+    onPointerLeave,
+    touchSlid: () => touchSliding,
+    remeasure: measure,
+  }
 }

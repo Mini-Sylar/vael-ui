@@ -1,0 +1,61 @@
+@layer ui-components {
+  .ui-animated-number {
+    display: inline-block;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    interpolate-size: allow-keywords;
+  }
+  .ui-animated-number-text {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .ui-animated-number-chars {
+    user-select: none;
+  }
+  .ui-animated-number-digit,
+  .ui-animated-number-symbol {
+    display: inline-block;
+  }
+  /* The hidden glyph sets the column's width and baseline; the reel rolls over it. */
+  .ui-animated-number-digit {
+    position: relative;
+    overflow: clip;
+  }
+  .ui-animated-number-placeholder {
+    visibility: hidden;
+  }
+  .ui-animated-number-reel {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    translate: 0 calc(var(--ui-digit) * -10%);
+    transition: translate var(--ui-duration-number) var(--ui-ease-number);
+  }
+  .ui-animated-number-enter-active,
+  .ui-animated-number-leave-active {
+    transition:
+      opacity var(--ui-duration-number) var(--ui-ease-number),
+      inline-size var(--ui-duration-number) var(--ui-ease-number);
+  }
+  .ui-animated-number-enter-from,
+  .ui-animated-number-leave-to {
+    inline-size: 0;
+    opacity: 0;
+  }
+  .ui-animated-number[data-motion='off'] .ui-animated-number-reel {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-animated-number-reel {
+      transition-duration: 0s;
+    }
+  }
+}

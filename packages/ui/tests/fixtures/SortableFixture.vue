@@ -4,7 +4,7 @@
     item-key="id"
     label-key="label"
     :disabled="disabled"
-    :motion-css="motionCss"
+    :motion="motion"
     :axis="axis"
     :can-drop="canDrop"
     :before-drop="beforeDrop"
@@ -26,12 +26,12 @@ import type { SortableDropDetails } from '../../src/composables/useSortable'
 withDefaults(
   defineProps<{
     disabled?: boolean
-    motionCss?: boolean
+    motion?: boolean
     axis?: 'x' | 'y'
     canDrop?: (d: SortableDropDetails) => boolean
     beforeDrop?: (d: SortableDropDetails) => boolean | Promise<boolean>
   }>(),
-  { disabled: false, motionCss: true, axis: 'y', canDrop: undefined, beforeDrop: undefined },
+  { disabled: false, motion: true, axis: 'y', canDrop: undefined, beforeDrop: undefined },
 )
 
 const dropErrors = ref<string[]>([])

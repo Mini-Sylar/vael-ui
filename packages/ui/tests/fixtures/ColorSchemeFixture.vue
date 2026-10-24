@@ -12,6 +12,10 @@ import type { ColorSchemeMode } from '../../src/composables/useColorScheme'
 
 const props = defineProps<{
   persist?: { get: () => string | null; set: (mode: ColorSchemeMode | null) => void }
+  initial?: ColorSchemeMode
 }>()
-const { mode, resolvedMode, setMode } = useColorScheme({ persist: props.persist })
+const { mode, resolvedMode, setMode } = useColorScheme({
+  persist: props.persist,
+  initial: props.initial,
+})
 </script>

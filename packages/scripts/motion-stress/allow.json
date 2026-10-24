@@ -1,0 +1,42 @@
+[
+  {
+    "page": "components/SwipeToReveal",
+    "check": "visible at rest",
+    "reason": "The actions sit under the row until it's swiped open: covered at rest by design."
+  },
+  {
+    "page": "components/Toaster",
+    "check": "visible at rest",
+    "reason": "Stacked toasts sit behind the front one until the stack is expanded."
+  },
+  {
+    "page": "motion/blocks",
+    "demo": "Notification stack",
+    "check": "visible at rest",
+    "reason": "Closed, each card sits behind the one before until the stack spreads into a list."
+  },
+  {
+    "page": "components/Sortable",
+    "demo": "Moving cards between lists",
+    "check": "visible at rest",
+    "reason": "The whole card is its drag handle: the handle button covers the card's content by design."
+  },
+  {
+    "page": "components/Dock",
+    "demo": "spring fisheye",
+    "check": "repeat",
+    "reason": "The fisheye follows the pointer: where it rests after a press decides what moves next."
+  },
+  {
+    "page": "components/SplitButton",
+    "demo": "Auto-loading main action",
+    "check": "repeat",
+    "reason": "The main action loads on a timer: what's loading by the third press depends on the clock."
+  },
+  {
+    "page": "components/Toaster",
+    "demo": "spring in from their edge",
+    "check": "clean at rest",
+    "reason": "The toast's countdown runs for its whole lifetime, longer than the wait for rest."
+  }
+]

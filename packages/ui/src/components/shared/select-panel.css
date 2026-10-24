@@ -33,38 +33,4 @@
     /* Header-sized: plain-text footers otherwise inherit the page's larger body size. */
     font-size: calc(var(--ui-font-size) * 0.8125);
   }
-  .ui-select-enter-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-select-leave-active {
-    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-select-enter-from,
-  .ui-select-leave-to {
-    opacity: 0;
-  }
-  .ui-select-enter-active .ui-select-panel {
-    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-select-leave-active .ui-select-panel {
-    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  /* Opens from a touch further than it closes to: the close should get out of the way. Never from scale(0). */
-  .ui-select-enter-from .ui-select-panel {
-    transform: scale(0.97);
-  }
-  .ui-select-leave-to .ui-select-panel {
-    transform: scale(0.99);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ui-select-enter-active .ui-select-panel,
-    .ui-select-leave-active .ui-select-panel {
-      transition: none;
-    }
-    .ui-select-enter-from .ui-select-panel,
-    .ui-select-leave-to .ui-select-panel {
-      transform: none;
-    }
-  }
 }

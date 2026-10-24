@@ -1,4 +1,8 @@
-import type { RouteRecordRaw, RouterScrollBehavior } from 'vue-router'
+import type { NavigationGuard, RouteRecordRaw, RouterScrollBehavior } from 'vue-router'
+import { allComponents } from './taxonomy'
+import { allComposables } from './composablesTaxonomy'
+import { DIRECTIVES } from './directivesTaxonomy'
+import { MOTION_CHAPTERS } from './motionChapters'
 
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: () => import('./pages/Home.vue') },
@@ -48,6 +52,43 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/guides/Skill.vue'),
   },
   {
+    path: '/motion',
+    name: 'motion-overview',
+    component: () => import('./pages/motion/MotionOverview.vue'),
+  },
+  {
+    path: '/motion/springs',
+    name: 'motion-springs',
+    component: () => import('./pages/motion/MotionSprings.vue'),
+  },
+  // The Motion guide's chapters share one page, driven by motionChapters.ts.
+  ...MOTION_CHAPTERS.map((chapter) => ({
+    path: chapter.path,
+    name: chapter.routeName,
+    component: () => import('./pages/motion/MotionChapter.vue'),
+  })),
+  // Internal: every showpiece side by side, to compare engines. Not in the nav.
+  {
+    path: '/motion/side-by-side',
+    name: 'motion-showpieces',
+    component: () => import('./pages/motion/MotionShowcase.vue'),
+  },
+  {
+    path: '/motion/blocks',
+    name: 'motion-blocks',
+    component: () => import('./pages/motion/MotionBlocks.vue'),
+  },
+  {
+    path: '/motion/types',
+    name: 'motion-types',
+    component: () => import('./pages/motion/MotionTypes.vue'),
+  },
+  {
+    path: '/motion/engines',
+    name: 'motion-engines',
+    component: () => import('./pages/motion/MotionEngines.vue'),
+  },
+  {
     path: '/components/:name',
     name: 'component',
     component: () => import('./pages/ComponentPage.vue'),
@@ -77,3 +118,29 @@ const scrollBehavior: RouterScrollBehavior = (to) => {
 }
 
 export const routerOptions = { routes, scrollBehavior }
+
+// Typed and shared links often get the casing or separators wrong (/components/date-picker).
+// Compare names without case, dashes or underscores, then send the visitor to the real page.
+const fold = (name: string) => name.replace(/[-_]/g, '').toLowerCase()
+const byFolded = (names: readonly string[]) => new Map(names.map((name) => [fold(name), name]))
+const DOC_PAGES: Record<string, { segment: string; names: Map<string, string> }> = {
+  component: { segment: 'components', names: byFolded(allComponents) },
+  composable: { segment: 'composables', names: byFolded(allComposables) },
+  directive: { segment: 'directives', names: byFolded(DIRECTIVES) },
+}
+
+// A global guard rather than `beforeEnter`, which skips param-only changes such as
+// /components/Button to /components/date-picker.
+export const canonicalDocsName: NavigationGuard = (to) => {
+  const page = DOC_PAGES[to.name as string]
+  if (!page) return true
+  const name = to.params.name as string
+  const canonical = page.names.get(fold(name))
+  if (canonical === name) return true
+  const { query, hash } = to
+  if (canonical) {
+    return { name: to.name, params: { name: canonical }, query, hash, replace: true }
+  }
+  // Unknown names keep their URL but render the 404 page, which suggests close matches.
+  return { name: 'not-found', params: { pathMatch: [page.segment, name] }, query, hash }
+}

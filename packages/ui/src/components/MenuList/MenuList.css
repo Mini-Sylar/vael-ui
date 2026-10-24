@@ -4,25 +4,33 @@
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
-    /* Containing block for .ui-menu-list-indicator's absolute positioning. */
+    /* Containing block for the indicators' absolute positioning. */
     position: relative;
+    isolation: isolate;
+    --ui-duration-indicator: var(--ui-duration-indicator-wide);
   }
   /* Sliding indicator between rows. */
+  /* Moved with `translate`, so it stays smooth while the next page renders. */
   .ui-menu-list-indicator {
     position: absolute;
+    top: 0;
     inset-inline: 0;
     border-radius: calc(var(--ui-radius) - 4px);
     background: color-mix(in oklch, var(--ui-primary) 7%, var(--ui-surface));
     transition:
-      inset-block-start var(--ui-duration-press) var(--ui-ease-out),
-      block-size var(--ui-duration-press) var(--ui-ease-out),
+      translate var(--ui-duration-press) var(--ui-ease-in-out),
+      block-size var(--ui-duration-press) var(--ui-ease-in-out),
       background-color var(--ui-duration-press) ease;
   }
   /* Retarget darken to indicator via :has(). */
-  .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:hover:not(:disabled))
-    .ui-menu-list-indicator,
   .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:focus-visible) .ui-menu-list-indicator {
     background: color-mix(in oklch, var(--ui-primary) 12%, var(--ui-surface));
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-menu-list:has(.ui-menu-list-item[aria-current='page']:hover:not(:disabled))
+      .ui-menu-list-indicator {
+      background: color-mix(in oklch, var(--ui-primary) 12%, var(--ui-surface));
+    }
   }
   .ui-menu-list-item {
     /* Positioning context for item slot. */
@@ -45,10 +53,17 @@
     cursor: pointer;
     transition: background-color var(--ui-duration-press) ease;
   }
-  .ui-menu-list-item:hover:not(:disabled):not([aria-disabled='true']),
+  /* Hover and focus backgrounds are the sliding .ui-indicator. */
   .ui-menu-list-item:focus-visible {
     outline: none;
-    background: var(--ui-muted);
+  }
+  /* Touch has no hover: the press itself shows the row was hit. */
+  @media (hover: none) and (pointer: coarse) {
+    .ui-menu-list-item:active:not(:disabled):not([aria-disabled='true']):not(
+        [aria-current='page']
+      ) {
+      background: var(--ui-muted);
+    }
   }
   .ui-menu-list-item:disabled,
   .ui-menu-list-item[aria-disabled='true'] {
@@ -64,9 +79,13 @@
     font-weight: 600;
   }
   /* Stay transparent to let indicator show. */
-  .ui-menu-list-item[aria-current='page']:hover:not(:disabled),
   .ui-menu-list-item[aria-current='page']:focus-visible {
     background: transparent;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-menu-list-item[aria-current='page']:hover:not(:disabled) {
+      background: transparent;
+    }
   }
   /* Keyboard focus marker: left accent bar. */
   .ui-menu-list-item:focus-visible::before {

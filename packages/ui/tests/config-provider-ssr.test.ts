@@ -50,5 +50,6 @@ test('the server markup hydrates without mismatches and the theme applies', asyn
   }
 
   const button = host.querySelector('[data-testid="ssr-button"]')!
-  expect(getComputedStyle(button).backgroundColor).toBe('rgb(99, 102, 241)')
+  // The box is painted by the button's ::before layer.
+  expect(getComputedStyle(button, '::before').backgroundColor).toBe('rgb(99, 102, 241)')
 })

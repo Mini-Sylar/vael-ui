@@ -2,8 +2,9 @@
   <section class="demo">
     <h3>A bordered record form</h3>
     <p class="note">
-      <code>attached</code> is the vael-ui part. The grid, square corners and shared borders are
-      about 15 lines of your own CSS (<code>.my-record-form</code>): open the Code tab to copy them.
+      <code>attached</code> is the only vael-ui part. The grid, square corners and shared borders
+      are about 15 lines of your own CSS (<code>.my-record-form</code>): open the Code tab to copy
+      them.
     </p>
     <div class="my-record-form">
       <Field label="Username" label-placement="start" attached :label-width="104">

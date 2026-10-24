@@ -91,4 +91,10 @@
       transition: none;
     }
   }
+
+  /* Hover and focus: a lighter pill sliding under the options, beneath the selected one. */
+  .ui-select-button-hover {
+    border-radius: calc(var(--ui-select-button-radius) - var(--ui-select-button-gap));
+    background: color-mix(in oklch, var(--ui-surface) 55%, transparent);
+  }
 }

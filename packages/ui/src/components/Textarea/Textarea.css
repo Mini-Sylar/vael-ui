@@ -1,6 +1,7 @@
 @layer ui-components {
   /* Textarea Grid frame: row 1 is [start][textarea][end], row 2 is a full-width in-frame action strip under the text — an empty grid row with nothing placed in it collapses to 0 height on its own, so the row is always declared and simply disappears when neither bottom slot renders (no `:has()` needed). Auto-grow is native-first (`field-sizing: content`); see Textarea.vue's SFC comment for the JS fallback. */
   .ui-textarea {
+    position: relative;
     display: grid;
     grid-template-columns: auto 1fr auto;
     grid-template-areas:
@@ -40,6 +41,23 @@
   .ui-textarea-el::placeholder {
     color: var(--ui-text-muted);
   }
+  /* #display draws the text over the textarea; the textarea keeps the caret. */
+  .ui-textarea-display {
+    position: absolute;
+    overflow: hidden;
+    color: var(--ui-text);
+    pointer-events: none;
+  }
+  .ui-textarea-display-track {
+    display: block;
+  }
+  .ui-textarea-el[data-ui-display] {
+    color: transparent;
+    caret-color: var(--ui-text);
+  }
+  .ui-textarea-el[data-ui-display]::placeholder {
+    color: transparent;
+  }
   .ui-textarea:not(:has(.ui-textarea-end)):not(:has(.ui-textarea-bottom)) .ui-textarea-el {
     margin-inline-end: -0.75rem;
     margin-block-end: -0.5rem;
@@ -53,6 +71,8 @@
     field-sizing: content;
     resize: none;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     /* The +1rem budget is real padding-block (0.5rem top + bottom), not just size inflation: a <textarea> renders its content top-aligned with no vertical centering of its own, so without an actual padding split the whole 1rem buffer sat below the text, pushing the box's geometric center — and anything centered against it, like an avatar in #start — visibly below the text's true center. */
     padding-block: 0.5rem;
     min-block-size: calc(var(--ui-textarea-rows, 3) * 1lh + 1rem);
@@ -90,6 +110,13 @@
   /* margin-inline-start: auto, not space-between on the parent — with only
      #bottom-end provided, space-between has a single flex child and pins it
      to the start instead of the end. */
+  /* Each side is a centred row, so a counter, an icon and a button line up without extra markup. */
+  .ui-textarea-bottom-start,
+  .ui-textarea-bottom-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
   .ui-textarea-bottom-end {
     margin-inline-start: auto;
   }

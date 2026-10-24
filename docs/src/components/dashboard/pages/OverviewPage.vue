@@ -65,7 +65,7 @@
         <div class="dash-recent-orders-header">
           <div>
             <h2 class="ui-card-title">Recent orders</h2>
-            <p class="ui-card-description">Latest 10 — full table lives on the Orders page.</p>
+            <p class="ui-card-description">The latest 10. The full table is on the Orders page.</p>
           </div>
           <AvatarGroup size="sm" :overflow-count="teamOverflowCount" hover-lift>
             <Avatar
@@ -73,7 +73,7 @@
               :key="member.name"
               :name="member.name"
               size="sm"
-              v-tooltip="`${member.name} — ${member.role}`"
+              v-tooltip="`${member.name}, ${member.role}`"
             />
           </AvatarGroup>
         </div>

@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3>Value bubble in the <code>#thumb</code> slot</h3>
-    <p class="note">The bubble shows while dragging, on hover, and on keyboard focus.</p>
+    <p class="note">The bubble shows while you drag, on hover and on keyboard focus.</p>
     <div class="row">
       <Field label="Opacity" label-placement="start" class="slider-field">
         <Slider v-model="opacity" class="bubble-slider">

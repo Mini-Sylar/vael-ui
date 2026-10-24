@@ -11,11 +11,17 @@
     :aria-busy="loading || undefined"
     v-scroll-mask="scrollFade"
   >
+    <div
+      ref="indicatorEl"
+      class="ui-indicator ui-select-indicator"
+      :style="indicatorStyle"
+      aria-hidden="true"
+    />
     <div v-if="items.length === 0 && !loading" :class="emptyPart.class" :style="emptyPart.style">
       <slot name="empty">{{ emptyText }}</slot>
     </div>
     <div v-else-if="items.length === 0 && loading" class="ui-select-loading">
-      <span class="ui-loader" />
+      <LoaderMark />
     </div>
     <!-- Grouped: real role="group" wrappers, so screen readers announce each group's name. Rows
          aren't evenly spaced here, so every option renders and scrolls into view by itself. Keyed
@@ -96,7 +102,7 @@
         </div>
       </div>
       <div v-if="loading" class="ui-select-loading-more" aria-hidden="true">
-        <span class="ui-loader" />
+        <LoaderMark />
       </div>
     </template>
     <template v-else>
@@ -151,7 +157,7 @@
         </div>
       </div>
       <div v-if="loading" class="ui-select-loading-more" aria-hidden="true">
-        <span class="ui-loader" />
+        <LoaderMark />
       </div>
     </template>
   </div>
@@ -214,6 +220,7 @@ export interface SelectListSection<T extends SelectItemData = SelectItemData> {
 -->
 <script setup lang="ts" generic="T extends SelectItemData">
 import '../shared/loader-spinner.css'
+import LoaderMark from './LoaderMark.vue'
 import '../shared/tick.css'
 import { computed, useTemplateRef } from 'vue'
 import { useEasedHeight } from '../../composables/useEasedHeight'
@@ -222,6 +229,8 @@ import type { ScrollAlign } from '../../composables/useVirtualizer'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { scrollIntoContainer } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'
+import { useTabIndicator } from '../../composables/useTabIndicator'
+import '../shared/indicator.css'
 import type { UiPartValue } from '../../classes'
 
 const props = defineProps<{
@@ -284,6 +293,20 @@ defineSlots<{
 }>()
 
 const listEl = useTemplateRef<HTMLElement>('listEl')
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+
+// The highlight slides between options, Tabs-style; a long jump (typeahead, a search) lands at once.
+const { style: indicatorStyle } = useTabIndicator(() => [props.activeIndex, props.items], {
+  listEl,
+  orientation: 'vertical',
+  selector: '[role="option"][data-active]',
+  scroller: true,
+  matchCross: true,
+  maxGlide: 3,
+  motion: () => props.motion,
+  indicatorEl,
+  position: 'translate',
+})
 
 // Eases to the new height when the options change (a search, more loaded), as CommandPalette does.
 useEasedHeight({
@@ -316,6 +339,7 @@ function onRowClick(index: number) {
 
 defineExpose({
   listEl,
+  indicatorEl,
   scrollToIndex: (index: number, align?: ScrollAlign) => {
     if (!props.sections) return scrollToIndex(index, align)
     const row = listEl.value?.querySelector<HTMLElement>(`[id="${props.listboxId}-opt-${index}"]`)

@@ -35,7 +35,13 @@
     background: var(--ui-surface);
     transition:
       background-color var(--ui-duration-press) ease,
-      border-color var(--ui-duration-press) ease;
+      border-color var(--ui-duration-press) ease,
+      scale var(--ui-duration-press) var(--ui-ease-out);
+    /* Own layer, so the press can't shift the dot at fractional zoom (e.g. Windows scaling). */
+    will-change: transform;
+  }
+  .ui-radio-input:active:not(:disabled) + .ui-radio-control {
+    scale: 0.94;
   }
   .ui-radio-dot {
     inline-size: 0.5rem;
@@ -67,7 +73,7 @@
   .ui-radio--disabled .ui-radio-input {
     cursor: not-allowed;
   }
-  /* First paint, and `motionCss="false"` — see Checkbox's identical guard. */
+  /* First paint, and `motion="false"` — see Checkbox's identical guard. */
   .ui-radio--no-anim .ui-radio-control,
   .ui-radio--no-anim .ui-radio-dot {
     transition: none;
@@ -87,6 +93,9 @@
     /* Radio: the dot's scale-in is movement — drop the scale, keep the fade. */
     .ui-radio-dot {
       transition: opacity var(--ui-duration-press) ease;
+    }
+    .ui-radio-input:active:not(:disabled) + .ui-radio-control {
+      scale: 1;
     }
   }
 }

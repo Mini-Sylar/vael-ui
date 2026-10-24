@@ -59,6 +59,7 @@ import '../shared/tokens.css'
 import {
   computed,
   onBeforeUnmount,
+  onMounted,
   provide,
   shallowRef,
   useId,
@@ -74,6 +75,8 @@ import { useThemedUi } from '../../theme'
 import { fieldKey } from '../../composables/fieldContext'
 import FieldCellScope from '../internal/FieldCellScope.vue'
 import type { FieldContext } from '../../composables/fieldContext'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { FieldMotion } from '../../motion/types'
 
 const props = withDefaults(
   defineProps<{
@@ -98,6 +101,12 @@ const props = withDefaults(
     labelWidth?: number | string
     /** Aligns a `start`/`end` label's text. Use `'end'` for right-aligned form labels that sit next to the control. @default 'start' */
     labelAlign?: 'start' | 'end'
+    /**
+     * How it moves: its parts' appearance (`{ initial: { label: { opacity: 0, y: 4 } } }`) and its
+     * states (`{ states: { invalid: { control: { x: [0, -6, 6, 0] } } } }`). `false` turns its own
+     * animation off.
+     */
+    motion?: FieldMotion
     /** Class and style overrides for each part. Joined cells (an `attached` label, `#prepend`, `#append`) take their colors from `--ui-field-cell-bg` and `--ui-field-cell-color`. */
     ui?: Partial<{
       root: UiPartValue
@@ -110,7 +119,8 @@ const props = withDefaults(
       error: UiPartValue
     }>
   }>(),
-  { labelPlacement: 'top', attached: false, labelAlign: 'start' },
+  // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+  { labelPlacement: 'top', attached: false, labelAlign: 'start', motion: undefined },
 )
 
 defineSlots<{
@@ -138,6 +148,10 @@ const hasSlot = useSlotPresence(slots)
 const focused = shallowRef(false)
 const filled = shallowRef(false)
 const startInset = shallowRef(0)
+// Framed controls register on mount; until then a joined Field assumes it has one.
+const frames = shallowRef<(() => string | undefined)[]>([])
+const mounted = shallowRef(false)
+onMounted(() => (mounted.value = true))
 
 const describedBy = computed(() => {
   const ids: string[] = []
@@ -162,6 +176,10 @@ provide<FieldContext>(fieldKey, {
   },
   reportStartInset: (value) => {
     startInset.value = value
+  },
+  registerFrame: (size) => {
+    frames.value = [...frames.value, size]
+    return () => (frames.value = frames.value.filter((entry) => entry !== size))
   },
 })
 
@@ -286,6 +304,9 @@ const dataAttrs = computed(() => ({
   'data-placement': props.labelPlacement,
   'data-attached': isAttached.value || undefined,
   'data-joined': joinStart.value || joinEnd.value || undefined,
+  'data-frameless':
+    ((joinStart.value || joinEnd.value) && mounted.value && !frames.value.length) || undefined,
+  'data-frame-size': frames.value[0]?.(),
   'data-join-start': joinStart.value || undefined,
   'data-join-end': joinEnd.value || undefined,
   'data-label-align': isSide.value ? props.labelAlign : undefined,
@@ -296,6 +317,24 @@ const dataAttrs = computed(() => ({
 }))
 
 const root = useTemplateRef<HTMLElement>('root')
+const parts = useStateMotion({
+  key: 'field',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-field',
+    label: '.ui-field-label',
+    control: '.ui-field-control',
+    description: '.ui-field-description',
+    error: '.ui-field-error',
+  },
+  states: () => ({
+    invalid: isInvalid.value,
+    disabled: !!props.disabled,
+    focus: focused.value,
+  }),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.field,
@@ -315,5 +354,9 @@ const errorPart = computed(() => resolveUiPart(cx, themedUi()?.error, 'ui-field-
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

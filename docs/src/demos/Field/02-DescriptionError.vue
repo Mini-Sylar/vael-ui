@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Description, required marker, error</h3>
+    <h3>Description, required marker and error</h3>
     <div class="field-grid">
       <Field
         label="Username"

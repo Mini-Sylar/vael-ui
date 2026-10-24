@@ -18,6 +18,7 @@
 </template>
 
 <script setup lang="ts">
+import type { BeforeClose } from '../../src/motion/types'
 import { shallowRef, useTemplateRef } from 'vue'
 import BottomSheet from '../../src/components/BottomSheet/BottomSheet.vue'
 import type { SheetSnapPoint } from '../../src/components/BottomSheet/BottomSheet.vue'
@@ -26,7 +27,7 @@ withDefaults(
   defineProps<{
     snapPoints?: SheetSnapPoint[]
     dismissible?: boolean
-    beforeClose?: (done: () => void) => void
+    beforeClose?: BeforeClose
   }>(),
   {
     snapPoints: () => [

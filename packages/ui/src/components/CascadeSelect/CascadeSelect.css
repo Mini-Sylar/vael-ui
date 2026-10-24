@@ -37,8 +37,10 @@
     font-size: var(--ui-font-size);
     border-radius: var(--ui-radius);
   }
-  .ui-cascade-select-trigger:hover:not(.ui-cascade-select-trigger--disabled) {
-    border-color: var(--ui-border-strong);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-cascade-select-trigger:hover:not(.ui-cascade-select-trigger--disabled) {
+      border-color: var(--ui-border-strong);
+    }
   }
   /* Div role="combobox" needs own focus-visible. */
   .ui-cascade-select-trigger:focus-visible {
@@ -91,11 +93,15 @@
     inline-size: 0.85em;
     block-size: 0.85em;
   }
-  .ui-cascade-select-clear:hover {
-    color: var(--ui-text);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-cascade-select-clear:hover {
+      color: var(--ui-text);
+    }
   }
-  .ui-cascade-select-clear:hover::before {
-    background: var(--ui-muted);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-cascade-select-clear:hover::before {
+      background: var(--ui-muted);
+    }
   }
   .ui-cascade-select-value {
     flex: 1 1 auto;
@@ -105,10 +111,27 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  /* Clip room for a chip remove's 24px hit area. */
+  .ui-cascade-select-value .ui-animated-text-value {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+  }
+  .ui-cascade-select-value .ui-animated-text[data-sizing] .ui-animated-text-value {
+    text-overflow: clip;
+  }
+  /* One row, so the placeholder sits beside the last chip while it collapses instead of under it.
+     The padding is clip room for a chip remove's 24px hit area. */
   .ui-cascade-select-value:has(> .ui-cascade-select-chips) {
+    display: flex;
+    align-items: center;
     padding-block: 4px;
     margin-block: -4px;
+  }
+  /* As in Select: the row clips what doesn't fit, so neither the chips nor the placeholder gives way. */
+  .ui-cascade-select-value > .ui-cascade-select-chips,
+  .ui-cascade-select-value > .ui-cascade-select-placeholder {
+    flex: none;
   }
   /* Chips clip horizontally within the fixed-height trigger, as in Select. */
   .ui-cascade-select-chips {
@@ -130,7 +153,7 @@
   .ui-cascade-select-chevron {
     flex: none;
     color: var(--ui-text-muted);
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-cascade-select-chevron svg {
     inline-size: 1em;
@@ -170,14 +193,6 @@
      teleported out of .ui-cascade-select, so this targets Menu's row directly. */
   .ui-menu-item[data-cascade-selected] {
     background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
-  }
-  .ui-menu-item[data-cascade-selected]:focus-visible {
-    background: var(--ui-muted);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .ui-menu-item[data-cascade-selected]:hover {
-      background: var(--ui-muted);
-    }
   }
 
   @media (hover: none) and (pointer: coarse) {

@@ -1,10 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Extreme: GSAP stagger-in for new files (gsap)</h3>
+    <h3>Extreme: new files stagger in (gsap)</h3>
     <p class="note">
-      Drop several files at once, each row pops in with an offset delay via a GSAP stagger, layered
-      on top of (not instead of) the library's own opacity fade on the <code>&lt;li&gt;</code>. The
-      consumer only reaches the row's content via a function ref, never an internal class.
+      Drop several files at once and each row pops in a little after the one before, through a GSAP
+      stagger on <code>@add</code>. It runs on top of FileUpload’s own fade, not instead of it. The
+      demo reaches each row’s content through a function ref in <code>#item</code>, never an
+      internal class.
     </p>
     <FileUpload v-model:files="staggerFiles" @add="onStaggerAdd">
       <template #item="{ file, remove }">

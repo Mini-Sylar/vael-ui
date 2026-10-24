@@ -163,7 +163,7 @@ const html = template
       <CodeBlock
         lang="typescript"
         code="// main.ts
-import 'vael-ui/layers.css'"
+import 'vael-ui/style.css'"
         class="callout-code"
       />
     </Message>

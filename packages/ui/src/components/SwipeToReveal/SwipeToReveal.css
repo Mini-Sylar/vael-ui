@@ -35,15 +35,14 @@
     border-end-end-radius: 0;
   }
   /* Opt-in via the `revealScale` prop. The panel grows out of its own edge as the swipe
-     reveals it: --ui-swipe-reveal-progress runs 0 (closed) → 1 (open), set live off the drag
-     offset; --ui-swipe-reveal-scale-from is the closed-state scale, always settling to 1.
+     reveals it: --ui-swipe-reveal-progress runs 0 (closed) → 1 (open), set live off where the
+     row is on screen; --ui-swipe-reveal-scale-from is the closed-state scale, settling to 1.
      Progress is published on the actions elements regardless, for driving your own effects. */
   .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions {
     scale: calc(
       var(--ui-swipe-reveal-scale-from, 0.94) + (1 - var(--ui-swipe-reveal-scale-from, 0.94)) *
         var(--ui-swipe-reveal-progress, 1)
     );
-    transition: scale var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions[data-side='trailing'] {
     transform-origin: right center;
@@ -51,38 +50,25 @@
   .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions[data-side='leading'] {
     transform-origin: left center;
   }
-  .ui-swipe-reveal[data-reveal-scale][data-dragging] .ui-swipe-reveal-actions {
-    transition: none;
-  }
   .ui-swipe-reveal-content {
     position: relative;
     z-index: 1;
     background: var(--ui-surface);
     touch-action: pan-y;
     cursor: grab;
-    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-swipe-reveal[data-dragging] .ui-swipe-reveal-content {
-    transition: none;
     cursor: grabbing;
     user-select: none;
     -webkit-user-select: none;
   }
-  .ui-swipe-reveal[data-motion='off'] .ui-swipe-reveal-content {
-    transition: none;
-  }
   .ui-swipe-reveal[data-reveal-scale][data-motion='off'] .ui-swipe-reveal-actions {
     scale: 1;
-    transition: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-swipe-reveal-content {
-      transition: none;
-    }
     .ui-swipe-reveal[data-reveal-scale] .ui-swipe-reveal-actions {
       scale: 1;
-      transition: none;
     }
   }
 }

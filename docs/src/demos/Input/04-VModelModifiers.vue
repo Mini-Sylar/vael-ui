@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>v-model modifiers</h3>
+    <h3><code>v-model</code> modifiers</h3>
     <div class="row">
       <Input
         v-model.trim="trimValue"

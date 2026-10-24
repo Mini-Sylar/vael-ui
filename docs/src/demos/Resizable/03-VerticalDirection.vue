@@ -2,7 +2,7 @@
   <section class="demo">
     <h3>Vertical direction</h3>
     <p class="note">
-      Same composable, <code>direction="vertical"</code> measures block-size instead.
+      The same component with <code>direction="vertical"</code> resizes the block size instead.
     </p>
     <div class="resizable-vshell">
       <Resizable

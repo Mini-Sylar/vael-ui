@@ -44,7 +44,7 @@
   </div>
 
   <div data-testid="no-motion">
-    <Timeline :items="orderItems" :active="() => true" :motion-css="false" />
+    <Timeline :items="orderItems" :active="() => true" :motion="false" />
   </div>
   <div data-testid="motion-on">
     <Timeline :items="orderItems" :active="() => true" />

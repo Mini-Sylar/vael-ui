@@ -160,6 +160,8 @@ const {
   // vertical row does. 0.1 gives an 80%-wide "drop into" zone.
   nestEdgeFraction: 0.1,
   dragPreview: true,
+  // The tab stays within the strip along it, so a drop past either end lands at that end.
+  restrictToList: true,
   // Only a top-level tab (plain or already a group) can receive a drop —
   // a child chip can be reordered among its siblings but not nested again.
   // And only a plain tab can BE nested — a group being dragged carries its
@@ -216,7 +218,7 @@ const {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  margin: 0;
+  margin: 0.75rem 0 0;
   padding: 0.375rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);

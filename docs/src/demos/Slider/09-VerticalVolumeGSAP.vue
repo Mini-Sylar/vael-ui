@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Vertical volume: CSS and spring (GSAP)</h3>
     <p class="note">
-      A phone-style volume panel built on <code>orientation="vertical"</code>. The GSAP version
-      eases the fill, swells while held, and stretches elastically when you drag past the top or
-      bottom, then springs back on release.
+      A phone-style volume control built on <code>orientation="vertical"</code>. The GSAP version
+      eases the fill, grows while you hold it and stretches when you drag past the top or bottom,
+      then springs back when you let go.
     </p>
     <div class="pair">
       <figure>

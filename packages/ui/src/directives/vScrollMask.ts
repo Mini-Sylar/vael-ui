@@ -23,6 +23,8 @@ const FADE_PROPERTIES = [
   '--fade-left-end',
   '--fade-right-start',
 ]
+// Overlay scrollbars take no room but still draw over the edge: keep at least this much clear.
+const OVERLAY_BAR = 12
 
 function supportsScrollTimeline() {
   return typeof CSS !== 'undefined' && CSS.supports('animation-timeline: scroll()')
@@ -53,9 +55,23 @@ function resolveAxis(value: ScrollMaskValue): ScrollMaskAxis {
   return value === 'x' || value === 'y' || value === 'both' ? value : 'y'
 }
 
+// The scrollbar's strip, kept out of the fade (a mask covers the whole box, scrollbar included).
+function measureBars(el: HTMLElement) {
+  const style = getComputedStyle(el)
+  const hidden = style.scrollbarWidth === 'none'
+  const border = (a: string, b: string) => Number.parseFloat(a) + Number.parseFloat(b)
+  const y = el.offsetWidth - el.clientWidth - border(style.borderLeftWidth, style.borderRightWidth)
+  const x =
+    el.offsetHeight - el.clientHeight - border(style.borderTopWidth, style.borderBottomWidth)
+  el.style.setProperty('--ui-scroll-bar-y', `${hidden ? 0 : Math.max(y, OVERLAY_BAR)}px`)
+  el.style.setProperty('--ui-scroll-bar-x', `${hidden ? 0 : Math.max(x, OVERLAY_BAR)}px`)
+}
+
 function check(el: HTMLElement, axis: ScrollMaskAxis) {
   if (axis !== 'x') el.classList.toggle('scroll-fade', el.scrollHeight > el.clientHeight)
   if (axis !== 'y') el.classList.toggle('scroll-fade-x', el.scrollWidth > el.clientWidth)
+  if (el.classList.contains('scroll-fade') || el.classList.contains('scroll-fade-x'))
+    measureBars(el)
   if (state.get(el)?.onScroll) applyManualFade(el, axis)
 }
 
@@ -104,6 +120,8 @@ function stop(el: HTMLElement) {
   }
   state.delete(el)
   el.classList.remove('scroll-fade', 'scroll-fade-x', 'scroll-fade-manual')
+  el.style.removeProperty('--ui-scroll-bar-y')
+  el.style.removeProperty('--ui-scroll-bar-x')
 }
 
 export const vScrollMask: Directive<HTMLElement, ScrollMaskValue> = {

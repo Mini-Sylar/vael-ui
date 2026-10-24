@@ -193,11 +193,11 @@ test('search results swap at once: clearing a search starts no folder open or cl
   await new Promise((resolve) => setTimeout(resolve, 400))
   await userEvent.clear(input)
   await nextTick()
-  // A leaving block still in layout puts the old rows on top of the new ones; an entering one fades.
+  // A block still folding shut would put the old rows under the new ones; an opening one fades.
   const blocks = [...document.querySelectorAll<HTMLElement>('.ui-tree-rows')].filter(
     (el) => el.getClientRects().length > 0,
   )
-  expect(blocks.filter((el) => /-leave-active/.test(el.className))).toHaveLength(0)
+  expect(blocks.filter((el) => el.dataset.folding !== undefined)).toHaveLength(0)
   expect(blocks.filter((el) => Number(getComputedStyle(el).opacity) < 1)).toHaveLength(0)
   await vi.waitFor(() => expect(rowByLabel('Orange')).toBeUndefined())
 })
@@ -210,5 +210,5 @@ test('clicking a folder still animates its rows open', async () => {
   await vi.waitFor(() => expect(rowByLabel('Fruits')).toBeDefined())
   rowByLabel('Fruits')!.querySelector<HTMLElement>('.ui-tree-select-chevron')!.click()
   await nextTick()
-  expect(document.querySelectorAll('.ui-tree-rows-enter-active').length).toBeGreaterThan(0)
+  expect(document.querySelectorAll('.ui-tree-rows[data-folding]').length).toBeGreaterThan(0)
 })

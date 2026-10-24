@@ -35,17 +35,26 @@
   .ui-accordion-trigger-title {
     flex: 1 1 auto;
   }
+  /* Accordion's `spring` sets the --ui-accordion-* variables: open on it, close without the bounce. */
   .ui-accordion-chevron {
     flex: none;
     color: var(--ui-text-muted);
-    transition: transform var(--ui-duration-enter) var(--ui-ease-in-out);
+    transition: transform var(--ui-accordion-duration-close, var(--ui-duration-enter))
+      var(--ui-accordion-ease-close, var(--ui-ease-out));
   }
   .ui-accordion-trigger[aria-expanded='true'] .ui-accordion-chevron {
     transform: rotate(180deg);
+    transition-duration: var(--ui-accordion-duration, var(--ui-duration-enter));
+    transition-timing-function: var(--ui-accordion-ease, var(--ui-ease-out));
   }
   .ui-accordion-panel {
     contain: layout;
-    transition: block-size var(--ui-duration-enter) var(--ui-ease-in-out);
+    transition: block-size var(--ui-accordion-duration, var(--ui-duration-enter))
+      var(--ui-accordion-ease, var(--ui-ease-out));
+  }
+  .ui-accordion-panel[data-state='closing'] {
+    transition-duration: var(--ui-accordion-duration-close, var(--ui-duration-enter));
+    transition-timing-function: var(--ui-accordion-ease-close, var(--ui-ease-out));
   }
   .ui-accordion-body {
     /* Matches the trigger's inline padding so title and content share a start edge. */

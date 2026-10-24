@@ -3,15 +3,32 @@
     z-index: var(--ui-z-tooltip, 70);
     inline-size: max-content;
   }
+  /* The panel lays the text out; the box behind it is its own layer (::before) so it can scale in,
+     and morph between sizes while gliding, without the text ever being scaled or re-laid out: text
+     under a changing transform or at a fractional size is rasterised again every frame and snaps
+     onto the pixel grid when it stops. */
   .ui-tooltip-panel {
+    position: relative;
     padding: 0.375rem 0.625rem;
-    border-radius: calc(var(--ui-radius) - 2px);
-    background: var(--ui-primary);
     color: var(--ui-primary-contrast);
     font-size: calc(var(--ui-font-size) * 0.8125);
     line-height: 1.4;
     max-inline-size: 18rem;
+  }
+  .ui-tooltip-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: calc(var(--ui-radius) - 2px);
+    background: var(--ui-primary);
     box-shadow: var(--ui-panel-shadow);
+    transform-origin: inherit;
+    scale: var(--ui-tooltip-morph-x, 1) var(--ui-tooltip-morph-y, 1);
+  }
+  .ui-tooltip-content {
+    display: block;
+    opacity: var(--ui-tooltip-content-opacity, 1);
   }
   .ui-tooltip-enter-active {
     transition: opacity var(--ui-duration-tooltip) var(--ui-ease-out);
@@ -23,47 +40,38 @@
   .ui-tooltip-leave-to {
     opacity: 0;
   }
-  .ui-tooltip-enter-active .ui-tooltip-panel {
-    transition: transform var(--ui-duration-tooltip) var(--ui-ease-out);
+  .ui-tooltip-enter-active .ui-tooltip-panel::before {
+    transition: scale var(--ui-duration-tooltip) var(--ui-ease-out);
   }
-  .ui-tooltip-enter-from .ui-tooltip-panel {
-    transform: scale(0.98);
+  .ui-tooltip-enter-from .ui-tooltip-panel::before {
+    scale: 0.98;
   }
   .ui-tooltip-enter-active[data-instant],
   .ui-tooltip-leave-active[data-instant],
-  .ui-tooltip-enter-active[data-instant] .ui-tooltip-panel,
-  .ui-tooltip-leave-active[data-instant] .ui-tooltip-panel {
+  .ui-tooltip-enter-active[data-instant] .ui-tooltip-panel::before,
+  .ui-tooltip-leave-active[data-instant] .ui-tooltip-panel::before {
     transition-duration: 0ms;
   }
-  /* Same duration/easing pair as the panel's own same-trigger resize (Tooltip.vue) — both are
-     "the tooltip box resizing/repositioning", so they use the tooltip-specific tokens rather than
-     the generic press duration + a symmetric in-out curve, which read slightly slower and less
-     directional for something chasing the cursor across a row of triggers. */
+  /* A glide to another trigger, or a box morphing to new content: the positioner is laid out at
+     its destination once, and only its translate, the box layer's scale and the content's opacity
+     transition. All three run on the compositor. */
   .ui-tooltip-positioner[data-traveling] {
-    transition:
-      top var(--ui-duration-tooltip) var(--ui-ease-out),
-      left var(--ui-duration-tooltip) var(--ui-ease-out),
-      width var(--ui-duration-tooltip) var(--ui-ease-out),
-      height var(--ui-duration-tooltip) var(--ui-ease-out);
+    transition: translate var(--ui-duration-tooltip) var(--ui-ease-out);
   }
-  /* Set for the travel's whole span, not just while `data-traveling`'s transition is enabled: the
-     content already swapped to the new target the instant the trigger did, but the box is
-     briefly pinned to the old (or a mid-tween) size — a label that only needs one line at its
-     real target width wraps to two at that narrower size. Without `white-space: nowrap` here,
-     that extra wrapped line is fully visible for a frame (before `overflow` below clips it back
-     down), reading as a flash of doubled/wrapped text. */
-  .ui-tooltip-positioner[data-sizing-locked] .ui-tooltip-panel {
-    inline-size: 100%;
-    block-size: 100%;
-    overflow: hidden;
-    white-space: nowrap;
+  .ui-tooltip-positioner[data-morphing] .ui-tooltip-panel::before {
+    transition: scale var(--ui-duration-tooltip) var(--ui-ease-out);
+  }
+  .ui-tooltip-positioner[data-morphing] .ui-tooltip-content {
+    transition: opacity var(--ui-duration-tooltip) var(--ui-ease-out);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui-tooltip-enter-from .ui-tooltip-panel {
-      transform: none;
+    .ui-tooltip-enter-from .ui-tooltip-panel::before {
+      scale: 1;
     }
-    .ui-tooltip-positioner[data-traveling] {
+    .ui-tooltip-positioner[data-traveling],
+    .ui-tooltip-positioner[data-morphing] .ui-tooltip-panel::before,
+    .ui-tooltip-positioner[data-morphing] .ui-tooltip-content {
       transition: none;
     }
   }

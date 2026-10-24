@@ -42,6 +42,31 @@
   .ui-input-el::placeholder {
     color: var(--ui-text-muted);
   }
+  /* #display and animated draw the text over the input; the input keeps the caret. */
+  .ui-input-display {
+    position: absolute;
+    overflow: hidden;
+    white-space: pre;
+    color: var(--ui-text);
+    pointer-events: none;
+  }
+  .ui-input-display-track {
+    display: inline-block;
+    min-inline-size: 100%;
+  }
+  .ui-input-display-placeholder {
+    color: var(--ui-text-muted);
+  }
+  .ui-input-el[data-ui-display]::placeholder {
+    color: transparent;
+  }
+  .ui-input-el[data-ui-display='all'] {
+    color: transparent;
+    caret-color: var(--ui-text);
+  }
+  .ui-input-el[data-ui-display='value'] {
+    color: transparent;
+  }
   /* WebKit paints its own yellow/blue fill behind autofilled inputs and ignores a plain `background` override — an opaque inset shadow the size of the whole field is the only thing that actually beats it. Tokens, not literal colors, so this still matches the surface in dark mode; the absurd transition-delay is the standard trick to stop Chrome flashing its own color for one frame before this rule's shadow paints over it. */
   .ui-input-el:-webkit-autofill,
   .ui-input-el:-webkit-autofill:hover,

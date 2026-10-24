@@ -4,7 +4,7 @@ import { preventFocusZoom, vTooltip } from 'vael-ui'
 import './demo-content.css'
 import './prose.css'
 import App from './App.vue'
-import { routerOptions } from './router'
+import { canonicalDocsName, routerOptions } from './router'
 import { i18n } from './i18n'
 
 export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => {
@@ -25,6 +25,7 @@ export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => 
             })
         : guard,
     )
+  router.beforeEach(canonicalDocsName)
   // vaporInteropPlugin only exists in Vue's browser build — vue/server-renderer
   // has no VDOM/Vapor interop concept (there's no live DOM to bridge into during
   // SSG), so this import must stay dynamic and client-gated or the SSR build's

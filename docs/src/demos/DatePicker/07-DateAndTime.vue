@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Date + time, 12h with AM/PM</h3>
+    <h3>Date and time, 12-hour with AM/PM</h3>
     <p class="note">
-      <code>showTime</code> adds an hour/minute row — picking a date keeps the panel open since
-      there's still a time to set. <code>hourFormat</code> is left unset here, so it resolves from
-      the locale (<code>en-US</code> defaults to 12h with an AM/PM toggle).
+      <code>showTime</code> adds an hour and minute row, and picking a date keeps the panel open so
+      you can set the time. <code>hourFormat</code> is unset here, so the locale decides:
+      <code>en-US</code>, for example, uses 12-hour time with an AM/PM toggle.
     </p>
     <div class="row">
       <DatePicker

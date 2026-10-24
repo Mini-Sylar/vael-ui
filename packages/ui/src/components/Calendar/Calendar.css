@@ -57,11 +57,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  /* Leaving, it's stretched across the header; capped, it has to be centred by hand or it jumps
-     to the left edge. */
-  .ui-calendar-pane-label.ui-calendar-label-leave-active {
-    margin-inline: auto;
-  }
   .ui-calendar-header {
     display: flex;
     align-items: center;
@@ -87,6 +82,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* While the button eases between two names, neither is cut to an ellipsis: they overflow by a
+     few px and fade instead. */
+  .ui-calendar-header--year-nav
+    .ui-calendar-label-text:is(.ui-calendar-label-leave-active, .ui-calendar-label-enter-active) {
+    max-inline-size: none;
+    overflow: visible;
+  }
   .ui-calendar-header--overlay.ui-calendar-header--year-nav > :nth-last-child(2) {
     margin-inline-start: auto;
   }
@@ -100,15 +102,16 @@
     background: none;
     color: var(--ui-text-muted);
     cursor: pointer;
-    will-change: transform;
     transition:
       transform var(--ui-duration-press) var(--ui-ease-out),
       background-color var(--ui-duration-press) ease,
       color var(--ui-duration-press) ease;
   }
-  .ui-calendar-nav:hover:not([aria-disabled='true']) {
-    background: var(--ui-muted);
-    color: var(--ui-text);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-calendar-nav:hover:not([aria-disabled='true']) {
+      background: var(--ui-muted);
+      color: var(--ui-text);
+    }
   }
   .ui-calendar-nav:active:not([aria-disabled='true']) {
     transform: scale(0.96);
@@ -131,6 +134,9 @@
     position: relative;
     display: inline-grid;
     place-items: center;
+    /* Centres the text's track too, so a wider name arriving while the button eases to its width
+       grows out from the middle instead of hanging off the start edge. */
+    justify-content: center;
     font-size: calc(var(--ui-font-size) * 0.875);
     font-weight: 600;
     color: var(--ui-text);
@@ -143,13 +149,14 @@
   /* Interactive only when drillable. */
   .ui-calendar-label--button {
     cursor: pointer;
-    will-change: transform;
     transition:
       transform var(--ui-duration-press) var(--ui-ease-out),
       background-color var(--ui-duration-press) ease;
   }
-  .ui-calendar-label--button:hover {
-    background: var(--ui-muted);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-calendar-label--button:hover {
+      background: var(--ui-muted);
+    }
   }
   .ui-calendar-label--button:active {
     transform: scale(0.96);
@@ -228,10 +235,23 @@
     ) {
     transform: scale(0.94);
   }
-  .ui-calendar-cell:hover:not(.ui-calendar-cell--disabled),
+  /* Hover and focus backgrounds are the gliding .ui-indicator behind the cells. */
   .ui-calendar-cell:focus-visible {
-    background: var(--ui-muted);
     outline: none;
+  }
+  .ui-calendar-body {
+    isolation: isolate;
+  }
+  /* Shaped like the cell under it: its fill clipped inside the same transparent border. */
+  .ui-calendar-hover {
+    box-sizing: border-box;
+    border: 0 solid transparent;
+    border-block-width: 1px;
+    background-clip: padding-box;
+  }
+  .ui-calendar-body:has(:is(.ui-calendar-month-cell, .ui-calendar-year-cell)[data-indicated])
+    .ui-calendar-hover {
+    border-width: 0.125rem;
   }
   .ui-calendar-cell--blank {
     visibility: hidden;
@@ -249,10 +269,15 @@
     color: var(--ui-primary-contrast);
   }
   /* Specificity tie-break: selected stays visible on hover. */
-  .ui-calendar-cell.ui-calendar-cell--selected:hover,
   .ui-calendar-cell.ui-calendar-cell--selected:focus-visible {
     background: var(--ui-primary);
     color: var(--ui-primary-contrast);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-calendar-cell.ui-calendar-cell--selected:hover {
+      background: var(--ui-primary);
+      color: var(--ui-primary-contrast);
+    }
   }
   /* Range mode: endpoints solid, between tinted. */
   .ui-calendar-cell--range-start,
@@ -260,12 +285,17 @@
     background: var(--ui-primary);
     color: var(--ui-primary-contrast);
   }
-  .ui-calendar-cell.ui-calendar-cell--range-start:hover,
   .ui-calendar-cell.ui-calendar-cell--range-start:focus-visible,
-  .ui-calendar-cell.ui-calendar-cell--range-end:hover,
   .ui-calendar-cell.ui-calendar-cell--range-end:focus-visible {
     background: var(--ui-primary);
     color: var(--ui-primary-contrast);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-calendar-cell.ui-calendar-cell--range-start:hover,
+    .ui-calendar-cell.ui-calendar-cell--range-end:hover {
+      background: var(--ui-primary);
+      color: var(--ui-primary-contrast);
+    }
   }
   /* Tinted connector between endpoints. */
   /* Square, so the band reads as one strip with no specks where four cells meet. */
@@ -274,8 +304,10 @@
     border-radius: 0;
   }
   /* Prevents flicker on hover. */
-  .ui-calendar-cell.ui-calendar-cell--in-range:hover {
-    background: color-mix(in oklch, var(--ui-primary) 22%, transparent);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-calendar-cell.ui-calendar-cell--in-range:hover {
+      background: color-mix(in oklch, var(--ui-primary) 22%, transparent);
+    }
   }
   /* An endpoint flattens only the corners facing the band, once there is one. */
   .ui-calendar-cell--join-end {
@@ -320,11 +352,8 @@
       background-color var(--ui-duration-press) ease,
       color var(--ui-duration-press) ease;
   }
-  .ui-calendar-month-cell:hover:not(.ui-calendar-month-cell--disabled),
   .ui-calendar-month-cell:focus-visible,
-  .ui-calendar-year-cell:hover:not(.ui-calendar-year-cell--disabled),
   .ui-calendar-year-cell:focus-visible {
-    background: var(--ui-muted);
     outline: none;
   }
   .ui-calendar-month-cell--selected,
@@ -333,12 +362,17 @@
     color: var(--ui-primary-contrast);
   }
   /* Specificity tie-break for month/year selected. */
-  .ui-calendar-month-cell.ui-calendar-month-cell--selected:hover,
   .ui-calendar-month-cell.ui-calendar-month-cell--selected:focus-visible,
-  .ui-calendar-year-cell.ui-calendar-year-cell--selected:hover,
   .ui-calendar-year-cell.ui-calendar-year-cell--selected:focus-visible {
     background: var(--ui-primary);
     color: var(--ui-primary-contrast);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .ui-calendar-month-cell.ui-calendar-month-cell--selected:hover,
+    .ui-calendar-year-cell.ui-calendar-year-cell--selected:hover {
+      background: var(--ui-primary);
+      color: var(--ui-primary-contrast);
+    }
   }
   .ui-calendar-month-cell--disabled,
   .ui-calendar-year-cell--disabled {
@@ -355,18 +389,18 @@
     display: inline-block;
     white-space: nowrap;
   }
-  .ui-calendar-label-enter-active,
-  .ui-calendar-label-leave-active {
+  /* Out, then in: the old name is gone before the new one arrives, so the two never overlap. */
+  .ui-calendar-label-enter-active {
     transition:
       transform var(--ui-duration-enter) var(--ui-ease-out),
       opacity var(--ui-duration-enter) var(--ui-ease-out),
       filter var(--ui-duration-enter) var(--ui-ease-out);
   }
   .ui-calendar-label-leave-active {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
+    transition:
+      transform var(--ui-duration-tooltip-exit) var(--ui-ease-out),
+      opacity var(--ui-duration-tooltip-exit) var(--ui-ease-out),
+      filter var(--ui-duration-tooltip-exit) var(--ui-ease-out);
   }
   .ui-calendar-label-enter-from {
     opacity: 0;
@@ -390,6 +424,12 @@
     inset-block-start: 0;
     inset-inline-start: 0;
     inline-size: 100%;
+  }
+  /* Absolute, the leaving grid no longer stretches with the level; pinned to the bottom too, its rows
+     keep the same spread as the entering grid's, so the two cross-fade in place. */
+  .ui-calendar-month-grid.ui-calendar-grid-leave-active,
+  .ui-calendar-year-grid.ui-calendar-grid-leave-active {
+    inset-block-end: 0;
   }
   .ui-calendar-grid-enter-from {
     opacity: 0;
@@ -424,7 +464,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .ui-calendar-level-enter-active {
-      transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
     [data-zoom] > .ui-calendar-level-enter-from {
       transform: none;
@@ -432,7 +472,7 @@
     /* Calendar's month-transition is movement (translateX) — dropped here, same rule as every other position/slide transition in this block; the opacity half of the crossfade is kept. */
     .ui-calendar-grid-enter-active,
     .ui-calendar-grid-leave-active {
-      transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
     .ui-calendar-grid-enter-from,
     .ui-calendar-grid-leave-to {
@@ -441,7 +481,7 @@
     }
     .ui-calendar-label-enter-active,
     .ui-calendar-label-leave-active {
-      transition: opacity var(--ui-duration-enter) var(--ui-ease-in-out);
+      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
     }
     .ui-calendar-label-enter-from,
     .ui-calendar-label-leave-to {
@@ -453,5 +493,29 @@
     .ui-calendar-label--button:active {
       transform: none;
     }
+  }
+
+  /* Touch has no hover: the press itself shows the month or year was hit. */
+  @media (hover: none) and (pointer: coarse) {
+    .ui-calendar-month-cell:active:not(.ui-calendar-month-cell--disabled):not(
+        .ui-calendar-month-cell--selected
+      ),
+    .ui-calendar-year-cell:active:not(.ui-calendar-year-cell--disabled):not(
+        .ui-calendar-year-cell--selected
+      ) {
+      background: var(--ui-muted);
+    }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-calendar-label--button,
+  .ui-calendar-nav {
+    position: relative;
+  }
+  .ui-calendar-label--button:active::after,
+  .ui-calendar-nav:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

@@ -51,11 +51,19 @@
   .ui-pagination-labels-spacer {
     visibility: hidden;
   }
+  /* Hover and focus backgrounds are the sliding .ui-indicator behind the buttons. */
+  .ui-pagination-list
+    .ui-button--ghost:is(:hover, :focus-visible):not(:disabled):not(.ui-button--disabled):not(
+      .ui-button--loading
+    ) {
+    --ui-button-bg: transparent;
+  }
   @media (hover: hover) and (pointer: fine) {
     .ui-button--ghost.ui-pagination-page-button--active:hover:not(:disabled):not(
         .ui-button--disabled
       ):not(.ui-button--loading) {
-      background: transparent;
+      /* The indicator behind it is the active look; Button paints its box from this variable. */
+      --ui-button-bg: transparent;
     }
   }
   .ui-pagination--no-motion .ui-pagination-indicator,

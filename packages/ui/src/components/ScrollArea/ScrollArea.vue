@@ -22,6 +22,8 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { ScrollAreaMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -37,10 +39,13 @@ const props = withDefaults(
      * @default false
      */
     autoHide?: boolean
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`). `false` turns its own animation off. */
+    motion?: ScrollAreaMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; viewport: UiPartValue }>
   }>(),
-  { orientation: 'vertical', scrollFade: true, autoHide: false },
+  // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+  { orientation: 'vertical', scrollFade: true, autoHide: false, motion: undefined },
 )
 
 const emit = defineEmits<{
@@ -62,6 +67,14 @@ const scrollMaskValue = computed(() => {
 const root = useTemplateRef<HTMLElement>('root')
 const viewport = useTemplateRef<HTMLElement>('viewport')
 useFocusableScroller(viewport)
+// The scrollbar is the viewport's native one: no element of its own to animate.
+const parts = useStateMotion({
+  key: 'scrollArea',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value }),
+  states: () => ({}),
+})
 
 // useScroll's own reactive arrived/direction/isScrolling state replaces this component's former
 // hand-rolled scroll-position tracking. `isScrolling` in particular is what usePullToRefresh now
@@ -171,5 +184,9 @@ defineExpose({
   scrollToStart,
   /** Smooth-scrolls to the right edge. */
   scrollToEnd,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

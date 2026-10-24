@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>Disabled items and manual activation</h3>
     <p class="note">
-      <code>activation="manual"</code>: arrow keys only move focus (tracked via the
-      <code>focused</code> slot prop, driving tabindex here), Enter/Space commits. "Archived" is
-      disabled and gets skipped over by arrow/Home/End navigation entirely.
+      With <code>activation="manual"</code>, the arrow keys only move focus, and Enter or Space
+      selects. “Archived” is disabled, so the arrow keys, Home and End skip it.
     </p>
     <Tabs v-model:active="manualActive" :items="manualItems" activation="manual">
       <template #default="{ items: list, itemProps }">

@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Badge in a fixed layout: reserve the wrapper with <code>badgePlacement</code></h3>
     <p class="note">
-      A <code>#badge</code> slot that's <code>v-if</code>'d on real data (an unread count) would
-      otherwise flip the button between "plain element" and "wrapped in a span" the moment the first
-      badge appears — enough to knock a grid- or nth-child-placed button out of position. Setting
-      <code>badgePlacement</code> reserves the wrapper up front, and the button's own
-      <code>ui.root</code> class rides onto that wrapper, so its cell never moves.
+      A <code>#badge</code> slot behind a <code>v-if</code> on real data, such as an unread count,
+      switches the button from a plain element to one wrapped in a span when the first badge
+      appears. That can move a button placed by a grid or <code>nth-child</code>. Setting
+      <code>badgePlacement</code> renders the wrapper from the start, and the button’s own
+      <code>ui.root</code> class goes on that wrapper, so its cell never moves.
     </p>
     <div class="pill">
       <Button

@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Custom <code>#trigger</code>, the chevron is opt-in, not automatic</h3>
+    <h3>Custom <code>#trigger</code>: you add the chevron yourself</h3>
     <Accordion v-model:value="customValue" class="accordion-demo">
       <AccordionItem value="custom" title="This title is ignored, #trigger replaces it entirely">
         <template #trigger="{ open }">

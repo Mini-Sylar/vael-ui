@@ -12,19 +12,14 @@
       ref="listEl"
       :class="actionsPart.class"
       :style="actionsPart.style"
+      :data-ui-list="listMarker"
       role="menu"
       :aria-label="ariaLabel"
       :aria-orientation="orientationFor(direction)"
-      :data-motion="props.motionCss ? undefined : 'off'"
+      :data-motion="props.motion ? undefined : 'off'"
       @keydown="onKeydown"
     >
-      <TransitionGroup
-        name="ui-speed-dial-action"
-        appear
-        :css="props.motionCss"
-        @enter="enterHook"
-        @leave="leaveHook"
-      >
+      <TransitionGroup appear v-bind="actionsTransition">
         <Button
           v-for="(item, i) in visibleItems"
           :key="item.value ?? item.label"
@@ -99,7 +94,8 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
   /** Actions to fan out, one icon button each. */
   items: ReadonlyArray<T>
   /**
-   * Which way the actions fan out from the trigger. `'quarter-circle'` lays them on an arc of `radius`.
+   * Which way the actions fan out from the trigger, on screen: `'left'` is left on a right-to-left
+   * page too. `'quarter-circle'` lays them on an arc of `radius`.
    * @default 'up'
    */
   direction?: SpeedDialDirection
@@ -114,11 +110,12 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
   /** Arc radius in pixels. Only applies when `direction` is `'quarter-circle'`. @default 96 */
   radius?: number
   /**
-   * Built-in transitions for the actions and the icon. `false` hands actions to `@action-enter`
-   * and `@action-leave`, and turns the icon instantly.
+   * How the actions fan out and back, and the icon turns. `false` shows them and turns the icon
+   * at once. An object animates the actions your way: values for the `action` part, `stagger`,
+   * or `enter` / `leave` hooks for your own library.
    * @default true
    */
-  motionCss?: boolean
+  motion?: SpeedDialMotion
   /** Class and style overrides for each part. */
   ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }>
 }
@@ -154,6 +151,9 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { withProviderDefaults } from '../../config'
 import { ssrDocument } from '../../ssr'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { SpeedDialMotion } from '../../motion/types'
 
 /** Whether the actions are shown. @default false */
 const open = defineModel<boolean>('open', { default: false })
@@ -165,18 +165,13 @@ const rawProps = withDefaults(defineProps<SpeedDialProps<T>>(), {
   closeOnSelect: true,
   ariaLabel: 'Actions',
   radius: 96,
-  motionCss: undefined,
+  motion: undefined,
 })
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when you click an action. */
   select: [item: T]
-  /** Fires when an action's fan-out transition starts. Call `done()` when finished.
-   * Only fires when `motionCss` is `false`. */
-  'action-enter': [el: Element, done: () => void]
-  /** Fires when an action's fan-in transition starts, as with `@action-enter`. */
-  'action-leave': [el: Element, done: () => void]
 }>()
 
 defineSlots<{
@@ -188,17 +183,29 @@ defineSlots<{
 
 const visibleItems = computed(() => (open.value ? props.items : []))
 
-// Only the component's own motion-css="false" hands actions to the events. A provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('action-enter', el, done),
+// Yours (an object, or a shared style): actions come and go on the motion system, held where they
+// fanned out to as they leave. Otherwise the built-in CSS fan.
+const style = useMotionStyle()
+const listMotion =
+  (typeof rawProps.motion === 'object' || style?.value?.speedDial || style?.value?.list) &&
+  props.motion !== false
+    ? useComponentList(() => rawProps.motion, {
+        key: 'speedDial',
+        part: 'action',
+        name: 'SpeedDial',
+        look: { opacity: 0, scale: '0.9' },
+        leaving: 'hold',
+      })
+    : undefined
+// The actions render with no wrapper of their own, so the list engine's marker goes on the menu.
+const listMarker = computed(
+  () => (listMotion?.transition as Record<string, unknown> | undefined)?.['data-ui-list'],
 )
-const leaveHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('action-leave', el, done),
-)
+const actionsTransition = computed(() => {
+  if (!listMotion) return { name: 'ui-speed-dial-action', css: !!props.motion }
+  const { 'data-ui-list': _, ...transition } = listMotion.transition as Record<string, unknown>
+  return transition
+})
 
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {
   if (direction === 'up' || direction === 'down') return 'vertical'
@@ -383,7 +390,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-speed-dial',
     props.disabled && 'ui-speed-dial--disabled',
-    !props.motionCss && 'ui-speed-dial--no-motion',
+    !props.motion && 'ui-speed-dial--no-motion',
   ),
 )
 const actionsPart = computed(() => resolveUiPart(cx, undefined, 'ui-speed-dial-actions'))

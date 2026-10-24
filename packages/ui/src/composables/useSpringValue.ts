@@ -1,48 +1,25 @@
 import { getCurrentScope, onScopeDispose, shallowRef } from 'vue'
 import type { Ref } from 'vue'
+import { DEFAULT_DAMPING, DEFAULT_RESPONSE, stepSpring } from './springStep'
+import type { SpringState } from './springStep'
+
+export { stepSpring }
+export type { SpringState }
 
 export interface SpringOptions {
   /** Damping ratio. `1` (the default) is critically damped — reaches the target with no overshoot. Below 1 overshoots and oscillates; reserve that for motion the user's own gesture already threw (a flick release), never for something that merely appeared. */
   damping?: number
   /** Seconds to reach the target. Deliberately NOT a duration — a spring has no fixed end; this sets how *quickly* it converges and the real settle time emerges from the physics. */
   response?: number
-  /** Below this distance AND this speed (per second), the spring snaps to the target and parks. Defaults suit px; raise it for values on a 0–1 scale. */
+  /** Below this distance AND this speed (per second), the spring snaps to the target and parks. Defaults suit px; lower it for values on a 0–1 scale, or they park early. */
   epsilon?: number
 }
 
-export interface SpringState {
-  value: number
-  velocity: number
-}
-
-const DEFAULT_DAMPING = 1
-const DEFAULT_RESPONSE = 0.35
 const DEFAULT_EPSILON = 0.05
 // A backgrounded tab hands back a multi-second dt on its first frame. Feeding
 // that to the integrator below launches the value into the void — every spring
 // on screen visibly explodes on tab refocus. Clamping costs one slow frame.
 const MAX_DT = 1 / 30
-
-/**
- * One semi-implicit Euler step. Pure, so the physics is testable with plain
- * numbers instead of through rAF timing (same reasoning as `dockFalloff` and
- * `resolveSwipeCommit`).
- */
-export function stepSpring(
-  state: SpringState,
-  target: number,
-  dt: number,
-  damping: number = DEFAULT_DAMPING,
-  response: number = DEFAULT_RESPONSE,
-): SpringState {
-  if (dt <= 0) return { value: state.value, velocity: state.velocity }
-  const omega = (2 * Math.PI) / response
-  const stiffness = omega * omega
-  const dampingCoefficient = 2 * damping * omega
-  const acceleration = -stiffness * (state.value - target) - dampingCoefficient * state.velocity
-  const velocity = state.velocity + acceleration * dt
-  return { value: state.value + velocity * dt, velocity }
-}
 
 export interface SpringHandle {
   /** Live presentation value — what's actually on screen this frame. */
@@ -72,7 +49,8 @@ let frameId = 0
 let lastFrameTime = 0
 
 function tick(now: number) {
-  const dt = Math.min((now - lastFrameTime) / 1000, MAX_DT)
+  // The first frame moves a frame's worth: its timestamp can predate the call that scheduled it.
+  const dt = lastFrameTime ? Math.min((now - lastFrameTime) / 1000, MAX_DT) : 1 / 60
   lastFrameTime = now
   ticking.length = 0
   for (const spring of active) ticking.push(spring)
@@ -85,7 +63,7 @@ function schedule(spring: SpringRunner) {
   if (typeof requestAnimationFrame === 'undefined') return
   active.add(spring)
   if (frameId) return
-  lastFrameTime = performance.now()
+  lastFrameTime = 0
   frameId = requestAnimationFrame(tick)
 }
 

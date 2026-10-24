@@ -28,11 +28,15 @@
     border-block-start: 1px solid var(--ui-border);
   }
   .ui-menu-body {
+    position: relative;
+    isolation: isolate;
     /* The one flexible child — header/footer are `flex: none` siblings, and
        max-height (floating-ui live output) is capped on the panel, not here. */
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     /* A vertical list never scrolls sideways, even while rows slide in. */
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -65,11 +69,9 @@
     cursor: pointer;
     transition: transform var(--ui-duration-press) var(--ui-ease-out);
   }
-  /* Highlight with background, not focus ring (APG convention). */
-  .ui-menu-item:hover:not(:disabled):not([aria-disabled='true']),
+  /* Highlight with background, not focus ring (APG convention): the sliding .ui-indicator. */
   .ui-menu-item:focus-visible {
     outline: none;
-    background: var(--ui-muted);
   }
   .ui-menu-item:active:not(:disabled):not([aria-disabled='true']) {
     transform: scale(0.96);
@@ -113,6 +115,10 @@
     margin-inline-start: 0.5rem;
     color: var(--ui-text-muted);
   }
+  /* Right to left, a submenu opens to the left, and the chevron points there. */
+  .ui-menu-item-chevron:dir(rtl) svg {
+    scale: -1 1;
+  }
   /* Keeps the check at the row's end even when a custom #item has no flexible label. */
   .ui-menu-item-check {
     flex: none;
@@ -141,40 +147,7 @@
   .ui-menu-body[data-virtual]:focus {
     outline: none;
   }
-  .ui-menu-enter-active {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-menu-leave-active {
-    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-menu-enter-from,
-  .ui-menu-leave-to {
-    opacity: 0;
-  }
-  .ui-menu-enter-active .ui-menu-panel {
-    transition: transform var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-menu-leave-active .ui-menu-panel {
-    transition: transform var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  /* Opens from a touch further than it closes to: the close should get out of the way. Never from scale(0). */
-  .ui-menu-enter-from .ui-menu-panel {
-    transform: scale(0.97);
-  }
-  .ui-menu-leave-to .ui-menu-panel {
-    transform: scale(0.99);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ui-menu-enter-active .ui-menu-panel,
-    .ui-menu-leave-active .ui-menu-panel {
-      transition: none;
-    }
-    .ui-menu-enter-from .ui-menu-panel,
-    .ui-menu-leave-to .ui-menu-panel {
-      transform: none;
-    }
-  }
+  /* Enter and leave are played by the CSS engine (motion/css.ts) from Menu's built-in look. */
   /* Searching eases this list to its new height (useEasedHeight): no scrollbar while it moves, and a
      soft bottom edge so rows fade in at the moving edge instead of being cut mid-glyph. */
   .ui-menu-body {
@@ -197,5 +170,12 @@
     .ui-menu-body {
       transition: none;
     }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-menu-item:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

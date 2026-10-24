@@ -35,7 +35,7 @@
                 stroke-linejoin="round"
               />
             </svg>
-            <span v-else-if="state === 'loading'" class="ui-loader" aria-hidden="true" />
+            <LoaderMark v-else-if="state === 'loading'" />
             <svg v-else viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none">
               <path
                 d="M3 8.5l3.5 3.5L13 5"
@@ -56,6 +56,7 @@
 
 <script lang="ts">
 import type { UiPartValue } from '../../classes'
+import type { PullToRefreshMotion } from '../../motion/types'
 
 export interface PullToRefreshProps {
   /** Runs when you release a pull past `threshold`. The spinner shows until its promise settles. */
@@ -66,8 +67,13 @@ export interface PullToRefreshProps {
   maxPull?: number
   /** Existing scroll container to detect pulls on. Unset, the root itself scrolls. */
   scrollEl?: HTMLElement | { el: HTMLElement | null } | null
-  /** `false` skips the settle and indicator transitions; animate the `#indicator` slot or exposed `zoneEl` yourself. The live pull still tracks your finger. @default true */
-  motionCss?: boolean
+  /**
+   * How it moves: its appearance (`{ initial: { indicator: { opacity: 0 } } }`) and its states
+   * (`{ states: { refreshing: { indicator: { scale: '1.1' } } } }`). `false` skips the settle and
+   * indicator transitions; animate the `#indicator` slot or exposed `zoneEl` yourself. The live
+   * pull still tracks your finger. @default true
+   */
+  motion?: PullToRefreshMotion
   /** Class and style overrides for each part. */
   ui?: Partial<{
     root: UiPartValue
@@ -81,22 +87,26 @@ export interface PullToRefreshProps {
 
 <!-- Custom #indicator animations go inside slot content, not zone (which owns block-size state) -->
 <script setup lang="ts">
+import { prefersReducedMotion } from '../../composables/dom'
 import './PullToRefresh.css'
 import '../shared/tokens.css'
 import '../shared/loader-spinner.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import LoaderMark from '../internal/LoaderMark.vue'
+import { computed, useAttrs, useTemplateRef, watch } from 'vue'
+import { useComponentHaptic } from '../../composables/componentHaptic'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { PullToRefreshState } from '../../composables/usePullToRefresh'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
 
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 
-const props = withDefaults(defineProps<PullToRefreshProps>(), { motionCss: true })
+const props = withDefaults(defineProps<PullToRefreshProps>(), { motion: true })
 
 defineSlots<{
   /** Scrollable content. */
@@ -114,10 +124,7 @@ function unwrapEl(el: unknown): HTMLElement | null {
 
 // No CSS transitions when turned off, or when the user prefers reduced motion.
 function noMotion(): boolean {
-  return (
-    !props.motionCss ||
-    (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-  )
+  return props.motion === false || prefersReducedMotion()
 }
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -138,6 +145,19 @@ const { state, pullDistance, progress, refresh } = usePullToRefresh({
 })
 
 const live = computed(() => state.value === 'pulling' || state.value === 'ready')
+
+const parts = useStateMotion({
+  key: 'pullToRefresh',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-pull-to-refresh-root', indicator: '.ui-pull-to-refresh-indicator' },
+  states: () => ({ pulling: live.value, refreshing: state.value === 'loading' }),
+})
+// A tick as the pull passes the point where letting go refreshes.
+const haptic = useComponentHaptic()
+const tick = () => haptic.impact('light')
+watch(state, (next) => next === 'ready' && tick())
 
 const cx = useClassMerge()
 const themedUi = useThemedUi(
@@ -201,5 +221,9 @@ defineExpose({
   progress,
   /** Starts a refresh without a pull. No-op while one is already running. */
   refresh,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

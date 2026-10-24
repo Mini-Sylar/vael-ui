@@ -1,16 +1,33 @@
 <template>
   <section class="demo">
-    <h3>Cross-container drag: the &lt;Sortable&gt; shortcut</h3>
+    <h3>Moving cards between lists</h3>
     <p>
-      Dragging an item out of one list and into another — a Kanban board — is
-      <code>useSortableGroup()</code>, not a component; see its own
-      <RouterLink to="/composables/useSortableGroup">composable page</RouterLink> for the raw
-      primitive. For the common case, <code>&lt;Sortable&gt;</code> takes the same
-      <code>group</code>/<code>group-id</code> the primitive does, so a board needs zero manual
-      composable wiring. Cards are grabbable anywhere on their surface, not just a small handle, and
-      the column your drag is currently hovering tints and names itself, so it reads as a container
-      you're dropping into rather than a second, unrelated list.
+      Lists that share a <code>group</code> from
+      <RouterLink to="/composables/useSortableGroup">useSortableGroup()</RouterLink> let cards move
+      between them. Grab a card anywhere. The list under it highlights and shows “Drop in …”.
+      <code>preview-mode</code> sets what follows the pointer:
     </p>
+    <ul class="modes">
+      <li>
+        <strong>Move the card</strong> (<code>element</code>, the default): the card itself travels.
+        Use it for most lists.
+      </li>
+      <li>
+        <strong>Float a copy</strong> (<code>clone</code>): a copy follows the pointer, and the
+        original moves to where the card will land, shown here dashed. Use it when the card can't
+        leave its layout, like a table row. It also helps in a list that scrolls, which would cut
+        the real card off at its edges.
+      </li>
+    </ul>
+    <div class="row">
+      <SelectButton
+        v-model="previewMode"
+        :items="previewModes"
+        :allow-empty="false"
+        size="sm"
+        aria-label="Preview mode"
+      />
+    </div>
     <div class="board">
       <Card
         v-for="(col, i) in shortcutColumns"
@@ -25,6 +42,8 @@
           label-key="label"
           :group="shortcutGroup"
           :group-id="col.id"
+          :preview-mode="previewMode"
+          :ui="{ item: 'board-card', handle: 'board-card-handle' }"
           class="board-list"
         >
           <template #item="{ item }">{{ item.label }}</template>
@@ -40,7 +59,13 @@
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
 import type { Ref } from 'vue'
-import { Card, Sortable, useSortableGroup } from 'vael-ui'
+import { Card, SelectButton, Sortable, useSortableGroup } from 'vael-ui'
+
+const previewModes = [
+  { label: 'Move the card', value: 'element' },
+  { label: 'Float a copy', value: 'clone' },
+]
+const previewMode = ref<'element' | 'clone'>('element')
 
 type ShortcutColumnId = 'todo' | 'done'
 const shortcutColumns: { id: ShortcutColumnId; label: string }[] = [
@@ -93,13 +118,21 @@ const shortcutGroup = useSortableGroup({
   text-align: center;
 }
 
+.modes {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}
+
 /* Grabbable from anywhere on the card, not just the handle: the handle button
    already covers the whole item's hit area, so this just stretches it visibly
-   and lets the label sit on top without blocking the pointer from reaching it. */
-.board-list :deep(.ui-sortable-item) {
+   and lets the label sit on top without blocking the pointer from reaching it.
+   Classes from Sortable's `ui`, so the floating copy, which sits outside the list, matches. */
+:global(.board-card) {
   position: relative;
 }
-.board-list :deep(.ui-sortable-handle) {
+:global(.board-card-handle) {
   position: absolute;
   inset: 0;
   inline-size: 100%;
@@ -111,12 +144,38 @@ const shortcutGroup = useSortableGroup({
      what should visibly press. */
   transform: none;
 }
-.board-list :deep(.ui-sortable-item:active) {
+:global(.board-card:active) {
   transform: scale(0.98);
 }
-.board-list :deep(.ui-sortable-content) {
+:global(.board-card .ui-sortable-content) {
   position: relative;
   padding-inline-start: 1.875rem;
   pointer-events: none;
+}
+
+/* With "Float a copy", the original is the placeholder: it moves to where the card will land.
+   Sortable hides it by default; here it shows, dashed, so you can see the result before you drop. */
+.board-list :deep(.ui-sortable-item[data-sortable-source]) {
+  visibility: visible;
+  border-style: dashed;
+  background: transparent;
+  box-shadow: none;
+}
+.board-list :deep(.ui-sortable-item[data-sortable-source] > *) {
+  opacity: 0.45;
+}
+/* A label sitting on the dashed top edge, clear of the card's own text. */
+.board-list :deep(.ui-sortable-item[data-sortable-source])::after {
+  content: 'Original';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0.625rem;
+  translate: 0 -50%;
+  padding-inline: 0.25rem;
+  background: var(--ui-surface);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ui-text-muted);
 }
 </style>

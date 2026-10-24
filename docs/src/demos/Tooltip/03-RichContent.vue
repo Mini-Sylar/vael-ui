@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Rich content, the <code>&lt;Tooltip&gt;</code> component path</h3>
+    <h3>Rich content with the <code>&lt;Tooltip&gt;</code> component</h3>
     <div class="row">
       <Tooltip :open-delay="300">
         <template #trigger="{ setTriggerEl }">
@@ -25,19 +25,11 @@
     </div>
 
     <p class="note">
-      Custom entrance/exit animation (motion-v): <code>force-mount</code> +
-      <code>beforeClose(done)</code> + the exposed <code>panelEl</code> hand motion-v full control
-      of entrance and exit, the same escape hatch Popover and Dialog use.
+      Custom animation (motion-v): <code>enter</code> and <code>leave</code> hooks in
+      <code>motion</code> animate the panel with motion-v, as they do on Popover and Dialog.
     </p>
     <div class="row">
-      <Tooltip
-        ref="motionTip"
-        v-model:open="motionOpen"
-        force-mount
-        :open-delay="200"
-        :trigger-el="motionTriggerRef"
-        :before-close="motionBeforeClose"
-      >
+      <Tooltip :open-delay="200" :trigger-el="motionTriggerRef" :motion="sprung">
         <span>Sprung by motion-v.</span>
       </Tooltip>
       <Button ref="motionTriggerRef" variant="secondary">motion-v tooltip</Button>
@@ -46,33 +38,21 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, useTemplateRef, watch } from 'vue'
-import { useAnimate } from 'motion-v'
+import { useTemplateRef } from 'vue'
+import { animate } from 'motion-v'
 import { Button, Tooltip } from 'vael-ui'
+import type { TooltipMotion } from 'vael-ui'
 
 const motionTriggerRef = useTemplateRef('motionTriggerRef')
-const motionTip = useTemplateRef('motionTip')
-const motionOpen = shallowRef(false)
-const [, animate] = useAnimate()
 
-watch(motionOpen, (open) => {
-  if (!open) return
-  requestAnimationFrame(() => {
-    const panel = motionTip.value?.panelEl
-    if (!panel) return
+const sprung: TooltipMotion = {
+  enter: ({ panel }) =>
     animate(
       panel,
       { opacity: [0, 1], scale: [0.6, 1], rotate: [-6, 0] },
       { type: 'spring', visualDuration: 0.3, bounce: 0.4 },
-    )
-  })
-})
-
-async function motionBeforeClose(done: () => void) {
-  const panel = motionTip.value?.panelEl
-  if (!panel) return done()
-  await animate(panel, { opacity: 0, scale: 0.6, rotate: 6 }, { duration: 0.15 }).finished
-  done()
+    ),
+  leave: ({ panel }) => animate(panel, { opacity: 0, scale: 0.6, rotate: 6 }, { duration: 0.15 }),
 }
 </script>
 

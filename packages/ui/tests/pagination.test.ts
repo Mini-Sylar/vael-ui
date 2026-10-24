@@ -163,3 +163,24 @@ test('the page-size select has an accessible name', async () => {
   })
   await expect.element(screen.getByRole('combobox', { name: 'Rows per page' })).toBeVisible()
 })
+
+test('hovering the current page keeps it clear, so the indicator and its label stay visible', async () => {
+  const screen = await render(PaginationFixture)
+  const active = screen.container.querySelector<HTMLElement>('[aria-current="page"]')!
+  const other = screen.container.querySelector<HTMLElement>(
+    '.ui-pagination-page-button:not([aria-current])',
+  )!
+  const box = (el: HTMLElement) => getComputedStyle(el, '::before').backgroundColor
+  // The hover box fades in, so read it once the fade has finished.
+  const settled = () => new Promise((resolve) => setTimeout(resolve, 400))
+  const hover = screen.container.querySelector<HTMLElement>('.ui-pagination-hover')!
+  await userEvent.hover(other)
+  await settled()
+  // An ordinary page gets the sliding hover highlight, not a box of its own.
+  expect(getComputedStyle(hover).opacity).toBe('1')
+  expect(hover.getBoundingClientRect().left).toBeCloseTo(other.getBoundingClientRect().left, 0)
+  expect(box(other)).toBe('rgba(0, 0, 0, 0)')
+  await userEvent.hover(active)
+  await settled()
+  expect(box(active)).toBe('rgba(0, 0, 0, 0)')
+})

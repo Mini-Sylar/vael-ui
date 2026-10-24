@@ -10,7 +10,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { nextTick, shallowRef } from 'vue'
 import I18nAdapterFixture from './fixtures/I18nAdapterFixture.vue'
-import { resolveMessagesFromI18n } from '../src/messages'
+import { defaultMessages, resolveMessagesFromI18n } from '../src/messages'
 
 function closeLabel() {
   return document.querySelector('.ui-dialog-close')?.getAttribute('aria-label')
@@ -122,4 +122,14 @@ test('resolves the CascadeSelect count summary from uiKit.cascadeSelect.selected
     t: (key: string) => (key === 'uiKit.cascadeSelect.selectedCount' ? '{count} elegidos' : key),
   })
   expect(resolved.cascadeSelect).toEqual({ selectedCount: '{count} elegidos' })
+})
+
+test('every built-in message can be translated through i18n', () => {
+  const flat = (o: object, prefix = ''): string[] =>
+    Object.entries(o).flatMap(([key, value]) =>
+      typeof value === 'object' ? flat(value as object, `${prefix}${key}.`) : [`${prefix}${key}`],
+    )
+  const i18n = { t: (key: string) => `T:${key}`, locale: 'xx' }
+  const resolved = new Set(flat(resolveMessagesFromI18n(i18n as never)))
+  expect(flat(defaultMessages).filter((key) => !resolved.has(key))).toEqual([])
 })

@@ -1,10 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Header result count, footer hint</h3>
+    <h3>Result count in the header, hint in the footer</h3>
     <p class="note">
-      Same country list, siblings of Select's own <code>#header</code>/<code>#footer</code> demo —
-      <code>header</code> gets the same live <code>count</code>/<code>total</code> as `query`
-      narrows the list.
+      The same <code>#header</code> and <code>#footer</code> slots as Select.
+      <code>#header</code> receives a live <code>count</code> and <code>total</code> that update as
+      the query narrows the list.
     </p>
     <div class="row">
       <Combobox

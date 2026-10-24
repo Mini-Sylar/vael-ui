@@ -1,10 +1,10 @@
 <template>
-  <div class="guide-layout">
+  <div class="guide-layout" :class="{ 'guide-layout--wide': wide }">
     <article v-highlight-code v-scrollable-tables class="prose">
       <slot />
       <DocsPager />
     </article>
-    <OnThisPage :links="links" />
+    <OnThisPage v-if="!wide" :links="links" />
   </div>
 </template>
 
@@ -14,7 +14,11 @@ import OnThisPage from './OnThisPage.vue'
 import { vHighlightCode } from '../composables/vHighlightCode'
 import { vScrollableTables } from '../composables/vScrollableTables'
 
-defineProps<{ links: { id: string; label: string }[] }>()
+defineProps<{
+  links: { id: string; label: string }[]
+  /** A gallery page: one wide column, no table of contents. */
+  wide?: boolean
+}>()
 </script>
 
 <style scoped>
@@ -26,6 +30,14 @@ defineProps<{ links: { id: string; label: string }[] }>()
   justify-content: center;
   gap: 4rem;
   align-items: start;
+}
+
+.guide-layout--wide {
+  grid-template-columns: minmax(0, 76rem);
+}
+
+.guide-layout--wide > .prose {
+  max-width: none;
 }
 
 @media (max-width: 1100px) {

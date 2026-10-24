@@ -260,6 +260,9 @@ importers:
         specifier: ^5.4.0
         version: 5.4.0(@vue/compiler-sfc@3.6.0-rc.12)(esbuild@0.28.2)(rolldown@1.2.8)(rollup@4.62.4)(vite@8.3.4(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))(vue@3.6.0-rc.12(typescript@6.0.3))
     devDependencies:
+      '@mdream/js':
+        specifier: 2.0.3
+        version: 2.0.3
       '@vitejs/plugin-vue':
         specifier: ^6.0.10
         version: 6.0.10(vite@8.3.4(@types/node@26.1.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))(vue@3.6.0-rc.12(typescript@6.0.3))
@@ -1185,6 +1188,10 @@ packages:
   '@mapbox/node-pre-gyp@2.0.3':
     resolution: {integrity: sha512-uwPAhccfFJlsfCxMYTwOdVfOz3xqyj8xYL3zJj8f0pb30tLohnnFPhLuqp4/qoEz8sNxe4SESZedcBojRefIzg==}
     engines: {node: '>=18'}
+    hasBin: true
+
+  '@mdream/js@2.0.3':
+    resolution: {integrity: sha512-n35jmVwE663LBHr9iawaIbO+zpJ5EoCFD9UpG4XRYHs//YUqIX322d/F+QuF08Yi64dpFfzz4p4/joTnVZDvJA==}
     hasBin: true
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
@@ -6791,6 +6798,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@mdream/js@2.0.3':
+    dependencies:
+      cac: 7.1.0
+      pathe: 2.0.3
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true

@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Custom <code>#icon</code> slot (Phosphor)</h3>
+    <h3>Custom icon with <code>#icon</code> (Phosphor)</h3>
     <p class="note">
-      The <code>#icon</code> slot overrides the automatic <code>StatusIcon</code> per instance, pass
-      any icon set you like, including Phosphor.
+      The <code>#icon</code> slot replaces the automatic <code>StatusIcon</code> on one Message, so
+      you can use any icon set, such as Phosphor.
     </p>
     <div class="message-stack">
       <Message title="Automatic icon" variant="success">

@@ -44,16 +44,37 @@ test('narrowing a search eases the list to its new height instead of jumping', a
   expect(list.dataset.resizing).toBeUndefined()
 })
 
+// Samples every frame until 300ms after the last key: under load typing alone can outlast a
+// fixed window, which ended the samples before the list changed.
 async function heightsWhileTyping(list: HTMLElement, text: string): Promise<number[]> {
   const heights: number[] = []
-  const t0 = performance.now()
+  let typedAt = Infinity
+  // Under load the list can update late: keep sampling until it changes (up to 2s), then 300ms more.
+  let changedAt = Infinity
+  let done!: () => void
+  const finished = new Promise<void>((resolve) => (done = resolve))
   const sample = () => {
-    heights.push(list.getBoundingClientRect().height)
-    if (performance.now() - t0 < 500) requestAnimationFrame(sample)
+    const height = list.getBoundingClientRect().height
+    if (changedAt === Infinity && heights.length && Math.abs(height - heights[0]!) > 1)
+      changedAt = performance.now()
+    heights.push(height)
+    const now = performance.now()
+    if (
+      typedAt === Infinity ||
+      now - changedAt < 300 ||
+      (changedAt === Infinity && now - typedAt < 2000)
+    )
+      requestAnimationFrame(sample)
+    else done()
   }
   requestAnimationFrame(sample)
   await userEvent.keyboard(text)
-  await new Promise((resolve) => setTimeout(resolve, 550))
+  typedAt = performance.now()
+  await finished
+  // And at least as long as before: callers then check the eased height has let go.
+  await new Promise((resolve) =>
+    setTimeout(resolve, Math.max(0, 550 - (performance.now() - typedAt))),
+  )
   return heights
 }
 function expectEased(heights: number[]) {
@@ -125,9 +146,9 @@ function expectInstant(heights: number[]) {
   expect(heights.filter((value) => value > low + 1 && value < high - 1)).toHaveLength(0)
 }
 
-test('motion-css false: a Select search resizes the list at once', async () => {
+test('motion false: a Select search resizes the list at once', async () => {
   const screen = await render(
-    () => h(Select as never, { items, filter: true, modelValue: null, motionCss: false }),
+    () => h(Select as never, { items, filter: true, modelValue: null, motion: false }),
     { global },
   )
   await screen.getByRole('combobox').click()
@@ -140,8 +161,8 @@ test('motion-css false: a Select search resizes the list at once', async () => {
   expectInstant(await heightsWhileTyping(list, 'nai'))
 })
 
-test('motion-css false: a Tree search resizes the list and swaps its folders at once', async () => {
-  render(() => h(Tree as never, { items: folders, filterable: true, motionCss: false }), {
+test('motion false: a Tree search resizes the list and swaps its folders at once', async () => {
+  render(() => h(Tree as never, { items: folders, filterable: true, motion: false }), {
     global,
   })
   const tree = await vi.waitFor(() => {
@@ -158,17 +179,17 @@ test('motion-css false: a Tree search resizes the list and swaps its folders at 
   const shown = [...tree.querySelectorAll<HTMLElement>('.ui-tree-rows')].filter(
     (el) => el.getClientRects().length > 0,
   )
-  expect(shown.filter((el) => /-leave-active/.test(el.className))).toHaveLength(0)
+  expect(shown.filter((el) => el.dataset.folding !== undefined)).toHaveLength(0)
 })
 
-test('motion-css false: the clear button goes at once', async () => {
+test('motion false: the clear button goes at once', async () => {
   const Host = defineComponent(() => {
     const value = shallowRef<string | null>('accra')
     return () =>
       h(Select as never, {
         items,
         clearable: true,
-        motionCss: false,
+        motion: false,
         modelValue: value.value,
         'onUpdate:modelValue': (next: string | null) => (value.value = next),
       })

@@ -4,9 +4,9 @@
     <p class="note">
       Not a new component — <code>&lt;Dialog&gt;</code> at <code>position="left"</code> or
       <code>"right"</code>, full-height and flush to the edge instead of centered. Everything Dialog
-      already does (Escape, overlay click, <code>forceMount</code>, <code>beforeClose(done)</code>,
-      exposed <code>panelEl</code>) works unchanged — see "Family drawer" below for that same
-      contract at <code>position="bottom"</code>.
+      already does (Escape, overlay click, <code>beforeClose</code>, the <code>motion</code> prop)
+      works unchanged — see "Family drawer" below for that same contract at
+      <code>position="bottom"</code>.
     </p>
 
     <h3>Left / right edge</h3>
@@ -37,40 +37,28 @@
         <Button variant="outline" @click="counter++">Clicked {{ counter }} times</Button>
       </div>
     </div>
-    <Dialog
-      v-model:open="pinnedOpen"
-      position="left"
-      :modal="false"
-      force-mount
-      title="Pinned sidebar"
-    >
+    <Dialog v-model:open="pinnedOpen" position="left" :modal="false" title="Pinned sidebar">
       <p class="panel-text">Non-modal — try clicking the counter button behind this panel.</p>
     </Dialog>
 
     <h3>Motion-v: full external control</h3>
     <p class="note">
-      <code>force-mount</code> + <code>before-close(done)</code> + the exposed
-      <code>panelEl</code> hand a motion-v spring the whole enter/exit — the built-in CSS transition
-      never runs. Same shape as the family drawer's slide, rotated onto <code>translateX</code>.
+      <code>motion</code>'s <code>enter</code>/<code>leave</code> hooks hand a motion-v spring the
+      whole enter/exit — the built-in look never runs. Same shape as the family drawer's slide,
+      rotated onto <code>translateX</code>.
     </p>
-    <Button @click="openMotionDrawer">Open spring drawer</Button>
-    <Dialog
-      ref="motionDrawer"
-      v-model:open="motionOpen"
-      force-mount
-      :before-close="beforeCloseMotion"
-      position="right"
-      title="Spring drawer"
-    >
+    <Button @click="motionOpen = true">Open spring drawer</Button>
+    <Dialog v-model:open="motionOpen" :motion="springLook" position="right" title="Spring drawer">
       <p class="panel-text">Driven entirely by <code>motion-v</code>'s <code>animate()</code>.</p>
     </Dialog>
   </section>
 </template>
 
 <script setup lang="ts">
-import { nextTick, shallowRef, useTemplateRef } from 'vue'
+import { shallowRef } from 'vue'
 import { animate } from 'motion-v'
 import { Button, Dialog } from 'vael-ui'
+import type { DialogMotion } from 'vael-ui'
 
 const leftOpen = shallowRef(false)
 const rightOpen = shallowRef(false)
@@ -78,10 +66,6 @@ const pinnedOpen = shallowRef(false)
 const counter = shallowRef(0)
 
 const motionOpen = shallowRef(false)
-const motionDrawer = useTemplateRef('motionDrawer')
-
-const reducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 let progress = 0
 let slideDistance = 0
@@ -93,9 +77,10 @@ function renderPanel(panel: HTMLElement) {
   panel.style.opacity = `${progress}`
 }
 
-function animateTo(panel: HTMLElement, target: number, onSettle?: () => void) {
+function animateTo(panel: HTMLElement, target: number) {
   spring?.stop()
-  const controls = animate(progress, target, {
+  renderPanel(panel)
+  spring = animate(progress, target, {
     type: 'spring',
     visualDuration: 0.35,
     bounce: 0.25,
@@ -104,53 +89,28 @@ function animateTo(panel: HTMLElement, target: number, onSettle?: () => void) {
       renderPanel(panel)
     },
   })
-  spring = controls
-  if (onSettle) controls.finished.then(() => spring === controls && onSettle())
+  return spring
 }
 
-async function openMotionDrawer() {
-  const dialog = motionDrawer.value
-  if (dialog?.isClosing) {
-    dialog.cancelClose()
-    if (!reducedMotion()) animateTo(dialog.panelEl!, 1)
-    return
-  }
-  if (motionOpen.value) return
-  const panel = dialog?.panelEl
-  progress = reducedMotion() ? 1 : 0
-  if (panel && !reducedMotion()) panel.style.transform = 'translateX(100%)'
-  motionOpen.value = true
-  await nextTick()
-  if (panel) {
-    panel.style.transform = ''
+const springLook: DialogMotion = {
+  enter({ panel }) {
+    // Measured before the first transform, with the panel at rest
     slideDistance = window.innerWidth - panel.getBoundingClientRect().left
-    renderPanel(panel)
-  }
-  if (!reducedMotion()) animateTo(panel!, 1)
-  // Read rect while panel at rest to keep close animation target in sync
-  if (panel && !resizeHandler) {
-    resizeHandler = () => {
-      slideDistance = window.innerWidth - panel.getBoundingClientRect().left
+    if (!resizeHandler) {
+      resizeHandler = () => {
+        slideDistance = window.innerWidth - panel.getBoundingClientRect().left
+      }
+      window.addEventListener('resize', resizeHandler)
     }
-    window.addEventListener('resize', resizeHandler)
-  }
-}
-
-function beforeCloseMotion(done: () => void) {
-  const panel = motionDrawer.value?.panelEl
-  if (resizeHandler) {
-    window.removeEventListener('resize', resizeHandler)
-    resizeHandler = undefined
-  }
-  if (!panel || reducedMotion()) {
-    done()
-    return
-  }
-  animateTo(panel, 0, () => {
-    panel.style.transform = ''
-    panel.style.opacity = ''
-    done()
-  })
+    return animateTo(panel, 1)
+  },
+  leave({ panel }) {
+    if (resizeHandler) {
+      window.removeEventListener('resize', resizeHandler)
+      resizeHandler = undefined
+    }
+    return animateTo(panel, 0)
+  },
 }
 </script>
 

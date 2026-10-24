@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Year buttons</h3>
     <p class="note">
-      <code>show-year-buttons</code> adds « and » beside the month arrows to jump a whole year, for
-      ranges that span years. Without it, click the month name to step through years instead.
+      <code>show-year-buttons</code> adds « and » next to the month arrows to move a whole year, for
+      ranges that span years. Without it, click the month name to move by year.
     </p>
     <div class="row">
       <div class="stack">

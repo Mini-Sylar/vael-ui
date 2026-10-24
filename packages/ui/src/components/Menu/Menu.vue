@@ -9,7 +9,12 @@
     <slot name="trigger" :open="open" />
   </span>
   <Teleport :to="teleportTo">
-    <Transition name="ui-menu" appear :css="!forceMount">
+    <Transition
+      name="ui-menu"
+      appear
+      v-bind="motionHooks"
+      :css="!forceMount && motionTransition.css !== false"
+    >
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -26,6 +31,7 @@
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
           :data-level="level"
+          data-ui-presence
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -43,6 +49,12 @@
             @keydown="onListKeydown"
             @focusin="onListFocusin"
           >
+            <div
+              ref="indicatorEl"
+              class="ui-indicator ui-menu-indicator"
+              :style="indicatorStyle"
+              aria-hidden="true"
+            />
             <!-- Custom slot ignores `items` — consumer owns the markup. -->
             <slot
               v-if="$slots.default"
@@ -148,7 +160,7 @@
                   :trigger-el="rowEls[i]"
                   v-model:open="submenuOpen[i]"
                   :open-path="revealedRow === i ? openPath?.slice(1) : undefined"
-                  side="right"
+                  :side="submenuSide()"
                   align="start"
                   :teleport-to="positionerEl"
                   :ui="props.ui"
@@ -215,7 +227,7 @@ export interface MenuItemData {
   onSelect?: () => void
   /**
    * Nested rows; the row becomes a submenu trigger that opens on hover intent, click, Enter/Space or
-   * ArrowRight. Nested levels don't support custom item types. In MenuList, the row becomes an inert
+   * ArrowRight (ArrowLeft right to left, where the submenu opens to the left). Nested levels don't support custom item types. In MenuList, the row becomes an inert
    * group label with its `items` rendered beneath it (see the `isGroup` prop of the `#item` slot).
    */
   items?: ReadonlyArray<MenuEntry<MenuItemData>>
@@ -247,10 +259,16 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
   closeOnEsc?: boolean
   /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Runs before the menu closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The menu stays open while the promise is pending. */
+  beforeClose?: BeforeClose<PopoverCloseReason>
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, your own
+   * `initial` and `exit` for the panel, or `targets` for the rows (`select: '.ui-menu-item'`).
+   * Unset, it follows the nearest ConfigProvider's style.
+   */
+  motion?: MenuMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
   /**
@@ -276,6 +294,8 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
 </script>
 
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, MenuMotion } from '../../motion/types'
 import './Menu.css'
 import '../shared/tick.css'
 import '../shared/tokens.css'
@@ -305,11 +325,20 @@ import { createSlotRelay } from '../../composables/useSlotRelay'
 // circular import resolves fine: the default export is defined by instantiation time, long after
 // this module finishes evaluating.
 import MenuSelf from './Menu.vue'
-import { resolvePastDisplayContents, nativeTag, useSlotPresence } from '../../composables/dom'
+import {
+  isRtl,
+  resolvePastDisplayContents,
+  nativeTag,
+  useSlotPresence,
+} from '../../composables/dom'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useMenu } from '../../composables/useMenu'
 import { useVirtualizer } from '../../composables/useVirtualizer'
+import { useComponentMotion } from '../../motion/useComponentMotion'
+import { whenPlaced } from '../../composables/useSelectPanelMotion'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
+import '../shared/indicator.css'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -330,6 +359,7 @@ const props = withDefaults(defineProps<MenuProps<T>>(), {
   forceMount: false,
   teleportTo: 'body',
   scrollFade: true,
+  motion: undefined,
 })
 
 const emit = defineEmits<{
@@ -337,7 +367,7 @@ const emit = defineEmits<{
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
   /** Fires when a data-driven row is activated, including rows in submenus. */
   select: [item: T]
-  /** Fires on ArrowLeft inside the menu; a parent menu uses it to close this submenu. */
+  /** Fires on ArrowLeft inside the menu (ArrowRight right to left); a parent menu uses it to close this submenu. */
   collapse: []
   /** Fires when the pointer enters or leaves any submenu row or panel in this subtree; a parent menu uses it to stay open. */
   active: [value: boolean]
@@ -438,12 +468,22 @@ function onTriggerKeydown(event: KeyboardEvent) {
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+// A submenu opens toward the end of the line: to the left, right to left.
+const submenuSide = (): MenuSide => (isRtl(panelEl.value) ? 'left' : 'right')
 const attrs = useAttrs()
 const panelAttrs = useAttrListeners(
   () => panelEl.value,
   () => attrs,
 )
 const listEl = useTemplateRef<HTMLElement>('list')
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+// The hover and keyboard highlight slides between rows; a submenu's rows have their own.
+const { style: indicatorStyle } = useHoverIndicator(listEl, {
+  itemSelector: '.ui-menu-item',
+  scope: '.ui-menu-body',
+  scroller: true,
+  indicatorEl,
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.menu,
@@ -477,6 +517,39 @@ const {
   beforeClose: () => props.beforeClose,
   maxHeightCap: () => props.maxPanelHeight,
   onOpenChange: (value, details) => emit('open-change', value, details),
+})
+
+const motion = useComponentMotion({
+  name: 'Menu',
+  role: 'overlay',
+  key: 'menu',
+  mainPart: 'panel',
+  parts: () => ({ positioner: positionerEl.value, panel: panelEl.value }),
+  root: () => panelEl.value,
+  motion: () => props.motion,
+  // The built-in look as data: it opens from a touch further than it closes to, scaling from the
+  // trigger via the panel's own transform-origin, on the enter tokens. forceMount leaves it to you.
+  defaults: () => ({ panel: { opacity: 0, scale: '0.97' } }),
+  exitDefaults: () => ({ panel: { opacity: 0, scale: '0.99' } }),
+  timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
+  owns: () => !props.forceMount,
+  trigger: () => triggerElRef.value,
+  ready: () => whenPlaced(() => positionerStyle.value.visibility === 'visible'),
+})
+const { phase } = motion
+const motionTransition = motion.transition
+const motionHooks = computed(() => {
+  const { css: _css, ...hooks } = motionTransition.value
+  return {
+    ...hooks,
+    onBeforeEnter: (el: Element) => {
+      hooks.onBeforeEnter?.(el)
+      phase.value = 'entering'
+    },
+    onAfterEnter: () => (phase.value = 'entered'),
+    onBeforeLeave: () => (phase.value = 'leaving'),
+    onAfterLeave: () => (phase.value = 'left'),
+  }
 })
 
 // Same shared-layer-stack stacking as Popover.vue/Dialog.vue - see Popover's own comment.
@@ -900,6 +973,8 @@ defineExpose({
   positionerEl,
   /** Item list element (null while closed). */
   listEl,
+  /** The hover and keyboard highlight, sliding between rows (null while closed). Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
+  highlightEl: indicatorEl,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */
   placement,
   /** Inline positioning style applied to the positioner. */

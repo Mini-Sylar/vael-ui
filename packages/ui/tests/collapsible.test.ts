@@ -77,8 +77,8 @@ test('disabled prevents toggling on click', async () => {
   expect(panel().dataset.state).toBe('closed')
 })
 
-test('motionCss=false skips the pin/transition dance — no inline block-size transition state', async () => {
-  await render(CollapsibleFixture, { props: { motionCss: false } })
+test('motion=false skips the pin/transition dance — no inline block-size transition state', async () => {
+  await render(CollapsibleFixture, { props: { motion: false } })
   await page.getByRole('button', { name: 'Show details' }).click()
   await vi.waitFor(() => expect(panel().dataset.state).toBe('open'))
   expect(panel().style.blockSize).toBe('')

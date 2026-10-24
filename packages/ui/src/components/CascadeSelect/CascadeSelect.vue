@@ -13,6 +13,7 @@
       :close-on-outside="closeOnOutside"
       :before-close="beforeClose"
       :force-mount="forceMount"
+      :motion="menuMotion"
       :teleport-to="teleportTo"
       :scroll-fade="scrollFade"
       :ui="{
@@ -29,6 +30,10 @@
         <div v-if="filter !== undefined" :class="filterPart.class" :style="filterPart.style">
           <Input
             ref="filterInputRef"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            enterkeyhint="enter"
             v-model="query"
             :placeholder="filterPlaceholder"
             size="sm"
@@ -82,44 +87,54 @@
           @focus="onTriggerFocus"
           @blur="onTriggerBlur"
         >
-          <span :class="valuePart.class" :style="valuePart.style">
+          <span ref="valueEl" :class="valuePart.class" :style="valuePart.style">
             <slot name="value" :selected="selectedForSlot" :path="pathForSlot">
-              <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{ placeholder }}</span>
-              <template v-else-if="!multiple">{{ selectedItem?.label }}</template>
+              <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+              <LazyAnimatedText
+                v-if="!multiple"
+                :class="isEmpty && 'ui-cascade-select-placeholder'"
+                :value="isEmpty ? (placeholder ?? '') : (selectedItem?.label ?? '')"
+                :motion="!!props.motion"
+              />
+              <span
+                v-else-if="isEmpty && display !== 'chip'"
+                class="ui-cascade-select-placeholder"
+                >{{ placeholder }}</span
+              >
               <span v-else-if="display === 'text'">{{ displayLabel }}</span>
               <span v-else-if="display === 'count'">{{ selectedCountLabel }}</span>
-              <TransitionGroup
-                v-else
-                name="ui-chip-item"
-                @leave-cancelled="resetLeaveStyles"
-                tag="span"
-                class="ui-cascade-select-chips"
-                :css="props.motionCss"
-                :data-motion="props.motionCss ? undefined : 'off'"
-                @enter="chipEnterHook"
-                @leave="chipLeaveHook"
-              >
-                <Chip
-                  v-for="match in visibleChips"
-                  :key="match.item.value"
-                  :label="match.item.label"
-                  removable
-                  :disabled="isDisabled"
-                  @remove="removeChip(match.item)"
-                />
-                <span
-                  v-if="hiddenChipCount > 0"
-                  key="__overflow"
-                  class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+              <!-- The chips group stays mounted when the last chip goes, so it leaves like the others;
+                   the placeholder slides in behind it. -->
+              <template v-else>
+                <TransitionGroup
+                  v-bind="chipsTransition"
+                  :data-motion="props.motion ? undefined : 'off'"
+                  tag="span"
+                  class="ui-cascade-select-chips"
                 >
-                  +{{ hiddenChipCount }}
-                </span>
-              </TransitionGroup>
+                  <Chip
+                    v-for="match in visibleChips"
+                    :key="match.item.value"
+                    :label="match.item.label"
+                    removable
+                    :disabled="isDisabled"
+                    @remove="removeChip(match.item)"
+                  />
+                  <span
+                    v-if="hiddenChipCount > 0"
+                    key="__overflow"
+                    class="ui-chip ui-chip--md ui-cascade-select-chip--overflow"
+                  >
+                    +{{ hiddenChipCount }}
+                  </span>
+                </TransitionGroup>
+                <span v-if="isEmpty" class="ui-cascade-select-placeholder">{{ placeholder }}</span>
+              </template>
             </slot>
           </span>
           <Transition
             name="ui-clear"
-            :css="props.motionCss"
+            :css="!!props.motion"
             @enter="measureClearSpace"
             @leave="startClearLeave"
             @leave-cancelled="resetLeaveStyles"
@@ -244,21 +259,21 @@ export type CascadeSelectFilter<T> =
     V extends string | number | (string | number)[] | null = string | number | null
   "
 >
+import type { BeforeClose, CascadeSelectMotion } from '../../motion/types'
+import type { PopoverCloseReason } from '../../composables/usePopover'
 import './CascadeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/clear-transition.css'
-import {
-  collapseLeavingChip,
-  measureClearSpace,
-  resetLeaveStyles,
-  startClearLeave,
-} from '../../composables/dom'
+import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
+import { useChipRowWidth } from '../../composables/useChipRowWidth'
+import { useChipTransition } from '../../composables/useChipTransition'
 import '../shared/chip.css'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Menu from '../Menu/Menu.vue'
 import Chip from '../Chip/Chip.vue'
+import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import Input from '../Input/Input.vue'
 import { normalizeText } from '../../composables/normalizeText'
 import { useEasedHeight } from '../../composables/useEasedHeight'
@@ -325,9 +340,9 @@ const rawProps = withDefaults(
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
@@ -343,11 +358,14 @@ const rawProps = withDefaults(
      * @default true
      */
     scrollFade?: boolean
-    /** `false` skips the built-in motion: the menu easing to its new height as you search, the clear
-     * button, and chip transitions, which you can animate via `@chip-enter`/`@chip-leave`.
+    /**
+     * How it moves. `false` skips all of it: the menu opening and easing to its new height as you
+     * search, the clear button and the chips. An object moves the menu your way, like
+     * Menu's: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. `chips` does
+     * the same for the chips (`{ chips: { initial: { chip: { opacity: 0, y: 4 } } } }`).
      * @default true
      */
-    motionCss?: boolean
+    motion?: CascadeSelectMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
@@ -380,11 +398,11 @@ const rawProps = withDefaults(
     filter: undefined,
     filterPlaceholder: 'Search...',
     scrollFade: true,
-    motionCss: undefined,
+    motion: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const emit = defineEmits<{
   /** Fires before the panel closes, with the reason; `details.cancel()` keeps it open. */
@@ -393,19 +411,19 @@ const emit = defineEmits<{
   change: [value: V]
   /** Fires when a leaf is picked or unpicked, with the item and its root-to-leaf path. */
   select: [item: T, path: CascadeSelectPath]
-  /** Replaces the chip enter transition when `motionCss` is `false`; call `done()` when finished. */
-  'chip-enter': [el: Element, done: () => void]
-  /** Same as `@chip-enter`, for a chip's removal. */
-  'chip-leave': [el: Element, done: () => void]
 }>()
 
-const chipEnterHook = computed(() =>
-  props.motionCss ? undefined : (el: Element, done: () => void) => emit('chip-enter', el, done),
-)
-const chipLeaveHook = computed(() =>
-  props.motionCss
-    ? collapseLeavingChip
-    : (el: Element, done: () => void) => emit('chip-leave', el, done),
+// The menu's motion: yours without `chips`, which the chips row reads.
+const menuMotion = computed(() => {
+  if (typeof props.motion !== 'object') return props.motion
+  const { chips: _chips, ...menu } = props.motion
+  return menu
+})
+const chipsTransition = useChipTransition(
+  () => rawProps.motion,
+  () => !!props.motion,
+  'cascadeSelect',
+  'CascadeSelect',
 )
 
 defineSlots<{
@@ -657,6 +675,13 @@ function onOpenChange(value: boolean, details: PopoverOpenChangeDetails) {
 }
 
 const filterInputRef = useTemplateRef<{ inputEl: HTMLInputElement | null }>('filterInputRef')
+const valueEl = useTemplateRef<HTMLElement>('valueEl')
+useChipRowWidth({
+  row: () => valueEl.value,
+  empty: () => isEmpty.value,
+  active: () => props.multiple && props.display === 'chip' && !!props.motion,
+  placeholder: '.ui-cascade-select-placeholder',
+})
 function rows(): HTMLElement[] {
   const list = menuRef.value?.listEl
   if (!list) return []
@@ -758,6 +783,7 @@ function onClear(event: MouseEvent) {
 const messages = useUiMessages()
 const fieldControl = useFieldControl({
   filled: () => (props.multiple ? !isEmpty.value : model.value != null),
+  frame: { el: () => triggerEl.value, size: () => props.size },
 })
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
@@ -773,9 +799,9 @@ const restAttrs = computed(() =>
 )
 
 const cx = useClassMerge()
-// The panel is teleported, so motion-css off is marked on it for the CSS that follows it (Menu.css).
+// The panel is teleported, so motion off is marked on it for the CSS that follows it (Menu.css).
 const panelUi = computed<UiPartValue | undefined>(() => {
-  if (props.motionCss) return themedUi()?.panel
+  if (props.motion) return themedUi()?.panel
   const { class: panelClass, style } = splitUiPart(themedUi()?.panel)
   return { class: cx('ui-motion-off', panelClass), style }
 })
@@ -802,7 +828,7 @@ const filterPart = computed(() => resolveUiPart(cx, themedUi()?.filter, 'ui-casc
 useEasedHeight({
   el: () => menuRef.value?.listEl,
   source: [query, () => props.items],
-  enabled: () => props.motionCss && props.filter !== undefined,
+  enabled: () => props.motion && props.filter !== undefined,
 })
 watch(
   () => menuRef.value?.positionerEl,

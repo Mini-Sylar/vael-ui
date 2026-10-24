@@ -4,8 +4,10 @@ import { useEventListener } from '@vueuse/core'
 import { useLayer } from './useLayerStack'
 import { useScrollLock } from './useScrollLock'
 import { useInert } from './useInert'
-import { getFocusable, useDOMTarget, type DOMTarget, type ElRef } from './dom'
+import { getFocusable, opener, useDOMTarget, type DOMTarget, type ElRef } from './dom'
 import { ssrDocument } from '../ssr'
+import { useCloseGuard } from './useCloseGuard'
+import type { BeforeClose } from '../motion/types'
 
 export type DialogCloseReason = 'trigger' | 'escape' | 'outside' | 'history' | 'programmatic'
 
@@ -39,14 +41,24 @@ export interface UseDialogOptions {
   /** Called before the model flips to false. Call `cancel()` on the details to veto the close. Components wire this to their `open-change` emit. */
   onOpenChange?: (value: boolean, details: DialogOpenChangeDetails) => void
   /** Getter so the underlying prop stays reactive without being invoked by `toValue`. */
-  beforeClose?: () => ((done: () => void) => void) | undefined
+  beforeClose?: () => BeforeClose<DialogCloseReason> | undefined
   /** Overrides which element receives focus on open. Return null/undefined to fall back to the first focusable element (or the panel itself). */
   initialFocus?: () => HTMLElement | null | undefined
   /** Gates scroll-lock, the Tab focus-trap, and the initial-focus steal. Escape-close and layer stacking stay active either way. Default true. */
   modal?: MaybeRefOrGetter<boolean>
   /** Pushes a history entry on open so the mobile hardware/gesture back action closes this dialog instead of navigating the underlying page away, popping that entry again on any other close path. Default false — opt in per instance, since it alters the browser's history stack. */
   closeOnHistoryBack?: MaybeRefOrGetter<boolean>
+  /**
+   * Keeps the page's scroll locked after the model closes, until `releaseScroll()` is called
+   * (Dialog calls it once its exit animation ends). Releasing at the start of the exit brings a
+   * classic scrollbar back while the panel is still fading, and a panel centred in the viewport
+   * jumps sideways by half its width. Default false: released as soon as the dialog closes.
+   */
+  holdScrollUntilExit?: boolean
 }
+
+// Longer than any built-in exit, so it only fires if the exit never reports its end.
+const EXIT_FALLBACK_MS = 1000
 
 // Shared across dialogs: each popstate must be judged once against every open entry.
 let lastHistoryId = 0
@@ -88,9 +100,11 @@ function syncPopStateListener() {
 export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   const { panelEl } = options
 
-  // Logically open but visually closing: exposes third state for animations.
-  const isClosing = shallowRef(false)
-  let pendingClose: symbol | null = null
+  const {
+    isClosing,
+    close: closeGuarded,
+    cancelClose,
+  } = useCloseGuard(open, () => options.beforeClose?.())
 
   function requestClose(reason: DialogCloseReason, event?: Event) {
     if (!open.value) return
@@ -106,25 +120,7 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     options.onOpenChange?.(false, details)
     if (cancelled) return
 
-    const beforeClose = options.beforeClose?.()
-    if (!beforeClose) {
-      open.value = false
-      return
-    }
-    const token = Symbol('pending-close')
-    pendingClose = token
-    isClosing.value = true
-    beforeClose(() => {
-      if (pendingClose !== token) return
-      pendingClose = null
-      isClosing.value = false
-      open.value = false
-    })
-  }
-
-  function cancelClose() {
-    pendingClose = null
-    isClosing.value = false
+    closeGuarded(reason)
   }
 
   function close() {
@@ -227,6 +223,10 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
 
   let previouslyFocused: HTMLElement | null = null
   let active = false
+  // holdScrollUntilExit: whether this open's exit has finished, and a release in case it never reports.
+  let exitEnded = false
+  let exitFallback: ReturnType<typeof setTimeout> | undefined
+  let exitEl: HTMLElement | null = null
   // Snapshot at activate() to avoid desync on reactive flips mid-open.
   let modalActive = true
   let containedActive = false
@@ -278,14 +278,17 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
   function activate() {
     if (active) return
     active = true
+    exitEnded = false
+    clearTimeout(exitFallback)
+    exitEl = contentEl() ?? null
     modalActive = toValue(options.modal ?? true)
     containedActive = contained.value
     layer.push()
     isOpen.value = true
     pushHistoryEntry()
     if (modalActive) {
-      previouslyFocused =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null
+      // What opened it, even in Safari (a clicked button isn't focused there): focus goes back to it.
+      previouslyFocused = opener()
       scrollLocked.value = true
       // inert blurs whatever is focused inside it, so this must happen before the focus steal.
       if (containedActive) inerted.value = true
@@ -306,15 +309,20 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     isOpen.value = false
     popHistoryEntryIfOwned()
     if (modalActive) {
-      scrollLocked.value = false
+      // Nothing to wait for when the exit already ended (forceMount, no animation) or the dialog left
+      // the page at once (a stubbed <Transition> in tests). Vue clears the template ref on close,
+      // hence the element captured at open.
+      if (!options.holdScrollUntilExit || exitEnded || !exitEl?.isConnected)
+        scrollLocked.value = false
+      else exitFallback = setTimeout(releaseScroll, EXIT_FALLBACK_MS)
       inerted.value = false
       // the opener may have unmounted while we were open.
       if (previouslyFocused?.isConnected) previouslyFocused.focus({ preventScroll: true })
     }
     previouslyFocused = null
+    exitEl = null
     // Clear pending close on raw model writes mid-close.
-    pendingClose = null
-    isClosing.value = false
+    cancelClose()
   }
 
   watch(open, (value) => (value ? activate() : deactivate()), { flush: 'post' })
@@ -323,7 +331,17 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     if (open.value) activate()
   })
 
-  onScopeDispose(() => deactivate())
+  onScopeDispose(() => {
+    deactivate()
+    clearTimeout(exitFallback)
+  })
+
+  /** Ends a lock held by `holdScrollUntilExit`. A no-op while open, so a reopen mid-exit keeps it. */
+  function releaseScroll() {
+    clearTimeout(exitFallback)
+    exitEnded = true
+    if (!open.value) scrollLocked.value = false
+  }
 
   return {
     isClosing,
@@ -339,5 +357,6 @@ export function useDialog(open: Ref<boolean>, options: UseDialogOptions) {
     // stack slots instead of one, breaking isTopmost()/Escape-routing/scroll-lock ref-counting for
     // every dialog on the page.
     layerIndex: layer.index,
+    releaseScroll,
   }
 }

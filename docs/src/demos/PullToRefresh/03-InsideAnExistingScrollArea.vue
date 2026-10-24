@@ -2,10 +2,9 @@
   <section class="demo">
     <h3>Inside an existing scroll area</h3>
     <p class="note">
-      Pass <code>:scroll-el</code> when the scrolling already happens on an ancestor. The component
-      stays a thin wrapper and never takes over that element's <code>overflow</code>. The gesture
-      engages only while that element is scrolled to the very top — scroll down and it's an ordinary
-      list again.
+      Pass <code>:scroll-el</code> when an ancestor already scrolls. PullToRefresh stays a thin
+      wrapper and never changes that element's <code>overflow</code>. The pull only starts while
+      that element is scrolled to the top; anywhere else, the list scrolls as usual.
     </p>
     <div ref="scroller" class="ptr-scroller" tabindex="0" role="region" aria-label="Inbox">
       <PullToRefresh :on-refresh="refresh" :scroll-el="scroller">

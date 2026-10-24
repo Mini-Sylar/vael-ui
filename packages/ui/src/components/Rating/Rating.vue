@@ -27,7 +27,10 @@
     @blur="onBlur"
     v-bind="restAttrs"
   >
-    <span :key="committedKey" class="ui-rating-track">
+    <span
+      class="ui-rating-track"
+      :data-pop="committedKey ? (committedKey % 2 ? 'a' : 'b') : undefined"
+    >
       <span
         v-for="index in max"
         :key="index"
@@ -47,12 +50,13 @@
   </div>
 </template>
 
-<!-- Single ARIA-slider control (not N focusable radios), same interaction model as Slider.vue: pointer sets/drags the value, arrow keys step it. Hover/drag preview is instant (no transition, `data-tracking`); a committed change (click, drag release, keyboard) gets the fill sweep + pop, keyed like Badge's animated content so the pop never plays on first paint. -->
+<!-- Single ARIA-slider control (not N focusable radios), same interaction model as Slider.vue: pointer sets/drags the value, arrow keys step it. Hover/drag preview is instant (no transition, `data-tracking`); a committed change (click, drag release, keyboard) gets the fill sweep + pop, restarted by flipping between two copies of its keyframes, so the pop never plays on first paint and the stars are never remounted. -->
 <script setup lang="ts">
 import './Rating.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import { inlineKey, isRtl } from '../../composables/dom'
 import { useFieldControl } from '../../composables/useFieldControl'
 import {
   clearFocusVisible,
@@ -64,6 +68,8 @@ import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { RatingMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -104,14 +110,19 @@ const rawProps = withDefaults(
     name?: string
     /** Drives `aria-valuetext`. Defaults to the `rating.valueText` message ("{value} of {max}"). */
     valueText?: (value: number) => string
-    /** `false` skips the built-in fill-sweep and commit-pop animations. @default true */
-    motionCss?: boolean
+    /**
+     * How it moves: its appearance, star by star (`{ initial: { item: { opacity: 0, scale: 0.6 } }, stagger: 0.04 }`),
+     * and its states (`{ states: { disabled: { root: { opacity: 0.5 } } } }`). `false` turns its own
+     * animation off, the built-in fill sweep and commit pop too.
+     * @default true
+     */
+    motion?: RatingMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
   }>(),
-  { max: 5, allowHalf: false, readonly: false, disabled: false, motionCss: undefined },
+  { max: 5, allowHalf: false, readonly: false, disabled: false, motion: undefined },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const fieldControl = useFieldControl({ filled: () => modelValue.value > 0 })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
@@ -137,15 +148,12 @@ const hoverValue = shallowRef<number | null>(null)
 const isTracking = shallowRef(false)
 const displayValue = computed(() => hoverValue.value ?? modelValue.value)
 
-// Re-keying the item on every commit restarts its CSS `animation` (same
-// technique Badge.vue uses for its pop), skipped on first paint so mounting
-// with an existing value never pops.
+// Each commit flips `data-pop` between two copies of the pop, which restarts it without remounting
+// the stars (your animations hold them); mounting with an existing value never pops.
 const committedKey = shallowRef(0)
-let mounted = false
 function commit(value: number) {
   const next = clamp(value)
-  if (mounted && next !== modelValue.value) committedKey.value++
-  mounted = true
+  if (next !== modelValue.value) committedKey.value++
   modelValue.value = next
 }
 
@@ -153,9 +161,19 @@ const root = useTemplateRef<HTMLElement>('root')
 // One element per star — an external animation library needs real nodes to stagger-reveal,
 // wobble, or morph individual stars, not just the row as a whole.
 const itemEls = useTemplateRef<HTMLElement[]>('itemEls')
+const parts = useStateMotion({
+  key: 'rating',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-rating', item: '.ui-rating-item' },
+  states: () => ({ disabled: isDisabled.value }),
+})
 function valueFromPointer(event: PointerEvent): number {
   const rect = root.value!.getBoundingClientRect()
-  const fraction = rect.width === 0 ? 0 : (event.clientX - rect.left) / rect.width
+  // Right to left, the stars count from the right edge.
+  const from = isRtl(root.value) ? rect.right - event.clientX : event.clientX - rect.left
+  const fraction = rect.width === 0 ? 0 : from / rect.width
   const raw = Math.max(0, Math.min(1, fraction)) * props.max
   return props.allowHalf ? Math.ceil(raw * 2) / 2 : Math.ceil(raw)
 }
@@ -234,7 +252,7 @@ function onKeydown(event: KeyboardEvent) {
     if (['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
       hoverValue.value = null
     }
-    switch (event.key) {
+    switch (inlineKey(event.key, event.currentTarget as Element)) {
       case 'ArrowRight':
       case 'ArrowUp':
         event.preventDefault()
@@ -277,7 +295,7 @@ const rootPart = computed(() =>
     `ui-rating--${props.size}`,
     isDisabled.value && 'ui-rating--disabled',
     props.readonly && 'ui-rating--readonly',
-    !props.motionCss && 'ui-rating--no-motion',
+    !props.motion && 'ui-rating--no-motion',
   ),
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-rating-item'))
@@ -287,5 +305,9 @@ defineExpose({
   el: root,
   /** Star elements, one per star. */
   itemEls,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

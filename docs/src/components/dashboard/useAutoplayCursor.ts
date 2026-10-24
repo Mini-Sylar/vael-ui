@@ -58,23 +58,51 @@ export function useAutoplayCursor(options: {
     })
   }
 
-  // Scrolls the target into view inside its nearest scrolling box within the
-  // stage (the dashboard's content area), never the page itself.
+  // Scrolls the target into view inside every scrolling box between it and the
+  // stage (the dashboard's content area, a table, a list), both axes, never the
+  // page itself. On a phone the frame is short, so most steps need this.
   async function bringIntoView(target: Element, id: number): Promise<void> {
     const stage = options.stage.value
     let box = target.parentElement
     while (box && box !== stage) {
-      const { overflowY } = getComputedStyle(box)
-      if (/(auto|scroll)/.test(overflowY) && box.scrollHeight > box.clientHeight) break
+      const { overflowY, overflowX } = getComputedStyle(box)
+      const scrollsY = /(auto|scroll)/.test(overflowY) && box.scrollHeight > box.clientHeight
+      const scrollsX = /(auto|scroll)/.test(overflowX) && box.scrollWidth > box.clientWidth
+      if (scrollsY || scrollsX) {
+        const outer = box.getBoundingClientRect()
+        const inner = target.getBoundingClientRect()
+        const fitsY = inner.top >= outer.top && inner.bottom <= outer.bottom
+        const fitsX = inner.left >= outer.left && inner.right <= outer.right
+        if ((scrollsY && !fitsY) || (scrollsX && !fitsX)) {
+          box.scrollTo({
+            top:
+              scrollsY && !fitsY
+                ? box.scrollTop + inner.top - outer.top - (outer.height - inner.height) / 2
+                : box.scrollTop,
+            left:
+              scrollsX && !fitsX
+                ? box.scrollLeft + inner.left - outer.left - (outer.width - inner.width) / 2
+                : box.scrollLeft,
+            behavior: 'smooth',
+          })
+          await wait(380, id)
+        }
+      }
       box = box.parentElement
     }
-    if (!box || box === stage) return
-    const outer = box.getBoundingClientRect()
-    const inner = target.getBoundingClientRect()
-    if (inner.top >= outer.top && inner.bottom <= outer.bottom) return
-    const top = box.scrollTop + inner.top - outer.top - (outer.height - inner.height) / 2
-    box.scrollTo({ top, behavior: 'smooth' })
-    await wait(380, id)
+  }
+
+  // Whether the target shows inside the stage's own box. What the frame clips
+  // (a row below a short phone layout) is not a place the cursor should go:
+  // it would leave the frame and click where the visitor sees nothing.
+  function showsInStage(target: Element): boolean {
+    const stage = options.stage.value
+    if (!stage) return true
+    const s = stage.getBoundingClientRect()
+    const r = target.getBoundingClientRect()
+    const cx = r.left + Math.min(r.width * 0.4, 48)
+    const cy = r.top + r.height * 0.55
+    return cx >= s.left && cx <= s.right && cy >= s.top && cy <= s.bottom
   }
 
   // Scripted focus shouldn't raise a phone's keyboard. That includes focus the
@@ -110,8 +138,9 @@ export function useAutoplayCursor(options: {
     quieted.clear()
   }
 
-  async function glideTo(target: Element, id: number): Promise<void> {
+  async function glideTo(target: Element, id: number): Promise<boolean> {
     await bringIntoView(target, id)
+    if (!showsInStage(target)) return false
     const r = target.getBoundingClientRect()
     // Page coordinates: the cursor lives in <body>, above every layer, and
     // scrolls with the page. Aim a little left of center and just below the
@@ -125,6 +154,7 @@ export function useAutoplayCursor(options: {
     animate(x, tx, { type: 'spring', bounce: 0, duration })
     animate(y, ty, { type: 'spring', bounce: 0, duration: duration * 0.85 })
     await wait(duration * 1000 + 60, id)
+    return true
   }
 
   async function play(id: number): Promise<void> {
@@ -145,7 +175,8 @@ export function useAutoplayCursor(options: {
         // the step rather than fly to a zero-size box at the page's corner.
         const target = found && found.getClientRects().length > 0 ? found : undefined
         if (step.to && !target) continue
-        if (target) await glideTo(target, id)
+        // Still out of the frame after scrolling: skip the step, as for a hidden target.
+        if (target && !(await glideTo(target, id))) continue
         if (step.contextmenu && target) {
           pressed.value = true
           await wait(110, id)

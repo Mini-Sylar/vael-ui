@@ -2,27 +2,24 @@
   <section class="demo">
     <h3>Sizing: <code>width</code> and <code>fullScreen</code></h3>
     <p class="note">
-      Always flush to the bottom edge regardless of width (via Dialog's <code>flush</code> prop):
-      capped widths stay centered. <code>fullScreen</code> collapses to a single takeover snap point
-      with unrounded corners, since there's nowhere left to drag up to. Beyond the sm/md/lg scale,
-      the <code>ui.panel</code> escape hatch (same one Dialog's blurred-backdrop demo uses) reaches
-      the panel class directly for an arbitrary width.
+      Every width sits flush with the bottom edge, and <code>sm</code>, <code>md</code> and
+      <code>lg</code> center the sheet. <code>fullScreen</code> has one snap point at full height,
+      with square corners, since there’s no room left to drag up. For any other width, set a class
+      through <code>ui.panel</code>.
     </p>
     <div class="row">
-      <Button variant="outline" @click="widthOpen = 'full'">full</Button>
-      <Button variant="outline" @click="widthOpen = 'sm'">sm</Button>
-      <Button variant="outline" @click="widthOpen = 'md'">md</Button>
-      <Button variant="outline" @click="widthOpen = 'lg'">lg</Button>
+      <Button v-for="size in sizes" :key="size" variant="outline" @click="openAt(size)">
+        {{ size }}
+      </Button>
       <Button variant="outline" @click="fullScreenOpen = true">fullScreen</Button>
     </div>
     <BottomSheet
-      :open="widthOpen !== null"
-      :width="widthOpen ?? 'full'"
+      v-model:open="open"
+      :width="width"
       title="Notifications"
       aria-label="Notifications"
-      @update:open="(v) => !v && (widthOpen = null)"
     >
-      <p class="sheet-lede">width="{{ widthOpen }}"</p>
+      <p class="sheet-lede">width="{{ width }}"</p>
     </BottomSheet>
     <BottomSheet v-model:open="fullScreenOpen" full-screen title="Filters" aria-label="Filters">
       <p class="sheet-lede">A single snap point at 100% height. Drag the handle down to dismiss.</p>
@@ -34,8 +31,14 @@
 import { shallowRef } from 'vue'
 import { Button, BottomSheet } from 'vael-ui'
 
-const widthOpen = shallowRef<'full' | 'sm' | 'md' | 'lg' | null>(null)
+const sizes = ['full', 'sm', 'md', 'lg'] as const
+const width = shallowRef<(typeof sizes)[number]>('full')
+const open = shallowRef(false)
 const fullScreenOpen = shallowRef(false)
+function openAt(size: (typeof sizes)[number]) {
+  width.value = size
+  open.value = true
+}
 </script>
 
 <style scoped>

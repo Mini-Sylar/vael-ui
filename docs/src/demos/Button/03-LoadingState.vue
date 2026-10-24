@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Loading state</h3>
     <p class="note">
-      <code>loading="auto"</code> opts a button into promise-driven loading — returning a promise
-      from <code>@click</code> is then all the wiring it needs. It's opt-in rather than the default
-      because any thenable counts, including ones with no user-facing meaning (a router navigation's
-      own promise, say). <code>loader="inline"</code> keeps the label visible and puts the spinner
-      next to it instead of covering the button.
+      With <code>loading="auto"</code>, the button shows its loading state while the promise
+      returned from <code>@click</code> is pending. It’s opt-in because any thenable counts,
+      including ones that mean nothing to the user, such as a router navigation’s promise.
+      <code>loader="inline"</code> keeps the label visible and puts the spinner beside it instead of
+      over the button.
     </p>
     <div class="row">
       <Button loading="auto" @click="fakeSave">Save changes</Button>

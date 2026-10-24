@@ -1,12 +1,14 @@
 <template>
   <div
+    ref="item"
     :class="itemPart.class"
     :style="itemPart.style"
-    :data-motion="ctx.motionCss() ? undefined : 'off'"
+    :data-motion="ctx.motion() ? undefined : 'off'"
     v-bind="attrs"
   >
-    <component :is="headingTag" :class="headerPart.class" :style="headerPart.style">
+    <component :is="headingTag" ref="header" :class="headerPart.class" :style="headerPart.style">
       <button
+        ref="trigger"
         :id="triggerId"
         type="button"
         :class="triggerPart.class"
@@ -20,6 +22,7 @@
         <slot name="trigger" :open="isOpenValue" :toggle="onToggle">
           <span class="ui-accordion-trigger-title">{{ title }}</span>
           <svg
+            ref="chevron"
             class="ui-accordion-chevron"
             viewBox="0 0 16 16"
             width="14"
@@ -49,14 +52,14 @@
       :aria-hidden="collapseState === 'closed' ? 'true' : undefined"
       :inert="collapseState === 'closed'"
     >
-      <div :class="bodyPart.class" :style="bodyPart.style">
+      <div ref="body" :class="bodyPart.class" :style="bodyPart.style">
         <slot :open="isOpenValue" :toggle="onToggle" />
       </div>
     </div>
   </div>
 </template>
 
-<!-- No beforeClose: panel always mounted (collapsed); data-state + motionCss={false} + exposed panelEl for exit animation -->
+<!-- No beforeClose: panel always mounted (collapsed); data-state + motion={false} + exposed panelEl for exit animation -->
 <script setup lang="ts">
 import './AccordionItem.css'
 import '../shared/tokens.css'
@@ -67,6 +70,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { nativeTag } from '../../composables/dom'
+import { useStateMotion } from '../../motion/useStateMotion'
 
 defineOptions({ inheritAttrs: false })
 
@@ -118,8 +122,30 @@ const panelId = useId()
 const panel = useTemplateRef<HTMLElement>('panel')
 const { style: collapseStyle, state: collapseState } = useCollapse(isOpenValue, {
   el: panel,
-  motionCss: ctx.motionCss,
+  motion: ctx.motion,
   handOff: ctx.handOff,
+})
+
+const item = useTemplateRef<HTMLElement>('item')
+const header = useTemplateRef<HTMLElement>('header')
+const trigger = useTemplateRef<HTMLElement>('trigger')
+const chevron = useTemplateRef<HTMLElement>('chevron')
+const body = useTemplateRef<HTMLElement>('body')
+useStateMotion({
+  key: 'accordion',
+  mainPart: 'trigger',
+  motion: ctx.states,
+  // Your timing reaches the whole item: the panel's height as well as the chevron.
+  root: () => item.value,
+  parts: () => ({
+    item: item.value,
+    header: header.value,
+    trigger: trigger.value,
+    chevron: chevron.value,
+    panel: panel.value,
+    body: body.value,
+  }),
+  states: () => ({ open: isOpenValue.value, disabled: !!props.disabled }),
 })
 
 const cx = useClassMerge()

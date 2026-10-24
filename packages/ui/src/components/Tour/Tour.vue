@@ -6,7 +6,8 @@
     :padding="step?.spotlightPadding ?? spotlightPadding"
     :radius="step?.spotlightRadius ?? spotlightRadius"
     :instant="isScrolling"
-    :glide="props.motionCss"
+    :glide="!!props.motion"
+    :glide-timing="glideTiming"
     :force-mount="forceMount"
     :teleport-to="teleportTarget"
     :container-el="container"
@@ -27,6 +28,7 @@
     :close-on-outside="closeOnOverlay"
     :force-mount="forceMount"
     :before-close="beforeClose"
+    :motion="props.motion"
     :teleport-to="teleportTarget"
     :container="container"
     :ui="{ positioner: positionerUi, panel: ui?.panel }"
@@ -108,7 +110,7 @@ export interface TourProps<T extends TourStep = TourStep> {
   closeOnEsc?: boolean
   /** Clicking the dimmed area closes the tour. @default false */
   closeOnOverlay?: boolean
-  /** `ArrowLeft` and `ArrowRight` move back and forward a step. @default true */
+  /** `ArrowLeft` and `ArrowRight` move back and forward a step, swapped right to left. @default true */
   keyboardNav?: boolean
   /**
    * Space between the target and the spotlight cutout, in pixels. Per-step `spotlightPadding` wins.
@@ -126,16 +128,19 @@ export interface TourProps<T extends TourStep = TourStep> {
   container?: DOMTarget
   /** Element to scroll-lock while open. Defaults to `container`, then `document.body`. */
   scrollTarget?: DOMTarget
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
+  /** Runs before the tour closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The tour stays open while the promise is pending. */
+  beforeClose?: BeforeClose<PopoverCloseReason>
   /**
-   * The spotlight's glide between steps. `false` turns it off so you can animate `spotlightEl`
-   * yourself. For open and close, use `forceMount` and `beforeClose`.
+   * How the callout moves, like Popover's, and whether the spotlight glides between steps. `false`
+   * turns both off, so you can animate `spotlightEl` yourself. An object moves the callout your
+   * way: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks.
+   * Its `{ duration, easing }` or `{ spring }` also times the glide between steps. Unset, the glide
+   * is quick to a nearby target and longer across the screen.
    * @default true
    */
-  motionCss?: boolean
+  motion?: TourMotion
   /** Class and style overrides for each part. */
   ui?: Partial<{ spotlight: UiPartValue; positioner: UiPartValue; panel: UiPartValue }>
 }
@@ -147,14 +152,19 @@ export interface TourProps<T extends TourStep = TourStep> {
   scroll-lock/inert since Popover doesn't dim the page.
 -->
 <script setup lang="ts" generic="T extends TourStep = TourStep">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, TourMotion } from '../../motion/types'
 import './Tour.css'
 import '../shared/tokens.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
+import type { PopoverExposed } from '../Popover/Popover.vue'
 import TourSpotlight from './TourSpotlight.vue'
+import { glideOf, timingOf } from '../../composables/tourGlide'
+import { useMotionStyle } from '../../motion/context'
 import { useTour } from '../../composables/useTour'
-import { useDOMTarget } from '../../composables/dom'
+import { inlineKey, useDOMTarget, prefersReducedMotion } from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
 import { isComposing, useLayer } from '../../composables/useLayerStack'
@@ -180,10 +190,10 @@ const rawProps = withDefaults(defineProps<TourProps<T>>(), {
   spotlightRadius: 8,
   scrollIntoView: true,
   forceMount: false,
-  motionCss: undefined,
+  motion: undefined,
 })
 // Own or provider `false`: both turn the glide off. There are no events to hand over.
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires after moving to a step, including the first. The new step renders by the next frame. */
@@ -217,6 +227,10 @@ defineSlots<{
 }>()
 
 const messages = useUiMessages()
+
+// The glide's timing: your `motion`, then a style's `tour`; unset, it scales with the distance.
+const motionStyle = useMotionStyle()
+const glideTiming = computed(() => timingOf(props.motion) ?? timingOf(motionStyle?.value?.tour))
 
 const {
   currentIndex,
@@ -276,7 +290,7 @@ watch(isTransitioning, (transitioning) => {
   if (!transitioning && open.value) refreshTargetEl()
 })
 
-const popover = useTemplateRef<InstanceType<typeof Popover>>('popover')
+const popover = useTemplateRef<PopoverExposed>('popover')
 const popoverPanelEl = computed(() => popover.value?.panelEl ?? null)
 const spotlight = useTemplateRef<InstanceType<typeof TourSpotlight>>('spotlight')
 const spotlightEl = computed(() => spotlight.value?.el ?? null)
@@ -322,7 +336,7 @@ watch(
         const target = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? panel
         target.focus({ preventScroll: true })
       },
-      { flush: 'post', immediate: true },
+      { flush: 'post' },
     )
   },
   { flush: 'post' },
@@ -433,8 +447,7 @@ watch(
       rect.right <= bounds.right
     if (alreadyVisible) return
 
-    const reducedMotion =
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reducedMotion = prefersReducedMotion()
     isScrolling.value = true
     const stopWaiting = () => {
       isScrolling.value = false
@@ -456,7 +469,8 @@ function onKeydown(event: KeyboardEvent) {
   if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
   if (event.target instanceof Element && event.target.closest(ARROW_OWNER_SELECTOR)) return
-  if (event.key === 'ArrowRight') next()
+  // Right to left, the next step reads to the left.
+  if (inlineKey(event.key, ssrDocument()?.documentElement) === 'ArrowRight') next()
   else prev()
 }
 useEventListener(() => (open.value ? ssrDocument() : undefined), 'keydown', onKeydown)
@@ -499,7 +513,93 @@ const themedUi = useThemedUi(
 )
 const ui = computed(() => themedUi())
 const spotlightUi = computed(() => withZIndex(ui.value?.spotlight, spotlightZIndex.value))
-const positionerUi = computed(() => withZIndex(ui.value?.positioner, panelZIndex.value))
+// Between steps the callout travels with the spotlight. A FLIP, not a top/left transition: above
+// its target the callout pins its bottom edge instead, and `top: auto` doesn't animate.
+const GLIDE_ID = 'ui-tour-glide'
+let glideObserver: MutationObserver | undefined
+let glideTimer: ReturnType<typeof setTimeout> | undefined
+function stopGlide() {
+  glideObserver?.disconnect()
+  glideObserver = undefined
+  clearTimeout(glideTimer)
+}
+// Only once the callout has been placed in this session. Reopening a finished tour shows the last
+// step's target for a tick before resetting to the first; gliding then started from the
+// positioner's unplaced 0,0, so the callout swept in from the corner.
+let placed = false
+let placeFrame: number | undefined
+watch(
+  [open, targetEl],
+  ([isOpen, el]) => {
+    if (!isOpen) {
+      placed = false
+      stopGlide()
+      if (placeFrame !== undefined) cancelAnimationFrame(placeFrame)
+      placeFrame = undefined
+      return
+    }
+    if (!el || placed || placeFrame !== undefined) return
+    placeFrame = requestAnimationFrame(() => {
+      placeFrame = undefined
+      if (open.value) placed = true
+    })
+  },
+  // Mounted already open: placed too, so the first step change glides.
+  { flush: 'post', immediate: true },
+)
+
+watch(targetEl, (next, previous) => {
+  const el = popover.value?.positionerEl as HTMLElement | null | undefined
+  if (!el || !next || !previous || !open.value || !props.motion || !placed) return
+  if (prefersReducedMotion()) return
+  stopGlide()
+  const a = previous.getBoundingClientRect()
+  const b = next.getBoundingClientRect()
+  const box = container.value?.getBoundingClientRect()
+  const { duration: ms, easing } = glideOf(
+    el,
+    glideTiming.value,
+    Math.hypot(b.x + b.width / 2 - a.x - a.width / 2, b.y + b.height / 2 - a.y - a.height / 2),
+    box ? Math.hypot(box.width, box.height) : Math.hypot(innerWidth, innerHeight),
+  )
+  // Where it was seen as the step changed (a glide on its way included): this step's glide
+  // starts there.
+  const start = el.getBoundingClientRect()
+  const origin = { x: start.x, y: start.y }
+  let first = true
+  // Runs before the paint that would show the new spot. Placement writes the style again while the
+  // panel settles to the new content: each time, the same glide re-aims at the new spot from the
+  // same origin and carries on at the same moment, instead of starting over.
+  glideObserver = new MutationObserver(() => {
+    // The last step's glide, if still going, hands over; this step's own keeps its clock.
+    let elapsed = 0
+    for (const running of el.getAnimations())
+      if (running.id === GLIDE_ID) {
+        if (!first) elapsed = Number(running.currentTime ?? 0)
+        running.cancel()
+      }
+    first = false
+    const layout = el.getBoundingClientRect()
+    const dx = origin.x - layout.x
+    const dy = origin.y - layout.y
+    if (isScrolling.value || (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5)) return
+    const glide = el.animate([{ translate: `${dx}px ${dy}px` }, { translate: '0px 0px' }], {
+      duration: ms,
+      easing,
+    })
+    glide.id = GLIDE_ID
+    glide.currentTime = elapsed
+  })
+  glideObserver.observe(el, { attributes: true, attributeFilter: ['style'] })
+  glideTimer = setTimeout(stopGlide, ms + 100)
+})
+onScopeDispose(() => {
+  stopGlide()
+  if (placeFrame !== undefined) cancelAnimationFrame(placeFrame)
+})
+const positionerUi = computed<UiPartValue>(() =>
+  withZIndex(ui.value?.positioner, panelZIndex.value),
+)
 
 defineExpose({
   /** Returns the tour's `id` prop. */
@@ -510,7 +610,10 @@ defineExpose({
   panelEl: popoverPanelEl,
   /** Positioning wrapper around the callout panel (`null` while closed). */
   positionerEl,
-  /** Dimmed overlay with the cutout (`null` while closed). */
+  /**
+   * Dimmed overlay with the cutout (`null` while closed). It carries the cutout's box, kept current
+   * through the glide: `--ui-tour-cutout-x`, `-y`, `-width`, `-height` and `-radius`, in px.
+   */
   spotlightEl,
   /** `true` while a `beforeClose` close is pending. */
   isClosing: computed(() => popover.value?.isClosing ?? false),

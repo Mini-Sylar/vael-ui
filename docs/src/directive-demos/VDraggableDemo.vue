@@ -47,6 +47,10 @@ const tabsDraggable = computed(() => ({ items: tabs, axis: 'x' as const }))
 .draggable-tabs .ui-tabs-item {
   touch-action: none;
 }
+/* No sliding hover highlight here: the tabs themselves move. */
+.draggable-tabs :deep(.ui-tabs-hover) {
+  display: none;
+}
 .v-draggable-order {
   font-size: 0.8125rem;
   color: var(--ui-text-muted);

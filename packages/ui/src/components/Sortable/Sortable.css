@@ -4,6 +4,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    /* A drop moves rows in the DOM, and scroll anchoring would scroll the list to make up for it,
+       away from where the row was dropped. Sortable glides the rows itself. */
+    overflow-anchor: none;
+  }
+  /* The rows are laid out by the root, so your gap and direction on it apply to them. */
+  .ui-sortable-list {
+    display: contents;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -21,11 +28,13 @@
     border-radius: var(--ui-radius);
     background: var(--ui-surface);
     transition:
-      box-shadow var(--ui-duration-press) var(--ui-ease-out),
-      border-color var(--ui-duration-press) var(--ui-ease-out);
+      box-shadow var(--ui-duration-press) ease,
+      border-color var(--ui-duration-press) ease;
   }
+  /* The floating copy carries the grabbed look too: it's what the pointer holds. */
   .ui-sortable-item[data-dragging],
-  .ui-sortable-item[data-grabbed] {
+  .ui-sortable-item[data-grabbed],
+  .ui-sortable-item[data-sortable-preview] {
     position: relative;
     z-index: 1;
     border-color: var(--ui-primary);
@@ -33,8 +42,38 @@
       0 0 0 1px rgb(0 0 0 / 0.04),
       0 4px 10px rgb(0 0 0 / 0.1);
   }
-  .ui-sortable-item[data-dragging] {
+  .ui-sortable-item[data-dragging],
+  .ui-sortable-item[data-sortable-preview] {
     cursor: grabbing;
+  }
+  /* With preview-mode="clone", the original waits in its slot while a copy follows the pointer,
+     and while the copy lands. Hidden here, not inline, so a page can show it instead. */
+  .ui-sortable-item[data-sortable-source] {
+    visibility: hidden;
+  }
+  /* The real row under a copy that is landing on it; shown once the copy is down. A placeholder
+     fades out as the copy arrives instead of vanishing. */
+  .ui-sortable-item[data-sortable-landing] {
+    opacity: 0 !important;
+  }
+  /* A plain ease-out: the expo curve that suits movement drops a fade by half in its first frame. */
+  .ui-sortable-item[data-sortable-source][data-sortable-landing] {
+    transition: opacity var(--ui-duration-exit) ease-out;
+  }
+  /* Where a placeholder was, once its row has moved to another list: it fades out there. */
+  .ui-sortable-item[data-sortable-fading] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--ui-duration-exit) ease-out;
+    @starting-style {
+      opacity: 1;
+    }
+  }
+  /* A dropped copy flying into its slot puts the grabbed look down on the way, so the real row
+     taking its place at the end changes nothing on screen. */
+  .ui-sortable-item[data-sortable-preview][data-landing] {
+    border-color: var(--ui-border);
+    box-shadow: none;
   }
 
   .ui-sortable-handle {
@@ -52,16 +91,23 @@
     cursor: grab;
     touch-action: none;
     transition:
-      color var(--ui-duration-press) var(--ui-ease-out),
-      background-color var(--ui-duration-press) var(--ui-ease-out),
+      color var(--ui-duration-press) ease,
+      background-color var(--ui-duration-press) ease,
       transform var(--ui-duration-press) var(--ui-ease-out);
   }
-  .ui-sortable-handle:hover {
-    color: var(--ui-text);
-    background: var(--ui-muted);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-sortable-handle:hover:not(:disabled) {
+      color: var(--ui-text);
+      background: var(--ui-muted);
+    }
   }
-  .ui-sortable-handle:active {
+  .ui-sortable-handle:active:not(:disabled) {
     transform: scale(0.94);
+  }
+  /* `disabled` stops the dragging, not the rows: the grips read as off, the content stays as is. */
+  .ui-sortable-handle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   .ui-sortable-handle:focus-visible {
     outline: 2px solid var(--ui-primary);
@@ -116,5 +162,15 @@
     .ui-sortable-handle:active {
       transform: none;
     }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-sortable-handle {
+    position: relative;
+  }
+  .ui-sortable-handle:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

@@ -1,5 +1,7 @@
 <template>
   <ul ref="listEl" v-draggable="{ items, axis, handle }" class="draggable-list">
+    <!-- A decorative layer among the rows, like Tabs' hover indicator. -->
+    <li v-if="decor" aria-hidden="true" class="decor" />
     <li
       v-for="item in items"
       :key="item.id"
@@ -22,9 +24,10 @@
 import { reactive, shallowRef, useTemplateRef } from 'vue'
 import { vDraggable } from '../../src/directives/vDraggable'
 
-withDefaults(defineProps<{ axis?: 'x' | 'y'; handle?: string }>(), {
+withDefaults(defineProps<{ axis?: 'x' | 'y'; handle?: string; decor?: boolean }>(), {
   axis: 'y',
   handle: undefined,
+  decor: false,
 })
 
 const items = reactive([

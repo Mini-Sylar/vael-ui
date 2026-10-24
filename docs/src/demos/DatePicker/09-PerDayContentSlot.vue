@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Per-day content via the #day slot</h3>
+    <h3>Per-day content with the <code>#day</code> slot</h3>
     <p class="note">
-      The same <code>#day</code> slot as Calendar, passed through to the calendar in the panel. Here
-      a dot marks days that are already booked.
+      The same <code>#day</code> slot as Calendar, passed to the calendar in the panel. Here a dot
+      marks days that are already booked.
     </p>
     <div class="row">
       <DatePicker v-model="value" placeholder="Pick a day" style="max-width: 16rem">

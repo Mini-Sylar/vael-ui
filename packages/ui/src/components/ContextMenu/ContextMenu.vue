@@ -24,6 +24,7 @@
     :close-on-outside="closeOnOutside"
     :before-close="beforeClose"
     :force-mount="forceMount"
+    :motion="motion"
     :teleport-to="teleportTo"
     :scroll-fade="scrollFade"
     :ui="{
@@ -76,10 +77,16 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
   closeOnEsc?: boolean
   /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Runs before the menu closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The menu stays open while the promise is pending. */
+  beforeClose?: BeforeClose<PopoverCloseReason>
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How the menu moves, like Menu's. `false` opens and closes it at once. An object moves it your
+   * way: values for the `panel` part, `{ spring }`, or `enter` / `leave` hooks. Unset, it follows
+   * the nearest ConfigProvider's style.
+   */
+  motion?: MenuMotion
   /** Teleport target: a CSS selector or element. @default 'body' */
   teleportTo?: string | HTMLElement
   /**
@@ -103,6 +110,8 @@ export interface ContextMenuProps<T extends MenuItemData = MenuItemData> {
   Reopening moves anchor, then closes/reopens to recompute position.
 -->
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, MenuMotion } from '../../motion/types'
 import './ContextMenu.css'
 import '../shared/tokens.css'
 import { computed, nextTick, onScopeDispose, useTemplateRef } from 'vue'
@@ -132,6 +141,7 @@ const props = withDefaults(defineProps<ContextMenuProps<T>>(), {
   closeOnEsc: true,
   closeOnOutside: true,
   forceMount: false,
+  motion: undefined,
   teleportTo: 'body',
   scrollFade: true,
 })

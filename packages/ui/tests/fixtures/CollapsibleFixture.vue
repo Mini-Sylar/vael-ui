@@ -1,5 +1,5 @@
 <template>
-  <Collapsible ref="collapsible" v-model:open="open" :disabled="disabled" :motion-css="motionCss">
+  <Collapsible ref="collapsible" v-model:open="open" :disabled="disabled" :motion="motion">
     <template #trigger="{ open: isOpen }">
       <button type="button">{{ isOpen ? 'Hide' : 'Show' }} details</button>
     </template>
@@ -15,9 +15,9 @@ const props = withDefaults(
   defineProps<{
     initialOpen?: boolean
     disabled?: boolean
-    motionCss?: boolean
+    motion?: boolean
   }>(),
-  { initialOpen: false, disabled: false, motionCss: true },
+  { initialOpen: false, disabled: false, motion: true },
 )
 
 const open = shallowRef(props.initialOpen)

@@ -18,7 +18,7 @@
           :is="timelineComponent"
           :items="steps"
           :orientation="orientation"
-          :motion-css="motionCss"
+          :motion="motion"
           :current="current"
         >
           <template v-if="showOpposite" #opposite="{ item }">{{ item.date }}</template>
@@ -53,8 +53,8 @@
           <Switch id="ctl-opposite" v-model="showOpposite" />
         </div>
         <div class="control-row control-row--inline">
-          <label for="ctl-motion">motionCss</label>
-          <Switch id="ctl-motion" v-model="motionCss" />
+          <label for="ctl-motion">motion</label>
+          <Switch id="ctl-motion" v-model="motion" />
         </div>
       </div>
     </div>
@@ -96,7 +96,7 @@ const orientationItems = [
   { label: 'horizontal', value: 'horizontal' },
 ]
 const showOpposite = shallowRef(true)
-const motionCss = shallowRef(true)
+const motion = shallowRef(true)
 
 const code = computed(() => {
   const pkg = defaultVariant.value === 'vapor' ? 'vael-ui/vapor' : 'vael-ui'
@@ -108,7 +108,7 @@ const code = computed(() => {
 <Timeline
   :items="steps"
   orientation="${orientation.value}"
-  :motion-css="${motionCss.value}"
+  :motion="${motion.value}"
   :current="current"
 >${oppositeSlot}
   <template #item="{ item }">{{ item.label }}</template>

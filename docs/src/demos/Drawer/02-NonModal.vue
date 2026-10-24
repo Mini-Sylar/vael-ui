@@ -2,8 +2,8 @@
   <section class="demo">
     <h3>Non-modal: <code>:modal="false"</code></h3>
     <p class="note">
-      No overlay, no scroll lock, no stolen focus. The page behind stays fully interactive, try
-      clicking the counter while the drawer is open. Escape still closes it.
+      No overlay, no scroll lock, and focus stays where it is. The page behind keeps working: click
+      the counter while the drawer is open. Escape still closes it.
     </p>
     <div class="row">
       <Button variant="outline" @click="pinnedOpen = !pinnedOpen">

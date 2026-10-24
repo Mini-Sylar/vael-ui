@@ -3,8 +3,8 @@
     <h3>Multiple</h3>
     <p class="note">
       With <code>multiple</code>, the model is an array of leaf values. Picking a city checks it and
-      keeps the panel open, so you can move on to another country. It works like Select:
-      <code>maxLabels</code>, <code>display</code> and <code>clearable</code> do the same things.
+      keeps the panel open, so you can move on to another country. <code>maxLabels</code>,
+      <code>display</code> and <code>clearable</code> work as they do on Select.
     </p>
     <Field label="Office cities">
       <CascadeSelect

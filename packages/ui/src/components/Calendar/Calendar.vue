@@ -3,7 +3,7 @@
     ref="rootEl"
     :class="rootPart.class"
     :style="rootPart.style"
-    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-motion="motionOn ? undefined : 'off'"
   >
     <div
       :class="[
@@ -54,6 +54,7 @@
            dropped when drilling up to the year grid. -->
       <button
         v-if="!splitMonths"
+        ref="labelButton"
         type="button"
         :class="[labelPart.class, canDrill && 'ui-calendar-label--button']"
         :style="labelPart.style"
@@ -62,10 +63,7 @@
         @pointerenter="titleIfCut"
         @click="canDrill && drillUp()"
       >
-        <Transition
-          :name="props.motionCss ? 'ui-calendar-label' : undefined"
-          :css="props.motionCss"
-        >
+        <Transition v-bind="labelTransition">
           <span :key="headerLabel" class="ui-calendar-label-text">
             <slot name="label" :label="headerLabel" :date="viewDate" :level="navLevel">{{
               headerLabel
@@ -118,9 +116,15 @@
       :style="[{ '--ui-calendar-direction': direction }, bodyMinSize]"
       :data-zoom="zoom"
     >
+      <div
+        ref="hoverEl"
+        class="ui-indicator ui-indicator--grid ui-calendar-hover"
+        :style="hoverStyle"
+        aria-hidden="true"
+      />
       <Transition
-        :name="props.motionCss ? 'ui-calendar-level' : undefined"
-        :css="props.motionCss"
+        :name="motionOn ? 'ui-calendar-level' : undefined"
+        :css="motionOn"
         @enter="anchorZoom"
       >
         <div :key="navLevel" class="ui-calendar-level">
@@ -134,10 +138,7 @@
           >
             <div v-for="(pane, pi) in panes" :key="pi" class="ui-calendar-pane">
               <div v-if="panes.length > 1" class="ui-calendar-pane-head">
-                <Transition
-                  :name="props.motionCss ? 'ui-calendar-label' : undefined"
-                  :css="props.motionCss"
-                >
+                <Transition v-bind="labelTransition">
                   <button
                     :key="monthKeyOf(pane)"
                     type="button"
@@ -169,10 +170,7 @@
               </div>
 
               <div class="ui-calendar-grid-wrap">
-                <Transition
-                  :name="props.motionCss ? 'ui-calendar-grid' : undefined"
-                  :css="props.motionCss"
-                >
+                <Transition v-bind="gridTransition">
                   <div
                     :key="monthKeyOf(pane)"
                     :ref="(el) => pi === 0 && setGridEl(el)"
@@ -222,10 +220,7 @@
           </div>
 
           <template v-else-if="navLevel === 'month'">
-            <Transition
-              :name="props.motionCss ? 'ui-calendar-grid' : undefined"
-              :css="props.motionCss"
-            >
+            <Transition v-bind="gridTransition">
               <div
                 :key="`m${viewDate.getFullYear()}`"
                 role="grid"
@@ -263,10 +258,7 @@
           </template>
 
           <template v-else>
-            <Transition
-              :name="props.motionCss ? 'ui-calendar-grid' : undefined"
-              :css="props.motionCss"
-            >
+            <Transition v-bind="gridTransition">
               <div
                 :key="`y${yearWindowStart}`"
                 role="grid"
@@ -325,9 +317,12 @@ export type CalendarView = 'date' | 'month' | 'year'
      Range: two-click state machine; landing before start restarts (no silent swap).
      view vs navLevel: view is prop granularity; navLevel can drill up/down temporarily.
      Keyboard (date): ARIA APG pattern with roving focusedDate; Month/year grids use Tab between tabindex="0" cells.
-     Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motionCss=false disables. -->
+     Month transition: grid re-keys inside Transition, slides by --ui-calendar-direction. motion=false disables. -->
 <script setup lang="ts">
+import { inlineKey, prefersReducedMotion } from '../../composables/dom'
 import './Calendar.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import {
@@ -344,6 +339,8 @@ import type { ComponentPublicInstance } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useSwapMotion } from '../../motion/useSwapMotion'
+import type { CalendarMotion } from '../../motion/types'
 import { useUiMessages } from '../../messages'
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */
@@ -380,8 +377,11 @@ const rawProps = withDefaults(
      * @default false
      */
     showYearButtons?: boolean
-    /** `false` skips the month-navigation slide transition. @default true */
-    motionCss?: boolean
+    /**
+     * `false` skips the month change's slide. An object restyles it: give the `label` and `grid`
+     * looks as values, or as functions of `where.direction` (`1` forward, `-1` back). @default true
+     */
+    motion?: CalendarMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -404,11 +404,11 @@ const rawProps = withDefaults(
     firstDayOfWeek: undefined,
     months: 1,
     showYearButtons: false,
-    motionCss: undefined,
+    motion: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true, locale: undefined })
+const props = withProviderDefaults(rawProps, { motion: true, locale: undefined })
 
 const emit = defineEmits<{
   /** Fires when you pick a date, month, year or range endpoint. */
@@ -518,6 +518,35 @@ const initialAnchor = modelAnchor() ?? startOfMonth(new Date())
 const viewDate = ref<Date>(startOfMonth(initialAnchor))
 // 1 = forward, -1 = backward; drives month-transition slide direction.
 const direction = ref(1)
+const motionOn = computed(() => !!props.motion)
+// Yours set: the engine plays the label and grid swaps; otherwise their CSS classes do.
+const swapMotion = useSwapMotion({
+  key: 'calendar',
+  motion: () => props.motion,
+  direction: () => (direction.value < 0 ? -1 : 1),
+  initial: {
+    label: ({ direction: d }) => ({ opacity: 0, x: 4 * d, blur: 2 }),
+    grid: ({ direction: d }) => ({ opacity: 0, x: 8 * d, blur: 3 }),
+  },
+  exit: {
+    label: ({ direction: d }) => ({ opacity: 0, x: -4 * d, blur: 2 }),
+    grid: ({ direction: d }) => ({ opacity: 0, x: -8 * d, blur: 3 }),
+  },
+  timing: { duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' },
+})
+const labelSwap = swapMotion.hooks('label', 'wait')
+const gridSwap = swapMotion.hooks('grid', 'sync')
+// Motion off: no `mode` either, since Vue throws on an out-in leave that ends at once (3.6 rc.12).
+const swapped = (name: string, hooks: typeof labelSwap, mode?: 'out-in') =>
+  swapMotion.active.value
+    ? { css: false, onEnter: hooks.onEnter, onLeave: hooks.onLeave, mode }
+    : {
+        name: motionOn.value ? name : undefined,
+        css: motionOn.value,
+        mode: motionOn.value ? mode : undefined,
+      }
+const labelTransition = computed(() => swapped('ui-calendar-label', labelSwap, 'out-in'))
+const gridTransition = computed(() => swapped('ui-calendar-grid', gridSwap))
 const focusedDate = ref<Date>(initialAnchor)
 
 onMounted(() => {
@@ -862,6 +891,8 @@ function selectDate(day: Date) {
   else commitSingle(day)
 }
 function onDayClick(day: Date) {
+  // A disabled day does nothing, including the jump to its month when it's an adjacent month's day.
+  if (isDayDisabled(day)) return
   focusedDate.value = day
   if (!isShownMonth(day)) showMonth(day)
   selectDate(day)
@@ -912,6 +943,60 @@ function setGridEl(el: Element | ComponentPublicInstance | null) {
   gridEl.value = el instanceof HTMLElement ? el : null
 }
 const bodyEl = useTemplateRef<HTMLElement>('bodyEl')
+// The hover and keyboard highlight glides between days (and months, and years) on both axes.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(bodyEl, {
+  itemSelector:
+    '.ui-calendar-cell:not(.ui-calendar-cell--blank), .ui-calendar-month-cell, .ui-calendar-year-cell',
+  scope: '.ui-calendar-body',
+  motion: () => motionOn.value,
+  indicatorEl: hoverEl,
+})
+const labelButton = useTemplateRef<HTMLElement>('labelButton')
+
+// The label button is as wide as its text, so a new name would snap it to a new width and the
+// centred text would jump sideways. The incoming name is measured ahead with a hidden copy, and
+// the width eases over the whole swap (the old name out, the new one in) as one movement.
+watch(
+  headerLabel,
+  (next) => {
+    const button = labelButton.value
+    const text = button?.querySelector<HTMLElement>('.ui-calendar-label-text')
+    if (!button || !text || !motionOn.value) return
+    if (prefersReducedMotion()) return
+    // A custom #label renders more than text; only the plain name is measured.
+    if (text.childElementCount > 0) return
+    button.style.inlineSize = ''
+    const before = button.offsetWidth
+    const probe = text.cloneNode(false) as HTMLElement
+    probe.textContent = next
+    probe.className = text.className.split(' ')[0] ?? ''
+    probe.style.position = 'absolute'
+    probe.style.visibility = 'hidden'
+    probe.style.whiteSpace = 'nowrap'
+    button.append(probe)
+    const after = before - text.offsetWidth + probe.offsetWidth
+    probe.remove()
+    if (!after || Math.abs(after - before) < 1) return
+    button.style.transition = 'none'
+    button.style.inlineSize = `${before}px`
+    button.style.textOverflow = 'clip'
+    void button.offsetWidth
+    button.style.transition =
+      'inline-size calc(var(--ui-duration-tooltip-exit) + var(--ui-duration-enter)) var(--ui-ease-out)'
+    button.style.inlineSize = `${after}px`
+    button.addEventListener(
+      'transitionend',
+      () => {
+        button.style.transition = ''
+        button.style.inlineSize = ''
+        button.style.textOverflow = ''
+      },
+      { once: true },
+    )
+  },
+  { flush: 'pre' },
+)
 
 // FLIP-style height animation: Vue's Transition already handles the grid's
 // own slide/fade, but the body's overall height (a 4-week vs. 6-week month,
@@ -921,7 +1006,7 @@ function animateBodyHeight(mutate: () => void) {
   if (navLevel.value === 'date' && bodyEl.value) {
     dateBodySize.value = { inline: bodyEl.value.offsetWidth, block: bodyEl.value.offsetHeight }
   }
-  if (!props.motionCss || !bodyEl.value) {
+  if (!motionOn.value || !bodyEl.value) {
     mutate()
     return
   }
@@ -931,7 +1016,7 @@ function animateBodyHeight(mutate: () => void) {
   nextTick(() => {
     const after = body.offsetHeight
     if (!after || before === after) return
-    body.style.overflow = 'hidden'
+    body.style.overflowY = 'clip'
     body.style.blockSize = `${before}px`
     void body.offsetHeight
     requestAnimationFrame(() => {
@@ -941,7 +1026,7 @@ function animateBodyHeight(mutate: () => void) {
     body.addEventListener(
       'transitionend',
       () => {
-        body.style.overflow = ''
+        body.style.overflowY = ''
         body.style.blockSize = ''
         body.style.transition = ''
       },
@@ -967,8 +1052,9 @@ function focusDay(day: Date) {
 
 function onGridKeydown(event: KeyboardEvent) {
   let next: Date | null = null
-  // ARIA APG keyboard nav: arrow keys move focus, Enter/Space select.
-  switch (event.key) {
+  // ARIA APG keyboard nav: arrow keys move focus, Enter/Space select. Right to left, the week
+  // runs from the right.
+  switch (inlineKey(event.key, event.currentTarget as Element)) {
     case 'ArrowLeft':
       next = addDays(focusedDate.value, -1)
       break
@@ -1065,6 +1151,8 @@ defineExpose({
   rootEl,
   /** Day grid element (`null` while the month or year grid shows). */
   gridEl,
+  /** The hover and keyboard highlight, sliding between cells. With `motion: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
   /** Steps back one page: a month, or a year or 12 years in the month and year grids. */
   goToPreviousMonth: goPrevious,
   /** Steps forward one page: a month, or a year or 12 years in the month and year grids. */

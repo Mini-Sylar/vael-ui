@@ -1,7 +1,10 @@
 <template>
   <section class="demo">
     <h3>Currency mode</h3>
-    <p class="note">Formats and clamps as USD on blur, the model stays a plain number.</p>
+    <p class="note">
+      <code>mode="currency"</code> formats and clamps the value as USD on blur, and the model stays
+      a plain number.
+    </p>
     <Field label="Price">
       <InputNumber v-model="price" mode="currency" currency="USD" :min="0" :step="0.01" />
     </Field>

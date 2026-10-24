@@ -1,7 +1,9 @@
 <template>
   <section class="demo">
     <h3>Vertical orientation</h3>
-    <p class="note">↑/↓ move focus instead of ←/→, Home/End still jump to the ends.</p>
+    <p class="note">
+      ↑ and ↓ move focus instead of ← and →, and Home and End still jump to the ends.
+    </p>
     <div class="row">
       <Toolbar aria-label="Page tools" orientation="vertical" class="toolbar-vertical">
         <Button size="sm" variant="ghost" icon aria-label="Cut">

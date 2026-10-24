@@ -6,8 +6,10 @@ import type { ComponentPublicInstance } from 'vue'
 import TreeFixture from './fixtures/TreeFixture.vue'
 import type { TreeNode } from '../src/components/Tree/Tree.vue'
 
-// 40 x 50 = 2040 rows expanded. Counts are the main assertion; times get wide headroom.
-function bigItems(folders = 40, perFolder = 50): TreeNode[] {
+// 12 x 30 = 372 rows expanded: the most a tree keeps as nested rows (past 500 it's a flat list
+// that renders only what's in view; see tree-virtual.test.ts). Counts are the main assertion;
+// times get wide headroom.
+function bigItems(folders = 12, perFolder = 30): TreeNode[] {
   return Array.from({ length: folders }, (_, f) => ({
     label: `Folder ${f}`,
     value: `f${f}`,
@@ -39,16 +41,20 @@ function rowCount(): number {
 async function renderExpanded(
   props: Record<string, unknown> = {},
   items: TreeNode[] = bigItems(),
-  expectedRows = 2040,
+  expectedRows = 372,
+  transitions = false,
 ) {
   const screen = await render(TreeFixture, {
     props: { items, ...props },
-    global: { mixins: [countRowUpdates] },
+    global: {
+      mixins: [countRowUpdates],
+      ...(transitions && { stubs: { transition: false, 'transition-group': false } }),
+    },
   })
   await vi.waitFor(() => expect(rowCount()).toBe(items.length))
   screen.container.querySelector<HTMLButtonElement>('[data-testid="call-expand-all"]')!.click()
   await vi.waitFor(() => expect(rowCount()).toBe(expectedRows))
-  // Let the expand-all FLIP pass finish before measuring anything else.
+  // Let the expand-all motion finish before measuring anything else.
   await new Promise((resolve) => setTimeout(resolve, 400))
   return screen
 }
@@ -108,6 +114,15 @@ test('checkbox mode: checking one leaf re-renders only that leaf and its folder'
   expect(result.updates).toBeLessThanOrEqual(2)
 })
 
+test('past 150 visible rows the row checkboxes drop their press layer, and folders still fold', async () => {
+  await renderExpanded({ selectionMode: 'checkbox' })
+  const root = document.querySelector<HTMLElement>('.ui-tree-root')!
+  expect(root.dataset.rows).toBe('many')
+  expect(getComputedStyle(root.querySelector<HTMLElement>('.ui-checkbox-box')!).willChange).toBe(
+    'auto',
+  )
+})
+
 test('collapsing one folder re-renders only that folder row', async () => {
   await renderExpanded({}, bigItems())
 
@@ -119,7 +134,7 @@ test('collapsing one folder re-renders only that folder row', async () => {
   expect(result.updates).toBeLessThanOrEqual(1)
 })
 
-test('a large tree skips the FLIP pass on collapse instead of transforming every row', async () => {
+test('a large tree collapses without transforming any row', async () => {
   await renderExpanded()
   const reads = recordLayoutReads()
 
@@ -131,31 +146,43 @@ test('a large tree skips the FLIP pass on collapse instead of transforming every
   expect(reads.length).toBeLessThan(20)
 })
 
-test('a mid-sized tree batches FLIP reads before writes and only slides rows near the viewport', async () => {
-  // 12 x 10 = 132 rows: under the FLIP threshold, in a list that shows ~9.
-  await renderExpanded({ height: '300px' }, bigItems(12, 10), 132)
-  const reads = recordLayoutReads()
-
+test('a mid-sized tree animates the folder itself and moves no other row with a transform', async () => {
+  // 12 x 10 = 132 rows: under the motion limit, in a list that shows ~9.
+  await renderExpanded({ height: '300px' }, bigItems(12, 10), 132, true)
   await measure(() => rowEl('f0').querySelector<HTMLElement>('.ui-tree-chevron')!.click())
-
-  const sliding = slidingRowCount()
-  const readsAfterFirstWrite = reads.filter((transformed) => transformed > 0).length
-  // Some rows do slide, but not all ~120 that moved, most of them out of view.
-  expect(sliding).toBeGreaterThan(0)
-  expect(sliding).toBeLessThan(60)
-  // One forced reflow at most once writing starts.
-  expect(readsAfterFirstWrite).toBeLessThanOrEqual(1)
+  const block = document.querySelector<HTMLElement>('.ui-tree-rows[data-folding]')
+  expect(block).toBeTruthy()
+  // The rows below follow it in layout, so none of them is transformed.
+  expect(slidingRowCount()).toBe(0)
 })
 
-test('a small tree still slides rows that move when a folder expands', async () => {
-  await render(TreeFixture)
+test('a 300-row tree, past the checkbox limit, still folds with its animation', async () => {
+  // 30 x 9 = 300 rows: past 150 (static checkboxes) but under the 500-row fold limit.
+  await renderExpanded({ height: '300px', selectionMode: 'checkbox' }, bigItems(30, 9), 300, true)
+  expect(document.querySelector<HTMLElement>('.ui-tree-root')!.dataset.rows).toBe('many')
+  await measure(() => rowEl('f0').querySelector<HTMLElement>('.ui-tree-chevron')!.click())
+  expect(document.querySelector('.ui-tree-rows[data-folding]')).toBeTruthy()
+})
+
+test('a small tree grows the opening folder in flow, and the row below moves with it', async () => {
+  await render(TreeFixture, { global: { stubs: { transition: false, 'transition-group': false } } })
   await vi.waitFor(() => expect(rowCount()).toBe(2))
   const vegetables = rowEl('vegetables')
+  const before = vegetables.getBoundingClientRect().top
 
   rowEl('fruits').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
   await nextTick()
-  expect(vegetables.style.transform).toMatch(/^translateY\(-\d/)
-  await vi.waitFor(() => expect(vegetables.style.transform).toBe(''))
+  const block = rowEl('fruits').nextElementSibling as HTMLElement
+  expect(block.dataset.folding).toBe('')
+  expect(block.style.blockSize).toMatch(/px$/)
+  expect(vegetables.style.transform).toBe('')
+  // Partway there a few frames in, then all the way.
+  for (let i = 0; i < 4; i++) await new Promise((resolve) => requestAnimationFrame(resolve))
+  const partway = vegetables.getBoundingClientRect().top
+  expect(partway).toBeGreaterThan(before)
+  await vi.waitFor(() => expect(block.dataset.folding).toBeUndefined())
+  expect(block.style.blockSize).toBe('')
+  expect(vegetables.getBoundingClientRect().top).toBeGreaterThan(partway)
 })
 
 test('filter keystrokes re-render only rows whose visibility changed, and clearing mounts one component per row', async () => {
@@ -169,17 +196,17 @@ test('filter keystrokes re-render only rows whose visibility changed, and cleari
   // Every row still matches, so nothing visible changes.
   await measure(() => type('I'))
   const allVisible = await measure(() => type('It'))
-  expect(rowCount()).toBe(2040)
+  expect(rowCount()).toBe(372)
   const narrow = await measure(() => type('Item 3-4'))
-  await vi.waitFor(() => expect(rowCount()).toBe(12))
+  await vi.waitFor(() => expect(rowCount()).toBe(2))
 
   componentMounts = 0
   const clear = await measure(() => type(''))
-  await vi.waitFor(() => expect(rowCount()).toBe(2040))
+  await vi.waitFor(() => expect(rowCount()).toBe(372))
   console.log(
     `filter: all-visible keystroke ${allVisible.ms.toFixed(1)}ms (${allVisible.updates} rows), narrow ${narrow.ms.toFixed(1)}ms, clear ${clear.ms.toFixed(1)}ms (${componentMounts} components mounted)`,
   )
   expect(allVisible.updates).toBeLessThanOrEqual(1)
-  // 2028 rows come back without a Transition per leaf.
-  expect(componentMounts).toBeLessThan(2040 + 100)
+  // 370 rows come back without a Transition per leaf.
+  expect(componentMounts).toBeLessThan(372 + 100)
 })

@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Toggle buttons</h3>
     <p class="note">
-      Give the group a <code>v-model</code> and each Button a <code>value</code>, and they turn on
-      and off by themselves, with <code>aria-pressed</code> set for screen readers.
-      <code>multiple</code> lets several be on at once. A Button's own <code>@click</code> still
-      runs first; call <code>event.preventDefault()</code> there to keep it from toggling.
+      Give the group a <code>v-model</code> and each Button a <code>value</code>, and they toggle on
+      and off, with <code>aria-pressed</code> set for screen readers. <code>multiple</code> lets
+      several be on at once. A Button’s own <code>@click</code> still runs first; call
+      <code>event.preventDefault()</code> there to stop it from toggling.
     </p>
     <div class="row">
       <ButtonGroup v-model="active" multiple aria-label="Text style">

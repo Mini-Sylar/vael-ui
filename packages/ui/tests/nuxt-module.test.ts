@@ -8,6 +8,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 // carrying the definition) just enough to exercise setup()'s own logic —
 // which component names it registers, respecting `exclude` — in isolation.
 const addComponent = vi.fn()
+const addPluginTemplate = vi.fn()
 type ViteHook = (
   config: { optimizeDeps?: { include?: string[] } },
   env: { isClient: boolean },
@@ -22,6 +23,7 @@ function fakeNuxt(dev = true) {
 }
 vi.mock('@nuxt/kit', () => ({
   addComponent,
+  addPluginTemplate,
   defineNuxtModule: (def: {
     defaults: unknown
     setup: (options: unknown, nuxt: unknown) => void
@@ -38,6 +40,7 @@ vi.mock('@nuxt/kit', () => ({
 
 beforeEach(() => {
   addComponent.mockClear()
+  addPluginTemplate.mockClear()
 })
 
 test('registers every known component name by default', async () => {
@@ -113,4 +116,16 @@ test('in dev, the client pre-bundles the dependencies vael-ui loads at runtime',
   const prodClient: { optimizeDeps?: { include?: string[] } } = {}
   prod.hooks['vite:extendConfig']!(prodClient, { isClient: true })
   expect(prodClient.optimizeDeps).toBeUndefined()
+})
+
+test('v-animate is registered in every template, from the object form both variants and the server use', async () => {
+  const { default: vaelUiNuxtModule } = await import('../src/nuxt/index')
+  for (const variant of ['vdom', 'vapor'] as const) {
+    addPluginTemplate.mockClear()
+    vaelUiNuxtModule({ variant }, fakeNuxt())
+    expect(addPluginTemplate).toHaveBeenCalledTimes(1)
+    const code = addPluginTemplate.mock.calls[0]![0].getContents() as string
+    expect(code).toContain(`import { vAnimate } from 'vael-ui'`)
+    expect(code).toContain(`nuxtApp.vueApp.directive('animate', vAnimate)`)
+  }
 })

@@ -99,6 +99,7 @@ export interface UseInertOptions {
 
 export type UseInertReturn = WritableComputedRef<boolean>
 
+/** @internal Not public API; used by vael-ui's own components and may change. */
 export function useInert(options: UseInertOptions): UseInertReturn {
   const { root, content, initial = false } = options
 

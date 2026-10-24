@@ -1,6 +1,7 @@
 import { computed, onMounted, onScopeDispose, shallowRef, toValue } from 'vue'
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue'
 import type { ElRef } from './dom'
+import { inlineKey } from './dom'
 
 export interface UseToolbarOptions {
   /** Horizontal toolbars use ←/→, vertical use ↑/↓ (per the APG toolbar pattern). */
@@ -198,7 +199,7 @@ export function useToolbar(
 
     const currentIndex = current ? all.indexOf(current) : -1
     let nextIndex: number
-    switch (event.key) {
+    switch (inlineKey(event.key, event.currentTarget as Element)) {
       case forwardKey:
         nextIndex = step(all, currentIndex, 1)
         break

@@ -27,16 +27,20 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { PhArrowLeft, PhArrowRight } from '@phosphor-icons/vue'
-import { navSections, routeFor, valueFor } from '../docsNav'
+import { MOTION_ROUTES, navSections, routeFor, valueFor } from '../docsNav'
 
 const { t } = useI18n()
 const route = useRoute()
 
-const pages = computed(() =>
-  navSections(route.name === 'composable' ? 'composables' : 'components', t).flatMap(
-    (section) => section.items,
-  ),
+// A Motion page pages through the Motion list, in its order.
+const mode = computed(() =>
+  route.name === 'composable'
+    ? 'composables'
+    : MOTION_ROUTES.some((page) => page.routeName === route.name)
+      ? 'motion'
+      : 'components',
 )
+const pages = computed(() => navSections(mode.value, t).flatMap((section) => section.items))
 const index = computed(() => pages.value.findIndex((page) => page.value === valueFor(route)))
 const prev = computed(() => (index.value > 0 ? pages.value[index.value - 1] : undefined))
 const next = computed(() => (index.value >= 0 ? pages.value[index.value + 1] : undefined))

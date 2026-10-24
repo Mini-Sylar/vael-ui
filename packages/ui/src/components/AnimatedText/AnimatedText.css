@@ -1,0 +1,52 @@
+@layer ui-components {
+  .ui-animated-text {
+    position: relative;
+    display: inline-block;
+    max-inline-size: 100%;
+    vertical-align: bottom;
+    /* A color change, such as a placeholder turning into a value, eases with the swap. */
+    transition:
+      inline-size var(--ui-duration-text) var(--ui-ease-out),
+      color var(--ui-duration-text) var(--ui-ease-text);
+  }
+  .ui-animated-text-value {
+    display: inline-block;
+    white-space: inherit;
+  }
+  /* While the box eases to the new width, the text stays on one line instead of wrapping in it. */
+  .ui-animated-text[data-sizing] .ui-animated-text-value {
+    white-space: nowrap;
+  }
+  /* A swap: the new text rises 4px into place while the old fades a third faster, so the two
+     words barely overlap. No blur, which smears small text and repaints every frame. */
+  .ui-animated-text-enter-active {
+    transition:
+      opacity var(--ui-duration-text) var(--ui-ease-text),
+      translate var(--ui-duration-text) var(--ui-ease-text);
+  }
+  .ui-animated-text-leave-active {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    transition:
+      opacity calc(var(--ui-duration-text) * 0.66) var(--ui-ease-out),
+      translate calc(var(--ui-duration-text) * 0.66) var(--ui-ease-out);
+  }
+  .ui-animated-text-enter-from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  .ui-animated-text-leave-to {
+    opacity: 0;
+    translate: 0 -2px;
+  }
+  .ui-animated-text[data-motion='off'] {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ui-animated-text-enter-from,
+    .ui-animated-text-leave-to {
+      translate: none;
+    }
+  }
+}

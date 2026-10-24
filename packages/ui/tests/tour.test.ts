@@ -218,20 +218,20 @@ test('the spotlight glides between steps by default', async () => {
   expect(firstFrame).not.toBe(settled)
 })
 
-test('motionCss false: the cutout jumps to the next target', async () => {
-  const tour = await renderMotionTour({ motionCss: false })
+test('motion false: the cutout jumps to the next target', async () => {
+  const tour = await renderMotionTour({ motion: false })
   const { firstFrame, settled } = await cutoutAfterNext(tour)
   expect(firstFrame).toBe(settled)
 })
 
-test('motionCss false from a provider turns the glide off too', async () => {
-  const off = await renderMotionTour({}, { motionCss: false })
+test('motion false from a provider turns the glide off too', async () => {
+  const off = await renderMotionTour({}, { motion: false })
   const result = await cutoutAfterNext(off)
   expect(result.firstFrame).toBe(result.settled)
 })
 
 test('an inline clip-path on the exposed spotlight wins, and removing it shows Tour’s cutout again', async () => {
-  const tour = await renderMotionTour({ motionCss: false })
+  const tour = await renderMotionTour({ motion: false })
   const spotlight = tour.value!.spotlightEl as HTMLElement
   await vi.waitFor(() => expect(cutoutOf(spotlight)).toContain('path('))
   const own = getComputedStyle(spotlight).clipPath
@@ -256,7 +256,7 @@ test('the callout is at its new position by the first animation frame after @ste
     h(Tour as never, {
       ref: (instance: unknown) => (tour.value = instance as TourHandle | null),
       open: true,
-      motionCss: false,
+      motion: false,
       steps: [
         { target: '#frame-a', title: 'Frame A' },
         {
@@ -290,8 +290,9 @@ test('the callout is at its new position by the first animation frame after @ste
   expect(positions[0]).toBe(read())
 })
 
-test('Skip and Done go through beforeClose, so a custom exit runs', async () => {
-  const beforeClose = vi.fn()
+test('Skip and Done go through beforeClose, so a guard decides', async () => {
+  const answers: ((allowed: boolean) => void)[] = []
+  const beforeClose = vi.fn(() => new Promise<boolean>((resolve) => answers.push(resolve)))
   const open = shallowRef(true)
   await renderMotionTour({
     beforeClose,
@@ -304,7 +305,7 @@ test('Skip and Done go through beforeClose, so a custom exit runs', async () => 
   expect(beforeClose).toHaveBeenCalledTimes(1)
   await expect.element(page.getByText('Motion A')).toBeVisible()
 
-  beforeClose.mock.calls[0]![0]()
+  answers[0]!(true)
   await vi.waitFor(() => expect(open.value).toBe(false))
 
   open.value = true
@@ -312,7 +313,7 @@ test('Skip and Done go through beforeClose, so a custom exit runs', async () => 
   await page.getByRole('button', { name: 'Next' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
   expect(beforeClose).toHaveBeenCalledTimes(2)
-  beforeClose.mock.calls[1]![0]()
+  answers[1]!(true)
   await vi.waitFor(() => expect(open.value).toBe(false))
 })
 
@@ -356,4 +357,160 @@ test('Escape still skips the tour while a step’s own onBeforeEnter overlay is 
 
   await userEvent.keyboard('{Escape}')
   await vi.waitFor(() => expect(document.body.textContent).not.toContain('Behind a Dialog'))
+})
+
+test('restarting a tour lands the callout on the first step instead of gliding in from the corner', async () => {
+  const screen = await render(TourFixture)
+  const glided: string[] = []
+  let polling = true
+  const poll = () => {
+    const positioner = document.querySelector('.ui-popover-positioner')
+    if (positioner?.getAnimations().some((a) => a.id === 'ui-tour-glide'))
+      glided.push(screen.getByTestId('step-index').element().textContent ?? '')
+    if (polling) requestAnimationFrame(poll)
+  }
+  requestAnimationFrame(poll)
+  try {
+    await screen.getByTestId('trigger').click()
+    await expect.element(page.getByText('Step A')).toBeVisible()
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    await page.getByRole('button', { name: 'Next' }).click()
+    await expect.element(page.getByText('Step B')).toBeVisible()
+    // Sanity: a step change inside one session does glide.
+    await vi.waitFor(() => expect(glided.length).toBeGreaterThan(0))
+
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+    glided.length = 0
+
+    // Reopening resets B -> A: that is a fresh placement, not a step to travel from.
+    await screen.getByTestId('trigger').click()
+    await expect.element(page.getByText('Step A')).toBeVisible()
+    for (let i = 0; i < 5; i++) await new Promise((resolve) => requestAnimationFrame(resolve))
+    expect(glided).toEqual([])
+  } finally {
+    polling = false
+  }
+})
+
+test('the callout glides to a step on another side of its target instead of jumping', async () => {
+  const open = shallowRef(true)
+  const steps: TourStep[] = [
+    { target: '#glide-a', title: 'Below' },
+    { target: '#glide-b', title: 'Above', side: 'top' },
+  ]
+  await render({
+    setup: () => () =>
+      h('div', { style: 'padding: 200px 40px' }, [
+        h('button', { id: 'glide-a' }, 'A'),
+        h('button', { id: 'glide-b', style: 'margin-inline-start: 300px' }, 'B'),
+        h(Tour as never, {
+          steps,
+          open: open.value,
+          'onUpdate:open': (v: boolean) => (open.value = v),
+        }),
+      ]),
+  })
+  await expect.element(page.getByText('Below')).toBeVisible()
+  for (let i = 0; i < 3; i++) await new Promise((resolve) => requestAnimationFrame(resolve))
+  const positioner = document.querySelector<HTMLElement>('.ui-popover-positioner')!
+  const seen: DOMRect[] = []
+  let sampling = true
+  const sample = () => {
+    seen.push(positioner.getBoundingClientRect())
+    if (sampling) requestAnimationFrame(sample)
+  }
+  sample()
+
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect.element(page.getByText('Above')).toBeVisible()
+  const gliding = () => positioner.getAnimations().some((a) => a.id === 'ui-tour-glide')
+  await vi.waitFor(() => expect(gliding()).toBe(true))
+  await vi.waitFor(() => expect(gliding()).toBe(false))
+  sampling = false
+  // No frame covers half the trip: it travels instead of landing.
+  const trip = Math.hypot(seen.at(-1)!.x - seen[0]!.x, seen.at(-1)!.y - seen[0]!.y)
+  const moves = seen.slice(1).map((r, i) => Math.hypot(r.x - seen[i]!.x, r.y - seen[i]!.y))
+  expect(trip).toBeGreaterThan(100)
+  expect(Math.max(...moves)).toBeLessThan(trip / 2)
+  const after = positioner.getBoundingClientRect()
+  expect(after.bottom).toBeLessThan(document.querySelector('#glide-b')!.getBoundingClientRect().top)
+})
+
+test('a step asking for a side with no room in a narrow contained frame goes below the target instead', async () => {
+  const frame = shallowRef<HTMLElement | null>(null)
+  const open = shallowRef(true)
+  const steps: TourStep[] = [{ target: '#wide-card', title: 'Recent activity', side: 'left' }]
+  await render({
+    setup: () => () =>
+      h(
+        'div',
+        {
+          ref: frame,
+          'data-testid': 'frame',
+          style: 'position: relative; width: 360px; height: 640px; overflow: hidden',
+        },
+        [
+          h('div', { id: 'wide-card', style: 'margin: 120px 12px 0; height: 160px' }, 'Activity'),
+          frame.value
+            ? h(Tour as never, {
+                open: open.value,
+                'onUpdate:open': (v: boolean) => (open.value = v),
+                steps,
+                container: frame.value,
+              })
+            : null,
+        ],
+      ),
+  })
+  await vi.waitFor(() => expect(page.getByText('Recent activity').element()).toBeTruthy())
+  await new Promise((r) => setTimeout(r, 400))
+  const box = document.querySelector<HTMLElement>('[data-testid="frame"]')!.getBoundingClientRect()
+  const card = document.getElementById('wide-card')!.getBoundingClientRect()
+  const panel = page.getByText('Recent activity').element().closest<HTMLElement>('[role="dialog"]')!
+  const r = panel.getBoundingClientRect()
+  // Inside the frame, not cut off at its left edge, and under the card it points at.
+  expect(r.left).toBeGreaterThanOrEqual(box.left - 0.5)
+  expect(r.right).toBeLessThanOrEqual(box.right + 0.5)
+  expect(r.top).toBeGreaterThanOrEqual(card.bottom - 0.5)
+})
+
+test('a right-side step near the top of the window stays on the right instead of dropping below', async () => {
+  // A desktop window: room beside the row, as in an app's sidebar.
+  await page.viewport(1100, 700)
+  const open = shallowRef(true)
+  const steps: TourStep[] = [
+    {
+      target: '#corner-row',
+      title: 'Quick search',
+      description: 'Search anything in the app from here, and jump to what you find.',
+      side: 'right',
+    },
+  ]
+  await render({
+    setup: () => () => [
+      h(
+        'div',
+        {
+          id: 'corner-row',
+          style: 'position: fixed; top: 4px; left: 4px; width: 260px; height: 40px',
+        },
+        'Search',
+      ),
+      h(Tour as never, {
+        open: open.value,
+        'onUpdate:open': (v: boolean) => (open.value = v),
+        steps,
+      }),
+    ],
+  })
+  await vi.waitFor(() => expect(page.getByText('Quick search').element()).toBeTruthy())
+  await new Promise((r) => setTimeout(r, 400))
+  const row = document.getElementById('corner-row')!.getBoundingClientRect()
+  const panel = page.getByText('Quick search').element().closest<HTMLElement>('[role="dialog"]')!
+  const r = panel.getBoundingClientRect()
+  // Sticking out above the window is the shift's to fix; there's room on the right, so it stays there.
+  expect(r.left).toBeGreaterThanOrEqual(row.right - 0.5)
+  expect(r.top).toBeGreaterThanOrEqual(-0.5)
+  await page.viewport(414, 896)
 })

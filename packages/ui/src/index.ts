@@ -11,15 +11,19 @@ export type { ButtonGroupValue } from './components/ButtonGroup/ButtonGroup.vue'
 export { default as SplitButton } from './components/SplitButton/SplitButton.vue'
 export type { SplitButtonAlign, SplitButtonSide } from './components/SplitButton/SplitButton.vue'
 export { default as Loader } from './components/Loader/Loader.vue'
+export type { LoaderSource, LoaderType } from './composables/loaderType'
 export { default as Skeleton } from './components/Skeleton/Skeleton.vue'
 export { default as Badge } from './components/Badge/Badge.vue'
 export { default as Tag } from './components/Tag/Tag.vue'
 export { default as Kbd } from './components/Kbd/Kbd.vue'
+export { default as AnimatedNumber } from './components/AnimatedNumber/AnimatedNumber.vue'
+export { default as AnimatedText } from './components/AnimatedText/AnimatedText.vue'
 export { default as Avatar } from './components/Avatar/Avatar.vue'
 export { default as AvatarGroup } from './components/AvatarGroup/AvatarGroup.vue'
 export { default as Card } from './components/Card/Card.vue'
 export { default as Separator } from './components/Separator/Separator.vue'
 export { default as Progress } from './components/Progress/Progress.vue'
+export type { ProgressSegment, ProgressVariant } from './components/Progress/Progress.vue'
 export { default as Message } from './components/Message/Message.vue'
 export type {
   MessageOpenChangeDetails,
@@ -33,6 +37,8 @@ export { default as Input } from './components/Input/Input.vue'
 export { default as Textarea } from './components/Textarea/Textarea.vue'
 export { default as InputNumber } from './components/InputNumber/InputNumber.vue'
 export { default as OtpInput } from './components/OtpInput/OtpInput.vue'
+export { default as Editable } from './components/Editable/Editable.vue'
+export { default as ColorPicker } from './components/ColorPicker/ColorPicker.vue'
 export { default as PasswordInput } from './components/PasswordInput/PasswordInput.vue'
 export type { PasswordRule, PasswordRuleResult } from './components/PasswordInput/PasswordInput.vue'
 export { default as Checkbox } from './components/Checkbox/Checkbox.vue'
@@ -77,12 +83,21 @@ export { default as Column } from './components/Column.vue'
 export { provideDataTableContext, useDataTableContext } from './composables/useDataTableContext'
 export type { DataTableContext, RegisteredColumn } from './composables/useDataTableContext'
 export { default as Dialog } from './components/Dialog/Dialog.vue'
-export type { DialogPosition, DialogProps, DialogSize } from './components/Dialog/Dialog.vue'
+export type {
+  DialogExposed,
+  DialogPosition,
+  DialogProps,
+  DialogSize,
+} from './components/Dialog/Dialog.vue'
 export { default as DialogHost } from './components/DialogHost/DialogHost.vue'
 export { default as CommandPalette } from './components/CommandPalette/CommandPalette.vue'
 export type { CommandPaletteItem } from './components/CommandPalette/CommandPalette.vue'
 export { default as BottomSheet } from './components/BottomSheet/BottomSheet.vue'
-export type { BottomSheetProps, SheetSnapPoint } from './components/BottomSheet/BottomSheet.vue'
+export type {
+  BottomSheetProps,
+  SheetCloseReason,
+  SheetSnapPoint,
+} from './components/BottomSheet/BottomSheet.vue'
 export { default as Drawer } from './components/Drawer/Drawer.vue'
 export type { DrawerProps, DrawerSide } from './components/Drawer/Drawer.vue'
 export { default as Tabs } from './components/Tabs/Tabs.vue'
@@ -105,7 +120,12 @@ export { default as Accordion } from './components/Accordion/Accordion.vue'
 export { default as AccordionItem } from './components/AccordionItem/AccordionItem.vue'
 export { default as Collapsible } from './components/Collapsible/Collapsible.vue'
 export { default as Popover } from './components/Popover/Popover.vue'
-export type { PopoverAlign, PopoverProps, PopoverSide } from './components/Popover/Popover.vue'
+export type {
+  PopoverAlign,
+  PopoverExposed,
+  PopoverProps,
+  PopoverSide,
+} from './components/Popover/Popover.vue'
 export { default as PopoverHost } from './components/PopoverHost/PopoverHost.vue'
 export { default as Menu } from './components/Menu/Menu.vue'
 export type {
@@ -204,7 +224,14 @@ export type {
 export { useSheetDrag } from './composables/useSheetDrag'
 export type { UseSheetDragOptions, UseSheetDragReturn } from './composables/useSheetDrag'
 export { useTabIndicator } from './composables/useTabIndicator'
-export type { UseTabIndicatorOptions, UseTabIndicatorReturn } from './composables/useTabIndicator'
+export type {
+  IndicatorMode,
+  IndicatorSpring,
+  UseTabIndicatorOptions,
+  UseTabIndicatorReturn,
+} from './composables/useTabIndicator'
+export { useHoverIndicator } from './composables/useHoverIndicator'
+export type { UseHoverIndicatorOptions } from './composables/useHoverIndicator'
 export { usePopover } from './composables/usePopover'
 export type {
   PopoverCloseReason,
@@ -254,12 +281,193 @@ export type { Align, UseFloatingPositionOptions } from './composables/useFloatin
 export { useAsyncLoading } from './composables/useAsyncLoading'
 export type { UseAsyncLoadingReturn } from './composables/useAsyncLoading'
 export { useColorScheme } from './composables/useColorScheme'
+export { useHaptic } from './composables/useHaptic'
+export type {
+  HapticImpact,
+  HapticNotification,
+  HapticOptions,
+  UseHapticReturn,
+} from './composables/useHaptic'
+export { springEasing } from './composables/springEasing'
+export type { MotionOptions } from './composables/springEasing'
+export { settled } from './motion/timing'
+export { useMotion } from './motion/useMotion'
+export { parseMotionStyle } from './motion/parse'
+export { useComponentMotion } from './motion/useComponentMotion'
+export type { ComponentMotionOptions, ComponentMotionReturn } from './motion/useComponentMotion'
+export { useStateMotion } from './motion/useStateMotion'
+export { useSwapMotion } from './motion/useSwapMotion'
+export type { SwapMotionOptions, SwapMotionReturn } from './motion/useSwapMotion'
+export { flingTiming } from './motion/fling'
+export { askGuard, closeContext, useCloseGuard } from './composables/useCloseGuard'
+export type { StateMotionOptions } from './motion/useStateMotion'
+export {
+  motionStyleKey,
+  useMotionStyle,
+  isMotionStyle,
+  resolveMotion,
+  mergeTargets,
+} from './motion/context'
+export type { ResolvedMotion } from './motion/context'
+export type {
+  AccordionMotion,
+  AccordionPart,
+  AnimateDirectiveValue,
+  BeforeClose,
+  CloseContext,
+  ButtonMotion,
+  ButtonPart,
+  ComponentMotion,
+  DialogMotion,
+  DialogPart,
+  GuardContext,
+  InputMotion,
+  OtpInputMotion,
+  CalendarMotion,
+  FileUploadMotion,
+  CommandPaletteMotion,
+  CommandPaletteItemsMotion,
+  SpeedDialMotion,
+  DataTableMotion,
+  SelectMotion,
+  ComboboxMotion,
+  CascadeSelectMotion,
+  ChipsMotion,
+  TooltipMotion,
+  MessageMotion,
+  AnimatedNumberMotion,
+  AnimatedNumberPart,
+  AnimatedTextMotion,
+  AnimatedTextPart,
+  AvatarMotion,
+  AvatarPart,
+  AvatarGroupMotion,
+  AvatarGroupPart,
+  BadgeMotion,
+  BadgePart,
+  BreadcrumbMotion,
+  BreadcrumbPart,
+  ButtonGroupMotion,
+  ButtonGroupPart,
+  CardMotion,
+  CardPart,
+  CheckboxMotion,
+  CheckboxPart,
+  ChipMotion,
+  ChipPart,
+  CollapsibleMotion,
+  CollapsiblePart,
+  DialMotion,
+  DialPart,
+  DockMotion,
+  DockPart,
+  EditableMotion,
+  EditablePart,
+  FieldMotion,
+  FieldPart,
+  InputNumberMotion,
+  InputNumberPart,
+  KbdMotion,
+  KbdPart,
+  KnobMotion,
+  KnobPart,
+  LoaderMotion,
+  LoaderPart,
+  PasswordInputMotion,
+  PasswordInputPart,
+  ProgressMotion,
+  ProgressPart,
+  PullToRefreshMotion,
+  PullToRefreshPart,
+  RadioMotion,
+  RadioPart,
+  RadioGroupMotion,
+  RadioGroupPart,
+  RatingMotion,
+  RatingPart,
+  ResizableMotion,
+  ResizablePart,
+  ScrollAreaMotion,
+  ScrollAreaPart,
+  SkeletonMotion,
+  SkeletonPart,
+  SortableMotion,
+  SortablePart,
+  StepperMotion,
+  StepperPart,
+  SwipeToRevealMotion,
+  SwipeToRevealPart,
+  SwitchMotion,
+  SwitchPart,
+  TagMotion,
+  TagPart,
+  TextareaMotion,
+  TextareaPart,
+  TreeMotion,
+  TreePart,
+  MenuListMotion,
+  MenuListPart,
+  PaginationMotion,
+  PaginationPart,
+  SelectButtonMotion,
+  SelectButtonPart,
+  ToolbarMotion,
+  ToolbarPart,
+  ColorPickerMotion,
+  ColorPickerPart,
+  DatePickerMotion,
+  TreeSelectMotion,
+  SelectPart,
+  TimelineMotion,
+  LinkedMotion,
+  MorphFrom,
+  MotionContext,
+  ListHookContext,
+  MotionEngine,
+  EngineTiming,
+  MotionFilter,
+  MotionHook,
+  MotionMoment,
+  MotionPhase,
+  MotionRef,
+  MotionResult,
+  MotionRole,
+  MotionSpec,
+  MotionStep,
+  MotionStyle,
+  MotionTiming,
+  MotionValues,
+  MotionWhere,
+  ListContext,
+  MoveContext,
+  OwnMotion,
+  PartValues,
+  PopoverMotion,
+  MenuMotion,
+  PopoverPart,
+  SeparatorMotion,
+  SeparatorPart,
+  SliderMotion,
+  SliderPart,
+  Spring,
+  StateMotion,
+  TabsMotion,
+  TabsPart,
+  TargetMotion,
+  Thenable,
+  ToasterMotion,
+  TourMotion,
+  UiDuration,
+  UiEase,
+  UseMotionReturn,
+} from './motion/types'
 export { preventFocusZoom } from './composables/preventFocusZoom'
 // Internal: exported only so vael-ui/vapor's components share them with this build. Not public API.
 export { defaultsKey, validLocale, withProviderDefaults } from './config'
 export type { UiDefaults } from './config'
 export type {
   ColorSchemeMode,
+  ColorSchemeRevealOptions,
   UseColorSchemeOptions,
   UseColorSchemeReturn,
 } from './composables/useColorScheme'
@@ -299,6 +507,7 @@ export type { I18nInstance, PartialUiMessages, UiMessages } from './messages'
 export { classMergerKey, useClassMerge, resolveUiPart, splitUiPart } from './classes'
 export type { ClassMerger, ClassValue, UiPartValue, UiPartStyle } from './classes'
 export { vDraggable, vDraggableVapor } from './directives/vDraggable'
+export { vAnimate, vAnimateVapor } from './directives/vAnimate'
 export type { DraggableOptions, DraggableValue } from './directives/vDraggable'
 export { vScrollMask, vScrollMaskVapor } from './directives/vScrollMask'
 export { vTooltip, vTooltipVapor, tooltipTargets, TOOLTIP_ATTR } from './directives/vTooltip'
@@ -318,6 +527,7 @@ declare module 'vue' {
     vTooltip: typeof import('./directives/vTooltip').vTooltip
     vScrollMask: typeof import('./directives/vScrollMask').vScrollMask
     vDraggable: typeof import('./directives/vDraggable').vDraggable
+    vAnimate: typeof import('./directives/vAnimate').vAnimate
   }
 }
 
@@ -411,4 +621,3 @@ export type {
 
 export { default as Rating } from './components/Rating/Rating.vue'
 export { default as Timeline } from './components/Timeline/Timeline.vue'
-export type { TimelineItemParts } from './components/Timeline/Timeline.vue'

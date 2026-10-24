@@ -1,13 +1,12 @@
 <template>
   <section class="demo">
-    <h3>Multiple, tags with chips</h3>
+    <h3>Multiple, with chips</h3>
     <p class="note">
-      Selecting an item adds it and keeps the panel open (Select's own
-      <code>multiple</code> stance); already-picked items stay in the filtered list, checkmarked,
-      and clicking one again removes it. Selected items render as removable
-      <code>&lt;Chip&gt;</code>s inside the input, Backspace on an empty query removes the last
-      chip, and <code>maxLabels</code> caps how many show before the rest collapse into a trailing
-      "+N".
+      Picking an item adds it and keeps the panel open, as Select does with <code>multiple</code>.
+      Picked items stay in the filtered list with a check, and clicking one again removes it. They
+      show as removable <code>&lt;Chip&gt;</code>s inside the input: Backspace on an empty query
+      removes the last one, and <code>maxLabels</code> sets how many show before the rest collapse
+      into “+N”.
     </p>
     <Combobox
       v-model="targetMarkets"

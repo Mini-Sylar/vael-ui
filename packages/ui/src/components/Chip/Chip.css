@@ -50,11 +50,15 @@
   .ui-chip-remove:active {
     transform: scale(0.96);
   }
-  .ui-chip-remove:hover {
-    color: var(--ui-text);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-chip-remove:hover {
+      color: var(--ui-text);
+    }
   }
-  .ui-chip-remove:hover::before {
-    background: var(--ui-border-strong);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-chip-remove:hover::before {
+      background: var(--ui-border-strong);
+    }
   }
   /* On the painted circle, so the ring stays inside the chip. */
   .ui-chip-remove:focus-visible {
@@ -73,5 +77,12 @@
     .ui-chip-remove:active {
       transform: none;
     }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-chip-remove:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

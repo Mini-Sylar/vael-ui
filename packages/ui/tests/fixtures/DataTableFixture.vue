@@ -31,7 +31,7 @@
     :manual-sort="manualSort"
     :lazy="lazy"
     :total="total"
-    :motion-css="motionCss"
+    :motion="motion"
     :reorderable-columns="reorderableColumns"
     :column-grip-visibility="columnGripVisibility"
     :can-drop="canDrop"
@@ -124,7 +124,7 @@ const props = withDefaults(
     manualSort?: boolean
     lazy?: boolean
     total?: number
-    motionCss?: boolean
+    motion?: boolean
     reorderableColumns?: boolean
     columnGripVisibility?: 'hover' | 'always'
     canDrop?: (details: SortableDropDetails) => boolean
@@ -164,7 +164,7 @@ const props = withDefaults(
     scrollFade: undefined,
     manualSort: false,
     lazy: false,
-    motionCss: true,
+    motion: true,
     reorderableColumns: false,
     columnGripVisibility: 'always',
   },

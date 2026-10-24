@@ -2,7 +2,7 @@ import { shallowRef, toValue, watch, onScopeDispose } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 import type { ElRef } from './dom'
 import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
-import type { Placement, Side } from '@floating-ui/dom'
+import type { Middleware, Placement, Side } from '@floating-ui/dom'
 
 export type Align = 'start' | 'center' | 'end'
 
@@ -23,6 +23,8 @@ export interface UseFloatingPositionOptions {
   maxHeightCap?: MaybeRefOrGetter<number | undefined>
   /** Fires once if `referenceEl` is removed from the document while `active` — a route change under a delegated/external reference otherwise leaves `autoUpdate` repositioning against a detached node, which degenerates to a `{0,0,0,0}` rect. */
   onReferenceDisconnected?: () => void
+  /** @internal Pins the edge facing the trigger (`bottom` above it, `right` to its left), so a panel that resizes grows away from the trigger instead of a frame behind it. */
+  holdFacingEdge?: boolean
 }
 
 // Coarse mapping for transform-origin (enough for scale/fade).
@@ -50,12 +52,52 @@ function toTransformOrigin(placement: Placement): string {
   return vertical ? `${inline} ${block}` : `${block} ${inline}`
 }
 
+// Grows from the trigger's centre, on the edge facing it, even after flip and shift move the panel.
+const triggerOrigin: Middleware = {
+  name: 'triggerOrigin',
+  fn({ x, y, rects, placement }) {
+    const side = placement.split('-')[0] as Side
+    const clamp = (value: number, max: number) => Math.round(Math.min(Math.max(value, 0), max))
+    const centerX = clamp(rects.reference.x + rects.reference.width / 2 - x, rects.floating.width)
+    const centerY = clamp(rects.reference.y + rects.reference.height / 2 - y, rects.floating.height)
+    const data =
+      side === 'top' || side === 'bottom'
+        ? { x: centerX, y: side === 'top' ? rects.floating.height : 0 }
+        : { x: side === 'left' ? rects.floating.width : 0, y: centerY }
+    return { data }
+  },
+}
+
 // Position absolute to avoid scroll jitter; hidden until computed.
 const HIDDEN_STYLE: Record<string, string> = {
   position: 'absolute',
   top: '0px',
   left: '0px',
   visibility: 'hidden',
+}
+
+/** Insets from the far side for the edges that face the trigger: its containing block is whatever the insets resolve against now. */
+function facingEdge(
+  el: HTMLElement,
+  placement: Placement,
+  x: number,
+  y: number,
+  snap: (value: number) => number,
+): Record<string, string> {
+  const [side, align] = placement.split('-') as [Side, Align | undefined]
+  const vertical = side === 'top' || side === 'bottom'
+  const fromBottom = side === 'top' || (!vertical && align === 'end')
+  const fromRight = side === 'left' || (vertical && align === 'end')
+  // top + size + bottom spans the containing block, so the new bottom is top + bottom - y.
+  const style = getComputedStyle(el)
+  const far = (start: string, end: string, at: number) =>
+    `${snap(Number.parseFloat(start) + Number.parseFloat(end) - at)}px`
+  return {
+    top: fromBottom ? 'auto' : `${snap(y)}px`,
+    bottom: fromBottom ? far(style.top, style.bottom, y) : 'auto',
+    left: fromRight ? 'auto' : `${snap(x)}px`,
+    right: fromRight ? far(style.left, style.right, x) : 'auto',
+  }
 }
 
 export function useFloatingPosition(options: UseFloatingPositionOptions) {
@@ -95,7 +137,15 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
         // No altBoundary here: it resolves the boundary from the REFERENCE's
         // clipping ancestors, so a trigger inside any scrollable panel makes
         // flip/shift/size believe there's no room anywhere.
-        flip(),
+        // Asked for left or right with no room on either (a full-width card on a phone), it goes
+        // below or above instead of overflowing: shift only moves along the side it's on. Top and
+        // bottom keep their axis; there `size` makes the panel fit by scrolling. Only room beside the
+        // trigger counts: poking out above or below is shift's, or a row near the top would drop under.
+        flip(
+          side === 'left' || side === 'right'
+            ? { fallbackAxisSideDirection: 'end', crossAxis: false }
+            : {},
+        ),
         shift({ padding: 8 }),
         size({
           padding: 8,
@@ -105,21 +155,30 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
             anchorInlineSize = matchWidth ? `${rects.reference.width}px` : undefined
           },
         }),
+        triggerOrigin,
       ],
     })
     // A newer call already started (or the scope was disposed and `update` will never be called
     // again) — this result is stale, discard it rather than clobber a more current position.
     if (token !== updateToken) return
 
+    // Whole device pixels: a fractional offset blurs the text, and once an animation ends the
+    // text shifts onto the pixel grid, which reads as a flinch.
+    const dpr = window.devicePixelRatio || 1
+    const snap = (value: number) => Math.round(value * dpr) / dpr
     positionerStyle.value = {
       position: 'absolute',
-      top: `${result.y}px`,
-      left: `${result.x}px`,
+      ...(options.holdFacingEdge
+        ? facingEdge(floating, result.placement, result.x, result.y, snap)
+        : { top: `${snap(result.y)}px`, left: `${snap(result.x)}px` }),
       visibility: 'visible',
       ...(anchorInlineSize ? { '--ui-anchor-inline-size': anchorInlineSize } : {}),
     }
     placement.value = result.placement
-    transformOrigin.value = toTransformOrigin(result.placement)
+    const origin = result.middlewareData.triggerOrigin as { x: number; y: number } | undefined
+    transformOrigin.value = origin
+      ? `${origin.x}px ${origin.y}px`
+      : toTransformOrigin(result.placement)
   }
 
   let stopAutoUpdate: (() => void) | undefined

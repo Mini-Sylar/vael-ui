@@ -2,7 +2,7 @@
   <div>
     <Card
       title="All orders"
-      :description="`${orders.length} orders — sortable, searchable, selectable.`"
+      :description="`${orders.length} orders you can sort, search and select.`"
     >
       <DataTable
         :data="filteredOrders"

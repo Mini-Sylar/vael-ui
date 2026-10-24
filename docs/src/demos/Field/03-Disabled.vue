@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Disabled (advisory, flows to the control via context)</h3>
+    <h3>Disabled, passed down to the control</h3>
     <div class="field-grid">
       <Field label="Locked field" label-placement="float" disabled>
         <Input v-model="lockedValue" />

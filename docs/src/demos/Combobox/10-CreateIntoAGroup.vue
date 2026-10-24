@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Creating into a group, without a dialog</h3>
     <p class="note">
-      Type a tag that doesn't exist and pick <strong>Create</strong>. Instead of a dialog, the same
-      panel asks which group it belongs in, with the likeliest one first. Arrow keys and Enter pick
-      a group; Escape or Back returns to the list with your text intact. Cancelling
-      <code>@create</code> keeps the panel open, so the whole flow stays where you're typing.
+      Type a tag that doesn’t exist and pick <strong>Create</strong>. Instead of a dialog, the same
+      panel asks which group it goes in, with the likeliest one first. The arrow keys and Enter pick
+      a group; Escape or Back returns to the list and keeps your text. Canceling
+      <code>@create</code> keeps the panel open, so the whole flow stays where you’re typing.
     </p>
     <div class="row">
       <Field label="Tag">

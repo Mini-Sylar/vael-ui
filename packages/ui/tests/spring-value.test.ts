@@ -148,3 +148,14 @@ test('independent springs animate concurrently on the one shared loop', async ()
   a.destroy()
   b.destroy()
 })
+
+test("a spring's first frame moves, even when the frame's timestamp predates the call", () => {
+  let next: FrameRequestCallback | undefined
+  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => ((next = cb), 1))
+  const spring = createSpring(0, { response: 0.3 })
+  spring.set(100)
+  next!(performance.now() - 5)
+  expect(spring.value).toBeGreaterThan(0)
+  spring.destroy()
+  vi.unstubAllGlobals()
+})

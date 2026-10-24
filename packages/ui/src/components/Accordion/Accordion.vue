@@ -2,7 +2,7 @@
   <div
     ref="root"
     :class="rootPart.class"
-    :style="rootPart.style"
+    :style="[springVars, rootPart.style]"
     data-accordion-root
     @keydown="onKeydown"
     v-bind="attrs"
@@ -17,7 +17,9 @@ import type { InjectionKey } from 'vue'
 export interface AccordionContext {
   isOpen: (value: string) => boolean
   toggle: (value: string) => void
-  motionCss: () => boolean
+  motion: () => boolean
+  /** The `motion` object, for each item's `states`. */
+  states: () => unknown
   handOff: () => boolean
   headingLevel: () => 1 | 2 | 3 | 4 | 5 | 6
 }
@@ -27,12 +29,15 @@ export const accordionKey: InjectionKey<AccordionContext> = Symbol('ui-accordion
 
 <script setup lang="ts" generic="V extends string | string[] | null = string | string[] | null">
 import './Accordion.css'
-import { withProviderDefaults } from '../../config'
+import { defaultsKey, withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, provide, useAttrs, useTemplateRef } from 'vue'
+import { computed, inject, provide, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
+import type { AccordionMotion, Spring } from '../../motion/types'
 import { useThemedUi } from '../../theme'
+import { springEasing } from '../../composables/springEasing'
+import { useMotionStyle } from '../../motion/context'
 
 defineOptions({ inheritAttrs: false })
 
@@ -46,16 +51,20 @@ const rawProps = withDefaults(
     multiple?: boolean
     /** Whether the last open item can close, leaving none open. @default true */
     collapsible?: boolean
-    /** `false` skips transitions; use exposed `panelEl`/`open` for custom motion. @default true */
-    motionCss?: boolean
+    /**
+     * `false` turns the transitions off, so you can animate the exposed `panelEl` and `open`
+     * yourself. An object animates each item's states, like a quarter-turn chevron:
+     * `{ states: { open: { chevron: { rotate: '90deg' } } } }`. @default true
+     */
+    motion?: AccordionMotion
     /** Heading level wrapping each item's trigger; match it to the surrounding outline. @default 3 */
     headingLevel?: 1 | 2 | 3 | 4 | 5 | 6
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue }>
   }>(),
-  { multiple: false, collapsible: true, motionCss: undefined, headingLevel: 3 },
+  { multiple: false, collapsible: true, motion: undefined, headingLevel: 3 },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when an item opens or closes, with the new value. */
@@ -117,9 +126,10 @@ defineSlots<{
 provide(accordionKey, {
   isOpen,
   toggle,
-  motionCss: () => props.motionCss,
-  // Its own motion-css="false" hands the height over; a provider's just makes it instant.
-  handOff: () => rawProps.motionCss === false,
+  motion: () => props.motion !== false,
+  states: () => rawProps.motion,
+  // Its own motion="false" hands the height over; a provider's just makes it instant.
+  handOff: () => rawProps.motion === false,
   headingLevel: () => props.headingLevel,
 })
 
@@ -130,6 +140,25 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-accordion'))
+// `{ spring }` retimes the height and the chevron: opening on your spring, closing on it without the
+// bounce (an accordion is one reversible motion: same pace both ways). Your CSS can use them too.
+const motionStyle = useMotionStyle()
+const providerDefaults = inject(defaultsKey, undefined)
+const springVars = computed(() => {
+  const own = rawProps.motion
+  const spring = ((typeof own === 'object' && own.spring) ||
+    motionStyle?.value?.spring ||
+    providerDefaults?.value.spring) as Spring | undefined
+  if (!spring) return undefined
+  const open = springEasing(spring)
+  const close = springEasing({ damping: 1, response: spring.response ?? 0.32 })
+  return {
+    '--ui-accordion-ease': open.easing,
+    '--ui-accordion-duration': `${open.duration}ms`,
+    '--ui-accordion-ease-close': close.easing,
+    '--ui-accordion-duration-close': `${close.duration}ms`,
+  }
+})
 
 defineExpose({
   /** Root element. */

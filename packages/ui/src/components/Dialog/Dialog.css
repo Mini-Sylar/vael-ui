@@ -75,6 +75,10 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
+    /* Reaching the end of a long body doesn't scroll the page behind the dialog. */
+    overscroll-behavior: contain;
     padding: 1.5rem;
   }
   .ui-dialog-header + .ui-dialog-body {
@@ -133,65 +137,31 @@
     outline-offset: 1px;
   }
 
-  .ui-dialog-enter-active {
-    transition: --ui-dialog-t var(--ui-duration-enter) var(--ui-ease-out);
+  /* Enter and leave are played by the CSS engine (motion/css.ts) from Dialog's built-in look; only
+     what happens between them lives here. A leaving dialog lets taps through: its backdrop and panel
+     stay on screen for the exit, and would otherwise take the next tap. While a `before-close`
+     guard is deciding (`data-state="closing"`), nothing changes: the dialog holds as it is. */
+  .ui-dialog[data-ui-leaving] {
+    pointer-events: none;
   }
-  .ui-dialog-leave-active {
-    transition: --ui-dialog-t var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-dialog-enter-from,
-  .ui-dialog-leave-to {
-    --ui-dialog-t: 0;
-  }
-  .ui-dialog-enter-active .ui-dialog-panel {
-    transition:
-      transform var(--ui-duration-enter) var(--ui-ease-out),
-      opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-dialog-leave-active .ui-dialog-panel {
-    transition:
-      transform var(--ui-duration-exit) var(--ui-ease-out),
-      opacity var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog-leave-to .ui-dialog-panel {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  .ui-dialog-overlay {
-    transition: opacity var(--ui-duration-exit) var(--ui-ease-out);
-  }
-  .ui-dialog-enter-active .ui-dialog-overlay {
-    transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-  }
-  .ui-dialog-enter-from .ui-dialog-overlay,
-  .ui-dialog-leave-to .ui-dialog-overlay,
-  .ui-dialog[data-state='closing'] .ui-dialog-overlay {
-    opacity: 0;
-  }
-  @starting-style {
-    .ui-dialog-overlay {
-      opacity: 0;
-    }
-  }
-  /* forceMount: an inline opacity means you drive the backdrop, so the CSS fade steps aside. */
-  .ui-dialog[data-force-mount] .ui-dialog-overlay[style*='opacity'] {
-    transition: none;
-  }
-  .ui-dialog--top.ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel {
-    transform: translateY(-12px);
-  }
-  .ui-dialog--bottom.ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog--bottom.ui-dialog-leave-to .ui-dialog-panel {
-    transform: translateY(12px);
-  }
-
   .ui-dialog--left .ui-dialog-panel,
   .ui-dialog--right .ui-dialog-panel {
     inline-size: min(20rem, 90vw);
     block-size: 100dvh;
     max-block-size: 100dvh;
+  }
+  /* A full-height drawer on the screen keeps its header and footer clear of the
+     notch and the home indicator in an app that draws under them
+     (viewport-fit=cover); the insets are 0 otherwise. */
+  .ui-dialog:not([data-contained]).ui-dialog--left .ui-dialog-panel,
+  .ui-dialog:not([data-contained]).ui-dialog--right .ui-dialog-panel {
+    padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px);
+  }
+  .ui-dialog:not([data-contained]).ui-dialog--left .ui-dialog-panel {
+    padding-inline-start: env(safe-area-inset-left, 0px);
+  }
+  .ui-dialog:not([data-contained]).ui-dialog--right .ui-dialog-panel {
+    padding-inline-end: env(safe-area-inset-right, 0px);
   }
   .ui-dialog--left .ui-dialog-panel--sm,
   .ui-dialog--right .ui-dialog-panel--sm {
@@ -223,53 +193,7 @@
     border-start-end-radius: 0;
     border-end-end-radius: 0;
   }
-  .ui-dialog--left.ui-dialog-enter-active .ui-dialog-panel,
-  .ui-dialog--left.ui-dialog-leave-active .ui-dialog-panel,
-  .ui-dialog--right.ui-dialog-enter-active .ui-dialog-panel,
-  .ui-dialog--right.ui-dialog-leave-active .ui-dialog-panel {
-    transition-duration: var(--ui-duration-drawer);
-    transition-timing-function: var(--ui-ease-drawer), var(--ui-ease-out);
-  }
-  .ui-dialog--left.ui-dialog-enter-active,
-  .ui-dialog--left.ui-dialog-leave-active,
-  .ui-dialog--right.ui-dialog-enter-active,
-  .ui-dialog--right.ui-dialog-leave-active {
-    transition-duration: var(--ui-duration-drawer);
-  }
-  .ui-dialog--left.ui-dialog-enter-active .ui-dialog-overlay,
-  .ui-dialog--left.ui-dialog-leave-active .ui-dialog-overlay,
-  .ui-dialog--right.ui-dialog-enter-active .ui-dialog-overlay,
-  .ui-dialog--right.ui-dialog-leave-active .ui-dialog-overlay {
-    transition-duration: var(--ui-duration-drawer);
-  }
-  .ui-dialog--left.ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog--left.ui-dialog-leave-to .ui-dialog-panel {
-    transform: translateX(-100%);
-    opacity: 1;
-  }
-  .ui-dialog--right.ui-dialog-enter-from .ui-dialog-panel,
-  .ui-dialog--right.ui-dialog-leave-to .ui-dialog-panel {
-    transform: translateX(100%);
-    opacity: 1;
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .ui-dialog-enter-active .ui-dialog-panel,
-    .ui-dialog-leave-active .ui-dialog-panel {
-      transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-    }
-    .ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog--top.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--top.ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog--bottom.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--bottom.ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog--left.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--left.ui-dialog-leave-to .ui-dialog-panel,
-    .ui-dialog--right.ui-dialog-enter-from .ui-dialog-panel,
-    .ui-dialog--right.ui-dialog-leave-to .ui-dialog-panel {
-      transform: none;
-    }
     .ui-dialog-close:active,
     .ui-dialog-maximize:active {
       transform: none;
@@ -280,14 +204,20 @@
     .ui-dialog-panel {
       transition: none;
     }
-    .ui-dialog-enter-active {
-      transition: --ui-dialog-t var(--ui-duration-enter) var(--ui-ease-out);
-    }
-    .ui-dialog-leave-active {
-      transition: --ui-dialog-t var(--ui-duration-exit) var(--ui-ease-out);
-    }
     .ui-dialog-panel--resizing {
       animation: none;
     }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-dialog-close,
+  .ui-dialog-maximize {
+    position: relative;
+  }
+  .ui-dialog-close:active::after,
+  .ui-dialog-maximize:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

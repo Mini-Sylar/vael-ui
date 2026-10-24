@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Toolbar, <code>v-tooltip</code> directive with a shared warm group</h3>
+    <h3>A toolbar with <code>v-tooltip</code>: the next tooltip opens at once</h3>
     <div class="row">
       <Button
         v-for="item in toolbar"

@@ -3,6 +3,7 @@
     <p v-if="category" class="eyebrow">{{ category }}</p>
     <h1>{{ name }}</h1>
     <p v-if="description" class="description"><RichText :text="description" /></p>
+    <p v-if="details" class="details"><RichText :text="details" /></p>
 
     <section id="install" class="section">
       <h2>{{ t('component.install') }}</h2>
@@ -70,6 +71,12 @@ const description = computed(() => {
   const key = `composableDescriptions.${name.value}`
   return te(key) ? t(key) : content.value?.description
 })
+// The one-line summary leads; the full description follows it, unless it was the summary.
+const details = computed(() =>
+  content.value && content.value.description !== description.value
+    ? content.value.description
+    : undefined,
+)
 
 // UseConfirmAction -> UseConfirmAction
 const demoBaseName = computed(() => {
@@ -212,6 +219,12 @@ useBreadcrumbSchema(() => [
   color: var(--ui-text-muted);
   line-height: 1.6;
   margin-bottom: 1.5rem;
+}
+
+.details {
+  max-inline-size: 72ch;
+  line-height: 1.65;
+  margin-block: -0.5rem 1.75rem;
 }
 
 .section {

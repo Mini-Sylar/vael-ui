@@ -3,11 +3,13 @@ import '../src/style.css'
 import { page, userEvent } from 'vitest/browser'
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
+import { h, shallowRef } from 'vue'
 import DialogFixture from './fixtures/DialogFixture.vue'
 import DialogChromeFixture from './fixtures/DialogChromeFixture.vue'
 import DialogLongContentFixture from './fixtures/DialogLongContentFixture.vue'
 import DialogFooterEdgeFixture from './fixtures/DialogFooterEdgeFixture.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
+import type { DialogExposed } from '../src/components/Dialog/Dialog.vue'
 
 function activeTestId() {
   return document.activeElement?.getAttribute('data-testid') ?? document.activeElement?.className
@@ -199,12 +201,12 @@ test('content at the end of a body with a footer is not clipped, and the gap abo
 
 test('exposes the overlay as overlayEl, and null when modal is false', async () => {
   const { h, ref } = await import('vue')
-  const modal = ref<InstanceType<typeof Dialog> | null>(null)
-  const plain = ref<InstanceType<typeof Dialog> | null>(null)
+  const modal = ref<DialogExposed | null>(null)
+  const plain = ref<DialogExposed | null>(null)
   await render({
     render: () => [
-      h(Dialog, { ref: modal, open: true, title: 'Modal' }),
-      h(Dialog, { ref: plain, open: true, title: 'Plain', modal: false }),
+      h(Dialog as never, { ref: modal, open: true, title: 'Modal' }),
+      h(Dialog as never, { ref: plain, open: true, title: 'Plain', modal: false }),
     ],
   })
   await vi.waitFor(() => expect(modal.value?.overlayEl).toBeInstanceOf(HTMLElement))
@@ -213,64 +215,42 @@ test('exposes the overlay as overlayEl, and null when modal is false', async () 
   expect(plain.value!.overlayEl).toBeNull()
 })
 
-test('forceMount keeps the overlay fade until the consumer sets its opacity inline', async () => {
+test('a backdrop you drive yourself is never fought by a CSS transition', async () => {
   const { h, ref } = await import('vue')
-  const forced = ref<InstanceType<typeof Dialog> | null>(null)
-  const regular = ref<InstanceType<typeof Dialog> | null>(null)
+  const forced = ref<DialogExposed | null>(null)
   await render({
-    render: () => [
-      h(Dialog, { ref: forced, open: true, title: 'Forced', forceMount: true }),
-      h(Dialog, { ref: regular, open: true, title: 'Regular' }),
-    ],
+    render: () =>
+      h(Dialog as never, { ref: forced, open: true, title: 'Forced', forceMount: true }),
   })
   await vi.waitFor(() => expect(forced.value?.overlayEl).toBeInstanceOf(HTMLElement))
-  await vi.waitFor(() => expect(regular.value?.overlayEl).toBeInstanceOf(HTMLElement))
-  const forcedOverlay = forced.value!.overlayEl!
-  const regularOverlay = regular.value!.overlayEl!
-  const fades = (el: HTMLElement) => {
-    const style = getComputedStyle(el)
-    return style.transitionProperty === 'opacity' && parseFloat(style.transitionDuration) > 0
-  }
-  // Untouched, both keep the built-in fade, so existing forceMount code looks the same.
-  expect(fades(forcedOverlay)).toBe(true)
-  expect(fades(regularOverlay)).toBe(true)
-
-  // Driving opacity inline hands the forceMount overlay over: no transition to fight each frame.
-  forcedOverlay.style.opacity = '0.3'
-  regularOverlay.style.opacity = '0.3'
-  expect(fades(forcedOverlay)).toBe(false)
-  expect(getComputedStyle(forcedOverlay).opacity).toBe('0.3')
-  // Without forceMount, an inline opacity (say from ui.overlay.style) keeps the fade.
-  expect(fades(regularOverlay)).toBe(true)
-
-  // Releasing it brings the fade back.
-  forcedOverlay.style.removeProperty('opacity')
-  expect(fades(forcedOverlay)).toBe(true)
+  const overlay = forced.value!.overlayEl!
+  await vi.waitFor(() => expect(overlay.getAnimations()).toHaveLength(0))
+  overlay.style.opacity = '0.3'
+  // Applied at once: no transition carries it.
+  expect(getComputedStyle(overlay).opacity).toBe('0.3')
+  expect(overlay.getAnimations()).toHaveLength(0)
 })
 
-test('with forceMount, an inline overlay opacity wins over the closing fade', async () => {
+test('while a guard decides, the dialog holds as it is: the backdrop stays', async () => {
   const { h, ref } = await import('vue')
-  const dialog = ref<InstanceType<typeof Dialog> | null>(null)
+  const dialog = ref<DialogExposed | null>(null)
   let finish: (() => void) | undefined
   await render({
     render: () =>
-      h(Dialog, {
+      h(Dialog as never, {
         ref: dialog,
         open: true,
-        title: 'Closing',
-        forceMount: true,
-        beforeClose: (done: () => void) => {
-          finish = done
-        },
+        title: 'Saving',
+        beforeClose: () => new Promise<boolean>((allow) => (finish = () => allow(true))),
       }),
   })
   await vi.waitFor(() => expect(dialog.value?.overlayEl).toBeInstanceOf(HTMLElement))
   const overlay = dialog.value!.overlayEl!
-  overlay.style.opacity = '0.8'
+  await vi.waitFor(() => expect(getComputedStyle(overlay).opacity).toBe('1'))
   dialog.value!.close()
   await vi.waitFor(() => expect(dialog.value!.isClosing).toBe(true))
-  // data-state="closing" would set opacity 0 behind a transition; the consumer's value holds.
-  expect(getComputedStyle(overlay).opacity).toBe('0.8')
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  expect(getComputedStyle(overlay).opacity).toBe('1')
   finish?.()
 })
 
@@ -319,4 +299,87 @@ test('Escape that ends an IME composition does not close the dialog', async () =
 
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+})
+
+// The test renderer stubs <Transition>, which would skip the exit these two are about.
+const realTransitions = { global: { stubs: { transition: false } } }
+
+test('the scroll lock holds until the exit animation ends, so a returning scrollbar cannot nudge the closing panel', async () => {
+  const screen = await render(DialogFixture, realTransitions)
+  await screen.getByTestId('trigger').click()
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  expect(document.body.style.overflow).toBe('hidden')
+  // Fully open first, so the close plays a real exit.
+  await vi.waitFor(() =>
+    expect(getComputedStyle(document.querySelector('.ui-dialog-panel')!).opacity).toBe('1'),
+  )
+
+  await userEvent.keyboard('{Escape}')
+  // Closed, but still fading out: the page must stay locked under it.
+  await vi.waitFor(
+    () => expect(document.querySelector('.ui-dialog[data-ui-leaving]')).not.toBeNull(),
+    { interval: 5 },
+  )
+  expect(screen.getByTestId('state').element().textContent).toBe('closed')
+  expect(document.body.style.overflow).toBe('hidden')
+
+  await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull())
+  await vi.waitFor(() => expect(document.body.style.overflow).toBe(''))
+})
+
+test('reopening a dialog mid-exit keeps the scroll lock, and the next close still releases it', async () => {
+  const screen = await render(DialogFixture, realTransitions)
+  const trigger = screen.getByTestId('trigger')
+  await trigger.click()
+  await expect.element(page.getByRole('dialog')).toBeVisible()
+  await userEvent.keyboard('{Escape}')
+  await expect.element(screen.getByTestId('state')).toHaveTextContent('closed')
+  await trigger.click()
+  await expect.element(screen.getByTestId('state')).toHaveTextContent('open')
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  expect(document.body.style.overflow).toBe('hidden')
+
+  await userEvent.keyboard('{Escape}')
+  await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull())
+  await vi.waitFor(() => expect(document.body.style.overflow).toBe(''))
+})
+
+test('origin="trigger" grows the panel out of the element that opened it', async () => {
+  const open = shallowRef(false)
+  const screen = await render(
+    {
+      render: () => [
+        h(
+          'button',
+          {
+            id: 'opener',
+            style: 'position: fixed; left: 20px; top: 30px; width: 40px; height: 20px',
+            onClick: () => (open.value = true),
+          },
+          'Open',
+        ),
+        h(Dialog as never, {
+          open: open.value,
+          'onUpdate:open': (v: boolean) => (open.value = v),
+          origin: 'trigger',
+          title: 'Details',
+        }),
+      ],
+    },
+    { global: { stubs: { transition: false } } },
+  )
+  const opener = screen.container.querySelector<HTMLButtonElement>('#opener')!
+  opener.focus()
+  opener.click()
+  const panel = await vi.waitFor(() => {
+    const el = document.querySelector<HTMLElement>('.ui-dialog-panel')
+    expect(el?.style.transformOrigin).toBeTruthy()
+    return el!
+  })
+  expect(panel.closest('.ui-dialog')!.getAttribute('data-origin')).toBe('trigger')
+  const [x, y] = panel.style.transformOrigin.split(' ').map(parseFloat) as [number, number]
+  const parent = (panel.offsetParent as HTMLElement).getBoundingClientRect()
+  expect(Math.abs(parent.left + panel.offsetLeft + x - 40)).toBeLessThanOrEqual(1)
+  expect(Math.abs(parent.top + panel.offsetTop + y - 40)).toBeLessThanOrEqual(1)
+  open.value = false
 })

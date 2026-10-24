@@ -2,10 +2,10 @@
   <section class="demo">
     <h3>Variants</h3>
     <p class="note">
-      <code>toast()</code> is a plain function you can call from anywhere, with no hooks or context.
-      The single <code>&lt;Toaster /&gt;</code> mounted once in <code>App.vue</code> renders every
+      <code>toast()</code> is a plain function you can call from anywhere, with no composable or
+      provider. One <code>&lt;Toaster /&gt;</code> mounted in <code>App.vue</code> renders every
       toast. Hover the stack to expand it and pause every timer; each one resumes with the time it
-      had left. Drag a card sideways, or toward its edge, to swipe it away.
+      had left. Drag a card sideways, or toward its edge, to dismiss it.
     </p>
     <div class="row">
       <Button @click="toast('Simple notification')">Default</Button>

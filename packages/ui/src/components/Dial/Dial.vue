@@ -114,7 +114,7 @@ export const DIAL_TICKS = Array.from({ length: DIAL_TICK_COUNT }, (_, i) => {
 <script setup lang="ts">
 import './Dial.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import {
@@ -126,12 +126,19 @@ import { useDial } from '../../composables/useDial'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { DialMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
 /** Current value. @default 0 */
 const modelValue = defineModel<number>({ default: 0 })
+
+const emit = defineEmits<{
+  /** Fires with the final value when you release the dial or press a key, like a native range input's `change`. `v-model` updates on every move. */
+  change: [value: number]
+}>()
 
 const props = withDefaults(
   defineProps<{
@@ -167,6 +174,8 @@ const props = withDefaults(
       ticks: UiPartValue
       face: UiPartValue
     }>
+    /** How it moves: its appearance (`{ initial: { root: { opacity: 0, scale: 0.9 } } }`) and its states, like `active` while you turn it (`{ states: { active: { face: { scale: '0.97' } } } }`). `false` turns its own animation off. */
+    motion?: DialMotion
   }>(),
   {
     min: undefined,
@@ -177,6 +186,8 @@ const props = withDefaults(
     size: 'md',
     disabled: false,
     invalid: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
   },
 )
 
@@ -211,6 +222,20 @@ const ariaValueText = computed(() => {
 const root = useTemplateRef<HTMLElement>('root')
 const dialEl = useTemplateRef<HTMLElement>('dialEl')
 const ticksEl = useTemplateRef<SVGGElement>('ticksEl')
+const parts = useStateMotion({
+  key: 'dial',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-dial',
+    track: '.ui-dial-track',
+    fill: '.ui-dial-fill',
+    face: '.ui-dial-face',
+    ticks: '.ui-dial-ticks',
+  },
+  states: () => ({ disabled: isDisabled.value }),
+})
 
 const {
   isDragging,
@@ -224,6 +249,8 @@ const {
   step: () => props.step,
   degreesPerStep: () => props.degreesPerStep,
   disabled: () => isDisabled.value,
+  // After the parent applies the update, so `change` carries the committed value.
+  onCommit: () => nextTick(() => emit('change', modelValue.value)),
 })
 
 const cx = useClassMerge()
@@ -253,6 +280,10 @@ defineExpose({
   dialEl,
   /** SVG group holding the tick marks. */
   ticksEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 
 function onDialFocus(event: FocusEvent) {

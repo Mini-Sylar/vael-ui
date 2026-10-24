@@ -1,11 +1,11 @@
 <template>
   <section class="demo">
-    <h3>Tab behavior, <code>tab-behavior</code></h3>
+    <h3>Tab behavior: <code>tab-behavior</code></h3>
     <p class="note">
-      Type <code>tu</code> (it partially matches <code>feature</code>) and press Tab. Unset, Tab
-      just moves to the next field and the text reverts. <code>'select'</code> picks the highlighted
-      option, but only after you've typed or used the arrow keys, so tabbing through a form never
-      picks one by accident. <code>'create'</code> keeps exactly what you typed.
+      Type <code>tu</code> (it partly matches <code>feature</code>) and press Tab. Unset, Tab moves
+      to the next field and the text reverts. <code>'select'</code> picks the highlighted option,
+      but only after you’ve typed or used the arrow keys, so tabbing through a form never picks one
+      by accident. <code>'create'</code> keeps exactly what you typed.
     </p>
     <div class="stack">
       <SelectButton v-model="mode" size="sm" :items="modes" />

@@ -2,9 +2,9 @@
   <section class="demo">
     <h3>Vertical</h3>
     <p class="note">
-      Same collapsing logic, rotated to the block axis. One alignment is always chosen:
-      <code>v-model</code> without <code>multiple</code> keeps one on, and
-      <code>:allow-empty="false"</code> stops the chosen one from being turned off.
+      <code>orientation="vertical"</code> stacks the buttons and joins them top to bottom. One
+      alignment is always on: <code>v-model</code> without <code>multiple</code> keeps one on, and
+      <code>:allow-empty="false"</code> stops it from being turned off.
     </p>
     <div class="row">
       <ButtonGroup

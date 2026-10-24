@@ -23,8 +23,10 @@ import { ScrollArea } from 'vael-ui'
   inline-size: 100%;
   max-inline-size: 36rem;
 }
+/* Sized to its cards, so its end padding sits after the last card instead of at the viewport's edge. */
 .scroll-row {
   display: flex;
+  inline-size: max-content;
   gap: 0.75rem;
   padding: 1rem;
 }

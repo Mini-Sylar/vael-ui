@@ -92,16 +92,13 @@ const open = shallowRef(false)
 const query = shallowRef('')
 const reachEndCount = shallowRef(0)
 
-let pendingDone: (() => void) | null = null
-function beforeClose(done: () => void) {
-  if (!props.deferClose) {
-    done()
-    return
-  }
-  pendingDone = done
+let pendingDone: ((allowed: boolean) => void) | null = null
+function beforeClose() {
+  if (!props.deferClose) return true
+  return new Promise<boolean>((allow) => (pendingDone = allow))
 }
 function releaseClose() {
-  pendingDone?.()
+  pendingDone?.(true)
   pendingDone = null
 }
 

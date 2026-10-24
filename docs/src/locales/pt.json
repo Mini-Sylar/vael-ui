@@ -1,40 +1,60 @@
 {
   "animation": {
-    "beforeCloseIntro": "Para bibliotecas imperativas: passe uma função que recebe <code>done</code>. O componente continua montado, com <code>isClosing</code> ativo, até você chamá-la.",
-    "beforeCloseTitle": "antesFechar(concluído)",
-    "forceMountIntro": "Mantém o conteúdo montado enquanto fechado, em vez de removê-lo com <code>v-if</code>, e desliga a transição embutida. Anime o <code>panelEl</code> exposto ao abrir e combine com <code>beforeClose(done)</code> para sua própria saída.",
-    "forceMountTitle": "forçar montagem",
-    "gsapExampleIntro": "<code>beforeClose(done)</code> mais a referência <code>panelEl</code> exposta, para que a interpolação seja executada no elemento de painel real antes de ser removido:",
-    "gsapExampleTitle": "Exemplo: GSAP, Diálogo",
-    "intro": "Todo componente que anima traz uma transição CSS simples, e em todos você pode assumir o controle: com GSAP, motion-v ou sem animação. Os hooks disponíveis dependem do que o componente faz.",
-    "motionCssIntro": "Defina como <code>false</code> para desativar a transição CSS integrada. O componente continua mudando de estado, mas instantaneamente, e deixa o DOM para você animar. Em um <code>ConfigProvider</code>, <code>:motion-css=\"false\"</code> significa nenhuma animação: tudo dentro abre, fecha e sai na hora, sem nada para você tratar.",
-    "motionCssTitle": "movimentoCss",
-    "motionVExampleIntro": "<code>forceMount</code> entrega o painel a você. Anime a entrada de <code>panelEl</code> ao abrir e rode a saída em <code>beforeClose(done)</code>, que mantém o painel visível até você chamar <code>done()</code>:",
-    "motionVExampleTitle": "Exemplo: motion-v, Popover",
-    "title": "Traga sua própria animação",
-    "kindsTitle": "Hooks por tipo de componente",
+    "title": "Personalizar o movimento",
+    "intro": "Todo componente que anima tem movimento embutido e uma prop <code>motion</code>. Mantenha o movimento embutido, desligue-o, mude seus valores ou execute-o com GSAP, motion ou a Web Animations API.",
+    "builtInTitle": "Movimento embutido",
+    "builtInIntro": "Deixe <code>motion</code> sem valor e o componente usa seu movimento embutido. A maioria dos apps não precisa de mais nada. Defina-o como <code>false</code> e o componente muda de estado na hora: ele continua abrindo, fechando e removendo itens, sem animar.",
+    "builtInProvider": "Para desligar o movimento em todo lugar, por exemplo em testes de captura de tela, defina <code>:motion=\"false\"</code> em um <code>ConfigProvider</code>. Com movimento reduzido, o movimento embutido mantém os fades e descarta o deslocamento.",
+    "kindsTitle": "O que cada componente aceita",
     "kindsKind": "Tipo",
     "kindsComponents": "Componentes",
-    "kindsHooks": "Hooks",
+    "kindsSet": "Props e chaves",
     "kindsOverlayTitle": "Abre e fecha",
     "kindsInPlaceTitle": "Muda no lugar",
     "kindsListTitle": "Itens que entram e saem",
-    "kindsCheck": "As tabelas Props, Slots e Exposed de um componente listam exatamente o que ele tem.",
+    "kindsCheck": "Cada componente exporta seu próprio tipo <code>motion</code>, como <code>DialogMotion</code>, que lista suas partes e estados. Os nomes das partes são iguais às suas chaves <code>ui</code>. Em uma lista, o nome entre parênteses é a parte que cada item recebe.",
+    "valuesTitle": "Mude os valores",
+    "valuesIntro": "Passe um objeto para descrever o movimento como dados. <code>initial</code> define de onde cada parte entra, e <code>exit</code>, para onde ela sai. As chaves são nomes de partes, e os valores são propriedades CSS, mais <code>x</code>, <code>y</code> e <code>blur</code>.",
+    "valuesTiming": "Para o tempo, informe uma <code>spring</code>, ou uma <code>duration</code> em milissegundos com um <code>easing</code>, não ambos. Em uma mola, <code>damping</code> 1 assenta sem passar do ponto, e valores menores passam do ponto. <code>response</code> é mais ou menos o tempo em segundos para chegar. Sem <code>exit</code>, a parte some com um leve encolhimento.",
+    "hooksTitle": "Use sua própria biblioteca",
+    "hooksIntro": "Quando os valores não bastam, adicione os hooks <code>enter(parts, ctx)</code> e <code>leave(parts, ctx)</code>. <code>parts</code> traz os elementos do componente por nome de parte. Retorne o que sua biblioteca retorna: uma <code>Animation</code> da Web Animations, um tween ou timeline do GSAP, os controles do <code>animate()</code> do motion, ou uma promise. O componente espera por ela antes de terminar de abrir ou de remover o elemento.",
+    "hooksInterrupt": "Se o movimento for interrompido, por exemplo ao fechar enquanto ainda abre, o componente para o que você retornou com <code>kill</code>, <code>stop</code> ou <code>cancel</code>, e aborta <code>ctx.signal</code>. Com movimento reduzido, os hooks não rodam. Defina <code>reducedMotion: 'run'</code> para executá-los mesmo assim e confira <code>ctx.reducedMotion</code> você mesmo.",
+    "gsapExampleTitle": "GSAP",
+    "gsapExampleIntro": "Retorne uma timeline. Aqui um Dialog esmaece seu overlay e desliza seu painel:",
+    "motionExampleTitle": "motion",
+    "motionExampleIntro": "Retorne os controles do <code>animate()</code>, importado de <code>motion-v</code> ou <code>motion</code>. Aqui o painel de um Popover entra com uma mola:",
+    "waapiExampleTitle": "Web Animations API",
+    "waapiExampleIntro": "Sem biblioteca: <code>element.animate()</code> retorna uma <code>Animation</code>. Aqui uma Message desliza para o lado ao fechar:",
+    "listsTitle": "Listas",
+    "listsIntro": "Toaster, Timeline, FileUpload, SpeedDial e DataTable aceitam o mesmo objeto <code>motion</code> para seus itens. CommandPalette o aceita em <code>items</code>, e Select, Combobox e CascadeSelect em <code>chips</code>. Valores e hooks valem para cada item. Um hook recebe as partes de um item, como <code>{'{'} toast {'}'}</code>, <code>{'{'} item {'}'}</code>, <code>{'{'} row {'}'}</code>, <code>{'{'} action {'}'}</code> ou <code>{'{'} chip {'}'}</code>, mais <code>ctx.index</code> para seu próprio escalonamento.",
+    "listsOptions": "Listas aceitam mais três chaves. <code>stagger</code> é o intervalo em segundos entre itens que chegam juntos. <code>leaving</code> define o que acontece com o espaço de um item que sai: com <code>'pop'</code>, o padrão, os outros itens fecham o vão na hora; com <code>'hold'</code>, o item mantém seu espaço até sumir. <code>appear: true</code> também anima os itens que já estão lá quando a lista é montada.",
+    "listsHooksIntro": "Com hooks, cada etapa da Timeline recebe seu marcador, seus conectores e seu conteúdo:",
+    "listsEvents": "Os antigos eventos de lista, como <code>{'@'}item-enter</code> e <code>{'@'}item-leave</code>, foram removidos. Leve esse código para <code>enter</code> e <code>leave</code>.",
+    "guardsTitle": "beforeClose decide, não anima",
+    "guardsIntro": "<code>beforeClose</code> é uma guarda. Retorne <code>true</code> para fechar, <code>false</code> para continuar aberto, ou uma promise de qualquer um dos dois. Enquanto a promise está pendente, o overlay continua aberto e parado. Uma confirmação cabe em uma linha:",
+    "guardsExit": "A guarda recebe o <code>reason</code> do fechamento. Ela não executa sua animação de saída: coloque isso em <code>motion.leave</code>. O callback <code>done()</code> não existe mais.",
+    "forceMountTitle": "forceMount",
+    "forceMountIntro": "<code>forceMount</code> mantém o conteúdo montado enquanto fechado e o alterna com <code>v-show</code>. Use quando o conteúdo precisa ficar no DOM, por exemplo para manter seu estado ou medi-lo. O movimento embutido não roda em conteúdo mantido assim, então ele aparece e some na hora. Para animá-lo, use hooks de <code>motion</code>.",
+    "appWideTitle": "Um estilo para o app inteiro",
+    "appWideIntro": "Passe um estilo ao <code>ConfigProvider</code> para definir o movimento uma vez. Chaves de papel, como <code>overlay</code> e <code>list</code>, valem para todo componente daquele tipo. Chaves de componente, como <code>dialog</code> e <code>toaster</code>, substituem seu papel. A prop <code>motion</code> do próprio componente vence as duas. <code>version: 1</code> marca o formato, para que um estilo salvo continue funcionando em versões futuras.",
+    "vAnimateTitle": "Anime seus próprios elementos com v-animate",
+    "vAnimateIntro": "A diretiva <code>v-animate</code> dá o mesmo movimento aos seus próprios elementos. <code>v-animate=\"{'{'} initial: {'{'} opacity: 0, y: 8 {'}'} {'}'}\"</code> toca quando o elemento é montado. Ao ser desmontado, ele sai por onde veio, um pouco mais discreto e rápido.",
+    "vAnimateNamed": "Dentro de um componente, adicione um nome: <code>v-animate:rows</code> entra no movimento desse componente como um alvo chamado <code>rows</code>. O elemento entra e sai com o painel. Defina seus valores no elemento, ou em <code>targets.rows</code> no <code>motion</code> do componente.",
     "exposedTitle": "Elementos expostos",
-    "exposedIntro": "Coloque uma template ref em um componente e você recebe seus elementos DOM reais: <code>el</code> para a raiz, mais suas partes, como <code>panelEl</code>, <code>listEl</code>, <code>thumbEl</code> ou <code>checkEl</code>. Desligue a transição embutida com <code>motionCss</code> e anime esses elementos com qualquer biblioteca. A tabela Exposed de cada componente lista o que ele tem.",
-    "exposedExampleIntro": "Neste exemplo, a marca de seleção aparece com GSAP sempre que a caixa é marcada:"
+    "exposedIntro": "Para controlar totalmente uma parte, defina <code>:motion=\"false\"</code>, coloque uma ref de template no componente e anime seus elementos DOM: <code>el</code> para a raiz, mais partes como <code>checkEl</code> ou <code>thumbEl</code>. A tabela Exposed de cada componente lista o que ele tem.",
+    "exposedExampleIntro": "Neste exemplo, o GSAP faz a marca de seleção saltar sempre que a caixa é marcada:"
   },
   "component": {
     "code": "Código",
     "hideCode": "Ocultar código",
-    "copied": "Copiado!",
+    "copied": "Copiado",
     "copy": "Cópia",
     "events": "Eventos",
     "examples": "Exemplos",
     "exposed": "Expor",
     "install": "Instalar",
     "noEvents": "Sem eventos.",
-    "noExposed": "Nada exposto via modelo ref.",
+    "noExposed": "Nada exposto via template ref.",
     "noProps": "Sem adereços.",
     "noSlots": "Sem vagas.",
     "notFound": "Componente \"{name}\" não encontrado.",
@@ -44,120 +64,135 @@
     "slots": "Caça-níqueis",
     "vapor": "Vapor",
     "vaporUnavailable": "Nenhuma demonstração Vapor para este componente ainda",
-    "vdom": "Vue DOM",
-    "onThisPage": "Nesta página"
+    "vdom": "VDOM",
+    "onThisPage": "Nesta página",
+    "headless": "Combinável headless",
+    "motion": "Movimento",
+    "new": "Novo",
+    "highlights": "Destaques",
+    "moreExamples": "Mais exemplos"
   },
   "descriptions": {
-    "Accordion": "Uma pilha de seções dobráveis ​​onde a abertura de uma pode fechar as outras.",
-    "AccordionItem": "Uma seção recolhível de um Accordion. Use sempre dentro de um Accordion.",
-    "Avatar": "Uma imagem ou iniciais, em formato circular ou quadrado, que representam uma pessoa ou entidade.",
-    "Badge": "Um pequeno ponto, contagem ou rótulo sobreposto no canto de outro elemento.",
-    "BottomSheet": "Um painel que desliza para cima a partir da borda inferior, para layouts de toque.",
-    "Button": "Uma ação clicável com variantes, tamanhos, estados de carregamento e slots de ícones integrados.",
-    "Calendar": "Uma grade mensal para escolher uma única data ou um intervalo de datas.",
-    "Card": "Um contêiner com borda para agrupar conteúdo relacionado, com títulos e ações opcionais.",
-    "CascadeSelect": "Uma lista suspensa para escolher um caminho através de opções aninhadas, um nível por vez.",
-    "Checkbox": "Uma caixa de seleção para uma única escolha de sim ou não, com um estado indeterminado opcional.",
-    "Chip": "Um token compacto e removível para filtros, tags ou valores de seleção múltipla selecionados.",
-    "Collapsible": "Uma única seção de mostrar e ocultar, para conteúdo opcional ou secundário.",
-    "Column": "Define uma coluna de um DataTable. Use sempre dentro de um DataTable.",
-    "Combobox": "Um menu suspenso pesquisável que também aceita texto livre, portanto, o preenchimento automático e a marcação são um componente.",
-    "ConfigProvider": "Envolve seu app para fornecer temas, i18n e mesclagem de classes a todos os componentes dentro dele.",
-    "ContextMenu": "Um menu que se abre ao clicar com o botão direito do mouse, substituindo o menu nativo do navegador.",
-    "Tour": "Um tour guiado que destaca um elemento por vez ao lado de um balão explicativo, para onboarding e tours de produto.",
-    "DataTable": "Uma grade de dados com ordenação, seleção, redimensionamento de colunas e virtualização, construída com componentes Column.",
-    "DatePicker": "Um campo de texto emparelhado com um popover de calendário para escolher uma data ou intervalo.",
-    "Dial": "Um controle de arrastar circular para escolher um valor numérico, como um botão de volume.",
-    "Dialog": "Uma sobreposição modal que bloqueia a página até que alguém responda ou a feche.",
-    "Dock": "Uma linha de ícones no estilo macOS que aumentam conforme o ponteiro se aproxima deles.",
-    "Drawer": "Um painel que desliza a partir de uma borda da janela de visualização, para navegação ou conteúdo lateral.",
-    "Field": "Envolve um controle de formulário com um rótulo, um texto de ajuda e uma mensagem de erro, interligados para você.",
-    "FileUpload": "Uma área para soltar arquivos e uma lista de arquivos para selecioná-los, com validação.",
-    "Input": "Um campo de texto de linha única com tamanhos, estados e slots para ícones ou dicas.",
-    "InputNumber": "Um campo numérico com controles de incremento e decremento e uma análise que respeita o formato.",
-    "Kbd": "Estiliza um atalho de teclado para que pareça uma tecla física.",
-    "Knob": "Um controle giratório para escolher um valor numérico dentro de um arco fixo.",
-    "Loader": "Um pequeno indicador giratório que mostra que algo está em andamento.",
-    "Menu": "Uma lista suspensa de ações abertas a partir de um gatilho, com navegação completa pelo teclado.",
-    "MenuList": "As linhas do Menu renderizadas no fluxo da página em vez de em um menu suspenso, para uma navegação lateral permanente.",
-    "Message": "Um banner embutido para texto de status: informações, sucesso, aviso ou erro.",
-    "OtpInput": "Uma linha de caixas de um caractere para códigos únicos, com colagem e avanço automático.",
-    "Pagination": "Controles de número de página para dividir uma longa lista ou tabela entre páginas.",
-    "Popover": "Um painel flutuante ancorado em um elemento acionador, para menus, formulários ou detalhes extras.",
-    "Progress": "Uma barra de progresso para uma tarefa, com estados determinado e indeterminado.",
-    "PullToRefresh": "Um gesto suspenso na parte superior de um contêiner de rolagem que aciona uma atualização.",
-    "Radio": "Uma opção em um conjunto mutuamente exclusivo. Use sempre dentro de um RadioGroup.",
-    "RadioGroup": "Agrupa um conjunto de botões Radio para que só um possa ser selecionado por vez.",
-    "Resizable": "Uma alça de arrastar que redimensiona um painel entre um tamanho mínimo e um máximo.",
-    "Select": "Um menu suspenso para escolher um ou mais valores de uma lista, com filtragem e virtualização.",
-    "SelectButton": "Um controle segmentado para escolher um ou mais valores de uma lista curta.",
-    "Separator": "Uma linha fina, com rótulo opcional, que divide o conteúdo em grupos.",
-    "Skeleton": "Uma forma de espaço reservado que ocupa o lugar do conteúdo enquanto ele carrega.",
-    "Slider": "Arraste uma alça (ou duas, para um intervalo) ao longo de uma trilha para escolher um valor numérico.",
-    "SpeedDial": "Um botão de ação flutuante que se transforma em ações secundárias sob demanda.",
-    "SplitButton": "Uma ação primária fundida com uma divisa que abre ações alternativas em um menu suspenso.",
-    "SwipeToReveal": "Deslize um item para revelar ações abaixo dele, como uma linha de lista nativa de dispositivos móveis.",
-    "Switch": "Um botão liga/desliga com estilo de interruptor físico, para configurações de efeito imediato.",
-    "Tabs": "Alterna entre painéis de conteúdo, com um indicador deslizante sob a guia ativa.",
-    "Tag": "Uma etiqueta compacta para categorizar ou anotar um item em linha.",
-    "Textarea": "Um campo de texto de várias linhas que pode crescer automaticamente com seu conteúdo.",
-    "Toaster": "Renderiza as notificações criadas por toast(). Monte-o uma vez, em qualquer lugar do seu app.",
-    "Toolbar": "Uma faixa horizontal para agrupar ações relacionadas, com foco móvel no teclado.",
-    "Tooltip": "Um pequeno rótulo flutuante que aparece ao passar o mouse ou focar para explicar um elemento.",
-    "Tree": "Uma lista recolhível e recuada para dados hierárquicos, com seleção única ou múltipla.",
-    "TreeSelect": "Um menu suspenso cujo painel é uma Árvore, para escolher um ou mais nós de uma hierarquia.",
-    "PasswordInput": "Um campo de senha com alternância de revelação e uma dica de requisitos.",
-    "Sortable": "Uma lista reordenável por arrasto que também funciona pelo teclado, não só com o ponteiro.",
-    "BreadcrumbItem": "Um link ou a página atual em uma trilha Breadcrumb.",
-    "BreadcrumbSeparator": "O separador entre dois BreadcrumbItem. Ele mostra um chevron, a menos que você passe seu próprio conteúdo.",
-    "Rating": "Clique, arraste ou use as setas para escolher um valor em uma fileira de estrelas, com meias estrelas opcionais.",
-    "Timeline": "Uma lista ordenada de etapas ligadas por uma linha. Cada etapa pode conter qualquer conteúdo."
+    "Accordion": "Uma pilha de seções recolhíveis em que abrir uma pode fechar as outras. Use-o para perguntas frequentes ou conteúdo longo dividido em seções.",
+    "AccordionItem": "Uma seção recolhível de um Accordion. Use-o apenas dentro de um Accordion.",
+    "Avatar": "Uma imagem ou iniciais, em formato circular ou quadrado, que representam uma pessoa ou entidade. Use-o ao lado de nomes em listas, comentários e cabeçalhos.",
+    "Badge": "Um pequeno ponto, contagem ou rótulo para um status ou algo novo. Use-o no slot badge de um Button ou de um Avatar para fixá-lo num canto.",
+    "BottomSheet": "Um painel que desliza para cima a partir da borda inferior e se encaixa nas alturas que você define. Use-o em telas de toque, onde as pessoas o arrastam para cima, para baixo ou para fora.",
+    "Button": "Um botão para uma ação, com variantes, tamanhos, ícones e um estado de carregamento. Use-o para qualquer ação, e adicione hold quando uma ação destrutiva precisar de um pressionar e segurar para confirmar.",
+    "Calendar": "Uma grade mensal para escolher uma única data ou um intervalo de datas. Use-o quando o calendário deve ficar na página.",
+    "Card": "Um contêiner com borda que agrupa conteúdo relacionado, com título e ações opcionais. Use-o para um resumo, uma configuração ou um link para mais.",
+    "CascadeSelect": "Um menu suspenso para escolher um caminho por opções aninhadas, um nível por vez. Use-o para categorias ou lugares que se dividem em outros menores.",
+    "Checkbox": "Uma caixa para uma escolha de sim ou não, com um estado indeterminado opcional. Use-a quando cada escolha é independente das outras.",
+    "Chip": "Um token compacto, opcionalmente removível, para filtros, tags ou valores selecionados. Use-o para mostrar escolhas que as pessoas podem desfazer.",
+    "Collapsible": "Uma única seção que mostra e oculta seu conteúdo. Use-o para conteúdo opcional ou secundário.",
+    "Column": "Uma coluna de um DataTable. Use-a apenas dentro de um DataTable.",
+    "Combobox": "Um menu suspenso pesquisável que também aceita texto livre. Use-o para preenchimento automático ou para tags que as pessoas criam enquanto digitam.",
+    "ConfigProvider": "Um wrapper que define o tema, o tamanho, o idioma, a mesclagem de classes e o movimento de todos os componentes dentro dele. Use-o na raiz do seu app para defini-los uma vez.",
+    "ContextMenu": "Um menu que abre no ponteiro com o clique direito, ou com um toque longo em telas de toque. Use-o para ações sobre o item sob o ponteiro.",
+    "Tour": "Um tour guiado que destaca um elemento por vez ao lado de um balão explicativo. Use-o para onboarding e tours de produto.",
+    "DataTable": "Uma grade de dados com ordenação, seleção, redimensionamento de colunas e virtualização, construída com componentes Column. Use-o para registros que as pessoas ordenam, selecionam e comparam.",
+    "DatePicker": "Um campo de texto com um popover de calendário para escolher uma data, um intervalo ou um horário. Use-o em formulários em que as pessoas digitam ou escolhem uma data.",
+    "Dial": "Uma roda que você gira para mudar um número, sem limites a menos que você defina min ou max. Use-a para valores sem limite e ajustes finos.",
+    "Dialog": "Uma janela modal sobre a página que espera até que alguém responda ou a feche. Use-o para uma tarefa ou decisão que precisa de uma resposta antes.",
+    "Dock": "Uma linha de ícones no estilo macOS que aumentam conforme o ponteiro ou um dedo passa sobre eles. Use-o para navegação no estilo de app ou um lançador.",
+    "Drawer": "Um painel que desliza a partir de uma borda da tela. Use-o para navegação, filtros ou detalhes ao lado da página.",
+    "Field": "Um wrapper que liga um rótulo, um texto de ajuda e uma mensagem de erro a um controle de formulário. Use-o para rotular um controle sem ligar o id e os atributos ARIA você mesmo.",
+    "FileUpload": "Uma área para soltar arquivos e uma lista de arquivos para selecioná-los, com validação. Use-o para anexos e uploads em formulários.",
+    "Input": "Um campo de texto de linha única com tamanhos, estados e slots inicial e final para ícones ou botões. Use-o para nomes, e-mails, busca e outros textos curtos.",
+    "InputNumber": "Um campo numérico com botões de incremento e formatação e leitura que respeitam o idioma. Use-o para quantidades, preços e porcentagens.",
+    "Kbd": "Uma tecla ou atalho de teclado, com estilo de tecla física. Use-o em dicas e textos de ajuda.",
+    "AnimatedNumber": "Um número cujos dígitos alterados rolam até o novo valor, formatado para qualquer localidade. Use-o para contadores, preços e estatísticas que mudam na tela.",
+    "AnimatedText": "Texto que troca pelo seguinte com um breve esmaecer e elevação, enquanto a largura se ajusta suavemente para que nada ao lado salte. Use-o para rótulos e status que mudam no lugar.",
+    "Knob": "Um controle giratório que define um número dentro de um arco fixo. Use-o para valores limitados, como um volume ou um nível.",
+    "Loader": "Um pequeno indicador giratório em cinco estilos que se ajusta ao texto ao redor. Use-o para mostrar que algo está em andamento.",
+    "Menu": "Uma lista suspensa de ações que abre a partir de um gatilho, com navegação completa pelo teclado. Use-o para um conjunto de ações atrás de um botão.",
+    "MenuList": "As linhas do Menu renderizadas na página em vez de em um menu suspenso. Use-o para uma navegação lateral ou de configurações que fica na tela.",
+    "Message": "Um banner embutido para texto de status: informação, sucesso, aviso ou erro. Use-o para um aviso que fica na página.",
+    "OtpInput": "Uma linha de caixas de um caractere para um código de uso único, com colagem e avanço automático. Use-o para códigos de login e de verificação.",
+    "Editable": "Texto que vira um campo quando você clica nele e salva com Enter ou ao sair do campo. Use-o para renomear algo no lugar.",
+    "ColorPicker": "Uma amostra de cor que abre um seletor com um plano de saturação e brilho, um controle de matiz, um campo hex, predefinições opcionais e um conta-gotas quando o navegador oferece um. Use-o quando qualquer cor é permitida, não só algumas.",
+    "Pagination": "Controles de número de página que dividem uma lista ou tabela longa em páginas. Use-o quando as pessoas precisam chegar a uma página específica.",
+    "Popover": "Um painel flutuante ancorado em um elemento acionador. Use-o para formulários curtos, seletores ou detalhes extras.",
+    "Progress": "Uma barra ou anel para o progresso de uma tarefa, conhecido ou não, ou para partes empilhadas de um todo com legenda. Use-o para uploads, tarefas longas ou a divisão de um armazenamento.",
+    "PullToRefresh": "Um gesto de puxar para baixo no topo de um contêiner de rolagem que inicia uma atualização. Use-o para feeds e listas em telas de toque.",
+    "Radio": "Uma opção em um conjunto em que só uma pode ser selecionada. Use-o apenas dentro de um RadioGroup.",
+    "RadioGroup": "Um grupo de opções Radio em que só uma pode ser selecionada por vez. Use-o para uma lista curta de escolhas que devem ficar todas visíveis.",
+    "Resizable": "Uma alça de arrastar que redimensiona um painel entre um tamanho mínimo e um máximo. Use-o para barras laterais e visualizações divididas.",
+    "Select": "Um menu suspenso para escolher um ou mais valores de uma lista, com filtragem e virtualização. Use-o quando a lista é longa demais para radios ou um SelectButton.",
+    "SelectButton": "Um controle segmentado que escolhe um ou mais valores de uma lista curta. Use-o no lugar de radios ou checkboxes quando todas as opções cabem em uma linha.",
+    "Separator": "Uma linha fina, com rótulo opcional, que divide o conteúdo em grupos. Use-o entre seções, ou com um rótulo como “ou” entre duas escolhas.",
+    "Skeleton": "Uma forma de espaço reservado que ocupa o lugar do conteúdo enquanto ele carrega. Use-o quando você conhece o layout antes de os dados chegarem.",
+    "Slider": "Uma trilha com uma alça para um valor, ou duas para um intervalo. Use-o para escolher um número arrastando.",
+    "SpeedDial": "Um botão de ação flutuante que se abre em leque em ações secundárias. Use-o quando uma tela tem um botão principal e algumas ações relacionadas.",
+    "SplitButton": "Uma ação principal unida a uma divisa que abre ações relacionadas em um menu suspenso. Use-o quando uma ação é a escolha habitual e algumas outras ficam ao lado dela.",
+    "SwipeToReveal": "Uma linha que você desliza para revelar ações abaixo dela, como uma linha de lista nativa de dispositivos móveis. Use-o para ações como arquivar ou excluir em telas de toque.",
+    "Switch": "Um botão liga/desliga com estilo de interruptor físico. Use-o para configurações que têm efeito imediato.",
+    "Tabs": "Uma fileira de abas que alterna entre painéis, com um indicador deslizante sob a aba ativa. Use-as para dividir conteúdo relacionado em visualizações numa mesma página.",
+    "Tag": "Uma etiqueta compacta que categoriza ou anota um item em linha. Use-a para status, categorias e palavras-chave.",
+    "Textarea": "Um campo de texto de várias linhas que pode crescer com o conteúdo. Use-o para comentários, notas e outros textos longos.",
+    "Toaster": "O contêiner que mostra as notificações criadas por toast(). Monte-o uma vez, em qualquer lugar do seu app.",
+    "Toolbar": "Uma faixa de controles relacionados com foco pelas setas do teclado e um menu de excedentes para o que não cabe. Use-a para agrupar as ações de uma tela ou de um editor.",
+    "Tooltip": "Um rótulo curto que aparece ao passar o mouse ou focar. Use-o para nomear um botão de ícone ou explicar um controle.",
+    "Tree": "Uma lista recuada e recolhível para dados aninhados, com seleção única ou múltipla. Use-a para exploradores de arquivos e navegação aninhada.",
+    "TreeSelect": "Um menu suspenso com um Tree no painel, para escolher um ou mais nós de uma hierarquia. Use-o quando um campo de formulário recebe um valor de dados aninhados.",
+    "PasswordInput": "Um campo de senha com um botão para revelar e uma dica de requisitos. Use-o em formulários de cadastro e login.",
+    "Sortable": "Uma lista que você reordena arrastando ou pelo teclado. Use-o para qualquer ordem que as pessoas definem à mão, em uma lista ou entre várias.",
+    "BreadcrumbItem": "Um link, ou a página atual, em uma trilha Breadcrumb. Use-o apenas dentro de um Breadcrumb.",
+    "BreadcrumbSeparator": "O separador entre dois BreadcrumbItem, um chevron a menos que você passe seu próprio conteúdo. Use-o apenas dentro de um Breadcrumb.",
+    "Rating": "Uma fileira de estrelas que você clica, arrasta ou ajusta com as setas, com meias estrelas opcionais. Use-o para avaliações e feedback.",
+    "Timeline": "Uma lista ordenada de etapas ligadas por uma linha, em que cada etapa pode conter qualquer conteúdo. Use-a para um histórico, o andamento de um pedido ou um changelog.",
+    "ButtonGroup": "Uma linha ou coluna contínua de botões que também pode funcionar como alternadores simples ou múltiplos. Use-o para ações ou opções relacionadas que andam juntas.",
+    "CommandPalette": "Uma lista de comandos com busca em um diálogo, aberta por um botão ou um atalho de teclado como ⌘K. Use-a para que as pessoas cheguem a qualquer ação ou página pelo teclado.",
+    "Stepper": "Uma sequência de etapas que mostra o progresso e permite navegar entre elas. Use-o para checkouts, fluxos de cadastro e assistentes de configuração.",
+    "Breadcrumb": "Uma trilha de links do topo do site até a página atual. Use-o em páginas profundas de uma hierarquia.",
+    "AvatarGroup": "Vários avatares empilhados em uma linha sobreposta, com um contador para os que não cabem. Use-o para mostrar quem faz parte de uma equipe, um chat ou um documento.",
+    "ScrollArea": "Uma área de rolagem com barras finas no estilo do tema e bordas esmaecidas, em uma ou nas duas direções. Use-a para painéis e listas que rolam dentro da página."
   },
   "gettingStarted": {
-    "darkModeIntro": "O modo escuro é só CSS. Ele segue <code>&lt;html data-theme=\"dark\"&gt;</code> e, na falta dele, usa <code>prefers-color-scheme</code>. O vael-ui não inclui nenhum seletor de tema. <code>useColorScheme()</code> acompanha as mudanças de preferência do sistema e salva a escolha pela opção <code>persist</code> que você passar:",
-    "appearanceHeadIntro": "Se você salvar o modo de cor ou o tamanho da fonte do aplicativo em <code>localStorage</code>, coloque este script no <code>&lt;head&gt;</code> do HTML antes do código do aplicativo. Ele restaura ambos antes da primeira exibição. Salve um valor CSS como <code>13px</code> ou <code>1rem</code> em <code>app-font-size</code>. Os componentes herdam esse valor, a menos que você defina <code>theme.fontSize</code> para eles.",
+    "darkModeIntro": "O modo escuro é só CSS. Ele segue <code>&lt;html data-theme=\"dark\"&gt;</code> e, na falta dele, usa <code>prefers-color-scheme</code>. O vael-ui não inclui nenhum seletor de tema, mas <code>useColorScheme()</code> acompanha as mudanças na preferência do sistema e salva a escolha pela opção <code>persist</code> que você passar:",
+    "appearanceHeadIntro": "Se você salvar o modo de cor ou um tamanho de fonte para todo o app em <code>localStorage</code>, coloque este script no <code>&lt;head&gt;</code> do HTML, antes do bundle do app. Ele restaura ambos antes da primeira exibição. Salve um tamanho de fonte CSS como <code>13px</code> ou <code>1rem</code> em <code>app-font-size</code>. Os componentes herdam esse valor, a menos que você defina um <code>theme.fontSize</code> com escopo.",
     "darkModeTitle": "Modo escuro",
     "directivesIntro": "<code>v-tooltip</code> e <code>v-scroll-mask</code> não são registradas globalmente por padrão. Se você usa alguma delas em mais de um componente, registre-as uma vez:",
     "directivesNote": "<code>v-tooltip</code> também precisa de um <code>&lt;TooltipHost /&gt;</code> montado no seu app. Em um app Vapor, importe as duas diretivas de <code>vael-ui/vapor</code>.",
     "ssrTitle": "Renderização no servidor",
     "ssrIntro": "As duas builds renderizam no servidor e são hidratadas no navegador. {link} configura tudo abaixo para você.",
     "ssrIntroLink": "O módulo do Nuxt",
-    "ssrNoExternal": "Com Vite SSR puro, deixe o Vite empacotar o vael-ui para o servidor. Cada componente importa o próprio CSS, e o Node não consegue carregar arquivos CSS sozinho:",
-    "ssrTeleports": "Diálogos, popovers, toasts e tooltips renderizam no <code>&lt;body&gt;</code> via <code>&lt;Teleport&gt;</code>. O Vue retorna esse HTML separado em <code>ctx.teleports</code>. Adicione-o no início do <code>&lt;body&gt;</code>, antes do elemento da sua app, ou a hidratação falha:",
+    "ssrNoExternal": "Com renderização no servidor pelo Vite puro, deixe o Vite empacotar o vael-ui para o servidor. Cada componente importa o próprio CSS, e o Node não consegue carregar arquivos CSS sozinho:",
+    "ssrTeleports": "Diálogos, popovers, toasts e tooltips renderizam no <code>&lt;body&gt;</code> via <code>&lt;Teleport&gt;</code>. O Vue retorna esse HTML separado, em <code>ctx.teleports</code>. Adicione-o no início do <code>&lt;body&gt;</code>, antes do elemento da sua app, ou a página não vai hidratar corretamente:",
     "ssrLocale": "Defina <code>locale</code> no <code>ConfigProvider</code> quando renderizar num servidor. Sem isso, datas, números e o primeiro dia da semana seguem o idioma do servidor e mudam quando a página roda no navegador.",
     "directivesTitle": "Diretivas",
     "installIntro": "O vael-ui está no npm. Instale-o com seu gerenciador de pacotes:",
     "installTitle": "Instalar",
-    "intro": "Uma biblioteca de componentes para Vue 3 com uma build completa para Vue Vapor. As animações usam CSS simples por padrão, ou você pode usar sua própria biblioteca de animação.",
+    "intro": "O vael-ui é uma biblioteca de componentes para Vue 3 com uma build completa para Vue Vapor. Cada componente anima por um único sistema de movimento, e você pode animar qualquer parte com a sua própria biblioteca.",
     "title": "Primeiros passos",
     "usageImportNote": "Cada componente importa seus próprios estilos. Adicione esta importação só se você usa uma versão anterior à 0.2.0 ou quer carregar todos os estilos de uma vez. Veja {link} para configurar os estilos base.",
     "usageImportNoteLink": "Estilo e camadas em cascata",
     "usageImportNoteTitle": "Apenas antes da 0.2.0",
-    "usageIntro": "Depois importe os componentes de <code>'vael-ui'</code> para a build VDOM clássica. Para a build Vapor (o modo do Vue 3.6 sem DOM virtual), importe de <code>'vael-ui/vapor'</code>. As props são as mesmas nas duas:",
+    "usageIntro": "Importe os componentes de <code>'vael-ui'</code> para a build VDOM. Para a build Vapor (o modo do Vue 3.6 sem DOM virtual), importe de <code>'vael-ui/vapor'</code>. As props são as mesmas nas duas:",
     "fontIntro": "Os componentes usam a fonte da página ao redor e não trazem fonte própria. Sem uma fonte, o navegador usa sua fonte serifada padrão, então defina uma fonte no <code>body</code>:",
     "usageTitle": "Uso",
-    "vaporIntro": "As duas builds vêm do mesmo pacote e do mesmo código-fonte, com as mesmas props. Escolha a que sua app usa. Cada página de componente tem um seletor para compará-las.",
+    "vaporIntro": "As duas builds vêm no mesmo pacote, do mesmo código-fonte, com as mesmas props. Escolha a que sua app usa. Cada página de componente tem um seletor para compará-las.",
     "vaporPinIntro": "A build Vapor precisa do Vue 3.6, que ainda é uma versão prévia. Instale a versão exata usada para compilar o vael-ui, <code>{version}</code>. Um intervalo como <code>^3.5.0</code> pode instalar o Vue 3.5, que não tem modo Vapor, e outra versão prévia pode quebrar os componentes compilados:",
     "vaporAppIntro": "Uma app Vapor começa com <code>createVaporApp</code> e importa componentes, composables e diretivas de <code>'vael-ui/vapor'</code>. Seus próprios componentes passam para Vapor com <code>&lt;script setup vapor&gt;</code>:",
     "vaporForceIntro": "Para não escrever o atributo <code>vapor</code> em cada arquivo, ative <code>features.vapor</code> no <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou mais recente. Assim, todo componente <code>&lt;script setup&gt;</code> da sua app é compilado como Vapor:",
     "vaporMixTitle": "Usar as duas builds",
-    "vaporMixIntro": "Uma app clássica também pode receber componentes Vapor. Isso ajuda quando você migra uma app existente para Vapor aos poucos. Mantenha <code>createApp</code>, instale o <code>vaporInteropPlugin</code> do Vue e importe de <code>'vael-ui/vapor'</code> nos componentes marcados com <code>vapor</code>. Para uma app nova, escolha uma build só. Um componente marcado com <code>vapor</code> também importa diretivas como <code>vTooltip</code> de <code>'vael-ui/vapor'</code> por conta própria, porque uma diretiva registrada com <code>app.directive</code> só chega aos componentes clássicos.",
+    "vaporMixIntro": "Uma app VDOM também pode receber componentes Vapor, então você pode migrar uma app existente para Vapor aos poucos. Mantenha <code>createApp</code>, instale o <code>vaporInteropPlugin</code> do Vue e importe de <code>'vael-ui/vapor'</code> nos componentes marcados com <code>vapor</code>. Para uma app nova, escolha uma build só. Um componente marcado com <code>vapor</code> também importa diretivas como <code>vTooltip</code> de <code>'vael-ui/vapor'</code>, porque <code>app.directive</code> só as registra para componentes VDOM.",
     "vaporTitle": "Suporte Vue Vapor"
   },
   "globalSetup": {
     "allTogetherIntro": "Monte os quatro uma vez, no template raiz do seu app:",
     "allTogetherTitle": "Todos juntos",
-    "dialogHostIntro": "Renderiza os diálogos abertos por código com <code>openDialog()</code> ou <code>confirmAction()</code>. Você não precisa dele para um <code>&lt;Dialog v-model:open&gt;</code> no seu próprio template. Ele não tem props nem configuração.",
+    "dialogHostIntro": "Renderiza os diálogos que você abre por código com <code>openDialog()</code> ou <code>confirmAction()</code>. Um <code>&lt;Dialog v-model:open&gt;</code> no seu próprio template não precisa dele. Ele não tem props nem configuração.",
     "dialogHostTitle": "DialogHost",
-    "intro": "O vael-ui tem quatro singletons. Monte cada um uma vez, em qualquer lugar do seu app, e todo componente que precisar dele vai encontrá-lo.",
+    "intro": "O vael-ui tem quatro singletons: componentes que você monta uma vez, em qualquer lugar do seu app, para todos os outros componentes usarem.",
     "title": "Configuração global",
-    "toasterIntro": "Renderiza os toasts criados por {code}. Ele tem suas próprias props, por isso está documentado em {link}.",
+    "toasterIntro": "Renderiza os toasts que {code} cria. Ele tem suas próprias props, por isso está documentado em {link}.",
     "toasterIntroLink": "sua própria página",
     "toasterTitle": "Torradeira",
-    "tooltipHostIntro": "Renderiza cada <code>v-tooltip</code>. Se ele não estiver montado, as tooltips nunca aparecem e nenhum erro é exibido.",
+    "tooltipHostIntro": "Renderiza cada <code>v-tooltip</code>. Se ele não estiver montado, as tooltips nunca aparecem e nenhum erro diz por quê.",
     "tooltipHostOptions": "Ele aceita as mesmas opções que cada tooltip pode sobrescrever:",
     "tooltipHostTitle": "Dica de ferramentaHost",
-    "popoverHostIntro": "Renderiza os popovers abertos por código com <code>openPopover()</code>, ou com <code>confirmAction()</code> e <code>surface: 'popover'</code>. Você não precisa dele para um <code>&lt;Popover v-model:open&gt;</code> no seu próprio template. Ele não tem props nem configuração.",
+    "popoverHostIntro": "Renderiza os popovers que você abre por código com <code>openPopover()</code>, ou com <code>confirmAction()</code> e <code>surface: 'popover'</code>. Um <code>&lt;Popover v-model:open&gt;</code> no seu próprio template não precisa dele. Ele não tem props nem configuração.",
     "popoverHostTitle": "PopoverHost"
   },
   "header": {
@@ -172,39 +207,53 @@
     "sizeSm": "Pequeno",
     "sizeMd": "Médio",
     "sizeLg": "Grande",
-    "animations": "Animações",
+    "animations": "Movimento",
+    "loader": "Carregamento",
+    "loaderRing": "Anel",
+    "loaderDots": "Pontos",
+    "loaderBars": "Barras",
+    "loaderComet": "Cometa",
+    "loaderDither": "Pontilhado",
     "radiusRounded": "Arredondado",
     "radiusSharp": "Afiado",
     "radiusSoft": "Macio",
     "theme": "Personalizar tema",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "appearance": "Aparência",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema",
+    "demos": "Demos",
+    "general": "Geral",
+    "mode": "Modo",
+    "fontSize": "Tamanho da fonte"
   },
   "home": {
-    "tagline": "Mais de 60 componentes para Vue 3, compilados de uma única fonte para o build VDOM clássico e para o Vue Vapor.",
+    "tagline": "Mais de 60 componentes para Vue 3, com um sistema de movimento integrado. Uma única fonte compila para a build VDOM e para o Vue Vapor.",
     "browseComponents": "Navegar pelos componentes",
     "eyebrow": "Biblioteca de componentes Vue 3",
-    "featureAnimationBody": "CSS simples por padrão ou use você mesmo com GSAP ou motion-v.",
-    "featureAnimationTitle": "Traga sua própria animação",
+    "featureAnimationBody": "Cada componente traz seu próprio movimento. Ajuste-o com a prop motion e molas, ou anime qualquer parte com GSAP ou motion.",
+    "featureAnimationTitle": "Um só sistema de movimento",
     "featureI18nBody": "Cada string integrada é traduzida por meio de sua própria instância i18n.",
-    "featureI18nTitle": "i18n integrado",
-    "featurePrimitivesBody": "Sem a proliferação de componentes compostos e sem contexto oculto para conectar.",
+    "featureI18nTitle": "Traduções integradas",
+    "featurePrimitivesBody": "Sem componentes compostos para montar e sem contexto oculto para conectar.",
     "featurePrimitivesTitle": "Um componente por primitivo",
-    "featureSsrBody": "Cada componente verifica se há um navegador real antes de tocar em window ou document. Ele renderiza com segurança no Nuxt, em apps renderizados no servidor e em geradores de sites estáticos. Este site de documentação é feito com Vite SSG a partir dos mesmos componentes.",
-    "featureSsrTitle": "Pronto para SSR",
-    "featureVaporBody": "Cada componente é compilado através do modo Vapor do Vue 3.6 da mesma fonte.",
-    "featureVaporTitle": "Construção Real Vapor, não um calço",
+    "featureSsrBody": "Cada componente verifica se há um navegador antes de tocar em window ou document, então ele renderiza no Nuxt, em apps renderizados no servidor e em geradores de sites estáticos. Este site de documentação é feito com Vite SSG a partir dos mesmos componentes.",
+    "featureSsrTitle": "Pronto para renderização no servidor",
+    "featureVaporBody": "Cada componente é compilado pelo modo Vapor do Vue 3.6 a partir da mesma fonte.",
+    "featureVaporTitle": "Uma build Vapor de verdade, não um shim",
     "headline": "Componentes que são compilados diretamente no Vapor, e não em torno dele.",
-    "featureSkillBody": "Um pacote complementar que ensina ao Claude Code, GitHub Copilot, Codex e outros agentes a API real de cada componente. Ele é gerado a partir dos próprios tipos da biblioteca, não escrito à mão.",
+    "featureSkillBody": "Um pacote complementar que dá ao Claude Code, GitHub Copilot, Codex e outros agentes a API real de cada componente. Ele é gerado a partir dos próprios tipos do vael-ui, não escrito à mão.",
     "featureSkillTitle": "Skill para agentes de IA",
     "themeLabel": "Experimente uma cor:",
     "newTag": "Novo",
-    "newText": "Cada prop documentada no seu editor",
+    "newText": "0.5.0: um novo sistema de movimento",
     "showcaseLabel": "Demo ao vivo feita com vael-ui"
   },
   "i18nKeys": {
     "copyIntro": "Copie isto nos seus arquivos de idioma sob a chave uiKit e depois traduza os valores:",
     "englishDefault": "Padrão em inglês",
-    "intro": "Cada texto embutido (o botão de fechar do diálogo, o de dispensar um toast, os estados vazios e assim por diante) tem um padrão em inglês. Para traduzi-los, passe sua própria instância de i18n ao ConfigProvider. Ele lê do seu catálogo existente sob o namespace uiKit, então não há nada extra para instalar. As chaves que você não traduziu mantêm o texto padrão em inglês, sem avisos no console.",
+    "intro": "Cada texto embutido, como o botão de fechar do diálogo, o de dispensar um toast e os estados vazios, tem um padrão em inglês. Para traduzi-los, passe sua própria instância de i18n ao ConfigProvider. Ele lê do seu catálogo existente sob o namespace uiKit, então não há nada extra para instalar. As chaves que você não traduziu mostram o padrão em inglês. Se você traduzir algumas chaves mas não todas, as builds de desenvolvimento registram um aviso por idioma listando as que faltam.",
     "key": "Chave",
     "title": "Traduzindo vael-ui"
   },
@@ -217,9 +266,9 @@
     "link": "Link para"
   },
   "nav": {
-    "animationIntegrationGuide": "Traga sua própria animação",
+    "animationIntegrationGuide": "Personalizar o movimento",
     "components": "Componentes",
-    "gettingStarted": "Começando",
+    "gettingStarted": "Primeiros passos",
     "github": "GitHub",
     "sponsor": "Patrocinar",
     "globalSetup": "Configuração global",
@@ -227,83 +276,89 @@
     "home": "vael-ui",
     "i18nKeysGuide": "Traduzindo vael-ui",
     "search": "Componentes de pesquisa…",
-    "stylingAndLayersGuide": "Estilo e camadas em cascata",
+    "stylingAndLayersGuide": "Estilos e camadas em cascata",
     "tailwindGuide": "Usando com Tailwind",
     "menu": "Menu",
-    "openMenu": "Abrir menu",
     "composables": "Combináveis",
     "autoImportGuide": "Importação automática",
     "nuxtGuide": "Nuxt",
-    "skillGuide": "Habilidade de agente de IA",
+    "skillGuide": "Skill para agentes de IA",
     "directives": "Diretivas",
     "previous": "Anterior",
     "next": "Próximo",
     "pager": "Páginas anterior e seguinte",
     "mainNav": "Principal",
-    "sidebarNav": "Documentação"
+    "sidebarNav": "Documentação",
+    "searchShort": "Pesquisar",
+    "support": "Apoiar",
+    "searchAll": "Pesquise componentes, props e guias…"
   },
   "pageNotes": {
-    "Resizable": "A barra lateral deste site foi construída com Resizable. \nArraste a borda direita para experimentar.",
-    "ContextMenu": "Pelo teclado, o menu abre com Shift+F10 ou a tecla Menu, que disparam contextmenu no elemento em foco. Por isso, torne o alvo envolvido focável (tabindex=\"0\") e dê a ele um nome acessível.",
-    "Tree": "As linhas são atualizadas a partir do estado reativo, então um slot #node personalizado deve ler valores reativos (props, refs, computeds), não variáveis comuns capturadas do pai.",
-    "DataTable": "Tabelas grandes: com centenas de linhas, adicione virtualize e um scroll-height, por exemplo scroll-height=\"400px\". A tabela passa a desenhar só as linhas visíveis, então ordenar, selecionar e rolar continuam rápidos. Com mais de 150 linhas na tela ao mesmo tempo, as linhas também deixam de deslizar para o lugar ao ordenar."
+    "Resizable": "A barra lateral deste site foi construída com Resizable. Arraste a borda direita para experimentar.",
+    "ContextMenu": "Pelo teclado, o menu abre com Shift+F10 ou a tecla Menu, que disparam contextmenu no elemento em foco. Torne o alvo envolvido focável (tabindex=\"0\") e dê a ele um nome acessível.",
+    "Tree": "As linhas são atualizadas a partir do estado reativo. Em um slot #node personalizado, leia valores reativos (props, refs, computeds), não variáveis comuns capturadas do pai.",
+    "DataTable": "Para centenas de linhas, adicione virtualize e um scroll-height, como scroll-height=\"400px\". A tabela passa a desenhar só as linhas visíveis, então ordenar, selecionar e rolar continuam rápidos. Acima de 150 linhas renderizadas, as linhas também deixam de deslizar para o lugar ao ordenar."
   },
   "stylingLayers": {
-    "intro": "O vael-ui é distribuído em {layer}. CSS sem camada sempre vence CSS em camadas, qualquer que seja a especificidade. Assim, um reset base simples e sem camada sobrescreve os estilos internos do vael-ui sem nenhum aviso. Para corrigir isso, coloque seus estilos base em uma camada também e ordene essa camada primeiro.",
+    "intro": "O vael-ui é distribuído em {layer}. CSS sem camada sempre vence CSS em camadas, qualquer que seja a especificidade, então um reset base sem camada sobrescreve os estilos do vael-ui sem nenhum aviso. Para evitar isso, coloque seus estilos base em uma camada também e ordene essa camada primeiro.",
     "orderNote": "Aqui a ordem de importação só define a posição da camada. Uma sobrescrita sem camada sempre vence, onde quer que seja carregada.",
     "bundlerNoteTitle": "Apenas antes da 0.2.0",
     "bundlerNote": "Cada componente importa seus próprios estilos. Adicione a importação abaixo só se você usa uma versão anterior à 0.2.0 ou quer carregar todos os estilos de uma vez.",
-    "overrideNote": "Quando você sobrescreve um componente de propósito (com a prop {code} ou um utilitário do Tailwind), quer que sua regra vença. Mantenha esse CSS sem camada, que é o padrão. Veja {link}.",
+    "overrideNote": "Quando você sobrescreve um componente de propósito, com a prop {code} ou um utilitário do Tailwind, quer que sua regra vença. Mantenha esse CSS sem camada, que é o padrão. Veja {link}.",
     "overrideNoteLink": "Usando com Tailwind",
     "title": "Estilo e camadas em cascata",
     "cascadeLayersTitle": "Ordem das camadas",
     "colorsTitle": "Cores",
-    "cssVariablesIntro": "Cada valor de cor, raio, sombra e movimento do vael-ui vem de uma propriedade personalizada de CSS. Sobrescreva qualquer uma delas na sua própria folha de estilo sem camada:",
-    "cssVariablesThemeNote": "A prop <code>theme</code> do <code>ConfigProvider</code> define <code>primary</code>, <code>danger</code>, <code>radius</code> e <code>fontSize</code>. Sem <code>fontSize</code>, os componentes seguem o tamanho de fonte do <code>html</code>, campos de formulário incluídos. Se for menor que 16px, chame <code>preventFocusZoom()</code> uma vez para o iPhone não ampliar os campos. Os demais valores se ajustam com CSS.",
+    "cssVariablesIntro": "As cores, raios, sombras e tempos de movimento padrão do vael-ui vêm de propriedades personalizadas de CSS. Sobrescreva qualquer uma delas na sua própria folha de estilo sem camada:",
+    "cssVariablesThemeNote": "A prop <code>theme</code> do <code>ConfigProvider</code> define <code>primary</code>, <code>danger</code>, <code>radius</code> e <code>fontSize</code>. Sem <code>fontSize</code>, os componentes seguem o tamanho de fonte do <code>html</code>, campos de formulário incluídos. Se for menor que 16 px, chame <code>preventFocusZoom()</code> uma vez para o iPhone não ampliar os campos. Defina os demais tokens com CSS.",
     "cssVariablesTitle": "Variáveis ​​CSS",
     "default": "Padrão",
     "description": "Descrição",
-    "elevationTitle": "Elevação",
+    "elevationTitle": "Elevação e empilhamento",
     "motionTitle": "Movimento",
     "rows": {
       "border": "Cor padrão da borda.",
       "borderStrong": "Cor de borda mais forte para bordas enfatizadas.",
-      "contrastVariant": "Cor do texto/ícone sobre esta cor.",
-      "danger": "Cor destrutiva/erro.",
-      "durationDrawer": "Duração das transições de slides de gaveta/folha.",
-      "durationEnter": "Duração para transições de entrada/abertura.",
-      "durationExit": "Duração das transições de saída/fechamento.",
-      "durationPress": "Duração do feedback de pressionar/tocar.",
+      "contrastVariant": "Cor do texto e dos ícones sobre esta cor.",
+      "danger": "Cor de ações destrutivas e de erro.",
+      "durationDrawer": "Quanto tempo um drawer ou sheet leva para deslizar e abrir.",
+      "durationEnter": "Duração da abertura e da entrada.",
+      "durationExit": "Duração do fechamento e da saída.",
+      "durationIndicator": "Quanto tempo o destaque de hover em listas e menus leva para deslizar até a próxima linha.",
+      "durationIndicatorWide": "O mesmo deslizamento para as linhas largas de MenuList, Tree e DataTable.",
+      "easeIndicator": "Easing do destaque de hover.",
+      "indicatorBg": "Cor do destaque de hover. Defina-a em vez de um fundo :hover na linha, que pintaria por cima do destaque.",
+      "durationPress": "Duração do feedback ao pressionar.",
       "durationToast": "Duração da entrada de um toast.",
       "durationToastExit": "Duração da saída de um toast.",
       "durationTooltip": "Duração da abertura de uma tooltip.",
       "durationTooltipExit": "Duração do fechamento de uma tooltip.",
-      "easeDrawer": "Facilitação para corrediças ancoradas nas bordas (gavetas, folhas).",
-      "easeInOut": "Facilitando o movimento na tela (redimensionar, reposicionar).",
-      "easeOut": "Atenuação padrão para transições de entrada/estabelecimento.",
-      "easeToast": "Facilitando as transições do brinde.",
-      "hoverVariant": "Passe o estado para esta cor.",
+      "easeDrawer": "Easing para deslizes a partir de uma borda, como drawers e sheets.",
+      "easeInOut": "Easing para movimentos na tela, como redimensionar e reposicionar.",
+      "easeOut": "Easing padrão para elementos que entram e se acomodam.",
+      "easeToast": "Easing dos toasts.",
+      "hoverVariant": "Cor de hover desta cor.",
       "info": "Cor informativa.",
       "muted": "Fundo sutil para superfícies secundárias.",
-      "mutedHover": "Estado de foco para fundos silenciados.",
-      "overlay": "Cor do pano de fundo atrás de modais e caixas de diálogo.",
+      "mutedHover": "Cor de hover dos fundos atenuados.",
+      "overlay": "Cor do fundo atrás de diálogos e outros modais.",
       "panelShadow": "Sombra projetada para painéis flutuantes.",
-      "primary": "Cor primária da ação (botões, links, detalhes de foco).",
-      "primaryContrast": "Cor do texto/ícone acima da cor primária.",
-      "primaryHover": "Estado de foco para a cor primária.",
-      "radius": "Raio do canto base para controles (botões, entradas, emblemas).",
-      "radiusSurface": "Raio de canto limitado para superfícies grandes (painéis, cards, tabelas), para que um raio alto não as transforme em pílulas.",
+      "primary": "Cor da ação primária: botões, links e detalhes de foco.",
+      "primaryContrast": "Cor do texto e dos ícones sobre a cor primária.",
+      "primaryHover": "Cor de hover da cor primária.",
+      "radius": "Raio de canto base para controles como botões, campos e badges.",
+      "radiusSurface": "Raio de canto para superfícies grandes como painéis, cards e tabelas. Ele é limitado, para que um raio alto não as transforme em pílulas.",
       "success": "Cor do sucesso.",
-      "surface": "Plano de fundo base para painéis, cartões e caixas de diálogo.",
+      "surface": "Fundo base para painéis, cards e diálogos.",
       "text": "Cor primária do texto.",
-      "textMuted": "Cor do texto secundária/sem som.",
-      "toastOffset": "Deslocamento da borda da pilha de torradas.",
+      "textMuted": "Cor do texto secundário.",
+      "toastOffset": "Distância da borda da tela até a pilha de toasts.",
       "warning": "Cor de aviso.",
       "zDialog": "Ordem de empilhamento para diálogos.",
-      "zPopover": "Ordem de empilhamento para popovers, menus e seleções.",
+      "zPopover": "Ordem de empilhamento de popovers, menus e selects.",
       "zToast": "Ordem de empilhamento para torradas.",
-      "zTooltip": "Ordem de empilhamento das dicas de ferramentas (acima).",
-      "joinFrame": "No elemento com borda do seu controle, não no Field. Valor opcional: sm, md ou lg.",
+      "zTooltip": "Ordem de empilhamento das tooltips, a camada mais alta.",
+      "joinFrame": "Vai no elemento com borda do seu controle, não no Field. Valor opcional: sm, md ou lg.",
       "joinStart": "Uma célula ou um rótulo junto fica na borda inicial do controle.",
       "joinEnd": "Uma célula ou um rótulo junto fica na borda final do controle.",
       "joinFocused": "O controle tem o foco.",
@@ -311,27 +366,27 @@
       "joinAttached": "O rótulo é desenhado como uma célula junta.",
       "cellBg": "Fundo das células juntas: um rótulo junto, #prepend e #append.",
       "cellColor": "Cor do texto das células juntas.",
-      "labelWidth": "Largura de um rótulo start/end. Defina num elemento pai para alinhar um formulário inteiro."
+      "labelWidth": "Largura de um rótulo inicial ou final. Defina num elemento pai para alinhar um formulário inteiro."
     },
     "shapeTitle": "Forma",
     "variable": "Variável",
     "joinTitle": "Juntar o seu próprio controle a um Field",
-    "joinIntro": "O rótulo <code>attached</code> e as células <code>#prepend</code>/<code>#append</code> de um Field se juntam à moldura com borda do controle. Os controles do vael-ui marcam essa moldura com <code>data-ui-frame</code>. Adicione o mesmo atributo ao seu próprio controle e ele também se junta. Dê a ele o tamanho do controle (<code>sm</code>, <code>md</code> ou <code>lg</code>) e as células acompanham o raio dos cantos e o tamanho da fonte.",
-    "joinLayerNote": "As regras de junção do Field ficam em {layer}, então, se os estilos do seu controle estão fora de uma camada, eles vencem. Nesse caso, achate os cantos e mude a cor da borda você mesmo, usando os atributos que o Field coloca na raiz:",
+    "joinIntro": "O rótulo <code>attached</code> de um Field e suas células <code>#prepend</code> e <code>#append</code> se juntam à moldura com borda do controle. Os próprios controles do vael-ui marcam essa moldura com <code>data-ui-frame</code>. Adicione o mesmo atributo ao seu próprio controle e ele também se junta. Dê a ele o tamanho do controle (<code>sm</code>, <code>md</code> ou <code>lg</code>) e as células acompanham o raio dos cantos e o tamanho da fonte.",
+    "joinLayerNote": "As regras de junção do Field ficam em {layer}, então os estilos sem camada do seu próprio controle vencem. Nesse caso, achate os cantos e mude a cor da borda você mesmo, usando os atributos que o Field coloca na raiz:",
     "joinCellNote": "Dê a um controle dentro de uma célula o seu próprio <code>aria-label</code>. Ele é independente, então o rótulo do Field não o nomeia.",
     "attributesTitle": "Atributos do Field",
     "variablesTitle": "Variáveis do Field",
     "attribute": "Atributo",
     "setWhen": "Presente quando",
     "advancedTitle": "Avançado",
-    "advancedNote": "Você não vai precisar disto no uso diário. É para criar seus próprios controles que se integram ao vael-ui."
+    "advancedNote": "A maioria dos apps não precisa disto. É para criar seus próprios controles que se integram ao vael-ui."
   },
   "tailwind": {
-    "layerNote": "O vael-ui é distribuído em {layer}. O Tailwind v4 também coloca seus utilitários em uma camada, então a ordem de importação importa. Importe o CSS do vael-ui antes da entrada do Tailwind (como mostrado abaixo) para que a camada dele seja registrada primeiro. Assim a camada de utilitários do Tailwind fica depois na cascata, e um utilitário do Tailwind em um componente do vael-ui sempre vence. Você não precisa de {important} nem de brigas de especificidade. Veja {link} para entender como as camadas funcionam.",
+    "layerNote": "O vael-ui é distribuído em {layer}. O Tailwind v4 também coloca seus utilitários em uma camada, então a ordem de importação importa. Importe o CSS do vael-ui antes da entrada do Tailwind, como mostrado abaixo, para que a camada dele seja registrada primeiro. Assim os utilitários do Tailwind ficam depois na cascata, e um utilitário do Tailwind em um componente do vael-ui sempre vence, sem {important} nem brigas de especificidade. Veja {link} para entender como as camadas funcionam.",
     "layerNoteLink": "Estilo e camadas em cascata",
     "orderWarningTitle": "Mantenha essa importação primeiro",
-    "orderWarning": "Cada componente carrega o próprio CSS, então você não importa nenhuma folha de estilo para o vael-ui. O Tailwind v4 é a única exceção. Os utilitários dele ficam em uma camada de cascata própria, e a primeira folha de estilo que nomeia uma camada define a ordem. Importe <code>vael-ui/layers.css</code> antes da sua entrada do Tailwind, no arquivo de entrada principal do app. Ele só nomeia a camada do vael-ui e não carrega CSS de componentes, então a ordem se mantém quando os componentes carregam o CSS depois.",
-    "mergingIntro": "Cada componente aceita uma prop <code>ui</code> para as classes das suas partes (por exemplo <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>). Para resolver ali utilitários do Tailwind em conflito como o <code>tailwind-merge</code> faz (vence o último por propriedade), configure-o uma vez:",
+    "orderWarning": "Cada componente carrega o próprio CSS, então o vael-ui não precisa de nenhuma importação de folha de estilo, exceto com o Tailwind v4. Os utilitários dele ficam em uma camada de cascata própria, e a primeira folha de estilo que nomeia uma camada define a ordem. Importe <code>vael-ui/layers.css</code> antes da sua entrada do Tailwind, no arquivo de entrada principal do app. Ele só nomeia a camada do vael-ui e não carrega CSS de componentes, então a ordem se mantém quando os componentes carregam o CSS depois.",
+    "mergingIntro": "Cada componente aceita uma prop <code>ui</code> para as classes das suas partes, como <code>:ui=\"{'{'} root: 'my-class' {'}'}\"</code>. Para resolver ali utilitários do Tailwind em conflito como o <code>tailwind-merge</code> faz, em que vence o último por propriedade, configure-o uma vez:",
     "mergingNote": "Agora cada classe de parte <code>ui.*</code> da árvore passa pelo <code>twMerge</code>.",
     "mergingTitle": "Mesclando classes com tailwind-merge"
   },
@@ -339,10 +394,10 @@
     "actions": "Ações",
     "dataDisplay": "Exibição de dados",
     "feedback": "Opinião",
-    "formsAndInputs": "Formulários",
+    "formsAndInputs": "Formulários e campos",
     "gestures": "Gestos",
-    "layoutAndStructure": "Disposição",
-    "navigationAndMenus": "Navegação",
+    "layoutAndStructure": "Layout e estrutura",
+    "navigationAndMenus": "Navegação e menus",
     "overlays": "Sobreposições",
     "selection": "Seleção",
     "setup": "Configurar"
@@ -350,7 +405,8 @@
   "notFound": {
     "body": "A página que você procura não existe ou foi movida.",
     "home": "De volta para casa",
-    "title": "Página não encontrada"
+    "title": "Página não encontrada",
+    "didYouMean": "Você quis dizer:"
   },
   "composable": {
     "noParameters": "Não aceita argumentos.",
@@ -359,73 +415,82 @@
     "returns": "Devoluções"
   },
   "composablesTaxonomy": {
-    "overlaysAndConfirmation": "Sobreposições",
-    "positioningAndData": "Posicionamento",
+    "overlaysAndConfirmation": "Sobreposições e confirmação",
+    "positioningAndData": "Posicionamento e dados",
     "utilities": "Utilitários",
+    "motion": "Movimento",
     "dragAndDrop": "Arrastar e soltar"
   },
   "composableDescriptions": {
-    "confirmAction": "Um fluxo de confirmação que lida com operações assíncronas, exibido como um diálogo centralizado ou um popover ancorado a um gatilho. Ele aguarda seu handler antes de fechar.",
-    "useDialogService": "Abre qualquer componente como diálogo a partir do código em vez do markup. Retorna uma promise que é resolvida com o valor com que o diálogo fecha.",
-    "usePopoverService": "Abre qualquer componente como popover ancorado a partir do código em vez do markup. Retorna uma promise que é resolvida com o valor com que o popover fecha.",
-    "useToast": "Mostra notificações toast de qualquer lugar do seu app, com atalhos por variante e um helper de promise que troca um toast de carregamento por sucesso ou erro.",
-    "useTour": "A máquina de estados headless por trás do Tour: navegação por etapas e grupos, sem DOM nem renderização embutidos.",
-    "useAsyncLoading": "Acompanha cada promise pendente que você passar, para que o estado de carregamento só seja limpo quando todas tiverem sido resolvidas.",
-    "useNumberFormat": "Formatação e análise de números sensível ao locale, sempre sincronizadas, para que o texto digitado e a exibição formatada coincidam.",
-    "useColorScheme": "Alterna entre os modos de tema claro, escuro e do sistema. A persistência é opcional, por meio de funções de armazenamento que você fornece.",
-    "preventFocusZoom": "Impede o iOS de ampliar os campos de formulário, para que acompanhem o restante do texto.",
-    "useFloatingPosition": "O motor de posicionamento por trás de Popover, Menu e Tooltip, construído sobre Floating UI. Use-o para criar suas próprias superfícies ancoradas.",
-    "useVirtualizer": "Renderização virtualizada para listas longas, para que apenas as linhas visíveis existam no DOM.",
-    "useFieldControl": "Conecta um controle de formulário personalizado ao Field mais próximo: id, atributos ARIA e estado de foco ou preenchimento."
+    "confirmAction": "Uma etapa de confirmação, exibida como um diálogo centralizado ou um popover ancorado a um gatilho, que aguarda seu handler assíncrono antes de fechar. Use-a antes de uma ação difícil de desfazer.",
+    "useDialogService": "Abre qualquer componente como diálogo a partir do código em vez do markup. A promise de resultado é resolvida com o valor com que o diálogo fecha. Use-o para diálogos que você abre a partir de uma função.",
+    "usePopoverService": "Abre qualquer componente como popover ancorado a partir do código em vez do markup. A promise de resultado é resolvida com o valor com que o popover fecha. Use-o para popovers que você abre a partir de uma função.",
+    "useToast": "Mostra notificações toast de qualquer lugar do seu app, com atalhos por variante e um helper de promise que troca um toast de carregamento por sucesso ou erro. Use-o para feedback que não deve interromper a página.",
+    "useTour": "A navegação por etapas e grupos por trás do Tour, como estado headless, sem DOM nem renderização. Use-o para criar seu próprio tour.",
+    "useAsyncLoading": "Acompanha cada tarefa assíncrona que você executa por ele e continua carregando até todas terminarem. Use-o para um único estado de carregamento sobre várias requisições.",
+    "useNumberFormat": "Formata e analisa números para um locale com as mesmas opções, para que o texto digitado e a exibição formatada sempre coincidam. Use-o para seus próprios campos numéricos, ou para dar ao AnimatedNumber o mesmo formato.",
+    "useColorScheme": "Alterna entre os modos claro, escuro e do sistema, e pode espalhar o novo esquema em um círculo a partir de um clique. Use-o para um seletor de tema, e passe suas próprias funções de armazenamento para lembrar a escolha.",
+    "useHaptic": "Toca um feedback háptico nos telefones que oferecem suporte: um toque leve, um impacto, um padrão curto de sucesso, aviso ou erro, ou o seu próprio. Use-o para momentos que confirmam algo.",
+    "springEasing": "Transforma uma mola numa curva CSS linear() e no seu tempo de acomodação. Use-o para dar a element.animate() ou a uma transição CSS a mesma mola do vael-ui.",
+    "preventFocusZoom": "Impede o iOS de ampliar a tela quando um campo de formulário recebe foco, para que os campos possam acompanhar o tamanho do restante do texto. Chame-o uma vez no cliente, por exemplo em main.ts.",
+    "useFloatingPosition": "O motor de posicionamento por trás de Popover, Menu e Tooltip, construído sobre Floating UI. Use-o para criar seus próprios painéis ancorados.",
+    "useVirtualizer": "Renderiza só as linhas visíveis de uma lista longa, para que o DOM continue pequeno. Use-o para suas próprias listas longas.",
+    "useFieldControl": "Conecta um controle de formulário personalizado ao Field mais próximo: id, atributos ARIA e estado de foco e preenchimento. Use-o quando seu próprio controle fica dentro de um Field.",
+    "useHoverIndicator": "O destaque deslizante de hover e de teclado por trás das listas do vael-ui. Use-o para dar o mesmo destaque às suas próprias listas.",
+    "useSpringValue": "Física de molas interrompível em três formas: um valor reativo, uma mola imperativa que escreve cada quadro sem nova renderização e a função de passo pura por trás de ambos. Use-o para movimentos que podem mudar de destino no meio do caminho.",
+    "useTabIndicator": "O indicador de seleção deslizante por trás de Tabs, SelectButton, MenuList e Pagination. Use-o para seus próprios controles segmentados e listas.",
+    "useScrollLock": "Bloqueia a rolagem da página ou de qualquer elemento sem deslocar o layout, como os diálogos fazem enquanto estão abertos. Use-o para suas próprias sobreposições e painéis de tela cheia.",
+    "moveTreeNode": "Move um nó e sua subárvore para um novo pai e índice, no próprio array. Um movimento impossível, como uma pasta para dentro de si mesma, não muda nada. Use-o para aplicar um movimento de arrastar e soltar aos dados da sua árvore.",
+    "useFileDrop": "Transforma qualquer elemento em uma área para soltar arquivos, com um estado de arraste que se mantém estável sobre os elementos filhos e ignora texto ou links arrastados. Use-o para criar sua própria área de soltar."
   },
   "autoImport": {
     "bundlersIntro": "O unplugin-vue-components suporta Vite, Webpack, Rollup, esbuild e Rspack. O resolver é uma função comum, então funciona do mesmo jeito com todos eles.",
     "bundlersTitle": "Empacotadores",
     "cssIntro": "Aqui não é preciso nenhuma configuração extra. Cada componente do vael-ui importa seu próprio CSS, então resolver um componente também carrega os estilos dele. A maioria dos resolvers do unplugin-vue-components precisa de uma entrada <code>sideEffects</code> separada para isso.",
     "cssTitle": "CSS",
-    "intro": "vael-ui/resolver é um resolver para unplugin-vue-components. Registre-o uma vez e você poderá usar qualquer componente do vael-ui em um template sem importá-lo.",
+    "intro": "vael-ui/resolver é um resolver para unplugin-vue-components. Registre-o uma vez e você poderá usar qualquer componente do vael-ui em um template sem importá-lo. Ele resolve componentes, não diretivas.",
     "setupIntro": "Adicione o resolvedor sempre que unplugin-vue-components já estiver configurado:",
     "setupOutro": "Escreva a tag e o plugin adiciona a importação no momento da build:",
     "setupTitle": "Configurar",
     "title": "Importação automática",
-    "vaporIntro": "O vael-ui oferece duas builds a partir do mesmo código-fonte: a build VDOM normal e uma build Vapor (<code>vael-ui/vapor</code>). Por padrão, o resolver importa da build VDOM. Passe <code>variant: 'vapor'</code> para importar da build Vapor. O resolver importa todos os componentes de uma única build, então escolha a que seu app usa para renderizar.",
-    "vaporHostsNote": "Em um template Vapor, o unplugin-vue-components só encontra componentes que ficam no slot de outro componente. Importe à mão os do nível superior, como <code>&lt;Toaster&gt;</code>, <code>&lt;DialogHost&gt;</code> e <code>&lt;ConfigProvider&gt;</code>, até o unplugin-vue-components suportar Vapor.",
+    "vaporIntro": "O vael-ui oferece duas builds a partir do mesmo código-fonte: a build VDOM e a build Vapor (<code>vael-ui/vapor</code>). Por padrão, o resolver importa da build VDOM. Passe <code>variant: 'vapor'</code> para importar da build Vapor. O resolver importa todos os componentes de uma única build, então escolha a que seu app usa para renderizar.",
+    "vaporHostsNote": "Em um template Vapor, o unplugin-vue-components só encontra componentes que ficam no slot de outro componente. Até ele suportar Vapor, importe à mão os do nível superior, como <code>&lt;Toaster&gt;</code>, <code>&lt;DialogHost&gt;</code> e <code>&lt;ConfigProvider&gt;</code>.",
     "vaporTitle": "Vapor",
-    "oneImportIntro": "A importação automática do seu editor pode continuar sugerindo <code>vael-ui</code> em vez de <code>vael-ui/vapor</code>. É uma limitação conhecida do TypeScript quando um pacote exporta o mesmo nome a partir de dois pontos de entrada. Para evitar isso, defina uma condição de exportação <code>vapor</code> em vez de importar do subcaminho. Assim cada <code>import … from 'vael-ui'</code> é resolvido para a build Vapor em todo o projeto, tanto para componentes quanto para composables. A importação automática não tem mais como errar.",
-    "oneImportDefaults": "Adicione <code>vapor</code> às condições padrão do Vite em vez de substituí-las. Um <code>['vapor']</code> sozinho descarta os padrões, e outros pacotes podem carregar o arquivo errado. A linha <code>ssr</code> faz o mesmo para a renderização no servidor.",
-    "oneImportNote": "A condição do Vite controla qual build é carregada. A condição do TS mantém os tipos alinhados com ela. Se você definir uma sem a outra, terá uma incompatibilidade silenciosa em vez de um erro: tipos corretos com a build errada carregada, ou o contrário.",
+    "oneImportIntro": "A importação automática do seu editor pode continuar sugerindo <code>vael-ui</code> em vez de <code>vael-ui/vapor</code>. É uma limitação conhecida do TypeScript quando um pacote exporta o mesmo nome a partir de dois pontos de entrada. Para evitar isso, defina uma condição de exportação <code>vapor</code> em vez de importar do subcaminho. Assim cada <code>import … from 'vael-ui'</code> é resolvido para a build Vapor em todo o projeto, tanto para componentes quanto para composables, e a importação automática não tem como escolher o errado.",
+    "oneImportDefaults": "Adicione <code>vapor</code> às condições padrão do Vite em vez de substituí-las. Um <code>['vapor']</code> sozinho descarta os padrões, e outros pacotes podem então carregar o arquivo errado. A linha <code>ssr</code> faz o mesmo para a renderização no servidor.",
+    "oneImportNote": "A condição do Vite define qual build é carregada, e a condição do TypeScript mantém os tipos alinhados com ela. Se você definir só uma, nada dá erro: você recebe os tipos certos com a build errada, ou o contrário.",
     "oneImportNoteTitle": "Mantenha as duas configurações sincronizadas",
     "oneImportTitle": "Uma importação compartilhada, sem subcaminho /vapor"
   },
   "nuxt": {
     "excludeIntro": "Ignore nomes de componentes específicos, por exemplo para registrar seu próprio <code>&lt;Button&gt;</code> com a mesma tag:",
     "excludeTitle": "excluir",
-    "intro": "vael-ui/nuxt é um módulo Nuxt. Adicione-o uma vez e você poderá usar qualquer componente do vael-ui em um template sem importá-lo. Ele usa o registro de componentes nativo do Nuxt, não o unplugin-vue-components.",
+    "intro": "vael-ui/nuxt é um módulo Nuxt. Adicione-o uma vez e você poderá usar qualquer componente do vael-ui em um template sem importá-lo. Ele usa o registro de componentes do próprio Nuxt, não o unplugin-vue-components.",
     "resolverIntro": "Se o seu app Nuxt já usa o unplugin-vue-components para importar automaticamente outras bibliotecas, use o vael-ui/resolver no lugar. Veja o guia {link}.",
     "resolverIntroLink": "Importação automática",
     "resolverTitle": "Usando unplugin-vue-components em vez disso",
     "setupIntro": "Registre o módulo em sua configuração do Nuxt:",
     "setupOutro": "Escreva a tag e o Nuxt resolve a importação para você:",
     "appSetupTitle": "Configuração da app",
-    "appSetupIntro": "O módulo registra apenas componentes. Monte uma vez em app.vue os hosts que você usa. {link} explica o que cada um faz.",
+    "appSetupIntro": "O módulo não monta os hosts. Monte uma vez em app.vue os que você usa. {link} explica o que cada um faz.",
     "appSetupIntroLink": "Configuração global",
     "composablesIntro": "Composables como <code>toast()</code> e <code>openDialog()</code> não são importados automaticamente. Importe-os de <code>'vael-ui'</code>, ou de <code>'vael-ui/vapor'</code> com a variante Vapor:",
-    "directivesIntro": "As diretivas <code>v-tooltip</code> e <code>v-scroll-mask</code> também não são registradas. Registre-as em um plugin. Com a variante Vapor, importe-as de <code>'vael-ui/vapor'</code>:",
+    "directivesIntro": "O módulo registra <code>v-animate</code> para você, mas não <code>v-tooltip</code> nem <code>v-scroll-mask</code>. Registre essas duas em um plugin. Com a variante Vapor, importe-as de <code>'vael-ui/vapor'</code>:",
     "setupTitle": "Configurar",
     "title": "Nuxt",
     "vaporIntro": "Defina <code>variant: 'vapor'</code> para usar <code>vael-ui/vapor</code>, a mesma opção que o <code>vael-ui/resolver</code> aceita. O módulo ativa o <code>vue.vapor</code> do Nuxt para você. É preciso Nuxt 4.6 ou mais recente e Vue 3.6. Fixe o Vue na versão exata indicada em Primeiros passos.",
-    "vaporOutro": "As páginas continuam sendo renderizadas no servidor. O servidor transforma cada componente em HTML, e o navegador o assume como um componente Vapor, sem mais nada para configurar.",
+    "vaporOutro": "As páginas continuam sendo renderizadas no servidor. O servidor renderiza cada componente em HTML, e o navegador o hidrata como um componente Vapor, sem mais nada para configurar.",
     "vaporForceIntro": "Para compilar também seus próprios componentes <code>&lt;script setup&gt;</code> como Vapor, sem adicionar <code>vapor</code> a cada um, ative o <code>features.vapor</code> do <code>{'@'}vitejs/plugin-vue</code> pelo <code>vite.vue</code> do Nuxt:",
     "vaporTitle": "Vapor"
   },
   "skill": {
     "claudeCodeIntro": "Adicione o mercado uma vez e instale a habilidade:",
     "claudeCodeTitle": "Código Claude",
-    "includedAnimation": "O contrato independente de animação (motionCss, forceMount, beforeClose), com exemplos reais de GSAP e motion-v",
-    "includedComponents": "Props, slots, eventos e referências expostas de cada componente",
-    "includedComposables": "Parâmetros, valores de retorno e exemplos de uso de cada elemento independente que pode ser composto",
-    "includedStyling": "Ordenação de camadas em cascata e referência completa de variáveis ​​CSS para temas",
-    "intro": "Um pacote complementar que ensina agentes de programação com IA a usar o vael-ui. Funciona com Claude Code, GitHub Copilot, Codex, Cursor e outros. Cobre as props, slots e eventos de cada componente, cada composable e como configurar animação, temas e a divisão VDOM/Vapor. É gerado a partir dos próprios tipos e do conteúdo da documentação da biblioteca, não escrito à mão, então continua preciso conforme a biblioteca muda. Tem versões e lançamentos separados do vael-ui.",
+    "includedAnimation": "O sistema de movimento (a prop motion, os hooks enter e leave, v-animate), com exemplos de GSAP e motion",
+    "includedComponents": "Props, slots, eventos e refs expostas de cada componente",
+    "includedComposables": "Parâmetros, valores de retorno e exemplos de uso de cada composable independente",
+    "includedStyling": "A ordem das camadas em cascata e cada variável CSS para temas",
+    "intro": "Um pacote complementar que ensina agentes de programação com IA a usar o vael-ui. Funciona com Claude Code, GitHub Copilot, Codex, Cursor e outros. Cobre as props, slots e eventos de cada componente, cada composable e como configurar o movimento, os temas e as builds VDOM e Vapor. É gerado a partir dos próprios tipos e da documentação do vael-ui, não escrito à mão, então continua preciso conforme o vael-ui muda. Tem versões e lançamentos separados do vael-ui.",
     "otherAgentsIntro": "Qualquer agente compatível com a especificação compartilhada <a href=\"https://agentskills.io\" target=\"_blank\" rel=\"noreferrer\">Agent Skills</a> pode instalá-la com <a href=\"https://skill.sh\" target=\"_blank\" rel=\"noreferrer\">skill.sh</a>. Isso inclui GitHub Copilot, Codex, Cursor e mais de 70 outros:",
     "otherAgentsTitle": "Outros agentes",
     "sourceIntro": "O código-fonte da skill está em {link}, junto com instruções para atualizá-la fora do ciclo de lançamento do vael-ui.",
@@ -448,5 +513,455 @@
     "value": "Valor",
     "modifiers": "Modificadores",
     "noModifiers": "Nenhum modificador."
+  },
+  "dockTour": {
+    "componentsTitle": "Os componentes estão aqui embaixo",
+    "componentsDescription": "O menu saiu da barra superior para o dock, mais perto do seu polegar.",
+    "settingsTitle": "O modo escuro está nas Configurações",
+    "settingsDescription": "Assim como a cor do tema, o raio dos cantos, o tamanho, o tamanho da fonte, o movimento, o loader e o idioma.",
+    "replayLabel": "Tour",
+    "replay": "Ver novamente",
+    "searchTitle": "A busca a um toque",
+    "searchDescription": "Encontre qualquer componente, guia ou composable pelo nome, com uma breve descrição.",
+    "variantTitle": "VDOM ou Vapor, no topo",
+    "variantDescription": "Alterne aqui cada demo entre a build VDOM e a build Vapor."
+  },
+  "search": {
+    "actions": "Comandos",
+    "current": "Atual",
+    "on": "Ativadas",
+    "off": "Desativadas",
+    "copyInstall": "Copiar comando de instalação",
+    "reportIssue": "Relatar um problema",
+    "recent": "Recentes",
+    "drillIn": "API de {name}",
+    "copy": {
+      "import": "Copiar import",
+      "usage": "Copiar uso",
+      "link": "Copiar link",
+      "command": "Copiar"
+    },
+    "noResults": "Nenhum resultado para “{query}”",
+    "didYouMean": "Você quis dizer",
+    "request": "Peça no GitHub",
+    "copied": "Copiado para a área de transferência",
+    "back": "Todos os resultados",
+    "copiedShort": "Copiado",
+    "noCommands": "Nenhum comando corresponde a “{query}”"
+  },
+  "showMe": {
+    "loaderTitle": "Todos os loaders, num só lugar",
+    "loaderDescription": "Esta configuração é o loader-type do ConfigProvider, então todo spinner deste site o segue: botões, linhas de listas, toasts e puxar para atualizar. Escolha um e veja todos mudarem."
+  },
+  "motionDocs": {
+    "eyebrow": "O sistema de movimento",
+    "title": "Movimento",
+    "lede": "Cada componente do vael-ui anima com um só sistema de movimento. Use o movimento embutido como está, mude-o com uma prop <code>motion</code>, ou conduza-o com sua própria biblioteca.",
+    "logoToV": "Transformar a esfera em um V",
+    "logoToOrb": "Mostrar a esfera do vael-ui",
+    "tourTitle": "Comece aqui",
+    "card": {
+      "springs": {
+        "title": "Molas e tempo",
+        "body": "Veja como damping e response mudam um movimento e depois defina uma mola para o app todo."
+      },
+      "engines": {
+        "title": "Seu próprio motor",
+        "body": "Toque os mesmos valores com GSAP, motion ou a Web Animations API, lado a lado."
+      },
+      "guide": {
+        "title": "Use sua própria animação",
+        "body": "O guia completo de valores, hooks, listas, guardas e estilos para o app todo."
+      },
+      "types": {
+        "title": "TypeScript",
+        "body": "Autocompletar para cada parte e estado, e erros de tipo para os enganos comuns."
+      },
+      "blocks": {
+        "title": "Blocos",
+        "body": "Menus, folhas e widgets feitos com alguns componentes, prontos para copiar."
+      }
+    },
+    "propTitle": "Uma prop",
+    "propIntro": "Todo componente aceita <code>motion</code>. <code>false</code> desliga o movimento. Um objeto o muda: valores para as partes, uma mola ou uma duração, ou hooks <code>enter</code> e <code>leave</code> para sua própria biblioteca.",
+    "propTable": "Cada página de componente tem uma seção <strong>Movimento</strong> que lista suas partes, seus estados e suas outras opções de movimento.",
+    "yoursTitle": "Nos seus próprios componentes",
+    "yoursIntro": "<code>v-animate</code> dá o mesmo movimento aos seus próprios elementos: uma entrada, uma saída, um tamanho que se ajusta com suavidade ao conteúdo, ou um deslize para um novo lugar quando o layout muda.",
+    "yoursComposables": "Para movimentos seus, use os composables por trás dele:",
+    "composable": {
+      "springEasing": "Transforma uma mola em um easing CSS e no seu tempo de acomodação.",
+      "useSpringValue": "Um valor que segue seu alvo em uma mola.",
+      "useHoverIndicator": "O destaque deslizante ao passar o mouse, para suas próprias listas.",
+      "useTabIndicator": "O indicador deslizante por trás de Tabs e SelectButton."
+    },
+    "nav": {
+      "motion": "Movimento",
+      "overview": "Visão geral",
+      "springs": "Molas e tempo",
+      "engines": "Seu próprio motor",
+      "types": "TypeScript",
+      "back": "Voltar aos componentes",
+      "blocks": "Blocos",
+      "showpieces": "Lado a lado"
+    },
+    "mode": {
+      "components": "Cada componente, por tipo",
+      "composables": "A lógica por trás deles",
+      "motion": "Como tudo se move"
+    },
+    "springs": {
+      "title": "Molas e tempo",
+      "intro": "Uma mola recebe dois números. <code>damping</code> define como ela se acomoda: 1 para sem passar do ponto, e valores menores quicam. <code>response</code> é mais ou menos quanto ela leva, em segundos. Uma mola não tem duração fixa, então você pode interrompê-la e invertê-la a partir de onde estiver.",
+      "labTitle": "Experimente uma mola",
+      "presets": "Predefinições",
+      "preset": {
+        "snappy": "Ágil",
+        "smooth": "Suave",
+        "bouncy": "Saltitante",
+        "gentle": "Calma"
+      },
+      "reads": "Acomoda-se em cerca de {settle} ms.",
+      "play": "Tocar",
+      "everywhereTitle": "Uma mola para o app todo",
+      "everywhereIntro": "Defina uma mola no <code>ConfigProvider</code> e os drawers, sheets, toasts, indicadores e AnimatedNumber dentro dele passam a usar essa mola. As demos abaixo seguem os controles acima.",
+      "switch": "Notificações",
+      "openDrawer": "Abrir um drawer",
+      "drawerTitle": "Na sua mola",
+      "drawerBody": "Este drawer abriu com a mola que você definiu."
+    },
+    "engines": {
+      "title": "Seu próprio motor",
+      "intro": "Por padrão, o vael-ui toca o movimento por conta própria com transições CSS e a Web Animations API, então transform e opacity rodam fora da thread principal. O <code>engine</code> de um estilo toca as partes de overlays, os itens de listas e seus próprios alvos por uma biblioteca que você escolhe, com os mesmos valores e tempos. Estados, trocas e elementos <code>linked</code> sempre usam o motor embutido.",
+      "compareTitle": "Lado a lado",
+      "compareIntro": "Três popovers com os mesmos valores, cada um no seu próprio <code>ConfigProvider</code>. Abra-os juntos para comparar.",
+      "openAll": "Abrir os três",
+      "open": "Abrir",
+      "note": {
+        "waapi": "Embutido. Nada para instalar.",
+        "gsap": "O GSAP toca os valores com seu próprio easing.",
+        "motion": "O motion os toca com sua própria mola."
+      },
+      "adaptersTitle": "Escrevendo um adaptador",
+      "adaptersIntro": "Um motor recebe o elemento, os valores inicial e final e o tempo em segundos, mais a mola por trás quando houver uma. Retorne o que sua biblioteca retornar. O vael-ui espera por isso e o interrompe se a animação for interrompida.",
+      "appWideTitle": "Trocando de motor no app todo",
+      "appWideIntro": "Coloque o adaptador no <code>ConfigProvider</code> da raiz, e todo componente dentro dele o usa. Os hooks próprios de um componente continuam tendo prioridade."
+    },
+    "presets": {
+      "label": "Movimento",
+      "changed": "Movimento: {name}",
+      "default": {
+        "label": "Padrão",
+        "body": "O movimento próprio do vael-ui"
+      },
+      "calm": {
+        "label": "Calmo",
+        "body": "Esmaecimentos suaves, sem passar do ponto"
+      },
+      "snappy": {
+        "label": "Ágil",
+        "body": "Rápido e preciso"
+      },
+      "bouncy": {
+        "label": "Saltitante",
+        "body": "Um pouco de rebote em tudo"
+      },
+      "jelly": {
+        "label": "Gelatina",
+        "body": "Achata e estica até se acomodar"
+      },
+      "gooey": {
+        "label": "Viscoso",
+        "body": "Manchas borradas que incham até tomar forma"
+      },
+      "tune": "Ajustar {name}",
+      "reset": "Redefinir",
+      "dial": {
+        "response": "Duração",
+        "damping": "Quique",
+        "press": "Pressão",
+        "stagger": "Escalonamento"
+      }
+    },
+    "tour": {
+      "cta": "Novidades",
+      "menuTitle": "Movimento para o site inteiro",
+      "menuBody": "Escolha um preset e todos os componentes de todas as páginas o usam. Ajuste-o com os controles abaixo.",
+      "modeTitle": "Uma seção de movimento",
+      "modeBody": "Mude para Motion para ver molas, motores e os composables por trás.",
+      "tabTitle": "Movimento no playground",
+      "tabBody": "Mude como este componente entra, sai e reage quando você o pressiona, depois copie o código.",
+      "sectionTitle": "Cada parte, pelo nome",
+      "sectionBody": "Toda página de componente tem uma seção Motion que lista as partes e os estados que você pode animar."
+    },
+    "types": {
+      "title": "TypeScript",
+      "intro": "Seu editor conhece as partes e estados de cada componente, cada propriedade CSS e os tokens de tempo do vael-ui. Um erro fica vermelho antes de salvar.",
+      "component": "Componente",
+      "completeTitle": "Autocompletar",
+      "completeIntro": "Selecione um nome no código para ver o que seu editor sugere ali, e escolha um para inseri-lo.",
+      "completeHint": "Selecione um nome pontilhado para ver o que seu editor sugere.",
+      "completeNote": "Os mesmos nomes estão {link}.",
+      "completeLink": "na seção Motion de {name}",
+      "mistakesTitle": "Erros são erros de tipo",
+      "mistakesIntro": "Os próprios testes de tipo do vael-ui verificam que cada um destes continua sendo um erro, para que nenhuma versão passe a aceitá-lo por acidente.",
+      "unitsTitle": "Unidades",
+      "unitsIntro": "Um número sozinho usa a unidade mostrada. Uma string vai direto para o CSS, então <code>'2rem'</code> e <code>'50%'</code> também funcionam.",
+      "tokensTitle": "Tokens de tempo",
+      "tokensIntro": "<code>duration</code> e <code>easing</code> aceitam os tokens do vael-ui, e seu editor os lista. Abaixo estão os valores atuais deles nesta página. Escolha um preset no menu de movimento do cabeçalho, e os tokens que uma mola controla mudam junto.",
+      "warningsTitle": "No console",
+      "warningsIntro": "Em desenvolvimento, o vael-ui registra o que deu errado e o que mudar. Builds de produção deixam essas mensagens de fora.",
+      "devtools": "Para ver o que se moveu e por quê, inspecione o componente. <code>data-motion</code> nomeia as camadas que definem seu movimento, e cada abertura e fechamento aparece na trilha Timings do painel Performance.",
+      "mistake": {
+        "part": "Uma parte que ele não tem",
+        "property": "Uma propriedade CSS escrita errado",
+        "timing": "Uma mola e uma duração juntas",
+        "state": "Um estado que ele não tem",
+        "kind": "Uma opção de lista num diálogo",
+        "version": "Um estilo sem versão"
+      },
+      "unit": {
+        "ms": "milissegundos",
+        "s": "segundos",
+        "px": "pixels",
+        "deg": "graus",
+        "none": "sem unidade"
+      },
+      "orAnyProperty": "ou qualquer propriedade CSS",
+      "orAnyEasing": "ou qualquer easing CSS",
+      "orMs": "ou um número, em ms"
+    },
+    "chapters": {
+      "eyebrow": "Guia de movimento · {n} de {total}",
+      "start": {
+        "title": "Primeiros passos",
+        "intro": "Os componentes do vael-ui já animam por padrão. Você pode mudar como eles se movem, em um componente ou no app inteiro, com as mesmas poucas opções.",
+        "already": {
+          "title": "Já se move",
+          "body": "Abra o diálogo, o select e o toast abaixo. Todo overlay, lista e controle tem movimento embutido. Ele é curto e fecha mais rápido do que abre."
+        },
+        "one": {
+          "title": "Mude um componente",
+          "body": "Todo componente aceita uma prop <code>motion</code>. Defina de onde uma parte entra, como <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>, e a mola em que ela se move."
+        },
+        "spring": {
+          "title": "Uma mola para tudo",
+          "body": "Coloque uma <code>spring</code> no <code>ConfigProvider</code> e todos os componentes dentro dele a usam. Com <code>damping</code> abaixo de 1, ela passa do ponto, e <code>response</code> é mais ou menos quanto tempo leva, em segundos."
+        },
+        "off": {
+          "title": "Desligue",
+          "body": "<code>:motion=\"false\"</code> em um componente, ou no <code>ConfigProvider</code> para tudo dentro dele, deixa abrir e fechar instantâneos. Com o movimento ligado, quem pede movimento reduzido recebe os esmaecimentos sem o deslocamento."
+        }
+      },
+      "elements": {
+        "title": "Qualquer elemento",
+        "intro": "Movimento não é só para os componentes do vael-ui. <code>v-animate</code> dá a qualquer elemento seu uma entrada e uma saída, direto no template.",
+        "appear": {
+          "title": "Entrar e sair",
+          "body": "<code>initial</code> define de onde o elemento entra. Quando o Vue o remove, ele sai por onde veio, mais rápido e mais discreto, a menos que você dê a ele um <code>exit</code>."
+        },
+        "scroll": {
+          "title": "Quando aparece na rolagem",
+          "body": "<code>when: 'visible'</code> espera até o elemento estar na tela e então toca uma vez. Elementos que compartilham um nome, como <code>v-animate:tiles</code>, tocam na ordem da página, um depois do outro com um <code>stagger</code>."
+        },
+        "replay": {
+          "title": "Toque de novo",
+          "body": "<code>replay</code> toca <code>initial</code> de novo cada vez que seu valor muda, sem remontar o elemento. Use-o para um contador subindo, uma mudança de status ou uma cópia que falhou. Com <code>appear: false</code>, ele só toca nessas mudanças, não quando o elemento é montado."
+        },
+        "layout": {
+          "title": "Deslize para um novo lugar",
+          "body": "<code>layout: true</code> desliza um elemento para onde o layout o colocar, como quando uma lista se reordena ou um vizinho cresce."
+        },
+        "shared": {
+          "title": "De um lugar para outro",
+          "body": "Dois elementos com o mesmo <code>layoutId</code> agem como um só elemento. Quando um sai e o outro chega, o novo cresce a partir da caixa do antigo. Adicione <code>layout: 'position'</code> para manter o tamanho no caminho, assim o texto dentro dele nunca estica."
+        },
+        "animate": {
+          "title": "Mantenha um visual",
+          "body": "<code>animate</code> define um visual que o elemento mantém enquanto está na página. Mude-o e o elemento anima até ele de onde estiver, numa mola, a menos que você defina uma <code>duration</code>: <code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>. Com arrays de keyframes, <code>progress</code> (de 0 a 1) os segura em um ponto em vez de tocá-los, assim um swipe ou uma rolagem pode percorrê-los. Com uma <code>spring</code>, eles o seguem com um leve atraso."
+        },
+        "size": {
+          "title": "Acompanhe o conteúdo",
+          "body": "<code>v-animate.size</code> leva um elemento suavemente até o novo tamanho do conteúdo em vez de pular."
+        },
+        "own": {
+          "title": "Seus próprios componentes",
+          "body": "<code>useMotion</code> dá ao seu próprio componente o mesmo movimento dos componentes do vael-ui. Ligue a <code>transition</code> dele ao <code>&lt;Transition&gt;</code> do Vue. O componente então segue o movimento do seu app, anima ao entrar e sair, e anima junto os filhos nomeados."
+        }
+      },
+      "states": {
+        "title": "Estados e listas",
+        "intro": "Os componentes também animam enquanto estão na tela, como ao serem pressionados, numa validação que falhou ou num painel abrindo. As listas animam os itens quando eles entram e saem.",
+        "press": {
+          "title": "Pressionar e passar o mouse",
+          "body": "<code>states</code> anima uma parte enquanto o componente está em um estado. Um valor simples vale enquanto o estado está ativo: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> encolhe um botão enquanto você o pressiona."
+        },
+        "shake": {
+          "title": "Uma validação que falhou",
+          "body": "Um array toca uma vez, quando o estado é ativado: <code>invalid: {'{'} root: {'{'} x: [0, -8, 8, -4, 4, 0] {'}'} {'}'}</code> sacode um campo cada vez que ele fica inválido."
+        },
+        "toggle": {
+          "title": "Aberto, marcado, pressionado",
+          "body": "O Accordion gira a seta em <code>open</code>, e o Switch achata o botão deslizante em <code>active</code>. A página de cada componente lista as partes e os estados dele em Motion."
+        },
+        "keyframes": {
+          "title": "Keyframes",
+          "body": "Um array é um conjunto de keyframes. <code>times</code> posiciona cada um, de 0 a 1, e <code>easing</code> suaviza cada passo. Passe uma lista de easings para dar a cada passo o seu, como uma subida e depois um quique. <code>repeat</code> os toca de novo, e <code>repeat: Infinity</code> continua até o estado ser desativado ou o visual mudar."
+        },
+        "each": {
+          "title": "Um de cada vez",
+          "body": "Algumas partes se repetem, como os círculos de um Stepper, os itens de um Dock ou as células de um OtpInput. Cada elemento toca seus próprios estados, então só o passo que vira <code>current</code> salta. Escreva os valores como função para usar o <code>index</code> de cada elemento, como num tremor que percorre célula por célula."
+        },
+        "again": {
+          "title": "Tocar a entrada de novo",
+          "body": "O <code>motion</code> de um componente também aceita <code>replay</code>. Quando ele muda, o componente toca o <code>initial</code> de novo sem remontar, como uma chuva de estrelas numa avaliação de cinco estrelas. <code>appear: false</code> impede que ele toque quando o componente é montado."
+        },
+        "lists": {
+          "title": "Listas",
+          "body": "Toaster, Timeline, FileUpload, SpeedDial, as linhas do DataTable, as linhas do CommandPalette e os chips da família Select trazem os itens novos um depois do outro. <code>leaving: 'pop'</code> tira do layout um item que sai, então os demais fecham o espaço na hora. <code>'hold'</code> mantém o espaço até o item sumir. Escreva <code>initial</code> ou <code>exit</code> como função para receber <code>{'{'} index, count {'}'}</code> dos itens que entram ou saem juntos, assim um fechamento pode ir do último ao primeiro."
+        },
+        "toasts": {
+          "title": "Um toast que muda",
+          "body": "Os <code>states</code> do Toaster tocam quando um toast muda de variante. Um toast de salvamento que termina em <code>error</code> pode tremer, e um que termina em <code>success</code> pode fazer o ícone saltar."
+        }
+      },
+      "overlays": {
+        "title": "Overlays",
+        "intro": "Overlays como Dialog, Drawer, BottomSheet, Popover e Menu abrem e fecham pelo sistema de movimento. Eles podem crescer a partir do elemento que os abriu, mover a página junto e trocar o que têm dentro.",
+        "morph": {
+          "title": "Cresça a partir do gatilho",
+          "body": "<code>morph: 'trigger'</code> faz o painel crescer a partir do elemento que o abriu, e o encolhe de volta para esse elemento ao fechar."
+        },
+        "morphAny": {
+          "title": "Cresça a partir de qualquer elemento",
+          "body": "Passe para <code>morph</code> uma função que retorna um elemento, como a linha em que você clicou. <code>hide: false</code> mantém a linha na tela enquanto o diálogo está aberto."
+        },
+        "recede": {
+          "title": "Mova a página junto",
+          "body": "<code>linked</code> move outros elementos enquanto um Dialog, Drawer ou BottomSheet está aberto, como uma página que recua atrás de um drawer. Cada entrada indica um elemento e como ele fica enquanto o overlay está aberto."
+        },
+        "inner": {
+          "title": "As partes de dentro",
+          "body": "<code>initial</code> também anima o título, o corpo e o rodapé de um diálogo, para que sigam o painel na entrada. <code>exitOrder: 'reverse'</code> os fecha antes do painel."
+        },
+        "swap": {
+          "title": "Troque o que está dentro",
+          "body": "Coloque um elemento com key no diálogo e mude a key dele. <code>swap: 'wait'</code> deixa o elemento antigo sair antes de o novo chegar, e <code>direction</code> diz aos seus valores para que lado você foi."
+        },
+        "guard": {
+          "title": "Pergunte antes de fechar",
+          "body": "<code>before-close</code> decide se o diálogo fecha. Retorne <code>true</code> para fechar, <code>false</code> para continuar aberto, ou uma promise de qualquer um dos dois, como uma confirmação. O diálogo fica parado até a resposta chegar."
+        }
+      },
+      "choreography": {
+        "title": "Coreografia",
+        "intro": "Dentro de um diálogo ou popover, seus próprios elementos podem participar do movimento dele. Você dá nomes a eles e depois os sincroniza entre si e com o painel.",
+        "after": {
+          "title": "Um depois do outro",
+          "body": "Dê nomes aos seus elementos em <code>targets</code> e marque-os com <code>target('name')</code> do slot ou com <code>v-animate:name</code>. <code>after: 'summary:60%'</code> começa as linhas quando o resumo já entrou 60%."
+        },
+        "moments": {
+          "title": "Momentos",
+          "body": "<code>after</code> espera um momento no movimento de outro elemento:",
+          "items": [
+            "<code>'summary'</code>: quando ele chega",
+            "<code>'summary:start'</code>: quando ele começa",
+            "<code>'summary:settle'</code>: quando a mola dele para",
+            "<code>'summary:40%'</code>: em parte do caminho",
+            "<code>'panel'</code>: as partes do próprio componente também funcionam",
+            "<code>['summary', 'chart']</code>: quando todos eles chegam"
+          ]
+        },
+        "steps": {
+          "title": "Paradas no caminho",
+          "body": "<code>steps</code> leva um elemento por uma série de paradas. Ele espera em cada parada até chegar o momento <code>after</code> dela."
+        },
+        "own": {
+          "title": "Sua própria timeline",
+          "body": "Um hook <code>enter</code> recebe as partes e seus targets, então uma única timeline do GSAP pode animar todos eles. Retorne a timeline. O diálogo espera por ela e a interrompe se você fechar antes."
+        }
+      },
+      "styles": {
+        "title": "O movimento do seu app",
+        "intro": "Um estilo de movimento é um objeto no <code>ConfigProvider</code> que define como o app inteiro se move: por papel, por componente e com presets para seus próprios elementos.",
+        "style": {
+          "title": "Um objeto para o app",
+          "body": "Um estilo tem <code>version: 1</code>, uma <code>spring</code> e chaves por papel (<code>overlay</code>, <code>list</code>, <code>press</code>, <code>reveal</code>, <code>content</code>) ou por componente (<code>dialog</code>, <code>toaster</code>). O <code>motion</code> do próprio componente o substitui."
+        },
+        "presets": {
+          "title": "Presets",
+          "body": "<code>presets</code> dá nome a visuais que você pode usar com <code>v-animate=\"'rise'\"</code> em qualquer lugar dentro do provider, assim seus elementos se movem como seus componentes."
+        },
+        "parse": {
+          "title": "Um estilo de fora do seu código",
+          "body": "<code>parseMotionStyle</code> verifica um estilo vindo de uma página de configurações, de um banco de dados ou da rede. Ele descarta tudo o que é inseguro ou desconhecido e lista o que descartou em <code>issues</code>."
+        }
+      }
+    },
+    "blocks": {
+      "title": "Blocos",
+      "intro": "Peças inteiras de interface, cada uma feita com alguns componentes do vael-ui e seu movimento. Copie uma para seu app e adapte-a.",
+      "comingTitle": "Vem mais por aí",
+      "comingBody": "Os blocos vão ganhar um site próprio, blocks.vael-ui.dev. Estes são os primeiros.",
+      "items": {
+        "Bloom": {
+          "title": "Menu Bloom",
+          "body": "Um botão Criar cresce até virar o seu menu, e os itens se abrem para fora a partir do centro dele."
+        },
+        "Family": {
+          "title": "Folha de carteira",
+          "body": "Uma folha flutuante cujas vistas se mesclam no lugar enquanto ela se ajusta suavemente à altura de cada uma."
+        },
+        "Island": {
+          "title": "Ilha dinâmica",
+          "body": "Uma pílula que salta para o tamanho de cada atividade, com uma bolha que escorre do lado."
+        },
+        "Feedback": {
+          "title": "Widget de feedback",
+          "body": "O botão cresce até virar um formulário, e o estado de envio e a mensagem de agradecimento trocam no lugar."
+        },
+        "Stack": {
+          "title": "Pilha de notificações",
+          "body": "Aponte para a pilha e os cartões se abrem em uma lista."
+        },
+        "Composer": {
+          "title": "Caixa de resposta",
+          "body": "Foque a caixa e as ferramentas abrem numa mola enquanto o botão Responder desliza até elas."
+        },
+        "ActionBar": {
+          "title": "Barra de ações que cresce",
+          "body": "Aponte para uma ação e ela se expande para mostrar o rótulo. A barra se redimensiona junto."
+        },
+        "Otp": {
+          "title": "Código de verificação",
+          "body": "Um código errado sacode o campo, e 424242 desenha um visto."
+        },
+        "Reveal": {
+          "title": "Aparecer ao rolar",
+          "body": "Os cartões sobem ao entrar na tela e os números contam para cima, uma vez."
+        },
+        "Calendar": {
+          "title": "Meses que deslizam",
+          "body": "A grade desliza na direção para onde você foi, e o rótulo rola junto."
+        },
+        "Accordion": {
+          "title": "Acordeão com mola",
+          "body": "Altura, seta, espaços e cantos se movem numa única mola."
+        },
+        "Spotlight": {
+          "title": "Menu de comandos",
+          "body": "Você o abre muitas vezes por dia, então ele mantém o movimento embutido e discreto."
+        }
+      }
+    },
+    "showpieces": {
+      "title": "Lado a lado",
+      "intro": "Cada peça de destaque desta documentação foi feita primeiro com GSAP, motion ou o movimento embutido do vael-ui. Aqui, cada uma fica ao lado da mesma peça refeita só com o movimento do vael-ui. Toque as duas do mesmo jeito e abra o código de qualquer uma.",
+      "filter": "Feito primeiro com",
+      "all": "Todos",
+      "builtin": "Embutido",
+      "with": "Com {engine}",
+      "vael": "Com o movimento do vael-ui",
+      "none": "Ainda não há versão do vael-ui."
+    }
   }
 }

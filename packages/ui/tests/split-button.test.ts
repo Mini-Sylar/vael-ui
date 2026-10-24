@@ -212,3 +212,15 @@ test('Escape closes the dropdown (same closeOnEsc default-forwarding fix)', asyn
   await userEvent.keyboard('{Escape}')
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
 })
+
+test('a thin line separates the two buttons; `unified` joins them into one surface', async () => {
+  const seam = (el: Element) =>
+    getComputedStyle(el.querySelector('.ui-split-button-trigger')!, '::before')
+      .borderInlineStartColor
+  const items = [{ label: 'Save as', value: 'save-as' }]
+  const split = await render(SplitButton, { props: { items } })
+  // Over the button's own colour, so it shows on any variant.
+  expect(seam(split.container)).toMatch(/color-mix|oklch|rgba?\(.*,.*,.*,\s*0\.\d+\)/)
+  const unified = await render(SplitButton, { props: { items, unified: true } })
+  expect(seam(unified.container)).toBe('rgba(0, 0, 0, 0)')
+})

@@ -1,13 +1,13 @@
 <template>
   <section class="demo">
-    <h3>Async — remote search backing a virtualized list</h3>
+    <h3>Remote search with a virtualized list</h3>
     <p class="note">
-      <code>filter="false"</code> still shows the search box, but Select does no matching of its own
-      — it trusts whatever <code>items</code> it's handed. This debounces <code>query</code> into a
-      fake API call and swaps <code>items</code> with the response; virtualization (already a plain
-      computed off the current item count) re-evaluates automatically, so a 5,000-row remote page
-      virtualizes exactly like a local one would. The panel matches the trigger's width by default;
-      <code>ui.panel</code> gives it a wider floor here so the email addresses don't truncate.
+      With <code>:filter="false"</code>, Select shows the search box but doesn't match anything
+      itself; it lists the <code>items</code> you pass. This demo debounces <code>query</code> into
+      a fake API call and replaces <code>items</code> with the response. Select virtualizes long
+      lists on its own, so a large remote result scrolls like a local one. The panel matches the
+      trigger's width by default; here <code>ui.panel</code> sets a wider minimum so the email
+      addresses fit.
     </p>
     <div class="row">
       <Field label="User">

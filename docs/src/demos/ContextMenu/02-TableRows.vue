@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Table rows, each row gets its own menu</h3>
+    <h3>Table rows, each with its own menu</h3>
     <p class="note">
-      Every row wraps its own <code>ContextMenu</code>, each opening independently at wherever it
-      was right-clicked. Nothing is shared between them beyond the same <code>items</code> array.
+      Each row wraps its own <code>ContextMenu</code>, which opens where you right-click. The rows
+      share only the <code>items</code> array.
     </p>
     <div class="row-table">
       <ContextMenu v-for="row in rows" :key="row.id" :items="rowItems(row)" @select="onSelect">

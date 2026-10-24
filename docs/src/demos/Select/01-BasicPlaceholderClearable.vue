@@ -1,9 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Basic, placeholder, clearable</h3>
+    <h3>Basic, with a placeholder and a clear button</h3>
     <p class="note">
-      A realistic long option list (30 countries, one disabled) so the dropdown's real scroll and
-      keyboard-navigation behavior is visible, not just three toy options.
+      A long list of 30 countries, one of them disabled, so you can try scrolling and keyboard
+      navigation.
     </p>
     <div class="row">
       <Field label="Destination">

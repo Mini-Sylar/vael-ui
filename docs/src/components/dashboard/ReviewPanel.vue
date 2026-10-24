@@ -1,10 +1,11 @@
 <template>
-  <!-- A Drawer inside the dashboard on wide screens, a BottomSheet on phones. -->
+  <!-- A Drawer on wide screens, a BottomSheet on phones; both stay inside the shell. -->
   <component
     :is="phone ? BottomSheet : Drawer"
     v-model:open="open"
     :title="title"
-    v-bind="phone ? {} : { side: 'right', container: shell }"
+    :container="shell"
+    v-bind="phone ? {} : { side: 'right' }"
     class="review-panel"
     data-dash-overlay
   >
@@ -84,7 +85,7 @@ function merge() {
   mergePull(pull.id)
   open.value = false
   comment.value = ''
-  toast.success(`#${pull.id} merged into main.`)
+  toast.success(`#${pull.id} merged into main.`, { toaster: 'dashboard' })
 }
 </script>
 

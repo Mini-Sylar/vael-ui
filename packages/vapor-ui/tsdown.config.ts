@@ -102,6 +102,25 @@ const entry = {
   ),
 }
 
+// Vue's server renderer only takes object directives (it reads `getSSRProps`), so on the server
+// `vAnimate` is the object form: a server render then carries the first-paint CSS. In the browser,
+// Vapor's function form; it hydrates what the object rendered.
+function objectDirectivesOnServer(): Plugin {
+  return {
+    name: 'vael-ui:object-directives-on-server',
+    transform(code) {
+      if (!code.includes('vAnimateVapor')) return null
+      return code.replace(
+        /\{([^}]*)\}(\s*from\s*['"][^'"]*directives\/vAnimate(?:\.js|\.ts)?['"])/g,
+        (_, names: string, from: string) =>
+          `{${names
+            .replace(/\bvAnimateVapor as vAnimate\b/, 'vAnimate')
+            .replace(/\bvAnimateVapor\b(?! as)/, 'vAnimate as vAnimateVapor')}}${from}`,
+      )
+    },
+  }
+}
+
 export default defineConfig([
   {
     entry,
@@ -129,6 +148,7 @@ export default defineConfig([
     outDir: '../ui/dist/vapor-server',
     platform: 'neutral',
     plugins: [
+      objectDirectivesOnServer(),
       useVdomFiles(join(UI_DIR, 'dist/vapor-server')),
       useVdomCss(join(UI_DIR, 'dist/vapor-server')),
       Vue({ isProduction: true, ssr: true, template: { compilerOptions: { comments: false } } }),

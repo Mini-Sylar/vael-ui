@@ -1,5 +1,10 @@
 <template>
-  <Popover ref="popover" v-bind="entry.popoverProps" v-model:open="localOpen">
+  <Popover
+    ref="popover"
+    v-bind="entry.popoverProps"
+    v-model:open="localOpen"
+    @after-leave="entry.left?.()"
+  >
     <component :is="entry.component" v-bind="entry.componentProps" />
   </Popover>
 </template>
@@ -66,6 +71,17 @@ watch(
   () => props.entry.closeRequested,
   (requested) => {
     if (requested) popoverInstance.value?.close()
+  },
+)
+
+// The entry goes once it has left: on `after-leave`, or at once when nothing is leaving (no
+// transition ran, as under a test renderer's stubs, or motion is off).
+watch(
+  () => props.entry.open,
+  async (open) => {
+    if (open) return
+    await nextTick()
+    if (popoverInstance.value?.phase !== 'leaving') props.entry.left?.()
   },
 )
 </script>

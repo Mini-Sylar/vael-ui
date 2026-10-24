@@ -39,6 +39,8 @@
     min-block-size: 0;
     min-inline-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     padding-inline: 0.25rem;
     padding-block: 0 0.25rem;
   }
@@ -48,6 +50,10 @@
     transition:
       block-size var(--ui-duration-enter) var(--ui-ease-out),
       --ui-list-edge var(--ui-duration-exit) var(--ui-ease-out);
+  }
+  /* Pinned rows sit on the top edge, so only the bottom fades (important outranks the animation). */
+  .ui-tree-list[data-sticky].scroll-fade {
+    --fade-top-end: 0% !important;
   }
   .ui-tree-list[data-resizing] {
     overflow-y: hidden;
@@ -71,9 +77,8 @@
     color: var(--ui-text-muted);
     font-size: calc(var(--ui-font-size) * 0.875);
   }
-  /* TreeNodeRow.vue's own root: row + its children block. A real box, not
-     `display: contents`, so the children block's leave-active (absolute) has
-     something to anchor to. */
+  /* TreeNodeRow.vue's own root: row + its children block. A real box, so the
+     block's fold and sticky rows have a containing block. */
   .ui-tree-node {
     display: flex;
     flex-direction: column;
@@ -116,10 +121,19 @@
   .ui-tree[data-reorderable] .ui-tree-row {
     touch-action: none;
   }
-  .ui-tree-row:hover:not(.ui-tree-row--disabled),
+  /* Hover and focus backgrounds are the sliding .ui-indicator; a sticky row covers it, so it paints its own. */
+  .ui-tree-list {
+    position: relative;
+    isolation: isolate;
+    --ui-duration-indicator: var(--ui-duration-indicator-wide);
+  }
+  .ui-tree-row--sticky[data-indicated] {
+    background: var(--ui-indicator-bg, var(--ui-muted));
+  }
+  /* Inset, so the ring fits inside the row and is never clipped by a scroll box around the tree. */
   .ui-tree-row:focus-visible {
-    background: var(--ui-muted);
-    outline: none;
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
   }
   /* After .ui-tree-row so padding-block-end wins (equal specificity, later
      source). 1px overscan (negative margin keeps layout height unchanged)
@@ -135,6 +149,41 @@
   /* Quiet permanent tint for current value. */
   .ui-tree-row--selected {
     background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
+  }
+  /* Single selection paints the tint on its own layer, so it can slide between rows. */
+  .ui-tree-row--selected:has(> .ui-tree-row-highlight) {
+    isolation: isolate;
+    background: none;
+  }
+  .ui-tree-row--selected:not(.ui-tree-row--sticky):has(> .ui-tree-row-highlight) {
+    position: relative;
+  }
+  .ui-tree-row-highlight {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
+    pointer-events: none;
+  }
+  .ui-tree-row-highlight[data-from='near'] {
+    animation: ui-tree-highlight-slide var(--ui-duration-enter) var(--ui-ease-out);
+  }
+  .ui-tree-row-highlight[data-from='far'] {
+    animation: ui-tree-highlight-fade var(--ui-duration-enter) ease-out;
+  }
+  @keyframes ui-tree-highlight-slide {
+    from {
+      translate: 0 var(--ui-tree-highlight-from, 0px);
+    }
+  }
+  @keyframes ui-tree-highlight-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  .ui-tree-root[data-motion='off'] .ui-tree-row-highlight {
+    animation: none;
   }
   .ui-tree-row--disabled {
     opacity: 0.5;
@@ -216,57 +265,48 @@
   .ui-tree-root[data-motion='off'] .ui-tree-row .ui-tree-check path {
     transition: none;
   }
-  /* A folder's children are uncovered from the top edge down, and covered back up, while
-     Tree.vue's FLIP pass slides the rows below by the block's height. Same curve, same duration,
-     same start frame: the reveal edge and the next row move together, so nothing overlaps. Closing
-     uses the exit duration for both. transform carries the block along when its folder row slides
-     too (a tree centred in its box). ease-out, so it moves on the first frame after the click. */
-  .ui-tree-rows-enter-active,
-  .ui-tree-rows-leave-active {
-    /* inset(0), not none: clip-path only animates between two insets. */
-    clip-path: inset(0);
-    transition:
-      opacity var(--ui-duration-enter) var(--ui-ease-out),
-      clip-path var(--ui-duration-enter) var(--ui-ease-out),
-      transform var(--ui-duration-enter) var(--ui-ease-out);
+  /* A large tree: a block as tall as every row, the rows in view placed in it by translate, and
+     the pinned folders (copies, for the eye) stuck to the top. During a fold, the rows below a
+     folder are shifted up by --ui-tree-shift, written each frame. */
+  .ui-tree-rows--virtual {
+    display: block;
+    position: relative;
   }
-  .ui-tree-rows-enter-from,
-  .ui-tree-rows-leave-to {
-    opacity: 0;
-    clip-path: inset(0 0 100% 0);
-  }
-  /* Out of flow, so the rows below can slide up into its place (FLIP) while it covers itself. */
-  .ui-tree-rows-leave-active {
+  .ui-tree-rows--virtual > [data-virtual-index] {
     position: absolute;
     inset-inline: 0;
-    top: var(--ui-tree-row-height);
-    transition-duration: var(--ui-duration-exit);
+    top: 0;
   }
-  /* A folder that was already open inside one that's opening comes with it: one reveal, not two. */
-  .ui-tree-rows-enter-active .ui-tree-rows-enter-active {
-    transition: none;
+  /* No height of its own, so the pins take no room in the block: each sticks at its own top. */
+  .ui-tree-rows--virtual > .ui-tree-pin {
+    position: sticky;
+    block-size: 0;
+    overflow: visible;
   }
-  /* A search swap, motion-css off or reduced motion (TreeNodeRow.vue): rows appear and go at
-     once. A leaving block drops out of layout now instead of after the two frames Vue waits. */
-  .ui-tree-rows[data-instant] {
-    transition: none;
+  .ui-tree-pin > .ui-tree-row {
+    flex-shrink: 0;
   }
-  .ui-tree-rows-enter-from[data-instant] {
-    opacity: 1;
-    clip-path: none;
+
+  /* A folder's rows fold open and shut by the block's own height (useFold): it stays in the flow,
+     so the rows below and a tree centred in its box follow its edge in layout, and nothing is drawn
+     twice. `clip`, not `hidden`: a hidden overflow would make the block a scroll container and
+     unstick any sticky row inside it. */
+  .ui-tree-rows[data-folding] {
+    overflow: clip;
   }
-  .ui-tree-rows-leave-active[data-instant] {
-    display: none;
+  /* In a scroll box, anchoring would move the box to hold a row below the fold still, and the row
+     that was clicked would slip away from under the pointer. */
+  .ui-tree-root {
+    overflow-anchor: none;
+  }
+  .ui-tree-rows[data-folding] > * {
+    flex-shrink: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-tree-chevron,
     .ui-tree-list {
       transition: none;
-    }
-    /* Opening fades without the wipe; closing is instant (TreeNodeRow.vue). */
-    .ui-tree-rows-enter-from {
-      clip-path: inset(0);
     }
   }
 
@@ -310,7 +350,7 @@
     scale: 1.01;
     transition:
       scale var(--ui-duration-press) var(--ui-ease-out),
-      background-color var(--ui-duration-press) var(--ui-ease-out);
+      background-color var(--ui-duration-press) ease;
   }
 
   /* Dropping INTO a folder. The whole row fills, because the destination is
@@ -369,11 +409,29 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .ui-tree-row-highlight {
+      animation: none;
+    }
     .ui-tree-row[data-dragging],
     .ui-tree-row[data-drop-into]:not(.ui-tree-row--disabled) {
       box-shadow: none;
       scale: 1;
       transition: none;
     }
+  }
+
+  /* Touch has no hover: the press itself shows the row was hit. */
+  @media (hover: none) and (pointer: coarse) {
+    .ui-tree-row:active:not(.ui-tree-row--disabled, .ui-tree-row--selected) {
+      background: var(--ui-muted);
+    }
+  }
+
+  /* Too many rows: static checkboxes, so no compositor layer each. Folding is unaffected. */
+  .ui-tree-root[data-rows='many'] .ui-checkbox-box {
+    will-change: auto;
+  }
+  .ui-tree-root[data-rows='many'] .ui-checkbox-input:active:not(:disabled) + .ui-checkbox-box {
+    scale: none;
   }
 }

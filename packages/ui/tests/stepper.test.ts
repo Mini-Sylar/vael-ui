@@ -21,8 +21,8 @@ test('steps before/at/after modelValue get completed/active/upcoming data-state'
   expect(steps[2]!.getAttribute('data-state')).toBe('upcoming')
 })
 
-test('motionCss=false disables the check/number swap transition (no ui-stepper-check-* class applied)', async () => {
-  const screen = await render(Stepper, { props: { items, modelValue: 1, motionCss: false } })
+test('motion=false disables the check/number swap transition (no ui-stepper-check-* class applied)', async () => {
+  const screen = await render(Stepper, { props: { items, modelValue: 1, motion: false } })
   const check = screen.container.querySelector('.ui-stepper-step svg')!
   expect(check.getAttribute('class')).toBeNull()
 })
@@ -66,8 +66,8 @@ test('linear (default) blocks skipping ahead to an unreached step', async () => 
   }
   const screen = await render(Wrapper)
   const last = screen.container.querySelectorAll('.ui-stepper-trigger')[3]!
-  // Not clickable ahead of the active step: renders as a plain div, not a button.
-  expect(last.tagName).toBe('DIV')
+  // Not clickable ahead of the active step: a button that's off until it's reached.
+  expect((last as HTMLButtonElement).disabled).toBe(true)
   expect(modelValue.value).toBe(0)
 })
 
@@ -84,15 +84,15 @@ test('linear=false allows jumping straight to any non-disabled step', async () =
   }
   const screen = await render(Wrapper)
   const last = screen.container.querySelectorAll('.ui-stepper-trigger')[3]!
-  expect(last.tagName).toBe('BUTTON')
+  expect((last as HTMLButtonElement).disabled).toBe(false)
   await userEvent.click(last)
   expect(modelValue.value).toBe(3)
 })
 
 test('a disabled step never becomes clickable, even with linear=false', async () => {
   const screen = await render(Stepper, { props: { items, linear: false, modelValue: 0 } })
-  const review = screen.container.querySelectorAll('.ui-stepper-trigger')[2]!
-  expect(review.tagName).toBe('DIV')
+  const review = screen.container.querySelectorAll<HTMLButtonElement>('.ui-stepper-trigger')[2]!
+  expect(review.disabled).toBe(true)
 })
 
 test('clickable=false renders every trigger as a non-interactive div', async () => {
@@ -130,17 +130,18 @@ test('linear: steps reached earlier stay clickable after stepping back', async (
   const triggers = () => screen.container.querySelectorAll<HTMLElement>('.ui-stepper-trigger')
   await userEvent.click(triggers()[0]!)
   expect(modelValue.value).toBe(0)
-  // Step 2 was reached, so it's still a button; step 3 never was.
-  expect(triggers()[2]!.tagName).toBe('BUTTON')
-  expect(triggers()[3]!.tagName).toBe('DIV')
+  // Step 2 was reached, so it's still on; step 3 never was.
+  expect((triggers()[2] as HTMLButtonElement).disabled).toBe(false)
+  expect((triggers()[3] as HTMLButtonElement).disabled).toBe(true)
   await userEvent.click(triggers()[2]!)
   expect(modelValue.value).toBe(2)
 })
 
-test('non-interactive steps carry no disabled attribute; disabled steps use aria-disabled and look dimmed', async () => {
+test('steps not reached yet are off but not dimmed; disabled steps use aria-disabled and look dimmed', async () => {
   const screen = await render(Stepper, { props: { items, modelValue: 0 } })
   const triggers = screen.container.querySelectorAll<HTMLElement>('.ui-stepper-trigger')
-  triggers.forEach((el) => expect(el.hasAttribute('disabled')).toBe(false))
+  expect(triggers[0]!.hasAttribute('disabled')).toBe(false)
+  expect(triggers[3]!.hasAttribute('disabled')).toBe(true)
   expect(triggers[2]!.getAttribute('aria-disabled')).toBe('true')
   expect(triggers[3]!.hasAttribute('aria-disabled')).toBe(false)
   // Disabled reads differently from a merely upcoming step.
@@ -162,9 +163,8 @@ test('#indicator slot replaces the circle content and receives the step state', 
   expect(circles[0]!.querySelector('svg')).toBeNull()
 })
 
-test('motionCss=false switches off the circle and connector fill transitions too', async () => {
-  const make = (motionCss: boolean) =>
-    render(Stepper, { props: { items, modelValue: 1, motionCss } })
+test('motion=false switches off the circle and connector fill transitions too', async () => {
+  const make = (motion: boolean) => render(Stepper, { props: { items, modelValue: 1, motion } })
   const parts = (container: HTMLElement) => ({
     circle: container.querySelector<HTMLElement>('.ui-stepper-circle')!,
     connector: container.querySelector<HTMLElement>('.ui-stepper-connector')!,
@@ -181,7 +181,7 @@ test('motionCss=false switches off the circle and connector fill transitions too
   expect(getComputedStyle(still.connector, '::after').transitionProperty).toBe('none')
 })
 
-test('exposes circleEls, connectorEls and labelEls in order, and keeps them right when a step remounts', async () => {
+test('exposes circleEls, connectorEls and labelEls in order; reaching a step keeps its circle', async () => {
   const stepper = shallowRef<{
     circleEls: HTMLElement[]
     connectorEls: HTMLElement[]
@@ -202,20 +202,20 @@ test('exposes circleEls, connectorEls and labelEls in order, and keeps them righ
   expect(stepper.value!.connectorEls).toEqual(query('.ui-stepper-connector'))
   expect(stepper.value!.labelEls.map((el) => el.textContent)).toEqual(['A', 'B', 'C', 'D'])
 
-  // Reaching step 2 swaps its trigger from a div to a button, a new circle element.
+  // Reaching step 2 turns its trigger on: the same circle, so its colour transitions.
   const oldCircle = stepper.value!.circleEls[2]
   modelValue.value = 2
   await nextTick()
   await nextTick()
   const circles = query('.ui-stepper-circle')
-  expect(circles[2]).not.toBe(oldCircle)
+  expect(circles[2]).toBe(oldCircle)
   expect(stepper.value!.circleEls).toEqual(circles)
   expect(stepper.value!.labelEls).toEqual(query('.ui-stepper-label'))
 })
 
 test('--ui-stepper-fill on a connector drives its fill, and the default look holds when unset', async () => {
-  // motionCss=false, as JS would: with the CSS transition on, the new value eases in.
-  const screen = await render(Stepper, { props: { items, modelValue: 1, motionCss: false } })
+  // motion=false, as JS would: with the CSS transition on, the new value eases in.
+  const screen = await render(Stepper, { props: { items, modelValue: 1, motion: false } })
   const connectors = screen.container.querySelectorAll<HTMLElement>('.ui-stepper-connector')
   const filled = connectors[0]!
   const empty = connectors[1]!

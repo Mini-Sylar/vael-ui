@@ -25,13 +25,17 @@
   >
     <span :class="valuePart.class" :style="valuePart.style">
       <slot name="value" :selected="selectedNodes as T[]">
-        <span v-if="isEmpty" class="ui-select-placeholder">{{ placeholder }}</span>
-        <span v-else>{{ displayLabel }}</span>
+        <!-- The placeholder is the same text element, so the first choice crossfades in too. -->
+        <LazyAnimatedText
+          :class="isEmpty && 'ui-select-placeholder'"
+          :value="isEmpty ? (placeholder ?? '') : displayLabel"
+          :motion="!!props.motion"
+        />
       </slot>
     </span>
     <Transition
       name="ui-clear"
-      :css="props.motionCss"
+      :css="!!props.motion"
       @enter="measureClearSpace"
       @leave="startClearLeave"
       @leave-cancelled="resetLeaveStyles"
@@ -68,7 +72,7 @@
   </div>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" appear :css="!forceMount">
+    <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -82,9 +86,10 @@
       >
         <div
           ref="panel"
+          data-ui-presence
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelMaxHeightStyle, panelPart.style]"
-          :data-motion="props.motionCss ? undefined : 'off'"
+          :data-motion="props.motion ? undefined : 'off'"
           v-bind="panelAttrs"
         >
           <div v-if="$slots.header" :class="headerPart.class" :style="headerPart.style">
@@ -102,9 +107,10 @@
             :filterable="filterable"
             :filter-placeholder="filterPlaceholder"
             :empty-text="emptyText"
-            :motion-css="props.motionCss"
+            :motion="!!props.motion"
             :expand-on-row-click="expandOnRowClick"
             :sticky-scroll="stickyScroll"
+            :scroll-fade="scrollFade"
             :ui="treeUi"
             @change="(value) => emit('change', value)"
             @select="onTreeSelect"
@@ -153,6 +159,8 @@ export type TreeSelectSelectionMode = TreeSelectionMode
 </script>
 
 <script setup lang="ts" generic="T extends TreeSelectNode = TreeSelectNode">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, TreeSelectMotion } from '../../motion/types'
 import './TreeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
@@ -164,6 +172,7 @@ import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } fr
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import { usePopover } from '../../composables/usePopover'
+import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useUiMessages } from '../../messages'
@@ -171,6 +180,7 @@ import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import Tree from '../Tree/Tree.vue'
+import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -245,6 +255,12 @@ const rawProps = withDefaults(
      * @default false
      */
     stickyScroll?: boolean
+    /**
+     * Fades the panel's top and bottom edges while there are more rows past them. With
+     * `stickyScroll`, only the bottom fades, so pinned rows stay solid.
+     * @default true
+     */
+    scrollFade?: boolean
     /** Renders hidden `<input>`(s) so a plain `<form>` post carries the selection, repeating `name` outside `'single'` mode. */
     name?: string
     /** Which side of the trigger the panel opens on. @default 'bottom' */
@@ -259,9 +275,9 @@ const rawProps = withDefaults(
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
@@ -271,9 +287,13 @@ const rawProps = withDefaults(
      * @default 320
      */
     maxPanelHeight?: number
-    /** `false` skips all built-in motion (row transitions, chevron rotation, the panel and list easing
-     * to a new height, and the clear button). @default true */
-    motionCss?: boolean
+    /**
+     * `false` skips all built-in motion: the panel opening, rows, the chevron, the list easing to a
+     * new height, and the clear button. An object moves the panel your way, like Popover's: values
+     * for the `panel` part, `{ spring }`, or `enter` / `leave` hooks for your own library.
+     * @default true
+     */
+    motion?: TreeSelectMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       trigger: UiPartValue
@@ -300,6 +320,7 @@ const rawProps = withDefaults(
     emptyText: 'No results found',
     expandOnRowClick: false,
     stickyScroll: false,
+    scrollFade: true,
     name: undefined,
     side: 'bottom',
     align: 'start',
@@ -311,11 +332,11 @@ const rawProps = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
-    motionCss: undefined,
+    motion: undefined,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 const emit = defineEmits<{
   /** Fires before the panel closes; `details.cancel()` keeps it open. */
@@ -402,41 +423,19 @@ function onTreeSelect(node: T) {
 const triggerEl = useTemplateRef<HTMLElement>('triggerEl')
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
+const panelTransition = useSelectPanelMotion({
+  name: 'TreeSelect',
+  key: 'treeSelect',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => triggerEl.value,
+  forceMount: () => props.forceMount,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
 
-// The panel grows and shrinks with the tree's own expand animation instead of jumping to its new
-// height first: Tree.vue's FLIP pass slides rows on --ui-ease-out, starting two frames in, over
-// the enter duration when opening and the exit duration when closing, and the panel does the same.
-// A folder that swaps at once (an arrow key) resizes the panel at once too. Heights ignore the
-// opening scale.
 function onExpandChange(value: string | number, expanded: boolean) {
   emit('expand-change', value, expanded)
-  const panel = panelEl.value
-  if (!panel || !props.motionCss || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  const from = panel.offsetHeight
-  nextTick(() => {
-    panel.style.transition = 'none'
-    panel.style.height = ''
-    const to = panel.offsetHeight
-    if (Math.abs(to - from) < 1 || panel.querySelector('.ui-tree-rows[data-instant]')) {
-      panel.style.transition = ''
-      return
-    }
-    panel.style.height = `${from}px`
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        const duration = expanded ? 'var(--ui-duration-enter)' : 'var(--ui-duration-exit)'
-        panel.style.transition = `height ${duration} var(--ui-ease-out)`
-        panel.style.height = `${to}px`
-        const settle = (event: TransitionEvent) => {
-          if (event.target !== panel || event.propertyName !== 'height') return
-          panel.removeEventListener('transitionend', settle)
-          panel.style.height = ''
-          panel.style.transition = ''
-        }
-        panel.addEventListener('transitionend', settle)
-      }),
-    )
-  })
 }
 const treeRef = useTemplateRef<ComponentExposed<typeof Tree>>('treeRef')
 
@@ -480,7 +479,10 @@ const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layer
 const treeId = useId()
 
 const messages = useUiMessages()
-const fieldControl = useFieldControl({ filled: () => !isEmpty.value })
+const fieldControl = useFieldControl({
+  filled: () => !isEmpty.value,
+  frame: { el: () => triggerEl.value, size: () => props.size },
+})
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 

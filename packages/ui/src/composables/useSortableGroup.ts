@@ -1,12 +1,6 @@
 import { nextTick, toValue } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
-import {
-  DROP_SPRING,
-  SHIFT_SPRING,
-  resolveInsertionIndex,
-  resolveRowShifts,
-  useSortable,
-} from './useSortable'
+import { SHIFT_SPRING, resolveInsertionIndex, resolveRowShifts, useSortable } from './useSortable'
 import type {
   GroupMemberBinding,
   SortableAxis,
@@ -17,7 +11,9 @@ import type {
 } from './useSortable'
 import { createSpring } from './useSpringValue'
 import type { SpringHandle } from './useSpringValue'
-import { contentOffset, findScrollParent } from './sortableAutoScroll'
+import { contentOffset, findScrollParent, scrollIntoReach } from './sortableAutoScroll'
+import type { Point } from './sortableSettle'
+import { prefersReducedMotion } from './dom'
 
 /** Where a dragged value sits, or would land, within one member list. */
 export interface GroupDropPosition {
@@ -42,7 +38,7 @@ export interface UseSortableGroupOptions {
   /** `beforeDrop` threw or rejected; the move is already reverted by the time this fires. */
   onDropError?: (error: unknown, details: GroupDropDetails) => void
   /** `false` skips the springs for the ghost gap opened in a foreign column while hovering it. */
-  motionCss?: MaybeRefOrGetter<boolean>
+  motion?: MaybeRefOrGetter<boolean>
 }
 
 interface GroupContainerRect {
@@ -103,37 +99,15 @@ function translateFor(offset: number, axis: SortableAxis): string {
   return axis === 'x' ? `${offset}px 0` : `0 ${offset}px`
 }
 
-function captureTops(binding: GroupMemberBinding): Map<HTMLElement, number> {
-  const tops = new Map<HTMLElement, number>()
-  const axis = binding.axis()
+function captureTops(binding: GroupMemberBinding): Map<HTMLElement, Point> {
+  const tops = new Map<HTMLElement, Point>()
   for (const row of binding.rows()) {
     const el = binding.getElement(row.value)
     if (!el) continue
     const rect = el.getBoundingClientRect()
-    tops.set(el, axis === 'x' ? rect.left : rect.top)
+    tops.set(el, { x: rect.left, y: rect.top })
   }
   return tops
-}
-
-function flipRows(
-  before: Map<HTMLElement, number>,
-  after: Map<HTMLElement, number>,
-  velocities: Map<HTMLElement, number>,
-  skipEl: HTMLElement | null,
-  axis: SortableAxis,
-) {
-  for (const [el, beforeTop] of before) {
-    if (el === skipEl) continue
-    const afterTop = after.get(el)
-    if (afterTop == null) continue
-    const delta = beforeTop - afterTop
-    if (Math.abs(delta) < 0.5) continue
-    el.style.translate = translateFor(delta, axis)
-    const spring = createSpring(delta, DROP_SPRING, (offset) => {
-      el.style.translate = translateFor(offset, axis)
-    })
-    spring.set(0, { velocity: velocities.get(el) ?? undefined })
-  }
 }
 
 function focusHandle(el: HTMLElement) {
@@ -163,10 +137,8 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
   let ghostSprings = new Map<string | number, SpringHandle>()
 
   function reducedMotion(): boolean {
-    if (toValue(options.motionCss) === false) return true
-    return (
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    )
+    if (toValue(options.motion) === false) return true
+    return prefersReducedMotion()
   }
 
   function containerRects(): GroupContainerRect[] {
@@ -272,6 +244,7 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     } else if (currentHostId != null) {
       settleGhost()
       members.get(currentHostId)?.onForeignHover(false)
+      members.get(currentHostId)?.makeRoom(0)
     }
     currentHostId = newHostId
     if (newHostId === originGroupId) {
@@ -279,12 +252,16 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     } else {
       freezeBands(members.get(newHostId)!)
       members.get(newHostId)?.onForeignHover(true)
+      // The list grows to take the row in, so the gap has real room, at its end too.
+      const size = members.get(originGroupId!)?.draggedBlockSize()
+      if (size) members.get(newHostId)?.makeRoom(size)
     }
   }
 
   function resetSession() {
     if (currentHostId != null && currentHostId !== originGroupId) {
       members.get(currentHostId)?.onForeignHover(false)
+      members.get(currentHostId)?.makeRoom(0)
     }
     originGroupId = null
     currentHostId = null
@@ -324,9 +301,20 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     const hostBinding = members.get(currentHostId!)!
     const origin = members.get(originGroupId)!
     const axis = hostBinding.axis()
-    const pointerAlong =
-      (axis === 'x' ? point.x : point.y) + contentOffset(ghostScrollEl, axis) - ghostOffsetAtFreeze
-    currentIndex = resolveInsertionIndex(ghostBands, pointerAlong)
+    // The preview's centre, as a same-list drag uses the block's centre, so where a card lands
+    // doesn't depend on where it was grabbed.
+    const preview = origin.previewRect()
+    const along = preview
+      ? axis === 'x'
+        ? preview.left + preview.width / 2
+        : preview.top + preview.height / 2
+      : axis === 'x'
+        ? point.x
+        : point.y
+    currentIndex = resolveInsertionIndex(
+      ghostBands,
+      along + contentOffset(ghostScrollEl, axis) - ghostOffsetAtFreeze,
+    )
     driveGhost(hostBinding, currentIndex, origin.draggedBlockSize())
   }
 
@@ -409,6 +397,12 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     }
     ghostSprings = new Map()
 
+    // Taken now, while the lifted row is still on the page to copy.
+    const lifted = keyboardSourced ? null : origin.copyLiftedRow()
+    origin.fadePlaceholder()
+    // The row takes over the room its new list made for it, in the same frame, so neither moves.
+    dest.makeRoom(0, true)
+    const leaving = origin.draggedBlockSize()
     options.onTransfer(value, from, to)
     resetSession()
 
@@ -416,26 +410,57 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
 
     origin.finishDepart(departCapture)
 
-    const destAfter = captureTops(dest)
     const destEl = dest.getElement(value)
+    // Measured after any scroll that shows the new slot, so the column's rows glide through it.
+    if (destEl) scrollIntoReach(destEl, destAxis)
+    const destAfter = captureTops(dest)
+    const velocity = destAxis === 'x' ? { x: releaseVelocity, y: 0 } : { x: 0, y: releaseVelocity }
+    // A floating copy flies into the new slot above every column, and the card shows once it's
+    // there. The real card would be clipped by its new list and pass under its new neighbours.
+    // A lifted real card ('element') lands the same way, through a copy of itself.
+    const copy = destEl && !keyboardSourced ? (origin.takeCopy() ?? lifted) : null
+    if (copy !== lifted) lifted?.remove()
     origin.destroyOwnPreview()
-    if (destEl && previewRect) {
-      const beforeTop = destAxis === 'x' ? previewRect.left : previewRect.top
-      const afterTop = destAfter.get(destEl)
-      if (afterTop != null) {
-        const delta = beforeTop - afterTop
-        if (Math.abs(delta) >= 0.5) {
-          destEl.style.translate = translateFor(delta, destAxis)
-          const spring = createSpring(delta, DROP_SPRING, (offset) => {
-            destEl.style.translate = translateFor(offset, destAxis)
-          })
-          spring.set(0, { velocity: releaseVelocity })
-        } else {
-          destEl.style.translate = ''
-        }
+    // The list it left closes up behind it instead of snapping to its new size.
+    origin.makeRoom(leaving, true)
+    origin.makeRoom(0)
+    if (copy && destEl) dest.landCopy(copy, destEl, value, velocity)
+    if (!copy && destEl && previewRect) {
+      const after = destAfter.get(destEl)
+      if (after) {
+        // Both axes: the preview was wherever the pointer left it, and the whole way from there
+        // to the slot glides.
+        const delta = { x: previewRect.left - after.x, y: previewRect.top - after.y }
+        if (Math.abs(delta.x) >= 0.5 || Math.abs(delta.y) >= 0.5)
+          dest.settle(destEl, value, delta, velocity, true)
+        else destEl.style.translate = ''
       }
     }
-    flipRows(destBefore, destAfter, destGhostVelocities, destEl ?? null, destAxis)
+    // The landing watches the destination's rows too: an optimistic update that re-sorts the
+    // column right after the drop then glides them instead of snapping.
+    dest.watchRows()
+    // The rest of the destination's rows land through the same settler, so one writer owns
+    // their translate if the column re-sorts while they settle.
+    const destValueOf = new Map<HTMLElement, string | number>()
+    for (const row of dest.rows()) {
+      const el = dest.getElement(row.value)
+      if (el) destValueOf.set(el, row.value)
+    }
+    for (const [el, before] of destBefore) {
+      if (el === destEl) continue
+      const rowValue = destValueOf.get(el)
+      const after = destAfter.get(el)
+      if (rowValue == null || !after) continue
+      const delta = { x: before.x - after.x, y: before.y - after.y }
+      if (Math.abs(delta.x) < 0.5 && Math.abs(delta.y) < 0.5) continue
+      const carried = destGhostVelocities.get(el) ?? 0
+      dest.settle(
+        el,
+        rowValue,
+        delta,
+        destAxis === 'x' ? { x: carried, y: 0 } : { x: 0, y: carried },
+      )
+    }
 
     if (keyboardSourced && destEl) focusHandle(destEl)
   }
@@ -475,6 +500,15 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     return useSortable({ ...memberOptions, group: handle, groupId: memberOptions.groupId })
   }
 
+  function __hostContainer(): HTMLElement | null {
+    return currentHostId == null ? null : (members.get(currentHostId)?.container() ?? null)
+  }
+
+  function __hostScroller(): HTMLElement | null {
+    const host = currentHostId == null ? undefined : members.get(currentHostId)
+    return host ? findScrollParent(host.container(), host.axis()) : null
+  }
+
   const handle: SortableGroupHandle = {
     join,
     __register,
@@ -483,6 +517,8 @@ export function useSortableGroup(options: UseSortableGroupOptions): SortableGrou
     __keyboardMove,
     __finish,
     __cancel,
+    __hostScroller,
+    __hostContainer,
   }
   return handle
 }

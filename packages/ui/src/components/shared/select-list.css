@@ -7,12 +7,15 @@
   }
   .ui-select-body {
     position: relative;
+    isolation: isolate;
     contain: layout;
     /* Panel is a flex column (filter/header/footer are `flex: none` siblings) —
        this is the one flexible child, capped by the panel's own max-height. */
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     /* A vertical list never scrolls sideways, even while rows slide in. */
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -86,9 +89,6 @@
     background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
   }
   /* Active reads same as hover (APG convention). */
-  .ui-select-option[data-active] {
-    background: var(--ui-muted);
-  }
   .ui-select-option[data-disabled] {
     opacity: 0.5;
     cursor: not-allowed;

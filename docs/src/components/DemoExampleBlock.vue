@@ -4,7 +4,7 @@
       <a :href="`#${anchor}`">{{ example.title }}</a>
     </h3>
     <div class="demo-card">
-      <h3 v-if="showTitle && !next" class="demo-title">{{ example.title }}</h3>
+      <h3 v-if="showTitle && !next" :id="anchor" class="demo-title">{{ example.title }}</h3>
       <div v-if="!next" class="demo-toolbar">
         <SelectButton v-model="view" size="sm" :items="viewItems" :allow-empty="false" />
         <SelectButton
@@ -248,8 +248,9 @@ const code = computed(() =>
 }
 
 .demo-code-trigger:active {
+  /* A button's box is its own layer (vael-ui 0.5): colour it through these variables. */
   transform: none;
-  background: var(--ui-muted-hover);
+  --ui-button-bg: var(--ui-muted-hover);
 }
 
 .demo-code-chevron {

@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Extreme: a fare calendar (motion-v)</h3>
     <p class="note">
-      The <code>#day</code> slot shows each day's fare, coloured from cheap to pricey, with a dot on
-      the best deals. Every day is motion-v markup inside the slot, so it animates without any DOM
-      querying: a new month falls in on a diagonal wave, departure and return pop when picked, and a
-      finished trip ripples its fares from one end to the other. <code>:motion-css="false"</code>
-      turns off the built-in slide so the two don't fight.
+      The <code>#day</code> slot shows each day’s fare, colored from cheap to expensive, with a dot
+      on the best deals. Each day is motion-v markup inside the slot, so it animates without
+      querying the DOM: a new month’s days drop in on a diagonal wave, departure and return pop when
+      picked, and a finished trip ripples its fares from one end to the other.
+      <code>:motion="false"</code> turns off the built-in month slide so the two don’t conflict.
     </p>
     <div class="fare">
       <Calendar
@@ -14,7 +14,7 @@
         selection-mode="range"
         :months="2"
         :min-date="today"
-        :motion-css="false"
+        :motion="false"
         locale="en-US"
       >
         <template #day="{ date, isCurrentMonth, isDisabled, isSelected, isToday }">

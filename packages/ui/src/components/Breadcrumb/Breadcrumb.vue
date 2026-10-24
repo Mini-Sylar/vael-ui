@@ -6,9 +6,15 @@
     :style="rootPart.style"
     v-bind="attrs"
   >
-    <ol v-scroll-mask="wrap ? false : 'x'" :class="listPart.class" :style="listPart.style">
+    <component
+      :is="crumbsTransition ? TransitionGroup : 'ol'"
+      v-scroll-mask="wrap ? false : 'x'"
+      :class="listPart.class"
+      :style="listPart.style"
+      v-bind="crumbsTransition"
+    >
       <template v-if="items">
-        <template v-for="(item, index) in items" :key="index">
+        <template v-for="(item, index) in items" :key="crumbKey(item, index)">
           <BreadcrumbItem
             :as="item.as"
             :current="item.current ?? index === items.length - 1"
@@ -28,7 +34,7 @@
         </template>
       </template>
       <slot v-else />
-    </ol>
+    </component>
   </nav>
 </template>
 
@@ -50,12 +56,16 @@ export interface BreadcrumbItemData {
 <script setup lang="ts" generic="T extends BreadcrumbItemData = BreadcrumbItemData">
 import './Breadcrumb.css'
 import '../shared/tokens.css'
-import { computed, useAttrs, useTemplateRef } from 'vue'
+import { TransitionGroup, computed, useAttrs, useTemplateRef } from 'vue'
 import BreadcrumbItem from '../BreadcrumbItem/BreadcrumbItem.vue'
 import BreadcrumbSeparator from '../BreadcrumbSeparator/BreadcrumbSeparator.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { BreadcrumbMotion } from '../../motion/types'
 import { useUiMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
 
@@ -73,10 +83,16 @@ const props = withDefaults(
      * @default false
      */
     wrap?: boolean
+    /** How it moves: its appearance, crumb by crumb (`{ initial: { item: { opacity: 0, x: -4 } }, stagger: 0.03 }`). Crumbs a new path adds or removes come and go the same way. `false` turns its own animation off. */
+    motion?: BreadcrumbMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; list: UiPartValue }>
   }>(),
-  { wrap: false },
+  {
+    wrap: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 
 defineSlots<{
@@ -90,6 +106,33 @@ const messages = useUiMessages()
 const ariaLabel = computed(() => props.ariaLabel ?? messages.value.breadcrumb.label)
 
 const root = useTemplateRef<HTMLElement>('root')
+// A crumb by its link, or its label: a new path adds and removes crumbs instead of relabelling them.
+function crumbKey(item: T, index: number): string {
+  const href = item.attrs?.href ?? item.attrs?.to
+  return href !== undefined ? String(href) : `${item.label}:${index}`
+}
+// Yours (an object, or a shared style): crumbs come and go on the motion system.
+const style = useMotionStyle()
+const crumbsMotion =
+  typeof props.motion === 'object' || style?.value?.breadcrumb || style?.value?.list
+    ? useComponentList(() => props.motion, {
+        key: 'breadcrumb',
+        part: 'item',
+        name: 'Breadcrumb',
+        look: { opacity: 0, x: -4 },
+      })
+    : undefined
+const crumbsTransition = computed(() =>
+  crumbsMotion && props.motion !== false ? { tag: 'ol', ...crumbsMotion.transition } : undefined,
+)
+const parts = useStateMotion({
+  key: 'breadcrumb',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-breadcrumb', item: '.ui-breadcrumb-item' },
+  states: () => ({}),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.breadcrumb,
@@ -108,5 +151,9 @@ const listPart = computed(() =>
 defineExpose({
   /** Root element. */
   el: root,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

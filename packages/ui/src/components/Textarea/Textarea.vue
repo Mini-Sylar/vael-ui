@@ -27,11 +27,30 @@
       :aria-describedby="fieldControl.describedBy()"
       :aria-invalid="isInvalid || undefined"
       :aria-required="fieldControl.required() || undefined"
+      :data-ui-display="hasSlot('display') ? 'all' : undefined"
       @input="onNativeInput"
       @change="onNativeChange"
       @focus="onNativeFocus"
       @blur="onNativeBlur"
     />
+    <span
+      v-if="$slots.display"
+      class="ui-textarea-display"
+      :style="overlay.style.value"
+      aria-hidden="true"
+    >
+      <span
+        class="ui-textarea-display-track"
+        :style="{ translate: `${-overlay.scroll.value.x}px ${-overlay.scroll.value.y}px` }"
+      >
+        <slot
+          name="display"
+          :value="modelValue"
+          :placeholder="placeholder ?? ''"
+          :focused="focused"
+        />{{ '\u200b' }}</span
+      >
+    </span>
     <span v-if="$slots.end" :class="endPart.class" :style="endPart.style"><slot name="end" /></span>
     <div v-if="$slots['bottom-start'] || $slots['bottom-end']" :class="bottomClass">
       <span
@@ -55,7 +74,9 @@
 import './Textarea.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
+import { useTextOverlay } from '../../composables/useTextOverlay'
+import { useSlotPresence } from '../../composables/dom'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
@@ -63,6 +84,8 @@ import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { TextareaMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -90,6 +113,12 @@ const rawProps = withDefaults(
     autoGrow?: boolean
     /** Maximum rows `autoGrow` grows to; unset means no cap. */
     maxRows?: number
+    /**
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { invalid: { root: { x: [0, -6, 6, 0] } } } }`). `false` turns its own animation
+     * off.
+     */
+    motion?: TextareaMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -100,7 +129,15 @@ const rawProps = withDefaults(
       bottomEnd: UiPartValue
     }>
   }>(),
-  { disabled: false, readonly: false, invalid: false, rows: 3, autoGrow: false },
+  {
+    disabled: false,
+    readonly: false,
+    invalid: false,
+    rows: 3,
+    autoGrow: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
@@ -113,6 +150,13 @@ defineSlots<{
   'bottom-start'(): unknown
   /** Bottom-right of the action strip, such as a character counter or send button. */
   'bottom-end'(): unknown
+  /**
+   * Draws the text yourself, over the textarea's own text and following its wrapping and scroll,
+   * for highlighted mentions, tags or syntax. The textarea underneath keeps the caret, selection
+   * and screen reader text; its own text is hidden. Give an element `pointer-events: auto` to let
+   * it take hover.
+   */
+  display(props: { value: string; placeholder: string; focused: boolean }): unknown
 }>()
 
 function commit(value: string) {
@@ -135,9 +179,14 @@ function onNativeChange(event: Event) {
   }
 }
 
-const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0 })
+const fieldControl = useFieldControl({
+  filled: () => modelValue.value.length > 0,
+  frame: { el: () => root.value, size: () => props.size },
+})
 const focusVisible = shallowRef(false)
+const focused = shallowRef(false)
 function onNativeFocus(event: FocusEvent) {
+  focused.value = true
   try {
     focusVisible.value = focusIsFromKeyboard()
     fieldControl.onFocus()
@@ -146,6 +195,7 @@ function onNativeFocus(event: FocusEvent) {
   }
 }
 function onNativeBlur(event: FocusEvent) {
+  focused.value = false
   try {
     focusVisible.value = false
     fieldControl.onBlur()
@@ -218,6 +268,16 @@ const textareaStyle = computed(() => ({
 }))
 
 const root = useTemplateRef<HTMLElement>('root')
+const parts = useStateMotion({
+  key: 'textarea',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value, textarea: textareaEl.value }),
+  states: () => ({ invalid: isInvalid.value, disabled: isDisabled.value }),
+})
+const slots = useSlots()
+const hasSlot = useSlotPresence(slots)
+const overlay = useTextOverlay(textareaEl, root, () => hasSlot('display'), { multiline: true })
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.textarea,
@@ -253,5 +313,9 @@ defineExpose({
   el: root,
   /** Native `<textarea>` element. */
   textareaEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

@@ -11,10 +11,11 @@
 </template>
 
 <script setup lang="ts">
+import type { BeforeClose } from '../../src/motion/types'
 import { shallowRef } from 'vue'
 import Dialog from '../../src/components/Dialog/Dialog.vue'
 
-defineProps<{ beforeClose?: (done: () => void) => void }>()
+defineProps<{ beforeClose?: BeforeClose }>()
 
 const open = shallowRef(false)
 </script>

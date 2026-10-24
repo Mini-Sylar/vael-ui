@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Responsive overflow</h3>
     <p class="note">
-      <code>#start</code>/<code>#center</code>/<code>#end</code> slots lay out a document-style
-      toolbar; drag the resize handle in the box's bottom-right corner to shrink it. Only the
-      <code>#end</code> buttons marked <code>data-toolbar-overflow</code> collapse right-to-left
-      into the "…" menu once they stop fitting, they stay mounted, just visually hidden, so state
-      like the click counts below survives a collapse/expand round trip.
+      The <code>#start</code>, <code>#center</code> and <code>#end</code> slots lay out a document
+      toolbar. Drag the handle in the box's bottom-right corner to shrink it. The
+      <code>#end</code> buttons marked <code>data-toolbar-overflow</code> move into the “…” menu
+      from right to left once they don't fit. They stay mounted, only hidden, so state such as the
+      click counts below survives.
     </p>
     <div class="row">
       <div class="resizable">

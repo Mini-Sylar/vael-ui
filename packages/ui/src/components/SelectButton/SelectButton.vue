@@ -12,6 +12,12 @@
     :aria-required="fieldControl.required() || undefined"
     v-bind="attrs"
   >
+    <span
+      ref="hoverEl"
+      class="ui-indicator ui-indicator--inline ui-select-button-hover"
+      :style="hoverStyle"
+      aria-hidden="true"
+    />
     <label
       v-for="item in items"
       :key="item.value"
@@ -54,6 +60,8 @@ export interface SelectButtonItem {
 <!-- Native radios (single) or checkboxes (multiple) with sliding indicator; allowEmpty clears on click -->
 <script setup lang="ts" generic="T extends SelectButtonItem = SelectButtonItem">
 import './SelectButton.css'
+import '../shared/indicator.css'
+import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
@@ -62,6 +70,9 @@ import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import { useIndicatorMotion } from '../../composables/useIndicatorMotion'
+import type { SelectButtonMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -86,8 +97,11 @@ const rawProps = withDefaults(
     name?: string
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; option: UiPartValue; indicator: UiPartValue }>
+    /** How it moves: its appearance, option by option (`{ initial: { option: { opacity: 0, y: 4 } }, stagger: 0.03 }`), over `root`, `option` and the selection `indicator`, and its states (`{ states: { disabled: { root: { opacity: 0.6 } } } }`). `spring` retimes the indicator; `move` hands its moves to your own animation. `false` turns its own animation off. */
+    motion?: SelectButtonMotion
   }>(),
-  { multiple: false, allowEmpty: true, disabled: false },
+  // `motion`: absent must read as unset, not `false` (Vue's boolean casting would turn it off).
+  { multiple: false, allowEmpty: true, disabled: false, motion: undefined },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
@@ -143,9 +157,40 @@ function onInputChange(item: T, event: Event) {
 }
 
 const root = useTemplateRef<HTMLElement>('root')
+const parts = useStateMotion({
+  key: 'selectButton',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-select-button',
+    option: '.ui-select-button-option',
+    indicator: '.ui-select-button-indicator',
+  },
+  states: () => ({ disabled: props.disabled || fieldControl.disabled() }),
+})
+// The hover and keyboard highlight slides between options, under the selected one's indicator.
+const hoverEl = useTemplateRef<HTMLElement>('hoverEl')
+const { style: hoverStyle } = useHoverIndicator(root, {
+  itemSelector: '.ui-select-button-option',
+  orientation: 'horizontal',
+  indicatorEl: hoverEl,
+})
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+const indicatorMotion = useIndicatorMotion({
+  name: 'SelectButton',
+  motion: () => props.motion,
+  indicator: () => indicatorEl.value,
+  parts: () => parts(),
+})
 const { style: indicatorStyle } = useTabIndicator(modelValue, {
   listEl: root,
   selector: '[data-checked]',
+  indicatorEl,
+  indicator: indicatorMotion.spring,
+  motion: () => (indicatorMotion.handsOff() || props.motion === false ? false : undefined),
+  stretch: () => (typeof props.motion === 'object' ? props.motion.stretch : undefined),
+  squash: () => (typeof props.motion === 'object' ? props.motion.squash : undefined),
 })
 
 const cx = useClassMerge()
@@ -167,11 +212,16 @@ const indicatorPart = computed(() =>
   resolveUiPart(cx, themedUi()?.indicator, 'ui-select-button-indicator'),
 )
 
-const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
 defineExpose({
   /** Root element. */
   el: root,
   /** Sliding selection indicator (single mode only; `null` with `multiple`). */
   indicatorEl,
+  /** The hover and keyboard highlight, sliding between options. Under a ConfigProvider with `motion: false` it moves at once, for your own animation. */
+  highlightEl: hoverEl,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

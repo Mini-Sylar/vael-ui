@@ -98,7 +98,6 @@
     background: transparent;
     color: var(--ui-text-muted);
     cursor: pointer;
-    will-change: transform;
     transition:
       background-color var(--ui-duration-press) ease,
       color var(--ui-duration-press) ease,
@@ -107,9 +106,11 @@
   .ui-file-upload-remove:active {
     transform: scale(0.96);
   }
-  .ui-file-upload-remove:hover {
-    background: var(--ui-muted);
-    color: var(--ui-danger);
+  @media (hover: hover) and (pointer: fine) {
+    .ui-file-upload-remove:hover {
+      background: var(--ui-muted);
+      color: var(--ui-danger);
+    }
   }
   .ui-file-upload--disabled {
     opacity: 0.6;
@@ -117,7 +118,7 @@
   }
   .ui-file-item-enter-active {
     transition: opacity var(--ui-duration-enter) var(--ui-ease-out);
-    transition-delay: calc(var(--ui-file-item-index, 0) * 40ms);
+    transition-delay: calc(var(--ui-file-item-index, 0) * var(--ui-duration-stagger));
   }
   .ui-file-item-enter-from,
   .ui-file-item-leave-to {
@@ -177,5 +178,15 @@
     .ui-file-upload-remove:active {
       transform: none;
     }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-file-upload-remove {
+    position: relative;
+  }
+  .ui-file-upload-remove:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

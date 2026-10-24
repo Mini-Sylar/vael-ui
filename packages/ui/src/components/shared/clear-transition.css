@@ -1,24 +1,34 @@
 @layer ui-components {
-  /* A clear button fades and shrinks where it is, while a negative end margin slides its
-     neighbours across by exactly the room it takes in the row (measured into --ui-clear-space by
-     the transition hooks). Its width never animates, so nothing is left to jump when it goes. */
+  /* A clear button fades and shrinks where it is, while its margins give back the room it took:
+     the start margin in a fixed-width row (the value area widens under it), the end margin in a
+     content-sized one (the row closes up). Measured into --ui-clear-start/-end by the hooks. */
   /* Named with the buttons so these beat each button's own base rules, whatever order they load in. */
   :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
     .ui-clear-enter-active,
     .ui-clear-leave-active
   ) {
+    /* A plain ease-out for the fade: the expo curve drops most of it in the first frame. */
     transition:
-      opacity var(--ui-duration-press) var(--ui-ease-out),
+      opacity var(--ui-duration-press) ease-out,
       transform var(--ui-duration-press) var(--ui-ease-out),
+      margin-inline-start var(--ui-duration-press) var(--ui-ease-out),
       margin-inline-end var(--ui-duration-press) var(--ui-ease-out);
+  }
+  /* Leaving fades out quicker than it came in. */
+  :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear).ui-clear-leave-active {
+    transition-duration:
+      calc(var(--ui-duration-press) * 0.75), var(--ui-duration-press), var(--ui-duration-press),
+      var(--ui-duration-press);
   }
   :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
     .ui-clear-enter-from,
     .ui-clear-leave-to
   ) {
     opacity: 0;
-    transform: scale(0.5);
-    margin-inline-end: calc(var(--ui-clear-space, 0px) * -1);
+    transform: scale(0.9);
+    /* Unmeasured, the button's own resting margin. */
+    margin-inline-start: var(--ui-clear-start, min(0px, 1.5em - 24px));
+    margin-inline-end: var(--ui-clear-end, 0px);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -26,14 +36,13 @@
       .ui-clear-enter-active,
       .ui-clear-leave-active
     ) {
-      transition: opacity var(--ui-duration-press) var(--ui-ease-out);
+      transition: opacity var(--ui-duration-press) ease-out;
     }
     :is(.ui-select-clear, .ui-combobox-clear, .ui-cascade-select-clear):is(
       .ui-clear-enter-from,
       .ui-clear-leave-to
     ) {
       transform: none;
-      margin-inline-end: 0;
     }
   }
 }

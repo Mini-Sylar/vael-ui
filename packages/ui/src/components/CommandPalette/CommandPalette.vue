@@ -9,6 +9,7 @@
     :close-on-esc="closeOnEsc"
     :close-on-overlay="closeOnOverlay"
     :force-mount="forceMount"
+    :motion="dialogMotion"
     :before-close="beforeClose"
     :teleport-to="teleportTo"
     :container="container"
@@ -22,7 +23,10 @@
     <template #default="{ close }">
       <input
         ref="inputEl"
-        v-model="query"
+        :value="query"
+        enterkeyhint="go"
+        autocapitalize="off"
+        autocorrect="off"
         type="text"
         role="combobox"
         autocomplete="off"
@@ -34,6 +38,7 @@
         :placeholder="placeholder ?? messages.commandPalette.placeholder"
         :aria-controls="listId"
         :aria-activedescendant="activeId"
+        @input="onInput"
         @keydown="onInputKeydown($event, close)"
       />
       <TransitionGroup
@@ -44,12 +49,16 @@
         v-scroll-mask
         :class="listPart.class"
         :style="listPart.style"
-        :name="props.motionCss ? 'ui-command-palette-row' : undefined"
-        :css="props.motionCss"
-        move-class="ui-command-palette-row-move"
-        @enter="enterHook"
-        @leave="leaveHook"
+        v-bind="rowsTransition"
       >
+        <li
+          key="indicator"
+          ref="indicatorEl"
+          role="none"
+          aria-hidden="true"
+          class="ui-indicator ui-command-palette-indicator"
+          :style="indicatorStyle"
+        />
         <li
           v-if="filteredItems.length === 0"
           key="empty"
@@ -68,7 +77,7 @@
           :data-disabled="(row.kind === 'item' && row.item.disabled) || undefined"
           :class="row.kind === 'item' ? itemPart.class : groupLabelPart.class"
           :style="row.kind === 'item' ? itemPart.style : groupLabelPart.style"
-          @mousemove="row.kind === 'item' && (activeIndex = row.index)"
+          @mousemove="row.kind === 'item' && point(row.index)"
           @click="row.kind === 'item' && selectItem(row.item, close)"
         >
           <slot
@@ -105,6 +114,9 @@
           </slot>
         </li>
       </TransitionGroup>
+      <div v-if="$slots.footer" :class="footerPart.class" :style="footerPart.style">
+        <slot name="footer" :active-item="activeItem" :query="query" />
+      </div>
     </template>
   </Dialog>
 </template>
@@ -129,13 +141,18 @@ export interface CommandPaletteItem {
 </script>
 
 <script setup lang="ts" generic="T extends CommandPaletteItem = CommandPaletteItem">
+import type { DialogCloseReason } from '../../composables/useDialog'
+import type { BeforeClose } from '../../motion/types'
 import './CommandPalette.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import { computed, nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { useEasedHeight } from '../../composables/useEasedHeight'
+import { useTabIndicator } from '../../composables/useTabIndicator'
+import '../shared/indicator.css'
 import Dialog from '../Dialog/Dialog.vue'
+import type { DialogExposed } from '../Dialog/Dialog.vue'
 import type { DialogPosition, DialogSize } from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 import { scrollIntoContainer } from '../../composables/dom'
@@ -146,6 +163,9 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useComponentList } from '../../motion/useMotion'
+import { useMotionStyle } from '../../motion/context'
+import type { CommandPaletteMotion } from '../../motion/types'
 
 interface CommandPaletteGroupView {
   group: string | undefined
@@ -188,19 +208,22 @@ const rawProps = withDefaults(
      * @default true
      */
     closeOnOverlay?: boolean
-    /** Custom exit animation; call `done()` to finish closing. Forwarded to the underlying Dialog. */
-    beforeClose?: (done: () => void) => void
+    /** Runs before the palette closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The palette stays open while the promise is pending. CommandPalette passes it to its Dialog. */
+    beforeClose?: BeforeClose<DialogCloseReason>
     /**
-     * Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. Forwarded to the underlying Dialog.
+     * Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui
+     * then leaves its motion to you. Forwarded to the underlying Dialog.
      * @default false
      */
     forceMount?: boolean
     /**
-     * The results list eases to its new height as you type. `false` turns that off and hands
-     * each appearing and disappearing row to `@item-enter`/`@item-leave` instead.
+     * How it moves. `false` skips all of it: opening, closing, and the results easing to their new
+     * height as you type (rows change at once). An object moves the dialog your way, like Dialog's:
+     * values for its parts, `{ spring }`, or `enter` / `leave` hooks. `items` animates the rows
+     * (`{ items: { initial: { item: { opacity: 0 } } } }`).
      * @default true
      */
-    motionCss?: boolean
+    motion?: CommandPaletteMotion
     /** Teleport target: a CSS selector. Takes precedence over `container`. */
     teleportTo?: string
     /** Scopes the palette to one element instead of the viewport. Forwarded to the underlying Dialog. */
@@ -215,6 +238,7 @@ const rawProps = withDefaults(
       groupLabel: UiPartValue
       item: UiPartValue
       empty: UiPartValue
+      footer: UiPartValue
     }>
   }>(),
   {
@@ -225,33 +249,40 @@ const rawProps = withDefaults(
     closeOnEsc: true,
     closeOnOverlay: true,
     forceMount: false,
-    motionCss: undefined,
+    motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
 
 const emit = defineEmits<{
   /** Fires when you pick an enabled item by click or Enter. */
   select: [item: T]
   /** Fires before the palette closes, with the reason; `details.cancel()` keeps it open. */
   'open-change': [value: boolean, details: DialogOpenChangeDetails]
-  /** Fires as a row appears while you type, only while `motionCss` is `false`. Run your own
-   * animation, then call `done()`. */
-  'item-enter': [el: Element, done: () => void]
-  /** Same as `@item-enter`, for a row disappearing. */
-  'item-leave': [el: Element, done: () => void]
 }>()
 
-// Only the component's own motion-css="false" hands items to the events; a provider's is instant.
-const enterHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-enter', el, done),
-)
-const leaveHook = computed(() =>
-  rawProps.motionCss !== false
-    ? undefined
-    : (el: Element, done: () => void) => emit('item-leave', el, done),
+// Yours (an object, or a shared style): rows come and go on the motion system, which eases the
+// list's height too. Otherwise rows change at once and the list eases its height itself.
+const style = useMotionStyle()
+const itemsOf = (source: unknown) => (source as { items?: object } | undefined)?.items
+const items = () => itemsOf(rawProps.motion) ?? itemsOf(style?.value?.commandPalette)
+const listMotion =
+  (typeof items() === 'object' || style?.value?.list) && props.motion !== false
+    ? useComponentList(items, {
+        key: 'list',
+        part: 'item',
+        name: 'CommandPalette',
+        look: { opacity: 0 },
+      })
+    : undefined
+const rowsTransition = computed(() =>
+  listMotion
+    ? listMotion.transition
+    : {
+        name: props.motion ? 'ui-command-palette-row' : undefined,
+        css: !!props.motion,
+        moveClass: 'ui-command-palette-row-move',
+      },
 )
 
 defineSlots<{
@@ -268,6 +299,8 @@ defineSlots<{
   'group-label'(props: { group: string; items: T[] }): unknown
   /** Replaces the localized "no results" row shown when nothing matches. */
   empty(): unknown
+  /** A strip under the list, such as key hints. `activeItem` is the highlighted item, if any. */
+  footer(props: { activeItem: T | undefined; query: string }): unknown
 }>()
 
 const messages = useUiMessages()
@@ -327,6 +360,7 @@ const rows = computed(() =>
 )
 
 const activeIndex = shallowRef(-1)
+const activeItem = computed<T | undefined>(() => filteredItems.value[activeIndex.value])
 
 function enabledIndices(): number[] {
   const indices: number[] = []
@@ -368,18 +402,63 @@ function registerListEl(el: Element | { $el?: unknown } | null) {
 }
 
 // Ease to the new height from the current one, so a restart mid-animation doesn't jump.
+// The highlight slides between items, Tabs-style; a long jump (a new search) lands at once.
+const indicatorEl = useTemplateRef<HTMLElement>('indicatorEl')
+const { style: indicatorStyle } = useTabIndicator(() => [activeIndex.value, rows.value], {
+  listEl,
+  orientation: 'vertical',
+  selector: '[role="option"][data-active]',
+  scroller: true,
+  matchCross: true,
+  maxGlide: 3,
+  motion: () => !!props.motion,
+  indicatorEl,
+  position: 'translate',
+})
+
+// The list eases its own height (with a soft edge): the panel mustn't ease the same change too.
+// The dialog gets yours without `items`, which the rows read.
+const dialogMotion = computed(() => {
+  if (props.forceMount) return undefined
+  if (props.motion === false) return false
+  if (typeof props.motion !== 'object') return { resize: false }
+  const { items: _items, ...dialog } = props.motion
+  return { resize: false, ...dialog }
+})
 useEasedHeight({
   el: () => listEl.value,
   source: rows,
-  enabled: () => props.motionCss,
+  enabled: () => !!props.motion && !listMotion,
   edgeProperty: '--ui-command-palette-edge',
 })
 
+// Pointing at a half-hidden row mustn't scroll the list out from under the pointer.
+let pointed = false
+function point(index: number) {
+  if (activeIndex.value === index) return
+  pointed = true
+  activeIndex.value = index
+}
+
 watch(activeIndex, (index) => {
-  if (index < 0) return
+  const byPointer = pointed
+  pointed = false
+  if (index < 0 || byPointer) return
   nextTick(() => {
-    const row = listEl.value?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)
-    if (listEl.value && row) scrollIntoContainer(listEl.value, row)
+    const list = listEl.value
+    const row = list?.querySelector<HTMLElement>(`#${CSS.escape(optionId(index))}`)
+    if (!list || !row) return
+    // A group's heading sticks to the top of the list, so moving up, the row has to stop below
+    // its own heading instead of scrolling under it.
+    let heading = row.previousElementSibling
+    while (heading && heading.getAttribute('role') !== 'presentation') {
+      heading = heading.previousElementSibling
+    }
+    // It sticks inside the list's top padding, so the room it takes is both together.
+    const padding = Number.parseFloat(getComputedStyle(list).paddingTop) || 0
+    list.style.scrollPaddingBlockStart =
+      heading instanceof HTMLElement ? `${heading.offsetHeight + padding}px` : ''
+    scrollIntoContainer(list, row)
   })
 })
 
@@ -400,6 +479,12 @@ function selectItem(item: T, close: () => void) {
   if (item.disabled) return
   emit('select', item)
   if (props.closeOnSelect) close()
+}
+
+// Not v-model: it skips input while a keyboard composes, and Android
+// keyboards compose a whole word, so the list would wait for the space bar.
+function onInput(event: Event) {
+  query.value = (event.target as HTMLInputElement).value
 }
 
 function onInputKeydown(event: KeyboardEvent, close: () => void) {
@@ -423,7 +508,7 @@ function onInputKeydown(event: KeyboardEvent, close: () => void) {
   }
 }
 
-const dialogRef = useTemplateRef<InstanceType<typeof Dialog>>('dialogRef')
+const dialogRef = useTemplateRef<DialogExposed>('dialogRef')
 
 function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {
   const tokens = shortcut
@@ -467,6 +552,9 @@ const groupLabelPart = computed(() =>
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-command-palette-item'))
 const emptyPart = computed(() => resolveUiPart(cx, themedUi()?.empty, 'ui-command-palette-empty'))
+const footerPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.footer, 'ui-command-palette-footer'),
+)
 
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 
@@ -483,9 +571,13 @@ defineExpose({
   inputEl,
   /** Results list element (null while closed). */
   listEl,
+  /** The hover and keyboard highlight, sliding between items (null while closed). With `motion: false` it moves at once, for your own animation. */
+  highlightEl: indicatorEl,
   /** Items matching the current query, in `items` order. */
   filteredItems,
   /** Index of the highlighted item in `filteredItems` (`-1` when none). */
   activeIndex,
+  /** The highlighted item, for acting on it from your own keys (copy, open in a new tab). */
+  activeItem,
 })
 </script>

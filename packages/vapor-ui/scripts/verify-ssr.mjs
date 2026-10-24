@@ -17,13 +17,20 @@ const SSR_BUGS =
   /\b(document|window|navigator|localStorage|requestAnimationFrame) is not defined|does not provide an export/
 
 const entry = `
-import { createSSRApp, h } from 'vue'
+import { createSSRApp, h, withDirectives } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import * as vdom from 'vael-ui'
 import * as vapor from 'vael-ui/vapor'
 export const builds = { vdom, vapor }
 export const render = (component) =>
   renderToString(createSSRApp({ render: () => h(component, null, () => 'x') }))
+// v-animate's first appearance as CSS, from either build's directive.
+export const appear = (lib) =>
+  renderToString(
+    createSSRApp({
+      render: () => withDirectives(h('p', 'x'), [[lib.vAnimate, { initial: { opacity: 0 } }]]),
+    }),
+  )
 `
 
 console.warn = () => {}
@@ -45,7 +52,10 @@ const vite = await createServer({
 const problems = []
 const rendered = {}
 try {
-  const { builds, render } = await vite.ssrLoadModule('virtual:verify-ssr')
+  const { builds, render, appear } = await vite.ssrLoadModule('virtual:verify-ssr')
+  for (const [label, lib] of Object.entries(builds))
+    if (!(await appear(lib)).includes('data-ui-appear'))
+      problems.push(`${label} v-animate renders no first-paint appearance on the server`)
   for (const [label, lib] of Object.entries(builds)) {
     rendered[label] = new Set()
     const components = Object.keys(lib).filter(

@@ -2,24 +2,24 @@
   <section class="demo">
     <h3>Programmatic dialogs and focus control</h3>
     <p class="note">
-      "Delete workspace" never touches a template at all: <code>openDialog()</code> loads a
-      component straight into a real <code>&lt;Dialog&gt;</code>, rendered by the single
-      <code>&lt;DialogHost /&gt;</code> mounted once in <code>App.vue</code> (same rule as
-      <code>&lt;Toaster /&gt;</code>). <code>await result</code> gets back whatever the loaded
-      component's own <code>dialogRef.close(value)</code> passed. It also sets
-      <code>role="alertdialog"</code>, the correct ARIA role for a confirmation, announced more
-      assertively than plain <code>role="dialog"</code>.
+      “Delete workspace” has no template: <code>openDialog()</code> renders a component inside a
+      real <code>&lt;Dialog&gt;</code>, through the one <code>&lt;DialogHost /&gt;</code> mounted in
+      <code>App.vue</code>, as with <code>&lt;Toaster /&gt;</code>.
+      <code>await result</code> returns the value the component passed to
+      <code>dialogRef.close(value)</code>. It also sets <code>role="alertdialog"</code>, the ARIA
+      role for a confirmation, which screen readers announce more urgently than
+      <code>role="dialog"</code>.
     </p>
     <p class="note">
-      "Reset settings" deliberately renders Delete before Cancel in the DOM, so the library's
-      default "focus the first focusable element" would land on the destructive action, then
-      overrides it with <code>initialFocus</code> pointed at the Cancel button instead.
+      “Reset settings” puts Delete before Cancel in the DOM, so the default, focusing the first
+      focusable element, would focus the destructive action. <code>initialFocus</code> points it at
+      Cancel instead.
     </p>
     <p class="note">
-      "Rotate API key" sets <code>closeOnEsc</code>, <code>closeOnOverlay</code>, and
-      <code>showClose</code> to <code>false</code>: Escape, clicking outside, and the × are all
-      disabled. The only way out is checking the acknowledgement and clicking Continue, which calls
-      <code>dialogRef.close()</code> itself.
+      “Rotate API key” sets <code>closeOnEsc</code>, <code>closeOnOverlay</code> and
+      <code>showClose</code> to <code>false</code>, so Escape, clicking outside and the × don’t
+      close it. The only way out is to check the acknowledgement and click Continue, which calls
+      <code>dialogRef.close()</code>.
     </p>
     <div class="row">
       <Button variant="outline" @click="openDynamicConfirm">Delete workspace</Button>

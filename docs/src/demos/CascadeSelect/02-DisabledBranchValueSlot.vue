@@ -1,11 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Disabled branch, <code>#value</code> breadcrumb slot</h3>
+    <h3>Disabled branch, and a breadcrumb in <code>#value</code></h3>
     <p class="note">
-      "France" is disabled (its whole subtree is unreachable): expand-only rows never accept a
-      selection, so a disabled branch simply can't be entered. The trigger's default label swaps for
-      a breadcrumb via the <code>#value</code> slot: <code>path</code> holds each level's
-      <code>value</code>, mapped back to labels here.
+      “France” is disabled, so you can’t open it or reach any city under it. The
+      <code>#value</code> slot replaces the trigger’s label with a breadcrumb:
+      <code>path</code> holds each level’s <code>value</code>, mapped back to labels here.
     </p>
     <Field label="City">
       <CascadeSelect v-model="city2" :items="geographyWithDisabled" placeholder="Pick a city">

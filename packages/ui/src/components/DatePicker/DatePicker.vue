@@ -16,6 +16,8 @@
     :ui="innerUi"
     @click="onTriggerClick"
     @keydown="onTriggerKeydown"
+    @pointerenter="prefetchCalendar"
+    @focusin="prefetchCalendar"
   >
     <template #end>
       <span class="ui-date-picker-icon" aria-hidden="true">
@@ -41,7 +43,7 @@
   </Input>
 
   <Teleport :to="teleportTo">
-    <Transition name="ui-select" appear :css="!forceMount">
+    <Transition name="ui-select" appear v-bind="panelTransition">
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -56,6 +58,7 @@
         <div
           :id="panelId"
           ref="panel"
+          data-ui-presence
           role="dialog"
           aria-modal="false"
           :aria-label="messages.datePicker.chooseDate"
@@ -76,7 +79,7 @@
             :first-day-of-week="firstDayOfWeek"
             :months="months"
             :show-year-buttons="showYearButtons"
-            :motion-css="props.motionCss"
+            :motion="!!props.motion"
             :ui="calendarUi"
             @change="onCalendarChange"
             @month-change="(value) => emit('month-change', value)"
@@ -174,13 +177,26 @@ export type DatePickerAlign = Align
 
 <!-- Wraps Calendar in Select's popover chrome; input readonly, formatting deferred. -->
 <script setup lang="ts">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose, DatePickerMotion } from '../../motion/types'
 import './DatePicker.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../shared/select-panel.css'
-import { computed, inject, nextTick, useAttrs, useId, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  nextTick,
+  onMounted,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
 import { usePopover } from '../../composables/usePopover'
+import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -189,9 +205,8 @@ import { themeScopeKey, useThemedUi } from '../../theme'
 import { useUiMessages } from '../../messages'
 import Input from '../Input/Input.vue'
 import Button from '../Button/Button.vue'
-import SelectButton from '../SelectButton/SelectButton.vue'
-import Calendar from '../Calendar/Calendar.vue'
-import TimeField from '../internal/TimeField.vue'
+import type CalendarType from '../Calendar/Calendar.vue'
+import type TimeFieldType from '../internal/TimeField.vue'
 import type {
   CalendarDisabledDates,
   CalendarRange,
@@ -278,14 +293,19 @@ const rawProps = withDefaults(
     closeOnEsc?: boolean
     /** Clicking outside the panel closes it. @default true */
     closeOnOutside?: boolean
-    /** Custom exit animation; call `done()` to finish closing. */
-    beforeClose?: (done: () => void) => void
-    /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+    /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
+    /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
     forceMount?: boolean
     /** Teleport target: a CSS selector or element. @default 'body' */
     teleportTo?: string | HTMLElement
-    /** `false` skips both the popover enter/leave and Calendar's month-slide transitions. @default true */
-    motionCss?: boolean
+    /**
+     * How the panel moves, like Popover's: `false` opens and closes it at once, and skips Calendar's
+     * month slide. An object retimes it (`{ spring }`), or gives values for the `panel` part or
+     * `enter` / `leave` hooks for your own library.
+     * @default true
+     */
+    motion?: DatePickerMotion
     /** Shows built-in Today (`single` mode only) and Clear buttons below the calendar.
      * Has no effect once you provide the `#footer` slot, which renders instead.
      * @default false
@@ -346,7 +366,7 @@ const rawProps = withDefaults(
     beforeClose: undefined,
     forceMount: false,
     teleportTo: 'body',
-    motionCss: undefined,
+    motion: undefined,
     showButtonBar: false,
     showYearButtons: false,
     showTime: false,
@@ -356,7 +376,29 @@ const rawProps = withDefaults(
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true, locale: undefined })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true, locale: undefined })
+
+// The time row's parts load only for a picker that shows time, fetched as it's set up, long before
+// the panel opens. A ref on an async component reaches the inner one once it's loaded.
+const loadTimeField = () => import('../internal/TimeField.vue')
+const loadSelectButton = () => import('../SelectButton/SelectButton.vue')
+const TimeField = defineAsyncComponent(loadTimeField)
+// The calendar is drawn only in the open panel, so it loads apart from the field: while the browser
+// is idle after mount, or as the pointer or focus reaches the field, whichever comes first.
+const loadCalendar = () => import('../Calendar/Calendar.vue')
+const Calendar = defineAsyncComponent(loadCalendar)
+const prefetchCalendar = () => {
+  if (!rawProps.timeOnly) void loadCalendar()
+}
+onMounted(() => {
+  const idle = window.requestIdleCallback ?? ((run: () => void) => setTimeout(run, 200))
+  idle(prefetchCalendar)
+})
+const SelectButton = defineAsyncComponent(loadSelectButton)
+if (rawProps.showTime || rawProps.timeOnly) {
+  void loadTimeField()
+  void loadSelectButton()
+}
 
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */
@@ -523,9 +565,19 @@ const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
-const calendarRef = useTemplateRef<InstanceType<typeof Calendar>>('calendarRef')
-const hourFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('hourFieldRef')
-const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeField>>('minuteFieldRef')
+const panelTransition = useSelectPanelMotion({
+  name: 'DatePicker',
+  key: 'datePicker',
+  motion: () => props.motion,
+  positioner: () => positionerEl.value,
+  panel: () => panelEl.value,
+  trigger: () => el.value,
+  forceMount: () => props.forceMount,
+  placed: () => positionerStyle.value.visibility === 'visible',
+})
+const calendarRef = useTemplateRef<InstanceType<typeof CalendarType>>('calendarRef')
+const hourFieldRef = useTemplateRef<InstanceType<typeof TimeFieldType>>('hourFieldRef')
+const minuteFieldRef = useTemplateRef<InstanceType<typeof TimeFieldType>>('minuteFieldRef')
 
 // Like a native time input: a complete hour moves on to the minutes (focus selects them).
 function focusMinuteField() {
@@ -584,7 +636,8 @@ watch(
   (ready) => {
     if (!ready) return
     if (timeOnlyEffective.value) {
-      nextTick(() => hourFieldRef.value?.inputEl?.focus())
+      // The time fields may still be on their way: focus once they're in.
+      void loadTimeField().then(() => nextTick(() => hourFieldRef.value?.inputEl?.focus()))
       return
     }
     const value = model.value
@@ -594,7 +647,8 @@ watch(
         : isRangeModel(value)
           ? (value.end ?? value.start ?? new Date())
           : value
-    nextTick(() => calendarRef.value?.focusDay(anchor))
+    // The calendar may still be on its way: focus the day once it's in.
+    void loadCalendar().then(() => nextTick(() => calendarRef.value?.focusDay(anchor)))
   },
 )
 const innerUi = computed(() => ({

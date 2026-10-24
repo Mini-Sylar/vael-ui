@@ -244,6 +244,28 @@
         class="tree-reorder-demo"
       />
     </section>
+
+    <section class="demo">
+      <h3>A large tree: 12,280 rows</h3>
+      <p>
+        Past 500 visible rows, a tree renders only the rows in view, so this one opens, scrolls and
+        folds like a small one. <code>sticky-scroll</code> pins the folders you scroll through, and
+        arrow keys, Home and End move through the whole tree. Expand everything to try it.
+      </p>
+      <div class="large-tree-actions">
+        <Button size="sm" variant="outline" @click="largeTree?.expandAll()">Expand all</Button>
+        <Button size="sm" variant="outline" @click="largeTree?.collapseAll()">Collapse all</Button>
+      </div>
+      <div class="large-tree-box">
+        <Tree
+          ref="largeTree"
+          :items="largeTreeItems"
+          selection-mode="checkbox"
+          sticky-scroll
+          aria-label="Large tree"
+        />
+      </div>
+    </section>
   </div>
 </template>
 
@@ -428,6 +450,21 @@ const fileTree: TreeNode[] = [
   { label: 'package.json', value: 'package.json' },
   { label: 'index.html', value: 'index.html' },
 ]
+
+// 40 projects x 6 folders x 50 files: 12,280 rows once everything is open.
+const largeTreeItems: TreeNode[] = Array.from({ length: 40 }, (_, p) => ({
+  label: `project-${p + 1}`,
+  value: `p${p}`,
+  children: Array.from({ length: 6 }, (_, f) => ({
+    label: ['src', 'tests', 'docs', 'assets', 'scripts', 'config'][f]!,
+    value: `p${p}-${f}`,
+    children: Array.from({ length: 50 }, (_, i) => ({
+      label: `file-${String(i + 1).padStart(2, '0')}.ts`,
+      value: `p${p}-${f}-${i}`,
+    })),
+  })),
+}))
+const largeTree = useTemplateRef<{ expandAll: () => void; collapseAll: () => void }>('largeTree')
 
 const singleValue = shallowRef<string | number | null>(null)
 const checkboxValues = shallowRef<(string | number)[]>([])
@@ -763,6 +800,18 @@ function openContextMenu(node: GitTreeNode, event: MouseEvent) {
 </script>
 
 <style scoped>
+.large-tree-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-block-end: 0.75rem;
+}
+.large-tree-box {
+  display: flex;
+  block-size: 22rem;
+  max-inline-size: 22rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+}
 .tree-demo-shell {
   display: flex;
   flex-wrap: wrap;

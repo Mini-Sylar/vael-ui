@@ -1,11 +1,10 @@
 <template>
   <section class="demo">
-    <h3>Async suggest, <code>:filter="false"</code></h3>
+    <h3>Async suggestions: <code>:filter="false"</code></h3>
     <p class="note">
-      Query is uncontrolled-friendly but bound here via <code>v-model:query</code> to drive a
-      simulated 300ms fetch. <code>filter=false</code> means Combobox never filters locally: every
-      keystroke's <code>items</code> is trusted verbatim, and <code>openOnFocus</code> defaults to
-      true in this mode so results (or a loader) show up before typing even starts.
+      <code>v-model:query</code> drives a simulated 300 ms fetch. With <code>:filter="false"</code>,
+      Combobox never filters on its own and shows <code>items</code> as you pass them. It opens on
+      focus, so results or a loader appear before you type.
     </p>
     <div class="row">
       <Combobox

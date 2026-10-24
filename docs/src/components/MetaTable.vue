@@ -26,6 +26,15 @@
             </th>
             <td class="type-cell" :data-label="t('metaTable.type')">
               <InlineCode v-if="kind === 'events'" :code="eventSignature(row)" />
+              <!-- A type with its own section (the motion prop's): says what it is, and goes there. -->
+              <a
+                v-else-if="typeLink && row.name === typeLink.prop"
+                v-tooltip="{ content: typeLink.tip, side: 'top' }"
+                class="type-link"
+                :href="typeLink.href"
+              >
+                <InlineCode :code="displayType(row)" lang="type" />
+              </a>
               <InlineCode v-else :code="displayType(row)" lang="type" />
             </td>
             <td v-if="showDefault" class="default-cell" :data-label="t('metaTable.default')">
@@ -44,6 +53,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { vTooltip } from 'vael-ui'
 import InlineCode from './InlineCode.vue'
 import RichText from './RichText.vue'
 import type { MetaRow } from '../types'
@@ -59,8 +69,10 @@ const props = withDefaults(
     showDefault?: boolean
     /** Events show their payload as a call signature instead of a tuple. */
     kind?: 'props' | 'events' | 'slots' | 'exposed'
+    /** One row's type links to a section that explains it, with a tooltip saying what it is. */
+    typeLink?: { prop: string; href: string; tip: string }
   }>(),
-  { showDefault: false, kind: undefined },
+  { showDefault: false, kind: undefined, typeLink: undefined },
 )
 
 // The default as written in source. An explicit `undefined` means "unset",
@@ -181,7 +193,36 @@ tbody tr:hover {
 
 /* A followed anchor briefly marks its row so the eye lands on it. */
 tbody tr:target {
-  background: color-mix(in oklch, var(--ui-info) 10%, transparent);
+  background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 10%, transparent);
+}
+
+/* Arrived at from the search palette: the router changes the hash without :target, so the
+   row is marked instead and flashes once, then settles to the target tint. */
+tbody tr[data-landed] {
+  animation: row-landed 1.8s var(--ui-ease-out);
+}
+
+@keyframes row-landed {
+  from {
+    background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 28%, transparent);
+  }
+  to {
+    background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  tbody tr[data-landed] {
+    animation: none;
+    background: color-mix(in oklch, var(--docs-accent, var(--ui-info)) 10%, transparent);
+  }
+}
+
+/* A type you can follow: underlined like a link, without changing the code's own colours. */
+.type-link {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--ui-text-muted);
+  text-underline-offset: 4px;
 }
 
 /* Name: the row's anchor, so it carries the weight. */

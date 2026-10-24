@@ -2,8 +2,8 @@
   <section class="demo">
     <h3><code>side</code> in inline mode</h3>
     <p class="note">
-      In <code>hintPlacement="popover"</code>, <code>side</code> is floating-ui's own side. In
-      <code>"inline"</code> it drives the flex layout instead — same prop, no separate one needed.
+      With <code>hintPlacement="popover"</code>, <code>side</code> places the floating hint. With
+      <code>"inline"</code>, the same prop sets which side of the input the hint sits on.
     </p>
     <div class="example-grid example-grid--1">
       <div class="example">

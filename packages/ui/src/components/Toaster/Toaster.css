@@ -8,6 +8,11 @@
     transition: block-size var(--ui-duration-toast) var(--ui-ease-toast);
   }
 
+  /* vw is viewport-relative; a contained stack fits its container instead. */
+  .ui-toaster[data-contained] {
+    inline-size: min(22rem, calc(100% - 2 * var(--ui-toast-offset)));
+  }
+
   .ui-toast {
     /* The collapsed back-card height is a measured border-box height. */
     box-sizing: border-box;
@@ -178,7 +183,6 @@
     color: inherit;
     opacity: 0.5;
     cursor: pointer;
-    will-change: transform;
     transition:
       opacity var(--ui-duration-press) ease,
       background-color var(--ui-duration-press) ease,
@@ -255,5 +259,17 @@
     to {
       opacity: 0;
     }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-toast-action,
+  .ui-toast-close {
+    position: relative;
+  }
+  .ui-toast-action:active::after,
+  .ui-toast-close:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

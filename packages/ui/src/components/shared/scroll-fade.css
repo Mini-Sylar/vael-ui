@@ -14,16 +14,24 @@
   .scroll-fade {
     /* Variable prevents Lightning CSS from folding scroll() into shorthand. */
     --timeline-self: scroll(self);
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      #000 var(--fade-top-end),
-      #000 var(--fade-bottom-start),
-      transparent 99%
-    );
-    mask-size: 100% 100%;
+    /* The mask covers the whole box, scrollbar included: a solid layer keeps the scrollbar's
+       strip (--ui-scroll-bar-y, set by vScrollMask) out of the fade. */
+    mask-image:
+      linear-gradient(
+        to bottom,
+        transparent 0%,
+        #000 var(--fade-top-end),
+        #000 var(--fade-bottom-start),
+        transparent 99%
+      ),
+      linear-gradient(#000 0 0);
+    mask-size:
+      calc(100% - var(--ui-scroll-bar-y, 0px)) 100%,
+      var(--ui-scroll-bar-y, 0px) 100%;
     mask-repeat: no-repeat;
-    mask-position: center;
+    mask-position:
+      left top,
+      right top;
     animation:
       scroll-fade-top linear both,
       scroll-fade-bottom linear both;
@@ -31,6 +39,13 @@
     animation-range:
       0px 40px,
       90% 100%;
+  }
+
+  /* Right to left, the vertical scrollbar sits on the left. */
+  .scroll-fade:dir(rtl) {
+    mask-position:
+      right top,
+      left top;
   }
 
   @keyframes scroll-fade-top {
@@ -64,16 +79,22 @@
 
   .scroll-fade-x {
     --timeline-self-x: scroll(self inline);
-    mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      #000 var(--fade-left-end),
-      #000 var(--fade-right-start),
-      transparent 99%
-    );
-    mask-size: 100% 100%;
+    mask-image:
+      linear-gradient(
+        to right,
+        transparent 0%,
+        #000 var(--fade-left-end),
+        #000 var(--fade-right-start),
+        transparent 99%
+      ),
+      linear-gradient(#000 0 0);
+    mask-size:
+      100% calc(100% - var(--ui-scroll-bar-x, 0px)),
+      100% var(--ui-scroll-bar-x, 0px);
     mask-repeat: no-repeat;
-    mask-position: center;
+    mask-position:
+      left top,
+      left bottom;
     animation:
       scroll-fade-left linear both,
       scroll-fade-right linear both;
@@ -108,22 +129,34 @@
 
   /* Both fade classes on one box: intersect the two masks, or the later one wins outright. */
   .scroll-fade.scroll-fade-x {
+    /* (fade y ∩ fade x) ∪ the two scrollbar strips. */
     mask-image:
-      linear-gradient(
-        to bottom,
-        transparent 0%,
-        #000 var(--fade-top-end),
-        #000 var(--fade-bottom-start),
-        transparent 99%
-      ),
+      linear-gradient(#000 0 0), linear-gradient(#000 0 0),
       linear-gradient(
         to right,
         transparent 0%,
         #000 var(--fade-left-end),
         #000 var(--fade-right-start),
         transparent 99%
+      ),
+      linear-gradient(
+        to bottom,
+        transparent 0%,
+        #000 var(--fade-top-end),
+        #000 var(--fade-bottom-start),
+        transparent 99%
       );
-    mask-composite: intersect;
+    mask-size:
+      100% var(--ui-scroll-bar-x, 0px),
+      var(--ui-scroll-bar-y, 0px) 100%,
+      calc(100% - var(--ui-scroll-bar-y, 0px)) calc(100% - var(--ui-scroll-bar-x, 0px)),
+      calc(100% - var(--ui-scroll-bar-y, 0px)) calc(100% - var(--ui-scroll-bar-x, 0px));
+    mask-position:
+      left bottom,
+      right top,
+      left top,
+      left top;
+    mask-composite: add, add, intersect, add;
     animation:
       scroll-fade-top linear both,
       scroll-fade-bottom linear both,
@@ -136,6 +169,13 @@
       90% 100%,
       0px 40px,
       90% 100%;
+  }
+  .scroll-fade.scroll-fade-x:dir(rtl) {
+    mask-position:
+      left bottom,
+      left top,
+      right top,
+      right top;
   }
   .scroll-fade.scroll-fade-x.scroll-fade-manual {
     animation: none;

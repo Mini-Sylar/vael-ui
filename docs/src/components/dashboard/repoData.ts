@@ -249,9 +249,10 @@ export const fileSources: Record<
     author: 'EB',
     lines: 318,
     lang: 'css',
-    code: `.ui-button:active {
-  transform: scale(0.96);
-  transition: transform var(--ui-duration-press) var(--ui-ease-out);
+    code: `.ui-button:active::before,
+.ui-button:active .ui-button-inner {
+  scale: 0.96;
+  transition: scale var(--ui-duration-press) var(--ui-ease-out);
 }`,
   },
   'src/components/Tooltip/Tooltip.vue': {
@@ -325,7 +326,7 @@ Components that compile straight to Vapor, not around it.`,
     lang: 'json',
     code: `{
   "name": "vael-ui",
-  "version": "0.4.0"
+  "version": "0.5.0"
 }`,
   },
 }

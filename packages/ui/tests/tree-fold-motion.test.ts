@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick } from 'vue'
 import Tree from '../src/components/Tree/Tree.vue'
@@ -46,7 +46,8 @@ interface Drawn {
   top: number
   bottom: number
 }
-// What's painted: each row cut by any clip-path on its blocks, and faded-out rows left out.
+// What's painted: each row cut by any clip-path or clipped overflow on its blocks, and faded-out rows
+// left out.
 function drawnRows(): Drawn[] {
   const tree = document.querySelector<HTMLElement>('[role="tree"]')!
   const out: Drawn[] = []
@@ -57,9 +58,14 @@ function drawnRows(): Drawn[] {
     for (let n: HTMLElement | null = el; n && n !== tree; n = n.parentElement) {
       const style = getComputedStyle(n)
       opacity *= Number(style.opacity)
-      const inset = style.clipPath.match(/^inset\(([^)]*)\)/)
-      if (!inset || n === el) continue
+      if (n === el) continue
       const box = n.getBoundingClientRect()
+      if (style.overflowY !== 'visible') {
+        top = Math.max(top, box.top)
+        bottom = Math.min(bottom, box.bottom)
+      }
+      const inset = style.clipPath.match(/^inset\(([^)]*)\)/)
+      if (!inset) continue
       const [t, , b = t] = inset[1]!
         .split(/\s+/)
         .map((v) => (v.endsWith('%') ? (parseFloat(v) * box.height) / 100 : parseFloat(v)))
@@ -115,7 +121,13 @@ function flickers(frames: Drawn[][]): string[] {
   return found
 }
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 350))
+// After the click has rendered, until no block is folding.
+async function settle() {
+  await nextTick()
+  await vi.waitFor(() => expect(document.querySelector('[data-folding]')).toBeNull(), {
+    timeout: 2000,
+  })
+}
 
 test('opening and closing a folder never paints one row over another', async () => {
   renderCentred()
@@ -166,30 +178,186 @@ test('arrow keys open and close a folder at once', async () => {
   expect(drawnRows().map((r) => r.label)).toEqual(['src', 'package.json', 'README.md'])
 })
 
-test('a second click mid-way reverses from where the folder is, without a jump', async () => {
+test('a second click mid-way carries the fold on from where it is, with no jump', async () => {
   renderCentred()
   await settle()
   const block = () => row('src').nextElementSibling as HTMLElement | null
   const pkgTop = () => row('package.json').getBoundingClientRect().top
+  // One plain open: its biggest single-frame move is the yardstick.
+  const plain: number[] = [pkgTop()]
   row('src').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
-  await new Promise((resolve) => setTimeout(resolve, 90))
-  const pkgAtClick = pkgTop()
-  const opacityAtClick = Number(getComputedStyle(block()!).opacity)
-  expect(opacityAtClick).toBeLessThan(1)
-  const samples: { pkg: number; opacity: number }[] = []
-  const done = new Promise<void>((resolve) => {
-    const t0 = performance.now()
-    const sample = () => {
-      const el = block()
-      samples.push({ pkg: pkgTop(), opacity: el ? Number(getComputedStyle(el).opacity) : 0 })
-      if (performance.now() - t0 < 400) requestAnimationFrame(sample)
-      else resolve()
+  for (let i = 0; i < 24; i++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    plain.push(pkgTop())
+  }
+  const biggest = Math.max(...plain.slice(1).map((top, i) => Math.abs(top - plain[i]!)))
+  await settle()
+  row('src').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  await settle()
+
+  row('src').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  await new Promise((resolve) => setTimeout(resolve, 70))
+  expect(Number(getComputedStyle(block()!).opacity)).toBeLessThan(1)
+  const tops = [pkgTop()]
+  row('src').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  for (let i = 0; i < 40; i++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    tops.push(pkgTop())
+  }
+  // It keeps its speed through the turn (so it may travel a little further first), never jumps,
+  // and ends shut with the block gone.
+  const steps = tops.slice(1).map((top, i) => Math.abs(top - tops[i]!))
+  expect(Math.max(...steps), `steps ${steps.map(Math.round).join(',')}`).toBeLessThanOrEqual(
+    biggest + 2,
+  )
+  expect(tops.at(-1)).toBeCloseTo(plain[0]!, 0)
+  expect(block()?.classList.contains('ui-tree-rows') ?? false).toBe(false)
+})
+
+// An app sidebar: a tall day with an hour open inside, in a scroll box. 0.4.8 slid the rows
+// below with transform while clipping the folder, and the two drifted apart on a folder this tall.
+test('a tall folder with a subfolder open: the row below rides its edge every frame, then settles', async () => {
+  const hours = ['7 AM', '6 AM', '5 AM', '4 AM', '3 AM'].map((label, i) => ({
+    label,
+    value: `h${i}`,
+    children: [
+      { label: `Thread ${i}a`, value: `t${i}a` },
+      { label: `Thread ${i}b`, value: `t${i}b` },
+    ],
+  }))
+  const days = [
+    { label: 'Wed, Sep 30', value: 'sep30', children: hours },
+    { label: 'Mon, Sep 28', value: 'sep28', children: [{ label: '1 PM', value: 'pm1' }] },
+  ]
+  render(
+    () =>
+      h('div', { style: 'max-block-size:18rem;overflow-y:auto' }, [
+        h(Tree as never, { items: days, filterable: false }),
+      ]),
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  await settle()
+  row('Wed, Sep 30').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  await settle()
+  row('6 AM').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  await settle()
+  row('Wed, Sep 30').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  await settle()
+
+  for (const phase of ['open', 'close']) {
+    row('Wed, Sep 30').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+    const tops: number[] = []
+    const gaps: number[] = []
+    for (let i = 0; i < 24; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+      const below = row('Mon, Sep 28').getBoundingClientRect().top
+      tops.push(below)
+      const block = row('Wed, Sep 30').nextElementSibling as HTMLElement | null
+      if (block?.classList.contains('ui-tree-rows')) {
+        gaps.push(Math.round(below - block.getBoundingClientRect().bottom))
+      }
     }
-    requestAnimationFrame(sample)
+    // The next row sits right under the block's drawn edge on every frame, never ahead or behind.
+    for (const gap of gaps) expect(Math.abs(gap - 1), `${phase}: gap ${gap}`).toBeLessThanOrEqual(1)
+    // One run in one direction, and it ends where it settles: no jump on the last frames.
+    const steps = tops.slice(1).map((top, i) => top - tops[i]!)
+    const sign = phase === 'open' ? 1 : -1
+    for (const step of steps)
+      expect(step * sign, `${phase}: ${steps.join(',')}`).toBeGreaterThanOrEqual(-1)
+    const lastMove = steps.findLastIndex((step) => Math.abs(step) > 1)
+    expect(Math.abs(steps[lastMove] ?? 0), `${phase}: ${steps.join(',')}`).toBeLessThan(
+      Math.abs(Math.max(...steps.map(Math.abs))),
+    )
+    await settle()
+  }
+})
+
+// Spam-clicking a folder: every click reverses from where it is, so nothing snaps open or shut.
+test('clicking a tall folder over and over never makes the rows jump', async () => {
+  const hours = ['7 AM', '6 AM', '5 AM', '4 AM', '3 AM'].map((label, i) => ({
+    label,
+    value: `h${i}`,
+    children: [
+      { label: `Thread ${i}a`, value: `t${i}a` },
+      { label: `Thread ${i}b`, value: `t${i}b` },
+    ],
+  }))
+  const days = [
+    { label: 'Wed, Sep 30', value: 'sep30', children: hours },
+    { label: 'Mon, Sep 28', value: 'sep28', children: [{ label: '1 PM', value: 'pm1' }] },
+  ]
+  render(
+    () =>
+      h('div', { style: 'max-block-size:18rem;overflow-y:auto' }, [
+        h(Tree as never, { items: days, filterable: false }),
+      ]),
+    { global: { stubs: { transition: false, 'transition-group': false } } },
+  )
+  const chevron = () => row('Wed, Sep 30').querySelector<HTMLElement>('.ui-tree-chevron')!
+  const below = () => row('Mon, Sep 28').getBoundingClientRect().top
+  await settle()
+  chevron().click()
+  await settle()
+  row('6 AM').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
+  await settle()
+  chevron().click()
+  await settle()
+
+  // The biggest single-frame move in one plain open is the yardstick. Steps are measured per
+  // 60Hz frame: a frame the runner dropped covers twice the time, and its step would otherwise
+  // read as a jump. A real snap inside a normal frame still counts in full.
+  const FRAME = 1000 / 60
+  async function trace(clickEvery: number, clicks: number): Promise<number[]> {
+    const tops = [below()]
+    const times = [performance.now()]
+    let clicked = 0
+    let last = -Infinity
+    const t0 = performance.now()
+    while (performance.now() - t0 < clickEvery * clicks + 400) {
+      if (clicked < clicks && performance.now() - last >= clickEvery) {
+        chevron().click()
+        clicked++
+        last = performance.now()
+      }
+      times.push(await new Promise<number>((resolve) => requestAnimationFrame(resolve)))
+      tops.push(below())
+    }
+    return tops
+      .slice(1)
+      .map(
+        (top, i) => (Math.abs(top - tops[i]!) * FRAME) / Math.max(FRAME, times[i + 1]! - times[i]!),
+      )
+  }
+  const plain = Math.max(...(await trace(1000, 1)))
+  await settle()
+  chevron().click()
+  await settle()
+  const spam = await trace(60, 6)
+  expect(Math.max(...spam), `steps ${spam.map(Math.round).join(',')}`).toBeLessThanOrEqual(
+    plain + 2,
+  )
+})
+
+test('a folder lets go of its pinned height where it already is, so the rows below never hop at the end', async () => {
+  renderCentred()
+  await settle()
+  const heights: number[] = []
+  const watchPin = new MutationObserver((records) => {
+    for (const record of records) {
+      const el = record.target as HTMLElement
+      if (el.classList.contains('ui-tree-rows') && el.style.blockSize) {
+        heights.push(Number.parseFloat(el.style.blockSize))
+      }
+    }
   })
+  watchPin.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style'] })
   row('src').querySelector<HTMLElement>('.ui-tree-chevron')!.click()
-  await done
-  // Closing from part-way open: the row below only heads back up, and the rows only fade out.
-  expect(Math.max(...samples.map((s) => s.pkg))).toBeLessThanOrEqual(pkgAtClick + 1)
-  expect(Math.max(...samples.map((s) => s.opacity))).toBeLessThanOrEqual(opacityAtClick + 0.02)
+  await settle()
+  watchPin.disconnect()
+  // The block that just opened: the one holding src's first child.
+  const block = row('components').closest<HTMLElement>('.ui-tree-rows')!
+  const released = block.getBoundingClientRect().height
+  expect(heights.length).toBeGreaterThan(3)
+  // At half a pixel short, letting go was a visible hop.
+  expect(Math.abs(released - heights.at(-1)!)).toBeLessThan(0.1)
 })

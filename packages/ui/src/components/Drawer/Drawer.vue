@@ -18,6 +18,7 @@
     :close-on-history-back="closeOnHistoryBack"
     :before-close="beforeClose"
     :force-mount="forceMount"
+    :motion="motion"
     :teleport-to="teleportTo"
     :container="container"
     :scroll-target="scrollTarget"
@@ -77,6 +78,7 @@ const props = withDefaults(defineProps<DrawerProps>(), {
   closeOnHistoryBack: false,
   forceMount: false,
   scrollFade: true,
+  motion: undefined,
 })
 
 const emit = defineEmits<{

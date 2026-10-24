@@ -2,13 +2,13 @@
   <section class="demo">
     <h3>Extreme: timezone picker with live group counts and sticky regions</h3>
     <p class="note">
-      Each region carries its own <code>icon</code> and <code>hint</code>, and
-      <code>#group-label</code> reads them straight off <code>group</code>. Its
-      <code>items</code> are the zones still showing, so the count follows your search.
-      <code>ui.groupLabel</code> pins each region to the top while you scroll through it, and
-      <code>scroll-padding</code> on <code>ui.list</code> keeps the highlighted zone clear of that
-      label as arrow keys scroll. <code>ui.group</code> draws the line between regions. Search by
-      city or by offset, such as <code>+1</code>.
+      Each region has its own <code>icon</code> and <code>hint</code>, and
+      <code>#group-label</code> reads them from <code>group</code>. Its <code>items</code> are the
+      zones still showing, so the count follows your search. <code>ui.groupLabel</code> pins each
+      region's label to the top while you scroll through it, and <code>scroll-padding</code> on
+      <code>ui.list</code> keeps the highlighted zone clear of that label as the arrow keys scroll.
+      <code>ui.group</code> draws the line between regions. Search by city or by offset, such as
+      <code>+1</code>.
     </p>
     <div class="row">
       <Field label="Timezone">

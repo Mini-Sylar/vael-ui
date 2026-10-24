@@ -2,23 +2,20 @@
   <section class="demo">
     <h3>Extreme: a fare picker (GSAP)</h3>
     <p class="note">
-      <code>force-mount</code> hands the panel to you: GSAP unrolls the exposed
-      <code>panelEl</code> from the field when it opens, and <code>beforeClose(done)</code> rolls it
-      back up, and each opening ripples the <code>#day</code> slot's days in behind it. The
-      <code>#label</code> slot puts each month's cheapest fare next to its name.
-      <code>:close-on-select="false"</code> keeps it open while you try a few returns.
+      The <code>enter</code> and <code>leave</code> hooks in <code>motion</code> animate the panel
+      with GSAP: it unrolls from the field on open and rolls back up on close. Each opening ripples
+      the <code>#day</code> slot’s days in after it. The <code>#label</code> slot shows each month’s
+      cheapest fare next to its name, and <code>:close-on-select="false"</code> keeps the panel open
+      while you try a few return dates.
     </p>
     <div class="fare">
       <DatePicker
-        ref="picker"
         v-model="trip"
-        v-model:open="open"
         selection-mode="range"
         :months="2"
         :min-date="today"
-        force-mount
         :close-on-select="false"
-        :before-close="rollUp"
+        :motion="unroll"
         locale="en-US"
         placeholder="Departure – return"
       >
@@ -43,17 +40,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { gsap } from 'gsap'
 import { DatePicker } from 'vael-ui'
-import type { CalendarRange } from 'vael-ui'
+import type { CalendarRange, DatePickerMotion } from 'vael-ui'
 
-const picker = useTemplateRef('picker')
-const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const now = new Date()
 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 const trip = shallowRef<CalendarRange | null>(null)
-const open = shallowRef(false)
 const DAY = 86_400_000
 
 // A stand-in fare per day: steady for a given date, pricier at weekends.
@@ -93,47 +87,45 @@ function clip(panel: HTMLElement, isOpen: boolean) {
     : `inset(0px -${SHADOW}px ${far}px -${SHADOW}px)`
 }
 
-// Each day registers its element through a ref, so opening animates the days already there
-// instead of rebuilding them, and the panel shows on the very next frame.
+// Each day registers its element through a ref, so the ripple knows each one's date.
 const days = new Map<HTMLElement, Date>()
 function trackDay(el: HTMLElement | null, date: Date) {
   if (el) days.set(el, date)
 }
-watch(open, async (isOpen) => {
-  if (!isOpen) return
-  await nextTick()
-  const panel = picker.value?.panelEl
-  if (!panel || reduce()) return
-  gsap.fromTo(
-    panel,
-    { clipPath: clip(panel, false) },
-    { clipPath: clip(panel, true), duration: 0.32, ease: 'power3.out', clearProps: 'clipPath' },
-  )
-  for (const el of days.keys()) if (!el.isConnected) days.delete(el)
-  const shown = [...days.keys()]
-  gsap.fromTo(
-    shown,
-    { opacity: 0, y: -8, scale: 0.8 },
-    {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      duration: 0.36,
-      ease: 'back.out(1.7)',
-      delay: (i: number) => wave(days.get(shown[i]!)!),
-      clearProps: 'opacity,transform',
-    },
-  )
-})
 
-function rollUp(done: () => void) {
-  const panel = picker.value?.panelEl
-  if (!panel || reduce()) return done()
-  gsap.fromTo(
-    panel,
-    { clipPath: clip(panel, true) },
-    { clipPath: clip(panel, false), duration: 0.18, ease: 'power2.in', onComplete: done },
-  )
+const unroll: DatePickerMotion = {
+  enter({ panel }) {
+    for (const el of days.keys()) if (!el.isConnected) days.delete(el)
+    const shown = [...days.keys()]
+    return gsap
+      .timeline()
+      .fromTo(
+        panel,
+        { clipPath: clip(panel, false) },
+        { clipPath: clip(panel, true), duration: 0.32, ease: 'power3.out', clearProps: 'clipPath' },
+        0,
+      )
+      .fromTo(
+        shown,
+        { opacity: 0, y: -8, scale: 0.8 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.36,
+          ease: 'back.out(1.7)',
+          delay: (i: number) => wave(days.get(shown[i]!)!),
+          clearProps: 'opacity,transform',
+        },
+        0,
+      )
+  },
+  leave: ({ panel }) =>
+    gsap.fromTo(
+      panel,
+      { clipPath: clip(panel, true) },
+      { clipPath: clip(panel, false), duration: 0.18, ease: 'power2.out' },
+    ),
 }
 
 const summary = computed(() => {

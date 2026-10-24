@@ -28,7 +28,26 @@ const PER_BUILD_MODULES = new Set([
   'composables/useLazySortable',
   'composables/useFocusableScroller',
   'composables/selectGroups',
+  'composables/useRememberedSelection',
+  'composables/useVirtualTree',
+  'composables/lazyVirtualTree',
+  'composables/indicatorStretch',
   'composables/useEasedHeight',
+  'composables/useFold',
+  'composables/tourGlide',
+  'composables/useChipRowWidth',
+  'composables/useChipTransition',
+  'composables/useSelectPanelMotion',
+  'composables/useTooltipMotion',
+  'composables/useMessageMotion',
+  'composables/useIndicatorMotion',
+  'composables/componentHaptic',
+  'composables/lazyParts',
+  'composables/sortableSettle',
+  'composables/loaderType',
+  'composables/numberParts',
+  'composables/useTextOverlay',
+  'motion/styleHolder',
 ])
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 
@@ -65,6 +84,7 @@ function resolveModuleId(name) {
 // rather than '../composables/...'.
 const REWRITABLE_BASENAMES = [
   'composables/',
+  'motion/',
   'classes',
   'theme',
   'messages',
@@ -128,6 +148,8 @@ const NON_COMPONENT_EXPORTS_EXCLUDED = new Set([
   'vScrollMaskVapor',
   'vDraggable',
   'vDraggableVapor',
+  'vAnimate',
+  'vAnimateVapor',
   'confirmAction',
 ])
 
@@ -166,7 +188,8 @@ function collectNonComponentExports(indexSource) {
 // '../internal/StatusIcon.vue', not './internal/StatusIcon.vue'.
 function findSiblingModuleIds(source, fromId) {
   const ids = new Set()
-  const re = /from\s+'(\.\.?\/[^']+)\.vue'/g
+  // Static (`from './X.vue'`) and lazy (`import('./X.vue')`) alike: a lazy one still ships.
+  const re = /(?:from\s+|import\(\s*)'(\.\.?\/[^']+)\.vue'/g
   const fromDir = dirname(fromId) // 'Message/Message' -> 'Message'; 'Select' -> '.'
   let match
   while ((match = re.exec(source))) {
@@ -236,6 +259,7 @@ const VAPOR_ALIASES = {
   vTooltip: ['vTooltipVapor', 'directives/vTooltip'],
   vScrollMask: ['vScrollMaskVapor', 'directives/vScrollMask'],
   vDraggable: ['vDraggableVapor', 'directives/vDraggable'],
+  vAnimate: ['vAnimateVapor', 'directives/vAnimate'],
   // See useSlotRelay.ts: a plain functional component forwarding a captured
   // slot renders as [object Object] under vaporInteropPlugin
   // (https://github.com/vuejs/core/issues/15596) — the vapor build needs the
@@ -289,7 +313,10 @@ function rewriteImports(source, moduleId) {
     // imports of the vdom build's own files, so both builds share one copy of their state.
     const lines = [...directiveLines]
     if (otherNames.length > 0) {
+      // Forward slashes, as the module lists spell them, on Windows too.
       const sourcePath = relative(UI_SRC_DIR, resolve(UI_COMPONENTS_DIR, fromDir, specifier))
+        .split('\\')
+        .join('/')
       const typesOnly = typeOnly || otherNames.every((n) => n.startsWith('type '))
       if (!typesOnly && !SHARED_MODULES.has(sourcePath) && !PER_BUILD_MODULES.has(sourcePath)) {
         throw new Error(
@@ -399,6 +426,7 @@ function main() {
     `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
     `export { vScrollMaskVapor as vScrollMask } from '${relativeImportPath('directives/vScrollMask')}'`,
     `export { vDraggableVapor as vDraggable } from '${relativeImportPath('directives/vDraggable')}'`,
+    `export { vAnimateVapor as vAnimate } from '${relativeImportPath('directives/vAnimate')}'`,
     `export { confirmAction } from './composables/confirmAction'`,
     `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
   )

@@ -39,10 +39,23 @@
   }
   /* Whole row settles together on a committed change (click, drag release, arrow key) — same
      scale-pop keyframe/timing as Badge's own animated-content pop. */
-  .ui-rating:not(.ui-rating--no-motion) .ui-rating-track {
+  .ui-rating:not(.ui-rating--no-motion) .ui-rating-track[data-pop='a'] {
     animation: ui-rating-pop var(--ui-duration-press) var(--ui-ease-out);
   }
+  .ui-rating:not(.ui-rating--no-motion) .ui-rating-track[data-pop='b'] {
+    animation: ui-rating-pop-again var(--ui-duration-press) var(--ui-ease-out);
+  }
+  /* Two copies: switching between them restarts the pop on the same element. */
   @keyframes ui-rating-pop {
+    0%,
+    100% {
+      scale: 1;
+    }
+    50% {
+      scale: 1.08;
+    }
+  }
+  @keyframes ui-rating-pop-again {
     0%,
     100% {
       scale: 1;
@@ -87,6 +100,10 @@
     color: var(--ui-warning);
     clip-path: inset(0 calc(100% - var(--ui-rating-fill, 0%)) 0 0);
     transition: clip-path var(--ui-duration-press) var(--ui-ease-out);
+  }
+  /* Right to left, a part-filled star fills from its right edge. */
+  .ui-rating-icon--filled:dir(rtl) {
+    clip-path: inset(0 0 0 calc(100% - var(--ui-rating-fill, 0%)));
   }
   /* Instant during an active pointer gesture — 1:1 tracking, no lag between
      cursor position and fill. The commit-pop above still marks the moment

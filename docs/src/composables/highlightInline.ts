@@ -75,6 +75,31 @@ export function highlightBlock(code: string, lang: string): Promise<string> {
   return html
 }
 
+/** A token with its light and dark colors, as an inline style for a `.shiki` ancestor to apply. */
+export interface StyledToken {
+  offset: number
+  content: string
+  style: string
+}
+
+/** A block's tokens, line by line, for code drawn from parts (an editor with clickable names) that
+ * can't be highlighted as one HTML string but should still be colored in its full context. */
+export async function tokenizeBlock(
+  code: string,
+  lang: 'vue' | 'ts' | 'css',
+): Promise<StyledToken[][]> {
+  const { tokens } = await codeToTokens(code, { lang, themes, defaultColor: false })
+  return tokens.map((line) =>
+    line.map((token) => ({
+      offset: token.offset,
+      content: token.content,
+      style: Object.entries(token.htmlStyle ?? {})
+        .map(([property, value]) => `${property}:${value}`)
+        .join(';'),
+    })),
+  )
+}
+
 // A snippet on its own can parse as the wrong thing: a bare `boolean` is an
 // uncolored identifier, not a type, and `--ui-primary` or `#18181b` isn't CSS
 // at all.

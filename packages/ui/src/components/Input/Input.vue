@@ -26,12 +26,37 @@
       :aria-describedby="fieldControl.describedBy()"
       :aria-invalid="isInvalid || undefined"
       :aria-required="fieldControl.required() || undefined"
+      :data-ui-display="displayMode"
       @input="onNativeInput"
       @change="onNativeChange"
       @focus="onNativeFocus"
       @blur="onNativeBlur"
     />
-    <span v-if="$slots.end" :class="endPart.class" :style="endPart.style"><slot name="end" /></span>
+    <span
+      v-if="displayMode"
+      class="ui-input-display"
+      :style="overlay.style.value"
+      aria-hidden="true"
+    >
+      <span class="ui-input-display-track" :style="{ translate: `${-overlay.scroll.value.x}px 0` }">
+        <slot
+          name="display"
+          :value="modelValue"
+          :placeholder="placeholder ?? ''"
+          :focused="focused"
+        >
+          <LazyAnimatedText
+            v-if="modelValue === ''"
+            class="ui-input-display-placeholder"
+            :value="placeholder ?? ''"
+          />
+          <LazyAnimatedText v-else :value="modelValue" />
+        </slot>
+      </span>
+    </span>
+    <span v-if="$slots.end" ref="endEl" :class="endPart.class" :style="endPart.style"
+      ><slot name="end"
+    /></span>
   </div>
 </template>
 
@@ -40,12 +65,25 @@
 import './Input.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, onBeforeUnmount, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  onBeforeUnmount,
+  shallowRef,
+  useAttrs,
+  useSlots,
+  useTemplateRef,
+  watch,
+} from 'vue'
+import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
+import { useTextOverlay } from '../../composables/useTextOverlay'
 import { useFieldControl } from '../../composables/useFieldControl'
+import { useSlotPresence } from '../../composables/dom'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { InputMotion } from '../../motion/types'
 import { useThemedUi } from '../../theme'
 
 defineOptions({ inheritAttrs: false })
@@ -67,10 +105,25 @@ const rawProps = withDefaults(
     invalid?: boolean
     /** Text shown while the input is empty. */
     placeholder?: string
+    /**
+     * Crossfades a placeholder or value that changes on its own, like AnimatedText. What you type
+     * never animates. @default false
+     */
+    animated?: boolean
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; input: UiPartValue; start: UiPartValue; end: UiPartValue }>
+    /** Animates its states, like a shake when it turns invalid: `{ states: { invalid: { root: { x: [0, -6, 6, -3, 0] } } } }`. */
+    motion?: InputMotion
   }>(),
-  { type: 'text', disabled: false, readonly: false, invalid: false },
+  {
+    type: 'text',
+    disabled: false,
+    readonly: false,
+    invalid: false,
+    animated: false,
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
@@ -79,6 +132,13 @@ defineSlots<{
   start(): unknown
   /** Inline trailing content. */
   end(): unknown
+  /**
+   * Draws the text yourself, over the input's own text box and following its scroll, for a fancy
+   * input: characters that animate in, gradients, highlighted tokens. The input underneath keeps
+   * the caret, selection and screen reader text; its own text is hidden. Give an element
+   * `pointer-events: auto` to let it take hover, say for a popover on a mention.
+   */
+  display(props: { value: string; placeholder: string; focused: boolean }): unknown
 }>()
 
 function commit(value: string) {
@@ -105,10 +165,13 @@ const fieldStartInset = shallowRef(0)
 const fieldControl = useFieldControl({
   filled: () => modelValue.value.length > 0,
   startInset: fieldStartInset,
+  frame: { el: () => root.value, size: () => props.size },
 })
 const focusVisible = shallowRef(false)
+const focused = shallowRef(false)
 function onNativeFocus(event: FocusEvent) {
   try {
+    focused.value = true
     focusVisible.value = focusIsFromKeyboard()
     fieldControl.onFocus()
   } finally {
@@ -117,6 +180,7 @@ function onNativeFocus(event: FocusEvent) {
 }
 function onNativeBlur(event: FocusEvent) {
   try {
+    focused.value = false
     focusVisible.value = false
     fieldControl.onBlur()
   } finally {
@@ -144,6 +208,28 @@ const restAttrs = computed(() =>
 const root = useTemplateRef<HTMLElement>('root')
 const inputEl = useTemplateRef<HTMLInputElement>('inputEl')
 const startEl = useTemplateRef<HTMLElement>('startEl')
+const endEl = useTemplateRef<HTMLElement>('endEl')
+
+useStateMotion({
+  key: 'input',
+  mainPart: 'root',
+  motion: () => props.motion,
+  parts: () => ({ root: root.value, input: inputEl.value, start: startEl.value, end: endEl.value }),
+  states: () => ({ invalid: isInvalid.value, disabled: isDisabled.value, focus: focused.value }),
+})
+
+// `all` hides the input's text for #display; `animated` crossfades the placeholder, and the value
+// while you're not in the field, so typing stays plain.
+const slots = useSlots()
+const hasSlot = useSlotPresence(slots)
+const displayMode = computed(() => {
+  if (hasSlot('display')) return 'all'
+  if (!props.animated) return undefined
+  if (modelValue.value === '') return 'placeholder'
+  // A password is never drawn as text.
+  return focused.value || props.type === 'password' ? undefined : 'value'
+})
+const overlay = useTextOverlay(inputEl, root, () => displayMode.value !== undefined)
 
 // Measures the real <input>'s offset from the frame edge, rather than assuming a fixed gap.
 function measureStartInset() {

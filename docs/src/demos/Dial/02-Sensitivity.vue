@@ -2,9 +2,8 @@
   <section class="demo">
     <h3>Sensitivity (<code>degreesPerStep</code>)</h3>
     <p class="note">
-      Default is 15deg/step (a full turn = 24 steps, matching the traditional mechanical mouse-wheel
-      notch). A coarse value range wants fewer, bigger degrees-per-step so a full spin doesn't blow
-      past the whole range in one gesture.
+      The default is 15° per step, so a full turn is 24 steps, like the notches of a mouse wheel. A
+      coarse range needs more degrees per step, so one spin doesn’t run through the whole range.
     </p>
     <div class="row dial-row">
       <div class="dial-cell">

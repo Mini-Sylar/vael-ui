@@ -1,6 +1,6 @@
 <template>
   <section class="demo">
-    <h3>Actions menu: disabled, keep-open, and danger rows</h3>
+    <h3>Actions menu: disabled, keep-open and danger rows</h3>
     <div class="row">
       <Menu :items="actionItems" @select="onSelect">
         <template #trigger>

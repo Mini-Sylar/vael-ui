@@ -6,6 +6,7 @@ import { h, nextTick, ref } from 'vue'
 import { toast, useToastQueue } from '../src/composables/useToast'
 import ToasterFixture from './fixtures/ToasterFixture.vue'
 import ToasterCustomCardFixture from './fixtures/ToasterCustomCardFixture.vue'
+import ToasterContainedFixture from './fixtures/ToasterContainedFixture.vue'
 import Toaster from '../src/components/Toaster/Toaster.vue'
 
 const { dismiss, toasts } = useToastQueue()
@@ -277,31 +278,31 @@ test('the default slot fully replaces built-in card markup — the library still
   await vi.waitFor(() => expect(document.querySelectorAll('.ui-toaster').length).toBe(0))
 })
 
-test("card-enter/card-leave forward TransitionGroup's own (el, done) hooks when motionCss is false — the GSAP/motion-v escape hatch", async () => {
-  const enterCalls: Element[] = []
-  const leaveCalls: Element[] = []
+test('motion hooks: each toast goes through your enter and leave as `toast`, held where the stack put it', async () => {
+  const entered: Element[] = []
+  const left: Element[] = []
   const screen = await render(Toaster, {
-    props: { motionCss: false },
-    attrs: {
-      onCardEnter: (el: Element, done: () => void) => {
-        enterCalls.push(el)
-        done()
-      },
-      onCardLeave: (el: Element, done: () => void) => {
-        leaveCalls.push(el)
-        done()
+    props: {
+      motion: {
+        enter: ({ toast: el }: { toast: HTMLElement }) => void entered.push(el),
+        leave: ({ toast: el }: { toast: HTMLElement }) => {
+          left.push(el)
+          return el.animate([{ opacity: 1 }, { opacity: 0 }], 200)
+        },
       },
     },
     global: { stubs: { transition: false, 'transition-group': false } },
   })
-  const id = toast('Imperative motion', { duration: 10000 })
-  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
-  await vi.waitFor(() => expect(enterCalls.length).toBe(1))
-  expect(enterCalls[0]).toBeInstanceOf(HTMLElement)
+  const id = toast('Your motion', { duration: 10000 })
+  await vi.waitFor(() => expect(entered.length).toBe(1))
+  expect(entered[0]).toBeInstanceOf(HTMLElement)
 
+  const card = entered[0] as HTMLElement
+  const placed = { top: card.style.top, left: card.style.left, width: card.style.width }
   dismiss(id)
-  await vi.waitFor(() => expect(leaveCalls.length).toBe(1))
-  // done() was called synchronously above, so Vue actually removes the node.
+  await vi.waitFor(() => expect(left.length).toBe(1))
+  // Not re-placed while it leaves: the stack's own placement stands.
+  expect({ top: card.style.top, left: card.style.left, width: card.style.width }).toEqual(placed)
   await vi.waitFor(() => expect(document.querySelector('.ui-toast')).toBeNull())
   await screen.unmount()
 })
@@ -822,4 +823,68 @@ test('an aria-label names the live region, so two Toasters on a page stay distin
   await expect.element(page.getByRole('region', { name: 'Upload status' })).toBeInTheDocument()
   expect(document.querySelectorAll('[aria-label="Upload status"]')).toHaveLength(1)
   await screen.unmount()
+})
+
+test('container renders the stack inside that element, absolute in its corner instead of the viewport', async () => {
+  const screen = await render(ToasterContainedFixture)
+  toast('Framed', { toaster: 'frame' })
+  await expect.element(page.getByText('Framed')).toBeVisible()
+
+  const frame = document.querySelector('[data-testid="frame"]')!
+  const toaster = frame.querySelector<HTMLElement>('.ui-toaster')!
+  expect(toaster).not.toBeNull()
+  expect(getComputedStyle(toaster).position).toBe('absolute')
+  expect(toaster.dataset.contained).toBe('true')
+
+  // The stack sits in the frame's bottom-right corner, with the default 1rem offset.
+  const box = frame.getBoundingClientRect()
+  const stack = toaster.getBoundingClientRect()
+  expect(stack.right).toBeCloseTo(box.right - 16, 0)
+  expect(stack.bottom).toBeCloseTo(box.bottom - 16, 0)
+  expect(stack.left).toBeGreaterThanOrEqual(box.left)
+
+  // The live region spans the frame but lets clicks through to the content underneath.
+  const region = frame.querySelector<HTMLElement>('[aria-live]')!
+  expect(getComputedStyle(region).pointerEvents).toBe('none')
+  await userEvent.click(page.getByRole('button', { name: 'Inside the frame' }))
+
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('a contained Toaster only shows toasts sent to its name; the viewport Toaster keeps the rest', async () => {
+  const screen = await render(() => h('div', [h(Toaster), h(ToasterContainedFixture)]))
+  toast('Global')
+  toast('Framed', { toaster: 'frame' })
+  await expect.element(page.getByText('Framed')).toBeVisible()
+  await expect.element(page.getByText('Global')).toBeVisible()
+
+  const frame = document.querySelector('[data-testid="frame"]')!
+  expect(frame.textContent).toContain('Framed')
+  expect(frame.textContent).not.toContain('Global')
+  const global = Array.from(document.querySelectorAll<HTMLElement>('.ui-toaster')).find(
+    (el) => !frame.contains(el),
+  )!
+  expect(getComputedStyle(global).position).toBe('fixed')
+
+  toast.dismiss()
+  await screen.unmount()
+})
+
+test('states: a toast moving into a variant plays that state; its first variant plays nothing', async () => {
+  render(Toaster, {
+    props: { motion: { states: { error: { toast: { x: [0, -8, 8, -4, 0] } } } } },
+  })
+  toast('Saving', { id: 'save', variant: 'loading' })
+  await vi.waitFor(() => expect(document.querySelector('.ui-toast')).not.toBeNull())
+  const card = () => document.querySelector<HTMLElement>('.ui-toast')!
+  const shaking = () =>
+    card()
+      .getAnimations()
+      .filter((a) => a.id === 'ui-state').length
+  await new Promise((r) => setTimeout(r, 200))
+  expect(shaking()).toBe(0)
+  // The save failed: the same toast turns into an error, and shakes.
+  toast('Could not save', { id: 'save', variant: 'error' })
+  await vi.waitFor(() => expect(shaking()).toBeGreaterThan(0))
 })

@@ -1,6 +1,8 @@
 <template>
   <section class="demo">
-    <h3>Accessible name, <code>label</code> renders role="status" plus visually-hidden text</h3>
+    <h3>
+      Accessible name: <code>label</code> adds <code>role="status"</code> and visually hidden text
+    </h3>
     <div class="row">
       <Loader label="Loading results" />
       <span class="panel-text"

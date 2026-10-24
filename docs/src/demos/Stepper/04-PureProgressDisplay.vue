@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
-    <h3><code>clickable=false</code>: pure progress display</h3>
-    <p class="note">Driven entirely by an external process — nothing here responds to a click.</p>
+    <h3><code>clickable=false</code>: progress display only</h3>
+    <p class="note">An outside process drives the steps; nothing here responds to a click.</p>
     <Stepper
       :model-value="uploadStep"
       :items="uploadSteps"

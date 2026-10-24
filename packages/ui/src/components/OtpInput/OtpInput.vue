@@ -7,7 +7,7 @@
     :data-focus-visible="focusVisible || undefined"
     v-bind="rootAttrs"
   >
-    <div class="ui-otp-cells" aria-hidden="true">
+    <div ref="cellsEl" class="ui-otp-cells" aria-hidden="true">
       <template v-for="(cell, index) in cells" :key="index">
         <span
           v-if="groupStarts.has(index)"
@@ -32,12 +32,22 @@
             :active="cell.active"
             :filled="cell.filled"
           >
-            <span :key="`${index}-${cell.char ?? 'empty'}`" class="ui-otp-cell-char">{{
-              cell.char ? (mask ? '•' : cell.char) : ''
-            }}</span>
+            <span
+              :key="`${index}-${cell.char ?? 'empty'}`"
+              class="ui-otp-cell-char"
+              :class="!cell.char && placeholderChar && 'ui-otp-cell-char--placeholder'"
+              >{{ cell.char ? (mask ? '•' : cell.char) : placeholderChar }}</span
+            >
           </slot>
         </span>
       </template>
+      <span
+        v-if="!hasCustomCell"
+        ref="ringEl"
+        class="ui-otp-ring"
+        :data-caret="activeCellEmpty || undefined"
+        :style="ringStyle"
+      />
     </div>
     <input
       ref="inputEl"
@@ -83,12 +93,15 @@ import {
   watch,
 } from 'vue'
 import { useSlotPresence } from '../../composables/dom'
+import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { OtpInputMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -110,10 +123,16 @@ const rawProps = withDefaults(
     invalid?: boolean
     /** Control size. @default 'md' */
     size?: 'sm' | 'md' | 'lg'
+    /** `'field'` draws one box around the whole code, like a phone's verification field, instead of a box per cell. @default 'cells' */
+    variant?: 'cells' | 'field'
+    /** One character shown in each empty cell, such as `0` or `•`. */
+    placeholder?: string
     /** Native `name` on the input, for plain `<form>` submission. */
     name?: string
     /** Splits the cells into groups with a separator between them: a group size (`3` for `123-456`), or each group's size (`[3, 4]`). */
     groups?: number | number[]
+    /** Animates its states, like a shake when the code is wrong: `{ states: { invalid: { root: { x: [0, -6, 6, -3, 0] } } } }`. */
+    motion?: OtpInputMotion
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -122,7 +141,16 @@ const rawProps = withDefaults(
       separator: UiPartValue
     }>
   }>(),
-  { length: 6, type: 'numeric', mask: false, disabled: false, invalid: false },
+  {
+    length: 6,
+    type: 'numeric',
+    mask: false,
+    disabled: false,
+    invalid: false,
+    variant: 'cells',
+    // Absent must read as unset, not `false` (Vue's boolean casting would turn motion off).
+    motion: undefined,
+  },
 )
 const props = withProviderDefaults(rawProps, { size: 'md' })
 
@@ -277,6 +305,7 @@ function onNativeBlur() {
 // Clamped view used for display/completeness: a bound modelValue can be longer than `length`.
 const displayValue = computed(() => modelValue.value.slice(0, props.length))
 
+const placeholderChar = computed(() => [...(props.placeholder ?? '')][0] ?? '')
 const cells = computed(() => {
   const value = displayValue.value
   return Array.from({ length: props.length }, (_, index) => {
@@ -306,7 +335,48 @@ onMounted(() => {
   })
 })
 
+// One ring (and caret) glides between cells, following ConfigProvider's `indicator`.
+const cellsEl = useTemplateRef<HTMLElement>('cellsEl')
+const ringEl = useTemplateRef<HTMLElement>('ringEl')
+const activeCellEmpty = computed(
+  () => activeIndex.value >= 0 && activeIndex.value >= displayValue.value.length,
+)
+const { style: ringStyle } = useTabIndicator(activeIndex, {
+  listEl: cellsEl,
+  orientation: 'horizontal',
+  selector: '.ui-otp-cell[data-active]',
+  matchCross: true,
+  indicatorEl: ringEl,
+  position: 'translate',
+})
+// Like a native caret, it stays solid when it moves and blinks once it rests.
+watch(activeIndex, () => {
+  // Only the caret blink restarts; the ring's own glide keeps going.
+  for (const animation of ringEl.value?.getAnimations?.({ subtree: true }) ?? []) {
+    if (animation instanceof CSSAnimation) animation.currentTime = 0
+  }
+})
+
 const root = useTemplateRef<HTMLElement>('root')
+useStateMotion({
+  key: 'otpInput',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: { root: '.ui-otp', cell: '.ui-otp-cell' },
+  states: () => ({
+    invalid: isInvalid.value,
+    complete: dataState.value === 'complete',
+    disabled: isDisabled.value,
+    focus: isFocused.value,
+  }),
+  // Cell by cell, each with its index (a shake that ripples): filled, and where the caret is.
+  repeated: ['cell'],
+  each: (_, __, index) => ({
+    filled: index < modelValue.value.length,
+    current: index === activeIndex.value,
+  }),
+})
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.otpInput,
@@ -318,6 +388,7 @@ const rootPart = computed(() =>
     themedUi()?.root,
     'ui-otp',
     `ui-otp--${props.size}`,
+    props.variant === 'field' && 'ui-otp--field',
     isDisabled.value && 'ui-otp--disabled',
     skipTransition.value && 'ui-otp--no-anim',
   ),
@@ -335,5 +406,7 @@ defineExpose({
   inputEl,
   /** Cell elements, one per character slot. */
   cellEls,
+  /** The ring and caret that glide to the active cell. `null` with a custom `#cell` slot. */
+  ringEl,
 })
 </script>

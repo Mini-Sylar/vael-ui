@@ -94,11 +94,12 @@ pre,
 }
 
 .copy-button {
+  /* A button's box is its own layer (vael-ui 0.5): colour it through these variables. */
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: var(--ui-surface);
-  border: 1px solid var(--ui-border);
+  --ui-button-bg: var(--ui-surface);
+  --ui-button-border: var(--ui-border);
   opacity: 0;
   transition: opacity var(--ui-duration-press) var(--ui-ease-out);
 }

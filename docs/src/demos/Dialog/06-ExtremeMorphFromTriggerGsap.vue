@@ -2,18 +2,17 @@
   <section class="demo">
     <h3>Extreme: the dialog morphs out of its button (GSAP)</h3>
     <p class="note">
-      <code>force-mount</code> hands you the exposed <code>panelEl</code> and
-      <code>overlayEl</code>. The panel grows out of the button and the backdrop fades on the same
-      progress. <code>before-close(done)</code> shrinks it back into the button.
+      The <code>motion</code> prop’s <code>enter</code> and <code>leave</code> hooks receive the
+      panel and the overlay. A GSAP timeline grows the panel out of the button while the overlay
+      fades on the same progress, then shrinks it back on close. The dialog waits for the returned
+      timeline before it unmounts.
     </p>
-    <Button ref="trigger" @click="openFromTrigger">Invite teammates</Button>
+    <Button ref="trigger" @click="open = true">Invite teammates</Button>
 
     <Dialog
-      ref="dialog"
       v-model:open="open"
-      force-mount
       size="sm"
-      :before-close="shrinkIntoTrigger"
+      :motion="morph"
       title="Invite teammates"
       description="They get an email with a link to join this workspace."
     >
@@ -27,21 +26,19 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onUnmounted, shallowRef, useTemplateRef } from 'vue'
+import { shallowRef, useTemplateRef } from 'vue'
 import { gsap } from 'gsap'
 import { Button, Dialog, Input } from 'vael-ui'
+import type { DialogMotion } from 'vael-ui'
 
 const open = shallowRef(false)
 const email = shallowRef('')
-const dialog = useTemplateRef('dialog')
 const trigger = useTemplateRef('trigger')
 
-const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 // How far the clip reaches past the panel at rest, so its shadow isn't cut off.
 const SHADOW = 48
 // One state for the whole morph, so a reversal starts from what is on screen.
 const state = { progress: 0, content: 0 }
-let morph: gsap.core.Timeline | null = null
 
 type Geometry = {
   panel: HTMLElement
@@ -56,10 +53,9 @@ type Geometry = {
 }
 
 // No scale, so text never stretches: the panel slides from the button while a clip window grows.
-function measure(): Geometry | null {
-  const panel = dialog.value?.panelEl
+function measure(panel: HTMLElement, overlay: HTMLElement | null): Geometry | null {
   const button = (trigger.value as { el?: HTMLElement } | null)?.el
-  if (!panel || !button) return null
+  if (!button) return null
   // Measure the panel where it rests, not where a running morph has moved it.
   const translate = panel.style.translate
   panel.style.translate = ''
@@ -69,7 +65,7 @@ function measure(): Geometry | null {
   const buttonStyle = getComputedStyle(button)
   return {
     panel,
-    overlay: dialog.value?.overlayEl ?? null,
+    overlay,
     dx: t.left + t.width / 2 - (p.left + p.width / 2),
     dy: t.top + t.height / 2 - (p.top + p.height / 2),
     insetX: (p.width - t.width) / 2,
@@ -94,7 +90,6 @@ function draw(g: Geometry) {
   const tint = Math.max(0, 1 - p * 2) * 100
   panel.style.backgroundColor = `color-mix(in srgb, ${g.fromColor} ${tint}%, var(--ui-surface))`
   for (const child of panel.children) (child as HTMLElement).style.opacity = String(state.content)
-  // An inline opacity takes the backdrop off Dialog's CSS fade and onto this timeline.
   if (overlay) overlay.style.opacity = String(p)
 }
 
@@ -106,50 +101,34 @@ function release(g: Geometry) {
   g.overlay?.style.removeProperty('opacity')
 }
 
-async function openFromTrigger() {
-  // The overlay covers the button, but a programmatic click can still land mid-close.
-  if (dialog.value?.isClosing) dialog.value.cancelClose()
-  const fresh = !open.value
-  open.value = true
-  await nextTick()
-  if (reduce()) return
-  const g = measure()
-  if (!g) return
-  morph?.kill()
-  if (fresh) state.progress = state.content = 0
-  draw(g)
-  // Shorter when it is already part of the way open.
-  const left = 1 - state.progress
-  morph = gsap
-    .timeline({
-      defaults: { ease: 'power3.out' },
-      onUpdate: () => draw(g),
-      onComplete: () => release(g),
-    })
-    .to(state, { progress: 1, duration: 0.15 + 0.3 * left }, 0)
-    .to(state, { content: 1, duration: 0.2 }, 0.12 * left)
+const morph: DialogMotion = {
+  enter: ({ panel, overlay }) => {
+    const g = measure(panel, overlay ?? null)
+    if (!g) return
+    draw(g)
+    // Shorter when it is already part of the way open.
+    const left = 1 - state.progress
+    return gsap
+      .timeline({
+        defaults: { ease: 'power3.out' },
+        onUpdate: () => draw(g),
+        onComplete: () => release(g),
+      })
+      .to(state, { progress: 1, duration: 0.15 + 0.3 * left }, 0)
+      .to(state, { content: 1, duration: 0.2 }, 0.12 * left)
+  },
+  leave: ({ panel, overlay }) => {
+    const g = measure(panel, overlay ?? null)
+    if (!g) return
+    draw(g)
+    return gsap
+      .timeline({
+        defaults: { ease: 'power2.out' },
+        onUpdate: () => draw(g),
+        onComplete: () => (state.progress = state.content = 0),
+      })
+      .to(state, { content: 0, duration: 0.1 }, 0)
+      .to(state, { progress: 0, duration: 0.1 + 0.18 * state.progress }, 0)
+  },
 }
-
-function shrinkIntoTrigger(done: () => void) {
-  const g = reduce() ? null : measure()
-  if (!g) return done()
-  morph?.kill()
-  // A panel at rest has no inline styles; pick up from the fully open state.
-  if (!g.panel.style.clipPath) state.progress = state.content = 1
-  draw(g)
-  morph = gsap
-    .timeline({
-      onUpdate: () => draw(g),
-      onComplete: () => {
-        done()
-        // The panel hides before the next paint, so clearing here can't flash it.
-        release(g)
-        state.progress = state.content = 0
-      },
-    })
-    .to(state, { content: 0, duration: 0.1, ease: 'power2.out' }, 0)
-    .to(state, { progress: 0, duration: 0.1 + 0.18 * state.progress, ease: 'power2.inOut' }, 0)
-}
-
-onUnmounted(() => morph?.kill())
 </script>

@@ -5,7 +5,7 @@
     :style="[rootStyle, rootPart.style]"
     :data-open-side="openSide || undefined"
     :data-dragging="isDragging || undefined"
-    :data-motion="props.motionCss ? undefined : 'off'"
+    :data-motion="props.motion ? undefined : 'off'"
     :data-reveal-scale="revealScaleOn || undefined"
     :aria-disabled="disabled || undefined"
     v-bind="attrs"
@@ -44,7 +44,7 @@
     <div
       ref="contentEl"
       :class="contentPart.class"
-      :style="[{ transform: `translateX(${offset}px)` }, contentPart.style]"
+      :style="[{ transform: `translateX(${shown}px)` }, contentPart.style]"
       @pointerdown="onContentPointerdown"
       @click.capture="onContentClick"
     >
@@ -59,13 +59,19 @@
 import './SwipeToReveal.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, useAttrs, useSlots, useTemplateRef } from 'vue'
+import { computed, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
+import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useElementSize } from '@vueuse/core'
 import { useSwipeReveal } from '../../composables/useSwipeReveal'
 import type { SwipeRevealSide } from '../../composables/useSwipeReveal'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import { useMotionStyle } from '../../motion/context'
+import { useSpringValue } from '../../composables/useSpringValue'
+import { prefersReducedMotion } from '../../composables/dom'
+import type { Spring, SwipeToRevealMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -82,10 +88,12 @@ const rawProps = withDefaults(
     /** Blocks swiping. `reveal()`, `close()` and `v-model:open` still work. @default false */
     disabled?: boolean
     /**
-     * Plays the built-in release and settle transition. Set `false` to drive the settle yourself.
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { open: { actions: { opacity: 1 } } } }`). The built-in release and settle
+     * transition plays unless it's `false`, so you can drive the settle yourself.
      * @default true
      */
-    motionCss?: boolean
+    motion?: SwipeToRevealMotion
     /** Grows the actions panel in from its edge as it opens. A number from 0 to 1 sets the starting scale.
      * `false` turns it off.
      * @default true
@@ -96,12 +104,13 @@ const rawProps = withDefaults(
   }>(),
   {
     disabled: false,
-    motionCss: undefined,
+    motion: undefined,
     revealScale: true,
     ui: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { motionCss: true })
+const props = withProviderDefaults(rawProps, { motion: true })
+const DEFAULT_SPRING = { damping: 1, response: 0.32 }
 
 const emit = defineEmits<{
   /** Fires once per settled interaction, with `open` and the open edge (or `null`). */
@@ -139,6 +148,8 @@ const { width: trailingWidth } = useElementSize(trailingActionsEl)
 // template ref's own null-to-element transition right after mount, before that first callback
 // lands. A drag committed in that same short window would otherwise measure a stale/zero width
 // and be forced closed regardless of how far it traveled.
+const haptic = useComponentHaptic()
+const tick = () => haptic.impact('light')
 const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reveal, close } =
   useSwipeReveal(open, {
     leading: () => hasLeading.value,
@@ -146,8 +157,24 @@ const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reve
     leadingWidth: () => leadingActionsEl.value?.offsetWidth ?? leadingWidth.value,
     trailingWidth: () => trailingActionsEl.value?.offsetWidth ?? trailingWidth.value,
     disabled: () => props.disabled,
-    onCommit: (side) => emit('change', side !== null, side),
+    onCommit: (side) => {
+      tick()
+      emit('change', side !== null, side)
+    },
   })
+
+const parts = useStateMotion({
+  key: 'swipeToReveal',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  selectors: {
+    root: '.ui-swipe-reveal',
+    content: '.ui-swipe-reveal-content',
+    actions: '.ui-swipe-reveal-actions',
+  },
+  states: () => ({ open: openSide.value !== null, dragging: isDragging.value }),
+})
 
 // Tabbing into a closed row's actions reveals them, so the focused button is
 // visible; tabbing out of the row closes what focus opened.
@@ -164,16 +191,35 @@ function onFocusout(event: FocusEvent) {
   close()
 }
 
-// 0 → 1: how far the drag/settle has revealed each edge. Exposed for consumer-driven effects;
-// also drives the opt-in `revealScale` grow-in.
+// Where the row is on screen: with the finger while dragging, then on a spring to where it
+// settles, so the progress below is what you see, not where it's going.
+const style = useMotionStyle()
+const own = typeof rawProps.motion === 'object' ? (rawProps.motion.spring as Spring) : undefined
+const {
+  value: shown,
+  set: glide,
+  jump,
+} = useSpringValue(offset.value, {
+  ...(own ?? style?.value?.spring ?? DEFAULT_SPRING),
+  epsilon: 0.1,
+})
+watch(
+  offset,
+  (next) =>
+    isDragging.value || !props.motion || prefersReducedMotion() ? jump(next) : glide(next),
+  { flush: 'sync' },
+)
+
+// 0 → 1: how far each edge is revealed on screen. Exposed for consumer-driven effects; also
+// drives the opt-in `revealScale` grow-in.
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
 const leadingProgress = computed(() => {
   const width = leadingActionsEl.value?.offsetWidth ?? leadingWidth.value
-  return width > 0 ? clamp01(offset.value / width) : 0
+  return width > 0 ? clamp01(shown.value / width) : 0
 })
 const trailingProgress = computed(() => {
   const width = trailingActionsEl.value?.offsetWidth ?? trailingWidth.value
-  return width > 0 ? clamp01(-offset.value / width) : 0
+  return width > 0 ? clamp01(-shown.value / width) : 0
 })
 
 const revealScaleOn = computed(() => props.revealScale !== false)
@@ -216,13 +262,17 @@ defineExpose({
   isDragging,
   /** Which edge is open, or `null` when closed. */
   openSide,
-  /** Reveal progress of the leading edge, from 0 to 1. Live during a drag, settled after. */
+  /** Reveal progress of the leading edge, from 0 to 1, as it is on screen. */
   leadingProgress,
-  /** Reveal progress of the trailing edge, from 0 to 1. Live during a drag, settled after. */
+  /** Reveal progress of the trailing edge, from 0 to 1, as it is on screen. */
   trailingProgress,
   /** Opens an edge. Without `side`, it opens the trailing edge, or the leading one if it's the only edge. */
   reveal,
   /** Closes the open edge. */
   close,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

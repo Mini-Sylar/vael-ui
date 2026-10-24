@@ -16,12 +16,18 @@
       :invalid="isInvalid"
       :placeholder="placeholder"
       :name="name"
-      :autocomplete="autocomplete"
+      :autocomplete="resolvedAutocomplete"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
       :ui="innerUi"
       v-bind="inputAttrs"
       @focus="onFocus"
       @blur="onBlur"
     >
+      <template v-if="$slots.display" #display="displayProps">
+        <slot name="display" v-bind="displayProps" />
+      </template>
       <template #end>
         <slot name="end" />
         <button
@@ -60,7 +66,7 @@
 
     <Transition
       v-if="hintPlacement === 'inline' && hasHintContent"
-      :name="props.motionCss ? 'ui-field-error' : undefined"
+      :name="props.motion ? 'ui-field-error' : undefined"
     >
       <div :class="hintPart.class" :style="hintPart.style">
         <slot name="hint" :value="modelValue" :results="ruleResults">
@@ -155,6 +161,8 @@ export interface PasswordRuleResult {
 </script>
 
 <script setup lang="ts">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose } from '../../motion/types'
 import './PasswordInput.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
@@ -168,6 +176,8 @@ import { omitAttrs } from '../../composables/forwardedListeners'
 import { useUiMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
+import { useStateMotion } from '../../motion/useStateMotion'
+import type { PasswordInputMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -190,8 +200,10 @@ const rawProps = withDefaults(
     placeholder?: string
     /** Native `name` on the input, for plain `<form>` submission. */
     name?: string
-    /** `'current-password'` for a login form, `'new-password'` for signup, reset or change forms.
-     * Set it yourself; only the screen's context determines which one fits. */
+    /** Tells password managers what this field is. Defaults to `'new-password'` when the field
+     * shows requirements (`rules` or `#hint`), so the phone offers a strong password, and to
+     * `'current-password'` otherwise, so a saved one fills in. Set it for a case that reads
+     * otherwise, like a sign-up form without rules. */
     autocomplete?: string
     /** `false` hides the reveal toggle, for forms that must never show the password in plain text.
      * @default true
@@ -202,8 +214,12 @@ const rawProps = withDefaults(
     rules?: PasswordRule[]
     /** Where the requirements hint renders. `'none'` disables it outright. @default 'popover' */
     hintPlacement?: 'inline' | 'popover' | 'none'
-    /** `false` skips the hint's enter/exit transition. Inline mode only. @default true */
-    motionCss?: boolean
+    /**
+     * How it moves: its appearance (`{ initial: { root: { opacity: 0, y: 4 } } }`) and its states
+     * (`{ states: { invalid: { root: { x: [0, -6, 6, 0] } } } }`). The inline `hint` is a part;
+     * the popover one is not. `false` skips the inline hint's enter/exit transition. @default true
+     */
+    motion?: PasswordInputMotion
     /** Which side of the input the hint appears on, in both `'popover'` and `'inline'` mode.
      * Inline defaults to `'bottom'`. */
     side?: PopoverSide
@@ -221,8 +237,8 @@ const rawProps = withDefaults(
      * @default false
      */
     forceMount?: boolean
-    /** Custom exit animation for the hint popover; call `done()` when it's complete. Popover mode only. */
-    beforeClose?: (done: () => void) => void
+    /** Runs before the hint closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The hint stays open while the promise is pending. Popover mode only. */
+    beforeClose?: BeforeClose<PopoverCloseReason>
     /** Class and style overrides for each part. */
     ui?: Partial<{
       root: UiPartValue
@@ -240,15 +256,20 @@ const rawProps = withDefaults(
     invalid: false,
     revealable: true,
     hintPlacement: 'popover',
-    motionCss: undefined,
+    motion: undefined,
     forceMount: false,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', motionCss: true })
+const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 
 defineSlots<{
   /** Inline trailing content, placed before the reveal toggle. */
   end(): unknown
+  /**
+   * Draws the text yourself over the field's own text, as Input's `#display`: the real input keeps
+   * the caret, selection and screen reader text.
+   */
+  display(props: { value: string; placeholder: string; focused: boolean }): unknown
   /** Replaces the default requirements checklist. Falls back to it when omitted. */
   hint(props: { value: string; results: PasswordRuleResult[] }): unknown
 }>()
@@ -262,6 +283,10 @@ const slots = useSlots()
 const hasSlot = useSlotPresence(slots)
 // Nothing to show: no rules and no #hint override — don't mount an empty popover/hint.
 const hasHintContent = computed(() => resolvedRules.value.length > 0 || hasSlot('hint'))
+// Requirements mean someone is choosing a password; without them, they're typing one they have.
+const resolvedAutocomplete = computed(
+  () => props.autocomplete ?? (hasHintContent.value ? 'new-password' : 'current-password'),
+)
 
 const messages = useUiMessages()
 const fieldControl = useFieldControl()
@@ -289,6 +314,20 @@ const root = useTemplateRef<HTMLElement>('root')
 const inputRef = useTemplateRef<ComponentExposed<typeof Input>>('inputRef')
 const el = computed(() => root.value)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
+const parts = useStateMotion({
+  key: 'passwordInput',
+  mainPart: 'root',
+  motion: () => props.motion,
+  root: () => root.value,
+  // The popover hint is teleported, so only the inline one is found.
+  selectors: {
+    root: '.ui-password-input',
+    input: '.ui-input-el',
+    toggle: '.ui-password-input-toggle',
+    hint: '.ui-password-input-hint',
+  },
+  states: () => ({ invalid: isInvalid.value, disabled: isDisabled.value }),
+})
 
 const popoverRef = useTemplateRef<ComponentExposed<typeof Popover>>('popoverRef')
 const hintPanelEl = computed(() => popoverRef.value?.panelEl ?? null)
@@ -346,5 +385,9 @@ defineExpose({
   closeHint,
   /** Aborts a pending `beforeClose` exit and keeps the hint popover open. */
   cancelCloseHint,
+  /** Its elements by part name, for your own animation; a repeated part is an array. */
+  get parts() {
+    return parts()
+  },
 })
 </script>

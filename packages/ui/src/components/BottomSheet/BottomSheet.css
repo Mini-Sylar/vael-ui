@@ -4,6 +4,10 @@
     max-block-size: 100dvh;
     border-radius: 1.25rem 1.25rem 0 0;
     transition: none;
+    /* Its own layer for its whole life: a drag moves it with an inline transform and no
+       transition, which the browser doesn't promote, so every finger move repainted the
+       sheet and everything in it. Never toggled, so the contents aren't re-rasterised. */
+    will-change: transform;
   }
   .ui-bottom-sheet-panel--sm {
     max-inline-size: min(22rem, 100%);
@@ -19,9 +23,6 @@
   }
   .ui-bottom-sheet-panel--full-screen {
     border-radius: 0;
-  }
-  .ui-bottom-sheet-overlay {
-    transition-duration: var(--ui-duration-drawer);
   }
   .ui-bottom-sheet-body {
     display: flex;
@@ -92,8 +93,14 @@
     flex: 1 1 auto;
     min-block-size: 0;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-scroll-thumb, var(--ui-border-strong)) transparent;
     overscroll-behavior: contain;
-    padding: 0 1.25rem 1.25rem;
+    /* Room above the first row: this box scrolls, so it clips, and a focus ring or a selection
+       ring on the first control would otherwise lose its top edge. */
+    padding: 0.5rem 1.25rem 1.25rem;
+    /* Clear of the home indicator in an app that draws under it (viewport-fit=cover). */
+    padding-block-end: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   }
   .ui-bottom-sheet-content[data-dragging] {
     user-select: none;
@@ -103,5 +110,15 @@
     .ui-bottom-sheet-close:active {
       transform: none;
     }
+  }
+
+  /* Pressed, it shrinks; this keeps its full box clickable so a press at the edge still lands. */
+  .ui-bottom-sheet-close {
+    position: relative;
+  }
+  .ui-bottom-sheet-close:active::after {
+    content: '';
+    position: absolute;
+    inset: -4%;
   }
 }

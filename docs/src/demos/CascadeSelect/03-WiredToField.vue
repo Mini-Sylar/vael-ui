@@ -1,10 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Wired to Field</h3>
+    <h3>Inside a Field</h3>
     <p class="note">
-      Same "standalone-or-Field" contract as every other control: no Field ancestor above, it just
-      generates its own id and works. Wire it into a Field and label/description/error/required
-      wiring appears for free.
+      Like every control, CascadeSelect works alone and generates its own id. Inside a Field, it
+      gets the label, description, error and required state with no extra code.
     </p>
     <Field label="Destination" description="Where should we ship your order?" :required="true">
       <CascadeSelect

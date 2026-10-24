@@ -9,7 +9,12 @@
   </span>
   <slot v-else-if="$slots.trigger" name="trigger" :open="open" :setTriggerEl="setTriggerEl" />
   <Teleport :to="teleportTarget">
-    <Transition name="ui-popover" appear :css="!forceMount">
+    <Transition
+      name="ui-popover"
+      appear
+      v-bind="motionHooks"
+      :css="!forceMount && motionTransition.css !== false"
+    >
       <div
         v-if="forceMount || open"
         v-show="open"
@@ -22,20 +27,53 @@
         :data-align="resolvedAlign"
       >
         <div
+          v-if="surface"
+          ref="surfaceLayer"
+          class="ui-popover-surface"
+          aria-hidden="true"
+          :style="surface as StyleValue"
+        >
+          <span ref="surfacePill" class="ui-popover-surface-shape" />
+          <span ref="surfaceBlob" class="ui-popover-surface-shape" />
+        </div>
+        <div
           :id="panelId"
           ref="panel"
+          data-ui-presence
           :class="panelPart.class"
           :style="[{ transformOrigin }, panelPart.style]"
           v-bind="panelAttrs"
         >
           <div class="ui-popover-body" :style="bodyStyle" v-scroll-mask="scrollFade">
+            <!-- `swap`: one keyed root inside; the old view leaves as the new one comes in. -->
+            <Transition
+              v-if="motion.resolved.value.swap"
+              :css="false"
+              :mode="motion.resolved.value.swap === 'wait' ? 'out-in' : undefined"
+              @enter="motion.swap.onEnter"
+              @leave="motion.swap.onLeave"
+            >
+              <slot
+                :close="close"
+                :open="open"
+                :isClosing="isClosing"
+                :cancelClose="cancelClose"
+                :panelEl="panelEl"
+                :placement="placement"
+                :target="target"
+                :phase="phase"
+              />
+            </Transition>
             <slot
+              v-else
               :close="close"
               :open="open"
               :isClosing="isClosing"
               :cancelClose="cancelClose"
               :panelEl="panelEl"
               :placement="placement"
+              :target="target"
+              :phase="phase"
             />
           </div>
         </div>
@@ -45,7 +83,8 @@
 </template>
 
 <script lang="ts">
-import type { Side } from '@floating-ui/dom'
+import type { Placement, Side } from '@floating-ui/dom'
+import type { MotionPhase } from '../../motion/types'
 import type { Align } from '../../composables/useFloatingPosition'
 import type { UiPartValue } from '../../classes'
 
@@ -70,10 +109,16 @@ export interface PopoverProps {
   closeOnEsc?: boolean
   /** Clicking outside the panel closes it. @default true */
   closeOnOutside?: boolean
-  /** Custom exit animation; call `done()` to finish closing. */
-  beforeClose?: (done: () => void) => void
-  /** Keeps it mounted, toggled with `v-show`, so you can own the enter/exit animation. @default false */
+  /** Runs before the panel closes. Return `true` to close it, `false` to keep it open, or a promise of either, like `() => confirmAction(…).result`. The panel stays open while the promise is pending. */
+  beforeClose?: BeforeClose<PopoverCloseReason>
+  /** Keeps it mounted while closed, toggled with `v-show`, so its content keeps its state. vael-ui then leaves its motion to you. @default false */
   forceMount?: boolean
+  /**
+   * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, states by part
+   * (`initial: { panel: { … } }`), your `targets`, or `enter`/`leave` hooks for a library.
+   * Unset, it follows the nearest ConfigProvider's style.
+   */
+  motion?: PopoverMotion
   /** Teleport target: a CSS selector or element. Wins over `container` either way. */
   teleportTo?: string | HTMLElement
   /** Scopes the popover to an element. It teleports there instead of `body`, and its Escape handling
@@ -92,6 +137,18 @@ export interface PopoverProps {
   /** Class and style overrides for each part. */
   ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }>
 }
+
+/** What a template ref to Popover gives you; Popover is generic, so `InstanceType<typeof Popover>` can't. */
+export interface PopoverExposed {
+  panelEl: HTMLElement | null
+  phase: MotionPhase
+  positionerEl: HTMLElement | null
+  placement: Placement
+  positionerStyle: Record<string, string>
+  isClosing: boolean
+  close: () => void
+  cancelClose: () => void
+}
 </script>
 
 <!--
@@ -99,7 +156,10 @@ export interface PopoverProps {
   openOnTriggerClick for Menu's fully-managed click-to-toggle contract instead.
   positionerStyle only on positioner (no inline style on panelEl — safe for GSAP/motion-v).
 -->
-<script setup lang="ts">
+<!-- Generic over your target names, so `target('…')` autocompletes from `motion.targets`. -->
+<script setup lang="ts" generic="N extends string = string">
+import type { PopoverCloseReason } from '../../composables/usePopover'
+import type { BeforeClose } from '../../motion/types'
 import './Popover.css'
 import '../shared/tokens.css'
 import {
@@ -113,7 +173,7 @@ import {
   watchEffect,
 } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
-import type { ComponentPublicInstance } from 'vue'
+import type { ComponentPublicInstance, StyleValue } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { usePopover } from '../../composables/usePopover'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
@@ -121,27 +181,48 @@ import { useDOMTarget, resolvePastDisplayContents, type DOMTarget } from '../../
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
+import { useComponentMotion } from '../../motion/useComponentMotion'
+import { loadSurface } from '../../composables/lazyParts'
+import type { MotionRef, PopoverMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
 /** Whether the popover is open. @default false */
 const open = defineModel<boolean>('open', { default: false })
 
-const props = withDefaults(defineProps<PopoverProps>(), {
-  side: 'bottom',
-  align: 'center',
-  sideOffset: 8,
-  alignOffset: 0,
-  closeOnEsc: true,
-  closeOnOutside: true,
-  forceMount: false,
-  scrollFade: true,
-  openOnTriggerClick: false,
-})
+const props = withDefaults(
+  defineProps<
+    Omit<PopoverProps, 'motion'> & {
+      /**
+       * How it moves: `false` for instantly, `{ spring }` to retime the built-in motion, states by part
+       * (`initial: { panel: { … } }`), your `targets`, or `enter`/`leave` hooks for a library.
+       * Unset, it follows the nearest ConfigProvider's style.
+       */
+      motion?: PopoverMotion<N>
+    }
+  >(),
+  {
+    // Unset means "follow the app"; without this Vue would read a missing boolean prop as false.
+    motion: undefined,
+    side: 'bottom',
+    align: 'center',
+    sideOffset: 8,
+    alignOffset: 0,
+    closeOnEsc: true,
+    closeOnOutside: true,
+    forceMount: false,
+    scrollFade: true,
+    openOnTriggerClick: false,
+  },
+)
 
 const emit = defineEmits<{
   /** Fires when a close is requested; call `details.cancel()` to keep the panel open. */
   'open-change': [value: boolean, details: PopoverOpenChangeDetails]
+  /** Fires once it has finished opening. */
+  'after-enter': []
+  /** Fires once it has finished closing. */
+  'after-leave': []
 }>()
 
 defineSlots<{
@@ -153,6 +234,9 @@ defineSlots<{
     cancelClose: () => void
     panelEl: HTMLElement | null
     placement: string
+    /** Marks an element to animate under one of your `motion.targets` names: `:ref="target('rows')"`. */
+    target: (name: N) => MotionRef
+    phase: MotionPhase
   }): unknown
   /** Trigger markup; bind `:ref="setTriggerEl"` to position against it. Clicking it does nothing
    * unless you set `openOnTriggerClick`. */
@@ -198,7 +282,116 @@ const triggerElRef = computed<HTMLElement | null>(() => {
 })
 
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
+const surfaceLayer = useTemplateRef<HTMLElement>('surfaceLayer')
+const surfacePill = useTemplateRef<HTMLElement>('surfacePill')
+const surfaceBlob = useTemplateRef<HTMLElement>('surfaceBlob')
+// Vue nulls refs as a close begins, before the leave: the blob must still follow the panel out.
+let lastBlob: HTMLElement | null = null
+watch(surfaceBlob, (el) => el && (lastBlob = el))
 const panelEl = useTemplateRef<HTMLElement>('panel')
+
+const motion = useComponentMotion({
+  name: 'Popover',
+  role: 'overlay',
+  key: 'popover',
+  mainPart: 'panel',
+  parts: () => ({ panel: panelEl.value }),
+  root: () => panelEl.value,
+  motion: () => props.motion,
+  // The built-in look as data, played by the CSS engine: it opens from a touch further than it
+  // closes to (the close should get out of the way), scaling from the trigger via the panel's own
+  // transform-origin, on the enter tokens. forceMount leaves the motion to you.
+  defaults: () => ({ panel: { opacity: 0, scale: '0.97' } }),
+  exitDefaults: () => ({ panel: { opacity: 0, scale: '0.99' } }),
+  timing: () => ({ duration: 'var(--ui-duration-enter)', easing: 'var(--ui-ease-out)' }),
+  owns: () => !props.forceMount,
+  // morph: 'trigger' grows from the trigger.
+  trigger: () => triggerElRef.value,
+  ready: placed,
+  mirror: () => (motion.resolved.value.surface ? lastBlob : null),
+  resizes: true,
+})
+const { target, phase } = motion
+// `surface`: a layer of shapes above the page and behind the panel: a pill on the trigger and a
+// blob that moves exactly as the panel does, both in the panel's colour, so they melt into one
+// shape under your filter. The trigger is cut out of the layer, so the real one shows through.
+// The panel goes clear while open: the blob is its body, and your filter never touches text.
+const surface = computed(() => motion.resolved.value.surface)
+// The panel's own colour while the blob stands in for it.
+const panelFill: { value?: string } = {}
+// Closed: the panel's own background and shadow again.
+watch(phase, (now) => {
+  if (now !== 'left' || !panelFill.value) return
+  panelFill.value = undefined
+  panelEl.value?.style.removeProperty('background')
+  panelEl.value?.style.removeProperty('box-shadow')
+})
+// The shapes' maths (motion/surface.ts) loads only for a popover with a `surface`, before it opens.
+let surfaceKit: typeof import('../../motion/surface') | undefined
+function measureSurface() {
+  surfaceKit?.measureSurface(
+    {
+      trigger: triggerElRef.value,
+      panel: panelEl.value,
+      positioner: positionerEl.value,
+      layer: surfaceLayer.value,
+      pill: surfacePill.value,
+      blob: surfaceBlob.value,
+    },
+    panelFill,
+  )
+}
+// Placed: floating-ui has put it where it opens. A panel that's never placed opens anyway.
+function placed(): Promise<void> {
+  return new Promise((resolve) => {
+    let stop: (() => void) | undefined
+    const done = () => {
+      clearTimeout(timer)
+      stop?.()
+      if (!surface.value) return resolve()
+      void loadSurface().then((kit) => {
+        surfaceKit = kit
+        measureSurface()
+        resolve()
+      })
+    }
+    const timer = setTimeout(done, 150)
+    // Already placed: at once.
+    if (positionerStyle.value.visibility === 'visible') return done()
+    stop = watch(positionerStyle, (style) => style.visibility === 'visible' && done(), {
+      flush: 'post',
+    })
+  })
+}
+const motionTransition = motion.transition
+// Whether this open's after-enter (or this close's after-leave) has been emitted.
+let told = false
+const motionHooks = computed(() => {
+  const { css: _css, ...hooks } = motionTransition.value
+  return {
+    ...hooks,
+    onBeforeEnter: (el: Element) => {
+      hooks.onBeforeEnter?.(el)
+      phase.value = 'entering'
+      told = false
+    },
+    // Once per open and per close: v-if and v-show each run an enter, and each calls this.
+    onAfterEnter: () => {
+      phase.value = 'entered'
+      if (!told) emit('after-enter')
+      told = true
+    },
+    onBeforeLeave: () => {
+      phase.value = 'leaving'
+      told = false
+    },
+    onAfterLeave: () => {
+      phase.value = 'left'
+      if (!told) emit('after-leave')
+      told = true
+    },
+  }
+})
 const attrs = useAttrs()
 const panelAttrs = useAttrListeners(
   () => panelEl.value,
@@ -268,6 +461,8 @@ const {
   onOpenChange: (value, details) => emit('open-change', value, details),
   scope: container,
 })
+// Moved while open (scroll, flip, shift): the shapes follow.
+watch(positionerStyle, () => open.value && measureSurface(), { flush: 'post' })
 
 // Same shared-layer-stack stacking Dialog uses (see Dialog.vue's rootStyle.zIndex) - deliberately --ui-z-dialog, not --ui-z-popover, so both families compare on one shared axis.
 const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layerIndex())})`)
@@ -293,6 +488,8 @@ const resolvedAlign = computed<PopoverAlign>(() => {
 defineExpose({
   /** Panel element (`null` while closed). */
   panelEl,
+  /** `'entering' | 'entered' | 'leaving' | 'left'`. */
+  phase,
   /** Positioning wrapper around the panel (`null` while closed). */
   positionerEl,
   /** Resolved placement after flipping, e.g. `'bottom-start'`. */

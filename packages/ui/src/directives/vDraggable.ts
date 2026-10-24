@@ -50,10 +50,13 @@ function sameValue(a: DraggableValue, b: DraggableValue | null): boolean {
   )
 }
 
+// Rows only: not the drag preview, nor a decorative layer such as Tabs' hover indicator.
 function childrenOf(container: HTMLElement): HTMLElement[] {
   return Array.from(container.children).filter(
     (child): child is HTMLElement =>
-      child instanceof HTMLElement && !child.hasAttribute('data-sortable-preview'),
+      child instanceof HTMLElement &&
+      !child.hasAttribute('data-sortable-preview') &&
+      child.getAttribute('aria-hidden') !== 'true',
   )
 }
 

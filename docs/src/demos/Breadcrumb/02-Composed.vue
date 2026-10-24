@@ -1,11 +1,9 @@
 <template>
   <section class="demo">
-    <h3>Composed, same result</h3>
+    <h3>Built by hand, same result</h3>
     <p class="note">
-      The same trail, built by hand from <code>BreadcrumbItem</code>/<code
-        >BreadcrumbSeparator</code
-      >
-      instead — reach for this when a crumb needs custom content, not just a label.
+      The same trail, built from <code>BreadcrumbItem</code> and <code>BreadcrumbSeparator</code>.
+      Use this when a crumb needs more than a label.
     </p>
     <Breadcrumb aria-label="Composed breadcrumb">
       <BreadcrumbItem href="/">Home</BreadcrumbItem>
