@@ -276,16 +276,21 @@ async function runJob(browser, { setup, page: path }) {
           .trim()
           .slice(0, 24) || `control ${c}`
       const where = { ...base, demo: title, control: label }
-      // The pointer is on it before the first press, so its hover isn't counted as the press.
+      // The pointer is on it before the first press, so its hover isn't counted as the press. A
+      // hover can open something (a SpeedDial on hover): it settles before the first press is recorded.
       await controls
         .nth(c)
         .hover({ force: true, timeout: 1000 })
         .catch(() => {})
-      await p.evaluate(([i, cap]) => window.__stress.rest(i, cap), [d, LOOP_MS])
+      await p.evaluate(([i, cap]) => window.__stress.rest(i, cap), [d, loops ? LOOP_MS : SETTLE_MS])
       const runs = []
       // Four presses: the first brings the demo into the cycle (pressing it may have closed
       // another part left open earlier), then the second and fourth start alike and are compared.
       for (let run = 0; run < 4; run++) {
+        if (process.env.STRESS_TRACE)
+          console.log(
+            `\n${where.page} › ${where.demo} › ${where.control} › press ${run + 1} at ${new Date().toISOString().slice(11, 19)}`,
+          )
         const url = p.url()
         await p.evaluate((i) => window.__stress.begin(i), d)
         const pressed = await controls
@@ -299,7 +304,12 @@ async function runJob(browser, { setup, page: path }) {
           await p.evaluate(() => window.__stress.end())
           break
         }
+        const step = (what) =>
+          process.env.STRESS_TRACE &&
+          console.log(`  ${where.page} ${what} at ${new Date().toISOString().slice(11, 19)}`)
+        step('clicked')
         const r = await afterPress(d, where)
+        step('rested')
         let stuckOpen = false
         if (r.overlay) {
           await p.keyboard.press('Escape')
@@ -318,7 +328,9 @@ async function runJob(browser, { setup, page: path }) {
           }
           stuckOpen = after.overlay
         }
+        step('overlay handled')
         const moved = await p.evaluate(() => window.__stress.end())
+        step('recorded')
         // Where the press left it: an overlay that opened, and the control's own state.
         const state = await controls
           .nth(c)
@@ -328,6 +340,7 @@ async function runJob(browser, { setup, page: path }) {
               .join('|'),
           )
           .catch(() => '?')
+        step('state read')
         runs.push({ moved, overlay: r.overlay, state, stuckOpen })
         if (await back(url)) break
         // Nothing moved and nothing opened: pressing it again tells us nothing.
@@ -346,7 +359,10 @@ async function runJob(browser, { setup, page: path }) {
         // Worn down since the very first time, and still moving: what a stale leftover does (a
         // slide that only goes one way now). Something that stopped moving altogether is left to
         // the comparison above, since the first press may have closed a part left open earlier.
-        for (const [key, a] of Object.entries(runs[0].moved)) {
+        // Only when the first press did what the fourth did: a SpeedDial opened by hover keeps
+        // open on its first click, and the fourth closes it.
+        const sameKind = runs[0].state === runs[3].state && runs[0].overlay === runs[3].overlay
+        for (const [key, a] of sameKind ? Object.entries(runs[0].moved) : []) {
           const b = runs[3].moved[key]
           if (
             b &&
@@ -365,27 +381,97 @@ async function runJob(browser, { setup, page: path }) {
   }
   for (const w of new Set(warnings))
     report({ ...base, demo: '', control: '', check: 'console', detail: w })
-  await context.close()
+  if (process.env.STRESS_TRACE) {
+    // Is the page still busy as it closes: answering, animating, rewriting itself?
+    const probe = p.evaluate(
+      () =>
+        new Promise((resolve) => {
+          let mutations = 0
+          const observer = new MutationObserver((records) => (mutations += records.length))
+          observer.observe(document.body, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            characterData: true,
+          })
+          setTimeout(() => {
+            observer.disconnect()
+            const running = document
+              .getAnimations()
+              .filter((a) => a.playState === 'running')
+              .map((a) => `${a.constructor.name}:${a.effect?.target?.className?.slice?.(0, 30)}`)
+            resolve({
+              mutations,
+              running: running.slice(0, 8),
+              active: document.activeElement?.className?.slice(0, 40),
+            })
+          }, 1000)
+        }),
+    )
+    const answer = await Promise.race([
+      probe,
+      new Promise((r) => setTimeout(() => r('no answer in 5s'), 5000)),
+    ])
+    console.log(`  ${path} before close: ${JSON.stringify(answer)}`)
+    console.log(`  ${path} closing`)
+  }
+  // WebKit under heavy load can stall closing a finished page (Playwright teardown, nothing a
+  // user meets): the worker starts a fresh browser instead of waiting on it.
+  const closed = await Promise.race([
+    context.close().then(() => true),
+    new Promise((resolve) => setTimeout(() => resolve(false), 15_000)),
+  ])
+  if (!closed) throw Object.assign(new Error('page did not close'), { closeStalled: true })
+  if (process.env.STRESS_TRACE) console.log(`  ${path} closed`)
 }
 
 const started = Date.now()
 let done = 0
+// A page that never settles is a failure of its own, by name, not a run that never ends.
+const PAGE_LIMIT_MS = 5 * 60_000
+const running = new Set()
 await Promise.all(
   Array.from({ length: Math.min(WORKERS, jobs.length) }, async () => {
     // A browser per worker: no queueing behind one shared browser process.
-    const browser = await browserType.launch()
+    let browser = await browserType.launch()
     for (let job = jobs.shift(); job; job = jobs.shift()) {
-      await runJob(browser, job).catch((e) =>
-        report({
-          ...job,
-          demo: '',
-          control: '',
-          check: 'console',
-          detail: `runner: ${e.message.split('\n')[0]}`,
-        }),
-      )
+      const name = `${job.page} [${job.setup}]`
+      running.add(name)
+      let timer
+      const limit = new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`still running after ${PAGE_LIMIT_MS / 60_000} minutes`)),
+          PAGE_LIMIT_MS,
+        )
+      })
+      await Promise.race([runJob(browser, job), limit])
+        .catch(async (e) => {
+          if (e.closeStalled) {
+            console.log(
+              `\n${name}: tested, but the browser stalled closing it; continuing on a fresh one`,
+            )
+            await browser.close().catch(() => {})
+            browser = await browserType.launch()
+            return
+          }
+          report({
+            ...job,
+            demo: '',
+            control: '',
+            check: 'console',
+            detail: `runner: ${e.message.split('\n')[0]}`,
+          })
+          // A hung page keeps its browser busy: start the next page on a fresh one.
+          if (e.message.startsWith('still running')) {
+            await browser.close().catch(() => {})
+            browser = await browserType.launch()
+          }
+        })
+        .finally(() => clearTimeout(timer))
+      running.delete(name)
       done++
-      process.stdout.write(`\r${done}/${total} pages`)
+      const left = running.size && total - done <= 3 ? ` (running: ${[...running].join(', ')})` : ''
+      process.stdout.write(`\r${done}/${total} pages${left}`)
     }
     await browser.close()
   }),
