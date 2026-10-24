@@ -5,7 +5,7 @@ import type { MotionStyle } from './types'
 // It finds the nearest ConfigProvider through the DOM, on the element ConfigProvider marks. Kept
 // on the element, not in this module, so the VDOM and Vapor builds read the same one.
 type Holder = { style: () => MotionStyle | undefined; off: () => boolean }
-type Holds = Element & { _uiMotionStyle?: Holder; _uiAround?: Holder }
+type Holds = Element & { _uiMotionStyle?: Holder; _uiAround?: () => Holder | undefined }
 
 /** @internal ConfigProvider puts its style, and whether it turned motion off, on its element. */
 export function holdMotionStyle(el: Element, holder: Holder): void {
@@ -13,14 +13,14 @@ export function holdMotionStyle(el: Element, holder: Holder): void {
 }
 
 /** @internal A v-animate element's provider through the component tree, for when it's teleported. */
-export function holdAround(el: Element, around: Holder): void {
+export function holdAround(el: Element, around: () => Holder | undefined): void {
   ;(el as Holds)._uiAround = around
 }
 
 // The nearest provider around it in the page, else (teleported out of it) through its components.
 function holderOf(el: Element): Holder | undefined {
   const around = el.parentElement?.closest('[data-ui-motion-style]') as Holds | null
-  return around?._uiMotionStyle ?? (el as Holds)._uiAround
+  return around?._uiMotionStyle ?? (el as Holds)._uiAround?.()
 }
 
 /** @internal The style of the nearest ConfigProvider around `el`, if any. */

@@ -1,7 +1,8 @@
 // v-animate:name="value": marks an element for the nearest component's motion, from the template.
 import '../components/shared/appear.css'
-import { inject, onScopeDispose, watchPostEffect } from 'vue'
-import type { ComponentInternalInstance, DirectiveBinding, ObjectDirective } from 'vue'
+import * as vue from 'vue'
+import { inject, isVNode, onScopeDispose, watchPostEffect } from 'vue'
+import type { ComponentInternalInstance, DirectiveBinding, ObjectDirective, VNode } from 'vue'
 import { findPresence } from '../motion/presence'
 import {
   arriveLayout,
@@ -206,9 +207,13 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
   getSSRProps(binding) {
     return (!binding.arg && typeof binding.value === 'object' && firstPaint(binding.value)) || {}
   },
-  mounted(el, binding) {
+  mounted(el, binding, vnode) {
     const marked = el as Marked
-    holdProvider(el, binding.instance?.$ ?? null)
+    // The instance that rendered it; a functional component has no public one.
+    holdProvider(
+      el,
+      (vnode as { ctx?: ComponentInternalInstance | null }).ctx ?? binding.instance?.$ ?? null,
+    )
     marked._uiAnimateValue = binding.value
     followTarget(marked, binding.value)
     // Hydrated: the server's CSS is playing (or has played) its appearance; never twice.
@@ -257,23 +262,59 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
   },
 }
 
-// What the owner's tree provides, read as it is now; a Teleport keeps the tree.
+// Teleported out of every provider in the page, it finds its own through the components around
+// it. Not its owner's: inside a slot (an App.vue's Teleport), the template's owner sits above them.
 type Provided<T> = { value: T } | undefined
+type Provides = Record<symbol, unknown>
+type Instance = ComponentInternalInstance & { provides: Provides }
 function holdProvider(el: Element, owner: ComponentInternalInstance | null) {
-  const provides = (owner as { provides?: Record<symbol, unknown> } | null)?.provides
-  if (!provides) return
-  hold(
-    el,
+  if (!owner) return
+  let found: ReturnType<typeof holderOf> | null = null
+  holdAround(el, () => {
+    // Walked once, and only when a provider with motion settings is on the page.
+    if (found === null)
+      found = holderOf(
+        (document.querySelector('[data-ui-motion-style]') && around(owner, el)) || owner,
+      )
+    return found
+  })
+}
+const holderOf = (instance: ComponentInternalInstance) => {
+  const provides = (instance as Instance).provides
+  return holding(
     provides[motionStyleKey as symbol] as Provided<MotionStyle | undefined>,
     provides[defaultsKey as symbol] as Provided<{ motion?: boolean }>,
   )
 }
-function hold(
-  el: Element,
+const holding = (
   style: Provided<MotionStyle | undefined>,
   defaults: Provided<{ motion?: boolean }>,
-) {
-  holdAround(el, { style: () => style?.value, off: () => defaults?.value.motion === false })
+) => ({ style: () => style?.value, off: () => defaults?.value.motion === false })
+
+/** The component that holds `el` in its rendered tree, walked down from `owner`. */
+function around(
+  owner: ComponentInternalInstance,
+  el: Element,
+): ComponentInternalInstance | undefined {
+  const walk = (
+    node: VNode,
+    holder: ComponentInternalInstance,
+  ): ComponentInternalInstance | undefined => {
+    if (typeof node.type === 'string') {
+      if (node.el === el) return holder
+    } else if (node.component) {
+      const subTree = (node.component as { subTree?: VNode }).subTree
+      return subTree ? walk(subTree, node.component) : undefined
+    } else if (node.suspense?.activeBranch) return walk(node.suspense.activeBranch, holder)
+    if (Array.isArray(node.children))
+      for (const child of node.children)
+        if (isVNode(child)) {
+          const found = walk(child, holder)
+          if (found) return found
+        }
+    return undefined
+  }
+  return walk(owner.subTree, owner)
 }
 
 /** Vapor's form: called once in setup with a value getter; the argument arrives as a getter too. */
@@ -303,8 +344,18 @@ export function vAnimateVapor(
     return vAnimate.mounted!(el, value as never, null as never, null)
   }
   const name = typeof argument === 'function' ? argument() : argument
-  // Called in setup: its provider, through the component tree.
-  hold(el, inject(motionStyleKey, undefined), inject(defaultsKey, undefined))
+  // Called in setup: its provider, through the component tree. Read from the current instance's
+  // own provides: inside a Teleport in a provider's slot, Vapor runs this with the provider itself
+  // current, and `inject` would look past it, to its parent's.
+  const provides = (vue as unknown as { currentInstance?: { provides?: Provides } | null })
+    .currentInstance?.provides
+  const provided = provides
+    ? holding(
+        provides[motionStyleKey as symbol] as Provided<MotionStyle | undefined>,
+        provides[defaultsKey as symbol] as Provided<{ motion?: boolean }>,
+      )
+    : holding(inject(motionStyleKey, undefined), inject(defaultsKey, undefined))
+  holdAround(el, () => provided)
   // Hydrated: the server's CSS plays its appearance; never twice.
   if (handOver(el)) (el as Marked)._uiAppeared = true
   const stopSize = modifiers.size ? followSize(el, () => timingOf(value?.()), true).stop : undefined

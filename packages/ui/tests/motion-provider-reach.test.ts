@@ -118,3 +118,51 @@ test('a v-animate preset inside a Teleport still finds its provider', async () =
   expect(warn.mock.calls.flat().join(' ')).not.toContain("preset 'rise'")
   warn.mockRestore()
 })
+
+// In the provider's own template (an App.vue), the template's owner sits above the provider.
+test('a preset in a Teleport written beside the provider, or passed through a slot, finds it', async () => {
+  const warn = vi.spyOn(console, 'warn')
+  const rise = { initial: { opacity: 0, y: 12 }, duration: 1500 }
+  const Layout = defineComponent(
+    (_, { slots }) =>
+      () =>
+        h('main', slots.default?.()),
+  )
+  render(() =>
+    h(ConfigProvider as never, { motion: { version: 1, presets: { rise } } }, () => [
+      h(Teleport, { to: 'body' }, [
+        withDirectives(h('div', { class: 'beside' }, 'a'), [[vAnimate, 'rise']]),
+      ]),
+      h(Layout, () =>
+        h(Teleport, { to: 'body' }, [
+          withDirectives(h('div', { class: 'slotted' }, 'b'), [[vAnimate, 'rise']]),
+        ]),
+      ),
+    ]),
+  )
+  await vi.waitFor(() => expect(document.querySelector('.slotted')).not.toBeNull())
+  await wait(100)
+  for (const selector of ['.beside', '.slotted']) {
+    const el = document.querySelector(selector)!
+    expect(el.getAnimations().length, selector).toBeGreaterThan(0)
+  }
+  expect(warn.mock.calls.flat().join(' ')).not.toContain("preset 'rise'")
+  warn.mockRestore()
+})
+
+test('motion: false reaches a Teleport written beside the provider', async () => {
+  render(() =>
+    h(ConfigProvider as never, { motion: false }, () =>
+      h(Teleport, { to: 'body' }, [
+        withDirectives(h('div', { class: 'beside-off' }, 'x'), [
+          [vAnimate, { initial: { opacity: 0, y: 12 }, duration: 1500 }],
+        ]),
+      ]),
+    ),
+  )
+  await vi.waitFor(() => expect(document.querySelector('.beside-off')).not.toBeNull())
+  await wait(100)
+  const el = document.querySelector('.beside-off')!
+  expect(el.getAnimations()).toHaveLength(0)
+  expect(opacity(el)).toBe(1)
+})

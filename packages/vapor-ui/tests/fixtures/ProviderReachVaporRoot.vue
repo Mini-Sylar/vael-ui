@@ -1,9 +1,15 @@
 <template>
   <ConfigProvider :motion="{ version: 1, presets: { rise } }">
     <ProviderReachSheet />
+    <Teleport to="body">
+      <p class="beside" v-animate="'rise'">c</p>
+    </Teleport>
   </ConfigProvider>
   <ConfigProvider :motion="false">
     <p class="off" v-animate="{ initial: { opacity: 0, y: 12 }, duration: 1500 }">x</p>
+    <Teleport to="body">
+      <p class="off-beside" v-animate="{ initial: { opacity: 0, y: 12 }, duration: 1500 }">y</p>
+    </Teleport>
   </ConfigProvider>
 </template>
 
