@@ -11,6 +11,7 @@ import DockFixture from './fixtures/DockFixture.vue'
 import MenuSubmenuFixture from './fixtures/MenuSubmenuFixture.vue'
 import ResizableFixture from './fixtures/ResizableFixture.vue'
 import SliderFixture from './fixtures/SliderFixture.vue'
+import SortableFixture from './fixtures/SortableFixture.vue'
 import TabsFixture from './fixtures/TabsFixture.vue'
 import ToolbarFixture from './fixtures/ToolbarFixture.vue'
 import TourFixture from './fixtures/TourFixture.vue'
@@ -195,4 +196,16 @@ test('Tour: ArrowLeft goes to the next step, right to left', async () => {
   await vi.waitFor(() => expect(text('step-index')).toBe('1'))
   await userEvent.keyboard('{ArrowRight}')
   await vi.waitFor(() => expect(text('step-index')).toBe('0'))
+})
+
+test('Sortable: a horizontal list runs from the right, and ArrowLeft moves an item along it', async () => {
+  await rtl(SortableFixture, { axis: 'x' })
+  expect(text('order')).toBe('a,b,c')
+  const handle = () => document.querySelectorAll<HTMLElement>('.ui-sortable-handle')[0]!
+  handle().focus()
+  await userEvent.keyboard(' {ArrowLeft} ')
+  await vi.waitFor(() => expect(text('order')).toBe('b,a,c'))
+  handle().focus()
+  await userEvent.keyboard(' {ArrowLeft} ')
+  await vi.waitFor(() => expect(text('order')).toBe('a,b,c'))
 })

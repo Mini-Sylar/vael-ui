@@ -12,7 +12,7 @@ import {
   visibleExtent,
 } from './sortableAutoScroll'
 import type { ScrollReach } from './sortableAutoScroll'
-import { createClickGuard, prefersReducedMotion } from './dom'
+import { createClickGuard, inlineKey, isRtl, prefersReducedMotion } from './dom'
 
 /**
  * Reorder engine shared by every sortable surface. All ordering/nesting
@@ -1596,7 +1596,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
 
     const shift = scrollShift()
     const along = (axis() === 'x' ? dx : dy) + shift
-    const across = axis() === 'x' ? dy : dx
+    // Right to left, a deeper row sits further left.
+    const across = axis() === 'x' ? dy : isRtl(dragEl) ? -dx : dx
     // 1:1 with the pointer, no transition — never gate a live drag.
     if (previewEl) movePreview(event)
     else if (dragEl) {
@@ -1783,6 +1784,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     }
 
     if (!isGrabbed.value || source !== 'keyboard') return
+    // Right to left, a row (or a row of columns) runs from the right: the arrows follow it.
+    const key = inlineKey(event.key, event.currentTarget as Element)
 
     if (event.key === 'Escape') {
       event.preventDefault()
@@ -1798,19 +1801,19 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       const reorderBackKey = axis() === 'x' ? 'ArrowLeft' : 'ArrowUp'
       const transferKey = axis() === 'x' ? 'ArrowDown' : 'ArrowRight'
       const transferBackKey = axis() === 'x' ? 'ArrowUp' : 'ArrowLeft'
-      if (event.key === reorderKey || event.key === reorderBackKey) {
+      if (key === reorderKey || key === reorderBackKey) {
         event.preventDefault()
-        options.group.__keyboardMove(event.key === reorderKey ? 1 : -1, 'reorder')
-      } else if (event.key === transferKey || event.key === transferBackKey) {
+        options.group.__keyboardMove(key === reorderKey ? 1 : -1, 'reorder')
+      } else if (key === transferKey || key === transferBackKey) {
         event.preventDefault()
-        options.group.__keyboardMove(event.key === transferKey ? 1 : -1, 'transfer')
+        options.group.__keyboardMove(key === transferKey ? 1 : -1, 'transfer')
       }
       return
     }
 
     const forward = axis() === 'x' ? 'ArrowRight' : 'ArrowDown'
     const backward = axis() === 'x' ? 'ArrowLeft' : 'ArrowUp'
-    const step = event.key === forward ? 1 : event.key === backward ? -1 : 0
+    const step = key === forward ? 1 : key === backward ? -1 : 0
     if (step !== 0) {
       event.preventDefault()
       if (nested() && dropOnTarget() && !siblingReorderAllowed()) return
@@ -1820,9 +1823,9 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
       return
     }
 
-    if (nested() && axis() === 'y' && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+    if (nested() && axis() === 'y' && (key === 'ArrowRight' || key === 'ArrowLeft')) {
       event.preventDefault()
-      const delta = event.key === 'ArrowRight' ? indentWidth() : -indentWidth()
+      const delta = key === 'ArrowRight' ? indentWidth() : -indentWidth()
       applyTarget(currentIndex, delta)
       say('move')
     }
