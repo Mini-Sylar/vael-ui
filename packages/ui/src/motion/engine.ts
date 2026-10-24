@@ -49,12 +49,41 @@ export interface PlayOptions {
   reduced?: boolean
   /** A style's engine: your library plays it instead of WAAPI. */
   engine?: MotionEngine
+  /** With an engine: where it starts, in vael-ui's names (a replaced part, turning around). */
+  from?: Record<string, string | number>
 }
 
 // What an engine is playing on each element, stopped like our own when it's interrupted.
 const through = new WeakMap<Element, AbortController>()
+// What it started there and hasn't finished: a new play meanwhile is a reversal mid-way. Kept a
+// frame past a stop, since the leave stops the enter just before it plays.
+const moving = new WeakMap<Element, AbortController>()
 const rest = (key: string, style: CSSStyleDeclaration): string | number =>
   key === 'x' || key === 'y' ? 0 : key === 'scale' ? 1 : style.getPropertyValue(cssName(key))
+
+/** Where an engine left it on screen, in vael-ui's names: x, y and scale from its transform. */
+export function painted(el: Element, values: MotionValues): Record<string, string | number> {
+  const style = getComputedStyle(el)
+  const m = new DOMMatrix(style.transform === 'none' ? '' : style.transform)
+  // `none` parses as NaN: no own translate or scale.
+  const [tx, ty] = style.translate.split(' ').map(Number.parseFloat)
+  const out: Record<string, string | number> = {}
+  for (const [key, raw] of Object.entries(plainValues(values)))
+    if (!Array.isArray(raw))
+      out[key === 'blur' ? 'filter' : key] =
+        key === 'x'
+          ? m.m41 + (tx || 0)
+          : key === 'y'
+            ? m.m42 + (ty || 0)
+            : key === 'scale'
+              ? Math.hypot(m.a, m.b) * (Number.parseFloat(style.scale) || 1)
+              : key === 'blur'
+                ? style.filter.replace('none', 'blur(0px)')
+                : key === 'opacity'
+                  ? Number(style.opacity)
+                  : style.getPropertyValue(cssName(key))
+  return out
+}
 
 /** Plays `values` through your engine, in vael-ui's names, and waits for what it returns. */
 function playThrough(
@@ -62,6 +91,7 @@ function playThrough(
   el: HTMLElement,
   values: MotionValues,
   options: PlayOptions,
+  live?: Record<string, string | number>,
 ) {
   const style = getComputedStyle(el)
   const rtl = style.direction === 'rtl'
@@ -83,22 +113,27 @@ function playThrough(
   const controller = new AbortController()
   through.set(el, controller)
   const { duration, easing, spring } = options.timing
-  const [from, to] = options.direction === 'out' ? [home, at] : [at, home]
-  return track(
-    runHook(
-      'engine',
-      options.direction === 'out' ? 'leave' : 'enter',
-      () =>
-        engine(el, from, to, {
-          duration: duration / 1000,
-          delay: options.delay ?? 0,
-          easing,
-          spring,
-        }),
-      controller.signal,
-      [el],
-    ),
+  const [start, to] = options.direction === 'out' ? [home, at] : [at, home]
+  const from = live ? { ...start, ...live } : start
+  const run = runHook(
+    'engine',
+    options.direction === 'out' ? 'leave' : 'enter',
+    () =>
+      engine(el, from, to, {
+        duration: duration / 1000,
+        delay: options.delay ?? 0,
+        easing,
+        spring,
+      }),
+    controller.signal,
+    [el],
   )
+  moving.set(el, controller)
+  // Finished: a later play starts from its own values, not from where this one left it.
+  const forget = () => void (moving.get(el) === controller && moving.delete(el))
+  const done = () => (controller.signal.aborted ? requestAnimationFrame(forget) : forget())
+  void run.then(done, done)
+  return track(run)
 }
 
 // The clip at rest: `none` can't interpolate to or from an inset.
@@ -119,8 +154,10 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
     return Promise.resolve()
   }
   if (options.engine) {
+    // Caught mid-way: it carries on from what's on screen, read before the old run is stopped.
+    const live = options.from ?? (moving.has(el) ? painted(el, state) : undefined)
     stopPresence(el)
-    return playThrough(options.engine, el, state, options)
+    return playThrough(options.engine, el, state, options, live)
   }
   const style = getComputedStyle(el)
   const rtl = style.direction === 'rtl'

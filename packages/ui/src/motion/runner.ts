@@ -2,7 +2,7 @@
 // ownership, scheduling, enter and leave. Components hold a light shell (useComponentMotion).
 import { nextTick } from 'vue'
 import { prefersReducedMotion } from '../composables/dom'
-import { holdValues, playValues, resolveTiming } from './engine'
+import { holdValues, painted, playValues, resolveTiming } from './engine'
 import { PRESENCE_ID } from './ids'
 import { collectEntries } from './presence'
 import { createMoments, runTargets, startMoments } from './schedule'
@@ -86,8 +86,32 @@ export function createRunner(host: RunnerHost): Runner {
   // The element now entering, and the `done`s of repeat calls for it.
   let enteringEl: Element | null = null
   let repeatDones: (() => void)[] = []
+  // With an engine, each part's look as it leaves, sampled every frame: reopened before it's gone,
+  // a part Vue replaced turns around from there (the CSS engine does the same).
+  let leftAt = new Map<string, { el: Element; look: Record<string, string | number> }>()
+  let turned: typeof leftAt | undefined
+  // Its own record: a wrapper may have moved the phase on already.
+  let leavingNow = false
+
+  function sampleWhileLeaving(id: number, motion: ReturnType<RunnerHost['resolved']>) {
+    const tick = () => {
+      if (id !== generation) return
+      for (const [part, partEl] of Object.entries(host.parts()))
+        if (partEl instanceof HTMLElement && partEl.isConnected && motion.initial[part])
+          leftAt.set(part, { el: partEl, look: painted(partEl, motion.initial[part]!) })
+      requestAnimationFrame(tick)
+    }
+    leftAt = new Map()
+    requestAnimationFrame(tick)
+  }
+  const turnedFrom = (part: string, partEl: Element) => {
+    const left = turned?.get(part)
+    return left && left.el !== partEl ? left.look : undefined
+  }
 
   function begin(next: MotionPhase): { id: number; signal: AbortSignal } {
+    turned = next === 'entering' && leavingNow ? leftAt : undefined
+    leavingNow = next === 'leaving'
     enteringEl = null
     repeatDones = []
     controller?.abort()
@@ -151,6 +175,7 @@ export function createRunner(host: RunnerHost): Runner {
                 ? playValues(partEl, values, {
                     direction: 'in',
                     engine: motion.engine,
+                    from: turnedFrom(part, partEl),
                     timing: resolveTiming(
                       partEl,
                       motion.partTiming[part] ?? motion.timing,
@@ -190,7 +215,12 @@ export function createRunner(host: RunnerHost): Runner {
       startMoments(m, timing.arrival)
       plays.push(
         (values
-          ? playValues(partEl, values, { direction: 'in', timing, engine: motion.engine })
+          ? playValues(partEl, values, {
+              direction: 'in',
+              timing,
+              engine: motion.engine,
+              from: turnedFrom(part, partEl),
+            })
           : Promise.resolve()
         ).then(() => {
           m.arrive.resolve()
@@ -208,6 +238,7 @@ export function createRunner(host: RunnerHost): Runner {
     const motion = host.resolved()
     const finish = () => {
       if (id !== generation) return
+      leavingNow = false
       host.phase.value = 'left'
       done()
       host.onAfterLeave?.()
@@ -217,6 +248,7 @@ export function createRunner(host: RunnerHost): Runner {
     const root = host.root()
     const entries = root ? collectEntries(root, motion.targets) : []
     const partEls = Object.values(parts).filter((p): p is Element => !!p)
+    if (motion.engine) sampleWhileLeaving(id, motion)
     // Where a part leaves to: its own `exit`, else a quiet fade, but only for a part that came in
     // (the built-in look always does). One you never animated stays put inside the leaving panel.
     const leaveOf = (part: string): MotionValues | null =>
@@ -311,6 +343,7 @@ export function createRunner(host: RunnerHost): Runner {
   }
 
   function cancel() {
+    leavingNow = false
     enteringEl = null
     repeatDones = []
     controller?.abort()

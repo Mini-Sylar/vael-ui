@@ -57,9 +57,11 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // pays ~100 B). Measured 5871, 4925, 1177 and 2705 B.
 // states 4.9 → 5.2 KB (2026-10-23): a hover that moves its element off a still cursor holds until
 // the cursor leaves the element's resting box, instead of flickering on and off. Measured 5228 B.
+// runtime 5.8 → 6.2 KB (2026-10-23): an engine (GSAP, motion) reversed mid-way carries on from
+// what's on screen, on the same element or on a part Vue replaced as it reopened. Measured 6262 B.
 const BUDGET = {
   upFront: 7.3 * 1024,
-  runtime: 5.8 * 1024,
+  runtime: 6.2 * 1024,
   morph: 1.5 * 1024,
   button: 1.2 * 1024,
   states: 5.2 * 1024,

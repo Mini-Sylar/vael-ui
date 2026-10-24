@@ -21,14 +21,21 @@ export function holdTarget(el: HTMLElement) {
   let chaseKey = ''
   return {
     /** The look to hold now; `changed`: it differs from the last one, so its keyframes play again. */
-    update(values: MotionValues, timing: MotionTiming, spring: Spring | undefined, changed = true) {
+    /** `instant`: shown at once (motion off), as on the first update. */
+    update(
+      values: MotionValues,
+      timing: MotionTiming,
+      spring: Spring | undefined,
+      changed = true,
+      instant = false,
+    ) {
       player.update({
         flags: { [ON]: true },
         spec: { [ON]: { target: values } },
         parts: { target: el },
         timing,
         spring,
-        instant: first,
+        instant: first || instant,
         again: changed && !first ? [ON] : undefined,
       })
       first = false

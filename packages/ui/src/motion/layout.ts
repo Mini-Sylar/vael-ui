@@ -7,6 +7,7 @@ import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { resolveTiming, track } from './timing'
 import type { MotionTiming, MotionValues } from './types'
 import { isTimed } from './playable'
+import { motionOffAt } from './styleHolder'
 import { groupValues, reducePresence, toKeyframe } from './values'
 
 // Just now: the same flush or the next frame (a late tick, an async part). Later is a new arrival.
@@ -88,7 +89,7 @@ export function arriveLayout(
     const before = boxes.get(id)
     boxes.delete(id)
     if (!before || performance.now() - before.at > FRESH) return otherwise()
-    if (prefersReducedMotion() || pageHidden()) return
+    if (prefersReducedMotion() || pageHidden() || motionOffAt(el)) return
     const now = el.getBoundingClientRect()
     slide(el, before.box, now, timing)
   })
@@ -223,7 +224,7 @@ function relayout(parent: Element, members: Set<Element>) {
     if (!last || !place || (Math.abs(last.x - place.x) < 0.5 && Math.abs(last.y - place.y) < 0.5))
       return
     for (const run of runs[i]!) run.cancel()
-    if (reduced) return
+    if (reduced || motionOffAt(el)) return
     const offset = {
       x: last.x + shown[i]!.x - place.x,
       y: last.y + shown[i]!.y - place.y,

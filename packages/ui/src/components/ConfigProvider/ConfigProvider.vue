@@ -22,7 +22,7 @@
   <div
     :ref="holdStyle"
     :data-ui-theme="themeCss ? scopeId : undefined"
-    :data-ui-motion-style="motionStyle ? '' : undefined"
+    :data-ui-motion-style="motionStyle || motion === false ? '' : undefined"
     style="display: contents"
   >
     <slot />
@@ -125,10 +125,14 @@ const motionStyle = computed<MotionStyle | undefined>(() =>
       : parentStyle?.value,
 )
 provide(motionStyleKey, motionStyle)
-// v-animate on its own finds the style (its presets) through this element. A function ref is set
-// before the directives inside run their mounted hooks; onMounted would come after them.
+// v-animate on its own finds the style (its presets) and `motion: false` through this element. A
+// function ref is set before the directives inside run their mounted hooks; onMounted comes after.
 const holdStyle = (el: unknown) => {
-  if (el instanceof Element) holdMotionStyle(el, () => motionStyle.value)
+  if (el instanceof Element)
+    holdMotionStyle(el, {
+      style: () => motionStyle.value,
+      off: () => defaults.value.motion === false,
+    })
 }
 // Filters are data, rendered as SVG by the template: numbers only, ids limited to a safe alphabet.
 const filters = computed(() =>

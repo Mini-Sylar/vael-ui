@@ -1,7 +1,7 @@
 // v-animate:name="value": marks an element for the nearest component's motion, from the template.
 import '../components/shared/appear.css'
-import { onScopeDispose, watchPostEffect } from 'vue'
-import type { DirectiveBinding, ObjectDirective } from 'vue'
+import { inject, onScopeDispose, watchPostEffect } from 'vue'
+import type { ComponentInternalInstance, DirectiveBinding, ObjectDirective } from 'vue'
 import { findPresence } from '../motion/presence'
 import {
   arriveLayout,
@@ -21,12 +21,15 @@ import { valuesAt } from '../motion/playable'
 import { queueAppearance, scrolling, seen, unwatchView } from '../motion/appearance'
 import type {
   AnimateDirectiveValue,
+  MotionStyle,
   MotionTiming,
   MotionValues,
   TargetMotion,
 } from '../motion/types'
 import { motionWarn } from '../motion/warn'
-import { motionStyleAround } from '../motion/styleHolder'
+import { holdAround, motionOffAt, motionStyleAt } from '../motion/styleHolder'
+import { motionStyleKey } from '../motion/context'
+import { defaultsKey } from '../config'
 import { toKeyframe } from '../motion/values'
 import { loadAnimateTarget } from '../composables/lazyParts'
 
@@ -77,7 +80,8 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined) {
     // Changed again before it loaded: the latest call puts the mount look back.
     if (el._uiTargetKey !== key) return
     el._uiTarget ??= module.holdTarget(el)
-    el._uiTarget.update(animate, timingOf(value) ?? {}, motionStyleAround(el)?.spring, changed)
+    const off = motionOffAt(el)
+    el._uiTarget.update(animate, timingOf(value) ?? {}, motionStyleAt(el)?.spring, changed, off)
     putBack(el)
   })
 }
@@ -107,6 +111,7 @@ function appearAlone(
 ) {
   if (el._uiAppeared) return
   el._uiAppeared = true
+  if (motionOffAt(el)) return
   if (typeof value === 'string') {
     const preset = presetAround(el, value)
     if (!preset) {
@@ -132,9 +137,9 @@ const EXIT: MotionTiming = { duration: 'var(--ui-duration-exit)', easing: 'var(-
 const ownTiming = (t: TargetMotion) =>
   t.spring !== undefined || t.duration !== undefined || t.easing !== undefined
 
-// A preset on its own: the nearest ConfigProvider style's, read through the DOM.
+// A preset on its own: the nearest ConfigProvider style's.
 function presetAround(el: Element, name: string): TargetMotion | undefined {
-  return motionStyleAround(el)?.presets?.[name]
+  return motionStyleAt(el)?.presets?.[name]
 }
 // What a leaving element plays: a preset name on its own resolves the same way.
 const resolved = (el: Element, value: AnimateDirectiveValue | undefined) =>
@@ -155,8 +160,8 @@ function leaveIfRemoved(
   place?: LeavingPlace,
 ) {
   const look = leaving(value)
-  // Off screen, or scrolled away (a recycled row): it just goes.
-  if (look && place && seen(place.box) && !scrolling())
+  // Off screen, scrolled away (a recycled row) or motion off: it just goes.
+  if (look && place && seen(place.box) && !scrolling() && !motionOffAt(el))
     leaveInPlace(el, place, look.values, look.timing)
 }
 
@@ -172,6 +177,7 @@ function replayIfChanged(
 ) {
   if (typeof value !== 'object' || !('replay' in value) || !value.initial) return
   if (typeof before === 'object' && Object.is(before.replay, value.replay)) return
+  if (motionOffAt(el)) return
   queueAppearance(el, name, value, true)
 }
 
@@ -202,6 +208,7 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
   },
   mounted(el, binding) {
     const marked = el as Marked
+    holdProvider(el, binding.instance?.$ ?? null)
     marked._uiAnimateValue = binding.value
     followTarget(marked, binding.value)
     // Hydrated: the server's CSS is playing (or has played) its appearance; never twice.
@@ -250,6 +257,25 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
   },
 }
 
+// What the owner's tree provides, read as it is now; a Teleport keeps the tree.
+type Provided<T> = { value: T } | undefined
+function holdProvider(el: Element, owner: ComponentInternalInstance | null) {
+  const provides = (owner as { provides?: Record<symbol, unknown> } | null)?.provides
+  if (!provides) return
+  hold(
+    el,
+    provides[motionStyleKey as symbol] as Provided<MotionStyle | undefined>,
+    provides[defaultsKey as symbol] as Provided<{ motion?: boolean }>,
+  )
+}
+function hold(
+  el: Element,
+  style: Provided<MotionStyle | undefined>,
+  defaults: Provided<{ motion?: boolean }>,
+) {
+  holdAround(el, { style: () => style?.value, off: () => defaults?.value.motion === false })
+}
+
 /** Vapor's form: called once in setup with a value getter; the argument arrives as a getter too. */
 export function vAnimateVapor(
   el: HTMLElement,
@@ -277,6 +303,8 @@ export function vAnimateVapor(
     return vAnimate.mounted!(el, value as never, null as never, null)
   }
   const name = typeof argument === 'function' ? argument() : argument
+  // Called in setup: its provider, through the component tree.
+  hold(el, inject(motionStyleKey, undefined), inject(defaultsKey, undefined))
   // Hydrated: the server's CSS plays its appearance; never twice.
   if (handOver(el)) (el as Marked)._uiAppeared = true
   const stopSize = modifiers.size ? followSize(el, () => timingOf(value?.()), true).stop : undefined

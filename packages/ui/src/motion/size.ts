@@ -1,5 +1,6 @@
 // v-animate.size and lists: a box that follows its content's size on a spring instead of jumping.
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
+import { motionOffAt } from './styleHolder'
 import { resolveTiming } from './timing'
 import type { MotionTiming } from './types'
 
@@ -144,7 +145,7 @@ export function followSize(
     const box = measure()
     const widthMoved = !changed && !close(box.width, last.width)
     last = box
-    if (widthMoved || prefersReducedMotion() || pageHidden()) return
+    if (widthMoved || prefersReducedMotion() || pageHidden() || motionOffAt(el)) return
     if (close(box.height, showing.height) && close(box.width, showing.width)) return
     play(showing, box)
   }
