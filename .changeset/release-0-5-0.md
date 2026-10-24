@@ -276,6 +276,11 @@ These fix behavior in 0.4.8 and earlier.
   - the sliding selection in Tabs, SelectButton, MenuList and Pagination lines up with the selected item instead of measuring from the wrong edge
   - Switch’s thumb starts on the right and travels left
   - a magnified Dock spreads its items apart instead of piling them on top of each other
+  - the arrow keys follow the screen: ArrowLeft moves toward the end of the line in Tabs, Toolbar, Menu, Tree, Rating, Dock, Tour, the Calendar's days and Resizable, and a submenu opens to the left
+  - Slider starts at its right edge, with its fill, thumbs, keys and pointer to match
+  - Rating counts its stars from the right, by pointer too, and a half star fills its right half
+  - SpeedDial’s `direction` stays on screen: `'left'` fans out to the left, and `'up'` and `'down'` stay centered on the trigger
+  - a Resizable drag grows the panel toward its trailing edge, on the left
 - **Smaller bundles**: Input, InputNumber, Select, CascadeSelect and TreeSelect load AnimatedText and AnimatedNumber after mount, and show the same text until they arrive. A page that only renders fields no longer ships the animation code up front.
 - **Reduced motion**: every component reads one shared `prefers-reduced-motion` query instead of creating a new one on each check.
 - **BottomSheet**:
