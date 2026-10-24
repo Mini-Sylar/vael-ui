@@ -11,9 +11,9 @@
   >
     <div class="sidebar-mode-toggle">
       <ModeSwitcher v-model="sidebarMode" @switch="goToMode" />
-      <!-- Most people come to Motion from a component, and want to get back to it. -->
+      <!-- Most people come to Motion or a composable from a component, and want to get back to it. -->
       <button
-        v-if="sidebarMode === 'motion'"
+        v-if="sidebarMode !== 'components'"
         type="button"
         class="sidebar-back"
         @click="((sidebarMode = 'components'), goToMode('components'))"
@@ -47,8 +47,14 @@
               class="sidebar-link-icon"
               aria-hidden="true"
             />
-            <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
-            <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
+            <template v-if="isNewBadge(item.value)">
+              <span
+                class="sidebar-new-dot"
+                :data-new-key="seenKey(String(item.value))"
+                aria-hidden="true"
+              />
+              <span class="sidebar-sr-only" :data-new-key="seenKey(String(item.value))">New</span>
+            </template>
           </template>
         </MenuList>
       </div>
@@ -57,9 +63,8 @@
   <Drawer v-model:open="mobileOpen" side="left" size="sm" :title="t('nav.menu')">
     <div class="sidebar-mode-toggle sidebar-mode-toggle--mobile">
       <ModeSwitcher v-model="sidebarMode" @switch="goToMode" />
-      <!-- Most people come to Motion from a component, and want to get back to it. -->
       <button
-        v-if="sidebarMode === 'motion'"
+        v-if="sidebarMode !== 'components'"
         type="button"
         class="sidebar-back"
         @click="((sidebarMode = 'components'), goToMode('components'))"
@@ -95,8 +100,14 @@
               class="sidebar-link-icon"
               aria-hidden="true"
             />
-            <span v-if="isNewBadge(item.value)" class="sidebar-new-dot" aria-hidden="true" />
-            <span v-if="isNewBadge(item.value)" class="sidebar-sr-only">New</span>
+            <template v-if="isNewBadge(item.value)">
+              <span
+                class="sidebar-new-dot"
+                :data-new-key="seenKey(String(item.value))"
+                aria-hidden="true"
+              />
+              <span class="sidebar-sr-only" :data-new-key="seenKey(String(item.value))">New</span>
+            </template>
           </template>
         </MenuList>
       </div>
@@ -142,16 +153,22 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
-// Session-scoped (not persisted across a closed tab, unlike sidebarWidth
-// below): a fresh visit should always start on Components, but switching
-// back and forth while browsing in the same tab shouldn't keep resetting.
-
-const MODE_STORAGE_KEY = 'vael-ui-docs-sidebar-mode'
-const storedMode =
-  typeof sessionStorage === 'undefined'
-    ? null
-    : (sessionStorage.getItem(MODE_STORAGE_KEY) as DocsMode | null)
-const sidebarMode = shallowRef<DocsMode>(storedMode ?? 'components')
+// The page you're on picks the list: every Motion page shows Motion's, a component, directive
+// or guide shows the components. A motion composable opened from the Motion list keeps that list.
+function modeFor(routeName: unknown, current: DocsMode): DocsMode | null {
+  if (MOTION_ROUTES.some((g) => g.routeName === routeName)) return 'motion'
+  if (routeName === 'composable') return current === 'motion' ? 'motion' : 'composables'
+  if (
+    routeName === 'component' ||
+    routeName === 'directive' ||
+    GUIDE_ROUTES.some((g) => g.routeName === routeName)
+  )
+    return 'components'
+  return null
+}
+// The first render follows the route alone, as the prerendered page did, so hydration never
+// swaps the list. Browsing in the tab keeps the mode in this ref; a reload starts from the route.
+const sidebarMode = shallowRef<DocsMode>(modeFor(route.name, 'components') ?? 'components')
 // A mode switch is a push, like drilling into a page: Motion and Composables slide in over the
 // components from the right edge as the components fall back a third and fade; back reverses it.
 // One spring for both, so they move as one. Never on the first render: no page loads moving.
@@ -199,31 +216,12 @@ function goToMode(mode: DocsMode) {
   const name = remembered('component')
   return router.push(name ? { name: 'component', params: { name } } : { name: 'getting-started' })
 }
-watch(sidebarMode, (mode) => {
-  if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(MODE_STORAGE_KEY, mode)
-})
-
-// Landing directly on a components/composables page (a shared link, a
-// search result) always shows the sidebar mode that page actually belongs
-// to — sessionStorage only matters for route-agnostic pages (Home), where
-// there's no page-driven signal either way.
 watch(
   () => route.name,
   (routeName) => {
-    // Every Motion page, its overview included, shows Motion's own list.
-    if (MOTION_ROUTES.some((g) => g.routeName === routeName)) sidebarMode.value = 'motion'
-    // A motion composable opened from the Motion list keeps that list.
-    else if (routeName === 'composable' && sidebarMode.value !== 'motion')
-      sidebarMode.value = 'composables'
-    else if (
-      routeName === 'component' ||
-      routeName === 'directive' ||
-      GUIDE_ROUTES.some((g) => g.routeName === routeName)
-    ) {
-      sidebarMode.value = 'components'
-    }
+    const mode = modeFor(routeName, sidebarMode.value)
+    if (mode) sidebarMode.value = mode
   },
-  { immediate: true },
 )
 
 // Real routes for real <a> tags: MenuList's `as: 'RouterLink'` renders actual hrefs, so
@@ -289,10 +287,14 @@ watch(
   { immediate: true },
 )
 
+// Until mounted, every dot renders as in the prerendered page so hydration matches; the
+// inline script in index.html already hid the seen ones before the first paint.
+const mounted = shallowRef(false)
+onMounted(() => (mounted.value = true))
 function isNewBadge(value: string | number | null | undefined): boolean {
   if (typeof value !== 'string') return false
   const since = NEW_ITEMS[value]
-  if (!since || seenNewComponents.value.includes(seenKey(value))) return false
+  if (!since || (mounted.value && seenNewComponents.value.includes(seenKey(value)))) return false
   const ageDays = (Date.now() - new Date(since).getTime()) / 86_400_000
   return ageDays >= 0 && ageDays <= NEW_BADGE_DAYS
 }

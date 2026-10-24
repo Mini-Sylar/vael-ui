@@ -91,6 +91,11 @@
     "headless": "Headless composable",
     "motion": "Motion",
     "new": "New",
+    "accessibility": "Accessibility",
+    "a11yPattern": "Follows the {pattern} pattern from the WAI-ARIA Authoring Practices Guide.",
+    "a11yKey": "Key",
+    "a11yAction": "Action",
+    "a11yNoKeys": "It has no keyboard interaction of its own.",
     "highlights": "Highlights",
     "moreExamples": "More examples"
   },
@@ -962,6 +967,80 @@
       "with": "With {engine}",
       "vael": "With vael-ui motion",
       "none": "No vael-ui version yet."
+    }
+  },
+  "recipes": {
+    "DataTable": {
+      "Filtering": {
+        "title": "Filtering",
+        "note": "Filter the rows before you pass them to `data`. Here a `computed` keeps the rows that match the search and the status, and the table shows the rows it receives."
+      },
+      "InlineEditing": {
+        "title": "Inline editing",
+        "note": "Put an `Editable` in a column’s `#cell` slot and bind it to the row’s field. Enter or leaving the cell saves, and Escape cancels. Save the change to your server in the `submit` event."
+      },
+      "CsvExport": {
+        "title": "CSV export",
+        "note": "Build the CSV from the same rows and columns the table shows, and download it as a `Blob`. Values that contain a comma, a quote or a line break are quoted."
+      },
+      "RowGrouping": {
+        "title": "Row grouping",
+        "note": "Group the rows yourself, then pass one flat list with a header row before each group. Each header row has its own key, so CSS can style it, and its button collapses the group. Leave the columns unsorted, because sorting would move the header rows."
+      },
+      "ColumnVisibility": {
+        "title": "Column visibility",
+        "note": "Keep the visible columns in a list that checkboxes change, and render each `Column` with `v-if`. When a column unmounts, the table removes it."
+      }
+    },
+    "Field": {
+      "ValidationVeeValidate": {
+        "title": "Validation with vee-validate",
+        "note": "vee-validate holds the values and errors, and Field shows them. Pass each field’s error to `error`, and set `invalid` on its control. A field is checked when you leave it, then on every change until it’s valid. Submitting checks every field."
+      },
+      "ValidationStandardSchema": {
+        "title": "Validation with a Standard Schema",
+        "note": "Zod, Valibot, ArkType and other Standard Schema validators all expose `~standard.validate`. Each issue’s `path` names its field, so its message goes to that Field’s `error`. This demo uses a small handwritten schema, and a Zod or Valibot schema works in its place."
+      }
+    },
+    "Input": {
+      "PhoneMask": {
+        "title": "Input mask",
+        "note": "A mask is a small formatter on `update:modelValue`. It keeps only the digits and formats them as (555) 123-4567, so typing, pasting and deleting give the same result. Send the digits to your server."
+      },
+      "CharacterCounter": {
+        "title": "Character counter",
+        "note": "Show the length of the `v-model` value in the `#end` slot. `maxlength` stops input at the limit, and `aria-describedby` links the count to the field for screen readers."
+      }
+    },
+    "DatePicker": {
+      "RangePresets": {
+        "title": "Range presets",
+        "note": "Put buttons for common ranges next to a range picker. Each button builds a range with `start` and `end` and sets it as the `v-model` value. You can still pick dates by hand."
+      }
+    },
+    "Tabs": {
+      "ClosableTabs": {
+        "title": "Closable tabs",
+        "note": "Render each tab yourself, with a close button inside it. When you close the selected tab, the tab to its right is selected, or the one to its left if it was last. Focus moves to that tab, so keyboard users keep their place. Delete or Backspace closes the focused tab."
+      }
+    },
+    "Pagination": {
+      "JumpToPage": {
+        "title": "Jump to page",
+        "note": "Put an `InputNumber` next to the pagination for long lists. `min` and `max` keep the number within the page count. Press Enter or leave the field to go to that page."
+      }
+    },
+    "FileUpload": {
+      "ImagePreviews": {
+        "title": "Image previews",
+        "note": "Create an object URL for each image and show it in the `#item` slot. An object URL keeps its file in memory until you revoke it. Revoke each URL when its image is removed, and revoke the rest when the component unmounts."
+      }
+    },
+    "Dialog": {
+      "DraggableDialog": {
+        "title": "Draggable dialog",
+        "note": "Drag the header to move the dialog. Pointer capture keeps the drag going when the pointer leaves the header. With the grip button focused, the arrow keys move it 10 px, or 50 px with Shift. The dialog stays inside the window and opens centered again."
+      }
     }
   }
 }

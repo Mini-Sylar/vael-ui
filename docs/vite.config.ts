@@ -13,7 +13,9 @@ import { pairedComposables } from './src/pairedComposables.ts'
 import { DIRECTIVES } from './src/directivesTaxonomy.ts'
 import { directivesContent } from './src/directivesContent.ts'
 import messages from './src/locales/en.json'
+import { a11yContent } from './src/a11yContent.ts'
 import { writeLlms } from './scripts/llms.mjs'
+import { highlightPrerenderedCode } from './scripts/highlight-prerendered.ts'
 
 const uiPackageJson = JSON.parse(
   readFileSync(fileURLToPath(new URL('../packages/ui/package.json', import.meta.url)), 'utf-8'),
@@ -66,6 +68,8 @@ export default defineConfig({
     },
     // `dirStyle: 'nested'` would otherwise write `404/index.html` — static
     // hosts (Netlify, Vercel, GitHub Pages) look for `404.html` at the root.
+    // Prose code the app would highlight after it loads is highlighted in the HTML already.
+    onPageRendered: (_route, html) => highlightPrerenderedCode(html),
     htmlFileName(filename) {
       if (filename === '404/index.html') return '404.html'
       return undefined
@@ -87,6 +91,7 @@ export default defineConfig({
         directives: DIRECTIVES,
         directivesContent,
         messages,
+        a11yContent,
       })
     },
   },

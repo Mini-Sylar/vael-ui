@@ -85,6 +85,11 @@
     "headless": "Composable headless",
     "motion": "Animation",
     "new": "Nouveau",
+    "accessibility": "Accessibilité",
+    "a11yPattern": "Suit le modèle {pattern} du WAI-ARIA Authoring Practices Guide.",
+    "a11yKey": "Touche",
+    "a11yAction": "Action",
+    "a11yNoKeys": "Il n’a pas d’interaction clavier propre.",
     "highlights": "À la une",
     "moreExamples": "Plus d'exemples"
   },
@@ -962,6 +967,80 @@
       "with": "Avec {engine}",
       "vael": "Avec le mouvement vael-ui",
       "none": "Pas encore de version vael-ui."
+    }
+  },
+  "recipes": {
+    "DataTable": {
+      "Filtering": {
+        "title": "Filtrage",
+        "note": "Filtrez les lignes avant de les passer à `data`. Ici, un `computed` garde les lignes qui correspondent à la recherche et au statut, et la table affiche les lignes qu’elle reçoit."
+      },
+      "InlineEditing": {
+        "title": "Modification dans la cellule",
+        "note": "Placez un `Editable` dans le slot `#cell` d’une colonne et liez-le au champ de la ligne. Entrée ou la sortie de la cellule enregistre, Échap annule. Enregistrez la modification sur votre serveur dans l’événement `submit`."
+      },
+      "CsvExport": {
+        "title": "Export CSV",
+        "note": "Construisez le CSV à partir des lignes et des colonnes que la table affiche, et téléchargez-le sous forme de `Blob`. Les valeurs qui contiennent une virgule, un guillemet ou un saut de ligne sont mises entre guillemets."
+      },
+      "RowGrouping": {
+        "title": "Regroupement des lignes",
+        "note": "Regroupez les lignes vous-même, puis passez une liste à plat avec une ligne d’en-tête avant chaque groupe. Chaque ligne d’en-tête a sa propre clé, donc le CSS peut la styler, et son bouton replie le groupe. Laissez les colonnes sans tri, car un tri déplacerait les lignes d’en-tête."
+      },
+      "ColumnVisibility": {
+        "title": "Visibilité des colonnes",
+        "note": "Gardez les colonnes visibles dans une liste que des cases à cocher modifient, et affichez chaque `Column` avec `v-if`. Quand une colonne est démontée, la table la retire."
+      }
+    },
+    "Field": {
+      "ValidationVeeValidate": {
+        "title": "Validation avec vee-validate",
+        "note": "vee-validate garde les valeurs et les erreurs, et Field les affiche. Passez l’erreur de chaque champ à `error` et ajoutez `invalid` à son contrôle. Un champ est vérifié quand vous le quittez, puis à chaque modification jusqu’à ce qu’il soit valide. L’envoi vérifie tous les champs."
+      },
+      "ValidationStandardSchema": {
+        "title": "Validation avec un Standard Schema",
+        "note": "Zod, Valibot, ArkType et les autres validateurs Standard Schema exposent tous `~standard.validate`. Le `path` de chaque problème nomme son champ, donc son message va dans le `error` de ce Field. Cette démo utilise un petit schéma écrit à la main, et un schéma Zod ou Valibot fonctionne à sa place."
+      }
+    },
+    "Input": {
+      "PhoneMask": {
+        "title": "Masque de saisie",
+        "note": "Un masque est un petit formateur sur `update:modelValue`. Il ne garde que les chiffres et les met en forme comme (555) 123-4567, donc la saisie, le collage et la suppression donnent le même résultat. Envoyez les chiffres à votre serveur."
+      },
+      "CharacterCounter": {
+        "title": "Compteur de caractères",
+        "note": "Affichez la longueur de la valeur `v-model` dans le slot `#end`. `maxlength` arrête la saisie à la limite, et `aria-describedby` relie le compteur au champ pour les lecteurs d’écran."
+      }
+    },
+    "DatePicker": {
+      "RangePresets": {
+        "title": "Plages prédéfinies",
+        "note": "Placez des boutons pour les plages courantes à côté d’un sélecteur de plage. Chaque bouton construit une plage avec `start` et `end` et la définit comme valeur du `v-model`. Vous pouvez toujours choisir les dates à la main."
+      }
+    },
+    "Tabs": {
+      "ClosableTabs": {
+        "title": "Onglets fermables",
+        "note": "Affichez chaque onglet vous-même, avec un bouton de fermeture à l’intérieur. Quand vous fermez l’onglet sélectionné, l’onglet à sa droite est sélectionné, ou celui à sa gauche s’il était le dernier. Le focus passe sur cet onglet, et les personnes au clavier gardent leur place. Suppr ou Retour arrière ferme l’onglet qui a le focus."
+      }
+    },
+    "Pagination": {
+      "JumpToPage": {
+        "title": "Aller à la page",
+        "note": "Pour les longues listes, placez un `InputNumber` à côté de la pagination. `min` et `max` gardent le nombre dans les limites du nombre de pages. Appuyez sur Entrée ou quittez le champ pour aller à cette page."
+      }
+    },
+    "FileUpload": {
+      "ImagePreviews": {
+        "title": "Aperçus d’images",
+        "note": "Créez une URL d’objet pour chaque image et affichez-la dans le slot `#item`. Une URL d’objet garde son fichier en mémoire jusqu’à ce que vous la révoquiez. Révoquez chaque URL quand son image est retirée, et les autres quand le composant est démonté."
+      }
+    },
+    "Dialog": {
+      "DraggableDialog": {
+        "title": "Boîte de dialogue déplaçable",
+        "note": "Faites glisser l’en-tête pour déplacer la boîte de dialogue. La capture du pointeur poursuit le glissement quand le pointeur quitte l’en-tête. Quand le bouton de prise a le focus, les flèches la déplacent de 10 px, ou de 50 px avec Maj. La boîte reste dans la fenêtre et se rouvre au centre."
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-import { onScopeDispose, watch } from 'vue'
+import { onMounted, onScopeDispose, watch } from 'vue'
 import type { Ref, WatchSource } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import { animate, motionValue } from 'motion-v'
@@ -60,6 +60,9 @@ export function useGlidingIndicator(
       at = parent && box.contains(parent) ? parent : null
     }
     const nextBottom = nextTop + target.offsetHeight
+    // The first placement shows the bar at once, as the prerendered page did; later ones fade.
+    const first = !placed
+    if (first) el.style.transition = 'none'
     el.style.opacity = '1'
     if (offsetX !== undefined) el.style.left = `${left + offsetX}px`
 
@@ -71,6 +74,10 @@ export function useGlidingIndicator(
       bottom.jump(nextBottom)
       placed = true
       paint()
+      if (first) {
+        void getComputedStyle(el).opacity
+        el.style.transition = ''
+      }
       return
     }
     const movingDown = nextTop > top.get()
@@ -78,6 +85,8 @@ export function useGlidingIndicator(
     animate(bottom, nextBottom, movingDown ? LEAD : TRAIL)
   }
 
+  // Placed in the mount's own frame, so the first paint already has the bar.
+  onMounted(update)
   watch(source, () => requestAnimationFrame(update), { flush: 'post' })
   useResizeObserver(container, () => requestAnimationFrame(update))
   onScopeDispose(() => unsubscribe.forEach((stop) => stop()))

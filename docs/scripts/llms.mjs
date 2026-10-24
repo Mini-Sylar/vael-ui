@@ -70,13 +70,39 @@ function composableMarkdown(name, content, summary, level = 1) {
   return parts.filter(Boolean).join('\n\n')
 }
 
-function componentMarkdown(name, summary, paired, origin) {
+function a11yMarkdown(info) {
+  if (!info) return ''
+  const parts = ['## Accessibility']
+  if (info.pattern)
+    parts.push(
+      `Follows the [${info.pattern.name}](${info.pattern.url}) pattern from the WAI-ARIA Authoring Practices Guide.`,
+    )
+  if (info.keyboard.length) {
+    const keys = (text) =>
+      text
+        .split(' / ')
+        .map((alternative) =>
+          alternative
+            .split(' + ')
+            .map((key) => `\`${key}\``)
+            .join(' + '),
+        )
+        .join(' / ')
+    const rows = info.keyboard.map((row) => `${keys(row.keys)} | ${cell(row.action)}`)
+    parts.push(`Key | Action\n--- | ---\n${rows.join('\n')}`)
+  } else parts.push('It has no keyboard interaction of its own.')
+  if (info.notes.length) parts.push(info.notes.map((note) => `- ${note}`).join('\n'))
+  return parts.join('\n\n')
+}
+
+function componentMarkdown(name, summary, paired, origin, a11y) {
   const parts = [
     `# ${name}`,
     summary,
     importLine([name]),
     sections(meta[name], 2).trim(),
     motionSection(name, 2, `${origin}/motion.md`).trim(),
+    a11yMarkdown(a11y),
   ]
   for (const child of RELATED[name] ?? [])
     if (meta[child]) parts.push(`## ${child}`, sections(meta[child], 3).trim())
@@ -144,6 +170,7 @@ function routesUnder(dist, dir, first) {
  * @param {string[]} site.directives
  * @param {Record<string, any>} site.directivesContent
  * @param {Record<string, any>} site.messages The English locale.
+ * @param {Record<string, any>} site.a11yContent Each component's Accessibility section.
  */
 export function writeLlms(site) {
   const { dist, origin, messages } = site
@@ -174,7 +201,7 @@ export function writeLlms(site) {
         `Components: ${category.name}`,
         name,
         `/components/${name}`,
-        componentMarkdown(name, summary, paired, origin),
+        componentMarkdown(name, summary, paired, origin, site.a11yContent?.[name]),
         summary,
       )
     }

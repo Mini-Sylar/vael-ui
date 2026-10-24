@@ -69,6 +69,11 @@
     "headless": "Headless-Composable",
     "motion": "Bewegung",
     "new": "Neu",
+    "accessibility": "Barrierefreiheit",
+    "a11yPattern": "Folgt dem Muster {pattern} aus dem WAI-ARIA Authoring Practices Guide.",
+    "a11yKey": "Taste",
+    "a11yAction": "Aktion",
+    "a11yNoKeys": "Die Komponente hat keine eigene Tastaturbedienung.",
     "highlights": "Highlights",
     "moreExamples": "Weitere Beispiele"
   },
@@ -962,6 +967,80 @@
       "with": "Mit {engine}",
       "vael": "Mit vael-ui-Bewegung",
       "none": "Noch keine vael-ui-Version."
+    }
+  },
+  "recipes": {
+    "DataTable": {
+      "Filtering": {
+        "title": "Filtern",
+        "note": "Filtern Sie die Zeilen, bevor Sie sie an `data` übergeben. Hier behält ein `computed` die Zeilen, die zur Suche und zum Status passen, und die Tabelle zeigt die Zeilen, die sie erhält."
+      },
+      "InlineEditing": {
+        "title": "Bearbeiten in der Zelle",
+        "note": "Setzen Sie ein `Editable` in den `#cell`-Slot einer Spalte und binden Sie es an das Feld der Zeile. Enter oder das Verlassen der Zelle speichert, Escape bricht ab. Speichern Sie die Änderung im `submit`-Event auf Ihrem Server."
+      },
+      "CsvExport": {
+        "title": "CSV-Export",
+        "note": "Erzeugen Sie die CSV aus denselben Zeilen und Spalten, die die Tabelle zeigt, und laden Sie sie als `Blob` herunter. Werte mit einem Komma, einem Anführungszeichen oder einem Zeilenumbruch stehen in Anführungszeichen."
+      },
+      "RowGrouping": {
+        "title": "Zeilen gruppieren",
+        "note": "Gruppieren Sie die Zeilen selbst und übergeben Sie dann eine flache Liste mit einer Kopfzeile vor jeder Gruppe. Jede Kopfzeile hat einen eigenen Schlüssel, sodass CSS sie gestalten kann, und ihr Button klappt die Gruppe ein. Lassen Sie die Spalten unsortiert, denn Sortieren würde die Kopfzeilen verschieben."
+      },
+      "ColumnVisibility": {
+        "title": "Sichtbarkeit von Spalten",
+        "note": "Halten Sie die sichtbaren Spalten in einer Liste, die Checkboxen ändern, und rendern Sie jede `Column` mit `v-if`. Wird eine Spalte ausgehängt, entfernt die Tabelle sie."
+      }
+    },
+    "Field": {
+      "ValidationVeeValidate": {
+        "title": "Validierung mit vee-validate",
+        "note": "vee-validate hält die Werte und Fehler, Field zeigt sie an. Übergeben Sie den Fehler jedes Felds an `error` und setzen Sie `invalid` auf sein Steuerelement. Ein Feld wird geprüft, wenn Sie es verlassen, danach bei jeder Änderung, bis es gültig ist. Beim Absenden werden alle Felder geprüft."
+      },
+      "ValidationStandardSchema": {
+        "title": "Validierung mit einem Standard Schema",
+        "note": "Zod, Valibot, ArkType und andere Standard-Schema-Validatoren bieten alle `~standard.validate`. Der `path` jedes Problems nennt sein Feld, also geht die Meldung an das `error` dieses Fields. Diese Demo nutzt ein kleines, von Hand geschriebenes Schema; ein Zod- oder Valibot-Schema funktioniert an seiner Stelle."
+      }
+    },
+    "Input": {
+      "PhoneMask": {
+        "title": "Eingabemaske",
+        "note": "Eine Maske ist ein kleiner Formatierer an `update:modelValue`. Sie behält nur die Ziffern und formatiert sie als (555) 123-4567, sodass Tippen, Einfügen und Löschen dasselbe Ergebnis liefern. Senden Sie die Ziffern an Ihren Server."
+      },
+      "CharacterCounter": {
+        "title": "Zeichenzähler",
+        "note": "Zeigen Sie die Länge des `v-model`-Werts im `#end`-Slot an. `maxlength` stoppt die Eingabe am Limit, und `aria-describedby` verbindet den Zähler für Screenreader mit dem Feld."
+      }
+    },
+    "DatePicker": {
+      "RangePresets": {
+        "title": "Vorgaben für Zeiträume",
+        "note": "Stellen Sie Buttons für häufige Zeiträume neben eine Bereichsauswahl. Jeder Button baut einen Zeitraum mit `start` und `end` und setzt ihn als `v-model`-Wert. Daten von Hand zu wählen funktioniert weiterhin."
+      }
+    },
+    "Tabs": {
+      "ClosableTabs": {
+        "title": "Schließbare Tabs",
+        "note": "Rendern Sie jeden Tab selbst, mit einem Schließen-Button darin. Wenn Sie den ausgewählten Tab schließen, wird der Tab rechts daneben ausgewählt, oder der linke, wenn er der letzte war. Der Fokus wechselt zu diesem Tab, sodass Tastaturnutzer ihre Position behalten. Entf oder Rücktaste schließt den fokussierten Tab."
+      }
+    },
+    "Pagination": {
+      "JumpToPage": {
+        "title": "Zu Seite springen",
+        "note": "Stellen Sie bei langen Listen ein `InputNumber` neben die Pagination. `min` und `max` halten die Zahl innerhalb der Seitenzahl. Drücken Sie Enter oder verlassen Sie das Feld, um zu dieser Seite zu gehen."
+      }
+    },
+    "FileUpload": {
+      "ImagePreviews": {
+        "title": "Bildvorschauen",
+        "note": "Erzeugen Sie für jedes Bild eine Object-URL und zeigen Sie sie im `#item`-Slot. Eine Object-URL hält ihre Datei im Speicher, bis Sie sie widerrufen. Widerrufen Sie jede URL, wenn ihr Bild entfernt wird, und die übrigen, wenn die Komponente ausgehängt wird."
+      }
+    },
+    "Dialog": {
+      "DraggableDialog": {
+        "title": "Verschiebbarer Dialog",
+        "note": "Ziehen Sie die Kopfzeile, um den Dialog zu verschieben. Pointer Capture hält das Ziehen aufrecht, wenn der Zeiger die Kopfzeile verlässt. Hat der Griff-Button den Fokus, verschieben ihn die Pfeiltasten um 10 px, mit Umschalt um 50 px. Der Dialog bleibt im Fenster und öffnet sich wieder zentriert."
+      }
     }
   }
 }

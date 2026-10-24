@@ -69,6 +69,11 @@
     "headless": "Combinável headless",
     "motion": "Movimento",
     "new": "Novo",
+    "accessibility": "Acessibilidade",
+    "a11yPattern": "Segue o padrão {pattern} do WAI-ARIA Authoring Practices Guide.",
+    "a11yKey": "Tecla",
+    "a11yAction": "Ação",
+    "a11yNoKeys": "Não tem interação de teclado própria.",
     "highlights": "Destaques",
     "moreExamples": "Mais exemplos"
   },
@@ -962,6 +967,80 @@
       "with": "Com {engine}",
       "vael": "Com o movimento do vael-ui",
       "none": "Ainda não há versão do vael-ui."
+    }
+  },
+  "recipes": {
+    "DataTable": {
+      "Filtering": {
+        "title": "Filtragem",
+        "note": "Filtre as linhas antes de passá-las para `data`. Aqui um `computed` mantém as linhas que correspondem à busca e ao status, e a tabela mostra as linhas que recebe."
+      },
+      "InlineEditing": {
+        "title": "Edição na célula",
+        "note": "Coloque um `Editable` no slot `#cell` de uma coluna e vincule-o ao campo da linha. Enter ou sair da célula salva, e Escape cancela. Salve a alteração no seu servidor no evento `submit`."
+      },
+      "CsvExport": {
+        "title": "Exportar CSV",
+        "note": "Monte o CSV com as mesmas linhas e colunas que a tabela mostra e baixe-o como um `Blob`. Valores com vírgula, aspas ou quebra de linha ficam entre aspas."
+      },
+      "RowGrouping": {
+        "title": "Agrupar linhas",
+        "note": "Agrupe as linhas você mesmo e passe uma lista plana com uma linha de cabeçalho antes de cada grupo. Cada linha de cabeçalho tem sua própria chave, então o CSS pode estilizá-la, e o botão dela recolhe o grupo. Deixe as colunas sem ordenação, porque ordenar moveria as linhas de cabeçalho."
+      },
+      "ColumnVisibility": {
+        "title": "Visibilidade das colunas",
+        "note": "Mantenha as colunas visíveis em uma lista que caixas de seleção alteram e renderize cada `Column` com `v-if`. Quando uma coluna é desmontada, a tabela a remove."
+      }
+    },
+    "Field": {
+      "ValidationVeeValidate": {
+        "title": "Validação com vee-validate",
+        "note": "O vee-validate guarda os valores e os erros, e o Field os mostra. Passe o erro de cada campo para `error` e defina `invalid` no controle dele. Um campo é verificado quando você sai dele e, depois, a cada alteração até ficar válido. Enviar verifica todos os campos."
+      },
+      "ValidationStandardSchema": {
+        "title": "Validação com um Standard Schema",
+        "note": "Zod, Valibot, ArkType e outros validadores Standard Schema expõem `~standard.validate`. O `path` de cada problema indica o campo, então a mensagem vai para o `error` desse Field. Esta demo usa um pequeno schema escrito à mão, e um schema do Zod ou do Valibot funciona no lugar dele."
+      }
+    },
+    "Input": {
+      "PhoneMask": {
+        "title": "Máscara de entrada",
+        "note": "Uma máscara é um pequeno formatador em `update:modelValue`. Ela mantém só os dígitos e os formata como (555) 123-4567, então digitar, colar e apagar dão o mesmo resultado. Envie os dígitos para o seu servidor."
+      },
+      "CharacterCounter": {
+        "title": "Contador de caracteres",
+        "note": "Mostre o tamanho do valor do `v-model` no slot `#end`. `maxlength` interrompe a digitação no limite, e `aria-describedby` liga o contador ao campo para leitores de tela."
+      }
+    },
+    "DatePicker": {
+      "RangePresets": {
+        "title": "Intervalos predefinidos",
+        "note": "Coloque botões para intervalos comuns ao lado de um seletor de intervalo. Cada botão monta um intervalo com `start` e `end` e o define como valor do `v-model`. Você ainda pode escolher as datas à mão."
+      }
+    },
+    "Tabs": {
+      "ClosableTabs": {
+        "title": "Abas que fecham",
+        "note": "Renderize cada aba você mesmo, com um botão de fechar dentro dela. Ao fechar a aba selecionada, a aba à direita é selecionada, ou a da esquerda se ela era a última. O foco vai para essa aba, então quem usa o teclado não perde o lugar. Delete ou Backspace fecha a aba com foco."
+      }
+    },
+    "Pagination": {
+      "JumpToPage": {
+        "title": "Ir para a página",
+        "note": "Em listas longas, coloque um `InputNumber` ao lado da paginação. `min` e `max` mantêm o número dentro do total de páginas. Pressione Enter ou saia do campo para ir para essa página."
+      }
+    },
+    "FileUpload": {
+      "ImagePreviews": {
+        "title": "Prévias de imagens",
+        "note": "Crie uma URL de objeto para cada imagem e mostre-a no slot `#item`. Uma URL de objeto mantém o arquivo na memória até você revogá-la. Revogue cada URL quando a imagem dela for removida, e as demais quando o componente for desmontado."
+      }
+    },
+    "Dialog": {
+      "DraggableDialog": {
+        "title": "Diálogo arrastável",
+        "note": "Arraste o cabeçalho para mover o diálogo. A captura do ponteiro mantém o arraste quando o ponteiro sai do cabeçalho. Com o foco no botão de alça, as setas o movem 10 px, ou 50 px com Shift. O diálogo fica dentro da janela e abre centralizado de novo."
+      }
     }
   }
 }

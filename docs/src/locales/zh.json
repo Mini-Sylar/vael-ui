@@ -69,6 +69,11 @@
     "headless": "无头可组合项",
     "motion": "动效",
     "new": "新",
+    "accessibility": "无障碍",
+    "a11yPattern": "遵循 WAI-ARIA Authoring Practices Guide 中的 {pattern} 模式。",
+    "a11yKey": "按键",
+    "a11yAction": "操作",
+    "a11yNoKeys": "它没有自己的键盘交互。",
     "highlights": "精选",
     "moreExamples": "更多示例"
   },
@@ -962,6 +967,80 @@
       "with": "使用 {engine}",
       "vael": "使用 vael-ui 动效",
       "none": "暂无 vael-ui 版本。"
+    }
+  },
+  "recipes": {
+    "DataTable": {
+      "Filtering": {
+        "title": "筛选",
+        "note": "请在把行传给 `data` 之前先筛选。这里由一个 `computed` 保留与搜索和状态匹配的行，表格显示它收到的行。"
+      },
+      "InlineEditing": {
+        "title": "单元格内编辑",
+        "note": "在列的 `#cell` 插槽中放一个 `Editable`，并绑定到行的字段。按 Enter 或离开单元格即保存，按 Escape 取消。请在 `submit` 事件中把修改保存到服务器。"
+      },
+      "CsvExport": {
+        "title": "导出 CSV",
+        "note": "用表格显示的同一组行和列生成 CSV，并以 `Blob` 的形式下载。包含逗号、引号或换行的值会加上引号。"
+      },
+      "RowGrouping": {
+        "title": "行分组",
+        "note": "请自己对行分组，然后传入一个扁平列表，并在每组前放一行分组标题。每个标题行都有自己的 key，CSS 可以为它设置样式，它的按钮可以折叠该组。请不要让列可排序，因为排序会移动标题行。"
+      },
+      "ColumnVisibility": {
+        "title": "列的显示与隐藏",
+        "note": "把可见的列保存在一个由复选框修改的列表中，并用 `v-if` 渲染每个 `Column`。列卸载后，表格会移除它。"
+      }
+    },
+    "Field": {
+      "ValidationVeeValidate": {
+        "title": "用 vee-validate 校验",
+        "note": "vee-validate 保存值和错误，Field 负责显示。把每个字段的错误传给 `error`，并在它的控件上设置 `invalid`。离开字段时会校验它，之后每次修改都会校验，直到它有效为止。提交时会校验所有字段。"
+      },
+      "ValidationStandardSchema": {
+        "title": "用 Standard Schema 校验",
+        "note": "Zod、Valibot、ArkType 等 Standard Schema 校验器都提供 `~standard.validate`。每个问题的 `path` 指明它的字段，所以消息会交给该 Field 的 `error`。这个示例用的是一个手写的小 schema，换成 Zod 或 Valibot 的 schema 也同样可用。"
+      }
+    },
+    "Input": {
+      "PhoneMask": {
+        "title": "输入掩码",
+        "note": "掩码就是挂在 `update:modelValue` 上的一个小格式化函数。它只保留数字，并格式化为 (555) 123-4567，所以输入、粘贴和删除得到的结果一致。请把纯数字发送到服务器。"
+      },
+      "CharacterCounter": {
+        "title": "字数统计",
+        "note": "在 `#end` 插槽中显示 `v-model` 值的长度。`maxlength` 在达到上限时停止输入，`aria-describedby` 把计数与输入框关联起来，供屏幕阅读器读取。"
+      }
+    },
+    "DatePicker": {
+      "RangePresets": {
+        "title": "常用日期范围",
+        "note": "在范围选择器旁边放上常用范围的按钮。每个按钮会生成一个包含 `start` 和 `end` 的范围，并设为 `v-model` 的值。你仍然可以手动选择日期。"
+      }
+    },
+    "Tabs": {
+      "ClosableTabs": {
+        "title": "可关闭的标签页",
+        "note": "自己渲染每个标签，并在里面放一个关闭按钮。关闭选中的标签后，会选中它右边的标签；如果它是最后一个，则选中左边的。焦点也会移到那个标签上，键盘用户不会丢失位置。按 Delete 或 Backspace 可关闭获得焦点的标签。"
+      }
+    },
+    "Pagination": {
+      "JumpToPage": {
+        "title": "跳转到页面",
+        "note": "列表较长时，在分页旁放一个 `InputNumber`。`min` 和 `max` 让数字保持在页数范围内。按 Enter 或离开输入框即可跳到该页。"
+      }
+    },
+    "FileUpload": {
+      "ImagePreviews": {
+        "title": "图片预览",
+        "note": "为每张图片创建一个对象 URL，并在 `#item` 插槽中显示。对象 URL 在被撤销之前会一直把文件留在内存中。图片被移除时撤销它的 URL，组件卸载时撤销其余的 URL。"
+      }
+    },
+    "Dialog": {
+      "DraggableDialog": {
+        "title": "可拖动的对话框",
+        "note": "拖动标题栏即可移动对话框。指针捕获让指针离开标题栏后拖动仍能继续。焦点在抓手按钮上时，方向键每次移动 10 px，按住 Shift 则移动 50 px。对话框会保持在窗口内，再次打开时回到中央。"
+      }
     }
   }
 }

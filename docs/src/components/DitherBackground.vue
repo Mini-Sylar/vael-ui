@@ -48,6 +48,7 @@ function resize() {
 
 // Two offset sine fields instead of true random noise: cheap, and its slow
 // drift reads as a living texture rather than static TV static.
+// index.html draws the prerendered canvases' first frame (t = 0) the same way: keep them in step.
 function noiseAt(x: number, y: number): number {
   const v = 0.5 + 0.25 * Math.sin(x * 0.09 + t) + 0.25 * Math.sin(y * 0.07 - t * 0.7 + x * 0.02)
   return v

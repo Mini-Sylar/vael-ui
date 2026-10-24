@@ -6,6 +6,7 @@ import './prose.css'
 import App from './App.vue'
 import { canonicalDocsName, routerOptions } from './router'
 import { i18n } from './i18n'
+import { adoptPrerendered } from './composables/highlightInline'
 
 export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => {
   app.use(i18n).directive('tooltip', vTooltip)
@@ -33,6 +34,8 @@ export const createApp = ViteSSG(App, routerOptions, async ({ app, router }) => 
   if (!import.meta.env.SSR) {
     const { vaporInteropPlugin } = await import('vue')
     app.use(vaporInteropPlugin)
+    // The app replaces the prerendered page: its code renders highlighted from the first frame.
+    adoptPrerendered(document)
 
     // Route components are lazy-loaded (`() => import('./pages/X.vue')`) by
     // their build hash. After a redeploy, a tab still holding the old

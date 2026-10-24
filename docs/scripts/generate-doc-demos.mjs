@@ -188,7 +188,7 @@ function extractTitle(source, fallback) {
 }
 
 // `id` and every entry in `allIds` are paths relative to the generated root,
-// without extension — "DataTableDemo" for a legacy flat file, or
+// without extension — "TreeDemo" for a legacy flat file, or
 // "Sortable/DragToReorder" for a migrated one. Fully self-describing, so
 // nothing here needs to know which shape produced them.
 function emitExample(id, allIds, sourceFor, vaporExportNames, state) {

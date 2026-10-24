@@ -46,6 +46,10 @@ const themes = { light: 'github-light', dark: 'github-dark' } as const
 // distinct snippet is highlighted once and shared.
 const cache = new Map<string, Promise<string>>()
 
+// Finished results by the same key, for a first render that shouldn't wait a frame: what has
+// resolved here, plus what the prerendered page shipped (see `adoptPrerendered`).
+const known = new Map<string, string>()
+
 /** Shiki-highlighted HTML for a short inline snippet, themed like `CodeBlock`. */
 export function highlightInline(code: string, lang: InlineLang = 'ts'): Promise<string> {
   const key = `${lang}\u0000${code}`
@@ -56,8 +60,17 @@ export function highlightInline(code: string, lang: InlineLang = 'ts'): Promise<
     else if (lang === 'cssValue') html = highlightInContext(code, 'css', 'a{b:', '}')
     else html = codeToHtml(code, { lang, themes, defaultColor: false, structure: 'inline' })
     cache.set(key, html)
+    html.then(
+      (result) => known.set(key, result),
+      () => {},
+    )
   }
   return html
+}
+
+/** `highlightInline`'s result if it's already known, without waiting. */
+export function highlightedInline(code: string, lang: InlineLang = 'ts'): string | undefined {
+  return known.get(`${lang}\u0000${code}`)
 }
 
 // Code blocks: the same demo source renders in more than one place (a demo's
@@ -71,8 +84,31 @@ export function highlightBlock(code: string, lang: string): Promise<string> {
   if (!html) {
     html = codeToHtml(code, { lang, themes, defaultColor: false })
     blockCache.set(key, html)
+    html.then(
+      (result) => known.set(`block:${key}`, result),
+      () => {},
+    )
   }
   return html
+}
+
+/** `highlightBlock`'s result if it's already known, without waiting. */
+export function highlightedBlock(code: string, lang: string): string | undefined {
+  return known.get(`block:${lang}\u0000${code}`)
+}
+
+/**
+ * Reads the highlighting the prerendered page already shows, so the app that replaces it renders
+ * the same HTML on its first frame. Each highlighted element carries `data-shiki` (its language,
+ * `block:` first for a code block) and its text is the code.
+ */
+export function adoptPrerendered(root: ParentNode): void {
+  for (const el of root.querySelectorAll<HTMLElement>('[data-shiki]')) {
+    // A color's preview swatch is added beside the highlighting, not part of it.
+    const swatch = el.querySelector(':scope > .code-swatch')
+    const html = swatch ? el.innerHTML.replace(swatch.outerHTML, '') : el.innerHTML
+    known.set(`${el.dataset.shiki}\u0000${el.textContent}`, html)
+  }
 }
 
 /** A token with its light and dark colors, as an inline style for a `.shiki` ancestor to apply. */

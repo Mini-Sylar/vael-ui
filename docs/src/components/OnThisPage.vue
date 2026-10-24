@@ -7,7 +7,9 @@
   >
     <!-- One rail for the page, branching out to a section's own links and back; the indicator is
          a lit stretch of the same path, so it travels around the curves to get there. -->
-    <svg class="toc-rail" :width="RAIL_WIDTH" :height="railHeight" aria-hidden="true">
+    <svg class="toc-rail" :width="RAIL_WIDTH" :height="railHeight || '100%'" aria-hidden="true">
+      <!-- Until it's measured (and in the prerendered page) every branch is closed: a straight rail. -->
+      <line v-if="!railPath" class="toc-rail-line" x1="0.5" y1="0" x2="0.5" y2="100%" />
       <path class="toc-rail-line" :d="railPath" />
       <path ref="lit" class="toc-rail-lit" :d="railPath" />
     </svg>
@@ -26,6 +28,13 @@
       >
         {{ link.label }}
         <span v-if="link.isNew" class="toc-new" :aria-label="t('component.new')" />
+        <!-- The lit stretch and its dither as the prerendered page draws them, on the link. -->
+        <template v-if="link.id === staticId">
+          <svg class="toc-lit-static" aria-hidden="true">
+            <line x1="0.5" y1="0" x2="0.5" y2="100%" />
+          </svg>
+          <span class="toc-lit-dither toc-lit-dither-static" aria-hidden="true" />
+        </template>
       </a>
       <!-- Closed until you reach the section, then it splits open. -->
       <div
@@ -75,7 +84,8 @@ const props = defineProps<{ links: TocLink[] }>()
 const route = useRoute()
 const { t } = useI18n()
 
-const activeId = shallowRef<string | null>(null)
+// The first section, as at the top of the page: the prerendered page marks it too.
+const activeId = shallowRef<string | null>(props.links[0]?.id ?? null)
 const allLinks = () => props.links.flatMap((link) => [link, ...(link.children ?? [])])
 // Open while you're in it, and already open as you come near, from above or below, so the
 // indicator has somewhere to go when it gets there.
@@ -114,8 +124,10 @@ function draw() {
     d += ` V${top} C${MAIN_X} ${top + c * 0.6} ${x} ${top + c * 0.4} ${x} ${top + c}`
     d += ` V${bottom - c} C${x} ${bottom - c * 0.4} ${MAIN_X} ${bottom - c * 0.6} ${MAIN_X} ${bottom}`
   }
-  railPath.value = `${d} V${box.offsetHeight}`
-  railHeight.value = box.offsetHeight
+  // Unrounded, as the prerendered rail (100% of the nav) is drawn.
+  const height = box.getBoundingClientRect().height
+  railPath.value = `${d} V${height}`
+  railHeight.value = height
 }
 
 // The lit stretch: its top and bottom edges, each on its own spring, so it stretches toward
@@ -132,6 +144,9 @@ const targets = new Map([
   [end, 0],
 ])
 let placed = false
+// The link the prerendered page lit: its static marker stands in for the stretch until the
+// stretch first moves, so the app taking over the page changes nothing.
+const staticId = shallowRef(activeId.value)
 
 interface Branch {
   el: HTMLElement
@@ -247,14 +262,12 @@ function light() {
     placed = false
     return
   }
-  path.style.opacity = '1'
-  if (litDither.value) litDither.value.style.opacity = '1'
   const list = branches(box)
   reconcile(list)
   // A little past the link's line box, like the sidebar's bar on its row.
   const top = settledTop(list, box, target) - PAD
   const bottom = top + target.offsetHeight + PAD * 2
-  if (!placed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const jump = () => {
     start.jump(top)
     end.jump(bottom)
     targets.set(start, top).set(end, bottom)
@@ -262,6 +275,23 @@ function light() {
     litId = activeId.value
     goal = top
     paint()
+  }
+  if (staticId.value) {
+    // Kept on the marker's link, hidden behind it.
+    if (!placed || activeId.value === staticId.value) jump()
+    if (activeId.value === staticId.value) return
+    // Shown where the marker was, at once, before it sets off.
+    const parts = [path, litDither.value].filter((el) => !!el)
+    for (const el of parts) el.style.transition = 'none'
+    for (const el of parts) el.style.opacity = '1'
+    void getComputedStyle(path).opacity
+    for (const el of parts) el.style.transition = ''
+    staticId.value = null
+  }
+  path.style.opacity = '1'
+  if (litDither.value) litDither.value.style.opacity = '1'
+  if (!placed || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    jump()
     return
   }
   // Already heading there: the rail redraws under it as branches move.
@@ -295,7 +325,7 @@ const TARGET_Y = 88 // matches router.ts's scrollBehavior offset
 // fitting on screen at once) can end up simultaneously past any fixed
 // line, where "last past the line" always picks the same one regardless
 // of which you actually scrolled to.
-function updateActive() {
+function updateActive(openNear = true) {
   let best: string | null = null
   let bestDistance = Infinity
   for (const link of allLinks()) {
@@ -308,6 +338,7 @@ function updateActive() {
     }
   }
   activeId.value = best
+  if (!openNear) return
   const reach = window.innerHeight * 0.5
   const next = new Set<string>()
   for (const link of props.links) {
@@ -350,8 +381,9 @@ onMounted(() => {
   // A short trailing section can't always reach the target line at all
   // (the page hits max scroll first), so geometry can't be trusted for it.
   // Trust an explicit #hash the same way a click is trusted.
+  // At the top, sections only open nearby once you scroll, as the prerendered page shows them.
   if (route.hash) onLinkClick(route.hash.slice(1))
-  else updateActive()
+  else updateActive(window.scrollY > 0)
   refresh()
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('scrollend', releaseHold)
@@ -400,6 +432,28 @@ onUnmounted(() => {
   mask-image: linear-gradient(to right, rgb(0 0 0 / 0.85), transparent);
   pointer-events: none;
   transition: opacity 200ms var(--ui-ease-out);
+}
+
+/* The lit stretch as the rail draws it, 3px past the link's line box, on the rail's own x. */
+.toc-lit-static {
+  position: absolute;
+  inset-block-start: -3px;
+  inset-inline-start: -1.5rem;
+  inline-size: 2px;
+  block-size: calc(100% + 6px);
+  overflow: visible;
+  pointer-events: none;
+  stroke: var(--ui-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.toc-lit-dither-static {
+  inset-block: -3px;
+  inset-inline-start: calc(-1.5rem + 1.5px);
+  block-size: auto;
+  opacity: 1;
+  transition: none;
 }
 
 .toc-rail-lit {

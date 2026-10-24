@@ -102,12 +102,19 @@ let frame = 0
 let last = 0
 let observer: IntersectionObserver | undefined
 let dots: Element[] = []
+// What each dot shows now: a frame moves the light a thousandth of a pixel, so only a dot whose
+// radius changes by a visible step (a hundredth) is written.
+let shown: string[] = initial.map((r) => r.toFixed(2))
 function tick(now: number) {
   const dt = last ? Math.min(now - last, 100) : 16
   last = now
   angle += (Math.PI * 2 * dt) / 40_000
-  const next = radii(angle)
-  dots.forEach((dot, i) => dot.setAttribute('r', next[i]!.toFixed(3)))
+  radii(angle).forEach((r, i) => {
+    const text = r.toFixed(2)
+    if (text === shown[i]) return
+    shown[i] = text
+    dots[i]!.setAttribute('r', text)
+  })
   frame = requestAnimationFrame(tick)
 }
 function stop() {

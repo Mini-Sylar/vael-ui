@@ -1,5 +1,5 @@
 import type { Directive } from 'vue'
-import { classifyInline, highlightInline } from './highlightInline'
+import { classifyInline, highlightInline, highlightedInline } from './highlightInline'
 
 // Guide prose reaches the page as `v-html` locale strings, `<i18n-t>` slots
 // and plain template `<code>`, so rather than routing every one through
@@ -23,7 +23,7 @@ function highlightWithin(root: HTMLElement): void {
     code.classList.toggle('code-token', !/\s/.test(text))
     if (kind === 'ref' || kind === 'plain') continue
     const lang = kind === 'code' ? 'ts' : kind
-    highlightInline(text, lang).then((html) => {
+    const apply = (html: string) => {
       // The text may have changed (locale switch) while Shiki was working.
       if (code.textContent !== text) return
       // A color value gets a small preview swatch; it adds no text, so the
@@ -35,11 +35,18 @@ function highlightWithin(root: HTMLElement): void {
           : ''
       code.innerHTML = swatch + html
       code.classList.add('shiki')
-    })
+      code.dataset.shiki = lang
+    }
+    // Known already (the prerendered page had it): in place before the first paint.
+    const known = highlightedInline(text, lang)
+    if (known === undefined) highlightInline(text, lang).then(apply)
+    else apply(known)
   }
 }
 
 export const vHighlightCode: Directive<HTMLElement> = {
+  // Marks the element for the build, which highlights its code in the prerendered HTML.
+  getSSRProps: () => ({ 'data-highlight-code': '' }),
   mounted(el) {
     highlightWithin(el)
     const observer = new MutationObserver(() => highlightWithin(el))

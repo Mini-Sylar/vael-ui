@@ -69,6 +69,11 @@
     "headless": "Componibile headless",
     "motion": "Movimento",
     "new": "Nuovo",
+    "accessibility": "Accessibilità",
+    "a11yPattern": "Segue il pattern {pattern} della WAI-ARIA Authoring Practices Guide.",
+    "a11yKey": "Tasto",
+    "a11yAction": "Azione",
+    "a11yNoKeys": "Non ha un'interazione da tastiera propria.",
     "highlights": "In evidenza",
     "moreExamples": "Altri esempi"
   },
@@ -962,6 +967,80 @@
       "with": "Con {engine}",
       "vael": "Con il movimento di vael-ui",
       "none": "Ancora nessuna versione vael-ui."
+    }
+  },
+  "recipes": {
+    "DataTable": {
+      "Filtering": {
+        "title": "Filtro",
+        "note": "Filtra le righe prima di passarle a `data`. Qui un `computed` tiene le righe che corrispondono alla ricerca e allo stato, e la tabella mostra le righe che riceve."
+      },
+      "InlineEditing": {
+        "title": "Modifica nella cella",
+        "note": "Metti un `Editable` nello slot `#cell` di una colonna e collegalo al campo della riga. Invio o l’uscita dalla cella salva, Esc annulla. Salva la modifica sul tuo server nell’evento `submit`."
+      },
+      "CsvExport": {
+        "title": "Esportazione CSV",
+        "note": "Crea il CSV dalle stesse righe e colonne che mostra la tabella e scaricalo come `Blob`. I valori che contengono una virgola, una virgoletta o un a capo vanno tra virgolette."
+      },
+      "RowGrouping": {
+        "title": "Raggruppamento delle righe",
+        "note": "Raggruppa tu le righe, poi passa un’unica lista piatta con una riga di intestazione prima di ogni gruppo. Ogni riga di intestazione ha una sua chiave, così il CSS può darle uno stile, e il suo pulsante comprime il gruppo. Lascia le colonne senza ordinamento, perché ordinare sposterebbe le righe di intestazione."
+      },
+      "ColumnVisibility": {
+        "title": "Visibilità delle colonne",
+        "note": "Tieni le colonne visibili in una lista che delle caselle di controllo modificano, e renderizza ogni `Column` con `v-if`. Quando una colonna viene smontata, la tabella la rimuove."
+      }
+    },
+    "Field": {
+      "ValidationVeeValidate": {
+        "title": "Validazione con vee-validate",
+        "note": "vee-validate tiene i valori e gli errori, e Field li mostra. Passa l’errore di ogni campo a `error` e imposta `invalid` sul suo controllo. Un campo viene controllato quando lo lasci, poi a ogni modifica finché non è valido. L’invio controlla tutti i campi."
+      },
+      "ValidationStandardSchema": {
+        "title": "Validazione con uno Standard Schema",
+        "note": "Zod, Valibot, ArkType e gli altri validatori Standard Schema espongono tutti `~standard.validate`. Il `path` di ogni problema indica il suo campo, quindi il messaggio va nell’`error` di quel Field. Questa demo usa un piccolo schema scritto a mano, e uno schema Zod o Valibot funziona al suo posto."
+      }
+    },
+    "Input": {
+      "PhoneMask": {
+        "title": "Maschera di input",
+        "note": "Una maschera è un piccolo formattatore su `update:modelValue`. Tiene solo le cifre e le formatta come (555) 123-4567, così digitare, incollare e cancellare danno lo stesso risultato. Invia le cifre al tuo server."
+      },
+      "CharacterCounter": {
+        "title": "Contatore di caratteri",
+        "note": "Mostra la lunghezza del valore di `v-model` nello slot `#end`. `maxlength` ferma l’inserimento al limite, e `aria-describedby` collega il contatore al campo per gli screen reader."
+      }
+    },
+    "DatePicker": {
+      "RangePresets": {
+        "title": "Intervalli predefiniti",
+        "note": "Metti dei pulsanti per gli intervalli più comuni accanto a un selettore di intervallo. Ogni pulsante crea un intervallo con `start` e `end` e lo imposta come valore del `v-model`. Puoi ancora scegliere le date a mano."
+      }
+    },
+    "Tabs": {
+      "ClosableTabs": {
+        "title": "Schede chiudibili",
+        "note": "Renderizza tu ogni scheda, con un pulsante di chiusura al suo interno. Quando chiudi la scheda selezionata, viene selezionata quella alla sua destra, o quella alla sua sinistra se era l’ultima. Il focus passa a quella scheda, così chi usa la tastiera non perde il segno. Canc o Backspace chiude la scheda con il focus."
+      }
+    },
+    "Pagination": {
+      "JumpToPage": {
+        "title": "Vai alla pagina",
+        "note": "Per le liste lunghe, metti un `InputNumber` accanto alla paginazione. `min` e `max` tengono il numero entro il totale delle pagine. Premi Invio o lascia il campo per andare a quella pagina."
+      }
+    },
+    "FileUpload": {
+      "ImagePreviews": {
+        "title": "Anteprime delle immagini",
+        "note": "Crea un object URL per ogni immagine e mostralo nello slot `#item`. Un object URL tiene il suo file in memoria finché non lo revochi. Revoca ogni URL quando la sua immagine viene rimossa, e gli altri quando il componente viene smontato."
+      }
+    },
+    "Dialog": {
+      "DraggableDialog": {
+        "title": "Dialog trascinabile",
+        "note": "Trascina l’intestazione per spostare il dialog. La cattura del puntatore mantiene il trascinamento quando il puntatore esce dall’intestazione. Con il focus sul pulsante di presa, le frecce lo spostano di 10 px, o di 50 px con Maiusc. Il dialog resta dentro la finestra e si riapre al centro."
+      }
     }
   }
 }

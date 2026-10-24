@@ -45,6 +45,8 @@ import DemoExampleBlock from './DemoExampleBlock.vue'
 export interface DemoExample {
   id: string
   title: string
+  /** A recipe's note, shown above its preview. */
+  note?: string
   vdomComponent: Component | null
   vaporComponent: Component | null
   vdomCode: string

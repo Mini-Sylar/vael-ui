@@ -69,6 +69,11 @@
     "headless": "Componible headless",
     "motion": "Movimiento",
     "new": "Nuevo",
+    "accessibility": "Accesibilidad",
+    "a11yPattern": "Sigue el patrón {pattern} de la WAI-ARIA Authoring Practices Guide.",
+    "a11yKey": "Tecla",
+    "a11yAction": "Acción",
+    "a11yNoKeys": "No tiene interacción de teclado propia.",
     "highlights": "Destacados",
     "moreExamples": "Más ejemplos"
   },
@@ -962,6 +967,80 @@
       "with": "Con {engine}",
       "vael": "Con movimiento de vael-ui",
       "none": "Todavía no hay versión de vael-ui."
+    }
+  },
+  "recipes": {
+    "DataTable": {
+      "Filtering": {
+        "title": "Filtrado",
+        "note": "Filtra las filas antes de pasarlas a `data`. Aquí un `computed` conserva las filas que coinciden con la búsqueda y el estado, y la tabla muestra las filas que recibe."
+      },
+      "InlineEditing": {
+        "title": "Edición en la celda",
+        "note": "Pon un `Editable` en el slot `#cell` de una columna y vincúlalo al campo de la fila. Enter o salir de la celda guarda, y Escape cancela. Guarda el cambio en tu servidor en el evento `submit`."
+      },
+      "CsvExport": {
+        "title": "Exportar a CSV",
+        "note": "Genera el CSV con las mismas filas y columnas que muestra la tabla, y descárgalo como un `Blob`. Los valores que contienen una coma, una comilla o un salto de línea van entre comillas."
+      },
+      "RowGrouping": {
+        "title": "Agrupar filas",
+        "note": "Agrupa las filas tú mismo y luego pasa una lista plana con una fila de encabezado antes de cada grupo. Cada fila de encabezado tiene su propia clave, así que el CSS puede darle estilo, y su botón contrae el grupo. Deja las columnas sin ordenar, porque ordenar movería las filas de encabezado."
+      },
+      "ColumnVisibility": {
+        "title": "Visibilidad de columnas",
+        "note": "Guarda las columnas visibles en una lista que cambian unas casillas, y renderiza cada `Column` con `v-if`. Cuando una columna se desmonta, la tabla la quita."
+      }
+    },
+    "Field": {
+      "ValidationVeeValidate": {
+        "title": "Validación con vee-validate",
+        "note": "vee-validate guarda los valores y los errores, y Field los muestra. Pasa el error de cada campo a `error` y pon `invalid` en su control. Un campo se comprueba al salir de él, y luego en cada cambio hasta que sea válido. Al enviar se comprueban todos los campos."
+      },
+      "ValidationStandardSchema": {
+        "title": "Validación con un Standard Schema",
+        "note": "Zod, Valibot, ArkType y otros validadores de Standard Schema exponen `~standard.validate`. El `path` de cada problema indica su campo, así que el mensaje va al `error` de ese Field. Esta demo usa un pequeño esquema escrito a mano, y un esquema de Zod o Valibot funciona en su lugar."
+      }
+    },
+    "Input": {
+      "PhoneMask": {
+        "title": "Máscara de entrada",
+        "note": "Una máscara es un pequeño formateador en `update:modelValue`. Conserva solo los dígitos y los formatea como (555) 123-4567, así que escribir, pegar y borrar dan el mismo resultado. Envía los dígitos a tu servidor."
+      },
+      "CharacterCounter": {
+        "title": "Contador de caracteres",
+        "note": "Muestra la longitud del valor de `v-model` en el slot `#end`. `maxlength` detiene la escritura en el límite, y `aria-describedby` vincula el contador al campo para los lectores de pantalla."
+      }
+    },
+    "DatePicker": {
+      "RangePresets": {
+        "title": "Rangos predefinidos",
+        "note": "Pon botones para los rangos habituales junto a un selector de rango. Cada botón crea un rango con `start` y `end` y lo asigna como valor del `v-model`. Puedes seguir eligiendo fechas a mano."
+      }
+    },
+    "Tabs": {
+      "ClosableTabs": {
+        "title": "Pestañas que se cierran",
+        "note": "Renderiza cada pestaña tú mismo, con un botón de cerrar dentro. Al cerrar la pestaña seleccionada, se selecciona la de su derecha, o la de su izquierda si era la última. El foco pasa a esa pestaña, así quien usa el teclado no pierde su sitio. Supr o Retroceso cierra la pestaña con el foco."
+      }
+    },
+    "Pagination": {
+      "JumpToPage": {
+        "title": "Ir a una página",
+        "note": "En listas largas, pon un `InputNumber` junto a la paginación. `min` y `max` mantienen el número dentro del total de páginas. Pulsa Enter o sal del campo para ir a esa página."
+      }
+    },
+    "FileUpload": {
+      "ImagePreviews": {
+        "title": "Vistas previas de imágenes",
+        "note": "Crea una URL de objeto para cada imagen y muéstrala en el slot `#item`. Una URL de objeto mantiene su archivo en memoria hasta que la revocas. Revoca cada URL cuando se quita su imagen, y el resto cuando el componente se desmonta."
+      }
+    },
+    "Dialog": {
+      "DraggableDialog": {
+        "title": "Diálogo arrastrable",
+        "note": "Arrastra la cabecera para mover el diálogo. La captura del puntero mantiene el arrastre cuando el puntero sale de la cabecera. Con el foco en el botón de agarre, las flechas lo mueven 10 px, o 50 px con Mayús. El diálogo se queda dentro de la ventana y vuelve a abrirse centrado."
+      }
     }
   }
 }
