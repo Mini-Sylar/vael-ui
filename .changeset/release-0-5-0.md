@@ -128,9 +128,24 @@ Some components render different DOM or styles. Their props, slots and events ar
 - **`--ui-indicator-bg`**: no longer set on `:root`. The highlight reads it with `var(--ui-muted)` as the fallback, so a panel that changes `--ui-muted` recolors its highlight too. If your own CSS uses `var(--ui-indicator-bg)`, add that fallback.
 - **Stepper**: a step you can’t reach yet is now a disabled button instead of a `div`. Its circle stays the same element as you move through the steps, so its color transitions. It looks the same, and screen readers announce it as unavailable.
 
+- **Vue `3.6.0-rc.13`**: vael-ui is built and tested against it. Install that exact version (`npm install vue@3.6.0-rc.13 --save-exact`).
+- **Select, TreeSelect, CascadeSelect**: the trigger is now a frame around the control. The element with `role="combobox"` (`role="button"` for CascadeSelect) is `.ui-select-control` (`.ui-cascade-select-control`) inside `.ui-select-trigger`, and it carries the `id`, `aria-*` and `data-*` you pass. The clear button sits beside it. The frame keeps the border, `data-state` and `data-invalid`.
+- **CascadeSelect**: the trigger is a menu button (`role="button"`) instead of a combobox, and it reads its label followed by the value. Tests that query `getByRole('combobox')` for it need `getByRole('button')`.
+- **DatePicker**: the input takes typing. A click in it opens the calendar and keeps focus in the input, a second click no longer closes it, and Space types a space instead of opening the calendar. The calendar icon is a "Choose date" button.
+- **Pagination**: at the first or last page, the first, previous, next and last buttons use `aria-disabled` and the `ui-button--disabled` class instead of `disabled`, so they stay focusable.
+- **Card**: the header and footer are `div`s instead of `<header>` and `<footer>`, so they aren’t page landmarks.
+- **Tabs**: a horizontal tab row is at most as wide as its container and scrolls inside it, with fading edges.
+
 ## New components and features
 
 0.5.0 adds four components (Editable, AnimatedNumber, AnimatedText and ColorPicker), haptics, and new options across forms, overlays and lists.
+
+- **Typing a date in DatePicker**: the input reads what you type in the active locale’s order (month/day/year in en-US, day/month/year in de, year/month/day in ja), plus ISO `yyyy-mm-dd`, month names, ranges and times. Enter or leaving the field commits it, Escape undoes it, and an entry that doesn’t read keeps the last value and marks the field invalid.
+- **Week numbers**: `show-week-numbers` on Calendar and DatePicker shows ISO week numbers beside each week.
+- **Form reset**: resetting a `<form>` puts every vael-ui control back to the value it had when it mounted.
+- **Input `clearable`**: shows a clear button while there’s text and emits `clear`. Focus stays in the input.
+- **FileUpload**: paste files with Cmd+V or Ctrl+V while it’s focused or under the pointer, or drop a folder to add its files. Both go through `accept`, `maxSize` and `maxFiles`. `useFileDrop` takes a `paste` option.
+- **Tree `focusNode(value)`**: opens the folders above a row and focuses it.
 
 - **Editable**: text that turns into an input when you click it, for renaming in place. It saves on Enter or blur:
   - `activation-mode` sets what starts editing, `submit-mode` sets what saves, and `v-model:editing` controls it
@@ -263,6 +278,45 @@ These components changed how they move:
   - Stepper checks and clear buttons scale in from 0.9 instead of 0.5
   - under reduced motion, Skeleton pulses slower, OtpInput’s caret blinks slower, and Stepper keeps its color fade
   - a keyboard-focused Tree row shows an inset ring
+
+## Accessibility
+
+Every component page now has an Accessibility section with its keyboard keys, the WAI-ARIA pattern it follows, its roles, and the labels you need to provide. These changes came out of checking each component against its code:
+
+- **Overlays**:
+  - a modal Dialog, Drawer, BottomSheet or CommandPalette makes the rest of the page inert. Toasts, live regions, tooltips and anything opened from inside stay usable. A contained modal Dialog sets `aria-modal`
+  - BottomSheet is named by its `title`. Its handle is a button: ArrowUp and ArrowDown move between snap points. A sheet that mounts open rests on its first snap point
+  - CommandPalette names its search input, marks disabled items with `aria-disabled`, announces how many results match, and names each group by its heading
+  - Menu is named by its trigger, and a submenu by its row; an `aria-label` you pass names the menu itself. ContextMenu gives focus back to what had it, or to what you right-clicked
+  - a modal Tour sets `aria-modal`, keeps Tab inside the callout, and returns focus to the button that started it
+- **Selection**:
+  - Select with `filter`: the search box is the combobox while the panel is open
+  - CascadeSelect reads its value after its label, whether the label comes from a Field, `aria-labelledby` or `aria-label`
+  - clearing, or removing the last chip, puts focus back on the trigger or input. Inside a trigger, chips are removed with Backspace or Delete, and nothing else in the trigger takes focus
+  - Tree is named by your `aria-label` or `aria-labelledby`, starts on the selected row, and in checkbox mode is one tab stop where Space checks the row. TreeSelect opens on the selected row and reads its summary from `treeSelect.selectedCount`
+  - long, virtualized lists announce each option’s position
+- **Forms**:
+  - Input and Textarea keep your `aria-describedby` and add the Field’s description and error to it. A control in a Field without a label no longer points at a missing one
+  - Editable with `activation-mode="focus"` no longer reopens as it closes, and `aria-label` names its input
+  - PasswordInput reads each requirement as met or not met, and announces only the one that changed
+  - OtpInput with `mask` doesn’t let screen readers read the code
+  - Slider, Knob, Dial, Rating and FileUpload set `aria-invalid`. FileUpload’s Browse button carries the Field’s label, description and error, and rejected files are announced
+  - Calendar’s month and year views move with the arrow keys, Home, End, PageUp and PageDown, and picking one moves focus into the next view. Every day in a range is announced as selected
+- **Actions and feedback**:
+  - SpeedDial no longer takes focus when it opens on hover, and its menu exists only while open. Typing a letter jumps to an icon-only action
+  - Button with `as` set to a plain tag is announced as a button, takes focus, and activates with Enter and Space. An `aria-disabled` you pass is kept
+  - Toolbar leaves arrow keys typed in a text field to that field
+  - error toasts are announced assertively, others politely
+  - Progress puts your `aria-label` on the progress bar. Stepper reads “Completed” on finished steps. Timeline marks the active item with `aria-current`
+  - Pagination keeps focus at the first and last page. Dock’s tab stop skips a disabled first item
+  - Avatar is read once, and AnimatedText reads only the new text during a swap
+- **Data and layout**:
+  - DataTable with row selection is a grid, and each row checkbox is named after its row. Column resize handles take focus and resize with the arrow keys; Alt + ArrowLeft or ArrowRight moves a reorderable column. Both are announced
+  - ScrollArea’s viewport takes your `aria-label`. Collapsible’s panel is named by its trigger, and Separator’s label is read
+  - Resizable always reports its maximum. SwipeToReveal’s Tab order follows the screen, and Escape closes an open row. PullToRefresh announces “Refreshing…” and “Updated”
+  - Sortable cancels a keyboard move when focus leaves, and keeps focus on the moved item after a drop
+- **Right to left**: Breadcrumb’s chevron and ColorPicker’s hue track point the right way
+- **Translations**: SpeedDial’s “Actions”, Toolbar’s “More”, Resizable’s “Resize” and the new announcements come from the messages, so `ConfigProvider` can translate them.
 
 ## Bug fixes
 
