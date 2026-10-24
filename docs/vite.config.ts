@@ -6,8 +6,14 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import generateSitemap from 'vite-ssg-sitemap'
-import { allComponents } from './src/taxonomy.ts'
-import { allComposables } from './src/composablesTaxonomy.ts'
+import { allComponents, categories } from './src/taxonomy.ts'
+import { allComposables, composableCategories } from './src/composablesTaxonomy.ts'
+import { composablesContent } from './src/composablesContent.ts'
+import { pairedComposables } from './src/pairedComposables.ts'
+import { DIRECTIVES } from './src/directivesTaxonomy.ts'
+import { directivesContent } from './src/directivesContent.ts'
+import messages from './src/locales/en.json'
+import { writeLlms } from './scripts/llms.mjs'
 
 const uiPackageJson = JSON.parse(
   readFileSync(fileURLToPath(new URL('../packages/ui/package.json', import.meta.url)), 'utf-8'),
@@ -47,7 +53,7 @@ export default defineConfig({
     formatting: 'minify',
     // beasties drops the layer-order.css link (see index.html) since it has no matched selector.
     beastiesOptions: false,
-    // `/components/:name` and `/composables/:name` are dynamic and get
+    // `/components/:name`, `/composables/:name` and `/directives/:name` are dynamic and get
     // filtered out by vite-ssg's own default handler — expand each into one
     // concrete path per real entry instead, plus a `/404` render used only
     // to produce a static 404.html.
@@ -55,7 +61,8 @@ export default defineConfig({
       const staticPaths = paths.filter((p) => !p.includes(':'))
       const componentPaths = allComponents.map((name) => `/components/${name}`)
       const composablePaths = allComposables.map((name) => `/composables/${name}`)
-      return [...staticPaths, ...componentPaths, ...composablePaths, '/404']
+      const directivePaths = DIRECTIVES.map((name) => `/directives/${name}`)
+      return [...staticPaths, ...componentPaths, ...composablePaths, ...directivePaths, '/404']
     },
     // `dirStyle: 'nested'` would otherwise write `404/index.html` — static
     // hosts (Netlify, Vercel, GitHub Pages) look for `404.html` at the root.
@@ -68,6 +75,18 @@ export default defineConfig({
         hostname: 'https://vael-ui.dev',
         exclude: ['/404'],
         robots: [{ userAgent: '*', allow: '/' }],
+      })
+      // llms.txt, llms-full.txt and a Markdown copy of every page, for language models.
+      writeLlms({
+        dist: fileURLToPath(new URL('./dist', import.meta.url)),
+        origin: 'https://vael-ui.dev',
+        categories,
+        composableCategories,
+        composablesContent,
+        pairedComposables,
+        directives: DIRECTIVES,
+        directivesContent,
+        messages,
       })
     },
   },

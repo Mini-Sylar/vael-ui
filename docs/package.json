@@ -27,6 +27,7 @@
     "vue-router": "^5.4.0"
   },
   "devDependencies": {
+    "@mdream/js": "2.0.3",
     "@vitejs/plugin-vue": "^6.0.10",
     "beasties": "^0.4.3",
     "typescript": "^6.0.3",
