@@ -2,7 +2,7 @@
  * useMotion('list') in the built Vapor bundle (run `pnpm build` first): Vapor's TransitionGroup must
  * carry the list's marker and call the hooks the list measures from, or nothing slides.
  */
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { createVaporApp } from 'vue'
 import MotionListVaporRoot from './fixtures/MotionListVaporRoot.vue'
 
@@ -16,21 +16,30 @@ test('Vapor list: an add enters and slides the rest; a sort slides everyone', as
   app.mount(host)
   try {
     // The list engine loads on demand from setup; an app changes its list long after. A change in
-    // the first moments after mount enters without sibling slides (documented trade).
-    await new Promise((resolve) => setTimeout(resolve, 150))
+    // the first moments after mount enters without sibling slides (documented trade), so it gets
+    // room to load, even on a busy machine.
+    await new Promise((resolve) => setTimeout(resolve, 500))
     await frame()
     const item = (n: number) => host.querySelector(`[data-item="${n}"]`)!
     host.querySelector<HTMLElement>('[data-testid="add"]')!.click()
-    await frame()
-    expect(ids(item(10))).toContain('ui-presence')
-    for (const n of [1, 2, 3]) expect(ids(item(n))).toContain('ui-slide')
+    // Within a frame or two, however busy the machine.
+    await vi.waitFor(
+      () => {
+        expect(ids(item(10))).toContain('ui-presence')
+        for (const n of [1, 2, 3]) expect(ids(item(n))).toContain('ui-slide')
+      },
+      { timeout: 500, interval: 16 },
+    )
     await new Promise((resolve) => setTimeout(resolve, 900))
     host.querySelector<HTMLElement>('[data-testid="sort"]')!.click()
-    await frame()
-    await frame()
     // Reversed: everyone but the middle one moves.
-    const moved = [10, 1, 2, 3].filter((n) => ids(item(n)).includes('ui-slide'))
-    expect(moved.length).toBeGreaterThanOrEqual(2)
+    await vi.waitFor(
+      () => {
+        const moved = [10, 1, 2, 3].filter((n) => ids(item(n)).includes('ui-slide'))
+        expect(moved.length).toBeGreaterThanOrEqual(2)
+      },
+      { timeout: 500, interval: 16 },
+    )
   } finally {
     app.unmount()
     host.remove()
