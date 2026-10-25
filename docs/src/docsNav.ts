@@ -11,7 +11,6 @@ export const GUIDE_ROUTES = [
   { routeName: 'guide-global-setup', labelKey: 'nav.globalSetup' },
   { routeName: 'guide-tailwind', labelKey: 'nav.tailwindGuide' },
   { routeName: 'guide-styling-and-layers', labelKey: 'nav.stylingAndLayersGuide' },
-  { routeName: 'guide-animation-integration', labelKey: 'nav.animationIntegrationGuide' },
   { routeName: 'guide-i18n-keys', labelKey: 'nav.i18nKeysGuide' },
   { routeName: 'guide-auto-import', labelKey: 'nav.autoImportGuide' },
   { routeName: 'guide-nuxt', labelKey: 'nav.nuxtGuide' },
@@ -53,6 +52,8 @@ export interface DocsNavSection {
 }
 
 export const guideValue = (routeName: string) => `guide:${routeName}`
+/** The row that opens the Motion section from the components' sidebar. */
+export const MOTION_LINK = guideValue('motion-overview')
 export const composableValue = (name: string) => `composable:${name}`
 export const directiveValue = (name: string) => `directive:${name}`
 
@@ -100,12 +101,12 @@ export function navSections(mode: DocsMode, t: (key: string) => string): DocsNav
   return [
     {
       label: t('nav.guides'),
-      // Motion has its own section: one row here takes you there, in place of its guide.
-      items: GUIDE_ROUTES.map((g) =>
-        g.routeName === 'guide-animation-integration'
-          ? { label: t('motionDocs.nav.motion'), value: guideValue('motion-overview') }
-          : { label: t(g.labelKey), value: guideValue(g.routeName) },
-      ),
+      items: GUIDE_ROUTES.map((g) => ({ label: t(g.labelKey), value: guideValue(g.routeName) })),
+    },
+    // Motion has a section of its own: this row takes you there.
+    {
+      label: t('nav.motionSystem'),
+      items: [{ label: t('motionDocs.nav.overview'), value: MOTION_LINK }],
     },
     {
       label: t('nav.directives'),

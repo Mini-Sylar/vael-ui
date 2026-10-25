@@ -138,7 +138,7 @@ import { NEW_COMPOSABLES, composableCategories } from '../composablesTaxonomy'
 import {
   composableValue,
   GUIDE_ROUTES,
-  guideValue,
+  MOTION_LINK,
   MOTION_ROUTES,
   navSections,
   routeFor,
@@ -183,9 +183,9 @@ const swap = (mode: DocsMode) => {
   }
 }
 
-// Among the components' guides, Motion is marked like a link: it opens its own section.
+// In the components' sidebar, the Motion row is marked like a link: it opens its own section.
 const leavesSection = (value: unknown) =>
-  sidebarMode.value === 'components' && value === guideValue('motion-overview')
+  sidebarMode.value === 'components' && value === MOTION_LINK
 
 // Switching modes takes you there: back to the last component or composable you read, or to
 // the section's first page. A reload then lands where the switch took you.

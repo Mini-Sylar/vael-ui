@@ -150,10 +150,8 @@ export function pageEntries(t: Translate, te: Has): PaletteEntry[] {
       boost: 6,
       group: t('nav.guides'),
     })),
-    // The Motion guide's pages; the animation guide is already among the guides.
-    ...MOTION_ROUTES.filter(
-      (page) => !GUIDE_ROUTES.some((g) => g.routeName === page.routeName),
-    ).map((page) => ({
+    // The Motion section's pages, its customizing guide among them.
+    ...MOTION_ROUTES.map((page) => ({
       id: guideValue(page.routeName),
       kind: 'page' as const,
       label: t(page.labelKey),

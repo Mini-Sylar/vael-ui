@@ -2,6 +2,7 @@
   "nav": {
     "gettingStarted": "Démarrage",
     "guides": "Guides",
+    "motionSystem": "Système d'animation",
     "tailwindGuide": "Utiliser avec Tailwind",
     "globalSetup": "Configuration globale",
     "components": "Composants",
