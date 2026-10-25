@@ -157,6 +157,7 @@ import type { PopoverCloseReason } from '../../composables/usePopover'
 import type { BeforeClose, TourMotion } from '../../motion/types'
 import './Tour.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Popover from '../Popover/Popover.vue'
@@ -177,7 +178,7 @@ import { useInert } from '../../composables/useInert'
 import { isComposing, useLayer } from '../../composables/useLayerStack'
 import { useThemedUi } from '../../theme'
 import { ssrDocument, ssrWindow } from '../../ssr'
-import { useUiMessages } from '../../messages'
+import { useMessages, tourMessages } from '../../messages'
 import { withProviderDefaults } from '../../config'
 
 // Two roots: attrs go to the popover panel, like Popover's own.
@@ -233,7 +234,7 @@ defineSlots<{
   }): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ tour: tourMessages })
 
 // The glide's timing: your `motion`, then a style's `tour`; unset, it scales with the distance.
 const motionStyle = useMotionStyle()

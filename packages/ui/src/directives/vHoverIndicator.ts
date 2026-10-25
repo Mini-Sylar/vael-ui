@@ -1,5 +1,6 @@
 import '../components/shared/indicator.css'
 import '../components/shared/tokens.css'
+import '../motion/timing.css'
 import { effectScope, nextTick, shallowRef, watch } from 'vue'
 import type {
   ComponentInternalInstance,

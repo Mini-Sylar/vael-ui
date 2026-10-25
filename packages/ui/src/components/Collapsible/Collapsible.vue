@@ -37,6 +37,7 @@
 import './Collapsible.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useId, useTemplateRef, watchEffect } from 'vue'
 import { useMutationObserver } from '@vueuse/core'
 import { useCollapse } from '../../composables/useCollapse'

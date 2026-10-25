@@ -180,6 +180,7 @@ import type { BeforeClose, TreeSelectMotion } from '../../motion/types'
 import './TreeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/clear-transition.css'
 import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
 import '../shared/select-panel.css'
@@ -192,7 +193,7 @@ import { useSelectPanelMotion } from '../../composables/useSelectPanelMotion'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
-import { useUiMessages } from '../../messages'
+import { useMessages, treeSelectMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
@@ -517,7 +518,7 @@ const zIndex = computed(() => `calc(var(--ui-z-dialog, 50) + ${Math.max(0, layer
 
 const treeId = useId()
 
-const messages = useUiMessages()
+const messages = useMessages({ treeSelect: treeSelectMessages })
 const fieldControl = useFieldControl({
   filled: () => !isEmpty.value,
   frame: { el: () => triggerEl.value, size: () => props.size },

@@ -17,8 +17,10 @@
 <script setup lang="ts">
 import './ScrollArea.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, onScopeDispose, shallowRef, useAttrs, useTemplateRef } from 'vue'
-import { useResizeObserver, useScroll } from '@vueuse/core'
+import { useResizeObserver } from '@vueuse/core'
+import { useScrollState } from '../../composables/useScrollState'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -83,11 +85,6 @@ const parts = useStateMotion({
   states: () => ({}),
 })
 
-// useScroll's own reactive arrived/direction/isScrolling state replaces this component's former
-// hand-rolled scroll-position tracking. `isScrolling` in particular is what usePullToRefresh now
-// reads to avoid arming a pull while a nested ScrollArea's own momentum/rubber-band scroll
-// hasn't actually settled — a touchstart landing at scrollTop 0 mid-bounce used to arm
-// regardless, since a raw scrollTop read can't tell "settled" from "still animating through 0."
 // autoHide keeps the thumb shown for a moment after the last scroll event, like
 // an overlay scrollbar. Not `isScrolling`: an instant scroll fires scrollend in the
 // same frame, so the thumb would never paint.
@@ -110,18 +107,14 @@ const {
   arrivedState,
   directions,
   measure,
-} = useScroll(viewport, { onScroll })
+} = useScrollState(viewport, onScroll)
 
 const atTop = computed(() => arrivedState.top)
 const atBottom = computed(() => arrivedState.bottom)
 const atStart = computed(() => arrivedState.left)
 const atEnd = computed(() => arrivedState.right)
 
-// useScroll's own `observe` option (a MutationObserver, on by default) covers a DOM-mutation-
-// driven size change; this additionally catches a pure layout/CSS size change with no DOM
-// mutation (e.g. a height transition), so `measure()` never goes stale either way — same
-// guarantee the old hand-rolled ResizeObserver gave, via useResizeObserver instead of a bespoke
-// one (it already tracks the reactive `viewport` ref and disconnects on scope dispose).
+// A size change with no scroll (a height transition, new content) moves the edges too.
 useResizeObserver(viewport, () => measure())
 
 function scrollTo(options: ScrollToOptions) {

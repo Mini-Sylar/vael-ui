@@ -31,6 +31,7 @@ export const buttonGroupKey: InjectionKey<ButtonGroupContext> = Symbol('ui-butto
 <script setup lang="ts">
 import './ButtonGroup.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, provide, useAttrs, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

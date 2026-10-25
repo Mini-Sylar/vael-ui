@@ -1,6 +1,6 @@
 import { onScopeDispose, shallowRef, toValue, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { onLongPress, useEventListener } from '@vueuse/core'
+import { useEventListener } from '@vueuse/core'
 import type { Side } from '@floating-ui/dom'
 import { useFloatingPosition } from './useFloatingPosition'
 import type { Align } from './useFloatingPosition'
@@ -570,25 +570,42 @@ export function useTooltipCore(open: Ref<boolean>, options: UseTooltipOptions) {
     closeTimer = setTimeout(() => requestClose('pointer'), toValue(options.closeDelay) ?? 100)
   }
 
+  // A touch held 500 ms within 10 px is a long press (the platform's convention): it shows the tip.
+  let hold:
+    | { x: number; y: number; timer: ReturnType<typeof setTimeout>; held: boolean }
+    | undefined
+  const release = () => {
+    clearTimeout(hold?.timer)
+    hold = undefined
+  }
   useEventListener(options.triggerEl, 'pointerdown', (event: PointerEvent) => {
     lastPointerWasTouch = event.pointerType === 'touch'
     // A new press is a new gesture. Android fires no click after a long press, so a flag left
     // from one would swallow the next real tap and the trigger would need two.
     suppressNextClick = false
+    release()
+    if (!lastPointerWasTouch) return
+    const current = {
+      x: event.clientX,
+      y: event.clientY,
+      held: false,
+      timer: setTimeout(() => {
+        current.held = true
+        show()
+      }, 500),
+    }
+    hold = current
   })
-  // VueUse's own long-press primitive (500ms delay, 10px move tolerance to cancel, both matching
-  // platform convention) - it fires for every pointer type, so the handler itself gates on touch.
-  onLongPress(
-    options.triggerEl,
-    (event) => {
-      if (event.pointerType === 'touch') show()
-    },
-    {
-      onMouseUp: (_duration, _distance, isLongPress) => {
-        if (isLongPress && lastPointerWasTouch) suppressNextClick = true
-      },
-    },
-  )
+  useEventListener(options.triggerEl, 'pointermove', (event: PointerEvent) => {
+    if (hold && !hold.held && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 10)
+      release()
+  })
+  useEventListener(options.triggerEl, 'pointerup', () => {
+    if (hold?.held) suppressNextClick = true
+    release()
+  })
+  useEventListener(options.triggerEl, ['pointercancel', 'pointerleave'], release)
+  onScopeDispose(release)
   // A long-press that fires mid-gesture shouldn't also activate the trigger's own click handler right after.
   useEventListener(
     options.triggerEl,

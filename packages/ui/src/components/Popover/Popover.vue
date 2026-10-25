@@ -162,6 +162,7 @@ import type { PopoverCloseReason } from '../../composables/usePopover'
 import type { BeforeClose } from '../../motion/types'
 import './Popover.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,

@@ -18,6 +18,7 @@
 <script setup lang="ts">
 import './BreadcrumbItem.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { nativeTag } from '../../composables/dom'
 import { computed, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'

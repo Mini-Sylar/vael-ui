@@ -193,6 +193,7 @@ import type { BeforeClose, DatePickerMotion } from '../../motion/types'
 import './DatePicker.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/select-panel.css'
 import {
   computed,
@@ -215,7 +216,7 @@ import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useMessages, datePickerMessages } from '../../messages'
 import { loadDateText } from '../../composables/lazyParts'
 import Input from '../Input/Input.vue'
 import Button from '../Button/Button.vue'
@@ -242,7 +243,7 @@ const panelAttrs = useAttrListeners(
   () => panelEl.value,
   () => panelOwnAttrs.value,
 )
-const messages = useUiMessages()
+const messages = useMessages({ datePicker: datePickerMessages })
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */
 const model = defineModel<Date | CalendarRange | null>({ default: null })

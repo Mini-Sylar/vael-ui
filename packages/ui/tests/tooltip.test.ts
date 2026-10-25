@@ -267,7 +267,7 @@ test('a touch long-press shows the tooltip and swallows the click that follows t
   const touch = { pointerType: 'touch', pointerId: 7, bubbles: true, isPrimary: true }
 
   trigger.dispatchEvent(new PointerEvent('pointerdown', touch))
-  // onLongPress fires after 500ms of holding still: that elapsed time is the behaviour under test.
+  // A long press fires after 500ms of holding still: that elapsed time is the behaviour under test.
   await new Promise((resolve) => setTimeout(resolve, 550))
   await expect.element(screen.getByTestId('tip-a')).toBeVisible()
 
@@ -294,6 +294,17 @@ test('a long-press with no click after it (Android) leaves the next tap working'
   trigger.dispatchEvent(new PointerEvent('pointerup', { ...touch, pointerId: 8 }))
   trigger.click()
   expect(clicks).toHaveBeenCalledTimes(1)
+})
+
+test('a touch that moves away before the long press fires is a scroll, not a long press', async () => {
+  const screen = await render(TooltipFixture)
+  const trigger = screen.getByTestId('trigger-a').element() as HTMLElement
+  const touch = { pointerType: 'touch', pointerId: 9, bubbles: true, isPrimary: true }
+  trigger.dispatchEvent(new PointerEvent('pointerdown', { ...touch, clientX: 10, clientY: 10 }))
+  trigger.dispatchEvent(new PointerEvent('pointermove', { ...touch, clientX: 10, clientY: 30 }))
+  await new Promise((resolve) => setTimeout(resolve, 550))
+  const tip = screen.getByTestId('tip-a').query() as HTMLElement | null
+  expect(tip === null || tip.checkVisibility() === false).toBe(true)
 })
 
 test('a glide lays the positioner out once, at its destination, and moves it with translate only', async () => {

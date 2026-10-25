@@ -1,5 +1,6 @@
 import '../components/shared/scroll-fade.css'
 import '../components/shared/tokens.css'
+import '../motion/timing.css'
 import { watchEffect } from 'vue'
 import type { Directive, DirectiveBinding } from 'vue'
 

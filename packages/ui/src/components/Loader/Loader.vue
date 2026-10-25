@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import './Loader.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/loader-spinner.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'

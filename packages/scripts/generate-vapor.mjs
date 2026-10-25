@@ -237,14 +237,15 @@ function copyCssImports(source, origFileDir, outFileDir) {
   const importLineRe = /^import\s+'([^']+\.css)'\s*$/gm
   return source.replace(importLineRe, (_full, relPath) => {
     const absSrc = resolve(origFileDir, relPath)
-    const absOut = copyCss(absSrc)
+    // Outside components (motion's timing.css): the original, so every build shares one file.
+    const absOut = relative(UI_COMPONENTS_DIR, absSrc).startsWith('..') ? absSrc : copyCss(absSrc)
     let newRel = relative(outFileDir, absOut).split('\\').join('/')
     if (!newRel.startsWith('.')) newRel = `./${newRel}`
     return `import '${newRel}'`
   })
 }
 
-// Its @imports (tokens.css takes motion's timing.css) point back at the originals from the copy.
+// Any @imports point back at the originals from the copy.
 function copyCss(absSrc) {
   const absOut = join(OUT_DIR, relative(UI_COMPONENTS_DIR, absSrc))
   const css = readFileSync(absSrc, 'utf8').replace(

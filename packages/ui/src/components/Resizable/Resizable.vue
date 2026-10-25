@@ -35,9 +35,10 @@
 <script setup lang="ts">
 import './Resizable.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
-import { useUiMessages } from '../../messages'
+import { useMessages, resizableMessages } from '../../messages'
 import { useResizable } from '../../composables/useResizable'
 import type { ResizeDirection, ResizeEdge } from '../../composables/useResizable'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -121,7 +122,7 @@ const parts = useStateMotion({
   states: () => ({ dragging: isDragging.value }),
 })
 
-const messages = useUiMessages()
+const messages = useMessages({ resizable: resizableMessages })
 // Without a `max`, the most the panel can take is the room its container gives it.
 const available = shallowRef(0)
 function measureAvailable() {

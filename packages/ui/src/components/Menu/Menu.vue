@@ -310,6 +310,7 @@ import type { BeforeClose, MenuMotion } from '../../motion/types'
 import './Menu.css'
 import '../shared/tick.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,

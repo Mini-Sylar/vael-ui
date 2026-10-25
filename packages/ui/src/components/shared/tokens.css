@@ -1,5 +1,3 @@
-@import '../../motion/timing.css';
-
 @layer ui-components {
   /* The soft bottom edge of a list easing to a new height (useEasedHeight). Registered so it eases. */
   @property --ui-list-edge {

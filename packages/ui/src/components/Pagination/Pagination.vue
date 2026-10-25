@@ -195,6 +195,7 @@
 import './Pagination.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, onBeforeUnmount, onMounted, useAttrs, useTemplateRef } from 'vue'
 import Button from '../Button/Button.vue'
 import Select from '../Select/Select.vue'
@@ -205,7 +206,7 @@ import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import { useIndicatorMotion } from '../../composables/useIndicatorMotion'
 import type { PaginationMotion } from '../../motion/types'
-import { useUiMessages } from '../../messages'
+import { useMessages, paginationMessages } from '../../messages'
 import { useTabIndicator } from '../../composables/useTabIndicator'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/indicator.css'
@@ -213,7 +214,7 @@ import '../shared/indicator.css'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-const messages = useUiMessages()
+const messages = useMessages({ pagination: paginationMessages })
 
 /** Current page, 1-based. @default 1 */
 const page = defineModel<number>('page', { default: 1 })

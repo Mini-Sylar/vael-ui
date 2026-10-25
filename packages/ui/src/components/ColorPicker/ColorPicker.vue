@@ -176,6 +176,7 @@ function hsvToHex({ h, s, v }: Hsv): string {
 import './ColorPicker.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import Input from '../Input/Input.vue'
 import Popover from '../Popover/Popover.vue'
@@ -184,7 +185,7 @@ import Slider from '../Slider/Slider.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useMessages, colorPickerMessages } from '../../messages'
 import { useFormReset } from '../../composables/useFormReset'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { ColorPickerMotion, PopoverMotion } from '../../motion/types'
@@ -250,7 +251,7 @@ defineSlots<{
   default(props: { color: string; pick: (color: string) => void }): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ colorPicker: colorPickerMessages })
 
 // A disabled picker stays shut whatever opens it.
 watch(open, (value) => {

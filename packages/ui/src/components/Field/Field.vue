@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import './Field.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   onBeforeUnmount,

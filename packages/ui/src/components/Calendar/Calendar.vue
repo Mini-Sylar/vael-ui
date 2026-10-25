@@ -336,6 +336,7 @@ import '../shared/indicator.css'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   nextTick,
@@ -352,7 +353,7 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useSwapMotion } from '../../motion/useSwapMotion'
 import type { CalendarMotion } from '../../motion/types'
-import { useUiMessages } from '../../messages'
+import { useMessages, calendarMessages } from '../../messages'
 
 /** Selected date, or `{ start, end }` in `range` mode. @default null */
 const model = defineModel<Date | CalendarRange | null>({ default: null })
@@ -695,7 +696,7 @@ const headerLabel = computed(() => {
   if (navLevel.value === 'month') return yearLabel.value
   return yearRangeLabel.value
 })
-const messages = useUiMessages()
+const messages = useMessages({ calendar: calendarMessages })
 const previousLabel = computed(() =>
   navLevel.value === 'date'
     ? messages.value.calendar.previousMonth

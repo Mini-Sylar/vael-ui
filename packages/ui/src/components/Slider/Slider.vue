@@ -71,6 +71,7 @@
 <script setup lang="ts">
 import './Slider.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
@@ -86,7 +87,7 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { SliderMotion } from '../../motion/types'
-import { useUiMessages } from '../../messages'
+import { useMessages, sliderMessages } from '../../messages'
 
 defineOptions({ inheritAttrs: false })
 
@@ -137,7 +138,7 @@ const props = withDefaults(
 const fieldControl = useFieldControl({ filled: () => true })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
-const messages = useUiMessages()
+const messages = useMessages({ slider: sliderMessages })
 
 // The label and description name the focusable thumbs, so the wrapper doesn't get them.
 const rootAttrs = computed(() =>

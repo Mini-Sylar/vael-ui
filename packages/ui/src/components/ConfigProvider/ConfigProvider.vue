@@ -30,13 +30,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, provide, toValue, useId } from 'vue'
-import {
-  defaultMessages,
-  mergeMessages,
-  messagesKey,
-  resolveMessagesFromI18n,
-} from '../../messages'
+import { computed, inject, provide, toValue, useId, watchEffect } from 'vue'
+import { messagesKey, resolveMessagesFromI18n } from '../../messages'
 import type { I18nInstance, PartialUiMessages } from '../../messages'
 import { classMergerKey } from '../../classes'
 import type { ClassMerger } from '../../classes'
@@ -106,14 +101,14 @@ defineSlots<{
   default(): unknown
 }>()
 
-// Layered: defaults < i18n < static prop.
+// Each component looks its strings up in these: yours, then i18n's, then its English default.
 provide(
   messagesKey,
-  computed(() => {
-    const fromI18n = props.i18n ? resolveMessagesFromI18n(props.i18n) : undefined
-    return mergeMessages(mergeMessages(defaultMessages, fromI18n), props.messages)
-  }),
+  computed(() => ({ messages: props.messages, i18n: props.i18n })),
 )
+// Development only: one warning per locale that translates some uiKit keys but not all.
+if (process.env.NODE_ENV !== 'production')
+  watchEffect(() => props.i18n && resolveMessagesFromI18n(props.i18n))
 provide(classMergerKey, (classes: string) =>
   props.classMerge ? props.classMerge(classes) : classes,
 )

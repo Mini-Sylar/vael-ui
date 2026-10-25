@@ -50,6 +50,7 @@ export const chipFocusFallbackKey: InjectionKey<() => HTMLElement | null | undef
 <script setup lang="ts">
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/chip.css'
 import './Chip.css'
 import {
@@ -67,7 +68,7 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { ChipMotion } from '../../motion/types'
-import { useUiMessages } from '../../messages'
+import { useMessages, chipMessages } from '../../messages'
 
 defineOptions({ inheritAttrs: false })
 
@@ -106,7 +107,7 @@ defineSlots<{
   default(): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ chip: chipMessages })
 
 function onRemoveClick() {
   if (props.disabled) return

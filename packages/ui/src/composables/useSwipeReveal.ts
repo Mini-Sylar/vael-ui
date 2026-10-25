@@ -94,7 +94,7 @@ export function useSwipeReveal(
   }
   // Settled offset only (initial value, v-model sync, reveal, release). Rounded so the
   // content edge lands on a whole pixel flush with the actions panel — measured widths
-  // are fractional (useElementSize), and a subpixel gap shows as a ~1px seam at rest.
+  // can be fractional, and a subpixel gap shows as a ~1px seam at rest.
   // Live drag never routes through here; it stays fractional via rubberBand().
   function offsetFor(side: SwipeRevealSide | null): number {
     if (side === 'leading') return Math.round(leadingWidth())

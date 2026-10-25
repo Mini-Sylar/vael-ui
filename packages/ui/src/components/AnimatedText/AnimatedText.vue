@@ -48,6 +48,7 @@
 <script setup lang="ts">
 import './AnimatedText.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, Transition, useAttrs, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

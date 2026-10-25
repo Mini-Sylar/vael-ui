@@ -94,6 +94,7 @@ export interface PullToRefreshProps {
 import { prefersReducedMotion } from '../../composables/dom'
 import './PullToRefresh.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/loader-spinner.css'
 import LoaderMark from '../internal/LoaderMark.vue'
 import { computed, useAttrs, useTemplateRef, watch } from 'vue'
@@ -101,7 +102,7 @@ import { useComponentHaptic } from '../../composables/componentHaptic'
 import { usePullToRefresh } from '../../composables/usePullToRefresh'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { PullToRefreshState } from '../../composables/usePullToRefresh'
-import { useUiMessages } from '../../messages'
+import { useMessages, pullToRefreshMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
@@ -139,7 +140,7 @@ const ownsScroll = computed(() => props.scrollEl === undefined)
 useFocusableScroller(root, ownsScroll)
 const scrollEl = computed(() => (ownsScroll.value ? root.value : unwrapEl(props.scrollEl)))
 
-const messages = useUiMessages()
+const messages = useMessages({ pullToRefresh: pullToRefreshMessages })
 
 const { state, pullDistance, progress, refresh } = usePullToRefresh({
   scrollEl,

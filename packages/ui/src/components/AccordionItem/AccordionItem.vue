@@ -64,6 +64,7 @@
 <script setup lang="ts">
 import './AccordionItem.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, inject, useAttrs, useId, useTemplateRef } from 'vue'
 import { accordionKey } from '../Accordion/Accordion.vue'
 import { useCollapse } from '../../composables/useCollapse'

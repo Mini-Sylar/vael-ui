@@ -47,6 +47,7 @@
 import './Switch.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, onMounted, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useFieldControl } from '../../composables/useFieldControl'

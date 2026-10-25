@@ -74,6 +74,7 @@
 import './Textarea.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useTextOverlay } from '../../composables/useTextOverlay'
 import { useSlotPresence } from '../../composables/dom'

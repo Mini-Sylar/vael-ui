@@ -11,3 +11,4 @@ export {
   resolveMotion,
   useMotionStyle,
 } from './motion/context'
+export { useScrollState } from './composables/useScrollState'

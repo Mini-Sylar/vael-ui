@@ -60,9 +60,9 @@
 import './SwipeToReveal.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useComponentHaptic } from '../../composables/componentHaptic'
-import { useElementSize } from '@vueuse/core'
 import { useSwipeReveal } from '../../composables/useSwipeReveal'
 import type { SwipeRevealSide } from '../../composables/useSwipeReveal'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -142,22 +142,16 @@ const contentEl = useTemplateRef<HTMLElement>('contentEl')
 const leadingActionsEl = useTemplateRef<HTMLElement>('leadingActionsEl')
 const trailingActionsEl = useTemplateRef<HTMLElement>('trailingActionsEl')
 
-const { width: leadingWidth } = useElementSize(leadingActionsEl)
-const { width: trailingWidth } = useElementSize(trailingActionsEl)
-
-// A fresh offsetWidth read, not the useElementSize ref directly - ResizeObserver's own first
-// callback is always async (per spec), and useElementSize's ref briefly resets to 0 on the
-// template ref's own null-to-element transition right after mount, before that first callback
-// lands. A drag committed in that same short window would otherwise measure a stale/zero width
-// and be forced closed regardless of how far it traveled.
+// Read fresh each time: a ResizeObserver's first report is async, and a drag committed before it
+// would measure zero and close regardless of how far it traveled.
 const haptic = useComponentHaptic()
 const tick = () => haptic.impact('light')
 const { isDragging, offset, openSide, onContentPointerdown, onContentClick, reveal, close } =
   useSwipeReveal(open, {
     leading: () => hasLeading.value,
     trailing: () => hasTrailing.value,
-    leadingWidth: () => leadingActionsEl.value?.offsetWidth ?? leadingWidth.value,
-    trailingWidth: () => trailingActionsEl.value?.offsetWidth ?? trailingWidth.value,
+    leadingWidth: () => leadingActionsEl.value?.offsetWidth ?? 0,
+    trailingWidth: () => trailingActionsEl.value?.offsetWidth ?? 0,
     disabled: () => props.disabled,
     onCommit: (side) => {
       tick()
@@ -224,11 +218,11 @@ watch(
 // drives the opt-in `revealScale` grow-in.
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
 const leadingProgress = computed(() => {
-  const width = leadingActionsEl.value?.offsetWidth ?? leadingWidth.value
+  const width = leadingActionsEl.value?.offsetWidth ?? 0
   return width > 0 ? clamp01(shown.value / width) : 0
 })
 const trailingProgress = computed(() => {
-  const width = trailingActionsEl.value?.offsetWidth ?? trailingWidth.value
+  const width = trailingActionsEl.value?.offsetWidth ?? 0
   return width > 0 ? clamp01(-shown.value / width) : 0
 })
 

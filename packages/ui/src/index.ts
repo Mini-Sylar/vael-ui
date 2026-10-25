@@ -1,4 +1,5 @@
 import './components/shared/tokens.css'
+import './motion/timing.css'
 
 export { default as Button } from './components/Button/Button.vue'
 export type {

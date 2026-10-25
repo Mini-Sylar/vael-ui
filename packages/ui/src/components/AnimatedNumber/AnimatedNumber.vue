@@ -39,6 +39,7 @@
 <script setup lang="ts">
 import './AnimatedNumber.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   onMounted,

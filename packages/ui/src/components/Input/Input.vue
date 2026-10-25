@@ -91,6 +91,7 @@ import './Input.css'
 import '../shared/clear-transition.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   onBeforeUnmount,
@@ -109,7 +110,7 @@ import {
   startClearLeave,
   useSlotPresence,
 } from '../../composables/dom'
-import { useUiMessages } from '../../messages'
+import { useMessages, inputMessages } from '../../messages'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { focusIsFromKeyboard } from '../../composables/useFocusVisible'
 import { useFormReset } from '../../composables/useFormReset'
@@ -250,7 +251,7 @@ function onFrameMousedown(event: MouseEvent) {
   inputEl.value?.focus()
 }
 
-const messages = useUiMessages()
+const messages = useMessages({ input: inputMessages })
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const dataState = computed(() => (isInvalid.value ? 'invalid' : 'idle'))

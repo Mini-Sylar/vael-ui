@@ -172,6 +172,7 @@ export type ButtonLoaderPlacement = 'overlay' | 'inline'
 import './Button.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { nativeTag, useSlotPresence } from '../../composables/dom'
 import '../shared/loader-spinner.css'
 import LoaderMark from '../internal/LoaderMark.vue'
@@ -187,7 +188,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import { useUiMessages } from '../../messages'
+import { useMessages, buttonMessages } from '../../messages'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { loadButtonHold } from '../../composables/lazyParts'
 import type { ButtonHold } from '../../composables/buttonHold'
@@ -344,7 +345,7 @@ const rootTabindex = computed(() => {
 })
 
 // Hold: the fill runs while you hold, and only the click fired on completion gets through.
-const messages = useUiMessages()
+const messages = useMessages({ button: buttonMessages })
 const haptic = useComponentHaptic()
 const tick = () => haptic.impact('heavy')
 const holdMs = computed(() => (props.hold === true ? 1200 : props.hold || 0))

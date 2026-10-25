@@ -51,9 +51,10 @@ import './Toolbar.css'
 import '../shared/indicator.css'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useSlots, useTemplateRef, watch } from 'vue'
 import { useToolbar } from '../../composables/useToolbar'
-import { useUiMessages } from '../../messages'
+import { useMessages, toolbarMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -94,7 +95,7 @@ defineSlots<{
 }>()
 
 const slots = useSlots()
-const messages = useUiMessages()
+const messages = useMessages({ toolbar: toolbarMessages })
 const list = useTemplateRef<HTMLElement>('list')
 // The hover and keyboard highlight slides between the toolbar's ghost and text buttons.
 const hoverEl = useTemplateRef<HTMLElement>('hoverEl')

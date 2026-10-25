@@ -130,11 +130,11 @@
 import { computed, useTemplateRef } from 'vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
 import type { RegisteredColumn } from '../../composables/useDataTableContext'
-import { useUiMessages } from '../../messages'
+import { useMessages, dataTableMessages, resizableMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 
-const messages = useUiMessages()
+const messages = useMessages({ dataTable: dataTableMessages, resizable: resizableMessages })
 
 const props = defineProps<{
   selectColumnRendered: boolean

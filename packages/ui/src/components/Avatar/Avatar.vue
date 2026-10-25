@@ -34,6 +34,7 @@
 <script setup lang="ts">
 import './Avatar.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, onMounted, ref, useAttrs, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'

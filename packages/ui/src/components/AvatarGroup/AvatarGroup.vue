@@ -22,6 +22,7 @@
 <script setup lang="ts">
 import './AvatarGroup.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { TransitionGroup, computed, ref, useAttrs, useId } from 'vue'
 import Avatar from '../Avatar/Avatar.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'

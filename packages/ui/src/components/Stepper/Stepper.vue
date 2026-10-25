@@ -110,6 +110,7 @@ export interface StepperItem {
 import './Stepper.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { nativeTag } from '../../composables/dom'
 import { computed, ref, shallowReactive, useTemplateRef, watch } from 'vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -117,7 +118,7 @@ import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useMessages, stepperMessages } from '../../messages'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { StepperMotion } from '../../motion/types'
 
@@ -256,7 +257,7 @@ const connectorEls = computed(() =>
   connectorSlots.slice(0, Math.max(props.items.length - 1, 0)).filter(present),
 )
 const labelEls = computed(() => labelSlots.slice(0, props.items.length).filter(present))
-const messages = useUiMessages()
+const messages = useMessages({ stepper: stepperMessages })
 // The check is drawn, not read: a completed step says so in words.
 const visuallyHidden = {
   position: 'absolute',

@@ -284,6 +284,7 @@ import type { PopoverCloseReason } from '../../composables/usePopover'
 import './CascadeSelect.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/clear-transition.css'
 import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
 import { useChipRowWidth } from '../../composables/useChipRowWidth'
@@ -302,7 +303,7 @@ import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
-import { useUiMessages } from '../../messages'
+import { useMessages, cascadeSelectMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -826,7 +827,7 @@ function onClear(event: MouseEvent) {
   controlEl.value?.focus()
 }
 
-const messages = useUiMessages()
+const messages = useMessages({ cascadeSelect: cascadeSelectMessages })
 const fieldControl = useFieldControl({
   filled: () => (props.multiple ? !isEmpty.value : model.value != null),
   frame: { el: () => triggerEl.value, size: () => props.size },

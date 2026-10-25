@@ -103,9 +103,10 @@ export interface MessageProps {
 <script setup lang="ts">
 import './Message.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, useAttrs, useTemplateRef, watch } from 'vue'
 import { useAttrListeners } from '../../composables/forwardedListeners'
-import { useUiMessages } from '../../messages'
+import { useMessages, messageMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import StatusIcon from '../internal/StatusIcon.vue'
@@ -142,7 +143,7 @@ defineSlots<{
   actions(): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ message: messageMessages })
 const root = useTemplateRef<HTMLElement>('root')
 const rawAttrs = useAttrs()
 const attrs = useAttrListeners(

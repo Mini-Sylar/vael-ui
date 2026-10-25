@@ -64,6 +64,7 @@
 import './Checkbox.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   nextTick,

@@ -283,6 +283,7 @@ import './Tree.css'
 import '../shared/tick.css'
 import { defaultsKey, withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   effectScope,
@@ -310,7 +311,7 @@ import type { TreeMotion } from '../../motion/types'
 import Input from '../Input/Input.vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
 import TreeNodeRow from './TreeNodeRow.vue'
-import { useUiMessages } from '../../messages'
+import { useMessages, sortableMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import '../shared/indicator.css'
@@ -834,7 +835,7 @@ function treeRowElement(value: string | number): HTMLElement | null {
     null
   )
 }
-const messages = useUiMessages()
+const messages = useMessages({ sortable: sortableMessages })
 const sortableRows = computed<FlatSortableRow[]>(() =>
   flatRows.value.map((row) => ({
     value: row.node.value,

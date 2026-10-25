@@ -99,6 +99,7 @@ import type { BeforeClose, MenuMotion } from '../../motion/types'
 import './SplitButton.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, useAttrs, useTemplateRef } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
 import Button from '../Button/Button.vue'
@@ -106,7 +107,7 @@ import type { ButtonSize, ButtonVariant } from '../Button/Button.vue'
 import Menu from '../Menu/Menu.vue'
 import type { MenuEntry, MenuItemData } from '../Menu/Menu.vue'
 import type { PopoverOpenChangeDetails } from '../../composables/usePopover'
-import { useUiMessages } from '../../messages'
+import { useMessages, splitButtonMessages } from '../../messages'
 import { useClassMerge, resolveUiPart, splitUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -209,7 +210,7 @@ const mainAttrs = computed(() => {
   return rest
 })
 
-const messages = useUiMessages()
+const messages = useMessages({ splitButton: splitButtonMessages })
 const resolvedTriggerLabel = computed(() => props.triggerLabel ?? messages.value.splitButton.more)
 
 const root = useTemplateRef<HTMLElement>('root')

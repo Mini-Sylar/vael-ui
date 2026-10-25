@@ -365,7 +365,7 @@ import type { RegisteredColumn } from '../../composables/useDataTableContext'
 import { computed, TransitionGroup } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import type { VirtualRow } from '../../composables/useVirtualizer'
-import { useUiMessages } from '../../messages'
+import { useMessages, dataTableMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 
@@ -460,7 +460,7 @@ defineSlots<{
   expansion(props: { row: T }): any
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ dataTable: dataTableMessages })
 
 function ariaSelected(row: T): 'true' | 'false' | undefined {
   if (!props.selectable) return undefined

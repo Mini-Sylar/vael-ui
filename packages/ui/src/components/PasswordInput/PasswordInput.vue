@@ -176,6 +176,7 @@ import type { BeforeClose } from '../../motion/types'
 import './PasswordInput.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useId, useSlots, useTemplateRef, watch } from 'vue'
 import { useSlotPresence } from '../../composables/dom'
 import type { ComponentExposed } from 'vue-component-type-helpers'
@@ -183,7 +184,7 @@ import Input from '../Input/Input.vue'
 import Popover from '../Popover/Popover.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'
-import { useUiMessages } from '../../messages'
+import { useMessages, passwordInputMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
@@ -311,7 +312,7 @@ const resolvedAutocomplete = computed(
   () => props.autocomplete ?? (hasHintContent.value ? 'new-password' : 'current-password'),
 )
 
-const messages = useUiMessages()
+const messages = useMessages({ passwordInput: passwordInputMessages })
 const fieldControl = useFieldControl()
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())

@@ -150,6 +150,7 @@ export function quarterCirclePoint(
 <script setup lang="ts" generic="T extends SpeedDialItem = SpeedDialItem">
 import './SpeedDial.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, onMounted, onScopeDispose, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Button from '../Button/Button.vue'
@@ -159,7 +160,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { withProviderDefaults } from '../../config'
 import { ssrDocument } from '../../ssr'
-import { useUiMessages } from '../../messages'
+import { useMessages, speedDialMessages } from '../../messages'
 import { useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { SpeedDialMotion } from '../../motion/types'
@@ -192,7 +193,7 @@ defineSlots<{
 
 const visibleItems = computed(() => (open.value ? props.items : []))
 
-const messages = useUiMessages()
+const messages = useMessages({ speedDial: speedDialMessages })
 const label = computed(() => props.ariaLabel ?? messages.value.speedDial.label)
 const menuId = useId()
 

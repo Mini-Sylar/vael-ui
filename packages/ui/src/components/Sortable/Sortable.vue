@@ -75,6 +75,7 @@
 import './Sortable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, useAttrs, useId, useTemplateRef } from 'vue'
 import { useComponentHaptic } from '../../composables/componentHaptic'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -82,7 +83,7 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { SortableMotion } from '../../motion/types'
-import { useUiMessages } from '../../messages'
+import { useMessages, sortableMessages } from '../../messages'
 import { useSortable } from '../../composables/useSortable'
 import { moveTreeNode } from '../../composables/useSortable'
 import type {
@@ -195,7 +196,7 @@ defineSlots<{
 }>()
 
 const root = useTemplateRef<HTMLElement>('root')
-const messages = useUiMessages()
+const messages = useMessages({ sortable: sortableMessages })
 const instructionsId = useId()
 
 function keyOf(item: T): string | number {

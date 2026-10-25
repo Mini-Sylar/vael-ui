@@ -113,6 +113,7 @@ export type ToasterPosition =
 import './Toaster.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,
@@ -129,7 +130,7 @@ import { useDocumentVisibility } from '@vueuse/core'
 import { useToastQueue } from '../../composables/useToast'
 import { omitAttrs } from '../../composables/forwardedListeners'
 import type { ToastEntry, ToastId } from '../../composables/useToast'
-import { useUiMessages } from '../../messages'
+import { useMessages, toastMessages, toasterMessages } from '../../messages'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
@@ -245,7 +246,7 @@ const toasts = computed(() => (mounted.value ? queue.value.toasts : []))
 const dismiss = (id: ToastId) => queue.value.dismiss(id)
 const pauseAll = () => queue.value.pauseAll()
 const resumeAll = () => queue.value.resumeAll()
-const messages = useUiMessages()
+const messages = useMessages({ toast: toastMessages, toaster: toasterMessages })
 
 // Extracted to bypass oxfmt removing semicolon from multi-statement @click expression.
 function onActionClick(entry: ToastEntry) {

@@ -142,12 +142,13 @@
 import './InputNumber.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import Input from '../Input/Input.vue'
 import LazyAnimatedNumber from '../internal/LazyAnimatedNumber.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useNumberFormat } from '../../composables/useNumberFormat'
-import { useUiMessages } from '../../messages'
+import { useMessages, inputNumberMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -269,7 +270,7 @@ const numberFormat = useNumberFormat({
   suffix: () => props.suffix,
 })
 
-const messages = useUiMessages()
+const messages = useMessages({ inputNumber: inputNumberMessages })
 const fieldControl = useFieldControl()
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 const isInvalid = computed(() => props.invalid || fieldControl.invalid())

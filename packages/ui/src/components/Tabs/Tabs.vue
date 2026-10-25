@@ -33,6 +33,7 @@
 <script setup lang="ts" generic="T extends string">
 import './Tabs.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, useAttrs, useId, useTemplateRef } from 'vue'
 import type { ShallowRef } from 'vue'
 import { useTabs } from '../../composables/useTabs'

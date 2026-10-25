@@ -1,5 +1,6 @@
 /* Full-bundle manifest for `vael-ui/style.css`. Keep in sync with components/. */
 @import './components/shared/tokens.css';
+@import './motion/timing.css';
 @import './components/Accordion/Accordion.css';
 @import './components/AccordionItem/AccordionItem.css';
 @import './components/AnimatedNumber/AnimatedNumber.css';

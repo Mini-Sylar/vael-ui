@@ -115,6 +115,7 @@ export const DIAL_TICKS = Array.from({ length: DIAL_TICK_COUNT }, (_, i) => {
 <script setup lang="ts">
 import './Dial.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'

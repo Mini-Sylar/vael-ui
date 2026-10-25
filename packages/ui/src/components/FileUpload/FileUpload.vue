@@ -100,13 +100,14 @@
 import './FileUpload.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, ref, shallowRef, useId, useTemplateRef } from 'vue'
 import { transitionGroupRef } from '../../composables/dom'
 import Button from '../Button/Button.vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFileDrop } from '../../composables/useFileDrop'
 import { useFormReset } from '../../composables/useFormReset'
-import { useUiMessages } from '../../messages'
+import { useMessages, fileUploadMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -176,7 +177,7 @@ defineSlots<{
   item(props: { file: File; remove: () => void; index: number }): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ fileUpload: fileUploadMessages })
 const fieldControl = useFieldControl({ filled: () => modelValue.value.length > 0 })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 

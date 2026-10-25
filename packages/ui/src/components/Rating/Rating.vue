@@ -56,6 +56,7 @@
 import './Rating.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, shallowRef, useAttrs, useTemplateRef } from 'vue'
 import { inlineKey, isRtl } from '../../composables/dom'
 import { useFieldControl } from '../../composables/useFieldControl'
@@ -66,7 +67,7 @@ import {
 } from '../../composables/useFocusVisible'
 import { omitAttrs, useForwardedListener } from '../../composables/forwardedListeners'
 import { useFormReset } from '../../composables/useFormReset'
-import { useUiMessages } from '../../messages'
+import { useMessages, ratingMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
@@ -129,7 +130,7 @@ const props = withProviderDefaults(rawProps, { size: 'md', motion: true })
 const fieldControl = useFieldControl({ filled: () => modelValue.value > 0 })
 const isDisabled = computed(() => props.disabled || fieldControl.disabled())
 
-const messages = useUiMessages()
+const messages = useMessages({ rating: ratingMessages })
 function resolveValueText(value: number): string {
   if (props.valueText) return props.valueText(value)
   return messages.value.rating.valueText

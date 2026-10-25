@@ -61,6 +61,7 @@ export const KNOB_ARC_PATH = `M ${start.x.toFixed(3)} ${start.y.toFixed(3)} A ${
 <script setup lang="ts">
 import './Knob.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, useAttrs, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { omitAttrs } from '../../composables/forwardedListeners'

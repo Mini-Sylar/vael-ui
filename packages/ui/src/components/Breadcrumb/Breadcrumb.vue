@@ -57,6 +57,7 @@ export interface BreadcrumbItemData {
 <script setup lang="ts" generic="T extends BreadcrumbItemData = BreadcrumbItemData">
 import './Breadcrumb.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { TransitionGroup, computed, useAttrs, useTemplateRef } from 'vue'
 import BreadcrumbItem from '../BreadcrumbItem/BreadcrumbItem.vue'
 import BreadcrumbSeparator from '../BreadcrumbSeparator/BreadcrumbSeparator.vue'
@@ -67,7 +68,7 @@ import { useStateMotion } from '../../motion/useStateMotion'
 import { useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { BreadcrumbMotion } from '../../motion/types'
-import { useUiMessages } from '../../messages'
+import { useMessages, breadcrumbMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
 
 defineOptions({ inheritAttrs: false })
@@ -108,7 +109,7 @@ defineSlots<{
   item(props: { item: T; index: number }): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ breadcrumb: breadcrumbMessages })
 const ariaLabel = computed(() => props.ariaLabel ?? messages.value.breadcrumb.label)
 
 const root = useTemplateRef<HTMLElement>('root')

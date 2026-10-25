@@ -67,6 +67,7 @@ import type { TooltipCloseReason } from '../../composables/useTooltip'
 import type { BeforeClose, TooltipMotion } from '../../motion/types'
 import '../shared/tooltip.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,

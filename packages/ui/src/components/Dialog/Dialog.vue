@@ -264,6 +264,7 @@ import type { DialogCloseReason } from '../../composables/useDialog'
 import type { BeforeClose } from '../../motion/types'
 import './Dialog.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   inject,
@@ -281,7 +282,7 @@ import { useDialog } from '../../composables/useDialog'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
 import type { DOMTarget } from '../../composables/dom'
 import { opener } from '../../composables/dom'
-import { useUiMessages } from '../../messages'
+import { useMessages, dialogMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
 import { vScrollMask } from '../../directives/vScrollMask'
@@ -367,7 +368,7 @@ const overlayEl = useTemplateRef<HTMLElement>('overlay')
 // Outermost teleported node. `useInert` spares this rather than `panelEl` — otherwise
 // the overlay is a sibling, goes inert, and stops dispatching the outside-click.
 const rootEl = useTemplateRef<HTMLElement>('root')
-const messages = useUiMessages()
+const messages = useMessages({ dialog: dialogMessages })
 const cx = useClassMerge()
 const themedUi = useThemedUi(
   (theme) => theme.dialog,

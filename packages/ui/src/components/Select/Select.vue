@@ -278,6 +278,7 @@ import type { BeforeClose, SelectMotion } from '../../motion/types'
 import './Select.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import '../shared/clear-transition.css'
 import { measureClearSpace, resetLeaveStyles, startClearLeave } from '../../composables/dom'
 import '../shared/select-panel.css'
@@ -298,7 +299,7 @@ import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useMessages, selectMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
 import { flattenOptions, groupSections, isGroup } from '../../composables/selectGroups'
@@ -504,7 +505,7 @@ defineSlots<{
   footer(): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ select: selectMessages })
 
 /** Search box text. Clears when the panel closes. @default '' */
 const query = defineModel<string>('query', { default: '' })

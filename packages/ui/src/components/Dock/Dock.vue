@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import './Dock.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, inject, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import type { Component } from 'vue'
 import type { Side } from '@floating-ui/dom'

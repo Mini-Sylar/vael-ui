@@ -104,6 +104,7 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
 <script setup lang="ts" generic="T extends MenuItemData = MenuItemData">
 import './MenuList.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { nativeTag } from '../../composables/dom'
 import { computed, onMounted, useAttrs, useTemplateRef } from 'vue'
 import { useMenu } from '../../composables/useMenu'

@@ -150,6 +150,7 @@ import type { BeforeClose } from '../../motion/types'
 import './CommandPalette.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, shallowRef, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { useEasedHeight } from '../../composables/useEasedHeight'
@@ -165,7 +166,7 @@ import Kbd from '../Kbd/Kbd.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useMessages, commandPaletteMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
@@ -309,7 +310,7 @@ defineSlots<{
   footer(props: { activeItem: T | undefined; query: string }): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ commandPalette: commandPaletteMessages })
 
 function defaultFilter(item: T, q: string): boolean {
   if (item.label.toLowerCase().includes(q)) return true

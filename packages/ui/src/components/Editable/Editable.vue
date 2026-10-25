@@ -70,6 +70,7 @@
 import './Editable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, nextTick, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Input from '../Input/Input.vue'

@@ -136,6 +136,7 @@ import '../shared/indicator.css'
 import { useHoverIndicator } from '../../composables/useHoverIndicator'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import {
   computed,
   nextTick,
@@ -168,7 +169,7 @@ import type { TableRowEntry } from './DataTableBody.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
-import { useUiMessages } from '../../messages'
+import { useMessages, dataTableMessages, sortableMessages } from '../../messages'
 import { vScrollMask } from '../../directives/vScrollMask'
 import { useFocusableScroller } from '../../composables/useFocusableScroller'
 import { useComponentList } from '../../motion/useMotion'
@@ -346,7 +347,7 @@ function resortColumnsByDom() {
 onMounted(resortColumnsByDom)
 onUpdated(resortColumnsByDom)
 
-const messages = useUiMessages()
+const messages = useMessages({ dataTable: dataTableMessages, sortable: sortableMessages })
 
 const selectColumnRendered = computed(() => props.selectable && props.selectionMode === 'checkbox')
 const selectableRows = computed(() => props.selectable && props.selectionMode === 'row')

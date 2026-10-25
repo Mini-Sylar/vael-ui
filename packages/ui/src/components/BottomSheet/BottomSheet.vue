@@ -179,6 +179,7 @@ import Dialog from '../Dialog/Dialog.vue'
 import type { DialogExposed } from '../Dialog/Dialog.vue'
 import './BottomSheet.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { useSheetDrag } from '../../composables/useSheetDrag'
 import { askGuard, closeContext } from '../../composables/useCloseGuard'
 import { flingTiming } from '../../motion/fling'
@@ -186,7 +187,7 @@ import { gestureKey } from '../../motion/useComponentMotion'
 import type { LinkedGesture } from '../../motion/useComponentMotion'
 import { getFocusable, resolveDOMTarget } from '../../composables/dom'
 import { vScrollMask } from '../../directives/vScrollMask'
-import { useUiMessages } from '../../messages'
+import { useMessages, bottomSheetMessages, dialogMessages } from '../../messages'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import { useThemedUi } from '../../theme'
 
@@ -223,7 +224,7 @@ defineSlots<{
   header(props: { close: () => void }): unknown
 }>()
 
-const messages = useUiMessages()
+const messages = useMessages({ bottomSheet: bottomSheetMessages, dialog: dialogMessages })
 const dialog = useTemplateRef<DialogExposed>('dialog')
 const handle = useTemplateRef<HTMLElement>('handle')
 const content = useTemplateRef<HTMLElement>('content')

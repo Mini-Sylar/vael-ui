@@ -107,6 +107,7 @@
 import './Timeline.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, ref, useId, useSlots, useTemplateRef } from 'vue'
 import { transitionGroupRef, useSlotPresence } from '../../composables/dom'
 import { useClassMerge, resolveUiPart } from '../../classes'

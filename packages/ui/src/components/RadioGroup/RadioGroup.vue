@@ -36,6 +36,7 @@ export const radioGroupKey: InjectionKey<RadioGroupContext> = Symbol('ui-radio-g
 <script setup lang="ts">
 import './RadioGroup.css'
 import '../shared/tokens.css'
+import '../../motion/timing.css'
 import { computed, provide, useAttrs, useId, useTemplateRef } from 'vue'
 import { useFieldControl } from '../../composables/useFieldControl'
 import { useFormReset } from '../../composables/useFormReset'
