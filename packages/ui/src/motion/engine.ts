@@ -1,4 +1,4 @@
-// Plays MotionValues on elements with WAAPI. What's running, for settled(), lives in timing.ts.
+// Plays MotionValues on elements with WAAPI. What's running, for settled(), is tracked in timing.ts.
 import { prefersReducedMotion } from '../composables/dom'
 import { PRESENCE_ID, SLIDE_ID } from './ids'
 import { cssTime, easingOf, resolveTiming, token, track } from './timing'
@@ -16,7 +16,7 @@ import {
   toKeyframes,
 } from './values'
 
-export { resolveTiming, settled, track } from './timing'
+export { resolveTiming, track } from './timing'
 export type { ResolvedTiming } from './timing'
 
 export { PRESENCE_ID }

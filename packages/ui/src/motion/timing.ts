@@ -85,8 +85,8 @@ export function track<T>(work: Promise<T>): Promise<T> {
   })
 }
 
-/** Resolves once nothing vael-ui started is animating. For tests: open, `await settled()`, assert. */
-export function settled(): Promise<void> {
+/** @internal Resolves once nothing tracked is running (settled() in ./settled). */
+export function whenIdle(): Promise<void> {
   return new Promise((resolve) => {
     // A microtask first, so motion that starts in the same tick counts.
     queueMicrotask(() => {

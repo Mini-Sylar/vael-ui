@@ -290,7 +290,7 @@ export type {
 } from './composables/useHaptic'
 export { springEasing } from './composables/springEasing'
 export type { MotionOptions } from './composables/springEasing'
-export { settled } from './motion/timing'
+export { settled } from './motion/settled'
 export { useMotion } from './motion/useMotion'
 export { parseMotionStyle } from './motion/parse'
 export { useComponentMotion } from './motion/useComponentMotion'
