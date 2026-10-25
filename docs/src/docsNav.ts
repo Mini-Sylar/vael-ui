@@ -106,7 +106,7 @@ export function navSections(mode: DocsMode, t: (key: string) => string): DocsNav
     // Motion has a section of its own: this row takes you there.
     {
       label: t('nav.motionSystem'),
-      items: [{ label: t('motionDocs.nav.overview'), value: MOTION_LINK }],
+      items: [{ label: t('motionDocs.nav.motion'), value: MOTION_LINK }],
     },
     {
       label: t('nav.directives'),
