@@ -158,6 +158,7 @@ Every component page now has an Accessibility section with its keys, the WAI-ARI
 - `motion="false"` on Select, Combobox, CascadeSelect, DatePicker, TreeSelect and CommandPalette also opens and closes the panel at once.
 - `--ui-indicator-bg` is no longer set on `:root`. Read it as `var(--ui-indicator-bg, var(--ui-muted))`.
 - Timeline's hooks receive the step's `marker`, `connector` and `content`, replacing the removed `TimelineItemParts` type.
+- `messagesKey` carries what a `ConfigProvider` hands down, `{ messages, i18n }`, instead of the merged catalog, so each component ships only its own strings. `useUiMessages()` still returns the whole catalog.
 
 These components render different DOM, which your selectors or tests may rely on. Their props, slots and events are unchanged.
 
