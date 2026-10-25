@@ -200,7 +200,7 @@ const VALUES = [
   { name: 'clipPath', sample: "'inset(0 0 100% 0)'", hint: 'string' },
   { name: 'filter', sample: "'saturate(0)'", hint: 'string' },
 ]
-const EASES = ['out', 'in-out', 'drawer', 'pop', 'toast', 'indicator', 'number', 'text']
+const EASES = ['out', 'in-out', 'drawer', 'pop', 'bounce', 'toast', 'indicator', 'number', 'text']
 const DURATIONS = [
   'press',
   'enter',
@@ -400,7 +400,7 @@ const UNITS = [
 
 // ─── Tokens, read live: a preset in the header rewrites them ────────────────
 const DURATION_TOKENS = ['press', 'enter', 'exit', 'tooltip', 'toast', 'drawer', 'drawer-exit']
-const EASE_TOKENS = ['out', 'in-out', 'drawer', 'pop', 'toast', 'number']
+const EASE_TOKENS = ['out', 'in-out', 'drawer', 'pop', 'bounce', 'toast', 'number']
 const tokensEl = useTemplateRef<HTMLElement>('tokensEl')
 const durations = shallowRef(
   DURATION_TOKENS.map((name) => ({ name: `--ui-duration-${name}`, ms: 0 })),
@@ -425,8 +425,20 @@ function curveOf(raw: string): string {
   const points: [number, number][] = []
   const linear = /^linear\((.*)\)$/s.exec(easing)
   if (linear) {
-    const stops = linear[1]!.split(',').map((part) => Number.parseFloat(part))
-    stops.forEach((y, i) => points.push([i / Math.max(1, stops.length - 1), y]))
+    // Each stop's own position when it has one (`0.5 40%`); the rest spread between, as CSS does.
+    const stops = linear[1]!.split(',').map((part) => {
+      const [y, at] = part.trim().split(/\s+/)
+      return { y: Number.parseFloat(y!), x: at ? Number.parseFloat(at) / 100 : undefined }
+    })
+    stops[0]!.x ??= 0
+    stops[stops.length - 1]!.x ??= 1
+    stops.forEach((stop, i) => {
+      if (stop.x !== undefined) return
+      const next = stops.findIndex((s, j) => j > i && s.x !== undefined)
+      const from = stops[i - 1]!.x!
+      stop.x = from + (stops[next]!.x! - from) / (next - i + 1)
+    })
+    for (const stop of stops) points.push([stop.x!, stop.y])
   } else {
     const bezier = /cubic-bezier\(([^)]*)\)/.exec(easing)
     const [x1, y1, x2, y2] = bezier

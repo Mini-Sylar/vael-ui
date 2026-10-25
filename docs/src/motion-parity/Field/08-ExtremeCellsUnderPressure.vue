@@ -11,7 +11,8 @@
       The last row is a hand-built <code>&lt;input&gt;</code> that joins through
       <code>data-ui-frame</code> and Field's <code>data-join-*</code> and
       <code>data-focused</code> attributes (see Advanced in the styling guide). The copy button
-      swaps its icon with <code>v-animate</code>, and the email field shakes when Error turns on.
+      swaps its icon with <code>v-animate</code>: the old one turns away in place as the new one
+      springs in.
     </p>
     <div class="toolbar">
       <SelectButton v-model="size" :items="sizes" size="sm" :allow-empty="false" />
@@ -35,7 +36,6 @@
         attached
         :label-width="132"
         :error="invalid ? 'That address bounced last month.' : undefined"
-        :motion="shake"
       >
         <Input v-model="email" type="email" :size="size" />
         <template #append>
@@ -46,11 +46,7 @@
             :aria-label="copied ? 'Copied' : 'Copy email'"
             @click="copy"
           >
-            <span class="icon-swap">
-              <!-- Spans, not the icons: an SVG element gets no exit. -->
-              <span v-if="copied" v-animate="iconSwap"><PhCheck weight="bold" /></span>
-              <span v-else v-animate="iconSwap"><PhCopy weight="bold" /></span>
-            </span>
+            <component :is="copied ? PhCheck : PhCopy" v-animate="swap" weight="bold" />
           </Button>
         </template>
       </Field>
@@ -86,7 +82,6 @@ import {
   Textarea,
   vAnimate,
 } from 'vael-ui'
-import type { FieldMotion } from 'vael-ui'
 import { PhCheck, PhCopy, PhStack } from '@phosphor-icons/vue'
 
 const sizes = [
@@ -117,17 +112,13 @@ const plans = [
 const notes = shallowRef('Type a few lines: the cells stretch with the Textarea as it grows.')
 const tag = shallowRef('')
 
-// Both icons sit in one grid cell: one springs in as the other turns away.
-const iconSwap = {
-  initial: {
-    scale: 0.85,
-    opacity: 0,
-    rotate: { value: '-60deg', spring: { damping: 0.55, response: 0.35 } },
-  },
-  exit: { scale: 0.85, opacity: 0, rotate: '60deg' },
+// Swaps only: the icon that's there at first render shows as it is.
+const swap = {
+  appear: 'later' as const,
+  initial: { scale: 0.4, opacity: 0, rotate: -45 },
+  exit: { scale: 0.4, opacity: 0, rotate: 45 },
+  spring: { damping: 0.6, response: 0.3 },
 }
-// The control jolts side to side when the field turns invalid.
-const shake: FieldMotion = { states: { invalid: { control: { x: [0, -6, 6, -3, 0] } } } }
 
 const copied = shallowRef(false)
 let resetTimer: ReturnType<typeof setTimeout> | undefined
@@ -160,14 +151,6 @@ function copy() {
 /* Theming one field's cell through the ui prop. */
 .stage :deep(.cell-accent) {
   color: var(--ui-primary);
-}
-.icon-swap {
-  display: inline-grid;
-  place-items: center;
-}
-.icon-swap > * {
-  display: grid;
-  grid-area: 1 / 1;
 }
 /* A hand-built control: unlayered CSS beats Field's layered join rules, so it reads Field's state hooks itself. */
 .own-frame {

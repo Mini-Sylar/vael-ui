@@ -94,6 +94,7 @@ watch(
       gsap.to(arrow, {
         rotation: 0,
         opacity: 1,
+        scale: 1,
         transformOrigin: '50% 50%',
         duration: 0.3,
         ease: 'power3.out',

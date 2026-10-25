@@ -2,11 +2,11 @@
   <section class="demo">
     <h3>Extreme: panels open and their rows stagger in (GSAP)</h3>
     <p class="note">
-      With <code>:motion="false"</code>, Accordion leaves the panel height to you, and you animate
-      each item’s exposed <code>panelEl</code>. The opening panel grows to its full height while its
-      rows fade up one after another, and the chevron in the <code>#trigger</code> slot turns with
-      it. One timeline opens one item and closes the other, so the list’s total height changes
-      smoothly.
+      With <code>:motion="false"</code>, Accordion leaves the panel height and the chevron to you,
+      and you animate each item’s exposed <code>panelEl</code> and <code>chevronEl</code>. The
+      opening panel grows to its full height while its rows fade up one after another, and the
+      chevron turns with it. One timeline opens one item and closes the other, so the list’s total
+      height changes smoothly.
     </p>
     <Accordion v-model:value="openItem" :motion="false" class="reveal-accordion">
       <AccordionItem
@@ -14,29 +14,9 @@
         :key="section.value"
         :ref="(item) => track(section.value, item)"
         :value="section.value"
+        :title="section.title"
         :ui="{ panel: 'reveal-panel' }"
       >
-        <template #trigger="{ open }">
-          <span class="reveal-title">{{ section.title }}</span>
-          <svg
-            :ref="(el) => trackChevron(section.value, el)"
-            class="reveal-chevron"
-            :class="{ 'is-open': open }"
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            aria-hidden="true"
-            fill="none"
-          >
-            <path
-              d="M4 6l4 4 4-4"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </template>
         <ul class="reveal-rows">
           <li v-for="row in section.rows" :key="row" data-reveal>{{ row }}</li>
         </ul>
@@ -69,23 +49,18 @@ const sections = [
 ]
 const openItem = shallowRef<string | null>('shipping')
 
-type ItemHandle = { panelEl: HTMLElement | null }
+type ItemHandle = { panelEl: HTMLElement | null; chevronEl: SVGSVGElement | null }
 const items = new Map<string, ItemHandle>()
-const chevrons = new Map<string, SVGElement>()
 function track(value: string, item: unknown) {
   if (item) items.set(value, item as ItemHandle)
   else items.delete(value)
-}
-function trackChevron(value: string, el: unknown) {
-  if (el) chevrons.set(value, el as SVGElement)
-  else chevrons.delete(value)
 }
 
 const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const rowsOf = (panel: HTMLElement) => panel.querySelectorAll<HTMLElement>('[data-reveal]')
 
 // Chevron angles live here, not in GSAP's transform cache, so an interrupted turn resumes from
-// the angle on screen. The chevron rests on its CSS `rotate`, which the draw overrides inline.
+// the angle on screen. The chevron rests on its CSS `transform`, which the draw overrides inline.
 const angle = new Map<string, number>()
 const moving = new Set<string>()
 let reveal: gsap.core.Timeline | null = null
@@ -96,7 +71,7 @@ function release(value: string) {
     for (const prop of ['height', 'overflow', 'visibility']) panel.style.removeProperty(prop)
     gsap.set(rowsOf(panel), { clearProps: 'opacity,transform' })
   }
-  chevrons.get(value)?.style.removeProperty('rotate')
+  items.get(value)?.chevronEl?.style.removeProperty('transform')
   angle.delete(value)
   moving.delete(value)
 }
@@ -124,15 +99,14 @@ watch(openItem, async (next, prev) => {
   }
   await nextTick()
 
-  const opening = next !== null
-  // A lone close runs faster. In a swap both heights share one duration and ease, so the
-  // growing and shrinking panels always add up to a smooth total.
-  const heightDuration = opening ? 0.3 : 0.2
+  // One pace both ways, as Accordion's own motion. In a swap both heights share it, so the growing
+  // and shrinking panels always add up to a smooth total.
+  const heightDuration = 0.3
   const tl = gsap.timeline({ onComplete: () => involved.forEach(release) })
 
   for (const value of involved) {
     const panel = items.get(value)?.panelEl
-    const chevron = chevrons.get(value)
+    const chevron = items.get(value)?.chevronEl
     const start = from.get(value)
     if (!panel || !chevron || !start) continue
     const open = value === next
@@ -145,7 +119,7 @@ watch(openItem, async (next, prev) => {
     panel.style.height = `${start.height}px`
     const turn = { deg: start.angle }
     const draw = () => {
-      chevron.style.rotate = `${turn.deg}deg`
+      chevron.style.transform = `rotate(${turn.deg}deg)`
       angle.set(value, turn.deg)
     }
     draw()
@@ -191,16 +165,6 @@ watch(openItem, async (next, prev) => {
   height: 0;
   overflow: hidden;
   visibility: hidden;
-}
-.reveal-title {
-  flex: 1 1 auto;
-}
-.reveal-chevron {
-  flex: none;
-  color: var(--ui-text-muted);
-}
-.reveal-chevron.is-open {
-  rotate: 180deg;
 }
 .reveal-rows {
   display: grid;

@@ -4,10 +4,10 @@
     <p class="note">
       The <code>#day</code> slot shows each day's fare, colored from cheap to pricey, with a dot on
       the best deals. Every day is <code>v-animate</code> markup: a new month falls in on a diagonal
-      wave (<code>delay</code> from the cell's place, <code>replay</code> on the date), departure
-      and return spring up to the size CSS gives a picked day (<code>replay</code> on the pick), and
-      a finished trip ripples its fares from one end to the other. <code>:motion="false"</code>
-      turns off the built-in slide so the two don't fight.
+      wave (<code>delay</code> from the cell's place), departure and return spring up through
+      <code>animate</code>, and a finished trip ripples its fares from one end to the other with
+      <code>replay</code>. <code>:motion="false"</code> turns off the built-in slide so the two
+      don't fight.
     </p>
     <div class="fare">
       <Calendar
@@ -23,9 +23,8 @@
           <span v-animate="fall(date)" class="fare-day">
             <!-- Departure and return pop when picked. -->
             <span
-              v-animate="pop(date, isSelected)"
+              v-animate="{ animate: { scale: isSelected ? 1.14 : 1 }, spring: pop }"
               class="fare-stack"
-              :data-picked="isSelected || undefined"
             >
               <span class="fare-date" :class="{ 'fare-today': isToday }">{{ date.getDate() }}</span>
               <!-- A finished trip ripples its fares from departure to return. -->
@@ -52,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { Calendar, vAnimate } from 'vael-ui'
 import type { CalendarRange } from 'vael-ui'
 
@@ -83,50 +82,23 @@ function wave(date: Date): number {
   return (row + column) * 0.028
 }
 // motion-v's springs in vael-ui's terms: damping is 1 − bounce, response is 1.2 × visualDuration.
-// Replays whenever a cell shows a different date, which is every month change. `when: 'visible'`
-// plays the first wave once seen: the row mounts mid-scroll, when on-mount appearances are skipped.
+// `when: 'visible'`: mounted mid-scroll, where on-mount appearances are skipped, it waits to be seen.
 const fall = (date: Date) => ({
   initial: { opacity: 0, y: -14, scale: 0.6, blur: 6 },
   spring: { damping: 0.65, response: 0.54 },
   delay: wave(date),
-  replay: date.getTime(),
   when: 'visible' as const,
 })
-// Days just picked or unpicked: only these move, from the scale they had to the one CSS gives now.
-const flipped = shallowRef(new Set<number>())
-watch(
-  () => [trip.value?.start?.getTime(), trip.value?.end?.getTime()],
-  (now, was = []) => {
-    flipped.value = new Set(
-      [...now, ...was].filter((t): t is number => t != null && now.includes(t) !== was.includes(t)),
-    )
-  },
-)
-const pop = (date: Date, picked: boolean) => ({
-  initial: flipped.value.has(date.getTime()) ? { scale: picked ? 1 : 1.14 } : undefined,
-  spring: { damping: 0.45, response: 0.36 },
-  replay: picked,
-})
-
-// Each finished trip gets a new id, which remounts its fares so they ripple again.
-const tripId = shallowRef(0)
-watch(
-  () => trip.value?.end,
-  (end) => end && tripId.value++,
-)
-function inTrip(date: Date): boolean {
-  const { start, end } = trip.value ?? {}
-  return !!start && !!end && date >= start && date <= end
-}
-// In-trip fares replay on each finished trip; others never do.
+const pop = { damping: 0.45, response: 0.36 }
+// Fares inside a finished trip ripple from departure to return, again for each new return.
 function ripple(date: Date) {
-  const start = trip.value?.start
-  const inside = inTrip(date)
+  const { start, end } = trip.value ?? {}
+  if (!start || !end || date < start || date > end) return undefined
   return {
-    initial: inside ? { opacity: 0, y: 5, scale: 0.4 } : undefined,
+    initial: { opacity: 0, y: 5, scale: 0.4 },
     spring: { damping: 0.5, response: 0.48 },
-    delay: inside && start ? Math.min((date.getTime() - start.getTime()) / DAY, 20) * 0.03 : 0,
-    replay: inside ? tripId.value : 0,
+    delay: Math.min((date.getTime() - start.getTime()) / DAY, 20) * 0.03,
+    replay: end,
   }
 }
 
@@ -184,10 +156,6 @@ const summary = computed(() => {
   flex-direction: column;
   align-items: center;
   gap: 0.125rem;
-}
-/* Departure and return stay a size up; v-animate springs them there. */
-.fare-stack[data-picked] {
-  scale: 1.14;
 }
 
 .fare-date {

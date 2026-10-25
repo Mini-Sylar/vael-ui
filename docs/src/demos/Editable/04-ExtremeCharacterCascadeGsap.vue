@@ -62,15 +62,15 @@ function cascade() {
 function flash(index: number) {
   const row = rowEls[index]
   if (!row) return
-  gsap.fromTo(
-    row,
-    { backgroundColor: 'color-mix(in oklab, var(--ui-primary) 18%, transparent)' },
-    { backgroundColor: 'transparent', duration: 0.8, ease: 'power2.out' },
-  )
+  // GSAP can't read color-mix(): it tweens the share of the tint, and CSS mixes it.
+  gsap.fromTo(row, { '--tint': 18 }, { '--tint': 0, duration: 0.8, ease: 'power2.out' })
 }
 </script>
 
 <style scoped>
+.sheet tr {
+  background: color-mix(in oklab, var(--ui-primary) calc(var(--tint, 0) * 1%), transparent);
+}
 .title {
   display: inline-flex;
   font-size: 1.5rem;

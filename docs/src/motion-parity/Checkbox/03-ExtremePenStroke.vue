@@ -153,15 +153,13 @@ const tick = (id: string): CheckboxMotion => {
   }
 }
 
-// Draws in from the left; leaves into its far end, as GSAP's origin-right retract does.
+// Draws in from the left and leaves into its far end, as GSAP's origin-right retract does, both by
+// clipping: a stroke caught partway leaves from where it is, and one that never began stays unseen.
 const leave = { duration: 220, easing: 'cubic-bezier(0.55, 0.055, 0.675, 0.19)' }
 const strike = (id: string) => ({
   appear: 'later' as const,
-  initial: { scale: '0 1' },
-  exit: {
-    transformOrigin: { value: 'right', duration: 0 },
-    scale: { value: '0 1', ...leave },
-  },
+  initial: { clipPath: 'inset(0 100% 0 0)' },
+  exit: { clipPath: { value: 'inset(0 0 0 100%)', ...leave } },
   duration: 360,
   easing: 'cubic-bezier(0.645, 0.045, 0.355, 1)',
   delay: 0.14 + (wait.value[id] ?? 0),
@@ -220,7 +218,8 @@ const burst = (id: string) => ({
   block-size: 1.5px;
   border-radius: 1px;
   background: currentColor;
-  transform-origin: left;
+  /* Its resting clip, so the draw and the retract both have one to move from. */
+  clip-path: inset(0);
   pointer-events: none;
 }
 

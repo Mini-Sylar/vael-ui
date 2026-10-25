@@ -5,22 +5,25 @@
       Everything lives in Textarea's own slots: an avatar in <code>#start</code>, an attach button
       in <code>#bottom-start</code>, and the budget ring with Send in <code>#bottom-end</code>.
       <code>auto-grow</code> keeps the box the size of the message. <code>v-animate</code>'s
-      <code>animate</code> eases the ring per keystroke, warming near the limit, and
-      <code>states.invalid</code> shakes the box when you go over. The draft is drawn through
-      <code>#display</code> under a <code>layoutId</code> the new bubble's text shares, so Send
-      moves the text itself out of the box into the thread, while the bubble settles behind it with
-      a little give and the ones above slide with <code>layout</code>. Cmd or Ctrl with Enter sends.
+      <code>animate</code> eases the ring per keystroke, warming near the limit. The draft is drawn
+      through <code>#display</code> under a <code>layoutId</code> the new bubble's text shares, so
+      Send moves the text itself out of the box into the thread, while the bubble settles behind it
+      with a little give. Cmd or Ctrl with Enter sends.
     </p>
     <div class="thread">
       <div class="bubbles">
-        <div v-for="message in sent" :key="message.id" v-animate="{ layout: true }" class="bubble">
+        <div v-for="(text, i) in sent" :key="i" v-animate="bubble" class="bubble">
           <span v-animate="landing" class="bubble-fill" aria-hidden="true" />
           <span
-            v-animate="{ ...travel, layoutId: `message-${message.id}`, layout: 'position' }"
+            v-animate="{
+              layoutId: `message-${i}`,
+              layout: 'position',
+              duration: 450,
+              easing: 'in-out',
+            }"
             class="bubble-text"
+            >{{ text }}</span
           >
-            <span v-animate="ink">{{ message.text }}</span>
-          </span>
         </div>
       </div>
       <Textarea
@@ -32,12 +35,13 @@
         placeholder="Write a message"
         aria-label="Message"
         :invalid="over"
-        :motion="shake"
         class="composer"
         @keydown="onKeydown"
       >
         <template #display="{ value, placeholder }">
-          <span v-if="value" v-animate="draftLook" class="draft">{{ value }}</span>
+          <span v-if="value" v-animate="{ layoutId: `message-${sent.length}` }" class="draft">{{
+            value
+          }}</span>
           <span v-else class="placeholder">{{ placeholder }}</span>
         </template>
         <template #start>
@@ -49,7 +53,7 @@
         <template #bottom-end>
           <svg class="budget" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
             <circle cx="12" cy="12" r="10" class="budget-track" />
-            <circle v-animate="{ animate: ringLook }" cx="12" cy="12" r="10" class="budget-fill" />
+            <circle v-animate="ring" cx="12" cy="12" r="10" class="budget-fill" />
           </svg>
           <span class="demo-status count">{{ draft.length }}/{{ LIMIT }}</span>
           <Button size="sm" :disabled="!draft.trim() || over" @click="send">Send</Button>
@@ -62,48 +66,38 @@
 <script setup lang="ts">
 import { computed, shallowRef, useTemplateRef } from 'vue'
 import { Button, Textarea, vAnimate } from 'vael-ui'
-import type { TextareaMotion } from 'vael-ui'
 
 const LIMIT = 140
 const CIRCUMFERENCE = 2 * Math.PI * 10
 const draft = shallowRef('')
-const sent = shallowRef<{ id: number; text: string }[]>([])
+const sent = shallowRef<string[]>([])
 const composer = useTemplateRef<InstanceType<typeof Textarea>>('composer')
 const over = computed(() => draft.value.length > LIMIT)
 
-// The ring eases to each keystroke instead of stepping (300ms, GSAP's power2.out), and its colour
-// follows the budget the same way.
-const ringEase = { duration: 300, easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)' }
-const ringLook = computed(() => {
+// The ring eases to each keystroke (GSAP's power2.out), its colour warming near the limit.
+const ring = computed(() => {
   const used = Math.min(1, draft.value.length / LIMIT)
-  const stroke =
-    used > 0.9 ? 'var(--ui-danger)' : used > 0.7 ? 'var(--ui-warning)' : 'var(--ui-primary)'
   return {
-    strokeDashoffset: { value: CIRCUMFERENCE * (1 - used), ...ringEase },
-    stroke: { value: stroke, ...ringEase },
+    animate: {
+      strokeDashoffset: CIRCUMFERENCE * (1 - used),
+      stroke:
+        used > 0.9 ? 'var(--ui-danger)' : used > 0.7 ? 'var(--ui-warning)' : 'var(--ui-primary)',
+    },
+    duration: 300,
+    easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)',
   }
 })
-
-// Going over the limit gives the box a quick shake.
-const shake: TextareaMotion = {
-  states: { invalid: { root: { x: [0, -6, 6, -3, 0] } } },
+// Slides if the thread moves; its text turns from the composer's ink to its own as it lands.
+const bubble = {
+  layout: true,
+  initial: { color: { value: 'var(--ui-text)', delay: 0.3, duration: 450 } },
 }
-// The draft and the bubble's text share a layoutId: Send moves the text from the box to the thread.
-let nextId = 0
-const pending = shallowRef(nextId)
-const draftLook = computed(() => ({ layoutId: `message-${pending.value}` }))
-// GSAP's power3.inOut, sampled.
-const POWER3_IN_OUT =
-  'linear(0, 0.0001, 0.0008, 0.004, 0.0128, 0.0313, 0.0648, 0.12, 0.2048, 0.3281, 0.5, 0.672, 0.7952, 0.88, 0.9352, 0.9688, 0.9872, 0.996, 0.9992, 1, 1)'
-const travel = { duration: 450, easing: POWER3_IN_OUT }
-// The bubble grows in behind the text as it lands, on a spring with GSAP's back.out(1.4) give; the
-// text turns to the bubble's ink on the way.
+// The fill grows in behind the arriving text, with GSAP's back.out(1.4) give.
 const landing = {
   initial: { opacity: 0, scale: 0.92 },
   delay: 0.3,
   spring: { damping: 0.64, response: 0.36 },
 }
-const ink = { initial: { color: 'var(--ui-text)' }, delay: 0.3, duration: 450 }
 
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -115,8 +109,7 @@ function onKeydown(event: KeyboardEvent) {
 function send() {
   const text = draft.value.trim()
   if (!text || over.value) return
-  sent.value = [...sent.value, { id: pending.value, text }]
-  pending.value = ++nextId
+  sent.value = [...sent.value, text]
   draft.value = ''
   composer.value?.textareaEl?.focus()
 }

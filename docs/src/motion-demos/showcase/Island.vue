@@ -61,8 +61,8 @@ const style: MotionStyle = {
 const layers = ['shapes', 'ink']
 const activities = ['idle', 'call', 'timer', 'music'] as const
 const activity = shallowRef<(typeof activities)[number]>('idle')
-// A shape arriving at a new size: a touch of bounce.
-const spring = { spring: { damping: 0.72, response: 0.42 } }
+// A shape arriving at a new size rings past it and settles, as Apple's island does.
+const spring = { spring: { damping: 0.62, response: 0.5 } }
 // Follows its content's size, growing around its middle.
 const island = spring
 // Out of the island's edge, and back into it the same way.
@@ -94,9 +94,11 @@ const content = {
   gap: 1.5rem;
   min-block-size: 12rem;
 }
+/* As tall as the tallest activity: the island grows around its middle and moves nothing below. */
 .stage {
   display: grid;
-  justify-items: center;
+  place-items: center;
+  min-block-size: 5rem;
 }
 /* Positioned: the bubble hangs off it, and the ink paints over the filtered shapes at rest. */
 .layer {

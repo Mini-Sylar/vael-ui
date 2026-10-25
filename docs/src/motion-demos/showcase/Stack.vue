@@ -9,8 +9,8 @@
       tabindex="0"
       role="group"
       aria-label="Notifications"
-      @pointerenter="open = true"
-      @pointerleave="open = false"
+      @pointerenter="hover(true)"
+      @pointerleave="hover(false)"
       @focusin="open = true"
       @focusout="open = false"
       @click="open = !open"
@@ -43,6 +43,13 @@ const notes = [
   { title: 'Invite accepted', text: 'Theo joined the workspace.', icon: PhUsers },
 ]
 const open = shallowRef(false)
+// Closes a beat after the pointer leaves: a hand resting on a card's edge doesn't flicker it.
+let closing: ReturnType<typeof setTimeout> | undefined
+function hover(on: boolean) {
+  clearTimeout(closing)
+  if (on) open.value = true
+  else closing = setTimeout(() => (open.value = false), 100)
+}
 const spring = { spring: { damping: 0.85, response: 0.32 } }
 // layout: each card slides to wherever the layout puts it.
 const card = { layout: true, ...spring }

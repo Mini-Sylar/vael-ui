@@ -3,58 +3,55 @@
     <h3>Extreme: a ticker that flashes its direction</h3>
     <p class="note">
       AnimatedNumber's <code>motion</code> sets the roll's duration and a slightly overshooting
-      curve. Each change also replays two <code>v-animate</code> entrances through
-      <code>replay</code>: the price swells and settles, and the arrow kicks in from the side it
-      moved.
+      curve. Two <code>v-animate</code>s replay on each new <code>value</code>: the price swells and
+      settles, and the arrow kicks in from the side it moved.
     </p>
     <div class="ticker">
       <span class="symbol">ACME</span>
-      <span v-animate="swell" class="swell">
-        <AnimatedNumber
-          :value="value"
-          :format="{ style: 'currency', currency: 'USD' }"
-          :motion="roll"
-          class="price"
-          :data-trend="trend"
-        />
-      </span>
-      <span v-animate="kick" class="arrow" :data-trend="trend" aria-hidden="true">▲</span>
+      <AnimatedNumber
+        v-animate="{
+          initial: { scale: 1.04 },
+          duration: 400,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+          replay: value,
+          appear: false,
+        }"
+        :value="value"
+        :format="{ style: 'currency', currency: 'USD' }"
+        :motion="{ duration: 450, easing: 'pop' }"
+        class="price"
+        :data-trend="trend"
+      />
+      <span
+        v-animate="{
+          initial: { y: trend === 'up' ? 6 : -6, opacity: 0 },
+          spring: { damping: 0.4, response: 0.32 },
+          replay: value,
+          appear: false,
+        }"
+        class="arrow"
+        :data-trend="trend"
+        aria-hidden="true"
+        >▲</span
+      >
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onScopeDispose, shallowRef } from 'vue'
+import { onScopeDispose, shallowRef } from 'vue'
 import { AnimatedNumber, vAnimate } from 'vael-ui'
-import type { AnimatedNumberMotion } from 'vael-ui'
 
 const value = shallowRef(184.32)
 const trend = shallowRef<'up' | 'down'>('up')
-const ticks = shallowRef(0)
 
 function tick() {
   const change = Math.round((Math.random() - 0.45) * 600) / 100
   trend.value = change >= 0 ? 'up' : 'down'
   value.value = Math.max(1, Math.round((value.value + change) * 100) / 100)
-  ticks.value++
 }
 const timer = setInterval(tick, 1400)
 onScopeDispose(() => clearInterval(timer))
-
-const roll: AnimatedNumberMotion = { duration: 450, easing: 'pop' }
-
-// Both replay on each tick; the arrow starts on the side it moved from and overshoots about 25%.
-const swell = computed(() => ({
-  initial: { scale: 1.04 },
-  duration: 400,
-  easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
-  replay: ticks.value,
-}))
-const kick = computed(() => ({
-  initial: { y: trend.value === 'up' ? 6 : -6, opacity: 0 },
-  spring: { damping: 0.4, response: 0.32 },
-  replay: ticks.value,
-}))
 </script>
 
 <style scoped>
@@ -72,10 +69,6 @@ const kick = computed(() => ({
   font-weight: 600;
   letter-spacing: 0.04em;
 }
-.swell {
-  display: inline-block;
-}
-/* On the number, not the swell: the swell's own transition would replace it. */
 .price {
   font-size: 2rem;
   font-weight: 600;
@@ -92,5 +85,8 @@ const kick = computed(() => ({
 .arrow {
   display: inline-block;
   font-size: 0.875rem;
+}
+.arrow[data-trend='down'] {
+  rotate: 180deg;
 }
 </style>

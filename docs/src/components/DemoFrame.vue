@@ -15,7 +15,7 @@
         <h3 :id="anchorOf(example)" class="demo-pair-title">
           <a :href="`#${anchorOf(example)}`">{{ example.title }}</a>
         </h3>
-        <div class="demo-pair-sides" :data-twin="example.twin ? '' : undefined">
+        <div :ref="fitPair" class="demo-pair-sides" :data-twin="example.twin ? '' : undefined">
           <div class="demo-pair-side">
             <p v-if="example.twin" class="demo-pair-label">
               {{
@@ -37,10 +37,49 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount } from 'vue'
 import type { Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DemoExampleBlock from './DemoExampleBlock.vue'
+
+// A pair whose demo needs more than half the width (a two-month calendar) stacks, the twin under
+// the original. The width it needed is remembered, so stacking (where it then fits) can't undo it.
+const needed = new WeakMap<Element, number>()
+const watching = new Set<Element>()
+const observer =
+  typeof ResizeObserver === 'undefined'
+    ? undefined
+    : new ResizeObserver((entries) => {
+        for (const { target } of entries) {
+          const sides = target.closest('.demo-pair-sides')
+          if (sides) fit(sides as HTMLElement)
+        }
+      })
+function fit(sides: HTMLElement) {
+  let need = needed.get(sides) ?? 0
+  for (const preview of sides.querySelectorAll<HTMLElement>('.demo-preview'))
+    if (preview.scrollWidth > preview.clientWidth + 1) need = Math.max(need, preview.scrollWidth)
+  needed.set(sides, need)
+  const gap = parseFloat(getComputedStyle(sides).columnGap) || 0
+  sides.toggleAttribute('data-stacked', need > (sides.clientWidth - gap) / 2)
+}
+function fitPair(el: unknown) {
+  if (!(el instanceof HTMLElement) || !observer || watching.has(el)) return
+  watching.add(el)
+  observer.observe(el)
+  // What each preview shows, as it mounts and changes size.
+  for (const preview of el.querySelectorAll('.demo-preview')) {
+    observer.observe(preview)
+    new MutationObserver(() => {
+      for (const child of preview.children) observer.observe(child)
+    }).observe(preview, { childList: true, subtree: false })
+    for (const child of preview.children) observer.observe(child)
+  }
+}
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  watching.clear()
+})
 
 export interface DemoExample {
   id: string
@@ -114,10 +153,13 @@ const anchorOf = (example: DemoExample) =>
   font-weight: 600;
 }
 
-/* Side by side once there's room for both to breathe. */
+/* Side by side once there's room for both to breathe, unless a demo needs more than half. */
 @container (min-width: 52rem) {
   .demo-pair-sides[data-twin] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .demo-pair-sides[data-twin][data-stacked] {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

@@ -2,20 +2,19 @@
   <section class="demo">
     <h3>Extreme: groups in motion</h3>
     <p class="note">
-      Every group is a real element (<code>ui.group</code>), so is its label
-      (<code>ui.groupLabel</code>) and each option (<code>ui.option</code>). The panel's own look is
-      one line of <code>motion</code>; inside it, <code>v-animate</code> does the rest. On open,
-      each label wipes in behind its accent bar and its options rise in after it. While you search,
-      the options and labels that stay glide to their new places with <code>layout</code>, and each
-      count pops when it changes with <code>replay</code>. Reduced motion keeps the fades and drops
-      the movement.
+      <code>ui.group</code>, <code>ui.groupLabel</code> and <code>ui.option</code> give each group,
+      label and option a class, and <code>targets</code> in <code>motion</code> reach them with
+      <code>select</code>. On open, each label wipes in behind its accent bar and its options rise
+      in after it. While you search, <code>v-animate</code> with <code>layout</code> glides the
+      labels and options that stay, and <code>appear: 'later'</code> brings back the ones that
+      return (not the ones there as it opens). Each count pops when it changes with
+      <code>replay</code>. Closing fades the panel, its content with it. Reduced motion keeps the
+      fades and drops the movement.
     </p>
     <div class="row">
       <Field label="Tool">
         <Select
           v-model="tool"
-          v-model:open="open"
-          v-model:query="query"
           :items="toolGroups"
           filter
           :motion="panelMotion"
@@ -28,13 +27,8 @@
           }"
         >
           <template #group-label="{ group, items: shown }">
-            <span v-animate:label="searched ? arrive : label" class="label-body">
-              <span
-                v-animate:accent="searched ? undefined : accent"
-                class="accent"
-                :style="{ background: group.accent }"
-                aria-hidden="true"
-              />
+            <span v-animate="rows" class="label-body">
+              <span class="accent" :style="{ background: group.accent }" aria-hidden="true" />
               <span class="name">{{ group.label }}</span>
               <span v-animate="{ ...count, replay: shown.length }" class="count">{{
                 shown.length
@@ -42,7 +36,7 @@
             </span>
           </template>
           <template #item="{ item, selected, group }">
-            <span v-animate:option="searched ? arrive : option" class="option-body">
+            <span v-animate="rows" class="option-body">
               <component
                 :is="group?.icon"
                 class="tool-icon"
@@ -61,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef, watch } from 'vue'
+import { shallowRef } from 'vue'
 import { Field, Select, vAnimate } from 'vael-ui'
 import type { SelectMotion } from 'vael-ui'
 import { PhChatsCircle, PhCheck, PhCode, PhFileText, PhPaintBrush } from '@phosphor-icons/vue'
@@ -110,74 +104,45 @@ const toolGroups = [
 ]
 
 const tool = shallowRef<string | null>(null)
-const open = shallowRef(false)
-const query = shallowRef('')
-// Once you search, rows that come back just rise in; the opening's wipe and stagger are done.
-const searched = shallowRef(false)
-watch(query, () => (searched.value = open.value))
-watch(open, () => (searched.value = false))
 
-// GSAP's power3.out (a quartic), the original's curve throughout, sampled: the usual cubic-bezier
-// stand-in is off by up to 4% of the move.
+// GSAP's power3.out (a quartic), sampled.
 const POWER3_OUT = `linear(${Array.from({ length: 21 }, (_, i) => 1 - (1 - i / 20) ** 4).join(', ')})`
-// Closing: 150ms on power2.out.
-const close = { duration: 150, easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)' }
-// The panel scales in; closing is a quick fade.
+// Labels wipe in 70ms apart, each accent growing with it.
+const wave = { stagger: 0.07, delay: 0.06, duration: 300, easing: POWER3_OUT }
+// Options stagger 30ms within their group, each group starting with its label.
+const starts = toolGroups.flatMap((group, g) => group.items.map((_, i) => g * 0.07 + i * 0.03))
+// Opening, on the parts `ui` marks: the panel scales in, labels wipe, options rise after them.
+// Closing fades the panel on vael-ui's exit token (150ms).
 const panelMotion: SelectMotion = {
   initial: { panel: { opacity: 0, scale: 0.96 } },
-  exit: { panel: { opacity: { value: 0, ...close }, scale: { value: 0.97, ...close } } },
+  exit: { panel: { opacity: 0, scale: 0.97 } },
   duration: 220,
   easing: POWER3_OUT,
+  targets: {
+    label: { ...wave, select: '.motion-label', initial: { clipPath: 'inset(0 100% 0 0)' } },
+    accent: { ...wave, select: '.accent', initial: { scale: '1 0' } },
+    option: {
+      ...wave,
+      select: '.motion-option',
+      initial: { opacity: 0, y: 8, blur: 2 },
+      stagger: (i) => starts[i]!,
+      delay: 0.11,
+      duration: 260,
+    },
+  },
 }
-// Labels wipe in one after another; `layout` glides the ones that stay when a search moves them.
-const label = {
-  initial: { clipPath: 'inset(0 100% 0 0)' },
-  stagger: 0.07,
-  delay: 0.06,
-  duration: 300,
-  easing: POWER3_OUT,
-  layout: true,
-  exit: false as const,
-}
-// Each accent bar grows down with its label.
-const accent = {
-  initial: { scale: '1 0' },
-  stagger: 0.07,
-  delay: 0.06,
-  duration: 300,
-  easing: POWER3_OUT,
-}
-// Options stagger within their group, each group starting with its label, as the original does.
-const sizes = toolGroups.map((group) => group.items.length)
-function optionAt(index: number, count: number) {
-  if (count !== sizes.reduce((sum, size) => sum + size)) return index * 0.03
-  let group = 0
-  while (index >= sizes[group]!) index -= sizes[group++]!
-  return group * 0.07 + index * 0.03
-}
-// Options rise in once their label has started, and glide the same way.
-const option = {
-  initial: { opacity: 0, y: 8, blur: 2 },
-  stagger: optionAt,
-  delay: 0.11,
-  duration: 260,
-  easing: POWER3_OUT,
-  layout: true,
-  exit: false as const,
-}
-// While searching, rows that stay glide 0.3s on power3.out; one that comes back rises in on GSAP's
-// default power1.out, and one filtered out goes at once.
+// Searching: rows that stay glide; one that comes back rises in on GSAP's default power1.out.
 const rise = { duration: 220, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }
-const arrive = {
-  initial: { opacity: { value: 0, ...rise }, y: { value: 6, ...rise } },
+const rows = {
+  layout: true,
+  appear: 'later' as const,
   duration: 300,
   easing: POWER3_OUT,
-  layout: true,
-  exit: false as const,
+  initial: { opacity: { value: 0, ...rise }, y: { value: 6, ...rise } },
 }
-// The count pops with the original's overshoot.
+// The count pops with the original's overshoot and colour flash.
 const count = {
-  initial: { scale: 1.5 },
+  initial: { scale: 1.5, color: 'var(--ui-text)' },
   duration: 260,
   easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
 }
@@ -224,11 +189,6 @@ const count = {
 
 <!-- The panel is teleported, so vael-ui's own parts are styled from here, outside the scoped styles. -->
 <style>
-.motion-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 .motion-group + .motion-group {
   margin-block-start: 0.375rem;
 }

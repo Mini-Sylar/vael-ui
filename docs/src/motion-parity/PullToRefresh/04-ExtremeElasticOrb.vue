@@ -3,33 +3,37 @@
     <h3>Extreme: an elastic orb</h3>
     <p class="note">
       The <code>#indicator</code> slot receives the pull's <code>state</code> and
-      <code>progress</code>. While you pull, a ring fills with your finger. Each part has a
-      <code>v-animate</code> whose <code>replay</code> follows the state: crossing the threshold
-      blips the orb and flips the arrow on a spring that rings past it, refreshing fades the arrow
-      and spins the orb (an <code>animate</code> turn that loops with <code>repeat</code>), and
-      finishing draws a check with a pulse.
+      <code>progress</code>. While you pull, a ring fills with your finger. Each part holds a
+      <code>v-animate</code> look per state and moves to the next one from wherever it is: past the
+      threshold the orb blips and the arrow flips on a spring that rings past it, refreshing shrinks
+      the arrow away and spins the orb, and finishing draws a check with a pulse.
     </p>
-    <PullToRefresh ref="ptr" class="ptr-box" :on-refresh="refresh">
+    <PullToRefresh class="ptr-box" :on-refresh="refresh">
       <template #indicator="{ state, progress }">
-        <div v-animate="orbMotion" class="orb">
-          <svg v-animate="spin" class="orb-svg" viewBox="0 0 48 48" aria-hidden="true">
+        <div v-animate="blip[state]" class="orb">
+          <svg
+            v-animate="{ animate: state === 'loading' ? SPIN : STILL }"
+            class="orb-svg"
+            viewBox="0 0 48 48"
+            aria-hidden="true"
+          >
             <circle class="orb-track" cx="24" cy="24" r="20" />
             <circle
-              v-animate="ringMotion"
+              v-animate="ring[state]"
               class="orb-ring"
               cx="24"
               cy="24"
               r="20"
               :stroke-dasharray="CIRCUMFERENCE"
-              :style="{ strokeDashoffset: CIRCUMFERENCE * (1 - ringFill(state, progress)) }"
+              :stroke-dashoffset="CIRCUMFERENCE * (1 - progress)"
               transform="rotate(-90 24 24)"
             />
-            <g v-animate="arrowMotion" class="orb-arrow" :style="arrowLook(state)">
+            <g v-animate="arrow[state]" class="orb-arrow">
               <path d="M24 15v16M17 25l7 7 7-7" />
             </g>
             <path
               v-if="state === 'done'"
-              v-animate="draw"
+              v-animate="DRAW"
               class="orb-check"
               d="M15.5 25.5l6 6 11-13"
               pathLength="1"
@@ -46,12 +50,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { shallowRef } from 'vue'
 import { PullToRefresh, vAnimate } from 'vael-ui'
-import type { AnimateDirectiveValue, PullToRefreshState, TargetMotion } from 'vael-ui'
+import type { AnimateDirectiveValue, MotionValues, PullToRefreshState } from 'vael-ui'
 
 const CIRCUMFERENCE = 2 * Math.PI * 20
-const ptr = useTemplateRef('ptr')
 
 const rows = shallowRef([
   'Design review',
@@ -67,95 +70,43 @@ async function refresh() {
   rows.value = [`New: ${new Date().toLocaleTimeString()}`, ...rows.value]
 }
 
-// GSAP's elastic.out(1, 0.45) as a spring that rings past; power2/power3 as beziers.
+// GSAP's power2 curves, and its elastic.out as a spring that rings past.
+const OUT = 'cubic-bezier(0.33, 1, 0.68, 1)'
+const IN = 'cubic-bezier(0.32, 0, 0.67, 0)'
 const ELASTIC = { damping: 0.4, response: 0.3 }
-const POWER2_OUT = 'cubic-bezier(0.33, 1, 0.68, 1)'
-const POWER3_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)'
-const POWER2_IN = 'cubic-bezier(0.32, 0, 0.67, 0)'
 
-// The ring follows your finger while pulling; refreshing it is a short arc, done it is whole.
-function ringFill(state: string, progress: number) {
-  if (state === 'loading') return 0.28
-  if (state === 'done') return 1
-  return progress
+// Each part holds a look per state and moves to the next from wherever it is on screen; a state
+// with no look snaps back to the part's own, as clearProps does.
+type Looks = Partial<Record<PullToRefreshState, AnimateDirectiveValue>>
+
+// Flipped past the threshold, shrunk away while refreshing and done, home again after.
+const home = { animate: { rotate: 0 }, duration: 300, easing: 'out' }
+const hidden = { animate: { rotate: 180, opacity: 0, scale: 0.4 }, duration: 200, easing: IN }
+const arrow: Record<PullToRefreshState, AnimateDirectiveValue> = {
+  idle: home,
+  pulling: home,
+  ready: { animate: { rotate: 180 }, spring: ELASTIC },
+  loading: hidden,
+  done: hidden,
 }
-// The arrow's resting look per state: flipped past the threshold, shrunk away while refreshing.
-function arrowLook(state: string) {
-  if (state === 'ready') return { rotate: '180deg' }
-  if (state === 'loading') return { rotate: '180deg', opacity: 0, scale: 0.4 }
-  if (state === 'done') return { opacity: 0 }
-  return {}
+// The ring follows your finger; refreshing shrinks it to an arc, finishing closes it.
+const ring: Looks = {
+  loading: { animate: { strokeDashoffset: CIRCUMFERENCE * 0.72 }, duration: 300, easing: OUT },
+  done: { animate: { strokeDashoffset: 0 }, duration: 250, easing: OUT },
 }
-
-// Each change of state replays the part's `initial`, from where it was to its new look.
-const state = shallowRef<PullToRefreshState>('idle')
-const before = shallowRef<PullToRefreshState>('idle')
-const turn = shallowRef(0)
-watch(
-  () => ptr.value?.state,
-  (next, previous) => {
-    if (!next) return
-    before.value = previous ?? 'idle'
-    state.value = next
-    turn.value++
-  },
-)
-
-// A quick blip as the threshold is crossed, and another as it finishes.
-const orbMotion = computed<TargetMotion>(() => {
-  if (state.value === 'ready')
-    return { replay: turn.value, initial: { scale: 1.28 }, duration: 40, easing: POWER2_OUT }
-  if (state.value === 'done')
-    return {
-      replay: turn.value,
-      initial: { scale: { value: [1, 1.2, 1], duration: 60, delay: 0.2 } },
-    }
-  return {}
-})
-const arrowMotion = computed<TargetMotion>(() => {
-  const s = state.value
-  if (s === 'ready') return { replay: turn.value, initial: { rotate: 0 }, spring: ELASTIC }
-  if (s === 'loading')
-    return {
-      replay: turn.value,
-      initial: { opacity: 1, scale: 1 },
-      duration: 200,
-      easing: POWER2_IN,
-    }
-  // Back from the threshold, or back after a refresh: it turns home and shows again.
-  if ((s === 'pulling' || s === 'idle') && (before.value === 'ready' || before.value === 'done'))
-    return {
-      replay: turn.value,
-      initial: { rotate: 180, opacity: before.value === 'done' ? 0 : 1 },
-      duration: 300,
-      easing: POWER3_OUT,
-    }
-  return {}
-})
-// Refreshing shrinks the ring to an arc; finishing closes it.
-const ringMotion = computed<TargetMotion>(() => {
-  const at = (fill: number, duration: number) => ({
-    replay: turn.value,
-    initial: {
-      strokeDashoffset: { value: CIRCUMFERENCE * (1 - fill), duration, easing: POWER2_OUT },
-    },
-  })
-  if (state.value === 'loading') return at(1, 300)
-  if (state.value === 'done') return at(0.28, 250)
-  return {}
-})
-
-// Refreshing, the orb turns once every 850ms until it's done, then stands straight at once.
-const spin = computed<AnimateDirectiveValue>(() => ({
-  animate:
-    state.value === 'loading'
-      ? { rotate: { value: [0, 360], duration: 850, easing: 'linear', repeat: Infinity } }
-      : { rotate: { value: 0, duration: 0 } },
-}))
-
-// The check draws itself in the moment it appears, and goes at once.
-const draw: TargetMotion = {
-  initial: { strokeDashoffset: { value: 1, duration: 350, easing: POWER2_OUT, delay: 0.1 } },
+// A blip as the threshold is crossed, and another as it finishes.
+const blip: Looks = {
+  ready: { animate: { scale: [1.28, 1] }, duration: 40, easing: OUT },
+  done: { animate: { scale: { value: [1, 1.2, 1], duration: 60, delay: 0.2 } } },
+}
+// Refreshing, the orb turns every 850ms; otherwise it stands straight at once.
+const SPIN: MotionValues = {
+  rotate: { value: [0, 360], duration: 850, easing: 'linear', repeat: Infinity },
+}
+const STILL: MotionValues = { rotate: { value: 0, duration: 0 } }
+// The check draws itself in as it appears, and goes at once.
+const DRAW: AnimateDirectiveValue = {
+  initial: { strokeDashoffset: { value: 1, duration: 350, easing: OUT, delay: 0.1 } },
   exit: false,
 }
 </script>

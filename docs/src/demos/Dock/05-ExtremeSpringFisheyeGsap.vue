@@ -4,8 +4,9 @@
     <p class="note">
       <code>:magnify="false"</code> turns off the built-in magnification, and
       <code>itemEls()</code> returns the item buttons. Here a spring per icon, stepped on GSAP’s
-      ticker, scales each one by its distance to the pointer and pushes its neighbors aside, so the
-      dock grows around the cursor. Clicking an app makes it bounce twice.
+      ticker, scales each one by its distance to the pointer and pushes its neighbors aside, and
+      <code>--ui-dock-spread</code> widens the bar by what they grew. Clicking an app makes it
+      bounce twice.
     </p>
     <div class="stage">
       <Dock
@@ -89,7 +90,7 @@ function step(_time: number, deltaMs: number) {
     grow += (s.scale - 1) * items[i]!.offsetWidth
   })
   // The bar widens with the icons, so the outer ones never hang off its ends.
-  dock.value?.el?.style.setProperty('--grow', `${grow}px`)
+  dock.value?.el?.style.setProperty('--ui-dock-spread', `${grow}px`)
   if (!moving) {
     gsap.ticker.remove(step)
     ticking = false
@@ -168,27 +169,5 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   padding-block: 2.5rem 0.5rem;
-}
-/* GSAP owns each icon's transform here, so the CSS transition would only smooth it a second time. */
-.stage :deep(.ui-dock-item) {
-  transition: none;
-}
-/* The bar is drawn behind the icons, widened by --grow as they swell. */
-.stage :deep(.ui-dock) {
-  position: relative;
-  isolation: isolate;
-  background: none;
-  border-color: transparent;
-  box-shadow: none;
-}
-.stage :deep(.ui-dock)::before {
-  content: '';
-  position: absolute;
-  inset: -1px calc(var(--grow, 0px) / -2 - 1px);
-  z-index: -1;
-  border: 1px solid var(--ui-border);
-  border-radius: inherit;
-  background: var(--ui-surface);
-  box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);
 }
 </style>
