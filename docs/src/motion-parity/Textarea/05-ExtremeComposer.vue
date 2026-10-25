@@ -65,7 +65,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, useTemplateRef } from 'vue'
-import { Button, Textarea, vAnimate } from 'vael-ui'
+import { Button, Textarea } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const LIMIT = 140
 const CIRCUMFERENCE = 2 * Math.PI * 10

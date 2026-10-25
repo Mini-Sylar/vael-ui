@@ -57,7 +57,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { Avatar, Button, Textarea, vAnimate } from 'vael-ui'
+import { Avatar, Button, Textarea } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhChartBar, PhImage, PhSmiley } from '@phosphor-icons/vue'
 
 const text = shallowRef('')

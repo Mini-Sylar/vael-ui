@@ -18,7 +18,8 @@
 
 <script setup lang="ts">
 import { onMounted, shallowRef, watch } from 'vue'
-import { Button, vAnimate } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhBoundingBox } from '@phosphor-icons/vue'
 
 const shown = defineModel<boolean>('shown', { default: false })

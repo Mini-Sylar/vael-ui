@@ -20,7 +20,8 @@
 
 <script setup lang="ts">
 import { computed, reactive, shallowRef } from 'vue'
-import { Button, Dialog, Input, vAnimate } from 'vael-ui'
+import { Button, Dialog, Input } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { DialogMotion } from 'vael-ui'
 
 const steps = [{ title: 'Name it' }, { title: 'Your role' }, { title: 'Team size' }]

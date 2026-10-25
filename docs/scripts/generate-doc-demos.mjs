@@ -157,6 +157,12 @@ function suppressKnownVaporDirectiveGaps(source) {
 // and `import type` lines are untouched: vapor's .d.ts re-exports the same types.
 function rewriteToVapor(source, vaporExportNames) {
   const importRe = /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui['"];?$/gm
+  // v-animate's Vapor form comes from vael-ui/motion too, as vAnimateVapor.
+  source = source.replace(
+    /^import\s+\{([^}]+)\}\s+from\s+['"]vael-ui\/motion['"]/gm,
+    (full, clause) =>
+      full.replace(clause, clause.replace(/\bvAnimate\b(?!\s+as)/, 'vAnimateVapor as vAnimate')),
+  )
   return source.replace(importRe, (full, namedClause) => {
     const names = namedClause
       .split(',')

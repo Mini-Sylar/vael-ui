@@ -17,7 +17,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { AnimatedText, Button, vAnimate } from 'vael-ui'
+import { AnimatedText, Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 const index = shallowRef(4)

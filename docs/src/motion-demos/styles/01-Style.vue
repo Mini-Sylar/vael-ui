@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Button, ConfigProvider, Dialog, SelectButton, Toaster, toast } from 'vael-ui'
-import type { MotionStyle } from 'vael-ui'
+import type { MotionStyle } from 'vael-ui/motion'
 
 const styles: Record<string, MotionStyle> = {
   calm: { version: 1, spring: 'smooth' },

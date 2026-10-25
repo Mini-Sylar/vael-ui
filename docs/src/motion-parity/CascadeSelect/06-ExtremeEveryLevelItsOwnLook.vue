@@ -60,7 +60,8 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import type { Component } from 'vue'
-import { CascadeSelect, Field, vAnimate } from 'vael-ui'
+import { CascadeSelect, Field } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { CascadeSelectItem } from 'vael-ui'
 import { PhCaretRight, PhHouseLine, PhLaptop, PhTent } from '@phosphor-icons/vue'
 

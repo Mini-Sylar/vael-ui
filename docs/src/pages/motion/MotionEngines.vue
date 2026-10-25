@@ -43,7 +43,7 @@ import { useI18n } from 'vue-i18n'
 import { gsap } from 'gsap'
 import { animate } from 'motion-v'
 import { Button, ConfigProvider, Popover } from 'vael-ui'
-import type { MotionEngine, MotionStyle } from 'vael-ui'
+import type { MotionEngine, MotionStyle } from 'vael-ui/motion'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 
@@ -89,14 +89,14 @@ function openAll() {
 }
 
 const GSAP_CODE = `import { gsap } from 'gsap'
-import type { MotionEngine } from 'vael-ui'
+import type { MotionEngine } from 'vael-ui/motion'
 
 // The engine receives the element, its values and the timing in seconds; return the tween.
 export const gsapEngine: MotionEngine = (el, from, to, { duration, delay }) =>
   gsap.fromTo(el, from, { ...to, duration, delay, ease: 'power3.out' })`
 
 const MOTION_CODE = `import { animate } from 'motion'
-import type { MotionEngine } from 'vael-ui'
+import type { MotionEngine } from 'vael-ui/motion'
 
 // The spring behind vael-ui's timing, when there is one, in motion's own terms.
 export const motionEngine: MotionEngine = (el, from, to, { duration, delay, spring }) =>

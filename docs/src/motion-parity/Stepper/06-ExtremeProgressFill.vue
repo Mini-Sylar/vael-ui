@@ -41,7 +41,8 @@
 
 <script setup lang="ts">
 import { computed, reactive, shallowRef, watch } from 'vue'
-import { Button, Stepper, vAnimate } from 'vael-ui'
+import { Button, Stepper } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { StepperItem, StepperMotion } from 'vael-ui'
 
 const steps: StepperItem[] = [

@@ -51,8 +51,10 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { PullToRefresh, vAnimate } from 'vael-ui'
-import type { AnimateDirectiveValue, MotionValues, PullToRefreshState } from 'vael-ui'
+import { PullToRefresh } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
+import type { PullToRefreshState } from 'vael-ui'
+import type { AnimateDirectiveValue, MotionValues } from 'vael-ui/motion'
 
 const CIRCUMFERENCE = 2 * Math.PI * 20
 

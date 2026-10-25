@@ -28,6 +28,7 @@ import {
   PhTextbox,
 } from '@phosphor-icons/vue'
 import type { CommandPaletteItem } from 'vael-ui'
+import { importCode } from '../importCode'
 import type { SearchEntry } from './fuzzy'
 import { categories } from '../taxonomy'
 import { composableCategories } from '../composablesTaxonomy'
@@ -174,7 +175,7 @@ export function pageEntries(t: Translate, te: Has): PaletteEntry[] {
         boost: 6,
         group: t('nav.composables'),
         scope: name,
-        copy: `import { ${name} } from 'vael-ui'`,
+        copy: importCode([name]),
         copyKind: 'import' as const,
       })),
     ),
@@ -188,7 +189,7 @@ export function pageEntries(t: Translate, te: Has): PaletteEntry[] {
       icon: PhAt,
       boost: 6,
       group: t('nav.directives'),
-      copy: `import { ${name} } from 'vael-ui'`,
+      copy: importCode([name]),
       copyKind: 'import' as const,
     })),
   ]

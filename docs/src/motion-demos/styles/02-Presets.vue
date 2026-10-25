@@ -22,8 +22,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Button, ConfigProvider, vAnimate } from 'vael-ui'
-import type { MotionStyle } from 'vael-ui'
+import { Button, ConfigProvider } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
+import type { MotionStyle } from 'vael-ui/motion'
 
 const style: MotionStyle = {
   version: 1,

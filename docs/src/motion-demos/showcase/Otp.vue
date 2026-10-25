@@ -27,7 +27,8 @@
 
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
-import { Button, Loader, OtpInput, vAnimate } from 'vael-ui'
+import { Button, Loader, OtpInput } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { OtpInputMotion } from 'vael-ui'
 
 const code = shallowRef('')

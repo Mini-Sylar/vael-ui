@@ -41,8 +41,10 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, useTemplateRef } from 'vue'
-import { Avatar, Button, Card, Tour, vAnimate } from 'vael-ui'
-import type { AnimateDirectiveValue, TourMotion, TourStep } from 'vael-ui'
+import { Avatar, Button, Card, Tour } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
+import type { TourMotion, TourStep } from 'vael-ui'
+import type { AnimateDirectiveValue } from 'vael-ui/motion'
 
 const open = shallowRef(false)
 const step = shallowRef(0)

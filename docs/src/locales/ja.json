@@ -447,6 +447,7 @@
     "useFieldControl": "カスタムフォームコントロールを最も近い Field に接続します。id、ARIA 属性、フォーカス状態と入力済み状態を扱います。独自のコントロールを Field の中に置くときに使います。",
     "useHoverIndicator": "vael-ui のリストの背後にある、スライドするホバーとキーボードのハイライト。独自のリストに同じハイライトを付けるのに使います。",
     "useSpringValue": "中断できるスプリング物理を 3 つの形で提供します。リアクティブな値、再レンダリングせずに毎フレーム書き込む命令的なスプリング、その両方を支える純粋なステップ関数です。途中で目標が変わるモーションに使います。",
+    "useScrollProgress": "スクロールの進み具合を 0〜1 の ref で返します。ページ全体、または要素が画面を通る進み具合です。v-animate の progress にゲッターとして渡します。",
     "useTabIndicator": "Tabs、SelectButton、MenuList、Pagination の背後にある、スライドする選択インジケーター。独自のセグメントコントロールやリストに使います。",
     "useScrollLock": "ダイアログが開いている間と同じように、ページや任意の要素のスクロールをレイアウトのずれなしでロックします。独自のオーバーレイや全画面パネルに使います。",
     "moveTreeNode": "ノードとそのサブツリーを、新しい親とインデックスへその場で移動します。フォルダーを自分自身の中へ移すなど、不可能な移動では何も変わりません。ドラッグ＆ドロップの移動をツリーデータに反映するのに使います。",
@@ -465,7 +466,7 @@
     "vaporIntro": "vael-ui は同じソースから 2 つのビルドを提供しています。VDOM ビルドと Vapor ビルド（<code>vael-ui/vapor</code>）です。リゾルバーはデフォルトで VDOM ビルドからインポートします。代わりに Vapor ビルドからインポートするには <code>variant: 'vapor'</code> を渡してください。リゾルバーはすべてのコンポーネントを 1 つのビルドからインポートするので、アプリが描画に使う方を選んでください。",
     "vaporHostsNote": "Vapor テンプレートでは、unplugin-vue-components は他のコンポーネントのスロット内にあるコンポーネントしか見つけられません。Vapor に対応するまでは、<code>&lt;Toaster&gt;</code>、<code>&lt;DialogHost&gt;</code>、<code>&lt;ConfigProvider&gt;</code> など最上位のものを手動でインポートしてください。",
     "vaporTitle": "蒸気",
-    "oneImportIntro": "エディターの自動インポートが、<code>vael-ui/vapor</code> ではなく <code>vael-ui</code> を提案し続けることがあります。これは、パッケージが 2 つのエントリーポイントから同じ名前をエクスポートする場合の、TypeScript の既知の制限です。これを避けるには、サブパスからインポートする代わりに <code>vapor</code> エクスポート条件を設定してください。すると、プロジェクト全体ですべての <code>import … from 'vael-ui'</code> が、コンポーネントもコンポーザブルも Vapor ビルドに解決されるので、自動インポートが間違えることはありません。",
+    "oneImportIntro": "エディターの自動インポートが、<code>vael-ui/vapor</code> ではなく <code>vael-ui</code> を提案し続けることがあります。これは、パッケージが 2 つのエントリーポイントから同じ名前をエクスポートする場合の、TypeScript の既知の制限です。これを避けるには、サブパスからインポートする代わりに <code>vapor</code> エクスポート条件を設定してください。すると、プロジェクト全体ですべての <code>import … from 'vael-ui'</code> が、コンポーネントもコンポーザブルも Vapor ビルドに解決されるので、自動インポートが間違えることはありません。<code>vael-ui/motion</code> も同じ条件に従うため、その <code>vAnimate</code> は Vapor 用のディレクティブになります。",
     "oneImportDefaults": "Vite の既定の条件を置き換えずに、そこへ <code>vapor</code> を追加します。<code>['vapor']</code> だけを書くと既定値が消え、ほかのパッケージが誤ったファイルを読み込むことがあります。<code>ssr</code> の行はサーバーレンダリングに同じ設定をします。",
     "oneImportNote": "Vite の条件はどのビルドを読み込むかを決め、TypeScript の条件は型をそれに合わせます。片方だけを設定してもエラーにはならず、型は正しいのにビルドが間違っている、あるいはその逆の状態になります。",
     "oneImportNoteTitle": "両方の設定を同期させます",
@@ -595,11 +596,12 @@
     "propIntro": "すべてのコンポーネントは <code>motion</code> を受け取ります。<code>false</code> でモーションをオフにし、オブジェクトで変更します。パーツごとの値、スプリングまたはデュレーション、あるいは独自ライブラリ用の <code>enter</code> と <code>leave</code> フックを渡せます。",
     "propTable": "各コンポーネントのページには<strong>モーション</strong>セクションがあり、パーツ、状態、そのほかのモーションのオプションを一覧にしています。",
     "yoursTitle": "独自のコンポーネントで",
-    "yoursIntro": "<code>v-animate</code> は自分の要素にも同じモーションを与えます。登場、退場、内容に合わせてなめらかに変わるサイズ、レイアウトの変化に合わせた新しい位置へのスライドなどです。",
+    "yoursIntro": "<code>v-animate</code> は自分の要素にも同じモーションを与えます。登場、退場、内容に合わせてなめらかに変わるサイズ、レイアウトの変化に合わせた新しい位置へのスライドなどです。これと自分の要素向けのほかのツールは <code>vael-ui/motion</code>。Vapor コンポーネントでは代わりにそこから <code>vAnimateVapor</code> をインポートしますからインポートします。",
     "yoursComposables": "独自のモーションには、その裏にあるコンポーザブルを使います:",
     "composable": {
       "springEasing": "スプリングを CSS のイージングと収束時間に変換します。",
       "useSpringValue": "目標値にスプリングで追従する値。",
+      "useScrollProgress": "スクロール連動のための 0〜1 の進み具合。",
       "useHoverIndicator": "スライドするホバーハイライトを独自のリストに。",
       "useTabIndicator": "Tabs と SelectButton の裏にあるスライドするインジケーター。"
     },
@@ -772,9 +774,21 @@
           "title": "登場と退場",
           "body": "<code>initial</code> は要素が入ってくる起点を決めます。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。ダイアログやメニューなど閉じるコンポーネントの中では、代わりにパネルと一緒に消えます。 よく使う登場は名前で選べます: <code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code>、<code>.blur</code>。スプリングも同じように <code>v-animate.pop.bouncy</code> と付けられ、値で調整できます: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
         },
+        "show": {
+          "title": "表示と非表示",
+          "body": "<code>v-show</code> と一緒に使うと、<code>v-animate</code> は要素が隠れるときに退場を、再び表示されるときに登場を再生します。<code>v-if</code> と同じです。"
+        },
         "scroll": {
           "title": "スクロールで画面に入ったとき",
           "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。 <code>stagger: true</code> は stagger トークンの間隔で並べます。<code>'end'</code>、<code>'center'</code>、<code>'edges'</code> を指定すると、波がそこから始まります。"
+        },
+        "inView": {
+          "title": "画面に入っている間",
+          "body": "<code>states.inView</code> は要素が画面にある間その見た目を保ち、スクロールで出ると戻します。<code>viewport</code> で数え方を決めます：<code>amount</code>（<code>'some'</code>、<code>'all'</code>、または 0〜1）、画面の周りの <code>margin</code>、一度見えたら保つ <code>once</code>。<code>when: 'visible'</code> も同じ <code>viewport</code> を受け取ります。"
+        },
+        "progress": {
+          "title": "スクロールに連動",
+          "body": "<code>useScrollProgress()</code> はページのスクロール、または要素が画面を通る進み具合を 0〜1 の ref で返します。<code>progress</code> にゲッターとして渡すと（<code>progress: () => scroll</code>）、キーフレームはコンポーネントを再レンダリングせずにスクロールに追従します。<code>offset</code> で始まりと終わりを決めます：<code>['start end', 'end start']</code> は入ってから出るまでです。"
         },
         "replay": {
           "title": "もう一度再生する",
@@ -782,7 +796,7 @@
         },
         "layout": {
           "title": "新しい位置へスライド",
-          "body": "<code>layout: true</code> は、リストの並べ替えや隣の要素の拡大などでレイアウトが変わったとき、要素を新しい位置までスライドさせます。 <code>delay</code> を付けると、スライドする前に待ち、その間は元の位置にとどまります。"
+          "body": "<code>layout: true</code> はリストの並べ替えや隣の要素の拡大などで、レイアウトが置いた場所へ要素をすべらせ、サイズが変われば新しいサイズへなめらかに変えます。<code>layout: 'position'</code> はすべらせるだけです。<code>delay</code> はすべり出す前に待ち、その間は元の場所に留まります。"
         },
         "shared": {
           "title": "ある場所から別の場所へ",
@@ -792,9 +806,25 @@
           "title": "見た目を保つ",
           "body": "<code>animate</code> は、要素がページにある間ずっと保つ見た目を決めます。値を変えると、要素は今の位置からそこへアニメーションします。<code>duration</code> を指定しなければスプリングで動きます。例：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。キーフレームの配列では、<code>progress</code>（0 から 1）が再生する代わりにキーフレームをある位置に止めるので、スワイプやスクロールに合わせて動かせます。<code>spring</code> を指定すると、少し遅れて追従します。"
         },
+        "turn": {
+          "title": "3D で回す",
+          "body": "<code>rotateX</code> と <code>rotateY</code> は要素を手前や奥へ回し、<code>perspective</code> で奥行きを決めます。カードをめくるなら <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code> です。<code>skewX</code> と <code>skewY</code> は傾けます。"
+        },
+        "draw": {
+          "title": "線を描く",
+          "body": "<code>pathLength</code> は SVG の線を 0（なし）から 1（全部）まで描きます：<code>initial: {'{'} pathLength: 0 {'}'}</code> でチェックマークが描かれます。<code>pathOffset</code> は描かれる部分の始まりを動かします。"
+        },
         "size": {
           "title": "中身に合わせる",
-          "body": "<code>v-animate.size</code> は、要素のサイズが中身の新しいサイズへジャンプせず、なめらかに変わるようにします。"
+          "body": "<code>v-animate.size</code> は要素を、跳ばずに中身の新しい高さへ、中身が幅を決めるときは新しい幅へもなめらかに変えます。"
+        },
+        "fromCode": {
+          "title": "コードから",
+          "body": "誤ったコードやカートへの追加のように、イベントがきっかけで動かすときは、<code>animate(el, values, options)</code> が <code>v-animate</code> と同じ値とタイミングをコードから再生し、終わりを要素自身のスタイルとして残します。await で待つことも、<code>pause()</code>、<code>reverse()</code>、<code>time</code>、<code>speed</code> で操作することもできます。<code>useAnimate()</code> はセレクターを一つの要素の中に限定し、コンポーネントのアンマウント時に始めたものを止めます。アプリのスプリング、<code>motion: false</code>、視差効果を減らす設定に従います。"
+        },
+        "drag": {
+          "title": "ドラッグ",
+          "body": "ドラッグできるコンポーネント（BottomSheet、SwipeToReveal、Sortable、Slider）には組み込まれています。自分の要素をドラッグするには VueUse の <code>useDraggable</code> を使い、離したときの動きは <code>v-animate</code> の <code>layout</code> や <code>animate</code> に任せます。"
         },
         "own": {
           "title": "自作のコンポーネント",
@@ -818,7 +848,7 @@
         },
         "keyframes": {
           "title": "キーフレーム",
-          "body": "配列はキーフレームの並びです。<code>times</code> で各キーフレームを 0 から 1 の間に配置し、<code>easing</code> で各ステップをイージングします。イージングのリストを渡すと、上昇のあとに弾むなど、ステップごとに別のイージングを付けられます。<code>repeat</code> で繰り返し再生し、<code>repeat: Infinity</code> なら状態がオフになるか見た目が変わるまで続きます。 ステップはスプリングでも動かせます: <code>easing: ['linear', 'bouncy']</code>。ループの <code>duration</code> を再生中に変えると、その位置のまま速くなったり遅くなったりします。"
+          "body": "配列はキーフレームの並びです。<code>times</code> で各キーフレームを 0 から 1 の間に配置し、<code>easing</code> で各ステップをイージングします。イージングのリストを渡すと、上昇のあとに弾むなど、ステップごとに別のイージングを付けられます。<code>repeat</code> で繰り返し再生し、<code>repeat: Infinity</code> なら状態がオフになるか見た目が変わるまで続きます。 ステップはスプリングでも動かせます: <code>easing: ['linear', 'bouncy']</code>。ループの <code>duration</code> を再生中に変えると、その位置のまま速くなったり遅くなったりします。 <code>repeatDelay</code> は繰り返しの間で止まり、<code>repeatType: 'mirror'</code> は来た道を戻ります。最初のキーフレームを <code>null</code> にすると、今の値から始まります：<code>scale: [null, 1.2, 1]</code>。"
         },
         "each": {
           "title": "ひとつずつ",
@@ -898,7 +928,7 @@
         "intro": "どれもモーションが再生し終わってから実行されるので、次の処理で長さを推測する必要はありません。モーションがオフのように何も再生しないときは、すぐに実行されます。",
         "enterLeave": {
           "title": "入ったとき、消えたとき",
-          "body": "<code>v-animate</code> では、<code>onAfterEnter</code> は登場が再生し終わったとき、そして <code>replay</code> のたびに実行されます。<code>onAfterLeave</code> は退場が再生し終わり、要素がなくなったときに実行されます。どちらも要素を受け取ります。"
+          "body": "<code>v-animate</code> では、<code>onAfterEnter</code> は登場が再生し終わったとき、そして <code>replay</code> のたびに実行されます。<code>onAfterLeave</code> は退場が再生し終わり、要素がなくなったときに実行されます。どちらも要素を受け取ります。 <code>onStart</code> は <code>delay</code> のあと、登場が動き出すときに実行されます。"
         },
         "states": {
           "title": "状態のあと",

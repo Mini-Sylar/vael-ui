@@ -20,7 +20,8 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { PhShoppingCart } from '@phosphor-icons/vue'
-import { Button, vAnimate } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const count = shallowRef(0)
 </script>

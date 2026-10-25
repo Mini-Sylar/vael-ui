@@ -97,7 +97,8 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
-import { Button, vAnimate } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhCheck, PhCopy } from '@phosphor-icons/vue'
 import type { Part, Slot } from '../anatomyOf'
 

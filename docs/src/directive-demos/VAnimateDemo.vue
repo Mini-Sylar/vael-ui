@@ -22,7 +22,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, vAnimate } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 let next = 4
 const items = shallowRef([1, 2, 3])

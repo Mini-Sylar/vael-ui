@@ -447,6 +447,7 @@
     "useFieldControl": "将自定义表单控件接入最近的 Field：id、ARIA 属性以及聚焦和已填写状态。当你自己的控件位于 Field 内时使用。",
     "useHoverIndicator": "vael-ui 列表背后的滑动悬停和键盘高亮。用它让你自己的列表获得同样的高亮。",
     "useSpringValue": "三种形式的可中断弹簧物理：一个响应式值、一个每帧直接写入且不触发重新渲染的命令式弹簧，以及两者背后的纯步进函数。用于可能中途改变目标的动效。",
+    "useScrollProgress": "以 0 到 1 的 ref 返回滚动进度：整个页面的，或元素穿过屏幕的进度。作为 getter 传给 v-animate 的 progress。",
     "useTabIndicator": "Tabs、SelectButton、MenuList 和 Pagination 背后的滑动选中指示器。用于你自己的分段控件和列表。",
     "useScrollLock": "像对话框打开时那样，锁定页面或任意元素的滚动，且不会造成布局偏移。用于你自己的浮层和全屏面板。",
     "moveTreeNode": "将节点及其子树原地移动到新的父节点和索引。不可能的移动（例如把文件夹放进它自己里面）不会改变任何内容。用它把拖放移动应用到你的树数据上。",
@@ -465,7 +466,7 @@
     "vaporIntro": "vael-ui 从同一份源码提供两种构建：VDOM 构建和 Vapor 构建（<code>vael-ui/vapor</code>）。解析器默认从 VDOM 构建导入。传入 <code>variant: 'vapor'</code> 即可改为从 Vapor 构建导入。解析器会从同一种构建导入所有组件，因此请选择你的应用用于渲染的那一种。",
     "vaporHostsNote": "在 Vapor 模板中，unplugin-vue-components 只能找到位于其他组件插槽内的组件。在它支持 Vapor 之前，请手动导入顶层组件，例如 <code>&lt;Toaster&gt;</code>、<code>&lt;DialogHost&gt;</code> 和 <code>&lt;ConfigProvider&gt;</code>。",
     "vaporTitle": "汽",
-    "oneImportIntro": "编辑器的自动导入可能会一直建议使用 <code>vael-ui</code>，而不是 <code>vael-ui/vapor</code>。这是当一个包从两个入口点导出同名内容时 TypeScript 的已知限制。为避免这个问题，请设置 <code>vapor</code> 导出条件，而不是从子路径导入。这样，整个项目中所有的 <code>import … from 'vael-ui'</code> 都会解析到 Vapor 构建，组件和组合式函数都是如此，自动导入也就不会选错。",
+    "oneImportIntro": "编辑器的自动导入可能会一直建议使用 <code>vael-ui</code>，而不是 <code>vael-ui/vapor</code>。这是当一个包从两个入口点导出同名内容时 TypeScript 的已知限制。为避免这个问题，请设置 <code>vapor</code> 导出条件，而不是从子路径导入。这样，整个项目中所有的 <code>import … from 'vael-ui'</code> 都会解析到 Vapor 构建，组件和组合式函数都是如此，自动导入也就不会选错。<code>vael-ui/motion</code> 也遵循该条件,因此其中的 <code>vAnimate</code> 就是 Vapor 指令。",
     "oneImportDefaults": "把 <code>vapor</code> 加到 Vite 的默认条件中，而不是替换它们。只写 <code>['vapor']</code> 会丢掉默认值，其他包可能因此加载错误的文件。<code>ssr</code> 那一行为服务端渲染做同样的设置。",
     "oneImportNote": "Vite 条件决定加载哪一种构建，TypeScript 条件让类型与之保持一致。如果只设置其中一个，不会有任何报错：你会得到正确的类型却加载了错误的构建，或者相反。",
     "oneImportNoteTitle": "保持两个设置同步",
@@ -595,11 +596,12 @@
     "propIntro": "每个组件都接受 <code>motion</code>。<code>false</code> 关闭它的动效。对象则修改动效：各部件的数值、弹簧或时长，或交给你自己库的 <code>enter</code> 和 <code>leave</code> 钩子。",
     "propTable": "每个组件页面都有<strong>动效</strong>一节，列出它的部件、状态以及其他动效选项。",
     "yoursTitle": "在你自己的组件中",
-    "yoursIntro": "<code>v-animate</code> 让你自己的元素拥有同样的动效：入场、离场、平滑适应内容的尺寸，或在布局变化时滑动到新位置。",
+    "yoursIntro": "<code>v-animate</code> 让你自己的元素拥有同样的动效：入场、离场、平滑适应内容的尺寸，或在布局变化时滑动到新位置。它和用于你自己元素的其他工具都从 <code>vael-ui/motion</code> 导入;在 Vapor 组件中,改为从那里导入 <code>vAnimateVapor</code>。",
     "yoursComposables": "要实现你自己的动效，可使用背后的这些组合式函数：",
     "composable": {
       "springEasing": "把弹簧转换为 CSS 缓动和稳定所需的时间。",
       "useSpringValue": "一个沿弹簧追随目标的值。",
+      "useScrollProgress": "0 到 1 的滚动进度，用于跟随滚动的动效。",
       "useHoverIndicator": "滑动的悬停高亮，用于你自己的列表。",
       "useTabIndicator": "Tabs 和 SelectButton 背后的滑动指示器。"
     },
@@ -772,9 +774,21 @@
           "title": "进入与离开",
           "body": "<code>initial</code> 指定元素从哪里进入。Vue 移除它时，它会沿原路离开，更快也更轻，除非你给它一个 <code>exit</code>。在会关闭的组件里，比如对话框或菜单，它会随面板一起离开。 常用的入场可以直接写名字：<code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code> 或 <code>.blur</code>。弹簧也这样加，比如 <code>v-animate.pop.bouncy</code>，再用一个值来微调：<code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
         },
+        "show": {
+          "title": "显示与隐藏",
+          "body": "与 <code>v-show</code> 一起使用时，<code>v-animate</code> 会在元素隐藏时播放离场，再次显示时播放入场，和 <code>v-if</code> 一样。"
+        },
         "scroll": {
           "title": "滚动到视野中时",
           "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。 <code>stagger: true</code> 按 stagger 令牌的间隔排开；<code>'end'</code>、<code>'center'</code> 或 <code>'edges'</code> 会让这一波从那里开始。"
+        },
+        "inView": {
+          "title": "在视野中时",
+          "body": "<code>states.inView</code> 在元素位于屏幕上时保持一种外观，滚出视野后恢复。<code>viewport</code> 决定何时算作可见：<code>amount</code>（<code>'some'</code>、<code>'all'</code> 或 0 到 1）、屏幕周围的 <code>margin</code>，以及看到一次后保持的 <code>once</code>。<code>when: 'visible'</code> 也接受同样的 <code>viewport</code>。"
+        },
+        "progress": {
+          "title": "跟随滚动",
+          "body": "<code>useScrollProgress()</code> 以 0 到 1 的 ref 返回页面的滚动，或元素穿过屏幕的进度。把它作为 getter 传给 <code>progress</code>（<code>progress: () => scroll</code>），关键帧就会跟随滚动，而不会重新渲染你的组件。<code>offset</code> 决定起点和终点：<code>['start end', 'end start']</code> 表示从进入到离开。"
         },
         "replay": {
           "title": "再播一次",
@@ -782,7 +796,7 @@
         },
         "layout": {
           "title": "滑到新位置",
-          "body": "<code>layout: true</code> 会让元素滑到布局为它安排的新位置，比如列表重新排序或相邻元素变大时。 设置 <code>delay</code> 后，它会先等待再滑动，等待期间停在原来的位置。"
+          "body": "<code>layout: true</code> 会让元素滑到布局放置它的位置，比如列表重新排序或相邻元素变大时，并在尺寸改变时平滑过渡到新尺寸。<code>layout: 'position'</code> 只滑动。<code>delay</code> 会在滑动前等待，期间保持原来的位置。"
         },
         "shared": {
           "title": "从一处到另一处",
@@ -792,9 +806,25 @@
           "title": "保持一种外观",
           "body": "<code>animate</code> 设置元素在页面上时一直保持的外观。修改它，元素就会从当前状态动画过去；除非你指定 <code>duration</code>，否则使用弹簧：<code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>。使用关键帧数组时，<code>progress</code>（0 到 1）会把它们停在某个位置，而不是播放它们，这样滑动或滚动就能拖动它们。配上 <code>spring</code>，它们会稍有延迟地跟上。"
         },
+        "turn": {
+          "title": "3D 翻转",
+          "body": "<code>rotateX</code> 和 <code>rotateY</code> 让元素朝你或远离你转动，<code>perspective</code> 决定纵深感：翻转卡片就是 <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>。<code>skewX</code> 和 <code>skewY</code> 让它倾斜。"
+        },
+        "draw": {
+          "title": "绘制线条",
+          "body": "<code>pathLength</code> 把 SVG 线条从 0（无）画到 1（全部）：<code>initial: {'{'} pathLength: 0 {'}'}</code> 会画出一个对勾。<code>pathOffset</code> 移动绘制部分的起点。"
+        },
         "size": {
           "title": "跟随内容",
-          "body": "<code>v-animate.size</code> 让元素平滑过渡到内容的新尺寸，而不是直接跳变。"
+          "body": "<code>v-animate.size</code> 让元素平滑过渡到内容的新高度；当内容决定宽度时，也会过渡到新宽度，而不是突然跳变。"
+        },
+        "fromCode": {
+          "title": "从代码中",
+          "body": "对于由事件触发的动效，比如输入了错误的代码或把商品加入购物车，<code>animate(el, values, options)</code> 会在代码中播放与 <code>v-animate</code> 相同的值和时序，并把终点留作元素自身的样式。可以用 await 等待它，或用 <code>pause()</code>、<code>reverse()</code>、<code>time</code> 和 <code>speed</code> 控制它。<code>useAnimate()</code> 把选择器限定在一个元素内，并在组件卸载时停止它启动的动画。它遵循应用的弹簧、<code>motion: false</code> 和减弱动态效果设置。"
+        },
+        "drag": {
+          "title": "拖动",
+          "body": "可拖动的组件（BottomSheet、SwipeToReveal、Sortable、Slider）已内置拖动。要拖动你自己的元素，请使用 VueUse 的 <code>useDraggable</code>，松手时的动效交给 <code>v-animate</code> 的 <code>layout</code> 或 <code>animate</code>。"
         },
         "own": {
           "title": "你自己的组件",
@@ -818,7 +848,7 @@
         },
         "keyframes": {
           "title": "关键帧",
-          "body": "数组就是一组关键帧。<code>times</code> 把每一帧放在 0 到 1 之间的位置，<code>easing</code> 为每一步加上缓动。传入一个缓动列表可以让每一步各用一个缓动，比如先上升再回弹。<code>repeat</code> 会重播它们，<code>repeat: Infinity</code> 会一直播放，直到状态关闭或外观改变。 某一步也可以用弹簧：<code>easing: ['linear', 'bouncy']</code>。在循环播放时修改它的 <code>duration</code>，它会从当前位置加速或减速。"
+          "body": "数组就是一组关键帧。<code>times</code> 把每一帧放在 0 到 1 之间的位置，<code>easing</code> 为每一步加上缓动。传入一个缓动列表可以让每一步各用一个缓动，比如先上升再回弹。<code>repeat</code> 会重播它们，<code>repeat: Infinity</code> 会一直播放，直到状态关闭或外观改变。 某一步也可以用弹簧：<code>easing: ['linear', 'bouncy']</code>。在循环播放时修改它的 <code>duration</code>，它会从当前位置加速或减速。 <code>repeatDelay</code> 在每次重复之间停顿，<code>repeatType: 'mirror'</code> 沿原路返回。第一个关键帧写 <code>null</code>，就从当前值开始：<code>scale: [null, 1.2, 1]</code>。"
         },
         "each": {
           "title": "逐个播放",
@@ -898,7 +928,7 @@
         "intro": "这些回调都在动效播放完后运行，所以下一步不必去猜时长。没有动效播放时，比如关闭了动效，它们会立即运行。",
         "enterLeave": {
           "title": "进入之后，离开之后",
-          "body": "在 <code>v-animate</code> 上，<code>onAfterEnter</code> 在入场播放完后运行，每次 <code>replay</code> 后也会运行。<code>onAfterLeave</code> 在离场播放完、元素移除后运行。两者都会收到该元素。"
+          "body": "在 <code>v-animate</code> 上，<code>onAfterEnter</code> 在入场播放完后运行，每次 <code>replay</code> 后也会运行。<code>onAfterLeave</code> 在离场播放完、元素移除后运行。两者都会收到该元素。 <code>onStart</code> 在入场开始移动时运行，在任何 <code>delay</code> 之后。"
         },
         "states": {
           "title": "状态之后",

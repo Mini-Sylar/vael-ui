@@ -40,7 +40,8 @@
 
 <script setup lang="ts">
 import { onScopeDispose, shallowRef } from 'vue'
-import { AnimatedNumber, vAnimate } from 'vael-ui'
+import { AnimatedNumber } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const value = shallowRef(184.32)
 const trend = shallowRef<'up' | 'down'>('up')

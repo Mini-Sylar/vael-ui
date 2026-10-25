@@ -52,7 +52,8 @@
 
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
-import { AnimatedText, Button, Dialog, vAnimate } from 'vael-ui'
+import { AnimatedText, Button, Dialog } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const cssOpen = shallowRef(false)
 const outerOpen = shallowRef(false)

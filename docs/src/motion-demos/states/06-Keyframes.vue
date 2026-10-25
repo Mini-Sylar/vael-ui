@@ -15,7 +15,8 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { PhBell } from '@phosphor-icons/vue'
-import { Button, vAnimate } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const ringing = shallowRef(false)
 // A swing that settles, then a pause, over and over until it's silenced.

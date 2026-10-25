@@ -35,7 +35,13 @@ export const composableCategories: ComposableCategory[] = [
   {
     key: 'motion',
     name: 'Motion',
-    items: ['useSpringValue', 'useTabIndicator', 'useHoverIndicator', 'springEasing'],
+    items: [
+      'useSpringValue',
+      'useScrollProgress',
+      'useTabIndicator',
+      'useHoverIndicator',
+      'springEasing',
+    ],
   },
   {
     key: 'dragAndDrop',
@@ -55,6 +61,7 @@ export const NEW_COMPOSABLES: Record<string, string> = {
   useHaptic: '2026-10-21',
   useHoverIndicator: '2026-10-21',
   useNumberFormat: '2026-10-21',
+  useScrollProgress: '2026-10-25',
   useSpringValue: '2026-10-21',
   useTabIndicator: '2026-10-21',
   springEasing: '2026-10-21',

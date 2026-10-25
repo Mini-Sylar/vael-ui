@@ -32,8 +32,9 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
-import { Field, Slider, createSpring } from 'vael-ui'
-import type { SpringHandle } from 'vael-ui'
+import { Field, Slider } from 'vael-ui'
+import { createSpring } from 'vael-ui/motion'
+import type { SpringHandle } from 'vael-ui/motion'
 
 const damping = shallowRef(0.6)
 const response = shallowRef(0.45)

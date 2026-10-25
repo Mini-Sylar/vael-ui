@@ -22,7 +22,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, FileUpload, vAnimate } from 'vael-ui'
+import { Button, FileUpload } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhX } from '@phosphor-icons/vue'
 
 const files = shallowRef<File[]>([])

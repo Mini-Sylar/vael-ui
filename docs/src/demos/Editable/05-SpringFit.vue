@@ -21,8 +21,9 @@
 
 <script setup lang="ts">
 import { nextTick, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
-import { createSpring, Editable } from 'vael-ui'
-import type { SpringHandle } from 'vael-ui'
+import { Editable } from 'vael-ui'
+import { createSpring } from 'vael-ui/motion'
+import type { SpringHandle } from 'vael-ui/motion'
 
 const name = shallowRef('Northwind launch')
 const editing = shallowRef(false)

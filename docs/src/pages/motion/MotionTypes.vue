@@ -162,7 +162,8 @@ import {
   PhWaveSine,
   PhXCircle,
 } from '@phosphor-icons/vue'
-import { SelectButton, vAnimate } from 'vael-ui'
+import { SelectButton } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { tokenizeBlock } from '../../composables/highlightInline'
 import type { StyledToken } from '../../composables/highlightInline'
 import GuideLayout from '../../components/GuideLayout.vue'

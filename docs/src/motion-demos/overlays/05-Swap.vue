@@ -25,7 +25,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, Dialog, vAnimate } from 'vael-ui'
+import { Button, Dialog } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const steps = [
   { title: 'Name it', text: 'Give the workspace a short name your team will recognise.' },

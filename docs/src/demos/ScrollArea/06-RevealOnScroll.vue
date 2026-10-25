@@ -18,7 +18,8 @@
 </template>
 
 <script setup lang="ts">
-import { ScrollArea, vAnimate } from 'vael-ui'
+import { ScrollArea } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const notes = [
   'Draft the outline',

@@ -18,8 +18,9 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { PhBell } from '@phosphor-icons/vue'
-import { Button, vAnimate } from 'vael-ui'
-import type { MotionValues } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
+import type { MotionValues } from 'vael-ui/motion'
 
 const ringing = shallowRef(false)
 const status = shallowRef('Ring the bell: it swings three times.')

@@ -54,7 +54,8 @@
 
 <script setup lang="ts">
 import { reactive, shallowReactive } from 'vue'
-import { Avatar, SwipeToReveal, vAnimate } from 'vael-ui'
+import { Avatar, SwipeToReveal } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhArchiveBox, PhPushPin, PhTrash } from '@phosphor-icons/vue'
 
 const rows = [

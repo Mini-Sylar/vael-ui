@@ -94,8 +94,8 @@ import {
   SelectButton,
   Slider,
   Switch,
-  springEasing,
 } from 'vael-ui'
+import { springEasing } from 'vael-ui/motion'
 import CodeBlock from '../../components/CodeBlock.vue'
 import GuideLayout from '../../components/GuideLayout.vue'
 

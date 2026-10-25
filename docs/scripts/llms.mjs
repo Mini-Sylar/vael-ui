@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { htmlToMarkdown } from '@mdream/js'
 import { filterPlugin, isolateMainPlugin } from '@mdream/js/plugins'
+import { importCode } from '../src/importCode.ts'
 import { RELATED, cell, meta, motionSection, sections, table } from './api-markdown.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -36,8 +37,13 @@ const CHROME = [
 const SKIP = new Set(['/motion/blocks', '/motion/side-by-side'])
 
 const fence = (code, lang) => `\`\`\`${lang}\n${code.trim()}\n\`\`\``
-const importLine = (names, comment = " // or 'vael-ui/vapor'") =>
-  fence(`import { ${names.join(', ')} } from 'vael-ui'${comment}`, 'ts')
+const importLine = (names) =>
+  fence(
+    importCode(names)
+      .replace(/'vael-ui'$/gm, "'vael-ui' // or 'vael-ui/vapor'")
+      .replace(/(\{ vAnimate \} from 'vael-ui\/motion')$/m, '$1 // Vapor: vAnimateVapor'),
+    'ts',
+  )
 // A demo as its page shows it: without the notes and headings around the example.
 const stripDemoProse = (source) =>
   source
@@ -235,7 +241,7 @@ export function writeLlms(site) {
   const intro = [
     '# vael-ui',
     `> ${messages.home.tagline}`,
-    "Import from `'vael-ui'` (VDOM) or `'vael-ui/vapor'` (Vapor); the props are the same. Every page below is Markdown.",
+    "Import from `'vael-ui'` (VDOM) or `'vael-ui/vapor'` (Vapor); the props are the same. Motion imports from `'vael-ui/motion'` in both, with `vAnimateVapor` as the Vapor form of `v-animate`. Every page below is Markdown.",
   ].join('\n\n')
   const index = [intro]
   for (const section of new Set(pages.map((page) => page.section))) {

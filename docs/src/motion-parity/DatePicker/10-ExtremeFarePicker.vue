@@ -42,7 +42,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { DatePicker, vAnimate } from 'vael-ui'
+import { DatePicker } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { CalendarRange, DatePickerMotion } from 'vael-ui'
 
 const now = new Date()

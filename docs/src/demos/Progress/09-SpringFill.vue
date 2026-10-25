@@ -18,8 +18,9 @@
 
 <script setup lang="ts">
 import { onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
-import { Button, createSpring, Field, Progress, Slider } from 'vael-ui'
-import type { SpringHandle } from 'vael-ui'
+import { Button, Field, Progress, Slider } from 'vael-ui'
+import { createSpring } from 'vael-ui/motion'
+import type { SpringHandle } from 'vael-ui/motion'
 
 const bar = useTemplateRef('bar')
 const damping = shallowRef(0.6)

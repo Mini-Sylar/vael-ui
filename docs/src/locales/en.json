@@ -439,7 +439,7 @@
     "vaporIntro": "vael-ui ships two builds from the same source: the VDOM build and the Vapor build (<code>vael-ui/vapor</code>). The resolver imports from the VDOM build by default. Pass <code>variant: 'vapor'</code> to import from the Vapor build instead. The resolver imports every component from one build, so pick the one your app renders with.",
     "vaporHostsNote": "In a Vapor template, unplugin-vue-components only finds components inside another component’s slot. Until it supports Vapor, import top-level ones by hand, such as <code>&lt;Toaster&gt;</code>, <code>&lt;DialogHost&gt;</code> and <code>&lt;ConfigProvider&gt;</code>.",
     "oneImportTitle": "One shared import, no /vapor subpath",
-    "oneImportIntro": "Your editor’s auto-import may keep suggesting <code>vael-ui</code> instead of <code>vael-ui/vapor</code>. It’s a known TypeScript limitation when a package exports the same name from two entry points. To avoid it, set a <code>vapor</code> export condition instead of importing from the subpath. Every <code>import … from 'vael-ui'</code> then resolves to the Vapor build across the project, for components and composables alike, so auto-import can’t pick the wrong one.",
+    "oneImportIntro": "Your editor’s auto-import may keep suggesting <code>vael-ui</code> instead of <code>vael-ui/vapor</code>. It’s a known TypeScript limitation when a package exports the same name from two entry points. To avoid it, set a <code>vapor</code> export condition instead of importing from the subpath. Every <code>import … from 'vael-ui'</code> then resolves to the Vapor build across the project, for components and composables alike, so auto-import can’t pick the wrong one. <code>vael-ui/motion</code> follows it too, so its <code>vAnimate</code> is the Vapor directive.",
     "oneImportDefaults": "Add <code>vapor</code> to Vite’s default conditions instead of replacing them. A bare <code>['vapor']</code> drops the defaults, and other packages can then load the wrong file. The <code>ssr</code> line does the same for server rendering.",
     "oneImportNoteTitle": "Keep both settings in sync",
     "oneImportNote": "The Vite condition sets which build loads, and the TypeScript condition keeps the types in line with it. If you set only one, nothing errors: you get the right types with the wrong build, or the reverse.",
@@ -508,6 +508,7 @@
     "useFieldControl": "Connects a custom form control to the nearest Field: its id, ARIA attributes, and focus and filled state. Use it when your own control sits inside a Field.",
     "useHoverIndicator": "The sliding hover and keyboard highlight behind vael-ui’s lists. Use it to give your own lists the same highlight.",
     "useSpringValue": "Interruptible spring physics in three forms: a reactive value, an imperative spring that writes each frame without re-rendering, and the pure step function behind both. Use it for motion that can change target partway.",
+    "useScrollProgress": "Scroll progress as a ref from 0 to 1: the page's, or an element's way through the screen. Pass it to v-animate's progress as a getter.",
     "useTabIndicator": "The sliding selection indicator behind Tabs, SelectButton, MenuList and Pagination. Use it for your own segmented controls and lists.",
     "useScrollLock": "Locks scrolling on the page or any element without a layout shift, as dialogs do while they’re open. Use it for your own overlays and full-screen panels.",
     "moveTreeNode": "Moves a node and its subtree to a new parent and index, in place. An impossible move, such as a folder into itself, changes nothing. Use it to apply a drag-and-drop move to your tree data.",
@@ -595,11 +596,12 @@
     "propIntro": "Every component takes <code>motion</code>. <code>false</code> turns its motion off. An object changes it: values for its parts, a spring or a duration, or <code>enter</code> and <code>leave</code> hooks for your own library.",
     "propTable": "Each component page has a <strong>Motion</strong> section that lists its parts, its states and its other motion options.",
     "yoursTitle": "In your own components",
-    "yoursIntro": "<code>v-animate</code> gives your own elements the same motion: an entrance, an exit, a size that eases to fit its content, or a slide to a new place when the layout changes.",
+    "yoursIntro": "<code>v-animate</code> gives your own elements the same motion: an entrance, an exit, a size that eases to fit its content, or a slide to a new place when the layout changes. It and the rest of the tools for your own elements import from <code>vael-ui/motion</code>; a Vapor component imports <code>vAnimateVapor</code> from there in place of <code>vAnimate</code>.",
     "yoursComposables": "For motion of your own, use the composables behind it:",
     "composable": {
       "springEasing": "Turns a spring into a CSS easing and its settle time.",
       "useSpringValue": "A value that follows its target on a spring.",
+      "useScrollProgress": "Scroll progress from 0 to 1, for scroll-linked motion.",
       "useHoverIndicator": "The sliding hover highlight, for your own lists.",
       "useTabIndicator": "The sliding indicator behind Tabs and SelectButton."
     },
@@ -772,9 +774,21 @@
           "title": "In and out",
           "body": "<code>initial</code> sets where the element comes in from. When Vue removes it, it leaves the way it came, faster and quieter, unless you give it an <code>exit</code>. Inside a component that closes, such as a dialog or a menu, it leaves with the panel instead. For the usual entrances, pick one by name: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> or <code>.blur</code>. Add a spring the same way, as in <code>v-animate.pop.bouncy</code>, and tune it with a value: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
+        "show": {
+          "title": "Shown and hidden",
+          "body": "Beside <code>v-show</code>, <code>v-animate</code> plays its exit when the element is hidden and its entrance when it's shown again, as it does for <code>v-if</code>."
+        },
         "scroll": {
           "title": "When it scrolls into view",
           "body": "<code>when: 'visible'</code> waits until the element is on screen, then plays once. Elements that share a name, such as <code>v-animate:tiles</code>, play in page order, one after another with a <code>stagger</code>. <code>stagger: true</code> spaces them by the stagger token; <code>'end'</code>, <code>'center'</code> or <code>'edges'</code> start the wave there instead."
+        },
+        "inView": {
+          "title": "While it's in view",
+          "body": "<code>states.inView</code> holds a look while the element is on screen and lets it go when it scrolls away. <code>viewport</code> sets when it counts: <code>amount</code> (<code>'some'</code>, <code>'all'</code> or 0 to 1), a <code>margin</code> around the screen, and <code>once</code> to keep it once seen. <code>when: 'visible'</code> takes the same <code>viewport</code>."
+        },
+        "progress": {
+          "title": "Linked to scroll",
+          "body": "<code>useScrollProgress()</code> gives the page's scroll, or an element's way through the screen, as a ref from 0 to 1. Pass it to <code>progress</code> as a getter, <code>progress: () => scroll</code>, and the keyframes follow the scroll without re-rendering your component. <code>offset</code> sets where it starts and ends: <code>['start end', 'end start']</code> runs from entering to having left."
         },
         "replay": {
           "title": "Play it again",
@@ -782,7 +796,7 @@
         },
         "layout": {
           "title": "Slide to a new place",
-          "body": "<code>layout: true</code> slides an element to wherever the layout puts it, such as when a list reorders or a sibling grows. A <code>delay</code> waits before it slides, holding its old place meanwhile."
+          "body": "<code>layout: true</code> slides an element to wherever the layout puts it, such as when a list reorders or a sibling grows, and eases it to a new size when it gets one. <code>layout: 'position'</code> only slides. A <code>delay</code> waits before it slides, holding its old place meanwhile."
         },
         "shared": {
           "title": "From one place to another",
@@ -792,9 +806,25 @@
           "title": "Hold a look",
           "body": "<code>animate</code> sets a look the element holds while it's on the page. Change it, and the element animates there from wherever it is, on a spring unless you set a <code>duration</code>: <code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>. With keyframe arrays, <code>progress</code> (0 to 1) holds them at one point instead of playing them, so a swipe or a scroll can scrub them. With a <code>spring</code>, they follow it with a short lag."
         },
+        "turn": {
+          "title": "Turn in 3D",
+          "body": "<code>rotateX</code> and <code>rotateY</code> turn an element toward you or away, and <code>perspective</code> sets how deep that looks: a card flip is <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> and <code>skewY</code> slant it."
+        },
+        "draw": {
+          "title": "Draw a stroke",
+          "body": "<code>pathLength</code> draws an SVG stroke from 0 (none) to 1 (all of it): <code>initial: {'{'} pathLength: 0 {'}'}</code> draws a check in. <code>pathOffset</code> moves where the drawn part starts."
+        },
         "size": {
           "title": "Follow its content",
-          "body": "<code>v-animate.size</code> eases an element to its content's new size instead of jumping."
+          "body": "<code>v-animate.size</code> eases an element to its content's new height, and to its new width when the content sizes that, instead of jumping."
+        },
+        "fromCode": {
+          "title": "From code",
+          "body": "For motion an event starts, such as a wrong code or an item added to the cart, <code>animate(el, values, options)</code> plays the same values and timing as <code>v-animate</code> from your code, and leaves the end as the element's own style. Await it, or steer it with <code>pause()</code>, <code>reverse()</code>, <code>time</code> and <code>speed</code>. <code>useAnimate()</code> scopes selectors to one element and stops what it started when the component unmounts. It follows the app's spring, <code>motion: false</code> and reduced motion."
+        },
+        "drag": {
+          "title": "Dragging",
+          "body": "The components that drag (BottomSheet, SwipeToReveal, Sortable, Slider) have it built in. To drag your own elements, use VueUse's <code>useDraggable</code>, and let <code>v-animate</code> handle the release with <code>layout</code> or <code>animate</code>."
         },
         "own": {
           "title": "Your own components",
@@ -818,7 +848,7 @@
         },
         "keyframes": {
           "title": "Keyframes",
-          "body": "An array is a set of keyframes. <code>times</code> places each one, from 0 to 1, and <code>easing</code> eases each step. Pass a list of easings to give each step its own, such as a rise and then a bounce. <code>repeat</code> plays them again, and <code>repeat: Infinity</code> keeps going until the state turns off or the look changes. A step can ease on a spring: <code>easing: ['linear', 'bouncy']</code>. Change a loop's <code>duration</code> while it plays, and it speeds up or slows down from where it is."
+          "body": "An array is a set of keyframes. <code>times</code> places each one, from 0 to 1, and <code>easing</code> eases each step. Pass a list of easings to give each step its own, such as a rise and then a bounce. <code>repeat</code> plays them again, and <code>repeat: Infinity</code> keeps going until the state turns off or the look changes. A step can ease on a spring: <code>easing: ['linear', 'bouncy']</code>. Change a loop's <code>duration</code> while it plays, and it speeds up or slows down from where it is. <code>repeatDelay</code> holds still between runs, and <code>repeatType: 'mirror'</code> comes back the way it went. <code>null</code> as the first keyframe starts from wherever the value is now: <code>scale: [null, 1.2, 1]</code>."
         },
         "each": {
           "title": "One at a time",
@@ -898,7 +928,7 @@
         "intro": "Each of these runs once a motion has played, so your next step never guesses a duration. When nothing plays, as with motion off, they run at once.",
         "enterLeave": {
           "title": "Once it's in, once it's gone",
-          "body": "On <code>v-animate</code>, <code>onAfterEnter</code> runs once its entrance has played, and after each <code>replay</code>. <code>onAfterLeave</code> runs once its exit has played and it's gone. Both get the element."
+          "body": "On <code>v-animate</code>, <code>onAfterEnter</code> runs once its entrance has played, and after each <code>replay</code>. <code>onAfterLeave</code> runs once its exit has played and it's gone. Both get the element. <code>onStart</code> runs as the entrance starts moving, after any <code>delay</code>."
         },
         "states": {
           "title": "After a state",

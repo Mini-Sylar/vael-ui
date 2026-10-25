@@ -15,7 +15,8 @@
 
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
-import { Button, vAnimate } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const orders = shallowReactive([1042, 1043])
 const add = () => orders.push((orders.at(-1) ?? 1041) + 1)

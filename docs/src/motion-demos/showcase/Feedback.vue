@@ -44,7 +44,8 @@
 
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
-import { Button, Loader, Popover, Textarea, vAnimate } from 'vael-ui'
+import { Button, Loader, Popover, Textarea } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhPaperPlaneTilt } from '@phosphor-icons/vue'
 
 const open = shallowRef(false)

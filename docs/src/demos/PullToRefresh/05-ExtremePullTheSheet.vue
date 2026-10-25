@@ -28,7 +28,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, useTemplateRef } from 'vue'
-import { Loader, PullToRefresh, springEasing } from 'vael-ui'
+import { Loader, PullToRefresh } from 'vael-ui'
+import { springEasing } from 'vael-ui/motion'
 
 const ptr = useTemplateRef('ptr')
 const rows = shallowRef(['Inbox', 'Design review', 'Standup notes', 'Invoices', 'Reading list'])

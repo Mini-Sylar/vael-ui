@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { vAnimate } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhBookmarkSimple, PhCopy, PhHeart, PhShareFat } from '@phosphor-icons/vue'
 
 const actions = [

@@ -30,7 +30,8 @@
 
 <script setup lang="ts">
 import { reactive, shallowRef, watch } from 'vue'
-import { Accordion, AccordionItem, vAnimate } from 'vael-ui'
+import { Accordion, AccordionItem } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { AccordionMotion } from 'vael-ui'
 
 const sections = [

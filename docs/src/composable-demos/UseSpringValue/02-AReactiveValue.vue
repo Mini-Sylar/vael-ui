@@ -28,7 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { Button, useSpringValue } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { useSpringValue } from 'vael-ui/motion'
 
 // Slightly under 1, so a long move settles with one small overshoot.
 const { value, set, jump, stop } = useSpringValue(0, { damping: 0.8, response: 0.6 })

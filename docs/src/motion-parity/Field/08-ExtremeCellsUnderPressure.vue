@@ -71,17 +71,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import {
-  Button,
-  Field,
-  Input,
-  InputNumber,
-  Select,
-  SelectButton,
-  Switch,
-  Textarea,
-  vAnimate,
-} from 'vael-ui'
+import { Button, Field, Input, InputNumber, Select, SelectButton, Switch, Textarea } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhCheck, PhCopy, PhStack } from '@phosphor-icons/vue'
 
 const sizes = [

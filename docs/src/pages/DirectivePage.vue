@@ -31,6 +31,7 @@
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent, shallowRef, watchEffect, type Component } from 'vue'
+import { importCode } from '../importCode'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
@@ -83,7 +84,7 @@ watchEffect(async () => {
 
 const installCode = computed(() => {
   const names = content.value?.installNames ?? [name.value]
-  return `import { ${names.join(', ')} } from 'vael-ui'`
+  return importCode(names)
 })
 
 useHead({ title: () => content.value?.label ?? name.value })

@@ -481,7 +481,7 @@ function onSave() {
   springEasing: {
     description:
       'Turns a spring into a CSS `linear()` curve and the time it takes to settle, in ms. It\'s the curve vael-ui uses for `ConfigProvider`\'s `:motion="{ spring }"`. The result has the same shape as the options `element.animate()` takes, so your own animations can move on the same spring without a library. Damping below 1 overshoots.',
-    exampleCode: `import { springEasing } from 'vael-ui'
+    exampleCode: `import { springEasing } from 'vael-ui/motion'
 
 // { easing: 'linear(0, …, 1)', duration: 642 }
 const spring = springEasing({ damping: 0.7, response: 0.4 })
@@ -705,6 +705,43 @@ const { mode, resolvedMode, setMode } = useColorScheme({
     ],
   },
 
+  useScrollProgress: {
+    description:
+      "Scroll progress as a ref from 0 to 1: the page's, from top to bottom, or an element's way through the screen (or a scrolling container). Pass it to `v-animate`'s `progress` as a getter, `progress: () => scroll.value`, and keyframes follow the scroll without re-rendering the component. It measures on the next frame after a scroll or resize, and stops when its scope ends.",
+    installNames: ['useScrollProgress'],
+    hasLiveDemo: true,
+    params: [
+      {
+        name: 'target',
+        type: 'MaybeRefOrGetter<Element | null | undefined>',
+        description:
+          "The element whose way through the screen to track. Leave it out for the page's scroll from top to bottom.",
+      },
+      {
+        name: 'options.container',
+        type: 'MaybeRefOrGetter<Element | null | undefined>',
+        description: 'A scrolling element to measure in, instead of the page.',
+      },
+      {
+        name: 'options.axis',
+        type: "'x' | 'y'",
+        description: "Which way it scrolls. Default `'y'`.",
+      },
+      {
+        name: 'options.offset',
+        type: '[string, string]',
+        description:
+          "Where it starts and ends, each a `'<target edge> <container edge>'` pair: `start`, `center`, `end`, a share such as `0.25`, px or %. `'start end'` is the target's start meeting the container's end. Default `['start end', 'end start']`: from entering to having left.",
+      },
+    ],
+    returns: [
+      {
+        name: 'progress',
+        type: 'Readonly<Ref<number>>',
+        description: 'From 0 to 1, clamped. `0` on the server.',
+      },
+    ],
+  },
   useSpringValue: {
     description:
       "vael-ui's spring engine: the physics behind Sortable, Tree and DataTable reordering, and behind every sliding indicator set to a spring. A spring has no duration. You give it a target, and it moves there from where it is now, at the speed it already has. So every animation can be interrupted: call `set()` mid-flight and the value turns toward the new target with no jump. `useSpringValue` returns a ref to bind in a template. `createSpring` calls `onFrame` with each frame instead, so a value that drives a style never re-renders a component. `stepSpring` is the pure step under both, for tests and plots. One shared `requestAnimationFrame` loop runs every moving spring, and it stops once they all rest.",

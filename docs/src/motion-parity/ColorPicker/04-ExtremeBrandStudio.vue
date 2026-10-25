@@ -75,7 +75,8 @@
 
 <script setup lang="ts">
 import { shallowRef, watch } from 'vue'
-import { ColorPicker, vAnimate } from 'vael-ui'
+import { ColorPicker } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const presets = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#0f766e']
 const brand = shallowRef(presets[0]!)

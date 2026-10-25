@@ -661,9 +661,9 @@ import {
   SelectButton,
   Switch,
   useSortableGroup,
-  vAnimate,
   vScrollMask,
 } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { ProgressSegment, TreeNode } from 'vael-ui'
 import { useResizeObserver } from '@vueuse/core'
 import {

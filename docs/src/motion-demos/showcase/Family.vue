@@ -68,7 +68,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, Dialog, vAnimate } from 'vael-ui'
+import { Button, Dialog } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { DialogMotion } from 'vael-ui'
 import {
   PhArticle,

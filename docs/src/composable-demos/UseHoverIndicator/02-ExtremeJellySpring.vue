@@ -18,7 +18,8 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
-import { createSpring, useHoverIndicator } from 'vael-ui'
+import { useHoverIndicator } from 'vael-ui'
+import { createSpring } from 'vael-ui/motion'
 
 const items = ['Inbox', 'Starred', 'Snoozed', 'Sent', 'Drafts', 'Archive', 'Trash']
 

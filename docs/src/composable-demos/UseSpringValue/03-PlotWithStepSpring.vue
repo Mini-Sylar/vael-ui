@@ -31,7 +31,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { Field, Slider, stepSpring } from 'vael-ui'
+import { Field, Slider } from 'vael-ui'
+import { stepSpring } from 'vael-ui/motion'
 
 const response = shallowRef(0.35)
 const DURATION = 1.2

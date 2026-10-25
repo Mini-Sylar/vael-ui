@@ -21,7 +21,8 @@
 </template>
 
 <script setup lang="ts">
-import { AnimatedNumber, vAnimate } from 'vael-ui'
+import { AnimatedNumber } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const stats = [
   {

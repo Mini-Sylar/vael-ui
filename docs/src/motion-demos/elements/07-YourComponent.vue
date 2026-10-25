@@ -13,7 +13,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, useMotion } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { useMotion } from 'vael-ui/motion'
 
 const open = shallowRef(false)
 const motion = useMotion('overlay')

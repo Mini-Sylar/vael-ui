@@ -16,7 +16,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
-import { Knob, vAnimate } from 'vael-ui'
+import { Knob } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const value = shallowRef(50)
 const swing = shallowRef(0)

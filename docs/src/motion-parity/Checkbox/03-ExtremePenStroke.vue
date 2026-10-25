@@ -56,7 +56,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
-import { Checkbox, springEasing, vAnimate } from 'vael-ui'
+import { Checkbox } from 'vael-ui'
+import { springEasing, vAnimate } from 'vael-ui/motion'
 import type { CheckboxMotion } from 'vael-ui'
 
 const tasks = [

@@ -37,7 +37,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, Progress, vAnimate } from 'vael-ui'
+import { Button, Progress } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { ProgressMotion, ProgressSegment } from 'vael-ui'
 
 const segments: ProgressSegment[] = [

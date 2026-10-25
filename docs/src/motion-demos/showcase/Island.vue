@@ -49,8 +49,9 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, ConfigProvider, vAnimate } from 'vael-ui'
-import type { MotionStyle } from 'vael-ui'
+import { Button, ConfigProvider } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
+import type { MotionStyle } from 'vael-ui/motion'
 import { PhBellRinging, PhMicrophone, PhPause, PhPhone, PhTimer } from '@phosphor-icons/vue'
 
 // A goo: blurred, then its edge sharpened, so shapes that meet merge.

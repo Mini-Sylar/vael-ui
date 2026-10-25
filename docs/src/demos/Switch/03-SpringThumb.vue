@@ -13,7 +13,8 @@
 
 <script setup lang="ts">
 import { nextTick, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
-import { createSpring, Switch } from 'vael-ui'
+import { Switch } from 'vael-ui'
+import { createSpring } from 'vael-ui/motion'
 
 const enabled = shallowRef(false)
 const sw = useTemplateRef('sw')

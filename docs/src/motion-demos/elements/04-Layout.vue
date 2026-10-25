@@ -12,7 +12,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, vAnimate } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const tasks = shallowRef([
   { id: 1, label: 'Write the changelog' },

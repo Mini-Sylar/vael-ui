@@ -15,8 +15,9 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, vAnimate } from 'vael-ui'
-import type { MotionTiming } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
+import type { MotionTiming } from 'vael-ui/motion'
 
 const on = shallowRef(false)
 const curves: { label: string; timing: MotionTiming }[] = [

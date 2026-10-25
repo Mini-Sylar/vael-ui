@@ -26,7 +26,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { SelectButton, vAnimate } from 'vael-ui'
+import { SelectButton } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const status = shallowRef<'offline' | 'away' | 'live'>('offline')
 const colours = {

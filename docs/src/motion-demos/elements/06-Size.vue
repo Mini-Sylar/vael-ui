@@ -10,7 +10,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, vAnimate } from 'vael-ui'
+import { Button } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const more = shallowRef(false)
 const short = 'Billing runs on the first of each month.'

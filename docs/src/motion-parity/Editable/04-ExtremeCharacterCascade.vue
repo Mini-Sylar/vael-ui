@@ -41,7 +41,8 @@
 
 <script setup lang="ts">
 import { reactive, shallowRef } from 'vue'
-import { Editable, vAnimate } from 'vael-ui'
+import { Editable } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 const title = shallowRef('Quarterly roadmap')
 const rows = reactive([

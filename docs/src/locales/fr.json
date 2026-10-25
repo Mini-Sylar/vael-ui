@@ -447,6 +447,7 @@
     "useFieldControl": "Connecte un contrôle de formulaire personnalisé au Field le plus proche : id, attributs ARIA, et états de focus et de remplissage. Utilisez-le quand votre propre contrôle se trouve dans un Field.",
     "useHoverIndicator": "Le surlignage glissant au survol et au clavier derrière les listes de vael-ui. Utilisez-le pour donner le même surlignage à vos propres listes.",
     "useSpringValue": "Une physique de ressort interruptible sous trois formes : une valeur réactive, un ressort impératif qui écrit chaque image sans nouveau rendu, et la fonction de pas pure derrière les deux. Utilisez-le pour un mouvement dont la cible peut changer en cours de route.",
+    "useScrollProgress": "La progression du défilement sous forme de ref de 0 à 1 : celle de la page, ou le passage d'un élément à l'écran. Passez-la au progress de v-animate comme getter.",
     "useTabIndicator": "L'indicateur de sélection glissant derrière Tabs, SelectButton, MenuList et Pagination. Utilisez-le pour vos propres contrôles segmentés et listes.",
     "useScrollLock": "Bloque le défilement de la page ou de n'importe quel élément sans décalage de mise en page, comme le font les dialogues ouverts. Utilisez-le pour vos propres superpositions et panneaux plein écran.",
     "moveTreeNode": "Déplace un nœud et son sous-arbre vers un nouveau parent et un nouvel index, sur place. Un déplacement impossible, comme un dossier dans lui-même, ne change rien. Utilisez-le pour appliquer un glisser-déposer à vos données d'arbre.",
@@ -465,7 +466,7 @@
     "vaporIntro": "vael-ui fournit deux versions issues de la même source : la version VDOM et la version Vapor (<code>vael-ui/vapor</code>). Par défaut, le résolveur importe depuis la version VDOM. Passez <code>variant: 'vapor'</code> pour importer plutôt depuis la version Vapor. Le résolveur importe tous les composants depuis une seule version, choisissez donc celle avec laquelle votre application effectue le rendu.",
     "vaporHostsNote": "Dans un template Vapor, unplugin-vue-components ne trouve que les composants placés dans le slot d’un autre composant. Tant qu'il ne prend pas en charge Vapor, importez à la main ceux du premier niveau, comme <code>&lt;Toaster&gt;</code>, <code>&lt;DialogHost&gt;</code> et <code>&lt;ConfigProvider&gt;</code>.",
     "vaporTitle": "Vapeur",
-    "oneImportIntro": "L'import automatique de votre éditeur peut continuer à suggérer <code>vael-ui</code> au lieu de <code>vael-ui/vapor</code>. C'est une limitation connue de TypeScript lorsqu'un package exporte le même nom depuis deux points d'entrée. Pour l'éviter, définissez une condition d'export <code>vapor</code> au lieu d'importer depuis le sous-chemin. Chaque <code>import … from 'vael-ui'</code> se résout alors vers la version Vapor dans tout le projet, pour les composants comme pour les composables, et l'import automatique ne peut plus se tromper.",
+    "oneImportIntro": "L'import automatique de votre éditeur peut continuer à suggérer <code>vael-ui</code> au lieu de <code>vael-ui/vapor</code>. C'est une limitation connue de TypeScript lorsqu'un package exporte le même nom depuis deux points d'entrée. Pour l'éviter, définissez une condition d'export <code>vapor</code> au lieu d'importer depuis le sous-chemin. Chaque <code>import … from 'vael-ui'</code> se résout alors vers la version Vapor dans tout le projet, pour les composants comme pour les composables, et l'import automatique ne peut plus se tromper. <code>vael-ui/motion</code> la suit aussi : son <code>vAnimate</code> est alors la directive Vapor.",
     "oneImportDefaults": "Ajoutez <code>vapor</code> aux conditions par défaut de Vite au lieu de les remplacer. Un simple <code>['vapor']</code> supprime les valeurs par défaut, et d’autres paquets peuvent alors charger le mauvais fichier. La ligne <code>ssr</code> fait de même pour le rendu côté serveur.",
     "oneImportNote": "La condition Vite détermine la version chargée, et la condition TypeScript aligne les types sur celle-ci. Si vous n'en définissez qu'une, aucune erreur n'apparaît : vous obtenez les bons types avec la mauvaise version, ou l'inverse.",
     "oneImportNoteTitle": "Gardez les deux paramètres synchronisés",
@@ -595,11 +596,12 @@
     "propIntro": "Chaque composant accepte <code>motion</code>. <code>false</code> coupe son mouvement. Un objet le modifie : des valeurs pour ses parties, un ressort ou une durée, ou des hooks <code>enter</code> et <code>leave</code> pour votre propre bibliothèque.",
     "propTable": "Chaque page de composant a une section <strong>Motion</strong> qui liste ses parties, ses états et ses autres options de mouvement.",
     "yoursTitle": "Dans vos propres composants",
-    "yoursIntro": "<code>v-animate</code> donne le même mouvement à vos propres éléments : une entrée, une sortie, une taille qui s'ajuste en douceur à son contenu, ou un glissement vers une nouvelle place quand la mise en page change.",
+    "yoursIntro": "<code>v-animate</code> donne le même mouvement à vos propres éléments : une entrée, une sortie, une taille qui s'ajuste en douceur à son contenu, ou un glissement vers une nouvelle place quand la mise en page change. Elle et les autres outils pour vos propres éléments s’importent depuis <code>vael-ui/motion</code> ; dans un composant Vapor, importez plutôt <code>vAnimateVapor</code> depuis ce même chemin.",
     "yoursComposables": "Pour vos propres mouvements, utilisez les composables qui se cachent derrière :",
     "composable": {
       "springEasing": "Transforme un ressort en easing CSS et en temps de stabilisation.",
       "useSpringValue": "Une valeur qui suit sa cible sur un ressort.",
+      "useScrollProgress": "Progression du défilement de 0 à 1, pour un mouvement lié au défilement.",
       "useHoverIndicator": "Le surlignage glissant au survol, pour vos propres listes.",
       "useTabIndicator": "L'indicateur glissant derrière Tabs et SelectButton."
     },
@@ -772,9 +774,21 @@
           "title": "Entrée et sortie",
           "body": "<code>initial</code> indique d'où arrive l'élément. Quand Vue le retire, il repart par où il est venu, plus vite et plus discrètement, sauf si vous lui donnez un <code>exit</code>. Dans un composant qui se ferme, comme une boîte de dialogue ou un menu, il part plutôt avec le panneau. Pour les entrées courantes, choisissez-en une par son nom : <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> ou <code>.blur</code>. Ajoutez un ressort de la même façon, comme dans <code>v-animate.pop.bouncy</code>, et ajustez-la avec une valeur : <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
+        "show": {
+          "title": "Affiché et masqué",
+          "body": "À côté de <code>v-show</code>, <code>v-animate</code> joue sa sortie quand l'élément est masqué et son entrée quand il réapparaît, comme avec <code>v-if</code>."
+        },
         "scroll": {
           "title": "Quand il apparaît au défilement",
           "body": "<code>when: 'visible'</code> attend que l'élément soit à l'écran, puis joue une fois. Les éléments qui partagent un nom, comme <code>v-animate:tiles</code>, jouent dans l'ordre de la page, l'un après l'autre avec un <code>stagger</code>. <code>stagger: true</code> les espace selon le token de stagger ; <code>'end'</code>, <code>'center'</code> ou <code>'edges'</code> font partir la vague de là."
+        },
+        "inView": {
+          "title": "Tant qu'il est visible",
+          "body": "<code>states.inView</code> garde une apparence tant que l'élément est à l'écran et la relâche quand il défile hors de vue. <code>viewport</code> fixe quand il compte : <code>amount</code> (<code>'some'</code>, <code>'all'</code> ou de 0 à 1), une <code>margin</code> autour de l'écran, et <code>once</code> pour la garder une fois vu. <code>when: 'visible'</code> prend le même <code>viewport</code>."
+        },
+        "progress": {
+          "title": "Lié au défilement",
+          "body": "<code>useScrollProgress()</code> donne le défilement de la page, ou le passage d'un élément à l'écran, sous forme de ref de 0 à 1. Passez-le à <code>progress</code> comme getter, <code>progress: () => scroll</code>, et les keyframes suivent le défilement sans re-rendre votre composant. <code>offset</code> fixe le début et la fin : <code>['start end', 'end start']</code> va de l'entrée à la sortie."
         },
         "replay": {
           "title": "Le rejouer",
@@ -782,7 +796,7 @@
         },
         "layout": {
           "title": "Glisser vers une nouvelle place",
-          "body": "<code>layout: true</code> fait glisser un élément là où la mise en page le place, par exemple quand une liste se réordonne ou qu'un voisin grandit. Un <code>delay</code> attend avant de glisser, en gardant son ancienne place entre-temps."
+          "body": "<code>layout: true</code> fait glisser un élément là où la mise en page le place, par exemple quand une liste se réordonne ou qu'un voisin grandit, et l'amène en douceur à sa nouvelle taille quand il en change. <code>layout: 'position'</code> ne fait que glisser. Un <code>delay</code> attend avant de glisser, en gardant son ancienne place."
         },
         "shared": {
           "title": "D'un endroit à l'autre",
@@ -792,9 +806,25 @@
           "title": "Garder une apparence",
           "body": "<code>animate</code> définit une apparence que l'élément garde tant qu'il est sur la page. Changez-la, et l'élément s'y rend depuis là où il se trouve, sur un ressort sauf si vous définissez une <code>duration</code> : <code>animate: {'{'} rotate: open ? 180 : 0 {'}'}</code>. Avec des tableaux de keyframes, <code>progress</code> (de 0 à 1) les fige à un point au lieu de les jouer, pour qu'un swipe ou un défilement puisse les parcourir. Avec un <code>spring</code>, elles le suivent avec un léger retard."
         },
+        "turn": {
+          "title": "Tourner en 3D",
+          "body": "<code>rotateX</code> et <code>rotateY</code> tournent un élément vers vous ou au loin, et <code>perspective</code> règle la profondeur : retourner une carte, c'est <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> et <code>skewY</code> l'inclinent."
+        },
+        "draw": {
+          "title": "Tracer un trait",
+          "body": "<code>pathLength</code> trace un trait SVG de 0 (rien) à 1 (tout) : <code>initial: {'{'} pathLength: 0 {'}'}</code> trace une coche. <code>pathOffset</code> déplace le début de la partie tracée."
+        },
         "size": {
           "title": "Suivre son contenu",
-          "body": "<code>v-animate.size</code> amène en douceur un élément à la nouvelle taille de son contenu au lieu de sauter."
+          "body": "<code>v-animate.size</code> amène un élément en douceur à la nouvelle hauteur de son contenu, et à sa nouvelle largeur quand le contenu la fixe, au lieu de sauter."
+        },
+        "fromCode": {
+          "title": "Depuis le code",
+          "body": "Pour un mouvement déclenché par un événement, comme un code erroné ou un article ajouté au panier, <code>animate(el, values, options)</code> joue les mêmes valeurs et le même timing que <code>v-animate</code> depuis votre code, et laisse la fin comme style propre de l'élément. Attendez-le avec await, ou pilotez-le avec <code>pause()</code>, <code>reverse()</code>, <code>time</code> et <code>speed</code>. <code>useAnimate()</code> limite les sélecteurs à un élément et arrête ce qu'il a lancé quand le composant est démonté. Il suit le ressort de l'app, <code>motion: false</code> et le mouvement réduit."
+        },
+        "drag": {
+          "title": "Glisser",
+          "body": "Les composants qu'on fait glisser (BottomSheet, SwipeToReveal, Sortable, Slider) l'intègrent déjà. Pour vos propres éléments, utilisez <code>useDraggable</code> de VueUse et laissez <code>v-animate</code> gérer le relâchement avec <code>layout</code> ou <code>animate</code>."
         },
         "own": {
           "title": "Vos propres composants",
@@ -818,7 +848,7 @@
         },
         "keyframes": {
           "title": "Keyframes",
-          "body": "Un tableau est une série de keyframes. <code>times</code> place chacune, de 0 à 1, et <code>easing</code> adoucit chaque étape. Passez une liste d'easings pour donner à chaque étape le sien, comme une montée puis un rebond. <code>repeat</code> les rejoue, et <code>repeat: Infinity</code> continue jusqu'à ce que l'état se désactive ou que l'apparence change. Une étape peut suivre un ressort : <code>easing: ['linear', 'bouncy']</code>. Changez la <code>duration</code> d'une boucle pendant qu'elle joue, et elle accélère ou ralentit depuis là où elle en est."
+          "body": "Un tableau est une série de keyframes. <code>times</code> place chacune, de 0 à 1, et <code>easing</code> adoucit chaque étape. Passez une liste d'easings pour donner à chaque étape le sien, comme une montée puis un rebond. <code>repeat</code> les rejoue, et <code>repeat: Infinity</code> continue jusqu'à ce que l'état se désactive ou que l'apparence change. Une étape peut suivre un ressort : <code>easing: ['linear', 'bouncy']</code>. Changez la <code>duration</code> d'une boucle pendant qu'elle joue, et elle accélère ou ralentit depuis là où elle en est. <code>repeatDelay</code> reste immobile entre les passages, et <code>repeatType: 'mirror'</code> revient par le même chemin. <code>null</code> en premier keyframe part d'où se trouve la valeur : <code>scale: [null, 1.2, 1]</code>."
         },
         "each": {
           "title": "Un par un",
@@ -898,7 +928,7 @@
         "intro": "Chacun s'exécute une fois qu'une animation a joué, pour que votre étape suivante ne devine jamais une durée. Quand rien ne joue, comme avec le mouvement désactivé, ils s'exécutent tout de suite.",
         "enterLeave": {
           "title": "Une fois entré, une fois parti",
-          "body": "Sur <code>v-animate</code>, <code>onAfterEnter</code> s'exécute une fois son entrée jouée, et après chaque <code>replay</code>. <code>onAfterLeave</code> s'exécute une fois sa sortie jouée et l'élément parti. Les deux reçoivent l'élément."
+          "body": "Sur <code>v-animate</code>, <code>onAfterEnter</code> s'exécute une fois son entrée jouée, et après chaque <code>replay</code>. <code>onAfterLeave</code> s'exécute une fois sa sortie jouée et l'élément parti. Les deux reçoivent l'élément. <code>onStart</code> s'exécute quand l'entrée commence à bouger, après un éventuel <code>delay</code>."
         },
         "states": {
           "title": "Après un état",

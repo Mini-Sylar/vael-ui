@@ -52,7 +52,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { Calendar, vAnimate } from 'vael-ui'
+import { Calendar } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { CalendarRange } from 'vael-ui'
 
 const now = new Date()

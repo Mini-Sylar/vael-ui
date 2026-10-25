@@ -25,7 +25,8 @@
 <script setup lang="ts">
 import { onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { createSpring, Slider } from 'vael-ui'
+import { Slider } from 'vael-ui'
+import { createSpring } from 'vael-ui/motion'
 
 const MIN = 0
 const MAX = 100

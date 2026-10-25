@@ -56,7 +56,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Field, Select, vAnimate } from 'vael-ui'
+import { Field, Select } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { SelectMotion } from 'vael-ui'
 import { PhChatsCircle, PhCheck, PhCode, PhFileText, PhPaintBrush } from '@phosphor-icons/vue'
 

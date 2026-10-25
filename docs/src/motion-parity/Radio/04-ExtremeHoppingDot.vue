@@ -27,7 +27,8 @@
 
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
-import { Radio, RadioGroup, vAnimate } from 'vael-ui'
+import { Radio, RadioGroup } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { RadioMotion } from 'vael-ui'
 
 const plans = [

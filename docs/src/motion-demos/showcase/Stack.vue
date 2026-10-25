@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { vAnimate } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import { PhBell, PhCheckCircle, PhUsers } from '@phosphor-icons/vue'
 
 const notes = [

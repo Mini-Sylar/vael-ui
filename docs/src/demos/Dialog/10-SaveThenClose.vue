@@ -55,7 +55,8 @@
 
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button, Dialog, Input, toast, vAnimate } from 'vael-ui'
+import { Button, Dialog, Input, toast } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import type { DialogMotion } from 'vael-ui'
 
 const open = shallowRef(false)

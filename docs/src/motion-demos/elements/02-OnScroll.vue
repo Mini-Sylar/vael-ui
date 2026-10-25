@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { vAnimate } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 
 // Plays once, the first time a tile is scrolled to; tiles seen together stagger.
 const reveal = { initial: { opacity: 0, y: 16 }, when: 'visible' as const, stagger: true }

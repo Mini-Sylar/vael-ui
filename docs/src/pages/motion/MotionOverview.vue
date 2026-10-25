@@ -74,7 +74,7 @@ import { vAnimate } from "vael-ui"
 import { computed, reactive } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
-import { vAnimate } from 'vael-ui'
+import { vAnimate } from 'vael-ui/motion'
 import CodeBlock from '../../components/CodeBlock.vue'
 import DitherBackground from '../../components/DitherBackground.vue'
 import GuideLayout from '../../components/GuideLayout.vue'

@@ -15,7 +15,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Button, ConfigProvider, Dialog, Textarea, parseMotionStyle } from 'vael-ui'
+import { Button, ConfigProvider, Dialog, Textarea } from 'vael-ui'
+import { parseMotionStyle } from 'vael-ui/motion'
 
 const text = ref(`{
   "version": 1,

@@ -1,4 +1,4 @@
-import type { MotionStyle } from 'vael-ui'
+import type { MotionStyle } from 'vael-ui/motion'
 
 // The site's motion presets: what the header's motion menu puts on the whole docs.
 export const MOTION_PRESETS = ['default', 'calm', 'snappy', 'bouncy', 'jelly', 'gooey'] as const

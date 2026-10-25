@@ -16,7 +16,7 @@ export const directivesContent: Record<string, DirectiveContent> = {
   vAnimate: {
     label: 'v-animate',
     description:
-      "Animates any element: in as it mounts, out as it leaves, to a new look when its values change, and to its new place when layout moves it. It plays on the same motion system as the components, so a ConfigProvider's spring, `motion: false` and reduced motion apply to it too. The Motion section covers it in depth, with examples for each case. The Vapor build exports its own version under the same name from `vael-ui/vapor`.",
+      "Animates any element: in as it mounts, out as it leaves, to a new look when its values change, and to its new place when layout moves it. It plays on the same motion system as the components, so a ConfigProvider's spring, `motion: false` and reduced motion apply to it too. The Motion section covers it in depth, with examples for each case. It comes from `vael-ui/motion`; in a Vapor component, import `vAnimateVapor` from there instead (as `vAnimate`, or write `v-animate-vapor`).",
     installNames: ['vAnimate'],
     value: [
       {
