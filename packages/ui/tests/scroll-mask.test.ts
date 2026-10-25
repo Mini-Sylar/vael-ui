@@ -111,7 +111,7 @@ test('a child that grows through its style turns the fade on', async () => {
   await vi.waitFor(() => expect(el.classList.contains('scroll-fade')).toBe(true))
 })
 
-test("the scrollbar's strip stays out of the fade: at least 12px, none when hidden, on the left right to left", async () => {
+test("the scrollbar's strip stays out of the fade: its own width, none when hidden, on the left right to left", async () => {
   const scroller = (screen: { container: Element }) =>
     screen.container.querySelector<HTMLElement>('[data-testid="scroller"]')!
   {
@@ -122,7 +122,8 @@ test("the scrollbar's strip stays out of the fade: at least 12px, none when hidd
     await nextTick()
     const own = scroller(bordered)
     const bar = own.offsetWidth - own.clientWidth - 60
-    expect(own.style.getPropertyValue('--ui-scroll-bar-y')).toBe(`${Math.max(bar, 12)}px`)
+    // An overlay scrollbar (0 here) takes no room, so content runs under it: no strip.
+    expect(own.style.getPropertyValue('--ui-scroll-bar-y')).toBe(`${bar}px`)
     bordered.unmount()
     expect(own.style.getPropertyValue('--ui-scroll-bar-y')).toBe('')
 

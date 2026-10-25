@@ -70,7 +70,7 @@
 import './Editable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
-import { computed, nextTick, shallowRef, useAttrs, useTemplateRef } from 'vue'
+import { computed, nextTick, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Input from '../Input/Input.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -164,6 +164,8 @@ const input = useTemplateRef<InstanceType<typeof Input>>('input')
 const editArea = useTemplateRef<HTMLElement>('editArea')
 const preview = useTemplateRef<HTMLButtonElement>('preview')
 const draft = shallowRef('')
+// Opened from outside (v-model:editing), the input starts on the text, as a click would.
+watch(editing, (on) => on && (draft.value = modelValue.value), { immediate: true })
 const parts = useStateMotion({
   key: 'editable',
   mainPart: 'root',

@@ -75,6 +75,26 @@ test('empty text shows the placeholder; disabled does not open; the editing mode
   expect(input(open.container)).not.toBeNull()
 })
 
+test('opened through the editing model, the input holds the text, and leaving keeps it', async () => {
+  const onUpdate = vi.fn()
+  const editing = ref(false)
+  const screen = await render({
+    setup: () => () =>
+      h(Editable, {
+        modelValue: 'Roadmap',
+        editing: editing.value,
+        'onUpdate:editing': (v: boolean) => (editing.value = v),
+        'onUpdate:modelValue': onUpdate,
+      }),
+  })
+  editing.value = true
+  await vi.waitFor(() => expect(input(screen.container)?.value).toBe('Roadmap'))
+  input(screen.container)!.focus()
+  input(screen.container)!.blur()
+  await vi.waitFor(() => expect(input(screen.container)).toBeNull())
+  expect(onUpdate).not.toHaveBeenCalledWith('')
+})
+
 test('actions in the slot submit without the blur getting there first', async () => {
   const onSubmit = vi.fn()
   const screen = await render(Editable, {

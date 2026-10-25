@@ -23,8 +23,6 @@ const FADE_PROPERTIES = [
   '--fade-left-end',
   '--fade-right-start',
 ]
-// Overlay scrollbars take no room but still draw over the edge: keep at least this much clear.
-const OVERLAY_BAR = 12
 
 function supportsScrollTimeline() {
   return typeof CSS !== 'undefined' && CSS.supports('animation-timeline: scroll()')
@@ -56,6 +54,8 @@ function resolveAxis(value: ScrollMaskValue): ScrollMaskAxis {
 }
 
 // The scrollbar's strip, kept out of the fade (a mask covers the whole box, scrollbar included).
+// Only a scrollbar that takes room has one: content runs under an overlay scrollbar, so a strip
+// there would leave a column of content unfaded.
 function measureBars(el: HTMLElement) {
   const style = getComputedStyle(el)
   const hidden = style.scrollbarWidth === 'none'
@@ -63,8 +63,8 @@ function measureBars(el: HTMLElement) {
   const y = el.offsetWidth - el.clientWidth - border(style.borderLeftWidth, style.borderRightWidth)
   const x =
     el.offsetHeight - el.clientHeight - border(style.borderTopWidth, style.borderBottomWidth)
-  el.style.setProperty('--ui-scroll-bar-y', `${hidden ? 0 : Math.max(y, OVERLAY_BAR)}px`)
-  el.style.setProperty('--ui-scroll-bar-x', `${hidden ? 0 : Math.max(x, OVERLAY_BAR)}px`)
+  el.style.setProperty('--ui-scroll-bar-y', `${hidden ? 0 : Math.max(y, 0)}px`)
+  el.style.setProperty('--ui-scroll-bar-x', `${hidden ? 0 : Math.max(x, 0)}px`)
 }
 
 function check(el: HTMLElement, axis: ScrollMaskAxis) {
