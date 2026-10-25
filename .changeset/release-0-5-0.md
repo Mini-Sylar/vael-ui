@@ -10,7 +10,7 @@ Every animated component now takes one `motion` prop, and one engine runs every 
 
 - **`motion`**: `false` turns a component’s motion off. An object changes it:
   - values for each part, such as `{ initial: { panel: { opacity: 0, y: 8 } } }` or `exit`. A plain number is px, or degrees for `rotate`.
-  - timing: a spring by name (`spring: 'snappy'`, `'smooth'`, `'bouncy'` or `'gentle'`) or as `{ damping, response }`, or a `duration` and `easing`. Easings and durations also take vael-ui’s tokens by name, such as `easing: 'out'` or `duration: 'enter'`.
+  - timing: a spring by name (`spring: 'snappy'`, `'smooth'`, `'bouncy'` or `'gentle'`) or as `{ damping, response }`, or a `duration` and `easing`. Easings and durations also take vael-ui’s tokens by name, such as `easing: 'out'`, `'bounce'` (it lands like a dropped ball) or `duration: 'enter'`. On a spring, positions and sizes ride it; opacity, colors and blur ease. Timing on one component retimes its own transitions only: a token you name inside it still means your theme’s.
   - `enter` and `leave` hooks
 
   Each component exports its own type, such as `DialogMotion`, `SelectMotion` or `ToasterMotion`, so its parts autocomplete.
@@ -32,14 +32,14 @@ Every animated component now takes one `motion` prop, and one engine runs every 
 - **App-wide style**: `ConfigProvider`’s `motion` sets the motion for a whole app, by role (`overlay`, `list`, `reveal`, `press`, `content`) or by component (`dialog`, `toaster`, `select`). A component’s own `motion` overrides it. `presets` names looks you can use with `v-animate` anywhere inside the provider, such as `v-animate.wiggle` or `v-animate="'wiggle'"`. List them in `MotionPresets` (`declare module 'vael-ui' { interface MotionPresets { wiggle: true } }`) and TypeScript checks every name. `parseMotionStyle` validates a style loaded from JSON.
 - **`v-animate`**: animates your own elements. Modifiers pick, and the value tunes:
   - `v-animate.rise` plays a built-in entrance: `fade`, `rise`, `drop`, `pop` or `blur`. Add a spring the same way (`v-animate.pop.bouncy`), and tune it with a value: `v-animate.rise="{ delay: 0.1 }"`.
-  - `v-animate="{ initial: { opacity: 0, y: 8 } }"` plays your own entrance. When Vue removes the element, it leaves the way it came; `exit: false` turns that off.
+  - `v-animate="{ initial: { opacity: 0, y: 8 } }"` plays your own entrance. When Vue removes the element, it leaves the way it came; `exit: false` turns that off. Inside a component that closes, such as a dialog or a menu, it leaves with the panel unless it has an `exit` of its own.
   - `stagger` brings elements that share a name in one after another: `v-animate:rows.rise.stagger`, or `stagger: true`, `'end'`, `'center'`, `'edges'`, a number of seconds or a function
   - `states` holds a look while an element is hovered, pressed or focused, as on a component: `{ states: { hover: { scale: 1.03 }, active: { scale: 0.97 } } }`
   - with no timing of its own, it follows the ConfigProvider’s spring
   - `.size` eases an element to its content’s size
   - `layout: true` slides an element to its new place when the layout moves it, after its `delay` if it has one
   - `layoutId` moves an element between two places, such as a card into a dialog. Add `layout: 'position'` to keep its size on the way, so text never stretches.
-  - `replay` plays the animation again when its value changes; `appear: false` plays it only then, and `appear: 'later'` skips what’s there at the first render but plays for anything added after
+  - `replay` plays the animation again when its value changes; `appear: false` plays it only then, and `appear: 'later'` skips what’s there at the first render (inside a component’s panel, what’s there when it opens) but plays for anything added after
   - `when: 'visible'` waits until the element scrolls into view
   - `animate` sets a look the element holds. When the look changes, the element animates to it from wherever it is: `animate: { rotate: open ? 180 : 0 }`.
   - `progress` (0 to 1) holds keyframe arrays at that point, so a swipe or a scroll can scrub them. With a `spring`, they follow `progress` with a short lag.
@@ -170,6 +170,12 @@ Some components render different DOM or styles. Their props, slots and events ar
   - an element in it with `pointer-events: auto` receives hover, such as for a tooltip on a mention
   - Textarea has the same slot and follows its wrapping and scroll. PasswordInput, Combobox (the typed text, after any chips) and InputNumber pass it through.
 - **Select, CascadeSelect, TreeSelect**: the label crossfades whenever it changes, from the placeholder to the first choice, between choices, and back to the placeholder when cleared. A trigger sized to its content eases to the new width. A value already set when the page loads shows at once, and `motion="false"` swaps it at once. A `#value` slot of your own replaces the label and its crossfade; wrap your text in `<AnimatedText>` to keep it.
+- **Select, TreeSelect, CascadeSelect `#start` and `#end`**: content before the value, and before the clear button and chevron, as on Combobox. Each sits in its own part, `start` and `end`. A click there opens the panel like the rest of the trigger, so give a button you put there `@click.stop`.
+- **Chevrons, clear buttons and icons take `ui` keys**: you can style them through `ui` or a `ConfigProvider` theme, like any other part:
+  - `chevron`: Select, TreeSelect, CascadeSelect, Combobox, AccordionItem, SplitButton, Menu
+  - `clear`: Select, TreeSelect, CascadeSelect, Combobox, Input
+  - `icon`: DatePicker (its calendar button), Menu, MenuList, CommandPalette, Breadcrumb, BreadcrumbSeparator, SpeedDial
+  - `filterIcon`: Select, CascadeSelect, Tree. Also `createIcon` on Combobox, `sortChevron` and `expandChevron` on DataTable, `arrow` on PullToRefresh and `hintIcon` on PasswordInput
 - **Button**: `hold` asks for a press and hold before a destructive action. A fill sweeps across while you hold, and `@click` fires when it completes; letting go early snaps it back:
   - `true` holds for 1200 ms, and a number sets the time. Space and Enter hold too.
   - screen readers hear the new `button.hold` message, “Press and hold to confirm” (key `uiKit.button.hold`), as the button’s description, alongside any `aria-describedby` of your own
@@ -215,7 +221,7 @@ Some components render different DOM or styles. Their props, slots and events ar
   - each row tells screen readers its level, its position among its siblings and how many there are
   - the code for it loads with the first tree that needs it, so an app of smaller trees doesn’t ship it
   - a reorderable tree and `forceMount` keep rendering every row
-- **Animation hooks**: Editable, ColorPicker and Progress accept `motion="false"` and expose their elements for your own animations: `previewEl`, `inputEl`, `swatchEl`, `panelEl`, `areaEl`, `thumbEl`, `fillEl` and `fillEls`.
+- **Animation hooks**: Editable, ColorPicker and Progress accept `motion="false"` and expose their elements for your own animations: `previewEl`, `inputEl`, `swatchEl`, `panelEl`, `areaEl`, `thumbEl`, `fillEl` and `fillEls`. AccordionItem exposes its chevron as `chevronEl`, next to `panelEl`.
 - **Sliding highlight on every list**: the hover and keyboard highlight glides between rows in Select, Combobox, CommandPalette, Menu (and so ContextMenu, SplitButton and CascadeSelect), Tree, TreeSelect, MenuList, DataTable, Pagination, Tabs, SelectButton, Toolbar and Calendar:
   - keyboard focus always moves it, even with the pointer resting in the list
   - a move of more than 3 rows (typeahead, Home, End, a new search) jumps instead of gliding, and touch never shows it
@@ -224,6 +230,13 @@ Some components render different DOM or styles. Their props, slots and events ar
   - each component exposes it as `highlightEl`. `indicatorEl` stays the name for a selection indicator, and MenuList now exposes its current-page one.
   - with `motion="false"`, it moves at once, for an animation of your own
 - **ConfigProvider `indicator`**: sets how every sliding indicator inside moves, both the hover highlight and the selection in Tabs, SelectButton and MenuList. Use `'glide'` (the default), `'instant'`, or a spring such as `{ damping: 0.5, response: 0.35 }`, where damping below 1 overshoots. A spring writes to the element on each frame, so nothing re-renders. `motion="false"` still makes indicators instant. `IndicatorMode` and `IndicatorSpring` type it, and `useTabIndicator` and `useHoverIndicator` take the same `indicator` option.
+- **`v-hover-indicator`**: the same highlight for your own lists in one attribute. It adds the highlight element and the positioning itself, and follows `ConfigProvider`’s `indicator` and `motion`:
+  ```vue
+  <ul v-hover-indicator="'.row'">
+    <li v-for="item in items" :key="item.id" class="row">{{ item.name }}</li>
+  </ul>
+  ```
+  `.over` draws it as a see-through tint over rows with a solid background, such as SwipeToReveal rows; `--ui-indicator-over-bg` sets the tint. Register it like `v-tooltip`, or import it from `'vael-ui/vapor'` in a Vapor component.
 - **useHoverIndicator**: the composable behind that highlight, for your own lists. Mark the rows with `itemSelector`, put an element with the `ui-indicator` class in the list, and bind the `style` it returns:
   - `motion: false` leaves the movement to you; the docs show a highlight driven by `createSpring` that overshoots and stretches
   - `group` passes the highlight between neighbouring lists, so moving from one into the next glides across instead of fading out and in. MenuList and Tree do this on their own, for two nav groups or an explorer’s sections.
@@ -265,7 +278,7 @@ These components changed how they move:
 - **Collapsible, Accordion**: content that grows while a panel opens is no longer clipped, and panels ease out.
 - **Message**: grows and shrinks with its fade, so the content below moves instead of jumping.
 - **Select, CascadeSelect**: removing the last chip collapses it smoothly, and a trigger sized to its content eases to the placeholder’s width.
-- **Dock**: sliding a finger along the dock magnifies it, and tapping an item makes it bounce. Item tooltips open above the magnified item. `v-tooltip` takes a `sideOffset`, as a number or a function.
+- **Dock**: sliding a finger along the dock magnifies it, and tapping an item makes it bounce. Magnification follows the spring in `motion` (`{ spring: 'bouncy' }` overshoots), then a style's spring, then the app's. The bar widens with the magnified items, so the end ones stay on it; your own animation can set `--ui-dock-spread` for the same. Item tooltips open above the magnified item. `v-tooltip` takes a `sideOffset`, as a number or a function.
 - **Tour**: the callout travels with the spotlight between steps, including to a step on the other side of its target:
   - `motion` (`duration` and `easing`, or `spring`) times that glide
   - the spotlight exposes the cutout as `--ui-tour-cutout-x`, `-y`, `-width`, `-height` and `-radius`, so a ring of your own can follow it
@@ -391,6 +404,7 @@ These fix behavior in 0.4.8 and earlier.
 - **Dialog**: scrolling to the end of a long dialog no longer scrolls the page behind it.
 - **DataTable**: changing page no longer flashes the table. Before, the old page’s rows stayed for two frames, doubling the table’s height, and then every new row faded in. Now the new page shows at once, and a removed row leaves the layout at once, so the rows below slide up.
 - **Dock**: with `magnify` off, moving over the dock no longer clears the transforms your own animation sets on its items.
+- **AvatarGroup**: with `hoverLift`, a pointer resting on an avatar’s bottom edge no longer makes it flicker up and down.
 - **v-draggable**: a decorative child marked `aria-hidden`, such as Tabs’ indicator, no longer counts as a row. Before, it shifted every row by one, so a drag moved the wrong item.
 - **v-draggable**: grabbing a row while the last drop is still settling no longer leaves a row stuck off its slot.
 - **PasswordInput**: Edge no longer adds its own reveal button. Only `revealable` shows one.
