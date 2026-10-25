@@ -63,7 +63,8 @@
       <button
         v-if="clearable && modelValue !== '' && !isDisabled && !readonly"
         type="button"
-        class="ui-input-clear"
+        :class="clearPart.class"
+        :style="clearPart.style"
         :aria-label="messages.input.clear"
         @click="onClear"
         @mousedown.prevent
@@ -145,7 +146,14 @@ const rawProps = withDefaults(
      */
     animated?: boolean
     /** Class and style overrides for each part. */
-    ui?: Partial<{ root: UiPartValue; input: UiPartValue; start: UiPartValue; end: UiPartValue }>
+    ui?: Partial<{
+      root: UiPartValue
+      input: UiPartValue
+      start: UiPartValue
+      end: UiPartValue
+      /** The clear button. */
+      clear: UiPartValue
+    }>
     /** Animates its states, like a shake when it turns invalid: `{ states: { invalid: { root: { x: [0, -6, 6, -3, 0] } } } }`. */
     motion?: InputMotion
   }>(),
@@ -339,6 +347,7 @@ const rootStyle = computed(() => rootSplit.value.style)
 const inputPart = computed(() => resolveUiPart(cx, themedUi()?.input, 'ui-input-el'))
 const startPart = computed(() => resolveUiPart(cx, themedUi()?.start, 'ui-input-start'))
 const endPart = computed(() => resolveUiPart(cx, themedUi()?.end, 'ui-input-end'))
+const clearPart = computed(() => resolveUiPart(cx, themedUi()?.clear, 'ui-input-clear'))
 
 defineExpose({
   /** Root element (the frame around the input). */

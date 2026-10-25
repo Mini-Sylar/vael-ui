@@ -65,6 +65,15 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+  /* #start and #end: muted like the chevron, spaced by the trigger's gap. */
+  .ui-cascade-select-start,
+  .ui-cascade-select-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+    color: var(--ui-text-muted);
+  }
   /* Same 24px target as Select's clear. */
   .ui-cascade-select-clear {
     position: relative;
@@ -163,7 +172,8 @@
     color: var(--ui-text-muted);
     transition: transform var(--ui-duration-enter) var(--ui-ease-out);
   }
-  .ui-cascade-select-chevron svg {
+  /* The chevron is the svg itself: sized by the trigger's font-size, like Select's. */
+  svg.ui-cascade-select-chevron {
     inline-size: 1em;
     block-size: 1em;
   }

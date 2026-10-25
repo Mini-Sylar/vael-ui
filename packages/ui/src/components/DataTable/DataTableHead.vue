@@ -88,7 +88,8 @@
           >
             <span class="ui-datatable-th-label">{{ col.label ?? String(col.field) }}</span>
             <span
-              class="ui-datatable-sort-chevron"
+              :class="sortChevronPart.class"
+              :style="sortChevronPart.style"
               :data-state="sort.field === col.field ? sort.dir : 'none'"
               aria-hidden="true"
             >
@@ -167,6 +168,7 @@ const props = defineProps<{
     thead: UiPartValue
     th: UiPartValue
     sortButton: UiPartValue
+    sortChevron: UiPartValue
     grip: UiPartValue
     resizeHandle: UiPartValue
   }>
@@ -186,6 +188,9 @@ function thPart(...extra: (string | false | undefined)[]) {
 }
 const sortButtonPart = computed(() =>
   resolveUiPart(cx, props.ui?.sortButton, 'ui-datatable-sort-button'),
+)
+const sortChevronPart = computed(() =>
+  resolveUiPart(cx, props.ui?.sortChevron, 'ui-datatable-sort-chevron'),
 )
 const gripPart = computed(() => resolveUiPart(cx, props.ui?.grip, 'ui-datatable-th-grip'))
 const resizeHandlePart = computed(() =>

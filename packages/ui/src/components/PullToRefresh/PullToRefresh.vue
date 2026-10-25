@@ -19,8 +19,8 @@
           <div :class="bubblePart.class" :style="[bubbleStyle, bubblePart.style]">
             <svg
               v-if="state === 'idle' || state === 'pulling' || state === 'ready'"
-              class="ui-pull-to-refresh-arrow"
-              :style="arrowStyle"
+              :class="arrowPart.class"
+              :style="[arrowStyle, arrowPart.style]"
               viewBox="0 0 16 16"
               width="16"
               height="16"
@@ -83,6 +83,8 @@ export interface PullToRefreshProps {
     indicator: UiPartValue
     bubble: UiPartValue
     label: UiPartValue
+    /** The arrow in the bubble, turning as you pull. */
+    arrow: UiPartValue
   }>
 }
 </script>
@@ -176,6 +178,7 @@ const bubblePart = computed(() =>
   resolveUiPart(cx, themedUi()?.bubble, 'ui-pull-to-refresh-bubble'),
 )
 const labelPart = computed(() => resolveUiPart(cx, themedUi()?.label, 'ui-pull-to-refresh-label'))
+const arrowPart = computed(() => resolveUiPart(cx, themedUi()?.arrow, 'ui-pull-to-refresh-arrow'))
 
 const zoneStyle = computed(() => ({
   blockSize: `${pullDistance.value}px`,

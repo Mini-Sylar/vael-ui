@@ -31,6 +31,7 @@ export interface UiTheme {
       panel: UiPartValue
       header: UiPartValue
       footer: UiPartValue
+      chevron: UiPartValue
     }>
   }
   loader?: { ui?: Partial<{ root: UiPartValue }> }
@@ -106,7 +107,13 @@ export interface UiTheme {
     }>
   }
   input?: {
-    ui?: Partial<{ root: UiPartValue; input: UiPartValue; start: UiPartValue; end: UiPartValue }>
+    ui?: Partial<{
+      root: UiPartValue
+      input: UiPartValue
+      start: UiPartValue
+      end: UiPartValue
+      clear: UiPartValue
+    }>
   }
   inputNumber?: {
     ui?: Partial<{
@@ -152,6 +159,7 @@ export interface UiTheme {
       hint: UiPartValue
       hintList: UiPartValue
       hintItem: UiPartValue
+      hintIcon: UiPartValue
     }>
   }
   textarea?: {
@@ -193,11 +201,11 @@ export interface UiTheme {
       connector: UiPartValue
     }>
   }
-  breadcrumb?: { ui?: Partial<{ root: UiPartValue; list: UiPartValue }> }
+  breadcrumb?: { ui?: Partial<{ root: UiPartValue; list: UiPartValue; icon: UiPartValue }> }
   breadcrumbItem?: {
     ui?: Partial<{ item: UiPartValue; link: UiPartValue; current: UiPartValue }>
   }
-  breadcrumbSeparator?: { ui?: Partial<{ root: UiPartValue }> }
+  breadcrumbSeparator?: { ui?: Partial<{ root: UiPartValue; icon: UiPartValue }> }
   toolbar?: {
     ui?: Partial<{ root: UiPartValue; group: UiPartValue; overflowTrigger: UiPartValue }>
   }
@@ -209,6 +217,7 @@ export interface UiTheme {
       trigger: UiPartValue
       panel: UiPartValue
       body: UiPartValue
+      chevron: UiPartValue
     }>
   }
   collapsible?: {
@@ -233,6 +242,7 @@ export interface UiTheme {
       indicator: UiPartValue
       bubble: UiPartValue
       label: UiPartValue
+      arrow: UiPartValue
     }>
   }
   popover?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
@@ -242,9 +252,18 @@ export interface UiTheme {
       panel: UiPartValue
       header: UiPartValue
       footer: UiPartValue
+      icon: UiPartValue
+      chevron: UiPartValue
     }>
   }
-  menuList?: { ui?: Partial<{ root: UiPartValue; item: UiPartValue; separator: UiPartValue }> }
+  menuList?: {
+    ui?: Partial<{
+      root: UiPartValue
+      item: UiPartValue
+      separator: UiPartValue
+      icon: UiPartValue
+    }>
+  }
   tooltip?: { ui?: Partial<{ positioner: UiPartValue; panel: UiPartValue }> }
   knob?: {
     ui?: Partial<{
@@ -274,6 +293,11 @@ export interface UiTheme {
       header: UiPartValue
       filter: UiPartValue
       footer: UiPartValue
+      start: UiPartValue
+      end: UiPartValue
+      clear: UiPartValue
+      chevron: UiPartValue
+      filterIcon: UiPartValue
     }>
   }
   select?: {
@@ -290,6 +314,11 @@ export interface UiTheme {
       groupLabel: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      start: UiPartValue
+      end: UiPartValue
+      clear: UiPartValue
+      chevron: UiPartValue
+      filterIcon: UiPartValue
     }>
   }
   combobox?: {
@@ -305,6 +334,9 @@ export interface UiTheme {
       groupLabel: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      clear: UiPartValue
+      chevron: UiPartValue
+      createIcon: UiPartValue
     }>
   }
   slider?: {
@@ -344,6 +376,10 @@ export interface UiTheme {
       node: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      start: UiPartValue
+      end: UiPartValue
+      clear: UiPartValue
+      chevron: UiPartValue
     }>
   }
   tree?: {
@@ -354,6 +390,7 @@ export interface UiTheme {
       empty: UiPartValue
       chevron: UiPartValue
       label: UiPartValue
+      filterIcon: UiPartValue
     }>
   }
   dock?: { ui?: Partial<{ root: UiPartValue; item: UiPartValue }> }
@@ -384,6 +421,7 @@ export interface UiTheme {
       cell: UiPartValue
       time: UiPartValue
       footer: UiPartValue
+      icon: UiPartValue
     }>
   }
   /** Forwarded straight into the wrapped `<Menu>`'s own `ui` prop — same positioner/panel keys, themeable separately from plain `theme.menu`. */
@@ -395,7 +433,14 @@ export interface UiTheme {
       footer: UiPartValue
     }>
   }
-  speedDial?: { ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }> }
+  speedDial?: {
+    ui?: Partial<{
+      root: UiPartValue
+      trigger: UiPartValue
+      action: UiPartValue
+      icon: UiPartValue
+    }>
+  }
   swipeToReveal?: {
     ui?: Partial<{ root: UiPartValue; content: UiPartValue; actions: UiPartValue }>
   }
@@ -408,6 +453,7 @@ export interface UiTheme {
       item: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      icon: UiPartValue
     }>
   }
   tour?: {
@@ -447,6 +493,7 @@ export interface UiTheme {
       thead: UiPartValue
       th: UiPartValue
       sortButton: UiPartValue
+      sortChevron: UiPartValue
       grip: UiPartValue
       resizeHandle: UiPartValue
       tbody: UiPartValue
@@ -454,6 +501,7 @@ export interface UiTheme {
       td: UiPartValue
       expansionRow: UiPartValue
       expansionContent: UiPartValue
+      expandChevron: UiPartValue
       footer: UiPartValue
     }>
   }

@@ -150,7 +150,8 @@
               height="12"
               fill="none"
               aria-hidden="true"
-              class="ui-datatable-expand-chevron"
+              :class="expandChevronPart.class"
+              :style="expandChevronPart.style"
               :data-state="isExpanded(tableRowEntries[virtualRow.index]!.row) ? 'open' : 'closed'"
             >
               <path
@@ -300,7 +301,8 @@
               height="12"
               fill="none"
               aria-hidden="true"
-              class="ui-datatable-expand-chevron"
+              :class="expandChevronPart.class"
+              :style="expandChevronPart.style"
               :data-state="isExpanded(entry.row) ? 'open' : 'closed'"
             >
               <path
@@ -422,6 +424,7 @@ const props = defineProps<{
     td: UiPartValue
     expansionRow: UiPartValue
     expansionContent: UiPartValue
+    expandChevron: UiPartValue
   }>
 }>()
 
@@ -443,6 +446,9 @@ function tdPart(...extra: (string | false | undefined)[]) {
 }
 const expansionRowPart = computed(() =>
   resolveUiPart(cx, props.ui?.expansionRow, 'ui-datatable-expansion-rows'),
+)
+const expandChevronPart = computed(() =>
+  resolveUiPart(cx, props.ui?.expandChevron, 'ui-datatable-expand-chevron'),
 )
 const expansionContentPart = computed(() =>
   resolveUiPart(cx, props.ui?.expansionContent, 'ui-datatable-expansion-inner'),

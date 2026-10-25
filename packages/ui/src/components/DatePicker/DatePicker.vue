@@ -23,7 +23,8 @@
     <template #end>
       <button
         type="button"
-        class="ui-date-picker-icon"
+        :class="iconPart.class"
+        :style="iconPart.style"
         tabindex="-1"
         :aria-label="messages.datePicker.chooseDate"
         :disabled="isDisabled"
@@ -358,6 +359,8 @@ const rawProps = withDefaults(
       cell: UiPartValue
       time: UiPartValue
       footer: UiPartValue
+      /** The calendar button at the end of the field. */
+      icon: UiPartValue
     }>
   }>(),
   {
@@ -826,6 +829,7 @@ const footerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer', 'ui-date-picker-footer'),
 )
 const timePart = computed(() => resolveUiPart(cx, themedUi()?.time, 'ui-date-picker-time'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-date-picker-icon'))
 
 const resolvedSide = computed(() => placement.value.split('-')[0] as DatePickerSide)
 const resolvedAlign = computed<DatePickerAlign>(() => {

@@ -59,7 +59,7 @@
       :aria-label="label"
       @click="onTriggerClick"
     >
-      <span ref="iconEl" class="ui-speed-dial-trigger-icon" aria-hidden="true">
+      <span ref="iconEl" :class="iconPart.class" :style="iconPart.style" aria-hidden="true">
         <slot name="icon" :open="open">
           <svg viewBox="0 0 16 16" width="16" height="16" fill="none">
             <path
@@ -119,7 +119,13 @@ export interface SpeedDialProps<T extends SpeedDialItem = SpeedDialItem> {
    */
   motion?: SpeedDialMotion
   /** Class and style overrides for each part. */
-  ui?: Partial<{ root: UiPartValue; trigger: UiPartValue; action: UiPartValue }>
+  ui?: Partial<{
+    root: UiPartValue
+    trigger: UiPartValue
+    action: UiPartValue
+    /** The icon inside the trigger, around the `#icon` slot. */
+    icon: UiPartValue
+  }>
 }
 
 export function quarterCirclePoint(
@@ -410,6 +416,7 @@ const rootPart = computed(() =>
 const actionsPart = computed(() => resolveUiPart(cx, undefined, 'ui-speed-dial-actions'))
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-speed-dial-trigger'))
 const actionPart = computed(() => resolveUiPart(cx, themedUi()?.action, 'ui-speed-dial-action'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-speed-dial-trigger-icon'))
 
 defineExpose({
   /** Root element. */

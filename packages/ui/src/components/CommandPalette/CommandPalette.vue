@@ -102,7 +102,8 @@
               :is="row.item.icon"
               v-if="row.item.icon"
               aria-hidden="true"
-              class="ui-command-palette-item-icon"
+              :class="iconPart.class"
+              :style="iconPart.style"
             />
             <span class="ui-command-palette-item-body">
               <span class="ui-command-palette-item-label">{{ row.item.label }}</span>
@@ -242,6 +243,8 @@ const rawProps = withDefaults(
       item: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      /** The icon at the start of an item. */
+      icon: UiPartValue
     }>
   }>(),
   {
@@ -574,6 +577,7 @@ const groupLabelPart = computed(() =>
   resolveUiPart(cx, themedUi()?.groupLabel, 'ui-command-palette-group-label'),
 )
 const itemPart = computed(() => resolveUiPart(cx, themedUi()?.item, 'ui-command-palette-item'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-command-palette-item-icon'))
 const emptyPart = computed(() => resolveUiPart(cx, themedUi()?.empty, 'ui-command-palette-empty'))
 const footerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.footer, 'ui-command-palette-footer'),

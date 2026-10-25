@@ -245,6 +245,8 @@ const rawProps = withDefaults(
       thead: UiPartValue
       th: UiPartValue
       sortButton: UiPartValue
+      /** The sort direction chevron inside a sortable header. */
+      sortChevron: UiPartValue
       grip: UiPartValue
       resizeHandle: UiPartValue
       tbody: UiPartValue
@@ -252,6 +254,8 @@ const rawProps = withDefaults(
       td: UiPartValue
       expansionRow: UiPartValue
       expansionContent: UiPartValue
+      /** The chevron on a row's expand button. */
+      expandChevron: UiPartValue
       footer: UiPartValue
     }>
   }>(),
@@ -1156,6 +1160,7 @@ const headProps = computed(() => ({
     thead: themedUi()?.thead,
     th: themedUi()?.th,
     sortButton: themedUi()?.sortButton,
+    sortChevron: themedUi()?.sortChevron,
     grip: themedUi()?.grip,
     resizeHandle: themedUi()?.resizeHandle,
   },
@@ -1183,6 +1188,7 @@ const bodyUi = computed(() => ({
   td: themedUi()?.td,
   expansionRow: themedUi()?.expansionRow,
   expansionContent: themedUi()?.expansionContent,
+  expandChevron: themedUi()?.expandChevron,
 }))
 const bodyProps = computed(() => ({
   split: !!props.scrollHeight,

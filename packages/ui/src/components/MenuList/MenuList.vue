@@ -34,7 +34,7 @@
         :style="[indentStyle(row.depth), itemPart.style]"
       >
         <slot name="item" :item="row.entry as T" :is-group="true">
-          <span v-if="row.entry.icon" class="ui-menu-list-item-icon">
+          <span v-if="row.entry.icon" :class="iconPart.class" :style="iconPart.style">
             <component :is="row.entry.icon" />
           </span>
           <span class="ui-menu-list-item-label">{{ row.entry.label }}</span>
@@ -54,7 +54,7 @@
         v-bind="row.entry.attrs"
       >
         <slot name="item" :item="row.entry as T" :is-group="false">
-          <span v-if="row.entry.icon" class="ui-menu-list-item-icon">
+          <span v-if="row.entry.icon" :class="iconPart.class" :style="iconPart.style">
             <component :is="row.entry.icon" />
           </span>
           <span class="ui-menu-list-item-label">{{ row.entry.label }}</span>
@@ -84,7 +84,13 @@ export interface MenuListProps<T extends MenuItemData = MenuItemData> {
   /** `value` of the current page; the matching row gets `aria-current="page"`. */
   active?: string | number | null
   /** Class and style overrides for each part. */
-  ui?: Partial<{ root: UiPartValue; item: UiPartValue; separator: UiPartValue }>
+  ui?: Partial<{
+    root: UiPartValue
+    item: UiPartValue
+    separator: UiPartValue
+    /** The icon at the start of an item or group label. */
+    icon: UiPartValue
+  }>
   /** How it moves: its appearance, row by row (`{ initial: { item: { opacity: 0, x: -4 } }, stagger: 0.03 }`), over `root`, `item` and the current page's `indicator`. `spring` retimes the indicator; `move` hands its moves to your own animation. `false` turns its own animation off. */
   motion?: MenuListMotion
 }
@@ -242,6 +248,7 @@ const themedUi = useThemedUi(
 )
 
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-menu-list'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-menu-list-item-icon'))
 const separatorPart = computed(() =>
   resolveUiPart(cx, themedUi()?.separator, 'ui-menu-list-separator'),
 )

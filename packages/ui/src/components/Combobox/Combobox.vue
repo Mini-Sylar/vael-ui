@@ -71,7 +71,8 @@
         <button
           v-if="clearable && !isDisabled && (hasValue || query.length > 0)"
           type="button"
-          class="ui-combobox-clear"
+          :class="clearPart.class"
+          :style="clearPart.style"
           :aria-label="messages.combobox.clear"
           @click.stop="onClear"
           @mousedown.stop.prevent
@@ -88,7 +89,8 @@
       </Transition>
       <button
         type="button"
-        class="ui-combobox-chevron"
+        :class="chevronPart.class"
+        :style="chevronPart.style"
         :aria-label="messages.combobox.toggle"
         :aria-expanded="open"
         :disabled="isDisabled"
@@ -166,7 +168,8 @@
                 :active="slotProps.active"
               >
                 <svg
-                  class="ui-combobox-create-icon"
+                  :class="createIconPart.class"
+                  :style="createIconPart.style"
                   viewBox="0 0 16 16"
                   width="14"
                   height="14"
@@ -445,6 +448,12 @@ const rawProps = withDefaults(
       groupLabel: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      /** The clear button. */
+      clear: UiPartValue
+      /** The chevron at the end of the field. */
+      chevron: UiPartValue
+      /** The plus icon on the `Create "…"` row. */
+      createIcon: UiPartValue
     }>
   }>(),
   {
@@ -968,6 +977,11 @@ const innerUi = computed(() => ({
 }))
 const positionerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.positioner, 'ui-select-positioner', 'ui-combobox-positioner'),
+)
+const clearPart = computed(() => resolveUiPart(cx, themedUi()?.clear, 'ui-combobox-clear'))
+const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-combobox-chevron'))
+const createIconPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.createIcon, 'ui-combobox-create-icon'),
 )
 const panelPart = computed(() =>
   resolveUiPart(cx, themedUi()?.panel, 'ui-select-panel', 'ui-combobox-panel'),

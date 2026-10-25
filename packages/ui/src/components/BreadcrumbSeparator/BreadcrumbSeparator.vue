@@ -2,7 +2,8 @@
   <li ref="root" aria-hidden="true" :class="rootPart.class" :style="rootPart.style" v-bind="attrs">
     <slot>
       <svg
-        class="ui-breadcrumb-separator-icon"
+        :class="iconPart.class"
+        :style="iconPart.style"
         viewBox="0 0 16 16"
         width="14"
         height="14"
@@ -33,7 +34,11 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const props = defineProps<{
   /** Class and style overrides for each part. */
-  ui?: Partial<{ root: UiPartValue }>
+  ui?: Partial<{
+    root: UiPartValue
+    /** The built-in chevron icon. */
+    icon: UiPartValue
+  }>
 }>()
 
 defineSlots<{
@@ -48,6 +53,7 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-breadcrumb-separator'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-breadcrumb-separator-icon'))
 
 defineExpose({
   /** Root element. */

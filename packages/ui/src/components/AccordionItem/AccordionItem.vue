@@ -23,7 +23,8 @@
           <span class="ui-accordion-trigger-title">{{ title }}</span>
           <svg
             ref="chevron"
-            class="ui-accordion-chevron"
+            :class="chevronPart.class"
+            :style="chevronPart.style"
             viewBox="0 0 16 16"
             width="14"
             height="14"
@@ -59,7 +60,7 @@
   </div>
 </template>
 
-<!-- No beforeClose: panel always mounted (collapsed); data-state + motion={false} + exposed panelEl for exit animation -->
+<!-- No beforeClose: panel always mounted (collapsed); data-state + motion={false} + exposed panelEl/chevronEl for exit animation -->
 <script setup lang="ts">
 import './AccordionItem.css'
 import '../shared/tokens.css'
@@ -91,6 +92,8 @@ const props = defineProps<{
     trigger: UiPartValue
     panel: UiPartValue
     body: UiPartValue
+    /** The chevron at the end of the trigger. */
+    chevron: UiPartValue
   }>
 }>()
 
@@ -129,7 +132,7 @@ const { style: collapseStyle, state: collapseState } = useCollapse(isOpenValue, 
 const item = useTemplateRef<HTMLElement>('item')
 const header = useTemplateRef<HTMLElement>('header')
 const trigger = useTemplateRef<HTMLElement>('trigger')
-const chevron = useTemplateRef<HTMLElement>('chevron')
+const chevron = useTemplateRef<SVGSVGElement>('chevron')
 const body = useTemplateRef<HTMLElement>('body')
 useStateMotion({
   key: 'accordion',
@@ -165,10 +168,13 @@ const headerPart = computed(() => resolveUiPart(cx, themedUi()?.header, 'ui-acco
 const triggerPart = computed(() => resolveUiPart(cx, themedUi()?.trigger, 'ui-accordion-trigger'))
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-accordion-panel'))
 const bodyPart = computed(() => resolveUiPart(cx, themedUi()?.body, 'ui-accordion-body'))
+const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-accordion-chevron'))
 
 defineExpose({
   /** Panel element, always mounted. */
   panelEl: panel,
+  /** The built-in chevron, for your own engine to turn. Null when the `#trigger` slot replaces it. */
+  chevronEl: chevron,
   /** Whether the item is open. */
   open: isOpenValue,
 })

@@ -44,6 +44,15 @@
   .ui-select-placeholder {
     color: var(--ui-text-muted);
   }
+  /* #start and #end: muted like the chevron, spaced by the trigger's gap. */
+  .ui-select-start,
+  .ui-select-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+    color: var(--ui-text-muted);
+  }
   /* 24px target (WCAG 2.5.8) on the clear's own box, which axe measures; ::before paints the circle. */
   .ui-select-clear,
   .ui-combobox-clear {

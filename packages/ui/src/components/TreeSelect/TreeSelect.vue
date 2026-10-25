@@ -11,6 +11,10 @@
     @click="onTriggerClick"
     @focus="focusControl"
   >
+    <!-- Start and end sit outside the combobox, so they don't join its accessible name. -->
+    <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
+      ><slot name="start"
+    /></span>
     <div
       ref="controlEl"
       class="ui-select-control"
@@ -41,6 +45,7 @@
         </slot>
       </span>
     </div>
+    <span v-if="$slots.end" :class="endPart.class" :style="endPart.style"><slot name="end" /></span>
     <Transition
       name="ui-clear"
       :css="!!props.motion"
@@ -51,7 +56,8 @@
       <button
         v-if="clearable && !isEmpty && !isDisabled"
         type="button"
-        class="ui-select-clear"
+        :class="clearPart.class"
+        :style="clearPart.style"
         :aria-label="messages.treeSelect.clear"
         @click.stop="onClear"
         @mousedown.stop.prevent
@@ -66,7 +72,7 @@
         </svg>
       </button>
     </Transition>
-    <span class="ui-select-chevron" aria-hidden="true">
+    <span :class="chevronPart.class" :style="chevronPart.style" aria-hidden="true">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
         <path
           d="M4 6l4 4 4-4"
@@ -317,6 +323,14 @@ const rawProps = withDefaults(
       node: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      /** Wraps the `#start` slot, before the value. */
+      start: UiPartValue
+      /** Wraps the `#end` slot, before the clear button and chevron. */
+      end: UiPartValue
+      /** The clear button. */
+      clear: UiPartValue
+      /** The chevron at the end of the trigger. */
+      chevron: UiPartValue
     }>
   }>(),
   {
@@ -361,6 +375,10 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
+  /** Content at the start of the trigger, such as an icon, before the value. */
+  start(): unknown
+  /** Content before the built-in clear button and chevron. */
+  end(): unknown
   /** Custom trigger content for the selected nodes. */
   value(props: { selected: T[] }): unknown
   /** Content above the filter input (when `filterable` is on) or the tree. */
@@ -570,6 +588,14 @@ const triggerPart = computed(() =>
   ),
 )
 const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-select-value'))
+const startPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.start, 'ui-select-start', 'ui-tree-select-start'),
+)
+const endPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.end, 'ui-select-end', 'ui-tree-select-end'),
+)
+const clearPart = computed(() => resolveUiPart(cx, themedUi()?.clear, 'ui-select-clear'))
+const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-select-chevron'))
 const positionerPart = computed(() =>
   resolveUiPart(cx, themedUi()?.positioner, 'ui-select-positioner', 'ui-tree-select-positioner'),
 )

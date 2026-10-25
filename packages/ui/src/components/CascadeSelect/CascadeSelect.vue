@@ -43,7 +43,8 @@
           >
             <template #start>
               <svg
-                class="ui-cascade-select-search-icon"
+                :class="filterIconPart.class"
+                :style="filterIconPart.style"
                 viewBox="0 0 16 16"
                 width="14"
                 height="14"
@@ -77,11 +78,16 @@
           @focus="focusControl"
         >
           <span v-if="ownLabel" :id="ownLabelId" hidden>{{ ownLabel }}</span>
+          <!-- Start and end sit outside the button, so they don't join its accessible name. -->
+          <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
+            ><slot name="start"
+          /></span>
           <div
             :id="controlId"
             ref="controlEl"
             class="ui-cascade-select-control"
             role="button"
+            data-menu-trigger
             v-bind="restAttrs"
             :tabindex="isDisabled ? -1 : 0"
             :aria-disabled="isDisabled || undefined"
@@ -141,6 +147,9 @@
               </slot>
             </span>
           </div>
+          <span v-if="$slots.end" :class="endPart.class" :style="endPart.style"
+            ><slot name="end"
+          /></span>
           <Transition
             name="ui-clear"
             :css="!!props.motion"
@@ -151,7 +160,8 @@
             <button
               v-if="clearable && !isEmpty && !isDisabled"
               type="button"
-              class="ui-cascade-select-clear"
+              :class="clearPart.class"
+              :style="clearPart.style"
               :aria-label="messages.cascadeSelect.clear"
               @click.stop="onClear"
               @mousedown.stop.prevent
@@ -167,7 +177,8 @@
             </button>
           </Transition>
           <svg
-            class="ui-cascade-select-chevron"
+            :class="chevronPart.class"
+            :style="chevronPart.style"
             viewBox="0 0 16 16"
             width="14"
             height="14"
@@ -385,6 +396,16 @@ const rawProps = withDefaults(
       header: UiPartValue
       filter: UiPartValue
       footer: UiPartValue
+      /** Wraps the `#start` slot, before the value. */
+      start: UiPartValue
+      /** Wraps the `#end` slot, before the clear button and chevron. */
+      end: UiPartValue
+      /** The clear button. */
+      clear: UiPartValue
+      /** The chevron at the end of the trigger. */
+      chevron: UiPartValue
+      /** The search icon at the start of the filter box. */
+      filterIcon: UiPartValue
     }>
   }>(),
   {
@@ -437,6 +458,10 @@ const chipsTransition = useChipTransition(
 )
 
 defineSlots<{
+  /** Content at the start of the trigger, such as an icon, before the value. */
+  start(): unknown
+  /** Content before the built-in clear button and chevron. */
+  end(): unknown
   /** Custom trigger content; receives the selected leaf and its path, or arrays of both. */
   value(props: {
     selected: V extends unknown[] ? T[] : T | null
@@ -862,6 +887,15 @@ const triggerClass = computed(() =>
 const triggerStyle = computed(() => triggerSplit.value.style)
 const valuePart = computed(() => resolveUiPart(cx, themedUi()?.value, 'ui-cascade-select-value'))
 const filterPart = computed(() => resolveUiPart(cx, themedUi()?.filter, 'ui-cascade-select-filter'))
+const startPart = computed(() => resolveUiPart(cx, themedUi()?.start, 'ui-cascade-select-start'))
+const endPart = computed(() => resolveUiPart(cx, themedUi()?.end, 'ui-cascade-select-end'))
+const clearPart = computed(() => resolveUiPart(cx, themedUi()?.clear, 'ui-cascade-select-clear'))
+const chevronPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.chevron, 'ui-cascade-select-chevron'),
+)
+const filterIconPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.filterIcon, 'ui-cascade-select-search-icon'),
+)
 
 // After menuRef exists: the watcher reads it straight away.
 // Searching eases the menu to its new height, the same as Select's and Combobox's lists.

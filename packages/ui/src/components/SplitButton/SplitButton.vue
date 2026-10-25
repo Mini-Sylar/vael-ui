@@ -54,7 +54,8 @@
           :aria-label="resolvedTriggerLabel"
         >
           <svg
-            class="ui-split-button-chevron"
+            :class="chevronPart.class"
+            :style="chevronPart.style"
             viewBox="0 0 16 16"
             width="14"
             height="14"
@@ -167,6 +168,8 @@ const rawProps = withDefaults(
       panel: UiPartValue
       header: UiPartValue
       footer: UiPartValue
+      /** The chevron inside the menu trigger. */
+      chevron: UiPartValue
     }>
   }>(),
   {
@@ -230,6 +233,9 @@ const rootClass = computed(() =>
   ),
 )
 const rootStyle = computed(() => rootSplit.value.style)
+const chevronPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.chevron, 'ui-split-button-chevron'),
+)
 const mainUi = computed(() => ({
   root: resolveUiPart(cx, themedUi()?.main, 'ui-split-button-main'),
 }))

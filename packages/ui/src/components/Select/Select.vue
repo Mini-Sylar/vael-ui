@@ -11,6 +11,10 @@
     @click="onTriggerClick"
     @focus="focusControl"
   >
+    <!-- Start and end sit outside the combobox, so they don't join its accessible name. -->
+    <span v-if="$slots.start" :class="startPart.class" :style="startPart.style"
+      ><slot name="start"
+    /></span>
     <div
       ref="controlEl"
       class="ui-select-control"
@@ -76,6 +80,7 @@
         </slot>
       </span>
     </div>
+    <span v-if="$slots.end" :class="endPart.class" :style="endPart.style"><slot name="end" /></span>
     <Transition
       name="ui-clear"
       :css="!!props.motion"
@@ -86,7 +91,8 @@
       <button
         v-if="clearable && !isEmpty && !isDisabled"
         type="button"
-        class="ui-select-clear"
+        :class="clearPart.class"
+        :style="clearPart.style"
         :aria-label="messages.select.clear"
         @click.stop="onClear"
         @mousedown.stop.prevent
@@ -101,7 +107,7 @@
         </svg>
       </button>
     </Transition>
-    <span class="ui-select-chevron" aria-hidden="true">
+    <span :class="chevronPart.class" :style="chevronPart.style" aria-hidden="true">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
         <path
           d="M4 6l4 4 4-4"
@@ -163,7 +169,8 @@
                 <template #start>
                   <slot name="filter-icon">
                     <svg
-                      class="ui-select-search-icon"
+                      :class="filterIconPart.class"
+                      :style="filterIconPart.style"
                       viewBox="0 0 16 16"
                       width="14"
                       height="14"
@@ -410,6 +417,16 @@ const rawProps = withDefaults(
       groupLabel: UiPartValue
       empty: UiPartValue
       footer: UiPartValue
+      /** Wraps the `#start` slot, before the value. */
+      start: UiPartValue
+      /** Wraps the `#end` slot, before the clear button and chevron. */
+      end: UiPartValue
+      /** The clear button. */
+      clear: UiPartValue
+      /** The chevron at the end of the trigger. */
+      chevron: UiPartValue
+      /** The search icon at the start of the filter box. */
+      filterIcon: UiPartValue
     }>
   }>(),
   {
@@ -456,6 +473,10 @@ const chipsTransition = useChipTransition(
 )
 
 defineSlots<{
+  /** Content at the start of the trigger, such as an icon, before the value. */
+  start(): unknown
+  /** Content before the built-in clear button and chevron. */
+  end(): unknown
   /** Custom trigger content for the current selection (an array when `multiple`). It replaces the built-in label and its crossfade; to keep the crossfade, put the text in `<AnimatedText :value="…" />`. */
   value(props: { selected: T | T[] | null }): unknown
   /** Content above the filter input (when `filter` is on) or the listbox. `count` and `total` support a result-count readout. */
@@ -783,6 +804,13 @@ const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-select
 const headerPart = computed(() => resolveUiPart(cx, themedUi()?.header, 'ui-select-header'))
 const filterPart = computed(() => resolveUiPart(cx, themedUi()?.filter, 'ui-select-filter'))
 const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-select-footer'))
+const startPart = computed(() => resolveUiPart(cx, themedUi()?.start, 'ui-select-start'))
+const endPart = computed(() => resolveUiPart(cx, themedUi()?.end, 'ui-select-end'))
+const clearPart = computed(() => resolveUiPart(cx, themedUi()?.clear, 'ui-select-clear'))
+const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-select-chevron'))
+const filterIconPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.filterIcon, 'ui-select-search-icon'),
+)
 
 const resolvedSide = computed(() => placement.value.split('-')[0] as SelectSide)
 const resolvedAlign = computed<SelectAlign>(() => {

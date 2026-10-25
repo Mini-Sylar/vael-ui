@@ -78,7 +78,7 @@
               :style="hintItemPart.style"
               :data-passed="result.passed || undefined"
             >
-              <span class="ui-password-input-hint-icon" aria-hidden="true">
+              <span :class="hintIconPart.class" :style="hintIconPart.style" aria-hidden="true">
                 <svg v-if="result.passed" viewBox="0 0 12 12" width="10" height="10" fill="none">
                   <path
                     d="M2.5 6.5l2.5 2.5 4.5-5"
@@ -128,7 +128,7 @@
             :style="hintItemPart.style"
             :data-passed="result.passed || undefined"
           >
-            <span class="ui-password-input-hint-icon" aria-hidden="true">
+            <span :class="hintIconPart.class" :style="hintIconPart.style" aria-hidden="true">
               <svg v-if="result.passed" viewBox="0 0 12 12" width="10" height="10" fill="none">
                 <path
                   d="M2.5 6.5l2.5 2.5 4.5-5"
@@ -258,6 +258,8 @@ const rawProps = withDefaults(
       hint: UiPartValue
       hintList: UiPartValue
       hintItem: UiPartValue
+      /** The mark before each rule in the hint list, a check once the rule passes. */
+      hintIcon: UiPartValue
     }>
   }>(),
   {
@@ -399,6 +401,9 @@ const hintListPart = computed(() =>
 )
 const hintItemPart = computed(() =>
   resolveUiPart(cx, themedUi()?.hintItem, 'ui-password-input-hint-item'),
+)
+const hintIconPart = computed(() =>
+  resolveUiPart(cx, themedUi()?.hintIcon, 'ui-password-input-hint-icon'),
 )
 
 defineExpose({

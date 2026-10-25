@@ -25,7 +25,8 @@
                 :is="item.icon"
                 v-if="item.icon"
                 aria-hidden="true"
-                class="ui-breadcrumb-item-icon"
+                :class="iconPart.class"
+                :style="iconPart.style"
               />
               {{ item.label }}
             </slot>
@@ -86,7 +87,12 @@ const props = withDefaults(
     /** How it moves: its appearance, crumb by crumb (`{ initial: { item: { opacity: 0, x: -4 } }, stagger: 0.03 }`). Crumbs a new path adds or removes come and go the same way. `false` turns its own animation off. */
     motion?: BreadcrumbMotion
     /** Class and style overrides for each part. */
-    ui?: Partial<{ root: UiPartValue; list: UiPartValue }>
+    ui?: Partial<{
+      root: UiPartValue
+      list: UiPartValue
+      /** The icon before a crumb's label, when you pass `items`. */
+      icon: UiPartValue
+    }>
   }>(),
   {
     wrap: false,
@@ -139,6 +145,7 @@ const themedUi = useThemedUi(
   () => props.ui,
 )
 const rootPart = computed(() => resolveUiPart(cx, themedUi()?.root, 'ui-breadcrumb'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-breadcrumb-item-icon'))
 const listPart = computed(() =>
   resolveUiPart(
     cx,

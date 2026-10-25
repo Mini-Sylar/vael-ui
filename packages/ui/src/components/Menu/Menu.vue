@@ -104,14 +104,19 @@
                   v-bind="entry.attrs"
                 >
                   <slot name="item" :item="entry">
-                    <span v-if="entry.icon" class="ui-menu-item-icon">
+                    <span v-if="entry.icon" :class="iconPart.class" :style="iconPart.style">
                       <component :is="entry.icon" />
                     </span>
                     <span class="ui-menu-item-label">{{ entry.label }}</span>
                     <span v-if="entry.shortcut" class="ui-menu-item-shortcut">
                       {{ entry.shortcut }}
                     </span>
-                    <span v-if="entry.items" class="ui-menu-item-chevron" aria-hidden="true">
+                    <span
+                      v-if="entry.items"
+                      :class="chevronPart.class"
+                      :style="chevronPart.style"
+                      aria-hidden="true"
+                    >
                       <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
                         <path
                           d="M6 4l4 4-4 4"
@@ -291,6 +296,10 @@ export interface MenuProps<T extends MenuItemData = MenuItemData> {
     panel: UiPartValue
     header: UiPartValue
     footer: UiPartValue
+    /** The icon at the start of an item. */
+    icon: UiPartValue
+    /** The chevron at the end of an item that opens a submenu. */
+    chevron: UiPartValue
   }>
 }
 </script>
@@ -728,9 +737,11 @@ const triggerId = useId()
 const labelledBy = shallowRef<string>()
 watchEffect(() => {
   const root = resolvedTriggerEl.value
+  // A marked control wins over buttons placed before it, like CascadeSelect's `#start`.
+  const marked = triggerWrapper.value?.querySelector<HTMLElement>('[data-menu-trigger]')
   const trigger = root?.matches(TRIGGER_SELECTOR)
     ? root
-    : (triggerWrapper.value?.querySelector<HTMLElement>(TRIGGER_SELECTOR) ?? root)
+    : (marked ?? triggerWrapper.value?.querySelector<HTMLElement>(TRIGGER_SELECTOR) ?? root)
   // The menu is named by what opens it: the trigger, a `triggerEl`, or a submenu's row.
   // One hidden from screen readers (ContextMenu's anchor) can't name it.
   const shown = props.triggerEl !== undefined ? triggerElRef.value : trigger
@@ -970,6 +981,8 @@ const positionerPart = computed(() =>
 const panelPart = computed(() => resolveUiPart(cx, themedUi()?.panel, 'ui-menu-panel'))
 const headerPart = computed(() => resolveUiPart(cx, themedUi()?.header, 'ui-menu-header'))
 const footerPart = computed(() => resolveUiPart(cx, themedUi()?.footer, 'ui-menu-footer'))
+const iconPart = computed(() => resolveUiPart(cx, themedUi()?.icon, 'ui-menu-item-icon'))
+const chevronPart = computed(() => resolveUiPart(cx, themedUi()?.chevron, 'ui-menu-item-chevron'))
 
 // Resolved placement after floating-ui flips (e.g., "top" becomes "bottom" if no room).
 const resolvedSide = computed(() => placement.value.split('-')[0] as MenuSide)
