@@ -349,3 +349,24 @@ export function inlineKey(key: string, el: Element | null | undefined): string {
   if ((key !== 'ArrowLeft' && key !== 'ArrowRight') || !isRtl(el)) return key
   return key === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft'
 }
+
+/**
+ * Its box once every animation moving it (on it or an ancestor, such as an overlay springing in)
+ * has played out. Each is stepped to just short of its end, so none finishes early, then put back;
+ * all in one task, so nothing is painted in between. Endless loops are left where they are.
+ */
+export function restingRect(el: Element): DOMRect {
+  const moved: [Animation, number][] = []
+  for (const animation of el.ownerDocument.getAnimations()) {
+    const target = (animation.effect as KeyframeEffect | null)?.target
+    if (!target || !target.contains(el) || animation.playState === 'finished') continue
+    const { activeDuration, delay = 0 } = animation.effect!.getComputedTiming()
+    const end = delay + Number(activeDuration)
+    if (!Number.isFinite(end)) continue
+    moved.push([animation, Number(animation.currentTime ?? 0)])
+    animation.currentTime = animation.playbackRate < 0 ? 0.001 : Math.max(0, end - 0.001)
+  }
+  const rect = el.getBoundingClientRect()
+  for (const [animation, time] of moved) animation.currentTime = time
+  return rect
+}

@@ -172,6 +172,7 @@ import {
   opener,
   useDOMTarget,
   prefersReducedMotion,
+  restingRect,
 } from '../../composables/dom'
 import { useScrollLock } from '../../composables/useScrollLock'
 import { useInert } from '../../composables/useInert'
@@ -608,7 +609,7 @@ watch(targetEl, (next, previous) => {
   if (prefersReducedMotion()) return
   stopGlide()
   const a = previous.getBoundingClientRect()
-  const b = next.getBoundingClientRect()
+  const b = restingRect(next)
   const box = container.value?.getBoundingClientRect()
   const { duration: ms, easing } = glideOf(
     el,

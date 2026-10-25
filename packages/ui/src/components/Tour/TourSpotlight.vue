@@ -72,7 +72,7 @@ export interface TourSpotlightProps {
   and `-radius` (px, in the overlay's own coordinates), for a ring of your own that follows it.
 -->
 <script setup lang="ts">
-import { prefersReducedMotion } from '../../composables/dom'
+import { prefersReducedMotion, restingRect } from '../../composables/dom'
 import { easingFn, glideOf } from '../../composables/tourGlide'
 import './Tour.css'
 import { computed, onScopeDispose, shallowRef, useTemplateRef, watch } from 'vue'
@@ -115,7 +115,8 @@ interface Cutout {
 }
 
 function measure(): Cutout {
-  const rect = props.targetEl!.getBoundingClientRect()
+  // Where it will rest: inside an overlay still springing in, the spotlight goes straight there.
+  const rect = restingRect(props.targetEl!)
   const container = props.containerEl
   const containerRect = container?.getBoundingClientRect()
   const originX = containerRect?.left ?? 0

@@ -1,6 +1,7 @@
 import { shallowRef, toValue, watch, onScopeDispose } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 import type { ElRef } from './dom'
+import { restingRect } from './dom'
 import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
 import type { Middleware, Placement, Side } from '@floating-ui/dom'
 
@@ -126,7 +127,12 @@ export function useFloatingPosition(options: UseFloatingPositionOptions) {
     const side = toValue(options.side) ?? 'bottom'
     const align = toValue(options.align) ?? 'center'
     const matchWidth = toValue(options.matchReferenceWidth) ?? false
-    const result = await computePosition(reference, floating, {
+    // The reference where it will rest: a trigger in an overlay still springing in isn't caught mid-flight.
+    const resting = {
+      getBoundingClientRect: () => restingRect(reference),
+      contextElement: reference,
+    }
+    const result = await computePosition(resting, floating, {
       placement: toPlacement(side, align),
       strategy: 'absolute',
       middleware: [
