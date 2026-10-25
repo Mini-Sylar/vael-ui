@@ -48,10 +48,11 @@
           <template #default="{ pick }">
             <div class="recent">
               <span class="recent-label">Recent</span>
+              <!-- Chips rise in one after another each time the panel opens. -->
               <button
                 v-for="color in recent"
                 :key="color"
-                v-animate:chips="chips"
+                v-animate:chips.rise.stagger="{ duration: 300, easing: easeOut }"
                 type="button"
                 class="recent-chip"
                 :style="{ background: color }"
@@ -86,19 +87,13 @@ const easeOut = 'cubic-bezier(0.215, 0.61, 0.355, 1)'
 // The page's brand eases from the colour on screen to each pick (a registered custom property).
 // Its own timing: given for the whole look, a colour would be capped to a quick fade.
 const pageEase = { duration: 600, easing: easeOut }
-// GSAP's back.out(1.6): overshoots ~9% once, then settles.
-const backOut =
-  'linear(0, 0.1112, 0.2148, 0.3112, 0.4006, 0.4832, 0.5593, 0.6291, 0.6928, 0.7507, 0.8031, 0.8502, 0.8922, 0.9294, 0.962, 0.9902, 1.0144, 1.0347, 1.0514, 1.0648, 1.075, 1.0824, 1.0871, 1.0894, 1.0896, 1.0879, 1.0845, 1.0797, 1.0738, 1.0669, 1.0594, 1.0514, 1.0432, 1.0351, 1.0272, 1.0199, 1.0134, 1.0079, 1.0037, 1.001, 1)'
-// The orb turns over and swells while the panel is open.
-const orbEase = { duration: 500, easing: backOut }
+// The orb turns over and swells while the panel is open, overshooting about 9% once.
+const orbEase = { spring: { damping: 0.6, response: 0.45 } }
 
 watch(brand, (_, previous) => {
   if (previous && !recent.value.includes(previous))
     recent.value = [previous, ...recent.value].slice(0, 5)
 })
-
-// Recent chips rise in one after another each time the panel opens.
-const chips = { initial: { opacity: 0, y: 6 }, stagger: 0.04, duration: 300, easing: easeOut }
 </script>
 
 <style>

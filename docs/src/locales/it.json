@@ -748,9 +748,13 @@
           "title": "Cambia un componente",
           "body": "Ogni componente accetta una prop <code>motion</code>. Indica da dove entra una parte, come <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>, e la molla con cui si muove."
         },
+        "timing": {
+          "title": "Tempi",
+          "body": "Il movimento segue una molla o una <code>duration</code>. Una molla accetta un nome, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> o <code>'gentle'</code>, oppure i suoi valori <code>damping</code> e <code>response</code>. Una <code>duration</code> in ms accetta qualsiasi <code>easing</code> CSS, o uno di vael-ui per nome, come <code>'out'</code> o <code>'pop'</code>."
+        },
         "spring": {
           "title": "Una molla per tutto",
-          "body": "Metti una <code>spring</code> su <code>ConfigProvider</code> e ogni componente al suo interno la usa. Con <code>damping</code> sotto 1 oltrepassa, e <code>response</code> è all'incirca quanto dura, in secondi."
+          "body": "Metti una <code>spring</code> su <code>ConfigProvider</code> e ogni componente al suo interno la usa. Con <code>damping</code> sotto 1 oltrepassa, e <code>response</code> è all'incirca quanto dura, in secondi. Oppure chiamala per nome: <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> o <code>'gentle'</code>."
         },
         "off": {
           "title": "Spegnilo",
@@ -762,19 +766,19 @@
         "intro": "Il movimento non è solo per i componenti di vael-ui. <code>v-animate</code> dà a qualsiasi tuo elemento un'entrata e un'uscita, direttamente nel template.",
         "appear": {
           "title": "Dentro e fuori",
-          "body": "<code>initial</code> indica da dove entra l'elemento. Quando Vue lo rimuove, esce da dove è venuto, più veloce e più discreto, a meno che tu non gli dia un <code>exit</code>."
+          "body": "<code>initial</code> indica da dove entra l'elemento. Quando Vue lo rimuove, esce da dove è venuto, più veloce e più discreto, a meno che tu non gli dia un <code>exit</code>. Per le entrate più comuni, scegline una per nome: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> o <code>.blur</code>. Aggiungi una molla allo stesso modo, come in <code>v-animate.pop.bouncy</code>, e regolala con un valore: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
         "scroll": {
           "title": "Quando entra nella vista",
-          "body": "<code>when: 'visible'</code> aspetta che l'elemento sia sullo schermo, poi parte una volta. Gli elementi che condividono un nome, come <code>v-animate:tiles</code>, partono nell'ordine della pagina, uno dopo l'altro con uno <code>stagger</code>."
+          "body": "<code>when: 'visible'</code> aspetta che l'elemento sia sullo schermo, poi parte una volta. Gli elementi che condividono un nome, come <code>v-animate:tiles</code>, partono nell'ordine della pagina, uno dopo l'altro con uno <code>stagger</code>. <code>stagger: true</code> li distanzia secondo il token di stagger; <code>'end'</code>, <code>'center'</code> o <code>'edges'</code> fanno partire l'onda da lì."
         },
         "replay": {
           "title": "Riproducilo",
-          "body": "<code>replay</code> riproduce di nuovo <code>initial</code> ogni volta che il suo valore cambia, senza rimontare l'elemento. Usalo per un contatore che sale, uno stato che cambia o una copia fallita. Con <code>appear: false</code> parte solo a quei cambi, non quando l'elemento viene montato."
+          "body": "<code>replay</code> riproduce di nuovo <code>initial</code> ogni volta che il suo valore cambia, senza rimontare l'elemento. Usalo per un contatore che sale, uno stato che cambia o una copia fallita. Con <code>appear: false</code> parte solo a quei cambi, non quando l'elemento viene montato. Con <code>appear: 'later'</code>, ciò che c'è al primo rendering della pagina resta fermo, e tutto ciò che viene aggiunto dopo entra animato."
         },
         "layout": {
           "title": "Scorri in un nuovo punto",
-          "body": "<code>layout: true</code> fa scorrere un elemento dove il layout lo mette, per esempio quando una lista si riordina o un elemento vicino cresce."
+          "body": "<code>layout: true</code> fa scorrere un elemento dove il layout lo mette, per esempio quando una lista si riordina o un elemento vicino cresce. Un <code>delay</code> aspetta prima di scorrere, tenendo il vecchio posto nel frattempo."
         },
         "shared": {
           "title": "Da un punto all'altro",
@@ -798,7 +802,7 @@
         "intro": "I componenti si animano anche mentre sono sullo schermo, come a una pressione, a un controllo fallito o a un pannello che si apre. Le liste animano gli elementi quando entrano ed escono.",
         "press": {
           "title": "Pressione e hover",
-          "body": "<code>states</code> anima una parte finché il componente è in uno stato. Un valore semplice resta finché lo stato è attivo: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> rimpicciolisce un pulsante mentre lo premi."
+          "body": "<code>states</code> anima una parte finché il componente è in uno stato. Un valore semplice resta finché lo stato è attivo: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> rimpicciolisce un pulsante mentre lo premi. Qualsiasi elemento accetta gli stessi stati con <code>v-animate</code>: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>."
         },
         "shake": {
           "title": "Un controllo fallito",
@@ -810,7 +814,7 @@
         },
         "keyframes": {
           "title": "Keyframe",
-          "body": "Un array è una serie di keyframe. <code>times</code> colloca ciascuno, da 0 a 1, e <code>easing</code> ammorbidisce ogni passaggio. Passa una lista di easing per darne uno a ogni passaggio, come una salita e poi un rimbalzo. <code>repeat</code> li riproduce di nuovo, e <code>repeat: Infinity</code> continua finché lo stato si disattiva o l'aspetto cambia."
+          "body": "Un array è una serie di keyframe. <code>times</code> colloca ciascuno, da 0 a 1, e <code>easing</code> ammorbidisce ogni passaggio. Passa una lista di easing per darne uno a ogni passaggio, come una salita e poi un rimbalzo. <code>repeat</code> li riproduce di nuovo, e <code>repeat: Infinity</code> continua finché lo stato si disattiva o l'aspetto cambia. Un passo può seguire una molla: <code>easing: ['linear', 'bouncy']</code>. Cambia la <code>duration</code> di un ciclo mentre è in corso, e accelera o rallenta da dove si trova."
         },
         "each": {
           "title": "Uno alla volta",
@@ -822,7 +826,7 @@
         },
         "lists": {
           "title": "Liste",
-          "body": "Toaster, Timeline, FileUpload, SpeedDial, le righe di DataTable, le righe di CommandPalette e i chip della famiglia Select fanno entrare i nuovi elementi uno dopo l'altro. <code>leaving: 'pop'</code> toglie dal layout un elemento che esce, così gli altri chiudono subito lo spazio. <code>'hold'</code> mantiene lo spazio finché l'elemento non è uscito. Scrivi <code>initial</code> o <code>exit</code> come funzione per ricevere <code>{'{'} index, count {'}'}</code> degli elementi che entrano o escono insieme, così una chiusura può andare dall'ultimo al primo."
+          "body": "Toaster, Timeline, FileUpload, SpeedDial, le righe di DataTable, le righe di CommandPalette e i chip della famiglia Select fanno entrare i nuovi elementi uno dopo l'altro. <code>leaving: 'pop'</code> toglie dal layout un elemento che esce, così gli altri chiudono subito lo spazio. <code>'hold'</code> mantiene lo spazio finché l'elemento non è uscito. Scrivi <code>initial</code> o <code>exit</code> come funzione per ricevere <code>{'{'} index, count {'}'}</code> degli elementi che entrano o escono insieme, così una chiusura può andare dall'ultimo al primo. <code>stagger</code> accetta le stesse parole che su <code>v-animate</code> (<code>true</code>, <code>'end'</code>, <code>'center'</code>, <code>'edges'</code>), o i secondi."
         },
         "toasts": {
           "title": "Un toast che cambia",
@@ -862,7 +866,7 @@
         "intro": "Dentro un dialog o un popover, i tuoi elementi possono unirsi al suo movimento. Dai loro un nome, poi li sincronizzi tra loro e con il pannello.",
         "after": {
           "title": "Uno dopo l'altro",
-          "body": "Dai un nome ai tuoi elementi in <code>targets</code> e segnali con <code>target('name')</code> dello slot, o con <code>v-animate:name</code>. <code>after: 'summary:60%'</code> avvia le righe quando il riepilogo è entrato al 60%."
+          "body": "Dai un nome ai tuoi elementi in <code>targets</code> e segnali con <code>target('name')</code> dello slot, o con <code>v-animate:name</code>. <code>after: 'summary:60%'</code> avvia le righe quando il riepilogo è entrato al 60%. Anche gli elementi senza un componente intorno possono aspettarsi a vicenda, quando compaiono insieme: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>."
         },
         "moments": {
           "title": "Momenti",
@@ -894,11 +898,35 @@
         },
         "presets": {
           "title": "Preset",
-          "body": "<code>presets</code> dà un nome ad aspetti che puoi usare con <code>v-animate=\"'rise'\"</code> ovunque dentro il provider, così i tuoi elementi si muovono come i tuoi componenti."
+          "body": "<code>presets</code> dà un nome ad aspetti che puoi usare con <code>v-animate.rise</code> ovunque dentro il provider, così i tuoi elementi si muovono come i tuoi componenti."
         },
         "parse": {
           "title": "Uno stile da fuori il tuo codice",
           "body": "<code>parseMotionStyle</code> controlla uno stile che arriva da una pagina di impostazioni, da un database o dalla rete. Scarta tutto ciò che è insicuro o sconosciuto, ed elenca ciò che ha scartato in <code>issues</code>."
+        }
+      },
+      "server": {
+        "title": "Rendering lato server",
+        "intro": "Il movimento funziona sulle pagine renderizzate lato server: le entrate partono prima di qualsiasi script, e nulla si ripete durante l'idratazione.",
+        "paint": {
+          "title": "Prima di qualsiasi script",
+          "body": "In una pagina renderizzata lato server, l'entrata di un <code>v-animate</code> viene scritta nell'HTML come CSS, quindi parte mentre la pagina si disegna, prima che il tuo JavaScript si carichi, e non si ripete mai durante l'idratazione. Copre <code>opacity</code>, <code>x</code>, <code>y</code>, <code>scale</code>, <code>blur</code>, con una molla o una durata, incluse le entrate integrate come <code>v-animate.rise</code>. Con il movimento ridotto fa solo una dissolvenza."
+        },
+        "stagger": {
+          "title": "Una lista scaglionata",
+          "body": "Uno <code>stagger</code> numerico legge il <code>--i</code> di ogni elemento: impostalo dall'indice di <code>v-for</code>, come in <code>:style=\"{'{'} '--i': index {'}'}\"</code>. <code>stagger: true</code> li distanzia secondo il token di stagger."
+        },
+        "later": {
+          "title": "Cosa aspetta JavaScript",
+          "body": "Gli array di keyframe, <code>when: 'visible'</code>, <code>layoutId</code>, <code>after</code>, <code>steps</code> hanno bisogno dello script della pagina, quindi quegli elementi restano come sono finché non parte. Un elemento con un nome per un componente (<code>v-animate:rows</code>) si muove con il suo componente. <code>appear: 'later'</code> considera il rendering del server il primo rendering, quindi lì non si anima nulla."
+        },
+        "open": {
+          "title": "Aperto al caricamento",
+          "body": "Un overlay aperto quando la pagina si carica viene renderizzato aperto, senza animazione. L'<code>initial</code> di un componente non parte mai durante l'idratazione, e l'<code>appear: true</code> di una lista salta gli elementi renderizzati dal server."
+        },
+        "setup": {
+          "title": "Nuxt e Vite",
+          "body": "Il modulo Nuxt registra <code>v-animate</code> per te. Con il solo SSR di Vite, imposta <code>ssr: {'{'} noExternal: ['vael-ui'] {'}'}</code> perché arrivi il CSS di ogni componente, e renderizza i teleport in <code>&lt;body&gt;</code>, dove vanno gli overlay. Sia la build VDOM sia quella Vapor fanno il rendering lato server e l'idratazione."
         }
       }
     },

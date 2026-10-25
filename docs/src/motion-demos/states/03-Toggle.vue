@@ -25,7 +25,7 @@ const notify = shallowRef(true)
 // Held while open, on a bouncy spring.
 const chevron: AccordionMotion = {
   states: { open: { chevron: { rotate: 180 } } },
-  spring: { damping: 0.5, response: 0.45 },
+  spring: 'bouncy',
 }
 // Wider and flatter while pressed.
 const squash: SwitchMotion = {

@@ -4,7 +4,13 @@
     <div class="row">
       <span class="cart" aria-label="Cart">
         <PhShoppingCart :size="28" />
-        <span v-if="count" v-animate="pop" class="badge">{{ count }}</span>
+        <!-- Plays its initial again each time the count changes. -->
+        <span
+          v-if="count"
+          v-animate.bouncy="{ initial: { scale: 1.4 }, replay: count }"
+          class="badge"
+          >{{ count }}</span
+        >
       </span>
       <Button @click="count++">Add to cart</Button>
     </div>
@@ -12,18 +18,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { shallowRef } from 'vue'
 import { PhShoppingCart } from '@phosphor-icons/vue'
 import { Button, vAnimate } from 'vael-ui'
 
 const count = shallowRef(0)
-
-// Plays its initial again each time the count changes.
-const pop = computed(() => ({
-  initial: { scale: '1.4' },
-  spring: { damping: 0.5, response: 0.35 },
-  replay: count.value,
-}))
 </script>
 
 <style scoped>

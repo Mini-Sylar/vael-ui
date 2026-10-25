@@ -59,16 +59,15 @@ function send() {
     setTimeout(() => (open.value = false), 1400)
   }, 900)
 }
-const ease = 'cubic-bezier(0.23, 1, 0.32, 1)'
 // One label in two places: the morph carries it between the button and the field.
 const label = { layoutId: 'feedback-label' }
 const view = {
   initial: { opacity: 0, blur: 2, y: 4 },
   exit: { opacity: 0, blur: 2 },
   duration: 200,
-  easing: ease,
+  easing: 'out',
 }
-const tick = { initial: { strokeDashoffset: 1 }, delay: 0.08, duration: 300, easing: ease }
+const tick = { initial: { strokeDashoffset: 1 }, delay: 0.08, duration: 300, easing: 'out' }
 </script>
 
 <style scoped>

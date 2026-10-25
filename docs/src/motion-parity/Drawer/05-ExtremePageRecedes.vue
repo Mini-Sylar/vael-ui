@@ -64,8 +64,8 @@ const sheetUi = { overlay: { style: { background: 'transparent' } } }
 // Starts below the stage, as the original does: its height, the gap under it and its shadow.
 const below = 'calc(100% + 1rem + 32px)'
 const sheetMotion: DialogMotion = {
-  initial: { panel: { y: { value: below, duration: 480, easing: 'var(--ui-ease-drawer)' } } },
-  exit: { panel: { y: { value: below, duration: 300, easing: 'var(--ui-ease-drawer)' } } },
+  initial: { panel: { y: { value: below, duration: 480, easing: 'drawer' } } },
+  exit: { panel: { y: { value: below, duration: 300, easing: 'drawer' } } },
   // On the panel's timing, so the page and the sheet move as one.
   linked: {
     page: {

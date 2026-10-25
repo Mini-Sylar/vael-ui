@@ -23,7 +23,7 @@
           <span
             v-for="n in 3"
             :key="`${card.id}-${n}-${plays[card.id] ?? 0}`"
-            v-animate="card.look(n)"
+            v-animate:[card.id]="card.look(n)"
             class="motion-card-dot"
           />
         </span>
@@ -53,7 +53,7 @@ import { vAnimate } from "vael-ui"
 &lt;/script&gt;
 
 <template>
-  <article v-animate="{ initial: { opacity: 0, y: 8 }, when: &apos;visible&apos; }">
+  <article v-animate.rise="{ when: &apos;visible&apos; }">
     Rises in the first time it scrolls into view.
   </article>
 </template>'
@@ -88,7 +88,7 @@ useBreadcrumbSchema(() => [
   { name: t('motionDocs.title'), url: 'https://vael-ui.dev/motion' },
 ])
 
-// Each card shows its idea in three dots, played again as you point at it.
+// Each card shows its idea in three dots, played again as you point at it; a card staggers its own.
 const plays = reactive<Record<string, number>>({})
 const replay = (id: string) => (plays[id] = (plays[id] ?? 0) + 1)
 const cards = [
@@ -96,10 +96,10 @@ const cards = [
     id: 'blocks',
     to: { name: 'motion-blocks' },
     // A burst: they pop up one after another, with a little overshoot.
-    look: (n: number) => ({
+    look: () => ({
       initial: { opacity: 0, scale: '0.4' },
-      spring: { damping: 0.5, response: 0.4 },
-      delay: n * 0.05,
+      spring: 'bouncy' as const,
+      stagger: true,
     }),
   },
   {
@@ -114,7 +114,7 @@ const cards = [
     id: 'types',
     to: { name: 'motion-types' },
     // Like characters typed in: one after another, no bounce.
-    look: (n: number) => ({ initial: { opacity: 0, x: -6 }, duration: 160, delay: n * 0.09 }),
+    look: () => ({ initial: { opacity: 0, x: -6 }, duration: 160, stagger: 0.09 }),
   },
   {
     id: 'engines',
@@ -124,11 +124,7 @@ const cards = [
   {
     id: 'guide',
     to: { name: 'guide-animation-integration' },
-    look: (n: number) => ({
-      initial: { x: -14, opacity: 0, blur: 4 },
-      duration: 320,
-      delay: n * 0.06,
-    }),
+    look: () => ({ initial: { x: -14, opacity: 0, blur: 4 }, duration: 320, stagger: 0.06 }),
   },
 ]
 const composables = [

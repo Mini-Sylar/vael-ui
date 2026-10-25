@@ -46,7 +46,7 @@ const cardsMotion: ToasterMotion = {
   },
   exit: {
     toast: {
-      transform: { value: 'translateY(100%)', duration: 250, easing: 'var(--ui-ease-out)' },
+      transform: { value: 'translateY(100%)', duration: 250, easing: 'out' },
       opacity: { value: 0, duration: 62, easing: 'ease-in' },
     },
   },

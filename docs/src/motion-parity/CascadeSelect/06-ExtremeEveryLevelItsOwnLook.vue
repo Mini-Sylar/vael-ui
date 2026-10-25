@@ -153,7 +153,7 @@ const departments = { initial: { opacity: 0, x: -6 }, stagger: 0.03 }
 const categories = {
   initial: { opacity: 0, x: -12 },
   spring: { damping: 0.85, response: 0.3 },
-  stagger: 0.04,
+  stagger: true,
 }
 const products = {
   initial: { opacity: 0, y: 8, scale: 0.97 },

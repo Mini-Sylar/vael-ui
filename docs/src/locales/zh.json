@@ -748,9 +748,13 @@
           "title": "修改一个组件",
           "body": "每个组件都接受 <code>motion</code> prop。指定某个部件从哪里进入，比如 <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>，以及它运动所用的弹簧。"
         },
+        "timing": {
+          "title": "时间",
+          "body": "动效可以用弹簧，也可以用 <code>duration</code>。弹簧可以写名字：<code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code> 或 <code>'gentle'</code>，也可以写 <code>damping</code> 和 <code>response</code> 的数值。以毫秒计的 <code>duration</code> 可以配任何 CSS <code>easing</code>，也可以用 vael-ui 的名字，比如 <code>'out'</code> 或 <code>'pop'</code>。"
+        },
         "spring": {
           "title": "一个弹簧管全部",
-          "body": "在 <code>ConfigProvider</code> 上设置 <code>spring</code>，里面的每个组件都会使用它。<code>damping</code> 小于 1 会冲过头，<code>response</code> 大致是所需的时间，单位为秒。"
+          "body": "在 <code>ConfigProvider</code> 上设置 <code>spring</code>，里面的每个组件都会使用它。<code>damping</code> 小于 1 会冲过头，<code>response</code> 大致是所需的时间，单位为秒。 也可以直接写名字：<code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code> 或 <code>'gentle'</code>。"
         },
         "off": {
           "title": "关闭动效",
@@ -762,19 +766,19 @@
         "intro": "动效不只属于 vael-ui 的组件。<code>v-animate</code> 能直接在模板里给你的任意元素加上入场和离场动效。",
         "appear": {
           "title": "进入与离开",
-          "body": "<code>initial</code> 指定元素从哪里进入。Vue 移除它时，它会沿原路离开，更快也更轻，除非你给它一个 <code>exit</code>。"
+          "body": "<code>initial</code> 指定元素从哪里进入。Vue 移除它时，它会沿原路离开，更快也更轻，除非你给它一个 <code>exit</code>。 常用的入场可以直接写名字：<code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code> 或 <code>.blur</code>。弹簧也这样加，比如 <code>v-animate.pop.bouncy</code>，再用一个值来微调：<code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
         },
         "scroll": {
           "title": "滚动到视野中时",
-          "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。"
+          "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。 <code>stagger: true</code> 按 stagger 令牌的间隔排开；<code>'end'</code>、<code>'center'</code> 或 <code>'edges'</code> 会让这一波从那里开始。"
         },
         "replay": {
           "title": "再播一次",
-          "body": "<code>replay</code> 的值每次变化时，都会重新播放 <code>initial</code>，而不重新挂载元素。可用于数字增加、状态变化或复制失败。设置 <code>appear: false</code> 后，它只在这些变化时播放，挂载时不播放。"
+          "body": "<code>replay</code> 的值每次变化时，都会重新播放 <code>initial</code>，而不重新挂载元素。可用于数字增加、状态变化或复制失败。设置 <code>appear: false</code> 后，它只在这些变化时播放，挂载时不播放。 使用 <code>appear: 'later'</code> 时，页面首次渲染时已有的元素保持不动，之后添加的元素才会动画进入。"
         },
         "layout": {
           "title": "滑到新位置",
-          "body": "<code>layout: true</code> 会让元素滑到布局为它安排的新位置，比如列表重新排序或相邻元素变大时。"
+          "body": "<code>layout: true</code> 会让元素滑到布局为它安排的新位置，比如列表重新排序或相邻元素变大时。 设置 <code>delay</code> 后，它会先等待再滑动，等待期间停在原来的位置。"
         },
         "shared": {
           "title": "从一处到另一处",
@@ -798,7 +802,7 @@
         "intro": "组件在屏幕上时也会动，例如按下、校验失败或面板展开。列表会在条目进出时为它们添加动画。",
         "press": {
           "title": "按下与悬停",
-          "body": "<code>states</code> 会在组件处于某个状态时为部件添加动画。普通值在状态开启期间一直保持：<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> 会在你按住按钮时把它缩小。"
+          "body": "<code>states</code> 会在组件处于某个状态时为部件添加动画。普通值在状态开启期间一直保持：<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> 会在你按住按钮时把它缩小。 任何元素都可以通过 <code>v-animate</code> 使用同样的状态：<code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>。"
         },
         "shake": {
           "title": "校验失败",
@@ -810,7 +814,7 @@
         },
         "keyframes": {
           "title": "关键帧",
-          "body": "数组就是一组关键帧。<code>times</code> 把每一帧放在 0 到 1 之间的位置，<code>easing</code> 为每一步加上缓动。传入一个缓动列表可以让每一步各用一个缓动，比如先上升再回弹。<code>repeat</code> 会重播它们，<code>repeat: Infinity</code> 会一直播放，直到状态关闭或外观改变。"
+          "body": "数组就是一组关键帧。<code>times</code> 把每一帧放在 0 到 1 之间的位置，<code>easing</code> 为每一步加上缓动。传入一个缓动列表可以让每一步各用一个缓动，比如先上升再回弹。<code>repeat</code> 会重播它们，<code>repeat: Infinity</code> 会一直播放，直到状态关闭或外观改变。 某一步也可以用弹簧：<code>easing: ['linear', 'bouncy']</code>。在循环播放时修改它的 <code>duration</code>，它会从当前位置加速或减速。"
         },
         "each": {
           "title": "逐个播放",
@@ -822,7 +826,7 @@
         },
         "lists": {
           "title": "列表",
-          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable 的行、CommandPalette 的行以及 Select 系列的标签，都会让新条目依次进入。<code>leaving: 'pop'</code> 会把离开的条目移出布局，让其余条目立即合上空位。<code>'hold'</code> 会保留空位，直到条目离开。把 <code>initial</code> 或 <code>exit</code> 写成函数，它会收到一起进出的条目的 <code>{'{'} index, count {'}'}</code>，这样关闭时可以从最后一个到第一个依次进行。"
+          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable 的行、CommandPalette 的行以及 Select 系列的标签，都会让新条目依次进入。<code>leaving: 'pop'</code> 会把离开的条目移出布局，让其余条目立即合上空位。<code>'hold'</code> 会保留空位，直到条目离开。把 <code>initial</code> 或 <code>exit</code> 写成函数，它会收到一起进出的条目的 <code>{'{'} index, count {'}'}</code>，这样关闭时可以从最后一个到第一个依次进行。 <code>stagger</code> 接受与 <code>v-animate</code> 相同的写法（<code>true</code>、<code>'end'</code>、<code>'center'</code>、<code>'edges'</code>），或秒数。"
         },
         "toasts": {
           "title": "会变化的消息提示",
@@ -862,7 +866,7 @@
         "intro": "在对话框或弹出框里，你自己的元素也能加入它的动效。先给它们命名，再安排它们彼此之间以及与面板的时间关系。",
         "after": {
           "title": "依次进行",
-          "body": "在 <code>targets</code> 中为元素命名，并用插槽提供的 <code>target('name')</code> 或 <code>v-animate:name</code> 标记它们。<code>after: 'summary:60%'</code> 会在摘要进入到 60% 时开始播放各行。"
+          "body": "在 <code>targets</code> 中为元素命名，并用插槽提供的 <code>target('name')</code> 或 <code>v-animate:name</code> 标记它们。<code>after: 'summary:60%'</code> 会在摘要进入到 60% 时开始播放各行。 没有被组件包裹的元素，在一起出现时也可以互相等待：<code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。"
         },
         "moments": {
           "title": "时间点",
@@ -894,11 +898,35 @@
         },
         "presets": {
           "title": "预设",
-          "body": "<code>presets</code> 为外观命名，在 provider 内的任何地方都能通过 <code>v-animate=\"'rise'\"</code> 使用，让你的元素和组件以同样的方式运动。"
+          "body": "<code>presets</code> 为外观命名，在 provider 内的任何地方都能通过 <code>v-animate.rise</code> 使用，让你的元素和组件以同样的方式运动。"
         },
         "parse": {
           "title": "来自代码之外的风格",
           "body": "<code>parseMotionStyle</code> 会检查来自设置页、数据库或网络的风格。它会丢弃任何不安全或未知的内容，并在 <code>issues</code> 中列出被丢弃的部分。"
+        }
+      },
+      "server": {
+        "title": "服务端渲染",
+        "intro": "动效在服务端渲染的页面上同样有效：入场在任何脚本之前就开始，水合时也不会重复播放。",
+        "paint": {
+          "title": "在任何脚本之前",
+          "body": "在服务端渲染的页面上，<code>v-animate</code> 的入场会以 CSS 的形式写进 HTML，因此它随页面绘制一起播放，不等你的 JavaScript 加载，水合时也不会再播放。它支持 <code>opacity</code>、<code>x</code>、<code>y</code>、<code>scale</code>、<code>blur</code>，可以用弹簧或 duration，也包括 <code>v-animate.rise</code> 这样的内置入场。在减少动态效果的设置下，它只做淡入。"
+        },
+        "stagger": {
+          "title": "依次出现的列表",
+          "body": "数值形式的 <code>stagger</code> 会读取每个元素的 <code>--i</code>：用 <code>v-for</code> 的索引来设置，比如 <code>:style=\"{'{'} '--i': index {'}'}\"</code>。<code>stagger: true</code> 按 stagger 令牌的间隔排开。"
+        },
+        "later": {
+          "title": "需要等 JavaScript 的部分",
+          "body": "关键帧数组、<code>when: 'visible'</code>、<code>layoutId</code>、<code>after</code>、<code>steps</code> 需要页面的脚本，所以这些元素在脚本运行前会保持原样。为组件命名的元素（<code>v-animate:rows</code>）随它的组件一起动。<code>appear: 'later'</code> 把服务端渲染算作首次渲染，所以那里的内容都不会动画。"
+        },
+        "open": {
+          "title": "加载时已打开",
+          "body": "页面加载时就处于打开状态的浮层会直接以打开状态渲染，不播放动画。组件的 <code>initial</code> 在水合时不会播放，列表的 <code>appear: true</code> 会跳过服务端已经渲染的项。"
+        },
+        "setup": {
+          "title": "Nuxt 和 Vite",
+          "body": "Nuxt 模块会自动注册 <code>v-animate</code>。只用 Vite SSR 时，设置 <code>ssr: {'{'} noExternal: ['vael-ui'] {'}'}</code>，让每个组件的 CSS 一起打包，并把 teleport 渲染到浮层所在的 <code>&lt;body&gt;</code>。VDOM 和 Vapor 两种构建都能在服务端渲染并水合。"
         }
       }
     },

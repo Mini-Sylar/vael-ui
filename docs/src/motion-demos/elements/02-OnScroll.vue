@@ -13,7 +13,7 @@
 import { vAnimate } from 'vael-ui'
 
 // Plays once, the first time a tile is scrolled to; tiles seen together stagger.
-const reveal = { initial: { opacity: 0, y: 16 }, when: 'visible' as const, stagger: 0.05 }
+const reveal = { initial: { opacity: 0, y: 16 }, when: 'visible' as const, stagger: true }
 </script>
 
 <style scoped>

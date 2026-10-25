@@ -32,7 +32,7 @@ const motion: DialogMotion<'summary' | 'rows'> = {
   targets: {
     summary: { initial: { opacity: 0, y: 8 } },
     // The rows start when the summary is 60% of the way in.
-    rows: { initial: { opacity: 0, y: 6 }, stagger: 0.04, after: 'summary:60%' },
+    rows: { initial: { opacity: 0, y: 6 }, stagger: true, after: 'summary:60%' },
   },
 }
 </script>

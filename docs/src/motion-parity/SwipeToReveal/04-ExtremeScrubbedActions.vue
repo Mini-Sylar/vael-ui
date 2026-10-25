@@ -78,8 +78,8 @@ const CHASE = { damping: 1, response: 0.1 }
 // GSAP's timeline, held at that progress: 1 s per button, 0.14 s apart, back.out(2.2).
 const STAGGER = 0.14
 const TOTAL = 1 + STAGGER * (actions.length - 1)
-const backOut = (t: number) => (t - 1) ** 2 * (3.2 * (t - 1) + 2.2) + 1
-const BACK_OUT = `linear(${Array.from({ length: 31 }, (_, i) => backOut(i / 30)).join(', ')})`
+// back.out(2.2) is a cubic, so this curve is exact.
+const BACK_OUT = 'cubic-bezier(0.333, 1.733, 0.667, 1)'
 // Each button's slice of the timeline: still before it, eased across it, held after it.
 const cartwheel = actions.map((_, index) => {
   const times = [0, (index * STAGGER) / TOTAL, (index * STAGGER + 1) / TOTAL, 1]

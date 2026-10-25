@@ -22,10 +22,10 @@ import { Button, ConfigProvider, Dialog, SelectButton, Toaster, toast } from 'va
 import type { MotionStyle } from 'vael-ui'
 
 const styles: Record<string, MotionStyle> = {
-  calm: { version: 1, spring: { damping: 1, response: 0.4 } },
+  calm: { version: 1, spring: 'smooth' },
   playful: {
     version: 1,
-    spring: { damping: 0.6, response: 0.4 },
+    spring: 'bouncy',
     overlay: { initial: { opacity: 0, scale: '0.85' } },
     list: { stagger: 0.06 },
     press: { active: { scale: '0.9' } },

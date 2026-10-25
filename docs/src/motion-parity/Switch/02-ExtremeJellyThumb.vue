@@ -2,12 +2,11 @@
   <section class="demo">
     <h3>Extreme: a jelly thumb</h3>
     <p class="note">
-      <code>motion</code>'s <code>duration</code> and <code>easing</code> launch the thumb fast and
-      let it overshoot. <code>states.checked</code> and <code>states.unchecked</code> play once each
-      way. The thumb stretches from the edge it leaves, holds and wobbles to a stop; the track
-      squashes and bulges. Both are keyframes placed with <code>times</code>, with an easing for
-      each step. The track's color fills in behind the thumb, and a click mid-flight turns it around
-      from where it is.
+      <code>motion</code>'s <code>spring</code> launches the thumb fast and lets it overshoot.
+      <code>states.checked</code> and <code>states.unchecked</code> play once each way. The thumb
+      stretches from the edge it leaves, holds and wobbles to a stop; the track squashes and bulges.
+      Both are keyframes placed with <code>times</code>, with an easing for each step. The track's
+      color fills in behind the thumb, and a click mid-flight turns it around from where it is.
     </p>
     <Switch v-model="enabled" label="Turbo mode" class="jelly" :motion="jelly" />
   </section>
@@ -20,23 +19,18 @@ import type { SwitchMotion } from 'vael-ui'
 
 const enabled = shallowRef(false)
 
-// GSAP's back.out(1.8): fast off the mark, a small overshoot, no swing back.
-const BACK_OUT =
-  'linear(0, 0.224, 0.417, 0.581, 0.718, 0.831, 0.922, 0.992, 1.043, 1.079, 1.1, 1.109, 1.109, 1.1, 1.086, 1.069, 1.05, 1.031, 1.015, 1.004, 1)'
-const TRAVEL = { duration: 550, easing: BACK_OUT }
+// GSAP's back.out(1.8) as a spring: fast off the mark, a small overshoot.
+const TRAVEL = { spring: { damping: 0.57, response: 0.4 } }
 
 // GSAP's power2.out, the same curve as a CSS cubic-bezier.
 const POWER2_OUT = 'cubic-bezier(0.33, 1, 0.67, 1)'
-// GSAP's elastic.out(1.2, 0.3), sampled 80 times.
-const PHASE = (0.3 / (2 * Math.PI)) * Math.asin(1 / 1.2)
-const elastic = (u: number) =>
-  u === 1 ? 1 : 1.2 * 2 ** (-10 * u) * Math.sin(((u - PHASE) * 2 * Math.PI) / 0.3) + 1
-const ELASTIC = `linear(${Array.from({ length: 81 }, (_, i) => +elastic(i / 80).toFixed(4)).join(', ')})`
+// GSAP's elastic.out(1.2, 0.3) as a spring, for the wobble back to round.
+const WOBBLE = { damping: 0.25, response: 0.23 }
 // The thumb stretches out in 120ms, holds 20ms, then wobbles back to round for 800ms.
 const STRETCH = {
   times: [0, 120 / 940, 140 / 940, 1],
   duration: 940,
-  easing: [POWER2_OUT, 'linear', ELASTIC],
+  easing: [POWER2_OUT, 'linear', WOBBLE],
 }
 // GSAP eases the track power2.out as a whole (its middle keyframe lands at 124ms) and power1.inOut per step.
 const SQUASH = {

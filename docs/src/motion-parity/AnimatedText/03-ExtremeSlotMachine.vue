@@ -4,8 +4,8 @@
     <p class="note">
       <code>:motion="false"</code> swaps the word at once, and one <code>v-animate</code> with
       <code>replay</code> makes the drop: the new word falls from above with a little overshoot,
-      squashed wide and flat, and springs back to shape as it settles. Each value has its own
-      timing.
+      squashed wide and flat, and springs back to shape as it settles. The fall rides one spring;
+      the squash has its own, a beat later.
     </p>
     <p class="line">
       Ship it on
@@ -28,17 +28,14 @@ function spin() {
   spins.value++
 }
 
-// GSAP's back.out(2.5): it starts at full speed and overshoots a little.
-const backOut =
-  'linear(0, 0.216, 0.405, 0.569, 0.711, 0.83, 0.93, 1.01, 1.074, 1.122, 1.156, 1.177, 1.188, 1.188, 1.181, 1.167, 1.148, 1.126, 1.102, 1.077, 1.053, 1.032, 1.015, 1.004, 1)'
-
+// The fall overshoots a little; the squash holds while it falls, then wobbles out as it lands.
 const drop = computed(() => ({
   initial: {
-    y: { value: '-80%', duration: 350, easing: backOut },
-    opacity: { value: 0, duration: 350, easing: backOut },
-    // The squash holds while it falls, then wobbles out as it lands.
+    y: '-80%',
+    opacity: 0,
     scale: { value: '1.08 0.85', delay: 0.25, spring: { damping: 0.3, response: 0.3 } },
   },
+  spring: { damping: 0.45, response: 0.32 },
   replay: spins.value,
 }))
 </script>

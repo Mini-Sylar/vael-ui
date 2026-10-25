@@ -2,12 +2,7 @@
 <template>
   <section class="demo">
     <h3>Bouncy accordion</h3>
-    <Accordion
-      v-model:value="open"
-      multiple
-      class="stack"
-      :motion="{ spring: { damping: 0.5, response: 0.42 } }"
-    >
+    <Accordion v-model:value="open" multiple class="stack" :motion="{ spring: 'bouncy' }">
       <AccordionItem
         v-for="(item, i) in items"
         :key="item.value"

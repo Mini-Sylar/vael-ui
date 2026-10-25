@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { Radio, RadioGroup, vAnimate } from 'vael-ui'
 import type { RadioMotion } from 'vael-ui'
 
@@ -45,16 +45,12 @@ watch(plan, (next, prev) => {
   flight.value = { way: Math.sign(by) || 1, steps: Math.abs(by) }
 })
 
-// The page shows the chosen plan as it is; only changes after that animate.
-const ready = shallowRef(false)
-onMounted(() => (ready.value = true))
-
 // One dot, handed from circle to circle: 50ms of wind-up, then GSAP's back.out(2.2) over 500ms.
 const hop = {
   layoutId: 'plan-dot',
-  duration: 550,
-  easing:
-    'linear(0, 0 9.09%, 0.242, 0.449, 0.624, 0.77, 0.887, 0.98, 1.051, 1.101, 1.133, 1.15, 1.154, 1.147, 1.132, 1.112, 1.087, 1.062, 1.039, 1.019, 1.005, 1)',
+  delay: 0.05,
+  duration: 500,
+  easing: 'cubic-bezier(0.333, 1.733, 0.667, 1)',
 }
 
 // The ball's length along its path every 55ms: wound up, stretched by its speed in flight (less on
@@ -62,12 +58,13 @@ const hop = {
 const FLYING = [2, 2.2, 1.86, 1.45, 1.27, 1.17, 1.15]
 const TURN = [0, 0, -3, -8, -17, -42, -56, -146, -166, -180, -180, -180, -180]
 const LAND = 0.45
+// The page shows the chosen plan as it is (`appear: 'later'`); only changes after that animate.
 const ball = computed(() => {
-  if (!ready.value) return {}
   const { way, steps } = flight.value
   const k = steps > 1 ? 1 : 0.57
   const long = [0.5, ...FLYING.map((l) => 1 + (l - 1) * k), 0.61, 1.23, 1.12, 0.95, 1]
   return {
+    appear: 'later' as const,
     initial: {
       // After the 50ms wind-up in place, thrown out sideways, then drifting back in line as it
       // lands (GSAP's sine.inOut).
@@ -91,6 +88,8 @@ const ball = computed(() => {
 })
 
 const CUBIC_OUT = 'cubic-bezier(0.215, 0.61, 0.355, 1)'
+// GSAP's elastic.out(1, 0.4) as a spring, for the pop's settle.
+const SETTLE = { damping: 0.38, response: 0.26 }
 const SURFACE = ['var(--ui-surface)', 'var(--ui-border-strong)']
 const PRIMARY = ['var(--ui-primary)', 'var(--ui-primary)']
 // Background and border from one look to the other.
@@ -111,12 +110,12 @@ const circle: RadioMotion = {
     checked: {
       control: {
         ...paint(SURFACE, PRIMARY, { duration: 140, easing: CUBIC_OUT, delay: LAND }),
-        // Straight up to 1.15, then GSAP's elastic.out(1, 0.4) back down to its own size.
+        // Straight up to 1.15, then springing back down to its own size.
         scale: {
-          value: [1, 1.15],
+          value: [1, 1.15, 1],
+          times: [0, 0.01, 1],
           duration: 550,
-          easing:
-            'linear(0, 1 1%, 0.551 4.55%, 0.076, -0.21, -0.272, -0.188, -0.063, 0.031, 0.068, 0.058, 0.028, 0, -0.015, -0.016, -0.01, -0.002, 0.003, 0.004, 0.003, 0.001, 0, -0.001, 0)',
+          easing: ['linear', SETTLE],
           delay: LAND,
         },
         boxShadow: {

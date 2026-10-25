@@ -4,8 +4,14 @@
     <h3>Reveal on scroll</h3>
     <div class="scroller">
       <p class="hint">Scroll down</p>
+      <!-- Seen once, so a touch of stagger is fine. -->
       <div class="cards">
-        <article v-for="stat in stats" :key="stat.label" v-animate:stats="reveal" class="card">
+        <article
+          v-for="stat in stats"
+          :key="stat.label"
+          v-animate:stats.rise.stagger="{ when: 'visible', duration: 300, easing: 'out' }"
+          class="card"
+        >
           <span class="label">{{ stat.label }}</span>
           <AnimatedNumber :value="stat.value" :format="stat.format" :motion="{ when: 'visible' }" />
         </article>
@@ -26,14 +32,6 @@ const stats = [
   { label: 'Active users', value: 4_281, format: {} },
   { label: 'Uptime', value: 0.9994, format: { style: 'percent', maximumFractionDigits: 2 } },
 ] as const
-// Seen once, so a touch of stagger is fine.
-const reveal = {
-  initial: { opacity: 0, y: 8 },
-  when: 'visible' as const,
-  stagger: 0.06,
-  duration: 300,
-  easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
-}
 </script>
 
 <style scoped>

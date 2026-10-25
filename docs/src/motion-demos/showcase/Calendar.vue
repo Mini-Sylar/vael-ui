@@ -22,7 +22,7 @@ const motion: CalendarMotion = {
     grid: ({ direction }) => ({ opacity: 0, x: -12 * direction, blur: 2 }),
     label: ({ direction }) => ({ opacity: 0, y: -6 * direction, blur: 2 }),
   },
-  spring: { damping: 1, response: 0.3 },
+  spring: 'snappy',
 }
 </script>
 

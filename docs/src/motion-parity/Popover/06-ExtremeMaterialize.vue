@@ -37,13 +37,12 @@ import type { PopoverMotion } from 'vael-ui'
 
 const open = shallowRef(false)
 
-const easeOut = 'cubic-bezier(0.23, 1, 0.32, 1)'
-const out = { duration: 150, easing: easeOut }
+const out = { duration: 150, easing: 'out' }
 
 // Opacity and blur ease in over 200 ms; scale rides a soft spring. Out: 150 ms, eased.
 const materialize: PopoverMotion = {
   duration: 200,
-  easing: easeOut,
+  easing: 'out',
   initial: {
     panel: {
       opacity: 0,

@@ -82,7 +82,7 @@ const content = {
   exit: { opacity: quick(0), blur: quick(3), scale: quick('0.9') },
   delay: 0.08,
   duration: 250,
-  easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+  easing: 'out',
 }
 </script>
 

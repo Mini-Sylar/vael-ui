@@ -48,10 +48,11 @@ const fade = createSpring(0, { response: 0.2 }, (value) => {
 })
 
 watch(style, (next) => {
-  const visible = next.opacity !== '0' && next.insetBlockStart !== undefined
+  // Its place comes as `translate` (x y, in px) and its height as `blockSize`.
+  const visible = next.opacity !== '0' && next.translate !== undefined
   fade.set(visible ? 1 : 0)
   if (!visible) return
-  const to = parseFloat(next.insetBlockStart!)
+  const to = parseFloat(String(next.translate).split(' ')[1] ?? '0')
   const size = parseFloat(next.blockSize!)
   // The first row shown, or reduced motion: no travel, it just appears there.
   if (!shown || reduce()) {

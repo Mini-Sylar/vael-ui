@@ -4,9 +4,10 @@
     <p class="note">
       Flick the thumb and let go: it overshoots past the release point and rings back, scaled to how
       fast you were moving. The value stays where you let go. <code>v-animate</code>'s
-      <code>replay</code> plays the swing on each release, from the overshoot back to rest on an
-      elastic curve, and a CSS variable adds it to the thumb as a <code>transform</code>, separate
-      from the <code>translate</code> Slider places it with, so the drag itself is never delayed.
+      <code>replay</code> plays the swing on each release, from the overshoot back to rest on a
+      spring that rings past it, and a CSS variable adds it to the thumb as a
+      <code>transform</code>, separate from the <code>translate</code> Slider places it with, so the
+      drag itself is never delayed.
     </p>
     <div
       v-animate="swing"
@@ -36,16 +37,13 @@ const value = shallowRef(50)
 const overshoot = shallowRef(0)
 const releases = shallowRef(0)
 
-// GSAP's elastic.out(1, 0.5), sampled.
-const ELASTIC =
-  'linear(0, 0.1286, 0.2749, 0.4279, 0.5785, 0.7194, 0.8455, 0.9534, 1.0415, 1.1093, 1.1575, 1.1878, 1.2023, 1.2035, 1.1941, 1.1768, 1.154, 1.1282, 1.1011, 1.0745, 1.0496, 1.0273, 1.0082, 0.9927, 0.9807, 0.9722, 0.9668, 0.9642, 0.964, 0.9657, 0.9688, 0.9728, 0.9773, 0.9821, 0.9868, 0.9912, 0.9952, 0.9985, 1.0013, 1.0034, 1.0049, 1.0059, 1.0063, 1.0064, 1.0061, 1.0055, 1.0048, 1.004, 1.0032, 1.0023, 1.0016, 1.0009, 1.0003, 0.9998, 0.9994, 0.9991, 0.999, 0.9989, 0.9989, 0.9989, 1)'
-// Each release swings the thumb out by `overshoot` and rings it back to rest over 600ms.
+// Each release swings the thumb out by `overshoot` and springs it back to rest, ringing past it
+// like GSAP's elastic.out(1, 0.5) over 600ms.
 const swing = computed(() => ({
   initial: { '--swing': `${overshoot.value}px` },
   replay: releases.value,
   appear: false,
-  duration: 600,
-  easing: ELASTIC,
+  spring: { damping: 0.45, response: 0.3 },
 }))
 
 // The last few pointer samples of a thumb drag, to read the release speed from.

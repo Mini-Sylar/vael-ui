@@ -5,7 +5,7 @@
       <span
         v-animate="{
           animate: { scale: status === 'live' ? 1.25 : 1, backgroundColor: colours[status] },
-          spring: { damping: 0.55, response: 0.4 },
+          spring: 'bouncy',
         }"
         class="dot"
         aria-hidden="true"

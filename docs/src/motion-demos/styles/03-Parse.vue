@@ -19,7 +19,7 @@ import { Button, ConfigProvider, Dialog, Textarea, parseMotionStyle } from 'vael
 
 const text = ref(`{
   "version": 1,
-  "spring": { "damping": 0.6, "response": 0.4 },
+  "spring": "bouncy",
   "overlay": {
     "initial": { "opacity": 0, "scale": "0.85", "filter": "url(#x)" }
   }

@@ -92,18 +92,16 @@ const shake: TextareaMotion = {
 let nextId = 0
 const pending = shallowRef(nextId)
 const draftLook = computed(() => ({ layoutId: `message-${pending.value}` }))
-// GSAP's power3.inOut and back.out(1.4), sampled.
+// GSAP's power3.inOut, sampled.
 const POWER3_IN_OUT =
   'linear(0, 0.0001, 0.0008, 0.004, 0.0128, 0.0313, 0.0648, 0.12, 0.2048, 0.3281, 0.5, 0.672, 0.7952, 0.88, 0.9352, 0.9688, 0.9872, 0.996, 0.9992, 1, 1)'
-const BACK_OUT =
-  'linear(0, 0.206, 0.384, 0.538, 0.667, 0.775, 0.863, 0.932, 0.986, 1.024, 1.05, 1.065, 1.07, 1.069, 1.061, 1.05, 1.037, 1.023, 1.012, 1.003, 1)'
 const travel = { duration: 450, easing: POWER3_IN_OUT }
-// The bubble grows in behind the text as it lands; the text turns to the bubble's ink on the way.
+// The bubble grows in behind the text as it lands, on a spring with GSAP's back.out(1.4) give; the
+// text turns to the bubble's ink on the way.
 const landing = {
   initial: { opacity: 0, scale: 0.92 },
   delay: 0.3,
-  duration: 450,
-  easing: BACK_OUT,
+  spring: { damping: 0.64, response: 0.36 },
 }
 const ink = { initial: { color: 'var(--ui-text)' }, delay: 0.3, duration: 450 }
 

@@ -41,13 +41,9 @@ function tick() {
 const timer = setInterval(tick, 1400)
 onScopeDispose(() => clearInterval(timer))
 
-const roll: AnimatedNumberMotion = { duration: 450, easing: 'cubic-bezier(0.34, 1.36, 0.64, 1)' }
+const roll: AnimatedNumberMotion = { duration: 450, easing: 'pop' }
 
-// A strong back-out: up to 25% past the end, then back.
-const backOut =
-  'linear(0, 0.235, 0.44, 0.617, 0.769, 0.896, 1, 1.084, 1.148, 1.195, 1.227, 1.245, 1.25, 1.245, 1.231, 1.211, 1.185, 1.156, 1.125, 1.094, 1.065, 1.039, 1.019, 1.005, 1)'
-
-// Both replay on each tick; the arrow starts on the side it moved from.
+// Both replay on each tick; the arrow starts on the side it moved from and overshoots about 25%.
 const swell = computed(() => ({
   initial: { scale: 1.04 },
   duration: 400,
@@ -56,8 +52,7 @@ const swell = computed(() => ({
 }))
 const kick = computed(() => ({
   initial: { y: trend.value === 'up' ? 6 : -6, opacity: 0 },
-  duration: 350,
-  easing: backOut,
+  spring: { damping: 0.4, response: 0.32 },
   replay: ticks.value,
 }))
 </script>

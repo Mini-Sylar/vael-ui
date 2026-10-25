@@ -27,15 +27,11 @@ import { PhX } from '@phosphor-icons/vue'
 
 const files = shallowRef<File[]>([])
 
-// GSAP's back.out(1.6), sampled.
-const BACK_OUT =
-  'linear(0, 0.215, 0.401, 0.559, 0.693, 0.803, 0.892, 0.962, 1.014, 1.051, 1.075, 1.087, 1.09, 1.085, 1.074, 1.059, 1.043, 1.027, 1.013, 1.004, 1)'
-// Each row's content rises and grows in, 60 ms after the one before.
+// Each row's content rises and grows in with a small overshoot, 60 ms after the one before.
 const pop = {
   initial: { y: 14, scale: 0.92 },
   stagger: 0.06,
-  duration: 400,
-  easing: BACK_OUT,
+  spring: { damping: 0.6, response: 0.4 },
 }
 </script>
 

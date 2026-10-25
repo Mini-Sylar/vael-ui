@@ -4,7 +4,8 @@
     <p class="note">
       The fill's <code>initial</code> starts each segment at nothing, a beat after the one before,
       and it settles with a little overshoot. Each count rolls up from 0 with a
-      <code>v-animate</code> of its own. Land again draws the bar afresh, so both play again.
+      <code>v-animate</code>, staggered the same way. Land again draws the bar afresh, so both play
+      again.
     </p>
     <Progress
       :key="round"
@@ -14,11 +15,11 @@
       label="Support tickets"
       style="max-width: 26rem"
     >
-      <template #legend="{ segment, index }">
+      <template #legend="{ segment }">
         <span class="swatch" :data-variant="segment.variant" />
         <span class="legend-label">{{ segment.label }}</span>
         <span
-          v-animate="countUp(index)"
+          v-animate:counts="countUp"
           class="legend-count"
           :style="{ '--count': segment.value }"
         />
@@ -43,30 +44,21 @@ const segments: ProgressSegment[] = [
 const total = 60
 const STEP = 0.12
 
-// GSAP's back.out(1.4) as a CSS easing.
-const backOut = `linear(${Array.from({ length: 41 }, (_, i) => {
-  const t = i / 40 - 1
-  return +(1 + 2.4 * t ** 3 + 1.4 * t ** 2).toFixed(4)
-}).join(', ')})`
-
-// Each fill grows from nothing, 120 ms after the one before. Timed per value: a width isn't capped.
-const grow = { duration: 700, easing: backOut }
+// Each fill grows from nothing, 120 ms after the one before (`stagger`), on a spring that
+// overshoots like GSAP's back.out(1.4). Timed per value: a width isn't capped.
 const motion: ProgressMotion = {
   initial: {
-    fill: ({ index }) => ({ inlineSize: { value: '0%', ...grow, delay: index * STEP } }),
+    fill: { inlineSize: { value: '0%', spring: { damping: 0.64, response: 0.55 } } },
   },
+  stagger: STEP,
 }
 // The count is a CSS counter on --count: it rolls up from 0 alongside its segment.
-const countUp = (index: number): TargetMotion => ({
+const countUp: TargetMotion = {
   initial: {
-    '--count': {
-      value: 0,
-      duration: 700,
-      easing: 'cubic-bezier(0.33, 1, 0.68, 1)',
-      delay: index * STEP,
-    },
+    '--count': { value: 0, duration: 700, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' },
   } as TargetMotion['initial'],
-})
+  stagger: STEP,
+}
 
 // A new bar mounts: both appearances play again.
 const round = shallowRef(0)

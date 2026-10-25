@@ -6,7 +6,9 @@
       <Button @click="add">Add</Button>
       <Button variant="secondary" :disabled="!steps.length" @click="steps.shift()">Remove</Button>
     </div>
-    <Timeline :items="steps" :motion="motion" />
+    <Timeline :items="steps" :item-key="(step) => step.id" :motion="motion">
+      <template #item="{ item }">{{ item.title }}</template>
+    </Timeline>
   </section>
 </template>
 
@@ -21,16 +23,20 @@ const modes: SelectButtonItem[] = [
 ]
 const leaving = shallowRef<'pop' | 'hold'>('pop')
 
-const labels = ['Brief', 'Design', 'Build', 'Review', 'Launch']
-const steps = reactive(labels.slice(0, 3).map((title) => ({ title })))
+// Each step keeps its own id, so the one you remove is the one that leaves.
+let next = 0
+const steps = reactive(['Brief', 'Design', 'Build'].map((title) => ({ id: next++, title })))
 function add() {
-  steps.push({ title: `Step ${steps.length + 1}` })
+  steps.push({ id: next, title: `Step ${++next}` })
 }
 
-// Items rise in one after another. 'hold' keeps the rest in place until the leaver is gone.
+// Exaggerated so you can see it: items swing in from the side on a bouncy spring, one after
+// another, and leave the way they came. 'hold' keeps the rest in place until the leaver is gone.
 const motion = computed<TimelineMotion>(() => ({
-  initial: { item: { opacity: 0, y: 8 } },
-  stagger: 0.06,
+  initial: { item: { opacity: 0, x: -48, scale: 0.9, blur: 4 } },
+  exit: { item: { opacity: 0, x: 48, scale: 0.9 } },
+  spring: 'bouncy',
+  stagger: 0.12,
   leaving: leaving.value,
 }))
 </script>

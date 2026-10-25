@@ -175,7 +175,7 @@ const tocLinks = computed(() => [
 <style scoped>
 .spring-lab {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(min-content, 1fr) minmax(0, 1.2fr);
   gap: 1.5rem;
   padding: 1.25rem;
   border: 1px solid var(--ui-border);

@@ -3,9 +3,9 @@
     <h3>Extreme: panels open and their rows stagger in</h3>
     <p class="note">
       Accordion's own <code>motion</code> sets one duration and curve for the panel height and the
-      chevron turn. Each row is <code>v-animate</code> with its own <code>delay</code> and a
-      <code>replay</code> count that only rises on open, so rows fade up one after another when
-      their panel opens and stay put when it closes.
+      chevron turn. Each row is <code>v-animate.rise.stagger</code> with a <code>replay</code>
+      count that only rises on open, so rows fade up one after another when their panel opens and
+      stay put when it closes.
     </p>
     <Accordion v-model:value="openItem" :motion="motion" class="reveal-accordion">
       <AccordionItem
@@ -16,9 +16,9 @@
       >
         <ul class="reveal-rows">
           <li
-            v-for="(row, i) in section.rows"
+            v-for="row in section.rows"
             :key="row"
-            v-animate:rows="{ ...rowLook, delay: 0.05 + i * 0.04, replay: opens[section.value] }"
+            v-animate:rows.rise.stagger="{ ...rowTiming, replay: opens[section.value] }"
           >
             {{ row }}
           </li>
@@ -61,11 +61,8 @@ watch(openItem, (next) => {
 // Height and chevron turn share one strong ease-out.
 const motion: AccordionMotion = { duration: 300, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }
 
-const rowLook = {
-  initial: { opacity: 0, y: 8 },
-  duration: 200,
-  easing: 'cubic-bezier(0.33, 1, 0.68, 1)',
-}
+// Rows rise in 40 ms apart, a beat after the panel starts opening.
+const rowTiming = { delay: 0.05, duration: 200, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' }
 </script>
 
 <style scoped>

@@ -32,10 +32,7 @@
         :style="{ background: selected.color }"
       >
         <!-- In once it has landed, so nothing in it stretches on the way. -->
-        <div
-          v-animate="{ initial: { opacity: 0, y: 4 }, delay: 0.15, duration: 200 }"
-          class="detail-body"
-        >
+        <div v-animate.rise="{ delay: 0.15, duration: 200 }" class="detail-body">
           <div>
             <strong>{{ selected.name }}</strong>
             <p>{{ selected.note }}</p>

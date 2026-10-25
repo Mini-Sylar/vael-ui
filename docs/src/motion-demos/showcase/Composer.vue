@@ -15,15 +15,22 @@
       <template #start><Avatar name="Sam Rivera" size="sm" /></template>
       <template #end>
         <!-- One Reply button: in the row at rest, sliding down to the actions when open. -->
-        <Button v-if="!open" v-animate="reply" size="sm" disabled tabindex="-1">Reply</Button>
+        <Button
+          v-if="!open"
+          v-animate.snappy="{ layoutId: 'reply' }"
+          size="sm"
+          disabled
+          tabindex="-1"
+          >Reply</Button
+        >
       </template>
       <template #bottom-start>
-        <div v-animate.size="spring">
+        <div v-animate.size.snappy>
           <div v-if="open" class="tools">
             <Button
               v-for="tool in tools"
               :key="tool.label"
-              v-animate:tools="arrive"
+              v-animate:tools.drop.snappy.stagger
               size="sm"
               variant="ghost"
               icon
@@ -35,10 +42,12 @@
         </div>
       </template>
       <template #bottom-end>
-        <div v-animate.size="spring">
+        <div v-animate.size.snappy>
           <div v-if="open" class="actions">
             <span class="left">{{ 280 - text.length }}</span>
-            <Button v-animate="reply" size="sm" :disabled="!text.trim()">Reply</Button>
+            <Button v-animate.snappy="{ layoutId: 'reply' }" size="sm" :disabled="!text.trim()"
+              >Reply</Button
+            >
           </div>
         </div>
       </template>
@@ -59,10 +68,6 @@ const tools = [
   { label: 'Emoji', icon: PhSmiley },
   { label: 'Poll', icon: PhChartBar },
 ]
-// One spring for every moving piece.
-const spring = { spring: { damping: 1, response: 0.3 } }
-const arrive = { initial: { opacity: 0, y: -4 }, stagger: 0.03, ...spring }
-const reply = { layoutId: 'reply', ...spring }
 </script>
 
 <style scoped>

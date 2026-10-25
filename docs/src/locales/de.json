@@ -748,9 +748,13 @@
           "title": "Eine Komponente ändern",
           "body": "Jede Komponente nimmt eine <code>motion</code>-Prop an. Geben Sie an, woher ein Teil kommt, etwa <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>, und auf welcher Feder er sich bewegt."
         },
+        "timing": {
+          "title": "Timing",
+          "body": "Bewegung läuft auf einer Feder oder auf einer <code>duration</code>. Eine Feder nimmt einen Namen an, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> oder <code>'gentle'</code>, oder ihre Werte <code>damping</code> und <code>response</code>. Eine <code>duration</code> in ms nimmt jedes CSS-<code>easing</code> an, oder eines von vael-ui beim Namen, etwa <code>'out'</code> oder <code>'pop'</code>."
+        },
         "spring": {
           "title": "Eine Feder für alles",
-          "body": "Setzen Sie eine <code>spring</code> auf <code>ConfigProvider</code>, und jede Komponente darin nutzt sie. Mit <code>damping</code> unter 1 schwingt sie über, und <code>response</code> ist ungefähr ihre Dauer in Sekunden."
+          "body": "Setzen Sie eine <code>spring</code> auf <code>ConfigProvider</code>, und jede Komponente darin nutzt sie. Mit <code>damping</code> unter 1 schwingt sie über, und <code>response</code> ist ungefähr ihre Dauer in Sekunden. Oder nennen Sie sie beim Namen: <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> oder <code>'gentle'</code>."
         },
         "off": {
           "title": "Ausschalten",
@@ -762,19 +766,19 @@
         "intro": "Bewegung gibt es nicht nur für die Komponenten von vael-ui. <code>v-animate</code> gibt jedem Ihrer Elemente einen Auftritt und einen Abgang, direkt im Template.",
         "appear": {
           "title": "Rein und raus",
-          "body": "<code>initial</code> legt fest, woher das Element kommt. Wenn Vue es entfernt, geht es den Weg zurück, den es gekommen ist, schneller und leiser, außer Sie geben ihm ein <code>exit</code>."
+          "body": "<code>initial</code> legt fest, woher das Element kommt. Wenn Vue es entfernt, geht es den Weg zurück, den es gekommen ist, schneller und leiser, außer Sie geben ihm ein <code>exit</code>. Für die üblichen Auftritte wählen Sie einen beim Namen: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> oder <code>.blur</code>. Eine Feder fügen Sie genauso hinzu, wie in <code>v-animate.pop.bouncy</code>, und mit einem Wert passen Sie sie an: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
         "scroll": {
           "title": "Wenn es ins Bild scrollt",
-          "body": "<code>when: 'visible'</code> wartet, bis das Element auf dem Bildschirm ist, und spielt dann einmal. Elemente mit demselben Namen, etwa <code>v-animate:tiles</code>, spielen in der Reihenfolge der Seite, eines nach dem anderen mit einem <code>stagger</code>."
+          "body": "<code>when: 'visible'</code> wartet, bis das Element auf dem Bildschirm ist, und spielt dann einmal. Elemente mit demselben Namen, etwa <code>v-animate:tiles</code>, spielen in der Reihenfolge der Seite, eines nach dem anderen mit einem <code>stagger</code>. <code>stagger: true</code> verteilt sie im Abstand des Stagger-Tokens; <code>'end'</code>, <code>'center'</code> oder <code>'edges'</code> lassen die Welle stattdessen dort beginnen."
         },
         "replay": {
           "title": "Noch einmal abspielen",
-          "body": "<code>replay</code> spielt <code>initial</code> jedes Mal erneut, wenn sich sein Wert ändert, ohne das Element neu zu mounten. Nutzen Sie es für einen steigenden Zähler, einen Statuswechsel oder ein fehlgeschlagenes Kopieren. Mit <code>appear: false</code> spielt es nur bei diesen Änderungen, nicht beim Mounten des Elements."
+          "body": "<code>replay</code> spielt <code>initial</code> jedes Mal erneut, wenn sich sein Wert ändert, ohne das Element neu zu mounten. Nutzen Sie es für einen steigenden Zähler, einen Statuswechsel oder ein fehlgeschlagenes Kopieren. Mit <code>appear: false</code> spielt es nur bei diesen Änderungen, nicht beim Mounten des Elements. Mit <code>appear: 'later'</code> bleibt, was beim ersten Rendern der Seite da ist, ruhig, und alles, was danach hinzukommt, erscheint animiert."
         },
         "layout": {
           "title": "An einen neuen Platz gleiten",
-          "body": "<code>layout: true</code> lässt ein Element dorthin gleiten, wo das Layout es hinsetzt, etwa wenn sich eine Liste neu ordnet oder ein Nachbar wächst."
+          "body": "<code>layout: true</code> lässt ein Element dorthin gleiten, wo das Layout es hinsetzt, etwa wenn sich eine Liste neu ordnet oder ein Nachbar wächst. Ein <code>delay</code> wartet, bevor es gleitet, und hält bis dahin seinen alten Platz."
         },
         "shared": {
           "title": "Von einem Ort zum anderen",
@@ -798,7 +802,7 @@
         "intro": "Komponenten animieren auch, während sie auf dem Bildschirm sind, etwa bei einem Druck, einer fehlgeschlagenen Prüfung oder einem sich öffnenden Panel. Listen animieren Einträge, wenn sie kommen und gehen.",
         "press": {
           "title": "Drücken und Hovern",
-          "body": "<code>states</code> animiert einen Teil, solange die Komponente in einem Zustand ist. Ein einfacher Wert gilt, solange der Zustand an ist: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> staucht einen Button, während Sie ihn drücken."
+          "body": "<code>states</code> animiert einen Teil, solange die Komponente in einem Zustand ist. Ein einfacher Wert gilt, solange der Zustand an ist: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> staucht einen Button, während Sie ihn drücken. Jedes Element bekommt dieselben Zustände über <code>v-animate</code>: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>."
         },
         "shake": {
           "title": "Eine fehlgeschlagene Prüfung",
@@ -810,7 +814,7 @@
         },
         "keyframes": {
           "title": "Keyframes",
-          "body": "Ein Array ist eine Folge von Keyframes. <code>times</code> platziert jeden davon, von 0 bis 1, und <code>easing</code> glättet jeden Schritt. Geben Sie eine Liste von Easings an, um jedem Schritt sein eigenes zu geben, etwa erst ein Anstieg und dann ein Abprallen. <code>repeat</code> spielt sie erneut, und <code>repeat: Infinity</code> läuft weiter, bis der Zustand ausgeht oder sich das Aussehen ändert."
+          "body": "Ein Array ist eine Folge von Keyframes. <code>times</code> platziert jeden davon, von 0 bis 1, und <code>easing</code> glättet jeden Schritt. Geben Sie eine Liste von Easings an, um jedem Schritt sein eigenes zu geben, etwa erst ein Anstieg und dann ein Abprallen. <code>repeat</code> spielt sie erneut, und <code>repeat: Infinity</code> läuft weiter, bis der Zustand ausgeht oder sich das Aussehen ändert. Ein Schritt kann auf einer Feder easen: <code>easing: ['linear', 'bouncy']</code>. Ändern Sie die <code>duration</code> einer Schleife, während sie läuft, wird sie von ihrer aktuellen Stelle aus schneller oder langsamer."
         },
         "each": {
           "title": "Einer nach dem anderen",
@@ -822,7 +826,7 @@
         },
         "lists": {
           "title": "Listen",
-          "body": "Toaster, Timeline, FileUpload, SpeedDial, DataTable-Zeilen, CommandPalette-Zeilen und die Chips der Select-Familie bringen neue Einträge nacheinander herein. <code>leaving: 'pop'</code> hebt einen gehenden Eintrag aus dem Layout, sodass die übrigen die Lücke sofort schließen. <code>'hold'</code> hält die Lücke offen, bis der Eintrag weg ist. Geben Sie <code>initial</code> oder <code>exit</code> als Funktion an, um <code>{'{'} index, count {'}'}</code> für die Einträge zu bekommen, die gemeinsam kommen oder gehen, sodass ein Schließen vom letzten zum ersten laufen kann."
+          "body": "Toaster, Timeline, FileUpload, SpeedDial, DataTable-Zeilen, CommandPalette-Zeilen und die Chips der Select-Familie bringen neue Einträge nacheinander herein. <code>leaving: 'pop'</code> hebt einen gehenden Eintrag aus dem Layout, sodass die übrigen die Lücke sofort schließen. <code>'hold'</code> hält die Lücke offen, bis der Eintrag weg ist. Geben Sie <code>initial</code> oder <code>exit</code> als Funktion an, um <code>{'{'} index, count {'}'}</code> für die Einträge zu bekommen, die gemeinsam kommen oder gehen, sodass ein Schließen vom letzten zum ersten laufen kann. <code>stagger</code> nimmt dieselben Wörter wie bei <code>v-animate</code> (<code>true</code>, <code>'end'</code>, <code>'center'</code>, <code>'edges'</code>) oder Sekunden."
         },
         "toasts": {
           "title": "Ein Toast, der sich ändert",
@@ -862,7 +866,7 @@
         "intro": "In einem Dialog oder Popover können Ihre eigenen Elemente bei seiner Bewegung mitmachen. Sie benennen sie und stimmen sie dann aufeinander und auf das Panel ab.",
         "after": {
           "title": "Einer nach dem anderen",
-          "body": "Benennen Sie Ihre Elemente in <code>targets</code> und markieren Sie sie mit <code>target('name')</code> aus dem Slot oder mit <code>v-animate:name</code>. <code>after: 'summary:60%'</code> startet die Zeilen, wenn die Zusammenfassung zu 60 % hereingekommen ist."
+          "body": "Benennen Sie Ihre Elemente in <code>targets</code> und markieren Sie sie mit <code>target('name')</code> aus dem Slot oder mit <code>v-animate:name</code>. <code>after: 'summary:60%'</code> startet die Zeilen, wenn die Zusammenfassung zu 60 % hereingekommen ist. Auch Elemente ohne Komponente um sie herum können aufeinander warten, wenn sie zusammen erscheinen: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>."
         },
         "moments": {
           "title": "Momente",
@@ -894,11 +898,35 @@
         },
         "presets": {
           "title": "Presets",
-          "body": "<code>presets</code> benennt Looks, die Sie mit <code>v-animate=\"'rise'\"</code> überall im Provider nutzen können, damit sich Ihre Elemente wie Ihre Komponenten bewegen."
+          "body": "<code>presets</code> benennt Looks, die Sie mit <code>v-animate.rise</code> überall im Provider nutzen können, damit sich Ihre Elemente wie Ihre Komponenten bewegen."
         },
         "parse": {
           "title": "Ein Stil von außerhalb Ihres Codes",
           "body": "<code>parseMotionStyle</code> prüft einen Stil aus einer Einstellungsseite, einer Datenbank oder dem Netzwerk. Es verwirft alles Unsichere oder Unbekannte und listet das Verworfene in <code>issues</code> auf."
+        }
+      },
+      "server": {
+        "title": "Server-Rendering",
+        "intro": "Bewegung funktioniert auf serverseitig gerenderten Seiten: Auftritte starten vor jedem Skript, und beim Hydrieren spielt nichts zweimal.",
+        "paint": {
+          "title": "Vor jedem Skript",
+          "body": "Auf einer serverseitig gerenderten Seite wird ein <code>v-animate</code>-Auftritt als CSS ins HTML geschrieben. Er spielt also, während die Seite gezeichnet wird, bevor Ihr JavaScript lädt, und beim Hydrieren nie erneut. Er umfasst <code>opacity</code>, <code>x</code>, <code>y</code>, <code>scale</code>, <code>blur</code> auf einer Feder oder mit einer Dauer, auch eingebaute Auftritte wie <code>v-animate.rise</code>. Bei reduzierter Bewegung blendet er nur ein."
+        },
+        "stagger": {
+          "title": "Eine gestaffelte Liste",
+          "body": "Ein <code>stagger</code> als Zahl liest das <code>--i</code> jedes Elements: Setzen Sie es aus dem Index von <code>v-for</code>, etwa mit <code>:style=\"{'{'} '--i': index {'}'}\"</code>. <code>stagger: true</code> verteilt sie im Abstand des Stagger-Tokens."
+        },
+        "later": {
+          "title": "Was auf JavaScript wartet",
+          "body": "Keyframe-Arrays, <code>when: 'visible'</code>, <code>layoutId</code>, <code>after</code>, <code>steps</code> brauchen das Skript der Seite. Diese Elemente erscheinen daher unverändert, bis es läuft. Ein Element, das für eine Komponente benannt ist (<code>v-animate:rows</code>), bewegt sich mit seiner Komponente. <code>appear: 'later'</code> zählt das Server-Rendering als erstes Rendering, dort animiert also nichts."
+        },
+        "open": {
+          "title": "Beim Laden geöffnet",
+          "body": "Ein Overlay, das beim Laden der Seite offen ist, wird geöffnet gerendert, ohne Animation. Das <code>initial</code> einer Komponente spielt beim Hydrieren nie, und <code>appear: true</code> einer Liste überspringt die Einträge, die der Server gerendert hat."
+        },
+        "setup": {
+          "title": "Nuxt und Vite",
+          "body": "Das Nuxt-Modul registriert <code>v-animate</code> für Sie. Mit reinem Vite-SSR setzen Sie <code>ssr: {'{'} noExternal: ['vael-ui'] {'}'}</code>, damit das CSS jeder Komponente mitkommt, und rendern die Teleports in <code>&lt;body&gt;</code>, wo die Overlays landen. Sowohl der VDOM- als auch der Vapor-Build rendern auf dem Server und hydrieren."
         }
       }
     },

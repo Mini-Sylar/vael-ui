@@ -748,9 +748,13 @@
           "title": "Change one component",
           "body": "Every component takes a <code>motion</code> prop. Set where a part comes in from, such as <code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code>, and the spring it moves on."
         },
+        "timing": {
+          "title": "Timing",
+          "body": "Motion runs on a spring or on a <code>duration</code>. A spring takes a name, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> or <code>'gentle'</code>, or its <code>damping</code> and <code>response</code>. A <code>duration</code> in ms takes any CSS <code>easing</code>, or one of vael-ui's by name, such as <code>'out'</code> or <code>'pop'</code>."
+        },
         "spring": {
           "title": "One spring for everything",
-          "body": "Put a <code>spring</code> on <code>ConfigProvider</code>, and every component inside uses it. <code>damping</code> below 1 overshoots, and <code>response</code> is roughly how long it takes, in seconds."
+          "body": "Put a <code>spring</code> on <code>ConfigProvider</code>, and every component inside uses it. <code>damping</code> below 1 overshoots, and <code>response</code> is roughly how long it takes, in seconds. Or name it: <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> or <code>'gentle'</code>."
         },
         "off": {
           "title": "Turn it off",
@@ -762,19 +766,19 @@
         "intro": "Motion isn't only for vael-ui components. <code>v-animate</code> gives any of your elements an entrance and an exit, right in the template.",
         "appear": {
           "title": "In and out",
-          "body": "<code>initial</code> sets where the element comes in from. When Vue removes it, it leaves the way it came, faster and quieter, unless you give it an <code>exit</code>."
+          "body": "<code>initial</code> sets where the element comes in from. When Vue removes it, it leaves the way it came, faster and quieter, unless you give it an <code>exit</code>. For the usual entrances, pick one by name: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> or <code>.blur</code>. Add a spring the same way, as in <code>v-animate.pop.bouncy</code>, and tune it with a value: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
         "scroll": {
           "title": "When it scrolls into view",
-          "body": "<code>when: 'visible'</code> waits until the element is on screen, then plays once. Elements that share a name, such as <code>v-animate:tiles</code>, play in page order, one after another with a <code>stagger</code>."
+          "body": "<code>when: 'visible'</code> waits until the element is on screen, then plays once. Elements that share a name, such as <code>v-animate:tiles</code>, play in page order, one after another with a <code>stagger</code>. <code>stagger: true</code> spaces them by the stagger token; <code>'end'</code>, <code>'center'</code> or <code>'edges'</code> start the wave there instead."
         },
         "replay": {
           "title": "Play it again",
-          "body": "<code>replay</code> plays <code>initial</code> again each time its value changes, without remounting the element. Use it for a count going up, a status change or a failed copy. With <code>appear: false</code>, it plays only on those changes, not when the element mounts."
+          "body": "<code>replay</code> plays <code>initial</code> again each time its value changes, without remounting the element. Use it for a count going up, a status change or a failed copy. With <code>appear: false</code>, it plays only on those changes, not when the element mounts. With <code>appear: 'later'</code>, what's there when the page first renders stays still, and anything added after comes in."
         },
         "layout": {
           "title": "Slide to a new place",
-          "body": "<code>layout: true</code> slides an element to wherever the layout puts it, such as when a list reorders or a sibling grows."
+          "body": "<code>layout: true</code> slides an element to wherever the layout puts it, such as when a list reorders or a sibling grows. A <code>delay</code> waits before it slides, holding its old place meanwhile."
         },
         "shared": {
           "title": "From one place to another",
@@ -798,7 +802,7 @@
         "intro": "Components also animate while they're on screen, such as on a press, a failed check or a panel opening. Lists animate items as they come and go.",
         "press": {
           "title": "Press and hover",
-          "body": "<code>states</code> animates a part while the component is in a state. A plain value holds while the state is on: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> shrinks a button while you press it."
+          "body": "<code>states</code> animates a part while the component is in a state. A plain value holds while the state is on: <code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> shrinks a button while you press it. Any element takes the same looks through <code>v-animate</code>: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>."
         },
         "shake": {
           "title": "A failed check",
@@ -810,7 +814,7 @@
         },
         "keyframes": {
           "title": "Keyframes",
-          "body": "An array is a set of keyframes. <code>times</code> places each one, from 0 to 1, and <code>easing</code> eases each step. Pass a list of easings to give each step its own, such as a rise and then a bounce. <code>repeat</code> plays them again, and <code>repeat: Infinity</code> keeps going until the state turns off or the look changes."
+          "body": "An array is a set of keyframes. <code>times</code> places each one, from 0 to 1, and <code>easing</code> eases each step. Pass a list of easings to give each step its own, such as a rise and then a bounce. <code>repeat</code> plays them again, and <code>repeat: Infinity</code> keeps going until the state turns off or the look changes. A step can ease on a spring: <code>easing: ['linear', 'bouncy']</code>. Change a loop's <code>duration</code> while it plays, and it speeds up or slows down from where it is."
         },
         "each": {
           "title": "One at a time",
@@ -822,7 +826,7 @@
         },
         "lists": {
           "title": "Lists",
-          "body": "Toaster, Timeline, FileUpload, SpeedDial, DataTable rows, CommandPalette rows and the Select family's chips bring new items in one after another. <code>leaving: 'pop'</code> lifts a leaving item out of the layout, so the rest close the gap at once. <code>'hold'</code> keeps the gap until the item is gone. Write <code>initial</code> or <code>exit</code> as a function to receive <code>{'{'} index, count {'}'}</code> for the items arriving or leaving together, so a close can run last to first."
+          "body": "Toaster, Timeline, FileUpload, SpeedDial, DataTable rows, CommandPalette rows and the Select family's chips bring new items in one after another. <code>leaving: 'pop'</code> lifts a leaving item out of the layout, so the rest close the gap at once. <code>'hold'</code> keeps the gap until the item is gone. Write <code>initial</code> or <code>exit</code> as a function to receive <code>{'{'} index, count {'}'}</code> for the items arriving or leaving together, so a close can run last to first. <code>stagger</code> takes the same words as on <code>v-animate</code> (<code>true</code>, <code>'end'</code>, <code>'center'</code>, <code>'edges'</code>), or seconds."
         },
         "toasts": {
           "title": "A toast that changes",
@@ -862,7 +866,7 @@
         "intro": "Inside a dialog or a popover, your own elements can join its motion. You name them, then time them against each other and against the panel.",
         "after": {
           "title": "One after another",
-          "body": "Name your elements in <code>targets</code>, and mark them with the slot's <code>target('name')</code> or with <code>v-animate:name</code>. <code>after: 'summary:60%'</code> starts the rows when the summary is 60% of the way in."
+          "body": "Name your elements in <code>targets</code>, and mark them with the slot's <code>target('name')</code> or with <code>v-animate:name</code>. <code>after: 'summary:60%'</code> starts the rows when the summary is 60% of the way in. Elements with no component around them can wait on each other too, when they appear together: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>."
         },
         "moments": {
           "title": "Moments",
@@ -894,11 +898,35 @@
         },
         "presets": {
           "title": "Presets",
-          "body": "<code>presets</code> names looks you can use with <code>v-animate=\"'rise'\"</code> anywhere inside the provider, so your elements move the way your components do."
+          "body": "<code>presets</code> names looks you can use with <code>v-animate.rise</code> anywhere inside the provider, so your elements move the way your components do."
         },
         "parse": {
           "title": "A style from outside your code",
           "body": "<code>parseMotionStyle</code> checks a style from a settings page, a database or the network. It drops anything unsafe or unknown, and lists what it dropped in <code>issues</code>."
+        }
+      },
+      "server": {
+        "title": "Server rendering",
+        "intro": "Motion works on server-rendered pages: entrances start before any script, and nothing plays twice when the page hydrates.",
+        "paint": {
+          "title": "Before any script",
+          "body": "On a server-rendered page, a <code>v-animate</code> entrance is written into the HTML as CSS, so it plays as the page paints, before your JavaScript loads, and never again on hydration. It covers <code>opacity</code>, <code>x</code>, <code>y</code>, <code>scale</code>, <code>blur</code>, on a spring or a duration, built-in entrances such as <code>v-animate.rise</code> included. Under reduced motion it only fades."
+        },
+        "stagger": {
+          "title": "A staggered list",
+          "body": "A number <code>stagger</code> reads each element's <code>--i</code>: set it from <code>v-for</code>'s index, as in <code>:style=\"{'{'} '--i': index {'}'}\"</code>. <code>stagger: true</code> spaces them by the stagger token."
+        },
+        "later": {
+          "title": "What waits for JavaScript",
+          "body": "Keyframe arrays, <code>when: 'visible'</code>, <code>layoutId</code>, <code>after</code>, <code>steps</code> need the page's script, so those elements show as they are until it runs. An element named for a component (<code>v-animate:rows</code>) moves with its component. <code>appear: 'later'</code> counts the server render as the first render, so nothing there animates."
+        },
+        "open": {
+          "title": "Open on load",
+          "body": "An overlay that's open when the page loads renders open, without animating. A component's <code>initial</code> never plays on hydration, and a list's <code>appear: true</code> skips the items the server rendered."
+        },
+        "setup": {
+          "title": "Nuxt and Vite",
+          "body": "The Nuxt module registers <code>v-animate</code> for you. With plain Vite SSR, set <code>ssr: {'{'} noExternal: ['vael-ui'] {'}'}</code> so each component's CSS comes along, and render the teleports into <code>&lt;body&gt;</code>, where overlays go. Both the VDOM and the Vapor builds render on the server and hydrate."
         }
       }
     },

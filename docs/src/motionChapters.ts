@@ -15,6 +15,7 @@ export const MOTION_CHAPTERS: MotionChapter[] = [
     sections: [
       { id: 'already', demo: 'start/01-ItAlreadyMoves' },
       { id: 'one', demo: 'start/02-OneComponent' },
+      { id: 'timing', demo: 'start/05-Timing' },
       { id: 'spring', demo: 'start/03-OneSpring' },
       { id: 'off', demo: 'start/04-TurnItOff' },
     ],
@@ -81,6 +82,18 @@ export const MOTION_CHAPTERS: MotionChapter[] = [
       { id: 'style', demo: 'styles/01-Style' },
       { id: 'presets', demo: 'styles/02-Presets' },
       { id: 'parse', demo: 'styles/03-Parse' },
+    ],
+  },
+  {
+    id: 'server',
+    routeName: 'motion-server',
+    path: '/motion/server',
+    sections: [
+      { id: 'paint' },
+      { id: 'stagger' },
+      { id: 'later' },
+      { id: 'open' },
+      { id: 'setup' },
     ],
   },
 ]

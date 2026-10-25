@@ -55,8 +55,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, shallowRef, watch } from 'vue'
-import { Checkbox, vAnimate } from 'vael-ui'
+import { computed, shallowRef, watch } from 'vue'
+import { Checkbox, springEasing, vAnimate } from 'vael-ui'
 import type { CheckboxMotion } from 'vael-ui'
 
 const tasks = [
@@ -89,37 +89,29 @@ watch(done, (next, prev) => {
 })
 
 // The page shows what's done as it is; only changes after that animate.
-const ready = shallowRef(false)
-onMounted(() => (ready.value = true))
 
-// GSAP's curves as CSS easings, sampled from its formulas: elastic.out(1, period) and back.out(3).
-const curve = (ease: (u: number) => number) =>
-  `linear(${Array.from({ length: 61 }, (_, i) => +ease(i / 60).toFixed(4)).join(', ')})`
-const elasticOut = (period: number) =>
-  curve((u) =>
-    u === 1 ? 1 : 2 ** (-10 * u) * Math.sin(((u - period / 4) * 2 * Math.PI) / period) + 1,
-  )
-const BACK_OUT = curve((u) => (u - 1) ** 2 * (4 * (u - 1) + 3) + 1)
 // GSAP's power2 is a cubic, power3 a quartic.
 const POWER2_OUT = 'cubic-bezier(0.215, 0.61, 0.355, 1)'
 const POWER3_OUT = 'cubic-bezier(0.165, 0.84, 0.44, 1)'
 const QUAD_OUT = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+// A spring as an easing, so the box's pop can hold its first keyframe while it waits.
+const SETTLE = springEasing({ damping: 0.45, response: 0.25 })
 
 // Each value starts `at` seconds in, after this box's wait, and holds its first value until then.
 const tick = (id: string): CheckboxMotion => {
   const at = (s: number) => s + (wait.value[id] ?? 0)
   const fills = id !== ALL || allFrom.value.empty
-  const turn = { duration: 450, easing: BACK_OUT, delay: at(0.06) }
+  const turn = { spring: { damping: 0.4, response: 0.4 }, delay: at(0.06) }
   return {
     states: {
       checked: {
         control: {
-          // Held at 0.78 while it waits, then straight to 1.14 and an elastic settle.
+          // Held at 0.78 while it waits, then straight to 1.14 and a springy settle.
           scale: {
             value: [0.78, 1.14, 1],
-            times: [0, 1 / 600, 1],
-            duration: 600,
-            easing: elasticOut(0.45),
+            times: [0, 1 / SETTLE.duration, 1],
+            duration: SETTLE.duration,
+            easing: ['linear', SETTLE.easing],
             delay: at(0),
           },
           // The fill waits its turn too.
@@ -154,7 +146,7 @@ const tick = (id: string): CheckboxMotion => {
       unchecked: {
         control:
           id !== ALL || allFrom.value.full
-            ? { scale: { value: [0.9, 1], duration: 350, easing: elasticOut(0.5) } }
+            ? { scale: { value: [0.9, 1], spring: { damping: 0.5, response: 0.15 } } }
             : {},
       },
     },
@@ -164,7 +156,8 @@ const tick = (id: string): CheckboxMotion => {
 // Draws in from the left; leaves into its far end, as GSAP's origin-right retract does.
 const leave = { duration: 220, easing: 'cubic-bezier(0.55, 0.055, 0.675, 0.19)' }
 const strike = (id: string) => ({
-  ...(ready.value && { initial: { scale: '0 1' } }),
+  appear: 'later' as const,
+  initial: { scale: '0 1' },
   exit: {
     transformOrigin: { value: 'right', duration: 0 },
     scale: { value: '0 1', ...leave },
@@ -183,7 +176,8 @@ const sparks = (reach: number) =>
     return { n, style: { '--dx': dx, '--dy': dy } }
   })
 const burst = (id: string) => ({
-  ...(ready.value && { initial: { x: 0, y: 0, opacity: 1, scale: 1 } }),
+  appear: 'later' as const,
+  initial: { x: 0, y: 0, opacity: 1, scale: 1 },
   duration: 450,
   easing: POWER3_OUT,
   delay: 0.1 + (wait.value[id] ?? 0),

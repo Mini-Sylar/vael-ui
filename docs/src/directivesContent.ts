@@ -13,6 +13,139 @@ export interface DirectiveContent {
 }
 
 export const directivesContent: Record<string, DirectiveContent> = {
+  vAnimate: {
+    label: 'v-animate',
+    description:
+      "Animates any element: in as it mounts, out as it leaves, to a new look when its values change, and to its new place when layout moves it. It plays on the same motion system as the components, so a ConfigProvider's spring, `motion: false` and reduced motion apply to it too. The Motion section covers it in depth, with examples for each case. The Vapor build exports its own version under the same name from `vael-ui/vapor`.",
+    installNames: ['vAnimate'],
+    value: [
+      {
+        name: 'string',
+        type: 'string',
+        description:
+          'The name of a preset from the `presets` of a ConfigProvider `motion` style around it.',
+      },
+      {
+        name: 'initial',
+        type: 'MotionValues | ((where) => MotionValues)',
+        description:
+          'Where it comes in from as it mounts: `{ opacity: 0, y: 8 }`. It plays to its own style.',
+      },
+      {
+        name: 'exit',
+        type: 'MotionValues | ((where) => MotionValues) | false',
+        description:
+          'Where it leaves to, inside a `v-if` or `v-for`. Unset, it leaves back the way it came, quicker. `false` leaves at once.',
+      },
+      {
+        name: 'animate',
+        type: 'MotionValues',
+        description:
+          'A look it holds while bound, moving to each new one from wherever it is on screen: `{ rotate: open ? 180 : 0 }`. Keyframe arrays play once per change, or loop with `repeat`.',
+      },
+      {
+        name: 'spring / duration / easing',
+        type: 'SpringName | Spring / number | string / string',
+        description:
+          "Its timing: a spring by name (`'snappy'`, `'smooth'`, `'bouncy'`, `'gentle'`) or `{ damping, response }`, or a duration in ms with any CSS easing or a token by name (`'out'`, `'pop'`). Unset, it uses the ConfigProvider's spring. A single value can carry its own: `{ y: { value: 8, duration: 200 } }`.",
+      },
+      {
+        name: 'delay',
+        type: 'number',
+        description:
+          'Seconds before it starts: its entrance, and a `layout` slide, which holds its old place meanwhile.',
+      },
+      {
+        name: 'stagger',
+        type: "boolean | 'end' | 'center' | 'edges' | number | ((index, count) => number)",
+        description:
+          "Elements that share a name (`v-animate:rows`) come in one after another, in page order. `true` spaces them by the stagger token (40ms); `'end'`, `'center'` or `'edges'` start the wave there. A number is the seconds between them; a function gives each its own start.",
+      },
+      {
+        name: 'after',
+        type: 'string | string[]',
+        description:
+          "Starts after a moment in another named element's motion: `'summary'`, `'summary:start'`, `'summary:60%'` or `'summary:settle'`. Inside a component, or among elements that appear together.",
+      },
+      {
+        name: 'steps',
+        type: 'MotionStep[]',
+        description: 'A series of stops, each with its own `to`, timing and `after` moment.',
+      },
+      {
+        name: 'replay',
+        type: 'unknown',
+        description:
+          'Plays `initial` again whenever this value changes, without remounting: a count going up, a failed copy.',
+      },
+      {
+        name: 'appear',
+        type: "boolean | 'later'",
+        description:
+          "`false`: no entrance on mount; `replay` and its exit still play. `'later'`: no entrance for what's there at the first render, one for anything added after. Default `true`.",
+      },
+      {
+        name: 'layout',
+        type: "boolean | 'position'",
+        description:
+          "Slides to wherever layout puts it, such as when a list reorders or a sibling grows. `'position'` moves it without resizing on the way.",
+      },
+      {
+        name: 'layoutId',
+        type: 'string',
+        description:
+          "Elements that share one are a single element moving between places: when one leaves and another arrives together, the newcomer slides from the old one's box.",
+      },
+      {
+        name: 'states',
+        type: '{ hover?, active?, focus? }',
+        description:
+          "Looks it holds while hovered (a mouse), pressed (pointer, Space or Enter) or focused, as a component's `states`: `{ hover: { scale: 1.03 }, active: { scale: 0.97 } }`.",
+      },
+      {
+        name: 'when',
+        type: "'mount' | 'visible'",
+        description:
+          "`'visible'` waits until it's scrolled into view, then plays once. Default `'mount'`.",
+      },
+      {
+        name: 'progress',
+        type: 'number',
+        description:
+          'With keyframe arrays in `animate`: holds them at this point, from 0 to 1, so a swipe or a scroll scrubs them.',
+      },
+    ],
+    modifiers: [
+      {
+        name: '.fade / .rise / .drop / .pop / .blur',
+        type: '—',
+        description:
+          'A built-in entrance: `v-animate.rise`. A value tunes it (`v-animate.rise="{ delay: 0.1 }"`), and your own presets work the same way once listed in `MotionPresets`.',
+      },
+      {
+        name: '.snappy / .smooth / .bouncy / .gentle',
+        type: '—',
+        description: 'The spring it moves on: `v-animate.pop.bouncy`.',
+      },
+      {
+        name: '.stagger',
+        type: '—',
+        description: 'With a name, `stagger: true`: `v-animate:rows.rise.stagger`.',
+      },
+      {
+        name: ':name',
+        type: '—',
+        description:
+          'Names the element, as `v-animate:rows`: elements that share a name stagger together, `after` can wait for it, and inside a component it marks one of the targets its `motion` animates.',
+      },
+      {
+        name: '.size',
+        type: '—',
+        description:
+          "Eases the element to its content's new size instead of jumping. On its own (`v-animate.size`), it takes no value.",
+      },
+    ],
+  },
   vTooltip: {
     label: 'v-tooltip',
     description:

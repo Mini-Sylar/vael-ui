@@ -118,11 +118,10 @@ function start() {
   open.value = true
 }
 // A tap carries no momentum: the sheet rises on a critically damped spring.
-const sheet = { damping: 1, response: 0.35 }
 const motion: DialogMotion = {
   swap: 'sync',
-  initial: { panel: { y: { value: '110%', spring: sheet } } },
-  exit: { panel: { y: { value: '110%', spring: sheet } } },
+  initial: { panel: { y: { value: '110%', spring: 'smooth' } } },
+  exit: { panel: { y: { value: '110%', spring: 'smooth' } } },
 }
 // Views swap with a quiet scale-fade, the same both ways.
 const swap = {

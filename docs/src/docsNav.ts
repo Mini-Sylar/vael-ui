@@ -28,6 +28,7 @@ export const MOTION_ROUTES = [
   { routeName: 'motion-choreography', labelKey: 'motionDocs.chapters.choreography.title' },
   { routeName: 'motion-springs', labelKey: 'motionDocs.nav.springs' },
   { routeName: 'motion-styles', labelKey: 'motionDocs.chapters.styles.title' },
+  { routeName: 'motion-server', labelKey: 'motionDocs.chapters.server.title' },
   { routeName: 'motion-engines', labelKey: 'motionDocs.nav.engines' },
   { routeName: 'motion-types', labelKey: 'motionDocs.nav.types' },
   { routeName: 'motion-blocks', labelKey: 'motionDocs.nav.blocks' },

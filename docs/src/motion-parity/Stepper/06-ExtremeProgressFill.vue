@@ -63,19 +63,10 @@ watch(step, (to, from) => {
   for (let i = Math.min(from, to); i < Math.max(from, to); i++) swaps[i]!++
 })
 
-// Going forward, the circle the fill arrives at grows to 1.15 in 90ms (power2.out), then settles
-// on GSAP's elastic.out(1, 0.4) in 500ms: one curve from 1.15 to its own size, starting at rest.
+// Going forward, the circle the fill arrives at grows to 1.15 in 90ms (power2.out), then springs
+// back to its own size in 500ms, like GSAP's elastic.out(1, 0.4).
 const POP_MS = 590
-const RISE = 90 / POP_MS
-const point = (value: number, at: number) => `${+value.toFixed(4)} ${+(at * 100).toFixed(2)}%`
-const POP = `linear(${[
-  ...Array.from({ length: 10 }, (_, i) => point((1 - i / 10) ** 3, (RISE * i) / 10)),
-  ...Array.from({ length: 61 }, (_, i) => {
-    const u = i / 60
-    const elastic = u === 1 ? 1 : 2 ** (-10 * u) * Math.sin(((u - 0.1) * 2 * Math.PI) / 0.4) + 1
-    return point(elastic, RISE + (1 - RISE) * u)
-  }),
-].join(', ')})`
+const SETTLE = { damping: 0.38, response: 0.24 }
 
 const fill = computed<StepperMotion>(() => ({
   duration: forward.value ? FILL : DRAIN,
@@ -84,7 +75,13 @@ const fill = computed<StepperMotion>(() => ({
     current: forward.value
       ? {
           circle: {
-            scale: { value: [1.15, 1], duration: POP_MS, easing: POP, delay: FILL / 1000 },
+            scale: {
+              value: [1, 1.15, 1],
+              times: [0, 90 / POP_MS, 1],
+              duration: POP_MS,
+              easing: ['cubic-bezier(0.33, 1, 0.68, 1)', SETTLE],
+              delay: FILL / 1000,
+            },
           },
         }
       : {},

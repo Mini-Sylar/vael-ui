@@ -3,15 +3,15 @@
     <Button variant="outline" @click="run++">Replay</Button>
     <ConfigProvider :motion="style">
       <div :key="run" class="cards">
-        <article v-animate="'rise'" class="card">
+        <article v-animate.rise class="card">
           <strong>Q3 plan</strong>
           <span>Rises in</span>
         </article>
-        <article v-animate="'pop'" class="card">
+        <article v-animate.pop class="card">
           <strong>Launch</strong>
           <span>Pops in</span>
         </article>
-        <article v-animate="'rise'" class="card">
+        <article v-animate.rise class="card">
           <strong>Retro</strong>
           <span>Rises in</span>
         </article>
@@ -27,13 +27,8 @@ import type { MotionStyle } from 'vael-ui'
 
 const style: MotionStyle = {
   version: 1,
-  presets: {
-    rise: { initial: { opacity: 0, y: 16 } },
-    pop: {
-      initial: { opacity: 0, scale: '0.9' },
-      spring: { damping: 0.6, response: 0.4 },
-    },
-  },
+  // Replaces the built-in rise inside this provider; pop stays built-in.
+  presets: { rise: { initial: { opacity: 0, y: 16 } } },
 }
 const run = ref(0)
 </script>

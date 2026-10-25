@@ -6,12 +6,7 @@
       <Button variant="outline" :disabled="!orders.length" @click="orders.pop()">Remove</Button>
     </div>
     <div class="list">
-      <article
-        v-for="order in orders"
-        :key="order"
-        v-animate="{ initial: { opacity: 0, y: 12 } }"
-        class="card"
-      >
+      <article v-for="order in orders" :key="order" v-animate.rise class="card">
         Order #{{ order }}
       </article>
     </div>

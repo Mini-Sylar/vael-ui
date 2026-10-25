@@ -748,9 +748,13 @@
           "title": "ひとつのコンポーネントを変える",
           "body": "すべてのコンポーネントは <code>motion</code> prop を受け取ります。パーツがどこから入ってくるか（<code>initial: {'{'} panel: {'{'} y: 32 {'}'} {'}'}</code> など）と、そのときのスプリングを指定します。"
         },
+        "timing": {
+          "title": "タイミング",
+          "body": "モーションはスプリングか <code>duration</code> で動きます。スプリングには <code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code>、<code>'gentle'</code> の名前か、<code>damping</code> と <code>response</code> の値を指定します。ms 単位の <code>duration</code> には CSS の <code>easing</code> か、<code>'out'</code>、<code>'pop'</code> のような vael-ui の名前を指定できます。"
+        },
         "spring": {
           "title": "すべてにひとつのスプリング",
-          "body": "<code>ConfigProvider</code> に <code>spring</code> を置くと、その中のすべてのコンポーネントがそれを使います。<code>damping</code> が 1 未満だと行き過ぎます。<code>response</code> はおおよその所要時間（秒）です。"
+          "body": "<code>ConfigProvider</code> に <code>spring</code> を置くと、その中のすべてのコンポーネントがそれを使います。<code>damping</code> が 1 未満だと行き過ぎます。<code>response</code> はおおよその所要時間（秒）です。 名前で指定することもできます: <code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code>、<code>'gentle'</code>。"
         },
         "off": {
           "title": "オフにする",
@@ -762,19 +766,19 @@
         "intro": "モーションは vael-ui のコンポーネントだけのものではありません。<code>v-animate</code> を使えば、自分のどの要素にもテンプレートから直接、登場と退場の動きを付けられます。",
         "appear": {
           "title": "登場と退場",
-          "body": "<code>initial</code> は要素が入ってくる起点を決めます。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。"
+          "body": "<code>initial</code> は要素が入ってくる起点を決めます。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。 よく使う登場は名前で選べます: <code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code>、<code>.blur</code>。スプリングも同じように <code>v-animate.pop.bouncy</code> と付けられ、値で調整できます: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
         },
         "scroll": {
           "title": "スクロールで画面に入ったとき",
-          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。"
+          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。 <code>stagger: true</code> は stagger トークンの間隔で並べます。<code>'end'</code>、<code>'center'</code>、<code>'edges'</code> を指定すると、波がそこから始まります。"
         },
         "replay": {
           "title": "もう一度再生する",
-          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、ステータスの変化、失敗したコピーなどに使います。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。"
+          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、ステータスの変化、失敗したコピーなどに使います。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。 <code>appear: 'later'</code> にすると、ページの最初の描画時にあるものは動かず、あとから追加されたものだけが入ってきます。"
         },
         "layout": {
           "title": "新しい位置へスライド",
-          "body": "<code>layout: true</code> は、リストの並べ替えや隣の要素の拡大などでレイアウトが変わったとき、要素を新しい位置までスライドさせます。"
+          "body": "<code>layout: true</code> は、リストの並べ替えや隣の要素の拡大などでレイアウトが変わったとき、要素を新しい位置までスライドさせます。 <code>delay</code> を付けると、スライドする前に待ち、その間は元の位置にとどまります。"
         },
         "shared": {
           "title": "ある場所から別の場所へ",
@@ -798,7 +802,7 @@
         "intro": "コンポーネントは画面に表示されている間も、押したとき、チェックに失敗したとき、パネルが開くときなどにアニメーションします。リストは項目の出入りに合わせてアニメーションします。",
         "press": {
           "title": "押下とホバー",
-          "body": "<code>states</code> は、コンポーネントがある状態にある間、パーツをアニメーションさせます。単一の値は状態がオンの間ずっと保たれます。<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> は押している間ボタンを縮めます。"
+          "body": "<code>states</code> は、コンポーネントがある状態にある間、パーツをアニメーションさせます。単一の値は状態がオンの間ずっと保たれます。<code>active: {'{'} root: {'{'} scale: '0.92' {'}'} {'}'}</code> は押している間ボタンを縮めます。 どの要素でも <code>v-animate</code> で同じ状態を使えます: <code>{'{'} states: {'{'} hover: {'{'} scale: 1.03 {'}'}, active: {'{'} scale: 0.97 {'}'} {'}'} {'}'}</code>。"
         },
         "shake": {
           "title": "チェックの失敗",
@@ -810,7 +814,7 @@
         },
         "keyframes": {
           "title": "キーフレーム",
-          "body": "配列はキーフレームの並びです。<code>times</code> で各キーフレームを 0 から 1 の間に配置し、<code>easing</code> で各ステップをイージングします。イージングのリストを渡すと、上昇のあとに弾むなど、ステップごとに別のイージングを付けられます。<code>repeat</code> で繰り返し再生し、<code>repeat: Infinity</code> なら状態がオフになるか見た目が変わるまで続きます。"
+          "body": "配列はキーフレームの並びです。<code>times</code> で各キーフレームを 0 から 1 の間に配置し、<code>easing</code> で各ステップをイージングします。イージングのリストを渡すと、上昇のあとに弾むなど、ステップごとに別のイージングを付けられます。<code>repeat</code> で繰り返し再生し、<code>repeat: Infinity</code> なら状態がオフになるか見た目が変わるまで続きます。 ステップはスプリングでも動かせます: <code>easing: ['linear', 'bouncy']</code>。ループの <code>duration</code> を再生中に変えると、その位置のまま速くなったり遅くなったりします。"
         },
         "each": {
           "title": "ひとつずつ",
@@ -822,7 +826,7 @@
         },
         "lists": {
           "title": "リスト",
-          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable の行、CommandPalette の行、Select ファミリーのチップは、新しい項目をひとつずつ順に入れます。<code>leaving: 'pop'</code> は去る項目をレイアウトから外すので、残りがすぐに隙間を詰めます。<code>'hold'</code> は項目が消えるまで隙間を残します。<code>initial</code> や <code>exit</code> を関数で書くと、一緒に出入りする項目の <code>{'{'} index, count {'}'}</code> を受け取れるので、閉じるときに最後の項目から順に動かせます。"
+          "body": "Toaster、Timeline、FileUpload、SpeedDial、DataTable の行、CommandPalette の行、Select ファミリーのチップは、新しい項目をひとつずつ順に入れます。<code>leaving: 'pop'</code> は去る項目をレイアウトから外すので、残りがすぐに隙間を詰めます。<code>'hold'</code> は項目が消えるまで隙間を残します。<code>initial</code> や <code>exit</code> を関数で書くと、一緒に出入りする項目の <code>{'{'} index, count {'}'}</code> を受け取れるので、閉じるときに最後の項目から順に動かせます。 <code>stagger</code> は <code>v-animate</code> と同じ言葉 (<code>true</code>、<code>'end'</code>、<code>'center'</code>、<code>'edges'</code>) か秒数を受け付けます。"
         },
         "toasts": {
           "title": "変化するトースト",
@@ -862,7 +866,7 @@
         "intro": "ダイアログやポップオーバーの中では、自分の要素もそのモーションに加われます。要素に名前を付け、要素同士やパネルに合わせてタイミングを決めます。",
         "after": {
           "title": "順番に",
-          "body": "<code>targets</code> で要素に名前を付け、スロットの <code>target('name')</code> か <code>v-animate:name</code> で印を付けます。<code>after: 'summary:60%'</code> は、サマリーが 60% 入ったところで行を動かし始めます。"
+          "body": "<code>targets</code> で要素に名前を付け、スロットの <code>target('name')</code> か <code>v-animate:name</code> で印を付けます。<code>after: 'summary:60%'</code> は、サマリーが 60% 入ったところで行を動かし始めます。 コンポーネントの外にある要素どうしも、一緒に表示されるなら互いを待てます: <code>v-animate:body=\"{'{'} after: 'title' {'}'}\"</code>。"
         },
         "moments": {
           "title": "タイミング",
@@ -894,11 +898,35 @@
         },
         "presets": {
           "title": "プリセット",
-          "body": "<code>presets</code> は見た目に名前を付けます。プロバイダーの中ならどこでも <code>v-animate=\"'rise'\"</code> で使えるので、自分の要素もコンポーネントと同じように動きます。"
+          "body": "<code>presets</code> は見た目に名前を付けます。プロバイダーの中ならどこでも <code>v-animate.rise</code> で使えるので、自分の要素もコンポーネントと同じように動きます。"
         },
         "parse": {
           "title": "コードの外から来るスタイル",
           "body": "<code>parseMotionStyle</code> は、設定ページ、データベース、ネットワークから来たスタイルを検証します。安全でないものや不明なものは取り除き、取り除いた内容を <code>issues</code> に一覧で返します。"
+        }
+      },
+      "server": {
+        "title": "サーバーレンダリング",
+        "intro": "モーションはサーバーレンダリングされたページでも動きます。登場はスクリプトより先に始まり、ハイドレーションで二度再生されることはありません。",
+        "paint": {
+          "title": "スクリプトより先に",
+          "body": "サーバーレンダリングされたページでは、<code>v-animate</code> の登場が CSS として HTML に書き込まれます。そのため JavaScript の読み込みを待たずにページの描画とともに再生され、ハイドレーションで再生し直されることはありません。対象は <code>opacity</code>、<code>x</code>、<code>y</code>、<code>scale</code>、<code>blur</code> で、スプリングでも duration でも動き、<code>v-animate.rise</code> のような組み込みの登場も含みます。視差効果を減らす設定ではフェードだけになります。"
+        },
+        "stagger": {
+          "title": "順番に表示するリスト",
+          "body": "数値の <code>stagger</code> は各要素の <code>--i</code> を読みます。<code>:style=\"{'{'} '--i': index {'}'}\"</code> のように <code>v-for</code> のインデックスから設定してください。<code>stagger: true</code> は stagger トークンの間隔で並べます。"
+        },
+        "later": {
+          "title": "JavaScript を待つもの",
+          "body": "キーフレームの配列、<code>when: 'visible'</code>、<code>layoutId</code>、<code>after</code>、<code>steps</code> はページのスクリプトが必要なため、それが動くまで要素はそのまま表示されます。コンポーネント用に名前を付けた要素 (<code>v-animate:rows</code>) はそのコンポーネントと一緒に動きます。<code>appear: 'later'</code> はサーバーの描画を最初の描画として扱うので、そこにある要素は動きません。"
+        },
+        "open": {
+          "title": "読み込み時に開いている",
+          "body": "ページの読み込み時に開いているオーバーレイは、アニメーションせずに開いた状態で描画されます。コンポーネントの <code>initial</code> はハイドレーションで再生されず、リストの <code>appear: true</code> はサーバーが描画した項目を飛ばします。"
+        },
+        "setup": {
+          "title": "Nuxt と Vite",
+          "body": "Nuxt モジュールは <code>v-animate</code> を自動で登録します。Vite の SSR だけを使う場合は、各コンポーネントの CSS が含まれるよう <code>ssr: {'{'} noExternal: ['vael-ui'] {'}'}</code> を設定し、オーバーレイが入る <code>&lt;body&gt;</code> にテレポートを描画してください。VDOM 版も Vapor 版もサーバーで描画し、ハイドレーションできます。"
         }
       }
     },

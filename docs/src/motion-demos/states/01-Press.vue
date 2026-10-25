@@ -16,7 +16,7 @@ import type { ButtonMotion } from 'vael-ui'
 // Pressed: shrinks on a bouncy spring.
 const squishy: ButtonMotion = {
   states: { active: { root: { scale: '0.92' } } },
-  spring: { damping: 0.5, response: 0.35 },
+  spring: 'bouncy',
 }
 // Hovered (mouse only): rises 2px.
 const lift: ButtonMotion = { states: { hover: { root: { y: -2 } } } }

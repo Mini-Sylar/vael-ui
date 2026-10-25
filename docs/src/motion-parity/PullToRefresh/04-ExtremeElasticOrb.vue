@@ -5,9 +5,9 @@
       The <code>#indicator</code> slot receives the pull's <code>state</code> and
       <code>progress</code>. While you pull, a ring fills with your finger. Each part has a
       <code>v-animate</code> whose <code>replay</code> follows the state: crossing the threshold
-      blips the orb and flips the arrow on an elastic curve, refreshing fades the arrow and spins
-      the orb (an <code>animate</code> turn that loops with <code>repeat</code>), and finishing
-      draws a check with a pulse.
+      blips the orb and flips the arrow on a spring that rings past it, refreshing fades the arrow
+      and spins the orb (an <code>animate</code> turn that loops with <code>repeat</code>), and
+      finishing draws a check with a pulse.
     </p>
     <PullToRefresh ref="ptr" class="ptr-box" :on-refresh="refresh">
       <template #indicator="{ state, progress }">
@@ -67,13 +67,8 @@ async function refresh() {
   rows.value = [`New: ${new Date().toLocaleTimeString()}`, ...rows.value]
 }
 
-// GSAP's elastic.out(1, 0.45) as a CSS easing; power2/power3 out as beziers.
-const elastic = `linear(${Array.from({ length: 61 }, (_, i) => {
-  const p = i / 60
-  return p === 1
-    ? 1
-    : +(2 ** (-10 * p) * Math.sin(((p - 0.1125) * 2 * Math.PI) / 0.45) + 1).toFixed(4)
-}).join(', ')})`
+// GSAP's elastic.out(1, 0.45) as a spring that rings past; power2/power3 as beziers.
+const ELASTIC = { damping: 0.4, response: 0.3 }
 const POWER2_OUT = 'cubic-bezier(0.33, 1, 0.68, 1)'
 const POWER3_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)'
 const POWER2_IN = 'cubic-bezier(0.32, 0, 0.67, 0)'
@@ -119,8 +114,7 @@ const orbMotion = computed<TargetMotion>(() => {
 })
 const arrowMotion = computed<TargetMotion>(() => {
   const s = state.value
-  if (s === 'ready')
-    return { replay: turn.value, initial: { rotate: 0 }, duration: 600, easing: elastic }
+  if (s === 'ready') return { replay: turn.value, initial: { rotate: 0 }, spring: ELASTIC }
   if (s === 'loading')
     return {
       replay: turn.value,

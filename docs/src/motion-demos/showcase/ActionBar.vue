@@ -3,10 +3,11 @@
   <section class="demo">
     <h3>Expandable action bar</h3>
     <div class="bar" role="toolbar" aria-label="Post actions" @pointerleave="active = -1">
+      <!-- Hover happens all day: quick, no bounce. -->
       <button
         v-for="(action, i) in actions"
         :key="action.label"
-        v-animate.size="quick"
+        v-animate.size.snappy
         type="button"
         class="action"
         :aria-label="action.label"
@@ -15,7 +16,9 @@
         @blur="active = -1"
       >
         <component :is="action.icon" :size="18" />
-        <span v-if="active === i" v-animate="label">{{ action.label }}</span>
+        <span v-if="active === i" v-animate.blur="{ duration: 150, easing: 'out' }">{{
+          action.label
+        }}</span>
       </button>
     </div>
   </section>
@@ -33,13 +36,6 @@ const actions = [
   { label: 'Save', icon: PhBookmarkSimple },
 ]
 const active = shallowRef(-1)
-// Hover happens all day: quick, no bounce.
-const quick = { spring: { damping: 1, response: 0.25 } }
-const label = {
-  initial: { opacity: 0, blur: 2 },
-  duration: 150,
-  easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
-}
 </script>
 
 <style scoped>
