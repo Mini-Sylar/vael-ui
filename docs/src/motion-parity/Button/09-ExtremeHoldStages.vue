@@ -45,10 +45,10 @@ const motion = computed<ButtonMotion>(() => ({
       progress.value >= 0.6 && progress.value < 1
         ? {
             root: {
-              // Quicker as the hold fills, as GSAP's timeScale does: a new duration keeps its place.
+              // Out and back in 100 ms like GSAP's yoyo, quicker as the hold fills, as its timeScale does.
               x: {
                 value: [0, 1.5, 0],
-                duration: 64 / (1 + (progress.value - 0.6) * 4),
+                duration: 100 / (1 + (progress.value - 0.6) * 4),
                 easing: 'linear',
                 repeat: Infinity,
               },
