@@ -3,7 +3,7 @@ import { holdValues, playBetween, playValues, resolveTiming } from './engine'
 import { staggerAt, valuesAt } from './playable'
 import { motionWarn as warn } from './warn'
 import type { MotionValues, Spring, TargetMotion } from './types'
-import { entered } from './finish'
+import { entered, started } from './finish'
 import { runHook } from './hook'
 import { prefersReducedMotion } from '../composables/dom'
 
@@ -158,6 +158,7 @@ async function playTarget(
   if (motion.enter) {
     if (delay) await sleep(delay * 1000)
     if (options.signal.aborted) return
+    started(el)
     const enter = motion.enter
     const context = { signal: options.signal, reducedMotion: prefersReducedMotion(), index }
     return runHook('v-animate', 'enter', () => enter(el as HTMLElement, context), options.signal, [
@@ -167,11 +168,13 @@ async function playTarget(
   const timing = resolveTiming(el, motion, options.spring)
   const initial = valuesAt(motion.initial, { direction: 0, index }) ?? {}
   if (!motion.steps?.length) {
+    started(el, delay * 1000)
     await playValues(el, initial, { direction: 'in', timing, delay })
     return
   }
   // Steps: move, hold, and continue when something else happens (already pinned at `initial`).
   if (delay) await sleep(delay * 1000)
+  started(el)
   let from: MotionValues = initial
   for (const [i, step] of motion.steps.entries()) {
     await Promise.all(toList(step.after).map(waitFor))

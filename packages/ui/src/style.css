@@ -71,7 +71,7 @@
 @import './components/Tour/Tour.css';
 @import './components/Tree/Tree.css';
 @import './components/TreeSelect/TreeSelect.css';
-@import './components/shared/appear.css';
+@import './motion/appear.css';
 @import './components/shared/chip.css';
 @import './components/shared/clear-transition.css';
 @import './components/shared/confirm-popover.css';

@@ -6,7 +6,7 @@
 
 <script setup lang="ts" vapor>
 // A component of the app's that teleports its content, as a modal or a toast does.
-import { vAnimate } from 'vael-ui/vapor'
+import { vAnimateVapor as vAnimate } from 'vael-ui/motion'
 
 void vAnimate
 </script>

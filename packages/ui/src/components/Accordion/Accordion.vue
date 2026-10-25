@@ -36,7 +36,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import type { AccordionMotion, Spring } from '../../motion/types'
 import { useThemedUi } from '../../theme'
-import { springEasing, springOf } from '../../composables/springEasing'
+import { springEasing, springOf } from '../../motion/springEasing'
 import { useMotionStyle } from '../../motion/context'
 
 defineOptions({ inheritAttrs: false })

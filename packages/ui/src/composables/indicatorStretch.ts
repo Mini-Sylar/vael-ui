@@ -1,5 +1,5 @@
-import { createSpring } from './useSpringValue'
-import type { SpringHandle } from './useSpringValue'
+import { createSpring } from '../motion/useSpringValue'
+import type { SpringHandle } from '../motion/useSpringValue'
 import type { IndicatorSpring } from './useTabIndicator'
 
 /**

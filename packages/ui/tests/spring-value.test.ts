@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest'
-import { createSpring, stepSpring } from '../src/composables/useSpringValue'
-import type { SpringState } from '../src/composables/useSpringValue'
+import { createSpring, stepSpring } from '../src/motion/useSpringValue'
+import type { SpringState } from '../src/motion/useSpringValue'
 
 // Pure integrator, driven with fixed timesteps rather than through rAF — real
 // frame timing can't be reproduced in a test, and the physics is the part

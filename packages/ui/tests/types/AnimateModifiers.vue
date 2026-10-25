@@ -18,5 +18,5 @@
 </template>
 
 <script setup lang="ts">
-import { vAnimate } from '../../src/directives/vAnimate'
+import { vAnimate } from '../../src/motion/vAnimate'
 </script>

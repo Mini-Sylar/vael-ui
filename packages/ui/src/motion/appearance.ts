@@ -2,39 +2,30 @@
 // those that mount together play in page order, up to a budget, and only where they're seen.
 import { motionSpringAt } from './styleHolder'
 import { staggerAt, valuesAt } from './playable'
-import type { MotionTiming, MotionValues, TargetMotion } from './types'
+import type { MotionTiming, MotionValues, TargetMotion, Viewport } from './types'
+import { watchViewport } from './viewport'
 import { appear } from './useComponentMotion'
 import { armEnter, entered } from './finish'
 import { loading } from './styleKey'
 
-// `when: 'visible'`: settles once the element scrolls into view, a little past the edge so it
-// starts where it's seen (useInView's margin), once.
-let viewer: IntersectionObserver | undefined
-const waiting = new WeakMap<Element, () => void>()
-function inView(el: Element): Promise<void> {
-  if (typeof IntersectionObserver === 'undefined') return Promise.resolve()
-  viewer ??= new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries)
-        if (entry.isIntersecting) {
-          viewer!.unobserve(entry.target)
-          waiting.get(entry.target)?.()
-          waiting.delete(entry.target)
-        }
-    },
-    // Its own document's viewport: inside an iframe (Storybook, a test), not the top page's.
-    { root: document, rootMargin: '0px 0px -10% 0px' },
-  )
+// `when: 'visible'`: settles once the element scrolls into view, by default a little past the edge
+// so it starts where it's seen (useInView's margin), once.
+const watching = new WeakMap<Element, () => void>()
+function inView(el: Element, viewport: Viewport | undefined): Promise<void> {
   return new Promise((resolve) => {
-    waiting.set(el, resolve)
-    viewer!.observe(el)
+    const stop = watchViewport(el, viewport, '0px 0px -10% 0px', (seen) => {
+      if (!seen) return
+      unwatchView(el)
+      resolve()
+    })
+    watching.set(el, stop)
   })
 }
 
 /** Gone before it was seen: it's let go. */
 export function unwatchView(el: Element) {
-  viewer?.unobserve(el)
-  waiting.delete(el)
+  watching.get(el)?.()
+  watching.delete(el)
 }
 
 // The most that appear together; past it, chaos, not choreography (18c).
@@ -89,7 +80,7 @@ function flush() {
       played++
       i++
       const delay = ((value.delay ?? 0) + staggerAt(value.stagger, i, items.length, el)) * 1000
-      const until = later ? inView(el) : undefined
+      const until = later ? inView(el, value.viewport) : undefined
       // Played, or nothing to play: its `onFinish` runs either way.
       void appear(el, initial, value, motionSpringAt(el), delay, again, until).finally(() =>
         entered(el),

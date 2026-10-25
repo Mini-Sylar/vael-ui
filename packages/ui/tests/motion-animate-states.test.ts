@@ -3,7 +3,7 @@ import '../src/style.css'
 import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, shallowRef, withDirectives } from 'vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 import { trackResources } from './utils/resources'
 
 afterEach(() => {

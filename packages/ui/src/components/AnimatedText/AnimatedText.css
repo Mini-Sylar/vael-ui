@@ -43,10 +43,49 @@
   .ui-animated-text[data-motion='off'] {
     transition: none;
   }
+  /* Split: the value itself doesn't fade; its pieces rise in one after another, 30ms apart. */
+  .ui-animated-text-value[data-split].ui-animated-text-enter-from {
+    opacity: 1;
+    translate: none;
+  }
+  .ui-animated-text-word,
+  .ui-animated-text-piece {
+    display: inline-block;
+  }
+  .ui-animated-text-word {
+    white-space: nowrap;
+  }
+  .ui-animated-text-value[data-enter] .ui-animated-text-piece {
+    animation: ui-animated-text-piece var(--ui-duration-text) var(--ui-ease-text) both;
+    animation-delay: calc(var(--ui-piece, 0) * 30ms);
+  }
+  @keyframes ui-animated-text-piece {
+    from {
+      opacity: 0;
+      translate: 0 4px;
+    }
+  }
+  /* The whole text, for screen readers only. */
+  .ui-animated-text-read {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   @media (prefers-reduced-motion: reduce) {
     .ui-animated-text-enter-from,
     .ui-animated-text-leave-to {
       translate: none;
+    }
+    .ui-animated-text-value[data-enter] .ui-animated-text-piece {
+      animation-name: ui-animated-text-fade;
+    }
+  }
+  @keyframes ui-animated-text-fade {
+    from {
+      opacity: 0;
     }
   }
 }

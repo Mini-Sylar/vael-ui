@@ -6,7 +6,7 @@ import { render } from 'vitest-browser-vue'
 import { defineComponent, h, shallowRef, Teleport, withDirectives } from 'vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 
 const global = { stubs: { transition: false } }
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))

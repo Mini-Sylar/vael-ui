@@ -1,7 +1,8 @@
 // v-animate:name="value": marks an element for the nearest component's motion, from the template.
-import '../components/shared/appear.css'
+import './appear.css'
+import './timing.css'
 import * as vue from 'vue'
-import { inject, isVNode, onScopeDispose, shallowRef, watchPostEffect } from 'vue'
+import { inject, isVNode, onScopeDispose, shallowRef, watch, watchPostEffect } from 'vue'
 import type {
   ComponentInternalInstance,
   DirectiveBinding,
@@ -9,7 +10,7 @@ import type {
   ShallowRef,
   VNode,
 } from 'vue'
-import { findPresence } from '../motion/presence'
+import { findPresence } from './presence'
 import {
   arriveLayout,
   exitFrom,
@@ -20,12 +21,12 @@ import {
   rememberLayout,
   watchLeaving,
   watchPaintedBox,
-} from '../motion/layout'
-import type { LeavingPlace } from '../motion/layout'
-import { followSize } from '../motion/size'
-import { firstPaint, handOver } from '../motion/firstPaint'
-import { valuesAt } from '../motion/playable'
-import { queueAppearance, scrolling, seen, unwatchView } from '../motion/appearance'
+} from './layout'
+import type { LeavingPlace } from './layout'
+import { followSize } from './size'
+import { firstPaint, handOver } from './firstPaint'
+import { valuesAt } from './playable'
+import { queueAppearance, scrolling, seen, unwatchView } from './appearance'
 import type {
   AnimateDirectiveValue,
   AnimateModifier,
@@ -34,18 +35,18 @@ import type {
   MotionTiming,
   MotionValues,
   TargetMotion,
-} from '../motion/types'
-import { motionWarn } from '../motion/warn'
-import { holdAround, motionOffAt, motionSpringAt, motionStyleAt } from '../motion/styleHolder'
-import { motionStyleKey } from '../motion/context'
-import { defaultsKey } from '../config'
-import { toKeyframe } from '../motion/values'
-import { loadAnimateTarget } from '../composables/lazyParts'
-import { SPRINGS } from '../composables/springNames'
-import type { SpringName } from '../composables/springNames'
-import { BUILTIN_PRESETS } from '../motion/presets'
-import { armEnter, entered, left } from '../motion/finish'
-import { loading } from '../motion/styleKey'
+} from './types'
+import { motionWarn } from './warn'
+import { holdAround, motionOffAt, motionSpringAt, motionStyleAt } from './styleHolder'
+import { motionStyleKey } from './context'
+import { preparePath, toKeyframe } from './values'
+import { SPRINGS } from './springNames'
+import type { SpringName } from './springNames'
+import { BUILTIN_PRESETS } from './presets'
+import { armEnter, entered, left } from './finish'
+import { loading, motionSettingsKey } from './styleKey'
+// `animate`'s player, loaded on first use.
+const loadAnimateTarget = () => loading(import('./animateTarget'))
 
 type Marked = HTMLElement & {
   _uiAnimateLeave?: () => void
@@ -54,7 +55,7 @@ type Marked = HTMLElement & {
   _uiAnimateValue?: AnimateDirectiveValue
   _uiAppeared?: boolean
   _uiLeavingPlace?: LeavingPlace
-  _uiTarget?: ReturnType<typeof import('../motion/animateTarget').holdTarget>
+  _uiTarget?: ReturnType<typeof import('./animateTarget').holdTarget>
   _uiTargetKey?: string
   /** It has held a look: one coming back after none animates in. */
   _uiHeld?: boolean
@@ -62,6 +63,10 @@ type Marked = HTMLElement & {
   _uiShown?: [string, string][]
   /** Mounted with its component's first render: `appear: 'later'` skips its entrance. */
   _uiFirstRender?: boolean
+  /** Watching `v-show` hide and show it. */
+  _uiShownStop?: () => void
+  /** A `progress` getter followed outside render, and how to stop following it. */
+  _uiProgressStop?: () => void
   /** `states`: what it holds while hovered, pressed or focused, and how to stop listening. */
   _uiStates?: ShallowRef<AnimateStates | undefined>
   /** The component it belongs to, noted while it's in the page. */
@@ -75,13 +80,17 @@ function followStates(el: Marked, value: AnimateDirectiveValue | undefined) {
   if (el._uiStates) el._uiStates.value = states
   if (!states || el._uiStates) return
   const held = (el._uiStates = shallowRef(states))
-  void loading(import('../motion/states')).then((module) => {
+  void loading(import('./states')).then((module) => {
     if (!el.isConnected || el._uiStates !== held) return
     el._uiStatesStop = module.holdElementStates(
       el,
       () => held.value,
       () => timingOf(el._uiAnimateValue) ?? {},
       () => motionSpringAt(el),
+      () => {
+        const value = el._uiAnimateValue
+        return typeof value === 'object' ? value.viewport : undefined
+      },
     )
   })
 }
@@ -89,6 +98,8 @@ function followStates(el: Marked, value: AnimateDirectiveValue | undefined) {
 /** `animate`: the look it holds, moving to each new one as it changes (from the states player). */
 function followTarget(el: Marked, value: AnimateDirectiveValue | undefined, gone = false) {
   const animate = typeof value === 'object' ? value.animate : undefined
+  el._uiProgressStop?.()
+  el._uiProgressStop = undefined
   if (!animate) {
     el._uiTarget?.stop()
     el._uiTarget = el._uiTargetKey = undefined
@@ -102,12 +113,25 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined, gone
   if (progress !== undefined) {
     const rebuild = key !== el._uiTargetKey
     el._uiTargetKey = key
-    const seek = () => el._uiTarget?.scrub(animate, progress, timingOf(value) ?? {}, rebuild)
-    if (el._uiTarget) return seek()
+    const timing = timingOf(value) ?? {}
+    const follow = (fresh: boolean) => {
+      if (typeof progress !== 'function')
+        return el._uiTarget?.scrub(animate, progress, timing, fresh)
+      // A getter is followed here, so a scroll never re-renders the component around it.
+      el._uiProgressStop = watch(
+        progress,
+        (now) => {
+          el._uiTarget?.scrub(animate, now, timing, fresh)
+          fresh = false
+        },
+        { immediate: true },
+      )
+    }
+    if (el._uiTarget) return follow(rebuild)
     void loadAnimateTarget().then((module) => {
       if (el._uiTargetKey !== key) return
       el._uiTarget ??= module.holdTarget(el)
-      el._uiTarget.scrub(animate, progress, timingOf(value) ?? {}, true)
+      follow(true)
       putBack(el)
     })
     return
@@ -179,14 +203,20 @@ function appearAlone(
   queueAppearance(el, name, value!)
 }
 
+// A stroke drawn in any of its looks (`pathLength`) measures the path as 1 long.
+const drawn = (el: Element, value: AnimateDirectiveValue | undefined) =>
+  typeof value === 'object' &&
+  preparePath(el, value.initial, value.exit, value.animate, ...Object.values(value.states ?? {}))
+
 // One of your callbacks, as it is when it runs: a value written inline is a new object each render.
 // Inside a component, it runs there, merged with its `targets` entry.
-const call = (el: Marked, name: 'onAfterEnter' | 'onAfterLeave' | 'onAfterMove') => () => {
-  const presence = el._uiPresence
-  if (presence?.after && name !== 'onAfterMove') return presence.after(el, name)
-  const value = el._uiAnimateValue
-  if (typeof value === 'object') value[name]?.(el)
-}
+const call =
+  (el: Marked, name: 'onStart' | 'onAfterEnter' | 'onAfterLeave' | 'onAfterMove') => () => {
+    const presence = el._uiPresence
+    if (presence?.after && name !== 'onAfterMove') return presence.after(el, name)
+    const value = el._uiAnimateValue
+    if (typeof value === 'object') value[name]?.(el)
+  }
 const timingOf = (value: AnimateDirectiveValue | undefined): MotionTiming | undefined =>
   typeof value === 'object' ? value : undefined
 const layoutIdOf = (value: AnimateDirectiveValue | undefined) =>
@@ -293,6 +323,45 @@ function leaveIfRemoved(
 }
 
 /**
+ * `v-show`: hidden, a copy plays its exit where it was; shown again, it comes back in. It stays in
+ * the page throughout, so this watches its `display` rather than its removal.
+ */
+function followShown(el: Marked, name: string | undefined): () => void {
+  let shown = el.style.display !== 'none'
+  let display = shown ? el.style.display : ''
+  const watcher = new MutationObserver(() => {
+    const now = el.style.display !== 'none'
+    if (now === shown) {
+      if (now) display = el.style.display
+      return
+    }
+    shown = now
+    const value = resolved(el, el._uiAnimateValue)
+    if (now) {
+      display = el.style.display
+      armEnter(el, call(el, 'onAfterEnter'), call(el, 'onStart'))
+      if (typeof value !== 'object' || !(value.initial || value.enter) || motionOffAt(el))
+        return entered(el)
+      return queueAppearance(el, name, value, true)
+    }
+    // Shown again for a moment (before any paint) to see where it was and how it looked.
+    el.style.display = display
+    const place = placeOnLeave(el)
+    el.style.display = 'none'
+    const copy = el.cloneNode(true) as HTMLElement
+    copy.style.display = display
+    copy.removeAttribute('id')
+    const look = leaving(value)
+    const gone = () => left(el, call(el, 'onAfterLeave'))
+    if (look && place && seen(place.box) && !motionOffAt(el))
+      void leaveInPlace(copy, place, look.values, look.timing, look.hook).then(gone)
+    else gone()
+  })
+  watcher.observe(el, { attributes: true, attributeFilter: ['style'] })
+  return () => watcher.disconnect()
+}
+
+/**
  * `replay`: when its value changes, the element plays its `initial` again, without remounting.
  * Those under one name that replay together stagger, as when they first appeared.
  */
@@ -304,7 +373,7 @@ function replayIfChanged(
 ) {
   if (typeof value !== 'object' || !('replay' in value) || !(value.initial || value.enter)) return
   if (typeof before === 'object' && Object.is(before.replay, value.replay)) return
-  armEnter(el, call(el as Marked, 'onAfterEnter'))
+  armEnter(el, call(el as Marked, 'onAfterEnter'), call(el as Marked, 'onStart'))
   if (motionOffAt(el)) return entered(el)
   queueAppearance(el, name, value, true)
 }
@@ -359,7 +428,8 @@ export const vAnimate: ObjectDirective<
     )
     const value = valueOf(el, binding)
     marked._uiAnimateValue = value
-    armEnter(el, call(marked, 'onAfterEnter'))
+    drawn(el, value)
+    armEnter(el, call(marked, 'onAfterEnter'), call(marked, 'onStart'))
     followTarget(marked, value)
     followStates(marked, value)
     // Hydrated: the server's CSS is playing (or has played) its appearance; never twice.
@@ -367,15 +437,24 @@ export const vAnimate: ObjectDirective<
       marked._uiAppeared = true
       entered(el)
     }
-    if (binding.modifiers.size)
-      marked._uiSizeStop = followSize(el, () => timingOf(marked._uiAnimateValue), true).stop
+    // `layout: true` follows its size as well as its place; `'position'` only moves.
+    const sized = typeof value === 'object' && value.layout === true
+    const size =
+      binding.modifiers.size || sized
+        ? followSize(el, () => timingOf(marked._uiAnimateValue), true, sized)
+        : undefined
+    marked._uiSizeStop = size?.stop
     if (typeof value === 'object' && value.layout)
       marked._uiLayoutStop = followLayout(
         el,
         () => timingOf(marked._uiAnimateValue) ?? {},
         call(marked, 'onAfterMove'),
+        sized ? size?.sync : undefined,
       )
     if (!binding.arg && binding.modifiers.size && !hasPicks(binding.modifiers)) return entered(el)
+    // Beside `v-show`: it animates as that hides and shows it.
+    if ((vnode as { dirs?: { dir: unknown }[] | null }).dirs?.some((d) => d.dir === vue.vShow))
+      marked._uiShownStop = followShown(marked, binding.arg)
     const owner = binding.instance?.$ ?? null
     if (leaving(resolved(el, value))) {
       watchPaintedBox(el, owner)
@@ -413,6 +492,7 @@ export const vAnimate: ObjectDirective<
       binding.modifiers,
     )
     ;(el as Marked)._uiAnimateValue = value
+    drawn(el, value)
     followTarget(el as Marked, value)
     followStates(el as Marked, value)
     replayIfChanged(el, value, before, binding.arg)
@@ -429,6 +509,7 @@ export const vAnimate: ObjectDirective<
     ;(el as Marked)._uiSizeStop?.()
     ;(el as Marked)._uiLayoutStop?.()
     ;(el as Marked)._uiStatesStop?.()
+    ;(el as Marked)._uiShownStop?.()
     followTarget(el as Marked, undefined, true)
   },
 }
@@ -454,7 +535,7 @@ const holderOf = (instance: ComponentInternalInstance) => {
   const provides = (instance as Instance).provides
   return holding(
     provides[motionStyleKey as symbol] as Provided<MotionStyle | undefined>,
-    provides[defaultsKey as symbol] as Provided<{ motion?: boolean }>,
+    provides[motionSettingsKey as symbol] as Provided<{ motion?: boolean }>,
   )
 }
 const holding = (
@@ -509,9 +590,7 @@ export function vAnimateVapor(
     // A VDOM template turns a function directive into mounted + updated only: no unmount, so no
     // layoutId and no cleanup. Its VDOM form is the one that works there.
     if (process.env.NODE_ENV !== 'production')
-      motionWarn(
-        "v-animate from 'vael-ui/vapor' is in a VDOM template: import vAnimate from 'vael-ui' there.",
-      )
+      motionWarn('vAnimateVapor is in a VDOM template: use vAnimate there.')
     return vAnimate.mounted!(el, raw as never, null as never, null)
   }
   // The modifiers and the value as one, as in the VDOM build.
@@ -529,11 +608,11 @@ export function vAnimateVapor(
   const provided = provides
     ? holding(
         provides[motionStyleKey as symbol] as Provided<MotionStyle | undefined>,
-        provides[defaultsKey as symbol] as Provided<{ motion?: boolean }>,
+        provides[motionSettingsKey as symbol] as Provided<{ motion?: boolean }>,
       )
-    : holding(inject(motionStyleKey, undefined), inject(defaultsKey, undefined))
+    : holding(inject(motionStyleKey, undefined), inject(motionSettingsKey, undefined))
   holdAround(el, () => provided)
-  armEnter(el, call(el as Marked, 'onAfterEnter'))
+  armEnter(el, call(el as Marked, 'onAfterEnter'), call(el as Marked, 'onStart'))
   // Hydrated: the server's CSS plays its appearance; never twice.
   if (handOver(el)) {
     ;(el as Marked)._uiAppeared = true
@@ -554,17 +633,26 @@ export function vAnimateVapor(
   watchPostEffect(() => {
     const current = value()
     ;(el as Marked)._uiAnimateValue = current
+    drawn(el, current)
     followTarget(el as Marked, current)
     followStates(el as Marked, current)
     if (arrived) replayIfChanged(el, current, before, name)
     before = current
     // After the flush: in setup it has no parent yet to watch.
-    if (!arrived && typeof current === 'object' && current.layout)
+    if (!arrived && typeof current === 'object' && current.layout) {
+      // `layout: true` follows its size as well as its place; `'position'` only moves.
+      const size =
+        current.layout === true && !modifiers.size
+          ? followSize(el, () => timingOf(value()), true, true)
+          : undefined
+      if (size) onScopeDispose(size.stop)
       stopLayout = followLayout(
         el,
         () => timingOf(value()) ?? {},
         call(el as Marked, 'onAfterMove'),
+        size?.sync,
       )
+    }
     const id = layoutIdOf(current)
     if (id) el.dataset.layoutId = id
     if (id && !arrived)
@@ -586,6 +674,13 @@ export function vAnimateVapor(
     const leavingValue = resolved(el, current)
     leaveIfRemoved(el, leavingValue, leaving(leavingValue) ? placeOnLeave(el) : undefined)
   })
+  // Vapor has no list of the element's directives: one that can come and go watches `v-show`.
+  const initialValue = value()
+  if (
+    typeof initialValue === 'object' &&
+    (initialValue.initial || initialValue.exit || initialValue.leave)
+  )
+    onScopeDispose(followShown(el as Marked, name))
   const leave = () => (el as Marked)._uiAnimateLeave?.()
   onScopeDispose(leave)
   onScopeDispose(() => followTarget(el as Marked, undefined, true))

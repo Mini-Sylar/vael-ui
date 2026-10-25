@@ -15,6 +15,7 @@ import {
   toKeyframe,
   toKeyframes,
 } from './values'
+import { repeating } from './repeatPlan'
 
 export { resolveTiming, track } from './timing'
 export type { ResolvedTiming } from './timing'
@@ -206,18 +207,23 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
     // Keyframe arrays play through, start to end, each segment eased; repeating forever, they
     // loop until it leaves, and the entrance doesn't wait for them.
     if (group.sequence) {
-      const repeat = repeatOf(group.timing as Parameters<typeof repeatOf>[0])
-      const run = el.animate(group.sequence, {
+      const own = group.timing as Parameters<typeof repeatOf>[0] & {
+        onRepeat?: (count: number) => void
+      }
+      const length = out && !group.timing ? exitMs : duration
+      const plan = repeating(group.sequence, length, own)
+      const repeat = plan ?? repeatOf(own)
+      const run = el.animate(plan?.frames ?? group.sequence, {
         id: PRESENCE_ID,
-        duration: out && !group.timing ? exitMs : duration,
+        duration: plan?.duration ?? length,
         easing: 'linear',
         delay,
         fill,
         ...repeat,
       })
-      const onRepeat = (group.timing as { onRepeat?: (count: number) => void } | undefined)
-        ?.onRepeat
-      if (onRepeat) void import('./repeat').then((kit) => kit.onRepeats(run, onRepeat))
+      const onRepeat = own?.onRepeat
+      if (onRepeat)
+        void import('./repeat').then((kit) => kit.onRepeats(run, onRepeat, plan?.every ?? length))
       if (repeat.iterations !== Infinity) runs.push(run.finished)
     }
     const { moves, fades } = splitFrame(group.frame)

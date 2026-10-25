@@ -5,8 +5,8 @@ import { render } from 'vitest-browser-vue'
 import { h } from 'vue'
 
 const springs: unknown[] = []
-vi.mock('../src/composables/useSpringValue', async (importOriginal) => {
-  const real = await importOriginal<typeof import('../src/composables/useSpringValue')>()
+vi.mock('../src/motion/useSpringValue', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../src/motion/useSpringValue')>()
   return {
     ...real,
     createSpring: (...args: Parameters<typeof real.createSpring>) => {

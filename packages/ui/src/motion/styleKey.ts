@@ -9,6 +9,10 @@ import type { MotionStyle } from './types'
 export const motionStyleKey: InjectionKey<ComputedRef<MotionStyle | undefined>> =
   Symbol('ui-motion-style')
 
+/** @internal The nearest ConfigProvider's settings, as motion reads them: `motion: false` stops it. */
+export const motionSettingsKey: InjectionKey<ComputedRef<{ motion?: boolean }>> =
+  Symbol('ui-motion-settings')
+
 /** @internal */
 export function useMotionStyle(): ComputedRef<MotionStyle | undefined> | undefined {
   return inject(motionStyleKey, undefined)

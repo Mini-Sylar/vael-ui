@@ -4,7 +4,7 @@
 import { cssDuration, cssEasing } from './ease'
 import { nextTick } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
-import { springArrival, springEasing, springOf } from '../composables/springEasing'
+import { springArrival, springEasing, springOf } from './springEasing'
 import type { ResolvedMotion } from './context'
 import type { Runner, RunnerHost } from './host'
 import { cssCanPlay, staggerAt, targetCanPlay, valuesAt } from './playable'
@@ -16,6 +16,7 @@ import type { MotionTiming, MotionValues, Spring } from './types'
 import { isTimed } from './values'
 import { dev } from './warn'
 import { loading } from './styleKey'
+import { started } from './finish'
 
 const PROPS = [
   'opacity',
@@ -344,6 +345,7 @@ export async function appear(
         : el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: 'forwards' })
     const runtime = runtimeLoaded ?? (runtimeLoaded = await loading(import('./engine')))
     const timed = runtime.resolveTiming(el, own, spring)
+    started(el, delayMs)
     const played = runtime.playValues(el, values, {
       direction: 'in',
       timing: timed,
@@ -357,6 +359,7 @@ export async function appear(
   // A style read, not offsetWidth: SVG elements have none, and the start look never applied.
   void getComputedStyle(el).opacity
   go()
+  started(el, delayMs)
   await settle(el)
   clear(el)
 }
@@ -499,12 +502,15 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
         if (carried.some((el) => target.contains(el))) return
         // Each its own look, delay and timing; the stagger is the name's.
         const each = g.each[i]!
+        const delay =
+          ((each.delay ?? 0) + staggerAt(g.motion.stagger, i, g.els.length, target)) * 1000
         start$(
           target as HTMLElement,
           valuesAt(each.initial, { direction: m.direction, index: i, count: g.els.length }) ?? {},
           ownTiming(each) ? timing(target, each, spring) : t,
-          ((each.delay ?? 0) + staggerAt(g.motion.stagger, i, g.els.length, target)) * 1000,
+          delay,
         )
+        started(target, delay)
       })
     }
     let rest = ''

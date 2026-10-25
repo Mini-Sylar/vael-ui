@@ -1,5 +1,5 @@
 import { stepSpring } from './springStep'
-import type { IndicatorSpring } from './useTabIndicator'
+import type { Spring as IndicatorSpring } from './types'
 import { springOf } from './springNames'
 import type { SpringName } from './springNames'
 

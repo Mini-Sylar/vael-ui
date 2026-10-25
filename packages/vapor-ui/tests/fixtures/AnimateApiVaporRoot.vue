@@ -9,7 +9,7 @@
 <script setup lang="ts" vapor>
 // v-animate's modifiers, `states` and `appear: 'later'` in a Vapor component.
 import { shallowRef } from 'vue'
-import { vAnimate } from 'vael-ui/vapor'
+import { vAnimateVapor as vAnimate } from 'vael-ui/motion'
 
 const items = shallowRef([1, 2])
 const later = { initial: { opacity: 0, y: 8 }, appear: 'later' as const }

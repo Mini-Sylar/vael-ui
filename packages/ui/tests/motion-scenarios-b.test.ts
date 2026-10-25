@@ -12,7 +12,7 @@ import {
   withDirectives,
 } from 'vue'
 import Popover from '../src/components/Popover/Popover.vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 
 const real = { global: { stubs: { transition: false, 'transition-group': false } } }
 const frame = () => new Promise<number>(requestAnimationFrame)

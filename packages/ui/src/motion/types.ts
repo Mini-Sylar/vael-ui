@@ -1,13 +1,22 @@
 // The motion API contract (plans/008, plans/009 M0). Types only; the runtime implements them.
 import type { ComponentPublicInstance, CSSProperties, TransitionProps } from 'vue'
-import type { SpringName } from '../composables/springNames'
+import type { SpringName } from './springNames'
 import type { BuiltinPreset } from './presets'
-import type { IndicatorSpring, IndicatorStretch } from '../composables/useTabIndicator'
+import type { SpringOptions } from './useSpringValue'
 
 // ─── Vocabulary ──────────────────────────────────────────────────────────────
 
 /** A spring. `damping` 1 settles without overshoot, below 1 it bounces; `response` is roughly the seconds to arrive. */
-export type Spring = IndicatorSpring
+/** A spring by its numbers: `damping` below 1 overshoots, `response` is roughly its length in seconds. */
+export type Spring = Pick<SpringOptions, 'damping' | 'response'>
+
+/** How a stretching indicator's trailing edge follows the leading one. */
+export interface IndicatorStretch {
+  /** The trailing edge's spring. Unset, a slightly softer and bouncier copy of the leading one. */
+  trail?: Spring
+  /** Seconds the trailing edge waits before it follows. @default 0.05 */
+  delay?: number
+}
 
 export type { SpringName }
 export type { BuiltinPreset }
@@ -83,6 +92,20 @@ interface Shorthands {
   blur?: Length
   /** Turns it, in degrees when a number: `rotate: 90`. */
   rotate?: number | (string & {})
+  /** Turns it toward or away from you, in degrees: a card flip. Pair with `perspective`. */
+  rotateX?: number | (string & {})
+  rotateY?: number | (string & {})
+  /** Slants it, in degrees. */
+  skewX?: number | (string & {})
+  skewY?: number | (string & {})
+  /** How deep 3D turns look, in px: smaller is more dramatic. */
+  perspective?: Length
+  /** An SVG stroke drawn from 0 (none) to 1 (all of it): a check drawing in. */
+  pathLength?: number
+  /** Where the drawn stroke starts along the path, from 0 to 1. */
+  pathOffset?: number
+  /** The gap after the drawn stroke, from 0 to 1. @default 1 */
+  pathSpacing?: number
 }
 type StyleProps = Omit<CSSProperties, keyof Shorthands> & Shorthands
 
@@ -96,15 +119,20 @@ export type TimedValue<V> = (
       easing: (UiEase | SpringName | Spring | (string & {}))[]
     }
 ) & {
-  value: V | V[]
+  value: V | Keyframes<V>
   /** Seconds before this value starts, on top of the element's own delay. */
   delay?: number
   /** Keyframes: where each one falls, from 0 to 1 (`[0, 0.3, 1]`). Unset, they're evenly spaced. */
   times?: number[]
   /** Keyframes: plays this many more times; `Infinity` loops until the element or state goes. */
   repeat?: number
-  /** Keyframes, repeating: `'loop'` starts over each time; `'reverse'` plays back and forth. */
-  repeatType?: 'loop' | 'reverse'
+  /**
+   * Keyframes, repeating: `'loop'` starts over each time; `'reverse'` plays back and forth;
+   * `'mirror'` comes back the way it went, eased as it went.
+   */
+  repeatType?: 'loop' | 'reverse' | 'mirror'
+  /** Keyframes, repeating: seconds it holds still between runs. */
+  repeatDelay?: number
   /** Keyframes, repeating: runs as each repeat starts, with how many it has done (1, 2, …). */
   onRepeat?: (count: number) => void
 }
@@ -117,9 +145,11 @@ export type TimedValue<V> = (
 export type MotionValues = {
   [K in keyof StyleProps]?:
     | StyleProps[K]
-    | NonNullable<StyleProps[K]>[]
+    | Keyframes<NonNullable<StyleProps[K]>>
     | TimedValue<NonNullable<StyleProps[K]>>
 }
+/** Keyframes; `null` first plays from where it is now: `scale: [null, 1.2, 1]`. */
+type Keyframes<V> = (V | null)[]
 
 /** Where an element is: in a swap, `direction` (1 forward, -1 back, 0 neither); in a list, `index`. */
 export interface MotionWhere {
@@ -269,6 +299,8 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   layout?: boolean | 'position'
   /** `'visible'`: on its own (no component around it), it appears once scrolled into view. */
   when?: 'mount' | 'visible'
+  /** When it counts as in view, for `when: 'visible'` and `states.inView`. */
+  viewport?: Viewport
   /**
    * Animates it in yourself (GSAP, motion) instead of `initial`. Return the animation: vael-ui waits
    * for it before `onAfterEnter`, and stops it if the element leaves first.
@@ -283,6 +315,8 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   onAfterEnter?: (el: HTMLElement) => void
   /** Runs once it has left and is gone. At once when nothing plays. */
   onAfterLeave?: (el: HTMLElement) => void
+  /** Runs as its entrance starts moving, after any `delay`, `after` or scroll into view. */
+  onStart?: (el: HTMLElement) => void
 }
 
 // ─── Guards ──────────────────────────────────────────────────────────────────
@@ -740,9 +774,9 @@ export type AnimatedNumberPart = 'root'
 export type AnimatedNumberMotion = ComponentMotion<{ parts: AnimatedNumberPart; value: true }>
 
 /** AnimatedText's parts, by their `ui` names: the elements its `motion` can animate. */
-export type AnimatedTextPart = 'root'
+export type AnimatedTextPart = 'root' | 'piece'
 /** AnimatedText: its appearance and the swap's timing. */
-export type AnimatedTextMotion = ComponentMotion<{ parts: AnimatedTextPart }>
+export type AnimatedTextMotion = ComponentMotion<{ parts: AnimatedTextPart; repeated: 'piece' }>
 
 /** Avatar's parts, by their `ui` names: the elements its `motion` can animate. */
 export type AvatarPart = 'root' | 'image' | 'fallback' | 'badge'
@@ -1186,7 +1220,35 @@ export interface MotionPresets {}
 export type PresetName = BuiltinPreset | keyof MotionPresets
 
 /** `v-animate`'s `states`: a look per state, held while it's on. */
-export type AnimateStates = Partial<Record<'hover' | 'active' | 'focus', MotionValues>>
+export type AnimateStates = Partial<Record<'hover' | 'active' | 'focus' | 'inView', MotionValues>>
+
+/** `animate()`'s options: its timing, when it starts, and how keyframes repeat. */
+export type AnimateOptions = MotionTiming & {
+  /** Seconds before it starts. */
+  delay?: number
+  /** With several elements, one after another (see `Stagger`). */
+  stagger?: Stagger
+  /** Keyframes: where each one falls, from 0 to 1. */
+  times?: number[]
+  /** Keyframes: plays them this many more times; `Infinity` loops until stopped. */
+  repeat?: number
+  /** Keyframes, repeating: `'loop'`, `'reverse'` (back and forth) or `'mirror'`. */
+  repeatType?: 'loop' | 'reverse' | 'mirror'
+  /** Keyframes, repeating: seconds held still between runs. */
+  repeatDelay?: number
+  /** Keyframes, repeating: as each repeat starts, with how many it has done. */
+  onRepeat?: (count: number) => void
+}
+
+/** When it counts as in view, for `when: 'visible'` and `states.inView`. */
+export interface Viewport {
+  /** How much of it must show: `'some'` (any of it), `'all'`, or a share from 0 to 1. @default 'some' */
+  amount?: 'some' | 'all' | number
+  /** Grows or shrinks the viewport it must enter, as CSS margin: `'0px 0px -20% 0px'`. */
+  margin?: string
+  /** Once seen, it stays in view: `states.inView` holds its look for good. */
+  once?: boolean
+}
 
 /** What `v-animate`'s modifiers pick: an entrance, a spring, `stagger`, or `size`. */
 export type AnimateModifier = PresetName | SpringName | 'stagger' | 'size'
@@ -1210,16 +1272,16 @@ export type AnimateDirectiveValue =
        */
       appear?: boolean | 'later'
       /**
-       * Looks it holds while hovered (a mouse), pressed (`active`: pointer, Space or Enter) or
-       * focused, as a component's `states`: `{ hover: { scale: 1.03 }, active: { scale: 0.97 } }`.
+       * Looks it holds while hovered (a mouse), pressed (`active`: pointer, Space or Enter),
+       * focused or in view (`inView`, by its `viewport`): `{ hover: { scale: 1.03 } }`.
        */
       states?: AnimateStates
       /**
        * With keyframe arrays in `animate`: holds them at this point, from 0 to 1, instead of
-       * playing them, so a swipe or a scroll scrubs them: `progress: swipe.progress`. With a
-       * `spring`, they follow it on that spring instead of at once.
+       * playing them, so a swipe or a scroll scrubs them. With a `spring`, they follow it on that
+       * spring. A getter (`() => scroll.value`) is followed without re-rendering the component.
        */
-      progress?: number
+      progress?: number | (() => number)
       /**
        * Runs once it has moved: a `layout` or `layoutId` slide, or a change of `animate`, has
        * played. At once when the change doesn't animate, as with motion off.

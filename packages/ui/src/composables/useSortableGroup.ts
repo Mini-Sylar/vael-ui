@@ -9,8 +9,8 @@ import type {
   UseSortableOptions,
   UseSortableReturn,
 } from './useSortable'
-import { createSpring } from './useSpringValue'
-import type { SpringHandle } from './useSpringValue'
+import { createSpring } from '../motion/useSpringValue'
+import type { SpringHandle } from '../motion/useSpringValue'
 import { contentOffset, findScrollParent, scrollIntoReach } from './sortableAutoScroll'
 import type { Point } from './sortableSettle'
 import { prefersReducedMotion } from './dom'

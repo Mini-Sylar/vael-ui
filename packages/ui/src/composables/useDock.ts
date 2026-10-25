@@ -4,7 +4,7 @@ import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { ssrWindow } from '../ssr'
 import type { ElRef } from './dom'
 import { prefersReducedMotion } from './dom'
-import { stepSpring } from './springStep'
+import { stepSpring } from '../motion/springStep'
 
 export type DockOrientation = 'horizontal' | 'vertical'
 

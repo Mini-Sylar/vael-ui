@@ -5,7 +5,7 @@ import { page } from 'vitest/browser'
 import { render } from 'vitest-browser-vue'
 import { defineComponent, h, nextTick, shallowRef, vShow, withDirectives } from 'vue'
 import type { DirectiveArguments, VNode, VNodeChild } from 'vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 
 const real = { global: { stubs: { transition: false, 'transition-group': false } } }
 const frame = () => new Promise<number>(requestAnimationFrame)

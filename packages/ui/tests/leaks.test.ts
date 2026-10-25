@@ -60,7 +60,7 @@ import ColorPicker from '../src/components/ColorPicker/ColorPicker.vue'
 import Editable from '../src/components/Editable/Editable.vue'
 import ScrollArea from '../src/components/ScrollArea/ScrollArea.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 
 // Each component is mounted once to install any page-wide singletons (focus-visible tracking,
 // the layer stack), then mounted, used and unmounted again under the tracker. Whatever is still

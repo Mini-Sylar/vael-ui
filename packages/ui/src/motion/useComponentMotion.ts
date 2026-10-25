@@ -3,7 +3,6 @@
 // on slow networks. The runtime (runner.ts: hooks, steps, keyframes) loads only when one is used.
 import { computed, getCurrentScope, inject, onScopeDispose, shallowRef, watch } from 'vue'
 import type { ComputedRef, InjectionKey, ShallowRef, TransitionProps } from 'vue'
-import { defaultsKey } from '../config'
 import { pageHidden } from '../composables/dom'
 import { PRESENCE_ID } from './ids'
 import { collectEntries, PRESENCE_ATTR, presenceFor, refElement, TARGET_ATTR } from './presence'
@@ -16,7 +15,7 @@ import { dev } from './warn'
 import { targetsOf } from './targets'
 import { stepOut } from './stepOut'
 import { armEnter, entered, left } from './finish'
-import { loading } from './styleKey'
+import { loading, motionSettingsKey } from './styleKey'
 
 let runtime: Promise<typeof import('./runner')> | undefined
 import * as cssModule from './css'
@@ -94,7 +93,7 @@ export interface ComponentMotionReturn {
 /** @internal */
 export function useComponentMotion(options: ComponentMotionOptions): ComponentMotionReturn {
   const style = useMotionStyle()
-  const providerDefaults = inject(defaultsKey, undefined)
+  const providerDefaults = inject(motionSettingsKey, undefined)
   const phase = shallowRef<MotionPhase>('left')
 
   const resolved = computed(() =>
@@ -134,15 +133,16 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
   const playsAfter = new WeakSet<Element>()
   const filled = (parts: Record<string, Element | null | undefined>) =>
     Object.fromEntries(Object.entries(parts).filter(([, el]) => el)) as Record<string, HTMLElement>
-  const elementCallback = (el: Element, name: 'onAfterEnter' | 'onAfterLeave') => () => {
-    // Remembered: by the time it has closed, Vue has let go of the root's ref.
-    const root = currentRoot()
-    const entry = root && collectEntries(root, resolved.value.targets).find((e) => e.el === el)
-    if (!entry) return
-    // Its own (`v-animate`'s value), else its name's in `targets`.
-    const own = typeof entry.motion === 'object' ? entry.motion : undefined
-    ;(own?.[name] ?? resolved.value.targets[entry.name]?.[name])?.(el as HTMLElement)
-  }
+  const elementCallback =
+    (el: Element, name: 'onStart' | 'onAfterEnter' | 'onAfterLeave') => () => {
+      // Remembered: by the time it has closed, Vue has let go of the root's ref.
+      const root = currentRoot()
+      const entry = root && collectEntries(root, resolved.value.targets).find((e) => e.el === el)
+      if (!entry) return
+      // Its own (`v-animate`'s value), else its name's in `targets`.
+      const own = typeof entry.motion === 'object' ? entry.motion : undefined
+      ;(own?.[name] ?? resolved.value.targets[entry.name]?.[name])?.(el as HTMLElement)
+    }
   if (typeof window !== 'undefined')
     watch(
       phase,
@@ -151,7 +151,8 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
         const entries = root ? collectEntries(root, resolved.value.targets) : []
         // Content kept between openings is armed again; newly mounted content armed itself.
         if (now === 'entering')
-          for (const { el } of entries) armEnter(el, elementCallback(el, 'onAfterEnter'))
+          for (const { el } of entries)
+            armEnter(el, elementCallback(el, 'onAfterEnter'), elementCallback(el, 'onStart'))
         if (now === 'entered') {
           for (const { el } of entries) if (!playsAfter.has(el)) entered(el)
           resolved.value.onAfterEnter?.(filled(currentParts()))
@@ -398,7 +399,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       // Stamped now, collected when it enters or leaves (the root's marker may not be on yet).
       if (!el || el.getAttribute(TARGET_ATTR) === name) return
       el.setAttribute(TARGET_ATTR, name)
-      armEnter(el, elementCallback(el, 'onAfterEnter'))
+      armEnter(el, elementCallback(el, 'onAfterEnter'), elementCallback(el, 'onStart'))
     }
   }
 

@@ -152,12 +152,13 @@ export const byReason: BeforeClose<'escape' | 'outside' | 'trigger'> = ({ reason
 // @ts-expect-error not callable
 export const legacy: BeforeClose = (done) => void done()
 
-// 22. Everything above is reachable from the package entry, not only from motion/types.
+// 22. Everything above is reachable from the entries: a component's own types from 'vael-ui',
+// the motion system's from 'vael-ui/motion'.
 export type FromEntry = [
   import('../../src/index').BeforeClose,
   import('../../src/index').CloseContext,
-  import('../../src/index').MotionWhere,
-  import('../../src/index').OwnMotion<'overlay'>,
+  import('../../src/motion/index').MotionWhere,
+  import('../../src/motion/index').OwnMotion<'overlay'>,
   import('../../src/index').ButtonMotion,
   import('../../src/index').AccordionMotion,
 ]

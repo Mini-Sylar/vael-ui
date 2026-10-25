@@ -288,26 +288,14 @@ export type {
   HapticOptions,
   UseHapticReturn,
 } from './composables/useHaptic'
-export { springEasing } from './composables/springEasing'
-export type { MotionOptions } from './composables/springEasing'
-export { settled } from './motion/settled'
-export { useMotion } from './motion/useMotion'
-export { parseMotionStyle } from './motion/parse'
 export { askGuard, closeContext, useCloseGuard } from './composables/useCloseGuard'
 export type {
   AccordionMotion,
   AccordionPart,
-  AnimateDirectiveValue,
-  AnimateModifier,
-  AnimateStates,
-  BuiltinPreset,
-  MotionPresets,
-  PresetName,
   BeforeClose,
   CloseContext,
   ButtonMotion,
   ButtonPart,
-  ComponentMotion,
   DialogMotion,
   DialogPart,
   GuardContext,
@@ -409,31 +397,6 @@ export type {
   TreeSelectMotion,
   SelectPart,
   TimelineMotion,
-  LinkedMotion,
-  MorphFrom,
-  MotionContext,
-  ElementHookContext,
-  ListHookContext,
-  PartElements,
-  MotionEngine,
-  EngineTiming,
-  MotionFilter,
-  MotionHook,
-  MotionMoment,
-  MotionPhase,
-  MotionRef,
-  MotionResult,
-  MotionRole,
-  MotionSpec,
-  MotionStep,
-  MotionStyle,
-  MotionTiming,
-  MotionValues,
-  MotionWhere,
-  ListContext,
-  MoveContext,
-  OwnMotion,
-  PartValues,
   PopoverMotion,
   MenuMotion,
   PopoverPart,
@@ -441,20 +404,10 @@ export type {
   SeparatorPart,
   SliderMotion,
   SliderPart,
-  Spring,
-  Stagger,
-  StaggerFrom,
-  SpringName,
-  StateMotion,
   TabsMotion,
   TabsPart,
-  TargetMotion,
-  Thenable,
   ToasterMotion,
   TourMotion,
-  UiDuration,
-  UiEase,
-  UseMotionReturn,
 } from './motion/types'
 export { preventFocusZoom } from './composables/preventFocusZoom'
 // Internal: exported only so vael-ui/vapor's components share them with this build. Not public API.
@@ -502,7 +455,6 @@ export type { I18nInstance, PartialUiMessages, UiMessages } from './messages'
 export { classMergerKey, useClassMerge, resolveUiPart, splitUiPart } from './classes'
 export type { ClassMerger, ClassValue, UiPartValue, UiPartStyle } from './classes'
 export { vDraggable, vDraggableVapor } from './directives/vDraggable'
-export { vAnimate, vAnimateVapor } from './directives/vAnimate'
 export type { DraggableOptions, DraggableValue } from './directives/vDraggable'
 export { vScrollMask, vScrollMaskVapor } from './directives/vScrollMask'
 export { vHoverIndicator, vHoverIndicatorVapor } from './directives/vHoverIndicator'
@@ -524,7 +476,7 @@ declare module 'vue' {
     vTooltip: typeof import('./directives/vTooltip').vTooltip
     vScrollMask: typeof import('./directives/vScrollMask').vScrollMask
     vDraggable: typeof import('./directives/vDraggable').vDraggable
-    vAnimate: typeof import('./directives/vAnimate').vAnimate
+    vAnimate: typeof import('./motion/vAnimate').vAnimate
     vHoverIndicator: typeof import('./directives/vHoverIndicator').vHoverIndicator
   }
 }
@@ -609,13 +561,6 @@ export type {
   GroupDropDetails,
   UseSortableGroupOptions,
 } from './composables/useSortableGroup'
-export { useSpringValue, createSpring, stepSpring } from './composables/useSpringValue'
-export type {
-  SpringOptions,
-  SpringState,
-  SpringHandle,
-  UseSpringValueReturn,
-} from './composables/useSpringValue'
 
 export { default as Rating } from './components/Rating/Rating.vue'
 export { default as Timeline } from './components/Timeline/Timeline.vue'

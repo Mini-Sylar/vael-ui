@@ -141,7 +141,7 @@ import { useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { ToasterMotion } from '../../motion/types'
 import { loadToastStates, loadToastSwipe } from '../../composables/lazyParts'
-import { springOf } from '../../composables/springNames'
+import { springOf } from '../../motion/springNames'
 
 defineOptions({ inheritAttrs: false })
 

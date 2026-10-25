@@ -57,30 +57,63 @@ export const cssValue = (key: string, value: unknown): string =>
     ? `${value}`
     : `${value}${key === 'rotate' ? 'deg' : 'px'}`
 
+// Turns and skews with no CSS property of their own, composed into `transform` in this order.
+const TURNS = ['perspective', 'rotateX', 'rotateY', 'skewX', 'skewY']
+// Stroke drawing, on a path normalized to a length of 1 (`pathLength="1"`).
+const PATH = /^path(Length|Offset|Spacing)$/
+
 export function toKeyframe(
   input: MotionValues,
   rtl = false,
   axis: 'translate' | 'transform' = 'translate',
 ): Keyframe {
-  const values = plainValues(input)
+  const values = plainValues(input) as Record<string, unknown>
   const frame: Keyframe = {}
+  const turns: string[] = []
   for (const [key, raw] of Object.entries(values)) {
-    if (key === 'x' || key === 'y') continue
+    if (key === 'x' || key === 'y' || PATH.test(key) || TURNS.includes(key)) continue
     const value = first(raw)
+    // `null`: no keyframe of its own, so it plays from where it is.
     if (value == null) continue
     if (key === 'blur') frame.filter = `blur(${px(value)})`
     else
       frame[camel(key)] =
         key === 'opacity' && typeof value === 'number' ? value : cssValue(key, value)
   }
-  if ('x' in values || 'y' in values) {
-    const x = first(values.x)
+  for (const key of TURNS) {
+    const value = first(values[key])
+    if (value != null)
+      turns.push(
+        `${key}(${typeof value === 'number' ? value + (key[0] === 'p' ? 'px' : 'deg') : value})`,
+      )
+  }
+  const x = first(values.x)
+  const y = first(values.y)
+  if (x != null || y != null) {
     const mirrored = rtl && typeof x === 'number' ? -x : x
-    const moved = `${px(mirrored)} ${px(first(values.y))}`
+    const moved = `${px(mirrored)} ${px(y)}`
     if (axis === 'translate') frame.translate = moved
-    else frame.transform = `translate(${moved.replace(' ', ', ')})`
+    else turns.unshift(`translate(${moved.replace(' ', ', ')})`)
+  }
+  if (turns.length) frame.transform = turns.join(' ')
+  const length = first(values.pathLength)
+  if (length != null) {
+    frame.strokeDasharray = `${length} ${first(values.pathSpacing) ?? 1}`
+    frame.strokeDashoffset = `${-Number(first(values.pathOffset) ?? 0)}`
   }
   return frame
+}
+
+/** Values that draw a stroke measure the path as 1 long: `pathLength="1"` on the shape. */
+export function preparePath(el: Element, ...looks: unknown[]) {
+  const draws = looks.some(
+    (look) => !!look && typeof look === 'object' && Object.keys(look).some((key) => PATH.test(key)),
+  )
+  if (!draws || typeof SVGGeometryElement === 'undefined' || !(el instanceof SVGGeometryElement))
+    return
+  el.setAttribute('pathLength', '1')
+  // At rest, drawn in full as a dash: a dash can ease to and from that, never to `none`.
+  if (getComputedStyle(el).strokeDasharray === 'none') el.style.strokeDasharray = '1 1'
 }
 
 /** How a keyframe sequence plays: each segment's easing (one for all, or one each), where each keyframe falls. */
@@ -122,7 +155,9 @@ export function toKeyframes(
 }
 
 /** How many times keyframes play, and which way: WAAPI's `iterations` and `direction`. */
-export const repeatOf = (t: { repeat?: number; repeatType?: 'loop' | 'reverse' } | undefined) => ({
+export const repeatOf = (
+  t: { repeat?: number; repeatType?: 'loop' | 'reverse' | 'mirror' } | undefined,
+) => ({
   iterations: (t?.repeat ?? 0) + 1,
   direction: (t?.repeatType === 'reverse' ? 'alternate' : 'normal') as PlaybackDirection,
 })

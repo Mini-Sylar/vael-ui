@@ -3,13 +3,14 @@
 // Loaded only when a component's states are customised (useStateMotion), with the listeners for
 // hover, press and focus.
 import { cssDuration, cssEasing } from './ease'
-import { effectScope, onScopeDispose, shallowReactive, watch } from 'vue'
+import { effectScope, onScopeDispose, shallowReactive, shallowRef, watch } from 'vue'
 import { prefersReducedMotion } from '../composables/dom'
 import { easingOf, resolveTiming, track } from './timing'
-import { springEasing } from '../composables/springEasing'
+import { springEasing } from './springEasing'
 import { isTimed } from './playable'
-import type { MotionTiming, MotionValues, MotionWhere, PartValues, Spring } from './types'
-import { groupValues, repeatOf, splitFrame, toKeyframe, toKeyframes } from './values'
+import type { MotionTiming, MotionValues, MotionWhere, PartValues, Spring, Viewport } from './types'
+import { repeating } from './repeatPlan'
+import { groupValues, preparePath, repeatOf, splitFrame, toKeyframe, toKeyframes } from './values'
 
 const STATE_ID = 'ui-state'
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
@@ -38,7 +39,8 @@ export interface StateFrame {
 type SequenceTiming = {
   times?: number[]
   repeat?: number
-  repeatType?: 'loop' | 'reverse'
+  repeatType?: 'loop' | 'reverse' | 'mirror'
+  repeatDelay?: number
   onRepeat?: (count: number) => void
 }
 
@@ -85,6 +87,7 @@ export function createStatePlayer() {
 
   /** Moves `el` to what the states that are on hold; returns the runs it started. */
   function hold(el: HTMLElement, values: MotionValues, frame: StateFrame): Animation[] {
+    preparePath(el, values)
     const rtl = getComputedStyle(el).direction === 'rtl'
     const target = toKeyframe(values, rtl)
     const prev = holds.get(el)
@@ -148,6 +151,7 @@ export function createStatePlayer() {
     frame: StateFrame,
     state: string,
   ): Animation[] | null {
+    preparePath(el, values)
     const rtl = getComputedStyle(el).direction === 'rtl'
     const started: Animation[] = []
     let looping = false
@@ -164,16 +168,27 @@ export function createStatePlayer() {
       // segment eased. Capped unless you gave a duration.
       const pair = frames.length === 2 && !own.times
       const given = own.duration !== undefined
-      const run = el.animate(pair ? frames.map(({ easing: _, ...step }) => step) : frames, {
-        id: STATE_ID,
-        duration: pair || given ? duration : Math.min(duration, ONCE_CAP),
-        delay: group.delay * 1000,
-        easing: pair ? easing : 'linear',
-        fill: 'backwards',
-        ...repeatOf(own),
-      })
+      const length = pair || given ? duration : Math.min(duration, ONCE_CAP)
+      // A pause between runs, or a mirror: built into the keyframes, each step eased.
+      const plan = repeating(
+        pair ? frames.map((step) => ({ ...step, easing })) : frames,
+        length,
+        own,
+      )
+      const run = el.animate(
+        plan?.frames ?? (pair ? frames.map(({ easing: _, ...step }) => step) : frames),
+        {
+          id: STATE_ID,
+          duration: plan?.duration ?? length,
+          delay: group.delay * 1000,
+          easing: pair && !plan ? easing : 'linear',
+          fill: 'backwards',
+          ...(plan ?? repeatOf(own)),
+        },
+      )
       const onRepeat = own.onRepeat
-      if (onRepeat) void import('./repeat').then((kit) => kit.onRepeats(run, onRepeat))
+      if (onRepeat)
+        void import('./repeat').then((kit) => kit.onRepeats(run, onRepeat, plan?.every ?? length))
       if (own.repeat === Infinity) {
         loops.set(state, [...(loops.get(state) ?? []), run])
         looping = true
@@ -625,21 +640,44 @@ export function holdElementStates(
   states: () => Partial<Record<string, MotionValues>> | undefined,
   timing: () => MotionTiming,
   spring: () => Spring | undefined,
+  viewport: () => Viewport | undefined = () => undefined,
 ): () => void {
   const scope = effectScope(true)
-  scope.run(() =>
+  scope.run(() => {
+    // `inView`: watched only while a look asks for it; with `once`, it stays once seen.
+    const seen = shallowRef(false)
+    let stop: (() => void) | undefined
+    watch(
+      () => !!states()?.inView,
+      (wanted) => {
+        stop?.()
+        stop = undefined
+        if (!wanted) return
+        // Loaded only for a look that asks for it.
+        let live = true
+        stop = () => (live = false)
+        void import('./viewport').then((kit) => {
+          if (!live) return
+          stop = kit.watchViewport(el, viewport(), '0px', (now) => {
+            seen.value = now || (!!viewport()?.once && seen.value)
+          })
+        })
+      },
+      { immediate: true },
+    )
+    onScopeDispose(() => stop?.())
     startStates({
       mainPart: 'root',
       parts: () => ({ root: el }),
-      states: () => ({}),
+      states: () => ({ inView: seen.value }),
       spec: () =>
         Object.fromEntries(
           Object.entries(states() ?? {}).map(([state, values]) => [state, { root: values }]),
         ),
       timing,
       spring,
-    }),
-  )
+    })
+  })
   return () => scope.stop()
 }
 

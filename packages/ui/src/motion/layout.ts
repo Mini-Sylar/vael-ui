@@ -154,6 +154,8 @@ const placeOf = new WeakMap<Element, Point | undefined>()
 const timingOf = new WeakMap<Element, () => MotionTiming>()
 // `onAfterMove`: run once its slide has played, or at once when it moves without one.
 const movedOf = new WeakMap<Element, () => void>()
+// `layout: true`: its size, checked whenever the layout around it changes.
+const resizeOf = new WeakMap<Element, () => void>()
 const groups = new WeakMap<
   Element,
   { observer: MutationObserver; resize: ResizeObserver; members: Set<Element> }
@@ -264,6 +266,8 @@ function slideBy(el: Element, offset: Point, timing: MotionTiming) {
 function relayout(parent: Element, members: Set<Element>) {
   for (const el of members) if (!el.isConnected) members.delete(el)
   const list = [...members]
+  // Sizes first: something around it changed, and it may have grown or shrunk with it.
+  for (const el of list) resizeOf.get(el)?.()
   const reduced = prefersReducedMotion()
   // Its own glides only (a `layoutId` travel is left alone), and where they show it now.
   const runs = list.map((el) =>
@@ -312,6 +316,8 @@ export function followLayout(
   el: Element,
   timing: () => MotionTiming,
   moved?: () => void,
+  /** Eases it to a new size too (`layout: true`, not `'position'`). */
+  resize?: () => void,
 ): () => void {
   // Inside a component's panel, measured against the panel: content in a slot moves with the row
   // around it (a filtered option), not within its own parent.
@@ -321,6 +327,7 @@ export function followLayout(
   ownOf.set(el, ownShift(el))
   timingOf.set(el, timing)
   if (moved) movedOf.set(el, moved)
+  if (resize) resizeOf.set(el, resize)
   let group = groups.get(parent)
   if (!group) {
     const members = new Set<Element>()

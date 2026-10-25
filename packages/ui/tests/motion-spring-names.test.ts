@@ -7,8 +7,8 @@ import Accordion from '../src/components/Accordion/Accordion.vue'
 import AccordionItem from '../src/components/AccordionItem/AccordionItem.vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
-import { SPRINGS, springEasing, springOf } from '../src/composables/springEasing'
-import { vAnimate } from '../src/directives/vAnimate'
+import { SPRINGS, springEasing, springOf } from '../src/motion/springEasing'
+import { vAnimate } from '../src/motion/vAnimate'
 import { parseMotionStyle } from '../src/motion/parse'
 
 const curve = (name: keyof typeof SPRINGS) => springEasing(SPRINGS[name]).easing

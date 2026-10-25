@@ -57,6 +57,28 @@
       "bun": "./dist/vapor-server/index.js",
       "default": "./dist/vapor/index.js"
     },
+    "./motion": {
+      "vapor": {
+        "types": "./dist/vapor/motion.d.ts",
+        "browser": "./dist/vapor/motion.js",
+        "node": "./dist/vapor-server/motion.js",
+        "workerd": "./dist/vapor-server/motion.js",
+        "worker": "./dist/vapor-server/motion.js",
+        "edge-light": "./dist/vapor-server/motion.js",
+        "deno": "./dist/vapor-server/motion.js",
+        "bun": "./dist/vapor-server/motion.js",
+        "default": "./dist/vapor/motion.js"
+      },
+      "types": "./dist/motion/index.d.ts",
+      "browser": "./dist/motion/index.js",
+      "node": "./dist/vapor-server/motion.js",
+      "workerd": "./dist/vapor-server/motion.js",
+      "worker": "./dist/vapor-server/motion.js",
+      "edge-light": "./dist/vapor-server/motion.js",
+      "deno": "./dist/vapor-server/motion.js",
+      "bun": "./dist/vapor-server/motion.js",
+      "default": "./dist/motion/index.js"
+    },
     "./resolver": {
       "types": "./dist/resolver/index.d.ts",
       "default": "./dist/resolver/index.js"

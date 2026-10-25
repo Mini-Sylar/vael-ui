@@ -1,6 +1,6 @@
 // Gestures hand their speed to the motion that follows: a spring that starts at the release speed
 // and settles, compiled to CSS `linear()` so it still runs on the compositor.
-import { FLING_SPRING, springEasing } from '../composables/springEasing'
+import { FLING_SPRING, springEasing } from './springEasing'
 import type { Spring } from './types'
 
 export { FLING_SPRING }

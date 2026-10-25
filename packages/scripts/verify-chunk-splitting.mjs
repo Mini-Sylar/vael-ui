@@ -18,8 +18,8 @@ import { collectBarrelEntries } from './collect-barrel-entries.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-function verify(label, barrelPath, distDir, cwd) {
-  const entries = collectBarrelEntries(barrelPath, cwd)
+function verify(label, barrelPath, distDir, cwd, prefix = '') {
+  const entries = collectBarrelEntries(barrelPath, cwd, prefix)
   const missing = []
   for (const [name, srcPath] of Object.entries(entries)) {
     // The Vapor build imports composables from the vdom build's own files instead of copying them.
@@ -36,6 +36,13 @@ const vaporRoot = join(__dirname, '../vapor-ui')
 
 const missing = [
   ...verify('vdom', join(uiRoot, 'src/index.ts'), join(uiRoot, 'dist'), uiRoot),
+  ...verify(
+    'vdom motion',
+    join(uiRoot, 'src/motion/index.ts'),
+    join(uiRoot, 'dist'),
+    uiRoot,
+    'motion/',
+  ),
   // Shared with the Vapor build, not public: their own files too.
   ...verify('vdom internal', join(uiRoot, 'src/internal.ts'), join(uiRoot, 'dist'), uiRoot),
   ...verify(

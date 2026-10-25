@@ -1,7 +1,7 @@
 // Timing and settled(): shared by the runtime and the states player, so neither drags in the other.
-import { springArrival, springEasing, springOf } from '../composables/springEasing'
-import { SPRINGS } from '../composables/springNames'
-import type { SpringName } from '../composables/springNames'
+import { springArrival, springEasing, springOf } from './springEasing'
+import { SPRINGS } from './springNames'
+import type { SpringName } from './springNames'
 import { cssDuration, cssEasing } from './ease'
 import type { MotionTiming, Spring } from './types'
 

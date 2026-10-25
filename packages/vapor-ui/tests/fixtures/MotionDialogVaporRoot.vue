@@ -13,7 +13,8 @@
 <script setup lang="ts" vapor>
 // Built `vael-ui/vapor`: the enter hook records each call and the targets it was handed.
 import { shallowRef } from 'vue'
-import { Button, Dialog, vAnimate } from 'vael-ui/vapor'
+import { Button, Dialog } from 'vael-ui/vapor'
+import { vAnimateVapor as vAnimate } from 'vael-ui/motion'
 import type { DialogMotion } from 'vael-ui'
 
 const open = shallowRef(false)

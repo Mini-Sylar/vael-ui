@@ -89,13 +89,18 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // used), your elements' own `enter` / `leave` hooks, a state that turns on while the player loads
 // still playing, and settled(el) waiting for motion code still on its way (counted in styleKey, no
 // chunk of its own). Measured 8627, 6643, 1262 and 6651 B.
+// up front 8.45 → 8.55 KB, runtime 6.5 → 7.1 KB, states 6.5 → 7.25 KB, linked 2.8 → 3.05 KB
+// (2026-10-25): `repeatDelay` and `repeatType: 'mirror'` (a planner shared by the runtime and the
+// states player, never loaded by components that don't repeat keyframes), 3D turns and skews,
+// `pathLength` drawing and `null` keyframes in the shared keyframe code, `onStart`, and `inView`
+// (its observer loads only when a look asks for it). Measured 8698, 7218, 7377 and 3085 B.
 const BUDGET = {
-  upFront: 8.45 * 1024,
-  runtime: 6.5 * 1024,
+  upFront: 8.55 * 1024,
+  runtime: 7.1 * 1024,
   morph: 1.55 * 1024,
   button: 1.24 * 1024,
-  states: 6.5 * 1024,
-  linked: 2.8 * 1024,
+  states: 7.25 * 1024,
+  linked: 3.05 * 1024,
 }
 
 // Every chunk a file pulls in statically.

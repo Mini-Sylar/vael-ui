@@ -40,6 +40,8 @@ export function followSize(
   timing: () => MotionTiming | undefined,
   /** Clip only past the bottom edge, so content moving in from above or the sides stays visible. */
   clipEnd = false,
+  /** `layout: true`: a size its own class or style gave it animates too. */
+  layout = false,
 ): FollowSize {
   if (typeof ResizeObserver === 'undefined' || typeof MutationObserver === 'undefined')
     return { sync: () => {}, stop: () => {} }
@@ -182,7 +184,7 @@ export function followSize(
     )
     if (!records.length) return
     watchChildren()
-    sync(records.some((r) => r.target !== el || r.type !== 'attributes'))
+    sync(layout || records.some((r) => r.target !== el || r.type !== 'attributes'))
   })
   changes.observe(el, {
     childList: true,

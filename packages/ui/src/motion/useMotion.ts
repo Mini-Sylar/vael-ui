@@ -1,4 +1,5 @@
 // Your own components, in the app's motion style: bind `transition` to Vue's <Transition>, mark parts and targets.
+import './timing.css'
 import { computed, onMounted, onScopeDispose, shallowReactive } from 'vue'
 import type { TransitionProps } from 'vue'
 import { PRESENCE_ATTR, refElement } from './presence'

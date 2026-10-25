@@ -1,7 +1,7 @@
 import { nextTick, onScopeDispose, shallowRef, toValue, useId, watch } from 'vue'
 import type { MaybeRefOrGetter, Ref } from 'vue'
-import { createSpring } from './useSpringValue'
-import type { SpringHandle } from './useSpringValue'
+import { createSpring } from '../motion/useSpringValue'
+import type { SpringHandle } from '../motion/useSpringValue'
 import { createSettler } from './sortableSettle'
 import type { Point } from './sortableSettle'
 import {

@@ -46,9 +46,14 @@ import { defaultsKey, validLocale } from '../../config'
 import type { UiDefaults } from '../../config'
 import type { LoaderSource } from '../../composables/loaderType'
 import type { IndicatorMode } from '../../composables/useTabIndicator'
-import { springOf, springTokens } from '../../composables/springEasing'
-import type { MotionOptions } from '../../composables/springEasing'
-import { isMotionStyle, motionStyleKey, useMotionStyle } from '../../motion/context'
+import { springOf, springTokens } from '../../motion/springEasing'
+import type { MotionOptions } from '../../motion/springEasing'
+import {
+  isMotionStyle,
+  motionSettingsKey,
+  motionStyleKey,
+  useMotionStyle,
+} from '../../motion/context'
 import { holdMotionStyle } from '../../motion/styleHolder'
 import type { MotionStyle } from '../../motion/types'
 import type { HapticOptions } from '../../composables/useHaptic'
@@ -164,6 +169,8 @@ const defaults = computed<UiDefaults>(() => {
   return { ...parentDefaults?.value, ...own }
 })
 provide(defaultsKey, defaults)
+// Motion reads its own key, so it depends on nothing outside motion/.
+provide(motionSettingsKey, defaults)
 
 // The <style> renders in place, not teleported to <head>: a head teleport can't hydrate
 // cleanly and in production overwrote the app's own head tags. A <style> in <body> still

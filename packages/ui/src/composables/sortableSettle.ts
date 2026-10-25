@@ -1,4 +1,4 @@
-import { stepSpring } from './springStep'
+import { stepSpring } from '../motion/springStep'
 import type { SortableAxis } from './useSortable'
 
 /** Same as useSortable's DROP_SPRING: critically damped, no bounce for a row settling into a slot. */

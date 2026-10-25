@@ -1,3 +1,4 @@
+import type { IndicatorStretch, Spring } from '../motion/types'
 import {
   nextTick,
   onBeforeUnmount,
@@ -11,14 +12,14 @@ import type { MaybeRefOrGetter, Ref, WatchSource } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
 import { injectDefaults, isOutside } from '../config'
-import type { SpringHandle, SpringOptions } from './useSpringValue'
-import { DEFAULT_DAMPING, DEFAULT_RESPONSE } from './springStep'
+import type { SpringHandle } from '../motion/useSpringValue'
+import { DEFAULT_DAMPING, DEFAULT_RESPONSE } from '../motion/springStep'
 
 // The spring engine loads only for an indicator set to a spring, fetched as soon as one is.
-let springs$: typeof import('./useSpringValue') | undefined
+let springs$: typeof import('../motion/useSpringValue') | undefined
 let loadingSprings: Promise<unknown> | undefined
 const loadSprings = () =>
-  (loadingSprings ??= import('./useSpringValue').then((m) => (springs$ = m)))
+  (loadingSprings ??= import('../motion/useSpringValue').then((m) => (springs$ = m)))
 // A stretch or squash's own springs, for the indicators that set one.
 let stretch$: typeof import('./indicatorStretch') | undefined
 let loadingStretch: Promise<unknown> | undefined
@@ -31,15 +32,9 @@ import { prefersReducedMotion } from './dom'
  * spring, given as `{ damping, response }` (see `createSpring`). Below 1, damping overshoots.
  */
 export type IndicatorMode = 'glide' | 'instant' | IndicatorSpring
-export type IndicatorSpring = Pick<SpringOptions, 'damping' | 'response'>
-
-/** How a stretching indicator's trailing edge follows the leading one. */
-export interface IndicatorStretch {
-  /** The trailing edge's spring. Unset, a slightly softer and bouncier copy of the leading one. */
-  trail?: IndicatorSpring
-  /** Seconds the trailing edge waits before it follows. @default 0.05 */
-  delay?: number
-}
+/** A spring by its numbers, as the motion system's `Spring`. */
+export type IndicatorSpring = Spring
+export type { IndicatorStretch }
 
 export interface UseTabIndicatorOptions {
   listEl: ElRef<HTMLElement | null>

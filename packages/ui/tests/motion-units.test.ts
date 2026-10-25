@@ -3,7 +3,7 @@ import '../src/style.css'
 import { expect, test } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, withDirectives } from 'vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 
 const frame = () => new Promise(requestAnimationFrame)
 async function midway(node: () => ReturnType<typeof h>, read: (el: Element) => number) {

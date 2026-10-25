@@ -2,7 +2,7 @@
 // it changes (a spring by default). Keyframe arrays play once per change; `repeat` loops them; with
 // `progress` they're held at that point instead (scrubbed by a swipe or a scroll).
 import { createStatePlayer } from './states'
-import { createSpring } from '../composables/useSpringValue'
+import { createSpring } from './useSpringValue'
 import { prefersReducedMotion } from '../composables/dom'
 import { easingOf } from './timing'
 import type { MotionTiming, MotionValues, Spring } from './types'

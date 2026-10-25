@@ -68,7 +68,7 @@ import { useThemedUi } from '../../theme'
 import { vTooltip } from '../../directives/vTooltip'
 import { useStateMotion } from '../../motion/useStateMotion'
 import type { DockMotion, Spring } from '../../motion/types'
-import { springOf } from '../../composables/springNames'
+import { springOf } from '../../motion/springNames'
 import { useMotionStyle } from '../../motion/context'
 import { defaultsKey } from '../../config'
 

@@ -2,12 +2,11 @@
 // its own CSS; once you set `motion` (or a shared style does), swap.ts plays each part's look.
 import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
-import { defaultsKey } from '../config'
 import { resolveMotion, useMotionStyle } from './context'
 import { stepOut } from './stepOut'
 import type { ResolvedMotion } from './context'
 import type { MotionStyle, MotionTiming, MotionValues, MotionWhere } from './types'
-import { loading } from './styleKey'
+import { loading, motionSettingsKey } from './styleKey'
 
 let swapKit: Promise<typeof import('./swap')> | undefined
 const loadSwap = () => (swapKit ??= loading(import('./swap')))
@@ -42,7 +41,7 @@ export interface SwapMotionReturn {
 /** @internal */
 export function useSwapMotion(options: SwapMotionOptions): SwapMotionReturn {
   const style = useMotionStyle()
-  const provider = inject(defaultsKey, undefined)
+  const provider = inject(motionSettingsKey, undefined)
   const resolved = computed<ResolvedMotion>(() => ({
     ...resolveMotion({
       role: options.key,

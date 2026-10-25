@@ -6,7 +6,7 @@ import { renderToString } from 'vue/server-renderer'
 import type { SSRContext } from 'vue/server-renderer'
 import { afterEach, expect, test, vi } from 'vitest'
 import Dialog from '../src/components/Dialog/Dialog.vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 import { useMotion } from '../src/motion/useMotion'
 
 const frame = () => new Promise(requestAnimationFrame)

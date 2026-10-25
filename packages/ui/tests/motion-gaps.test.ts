@@ -5,8 +5,8 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { defineComponent, h, shallowRef, withDirectives } from 'vue'
 import Button from '../src/components/Button/Button.vue'
-import { SPRINGS, springEasing } from '../src/composables/springEasing'
-import { vAnimate } from '../src/directives/vAnimate'
+import { SPRINGS, springEasing } from '../src/motion/springEasing'
+import { vAnimate } from '../src/motion/vAnimate'
 
 afterEach(() => {
   document.body.innerHTML = ''

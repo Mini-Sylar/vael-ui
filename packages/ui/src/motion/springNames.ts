@@ -1,5 +1,5 @@
 // Springs by name, kept apart from the spring compiler so naming one costs a few bytes.
-import type { IndicatorSpring } from './useTabIndicator'
+import type { Spring as IndicatorSpring } from './types'
 
 /** A spring by name: `snappy` and `smooth` settle without overshoot, `bouncy` overshoots, `gentle` is slow with a little give. */
 export type SpringName = 'snappy' | 'smooth' | 'bouncy' | 'gentle'

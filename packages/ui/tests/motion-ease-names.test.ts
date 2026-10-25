@@ -4,7 +4,7 @@ import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, shallowRef, withDirectives } from 'vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 import { cssDuration, cssEasing } from '../src/motion/ease'
 
 test('tokens by name, and CSS as it is', () => {

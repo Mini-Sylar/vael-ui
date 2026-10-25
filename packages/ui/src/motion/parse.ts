@@ -2,7 +2,7 @@
 // safe data-only style out. Unknown keys, functions and out-of-range or unsafe values are dropped
 // one by one and reported; it never throws.
 import { cssEasing } from './ease'
-import { SPRINGS } from '../composables/springNames'
+import { SPRINGS } from './springNames'
 import type { MotionStyle, ParseMotionStyle } from './types'
 import { motionWarn } from './warn'
 

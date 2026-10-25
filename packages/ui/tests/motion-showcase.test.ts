@@ -6,7 +6,7 @@ import { h, nextTick, shallowRef, withDirectives } from 'vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
 import Menu from '../src/components/Menu/Menu.vue'
 import Popover from '../src/components/Popover/Popover.vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 
 const real = { global: { stubs: { transition: false } } }
 const frame = () => new Promise(requestAnimationFrame)

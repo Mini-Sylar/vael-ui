@@ -60,13 +60,13 @@ const vaelUiNuxtModule = defineNuxtModule<ModuleOptions>({
     const filePath = vapor ? 'vael-ui/vapor' : 'vael-ui'
     // `v-animate` in any template, no import: the object form, for the app's VDOM templates (Nuxt's
     // own are VDOM even with Vapor on) and the server, whose `getSSRProps` renders a first
-    // appearance as CSS. A `<script setup vapor>` component imports `vAnimate` from 'vael-ui/vapor'.
+    // appearance as CSS. A `<script setup vapor>` component imports `vAnimateVapor` from 'vael-ui/motion'.
     addPluginTemplate({
       filename: 'vael-ui-directives.mjs',
       getContents: () =>
         [
           `import { defineNuxtPlugin } from '#app'`,
-          `import { vAnimate } from 'vael-ui'`,
+          `import { vAnimate } from 'vael-ui/motion'`,
           `export default defineNuxtPlugin((nuxtApp) => {`,
           `  nuxtApp.vueApp.directive('animate', vAnimate)`,
           `})`,

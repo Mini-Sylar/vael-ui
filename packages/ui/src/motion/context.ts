@@ -10,10 +10,10 @@ import type {
   TargetMotion,
   MotionEngine,
 } from './types'
-import { springOf } from '../composables/springNames'
+import { springOf } from './springNames'
 import { BUILTIN_PRESETS } from './presets'
 
-export { motionStyleKey, useMotionStyle } from './styleKey'
+export { motionSettingsKey, motionStyleKey, useMotionStyle } from './styleKey'
 
 /** @internal A full style, as opposed to `false`, `true` or the older `{ spring }`. */
 export function isMotionStyle(value: unknown): value is MotionStyle {

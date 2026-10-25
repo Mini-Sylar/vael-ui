@@ -15,7 +15,8 @@
 
 <script setup lang="ts" vapor>
 // Built `vael-ui/vapor`: a preset inside a teleporting component, and v-animate under motion: false.
-import { ConfigProvider, vAnimate } from 'vael-ui/vapor'
+import { ConfigProvider } from 'vael-ui/vapor'
+import { vAnimateVapor as vAnimate } from 'vael-ui/motion'
 import ProviderReachSheet from './ProviderReachSheet.vue'
 
 const rise = { initial: { opacity: 0, y: 12 }, duration: 1500 }

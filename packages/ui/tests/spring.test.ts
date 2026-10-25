@@ -4,8 +4,8 @@ import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef } from 'vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Badge from '../src/components/Badge/Badge.vue'
-import { springEasing, springTokens } from '../src/composables/springEasing'
-import { stepSpring } from '../src/composables/useSpringValue'
+import { springEasing, springTokens } from '../src/motion/springEasing'
+import { stepSpring } from '../src/motion/useSpringValue'
 
 test('springEasing turns a spring into a linear() curve and its settle time', () => {
   const crisp = springEasing({ damping: 1, response: 0.3 })

@@ -4,7 +4,7 @@ import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef, withDirectives } from 'vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 import type { DialogMotion, MotionStyle } from '../src/motion/types'
 
 // The runtime's own animations (hooks, steps); static motion is played by CSS transitions instead.

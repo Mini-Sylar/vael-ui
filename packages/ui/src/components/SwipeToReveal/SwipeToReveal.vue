@@ -70,10 +70,10 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
 import { useMotionStyle } from '../../motion/context'
-import { useSpringValue } from '../../composables/useSpringValue'
+import { useSpringValue } from '../../motion/useSpringValue'
 import { prefersReducedMotion } from '../../composables/dom'
 import type { Spring, SwipeToRevealMotion } from '../../motion/types'
-import { springOf } from '../../composables/springNames'
+import { springOf } from '../../motion/springNames'
 
 defineOptions({ inheritAttrs: false })
 

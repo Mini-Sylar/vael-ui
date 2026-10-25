@@ -26,6 +26,8 @@ const SHARED_MODULES = new Set([
   ...Object.keys(collectBarrelEntries(UI_INDEX_PATH, UI_SRC_DIR)),
   // Shared but not public (src/internal.ts).
   ...Object.keys(collectBarrelEntries(join(UI_SRC_DIR, 'internal.ts'), UI_SRC_DIR)),
+  // vael-ui/motion.
+  ...Object.keys(collectBarrelEntries(join(UI_SRC_DIR, 'motion/index.ts'), UI_SRC_DIR, 'motion/')),
 ])
 // Stateless helpers each build may bundle on its own.
 const PER_BUILD_MODULES = new Set([
@@ -38,7 +40,7 @@ const PER_BUILD_MODULES = new Set([
   'composables/indicatorStretch',
   'composables/dateText',
   'composables/useFormReset',
-  'composables/springNames',
+  'motion/springNames',
   'composables/useEasedHeight',
   'composables/useFold',
   'composables/tourGlide',
@@ -235,13 +237,25 @@ function copyCssImports(source, origFileDir, outFileDir) {
   const importLineRe = /^import\s+'([^']+\.css)'\s*$/gm
   return source.replace(importLineRe, (_full, relPath) => {
     const absSrc = resolve(origFileDir, relPath)
-    const mirroredRel = relative(UI_COMPONENTS_DIR, absSrc)
-    const absOut = join(OUT_DIR, mirroredRel)
-    writeIfChanged(absOut, readFileSync(absSrc, 'utf8'))
+    const absOut = copyCss(absSrc)
     let newRel = relative(outFileDir, absOut).split('\\').join('/')
     if (!newRel.startsWith('.')) newRel = `./${newRel}`
     return `import '${newRel}'`
   })
+}
+
+// Its @imports (tokens.css takes motion's timing.css) point back at the originals from the copy.
+function copyCss(absSrc) {
+  const absOut = join(OUT_DIR, relative(UI_COMPONENTS_DIR, absSrc))
+  const css = readFileSync(absSrc, 'utf8').replace(
+    /^@import\s+'(\.[^']+\.css)'/gm,
+    (_full, relPath) =>
+      `@import '${relative(dirname(absOut), resolve(dirname(absSrc), relPath))
+        .split('\\')
+        .join('/')}'`,
+  )
+  writeIfChanged(absOut, css)
+  return absOut
 }
 
 // Vapor ignores v-memo and warns about it at build time, so the copies drop it.
@@ -268,7 +282,7 @@ const VAPOR_ALIASES = {
   vTooltip: ['vTooltipVapor', 'directives/vTooltip'],
   vScrollMask: ['vScrollMaskVapor', 'directives/vScrollMask'],
   vDraggable: ['vDraggableVapor', 'directives/vDraggable'],
-  vAnimate: ['vAnimateVapor', 'directives/vAnimate'],
+  vAnimate: ['vAnimateVapor', 'motion/vAnimate'],
   vHoverIndicator: ['vHoverIndicatorVapor', 'directives/vHoverIndicator'],
   // See useSlotRelay.ts: a plain functional component forwarding a captured
   // slot renders as [object Object] under vaporInteropPlugin
@@ -436,7 +450,6 @@ function main() {
     `export { vTooltipVapor as vTooltip } from '${relativeImportPath('directives/vTooltip')}'`,
     `export { vScrollMaskVapor as vScrollMask } from '${relativeImportPath('directives/vScrollMask')}'`,
     `export { vDraggableVapor as vDraggable } from '${relativeImportPath('directives/vDraggable')}'`,
-    `export { vAnimateVapor as vAnimate } from '${relativeImportPath('directives/vAnimate')}'`,
     `export { vHoverIndicatorVapor as vHoverIndicator } from '${relativeImportPath('directives/vHoverIndicator')}'`,
     `export { confirmAction } from './composables/confirmAction'`,
     `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
@@ -456,6 +469,24 @@ function main() {
   }
 
   writeIfChanged(join(OUT_DIR, 'index.ts'), barrelLines.join('\n') + '\n')
+
+  // vael-ui/motion under the `vapor` condition: `vAnimate` is the Vapor form (also as
+  // `vAnimateVapor`); the rest is shared code.
+  const motionSource = readFileSync(join(UI_SRC_DIR, 'motion/index.ts'), 'utf8')
+  const motionLines = []
+  for (const [, typeOnly, clause, spec] of motionSource.matchAll(
+    /export\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'/g,
+  )) {
+    const path = relativeImportPath(join('motion', spec))
+    const names = clause
+      .split(',')
+      .map((name) => name.trim())
+      .filter((name) => name && name !== 'vAnimate')
+      .map((name) => (name === 'vAnimateVapor' ? 'vAnimateVapor as vAnimate, vAnimateVapor' : name))
+    if (names.length)
+      motionLines.push(`export ${typeOnly ?? ''}{ ${names.join(', ')} } from '${path}'`)
+  }
+  writeIfChanged(join(OUT_DIR, 'motion.ts'), motionLines.join('\n') + '\n')
   removeStale(OUT_DIR)
   console.log(
     `\ngenerated src/generated/index.ts (${COMPONENTS.length} public component(s), ${toGenerate.size} file(s) total, ${composableCount} composable(s)/utilit(y/ies))`,

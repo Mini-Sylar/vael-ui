@@ -125,7 +125,7 @@ test('v-animate is registered in every template, from the object form both varia
     vaelUiNuxtModule({ variant }, fakeNuxt())
     expect(addPluginTemplate).toHaveBeenCalledTimes(1)
     const code = addPluginTemplate.mock.calls[0]![0].getContents() as string
-    expect(code).toContain(`import { vAnimate } from 'vael-ui'`)
+    expect(code).toContain(`import { vAnimate } from 'vael-ui/motion'`)
     expect(code).toContain(`nuxtApp.vueApp.directive('animate', vAnimate)`)
   }
 })

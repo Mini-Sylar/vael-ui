@@ -13,7 +13,7 @@
 <script setup lang="ts" vapor>
 // Built `vael-ui/vapor`: useMotion('list') on Vapor's TransitionGroup.
 import { shallowRef } from 'vue'
-import { useMotion } from 'vael-ui/vapor'
+import { useMotion } from 'vael-ui/motion'
 
 let next = 10
 const items = shallowRef([1, 2, 3])

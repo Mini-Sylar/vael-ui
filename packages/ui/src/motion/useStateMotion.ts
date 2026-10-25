@@ -10,10 +10,9 @@ import {
   onScopeDispose,
   watch,
 } from 'vue'
-import { defaultsKey } from '../config'
-import { useMotionStyle } from './styleKey'
+import { useMotionStyle, motionSettingsKey } from './styleKey'
 import type { MotionStyle, MotionTiming } from './types'
-import { springOf } from '../composables/springNames'
+import { springOf } from './springNames'
 import { loading } from './styleKey'
 
 let appearance: typeof import('./appearance') | undefined
@@ -78,7 +77,7 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
   if (typeof window === 'undefined') return exposed
   const parts = () => Object.fromEntries(names().map((name) => [name, els(name)[0]]))
   const style = useMotionStyle()
-  const provider = inject(defaultsKey, undefined)
+  const provider = inject(motionSettingsKey, undefined)
 
   // What a style's press look, its states and your own add up to: merged in the states chunk.
   const sources = () => {

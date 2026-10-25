@@ -3,7 +3,7 @@
 import { onScopeDispose, watch } from 'vue'
 import type { ComputedRef, ShallowRef } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
-import { springOf } from '../composables/springNames'
+import { springOf } from './springNames'
 import type { ResolvedMotion } from './context'
 import { isTimed, valuesAt } from './playable'
 import { presenceFor } from './presence'

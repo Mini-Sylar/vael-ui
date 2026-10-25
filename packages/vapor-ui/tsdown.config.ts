@@ -17,6 +17,8 @@ const vdomFiles = new Map(
     ...collectBarrelEntries(join(UI_DIR, 'src/index.ts'), UI_DIR),
     // Shared but not public (src/internal.ts).
     ...collectBarrelEntries(join(UI_DIR, 'src/internal.ts'), UI_DIR),
+    // vael-ui/motion.
+    ...collectBarrelEntries(join(UI_DIR, 'src/motion/index.ts'), UI_DIR, 'motion/'),
   })
     .filter(([, path]) => !path.endsWith('.vue'))
     .map(([name, path]) => [resolve(UI_DIR, path), join(UI_DIR, 'dist', `${name}.js`)]),
@@ -99,6 +101,7 @@ function useVdomCss(outDir: string): Plugin {
 // ones that now come from the vdom build's files.
 const entry = {
   index: './src/generated/index.ts',
+  motion: './src/generated/motion.ts',
   ...Object.fromEntries(
     Object.entries(collectBarrelEntries('./src/generated/index.ts', process.cwd())).filter(
       ([, path]) => !vdomFiles.has(resolve(path)),
@@ -115,7 +118,7 @@ function objectDirectivesOnServer(): Plugin {
     transform(code) {
       if (!code.includes('vAnimateVapor')) return null
       return code.replace(
-        /\{([^}]*)\}(\s*from\s*['"][^'"]*directives\/vAnimate(?:\.js|\.ts)?['"])/g,
+        /\{([^}]*)\}(\s*from\s*['"][^'"]*motion\/vAnimate(?:\.js|\.ts)?['"])/g,
         (_, names: string, from: string) =>
           `{${names
             .replace(/\bvAnimateVapor as vAnimate\b/, 'vAnimate')

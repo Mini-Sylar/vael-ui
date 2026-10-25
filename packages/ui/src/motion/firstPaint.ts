@@ -1,6 +1,6 @@
 // v-animate on the server: an element's first appearance as CSS, so it plays with the first paint
 // and no script (plan 008 §15). The same on server and client: no measuring, no randomness.
-import { springEasing } from '../composables/springEasing'
+import { springEasing } from './springEasing'
 import type { Spring, TargetMotion } from './types'
 import { cssDuration, cssEasing } from './ease'
 

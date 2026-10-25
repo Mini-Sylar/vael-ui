@@ -2,7 +2,7 @@ import '../src/style.css'
 import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef, withDirectives } from 'vue'
-import { vAnimate } from '../src/directives/vAnimate'
+import { vAnimate } from '../src/motion/vAnimate'
 
 const sizing = (el: Element | null) => (el?.getAnimations() ?? []).filter((a) => a.id === 'ui-size')
 const frame = () => new Promise(requestAnimationFrame)

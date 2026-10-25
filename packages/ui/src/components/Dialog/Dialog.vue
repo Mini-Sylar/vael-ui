@@ -259,7 +259,7 @@ export interface DialogExposed {
 <!-- v-if mode: Transition owns enter/exit; forceMount: v-show + consumer drives motion. -->
 <!-- Generic over your target names, so `target('…')` autocompletes from `motion.targets`. -->
 <script setup lang="ts" generic="N extends string = string">
-import { FLING_SPRING } from '../../composables/springEasing'
+import { FLING_SPRING } from '../../motion/springEasing'
 import type { DialogCloseReason } from '../../composables/useDialog'
 import type { BeforeClose } from '../../motion/types'
 import './Dialog.css'

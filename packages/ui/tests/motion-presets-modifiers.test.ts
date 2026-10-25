@@ -5,8 +5,8 @@ import { render } from 'vitest-browser-vue'
 import { h, shallowRef, withDirectives } from 'vue'
 import type { DirectiveArguments } from 'vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
-import { SPRINGS, springEasing } from '../src/composables/springEasing'
-import { vAnimate } from '../src/directives/vAnimate'
+import { SPRINGS, springEasing } from '../src/motion/springEasing'
+import { vAnimate } from '../src/motion/vAnimate'
 
 afterEach(() => {
   document.body.innerHTML = ''
