@@ -112,9 +112,25 @@ export const routes: RouteRecordRaw[] = [
 
 // `history` is intentionally omitted — ViteSSG supplies createMemoryHistory()
 // during static generation and createWebHistory() on the client itself.
-const scrollBehavior: RouterScrollBehavior = (to) => {
+// A new page starts at its top, at once: Safari drops a smooth scroll (the page's
+// scroll-behavior) when the page swap changes the height under it.
+let pageEntering: (() => void) | undefined
+/** App.vue's page Transition calls this as the new page starts to come in. */
+export const pageEntered = () => pageEntering?.()
+const scrollBehavior: RouterScrollBehavior = (to, from) => {
   if (to.hash) return { el: to.hash, top: 88 }
-  return { top: 0 }
+  const top = { top: 0, behavior: 'instant' as ScrollBehavior }
+  // The same page component re-renders in place; another one swaps out first, then in.
+  if (to.name === from.name) return top
+  return new Promise((resolve) => {
+    const done = () => {
+      pageEntering = undefined
+      clearTimeout(fallback)
+      resolve(top)
+    }
+    const fallback = setTimeout(done, 600)
+    pageEntering = done
+  })
 }
 
 export const routerOptions = { routes, scrollBehavior }

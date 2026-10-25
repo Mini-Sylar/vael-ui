@@ -170,7 +170,7 @@
             <DitherBackground still />
           </div>
           <RouterView v-slot="{ Component }">
-            <Transition name="page" mode="out-in">
+            <Transition name="page" mode="out-in" @before-enter="pageEntered">
               <component :is="Component" />
             </Transition>
           </RouterView>
@@ -352,6 +352,7 @@ import DitherBackground from './components/DitherBackground.vue'
 import { MOTION_PRESETS, motionPresets, tunedStyle } from './motionPresets'
 import type { MotionPreset, MotionTune } from './motionPresets'
 import Sidebar from './components/Sidebar.vue'
+import { pageEntered } from './router'
 import SiteSearch from './components/SiteSearch.vue'
 import { siteSearchOpen } from './siteSearch'
 import { docsSettingsKey } from './docsSettings'
