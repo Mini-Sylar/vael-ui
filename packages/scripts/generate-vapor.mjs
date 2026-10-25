@@ -153,6 +153,8 @@ const NON_COMPONENT_EXPORTS_EXCLUDED = new Set([
   'vDraggableVapor',
   'vAnimate',
   'vAnimateVapor',
+  'vHoverIndicator',
+  'vHoverIndicatorVapor',
   'confirmAction',
 ])
 
@@ -263,6 +265,7 @@ const VAPOR_ALIASES = {
   vScrollMask: ['vScrollMaskVapor', 'directives/vScrollMask'],
   vDraggable: ['vDraggableVapor', 'directives/vDraggable'],
   vAnimate: ['vAnimateVapor', 'directives/vAnimate'],
+  vHoverIndicator: ['vHoverIndicatorVapor', 'directives/vHoverIndicator'],
   // See useSlotRelay.ts: a plain functional component forwarding a captured
   // slot renders as [object Object] under vaporInteropPlugin
   // (https://github.com/vuejs/core/issues/15596) — the vapor build needs the
@@ -430,6 +433,7 @@ function main() {
     `export { vScrollMaskVapor as vScrollMask } from '${relativeImportPath('directives/vScrollMask')}'`,
     `export { vDraggableVapor as vDraggable } from '${relativeImportPath('directives/vDraggable')}'`,
     `export { vAnimateVapor as vAnimate } from '${relativeImportPath('directives/vAnimate')}'`,
+    `export { vHoverIndicatorVapor as vHoverIndicator } from '${relativeImportPath('directives/vHoverIndicator')}'`,
     `export { confirmAction } from './composables/confirmAction'`,
     `export type { ConfirmActionHandle, ConfirmActionOptions } from './composables/confirmAction'`,
   )

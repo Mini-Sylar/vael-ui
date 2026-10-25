@@ -518,6 +518,8 @@ export { vDraggable, vDraggableVapor } from './directives/vDraggable'
 export { vAnimate, vAnimateVapor } from './directives/vAnimate'
 export type { DraggableOptions, DraggableValue } from './directives/vDraggable'
 export { vScrollMask, vScrollMaskVapor } from './directives/vScrollMask'
+export { vHoverIndicator, vHoverIndicatorVapor } from './directives/vHoverIndicator'
+export type { HoverIndicatorOptions, HoverIndicatorValue } from './directives/vHoverIndicator'
 export { vTooltip, vTooltipVapor, tooltipTargets, TOOLTIP_ATTR } from './directives/vTooltip'
 export type { TooltipDirectiveOptions, TooltipDirectiveValue } from './directives/vTooltip'
 export {
@@ -536,6 +538,7 @@ declare module 'vue' {
     vScrollMask: typeof import('./directives/vScrollMask').vScrollMask
     vDraggable: typeof import('./directives/vDraggable').vDraggable
     vAnimate: typeof import('./directives/vAnimate').vAnimate
+    vHoverIndicator: typeof import('./directives/vHoverIndicator').vHoverIndicator
   }
 }
 

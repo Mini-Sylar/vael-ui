@@ -103,12 +103,13 @@ const { mode, setMode } = useColorScheme({
       lang="typescript"
       code="// main.ts
 import { createApp } from 'vue'
-import { vTooltip, vScrollMask } from 'vael-ui'
+import { vTooltip, vScrollMask, vHoverIndicator } from 'vael-ui'
 import App from './App.vue'
 
 const app = createApp(App)
 app.directive('tooltip', vTooltip)
 app.directive('scroll-mask', vScrollMask)
+app.directive('hover-indicator', vHoverIndicator)
 app.mount('#app')"
     />
     <p v-html="t('gettingStarted.directivesNote')" />

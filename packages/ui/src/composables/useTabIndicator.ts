@@ -1,8 +1,16 @@
-import { inject, nextTick, onBeforeUnmount, onMounted, shallowRef, toValue, watch } from 'vue'
+import {
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  onScopeDispose,
+  shallowRef,
+  toValue,
+  watch,
+} from 'vue'
 import type { MaybeRefOrGetter, Ref, WatchSource } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import type { ElRef } from './dom'
-import { defaultsKey } from '../config'
+import { injectDefaults, isOutside } from '../config'
 import type { SpringHandle, SpringOptions } from './useSpringValue'
 import { DEFAULT_DAMPING, DEFAULT_RESPONSE } from './springStep'
 
@@ -84,7 +92,7 @@ export function useTabIndicator(
 ): UseTabIndicatorReturn {
   const style = shallowRef<Record<string, string | undefined>>({})
   const placed = shallowRef(false)
-  const provided = inject(defaultsKey, undefined)
+  const provided = injectDefaults()
   const mode = (): IndicatorMode =>
     toValue(options.indicator) ?? provided?.value.indicator ?? 'glide'
   // Unset, a ConfigProvider's `motion: false` turns it off too, springs included.
@@ -98,7 +106,9 @@ export function useTabIndicator(
   }
   // A spring set: its engine is fetched once mounted, long before anything moves (until then it
   // glides). Not in setup: a component may set this up before its own props exist.
-  onMounted(() =>
+  // Outside a component (a directive), its element is already in the page.
+  const whenMounted = (fn: () => void) => (isOutside() ? fn() : onMounted(fn))
+  whenMounted(() =>
     watch(
       () => lead() && [lead(), toValue(options.stretch)],
       // Arrived: measured once more, so its springs start where it rests and the next move glides.
@@ -431,12 +441,15 @@ export function useTabIndicator(
   }
 
   watch(active, () => nextTick(measure), { immediate: true, flush: 'post' })
-  // A new indicator element (a menu opened again) starts with no springs on it.
+  // A new indicator element (a menu reopened) starts with no springs; a getter, as Tabs passes no ref.
   if (options.indicatorEl)
-    watch(options.indicatorEl, () => {
-      dropSprings()
-      springKey = ''
-    })
+    watch(
+      () => options.indicatorEl!.value,
+      () => {
+        dropSprings()
+        springKey = ''
+      },
+    )
 
   if (typeof document !== 'undefined' && document.fonts) {
     document.fonts.ready.then(() => {
@@ -470,10 +483,12 @@ export function useTabIndicator(
     measure()
   })
 
-  onBeforeUnmount(() => {
+  const teardown = () => {
     if (frame) cancelAnimationFrame(frame)
     dropSprings()
-  })
+  }
+  if (isOutside()) onScopeDispose(teardown)
+  else onBeforeUnmount(teardown)
 
   return { style, update, placed }
 }

@@ -16,6 +16,22 @@
       block-size var(--ui-duration-indicator) var(--ui-ease-indicator),
       opacity var(--ui-duration-press) ease;
   }
+  /* A list v-hover-indicator follows: a positioned, isolated box for the highlight behind its
+     rows. Zero specificity, so a position of your own wins. */
+  :where(.ui-hover-list) {
+    position: relative;
+    isolation: isolate;
+  }
+  /* Over rows with a solid background: a see-through tint on top, which the pointer passes
+     through. Hidden while a SwipeToReveal row is swiped or open, so its actions show as they are. */
+  .ui-indicator--over {
+    z-index: 2;
+    background: var(--ui-indicator-over-bg, color-mix(in oklch, var(--ui-text) 6%, transparent));
+  }
+  .ui-hover-list:has(.ui-swipe-reveal[data-dragging], .ui-swipe-reveal[data-open-side])
+    > .ui-indicator--over {
+    opacity: 0;
+  }
   /* A row of buttons: sizes along the inline axis instead. */
   .ui-indicator--inline {
     transition:

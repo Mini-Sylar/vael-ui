@@ -47,7 +47,7 @@ for (const match of uiIndex.matchAll(
 
 const outPath = join(__dirname, '../ui/dist/vapor/index.d.ts')
 const lines = [
-  `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask, vDraggableVapor as vDraggable, vAnimateVapor as vAnimate } from '../index'`,
+  `export { ${componentNames.join(', ')}, vTooltipVapor as vTooltip, vScrollMaskVapor as vScrollMask, vDraggableVapor as vDraggable, vAnimateVapor as vAnimate, vHoverIndicatorVapor as vHoverIndicator } from '../index'`,
 ]
 if (componentExtraValueNames.length > 0) {
   lines.push(`export { ${componentExtraValueNames.join(', ')} } from '../index'`)
@@ -58,7 +58,7 @@ if (allTypeNames.length > 0)
 
 // Types only — safe to re-export from the sibling dist/index.d.ts (unlike the
 // runtime .js side, see generate-vapor.mjs, types aren't subject to the circular-reexport issue).
-const DIRECTIVE_ORIGINALS_EXCLUDED = new Set(['vTooltip', 'vScrollMask'])
+const DIRECTIVE_ORIGINALS_EXCLUDED = new Set(['vTooltip', 'vScrollMask', 'vHoverIndicator'])
 const composableValues = new Set()
 const composableTypes = new Set()
 for (const match of uiIndex.matchAll(/export\s+(type\s+)?\{([^}]+)\}\s+from\s+'([^']+)'/g)) {

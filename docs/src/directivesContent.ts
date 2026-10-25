@@ -214,6 +214,74 @@ export const directivesContent: Record<string, DirectiveContent> = {
       },
     ],
   },
+  vHoverIndicator: {
+    label: 'v-hover-indicator',
+    description:
+      "Gives your own list the hover highlight vael-ui's lists have: one highlight that slides to the row under the pointer, or to the row with keyboard focus, instead of each row changing color on its own. It adds the highlight element and the positioning itself. Touch doesn't move it, as with hover styles. It follows a ConfigProvider's `indicator` and `motion`, so a spring or `motion: false` applies here too. The highlight is the list's first child, so a `:first-child` rule for your rows needs `:first-of-type` or a class instead. The Vapor build exports its own version under the same name from `vael-ui/vapor`.",
+    installNames: ['vHoverIndicator'],
+    value: [
+      {
+        name: 'string',
+        type: 'string',
+        description:
+          "A CSS selector for the rows, such as `v-hover-indicator=\"'.row'\"`. Rows that are disabled don't get the highlight.",
+      },
+      {
+        name: 'itemSelector',
+        type: 'string',
+        description: 'The same selector, in the object form.',
+      },
+      {
+        name: 'over',
+        type: 'boolean',
+        description:
+          'Draws the highlight as a see-through tint over the rows instead of behind them, for rows with a solid background. Set the tint with `--ui-indicator-over-bg`. Same as the `.over` modifier.',
+      },
+      {
+        name: 'orientation',
+        type: "'vertical' | 'horizontal'",
+        description:
+          "`'horizontal'` for items side by side, such as a row of tabs. Default `'vertical'`.",
+      },
+      {
+        name: 'scope',
+        type: 'string',
+        description:
+          'A row counts only when its nearest match for this selector is the list itself, so a list nested inside another keeps its own rows.',
+      },
+      {
+        name: 'scroller',
+        type: 'boolean',
+        description:
+          "The list scrolls, and the highlight scrolls with its rows. Unset, it checks the list's own overflow.",
+      },
+      {
+        name: 'group',
+        type: 'string',
+        description:
+          'Lists with the same group hand the highlight over: moving the pointer from one to the next, it slides across instead of fading out and in.',
+      },
+      {
+        name: 'class',
+        type: 'string',
+        description:
+          'A class of your own on the highlight element. In a component with scoped styles, style it with `:deep(.your-class)`, since the directive creates the element.',
+      },
+      {
+        name: 'enabled',
+        type: 'boolean',
+        description:
+          '`false` hides the highlight and stops it following the pointer, such as while a row is being dragged. A value of `false` removes it instead.',
+      },
+    ],
+    modifiers: [
+      {
+        name: '.over',
+        type: '—',
+        description: 'Sets `over`.',
+      },
+    ],
+  },
   vDraggable: {
     label: 'v-draggable',
     description:

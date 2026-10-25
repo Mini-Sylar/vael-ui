@@ -20,6 +20,26 @@ export interface UiDefaults {
 /** @internal */
 export const defaultsKey: InjectionKey<ComputedRef<UiDefaults>> = Symbol('ui-defaults')
 
+// A directive sets up outside its component's setup, where `inject` and lifecycle hooks can't
+// reach the component: it reads the provider itself and runs the composables in `runOutside`.
+let outside: { defaults: ComputedRef<UiDefaults> | undefined } | undefined
+/** @internal The nearest provider's defaults, in a setup or in `runOutside`. */
+export function injectDefaults(): ComputedRef<UiDefaults> | undefined {
+  return outside ? outside.defaults : inject(defaultsKey, undefined)
+}
+/** @internal Whether this runs in `runOutside`, with no component's lifecycle to hook into. */
+export const isOutside = (): boolean => !!outside
+/** @internal Runs `fn` outside a component, with `defaults` as its provider's. */
+export function runOutside<T>(defaults: ComputedRef<UiDefaults> | undefined, fn: () => T): T {
+  const before = outside
+  outside = { defaults }
+  try {
+    return fn()
+  } finally {
+    outside = before
+  }
+}
+
 /** @internal `locale` if the browser's `Intl` accepts it, else `undefined` (the browser's own language). */
 export function validLocale(locale: string | undefined): string | undefined {
   if (!locale) return undefined

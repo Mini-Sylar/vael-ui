@@ -1,11 +1,11 @@
-import { inject, onScopeDispose, toValue, watch } from 'vue'
+import { onScopeDispose, toValue, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { MaybeRefOrGetter } from 'vue'
 import { useTabIndicator } from './useTabIndicator'
 import type { IndicatorMode, UseTabIndicatorReturn } from './useTabIndicator'
 import type { ElRef } from './dom'
 import { loadHoverHandoff } from './lazyParts'
-import { defaultsKey } from '../config'
+import { injectDefaults } from '../config'
 
 export interface UseHoverIndicatorOptions {
   /** The rows the indicator moves between, matched inside `listEl`. */
@@ -46,7 +46,7 @@ export function useHoverIndicator(
   listEl: ElRef<HTMLElement | null>,
   options: UseHoverIndicatorOptions,
 ): UseTabIndicatorReturn {
-  const provided = inject(defaultsKey, undefined)
+  const provided = injectDefaults()
   // Each instance marks with its own value, so a list nested inside another (a submenu, a table
   // in an expanded row) never measures the outer list's row, or the outer the inner's.
   const id = String(++instances)

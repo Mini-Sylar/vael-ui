@@ -146,3 +146,16 @@ test('useTabs keeps object items apart, matching each tab by position', async ()
   // Focus follows the selection to its own tab, not the first tab with the same string.
   await vi.waitFor(() => expect(document.activeElement?.textContent).toBe('c'))
 })
+
+test('mounting Tabs gives Vue no invalid watch source', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    await render(TabsFixture)
+    const invalid = warn.mock.calls.filter((args) =>
+      String(args[0]).includes('Invalid watch source'),
+    )
+    expect(invalid).toEqual([])
+  } finally {
+    warn.mockRestore()
+  }
+})
