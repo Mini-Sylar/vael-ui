@@ -1,5 +1,7 @@
 // The motion API contract (plans/008, plans/009 M0). Types only; the runtime implements them.
 import type { ComponentPublicInstance, CSSProperties, TransitionProps } from 'vue'
+import type { SpringName } from '../composables/springNames'
+import type { BuiltinPreset } from './presets'
 import type { IndicatorSpring, IndicatorStretch } from '../composables/useTabIndicator'
 
 // ─── Vocabulary ──────────────────────────────────────────────────────────────
@@ -7,8 +9,16 @@ import type { IndicatorSpring, IndicatorStretch } from '../composables/useTabInd
 /** A spring. `damping` 1 settles without overshoot, below 1 it bounces; `response` is roughly the seconds to arrive. */
 export type Spring = IndicatorSpring
 
-/** vael-ui's easing tokens. Any CSS easing string works too. */
+export type { SpringName }
+export type { BuiltinPreset }
+
+/** vael-ui's easing tokens, by name (`'out'`) or as the CSS variable. */
 export type UiEase =
+  | 'out'
+  | 'in-out'
+  | 'drawer'
+  | 'pop'
+  | 'text'
   | 'var(--ui-ease-out)'
   | 'var(--ui-ease-in-out)'
   | 'var(--ui-ease-drawer)'
@@ -18,8 +28,17 @@ export type UiEase =
   | 'var(--ui-ease-number)'
   | 'var(--ui-ease-text)'
 
-/** vael-ui's duration tokens. Any number of milliseconds works too. */
+/** vael-ui's duration tokens, by name (`'enter'`) or as the CSS variable. Any number of milliseconds works too. */
 export type UiDuration =
+  | 'press'
+  | 'enter'
+  | 'exit'
+  | 'drawer'
+  | 'drawer-exit'
+  | 'tooltip'
+  | 'tooltip-exit'
+  | 'toast'
+  | 'toast-exit'
   | 'var(--ui-duration-press)'
   | 'var(--ui-duration-enter)'
   | 'var(--ui-duration-exit)'
@@ -36,8 +55,11 @@ type PickOne = 'use spring, or duration with easing, not both'
 /** A spring, or a duration with an easing; never both. */
 export type MotionTiming =
   | {
-      /** A spring: `damping` below 1 overshoots, `response` is roughly its length in seconds. */
-      spring?: Spring
+      /**
+       * A spring by name (`'snappy'`, `'smooth'`, `'bouncy'`, `'gentle'`), or its numbers: `damping`
+       * below 1 overshoots, `response` is roughly its length in seconds.
+       */
+      spring?: Spring | SpringName
       duration?: PickOne
       easing?: PickOne
     }
@@ -45,7 +67,7 @@ export type MotionTiming =
       spring?: PickOne
       /** Milliseconds, or a `--ui-duration-*` token. */
       duration?: number | UiDuration
-      /** A CSS easing, or a `--ui-ease-*` token. */
+      /** A CSS easing, or a token by name (`'out'`, `'pop'`). */
       easing?: UiEase | (string & {})
     }
 
@@ -68,8 +90,8 @@ export type TimedValue<V> = (
   | {
       spring?: PickOne
       duration?: number | UiDuration
-      /** Keyframes: one easing per step between them, such as a rise, then a bounce. */
-      easing: (UiEase | (string & {}))[]
+      /** Keyframes: one easing per step between them, such as a quick rise, then `'bouncy'` to settle. A step takes CSS, a token by name or a spring. */
+      easing: (UiEase | SpringName | Spring | (string & {}))[]
     }
 ) & {
   value: V | V[]
@@ -193,6 +215,16 @@ export type MotionStep<N extends string = string> = MotionTiming & {
   delay?: number
 }
 
+/** Where a stagger's wave starts, other than the first element. */
+export type StaggerFrom = 'end' | 'center' | 'edges'
+
+/**
+ * Elements one after another: `true` spaces them by the stagger token (40ms) in page order;
+ * `'end'`, `'center'` or `'edges'` start the wave there instead. A number is the seconds between
+ * them; a function gives each its own start: `(index, count) => seconds`.
+ */
+export type Stagger = boolean | StaggerFrom | number | ((index: number, count: number) => number)
+
 export type TargetMotion<N extends string = string> = MotionTiming & {
   /** Where it comes in from. A function receives `where`: a swap's direction, its index. */
   initial?: MotionValues | ((where: MotionWhere) => MotionValues)
@@ -201,11 +233,8 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
    * way it came, quieter and quicker; `false` leaves at once.
    */
   exit?: MotionValues | ((where: MotionWhere) => MotionValues) | false
-  /**
-   * Seconds between the elements under this name. A function gives each its own start, in seconds
-   * after the first: `(index, count) => …`, such as outward from the centre of a grid.
-   */
-  stagger?: number | ((index: number, count: number) => number)
+  /** The elements under this name one after another, in page order (see `Stagger`). */
+  stagger?: Stagger
   /** After this moment, or after all of these. Unset: with the component. */
   after?: MotionMoment<N> | MotionMoment<N>[]
   delay?: number
@@ -347,7 +376,8 @@ type OverlayMotion = {
   resize?: boolean
 }
 type ListMotion = {
-  stagger?: number
+  /** New items one after another (see `Stagger`). @default 0.03 */
+  stagger?: Stagger
   /** Leaving items: `'pop'` (default) closes the gap at once, `'hold'` keeps it until they're gone. */
   leaving?: 'pop' | 'hold'
   /** Also enters the items already there when the list mounts, such as each time a palette opens. Hydration never plays it. @default false */
@@ -405,6 +435,8 @@ export type ComponentMotion<S extends MotionSpec, N extends string = string> =
 
 /** What a component that's always on the page has: its appearance, played again. */
 type ReplayMotion = {
+  /** A repeated part's elements (Rating's stars, Progress's segments) come in one after another. */
+  stagger?: Stagger
   /** Plays its `initial` again whenever this value changes, without remounting: a burst on a pick. */
   replay?: unknown
   /** `false`: its `initial` doesn't play when it mounts, only on `replay`. @default true */
@@ -631,7 +663,7 @@ export type SeparatorMotion = ComponentMotion<{ parts: SeparatorPart }>
 // ─── Every other component: appearance (`initial`), states, and its kind ───
 
 /** Parts that repeat (stars, rows, steps) appear one after another, this many seconds apart. */
-type Staggered = { stagger?: number }
+type Staggered = { stagger?: Stagger }
 type WithStagger<M> = M extends boolean ? M : M & Staggered
 
 /** AnimatedNumber's parts, by their `ui` names: the elements its `motion` can animate. */
@@ -947,7 +979,8 @@ type RoleValues = MotionTiming & { initial?: MotionValues; exit?: MotionValues }
 export interface MotionStyle {
   /** Schema version, so a style outlives releases. */
   version: 1
-  spring?: Spring
+  /** Every component's spring inside: a name (`'bouncy'`) or `{ damping, response }`. */
+  spring?: Spring | SpringName
   /** Your animation library behind vael-ui's values, for components inside. Code only, never data. */
   engine?: MotionEngine
   filters?: Record<string, MotionFilter>
@@ -958,7 +991,11 @@ export interface MotionStyle {
     swap?: 'sync' | 'wait'
     resize?: boolean
   }
-  list?: RoleValues & { stagger?: number; leaving?: 'pop' | 'hold'; appear?: boolean }
+  list?: RoleValues & {
+    stagger?: number | boolean | StaggerFrom
+    leaving?: 'pop' | 'hold'
+    appear?: boolean
+  }
   reveal?: RoleValues
   press?: MotionTiming & { active?: MotionValues; hover?: MotionValues }
   content?: TargetMotion
@@ -1066,8 +1103,27 @@ export interface UseMotionReturn<N extends string = string> {
 }
 
 /** `v-animate:name="value"`: a preset name or values. */
+/**
+ * Your own `v-animate` presets by name, so they autocomplete and work as modifiers
+ * (`v-animate.wiggle`). Add them where you declare your app's types:
+ * `declare module 'vael-ui' { interface MotionPresets { wiggle: true } }`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- filled in by your app
+export interface MotionPresets {}
+
+/** A preset by name: a built-in entrance (`fade`, `rise`, `drop`, `pop`, `blur`) or one of yours. */
+export type PresetName = BuiltinPreset | keyof MotionPresets
+
+/** `v-animate`'s `states`: a look per state, held while it's on. */
+export type AnimateStates = Partial<Record<'hover' | 'active' | 'focus', MotionValues>>
+
+/** What `v-animate`'s modifiers pick: an entrance, a spring, `stagger`, or `size`. */
+export type AnimateModifier = PresetName | SpringName | 'stagger' | 'size'
+
 export type AnimateDirectiveValue =
-  | string
+  // Until you list your presets in MotionPresets, any name is accepted (and checked as it plays).
+  | PresetName
+  | ([keyof MotionPresets] extends [never] ? string & {} : never)
   | (TargetMotion & {
       /**
        * A look it holds while bound, moving to each new one as it changes, from wherever it is on
@@ -1075,8 +1131,17 @@ export type AnimateDirectiveValue =
        * loop with `repeat`.
        */
       animate?: MotionValues
-      /** `false`: no entrance when it mounts; `replay` and its exit still play. @default true */
-      appear?: boolean
+      /**
+       * `false`: no entrance when it mounts; `replay` and its exit still play. `'later'`: no
+       * entrance for what's there when its component first renders, but one for anything mounted
+       * after, such as a row added to a list. @default true
+       */
+      appear?: boolean | 'later'
+      /**
+       * Looks it holds while hovered (a mouse), pressed (`active`: pointer, Space or Enter) or
+       * focused, as a component's `states`: `{ hover: { scale: 1.03 }, active: { scale: 0.97 } }`.
+       */
+      states?: AnimateStates
       /**
        * With keyframe arrays in `animate`: holds them at this point, from 0 to 1, instead of
        * playing them, so a swipe or a scroll scrubs them: `progress: swipe.progress`. With a

@@ -2,7 +2,8 @@
 // on. Never writes `transition`, so the component's own transitions keep working underneath.
 // Loaded only when a component's states are customised (useStateMotion), with the listeners for
 // hover, press and focus.
-import { onScopeDispose, shallowReactive, watch } from 'vue'
+import { cssDuration, cssEasing } from './ease'
+import { effectScope, onScopeDispose, shallowReactive, watch } from 'vue'
 import { prefersReducedMotion } from '../composables/dom'
 import { easingOf, resolveTiming, track } from './timing'
 import { springEasing } from '../composables/springEasing'
@@ -37,6 +38,11 @@ export interface StateFrame {
 type SequenceTiming = { times?: number[]; repeat?: number; repeatType?: 'loop' | 'reverse' }
 
 const cssName = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
+
+// Two states' keyframes, alike but for their durations.
+const withoutDurations = (plays: string) => plays.replace(/"duration":[^,}\]]+/g, '')
+const sameButDuration = (a: string | undefined, b: string) =>
+  a !== undefined && withoutDurations(a) === withoutDurations(b)
 
 function split(
   raw: unknown,
@@ -120,6 +126,7 @@ export function createStatePlayer() {
 
   // Keyframes repeating forever, by state: they stop, easing home, when the state turns off.
   const loops = new Map<string, Animation[]>()
+  const played = new Map<string, string>()
 
   function once(el: HTMLElement, values: MotionValues, frame: StateFrame, state: string) {
     const rtl = getComputedStyle(el).direction === 'rtl'
@@ -148,6 +155,33 @@ export function createStatePlayer() {
       else void track(run.finished.catch(() => {}))
     }
   }
+  /**
+   * A looping state whose durations changed, nothing else: each loop plays at its new pace from
+   * where it is (a tremble that quickens as a hold fills). False when the loops don't line up.
+   */
+  function retime(state: string, byPart: PartValues<string>, frame: StateFrame, reduced: boolean) {
+    const runs = loops.get(state)
+    if (!runs?.length) return false
+    const paces: number[] = []
+    for (const [part, raw] of Object.entries(byPart)) {
+      const el = frame.parts[part]
+      if (!(el instanceof HTMLElement || el instanceof SVGElement)) continue
+      for (const group of groupValues(split(raw, reduced, frame.where).once)) {
+        const own = (group.timing ?? frame.timing) as MotionTiming & SequenceTiming
+        if (own.repeat !== Infinity) continue
+        const given = own.duration !== undefined
+        const { duration } = resolveTiming(el, own, frame.spring)
+        paces.push(given ? duration : Math.min(duration, ONCE_CAP))
+      }
+    }
+    if (paces.length !== runs.length) return false
+    runs.forEach((run, i) => {
+      const base = Number(run.effect?.getTiming().duration) || paces[i]!
+      run.updatePlaybackRate(base / paces[i]!)
+    })
+    return true
+  }
+
   /** A state that turned off: its endless keyframes ease back to the element's own look. */
   function stopLoops(state: string) {
     for (const run of loops.get(state) ?? []) {
@@ -171,6 +205,22 @@ export function createStatePlayer() {
     update(frame: StateFrame) {
       const reduced = prefersReducedMotion()
       const again = new Set(frame.again ?? [])
+      // What each state plays, by value: changed while it's on, it plays the new one.
+      for (const [state, byPart] of Object.entries(frame.spec)) {
+        const plays = JSON.stringify(
+          Object.entries(byPart).map(([part, raw]) => [
+            part,
+            split(raw, reduced, frame.where).once,
+          ]),
+          (_, v) => (v === Infinity ? 'Infinity' : v),
+        )
+        const was = played.get(state)
+        if (frame.flags[state] && before[state] && was !== plays)
+          // Only a loop's duration changed: it speeds up or slows down where it is.
+          if (!(sameButDuration(was, plays) && retime(state, byPart, frame, reduced)))
+            again.add(state)
+        played.set(state, plays)
+      }
       const entered = new Set(
         Object.keys(frame.spec).filter(
           (state) => frame.flags[state] && (!before[state] || again.has(state)),
@@ -332,8 +382,10 @@ export function startStates(ctx: StatesContext): void {
   // On the main part.
   const pointer = shallowReactive<Pointer>({ hover: false, active: false, focus: false })
   let unlisten: (() => void) | undefined
+  // Each source compared on its own: a rebuilt motion with the same states keeps its listeners,
+  // and a press in progress isn't forgotten.
   watch(
-    () => [ctx.parts()[ctx.mainPart], wantedIn(ctx.spec())] as const,
+    [() => ctx.parts()[ctx.mainPart], () => wantedIn(ctx.spec())],
     ([el, wanted]) => {
       unlisten?.()
       unlisten = el && wanted ? pointerOn(el, new Set(wanted.split(',')), pointer) : undefined
@@ -419,6 +471,30 @@ export function startStates(ctx: StatesContext): void {
   })
 }
 
+/** @internal v-animate's `states` on its own element: hover, press and focus, as a component's. */
+export function holdElementStates(
+  el: Element,
+  states: () => Partial<Record<string, MotionValues>> | undefined,
+  timing: () => MotionTiming,
+  spring: () => Spring | undefined,
+): () => void {
+  const scope = effectScope(true)
+  scope.run(() =>
+    startStates({
+      mainPart: 'root',
+      parts: () => ({ root: el }),
+      states: () => ({}),
+      spec: () =>
+        Object.fromEntries(
+          Object.entries(states() ?? {}).map(([state, values]) => [state, { root: values }]),
+        ),
+      timing,
+      spring,
+    }),
+  )
+  return () => scope.stop()
+}
+
 const DURATION_TOKENS = [
   '--ui-duration-press',
   '--ui-duration-enter',
@@ -437,14 +513,15 @@ const EASE_TOKENS = [
 export function putTimingTokens(el: HTMLElement | SVGElement, timing: MotionTiming): string[] {
   let duration: string | undefined
   let easing: string | undefined
-  if (timing.spring && typeof timing.spring === 'object') {
+  if (timing.spring) {
     const curve = springEasing(timing.spring as never)
     duration = `${Math.round(curve.duration)}ms`
     easing = curve.easing
   } else {
     const raw = timing.duration
-    if (raw !== undefined) duration = typeof raw === 'number' ? `${raw}ms` : String(raw)
-    if (timing.easing) easing = String(timing.easing)
+    if (raw !== undefined)
+      duration = typeof raw === 'number' ? `${raw}ms` : cssDuration(String(raw))
+    if (timing.easing) easing = cssEasing(String(timing.easing))
   }
   const set: string[] = []
   const put = (names: string[], value: string | undefined) => {

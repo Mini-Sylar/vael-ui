@@ -34,6 +34,7 @@ const PER_BUILD_MODULES = new Set([
   'composables/indicatorStretch',
   'composables/dateText',
   'composables/useFormReset',
+  'composables/springNames',
   'composables/useEasedHeight',
   'composables/useFold',
   'composables/tourGlide',

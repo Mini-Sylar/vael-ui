@@ -1,5 +1,6 @@
 // morph: a component grows from another element's box and back into it. Loaded only by
 // components that set `morph`: translate plus clip-path, played by the CSS engine.
+import { springOf } from '../composables/springNames'
 import type { MotionTiming, MotionValues, Spring } from './types'
 
 // The clip rests just outside the box, so the panel's shadow shows (inset() can't interpolate to
@@ -12,7 +13,7 @@ export const MORPH_IN: MotionTiming = {
 /** A close never bounces and is quicker: your spring, critically damped, at 0.65 of its response. */
 export const closing = (t: MotionTiming): MotionTiming =>
   t.spring
-    ? { spring: { damping: 1, response: ((t.spring as Spring).response ?? 0.32) * 0.65 } }
+    ? { spring: { damping: 1, response: (springOf(t.spring as Spring).response ?? 0.32) * 0.65 } }
     : t
 
 export const MORPH_OUT: MotionTiming = {

@@ -1,5 +1,6 @@
 // Appearances with no component playing them (`v-animate` on its own, a component's `initial`):
 // those that mount together play in page order, up to a budget, and only where they're seen.
+import { motionSpringAt } from './styleHolder'
 import { staggerAt, valuesAt } from './playable'
 import type { MotionTiming, MotionValues, TargetMotion } from './types'
 import { appear } from './useComponentMotion'
@@ -51,12 +52,23 @@ export const scrolling = () => performance.now() - scrolledAt < 150
 // No component around it: it plays its own appearance. Those that mount together under one name
 // stagger in page order (`stagger`, `delay`).
 const batch = new Map<string, { el: HTMLElement; value: TargetMotion; again: boolean }[]>()
+const byPage = (a: { el: Element }, b: { el: Element }) =>
+  a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
+
 function flush() {
+  // `after` or `steps` in this batch: it plays as one timeline, names waiting on names.
+  const timeline = [...batch.values()].some((items) =>
+    items.some(({ value, again }) => !again && (value.after !== undefined || value.steps)),
+  )
+  if (timeline) {
+    const groups = [...batch.entries()]
+    batch.clear()
+    void playTimeline(groups)
+    return
+  }
   let played = 0
   for (const items of batch.values()) {
-    items.sort((a, b) =>
-      a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
-    )
+    items.sort(byPage)
     let i = -1
     items.forEach(({ el, value, again }) => {
       const later = value.when === 'visible'
@@ -69,12 +81,45 @@ function flush() {
       if (!initial || !Object.keys(initial).length) return
       played++
       i++
-      const delay = ((value.delay ?? 0) + staggerAt(value.stagger, i, items.length)) * 1000
+      const delay = ((value.delay ?? 0) + staggerAt(value.stagger, i, items.length, el)) * 1000
       const until = later ? inView(el) : undefined
-      void appear(el, initial, value, undefined, delay, again, until)
+      void appear(el, initial, value, motionSpringAt(el), delay, again, until)
     })
   }
   batch.clear()
+}
+
+/**
+ * The elements that mounted together, as one timeline: each name a target, an unnamed element its
+ * own, `after` and `steps` honoured. Hidden at their start until the runtime that plays it arrives.
+ */
+async function playTimeline(groups: [string, { el: HTMLElement; value: TargetMotion }[]][]) {
+  const all = groups.flatMap(([, items]) => items)
+  const hidden = all.map(({ el }) =>
+    el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: 'forwards' }),
+  )
+  const { runTargets } = await import('./schedule')
+  let alone = 0
+  const targets = groups.flatMap(([name, items]) => {
+    items.sort(byPage)
+    return name
+      ? [
+          {
+            name,
+            els: items.map((i) => i.el),
+            motion: items[0]!.value,
+            each: items.map((i) => i.value),
+          },
+        ]
+      : items.map((i) => ({ name: `#${alone++}`, els: [i.el], motion: i.value }))
+  })
+  const playing = runTargets(targets, new Map(), {
+    spring: motionSpringAt(all[0]!.el),
+    signal: new AbortController().signal,
+  })
+  // Held at their start by now: the stand-in comes off.
+  for (const run of hidden) run.cancel()
+  await playing
 }
 
 /**
@@ -101,7 +146,7 @@ export function appearParts(
   /** A `replay`: it plays again, though it's been brought in. */
   again = false,
 ) {
-  const mine = (own ?? {}) as { initial?: object; stagger?: number; when?: string }
+  const mine = (own ?? {}) as { initial?: object; stagger?: TargetMotion['stagger']; when?: string }
   const initial = { ...(keyStyle?.initial as object), ...mine.initial } as Record<
     string,
     MotionValues

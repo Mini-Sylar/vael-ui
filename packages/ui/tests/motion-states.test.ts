@@ -325,7 +325,8 @@ test('a button presses by pointer and by keyboard, and hovers only for a mouse',
   const button = () => document.querySelector<HTMLElement>('.ui-button')!
   const label = () => document.querySelector<HTMLElement>('.ui-button-label')!
   await vi.waitFor(() => expect(button()).not.toBeNull())
-  await frame()
+  // The player loads on mount; a press before it arrives shows the built-in look.
+  await new Promise((r) => setTimeout(r, 300))
   const pointer = (type: string, pointerType = 'mouse') =>
     button().dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerType }))
 
@@ -488,4 +489,68 @@ test('Dock: picking an item plays its selected keyframes, again on the same item
   await vi.waitFor(() =>
     expect(states(items()[1]!).some((a) => a.playState === 'running')).toBe(true),
   )
+})
+
+test('a motion rebuilt on every frame with the same values keeps its looping state running', async () => {
+  const tick = shallowRef(0)
+  const motion = (): ButtonMotion => {
+    void tick.value
+    return {
+      states: {
+        active: {
+          root: {
+            x: { value: [0, 2, 0], duration: 60, easing: 'linear', repeat: Infinity, delay: 0.1 },
+          },
+        },
+      },
+    }
+  }
+  render(() => h(Button as never, { motion: motion() }, () => 'Hold'))
+  const button = () => document.querySelector<HTMLElement>('.ui-button')!
+  await vi.waitFor(() => expect(button()).toBeTruthy())
+  await new Promise((r) => setTimeout(r, 300))
+  button().dispatchEvent(
+    new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }),
+  )
+  // A new but identical motion each frame, as a computed reading a live value makes.
+  const moved: number[] = []
+  for (let i = 0; i < 30; i++) {
+    tick.value++
+    await frame()
+    moved.push(Math.abs(parseFloat(getComputedStyle(button()).translate) || 0))
+  }
+  window.dispatchEvent(new PointerEvent('pointerup', { button: 0 }))
+  expect(Math.max(...moved)).toBeGreaterThan(0.5)
+})
+
+test('what a state plays can change while it is on: a loop that starts mid-press plays, and stops when taken away', async () => {
+  const progress = shallowRef(0)
+  const loop = { x: { value: [0, 2, 0], duration: 60, easing: 'linear', repeat: Infinity } }
+  const motion = (): ButtonMotion => ({
+    states: { active: progress.value >= 0.6 && progress.value < 1 ? { root: loop } : {} },
+  })
+  render(() => h(Button as never, { motion: motion() }, () => 'Hold'))
+  const button = () => document.querySelector<HTMLElement>('.ui-button')!
+  await vi.waitFor(() => expect(button()).toBeTruthy())
+  await new Promise((r) => setTimeout(r, 300))
+  button().dispatchEvent(
+    new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }),
+  )
+  const sample = async (frames: number) => {
+    const out: number[] = []
+    for (let i = 0; i < frames; i++) {
+      progress.value = Math.min(1, progress.value + 0.02)
+      await frame()
+      out.push(Math.abs(parseFloat(getComputedStyle(button()).translate) || 0))
+    }
+    return out
+  }
+  // 0 to 0.5: still; 0.6 to 0.98: trembling; at 1, home again.
+  const before = await sample(25)
+  const during = await sample(20)
+  const after = await sample(20)
+  window.dispatchEvent(new PointerEvent('pointerup', { button: 0 }))
+  expect(Math.max(...before)).toBe(0)
+  expect(Math.max(...during)).toBeGreaterThan(0.5)
+  expect(after.at(-1)).toBe(0)
 })

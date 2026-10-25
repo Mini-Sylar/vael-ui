@@ -101,6 +101,12 @@ export function arriveLayout(
 const LAYOUT_ID = 'ui-layout'
 
 /** From `from` to where it is (`to`), as a transform that ends at none. */
+// Its `delay` (seconds), held where it was until then.
+const delayOf = (timing: MotionTiming) => {
+  const delay = (timing as { delay?: number }).delay
+  return delay ? { delay: delay * 1000, fill: 'backwards' as const } : {}
+}
+
 function slide(el: Element, from: DOMRect, to: DOMRect, timing: MotionTiming) {
   // A scaled ancestor scales the translate too: the gap on screen, in its own pixels.
   // offsetWidth rounds, so only a real scale (over 2%) counts.
@@ -126,7 +132,7 @@ function slide(el: Element, from: DOMRect, to: DOMRect, timing: MotionTiming) {
       { transformOrigin: '0 0', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
       { transformOrigin: '0 0', transform: 'none' },
     ],
-    { id: LAYOUT_ID, duration, easing },
+    { id: LAYOUT_ID, duration, easing, ...delayOf(timing) },
   )
   void track(run.finished.catch(() => {}))
 }
@@ -194,6 +200,7 @@ function slideBy(el: Element, offset: Point, timing: MotionTiming) {
     duration,
     easing,
     composite: 'add',
+    ...delayOf(timing),
   })
   offsets.set(run, offset)
   void track(run.finished.catch(() => {}))

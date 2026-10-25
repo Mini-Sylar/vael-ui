@@ -141,6 +141,7 @@ import { useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { ToasterMotion } from '../../motion/types'
 import { loadToastStates, loadToastSwipe } from '../../composables/lazyParts'
+import { springOf } from '../../composables/springNames'
 
 defineOptions({ inheritAttrs: false })
 
@@ -279,7 +280,7 @@ watch(
   async (key) => {
     if (!key) return
     toastStates ??= (await loadToastStates()).createToastStates()
-    toastStates.sync(rendered.value, cardEls, ownMotion()!, style?.value?.spring)
+    toastStates.sync(rendered.value, cardEls, ownMotion()!, springOf(style?.value?.spring))
   },
   { flush: 'post' },
 )

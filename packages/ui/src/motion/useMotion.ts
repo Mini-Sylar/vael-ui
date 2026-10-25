@@ -2,7 +2,14 @@
 import { computed, onMounted, onScopeDispose, shallowReactive } from 'vue'
 import type { TransitionProps } from 'vue'
 import { PRESENCE_ATTR, refElement } from './presence'
-import type { MotionRole, MotionStyle, MotionValues, OwnMotion, UseMotionReturn } from './types'
+import type {
+  MotionRole,
+  MotionStyle,
+  MotionValues,
+  OwnMotion,
+  UseMotionReturn,
+  Stagger,
+} from './types'
 import { useMotionStyle } from './context'
 import { PRESENCE_ID } from './ids'
 import type { ListMotion } from './list'
@@ -137,7 +144,7 @@ function useListMotion<N extends string>(
       [part]: (typeof as.look === 'function' ? as.look() : as.look) ?? LIST_DEFAULT,
     }),
   })
-  type ListOptions = { stagger?: number; leaving?: 'pop' | 'hold'; appear?: boolean }
+  type ListOptions = { stagger?: Stagger; leaving?: 'pop' | 'hold'; appear?: boolean }
   const own = () => (motion?.() ?? {}) as ListOptions
   const role = () => (style?.value?.list ?? {}) as ListOptions
   // The list engine loads on demand, from setup, so it's here long before the list first changes.

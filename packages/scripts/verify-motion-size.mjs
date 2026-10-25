@@ -59,13 +59,19 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // the cursor leaves the element's resting box, instead of flickering on and off. Measured 5228 B.
 // runtime 5.8 → 6.2 KB (2026-10-23): an engine (GSAP, motion) reversed mid-way carries on from
 // what's on screen, on the same element or on a part Vue replaced as it reopened. Measured 6262 B.
+// up front 7.3 → 7.65 KB, runtime 6.2 → 6.35 KB, states 5.2 → 5.8 KB, morph 1.5 → 1.55 KB, linked
+// 2.7 → 2.75 KB (2026-10-24): springs by name wherever a spring goes (a keyframe step included),
+// tokens by name, built-in entrances and modifiers on v-animate, stagger words, `states` on
+// v-animate, `appear: 'later'`, `after` and `steps` among elements that appear together, a delay
+// before layout slides, and loops that change speed in place. The names live apart from the spring
+// compiler, so a Button pays ~90 B. Measured 7798, 6458, 5906, 1563 and 2795 B.
 const BUDGET = {
-  upFront: 7.3 * 1024,
-  runtime: 6.2 * 1024,
-  morph: 1.5 * 1024,
+  upFront: 7.65 * 1024,
+  runtime: 6.35 * 1024,
+  morph: 1.55 * 1024,
   button: 1.2 * 1024,
-  states: 5.2 * 1024,
-  linked: 2.7 * 1024,
+  states: 5.8 * 1024,
+  linked: 2.75 * 1024,
 }
 
 // Every chunk a file pulls in statically.
@@ -79,7 +85,7 @@ function closure(file, seen = new Set()) {
 // Compressed together, as an app's bundle ships them (per-file gzip overcounts small chunks).
 const gz = (files) => gzipSync(Buffer.concat([...files].map((f) => readFileSync(f)))).length
 const isMotion = (f) =>
-  /[\\/]motion[\\/]|(?:^|[\\/])(?:ids|presence|runner|linked|css|engine|schedule|warn|size|list|playable|targets|values|useComponentMotion|useStateMotion|states|context|morph|springEasing|springStep)[-.]/.test(
+  /[\\/]motion[\\/]|(?:^|[\\/])(?:ids|presence|runner|linked|css|engine|schedule|warn|size|list|playable|targets|values|useComponentMotion|useStateMotion|states|context|morph|springEasing|springStep|ease)[-.]/.test(
     f,
   )
 const chunk = (name) => readdirSync(dist).find((f) => new RegExp(`^${name}-.*\\.js$`).test(f))

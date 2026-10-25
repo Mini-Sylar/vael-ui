@@ -73,6 +73,7 @@ import { useMotionStyle } from '../../motion/context'
 import { useSpringValue } from '../../composables/useSpringValue'
 import { prefersReducedMotion } from '../../composables/dom'
 import type { Spring, SwipeToRevealMotion } from '../../motion/types'
+import { springOf } from '../../composables/springNames'
 
 defineOptions({ inheritAttrs: false })
 
@@ -209,7 +210,7 @@ const {
   set: glide,
   jump,
 } = useSpringValue(offset.value, {
-  ...(own ?? style?.value?.spring ?? DEFAULT_SPRING),
+  ...springOf(own ?? style?.value?.spring ?? DEFAULT_SPRING),
   epsilon: 0.1,
 })
 watch(

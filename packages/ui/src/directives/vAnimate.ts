@@ -1,8 +1,14 @@
 // v-animate:name="value": marks an element for the nearest component's motion, from the template.
 import '../components/shared/appear.css'
 import * as vue from 'vue'
-import { inject, isVNode, onScopeDispose, watchPostEffect } from 'vue'
-import type { ComponentInternalInstance, DirectiveBinding, ObjectDirective, VNode } from 'vue'
+import { inject, isVNode, onScopeDispose, shallowRef, watchPostEffect } from 'vue'
+import type {
+  ComponentInternalInstance,
+  DirectiveBinding,
+  ObjectDirective,
+  ShallowRef,
+  VNode,
+} from 'vue'
 import { findPresence } from '../motion/presence'
 import {
   arriveLayout,
@@ -22,17 +28,22 @@ import { valuesAt } from '../motion/playable'
 import { queueAppearance, scrolling, seen, unwatchView } from '../motion/appearance'
 import type {
   AnimateDirectiveValue,
+  AnimateModifier,
+  AnimateStates,
   MotionStyle,
   MotionTiming,
   MotionValues,
   TargetMotion,
 } from '../motion/types'
 import { motionWarn } from '../motion/warn'
-import { holdAround, motionOffAt, motionStyleAt } from '../motion/styleHolder'
+import { holdAround, motionOffAt, motionSpringAt, motionStyleAt } from '../motion/styleHolder'
 import { motionStyleKey } from '../motion/context'
 import { defaultsKey } from '../config'
 import { toKeyframe } from '../motion/values'
 import { loadAnimateTarget } from '../composables/lazyParts'
+import { SPRINGS } from '../composables/springNames'
+import type { SpringName } from '../composables/springNames'
+import { BUILTIN_PRESETS } from '../motion/presets'
 
 type Marked = HTMLElement & {
   _uiAnimateLeave?: () => void
@@ -45,6 +56,28 @@ type Marked = HTMLElement & {
   _uiTargetKey?: string
   /** What the look written at mount covered, put back once its player holds it. */
   _uiShown?: [string, string][]
+  /** Mounted with its component's first render: `appear: 'later'` skips its entrance. */
+  _uiFirstRender?: boolean
+  /** `states`: what it holds while hovered, pressed or focused, and how to stop listening. */
+  _uiStates?: ShallowRef<AnimateStates | undefined>
+  _uiStatesStop?: () => void
+}
+
+/** `states`: hover, press and focus on this element, played as a component's (loaded when used). */
+function followStates(el: Marked, value: AnimateDirectiveValue | undefined) {
+  const states = typeof value === 'object' ? value.states : undefined
+  if (el._uiStates) el._uiStates.value = states
+  if (!states || el._uiStates) return
+  const held = (el._uiStates = shallowRef(states))
+  void import('../motion/states').then((module) => {
+    if (!el.isConnected || el._uiStates !== held) return
+    el._uiStatesStop = module.holdElementStates(
+      el,
+      () => held.value,
+      () => timingOf(el._uiAnimateValue) ?? {},
+      () => motionSpringAt(el),
+    )
+  })
 }
 
 /** `animate`: the look it holds, moving to each new one as it changes (from the states player). */
@@ -82,7 +115,7 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined) {
     if (el._uiTargetKey !== key) return
     el._uiTarget ??= module.holdTarget(el)
     const off = motionOffAt(el)
-    el._uiTarget.update(animate, timingOf(value) ?? {}, motionStyleAt(el)?.spring, changed, off)
+    el._uiTarget.update(animate, timingOf(value) ?? {}, motionSpringAt(el), changed, off)
     putBack(el)
   })
 }
@@ -124,7 +157,8 @@ function appearAlone(
     }
     value = preset
   }
-  if (!value?.initial || value.appear === false) return
+  if (!value?.initial || value.appear === false || (value.appear === 'later' && el._uiFirstRender))
+    return
   queueAppearance(el, name, value)
 }
 
@@ -138,10 +172,72 @@ const EXIT: MotionTiming = { duration: 'var(--ui-duration-exit)', easing: 'var(-
 const ownTiming = (t: TargetMotion) =>
   t.spring !== undefined || t.duration !== undefined || t.easing !== undefined
 
-// A preset on its own: the nearest ConfigProvider style's.
-function presetAround(el: Element, name: string): TargetMotion | undefined {
-  return motionStyleAt(el)?.presets?.[name]
+// A preset by name: the nearest ConfigProvider style's, else a built-in one.
+function presetAround(el: Element | undefined, name: string): TargetMotion | undefined {
+  return (
+    (el && motionStyleAt(el)?.presets?.[name]) ??
+    (BUILTIN_PRESETS as Record<string, TargetMotion>)[name]
+  )
 }
+
+const timedBy = (t: TargetMotion | undefined) =>
+  !!t && (t.spring !== undefined || t.duration !== undefined || t.easing !== undefined)
+const timingKeys = (t: TargetMotion | undefined): MotionTiming =>
+  !t
+    ? {}
+    : t.spring !== undefined
+      ? { spring: t.spring }
+      : ({ duration: t.duration, easing: t.easing } as MotionTiming)
+// Two looks of one phase: the value's values over the preset's (functions aren't merged).
+const over = (base: unknown, own: unknown) =>
+  base && own && typeof base === 'object' && typeof own === 'object'
+    ? { ...base, ...own }
+    : (own ?? base)
+
+/**
+ * The modifiers and the value as one: the modifiers pick (an entrance, a spring, `stagger`), the
+ * value tunes. `v-animate.rise.bouncy="{ delay: 0.1 }"`: rise's look on the bouncy spring, later.
+ */
+function withModifiers(
+  el: Element | undefined,
+  value: AnimateDirectiveValue | undefined,
+  modifiers: Partial<Record<string, boolean>>,
+): AnimateDirectiveValue | undefined {
+  const picked = Object.keys(modifiers).filter((name) => name !== 'size' && modifiers[name])
+  if (!picked.length) return value
+  let base: TargetMotion | undefined
+  let spring: SpringName | undefined
+  let stagger = false
+  for (const name of picked) {
+    if (name in SPRINGS) spring = name as SpringName
+    else if (name === 'stagger') stagger = true
+    else {
+      base = presetAround(el, name)
+      if (!base && el && process.env.NODE_ENV !== 'production')
+        motionWarn(
+          `v-animate.${name}: not a built-in entrance, a spring, \`stagger\` or a preset of a ConfigProvider style around it.`,
+        )
+    }
+  }
+  const own = typeof value === 'string' ? presetAround(el, value) : value
+  const merged = { ...base, ...own } as TargetMotion & Record<string, unknown>
+  if (stagger && merged.stagger === undefined) merged.stagger = true
+  // Timing: the value's, else the spring modifier's, else the preset's.
+  delete merged.spring
+  delete merged.duration
+  delete merged.easing
+  Object.assign(merged, timedBy(own) ? timingKeys(own) : spring ? { spring } : timingKeys(base))
+  merged.initial = over(base?.initial, own?.initial) as TargetMotion['initial']
+  merged.exit = over(base?.exit, own?.exit) as TargetMotion['exit']
+  for (const key of ['initial', 'exit', 'duration', 'easing', 'spring'])
+    if (merged[key] === undefined) delete merged[key]
+  return merged
+}
+// What the hooks see: the binding's value with its modifiers applied.
+const valueOf = (el: Element | undefined, binding: DirectiveBinding) =>
+  withModifiers(el, binding.value as AnimateDirectiveValue | undefined, binding.modifiers)
+const hasPicks = (modifiers: Partial<Record<string, boolean>>) =>
+  Object.keys(modifiers).some((name) => name !== 'size' && modifiers[name])
 // What a leaving element plays: a preset name on its own resolves the same way.
 const resolved = (el: Element, value: AnimateDirectiveValue | undefined) =>
   typeof value === 'string' && !findPresence(el) ? presetAround(el, value) : value
@@ -192,7 +288,10 @@ function join(
   if (!presence) return appearAlone(el, name, value)
   // `appear: false`: it doesn't come in with the component; its exit stays.
   const joined =
-    typeof value === 'object' && value.appear === false ? { ...value, initial: undefined } : value
+    typeof value === 'object' &&
+    (value.appear === false || (value.appear === 'later' && el._uiFirstRender))
+      ? { ...value, initial: undefined }
+      : value
   // A string names one of the style's presets; the component resolves it when it plays.
   el._uiAnimateLeave = presence.register(el, name ?? 'default', joined)
 }
@@ -201,11 +300,23 @@ function join(
  * `v-animate:rows="{ initial: { opacity: 0, y: 6 } }"` joins the nearest component's presence.
  * `v-animate.size` makes the element follow its content's height on a spring (no name: size only).
  */
-export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | undefined, 'size'> = {
+export const vAnimate: ObjectDirective<
+  HTMLElement,
+  AnimateDirectiveValue | undefined,
+  AnimateModifier
+> = {
   // Server-rendered: its first appearance plays from CSS, before any script. Named ones are their
   // component's, which shows as it is on load.
   getSSRProps(binding) {
-    return (!binding.arg && typeof binding.value === 'object' && firstPaint(binding.value)) || {}
+    const value = valueOf(undefined, binding)
+    // `appear: 'later'`: what the server renders is the first render; it shows as it is.
+    if (typeof value === 'object' && value.appear === 'later') return {}
+    return (!binding.arg && typeof value === 'object' && firstPaint(value)) || {}
+  },
+  // Before the component that rendered it counts as mounted: is this its first render?
+  created(el, _binding, vnode) {
+    const owner = (vnode as { ctx?: { isMounted?: boolean } | null }).ctx
+    ;(el as Marked)._uiFirstRender = !owner?.isMounted
   },
   mounted(el, binding, vnode) {
     const marked = el as Marked
@@ -214,50 +325,63 @@ export const vAnimate: ObjectDirective<HTMLElement, AnimateDirectiveValue | unde
       el,
       (vnode as { ctx?: ComponentInternalInstance | null }).ctx ?? binding.instance?.$ ?? null,
     )
-    marked._uiAnimateValue = binding.value
-    followTarget(marked, binding.value)
+    const value = valueOf(el, binding)
+    marked._uiAnimateValue = value
+    followTarget(marked, value)
+    followStates(marked, value)
     // Hydrated: the server's CSS is playing (or has played) its appearance; never twice.
     if (handOver(el)) marked._uiAppeared = true
     if (binding.modifiers.size)
       marked._uiSizeStop = followSize(el, () => timingOf(marked._uiAnimateValue), true).stop
-    if (typeof binding.value === 'object' && binding.value.layout)
+    if (typeof value === 'object' && value.layout)
       marked._uiLayoutStop = followLayout(el, () => timingOf(marked._uiAnimateValue) ?? {})
-    if (!binding.arg && binding.modifiers.size) return
+    if (!binding.arg && binding.modifiers.size && !hasPicks(binding.modifiers)) return
     const owner = binding.instance?.$ ?? null
-    if (leaving(resolved(el, binding.value))) {
+    if (leaving(resolved(el, value))) {
       watchPaintedBox(el, owner)
       watchLeaving(el)
     }
-    const id = layoutIdOf(binding.value)
+    const id = layoutIdOf(value)
     // A morph finds it by this: in the trigger and the panel, it travels between the two.
     if (id) el.dataset.layoutId = id
     if (id) watchPaintedBox(el, owner)
     // Arriving where another under its `layoutId` just left: it slides over instead of appearing.
-    if (id)
-      arriveLayout(el, id, timingOf(binding.value)!, () => join(marked, binding.arg, binding.value))
-    else join(marked, binding.arg, binding.value)
+    if (id) arriveLayout(el, id, timingOf(value)!, () => join(marked, binding.arg, value))
+    else join(marked, binding.arg, value)
   },
   beforeUnmount(el, binding) {
-    const id = layoutIdOf(binding.value)
+    const value = valueOf(el, binding)
+    const id = layoutIdOf(value)
     if (id) rememberLayout(el, id)
-    if (leaving(resolved(el, binding.value))) (el as Marked)._uiLeavingPlace = placeOnLeave(el)
+    if (leaving(resolved(el, value))) (el as Marked)._uiLeavingPlace = placeOnLeave(el)
   },
   beforeUpdate(el) {
     notePaintedSiblings(el)
   },
   updated(el, binding) {
-    ;(el as Marked)._uiAnimateValue = binding.value
-    followTarget(el as Marked, binding.value)
-    replayIfChanged(el, binding.value, binding.oldValue ?? undefined, binding.arg)
-    if (binding.value !== binding.oldValue && (binding.arg || !binding.modifiers.size))
-      join(el as Marked, binding.arg, binding.value)
+    const value = valueOf(el, binding)
+    const before = withModifiers(
+      el,
+      (binding.oldValue ?? undefined) as AnimateDirectiveValue | undefined,
+      binding.modifiers,
+    )
+    ;(el as Marked)._uiAnimateValue = value
+    followTarget(el as Marked, value)
+    followStates(el as Marked, value)
+    replayIfChanged(el, value, before, binding.arg)
+    if (
+      binding.value !== binding.oldValue &&
+      (binding.arg || !binding.modifiers.size || hasPicks(binding.modifiers))
+    )
+      join(el as Marked, binding.arg, value)
   },
   unmounted(el, binding) {
-    leaveIfRemoved(el, resolved(el, binding.value), (el as Marked)._uiLeavingPlace)
+    leaveIfRemoved(el, resolved(el, valueOf(el, binding)), (el as Marked)._uiLeavingPlace)
     unwatchView(el)
     ;(el as Marked)._uiAnimateLeave?.()
     ;(el as Marked)._uiSizeStop?.()
     ;(el as Marked)._uiLayoutStop?.()
+    ;(el as Marked)._uiStatesStop?.()
     followTarget(el as Marked, undefined)
   },
 }
@@ -326,29 +450,35 @@ export function vAnimateVapor(
   el: HTMLElement,
   value?: () => AnimateDirectiveValue | undefined,
   argument?: string | (() => string),
-  modifiers?: { size?: boolean },
+  modifiers?: Partial<Record<AnimateModifier, boolean>>,
 ): () => void
 export function vAnimateVapor(
   el: HTMLElement,
-  value?: (() => AnimateDirectiveValue | undefined) | DirectiveBinding<AnimateDirectiveValue>,
+  raw?: (() => AnimateDirectiveValue | undefined) | DirectiveBinding<AnimateDirectiveValue>,
   argument?: string | (() => string),
-  modifiers: { size?: boolean } = {},
+  modifiers: Partial<Record<AnimateModifier, boolean>> = {},
 ): (() => void) | void {
-  if (value && typeof value === 'object') {
+  if (raw && typeof raw === 'object') {
     // A VDOM template turns a function directive into mounted + updated only: no unmount, so no
     // layoutId and no cleanup. Its VDOM form is the one that works there.
     if (process.env.NODE_ENV !== 'production')
       motionWarn(
         "v-animate from 'vael-ui/vapor' is in a VDOM template: import vAnimate from 'vael-ui' there.",
       )
-    return vAnimate.mounted!(el, value as never, null as never, null)
+    return vAnimate.mounted!(el, raw as never, null as never, null)
   }
+  // The modifiers and the value as one, as in the VDOM build.
+  const value = () => withModifiers(el, raw?.(), modifiers)
   const name = typeof argument === 'function' ? argument() : argument
   // Called in setup: its provider, through the component tree. Read from the current instance's
   // own provides: inside a Teleport in a provider's slot, Vapor runs this with the provider itself
   // current, and `inject` would look past it, to its parent's.
-  const provides = (vue as unknown as { currentInstance?: { provides?: Provides } | null })
-    .currentInstance?.provides
+  const current = (
+    vue as unknown as { currentInstance?: { provides?: Provides; isMounted?: boolean } | null }
+  ).currentInstance
+  const provides = current?.provides
+  // Rendered with its component's first render (`appear: 'later'` skips its entrance).
+  ;(el as Marked)._uiFirstRender = !current?.isMounted
   const provided = provides
     ? holding(
         provides[motionStyleKey as symbol] as Provided<MotionStyle | undefined>,
@@ -358,23 +488,24 @@ export function vAnimateVapor(
   holdAround(el, () => provided)
   // Hydrated: the server's CSS plays its appearance; never twice.
   if (handOver(el)) (el as Marked)._uiAppeared = true
-  const stopSize = modifiers.size ? followSize(el, () => timingOf(value?.()), true).stop : undefined
+  const stopSize = modifiers.size ? followSize(el, () => timingOf(value()), true).stop : undefined
   if (stopSize) onScopeDispose(stopSize)
   let stopLayout: (() => void) | undefined
   onScopeDispose(() => stopLayout?.())
-  if (modifiers.size && !name) return () => stopSize?.()
+  if (modifiers.size && !name && !hasPicks(modifiers)) return () => stopSize?.()
   // Post-flush: in setup the element isn't inside its component's panel yet. Vapor directives can't
   // use onMounted (it would attach to the component), and this also re-joins when the value changes.
   let arrived = false
   let before: AnimateDirectiveValue | undefined
   watchPostEffect(() => {
-    const current = value?.()
+    const current = value()
     followTarget(el as Marked, current)
+    followStates(el as Marked, current)
     if (arrived) replayIfChanged(el, current, before, name)
     before = current
     // After the flush: in setup it has no parent yet to watch.
     if (!arrived && typeof current === 'object' && current.layout)
-      stopLayout = followLayout(el, () => timingOf(value?.()) ?? {})
+      stopLayout = followLayout(el, () => timingOf(value()) ?? {})
     const id = layoutIdOf(current)
     if (id) el.dataset.layoutId = id
     if (id && !arrived)
@@ -384,7 +515,7 @@ export function vAnimateVapor(
   })
   // Before it goes: its box, for whoever arrives under the same `layoutId`.
   onScopeDispose(() => {
-    const current = value?.()
+    const current = value()
     const id = layoutIdOf(current)
     if (id && el.isConnected) rememberLayout(el, id)
     const leavingValue = resolved(el, current)
@@ -393,6 +524,7 @@ export function vAnimateVapor(
   const leave = () => (el as Marked)._uiAnimateLeave?.()
   onScopeDispose(leave)
   onScopeDispose(() => followTarget(el as Marked, undefined))
+  onScopeDispose(() => (el as Marked)._uiStatesStop?.())
   onScopeDispose(() => unwatchView(el))
   return leave
 }

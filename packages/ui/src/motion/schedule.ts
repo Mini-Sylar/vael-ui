@@ -126,7 +126,8 @@ export async function runTargets(
         return
       }
       const timing = resolveTiming(first, motion, options.spring)
-      const at = (i: number) => staggerAt(motion.stagger, i, els.length) + delays[i]! - shared
+      const at = (i: number) =>
+        staggerAt(motion.stagger, i, els.length, first) + delays[i]! - shared
       const lastStart = Math.max(0, ...els.map((_, i) => at(i))) * 1000
       startMoments(m, lastStart + timing.arrival)
       await Promise.all(els.map((el, i) => playTarget(el, own(i), at(i), options, waitFor, i)))

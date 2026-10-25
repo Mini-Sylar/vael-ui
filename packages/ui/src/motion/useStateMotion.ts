@@ -13,6 +13,7 @@ import {
 import { defaultsKey } from '../config'
 import { useMotionStyle } from './styleKey'
 import type { MotionStyle, MotionTiming } from './types'
+import { springOf } from '../composables/springNames'
 
 let appearance: typeof import('./appearance') | undefined
 const loadAppearance = () => import('./appearance').then((module) => (appearance = module))
@@ -136,7 +137,7 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
               parts,
               spec: () => spec.value,
               timing: () => timing.value,
-              spring: () => style?.value?.spring,
+              spring: () => springOf(style?.value?.spring),
               repeated: () => Object.fromEntries((options.repeated ?? []).map((n) => [n, els(n)])),
             })
           }),

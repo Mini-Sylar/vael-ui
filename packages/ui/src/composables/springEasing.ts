@@ -1,10 +1,15 @@
 import { stepSpring } from './springStep'
 import type { IndicatorSpring } from './useTabIndicator'
+import { springOf } from './springNames'
+import type { SpringName } from './springNames'
+
+export { SPRINGS, springOf } from './springNames'
+export type { SpringName } from './springNames'
 
 /** ConfigProvider's `motion` as an object: motion stays on, retimed. */
 export interface MotionOptions {
-  /** Drawers, sheets, toasts, sliding indicators and AnimatedNumber follow this spring. */
-  spring?: IndicatorSpring
+  /** Drawers, sheets, toasts, sliding indicators and AnimatedNumber follow this spring: a name (`'bouncy'`) or `{ damping, response }`. */
+  spring?: IndicatorSpring | SpringName
 }
 
 /** The drawer's spring: critically damped, so a flick never bounces past where it rests. */
@@ -17,7 +22,7 @@ const cache = new Map<string, { easing: string; duration: number; arrival: numbe
  * it starts moving, in distances per second (a flick handing its speed on); negative moves away.
  */
 export function springEasing(
-  spring: IndicatorSpring,
+  spring: IndicatorSpring | SpringName,
   velocity = 0,
 ): { easing: string; duration: number } {
   const { easing, duration } = compileSpring(spring, velocity)
@@ -25,19 +30,20 @@ export function springEasing(
 }
 
 /** @internal When the spring first reaches its target (ms): what `after` waits for by default. */
-export function springArrival(spring: IndicatorSpring): number {
+export function springArrival(spring: IndicatorSpring | SpringName): number {
   return compileSpring(spring).arrival
 }
 
 // Cached by value, so an inline `{ damping, response }` isn't recompiled on every render.
 function compileSpring(
-  spring: IndicatorSpring,
+  named: IndicatorSpring | SpringName,
   velocity = 0,
 ): {
   easing: string
   duration: number
   arrival: number
 } {
+  const spring = springOf(named)
   const start = Math.round(velocity * 100) / 100
   const key = `${spring.damping}|${spring.response}|${start}`
   const hit = cache.get(key)

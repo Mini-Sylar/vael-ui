@@ -3,11 +3,12 @@
 import { onScopeDispose, watch } from 'vue'
 import type { ComputedRef, ShallowRef } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
+import { springOf } from '../composables/springNames'
 import type { ResolvedMotion } from './context'
 import { isTimed, valuesAt } from './playable'
 import { presenceFor } from './presence'
 import { resolveTiming, track } from './timing'
-import type { MotionPhase, MotionTiming, MotionValues, TargetMotion } from './types'
+import type { MotionPhase, MotionTiming, MotionValues, Spring, TargetMotion } from './types'
 import { appear } from './useComponentMotion'
 import { followSize } from './size'
 import type { FollowSize } from './size'
@@ -131,7 +132,7 @@ const sizesItself = (m: ResolvedMotion) =>
 
 /** A height change isn't an entrance: the same spring, without the bounce. */
 const calm = (t: MotionTiming): MotionTiming =>
-  t.spring ? { spring: { damping: 1, response: (t.spring as { response?: number }).response } } : t
+  t.spring ? { spring: { damping: 1, response: springOf(t.spring as Spring).response } } : t
 
 /** The main part's timing: its own if your values set one, else the component's. */
 function mainTiming(m: ResolvedMotion): MotionTiming {

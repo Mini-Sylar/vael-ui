@@ -304,6 +304,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
+import { springOf } from '../../composables/springNames'
 import type { TreeMotion } from '../../motion/types'
 import Input from '../Input/Input.vue'
 import Checkbox from '../Checkbox/Checkbox.vue'
@@ -1223,7 +1224,7 @@ const providerDefaults = inject(defaultsKey, undefined)
 const treeFoldSpring = computed<FoldSpring>(() => {
   const timing = timingOf(rawProps.motion) ?? timingOf(motionStyle?.value?.tree)
   if (typeof timing?.duration === 'number') return { damping: 1, response: timing.duration / 1000 }
-  const spring = (timing?.spring as Spring | undefined) ?? providerDefaults?.value.spring
+  const spring = springOf((timing?.spring as Spring | undefined) ?? providerDefaults?.value.spring)
   return {
     damping: spring?.damping ?? DEFAULT_FOLD_SPRING.damping,
     response: spring?.response ?? DEFAULT_FOLD_SPRING.response,

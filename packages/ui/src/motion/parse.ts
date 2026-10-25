@@ -1,6 +1,8 @@
 // parseMotionStyle: a style from outside your code (a settings page, a database, the network) in, a
 // safe data-only style out. Unknown keys, functions and out-of-range or unsafe values are dropped
 // one by one and reported; it never throws.
+import { cssEasing } from './ease'
+import { SPRINGS } from '../composables/springNames'
 import type { MotionStyle, ParseMotionStyle } from './types'
 import { motionWarn } from './warn'
 
@@ -113,7 +115,7 @@ const PROPERTIES = new Set([
   'letterSpacing',
 ])
 const EASING_TOKEN = /^var\(--ui-ease-[a-z-]+\)$/
-const DURATION_TOKEN = /^var\(--ui-duration-[a-z-]+\)$/
+const DURATION_TOKEN = /^(var\(--ui-duration-[a-z-]+\)|[a-z]+(-[a-z]+)*)$/
 const cssName = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
 
 function inRange(value: unknown, min: number, max: number): value is number {
@@ -131,8 +133,12 @@ function entries(input: Data, path: string, issues: Issues): [string, unknown][]
   return out
 }
 
-function spring(input: unknown, path: string, issues: Issues): Data | undefined {
-  if (!isData(input)) return void issues.push(`${path}: expected { damping, response }`)
+function spring(input: unknown, path: string, issues: Issues): Data | string | undefined {
+  if (typeof input === 'string' && input in SPRINGS) return input
+  if (!isData(input))
+    return void issues.push(
+      `${path}: a spring name (${Object.keys(SPRINGS).join(', ')}) or { damping, response }`,
+    )
   if (!inRange(input.damping, 0, 2) || !inRange(input.response, 0.05, 2))
     return void issues.push(`${path}: damping 0–2 and response 0.05–2 seconds`)
   return { damping: input.damping, response: input.response }
@@ -140,8 +146,10 @@ function spring(input: unknown, path: string, issues: Issues): Data | undefined 
 
 function easing(value: unknown): boolean {
   if (typeof value !== 'string' || value.length > 400 || UNSAFE.test(value)) return false
-  if (EASING_TOKEN.test(value)) return true
-  return typeof CSS === 'undefined' || CSS.supports('transition-timing-function', value)
+  // A GSAP name or a token by name, as the CSS it stands for.
+  const css = cssEasing(value)
+  if (EASING_TOKEN.test(css)) return true
+  return typeof CSS === 'undefined' || CSS.supports('transition-timing-function', css)
 }
 
 /** spring XOR duration + easing, copied onto `out`. */
@@ -222,8 +230,9 @@ function target(input: unknown, path: string, issues: Issues): Data | undefined 
       const parsed = values(raw, `${path}.${key}`, issues)
       if (parsed) out[key] = parsed
     } else if (key === 'stagger') {
-      if (inRange(raw, 0, 1)) out.stagger = raw
-      else issues.push(`${path}.stagger: 0–1 seconds`)
+      if (inRange(raw, 0, 1) || raw === true || ['end', 'center', 'edges'].includes(raw as string))
+        out.stagger = raw
+      else issues.push(`${path}.stagger: true, 'end', 'center', 'edges', or 0–1 seconds`)
     } else if (key === 'delay') {
       if (inRange(raw, -2, 2)) out.delay = raw
       else issues.push(`${path}.delay: -2–2 seconds`)
@@ -314,7 +323,11 @@ function component(input: unknown, path: string, issues: Issues): Data | undefin
     else if (key === 'when' && (raw === 'mount' || raw === 'visible')) out.when = raw
     else if (key === 'morph' && raw === 'trigger') out.morph = raw
     else if (key === 'exitOrder' && (raw === 'together' || raw === 'reverse')) out.exitOrder = raw
-    else if (key === 'stagger' && inRange(raw, 0, 1)) out.stagger = raw
+    else if (
+      key === 'stagger' &&
+      (inRange(raw, 0, 1) || raw === true || ['end', 'center', 'edges'].includes(raw as string))
+    )
+      out.stagger = raw
     else if (key === 'leaving' && (raw === 'pop' || raw === 'hold')) out.leaving = raw
     else issues.push(`${path}.${key}: unknown or invalid`)
   }
@@ -352,7 +365,12 @@ function role(name: (typeof ROLES)[number], input: unknown, issues: Issues): Dat
     else if (name === 'overlay' && key === 'swap' && (raw === 'sync' || raw === 'wait'))
       out.swap = raw
     else if (name === 'overlay' && key === 'resize' && typeof raw === 'boolean') out.resize = raw
-    else if (name === 'list' && key === 'stagger' && inRange(raw, 0, 1)) out.stagger = raw
+    else if (
+      name === 'list' &&
+      key === 'stagger' &&
+      (inRange(raw, 0, 1) || raw === true || ['end', 'center', 'edges'].includes(raw as string))
+    )
+      out.stagger = raw
     else if (name === 'list' && key === 'leaving' && (raw === 'pop' || raw === 'hold'))
       out.leaving = raw
     else if (name === 'list' && key === 'appear' && typeof raw === 'boolean') out.appear = raw

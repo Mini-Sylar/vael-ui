@@ -1,5 +1,8 @@
 // Timing and settled(): shared by the runtime and the states player, so neither drags in the other.
-import { springArrival, springEasing } from '../composables/springEasing'
+import { springArrival, springEasing, springOf } from '../composables/springEasing'
+import { SPRINGS } from '../composables/springNames'
+import type { SpringName } from '../composables/springNames'
+import { cssDuration, cssEasing } from './ease'
 import type { MotionTiming, Spring } from './types'
 
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
@@ -25,13 +28,24 @@ export function token(el: Element, value: string): string {
   return match ? getComputedStyle(el).getPropertyValue(match[1]!).trim() : value
 }
 
-/** A keyframe sequence's easing, one or one per segment, with tokens resolved against the element. */
+// One step's easing: a spring (by name or numbers) as its curve, a token by name, or CSS.
+const stepEasing = (el: Element, easing: unknown): string =>
+  typeof easing === 'object' && easing
+    ? springEasing(easing as Spring).easing
+    : typeof easing === 'string' && easing in SPRINGS
+      ? springEasing(easing as SpringName).easing
+      : token(el, cssEasing(String(easing)))
+
+/**
+ * A keyframe sequence's easing, one or one per segment: CSS, a token by name (`'out'`) or a spring
+ * (`'bouncy'`, `{ damping, response }`), resolved against the element.
+ */
 export const easingOf = (el: Element, easing: unknown): string | string[] | undefined =>
   easing === undefined
     ? undefined
     : Array.isArray(easing)
-      ? easing.map((each) => token(el, String(each)))
-      : token(el, String(easing))
+      ? easing.map((each) => stepEasing(el, each))
+      : stepEasing(el, easing)
 
 /** A spring, or a duration with an easing; tokens resolve against the element. */
 export function resolveTiming(
@@ -41,13 +55,17 @@ export function resolveTiming(
 ): ResolvedTiming {
   if (timing.duration !== undefined || timing.easing !== undefined) {
     const raw = timing.duration ?? 'var(--ui-duration-enter)'
-    const duration = typeof raw === 'number' ? raw : cssTime(token(el, raw))
+    const duration = typeof raw === 'number' ? raw : cssTime(token(el, cssDuration(raw)))
     // One easing per keyframe segment: the whole runs linear, each segment eases on its own.
     const given = timing.easing as string | string[] | undefined
-    const easing = Array.isArray(given) ? 'linear' : given ? token(el, given) || EASE_OUT : EASE_OUT
+    const easing = Array.isArray(given)
+      ? 'linear'
+      : given
+        ? token(el, cssEasing(given)) || EASE_OUT
+        : EASE_OUT
     return { easing, duration, arrival: duration }
   }
-  const spring = (timing.spring as Spring | undefined) ?? fallback ?? DEFAULT_SPRING
+  const spring = springOf((timing.spring as Spring | undefined) ?? fallback ?? DEFAULT_SPRING)
   return { ...springEasing(spring), arrival: springArrival(spring), spring }
 }
 

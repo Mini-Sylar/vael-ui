@@ -1,9 +1,10 @@
 // The CSS engine: static motion (values, springs, per-value timing, stagger, `after` chains) played
 // by the browser's own transitions. JS writes inline styles and waits; nothing is !important, which
 // would keep a close off the compositor. Hooks, steps and keyframe arrays go to the runtime.
+import { cssDuration, cssEasing } from './ease'
 import { nextTick } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
-import { springArrival, springEasing } from '../composables/springEasing'
+import { springArrival, springEasing, springOf } from '../composables/springEasing'
 import type { ResolvedMotion } from './context'
 import type { Runner, RunnerHost } from './host'
 import { cssCanPlay, staggerAt, targetCanPlay, valuesAt } from './playable'
@@ -59,13 +60,13 @@ function tokenMs(el: Element, token: string): number {
 function timing(el: Element, t: MotionTiming, fallback: Spring): Timed {
   if (t.duration !== undefined || t.easing !== undefined) {
     const raw = t.duration ?? 'var(--ui-duration-enter)'
-    const duration = typeof raw === 'number' ? raw : tokenMs(el, raw)
+    const duration = typeof raw === 'number' ? raw : tokenMs(el, cssDuration(raw))
     // An easing token stays a var(): the browser resolves it where the transition applies.
     // A list of easings is for keyframes, which this engine never plays: linear stands in.
-    const easing = Array.isArray(t.easing) ? 'linear' : (t.easing ?? EASE_OUT)
+    const easing = Array.isArray(t.easing) ? 'linear' : t.easing ? cssEasing(t.easing) : EASE_OUT
     return { easing, duration, arrival: duration, given: true }
   }
-  const spring = (t.spring as Spring | undefined) ?? fallback
+  const spring = springOf((t.spring as Spring | undefined) ?? fallback)
   return { ...springEasing(spring), arrival: springArrival(spring) }
 }
 
@@ -457,7 +458,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
           target as HTMLElement,
           valuesAt(each.initial, { direction: m.direction, index: i, count: g.els.length }) ?? {},
           ownTiming(each) ? timing(target, each, spring) : t,
-          ((each.delay ?? 0) + staggerAt(g.motion.stagger, i, g.els.length)) * 1000,
+          ((each.delay ?? 0) + staggerAt(g.motion.stagger, i, g.els.length, target)) * 1000,
         )
       })
     }

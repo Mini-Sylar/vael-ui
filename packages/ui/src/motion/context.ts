@@ -10,6 +10,8 @@ import type {
   TargetMotion,
   MotionEngine,
 } from './types'
+import { springOf } from '../composables/springNames'
+import { BUILTIN_PRESETS } from './presets'
 
 export { motionStyleKey, useMotionStyle } from './styleKey'
 
@@ -145,13 +147,13 @@ export function resolveMotion(input: {
         explicit ?? (overridden.has(part) ? {} : (defaultTiming ?? {})),
       ]),
     ),
-    spring: style?.spring,
+    spring: springOf(style?.spring),
     engine: style?.engine,
     initial,
     exit: parts('exit', exitDefaults ?? {}),
     targets,
     content: style?.content,
-    presets: style?.presets ?? {},
+    presets: { ...BUILTIN_PRESETS, ...style?.presets },
     enter: (own?.enter ?? keyStyle?.enter) as AnyHook | undefined,
     leave: (own?.leave ?? keyStyle?.leave) as AnyHook | undefined,
     morph: (own?.morph ?? keyStyle?.morph ?? roleStyle?.morph) as ResolvedMotion['morph'],

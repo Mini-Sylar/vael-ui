@@ -2,6 +2,7 @@
 // and no script (plan 008 §15). The same on server and client: no measuring, no randomness.
 import { springEasing } from '../composables/springEasing'
 import type { Spring, TargetMotion } from './types'
+import { cssDuration, cssEasing } from './ease'
 
 const DEFAULT_SPRING: Spring = { damping: 1, response: 0.32 }
 const px = (v: unknown) => (typeof v === 'number' ? `${v}px` : String(v))
@@ -37,14 +38,19 @@ export function firstPaint(motion: TargetMotion): Record<string, unknown> | unde
         duration:
           typeof motion.duration === 'number'
             ? `${motion.duration}ms`
-            : (motion.duration ?? 'var(--ui-duration-enter)'),
-        easing: motion.easing ?? 'var(--ui-ease-out)',
+            : cssDuration(motion.duration ?? 'enter'),
+        easing: cssEasing(motion.easing ?? 'out'),
       }
     : (({ duration, easing }) => ({ duration: `${Math.round(duration)}ms`, easing }))(
         springEasing((motion.spring as Spring | undefined) ?? DEFAULT_SPRING),
       )
   // A stagger by number reads the element's own `--i` (set it with v-for's index).
-  const stagger = typeof motion.stagger === 'number' ? ` + var(--i, 0) * ${motion.stagger}s` : ''
+  const stagger =
+    typeof motion.stagger === 'number'
+      ? ` + var(--i, 0) * ${motion.stagger}s`
+      : motion.stagger === true
+        ? ' + var(--i, 0) * var(--ui-duration-stagger, 40ms)'
+        : ''
   const delay = `calc(${motion.delay ?? 0}s${stagger})`
   return {
     'data-ui-appear': '',

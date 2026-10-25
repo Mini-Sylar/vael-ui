@@ -13,9 +13,32 @@ export const valuesAt = (
   where: MotionWhere,
 ): MotionValues | undefined => (typeof values === 'function' ? values(where) : values || undefined)
 
-/** When the element at `index` of `count` starts, in seconds after the first. */
-export const staggerAt = (stagger: TargetMotion['stagger'], index: number, count: number) =>
-  typeof stagger === 'function' ? stagger(index, count) : index * (stagger ?? 0)
+/**
+ * When the element at `index` of `count` starts, in seconds after the first. A word is spaced by
+ * the `--ui-duration-stagger` token where `el` is (40ms), from the start, the end, the centre or the
+ * edges.
+ */
+export function staggerAt(
+  stagger: TargetMotion['stagger'],
+  index: number,
+  count: number,
+  el?: Element,
+): number {
+  if (typeof stagger === 'function') return stagger(index, count)
+  if (typeof stagger === 'number' || !stagger) return index * (stagger || 0)
+  const token = el && getComputedStyle(el).getPropertyValue('--ui-duration-stagger').trim()
+  const each = token ? Number.parseFloat(token) / (token.endsWith('ms') ? 1000 : 1) : 0.04
+  const last = count - 1
+  const steps =
+    stagger === 'end'
+      ? last - index
+      : stagger === 'center'
+        ? Math.abs(index - last / 2)
+        : stagger === 'edges'
+          ? last / 2 - Math.abs(index - last / 2)
+          : index
+  return steps * (Number.isFinite(each) ? each : 0.04)
+}
 
 // What a value may name for the CSS engine; anything else is the runtime's.
 const KEYS = new Set([

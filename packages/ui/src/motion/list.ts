@@ -7,8 +7,8 @@ import { playValues, resolveTiming, slideFrom } from './engine'
 import { runHook } from './hook'
 import { followSize } from './size'
 import type { FollowSize } from './size'
-import { valuesAt } from './playable'
-import type { MotionValues, MotionWhere } from './types'
+import { valuesAt, staggerAt } from './playable'
+import type { MotionValues, MotionWhere, Stagger } from './types'
 
 const QUIET_FADE: MotionValues = { opacity: 0 }
 
@@ -17,7 +17,7 @@ export interface ListMotionOptions {
   id: string
   resolved: () => ResolvedMotion
   /** Seconds between items that enter together. */
-  stagger: () => number
+  stagger: () => Stagger
   /** `'pop'` (default): a leaving item lifts out at once so the rest close the gap while it fades. */
   leaving: () => 'pop' | 'hold'
   /** The items' part name in your values and hooks (`item`, a component's `row`, `chip`, `toast`). */
@@ -182,7 +182,7 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
         direction: 'in',
         engine: motion.engine,
         timing: timingFor(el),
-        delay: index * options.stagger(),
+        delay: staggerAt(options.stagger(), index, group.length, el),
       }).then(done)
     })
   }

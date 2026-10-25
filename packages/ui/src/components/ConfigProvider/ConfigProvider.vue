@@ -22,7 +22,7 @@
   <div
     :ref="holdStyle"
     :data-ui-theme="themeCss ? scopeId : undefined"
-    :data-ui-motion-style="motionStyle || motion === false ? '' : undefined"
+    :data-ui-motion-style="motionStyle || motion === false || defaults.spring ? '' : undefined"
     style="display: contents"
   >
     <slot />
@@ -46,7 +46,7 @@ import { defaultsKey, validLocale } from '../../config'
 import type { UiDefaults } from '../../config'
 import type { LoaderSource } from '../../composables/loaderType'
 import type { IndicatorMode } from '../../composables/useTabIndicator'
-import { springTokens } from '../../composables/springEasing'
+import { springOf, springTokens } from '../../composables/springEasing'
 import type { MotionOptions } from '../../composables/springEasing'
 import { isMotionStyle, motionStyleKey, useMotionStyle } from '../../motion/context'
 import { holdMotionStyle } from '../../motion/styleHolder'
@@ -113,13 +113,15 @@ provide(classMergerKey, (classes: string) =>
   props.classMerge ? props.classMerge(classes) : classes,
 )
 
-const spring = computed(() => (typeof props.motion === 'object' ? props.motion.spring : undefined))
+const spring = computed(() =>
+  springOf(typeof props.motion === 'object' ? props.motion.spring : undefined),
+)
 
 // A full style reaches every component inside; nested providers inherit their parent's.
 const parentStyle = useMotionStyle()
 const motionStyle = computed<MotionStyle | undefined>(() =>
   isMotionStyle(props.motion)
-    ? props.motion
+    ? { ...props.motion, spring: spring.value }
     : props.motion === false
       ? undefined
       : parentStyle?.value,
@@ -132,6 +134,7 @@ const holdStyle = (el: unknown) => {
     holdMotionStyle(el, {
       style: () => motionStyle.value,
       off: () => defaults.value.motion === false,
+      spring: () => springOf(motionStyle.value?.spring ?? defaults.value.spring),
     })
 }
 // Filters are data, rendered as SVG by the template: numbers only, ids limited to a safe alphabet.

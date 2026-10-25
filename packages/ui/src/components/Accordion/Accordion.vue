@@ -36,7 +36,7 @@ import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import type { AccordionMotion, Spring } from '../../motion/types'
 import { useThemedUi } from '../../theme'
-import { springEasing } from '../../composables/springEasing'
+import { springEasing, springOf } from '../../composables/springEasing'
 import { useMotionStyle } from '../../motion/context'
 
 defineOptions({ inheritAttrs: false })
@@ -146,9 +146,11 @@ const motionStyle = useMotionStyle()
 const providerDefaults = inject(defaultsKey, undefined)
 const springVars = computed(() => {
   const own = rawProps.motion
-  const spring = ((typeof own === 'object' && own.spring) ||
-    motionStyle?.value?.spring ||
-    providerDefaults?.value.spring) as Spring | undefined
+  const spring = springOf(
+    ((typeof own === 'object' && own.spring) ||
+      motionStyle?.value?.spring ||
+      providerDefaults?.value.spring) as Spring | undefined,
+  )
   if (!spring) return undefined
   const open = springEasing(spring)
   const close = springEasing({ damping: 1, response: spring.response ?? 0.32 })
