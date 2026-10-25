@@ -188,7 +188,8 @@
     "vaporTitle": "Soporte para Vue Vapor"
   },
   "globalSetup": {
-    "allTogetherIntro": "Monta los cuatro una vez, en la plantilla raíz de tu app:",
+    "allTogetherIntro": "Monta los cuatro una sola vez, en la plantilla raíz de tu app. Sin <code>ConfigProvider</code>:",
+    "allTogetherProvider": "Con un <code>ConfigProvider</code>, colócalos dentro. Un host renderiza lo que abres desde el código (<code>openDialog()</code>, <code>toast()</code>, tooltips), así que eso solo toma el tema, el movimiento, los textos y el tamaño del provider si el host está dentro:",
     "allTogetherTitle": "Juntos",
     "dialogHostIntro": "Renderiza los diálogos que abres desde código con <code>openDialog()</code> o <code>confirmAction()</code>. Un <code>&lt;Dialog v-model:open&gt;</code> en tu propia plantilla no lo necesita. No tiene props ni configuración.",
     "dialogHostTitle": "Anfitrión de diálogo",

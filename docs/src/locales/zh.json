@@ -188,7 +188,8 @@
     "vaporTitle": "Vue 蒸气支持"
   },
   "globalSetup": {
-    "allTogetherIntro": "在应用的根模板中将这四个组件各挂载一次：",
+    "allTogetherIntro": "在应用的根模板中挂载这四个组件,只需一次。不使用 <code>ConfigProvider</code> 时:",
+    "allTogetherProvider": "使用 <code>ConfigProvider</code> 时,请把它们放在其中。从代码打开的内容(<code>openDialog()</code>、<code>toast()</code>、提示框)由宿主渲染,只有宿主位于其中时,才会继承 provider 的主题、动效、文案和尺寸:",
     "allTogetherTitle": "全部在一起",
     "dialogHostIntro": "渲染通过 <code>openDialog()</code> 或 <code>confirmAction()</code> 从代码中打开的对话框。在你自己模板中使用 <code>&lt;Dialog v-model:open&gt;</code> 时不需要它。它没有任何 props 或配置。",
     "dialogHostTitle": "对话主机",

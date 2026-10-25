@@ -188,7 +188,8 @@
     "vaporTitle": "Vue Vapor のサポート"
   },
   "globalSetup": {
-    "allTogetherIntro": "アプリのルートテンプレートに、4 つすべてを一度だけマウントします:",
+    "allTogetherIntro": "4 つすべてを、アプリのルートテンプレートに一度だけマウントします。<code>ConfigProvider</code> を使わない場合:",
+    "allTogetherProvider": "<code>ConfigProvider</code> を使う場合は、その中に置きます。コードから開くもの(<code>openDialog()</code>、<code>toast()</code>、ツールチップ)はホストが描画するため、ホストが中にあるときだけプロバイダーのテーマ、モーション、メッセージ、サイズが適用されます:",
     "allTogetherTitle": "みんなで一緒に",
     "dialogHostIntro": "<code>openDialog()</code> や <code>confirmAction()</code> でコードから開いたダイアログを描画します。自分のテンプレート内の <code>&lt;Dialog v-model:open&gt;</code> には不要です。props や設定はありません。",
     "dialogHostTitle": "ダイアログホスト",

@@ -272,7 +272,8 @@
     "ScrollArea": "Une zone défilante aux barres fines et thématisées, aux bords estompés, dans un ou deux sens. Utilisez-la pour les panneaux et les listes qui défilent dans la page."
   },
   "globalSetup": {
-    "allTogetherIntro": "Montez les quatre une seule fois, dans le template racine de votre application :",
+    "allTogetherIntro": "Montez les quatre une seule fois, dans le template racine de votre app. Sans <code>ConfigProvider</code> :",
+    "allTogetherProvider": "Avec un <code>ConfigProvider</code>, placez-les à l’intérieur. Un host affiche ce que vous ouvrez depuis le code (<code>openDialog()</code>, <code>toast()</code>, les tooltips) : le thème, le mouvement, les textes et la taille du provider ne s’y appliquent que si le host est dedans :",
     "allTogetherTitle": "Tous ensemble",
     "dialogHostIntro": "Affiche les boîtes de dialogue ouvertes depuis le code par <code>openDialog()</code> ou <code>confirmAction()</code>. Vous n'en avez pas besoin pour un <code>&lt;Dialog v-model:open&gt;</code> dans votre propre template. Il n'a ni props ni configuration.",
     "dialogHostTitle": "Hôte de dialogue",

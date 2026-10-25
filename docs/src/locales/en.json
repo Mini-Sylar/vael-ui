@@ -170,7 +170,8 @@
     "toasterIntro": "Renders the toasts that {code} creates. It has its own props, so it’s documented on {link}.",
     "toasterIntroLink": "its own page",
     "allTogetherTitle": "All together",
-    "allTogetherIntro": "Mount all four once, in your app’s root template:"
+    "allTogetherIntro": "Mount all four once, in your app’s root template. Without a <code>ConfigProvider</code>:",
+    "allTogetherProvider": "With a <code>ConfigProvider</code>, put them inside it. A host renders what you open from code (<code>openDialog()</code>, <code>toast()</code>, tooltips), so those take the provider’s theme, motion, messages and size only when the host sits inside it:"
   },
   "tailwind": {
     "layerNote": "vael-ui ships in {layer}. Tailwind v4 puts its utilities in a layer too, so import order matters. Import vael-ui’s CSS before your Tailwind entry, as shown below, so its layer registers first. Tailwind’s utilities then come later in the cascade, and a Tailwind utility on a vael-ui component always wins, with no {important} or specificity fights. See {link} for how layers work.",

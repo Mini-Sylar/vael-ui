@@ -188,7 +188,8 @@
     "vaporTitle": "Vue Vapor-Unterstützung"
   },
   "globalSetup": {
-    "allTogetherIntro": "Binden Sie alle vier einmal im Root-Template Ihrer App ein:",
+    "allTogetherIntro": "Binden Sie alle vier einmal im Root-Template Ihrer App ein. Ohne <code>ConfigProvider</code>:",
+    "allTogetherProvider": "Mit einem <code>ConfigProvider</code> gehören sie hinein. Ein Host rendert, was Sie aus dem Code öffnen (<code>openDialog()</code>, <code>toast()</code>, Tooltips). Theme, Motion, Texte und Größe des Providers gelten dafür nur, wenn der Host darin liegt:",
     "allTogetherTitle": "Alles zusammen",
     "dialogHostIntro": "Rendert Dialoge, die Sie per Code mit <code>openDialog()</code> oder <code>confirmAction()</code> öffnen. Für einen <code>&lt;Dialog v-model:open&gt;</code> in Ihrem eigenen Template brauchen Sie ihn nicht. Er hat keine Props und keine Konfiguration.",
     "dialogHostTitle": "DialogHost",
