@@ -321,6 +321,8 @@ test('a button presses by pointer and by keyboard, and hovers only for a mouse',
   const motion: ButtonMotion = {
     states: { active: { label: { scale: '0.8' } }, hover: { root: { opacity: 0.5 } } },
   }
+  // A real cursor left over this spot (by an earlier test file) would hover it for real: move it off.
+  await userEvent.hover(document.documentElement, { position: { x: innerWidth - 10, y: 5 } })
   render({ setup: () => () => h(Button, { motion }, () => 'Save') })
   const button = () => document.querySelector<HTMLElement>('.ui-button')!
   const label = () => document.querySelector<HTMLElement>('.ui-button-label')!
