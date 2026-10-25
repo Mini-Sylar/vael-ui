@@ -412,20 +412,37 @@ test('grow: items change real size and the dock grows to hold them', async () =>
   expect(root.getBoundingClientRect().height).toBeCloseTo(restRoot.height, 0)
 })
 
-test('without grow the dock keeps its size: items scale with transforms', async () => {
+test('without grow, items scale with transforms and the bar widens around where it rests', async () => {
   const screen = await render(DockFixture, {})
   const buttons = itemButtons(screen)
   const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
   const rest = buttons[0].offsetWidth
   const restRoot = root.getBoundingClientRect()
+  const last = buttons[buttons.length - 1]
+  const lastRest = last.getBoundingClientRect()
+  const overLast = () =>
+    root.dispatchEvent(
+      new PointerEvent('pointermove', {
+        clientX: lastRest.left + lastRest.width / 2,
+        clientY: lastRest.top + lastRest.height / 2,
+        bubbles: true,
+      }),
+    )
+  await expect.poll(() => (overLast(), scaleOf(last))).toBeGreaterThan(1.3)
+  // Settled: the end item stays on the bar instead of hanging off its end.
   await expect
-    .poll(() => {
-      hoverItem(root, buttons[0])
-      return scaleOf(buttons[0])
-    })
-    .toBeGreaterThan(1.3)
-  expect(buttons[0].offsetWidth).toBe(rest)
-  expect(root.getBoundingClientRect().width).toBeCloseTo(restRoot.width, 0)
+    .poll(
+      () => (overLast(), root.getBoundingClientRect().right - last.getBoundingClientRect().right),
+    )
+    .toBeGreaterThan(0)
+  expect(last.offsetWidth).toBe(rest)
+  const widened = root.getBoundingClientRect()
+  expect(widened.width).toBeGreaterThan(restRoot.width + 10)
+  // Around its resting center, so nothing beside it moves.
+  expect((widened.left + widened.right) / 2).toBeCloseTo((restRoot.left + restRoot.right) / 2, 0)
+  root.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }))
+  await expect.poll(() => root.getBoundingClientRect().width).toBeCloseTo(restRoot.width, 0)
+  expect(root.style.getPropertyValue('--ui-dock-spread')).toBe('')
 })
 
 test('a narrow container shrinks the items instead of letting the dock overflow', async () => {
@@ -589,3 +606,53 @@ for (const grow of [false, true])
       document.documentElement.dir = ''
     }
   })
+
+test('magnification chases the pointer on motion.spring, overshoot included; without one it never overshoots', async () => {
+  const items = [1, 2, 3, 4, 5].map((n) => ({ label: `App ${n}`, value: `${n}` }))
+  const peakOf = async (motion?: object) => {
+    const screen = await render(() => h(Dock as never, { items, motion }))
+    await expect.poll(() => screen.container.querySelectorAll('.ui-dock-item').length).toBe(5)
+    const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+    const first = itemButtons(screen)[0]!
+    const box = first.getBoundingClientRect()
+    const move = () =>
+      root.dispatchEvent(
+        new PointerEvent('pointermove', {
+          clientX: box.left + box.width / 2,
+          clientY: box.top + box.height / 2,
+          pointerType: 'mouse',
+          bubbles: true,
+        }),
+      )
+    await expect.poll(() => (move(), first.style.transform)).not.toBe('')
+    expect(getComputedStyle(first).transitionDuration).toBe('0s')
+    let peak = 1
+    for (let i = 0; i < 60; i++) {
+      peak = Math.max(
+        peak,
+        parseFloat(first.style.transform.match(/scale\(([\d.]+)\)/)?.[1] ?? '1'),
+      )
+      await new Promise(requestAnimationFrame)
+    }
+    const settled = parseFloat(first.style.transform.match(/scale\(([\d.]+)\)/)?.[1] ?? '1')
+    screen.unmount()
+    return { peak, settled }
+  }
+  const eased = await peakOf()
+  expect(eased.peak).toBeLessThanOrEqual(eased.settled + 1e-3)
+  const sprung = await peakOf({ spring: { damping: 0.4, response: 0.3 } })
+  expect(sprung.settled).toBeCloseTo(eased.settled, 2)
+  expect(sprung.peak).toBeGreaterThan(sprung.settled + 0.05)
+})
+
+test('a mouse click keeps the magnification; a finger lifting settles it', async () => {
+  const screen = await render(DockFixture, {})
+  const buttons = itemButtons(screen)
+  const root = screen.container.querySelector<HTMLElement>('.ui-dock')!
+  await expect.poll(() => (hoverItem(root, buttons[0]), scaleOf(buttons[0]))).toBeGreaterThan(1.3)
+  root.dispatchEvent(new PointerEvent('pointerup', { pointerType: 'mouse', bubbles: true }))
+  for (let i = 0; i < 10; i++) await new Promise(requestAnimationFrame)
+  expect(scaleOf(buttons[0])).toBeGreaterThan(1.3)
+  root.dispatchEvent(new PointerEvent('pointerup', { pointerType: 'touch', bubbles: true }))
+  await expect.poll(() => scaleOf(buttons[0])).toBeCloseTo(1, 1)
+})

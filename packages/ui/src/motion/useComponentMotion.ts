@@ -139,8 +139,9 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
           // SVG too: a badge popping, a check drawing.
           if (!(entry.el instanceof HTMLElement || entry.el instanceof SVGElement)) return
           const el = entry.el as HTMLElement
+          const later = (entry.motion as { appear?: unknown } | undefined)?.appear === 'later'
           const play = () => {
-            const group = targetsOf([entry], resolved.value)[0]
+            const group = targetsOf([entry], resolved.value, true)[0]
             const where = { direction: resolved.value.direction, index: 0 }
             const initial = valuesAt(group?.motion.initial, where)
             if (!group || !initial) return
@@ -154,7 +155,8 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
           }
           if (phase.value === 'entered') return play()
           // Joined mid-opening: once it's open, unless the opening already brought it in.
-          if (phase.value !== 'entering') return
+          // `appear: 'later'` came with the opening, so it shows as it is.
+          if (phase.value !== 'entering' || later) return
           const stop = watch(phase, (now) => {
             if (now === 'entering') return
             stop()

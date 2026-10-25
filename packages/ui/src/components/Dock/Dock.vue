@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import './Dock.css'
 import '../shared/tokens.css'
-import { computed, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import { computed, inject, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
 import type { Component } from 'vue'
 import type { Side } from '@floating-ui/dom'
 import { inlineKey } from '../../composables/dom'
@@ -67,7 +67,10 @@ import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { vTooltip } from '../../directives/vTooltip'
 import { useStateMotion } from '../../motion/useStateMotion'
-import type { DockMotion } from '../../motion/types'
+import type { DockMotion, Spring } from '../../motion/types'
+import { springOf } from '../../composables/springNames'
+import { useMotionStyle } from '../../motion/context'
+import { defaultsKey } from '../../config'
 
 defineOptions({ inheritAttrs: false })
 
@@ -122,7 +125,7 @@ const props = withDefaults(
     tooltipSide?: Side
     /** Class and style overrides for each part. */
     ui?: Partial<{ root: UiPartValue; item: UiPartValue }>
-    /** How it moves: its appearance, item by item (`{ initial: { item: { opacity: 0, y: 8 } }, stagger: 0.04 }`). `false` turns its own animation off. */
+    /** How it moves: its appearance, item by item (`{ initial: { item: { opacity: 0, y: 8 } }, stagger: 0.04 }`), and the `spring` magnification follows the pointer on (`{ spring: 'bouncy' }`). `false` turns its own animation off. */
     motion?: DockMotion
   }>(),
   {
@@ -162,6 +165,18 @@ const parts = useStateMotion({
   }),
 })
 
+// Magnification chases the pointer on your spring: your own, then the style's, then the app's.
+const motionStyle = useMotionStyle()
+const providerDefaults = inject(defaultsKey, undefined)
+function magnifySpring() {
+  const own = props.motion
+  return springOf(
+    ((typeof own === 'object' && own.spring) ||
+      motionStyle?.value?.spring ||
+      providerDefaults?.value.spring) as Spring | undefined,
+  )
+}
+
 const { setItemEl, onPointerDown, onPointerMove, onPointerLeave, touchSlid, remeasure } = useDock(
   rootEl,
   () => props.items.length,
@@ -173,6 +188,7 @@ const { setItemEl, onPointerDown, onPointerMove, onPointerLeave, touchSlid, reme
     disabled: () => props.disabled,
     magnify: () => props.magnify,
     grow: () => props.grow,
+    spring: () => magnifySpring(),
   },
 )
 

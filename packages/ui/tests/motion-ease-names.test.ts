@@ -8,12 +8,15 @@ import { vAnimate } from '../src/directives/vAnimate'
 import { cssDuration, cssEasing } from '../src/motion/ease'
 
 test('tokens by name, and CSS as it is', () => {
-  expect(cssEasing('out')).toBe('var(--ui-ease-out)')
-  expect(cssEasing('in-out')).toBe('var(--ui-ease-in-out)')
+  // The theme's value when a component around retimes the token, else the token.
+  expect(cssEasing('out')).toBe('var(--ui-theme-ease-out, var(--ui-ease-out))')
+  expect(cssEasing('in-out')).toBe('var(--ui-theme-ease-in-out, var(--ui-ease-in-out))')
   for (const css of ['ease-out', 'linear', 'cubic-bezier(0.2, 0, 0, 1)', 'steps(4)', 'var(--x)'])
     expect(cssEasing(css)).toBe(css)
-  expect(cssDuration('enter')).toBe('var(--ui-duration-enter)')
-  expect(cssDuration('drawer-exit')).toBe('var(--ui-duration-drawer-exit)')
+  expect(cssDuration('enter')).toBe('var(--ui-theme-duration-enter, var(--ui-duration-enter))')
+  expect(cssDuration('drawer-exit')).toBe(
+    'var(--ui-theme-duration-drawer-exit, var(--ui-duration-drawer-exit))',
+  )
   expect(cssDuration('var(--x)')).toBe('var(--x)')
 })
 

@@ -546,7 +546,7 @@ test('a change inside a popover mid-entrance that keeps its size starts no resiz
   ).toHaveLength(0)
 })
 
-test('layout: an element with its own offset and scale slides by its layout move only, onto them', async () => {
+test('layout: an element whose own offset drops as it moves slides from where it showed, onto its look', async () => {
   const spread = shallowRef(false)
   render({
     setup: () => () =>
@@ -570,8 +570,9 @@ test('layout: an element with its own offset and scale slides by its layout move
   const el = () => document.querySelector<HTMLElement>('.moves')!
   await vi.waitFor(() => expect(el().getAnimations().length).toBeGreaterThan(0))
   const run = el().getAnimations()[0]!
-  // Its own translate and scale changing aren't its move; the slide adds onto them.
-  expect(String((run.effect as KeyframeEffect).getKeyframes()[0]!.translate)).toBe('0px -40px')
+  // Its own offset dropping with the move (10px, no transition) is where it showed: the slide
+  // starts there, 40px up less those 10, so it doesn't jump. It adds onto its own look.
+  expect(String((run.effect as KeyframeEffect).getKeyframes()[0]!.translate)).toBe('0px -30px')
   expect((run.effect as KeyframeEffect).composite).toBe('add')
 })
 

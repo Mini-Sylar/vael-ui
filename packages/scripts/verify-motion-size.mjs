@@ -65,13 +65,25 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // v-animate, `appear: 'later'`, `after` and `steps` among elements that appear together, a delay
 // before layout slides, and loops that change speed in place. The names live apart from the spring
 // compiler, so a Button pays ~90 B. Measured 7798, 6458, 5906, 1563 and 2795 B.
+// up front 7.65 → 7.7 KB (2026-10-25): a replay that cuts another short keeps what Vue's :style set
+// meanwhile, and puts back only once. Measured 7868 B.
+// up front 7.7 → 7.85 KB (2026-10-25): no edge-hover jitter (a growing box keeps what already
+// showed past it), an element's own transitions keep running while the engine plays, and a replay
+// under reduced motion doesn't fade in from nothing, and a leaving element placed by its own CSS
+// (absolute) follows its container. Measured 8030 B.
+// up front 7.85 → 7.9 KB, runtime 6.35 → 6.4 KB, linked 2.75 → 2.8 KB (2026-10-25): content
+// without its own exit leaves with its closing panel, as it looks; `appear: 'later'` counts from a
+// panel's opening; sizes ride springs. Measured 8069, 6512 and 2822 B.
+// up front 7.9 → 8 KB, states 5.8 → 5.9 KB (2026-10-25): a token named inside a component given
+// its own timing means the theme's (names resolve through --ui-theme-*, which a retimed component
+// keeps), and durations given as plain strings read right. Measured 8146 and 6037 B.
 const BUDGET = {
-  upFront: 7.65 * 1024,
-  runtime: 6.35 * 1024,
+  upFront: 8 * 1024,
+  runtime: 6.4 * 1024,
   morph: 1.55 * 1024,
   button: 1.2 * 1024,
-  states: 5.8 * 1024,
-  linked: 2.75 * 1024,
+  states: 5.9 * 1024,
+  linked: 2.8 * 1024,
 }
 
 // Every chunk a file pulls in statically.

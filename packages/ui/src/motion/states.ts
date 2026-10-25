@@ -524,9 +524,17 @@ export function putTimingTokens(el: HTMLElement | SVGElement, timing: MotionTimi
     if (timing.easing) easing = cssEasing(String(timing.easing))
   }
   const set: string[] = []
+  // The theme's values first, kept beside the retimed ones for what's inside (see cssEasing).
+  const around = el.parentElement ? getComputedStyle(el.parentElement) : undefined
   const put = (names: string[], value: string | undefined) => {
     if (!value) return
     for (const name of names) {
+      const theme = name.replace('--ui-', '--ui-theme-')
+      const was = around?.getPropertyValue(theme).trim() || around?.getPropertyValue(name).trim()
+      if (was) {
+        el.style.setProperty(theme, was)
+        set.push(theme)
+      }
       el.style.setProperty(name, value)
       set.push(name)
     }

@@ -49,9 +49,11 @@ const px = (v: unknown) => (typeof v === 'number' ? `${v}px` : String(v ?? 0))
 const ownTiming = (t: MotionTiming | undefined) =>
   !!t && (t.spring !== undefined || t.duration !== undefined || t.easing !== undefined)
 
-/** A duration token (`var(--ui-duration-enter)`) in ms, read from where it applies. */
+/** A duration (`var(--ui-duration-enter)`, its fallback form, or `'200ms'`) in ms, read where it applies. */
 function tokenMs(el: Element, token: string): number {
-  const value = getComputedStyle(el).getPropertyValue(token.slice(4, -1)).trim()
+  const match = /^var\((--[\w-]+)(?:,\s*(.+))?\)$/.exec(token.trim())
+  const value = match ? getComputedStyle(el).getPropertyValue(match[1]!).trim() : token.trim()
+  if (match && !value && match[2]) return tokenMs(el, match[2])
   const n = Number.parseFloat(value)
   if (!Number.isFinite(n)) return 300
   return value.endsWith('ms') ? n : n * 1000
@@ -125,6 +127,8 @@ function plan(values: MotionValues, rtl: boolean): Plan {
 interface Staged {
   values: Partial<Record<Prop, string>>
   transition: string
+  /** Placed at its start: this engine's properties at once, the element's own transitions running. */
+  place: string
 }
 function stage(
   el: HTMLElement,
@@ -162,19 +166,53 @@ function stage(
     const delay = Math.max(0, delayMs + (own?.delay ?? 0) * 1000)
     return `${prop} ${Math.round(duration)}ms ${easing} ${Math.round(delay)}ms`
   })
-  return { values: held, transition: list.join(', ') }
+  // Its own transitions first, so those for what this engine doesn't move stand (the last wins).
+  const own = ownTransition(el)
+  const first = own ? [own] : []
+  return {
+    values: held,
+    transition: [...first, ...list].join(', '),
+    place: [...first, ...PROPS.map((prop) => `${prop} 0s`)].join(', '),
+  }
+}
+
+// The element's own transitions, from its stylesheet: read before this engine writes its own.
+const ownTransitions = new WeakMap<HTMLElement, string>()
+function ownTransition(el: HTMLElement): string {
+  const ours = written.get(el)?.transition
+  if (!ours || el.style.getPropertyValue('transition') !== ours) {
+    // Only entries that do something: a duration or a delay above 0.
+    const own = getComputedStyle(el).transition.split(/,(?![^(]*\))/)
+    ownTransitions.set(el, own.filter((e) => /(^|\s)[\d.]*[1-9][\d.]*m?s\b/.test(e)).join(','))
+  }
+  return ownTransitions.get(el) ?? ''
 }
 
 // The element's own inline styles, before the engine touched it: put back once it's done.
 const STYLED = [...PROPS, 'transition'] as const
 const before = new WeakMap<HTMLElement, Record<string, string>>()
+// What the engine itself last wrote, so a value someone else set meanwhile (Vue's :style) is theirs.
+const written = new WeakMap<HTMLElement, Record<string, string>>()
 const keep = (el: HTMLElement) => {
-  if (!before.has(el))
+  const own = before.get(el)
+  if (!own) {
     before.set(el, Object.fromEntries(STYLED.map((p) => [p, el.style.getPropertyValue(p)])))
+    return
+  }
+  // Already held (a replay over a replay): a value changed by someone else is its own now. Its
+  // transition is the engine's own while it's held.
+  const ours = written.get(el) ?? {}
+  for (const prop of PROPS) {
+    const now = el.style.getPropertyValue(prop)
+    if (now !== (ours[prop] ?? own[prop])) own[prop] = now
+  }
 }
 // Unchanged, left alone: removing a longhand that's empty would cut it out of a shorthand (an
 // overlay's inline `background`), and the overlay would lose its colour.
 const put = (el: HTMLElement, prop: string, value: string | undefined) => {
+  const ours = written.get(el) ?? {}
+  ours[prop] = value ?? ''
+  written.set(el, ours)
   if (el.style.getPropertyValue(prop) === (value ?? '')) return
   if (value) el.style.setProperty(prop, value)
   else el.style.removeProperty(prop)
@@ -189,9 +227,12 @@ const release = (el: HTMLElement) => {
 }
 const clear = (el: HTMLElement) => {
   const own = before.get(el)
-  for (const prop of STYLED) put(el, prop, own?.[prop])
-  before.delete(el)
   el.removeAttribute('data-ui-m')
+  // Already put back (two runs settling on one element): its own styles are there, leave them.
+  if (!own) return
+  for (const prop of STYLED) put(el, prop, own[prop])
+  before.delete(el)
+  written.delete(el)
 }
 
 // Only what will end: transitions and finite, playing animations (a paused spinner never finishes).
@@ -242,7 +283,7 @@ function lookOf(el: Element): MotionValues {
   return look as MotionValues
 }
 
-/** Holds an element's starting look with every transition off; the returned call lets it go. */
+/** Holds an element's starting look, its own transitions left running; the returned call lets it go. */
 function bringIn(
   node: HTMLElement,
   values: MotionValues,
@@ -258,7 +299,7 @@ function bringIn(
   const unclipped = !!next.values['clip-path'] && getComputedStyle(node).clipPath === 'none'
   // Caught mid-close: carry on from what's on screen. A replay starts over, as a fromTo does.
   if (restart || !node.hasAttribute('data-ui-m')) {
-    node.style.setProperty('transition', 'none')
+    node.style.setProperty('transition', next.place)
     hold(node, next.values)
   }
   return () => {
@@ -286,6 +327,9 @@ export async function appear(
   /** Held at its start until this settles (`when: 'visible'`: scrolled into view). */
   until?: Promise<unknown>,
 ): Promise<void> {
+  // Replayed under reduced motion: it's on screen already, so only a fade of its own plays.
+  if (again && prefersReducedMotion())
+    values = values.opacity === undefined ? {} : { opacity: values.opacity }
   // Already brought in by its component's opening: never twice, unless it's replayed.
   if (!Object.keys(values).length || (shown.has(el) && !again) || pageHidden()) return
   // Keyframes or properties CSS transitions here can't play (an SVG stroke drawing in): the runtime's.
@@ -532,10 +576,11 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       ...groups.flatMap((g) =>
         g.els.map((target, index): [HTMLElement, MotionValues, number] => [
           target as HTMLElement,
+          // Content without an `exit` of its own goes with the panel around it, just as it looks.
           exitOf(
             g.each[index]!,
             { direction: m.direction, index, count: g.els.length },
-            QUIET_FADE,
+            lookOf(target),
           ),
           0,
         ]),
@@ -566,7 +611,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       const now = getComputedStyle(node)
       // Clipped from none: from no inset instead, which it can wipe from.
       if (next.values['clip-path'] && now.clipPath === 'none') {
-        node.style.setProperty('transition', 'none')
+        node.style.setProperty('transition', next.place)
         node.style.setProperty('clip-path', NO_CLIP)
         void now.clipPath
       }

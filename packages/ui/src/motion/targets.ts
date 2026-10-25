@@ -16,10 +16,18 @@ export interface TargetGroup {
   each: TargetMotion[]
 }
 
-export function targetsOf(entries: PresenceEntry[], motion: ResolvedMotion): TargetGroup[] {
+export function targetsOf(
+  entries: PresenceEntry[],
+  motion: ResolvedMotion,
+  /** One joining an open component: `appear: 'later'` plays now. */
+  joining = false,
+): TargetGroup[] {
   const groups = new Map<string, TargetGroup>()
   for (const entry of entries) {
-    const own = typeof entry.motion === 'string' ? motion.presets[entry.motion] : entry.motion
+    let own = typeof entry.motion === 'string' ? motion.presets[entry.motion] : entry.motion
+    // `appear: 'later'`: not with the component's opening.
+    if ((own as { appear?: unknown } | undefined)?.appear === 'later' && !joining)
+      own = { ...own, initial: undefined }
     if (typeof entry.motion === 'string' && !own)
       if (process.env.NODE_ENV !== 'production')
         motionWarn(`v-animate preset '${entry.motion}' isn't in the style's presets.`)
@@ -33,6 +41,9 @@ export function targetsOf(entries: PresenceEntry[], motion: ResolvedMotion): Tar
   return [...groups.values()]
 }
 
-/** Where an element leaves to: its `exit`, a quiet fade without one, nowhere for `exit: false`. */
-export const exitOf = (t: TargetMotion, where: MotionWhere, quiet: MotionValues): MotionValues =>
-  t.exit === false ? {} : (valuesAt(t.exit, where) ?? quiet)
+/** Where an element leaves to: its `exit`, `otherwise` without one, nowhere for `exit: false`. */
+export const exitOf = (
+  t: TargetMotion,
+  where: MotionWhere,
+  otherwise: MotionValues,
+): MotionValues => (t.exit === false ? {} : (valuesAt(t.exit, where) ?? otherwise))

@@ -15,6 +15,14 @@ import { motionWarn } from './warn'
 
 const QUIET_EXIT: MotionValues = { opacity: 0, scale: '0.97' }
 const QUIET_FADE: MotionValues = { opacity: 0 }
+// How it looks now, in what an exit moves.
+const lookOf = (el: Element): MotionValues => {
+  const style = getComputedStyle(el)
+  const look: Record<string, string> = { opacity: style.opacity }
+  for (const key of ['translate', 'scale', 'rotate', 'filter'] as const)
+    if (style[key] !== 'none') look[key] = style[key]
+  return look as MotionValues
+}
 // `exitOrder: 'reverse'`: seconds between leaving targets, and the most the cascade may add.
 const REVERSE_STEP = 0.04
 const REVERSE_CAP = 0.2
@@ -307,10 +315,11 @@ export function createRunner(host: RunnerHost): Runner {
       Promise.all(
         leaving.map((entry, i) => {
           const own = ownOf.get(entry.el) ?? {}
+          // Content without an `exit` of its own goes with the panel around it, just as it looks.
           const exit = exitOf(
             own,
             { direction: motion.direction, index: i, count: leaving.length },
-            QUIET_FADE,
+            lookOf(entry.el),
           )
           return playValues(entry.el, exit, {
             direction: 'out',

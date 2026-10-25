@@ -35,7 +35,8 @@ export function holdTarget(el: HTMLElement) {
         parts: { target: el },
         timing,
         spring,
-        instant: first || instant,
+        // Its first look shows at once, unless it's coming back after none (`changed`).
+        instant: (first && !changed) || instant,
         again: changed && !first ? [ON] : undefined,
       })
       first = false

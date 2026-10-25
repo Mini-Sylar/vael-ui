@@ -197,3 +197,20 @@ test('a panel opens to its exact height, so nothing hops when the animation lets
   for (const height of targets) expect(height).toBeCloseTo(open, 2)
   expect(panel.getBoundingClientRect().height).toBeCloseTo(open, 2)
 })
+
+test('exposes the built-in chevron, and null when #trigger replaces it', async () => {
+  const items: Record<string, { chevronEl: SVGSVGElement | null } | null> = {}
+  render(() =>
+    h(Accordion as never, { value: 'a' }, () => [
+      h(AccordionItem, { value: 'a', title: 'A', ref: (el) => (items.a = el as never) }),
+      h(
+        AccordionItem,
+        { value: 'b', ref: (el) => (items.b = el as never) },
+        { trigger: () => 'B', default: () => 'Body' },
+      ),
+    ]),
+  )
+  await expect.poll(() => items.a?.chevronEl).toBeInstanceOf(SVGSVGElement)
+  expect(items.a!.chevronEl!.classList.contains('ui-accordion-chevron')).toBe(true)
+  expect(items.b?.chevronEl).toBeNull()
+})

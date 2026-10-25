@@ -427,7 +427,7 @@ test("exitOrder 'reverse': targets leave last-first to their own exit, then the 
       exitOrder: 'reverse',
       targets: {
         a: { initial: { opacity: 0 }, exit: { opacity: 0, x: -20 } },
-        b: { initial: { opacity: 0 } },
+        b: { initial: { opacity: 0 }, exit: { opacity: 0 } },
       },
     },
     ({ target }) => [
@@ -625,4 +625,46 @@ test('steps: a target stops at each step, holds, then goes on to rest', async ()
     timeout: 2000,
   })
   await vi.waitFor(() => expect(events).toContain('after-enter'))
+})
+
+test('content without an exit of its own goes with the panel, not before it', async () => {
+  const { open, events } = dialog(
+    { targets: { rows: { initial: { opacity: 0 } } } },
+    ({ target }) => [h('li', { ref: target('rows'), 'data-name': 'row' }, 'row')],
+  )
+  open.value = true
+  await vi.waitFor(() => expect(events).toContain('after-enter'))
+  const row = () => document.querySelector<HTMLElement>('[data-name="row"]')
+  open.value = false
+  let lowest = 1
+  while (panel() && row()) {
+    lowest = Math.min(lowest, Number(getComputedStyle(row()!).opacity))
+    await frame()
+  }
+  // Its own opacity holds: it fades only as the panel around it does.
+  expect(lowest).toBe(1)
+})
+
+test("appear: 'later' inside a panel: not with its opening, yes for a row that comes while it's open", async () => {
+  const rows = shallowRef(['a', 'b'])
+  const later = { appear: 'later' as const, initial: { opacity: 0 }, duration: 400 }
+  const { open, events } = dialog(undefined, () =>
+    rows.value.map((r) =>
+      withDirectives(h('p', { key: r, 'data-row': r }, r), [[vAnimate, later]]),
+    ),
+  )
+  const row = (r: string) => document.querySelector<HTMLElement>(`[data-row="${r}"]`)
+  open.value = true
+  let lowest = 1
+  while (!events.includes('after-enter')) {
+    if (row('a')) lowest = Math.min(lowest, Number(getComputedStyle(row('a')!).opacity))
+    await frame()
+  }
+  // The opening brings the panel in; its rows show as they are.
+  expect(lowest).toBe(1)
+  rows.value = ['a', 'b', 'c']
+  await vi.waitFor(() => expect(row('c')).not.toBeNull())
+  await frame()
+  await frame()
+  expect(Number(getComputedStyle(row('c')!).opacity)).toBeLessThan(1)
 })

@@ -4,7 +4,8 @@ import type { MotionTiming, MotionValues } from './types'
 
 export { isTimed }
 
-const MOVES = new Set(['translate', 'scale', 'rotate', 'transform'])
+// What eases instead of springing: how it looks, not where or how big it is (as motion does).
+const FADES = /^(opacity|filter|boxShadow|fill|stroke|.*[cC]olor)$/
 
 const px = (value: unknown): string =>
   typeof value === 'number' ? `${value}px` : String(value ?? 0)
@@ -47,8 +48,9 @@ export function groupValues(values: MotionValues): ValueGroup[] {
 }
 
 /** One keyframe from a state. `x` mirrors in right-to-left layouts. `axis` names where x and y go. */
-// Plain numbers: these stay numbers, `rotate` is degrees, and any other property is px.
-const UNITLESS = /^(opacity|scale|zIndex|order|flex|fontWeight|lineHeight|(fill|stroke)Opacity)/
+// Plain numbers: these stay numbers (a custom property's, as its syntax says), `rotate` is degrees,
+// and any other property is px.
+const UNITLESS = /^(--|opacity|scale|zIndex|order|flex|fontWeight|lineHeight|(fill|stroke)Opacity)/
 /** A value for a keyframe: `width: 100` is `100px`, `rotate: 45` is `45deg`. */
 export const cssValue = (key: string, value: unknown): string =>
   typeof value !== 'number' || UNITLESS.test(key)
@@ -125,11 +127,14 @@ export const repeatOf = (t: { repeat?: number; repeatType?: 'loop' | 'reverse' }
   direction: (t?.repeatType === 'reverse' ? 'alternate' : 'normal') as PlaybackDirection,
 })
 
-/** Movement rides a spring; opacity, colour and blur ease, so a wobble never turns anything see-through. */
+/**
+ * Movement and size ride a spring; opacity, colour and blur ease, so a wobble never turns anything
+ * see-through.
+ */
 export function splitFrame(frame: Keyframe): { moves: Keyframe; fades: Keyframe } {
   const moves: Keyframe = {}
   const fades: Keyframe = {}
-  for (const [key, value] of Object.entries(frame)) (MOVES.has(key) ? moves : fades)[key] = value
+  for (const [key, value] of Object.entries(frame)) (FADES.test(key) ? fades : moves)[key] = value
   return { moves, fades }
 }
 

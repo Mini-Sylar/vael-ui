@@ -52,8 +52,8 @@ const rawProps = withDefaults(
     /** Whether the last open item can close, leaving none open. @default true */
     collapsible?: boolean
     /**
-     * `false` turns the transitions off, so you can animate the exposed `panelEl` and `open`
-     * yourself. An object animates each item's states, like a quarter-turn chevron:
+     * `false` turns the transitions off, so you can animate each item's exposed `panelEl` and
+     * `chevronEl` yourself. An object animates each item's states, like a quarter-turn chevron:
      * `{ states: { open: { chevron: { rotate: '90deg' } } } }`. @default true
      */
     motion?: AccordionMotion

@@ -1,10 +1,11 @@
 import '../src/style.css'
 import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { h, shallowRef } from 'vue'
+import { defineComponent, h, shallowRef, withDirectives } from 'vue'
 import Button from '../src/components/Button/Button.vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 import Dialog from '../src/components/Dialog/Dialog.vue'
+import { vAnimate } from '../src/directives/vAnimate'
 
 vi.mock('../src/composables/dom', async (original) => ({
   ...(await original<typeof import('../src/composables/dom')>()),
@@ -122,4 +123,29 @@ test('reduced motion: an engine gets the fade without the movement', async () =>
   expect(seen[0]).toHaveProperty('opacity')
   expect(seen[0]).not.toHaveProperty('scale')
   expect(seen[0]).not.toHaveProperty('y')
+})
+
+test('a replay of movement only, on screen already: it neither moves nor fades', async () => {
+  const turn = shallowRef(0)
+  render(
+    defineComponent({
+      setup: () => () =>
+        withDirectives(h('p', { class: 'kicks' }, 'Kick'), [
+          [
+            vAnimate,
+            { initial: { x: 12, scale: 1.2 }, duration: 300, replay: turn.value, appear: false },
+          ],
+        ]),
+    }),
+  )
+  await frame()
+  const el = document.querySelector<HTMLElement>('.kicks')!
+  turn.value++
+  const seen: number[] = []
+  for (let i = 0; i < 12; i++) {
+    await frame()
+    seen.push(Number(getComputedStyle(el).opacity))
+  }
+  expect(Math.min(...seen)).toBe(1)
+  expect(getComputedStyle(el).translate).toBe('none')
 })

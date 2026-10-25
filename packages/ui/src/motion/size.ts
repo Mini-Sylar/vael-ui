@@ -53,13 +53,28 @@ export function followSize(
     if (!taller && !wider) return []
     if (!clipEnd) return [{ overflow: 'hidden' }, { overflow: 'hidden' }]
     const rtl = getComputedStyle(el).direction === 'rtl'
-    const at = (margin: number) => {
-      const edge = (moves: boolean) => (moves ? `${-margin}px` : '-100vmax')
-      return {
-        clipPath: `inset(-100vmax ${edge(wider && !rtl)} ${edge(taller)} ${edge(wider && rtl)})`,
-      }
+    const at = (block: number, inline: number) => {
+      const edge = (moves: boolean, margin: number) => (moves ? `${-margin}px` : '-100vmax')
+      const side = (end: boolean) => edge(wider && end, inline)
+      return { clipPath: `inset(-100vmax ${side(!rtl)} ${edge(taller, block)} ${side(rtl)})` }
     }
-    return [at(0), at(shadowReach(el))]
+    const reach = shadowReach(el)
+    // What showed past it, its shadow included, never a hair short of its edge.
+    const past = (shown: number) => (shown > 0 ? shown + reach : 0)
+    return [at(past(seen.block), past(seen.inline)), at(reach, reach)]
+  }
+  // What already shows past its moving edges at rest (cards peeking out of a stack): a growth
+  // starts its clip there, so nothing seen vanishes, or stops taking the pointer, as it opens.
+  let seen = { block: 0, inline: 0 }
+  const note = () => {
+    const box = el.getBoundingClientRect()
+    const rtl = getComputedStyle(el).direction === 'rtl'
+    seen = { block: 0, inline: 0 }
+    for (const child of el.children) {
+      const r = child.getBoundingClientRect()
+      seen.block = Math.max(seen.block, r.bottom - box.bottom)
+      seen.inline = Math.max(seen.inline, rtl ? box.left - r.left : r.right - box.right)
+    }
   }
   const measure = (): Box => {
     const { width, height } = el.getBoundingClientRect()
@@ -114,6 +129,7 @@ export function followSize(
         if (running !== animation) return
         running = undefined
         unpin()
+        requestAnimationFrame(() => running || note())
       },
       () => {},
     )
@@ -176,6 +192,7 @@ export function followSize(
     attributes: true,
   })
   watchChildren()
+  requestAnimationFrame(() => running || note())
   return {
     sync: () => sync(true),
     stop() {

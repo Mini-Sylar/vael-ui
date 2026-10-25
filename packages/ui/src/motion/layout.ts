@@ -147,6 +147,28 @@ const groups = new WeakMap<
 >()
 // A running slide's starting offset, so an interruption carries on from where it shows.
 const offsets = new WeakMap<Animation, Point>()
+// Each one's resting offset of its own (a stacked card's `translate: 0 10px`), at its last place.
+const ownOf = new WeakMap<Element, Point | undefined>()
+
+/**
+ * Its own resting offset, from its style: what our glides add left out. A transition on it still
+ * reads its old value as the change lands, so a transitioned offset isn't counted twice. Unknown
+ * (anything else animating its translate, a percentage) is undefined.
+ */
+function ownShift(el: Element, shown: Point = shownOn(el)): Point | undefined {
+  const others = el
+    .getAnimations()
+    .some((run) => run.id !== LAYOUT_ID && !(run as CSSTransition).transitionProperty)
+  if (others) return undefined
+  const style = getComputedStyle(el)
+  if (style.translate.includes('%')) return undefined
+  const [tx = '0', ty = '0'] = style.translate === 'none' ? [] : style.translate.split(' ')
+  const matrix = style.transform === 'none' ? undefined : new DOMMatrix(style.transform)
+  return {
+    x: (Number.parseFloat(tx) || 0) + (matrix?.m41 ?? 0) - shown.x,
+    y: (Number.parseFloat(ty) || 0) + (matrix?.m42 ?? 0) - shown.y,
+  }
+}
 
 /**
  * Where layout puts it in its parent, its own transforms left out (a card's own scale or offset,
@@ -181,6 +203,20 @@ function placeIn(el: Element, parent: Element): Point | undefined {
     if (up === parent) break
   }
   return { x, y }
+}
+
+/** What its own glides add to where it shows now. */
+function shownOn(el: Element): Point {
+  return el
+    .getAnimations()
+    .filter((run) => run.id === LAYOUT_ID && offsets.has(run))
+    .reduce(
+      (sum, run) => {
+        const o = shownOffset(run)
+        return { x: sum.x + o.x, y: sum.y + o.y }
+      },
+      { x: 0, y: 0 },
+    )
 }
 
 /** Where a slide shows it now, relative to its layout place: its start offset, eased away. */
@@ -226,18 +262,24 @@ function relayout(parent: Element, members: Set<Element>) {
   )
   // One layout read for all.
   const now = list.map((el) => placeIn(el, parent))
+  const ownNow = list.map((el, i) => ownShift(el, shown[i]))
   list.forEach((el, i) => {
     const last = placeOf.get(el)
     const place = now[i]
+    const ownLast = ownOf.get(el)
+    const own = ownNow[i]
     placeOf.set(el, place)
+    ownOf.set(el, own)
     // Unmoved: a glide on its way carries on undisturbed.
     if (!last || !place || (Math.abs(last.x - place.x) < 0.5 && Math.abs(last.y - place.y) < 0.5))
       return
     for (const run of runs[i]!) run.cancel()
     if (reduced || motionOffAt(el)) return
+    // From where it showed: its resting offset of its own that went with the move included.
+    const jumped = ownLast && own ? { x: ownLast.x - own.x, y: ownLast.y - own.y } : { x: 0, y: 0 }
     const offset = {
-      x: last.x + shown[i]!.x - place.x,
-      y: last.y + shown[i]!.y - place.y,
+      x: last.x + shown[i]!.x - place.x + jumped.x,
+      y: last.y + shown[i]!.y - place.y + jumped.y,
     }
     slideBy(el, offset, timingOf.get(el)?.() ?? {})
   })
@@ -254,6 +296,7 @@ export function followLayout(el: Element, timing: () => MotionTiming): () => voi
   const parent = el.parentElement?.closest('[data-ui-presence]') ?? el.parentElement
   if (!parent) return () => {}
   placeOf.set(el, placeIn(el, parent))
+  ownOf.set(el, ownShift(el))
   timingOf.set(el, timing)
   let group = groups.get(parent)
   if (!group) {
@@ -267,7 +310,11 @@ export function followLayout(el: Element, timing: () => MotionTiming): () => voi
     })
     // Resized from outside (the window, a pane): places noted again, nothing slides.
     const resize = new ResizeObserver(() => {
-      for (const each of members) if (each.isConnected) placeOf.set(each, placeIn(each, parent))
+      for (const each of members)
+        if (each.isConnected) {
+          placeOf.set(each, placeIn(each, parent))
+          ownOf.set(each, ownShift(each))
+        }
     })
     resize.observe(parent)
     group = { observer, resize, members }
@@ -294,6 +341,8 @@ export interface LeavingPlace {
   at: number
   /** Its look as it started leaving: where its exit starts from. */
   look?: Record<string, string>
+  /** Out of the flow already (absolute or fixed): it keeps its own place and follows its container. */
+  floats?: boolean
 }
 
 // An element that can be lifted out and placed: HTML, or an icon's outermost <svg>.
@@ -314,7 +363,8 @@ export function placeOnLeave(el: Element): LeavingPlace | undefined {
     const now = el.getBoundingClientRect()
     box = new DOMRect(box.x + was.x - now.x, box.y + was.y - now.y, box.width, box.height)
   }
-  return { parent: el.parentNode, next: el.nextSibling, box, at, look }
+  const floats = /^(absolute|fixed)$/.test(style.position)
+  return { parent: el.parentNode, next: el.nextSibling, box, at, look, floats }
 }
 const HELD_LOOK = ['translate', 'scale', 'rotate', 'transform', 'opacity', 'filter', 'clip-path']
 
@@ -368,9 +418,19 @@ export function exitFrom(initial: MotionValues | undefined): MotionValues {
     const v = initial && key in initial ? half(initial[key], 0) : undefined
     if (v !== undefined) out[key] = v
   }
-  const scale = initial?.scale !== undefined ? half(initial.scale, 1) : undefined
-  if (scale !== undefined) out.scale = String(scale)
+  const scale = initial?.scale !== undefined ? exitScale(initial.scale) : undefined
+  if (scale !== undefined) out.scale = scale
   return out as MotionValues
+}
+
+/**
+ * Each axis halfway back, or all the way when it grew from far smaller (a line drawn in): it never
+ * stops half drawn as it fades, nor grows on the way out when it's caught before it began.
+ */
+function exitScale(raw: unknown): string | undefined {
+  const axes = String(plain(raw)).trim().split(/\s+/).map(Number)
+  if (!axes.length || axes.some((n) => !Number.isFinite(n))) return undefined
+  return axes.map((n) => (n < 0.5 ? n : 1 + (n - 1) / 2)).join(' ')
 }
 
 // Per box, how many are leaving inside it and its own styles, put back when the last is gone.
@@ -437,16 +497,19 @@ export function leaveInPlace(
     if (el.isConnected || !place.parent.isConnected || performance.now() - place.at > HELD) return
     if (pageHidden()) return
     const next = place.next?.parentNode === place.parent ? place.next : null
-    Object.assign(el.style, {
-      position: 'absolute',
-      top: '0px',
-      left: '0px',
-      width: `${place.box.width}px`,
-      height: `${place.box.height}px`,
-      boxSizing: 'border-box',
-      margin: '0',
-      pointerEvents: 'none',
-    })
+    // In the flow, it's lifted out where it was, so nothing around it moves. Already out of it,
+    // its own CSS places it: it follows its container (a bubble on a shrinking pill's side).
+    if (!place.floats)
+      Object.assign(el.style, {
+        position: 'absolute',
+        top: '0px',
+        left: '0px',
+        width: `${place.box.width}px`,
+        height: `${place.box.height}px`,
+        boxSizing: 'border-box',
+        margin: '0',
+      })
+    el.style.pointerEvents = 'none'
     // Placed there, not transitioned to it.
     el.style.setProperty('transition', 'none')
     el.setAttribute('aria-hidden', 'true')
@@ -457,9 +520,11 @@ export function leaveInPlace(
     const unclip = box ? clipWhileLeaving(box) : () => {}
     place.parent.insertBefore(el, next)
     // Placed at 0,0 of whatever holds it, then moved by what that turned out to be.
-    const at = el.getBoundingClientRect()
-    el.style.top = `${place.box.top - at.top}px`
-    el.style.left = `${place.box.left - at.left}px`
+    if (!place.floats) {
+      const at = el.getBoundingClientRect()
+      el.style.top = `${place.box.top - at.top}px`
+      el.style.left = `${place.box.left - at.left}px`
+    }
     // From the look it had, not its resting one: on top of the place it's measured into.
     for (const [prop, value] of Object.entries(place.look ?? {})) el.style.setProperty(prop, value)
     clipToScrollers(el, place)

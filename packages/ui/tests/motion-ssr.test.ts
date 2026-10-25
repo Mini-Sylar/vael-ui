@@ -64,6 +64,9 @@ const cards = () =>
     withDirectives(h('p', { class: 'later' }, 'Later'), [
       [vAnimate, { initial: { opacity: 0 }, when: 'visible' }],
     ]),
+    withDirectives(h('p', { class: 'replays' }, 'Replays'), [
+      [vAnimate, { initial: { opacity: 0 }, appear: false, replay: 1 }],
+    ]),
   ])
 
 test('server render: a v-animate appearance is CSS in the HTML; named targets and `when: visible` just show', async () => {
@@ -80,6 +83,8 @@ test('server render: a v-animate appearance is CSS in the HTML; named targets an
   expect(card.style.color).toBe('rgb(1, 2, 3)')
   expect(doc.querySelector('.named')!.hasAttribute('data-ui-appear')).toBe(false)
   expect(doc.querySelector('.later')!.hasAttribute('data-ui-appear')).toBe(false)
+  // `appear: false`: only its replays play, never the server's first paint.
+  expect(doc.querySelector('.replays')!.hasAttribute('data-ui-appear')).toBe(false)
 })
 
 test('with no script at all, the server HTML plays its appearance from CSS', async () => {

@@ -18,11 +18,13 @@ export type UiEase =
   | 'in-out'
   | 'drawer'
   | 'pop'
+  | 'bounce'
   | 'text'
   | 'var(--ui-ease-out)'
   | 'var(--ui-ease-in-out)'
   | 'var(--ui-ease-drawer)'
   | 'var(--ui-ease-pop)'
+  | 'var(--ui-ease-bounce)'
   | 'var(--ui-ease-toast)'
   | 'var(--ui-ease-indicator)'
   | 'var(--ui-ease-number)'
@@ -750,7 +752,8 @@ export type DialMotion = ComponentMotion<{
 export type DockPart = 'root' | 'item'
 /**
  * Dock: its appearance, item by item, and each item's states: `hover`, `active` (pressed), `focus`,
- * and `selected`, which plays each time the item is picked (a launch hop).
+ * and `selected`, which plays each time the item is picked (a launch hop). Its `spring` is the one
+ * magnification follows the pointer on, overshoot included.
  */
 export type DockMotion = WithStagger<
   ComponentMotion<{
@@ -1133,8 +1136,9 @@ export type AnimateDirectiveValue =
       animate?: MotionValues
       /**
        * `false`: no entrance when it mounts; `replay` and its exit still play. `'later'`: no
-       * entrance for what's there when its component first renders, but one for anything mounted
-       * after, such as a row added to a list. @default true
+       * entrance for what's there when its component first renders (inside a vael-ui component,
+       * when it opens), but one for anything mounted after, such as a row added to a list.
+       * @default true
        */
       appear?: boolean | 'later'
       /**

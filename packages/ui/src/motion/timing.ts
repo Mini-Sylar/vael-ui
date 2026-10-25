@@ -24,8 +24,10 @@ export function cssTime(value: string): number {
 }
 
 export function token(el: Element, value: string): string {
-  const match = /^var\((--[\w-]+)\)$/.exec(value.trim())
-  return match ? getComputedStyle(el).getPropertyValue(match[1]!).trim() : value
+  const match = /^var\((--[\w-]+)(?:,\s*(.+))?\)$/.exec(value.trim())
+  if (!match) return value
+  const own = getComputedStyle(el).getPropertyValue(match[1]!).trim()
+  return own || (match[2] ? token(el, match[2]) : '')
 }
 
 // One step's easing: a spring (by name or numbers) as its curve, a token by name, or CSS.

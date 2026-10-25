@@ -54,6 +54,8 @@ type Marked = HTMLElement & {
   _uiLeavingPlace?: LeavingPlace
   _uiTarget?: ReturnType<typeof import('../motion/animateTarget').holdTarget>
   _uiTargetKey?: string
+  /** It has held a look: one coming back after none animates in. */
+  _uiHeld?: boolean
   /** What the look written at mount covered, put back once its player holds it. */
   _uiShown?: [string, string][]
   /** Mounted with its component's first render: `appear: 'later'` skips its entrance. */
@@ -81,12 +83,13 @@ function followStates(el: Marked, value: AnimateDirectiveValue | undefined) {
 }
 
 /** `animate`: the look it holds, moving to each new one as it changes (from the states player). */
-function followTarget(el: Marked, value: AnimateDirectiveValue | undefined) {
+function followTarget(el: Marked, value: AnimateDirectiveValue | undefined, gone = false) {
   const animate = typeof value === 'object' ? value.animate : undefined
   if (!animate) {
     el._uiTarget?.stop()
     el._uiTarget = el._uiTargetKey = undefined
     putBack(el)
+    if (gone) el._uiHeld = false
     return
   }
   const key = JSON.stringify(animate)
@@ -106,8 +109,10 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined) {
     return
   }
   if (key === el._uiTargetKey) return
-  const changed = el._uiTargetKey !== undefined
+  // A look back after none: it animates in from its own, as any change does.
+  const changed = el._uiTargetKey !== undefined || !!el._uiHeld
   el._uiTargetKey = key
+  el._uiHeld = true
   // Mounting: shown in that look at once, so nothing flashes while its player loads.
   if (!changed) el._uiShown = showNow(el, animate)
   void loadAnimateTarget().then((module) => {
@@ -286,12 +291,10 @@ function join(
   el._uiAnimateLeave?.()
   const presence = findPresence(el)
   if (!presence) return appearAlone(el, name, value)
-  // `appear: false`: it doesn't come in with the component; its exit stays.
+  // `appear: false`: it doesn't come in with the component; its exit stays. `'later'` the
+  // component itself sorts out: not with its opening, yes once it's open.
   const joined =
-    typeof value === 'object' &&
-    (value.appear === false || (value.appear === 'later' && el._uiFirstRender))
-      ? { ...value, initial: undefined }
-      : value
+    typeof value === 'object' && value.appear === false ? { ...value, initial: undefined } : value
   // A string names one of the style's presets; the component resolves it when it plays.
   el._uiAnimateLeave = presence.register(el, name ?? 'default', joined)
 }
@@ -309,13 +312,16 @@ export const vAnimate: ObjectDirective<
   // component's, which shows as it is on load.
   getSSRProps(binding) {
     const value = valueOf(undefined, binding)
-    // `appear: 'later'`: what the server renders is the first render; it shows as it is.
-    if (typeof value === 'object' && value.appear === 'later') return {}
+    // `appear: false` or `'later'`: what the server renders is the first render; it shows as it is.
+    if (typeof value === 'object' && (value.appear === 'later' || value.appear === false)) return {}
     return (!binding.arg && typeof value === 'object' && firstPaint(value)) || {}
   },
   // Before the component that rendered it counts as mounted: is this its first render?
-  created(el, _binding, vnode) {
-    const owner = (vnode as { ctx?: { isMounted?: boolean } | null }).ctx
+  created(el, binding, vnode) {
+    // The template it's written in: on a component, the vnode is that component's own root.
+    const owner =
+      (binding.instance?.$ as { isMounted?: boolean } | undefined) ??
+      (vnode as { ctx?: { isMounted?: boolean } | null }).ctx
     ;(el as Marked)._uiFirstRender = !owner?.isMounted
   },
   mounted(el, binding, vnode) {
@@ -382,7 +388,7 @@ export const vAnimate: ObjectDirective<
     ;(el as Marked)._uiSizeStop?.()
     ;(el as Marked)._uiLayoutStop?.()
     ;(el as Marked)._uiStatesStop?.()
-    followTarget(el as Marked, undefined)
+    followTarget(el as Marked, undefined, true)
   },
 }
 
@@ -523,7 +529,7 @@ export function vAnimateVapor(
   })
   const leave = () => (el as Marked)._uiAnimateLeave?.()
   onScopeDispose(leave)
-  onScopeDispose(() => followTarget(el as Marked, undefined))
+  onScopeDispose(() => followTarget(el as Marked, undefined, true))
   onScopeDispose(() => (el as Marked)._uiStatesStop?.())
   onScopeDispose(() => unwatchView(el))
   return leave

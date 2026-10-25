@@ -75,7 +75,9 @@ function flush() {
       // Timed by you (a wave across a grid): yours, however many; otherwise a budget.
       const timed = value.delay !== undefined || value.stagger !== undefined
       // Many at once (a route of cards): those in view play, up to a budget; the rest just show.
-      if (!later && ((!timed && played >= BUDGET) || scrolling() || !onScreen(el))) return
+      // Scrolling recycles rows; a replay is yours, on screen, and always plays.
+      if (!later && ((!timed && played >= BUDGET) || (!again && scrolling()) || !onScreen(el)))
+        return
       const initial = valuesAt(value.initial, { direction: 0, index: i + 1, count: items.length })
       // Nothing to come in from: it neither plays nor counts.
       if (!initial || !Object.keys(initial).length) return

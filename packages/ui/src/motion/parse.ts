@@ -114,7 +114,7 @@ const PROPERTIES = new Set([
   'outlineColor',
   'letterSpacing',
 ])
-const EASING_TOKEN = /^var\(--ui-ease-[a-z-]+\)$/
+const EASING_TOKEN = /^var\(--ui-(theme-)?ease-[a-z-]+(, var\(--ui-ease-[a-z-]+\))?\)$/
 const DURATION_TOKEN = /^(var\(--ui-duration-[a-z-]+\)|[a-z]+(-[a-z]+)*)$/
 const cssName = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
 
