@@ -156,6 +156,8 @@
   },
   "gettingStarted": {
     "darkModeIntro": "深色模式完全由 CSS 实现。它跟随 <code>&lt;html data-theme=\"dark\"&gt;</code>，未设置时回退到 <code>prefers-color-scheme</code>。vael-ui 不提供切换开关，但 <code>useColorScheme()</code> 会跟踪系统设置的变化，并通过你传入的 <code>persist</code> 选项保存选择：",
+    "darkModeReveal": "要为切换添加动画，请传入它的起点。新主题会从点击位置、某个元素或某个坐标以圆形扩散开来；不支持 View Transitions 的浏览器，或开启了减少动态效果时，会立即切换。{link}有在线演示。",
+    "darkModeRevealLink": "useColorScheme 页面",
     "appearanceHeadIntro": "如果将颜色模式或应用全局字体大小保存在 <code>localStorage</code> 中，请将此脚本放在 HTML 的 <code>&lt;head&gt;</code> 中，并置于应用脚本之前。它会在首次绘制前恢复这两个设置。将 <code>13px</code> 或 <code>1rem</code> 等 CSS 字体大小保存到 <code>app-font-size</code>。除非设置了局部 <code>theme.fontSize</code>，组件会继承该值。",
     "darkModeTitle": "深色模式",
     "directivesIntro": "默认情况下，<code>v-tooltip</code>、<code>v-scroll-mask</code> 和 <code>v-hover-indicator</code> 不会全局注册。如果你在多个组件中使用其中任意一个，请统一注册一次：",

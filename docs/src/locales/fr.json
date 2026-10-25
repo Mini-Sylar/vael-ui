@@ -124,6 +124,8 @@
     "darkModeTitle": "Mode sombre",
     "directivesTitle": "Directives",
     "darkModeIntro": "Le mode sombre repose uniquement sur CSS. Il suit <code>&lt;html data-theme=\"dark\"&gt;</code> et se rabat sur <code>prefers-color-scheme</code>. vael-ui ne fournit aucune bascule, mais <code>useColorScheme()</code> suit les changements du réglage système et enregistre le choix via l'option <code>persist</code> que vous lui passez :",
+    "darkModeReveal": "Pour animer le changement, indiquez son origine. Le nouveau thème s'étend en cercle depuis le clic, un élément ou un point, et les navigateurs sans View Transitions, ou avec le mouvement réduit, changent immédiatement. {link} propose une démo.",
+    "darkModeRevealLink": "La page useColorScheme",
     "appearanceHeadIntro": "Si vous enregistrez le mode de couleur ou une taille de police globale dans <code>localStorage</code>, placez ce script dans le <code>&lt;head&gt;</code> HTML, avant le bundle de l’application. Il restaure les deux avant le premier affichage. Enregistrez une taille de police CSS comme <code>13px</code> ou <code>1rem</code> sous <code>app-font-size</code>. Les composants en héritent, sauf si vous définissez un <code>theme.fontSize</code> local.",
     "directivesIntro": "<code>v-tooltip</code>, <code>v-scroll-mask</code> et <code>v-hover-indicator</code> ne sont pas enregistrées globalement par défaut. Si vous utilisez l'une d'elles dans plusieurs composants, enregistrez-les une seule fois :",
     "directivesNote": "<code>v-tooltip</code> a aussi besoin d'un <code>&lt;TooltipHost /&gt;</code> monté une fois dans votre application. Dans une application Vapor, importez plutôt les deux directives depuis <code>vael-ui/vapor</code>.",

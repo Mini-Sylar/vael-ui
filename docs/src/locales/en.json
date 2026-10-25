@@ -142,6 +142,8 @@
     "fontIntro": "Components use the font of the page around them and ship none of their own. Without one, the browser falls back to its default serif font, so set a font on <code>body</code>:",
     "darkModeTitle": "Dark mode",
     "darkModeIntro": "Dark mode is CSS only. It follows <code>&lt;html data-theme=\"dark\"&gt;</code> and falls back to <code>prefers-color-scheme</code>. vael-ui ships no toggle, but <code>useColorScheme()</code> tracks changes to the OS setting and saves the choice through the <code>persist</code> option you pass:",
+    "darkModeReveal": "To animate the switch, pass where it came from. The new theme spreads in a circle from the click, an element or a point, and browsers without View Transitions, or with reduced motion, switch at once. {link} has a live demo.",
+    "darkModeRevealLink": "The useColorScheme page",
     "appearanceHeadIntro": "If you save the color mode or an app-wide font size in <code>localStorage</code>, put this script in your HTML <code>&lt;head&gt;</code>, before the app bundle. It restores both before the first paint. Save a CSS font size such as <code>13px</code> or <code>1rem</code> under <code>app-font-size</code>. Components inherit it unless you set a scoped <code>theme.fontSize</code>.",
     "directivesTitle": "Directives",
     "directivesIntro": "<code>v-tooltip</code>, <code>v-scroll-mask</code> and <code>v-hover-indicator</code> aren’t registered globally by default. If you use any of them in more than one component, register them once:",

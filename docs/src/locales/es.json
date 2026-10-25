@@ -156,6 +156,8 @@
   },
   "gettingStarted": {
     "darkModeIntro": "El modo oscuro es solo CSS. Sigue a <code>&lt;html data-theme=\"dark\"&gt;</code> y, si no está, recurre a <code>prefers-color-scheme</code>. vael-ui no incluye ningún selector de tema, pero <code>useColorScheme()</code> detecta los cambios en la preferencia del sistema y guarda la elección mediante la opción <code>persist</code> que le pases:",
+    "darkModeReveal": "Para animar el cambio, indica de dónde viene. El nuevo tema se expande en círculo desde el clic, un elemento o un punto, y los navegadores sin View Transitions, o con movimiento reducido, cambian al instante. {link} tiene una demo en vivo.",
+    "darkModeRevealLink": "La página de useColorScheme",
     "appearanceHeadIntro": "Si guardas el modo de color o el tamaño de fuente de toda la app en <code>localStorage</code>, pon este script en el <code>&lt;head&gt;</code> del HTML, antes del bundle de la app. Restaura ambos antes del primer renderizado. Guarda un tamaño de fuente CSS como <code>13px</code> o <code>1rem</code> en <code>app-font-size</code>. Los componentes lo heredan salvo que definas un <code>theme.fontSize</code> con ámbito.",
     "darkModeTitle": "modo oscuro",
     "directivesIntro": "<code>v-tooltip</code>, <code>v-scroll-mask</code> y <code>v-hover-indicator</code> no se registran globalmente por defecto. Si usas alguna de ellas en más de un componente, regístralas una vez:",

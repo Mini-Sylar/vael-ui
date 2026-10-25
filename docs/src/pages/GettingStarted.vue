@@ -94,6 +94,19 @@ const { mode, setMode } = useColorScheme({
   },
 })"
     />
+    <i18n-t keypath="gettingStarted.darkModeReveal" tag="p" scope="global">
+      <template #link>
+        <RouterLink to="/composables/useColorScheme">{{
+          t('gettingStarted.darkModeRevealLink')
+        }}</RouterLink>
+      </template>
+    </i18n-t>
+    <CodeBlock
+      lang="typescript"
+      code="// <button @click=&quot;toggleTheme&quot;>Toggle theme</button>
+const toggleTheme = (event: MouseEvent) =>
+  setMode(mode.value === 'dark' ? 'light' : 'dark', { from: event })"
+    />
     <p v-html="t('gettingStarted.appearanceHeadIntro')" />
     <CodeBlock lang="html" :code="appearanceHeadCode" />
 

@@ -156,6 +156,8 @@
   },
   "gettingStarted": {
     "darkModeIntro": "ダークモードは CSS のみで実装されています。<code>&lt;html data-theme=\"dark\"&gt;</code> に従い、指定がなければ <code>prefers-color-scheme</code> にフォールバックします。vael-ui は切り替え UI を提供しませんが、<code>useColorScheme()</code> は OS 設定の変更を追跡し、渡した <code>persist</code> オプションを通じて選択を保存します:",
+    "darkModeReveal": "切り替えをアニメーションさせるには、起点を渡します。新しいテーマはクリック位置、要素、または座標から円形に広がります。View Transitions に対応していないブラウザや、動きを減らす設定では即座に切り替わります。{link}でデモを確認できます。",
+    "darkModeRevealLink": "useColorScheme のページ",
     "appearanceHeadIntro": "カラーモードやアプリ全体のフォントサイズを <code>localStorage</code> に保存する場合は、このスクリプトを HTML の <code>&lt;head&gt;</code> の、アプリのバンドルより前に置きます。両方を初回表示前に復元します。<code>13px</code> や <code>1rem</code> などの CSS フォントサイズを <code>app-font-size</code> に保存してください。スコープ付きの <code>theme.fontSize</code> を指定しない限り、コンポーネントはその値を継承します。",
     "darkModeTitle": "ダークモード",
     "directivesIntro": "<code>v-tooltip</code>、<code>v-scroll-mask</code>、<code>v-hover-indicator</code> は、デフォルトではグローバル登録されていません。いずれかを複数のコンポーネントで使う場合は、一度だけ登録してください:",
