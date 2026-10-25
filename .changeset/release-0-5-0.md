@@ -4,6 +4,8 @@
 
 ![vael-ui 0.5.0](https://raw.githubusercontent.com/Mini-Sylar/vael-ui/main/.github/assets/release-0.5.0.png)
 
+**Contents:** [Breaking changes](#breaking-changes) · [The motion system](#the-motion-system) · [New components](#new-components) · [New features](#new-features) · [Changes to built-in animations](#changes-to-built-in-animations) · [Accessibility](#accessibility) · [Bug fixes](#bug-fixes) · [Other changes to check when upgrading](#other-changes-to-check-when-upgrading)
+
 ## Breaking changes
 
 | What                          | Before                                        | After                                         |
