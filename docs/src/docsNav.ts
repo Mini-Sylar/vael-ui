@@ -39,6 +39,7 @@ const MOTION_COMPOSABLES = [
   'springEasing',
   'useSpringValue',
   'useScrollProgress',
+  'settled',
   'useHoverIndicator',
   'useTabIndicator',
 ]

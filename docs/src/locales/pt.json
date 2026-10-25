@@ -448,6 +448,7 @@
     "useHoverIndicator": "O destaque deslizante de hover e de teclado por trás das listas do vael-ui. Use-o para dar o mesmo destaque às suas próprias listas.",
     "useSpringValue": "Física de molas interrompível em três formas: um valor reativo, uma mola imperativa que escreve cada quadro sem nova renderização e a função de passo pura por trás de ambos. Use-o para movimentos que podem mudar de destino no meio do caminho.",
     "useScrollProgress": "O progresso da rolagem como ref de 0 a 1: o da página, ou o caminho de um elemento pela tela. Passe para o progress do v-animate como getter.",
+    "settled": "Resolve quando nada do que o vael-ui iniciou ainda está animando, em toda parte ou num elemento. Para testes.",
     "useTabIndicator": "O indicador de seleção deslizante por trás de Tabs, SelectButton, MenuList e Pagination. Use-o para seus próprios controles segmentados e listas.",
     "useScrollLock": "Bloqueia a rolagem da página ou de qualquer elemento sem deslocar o layout, como os diálogos fazem enquanto estão abertos. Use-o para suas próprias sobreposições e painéis de tela cheia.",
     "moveTreeNode": "Move um nó e sua subárvore para um novo pai e índice, no próprio array. Um movimento impossível, como uma pasta para dentro de si mesma, não muda nada. Use-o para aplicar um movimento de arrastar e soltar aos dados da sua árvore.",
@@ -602,6 +603,7 @@
       "springEasing": "Transforma uma mola em um easing CSS e no seu tempo de acomodação.",
       "useSpringValue": "Um valor que segue seu alvo em uma mola.",
       "useScrollProgress": "Progresso da rolagem de 0 a 1, para movimento ligado à rolagem.",
+      "settled": "Espera o movimento terminar, nos testes.",
       "useHoverIndicator": "O destaque deslizante ao passar o mouse, para suas próprias listas.",
       "useTabIndicator": "O indicador deslizante por trás de Tabs e SelectButton."
     },

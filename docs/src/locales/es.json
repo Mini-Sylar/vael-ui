@@ -448,6 +448,7 @@
     "useHoverIndicator": "El resaltado deslizante de hover y teclado detrás de las listas de vael-ui. Úsalo para dar el mismo resaltado a tus propias listas.",
     "useSpringValue": "Física de resortes interrumpible en tres formas: un valor reactivo, un resorte imperativo que escribe cada fotograma sin volver a renderizar y la función de paso pura detrás de ambos. Úsalo para movimiento que puede cambiar de destino a medio camino.",
     "useScrollProgress": "El progreso del scroll como ref de 0 a 1: el de la página o el recorrido de un elemento por la pantalla. Pásalo al progress de v-animate como getter.",
+    "settled": "Se resuelve cuando ya no se anima nada de lo que inició vael-ui, en todas partes o en un elemento. Para tests.",
     "useTabIndicator": "El indicador de selección deslizante detrás de Tabs, SelectButton, MenuList y Pagination. Úsalo para tus propios controles segmentados y listas.",
     "useScrollLock": "Bloquea el desplazamiento de la página o de cualquier elemento sin saltos de diseño, como hacen los diálogos mientras están abiertos. Úsalo para tus propias superposiciones y paneles a pantalla completa.",
     "moveTreeNode": "Mueve un nodo y su subárbol a un nuevo padre e índice, en el mismo lugar. Un movimiento imposible, como una carpeta dentro de sí misma, no cambia nada. Úsalo para aplicar un movimiento de arrastrar y soltar a los datos de tu árbol.",
@@ -602,6 +603,7 @@
       "springEasing": "Convierte un resorte en un easing de CSS y su tiempo de asentamiento.",
       "useSpringValue": "Un valor que sigue a su objetivo sobre un resorte.",
       "useScrollProgress": "Progreso del scroll de 0 a 1, para movimiento ligado al scroll.",
+      "settled": "Espera a que termine el movimiento, en los tests.",
       "useHoverIndicator": "El resaltado deslizante al pasar el cursor, para tus propias listas.",
       "useTabIndicator": "El indicador deslizante detrás de Tabs y SelectButton."
     },

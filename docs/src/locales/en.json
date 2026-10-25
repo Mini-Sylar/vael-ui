@@ -509,6 +509,7 @@
     "useHoverIndicator": "The sliding hover and keyboard highlight behind vael-ui’s lists. Use it to give your own lists the same highlight.",
     "useSpringValue": "Interruptible spring physics in three forms: a reactive value, an imperative spring that writes each frame without re-rendering, and the pure step function behind both. Use it for motion that can change target partway.",
     "useScrollProgress": "Scroll progress as a ref from 0 to 1: the page's, or an element's way through the screen. Pass it to v-animate's progress as a getter.",
+    "settled": "Resolves once nothing vael-ui started is still animating, everywhere or on one element. For tests.",
     "useTabIndicator": "The sliding selection indicator behind Tabs, SelectButton, MenuList and Pagination. Use it for your own segmented controls and lists.",
     "useScrollLock": "Locks scrolling on the page or any element without a layout shift, as dialogs do while they’re open. Use it for your own overlays and full-screen panels.",
     "moveTreeNode": "Moves a node and its subtree to a new parent and index, in place. An impossible move, such as a folder into itself, changes nothing. Use it to apply a drag-and-drop move to your tree data.",
@@ -602,6 +603,7 @@
       "springEasing": "Turns a spring into a CSS easing and its settle time.",
       "useSpringValue": "A value that follows its target on a spring.",
       "useScrollProgress": "Scroll progress from 0 to 1, for scroll-linked motion.",
+      "settled": "Waits for motion to finish, in tests.",
       "useHoverIndicator": "The sliding hover highlight, for your own lists.",
       "useTabIndicator": "The sliding indicator behind Tabs and SelectButton."
     },

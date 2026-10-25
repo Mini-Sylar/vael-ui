@@ -467,6 +467,7 @@
     "useHoverIndicator": "Die gleitende Hover- und Tastatur-Hervorhebung hinter den Listen von vael-ui. Nutzen Sie sie, um Ihren eigenen Listen dieselbe Hervorhebung zu geben.",
     "useSpringValue": "Unterbrechbare Federphysik in drei Formen: ein reaktiver Wert, eine imperative Feder, die jeden Frame ohne Neu-Rendern schreibt, und die reine Schrittfunktion hinter beiden. Nutzen Sie sie für Bewegung, die ihr Ziel unterwegs ändern kann.",
     "useScrollProgress": "Scroll-Fortschritt als Ref von 0 bis 1: der der Seite oder der Weg eines Elements durch den Bildschirm. Gib ihn v-animates progress als Getter.",
+    "settled": "Löst auf, sobald nichts mehr animiert, was vael-ui gestartet hat, überall oder an einem Element. Für Tests.",
     "useTabIndicator": "Der gleitende Auswahlindikator hinter Tabs, SelectButton, MenuList und Pagination. Nutzen Sie ihn für Ihre eigenen Segment-Steuerelemente und Listen.",
     "useScrollLock": "Sperrt das Scrollen der Seite oder eines beliebigen Elements ohne Layoutsprung, so wie Dialoge es tun, solange sie geöffnet sind. Nutzen Sie es für Ihre eigenen Overlays und Vollbild-Panels.",
     "moveTreeNode": "Verschiebt einen Knoten samt Teilbaum direkt an einen neuen Elternknoten und Index. Eine unmögliche Verschiebung, etwa ein Ordner in sich selbst, ändert nichts. Nutzen Sie es, um eine Drag-and-drop-Verschiebung auf Ihre Baumdaten anzuwenden.",
@@ -602,6 +603,7 @@
       "springEasing": "Macht aus einer Feder ein CSS-Easing und ihre Einschwingzeit.",
       "useSpringValue": "Ein Wert, der seinem Ziel auf einer Feder folgt.",
       "useScrollProgress": "Scroll-Fortschritt von 0 bis 1, für Bewegung am Scrollen.",
+      "settled": "Wartet in Tests, bis die Bewegung fertig ist.",
       "useHoverIndicator": "Die gleitende Hover-Markierung, für Ihre eigenen Listen.",
       "useTabIndicator": "Der gleitende Indikator hinter Tabs und SelectButton."
     },

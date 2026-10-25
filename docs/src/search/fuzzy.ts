@@ -155,6 +155,13 @@ export function scoreEntry(query: string, entry: SearchEntry): number {
   }
   // A phrase from the description, word for word, ranks above scattered words.
   if (terms.length > 1 && entry.text?.toLowerCase().includes(normalized)) total += 10
+  // The words as typed, filler included, in its name or keywords: "in view" before a `view` prop.
+  const phrase = query.trim().toLowerCase().replace(/\s+/g, ' ')
+  if (
+    phrase.includes(' ') &&
+    [entry.label, ...(entry.keywords ?? [])].some((name) => name.toLowerCase().includes(phrase))
+  )
+    total += 30 * terms.length
   // Named exactly: "dialog open" wants the `open` prop before `open-change`.
   const exact = terms.includes(entry.label.toLowerCase()) ? 8 : 0
   return total / terms.length + exact + (entry.boost ?? 0)

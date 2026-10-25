@@ -487,6 +487,8 @@ export async function loadDeepEntries(t: Translate): Promise<PaletteEntry[]> {
         parent: chapterTitle,
         to: { name: chapter.routeName, hash: `#${section.id}` },
         text: plain(htmlText(t(`motionDocs.chapters.${chapter.id}.${section.id}.body`))),
+        // Its id as words too: `inView` is found by "in view".
+        keywords: [section.id.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase()],
         icon: PhHash,
         boost: 4,
         group: t('motionDocs.nav.motion'),

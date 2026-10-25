@@ -448,6 +448,7 @@
     "useHoverIndicator": "Le surlignage glissant au survol et au clavier derrière les listes de vael-ui. Utilisez-le pour donner le même surlignage à vos propres listes.",
     "useSpringValue": "Une physique de ressort interruptible sous trois formes : une valeur réactive, un ressort impératif qui écrit chaque image sans nouveau rendu, et la fonction de pas pure derrière les deux. Utilisez-le pour un mouvement dont la cible peut changer en cours de route.",
     "useScrollProgress": "La progression du défilement sous forme de ref de 0 à 1 : celle de la page, ou le passage d'un élément à l'écran. Passez-la au progress de v-animate comme getter.",
+    "settled": "Se résout quand plus rien de ce qu’a lancé vael-ui n’est animé, partout ou sur un élément. Pour les tests.",
     "useTabIndicator": "L'indicateur de sélection glissant derrière Tabs, SelectButton, MenuList et Pagination. Utilisez-le pour vos propres contrôles segmentés et listes.",
     "useScrollLock": "Bloque le défilement de la page ou de n'importe quel élément sans décalage de mise en page, comme le font les dialogues ouverts. Utilisez-le pour vos propres superpositions et panneaux plein écran.",
     "moveTreeNode": "Déplace un nœud et son sous-arbre vers un nouveau parent et un nouvel index, sur place. Un déplacement impossible, comme un dossier dans lui-même, ne change rien. Utilisez-le pour appliquer un glisser-déposer à vos données d'arbre.",
@@ -602,6 +603,7 @@
       "springEasing": "Transforme un ressort en easing CSS et en temps de stabilisation.",
       "useSpringValue": "Une valeur qui suit sa cible sur un ressort.",
       "useScrollProgress": "Progression du défilement de 0 à 1, pour un mouvement lié au défilement.",
+      "settled": "Attend la fin du mouvement, dans les tests.",
       "useHoverIndicator": "Le surlignage glissant au survol, pour vos propres listes.",
       "useTabIndicator": "L'indicateur glissant derrière Tabs et SelectButton."
     },
