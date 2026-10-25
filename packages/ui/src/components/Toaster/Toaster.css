@@ -234,6 +234,18 @@
   .ui-toaster--top-right .ui-toast-leave-to {
     transform: translateY(-100%) scale(0.9);
   }
+  /* A collapsed back card leaving recedes further into the stack, so its edge lifts away and fades
+     instead of sliding behind the front card unseen. */
+  .ui-toaster--bottom-left .ui-toast-leave-to[data-front='false'][data-expanded='false'],
+  .ui-toaster--bottom-center .ui-toast-leave-to[data-front='false'][data-expanded='false'],
+  .ui-toaster--bottom-right .ui-toast-leave-to[data-front='false'][data-expanded='false'] {
+    transform: translateY(-60%) scale(0.9);
+  }
+  .ui-toaster--top-left .ui-toast-leave-to[data-front='false'][data-expanded='false'],
+  .ui-toaster--top-center .ui-toast-leave-to[data-front='false'][data-expanded='false'],
+  .ui-toaster--top-right .ui-toast-leave-to[data-front='false'][data-expanded='false'] {
+    transform: translateY(60%) scale(0.9);
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .ui-toast {

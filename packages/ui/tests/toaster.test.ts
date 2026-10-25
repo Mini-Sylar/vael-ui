@@ -888,3 +888,25 @@ test('states: a toast moving into a variant plays that state; its first variant 
   toast('Could not save', { id: 'save', variant: 'error' })
   await vi.waitFor(() => expect(shaking()).toBeGreaterThan(0))
 })
+
+test('a collapsed back card leaving recedes into the stack, where the front card leaves downward', async () => {
+  await render(Toaster, {
+    props: { duration: 60000 },
+    global: { stubs: { transition: false, 'transition-group': false } },
+  })
+  for (const id of ['a', 'b', 'c']) toast(id, { id })
+  await new Promise((r) => setTimeout(r, 1000))
+  const card = (text: string) =>
+    [...document.querySelectorAll<HTMLElement>('.ui-toast')].find((el) =>
+      el.textContent?.includes(text),
+    )!
+  // The vertical move of the leave transform, partway through it.
+  const moveOf = async (text: string) => {
+    const el = card(text)
+    toast.dismiss(text)
+    await new Promise((r) => setTimeout(r, 90))
+    return new DOMMatrix(getComputedStyle(el).transform).m42
+  }
+  expect(await moveOf('a')).toBeLessThan(-2)
+  expect(await moveOf('c')).toBeGreaterThan(2)
+})

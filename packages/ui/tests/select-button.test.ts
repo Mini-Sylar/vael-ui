@@ -184,3 +184,20 @@ test('multiple mode gets role="group", not role="radiogroup"', async () => {
   })
   expect(screen.container.querySelector('.ui-select-button')!.getAttribute('role')).toBe('group')
 })
+
+test('a narrow column never clips its options', async () => {
+  const SelectButton = (await import('../src/components/SelectButton/SelectButton.vue')).default
+  const { h } = await import('vue')
+  const { render } = await import('vitest-browser-vue')
+  render(() =>
+    h('div', { style: 'display: grid; grid-template-columns: 120px' }, [
+      h(SelectButton as never, {
+        modelValue: 'gentle',
+        'aria-label': 'Spring',
+        items: ['snappy', 'smooth', 'bouncy', 'gentle'].map((value) => ({ label: value, value })),
+      }),
+    ]),
+  )
+  const root = document.querySelector<HTMLElement>('.ui-select-button')!
+  expect(root.scrollWidth).toBeLessThanOrEqual(root.clientWidth + 1)
+})

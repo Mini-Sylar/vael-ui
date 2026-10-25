@@ -10,6 +10,9 @@
     border-radius: var(--ui-select-button-radius);
     background: var(--ui-muted);
     overflow: hidden;
+    /* Never narrower than its options: overflow: hidden alone lets a grid or flex column shrink it
+       and clip the last one. */
+    min-inline-size: max-content;
   }
   .ui-select-button-option {
     position: relative;
