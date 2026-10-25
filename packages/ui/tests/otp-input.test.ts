@@ -259,3 +259,27 @@ test('one ring glides to the active cell and carries the caret while it is empty
   input.blur()
   await vi.waitFor(() => expect(getComputedStyle(ring).opacity).toBe('0'))
 })
+
+test('clearing the code from your own code, while the field has focus, moves the active cell back to the first', async () => {
+  const { h, shallowRef } = await import('vue')
+  const code = shallowRef('')
+  const screen = await render(() =>
+    h(OtpInput, {
+      modelValue: code.value,
+      'onUpdate:modelValue': (v: string) => (code.value = v),
+      length: 4,
+      'aria-label': 'Code',
+    }),
+  )
+  const input = screen.container.querySelector<HTMLInputElement>('input')!
+  input.focus()
+  await userEvent.keyboard('9999')
+  const active = () =>
+    [...screen.container.querySelectorAll('.ui-otp-cell')].findIndex((cell) =>
+      cell.hasAttribute('data-active'),
+    )
+  await vi.waitFor(() => expect(active()).toBe(3))
+  code.value = ''
+  input.focus()
+  await vi.waitFor(() => expect(active()).toBe(0))
+})

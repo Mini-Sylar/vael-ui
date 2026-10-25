@@ -327,6 +327,9 @@ const dataState = computed(() => {
 watch(displayValue, (value) => {
   if (value.length === props.length) emit('complete', value)
 })
+// A value set from your code (cleared after a wrong code) fires no input or selection event: once
+// the input shows it, the caret, and the ring with it, are read again.
+watch(displayValue, () => updateActive(), { flush: 'post' })
 
 // Skip pop-in animation on first paint (pre-filled model shouldn't pop all cells on load).
 const skipTransition = shallowRef(true)
