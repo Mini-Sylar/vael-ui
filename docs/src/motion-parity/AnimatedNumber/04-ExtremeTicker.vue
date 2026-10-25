@@ -2,23 +2,22 @@
   <section class="demo">
     <h3>Extreme: a ticker that flashes its direction</h3>
     <p class="note">
-      AnimatedNumber's <code>motion</code> sets the roll's duration and a slightly overshooting
-      curve. Two <code>v-animate</code>s replay on each new <code>value</code>: the price swells and
-      settles, and the arrow kicks in from the side it moved.
+      AnimatedNumber's <code>motion</code> rolls the digits on a slightly overshooting curve and
+      replays a swell on each new <code>value</code>. One <code>v-animate</code> kicks the arrow in
+      from the side it moved.
     </p>
     <div class="ticker">
       <span class="symbol">ACME</span>
       <AnimatedNumber
-        v-animate="{
-          initial: { scale: 1.04 },
-          duration: 400,
-          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+        :value="value"
+        :format="{ style: 'currency', currency: 'USD' }"
+        :motion="{
+          duration: 450,
+          easing: 'pop',
+          initial: { root: { scale: { value: 1.04, duration: 400, easing: 'out' } } },
           replay: value,
           appear: false,
         }"
-        :value="value"
-        :format="{ style: 'currency', currency: 'USD' }"
-        :motion="{ duration: 450, easing: 'pop' }"
         class="price"
         :data-trend="trend"
       />
@@ -39,7 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import { onScopeDispose, shallowRef } from 'vue'
+import { shallowRef } from 'vue'
+import { useIntervalFn } from '@vueuse/core'
 import { AnimatedNumber } from 'vael-ui'
 import { vAnimate } from 'vael-ui/motion'
 
@@ -51,8 +51,7 @@ function tick() {
   trend.value = change >= 0 ? 'up' : 'down'
   value.value = Math.max(1, Math.round((value.value + change) * 100) / 100)
 }
-const timer = setInterval(tick, 1400)
-onScopeDispose(() => clearInterval(timer))
+useIntervalFn(tick, 1400)
 </script>
 
 <style scoped>

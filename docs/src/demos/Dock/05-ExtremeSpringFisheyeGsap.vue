@@ -9,13 +9,7 @@
       bounce twice.
     </p>
     <div class="stage">
-      <Dock
-        ref="dock"
-        aria-label="Applications"
-        :items="appItems"
-        :magnify="false"
-        @select="launch"
-      />
+      <Dock ref="dock" aria-label="Applications" :items="appItems" @select="launch" />
     </div>
     <p class="demo-status">
       Last launched: <strong>{{ launched ?? 'none yet' }}</strong>

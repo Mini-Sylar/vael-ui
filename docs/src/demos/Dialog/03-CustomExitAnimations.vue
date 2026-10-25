@@ -101,25 +101,28 @@ const flipLook: DialogMotion = {
   enter: ({ panel }) => {
     const delta = flipDelta(elOf(flipTrigger.value), panel)
     if (!delta) return
-    return gsap.fromTo(
-      panel,
-      { ...delta, opacity: 0.5 },
-      {
+    // It fades in over the first part of the grow, so it never starts as a ghost on the button.
+    return gsap
+      .timeline()
+      .fromTo(panel, delta, {
         x: 0,
         y: 0,
         scaleX: 1,
         scaleY: 1,
-        opacity: 1,
         duration: 0.45,
         ease: 'power3.out',
-        clearProps: 'transform,opacity',
-      },
-    )
+      })
+      .fromTo(panel, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: 'power1.out' }, 0)
+      .set(panel, { clearProps: 'transform,opacity' })
   },
   leave: ({ panel }) => {
     const delta = flipDelta(elOf(flipTrigger.value), panel)
     if (!delta) return
-    return gsap.to(panel, { ...delta, opacity: 0.4, duration: 0.3, ease: 'power3.out' })
+    // It fades out over the second half, gone as it lands on the button.
+    return gsap
+      .timeline()
+      .to(panel, { ...delta, duration: 0.3, ease: 'power3.out' })
+      .to(panel, { opacity: 0, duration: 0.15, ease: 'power1.in' }, 0.15)
   },
 }
 
@@ -145,15 +148,23 @@ function openDynamicFlipMotion() {
             y: [delta.y, 0],
             scaleX: [delta.scaleX, 1],
             scaleY: [delta.scaleY, 1],
-            opacity: [0.5, 1],
+            opacity: [0, 1],
           },
-          { duration: 0.45, ease: flipEase },
+          { duration: 0.45, ease: flipEase, opacity: { duration: 0.2, ease: 'easeOut' } },
         )
       },
       leave: ({ panel }) => {
         const delta = flipDelta(triggerEl, panel)
         if (!delta) return
-        return animate(panel, { ...delta, opacity: 0.4 }, { duration: 0.3, ease: flipEase })
+        return animate(
+          panel,
+          { ...delta, opacity: 0 },
+          {
+            duration: 0.3,
+            ease: flipEase,
+            opacity: { duration: 0.15, delay: 0.15, ease: 'easeIn' },
+          },
+        )
       },
     },
   })

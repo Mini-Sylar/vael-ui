@@ -21,7 +21,8 @@
 </template>
 
 <script setup lang="ts">
-import { onScopeDispose, shallowRef, useTemplateRef } from 'vue'
+import { shallowRef, useTemplateRef } from 'vue'
+import { useIntervalFn } from '@vueuse/core'
 import { gsap } from 'gsap'
 import { AnimatedNumber } from 'vael-ui'
 
@@ -43,8 +44,7 @@ function tick() {
       { y: 0, opacity: 1, duration: 0.35, ease: 'back.out(3)' },
     )
 }
-const timer = setInterval(tick, 1400)
-onScopeDispose(() => clearInterval(timer))
+useIntervalFn(tick, 1400)
 </script>
 
 <style scoped>
