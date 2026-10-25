@@ -27,30 +27,6 @@ The rename also covers `ConfigProvider`, `useCollapse`, `useSortable` and `useSo
 }
 ```
 
-### Also changed
-
-- `force-mount` only keeps content mounted. Animate content kept this way with `motion` hooks.
-- `motion="false"` on Select, Combobox, CascadeSelect, DatePicker, TreeSelect and CommandPalette also opens and closes the panel at once.
-- `--ui-indicator-bg` is no longer set on `:root`. Read it as `var(--ui-indicator-bg, var(--ui-muted))`.
-- Timeline's hooks receive the step's `marker`, `connector` and `content`, replacing the removed `TimelineItemParts` type.
-
-These components render different DOM, which your selectors or tests may rely on. Their props, slots and events are unchanged.
-
-| Component                         | Change                                                                                                                                       |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Button                            | Contents sit in `.ui-button-inner`, and `.ui-button::before` draws the box (style it for a dashed border)                                    |
-| Select, TreeSelect, CascadeSelect | The trigger is a frame. The `role` element is `.ui-select-control` (`.ui-cascade-select-control`) and takes your `id`, `aria-*` and `data-*` |
-| CascadeSelect                     | The trigger is `role="button"`, so tests query `getByRole('button')`                                                                         |
-| DatePicker                        | The input takes typing, Space types a space, and the icon is a "Choose date" button                                                          |
-| Sortable                          | The root is `div.ui-sortable`, around `ul.ui-sortable-list`                                                                                  |
-| Tooltip                           | The label is in `.ui-tooltip-content`; `data-traveling` and `data-morphing` replace `data-sizing-locked`                                     |
-| Stepper                           | A step you can't reach yet is a disabled button                                                                                              |
-| Pagination                        | The first, previous, next and last buttons use `aria-disabled`, so they stay focusable                                                       |
-| Progress                          | The ARIA attributes moved from the root to the track                                                                                         |
-| Card                              | The header and footer are `div`s, not page landmarks                                                                                         |
-| Tabs                              | A horizontal tab row scrolls inside its container                                                                                            |
-| Message                           | Stays still while `beforeClose` decides, and leaves once it allows                                                                           |
-
 ## The motion system
 
 0.5.0 rebuilds animation around one `motion` prop and one engine, adds four components, gives every list a sliding hover highlight, and documents each component's keyboard and screen reader support. The [motion guide](https://vael-ui.dev/motion) covers the system in depth. The engine animates `transform` and `opacity` with CSS transitions and Web Animations, and a page loads only the parts it uses.
@@ -166,3 +142,27 @@ Every component page now has an Accessibility section with its keys, the WAI-ARI
 | `vael-ui/style.css`              | Includes every component's styles                                                                                                                                                                                                                                                                      |
 | Bundle size                      | Fields load AnimatedText and AnimatedNumber after mount                                                                                                                                                                                                                                                |
 | Others                           | Field hover cost, Accordion's sub-pixel jump, Pagination's current page, checkboxes at fractional pixel ratios, `useColorScheme` on the server, `useTabs` object items, `moveTreeNode`, `useFileDrop`, `v-draggable`, Calendar's disabled days, ColorPicker on Windows and the forced-colors highlight |
+
+## Other changes to check when upgrading
+
+- `force-mount` only keeps content mounted. Animate content kept this way with `motion` hooks.
+- `motion="false"` on Select, Combobox, CascadeSelect, DatePicker, TreeSelect and CommandPalette also opens and closes the panel at once.
+- `--ui-indicator-bg` is no longer set on `:root`. Read it as `var(--ui-indicator-bg, var(--ui-muted))`.
+- Timeline's hooks receive the step's `marker`, `connector` and `content`, replacing the removed `TimelineItemParts` type.
+
+These components render different DOM, which your selectors or tests may rely on. Their props, slots and events are unchanged.
+
+| Component                         | Change                                                                                                                                       |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Button                            | Contents sit in `.ui-button-inner`, and `.ui-button::before` draws the box (style it for a dashed border)                                    |
+| Select, TreeSelect, CascadeSelect | The trigger is a frame. The `role` element is `.ui-select-control` (`.ui-cascade-select-control`) and takes your `id`, `aria-*` and `data-*` |
+| CascadeSelect                     | The trigger is `role="button"`, so tests query `getByRole('button')`                                                                         |
+| DatePicker                        | The input takes typing, Space types a space, and the icon is a "Choose date" button                                                          |
+| Sortable                          | The root is `div.ui-sortable`, around `ul.ui-sortable-list`                                                                                  |
+| Tooltip                           | The label is in `.ui-tooltip-content`; `data-traveling` and `data-morphing` replace `data-sizing-locked`                                     |
+| Stepper                           | A step you can't reach yet is a disabled button                                                                                              |
+| Pagination                        | The first, previous, next and last buttons use `aria-disabled`, so they stay focusable                                                       |
+| Progress                          | The ARIA attributes moved from the root to the track                                                                                         |
+| Card                              | The header and footer are `div`s, not page landmarks                                                                                         |
+| Tabs                              | A horizontal tab row scrolls inside its container                                                                                            |
+| Message                           | Stays still while `beforeClose` decides, and leaves once it allows                                                                           |
