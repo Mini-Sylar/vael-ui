@@ -75,6 +75,21 @@ export const MOTION_CHAPTERS: MotionChapter[] = [
     ],
   },
   {
+    id: 'callbacks',
+    routeName: 'motion-callbacks',
+    path: '/motion/callbacks',
+    sections: [
+      { id: 'enterLeave', demo: 'callbacks/01-EnterLeave' },
+      { id: 'states', demo: 'callbacks/02-States' },
+      { id: 'overlays', demo: 'callbacks/03-Overlays' },
+      { id: 'swap', demo: 'callbacks/04-Swap' },
+      { id: 'lists', demo: 'callbacks/05-Lists' },
+      { id: 'move', demo: 'callbacks/06-Move' },
+      { id: 'repeat', demo: 'callbacks/07-Repeat' },
+      { id: 'hooks', demo: 'callbacks/08-Hooks' },
+    ],
+  },
+  {
     id: 'styles',
     routeName: 'motion-styles',
     path: '/motion/styles',

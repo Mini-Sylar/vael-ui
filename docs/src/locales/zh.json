@@ -893,6 +893,42 @@
           "body": "<code>enter</code> 钩子会收到各个部件和你的目标元素，这样一条 GSAP 时间线就能为它们全部添加动画。返回这条时间线。对话框会等待它，如果你提前关闭，就会停止它。"
         }
       },
+      "callbacks": {
+        "title": "回调",
+        "intro": "这些回调都在动效播放完后运行，所以下一步不必去猜时长。没有动效播放时，比如关闭了动效，它们会立即运行。",
+        "enterLeave": {
+          "title": "进入之后，离开之后",
+          "body": "在 <code>v-animate</code> 上，<code>onAfterEnter</code> 在入场播放完后运行，每次 <code>replay</code> 后也会运行。<code>onAfterLeave</code> 在离场播放完、元素移除后运行。两者都会收到该元素。"
+        },
+        "states": {
+          "title": "状态之后",
+          "body": "状态的 <code>onAfterEnter</code> 在它打开并播放完后运行，按名称收到各部件：<code>({'{'} root {'}'}) => …</code>。它的 <code>onAfterLeave</code> 在它关闭并复原后运行。重复的部件，比如 OtpInput 的格子，以数组形式传入。"
+        },
+        "overlays": {
+          "title": "打开之后，关闭之后",
+          "body": "组件自身的 <code>onAfterEnter</code> 和 <code>onAfterLeave</code> 与它的 <code>{'@'}after-enter</code>、<code>{'@'}after-leave</code> 同时运行，并收到它的部件。里面你自己的元素，把回调写在 <code>targets</code> 中、外观旁边：<code>hint: {'{'} after: 'panel', onAfterEnter {'}'}</code>。"
+        },
+        "swap": {
+          "title": "切换之后",
+          "body": "<code>onAfterSwap</code> 在新视图进入后运行，收到该视图和 <code>direction</code>。Calendar 的在新月份进入后运行，收到它的网格。"
+        },
+        "lists": {
+          "title": "列表中的每一项",
+          "body": "在列表中，<code>onAfterEnter</code> 和 <code>onAfterLeave</code> 对每一项运行，收到它的部件，以及它在同时进入或离开的项中的 <code>index</code>。"
+        },
+        "move": {
+          "title": "移动之后",
+          "body": "<code>onAfterMove</code> 在 <code>layout</code> 或 <code>layoutId</code> 的滑动、或 <code>animate</code> 的变化播放完后运行。 每个元素各自运行一次，所以一次打乱移动了四行，就会运行四次。"
+        },
+        "repeat": {
+          "title": "每次重复",
+          "body": "写在值的 <code>repeat</code> 旁边，<code>onRepeat</code> 在每次重复开始时运行，收到已完成的次数：1，然后是 2。"
+        },
+        "hooks": {
+          "title": "你自己的动画",
+          "body": "给元素加上 <code>enter</code> 或 <code>leave</code>，就能用 GSAP 或 motion 代替它的值来做动画。请返回该动画：vael-ui 会等它播放完再运行回调，元素提前离开时会停止它。钩子会收到元素和 <code>{'{'} signal, reducedMotion, index {'}'}</code>。"
+        }
+      },
       "styles": {
         "title": "你的应用的动效",
         "intro": "动效风格是 <code>ConfigProvider</code> 上的一个对象，决定整个应用如何运动：按角色、按组件，还可以为你自己的元素设置预设。",

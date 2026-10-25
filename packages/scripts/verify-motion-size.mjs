@@ -80,12 +80,21 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // states 5.9 → 6.2 KB (2026-10-25): a state's `onFinish` runs once its animation has played on every
 // part (once for a repeated part), at once when nothing plays, never for a loop or a state that
 // turned off first. Only components given custom states load this chunk. Measured 6307 B.
+// up front 8 → 8.15 KB (2026-10-25): `v-animate`'s `onFinish` runs once that element's entrance
+// has played, inside a component's opening or on its own, and at once when nothing plays.
+// Measured 8295 B.
+// up front 8.15 → 8.45 KB, runtime 6.4 → 6.5 KB, button 1.2 → 1.24 KB, states 6.2 → 6.5 KB
+// (2026-10-25): `onAfterEnter` / `onAfterLeave` on components, list items, states and your elements
+// (`v-animate`, `targets`), `onAfterSwap`, `onAfterMove`, `onRepeat` (its helper loads only when
+// used), your elements' own `enter` / `leave` hooks, a state that turns on while the player loads
+// still playing, and settled(el) waiting for motion code still on its way (counted in styleKey, no
+// chunk of its own). Measured 8627, 6643, 1262 and 6651 B.
 const BUDGET = {
-  upFront: 8 * 1024,
-  runtime: 6.4 * 1024,
+  upFront: 8.45 * 1024,
+  runtime: 6.5 * 1024,
   morph: 1.55 * 1024,
-  button: 1.2 * 1024,
-  states: 6.2 * 1024,
+  button: 1.24 * 1024,
+  states: 6.5 * 1024,
   linked: 2.8 * 1024,
 }
 

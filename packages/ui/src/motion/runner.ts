@@ -315,6 +315,18 @@ export function createRunner(host: RunnerHost): Runner {
       Promise.all(
         leaving.map((entry, i) => {
           const own = ownOf.get(entry.el) ?? {}
+          // Your own `leave` on this element: it plays instead of `exit`.
+          const hook = own.leave
+          if (hook) {
+            const context = { signal, reducedMotion: prefersReducedMotion(), index: i }
+            return runHook(
+              host.name,
+              'leave',
+              () => hook(entry.el as HTMLElement, context),
+              signal,
+              [entry.el],
+            )
+          }
           // Content without an `exit` of its own goes with the panel around it, just as it looks.
           const exit = exitOf(
             own,

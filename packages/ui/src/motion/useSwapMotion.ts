@@ -7,9 +7,10 @@ import { resolveMotion, useMotionStyle } from './context'
 import { stepOut } from './stepOut'
 import type { ResolvedMotion } from './context'
 import type { MotionStyle, MotionTiming, MotionValues, MotionWhere } from './types'
+import { loading } from './styleKey'
 
 let swapKit: Promise<typeof import('./swap')> | undefined
-const loadSwap = () => (swapKit ??= import('./swap'))
+const loadSwap = () => (swapKit ??= loading(import('./swap')))
 
 type Look = Record<string, (where: MotionWhere) => MotionValues>
 
@@ -22,6 +23,8 @@ export interface SwapMotionOptions {
   initial: Look
   exit: Look
   timing: MotionTiming
+  /** The part that is the view (Calendar's `grid`): `onAfterSwap` gets it once every part is in. */
+  view: string
 }
 
 export interface SwapMotionReturn {
@@ -61,10 +64,27 @@ export function useSwapMotion(options: SwapMotionOptions): SwapMotionReturn {
       ((typeof own === 'object' && own !== null) || !!style?.value?.[options.key])
     )
   })
+  // `onAfterSwap`, once the parts that came in together are all in.
+  let coming = 0
+  let view: Element | undefined
+  const arrived = (part: string, el: Element, done: () => void) => {
+    coming++
+    if (part === options.view) view = el
+    return () => {
+      done()
+      if (--coming) return
+      const own = options.motion() as { onAfterSwap?: (view: HTMLElement, c: object) => void }
+      if (view) own?.onAfterSwap?.(view as HTMLElement, { direction: options.direction() })
+      view = undefined
+    }
+  }
   const hooks: SwapMotionReturn['hooks'] = (part, swap) => {
     const host = { resolved, root: () => null, part, swap }
     return {
-      onEnter: (el, done) => void loadSwap().then((kit) => kit.swapIn(el, done, host), done),
+      onEnter: (el, done) => {
+        const end = arrived(part, el, done)
+        void loadSwap().then((kit) => kit.swapIn(el, end, host), end)
+      },
       onLeave: (el, done) => {
         if (!resolved.value.off && swap === 'sync') stepOut(el)
         void loadSwap().then((kit) => kit.swapOut(el, done, host), done)

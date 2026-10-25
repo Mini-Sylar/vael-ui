@@ -5,7 +5,8 @@ import { onBeforeUpdate } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { resolveTiming, track } from './timing'
-import type { MotionTiming, MotionValues } from './types'
+import type { ElementHookContext, MotionResult, MotionTiming, MotionValues } from './types'
+import { runHook } from './hook'
 import { isTimed } from './playable'
 import { motionOffAt } from './styleHolder'
 import { groupValues, reducePresence, toKeyframe } from './values'
@@ -87,14 +88,18 @@ export function arriveLayout(
   id: string,
   timing: MotionTiming,
   otherwise: () => void,
+  /** It has slid into place (or would have, with motion off). */
+  moved?: () => void,
 ): void {
   queueMicrotask(() => {
     const before = boxes.get(id)
     boxes.delete(id)
     if (!before || performance.now() - before.at > FRESH) return otherwise()
-    if (prefersReducedMotion() || pageHidden() || motionOffAt(el)) return
+    if (prefersReducedMotion() || pageHidden() || motionOffAt(el)) return moved?.()
     const now = el.getBoundingClientRect()
-    slide(el, before.box, now, timing)
+    const run = slide(el, before.box, now, timing)
+    if (!run) moved?.()
+    else run.finished.then(moved, () => {})
   })
 }
 
@@ -107,7 +112,12 @@ const delayOf = (timing: MotionTiming) => {
   return delay ? { delay: delay * 1000, fill: 'backwards' as const } : {}
 }
 
-function slide(el: Element, from: DOMRect, to: DOMRect, timing: MotionTiming) {
+function slide(
+  el: Element,
+  from: DOMRect,
+  to: DOMRect,
+  timing: MotionTiming,
+): Animation | undefined {
   // A scaled ancestor scales the translate too: the gap on screen, in its own pixels.
   // offsetWidth rounds, so only a real scale (over 2%) counts.
   const scaleOf = (shown: number, own: number) =>
@@ -125,7 +135,7 @@ function slide(el: Element, from: DOMRect, to: DOMRect, timing: MotionTiming) {
     Math.abs(sx - 1) < 0.01 &&
     Math.abs(sy - 1) < 0.01
   )
-    return
+    return undefined
   const { duration, easing } = resolveTiming(el, timing)
   const run = el.animate(
     [
@@ -135,12 +145,15 @@ function slide(el: Element, from: DOMRect, to: DOMRect, timing: MotionTiming) {
     { id: LAYOUT_ID, duration, easing, ...delayOf(timing) },
   )
   void track(run.finished.catch(() => {}))
+  return run
 }
 
 // `layout`: each element's last place in its parent, and per parent, the elements watched under it.
 type Point = { x: number; y: number }
 const placeOf = new WeakMap<Element, Point | undefined>()
 const timingOf = new WeakMap<Element, () => MotionTiming>()
+// `onAfterMove`: run once its slide has played, or at once when it moves without one.
+const movedOf = new WeakMap<Element, () => void>()
 const groups = new WeakMap<
   Element,
   { observer: MutationObserver; resize: ResizeObserver; members: Set<Element> }
@@ -228,7 +241,7 @@ function shownOffset(run: Animation): Point {
 
 /** By `offset`, back to its place: added onto its own translate, so its own styles still apply. */
 function slideBy(el: Element, offset: Point, timing: MotionTiming) {
-  if (pageHidden()) return
+  if (pageHidden()) return movedOf.get(el)?.()
   if (Math.abs(offset.x) < 0.5 && Math.abs(offset.y) < 0.5) return
   const { duration, easing } = resolveTiming(el, timing)
   const run = el.animate([{ translate: `${offset.x}px ${offset.y}px` }, { translate: '0px 0px' }], {
@@ -240,6 +253,11 @@ function slideBy(el: Element, offset: Point, timing: MotionTiming) {
   })
   offsets.set(run, offset)
   void track(run.finished.catch(() => {}))
+  // Interrupted by the next move: only the last one counts.
+  run.finished.then(
+    () => movedOf.get(el)?.(),
+    () => {},
+  )
 }
 
 /** Something under the parent changed: each element that moved slides from where it showed. */
@@ -274,7 +292,7 @@ function relayout(parent: Element, members: Set<Element>) {
     if (!last || !place || (Math.abs(last.x - place.x) < 0.5 && Math.abs(last.y - place.y) < 0.5))
       return
     for (const run of runs[i]!) run.cancel()
-    if (reduced || motionOffAt(el)) return
+    if (reduced || motionOffAt(el)) return movedOf.get(el)?.()
     // From where it showed: its resting offset of its own that went with the move included.
     const jumped = ownLast && own ? { x: ownLast.x - own.x, y: ownLast.y - own.y } : { x: 0, y: 0 }
     const offset = {
@@ -290,7 +308,11 @@ function relayout(parent: Element, members: Set<Element>) {
  * reordering), watched through its parent's changes (inside a component, its panel's), the way
  * auto-animate does. Position only. Returns the stop.
  */
-export function followLayout(el: Element, timing: () => MotionTiming): () => void {
+export function followLayout(
+  el: Element,
+  timing: () => MotionTiming,
+  moved?: () => void,
+): () => void {
   // Inside a component's panel, measured against the panel: content in a slot moves with the row
   // around it (a filtered option), not within its own parent.
   const parent = el.parentElement?.closest('[data-ui-presence]') ?? el.parentElement
@@ -298,6 +320,7 @@ export function followLayout(el: Element, timing: () => MotionTiming): () => voi
   placeOf.set(el, placeIn(el, parent))
   ownOf.set(el, ownShift(el))
   timingOf.set(el, timing)
+  if (moved) movedOf.set(el, moved)
   let group = groups.get(parent)
   if (!group) {
     const members = new Set<Element>()
@@ -492,10 +515,14 @@ export function leaveInPlace(
   place: LeavingPlace,
   values: MotionValues,
   timing: MotionTiming,
-): void {
-  queueMicrotask(() => {
-    if (el.isConnected || !place.parent.isConnected || performance.now() - place.at > HELD) return
-    if (pageHidden()) return
+  /** Your own `leave`: it plays instead of `values`. */
+  hook?: (el: HTMLElement, context: ElementHookContext) => MotionResult,
+): Promise<void> {
+  return new Promise((resolve) => queueMicrotask(() => putBack(resolve)))
+  function putBack(resolve: () => void) {
+    if (el.isConnected || !place.parent.isConnected || performance.now() - place.at > HELD)
+      return resolve()
+    if (pageHidden()) return resolve()
     const next = place.next?.parentNode === place.parent ? place.next : null
     // In the flow, it's lifted out where it was, so nothing around it moves. Already out of it,
     // its own CSS places it: it follows its container (a bubble on a shrinking pill's side).
@@ -528,6 +555,19 @@ export function leaveInPlace(
     // From the look it had, not its resting one: on top of the place it's measured into.
     for (const [prop, value] of Object.entries(place.look ?? {})) el.style.setProperty(prop, value)
     clipToScrollers(el, place)
+    const gone = () => {
+      el.remove()
+      unclip()
+      resolve()
+    }
+    if (hook) {
+      const signal = new AbortController().signal
+      const context = { signal, reducedMotion: prefersReducedMotion(), index: 0 }
+      void track(
+        runHook('v-animate', 'leave', () => hook(el as HTMLElement, context), signal, [el]),
+      ).then(gone, gone)
+      return
+    }
     const look = prefersReducedMotion() ? reducePresence(values) : values
     const rtl = getComputedStyle(el).direction === 'rtl'
     // A value with its own timing leaves on it; x and y timed apart can't share `translate`.
@@ -549,10 +589,6 @@ export function leaveInPlace(
         fill: 'forwards',
       }).finished
     })
-    const gone = () => {
-      el.remove()
-      unclip()
-    }
     void track(Promise.all(runs).then(gone, gone))
-  })
+  }
 }

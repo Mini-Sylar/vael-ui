@@ -9,6 +9,8 @@ export default defineConfig({
     'resolver/index': './src/resolver/index.ts',
     'nuxt/index': './src/nuxt/index.ts',
     ...collectBarrelEntries('./src/index.ts', process.cwd()),
+    // Shared with the Vapor build but not public: their own files, not exported.
+    ...collectBarrelEntries('./src/internal.ts', process.cwd()),
   },
   platform: 'neutral',
   plugins: [Vue({ isProduction: true, template: { compilerOptions: { comments: false } } })],

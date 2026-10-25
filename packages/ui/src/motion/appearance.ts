@@ -4,6 +4,8 @@ import { motionSpringAt } from './styleHolder'
 import { staggerAt, valuesAt } from './playable'
 import type { MotionTiming, MotionValues, TargetMotion } from './types'
 import { appear } from './useComponentMotion'
+import { armEnter, entered } from './finish'
+import { loading } from './styleKey'
 
 // `when: 'visible'`: settles once the element scrolls into view, a little past the edge so it
 // starts where it's seen (useInView's margin), once.
@@ -56,9 +58,12 @@ const byPage = (a: { el: Element }, b: { el: Element }) =>
   a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
 
 function flush() {
-  // `after` or `steps` in this batch: it plays as one timeline, names waiting on names.
+  // `after`, `steps` or your own `enter` in this batch: it plays as one timeline, names waiting
+  // on names, from the runtime that runs hooks.
   const timeline = [...batch.values()].some((items) =>
-    items.some(({ value, again }) => !again && (value.after !== undefined || value.steps)),
+    items.some(
+      ({ value, again }) => (!again && (value.after !== undefined || value.steps)) || value.enter,
+    ),
   )
   if (timeline) {
     const groups = [...batch.entries()]
@@ -77,15 +82,18 @@ function flush() {
       // Many at once (a route of cards): those in view play, up to a budget; the rest just show.
       // Scrolling recycles rows; a replay is yours, on screen, and always plays.
       if (!later && ((!timed && played >= BUDGET) || (!again && scrolling()) || !onScreen(el)))
-        return
+        return entered(el)
       const initial = valuesAt(value.initial, { direction: 0, index: i + 1, count: items.length })
       // Nothing to come in from: it neither plays nor counts.
-      if (!initial || !Object.keys(initial).length) return
+      if (!initial || !Object.keys(initial).length) return entered(el)
       played++
       i++
       const delay = ((value.delay ?? 0) + staggerAt(value.stagger, i, items.length, el)) * 1000
       const until = later ? inView(el) : undefined
-      void appear(el, initial, value, motionSpringAt(el), delay, again, until)
+      // Played, or nothing to play: its `onFinish` runs either way.
+      void appear(el, initial, value, motionSpringAt(el), delay, again, until).finally(() =>
+        entered(el),
+      )
     })
   }
   batch.clear()
@@ -100,7 +108,7 @@ async function playTimeline(groups: [string, { el: HTMLElement; value: TargetMot
   const hidden = all.map(({ el }) =>
     el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: 'forwards' }),
   )
-  const { runTargets } = await import('./schedule')
+  const { runTargets } = await loading(import('./schedule'))
   let alone = 0
   const targets = groups.flatMap(([name, items]) => {
     items.sort(byPage)
@@ -147,7 +155,13 @@ export function appearParts(
   timing: MotionTiming,
   /** A `replay`: it plays again, though it's been brought in. */
   again = false,
+  /** Once every part's appearance has played (or at once, when none plays). */
+  done?: () => void,
 ) {
+  let pending = 0
+  const one = () => {
+    if (--pending === 0) done?.()
+  }
   const mine = (own ?? {}) as { initial?: object; stagger?: TargetMotion['stagger']; when?: string }
   const initial = { ...(keyStyle?.initial as object), ...mine.initial } as Record<
     string,
@@ -155,7 +169,11 @@ export function appearParts(
   >
   for (const [part, values] of Object.entries(initial))
     for (const el of els(part))
-      if (values && (el instanceof HTMLElement || el instanceof SVGElement))
+      if (values && (el instanceof HTMLElement || el instanceof SVGElement)) {
+        if (done) {
+          pending++
+          armEnter(el, one)
+        }
         queueAppearance(
           el as HTMLElement,
           `${key}:${part}`,
@@ -168,4 +186,6 @@ export function appearParts(
           },
           again,
         )
+      }
+  if (!pending) done?.()
 }

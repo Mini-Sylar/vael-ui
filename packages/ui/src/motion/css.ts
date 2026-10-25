@@ -15,6 +15,7 @@ import type { TargetGroup } from './targets'
 import type { MotionTiming, MotionValues, Spring } from './types'
 import { isTimed } from './values'
 import { dev } from './warn'
+import { loading } from './styleKey'
 
 const PROPS = [
   'opacity',
@@ -260,7 +261,7 @@ async function settle(root: Element): Promise<void> {
 }
 
 let morphKit: Promise<typeof Morph> | undefined
-const loadMorph = () => (morphKit ??= import('./morph'))
+const loadMorph = () => (morphKit ??= loading(import('./morph')))
 
 // The runtime engine, kept once loaded: a replay that needs it starts in the same frame.
 let runtimeLoaded: typeof import('./engine') | undefined
@@ -341,7 +342,7 @@ export async function appear(
       again || runtimeLoaded
         ? undefined
         : el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: 'forwards' })
-    const runtime = runtimeLoaded ?? (runtimeLoaded = await import('./engine'))
+    const runtime = runtimeLoaded ?? (runtimeLoaded = await loading(import('./engine')))
     const timed = runtime.resolveTiming(el, own, spring)
     const played = runtime.playValues(el, values, {
       direction: 'in',

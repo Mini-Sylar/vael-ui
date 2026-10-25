@@ -536,6 +536,7 @@ const motionOn = computed(() => !!props.motion)
 // Yours set: the engine plays the label and grid swaps; otherwise their CSS classes do.
 const swapMotion = useSwapMotion({
   key: 'calendar',
+  view: 'grid',
   motion: () => props.motion,
   direction: () => (direction.value < 0 ? -1 : 1),
   initial: {

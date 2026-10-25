@@ -36,6 +36,8 @@ const vaporRoot = join(__dirname, '../vapor-ui')
 
 const missing = [
   ...verify('vdom', join(uiRoot, 'src/index.ts'), join(uiRoot, 'dist'), uiRoot),
+  // Shared with the Vapor build, not public: their own files too.
+  ...verify('vdom internal', join(uiRoot, 'src/internal.ts'), join(uiRoot, 'dist'), uiRoot),
   ...verify(
     'vapor',
     join(vaporRoot, 'src/generated/index.ts'),

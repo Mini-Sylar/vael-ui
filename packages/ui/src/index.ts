@@ -293,22 +293,7 @@ export type { MotionOptions } from './composables/springEasing'
 export { settled } from './motion/settled'
 export { useMotion } from './motion/useMotion'
 export { parseMotionStyle } from './motion/parse'
-export { useComponentMotion } from './motion/useComponentMotion'
-export type { ComponentMotionOptions, ComponentMotionReturn } from './motion/useComponentMotion'
-export { useStateMotion } from './motion/useStateMotion'
-export { useSwapMotion } from './motion/useSwapMotion'
-export type { SwapMotionOptions, SwapMotionReturn } from './motion/useSwapMotion'
-export { flingTiming } from './motion/fling'
 export { askGuard, closeContext, useCloseGuard } from './composables/useCloseGuard'
-export type { StateMotionOptions } from './motion/useStateMotion'
-export {
-  motionStyleKey,
-  useMotionStyle,
-  isMotionStyle,
-  resolveMotion,
-  mergeTargets,
-} from './motion/context'
-export type { ResolvedMotion } from './motion/context'
 export type {
   AccordionMotion,
   AccordionPart,
@@ -427,7 +412,9 @@ export type {
   LinkedMotion,
   MorphFrom,
   MotionContext,
+  ElementHookContext,
   ListHookContext,
+  PartElements,
   MotionEngine,
   EngineTiming,
   MotionFilter,

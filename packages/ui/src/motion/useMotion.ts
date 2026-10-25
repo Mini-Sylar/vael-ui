@@ -14,6 +14,7 @@ import { useMotionStyle } from './context'
 import { PRESENCE_ID } from './ids'
 import type { ListMotion } from './list'
 import { useComponentMotion } from './useComponentMotion'
+import { loading as loadingChunk } from './styleKey'
 
 /**
  * Makes a component of yours move like vael-ui's: it follows the nearest ConfigProvider's style for `role`,
@@ -151,7 +152,7 @@ function useListMotion<N extends string>(
   const id = String(++lists)
   let list: ListMotion | undefined
   let mounted = false
-  const loading = import('./list').then((module) => {
+  const loading = loadingChunk(import('./list')).then((module) => {
     list = module.createListMotion({
       id,
       part,

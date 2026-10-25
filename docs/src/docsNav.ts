@@ -25,6 +25,7 @@ export const MOTION_ROUTES = [
   { routeName: 'motion-states', labelKey: 'motionDocs.chapters.states.title' },
   { routeName: 'motion-overlays', labelKey: 'motionDocs.chapters.overlays.title' },
   { routeName: 'motion-choreography', labelKey: 'motionDocs.chapters.choreography.title' },
+  { routeName: 'motion-callbacks', labelKey: 'motionDocs.chapters.callbacks.title' },
   { routeName: 'motion-springs', labelKey: 'motionDocs.nav.springs' },
   { routeName: 'motion-styles', labelKey: 'motionDocs.chapters.styles.title' },
   { routeName: 'motion-server', labelKey: 'motionDocs.chapters.server.title' },

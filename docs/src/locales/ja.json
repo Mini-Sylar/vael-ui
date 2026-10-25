@@ -893,6 +893,42 @@
           "body": "<code>enter</code> フックはパーツとターゲットを受け取るので、ひとつの GSAP タイムラインですべてをアニメーションできます。タイムラインを返してください。ダイアログはそれを待ち、早く閉じた場合は止めます。"
         }
       },
+      "callbacks": {
+        "title": "コールバック",
+        "intro": "どれもモーションが再生し終わってから実行されるので、次の処理で長さを推測する必要はありません。モーションがオフのように何も再生しないときは、すぐに実行されます。",
+        "enterLeave": {
+          "title": "入ったとき、消えたとき",
+          "body": "<code>v-animate</code> では、<code>onAfterEnter</code> は登場が再生し終わったとき、そして <code>replay</code> のたびに実行されます。<code>onAfterLeave</code> は退場が再生し終わり、要素がなくなったときに実行されます。どちらも要素を受け取ります。"
+        },
+        "states": {
+          "title": "状態のあと",
+          "body": "状態の <code>onAfterEnter</code> は、オンになって再生し終わったときに、パーツを名前で受け取って実行されます：<code>({'{'} root {'}'}) => …</code>。<code>onAfterLeave</code> はオフになって元に戻ったときに実行されます。OtpInput のセルのような繰り返しパーツは配列で届きます。"
+        },
+        "overlays": {
+          "title": "開いたあと、閉じたあと",
+          "body": "コンポーネント自身の <code>onAfterEnter</code> と <code>onAfterLeave</code> は、<code>{'@'}after-enter</code> と <code>{'@'}after-leave</code> と同時に、パーツを受け取って実行されます。中にある自分の要素は、見た目と並べて <code>targets</code> に書きます：<code>hint: {'{'} after: 'panel', onAfterEnter {'}'}</code>。"
+        },
+        "swap": {
+          "title": "切り替えのあと",
+          "body": "<code>onAfterSwap</code> は新しいビューが入ったときに、そのビューと <code>direction</code> を受け取って実行されます。Calendar では新しい月が入ったときに、そのグリッドを受け取ります。"
+        },
+        "lists": {
+          "title": "リストの各項目",
+          "body": "リストでは、<code>onAfterEnter</code> と <code>onAfterLeave</code> が項目ごとに、そのパーツと、一緒に入った・出た項目の中での <code>index</code> を受け取って実行されます。"
+        },
+        "move": {
+          "title": "移動のあと",
+          "body": "<code>onAfterMove</code> は、<code>layout</code> や <code>layoutId</code> のスライド、または <code>animate</code> の変化が再生し終わったときに実行されます。 要素ごとに実行されるので、シャッフルで 4 行が動けば 4 回実行されます。"
+        },
+        "repeat": {
+          "title": "繰り返しのたび",
+          "body": "値の <code>repeat</code> の横に書く <code>onRepeat</code> は、繰り返しが始まるたびに、それまでの回数を受け取って実行されます：1、次に 2。"
+        },
+        "hooks": {
+          "title": "自分のアニメーション",
+          "body": "要素に <code>enter</code> や <code>leave</code> を渡すと、値の代わりに GSAP や motion でアニメーションできます。アニメーションを返してください。vael-ui はコールバックの前にそれを待ち、先に要素がなくなれば止めます。フックは要素と <code>{'{'} signal, reducedMotion, index {'}'}</code> を受け取ります。"
+        }
+      },
       "styles": {
         "title": "アプリのモーション",
         "intro": "モーションスタイルは <code>ConfigProvider</code> に渡すひとつのオブジェクトで、アプリ全体の動きを決めます。ロール別、コンポーネント別に設定でき、自分の要素用のプリセットも持てます。",

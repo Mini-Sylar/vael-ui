@@ -22,7 +22,11 @@ const UI_INDEX_PATH = join(__dirname, '../ui/src/index.ts')
 
 // Modules the vdom build ships as their own files. Vapor components import these by path and the
 // Vapor build points them at the vdom files, so both builds share one copy.
-const SHARED_MODULES = new Set(Object.keys(collectBarrelEntries(UI_INDEX_PATH, UI_SRC_DIR)))
+const SHARED_MODULES = new Set([
+  ...Object.keys(collectBarrelEntries(UI_INDEX_PATH, UI_SRC_DIR)),
+  // Shared but not public (src/internal.ts).
+  ...Object.keys(collectBarrelEntries(join(UI_SRC_DIR, 'internal.ts'), UI_SRC_DIR)),
+])
 // Stateless helpers each build may bundle on its own.
 const PER_BUILD_MODULES = new Set([
   'composables/useLazySortable',

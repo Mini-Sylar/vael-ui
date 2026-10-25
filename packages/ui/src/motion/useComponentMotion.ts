@@ -6,7 +6,7 @@ import type { ComputedRef, InjectionKey, ShallowRef, TransitionProps } from 'vue
 import { defaultsKey } from '../config'
 import { pageHidden } from '../composables/dom'
 import { PRESENCE_ID } from './ids'
-import { PRESENCE_ATTR, presenceFor, refElement, TARGET_ATTR } from './presence'
+import { collectEntries, PRESENCE_ATTR, presenceFor, refElement, TARGET_ATTR } from './presence'
 import { resolveMotion, useMotionStyle } from './context'
 import type { ResolvedMotion } from './context'
 import type { MotionPhase, MotionRef, MotionStyle, MotionTiming, MotionValues } from './types'
@@ -15,14 +15,16 @@ import { needsRuntime, valuesAt } from './playable'
 import { dev } from './warn'
 import { targetsOf } from './targets'
 import { stepOut } from './stepOut'
+import { armEnter, entered, left } from './finish'
+import { loading } from './styleKey'
 
 let runtime: Promise<typeof import('./runner')> | undefined
 import * as cssModule from './css'
 
 /** @internal Loads the motion runtime once, for every component. */
-const loadMotionRuntime = () => (runtime ??= import('./runner'))
+const loadMotionRuntime = () => (runtime ??= loading(import('./runner')))
 let swapKit: Promise<typeof import('./swap')> | undefined
-const loadSwap = () => (swapKit ??= import('./swap'))
+const loadSwap = () => (swapKit ??= loading(import('./swap')))
 /** @internal One element's appearance on its own (`v-animate` with no component, or joining late). */
 export const appear = cssModule.appear
 
@@ -126,6 +128,42 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     return last.root
   }
 
+  // Your elements inside it: each opening arms their `onAfterEnter`, and its end runs those still
+  // waiting (an engine that plays them all at once, motion off); ones that play after it report
+  // themselves. Closed, their `onAfterLeave` runs. Then the motion's own callbacks, as its events.
+  const playsAfter = new WeakSet<Element>()
+  const filled = (parts: Record<string, Element | null | undefined>) =>
+    Object.fromEntries(Object.entries(parts).filter(([, el]) => el)) as Record<string, HTMLElement>
+  const elementCallback = (el: Element, name: 'onAfterEnter' | 'onAfterLeave') => () => {
+    // Remembered: by the time it has closed, Vue has let go of the root's ref.
+    const root = currentRoot()
+    const entry = root && collectEntries(root, resolved.value.targets).find((e) => e.el === el)
+    if (!entry) return
+    // Its own (`v-animate`'s value), else its name's in `targets`.
+    const own = typeof entry.motion === 'object' ? entry.motion : undefined
+    ;(own?.[name] ?? resolved.value.targets[entry.name]?.[name])?.(el as HTMLElement)
+  }
+  if (typeof window !== 'undefined')
+    watch(
+      phase,
+      (now) => {
+        const root = now === 'entering' ? options.root() : currentRoot()
+        const entries = root ? collectEntries(root, resolved.value.targets) : []
+        // Content kept between openings is armed again; newly mounted content armed itself.
+        if (now === 'entering')
+          for (const { el } of entries) armEnter(el, elementCallback(el, 'onAfterEnter'))
+        if (now === 'entered') {
+          for (const { el } of entries) if (!playsAfter.has(el)) entered(el)
+          resolved.value.onAfterEnter?.(filled(currentParts()))
+        }
+        if (now === 'left') {
+          for (const { el } of entries) left(el, elementCallback(el, 'onAfterLeave'))
+          resolved.value.onAfterLeave?.(filled(currentParts()))
+        }
+      },
+      { flush: 'sync' },
+    )
+
   // An element that joins while it's open (a v-if turning true inside) plays its appearance.
   if (typeof window !== 'undefined')
     watch(
@@ -135,6 +173,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
         // Seen as it mounts, so a close before the enter (not placed yet) still hands over its parts.
         currentParts()
         currentRoot()
+        presenceFor(root).after = (el, kind) => elementCallback(el, kind)()
         presenceFor(root).joined = (entry) => {
           // SVG too: a badge popping, a check drawing.
           if (!(entry.el instanceof HTMLElement || entry.el instanceof SVGElement)) return
@@ -144,20 +183,25 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
             const group = targetsOf([entry], resolved.value, true)[0]
             const where = { direction: resolved.value.direction, index: 0 }
             const initial = valuesAt(group?.motion.initial, where)
-            if (!group || !initial) return
-            void cssModule.appear(
-              el,
-              initial,
-              group.motion,
-              resolved.value.spring,
-              (group.motion.delay ?? 0) * 1000,
-            )
+            if (!group || !initial) return entered(el)
+            void cssModule
+              .appear(
+                el,
+                initial,
+                group.motion,
+                resolved.value.spring,
+                (group.motion.delay ?? 0) * 1000,
+              )
+              .finally(() => entered(el))
           }
           if (phase.value === 'entered') return play()
           // Joined mid-opening: once it's open, unless the opening already brought it in.
           // `appear: 'later'` came with the opening, so it shows as it is.
           if (phase.value !== 'entering' || later) return
+          // It plays after the opening: the opening's end isn't its `onFinish`.
+          playsAfter.add(el)
           const stop = watch(phase, (now) => {
+            playsAfter.delete(el)
             if (now === 'entering') return
             stop()
             if (now === 'entered') play()
@@ -197,9 +241,13 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
         ),
       )
     })
+  const swapped = (el: Element, done: () => void) => () => {
+    done()
+    resolved.value.onAfterSwap?.(el, { direction: resolved.value.direction })
+  }
   const swap = {
     onEnter: (el: Element, done: () => void) =>
-      void loadSwap().then((kit) => kit.swapIn(el, done, swapHost), done),
+      void loadSwap().then((kit) => kit.swapIn(el, swapped(el, done), swapHost), swapped(el, done)),
     onLeave: (el: Element, done: () => void) => {
       if (!resolved.value.off && resolved.value.swap !== 'wait') stepOut(el)
       void loadSwap().then((kit) => kit.swapOut(el, done, swapHost), done)
@@ -214,7 +262,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
       (on) => {
         if (!on || linking) return
         linking = true
-        void import('./linked').then((kit) =>
+        void loading(import('./linked')).then((kit) =>
           scope?.run(() =>
             kit.attach(resolved, options.open ?? (() => false), options.mainPart, options.gesture),
           ),
@@ -348,7 +396,9 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     return (raw: unknown) => {
       const el = refElement(raw)
       // Stamped now, collected when it enters or leaves (the root's marker may not be on yet).
-      if (el) el.setAttribute(TARGET_ATTR, name)
+      if (!el || el.getAttribute(TARGET_ATTR) === name) return
+      el.setAttribute(TARGET_ATTR, name)
+      armEnter(el, elementCallback(el, 'onAfterEnter'))
     }
   }
 

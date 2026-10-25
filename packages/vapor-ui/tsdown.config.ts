@@ -13,7 +13,11 @@ const UI_DIR = resolve(process.cwd(), '../ui')
 // for both builds, and a second copy would carry its own state. A toast() from one copy would
 // never reach a <Toaster> using the other, depending on how the app resolves 'vael-ui'.
 const vdomFiles = new Map(
-  Object.entries(collectBarrelEntries(join(UI_DIR, 'src/index.ts'), UI_DIR))
+  Object.entries({
+    ...collectBarrelEntries(join(UI_DIR, 'src/index.ts'), UI_DIR),
+    // Shared but not public (src/internal.ts).
+    ...collectBarrelEntries(join(UI_DIR, 'src/internal.ts'), UI_DIR),
+  })
     .filter(([, path]) => !path.endsWith('.vue'))
     .map(([name, path]) => [resolve(UI_DIR, path), join(UI_DIR, 'dist', `${name}.js`)]),
 )

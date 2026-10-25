@@ -160,10 +160,21 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     return Promise.all(runs)
   }
 
+  // Its `onAfterEnter` / `onAfterLeave`, with its place in its group; an item that starts leaving
+  // before it's in never gets `onAfterEnter`.
+  const leavingNow = new WeakSet<Element>()
+  const after =
+    (el: Element, kind: 'onAfterEnter' | 'onAfterLeave', index: number, done: () => void) => () => {
+      done()
+      if (kind === 'onAfterEnter' && leavingNow.has(el)) return
+      options.resolved()[kind]?.({ ...partsOf(el), [part]: el as HTMLElement }, { index })
+    }
+
   function onEnter(el: Element, done: () => void) {
     adopt(el.parentElement)
+    leavingNow.delete(el)
     const motion = options.resolved()
-    if (motion.off) return done()
+    if (motion.off) return after(el, 'onAfterEnter', 0, done)()
     // Items arriving in the same tick are one group, started together before the next paint.
     if (!batch.length) queueMicrotask(enterBatch)
     batch.push({ el, done })
@@ -175,7 +186,8 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     )
     batch = []
     const motion = options.resolved()
-    group.forEach(({ el, done }, index) => {
+    group.forEach(({ el, done: entered }, index) => {
+      const done = after(el, 'onAfterEnter', index, entered)
       if (hooked(el, 'enter', index, done)) return
       const where: MotionWhere = { direction: 0, index, count: group.length }
       playItem(el, motion.initial, valuesAt(motion.initial[part], where) ?? {}, where, {
@@ -189,10 +201,11 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
 
   function onLeave(el: Element, done: () => void) {
     adopt(el.parentElement)
+    leavingNow.add(el)
     // Left in the tick it came: it never starts entering (Vue cancels that entry itself).
     batch = batch.filter((entry) => entry.el !== el)
     const motion = options.resolved()
-    if (motion.off) return done()
+    if (motion.off) return after(el, 'onAfterLeave', 0, done)()
     const box = el as Pinned
     if (options.leaving() === 'pop') {
       // Lifted out where it is, so the others slide up under it while it fades.
@@ -225,7 +238,8 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     )
     leavingBatch = []
     const motion = options.resolved()
-    group.forEach(({ el, done }, index) => {
+    group.forEach(({ el, done: gone }, index) => {
+      const done = after(el, 'onAfterLeave', index, gone)
       if (hooked(el, 'leave', index, done)) return
       const where: MotionWhere = { direction: 0, index, count: group.length }
       // Its parts given their own exits: the item stays as it is around them.

@@ -3,6 +3,9 @@ import { holdValues, playBetween, playValues, resolveTiming } from './engine'
 import { staggerAt, valuesAt } from './playable'
 import { motionWarn as warn } from './warn'
 import type { MotionValues, Spring, TargetMotion } from './types'
+import { entered } from './finish'
+import { runHook } from './hook'
+import { prefersReducedMotion } from '../composables/dom'
 
 interface Deferred<T = void> {
   promise: Promise<T>
@@ -130,7 +133,13 @@ export async function runTargets(
         staggerAt(motion.stagger, i, els.length, first) + delays[i]! - shared
       const lastStart = Math.max(0, ...els.map((_, i) => at(i))) * 1000
       startMoments(m, lastStart + timing.arrival)
-      await Promise.all(els.map((el, i) => playTarget(el, own(i), at(i), options, waitFor, i)))
+      await Promise.all(
+        els.map((el, i) =>
+          playTarget(el, own(i), at(i), options, waitFor, i).then(() => {
+            if (!options.signal.aborted) entered(el)
+          }),
+        ),
+      )
       m.arrive.resolve()
       m.settle.resolve()
     }),
@@ -145,6 +154,16 @@ async function playTarget(
   waitFor: (moment: string) => Promise<void>,
   index = 0,
 ): Promise<void> {
+  // Your own `enter`: it plays instead of `initial`, after its delay.
+  if (motion.enter) {
+    if (delay) await sleep(delay * 1000)
+    if (options.signal.aborted) return
+    const enter = motion.enter
+    const context = { signal: options.signal, reducedMotion: prefersReducedMotion(), index }
+    return runHook('v-animate', 'enter', () => enter(el as HTMLElement, context), options.signal, [
+      el,
+    ])
+  }
   const timing = resolveTiming(el, motion, options.spring)
   const initial = valuesAt(motion.initial, { direction: 0, index }) ?? {}
   if (!motion.steps?.length) {

@@ -35,7 +35,7 @@ const motion: OtpInputMotion = {
       root: {
         x: { value: [0, -10, 9, -7, 5, -3, 0], duration: 460, easing: 'ease-in-out' },
       },
-      onFinish: ({ root }) => {
+      onAfterEnter: ({ root }) => {
         code.value = ''
         invalid.value = false
         root.querySelector('input')?.focus()

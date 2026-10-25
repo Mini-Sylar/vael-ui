@@ -105,6 +105,8 @@ export type TimedValue<V> = (
   repeat?: number
   /** Keyframes, repeating: `'loop'` starts over each time; `'reverse'` plays back and forth. */
   repeatType?: 'loop' | 'reverse'
+  /** Keyframes, repeating: runs as each repeat starts, with how many it has done (1, 2, …). */
+  onRepeat?: (count: number) => void
 }
 
 /**
@@ -195,6 +197,16 @@ export interface MoveContext<N extends string = string> extends MotionContext<N>
   from: { x: number; y: number; scaleX: number; scaleY: number }
 }
 
+/** What an element's own `enter` and `leave` hooks get. */
+export interface ElementHookContext {
+  /** Aborts when the motion is interrupted (it leaves mid-entrance). */
+  signal: AbortSignal
+  /** The user prefers reduced motion: your hook decides what to play. */
+  reducedMotion: boolean
+  /** Its place among the elements under its name that move together, for your own stagger. */
+  index: number
+}
+
 /** Animate the component's parts yourself (GSAP, motion, WAAPI). */
 export type MotionHook<P extends string, C> = (
   parts: Record<P, HTMLElement>,
@@ -257,6 +269,20 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   layout?: boolean | 'position'
   /** `'visible'`: on its own (no component around it), it appears once scrolled into view. */
   when?: 'mount' | 'visible'
+  /**
+   * Animates it in yourself (GSAP, motion) instead of `initial`. Return the animation: vael-ui waits
+   * for it before `onAfterEnter`, and stops it if the element leaves first.
+   */
+  enter?: (el: HTMLElement, context: ElementHookContext) => MotionResult
+  /** Animates it out yourself instead of `exit`; it's removed once your animation ends. */
+  leave?: (el: HTMLElement, context: ElementHookContext) => MotionResult
+  /**
+   * Runs once it has come in, and after each `replay`: close a dialog once its success tick has
+   * drawn in. At once when nothing plays, as with motion off.
+   */
+  onAfterEnter?: (el: HTMLElement) => void
+  /** Runs once it has left and is gone. At once when nothing plays. */
+  onAfterLeave?: (el: HTMLElement) => void
 }
 
 // ─── Guards ──────────────────────────────────────────────────────────────────
@@ -305,7 +331,7 @@ export type LinkedMotion = MotionTiming & {
 
 export type MotionPhase = 'entering' | 'entered' | 'leaving' | 'left'
 
-/** Its elements by part name, as `onFinish` gets them: a repeated part (OtpInput's cells) is a list. */
+/** Its elements by part name, as a state's callbacks get them: a repeated part (OtpInput's cells) is a list. */
 export type PartElements<P extends string, R extends string = never> = {
   [K in P]: K extends R ? HTMLElement[] : HTMLElement
 }
@@ -314,12 +340,13 @@ export type PartElements<P extends string, R extends string = never> = {
 export type StateMotion<S extends string, P extends string, R extends string = never> = {
   [K in S]?: PartValues<P> & {
     /**
-     * Runs once the state's animation has finished on every part, while the state is still on:
-     * clear a field after its invalid shake. Runs at once when nothing plays, as under reduced
-     * motion; not for a state that loops, or one that turns off first. It gets the component's
-     * elements by part name: `({ root }) => root.querySelector('input')?.focus()`.
+     * Runs once the state has turned on and played, while it's still on: clear a field after its
+     * invalid shake, `({ root }) => root.querySelector('input')?.focus()`. At once when nothing
+     * plays; not for a state that loops, or one that's on when the component mounts.
      */
-    onFinish?: (parts: PartElements<P, R>) => void
+    onAfterEnter?: (parts: PartElements<P, R>) => void
+    /** Runs once the state has turned off and its parts are back to their own look. */
+    onAfterLeave?: (parts: PartElements<P, R>) => void
   }
 }
 
@@ -329,7 +356,7 @@ export type StateMotion<S extends string, P extends string, R extends string = n
 export interface MotionSpec {
   parts: string
   states?: string
-  /** Parts with many elements (OtpInput's cells): `onFinish` gets each as a list. */
+  /** Parts with many elements (OtpInput's cells): a state's callbacks get each as a list. */
   repeated?: string
   overlay?: true
   /** It comes and goes on its own (Message, your `useMotion('reveal')`): it has an exit and hooks. */
@@ -368,7 +395,18 @@ type PresenceMotion<S extends MotionSpec, N extends string> = {
   leave?: MotionHook<Parts<S>, HookContext<S, N>>
   /** Hooks under reduced motion: skipped unless `'run'`. */
   reducedMotion?: 'skip' | 'run'
+  /**
+   * Runs once it has come in: an overlay fully open (as `@after-enter`), a list's item arrived (with
+   * its `index`). Gets the parts by name. At once when nothing plays.
+   */
+  onAfterEnter?: AfterCallback<S>
+  /** Runs once it has left: an overlay fully closed (as `@after-leave`), a list's item gone. */
+  onAfterLeave?: AfterCallback<S>
 }
+type AfterCallback<S extends MotionSpec> = (
+  parts: Record<Parts<S>, HTMLElement>,
+  ...item: S['list'] extends true ? [context: ListHookContext] : []
+) => void
 type TargetsMotion<S extends MotionSpec, N extends string> = {
   /** Your elements inside it, by name. Names are read from these keys only, never from `after`. */
   targets?: { [K in N]?: TargetMotion<NoInfer<N> | Parts<S>> }
@@ -421,6 +459,8 @@ type SwapMotion = {
    * as `where.direction` when the swap happens, so the view leaving reads the new direction too.
    */
   direction?: 1 | -1 | 0
+  /** Runs once a swap is done: the new view is in (focus its first field). Gets that view. */
+  onAfterSwap?: (view: HTMLElement, context: { direction: 1 | -1 | 0 }) => void
 }
 type LinkedMotions = {
   /** Elements outside it that move with it while it's open, by a name you choose. */
@@ -461,6 +501,8 @@ type ReplayMotion = {
   replay?: unknown
   /** `false`: its `initial` doesn't play when it mounts, only on `replay`. @default true */
   appear?: boolean
+  /** Runs once its `initial` has played on every part, on mount and after each `replay`. */
+  onAfterEnter?: () => void
 }
 
 // Exemplars, one per kind; M3–M5 add the rest from each component's `ui` keys and real states.
@@ -652,7 +694,12 @@ export type CalendarPart = 'label' | 'grid'
  */
 export type CalendarMotion =
   | boolean
-  | (MotionTiming & { initial?: PartValues<CalendarPart>; exit?: PartValues<CalendarPart> })
+  | (MotionTiming & {
+      initial?: PartValues<CalendarPart>
+      exit?: PartValues<CalendarPart>
+      /** Runs once a new month is in. Gets its grid. */
+      onAfterSwap?: (grid: HTMLElement, context: { direction: 1 | -1 | 0 }) => void
+    })
 
 /** Slider's parts, by their `ui` names: the elements its `motion` can animate. */
 export type SliderPart = 'root' | 'track' | 'fill' | 'thumb'
@@ -1173,6 +1220,11 @@ export type AnimateDirectiveValue =
        * `spring`, they follow it on that spring instead of at once.
        */
       progress?: number
+      /**
+       * Runs once it has moved: a `layout` or `layoutId` slide, or a change of `animate`, has
+       * played. At once when the change doesn't animate, as with motion off.
+       */
+      onAfterMove?: (el: HTMLElement) => void
     })
 
 /** Validates a style from outside your code (settings, a database, the network). */

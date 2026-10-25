@@ -215,6 +215,9 @@ export function playValues(el: Element, values: MotionValues, options: PlayOptio
         fill,
         ...repeat,
       })
+      const onRepeat = (group.timing as { onRepeat?: (count: number) => void } | undefined)
+        ?.onRepeat
+      if (onRepeat) void import('./repeat').then((kit) => kit.onRepeats(run, onRepeat))
       if (repeat.iterations !== Infinity) runs.push(run.finished)
     }
     const { moves, fades } = splitFrame(group.frame)

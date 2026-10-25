@@ -893,6 +893,42 @@
           "body": "An <code>enter</code> hook receives the parts and your targets, so one GSAP timeline can animate all of them. Return the timeline. The dialog waits for it, and stops it if you close early."
         }
       },
+      "callbacks": {
+        "title": "Callbacks",
+        "intro": "Each of these runs once a motion has played, so your next step never guesses a duration. When nothing plays, as with motion off, they run at once.",
+        "enterLeave": {
+          "title": "Once it's in, once it's gone",
+          "body": "On <code>v-animate</code>, <code>onAfterEnter</code> runs once its entrance has played, and after each <code>replay</code>. <code>onAfterLeave</code> runs once its exit has played and it's gone. Both get the element."
+        },
+        "states": {
+          "title": "After a state",
+          "body": "A state's <code>onAfterEnter</code> runs once it has turned on and played, with the parts by name: <code>({'{'} root {'}'}) => …</code>. Its <code>onAfterLeave</code> runs once it has turned off and settled back. A repeated part, such as OtpInput's cells, comes as an array."
+        },
+        "overlays": {
+          "title": "After it opens and closes",
+          "body": "A component's own <code>onAfterEnter</code> and <code>onAfterLeave</code> run when its <code>{'@'}after-enter</code> and <code>{'@'}after-leave</code> do, with its parts. Your elements inside take theirs in <code>targets</code>, beside their looks: <code>hint: {'{'} after: 'panel', onAfterEnter {'}'}</code>."
+        },
+        "swap": {
+          "title": "After a swap",
+          "body": "<code>onAfterSwap</code> runs once the new view is in, with that view and the <code>direction</code>. Calendar's runs once a new month is in, with its grid."
+        },
+        "lists": {
+          "title": "Each item in a list",
+          "body": "In a list, <code>onAfterEnter</code> and <code>onAfterLeave</code> run for each item, with its parts and its <code>index</code> among the items that came or went together."
+        },
+        "move": {
+          "title": "After a move",
+          "body": "<code>onAfterMove</code> runs once a <code>layout</code> or <code>layoutId</code> slide, or a change of <code>animate</code>, has played. Each element runs its own, so a shuffle that moves four rows runs it four times."
+        },
+        "repeat": {
+          "title": "Each repeat",
+          "body": "Beside a value's <code>repeat</code>, <code>onRepeat</code> runs as each repeat starts, with how many it has done: 1, then 2."
+        },
+        "hooks": {
+          "title": "Your own animation",
+          "body": "Give an element <code>enter</code> or <code>leave</code> to animate it with GSAP or motion instead of its values. Return the animation: vael-ui waits for it before the callbacks, and stops it if the element leaves first. The hook gets the element and <code>{'{'} signal, reducedMotion, index {'}'}</code>."
+        }
+      },
       "styles": {
         "title": "Your app's motion",
         "intro": "A motion style is one object on <code>ConfigProvider</code> that sets how your whole app moves: by role, by component, and with presets for your own elements.",

@@ -69,7 +69,12 @@ export interface ResolvedMotion {
   /** Elements outside it that follow it. Yours only: they're getters, and shared styles are data. */
   linked?: Record<string, LinkedMotion>
   reducedHooks: 'skip' | 'run'
+  /** Yours only, like `linked`: run once it has come in or left (a list: per item, with its index). */
+  onAfterEnter?: AfterCallback
+  onAfterLeave?: AfterCallback
+  onAfterSwap?: (view: Element, context: { direction: 1 | -1 | 0 }) => void
 }
+type AfterCallback = (parts: Record<string, HTMLElement>, item?: { index: number }) => void
 
 type Instance = Record<string, unknown> | boolean | undefined
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -166,5 +171,8 @@ export function resolveMotion(input: {
       ((own?.exitOrder ?? keyStyle?.exitOrder ?? roleStyle?.exitOrder) as 'together' | 'reverse') ??
       'together',
     reducedHooks: (own?.reducedMotion as 'skip' | 'run') ?? 'skip',
+    onAfterEnter: own?.onAfterEnter as AfterCallback | undefined,
+    onAfterLeave: own?.onAfterLeave as AfterCallback | undefined,
+    onAfterSwap: own?.onAfterSwap as ResolvedMotion['onAfterSwap'],
   }
 }

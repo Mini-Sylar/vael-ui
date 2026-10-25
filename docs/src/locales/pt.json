@@ -893,6 +893,42 @@
           "body": "Um hook <code>enter</code> recebe as partes e seus targets, então uma única timeline do GSAP pode animar todos eles. Retorne a timeline. O diálogo espera por ela e a interrompe se você fechar antes."
         }
       },
+      "callbacks": {
+        "title": "Callbacks",
+        "intro": "Cada um roda quando uma animação terminou, então o seu próximo passo nunca adivinha uma duração. Quando nada toca, como com o movimento desligado, eles rodam na hora.",
+        "enterLeave": {
+          "title": "Quando entrou, quando saiu",
+          "body": "No <code>v-animate</code>, <code>onAfterEnter</code> roda quando a entrada terminou, e depois de cada <code>replay</code>. <code>onAfterLeave</code> roda quando a saída terminou e o elemento sumiu. Os dois recebem o elemento."
+        },
+        "states": {
+          "title": "Depois de um estado",
+          "body": "O <code>onAfterEnter</code> de um estado roda quando ele ligou e terminou, com as partes por nome: <code>({'{'} root {'}'}) => …</code>. O <code>onAfterLeave</code> roda quando ele desligou e voltou ao normal. Uma parte repetida, como as células do OtpInput, chega como array."
+        },
+        "overlays": {
+          "title": "Depois de abrir e fechar",
+          "body": "O <code>onAfterEnter</code> e o <code>onAfterLeave</code> de um componente rodam junto com o <code>{'@'}after-enter</code> e o <code>{'@'}after-leave</code> dele, com as partes. Os seus elementos dentro levam os deles em <code>targets</code>, ao lado do visual: <code>hint: {'{'} after: 'panel', onAfterEnter {'}'}</code>."
+        },
+        "swap": {
+          "title": "Depois de uma troca",
+          "body": "<code>onAfterSwap</code> roda quando a nova visão entrou, com essa visão e a <code>direction</code>. O do Calendar roda quando um novo mês entrou, com a grade dele."
+        },
+        "lists": {
+          "title": "Cada item de uma lista",
+          "body": "Em uma lista, <code>onAfterEnter</code> e <code>onAfterLeave</code> rodam para cada item, com as partes e o <code>index</code> entre os itens que chegaram ou saíram juntos."
+        },
+        "move": {
+          "title": "Depois de mover",
+          "body": "<code>onAfterMove</code> roda quando um deslize de <code>layout</code> ou <code>layoutId</code>, ou uma mudança de <code>animate</code>, terminou. Cada elemento tem o seu, então um embaralhamento que move quatro linhas o roda quatro vezes."
+        },
+        "repeat": {
+          "title": "Cada repetição",
+          "body": "Ao lado do <code>repeat</code> de um valor, <code>onRepeat</code> roda quando cada repetição começa, com quantas já fez: 1, depois 2."
+        },
+        "hooks": {
+          "title": "Sua própria animação",
+          "body": "Dê <code>enter</code> ou <code>leave</code> a um elemento para animá-lo com GSAP ou motion em vez dos valores. Retorne a animação: o vael-ui espera por ela antes dos callbacks e a para se o elemento sair antes. O hook recebe o elemento e <code>{'{'} signal, reducedMotion, index {'}'}</code>."
+        }
+      },
       "styles": {
         "title": "O movimento do seu app",
         "intro": "Um estilo de movimento é um objeto no <code>ConfigProvider</code> que define como o app inteiro se move: por papel, por componente e com presets para seus próprios elementos.",

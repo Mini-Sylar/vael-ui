@@ -1,4 +1,5 @@
 import { whenIdle } from './timing'
+import { whenLoaded } from './styleKey'
 
 /**
  * Resolves once nothing vael-ui started is animating: in tests, open, `await settled()`, assert.
@@ -11,10 +12,14 @@ export function settled(scope?: Element | null): Promise<void> {
   return arguments.length ? settledOn(scope) : whenIdle()
 }
 
-// A frame first: it runs after Vue's flush, so a state the caller just changed has started.
+const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+// A frame first: it runs after Vue's flush, so a change the caller just made has started, or its
+// motion code has started loading; then that code, and a frame for what it plays to start.
 async function settledOn(scope: Element | null | undefined): Promise<void> {
   if (!scope) return
-  await new Promise((resolve) => requestAnimationFrame(resolve))
+  await frame()
+  await whenLoaded()
+  await frame()
   const running = scope
     .getAnimations({ subtree: true })
     .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)

@@ -893,6 +893,42 @@
           "body": "Ein <code>enter</code>-Hook bekommt die Teile und Ihre Targets, sodass eine GSAP-Timeline sie alle animieren kann. Geben Sie die Timeline zurück. Der Dialog wartet auf sie und stoppt sie, wenn Sie früher schließen."
         }
       },
+      "callbacks": {
+        "title": "Callbacks",
+        "intro": "Jeder davon läuft, sobald eine Bewegung abgespielt ist, damit dein nächster Schritt nie eine Dauer raten muss. Spielt nichts, etwa bei ausgeschalteter Bewegung, laufen sie sofort.",
+        "enterLeave": {
+          "title": "Sobald es da ist, sobald es weg ist",
+          "body": "Bei <code>v-animate</code> läuft <code>onAfterEnter</code>, sobald der Auftritt abgespielt ist, und nach jedem <code>replay</code>. <code>onAfterLeave</code> läuft, sobald der Abgang abgespielt und das Element weg ist. Beide bekommen das Element."
+        },
+        "states": {
+          "title": "Nach einem Zustand",
+          "body": "<code>onAfterEnter</code> eines Zustands läuft, sobald er eingeschaltet und abgespielt ist, mit den Teilen nach Namen: <code>({'{'} root {'}'}) => …</code>. Sein <code>onAfterLeave</code> läuft, sobald er ausgeschaltet und zurückgekehrt ist. Ein wiederholter Teil, etwa die Zellen von OtpInput, kommt als Array."
+        },
+        "overlays": {
+          "title": "Nach dem Öffnen und Schließen",
+          "body": "<code>onAfterEnter</code> und <code>onAfterLeave</code> einer Komponente laufen zusammen mit ihrem <code>{'@'}after-enter</code> und <code>{'@'}after-leave</code>, mit ihren Teilen. Deine Elemente darin bekommen ihre in <code>targets</code>, neben ihren Looks: <code>hint: {'{'} after: 'panel', onAfterEnter {'}'}</code>."
+        },
+        "swap": {
+          "title": "Nach einem Wechsel",
+          "body": "<code>onAfterSwap</code> läuft, sobald die neue Ansicht da ist, mit dieser Ansicht und der <code>direction</code>. Bei Calendar läuft es, sobald ein neuer Monat da ist, mit seinem Raster."
+        },
+        "lists": {
+          "title": "Jeder Eintrag einer Liste",
+          "body": "In einer Liste laufen <code>onAfterEnter</code> und <code>onAfterLeave</code> für jeden Eintrag, mit seinen Teilen und seinem <code>index</code> unter den Einträgen, die gemeinsam kamen oder gingen."
+        },
+        "move": {
+          "title": "Nach einer Bewegung",
+          "body": "<code>onAfterMove</code> läuft, sobald ein <code>layout</code>- oder <code>layoutId</code>-Gleiten oder eine Änderung von <code>animate</code> abgespielt ist. Jedes Element hat sein eigenes, also läuft es viermal, wenn ein Mischen vier Zeilen bewegt."
+        },
+        "repeat": {
+          "title": "Jede Wiederholung",
+          "body": "Neben dem <code>repeat</code> eines Werts läuft <code>onRepeat</code>, sobald eine Wiederholung beginnt, mit ihrer Anzahl bisher: 1, dann 2."
+        },
+        "hooks": {
+          "title": "Deine eigene Animation",
+          "body": "Gib einem Element <code>enter</code> oder <code>leave</code>, um es statt mit seinen Werten mit GSAP oder motion zu animieren. Gib die Animation zurück: vael-ui wartet vor den Callbacks auf sie und stoppt sie, wenn das Element vorher geht. Der Hook bekommt das Element und <code>{'{'} signal, reducedMotion, index {'}'}</code>."
+        }
+      },
       "styles": {
         "title": "Die Bewegung Ihrer App",
         "intro": "Ein Bewegungsstil ist ein Objekt auf <code>ConfigProvider</code>, das festlegt, wie sich Ihre ganze App bewegt: nach Rolle, nach Komponente und mit Presets für Ihre eigenen Elemente.",

@@ -44,6 +44,8 @@ import { loadAnimateTarget } from '../composables/lazyParts'
 import { SPRINGS } from '../composables/springNames'
 import type { SpringName } from '../composables/springNames'
 import { BUILTIN_PRESETS } from '../motion/presets'
+import { armEnter, entered, left } from '../motion/finish'
+import { loading } from '../motion/styleKey'
 
 type Marked = HTMLElement & {
   _uiAnimateLeave?: () => void
@@ -62,6 +64,8 @@ type Marked = HTMLElement & {
   _uiFirstRender?: boolean
   /** `states`: what it holds while hovered, pressed or focused, and how to stop listening. */
   _uiStates?: ShallowRef<AnimateStates | undefined>
+  /** The component it belongs to, noted while it's in the page. */
+  _uiPresence?: ReturnType<typeof findPresence>
   _uiStatesStop?: () => void
 }
 
@@ -71,7 +75,7 @@ function followStates(el: Marked, value: AnimateDirectiveValue | undefined) {
   if (el._uiStates) el._uiStates.value = states
   if (!states || el._uiStates) return
   const held = (el._uiStates = shallowRef(states))
-  void import('../motion/states').then((module) => {
+  void loading(import('../motion/states')).then((module) => {
     if (!el.isConnected || el._uiStates !== held) return
     el._uiStatesStop = module.holdElementStates(
       el,
@@ -120,7 +124,14 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined, gone
     if (el._uiTargetKey !== key) return
     el._uiTarget ??= module.holdTarget(el)
     const off = motionOffAt(el)
-    el._uiTarget.update(animate, timingOf(value) ?? {}, motionSpringAt(el), changed, off)
+    el._uiTarget.update(
+      animate,
+      timingOf(value) ?? {},
+      motionSpringAt(el),
+      changed,
+      off,
+      call(el, 'onAfterMove'),
+    )
     putBack(el)
   })
 }
@@ -150,7 +161,7 @@ function appearAlone(
 ) {
   if (el._uiAppeared) return
   el._uiAppeared = true
-  if (motionOffAt(el)) return
+  if (motionOffAt(el)) return entered(el)
   if (typeof value === 'string') {
     const preset = presetAround(el, value)
     if (!preset) {
@@ -158,15 +169,24 @@ function appearAlone(
         motionWarn(
           `v-animate preset '${value}' isn't in the presets of a ConfigProvider style around it.`,
         )
-      return
+      return entered(el)
     }
     value = preset
   }
-  if (!value?.initial || value.appear === false || (value.appear === 'later' && el._uiFirstRender))
-    return
-  queueAppearance(el, name, value)
+  const enters = !!value?.initial || !!value?.enter
+  if (!enters || value!.appear === false || (value!.appear === 'later' && el._uiFirstRender))
+    return entered(el)
+  queueAppearance(el, name, value!)
 }
 
+// One of your callbacks, as it is when it runs: a value written inline is a new object each render.
+// Inside a component, it runs there, merged with its `targets` entry.
+const call = (el: Marked, name: 'onAfterEnter' | 'onAfterLeave' | 'onAfterMove') => () => {
+  const presence = el._uiPresence
+  if (presence?.after && name !== 'onAfterMove') return presence.after(el, name)
+  const value = el._uiAnimateValue
+  if (typeof value === 'object') value[name]?.(el)
+}
 const timingOf = (value: AnimateDirectiveValue | undefined): MotionTiming | undefined =>
   typeof value === 'object' ? value : undefined
 const layoutIdOf = (value: AnimateDirectiveValue | undefined) =>
@@ -249,7 +269,10 @@ const resolved = (el: Element, value: AnimateDirectiveValue | undefined) =>
 
 /** How it leaves when Vue removes it: its `exit`, or one from its `initial`; nothing if neither. */
 function leaving(value: AnimateDirectiveValue | undefined) {
-  if (typeof value !== 'object' || value.layoutId || value.exit === false) return undefined
+  if (typeof value !== 'object' || value.layoutId) return undefined
+  // Your own `leave` plays instead of any values.
+  if (value.leave) return { values: {}, timing: EXIT, hook: value.leave }
+  if (value.exit === false) return undefined
   const where = { direction: 0 as const, index: 0 }
   const exit = valuesAt(value.exit, where)
   if (exit) return { values: exit, timing: ownTiming(value) ? (value as MotionTiming) : EXIT }
@@ -262,9 +285,11 @@ function leaveIfRemoved(
   place?: LeavingPlace,
 ) {
   const look = leaving(value)
+  const gone = () => left(el, call(el as Marked, 'onAfterLeave'))
   // Off screen, scrolled away (a recycled row) or motion off: it just goes.
   if (look && place && seen(place.box) && !scrolling() && !motionOffAt(el))
-    leaveInPlace(el, place, look.values, look.timing)
+    void leaveInPlace(el, place, look.values, look.timing, look.hook).then(gone)
+  else gone()
 }
 
 /**
@@ -277,9 +302,10 @@ function replayIfChanged(
   before: AnimateDirectiveValue | undefined,
   name: string | undefined,
 ) {
-  if (typeof value !== 'object' || !('replay' in value) || !value.initial) return
+  if (typeof value !== 'object' || !('replay' in value) || !(value.initial || value.enter)) return
   if (typeof before === 'object' && Object.is(before.replay, value.replay)) return
-  if (motionOffAt(el)) return
+  armEnter(el, call(el as Marked, 'onAfterEnter'))
+  if (motionOffAt(el)) return entered(el)
   queueAppearance(el, name, value, true)
 }
 
@@ -289,7 +315,7 @@ function join(
   value: AnimateDirectiveValue | undefined,
 ): void {
   el._uiAnimateLeave?.()
-  const presence = findPresence(el)
+  const presence = (el._uiPresence = findPresence(el))
   if (!presence) return appearAlone(el, name, value)
   // `appear: false`: it doesn't come in with the component; its exit stays. `'later'` the
   // component itself sorts out: not with its opening, yes once it's open.
@@ -333,15 +359,23 @@ export const vAnimate: ObjectDirective<
     )
     const value = valueOf(el, binding)
     marked._uiAnimateValue = value
+    armEnter(el, call(marked, 'onAfterEnter'))
     followTarget(marked, value)
     followStates(marked, value)
     // Hydrated: the server's CSS is playing (or has played) its appearance; never twice.
-    if (handOver(el)) marked._uiAppeared = true
+    if (handOver(el)) {
+      marked._uiAppeared = true
+      entered(el)
+    }
     if (binding.modifiers.size)
       marked._uiSizeStop = followSize(el, () => timingOf(marked._uiAnimateValue), true).stop
     if (typeof value === 'object' && value.layout)
-      marked._uiLayoutStop = followLayout(el, () => timingOf(marked._uiAnimateValue) ?? {})
-    if (!binding.arg && binding.modifiers.size && !hasPicks(binding.modifiers)) return
+      marked._uiLayoutStop = followLayout(
+        el,
+        () => timingOf(marked._uiAnimateValue) ?? {},
+        call(marked, 'onAfterMove'),
+      )
+    if (!binding.arg && binding.modifiers.size && !hasPicks(binding.modifiers)) return entered(el)
     const owner = binding.instance?.$ ?? null
     if (leaving(resolved(el, value))) {
       watchPaintedBox(el, owner)
@@ -352,7 +386,14 @@ export const vAnimate: ObjectDirective<
     if (id) el.dataset.layoutId = id
     if (id) watchPaintedBox(el, owner)
     // Arriving where another under its `layoutId` just left: it slides over instead of appearing.
-    if (id) arriveLayout(el, id, timingOf(value)!, () => join(marked, binding.arg, value))
+    if (id)
+      arriveLayout(
+        el,
+        id,
+        timingOf(value)!,
+        () => join(marked, binding.arg, value),
+        call(marked, 'onAfterMove'),
+      )
     else join(marked, binding.arg, value)
   },
   beforeUnmount(el, binding) {
@@ -492,30 +533,48 @@ export function vAnimateVapor(
       )
     : holding(inject(motionStyleKey, undefined), inject(defaultsKey, undefined))
   holdAround(el, () => provided)
+  armEnter(el, call(el as Marked, 'onAfterEnter'))
   // Hydrated: the server's CSS plays its appearance; never twice.
-  if (handOver(el)) (el as Marked)._uiAppeared = true
+  if (handOver(el)) {
+    ;(el as Marked)._uiAppeared = true
+    entered(el)
+  }
   const stopSize = modifiers.size ? followSize(el, () => timingOf(value()), true).stop : undefined
   if (stopSize) onScopeDispose(stopSize)
   let stopLayout: (() => void) | undefined
   onScopeDispose(() => stopLayout?.())
-  if (modifiers.size && !name && !hasPicks(modifiers)) return () => stopSize?.()
+  if (modifiers.size && !name && !hasPicks(modifiers)) {
+    entered(el)
+    return () => stopSize?.()
+  }
   // Post-flush: in setup the element isn't inside its component's panel yet. Vapor directives can't
   // use onMounted (it would attach to the component), and this also re-joins when the value changes.
   let arrived = false
   let before: AnimateDirectiveValue | undefined
   watchPostEffect(() => {
     const current = value()
+    ;(el as Marked)._uiAnimateValue = current
     followTarget(el as Marked, current)
     followStates(el as Marked, current)
     if (arrived) replayIfChanged(el, current, before, name)
     before = current
     // After the flush: in setup it has no parent yet to watch.
     if (!arrived && typeof current === 'object' && current.layout)
-      stopLayout = followLayout(el, () => timingOf(value()) ?? {})
+      stopLayout = followLayout(
+        el,
+        () => timingOf(value()) ?? {},
+        call(el as Marked, 'onAfterMove'),
+      )
     const id = layoutIdOf(current)
     if (id) el.dataset.layoutId = id
     if (id && !arrived)
-      arriveLayout(el, id, timingOf(current)!, () => join(el as Marked, name, current))
+      arriveLayout(
+        el,
+        id,
+        timingOf(current)!,
+        () => join(el as Marked, name, current),
+        call(el as Marked, 'onAfterMove'),
+      )
     else join(el as Marked, name, current)
     arrived = true
   })
@@ -525,7 +584,7 @@ export function vAnimateVapor(
     const id = layoutIdOf(current)
     if (id && el.isConnected) rememberLayout(el, id)
     const leavingValue = resolved(el, current)
-    if (leaving(leavingValue)) leaveIfRemoved(el, leavingValue, placeOnLeave(el))
+    leaveIfRemoved(el, leavingValue, leaving(leavingValue) ? placeOnLeave(el) : undefined)
   })
   const leave = () => (el as Marked)._uiAnimateLeave?.()
   onScopeDispose(leave)

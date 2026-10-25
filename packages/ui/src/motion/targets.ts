@@ -31,6 +31,17 @@ export function targetsOf(
     if (typeof entry.motion === 'string' && !own)
       if (process.env.NODE_ENV !== 'production')
         motionWarn(`v-animate preset '${entry.motion}' isn't in the style's presets.`)
+    // A name marked in the template that nothing gives motion to is a typo.
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      !(entry.name in motion.targets) &&
+      entry.name !== 'default' &&
+      !motion.content &&
+      !(own && Object.keys(own).length)
+    )
+      motionWarn(
+        `'${entry.name}' isn't in this component's \`motion.targets\` and has no motion of its own: check the name.`,
+      )
     const base = mergeTargets(motion.content, motion.targets[entry.name])
     const group = groups.get(entry.name) ?? { name: entry.name, els: [], motion: base, each: [] }
     group.els.push(entry.el)

@@ -35,7 +35,18 @@ export interface StateFrame {
   again?: string[]
 }
 
-type SequenceTiming = { times?: number[]; repeat?: number; repeatType?: 'loop' | 'reverse' }
+type SequenceTiming = {
+  times?: number[]
+  repeat?: number
+  repeatType?: 'loop' | 'reverse'
+  onRepeat?: (count: number) => void
+}
+
+/** The states that just turned on (with the runs each started; null: one loops) and off. */
+export interface StatesReport {
+  entered: Map<string, Animation[] | null>
+  left: Map<string, Animation[]>
+}
 
 const cssName = (key: string) => key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
 
@@ -72,13 +83,14 @@ export function createStatePlayer() {
   const holds = new Map<Element, Held>()
   let before: Record<string, boolean> = {}
 
-  function hold(el: HTMLElement, values: MotionValues, frame: StateFrame) {
+  /** Moves `el` to what the states that are on hold; returns the runs it started. */
+  function hold(el: HTMLElement, values: MotionValues, frame: StateFrame): Animation[] {
     const rtl = getComputedStyle(el).direction === 'rtl'
     const target = toKeyframe(values, rtl)
     const prev = holds.get(el)
-    if (prev && same(prev.target, target)) return
+    if (prev && same(prev.target, target)) return []
     const keys = [...new Set([...Object.keys(prev?.target ?? {}), ...Object.keys(target)])]
-    if (!keys.length) return
+    if (!keys.length) return []
     // From what's on screen (a hold in flight included) to the new target; a key no state holds
     // any more goes back to the element's own value (the implicit end keyframe).
     const style = getComputedStyle(el)
@@ -122,13 +134,14 @@ export function createStatePlayer() {
     play(Object.keys(fades), frame.timing, 0, !given)
     if (Object.keys(target).length) holds.set(el, { runs, target })
     else holds.delete(el)
+    return runs
   }
 
   // Keyframes repeating forever, by state: they stop, easing home, when the state turns off.
   const loops = new Map<string, Animation[]>()
   const played = new Map<string, string>()
 
-  // The runs it started, for onFinish; null when one of them loops.
+  // The runs it started, for onAfterEnter; null when one of them loops.
   function once(
     el: HTMLElement,
     values: MotionValues,
@@ -159,6 +172,8 @@ export function createStatePlayer() {
         fill: 'backwards',
         ...repeatOf(own),
       })
+      const onRepeat = own.onRepeat
+      if (onRepeat) void import('./repeat').then((kit) => kit.onRepeats(run, onRepeat))
       if (own.repeat === Infinity) {
         loops.set(state, [...(loops.get(state) ?? []), run])
         looping = true
@@ -197,7 +212,8 @@ export function createStatePlayer() {
   }
 
   /** A state that turned off: its endless keyframes ease back to the element's own look. */
-  function stopLoops(state: string) {
+  function stopLoops(state: string): Animation[] {
+    const home: Animation[] = []
     for (const run of loops.get(state) ?? []) {
       const el = (run.effect as KeyframeEffect | null)?.target as HTMLElement | null
       const keys = Object.keys(
@@ -207,17 +223,18 @@ export function createStatePlayer() {
       const now: Keyframe = {}
       for (const key of keys) now[key] = style?.getPropertyValue(cssName(key)) ?? ''
       run.cancel()
-      if (el && keys.length)
-        void track(
-          el.animate([now, {}], { id: STATE_ID, duration: 150, easing: EASE_OUT }).finished,
-        ).catch(() => {})
+      if (!el || !keys.length) continue
+      const back = el.animate([now, {}], { id: STATE_ID, duration: 150, easing: EASE_OUT })
+      home.push(back)
+      void track(back.finished).catch(() => {})
     }
     loops.delete(state)
+    return home
   }
 
   return {
-    /** The states that just turned on, with the runs each started (null: it loops). */
-    update(frame: StateFrame): Map<string, Animation[] | null> {
+    /** The states that just turned on or off, with the runs each started (null: one loops). */
+    update(frame: StateFrame): StatesReport {
       const reduced = prefersReducedMotion()
       const again = new Set(frame.again ?? [])
       // What each state plays, by value: changed while it's on, it plays the new one.
@@ -241,8 +258,12 @@ export function createStatePlayer() {
           (state) => frame.flags[state] && (!before[state] || again.has(state)),
         ),
       )
+      const turnedOff = Object.keys(frame.spec).filter(
+        (state) => before[state] && !frame.flags[state],
+      )
+      const homing = new Map<string, Animation[]>()
       for (const state of loops.keys())
-        if (!frame.flags[state] || again.has(state)) stopLoops(state)
+        if (!frame.flags[state] || again.has(state)) homing.set(state, stopLoops(state))
       before = { ...frame.flags }
       // Per element: what every state that's on holds, later states winning.
       const targets = new Map<HTMLElement, Record<string, unknown>>()
@@ -258,9 +279,20 @@ export function createStatePlayer() {
           if (!frame.instant && entered.has(state) && Object.keys(keyframes).length)
             plays.push([target, keyframes, state])
         }
-      for (const [el, values] of targets) hold(el, values as MotionValues, frame)
+      const moved = new Map<HTMLElement, Animation[]>()
+      for (const [el, values] of targets) moved.set(el, hold(el, values as MotionValues, frame))
       const report = new Map<string, Animation[] | null>()
-      if (frame.instant) return report
+      const left = new Map<string, Animation[]>()
+      if (frame.instant) return { entered: report, left }
+      // Each state that turned off: the runs taking its parts back, its loops easing home.
+      for (const state of turnedOff) {
+        const runs = [...(homing.get(state) ?? [])]
+        for (const part of Object.keys(frame.spec[state] ?? {})) {
+          const el = frame.parts[part]
+          if (el) runs.push(...(moved.get(el as HTMLElement) ?? []))
+        }
+        left.set(state, runs)
+      }
       // Each state that turned on: the transitions to its held look, then its keyframes.
       for (const state of entered) {
         const runs: Animation[] = []
@@ -276,7 +308,7 @@ export function createStatePlayer() {
         const runs = report.get(state)
         report.set(state, started && runs ? [...runs, ...started] : null)
       }
-      return report
+      return { entered: report, left }
     },
     dispose() {
       for (const { runs } of holds.values()) for (const run of runs) run.cancel()
@@ -299,6 +331,8 @@ export interface StatesContext {
   repeated?: () => Record<string, Element[]>
   /** What one element of a repeated part knows (`active` for the current step). */
   each?: (part: string, el: Element, index: number) => Record<string, boolean | undefined>
+  /** What it knew at setup, before this loaded: what changed since plays once it's here. */
+  initial?: Record<string, boolean | undefined>
 }
 
 type Pointer = { hover: boolean; active: boolean; focus: boolean }
@@ -392,15 +426,28 @@ function flagsOf(states: string[], known: Record<string, boolean | undefined>, p
   return flags
 }
 
+type Callback = 'onAfterEnter' | 'onAfterLeave'
+// The setup flags for the states this element knows: its own (filled, current) stay as they are.
+const pick = (at: Record<string, boolean | undefined>, flags: Record<string, boolean>) =>
+  Object.fromEntries(
+    Object.keys(flags)
+      .filter((k) => k in at)
+      .map((k) => [k, !!at[k]]),
+  )
+
 /** @internal Run inside the component's scope: everything stops with it. */
 export function startStates(ctx: StatesContext): void {
   const player = createStatePlayer()
   const repeatedNames = () => Object.keys(ctx.repeated?.() ?? {})
-  // A state's onFinish sits beside its parts; the players see only the parts.
+  // A state's callbacks sit beside its parts; the players see only the parts.
   const partsOnly = (): StateSpec => {
     const out: StateSpec = {}
     for (const [state, byPart] of Object.entries(ctx.spec())) {
-      const { onFinish: _, ...parts } = byPart as PartValues<string> & { onFinish?: unknown }
+      const {
+        onAfterEnter: _,
+        onAfterLeave: __,
+        ...parts
+      } = byPart as PartValues<string> & Partial<Record<Callback, unknown>>
       out[state] = parts
     }
     return out
@@ -415,36 +462,44 @@ export function startStates(ctx: StatesContext): void {
     return out
   }
 
-  // onFinish: what every player started for a state in one go (a cell each, in a repeated part)
-  // is gathered, then it runs once, if the state is still on and nothing newer entered it.
+  // What every player started for a state in one go (a cell each, in a repeated part) is gathered;
+  // its callback runs once that has played, if the state is still that way and didn't change since.
   const gathered = new Map<string, Animation[] | null>()
-  const entries = new Map<string, number>()
+  const changes = new Map<string, number>()
   let scheduled = false
-  const finisherOf = (state: string) =>
-    (ctx.spec()[state] as { onFinish?: (parts: Record<string, unknown>) => void } | undefined)
-      ?.onFinish
+  const callbackOf = (state: string, kind: Callback) =>
+    (ctx.spec()[state] as Partial<Record<Callback, (parts: object) => void>> | undefined)?.[kind]
   // Its elements by part name, as the component exposes them: a repeated part is an array.
   const partsNow = () => ({ ...ctx.parts(), ...ctx.repeated?.() })
-  const stillOn = (state: string) =>
+  const isOn = (state: string, otherwise: boolean) =>
     state in ctx.states() || (POINTER_STATES as readonly string[]).includes(state)
       ? !!flagsOf([state], ctx.states(), pointer)[state]
-      : true
-  function reported(report: Map<string, Animation[] | null>) {
-    for (const [state, runs] of report) {
-      if (!finisherOf(state)) continue
-      const so = gathered.has(state) ? gathered.get(state)! : []
-      gathered.set(state, so && runs ? [...so, ...runs] : null)
-    }
+      : otherwise
+  function reported(report: StatesReport) {
+    const kinds: [Callback, Map<string, Animation[] | null>][] = [
+      ['onAfterEnter', report.entered],
+      ['onAfterLeave', report.left],
+    ]
+    for (const [kind, states] of kinds)
+      for (const [state, runs] of states) {
+        if (!callbackOf(state, kind)) continue
+        const key = `${kind} ${state}`
+        const so = gathered.has(key) ? gathered.get(key)! : []
+        gathered.set(key, so && runs ? [...so, ...runs] : null)
+      }
     if (scheduled || !gathered.size) return
     scheduled = true
     queueMicrotask(() => {
       scheduled = false
-      for (const [state, runs] of gathered) {
-        const entry = (entries.get(state) ?? 0) + 1
-        entries.set(state, entry)
+      for (const [key, runs] of gathered) {
+        const [kind, state] = key.split(' ') as [Callback, string]
+        const change = (changes.get(state) ?? 0) + 1
+        changes.set(state, change)
         if (!runs) continue
+        const on = kind === 'onAfterEnter'
         void Promise.allSettled(runs.map((run) => run.finished)).then(() => {
-          if (entries.get(state) === entry && stillOn(state)) finisherOf(state)?.(partsNow())
+          if (changes.get(state) === change && isOn(state, on) === on)
+            callbackOf(state, kind)?.(partsNow())
         })
       }
       gathered.clear()
@@ -478,7 +533,12 @@ export function startStates(ctx: StatesContext): void {
       spring: ctx.spring(),
     }
   }
-  player.update({ ...frame(), instant: true })
+  // Shown as it was at setup, then what changed while this loaded plays (a shake on an early
+  // wrong code), so a state's callbacks run for it too.
+  const first = frame()
+  const atSetup = ctx.initial ? flagsOf(Object.keys(first.spec), ctx.initial, pointer) : first.flags
+  player.update({ ...first, flags: atSetup, instant: true })
+  reported(player.update(first))
   watch(frame, (next) => reported(player.update(next)), { flush: 'post' })
 
   // A repeated part: each element its own player, pointer and states, and its index as `where`.
@@ -529,11 +589,22 @@ export function startStates(ctx: StatesContext): void {
       }
     return out
   }
+  let firstFrames = true
   watch(
     frames,
     (next) => {
-      for (const [, one, f, fresh] of next)
-        reported(one.player.update(fresh ? { ...f, instant: true } : f))
+      for (const [, one, f, fresh] of next) {
+        if (!fresh) {
+          reported(one.player.update(f))
+          continue
+        }
+        // There since setup: shown as it was then, then caught up. Added later: shown as it is.
+        const known =
+          firstFrames && ctx.initial ? { ...f.flags, ...pick(ctx.initial, f.flags) } : f.flags
+        one.player.update({ ...f, flags: known, instant: true })
+        if (known !== f.flags) reported(one.player.update(f))
+      }
+      firstFrames = false
     },
     { flush: 'post', immediate: true },
   )

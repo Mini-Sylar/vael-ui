@@ -19,17 +19,20 @@ export function holdTarget(el: HTMLElement) {
   let scrubbed: Animation[] | undefined
   let chase: ReturnType<typeof createSpring> | undefined
   let chaseKey = ''
+  let changes = 0
   return {
     /** The look to hold now; `changed`: it differs from the last one, so its keyframes play again. */
-    /** `instant`: shown at once (motion off), as on the first update. */
+    /** `instant`: shown at once (motion off), as on the first update. `moved`: once it's there. */
     update(
       values: MotionValues,
       timing: MotionTiming,
       spring: Spring | undefined,
       changed = true,
       instant = false,
+      moved?: () => void,
     ) {
-      player.update({
+      const opening = first && !changed
+      const report = player.update({
         flags: { [ON]: true },
         spec: { [ON]: { target: values } },
         parts: { target: el },
@@ -40,6 +43,14 @@ export function holdTarget(el: HTMLElement) {
         again: changed && !first ? [ON] : undefined,
       })
       first = false
+      // Its first look isn't a move; a change is, once it has played (never an endless loop).
+      if (!moved || opening) return
+      const change = ++changes
+      const runs = report.entered.get(ON)
+      if (runs === null) return
+      void Promise.allSettled((runs ?? []).map((run) => run.finished)).then(() => {
+        if (change === changes) moved()
+      })
     },
     /** `progress`: the keyframes held at this point, 0 to 1; `rebuild` when they changed. */
     scrub(values: MotionValues, progress: number, timing: MotionTiming, rebuild: boolean) {

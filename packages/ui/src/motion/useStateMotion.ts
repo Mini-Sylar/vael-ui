@@ -14,12 +14,14 @@ import { defaultsKey } from '../config'
 import { useMotionStyle } from './styleKey'
 import type { MotionStyle, MotionTiming } from './types'
 import { springOf } from '../composables/springNames'
+import { loading } from './styleKey'
 
 let appearance: typeof import('./appearance') | undefined
-const loadAppearance = () => import('./appearance').then((module) => (appearance = module))
+const loadAppearance = () => loading(import('./appearance')).then((module) => (appearance = module))
 let statesModule: Promise<typeof import('./states')> | undefined
 let loaded: typeof import('./states') | undefined
-const loadStates = () => (statesModule ??= import('./states').then((module) => (loaded = module)))
+const loadStates = () =>
+  (statesModule ??= loading(import('./states')).then((module) => (loaded = module)))
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
@@ -127,7 +129,9 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
     (needed) => {
       if (!needed || started) return
       started = true
-      // Until it arrives the component's own CSS look shows; then it catches up without playing.
+      // What it knows now: a state that turns on while the player loads still plays once it's here.
+      const initial = { ...options.states() }
+      // Until it arrives the component's own CSS look shows.
       loadStates().then(
         (module) =>
           scope.run(() => {
@@ -139,6 +143,7 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
               timing: () => timing.value,
               spring: () => springOf(style?.value?.spring),
               repeated: () => Object.fromEntries((options.repeated ?? []).map((n) => [n, els(n)])),
+              initial,
             })
           }),
         () => {},
@@ -152,14 +157,19 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
   const instance = getCurrentInstance() as { vnode?: { el?: unknown } } | null
   let fromServer = false
   onBeforeMount(() => (fromServer = !!instance?.vnode?.el))
+  // Your `onAfterEnter`, once its appearance has played; at once when none plays.
+  const afterEnter = () => {
+    const own = options.motion()
+    if (isObject(own) && typeof own.onAfterEnter === 'function') own.onAfterEnter()
+  }
   onMounted(() => {
     const own = options.motion()
     const keyStyle = style?.value?.[options.key] as Record<string, unknown> | undefined
-    if (fromServer || own === false || provider?.value.motion === false) return
     if (isObject(own) && own.appear === false) return
-    if (!(isObject(own) && own.initial) && !keyStyle?.initial) return
+    if (fromServer || own === false || provider?.value.motion === false) return afterEnter()
+    if (!(isObject(own) && own.initial) && !keyStyle?.initial) return afterEnter()
     void loadAppearance().then((module) =>
-      module.appearParts(String(options.key), keyStyle, own, els, timing.value),
+      module.appearParts(String(options.key), keyStyle, own, els, timing.value, false, afterEnter),
     )
   })
   // `replay`: when it changes, the appearance plays again, without remounting.
@@ -174,7 +184,7 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
       const keyStyle = style?.value?.[options.key] as Record<string, unknown> | undefined
       // Loaded already (it played on mount, or replayed before): at once, in this flush.
       const play = (module: typeof import('./appearance')) =>
-        module.appearParts(String(options.key), keyStyle, own, els, timing.value, true)
+        module.appearParts(String(options.key), keyStyle, own, els, timing.value, true, afterEnter)
       if (appearance) play(appearance)
       else void loadAppearance().then(play)
     },

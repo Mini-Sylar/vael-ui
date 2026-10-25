@@ -70,6 +70,9 @@ export const targetCanPlay = (t: TargetMotion | undefined): boolean =>
   !t ||
   (!t.steps?.length &&
     t.after === undefined &&
+    // Your own hooks run from the runtime.
+    !t.enter &&
+    !t.leave &&
     cssCanPlay(valuesAt(t.initial, NEUTRAL)) &&
     cssCanPlay(valuesAt(t.exit, NEUTRAL)))
 
