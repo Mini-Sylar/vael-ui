@@ -60,6 +60,8 @@
               <PhDotsNine v-if="stageBg === 'dots'" :size="15" aria-hidden="true" />
               <PhSquare v-else :size="15" aria-hidden="true" />
             </Button>
+            <!-- Its parts, outlined on the stage and listed under it, each with its `ui` key. -->
+            <AnatomyToggle v-if="hasAnatomy" v-model:shown="anatomyOn" />
           </div>
         </div>
         <div
@@ -70,7 +72,9 @@
           "
           :data-sized="(next && frameWidth !== null) || undefined"
         >
-          <p v-if="needsContext" class="playground-error">{{ needsContext }}</p>
+          <!-- Anatomy shows a specimen: every part there, its panels open inside the stage. -->
+          <component :is="specimen" v-if="anatomyOn && specimen" />
+          <p v-else-if="needsContext" class="playground-error">{{ needsContext }}</p>
           <PlaygroundErrorBoundary v-else :reset-key="resetKey">
             <template v-if="isOpenModel">
               <Button variant="outline" @click="openModelValue = !openModelValue">
@@ -453,6 +457,14 @@
             @keydown="onHandleKey"
           />
         </div>
+        <AnatomyOverlay
+          v-if="hasAnatomy && previewEl"
+          :root="previewEl"
+          :component="name"
+          :parts="anatomyParts"
+          :slots="anatomySlots"
+          :shown="anatomyOn"
+        />
       </div>
 
       <div v-if="controls.length > 0 || showDataPreset" class="playground-controls">
@@ -649,6 +661,7 @@ import {
   SelectButton,
   Switch,
   useSortableGroup,
+  vAnimate,
   vScrollMask,
 } from 'vael-ui'
 import type { ProgressSegment, TreeNode } from 'vael-ui'
@@ -661,6 +674,9 @@ import {
   PhSquare,
   PhX,
 } from '@phosphor-icons/vue'
+import AnatomyOverlay from '../components/AnatomyOverlay.vue'
+import AnatomyToggle from '../components/AnatomyToggle.vue'
+import { partsOf, slotsOf, specimenOf } from '../anatomyOf'
 import CodeBlock from '../components/CodeBlock.vue'
 import { layoutNext as next } from '../layoutNext'
 import PlaygroundErrorBoundary from './PlaygroundErrorBoundary.vue'
@@ -964,6 +980,8 @@ const COMPONENT_OVERRIDES: Record<
   }
 > = {
   Avatar: { string: { name: 'Ada Lovelace' } },
+  // Something to show and swap: empty, it renders nothing at all.
+  AnimatedText: { string: { value: 'Saved' } },
   // Starts without one: the generic "Type here…" would fill every empty cell with "T". Typing a
   // character in the control shows what `placeholder` does.
   OtpInput: { string: { placeholder: '' } },
@@ -1356,6 +1374,17 @@ const activePreset = computed<string | null>({
 
 const stageBg = shallowRef<'dots' | 'plain'>('dots')
 
+// Anatomy: this component's parts (and its items', such as AccordionItem's), found by class.
+const anatomyOn = shallowRef(false)
+const anatomyParts = computed(() => partsOf(props.name))
+const anatomySlots = computed(() => slotsOf(props.name))
+const hasAnatomy = computed(() => anatomyParts.value.length > 0)
+const specimen = computed(() => specimenOf(props.name))
+watch(
+  () => props.name,
+  () => (anatomyOn.value = false),
+)
+
 // How many props sit below the fold of the scrolling panel, so a long list says
 // so instead of relying on a fade the eye can miss.
 const rowsEl = useTemplateRef<HTMLElement>('rowsEl')
@@ -1571,6 +1600,8 @@ watch(
     lastValues = now
     // Seeding a prop's starting value isn't a change you made.
     if (!changed || Object.is(now[changed], initialValues.value[changed])) return
+    // Back to the live component: the specimen doesn't take the props.
+    if (specimen.value) anatomyOn.value = false
     const text = meta.value?.props.find((p) => p.name === changed)?.description
     if (!text) return
     changeHint.value = { name: changed, text: text.split(/(?<=\.)\s/)[0]! }
@@ -2371,8 +2402,11 @@ const snippetParts = computed<{ extraAttrs?: string; children?: string[]; import
   grid-area: stage;
   position: relative;
   isolation: isolate;
-  display: flex;
-  justify-content: center;
+  /* The preview fills the stage; the anatomy's parts list, when on, sits under it. */
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  row-gap: 0.75rem;
   padding: 3.25rem 1rem 1rem;
 }
 

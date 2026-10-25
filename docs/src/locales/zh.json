@@ -47,6 +47,7 @@
   "component": {
     "code": "代码",
     "hideCode": "隐藏代码",
+    "anatomy": "结构",
     "copied": "已复制",
     "copy": "复制",
     "examples": "示例",
@@ -157,7 +158,7 @@
     "darkModeIntro": "深色模式完全由 CSS 实现。它跟随 <code>&lt;html data-theme=\"dark\"&gt;</code>，未设置时回退到 <code>prefers-color-scheme</code>。vael-ui 不提供切换开关，但 <code>useColorScheme()</code> 会跟踪系统设置的变化，并通过你传入的 <code>persist</code> 选项保存选择：",
     "appearanceHeadIntro": "如果将颜色模式或应用全局字体大小保存在 <code>localStorage</code> 中，请将此脚本放在 HTML 的 <code>&lt;head&gt;</code> 中，并置于应用脚本之前。它会在首次绘制前恢复这两个设置。将 <code>13px</code> 或 <code>1rem</code> 等 CSS 字体大小保存到 <code>app-font-size</code>。除非设置了局部 <code>theme.fontSize</code>，组件会继承该值。",
     "darkModeTitle": "深色模式",
-    "directivesIntro": "默认情况下，<code>v-tooltip</code> 和 <code>v-scroll-mask</code> 不会全局注册。如果你在多个组件中使用其中任意一个，请统一注册一次：",
+    "directivesIntro": "默认情况下，<code>v-tooltip</code>、<code>v-scroll-mask</code> 和 <code>v-hover-indicator</code> 不会全局注册。如果你在多个组件中使用其中任意一个，请统一注册一次：",
     "directivesNote": "<code>v-tooltip</code> 还需要在应用中挂载一个 <code>&lt;TooltipHost /&gt;</code>。在 Vapor 应用中，请改为从 <code>vael-ui/vapor</code> 导入这两个指令。",
     "ssrTitle": "服务端渲染",
     "ssrIntro": "两种构建都能在服务端渲染，并在浏览器中激活。{link}会自动完成下面的所有设置。",
@@ -480,7 +481,7 @@
     "appSetupIntro": "该模块不会挂载宿主组件。请在 app.vue 中将你要用到的宿主各挂载一次。{link}介绍了每个宿主的作用。",
     "appSetupIntroLink": "全局设置",
     "composablesIntro": "<code>toast()</code>、<code>openDialog()</code> 等组合式函数不会自动导入。请从 <code>'vael-ui'</code> 导入，使用 Vapor 变体时从 <code>'vael-ui/vapor'</code> 导入：",
-    "directivesIntro": "模块会为你注册 <code>v-animate</code>，但不会注册 <code>v-tooltip</code> 和 <code>v-scroll-mask</code>。请在插件中注册这两个指令。使用 Vapor 变体时，从 <code>'vael-ui/vapor'</code> 导入：",
+    "directivesIntro": "模块会为你注册 <code>v-animate</code>，但不会注册 <code>v-tooltip</code>、<code>v-scroll-mask</code> 和 <code>v-hover-indicator</code>。请在插件中注册这些指令。使用 Vapor 变体时，从 <code>'vael-ui/vapor'</code> 导入：",
     "setupTitle": "设置",
     "title": "努克斯特",
     "vaporIntro": "设置 <code>variant: 'vapor'</code> 即可使用 <code>vael-ui/vapor</code>，与 <code>vael-ui/resolver</code> 的选项相同。模块会自动开启 Nuxt 的 <code>vue.vapor</code>。需要 Nuxt 4.6 或更高版本以及 Vue 3.6。请将 Vue 固定为“入门”中给出的确切版本。",
@@ -750,7 +751,7 @@
         },
         "timing": {
           "title": "时间",
-          "body": "动效可以用弹簧，也可以用 <code>duration</code>。弹簧可以写名字：<code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code> 或 <code>'gentle'</code>，也可以写 <code>damping</code> 和 <code>response</code> 的数值。以毫秒计的 <code>duration</code> 可以配任何 CSS <code>easing</code>，也可以用 vael-ui 的名字，比如 <code>'out'</code> 或 <code>'pop'</code>。"
+          "body": "动效可以用弹簧，也可以用 <code>duration</code>。弹簧可以写名字：<code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code> 或 <code>'gentle'</code>，也可以写 <code>damping</code> 和 <code>response</code> 的数值。以毫秒计的 <code>duration</code> 可以配任何 CSS <code>easing</code>，也可以用 vael-ui 的名字，比如 <code>'out'</code>、<code>'pop'</code> 或像落下的球一样着地的 <code>'bounce'</code>。使用弹簧时，位置和尺寸随弹簧运动，不透明度、颜色和模糊则平滑过渡。"
         },
         "spring": {
           "title": "一个弹簧管全部",
@@ -766,7 +767,7 @@
         "intro": "动效不只属于 vael-ui 的组件。<code>v-animate</code> 能直接在模板里给你的任意元素加上入场和离场动效。",
         "appear": {
           "title": "进入与离开",
-          "body": "<code>initial</code> 指定元素从哪里进入。Vue 移除它时，它会沿原路离开，更快也更轻，除非你给它一个 <code>exit</code>。 常用的入场可以直接写名字：<code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code> 或 <code>.blur</code>。弹簧也这样加，比如 <code>v-animate.pop.bouncy</code>，再用一个值来微调：<code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
+          "body": "<code>initial</code> 指定元素从哪里进入。Vue 移除它时，它会沿原路离开，更快也更轻，除非你给它一个 <code>exit</code>。在会关闭的组件里，比如对话框或菜单，它会随面板一起离开。 常用的入场可以直接写名字：<code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code> 或 <code>.blur</code>。弹簧也这样加，比如 <code>v-animate.pop.bouncy</code>，再用一个值来微调：<code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
         },
         "scroll": {
           "title": "滚动到视野中时",
@@ -774,7 +775,7 @@
         },
         "replay": {
           "title": "再播一次",
-          "body": "<code>replay</code> 的值每次变化时，都会重新播放 <code>initial</code>，而不重新挂载元素。可用于数字增加、状态变化或复制失败。设置 <code>appear: false</code> 后，它只在这些变化时播放，挂载时不播放。 使用 <code>appear: 'later'</code> 时，页面首次渲染时已有的元素保持不动，之后添加的元素才会动画进入。"
+          "body": "<code>replay</code> 的值每次变化时，都会重新播放 <code>initial</code>，而不重新挂载元素。可用于数字增加、状态变化或复制失败。设置 <code>appear: false</code> 后，它只在这些变化时播放，挂载时不播放。 使用 <code>appear: 'later'</code> 时，页面首次渲染时已有的元素保持不动，之后添加的元素才会动画进入。在组件的面板里，指的是它打开时已有的元素。"
         },
         "layout": {
           "title": "滑到新位置",

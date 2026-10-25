@@ -47,6 +47,7 @@
   "component": {
     "code": "コード",
     "hideCode": "コードを隠す",
+    "anatomy": "構造",
     "copied": "コピーしました",
     "copy": "コピー",
     "events": "イベント",
@@ -157,7 +158,7 @@
     "darkModeIntro": "ダークモードは CSS のみで実装されています。<code>&lt;html data-theme=\"dark\"&gt;</code> に従い、指定がなければ <code>prefers-color-scheme</code> にフォールバックします。vael-ui は切り替え UI を提供しませんが、<code>useColorScheme()</code> は OS 設定の変更を追跡し、渡した <code>persist</code> オプションを通じて選択を保存します:",
     "appearanceHeadIntro": "カラーモードやアプリ全体のフォントサイズを <code>localStorage</code> に保存する場合は、このスクリプトを HTML の <code>&lt;head&gt;</code> の、アプリのバンドルより前に置きます。両方を初回表示前に復元します。<code>13px</code> や <code>1rem</code> などの CSS フォントサイズを <code>app-font-size</code> に保存してください。スコープ付きの <code>theme.fontSize</code> を指定しない限り、コンポーネントはその値を継承します。",
     "darkModeTitle": "ダークモード",
-    "directivesIntro": "<code>v-tooltip</code> と <code>v-scroll-mask</code> は、デフォルトではグローバル登録されていません。どちらかを複数のコンポーネントで使う場合は、一度だけ登録してください:",
+    "directivesIntro": "<code>v-tooltip</code>、<code>v-scroll-mask</code>、<code>v-hover-indicator</code> は、デフォルトではグローバル登録されていません。いずれかを複数のコンポーネントで使う場合は、一度だけ登録してください:",
     "directivesNote": "<code>v-tooltip</code> を使うには、アプリに <code>&lt;TooltipHost /&gt;</code> を 1 つマウントしておく必要もあります。Vapor アプリでは、両方のディレクティブを <code>vael-ui/vapor</code> からインポートしてください。",
     "ssrTitle": "サーバーレンダリング",
     "ssrIntro": "どちらのビルドもサーバーでレンダリングでき、ブラウザでハイドレートされます。{link}を使えば、以下の設定はすべて自動で行われます。",
@@ -480,7 +481,7 @@
     "appSetupIntro": "モジュールはホストをマウントしません。使うホストを app.vue に一度だけマウントしてください。各ホストの役割は {link} で説明しています。",
     "appSetupIntroLink": "グローバル設定",
     "composablesIntro": "<code>toast()</code> や <code>openDialog()</code> などのコンポーザブルは自動インポートされません。<code>'vael-ui'</code> から、Vapor バリアントでは <code>'vael-ui/vapor'</code> からインポートしてください:",
-    "directivesIntro": "モジュールは <code>v-animate</code> を登録しますが、<code>v-tooltip</code> と <code>v-scroll-mask</code> は登録しません。この 2 つはプラグインで登録してください。Vapor バリアントでは <code>'vael-ui/vapor'</code> からインポートします:",
+    "directivesIntro": "モジュールは <code>v-animate</code> を登録しますが、<code>v-tooltip</code>、<code>v-scroll-mask</code>、<code>v-hover-indicator</code> は登録しません。これらはプラグインで登録してください。Vapor バリアントでは <code>'vael-ui/vapor'</code> からインポートします:",
     "setupTitle": "設定",
     "title": "ナクスト",
     "vaporIntro": "<code>variant: 'vapor'</code> を設定すると <code>vael-ui/vapor</code> を使います。<code>vael-ui/resolver</code> と同じオプションです。モジュールが Nuxt の <code>vue.vapor</code> を自動で有効にします。Nuxt 4.6 以降と Vue 3.6 が必要です。Vue は「はじめに」に記載の正確なバージョンに固定してください。",
@@ -750,7 +751,7 @@
         },
         "timing": {
           "title": "タイミング",
-          "body": "モーションはスプリングか <code>duration</code> で動きます。スプリングには <code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code>、<code>'gentle'</code> の名前か、<code>damping</code> と <code>response</code> の値を指定します。ms 単位の <code>duration</code> には CSS の <code>easing</code> か、<code>'out'</code>、<code>'pop'</code> のような vael-ui の名前を指定できます。"
+          "body": "モーションはスプリングか <code>duration</code> で動きます。スプリングには <code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code>、<code>'gentle'</code> の名前か、<code>damping</code> と <code>response</code> の値を指定します。ms 単位の <code>duration</code> には CSS の <code>easing</code> か、<code>'out'</code>、<code>'pop'</code>、落としたボールのように着地する <code>'bounce'</code> のような vael-ui の名前を指定できます。スプリングでは位置とサイズがスプリングに乗り、不透明度・色・ぼかしはなめらかに変化します。"
         },
         "spring": {
           "title": "すべてにひとつのスプリング",
@@ -766,7 +767,7 @@
         "intro": "モーションは vael-ui のコンポーネントだけのものではありません。<code>v-animate</code> を使えば、自分のどの要素にもテンプレートから直接、登場と退場の動きを付けられます。",
         "appear": {
           "title": "登場と退場",
-          "body": "<code>initial</code> は要素が入ってくる起点を決めます。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。 よく使う登場は名前で選べます: <code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code>、<code>.blur</code>。スプリングも同じように <code>v-animate.pop.bouncy</code> と付けられ、値で調整できます: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
+          "body": "<code>initial</code> は要素が入ってくる起点を決めます。Vue が要素を取り除くと、<code>exit</code> を指定しない限り、来た道をより速く、控えめに戻っていきます。ダイアログやメニューなど閉じるコンポーネントの中では、代わりにパネルと一緒に消えます。 よく使う登場は名前で選べます: <code>v-animate.fade</code>、<code>.rise</code>、<code>.drop</code>、<code>.pop</code>、<code>.blur</code>。スプリングも同じように <code>v-animate.pop.bouncy</code> と付けられ、値で調整できます: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>。"
         },
         "scroll": {
           "title": "スクロールで画面に入ったとき",
@@ -774,7 +775,7 @@
         },
         "replay": {
           "title": "もう一度再生する",
-          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、ステータスの変化、失敗したコピーなどに使います。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。 <code>appear: 'later'</code> にすると、ページの最初の描画時にあるものは動かず、あとから追加されたものだけが入ってきます。"
+          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、ステータスの変化、失敗したコピーなどに使います。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。 <code>appear: 'later'</code> にすると、ページの最初の描画時にあるものは動かず、あとから追加されたものだけが入ってきます。コンポーネントのパネルの中では、開いたときにあるものが対象です。"
         },
         "layout": {
           "title": "新しい位置へスライド",

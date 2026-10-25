@@ -72,6 +72,7 @@
     "vaporUnavailable": "No Vapor demo for this component yet",
     "code": "Code",
     "hideCode": "Hide code",
+    "anatomy": "Anatomy",
     "preview": "Preview",
     "playground": "Playground",
     "examples": "Examples",
@@ -143,7 +144,7 @@
     "darkModeIntro": "Dark mode is CSS only. It follows <code>&lt;html data-theme=\"dark\"&gt;</code> and falls back to <code>prefers-color-scheme</code>. vael-ui ships no toggle, but <code>useColorScheme()</code> tracks changes to the OS setting and saves the choice through the <code>persist</code> option you pass:",
     "appearanceHeadIntro": "If you save the color mode or an app-wide font size in <code>localStorage</code>, put this script in your HTML <code>&lt;head&gt;</code>, before the app bundle. It restores both before the first paint. Save a CSS font size such as <code>13px</code> or <code>1rem</code> under <code>app-font-size</code>. Components inherit it unless you set a scoped <code>theme.fontSize</code>.",
     "directivesTitle": "Directives",
-    "directivesIntro": "<code>v-tooltip</code> and <code>v-scroll-mask</code> aren’t registered globally by default. If you use either one in more than one component, register them once:",
+    "directivesIntro": "<code>v-tooltip</code>, <code>v-scroll-mask</code> and <code>v-hover-indicator</code> aren’t registered globally by default. If you use any of them in more than one component, register them once:",
     "directivesNote": "<code>v-tooltip</code> also needs one <code>&lt;TooltipHost /&gt;</code> mounted in your app. In a Vapor app, import both directives from <code>vael-ui/vapor</code> instead.",
     "ssrTitle": "Server rendering",
     "ssrIntro": "Both builds render on the server and hydrate in the browser. {link} sets up everything below for you.",
@@ -454,7 +455,7 @@
     "appSetupIntro": "The module doesn’t mount the hosts. Mount the ones you use once in app.vue. {link} explains what each one does.",
     "appSetupIntroLink": "Global setup",
     "composablesIntro": "Composables such as <code>toast()</code> and <code>openDialog()</code> aren’t auto-imported. Import them from <code>'vael-ui'</code>, or from <code>'vael-ui/vapor'</code> with the Vapor variant:",
-    "directivesIntro": "The module registers <code>v-animate</code> for you, but not <code>v-tooltip</code> or <code>v-scroll-mask</code>. Register those two in a plugin. With the Vapor variant, import them from <code>'vael-ui/vapor'</code>:",
+    "directivesIntro": "The module registers <code>v-animate</code> for you, but not <code>v-tooltip</code>, <code>v-scroll-mask</code> or <code>v-hover-indicator</code>. Register those in a plugin. With the Vapor variant, import them from <code>'vael-ui/vapor'</code>:",
     "excludeTitle": "exclude",
     "excludeIntro": "Skip specific component names, such as to register your own <code>&lt;Button&gt;</code> under the same tag:",
     "vaporTitle": "Vapor",
@@ -750,7 +751,7 @@
         },
         "timing": {
           "title": "Timing",
-          "body": "Motion runs on a spring or on a <code>duration</code>. A spring takes a name, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> or <code>'gentle'</code>, or its <code>damping</code> and <code>response</code>. A <code>duration</code> in ms takes any CSS <code>easing</code>, or one of vael-ui's by name, such as <code>'out'</code> or <code>'pop'</code>."
+          "body": "Motion runs on a spring or on a <code>duration</code>. A spring takes a name, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> or <code>'gentle'</code>, or its <code>damping</code> and <code>response</code>. A <code>duration</code> in ms takes any CSS <code>easing</code>, or one of vael-ui's by name, such as <code>'out'</code>, <code>'pop'</code> or <code>'bounce'</code>, which lands like a dropped ball. On a spring, positions and sizes ride it, and opacity, colors and blur ease."
         },
         "spring": {
           "title": "One spring for everything",
@@ -766,7 +767,7 @@
         "intro": "Motion isn't only for vael-ui components. <code>v-animate</code> gives any of your elements an entrance and an exit, right in the template.",
         "appear": {
           "title": "In and out",
-          "body": "<code>initial</code> sets where the element comes in from. When Vue removes it, it leaves the way it came, faster and quieter, unless you give it an <code>exit</code>. For the usual entrances, pick one by name: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> or <code>.blur</code>. Add a spring the same way, as in <code>v-animate.pop.bouncy</code>, and tune it with a value: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
+          "body": "<code>initial</code> sets where the element comes in from. When Vue removes it, it leaves the way it came, faster and quieter, unless you give it an <code>exit</code>. Inside a component that closes, such as a dialog or a menu, it leaves with the panel instead. For the usual entrances, pick one by name: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> or <code>.blur</code>. Add a spring the same way, as in <code>v-animate.pop.bouncy</code>, and tune it with a value: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
         "scroll": {
           "title": "When it scrolls into view",
@@ -774,7 +775,7 @@
         },
         "replay": {
           "title": "Play it again",
-          "body": "<code>replay</code> plays <code>initial</code> again each time its value changes, without remounting the element. Use it for a count going up, a status change or a failed copy. With <code>appear: false</code>, it plays only on those changes, not when the element mounts. With <code>appear: 'later'</code>, what's there when the page first renders stays still, and anything added after comes in."
+          "body": "<code>replay</code> plays <code>initial</code> again each time its value changes, without remounting the element. Use it for a count going up, a status change or a failed copy. With <code>appear: false</code>, it plays only on those changes, not when the element mounts. With <code>appear: 'later'</code>, what's there when the page first renders stays still, and anything added after comes in. Inside a component's panel, that's what's there when it opens."
         },
         "layout": {
           "title": "Slide to a new place",

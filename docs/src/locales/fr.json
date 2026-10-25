@@ -66,6 +66,7 @@
     "vaporUnavailable": "Pas encore de démo Vapor pour ce composant",
     "code": "Code",
     "hideCode": "Masquer le code",
+    "anatomy": "Anatomie",
     "preview": "Aperçu",
     "playground": "Bac à sable",
     "examples": "Exemples",
@@ -124,7 +125,7 @@
     "directivesTitle": "Directives",
     "darkModeIntro": "Le mode sombre repose uniquement sur CSS. Il suit <code>&lt;html data-theme=\"dark\"&gt;</code> et se rabat sur <code>prefers-color-scheme</code>. vael-ui ne fournit aucune bascule, mais <code>useColorScheme()</code> suit les changements du réglage système et enregistre le choix via l'option <code>persist</code> que vous lui passez :",
     "appearanceHeadIntro": "Si vous enregistrez le mode de couleur ou une taille de police globale dans <code>localStorage</code>, placez ce script dans le <code>&lt;head&gt;</code> HTML, avant le bundle de l’application. Il restaure les deux avant le premier affichage. Enregistrez une taille de police CSS comme <code>13px</code> ou <code>1rem</code> sous <code>app-font-size</code>. Les composants en héritent, sauf si vous définissez un <code>theme.fontSize</code> local.",
-    "directivesIntro": "<code>v-tooltip</code> et <code>v-scroll-mask</code> ne sont pas enregistrées globalement par défaut. Si vous utilisez l'une ou l'autre dans plusieurs composants, enregistrez-les une seule fois :",
+    "directivesIntro": "<code>v-tooltip</code>, <code>v-scroll-mask</code> et <code>v-hover-indicator</code> ne sont pas enregistrées globalement par défaut. Si vous utilisez l'une d'elles dans plusieurs composants, enregistrez-les une seule fois :",
     "directivesNote": "<code>v-tooltip</code> a aussi besoin d'un <code>&lt;TooltipHost /&gt;</code> monté une fois dans votre application. Dans une application Vapor, importez plutôt les deux directives depuis <code>vael-ui/vapor</code>.",
     "ssrTitle": "Rendu côté serveur",
     "ssrIntro": "Les deux versions s’affichent côté serveur et s’hydratent dans le navigateur. {link} configure tout ce qui suit pour vous.",
@@ -480,7 +481,7 @@
     "appSetupIntro": "Le module ne monte pas les hôtes. Montez une fois dans app.vue ceux que vous utilisez. {link} explique le rôle de chacun.",
     "appSetupIntroLink": "Configuration globale",
     "composablesIntro": "Les composables comme <code>toast()</code> et <code>openDialog()</code> ne sont pas importés automatiquement. Importez-les depuis <code>'vael-ui'</code>, ou depuis <code>'vael-ui/vapor'</code> avec la variante Vapor :",
-    "directivesIntro": "Le module enregistre <code>v-animate</code> pour vous, mais pas <code>v-tooltip</code> ni <code>v-scroll-mask</code>. Enregistrez ces deux-là dans un plugin. Avec la variante Vapor, importez-les depuis <code>'vael-ui/vapor'</code> :",
+    "directivesIntro": "Le module enregistre <code>v-animate</code> pour vous, mais pas <code>v-tooltip</code>, <code>v-scroll-mask</code> ni <code>v-hover-indicator</code>. Enregistrez-les dans un plugin. Avec la variante Vapor, importez-les depuis <code>'vael-ui/vapor'</code> :",
     "setupTitle": "Installation",
     "title": "Nuxt",
     "vaporIntro": "Définissez <code>variant: 'vapor'</code> pour utiliser <code>vael-ui/vapor</code>, la même option que celle de <code>vael-ui/resolver</code>. Le module active <code>vue.vapor</code> de Nuxt pour vous. Il faut Nuxt 4.6 ou plus récent et Vue 3.6. Fixez Vue à la version exacte indiquée dans Démarrage.",
@@ -750,7 +751,7 @@
         },
         "timing": {
           "title": "Timing",
-          "body": "Le mouvement suit un ressort ou une <code>duration</code>. Un ressort accepte un nom, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> ou <code>'gentle'</code>, ou ses valeurs <code>damping</code> et <code>response</code>. Une <code>duration</code> en ms accepte tout <code>easing</code> CSS, ou un de ceux de vael-ui par son nom, comme <code>'out'</code> ou <code>'pop'</code>."
+          "body": "Le mouvement suit un ressort ou une <code>duration</code>. Un ressort accepte un nom, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> ou <code>'gentle'</code>, ou ses valeurs <code>damping</code> et <code>response</code>. Une <code>duration</code> en ms accepte tout <code>easing</code> CSS, ou un de ceux de vael-ui par son nom, comme <code>'out'</code>, <code>'pop'</code> ou <code>'bounce'</code>, qui atterrit comme une balle qu'on lâche. Sur un ressort, positions et tailles le suivent, tandis que l'opacité, les couleurs et le flou s'adoucissent."
         },
         "spring": {
           "title": "Un ressort pour tout",
@@ -766,7 +767,7 @@
         "intro": "Le mouvement n'est pas réservé aux composants de vael-ui. <code>v-animate</code> donne à n'importe lequel de vos éléments une entrée et une sortie, directement dans le template.",
         "appear": {
           "title": "Entrée et sortie",
-          "body": "<code>initial</code> indique d'où arrive l'élément. Quand Vue le retire, il repart par où il est venu, plus vite et plus discrètement, sauf si vous lui donnez un <code>exit</code>. Pour les entrées courantes, choisissez-en une par son nom : <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> ou <code>.blur</code>. Ajoutez un ressort de la même façon, comme dans <code>v-animate.pop.bouncy</code>, et ajustez-la avec une valeur : <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
+          "body": "<code>initial</code> indique d'où arrive l'élément. Quand Vue le retire, il repart par où il est venu, plus vite et plus discrètement, sauf si vous lui donnez un <code>exit</code>. Dans un composant qui se ferme, comme une boîte de dialogue ou un menu, il part plutôt avec le panneau. Pour les entrées courantes, choisissez-en une par son nom : <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> ou <code>.blur</code>. Ajoutez un ressort de la même façon, comme dans <code>v-animate.pop.bouncy</code>, et ajustez-la avec une valeur : <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
         "scroll": {
           "title": "Quand il apparaît au défilement",
@@ -774,7 +775,7 @@
         },
         "replay": {
           "title": "Le rejouer",
-          "body": "<code>replay</code> rejoue <code>initial</code> chaque fois que sa valeur change, sans remonter l'élément. Utilisez-le pour un compteur qui monte, un statut qui change ou une copie qui a échoué. Avec <code>appear: false</code>, il ne joue qu'à ces changements, pas au montage de l'élément. Avec <code>appear: 'later'</code>, ce qui est là au premier rendu de la page reste immobile, et tout ce qui est ajouté ensuite apparaît animé."
+          "body": "<code>replay</code> rejoue <code>initial</code> chaque fois que sa valeur change, sans remonter l'élément. Utilisez-le pour un compteur qui monte, un statut qui change ou une copie qui a échoué. Avec <code>appear: false</code>, il ne joue qu'à ces changements, pas au montage de l'élément. Avec <code>appear: 'later'</code>, ce qui est là au premier rendu de la page reste immobile, et tout ce qui est ajouté ensuite apparaît animé. Dans le panneau d'un composant, c'est ce qui est là à son ouverture."
         },
         "layout": {
           "title": "Glisser vers une nouvelle place",

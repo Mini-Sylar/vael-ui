@@ -47,6 +47,7 @@
   "component": {
     "code": "Código",
     "hideCode": "Ocultar código",
+    "anatomy": "Anatomia",
     "copied": "Copiado",
     "copy": "Cópia",
     "events": "Eventos",
@@ -157,7 +158,7 @@
     "darkModeIntro": "O modo escuro é só CSS. Ele segue <code>&lt;html data-theme=\"dark\"&gt;</code> e, na falta dele, usa <code>prefers-color-scheme</code>. O vael-ui não inclui nenhum seletor de tema, mas <code>useColorScheme()</code> acompanha as mudanças na preferência do sistema e salva a escolha pela opção <code>persist</code> que você passar:",
     "appearanceHeadIntro": "Se você salvar o modo de cor ou um tamanho de fonte para todo o app em <code>localStorage</code>, coloque este script no <code>&lt;head&gt;</code> do HTML, antes do bundle do app. Ele restaura ambos antes da primeira exibição. Salve um tamanho de fonte CSS como <code>13px</code> ou <code>1rem</code> em <code>app-font-size</code>. Os componentes herdam esse valor, a menos que você defina um <code>theme.fontSize</code> com escopo.",
     "darkModeTitle": "Modo escuro",
-    "directivesIntro": "<code>v-tooltip</code> e <code>v-scroll-mask</code> não são registradas globalmente por padrão. Se você usa alguma delas em mais de um componente, registre-as uma vez:",
+    "directivesIntro": "<code>v-tooltip</code>, <code>v-scroll-mask</code> e <code>v-hover-indicator</code> não são registradas globalmente por padrão. Se você usa alguma delas em mais de um componente, registre-as uma vez:",
     "directivesNote": "<code>v-tooltip</code> também precisa de um <code>&lt;TooltipHost /&gt;</code> montado no seu app. Em um app Vapor, importe as duas diretivas de <code>vael-ui/vapor</code>.",
     "ssrTitle": "Renderização no servidor",
     "ssrIntro": "As duas builds renderizam no servidor e são hidratadas no navegador. {link} configura tudo abaixo para você.",
@@ -480,7 +481,7 @@
     "appSetupIntro": "O módulo não monta os hosts. Monte uma vez em app.vue os que você usa. {link} explica o que cada um faz.",
     "appSetupIntroLink": "Configuração global",
     "composablesIntro": "Composables como <code>toast()</code> e <code>openDialog()</code> não são importados automaticamente. Importe-os de <code>'vael-ui'</code>, ou de <code>'vael-ui/vapor'</code> com a variante Vapor:",
-    "directivesIntro": "O módulo registra <code>v-animate</code> para você, mas não <code>v-tooltip</code> nem <code>v-scroll-mask</code>. Registre essas duas em um plugin. Com a variante Vapor, importe-as de <code>'vael-ui/vapor'</code>:",
+    "directivesIntro": "O módulo registra <code>v-animate</code> para você, mas não <code>v-tooltip</code>, <code>v-scroll-mask</code> nem <code>v-hover-indicator</code>. Registre-as em um plugin. Com a variante Vapor, importe-as de <code>'vael-ui/vapor'</code>:",
     "setupTitle": "Configurar",
     "title": "Nuxt",
     "vaporIntro": "Defina <code>variant: 'vapor'</code> para usar <code>vael-ui/vapor</code>, a mesma opção que o <code>vael-ui/resolver</code> aceita. O módulo ativa o <code>vue.vapor</code> do Nuxt para você. É preciso Nuxt 4.6 ou mais recente e Vue 3.6. Fixe o Vue na versão exata indicada em Primeiros passos.",
@@ -750,7 +751,7 @@
         },
         "timing": {
           "title": "Tempo",
-          "body": "O movimento segue uma mola ou uma <code>duration</code>. Uma mola aceita um nome, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> ou <code>'gentle'</code>, ou seus valores <code>damping</code> e <code>response</code>. Uma <code>duration</code> em ms aceita qualquer <code>easing</code> de CSS, ou um do vael-ui pelo nome, como <code>'out'</code> ou <code>'pop'</code>."
+          "body": "O movimento segue uma mola ou uma <code>duration</code>. Uma mola aceita um nome, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> ou <code>'gentle'</code>, ou seus valores <code>damping</code> e <code>response</code>. Uma <code>duration</code> em ms aceita qualquer <code>easing</code> de CSS, ou um do vael-ui pelo nome, como <code>'out'</code>, <code>'pop'</code> ou <code>'bounce'</code>, que aterrissa como uma bola que cai. Numa mola, posições e tamanhos a acompanham, e opacidade, cores e desfoque suavizam."
         },
         "spring": {
           "title": "Uma mola para tudo",
@@ -766,7 +767,7 @@
         "intro": "Movimento não é só para os componentes do vael-ui. <code>v-animate</code> dá a qualquer elemento seu uma entrada e uma saída, direto no template.",
         "appear": {
           "title": "Entrar e sair",
-          "body": "<code>initial</code> define de onde o elemento entra. Quando o Vue o remove, ele sai por onde veio, mais rápido e mais discreto, a menos que você dê a ele um <code>exit</code>. Para as entradas comuns, escolha uma pelo nome: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> ou <code>.blur</code>. Adicione uma mola do mesmo jeito, como em <code>v-animate.pop.bouncy</code>, e ajuste com um valor: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
+          "body": "<code>initial</code> define de onde o elemento entra. Quando o Vue o remove, ele sai por onde veio, mais rápido e mais discreto, a menos que você dê a ele um <code>exit</code>. Dentro de um componente que fecha, como um diálogo ou um menu, ele sai junto com o painel. Para as entradas comuns, escolha uma pelo nome: <code>v-animate.fade</code>, <code>.rise</code>, <code>.drop</code>, <code>.pop</code> ou <code>.blur</code>. Adicione uma mola do mesmo jeito, como em <code>v-animate.pop.bouncy</code>, e ajuste com um valor: <code>v-animate.rise=\"{'{'} delay: 0.1 {'}'}\"</code>."
         },
         "scroll": {
           "title": "Quando aparece na rolagem",
@@ -774,7 +775,7 @@
         },
         "replay": {
           "title": "Toque de novo",
-          "body": "<code>replay</code> toca <code>initial</code> de novo cada vez que seu valor muda, sem remontar o elemento. Use-o para um contador subindo, uma mudança de status ou uma cópia que falhou. Com <code>appear: false</code>, ele só toca nessas mudanças, não quando o elemento é montado. Com <code>appear: 'later'</code>, o que está na página no primeiro render fica parado, e tudo o que for adicionado depois entra animado."
+          "body": "<code>replay</code> toca <code>initial</code> de novo cada vez que seu valor muda, sem remontar o elemento. Use-o para um contador subindo, uma mudança de status ou uma cópia que falhou. Com <code>appear: false</code>, ele só toca nessas mudanças, não quando o elemento é montado. Com <code>appear: 'later'</code>, o que está na página no primeiro render fica parado, e tudo o que for adicionado depois entra animado. Dentro do painel de um componente, é o que está lá quando ele abre."
         },
         "layout": {
           "title": "Deslize para um novo lugar",

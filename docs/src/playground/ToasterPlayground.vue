@@ -1,6 +1,7 @@
 <template>
   <section class="playground">
     <div class="playground-toolbar">
+      <AnatomyToggle v-model:shown="anatomyOn" />
       <SelectButton
         v-model="defaultVariant"
         size="sm"
@@ -13,31 +14,42 @@
     </div>
 
     <div class="playground-body">
-      <div class="playground-preview">
-        <component
-          :is="toasterComponent"
-          :position="position"
-          :max-visible="maxVisible"
-          :gap="gap"
-          :expand="expand"
+      <div ref="previewEl" class="playground-preview">
+        <component :is="specimen" v-if="anatomyOn && specimen" />
+        <template v-else>
+          <component
+            :is="toasterComponent"
+            :position="position"
+            :max-visible="maxVisible"
+            :gap="gap"
+            :expand="expand"
+          />
+          <div class="trigger-row">
+            <Button size="sm" @click="toast('Saved changes')">Default</Button>
+            <Button size="sm" variant="outline" @click="toast.success('Upload complete')"
+              >Success</Button
+            >
+            <Button size="sm" variant="outline" @click="toast.error('Something went wrong')"
+              >Error</Button
+            >
+            <Button size="sm" variant="outline" @click="toast.warning('Storage almost full')"
+              >Warning</Button
+            >
+            <Button size="sm" variant="outline" @click="toast.info('New version available')"
+              >Info</Button
+            >
+            <Button size="sm" variant="secondary" @click="burst">Burst of 3</Button>
+            <Button size="sm" variant="secondary" @click="pin">Pinned</Button>
+          </div>
+        </template>
+        <AnatomyOverlay
+          v-if="previewEl"
+          :root="previewEl"
+          component="Toaster"
+          :parts="parts"
+          :slots="slots"
+          :shown="anatomyOn"
         />
-        <div class="trigger-row">
-          <Button size="sm" @click="toast('Saved changes')">Default</Button>
-          <Button size="sm" variant="outline" @click="toast.success('Upload complete')"
-            >Success</Button
-          >
-          <Button size="sm" variant="outline" @click="toast.error('Something went wrong')"
-            >Error</Button
-          >
-          <Button size="sm" variant="outline" @click="toast.warning('Storage almost full')"
-            >Warning</Button
-          >
-          <Button size="sm" variant="outline" @click="toast.info('New version available')"
-            >Info</Button
-          >
-          <Button size="sm" variant="secondary" @click="burst">Burst of 3</Button>
-          <Button size="sm" variant="secondary" @click="pin">Pinned</Button>
-        </div>
       </div>
 
       <div class="playground-controls">
@@ -86,15 +98,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, type Component } from 'vue'
+import { computed, shallowRef, useTemplateRef, type Component } from 'vue'
 import * as VaelUi from 'vael-ui'
 import { Button, InputNumber, Select, SelectButton, Switch, toast } from 'vael-ui'
 import type { ToasterPosition } from 'vael-ui'
 import CodeBlock from '../components/CodeBlock.vue'
+import AnatomyOverlay from '../components/AnatomyOverlay.vue'
+import AnatomyToggle from '../components/AnatomyToggle.vue'
+import { partsOf, slotsOf, specimenOf } from '../anatomyOf'
 import { defaultVariant } from '../preferences'
 import { useVaporComponents } from '../composables/useVaporComponents'
 
 const vaelUi = VaelUi as unknown as Record<string, Component>
+
+// Anatomy: its parts outlined over a specimen that has every one of them.
+const previewEl = useTemplateRef<HTMLElement>('previewEl')
+const anatomyOn = shallowRef(false)
+const parts = partsOf('Toaster')
+const slots = slotsOf('Toaster')
+const specimen = specimenOf('Toaster')
 const vaelUiVapor = useVaporComponents()
 // The imperative toast() queue is a plain composable, not a compiled
 // component — it isn't re-exported from 'vael-ui/vapor' (only PascalCase
@@ -163,6 +185,8 @@ toast.dismiss('verify-email')`
 .playground-toolbar {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.75rem;
   border-bottom: 1px solid var(--ui-border);
   background: var(--ui-muted);
@@ -177,6 +201,8 @@ toast.dismiss('verify-email')`
   position: relative;
   padding: 3rem;
   display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
   align-items: center;
   justify-content: center;
   min-height: 9rem;
