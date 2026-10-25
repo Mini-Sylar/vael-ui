@@ -45,6 +45,8 @@
     align-items: inherit;
     gap: inherit;
     pointer-events: none;
+    /* Hidden until placed, then clipped from script; a style binding would undo that in Vapor. */
+    clip-path: inset(0 100% 0 0);
     transition: clip-path var(--ui-duration-press) var(--ui-ease-in-out);
   }
   .ui-pagination-indicator-labels > span {

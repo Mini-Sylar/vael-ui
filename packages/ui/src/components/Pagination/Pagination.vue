@@ -30,7 +30,6 @@
         role="presentation"
         aria-hidden="true"
         inert
-        :style="labelsHidden"
       >
         <span v-for="n in 2" :key="`start-${n}`" class="ui-pagination-labels-spacer">
           <Button :class="labelPart.class" icon size="sm" variant="ghost" tabindex="-1" />
@@ -265,8 +264,6 @@ function clipLabels() {
   labels.style.transitionDuration =
     transitionProperty === 'opacity' || transitionDuration.startsWith('0ms') ? '0ms' : ''
 }
-// Hidden until the indicator is first placed; one object, so a re-render never rewrites it.
-const labelsHidden = { clipPath: 'inset(0 100% 0 0)' }
 // Its new place lands in its inline style, every frame on a spring.
 let indicatorObserver: MutationObserver | undefined
 onMounted(() => {
