@@ -77,12 +77,15 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // up front 7.9 → 8 KB, states 5.8 → 5.9 KB (2026-10-25): a token named inside a component given
 // its own timing means the theme's (names resolve through --ui-theme-*, which a retimed component
 // keeps), and durations given as plain strings read right. Measured 8146 and 6037 B.
+// states 5.9 → 6.2 KB (2026-10-25): a state's `onFinish` runs once its animation has played on every
+// part (once for a repeated part), at once when nothing plays, never for a loop or a state that
+// turned off first. Only components given custom states load this chunk. Measured 6307 B.
 const BUDGET = {
   upFront: 8 * 1024,
   runtime: 6.4 * 1024,
   morph: 1.55 * 1024,
   button: 1.2 * 1024,
-  states: 5.9 * 1024,
+  states: 6.2 * 1024,
   linked: 2.8 * 1024,
 }
 

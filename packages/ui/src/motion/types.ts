@@ -305,8 +305,23 @@ export type LinkedMotion = MotionTiming & {
 
 export type MotionPhase = 'entering' | 'entered' | 'leaving' | 'left'
 
+/** Its elements by part name, as `onFinish` gets them: a repeated part (OtpInput's cells) is a list. */
+export type PartElements<P extends string, R extends string = never> = {
+  [K in P]: K extends R ? HTMLElement[] : HTMLElement
+}
+
 /** Per state: keyframe arrays play once on entering it; plain values are held while it's on. */
-export type StateMotion<S extends string, P extends string> = { [K in S]?: PartValues<P> }
+export type StateMotion<S extends string, P extends string, R extends string = never> = {
+  [K in S]?: PartValues<P> & {
+    /**
+     * Runs once the state's animation has finished on every part, while the state is still on:
+     * clear a field after its invalid shake. Runs at once when nothing plays, as under reduced
+     * motion; not for a state that loops, or one that turns off first. It gets the component's
+     * elements by part name: `({ root }) => root.querySelector('input')?.focus()`.
+     */
+    onFinish?: (parts: PartElements<P, R>) => void
+  }
+}
 
 // ─── Per-component motion ────────────────────────────────────────────────────
 
@@ -314,6 +329,8 @@ export type StateMotion<S extends string, P extends string> = { [K in S]?: PartV
 export interface MotionSpec {
   parts: string
   states?: string
+  /** Parts with many elements (OtpInput's cells): `onFinish` gets each as a list. */
+  repeated?: string
   overlay?: true
   /** It comes and goes on its own (Message, your `useMotion('reveal')`): it has an exit and hooks. */
   presence?: true
@@ -329,6 +346,7 @@ export interface MotionSpec {
 
 type Parts<S extends MotionSpec> = S['parts']
 type States<S extends MotionSpec> = S['states'] extends string ? S['states'] : never
+type Repeated<S extends MotionSpec> = S['repeated'] extends string ? S['repeated'] : never
 
 type HookContext<S extends MotionSpec, N extends string> = MotionContext<NoInfer<N>> &
   (S['list'] extends true ? ListHookContext : unknown)
@@ -340,7 +358,7 @@ export interface ListHookContext {
 type BaseMotion<S extends MotionSpec> = MotionTiming & {
   /** Appearance: where it comes in from (mount, `v-if`, opening). Opt-in, never on hydration. */
   initial?: PartValues<Parts<S>>
-  states?: StateMotion<States<S>, Parts<S>>
+  states?: StateMotion<States<S>, Parts<S>, Repeated<S>>
 }
 /** What only something that comes and goes has: where it leaves to, and hooks for both ways. */
 type PresenceMotion<S extends MotionSpec, N extends string> = {
@@ -548,6 +566,7 @@ export type OtpInputPart = 'root' | 'cell'
  */
 export type OtpInputMotion = ComponentMotion<{
   parts: OtpInputPart
+  repeated: 'cell'
   states: 'invalid' | 'complete' | 'disabled' | 'focus' | 'filled' | 'current'
 }>
 
@@ -758,6 +777,7 @@ export type DockPart = 'root' | 'item'
 export type DockMotion = WithStagger<
   ComponentMotion<{
     parts: DockPart
+    repeated: 'item'
     states: 'hover' | 'active' | 'focus' | 'disabled' | 'selected'
   }>
 >
@@ -880,6 +900,7 @@ export type StepperPart = 'root' | 'step' | 'circle' | 'connector' | 'content'
 export type StepperMotion = WithStagger<
   ComponentMotion<{
     parts: StepperPart
+    repeated: Exclude<StepperPart, 'root'>
     states: 'current' | 'completed' | 'upcoming' | 'disabled' | 'hover' | 'focus'
   }>
 >

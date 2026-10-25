@@ -128,8 +128,16 @@ export function createStatePlayer() {
   const loops = new Map<string, Animation[]>()
   const played = new Map<string, string>()
 
-  function once(el: HTMLElement, values: MotionValues, frame: StateFrame, state: string) {
+  // The runs it started, for onFinish; null when one of them loops.
+  function once(
+    el: HTMLElement,
+    values: MotionValues,
+    frame: StateFrame,
+    state: string,
+  ): Animation[] | null {
     const rtl = getComputedStyle(el).direction === 'rtl'
+    const started: Animation[] = []
+    let looping = false
     // A value with its own timing plays on its own.
     for (const group of groupValues(values)) {
       const own = (group.timing ?? frame.timing) as MotionTiming & SequenceTiming
@@ -151,9 +159,15 @@ export function createStatePlayer() {
         fill: 'backwards',
         ...repeatOf(own),
       })
-      if (own.repeat === Infinity) loops.set(state, [...(loops.get(state) ?? []), run])
-      else void track(run.finished.catch(() => {}))
+      if (own.repeat === Infinity) {
+        loops.set(state, [...(loops.get(state) ?? []), run])
+        looping = true
+      } else {
+        void track(run.finished.catch(() => {}))
+        started.push(run)
+      }
     }
+    return looping ? null : started
   }
   /**
    * A looping state whose durations changed, nothing else: each loop plays at its new pace from
@@ -202,7 +216,8 @@ export function createStatePlayer() {
   }
 
   return {
-    update(frame: StateFrame) {
+    /** The states that just turned on, with the runs each started (null: it loops). */
+    update(frame: StateFrame): Map<string, Animation[] | null> {
       const reduced = prefersReducedMotion()
       const again = new Set(frame.again ?? [])
       // What each state plays, by value: changed while it's on, it plays the new one.
@@ -244,8 +259,24 @@ export function createStatePlayer() {
             plays.push([target, keyframes, state])
         }
       for (const [el, values] of targets) hold(el, values as MotionValues, frame)
+      const report = new Map<string, Animation[] | null>()
+      if (frame.instant) return report
+      // Each state that turned on: the transitions to its held look, then its keyframes.
+      for (const state of entered) {
+        const runs: Animation[] = []
+        for (const part of Object.keys(frame.spec[state] ?? {})) {
+          const el = frame.parts[part]
+          if (el) runs.push(...(holds.get(el)?.runs ?? []))
+        }
+        report.set(state, runs)
+      }
       // After the holds, so a shake plays on top of what's held.
-      for (const [el, values, state] of plays) once(el, values, frame, state)
+      for (const [el, values, state] of plays) {
+        const started = once(el, values, frame, state)
+        const runs = report.get(state)
+        report.set(state, started && runs ? [...runs, ...started] : null)
+      }
+      return report
     },
     dispose() {
       for (const { runs } of holds.values()) for (const run of runs) run.cancel()
@@ -365,14 +396,59 @@ function flagsOf(states: string[], known: Record<string, boolean | undefined>, p
 export function startStates(ctx: StatesContext): void {
   const player = createStatePlayer()
   const repeatedNames = () => Object.keys(ctx.repeated?.() ?? {})
+  // A state's onFinish sits beside its parts; the players see only the parts.
+  const partsOnly = (): StateSpec => {
+    const out: StateSpec = {}
+    for (const [state, byPart] of Object.entries(ctx.spec())) {
+      const { onFinish: _, ...parts } = byPart as PartValues<string> & { onFinish?: unknown }
+      out[state] = parts
+    }
+    return out
+  }
   // The main player's spec: every part but the repeated ones, which play element by element.
   const mainSpec = (): StateSpec => {
     const skip = new Set(repeatedNames())
-    if (!skip.size) return ctx.spec()
+    if (!skip.size) return partsOnly()
     const out: StateSpec = {}
-    for (const [state, byPart] of Object.entries(ctx.spec()))
+    for (const [state, byPart] of Object.entries(partsOnly()))
       out[state] = Object.fromEntries(Object.entries(byPart).filter(([part]) => !skip.has(part)))
     return out
+  }
+
+  // onFinish: what every player started for a state in one go (a cell each, in a repeated part)
+  // is gathered, then it runs once, if the state is still on and nothing newer entered it.
+  const gathered = new Map<string, Animation[] | null>()
+  const entries = new Map<string, number>()
+  let scheduled = false
+  const finisherOf = (state: string) =>
+    (ctx.spec()[state] as { onFinish?: (parts: Record<string, unknown>) => void } | undefined)
+      ?.onFinish
+  // Its elements by part name, as the component exposes them: a repeated part is an array.
+  const partsNow = () => ({ ...ctx.parts(), ...ctx.repeated?.() })
+  const stillOn = (state: string) =>
+    state in ctx.states() || (POINTER_STATES as readonly string[]).includes(state)
+      ? !!flagsOf([state], ctx.states(), pointer)[state]
+      : true
+  function reported(report: Map<string, Animation[] | null>) {
+    for (const [state, runs] of report) {
+      if (!finisherOf(state)) continue
+      const so = gathered.has(state) ? gathered.get(state)! : []
+      gathered.set(state, so && runs ? [...so, ...runs] : null)
+    }
+    if (scheduled || !gathered.size) return
+    scheduled = true
+    queueMicrotask(() => {
+      scheduled = false
+      for (const [state, runs] of gathered) {
+        const entry = (entries.get(state) ?? 0) + 1
+        entries.set(state, entry)
+        if (!runs) continue
+        void Promise.allSettled(runs.map((run) => run.finished)).then(() => {
+          if (entries.get(state) === entry && stillOn(state)) finisherOf(state)?.(partsNow())
+        })
+      }
+      gathered.clear()
+    })
   }
   const wantedIn = (spec: StateSpec, part?: string) =>
     POINTER_STATES.filter(
@@ -403,13 +479,13 @@ export function startStates(ctx: StatesContext): void {
     }
   }
   player.update({ ...frame(), instant: true })
-  watch(frame, (next) => player.update(next), { flush: 'post' })
+  watch(frame, (next) => reported(player.update(next)), { flush: 'post' })
 
   // A repeated part: each element its own player, pointer and states, and its index as `where`.
   type One = { player: ReturnType<typeof createStatePlayer>; pointer: Pointer; stop?: () => void }
   const ones = new Map<Element, One>()
   const frames = () => {
-    const spec = ctx.spec()
+    const spec = partsOnly()
     const out: [Element, One, StateFrame, boolean][] = []
     const seen = new Set<Element>()
     for (const [part, els] of Object.entries(ctx.repeated?.() ?? {})) {
@@ -456,7 +532,8 @@ export function startStates(ctx: StatesContext): void {
   watch(
     frames,
     (next) => {
-      for (const [, one, f, fresh] of next) one.player.update(fresh ? { ...f, instant: true } : f)
+      for (const [, one, f, fresh] of next)
+        reported(one.player.update(fresh ? { ...f, instant: true } : f))
     },
     { flush: 'post', immediate: true },
   )
