@@ -10,14 +10,14 @@ Every animated component now takes one `motion` prop, and one engine runs every 
 
 - **`motion`**: `false` turns a component’s motion off. An object changes it:
   - values for each part, such as `{ initial: { panel: { opacity: 0, y: 8 } } }` or `exit`. A plain number is px, or degrees for `rotate`.
-  - timing: `{ spring: { damping, response } }`, or `duration` and `easing`
+  - timing: a spring by name (`spring: 'snappy'`, `'smooth'`, `'bouncy'` or `'gentle'`) or as `{ damping, response }`, or a `duration` and `easing`. Easings and durations also take vael-ui’s tokens by name, such as `easing: 'out'` or `duration: 'enter'`.
   - `enter` and `leave` hooks
 
   Each component exports its own type, such as `DialogMotion`, `SelectMotion` or `ToasterMotion`, so its parts autocomplete.
 
 - **Your own library**: a hook returns what GSAP, motion’s `animate()` or `element.animate()` returns, or a promise, and the component waits for it. If you close mid-open or reopen mid-close, vael-ui stops the animation (`kill`, `stop` or `cancel`) and aborts `signal`. Under reduced motion, hooks don’t run unless you set `reducedMotion: 'run'`.
 - **Lists**: Toaster, Timeline, FileUpload, SpeedDial, DataTable rows, CommandPalette `items` and the Select family’s `chips` animate items that come and go:
-  - `stagger` brings new items in one after another
+  - `stagger` brings new items in one after another: seconds, `true` for the stagger token, or `'end'`, `'center'` or `'edges'` to start the wave there
   - `leaving: 'pop'` lifts a leaving item out of the layout, so the rest close the gap at once; `'hold'` keeps the gap until the item is gone
   - the other items slide into their new places
   - `initial` or `exit` written as a function receives `{ index, count }` for the items arriving or leaving together, so a close can run last to first
@@ -29,20 +29,24 @@ Every animated component now takes one `motion` prop, and one engine runs every 
   - `exitOrder: 'reverse'` closes the children first
   - `resize: false` stops a panel from easing to a new content size. While a panel’s width eases, its text keeps the line breaks of the final width.
 - **Your own engine**: a style’s `engine` runs overlay parts, list items and your own targets through your library. It receives the element, `from` and `to` in vael-ui’s names (`x`, `y`, `scale`, `opacity`), and the timing with the spring it came from, and returns what your library returns. States, swaps and `linked` always use the built-in engine.
-- **App-wide style**: `ConfigProvider`’s `motion` sets the motion for a whole app, by role (`overlay`, `list`, `reveal`, `press`, `content`) or by component (`dialog`, `toaster`, `select`). A component’s own `motion` overrides it. `presets` names looks you can use with `v-animate` anywhere inside the provider, such as `v-animate="'rise'"`. `parseMotionStyle` validates a style loaded from JSON.
-- **`v-animate`**: animates your own elements:
-  - `v-animate="{ initial: { opacity: 0, y: 8 } }"` plays when the element appears. When Vue removes the element, it leaves the way it came; `exit: false` turns that off.
+- **App-wide style**: `ConfigProvider`’s `motion` sets the motion for a whole app, by role (`overlay`, `list`, `reveal`, `press`, `content`) or by component (`dialog`, `toaster`, `select`). A component’s own `motion` overrides it. `presets` names looks you can use with `v-animate` anywhere inside the provider, such as `v-animate.wiggle` or `v-animate="'wiggle'"`. List them in `MotionPresets` (`declare module 'vael-ui' { interface MotionPresets { wiggle: true } }`) and TypeScript checks every name. `parseMotionStyle` validates a style loaded from JSON.
+- **`v-animate`**: animates your own elements. Modifiers pick, and the value tunes:
+  - `v-animate.rise` plays a built-in entrance: `fade`, `rise`, `drop`, `pop` or `blur`. Add a spring the same way (`v-animate.pop.bouncy`), and tune it with a value: `v-animate.rise="{ delay: 0.1 }"`.
+  - `v-animate="{ initial: { opacity: 0, y: 8 } }"` plays your own entrance. When Vue removes the element, it leaves the way it came; `exit: false` turns that off.
+  - `stagger` brings elements that share a name in one after another: `v-animate:rows.rise.stagger`, or `stagger: true`, `'end'`, `'center'`, `'edges'`, a number of seconds or a function
+  - `states` holds a look while an element is hovered, pressed or focused, as on a component: `{ states: { hover: { scale: 1.03 }, active: { scale: 0.97 } } }`
+  - with no timing of its own, it follows the ConfigProvider’s spring
   - `.size` eases an element to its content’s size
-  - `layout: true` slides an element to its new place when the layout moves it
+  - `layout: true` slides an element to its new place when the layout moves it, after its `delay` if it has one
   - `layoutId` moves an element between two places, such as a card into a dialog. Add `layout: 'position'` to keep its size on the way, so text never stretches.
-  - `replay` plays the animation again when its value changes; `appear: false` plays it only then
+  - `replay` plays the animation again when its value changes; `appear: false` plays it only then, and `appear: 'later'` skips what’s there at the first render but plays for anything added after
   - `when: 'visible'` waits until the element scrolls into view
   - `animate` sets a look the element holds. When the look changes, the element animates to it from wherever it is: `animate: { rotate: open ? 180 : 0 }`.
   - `progress` (0 to 1) holds keyframe arrays at that point, so a swipe or a scroll can scrub them. With a `spring`, they follow `progress` with a short lag.
-  - `v-animate:name` passes an element to the nearest component, which animates it with its own motion
+  - `v-animate:name` passes an element to the nearest component, which animates it with its own motion. Elements that appear together can also wait on each other with `after: 'title'` and `steps`, with no component around them.
 - **Entrances on any component**: `initial` on any component’s parts plays when it mounts, never on hydration, as in `<Separator :motion="{ initial: { root: { scale: '0 1' } } }" />`. Repeated parts, such as Rating’s stars or a Stepper’s steps, come in one after another with `stagger`. `replay` plays the entrance again without remounting, such as a burst on a five-star rating; `appear: false` plays it only on replays.
 - **States on every component**: each component has its own motion type (`SwitchMotion`, `ProgressMotion`, …) for its parts and states, so a style can shake every invalid field or lift every pressed card:
-  - **Keyframes**: an array is a set of keyframes. `times` places them, and `easing` eases each step; a list of easings gives each step its own, such as a rise and then a bounce. `repeat` plays them again, or forever while the state is on, and `repeatType: 'reverse'` alternates direction.
+  - **Keyframes**: an array is a set of keyframes. `times` places them, and `easing` eases each step; a list gives each step its own, and a step can ride a spring, as in `easing: ['linear', 'bouncy']`. `repeat` plays them again, or forever while the state is on, and `repeatType: 'reverse'` alternates direction. Changing a loop’s `duration` while it plays speeds it up or slows it down from where it is.
   - **Repeated parts**: a part that appears many times plays its states one element at a time. That covers a Stepper’s `current`, `completed` and `upcoming` steps, each Dock item’s hover and press, and `selected` on each item you pick. OtpInput’s new `cell` part works the same way, and its values can use each cell’s `index`.
   - **Off states**: Switch, Checkbox and Radio add `unchecked`, so turning one off can animate too
   - **Timing**: a `spring`, or a `duration` and `easing`, on one component retimes its own transitions, such as a Switch’s release, a Progress fill or an AnimatedNumber’s roll
@@ -186,7 +190,7 @@ Some components render different DOM or styles. Their props, slots and events ar
   `false` silences every `useHaptic` call inside the provider, yours included, for a “turn off haptics” setting. When it’s unset, your haptics play and vael-ui’s stay silent.
 
 - **Switch**: you can drag the thumb. It follows the pointer, the track flips as the thumb passes halfway, and the switch settles on the side you release it past. A tap still toggles. `dragging` is exposed, and the root carries `data-dragging`.
-- **One spring for everything**: `ConfigProvider`’s `:motion="{ spring: { damping, response } }"` puts drawers, sheets, toasts, AnimatedNumber, the sliding indicators, and the folds of Tree and Accordion on one spring. Crossfades such as AnimatedText keep their own short timing. Damping below 1 overshoots, and binding the values to refs retunes the app live. `indicator` still sets the indicators on their own. `springEasing` turns a spring into a CSS `linear()` curve and its settle time, in the shape `element.animate()` takes, so your own animations can use it.
+- **One spring for everything**: `ConfigProvider`’s `:motion="{ spring: 'snappy' }"` (or `{ damping, response }`) puts drawers, sheets, toasts, AnimatedNumber, the sliding indicators, and the folds of Tree and Accordion on one spring. Your own `v-animate` elements follow it too. Crossfades such as AnimatedText keep their own short timing. Damping below 1 overshoots, and binding the values to refs retunes the app live. `indicator` still sets the indicators on their own. `springEasing` turns a spring into a CSS `linear()` curve and its settle time, in the shape `element.animate()` takes, so your own animations can use it.
 - **Dialog**: `origin="trigger"` zooms the panel out of the element that opened it, and back into it on close. It uses the drawer curve, so `ConfigProvider`’s spring applies to it. It works on centered dialogs only, and reduced motion keeps a fade.
 - **ColorPicker**: a swatch that opens a picker with a saturation and brightness plane, a hue slider, a hex field, optional presets and an eyedropper where the browser supports one:
   - the plane works with the arrow keys
@@ -281,7 +285,7 @@ These components changed how they move:
 
 ## Accessibility
 
-Every component page now has an Accessibility section with its keyboard keys, the WAI-ARIA pattern it follows, its roles, and the labels you need to provide. These changes came out of checking each component against its code:
+Every component page now has an Accessibility section with its keyboard keys, the WAI-ARIA pattern it follows, its roles, and the labels you need to provide. The changes, by area:
 
 - **Overlays**:
   - a modal Dialog, Drawer, BottomSheet or CommandPalette makes the rest of the page inert. Toasts, live regions, tooltips and anything opened from inside stay usable. A contained modal Dialog sets `aria-modal`
@@ -325,7 +329,6 @@ These fix behavior in 0.4.8 and earlier.
 - **Pressing at the edge**: a control that shrinks while pressed (close buttons, steppers, chip removers, menu items, interactive Cards and 25 more) keeps its full box clickable. A press released near its edge is no longer lost. Clickable DataTable rows no longer shrink on press; the hover highlight is their feedback.
 - **Springs**: a spring stays smooth and never overshoots when the page drops to 30 fps. Before, a snappy spring could jitter or fly off.
 - **Field**: a page full of fields no longer restyles long lists on every hover. Field now asks its control whether it has a frame, instead of using a costly `:has()` selector.
-- **OtpInput**: typing fast no longer snaps the gliding ring backwards; only the caret blink restarts.
 - **Right to left**:
   - the sliding selection in Tabs, SelectButton, MenuList and Pagination lines up with the selected item instead of measuring from the wrong edge
   - Switch’s thumb starts on the right and travels left
@@ -352,6 +355,8 @@ These fix behavior in 0.4.8 and earlier.
 - **Pagination**: hovering the current page no longer covers it with the hover background.
 - **Radio, Checkbox, Switch**: at a fractional pixel ratio (Windows display scaling or browser zoom), the dot, tick and thumb no longer shift when you press them. Each stays on its own compositor layer. Tables over 150 rendered rows and trees between 150 and 500 visible rows make their checkboxes static instead, with no press feedback and no layer, so scrolling stays cheap. A virtualized table and a large tree keep them, since they render only the rows on screen.
 - **SelectButton**: the selection glides to a new choice. Before, it jumped, because the first measurement turned its transition off for good.
+- **SelectButton**: in a narrow grid or flex column, it keeps its full width instead of cutting off its last option.
+- **Toaster**: a collapsed card behind the front one recedes into the stack as it leaves. Before, it slid down behind the front card and seemed to vanish.
 - **SpeedDial**: the trigger’s plus sits in the middle of the button instead of a pixel above it, and pressing it no longer looks like a jitter.
 - **`vael-ui/style.css`**: the full stylesheet now includes AvatarGroup, Breadcrumb, CommandPalette, PasswordInput, Rating, ScrollArea, Sortable, Stepper, Timeline and Tour, and the shared clear-button, tick and indicator styles. Before, an app that imported the full stylesheet instead of each component’s own CSS rendered those components unstyled.
 - **Resizable**: End no longer sizes a panel to `Infinity` when it has no `max`; it does nothing instead.
@@ -386,7 +391,7 @@ These fix behavior in 0.4.8 and earlier.
 - **Dialog**: scrolling to the end of a long dialog no longer scrolls the page behind it.
 - **DataTable**: changing page no longer flashes the table. Before, the old page’s rows stayed for two frames, doubling the table’s height, and then every new row faded in. Now the new page shows at once, and a removed row leaves the layout at once, so the rows below slide up.
 - **Dock**: with `magnify` off, moving over the dock no longer clears the transforms your own animation sets on its items.
-- **v-draggable**: a decorative child marked `aria-hidden`, such as Tabs’ sliding highlight, no longer counts as a row. Before, it shifted every row by one, so a drag moved the wrong item.
+- **v-draggable**: a decorative child marked `aria-hidden`, such as Tabs’ indicator, no longer counts as a row. Before, it shifted every row by one, so a drag moved the wrong item.
 - **v-draggable**: grabbing a row while the last drop is still settling no longer leaves a row stuck off its slot.
 - **PasswordInput**: Edge no longer adds its own reveal button. Only `revealable` shows one.
 - **Dialog, Drawer, BottomSheet**: a closing overlay lets taps through while it animates out, so a tap on a button or a dock right after closing works the first time.
