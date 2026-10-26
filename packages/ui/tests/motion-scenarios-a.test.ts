@@ -192,7 +192,7 @@ test('3. layoutId: A removed, then B added 50ms later, appears in place without 
   b.value = true
   await until(() => !!B() && layoutRuns(B()).length === 1)
   const start = (layoutRuns(B())[0]!.effect as KeyframeEffect).getKeyframes()[0]!.transform
-  expect(String(start)).toMatch(/^translate\(-200px, 0px\)/)
+  expect(String(start)).toMatch(/^translate\(-200px(, 0px)?\)/)
   await wait(400)
   b.value = false
   a.value = true

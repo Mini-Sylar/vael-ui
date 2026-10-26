@@ -14,12 +14,13 @@ afterEach(() => {
 const frame = () => new Promise(requestAnimationFrame)
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 // A linear() curve's first values, without the stops a browser adds when it writes one back.
+// The first stops of a linear() easing, to two decimals: WebKit writes them back rounded so.
 const head = (easing: unknown) =>
   String(easing)
     .replace(/^linear\(|\)$/g, '')
     .split(',')
     .slice(0, 8)
-    .map((stop) => parseFloat(stop))
+    .map((stop) => parseFloat(stop).toFixed(2))
     .join()
 
 test('a spring can ease one step of keyframes, by name or by numbers', async () => {

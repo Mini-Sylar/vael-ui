@@ -100,7 +100,8 @@ test("the blob carries the panel's colour; the panel goes clear while open and g
   const own = getComputedStyle(panel() ?? document.body).backgroundColor
   open.value = true
   await vi.waitFor(() => expect(shapes()).toHaveLength(2))
-  await vi.waitFor(() => expect(panel().style.background).toBe('transparent'))
+  // Clear while open (read as computed: WebKit writes the shorthand back as 'none').
+  await vi.waitFor(() => expect(getComputedStyle(panel()).backgroundColor).toBe('rgba(0, 0, 0, 0)'))
   const colour = shapes()[1]!.style.background
   expect(colour).not.toBe('')
   expect(colour).not.toBe('transparent')
@@ -118,10 +119,17 @@ test('the blob moves exactly as the panel does, and the morph starts on the trig
   // On screen, frame by frame: the blob where the panel is, clipped as it is.
   await vi.waitFor(() => expect(panel().getAnimations().length).toBeGreaterThan(0))
   const blob = shapes()[1]!
-  const look = (el: Element) => {
-    const style = getComputedStyle(el)
-    return `${style.translate} ${style.clipPath}`
-  }
+  // Each moving property's keyframes and clock: the same on both is the same motion, painted
+  // together. (Computed values read one after the other can sample a moment apart in WebKit.)
+  const look = (el: Element) =>
+    el
+      .getAnimations()
+      .map((a) => {
+        const k = (a.effect as KeyframeEffect).getKeyframes()
+        return `${(a as CSSTransition).transitionProperty}@${a.startTime} ${k.map((f) => `${f.translate ?? ''}/${f.clipPath ?? ''}`).join('>')}`
+      })
+      .sort()
+      .join(' | ')
   for (let i = 0; i < 6; i++) {
     expect(look(blob)).toBe(look(panel()))
     await frame()

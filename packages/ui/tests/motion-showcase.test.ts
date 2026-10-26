@@ -228,7 +228,7 @@ test('layoutId: it slides from where it was painted, though a row inserted above
   await vi.waitFor(() => expect(run()).toBeTruthy())
   // Painted 50px right of where the message lands, on the same line: not 30px lower.
   expect(String((run()!.effect as KeyframeEffect).getKeyframes()[0]!.transform)).toMatch(
-    /^translate\(50px, 0px\)/,
+    /^translate\(50px(, 0px)?\)/,
   )
 })
 
@@ -1031,7 +1031,7 @@ test("layoutId with layout: 'position' travels at its own size: no stretch on th
   const run = () => document.querySelector('.bubble')?.getAnimations()[0]
   await vi.waitFor(() => expect(run()).toBeTruthy())
   const start = String((run()!.effect as KeyframeEffect).getKeyframes()[0]!.transform)
-  expect(start).toMatch(/^translate\(-80px, /)
+  expect(start).toMatch(/^translate\(-80px(, [^)]+)?\)/)
   expect(start).toContain('scale(1, 1)')
 })
 

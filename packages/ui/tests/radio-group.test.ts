@@ -29,9 +29,13 @@ test('arrow keys move selection natively and skip the disabled option', async ()
   await userEvent.keyboard('{ArrowDown}')
   await expect.element(screen.getByTestId('value')).toHaveTextContent('pro')
 
-  // "enterprise" is disabled — native roving skips it and wraps back to "free".
+  // "enterprise" is disabled: native roving never selects it. Chromium wraps back to "free";
+  // Safari's native radios stay on "pro". Either way, the disabled one is skipped.
   await userEvent.keyboard('{ArrowDown}')
-  await expect.element(screen.getByTestId('value')).toHaveTextContent('free')
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  expect(screen.getByTestId('value').element().textContent).not.toContain('enterprise')
+  if (navigator.userAgent.includes('Chrome'))
+    await expect.element(screen.getByTestId('value')).toHaveTextContent('free')
 })
 
 test('group disabled blocks every radio in it', async () => {

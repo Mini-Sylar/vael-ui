@@ -19,10 +19,14 @@ const settle = async (el: Element) => {
     expect(el.getAnimations().every((a) => a.playState !== 'running')).toBe(true),
   )
 }
+// Out of the real cursor's reach: an earlier test file can leave the mouse resting where this card
+// appears, and Chrome then hovers it for real. These tests dispatch their own pointer events.
 const card = (states: Record<string, object>) => {
   const look = shallowRef(states)
   render(() =>
-    withDirectives(h('button', { class: 'card' }, 'Card'), [[vAnimate, { states: look.value }]]),
+    withDirectives(h('button', { class: 'card', style: 'pointer-events: none' }, 'Card'), [
+      [vAnimate, { states: look.value }],
+    ]),
   )
   return { el: () => document.querySelector<HTMLElement>('.card')!, look }
 }
