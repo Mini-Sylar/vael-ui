@@ -102,7 +102,11 @@ function pauseTimer(entry: InternalEntry) {
   clearTimer(entry)
 }
 
-function pushToast(title: string, options: ToastOptions = {}): ToastId {
+// Internally a toast can be updated by vael-ui's own numeric id too (a promise toast settling).
+function pushToast(
+  title: string,
+  options: Omit<ToastOptions, 'id'> & { id?: ToastId } = {},
+): ToastId {
   // One server queue would reach every request; the browser runs this call again on hydration.
   if (!isClient) return options.id ?? nextId++
   const variant = options.variant ?? 'default'
@@ -190,21 +194,17 @@ function promise<T>(
 ): Promise<T> {
   const id = pushToast(messages.loading, { ...options, variant: 'loading', duration: Infinity })
   const settled = typeof input === 'function' ? input() : input
-  // With your own id the result updates the loading toast in place; otherwise it replaces it.
-  const replace = () => {
-    if (options?.id === undefined) dismiss(id)
-  }
+  // The result updates the loading toast in place: it stays where it is in the stack, and its
+  // move into `success` or `error` plays the Toaster's `states`.
   settled.then(
     (data) => {
-      replace()
       const text =
         typeof messages.success === 'function' ? messages.success(data) : messages.success
-      pushToast(text, { ...options, variant: 'success' })
+      pushToast(text, { ...options, id, variant: 'success' })
     },
     (error: unknown) => {
-      replace()
       const text = typeof messages.error === 'function' ? messages.error(error) : messages.error
-      pushToast(text, { ...options, variant: 'error' })
+      pushToast(text, { ...options, id, variant: 'error' })
     },
   )
   return settled
