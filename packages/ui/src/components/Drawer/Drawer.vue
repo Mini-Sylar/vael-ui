@@ -18,7 +18,7 @@
     :close-on-history-back="closeOnHistoryBack"
     :before-close="beforeClose"
     :force-mount="forceMount"
-    :motion="motion"
+    :motion="drawerMotion"
     :teleport-to="teleportTo"
     :container="container"
     :scroll-target="scrollTarget"
@@ -56,6 +56,8 @@ export interface DrawerProps extends Omit<DialogProps, 'position'> {
 import { computed, useTemplateRef } from 'vue'
 import Dialog from '../Dialog/Dialog.vue'
 import type { DialogOpenChangeDetails } from '../../composables/useDialog'
+import { useMotionStyle } from '../../motion/context'
+import type { DialogMotion } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -100,6 +102,18 @@ defineSlots<{
   /** Action row at the end of the panel. */
   footer(props: { close: () => void }): unknown
 }>()
+
+// A style's `drawer` key, under your own `motion`: drawers styled apart from the `dialog` key.
+const style = useMotionStyle()
+const drawerMotion = computed<DialogMotion | undefined>(() => {
+  const keyed = style?.value?.drawer as Exclude<DialogMotion, boolean> | undefined
+  const own = props.motion
+  if (!keyed || own === false) return own
+  if (typeof own !== 'object') return keyed
+  // Part by part, so your `initial: { panel }` keeps the style's `initial: { header }`.
+  const byPart = (field: 'initial' | 'exit') => ({ ...keyed[field], ...own[field] })
+  return { ...keyed, ...own, initial: byPart('initial'), exit: byPart('exit') } as DialogMotion
+})
 
 const dialog = useTemplateRef('dialog')
 defineExpose({

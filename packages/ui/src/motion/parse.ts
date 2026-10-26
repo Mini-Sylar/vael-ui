@@ -82,6 +82,7 @@ const COMPONENTS = [
   'toolbar',
   'colorPicker',
   'separator',
+  'drawer',
 ] as const
 // Every component key in MotionStyle, so a style for one is never dropped as unknown.
 type ComponentKey = Exclude<
@@ -100,6 +101,13 @@ const PROPERTIES = new Set([
   'opacity',
   'scale',
   'rotate',
+  'rotateX',
+  'rotateY',
+  'scaleX',
+  'scaleY',
+  'skewX',
+  'skewY',
+  'perspective',
   'translate',
   'transform',
   'transformOrigin',

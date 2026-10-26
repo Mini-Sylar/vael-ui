@@ -95,6 +95,9 @@ interface Shorthands {
   /** Turns it toward or away from you, in degrees: a card flip. Pair with `perspective`. */
   rotateX?: number | (string & {})
   rotateY?: number | (string & {})
+  /** Scales one axis only: a bar growing from its base (`scaleY`), a line drawing across (`scaleX`). */
+  scaleX?: number | (string & {})
+  scaleY?: number | (string & {})
   /** Slants it, in degrees. */
   skewX?: number | (string & {})
   skewY?: number | (string & {})
@@ -1109,6 +1112,8 @@ export interface MotionStyle {
   /** Per-component overrides, beating the role. */
   /** A style is data: `linked` reads elements, so it's set on the component, not here. */
   dialog?: Omit<Exclude<DialogMotion, boolean>, 'linked'>
+  /** Drawers, over `dialog`: a drawer's look apart from a dialog's. */
+  drawer?: Omit<Exclude<DialogMotion, boolean>, 'linked'>
   popover?: Exclude<PopoverMotion, boolean>
   /** Tour's glide between steps: a spring, or a duration with an easing. Its callout follows `popover`. */
   tour?: MotionTiming

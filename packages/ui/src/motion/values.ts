@@ -57,8 +57,11 @@ export const cssValue = (key: string, value: unknown): string =>
     ? `${value}`
     : `${value}${key === 'rotate' ? 'deg' : 'px'}`
 
-// Turns and skews with no CSS property of their own, composed into `transform` in this order.
-const TURNS = ['perspective', 'rotateX', 'rotateY', 'skewX', 'skewY']
+// Turns, one-axis scales and skews with no CSS property of their own, composed into `transform`
+// in this order.
+const TURNS = ['perspective', 'rotateX', 'rotateY', 'scaleX', 'scaleY', 'skewX', 'skewY']
+const turnUnit = (key: string) =>
+  key === 'perspective' ? 'px' : key.startsWith('scale') ? '' : 'deg'
 // Stroke drawing, on a path normalized to a length of 1 (`pathLength="1"`).
 const PATH = /^path(Length|Offset|Spacing)$/
 
@@ -83,9 +86,7 @@ export function toKeyframe(
   for (const key of TURNS) {
     const value = first(values[key])
     if (value != null)
-      turns.push(
-        `${key}(${typeof value === 'number' ? value + (key[0] === 'p' ? 'px' : 'deg') : value})`,
-      )
+      turns.push(`${key}(${typeof value === 'number' ? value + turnUnit(key) : value})`)
   }
   const x = first(values.x)
   const y = first(values.y)
@@ -97,10 +98,10 @@ export function toKeyframe(
   }
   if (turns.length) frame.transform = turns.join(' ')
   const length = first(values.pathLength)
-  if (length != null) {
-    frame.strokeDasharray = `${length} ${first(values.pathSpacing) ?? 1}`
-    frame.strokeDashoffset = `${-Number(first(values.pathOffset) ?? 0)}`
-  }
+  const offset = first(values.pathOffset)
+  if (length != null) frame.strokeDasharray = `${length} ${first(values.pathSpacing) ?? 1}`
+  // Its own: keyframes of `pathOffset` alone play apart from a plain `pathLength`.
+  if (length != null || offset != null) frame.strokeDashoffset = `${-Number(offset ?? 0)}`
   return frame
 }
 
