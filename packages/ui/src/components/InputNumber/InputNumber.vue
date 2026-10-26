@@ -55,6 +55,7 @@
             :value="modelValue!"
             :locale="props.locale"
             :format="numberFormat.formatOptions.value"
+            :roll-in="rollIn && !!props.motion"
           />{{ suffix }}</template
         >
         <span v-else-if="displayValue">{{ displayValue }}</span>
@@ -245,7 +246,7 @@ const rawProps = withDefaults(
     motion: undefined,
   },
 )
-const props = withProviderDefaults(rawProps, { size: 'md', locale: undefined })
+const props = withProviderDefaults(rawProps, { size: 'md', locale: undefined, motion: true })
 
 defineSlots<{
   /** Inline leading content, before the value and the `'split'` mode decrement button. */
@@ -285,6 +286,7 @@ const displayValue = shallowRef(numberFormat.format(modelValue.value))
 const isFocused = shallowRef(false)
 // Typing shows the plain input; a step, Home/End, Enter or blur hands back to the rolling digits.
 const typing = shallowRef(false)
+const rollIn = shallowRef(false)
 
 // Resync on external model writes and on format changes (locale, currency); skip if focused (avoid fighting caret).
 watch(
@@ -339,8 +341,11 @@ function applyStep(delta: number) {
   if (isDisabled.value || props.readonly) return
   const decimals = decimalPlaces.value
   const scale = 10 ** decimals
-  const base = modelValue.value ?? props.min ?? 0
+  // From empty, as a native number input: 0 and a step, kept within min and max.
+  const base = modelValue.value ?? 0
   const next = clamp(Math.round(base * scale + delta * scale) / scale)
+  // A first value comes in rolling up from 0.
+  rollIn.value = modelValue.value === null
   typing.value = false
   modelValue.value = next
   displayValue.value = numberFormat.format(next)
@@ -370,7 +375,7 @@ function onInputPointerdown(event: PointerEvent) {
   } catch {
     // An untrusted event has no active pointer to capture.
   }
-  drag = { x: event.clientX, base: modelValue.value ?? props.min ?? 0, moved: false }
+  drag = { x: event.clientX, base: modelValue.value ?? clamp(0), moved: false }
 }
 function onScrubMove(event: PointerEvent) {
   if (!drag) return

@@ -5,6 +5,7 @@ import { render } from 'vitest-browser-vue'
 import { h, nextTick, shallowRef } from 'vue'
 import InputNumberFixture from './fixtures/InputNumberFixture.vue'
 import InputNumber from '../src/components/InputNumber/InputNumber.vue'
+import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
 
 function basicInput(screen: Awaited<ReturnType<typeof render>>) {
   return screen.container.querySelector<HTMLInputElement>('[data-testid="basic"] .ui-input-el')!
@@ -187,6 +188,62 @@ test('animated rolls stepped values over the input and typing shows plain text',
 
   input.blur()
   await vi.waitFor(() => expect(digits()).not.toBeNull())
+})
+
+// An empty field with a stepper, optionally inside a ConfigProvider with motion off.
+async function emptyStepper(motion?: boolean) {
+  const value = shallowRef<number | null>(null)
+  const field = () =>
+    h(InputNumber, {
+      modelValue: value.value,
+      'onUpdate:modelValue': (next: number | null) => (value.value = next),
+      min: 5,
+      max: 600,
+      step: 5,
+      animated: true,
+      'aria-label': 'Minutes',
+    })
+  const screen = await render({
+    render: () => (motion === undefined ? field() : h(ConfigProvider, { motion }, field)),
+  })
+  const reels = () => [...screen.container.querySelectorAll('.ui-animated-number-reel')]
+  return { value, screen, reels }
+}
+
+test('stepping up from empty lands on the first step within min, as a native number input', async () => {
+  const { value, screen } = await emptyStepper()
+  await userEvent.click(
+    screen.container.querySelector<HTMLButtonElement>('.ui-input-number-stepper--inc')!,
+  )
+  await vi.waitFor(() => expect(value.value).toBe(5))
+})
+
+test('animated: a first value stepped in from empty rolls up, like any later step', async () => {
+  const { screen, reels } = await emptyStepper()
+  await userEvent.click(
+    screen.container.querySelector<HTMLButtonElement>('.ui-input-number-stepper--inc')!,
+  )
+  await vi.waitFor(() => expect(reels().some((reel) => reel.getAnimations().length > 0)).toBe(true))
+})
+
+test('animated: with motion off around it, the first value shows at once, never 0 first', async () => {
+  const { screen, reels } = await emptyStepper(false)
+  // Each digit as it's first drawn: a roll-in would start its reel at 0.
+  const firstDigits: string[] = []
+  const watcher = new MutationObserver((records) => {
+    for (const record of records)
+      for (const node of record.addedNodes)
+        if (node instanceof HTMLElement)
+          for (const digit of node.querySelectorAll<HTMLElement>('.ui-animated-number-digit'))
+            firstDigits.push(digit.style.getPropertyValue('--ui-digit'))
+  })
+  watcher.observe(screen.container, { childList: true, subtree: true })
+  await userEvent.click(
+    screen.container.querySelector<HTMLButtonElement>('.ui-input-number-stepper--inc')!,
+  )
+  await vi.waitFor(() => expect(reels().length).toBeGreaterThan(0))
+  watcher.disconnect()
+  expect(firstDigits).toEqual(['5'])
 })
 
 test('without animated, nothing is drawn over the input', async () => {
