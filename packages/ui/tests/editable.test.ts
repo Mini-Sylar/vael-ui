@@ -243,3 +243,16 @@ test("focus in a picker's teleported panel stays inside the edit; leaving the pa
   await vi.waitFor(() => expect(editing()).toBeNull())
   expect(onSubmit).toHaveBeenCalledWith('2026-11-12')
 })
+
+test('a labelled preview is named by its label and described by its text', async () => {
+  const screen = await render(Editable, {
+    props: { modelValue: 'Pressure low on pump 2', 'aria-label': 'Notes for Harbor Substation' },
+  })
+  const preview = screen.getByRole('button', { name: 'Notes for Harbor Substation' })
+  await expect.element(preview).toHaveAccessibleDescription('Pressure low on pump 2')
+})
+
+test('an unlabelled preview keeps its text as its name', async () => {
+  const screen = await render(Editable, { props: { modelValue: 'Pressure low on pump 2' } })
+  await expect.element(screen.getByRole('button', { name: 'Pressure low on pump 2' })).toBeVisible()
+})

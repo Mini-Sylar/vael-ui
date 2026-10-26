@@ -293,10 +293,10 @@ export const a11yContent: Record<string, A11yInfo> = {
       { keys: 'Tab', action: 'Saves or drops the edit as focus leaves, following `submitMode`.' },
     ],
     notes: [
-      'The preview is a native `button`, and its text is its name.',
+      'The preview is a native `button`. With `aria-label` or `aria-labelledby` the label is its name and its text its description ("Notes, button, Pressure low"); without one, its text is its name.',
       'Opening moves focus into the input and selects its text when `selectOnFocus` is on. Closing with Enter or Escape moves focus back to the preview; leaving with Tab keeps focus where it went.',
       'In a Textarea passed to `#edit`, Enter adds a new line and Cmd or Ctrl with Enter saves. Focus moving to `#actions` or a picker panel inside the edit does not count as leaving.',
-      '`aria-label` and `aria-labelledby` name the built-in input; other attributes go to the wrapper. A control you pass in `#edit` needs its own label.',
+      '`aria-label` and `aria-labelledby` name the preview and the built-in input; other attributes go to the wrapper. A control you pass in `#edit` needs its own label.',
     ],
   },
   ColorPicker: {

@@ -56,12 +56,17 @@
       :style="previewPart.style"
       :disabled="disabled"
       :data-placeholder="modelValue ? undefined : ''"
+      :aria-label="attrs['aria-label'] as string | undefined"
+      :aria-labelledby="attrs['aria-labelledby'] as string | undefined"
+      :aria-describedby="labelled ? valueId : undefined"
       @click="activationMode === 'click' && start()"
       @dblclick="activationMode === 'dblclick' && start()"
       @focus="activationMode === 'focus' && !refocusing && start()"
       @keydown.enter.prevent="start()"
     >
-      <slot name="preview" :value="modelValue">{{ modelValue || placeholder }}</slot>
+      <span :id="valueId"
+        ><slot name="preview" :value="modelValue">{{ modelValue || placeholder }}</slot></span
+      >
     </button>
   </div>
 </template>
@@ -71,7 +76,7 @@ import './Editable.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, nextTick, shallowRef, useAttrs, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import Input from '../Input/Input.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
@@ -85,8 +90,11 @@ import type { EditableMotion } from '../../motion/types'
 defineOptions({ inheritAttrs: false })
 
 const attrs = useAttrs()
-// The label names the input, so the wrapper doesn't get it.
+// The label names the input and the preview button, so the wrapper doesn't get it.
 const rootAttrs = computed(() => omitAttrs(attrs, ['aria-label', 'aria-labelledby']))
+// Labelled, the preview is named by the label and described by its text: "Notes, button, Pressure low".
+const labelled = computed(() => !!(attrs['aria-label'] || attrs['aria-labelledby']))
+const valueId = useId()
 /** The text. Updates when an edit is submitted, not on every keystroke. @default '' */
 const modelValue = defineModel<string>({ default: '' })
 /** Whether the input is showing. Bind it to open or close the edit from outside. @default false */
