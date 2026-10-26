@@ -83,14 +83,19 @@ export function useScrollProgress(
   let stop: (() => void) | undefined
   watch(
     () => [toValue(target), toValue(options.container)] as const,
-    ([, box]) => {
+    ([el, box]) => {
       stop?.()
       const source: EventTarget = box ?? window
       source.addEventListener('scroll', schedule, { passive: true })
       window.addEventListener('resize', schedule, { passive: true })
+      // Content that grows or shrinks moves the ends without a scroll, as rows loading in do.
+      const sizes = new ResizeObserver(schedule)
+      const root = box ?? document.body
+      for (const node of [root, ...root.children, el]) if (node) sizes.observe(node)
       stop = () => {
         source.removeEventListener('scroll', schedule)
         window.removeEventListener('resize', schedule)
+        sizes.disconnect()
       }
       measure()
     },

@@ -118,6 +118,45 @@ test("useScrollProgress tracks an element's way through the viewport", async () 
   await vi.waitFor(() => expect(progress!.value).toBe(1))
 })
 
+test('useScrollProgress stays at the top when the page grows after it mounts', async () => {
+  let progress: ReturnType<typeof useScrollProgress> | undefined
+  const tall = shallowRef(false)
+  render(
+    defineComponent({
+      setup() {
+        progress = useScrollProgress()
+        // Short at mount, as a page is before its rows load.
+        return () => h('div', { style: `height: ${tall.value ? '300vh' : '10px'}` })
+      },
+    }),
+  )
+  await wait(100)
+  tall.value = true
+  await vi.waitFor(() => expect(progress!.value).toBe(0))
+  scrollTo(0, (document.documentElement.scrollHeight - innerHeight) / 2)
+  await vi.waitFor(() => expect(progress!.value).toBeCloseTo(0.5, 1))
+})
+
+test('useScrollProgress in a container follows its content growing', async () => {
+  let progress: ReturnType<typeof useScrollProgress> | undefined
+  const tall = shallowRef(false)
+  render(
+    defineComponent({
+      setup() {
+        const box = shallowRef<HTMLElement | null>(null)
+        progress = useScrollProgress(undefined, { container: box })
+        return () =>
+          h('div', { ref: box, style: 'height: 200px; overflow: auto' }, [
+            h('div', { style: `height: ${tall.value ? 1000 : 10}px` }),
+          ])
+      },
+    }),
+  )
+  await wait(100)
+  tall.value = true
+  await vi.waitFor(() => expect(progress!.value).toBe(0))
+})
+
 test('layout: true eases a change of its own size, not only its place', async () => {
   const open = shallowRef(false)
   render(() =>
