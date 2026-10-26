@@ -486,9 +486,14 @@ const rowSwap = computed<{ keys: Set<string>; swap: boolean }>((previous) => {
 const rowFade = computed(() => rowCss.value && !rowSwap.value.swap)
 
 // Yours plays through the motion system, the built-in look through CSS; past the limit, neither.
+// On a swap your old rows go at once, as they'd leave in the table's flow and stack above the new
+// page; the new rows still come in your way.
+const leaveAtOnce = (_el: Element, done: () => void) => done()
 const rowsTransition = computed(() =>
   props.rowTransition && rowMotionFits.value.fits
-    ? props.rowTransition
+    ? rowSwap.value.swap
+      ? { ...props.rowTransition, onLeave: leaveAtOnce }
+      : props.rowTransition
     : { name: 'ui-datatable-row', css: rowFade.value },
 )
 

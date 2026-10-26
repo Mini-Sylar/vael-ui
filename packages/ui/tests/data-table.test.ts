@@ -1373,3 +1373,60 @@ test('a page change swaps the rows at once; a removed row leaves the flow at onc
   const leaving = bodyRows(screen.container).find((tr) => tr.textContent === 'Person 5')
   expect(getComputedStyle(leaving!).display).toBe('none')
 })
+
+test('with your row motion, a page change drops the old rows at once and brings the new ones in your way', async () => {
+  const people = Array.from({ length: 8 }, (_, i) => ({ id: `p${i}`, name: `Person ${i}` }))
+  const data = shallowRef(people)
+  const page = shallowRef(1)
+  const screen = await render(
+    {
+      setup: () => () =>
+        h(
+          DataTable as never,
+          {
+            data: data.value,
+            rowKey: 'id',
+            rows: 4,
+            page: page.value,
+            motion: {
+              initial: { row: { opacity: 0, y: -8 } },
+              exit: { row: { opacity: 0, x: 12 } },
+            },
+          },
+          {
+            columns: ({ Column }: { Column: never }) => h(Column, { field: 'name', label: 'Name' }),
+          },
+        ),
+    },
+    { global: { stubs: { 'transition-group': false } } },
+  )
+  await vi.waitFor(() => expect(bodyRows(screen.container)).toHaveLength(4))
+  await new Promise((resolve) => setTimeout(resolve, 600))
+
+  page.value = 2
+  await nextTick()
+  // No old row held in the flow above the new page.
+  expect(bodyRows(screen.container).map((tr) => tr.textContent)).toEqual([
+    'Person 4',
+    'Person 5',
+    'Person 6',
+    'Person 7',
+  ])
+  // The new rows play your `initial`.
+  await vi.waitFor(() =>
+    expect(bodyRows(screen.container).every((tr) => tr.getAnimations().length > 0)).toBe(true),
+  )
+
+  // Your exit still plays for the next change: a removed row holds its place while it leaves.
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  data.value = people.filter((person) => person.id !== 'p5')
+  await nextTick()
+  expect(bodyRows(screen.container).map((tr) => tr.textContent)).toContain('Person 5')
+  await vi.waitFor(() =>
+    expect(bodyRows(screen.container).map((tr) => tr.textContent)).toEqual([
+      'Person 4',
+      'Person 6',
+      'Person 7',
+    ]),
+  )
+})
