@@ -618,10 +618,17 @@ export function vAnimateVapor(
     ;(el as Marked)._uiAppeared = true
     entered(el)
   }
-  const stopSize = modifiers.size ? followSize(el, () => timingOf(value()), true).stop : undefined
+  // The value as last seen. After setup, only the effect below reads the template: once the element
+  // is going, its expression may no longer hold (`v-if="selected"` around `selected.id`).
+  let latest = value()
+  const stopSize = modifiers.size ? followSize(el, () => timingOf(latest), true).stop : undefined
   if (stopSize) onScopeDispose(stopSize)
   let stopLayout: (() => void) | undefined
-  onScopeDispose(() => stopLayout?.())
+  let stopLayoutSize: (() => void) | undefined
+  onScopeDispose(() => {
+    stopLayout?.()
+    stopLayoutSize?.()
+  })
   if (modifiers.size && !name && !hasPicks(modifiers)) {
     entered(el)
     return () => stopSize?.()
@@ -631,7 +638,7 @@ export function vAnimateVapor(
   let arrived = false
   let before: AnimateDirectiveValue | undefined
   watchPostEffect(() => {
-    const current = value()
+    const current = (latest = value())
     ;(el as Marked)._uiAnimateValue = current
     drawn(el, current)
     followTarget(el as Marked, current)
@@ -643,12 +650,13 @@ export function vAnimateVapor(
       // `layout: true` follows its size as well as its place; `'position'` only moves.
       const size =
         current.layout === true && !modifiers.size
-          ? followSize(el, () => timingOf(value()), true, true)
+          ? followSize(el, () => timingOf(latest), true, true)
           : undefined
-      if (size) onScopeDispose(size.stop)
+      // In an effect there's no scope to dispose with: stopped with the directive's, above.
+      stopLayoutSize = size?.stop
       stopLayout = followLayout(
         el,
-        () => timingOf(value()) ?? {},
+        () => timingOf(latest) ?? {},
         call(el as Marked, 'onAfterMove'),
         size?.sync,
       )
@@ -668,14 +676,14 @@ export function vAnimateVapor(
   })
   // Before it goes: its box, for whoever arrives under the same `layoutId`.
   onScopeDispose(() => {
-    const current = value()
+    const current = latest
     const id = layoutIdOf(current)
     if (id && el.isConnected) rememberLayout(el, id)
     const leavingValue = resolved(el, current)
     leaveIfRemoved(el, leavingValue, leaving(leavingValue) ? placeOnLeave(el) : undefined)
   })
   // Vapor has no list of the element's directives: one that can come and go watches `v-show`.
-  const initialValue = value()
+  const initialValue = latest
   if (
     typeof initialValue === 'object' &&
     (initialValue.initial || initialValue.exit || initialValue.leave)
