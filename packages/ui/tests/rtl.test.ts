@@ -79,6 +79,38 @@ test('SelectButton and Tabs selection indicators sit on the selected option', as
   near(underline.getBoundingClientRect().width, tab.getBoundingClientRect().width)
 })
 
+test('a Tabs indicator follows a page that switches to right to left after it mounted', async () => {
+  const dir = shallowRef<'ltr' | 'rtl'>('ltr')
+  const active = shallowRef('one')
+  const screen = await render({
+    render: () =>
+      h('div', { dir: dir.value, style: 'inline-size: 420px' }, [
+        h(
+          Tabs as never,
+          { items: ['one', 'two', 'three'], active: active.value },
+          {
+            default: ({ items: list, itemProps, indicatorProps }: never) => [
+              h('span', (indicatorProps as (kind: string) => object)('underline')),
+              ...(list as string[]).map((item) =>
+                h('button', { key: item, ...(itemProps as (i: string) => object)(item) }, item),
+              ),
+            ],
+          },
+        ),
+      ]),
+  })
+  await settle()
+  dir.value = 'rtl'
+  await nextTick()
+  active.value = 'two'
+  await settle()
+  const tab = screen.container.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')!
+  const underline = screen.container.querySelector<HTMLElement>('.ui-tabs-indicator')!
+  expect(tab.textContent).toBe('two')
+  near(underline.getBoundingClientRect().left, tab.getBoundingClientRect().left)
+  near(underline.getBoundingClientRect().width, tab.getBoundingClientRect().width)
+})
+
 test('Pagination current-page indicator sits on the current page', async () => {
   const screen = await render(rtl(() => h(Pagination, { page: 3, total: 100 })))
   await settle()

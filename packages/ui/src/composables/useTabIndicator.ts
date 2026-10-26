@@ -25,7 +25,7 @@ let stretch$: typeof import('./indicatorStretch') | undefined
 let loadingStretch: Promise<unknown> | undefined
 const loadStretch = () =>
   (loadingStretch ??= import('./indicatorStretch').then((m) => (stretch$ = m)))
-import { prefersReducedMotion } from './dom'
+import { isRtl, prefersReducedMotion } from './dom'
 
 /**
  * How a sliding indicator moves: `'glide'` (a CSS transition, the default), `'instant'`, or a
@@ -182,9 +182,10 @@ export function useTabIndicator(
     // PADDING box — a container with its own border (SelectButton's track)
     // needs that border subtracted or the indicator lands one border-width
     // further along than the option it's supposed to match exactly.
-    const { borderInlineStart, borderBlockStart, rtl } = bordersOf(list)
-    // inset-inline-start counts from the right in a right-to-left list.
-    const inlineStart = rtl
+    const { borderInlineStart, borderBlockStart } = bordersOf(list)
+    // inset-inline-start counts from the right in a right-to-left list. Read fresh: a page can
+    // switch direction without a resize.
+    const inlineStart = isRtl(list)
       ? (listRect.right - tabRect.right) / scaleX - (options.scroller ? list.scrollLeft : 0)
       : left
     const start = vertical ? top - borderBlockStart : inlineStart - borderInlineStart
@@ -397,7 +398,7 @@ export function useTabIndicator(
   type Borders = Record<
     'borderInlineStart' | 'borderBlockStart' | 'borderLeft' | 'borderTop',
     number
-  > & { rtl: boolean }
+  >
   const borders = new WeakMap<HTMLElement, Borders>()
   function bordersOf(list: HTMLElement): Borders {
     let cached = borders.get(list)
@@ -408,7 +409,6 @@ export function useTabIndicator(
         borderBlockStart: parseFloat(listStyle.borderBlockStartWidth) || 0,
         borderLeft: parseFloat(listStyle.borderLeftWidth) || 0,
         borderTop: parseFloat(listStyle.borderTopWidth) || 0,
-        rtl: listStyle.direction === 'rtl',
       }
       borders.set(list, cached)
     }
