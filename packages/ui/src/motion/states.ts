@@ -712,6 +712,9 @@ export function putTimingTokens(el: HTMLElement | SVGElement, timing: MotionTimi
   const set: string[] = []
   // The theme's values first, kept beside the retimed ones for what's inside (see cssEasing).
   const around = el.parentElement ? getComputedStyle(el.parentElement) : undefined
+  // Motion off (or a theme of its own) zeroed the durations around it: a retiming mustn't undo that.
+  if (/^0(?:s|ms)?$/.test(around?.getPropertyValue('--ui-duration-enter').trim() ?? ''))
+    duration = undefined
   const put = (names: string[], value: string | undefined) => {
     if (!value) return
     for (const name of names) {

@@ -16,7 +16,8 @@ export interface Presence {
   /** Set by the component that owns it: an element joining while it's open plays its appearance. */
   joined?: (entry: PresenceEntry) => void
   /** Set by the component: an element's callback, its own and its `targets` entry's merged. */
-  after?: (el: Element, kind: 'onStart' | 'onAfterEnter' | 'onAfterLeave') => void
+  /** Runs an element's callback through its component; `false` when the component doesn't list it. */
+  after?: (el: Element, kind: 'onStart' | 'onAfterEnter' | 'onAfterLeave') => boolean
 }
 
 /** The attribute that marks a presence root, so `v-animate` can find it through the DOM in both builds. */

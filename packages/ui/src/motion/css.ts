@@ -11,6 +11,7 @@ import { cssCanPlay, staggerAt, targetCanPlay, valuesAt } from './playable'
 import type * as Morph from './morph'
 import { collectEntries } from './presence'
 import { exitOf, targetsOf } from './targets'
+import { holdUnseen } from './ids'
 import type { TargetGroup } from './targets'
 import type { MotionTiming, MotionValues, Spring } from './types'
 import { isTimed } from './values'
@@ -314,11 +315,25 @@ function bringIn(
   }
 }
 
+// Appearances under way: a second caller (a swap and a join both bringing in the same view) waits
+// for the one playing, instead of finding it shown and finishing before it's in.
+const appearing = new WeakMap<Element, Promise<void>>()
+
 /**
  * One element's appearance on its own: it joined a component that's already open, or it has no
  * component (a page's own v-animate). The same starting look and release as an opening.
  */
-export async function appear(
+export function appear(...args: Parameters<typeof appearOnce>): Promise<void> {
+  const [el, , , , , again] = args
+  const under = appearing.get(el)
+  if (under && !again) return under
+  const run = appearOnce(...args)
+  appearing.set(el, run)
+  void run.finally(() => appearing.get(el) === run && appearing.delete(el))
+  return run
+}
+
+async function appearOnce(
   el: HTMLElement,
   values: MotionValues,
   own: MotionTiming = {},
@@ -448,8 +463,11 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       ? targetsOf(collectEntries(root, host.resolved().targets), host.resolved())
       : []
     if (!playable(groups)) {
-      // The runtime plays this; if it can't load, open at once.
+      // The runtime plays this; if it can't load, open at once. Held unseen while it loads, so the
+      // panel never paints open and at rest first (released in the task its entrance starts).
+      const wait = holdUnseen(el)
       handedOver = await fallback().catch(() => undefined)
+      wait.cancel()
       if (id !== generation) return
       if (handedOver) handedOver.enter(el, finish)
       else finish()

@@ -6,6 +6,7 @@ import type { ComputedRef, InjectionKey, ShallowRef, TransitionProps } from 'vue
 import { pageHidden } from '../composables/dom'
 import { PRESENCE_ID } from './ids'
 import { collectEntries, PRESENCE_ATTR, presenceFor, refElement, TARGET_ATTR } from './presence'
+import type { PresenceEntry } from './presence'
 import { resolveMotion, useMotionStyle } from './context'
 import type { ResolvedMotion } from './context'
 import type { MotionPhase, MotionRef, MotionStyle, MotionTiming, MotionValues } from './types'
@@ -134,14 +135,16 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
   const filled = (parts: Record<string, Element | null | undefined>) =>
     Object.fromEntries(Object.entries(parts).filter(([, el]) => el)) as Record<string, HTMLElement>
   const elementCallback =
-    (el: Element, name: 'onStart' | 'onAfterEnter' | 'onAfterLeave') => () => {
+    (el: Element, name: 'onStart' | 'onAfterEnter' | 'onAfterLeave') => (): boolean => {
       // Remembered: by the time it has closed, Vue has let go of the root's ref.
       const root = currentRoot()
       const entry = root && collectEntries(root, resolved.value.targets).find((e) => e.el === el)
-      if (!entry) return
+      // Gone on its own while this stays open (a row removed): no longer listed, it runs its own.
+      if (!entry) return false
       // Its own (`v-animate`'s value), else its name's in `targets`.
       const own = typeof entry.motion === 'object' ? entry.motion : undefined
       ;(own?.[name] ?? resolved.value.targets[entry.name]?.[name])?.(el as HTMLElement)
+      return true
     }
   if (typeof window !== 'undefined')
     watch(
@@ -180,6 +183,8 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
           if (!(entry.el instanceof HTMLElement || entry.el instanceof SVGElement)) return
           const el = entry.el as HTMLElement
           const later = (entry.motion as { appear?: unknown } | undefined)?.appear === 'later'
+          // Motion off: in at once, its callbacks with it.
+          if (resolved.value.off) return entered(el)
           const play = () => {
             const group = targetsOf([entry], resolved.value, true)[0]
             const where = { direction: resolved.value.direction, index: 0 }
@@ -195,7 +200,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
               )
               .finally(() => entered(el))
           }
-          if (phase.value === 'entered') return play()
+          if (phase.value === 'entered') return join(entry, play)
           // Joined mid-opening: once it's open, unless the opening already brought it in.
           // `appear: 'later'` came with the opening, so it shows as it is.
           if (phase.value !== 'entering' || later) return
@@ -205,12 +210,29 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
             playsAfter.delete(el)
             if (now === 'entering') return
             stop()
-            if (now === 'entered') play()
+            if (now === 'entered') join(entry, play)
           })
         }
       },
       { immediate: true, flush: 'post' },
     )
+
+  // Elements that join together (a swapped-in view) wait on each other as an opening's do: with
+  // `after` or `steps`, one timeline, the component's parts counted as in already.
+  let joining: { entry: PresenceEntry; play: () => void }[] = []
+  function join(entry: PresenceEntry, play: () => void) {
+    if (!joining.length) queueMicrotask(flushJoining)
+    joining.push({ entry, play })
+  }
+  async function flushJoining() {
+    const batch = joining.splice(0)
+    const entries = batch.map((b) => b.entry)
+    const groups = targetsOf(entries, resolved.value, true)
+    if (!groups.some((g) => g.motion.after || g.motion.steps)) return batch.forEach((b) => b.play())
+    const { joinTargets } = await loading(import('./schedule'))
+    await joinTargets(groups, Object.keys(currentParts()), resolved.value.spring).catch(() => {})
+    for (const { el } of entries) entered(el)
+  }
 
   // Dev: which layers set it, and each open and close timed, in DevTools.
   let trace: ((now: string) => void) | undefined

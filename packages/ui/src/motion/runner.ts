@@ -345,22 +345,30 @@ export function createRunner(host: RunnerHost): Runner {
           })
         }),
       )
-    const own = () =>
+    const own = (names: string[], step = 0) =>
       Promise.all(
-        Object.entries(parts).map(([part, partEl]) => {
+        names.map((part, i) => {
+          const partEl = parts[part]
           const values = leaveOf(part)
           if (!partEl || !values) return Promise.resolve()
           return playValues(partEl, values, {
             direction: 'out',
             engine: motion.engine,
             timing: resolveTiming(partEl, motion.partTiming[part] ?? motion.timing, motion.spring),
+            delay: i * step,
           })
         }),
       )
+    const all = Object.keys(parts)
     if (reverse) {
+      // What's inside the panel (its title, body, footer) closes before it, last first, as the
+      // targets do; then the panel and what's around it.
+      const outer = new Set([host.mainPart, 'overlay', 'positioner'])
+      const inner = all.filter((part) => !outer.has(part) && leaveOf(part)).reverse()
       await content()
-      await own()
-    } else await Promise.all([content(), own()])
+      await own(inner, Math.min(REVERSE_STEP, REVERSE_CAP / Math.max(1, inner.length)))
+      await own(all.filter((part) => outer.has(part)))
+    } else await Promise.all([content(), own(all)])
     finish()
   }
 

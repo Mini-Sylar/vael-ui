@@ -94,13 +94,20 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // states player, never loaded by components that don't repeat keyframes), 3D turns and skews,
 // `pathLength` drawing and `null` keyframes in the shared keyframe code, `onStart`, and `inView`
 // (its observer loads only when a look asks for it). Measured 8698, 7218, 7377 and 3085 B.
+// up front 8.55 → 8.85 KB, runtime 7.1 → 7.35 KB, button 1.24 → 1.38 KB, states 7.25 → 7.3 KB,
+// linked 3.05 → 3.1 KB (2026-10-26): the 0.5.0 motion challenge's fixes. Nothing paints at rest
+// before its entrance while the code for it loads (a part's appearance, a handover to the
+// runtime): Button's +150 B is that hold. Elements that join an open component together keep
+// their `after` and `steps` (the timeline itself loads with the runtime), `inView` states wait for
+// the entrance, `exitOrder: 'reverse'` covers parts, `scaleX` / `scaleY`, and a dev warning for a
+// GSAP hook that wasn't returned. Measured 9013, 7506, 1392, 7433 and 3135 B.
 const BUDGET = {
-  upFront: 8.55 * 1024,
-  runtime: 7.1 * 1024,
+  upFront: 8.85 * 1024,
+  runtime: 7.35 * 1024,
   morph: 1.55 * 1024,
-  button: 1.24 * 1024,
-  states: 7.25 * 1024,
-  linked: 3.05 * 1024,
+  button: 1.38 * 1024,
+  states: 7.3 * 1024,
+  linked: 3.1 * 1024,
 }
 
 // Every chunk a file pulls in statically.

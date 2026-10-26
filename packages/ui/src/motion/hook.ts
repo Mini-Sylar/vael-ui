@@ -49,11 +49,21 @@ export async function runHook(
       (result as { then: (f: () => void) => unknown }).then(() => resolve()),
     )
   else {
-    if (parts.some((el) => el.getAnimations?.().some((a) => a.playState === 'running')))
-      if (process.env.NODE_ENV !== 'production')
+    if (process.env.NODE_ENV !== 'production') {
+      const warn = () =>
         motionWarn(
           `${name} ${phase}: something was still animating when the hook returned. Return the animation so ${name} waits: \`${phase}: (parts) => gsap.to(...)\`.`,
         )
+      if (parts.some((el) => el.getAnimations?.().some((a) => a.playState === 'running'))) warn()
+      // A library that writes styles each frame (GSAP) shows no animation: its parts' inline
+      // styles changing a frame later give it away.
+      else if (typeof requestAnimationFrame !== 'undefined') {
+        const before = parts.map((el) => (el as HTMLElement).style?.cssText)
+        requestAnimationFrame(() => {
+          if (parts.some((el, i) => (el as HTMLElement).style?.cssText !== before[i])) warn()
+        })
+      }
+    }
     finished = Promise.resolve()
   }
   let timer: ReturnType<typeof setTimeout> | undefined

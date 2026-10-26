@@ -186,3 +186,19 @@ async function playTarget(
     if (to) from = to
   }
 }
+
+/** Elements joining an open component together: its `parts` count as in already (an open panel). */
+export function joinTargets(
+  targets: ScheduledTarget[],
+  parts: string[],
+  spring: Spring | undefined,
+): Promise<void> {
+  const arrived = parts.map((part): [string, Moments] => {
+    const m = createMoments()
+    startMoments(m, 0)
+    m.arrive.resolve()
+    m.settle.resolve()
+    return [part, m]
+  })
+  return runTargets(targets, new Map(arrived), { spring, signal: new AbortController().signal })
+}

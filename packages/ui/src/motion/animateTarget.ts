@@ -32,6 +32,10 @@ export function holdTarget(el: HTMLElement) {
       moved?: () => void,
     ) {
       const opening = first && !changed
+      // A loop has no resting look to show at once: it starts as the element mounts.
+      const loops = groupValues(values).some(
+        (group) => !!((group.timing ?? timing) as { repeat?: number }).repeat,
+      )
       const report = player.update({
         flags: { [ON]: true },
         spec: { [ON]: { target: values } },
@@ -39,7 +43,7 @@ export function holdTarget(el: HTMLElement) {
         timing,
         spring,
         // Its first look shows at once, unless it's coming back after none (`changed`).
-        instant: (first && !changed) || instant,
+        instant: (opening && !loops) || instant,
         again: changed && !first ? [ON] : undefined,
       })
       first = false

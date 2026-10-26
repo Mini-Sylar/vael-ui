@@ -43,7 +43,7 @@ import { preparePath, toKeyframe } from './values'
 import { SPRINGS } from './springNames'
 import type { SpringName } from './springNames'
 import { BUILTIN_PRESETS } from './presets'
-import { armEnter, entered, left } from './finish'
+import { armEnter, entered, left, onceEntered } from './finish'
 import { loading, motionSettingsKey } from './styleKey'
 // `animate`'s player, loaded on first use.
 const loadAnimateTarget = () => loading(import('./animateTarget'))
@@ -80,19 +80,23 @@ function followStates(el: Marked, value: AnimateDirectiveValue | undefined) {
   if (el._uiStates) el._uiStates.value = states
   if (!states || el._uiStates) return
   const held = (el._uiStates = shallowRef(states))
-  void loading(import('./states')).then((module) => {
-    if (!el.isConnected || el._uiStates !== held) return
-    el._uiStatesStop = module.holdElementStates(
-      el,
-      () => held.value,
-      () => timingOf(el._uiAnimateValue) ?? {},
-      () => motionSpringAt(el),
-      () => {
-        const value = el._uiAnimateValue
-        return typeof value === 'object' ? value.viewport : undefined
-      },
-    )
-  })
+  // Its own entrance first: a state's look (`inView`'s opacity) would otherwise play over the
+  // entrance's start, and it would fade in where it is, then slide.
+  const begin = () =>
+    void loading(import('./states')).then((module) => {
+      if (!el.isConnected || el._uiStates !== held) return
+      el._uiStatesStop = module.holdElementStates(
+        el,
+        () => held.value,
+        () => timingOf(el._uiAnimateValue) ?? {},
+        () => motionSpringAt(el),
+        () => {
+          const value = el._uiAnimateValue
+          return typeof value === 'object' ? value.viewport : undefined
+        },
+      )
+    })
+  onceEntered(el, begin)
 }
 
 /** `animate`: the look it holds, moving to each new one as it changes (from the states player). */
@@ -213,7 +217,7 @@ const drawn = (el: Element, value: AnimateDirectiveValue | undefined) =>
 const call =
   (el: Marked, name: 'onStart' | 'onAfterEnter' | 'onAfterLeave' | 'onAfterMove') => () => {
     const presence = el._uiPresence
-    if (presence?.after && name !== 'onAfterMove') return presence.after(el, name)
+    if (presence?.after && name !== 'onAfterMove' && presence.after(el, name)) return
     const value = el._uiAnimateValue
     if (typeof value === 'object') value[name]?.(el)
   }
@@ -268,7 +272,8 @@ function withModifiers(
     else if (name === 'stagger') stagger = true
     else {
       base = presetAround(el, name)
-      if (!base && el && process.env.NODE_ENV !== 'production')
+      // With motion off the style (and its presets) is gone, and nothing would play anyway.
+      if (!base && el && process.env.NODE_ENV !== 'production' && !motionOffAt(el))
         motionWarn(
           `v-animate.${name}: not a built-in entrance, a spring, \`stagger\` or a preset of a ConfigProvider style around it.`,
         )

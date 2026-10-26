@@ -1,3 +1,4 @@
+import { motionWarn } from '../motion/warn'
 import '../components/shared/indicator.css'
 import '../components/shared/tokens.css'
 import '../motion/timing.css'
@@ -142,8 +143,17 @@ function defaultsOf(binding: DirectiveBinding, vnode: unknown) {
  * A hover highlight that slides between a list's rows, as in vael-ui's own lists:
  * `v-hover-indicator=".row"`. `.over` draws it as a tint over rows with a solid background.
  */
+// Written bare it has no rows to follow, so it does nothing; `false` (off) stays silent.
+function warnIfBare(value: unknown) {
+  if (process.env.NODE_ENV !== 'production' && value === undefined)
+    motionWarn(
+      `v-hover-indicator needs a selector for its rows, such as v-hover-indicator="'.row'". Without one it does nothing.`,
+    )
+}
+
 export const vHoverIndicator: Directive<HTMLElement, HoverIndicatorValue> = {
   mounted(el, binding, vnode) {
+    warnIfBare(binding.value)
     const defaults = defaultsOf(binding, vnode)
     apply(el, binding.value, binding.modifiers, (run) => runOutside(defaults, run))
   },
@@ -175,6 +185,7 @@ export function vHoverIndicatorVapor(
   // Called in its component's setup, where `inject` finds the provider. The element joins the
   // page after setup, so each start waits a tick before it measures.
   const defaults = injectDefaults()
+  warnIfBare(typeof value === 'function' ? value() : (value as DirectiveBinding | undefined)?.value)
   const scope = effectScope()
   scope.run(() =>
     watch(

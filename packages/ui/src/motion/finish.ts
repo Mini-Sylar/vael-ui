@@ -2,7 +2,12 @@
 // run as it starts and once it has played; a leave runs once, whichever of the component or the
 // element reports it first. Your code runs outside the motion code, so an error in it never stalls
 // an opening.
-type Tracked = Element & { _uiStart?: () => void; _uiEntered?: () => void; _uiGone?: boolean }
+type Tracked = Element & {
+  _uiStart?: () => void
+  _uiEntered?: () => void
+  _uiGone?: boolean
+  _uiThen?: (() => void)[]
+}
 
 /** It's about to come in: `start` as it starts moving, `run` once it's in. The latest arming wins. */
 export function armEnter(el: Element, run: () => void, start?: () => void) {
@@ -24,9 +29,18 @@ export function started(el: Element, ms = 0) {
 /** It has come in, or nothing plays: `onStart` if it hasn't run, then what was armed, once. */
 export function entered(el: Element) {
   started(el)
-  const run = (el as Tracked)._uiEntered
-  ;(el as Tracked)._uiEntered = undefined
+  const tracked = el as Tracked
+  const run = tracked._uiEntered
+  tracked._uiEntered = undefined
   if (run) queueMicrotask(run)
+  for (const then of tracked._uiThen?.splice(0) ?? []) then()
+}
+
+/** `run` once its entrance has played: at once when none is armed (it's in, or never comes in). */
+export function onceEntered(el: Element, run: () => void) {
+  const tracked = el as Tracked
+  if (!tracked._uiEntered) return run()
+  ;(tracked._uiThen ??= []).push(run)
 }
 
 /** It has left: `run`, once per leaving. Left mid-entrance, its `onAfterEnter` never runs. */

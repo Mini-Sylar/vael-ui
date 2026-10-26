@@ -14,6 +14,7 @@ import { useMotionStyle, motionSettingsKey } from './styleKey'
 import type { MotionStyle, MotionTiming } from './types'
 import { springOf } from './springNames'
 import { loading } from './styleKey'
+import { holdUnseen } from './ids'
 
 let appearance: typeof import('./appearance') | undefined
 const loadAppearance = () => loading(import('./appearance')).then((module) => (appearance = module))
@@ -167,9 +168,19 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
     if (isObject(own) && own.appear === false) return
     if (fromServer || own === false || provider?.value.motion === false) return afterEnter()
     if (!(isObject(own) && own.initial) && !keyStyle?.initial) return afterEnter()
-    void loadAppearance().then((module) =>
-      module.appearParts(String(options.key), keyStyle, own, els, timing.value, false, afterEnter),
-    )
+    // Its first time, the appearance code is still on its way: held unseen meanwhile, so no part
+    // paints in its final look first (released in the same task its entrance starts).
+    const held = appearance
+      ? []
+      : Object.keys({
+          ...(keyStyle?.initial as object),
+          ...(own as { initial?: object }).initial,
+        }).flatMap((part) => els(part).map(holdUnseen))
+    const release = () => held.forEach((run) => run.cancel())
+    void loadAppearance().then((module) => {
+      release()
+      module.appearParts(String(options.key), keyStyle, own, els, timing.value, false, afterEnter)
+    }, release)
   })
   // `replay`: when it changes, the appearance plays again, without remounting.
   watch(
@@ -180,6 +191,8 @@ export function useStateMotion(options: StateMotionOptions): ExposedParts {
     (next, before) => {
       const own = options.motion()
       if (Object.is(next, before) || !isObject(own) || !own.initial) return
+      // Motion off: nothing plays, so your callback runs at once, as on mount.
+      if (provider?.value.motion === false) return afterEnter()
       const keyStyle = style?.value?.[options.key] as Record<string, unknown> | undefined
       // Loaded already (it played on mount, or replayed before): at once, in this flush.
       const play = (module: typeof import('./appearance')) =>

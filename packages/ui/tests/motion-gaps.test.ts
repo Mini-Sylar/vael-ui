@@ -63,8 +63,10 @@ test('a spring can ease one step of keyframes, by name or by numbers', async () 
 })
 
 // When an element's entrance starts, in ms: its animation's delay or its transition's.
+// The hold that keeps an item unseen while its motion loads isn't its entrance.
+const playing = (el: Element) => el.getAnimations().filter((a) => a.id !== 'ui-held')
 const startOf = (el: Element) => {
-  const animation = el.getAnimations()[0]
+  const animation = playing(el)[0]
   if (animation) return Math.round(Number(animation.effect?.getTiming().delay ?? 0))
   const delay = (el as HTMLElement).style.transitionDelay.split(',')[0]?.trim() ?? ''
   return Math.round(parseFloat(delay) * (delay.endsWith('ms') ? 1 : 1000)) || 0
@@ -82,7 +84,7 @@ test("a component's repeated part staggers by the token with `stagger: true`", a
   const items = await vi.waitFor(() => {
     const all = [...document.querySelectorAll<HTMLElement>('.ui-rating-item')]
     expect(all.length).toBe(5)
-    expect(all.every((el) => el.getAnimations().length || el.style.transition)).toBe(true)
+    expect(all.every((el) => playing(el).length || el.style.transition)).toBe(true)
     return all
   })
   expect(items.map(startOf)).toEqual([0, 40, 80, 120, 160])
@@ -104,7 +106,7 @@ test("a list's new items stagger from the end with `stagger: 'end'`", async () =
   const added = await vi.waitFor(() => {
     const all = [...document.querySelectorAll<HTMLElement>('.ui-timeline-step')].slice(1)
     expect(all.length).toBe(3)
-    expect(all.every((el) => el.getAnimations().length || el.style.transition)).toBe(true)
+    expect(all.every((el) => playing(el).length || el.style.transition)).toBe(true)
     return all
   })
   const starts = added.map(startOf)
