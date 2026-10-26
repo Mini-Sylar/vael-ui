@@ -237,3 +237,23 @@ test('a touch that starts as an upward move at the top does not engage', async (
   expect(state()).toBe('idle')
   expect(onRefresh).not.toHaveBeenCalled()
 })
+
+test('wrapping content in a grid, it shrinks with the grid instead of growing to its widest row', async () => {
+  const { h } = await import('vue')
+  const { default: PullToRefresh } =
+    await import('../src/components/PullToRefresh/PullToRefresh.vue')
+  const screen = await render({
+    render: () =>
+      h('div', { class: 'grid', style: 'display: grid; inline-size: 320px' }, [
+        h(
+          PullToRefresh,
+          { onRefresh: () => {}, scrollEl: document.documentElement },
+          // A wide table in its own scroll box, as a DataTable is.
+          () =>
+            h('div', { style: 'overflow-x: auto' }, [h('div', { style: 'inline-size: 1000px' })]),
+        ),
+      ]),
+  })
+  const root = screen.container.querySelector<HTMLElement>('.ui-pull-to-refresh-root')!
+  expect(root.getBoundingClientRect().width).toBe(320)
+})

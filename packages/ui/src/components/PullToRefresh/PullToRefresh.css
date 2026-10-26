@@ -2,6 +2,8 @@
   /* Pull to refresh: usePullToRefresh owns pullDistance and zone block-size. */
   .ui-pull-to-refresh-root {
     position: relative;
+    /* A wrapper: as a grid or flex item it shrinks like the content it wraps, not to its widest row. */
+    min-inline-size: 0;
   }
   /* Only when this root is itself the scroll box (no external `scrollEl`) — a consumer
      dropping this into an already-scrollable layout keeps their own overflow untouched. */
