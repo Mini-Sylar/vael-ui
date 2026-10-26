@@ -5,6 +5,14 @@
     /* Never wider than the screen, so several months stack on a phone instead of overflowing. */
     max-inline-size: calc(100vw - 1rem);
   }
+  /* The calendar fills the panel: a wider panel (`ui.panel`) gets bigger days, not empty space. */
+  .ui-date-picker-panel .ui-calendar-root {
+    display: flex;
+    inline-size: auto;
+  }
+  .ui-date-picker-panel .ui-calendar-pane {
+    flex: 1 1 auto;
+  }
   /* The calendar button: out of the tab order, ArrowDown opens the panel from the input. */
   .ui-date-picker-icon {
     display: inline-grid;

@@ -433,3 +433,29 @@ test('focusing the trigger (Tab) does not open it; Enter does, and a pick return
   await expect.element(screen.getByTestId('open-state')).toHaveTextContent('closed')
   await vi.waitFor(() => expect(document.activeElement).toBe(trigger))
 })
+
+test('a wider panel stretches the calendar, its days growing to fill it', async () => {
+  const { default: DatePicker } = await import('../src/components/DatePicker/DatePicker.vue')
+  const screen = await render(DatePicker, {
+    props: {
+      modelValue: new Date(2026, 9, 9),
+      'aria-label': 'Visit date',
+      ui: { panel: { style: { inlineSize: '24rem' } } },
+    },
+  })
+  await userEvent.click(screen.getByRole('combobox'))
+  // Throws until it's there, so waitFor retries.
+  const found = (selector: string) =>
+    vi.waitFor(() => {
+      const el = document.querySelector<HTMLElement>(selector)
+      if (!el) throw new Error(`no ${selector}`)
+      return el
+    })
+  const panel = await found('.ui-date-picker-panel')
+  const calendar = await found('.ui-date-picker-panel .ui-calendar-root')
+  const day = await found('.ui-date-picker-panel .ui-calendar-cell:not(.ui-calendar-cell--blank)')
+  await vi.waitFor(() =>
+    expect(calendar.getBoundingClientRect().width).toBeCloseTo(panel.clientWidth, 0),
+  )
+  expect(day.getBoundingClientRect().width).toBeGreaterThan(40)
+})
