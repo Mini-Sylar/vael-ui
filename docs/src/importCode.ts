@@ -11,6 +11,7 @@ const MOTION = [
   'settled',
   'springEasing',
   'useSpringValue',
+  'useTween',
   'createSpring',
   'stepSpring',
   'parseMotionStyle',

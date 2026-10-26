@@ -773,6 +773,39 @@ test('the dialog opens', async () => {
       },
     ],
   },
+  useTween: {
+    description:
+      'A number that eases to each new value of its source, from wherever it is: a cart total, a percentage, a value you draw yourself. Change the source mid-way and it turns toward the new value from where it shows, with no jump. It rides the app\'s spring unless you give it your own `spring`, or a `duration` and `easing`, as everywhere else in vael-ui. With `motion="false"` on a ConfigProvider around it, or under reduced motion, it jumps. For a value that should keep its speed through a change, such as one following a drag, use `useSpringValue`.',
+    installNames: ['useTween'],
+    exampleCode: `import { shallowRef } from 'vue'
+import { useTween } from 'vael-ui/motion'
+
+const total = shallowRef(0)
+// Eases to each new total from wherever it is.
+const shown = useTween(total, { duration: 600, easing: 'out' })`,
+    params: [
+      {
+        name: 'source',
+        type: 'MaybeRefOrGetter<number>',
+        description:
+          'The value to follow: a ref, a getter such as `() => props.total`, or a number.',
+      },
+      {
+        name: 'options',
+        type: 'MaybeRefOrGetter<TweenOptions>',
+        description:
+          "Its timing: `spring` (a name or `{ damping, response }`), or `duration` in ms and `easing` (a token such as `'out'`, or any CSS easing), and `delay` in seconds. Unset, the app's spring.",
+      },
+    ],
+    returns: [
+      {
+        name: 'value',
+        type: 'Readonly<ShallowRef<number>>',
+        description:
+          'The number as it eases, every frame. Bind it in a template or read it in a computed.',
+      },
+    ],
+  },
   useSpringValue: {
     description:
       "vael-ui's spring engine: the physics behind Sortable, Tree and DataTable reordering, and behind every sliding indicator set to a spring. A spring has no duration. You give it a target, and it moves there from where it is now, at the speed it already has. So every animation can be interrupted: call `set()` mid-flight and the value turns toward the new target with no jump. `useSpringValue` returns a ref to bind in a template. `createSpring` calls `onFrame` with each frame instead, so a value that drives a style never re-renders a component. `stepSpring` is the pure step under both, for tests and plots. One shared `requestAnimationFrame` loop runs every moving spring, and it stops once they all rest.",

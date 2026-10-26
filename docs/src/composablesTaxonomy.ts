@@ -37,6 +37,7 @@ export const composableCategories: ComposableCategory[] = [
     name: 'Motion',
     items: [
       'useSpringValue',
+      'useTween',
       'useScrollProgress',
       'settled',
       'useTabIndicator',
@@ -65,6 +66,7 @@ export const NEW_COMPOSABLES: Record<string, string> = {
   useScrollProgress: '2026-10-25',
   settled: '2026-10-25',
   useSpringValue: '2026-10-21',
+  useTween: '2026-10-26',
   useTabIndicator: '2026-10-21',
   springEasing: '2026-10-21',
 }

@@ -12,6 +12,7 @@
       <ul v-if="items(section.id).length" class="mc-list">
         <li v-for="(item, i) in items(section.id)" :key="i" v-html="item" />
       </ul>
+      <CodeBlock v-if="section.code" :code="section.code" />
       <MotionDemo v-if="section.demo" :id="section.demo" />
     </section>
   </GuideLayout>
@@ -24,6 +25,7 @@ import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import GuideLayout from '../../components/GuideLayout.vue'
 import MotionDemo from '../../components/MotionDemo.vue'
+import CodeBlock from '../../components/CodeBlock.vue'
 import { MOTION_CHAPTERS } from '../../motionChapters'
 
 const { t, tm, rt } = useI18n()

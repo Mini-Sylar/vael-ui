@@ -760,7 +760,7 @@
         },
         "timing": {
           "title": "タイミング",
-          "body": "モーションはスプリングか <code>duration</code> で動きます。スプリングには <code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code>、<code>'gentle'</code> の名前か、<code>damping</code> と <code>response</code> の値を指定します。ms 単位の <code>duration</code> には CSS の <code>easing</code> か、<code>'out'</code>、<code>'pop'</code>、落としたボールのように着地する <code>'bounce'</code> のような vael-ui の名前を指定できます。スプリングでは位置とサイズがスプリングに乗り、不透明度・色・ぼかしはなめらかに変化します。"
+          "body": "モーションはスプリングか <code>duration</code> で動きます。スプリングには <code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code>、<code>'gentle'</code> の名前か、<code>damping</code> と <code>response</code> の値を指定します。ms 単位の <code>duration</code> には CSS の <code>easing</code> か、<code>'out'</code>、<code>'pop'</code>、落としたボールのように着地する <code>'bounce'</code> のような vael-ui の名前を指定できます。スプリングでは位置とサイズがスプリングに乗り、不透明度・色・ぼかしはなめらかに変化します。 名前は感触であり、正確なカーブではありません。<code>'in-out'</code> は少し早く中間を過ぎるので、スクラブには <code>'linear'</code> を使ってください。"
         },
         "spring": {
           "title": "すべてにひとつのスプリング",
@@ -768,7 +768,7 @@
         },
         "off": {
           "title": "オフにする",
-          "body": "コンポーネントに <code>:motion=\"false\"</code> を付けると、開閉が即座になります。<code>ConfigProvider</code> に付ければ、その中すべてに効きます。モーションがオンの間、動きを減らす設定にしている人には、移動のないフェードだけが表示されます。"
+          "body": "コンポーネントに <code>:motion=\"false\"</code> を付けると、開閉が即座になります。<code>ConfigProvider</code> に付ければ、その中すべてに効きます。モーションがオンの間、動きを減らす設定にしている人には、移動のないフェードだけが表示されます。 ローダーは回り続けます。まだ処理中であることを伝えるためです。"
         }
       },
       "elements": {
@@ -784,11 +784,11 @@
         },
         "scroll": {
           "title": "スクロールで画面に入ったとき",
-          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。 <code>stagger: true</code> は stagger トークンの間隔で並べます。<code>'end'</code>、<code>'center'</code>、<code>'edges'</code> を指定すると、波がそこから始まります。 <code>'center'</code> はページ順での中央です。グリッドで中央のセルから始めるには、<code>stagger</code> にインデックスの関数を渡します。"
+          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。 <code>stagger: true</code> は stagger トークンの間隔で並べます。<code>'end'</code>、<code>'center'</code>、<code>'edges'</code> を指定すると、波がそこから始まります。 グリッドでは、<code>'center'</code> と <code>'edges'</code> は各要素の実際の位置に従います。波は中央のセル、または角から始まります。"
         },
         "inView": {
           "title": "画面に入っている間",
-          "body": "<code>states.inView</code> は要素が画面にある間その見た目を保ち、スクロールで出ると戻します。<code>viewport</code> で数え方を決めます：<code>amount</code>（<code>'some'</code>、<code>'all'</code>、または 0〜1）、画面の周りの <code>margin</code>、一度見えたら保つ <code>once</code>。<code>when: 'visible'</code> も同じ <code>viewport</code> を受け取ります。"
+          "body": "<code>states.inView</code> は要素が画面にある間その見た目を保ち、スクロールで出ると戻します。<code>viewport</code> で数え方を決めます：<code>amount</code>（<code>'some'</code>、<code>'all'</code>、または 0〜1）、画面の周りの <code>margin</code>、一度見えたら保つ <code>once</code>。<code>when: 'visible'</code> も同じ <code>viewport</code> を受け取ります。 <code>when: 'visible'</code> と判定を変えたいときは、<code>inView</code> に専用の <code>viewport</code> を指定します。<code>onAfterEnter</code> と <code>onAfterLeave</code> を渡すと、状態がオンやオフになったときにコードを実行できます。読んでいるセクションに目次で印を付ける、といった使い方です。"
         },
         "progress": {
           "title": "スクロールに連動",
@@ -796,7 +796,7 @@
         },
         "replay": {
           "title": "もう一度再生する",
-          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、ステータスの変化、失敗したコピーなどに使います。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。 <code>appear: 'later'</code> にすると、ページの最初の描画時にあるものは動かず、あとから追加されたものだけが入ってきます。コンポーネントのパネルの中では、開いたときにあるものが対象です。"
+          "body": "<code>replay</code> は値が変わるたびに、要素を再マウントせずに <code>initial</code> をもう一度再生します。増えていくカウント、ステータスの変化、失敗したコピーなどに使います。<code>appear: false</code> にすると、マウント時には再生せず、値が変わったときだけ再生します。 <code>appear: 'later'</code> にすると、ページの最初の描画時にあるものは動かず、あとから追加されたものだけが入ってきます。コンポーネントのパネルの中では、開いたときにあるものが対象です。 <code>animate</code> のキーフレームも最初から再生されるので、期間が変わるたびに線が描き直されます。"
         },
         "layout": {
           "title": "新しい位置へスライド",
@@ -805,6 +805,10 @@
         "shared": {
           "title": "ある場所から別の場所へ",
           "body": "同じ <code>layoutId</code> を持つ 2 つの要素は、ひとつの要素として振る舞います。一方が去りもう一方が現れると、新しい要素が古い要素のボックスから広がって出てきます。<code>layout: 'position'</code> を加えると移動中もサイズが保たれ、中のテキストが伸びません。"
+        },
+        "pages": {
+          "title": "ページ",
+          "body": "ルートの切り替えは、要素が出ていき、別の要素が入ってくることです。ルートのコンポーネントに名前付きの <code>v-animate</code> を付けます。古いページはその場で退場し、同時に新しいページが入ってきます。<code>swap: 'wait'</code> にすると、古いページが消えてから新しいページが入ります。"
         },
         "animate": {
           "title": "見た目を保つ",
@@ -816,7 +820,7 @@
         },
         "draw": {
           "title": "線を描く",
-          "body": "<code>pathLength</code> は SVG の線を 0（なし）から 1（全部）まで描きます：<code>initial: {'{'} pathLength: 0 {'}'}</code> でチェックマークが描かれます。<code>pathOffset</code> は描かれる部分の始まりを動かします。"
+          "body": "<code>pathLength</code> は SVG の線を 0（なし）から 1（全部）まで描きます：<code>initial: {'{'} pathLength: 0 {'}'}</code> でチェックマークが描かれます。<code>pathOffset</code> は描かれる部分の始まりを動かします。 <code>animate()</code> はパスに <code>pathLength=\"1\"</code> を設定するため、<code>pathOffset</code> や CSS で指定した破線は長さに対する割合になります。"
         },
         "size": {
           "title": "中身に合わせる",
@@ -824,7 +828,11 @@
         },
         "fromCode": {
           "title": "コードから",
-          "body": "誤ったコードやカートへの追加のように、イベントがきっかけで動かすときは、<code>animate(el, values, options)</code> が <code>v-animate</code> と同じ値とタイミングをコードから再生し、終わりを要素自身のスタイルとして残します。await で待つことも、<code>pause()</code>、<code>reverse()</code>、<code>time</code>、<code>speed</code> で操作することもできます。<code>useAnimate()</code> はセレクターを一つの要素の中に限定し、コンポーネントのアンマウント時に始めたものを止めます。アプリのスプリング、<code>motion: false</code>、視差効果を減らす設定に従います。"
+          "body": "誤ったコードやカートへの追加のように、イベントがきっかけで動かすときは、<code>animate(el, values, options)</code> が <code>v-animate</code> と同じ値とタイミングをコードから再生し、終わりを要素自身のスタイルとして残します。await で待つことも、<code>pause()</code>、<code>reverse()</code>、<code>time</code>、<code>speed</code> で操作することもできます。<code>useAnimate(useTemplateRef('row'))</code> はセレクターを一つの要素の中に限定し、コンポーネントのアンマウント時に始めたものを止めます。アプリのスプリング、<code>motion: false</code>、視差効果を減らす設定に従います。"
+        },
+        "tween": {
+          "title": "数値をトゥイーンする",
+          "body": "<code>useTween(source)</code> は、ソースの新しい値へ、いまの位置からなめらかに変化する数値です。合計、割合、自分で描く値などに使えます。<code>spring</code>、または <code>duration</code> と <code>easing</code> を渡さない限りアプリのばねで動き、モーションがオフまたは軽減設定のときは一瞬で切り替わります。"
         },
         "drag": {
           "title": "ドラッグ",
@@ -860,7 +868,7 @@
         },
         "again": {
           "title": "登場をもう一度再生する",
-          "body": "コンポーネントの <code>motion</code> も <code>replay</code> を受け取ります。値が変わると、コンポーネントは再マウントせずに <code>initial</code> をもう一度再生します。たとえば星 5 つの評価で星をはじけさせる、といった使い方です。<code>appear: false</code> にすると、コンポーネントのマウント時には再生しません。"
+          "body": "コンポーネントの <code>motion</code> も <code>replay</code> を受け取ります。値が変わると、コンポーネントは再マウントせずに <code>initial</code> をもう一度再生します。たとえば星 5 つの評価で星をはじけさせる、といった使い方です。<code>appear: false</code> にすると、コンポーネントのマウント時には再生しません。 状態も <code>replay</code> を受け取ります。状態がオンの間に値が変わると、キーフレームがもう一度再生されるので、2 回目の誤ったコードでもフィールドが揺れます：<code>invalid: {'{'} root: {'{'} x: [0, -6, 6, 0] {'}'}, replay: attempts {'}'}</code>。"
         },
         "lists": {
           "title": "リスト",
@@ -888,11 +896,11 @@
         },
         "inner": {
           "title": "中のパーツ",
-          "body": "<code>initial</code> はダイアログのタイトル、本文、フッターもアニメーションさせるので、それらをパネルに続いて入ってこさせられます。<code>exitOrder: 'reverse'</code> にすると、それらをパネルより先に閉じます。"
+          "body": "<code>initial</code> はダイアログのタイトル、本文、フッターもアニメーションさせるので、それらをパネルに続いて入ってこさせられます。<code>exitOrder: 'reverse'</code> にすると、それらをパネルより先に閉じます。 <code>stagger</code> を指定すると、ページ上の順に 1 つずつ入ってきます：<code>stagger: true</code>。"
         },
         "swap": {
           "title": "中身を切り替える",
-          "body": "ダイアログに key 付きの要素をひとつ置き、その key を変えます。<code>swap: 'wait'</code> は新しい要素が現れる前に古い要素を退場させ、<code>direction</code> はどちらの方向へ進んだかを値に伝えます。"
+          "body": "ダイアログに key 付きの要素をひとつ置き、その key を変えます。<code>swap: 'wait'</code> は新しい要素が現れる前に古い要素を退場させ、<code>direction</code> はどちらの方向へ進んだかを値に伝えます。 新しい内容が入ってくると、パネルはそのサイズへなめらかに変わります。<code>resize: false</code> にすると一瞬で切り替わります。"
         },
         "guard": {
           "title": "閉じる前に確認する",
@@ -915,7 +923,8 @@
             "<code>'summary:settle'</code>：スプリングが静止したとき",
             "<code>'summary:40%'</code>：途中まで入ったとき",
             "<code>'panel'</code>：コンポーネント自身のパーツも使えます",
-            "<code>['summary', 'chart']</code>：すべてが到着したとき"
+            "<code>['summary', 'chart']</code>：すべてが到着したとき",
+            "<code>'tag'</code>：すでにページにある要素なら、いま再生中のものが終わったとき"
           ]
         },
         "steps": {
@@ -956,7 +965,7 @@
         },
         "repeat": {
           "title": "繰り返しのたび",
-          "body": "値の <code>repeat</code> の横に書く <code>onRepeat</code> は、繰り返しが始まるたびに、それまでの回数を受け取って実行されます：1、次に 2。"
+          "body": "値の <code>repeat</code> と一緒に使う <code>onRepeat</code> は、各繰り返しの開始時に、完了した回数とともに呼ばれます。2 回目の開始時に 1、次に 2 です。"
         },
         "hooks": {
           "title": "自分のアニメーション",
@@ -996,7 +1005,7 @@
         },
         "open": {
           "title": "読み込み時に開いている",
-          "body": "ページの読み込み時に開いているオーバーレイは、アニメーションせずに開いた状態で描画されます。コンポーネントの <code>initial</code> はハイドレーションで再生されず、リストの <code>appear: true</code> はサーバーが描画した項目を飛ばします。"
+          "body": "ページの読み込み時に開いているオーバーレイは、アニメーションせずに開いた状態で描画されます。コンポーネントの <code>initial</code> はハイドレーションで再生されず、リストの <code>appear: true</code> はサーバーが描画した項目を飛ばします。 Message のように最初のレンダーから表示されるコンポーネントは、そのまま表示されます。後から現れるときに登場アニメーションを再生します。"
         },
         "setup": {
           "title": "Nuxt と Vite",

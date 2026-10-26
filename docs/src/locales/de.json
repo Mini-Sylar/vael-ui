@@ -760,7 +760,7 @@
         },
         "timing": {
           "title": "Timing",
-          "body": "Bewegung läuft auf einer Feder oder auf einer <code>duration</code>. Eine Feder nimmt einen Namen an, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> oder <code>'gentle'</code>, oder ihre Werte <code>damping</code> und <code>response</code>. Eine <code>duration</code> in ms nimmt jedes CSS-<code>easing</code> an, oder eines von vael-ui beim Namen, etwa <code>'out'</code>, <code>'pop'</code> oder <code>'bounce'</code>, das wie ein fallender Ball aufkommt. Auf einer Feder folgen Positionen und Größen ihr, Deckkraft, Farben und Unschärfe gleiten weich."
+          "body": "Bewegung läuft auf einer Feder oder auf einer <code>duration</code>. Eine Feder nimmt einen Namen an, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> oder <code>'gentle'</code>, oder ihre Werte <code>damping</code> und <code>response</code>. Eine <code>duration</code> in ms nimmt jedes CSS-<code>easing</code> an, oder eines von vael-ui beim Namen, etwa <code>'out'</code>, <code>'pop'</code> oder <code>'bounce'</code>, das wie ein fallender Ball aufkommt. Auf einer Feder folgen Positionen und Größen ihr, Deckkraft, Farben und Unschärfe gleiten weich. Die Namen sind ein Gefühl, keine exakten Kurven: <code>'in-out'</code> erreicht die Mitte etwas früher, also scrubbe mit <code>'linear'</code>."
         },
         "spring": {
           "title": "Eine Feder für alles",
@@ -768,7 +768,7 @@
         },
         "off": {
           "title": "Ausschalten",
-          "body": "<code>:motion=\"false\"</code> auf einer Komponente, oder auf <code>ConfigProvider</code> für alles darin, lässt Öffnen und Schließen sofort geschehen. Solange Bewegung an ist, bekommt, wer reduzierte Bewegung eingestellt hat, die Überblendungen ohne das Verschieben."
+          "body": "<code>:motion=\"false\"</code> auf einer Komponente, oder auf <code>ConfigProvider</code> für alles darin, lässt Öffnen und Schließen sofort geschehen. Solange Bewegung an ist, bekommt, wer reduzierte Bewegung eingestellt hat, die Überblendungen ohne das Verschieben. Loader drehen sich weiter, weil sie zeigen, dass noch etwas passiert."
         }
       },
       "elements": {
@@ -784,11 +784,11 @@
         },
         "scroll": {
           "title": "Wenn es ins Bild scrollt",
-          "body": "<code>when: 'visible'</code> wartet, bis das Element auf dem Bildschirm ist, und spielt dann einmal. Elemente mit demselben Namen, etwa <code>v-animate:tiles</code>, spielen in der Reihenfolge der Seite, eines nach dem anderen mit einem <code>stagger</code>. <code>stagger: true</code> verteilt sie im Abstand des Stagger-Tokens; <code>'end'</code>, <code>'center'</code> oder <code>'edges'</code> lassen die Welle stattdessen dort beginnen. <code>'center'</code> ist die Mitte der Seitenreihenfolge: In einem Raster gib <code>stagger</code> eine Funktion des Index, um von der mittleren Zelle aus zu starten."
+          "body": "<code>when: 'visible'</code> wartet, bis das Element auf dem Bildschirm ist, und spielt dann einmal. Elemente mit demselben Namen, etwa <code>v-animate:tiles</code>, spielen in der Reihenfolge der Seite, eines nach dem anderen mit einem <code>stagger</code>. <code>stagger: true</code> verteilt sie im Abstand des Stagger-Tokens; <code>'end'</code>, <code>'center'</code> oder <code>'edges'</code> lassen die Welle stattdessen dort beginnen. In einem Raster richten sich <code>'center'</code> und <code>'edges'</code> danach, wo jedes Element sitzt: Die Welle beginnt in der mittleren Zelle oder an den Ecken."
         },
         "inView": {
           "title": "Solange es sichtbar ist",
-          "body": "<code>states.inView</code> hält einen Look, solange das Element auf dem Bildschirm ist, und lässt ihn los, wenn es wegscrollt. <code>viewport</code> legt fest, wann es zählt: <code>amount</code> (<code>'some'</code>, <code>'all'</code> oder 0 bis 1), ein <code>margin</code> um den Bildschirm und <code>once</code>, um ihn nach dem ersten Mal zu behalten. <code>when: 'visible'</code> nimmt denselben <code>viewport</code>."
+          "body": "<code>states.inView</code> hält einen Look, solange das Element auf dem Bildschirm ist, und lässt ihn los, wenn es wegscrollt. <code>viewport</code> legt fest, wann es zählt: <code>amount</code> (<code>'some'</code>, <code>'all'</code> oder 0 bis 1), ein <code>margin</code> um den Bildschirm und <code>once</code>, um ihn nach dem ersten Mal zu behalten. <code>when: 'visible'</code> nimmt denselben <code>viewport</code>. Gib <code>inView</code> ein eigenes <code>viewport</code>, wenn es anders zählen soll als <code>when: 'visible'</code>, und <code>onAfterEnter</code> und <code>onAfterLeave</code>, um deinen Code beim Ein- und Ausschalten auszuführen, etwa um den Abschnitt zu markieren, den man gerade liest."
         },
         "progress": {
           "title": "Am Scrollen hängend",
@@ -796,7 +796,7 @@
         },
         "replay": {
           "title": "Noch einmal abspielen",
-          "body": "<code>replay</code> spielt <code>initial</code> jedes Mal erneut, wenn sich sein Wert ändert, ohne das Element neu zu mounten. Nutzen Sie es für einen steigenden Zähler, einen Statuswechsel oder ein fehlgeschlagenes Kopieren. Mit <code>appear: false</code> spielt es nur bei diesen Änderungen, nicht beim Mounten des Elements. Mit <code>appear: 'later'</code> bleibt, was beim ersten Rendern der Seite da ist, ruhig, und alles, was danach hinzukommt, erscheint animiert. Im Panel einer Komponente ist das, was beim Öffnen da ist."
+          "body": "<code>replay</code> spielt <code>initial</code> jedes Mal erneut, wenn sich sein Wert ändert, ohne das Element neu zu mounten. Nutzen Sie es für einen steigenden Zähler, einen Statuswechsel oder ein fehlgeschlagenes Kopieren. Mit <code>appear: false</code> spielt es nur bei diesen Änderungen, nicht beim Mounten des Elements. Mit <code>appear: 'later'</code> bleibt, was beim ersten Rendern der Seite da ist, ruhig, und alles, was danach hinzukommt, erscheint animiert. Im Panel einer Komponente ist das, was beim Öffnen da ist. Keyframes in <code>animate</code> spielen ebenfalls von vorn, sodass sich eine Linie für jeden neuen Zeitraum neu zeichnet."
         },
         "layout": {
           "title": "An einen neuen Platz gleiten",
@@ -805,6 +805,10 @@
         "shared": {
           "title": "Von einem Ort zum anderen",
           "body": "Zwei Elemente mit derselben <code>layoutId</code> verhalten sich wie ein Element. Wenn eines geht und das andere kommt, wächst das neue aus der Box des alten. Fügen Sie <code>layout: 'position'</code> hinzu, damit es unterwegs seine Größe behält und sein Text nie gestreckt wird."
+        },
+        "pages": {
+          "title": "Seiten",
+          "body": "Ein Routenwechsel ist ein Element, das geht, und ein anderes, das kommt. Setze <code>v-animate</code> mit einem Namen auf die geroutete Komponente. Die alte Seite geht an ihrer Stelle, während die neue kommt; <code>swap: 'wait'</code> lässt die neue erst kommen, wenn die alte weg ist."
         },
         "animate": {
           "title": "Ein Aussehen halten",
@@ -816,7 +820,7 @@
         },
         "draw": {
           "title": "Eine Linie zeichnen",
-          "body": "<code>pathLength</code> zeichnet eine SVG-Linie von 0 (nichts) bis 1 (ganz): <code>initial: {'{'} pathLength: 0 {'}'}</code> zeichnet ein Häkchen. <code>pathOffset</code> verschiebt, wo der gezeichnete Teil beginnt."
+          "body": "<code>pathLength</code> zeichnet eine SVG-Linie von 0 (nichts) bis 1 (ganz): <code>initial: {'{'} pathLength: 0 {'}'}</code> zeichnet ein Häkchen. <code>pathOffset</code> verschiebt, wo der gezeichnete Teil beginnt. <code>animate()</code> setzt <code>pathLength=\"1\"</code> auf den Pfad, daher sind <code>pathOffset</code> und ein in CSS gesetzter Strich Bruchteile seiner Länge."
         },
         "size": {
           "title": "Dem Inhalt folgen",
@@ -824,7 +828,11 @@
         },
         "fromCode": {
           "title": "Aus dem Code",
-          "body": "Für Bewegung, die ein Ereignis auslöst, etwa ein falscher Code oder ein Artikel im Warenkorb, spielt <code>animate(el, values, options)</code> dieselben Werte und dasselbe Timing wie <code>v-animate</code> aus deinem Code und lässt das Ende als eigenen Stil des Elements stehen. Warte mit await darauf oder steuere es mit <code>pause()</code>, <code>reverse()</code>, <code>time</code> und <code>speed</code>. <code>useAnimate()</code> begrenzt Selektoren auf ein Element und stoppt, was es gestartet hat, wenn die Komponente entfernt wird. Es folgt der Feder der App, <code>motion: false</code> und reduzierter Bewegung."
+          "body": "Für Bewegung, die ein Ereignis auslöst, etwa ein falscher Code oder ein Artikel im Warenkorb, spielt <code>animate(el, values, options)</code> dieselben Werte und dasselbe Timing wie <code>v-animate</code> aus deinem Code und lässt das Ende als eigenen Stil des Elements stehen. Warte mit await darauf oder steuere es mit <code>pause()</code>, <code>reverse()</code>, <code>time</code> und <code>speed</code>. <code>useAnimate(useTemplateRef('row'))</code> begrenzt Selektoren auf ein Element und stoppt, was es gestartet hat, wenn die Komponente entfernt wird. Es folgt der Feder der App, <code>motion: false</code> und reduzierter Bewegung."
+        },
+        "tween": {
+          "title": "Eine Zahl animieren",
+          "body": "<code>useTween(source)</code> ist eine Zahl, die von dort, wo sie gerade ist, weich zu jedem neuen Wert ihrer Quelle läuft: eine Summe, ein Prozentwert, ein Wert, den du selbst zeichnest. Sie folgt der Feder der App, außer du gibst ihr eine <code>spring</code> oder eine <code>duration</code> und <code>easing</code>; bei ausgeschalteter oder reduzierter Bewegung springt sie."
         },
         "drag": {
           "title": "Ziehen",
@@ -860,7 +868,7 @@
         },
         "again": {
           "title": "Den Auftritt erneut abspielen",
-          "body": "Die <code>motion</code> einer Komponente nimmt auch <code>replay</code> an. Wenn es sich ändert, spielt die Komponente ihr <code>initial</code> erneut, ohne neu zu mounten, etwa einen Sternenregen bei einer Fünf-Sterne-Bewertung. <code>appear: false</code> verhindert, dass es beim Mounten der Komponente spielt."
+          "body": "Die <code>motion</code> einer Komponente nimmt auch <code>replay</code> an. Wenn es sich ändert, spielt die Komponente ihr <code>initial</code> erneut, ohne neu zu mounten, etwa einen Sternenregen bei einer Fünf-Sterne-Bewertung. <code>appear: false</code> verhindert, dass es beim Mounten der Komponente spielt. Auch ein Zustand nimmt <code>replay</code>: Solange er an ist, spielt ein neuer Wert seine Keyframes erneut, sodass ein zweiter falscher Code das Feld wieder schüttelt: <code>invalid: {'{'} root: {'{'} x: [0, -6, 6, 0] {'}'}, replay: attempts {'}'}</code>."
         },
         "lists": {
           "title": "Listen",
@@ -888,11 +896,11 @@
         },
         "inner": {
           "title": "Die Teile darin",
-          "body": "<code>initial</code> animiert auch Titel, Inhalt und Footer eines Dialogs, sodass sie dem Panel folgen können. <code>exitOrder: 'reverse'</code> schließt sie vor dem Panel."
+          "body": "<code>initial</code> animiert auch Titel, Inhalt und Footer eines Dialogs, sodass sie dem Panel folgen können. <code>exitOrder: 'reverse'</code> schließt sie vor dem Panel. <code>stagger</code> lässt sie nacheinander erscheinen, in Seitenreihenfolge: <code>stagger: true</code>."
         },
         "swap": {
           "title": "Den Inhalt wechseln",
-          "body": "Setzen Sie ein Element mit Key in den Dialog und ändern Sie seinen Key. <code>swap: 'wait'</code> lässt das alte Element gehen, bevor das neue kommt, und <code>direction</code> sagt Ihren Werten, in welche Richtung Sie sich bewegt haben."
+          "body": "Setzen Sie ein Element mit Key in den Dialog und ändern Sie seinen Key. <code>swap: 'wait'</code> lässt das alte Element gehen, bevor das neue kommt, und <code>direction</code> sagt Ihren Werten, in welche Richtung Sie sich bewegt haben. Während der neue Inhalt erscheint, passt sich das Panel weich an seine Größe an; <code>resize: false</code> springt sofort dorthin."
         },
         "guard": {
           "title": "Vor dem Schließen fragen",
@@ -915,7 +923,8 @@
             "<code>'summary:settle'</code>: wenn seine Feder zur Ruhe kommt",
             "<code>'summary:40%'</code>: wenn es einen Teil des Wegs drin ist",
             "<code>'panel'</code>: die eigenen Teile der Komponente gehen auch",
-            "<code>['summary', 'chart']</code>: wenn alle davon angekommen sind"
+            "<code>['summary', 'chart']</code>: wenn alle davon angekommen sind",
+            "<code>'tag'</code>, ein Element, das schon auf der Seite ist: wenn das endet, was es gerade abspielt"
           ]
         },
         "steps": {
@@ -956,7 +965,7 @@
         },
         "repeat": {
           "title": "Jede Wiederholung",
-          "body": "Neben dem <code>repeat</code> eines Werts läuft <code>onRepeat</code>, sobald eine Wiederholung beginnt, mit ihrer Anzahl bisher: 1, dann 2."
+          "body": "Neben dem <code>repeat</code> eines Werts läuft <code>onRepeat</code> zu Beginn jeder Wiederholung, mit der Zahl der fertigen Durchläufe: 1, wenn der zweite beginnt, dann 2."
         },
         "hooks": {
           "title": "Deine eigene Animation",
@@ -996,7 +1005,7 @@
         },
         "open": {
           "title": "Beim Laden geöffnet",
-          "body": "Ein Overlay, das beim Laden der Seite offen ist, wird geöffnet gerendert, ohne Animation. Das <code>initial</code> einer Komponente spielt beim Hydrieren nie, und <code>appear: true</code> einer Liste überspringt die Einträge, die der Server gerendert hat."
+          "body": "Ein Overlay, das beim Laden der Seite offen ist, wird geöffnet gerendert, ohne Animation. Das <code>initial</code> einer Komponente spielt beim Hydrieren nie, und <code>appear: true</code> einer Liste überspringt die Einträge, die der Server gerendert hat. Eine Komponente, die ab dem ersten Rendern sichtbar ist, etwa eine Message, erscheint einfach; ihren Auftritt spielt sie, wenn sie später kommt."
         },
         "setup": {
           "title": "Nuxt und Vite",

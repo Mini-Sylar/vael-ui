@@ -760,7 +760,7 @@
         },
         "timing": {
           "title": "Timing",
-          "body": "Motion runs on a spring or on a <code>duration</code>. A spring takes a name, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> or <code>'gentle'</code>, or its <code>damping</code> and <code>response</code>. A <code>duration</code> in ms takes any CSS <code>easing</code>, or one of vael-ui's by name, such as <code>'out'</code>, <code>'pop'</code> or <code>'bounce'</code>, which lands like a dropped ball. On a spring, positions and sizes ride it, and opacity, colors and blur ease."
+          "body": "Motion runs on a spring or on a <code>duration</code>. A spring takes a name, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> or <code>'gentle'</code>, or its <code>damping</code> and <code>response</code>. A <code>duration</code> in ms takes any CSS <code>easing</code>, or one of vael-ui's by name, such as <code>'out'</code>, <code>'pop'</code> or <code>'bounce'</code>, which lands like a dropped ball. On a spring, positions and sizes ride it, and opacity, colors and blur ease. The names are a feel, not exact curves: <code>'in-out'</code> passes the middle a little early, so scrub with <code>'linear'</code>."
         },
         "spring": {
           "title": "One spring for everything",
@@ -768,7 +768,7 @@
         },
         "off": {
           "title": "Turn it off",
-          "body": "<code>:motion=\"false\"</code> on a component, or on <code>ConfigProvider</code> for everything inside, makes opening and closing instant. While motion is on, people who ask for reduced motion get the fades without the movement."
+          "body": "<code>:motion=\"false\"</code> on a component, or on <code>ConfigProvider</code> for everything inside, makes opening and closing instant. While motion is on, people who ask for reduced motion get the fades without the movement. Loaders keep spinning, since that tells people something is still happening."
         }
       },
       "elements": {
@@ -784,11 +784,11 @@
         },
         "scroll": {
           "title": "When it scrolls into view",
-          "body": "<code>when: 'visible'</code> waits until the element is on screen, then plays once. Elements that share a name, such as <code>v-animate:tiles</code>, play in page order, one after another with a <code>stagger</code>. <code>stagger: true</code> spaces them by the stagger token; <code>'end'</code>, <code>'center'</code> or <code>'edges'</code> start the wave there instead. <code>'center'</code> is the middle of the page order: in a grid, give <code>stagger</code> a function of the index to start from the middle cell."
+          "body": "<code>when: 'visible'</code> waits until the element is on screen, then plays once. Elements that share a name, such as <code>v-animate:tiles</code>, play in page order, one after another with a <code>stagger</code>. <code>stagger: true</code> spaces them by the stagger token; <code>'end'</code>, <code>'center'</code> or <code>'edges'</code> start the wave there instead. In a grid, <code>'center'</code> and <code>'edges'</code> go by where each element sits: the wave starts from the middle cell, or from the corners."
         },
         "inView": {
           "title": "While it's in view",
-          "body": "<code>states.inView</code> holds a look while the element is on screen and lets it go when it scrolls away. <code>viewport</code> sets when it counts: <code>amount</code> (<code>'some'</code>, <code>'all'</code> or 0 to 1), a <code>margin</code> around the screen, and <code>once</code> to keep it once seen. <code>when: 'visible'</code> takes the same <code>viewport</code>."
+          "body": "<code>states.inView</code> holds a look while the element is on screen and lets it go when it scrolls away. <code>viewport</code> sets when it counts: <code>amount</code> (<code>'some'</code>, <code>'all'</code> or 0 to 1), a <code>margin</code> around the screen, and <code>once</code> to keep it once seen. <code>when: 'visible'</code> takes the same <code>viewport</code>. Give <code>inView</code> its own <code>viewport</code> when it should count differently from <code>when: 'visible'</code>, and <code>onAfterEnter</code> and <code>onAfterLeave</code> to run your code as it turns on and off, such as marking the section you're reading."
         },
         "progress": {
           "title": "Linked to scroll",
@@ -796,7 +796,7 @@
         },
         "replay": {
           "title": "Play it again",
-          "body": "<code>replay</code> plays <code>initial</code> again each time its value changes, without remounting the element. Use it for a count going up, a status change or a failed copy. With <code>appear: false</code>, it plays only on those changes, not when the element mounts. With <code>appear: 'later'</code>, what's there when the page first renders stays still, and anything added after comes in. Inside a component's panel, that's what's there when it opens."
+          "body": "<code>replay</code> plays <code>initial</code> again each time its value changes, without remounting the element. Use it for a count going up, a status change or a failed copy. With <code>appear: false</code>, it plays only on those changes, not when the element mounts. With <code>appear: 'later'</code>, what's there when the page first renders stays still, and anything added after comes in. Inside a component's panel, that's what's there when it opens. Keyframes in <code>animate</code> play again from the start too, so a line draws itself again for each new period."
         },
         "layout": {
           "title": "Slide to a new place",
@@ -805,6 +805,10 @@
         "shared": {
           "title": "From one place to another",
           "body": "Two elements with the same <code>layoutId</code> act as one element. When one leaves and the other arrives, the new one grows out of the old one's box. Add <code>layout: 'position'</code> to keep its size on the way, so its text never stretches."
+        },
+        "pages": {
+          "title": "Pages",
+          "body": "A route change is an element leaving and another coming in. Put <code>v-animate</code> with a name on the routed component. The old page leaves where it was as the new one comes in; <code>swap: 'wait'</code> brings the new one in once the old one has gone."
         },
         "animate": {
           "title": "Hold a look",
@@ -816,7 +820,7 @@
         },
         "draw": {
           "title": "Draw a stroke",
-          "body": "<code>pathLength</code> draws an SVG stroke from 0 (none) to 1 (all of it): <code>initial: {'{'} pathLength: 0 {'}'}</code> draws a check in. <code>pathOffset</code> moves where the drawn part starts."
+          "body": "<code>pathLength</code> draws an SVG stroke from 0 (none) to 1 (all of it): <code>initial: {'{'} pathLength: 0 {'}'}</code> draws a check in. <code>pathOffset</code> moves where the drawn part starts. <code>animate()</code> sets <code>pathLength=\"1\"</code> on the path, so <code>pathOffset</code> and any dash you set in CSS are fractions of its length."
         },
         "size": {
           "title": "Follow its content",
@@ -824,7 +828,11 @@
         },
         "fromCode": {
           "title": "From code",
-          "body": "For motion an event starts, such as a wrong code or an item added to the cart, <code>animate(el, values, options)</code> plays the same values and timing as <code>v-animate</code> from your code, and leaves the end as the element's own style. Await it, or steer it with <code>pause()</code>, <code>reverse()</code>, <code>time</code> and <code>speed</code>. <code>useAnimate()</code> scopes selectors to one element and stops what it started when the component unmounts. It follows the app's spring, <code>motion: false</code> and reduced motion."
+          "body": "For motion an event starts, such as a wrong code or an item added to the cart, <code>animate(el, values, options)</code> plays the same values and timing as <code>v-animate</code> from your code, and leaves the end as the element's own style. Await it, or steer it with <code>pause()</code>, <code>reverse()</code>, <code>time</code> and <code>speed</code>. <code>useAnimate(useTemplateRef('row'))</code> scopes selectors to one element and stops what it started when the component unmounts. It follows the app's spring, <code>motion: false</code> and reduced motion."
+        },
+        "tween": {
+          "title": "Tween a number",
+          "body": "<code>useTween(source)</code> is a number that eases to each new value of its source, from wherever it is: a total, a percentage, a value you draw yourself. It rides the app's spring unless you give it a <code>spring</code>, or a <code>duration</code> and <code>easing</code>, and jumps with motion off or reduced motion."
         },
         "drag": {
           "title": "Dragging",
@@ -860,7 +868,7 @@
         },
         "again": {
           "title": "Play the entrance again",
-          "body": "A component's <code>motion</code> takes <code>replay</code> too. When it changes, the component plays its <code>initial</code> again without remounting, such as a burst of stars on a five-star rating. <code>appear: false</code> stops it from playing when the component mounts."
+          "body": "A component's <code>motion</code> takes <code>replay</code> too. When it changes, the component plays its <code>initial</code> again without remounting, such as a burst of stars on a five-star rating. <code>appear: false</code> stops it from playing when the component mounts. A state takes <code>replay</code> too: while it's on, a new value plays its keyframes again, so a second wrong code shakes the field again: <code>invalid: {'{'} root: {'{'} x: [0, -6, 6, 0] {'}'}, replay: attempts {'}'}</code>."
         },
         "lists": {
           "title": "Lists",
@@ -888,11 +896,11 @@
         },
         "inner": {
           "title": "The parts inside",
-          "body": "<code>initial</code> also animates a dialog's title, body and footer, so they can follow the panel in. <code>exitOrder: 'reverse'</code> closes them before the panel."
+          "body": "<code>initial</code> also animates a dialog's title, body and footer, so they can follow the panel in. <code>exitOrder: 'reverse'</code> closes them before the panel. <code>stagger</code> brings them in one after another, in page order: <code>stagger: true</code>."
         },
         "swap": {
           "title": "Change what's inside",
-          "body": "Put one keyed element in the dialog and change its key. <code>swap: 'wait'</code> lets the old element leave before the new one arrives, and <code>direction</code> tells your values which way you moved."
+          "body": "Put one keyed element in the dialog and change its key. <code>swap: 'wait'</code> lets the old element leave before the new one arrives, and <code>direction</code> tells your values which way you moved. As the new content comes in, the panel eases to its size; <code>resize: false</code> snaps to it."
         },
         "guard": {
           "title": "Ask before closing",
@@ -915,7 +923,8 @@
             "<code>'summary:settle'</code>: when its spring comes to rest",
             "<code>'summary:40%'</code>: part of the way in",
             "<code>'panel'</code>: the component's own parts work too",
-            "<code>['summary', 'chart']</code>: when all of them arrive"
+            "<code>['summary', 'chart']</code>: when all of them arrive",
+            "<code>'tag'</code>, an element already on the page: when what it's playing now ends"
           ]
         },
         "steps": {
@@ -956,7 +965,7 @@
         },
         "repeat": {
           "title": "Each repeat",
-          "body": "Beside a value's <code>repeat</code>, <code>onRepeat</code> runs as each repeat starts, with how many it has done: 1, then 2."
+          "body": "Beside a value's <code>repeat</code>, <code>onRepeat</code> runs as each repeat starts, with how many runs it has finished: 1 as the second starts, then 2."
         },
         "hooks": {
           "title": "Your own animation",
@@ -996,7 +1005,7 @@
         },
         "open": {
           "title": "Open on load",
-          "body": "An overlay that's open when the page loads renders open, without animating. A component's <code>initial</code> never plays on hydration, and a list's <code>appear: true</code> skips the items the server rendered."
+          "body": "An overlay that's open when the page loads renders open, without animating. A component's <code>initial</code> never plays on hydration, and a list's <code>appear: true</code> skips the items the server rendered. A component that's shown from its first render, such as a Message, just shows; it plays its entrance when it comes later."
         },
         "setup": {
           "title": "Nuxt and Vite",

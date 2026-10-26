@@ -1,7 +1,7 @@
 <template>
   <section class="demo">
     <h3>From code</h3>
-    <div ref="scope" class="row">
+    <div ref="row" class="row">
       <form class="code" @submit.prevent="check">
         <Input v-model="code" aria-label="Discount code" placeholder="Try SAVE10" class="field" />
         <Button type="submit" variant="secondary">Apply</Button>
@@ -17,12 +17,12 @@
 </template>
 
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { shallowRef, useTemplateRef } from 'vue'
 import { Button, Input } from 'vael-ui'
 import { useAnimate } from 'vael-ui/motion'
 
-// Selectors match inside `scope`, and anything still playing stops when this unmounts.
-const { scope, animate } = useAnimate()
+// Selectors match inside the row, and anything still playing stops when this unmounts.
+const { animate } = useAnimate(useTemplateRef('row'))
 const code = shallowRef('')
 const items = shallowRef(0)
 

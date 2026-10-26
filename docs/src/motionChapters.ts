@@ -4,7 +4,8 @@ export interface MotionChapter {
   id: string
   routeName: string
   path: string
-  sections: { id: string; demo?: string }[]
+  /** `code`: a snippet shown under the section's words, before its demo. */
+  sections: { id: string; demo?: string; code?: string }[]
 }
 
 export const MOTION_CHAPTERS: MotionChapter[] = [
@@ -33,11 +34,31 @@ export const MOTION_CHAPTERS: MotionChapter[] = [
       { id: 'replay', demo: 'elements/03-Replay' },
       { id: 'layout', demo: 'elements/04-Layout' },
       { id: 'shared', demo: 'elements/05-SharedElement' },
+      {
+        id: 'pages',
+        demo: 'elements/15-Pages',
+        code: `<script setup lang="ts">
+import { vAnimate } from 'vael-ui/motion'
+
+const page = {
+  initial: { opacity: 0, y: 12 },
+  exit: { opacity: 0, y: -12 },
+  swap: 'wait',
+} as const
+</script>
+
+<template>
+  <RouterView v-slot="{ Component, route }">
+    <component :is="Component" :key="route.path" v-animate:page="page" />
+  </RouterView>
+</template>`,
+      },
       { id: 'animate', demo: 'elements/08-Animate' },
       { id: 'turn', demo: 'elements/13-Turn' },
       { id: 'draw', demo: 'elements/12-Draw' },
       { id: 'size', demo: 'elements/06-Size' },
       { id: 'fromCode', demo: 'elements/14-FromCode' },
+      { id: 'tween', demo: 'elements/16-Tween' },
       { id: 'drag' },
       { id: 'own', demo: 'elements/07-YourComponent' },
     ],

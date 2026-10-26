@@ -38,6 +38,7 @@ export const MOTION_ROUTES = [
 const MOTION_COMPOSABLES = [
   'springEasing',
   'useSpringValue',
+  'useTween',
   'useScrollProgress',
   'settled',
   'useHoverIndicator',

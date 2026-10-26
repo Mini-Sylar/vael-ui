@@ -760,7 +760,7 @@
         },
         "timing": {
           "title": "Tempo",
-          "body": "O movimento segue uma mola ou uma <code>duration</code>. Uma mola aceita um nome, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> ou <code>'gentle'</code>, ou seus valores <code>damping</code> e <code>response</code>. Uma <code>duration</code> em ms aceita qualquer <code>easing</code> de CSS, ou um do vael-ui pelo nome, como <code>'out'</code>, <code>'pop'</code> ou <code>'bounce'</code>, que aterrissa como uma bola que cai. Numa mola, posições e tamanhos a acompanham, e opacidade, cores e desfoque suavizam."
+          "body": "O movimento segue uma mola ou uma <code>duration</code>. Uma mola aceita um nome, <code>'snappy'</code>, <code>'smooth'</code>, <code>'bouncy'</code> ou <code>'gentle'</code>, ou seus valores <code>damping</code> e <code>response</code>. Uma <code>duration</code> em ms aceita qualquer <code>easing</code> de CSS, ou um do vael-ui pelo nome, como <code>'out'</code>, <code>'pop'</code> ou <code>'bounce'</code>, que aterrissa como uma bola que cai. Numa mola, posições e tamanhos a acompanham, e opacidade, cores e desfoque suavizam. Os nomes são uma sensação, não curvas exatas: <code>'in-out'</code> passa o meio um pouco mais cedo, por isso para scrub usa <code>'linear'</code>."
         },
         "spring": {
           "title": "Uma mola para tudo",
@@ -768,7 +768,7 @@
         },
         "off": {
           "title": "Desligue",
-          "body": "<code>:motion=\"false\"</code> em um componente, ou no <code>ConfigProvider</code> para tudo dentro dele, deixa abrir e fechar instantâneos. Com o movimento ligado, quem pede movimento reduzido recebe os esmaecimentos sem o deslocamento."
+          "body": "<code>:motion=\"false\"</code> em um componente, ou no <code>ConfigProvider</code> para tudo dentro dele, deixa abrir e fechar instantâneos. Com o movimento ligado, quem pede movimento reduzido recebe os esmaecimentos sem o deslocamento. Os loaders continuam a rodar, porque mostram que algo ainda está a acontecer."
         }
       },
       "elements": {
@@ -784,11 +784,11 @@
         },
         "scroll": {
           "title": "Quando aparece na rolagem",
-          "body": "<code>when: 'visible'</code> espera até o elemento estar na tela e então toca uma vez. Elementos que compartilham um nome, como <code>v-animate:tiles</code>, tocam na ordem da página, um depois do outro com um <code>stagger</code>. <code>stagger: true</code> os espaça pelo token de stagger; <code>'end'</code>, <code>'center'</code> ou <code>'edges'</code> fazem a onda começar ali. <code>'center'</code> é o meio da ordem da página: numa grelha, dá a <code>stagger</code> uma função do índice para começar na célula do meio."
+          "body": "<code>when: 'visible'</code> espera até o elemento estar na tela e então toca uma vez. Elementos que compartilham um nome, como <code>v-animate:tiles</code>, tocam na ordem da página, um depois do outro com um <code>stagger</code>. <code>stagger: true</code> os espaça pelo token de stagger; <code>'end'</code>, <code>'center'</code> ou <code>'edges'</code> fazem a onda começar ali. Numa grelha, <code>'center'</code> e <code>'edges'</code> seguem onde cada elemento está: a onda começa na célula do meio ou nos cantos."
         },
         "inView": {
           "title": "Enquanto está à vista",
-          "body": "<code>states.inView</code> mantém um visual enquanto o elemento está na tela e o solta quando ele sai rolando. <code>viewport</code> define quando conta: <code>amount</code> (<code>'some'</code>, <code>'all'</code> ou de 0 a 1), uma <code>margin</code> em volta da tela e <code>once</code> para manter depois de visto. <code>when: 'visible'</code> aceita o mesmo <code>viewport</code>."
+          "body": "<code>states.inView</code> mantém um visual enquanto o elemento está na tela e o solta quando ele sai rolando. <code>viewport</code> define quando conta: <code>amount</code> (<code>'some'</code>, <code>'all'</code> ou de 0 a 1), uma <code>margin</code> em volta da tela e <code>once</code> para manter depois de visto. <code>when: 'visible'</code> aceita o mesmo <code>viewport</code>. Dá a <code>inView</code> o seu próprio <code>viewport</code> quando deve contar de forma diferente de <code>when: 'visible'</code>, e <code>onAfterEnter</code> e <code>onAfterLeave</code> para correr o teu código quando liga e desliga, por exemplo para marcar a secção que se está a ler."
         },
         "progress": {
           "title": "Ligado à rolagem",
@@ -796,7 +796,7 @@
         },
         "replay": {
           "title": "Toque de novo",
-          "body": "<code>replay</code> toca <code>initial</code> de novo cada vez que seu valor muda, sem remontar o elemento. Use-o para um contador subindo, uma mudança de status ou uma cópia que falhou. Com <code>appear: false</code>, ele só toca nessas mudanças, não quando o elemento é montado. Com <code>appear: 'later'</code>, o que está na página no primeiro render fica parado, e tudo o que for adicionado depois entra animado. Dentro do painel de um componente, é o que está lá quando ele abre."
+          "body": "<code>replay</code> toca <code>initial</code> de novo cada vez que seu valor muda, sem remontar o elemento. Use-o para um contador subindo, uma mudança de status ou uma cópia que falhou. Com <code>appear: false</code>, ele só toca nessas mudanças, não quando o elemento é montado. Com <code>appear: 'later'</code>, o que está na página no primeiro render fica parado, e tudo o que for adicionado depois entra animado. Dentro do painel de um componente, é o que está lá quando ele abre. Os keyframes de <code>animate</code> também voltam ao início, por isso uma linha volta a desenhar-se a cada novo período."
         },
         "layout": {
           "title": "Deslize para um novo lugar",
@@ -805,6 +805,10 @@
         "shared": {
           "title": "De um lugar para outro",
           "body": "Dois elementos com o mesmo <code>layoutId</code> agem como um só elemento. Quando um sai e o outro chega, o novo cresce a partir da caixa do antigo. Adicione <code>layout: 'position'</code> para manter o tamanho no caminho, assim o texto dentro dele nunca estica."
+        },
+        "pages": {
+          "title": "Páginas",
+          "body": "Uma mudança de rota é um elemento a sair e outro a entrar. Põe <code>v-animate</code> com um nome no componente da rota. A página antiga sai onde estava enquanto a nova entra; <code>swap: 'wait'</code> faz a nova entrar quando a antiga já saiu."
         },
         "animate": {
           "title": "Mantenha um visual",
@@ -816,7 +820,7 @@
         },
         "draw": {
           "title": "Desenhar um traço",
-          "body": "<code>pathLength</code> desenha um traço SVG de 0 (nada) a 1 (inteiro): <code>initial: {'{'} pathLength: 0 {'}'}</code> desenha um check. <code>pathOffset</code> move onde a parte desenhada começa."
+          "body": "<code>pathLength</code> desenha um traço SVG de 0 (nada) a 1 (inteiro): <code>initial: {'{'} pathLength: 0 {'}'}</code> desenha um check. <code>pathOffset</code> move onde a parte desenhada começa. <code>animate()</code> define <code>pathLength=\"1\"</code> no path, por isso <code>pathOffset</code> e qualquer tracejado definido em CSS são frações do seu comprimento."
         },
         "size": {
           "title": "Acompanhe o conteúdo",
@@ -824,7 +828,11 @@
         },
         "fromCode": {
           "title": "A partir do código",
-          "body": "Para movimento que um evento dispara, como um código errado ou um item adicionado ao carrinho, <code>animate(el, values, options)</code> toca os mesmos valores e tempos do <code>v-animate</code> a partir do seu código, e deixa o final como estilo próprio do elemento. Aguarde com await ou controle com <code>pause()</code>, <code>reverse()</code>, <code>time</code> e <code>speed</code>. <code>useAnimate()</code> limita os seletores a um elemento e para o que começou quando o componente é desmontado. Ele segue a mola do app, <code>motion: false</code> e o movimento reduzido."
+          "body": "Para movimento que um evento dispara, como um código errado ou um item adicionado ao carrinho, <code>animate(el, values, options)</code> toca os mesmos valores e tempos do <code>v-animate</code> a partir do seu código, e deixa o final como estilo próprio do elemento. Aguarde com await ou controle com <code>pause()</code>, <code>reverse()</code>, <code>time</code> e <code>speed</code>. <code>useAnimate(useTemplateRef('row'))</code> limita os seletores a um elemento e para o que começou quando o componente é desmontado. Ele segue a mola do app, <code>motion: false</code> e o movimento reduzido."
+        },
+        "tween": {
+          "title": "Animar um número",
+          "body": "<code>useTween(source)</code> é um número que desliza até cada novo valor da sua fonte, a partir de onde está: um total, uma percentagem, um valor que desenhas tu. Segue a mola da app, a não ser que lhe dês uma <code>spring</code>, ou uma <code>duration</code> e um <code>easing</code>, e salta com o movimento desligado ou reduzido."
         },
         "drag": {
           "title": "Arrastar",
@@ -860,7 +868,7 @@
         },
         "again": {
           "title": "Tocar a entrada de novo",
-          "body": "O <code>motion</code> de um componente também aceita <code>replay</code>. Quando ele muda, o componente toca o <code>initial</code> de novo sem remontar, como uma chuva de estrelas numa avaliação de cinco estrelas. <code>appear: false</code> impede que ele toque quando o componente é montado."
+          "body": "O <code>motion</code> de um componente também aceita <code>replay</code>. Quando ele muda, o componente toca o <code>initial</code> de novo sem remontar, como uma chuva de estrelas numa avaliação de cinco estrelas. <code>appear: false</code> impede que ele toque quando o componente é montado. Um estado também aceita <code>replay</code>: enquanto está ligado, um novo valor volta a tocar os seus keyframes, por isso um segundo código errado volta a abanar o campo: <code>invalid: {'{'} root: {'{'} x: [0, -6, 6, 0] {'}'}, replay: attempts {'}'}</code>."
         },
         "lists": {
           "title": "Listas",
@@ -888,11 +896,11 @@
         },
         "inner": {
           "title": "As partes de dentro",
-          "body": "<code>initial</code> também anima o título, o corpo e o rodapé de um diálogo, para que sigam o painel na entrada. <code>exitOrder: 'reverse'</code> os fecha antes do painel."
+          "body": "<code>initial</code> também anima o título, o corpo e o rodapé de um diálogo, para que sigam o painel na entrada. <code>exitOrder: 'reverse'</code> os fecha antes do painel. <code>stagger</code> fá-los entrar um a seguir ao outro, pela ordem da página: <code>stagger: true</code>."
         },
         "swap": {
           "title": "Troque o que está dentro",
-          "body": "Coloque um elemento com key no diálogo e mude a key dele. <code>swap: 'wait'</code> deixa o elemento antigo sair antes de o novo chegar, e <code>direction</code> diz aos seus valores para que lado você foi."
+          "body": "Coloque um elemento com key no diálogo e mude a key dele. <code>swap: 'wait'</code> deixa o elemento antigo sair antes de o novo chegar, e <code>direction</code> diz aos seus valores para que lado você foi. Enquanto o novo conteúdo entra, o painel ajusta-se suavemente ao seu tamanho; <code>resize: false</code> salta logo para ele."
         },
         "guard": {
           "title": "Pergunte antes de fechar",
@@ -915,7 +923,8 @@
             "<code>'summary:settle'</code>: quando a mola dele para",
             "<code>'summary:40%'</code>: em parte do caminho",
             "<code>'panel'</code>: as partes do próprio componente também funcionam",
-            "<code>['summary', 'chart']</code>: quando todos eles chegam"
+            "<code>['summary', 'chart']</code>: quando todos eles chegam",
+            "<code>'tag'</code>, um elemento que já está na página: quando acaba o que está a tocar"
           ]
         },
         "steps": {
@@ -956,7 +965,7 @@
         },
         "repeat": {
           "title": "Cada repetição",
-          "body": "Ao lado do <code>repeat</code> de um valor, <code>onRepeat</code> roda quando cada repetição começa, com quantas já fez: 1, depois 2."
+          "body": "Junto ao <code>repeat</code> de um valor, <code>onRepeat</code> corre no início de cada repetição, com quantas passagens terminou: 1 quando começa a segunda, depois 2."
         },
         "hooks": {
           "title": "Sua própria animação",
@@ -996,7 +1005,7 @@
         },
         "open": {
           "title": "Aberto ao carregar",
-          "body": "Um overlay aberto quando a página carrega é renderizado aberto, sem animação. O <code>initial</code> de um componente nunca toca na hidratação, e o <code>appear: true</code> de uma lista pula os itens que o servidor renderizou."
+          "body": "Um overlay aberto quando a página carrega é renderizado aberto, sem animação. O <code>initial</code> de um componente nunca toca na hidratação, e o <code>appear: true</code> de uma lista pula os itens que o servidor renderizou. Um componente mostrado desde o primeiro render, como uma Message, simplesmente aparece; toca a sua entrada quando chega mais tarde."
         },
         "setup": {
           "title": "Nuxt e Vite",

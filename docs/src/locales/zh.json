@@ -760,7 +760,7 @@
         },
         "timing": {
           "title": "时间",
-          "body": "动效可以用弹簧，也可以用 <code>duration</code>。弹簧可以写名字：<code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code> 或 <code>'gentle'</code>，也可以写 <code>damping</code> 和 <code>response</code> 的数值。以毫秒计的 <code>duration</code> 可以配任何 CSS <code>easing</code>，也可以用 vael-ui 的名字，比如 <code>'out'</code>、<code>'pop'</code> 或像落下的球一样着地的 <code>'bounce'</code>。使用弹簧时，位置和尺寸随弹簧运动，不透明度、颜色和模糊则平滑过渡。"
+          "body": "动效可以用弹簧，也可以用 <code>duration</code>。弹簧可以写名字：<code>'snappy'</code>、<code>'smooth'</code>、<code>'bouncy'</code> 或 <code>'gentle'</code>，也可以写 <code>damping</code> 和 <code>response</code> 的数值。以毫秒计的 <code>duration</code> 可以配任何 CSS <code>easing</code>，也可以用 vael-ui 的名字，比如 <code>'out'</code>、<code>'pop'</code> 或像落下的球一样着地的 <code>'bounce'</code>。使用弹簧时，位置和尺寸随弹簧运动，不透明度、颜色和模糊则平滑过渡。 这些名称表示一种感觉，而不是精确的曲线：<code>'in-out'</code> 会稍早经过中点，因此做拖动联动时请用 <code>'linear'</code>。"
         },
         "spring": {
           "title": "一个弹簧管全部",
@@ -768,7 +768,7 @@
         },
         "off": {
           "title": "关闭动效",
-          "body": "在组件上加 <code>:motion=\"false\"</code>，或加在 <code>ConfigProvider</code> 上作用于其中所有内容，打开和关闭就会立即完成。动效开启时，要求减少动态效果的用户只会看到淡入淡出，没有位移。"
+          "body": "在组件上加 <code>:motion=\"false\"</code>，或加在 <code>ConfigProvider</code> 上作用于其中所有内容，打开和关闭就会立即完成。动效开启时，要求减少动态效果的用户只会看到淡入淡出，没有位移。 加载指示器会继续旋转，因为它表示仍有操作在进行。"
         }
       },
       "elements": {
@@ -784,11 +784,11 @@
         },
         "scroll": {
           "title": "滚动到视野中时",
-          "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。 <code>stagger: true</code> 按 stagger 令牌的间隔排开；<code>'end'</code>、<code>'center'</code> 或 <code>'edges'</code> 会让这一波从那里开始。 <code>'center'</code> 指页面顺序的中间：在网格里想从中间的单元格开始，请给 <code>stagger</code> 传一个以索引为参数的函数。"
+          "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。 <code>stagger: true</code> 按 stagger 令牌的间隔排开；<code>'end'</code>、<code>'center'</code> 或 <code>'edges'</code> 会让这一波从那里开始。 在网格中，<code>'center'</code> 和 <code>'edges'</code> 按每个元素实际所在的位置计算：波从中间的单元格或四角开始。"
         },
         "inView": {
           "title": "在视野中时",
-          "body": "<code>states.inView</code> 在元素位于屏幕上时保持一种外观，滚出视野后恢复。<code>viewport</code> 决定何时算作可见：<code>amount</code>（<code>'some'</code>、<code>'all'</code> 或 0 到 1）、屏幕周围的 <code>margin</code>，以及看到一次后保持的 <code>once</code>。<code>when: 'visible'</code> 也接受同样的 <code>viewport</code>。"
+          "body": "<code>states.inView</code> 在元素位于屏幕上时保持一种外观，滚出视野后恢复。<code>viewport</code> 决定何时算作可见：<code>amount</code>（<code>'some'</code>、<code>'all'</code> 或 0 到 1）、屏幕周围的 <code>margin</code>，以及看到一次后保持的 <code>once</code>。<code>when: 'visible'</code> 也接受同样的 <code>viewport</code>。 当 <code>inView</code> 的判定需要与 <code>when: 'visible'</code> 不同时，给它自己的 <code>viewport</code>；再给它 <code>onAfterEnter</code> 和 <code>onAfterLeave</code>，就能在状态开启和关闭时运行你的代码，比如在目录中标出正在阅读的章节。"
         },
         "progress": {
           "title": "跟随滚动",
@@ -796,7 +796,7 @@
         },
         "replay": {
           "title": "再播一次",
-          "body": "<code>replay</code> 的值每次变化时，都会重新播放 <code>initial</code>，而不重新挂载元素。可用于数字增加、状态变化或复制失败。设置 <code>appear: false</code> 后，它只在这些变化时播放，挂载时不播放。 使用 <code>appear: 'later'</code> 时，页面首次渲染时已有的元素保持不动，之后添加的元素才会动画进入。在组件的面板里，指的是它打开时已有的元素。"
+          "body": "<code>replay</code> 的值每次变化时，都会重新播放 <code>initial</code>，而不重新挂载元素。可用于数字增加、状态变化或复制失败。设置 <code>appear: false</code> 后，它只在这些变化时播放，挂载时不播放。 使用 <code>appear: 'later'</code> 时，页面首次渲染时已有的元素保持不动，之后添加的元素才会动画进入。在组件的面板里，指的是它打开时已有的元素。 <code>animate</code> 中的关键帧也会从头播放，所以每换一个周期，线条都会重新绘制。"
         },
         "layout": {
           "title": "滑到新位置",
@@ -805,6 +805,10 @@
         "shared": {
           "title": "从一处到另一处",
           "body": "<code>layoutId</code> 相同的两个元素会作为同一个元素运动。一个离开、另一个到来时，新元素会从旧元素的盒子中长出来。加上 <code>layout: 'position'</code> 能让它在途中保持尺寸，文字就不会被拉伸。"
+        },
+        "pages": {
+          "title": "页面",
+          "body": "路由切换就是一个元素离开、另一个元素进入。给路由组件加上带名称的 <code>v-animate</code>。旧页面在原处离开，同时新页面进入；<code>swap: 'wait'</code> 会等旧页面离开后再让新页面进入。"
         },
         "animate": {
           "title": "保持一种外观",
@@ -816,7 +820,7 @@
         },
         "draw": {
           "title": "绘制线条",
-          "body": "<code>pathLength</code> 把 SVG 线条从 0（无）画到 1（全部）：<code>initial: {'{'} pathLength: 0 {'}'}</code> 会画出一个对勾。<code>pathOffset</code> 移动绘制部分的起点。"
+          "body": "<code>pathLength</code> 把 SVG 线条从 0（无）画到 1（全部）：<code>initial: {'{'} pathLength: 0 {'}'}</code> 会画出一个对勾。<code>pathOffset</code> 移动绘制部分的起点。 <code>animate()</code> 会在路径上设置 <code>pathLength=\"1\"</code>，因此 <code>pathOffset</code> 和你在 CSS 中设置的虚线都是其长度的比例。"
         },
         "size": {
           "title": "跟随内容",
@@ -824,7 +828,11 @@
         },
         "fromCode": {
           "title": "从代码中",
-          "body": "对于由事件触发的动效，比如输入了错误的代码或把商品加入购物车，<code>animate(el, values, options)</code> 会在代码中播放与 <code>v-animate</code> 相同的值和时序，并把终点留作元素自身的样式。可以用 await 等待它，或用 <code>pause()</code>、<code>reverse()</code>、<code>time</code> 和 <code>speed</code> 控制它。<code>useAnimate()</code> 把选择器限定在一个元素内，并在组件卸载时停止它启动的动画。它遵循应用的弹簧、<code>motion: false</code> 和减弱动态效果设置。"
+          "body": "对于由事件触发的动效，比如输入了错误的代码或把商品加入购物车，<code>animate(el, values, options)</code> 会在代码中播放与 <code>v-animate</code> 相同的值和时序，并把终点留作元素自身的样式。可以用 await 等待它，或用 <code>pause()</code>、<code>reverse()</code>、<code>time</code> 和 <code>speed</code> 控制它。<code>useAnimate(useTemplateRef('row'))</code> 把选择器限定在一个元素内，并在组件卸载时停止它启动的动画。它遵循应用的弹簧、<code>motion: false</code> 和减弱动态效果设置。"
+        },
+        "tween": {
+          "title": "补间一个数字",
+          "body": "<code>useTween(source)</code> 是一个从当前值平滑过渡到其来源每个新值的数字：总额、百分比、你自己绘制的值。除非你给它 <code>spring</code>，或 <code>duration</code> 和 <code>easing</code>，否则它使用应用的弹簧；关闭动效或减少动效时会直接跳到新值。"
         },
         "drag": {
           "title": "拖动",
@@ -860,7 +868,7 @@
         },
         "again": {
           "title": "再次播放入场",
-          "body": "组件的 <code>motion</code> 也接受 <code>replay</code>。它变化时，组件会重新播放 <code>initial</code>，而不重新挂载，比如打出五星评分时迸出一串星星。<code>appear: false</code> 让它在组件挂载时不播放。"
+          "body": "组件的 <code>motion</code> 也接受 <code>replay</code>。它变化时，组件会重新播放 <code>initial</code>，而不重新挂载，比如打出五星评分时迸出一串星星。<code>appear: false</code> 让它在组件挂载时不播放。 状态也接受 <code>replay</code>：在状态开启期间，值一变化就会再次播放其关键帧，所以第二次输错代码时字段也会再次抖动：<code>invalid: {'{'} root: {'{'} x: [0, -6, 6, 0] {'}'}, replay: attempts {'}'}</code>。"
         },
         "lists": {
           "title": "列表",
@@ -888,11 +896,11 @@
         },
         "inner": {
           "title": "内部的部件",
-          "body": "<code>initial</code> 也能作用到对话框的标题、正文和页脚，让它们跟着面板进入。<code>exitOrder: 'reverse'</code> 会在面板之前关闭它们。"
+          "body": "<code>initial</code> 也能作用到对话框的标题、正文和页脚，让它们跟着面板进入。<code>exitOrder: 'reverse'</code> 会在面板之前关闭它们。 <code>stagger</code> 会让它们按页面顺序依次进入：<code>stagger: true</code>。"
         },
         "swap": {
           "title": "切换内容",
-          "body": "在对话框里放一个带 key 的元素，然后改变它的 key。<code>swap: 'wait'</code> 让旧元素先离开、新元素再到来，<code>direction</code> 告诉你的值是往哪个方向切换的。"
+          "body": "在对话框里放一个带 key 的元素，然后改变它的 key。<code>swap: 'wait'</code> 让旧元素先离开、新元素再到来，<code>direction</code> 告诉你的值是往哪个方向切换的。 新内容进入时，面板会平滑过渡到它的尺寸；<code>resize: false</code> 则直接跳到该尺寸。"
         },
         "guard": {
           "title": "关闭前先确认",
@@ -915,7 +923,8 @@
             "<code>'summary:settle'</code>：弹簧静止时",
             "<code>'summary:40%'</code>：进入到一部分时",
             "<code>'panel'</code>：组件自身的部件也可以",
-            "<code>['summary', 'chart']</code>：全部到达时"
+            "<code>['summary', 'chart']</code>：全部到达时",
+            "<code>'tag'</code>：页面上已有的元素，在它当前播放的动画结束时"
           ]
         },
         "steps": {
@@ -956,7 +965,7 @@
         },
         "repeat": {
           "title": "每次重复",
-          "body": "写在值的 <code>repeat</code> 旁边，<code>onRepeat</code> 在每次重复开始时运行，收到已完成的次数：1，然后是 2。"
+          "body": "与值的 <code>repeat</code> 一起使用时，<code>onRepeat</code> 会在每次重复开始时运行，并传入已完成的次数：第二次开始时为 1，然后是 2。"
         },
         "hooks": {
           "title": "你自己的动画",
@@ -996,7 +1005,7 @@
         },
         "open": {
           "title": "加载时已打开",
-          "body": "页面加载时就处于打开状态的浮层会直接以打开状态渲染，不播放动画。组件的 <code>initial</code> 在水合时不会播放，列表的 <code>appear: true</code> 会跳过服务端已经渲染的项。"
+          "body": "页面加载时就处于打开状态的浮层会直接以打开状态渲染，不播放动画。组件的 <code>initial</code> 在水合时不会播放，列表的 <code>appear: true</code> 会跳过服务端已经渲染的项。 从首次渲染就显示的组件（例如 Message）会直接显示；之后再出现时才播放入场动画。"
         },
         "setup": {
           "title": "Nuxt 和 Vite",
