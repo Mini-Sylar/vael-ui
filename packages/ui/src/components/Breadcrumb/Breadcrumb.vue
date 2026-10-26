@@ -6,14 +6,13 @@
     :style="rootPart.style"
     v-bind="attrs"
   >
-    <component
-      :is="crumbsTransition ? TransitionGroup : 'ol'"
+    <ol
       v-scroll-mask="wrap ? false : 'x'"
       :class="listPart.class"
       :style="listPart.style"
-      v-bind="crumbsTransition"
+      :data-ui-list="crumbs.marker"
     >
-      <template v-if="items">
+      <TransitionGroup v-if="items" v-bind="crumbs.transition">
         <template v-for="(item, index) in items" :key="crumbKey(item, index)">
           <BreadcrumbItem
             :as="item.as"
@@ -33,9 +32,9 @@
           </BreadcrumbItem>
           <BreadcrumbSeparator v-if="index < items.length - 1" />
         </template>
-      </template>
+      </TransitionGroup>
       <slot v-else />
-    </component>
+    </ol>
   </nav>
 </template>
 
@@ -58,14 +57,14 @@ export interface BreadcrumbItemData {
 import './Breadcrumb.css'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { TransitionGroup, computed, useAttrs, useTemplateRef } from 'vue'
+import { computed, useAttrs, useTemplateRef } from 'vue'
 import BreadcrumbItem from '../BreadcrumbItem/BreadcrumbItem.vue'
 import BreadcrumbSeparator from '../BreadcrumbSeparator/BreadcrumbSeparator.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
-import { useComponentList } from '../../motion/useMotion'
+import { fragmentList, useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { BreadcrumbMotion } from '../../motion/types'
 import { useMessages, breadcrumbMessages } from '../../messages'
@@ -129,9 +128,7 @@ const crumbsMotion =
         look: { opacity: 0, x: -4 },
       })
     : undefined
-const crumbsTransition = computed(() =>
-  crumbsMotion && props.motion !== false ? { tag: 'ol', ...crumbsMotion.transition } : undefined,
-)
+const crumbs = computed(() => fragmentList(props.motion === false ? undefined : crumbsMotion))
 const parts = useStateMotion({
   key: 'breadcrumb',
   mainPart: 'root',

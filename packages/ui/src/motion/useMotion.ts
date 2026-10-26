@@ -30,15 +30,15 @@ import { loading as loadingChunk } from './styleKey'
  */
 export function useMotion<N extends string = string>(
   role: 'list',
-  motion?: () => OwnMotion<'list', N> | undefined,
+  motion?: () => OwnMotion<'list', N> | false | undefined,
 ): UseMotionReturn<N>
 export function useMotion<N extends string = string>(
   role: 'reveal' | 'content',
-  motion?: () => OwnMotion<'reveal', N> | undefined,
+  motion?: () => OwnMotion<'reveal', N> | false | undefined,
 ): UseMotionReturn<N>
 export function useMotion<N extends string = string>(
   role?: 'overlay',
-  motion?: () => OwnMotion<'overlay', N> | undefined,
+  motion?: () => OwnMotion<'overlay', N> | false | undefined,
 ): UseMotionReturn<N>
 export function useMotion<N extends string = string>(
   role: MotionRole = 'overlay',
@@ -118,6 +118,21 @@ export function useComponentList<N extends string = string>(
   as: ComponentListOptions,
 ): UseMotionReturn<N> {
   return useListMotion<N>(motion, as)
+}
+/**
+ * @internal A list transition for a `<TransitionGroup>` written with no `tag`, so the Vapor
+ * compiler sees the tag (`<component :is>` keeps the VDOM one, which renders nothing in Vapor).
+ * Its marker goes on the list's own element instead. With no motion, nothing plays.
+ */
+export function fragmentList(motion: UseMotionReturn | undefined): {
+  marker: string | undefined
+  transition: TransitionProps
+} {
+  if (!motion) return { marker: undefined, transition: { css: false } }
+  const { 'data-ui-list': marker, ...transition } = motion.transition as TransitionProps & {
+    'data-ui-list': string
+  }
+  return { marker, transition }
 }
 let lists = 0
 // Not an item: a decorative child of the list, such as its sliding highlight.

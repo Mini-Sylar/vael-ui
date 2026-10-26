@@ -161,7 +161,7 @@ import { useThemedUi } from '../../theme'
 import { withProviderDefaults } from '../../config'
 import { ssrDocument } from '../../ssr'
 import { useMessages, speedDialMessages } from '../../messages'
-import { useComponentList } from '../../motion/useMotion'
+import { fragmentList, useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import type { SpeedDialMotion } from '../../motion/types'
 
@@ -212,14 +212,11 @@ const listMotion =
       })
     : undefined
 // The actions render with no wrapper of their own, so the list engine's marker goes on the menu.
-const listMarker = computed(
-  () => (listMotion?.transition as Record<string, unknown> | undefined)?.['data-ui-list'],
+const actions = computed(() => fragmentList(listMotion))
+const listMarker = computed(() => actions.value.marker)
+const actionsTransition = computed(() =>
+  listMotion ? actions.value.transition : { name: 'ui-speed-dial-action', css: !!props.motion },
 )
-const actionsTransition = computed(() => {
-  if (!listMotion) return { name: 'ui-speed-dial-action', css: !!props.motion }
-  const { 'data-ui-list': _, ...transition } = listMotion.transition as Record<string, unknown>
-  return transition
-})
 
 function orientationFor(direction: SpeedDialDirection): 'vertical' | 'horizontal' | undefined {
   if (direction === 'up' || direction === 'down') return 'vertical'

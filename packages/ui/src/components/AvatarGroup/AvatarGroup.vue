@@ -1,35 +1,38 @@
 <template>
-  <component
-    :is="avatarsTransition ? TransitionGroup : 'div'"
+  <div
     :ref="registerRoot"
     :data-ui-group="groupKey"
+    :data-ui-list="avatars.marker"
     :class="rootPart.class"
     :style="rootPart.style"
-    v-bind="{ ...attrs, ...avatarsTransition }"
+    v-bind="attrs"
   >
-    <slot />
-    <Avatar
-      v-if="overflowCount > 0"
-      :size="size"
-      :class="overflowPart.class"
-      :style="overflowPart.style"
-    >
-      <slot name="overflow" :count="overflowCount">+{{ overflowCount }}</slot>
-    </Avatar>
-  </component>
+    <TransitionGroup v-bind="avatars.transition">
+      <slot />
+      <Avatar
+        v-if="overflowCount > 0"
+        key="ui-avatar-group-overflow"
+        :size="size"
+        :class="overflowPart.class"
+        :style="overflowPart.style"
+      >
+        <slot name="overflow" :count="overflowCount">+{{ overflowCount }}</slot>
+      </Avatar>
+    </TransitionGroup>
+  </div>
 </template>
 
 <script setup lang="ts">
 import './AvatarGroup.css'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { TransitionGroup, computed, ref, useAttrs, useId } from 'vue'
+import { computed, ref, useAttrs, useId } from 'vue'
 import Avatar from '../Avatar/Avatar.vue'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
-import { useComponentList } from '../../motion/useMotion'
+import { fragmentList, useComponentList } from '../../motion/useMotion'
 import { useMotionStyle } from '../../motion/context'
 import { transitionGroupRef } from '../../composables/dom'
 import type { AvatarGroupMotion } from '../../motion/types'
@@ -84,9 +87,7 @@ const avatarsMotion =
         look: { opacity: 0, scale: 0.8 },
       })
     : undefined
-const avatarsTransition = computed(() =>
-  avatarsMotion && props.motion !== false ? { tag: 'div', ...avatarsMotion.transition } : undefined,
-)
+const avatars = computed(() => fragmentList(props.motion === false ? undefined : avatarsMotion))
 const parts = useStateMotion({
   key: 'avatarGroup',
   mainPart: 'root',
