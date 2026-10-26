@@ -14,6 +14,7 @@
       :style="handlePart.style"
       :data-direction="direction"
       :data-edge="edge"
+      :data-flush="flush || undefined"
       :data-active="isDragging || undefined"
       role="separator"
       :aria-orientation="direction === 'horizontal' ? 'vertical' : 'horizontal'"
@@ -135,6 +136,33 @@ useResizeObserver(
   () => (Number.isFinite(props.max) ? null : root.value?.parentElement),
   measureAvailable,
 )
+
+// The handle straddles the panel's edge so it can be grabbed from either side. Where the panel
+// reaches its container's edge there's nothing past it to grab, and the outer half would only push
+// the page sideways: there, it tucks inside.
+const flush = shallowRef(false)
+function measureFlush() {
+  const panel = root.value
+  const parent = panel?.parentElement
+  if (!panel || !parent) return
+  const box = panel.getBoundingClientRect()
+  const room = parent.getBoundingClientRect()
+  const style = getComputedStyle(parent)
+  const horizontal = props.direction === 'horizontal'
+  const rtl = horizontal && style.direction === 'rtl'
+  // The edge the handle is on, in screen terms, against the container's content edge there.
+  const towardEnd = (props.edge === 'end') !== rtl
+  const pad = (side: 'Left' | 'Right' | 'Top' | 'Bottom') =>
+    Number.parseFloat(style[`padding${side}`]) + Number.parseFloat(style[`border${side}Width`])
+  flush.value = horizontal
+    ? towardEnd
+      ? box.right >= room.right - pad('Right') - 0.5
+      : box.left <= room.left + pad('Left') + 0.5
+    : towardEnd
+      ? box.bottom >= room.bottom - pad('Bottom') - 0.5
+      : box.top <= room.top + pad('Top') + 0.5
+}
+useResizeObserver(() => [root.value, root.value?.parentElement], measureFlush)
 const valueMax = computed(() =>
   Number.isFinite(props.max)
     ? props.max

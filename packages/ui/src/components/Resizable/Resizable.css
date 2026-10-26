@@ -29,6 +29,13 @@
   .ui-resizable-handle[data-direction='horizontal'][data-edge='start'] {
     inset-inline-start: -3px;
   }
+  /* Flush with its container's edge: inside the panel, so the page doesn't scroll sideways. */
+  .ui-resizable-handle[data-direction='horizontal'][data-edge='end'][data-flush] {
+    inset-inline-end: 0;
+  }
+  .ui-resizable-handle[data-direction='horizontal'][data-edge='start'][data-flush] {
+    inset-inline-start: 0;
+  }
   .ui-resizable-handle[data-direction='vertical'] {
     inset-inline: 0;
     block-size: 6px;
@@ -39,6 +46,12 @@
   }
   .ui-resizable-handle[data-direction='vertical'][data-edge='start'] {
     inset-block-start: -3px;
+  }
+  .ui-resizable-handle[data-direction='vertical'][data-edge='end'][data-flush] {
+    inset-block-end: 0;
+  }
+  .ui-resizable-handle[data-direction='vertical'][data-edge='start'][data-flush] {
+    inset-block-start: 0;
   }
   .ui-resizable-handle::after {
     content: '';
