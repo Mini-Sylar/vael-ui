@@ -116,7 +116,13 @@ function objectDirectivesOnServer(): Plugin {
   return {
     name: 'vael-ui:object-directives-on-server',
     transform(code) {
-      if (!code.includes('vAnimateVapor')) return null
+      // The VDOM async wrapper too: the server renders components as VDOM.
+      if (code.includes('defineVaporAsyncComponent as defineAsyncComponent'))
+        code = code.replace(
+          'defineVaporAsyncComponent as defineAsyncComponent',
+          'defineAsyncComponent',
+        )
+      if (!code.includes('vAnimateVapor')) return code
       return code.replace(
         /\{([^}]*)\}(\s*from\s*['"][^'"]*motion\/vAnimate(?:\.js|\.ts)?['"])/g,
         (_, names: string, from: string) =>

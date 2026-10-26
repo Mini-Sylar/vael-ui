@@ -264,6 +264,19 @@ function stripVMemo(source) {
   return source.replace(/\s+v-memo="[^"]*"/g, '')
 }
 
+// A VDOM async wrapper around a Vapor component renders nothing and hides its ref; Vapor has its own.
+function useVaporAsync(source) {
+  return source.replace(/import\s*\{([^}]*)\}\s*from\s*'vue'/, (full, names) =>
+    full.replace(
+      names,
+      names.replace(
+        /\bdefineAsyncComponent\b/,
+        'defineVaporAsyncComponent as defineAsyncComponent',
+      ),
+    ),
+  )
+}
+
 function injectVaporMarker(source, moduleId) {
   // Regex skips quoted values & uses multiline anchor to avoid matching comment prose
   const scriptSetupRe = /^<script\s+setup((?:[^>"]|"[^"]*")*)>/m
@@ -409,7 +422,7 @@ function main() {
       const outPath = join(OUT_DIR, `${moduleId}.vue`)
       mkdirSync(dirname(outPath), { recursive: true }) // for internal/*.vue
       source = copyCssImports(source, dirname(srcPath), dirname(outPath))
-      source = stripVMemo(source)
+      source = useVaporAsync(stripVMemo(source))
       source = injectVaporMarker(source, moduleId)
       source = rewriteImports(source, moduleId)
       writeIfChanged(outPath, source)
