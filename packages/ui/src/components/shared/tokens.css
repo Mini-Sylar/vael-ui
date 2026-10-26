@@ -89,6 +89,15 @@
     box-sizing: border-box;
   }
 
+  /* One button padding in every browser: Safari's default is 2px above and 3px below, which
+     set icons in stepper and close buttons half a pixel or more off centre. These are
+     Chromium's defaults, which the components are drawn to. Zero specificity: a component's
+     own padding and your styles still win. */
+  :where(button):where([class^='ui-'], [class*=' ui-']) {
+    padding-block: 1px;
+    padding-inline: 6px;
+  }
+
   @property --ui-dialog-t {
     syntax: '<number>';
     inherits: false;

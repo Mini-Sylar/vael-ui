@@ -965,6 +965,8 @@ export function useSortable(options: UseSortableOptions): UseSortableReturn {
     // actual last position, or the hand-off below teleports from where the
     // drag started instead of from under the pointer.
     if (previewEl && draggedEl) {
+      // A flick released before any frame placed the copy: it goes where the finger is first.
+      if (lastPointerEvent) movePreview(lastPointerEvent)
       const rect = previewEl.getBoundingClientRect()
       before.set(draggedEl, { x: rect.left, y: rect.top })
     }
