@@ -50,8 +50,8 @@
       :class="panelPart.class"
       :style="[collapseStyle, panelPart.style]"
       :data-state="collapseState"
-      :aria-hidden="collapseState === 'closed' ? 'true' : undefined"
-      :inert="collapseState === 'closed'"
+      :aria-hidden="collapseState === 'closed' && !findable ? 'true' : undefined"
+      :inert="collapseState === 'closed' && !findable"
     >
       <div ref="body" :class="bodyPart.class" :style="bodyPart.style">
         <slot :open="isOpenValue" :toggle="onToggle" />
@@ -124,10 +124,19 @@ const triggerId = useId()
 const panelId = useId()
 
 const panel = useTemplateRef<HTMLElement>('panel')
-const { style: collapseStyle, state: collapseState } = useCollapse(isOpenValue, {
+const {
+  style: collapseStyle,
+  state: collapseState,
+  findable,
+} = useCollapse(isOpenValue, {
   el: panel,
   motion: ctx.motion,
   handOff: ctx.handOff,
+  // The browser's find opens it on a match (closing the others, as a click would), disabled or
+  // not: the browser has already shown the match.
+  onFind: () => {
+    if (!isOpenValue.value) ctx.toggle(props.value)
+  },
 })
 
 const item = useTemplateRef<HTMLElement>('item')

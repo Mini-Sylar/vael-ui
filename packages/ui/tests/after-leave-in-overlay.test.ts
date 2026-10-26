@@ -31,3 +31,37 @@ for (const named of [false, true]) {
     await vi.waitFor(() => expect(left).toHaveBeenCalledWith('B'), { timeout: 2000 })
   })
 }
+
+test("removed inside an open Drawer: its name's onAfterLeave in `targets` runs", async () => {
+  const rows = shallowRef(['A', 'B', 'C'])
+  const left = vi.fn()
+  await render(
+    () =>
+      h(
+        Drawer as never,
+        {
+          open: true,
+          title: 'Cart',
+          motion: {
+            targets: {
+              rows: {
+                initial: { opacity: 0 },
+                onAfterLeave: (el: HTMLElement) => left(el.textContent),
+              },
+            },
+          },
+        },
+        () =>
+          rows.value.map((row) =>
+            withDirectives(h('p', { key: row, class: 'row' }, row), [
+              [vAnimate, undefined, 'rows'],
+            ]),
+          ),
+      ),
+    { global: { stubs: { transition: false } } },
+  )
+  await new Promise((resolve) => setTimeout(resolve, 800))
+  rows.value = ['A', 'C']
+  await nextTick()
+  await vi.waitFor(() => expect(left).toHaveBeenCalledWith('B'), { timeout: 2000 })
+})

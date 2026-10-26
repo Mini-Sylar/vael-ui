@@ -15,12 +15,22 @@ export interface UseCollapseOptions {
    * instant. Defaults to handing over; an app-wide "no animations" switch wants instant.
    */
   handOff?: () => boolean
+  /**
+   * Closed, its content stays findable with the browser's find (`hidden="until-found"`), and a
+   * match runs this to open it. Where the browser can't, the content is hidden as before.
+   */
+  onFind?: () => void
 }
 
 export interface UseCollapseReturn {
   /** Bind directly: `:style="style"`. Empty once open and settled, so the panel stays responsive to content/viewport changes instead of pinned at a stale px value. */
   style: Ref<Record<string, string>>
   state: Ref<CollapseState>
+  /**
+   * Closed content is `hidden="until-found"`: out of the page, the tab order and the
+   * accessibility tree, but findable. Don't also make it `inert` or `aria-hidden` then.
+   */
+  findable: Ref<boolean>
 }
 
 // Slack past the panel's own transition before the fallback settles it.
@@ -45,8 +55,11 @@ function transitionMs(el: HTMLElement) {
   return longest
 }
 
-function closedStyle(): Record<string, string> {
-  return { blockSize: '0px', overflow: 'hidden', visibility: 'hidden' }
+function closedStyle(findable = false): Record<string, string> {
+  // `hidden="until-found"` hides it instead, and unlike `visibility` lets find reach it.
+  return findable
+    ? { blockSize: '0px', overflow: 'hidden' }
+    : { blockSize: '0px', overflow: 'hidden', visibility: 'hidden' }
 }
 
 export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): UseCollapseReturn {
@@ -54,6 +67,10 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
   const handOff = () => motionOff() && (options.handOff?.() ?? true)
   const style = shallowRef<Record<string, string>>(open.value || handOff() ? {} : closedStyle())
   const state = shallowRef<CollapseState>(open.value ? 'open' : 'closed')
+
+  // Set once mounted, where the browser has it: the server renders it closed the plain way.
+  const findable = shallowRef(false)
+  const closed = () => closedStyle(findable.value)
 
   let token: symbol | null = null
   let fallbackTimer: ReturnType<typeof setTimeout> | undefined
@@ -63,8 +80,43 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
     token = null
     clearTimeout(fallbackTimer)
     while (observers.length) observers.pop()!.disconnect()
-    style.value = target || handOff() ? {} : closedStyle()
+    style.value = target || handOff() ? {} : closed()
     state.value = target ? 'open' : 'closed'
+  }
+
+  if (options.onFind) {
+    watch(
+      () => options.el.value,
+      (el) => {
+        findable.value = !!el && 'onbeforematch' in el
+        if (state.value === 'closed' && !handOff()) style.value = closed()
+      },
+      { immediate: true, flush: 'post' },
+    )
+    // Closed: out of the page but findable. Opening, it's back before anything is measured.
+    watch(
+      [() => options.el.value, state, findable],
+      ([el, now, on]) => {
+        if (!el) return
+        if (on && now === 'closed') el.setAttribute('hidden', 'until-found')
+        else if (el.getAttribute('hidden') === 'until-found') el.removeAttribute('hidden')
+      },
+      { immediate: true, flush: 'sync' },
+    )
+    // A match: open at once, laid out before the browser scrolls to it.
+    useEventListener(
+      () => options.el.value,
+      'beforematch',
+      () => {
+        const el = options.el.value!
+        token = null
+        clearTimeout(fallbackTimer)
+        for (const prop of ['block-size', 'overflow', 'visibility']) el.style.removeProperty(prop)
+        style.value = {}
+        state.value = 'open'
+        options.onFind?.()
+      },
+    )
   }
 
   useEventListener(
@@ -170,5 +222,5 @@ export function useCollapse(open: Ref<boolean>, options: UseCollapseOptions): Us
     while (observers.length) observers.pop()!.disconnect()
   })
 
-  return { style, state }
+  return { style, state, findable }
 }

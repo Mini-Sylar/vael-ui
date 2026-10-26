@@ -186,6 +186,7 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
     )
     batch = []
     const motion = options.resolved()
+    const els = group.map((item) => item.el)
     group.forEach(({ el, done: entered }, index) => {
       const done = after(el, 'onAfterEnter', index, entered)
       if (hooked(el, 'enter', index, done)) return
@@ -194,7 +195,7 @@ export function createListMotion(options: ListMotionOptions): ListMotion {
         direction: 'in',
         engine: motion.engine,
         timing: timingFor(el),
-        delay: staggerAt(options.stagger(), index, group.length, el),
+        delay: staggerAt(options.stagger(), index, group.length, el, els),
       }).then(done)
     })
   }

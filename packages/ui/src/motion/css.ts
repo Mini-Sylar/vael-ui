@@ -7,7 +7,7 @@ import { pageHidden, prefersReducedMotion } from '../composables/dom'
 import { springArrival, springEasing, springOf } from './springEasing'
 import type { ResolvedMotion } from './context'
 import type { Runner, RunnerHost } from './host'
-import { cssCanPlay, staggerAt, targetCanPlay, valuesAt } from './playable'
+import { cssCanPlay, partDelays, SHELL, staggerAt, targetCanPlay, valuesAt } from './playable'
 import type * as Morph from './morph'
 import { collectEntries } from './presence'
 import { exitOf, targetsOf } from './targets'
@@ -506,11 +506,12 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
       if (id !== generation) return
     }
     const turned = cutShort ? leftAt : undefined
+    const delays = partDelays(own, m.initial, m.stagger, SHELL(host.mainPart))
     for (const [name, part] of Object.entries(own)) {
       if (kit && part === main) continue
       const from = turned?.get(name)
       const start = from && from.el !== part ? from.look : (m.initial[name] ?? {})
-      start$(part as HTMLElement, start, partTiming(name), 0)
+      start$(part as HTMLElement, start, partTiming(name), from ? 0 : (delays[name] ?? 0) * 1000)
     }
     // What the morph carries stays seen: a target holding it doesn't fade in over it.
     const carried = kit && source && main ? kit.pairs(source, main).map(([el]) => el) : []
@@ -521,7 +522,7 @@ export function createCssEngine(host: RunnerHost, fallback: () => Promise<Runner
         // Each its own look, delay and timing; the stagger is the name's.
         const each = g.each[i]!
         const delay =
-          ((each.delay ?? 0) + staggerAt(g.motion.stagger, i, g.els.length, target)) * 1000
+          ((each.delay ?? 0) + staggerAt(g.motion.stagger, i, g.els.length, target, g.els)) * 1000
         start$(
           target as HTMLElement,
           valuesAt(each.initial, { direction: m.direction, index: i, count: g.els.length }) ?? {},

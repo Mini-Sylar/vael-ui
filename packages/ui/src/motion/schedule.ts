@@ -6,6 +6,7 @@ import type { MotionValues, Spring, TargetMotion } from './types'
 import { entered, started } from './finish'
 import { runHook } from './hook'
 import { prefersReducedMotion } from '../composables/dom'
+import { namedOnPage } from './presence'
 
 interface Deferred<T = void> {
   promise: Promise<T>
@@ -67,6 +68,31 @@ function cyclic(targets: ScheduledTarget[]): Set<string> {
 }
 
 /**
+ * `after` naming elements already on the page: what they're playing now (a change to their
+ * `animate`, a state), once their player has had a frame to start it. Never a loop.
+ */
+async function alreadyThere(name: string, moment: string, when?: string): Promise<void> {
+  const els = namedOnPage(name)
+  if (!els.length) {
+    warn(`\`after: '${moment}'\` names nothing on the page; starting without waiting.`)
+    return
+  }
+  if (when === 'start') return
+  await new Promise(requestAnimationFrame)
+  const runs = els.flatMap((el) =>
+    el
+      .getAnimations()
+      .filter(
+        (run) =>
+          run.playState === 'running' &&
+          !(run.timeline && !(run.timeline instanceof DocumentTimeline)) &&
+          Number.isFinite(run.effect?.getComputedTiming().endTime ?? Infinity),
+      ),
+  )
+  await Promise.allSettled(runs.map((run) => run.finished))
+}
+
+/**
  * Plays every target in. `parts` are the component's own moments (`panel`), so targets can wait on them.
  * Resolves when everything has settled or `signal` aborts.
  */
@@ -96,10 +122,7 @@ export async function runTargets(
   const waitFor = (moment: string): Promise<void> => {
     const [name, when] = moment.split(':') as [string, string | undefined]
     const m = moments.get(name)
-    if (!m) {
-      warn(`\`after: '${moment}'\` names nothing that was marked; starting without waiting.`)
-      return Promise.resolve()
-    }
+    if (!m) return alreadyThere(name, moment, when)
     if (when?.endsWith('%')) {
       const share = Number.parseFloat(when) / 100
       return m.span.promise.then((span) => sleep(Math.max(0, span * share)))
@@ -130,12 +153,12 @@ export async function runTargets(
       }
       const timing = resolveTiming(first, motion, options.spring)
       const at = (i: number) =>
-        staggerAt(motion.stagger, i, els.length, first) + delays[i]! - shared
+        staggerAt(motion.stagger, i, els.length, els[i], els) + delays[i]! - shared
       const lastStart = Math.max(0, ...els.map((_, i) => at(i))) * 1000
       startMoments(m, lastStart + timing.arrival)
       await Promise.all(
         els.map((el, i) =>
-          playTarget(el, own(i), at(i), options, waitFor, i).then(() => {
+          playTarget(el, own(i), at(i), options, waitFor, i, els.length).then(() => {
             if (!options.signal.aborted) entered(el)
           }),
         ),
@@ -153,6 +176,7 @@ async function playTarget(
   options: { spring?: Spring; signal: AbortSignal },
   waitFor: (moment: string) => Promise<void>,
   index = 0,
+  count = 1,
 ): Promise<void> {
   // Your own `enter`: it plays instead of `initial`, after its delay.
   if (motion.enter) {
@@ -166,7 +190,7 @@ async function playTarget(
     ])
   }
   const timing = resolveTiming(el, motion, options.spring)
-  const initial = valuesAt(motion.initial, { direction: 0, index }) ?? {}
+  const initial = valuesAt(motion.initial, { direction: 0, index, count }) ?? {}
   if (!motion.steps?.length) {
     started(el, delay * 1000)
     await playValues(el, initial, { direction: 'in', timing, delay })

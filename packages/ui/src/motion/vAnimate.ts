@@ -10,7 +10,7 @@ import type {
   ShallowRef,
   VNode,
 } from 'vue'
-import { findPresence } from './presence'
+import { findPresence, markLeaving, markNamed } from './presence'
 import {
   arriveLayout,
   exitFrom,
@@ -57,6 +57,7 @@ type Marked = HTMLElement & {
   _uiLeavingPlace?: LeavingPlace
   _uiTarget?: ReturnType<typeof import('./animateTarget').holdTarget>
   _uiTargetKey?: string
+  _uiTargetReplay?: unknown
   /** It has held a look: one coming back after none animates in. */
   _uiHeld?: boolean
   /** What the look written at mount covered, put back once its player holds it. */
@@ -140,7 +141,11 @@ function followTarget(el: Marked, value: AnimateDirectiveValue | undefined, gone
     })
     return
   }
-  if (key === el._uiTargetKey) return
+  // `replay` changed: the same look plays its keyframes again from the start.
+  const replay = typeof value === 'object' ? value.replay : undefined
+  const replayed = el._uiTargetKey !== undefined && !Object.is(replay, el._uiTargetReplay)
+  el._uiTargetReplay = replay
+  if (key === el._uiTargetKey && !replayed) return
   // A look back after none: it animates in from its own, as any change does.
   const changed = el._uiTargetKey !== undefined || !!el._uiHeld
   el._uiTargetKey = key
@@ -308,7 +313,7 @@ function leaving(value: AnimateDirectiveValue | undefined) {
   // Your own `leave` plays instead of any values.
   if (value.leave) return { values: {}, timing: EXIT, hook: value.leave }
   if (value.exit === false) return undefined
-  const where = { direction: 0 as const, index: 0 }
+  const where = { direction: 0 as const, index: 0, count: 1 }
   const exit = valuesAt(value.exit, where)
   if (exit) return { values: exit, timing: ownTiming(value) ? (value as MotionTiming) : EXIT }
   const initial = valuesAt(value.initial, where)
@@ -323,13 +328,16 @@ function leaveIfRemoved(
   el: HTMLElement,
   value: AnimateDirectiveValue | undefined,
   place?: LeavingPlace,
+  name?: string,
 ) {
   const look = leaving(value)
   const gone = () => left(el, call(el as Marked, 'onAfterLeave'))
   // Off screen, scrolled away (a recycled row) or motion off: it just goes.
-  if (look && place && seen(place.box) && !scrolling() && !motionOffAt(el))
-    void leaveInPlace(el, place, look.values, look.timing, look.hook).then(gone)
-  else gone()
+  if (look && place && seen(place.box) && !scrolling() && !motionOffAt(el)) {
+    const done = leaveInPlace(el, place, look.values, look.timing, look.hook).then(gone)
+    // What replaces it under its name with `swap: 'wait'` waits for this.
+    if (name) markLeaving(name, done)
+  } else gone()
 }
 
 /**
@@ -394,6 +402,7 @@ function join(
   value: AnimateDirectiveValue | undefined,
 ): void {
   el._uiAnimateLeave?.()
+  if (name) markNamed(el, name)
   const presence = (el._uiPresence = findPresence(el))
   if (!presence) return appearAlone(el, name, value)
   // `appear: false`: it doesn't come in with the component; its exit stays. `'later'` the
@@ -520,7 +529,12 @@ export const vAnimate: ObjectDirective<
       join(el as Marked, binding.arg, value)
   },
   unmounted(el, binding) {
-    leaveIfRemoved(el, resolved(el, valueOf(el, binding)), (el as Marked)._uiLeavingPlace)
+    leaveIfRemoved(
+      el,
+      resolved(el, valueOf(el, binding)),
+      (el as Marked)._uiLeavingPlace,
+      binding.arg,
+    )
     unwatchView(el)
     ;(el as Marked)._uiAnimateLeave?.()
     ;(el as Marked)._uiSizeStop?.()
@@ -705,7 +719,7 @@ export function vAnimateVapor(
     const id = layoutIdOf(current)
     if (id && el.isConnected) rememberLayout(el, id)
     const leavingValue = resolved(el, current)
-    leaveIfRemoved(el, leavingValue, leaving(leavingValue) ? placeOnLeave(el) : undefined)
+    leaveIfRemoved(el, leavingValue, leaving(leavingValue) ? placeOnLeave(el) : undefined, name)
   })
   // Vapor has no list of the element's directives: one that can come and go watches `v-show`.
   const initialValue = latest

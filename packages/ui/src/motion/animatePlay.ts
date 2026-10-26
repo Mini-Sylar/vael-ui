@@ -6,7 +6,7 @@ import { staggerAt } from './playable'
 import { repeating } from './repeatPlan'
 import { motionOffAt, motionSpringAt } from './styleHolder'
 import { easingOf, resolveTiming, track } from './timing'
-import type { AnimateOptions, MotionTiming, MotionValues } from './types'
+import type { AnimateOptions, MotionTiming, MotionValues, TweenOptions } from './types'
 import { groupValues, preparePath, repeatOf, toKeyframe, toKeyframes } from './values'
 
 // What only fades under reduced motion; the rest goes straight to its end.
@@ -32,6 +32,7 @@ export function playOn(
   options: AnimateOptions,
   index: number,
   count: number,
+  all?: readonly Element[],
 ): Animation[] {
   preparePath(el, input)
   // What's still moving from a last call stays where it is, then gives way.
@@ -56,7 +57,7 @@ export function playOn(
   const rtl = getComputedStyle(el).direction === 'rtl'
   const style = getComputedStyle(el)
   const spring = motionSpringAt(el)
-  const delay = ((options.delay ?? 0) + staggerAt(options.stagger, index, count, el)) * 1000
+  const delay = ((options.delay ?? 0) + staggerAt(options.stagger, index, count, el, all)) * 1000
   const runs: Animation[] = []
   for (const group of groupValues(values)) {
     if (!Object.keys(group.values).length) continue
@@ -117,4 +118,38 @@ export function playOn(
   }
   playing.set(el, runs)
   return runs
+}
+
+/**
+ * A number from `from` to `to`: an animation with no element, so the browser eases it as it would
+ * a style (any easing, a spring as `linear()`), and its progress is the value each frame.
+ */
+export function tweenOn(
+  from: number,
+  to: number,
+  options: TweenOptions,
+  onUpdate: (value: number) => void,
+): Animation | undefined {
+  const root = document.documentElement
+  const { duration, easing } = resolveTiming(root, options, motionSpringAt(root))
+  const effect = new KeyframeEffect(null, null, {
+    duration,
+    easing,
+    delay: (options.delay ?? 0) * 1000,
+    fill: 'both',
+  })
+  const run = new Animation(effect, document.timeline)
+  const tick = () => {
+    if (run.playState === 'idle') return
+    const progress = effect.getComputedTiming().progress ?? 1
+    onUpdate(from + (to - from) * progress)
+    if (run.playState !== 'finished') requestAnimationFrame(tick)
+  }
+  run.play()
+  requestAnimationFrame(tick)
+  void run.finished.then(
+    () => onUpdate(to),
+    () => {},
+  )
+  return run
 }

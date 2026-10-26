@@ -8,7 +8,16 @@ import { prefersReducedMotion } from '../composables/dom'
 import { easingOf, resolveTiming, track } from './timing'
 import { springEasing } from './springEasing'
 import { isTimed } from './playable'
-import type { MotionTiming, MotionValues, MotionWhere, PartValues, Spring, Viewport } from './types'
+import type {
+  AnimateState,
+  AnimateStates,
+  MotionTiming,
+  MotionValues,
+  MotionWhere,
+  PartValues,
+  Spring,
+  Viewport,
+} from './types'
 import { repeating } from './repeatPlan'
 import { groupValues, preparePath, repeatOf, splitFrame, toKeyframe, toKeyframes } from './values'
 
@@ -16,7 +25,7 @@ const STATE_ID = 'ui-state'
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
 const FADE_CAP = 250
 const ONCE_CAP = 600
-const WHERE: MotionWhere = { direction: 0, index: 0 }
+const WHERE: MotionWhere = { direction: 0, index: 0, count: 1 }
 // Reduced motion drops movement and keeps colour and opacity.
 const MOVES = new Set(['x', 'y', 'translate', 'scale', 'rotate', 'transform'])
 
@@ -461,11 +470,29 @@ export function startStates(ctx: StatesContext): void {
       const {
         onAfterEnter: _,
         onAfterLeave: __,
+        replay: ___,
         ...parts
-      } = byPart as PartValues<string> & Partial<Record<Callback, unknown>>
+      } = byPart as PartValues<string> & Partial<Record<Callback | 'replay', unknown>>
       out[state] = parts
     }
     return out
+  }
+  // `replay` on a state: the states whose value changed since this player last looked (each
+  // player keeps its own, so the main one and a repeated part's both see the change).
+  const replays = () =>
+    new Map(
+      Object.entries(ctx.spec()).map(([state, v]) => [state, (v as { replay?: unknown }).replay]),
+    )
+  function replayTracker() {
+    let last = replays()
+    return (): string[] => {
+      const now = replays()
+      const changed = [...now.keys()].filter(
+        (s) => last.has(s) && !Object.is(now.get(s), last.get(s)),
+      )
+      last = now
+      return changed
+    }
   }
   // The main player's spec: every part but the repeated ones, which play element by element.
   const mainSpec = (): StateSpec => {
@@ -554,7 +581,10 @@ export function startStates(ctx: StatesContext): void {
   const atSetup = ctx.initial ? flagsOf(Object.keys(first.spec), ctx.initial, pointer) : first.flags
   player.update({ ...first, flags: atSetup, instant: true })
   reported(player.update(first))
-  watch(frame, (next) => reported(player.update(next)), { flush: 'post' })
+  const mainReplayed = replayTracker()
+  watch(frame, (next) => reported(player.update({ ...next, again: mainReplayed() })), {
+    flush: 'post',
+  })
 
   // A repeated part: each element its own player, pointer and states, and its index as `where`.
   type One = { player: ReturnType<typeof createStatePlayer>; pointer: Pointer; stop?: () => void }
@@ -605,12 +635,14 @@ export function startStates(ctx: StatesContext): void {
     return out
   }
   let firstFrames = true
+  const eachReplayed = replayTracker()
   watch(
     frames,
     (next) => {
+      const again = eachReplayed()
       for (const [, one, f, fresh] of next) {
         if (!fresh) {
-          reported(one.player.update(f))
+          reported(one.player.update({ ...f, again: again.filter((s) => s in f.spec) }))
           continue
         }
         // There since setup: shown as it was then, then caught up. Added later: shown as it is.
@@ -637,15 +669,17 @@ export function startStates(ctx: StatesContext): void {
 /** @internal v-animate's `states` on its own element: hover, press and focus, as a component's. */
 export function holdElementStates(
   el: Element,
-  states: () => Partial<Record<string, MotionValues>> | undefined,
+  states: () => AnimateStates | undefined,
   timing: () => MotionTiming,
   spring: () => Spring | undefined,
   viewport: () => Viewport | undefined = () => undefined,
 ): () => void {
   const scope = effectScope(true)
   scope.run(() => {
-    // `inView`: watched only while a look asks for it; with `once`, it stays once seen.
+    // `inView`: watched only while a look asks for it; with `once`, it stays once seen. Its own
+    // `viewport` wins over the element's.
     const seen = shallowRef(false)
+    const inViewport = () => states()?.inView?.viewport ?? viewport()
     let stop: (() => void) | undefined
     watch(
       () => !!states()?.inView,
@@ -658,8 +692,8 @@ export function holdElementStates(
         stop = () => (live = false)
         void import('./viewport').then((kit) => {
           if (!live) return
-          stop = kit.watchViewport(el, viewport(), '0px', (now) => {
-            seen.value = now || (!!viewport()?.once && seen.value)
+          stop = kit.watchViewport(el, inViewport(), '0px', (now) => {
+            seen.value = now || (!!inViewport()?.once && seen.value)
           })
         })
       },
@@ -670,10 +704,29 @@ export function holdElementStates(
       mainPart: 'root',
       parts: () => ({ root: el }),
       states: () => ({ inView: seen.value }),
+      // Its callbacks get the element; the player sees the values alone.
       spec: () =>
         Object.fromEntries(
-          Object.entries(states() ?? {}).map(([state, values]) => [state, { root: values }]),
-        ),
+          Object.entries(states() ?? {}).map(([state, look]) => {
+            const {
+              onAfterEnter,
+              onAfterLeave,
+              viewport: _,
+              ...values
+            } = look as AnimateState & {
+              viewport?: unknown
+            }
+            const target = el as HTMLElement
+            return [
+              state,
+              {
+                root: values,
+                onAfterEnter: onAfterEnter && (() => onAfterEnter(target)),
+                onAfterLeave: onAfterLeave && (() => onAfterLeave(target)),
+              },
+            ]
+          }),
+        ) as StateSpec,
       timing,
       spring,
     })

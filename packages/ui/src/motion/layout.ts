@@ -15,8 +15,21 @@ import { groupValues, reducePresence, toKeyframe } from './values'
 // Just now: the same flush, however long that render takes, or soon after it (a late tick, an
 // async part). Timed from the flush's end: a slow render used to run the clock out mid-swap.
 const FRESH = 34
-const boxes = new Map<string, { box: DOMRect; at: number }>()
+// Every box that just left under an id, with where it sat (its parent), so each newcomer can take
+// the one nearest it: two copies of a tab row on a page each keep their own underline.
+type Left = { box: DOMRect; at: number; near: Element | null }
+const boxes = new Map<string, Left[]>()
 const fresh = (left: { at: number }) => performance.now() - left.at <= FRESH
+// How deep the nearest element holding both sits: deeper is closer.
+function closeness(near: Element | null, el: Element): number {
+  for (let at = near; at; at = at.parentElement)
+    if (at.contains(el)) {
+      let depth = 0
+      for (let up: Element | null = at; up; up = up.parentElement) depth++
+      return depth
+    }
+  return 0
+}
 
 // Boxes read as the owner starts to re-render: by the time one leaves, the same flush may have
 // moved it (a row inserted above). Dropped once the flush is over.
@@ -76,11 +89,15 @@ export function notePaintedSiblings(el: Element): void {
 export function rememberLayout(el: Element, id: string): void {
   const box = painted.get(el) ?? el.getBoundingClientRect()
   // Ids that left and never came back: dropped, so one id per item can't grow this for good.
-  for (const [key, left] of boxes) if (!fresh(left)) boxes.delete(key)
+  for (const [key, list] of boxes) {
+    const kept = list.filter(fresh)
+    if (kept.length) boxes.set(key, kept)
+    else boxes.delete(key)
+  }
   if (!box.width && !box.height) return
   // Still in its flush until the microtasks after it.
-  const left = { box, at: Infinity }
-  boxes.set(id, left)
+  const left: Left = { box, at: Infinity, near: el.parentElement }
+  boxes.set(id, [...(boxes.get(id) ?? []), left])
   queueMicrotask(() => (left.at = performance.now()))
 }
 
@@ -98,9 +115,15 @@ export function arriveLayout(
   moved?: () => void,
 ): void {
   queueMicrotask(() => {
-    const before = boxes.get(id)
-    boxes.delete(id)
-    if (!before || !fresh(before)) return otherwise()
+    // The nearest of those that just left; the latest of equally near ones.
+    const list = (boxes.get(id) ?? []).filter(fresh)
+    let before: Left | undefined
+    for (const left of list)
+      if (!before || closeness(left.near, el) >= closeness(before.near, el)) before = left
+    const rest = list.filter((left) => left !== before)
+    if (rest.length) boxes.set(id, rest)
+    else boxes.delete(id)
+    if (!before) return otherwise()
     if (prefersReducedMotion() || pageHidden() || motionOffAt(el)) return moved?.()
     const now = el.getBoundingClientRect()
     const run = slide(el, before.box, now, timing)

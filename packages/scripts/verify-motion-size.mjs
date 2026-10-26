@@ -101,12 +101,24 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '../ui/dist')
 // their `after` and `steps` (the timeline itself loads with the runtime), `inView` states wait for
 // the entrance, `exitOrder: 'reverse'` covers parts, `scaleX` / `scaleY`, and a dev warning for a
 // GSAP hook that wasn't returned. Measured 9013, 7506, 1392, 7433 and 3135 B.
+// runtime 7.35 → 7.55 KB, states 7.3 → 7.6 KB (2026-10-26): `after` waits on an element already
+// on the page, an overlay's `stagger` sequences its parts, a state's `replay` plays its keyframes
+// again while it's on, and `v-animate`'s states take callbacks and `inView` its own viewport. All
+// load only with the runtime or the states player. Measured 7683 and 7746 B.
+// up front 8.85 → 9.05 KB (2026-10-26): what must be there when a component opens: an element's
+// entry kept past its removal (its name's `onAfterLeave` runs for a row removed on its own), the
+// names `after` can find on the page, an overlay's part `stagger` in the CSS engine, and `replay`
+// redrawing `animate`'s keyframes. Measured 9244 B.
+// up front 9.05 → 9.4 KB, states 7.6 → 7.85 KB (2026-10-26): `'center'` and `'edges'` stagger by
+// where each element sits across a grid (measured once per group, needed as soon as an entrance
+// starts), and `swap: 'wait'`, which notes what's leaving under each name for a page that waits.
+// The states player shares the stagger code. Measured 9546 and 7978 B.
 const BUDGET = {
-  upFront: 8.85 * 1024,
-  runtime: 7.35 * 1024,
+  upFront: 9.4 * 1024,
+  runtime: 7.55 * 1024,
   morph: 1.55 * 1024,
   button: 1.38 * 1024,
-  states: 7.3 * 1024,
+  states: 7.85 * 1024,
   linked: 3.1 * 1024,
 }
 

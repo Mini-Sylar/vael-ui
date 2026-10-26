@@ -5,7 +5,14 @@ import { computed, getCurrentScope, inject, onScopeDispose, shallowRef, watch } 
 import type { ComputedRef, InjectionKey, ShallowRef, TransitionProps } from 'vue'
 import { pageHidden } from '../composables/dom'
 import { PRESENCE_ID } from './ids'
-import { collectEntries, PRESENCE_ATTR, presenceFor, refElement, TARGET_ATTR } from './presence'
+import {
+  collectEntries,
+  entryOf,
+  PRESENCE_ATTR,
+  presenceFor,
+  refElement,
+  TARGET_ATTR,
+} from './presence'
 import type { PresenceEntry } from './presence'
 import { resolveMotion, useMotionStyle } from './context'
 import type { ResolvedMotion } from './context'
@@ -138,8 +145,9 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
     (el: Element, name: 'onStart' | 'onAfterEnter' | 'onAfterLeave') => (): boolean => {
       // Remembered: by the time it has closed, Vue has let go of the root's ref.
       const root = currentRoot()
-      const entry = root && collectEntries(root, resolved.value.targets).find((e) => e.el === el)
-      // Gone on its own while this stays open (a row removed): no longer listed, it runs its own.
+      const entry =
+        root &&
+        (collectEntries(root, resolved.value.targets).find((e) => e.el === el) ?? entryOf(el))
       if (!entry) return false
       // Its own (`v-animate`'s value), else its name's in `targets`.
       const own = typeof entry.motion === 'object' ? entry.motion : undefined
@@ -187,7 +195,7 @@ export function useComponentMotion(options: ComponentMotionOptions): ComponentMo
           if (resolved.value.off) return entered(el)
           const play = () => {
             const group = targetsOf([entry], resolved.value, true)[0]
-            const where = { direction: resolved.value.direction, index: 0 }
+            const where = { direction: resolved.value.direction, index: 0, count: 1 }
             const initial = valuesAt(group?.motion.initial, where)
             if (!group || !initial) return entered(el)
             void cssModule

@@ -57,6 +57,7 @@ const PER_BUILD_MODULES = new Set([
   'composables/numberParts',
   'composables/useTextOverlay',
   'motion/styleHolder',
+  'motion/hook',
 ])
 const OUT_DIR = join(__dirname, '../vapor-ui/src/generated')
 

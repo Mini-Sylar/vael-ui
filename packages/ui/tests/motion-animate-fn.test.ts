@@ -1,5 +1,5 @@
 import '../src/style.css'
-import { afterEach, expect, test } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-vue'
 import { defineComponent, h, nextTick, shallowRef } from 'vue'
 import ConfigProvider from '../src/components/ConfigProvider/ConfigProvider.vue'
@@ -119,4 +119,40 @@ test('useAnimate scopes selectors to its element and stops its runs on unmount',
   shown.value = false
   await nextTick()
   await run
+})
+
+test('useAnimate takes a template ref as its scope', async () => {
+  const { defineComponent, h: hh, useTemplateRef } = await import('vue')
+  const { useAnimate } = await import('../src/motion/animate')
+  let played: Promise<unknown> | undefined
+  const Row = defineComponent({
+    setup() {
+      const { animate } = useAnimate(useTemplateRef('row'))
+      return () =>
+        hh('div', { ref: 'row' }, [
+          hh(
+            'span',
+            {
+              class: 'hit',
+              onClick: () =>
+                (played = animate('.hit', { opacity: [1, 0.5, 1] }, { duration: 200 }).finished),
+            },
+            'In',
+          ),
+        ])
+    },
+  })
+  const { render: mount } = await import('vitest-browser-vue')
+  const screen = await mount(Row)
+  // Outside the row, the same class isn't touched.
+  const outside = document.createElement('span')
+  outside.className = 'hit'
+  document.body.append(outside)
+  screen.container.querySelector<HTMLElement>('.hit')!.click()
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector('.hit')!.getAnimations().length).toBeGreaterThan(0),
+  )
+  expect(outside.getAnimations()).toHaveLength(0)
+  await played
+  outside.remove()
 })

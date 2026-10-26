@@ -160,8 +160,8 @@ export interface MotionWhere {
   direction: 1 | -1 | 0
   /** In a list or a group: its position. */
   index: number
-  /** In a list or a group: how many there are, or how many come or go together. */
-  count?: number
+  /** In a list or a group: how many there are, or how many come or go together; else `1`. */
+  count: number
 }
 
 /**
@@ -267,8 +267,9 @@ export type StaggerFrom = 'end' | 'center' | 'edges'
 
 /**
  * Elements one after another: `true` spaces them by the stagger token (40ms) in page order;
- * `'end'`, `'center'` or `'edges'` start the wave there instead. A number is the seconds between
- * them; a function gives each its own start: `(index, count) => seconds`.
+ * `'end'`, `'center'` or `'edges'` start the wave there instead (across a grid, `'center'` and
+ * `'edges'` go by where each sits: from the middle cell, or from the corners). A number is the
+ * seconds between them; a function gives each its own start: `(index, count) => seconds`.
  */
 export type Stagger = boolean | StaggerFrom | number | ((index: number, count: number) => number)
 
@@ -282,13 +283,20 @@ export type TargetMotion<N extends string = string> = MotionTiming & {
   exit?: MotionValues | ((where: MotionWhere) => MotionValues) | false
   /** The elements under this name one after another, in page order (see `Stagger`). */
   stagger?: Stagger
-  /** After this moment, or after all of these. Unset: with the component. */
+  /**
+   * After this moment, or after all of these. Unset: with the component. A name with nothing
+   * appearing alongside it waits for what the elements under it on the page are playing now
+   * (a change to their `animate`, a state): a stamp once the tag's shudder is done.
+   */
   after?: MotionMoment<N> | MotionMoment<N>[]
   delay?: number
   steps?: MotionStep<N>[]
   /** Find the elements with a selector inside the component instead of marking them. */
   select?: keyof HTMLElementTagNameMap | (string & {})
-  /** Plays `initial` again whenever this value changes, without remounting the element. */
+  /**
+   * Plays `initial` again whenever this value changes, without remounting the element, and
+   * `animate`'s keyframes from the start: a line that draws itself again on each new period.
+   */
   replay?: unknown
   /**
    * Elements sharing a `layoutId` are one element moving between places: when one leaves and
@@ -384,6 +392,11 @@ export type StateMotion<S extends string, P extends string, R extends string = n
     onAfterEnter?: (parts: PartElements<P, R>) => void
     /** Runs once the state has turned off and its parts are back to their own look. */
     onAfterLeave?: (parts: PartElements<P, R>) => void
+    /**
+     * While the state is on, its keyframes play again whenever this value changes: a second wrong
+     * code shakes again though the field never stopped being invalid (`replay: attempts`).
+     */
+    replay?: unknown
   }
 }
 
@@ -465,9 +478,14 @@ type OverlayMotion = {
    * the panel goes clear while open.
    */
   surface?: MotionValues
+  /**
+   * Opening: the parts you give an `initial` (header, body, footer) come in one after another, in
+   * page order, as the panel opens (see `Stagger`).
+   */
+  stagger?: Stagger
   /** Closing: `'together'` (default) or `'reverse'`, children first, adding about 200 ms at most. */
   exitOrder?: 'together' | 'reverse'
-  /** The panel eases to its content's new size (wizard steps, switched views); `false` snaps to it. */
+  /** The panel eases to its content's new size (wizard steps, switched views); `false` snaps to it. @default true */
   resize?: boolean
 }
 type ListMotion = {
@@ -838,10 +856,23 @@ export type ChipMotion = ComponentMotion<{
 /** Collapsible's parts, by their `ui` names: the elements its `motion` can animate. */
 export type CollapsiblePart = 'root' | 'trigger' | 'panel'
 /** Collapsible: its appearance and states. */
-export type CollapsibleMotion = ComponentMotion<{
-  parts: CollapsiblePart
-  states: 'open' | 'disabled'
-}>
+type CollapsibleHook = MotionHook<
+  CollapsiblePart | 'body',
+  { signal: AbortSignal; reducedMotion: boolean }
+>
+/**
+ * Collapsible: its appearance and states, and your own opening and closing. With a hook its
+ * height no longer eases: `enter` runs once the panel is open (animate it from closed), and
+ * `leave` before it closes, which waits for what it returns.
+ */
+export type CollapsibleMotion =
+  | Extract<ComponentMotion<{ parts: CollapsiblePart; states: 'open' | 'disabled' }>, boolean>
+  | (Exclude<ComponentMotion<{ parts: CollapsiblePart; states: 'open' | 'disabled' }>, boolean> & {
+      enter?: CollapsibleHook
+      leave?: CollapsibleHook
+      /** Under reduced motion, hooks are skipped unless this is `'run'`. @default 'skip' */
+      reducedMotion?: 'skip' | 'run'
+    })
 
 /** Dial's parts, by their `ui` names: the elements its `motion` can animate. */
 export type DialPart = 'root' | 'track' | 'fill' | 'face' | 'ticks'
@@ -1225,7 +1256,23 @@ export interface MotionPresets {}
 export type PresetName = BuiltinPreset | keyof MotionPresets
 
 /** `v-animate`'s `states`: a look per state, held while it's on. */
-export type AnimateStates = Partial<Record<'hover' | 'active' | 'focus' | 'inView', MotionValues>>
+/** A look `v-animate` holds in a state, and what runs as the state turns on and off. */
+export type AnimateState = MotionValues & {
+  /**
+   * Runs once the state has turned on and its look has played, while it's still on: mark the
+   * section you're reading in the contents. At once when nothing plays.
+   */
+  onAfterEnter?: (el: HTMLElement) => void
+  /** Runs once the state has turned off and the element is back to its own look. */
+  onAfterLeave?: (el: HTMLElement) => void
+}
+export type AnimateStates = Partial<Record<'hover' | 'active' | 'focus', AnimateState>> & {
+  /**
+   * In view. Its own `viewport` counts for this state only, so an entrance (`when: 'visible'`)
+   * can start as the element peeks in while this holds only once half of it shows.
+   */
+  inView?: AnimateState & { viewport?: Viewport }
+}
 
 /** `animate()`'s options: its timing, when it starts, and how keyframes repeat. */
 export type AnimateOptions = MotionTiming & {
@@ -1243,6 +1290,15 @@ export type AnimateOptions = MotionTiming & {
   repeatDelay?: number
   /** Keyframes, repeating: as each repeat starts, with how many it has done. */
   onRepeat?: (count: number) => void
+}
+
+/**
+ * `useTween`'s timing: the app's spring by default, or your own `spring`, or a `duration` (ms) and
+ * `easing`, as everywhere else.
+ */
+export type TweenOptions = MotionTiming & {
+  /** Seconds before each change starts moving. */
+  delay?: number
 }
 
 /** When it counts as in view, for `when: 'visible'` and `states.inView`. */
@@ -1276,6 +1332,11 @@ export type AnimateDirectiveValue =
        * @default true
        */
       appear?: boolean | 'later'
+      /**
+       * Replacing another under the same name (a page, a wizard step): `'wait'` comes in once that
+       * one has left; `'sync'` (default) crosses them. `v-animate:page="{ …, swap: 'wait' }"`.
+       */
+      swap?: 'sync' | 'wait'
       /**
        * Looks it holds while hovered (a mouse), pressed (`active`: pointer, Space or Enter),
        * focused or in view (`inView`, by its `viewport`): `{ hover: { scale: 1.03 } }`.

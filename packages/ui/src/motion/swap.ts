@@ -47,6 +47,7 @@ function look(el: Element, host: SwapHost, field: 'initial' | 'exit') {
     valuesAt(motion?.[field] ?? (part ? m[field][part] : undefined), {
       direction: m.direction,
       index: 0,
+      count: 1,
     }) ?? QUIET
   return {
     values: prefersReducedMotion() ? reducePresence(values) : values,

@@ -110,7 +110,8 @@ test('rapid double-toggle (open then close before settling) does not strand a pi
 
   await vi.waitFor(() => expect(panel.dataset.state).toBe('closed'))
   expect(panel.style.blockSize).toBe('0px')
-  expect(panel.style.visibility).toBe('hidden')
+  // Closed: out of the page, yet findable.
+  await vi.waitFor(() => expect(panel.getAttribute('hidden')).toBe('until-found'))
 })
 
 test('ArrowDown/ArrowUp/Home/End move focus between enabled triggers, wrapping at the ends', async () => {

@@ -17,7 +17,7 @@ export function firstPaint(motion: TargetMotion): Record<string, unknown> | unde
   if (motion.when === 'visible' || motion.layoutId || motion.steps || motion.after) return undefined
   const initial =
     typeof motion.initial === 'function'
-      ? motion.initial({ direction: 0, index: 0 })
+      ? motion.initial({ direction: 0, index: 0, count: 1 })
       : motion.initial
   if (!initial) return undefined
   const vars: Record<string, string> = {}

@@ -118,7 +118,7 @@ export const badAfter: DialogMotion<'title'> = { targets: { title: { after: 'tit
 export const badMoment: DialogMotion<'title'> = { targets: { title: { after: 'title:end' } } }
 
 // @ts-expect-error list keys don't exist on an overlay
-export const notAList: DialogMotion = { stagger: 0.05 }
+export const notAList: DialogMotion = { leaving: 'pop' }
 
 // @ts-expect-error overlay keys don't exist on a list
 export const notAnOverlay: ToasterMotion = { morph: 'trigger' }

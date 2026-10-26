@@ -135,7 +135,7 @@ export function OwnSheet() {
 }
 export function OwnSheetTypo() {
   // @ts-expect-error not an overlay key
-  return useMotion('overlay', () => ({ stagger: 0.04 }))
+  return useMotion('overlay', () => ({ leaving: 'hold' }))
 }
 
 // 19. Confirm before discarding a form: the guard returns confirmAction's promise.

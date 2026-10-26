@@ -10,6 +10,7 @@ import type { Moments } from './schedule'
 import type { MotionPhase, MotionResult, MotionValues } from './types'
 import type { Runner, RunnerHost } from './host'
 import { exitOf, targetsOf } from './targets'
+import { partDelays, SHELL } from './playable'
 import { runHook } from './hook'
 import { motionWarn } from './warn'
 
@@ -215,6 +216,7 @@ export function createRunner(host: RunnerHost): Runner {
     }
     const moments = new Map<string, Moments>()
     const plays: Promise<void>[] = []
+    const delays = partDelays(parts, motion.initial, motion.stagger, SHELL(host.mainPart))
     for (const [part, partEl] of Object.entries(parts)) {
       if (!partEl) continue
       const values = motion.initial[part]
@@ -229,6 +231,7 @@ export function createRunner(host: RunnerHost): Runner {
               timing,
               engine: motion.engine,
               from: turnedFrom(part, partEl),
+              delay: delays[part],
             })
           : Promise.resolve()
         ).then(() => {

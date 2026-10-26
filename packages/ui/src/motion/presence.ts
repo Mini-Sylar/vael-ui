@@ -26,6 +26,40 @@ export const PRESENCE_ATTR = 'data-ui-presence'
 export const TARGET_ATTR = 'data-ui-target'
 
 const byRoot = new WeakMap<Element, Presence>()
+// Kept past its removal: a row removed on its own still runs its name's callbacks as it leaves.
+const lastEntry = new WeakMap<Element, PresenceEntry>()
+
+/** What an element registered as, even once it has left its component's list. */
+export const entryOf = (el: Element): PresenceEntry | undefined => lastEntry.get(el)
+
+// Every named `v-animate` element, so `after` can wait on one that's already on the page.
+const byName = new Map<string, Set<Element>>()
+export function markNamed(el: Element, name: string): void {
+  const set = byName.get(name) ?? new Set()
+  set.add(el)
+  byName.set(name, set)
+}
+// Exits still playing, by name: a newcomer with `swap: 'wait'` comes in once they're done.
+const leavingByName = new Map<string, Set<Promise<unknown>>>()
+export function markLeaving(name: string, done: Promise<unknown>): void {
+  const set = leavingByName.get(name) ?? new Set()
+  set.add(done)
+  leavingByName.set(name, set)
+  void done.finally(() => set.delete(done))
+}
+/** Once every exit under this name has played; nothing when none is playing. */
+export function leavingUnder(name: string): Promise<unknown> | undefined {
+  const set = leavingByName.get(name)
+  return set?.size ? Promise.allSettled(set) : undefined
+}
+
+/** The elements under this name still on the page. */
+export function namedOnPage(name: string): Element[] {
+  const set = byName.get(name)
+  if (!set) return []
+  for (const el of set) if (!el.isConnected) set.delete(el)
+  return [...set]
+}
 
 function createPresence(): Presence {
   const list: PresenceEntry[] = []
@@ -34,6 +68,7 @@ function createPresence(): Presence {
       // A `:ref` written inline is a new function each render; the same element registers once.
       const existing = list.find((e) => e.el === el && e.name === name)
       const entry = existing ?? { el, name, motion }
+      lastEntry.set(el, entry)
       if (existing) existing.motion = motion ?? existing.motion
       else {
         list.push(entry)

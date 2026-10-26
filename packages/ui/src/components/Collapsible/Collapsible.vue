@@ -22,10 +22,10 @@
       :class="panelPart.class"
       :style="[collapseStyle, panelPart.style]"
       :data-state="collapseState"
-      :aria-hidden="collapseState === 'closed' ? 'true' : undefined"
-      :inert="collapseState === 'closed'"
+      :aria-hidden="collapseState === 'closed' && !findable ? 'true' : undefined"
+      :inert="collapseState === 'closed' && !findable"
     >
-      <div :class="bodyPart.class" :style="bodyPart.style">
+      <div ref="body" :class="bodyPart.class" :style="bodyPart.style">
         <slot />
       </div>
     </div>
@@ -38,14 +38,25 @@ import './Collapsible.css'
 import { withProviderDefaults } from '../../config'
 import '../shared/tokens.css'
 import '../../motion/timing.css'
-import { computed, shallowRef, useAttrs, useId, useTemplateRef, watchEffect } from 'vue'
+import {
+  computed,
+  nextTick,
+  shallowRef,
+  useAttrs,
+  useId,
+  useTemplateRef,
+  watch,
+  watchEffect,
+} from 'vue'
+import { prefersReducedMotion } from '../../composables/dom'
+import { runHook } from '../../motion/hook'
 import { useMutationObserver } from '@vueuse/core'
 import { useCollapse } from '../../composables/useCollapse'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { useThemedUi } from '../../theme'
 import { useStateMotion } from '../../motion/useStateMotion'
-import type { CollapsibleMotion } from '../../motion/types'
+import type { CollapsibleMotion, CollapsiblePart } from '../../motion/types'
 
 defineOptions({ inheritAttrs: false })
 
@@ -89,10 +100,51 @@ const triggerId = shallowRef<string>()
 const root = useTemplateRef<HTMLElement>('root')
 const triggerWrapper = useTemplateRef<HTMLElement>('triggerWrapper')
 const panel = useTemplateRef<HTMLElement>('panel')
+const body = useTemplateRef<HTMLElement>('body')
 
-const { style: collapseStyle, state: collapseState } = useCollapse(open, {
+// Your `enter` / `leave`: the panel shows at once and your hook animates it; closing waits for
+// `leave` before the panel goes. `shown` is what the panel follows.
+const hooks = computed(() =>
+  typeof props.motion === 'object' && (props.motion.enter || props.motion.leave)
+    ? props.motion
+    : undefined,
+)
+const shown = shallowRef(open.value)
+let running: AbortController | undefined
+watch(
+  open,
+  async (now) => {
+    running?.abort()
+    const hook = hooks.value?.[now ? 'enter' : 'leave']
+    const reduced = prefersReducedMotion()
+    if (!hook || (reduced && hooks.value?.reducedMotion !== 'run')) return void (shown.value = now)
+    const controller = (running = new AbortController())
+    if (now) {
+      shown.value = true
+      await nextTick()
+    }
+    const els = { ...parts(), body: body.value! } as Record<CollapsiblePart | 'body', HTMLElement>
+    await runHook(
+      'Collapsible',
+      now ? 'enter' : 'leave',
+      () => hook(els, { signal: controller.signal, reducedMotion: reduced }),
+      controller.signal,
+      Object.values(els),
+    )
+    if (!now && !controller.signal.aborted) shown.value = false
+  },
+  { flush: 'sync' },
+)
+
+const {
+  style: collapseStyle,
+  state: collapseState,
+  findable,
+} = useCollapse(shown, {
   el: panel,
-  motion: () => props.motion !== false,
+  // The browser's find opens it on a match.
+  onFind: () => (open.value = true),
+  motion: () => props.motion !== false && !hooks.value,
   // Its own motion="false" hands the height over; a provider's just makes it instant.
   handOff: () => rawProps.motion === false,
 })

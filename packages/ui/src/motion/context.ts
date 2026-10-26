@@ -9,6 +9,7 @@ import type {
   Spring,
   TargetMotion,
   MotionEngine,
+  Stagger,
 } from './types'
 import { springOf } from './springNames'
 import { BUILTIN_PRESETS } from './presets'
@@ -56,6 +57,8 @@ export interface ResolvedMotion {
   enter?: AnyHook
   leave?: AnyHook
   exitOrder: 'together' | 'reverse'
+  /** An overlay's parts one after another as it opens. */
+  stagger?: Stagger
   /** Grow from this element's box and back into it: 'trigger' (the component's) or your getter. */
   morph?: MorphFrom | { from: MorphFrom; hide?: boolean }
   /** Inside it, a view replacing another: cross-fade (`'sync'`) or one after the other (`'wait'`). */
@@ -170,6 +173,9 @@ export function resolveMotion(input: {
     exitOrder:
       ((own?.exitOrder ?? keyStyle?.exitOrder ?? roleStyle?.exitOrder) as 'together' | 'reverse') ??
       'together',
+    // A list's `stagger` is its items'; only an overlay's sequences its parts.
+    stagger:
+      role === 'overlay' ? ((own?.stagger ?? keyStyle?.stagger) as Stagger | undefined) : undefined,
     reducedHooks: (own?.reducedMotion as 'skip' | 'run') ?? 'skip',
     onAfterEnter: own?.onAfterEnter as AfterCallback | undefined,
     onAfterLeave: own?.onAfterLeave as AfterCallback | undefined,

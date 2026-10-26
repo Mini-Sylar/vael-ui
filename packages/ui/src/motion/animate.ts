@@ -2,7 +2,7 @@
 // spring, `motion: false` and reduced motion like everything else. What plays loads on first use.
 import './timing.css'
 import { onScopeDispose, shallowRef } from 'vue'
-import type { ShallowRef } from 'vue'
+import type { ComponentPublicInstance, ShallowRef } from 'vue'
 import { refElement } from './presence'
 import { loading } from './styleKey'
 import type { AnimateOptions, MotionValues } from './types'
@@ -71,7 +71,7 @@ function start(
     void loadPlayer().then(
       (kit) => {
         if (stopped) return
-        runs = els.flatMap((el, i) => kit.playOn(el, values, options, i, els.length))
+        runs = els.flatMap((el, i) => kit.playOn(el, values, options, i, els.length, els))
         // Steered before it loaded: applied now.
         each((run) => {
           run.playbackRate = rate
@@ -141,14 +141,18 @@ export function animate(
 }
 
 /**
- * `animate()` scoped to one element: selectors match inside `scope` (bind it with `ref="scope"`),
- * and whatever it started stops when the component unmounts.
+ * `animate()` scoped to one element: selectors match inside it, and whatever it started stops when
+ * the component unmounts. Pass the element's template ref, `useAnimate(useTemplateRef('row'))`, or
+ * bind the returned `scope` with `ref="scope"`.
  */
-export function useAnimate(): {
+export function useAnimate(
+  element?: Readonly<ShallowRef<Element | ComponentPublicInstance | null>>,
+): {
   scope: ShallowRef<Element | null>
   animate: typeof animate
 } {
-  const scope = shallowRef<Element | null>(null)
+  const scope =
+    (element as ShallowRef<Element | null> | undefined) ?? shallowRef<Element | null>(null)
   const live = new Set<AnimationControls>()
   onScopeDispose(() => {
     for (const run of live) run.stop()

@@ -101,7 +101,11 @@ import type { UiPartValue } from '../../classes'
 export type { TourStep, TourGroup, TourStepChangeDetails, TourEndDetails }
 
 export interface TourProps<T extends TourStep = TourStep> {
-  /** Steps to walk through, in order; each points at a `target` element. */
+  /**
+   * Steps to walk through, in order: `{ target, title, description }`, where `target` is the
+   * element (or a selector) the step points at. A step can also set its callout's `side`, `align`
+   * and spotlight, and a `group` for "Section 2 of 3".
+   */
   steps: readonly T[]
   /** Identifies this tour instance (see `useTour`'s `id` option). */
   id?: string

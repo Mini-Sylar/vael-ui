@@ -11,6 +11,7 @@ export { settled } from './settled'
 export { springEasing } from './springEasing'
 export type { MotionOptions } from './springEasing'
 export { useSpringValue, createSpring, stepSpring } from './useSpringValue'
+export { useTween } from './useTween'
 export type {
   SpringOptions,
   SpringState,
@@ -31,6 +32,7 @@ export type {
   MotionContext,
   ElementHookContext,
   AnimateOptions,
+  TweenOptions,
   Viewport,
   ListHookContext,
   PartElements,

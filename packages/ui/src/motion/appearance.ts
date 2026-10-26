@@ -7,6 +7,8 @@ import { watchViewport } from './viewport'
 import { appear } from './useComponentMotion'
 import { armEnter, entered } from './finish'
 import { loading } from './styleKey'
+import { holdUnseen } from './ids'
+import { leavingUnder } from './presence'
 
 // `when: 'visible'`: settles once the element scrolls into view, by default a little past the edge
 // so it starts where it's seen (useInView's margin), once.
@@ -63,8 +65,9 @@ function flush() {
     return
   }
   let played = 0
-  for (const items of batch.values()) {
+  for (const [name, items] of batch) {
     items.sort(byPage)
+    const els = items.map((item) => item.el)
     let i = -1
     items.forEach(({ el, value, again }) => {
       const later = value.when === 'visible'
@@ -79,12 +82,22 @@ function flush() {
       if (!initial || !Object.keys(initial).length) return entered(el)
       played++
       i++
-      const delay = ((value.delay ?? 0) + staggerAt(value.stagger, i, items.length, el)) * 1000
+      const delay = ((value.delay ?? 0) + staggerAt(value.stagger, i, items.length, el, els)) * 1000
       const until = later ? inView(el, value.viewport) : undefined
       // Played, or nothing to play: its `onFinish` runs either way.
-      void appear(el, initial, value, motionSpringAt(el), delay, again, until).finally(() =>
-        entered(el),
-      )
+      const play = () =>
+        appear(el, initial, value, motionSpringAt(el), delay, again, until).finally(() =>
+          entered(el),
+        )
+      // `swap: 'wait'`: what it replaces under its name leaves first; unseen meanwhile.
+      const before =
+        name && (value as { swap?: string }).swap === 'wait' ? leavingUnder(name) : undefined
+      if (!before) return void play()
+      const held = holdUnseen(el)
+      void before.then(() => {
+        held.cancel()
+        return play()
+      })
     })
   }
   batch.clear()
