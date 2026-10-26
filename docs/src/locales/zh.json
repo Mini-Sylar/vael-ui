@@ -182,6 +182,7 @@
     "vaporIntro": "两种构建来自同一个包和同一份源码，props 也相同。选择你的应用所使用的那一种即可。每个组件页面都有切换开关，方便对比。",
     "vaporPinIntro": "Vapor 构建需要 Vue 3.6，它目前仍是预发布版本。请安装 vael-ui 构建时所用的确切版本 <code>{version}</code>。像 <code>^3.5.0</code> 这样的范围可能会装上没有 Vapor 模式的 Vue 3.5，而其他预发布版本可能会让编译好的组件出错：",
     "vaporAppIntro": "Vapor 应用以 <code>createVaporApp</code> 启动，并从 <code>'vael-ui/vapor'</code> 导入组件、组合式函数和指令。你自己的组件用 <code>&lt;script setup vapor&gt;</code> 启用 Vapor：",
+    "vaporLibrariesIntro": "不是为 Vapor 构建的库中的组件（例如图标库）在 Vapor 应用中单独使用时不会渲染任何内容。请同时安装 Vue 的 <code>vaporInteropPlugin</code>：<code>createVaporApp(App).use(vaporInteropPlugin)</code>。",
     "vaporForceIntro": "如果不想在每个文件里写 <code>vapor</code> 属性，可以在 <code>{'@'}vitejs/plugin-vue</code> 6.0.8 或更高版本中开启 <code>features.vapor</code>。这样应用里所有 <code>&lt;script setup&gt;</code> 组件都会编译为 Vapor：",
     "vaporMixTitle": "混用两种构建",
     "vaporMixIntro": "VDOM 应用也可以包含 Vapor 组件，因此你可以一次迁移几个组件，逐步把现有应用迁移到 Vapor。保留 <code>createApp</code>，安装 Vue 的 <code>vaporInteropPlugin</code>，并在标记了 <code>vapor</code> 的组件中从 <code>'vael-ui/vapor'</code> 导入。新应用请只选一种构建。标记了 <code>vapor</code> 的组件也要从 <code>'vael-ui/vapor'</code> 导入 <code>vTooltip</code> 等指令，因为 <code>app.directive</code> 只会为 VDOM 组件注册它们。",
@@ -783,7 +784,7 @@
         },
         "scroll": {
           "title": "滚动到视野中时",
-          "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。 <code>stagger: true</code> 按 stagger 令牌的间隔排开；<code>'end'</code>、<code>'center'</code> 或 <code>'edges'</code> 会让这一波从那里开始。"
+          "body": "<code>when: 'visible'</code> 会等元素出现在屏幕上，然后播放一次。名字相同的元素，比如 <code>v-animate:tiles</code>，会按页面顺序以 <code>stagger</code> 间隔依次播放。 <code>stagger: true</code> 按 stagger 令牌的间隔排开；<code>'end'</code>、<code>'center'</code> 或 <code>'edges'</code> 会让这一波从那里开始。 <code>'center'</code> 指页面顺序的中间：在网格里想从中间的单元格开始，请给 <code>stagger</code> 传一个以索引为参数的函数。"
         },
         "inView": {
           "title": "在视野中时",
@@ -811,7 +812,7 @@
         },
         "turn": {
           "title": "3D 翻转",
-          "body": "<code>rotateX</code> 和 <code>rotateY</code> 让元素朝你或远离你转动，<code>perspective</code> 决定纵深感：翻转卡片就是 <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>。<code>skewX</code> 和 <code>skewY</code> 让它倾斜。"
+          "body": "<code>rotateX</code> 和 <code>rotateY</code> 让元素朝向你或远离你转动，<code>perspective</code> 决定看起来有多深：翻转卡片就是 <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>。<code>skewX</code> 和 <code>skewY</code> 让它倾斜，<code>scaleX</code> 和 <code>scaleY</code> 只缩放一个轴，比如从底部长出来的柱条。"
         },
         "draw": {
           "title": "绘制线条",
@@ -827,7 +828,7 @@
         },
         "drag": {
           "title": "拖动",
-          "body": "可拖动的组件（BottomSheet、SwipeToReveal、Sortable、Slider）已内置拖动。要拖动你自己的元素，请使用 VueUse 的 <code>useDraggable</code>，松手时的动效交给 <code>v-animate</code> 的 <code>layout</code> 或 <code>animate</code>。"
+          "body": "可拖动的组件（BottomSheet、SwipeToReveal、Sortable、Slider）已经内置了拖动。要让人重新排序你自己的列表，或在列表之间移动条目，请用 <code>v-draggable</code> 配合 <code>useSortableGroup</code>：与 Sortable 相同的引擎和动效。对自由拖动的元素（例如用 VueUse 的 <code>useDraggable</code>），把它的偏移放在 <code>animate</code> 里，松手时设回 0，<code>v-animate</code> 会用弹簧把它带回原位。"
         },
         "own": {
           "title": "你自己的组件",
@@ -879,7 +880,7 @@
         },
         "morphAny": {
           "title": "从任意元素展开",
-          "body": "给 <code>morph</code> 传一个返回元素的函数，比如返回你点击的那一行。<code>hide: false</code> 会让这一行在对话框打开时仍留在屏幕上。"
+          "body": "给 <code>morph</code> 一个对象，其 <code>from</code> 返回一个元素，比如你点击的那一行：<code>morph: {'{'} from: () => row, hide: false {'}'}</code>。<code>hide: false</code> 让这一行在对话框打开时仍然可见。"
         },
         "recede": {
           "title": "带动页面",
@@ -923,7 +924,7 @@
         },
         "own": {
           "title": "你自己的时间线",
-          "body": "<code>enter</code> 钩子会收到各个部件和你的目标元素，这样一条 GSAP 时间线就能为它们全部添加动画。返回这条时间线。对话框会等待它，如果你提前关闭，就会停止它。"
+          "body": "<code>enter</code> 钩子会收到各个部件，并在第二个参数里按名称收到你的目标：<code>enter: ({'{'} panel {'}'}, {'{'} targets {'}'}) => …</code>。先在 <code>targets</code> 里为它们命名，即使没有自己的值。这样一条 GSAP 时间线就能为它们全部做动画。返回这条时间线。对话框会等它完成，提前关闭时会停止它。"
         }
       },
       "callbacks": {

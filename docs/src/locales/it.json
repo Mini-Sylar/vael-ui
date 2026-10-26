@@ -182,6 +182,7 @@
     "vaporIntro": "Entrambe le build sono nello stesso pacchetto, dallo stesso codice sorgente, con le stesse props. Scegli quella che usa la tua app. Ogni pagina dei componenti ha un selettore per confrontarle.",
     "vaporPinIntro": "La build Vapor richiede Vue 3.6, che è ancora una versione preliminare. Installa la versione esatta con cui è compilato vael-ui, <code>{version}</code>. Un intervallo come <code>^3.5.0</code> può installare Vue 3.5, che non ha la modalità Vapor, e un'altra versione preliminare può rompere i componenti compilati:",
     "vaporAppIntro": "Un'app Vapor parte con <code>createVaporApp</code> e importa componenti, composable e direttive da <code>'vael-ui/vapor'</code>. I tuoi componenti passano a Vapor con <code>&lt;script setup vapor&gt;</code>:",
+    "vaporLibrariesIntro": "I componenti di una libreria non pensata per Vapor, come un set di icone, da soli non mostrano nulla in un'app Vapor. Installa anche il <code>vaporInteropPlugin</code> di Vue: <code>createVaporApp(App).use(vaporInteropPlugin)</code>.",
     "vaporForceIntro": "Per non scrivere l'attributo <code>vapor</code> in ogni file, attiva <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 o successivo. Così ogni componente <code>&lt;script setup&gt;</code> della tua app viene compilato come Vapor:",
     "vaporMixTitle": "Usare entrambe le build",
     "vaporMixIntro": "Un'app VDOM può anche ospitare componenti Vapor, così puoi spostare un'app esistente su Vapor pochi componenti alla volta. Mantieni <code>createApp</code>, installa il <code>vaporInteropPlugin</code> di Vue e importa da <code>'vael-ui/vapor'</code> nei componenti marcati <code>vapor</code>. Per una nuova app, scegli invece una sola build. Un componente marcato <code>vapor</code> importa anche le direttive come <code>vTooltip</code> da <code>'vael-ui/vapor'</code>, perché <code>app.directive</code> le registra solo per i componenti VDOM.",
@@ -783,7 +784,7 @@
         },
         "scroll": {
           "title": "Quando entra nella vista",
-          "body": "<code>when: 'visible'</code> aspetta che l'elemento sia sullo schermo, poi parte una volta. Gli elementi che condividono un nome, come <code>v-animate:tiles</code>, partono nell'ordine della pagina, uno dopo l'altro con uno <code>stagger</code>. <code>stagger: true</code> li distanzia secondo il token di stagger; <code>'end'</code>, <code>'center'</code> o <code>'edges'</code> fanno partire l'onda da lì."
+          "body": "<code>when: 'visible'</code> aspetta che l'elemento sia sullo schermo, poi parte una volta. Gli elementi che condividono un nome, come <code>v-animate:tiles</code>, partono nell'ordine della pagina, uno dopo l'altro con uno <code>stagger</code>. <code>stagger: true</code> li distanzia secondo il token di stagger; <code>'end'</code>, <code>'center'</code> o <code>'edges'</code> fanno partire l'onda da lì. <code>'center'</code> è il centro dell'ordine della pagina: in una griglia, passa a <code>stagger</code> una funzione dell'indice per partire dalla cella centrale."
         },
         "inView": {
           "title": "Finché è visibile",
@@ -811,7 +812,7 @@
         },
         "turn": {
           "title": "Girare in 3D",
-          "body": "<code>rotateX</code> e <code>rotateY</code> girano un elemento verso di te o lontano, e <code>perspective</code> regola la profondità: girare una carta è <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> e <code>skewY</code> lo inclinano."
+          "body": "<code>rotateX</code> e <code>rotateY</code> ruotano un elemento verso di te o lontano, e <code>perspective</code> ne regola la profondità: girare una carta è <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> e <code>skewY</code> lo inclinano, e <code>scaleX</code> e <code>scaleY</code> scalano un solo asse, come una barra che cresce dalla base."
         },
         "draw": {
           "title": "Disegnare un tratto",
@@ -827,7 +828,7 @@
         },
         "drag": {
           "title": "Trascinare",
-          "body": "I componenti che si trascinano (BottomSheet, SwipeToReveal, Sortable, Slider) lo hanno già. Per trascinare i tuoi elementi usa <code>useDraggable</code> di VueUse e lascia che <code>v-animate</code> gestisca il rilascio con <code>layout</code> o <code>animate</code>."
+          "body": "I componenti che si trascinano (BottomSheet, SwipeToReveal, Sortable, Slider) lo fanno già. Per riordinare la tua lista o spostare elementi tra liste, usa <code>v-draggable</code> con <code>useSortableGroup</code>: lo stesso motore e lo stesso movimento di Sortable. Per un elemento trascinato liberamente (per esempio con <code>useDraggable</code> di VueUse), tieni il suo spostamento in <code>animate</code> e riportalo a 0 al rilascio: <code>v-animate</code> lo riporta indietro su una molla."
         },
         "own": {
           "title": "I tuoi componenti",
@@ -879,7 +880,7 @@
         },
         "morphAny": {
           "title": "Cresci da qualsiasi elemento",
-          "body": "Passa a <code>morph</code> una funzione che restituisce un elemento, come la riga su cui hai cliccato. <code>hide: false</code> tiene la riga sullo schermo mentre il dialog è aperto."
+          "body": "Passa a <code>morph</code> un oggetto il cui <code>from</code> restituisce un elemento, come la riga cliccata: <code>morph: {'{'} from: () => row, hide: false {'}'}</code>. <code>hide: false</code> tiene visibile la riga mentre la finestra di dialogo è aperta."
         },
         "recede": {
           "title": "Sposta la pagina con sé",
@@ -923,7 +924,7 @@
         },
         "own": {
           "title": "La tua timeline",
-          "body": "Un hook <code>enter</code> riceve le parti e i tuoi target, così un'unica timeline GSAP può animarli tutti. Restituisci la timeline. Il dialog la attende, e la ferma se chiudi prima."
+          "body": "Un hook <code>enter</code> riceve le parti e, nel secondo argomento, i tuoi target per nome: <code>enter: ({'{'} panel {'}'}, {'{'} targets {'}'}) => …</code>. Prima dagli un nome in <code>targets</code>, anche senza valori propri. Così una sola timeline GSAP può animarli tutti. Restituisci la timeline. La finestra la aspetta e la ferma se chiudi prima."
         }
       },
       "callbacks": {

@@ -182,6 +182,7 @@
     "vaporIntro": "As duas builds vêm no mesmo pacote, do mesmo código-fonte, com as mesmas props. Escolha a que sua app usa. Cada página de componente tem um seletor para compará-las.",
     "vaporPinIntro": "A build Vapor precisa do Vue 3.6, que ainda é uma versão prévia. Instale a versão exata usada para compilar o vael-ui, <code>{version}</code>. Um intervalo como <code>^3.5.0</code> pode instalar o Vue 3.5, que não tem modo Vapor, e outra versão prévia pode quebrar os componentes compilados:",
     "vaporAppIntro": "Uma app Vapor começa com <code>createVaporApp</code> e importa componentes, composables e diretivas de <code>'vael-ui/vapor'</code>. Seus próprios componentes passam para Vapor com <code>&lt;script setup vapor&gt;</code>:",
+    "vaporLibrariesIntro": "Os componentes de uma biblioteca que não foi feita para Vapor, como um conjunto de ícones, não mostram nada sozinhos numa app Vapor. Instala também o <code>vaporInteropPlugin</code> do Vue: <code>createVaporApp(App).use(vaporInteropPlugin)</code>.",
     "vaporForceIntro": "Para não escrever o atributo <code>vapor</code> em cada arquivo, ative <code>features.vapor</code> no <code>{'@'}vitejs/plugin-vue</code> 6.0.8 ou mais recente. Assim, todo componente <code>&lt;script setup&gt;</code> da sua app é compilado como Vapor:",
     "vaporMixTitle": "Usar as duas builds",
     "vaporMixIntro": "Uma app VDOM também pode receber componentes Vapor, então você pode migrar uma app existente para Vapor aos poucos. Mantenha <code>createApp</code>, instale o <code>vaporInteropPlugin</code> do Vue e importe de <code>'vael-ui/vapor'</code> nos componentes marcados com <code>vapor</code>. Para uma app nova, escolha uma build só. Um componente marcado com <code>vapor</code> também importa diretivas como <code>vTooltip</code> de <code>'vael-ui/vapor'</code>, porque <code>app.directive</code> só as registra para componentes VDOM.",
@@ -783,7 +784,7 @@
         },
         "scroll": {
           "title": "Quando aparece na rolagem",
-          "body": "<code>when: 'visible'</code> espera até o elemento estar na tela e então toca uma vez. Elementos que compartilham um nome, como <code>v-animate:tiles</code>, tocam na ordem da página, um depois do outro com um <code>stagger</code>. <code>stagger: true</code> os espaça pelo token de stagger; <code>'end'</code>, <code>'center'</code> ou <code>'edges'</code> fazem a onda começar ali."
+          "body": "<code>when: 'visible'</code> espera até o elemento estar na tela e então toca uma vez. Elementos que compartilham um nome, como <code>v-animate:tiles</code>, tocam na ordem da página, um depois do outro com um <code>stagger</code>. <code>stagger: true</code> os espaça pelo token de stagger; <code>'end'</code>, <code>'center'</code> ou <code>'edges'</code> fazem a onda começar ali. <code>'center'</code> é o meio da ordem da página: numa grelha, dá a <code>stagger</code> uma função do índice para começar na célula do meio."
         },
         "inView": {
           "title": "Enquanto está à vista",
@@ -811,7 +812,7 @@
         },
         "turn": {
           "title": "Girar em 3D",
-          "body": "<code>rotateX</code> e <code>rotateY</code> giram um elemento para perto ou para longe, e <code>perspective</code> define a profundidade: virar um card é <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> e <code>skewY</code> o inclinam."
+          "body": "<code>rotateX</code> e <code>rotateY</code> rodam um elemento para ti ou para longe, e <code>perspective</code> define a profundidade: virar um cartão é <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> e <code>skewY</code> inclinam-no, e <code>scaleX</code> e <code>scaleY</code> escalam um só eixo, como uma barra que cresce a partir da base."
         },
         "draw": {
           "title": "Desenhar um traço",
@@ -827,7 +828,7 @@
         },
         "drag": {
           "title": "Arrastar",
-          "body": "Os componentes que se arrastam (BottomSheet, SwipeToReveal, Sortable, Slider) já trazem isso. Para arrastar seus próprios elementos, use o <code>useDraggable</code> do VueUse e deixe o <code>v-animate</code> cuidar da soltura com <code>layout</code> ou <code>animate</code>."
+          "body": "Os componentes que se arrastam (BottomSheet, SwipeToReveal, Sortable, Slider) já trazem isso. Para reordenar a tua própria lista ou mover itens entre listas, usa <code>v-draggable</code> com <code>useSortableGroup</code>: o mesmo motor e o mesmo movimento do Sortable. Para um elemento arrastado livremente (com o <code>useDraggable</code> do VueUse, por exemplo), guarda o deslocamento em <code>animate</code> e volta a pô-lo a 0 ao largar: o <code>v-animate</code> trá-lo de volta numa mola."
         },
         "own": {
           "title": "Seus próprios componentes",
@@ -879,7 +880,7 @@
         },
         "morphAny": {
           "title": "Cresça a partir de qualquer elemento",
-          "body": "Passe para <code>morph</code> uma função que retorna um elemento, como a linha em que você clicou. <code>hide: false</code> mantém a linha na tela enquanto o diálogo está aberto."
+          "body": "Dá a <code>morph</code> um objeto cujo <code>from</code> devolve um elemento, como a linha em que clicaste: <code>morph: {'{'} from: () => row, hide: false {'}'}</code>. <code>hide: false</code> mantém a linha visível enquanto o diálogo está aberto."
         },
         "recede": {
           "title": "Mova a página junto",
@@ -923,7 +924,7 @@
         },
         "own": {
           "title": "Sua própria timeline",
-          "body": "Um hook <code>enter</code> recebe as partes e seus targets, então uma única timeline do GSAP pode animar todos eles. Retorne a timeline. O diálogo espera por ela e a interrompe se você fechar antes."
+          "body": "Um hook <code>enter</code> recebe as partes e, no segundo argumento, os teus targets por nome: <code>enter: ({'{'} panel {'}'}, {'{'} targets {'}'}) => …</code>. Dá-lhes nome primeiro em <code>targets</code>, mesmo sem valores próprios. Assim, uma única timeline do GSAP pode animá-los todos. Devolve a timeline. O diálogo espera por ela e para-a se fechares antes."
         }
       },
       "callbacks": {

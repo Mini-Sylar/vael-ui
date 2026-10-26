@@ -130,6 +130,7 @@
     "vaporIntro": "Both builds ship in the same package, from the same source, with the same props. Pick the one your app runs. Every component page has a toggle to compare them.",
     "vaporPinIntro": "The Vapor build needs Vue 3.6, which is still a prerelease. Install the exact version vael-ui is built against, <code>{version}</code>. A range such as <code>^3.5.0</code> can install Vue 3.5, which has no Vapor mode, and another prerelease can break the compiled components:",
     "vaporAppIntro": "A Vapor app starts with <code>createVaporApp</code> and imports components, composables and directives from <code>'vael-ui/vapor'</code>. Your own components opt in with <code>&lt;script setup vapor&gt;</code>:",
+    "vaporLibrariesIntro": "Components from a library that isn't built for Vapor, such as an icon set, render nothing in a Vapor app on their own. Install Vue’s <code>vaporInteropPlugin</code> as well: <code>createVaporApp(App).use(vaporInteropPlugin)</code>.",
     "vaporForceIntro": "To skip the <code>vapor</code> attribute in every file, turn on <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 or later. Every <code>&lt;script setup&gt;</code> component in your app then compiles as Vapor:",
     "vaporMixTitle": "Mixing both builds",
     "vaporMixIntro": "A VDOM app can also host Vapor components, so you can move an existing app to Vapor a few components at a time. Keep <code>createApp</code>, install Vue’s <code>vaporInteropPlugin</code>, and import from <code>'vael-ui/vapor'</code> in the components you mark <code>vapor</code>. For a new app, pick one build instead. A component marked <code>vapor</code> imports directives such as <code>vTooltip</code> from <code>'vael-ui/vapor'</code> too, because <code>app.directive</code> only registers them for VDOM components.",
@@ -783,7 +784,7 @@
         },
         "scroll": {
           "title": "When it scrolls into view",
-          "body": "<code>when: 'visible'</code> waits until the element is on screen, then plays once. Elements that share a name, such as <code>v-animate:tiles</code>, play in page order, one after another with a <code>stagger</code>. <code>stagger: true</code> spaces them by the stagger token; <code>'end'</code>, <code>'center'</code> or <code>'edges'</code> start the wave there instead."
+          "body": "<code>when: 'visible'</code> waits until the element is on screen, then plays once. Elements that share a name, such as <code>v-animate:tiles</code>, play in page order, one after another with a <code>stagger</code>. <code>stagger: true</code> spaces them by the stagger token; <code>'end'</code>, <code>'center'</code> or <code>'edges'</code> start the wave there instead. <code>'center'</code> is the middle of the page order: in a grid, give <code>stagger</code> a function of the index to start from the middle cell."
         },
         "inView": {
           "title": "While it's in view",
@@ -811,7 +812,7 @@
         },
         "turn": {
           "title": "Turn in 3D",
-          "body": "<code>rotateX</code> and <code>rotateY</code> turn an element toward you or away, and <code>perspective</code> sets how deep that looks: a card flip is <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> and <code>skewY</code> slant it."
+          "body": "<code>rotateX</code> and <code>rotateY</code> turn an element toward you or away, and <code>perspective</code> sets how deep that looks: a card flip is <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> and <code>skewY</code> slant it, and <code>scaleX</code> and <code>scaleY</code> scale one axis, such as a bar growing from its base."
         },
         "draw": {
           "title": "Draw a stroke",
@@ -827,7 +828,7 @@
         },
         "drag": {
           "title": "Dragging",
-          "body": "The components that drag (BottomSheet, SwipeToReveal, Sortable, Slider) have it built in. To drag your own elements, use VueUse's <code>useDraggable</code>, and let <code>v-animate</code> handle the release with <code>layout</code> or <code>animate</code>."
+          "body": "The components that drag (BottomSheet, SwipeToReveal, Sortable, Slider) have it built in. To let people reorder your own list, or move items between lists, use <code>v-draggable</code> with <code>useSortableGroup</code>: the same engine and motion as Sortable. For an element dragged freely (with VueUse's <code>useDraggable</code>, say), hold its offset in <code>animate</code> and set it back to 0 on release: <code>v-animate</code> springs it home."
         },
         "own": {
           "title": "Your own components",
@@ -879,7 +880,7 @@
         },
         "morphAny": {
           "title": "Grow from any element",
-          "body": "Give <code>morph</code> a function that returns an element, such as the row you clicked. <code>hide: false</code> keeps the row on screen while the dialog is open."
+          "body": "Give <code>morph</code> an object whose <code>from</code> returns an element, such as the row you clicked: <code>morph: {'{'} from: () => row, hide: false {'}'}</code>. <code>hide: false</code> keeps the row on screen while the dialog is open."
         },
         "recede": {
           "title": "Move the page with it",
@@ -923,7 +924,7 @@
         },
         "own": {
           "title": "Your own timeline",
-          "body": "An <code>enter</code> hook receives the parts and your targets, so one GSAP timeline can animate all of them. Return the timeline. The dialog waits for it, and stops it if you close early."
+          "body": "An <code>enter</code> hook receives the parts, and your targets by name in its second argument: <code>enter: ({'{'} panel {'}'}, {'{'} targets {'}'}) => …</code>. Name them in <code>targets</code> first, even with no values of their own. One GSAP timeline can then animate all of them. Return the timeline. The dialog waits for it, and stops it if you close early."
         }
       },
       "callbacks": {

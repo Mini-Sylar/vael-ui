@@ -182,6 +182,7 @@
     "vaporIntro": "Beide Builds stecken im selben Paket, stammen aus demselben Quellcode und haben dieselben Props. Wählen Sie den Build, mit dem Ihre App läuft. Auf jeder Komponentenseite gibt es einen Schalter, um beide zu vergleichen.",
     "vaporPinIntro": "Der Vapor-Build braucht Vue 3.6, das noch eine Vorabversion ist. Installieren Sie genau die Version, gegen die vael-ui gebaut ist: <code>{version}</code>. Ein Bereich wie <code>^3.5.0</code> kann Vue 3.5 installieren, das keinen Vapor-Modus hat, und eine andere Vorabversion kann die kompilierten Komponenten brechen:",
     "vaporAppIntro": "Eine Vapor-App startet mit <code>createVaporApp</code> und importiert Komponenten, Composables und Direktiven aus <code>'vael-ui/vapor'</code>. Eigene Komponenten wechseln mit <code>&lt;script setup vapor&gt;</code> zu Vapor:",
+    "vaporLibrariesIntro": "Komponenten aus einer Bibliothek, die nicht für Vapor gebaut ist, etwa ein Icon-Set, rendern in einer Vapor-App allein nichts. Installiere zusätzlich Vues <code>vaporInteropPlugin</code>: <code>createVaporApp(App).use(vaporInteropPlugin)</code>.",
     "vaporForceIntro": "Um das Attribut <code>vapor</code> nicht in jede Datei zu schreiben, aktivieren Sie <code>features.vapor</code> in <code>{'@'}vitejs/plugin-vue</code> 6.0.8 oder neuer. Dann wird jede <code>&lt;script setup&gt;</code>-Komponente Ihrer App als Vapor kompiliert:",
     "vaporMixTitle": "Beide Builds kombinieren",
     "vaporMixIntro": "Eine VDOM-App kann auch Vapor-Komponenten enthalten. So können Sie eine bestehende App nach und nach, ein paar Komponenten auf einmal, auf Vapor umstellen. Behalten Sie <code>createApp</code>, installieren Sie Vues <code>vaporInteropPlugin</code> und importieren Sie in den mit <code>vapor</code> markierten Komponenten aus <code>'vael-ui/vapor'</code>. Für eine neue App wählen Sie stattdessen einen Build. Eine mit <code>vapor</code> markierte Komponente importiert auch Direktiven wie <code>vTooltip</code> aus <code>'vael-ui/vapor'</code>, denn <code>app.directive</code> registriert sie nur für VDOM-Komponenten.",
@@ -783,7 +784,7 @@
         },
         "scroll": {
           "title": "Wenn es ins Bild scrollt",
-          "body": "<code>when: 'visible'</code> wartet, bis das Element auf dem Bildschirm ist, und spielt dann einmal. Elemente mit demselben Namen, etwa <code>v-animate:tiles</code>, spielen in der Reihenfolge der Seite, eines nach dem anderen mit einem <code>stagger</code>. <code>stagger: true</code> verteilt sie im Abstand des Stagger-Tokens; <code>'end'</code>, <code>'center'</code> oder <code>'edges'</code> lassen die Welle stattdessen dort beginnen."
+          "body": "<code>when: 'visible'</code> wartet, bis das Element auf dem Bildschirm ist, und spielt dann einmal. Elemente mit demselben Namen, etwa <code>v-animate:tiles</code>, spielen in der Reihenfolge der Seite, eines nach dem anderen mit einem <code>stagger</code>. <code>stagger: true</code> verteilt sie im Abstand des Stagger-Tokens; <code>'end'</code>, <code>'center'</code> oder <code>'edges'</code> lassen die Welle stattdessen dort beginnen. <code>'center'</code> ist die Mitte der Seitenreihenfolge: In einem Raster gib <code>stagger</code> eine Funktion des Index, um von der mittleren Zelle aus zu starten."
         },
         "inView": {
           "title": "Solange es sichtbar ist",
@@ -811,7 +812,7 @@
         },
         "turn": {
           "title": "In 3D drehen",
-          "body": "<code>rotateX</code> und <code>rotateY</code> drehen ein Element zu dir hin oder weg, und <code>perspective</code> bestimmt, wie tief das wirkt: Eine Karte umdrehen ist <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> und <code>skewY</code> neigen es."
+          "body": "<code>rotateX</code> und <code>rotateY</code> drehen ein Element zu dir hin oder von dir weg, und <code>perspective</code> legt fest, wie tief das wirkt: Eine Kartenumdrehung ist <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code>. <code>skewX</code> und <code>skewY</code> neigen es, und <code>scaleX</code> und <code>scaleY</code> skalieren eine Achse, etwa einen Balken, der aus seiner Basis wächst."
         },
         "draw": {
           "title": "Eine Linie zeichnen",
@@ -827,7 +828,7 @@
         },
         "drag": {
           "title": "Ziehen",
-          "body": "Die Komponenten, die man ziehen kann (BottomSheet, SwipeToReveal, Sortable, Slider), bringen das mit. Für deine eigenen Elemente nimm <code>useDraggable</code> aus VueUse und überlass das Loslassen <code>v-animate</code> mit <code>layout</code> oder <code>animate</code>."
+          "body": "Die Komponenten, die man ziehen kann (BottomSheet, SwipeToReveal, Sortable, Slider), bringen das schon mit. Damit man deine eigene Liste umsortieren oder Einträge zwischen Listen verschieben kann, nimm <code>v-draggable</code> mit <code>useSortableGroup</code>: dieselbe Engine und Bewegung wie bei Sortable. Für ein frei gezogenes Element (etwa mit VueUse's <code>useDraggable</code>) halte seinen Versatz in <code>animate</code> und setze ihn beim Loslassen auf 0 zurück: <code>v-animate</code> federt es zurück."
         },
         "own": {
           "title": "Ihre eigenen Komponenten",
@@ -879,7 +880,7 @@
         },
         "morphAny": {
           "title": "Aus einem beliebigen Element wachsen",
-          "body": "Geben Sie <code>morph</code> eine Funktion, die ein Element zurückgibt, etwa die angeklickte Zeile. <code>hide: false</code> lässt die Zeile sichtbar, solange der Dialog offen ist."
+          "body": "Gib <code>morph</code> ein Objekt, dessen <code>from</code> ein Element zurückgibt, etwa die angeklickte Zeile: <code>morph: {'{'} from: () => row, hide: false {'}'}</code>. <code>hide: false</code> lässt die Zeile sichtbar, solange der Dialog offen ist."
         },
         "recede": {
           "title": "Die Seite mitbewegen",
@@ -923,7 +924,7 @@
         },
         "own": {
           "title": "Ihre eigene Timeline",
-          "body": "Ein <code>enter</code>-Hook bekommt die Teile und Ihre Targets, sodass eine GSAP-Timeline sie alle animieren kann. Geben Sie die Timeline zurück. Der Dialog wartet auf sie und stoppt sie, wenn Sie früher schließen."
+          "body": "Ein <code>enter</code>-Hook bekommt die Teile und, im zweiten Argument, deine Ziele nach Namen: <code>enter: ({'{'} panel {'}'}, {'{'} targets {'}'}) => …</code>. Benenne sie zuerst in <code>targets</code>, auch ohne eigene Werte. Dann kann eine GSAP-Timeline alle animieren. Gib die Timeline zurück. Der Dialog wartet darauf und stoppt sie, wenn du früh schließt."
         }
       },
       "callbacks": {

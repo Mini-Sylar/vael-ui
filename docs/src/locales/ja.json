@@ -182,6 +182,7 @@
     "vaporIntro": "どちらのビルドも同じパッケージ・同じソースから提供され、props も同じです。アプリで使っている方を選んでください。各コンポーネントページに、両者を比較できる切り替えがあります。",
     "vaporPinIntro": "Vapor ビルドには Vue 3.6 が必要ですが、まだプレリリースです。vael-ui のビルドに使われた正確なバージョン <code>{version}</code> をインストールしてください。<code>^3.5.0</code> のような範囲指定では Vapor モードのない Vue 3.5 が入ることがあり、別のプレリリースではコンパイル済みコンポーネントが壊れることがあります:",
     "vaporAppIntro": "Vapor アプリは <code>createVaporApp</code> で始め、コンポーネント・コンポーザブル・ディレクティブを <code>'vael-ui/vapor'</code> からインポートします。自分のコンポーネントは <code>&lt;script setup vapor&gt;</code> で Vapor にします:",
+    "vaporLibrariesIntro": "アイコンセットなど、Vapor 向けに作られていないライブラリのコンポーネントは、そのままでは Vapor アプリに何も描画されません。Vue の <code>vaporInteropPlugin</code> もインストールしてください：<code>createVaporApp(App).use(vaporInteropPlugin)</code>。",
     "vaporForceIntro": "すべてのファイルに <code>vapor</code> 属性を書かずに済ませるには、<code>{'@'}vitejs/plugin-vue</code> 6.0.8 以降で <code>features.vapor</code> を有効にします。アプリ内のすべての <code>&lt;script setup&gt;</code> コンポーネントが Vapor としてコンパイルされます:",
     "vaporMixTitle": "両方のビルドを併用する",
     "vaporMixIntro": "VDOM アプリの中で Vapor コンポーネントを使うこともできるので、既存のアプリを少しずつ Vapor に移せます。<code>createApp</code> はそのままにして Vue の <code>vaporInteropPlugin</code> を登録し、<code>vapor</code> を付けたコンポーネントでは <code>'vael-ui/vapor'</code> からインポートします。新しいアプリでは、どちらか一方のビルドを選んでください。<code>vapor</code> を付けたコンポーネントでは、<code>vTooltip</code> などのディレクティブも <code>'vael-ui/vapor'</code> からインポートします。<code>app.directive</code> で登録したディレクティブは VDOM コンポーネントにしか届かないためです。",
@@ -783,7 +784,7 @@
         },
         "scroll": {
           "title": "スクロールで画面に入ったとき",
-          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。 <code>stagger: true</code> は stagger トークンの間隔で並べます。<code>'end'</code>、<code>'center'</code>、<code>'edges'</code> を指定すると、波がそこから始まります。"
+          "body": "<code>when: 'visible'</code> は要素が画面に入るまで待ってから、一度だけ再生します。<code>v-animate:tiles</code> のように同じ名前を持つ要素は、ページ上の順番で、<code>stagger</code> の間隔を空けてひとつずつ再生されます。 <code>stagger: true</code> は stagger トークンの間隔で並べます。<code>'end'</code>、<code>'center'</code>、<code>'edges'</code> を指定すると、波がそこから始まります。 <code>'center'</code> はページ順での中央です。グリッドで中央のセルから始めるには、<code>stagger</code> にインデックスの関数を渡します。"
         },
         "inView": {
           "title": "画面に入っている間",
@@ -811,7 +812,7 @@
         },
         "turn": {
           "title": "3D で回す",
-          "body": "<code>rotateX</code> と <code>rotateY</code> は要素を手前や奥へ回し、<code>perspective</code> で奥行きを決めます。カードをめくるなら <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code> です。<code>skewX</code> と <code>skewY</code> は傾けます。"
+          "body": "<code>rotateX</code> と <code>rotateY</code> は要素を手前や奥へ回転させ、<code>perspective</code> で奥行きの見え方を決めます。カードをめくるなら <code>animate: {'{'} rotateY: flipped ? 180 : 0, perspective: 800 {'}'}</code> です。<code>skewX</code> と <code>skewY</code> は傾け、<code>scaleX</code> と <code>scaleY</code> は片方の軸だけを拡大縮小します。根元から伸びるバーなどに使えます。"
         },
         "draw": {
           "title": "線を描く",
@@ -827,7 +828,7 @@
         },
         "drag": {
           "title": "ドラッグ",
-          "body": "ドラッグできるコンポーネント（BottomSheet、SwipeToReveal、Sortable、Slider）には組み込まれています。自分の要素をドラッグするには VueUse の <code>useDraggable</code> を使い、離したときの動きは <code>v-animate</code> の <code>layout</code> や <code>animate</code> に任せます。"
+          "body": "ドラッグできるコンポーネント（BottomSheet、SwipeToReveal、Sortable、Slider）には最初から組み込まれています。自分のリストを並べ替えたり、リスト間で項目を移動したりするには、<code>v-draggable</code> と <code>useSortableGroup</code> を使います。Sortable と同じエンジンと動きです。自由にドラッグする要素（VueUse の <code>useDraggable</code> など）は、そのずれを <code>animate</code> に持たせ、離したときに 0 に戻すと、<code>v-animate</code> がばねで元の位置へ戻します。"
         },
         "own": {
           "title": "自作のコンポーネント",
@@ -879,7 +880,7 @@
         },
         "morphAny": {
           "title": "任意の要素から広がる",
-          "body": "<code>morph</code> に、クリックした行などの要素を返す関数を渡します。<code>hide: false</code> にすると、ダイアログが開いている間もその行が画面に残ります。"
+          "body": "<code>morph</code> には、<code>from</code> が要素を返すオブジェクトを渡します。たとえばクリックした行です：<code>morph: {'{'} from: () => row, hide: false {'}'}</code>。<code>hide: false</code> にすると、ダイアログが開いている間も行は表示されたままです。"
         },
         "recede": {
           "title": "ページを一緒に動かす",
@@ -923,7 +924,7 @@
         },
         "own": {
           "title": "自分のタイムライン",
-          "body": "<code>enter</code> フックはパーツとターゲットを受け取るので、ひとつの GSAP タイムラインですべてをアニメーションできます。タイムラインを返してください。ダイアログはそれを待ち、早く閉じた場合は止めます。"
+          "body": "<code>enter</code> フックはパーツを受け取り、第 2 引数で名前付きのターゲットを受け取ります：<code>enter: ({'{'} panel {'}'}, {'{'} targets {'}'}) => …</code>。値がなくても、先に <code>targets</code> で名前を付けておきます。これで 1 つの GSAP タイムラインですべてをアニメーションできます。タイムラインを返してください。ダイアログはそれを待ち、早く閉じると止めます。"
         }
       },
       "callbacks": {

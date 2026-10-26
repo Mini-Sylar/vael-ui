@@ -49,7 +49,7 @@
     <p v-html="t('motionDocs.yoursIntro')" />
     <CodeBlock
       code='&lt;script setup lang="ts"&gt;
-import { vAnimate } from "vael-ui"
+import { vAnimate } from "vael-ui/motion"
 &lt;/script&gt;
 
 <template>

@@ -16,6 +16,7 @@ import { RELATED, cell, meta, motionSection, sections, table } from './api-markd
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DEMOS_DIR = join(__dirname, '../src/composable-demos')
+const MOTION_DEMOS_DIR = join(__dirname, '../src/motion-demos')
 // Page chrome around a guide's prose: its kicker, the pager, the on-this-page list, the
 // npm/pnpm and VDOM/Vapor switches above code samples, the docs dock and live widgets' controls.
 const CHROME = [
@@ -50,6 +51,26 @@ const stripDemoProse = (source) =>
     .replace(/[ \t]*<p class="note">[\s\S]*?<\/p>\n?/g, '')
     .replace(/[ \t]*<h[23]>[\s\S]*?<\/h[23]>\n?/g, '')
     .replace(/\n{3,}/g, '\n\n')
+// A motion page's demos, whose code renders only in the browser: each under its own title, without
+// its styles, so a model reading the Markdown sees the syntax the prose describes.
+function motionExamples(route) {
+  const dir = join(MOTION_DEMOS_DIR, route.split('/').pop())
+  if (!route.startsWith('/motion/') || !existsSync(dir)) return ''
+  const examples = readdirSync(dir)
+    .filter((file) => file.endsWith('.vue'))
+    .sort()
+    .map((file) => {
+      const source = readFileSync(join(dir, file), 'utf8')
+      const title =
+        source
+          .match(/<h3>([\s\S]*?)<\/h3>/)?.[1]
+          .replace(/<[^>]+>/g, '')
+          .trim() || file.replace(/^\d+-|\.vue$/g, '').replace(/(?<=[a-z])(?=[A-Z])/g, ' ')
+      const code = stripDemoProse(source).replace(/<style[\s\S]*?<\/style>\s*/g, '')
+      return `### ${title}\n\n${fence(code, 'vue')}`
+    })
+  return examples.length ? `## Examples\n\n${examples.join('\n\n')}` : ''
+}
 const sfcOrTs = (code) => (code.trimStart().startsWith('<') ? 'vue' : 'ts')
 // The page's first paragraph, for its line in llms.txt.
 const summaryOf = (markdown) =>
@@ -193,7 +214,8 @@ export function writeLlms(site) {
     for (const route of routesUnder(dist, dir, first)) {
       if (SKIP.has(route)) continue
       const html = readFileSync(join(dist, route, 'index.html'), 'utf8')
-      const markdown = proseMarkdown(html, origin)
+      const examples = motionExamples(route)
+      const markdown = [proseMarkdown(html, origin), examples].filter(Boolean).join('\n\n')
       const title = markdown.match(/^# (.+)$/m)?.[1] ?? route
       add(section, title, route, markdown)
     }

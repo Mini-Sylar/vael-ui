@@ -225,7 +225,7 @@ const confirmDiscard = () =>
     <CodeBlock
       code='&lt;script setup lang="ts"&gt;
 import { ConfigProvider } from "vael-ui"
-import type { MotionStyle } from "vael-ui"
+import type { MotionStyle } from "vael-ui/motion"
 
 const style: MotionStyle = {
   version: 1,
@@ -249,7 +249,8 @@ const style: MotionStyle = {
     <CodeBlock
       code='&lt;script setup lang="ts"&gt;
 import { ref } from "vue"
-import { Dialog, vAnimate } from "vael-ui"
+import { Dialog } from "vael-ui"
+import { vAnimate } from "vael-ui/motion"
 
 const open = ref(false)
 const steps = ["Pick a plan", "Add your team", "Send invites"]

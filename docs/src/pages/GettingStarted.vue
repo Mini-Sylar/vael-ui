@@ -49,6 +49,7 @@ import App from './App.vue'
 createVaporApp(App).mount('#app')"
     />
     <CodeBlock :code="vaporAppCode" />
+    <p v-html="t('gettingStarted.vaporLibrariesIntro')" />
     <p v-html="t('gettingStarted.vaporForceIntro')" />
     <CodeBlock
       lang="typescript"
