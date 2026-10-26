@@ -309,6 +309,11 @@ function leaving(value: AnimateDirectiveValue | undefined) {
   const initial = valuesAt(value.initial, where)
   return initial ? { values: exitFrom(initial), timing: EXIT } : undefined
 }
+/** Already in the page under a new `layoutId`: it slides from what left under it, if anything did. */
+function arriveUnder(el: HTMLElement, id: string, value: AnimateDirectiveValue | undefined) {
+  el.dataset.layoutId = id
+  arriveLayout(el, id, timingOf(value)!, () => {}, call(el as Marked, 'onAfterMove'))
+}
 function leaveIfRemoved(
   el: HTMLElement,
   value: AnimateDirectiveValue | undefined,
@@ -449,7 +454,6 @@ export const vAnimate: ObjectDirective<
         el,
         () => timingOf(marked._uiAnimateValue) ?? {},
         call(marked, 'onAfterMove'),
-        sized ? size?.sync : undefined,
       )
     if (!binding.arg && binding.modifiers.size && !hasPicks(binding.modifiers)) return entered(el)
     // Beside `v-show`: it animates as that hides and shows it.
@@ -481,8 +485,13 @@ export const vAnimate: ObjectDirective<
     if (id) rememberLayout(el, id)
     if (leaving(resolved(el, value))) (el as Marked)._uiLeavingPlace = placeOnLeave(el)
   },
-  beforeUpdate(el) {
+  beforeUpdate(el, binding) {
     notePaintedSiblings(el)
+    // Another `layoutId` on the same element (a detail showing another card): it leaves under the
+    // old one, from where it's painted, for whoever comes back under it.
+    const was = layoutIdOf(binding.oldValue as AnimateDirectiveValue | undefined)
+    if (was && was !== layoutIdOf(binding.value as AnimateDirectiveValue | undefined))
+      rememberLayout(el, was)
   },
   updated(el, binding) {
     const value = valueOf(el, binding)
@@ -496,6 +505,9 @@ export const vAnimate: ObjectDirective<
     followTarget(el as Marked, value)
     followStates(el as Marked, value)
     replayIfChanged(el, value, before, binding.arg)
+    // ...and arrives under the new one, from what just left under it.
+    const id = layoutIdOf(value)
+    if (id && id !== layoutIdOf(before)) arriveUnder(el, id, value)
     if (
       binding.value !== binding.oldValue &&
       (binding.arg || !binding.modifiers.size || hasPicks(binding.modifiers))
@@ -603,6 +615,7 @@ export function vAnimateVapor(
     vue as unknown as { currentInstance?: { provides?: Provides; isMounted?: boolean } | null }
   ).currentInstance
   const provides = current?.provides
+  const owner = current
   // Rendered with its component's first render (`appear: 'later'` skips its entrance).
   ;(el as Marked)._uiFirstRender = !current?.isMounted
   const provided = provides
@@ -644,6 +657,14 @@ export function vAnimateVapor(
     followTarget(el as Marked, current)
     followStates(el as Marked, current)
     if (arrived) replayIfChanged(el, current, before, name)
+    // Another `layoutId` on the same element (a detail showing another card): it leaves under the
+    // old one, from where it was painted, and arrives under the new one.
+    const was = layoutIdOf(before)
+    const now = layoutIdOf(current)
+    if (arrived && was !== now) {
+      if (was) rememberLayout(el, was)
+      if (now) arriveUnder(el, now, current)
+    }
     before = current
     // After the flush: in setup it has no parent yet to watch.
     if (!arrived && typeof current === 'object' && current.layout) {
@@ -654,15 +675,14 @@ export function vAnimateVapor(
           : undefined
       // In an effect there's no scope to dispose with: stopped with the directive's, above.
       stopLayoutSize = size?.stop
-      stopLayout = followLayout(
-        el,
-        () => timingOf(latest) ?? {},
-        call(el as Marked, 'onAfterMove'),
-        size?.sync,
-      )
+      stopLayout = followLayout(el, () => timingOf(latest) ?? {}, call(el as Marked, 'onAfterMove'))
     }
     const id = layoutIdOf(current)
     if (id) el.dataset.layoutId = id
+    // Its box as painted before its component updates: a sibling inserted in the same update (a
+    // detail opening above) would move it before it leaves.
+    if (!arrived && (id || leaving(resolved(el, current))))
+      watchPaintedBox(el, owner as ComponentInternalInstance | null)
     if (id && !arrived)
       arriveLayout(
         el,

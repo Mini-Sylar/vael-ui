@@ -6,8 +6,8 @@ import type { MotionTiming } from './types'
 
 const SIZE_ID = 'ui-size'
 
-/** A border-box size as CSS, which excludes padding and border under content-box. */
-function cssSize(el: HTMLElement, borderBox: number, axis: 'height' | 'width'): string {
+/** A border-box size as the element's own `width` or `height`, whatever its `box-sizing`. */
+export function cssSize(el: HTMLElement, borderBox: number, axis: 'height' | 'width'): string {
   const style = getComputedStyle(el)
   if (style.boxSizing === 'border-box') return `${borderBox}px`
   const edges =
@@ -16,6 +16,15 @@ function cssSize(el: HTMLElement, borderBox: number, axis: 'height' | 'width'): 
       : (['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'] as const)
   const extra = edges.reduce((sum, key) => sum + (Number.parseFloat(style[key]) || 0), 0)
   return `${Math.max(0, borderBox - extra)}px`
+}
+
+// Each following box's timing, so what moves inside it as it resizes can keep pace with it.
+const timings = new WeakMap<Element, () => MotionTiming | undefined>()
+
+/** The duration and easing `box` resizes on, when it follows its size. */
+export function sizeTimingOf(box: HTMLElement): { duration: number; easing: string } | undefined {
+  const timing = timings.get(box)
+  return timing && resolveTiming(box, timing() ?? {}, undefined)
 }
 
 export interface FollowSize {
@@ -87,6 +96,7 @@ export function followSize(
   }
   // Marked, so what leaves inside it is clipped to it (leaveInPlace).
   el.setAttribute('data-ui-size', '')
+  timings.set(el, timing)
   let last = measure()
   let target = last
   let running: Animation | undefined
@@ -170,9 +180,16 @@ export function followSize(
     if (close(box.height, showing.height) && close(box.width, showing.width)) return
     play(showing, box)
   }
-  const sizes = new ResizeObserver(() => sync())
+  // A child resizing is new content: it animates. Only the box itself resizing is layout from
+  // outside (a grid row stretched by a neighbour, a container): noted as where it is, so a later
+  // check doesn't replay it.
+  const sizes = new ResizeObserver((entries) => {
+    if (entries.some((entry) => entry.target !== el)) return sync()
+    if (!running && el.isConnected) last = measure()
+  })
   const watchChildren = () => {
     sizes.disconnect()
+    sizes.observe(el)
     for (const child of el.children) sizes.observe(child)
   }
   // New content: nodes, text, or something inside changing. Its own style or class is layout.
@@ -199,6 +216,7 @@ export function followSize(
     sync: () => sync(true),
     stop() {
       el.removeAttribute('data-ui-size')
+      timings.delete(el)
       changes.disconnect()
       sizes.disconnect()
       running?.cancel()

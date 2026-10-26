@@ -89,7 +89,10 @@ function motionKeys(type, seen = new Set()) {
     // An alias (Tooltip's is Popover's), or written out by hand (Calendar's).
     const alias = body.match(/=\s*(?:\w+<\s*)*?(\w+Motion)\b/)?.[1]
     if (alias && alias !== type) for (const key of motionKeys(alias, seen)) keys.add(key)
-    for (const m of body.matchAll(/\b(initial|exit|spring|duration|easing)\?:/g)) keys.add(m[1])
+    for (const m of body.matchAll(
+      /\b(initial|exit|spring|duration|easing|onAfterEnter|onAfterLeave|onAfterSwap)\?:/g,
+    ))
+      keys.add(m[1])
   } else {
     const has = (kind) => new RegExp(`\\b${kind}:\\s*true`).test(spec)
     keys.add('initial')
@@ -101,13 +104,16 @@ function motionKeys(type, seen = new Set()) {
     if (has('presence')) for (const k of ['exit', 'enter', 'leave', 'targets']) keys.add(k)
     if (has('list'))
       for (const k of ['exit', 'enter', 'leave', 'stagger', 'leaving', 'appear']) keys.add(k)
+    // Callbacks: what comes and goes has both; the rest, once its `initial` (or a `replay`) played.
+    if (has('overlay') || has('presence') || has('list'))
+      for (const k of ['onAfterEnter', 'onAfterLeave']) keys.add(k)
     if (has('linked')) keys.add('linked')
     if (has('indicator')) keys.add('move')
     if (has('stretch')) for (const k of ['stretch', 'squash']) keys.add(k)
-    if (has('swap')) for (const k of ['swap', 'direction', 'exit']) keys.add(k)
+    if (has('swap')) for (const k of ['swap', 'direction', 'exit', 'onAfterSwap']) keys.add(k)
     if (has('value')) keys.add('when')
     if (!has('overlay') && !has('presence') && !has('list'))
-      for (const k of ['replay', 'appear']) keys.add(k)
+      for (const k of ['replay', 'appear', 'onAfterEnter']) keys.add(k)
     if (/^export type \w+ = WithStagger</m.test(body)) keys.add('stagger')
   }
   for (const m of body.matchAll(/\b(chips|items)\?:/g)) keys.add(m[1])

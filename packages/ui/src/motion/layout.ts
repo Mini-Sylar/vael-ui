@@ -4,6 +4,7 @@
 import { onBeforeUpdate } from 'vue'
 import type { ComponentInternalInstance } from 'vue'
 import { pageHidden, prefersReducedMotion } from '../composables/dom'
+import { cssSize, sizeTimingOf } from './size'
 import { resolveTiming, track } from './timing'
 import type { ElementHookContext, MotionResult, MotionTiming, MotionValues } from './types'
 import { runHook } from './hook'
@@ -11,9 +12,11 @@ import { isTimed } from './playable'
 import { motionOffAt } from './styleHolder'
 import { groupValues, reducePresence, toKeyframe } from './values'
 
-// Just now: the same flush or the next frame (a late tick, an async part). Later is a new arrival.
+// Just now: the same flush, however long that render takes, or soon after it (a late tick, an
+// async part). Timed from the flush's end: a slow render used to run the clock out mid-swap.
 const FRESH = 34
 const boxes = new Map<string, { box: DOMRect; at: number }>()
+const fresh = (left: { at: number }) => performance.now() - left.at <= FRESH
 
 // Boxes read as the owner starts to re-render: by the time one leaves, the same flush may have
 // moved it (a row inserted above). Dropped once the flush is over.
@@ -72,10 +75,13 @@ export function notePaintedSiblings(el: Element): void {
 /** Leaving: where it was, for whoever arrives next under the same id. */
 export function rememberLayout(el: Element, id: string): void {
   const box = painted.get(el) ?? el.getBoundingClientRect()
-  const now = performance.now()
   // Ids that left and never came back: dropped, so one id per item can't grow this for good.
-  for (const [key, left] of boxes) if (now - left.at > FRESH) boxes.delete(key)
-  if (box.width || box.height) boxes.set(id, { box, at: now })
+  for (const [key, left] of boxes) if (!fresh(left)) boxes.delete(key)
+  if (!box.width && !box.height) return
+  // Still in its flush until the microtasks after it.
+  const left = { box, at: Infinity }
+  boxes.set(id, left)
+  queueMicrotask(() => (left.at = performance.now()))
 }
 
 /**
@@ -94,13 +100,28 @@ export function arriveLayout(
   queueMicrotask(() => {
     const before = boxes.get(id)
     boxes.delete(id)
-    if (!before || performance.now() - before.at > FRESH) return otherwise()
+    if (!before || !fresh(before)) return otherwise()
     if (prefersReducedMotion() || pageHidden() || motionOffAt(el)) return moved?.()
     const now = el.getBoundingClientRect()
     const run = slide(el, before.box, now, timing)
-    if (!run) moved?.()
-    else run.finished.then(moved, () => {})
+    if (!run) return moved?.()
+    raiseWhile(el, run)
+    run.finished.then(moved, () => {})
   })
+}
+
+// On its way it passes over what's around it (cards with their own stacking, later in the page),
+// not behind; landed, it's back in its own stacking.
+function raiseWhile(el: Element, run: Animation) {
+  if (!(el instanceof HTMLElement) || el.style.zIndex) return
+  const position = el.style.position
+  if (getComputedStyle(el).position === 'static') el.style.position = 'relative'
+  el.style.zIndex = '1'
+  const lower = () => {
+    el.style.zIndex = ''
+    el.style.position = position
+  }
+  run.finished.then(lower, lower)
 }
 
 const LAYOUT_ID = 'ui-layout'
@@ -123,8 +144,10 @@ function slide(
   const scaleOf = (shown: number, own: number) =>
     own && shown && Math.abs(shown / own - 1) > 0.02 ? shown / own : 1
   const html = el instanceof HTMLElement
-  const dx = (from.left - to.left) / (html ? scaleOf(to.width, el.offsetWidth) : 1)
-  const dy = (from.top - to.top) / (html ? scaleOf(to.height, el.offsetHeight) : 1)
+  const kx = html ? scaleOf(to.width, el.offsetWidth) : 1
+  const ky = html ? scaleOf(to.height, el.offsetHeight) : 1
+  const dx = (from.left - to.left) / kx
+  const dy = (from.top - to.top) / ky
   // `layout: 'position'`: it travels at its own size, so text in it never stretches.
   const resize = (timing as { layout?: unknown }).layout !== 'position'
   const sx = resize && to.width ? from.width / to.width : 1
@@ -137,13 +160,30 @@ function slide(
   )
     return undefined
   const { duration, easing } = resolveTiming(el, timing)
-  const run = el.animate(
-    [
-      { transformOrigin: '0 0', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
-      { transformOrigin: '0 0', transform: 'none' },
-    ],
-    { id: LAYOUT_ID, duration, easing, ...delayOf(timing) },
-  )
+  const sized = html && (Math.abs(sx - 1) >= 0.01 || Math.abs(sy - 1) >= 0.01)
+  // Its real size, as Vue Starport moves a component: what's in it reflows on the way instead of
+  // being stretched. Clipped to it meanwhile. An SVG has no size to set: it scales.
+  const frames: Keyframe[] = sized
+    ? [
+        {
+          translate: `${dx}px ${dy}px`,
+          // In its own pixels: a scaled container scales what it's given.
+          width: cssSize(el, from.width / kx, 'width'),
+          height: cssSize(el, from.height / ky, 'height'),
+          overflow: 'clip',
+        },
+        {
+          translate: '0px 0px',
+          width: cssSize(el, to.width / kx, 'width'),
+          height: cssSize(el, to.height / ky, 'height'),
+          overflow: 'clip',
+        },
+      ]
+    : [
+        { transformOrigin: '0 0', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
+        { transformOrigin: '0 0', transform: 'none' },
+      ]
+  const run = el.animate(frames, { id: LAYOUT_ID, duration, easing, ...delayOf(timing) })
   void track(run.finished.catch(() => {}))
   return run
 }
@@ -154,8 +194,6 @@ const placeOf = new WeakMap<Element, Point | undefined>()
 const timingOf = new WeakMap<Element, () => MotionTiming>()
 // `onAfterMove`: run once its slide has played, or at once when it moves without one.
 const movedOf = new WeakMap<Element, () => void>()
-// `layout: true`: its size, checked whenever the layout around it changes.
-const resizeOf = new WeakMap<Element, () => void>()
 const groups = new WeakMap<
   Element,
   { observer: MutationObserver; resize: ResizeObserver; members: Set<Element> }
@@ -266,8 +304,6 @@ function slideBy(el: Element, offset: Point, timing: MotionTiming) {
 function relayout(parent: Element, members: Set<Element>) {
   for (const el of members) if (!el.isConnected) members.delete(el)
   const list = [...members]
-  // Sizes first: something around it changed, and it may have grown or shrunk with it.
-  for (const el of list) resizeOf.get(el)?.()
   const reduced = prefersReducedMotion()
   // Its own glides only (a `layoutId` travel is left alone), and where they show it now.
   const runs = list.map((el) =>
@@ -316,8 +352,6 @@ export function followLayout(
   el: Element,
   timing: () => MotionTiming,
   moved?: () => void,
-  /** Eases it to a new size too (`layout: true`, not `'position'`). */
-  resize?: () => void,
 ): () => void {
   // Inside a component's panel, measured against the panel: content in a slot moves with the row
   // around it (a filtered option), not within its own parent.
@@ -327,7 +361,6 @@ export function followLayout(
   ownOf.set(el, ownShift(el))
   timingOf.set(el, timing)
   if (moved) movedOf.set(el, moved)
-  if (resize) resizeOf.set(el, resize)
   let group = groups.get(parent)
   if (!group) {
     const members = new Set<Element>()
@@ -373,6 +406,8 @@ export interface LeavingPlace {
   look?: Record<string, string>
   /** Out of the flow already (absolute or fixed): it keeps its own place and follows its container. */
   floats?: boolean
+  /** In a box that follows its size, what came after it in the flow, and where each was. */
+  after?: { el: HTMLElement; was: DOMRect }[]
 }
 
 // An element that can be lifted out and placed: HTML, or an icon's outermost <svg>.
@@ -394,7 +429,44 @@ export function placeOnLeave(el: Element): LeavingPlace | undefined {
     box = new DOMRect(box.x + was.x - now.x, box.y + was.y - now.y, box.width, box.height)
   }
   const floats = /^(absolute|fixed)$/.test(style.position)
-  return { parent: el.parentNode, next: el.nextSibling, box, at, look, floats }
+  const after = floats ? undefined : followersIn(el)
+  return { parent: el.parentNode, next: el.nextSibling, box, at, look, floats, after }
+}
+
+/** Inside a box that follows its size, the siblings after it in the flow that close its gap. */
+function followersIn(el: Element) {
+  if (!el.parentElement?.closest('[data-ui-size]')) return undefined
+  const after: { el: HTMLElement; was: DOMRect }[] = []
+  for (let next = el.nextElementSibling; next; next = next.nextElementSibling) {
+    // Its own layout glide moves it already.
+    if (!(next instanceof HTMLElement) || timingOf.has(next)) continue
+    const style = getComputedStyle(next)
+    if (style.display === 'none' || /^(absolute|fixed)$/.test(style.position)) continue
+    after.push({ el: next, was: next.getBoundingClientRect() })
+  }
+  return after
+}
+
+/**
+ * Lifted out, it leaves a gap the box closes as it shrinks: what came after it slides up with the
+ * box's edge, on its timing, instead of jumping into the gap while the box is still easing.
+ */
+function closeGap(place: LeavingPlace, box: HTMLElement | null) {
+  if (!box || !place.after?.length || prefersReducedMotion() || motionOffAt(box)) return
+  const timing = sizeTimingOf(box)
+  if (!timing) return
+  for (const { el, was } of place.after) {
+    if (el.parentNode !== place.parent) continue
+    const now = el.getBoundingClientRect()
+    const x = was.left - now.left
+    const y = was.top - now.top
+    if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5) continue
+    const run = el.animate([{ translate: `${x}px ${y}px` }, { translate: '0px 0px' }], {
+      ...timing,
+      composite: 'add',
+    })
+    void track(run.finished.catch(() => {}))
+  }
 }
 const HELD_LOOK = ['translate', 'scale', 'rotate', 'transform', 'opacity', 'filter', 'clip-path']
 
@@ -562,6 +634,7 @@ export function leaveInPlace(
     // From the look it had, not its resting one: on top of the place it's measured into.
     for (const [prop, value] of Object.entries(place.look ?? {})) el.style.setProperty(prop, value)
     clipToScrollers(el, place)
+    closeGap(place, box)
     const gone = () => {
       el.remove()
       unclip()
