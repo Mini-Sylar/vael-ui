@@ -45,12 +45,11 @@
           :placeholder="placeholder ?? ''"
           :focused="focused"
         >
+          <!-- The placeholder is the same text element, so the first value crossfades in too. -->
           <LazyAnimatedText
-            v-if="modelValue === ''"
-            class="ui-input-display-placeholder"
-            :value="placeholder ?? ''"
+            :class="modelValue === '' && 'ui-input-display-placeholder'"
+            :value="modelValue === '' ? (placeholder ?? '') : modelValue"
           />
-          <LazyAnimatedText v-else :value="modelValue" />
         </slot>
       </span>
     </span>
@@ -94,6 +93,7 @@ import '../shared/tokens.css'
 import '../../motion/timing.css'
 import {
   computed,
+  inject,
   onBeforeUnmount,
   shallowRef,
   useAttrs,
@@ -103,6 +103,7 @@ import {
 } from 'vue'
 import LazyAnimatedText from '../internal/LazyAnimatedText.vue'
 import { useTextOverlay } from '../../composables/useTextOverlay'
+import { inputPickedKey } from '../../composables/inputPicked'
 import { useFieldControl } from '../../composables/useFieldControl'
 import {
   measureClearSpace,
@@ -290,15 +291,18 @@ useStateMotion({
 })
 
 // `all` hides the input's text for #display; `animated` crossfades the placeholder, and the value
-// while you're not in the field, so typing stays plain.
+// while you're not in the field, so typing stays plain. A value picked from a list (Combobox)
+// crossfades in focused too, until you type.
 const slots = useSlots()
 const hasSlot = useSlotPresence(slots)
+const picked = inject(inputPickedKey, undefined)
 const displayMode = computed(() => {
   if (hasSlot('display')) return 'all'
   if (!props.animated) return undefined
   if (modelValue.value === '') return 'placeholder'
   // A password is never drawn as text.
-  return focused.value || props.type === 'password' ? undefined : 'value'
+  if (props.type === 'password') return undefined
+  return focused.value && !picked?.() ? undefined : 'value'
 })
 const overlay = useTextOverlay(inputEl, root, () => displayMode.value !== undefined)
 

@@ -13,6 +13,7 @@
     :size="props.size"
     :disabled="disabled"
     :invalid="isInvalid"
+    :animated="!!props.motion && !multiple"
     role="combobox"
     aria-haspopup="listbox"
     :aria-expanded="open"
@@ -312,6 +313,7 @@ import { useFormReset } from '../../composables/useFormReset'
 import { useClassMerge, resolveUiPart } from '../../classes'
 import type { UiPartValue } from '../../classes'
 import { themeScopeKey, useThemedUi } from '../../theme'
+import { inputPickedKey } from '../../composables/inputPicked'
 import { useMessages, comboboxMessages } from '../../messages'
 import { normalizeText } from '../../composables/normalizeText'
 import SelectListBody from '../internal/SelectListBody.vue'
@@ -658,6 +660,8 @@ const el = computed(() => inputRef.value?.el ?? null)
 const inputEl = computed(() => inputRef.value?.inputEl ?? null)
 // Removing the last focused chip puts focus back in the input.
 provide(chipFocusFallbackKey, () => inputEl.value)
+// Picked (not typed) text crossfades in like Select's, focused or not.
+provide(inputPickedKey, () => !queryDirty.value)
 useFormReset(model, () => inputEl.value)
 const positionerEl = useTemplateRef<HTMLElement>('positioner')
 const panelEl = useTemplateRef<HTMLElement>('panel')
@@ -735,8 +739,9 @@ function selectItem(item: T, _index: number, createReason: ComboboxCreateReason 
     return
   }
   model.value = item.value
-  query.value = item.label
+  // The pick shows over the typed text first, then crossfades to its label, as Select's does.
   queryDirty.value = false
+  void nextTick(() => (query.value = item.label))
   emit('select', item)
   emit('change', model.value)
   close()

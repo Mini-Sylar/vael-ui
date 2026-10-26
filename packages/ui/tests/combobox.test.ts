@@ -696,3 +696,53 @@ test('multiple: content in #start stays at the start of the field, before the ch
   expect(chip.right).toBeLessThanOrEqual(input().left)
   expect(emptyGap).toBeLessThan(12)
 })
+
+test('a picked option crossfades in over the typed text, like Select, and typing takes over again', async () => {
+  // Real transitions, so the crossfade's classes show.
+  const screen = await render(ComboboxFixture, { global: { stubs: { transition: false } } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'cran')
+  await expect.element(screen.getByRole('option', { name: 'Cranberry' })).toBeVisible()
+  await screen.getByRole('option', { name: 'Cranberry' }).click()
+  // The picked label comes in through the overlay's crossfade, from the typed text.
+  await vi.waitFor(() =>
+    expect(
+      document.querySelector('.ui-input-display .ui-animated-text-enter-active'),
+    ).not.toBeNull(),
+  )
+  await vi.waitFor(() => expect(input.element()).toHaveValue('Cranberry'))
+  await vi.waitFor(() =>
+    expect(document.querySelector('.ui-input-display')?.textContent).toContain('Cranberry'),
+  )
+  // Typing again shows the field's own text, with no overlay over it.
+  input.element().focus()
+  await userEvent.type(input, 'x')
+  await vi.waitFor(() => expect(document.querySelector('.ui-input-display')).toBeNull())
+})
+
+test('the first pick crossfades in from the empty field too', async () => {
+  const screen = await render(ComboboxFixture, { global: { stubs: { transition: false } } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await screen.getByRole('option', { name: 'Cranberry' }).click()
+  await vi.waitFor(() =>
+    expect(
+      document.querySelector('.ui-input-display .ui-animated-text-enter-active'),
+    ).not.toBeNull(),
+  )
+})
+
+test('with motion off a pick writes the label straight into the field', async () => {
+  const items = [
+    { label: 'Apple', value: 'apple' },
+    { label: 'Cranberry', value: 'cranberry' },
+  ]
+  const screen = await render(Combobox, { props: { items, motion: false, 'aria-label': 'Fruit' } })
+  const input = screen.getByRole('combobox')
+  await input.click()
+  await userEvent.type(input, 'cran')
+  await screen.getByRole('option', { name: 'Cranberry' }).click()
+  await vi.waitFor(() => expect(input.element()).toHaveValue('Cranberry'))
+  expect(document.querySelector('.ui-input-display')).toBeNull()
+})

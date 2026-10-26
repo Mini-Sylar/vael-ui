@@ -12,3 +12,4 @@ export {
   useMotionStyle,
 } from './motion/context'
 export { useScrollState } from './composables/useScrollState'
+export { inputPickedKey } from './composables/inputPicked'

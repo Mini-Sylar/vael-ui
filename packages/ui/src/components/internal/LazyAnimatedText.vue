@@ -9,10 +9,14 @@
 import { markRaw } from 'vue'
 import type { Component } from 'vue'
 
-// One request for the whole page, however many fields use it.
+// One request for the whole page, however many fields use it; once it's in, later mounts use it at
+// once, so text that mounts and changes in the same moment (a Combobox pick) still crossfades.
 let request: Promise<Component> | undefined
+let ready: Component | undefined
 const load = () =>
-  (request ??= import('../AnimatedText/AnimatedText.vue').then((mod) => markRaw(mod.default)))
+  (request ??= import('../AnimatedText/AnimatedText.vue').then(
+    (mod) => (ready = markRaw(mod.default)),
+  ))
 </script>
 
 <!-- AnimatedText, split out of the bundle: the same markup as plain text until it loads after mount. -->
@@ -23,6 +27,6 @@ import { onMounted, shallowRef } from 'vue'
 // Unset, not false: AnimatedText then follows the nearest ConfigProvider.
 withDefaults(defineProps<{ value: string; motion?: boolean }>(), { motion: undefined })
 
-const loaded = shallowRef<Component | null>(null)
+const loaded = shallowRef<Component | null>(ready ?? null)
 onMounted(() => void load().then((component) => (loaded.value = component)))
 </script>
